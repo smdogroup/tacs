@@ -2,7 +2,7 @@
 
 /*
   The following file contains the specific implementation for block
-  size = 6.
+  size = 8.
 
   Copyright (c) 2010 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
@@ -28,26 +28,28 @@ void * BCSRMatVecMultAdd8_thread( void * t ){
     tdata->mat_mult_sched_job(group_size, &row);
     
     if (row >= 0){
-      TacsScalar * y = &tdata->output[6*row];
+      TacsScalar * y = &tdata->output[8*row];
       int k = rowp[row];
       for ( int ii = row; ii < nrows && (ii < row + group_size); ii++ ){
         int end = rowp[ii+1];
-        const TacsScalar * a = &A[36*k];
+        const TacsScalar * a = &A[64*k];
         
         for ( ; k < end; k++ ){
-          int j = 6*cols[k];
+          int j = 8*cols[k];
           
-          y[0] += a[0 ]*x[j] + a[1 ]*x[j+1] + a[2 ]*x[j+2] + a[3 ]*x[j+3] + a[4 ]*x[j+4] + a[5 ]*x[j+5];
-          y[1] += a[6 ]*x[j] + a[7 ]*x[j+1] + a[8 ]*x[j+2] + a[9 ]*x[j+3] + a[10]*x[j+4] + a[11]*x[j+5];
-          y[2] += a[12]*x[j] + a[13]*x[j+1] + a[14]*x[j+2] + a[15]*x[j+3] + a[16]*x[j+4] + a[17]*x[j+5];
-          y[3] += a[18]*x[j] + a[19]*x[j+1] + a[20]*x[j+2] + a[21]*x[j+3] + a[22]*x[j+4] + a[23]*x[j+5];
-          y[4] += a[24]*x[j] + a[25]*x[j+1] + a[26]*x[j+2] + a[27]*x[j+3] + a[28]*x[j+4] + a[29]*x[j+5];
-          y[5] += a[30]*x[j] + a[31]*x[j+1] + a[32]*x[j+2] + a[33]*x[j+3] + a[34]*x[j+4] + a[35]*x[j+5];
-        
-          a += 36;
+          y[0] += a[0 ]*x[j] + a[1 ]*x[j+1] + a[2 ]*x[j+2] + a[3 ]*x[j+3] + a[4 ]*x[j+4] + a[5 ]*x[j+5] + a[6 ]*x[j+6] + a[7 ]*x[j+7];
+          y[1] += a[8 ]*x[j] + a[9 ]*x[j+1] + a[10]*x[j+2] + a[11]*x[j+3] + a[12]*x[j+4] + a[13]*x[j+5] + a[14]*x[j+6] + a[15]*x[j+7];
+          y[2] += a[16]*x[j] + a[17]*x[j+1] + a[18]*x[j+2] + a[19]*x[j+3] + a[20]*x[j+4] + a[21]*x[j+5] + a[22]*x[j+6] + a[23]*x[j+7];
+          y[3] += a[24]*x[j] + a[25]*x[j+1] + a[26]*x[j+2] + a[27]*x[j+3] + a[28]*x[j+4] + a[29]*x[j+5] + a[30]*x[j+6] + a[31]*x[j+7];
+          y[4] += a[32]*x[j] + a[33]*x[j+1] + a[34]*x[j+2] + a[35]*x[j+3] + a[36]*x[j+4] + a[37]*x[j+5] + a[38]*x[j+6] + a[39]*x[j+7];
+          y[5] += a[40]*x[j] + a[41]*x[j+1] + a[42]*x[j+2] + a[43]*x[j+3] + a[44]*x[j+4] + a[45]*x[j+5] + a[46]*x[j+6] + a[47]*x[j+7];
+	  y[6] += a[48]*x[j] + a[49]*x[j+1] + a[50]*x[j+2] + a[51]*x[j+3] + a[52]*x[j+4] + a[53]*x[j+5] + a[54]*x[j+6] + a[55]*x[j+7];
+          y[7] += a[56]*x[j] + a[57]*x[j+1] + a[58]*x[j+2] + a[59]*x[j+3] + a[60]*x[j+4] + a[61]*x[j+5] + a[62]*x[j+6] + a[63]*x[j+7];
+
+          a += 64;
         }
         
-        y += 6; 
+        y += 8; 
       }
     }
   }
