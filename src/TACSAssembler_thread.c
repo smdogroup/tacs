@@ -47,9 +47,6 @@ void * TACSAssembler::assembleRes_thread( void * t ){
   TacsScalar * elemRes = &data[s];
   TacsScalar * elemXpts = &data[2*s];
 
-  // Get the load factor for this load case
-  TacsScalar lambda = tacs->loadFactor[loadCase];
-
   // Get information for the surface traction
   int index = 0;
   int numElems = 0;

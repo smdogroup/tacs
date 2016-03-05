@@ -77,13 +77,12 @@ void Compliance::preEvalThread( const int iter,
 */
 void Compliance::elementWiseEval( const int iter, 
                                   TACSElement * element, int elemNum,
-				  const TacsScalar elemVars[], 
 				  const TacsScalar Xpts[],
+				  const TacsScalar vars[], 
                                   int * iwork, TacsScalar * work ){
   double pt[3];
   int numGauss = element->getNumGaussPts();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
@@ -99,11 +98,11 @@ void Compliance::elementWiseEval( const int iter,
   // With the first iteration, find the minimum over the domain
   for ( int i = 0; i < numGauss; i++ ){
     // Get the Gauss points one at a time
-    TacsScalar weight = element->getGaussWtsPts(scheme, i, pt);
+    TacsScalar weight = element->getGaussWtsPts(i, pt);
     TacsScalar h = element->getJacobian(pt, Xpts);
       
     // Get the strain
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
     constitutive->calculateStress(pt, strain, stress);
 
     // Calculate the compliance
@@ -146,13 +145,12 @@ int Compliance::getSVSensWorkSize(){
 */
 void Compliance::elementWiseSVSens( TacsScalar * elemSVSens, 
 				    TACSElement * element, int elemNum,
-				    const TacsScalar elemVars[], 
 				    const TacsScalar Xpts[],
+				    const TacsScalar vars[], 
                                     TacsScalar * work ){
   double pt[3];
   int numGauss = element->getNumGaussPts();
   int numVars = element->numVariables();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
   
   // Zero the contribution from this element
@@ -169,17 +167,17 @@ void Compliance::elementWiseSVSens( TacsScalar * elemSVSens,
   TacsScalar * stress = &work[maxNumStresses];
 
   for ( int i = 0; i < numGauss; i++ ){
-    TacsScalar weight = element->getGaussWtsPts(scheme, i, pt);
+    TacsScalar weight = element->getGaussWtsPts(i, pt);
     TacsScalar h = weight*element->getJacobian(pt, Xpts);
     
     // Get the strain
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
     constitutive->calculateStress(pt, strain, stress);
        
     // Add the sensitivity of the compliance to the strain c = e^{T} * D * e    
     // dc/du = 2.0 * e^{T} * D * de/du
-    element->addPtwiseStrainSVSens(elemSVSens, pt, 2.0*h, stress, 
-                                   elemVars, Xpts);    
+    element->addStrainSVSens(elemSVSens, pt, 2.0*h, stress, 
+			     Xpts, vars);
   }
 }
 
@@ -187,7 +185,7 @@ void Compliance::elementWiseSVSens( TacsScalar * elemSVSens,
   Return the size of the work array for the XptSens calculations
 */
 int Compliance::getXptSensWorkSize(){
-  return 2*maxNumStresses + 3*maxNumNodes*(maxNumStresses + 1);
+  return 2*maxNumStresses + 3*maxNumNodes;
 }
 
 /*
@@ -196,13 +194,12 @@ int Compliance::getXptSensWorkSize(){
 */
 void Compliance::elementWiseXptSens( TacsScalar fXptSens[],
 				     TACSElement * element, int elemNum,
-				     const TacsScalar elemVars[], 
 				     const TacsScalar Xpts[],
+				     const TacsScalar vars[],
                                      TacsScalar * work  ){
   int numGauss = element->getNumGaussPts();
   int numNodes = element->numNodes();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
 
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
@@ -217,35 +214,33 @@ void Compliance::elementWiseXptSens( TacsScalar fXptSens[],
   TacsScalar * strain = &work[0];
   TacsScalar * stress = &work[maxNumStresses];
   TacsScalar * hXptSens = &work[2*maxNumStresses];
-  TacsScalar * strainXptSens = &work[2*maxNumStresses + 3*maxNumNodes];
   
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
     double pt[3];
-    TacsScalar weight = element->getGaussWtsPts(scheme, i, pt);
+    TacsScalar weight = element->getGaussWtsPts(i, pt);
     TacsScalar h = element->getJacobianXptSens(hXptSens, pt, Xpts);
 
     // Add contribution to the sensitivity from the strain calculation
-    element->getPtwiseStrainXptSens(strain, strainXptSens, pt, 
-                                    elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
    
     // Get the stress
     constitutive->calculateStress(pt, strain, stress);
         
-    TacsScalar SEdensity = 0.0; // The strain energy density
+    // Compute the strain energy density
+    TacsScalar SEdensity = 0.0;
     for ( int k = 0; k < numStresses; k++ ){
       SEdensity += strain[k]*stress[k];
     }
-    
+
+    // Add the contribution from the change in geometry
     for ( int k = 0; k < 3*numNodes; k++ ){
       fXptSens[k] += weight*hXptSens[k]*SEdensity;
-
-      TacsScalar SEdensitySens = 0.0;
-      for ( int j = 0; j < numStresses; j++ ){
-        SEdensitySens += strainXptSens[numStresses*k + j]*stress[j];
-      }
-      fXptSens[k] += 2.0*h*weight*SEdensitySens;
     }
+
+    // Add the terms from the derivative of the strain w.r.t. nodes
+    element->addStrainXptSens(fXptSens, pt, 2.0*h,
+			      stress, Xpts, vars);
   }
 }
 
@@ -262,12 +257,11 @@ int Compliance::getDVSensWorkSize(){
 */
 void Compliance::elementWiseDVSens( TacsScalar fdvSens[], int numDVs, 
 				    TACSElement * element, int elemNum,
-				    const TacsScalar elemVars[], 
 				    const TacsScalar Xpts[],
+				    const TacsScalar vars[],
                                     TacsScalar * work ){
   int numGauss = element->getNumGaussPts();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
@@ -282,11 +276,11 @@ void Compliance::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   for ( int i = 0; i < numGauss; i++ ){
     // Get the quadrature point
     double pt[3];
-    TacsScalar weight = element->getGaussWtsPts(scheme, i, pt);
+    TacsScalar weight = element->getGaussWtsPts(i, pt);
     TacsScalar h = weight*element->getJacobian(pt, Xpts);	
 
     // Get the strain at the current point
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
     constitutive->addStressDVSens(pt, strain, h, strain, 
 				  fdvSens, numDVs);
   }

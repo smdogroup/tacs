@@ -21,8 +21,6 @@ TACSFunction(_tacs, _elementNums, _numElements, _numElements, 2){
 
   max_nodes = 0;
   max_stresses = 0;
-  scheme_elevation = 0;
-  quad_type = GAUSS_QUADRATURE;
 
   max_fail = 0.0;
   fail_numer = 0.0;
@@ -41,8 +39,6 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN, 0, 2){
 
   max_nodes = 0;
   max_stresses = 0;
-  scheme_elevation = 0;
-  quad_type = GAUSS_QUADRATURE;
 
   max_fail = 0.0;
   fail_numer = 0.0;
@@ -83,23 +79,6 @@ void InducedFailure::setInducedType( enum InducedNormType type ){
 void InducedFailure::setLoadFactor( TacsScalar _load_factor ){
   if (_load_factor >= 1.0){ 
     load_factor = _load_factor;
-  }
-}
-
-/*
-  Set the type of quadrature scheme to use. This is optionally
-  ignored by individual elements so be careful.
-*/
-void InducedFailure::setQuadratureType( enum QuadratureType _quad_type ){
-  quad_type = _quad_type;
-}
-
-/*
-  Set the Gauss quadrature elevation 
-*/
-void InducedFailure::setQuadratureElevation( int elev ){
-  if (elev >= 0){
-    scheme_elevation = elev;
   }
 }
 
@@ -186,18 +165,14 @@ void InducedFailure::preEvalThread( const int iter,
 */
 void InducedFailure::elementWiseEval( const int iter,
 				      TACSElement * element, int elemNum,
-				      const TacsScalar vars[],
 				      const TacsScalar Xpts[],
+				      const TacsScalar vars[],
 				      int * iwork, TacsScalar * work ){
   // Retrieve the number of stress components for this element
   int numStresses = element->numStresses();
 
-  // Retrieve the quadrature scheme
-  int scheme = element->getGaussPtScheme();
-  scheme += scheme_elevation;
-
   // Get the number of quadrature points for this element
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -216,10 +191,10 @@ void InducedFailure::elementWiseEval( const int iter,
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
       double pt[3];
-      element->getGaussWtsPts(quad_type, scheme, i, pt);
+      element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, vars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= load_factor;
@@ -239,13 +214,13 @@ void InducedFailure::elementWiseEval( const int iter,
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
       double pt[3];
-      double weight = element->getGaussWtsPts(quad_type, scheme, i, pt);
+      double weight = element->getGaussWtsPts(i, pt);
 
       // Get the determinant of the Jacobian
       TacsScalar h = element->getJacobian(pt, Xpts);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, vars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= load_factor;
@@ -363,8 +338,8 @@ int InducedFailure::getSVSensWorkSize(){
 */
 void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens, 
 					TACSElement * element, int elemNum,
-					const TacsScalar vars[],
 					const TacsScalar Xpts[],
+					const TacsScalar vars[],
 					TacsScalar * work ){
   // Get the number of stress components and total number of variables
   // for this element.
@@ -372,9 +347,7 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   int numVars = element->numVariables();
 
   // Get the quadrature scheme information
-  int scheme = element->getGaussPtScheme();
-  scheme += scheme_elevation;
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -394,13 +367,13 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
 
   for ( int i = 0; i < numGauss; i++ ){
     double pt[3];
-    double weight = element->getGaussWtsPts(quad_type, scheme, i, pt);
+    double weight = element->getGaussWtsPts(i, pt);
         
     // Get the determinant of the Jacobian
     TacsScalar h = element->getJacobian(pt, Xpts);
 
     // Get the strain
-    element->getPtwiseStrain(strain, pt, vars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
             
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= load_factor;      
@@ -471,8 +444,8 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
     }
 
     // Determine the sensitivity of the state variables to SV
-    element->addPtwiseStrainSVSens(elemSVSens, pt, load_factor*s,
-                                   failSens, vars, Xpts);
+    element->addStrainSVSens(elemSVSens, pt, load_factor*s,
+			     failSens, Xpts, vars);
   }
 }
 
@@ -480,7 +453,7 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   Return the size of the work array for XptSens function
 */
 int InducedFailure::getXptSensWorkSize(){
-  return (2 + 3*max_nodes)*max_stresses + 3*max_nodes;
+  return 2*max_stresses + 3*max_nodes;
 }
 
 /*
@@ -489,8 +462,8 @@ int InducedFailure::getXptSensWorkSize(){
 */
 void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
 					 TACSElement * element, int elemNum,
-					 const TacsScalar vars[],
 					 const TacsScalar Xpts[],
+					 const TacsScalar vars[],
 					 TacsScalar * work ){
   // Get the number of stress components, the total number of
   // variables, and the total number of nodes
@@ -499,9 +472,7 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
   int numNodes = element->numNodes();
 
   // Get the quadrature scheme information
-  int scheme = element->getGaussPtScheme();
-  scheme += scheme_elevation;
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -519,19 +490,17 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
   TacsScalar * strain = &work[0];
   TacsScalar * failSens = &work[max_stresses];
   TacsScalar * hXptSens = &work[2*max_stresses];
-  TacsScalar * strainXptSens = &work[2*max_stresses + 3*max_nodes];
 
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
     double pt[3];
-    double weight = element->getGaussWtsPts(quad_type, scheme, i, pt);
+    double weight = element->getGaussWtsPts(i, pt);
 
     // Get the derivative of the determinant of the Jacobian w.r.t. the nodes
     TacsScalar h = element->getJacobianXptSens(hXptSens, pt, Xpts);
 
     // Get the strain
-    element->getPtwiseStrainXptSens(strain, strainXptSens, pt,
-                                    vars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
 
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= load_factor;
@@ -614,14 +583,16 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
       sx = 0.0;
     }
 
+    // Add the contribution from the derivative of the determinant of the
+    // Jacobian w.r.t. the nodes
     for ( int j = 0; j < 3*numNodes; j++ ){
       fXptSens[j] += sx*hXptSens[j];
-
-      for ( int k = 0; k < numStresses; k++ ){
-	fXptSens[j] += 
-	  s*load_factor*(failSens[k]*strainXptSens[k + j*numStresses]);
-      }
     }
+
+    // Add the contribution from the derivative of the strain w.r.t.
+    // the nodal locations
+    element->addStrainXptSens(fXptSens, pt, s*load_factor,
+			      failSens, Xpts, vars);
   }
 }
 
@@ -647,9 +618,7 @@ void InducedFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   int numStresses = element->numStresses();
 
   // Get the quadrature scheme information
-  int scheme = element->getGaussPtScheme();
-  scheme += scheme_elevation;
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -666,13 +635,13 @@ void InducedFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
     double pt[3];
-    double weight = element->getGaussWtsPts(quad_type, scheme, i, pt);
+    double weight = element->getGaussWtsPts(i, pt);
     
     // Get the determinant of the Jacobian
     TacsScalar h = element->getJacobian(pt, Xpts);
     
     // Get the strain
-    element->getPtwiseStrain(strain, pt, vars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
     
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= load_factor;        

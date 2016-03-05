@@ -9,24 +9,11 @@ include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
 	Compliance.o \
-	MaxFailure.o \
 	KSFailure.o \
-	AverageMaxFailure.o \
-	AverageKSFailure.o \
-	PNormFailure.o \
+	KSBuckling.o \
 	InducedFailure.o \
 	InducedBuckling.o \
-	MaxBuckling.o \
-	KSBuckling.o \
-	AverageKSBuckling.o \
-	PNormBuckling.o \
-	StructuralMass.o \
-	StructuralSize.o \
-	StructuralMassMoment.o \
-	AggregateDisplacement.o \
-	MinimumDistance.o \
-	TACSElementFunction.o \
-	KSElementFailure.o
+	StructuralMass.o 
 
 DIR=${TACS_DIR}/src/functions
 

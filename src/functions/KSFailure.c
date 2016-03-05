@@ -20,8 +20,6 @@ TACSFunction(_tacs, _elementNums, _numElements, _numElements, 2){
   loadFactor = 1.0;
   maxNumNodes = 0;
   maxNumStresses = 0;
-  schemeElevation = 0;
-  quadType = GAUSS_QUADRATURE;
 }
 
 KSFailure::KSFailure( TACSAssembler * _tacs, 
@@ -33,8 +31,6 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN, 0, 2){
   loadFactor = 1.0;
   maxNumNodes = 0;
   maxNumStresses = 0;
-  schemeElevation = 0;
-  quadType = GAUSS_QUADRATURE;
 }
 
 KSFailure::~KSFailure(){}
@@ -66,22 +62,6 @@ void KSFailure::setParameter( double _ksWeight ){
 void KSFailure::setLoadFactor( TacsScalar _loadFactor ){
   if (_loadFactor >= 1.0){ 
     loadFactor = _loadFactor;
-  }
-}
-
-/*
-  Set the Gauss quadrature information
-*/
-void KSFailure::setQuadratureType( enum QuadratureType _quadType ){
-  quadType = _quadType;
-}
-
-/*
-  Set the Gauss quadrature elevation 
-*/
-void KSFailure::setQuadratureElevation( int elev ){
-  if (elev >= 0){
-    schemeElevation = elev;
   }
 }
 
@@ -153,18 +133,14 @@ void KSFailure::preEvalThread( const int iter,
 */
 void KSFailure::elementWiseEval( const int iter, 
 				 TACSElement * element, int elemNum,
-				 const TacsScalar elemVars[],
 				 const TacsScalar Xpts[],
+				 const TacsScalar vars[],
 				 int * iwork, TacsScalar * work ){
   // Retrieve the number of stress components for this element
   int numStresses = element->numStresses();
 
-  // Retrieve the quadrature scheme
-  int scheme = element->getGaussPtScheme();
-  scheme += schemeElevation;
-
   // Get the number of quadrature points for this element
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -177,10 +153,10 @@ void KSFailure::elementWiseEval( const int iter,
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
       double pt[3];
-      element->getGaussWtsPts(quadType, scheme, i, pt);
+      element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;
@@ -200,10 +176,10 @@ void KSFailure::elementWiseEval( const int iter,
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
       double pt[3];
-      double weight = element->getGaussWtsPts(quadType, scheme, i, pt);
+      double weight = element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;        
@@ -222,7 +198,6 @@ void KSFailure::elementWiseEval( const int iter,
       else {
 	// Get the determinant of the Jacobian
 	TacsScalar h = element->getJacobian(pt, Xpts);
-
 	work[1] += h*weight*fexp;
       }
     }
@@ -279,8 +254,8 @@ int KSFailure::getSVSensWorkSize(){
 */
 void KSFailure::elementWiseSVSens( TacsScalar * elemSVSens, 
 				   TACSElement * element, int elemNum,
-				   const TacsScalar elemVars[],
 				   const TacsScalar Xpts[],
+				   const TacsScalar vars[],
 				   TacsScalar * work ){
   // Get the number of stress components and total number of variables
   // for this element.
@@ -288,9 +263,7 @@ void KSFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   int numVars = element->numVariables();
 
   // Get the quadrature scheme information
-  int scheme = element->getGaussPtScheme();
-  scheme += schemeElevation;
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -304,10 +277,10 @@ void KSFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   
   for ( int i = 0; i < numGauss; i++ ){
     double pt[3];
-    double weight = element->getGaussWtsPts(quadType, scheme, i, pt);
+    double weight = element->getGaussWtsPts(i, pt);
         
     // Get the strain
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
             
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= loadFactor;      
@@ -335,8 +308,8 @@ void KSFailure::elementWiseSVSens( TacsScalar * elemSVSens,
     }
 
     // Determine the sensitivity of the state variables to SV
-    element->addPtwiseStrainSVSens(elemSVSens, pt, ksPtWeight, 
-                                   failSens, elemVars, Xpts);
+    element->addStrainSVSens(elemSVSens, pt, ksPtWeight, 
+			     failSens, Xpts, vars);
   }
 }
 
@@ -344,7 +317,7 @@ void KSFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   Return the size of the work array for XptSens function
 */
 int KSFailure::getXptSensWorkSize(){
-  return (2 + 3*maxNumNodes)*maxNumStresses + 3*maxNumNodes;
+  return 2*maxNumStresses + 3*maxNumNodes;
 }
 
 /*
@@ -353,8 +326,8 @@ int KSFailure::getXptSensWorkSize(){
 */
 void KSFailure::elementWiseXptSens( TacsScalar fXptSens[],
 				    TACSElement * element, int elemNum,
-				    const TacsScalar elemVars[],
 				    const TacsScalar Xpts[],
+				    const TacsScalar vars[],
 				    TacsScalar * work ){
   // Get the number of stress components, the total number of
   // variables, and the total number of nodes
@@ -363,9 +336,7 @@ void KSFailure::elementWiseXptSens( TacsScalar fXptSens[],
   int numNodes = element->numNodes();
 
   // Get the quadrature scheme information
-  int scheme = element->getGaussPtScheme();
-  scheme += schemeElevation;
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -377,16 +348,14 @@ void KSFailure::elementWiseXptSens( TacsScalar fXptSens[],
   TacsScalar * strain = &work[0];
   TacsScalar * failSens = &work[maxNumStresses];
   TacsScalar * hXptSens = &work[2*maxNumStresses];
-  TacsScalar * strainXptSens = &work[2*maxNumStresses + 3*maxNumNodes];
   
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
     double pt[3];
-    double weight = element->getGaussWtsPts(quadType, scheme, i, pt);
+    double weight = element->getGaussWtsPts(i, pt);
 
     // Get the strain at the current point within the element
-    element->getPtwiseStrainXptSens(strain, strainXptSens, pt,
-                                    elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
 
     // Multiply by the load factor
     for ( int k = 0; k < numStresses; k++ ){
@@ -406,13 +375,9 @@ void KSFailure::elementWiseXptSens( TacsScalar fXptSens[],
       // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
       TacsScalar ksPtWeight = 
 	loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
-
-      for ( int j = 0; j < 3*numNodes; j++ ){
-	for ( int k = 0; k < numStresses; k++ ){
-	  fXptSens[j] += 
-	    ksPtWeight*failSens[k]*strainXptSens[k + j*numStresses];
-	}
-      }
+      
+      element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
+				Xpts, vars);
     }
     else {
       // Get the derivative of the determinant of the Jacobian
@@ -426,12 +391,10 @@ void KSFailure::elementWiseXptSens( TacsScalar fXptSens[],
 
       for ( int j = 0; j < 3*numNodes; j++ ){
 	fXptSens[j] += ksHptWeight*hXptSens[j];
-
-	for ( int k = 0; k < numStresses; k++ ){
-	  fXptSens[j] += 
-	    ksPtWeight*failSens[k]*strainXptSens[k + j*numStresses];
-	}
       }
+
+      element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
+				Xpts, vars);
     }
   }
 }
@@ -450,17 +413,15 @@ int KSFailure::getDVSensWorkSize(){
 */
 void KSFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 				   TACSElement * element, int elemNum,
-				   const TacsScalar elemVars[],
 				   const TacsScalar Xpts[],
+				   const TacsScalar vars[],
 				   TacsScalar * work ){ 
   // Get the number of stress components, the total number of
   // variables, and the total number of nodes
   int numStresses = element->numStresses();
 
   // Get the quadrature scheme information
-  int scheme = element->getGaussPtScheme();
-  scheme += schemeElevation;
-  int numGauss = element->getNumGaussPts(scheme);
+  int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
   TACSConstitutive * constitutive = element->getConstitutive();
@@ -471,10 +432,10 @@ void KSFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
     double pt[3];
-    double weight = element->getGaussWtsPts(quadType, scheme, i, pt);
+    double weight = element->getGaussWtsPts(i, pt);
 
     // Get the strain
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
 
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= loadFactor;        

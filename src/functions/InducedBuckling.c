@@ -21,8 +21,6 @@ TACSFunction(_tacs, _elementNums, _numElements, _numElements, 2){
 
   max_nodes = 0;
   max_stresses = 0;
-  scheme_elevation = 0;
-  quad_type = GAUSS_QUADRATURE;
 
   maxBuckling = 0.0;
   bucklingNumer = 0.0;
@@ -41,8 +39,6 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN, 0, 2){
 
   max_nodes = 0;
   max_stresses = 0;
-  scheme_elevation = 0;
-  quad_type = GAUSS_QUADRATURE;
 
   maxBuckling = 0.0;
   bucklingNumer = 0.0;
@@ -83,23 +79,6 @@ void InducedBuckling::setInducedType( enum InducedNormType type ){
 void InducedBuckling::setLoadFactor( TacsScalar _load_factor ){
   if (_load_factor >= 1.0){ 
     load_factor = _load_factor;
-  }
-}
-
-/*
-  Set the type of quadrature scheme to use. This is optionally
-  ignored by individual elements so be careful.
-*/
-void InducedBuckling::setQuadratureType( enum QuadratureType _quad_type ){
-  quad_type = _quad_type;
-}
-
-/*
-  Set the Gauss quadrature elevation 
-*/
-void InducedBuckling::setQuadratureElevation( int elev ){
-  if (elev >= 0){
-    scheme_elevation = elev;
   }
 }
 
@@ -187,13 +166,16 @@ void InducedBuckling::preEvalThread( const int iter,
 */
 void InducedBuckling::elementWiseEval( const int iter,
 				      TACSElement * element, int elemNum,
-				      const TacsScalar vars[],
 				      const TacsScalar Xpts[],
+				      const TacsScalar vars[],
 				      int * iwork, TacsScalar * work ){
-  double pt[3];
+  // Get the number of quadrature points
   int numGauss = element->getNumGaussPts();
+
+  // Get the number of stresses
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
+
+  // Retrieve the constitutive object
   TACSConstitutive * constitutive = element->getConstitutive();
  
   // If the element does not define a constitutive class, 
@@ -209,10 +191,11 @@ void InducedBuckling::elementWiseEval( const int iter,
     // With the first iteration, find the maximum over the domain
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
-      element->getGaussWtsPts(scheme, i, pt);
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, vars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= load_factor;
@@ -231,10 +214,11 @@ void InducedBuckling::elementWiseEval( const int iter,
   else {
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
-      element->getGaussWtsPts(scheme, i, pt);
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, vars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= load_factor;
@@ -331,15 +315,20 @@ int InducedBuckling::getSVSensWorkSize(){
   variables over this element.
 */
 void InducedBuckling::elementWiseSVSens( TacsScalar * elemSVSens, 
-					TACSElement * element, int elemNum,
-					const TacsScalar vars[],
-					const TacsScalar Xpts[],
-					TacsScalar * work ){
-  double pt[3];
+					 TACSElement * element, int elemNum,
+					 const TacsScalar Xpts[],
+					 const TacsScalar vars[],
+					 TacsScalar * work ){
+  // Retrieve the number of quadrature points
   int numGauss = element->getNumGaussPts();
+
+  // Get the number of variables for this element
   int numVars = element->numVariables();
+
+  // Get the number of stresses for this element
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
+
+  // Retrieve the constitutive object
   TACSConstitutive * constitutive = element->getConstitutive();
   
   // Zero the derivative w.r.t. the state variables
@@ -357,10 +346,11 @@ void InducedBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
 
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
-    element->getGaussWtsPts(scheme, i, pt);
+    double pt[3];
+    element->getGaussWtsPts(i, pt);
         
     // Get the strain
-    element->getPtwiseStrain(strain, pt, vars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
             
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= load_factor;      
@@ -405,8 +395,8 @@ void InducedBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
     }
 
     // Determine the sensitivity of the state variables to SV
-    element->addPtwiseStrainSVSens(elemSVSens, pt, load_factor*s,
-                                   bucklingSens, vars, Xpts);
+    element->addStrainSVSens(elemSVSens, pt, load_factor*s,
+			     bucklingSens, Xpts, vars);
   }
 }
 
@@ -414,7 +404,7 @@ void InducedBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
   Return the size of the work array for XptSens function
 */
 int InducedBuckling::getXptSensWorkSize(){
-  return (2 + 3*max_nodes)*max_stresses + 3*max_nodes;
+  return 2*max_stresses + 3*max_nodes;
 }
 
 /*
@@ -423,14 +413,19 @@ int InducedBuckling::getXptSensWorkSize(){
 */
 void InducedBuckling::elementWiseXptSens( TacsScalar fXptSens[],
 					 TACSElement * element, int elemNum,
-					 const TacsScalar vars[],
 					 const TacsScalar Xpts[],
+					 const TacsScalar vars[],
 					 TacsScalar * work ){
-  double pt[3];
+  // Get the number of quadrature points
   int numGauss = element->getNumGaussPts();
+
+  // Get the number of nodes
   int numNodes = element->numNodes();
+
+  // Get the number of stresses
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
+
+  // Retrieve the constitutive object
   TACSConstitutive * constitutive = element->getConstitutive();
 
   // Zero the sensitivity w.r.t. the nodes
@@ -445,15 +440,14 @@ void InducedBuckling::elementWiseXptSens( TacsScalar fXptSens[],
   // Set pointers into the buffer
   TacsScalar * strain = &work[0];
   TacsScalar * bucklingSens = &work[max_stresses];
-  TacsScalar * strainXptSens = &work[2*max_stresses];
 
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
-    element->getGaussWtsPts(scheme, i, pt);
+    double pt[3];
+    element->getGaussWtsPts(i, pt);
 
     // Get the strain
-    element->getPtwiseStrainXptSens(strain, strainXptSens, pt,
-                                    vars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
 
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= load_factor;
@@ -497,12 +491,8 @@ void InducedBuckling::elementWiseXptSens( TacsScalar fXptSens[],
 		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
     }
 
-    for ( int j = 0; j < 3*numNodes; j++ ){
-      for ( int k = 0; k < numStresses; k++ ){
-        fXptSens[j] += 
-          s*load_factor*(bucklingSens[k]*strainXptSens[k + j*numStresses]);
-      }
-    }
+    element->addStrainXptSens(fXptSens, pt, s*load_factor,
+			      bucklingSens, Xpts, vars);
   }
 }
 
@@ -520,13 +510,12 @@ int InducedBuckling::getDVSensWorkSize(){
 */
 void InducedBuckling::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 					TACSElement * element, int elemNum,
-					const TacsScalar vars[],
 					const TacsScalar Xpts[],
+					const TacsScalar vars[],
 					TacsScalar * work ){ 
   double pt[3];
   int numGauss = element->getNumGaussPts();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
   
   // If the element does not define a constitutive class, 
@@ -540,10 +529,10 @@ void InducedBuckling::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
-    element->getGaussWtsPts(scheme, i, pt);
+    element->getGaussWtsPts(i, pt);
     
     // Get the strain
-    element->getPtwiseStrain(strain, pt, vars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
     
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= load_factor;        

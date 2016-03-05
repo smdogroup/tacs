@@ -152,15 +152,15 @@ class TACSAssembler : public TACSObject {
 
   // Evaluate the derivative of the inner product of two vectors and a matrix
   // ------------------------------------------------------------------------
-  void evalMatDVSensInnerProduct( int loadCase, TacsScalar alpha, 
-				  ElementMatrixTypes matType, 
+  void evalMatDVSensInnerProduct( TacsScalar scale, 
+				  ElementMatrixType matType, 
 				  BVec *psi, BVec *phi,
 				  TacsScalar *dvSens, int numDVs );
 
   // Evaluate the partial derivative of the inner product with a matrix
   // ------------------------------------------------------------------
-  void evalMatSVSensInnerProduct( int loadCase, TacsScalar alpha, 
-				  ElementMatrixTypes matType, 
+  void evalMatSVSensInnerProduct( TacsScalar scale,
+				  ElementMatrixType matType, 
 				  BVec *psi, BVec *phi, BVec *res );
 
   // Return an element and the variables associated with that element
@@ -363,7 +363,7 @@ class TACSAssembler : public TACSObject {
     // Information for matrix assembly
     TACSMat *mat;
     TacsScalar scaleFactor;
-    ElementMatrixTypes matType;
+    ElementMatrixType matType;
     MatrixOrientation matOr;
 
     // Information required for the computation of f or df/dx
