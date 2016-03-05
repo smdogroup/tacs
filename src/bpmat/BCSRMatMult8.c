@@ -288,32 +288,38 @@ void BCSRMatApplyLower8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
 
   TacsScalar * z = y;  
   for ( int i = 0; i < nrows; i++ ){
+
     z[0] = x[0];
     z[1] = x[1];
     z[2] = x[2];
     z[3] = x[3];
     z[4] = x[4];
     z[5] = x[5];
+    z[6] = x[6];
+    z[7] = x[7];
     
     int end = diag[i];
     int k = rowp[i];
     int nz = end - k;
-    const TacsScalar * a = &(data->A[36*k]);
+    const TacsScalar * a = &(data->A[64*k]);
     for ( ; k < end; k++ ){
-      int j = 6*cols[k];
+      int j = 8*cols[k];
       
-      z[0] -= a[0 ]*y[j] + a[1 ]*y[j+1] + a[2 ]*y[j+2] + a[3 ]*y[j+3] + a[4 ]*y[j+4] + a[5 ]*y[j+5];
-      z[1] -= a[6 ]*y[j] + a[7 ]*y[j+1] + a[8 ]*y[j+2] + a[9 ]*y[j+3] + a[10]*y[j+4] + a[11]*y[j+5];
-      z[2] -= a[12]*y[j] + a[13]*y[j+1] + a[14]*y[j+2] + a[15]*y[j+3] + a[16]*y[j+4] + a[17]*y[j+5];
-      z[3] -= a[18]*y[j] + a[19]*y[j+1] + a[20]*y[j+2] + a[21]*y[j+3] + a[22]*y[j+4] + a[23]*y[j+5];
-      z[4] -= a[24]*y[j] + a[25]*y[j+1] + a[26]*y[j+2] + a[27]*y[j+3] + a[28]*y[j+4] + a[29]*y[j+5];
-      z[5] -= a[30]*y[j] + a[31]*y[j+1] + a[32]*y[j+2] + a[33]*y[j+3] + a[34]*y[j+4] + a[35]*y[j+5];
-      a += 36;
+      z[0] -= a[0 ]*y[j] + a[1 ]*y[j+1] + a[2 ]*y[j+2] + a[3 ]*y[j+3] + a[4 ]*y[j+4] + a[5 ]*y[j+5] + a[6 ]*y[j+6] + a[7 ]*y[j+7];
+      z[1] -= a[8 ]*y[j] + a[9 ]*y[j+1] + a[10]*y[j+2] + a[11]*y[j+3] + a[12]*y[j+4] + a[13]*y[j+5] + a[14]*y[j+6] + a[15]*y[j+7];
+      z[2] -= a[16]*y[j] + a[17]*y[j+1] + a[18]*y[j+2] + a[19]*y[j+3] + a[20]*y[j+4] + a[21]*y[j+5] + a[22]*y[j+6] + a[23]*y[j+7];
+      z[3] -= a[24]*y[j] + a[25]*y[j+1] + a[26]*y[j+2] + a[27]*y[j+3] + a[28]*y[j+4] + a[29]*y[j+5] + a[30]*y[j+6] + a[31]*y[j+7];
+      z[4] -= a[32]*y[j] + a[33]*y[j+1] + a[34]*y[j+2] + a[35]*y[j+3] + a[36]*y[j+4] + a[37]*y[j+5] + a[38]*y[j+6] + a[39]*y[j+7];
+      z[5] -= a[40]*y[j] + a[41]*y[j+1] + a[42]*y[j+2] + a[43]*y[j+3] + a[44]*y[j+4] + a[45]*y[j+5] + a[46]*y[j+6] + a[47]*y[j+7];
+      z[6] -= a[48]*y[j] + a[49]*y[j+1] + a[50]*y[j+2] + a[51]*y[j+3] + a[52]*y[j+4] + a[53]*y[j+5] + a[54]*y[j+6] + a[55]*y[j+7];
+      z[7] -= a[56]*y[j] + a[57]*y[j+1] + a[58]*y[j+2] + a[59]*y[j+3] + a[60]*y[j+4] + a[61]*y[j+5] + a[62]*y[j+6] + a[63]*y[j+7];
+
+      a += 64;
     }
 
-    z += 6;
-    x += 6;
-    TacsAddFlops(2*36*nz);
+    z += 8;
+    x += 8;
+    TacsAddFlops(2*64*nz);
   }
 }
 
@@ -326,38 +332,45 @@ void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
   const int * rowp = data->rowp;
   const int * cols = data->cols;
 
-  x = &x[6*(nrows-1)];
+  x = &x[8*(nrows-1)];
   for ( int i = nrows-1; i >= 0; i-- ){
     TacsScalar y0 = x[0], y1 = x[1], y2 = x[2];
     TacsScalar y3 = x[3], y4 = x[4], y5 = x[5];
+    TacsScalar y6 = x[6], y7 = x[7];
     
     int end = rowp[i+1];
     int k = diag[i]+1;
     int nz = end - k;
-    TacsScalar * a = &(data->A[36*k]);
+    TacsScalar * a = &(data->A[64*k]);
     for ( ; k < end; k++ ){
-      int j = 6*cols[k];
-        
-      y0 -= a[0 ]*y[j] + a[1 ]*y[j+1] + a[2 ]*y[j+2] + a[3 ]*y[j+3] + a[4 ]*y[j+4] + a[5 ]*y[j+5];
-      y1 -= a[6 ]*y[j] + a[7 ]*y[j+1] + a[8 ]*y[j+2] + a[9 ]*y[j+3] + a[10]*y[j+4] + a[11]*y[j+5];
-      y2 -= a[12]*y[j] + a[13]*y[j+1] + a[14]*y[j+2] + a[15]*y[j+3] + a[16]*y[j+4] + a[17]*y[j+5];
-      y3 -= a[18]*y[j] + a[19]*y[j+1] + a[20]*y[j+2] + a[21]*y[j+3] + a[22]*y[j+4] + a[23]*y[j+5];
-      y4 -= a[24]*y[j] + a[25]*y[j+1] + a[26]*y[j+2] + a[27]*y[j+3] + a[28]*y[j+4] + a[29]*y[j+5];
-      y5 -= a[30]*y[j] + a[31]*y[j+1] + a[32]*y[j+2] + a[33]*y[j+3] + a[34]*y[j+4] + a[35]*y[j+5];
-      a += 36;
+      int j = 8*cols[k];
+
+      y0 -= a[0 ]*y[j] + a[1 ]*y[j+1] + a[2 ]*y[j+2] + a[3 ]*y[j+3] + a[4 ]*y[j+4] + a[5 ]*y[j+5] + a[6 ]*y[j+6] + a[7 ]*y[j+7];
+      y1 -= a[8 ]*y[j] + a[9 ]*y[j+1] + a[10]*y[j+2] + a[11]*y[j+3] + a[12]*y[j+4] + a[13]*y[j+5] + a[14]*y[j+6] + a[15]*y[j+7];
+      y2 -= a[16]*y[j] + a[17]*y[j+1] + a[18]*y[j+2] + a[19]*y[j+3] + a[20]*y[j+4] + a[21]*y[j+5] + a[22]*y[j+6] + a[23]*y[j+7];
+      y3 -= a[24]*y[j] + a[25]*y[j+1] + a[26]*y[j+2] + a[27]*y[j+3] + a[28]*y[j+4] + a[29]*y[j+5] + a[30]*y[j+6] + a[31]*y[j+7];
+      y4 -= a[32]*y[j] + a[33]*y[j+1] + a[34]*y[j+2] + a[35]*y[j+3] + a[36]*y[j+4] + a[37]*y[j+5] + a[38]*y[j+6] + a[39]*y[j+7];
+      y5 -= a[40]*y[j] + a[41]*y[j+1] + a[42]*y[j+2] + a[43]*y[j+3] + a[44]*y[j+4] + a[45]*y[j+5] + a[46]*y[j+6] + a[47]*y[j+7];
+      y6 -= a[48]*y[j] + a[49]*y[j+1] + a[50]*y[j+2] + a[51]*y[j+3] + a[52]*y[j+4] + a[53]*y[j+5] + a[54]*y[j+6] + a[55]*y[j+7];
+      y7 -= a[56]*y[j] + a[57]*y[j+1] + a[58]*y[j+2] + a[59]*y[j+3] + a[60]*y[j+4] + a[61]*y[j+5] + a[62]*y[j+6] + a[63]*y[j+7];
+
+      a += 64;
     }
     
-    int bi = 6*i;
-    a = &(data->A[36*diag[i]]);
-    y[bi  ] = a[0 ]*y0 + a[1 ]*y1 + a[2 ]*y2 + a[3 ]*y3 + a[4 ]*y4 + a[5 ]*y5;
-    y[bi+1] = a[6 ]*y0 + a[7 ]*y1 + a[8 ]*y2 + a[9 ]*y3 + a[10]*y4 + a[11]*y5;
-    y[bi+2] = a[12]*y0 + a[13]*y1 + a[14]*y2 + a[15]*y3 + a[16]*y4 + a[17]*y5;
-    y[bi+3] = a[18]*y0 + a[19]*y1 + a[20]*y2 + a[21]*y3 + a[22]*y4 + a[23]*y5;
-    y[bi+4] = a[24]*y0 + a[25]*y1 + a[26]*y2 + a[27]*y3 + a[28]*y4 + a[29]*y5;
-    y[bi+5] = a[30]*y0 + a[31]*y1 + a[32]*y2 + a[33]*y3 + a[34]*y4 + a[35]*y5;
+    int bi = 8*i;
+    a = &(data->A[64*diag[i]]);
+
+    y[bi]   = a[0 ]*y0 + a[1 ]*y1 + a[2 ]*y2 + a[3 ]*y3 + a[4 ]*y4 + a[5 ]*y5 + a[6 ]*y6 + a[7 ]*y7;
+    y[bi+1] = a[8 ]*y0 + a[9 ]*y1 + a[10]*y2 + a[11]*y3 + a[12]*y4 + a[13]*y5 + a[14]*y6 + a[15]*y7;
+    y[bi+2] = a[16]*y0 + a[17]*y1 + a[18]*y2 + a[19]*y3 + a[20]*y4 + a[21]*y5 + a[22]*y6 + a[23]*y7;
+    y[bi+3] = a[24]*y0 + a[25]*y1 + a[26]*y2 + a[27]*y3 + a[28]*y4 + a[29]*y5 + a[30]*y6 + a[31]*y7;
+    y[bi+4] = a[32]*y0 + a[33]*y1 + a[34]*y2 + a[35]*y3 + a[36]*y4 + a[37]*y5 + a[38]*y6 + a[39]*y7;
+    y[bi+5] = a[40]*y0 + a[41]*y1 + a[42]*y2 + a[43]*y3 + a[44]*y4 + a[45]*y5 + a[46]*y6 + a[47]*y7;
+    y[bi+6] = a[48]*y0 + a[49]*y1 + a[50]*y2 + a[51]*y3 + a[52]*y4 + a[53]*y5 + a[54]*y6 + a[55]*y7;
+    y[bi+7] = a[56]*y0 + a[57]*y1 + a[58]*y2 + a[59]*y3 + a[60]*y4 + a[61]*y5 + a[62]*y6 + a[63]*y7;
     
-    x -= 6;
-    TacsAddFlops(2*36*nz + 66);
+    x -= 8;
+    TacsAddFlops(2*64*nz + 120);
   }
 }
 
