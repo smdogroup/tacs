@@ -1,0 +1,37 @@
+# use glob syntax.
+syntax: glob
+
+extern/
+*~
+*.in
+*.pyc
+*.o
+*.so
+*.a
+*.dat
+*.out
+*_wrap.cxx
+*.eps
+*.lay
+*.tripan
+*.wake
+*.pdf
+*.igs
+*.con
+*.edge
+*.h5
+*.f5
+*.bdf
+*.tar.gz
+*.png
+*.plt
+*_cs.*
+*.phy
+*.bin
+*.aux
+*.bbl
+*.blg
+*.log
+*.nav
+*.snm
+*.toc

@@ -1,0 +1,64 @@
+# Do not modify this file. Copy this file to Makefile.in and then modify it.
+
+# In order to get TACS to compile, you'll need to fill in the
+# following path information. Some of the items below are required
+# only if you're going to use the python interface.
+
+# the full path to the root TACS directory
+TACS_DIR = ${HOME}/hg/tacs
+CXX = mpicxx
+RM = rm -f
+
+# Set up for parallel make
+MAKE = make -j 8
+
+# Flags for debugging and regular compilation versions
+EXTRA_DEBUG_CC_FLAGS = -fPIC -g 
+EXTRA_CC_FLAGS = -fPIC -O2
+
+# Use this if you have problems with mpich
+# TACS_DEF = -DMPICH_IGNORE_CXX_SEEK
+
+# Set this flag to true if you want to use the complex version of TACS
+# TACS_IS_COMPLEX=true
+TACS_IS_COMPLEX=false
+
+# For linux systems, use the following settings:
+SO_EXT=so
+SO_LINK_FLAGS=-fPIC -shared
+
+# For MAC OS X, use the following settings:
+# SO_EXT=so
+# SO_LINK_FLAGS=-fPIC -dynamiclib -single_module -undefined dynamic_lookup -multiply_defined suppress
+
+# swig python interface generation utility (must be at least version 1.3.*)
+SWIG = swig
+
+# This uses the default installation of LAPACK. 
+# Use an optimized version of LAPACK if available.
+# You may also have to include -lblas as well.
+
+LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread
+
+# METIS is handy for partitioning graphs, but can be problematic for
+# compilation.  If you compile METIS using a C++ compiler you must add
+# -DTACS_CPLUSPLUS_METIS to the TACS_DEF arguments below. If you
+# compile METIS using a C compiler, there should be no issues.
+
+METIS_INCLUDE = -I${TACS_DIR}/extern/metis-4.0.3/Lib
+METIS_LIB = ${TACS_DIR}/extern/metis-4.0.3/libmetis.a
+
+# AMD is a set of routines for ordering matrices
+
+AMD_INCLUDE = -I${TACS_DIR}/extern/AMD/Include -I${TACS_DIR}/extern/UFconfig
+AMD_LIBS = ${TACS_DIR}/extern/AMD/Lib/libamd.a ${TACS_DIR}/extern/UFconfig/libufconfig.a
+
+# If using the python interface you'll need to include python and numpy 
+
+PYTHON_INCLUDE = ${shell python-config --includes}
+NUMPY_DIR=${shell python -c "import numpy; print numpy.get_include()"}
+
+# If you're going to use the python interface you'll also have to have
+# a working version of mpi4py
+
+MPI4PY_DIR=${shell python -c "import mpi4py; print mpi4py.get_include()"}

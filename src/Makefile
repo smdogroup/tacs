@@ -1,0 +1,27 @@
+# ============================================
+#
+# Make file for TACS_DIR/src/
+#
+# ============================================
+
+include ../Makefile.in
+include ../TACS_Common.mk
+
+CXX_OBJS = TACSObject.o \
+	TACSAssembler.o \
+	TACSAssembler_thread.o \
+	TACSMg.o \
+	TACSBuckling.o
+
+DIR=${TACS_DIR}/src
+
+CXX_OBJS := $(CXX_OBJS:%=$(DIR)/%)
+
+default: ${CXX_OBJS}
+	${AR} ${AR_FLAGS} ${TACS_LIB} ${CXX_OBJS}
+
+debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
+debug: default
+
+clean:
+	${RM} ${CXX_OBJS}
