@@ -2265,8 +2265,7 @@ int TACSAssembler::getTacsNodeNums( const int ** _tacsNodeNums ){
   vector entries are zeroed first, and that the Dirichlet boundary
   conditions are applied after the assembly of the residual is
   complete.
-
-  loadCase: the load case state variables to use
+  
   rhs:      the residual output
 */
 void TACSAssembler::assembleRes( BVec *residual ){
@@ -2999,14 +2998,11 @@ void TACSAssembler::evalDVSens( TACSFunction ** funcs, int numFuncs,
   list of functions since it is more efficient!
 
   input:
-  loadCase:  the load case to use
   funcs:     the TACSFunction function objects
   numFuncs:  the number of functions - size of funcs array
   fXptSens:  the sensitivity - size numFuncs*numNodes*3
 */
-void TACSAssembler::evalXptSens( int loadCase, 
-				 TACSFunction ** funcs, int numFuncs, 
-				 TacsScalar * fXptSens ){
+void TACSAssembler::evalXptSens( TACSFunction ** funcs, int numFuncs, TacsScalar * fXptSens ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
     if (this != funcs[k]->getTACS()){
@@ -3480,14 +3476,12 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
   tractions. Nevertheless, the short-term plan is to finish this
   implementation b/c it has the potential to be faster.
 
-  loadCase:    the load case number
   adjoint:     the array of adjoint vectors
   numAdjoints: the number of adjoint vectors
   dvSens:      the product of the derivative of the residuals and the adjoint
   numDVs:      the number of design variables
 */
-void TACSAssembler::evalAdjointResProductsExperimental( int loadCase, 
-							BVec ** adjoint, 
+void TACSAssembler::evalAdjointResProductsExperimental( BVec ** adjoint, 
 							int numAdjoints, 
 							TacsScalar * dvSens, 
 							int numDVs ){
