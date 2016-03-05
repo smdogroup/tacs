@@ -129,12 +129,6 @@ class InducedFailure : public TACSFunction {
   TacsScalar load_factor; // Load factor applied to the strain
   int max_nodes, max_stresses; // The max number of nodes/stresses
 
-  // Record the quadrature scheme to use 
-  enum QuadratureType quad_type;
-
-  // Set the quadrature scheme elevation
-  int scheme_elevation;
-
   // The name of the function
   static const char * funcName;
 

@@ -123,9 +123,9 @@ class TACSFunction : public TACSObject {
   virtual void preEvalThread( const int iter, 
                               int * iwork, TacsScalar * work ){}
   virtual void elementWiseEval( const int iter, TACSElement * element, int elemNum,
-				const TacsScalar elemVars[], 
 				const TacsScalar Xpts[],
-                                int * iwork, TacsScalar * work ){}
+                                const TacsScalar vars[], 
+				int * iwork, TacsScalar * work ){}
   virtual void postEvalThread( const int iter, 
                                int * iwork, TacsScalar * work ){}
   virtual void postEval( const int iter ){}
@@ -137,9 +137,12 @@ class TACSFunction : public TACSObject {
   // Calculate the sensitivity w.r.t. the state variables
   // ----------------------------------------------------
   virtual int getSVSensWorkSize();
-  virtual void elementWiseSVSens( TacsScalar * elemSVSens, TACSElement * element, 
-				  int elemNum, const TacsScalar elemVars[], 
-				  const TacsScalar Xpts[], TacsScalar * work ){
+  virtual void elementWiseSVSens( TacsScalar * elemSVSens, 
+				  TACSElement * element, 
+				  int elemNum, 
+				  const TacsScalar Xpts[], 
+				  const TacsScalar vars[], 
+				  TacsScalar * work ){
     int numVars = element->numVariables();
     memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
   }
@@ -149,16 +152,16 @@ class TACSFunction : public TACSObject {
   virtual int getDVSensWorkSize();
   virtual void elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 				  TACSElement * element, int elemNum,
-				  const TacsScalar elemVars[], 
 				  const TacsScalar Xpts[],
-                                  TacsScalar * work ){}
+                                  const TacsScalar vars[], 
+				  TacsScalar * work ){}
 
   virtual int getXptSensWorkSize();
   virtual void elementWiseXptSens( TacsScalar fXptSens[],
 				   TACSElement * element, int elemNum,
-				   const TacsScalar elemVars[], 
 				   const TacsScalar Xpts[],
-                                   TacsScalar * work ){
+                                   const TacsScalar vars[], 
+				   TacsScalar * work ){
     int numNodes = element->numNodes();
     memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
   }
