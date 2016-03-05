@@ -1,34 +1,21 @@
 # ============================================
 #
-# Make file for TACS_DIR/src/functions
+# Make file for TACS_DIR/src/constitutive
 #
 # ============================================
 
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-CXX_OBJS = TACSFunction.o \
-	Compliance.o \
-	MaxFailure.o \
-	KSFailure.o \
-	AverageMaxFailure.o \
-	AverageKSFailure.o \
-	PNormFailure.o \
-	InducedFailure.o \
-	InducedBuckling.o \
-	MaxBuckling.o \
-	KSBuckling.o \
-	AverageKSBuckling.o \
-	PNormBuckling.o \
-	StructuralMass.o \
-	StructuralSize.o \
-	StructuralMassMoment.o \
-	AggregateDisplacement.o \
-	MinimumDistance.o \
-	TACSElementFunction.o \
-	KSElementFailure.o
+CXX_OBJS = TACSConstitutive.o \
+	YSlibrary.o \
+	MaterialProperties.o \
+	SolidStiffness.o \
+	PlaneStressStiffness.o \
+	FSDTStiffness.o \
+	isoFSDTStiffness.o 
 
-DIR=${TACS_DIR}/src/functions
+DIR=${TACS_DIR}/src/constitutive
 
 CXX_OBJS := $(CXX_OBJS:%=$(DIR)/%)
 
