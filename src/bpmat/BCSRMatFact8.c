@@ -154,7 +154,6 @@ void * BCSRMatFactor6_thread( void * t ){
           
           // A[k] = A[k] - A[j] * A[p]
           if (k < kend && cols[k] == cols[p]){
-
             b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40], b6 = b[48], b7 = b[56];
             a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
             a[8 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4 + d15*b5 + d16*b6 + d17*b7;
@@ -242,7 +241,6 @@ void * BCSRMatFactor6_thread( void * t ){
           
         // Copy the matrix back into the row
         a = &A[64*jp];     
-
 	a[0 ] = d00; a[1 ] = d01; a[2 ] = d02; a[3 ] = d03; a[4 ] = d04; a[5 ] = d05; a[6 ] = d06; a[7 ] = d07;
         a[8 ] = d10; a[9 ] = d11; a[10] = d12; a[11] = d13; a[12] = d14; a[13] = d15; a[14] = d16; a[15] = d17;
         a[16] = d20; a[17] = d21; a[18] = d22; a[19] = d23; a[20] = d24; a[21] = d25; a[22] = d26; a[23] = d27;
@@ -251,14 +249,12 @@ void * BCSRMatFactor6_thread( void * t ){
         a[40] = d50; a[41] = d51; a[42] = d52; a[43] = d53; a[44] = d54; a[45] = d55; a[46] = d56; a[47] = d57;
 	a[48] = d60; a[49] = d61; a[50] = d62; a[51] = d63; a[52] = d64; a[53] = d65; a[54] = d66; a[55] = d67;
 	a[56] = d70; a[57] = d71; a[58] = d72; a[59] = d73; a[60] = d74; a[61] = d75; a[62] = d76; a[63] = d77;
-        
       }
 
       if (high-1 == row){
         // Invert the diagonal portion of the matrix
         TacsScalar D[64];
         TacsScalar * a = &A[64*diag[row]];
-
         D[0 ] = a[0 ]; D[1 ] = a[1 ]; D[2 ] = a[2 ]; D[3 ] = a[3 ]; D[4 ] = a[4 ]; D[5 ] = a[5 ]; D[6 ] = a[6 ]; D[7 ] = a[7 ];
         D[8 ] = a[8 ]; D[9 ] = a[9 ]; D[10] = a[10]; D[11] = a[11]; D[12] = a[12]; D[13] = a[13]; D[14] = a[14]; D[15] = a[15];
         D[16] = a[16]; D[17] = a[17]; D[18] = a[18]; D[19] = a[19]; D[20] = a[20]; D[21] = a[21]; D[22] = a[22]; D[23] = a[23];
@@ -335,7 +331,6 @@ void * BCSRMatFactorLower8_thread( void * t ){
 
           if (k < k_end && ecols[k] == ecols[p]){
             TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;  
-
             b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
             a[0 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
             a[8 ] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[12]*b5 + d[13]*b6 + d[14]*b7;
@@ -637,14 +632,12 @@ void * BCSRMatFactorUpper8_thread( void * t ){
             a[47] -= d50*b0 + d51*b1 + d52*b2 + d53*b3 + d54*b4 + d55*b5 + d56*b6 + d57*b7;
             a[55] -= d60*b0 + d61*b1 + d62*b2 + d63*b3 + d64*b4 + d65*b5 + d66*b6 + d67*b7;
             a[63] -= d70*b0 + d71*b1 + d72*b2 + d73*b3 + d74*b4 + d75*b5 + d76*b6 + d77*b7;
-
           }
           b += 64;
         }
 
         // Copy over the matrix
         a = &F[64*jp];
-
 	a[0 ] = d00; a[1 ] = d01; a[2 ] = d02; a[3 ] = d03; a[4 ] = d04; a[5 ] = d05; a[6 ] = d06; a[7 ] = d07;
         a[8 ] = d10; a[9 ] = d11; a[10] = d12; a[11] = d13; a[12] = d14; a[13] = d15; a[14] = d16; a[15] = d17;
         a[16] = d20; a[17] = d21; a[18] = d22; a[19] = d23; a[20] = d24; a[21] = d25; a[22] = d26; a[23] = d27;
@@ -653,7 +646,6 @@ void * BCSRMatFactorUpper8_thread( void * t ){
         a[40] = d50; a[41] = d51; a[42] = d52; a[43] = d53; a[44] = d54; a[45] = d55; a[46] = d56; a[47] = d57;
 	a[48] = d60; a[49] = d61; a[50] = d62; a[51] = d63; a[52] = d64; a[53] = d65; a[54] = d66; a[55] = d67;
 	a[56] = d70; a[57] = d71; a[58] = d72; a[59] = d73; a[60] = d74; a[61] = d75; a[62] = d76; a[63] = d77;
-
       }
     }
   }
@@ -802,7 +794,6 @@ void BCSRMatFactor8( BCSRMatData * data ){
 
         // A[k] = A[k] - A[j] * A[p]
         if (k < kend && cols[k] == cols[p]){
-
 	  b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40], b6 = b[48], b7 = b[56];
 	  a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
 	  a[8 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4 + d15*b5 + d16*b6 + d17*b7;
@@ -889,8 +880,7 @@ void BCSRMatFactor8( BCSRMatData * data ){
         b += 64;
       }
 
-      //TacsAddFlops(2*36*6*nz + 11*36);?
-      TacsAddFlops(2*64*8*nz + 11*64);
+      TacsAddFlops(2*64*8*nz + 15*64);
 
       // Copy the matrix back into the row
       a = &(data->A[64*j]);
@@ -1096,6 +1086,7 @@ void BCSRMatFactorUpper8( BCSRMatData * data, BCSRMatData * Fdata ){
       
       // Multiply d = F[j] * A[diag[cj]]      
       TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
+
       b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
       d00 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d10 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[12]*b5 + a[13]*b6 + a[14]*b7;
@@ -1195,7 +1186,6 @@ void BCSRMatFactorUpper8( BCSRMatData * data, BCSRMatData * Fdata ){
 	}
 
 	if ( k < k_end && fcols[k] == cols[p] ){
-
 	  b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40], b6 = b[48], b7 = b[56];
 	  a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
 	  a[8 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4 + d15*b5 + d16*b6 + d17*b7;
@@ -1281,7 +1271,7 @@ void BCSRMatFactorUpper8( BCSRMatData * data, BCSRMatData * Fdata ){
 	b += 64;
       }
 
-      TacsAddFlops(2*64*8*nz + 11*64);//?
+      TacsAddFlops(2*64*8*nz + 15*64);
       
       // Copy over the matrix
       a = &(Fdata->A[64*j]);
@@ -1293,7 +1283,6 @@ void BCSRMatFactorUpper8( BCSRMatData * data, BCSRMatData * Fdata ){
       a[40] = d50; a[41] = d51; a[42] = d52; a[43] = d53; a[44] = d54; a[45] = d55; a[46] = d56; a[47] = d57;
       a[48] = d60; a[49] = d61; a[50] = d62; a[51] = d63; a[52] = d64; a[53] = d65; a[54] = d66; a[55] = d67;
       a[56] = d70; a[57] = d71; a[58] = d72; a[59] = d73; a[60] = d74; a[61] = d75; a[62] = d76; a[63] = d77;
-
     }
   }
 }
