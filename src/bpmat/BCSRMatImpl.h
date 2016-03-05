@@ -262,4 +262,47 @@ void * BCSRMatApplyUpper6_thread( void * t );
 
 void * BCSRMatMatMultAdd6_thread( void * t );
 
+// The bsize == 8 code
+void BCSRMatVecMult8( BCSRMatData * A, TacsScalar * x, TacsScalar * y );
+void BCSRMatVecMultAdd8( BCSRMatData * A, TacsScalar * x, 
+                         TacsScalar * y, TacsScalar * z );
+void BCSRMatVecMultTranspose8( BCSRMatData * A, 
+                               TacsScalar * x, TacsScalar * y );
+void BCSRMatFactor8( BCSRMatData * A );
+void BCSRMatApplyLower8( BCSRMatData * A, TacsScalar * x, TacsScalar * y );
+void BCSRMatApplyUpper8( BCSRMatData * A, TacsScalar * x, TacsScalar * y );
+
+void BCSRMatApplyPartialLower8( BCSRMatData * A, TacsScalar * x, 
+                                int var_offset );
+void BCSRMatApplyPartialUpper8( BCSRMatData * A, TacsScalar * x, 
+                                int var_offset );
+void BCSRMatApplyFactorSchur8( BCSRMatData * A, TacsScalar * x, 
+                               int var_offset );
+
+void BCSRMatMatMultAdd8( double alpha, BCSRMatData * A, 
+                         BCSRMatData * B, BCSRMatData * C );
+void BCSRMatFactorLower8( BCSRMatData * A, BCSRMatData * E );
+void BCSRMatFactorUpper8( BCSRMatData * A, BCSRMatData * F );
+
+void BCSRMatApplySOR8( BCSRMatData * A, TacsScalar * Adiag,
+		       TacsScalar omega, int iters, 
+		       TacsScalar * b, TacsScalar * x );
+void BCSRMatApplySSOR8( BCSRMatData * A, TacsScalar * Adiag,
+			TacsScalar omega, int iters, 
+			TacsScalar * b, TacsScalar * x );
+
+// The threaded implementations for bsize = 8
+void * BCSRMatVecMultAdd8_thread( void * t );
+void * BCSRMatFactor8_thread( void * t );
+void * BCSRMatFactorLower8_thread( void * t );
+void * BCSRMatFactorUpper8_thread( void * t );
+
+void * BCSRMatApplyLower8_thread( void * t );
+void * BCSRMatApplyUpper8_thread( void * t );
+
+void * BCSRMatMatMultAdd8_thread( void * t );
+
 #endif
+
+
+
