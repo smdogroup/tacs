@@ -345,27 +345,27 @@ class TACSElement : public TACSOptObject {
   // This function returns the strain evaluated at pt
   // ------------------------------------------------
   virtual void getStrain( TacsScalar strain[], 
-			  const double pt[],
-			  const TacsScalar vars[], 
-			  const TacsScalar Xpts[] ) = 0;
+			  const double pt[], 
+			  const TacsScalar Xpts[],
+			  const TacsScalar vars[] ) = 0;
 
   // This function returns the sensitivity of the strain w.r.t. Xpts
   // ---------------------------------------------------------------
   virtual void addStrainXptSens( TacsScalar strainSens[],
 				 const double pt[], 
 				 const TacsScalar scale,
-				 const TacsScalar strainSens[],
-				 const TacsScalar elemVars[], 
-				 const TacsScalar Xpts[] );;
+				 const TacsScalar strainSens[], 
+				 const TacsScalar Xpts[],
+				 const TacsScalar vars[] );
   
   // This function adds the sensitivity of the strain to the state variables
   // -----------------------------------------------------------------------
   virtual void addStrainSVSens( TacsScalar strainSens[], 
 				const double pt[], 
 				const TacsScalar scale,
-				const TacsScalar strainSens[],
-				const TacsScalar elemVars[], 
-				const TacsScalar Xpts[] );
+				const TacsScalar strainSens[], 
+				const TacsScalar Xpts[],
+				const TacsScalar vars[] );
 
   // Functions for retrieving data from the element
   // ----------------------------------------------    
