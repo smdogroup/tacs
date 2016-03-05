@@ -103,28 +103,30 @@ class TACSAssembler : public TACSObject {
   // Methods for manipulating internal variable values
   // -------------------------------------------------
   void zeroVariables();
-  void setVariables( BVec * stateVars );
-  void getVariables( BVec * stateVars );
-  
-  // Methods specifically for the dynamic analysis
-  // ---------------------------------------------
   void zeroDotVariables();
   void zeroDDotVariables();
+  
+  // Methods for setting/getting variables
+  // -------------------------------------
+  void getVariables( BVec * stateVars );
+  void setVariables( BVec * stateVars );
   void setDotVariables( BVec * stateVars );
   void setDDotVariables( BVec * stateVars );
 
   // Return the underlying TACS node numbers
   // ---------------------------------------
-  void getTacsNodeNums( int localNodes[], int numNodes ) const;
-  int getTacsNodeNums( const int ** _tacsNodeNums ) const;
+  void getTacsNodeNums( int localNodes[], int numNodes );
+  int getTacsNodeNums( const int ** _tacsNodeNums );
 
   // Residual and Jacobian assembly
   // ------------------------------
-  void assembleRes( TACSVec * rhs );
-  void assembleResNoBCs( TACSVec * rhs );
-  void assembleJacobian( TACSVec *rhs, TACSMat *A,
-			 ElementMatrixType matType,
+  void assembleRes( TACSVec *residual );
+  void assembleResNoBCs( TACSVec *residual );
+  void assembleJacobian( TACSVec *residual, TACSMat *A,
+			 double alpha, double beta, double gamma,
 			 MatrixOrientation matOr = NORMAL );
+  void assembleMatType( ElementMatrixType matType,
+			TACSMat *A, MatrixOrientation matOr = NORMAL );
 
   // Design variable handling
   // ------------------------
@@ -201,6 +203,12 @@ class TACSAssembler : public TACSObject {
   void setNumThreads( int t );
 
  private:
+  // Contruct the TACSAssembler object, given the initial information
+  // ----------------------------------------------------------------
+  void init( MPI_Comm _tacs_comm, int numOwnedNodes, int _varsPerNode,
+	     int _numElements, int _numNodes, int _numDependentNodes,
+	     int _nodeMaxCSRsize );
+
   // Set the dependent nodal values based on the independent nodes
   // -------------------------------------------------------------
   void setDependentVariables( const int perNode, TacsScalar * vars );
@@ -214,15 +222,9 @@ class TACSAssembler : public TACSObject {
 			TacsScalar **x1, TacsScalar **x2,
 			TacsScalar **weights, TacsScalar **mat );
 
-  // Contruct the TACSAssembler object, given the initial information
-  // ----------------------------------------------------------------
-  void init( MPI_Comm _tacs_comm, int numOwnedNodes, int _varsPerNode,
-	     int _numElements, int _numNodes, int _numDependentNodes,
-	     int _nodeMaxCSRsize );
-
   // Apply the boundary conditions to the residual vector
   // ----------------------------------------------------
-  void applyBCs( TacsScalar lambda, BVec * res, const TacsScalar vars[] );  
+  void applyBCs( BVec * res, const TacsScalar vars[] );  
 
   // Functions for ordering the variables
   // ------------------------------------
@@ -236,12 +238,6 @@ class TACSAssembler : public TACSObject {
   void computeMatReordering( enum OrderingType order_type, 
                              int nvars, int * rowp, int * cols,
                              int * perm, int * new_vars );
-
-  // Set up the design variable information
-  // --------------------------------------
-  void setUpDesignVarInfo();
-  void createDesignVarList( int ** _dvElementPtr, int ** _dvElements,
-			    int maxDVElementSize );
 
   // Initialize the internal arrays for storing load case information
   // ----------------------------------------------------------------
@@ -283,18 +279,6 @@ class TACSAssembler : public TACSObject {
   // variables/elements have been initialized
   int meshFinalizedFlag;
 
-  // Design variable information that is associated only with elements.
-  // Note that the design variables associated with the nodes are 
-  // treated differently using the node map class.
-  int numElementDVs; // design variables associated with the elements
-
-  // The local list of surface tractions
-  TACSSurfaceTraction ** surfaceTractions;
-
-  // An array used to store the element numbers
-  // that are affected by setting a design variable
-  int * elemList; 
-
   int varsPerNode; // number of variables per node
   int maxElementNodes; // maximum number of ind. and dep. nodes for any element
   int maxElementSize; // maximum number of variables for any element
@@ -303,44 +287,41 @@ class TACSAssembler : public TACSObject {
   int numElements; // number of elements
   int numNodes; // number of nodes referenced by this process
   int numDependentNodes; // number of dependent nodes
-  int * tacsNodeNums; // node numbers associated with TACS
+  int *tacsNodeNums; // node numbers associated with TACS
 
   // Variables that define the CSR data structure to 
   // store the element -> node information
-  int * elementNodeIndex;
-  int * elementLocalNodes;
-  int * elementTacsNodes;
+  int *elementNodeIndex;
+  int *elementLocalNodes;
+  int *elementTacsNodes;
 
   int nodeMaxCSRsize; // the maximum size of the elementLocalVars array
   int nodeCSRIncrement; // increment the size of the csr structure by this
 
   // Variables that define the dependent node to independent node
   // dependence
-  int * depNodeIndex;
-  int * depNodeToLocal;
-  int * depNodeToTacs;
-  TacsScalar * depNodeWeights;
+  int *depNodeIndex;
+  int *depNodeToLocal;
+  int *depNodeToTacs;
+  TacsScalar *depNodeWeights;
 
   // For use during set up - before call to finalize
   int currElement; // Number of elements currently added (max val. numElements)
   int currNode; // Number of nodes currently added (max val. numNodes)
 
   // The local list of elements
-  TACSElement ** elements;
+  TACSElement **elements;
 
   // Memory for the variables/residuals
-  TacsScalar * localVars; // Local variables
-  TacsScalar * localRes; // Local residual values being assembled
-
-  // Optional memory for the velocity and accelerations
-  TacsScalar *localDotVars, *localDDotVars; 
+  TacsScalar *localVars, *localDotVars, *localDDotVars;
+  TacsScalar *localRes; // Local residual values being assembled
 
   // Memory for the element residuals and variables
-  TacsScalar * elementData; // Space for element residuals/matrices
-  int * elementIData; // Space for element index data
+  TacsScalar *elementData; // Space for element residuals/matrices
+  int *elementIData; // Space for element index data
 
   // The x,y,z positions/sensitivities of all the local nodes
-  TacsScalar * Xpts; // The nodal locations
+  TacsScalar *Xpts; // The nodal locations
 
   // The data required to perform parallel operations
   // MPI info
@@ -377,10 +358,10 @@ class TACSAssembler : public TACSObject {
     // The data required to perform most of the matrix
     // assembly.
     int loadCase;
-    TACSAssembler * tacs;
+    TACSAssembler *tacs;
 
     // Information for matrix assembly
-    TACSMat * mat;
+    TACSMat *mat;
     TacsScalar scaleFactor;
     ElementMatrixTypes matType;
     MatrixOrientation matOr;
@@ -389,14 +370,14 @@ class TACSAssembler : public TACSObject {
     unsigned int funcIteration;
     int numDesignVars;
     int numFuncs;
-    TACSFunction ** functions;
-    TacsScalar * fdvSens; // df/dx
-    TacsScalar * fXptSens; // df/dXpts
+    TACSFunction **functions;
+    TacsScalar *fdvSens; // df/dx
+    TacsScalar *fXptSens; // df/dXpts
 
     // Information for adjoint-dR/dx products
     int numAdjoints;
-    TacsScalar * adjointVars;
-    TacsScalar * adjXptSensProduct;
+    TacsScalar *adjointVars;
+    TacsScalar *adjXptSensProduct;
   } * tacsPInfo;
 
   // The pthread data required to pthread tacs operations
@@ -407,34 +388,6 @@ class TACSAssembler : public TACSObject {
 
   // The name of the TACSAssembler object
   static const char * tacsName;
-};
-
-class TACSPointLoad : public TACSObject {
- public:
-  TACSPointLoad( int _varsPerNode );
-  ~TACSPointLoad();
-  void addPointLoad( int var, const TacsScalar _load[] );
-  void addPointLoads( TacsScalar lambda, TacsScalar res[] );
- private:
-  int varsPerNode;
-
-  class PointLoad {
-   public:
-    PointLoad(int _node, const TacsScalar * _load, int varsPerNode ){
-      node = _node;
-      next = NULL;
-      load = new TacsScalar[ varsPerNode ];
-      for ( int k = 0; k < varsPerNode; k++ ){
-	load[k] = _load[k];
-      }
-    }
-    ~PointLoad(){
-      delete [] load;
-    }
-    int node;
-    TacsScalar * load;
-    PointLoad * next;
-  } *root, *head;
 };
 
 /*! 
