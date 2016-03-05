@@ -11,7 +11,7 @@
 /*
   Threaded implementation of matrix-multiplication
 */
-void * BCSRMatVecMultAdd6_thread( void * t ){
+void * BCSRMatVecMultAdd8_thread( void * t ){
   BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
   const int nrows = tdata->mat->nrows;
 
@@ -58,7 +58,7 @@ void * BCSRMatVecMultAdd6_thread( void * t ){
 /*!
   Compute the matrix-vector product: y = A * x
 */
-void BCSRMatVecMult6( BCSRMatData * data, 
+void BCSRMatVecMult8( BCSRMatData * data, 
 		      TacsScalar * x, TacsScalar * y ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
@@ -98,7 +98,7 @@ void BCSRMatVecMult6( BCSRMatData * data,
   Compute the matrix vector product plus addition: z = A * x + y
 */
 
-void BCSRMatVecMultAdd6( BCSRMatData * data, 
+void BCSRMatVecMultAdd8( BCSRMatData * data, 
 			 TacsScalar * x, TacsScalar * y, TacsScalar * z ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
@@ -148,7 +148,7 @@ void BCSRMatVecMultAdd6( BCSRMatData * data,
   Note that the scheduler ensures that no two threads are operating on
   the same data simultaneously.
 */
-void * BCSRMatApplyLower6_thread( void * t ){
+void * BCSRMatApplyLower8_thread( void * t ){
   BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
   const int nrows = tdata->mat->nrows;
   const int * rowp = tdata->mat->rowp;
@@ -201,7 +201,7 @@ void * BCSRMatApplyLower6_thread( void * t ){
   Compute:
   y <- U[irow, jstart:jend]^{-1} y
 */
-void * BCSRMatApplyUpper6_thread( void * t ){
+void * BCSRMatApplyUpper8_thread( void * t ){
   BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
   const int nrows = tdata->mat->nrows;
   const int * rowp = tdata->mat->rowp;
@@ -262,7 +262,7 @@ void * BCSRMatApplyUpper6_thread( void * t ){
 /*!
   Apply the lower factorization y = L^{-1} x
 */
-void BCSRMatApplyLower6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
+void BCSRMatApplyLower8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
   const int nrows = data->nrows;
   const int * diag = data->diag;
   const int * rowp = data->rowp;
@@ -302,7 +302,7 @@ void BCSRMatApplyLower6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
 /*!
   Apply the upper factorization y = U^{-1} x
 */
-void BCSRMatApplyUpper6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
+void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
   const int nrows = data->nrows;
   const int * diag = data->diag;
   const int * rowp = data->rowp;
@@ -347,7 +347,7 @@ void BCSRMatApplyUpper6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
   Apply a portion of the lower factorization x = L^{-1} x
 */
 
-void BCSRMatApplyPartialLower6( BCSRMatData * data, TacsScalar * x, 
+void BCSRMatApplyPartialLower8( BCSRMatData * data, TacsScalar * x, 
 				int var_offset ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
@@ -386,7 +386,7 @@ void BCSRMatApplyPartialLower6( BCSRMatData * data, TacsScalar * x,
   Apply a portion of he upper factorization x = U^{-1} x
 */
 
-void BCSRMatApplyPartialUpper6( BCSRMatData * data, TacsScalar * x, 
+void BCSRMatApplyPartialUpper8( BCSRMatData * data, TacsScalar * x, 
 				int var_offset ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
@@ -438,7 +438,7 @@ void BCSRMatApplyPartialUpper6( BCSRMatData * data, TacsScalar * x,
   Function for the approximate Schur preconditioner
 */
 
-void BCSRMatApplyFactorSchur6( BCSRMatData * data, TacsScalar * x, 
+void BCSRMatApplyFactorSchur8( BCSRMatData * data, TacsScalar * x, 
 			       int var_offset ){  
   const int * rowp = data->rowp;
   const int * cols = data->cols;
@@ -487,7 +487,7 @@ void BCSRMatApplyFactorSchur6( BCSRMatData * data, TacsScalar * x,
 /*
   Perform the matrix-matrix multiplication in parallel using pthreads
 */
-void * BCSRMatMatMultAdd6_thread( void * t ){
+void * BCSRMatMatMultAdd8_thread( void * t ){
   BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
   const double alpha = tdata->alpha;
   
@@ -752,7 +752,7 @@ void * BCSRMatMatMultAdd6_thread( void * t ){
 /*!
   Perform a matrix-matrix multiplication
 */
-void BCSRMatMatMultAdd6( double alpha, BCSRMatData * Adata, 
+void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata, 
                          BCSRMatData * Bdata, BCSRMatData * Cdata ){
   // Retrieve the data required from the matrix
   const int nrows_a = Adata->nrows;
@@ -1015,7 +1015,7 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData * Adata,
 /*!
   Apply a given number of steps of symmetric SOR to the system A*x = b.
 */
-void BCSRMatApplySOR6( BCSRMatData * data, TacsScalar * Adiag,
+void BCSRMatApplySOR8( BCSRMatData * data, TacsScalar * Adiag,
 		       TacsScalar omega, int iters, TacsScalar * b, 
 		       TacsScalar * x ){
   const int nrows = data->nrows;
@@ -1078,7 +1078,7 @@ void BCSRMatApplySOR6( BCSRMatData * data, TacsScalar * Adiag,
 /*!
   Apply a given number of steps of symmetric SOR to the system A*x = b.
 */
-void BCSRMatApplySSOR6( BCSRMatData * data, TacsScalar * Adiag,
+void BCSRMatApplySSOR8( BCSRMatData * data, TacsScalar * Adiag,
 			TacsScalar omega, int iters, TacsScalar * b, 
 			TacsScalar * x ){
   const int nrows = data->nrows;
