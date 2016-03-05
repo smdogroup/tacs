@@ -1109,4 +1109,8 @@ cdef class pyBVec(pyTACSVec):
 
     # Basic vector operations
     def getSize(self, int *size):
+        return
+
+    def norm(self):
+        return self.this_ptr.norm()
     
