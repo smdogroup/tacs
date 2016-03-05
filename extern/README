@@ -1,0 +1,57 @@
+Download the file TACS_extern.tar.gz and place it in this directory.
+
+METIS: Mesh partitioning software
+# -------------------------------
+
+Unpack metis by typing:
+tar -xzf metis-4.0.3.tar.gz
+
+cd to metis-4.0.3 and type:
+make
+
+If you are on a 64 bit OS or get errors like: 
+
+relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a shared object; recompile with -fPIC
+
+when compiling the python libraries, or linking, then you have to add
+the option '-fPIC' to the COPTIONS in metis-4.0.3/Makefile.in
+
+
+UFconfig and AMD: Routines for reordering matrices
+# ------------------------------------------------
+
+Unpackage the files:
+tar -xzf UFconfig-3.6.1.tar.gz
+tar -xzf AMD-2.2.2.tar.gz
+
+Make the targets:
+cd AMD; make
+cd UFconfig; make
+
+If you are on a 64 bit OS or get errors like: 
+
+relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a shared object; recompile with -fPIC
+
+when compiling the python libraries, or linking, then you have to add
+the option '-fPIC' to the CFLAGS in UFconfig/UFconfig.mk
+
+
+TECIO: A library for creating Tecplot-compatibile files 
+# -----------------------------------------------------
+
+Unpack tecio2009.zip by typing:
+unzip tecio2009.zip
+
+cd to the directory tecio and type:
+sh Runmake
+
+Select the option:
+  * linux.24 for 32 bit OS
+  * linuxi64.24 for 64 bit OS
+Make both the libraries and pltview. The script makes both no matter what.
+
+# F5ToTEC: A conversion routine for converting .f5 files to .plt files
+# --------------------------------------------------------------------
+
+F5ToTEC depends on TACS. TACS must be built before this can be compiled. 
+Once tecio is made, cd to the f5totec and type make.

@@ -20,6 +20,8 @@ CXX_OBJS = BCSRMat.o \
 	BCSRMatMult5.o \
 	BCSRMatFact6.o \
 	BCSRMatMult6.o \
+	BCSRMatFact8.o \
+	BCSRMatMult8.o \
 	BVec.o \
 	BVecDist.o \
 	BVecInterp.o \

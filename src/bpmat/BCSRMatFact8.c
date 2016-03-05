@@ -922,7 +922,7 @@ void BCSRMatFactor8( BCSRMatData * data ){
 /*!
   Compute x = L_{B}^{-1} E
 */
-void BCSRMatFactorLower6( BCSRMatData * data, BCSRMatData * Edata ){
+void BCSRMatFactorLower8( BCSRMatData * data, BCSRMatData * Edata ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
@@ -935,6 +935,15 @@ void BCSRMatFactorLower6( BCSRMatData * data, BCSRMatData * Edata ){
 
   // Keep track of the number of block matrix products
   int nz = 0;
+
+  TacsScalar d00, d01, d02, d03, d04, d05, d06, d07;
+  TacsScalar d10, d11, d12, d13, d14, d15, d16, d17;
+  TacsScalar d20, d21, d22, d23, d24, d25, d26, d27;
+  TacsScalar d30, d31, d32, d33, d34, d35, d36, d37;
+  TacsScalar d40, d41, d42, d43, d44, d45, d46, d47;
+  TacsScalar d50, d51, d52, d53, d54, d55, d56, d57;
+  TacsScalar d60, d61, d62, d63, d64, d65, d66, d67;
+  TacsScalar d70, d71, d72, d73, d74, d75, d76, d77;
 
   for ( int i = 0; i < nrows; i++ ){
     // Scan from the first entry in the current row, towards the
