@@ -100,12 +100,10 @@ class TACSObject {
   // Increase the reference count functions
   // --------------------------------------
   void incref();
-  void incref_python(); // Increase ref. count from python
 
   // Decrease the reference count
   // ----------------------------
   void decref();
-  void decref_python(); // Increase ref. count from python
 
   // Return the reference count
   // --------------------------
@@ -131,31 +129,6 @@ class TACSOptObject : public TACSObject {
   TACSOptObject() : TACSObject() {}
 
   virtual ~TACSOptObject(){}
-
-  /*!
-    Return true if the object is affected by this design variable
-  */
-  virtual int ownsDesignVar( const int dvNum ) const { return 0; }
-
-  /*! 
-    Return the number of design variables that modify this object
-  */
-  virtual int getNumDesignVars() const { return 0; }
-
-  /*!
-    Insert the design variables owned by this object into the array 'dvNums'
-
-    dvIndex:  The starting location of where design variables 
-    should be inserted - should return as the next vacant spot in the array
-    
-    dvNums:   A pointer to an array of integers to be modified
-    dvLen:    The total length of the array dvNums
-    
-    If the number of design variables is greater than can be 
-    inserted into the array, then return 0 otherwise return true
-  */
-  virtual int getDesignVarNums( int * dvNums, 
-				int * dvIndex, int dvLen ) const { return 1; }
 
   /*!
     Set the design variable numbers owned by this object to those passed 

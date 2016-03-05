@@ -108,15 +108,6 @@ void TACSObject::incref(){
 #endif
 }
 
-void TACSObject::incref_python(){ 
-  ref_count++; 
-#ifdef TACS_DEBUG
-  fprintf(stderr, "Reference count increased from python: %s (%d)\n",
-          this->TACSObjectName(), ref_count);
-  allocation_counter++;
-#endif
-}
-
 /*!
   Decrease the reference count
 */
@@ -139,30 +130,6 @@ void TACSObject::decref(){
   else if ( ref_count < 0 ){
     fprintf(stderr, "Encountered a negative reference count for %s\n",
             this->TACSObjectName());
-  }
-}
-
-void TACSObject::decref_python(){
-  ref_count--;
-  
-#ifdef TACS_DEBUG
-  allocation_counter--;
-  fprintf(stderr, "Reference count decreased from python: %s (%d)\n",
-          this->TACSObjectName(), ref_count);
-#endif
-  
-  if (ref_count == 0){
-#ifdef TACS_DEBUG
-    fprintf(stderr, "Delete object %s (%d)\n",
-            this->TACSObjectName(), allocation_counter);
-    delete this;
-#else
-    delete this;
-#endif
-  }
-  else if (ref_count < 0){
-    fprintf( stderr, "Encountered a negative reference count for %s\n",
-	     this->TACSObjectName() );
   }
 }
 
