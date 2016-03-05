@@ -1109,8 +1109,20 @@ cdef class pyBVec(pyTACSVec):
 
     # Basic vector operations
     def getSize(self, int *size):
+        '''
+        Get the local size of the vector on this processor
+        '''
         return
 
     def norm(self):
+        '''
+        Compute the norm of the vector
+        '''
         return self.this_ptr.norm()
+
+    def scale(self, TacsScalar alpha):
+        '''
+        Scale the vector by alpha
+        '''
+        self.this_ptr.scale(alpha)
     
