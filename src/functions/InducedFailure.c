@@ -83,23 +83,6 @@ void InducedFailure::setLoadFactor( TacsScalar _load_factor ){
 }
 
 /*
-  Set the type of quadrature scheme to use. This is optionally
-  ignored by individual elements so be careful.
-*/
-void InducedFailure::setQuadratureType( enum QuadratureType _quad_type ){
-  quad_type = _quad_type;
-}
-
-/*
-  Set the Gauss quadrature elevation 
-*/
-void InducedFailure::setQuadratureElevation( int elev ){
-  if (elev >= 0){
-    scheme_elevation = elev;
-  }
-}
-
-/*
   Retrieve the function name
 */
 const char * InducedFailure::functionName(){ return funcName; }
@@ -182,8 +165,8 @@ void InducedFailure::preEvalThread( const int iter,
 */
 void InducedFailure::elementWiseEval( const int iter,
 				      TACSElement * element, int elemNum,
-				      const TacsScalar vars[],
 				      const TacsScalar Xpts[],
+				      const TacsScalar vars[],
 				      int * iwork, TacsScalar * work ){
   // Retrieve the number of stress components for this element
   int numStresses = element->numStresses();
@@ -355,8 +338,8 @@ int InducedFailure::getSVSensWorkSize(){
 */
 void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens, 
 					TACSElement * element, int elemNum,
-					const TacsScalar vars[],
 					const TacsScalar Xpts[],
+					const TacsScalar vars[],
 					TacsScalar * work ){
   // Get the number of stress components and total number of variables
   // for this element.
@@ -470,7 +453,7 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   Return the size of the work array for XptSens function
 */
 int InducedFailure::getXptSensWorkSize(){
-  return (2 + 3*max_nodes)*max_stresses + 3*max_nodes;
+  return 2*max_stresses + 3*max_nodes;
 }
 
 /*
@@ -479,8 +462,8 @@ int InducedFailure::getXptSensWorkSize(){
 */
 void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
 					 TACSElement * element, int elemNum,
-					 const TacsScalar vars[],
 					 const TacsScalar Xpts[],
+					 const TacsScalar vars[],
 					 TacsScalar * work ){
   // Get the number of stress components, the total number of
   // variables, and the total number of nodes
@@ -507,7 +490,6 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
   TacsScalar * strain = &work[0];
   TacsScalar * failSens = &work[max_stresses];
   TacsScalar * hXptSens = &work[2*max_stresses];
-  TacsScalar * strainXptSens = &work[2*max_stresses + 3*max_nodes];
 
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point

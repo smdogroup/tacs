@@ -115,13 +115,11 @@ void KSBuckling::preEvalThread( const int iter,
 */
 void KSBuckling::elementWiseEval( const int iter, 
 				  TACSElement * element, int elemNum,
-				  const TacsScalar elemVars[],
 				  const TacsScalar Xpts[],
+				  const TacsScalar vars[],
 				  int * iwork, TacsScalar * work ){
-  double pt[3];
   int numGauss = element->getNumGaussPts();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
@@ -137,10 +135,11 @@ void KSBuckling::elementWiseEval( const int iter,
     // With the first iteration, find the maximum over the domain
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
-      element->getGaussWtsPts(scheme, i, pt);
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;
@@ -159,10 +158,11 @@ void KSBuckling::elementWiseEval( const int iter,
   else {
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
-      element->getGaussWtsPts(scheme, i, pt);
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
 
       // Get the strain
-      element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+      element->getStrain(strain, pt, Xpts, vars);
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;        
@@ -228,14 +228,12 @@ int KSBuckling::getSVSensWorkSize(){
 */
 void KSBuckling::elementWiseSVSens( TacsScalar * elemSVSens, 
 				    TACSElement * element, int elemNum,
-				    const TacsScalar elemVars[],
 				    const TacsScalar Xpts[],
+				    const TacsScalar vars[],
 				    TacsScalar * work ){
-  double pt[3];
   int numGauss = element->getNumGaussPts();
   int numVars = element->numVariables();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
   
   // Zero the derivative of the function w.r.t. the element state variables
@@ -252,10 +250,11 @@ void KSBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
   TacsScalar * bucklingSens = &work[maxNumStresses];
   
   for ( int i = 0; i < numGauss; i++ ){
-    element->getGaussWtsPts(scheme, i, pt);
+    double pt[3];
+    element->getGaussWtsPts(i, pt);
         
     // Get the strain
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
             
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= loadFactor;      
@@ -273,9 +272,9 @@ void KSBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
     TacsScalar ksLocal = exp(ksWeight*(buckling - maxBuckling));
                
     // Determine the sensitivity of the state variables to SV
-    element->addPtwiseStrainSVSens(elemSVSens, pt, 
-                                   loadFactor*(ksLocal/ksBucklingSum),
-                                   bucklingSens, elemVars, Xpts);
+    element->addStrainSVSens(elemSVSens, pt, 
+			     loadFactor*(ksLocal/ksBucklingSum),
+			     bucklingSens, Xpts, vars);
   }
 }
 
@@ -283,7 +282,7 @@ void KSBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
   Return the size of the work array for XptSens function
 */
 int KSBuckling::getXptSensWorkSize(){
-  return (2 + 3*maxNumNodes)*maxNumStresses;
+  return 2*maxNumStresses;
 }
 
 /*
@@ -292,14 +291,12 @@ int KSBuckling::getXptSensWorkSize(){
 */
 void KSBuckling::elementWiseXptSens( TacsScalar fXptSens[],
 				     TACSElement * element, int elemNum,
-				     const TacsScalar elemVars[],
 				     const TacsScalar Xpts[],
+				     const TacsScalar vars[],
 				     TacsScalar * work ){
-  double pt[3];
   int numGauss = element->getNumGaussPts();
   int numNodes = element->numNodes();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
 
   // Zero the sensitivity w.r.t. the nodes
@@ -314,15 +311,14 @@ void KSBuckling::elementWiseXptSens( TacsScalar fXptSens[],
   // Set pointers into the buffer
   TacsScalar * strain = &work[0];
   TacsScalar * bucklingSens = &work[maxNumStresses];
-  TacsScalar * strainXptSens = &work[2*maxNumStresses];
   
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
-    element->getGaussWtsPts(scheme, i, pt);
+    double pt[3];
+    element->getGaussWtsPts(i, pt);
 
     // Get the strain at the current point within the element
-    element->getPtwiseStrainXptSens(strain, strainXptSens, pt,
-                                    elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
 
     // Multiply by the load factor
     for ( int k = 0; k < numStresses; k++ ){
@@ -341,12 +337,8 @@ void KSBuckling::elementWiseXptSens( TacsScalar fXptSens[],
     TacsScalar ksLocal = loadFactor*exp(ksWeight*(buckling - maxBuckling));
 	
     ksLocal = (ksLocal/ksBucklingSum);
-    for ( int j = 0; j < 3*numNodes; j++ ){
-      for ( int k = 0; k < numStresses; k++ ){
-	fXptSens[j] += 
-	  ksLocal*bucklingSens[k]*strainXptSens[k + j*numStresses];
-      }
-    }
+    element->addStrainXptSens(fXptSens, pt, ksLocal, bucklingSens,
+			      Xpts, vars);
   }
 }
 
@@ -364,13 +356,11 @@ int KSBuckling::getDVSensWorkSize(){
 */
 void KSBuckling::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 				    TACSElement * element, int elemNum,
-				    const TacsScalar elemVars[], 
 				    const TacsScalar Xpts[],
+				    const TacsScalar vars[],
 				    TacsScalar * work ){ 
-  double pt[3];
   int numGauss = element->getNumGaussPts();
   int numStresses = element->numStresses();
-  int scheme = element->getGaussPtScheme();
   TACSConstitutive * constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
@@ -384,10 +374,11 @@ void KSBuckling::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 
   for ( int i = 0; i < numGauss; i++ ){
     // Get the gauss point
-    element->getGaussWtsPts(scheme, i, pt);
+    double pt[3];
+    element->getGaussWtsPts(i, pt);
     
     // Get the strain
-    element->getPtwiseStrain(strain, pt, elemVars, Xpts);
+    element->getStrain(strain, pt, Xpts, vars);
     
     for ( int k = 0; k < numStresses; k++ ){
       strain[k] *= loadFactor;        

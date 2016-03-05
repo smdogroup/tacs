@@ -73,11 +73,6 @@ class InducedFailure : public TACSFunction {
   double getParameter();
   void setInducedType( enum InducedNormType _norm_type );
   void setLoadFactor( TacsScalar _loadFactor );
-  
-  // Set the special quadrature information
-  // --------------------------------------
-  void setQuadratureType( enum QuadratureType _quad_type );
-  void setQuadratureElevation( int elev );
 
   // Functions for initialization
   // ----------------------------
@@ -91,7 +86,8 @@ class InducedFailure : public TACSFunction {
   void preEval( const int iter );
   void preEvalThread( const int iter, int * iwork, TacsScalar * work );
   void elementWiseEval( const int iter, TACSElement * element, int elemNum,
-                        const TacsScalar vars[], const TacsScalar Xpts[], 
+                        const TacsScalar Xpts[], 
+			const TacsScalar vars[],
 			int * iwork, TacsScalar * work );
   void postEvalThread( const int iter, int * iwork, TacsScalar * work );
   void postEval( const int iter );
@@ -100,12 +96,13 @@ class InducedFailure : public TACSFunction {
   // --------------------------------
   TacsScalar getValue();
 
-  // State variable sensitivity determination
-  // ----------------------------------------
+  // State variable sensitivities
+  // ----------------------------
   int getSVSensWorkSize();
   void elementWiseSVSens( TacsScalar * elemSVSens, 
                           TACSElement * element, int elemNum,
-                          const TacsScalar vars[], const TacsScalar Xpts[], 
+                          const TacsScalar Xpts[],
+			  const TacsScalar vars[], 
 			  TacsScalar * work );
 
   // Design variable sensitivity evaluation
@@ -113,13 +110,17 @@ class InducedFailure : public TACSFunction {
   int getDVSensWorkSize();
   void elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
                           TACSElement * element, int elemNum,
-                          const TacsScalar vars[], const TacsScalar Xpts[], 
+                          const TacsScalar Xpts[],
+			  const TacsScalar vars[], 
 			  TacsScalar * work );
 
+  // Nodal sensitivities
+  // -------------------
   int getXptSensWorkSize();
   void elementWiseXptSens( TacsScalar fXptSens[],
 			   TACSElement * element, int elemNum, 
-                           const TacsScalar vars[], const TacsScalar Xpts[], 
+			   const TacsScalar Xpts[], 
+			   const TacsScalar vars[],
 			   TacsScalar * work );
 
  private:

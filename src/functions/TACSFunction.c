@@ -1,4 +1,5 @@
 #include "TACSFunction.h"
+#include "FElibrary.h"
 
 /*
   Base TACSFunction implementation

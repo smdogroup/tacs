@@ -6,7 +6,6 @@ class TACSFunction;
 #include "TACSObject.h"
 #include "TACSElement.h"
 #include "TACSAssembler.h"
-#include "FElibrary.h"
 
 /*!
   Copyright (c) 2013 Graeme Kennedy. All rights reserved. 

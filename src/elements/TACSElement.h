@@ -14,7 +14,6 @@
 */
 
 #include "TACSObject.h"
-#include "FElibrary.h"
 #include "TACSConstitutive.h"
 
 enum ElementType { POINT_ELEMENT,
@@ -291,7 +290,7 @@ class TACSElement : public TACSOptObject {
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
-  virtual void getMatType( ElementMatrixTypes matType, 
+  virtual void getMatType( ElementMatrixType matType, 
 			   TacsScalar mat[], 
 			   const TacsScalar Xpts[],
 			   const TacsScalar vars[] ){}
@@ -351,7 +350,7 @@ class TACSElement : public TACSOptObject {
 
   // This function returns the sensitivity of the strain w.r.t. Xpts
   // ---------------------------------------------------------------
-  virtual void addStrainXptSens( TacsScalar strainSens[],
+  virtual void addStrainXptSens( TacsScalar strainXptSens[],
 				 const double pt[], 
 				 const TacsScalar scale,
 				 const TacsScalar strainSens[], 
@@ -360,7 +359,7 @@ class TACSElement : public TACSOptObject {
   
   // This function adds the sensitivity of the strain to the state variables
   // -----------------------------------------------------------------------
-  virtual void addStrainSVSens( TacsScalar strainSens[], 
+  virtual void addStrainSVSens( TacsScalar strainSVSens[], 
 				const double pt[], 
 				const TacsScalar scale,
 				const TacsScalar strainSens[], 
@@ -414,12 +413,7 @@ class TACSElement : public TACSOptObject {
 */
 class TestElement : public TACSObject {
  public:
-  TestElement( TACSElement * _element,
-               TACSElementTraction * _trac,
-               const TacsScalar _vars[],
-               const TacsScalar _Xpts[] );
   TestElement( TACSElement * _element, 
-	       TACSElementTraction * _trac,
 	       const TacsScalar _Xpts[] );
   ~TestElement();
 
@@ -441,7 +435,7 @@ class TestElement : public TACSObject {
   // Tests for consistency amongst the analysis functions
   // ----------------------------------------------------
   int testStiffnessMat( int col = -1 );
-  int testMatDVSens( ElementMatrixTypes type );
+  int testMatDVSens( ElementMatrixType type );
   int testStrainSVSens( const double pt[] );
   
   // Tests for the sensitivities w.r.t. nodal coordinates
@@ -468,7 +462,6 @@ class TestElement : public TACSObject {
   double fail_rtol, fail_atol;
 
   TACSElement * element;
-  TACSElementTraction * trac;
   TacsScalar *vars, *Xpts;
 };
 
