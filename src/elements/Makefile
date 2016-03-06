@@ -9,16 +9,9 @@ include ../../TACS_Common.mk
 
 CXX_OBJS = TACSElement.o \
 	FElibrary.o \
-	ParametricMap.o \
-	SplineFFD.o \
-	FETransform3D.o \
 	TACSShell.o \
 	ShellUtils.o \
-	LargeRotUtils.o \
-	RBFInterp.o \
-	EBBeam.o \
-	VolumeConstraints.o \
-	TACSFollowerForce.o
+	LargeRotUtils.o
 
 DIR=${TACS_DIR}/src/elements
 

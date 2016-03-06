@@ -12,11 +12,7 @@ TACS_SUBDIRS = src \
 	src/elements \
 	src/constitutive \
 	src/functions \
-	src/mesh \
-	src/transfer \
-	src/io \
-	src/dynamics \
-	src/ip
+	src/io
 
 SEARCH_PATTERN=$(addsuffix /*.c, ${TACS_SUBDIRS})
 TACS_OBJS := $(patsubst %.c,%.o,$(wildcard ${SEARCH_PATTERN}))

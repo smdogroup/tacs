@@ -1,7 +1,6 @@
 #include <stdlib.h>
-#include "tacslapack.h"
 #include "TACSElement.h"
-#include "TensorToolbox.h"
+#include "tacslapack.h"
 
 /*
   The TACSElement and Element Traction class definitions.
@@ -9,210 +8,6 @@
   Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
 */
-
-/*
-  The element class member functions
-*/
-
-const char * TACSElementTraction::tractionName = "TACSElementTraction";
-
-/*
-  The default for the design variable sensitivities is to return zero
-*/
-
-void TACSElement::getResXptSens( TacsScalar * elemRes, 
-				 const TacsScalar elemVars[], 
-				 const TacsScalar Xpts[] ){
-  int numVars = this->numVariables();
-  int numNodes = this->numNodes();
-  memset(elemRes, 0, 3*numNodes*numVars*sizeof(TacsScalar));
-}
-
-void TACSElement::getResDVSens( int dvNum, 
-				TacsScalar * elemRes, 
-				const TacsScalar elemVars[], 
-				const TacsScalar Xpts[] ){
-  int numVars = this->numVariables();
-  memset(elemRes, 0, numVars*sizeof(TacsScalar));
-}
-
-void TACSElement::addAdjResDVSensProduct( TacsScalar alpha,
-					  TacsScalar dvSens[], int dvLen,
-					  const TacsScalar psi[],
-					  const TacsScalar elemVars[],
-					  const TacsScalar Xpts[] ){}
-
-void TACSElement::addMatDVSensInnerProduct( ElementMatrixTypes matType,
-					    TacsScalar alpha,
-					    TacsScalar dvSens[], int dvLen,
-					    const TacsScalar psi[], 
-					    const TacsScalar phi[],
-					    const TacsScalar elemVars[],
-					    const TacsScalar Xpts[] ){}
-
-void TACSElement::addMatSVSensInnerProduct( ElementMatrixTypes matType,
-					    TacsScalar alpha,
-					    TacsScalar res[],
-					    const TacsScalar psi[], 
-					    const TacsScalar phi[],
-					    const TacsScalar elemVars[],
-					    const TacsScalar Xpts[] ){}
-
-void TACSElement::getMatTypeXptSens( ElementMatrixTypes matType, 
-				     TacsScalar scaleFactor, 
-				     TacsScalar * elementMatrix, 
-				     const TacsScalar elemVars[], 
-				     const TacsScalar Xpts[], 
-				     const TacsScalar XptSens[], 
-				     MatrixOrientation matOr ){
-
-  int numVars = this->numVariables();
-  memset(elementMatrix, 0, numVars*numVars*sizeof(TacsScalar));
-}
-
-void TACSElement::getMatTypeDVSens( int dvNum, 
-				    ElementMatrixTypes matType, 
-				    TacsScalar scaleFactor, 
-				    TacsScalar * elementMatrix, 
-				    const TacsScalar elemVars[], 
-				    const TacsScalar Xpts[], 
-				    MatrixOrientation matOr ){
-  int numVars = this->numVariables();
-  memset(elementMatrix, 0, numVars*numVars*sizeof(TacsScalar));
-}
-
-/*
-  These are the default routines for the inertial matrix implementation.
-*/
-void TACSElement::addInertialRes( TacsScalar *res, TacsScalar *rdyn,
-				  const TacsScalar vars[], 
-				  const TacsScalar dvars[], 
-				  const TacsScalar ddvars[],
-				  const TacsScalar qdyn[], 
-				  const TacsScalar dqdyn[],
-				  const TacsScalar Xpts[] ){}
-
-void TACSElement::addInertialMat( TacsScalar *Jvv, TacsScalar *Jvr,
-				  TacsScalar *Jrv, TacsScalar *Jrr,
-				  double alpha, double beta, double gamma,
-				  const TacsScalar vars[], 
-				  const TacsScalar dvars[],
-				  const TacsScalar ddvars[], 
-				  const TacsScalar qdyn[], 
-				  const TacsScalar dqdyn[], 
-				  const TacsScalar Xpts[] ){}
-
-void TACSElement::addInertialAdjResDVSensProduct( TacsScalar alpha, 
-						  TacsScalar dvSens[], 
-						  int dvLen,
-						  const TacsScalar psi[], 
-						  const TacsScalar dynpsi[],
-						  const TacsScalar vars[],
-						  const TacsScalar dvars[], 
-						  const TacsScalar ddvars[],
-						  const TacsScalar qdyn[], 
-						  const TacsScalar dqdyn[],
-						  const TacsScalar Xpts[] ){}
-
-void TACSElement::addInertialResXptSens( TacsScalar *res, TacsScalar *rdyn,
-					 const TacsScalar vars[], 
-					 const TacsScalar dvars[], 
-					 const TacsScalar ddvars[],
-					 const TacsScalar qdyn[], 
-					 const TacsScalar dqdyn[],
-					 const TacsScalar Xpts[] ){}
-
-void TACSElement::getRD( TacsScalar U[], const TacsScalar Xa[], 
-			 const double pt[], const TacsScalar elemVars[], 
-			 const TacsScalar Xpts[] ){
-  U[0] = U[1] = U[2] = TacsScalar(0.0);
-}
-
-void TACSElement::getRDSens( TacsScalar Ub[], 
-			     const TacsScalar Xa[], TacsScalar Xab[], 
-			     const double pt[], 
-			     const TacsScalar * vars, TacsScalar varsb[],
-			     const TacsScalar * Xpts, TacsScalar Xptsb[] ){}
-
-void TACSElement::getRDXptSens( TacsScalar USens[], const TacsScalar Xa[], 
-				const TacsScalar XaSens[], 
-				const double pt[], const TacsScalar elemVars[], 
-				const TacsScalar Xpts[], 
-				const TacsScalar XptSens[] ){
-  USens[0] = USens[1] = USens[2] = TacsScalar(0.0);
-}
-
-void TACSElement::getRDTranspose( TacsScalar elemAdj[], const TacsScalar U[], 
-				  const TacsScalar Xa[], const double pt[], 
-				  const TacsScalar Xpts[] ){
-  int numVars = this->numVariables();
-  memset(elemAdj, 0, numVars*sizeof(TacsScalar));
-}
-
-void TACSElement::getRF( TacsScalar elemRes[], const TacsScalar F[], 
-			 const TacsScalar Xa[], const double pt[], 
-			 const TacsScalar Xpts[] ){
-  int numVars = this->numVariables();
-  memset(elemRes, 0, numVars*sizeof(TacsScalar));
-}
-
-void TACSElement::getRFSens( const TacsScalar resb[], 
-			     const TacsScalar Fnode[], TacsScalar Fnodeb[], 
-			     const TacsScalar Xa[], TacsScalar Xab[],  
-			     const double pt[], const TacsScalar Xpts[], 
-			     TacsScalar Xptsb[] ){}
-
-void TACSElement::getRFXptSens( TacsScalar elemRes[], const TacsScalar F[], 
-				const TacsScalar Xa[], const TacsScalar XaSens[], 
-				const double pt[], const TacsScalar Xpts[], 
-				const TacsScalar XptSens[] ){
-  int numVars = this->numVariables();
-  memset(elemRes, 0, numVars*sizeof(TacsScalar));
-}
-
-void TACSElement::getRFTranspose( TacsScalar F[], 
-				  const TacsScalar Xa[], 
-				  const double pt[],
-				  const TacsScalar elemAdj[], 
-				  const TacsScalar Xpts[] ){
-  F[0] = F[1] = F[2] = TacsScalar(0.0);
-}
-
-
-TacsScalar TACSElement::getClosestPt( double pt[], int * fflag, 
-				      const TacsScalar X[], 
-				      const TacsScalar Xpts[] ){
-  fprintf(stderr, "getClosestPt not implemented for %s\n", 
-	  this->elementName());
-  *fflag = 1; 
-  return 1e40; 
-}
-
-TacsScalar TACSElement::getJacobianXptSens( TacsScalar * hXptSens, 
-					    const double * pt, 
-					    const TacsScalar Xpts[] ){
-  memset(hXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
-  return this->getJacobian(pt, Xpts);
-}
-
-void TACSElement::getPtwiseStrainXptSens( TacsScalar strain[], 
-					  TacsScalar strainSens[], 
-					  const double * pt,
-					  const TacsScalar elemVars[], 
-					  const TacsScalar Xpts[] ){
-  fprintf(stderr, "%s does not implement addPtwiseStrainXptSens()\n", 
-	  this->elementName());
-}
-
-void TACSElement::addPtwiseStrainSVSens( TacsScalar elementSens[], 
-					 const double * pt, 
-					 const TacsScalar scaleFactor, 
-					 const TacsScalar strainSens[],
-					 const TacsScalar elemVars[], 
-					 const TacsScalar Xpts[] ){
-  fprintf(stderr, "%s does not implement addPtwiseStrainSVSens()\n", 
-	  this->elementName());
-}
 
 /*
   Assign variables randomly to an array. This is useful for
@@ -349,19 +144,12 @@ static void form_approximate( TacsScalar * forward,
 
   input:
   element:  the element object to be tested
-  trac:     the traction object to be tested
-  vars:     the element variable values
   Xpts:     the element nodal locations
 */
 TestElement::TestElement( TACSElement * _element, 
-                          TACSElementTraction * _trac,
-                          const TacsScalar _vars[], 
                           const TacsScalar _Xpts[] ){
   element = _element;
   element->incref();
-
-  trac = _trac;
-  if (trac){ trac->incref(); }
   
   // Copy over the values of the variables
   // and the nodes.
@@ -369,42 +157,14 @@ TestElement::TestElement( TACSElement * _element,
   int nnodes = 3*element->numNodes();
 
   vars = new TacsScalar[ nvars ];
-  Xpts = new TacsScalar[ nnodes ];
-
-  memcpy(vars, _vars, nvars*sizeof(TacsScalar));
-  memcpy(Xpts, _Xpts, nnodes*sizeof(TacsScalar));
-  
-  // Default parameter values
-  dh = 0.5e-7;
-  print_level = 0;
-
-  // Set the default values for the failure tolerances. 
-  // The most important is the relative tolerance as the absolute
-  // error can be large due to large magnitudes of the quantities
-  // themselves.
-  fail_rtol = 1e-5;
-  fail_atol = 10.0;
-}
-
-TestElement::TestElement( TACSElement * _element, 
-                          TACSElementTraction * _trac,
-                          const TacsScalar _Xpts[] ){
-  element = _element;
-  element->incref();
-
-  trac = _trac;
-  if (trac){ trac->incref(); }
-  
-  // Copy over the values of the variables
-  // and the nodes.
-  int nvars = element->numVariables();
-  int nnodes = 3*element->numNodes();
-
-  vars = new TacsScalar[ nvars ];
+  dvars = new TacsScalar[ nvars ];
+  ddvars = new TacsScalar[ nvars ];
   Xpts = new TacsScalar[ nnodes ];
   memcpy(Xpts, _Xpts, nnodes*sizeof(TacsScalar));
 
   generate_random_array(vars, nvars);
+  generate_random_array(dvars, nvars);
+  generate_random_array(ddvars, nvars);
   
   // Default parameter values
   dh = 1e-7;
@@ -421,8 +181,9 @@ TestElement::TestElement( TACSElement * _element,
 
 TestElement::~TestElement(){
   element->decref();
-  if (trac){ trac->decref(); }
   delete [] vars;
+  delete [] dvars;
+  delete [] ddvars;
   delete [] Xpts;
 }
 
@@ -447,7 +208,9 @@ int TestElement::testStiffnessMat( int col ){
     generate_random_array(vars_pert, nvars);
   }
 
-  element->getMat(mat, res, vars, Xpts, NORMAL);
+  double alpha = 1.0, beta = 0.0, gamma = 0.0;
+  element->getJacobian(mat, alpha, beta, gamma,
+		       Xpts, vars, dvars, ddvars);
 
   int one = 1;
   TacsScalar a = 1.0, b = 0.0;
@@ -455,10 +218,10 @@ int TestElement::testStiffnessMat( int col ){
            vars_pert, &one, &b, result, &one);
 
   forward_perturb(vars_copy, nvars, vars, vars_pert, dh);
-  element->getRes(res, vars_copy, Xpts);
+  element->getResidual(res, Xpts, vars_copy, dvars, ddvars);
 
   backward_perturb(vars_copy, nvars, vars, vars_pert, dh);
-  element->getRes(temp, vars_copy, Xpts);
+  element->getResidual(res, Xpts, vars_copy, dvars, ddvars);
 
   form_approximate(res, temp, nvars, dh);
 
@@ -511,7 +274,8 @@ int TestElement::testStiffnessMat( int col ){
 /*
   Test the sensitivity of the matrix w.r.t. the design variables
 */
-int TestElement::testMatDVSens( ElementMatrixTypes type ){
+/*
+int TestElement::testMatDVSens( ElementMatrixType type ){
   // Get the design variables associated with this element
   int ndvs = element->getNumDesignVars();
   int * dv_nums = new int[ ndvs ];
@@ -621,7 +385,7 @@ for element %s.\n",
 
   return fail_flag;
 }
-
+*/
 /*
   Test the derivative of the strain with respect to the state
   variables
@@ -646,8 +410,8 @@ int TestElement::testStrainSVSens( const double pt[] ){
 
   TacsScalar scale = 1.0;
   memset(elementSens, 0, nvars*sizeof(TacsScalar));
-  element->addPtwiseStrainSVSens(elementSens, pt, scale,
-				 strainSens, vars, Xpts);
+  element->addStrainSVSens(elementSens, pt, scale,
+			   strainSens, Xpts, vars);
 
   memset(elementSensApprox, 0, nvars*sizeof(TacsScalar));
   memset(temp, 0, nvars*sizeof(TacsScalar));
@@ -656,7 +420,7 @@ int TestElement::testStrainSVSens( const double pt[] ){
 #ifdef TACS_USE_COMPLEX
     memcpy(vars_copy, vars, nvars*sizeof(TacsScalar));
     vars_copy[k] = TacsScalar(vars[k], dh);
-    element->getPtwiseStrain(strain, pt, vars_copy, Xpts);
+    element->getStrain(strain, pt, Xpts, vars_copy);
 
     for ( int j = 0; j < nstress; j++ ){
       elementSensApprox[k] += strainSens[j]*imag(strain[j])/dh;
@@ -664,7 +428,7 @@ int TestElement::testStrainSVSens( const double pt[] ){
 #else 
     memcpy(vars_copy, vars, nvars*sizeof(TacsScalar));
     vars_copy[k] = vars[k] + dh;
-    element->getPtwiseStrain(strain, pt, vars_copy, Xpts);
+    element->getStrain(strain, pt, Xpts, vars_copy);
         
     for ( int j = 0; j < nstress; j++ ){
       elementSensApprox[k] += strainSens[j]*strain[j];
@@ -672,7 +436,7 @@ int TestElement::testStrainSVSens( const double pt[] ){
 
     memcpy(vars_copy, vars, nvars*sizeof(TacsScalar));
     vars_copy[k] = vars[k] - dh;
-    element->getPtwiseStrain(strain, pt, vars_copy, Xpts);
+    element->getStrain(strain, pt, Xpts, vars_copy);
     
     TacsScalar temp = 0.0;     
     for ( int j = 0; j < nstress; j++ ){
@@ -775,22 +539,23 @@ int TestElement::testJacobianXptSens( const double pt[] ){
 /*
   Test the derivative of the strain w.r.t. the nodal coordinates
 */
+/*
 int TestElement::testStrainXptSens( const double pt[] ){
   // First, test the derivative w.r.t. the nodal coordinates
   int nstress = element->numStresses();
   int nnodes = 3*element->numNodes(); // actually 3 times the number of nodes
   TacsScalar * temp = new TacsScalar[nstress];
   TacsScalar * strainSens = new TacsScalar[nstress];
-  TacsScalar * strainSensApprox = new TacsScalar[nstress];
-  TacsScalar * strainXptSens = new TacsScalar[nnodes*nstress];
+  TacsScalar * strainSensApprox = new TacsScalar[nnodes];
+  TacsScalar * strainXptSens = new TacsScalar[nnodes];
   TacsScalar * Xpt_pert = new TacsScalar[nnodes];
   TacsScalar * Xpt_copy = new TacsScalar[nnodes];
   
   generate_random_array(Xpt_pert, nnodes);
 
   // Compute the sensitivity
-  element->getPtwiseStrainXptSens(temp, strainXptSens, pt, vars, Xpts);
-  element->getPtwiseStrain(strainSens, pt, vars, Xpts);
+  element->addStrainXptSens(temp, strainXptSens, pt, Xpts, vars);
+  element->getStrain(strainSens, pt, Xpts, vars);
 
   if (print_level > 0){
     int max_err_index, max_rel_index;
@@ -815,10 +580,10 @@ int TestElement::testStrainXptSens( const double pt[] ){
            Xpt_pert, &one, &b, strainSens, &one);
   
   forward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  element->getPtwiseStrain(strainSensApprox, pt, vars, Xpt_copy);
+  element->getStrain(strainSensApprox, pt, Xpt_copy, vars);
     
   backward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  element->getPtwiseStrain(temp, pt, vars, Xpt_copy);
+  element->getStrain(temp, pt, Xpt_copy, vars);
     
   form_approximate(strainSensApprox, temp, nstress, dh);
     
@@ -856,204 +621,7 @@ int TestElement::testStrainXptSens( const double pt[] ){
 
   return (max_err > fail_atol || max_rel > fail_rtol);
 }
-
-/*
-  Test the implementation of the residuals for the given combination
-  of element and traction 
 */
-int TestElement::testResXptSens( TacsScalar alpha ){
-  // First, test the derivative w.r.t. the nodal coordinates
-  int nvars = element->numVariables();
-  int nnodes = 3*element->numNodes(); // actually 3 times the number of nodes
-  TacsScalar qr[6], qrdot[6];
-  TacsScalar * dvars = new TacsScalar[nvars];
-  TacsScalar * ddvars = new TacsScalar[nvars];
-  TacsScalar * resXptSens = new TacsScalar[nnodes*nvars];
-  TacsScalar * Xpt_pert = new TacsScalar[nnodes];
-  TacsScalar * Xpt_copy = new TacsScalar[nnodes];
-  TacsScalar * resSens = new TacsScalar[nvars];
-  TacsScalar * resSensApprox = new TacsScalar[nvars];
-  TacsScalar * temp = new TacsScalar[nvars];
-  const int ndyn = 6;
-  TacsScalar rdyn[ndyn];
-  TacsScalar * dynXptSens = new TacsScalar[ndyn*nvars];
-
-  generate_random_array(qr, 6);
-  generate_random_array(qrdot, 6);
-  generate_random_array(Xpt_pert, nnodes);
-  generate_random_array(dvars, nvars);
-  generate_random_array(ddvars, nvars);
-
-  // Compute the sensitivity
-  element->getResXptSens(resXptSens, vars, Xpts);
-  element->addInertialResXptSens(resXptSens, dynXptSens,
-				 vars, dvars, ddvars, 
-                                 qr, qrdot, Xpts);
-  if (trac){ trac->addForceXptSens(alpha, resXptSens, vars, Xpts); }
-  
-  // Compute resSens = resXptSens * Xpt_pert
-  int one = 1;
-  TacsScalar a = 1.0, b = 0.0;
-  BLASgemv("N", &nvars, &nnodes, &a, resXptSens, &nvars,
-           Xpt_pert, &one, &b, resSens, &one);
-
-  // Compute the sensitivity approximation
-  forward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  element->getRes(resSensApprox, vars, Xpt_copy);
-  element->addInertialRes(resSensApprox, rdyn, vars, dvars, ddvars, 
-                          qr, qrdot, Xpt_copy);
-  if (trac){ trac->addForce(alpha, resSensApprox, vars, Xpt_copy); }
-
-  backward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  element->getRes(temp, vars, Xpt_copy);
-  element->addInertialRes(temp, rdyn, vars, dvars, ddvars, 
-                          qr, qrdot, Xpt_copy);
-  if (trac){ trac->addForce(alpha, temp, vars, Xpt_copy); }
-
-  form_approximate(resSensApprox, temp, nvars, dh);
-
-  // Compute the error
-  int max_err_index, max_rel_index;
-  double max_err = get_max_error(resSens, resSensApprox, 
-                                 nvars, &max_err_index);
-  double max_rel = get_max_rel_error(resSens, resSensApprox, 
-                                     nvars, &max_rel_index);
-
-  if (print_level > 0){
-    fprintf(stderr, 
-	    "Testing the residual sensivity w.r.t. the nodes for element %s.\n",
-	    element->elementName());
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (print_level > 1){
-    fprintf(stderr, 
-            "The sensitivity of the residuals w.r.t. the nodal locations\n");
-    print_error_components(stderr, "resXptSens", 
-                           resSens, resSensApprox, nvars);
-  }
-  if (print_level){ fprintf(stderr, "\n"); }
-
-  delete [] dvars;
-  delete [] ddvars;
-  delete [] resXptSens;
-  delete [] Xpt_pert;
-  delete [] resSens;
-  delete [] resSensApprox;
-  delete [] Xpt_copy;
-  delete [] temp;
-
-  return (max_err > fail_atol || max_rel > fail_rtol);
-}
-
-/*
-  Functions for testing the design variable sensitivity 
-*/
-int TestElement::testResDVSens(){
-  // Get the design variables associated with this element
-  int ndvs = element->getNumDesignVars();
-  int * dv_nums = new int[ ndvs ];
-  int dv_index = 0;
-  if (!element->getDesignVarNums(dv_nums, &dv_index, ndvs)){
-    fprintf(stderr, 
-            "The number of design variables defined by %s is inconsistent\n",
-            element->elementName());
-    return 0;
-  }
-  
-  int max_dv = 0;
-  for ( int k = 0; k < ndvs; k++ ){
-    if (dv_nums[k]+1 > max_dv){
-      max_dv = dv_nums[k]+1;
-    }
-  }
-
-  TacsScalar * dvs = new TacsScalar[ max_dv ];
-  element->getDesignVars(dvs, max_dv);
-
-  int nvars = element->numVariables();
-  TacsScalar * resSens = new TacsScalar[nvars];
-  TacsScalar * resSensApprox = new TacsScalar[nvars];
-  TacsScalar * temp = new TacsScalar[nvars];
-
-  if (print_level){
-    fprintf(stderr, 
-	    "Testing the residual sensivity w.r.t. the design variables \
-for element %s.\n",
-	    element->elementName());
-  }
-
-  int fail_flag = 0;
-
-  for ( int k = 0; k < dv_index; k++ ){
-    // Compute the derivative of the residual here
-    element->getResDVSens(dv_nums[k], resSens, vars, Xpts);
-    if (trac){ 
-      trac->addForceDVSens(dv_nums[k], 1.0, resSens, vars, Xpts); 
-    }
-
-    // Test the residual here
-    TacsScalar x = dvs[dv_nums[k]];
-#ifdef TACS_USE_COMPLEX
-    dvs[dv_nums[k]] = x + TacsScalar(0.0, dh);
-
-    element->setDesignVars(dvs, max_dv);
-    element->getRes(resSensApprox, vars, Xpts);
-    if (trac){ trac->addForce(1.0, resSensApprox, vars, Xpts); }
-#else
-    dvs[dv_nums[k]] = x + dh;
-    element->setDesignVars(dvs, max_dv);
-    element->getRes(resSensApprox, vars, Xpts);
-    if (trac){ trac->addForce(1.0, resSensApprox, vars, Xpts); }
-
-    dvs[dv_nums[k]] = x - dh;
-    element->setDesignVars(dvs, max_dv);
-    element->getRes(temp, vars, Xpts);
-    if (trac){ trac->addForce(1.0, temp, vars, Xpts); }
-#endif // TACS_USE_COMPLEX
-    dvs[dv_nums[k]] = x;
-    element->setDesignVars(dvs, max_dv);
-
-    form_approximate(resSensApprox, temp, nvars, dh);
-
-    // Compute the error
-    int max_err_index, max_rel_index;
-    double max_err = get_max_error(resSens, resSensApprox, 
-                                   nvars, &max_err_index);
-    double max_rel = get_max_rel_error(resSens, resSensApprox, 
-                                       nvars, &max_rel_index);
-   
-    if (print_level > 0){
-      fprintf(stderr, "Max Err dv %3d: %10.4e in component %d.\n",
-	      dv_nums[k], max_err, max_err_index);
-      fprintf(stderr, "Max REr dv %3d: %10.4e in component %d.\n",
-	      dv_nums[k], max_rel, max_rel_index);
-    }
-    // Print the error if required
-    if (print_level > 1){
-      fprintf(stderr, 
-              "The sensitivity of the residual w.r.t. dv %d is \n",
-              dv_nums[k]);
-      print_error_components(stderr, "resDVSens", 
-                             resSens, resSensApprox, nvars);
-    }
-    if (print_level){ fprintf(stderr, "\n"); }
-
-    fail_flag = (fail_flag || (max_err > fail_atol || max_rel > fail_rtol));
-  }
-
-  delete [] dvs;
-  delete [] dv_nums;
-  delete [] temp;
-  delete [] resSens;
-  delete [] resSensApprox;
-
-  return fail_flag;
-}
-
 /*
   Test the implementation of a constitutive class
 */
@@ -1188,7 +756,8 @@ the components of strain\n");
   return fail_flag;
 }
 
-int TestConstitutive::testFailDVSens( const double pt[] ){ 
+/*
+int TestConstitutive::testFailDVSens( const double pt[], int ndvs ){ 
   int nstress = con->getNumStresses();
 
   TacsScalar * strain = new TacsScalar[ nstress ];
@@ -1203,7 +772,6 @@ int TestConstitutive::testFailDVSens( const double pt[] ){
 
   // Next, determine the design variables to use.
   // Get the design variables associated with this constitutive class.
-  int ndvs = con->getNumDesignVars();
   int * dv_nums = new int[ ndvs ];
   int dv_index = 0;
   if (!con->getDesignVarNums(dv_nums, &dv_index, ndvs)){
@@ -1295,7 +863,8 @@ design variables for constitutive class %s.\n",
 
   return fail_flag;
 }
-
+*/
+/*
 int TestConstitutive::testMassDVSens( const double pt[] ){ 
   // Next, determine the design variables to use.
   // Get the design variables associated with this constitutive class.
@@ -1388,7 +957,7 @@ for constitutive class %s.\n",
 
   return fail_flag;
 }
-
+*/
 /*
   Test the sensitivity of the strain to a buckling 
 */
@@ -1460,6 +1029,7 @@ the components of strain\n");
   return fail_flag;
 }
 
+/*
 int TestConstitutive::testBucklingDVSens(){ 
   int nstress = con->getNumStresses();
 
@@ -1559,3 +1129,4 @@ design variables for constitutive class %s.\n",
 
   return fail_flag;
 }
+*/

@@ -40,15 +40,10 @@ enum MatrixOrientation { NORMAL, TRANSPOSE };
 
   Functions inherited from TACSOptObject:
   ---------------------------------------
-
-  int ownsDesignVar( const int dvNum ) const;
-  int getNumDesignVars() const;
-  int getDesignVarNums( int * dvNums, int *dvIndex, int dvLen ) const;
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs ) const;
   void getDesignVarRange( TacsScalar lowerBound[], 
 			  TacsScalar upperBound[], int numDVs ) const;
-  int getDesignVarIndex( int dvNum );
 
   These functions are used to set and retrieve variable information 
   and set up internal data for sensitivity calculations. Further details
@@ -225,19 +220,19 @@ class TACSElement : public TACSOptObject {
 
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
-  virtual const char * elementName() const = 0;
-  virtual const char * displacementName( int i ) const = 0;
-  virtual const char * stressName( int i ) const = 0;
-  virtual const char * strainName( int i ) const = 0;
-  virtual const char * extraName( int i ) const = 0;
+  virtual const char * elementName() = 0;
+  virtual const char * displacementName( int i ) = 0;
+  virtual const char * stressName( int i ) = 0;
+  virtual const char * strainName( int i ) = 0;
+  virtual const char * extraName( int i ) = 0;
 
   // Get the number of displacements, stresses, nodes, etc.
   // ------------------------------------------------------
-  virtual int numDisplacements() const = 0;
-  virtual int numStresses() const = 0;
-  virtual int numNodes() const = 0;
-  virtual int numVariables() const = 0;
-  virtual int numExtras() const = 0;
+  virtual int numDisplacements() = 0;
+  virtual int numStresses() = 0;
+  virtual int numNodes() = 0;
+  virtual int numVariables() = 0;
+  virtual int numExtras() = 0;
   virtual enum ElementType getElementType() = 0;
 
   // Return the name of the element
@@ -277,7 +272,7 @@ class TACSElement : public TACSOptObject {
 				 const TacsScalar Xpts[],
 				 const TacsScalar vars[],
 				 const TacsScalar dvars[],
-				 const TacsScalar ddvars[] ) = 0;
+				 const TacsScalar ddvars[] ){}
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------  
@@ -286,14 +281,19 @@ class TACSElement : public TACSOptObject {
 				    const TacsScalar Xpts[],
 				    const TacsScalar vars[],
 				    const TacsScalar dvars[],
-				    const TacsScalar ddvars[] ) = 0;
+				    const TacsScalar ddvars[] ){
+    memset(XptSens, 0, 3*numNodes()*sizeof(TacsScalar));
+  }
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
   virtual void getMatType( ElementMatrixType matType, 
 			   TacsScalar mat[], 
 			   const TacsScalar Xpts[],
-			   const TacsScalar vars[] ){}
+			   const TacsScalar vars[] ){
+    int size = numVariables()*numVariables();
+    memset(mat, 0, size*sizeof(TacsScalar));
+  }
 
   // Compute the derivative of the inner product w.r.t. design variables
   // -------------------------------------------------------------------
@@ -312,7 +312,9 @@ class TACSElement : public TACSOptObject {
 					 const TacsScalar psi[], 
 					 const TacsScalar phi[],
 					 const TacsScalar Xpts[],
-					 const TacsScalar vars[] ){}
+					 const TacsScalar vars[] ){
+    memset(res, 0, numVariables()*sizeof(TacsScalar));
+  }
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
@@ -328,7 +330,7 @@ class TACSElement : public TACSOptObject {
 
   // Get the shape functions from the element
   // ----------------------------------------
-  virtual void getShapeFunctions( const double pt[], double N[] ){}
+  virtual void getShapeFunctions( const double pt[], double N[] ) = 0;
   
   // Return the determinant of the Jacobian at this point
   // ----------------------------------------------------
@@ -339,7 +341,10 @@ class TACSElement : public TACSOptObject {
   // ------------------------------------------------------------------------
   virtual TacsScalar getJacobianXptSens( TacsScalar * hXptSens, 
                                          const double * pt, 
-					 const TacsScalar Xpts[] );
+					 const TacsScalar Xpts[] ){
+    memset(hXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
+    return getJacobian(pt, Xpts);
+  }
 
   // This function returns the strain evaluated at pt
   // ------------------------------------------------
@@ -355,7 +360,7 @@ class TACSElement : public TACSOptObject {
 				 const TacsScalar scale,
 				 const TacsScalar strainSens[], 
 				 const TacsScalar Xpts[],
-				 const TacsScalar vars[] );
+				 const TacsScalar vars[] ){}
   
   // This function adds the sensitivity of the strain to the state variables
   // -----------------------------------------------------------------------
@@ -364,7 +369,7 @@ class TACSElement : public TACSOptObject {
 				const TacsScalar scale,
 				const TacsScalar strainSens[], 
 				const TacsScalar Xpts[],
-				const TacsScalar vars[] );
+				const TacsScalar vars[] ){}
 
   // Functions for retrieving data from the element
   // ----------------------------------------------    
@@ -454,21 +459,21 @@ class TestElement : public TACSObject {
  private:
   TacsScalar dh; // Step size
 
-  // print_level: 0 - print nothing, 1 - print summary, 2 - print everything
+  // print_level: 0 - print nothing, 
+  // 1 - print summary, 2 - print everything
   int print_level; 
 
-  // A test fails if the relative or absolute tolerances are greater than
-  // these values
+  // A test fails if the relative or absolute tolerances are greater
+  // than these values
   double fail_rtol, fail_atol;
 
-  TACSElement * element;
-  TacsScalar *vars, *Xpts;
+  TACSElement *element;
+  TacsScalar *vars, *dvars, *ddvars, *Xpts;
 };
 
 /*
   Test the implementation of the constitutive class
 */
-
 class TestConstitutive : public TACSObject {
  public:
   TestConstitutive( TACSConstitutive * _con );

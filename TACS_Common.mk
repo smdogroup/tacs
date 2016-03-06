@@ -6,11 +6,7 @@ TACS_INCLUDE = -I${TACS_DIR}/src \
 	-I${TACS_DIR}/src/elements \
 	-I${TACS_DIR}/src/constitutive \
 	-I${TACS_DIR}/src/functions \
-	-I${TACS_DIR}/src/mesh \
-	-I${TACS_DIR}/src/transfer \
-	-I${TACS_DIR}/src/io \
-	-I${TACS_DIR}/src/dynamics \
-	-I${TACS_DIR}/src/ip
+	-I${TACS_DIR}/src/io
 
 # Set the command line flags to use for compilation
 TACS_OPT_CC_FLAGS = ${TACS_DEF} ${EXTRA_CC_FLAGS} ${METIS_INCLUDE} ${AMD_INCLUDE} ${TACS_INCLUDE} 
