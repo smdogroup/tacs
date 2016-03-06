@@ -26,7 +26,7 @@
 class TACSLinearBuckling : public TACSObject {
  public:
   TACSLinearBuckling( TACSAssembler * _tacs, 
-		      int _loadCase, TacsScalar _sigma,
+		      TacsScalar _sigma,
 		      TACSMat *_gmat, TACSMat *_kmat, 
 		      TACSMat *_aux_mat, TACSKsm * _solver,
 		      int _max_lanczos_vecs, 
@@ -53,7 +53,6 @@ class TACSLinearBuckling : public TACSObject {
 
  private:  
   // Data for the eigenvalue analysis
-  int loadCase;
   TacsScalar sigma;
   
   EPBucklingShiftInvert *ep_op;
@@ -99,7 +98,7 @@ class TACSLinearBuckling : public TACSObject {
 */
 class TACSFrequencyAnalysis : public TACSObject {
  public:
-  TACSFrequencyAnalysis( TACSAssembler * _tacs, int _loadCase, 
+  TACSFrequencyAnalysis( TACSAssembler * _tacs,
 			 TacsScalar _sigma,
 			 TACSMat * _mmat, TACSMat * _kmat,
 			 TACSKsm * _solver, int max_lanczos, 
@@ -121,7 +120,6 @@ class TACSFrequencyAnalysis : public TACSObject {
   TacsScalar checkOrthogonality();
 
  private:
-  int loadCase;
   TACSAssembler * tacs;
  
   // The matrices used in the analysis

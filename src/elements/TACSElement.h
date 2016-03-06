@@ -373,8 +373,8 @@ class TACSElement : public TACSOptObject {
   virtual void addOutputCount( int * nelems, int * nnodes, int * ncsr ) = 0;
   virtual void getOutputData( unsigned int out_type,
 			      double * data, int ld_data,
-			      const TacsScalar vars[],
-			      const TacsScalar Xpts[] ) = 0;
+			      const TacsScalar Xpts[],
+			      const TacsScalar vars[] );
   virtual void getOutputConnectivity( int * con, int start_node ) = 0;
 
  private: 

@@ -1,8 +1,8 @@
-#include <limits.h>
 #include "TACSAssembler.h"
+#include "FElibrary.h"
 #include "tacslapack.h"
 
-// Reordering routines
+// Reordering implementation 
 #include "MatUtils.h"
 #include "AMDInterface.h"
 #include "amd.h"
@@ -506,12 +506,6 @@ void TACSAssembler::addElements( TACSElement ***_elements ){
     int elemSize = elements[i]->numVariables();
     if (elemSize > maxElementSize){
       maxElementSize = elemSize;
-    }
-    
-    // Check for the number of design variables owned by this element
-    int numLocalDVs = elements[i]->getNumDesignVars();
-    if (numLocalDVs >= maxElementDVs){
-      maxElementDVs = numLocalDVs;
     }
   }  
 }
@@ -1676,9 +1670,6 @@ were defined more than once\n", mpiRank);
   vecDist = new BVecDistribute(varMap, vecDistIndices);
   vecDist->incref();
 
-  // Setup the design variable information
-  setUpDesignVarInfo();
-
   // Allocate space that will be used in the analysis
   initializeArrays();
 }
@@ -1746,7 +1737,7 @@ void TACSAssembler::setDesignVars( const TacsScalar dvs[], int numDVs ){
 */
 void TACSAssembler::getDesignVarRange( TacsScalar lowerBound[], 
 				       TacsScalar upperBound[], 
-				       int numDVs ) const {
+				       int numDVs ){
   TacsScalar * tempLB = new TacsScalar[ numDVs ];
   TacsScalar * tempUB = new TacsScalar[ numDVs ];
   memset(tempLB, 0, numDVs*sizeof(TacsScalar));
@@ -1762,7 +1753,7 @@ void TACSAssembler::getDesignVarRange( TacsScalar lowerBound[],
 		TACS_MPI_MAX, tacs_comm); 
 
   // Take the min of the upper bounds
-  MPI_Allreduce(tempUB, upperBounds, numDVs, TACS_MPI_TYPE, 
+  MPI_Allreduce(tempUB, upperBound, numDVs, TACS_MPI_TYPE, 
 		TACS_MPI_MIN, tacs_comm); 
 
   delete [] tempLB;
@@ -2281,12 +2272,12 @@ void TACSAssembler::assembleRes( BVec *residual ){
   apply the boundary conditions. This is useful for determing the
   reaction forces.
 
-  loadCase: the load case state variables to use
-  residual:      the residual (output)
+  output:
+  residual:      the residual of the governing equations
 */
 void TACSAssembler::assembleResNoBCs( BVec *residual ){
   // Zero the residual
-  rhs->zeroEntries();
+  residual->zeroEntries();
 
   int size = varsPerNode*(numNodes + numDependentNodes);
   memset(localRes, 0, size*sizeof(TacsScalar));
@@ -2295,7 +2286,6 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
     // Set the number of completed elements to zero
     numCompletedElements = 0;
     tacsPInfo->tacs = this;
-    tacsPInfo->loadCase = loadCase;
 
     // Create the joinable attribute
     pthread_attr_t attr;
@@ -2339,8 +2329,8 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
   addDependentResidual(varsPerNode, localRes);
 
   // Assemble the full residual
-  vecDist->beginReverse(localRes, rhs, BVecDistribute::ADD);
-  vecDist->endReverse(localRes, rhs, BVecDistribute::ADD);
+  vecDist->beginReverse(localRes, residual, BVecDistribute::ADD);
+  vecDist->endReverse(localRes, residual, BVecDistribute::ADD);
 }
 
 /*!
@@ -2378,6 +2368,9 @@ void TACSAssembler::assembleJacobian( BVec *residual,
     numCompletedElements = 0;
     tacsPInfo->tacs = this;
     tacsPInfo->mat = A;
+    tacsPInfo->alpha = alpha;
+    tacsPInfo->beta = beta;
+    tacsPInfo->gamma = gamma;
     tacsPInfo->matOr = matOr;
 
     // Create the joinable attribute
@@ -2386,7 +2379,8 @@ void TACSAssembler::assembleJacobian( BVec *residual,
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, TACSAssembler::assembleMat_thread,
+      pthread_create(&threads[k], &attr, 
+		     TACSAssembler::assembleJacobian_thread,
                      (void*)tacsPInfo);
     }
 
@@ -2415,8 +2409,7 @@ void TACSAssembler::assembleJacobian( BVec *residual,
       // Generate the Jacobian of the element
       elements[i]->getResidual(elemRes, elemXpts, 
 			       vars, dvars, ddvars);
-      elements[i]->getJacobian(elemMat, 
-			       alpha, beta, gamma,
+      elements[i]->getJacobian(elemMat, alpha, beta, gamma,
 			       elemXpts, vars, dvars, ddvars);
       
       // Insert the values into the global matrix
@@ -2436,30 +2429,22 @@ void TACSAssembler::assembleJacobian( BVec *residual,
   vecDist->endReverse(localRes, residual, BVecDistribute::ADD);
 
   // Apply the boundary conditions
-  applyBCs(resdual, localVars[loadCase]);
+  applyBCs(residual, localVars);
   A->applyBCs();
 }
 
 /*!  
   Assemble a matrix of a specified type. Note that all matrices
-  have the same non-zero pattern and are interchangable.
+  created from the TACSAssembler object have the same non-zero pattern
+  and are interchangable.
 
-  loadCase:     the load case number to use
   A:            the matrix to assemble (output)
-  scaleFactor:  scaling factor applied to the matrix
   matType:      the matrix type defined in Element.h
   matOr:        the matrix orientation: NORMAL or TRANSPOSE
 */
-void TACSAssembler::assembleMatType( int loadCase, TACSMat * A, 
-				     const TacsScalar scaleFactor, 
-				     ElementMatrixTypes matType, 
-				     MatrixOrientation matOr ){
-  if (loadCase < 0 || loadCase >= numLoadCases){
-    fprintf(stderr, "[%d] Load case number %d out of range [0,%d)\n", 
-	    mpiRank, loadCase, numLoadCases);
-    return;
-  }
-
+void TACSAssembler::assembleMatType(  ElementMatrixType matType,
+				      TACSMat *A, 
+				      MatrixOrientation matOr ){
   // Zero the matrix
   A->zeroEntries();
 
@@ -2468,7 +2453,6 @@ void TACSAssembler::assembleMatType( int loadCase, TACSMat * A,
     numCompletedElements = 0;    
     tacsPInfo->tacs = this;
     tacsPInfo->mat = A;
-    tacsPInfo->scaleFactor = scaleFactor;
     tacsPInfo->matType = matType;
     tacsPInfo->matOr = matOr;
 
@@ -2478,7 +2462,8 @@ void TACSAssembler::assembleMatType( int loadCase, TACSMat * A,
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, TACSAssembler::assembleMatType_thread,
+      pthread_create(&threads[k], &attr, 
+		     TACSAssembler::assembleMatType_thread,
                      (void*)tacsPInfo);
     }
 
@@ -2606,16 +2591,16 @@ TACSAssembler object\n", mpiRank, functions[k]->functionName());
   This function will print an error and return 0 if the underlying
   TACSAssembler object does not correspond to the TACSAssembler object.
 
-  loadCase:   the load case to use
+  input:
   functions:  array of functions to evaluate
   numFuncs:   the number of functions to evaluate
 
   output:
   funcVals: the values of the functions 
 */
-void TACSAssembler::evalFunctions( TACSFunction ** functions, 
+void TACSAssembler::evalFunctions( TACSFunction **functions, 
                                    int numFuncs, 
-				   TacsScalar * funcVals ){
+				   TacsScalar *funcVals ){
   // Find the max. number of iterations required
   int num_iters = 0;
   for ( int k = 0; k < numFuncs; k++ ){
@@ -2705,11 +2690,11 @@ void TACSAssembler::evalFunctions( TACSFunction ** functions,
             // Determine the values of the state 
             // variables for the current element
 	    getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-            getValues(varsPerNode, i, localVars[loadCase], elemVars);
+            getValues(varsPerNode, i, localVars, elemVars);
             
             // Evaluate the element-wise component of the function
-            functions[k]->elementWiseEval(iter, elements[i], i, elemVars, 
-					  elemXpts, iwork, work);
+            functions[k]->elementWiseEval(iter, elements[i], i, 
+					  elemXpts, elemVars, iwork, work);
           }
         }
         else if (functions[k]->getDomain() == TACSFunction::SUB_DOMAIN){
@@ -2723,11 +2708,11 @@ void TACSAssembler::evalFunctions( TACSFunction ** functions,
               // Determine the values of the state variables 
               // for the current element
 	      getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
-	      getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
+	      getValues(varsPerNode, elemNum, localVars, elemVars);
               
               // Evaluate the element-wise component of the function
-              functions[k]->elementWiseEval(iter, elements[elemNum], elemNum, 
-                                            elemVars, elemXpts, iwork, work);
+              functions[k]->elementWiseEval(iter, elements[elemNum], elemNum,
+					    elemXpts, elemVars, iwork, work);
             }
           }
         }
@@ -2781,14 +2766,13 @@ void TACSAssembler::evalFunctions( TACSFunction ** functions,
   communication is required.
 
   input:
-  loadCase:  the load case to use
   funcs:     the TACSFunction function objects
   numFuncs:  the number of functions - size of funcs array
   fdvSens:   the sensitivity - size numFuncs*numDVs
   numDVs:    the number of design variables
 */
-void TACSAssembler::evalDVSens( TACSFunction ** funcs, int numFuncs, 
-                                TacsScalar * fdvSens, int numDVs ){
+void TACSAssembler::evalDVSens( TACSFunction **funcs, int numFuncs, 
+                                TacsScalar *fdvSens, int numDVs ){
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemXpts, *elemXptSens;
   getDataPointers(elementData, &elemVars, NULL, NULL, NULL,
@@ -2812,51 +2796,12 @@ void TACSAssembler::evalDVSens( TACSFunction ** funcs, int numFuncs,
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    // Compute the derivative of the functions w.r.t. the nodes
-    TacsScalar * fXptSens = NULL;
-    if (nodeMap && nodeMap->getNumDesignVars() > 0){
-      // Allocate a temporary array for the derivative of funcs w.r.t. Xpts
-      int node_size = TACS_SPATIAL_DIM*(numNodes + numDependentNodes);
-      fXptSens = new TacsScalar[ numFuncs*node_size ];
-      memset(fXptSens, 0, numFuncs*node_size*sizeof(TacsScalar));
-
-      numCompletedElements = 0;
-      tacsPInfo->fXptSens = fXptSens;
-
-      for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-        pthread_create(&threads[k], &attr, 
-                       TACSAssembler::evalXptSens_thread,
-                       (void*)tacsPInfo);
-      }
-
-      // Join all the threads
-      for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-        pthread_join(threads[k], NULL);
-      }
-
-      // Evaluate the product of the derivative of the residuals w.r.t. 
-      // the nodal coordinates times the adjoint variables
-      int * dvNums = new int[ numDVs ];
-
-      int numNodeMapDVs = 0;
-      nodeMap->getDesignVarNums(dvNums, &numNodeMapDVs, numDVs);
-    
-      // Add the product of the derivative of the functions with respect to
-      // the nodes times the derivative of the nodes w.r.t. the design variables
-      // to the array fdvSens
-      nodeMap->addXptSensProduct(numNodeMapDVs, numFuncs, numNodes,
-				 fXptSens, TACS_SPATIAL_DIM*numNodes, 
-				 fdvSens, numDVs); 
-
-      delete [] dvNums;
-      if (fXptSens){ delete [] fXptSens; }
-    }
-
     // Now compute df/dx
     numCompletedElements = 0;
     
     for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, TACSAssembler::evalDVSens_thread,
+      pthread_create(&threads[k], &attr, 
+		     TACSAssembler::evalDVSens_thread,
                      (void*)tacsPInfo);
     }
     
@@ -2869,71 +2814,6 @@ void TACSAssembler::evalDVSens( TACSFunction ** funcs, int numFuncs,
     pthread_attr_destroy(&attr);
   }
   else {
-    if (nodeMap && nodeMap->getNumDesignVars() > 0){    
-      int node_size = TACS_SPATIAL_DIM*(numNodes + numDependentNodes);
-      TacsScalar * fXptSens = new TacsScalar[ numFuncs*node_size ];
-      memset(fXptSens, 0, numFuncs*node_size*sizeof(TacsScalar));
-
-      // For each function, evaluate the derivative w.r.t. the 
-      // nodal locations for all elements or part of the domain
-      for ( int k = 0; k < numFuncs; k++ ){
-        TACSFunction * function = funcs[k];
-
-        // Default work arrays
-        TacsScalar * work = NULL;
-        TacsScalar work_default[128];
-        int work_size = function->getXptSensWorkSize();
-        if (work_size > 128){ work = new TacsScalar[ work_size ]; }
-        else { work = work_default; }
-
-        if (function->getDomain() == TACSFunction::SUB_DOMAIN){
-          // Get the function sub-domain
-          const int * elemSubList;
-          int numSubElems = function->getElements(&elemSubList);
-          for ( int i = 0; i < numSubElems; i++ ){
-            int elemNum = elemSubList[i];
-            // Determine the values of the state variables for subElem
-            getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
-            getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
-          
-            // Evaluate the element-wise sensitivity of the function
-            function->elementWiseXptSens(elemXptSens, 
-                                         elements[elemNum], elemNum, 
-                                         elemVars, elemXpts, work);
-          
-            addValues(TACS_SPATIAL_DIM, elemNum, elemXptSens,
-		      &fXptSens[TACS_SPATIAL_DIM*k*numNodes]);
-          }
-        }
-        else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
-          for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
-            // Determine the values of the state variables for elemNum
-            getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
-            getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
-          
-            // Evaluate the element-wise sensitivity of the function
-            function->elementWiseXptSens(elemXptSens, 
-                                         elements[elemNum], elemNum, 
-                                         elemVars, elemXpts, work);
-          
-            addValues(TACS_SPATIAL_DIM, elemNum, elemXptSens,
-		      &fXptSens[TACS_SPATIAL_DIM*k*numNodes]);
-          }
-        }
-
-        if (work_size > 128){ delete [] work; }
-      }
-
-      // Add the product of the derivative of the functions with respect to
-      // the nodes times the derivative of the nodes w.r.t. the design variables
-      // to the array fdvSens
-      int numNodeMapDVs = nodeMap->getNumDesignVars();
-      nodeMap->addXptSensProduct(numNodeMapDVs, numFuncs, numNodes,
-				 fXptSens, TACS_SPATIAL_DIM*numNodes, 
-				 fdvSens, numDVs); 
-      delete [] fXptSens;
-    }
-
     // For each function, evaluate the derivative w.r.t. the 
     // design variables for each element
     for ( int k = 0; k < numFuncs; k++ ){
@@ -2954,25 +2834,25 @@ void TACSAssembler::evalDVSens( TACSFunction ** funcs, int numFuncs,
         for ( int i = 0; i < numSubElems; i++ ){
           int elemNum = elemSubList[i];
           // Determine the values of the state variables for subElem
-          getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
+          getValues(varsPerNode, elemNum, localVars, elemVars);
           getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
 	
           // Evaluate the element-wise sensitivity of the function
           function->elementWiseDVSens(&fdvSens[k*numDVs], numDVs,
                                       elements[elemNum], elemNum, 
-                                      elemVars, elemXpts, work);	      
+                                      elemXpts, elemVars, work);	      
         }
       }
       else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
         for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
           // Determine the values of the state variables for elemNum
-          getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
+          getValues(varsPerNode, elemNum, localVars, elemVars);
           getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
         
           // Evaluate the element-wise sensitivity of the function
           function->elementWiseDVSens(&fdvSens[k*numDVs], numDVs,
                                       elements[elemNum], elemNum, 
-                                      elemVars, elemXpts, work);
+                                      elemXpts, elemVars, work);
         }
       }
 
@@ -3002,7 +2882,9 @@ void TACSAssembler::evalDVSens( TACSFunction ** funcs, int numFuncs,
   numFuncs:  the number of functions - size of funcs array
   fXptSens:  the sensitivity - size numFuncs*numNodes*3
 */
-void TACSAssembler::evalXptSens( TACSFunction ** funcs, int numFuncs, TacsScalar * fXptSens ){
+/*
+void TACSAssembler::evalXptSens( TACSFunction **funcs, int numFuncs, 
+				 TacsScalar *fXptSens ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
     if (this != funcs[k]->getTACS()){
@@ -3071,7 +2953,7 @@ void TACSAssembler::evalXptSens( TACSFunction ** funcs, int numFuncs, TacsScalar
 	  // Evaluate the element-wise sensitivity of the function
 	  function->elementWiseXptSens(elemXptSens, 
 				       elements[elemNum], elemNum, 
-				       elemVars, elemXpts, work);
+				       elemXpts, elemVars, work);
           
 	  addValues(TACS_SPATIAL_DIM, elemNum, elemXptSens,
 		    &fXptSens[TACS_SPATIAL_DIM*k*numNodes]);
@@ -3086,7 +2968,7 @@ void TACSAssembler::evalXptSens( TACSFunction ** funcs, int numFuncs, TacsScalar
 	  // Evaluate the element-wise sensitivity of the function
 	  function->elementWiseXptSens(elemXptSens, 
 				       elements[elemNum], elemNum, 
-				       elemVars, elemXpts, work);
+				       elemXpts, elemVars, work);
       
 	  addValues(TACS_SPATIAL_DIM, elemNum, elemXptSens,
 		    &fXptSens[TACS_SPATIAL_DIM*k*numNodes]);
@@ -3097,6 +2979,7 @@ void TACSAssembler::evalXptSens( TACSFunction ** funcs, int numFuncs, TacsScalar
     }
   }
 }
+*/
 
 /*
   Evaluate the derivative of the function w.r.t. the state variables.
@@ -3145,11 +3028,11 @@ void TACSAssembler::evalSVSens( TACSFunction *function, BVec *vec ){
     for ( int i = 0; i < numElements; i++ ){
       // Determine the values of the state variables for the current element
       getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-      getValues(varsPerNode, i, localVars[loadCase], elemVars);
+      getValues(varsPerNode, i, localVars, elemVars);
       
       // Evaluate the element-wise sensitivity of the function
       function->elementWiseSVSens(elemRes, elements[i], i, 
-				  elemVars, elemXpts, work);
+				  elemXpts, elemVars, work);
 
       addValues(varsPerNode, i, elemRes, localRes);
     }
@@ -3164,10 +3047,10 @@ void TACSAssembler::evalSVSens( TACSFunction *function, BVec *vec ){
       if (elemNum >= 0 && elemNum < numElements){	
       	// Determine the values of the state variables for the current element
 	getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
-	getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
+	getValues(varsPerNode, elemNum, localVars, elemVars);
 
       	function->elementWiseSVSens(elemRes, elements[elemNum], elemNum, 
-				    elemVars, elemXpts, work);
+				    elemXpts, elemVars, work);
 
 	addValues(varsPerNode, elemNum, elemRes, localRes);
       }
@@ -3235,41 +3118,6 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    // Compute adjResProduct = Phi^{T} dR/dXpts
-    TacsScalar * adjXptSensProduct = NULL;
-    if (nodeMap && nodeMap->getNumDesignVars() > 0){
-      // Allocate a temporary array for the product of the adjoint and the
-      // derivative of the residuals w.r.t. the nodes
-      adjXptSensProduct = 
-	new TacsScalar[ TACS_SPATIAL_DIM*numNodes*numAdjoints ];
-      memset(adjXptSensProduct, 0, 
-	     TACS_SPATIAL_DIM*numNodes*numAdjoints*sizeof(TacsScalar));
-
-      // Set the vector to store Phi^{T} dR/dXpts
-      numCompletedElements = 0;
-      tacsPInfo->adjXptSensProduct = adjXptSensProduct;
-
-      for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-        pthread_create(&threads[k], &attr, 
-                       TACSAssembler::adjointResXptSensProduct_thread,
-                       (void*)tacsPInfo);
-      }
-
-      // Join all the threads
-      for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-        pthread_join(threads[k], NULL);
-      }
-    }
-
-    if (nodeMap){
-      int numNodeMapDVs = nodeMap->getNumDesignVars();
-      nodeMap->addXptSensProduct(numNodeMapDVs, numAdjoints, numNodes,
-				 adjXptSensProduct, TACS_SPATIAL_DIM*numNodes,
-				 dvSensVals, numDVs);
-    }
-
-    if (adjXptSensProduct){ delete [] adjXptSensProduct; }
-
     // Now compute Phi^{T} * dR/dx 
     numCompletedElements = 0;
 
@@ -3289,164 +3137,29 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
   }
   else {
     // Retrieve pointers to temporary storage
-    TacsScalar *elemVars, *elemResDVSens, *elemXpts, *elemResXptSens;
-    getDataPointers(elementData, &elemVars, &elemResDVSens, NULL, NULL,
-		    &elemXpts, NULL, NULL, &elemResXptSens);
+    TacsScalar *vars, *dvars, *ddvars;
+    TacsScalar *elemXpts, *elemAdjoint;
+    getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
+		    &elemXpts, NULL, NULL, NULL);
 
-    // Allocate memory for the element adjoint variables and 
-    // elemXptSens = the product of the element adjoint variables and
-    // the derivative of the residuals w.r.t. the nodes
-    int s = maxElementSize;
-    int sx = TACS_SPATIAL_DIM*maxElementNodes;
-    TacsScalar * elemAdjoint = new TacsScalar[ s*numAdjoints ];
-    TacsScalar * elemXptSens = new TacsScalar[ sx*numAdjoints ];
-    
-    // Get the surface traction information
-    int numStElems = 0;
-    const int * stElemNums = NULL;
-    
-    if (surfaceTractions[loadCase]){
-      numStElems = surfaceTractions[loadCase]->getElementNums(&stElemNums);
-    }
-
-    TacsScalar lambda = loadFactor[loadCase];
-
-    TacsScalar * adjXptSensProduct = NULL;
-    if (nodeMap && nodeMap->getNumDesignVars() > 0){
-      // Allocate a temporary array for the product of the adjoint and the
-      // derivative of the residuals w.r.t. the nodes
-      adjXptSensProduct = 
-	new TacsScalar[ TACS_SPATIAL_DIM*numNodes*numAdjoints ];
-      memset(adjXptSensProduct, 0, 
-	     TACS_SPATIAL_DIM*numNodes*numAdjoints*sizeof(TacsScalar));
-      
-      int stIndex = 0;      
-      for ( int i = 0; i < numElements; i++ ){
-        // Get the variables and nodes for this element
-        int nnodes = getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-        getValues(varsPerNode, i, localVars[loadCase], elemVars);
-        int nevars = varsPerNode*nnodes;
-      
-        // Get the adjoint variables associated with this element
-        for ( int k = 0; k < numAdjoints; k++ ){
-          getValues(varsPerNode, i, &localAdjoint[k*nvars],
-                    &elemAdjoint[k*nevars]);
-        }
-
-        // Compute the derivative of the element residuals w.r.t. the
-        // element nodes
-        elements[i]->getResXptSens(elemResXptSens, 
-                                   elemVars, elemXpts);               
-
-        // Add the contributions from the derivative of the consistent forces
-        // w.r.t. the element nodes
-        while ((stIndex < numStElems) && (stElemNums[stIndex] == i)){
-          TACSElementTraction * elemTraction =
-            surfaceTractions[loadCase]->getElement(stIndex);
-          elemTraction->addForceXptSens(lambda, elemResXptSens,
-                                        elemVars, elemXpts);
-          stIndex++;
-        }
-
-        // Compute the product of the derivative of the residual w.r.t. the
-        // nodal coordinates and the adjoint variables
-        // Need to compute: 
-        // elemXptSens = elementResXptSens^{T} * elemAdjoint
-        int nenodes = TACS_SPATIAL_DIM*nnodes;
-        TacsScalar alpha = 1.0, beta = 0.0;
-        BLASgemm("T", "N", &nenodes, &numAdjoints, &nevars,
-                 &alpha, elemResXptSens, &nevars,
-                 elemAdjoint, &nevars,                 
-                 &beta, elemXptSens, &nenodes);
-
-        // Add the values in elemXptSens into adjXptSensProduct
-        for ( int k = 0; k < numAdjoints; k++ ){
-          addValues(TACS_SPATIAL_DIM, i, &elemXptSens[k*nenodes], 
-		    &adjXptSensProduct[TACS_SPATIAL_DIM*numNodes*k]);
-        }
-      }
-    }
-
-    delete [] elemXptSens;
-
-    // Evaluate the product of the derivative of the residuals w.r.t. 
-    // the nodal coordinates times the adjoint variables
-    if (nodeMap){
-      int numNodeMapDVs = nodeMap->getNumDesignVars();
-      nodeMap->addXptSensProduct(numNodeMapDVs, numAdjoints, numNodes,
-				 adjXptSensProduct, TACS_SPATIAL_DIM*numNodes,
-				 dvSensVals, numDVs);
-    }
-
-    if (adjXptSensProduct){ delete [] adjXptSensProduct; }
-
-    // Go through each element in the domain and compute the derivative
-    // of the residuals with respect to each design variable and multiply by
-    // the adjoint variables
-    int * dvNums = new int[ maxElementDVs ]; 
-    int stIndex = 0;      
     for ( int i = 0; i < numElements; i++ ){
       // Find the variables and nodes
       int nnodes = getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-      getValues(varsPerNode, i, localVars[loadCase], elemVars);
+      getValues(varsPerNode, i, localVars, vars);
+      getValues(varsPerNode, i, localDotVars, dvars);
+      getValues(varsPerNode, i, localDDotVars, ddvars);
       int nevars = varsPerNode*nnodes;
-    
+      
       // Get the adjoint variables
       for ( int k = 0; k < numAdjoints; k++ ){
-        getValues(varsPerNode, i, &localAdjoint[nvars*k], 
-		  &elemAdjoint[nevars*k]);
-      }
-
-      int numElementDVs = 0;
-      if (elements[i]->getDesignVarNums(dvNums, &numElementDVs, numDVs)){
-        for ( int k = 0; k < numElementDVs; k++ ){
-          int dvNum = dvNums[k];
-          
-          elements[i]->getResDVSens(dvNum, elemResDVSens, elemVars, 
-                                    elemXpts);
-          
-          // Compute the product:
-          // dvSensVals += elementResDVSens^{T} * elemAdjoint            
-          // Note that the increment in dvSensVals is numDVs
-          int one = 1;
-          TacsScalar alpha = 1.0, beta = 1.0;
-          BLASgemv("T", &nevars, &numAdjoints,
-                   &alpha, elemAdjoint, &nevars, elemResDVSens, &one, 
-                   &beta, &dvSensVals[dvNum], &numDVs);
-        }
-      }
-
-      // Determine the derivative of the tractions w.r.t. the design variables
-      while ((stIndex < numStElems) && (stElemNums[stIndex] == i)){
-        TACSElementTraction * elemTraction =
-          surfaceTractions[loadCase]->getElement(stIndex);
-
-        numElementDVs = 0;
-        if (elemTraction->getDesignVarNums(dvNums, &numElementDVs, numDVs)){
-          for ( int k = 0; k < numElementDVs; k++ ){
-            int dvNum = dvNums[k];
-            
-            memset(elemResDVSens, 0, nevars*sizeof(TacsScalar));
-            elemTraction->addForceDVSens(dvNum, lambda, elemResDVSens,
-                                         elemVars, elemXpts);
-            
-            // Compute the product:
-            // dvSensVals^{T} += elemAdjoint^{T} elementResDVSens
-            // Note that the increment in dvSensVals is numDVs
-            int one = 1;
-            TacsScalar alpha = 1.0, beta = 1.0;
-            BLASgemv("T", &nevars, &numAdjoints,
-                     &alpha, elemAdjoint, &nevars, elemResDVSens, &one,
-                     &beta, &dvSensVals[dvNum], &numDVs);
-          }
-        }
-
-        stIndex++;
+	double scale = 1.0;
+	getValues(varsPerNode, i, &localAdjoint[nvars*k], elemAdjoint);
+	
+	elements[i]->addAdjResProduct(scale, &dvSens[k*numDVs], numDVs,
+				      elemAdjoint, elemXpts,
+				      vars, dvars, ddvars);
       }
     }
-
-    delete [] dvNums;
-    delete [] elemAdjoint;
   }
 
   // Collect the products from all processes
@@ -3459,89 +3172,6 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
 }
 
 /*
-  Evaluate the product of several ajdoint vectors with the derivative
-  of the residual w.r.t. the design variables.
-
-  This function is collective on all TACSAssembler processes. This
-  computes the product of the derivative of the residual w.r.t. the
-  design variables with several adjoint vectors simultaneously. This
-  saves computational time as the derivative of the element residuals
-  can be reused for each adjoint vector. This function performs the
-  same task as evalAdjointResProduct, but uses more memory than
-  calling it for each adjoint vector.
-
-  This implementation is experimental because it is not yet fully
-  implemented for all element types, does not handle geometric
-  variables and does not yet cover design variables in
-  tractions. Nevertheless, the short-term plan is to finish this
-  implementation b/c it has the potential to be faster.
-
-  adjoint:     the array of adjoint vectors
-  numAdjoints: the number of adjoint vectors
-  dvSens:      the product of the derivative of the residuals and the adjoint
-  numDVs:      the number of design variables
-*/
-void TACSAssembler::evalAdjointResProductsExperimental( BVec ** adjoint, 
-							int numAdjoints, 
-							TacsScalar * dvSens, 
-							int numDVs ){
-  if (loadCase < 0 || loadCase >= numLoadCases){
-    fprintf(stderr, "[%d] Load case number %d out of range [0,%d)\n", 
-	    mpiRank, loadCase, numLoadCases);
-    return;
-  }
-
-  // Allocate memory for the local components of the adjoint vector
-  int nvars = varsPerNode*(numNodes + numDependentNodes);
-  TacsScalar * localAdjoint = new TacsScalar[ nvars*numAdjoints ];
-
-  // Perform the transfer of the adjoint variables 
-  for ( int k = 0; k < numAdjoints; k++ ){
-    // Scatter the variables to the local processes
-    // now localRes == the adjoint variables
-    vecDist->beginForward(adjoint[k], &localAdjoint[k*nvars]);
-    vecDist->endForward(adjoint[k], &localAdjoint[k*nvars]);
-    setDependentVariables(varsPerNode, &localAdjoint[k*nvars]);
-  }
-
-  // Zero out the derivative of the design variables
-  memset(dvSens, 0, numDVs*numAdjoints*sizeof(TacsScalar));
-
-  // Retrieve pointers to temporary storage
-  TacsScalar *elemVars, *elemAdjoint, *elemXpts;
-  getDataPointers(elementData, &elemVars, &elemAdjoint, NULL, NULL,
-		  &elemXpts, NULL, NULL, NULL);
-
-  // Go through each element in the domain and compute the derivative
-  // of the residuals with respect to each design variable and multiply by
-  // the adjoint variables
-  int stIndex = 0;      
-  for ( int i = 0; i < numElements; i++ ){
-    // Find the variables and nodes
-    int nnodes = getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-    getValues(varsPerNode, i, localVars[loadCase], elemVars);
-    int nevars = varsPerNode*nnodes;
-
-    // Get the adjoint variables
-    for ( int k = 0; k < numAdjoints; k++ ){
-      TacsScalar alpha = 1.0;
-      getValues(varsPerNode, i, &localAdjoint[nvars*k], elemAdjoint);
-      
-      elements[i]->addAdjResDVSensProduct(alpha, &dvSens[k*numDVs], numDVs,
-					  &elemAdjoint[nevars*k], elemVars,
-					  elemXpts);
-    }
-  }
-  
-  // Collect the products from all processes
-  // Component wise summation
-  MPI_Allreduce(MPI_IN_PLACE, dvSens, numDVs*numAdjoints, TACS_MPI_TYPE, 
-		MPI_SUM, tacs_comm);
-
-  delete [] localAdjoint;
-}
-
-/*
   Evaluate the derivative of an inner product of two vectors with a
   matrix of a given type. This code does not explicitly evaluate the
   element matrices.  Instead, the inner product contribution from each
@@ -3549,8 +3179,6 @@ void TACSAssembler::evalAdjointResProductsExperimental( BVec ** adjoint,
   saves considerable computational time and memory.
 
   input:
-  loadCase:  the load case number to use
-  alpha:     the scaling parameter applied to the derivative
   matType:   the matrix type
   psi:       the left-multiplying vector
   phi:       the right-multiplying vector
@@ -3559,16 +3187,10 @@ void TACSAssembler::evalAdjointResProductsExperimental( BVec ** adjoint,
   output:
   dvSens:    the derivative of the inner product 
 */
-void TACSAssembler::evalMatDVSensInnerProduct( int loadCase, TacsScalar alpha, 
-					       ElementMatrixTypes matType, 
+void TACSAssembler::evalMatDVSensInnerProduct( TacsScalar scale, 
+					       ElementMatrixType matType, 
 					       BVec *psi, BVec *phi,
 					       TacsScalar *dvSens, int numDVs ){
-  if (loadCase < 0 || loadCase >= numLoadCases){
-    fprintf(stderr, "[%d] Load case number %d out of range [0,%d)\n", 
-	    mpiRank, loadCase, numLoadCases);
-    return;
-  }
-
   // Zero the derivative of the design variables
   memset(dvSens, 0, numDVs*sizeof(TacsScalar));
 
@@ -3597,14 +3219,14 @@ void TACSAssembler::evalMatDVSensInnerProduct( int loadCase, TacsScalar alpha,
   for ( int i = 0; i < numElements; i++ ){
     // Find the variables and nodes
     getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-    getValues(varsPerNode, i, localVars[loadCase], elemVars);
+    getValues(varsPerNode, i, localVars, elemVars);
     getValues(varsPerNode, i, &localVals[0], elemPsi);
     getValues(varsPerNode, i, &localVals[nvars], elemPhi);
     
     // Add the contribution to the design variable vector
-    elements[i]->addMatDVSensInnerProduct(matType, alpha, dvSens, numDVs,
-					  elemPsi, elemPhi, elemVars,
-					  elemXpts);
+    elements[i]->addMatDVSensInnerProduct(matType, scale, dvSens, numDVs,
+					  elemPsi, elemPhi, elemXpts,
+					  elemVars);
   }
   
   // Collect the products from all processes
@@ -3624,9 +3246,7 @@ void TACSAssembler::evalMatDVSensInnerProduct( int loadCase, TacsScalar alpha,
   of the inner product directly, saving computational time and memory.
 
   input:
-
-  loadCase:  the load case number to use
-  alpha:     the scaling parameter applied to the derivative
+  scale:     the scaling parameter applied to the derivative
   matType:   the matrix type
   psi:       the left-multiplying vector
   phi:       the right-multiplying vector
@@ -3635,15 +3255,9 @@ void TACSAssembler::evalMatDVSensInnerProduct( int loadCase, TacsScalar alpha,
   output:
   res:       the derivative of the inner product w.r.t. the state vars
 */
-void TACSAssembler::evalMatSVSensInnerProduct( int loadCase, TacsScalar alpha, 
-					       ElementMatrixTypes matType, 
+void TACSAssembler::evalMatSVSensInnerProduct( TacsScalar scale, 
+					       ElementMatrixType matType, 
 					       BVec *psi, BVec *phi, BVec *res ){
-  if (loadCase < 0 || loadCase >= numLoadCases){
-    fprintf(stderr, "[%d] Load case number %d out of range [0,%d)\n", 
-	    mpiRank, loadCase, numLoadCases);
-    return;
-  }
-  
   // Zero the entries in the residual vector
   res->zeroEntries();
 
@@ -3676,16 +3290,16 @@ void TACSAssembler::evalMatSVSensInnerProduct( int loadCase, TacsScalar alpha,
   for ( int i = 0; i < numElements; i++ ){
     // Find the variables and nodes
     int nnodes = getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
-    getValues(varsPerNode, i, localVars[loadCase], elemVars);
+    getValues(varsPerNode, i, localVars, elemVars);
     getValues(varsPerNode, i, &localVals[0], elemPsi);
     getValues(varsPerNode, i, &localVals[nvars], elemPhi);
     int nevars = varsPerNode*nnodes;
     memset(elemRes, 0, nevars*sizeof(TacsScalar));
 
     // Add the contribution to the design variable vector
-    elements[i]->addMatSVSensInnerProduct(matType, alpha, elemRes,
-					  elemPsi, elemPhi, elemVars,
-					  elemXpts);
+    elements[i]->getMatSVSensInnerProduct(matType, elemRes,
+					  elemPsi, elemPhi, elemXpts,
+					  elemVars);
 
     // Add the residual values to the local residual array
     addValues(varsPerNode, i, elemRes, localRes);
@@ -3715,12 +3329,12 @@ void TACSAssembler::evalMatSVSensInnerProduct( int loadCase, TacsScalar alpha,
   saves computational time as the derivative of the element residuals
   can be reused for each adjoint vector. 
 
-  loadCase:    the load case number
   adjoint:     the array of adjoint vectors
   numAdjoints: the number of adjoint vectors
   dvSens:      the product of the derivative of the residuals and the adjoint
   numDVs:      the number of design variables
 */
+/*
 void TACSAssembler::evalAdjointResXptSensProducts( int loadCase, 
 						   BVec ** adjoint, 
 						   int numAdjoints, 
@@ -3846,7 +3460,7 @@ void TACSAssembler::evalAdjointResXptSensProducts( int loadCase,
   }
   delete [] localAdjoint;
 }
-
+*/
 /*!  
   Given the load case number and the element, return the element
   object and the values of the variables and nodal locations
@@ -3903,41 +3517,21 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   }
 
   // Retrieve pointers to temporary storage
-  TacsScalar *elemVars, *elemXpts;
-  getDataPointers(elementData, &elemVars, NULL, NULL, NULL,
+  TacsScalar *elemXpts;
+  getDataPointers(elementData, NULL, NULL, NULL, NULL,
 		  &elemXpts, NULL, NULL, NULL);
 
-  int loadCase = 0;
+  // Get the element node locations
   int nnodes = getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
-  getValues(varsPerNode, elemNum, localVars[loadCase], elemVars);
 
-  TACSElementTraction * traction = NULL;
-  if (surfaceTractions[loadCase]){
-    const int * stElemNums = NULL;
-    int numStElems = surfaceTractions[loadCase]->getElementNums(&stElemNums);
-    
-    for ( int i = 0; i < numStElems; i++ ){
-      if (stElemNums[i] == elemNum){
-	traction = surfaceTractions[loadCase]->getElement(i);
-	break;
-      }
-    }
-  }    
-
+  // Create the element test function
   double pt[] = {0.0, 0.0, 0.0};
-  TestElement * test = new TestElement(elements[elemNum], traction,
-				       elemVars, elemXpts);
+  TestElement * test = new TestElement(elements[elemNum],
+				       elemXpts);
   test->incref();
   test->setPrintLevel(print_level);
   
-  if (traction){
-    printf("Testing element %s with element traction %s\n",
-	   elements[elemNum]->elementName(),
-	   traction->TACSObjectName());
-  }
-  else {
-    printf("Testing element %s\n", elements[elemNum]->elementName());
-  }
+  printf("Testing element %s\n", elements[elemNum]->elementName());
   if (test->testStiffnessMat()){ printf("Stiffness matrix failed\n"); }
   else { printf("Stiffness matrix passed\n"); }
   if (test->testJacobianXptSens(pt)){ printf("Jacobian XptSens failed\n"); }
@@ -4030,8 +3624,7 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
   num_design_vars: the number of design variables to use
   dh:              the step size to use
 */
-void TACSAssembler::testFunction( int loadCase, 
-                                  TACSFunction * func, 
+void TACSAssembler::testFunction( TACSFunction * func, 
                                   int num_design_vars, 
 				  double dh ){
   if (!meshFinalizedFlag){
@@ -4061,29 +3654,32 @@ void TACSAssembler::testFunction( int loadCase,
     xtemp[k] = x[k] + TacsScalar(0.0, dh)*xpert[k];
   }
   setDesignVars(xtemp, num_design_vars);
-
-  fd = ImagPart(evalFunction(loadCase, func))/dh;
+  evalFunctions(&func, 1, &fd);
+  fd = ImagPart(fd)/dh;
 #else
   // Compute the function at the point x + dh*xpert
   for ( int k = 0; k < num_design_vars; k++ ){
     xtemp[k] = x[k] + dh*xpert[k];
   }
   setDesignVars(xtemp, num_design_vars);
-  TacsScalar fval0 = evalFunction(loadCase, func);
+  TacsScalar fval0;
+  evalFunctions(&func, 1, &fval0);
 
   // Compute the function at the point x - dh*xpert
   for ( int k = 0; k < num_design_vars; k++ ){
     xtemp[k] = x[k] - dh*xpert[k];
   }
   setDesignVars(xtemp, num_design_vars);
-  TacsScalar fval1 = evalFunction(loadCase, func);
+  TacsScalar fval1;
+  evalFunctions(&func, 1, &fval1);
   fd = 0.5*(fval0 - fval1)/dh;
 #endif // TACS_USE_COMPLEX
 
   // Compute df/dx
+  TacsScalar ftmp;
   setDesignVars(x, num_design_vars);
-  evalFunction(loadCase, func);
-  evalDVSens(loadCase, func, xtemp, num_design_vars);
+  evalFunctions(&func, 1, &ftmp);
+  evalDVSens(&func, 1, xtemp, num_design_vars);
   
   // Compute df/dx^{T} * xpert
   TacsScalar pdf = 0.0;
@@ -4119,7 +3715,7 @@ void TACSAssembler::testFunction( int loadCase,
   pert->incref();
   vars->incref();
 
-  getVariables(loadCase, vars);
+  getVariables(vars);
 
   // Set up a random perturbation 
   pert->setRand(-1.0, 1.0);
@@ -4130,31 +3726,32 @@ void TACSAssembler::testFunction( int loadCase,
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
   temp->axpy(TacsScalar(0.0, dh), pert);
-  setVariables(loadCase, temp);
+  setVariables(temp);
 
-  fd = ImagPart(evalFunction(loadCase, func))/dh;
+  evalFunctions(&func, 1, &fd);
+  fd = ImagPart(fd)/dh;
 #else
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
   temp->axpy(dh, pert);
-  setVariables(loadCase, temp);
-  fval0 = evalFunction(loadCase, func);
+  setVariables(temp);
+  evalFunctions(&func, 1, &fval0);
 
   // Evaluate the function at vars - dh*pert
   temp->copyValues(vars);
   temp->axpy(-dh, pert);
-  setVariables(loadCase, temp);
-  fval1 = evalFunction(loadCase, func);
+  setVariables(temp);
+  evalFunctions(&func, 1, &fval1);
   
   fd = 0.5*(fval0 - fval1)/dh;
 #endif // TACS_USE_COMPLEX
 
   // Reset the variable values
-  setVariables(loadCase, vars);
+  setVariables(vars);
 
   // Evaluate the state variable sensitivity
-  evalFunction(loadCase, func);
-  evalSVSens(loadCase, func, temp);
+  evalFunctions(&func, 1, &ftmp);
+  evalSVSens(func, temp);
   pdf = temp->dot(pert);
 
   if (mpiRank == 0){
@@ -4297,14 +3894,12 @@ void TACSAssembler::getOutputConnectivity( enum ElementType elem_type,
   remaining data may be design variable entries that are computed
   below.
 
-  loadCase:  the load case for the data
   elem_type: the element type to match
   out_type:  the output type 
   data:      the data array - nvals x the number of elements
   nvals:     the number of values to skip at each point
 */
-void TACSAssembler::getOutputData( int loadCase,
-				   enum ElementType elem_type,
+void TACSAssembler::getOutputData( enum ElementType elem_type,
 				   unsigned int out_type,
 				   double * data, int nvals ){
   // Retrieve pointers to temporary storage
@@ -4315,56 +3910,12 @@ void TACSAssembler::getOutputData( int loadCase,
   int nelems = 0, nodes = 0, ncsr = 0;
   for ( int i = 0; i < numElements; i++ ){
     if (elements[i]->getElementType() == elem_type){
-      getValues(varsPerNode, i, localVars[loadCase], elemVars);
+      getValues(varsPerNode, i, localVars, elemVars);
       getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);      
 
       elements[i]->getOutputData(out_type, &data[nvals*nodes], nvals,
-				 elemVars, elemXpts);
+				 elemXpts, elemVars);
       elements[i]->addOutputCount(&nelems, &nodes, &ncsr);
     }
   }  
-}
-
-/*
-  Store the design variable data from the file point-wise
-
-  This can produce a large number of entries if there are many
-  design variables stored for each element.
-
-  intput:
-  x:         the design variables
-  numDVs:    the number of design variables/length of array x
-  elem_type: the type of element we're going to try to match
-  data:      the data array
-  nvals:     the number of entries to skip at each node
-*/
-void TACSAssembler::getOutputDesignVarData( TacsScalar * x, int numDVs,
-					    enum ElementType elem_type,
-					    double * data, int nvals ){
-  // Allocate storage for the design variable numbers
-  int * dvNums = new int[ maxElementDVs ];
-
-  int nelems = 0, nodes = 0, ncsr = 0;
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i]->getElementType() == elem_type){
-      // Retrieve the local design variable numbers
-      int ndvs = 0;
-      elements[i]->getDesignVarNums(dvNums, &ndvs, maxElementDVs);
-
-      // Add the node counts from this element
-      int start = nodes; 
-      elements[i]->addOutputCount(&nelems, &nodes, &ncsr);
-
-      // Add all the design variable entries
-      for ( int k = 0; (k < ndvs && k < nvals); k++ ){
-	if (dvNums[k] >= 0 && dvNums[k] < numDVs){
-	  for ( int j = start; j < nodes; j++ ){
-	    data[nvals*j + k] = x[dvNums[k]];
-	  }
-	}
-      }
-    }
-  }
-
-  delete [] dvNums;
 }

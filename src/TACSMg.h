@@ -53,14 +53,12 @@ class TACSMg : public TACSPc {
     
   // Set the state/design variables of all lower finite-element models
   // -----------------------------------------------------------------
-  void setVariables( int loadCase, BVec * vec ); 
+  void setVariables( BVec * vec ); 
   void setDesignVars( const TacsScalar dvs[], int numDVs );
 
   // Assemble the given finite-element matrix at all levels
   // ------------------------------------------------------
-  void assembleMatType( int loadCase,
-			const TacsScalar scaleFactor = 1.0, 
-			ElementMatrixTypes matType = STIFFNESS_MATRIX, 
+  void assembleMatType( ElementMatrixType matType = STIFFNESS_MATRIX, 
 			MatrixOrientation matOr = NORMAL );
 
   // Methods required by the TACSPc class

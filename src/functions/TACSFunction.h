@@ -73,12 +73,11 @@ class TACSFunction : public TACSObject {
  public:
   enum FunctionDomain { ENTIRE_DOMAIN, SUB_DOMAIN, NO_DOMAIN };
   
-  TACSFunction( TACSAssembler * _tacs, 
+  TACSFunction( TACSAssembler *_tacs, 
 		FunctionDomain _funcDomain = ENTIRE_DOMAIN, 
 		int _maxElems = 0, int _numIterations = 1 );
-  TACSFunction( TACSAssembler * _tacs, int _elemNums[], int _numElems, 
+  TACSFunction( TACSAssembler *_tacs, int _elemNums[], int _numElems, 
 		int maxElems = -1, int _numIterations = 1 );
-
   virtual ~TACSFunction();
 
   virtual const char * functionName() = 0;
@@ -121,7 +120,8 @@ class TACSFunction : public TACSObject {
   virtual void preEval( const int iter ){} 
   virtual void preEvalThread( const int iter, 
                               int * iwork, TacsScalar * work ){}
-  virtual void elementWiseEval( const int iter, TACSElement * element, int elemNum,
+  virtual void elementWiseEval( const int iter, 
+				TACSElement * element, int elemNum,
 				const TacsScalar Xpts[],
                                 const TacsScalar vars[], 
 				int * iwork, TacsScalar * work ){}

@@ -23,7 +23,6 @@
 
   input:
   tacs:         The TACS model corresponding to the analysis problem
-  loadCase:     The load case associated with the first eigenproblem
   sigma:        The spectral shift
   gmat:         The geometric stiffness matrix
   kmat:         The stiffness matrix
@@ -34,7 +33,7 @@
   eig_tol:      Tolerance of the eigenvalues
 */
 TACSLinearBuckling::TACSLinearBuckling( TACSAssembler * _tacs, 
-                                        int _loadCase, TacsScalar _sigma, 
+                                        TacsScalar _sigma, 
 					TACSMat *_gmat, TACSMat *_kmat, 
 					TACSMat *_aux_mat, TACSKsm * _solver,
                                         int _max_lanczos_vecs, 
@@ -67,8 +66,7 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler * _tacs,
 auxiliary matrix\n");
   } 
     
-  // Store the load case/spectral shift info
-  loadCase = _loadCase;
+  // Store the spectral shift info
   sigma = _sigma;
 
   // The eigenvalues solver options
@@ -161,9 +159,8 @@ void TACSLinearBuckling::setSigma( TacsScalar _sigma ){
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x 
 */
 void TACSLinearBuckling::solve( KSMPrint * ksm_print ){
-  tacs->zeroVariables(loadCase);
-  tacs->assembleMatType(loadCase, kmat, 
-                        1.0, STIFFNESS_MATRIX);
+  tacs->zeroVariables();
+  tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
 
   // Copy values from kmat to aux_mat
   // This requires a pointer to either ScMat or PMat 
@@ -171,14 +168,13 @@ void TACSLinearBuckling::solve( KSMPrint * ksm_print ){
   
   // Determine the tangent to the solution path at the origin
   pc->factor();
-  tacs->assembleResLoadFactor(loadCase, res);
+  tacs->assembleRes(res);
   solver->solve(res, path);
   path->scale(-1.0);
 
   // Assemble the geometric stiffness matrix
-  tacs->setVariables(loadCase, path);
-  tacs->assembleMatType(loadCase, gmat,
-                        1.0, GEOMETRIC_STIFFNESS_MATRIX);
+  tacs->setVariables(path);
+  tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
 
   // Set up the eigenvalue problem
   aux_mat->axpy(sigma, gmat);
@@ -311,12 +307,11 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
 
   // Evaluate the partial derivative for the stiffness matrix
-  tacs->evalMatDVSensInnerProduct(loadCase, 1.0, STIFFNESS_MATRIX,
+  tacs->evalMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
 				  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->evalMatDVSensInnerProduct(loadCase, 1.0, 
-				  GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->evalMatDVSensInnerProduct(1.0, GEOMETRIC_STIFFNESS_MATRIX,
 				  eigvec, eigvec, temp, numDVs);
 
   // Add the result to the derivative
@@ -326,14 +321,13 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
 
   // Evaluate derivative of the inner product with respect to 
   // the path variables
-  tacs->evalMatSVSensInnerProduct(loadCase, 1.0, 
-				  GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->evalMatSVSensInnerProduct(1.0, GEOMETRIC_STIFFNESS_MATRIX,
 				  eigvec, eigvec, res);
 
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  tacs->evalAdjointResProduct(loadCase, update, temp, numDVs);
+  tacs->evalAdjointResProducts(&update, 1, temp, numDVs);
 
   // Add the result to the derivative
   for ( int i = 0; i < numDVs; i++ ){
@@ -366,7 +360,6 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
 
   Input:
   tacs:        the TACS assembler object
-  loadCase:    the load case to use 
   sigma:       the initial value of the shift-invert
   mmat:        the mass matrix object
   kmat:        the stiffness matrix object
@@ -376,7 +369,6 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   eig_tol:     the eigenproblem tolerance
 */
 TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler * _tacs, 
-                                              int _loadCase, 
                                               TacsScalar _sigma, 
                                               TACSMat * _mmat, 
 					      TACSMat * _kmat,
@@ -387,9 +379,6 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler * _tacs,
   // Store the TACSAssembler pointer
   tacs = _tacs;         
   tacs->incref();
-
-  // Set the load case value
-  loadCase = _loadCase; 
 
   // Set the shift value 
   sigma = _sigma;
@@ -460,9 +449,9 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
   Solve the eigenvalue problem
 */
 void TACSFrequencyAnalysis::solve( KSMPrint * ksm_print ){
-  tacs->zeroVariables(loadCase);
-  tacs->assembleMatType(loadCase, kmat, 1.0, STIFFNESS_MATRIX);
-  tacs->assembleMatType(loadCase, mmat, 1.0, MASS_MATRIX);
+  tacs->zeroVariables();
+  tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+  tacs->assembleMatType(MASS_MATRIX, mmat);
 
   // Form the shifted operator and factor it
   kmat->axpy(-sigma, mmat);
@@ -524,11 +513,11 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
   
   // Evaluate the partial derivative for the stiffness matrix
-  tacs->evalMatDVSensInnerProduct(loadCase, 1.0, STIFFNESS_MATRIX,
+  tacs->evalMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
 				  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->evalMatDVSensInnerProduct(loadCase, 1.0, MASS_MATRIX,
+  tacs->evalMatDVSensInnerProduct(1.0, MASS_MATRIX,
 				  eigvec, eigvec, temp, numDVs);
   
   // Add the result to the derivative
@@ -553,9 +542,9 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 */
 void TACSFrequencyAnalysis::checkEigenvector( int n ){
   // Assemble the stiffness/mass matrices
-  tacs->zeroVariables(loadCase);
-  tacs->assembleMatType(loadCase, kmat, 1.0, STIFFNESS_MATRIX);
-  tacs->assembleMatType(loadCase, mmat, 1.0, MASS_MATRIX);
+  tacs->zeroVariables();
+  tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+  tacs->assembleMatType(MASS_MATRIX, mmat);
 
   // Create temporary arrays required
   BVec * t1 = tacs->createVec();   

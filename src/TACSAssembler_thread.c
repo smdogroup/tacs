@@ -35,57 +35,43 @@ void * TACSAssembler::assembleRes_thread( void * t ){
 
   // Un-pack information for this computation
   TACSAssembler * tacs = pinfo->tacs;
-  int loadCase = pinfo->loadCase;
 
   // Allocate a temporary array large enough to store everything required  
   int s = tacs->maxElementSize;
   int sx = 3*tacs->maxElementNodes;
-  int dataSize = 3*s + sx;
+  int dataSize = 4*s + sx;
   TacsScalar * data = new TacsScalar[ dataSize ];
   
-  TacsScalar * elemVars = &data[0];
-  TacsScalar * elemRes = &data[s];
-  TacsScalar * elemXpts = &data[2*s];
-
-  // Get information for the surface traction
-  int index = 0;
-  int numElems = 0;
-  const int * elemNums;
-  
-  if (tacs->surfaceTractions[loadCase]){
-    numElems = tacs->surfaceTractions[loadCase]->getElementNums(&elemNums);
-  }
+  // Set pointers to the allocate memory
+  TacsScalar *vars = &data[0];
+  TacsScalar *dvars = &data[s];
+  TacsScalar *ddvars = &data[2*s];
+  TacsScalar *elemRes = &data[3*s];
+  TacsScalar *elemXpts = &data[4*s];
 
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
     
     if (elemIndex >= 0){
+      // Get the element object
       TACSElement * element = tacs->elements[elemIndex];
-      
+
+      // Retrieve the variable values
+      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemIndex, 
+		      tacs->Xpts, elemXpts);
       tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars[loadCase], elemVars);
-      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, 
-		      elemIndex, tacs->Xpts, elemXpts);
-
+		      tacs->localVars, vars);
+      tacs->getValues(tacs->varsPerNode, elemIndex, 
+		      tacs->localDotVars, dvars);
+      tacs->getValues(tacs->varsPerNode, elemIndex, 
+		      tacs->localDDotVars, ddvars);
+  
       // Generate the Jacobian of the element
-      element->getRes(elemRes, elemVars, elemXpts);
+      element->getResidual(elemRes, elemXpts, vars, dvars, ddvars);
 
-      // Increment index until elemNums[index] >= elemIndex
-      while ((index < numElems) && (elemNums[index] < elemIndex)){
-        index++;
-      }
-
-      while ((index < numElems) && (elemNums[index] == elemIndex)){
-        TACSElementTraction * elemTraction = 
-          tacs->surfaceTractions[loadCase]->getElement(index);
-        elemTraction->addForce(lambda, elemRes,
-                               elemVars, elemXpts);
-        index++;
-      }
-      
+      // Add the values to the residual when the memory unlocks
       pthread_mutex_lock(&tacs->tacs_mutex);
-      // Add values to the residual
       tacs->addValues(tacs->varsPerNode, elemIndex, 
 		      elemRes, tacs->localRes);
       pthread_mutex_unlock(&tacs->tacs_mutex);
@@ -107,72 +93,60 @@ void * TACSAssembler::assembleRes_thread( void * t ){
   tacs:     the pointer to the TACSAssembler object
   A:        the generic TACSMat base class
 */
-void * TACSAssembler::assembleMat_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+void * TACSAssembler::assembleJacobian_thread( void * t ){
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
-  TACSAssembler * tacs = pinfo->tacs;
-  TACSMat * A = pinfo->mat;
+  TACSAssembler *tacs = pinfo->tacs;
+  TACSMat *A = pinfo->mat;
+  double alpha = pinfo->alpha;
+  double beta = pinfo->beta;
+  double gamma = pinfo->gamma;
   MatrixOrientation matOr = pinfo->matOr;
 
-  // Allocate a temporary array large enough to store everything required  
+  // Allocate a temporary array large enough to store everything
+  // required
   int s = tacs->maxElementSize;
   int sx = 3*tacs->maxElementNodes;
   int sw = tacs->maxElementIndepNodes;
-  int dataSize = 3*s + sx + s*s + sw;
+  int dataSize = 4*s + sx + s*s + sw;
   TacsScalar * data = new TacsScalar[ dataSize ];
   int * idata = new int[ sw + tacs->maxElementNodes + 1 ];
 
-  TacsScalar * elemVars = &data[0];
-  TacsScalar * elemRes = &data[s];
-  TacsScalar * elemXpts = &data[2*s];
-  TacsScalar * elemWeights = &data[2*s + sx];
-  TacsScalar * elemMat = &data[2*s + sx + sw];
-
-  // Get the load factor for this load case
-  TacsScalar lambda = tacs->loadFactor[loadCase];
-
-  // Get information for the surface traction
-  int index = 0;
-  int numElems = 0;
-  const int * elemNums;
-  
-  if (tacs->surfaceTractions[loadCase]){
-    numElems = tacs->surfaceTractions[loadCase]->getElementNums(&elemNums);
-  }
+  // Set pointers to the allocate memory
+  TacsScalar *vars = &data[0];
+  TacsScalar *dvars = &data[s];
+  TacsScalar *ddvars = &data[2*s];
+  TacsScalar *elemRes = &data[3*s];
+  TacsScalar *elemXpts = &data[4*s];
+  TacsScalar *elemWeights = &data[4*s + sx];
+  TacsScalar *elemMat = &data[4*s + sx + sw];
 
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
     
     if (elemIndex >= 0){
+      // Get the element object
       TACSElement * element = tacs->elements[elemIndex];
-      
+
+      // Retrieve the variable values
+      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemIndex, 
+		      tacs->Xpts, elemXpts);
       tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars[loadCase], elemVars);
-      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, 
-		      elemIndex, tacs->Xpts, elemXpts);
-
+		      tacs->localVars, vars);
+      tacs->getValues(tacs->varsPerNode, elemIndex, 
+		      tacs->localDotVars, dvars);
+      tacs->getValues(tacs->varsPerNode, elemIndex, 
+		      tacs->localDDotVars, ddvars);
+  
       // Generate the Jacobian of the element
-      element->getMat(elemMat, elemRes, elemVars, 
-                      elemXpts, matOr);
-      
-      // Increment index until elemNums[index] >= elemIndex
-      while ((index < numElems) && (elemNums[index] < elemIndex)){
-        index++;
-      }
-
-      while ((index < numElems) && (elemNums[index] == elemIndex)){
-        TACSElementTraction * elemTraction = 
-          tacs->surfaceTractions[loadCase]->getElement(index);
-        
-        elemTraction->addForce(lambda, elemRes, 
-                               elemVars, elemXpts);
-        elemTraction->addForceMat(lambda, elemMat, elemVars, 
-                                  elemXpts, matOr);      
-        index++;
-      }
+      element->getResidual(elemRes, elemXpts, 
+			   vars, dvars, ddvars);
+      element->getJacobian(elemMat, 
+			   alpha, beta, gamma,
+			   elemXpts, vars, dvars, ddvars);
       
       pthread_mutex_lock(&tacs->tacs_mutex);
       // Add values to the residual
@@ -204,14 +178,14 @@ void * TACSAssembler::assembleMat_thread( void * t ){
   matOr:        the matrix orientation: NORMAL or TRANSPOSE
 */
 void * TACSAssembler::assembleMatType_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   int loadCase = pinfo->loadCase;
   TACSAssembler * tacs = pinfo->tacs;
   TACSMat * A = pinfo->mat;
-  TacsScalar scaleFactor = pinfo->scaleFactor;
-  ElementMatrixTypes matType = pinfo->matType;
+  ElementMatrixType matType = pinfo->matType;
   MatrixOrientation matOr = pinfo->matOr;
 
   // Allocate a temporary array large enough to store everything required  
@@ -222,61 +196,28 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
   TacsScalar * data = new TacsScalar[ dataSize ];
   int * idata = new int[ sw + tacs->maxElementNodes + 1 ];
   
-  TacsScalar * elemVars = &data[0];
-  TacsScalar * elemRes = &data[s];
-  TacsScalar * elemXpts = &data[2*s];
-  TacsScalar * elemWeights = &data[2*s + sx];
-  TacsScalar * elemMat = &data[2*s + sx + sw];
+  TacsScalar *vars = &data[0];
+  TacsScalar *elemRes = &data[s];
+  TacsScalar *elemXpts = &data[2*s];
+  TacsScalar *elemWeights = &data[2*s + sx];
+  TacsScalar *elemMat = &data[2*s + sx + sw];
   
-  // Get the load factor for this load case
-  TacsScalar lambda = tacs->loadFactor[loadCase];
-
-  // Get information for the surface traction
-  int index = 0;
-  int numElems = 0;
-  const int * elemNums;
-  
-  if (tacs->surfaceTractions[loadCase]){
-    numElems = tacs->surfaceTractions[loadCase]->getElementNums(&elemNums);
-  }
-
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
     
     if (elemIndex >= 0){
+      // Get the element
       TACSElement * element = tacs->elements[elemIndex];
       
+      // Retrieve the variable values
+      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemIndex, 
+		      tacs->Xpts, elemXpts);
       tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars[loadCase], elemVars);
-      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, 
-		      elemIndex, tacs->Xpts, elemXpts);
+		      tacs->localVars, vars);
 
-      if (matType == STIFFNESS_MATRIX){
-        // Generate the Jacobian of the element
-        element->getMat(elemMat, elemRes, elemVars,
-                        elemXpts, matOr);
-        
-        // Increment index until elemNums[index] >= elemIndex
-        while ((index < numElems) && (elemNums[index] < elemIndex)){
-          index++;
-        }
-        
-        while ((index < numElems) && (elemNums[index] == elemIndex)){
-          TACSElementTraction * elemTraction = 
-            tacs->surfaceTractions[loadCase]->getElement(index);
-          
-          elemTraction->addForce(lambda, elemRes, 
-                                 elemVars, elemXpts);
-          elemTraction->addForceMat(lambda, elemMat, elemVars, 
-                                    elemXpts, matOr);      
-          index++;
-        }
-      }
-      else {
-        element->getMatType(matType, scaleFactor, elemMat, 
-                            elemVars, elemXpts, matOr);
-      }
+      // Retrieve the type of the matrix
+      element->getMatType(matType, elemMat, elemXpts, vars);
       
       pthread_mutex_lock(&tacs->tacs_mutex);
       // Add values to the matrix
@@ -309,8 +250,10 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
 
   adjXptSensProduct: adjXptSensProduct = Phi^{T}*dR/dXpts
 */
+/*
 void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   int loadCase = pinfo->loadCase;
@@ -418,7 +361,7 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/
 /*
   Threaded computation of Phi^{T}*dR/dx
 
@@ -434,8 +377,10 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
   loadCase:          the load case number to use
   numAdjoints:       the number of adjoint vectors
 */
+/*
 void * TACSAssembler::adjointResDVSensProduct_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   int loadCase = pinfo->loadCase;
@@ -568,7 +513,7 @@ void * TACSAssembler::adjointResDVSensProduct_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/
 /*
   Threaded computation of a series of functions
 
@@ -580,8 +525,10 @@ void * TACSAssembler::adjointResDVSensProduct_thread( void * t ){
   numFuncs:  the number of functions
   functions: the array of functions to be evaluated
 */
+/*
 void * TACSAssembler::evalFunctions_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   int loadCase = pinfo->loadCase;
@@ -708,8 +655,8 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
 			tacs->localVars[loadCase], elemVars);
         
         // Call the element-wise contribution to the function
-        function->elementWiseEval(iter, element, elemNum, elemVars,
-                                  elemXpts, iwork_array, work_array);
+        function->elementWiseEval(iter, element, elemNum, elemXpts,
+                                  elemVars, iwork_array, work_array);
       }
       else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
         int elemNum = elemIndex;
@@ -723,7 +670,7 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
         
         // Call the element-wise contribution to the function
         function->elementWiseEval(iter, element, elemNum, 
-                                  elemVars, elemXpts, 
+                                  elemXpts, elemVars,
 				  iwork_array, work_array);
       } 
     }
@@ -742,7 +689,7 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/
 /*
   Threaded computation of df/dXpts 
 
@@ -759,8 +706,10 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
   output:
   fXptSens:  the derivative of the functions w.r.t. the nodes
 */
+/*
 void * TACSAssembler::evalXptSens_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   int loadCase = pinfo->loadCase;
@@ -857,7 +806,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
 
         // Evaluate the element-wise sensitivity of the function
         function->elementWiseXptSens(elementXptSens, element, elemNum, 
-                                     elemVars, elemXpts, work);
+                                     elemXpts, elemXVars, work);
       
         // Add the derivatives to the df/dXpts
         pthread_mutex_lock(&tacs->tacs_mutex);
@@ -877,7 +826,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
       
         // Evaluate the element-wise sensitivity of the function
         function->elementWiseXptSens(elementXptSens, element, elemNum, 
-                                     elemVars, elemXpts, work);
+                                     elemXpts, elemVars, work);
       
         // Add the derivatives to the df/dXpts
         pthread_mutex_lock(&tacs->tacs_mutex);
@@ -893,7 +842,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/
 /*
   Threaded computation of df/dx
 
@@ -910,8 +859,10 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
   output:
   fdvSens:  the derivative of the functions w.r.t. the nodes
 */
+/*
 void * TACSAssembler::evalDVSens_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+  TACSAssemblerPthreadInfo * pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   int loadCase = pinfo->loadCase;
@@ -1012,7 +963,7 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
         // Evaluate the element-wise sensitivity of the function
         function->elementWiseDVSens(&fdvSens[funcIndex*numDVs], numDVs,
                                     element, elemNum, 
-                                    elemVars, elemXpts, work);	      
+                                    elemXpts, elemVars, work);	      
       }
       else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
         int elemNum = elemIndex;
@@ -1027,7 +978,7 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
         // Evaluate the element-wise sensitivity of the function
         function->elementWiseDVSens(&fdvSens[funcIndex*numDVs], numDVs,
                                     element, elemNum, 
-                                    elemVars, elemXpts, work);
+                                    elemXpts, elemVars, work);
       }
     }
   } 
@@ -1044,3 +995,4 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
 
   pthread_exit(NULL);
 }
+*/

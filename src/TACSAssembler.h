@@ -9,6 +9,8 @@
   Not for commercial purposes.
 */
 
+class TACSAssembler; 
+
 #include "TACSObject.h"
 #include "TACSFunction.h"
 #include "TACSElement.h"
@@ -120,9 +122,9 @@ class TACSAssembler : public TACSObject {
 
   // Residual and Jacobian assembly
   // ------------------------------
-  void assembleRes( TACSVec *residual );
-  void assembleResNoBCs( TACSVec *residual );
-  void assembleJacobian( TACSVec *residual, TACSMat *A,
+  void assembleRes( BVec *residual );
+  void assembleResNoBCs( BVec *residual );
+  void assembleJacobian( BVec *residual, TACSMat *A,
 			 double alpha, double beta, double gamma,
 			 MatrixOrientation matOr = NORMAL );
   void assembleMatType( ElementMatrixType matType,
@@ -142,13 +144,14 @@ class TACSAssembler : public TACSObject {
                       TacsScalar *funcVals );
   void evalDVSens( TACSFunction **funcs, int numFuncs, 
                    TacsScalar *fdvSens, int numDVs );
-  void evalXptSens( TACSFunction **funcs, int numFuncs,
-		    TACSVec *fXptSens );
+  void evalSVSens( TACSFunction *function, BVec *vec );
   void evalAdjointResProducts( BVec **adjoint, int numAdjoints,
                                TacsScalar * dvSens, int numDVs );
-  void evalAdjointResXptSensProducts( BVec ** adjoint, int numAdjoints,
-				      TACSVec *adjXptSensProduct );
-  void evalSVSens( TACSFunction *function, BVec *vec );
+
+  // void evalXptSens( TACSFunction **funcs, int numFuncs,
+  //                   TACSVec *fXptSens );
+  // void evalAdjointResXptSensProducts( BVec ** adjoint, int numAdjoints,
+  //   				      TACSVec *adjXptSensProduct );
 
   // Evaluate the derivative of the inner product of two vectors and a matrix
   // ------------------------------------------------------------------------
@@ -166,9 +169,9 @@ class TACSAssembler : public TACSObject {
   // Return an element and the variables associated with that element
   // ----------------------------------------------------------------
   TACSElement ** getElements(){ return elements; }
-  TACSElement * getElement( int loadCase, int elemNum,
-			    TacsScalar * elementVars, 
-			    TacsScalar * elementXpts );
+  TACSElement * getElement( int elemNum,
+			    TacsScalar *elemXpts,
+			    TacsScalar *elemVars );
 
   // Get information about the output files
   // --------------------------------------
@@ -179,19 +182,15 @@ class TACSAssembler : public TACSObject {
                               int ** _component_nums,
 			      int ** _csr, int ** _csr_range, 
 			      int ** _node_range );
-  void getOutputData( int loadCase,
-		      enum ElementType elem_type,
+  void getOutputData( enum ElementType elem_type,
 		      unsigned int out_type,
 		      double * data, int nvals );
-  void getOutputDesignVarData( TacsScalar * x, int numDVs,
-			       enum ElementType elem_type,
-			       double * data, int nvals );
 
   // Test the given element, constitutive or function class
   // ------------------------------------------------------
   void testElement( int elemNum, int print_level );
   void testConstitutive( int elemNum, int print_level );
-  void testFunction( int loadCase, TACSFunction * func, 
+  void testFunction( TACSFunction * func, 
                      int num_design_vars, double dh );
 
   // Retrieve the MPI communicator
@@ -258,12 +257,12 @@ class TACSAssembler : public TACSObject {
   static void schedPthreadJob( TACSAssembler * tacs,
                                int * index, int total_size );
   static void * assembleRes_thread( void * t );
-  static void * assembleMat_thread( void * t );
+  static void * assembleJacobian_thread( void * t );
   static void * assembleMatType_thread( void * t );
-  static void * adjointResXptSensProduct_thread( void * t );
+  // static void * adjointResXptSensProduct_thread( void * t );
   static void * adjointResDVSensProduct_thread( void * t );
   static void * evalFunctions_thread( void * t );
-  static void * evalXptSens_thread( void * t );
+  // static void * evalXptSens_thread( void * t );
   static void * evalDVSens_thread( void * t );
 
   VarMap * varMap; // Variable ownership map
@@ -339,7 +338,7 @@ class TACSAssembler : public TACSObject {
       tacs = NULL; 
       // Matrix information
       mat = NULL;
-      scaleFactor = 1.0;
+      alpha = beta = gamma = 0.0;
       matType = STIFFNESS_MATRIX;
       matOr = NORMAL;
       // Function data
@@ -362,7 +361,7 @@ class TACSAssembler : public TACSObject {
 
     // Information for matrix assembly
     TACSMat *mat;
-    TacsScalar scaleFactor;
+    double alpha, beta, gamma;
     ElementMatrixType matType;
     MatrixOrientation matOr;
 
@@ -378,7 +377,7 @@ class TACSAssembler : public TACSObject {
     int numAdjoints;
     TacsScalar *adjointVars;
     TacsScalar *adjXptSensProduct;
-  } * tacsPInfo;
+  } *tacsPInfo;
 
   // The pthread data required to pthread tacs operations
   int numCompletedElements; // Keep track of how much work has been done

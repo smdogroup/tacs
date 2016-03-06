@@ -182,16 +182,15 @@ void TACSMg::setLevel( int level, TACSAssembler * _tacs,
   Set the state variables for this, and all subsequent levels.
 
   input:
-  loadCase: the load case to use
   vec:      the input vector of state variables
 */
-void TACSMg::setVariables( int loadCase, BVec * vec ){
-  tacs[0]->setVariables(loadCase, vec);
+void TACSMg::setVariables( BVec * vec ){
+  tacs[0]->setVariables(vec);
 
   for ( int i = 0; i < nlevels-1; i++ ){
     restrct[i]->mult(x[i], x[i+1]);
     x[i+1]->applyBCs();
-    tacs[i+1]->setVariables(loadCase, x[i+1]);
+    tacs[i+1]->setVariables(x[i+1]);
   }
 }
 
@@ -229,22 +228,18 @@ void TACSMg::factor(){
   Set up the multi-grid data by computing the matrices at each
   multi-grid level within the problem. 
 */
-void TACSMg::assembleMatType( int loadCase,
-			      const TacsScalar scale,
-			      ElementMatrixTypes matType, 
+void TACSMg::assembleMatType( ElementMatrixType matType, 
 			      MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
   for ( int i = 0; i < nlevels-1; i++ ){
     if (tacs[i]){
-      tacs[i]->assembleMatType(loadCase, mat[i], scale,
-			       matType, matOr);
+      tacs[i]->assembleMatType(matType, mat[i], matOr);
     }
   }
 
   // Assemble the coarsest problem
-  tacs[nlevels-1]->assembleMatType(loadCase, root_mat, scale, 
-				   matType, matOr);
+  tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
 
   // For all but the lowest level, set up the SOR object
   for ( int i = 0; i < nlevels-1; i++ ){
