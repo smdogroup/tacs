@@ -57,4 +57,10 @@ PlaneStressTri6::getShapeFunctions( const double pt[], double N[]){
   
 }
 
+PlaneStressTri6::getNumGassPts(){
+    return 4;
+}
 
+PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
+    
+}
