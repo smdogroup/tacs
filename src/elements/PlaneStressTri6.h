@@ -16,7 +16,7 @@ class PlaneStressTri6 : public TACS2DElement<6> {
 
   // Retrieve the shape functions
   // ----------------------------
-  void getShapeFunctions( const double pt[], double N[] );
+  void getShapeFunctions( const double pt[], double N[]);
   void getShapeFunctions( const double pt[], double N[],
 			  double Na[], double Nb[] );
 
