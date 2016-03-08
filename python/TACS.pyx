@@ -1126,3 +1126,69 @@ cdef class pyBVec(pyTACSVec):
         '''
         self.this_ptr.scale(alpha)
     
+    def dot(self, pyTACSVec tvec):
+        '''
+        Compute the dot product of two vectors
+        '''
+        return self.this_ptr.dot(tvec.this_ptr)
+        
+    def mdot(self, np.ndarray[pyTACSVec,ndim=2, mode='c'] tvec,
+             np.ndarray[TacsScalar, ndim=1,mode='c']ans):
+        '''
+        Compute multiple dot products. This is more efficient for parallel
+        computations since there are fewer gather operations for the same
+        number of dot products.
+        '''
+        # Obtain the number of rows in tvecs
+        nvec = tvec.shape[1]
+        self.this_ptr.mdot(tvec.this_ptr, <TacsScalar*>ans.data, nvecs)
+
+    def axpy(self, TacsScalar alpha, pyTACSVec tvec):
+        '''
+        Compute y = alpha*x + y
+        '''
+        self.this_ptr.axpy(alpha, tvec.this_ptr)
+
+    def axpby(self, TacsScalar alpha, TacsScalar beta,
+              pyTACSVec tvec):
+        '''
+        Compute x <- alpha * vec + beta * x
+        '''
+        self.this_ptr.axpby(alpha, beta, tvec.this_ptr)
+
+    def copyValues(self, pyTACSVec tvec):
+        '''
+        Copy the values x <- vec->x
+        '''
+        self.this_ptr.copyValues(tvec.this_ptr)
+
+    def zeroEntries(self):
+        '''
+        Zero all entries in the vector
+        '''
+        self.this_ptr.zeroEntries()
+
+    def set(self, TacsScalar val):
+        '''
+        Set all the entries in the vector to val
+        '''
+        self.this_ptr.set(val)
+
+    def initRand(self):
+        '''
+        Initialize the random value generator
+        '''
+        self.this_ptr.initRand()
+
+    def setRand(self, double lower, double upper):
+        '''
+        Set all the values in the vector using a uniform pseudo-random
+        distribution over an interval between lower/upper.
+        '''
+        self.this_ptr.setRand(lower, upper)
+
+    def placeArray(self, np.ndarray[TacsScalar, ndim=1, mode='c']x):
+        '''
+        Place an array into the place of the local storage for this vector
+        '''
+        self.this_ptr.placeArray(<TacsScalar*>x.data)
