@@ -145,6 +145,24 @@ class TACS3DElement : public TACSElement {
 		   const TacsScalar Xpts[],
 		   const TacsScalar vars[] );
 
+  // Compute the derivative of the inner product w.r.t. design variables
+  // -------------------------------------------------------------------
+  void addMatDVSensInnerProduct( ElementMatrixType matType, 
+				 double scale,
+				 TacsScalar dvSens[], int dvLen,
+				 const TacsScalar psi[], 
+				 const TacsScalar phi[],
+				 const TacsScalar Xpts[],
+				 const TacsScalar vars[] );
+
+  // Compute the derivative of the inner product w.r.t. vars[]
+  // ---------------------------------------------------------
+  void getMatSVSensInnerProduct( ElementMatrixType matType, 
+				 TacsScalar res[],
+				 const TacsScalar psi[], 
+				 const TacsScalar phi[],
+				 const TacsScalar Xpts[],
+				 const TacsScalar vars[] );
   // Functions for evaluating global functionals of interest
   // -------------------------------------------------------
   TACSConstitutive * getConstitutive(){ return stiff; }
@@ -1378,8 +1396,8 @@ void TACS3DElement<NUM_NODES>::getAdjResXptSens( TacsScalar XptSens[],
 template <int NUM_NODES>
 void TACS3DElement<NUM_NODES>::getResDVSens( int dvNum, 
 					     TacsScalar * res, 
-					     const TacsScalar vars[], 
-					     const TacsScalar Xpts[] ){
+					     const TacsScalar Xpts[],
+					     const TacsScalar vars[]){
   memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
 
   if (dvNum < 0 || !stiff->ownsDesignVar(dvNum)){
@@ -1524,24 +1542,24 @@ void TACS3DElement<NUM_NODES>::addAdjResDVSensProduct( TacsScalar alpha,
 
   input:
   matType:     the matrix type (e.g. MASS_MATRIX)
-  alpha:       the scaling factor
+  scale:       the scaling factor
   dvLen:       the length of the design variable vector
   psi:         the left inner-product vector
   phi:         the right inner-product vector
-  vars:        the state variable values
   Xpts:        the nodal locations
+  vars:        the state variable values
 
   output:
   dvSens:      vector of the design sensitivity
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
-							 TacsScalar alpha,
+void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matType, 
+							 double scale,
 							 TacsScalar dvSens[], int dvLen,
 							 const TacsScalar psi[], 
 							 const TacsScalar phi[],
-							 const TacsScalar vars[],
-							 const TacsScalar Xpts[] ){
+							 const TacsScalar Xpts[],
+							 const TacsScalar vars[]){
   if (matType == STIFFNESS_MATRIX){
     // The shape functions associated with the element
     double N[NUM_NODES];
@@ -1812,10 +1830,10 @@ TacsScalar TACS3DElement<NUM_NODES>::getJacobianXptSens( TacsScalar * hXptSens,
   Xpts:     the element nodal locations
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::getPtwiseStrain( TacsScalar strain[], 
-						const double pt[],
-						const TacsScalar vars[], 
-						const TacsScalar Xpts[] ){
+void TACS3DElement<NUM_NODES>::getStrain( TacsScalar strain[], 
+					  const double pt[],
+					  const TacsScalar Xpts[],
+					  const TacsScalar vars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
@@ -1904,11 +1922,12 @@ void TACS3DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[],
   Xpts:      the nodal locations
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::getPtwiseStrainXptSens( TacsScalar strain[], 
-						       TacsScalar strainXptSens[], 
-						       const double * pt,
-						       const TacsScalar vars[], 
-						       const TacsScalar Xpts[] ){
+void TACS3DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
+						 const double pt[], 
+						 const TacsScalar scale,
+						 const TacsScalar strainSens[], 
+						 const TacsScalar Xpts[],
+						 const TacsScalar vars[] ){
 
   // The shape functions associated with the element
   double N[NUM_NODES];
