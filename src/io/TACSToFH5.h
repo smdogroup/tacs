@@ -24,7 +24,7 @@ class TACSToFH5 : public TACSObject {
   
   // Write the data to a file
   // ------------------------
-  void writeToFile( int load_case, const char * filename );
+  void writeToFile( const char * filename );
 
  private:
   // Get a character string of the variable names
@@ -38,8 +38,6 @@ class TACSToFH5 : public TACSObject {
   int nstresses;       // Number of stresses and strains
   int nextras;         // Number of extra values
   int ncoordinates;    // Number of coordinates per point (always 9)
-  int max_design_vars; // Maximum number of design variables
-  int num_design_vars; // The number of design variables
 
   int num_components; // The number of components in the model
   char ** component_names; // The names of each of the components

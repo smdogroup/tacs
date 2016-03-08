@@ -83,11 +83,6 @@ class TACSMeshLoader : public TACSObject {
                                     int vars_per_node,
                                     int num_load_cases );
 
-  // Add an element traction class to all elements in the given component
-  // --------------------------------------------------------------------
-  void addTraction( TACSSurfaceTraction * st,
-                    int component_num, TACSElementTraction * traction );
-
   // Functions required for writing a BDF file
   // -----------------------------------------
   void getNumElementsForComps( int * numElem, int sizeNumComp );
@@ -108,20 +103,21 @@ class TACSMeshLoader : public TACSObject {
  private:
   // Split the mesh and reorder (but do not distribute)
   void splitMesh( int split_size, 
-                  int * elem_partition, int * new_nodes,
-                  int * num_owned_elements, int * num_owned_nodes );
+                  int *elem_partition, int *new_nodes,
+                  int *num_owned_elements, int *num_owned_nodes );
 
   // Write the constitutive data to the given file pointer
   void writeBDFConstitutive( FILE *fp );
 
+  // Communicator for all processors
   MPI_Comm comm;
 
   // The element corresponding to each of the component numbers
-  TACSElement ** elements;
+  TACSElement **elements;
 
   // Original BDF mesh information:
-  int * node_nums;
-  double * Xpts_unsorted;
+  int *node_nums;
+  double *Xpts_unsorted;
 
   // The mesh and element connectivity
   int num_nodes, num_elements;
@@ -131,8 +127,8 @@ class TACSMeshLoader : public TACSObject {
 
   // Store information about the components
   int num_components;
-  char * component_elems;
-  char * component_descript;
+  char *component_elems;
+  char *component_descript;
 
   int num_owned_elements;
   int * local_component_nums;

@@ -6,8 +6,9 @@
 #include "FElibrary.h"
 #include "TACSMeshLoader.h"
 #include "FSDTStiffness.h"
-#include "EBStiffness.h"
-#include "EBBeam.h"
+#include "TensorToolbox.h"
+/* #include "EBStiffness.h" */
+/* #include "EBBeam.h" */
 
 /*!
   This is an interface for reading NASTRAN-style files.
@@ -2040,31 +2041,6 @@ void TACSMeshLoader::setFunctionDomain( TACSFunction * function,
 }
 
 /*
-  Add a traction to all the elements in the given component number
-*/
-void TACSMeshLoader::addTraction( TACSSurfaceTraction * st,
-                                  int component_num, 
-                                  TACSElementTraction * traction ){
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  if (!local_component_nums){
-    fprintf(stderr, "[%d] TACSMeshLoader: Cannot set element traction \
-class until the mesh is partitioned\n", rank);
-    return;
-  }
-
-  int * elem_nums;
-  int num_elems = getComponentElementNums(&elem_nums, &component_num, 1);
-
-  for ( int k = 0; k < num_elems; k++ ){
-    st->addElement(elem_nums[k], traction);
-  }
-
-  delete [] elem_nums;
-}
-
-/*
   Determine the number of elements that are in each component
 */
 void TACSMeshLoader::getNumElementsForComps( int * numElem, 
@@ -2341,7 +2317,7 @@ void TACSMeshLoader::writeBDF( const char * fileName, TacsScalar * bdfNodes,
 		    nodeNums[elem_node_con[j+4]], partId);
 	  }
 	  else if (end -j == 2){
-
+	    /*
 	    TACSElement * elem = elements[ii];
 	    EBBeam * beam = dynamic_cast<EBBeam*>(elem);
 	    if (beam){
@@ -2360,6 +2336,7 @@ void TACSMeshLoader::writeBDF( const char * fileName, TacsScalar * bdfNodes,
 		      RealPart(ref_dir[1]), 
 		      RealPart(ref_dir[2]));
 	    }
+	    */
 	  }
 	}
       }
@@ -2616,6 +2593,7 @@ void TACSMeshLoader::writeBDFConstitutive( FILE *fp ){
 	matCount += 4;
       }
 
+      /*
       EBStiffness * econ = dynamic_cast<EBStiffness*>(con);
       if (econ){
 	// Flag the constiutive object as being written
@@ -2637,7 +2615,8 @@ void TACSMeshLoader::writeBDFConstitutive( FILE *fp ){
 	
 	matCount += 1;
       }
-    
+      */
+
       if (conWritten == 0){
 	printf("Cannot write BDF file. Must consist of only constitutive \
 objects that inherit from FSDTStiffness and EBStiffness\n");

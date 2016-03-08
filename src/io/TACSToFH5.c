@@ -40,27 +40,6 @@ TACSToFH5::TACSToFH5( TACSAssembler * _tacs,
   nstresses = 0;
   nextras = 0;
 
-  max_design_vars = 0;
-  int numElements = tacs->getNumElements();
-  TACSElement ** elements = tacs->getElements();
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i] && elements[i]->getElementType() == elem_type){
-      ndisplacements = elements[i]->numDisplacements();
-      nstresses = elements[i]->numStresses();
-      nextras = elements[i]->numExtras();
-      int ndvs = elements[i]->getNumDesignVars();
-      if (ndvs > max_design_vars){
-	max_design_vars = ndvs;
-      }
-    }
-  }
-
-  int max_dvs = max_design_vars;
-  MPI_Allreduce(&max_dvs, &max_design_vars, 1, MPI_INT, 
-		MPI_MAX, tacs->getMPIComm());
-
-  num_design_vars = tacs->getNumDesignVars();
-
   // Count up the number of values that will be output for each point
   // in the mesh
   nvals = 0;
@@ -81,9 +60,6 @@ TACSToFH5::TACSToFH5( TACSAssembler * _tacs,
   }
   if (write_flag & TACSElement::OUTPUT_COORDINATES){
     nvals += ncoordinates;
-  }
-  if (write_flag & TACSElement::OUTPUT_DESIGN_VARIABLES){
-    nvals += max_design_vars;
   }
 
   // Get a comma separated list of the variable names
@@ -141,10 +117,9 @@ void TACSToFH5::setComponentName( int comp_num, const char * group_name ){
   Write the data stored in the TACSAssembler object to a file
   
   input:
-  load_case: the load case number corresponding to the output
   filename:  the name of the file to create
 */
-void TACSToFH5::writeToFile( int load_case, const char * filename ){
+void TACSToFH5::writeToFile( const char * filename ){
   int rank, size;
   MPI_Comm_rank(tacs->getMPIComm(), &rank);
   MPI_Comm_size(tacs->getMPIComm(), &size);
@@ -206,19 +181,8 @@ void TACSToFH5::writeToFile( int load_case, const char * filename ){
   memset(data, 0, len*sizeof(double));
 
   // Get the output data from TACS
-  tacs->getOutputData(load_case, elem_type,
-		      write_flag, data, nvals);
+  tacs->getOutputData(elem_type, write_flag, data, nvals);
   
-  if (write_flag & TACSElement::OUTPUT_DESIGN_VARIABLES){
-    // Get the output data for the design variables
-    TacsScalar * x = new TacsScalar[ num_design_vars ];
-    tacs->getDesignVars(x, num_design_vars);
-    tacs->getOutputDesignVarData(x, num_design_vars, elem_type, 
-				 &data[nvals-max_design_vars],
-				 nvals);
-    delete [] x;
-  }
-
   dim1 = node_range[rank+1] - node_range[rank];
   dim2 = nvals;
 
@@ -332,17 +296,6 @@ char * TACSToFH5::getElementVarNames(){
     size_t str_len = 4*ne;
     output_names[5] = new char[ str_len ];
     strcpy(output_names[5], "1x,1y,1z,2x,2y,2z,3x,3y,3z");
-  }
-  if (write_flag & TACSElement::OUTPUT_DESIGN_VARIABLES){
-    size_t str_len = 1 + 5*max_design_vars;   
-    char * temp = new char[ str_len ];
-    sprintf(temp, "x%d", 0);
-    for ( int i = 1; i < max_design_vars; i++ ){
-      size_t len = strlen(temp);
-      sprintf(&temp[len], ",x%d", i);
-    }
-    
-    output_names[6] = temp;
   }
 
   // Count up the size of the elem_vars string
