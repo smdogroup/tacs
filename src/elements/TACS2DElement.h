@@ -1245,8 +1245,8 @@ TacsScalar TACS2DElement<NUM_NODES>::getJacobianXptSens( TacsScalar * hXptSens,
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getStrain( TacsScalar strain[], 
 					  const double pt[],
-					  const TacsScalar vars[], 
-					  const TacsScalar Xpts[] ){
+					  const TacsScalar Xpts[],
+					  const TacsScalar vars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
