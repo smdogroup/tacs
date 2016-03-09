@@ -211,7 +211,6 @@ class TACSElement : public TACSOptObject {
   static const unsigned int OUTPUT_STRESSES = 8;
   static const unsigned int OUTPUT_EXTRAS = 16;
   static const unsigned int OUTPUT_COORDINATES = 32;
-  static const unsigned int OUTPUT_DESIGN_VARIABLES = 64;
 
   TACSElement( int _componentNum = 0 ){
     componentNum = _componentNum;

@@ -1,0 +1,161 @@
+\documentclass{article}
+\usepackage[linkcolor=black,colorlinks]{hyperref}
+\usepackage{amsmath}
+\usepackage{setspace}
+\usepackage[margin=1.25in]{geometry}
+
+\title{An installation guide for TACS}
+\author{Graeme Kennedy}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+The Toolbox for the Analysis of Composite Structures (TACS) is a
+parallel finite-element code written in C++, with an optional python
+interface. The architecture of TACS is designed with gradient-based
+optimization in mind. There are built-in routines for evaluating
+functions of interest and their sensitivities. TACS is object oriented
+and can be extended to include new elements, constitutive properties
+or functions of interest.
+
+There are several software package dependencies required to install
+TACS. The dependencies are divided into the following categories:
+\begin{enumerate}
+\item Dependencies for the C++ interface
+\item Dependencies for the python interface
+\end{enumerate}
+
+\section{Checking out the code}
+
+The TACS source is located at:
+\url{https://bitbucket.org/mdolab/tacs}. Using mercurial, checkout the
+source by typing \texttt{hg clone
+  https://user@bitbucket.org/mdolab/tacs}
+
+Also, download the file: \texttt{TACS\_extern.tar.gz} and place it in
+the directory \texttt{TACS/extern}. Extract it and follow the
+instructions in the README file in this directory. Note also that
+\texttt{f5totec} is located in this directory as well.
+
+The first step after checking out TACS is to copy
+\texttt{Makefile.in.info} to \texttt{Makefile.in} in the TACS root
+directory. \texttt{Makefile.in} contains the installation paths of the
+libraries used by TACS. In particular, set \texttt{TACS\_DIR} to the
+root directory of the TACS installation.
+
+\section{Installing the C++ interface}
+
+TACS can be used as a stand-alone C++ code without the python-level
+interface. The C++ source is located under \texttt{TACS/src}. 
+
+The requirements for the installation are:
+%
+\begin{enumerate}
+\item An MPI installation implementing the MPI 2.0 Standard
+  \url{http://www.mcs.anl.gov/research/projects/mpi/}
+\item \texttt{LAPACK}: The standard linear algebra package
+\item \texttt{METIS 4.0}: Serial graph-partitioner
+  \url{http://glaros.dtc.umn.edu/gkhome/views/metis}
+\item \texttt{f5totec}: A utility for converting .f5 files generated
+  by TACS to a tecplot compatible format
+\item \texttt{TecIO}: Tecplot binary format conversion code
+\item \texttt{AMD}: A package for computing the minimum degree
+  ordering \url{http://www.cise.ufl.edu/research/sparse/amd/}
+  \begin{itemize}
+  \item \texttt{UFconfig}: Required for the \texttt{AMD} package:
+    \url{http://www.cise.ufl.edu/research/sparse/UFconfig/}
+  \end{itemize}
+\end{enumerate}
+
+The external programs: \texttt{METIS}, \texttt{AMD}, \texttt{UFconfig}
+and \texttt{TecIO} are part of \texttt{TACS\_extern.tar.gz} file.
+
+Notes: An MPI 2.0 standard compliant compiler is essential. If one is
+not available, the code will not compile correctly. When you
+think everything is ready, type \texttt{make} in the TACS
+directory. This makes all the TACS-only source.
+
+\subsection{f5totec}
+
+\texttt{f5totec} is a conversion utility created by Graeme Kennedy for
+the conversion of .f5 files output from TACS to a tecplot compatible
+format. I recommend putting \texttt{f5totec} on your path. One way is
+to create a symbolic link in your local \texttt{bin} directory to
+f5totec. Note that this utility converts one .f5 file at a time. The
+usage is \texttt{f5totec input [output]}, if no output file is
+specified, the output name is taken as the input name with the
+extension .plt.
+
+\subsection{Tutorial example}
+
+There is a simple tutorial example in \texttt{TACS/tutorial}. Once the
+C++ interface has been compiled, try making and running
+\texttt{plate\_example.c}.
+
+\section{Installing the python interface}
+
+The python interface is generated in the \texttt{TACS/python}
+directory.  The interface is generated using program \texttt{SWIG}
+which can be obtained here: \url{http://www.swig.org/}. Make sure you
+use version \texttt{SWIG 1.3.40} or greater.
+
+The python interface requires the following packages:
+%
+\begin{enumerate}
+\item \texttt{numpy}: Numerical python packages
+\item \texttt{mpi4py}: Python interface for MPI
+\end{enumerate}
+
+You will need a recent version of python - at least python2.5 or
+greater (I have not tested with python 3.0). It is possible to install
+a local version of python if an old version is installed.
+
+Specify the location of the python include files using
+\texttt{PYTHON\_DIR}.  If you're using the native version then the
+director is usually: \texttt{PYTHON\_DIR=/usr/include/python2.x}. If
+you're using a locally installed version, point this path to the local
+header files.
+
+Once the packages have been installed, and you have a recent version
+of SWIG, the python interface can be installed by entering
+\texttt{TACS/python} and typing make.
+
+\subsection{NumPy}
+
+NumPy is available from here \url{http://numpy.scipy.org/}. Make sure
+to specify the location of the numpy include files in
+\texttt{Makefile.in}. This can be found by starting python at the command line
+then typing: \texttt{import numpy; numpy.get\_include()}.
+
+\subsection{mpi4py}
+ 
+\texttt{mpi4py} can be downloaded from here:
+\url{http://code.google.com/p/mpi4py/}.  Install the package using:
+\texttt{python setup.py build} then \texttt{python setup.py
+  install}. If you don't have root access use either the
+\texttt{prefix} or the \texttt{home} options to specify the local
+installation location. The line in the \texttt{Makefile.in} can be
+found by starting python at the command line and typing \texttt{import
+  mpi4py; mpi4py.get\_include()}.
+
+\section{Installing TriPan and its python interface}
+
+TriPan is a full three-dimensional panel code that is tightly
+integrated with TACS. Running TriPan requires the installation of
+PETSc: \url{http://www.mcs.anl.gov/petsc/petsc-as/}.
+TriPan works with PETSc 3.2. Earlier versions of PETSc are incompatible
+with TriPan due to various modifications that have been made to the
+PETSc API.
+
+I recommend installing PETSc with the options:
+
+\texttt{./configure --with-pic --with-cc=mpicc --with-fc=mpif90
+  --with-cxx=mpicxx --with -debugging=0 --with-shared-libraries}
+
+After installing PETSc, you should be able to compile TriPan and the
+python interface to TriPan in \texttt{tripan/python}.
+
+\end{document}

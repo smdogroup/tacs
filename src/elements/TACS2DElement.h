@@ -1140,7 +1140,7 @@ void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       
       // Get the pointwise mass
       TacsScalar ptmass[3];
-      stiff->pointwiseMass(pt, ptmass);
+      stiff->getPointwiseMass(pt, ptmass);
 
       // Fill-in the upper-portion of the matrix
       for ( int j = 0; j < NUM_NODES; j++ ){

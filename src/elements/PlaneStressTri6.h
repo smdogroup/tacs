@@ -14,7 +14,7 @@ class PlaneStressTri6 : public TACS2DElement<6> {
   
     // Return the name of this element
   // -------------------------------
-  const char * elementName() const { return elemName; }
+  const char * elementName(){ return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------

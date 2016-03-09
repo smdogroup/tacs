@@ -40,6 +40,18 @@ TACSToFH5::TACSToFH5( TACSAssembler * _tacs,
   nstresses = 0;
   nextras = 0;
 
+  // Get the size of the outputs
+  int numElements = tacs->getNumElements();
+  TACSElement ** elements = tacs->getElements();
+  for ( int i = 0; i < numElements; i++ ){
+    if (elements[i] && elements[i]->getElementType() == elem_type){
+      ndisplacements = elements[i]->numDisplacements();
+      nstresses = elements[i]->numStresses();
+      nextras = elements[i]->numExtras();
+      break;
+    }
+  }
+
   // Count up the number of values that will be output for each point
   // in the mesh
   nvals = 0;
