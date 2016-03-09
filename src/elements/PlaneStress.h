@@ -71,7 +71,7 @@ template <int order>
 const char * PlaneStress<order>::elemName = "PlaneStress";
 
 /*
-  Get the number of Gauss points in the quadrature scheme
+  Get the number of Gauss points in the Gauss quadrature scheme
 */
 template <int order>
 int PlaneStress<order>::getNumGaussPts(){
@@ -79,7 +79,7 @@ int PlaneStress<order>::getNumGaussPts(){
 }
 
 /*
-  Get the quadrature points
+  Get the Gauss points
 */
 template <int order>
 double PlaneStress<order>::getGaussWtsPts( int npoint, double pt[] ){
