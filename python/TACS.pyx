@@ -73,7 +73,7 @@ cdef class pyTACSObject:
         return
 
 # Python class for corresponding instance TACSAssembler
-cdef class pyTACSAssembler:
+cdef class pyTACSAssembler(pyTACSObject):
     cdef TACSAssembler *this_ptr
     def __cinit__(self, MPI.Comm comm, int numOwnedNodes,
                   int varsPerNode, int numElements, int numNodes,
@@ -106,10 +106,8 @@ cdef class pyTACSAssembler:
                                <int*>tacsNodeNums1.data,num_nodes)
         
     def setDependentNodes(self, 
-                          np.ndarray[int, ndim=1, mode='c']
-    depNodeIndex, 
-                          np.ndarray[int, ndim=1, mode='c']
-    depNodeTolLocal,
+                          np.ndarray[int, ndim=1, mode='c']depNodeIndex, 
+                          np.ndarray[int, ndim=1, mode='c']depNodeTolLocal,
                           np.ndarray[TacsScalar, ndim=1, mode='c']
                           depNodeWeights):
         '''
@@ -1217,7 +1215,7 @@ cdef class pyBVec(pyTACSVec):
         int                       The length of the vector
         len * sizeof(TacsScalar)  The vector entries
         '''
-        return self.this_ptr.writeToFile(&checkpoint[0])
+        return self.this_ptr.writeToFile(&filename[0])
 
     def readFromFile(self, char*filename=''):
         '''
@@ -1230,7 +1228,7 @@ cdef class pyBVec(pyTACSVec):
         int                       The length of the vector
         len * sizeof(TacsScalar)  The vector entries
         '''
-        return self.this_ptr.writeToFile(&checkpoint[0])
+        return self.this_ptr.readFromFile(&filename[0])
 
 # "Wrap" the abstract base class TACSMat
 cdef class pyTACSMat:
@@ -1250,10 +1248,702 @@ cdef class pyTACSMat:
         return
 
 # Python class for corresponding instance PMat
-cdef class pyPMat:
+cdef class pyPMat(pyTACSMat):
    cdef PMat *this_ptr
 
    def __cinit__(self):
        self.this_ptr = new PMat()
 
-   def __dealloc 
+   def __dealloc__(self):
+       del self.this_ptr
+    
+   def zeroEntries(self):
+       '''
+       Zero the entries in the matrix
+       '''
+       self.this_ptr.zeroEntries()
+
+   def applyBCs(self):
+       '''
+       Apply the Dirichlet boundary conditions to the matrix
+       '''
+       self.this_ptr.applyBCs()
+
+   def mult(self, pyTACSVec x, pyTACSVec y):
+       '''
+       Matrix multiplication
+       '''
+       self.this_ptr.mult(x.this_ptr, y.this_ptr)
+
+   def copyValues(self, pyPMat mat):
+       '''
+       Copy the values from mat         
+       '''
+       self.this_ptr.copyValues(mat.this_ptr) 
+
+   def scale(self, TacsScalar alpha):
+       '''
+       Scale the entries in the matrix by alpha
+       '''
+       self.this_ptr.scale(alpha)
+
+   def axpy(self, TacsScalar alpha, pyTACSMat mat):
+       '''
+       Compute y <- y + alpha * x
+       '''
+       self.this_ptr.axpy(alpha, mat.this_ptr)
+
+   def axpby(self, TacsScalar alpha, TacsScalar beta, pyPMat mat):
+       '''
+       Compute y <- alpha * x + beta * y
+       '''
+       self.this_ptr.axbpy(alpha, beta, mat.this_ptr)
+        
+cdef class pyDistMat(pyTACSMat):
+   cdef DistMat *this_ptr
+   def __cinit__(self):
+       self.this_ptr = new DistMat()
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def zeroEntries(self):
+       '''
+       Zero the entries in the matrix
+       '''
+       self.this_ptr.zeroEntries()
+
+   def applyBCs(self):
+       '''
+       Apply the Dirichlet boundary conditions to the matrix
+       '''
+       self.this_ptr.applyBCs()
+
+   def mult(self, pyTACSVec x, pyTACSVec y):
+       '''
+       Matrix multiplication
+       '''
+       self.this_ptr.mult(x.this_ptr, y.this_ptr)
+
+cdef class pyScMat(pyTACSMat):
+   cdef ScMat *this_ptr
+   def __cinit__(self):
+       self.this_ptr = new ScMat()
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def zeroEntries(self):
+       '''
+       Zero the entries in the matrix
+       '''
+       self.this_ptr.zeroEntries()
+
+   def applyBCs(self):
+       '''
+       Apply the Dirichlet boundary conditions to the matrix
+       '''
+       self.this_ptr.applyBCs()
+
+   def mult(self, pyTACSVec x, pyTACSVec y):
+       '''
+       Matrix multiplication
+       '''
+       self.this_ptr.mult(x.this_ptr, y.this_ptr)
+
+   def copyValues(self, pyScMat mat):
+       '''
+       Copy the values from mat         
+       '''
+       self.this_ptr.copyValues(mat.this_ptr) 
+
+   def scale(self, TacsScalar alpha):
+       '''
+       Scale the entries in the matrix by alpha
+       '''
+       self.this_ptr.scale(alpha)
+
+   def axpy(self, TacsScalar alpha, pyTACSMat mat):
+       '''
+       Compute y <- y + alpha * x
+       '''
+       self.this_ptr.axpy(alpha, mat.this_ptr)
+
+   def axpby(self, TacsScalar alpha, TacsScalar beta, pyScMat mat):
+       '''
+       Compute y <- alpha * x + beta * y
+       '''
+       self.this_ptr.axbpy(alpha, beta, mat.this_ptr)
+        
+cdef class pyFEMat(pyTACSMat):
+   cdef FEMat *this_ptr
+   def __cinit__(self):
+       self.this_ptr = new FEMat()
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def zeroEntries(self):
+       '''
+       Zero the entries in the matrix
+       '''
+       self.this_ptr.zeroEntries()
+
+   def applyBCs(self):
+       '''
+       Apply the Dirichlet boundary conditions to the matrix
+       '''
+       self.this_ptr.applyBCs()
+
+   def mult(self, pyTACSVec x, pyTACSVec y):
+       '''
+       Matrix multiplication
+       '''
+       self.this_ptr.mult(x.this_ptr, y.this_ptr)
+       
+# Wrap the abstract base class KSMPrint
+cdef class pyKSMPrint(pyTACSObject):
+   '''
+   KSMPrint base class
+   '''
+   cdef CyKSMPrint *this_ptr
+   def __init__(self):
+       self.this_ptr = new CyKSMPrint()
+       self.this_ptr.printResidual(_printresidual)
+
+   def __dealloc__(self):
+       del self.this_ptr
+cdef class pyKSMPrintStdout(pyKSMPrint):
+   cdef pyKSMPrintStdout *this_ptr
+   def __cinit__(self, char*descript = '', int rank, int freq):
+       '''
+       KSMPrint standard print class
+       '''
+       self.this_ptr = new KSMPrintStdout(&descript[0], rank, freq)
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def printResidual(self, int iterate, TacsScalar res):
+       '''
+       Print the residual norm for the given iteration on the root processor
+
+       input:
+       iter:  the iteration count
+       res:   the residual normal
+       '''
+       self.this_ptr.printResidual(iterate, res)
+
+# Wrap the abstract pre conditioner class
+cdef class pyTACSPc(pyTACSObjec):
+   cdef CyTACSPc *this_ptr
+   def __init__(self):
+       '''
+       Abstract Preconditioner base class TACSPc
+       '''
+       self.this_ptr = new CyTACSPc()
+       self.this_ptr.applyFactor(_applyFactor)
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+# Wrap interpolation class BVecInterp
+cdef class pyBVecInterp(pyTACSObject):
+   cdef BVecInterp *this_ptr
+   def __cinit__(self):
+       '''
+       Interpolation class BVecInterp
+       '''
+       self.this_ptr = new BVecInterp()
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def mult(self, pyBVec inVec, pyBvec outVec):
+       '''
+       Perform the interpolation from inVec to outVec:
+
+       Interp*inVec -> outVec
+    
+       input:
+       inVec:  the input vector
+
+       output:
+       outVec: the interpolated output vector
+       '''
+       self.this_ptr.mult(inVec.this_ptr, outVec.this_ptr)
+        
+   def multAdd(self, pyBVec inVec, pyBVec addVec, pyBVec outVec):
+       '''
+       Perform the interpolation from inVec to outVec:
+
+       addVec + Interp*inVec -> outVec
+    
+       input:
+       inVec:  the input vector
+       addVec: the vector to add to the output
+
+       output:
+       outVec: the interpolated output vector
+       '''
+       self.this_ptr.multAdd(inVec.this_ptr, addVec.this_ptr, outVec.this_ptr)
+
+   def multTranspose(self, pyBvec inVec, pyBVec outVec):
+       '''
+       Perform the interpolation from inVec to outVec:
+
+       Interp*inVec -> outVec
+
+       input:
+       inVec:  the input vector
+
+       output:
+       outVec: the interpolated output vector
+       '''
+       self.this_ptr.multTranspose(inVec.this_ptr, outVec.this_ptr)
+
+   def multTransposeAdd(self, pyBVec inVec, pyBVec addVec, pyBVec outVec):
+       '''
+       Perform the interpolation from inVec to outVec:
+
+       addVec + Interp*inVec -> outVec
+
+       input:
+       inVec:  the input vector
+       addVec: the vector to add to the output
+
+       output:
+       outVec: the interpolated output vector
+       '''
+       self.this_ptr.multTransposeAdd(inVec.this_ptr, addVec.this_ptr, outVec.this_ptr)
+
+cdef class pyAdditiveSchwarz(pyTACSPc):
+   cdef AdditivieSchwarz *this_ptr
+   def __cinit__(self, pyPMat mat, int levFill, double fill):
+       '''
+       Additive Schwarz preconditioner
+       '''
+       self.this_ptr = new AdditiveSchwarz(mat.this_ptr, levFill, fill)
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def factor(self):
+       self.this_ptr.factor()
+
+   def applyFactor(self, pyTACSVec xvec, pyTACSVec yvec):
+       '''
+       Apply the preconditioner to the input vector
+
+       For the additive Schwarz method that simply involves apply the ILU 
+       factorization of the diagonal to the input vector:
+
+       y = U^{-1} L^{-1} x
+       '''
+       self.this_ptr.applyFactor(xvec.this_ptr,yvec.this_ptr)
+
+   def applyFactor(self, pyTACSVec xvec):
+       '''
+       Apply the preconditioner to the input vector
+
+       For the additive Schwarz method that simply involves apply the ILU 
+       factorization of the diagonal to the input vector:
+
+       y = U^{-1} L^{-1} y
+       '''
+       self.this_ptr.applyFactor(xvec.this_ptr)
+
+cdef class pyApproximateSchur(pyTACSPc):
+   cdef ApproximateSchur *this_ptr
+   def __cinit__(self, pyPMat mat, int levFill, double fill,
+                 int inner_gmres_iters, double inner_rtol = 1e-3,
+                 double inner_atol = 1e-30):
+       '''
+       Approximate Schur preconditioner class
+       '''
+       self.this_ptr = new ApproximateSchur(mat.this_ptr, levFill, fill,
+                                            inner_gmres_iters, inner_rtol,
+                                            inner_atol) 
+   
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def setMonitor(self, pyKSMPrint ksm_print):
+       '''
+       Monitor the output to the file/screen
+       '''
+       self.this_ptr.setMonitor(ksm_print.this_ptr)
+       
+   def factor(self):
+       '''
+       Factor preconditioner based on the values in the matrix.
+       '''
+       self.this_ptr.factor()
+
+   def applyFactor(self, pyTACSVec xvec, pyTACSVec yvec):
+       '''
+       Apply the factorization for the approximate Schur method
+       '''
+       self.this_ptr.applyFactor(xvec.this_ptr, yvec.this_ptr)
+
+cdef class pyPcScMat(pyTACSPc):
+   cdef PcScMat *this_ptr
+   def __cinit__(self, pyScMat smat, int levFill, double fill,
+                 int reorder_schur_complement):
+       '''
+       Global Schur preconditioner
+       '''        
+       self.this_ptr = new PcScMat(smat.this_ptr, levFill, fill,
+                                   reorder_schur_complement)
+   def __deallloc__(self):
+       del self.this_ptr
+       
+   def factor(self):
+       '''
+       Factor preconditioner based on the values in the matrix.
+       '''
+       self.this_ptr.factor()
+
+   def applyFactor(self, pyTACSVec xvec, pyTACSVec yvec):
+       '''
+       Apply the factorization for the approximate Global Schur method
+       '''
+       self.this_ptr.applyFactor(xvec.this_ptr, yvec.this_ptr)
+
+   def setMonitorFactorFlag(self, int flag):
+       '''
+       Set the flag that prints out the factorization time
+
+       input:
+       flag: the flag value for the factor-time monitor
+       '''
+       self.this_ptr.setMonitorFactorFlag(flag)
+
+   def setMonitorBackSolveFlag(self, int flag):
+       '''
+       Set the flag that prints out the factorization time
+
+       input:
+       flag: the flag value for the factor-time monitor
+       '''
+       self.this_ptr.setMonitorBackSolveFlage(flag)
+
+   def setAlltoallAssemblyFlag(self, int flag):
+       '''
+       Set the flag that controls which matrix assembly code to use.
+
+       This flag controls whether the Alltoall version of the PDMat matrix
+       assembly is used. When true, this uses a faster, but more
+       memory-intensive version of the code. Be aware that this can cause
+       the code to run out of memory, but can be very beneficial in terms
+       of CPU time.  
+
+       input:
+       flag:  the flag value to use for the Alltoall flag
+       '''
+       self.this_ptr.setAlltoallAssemblyFlag(flag)
+
+cdef class pyTACSMg(pyTACSPc):
+   cdef TACSMg *this_ptr
+   def __cinit__(self, MPI.Comm comm, int nlevels, double sor_omega
+                 int sor_iters, int sor_symmetric):
+       '''
+       Set up the TACS multi-grid object with a given number of multi-grid
+       levels.
+
+       Each level is initialized with the given successive over relaxation
+       (SOR) factor (sor_omega), and the number of relaxations to perform
+       at each level. The flag sor_symmetric indicates whether or not to
+       use a symmetric SOR iteration.
+
+       input:
+       comm:          MPI communicator
+       nlevels:       number of multi-grid levels
+       sor_omega:     SOR factor
+       sor_iters:     number of SOR iterations to perform at each level
+       sor_symmetric: symmetric SOR flag
+
+       '''
+       # Convert the communicator
+       cdef MPI_Comm c_comm = comm.ob_mpi
+       self.this_ptr = new TACSMg(c_comm, nlevels, sor_omega,
+                                  sor_iters, sor_symmetric)
+
+   def __dealloc__(self):
+      del self.this_ptr
+
+   def setLevel(self, int level, pyTACSAssembler tacs, pyBVecInterp restrct,
+                pyBVecInterp interp, int iters = 1):
+       '''
+       Set the data for the given multi-grid level.
+
+       This consists of setting the TACS finite-element model, and the
+       restriction and interpolation operators for this level. (These are
+       not requried for the lowest level)
+
+       input:
+       level:     the multigrid level
+       tacs:      the TACSAssembler object
+       restrict:  the restriction operator
+       interp:    the interpolation operator
+       iters:     the number of iterations to take at this level
+       '''
+       self.this_ptr.setLevel(level, tacs.this_ptr, restrct.this_ptr,
+                              interp.this_ptr, iters)
+   def setVariables(self, pyBVec vec):
+       '''
+       Set the state variables for this, and all subsequent levels.
+
+       input:
+       vec:      the input vector of state variables
+       '''
+       self.this_ptr.setVariables(vec.this_ptr)
+
+   def setDesignVars(self, np.ndarray[TacsScalar, ndim=1,mode='c']dvs):
+       '''
+       Set the design variables for all multi-grid levels.
+
+       This call ensures that all the TACSAssembler objects, and the
+       objects they reference, share the same set of design variables.
+
+       input:
+       dvs:     the design variable values
+       '''
+       # Number of design variables
+       ndvs = dvs.shape[0]
+       self.setDesignVars(<TacsScalar*>dvs.data, ndvs)
+
+   def assembleMatType(self, ElementMatrixType matType,
+                       MatrixOrientation matOr):
+       '''
+       Set up the multi-grid data by computing the matrices at each
+       multi-grid level within the problem.
+       '''
+       self.this_ptr.assembleMatType(matType, matOr)
+
+   def applyFactor(self, pyTACSVec x, pyTACSVec y):
+       '''
+       Apply the multi-grid preconditioner to try and solve the problem
+       x = A^{-1} b
+
+       Assume an initial guess of zero.
+       '''
+       self.this_ptr.applyFactor(x.this_ptr, y.this_ptr)
+
+   def factor(self):
+       '''
+       Factor the SOR objects for each level of multi-grid, and 
+       the direct solver for the lowest level.
+       '''
+       self.this_ptr.factor()
+
+   def solve(self, pyBVec bvec, pyBVec xvec, int max_iters,
+             double rtol, double atol):
+       '''
+       Solve the problem by repeatedly applying the multi-grid method
+       '''
+       self.this_ptr.solve(bvec.this_ptr, xvec.this_ptr,
+                           max_iters, rtol, atol)       
+       
+   def getMat(self, int level):
+       '''
+       Retreive the matrix at the specified multi-grid level
+       '''
+       return self.this_ptr.getMat(level)
+
+   def setMonitor(self, pyKSMPrint monitor):
+       '''
+       Set the monitor to use internally for printing out convergence data.
+       '''
+       self.this_ptr.setMonitor(monitor.this_ptr)
+
+# Wrap the abstract base KSM class
+cdef class pyTACSKsm(pyTACSObject):
+   cdef CyTACSKsm *this_ptr
+   def __init__(self):
+       '''
+       The abstract Krylov-subspace method class
+  
+       Solve the linear system A*x = b with a Krylov subspace method,
+       possibly using some preconditioner.
+       '''
+       self.this_ptr = new CyTACSKsm()
+       self.this_ptr.solve(_solve)
+       self.this_ptr.setTolerances(_settolerances)
+       self.this_ptr.setMonitor(_setmonitor)
+   def __dealloc__(self):
+       del self.this_ptr
+
+cdef class pyGMRES(pyKsm):
+   cdef GMRES *this_ptr
+   def __cinit__(self, pyTACSMat mat, pyTACSPc pc, int m, int nrestart, int isFlexible = NULL ):
+       '''
+       Create a GMRES object for solving a linear system with or without a preconditioner.
+
+       This automatically allocates the requried Krylov subspace on
+       initialization.
+
+       input:
+       mat:        the matrix operator
+       pc:         the preconditioner
+       m:          the size of the Krylov subspace
+       nrestart:   the number of restarts before we give up
+       isFlexible: is the preconditioner actually flexible? If so use FGMRES
+       '''
+       if isFlexible:
+           self.this_ptr.GMRES(mat.this_ptr, pc.this_ptr, m, nrestart, isFlexible)
+
+       else:
+           self.this_ptr.GMRES(mat.this_ptr, m, nrestart)
+
+   def solve(self, pyTACSVec b, pyTACSVec x, int zero_guess = 1):
+       '''
+       Try to solve the linear system using GMRES.
+
+       The following code tries to solve the linear system using GMRES (or
+       FGMRES if the preconditioner is flexible.)
+
+       input:
+       b:          the right-hand-side
+       x:          the solution vector (with possibly significant entries)
+       zero_guess: flag to indicate whether to zero entries of x before solution
+       '''
+       self.this_ptr.solve(b.this_ptr, x.this_ptr, zero_guess)
+
+   def setTolerances(self, double rtol, double atol):
+       '''
+       Set the relative and absolute tolerances used for the stopping
+       criterion.
+
+       input:
+       rtol: the relative tolerance ||r_k|| < rtol*||r_0||
+       atol: the absolute tolerancne ||r_k|| < atol
+       '''
+       self.this_ptr.setTolerances(rtol, atol)
+
+   def setMonitor(self, pyKSMPrint monitor):
+       '''
+       Set the object to control how the convergence history is displayed
+       (if at all)
+
+       input:
+       monitor: the KSMPrint monitor object
+       '''
+       self.this_ptr.setMonitor(monitor.this_ptr)
+
+cdef class pyGCROT(pyTACSKsm):
+   cdef GCROT* this_ptr
+   def __cinit__(self, pyTACSMat mat, pyTACSPc pc, int outer_iters,
+                 int max_outer, int inner_iters, int isFlexible = NULL):
+       '''
+       Create the GCROT linear system solver
+
+       This constructor creates an object that uses a simplified variant of
+       GCROT described by Hicken and Zingg with or without a preconditioner.
+
+       input:
+       mat:        the matrix operator
+       pc:         the preconditioner
+       outer:      the number of outer vectors
+       max_outer:  the maximum number of outer iterations before we give up
+       msub:       the size of the underlying GMRES (FGMRES) subspace
+       isFlexible: flag to indicate required use of flexible GCROT       
+       '''
+       # With preconditioner
+       if isFlexible:
+           self.this_ptr = new GCROT(mat.this_ptr, pc.this_ptr, outer_iters,
+                                     max_outer, inner_iters, isFlexible)
+       # Without preconditioner
+       else:
+           self.this_ptr = new GCROT(mat.this_ptr, NULL, outer_iters,
+                                     max_outer, inner_iters, 0)
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def solve(self, pyTACSVec b, pyTACSVec x, int zero_guess = 1):
+       '''
+       Try to solve the linear system using GMRES.
+
+       The following code tries to solve the linear system using the
+       given (possibly flexible) preconditioner
+
+       input:
+       b:          the right-hand-side
+       x:          the solution vector (with possibly significant entries)
+       zero_guess: flag to indicate whether to zero entries of x before solution
+       '''
+       self.this_ptr.solve(b.this_ptr, x.this_ptr, zero_guess)
+
+   def setTolerances(self, double rtol, double atol):
+       '''
+       Set the relative and absolute tolerances used for the stopping
+       criterion.
+
+       input:
+       rtol: the relative tolerance ||r_k|| < rtol*||r_0||
+       atol: the absolute tolerancne ||r_k|| < atol
+       '''
+       self.this_ptr.setTolerances(rtol, atol)
+
+   def setMonitor(self, pyKSMPrint monitor):
+       '''
+       Set the object to control how the convergence history is displayed
+       (if at all)
+
+       input:
+       monitor: the KSMPrint monitor object
+       '''
+       self.this_ptr.setMonitor(monitor.this_ptr)    
+
+cdef class pyPCG(pyTACSKsm):
+   cdef PCG *this_ptr
+   def __cinit__(self, pyTACSMat mat, pyTACSPc pc, int reset, int nouter):
+       '''
+       The preconditioned conjugate gradient method
+
+       This object is used to perform the preconditioned conjugate gradient
+       method for a linear system. The preconditioner cannot be flexible.
+
+       input:
+       mat:    the matrix operator
+       pc:     the preconditioner operator
+       reset:  reset the CG iterations every 'reset' iterations
+       nouter: the number of resets to try before giving up
+       '''
+       self.this_ptr = new PCG(mat.this_ptr, pc.this_ptr, reset, nouter)
+
+   def __dealloc__(self):
+       del self.this_ptr
+
+   def solve(self, pyTACSVec b, pyTACSVec x, int zero_guess = 1):
+       '''
+       Solve the linear system with the preconditioned conjugate gradient
+       method
+
+       input:
+       b:          the right-hand-side
+       x:          the solution vector
+       zero_guess: flag to indicate whether to start with x = 0
+       '''
+       self.this_ptr(b.this_ptr, x.this_ptr, zero_guess)
+
+   def setTolerances(self, double rtol, double atol):
+       '''
+       Set the relative and absolute tolerances used for the stopping
+       criterion.
+
+       input:
+       rtol: the relative tolerance ||r_k|| < rtol*||r_0||
+       atol: the absolute tolerancne ||r_k|| < atol
+       '''
+       self.this_ptr.setTolerances(rtol, atol)
+
+   def setMonitor(self, pyKSMPrint monitor):
+       '''
+       Set the object to control how the convergence history is displayed
+       (if at all)
+
+       input:
+       monitor: the KSMPrint monitor object
+       '''
+       self.this_ptr.setMonitor(monitor.this_ptr)
