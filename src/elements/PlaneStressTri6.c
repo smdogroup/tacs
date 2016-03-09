@@ -57,10 +57,41 @@ PlaneStressTri6::getShapeFunctions( const double pt[], double N[]){
   
 }
 
-PlaneStressTri6::getNumGassPts(){
+/*
+  Get the number of Gauss points in the quadrature scheme
+*/
+int PlaneStressTri6::getNumGaussPts(){
     return 4;
 }
 
-PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
-    
+/*
+  Get the quadrature points
+*/
+TacsScalar PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
+    // Set coordinates of point specified by num input in pt[]
+    // Return weight of point as TacsScalar output
+    switch (num) {
+        case 0:	
+            pt[0] = 1.0 / 3.0;
+            pt[1] = 1.0 / 3.0;
+            return -27.0 / 48.0;
+
+        case 1:	
+            pt[0] = 1.0 / 5.0;
+            pt[1] = 3.0 / 5.0;
+            return 25.0 / 48.0;
+
+        case 2:	
+            pt[0] = 1.0 / 5.0;
+            pt[1] = 1.0 / 5.0;
+            return 25.0 / 48.0;
+
+        case 3:	
+            pt[0] = 3.0 / 5.0;
+            pt[1] = 1.0 / 5.0;
+            return 25.0 / 48.0;
+
+        default:	
+            break;
+    }
 }
