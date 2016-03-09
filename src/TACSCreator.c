@@ -195,7 +195,7 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     }
 
     // Set up the element partition so that it is sorted so that
-    // we can find 
+    // we can quickly find the elements associated with a processor
     int *elem_part = new int[ num_elements ];
     for ( int k = 0; k < num_elements; k++ ){
       elem_part[k] = k;
@@ -211,8 +211,6 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     int *tacs_nodes = new int[ elem_node_ptr[num_elements] ];
     int *elem_ptr = new int[ num_elements+1 ];
     int *elem_conn = new int[ elem_node_ptr[num_elements] ];
-
-
     int *elem_ids = new int[ num_elements ];
     TacsScalar * xpts = new TacsScalar[ 3*num_nodes ];
 
@@ -236,7 +234,7 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	  elem_conn[local_node_size] = new_nodes[node];          
         }
 
-	elem_comp[n] = elem_component[elem];
+	elem_ids[n] = elem_id_nums[elem];
 	elem_ptr[n+1] = local_node_size;
       }
 
@@ -246,7 +244,8 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
       // tacs_nodes is sorted and defines the local ordering 
       // tacs_nodes[i] -> local node i      
       for ( int j = 0; j < elem_ptr[n]; j++ ){
-	int * item = (int*)bsearch(&elem_conn[j], tacs_nodes, local_node_size,
+	int * item = (int*)bsearch(&elem_conn[j], tacs_nodes, 
+				   local_node_size,
 				   sizeof(int), FElibrary::comparator);
 	if (item){
 	  elem_conn[j] = item - tacs_nodes;
@@ -278,13 +277,13 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	memcpy(Xpts_local, xpts, 3*num_local_nodes*sizeof(double));
 
 	// Copy over values for the elements
-	memcpy(local_component_nums, elem_comp, 
+	memcpy(local_elem_id_nums, elem_ids, 
 	       num_owned_elements*sizeof(int));
 	memcpy(local_elem_node_ptr, elem_ptr, 
 	       (num_owned_elements+1)*sizeof(int));
 
-	local_elem_node_con = new int[local_elem_node_ptr[num_owned_elements]];
-	memcpy(local_elem_node_con, elem_conn,
+	local_elem_node_conn = new int[local_elem_node_ptr[num_owned_elements]];
+	memcpy(local_elem_node_conn, elem_conn,
 	       local_elem_node_ptr[num_owned_elements]*sizeof(int));
       }
       else {
@@ -295,7 +294,7 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	MPI_Send(xpts, 3*local_node_size, MPI_DOUBLE, k, 3, comm);
 
 	// Send the element data
-        MPI_Send(elem_comp, owned_elements[k], MPI_INT, k, 4, comm);
+        MPI_Send(elem_ids, owned_elements[k], MPI_INT, k, 4, comm);
         MPI_Send(elem_ptr, owned_elements[k]+1, MPI_INT, k, 5, comm);
 
         MPI_Send(elem_conn, elem_ptr[owned_elements[k]], MPI_INT, k, 6, comm);
@@ -309,7 +308,7 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     delete [] tacs_nodes;
     delete [] elem_ptr;
     delete [] elem_conn;
-    delete [] elem_comp;
+    delete [] elem_ids;
     delete [] xpts;
   }
   else {
@@ -328,14 +327,14 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	     root_rank, 3, comm, &status);
 
     // Receive the element data
-    MPI_Recv(local_component_nums, num_owned_elements, MPI_INT, 
+    MPI_Recv(local_elem_id_nums, num_owned_elements, MPI_INT, 
 	     root_rank, 4, comm, &status);
     MPI_Recv(local_elem_node_ptr, num_owned_elements+1, MPI_INT, 
 	     root_rank, 5, comm, &status);
 
     int con_size = local_elem_node_ptr[num_owned_elements];
-    local_elem_node_con = new int[con_size];
-    MPI_Recv(local_elem_node_con, con_size, MPI_INT, 
+    local_elem_node_conn = new int[con_size];
+    MPI_Recv(local_elem_node_conn, con_size, MPI_INT, 
 	     root_rank, 6, comm, &status);
   }
   
@@ -365,11 +364,11 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
   
   // Add the elements
   for ( int k = 0; k < num_owned_elements; k++ ){
-    TACSElement * element = elements[local_component_nums[k]];
+    TACSElement * element = elements[local_elem_id_nums[k]];
     if (!element){
       fprintf(stderr, 
               "[%d] TACSMeshLoader: Element undefined for component %d\n",
-              rank, local_component_nums[k]);
+              rank, local_elem_id_nums[k]);
       MPI_Abort(comm, 1);
       return NULL;
     }
@@ -377,7 +376,7 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     // Add the element node numbers
     int start = local_elem_node_ptr[k];
     int end = local_elem_node_ptr[k+1];
-    tacs->addElement(element, &local_elem_node_con[start], end-start);
+    tacs->addElement(element, &local_elem_node_conn[start], end-start);
   }
 
   tacs->computeReordering(order_type, mat_type);
@@ -385,25 +384,26 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
   // Finalize the ordering
   tacs->finalize();
 
-  // Set the nodes
+  // Set the node locations in TACS
   TacsScalar * x;
   tacs->getNodeArray(&x);
-  
   for ( int k = 0; k < 3*num_local_nodes; k++ ){
     x[k] = Xpts_local[k];
   }
 
-  // Set the boundar conditions
-  int bvars[6];
-  TacsScalar bvals[6];
+  // Allocate the arrays to store the variable values
+  int *bvars = new int[ vars_per_node ];
+  TacsScalar *bvals = new TacsScalar[ vars_per_node ];
+
+  // Set the boundary conditions
   for ( int k = 0; k < num_bcs; k++ ){
     if (bc_nodes[k] >= 0){
       int nbcs = bc_ptr[k+1] - bc_ptr[k];
       int n = 0;
       for ( int j = 0; j < nbcs; j++ ){
-        if (bc_con[bc_ptr[k] + j] < vars_per_node){
-          bvars[n] = bc_con[bc_ptr[k] + j];
-          bvals[n] = bc_vals[bc_ptr[k] + j];
+        if (bc_vars[bc_ptr[k] + j] < vars_per_node){
+          bvars[n] = bc_vars[bc_ptr[k] + j];
+          bvals[n] = 0.0;
           n++;
         }
       }
@@ -413,15 +413,17 @@ TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     }
   }
   
+  // Free memory only allocated on the root processor
   if (rank == root_rank){
     delete [] new_nodes;
     delete [] owned_elements;
     delete [] owned_nodes;
   }
 
+  // Free all the remaining memory
   delete [] partition;
   delete [] local_elem_node_ptr;
-  delete [] local_elem_node_con;
+  delete [] local_elem_node_conn;
   delete [] Xpts_local;
 
   return tacs;
@@ -530,17 +532,17 @@ void TACSCreator::splitSerialMesh( int split_size,
     // Add the elements - minus the diagonal entry
     for ( int j = 0; j < row_size; j++ ){
       if (row[j] != i){ // Not the diagonal 
-        elem_con[elem_con_size] = row[j];
-        elem_con_size++;
+        elem_conn[elem_conn_size] = row[j];
+        elem_conn_size++;
       }
     }
-    elem_ptr[i+1] = elem_con_size;
+    elem_ptr[i+1] = elem_conn_size;
   }
 
   // Free the memory for data that is not needed 
   delete [] row;
   delete [] node_elem_ptr;
-  delete [] node_elem_con;
+  delete [] node_elem_conn;
 
   // Partition the mesh using METIS.
   if (split_size > 1){
@@ -631,7 +633,7 @@ void TACSCreator::splitSerialMesh( int split_size,
   for ( int j = 0; j < num_elements; j++ ){
     int owner = elem_partition[j];
     for ( int i = elem_node_ptr[j]; i < elem_node_ptr[j+1]; i++ ){
-      int node = elem_node_con[i];
+      int node = elem_node_conn[i];
       if (new_nodes[node] < 0){
         new_nodes[node] = split_offset[owner];
         split_offset[owner]++;

@@ -553,6 +553,13 @@ void TACSAssembler::getNodes( BVec *X ){
   // We need to implement this still  
 }
 
+/*!
+  Get the raw nodal locations
+*/
+void TACSAssembler::getNodeArray( TacsScalar **_Xpts ){
+  *_Xpts = Xpts;
+}
+
 /*!  
   Compute the local node numbers that correspond to the coupling
   nodes connected to elements on other processes.

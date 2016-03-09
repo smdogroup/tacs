@@ -89,6 +89,7 @@ class TACSAssembler : public TACSObject {
   // ---------------------
   void setNodes( BVec *X ); 
   void getNodes( BVec *X );
+  void getNodeArray( TacsScalar **_Xpts );
 
   // Associate a Dirichlet boundary condition with the given variables
   // -----------------------------------------------------------------
