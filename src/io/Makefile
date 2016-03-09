@@ -8,8 +8,9 @@ include ../../Makefile.in
 include ../../TACS_Common.mk
 
 CXX_OBJS = FH5.o \
-	TACSToFH5.o \
-	TACSMeshLoader.o
+	TACSToFH5.o
+
+#	TACSMeshLoader.o
 
 DIR=${TACS_DIR}/src/io
 

@@ -30,7 +30,7 @@ class PlaneStressStiffness : public TACSConstitutive {
   // Return the mass moments
   // -----------------------
   int getNumMassMoments(){ return 1; }
-  void pointwiseMass( const double pt[], TacsScalar mass[] ){
+  void getPointwiseMass( const double pt[], TacsScalar mass[] ){
     mass[0] = rho;
   }
 

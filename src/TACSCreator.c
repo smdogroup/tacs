@@ -129,13 +129,30 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
 }
 
 /*
+  Set the elements
+*/
+void TACSCreator::setElements( TACSElement **_elements, int _num_elem_ids ){
+  num_elem_ids = _num_elem_ids;
+  elements = new TACSElement*[ num_elem_ids ];
+  memcpy(elements, _elements, num_elem_ids*sizeof(TACSElement*));
+}
+
+/*
+  Set the nodal locations
+*/
+void TACSCreator::setNodes( TacsScalar *_Xpts ){
+  Xpts = new TacsScalar[ 3*num_nodes ];
+  memcpy(Xpts, _Xpts, 3*num_nodes*sizeof(TacsScalar));
+}
+
+/*
   Create the instance of the TACSAssembler object and return it.
 
   This code partitions the mesh, calls for the elements to be
   allocated and returns a valid instance of the TACSAssembler object.
 
 */
-TACSAssembler *TACSCreator::createTACS( enum TACSAssembler::OrderingType order_type,
+TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_type,
 					enum TACSAssembler::MatrixOrderingType mat_type ){
   int size, rank;
   MPI_Comm_size(comm, &size);

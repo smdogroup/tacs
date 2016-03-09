@@ -11,7 +11,8 @@ TACS_SUBDIRS = src \
 	src/bpmat \
 	src/elements \
 	src/constitutive \
-	src/functions
+	src/functions \
+	src/io
 
 TACS_OBJS := $(addsuffix /*.o, ${TACS_SUBDIRS})
 

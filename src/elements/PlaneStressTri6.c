@@ -18,28 +18,28 @@ void PlaneStressTri6::getShapeFunctions( const double pt[],
 					 double Na[], 
 					 double Nb[] ){
   // shape function values
-  N[0] = 2.0*(1.0-(pt[0]+pt[1]))*(0.5-(pt[0]+pt[1]));
-  N[1] = 2.0*pt[0]*(pt[0]-0.5);
-  N[2] = 2.0*pt[1]*(pt[1]-0.5);
-  N[3] = 2.0*pt[0]*(1.0-(pt[0]+pt[1]));
+  N[0] = 2.0*(1.0 - (pt[0] + pt[1]))*(0.5 - (pt[0] + pt[1]));
+  N[1] = 2.0*pt[0]*(pt[0] - 0.5);
+  N[2] = 2.0*pt[1]*(pt[1] - 0.5);
+  N[3] = 4.0*pt[0]*(1.0 - (pt[0] + pt[1]));
   N[4] = 4.0*pt[0]*pt[1];
-  N[5] = 2.0*pt[1]*(1.0-(pt[0]+pt[1]));
+  N[5] = 4.0*pt[1]*(1.0 - (pt[0] + pt[1]));
 
   // derivative of shape function with respect to xi
-  Na[0] = 4.0*(pt[0]+pt[1]-0.75);
-  Na[1] = 4.0*pt[1]-1.0;
+  Na[0] = 4.0*(pt[0] + pt[1] - 0.75);
+  Na[1] = 4.0*pt[0] - 1.0;
   Na[2] = 0.0;
-  Na[3] = 2.0-4.0*pt[0]-2.0*pt[1];
+  Na[3] = 4.0*(1.0 - 2.0*pt[0] - pt[1]);
   Na[4] = 4.0*pt[1];
-  Na[5] = -2.0*pt[1];
+  Na[5] = -4.0*pt[1];
 
   // derivative of shape function with respect to eta
-  Nb[0] = 4.0*(pt[0]+pt[1]-0.75); 
+  Nb[0] = 4.0*(pt[0] + pt[1] - 0.75); 
   Nb[1] = 0.0;
-  Nb[2] = 4.0*pt[1]-1.0;
-  Nb[3] = -2.0*pt[0];
+  Nb[2] = 4.0*pt[1] - 1.0;
+  Nb[3] = -4.0*pt[0];
   Nb[4] = 4.0*pt[0];
-  Nb[5] = 2.0*(1.0-pt[0]-2.0*pt[1]);
+  Nb[5] = 4.0*(1.0 - pt[0] - 2.0*pt[1]);
 }
 
 /*
@@ -70,28 +70,27 @@ double PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
   // Return weight of point as TacsScalar output
   switch (num) {
   case 0:	
-    pt[0] = 1.0 / 3.0;
-    pt[1] = 1.0 / 3.0;
-    return -27.0 / 48.0;
+    pt[0] = 1.0/3.0;
+    pt[1] = 1.0/3.0;
+    return -27.0/48.0;
   case 1:	
-    pt[0] = 1.0 / 5.0;
-    pt[1] = 3.0 / 5.0;
-    return 25.0 / 48.0;  
+    pt[0] = 1.0/5.0;
+    pt[1] = 3.0/5.0;
+    return 25.0/48.0;  
   case 2:	
-    pt[0] = 1.0 / 5.0;
-    pt[1] = 1.0 / 5.0;
-    return 25.0 / 48.0;
+    pt[0] = 1.0/5.0;
+    pt[1] = 1.0/5.0;
+    return 25.0/48.0;
   case 3:	
-    pt[0] = 3.0 / 5.0;
-    pt[1] = 1.0 / 5.0;
-    return 25.0 / 48.0;
+    pt[0] = 3.0/5.0;
+    pt[1] = 1.0/5.0;
+    return 25.0/48.0;
   default:	
     break;
   }
 
   return 0.0;
 }
-
 
 /*
   Get the number of elemens/nodes and CSR size of the contributed by
@@ -126,12 +125,12 @@ void PlaneStressTri6::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 void PlaneStressTri6::getOutputData( unsigned int out_type, 
-				     double * data, int ld_data,
+				     double *data, int ld_data,
 				     const TacsScalar Xpts[],
 				     const TacsScalar vars[] ){
   // Set the nodal parametric coordinates
-  double pt[][2] = {{0.0, 0.0}, {0.5, 0.0}, {1.0, 0.0},
-		    {0.0, 0.5}, {0.5, 0.5}, {0.0, 1.0}};
+  double pt[][2] = {{0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
+		    {0.5, 0.0}, {0.5, 0.5}, {0.0, 0.5}};
 
   for ( int n = 0; n < 6; n++ ){
     int index = 0;
@@ -216,19 +215,19 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
 */
 void PlaneStressTri6::getOutputConnectivity( int *con, int node ){
   con[0] = node;
-  con[1] = node+1;
+  con[1] = node+3;
   con[2] = node+4;
-  con[3] = node+3;
+  con[3] = node+5;
   con += 4;
 
-  con[0] = node+1;
-  con[1] = node+2;
+  con[0] = node+3;
+  con[1] = node+1;
   con[2] = node+4;
   con[3] = node+4;
   con += 4;
 
-  con[0] = node+3;
+  con[0] = node+5;
   con[1] = node+4;
-  con[2] = node+5;
-  con[3] = node+5;
+  con[2] = node+2;
+  con[3] = node+2;
 }

@@ -29,6 +29,10 @@ class TACSCreator : public TACSObject {
   // ----------------------------------
   void setElements( TACSElement **_elements, int _num_elem_ids );
 
+  // Set the nodal locations
+  // -----------------------
+  void setNodes( TacsScalar *_Xpts );
+
   // Create the TACSAssembler object
   // -------------------------------
   TACSAssembler *createTACS( enum TACSAssembler::OrderingType order_type =
