@@ -11,6 +11,7 @@
 
 #include "TACSElement.h"
 #include "PlaneStressStiffness.h"
+#include "FElibrary.h"
 
 /*
   The following class defines a generic two-dimensional element
@@ -58,7 +59,7 @@ class TACS2DElement : public TACSElement {
   
   // Evaluate the strain in the element
   // ---------------------------------
-  void EvalStrain( TacsScalar strain[], const TacsScalar J[],
+  void evalStrain( TacsScalar strain[], const TacsScalar J[],
 		   const double Na[], const double Nb[],
 		   const TacsScalar vars[] );
  
@@ -481,7 +482,7 @@ void TACS2DElement<NUM_NODES>::getDisplGradientSens( TacsScalar Ud[],
   vars:       the variables
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::EvalStrain( TacsScalar strain[], 
+void TACS2DElement<NUM_NODES>::evalStrain( TacsScalar strain[], 
 					   const TacsScalar J[],
 					   const double Na[], 
 					   const double Nb[], 
@@ -799,7 +800,7 @@ void TACS2DElement<NUM_NODES>::computeEnergies( TacsScalar *_Te,
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, vars);
+    evalStrain(strain, J, Na, Nb, vars);
  
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
@@ -872,7 +873,7 @@ void TACS2DElement<NUM_NODES>::getResidual( TacsScalar * res,
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, vars);
+    evalStrain(strain, J, Na, Nb, vars);
  
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
@@ -959,7 +960,7 @@ void TACS2DElement<NUM_NODES>::getJacobian( TacsScalar mat[],
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, vars);
+    evalStrain(strain, J, Na, Nb, vars);
  
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
@@ -1062,7 +1063,7 @@ void TACS2DElement<NUM_NODES>::addAdjResProduct( double scale,
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, vars);
+    evalStrain(strain, J, Na, Nb, vars);
         
     // Get the derivative of the strain with respect to the nodal
     // displacements
@@ -1160,6 +1161,7 @@ void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
     }
   }
 }
+
 /*
   Evaluate the determinant of the Jacobian for numerical integration
 
@@ -1263,7 +1265,7 @@ void TACS2DElement<NUM_NODES>::getStrain( TacsScalar strain[],
   FElibrary::jacobian2d(Xa, J);
 
   // Compute the strain
-  EvalStrain(strain, J, Na, Nb, vars);
+  evalStrain(strain, J, Na, Nb, vars);
 }
 
 /*
@@ -1314,8 +1316,9 @@ void TACS2DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[],
 
   TacsScalar *b = B;
   for ( int i = 0; i < NUM_VARIABLES; i++ ){
-    sens[i] += scale*(strainSens[0]*b[0] + strainSens[1]*b[1] + 
-		      strainSens[2]*b[2]);
+    strainSVSens[i] += scale*(strainSens[0]*b[0] + 
+			      strainSens[1]*b[1] + 
+			      strainSens[2]*b[2]);
     b += NUM_STRESSES;
   }
 }
@@ -1359,9 +1362,6 @@ void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
   // Compute the determinant of Xa and the transformation
   TacsScalar J[4];
   FElibrary::jacobian2d(Xa, J);
-
-  // Compute the strain
-  EvalStrain(strain, J, Na, Nb, vars);
 
   // Compute the derivative of the strain w.r.t. nocal coordinates
   getStrainXptSens(strainXptSens, J, Xa, 

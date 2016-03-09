@@ -379,7 +379,7 @@ class TACSElement : public TACSOptObject {
   virtual void getOutputData( unsigned int out_type,
 			      double * data, int ld_data,
 			      const TacsScalar Xpts[],
-			      const TacsScalar vars[] );
+			      const TacsScalar vars[] ) = 0;
   virtual void getOutputConnectivity( int * con, int start_node ) = 0;
 
  private: 
@@ -446,12 +446,12 @@ class TestElement : public TACSObject {
   // Tests for the sensitivities w.r.t. nodal coordinates
   // ----------------------------------------------------
   int testJacobianXptSens( const double pt[] );
-  int testStrainXptSens( const double pt[] );
-  int testResXptSens( TacsScalar alpha = 1.0 );
+  // int testStrainXptSens( const double pt[] );
+  // int testResXptSens( TacsScalar alpha = 1.0 );
 
   // Design variable sensitivity tests
   // ---------------------------------
-  int testResDVSens();
+  // int testResDVSens();
   // int testForceTransferDVSens();
   // int testStiffnessMatDVSens();
   // int testMassMatDVSens();
@@ -497,16 +497,16 @@ class TestConstitutive : public TACSObject {
   // Test the failure load implementation
   // ------------------------------------
   int testFailStrainSens( const double pt[] );
-  int testFailDVSens( const double pt[] );
+  // int testFailDVSens( const double pt[] );
 
   // Test the buckling implementation
   // --------------------------------
   int testBucklingStrainSens();
-  int testBucklingDVSens();
+  // int testBucklingDVSens();
 
   // Test the mass implementation
   // ----------------------------
-  int testMassDVSens( const double pt[] );
+  // int testMassDVSens( const double pt[] );
   
  private:
   void compute_strain( TacsScalar strain[], 

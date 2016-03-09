@@ -10,7 +10,7 @@
 /*
   Factor the matrix using multiple threads.
 */
-void * BCSRMatFactor6_thread( void * t ){
+void * BCSRMatFactor8_thread( void * t ){
   BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
 
   const int nrows = tdata->mat->nrows;

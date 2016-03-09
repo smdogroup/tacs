@@ -11,9 +11,9 @@ CXX_OBJS = TACSConstitutive.o \
 	YSlibrary.o \
 	MaterialProperties.o \
 	SolidStiffness.o \
-	PlaneStressStiffness.o \
-	FSDTStiffness.o \
-	isoFSDTStiffness.o 
+	PlaneStressStiffness.o
+#	FSDTStiffness.o \
+#	isoFSDTStiffness.o 
 
 DIR=${TACS_DIR}/src/constitutive
 

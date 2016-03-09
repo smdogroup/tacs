@@ -11,7 +11,8 @@ CXX_OBJS = TACSElement.o \
 	FElibrary.o \
 	TACSShell.o \
 	ShellUtils.o \
-	LargeRotUtils.o
+	LargeRotUtils.o \
+	PlaneStressTri6.o
 
 DIR=${TACS_DIR}/src/elements
 

@@ -3130,7 +3130,7 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
 
     for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
       pthread_create(&threads[k], &attr, 
-                     TACSAssembler::adjointResDVSensProduct_thread,
+                     TACSAssembler::adjointResProduct_thread,
                      (void*)tacsPInfo);
     }
     
@@ -3545,13 +3545,13 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   else { printf("Jacobian XptSens passed\n"); }
   if (test->testStrainSVSens(pt)){ printf("Strain SVSens failed\n"); }
   else { printf("Strain SVSens passed\n"); }
+  /*if
+ (test->testResXptSens()){ printf("Res XptSens failed\n"); }
+  else { printf("Res XptSens passed\n"); }
   if (test->testStrainXptSens(pt)){ printf("Strain XptSens failed\n"); }
   else { printf("Strain XptSens passed\n"); }
-  if (test->testResXptSens()){ printf("Res XptSens failed\n"); }
-  else { printf("Res XptSens passed\n"); }
   if (test->testResDVSens()){ printf("Res DVSens failed\n"); }
   else { printf("Res DVSens passed\n"); }
-  /*
   if (test->testMatDVSens(STIFFNESS_MATRIX)){
     printf("Stiffness matrix DVSens failed\n"); }
   else { printf("Stiffness Matrix DVSens passed\n"); }
@@ -3599,14 +3599,16 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
     printf("Testing constitutive class %s\n", stiffness->constitutiveName());
     if (test->testFailStrainSens(pt)){ printf("Fail StrainSens failed\n"); }
     else { printf("Fail StrainSens passed\n"); }
-    if (test->testFailDVSens(pt)){ printf("Fail DVSens failed\n"); }
-    else { printf("Fail DVSens passed\n"); }
-    if (test->testMassDVSens(pt)){ printf("Mass DVSens failed\n"); }
-    else { printf("Mass DVSens passed\n"); }
     if (test->testBucklingStrainSens()){ printf("Buckling StrainSens failed\n"); }
     else { printf("Buckling StrainSens passed\n"); }
+    /*
+    if (test->testMassDVSens(pt)){ printf("Mass DVSens failed\n"); }
+    else { printf("Mass DVSens passed\n"); }
+    if (test->testFailDVSens(pt)){ printf("Fail DVSens failed\n"); }
+    else { printf("Fail DVSens passed\n"); }
     if (test->testBucklingDVSens()){ printf("Buckling DVSens failed\n"); }
     else { printf("Buckling DVSens passed\n"); }
+    */
     printf("\n");
  
     test->decref();

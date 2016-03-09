@@ -76,7 +76,7 @@ void StructuralMass::elementWiseEval( const int iter,
     double pt[3];
     double gauss_weight = element->getGaussWtsPts(i, pt);
     TacsScalar h = element->getJacobian(pt, Xpts);
-    material->pointwiseMass(pt, ptmass);
+    material->getPointwiseMass(pt, ptmass);
 
     work[0] += gauss_weight*h*ptmass[0];
   }
@@ -137,7 +137,7 @@ void StructuralMass::elementWiseXptSens( TacsScalar fXptSens[],
     TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
     element->getJacobianXptSens(hXptSens, pt, Xpts);
 
-    material->pointwiseMass(pt, ptmass);
+    material->getPointwiseMass(pt, ptmass);
 
     for ( int k = 0; k < 3*numNodes; k++ ){
       fXptSens[k] += gauss_weight*hXptSens[k]*ptmass[0];

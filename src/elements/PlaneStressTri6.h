@@ -1,6 +1,8 @@
 #ifndef TACS_PLANE_STRESS_TRI6_H
 #define TACS_PLANE_STRESS_TRI6_H
 
+#include "TACS2DElement.h"
+
 class PlaneStressTri6 : public TACS2DElement<6> {
  public:
   enum PlaneStressElementType { LINEAR, NONLINEAR };
@@ -23,7 +25,7 @@ class PlaneStressTri6 : public TACS2DElement<6> {
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  TacsScalar getGaussWtsPts( const int num, double pt[] ); 
+  double getGaussWtsPts( const int num, double pt[] ); 
 
   // Functions for post-processing
   // -----------------------------
@@ -36,10 +38,7 @@ class PlaneStressTri6 : public TACS2DElement<6> {
 
  private:
   static const int NUM_NODES = 6;
-
-  int numGauss;
-  const double *gaussWts;
-  const double *gaussPts1, *gaussPts2;
+  static const char *elemName; 
 };
 
 #endif // TACS_PLANE_STRESS_TRI6_H

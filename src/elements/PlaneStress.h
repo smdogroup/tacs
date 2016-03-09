@@ -11,7 +11,6 @@
 */
 
 #include "TACS2DElement.h"
-#include "ParametricMap.h"
 #include "FElibrary.h"
 
 template <int order>
@@ -37,7 +36,7 @@ class PlaneStress : public TACS2DElement<order*order> {
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  TacsScalar getGaussWtsPts( const int num, double pt[] ); 
+  double getGaussWtsPts( const int num, double pt[] ); 
 
   // Functions for post-processing
   // -----------------------------
@@ -118,7 +117,8 @@ void PlaneStress<order>::getShapeFunctions( const double pt[], double N[],
   this element.  
 */
 template <int order>
-void PlaneStress<order>::addOutputCount( int * nelems, int * nnodes, int * ncsr ){
+void PlaneStress<order>::addOutputCount( int *nelems, 
+					 int *nnodes, int *ncsr ){
   *nelems += (order-1)*(order-1);
   *nnodes += order*order;
   *ncsr += 4*(order-1)*(order-1);
@@ -147,7 +147,7 @@ void PlaneStress<order>::addOutputCount( int * nelems, int * nnodes, int * ncsr 
 */
 template <int order>
 void PlaneStress<order>::getOutputData( unsigned int out_type, 
-					double * data, int ld_data,
+					double *data, int ld_data,
 					const TacsScalar Xpts[],
 					const TacsScalar vars[] ){
   for ( int m = 0; m < order; m++ ){
@@ -240,7 +240,7 @@ void PlaneStress<order>::getOutputData( unsigned int out_type,
   less global
 */
 template <int order>
-void PlaneStress<order>::getOutputConnectivity( int * con, int node ){
+void PlaneStress<order>::getOutputConnectivity( int *con, int node ){
   int p = 0;
   for ( int m = 0; m < order-1; m++ ){
     for ( int n = 0; n < order-1; n++ ){

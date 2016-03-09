@@ -55,7 +55,7 @@ class TACSAssembler : public TACSObject {
   // -----------------
   void addNode( int locaNodeNum, int tacsNodeNum );
   void addNodes( int localNodeNum[], int tacsNodeNum[], int numNodes );
-  void addNodes( int ** tacsNodeNums );
+  void addNodes( int **tacsNodeNums );
 
   // Add a dependent node to TACS
   // ----------------------------
@@ -71,9 +71,9 @@ class TACSAssembler : public TACSObject {
 
   // Functions that may be used to perform reordering externally
   // -----------------------------------------------------------
-  void computeLocalNodeToNodeCSR( int ** _rowp, int ** _cols, int nodiag = 0 );
-  int computeCouplingNodes( int ** _cnodes );
-  int computeCouplingElements( int ** _celems );
+  void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, int nodiag=0 );
+  int computeCouplingNodes( int **_cnodes );
+  int computeCouplingElements( int **_celems );
   
   // Functions for performing ordering based on RCM
   // ----------------------------------------------
@@ -101,7 +101,7 @@ class TACSAssembler : public TACSObject {
   // -----------------------
   BVec * createVec();
   DistMat * createMat();
-  FEMat * createFEMat( enum OrderingType order_type = TACS_AMD_ORDER );
+  FEMat * createFEMat( enum OrderingType order_type=TACS_AMD_ORDER );
 
   // Methods for manipulating internal variable values
   // -------------------------------------------------
@@ -127,9 +127,9 @@ class TACSAssembler : public TACSObject {
   void assembleResNoBCs( BVec *residual );
   void assembleJacobian( BVec *residual, TACSMat *A,
 			 double alpha, double beta, double gamma,
-			 MatrixOrientation matOr = NORMAL );
+			 MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType,
-			TACSMat *A, MatrixOrientation matOr = NORMAL );
+			TACSMat *A, MatrixOrientation matOr=NORMAL );
 
   // Design variable handling
   // ------------------------
@@ -261,7 +261,7 @@ class TACSAssembler : public TACSObject {
   static void * assembleJacobian_thread( void * t );
   static void * assembleMatType_thread( void * t );
   // static void * adjointResXptSensProduct_thread( void * t );
-  static void * adjointResDVSensProduct_thread( void * t );
+  static void * adjointResProduct_thread( void * t );
   static void * evalFunctions_thread( void * t );
   // static void * evalXptSens_thread( void * t );
   static void * evalDVSens_thread( void * t );

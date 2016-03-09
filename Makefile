@@ -11,11 +11,9 @@ TACS_SUBDIRS = src \
 	src/bpmat \
 	src/elements \
 	src/constitutive \
-	src/functions \
-	src/io
+	src/functions
 
-SEARCH_PATTERN=$(addsuffix /*.c, ${TACS_SUBDIRS})
-TACS_OBJS := $(patsubst %.c,%.o,$(wildcard ${SEARCH_PATTERN}))
+TACS_OBJS := $(addsuffix /*.o, ${TACS_SUBDIRS})
 
 default:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
