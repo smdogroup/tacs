@@ -86,7 +86,7 @@ cdef class pyTACSAssembler:
                                           numDependentNodes,
                                           nodeMaxCSRsize)
         # Need to add incref
-    def __dealloc(self):
+    def __dealloc__(self):
         del self.this_ptr
         # Need to decref
     
@@ -1192,3 +1192,68 @@ cdef class pyBVec(pyTACSVec):
         Place an array into the place of the local storage for this vector
         '''
         self.this_ptr.placeArray(<TacsScalar*>x.data)
+
+    def restoreArray(self):
+        '''
+        Restore the array displaced by the call to placeArray() with the
+        original arrayremove the 'placed' array with the original array 
+        '''
+        self.this_ptr.restoreArray()
+
+    def applyBCs(self):
+        '''
+        Apply the Dirichlet boundary conditions to the vector
+        '''
+        self.this_ptr.applyBCs()
+
+    def writeToFile(self, char*filename=''):
+        '''
+        Write the values to a file.
+
+        This uses MPI file I/O. The filenames must be the same on all
+        processors. The format is independent of the number of processors.
+    
+        The file format is as follows:
+        int                       The length of the vector
+        len * sizeof(TacsScalar)  The vector entries
+        '''
+        return self.this_ptr.writeToFile(&checkpoint[0])
+
+    def readFromFile(self, char*filename=''):
+        '''
+        Read values from a binary data file.
+
+        The size of this vector must be the size of the vector
+        originally stored in the file otherwise nothing is read in.
+
+        The file format is as follows:
+        int                       The length of the vector
+        len * sizeof(TacsScalar)  The vector entries
+        '''
+        return self.this_ptr.writeToFile(&checkpoint[0])
+
+# "Wrap" the abstract base class TACSMat
+cdef class pyTACSMat:
+    cdef CyTACSMat *this_ptr
+
+    def __init__(self):
+        # Create the pointer to the underlying C++ object
+        self.this_ptr = new CyTACSMat()
+        self.this_ptr.setSelfPointer(<void*>self)
+        self.this_ptr.zeroEntries(_zeroentries)
+        self.this_ptr.applyBCs(_applybcs)
+        self.this_ptr.mult(_mult)
+        return
+
+    def __dealloc__(self):
+        del self.this_ptr
+        return
+
+# Python class for corresponding instance PMat
+cdef class pyPMat:
+   cdef PMat *this_ptr
+
+   def __cinit__(self):
+       self.this_ptr = new PMat()
+
+   def __dealloc 
