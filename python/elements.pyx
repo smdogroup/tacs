@@ -163,7 +163,6 @@ cdef class pyTACS2DElement(pyTACSElement)[T]:
         '''
         self.this_ptr = new CyTACS2DElement[T](planeStiff.this_ptr, linear, compNum)
         self.this_ptr.setSelfPointer(<void*>self)
-        self.this_ptr.elementName(_elementName)
         
     def __dealloc__(self):
         del self.this_ptr
@@ -219,12 +218,6 @@ cdef class pySolid(pyTACS3DElement)[T]:
     def __dealloc__(self):
         del self.this_ptr
 
-    def elementName(self):
-        '''
-        Return the name of this element
-        '''
-        return self.this_ptr.elementName()
-
 # Wrap the TACSShell element
 cdef class pyTACSShell(pyTACSElement):
     cdef CyTACSShell *this_ptr
@@ -236,7 +229,6 @@ cdef class pyTACSShell(pyTACSElement):
         '''
         self.this_ptr = new CyTACSShell(stiff.this_ptr, compNum)
         self.this_ptr.setSelfPointer(<void*>self)
-        self.this_ptr.elementName(_elementName)
 
     def __dealloc__(self):
         del self.this_ptr

@@ -61,13 +61,6 @@ cdef class NpArrayWrap:
       Py_INCREF(self)
       
       return ndarray
-
-cdef void _tacsmat_zeroentries(void *_self):
-    (<object>_self).zeroEntries()
-    return
-
-cdef void _tacsmat_applybcs(void *_self):
-    
   
 # Python class for corresponding instance TACSObject
 cdef class pyTACSObject:
@@ -214,34 +207,6 @@ cdef class pyTACSAssembler(pyTACSObject):
         Get the nodes from the node map object
         '''
         self.this_ptr.getNodes(X.this_ptr)
-        
-    def computeLocalNodeToNodeCSR(self, ):
-        '''
-        Set up a CSR data structure pointing from local nodes to other
-        local nodes.
-    
-        input:
-        nodiag = Remove the diagonal matrix entry 
-    
-        output:
-        rowp = the row pointer corresponding to CSR data structure
-        cols = the column indices for each row of the CSR data structure
-
-        This function works by first estimating the number of entries in
-        each row of the matrix. This information is stored temporarily in
-        the array rowp. After the contributions from the elements and sparse
-        constraints are added, the preceeding elements in rowp are added
-        such that rowp becomes the row pointer for the matrix. Note that
-        this is an upper bound because the elements and constraints may
-        introduce repeated variables. Next, cols is allocated corresponding
-        to the column index for each entry. This iterates back over all
-        elements and constraints. At this stage, rowp is treated as an array
-        of indices, that index into the i-th row of cols[:] where the next
-        index should be inserted. As a result, rowp must be adjusted after
-        this operation is completed.  The last step is to sort and uniquify
-        each row of the matrix.  
-        '''
-        self.this_ptr.computeLocalNodeToNodeCSR()
         
     def computeCouplingNodes():
         '''
@@ -633,9 +598,8 @@ cdef class pyTACSAssembler(pyTACSObject):
                                        A.this_ptr, alpha, beta,
                                        gamma, matOr)
 
-    def assembleMatType(self, pyTACSMat A, 
-                        TacsScalar scaleFactor, 
-                        ElementMatrixTypes matType,
+    def assembleMatType(self, ElementMatrixTypes matType,
+                        pyTACSMat A,
                         MatrixOrientation matOr):
         
         '''
@@ -658,8 +622,8 @@ cdef class pyTACSAssembler(pyTACSObject):
                        term 
         matOr:     the matrix orientation NORMAL or TRANSPOSE
         '''
-        self.this_ptr.assembleMatType(A.this_ptr, scaleFactor,
-                                      matType, matOr)
+        self.this_ptr.assembleMatType(matType, A.this_ptr, 
+                                      matOr)
    
     def evalFunctions(self, pyTACSFunction functions, int numFuncs,
                       np.ndarray[TacsScalar, ndim=1,mode='c']fVals):
@@ -791,40 +755,40 @@ cdef class pyTACSAssembler(pyTACSObject):
                                              <TacsScalar*>dvSens.data,
         int num_dvs)
 
-    def evalAdjointResProductsExperimental(self, pyBVec adjoint, 
-                                           int numAdjoints, 
-                                           np.ndarray[TacsScalar,ndim=1,mode='c']dvSens,
-                                           int num_dvs):
-        '''
-        Evaluate the product of several ajdoint vectors with the
-        derivative of the residual w.r.t. the design variables.
+    # def evalAdjointResProductsExperimental(self, pyBVec adjoint, 
+    #                                        int numAdjoints, 
+    #                                        np.ndarray[TacsScalar,ndim=1,mode='c']dvSens,
+    #                                        int num_dvs):
+    #     '''
+    #     Evaluate the product of several ajdoint vectors with the
+    #     derivative of the residual w.r.t. the design variables.
 
-        This function is collective on all TACSAssembler
-        processes. This computes the product of the derivative of 
-        the residual w.r.t. the design variables with several 
-        adjoint vectors simultaneously. This saves computational 
-        time as the derivative of the element residuals 
-        can be reused for each adjoint vector. This function 
-        performs the same task as evalAdjointResProduct, but uses 
-        more memory than calling it for each adjoint vector.
+    #     This function is collective on all TACSAssembler
+    #     processes. This computes the product of the derivative of 
+    #     the residual w.r.t. the design variables with several 
+    #     adjoint vectors simultaneously. This saves computational 
+    #     time as the derivative of the element residuals 
+    #     can be reused for each adjoint vector. This function 
+    #     performs the same task as evalAdjointResProduct, but uses 
+    #     more memory than calling it for each adjoint vector.
         
-        This implementation is experimental because it is not yet
-        fully implemented for all element types, does not handle
-        geometric variables and does not yet cover design variables
-        in tractions. Nevertheless, the short-term plan is to finish
-        this implementation b/c it has the potential to be faster.
+    #     This implementation is experimental because it is not yet
+    #     fully implemented for all element types, does not handle
+    #     geometric variables and does not yet cover design variables
+    #     in tractions. Nevertheless, the short-term plan is to finish
+    #     this implementation b/c it has the potential to be faster.
 
-        adjoint:     the array of adjoint vectors
-        numAdjoints: the number of adjoint vectors
-        dvSens:      the product of the derivative of the residuals
-                     and the adjoint   
-        numDVs:      the number of design variables
-        '''
-        self.this_ptr.evalAdjointResProductsExperiemental(adjoint.this_ptr,
-        numAdjoint, <TacScalar*>dvSens.data, num_dvs)
+    #     adjoint:     the array of adjoint vectors
+    #     numAdjoints: the number of adjoint vectors
+    #     dvSens:      the product of the derivative of the residuals
+    #                  and the adjoint   
+    #     numDVs:      the number of design variables
+    #     '''
+    #     self.this_ptr.evalAdjointResProductsExperiemental(adjoint.this_ptr,
+    #     numAdjoint, <TacScalar*>dvSens.data, num_dvs)
 
     def evalMatDVSensInnerProduct(self, TacsScalar alpha, 
-                                  ElementMatrixTypes, matType,
+                                  ElementMatrixTypes matType,
                                   pyBVec psi, pyBVec phi,
                                   np.ndarray[TacsScalar, ndim=1,
                                   mode='c']dvSens):
@@ -1027,59 +991,11 @@ cdef class pyTACSAssembler(pyTACSObject):
         self.this_ptr.getOutputData(elem_type, out_type,
                                     <double*>Data.data, nvals)
 
-    def testElement(self, int elemNum, int print_level):
-        '''
-        Test the implementation of the given element number.
-
-        This tests the stiffness matrix and various parts of the
-        design-sensitivities: the derivative of the determinant of the
-        Jacobian, the derivative of the strain w.r.t. the nodal coordinates,
-        and the state variables and the derivative of the residual w.r.t.
-        the design variables and nodal coordiantes.
-
-        elemNum:     the element number to test
-        print_level: the print level to use
-        '''
-        self.this_ptr.testElement(elemNum, print_level)
-
-    def testConstitutive(self, int elemNum, int print_level):
-        '''
-        Test the implementation of the given element's constitutive class.
-  
-        This function tests the failure computation and the mass
-        sensitivities for the given element.
-
-        elemNum:     the element to retrieve the constitutive object from
-        print_level: the print level to use for the test
-        '''
-        self.this_ptr.testConstitutive(elemNum, print_level)
-
-    def testFunction(self, pyTACSFunction func, int num_dvs, double dh):
-        '''
-        Test the implementation of the function. 
-
-        This tests the state variable sensitivities and the design variable
-        sensitivities of the function of interest. These sensitivities are
-        computed based on a random perturbation of the input values.  Note
-        that a system of equations should be solved - or the variables
-        should be set randomly before calling this function, otherwise this
-        function may produce unrealistic function values.
-  
-        Note that this function uses a central difference if the real code
-        is compiled, and a complex step approximation if the complex version
-        of the code is used.
-
-        func:            the function to test
-        num_design_vars: the number of design variables to use
-        dh:              the step size to use
-        '''
-        self.this_ptr.testFunction(func.this_ptr, num_dvs, dh)
-
     def getMPIComm(self):
         '''
         Retrieve the MPI Communicator
         '''
-        self.this_ptr.getMPIComm()
+        return self.this_ptr.getMPIComm()
 
 # Wrap the abstract vector base class
 cdef class pyTACSVec(pyTACSObject):
@@ -1139,12 +1055,12 @@ cdef class pyBVec(pyTACSVec):
         del this_ptr
 
     # Basic vector operations
-    def getSize(self, int *size):
-        '''
-        Get the local size of the vector on this processor
-        '''
-        return
-
+    # def getSize(self, int *size):
+    #     '''
+    #     Get the local size of the vector on this processor
+    #     '''
+    #     return
+    
     def norm(self):
         '''
         Compute the norm of the vector
@@ -1274,9 +1190,6 @@ cdef class pyTACSMat:
         # Create the pointer to the underlying C++ object
         self.this_ptr = new CyTACSMat()
         self.this_ptr.setSelfPointer(<void*>self)
-        self.this_ptr.zeroEntries(_zeroentries)
-        self.this_ptr.applyBCs(_applybcs)
-        self.this_ptr.mult(_mult)
         return
 
     def __dealloc__(self):
@@ -1476,10 +1389,10 @@ cdef class pyKSMPrint(pyTACSObject):
         '''
         self.this_ptr = new CyKSMPrint()
         self.this_ptr.setSelfPointer(<void*>self)
-        self.this_ptr.printResidual(_printresidual)
-    
+            
     def __dealloc__(self):
         del self.this_ptr
+
 cdef class pyKSMPrintStdout(pyKSMPrint):
     cdef pyKSMPrintStdout *this_ptr
     def __cinit__(self, char*descript = '', int rank, int freq):
@@ -1510,8 +1423,7 @@ cdef class pyTACSPc(pyTACSObjec):
         '''
         self.this_ptr = new CyTACSPc()
         self.this_ptr.setSelfPointer(<void*>self)
-        self.this_ptr.applyFactor(_applyFactor)
-    
+            
     def __dealloc__(self):
         del self.this_ptr
     
@@ -1836,9 +1748,7 @@ cdef class pyTACSKsm(pyTACSObject):
         '''
         self.this_ptr = new CyTACSKsm()
         self.this_ptr.setSelfPointer(<void*>self)
-        self.this_ptr.solve(_solve)
-        self.this_ptr.setTolerances(_settolerances)
-        self.this_ptr.setMonitor(_setmonitor)
+
     def __dealloc__(self):
         del self.this_ptr
 
