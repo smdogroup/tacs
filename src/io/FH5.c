@@ -176,7 +176,7 @@ int FH5File::writeZoneData( char * zone_name,
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
     
-    int * dim = new int[ size+1 ];
+    int *dim = new int[ size+1 ];
     dim[0] = 0;
     MPI_Allgather(&dim1, 1, MPI_INT, &dim[1], 1, MPI_INT, comm);
 
@@ -237,6 +237,9 @@ int FH5File::writeZoneData( char * zone_name,
     else if (dtype == MPI_INT){
       file_offset += total_dim*dim2*sizeof(int);
     }
+
+    // Free the dimension count
+    delete [] dim;
 
     return 1;
   }

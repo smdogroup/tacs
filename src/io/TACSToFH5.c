@@ -202,6 +202,7 @@ void TACSToFH5::writeToFile( const char * filename ){
   file->writeZoneData(data_name, FH5File::FH5_DOUBLE, variable_names,
                       data, dim1, dim2);
   delete [] data;
+  if (node_range){ delete [] node_range; }
 
   file->close();
   file->decref();
