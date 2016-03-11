@@ -5,80 +5,95 @@
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
-  // Create a regular mesh of triangular elements
-  int nx = 10, ny = 10;
-  int num_elements = 2*nx*ny;
-  int num_nodes = (2*nx + 1)*(2*ny + 1);
-
-  // Set the lengths along the x and y directions
-  double Lx = 10.0, Ly = 10.0;
-  
-  // Create the nodes
-  TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
-  for ( int j = 0; j < 2*ny+1; j++ ){
-    for ( int i = 0; i < 2*nx+1; i++ ){
-      Xpts[3*(i + j*(2*nx+1))] = 0.5*Lx*i/nx;
-      Xpts[3*(i + j*(2*nx+1))+1] = 0.5*Ly*j/ny;
-      Xpts[3*(i + j*(2*nx+1))+2] = 0.0;
-    }
-  }
-
-  // Set up the element connectivity arrays
-  int *elem_node_conn = new int[ 6*num_elements ];
-  int *elem_node_ptr = new int[ num_elements+1 ];
-
-  int n = 0;
-  int *conn = elem_node_conn;
-  elem_node_ptr[0] = 0;
-  for ( int j = 0; j < ny; j++ ){
-    for ( int i = 0; i < nx; i++ ){
-      conn[0] = 2*i + (2*nx+1)*(2*j);
-      conn[1] = 2*i+2 + (2*nx+1)*(2*j);
-      conn[2] = 2*i + (2*nx+1)*(2*j+2);
-      conn[3] = 2*i+1 + (2*nx+1)*(2*j);
-      conn[4] = 2*i+1 + (2*nx+1)*(2*j+1);
-      conn[5] = 2*i + (2*nx+1)*(2*j+1);
-      conn += 6;
-      elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
-      n++;
-
-      conn[0] = 2*i+2 + (2*nx+1)*(2*j+2);
-      conn[1] = 2*i + (2*nx+1)*(2*j+2);
-      conn[2] = 2*i+2 + (2*nx+1)*(2*j);
-      conn[3] = 2*i+1 + (2*nx+1)*(2*j+2);
-      conn[4] = 2*i+1 + (2*nx+1)*(2*j+1);
-      conn[5] = 2*i+2 + (2*nx+1)*(2*j+1);
-      conn += 6;
-      elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
-      n++;
-    }
-  }
-
-  // Set the identity numbers
-  int *elem_id_nums = new int[ num_elements ];
-  memset(elem_id_nums, 0, num_elements*sizeof(int));
-
-  // Set the boundary conditions
-  int num_bcs = 2*ny+1;
-  int *bc_nodes = new int[ num_bcs ];
-  for ( int j = 0; j < 2*ny+1; j++ ){
-    bc_nodes[j] = j*(2*nx+1);
-  }
-
   // Allocate the TACS creator
   TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, 2);
   creator->incref();
-  
-  // Set the connectivity
-  creator->setGlobalConnectivity(num_nodes, num_elements,
-				 elem_node_ptr, elem_node_conn,
-				 elem_id_nums);
 
-  // Set the boundary conditions
-  creator->setBoundaryConditions(num_bcs, bc_nodes, NULL, NULL);
+  // Get the rank of the processor
+  int rank; 
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-  // Set the nodal locations
-  creator->setNodes(Xpts);
+  // Only set the mesh/boundary conditions etc. on the
+  // root processor
+  if (rank == 0){
+    // Create a regular mesh of triangular elements
+    int nx = 10, ny = 10;
+    int num_elements = 2*nx*ny;
+    int num_nodes = (2*nx + 1)*(2*ny + 1);
+    
+    // Set the lengths along the x and y directions
+    double Lx = 10.0, Ly = 10.0;
+    
+    // Create the nodes
+    TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
+    for ( int j = 0; j < 2*ny+1; j++ ){
+      for ( int i = 0; i < 2*nx+1; i++ ){
+	Xpts[3*(i + j*(2*nx+1))] = 0.5*Lx*i/nx;
+	Xpts[3*(i + j*(2*nx+1))+1] = 0.5*Ly*j/ny;
+	Xpts[3*(i + j*(2*nx+1))+2] = 0.0;
+      }
+    }
+    
+    // Set up the element connectivity arrays
+    int *elem_node_conn = new int[ 6*num_elements ];
+    int *elem_node_ptr = new int[ num_elements+1 ];
+
+    int n = 0;
+    int *conn = elem_node_conn;
+    elem_node_ptr[0] = 0;
+    for ( int j = 0; j < ny; j++ ){
+      for ( int i = 0; i < nx; i++ ){
+	conn[0] = 2*i + (2*nx+1)*(2*j);
+	conn[1] = 2*i+2 + (2*nx+1)*(2*j);
+	conn[2] = 2*i + (2*nx+1)*(2*j+2);
+	conn[3] = 2*i+1 + (2*nx+1)*(2*j);
+	conn[4] = 2*i+1 + (2*nx+1)*(2*j+1);
+	conn[5] = 2*i + (2*nx+1)*(2*j+1);
+	conn += 6;
+	elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
+	n++;
+	
+	conn[0] = 2*i+2 + (2*nx+1)*(2*j+2);
+	conn[1] = 2*i + (2*nx+1)*(2*j+2);
+	conn[2] = 2*i+2 + (2*nx+1)*(2*j);
+	conn[3] = 2*i+1 + (2*nx+1)*(2*j+2);
+	conn[4] = 2*i+1 + (2*nx+1)*(2*j+1);
+	conn[5] = 2*i+2 + (2*nx+1)*(2*j+1);
+	conn += 6;
+	elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
+	n++;
+      }
+    }
+    
+    // Set the identity numbers
+    int *elem_id_nums = new int[ num_elements ];
+    memset(elem_id_nums, 0, num_elements*sizeof(int));
+    
+    // Set the boundary conditions
+    int num_bcs = 2*ny+1;
+    int *bc_nodes = new int[ num_bcs ];
+    for ( int j = 0; j < 2*ny+1; j++ ){
+      bc_nodes[j] = j*(2*nx+1);
+    }
+    
+    // Set the connectivity
+    creator->setGlobalConnectivity(num_nodes, num_elements,
+				   elem_node_ptr, elem_node_conn,
+				   elem_id_nums);
+    
+    // Set the boundary conditions
+    creator->setBoundaryConditions(num_bcs, bc_nodes, NULL, NULL);
+    
+    // Set the nodal locations
+    creator->setNodes(Xpts);
+
+    // Free all the allocated data
+    delete [] Xpts;
+    delete [] elem_node_ptr;
+    delete [] elem_node_conn;
+    delete [] elem_id_nums;
+    delete [] bc_nodes;
+  }
 
   // Create the stiffness object
   PlaneStressStiffness *stiff = new PlaneStressStiffness(1.0, 70.0, 0.3);
@@ -88,6 +103,7 @@ int main( int argc, char *argv[] ){
   TACSElement *elem = new PlaneStressTri6(stiff);
   elem->incref();
 
+  // This call must occur on all processor
   creator->setElements(&elem, 1);
 
   // Create the TACSAssembler object
@@ -98,6 +114,13 @@ int main( int argc, char *argv[] ){
   BVec *res = tacs->createVec();
   BVec *ans = tacs->createVec();
   FEMat *mat = tacs->createFEMat();
+
+  // Increment the reference count to the matrix/vectors
+  res->incref();
+  ans->incref();
+  mat->incref();
+
+  // Allocate the factorization
   int lev = 4500;
   double fill = 10.0;
   int reorder_schur = 1;
@@ -124,7 +147,16 @@ int main( int argc, char *argv[] ){
   f5->incref();
   f5->writeToFile("triangle.f5");
 
+  // Free everything
   f5->decref();
+  
+  // Decrease the reference count to the linear algebra objects
+  pc->decref();
+  mat->decref();
+  ans->decref();
+  res->decref();
+  
+  // Decrease the reference count to everything else
   stiff->decref();
   elem->decref();
   tacs->decref();

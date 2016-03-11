@@ -27,7 +27,6 @@ void TACSAssembler::schedPthreadJob( TACSAssembler * tacs,
   Note that the input must be the TACSAssemblerPthreadInfo data type.
   This function only uses the following data members:
   
-  loadCase: the load case to assemble
   tacs:     the pointer to the TACSAssembler object
 */
 void * TACSAssembler::assembleRes_thread( void * t ){
@@ -89,7 +88,6 @@ void * TACSAssembler::assembleRes_thread( void * t ){
   Note that the input must be the TACSAssemblerPthreadInfo data type.
   This function only uses the following data members:
   
-  loadCase: the load case to assemble
   tacs:     the pointer to the TACSAssembler object
   A:        the generic TACSMat base class
 */
@@ -171,7 +169,6 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
   This function uses the following information from the
   TACSAssemblerPthreadInfo class:
 
-  loadCase:     the load case number to use
   A:            the matrix to assemble (output)
   scaleFactor:  scaling factor applied to the matrix
   matType:      the matrix type defined in Element.h
@@ -182,7 +179,6 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
   TACSAssembler * tacs = pinfo->tacs;
   TACSMat * A = pinfo->mat;
   ElementMatrixType matType = pinfo->matType;
@@ -243,7 +239,6 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
   This function uses the following information from the 
   TACSAssemblerPthreadInfo class:
 
-  loadCase:          the load case number to use
   numAdjoints:       the number of adjoint vectors
 
   This function modifies:
@@ -256,7 +251,6 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
   TACSAssembler * tacs = pinfo->tacs;
   TacsScalar * localAdjoint = pinfo->adjointVars;
   int numAdjoints = pinfo->numAdjoints;
@@ -275,24 +269,12 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
   TacsScalar * elemXpts = &data[s];
   TacsScalar * elemResXptSens = &data[s + sx];
 
-  // Get the load factor for this load case
-  TacsScalar lambda = tacs->loadFactor[loadCase];
-
   // Allocate memory for the element adjoint variables and 
   // elemXptSens = the product of the element adjoint variables and
   // the derivative of the residuals w.r.t. the nodes
   TacsScalar * elemAdjoint = new TacsScalar[ s*numAdjoints ];
   TacsScalar * elemXptSens = new TacsScalar[ sx*numAdjoints ];
     
-  // Get the surface traction information
-  int index = 0;
-  int numElems = 0;
-  const int * elemNums = NULL;
-    
-  if (tacs->surfaceTractions[loadCase]){
-    numElems = tacs->surfaceTractions[loadCase]->getElementNums(&elemNums);
-  }
-
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
@@ -304,7 +286,7 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
       int nnodes = tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, 
 				   elemIndex, tacs->Xpts, elemXpts);
       tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars[loadCase], elemVars);
+		      tacs->localVars, elemVars);
       int nevars = tacs->varsPerNode*nnodes;
       
       // Get the adjoint variables associated with this element
@@ -327,7 +309,7 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
       // w.r.t. the element nodes
       while ((index < numElems) && (elemNums[index] == elemIndex)){
         TACSElementTraction * elemTraction =
-          tacs->surfaceTractions[loadCase]->getElement(index);
+          tacs->surfaceTractions->getElement(index);
         elemTraction->addForceXptSens(lambda, elemResXptSens,
                                       elemVars, elemXpts);
         index++;
@@ -374,7 +356,6 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
   This function uses the following information from the 
   TACSAssemblerPthreadInfo class:
 
-  loadCase:          the load case number to use
   numAdjoints:       the number of adjoint vectors
 */
 void * TACSAssembler::adjointResProduct_thread( void * t ){
@@ -382,7 +363,6 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
   TACSAssembler *tacs = pinfo->tacs;
   TacsScalar *localAdjoint = pinfo->adjointVars;
   int numAdjoints = pinfo->numAdjoints;
@@ -465,7 +445,6 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
   TACSAssemblerPthreadInfo class:
 
   iteration: the function evaluation iteration 
-  loadCase:  the number of load cases
   numFuncs:  the number of functions
   functions: the array of functions to be evaluated
 */
@@ -474,7 +453,6 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
   TACSAssembler * tacs = pinfo->tacs;
   int iter = pinfo->funcIteration;
   int numFuncs = pinfo->numFuncs;
@@ -642,7 +620,6 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
   This function uses the following information from the 
   TACSAssemblerPthreadInfo class:
 
-  loadCase:  the number of load cases
   numFuncs:  the number of functions
   functions: the array of functions 
 
@@ -655,7 +632,6 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
   TACSAssembler * tacs = pinfo->tacs;
   int numFuncs = pinfo->numFuncs;
   TACSFunction ** funcs = pinfo->functions;
@@ -745,7 +721,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
         tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
 			tacs->Xpts, elemXpts);
 	tacs->getValues(tacs->varsPerNode, elemNum, 
-			tacs->localVars[loadCase], elemVars);
+			tacs->localVars, elemVars);
 
         // Evaluate the element-wise sensitivity of the function
         function->elementWiseXptSens(elementXptSens, element, elemNum, 
@@ -765,7 +741,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
         tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
 			tacs->Xpts, elemXpts);
 	tacs->getValues(tacs->varsPerNode, elemNum, 
-			tacs->localVars[loadCase], elemVars);
+			tacs->localVars, elemVars);
       
         // Evaluate the element-wise sensitivity of the function
         function->elementWiseXptSens(elementXptSens, element, elemNum, 
@@ -795,7 +771,6 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
   This function uses the following information from the 
   TACSAssemblerPthreadInfo class:
 
-  loadCase:  the number of load cases
   numFuncs:  the number of functions
   functions: the array of functions 
 
@@ -807,7 +782,6 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  int loadCase = pinfo->loadCase;
   TACSAssembler *tacs = pinfo->tacs;
   int numFuncs = pinfo->numFuncs;
   int numDVs = pinfo->numDesignVars;

@@ -3858,8 +3858,8 @@ void TACSAssembler::getOutputConnectivity( enum ElementType elem_type,
     }
   }
 
-  int * node_range = new int[ mpiSize+1 ];
-  int * csr_range = new int[ mpiSize+1 ];
+  int *node_range = new int[ mpiSize+1 ];
+  int *csr_range = new int[ mpiSize+1 ];
   node_range[0] = 0;
   MPI_Allgather(&nodes, 1, MPI_INT, &node_range[1], 1, MPI_INT, tacs_comm);
   csr_range[0] = 0;
@@ -3870,8 +3870,8 @@ void TACSAssembler::getOutputConnectivity( enum ElementType elem_type,
     csr_range[i+1]  += csr_range[i];
   }
 
-  int * csr = new int[ ncsr ];
-  int * comp_nums = new int[ nelems ];
+  int *csr = new int[ ncsr ];
+  int *comp_nums = new int[ nelems ];
   ncsr = 0;
   nelems = 0;
   nodes = node_range[mpiRank];

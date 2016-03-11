@@ -42,9 +42,10 @@ class TACSCreator : public TACSObject {
 
  private:
   // Partition the mesh stored internally
-  void splitSerialMesh( int split_size, int *elem_partition, 
-			int *new_nodes, int *owned_elements, 
-			int *owned_nodes );
+  void splitSerialMesh( int split_size, int *partition, 
+			int *new_nodes, int *new_dep_nodes,
+			int *owned_elements, int *owned_nodes, 
+			int *owned_dep_nodes );
 
   // The number of variables per node in the mesh
   int vars_per_node;
@@ -55,6 +56,9 @@ class TACSCreator : public TACSObject {
 
   // The global connectivity information
   int num_nodes, num_elements;
+
+  // Set the dependent nodes
+  int num_dependent_nodes;
 
   // The element connectivity
   int *elem_node_ptr, *elem_node_conn;

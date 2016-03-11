@@ -133,7 +133,6 @@ class TACSAssembler : public TACSObject {
 
   // Design variable handling
   // ------------------------
-  int getNumDesignVars();
   void getDesignVars( TacsScalar dvs[], int numDVs );
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVarRange( TacsScalar lowerBound[], 
@@ -283,7 +282,6 @@ class TACSAssembler : public TACSObject {
   int maxElementNodes; // maximum number of ind. and dep. nodes for any element
   int maxElementSize; // maximum number of variables for any element
   int maxElementIndepNodes; // maximum number of independent nodes 
-  int numLoadCases; // number of load cases
   int numElements; // number of elements
   int numNodes; // number of nodes referenced by this process
   int numDependentNodes; // number of dependent nodes
@@ -335,7 +333,6 @@ class TACSAssembler : public TACSObject {
   class TACSAssemblerPthreadInfo {
   public:
     TACSAssemblerPthreadInfo(){
-      loadCase = 0;
       tacs = NULL; 
       // Matrix information
       mat = NULL;
@@ -357,7 +354,6 @@ class TACSAssembler : public TACSObject {
 
     // The data required to perform most of the matrix
     // assembly.
-    int loadCase;
     TACSAssembler *tacs;
 
     // Information for matrix assembly
