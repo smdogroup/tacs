@@ -25,6 +25,11 @@ class TACSCreator : public TACSObject {
   void setBoundaryConditions( int _num_bcs, int *_bc_nodes, int *_bc_vars,
 			      int *_bc_ptr );
 
+  // Set the dependent node connectivity and weights
+  // -----------------------------------------------
+  void setDependentNodes( int num_dep_nodes, int *_dep_node_ptr,
+			  int *_dep_node_conn, TacsScalar *_dep_node_weights );
+
   // Set the elements into TACS creator
   // ----------------------------------
   void setElements( TACSElement **_elements, int _num_elem_ids );
@@ -57,8 +62,10 @@ class TACSCreator : public TACSObject {
   // The global connectivity information
   int num_nodes, num_elements;
 
-  // Set the dependent nodes
+  // The dependent node data, connectivity and weights
   int num_dependent_nodes;
+  int *dep_node_ptr, *dep_node_conn;
+  TacsScalar *dep_node_weights;
 
   // The element connectivity
   int *elem_node_ptr, *elem_node_conn;

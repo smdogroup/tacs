@@ -317,7 +317,7 @@ void TACSAssembler::addNodes( int ** _tacsNodeNums ){
 */
 void TACSAssembler::setDependentNodes( int **_depNodeIndex, 
 				       int **_depNodeToLocal,
-				       TacsScalar **_depNodeWeights ){
+				       double **_depNodeWeights ){
   if (meshFinalizedFlag){
     fprintf(stderr, "[%d] Cannot call setDependentNodes() after finalize()\n", 
 	    mpiRank);

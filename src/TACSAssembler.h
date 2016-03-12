@@ -61,7 +61,7 @@ class TACSAssembler : public TACSObject {
   // ----------------------------
   void setDependentNodes( int **_depNodeIndex, 
 			  int **_depNodeToLocal,
-			  TacsScalar **_depNodeWeights );
+			  double **_depNodeWeights );
 
   // Add elements to TACS
   // --------------------
@@ -301,7 +301,7 @@ class TACSAssembler : public TACSObject {
   int *depNodeIndex;
   int *depNodeToLocal;
   int *depNodeToTacs;
-  TacsScalar *depNodeWeights;
+  double *depNodeWeights;
 
   // For use during set up - before call to finalize
   int currElement; // Number of elements currently added (max val. numElements)
