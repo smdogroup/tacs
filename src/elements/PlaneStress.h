@@ -25,7 +25,7 @@ class PlaneStress : public TACS2DElement<order*order> {
 
   // Return the name of this element
   // -------------------------------
-  const char * elementName() const { return elemName; }
+  const char* elementName(){ return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -48,6 +48,8 @@ class PlaneStress : public TACS2DElement<order*order> {
   void getOutputConnectivity( int * con, int node );
 
  private:
+  static const int NUM_NODES = order*order;
+
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
@@ -188,7 +190,7 @@ void PlaneStress<order>::getOutputData( unsigned int out_type,
 
       // Compute the strain
       TacsScalar strain[3];
-      this->getStrain(strain, J, Na, Nb, vars);
+      this->evalStrain(strain, J, Na, Nb, vars);
 	
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < 3; k++ ){

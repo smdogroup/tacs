@@ -39,13 +39,13 @@ class TACSMeshLoader : public TACSObject {
 
   // Read a BDF file for input
   // -------------------------
-  int scanBdfFile( const char * file_name );
+  int scanBDFFile( const char * file_name );
 
   // Get information about the mesh after scanning
   // ---------------------------------------------
   int getNumComponents();
-  const char * getComponentDescript( int comp_num );
-  const char * getElementDescript( int comp_num );
+  const char* getComponentDescript( int comp_num );
+  const char* getElementDescript( int comp_num );
 
   // Set the elements corresponding to each of the component numbers 
   // ---------------------------------------------------------------
@@ -56,88 +56,56 @@ class TACSMeshLoader : public TACSObject {
   // -------------------------------------------------------
   int getNumNodes();
   int getNumElements();
-  void getComponentNums( int comp_nums[], int num_elements );
-  int getComponentElementNums( int ** elem_nums,
-                               int comp_nums[], int num_comps );
-  void setFunctionDomain( TACSFunction * function, 
-			  int comp_nums[], int num_comps );
 
   // Create a TACSToFH5 file writer
   // ------------------------------
-  TACSToFH5 * createTACSToFH5( TACSAssembler * tacs,
-                               enum ElementType elem_type,
-                               unsigned int write_flag );
+  TACSToFH5* createTACSToFH5( TACSAssembler * tacs,
+			      enum ElementType elem_type,
+			      unsigned int write_flag );
 
   // Distribute the mesh and create TACS
   // -----------------------------------
-  TACSAssembler * createTACS( int vars_per_node,
-			      int num_load_cases,
-			      enum TACSAssembler::OrderingType order_type = 
-			      TACSAssembler::NO_ORDER, 
-			      enum TACSAssembler::MatrixOrderingType mat_type = 
-			      TACSAssembler::DIRECT_SCHUR);
-  
-  // Just create TACS - do not distribute the mesh
-  // ---------------------------------------------
-  TACSAssembler * createSerialTACS( int split_size,
-                                    int vars_per_node,
-                                    int num_load_cases );
+  TACSAssembler* createTACS( int vars_per_node,
+			     enum TACSAssembler::OrderingType order_type = 
+			     TACSAssembler::NATURAL_ORDER, 
+			     enum TACSAssembler::MatrixOrderingType mat_type = 
+			     TACSAssembler::DIRECT_SCHUR);
 
-  // Functions required for writing a BDF file
-  // -----------------------------------------
-  void getNumElementsForComps( int * numElem, int sizeNumComp );
-  void getConnectivity( int * conn, int sizeConn );
-  void getElementComponents( int * compIDs, int sizeCompIds );
-  int getTotalNumElements();
-  void getConnectivityForComp( int compID, int * conn, int sizeConn );
-  void getNodes( int * nodeList, int nNodes, double * pts, int nPts );
-  void getOrigNodes( double * xOrig, int n );
-  void getOrigNodeNums( int * nodeNumsOrig, int n );
-  void writeBDF( const char * filename, TacsScalar *bdfNodes, 
-		 int * nodeNums, int nBDFNodes );
-
-  // Write the data from the constitutive objects
-  // --------------------------------------------
-  void writeBDFConstitutive( const char *filename );
+  // Set the domain of a structural function with component numbers
+  // --------------------------------------------------------------
+  // void setFunctionDomain( TACSFunction * function, 
+  //                         int comp_nums[], int num_comps );
 
  private:
-  // Split the mesh and reorder (but do not distribute)
-  void splitMesh( int split_size, 
-                  int *elem_partition, int *new_nodes,
-                  int *num_owned_elements, int *num_owned_nodes );
-
-  // Write the constitutive data to the given file pointer
-  void writeBDFConstitutive( FILE *fp );
-
   // Communicator for all processors
   MPI_Comm comm;
 
   // The element corresponding to each of the component numbers
   TACSElement **elements;
 
-  // Original BDF mesh information:
+  // Original BDF mesh information: Note that the original
+  // ordering may not be contiguous. The node numbers associated
+  // with the original ordering are stored in node_nums.
   int *node_nums;
-  double *Xpts_unsorted;
+  double *Xpts_unsorted; 
+
+  // Reduced set of contiguous nodes 
+  double *Xpts;
 
   // The mesh and element connectivity
   int num_nodes, num_elements;
-  int *elem_node_con, *elem_node_ptr;
+  int *elem_node_conn, *elem_node_ptr;
   int *elem_component;
-  double *Xpts;
 
   // Store information about the components
   int num_components;
   char *component_elems;
   char *component_descript;
 
-  int num_owned_elements;
-  int * local_component_nums;
-
   // The boundary conditions
   int num_bcs;
-  int *bc_nodes, *bc_con, *bc_ptr;
-  int *orig_bc_nodes, *orig_bc_con, *orig_bc_ptr;
-  double *bc_vals, *orig_bc_vals;
+  int *bc_nodes, *bc_vars, *bc_ptr;
+  double *bc_vals;
 };
 
 #endif

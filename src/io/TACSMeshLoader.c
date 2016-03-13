@@ -1,14 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "tacsmetis.h"
 
-#include "FElibrary.h"
 #include "TACSMeshLoader.h"
-#include "FSDTStiffness.h"
-#include "TensorToolbox.h"
-/* #include "EBStiffness.h" */
-/* #include "EBBeam.h" */
+#include "TACSCreator.h"
+#include "FElibrary.h"
 
 /*!
   This is an interface for reading NASTRAN-style files.
@@ -482,6 +478,17 @@ static void parse_element_field9( char line1[], char line2[], char line3[],
   }
 }
 
+/*
+  The TACSMeshLoader class
+
+  To load a mesh, you first pass in the communicator on which TACS
+  will be allocated. You can then scan a file, set the element objects
+  and create the TACSAssembler object.
+
+  This constructor simply sets all data to NULL and stores the
+  communicator for later use. Note that the file is only scanned on
+  the root processor.
+*/
 TACSMeshLoader::TACSMeshLoader( MPI_Comm _comm ){
   comm = _comm;
 
@@ -490,35 +497,33 @@ TACSMeshLoader::TACSMeshLoader( MPI_Comm _comm ){
   num_bcs = 0;
   node_nums = NULL;
   Xpts_unsorted = NULL;
-  elem_node_con = elem_node_ptr = NULL;
+  elem_node_conn = elem_node_ptr = NULL;
   elem_component = NULL;
   Xpts = NULL;
   bc_vals = NULL;
-  bc_nodes = bc_con = bc_ptr = NULL;
-  orig_bc_vals = NULL;
-  orig_bc_nodes = orig_bc_con = orig_bc_ptr = NULL;
+  bc_nodes = bc_vars = bc_ptr = NULL;
+
   num_components = 0;
   elements = NULL;
   component_elems = NULL;
   component_descript = NULL;
-  num_owned_elements = 0; 
-  local_component_nums = NULL;
 }
 
+/*
+  Destroy existing data that may have been allocated
+
+  Note that most of this data will only be allocated on the root
+  processor 
+*/
 TACSMeshLoader::~TACSMeshLoader(){
-  if (elem_node_con){ delete [] elem_node_con; }
+  if (elem_node_conn){ delete [] elem_node_conn; }
   if (elem_node_ptr){ delete [] elem_node_ptr; }
   if (elem_component){ delete [] elem_component; }
   if (Xpts){ delete [] Xpts; }
   if (bc_nodes){ delete [] bc_nodes; }
-  if (bc_con){ delete [] bc_con; }
+  if (bc_vars){ delete [] bc_vars; }
   if (bc_vals){ delete [] bc_vals; }
   if (bc_ptr){ delete [] bc_ptr; }
-
-  if (orig_bc_nodes){ delete [] orig_bc_nodes; }
-  if (orig_bc_con){ delete [] orig_bc_con; }
-  if (orig_bc_vals){ delete [] orig_bc_vals; }
-  if (orig_bc_ptr){ delete [] orig_bc_ptr; }
 
   if (elements){
     for ( int k = 0; k < num_components; k++ ){
@@ -528,7 +533,6 @@ TACSMeshLoader::~TACSMeshLoader(){
   }
   if (component_elems){ delete [] component_elems; }
   if (component_descript){ delete [] component_descript; }
-  if (local_component_nums){ delete [] local_component_nums; }
   if (Xpts_unsorted){ delete [] Xpts_unsorted;}
   if (node_nums) {delete [] node_nums;}
 }
@@ -571,18 +575,22 @@ const char * TACSMeshLoader::getElementDescript( int comp_num ){
 }
 
 /*
-  This scans a Nastran file - only scanning in information from the
-  bulk data section.
+  This functions scans a Nastran BDF file - only scanning in
+  information from the bulk data section.
 
-  The only entries scanned are the entries beginning with elem_types
+  Only the element types, boundary conditions, connectivitiy and GRID
+  entries are scanned.  Any entries
+
+
+constituentries scanned are the entries beginning with elem_types
   and any GRID/GRID* entries.
 */
-int TACSMeshLoader::scanBdfFile( const char * file_name ){
+int TACSMeshLoader::scanBDFFile( const char * file_name ){
   int rank;
   MPI_Comm_rank(comm, &rank);
   int fail = 0;
-  int root = 0;
 
+  const int root = 0;
   if (rank == root){
     FILE * fp = fopen(file_name, "r"); 
     if (!fp){ 
@@ -600,7 +608,7 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
 
     // The size of the connectivity arrays
     int elem_con_size = 0;
-    int bc_con_size = 0;
+    int bc_vars_size = 0;
 
     // Each line can only be 80 characters long
     char line[9][80];
@@ -815,7 +823,7 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
 	    num_elements++;
 	  }      
 	  else if (strncmp(line[0], "SPC", 3) == 0){
-	    bc_con_size += 6;
+	    bc_vars_size += 6;
 	    num_bcs++;
 	  }
 	  else if (strncmp(line[0], "FFORCE", 6) == 0){	  
@@ -855,8 +863,8 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
     // Boundary condition information
     bc_nodes = new int[ num_bcs ];
     bc_ptr = new int[ num_bcs+1 ];
-    bc_vals = new double[ bc_con_size ];
-    bc_con = new int[ bc_con_size ];
+    bc_vals = new double[ bc_vars_size ];
+    bc_vars = new int[ bc_vars_size ];
     bc_ptr[0] = 0;
 
     // Allocate space for storing the component names
@@ -870,7 +878,7 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
     num_elements = 0;
     num_bcs = 0;
     elem_con_size = 0;
-    bc_con_size = 0;
+    bc_vars_size = 0;
 
     // Rewind to the beginning of the bulk section and allocate everything
     buffer_loc = bulk_start;
@@ -1214,15 +1222,15 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
 	    
 	    for ( int j = 0; j < 6; j++ ){
 	      if (dofs[j] == line[0][k]){
-		bc_con[bc_con_size] = j;
-		bc_vals[bc_con_size] = val;
-		bc_con_size++;
+		bc_vars[bc_vars_size] = j;
+		bc_vals[bc_vars_size] = val;
+		bc_vars_size++;
 		break;
 	      }
 	    }
 	  }
 	  
-	  bc_ptr[num_bcs+1] = bc_con_size;
+	  bc_ptr[num_bcs+1] = bc_vars_size;
 	  num_bcs++;
 	}
       }
@@ -1243,7 +1251,7 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
     }
 
     // Arg sort the list of nodes
-    int * node_args = new int[ num_nodes ]; 
+    int *node_args = new int[ num_nodes ]; 
     for ( int k = 0; k < num_nodes; k++ ){ 
       node_args[k] = k; 
     }
@@ -1253,7 +1261,7 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
     arg_sort_list = NULL;
 
     // Arg sort the list of elements
-    int * elem_args = new int[ num_elements ];
+    int *elem_args = new int[ num_elements ];
     for ( int k = 0; k < num_elements; k++ ){
       elem_args[k] = k;
     }
@@ -1274,8 +1282,8 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
       }
     }
 
-    // Now handle the connectivity array
-    elem_node_con = new int[ elem_con_size ];
+    // Read in the connectivity array and store the information
+    elem_node_conn = new int[ elem_con_size ];
     elem_node_ptr = new int[ num_elements+1 ];
     elem_component = new int[ num_elements ];
 
@@ -1290,11 +1298,11 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
         int node = find_index_arg_sorted(node_num, num_nodes,
                                          node_nums, node_args);
         if (node < 0){
-          elem_node_con[n] = -1;
+          elem_node_conn[n] = -1;
           fail = 1;
         }
         else {
-          elem_node_con[n] = node;
+          elem_node_conn[n] = node;
         }
       }
 
@@ -1315,12 +1323,12 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
       }
     }
 
+    // Free data that has been allocated locally
     delete [] elem_nums;
     delete [] elem_comp;
     delete [] elem_con;
     delete [] elem_con_ptr;
     delete [] elem_args;
-
     delete [] node_args;
   }
 
@@ -1338,40 +1346,6 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
     elements[k] = NULL;
   }
 
-  // Broadcast the boundary condition information
-  MPI_Bcast(&num_bcs, 1, MPI_INT, root, comm);
-
-  if (rank != root){
-    bc_nodes = new int[ num_bcs ];
-    bc_ptr = new int[ num_bcs+1 ];
-  }
-
-  MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root, comm);
-  MPI_Bcast(bc_ptr, num_bcs+1, MPI_INT, root, comm);
-
-  // Allocate the values and offsets
-  int bc_size = bc_ptr[num_bcs];
-  if (rank != root){
-    bc_vals = new double[bc_size];
-    bc_con = new int[bc_size];
-  }
-
-  // Save the original boundary condition information on the root proc
-  // such that it will be possible to write the original BDF file
-  if (rank == root){
-    orig_bc_nodes = new int[ num_bcs ];
-    orig_bc_ptr = new int[ num_bcs+1 ];
-    orig_bc_vals = new double[bc_size];
-    orig_bc_con = new int[bc_size];
-    memcpy(orig_bc_nodes, bc_nodes, num_bcs*sizeof(int));
-    memcpy(orig_bc_ptr, bc_ptr, (num_bcs+1)*sizeof(int));
-    memcpy(orig_bc_vals, bc_vals, bc_size*sizeof(double));
-    memcpy(orig_bc_con, bc_con, bc_size*sizeof(int));
-  }
-
-  MPI_Bcast(bc_vals, bc_size, MPI_DOUBLE, root, comm);
-  MPI_Bcast(bc_con, bc_size, MPI_INT, root, comm);
-
   return fail;
 }
 
@@ -1380,191 +1354,6 @@ int TACSMeshLoader::scanBdfFile( const char * file_name ){
 */
 int TACSMeshLoader::getNumNodes(){
   return num_nodes;
-}
-
-/*
-  Split the mesh into segments for parallel computations.
-
-  First, build an element to element CSR data structure. Next, split
-  the mesh using Metis ane return the elem_partition array.
-*/
-void TACSMeshLoader::splitMesh( int split_size, 
-                                int * elem_partition, int * new_nodes,
-                                int * owned_elements, 
-				int * owned_nodes ){
-  // Create an element -> element CSR data structure for splitting with
-  // Metis
-    
-  // First, compute the node to element CSR data structure
-  // node_elem_con[node_elem_ptr[node]:node_elem_ptr[node+1]] are the
-  // elements that contain node, 'node'
-  int * node_elem_ptr = new int[ num_nodes+1 ];
-  memset(node_elem_ptr, 0, (num_nodes+1)*sizeof(int));
-    
-  for ( int i = 0; i < num_elements; i++ ){
-    int end = elem_node_ptr[i+1]; 
-    for ( int j = elem_node_ptr[i]; j < end; j++ ){
-      int node = elem_node_con[j];
-      node_elem_ptr[node+1]++;
-    }
-  }
-
-  // Determine the size of the node to element array
-  for ( int i = 0; i < num_nodes; i++ ){
-    node_elem_ptr[i+1] += node_elem_ptr[i];
-  }
-  int * node_elem_con = new int[ node_elem_ptr[num_nodes] ];
-
-  for ( int i = 0; i < num_elements; i++ ){
-    int end = elem_node_ptr[i+1];
-    for ( int j = elem_node_ptr[i]; j < end; j++ ){
-      int node = elem_node_con[j];
-      node_elem_con[node_elem_ptr[node]] = i;
-      node_elem_ptr[node]++;
-    }
-  }
-  
-  // Reset the node_elem_ptr array to the correct range
-  for ( int i = num_nodes; i > 0; i-- ){
-    node_elem_ptr[i] = node_elem_ptr[i-1];
-  }
-  node_elem_ptr[0] = 0;
-
-  // Set up the element to element connectivity.
-  // For this to work, must remove the diagonal contribution
-  // (no self-reference)
-  int * elem_ptr = new int[ num_elements+1 ];
-  elem_ptr[0] = 0;
-
-  // Information to keep track of how big the data structure is
-  int elem_con_size = 0;
-  int max_elem_con_size = 27*num_elements;
-  int * elem_con = new int[ max_elem_con_size ];
-
-  int * row = new int[ num_elements ];
-
-  for ( int i = 0; i < num_elements; i++ ){
-    int row_size = 0;    
-
-    // Add the element -> element connectivity
-    for ( int j = elem_node_ptr[i]; j < elem_node_ptr[i+1]; j++ ){
-      int node = elem_node_con[j];
-
-      int start = node_elem_ptr[node];
-      int size = node_elem_ptr[node+1] - start;
-
-      row_size = FElibrary::mergeArrays(row, row_size, 
-                                        &node_elem_con[start], size);
-    }
-
-    if ( elem_con_size + row_size > max_elem_con_size ){
-      max_elem_con_size += 0.5*max_elem_con_size;
-      if (max_elem_con_size < elem_con_size + row_size ){
-        max_elem_con_size += elem_con_size + row_size;
-      }
-      extend_int_array(&elem_con, elem_con_size, 
-                       max_elem_con_size);
-    }
-
-    // Add the elements - minus the diagonal entry
-    for ( int j = 0; j < row_size; j++ ){
-      if (row[j] != i){ // Not the diagonal 
-        elem_con[elem_con_size] = row[j];
-        elem_con_size++;
-      }
-    }
-    elem_ptr[i+1] = elem_con_size;
-  }
-
-  delete [] row;
-  delete [] node_elem_ptr;
-  delete [] node_elem_con;
-
-  // Partition the mesh
-  if (split_size > 1 ){
-    int options[5];
-    options[0] = 0; // use the default options
-    int wgtflag = 0; // weights are on the verticies
-    int numflag = 0; // C style numbering 
-    int edgecut = -1;        
-      
-    int * vwgts = NULL; // Weights on the vertices 
-    int * adjwgts = NULL;  // Weights on the edges or adjacency
-      
-    if (split_size < 8){
-      METIS_PartGraphRecursive(&num_elements, elem_ptr, elem_con, 
-                               vwgts, adjwgts, 
-                               &wgtflag, &numflag, &split_size, 
-                               options, &edgecut, elem_partition);
-    }
-    else {
-      METIS_PartGraphKway(&num_elements, elem_ptr, elem_con, 
-                          vwgts, adjwgts, 
-                          &wgtflag, &numflag, &split_size, 
-                          options, &edgecut, elem_partition);
-    }
-  }
-  else {
-    for ( int k = 0; k < num_elements; k++ ){
-      elem_partition[k] = 0;
-    }
-  } 
-
-  delete [] elem_con;
-  delete [] elem_ptr;
-
-  // Now, re-order the variables so that they are almost contiguous over
-  // each processor 
-  memset(owned_nodes, 0, split_size*sizeof(int));
-  memset(owned_elements, 0, split_size*sizeof(int));
-
-  // Set up the array new_nodes such that
-  // old node i -> new node new_nodes[i]
-  for ( int k = 0; k < num_nodes; k++ ){
-    new_nodes[k] = -1;
-  }
-
-  int count = 0;
-  for ( int j = 0; j < num_elements; j++ ){
-    int owner = elem_partition[j];
-    owned_elements[owner]++;
-
-    for ( int i = elem_node_ptr[j]; i < elem_node_ptr[j+1]; i++ ){
-      // elem_node_con[j]
-      int node = elem_node_con[i];
-      if (new_nodes[node] < 0){
-        new_nodes[node] = count;
-        owned_nodes[owner]++;
-        count++;
-      }
-    }
-  }
-
-  // Now, number them for real
-  int * split_offset = new int[ split_size ];
-  split_offset[0] = 0;
-  for ( int k = 1; k < split_size; k++ ){
-    split_offset[k] = split_offset[k-1] + owned_nodes[k-1];
-  }
-
-  for ( int k = 0; k < num_nodes; k++ ){
-    new_nodes[k] = -1;
-  }
-
-  for ( int j = 0; j < num_elements; j++ ){
-    int owner = elem_partition[j];
-
-    for ( int i = elem_node_ptr[j]; i < elem_node_ptr[j+1]; i++ ){
-      // elem_node_con[j]
-      int node = elem_node_con[i];
-      if (new_nodes[node] < 0){
-        new_nodes[node] = split_offset[owner];
-        split_offset[owner]++;
-      }
-    }
-  }
-
-  delete [] split_offset;
 }
 
 /*
@@ -1598,358 +1387,40 @@ TACSToFH5 * TACSMeshLoader::createTACSToFH5( TACSAssembler * tacs,
   Create a distributed version of TACS
 */
 TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
-					    int num_load_cases,
 					    enum TACSAssembler::OrderingType order_type, 
 					    enum TACSAssembler::MatrixOrderingType mat_type ){
-  int size, rank;
-  MPI_Comm_size(comm, &size);
+  // Set the root processor
+  const int root = 0;
+
+  // Get the rank of the current processor
+  int rank;
   MPI_Comm_rank(comm, &rank);
 
-  num_owned_elements = 0; 
-  int num_owned_nodes = 0;
-  int *partition = NULL, *new_nodes = NULL;
-  int *owned_elements = NULL, *owned_nodes = NULL; // The arrays on the root
+  // Allocate the TACS creator
+  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, 2);
+  creator->incref();
 
-  int root = 0;
-  if (rank == root){   
-    partition = new int[ num_elements ];
-    new_nodes = new int[ num_nodes ];
-    owned_elements = new int[size];
-    owned_nodes = new int[size];
-    
-    splitMesh(size, partition, new_nodes, 
-              owned_elements, owned_nodes);    
-  }
-  
-  MPI_Scatter(owned_nodes, 1, MPI_INT, 
-              &num_owned_nodes, 1, MPI_INT, root, comm);
-  MPI_Scatter(owned_elements, 1, MPI_INT, 
-              &num_owned_elements, 1, MPI_INT, root, comm);
-
-  int num_local_nodes;
-  // Local element connectivity information
-  local_component_nums = new int[num_owned_elements]; // Store for use later
-  int * local_elem_node_ptr = new int[num_owned_elements+1];
-  int * local_elem_node_con = NULL;
-
-  // Loacal nodal information
-  int * local_tacs_nodes = NULL;
-  double * Xpts_local = NULL;
-
-  // For each processor, send the information to the owner
   if (rank == root){
-    // Reset the nodes for the boundary conditions
-    for ( int j = 0; j < num_bcs; j++ ){
-      bc_nodes[j] = new_nodes[bc_nodes[j]];
-    }
-
-    // The element partition
-    int * elem_part = new int[ num_elements ];
-    for ( int k = 0; k < num_elements; k++ ){
-      elem_part[k] = k;
-    }
-
-    int * inv_new_nodes = new int[ num_nodes ];
-    for ( int i = 0; i < num_nodes; i++ ){
-      inv_new_nodes[new_nodes[i]] = i;
-    }
-
-    // Now partition[elem_part[k]] is sorted
-    arg_sort_list = partition;
-    qsort(elem_part, num_elements, sizeof(int), compare_arg_sort);
-    arg_sort_list = NULL;
-
-    // Compute the local CSR data structure on this process
-    // Use an upper bound for the memory requirements
-    int * tacs_nodes = new int[ elem_node_ptr[num_elements] ];
-    int * elem_ptr = new int[ num_elements+1 ];
-    int * elem_con = new int[ elem_node_ptr[num_elements] ];
-    int * elem_comp = new int[ num_elements ];
-    double * xpts = new double[ 3*num_nodes ];
-
-    int start = 0;
-    for ( int k = 0; k < size; k++ ){
-      int end = start + owned_elements[k];
-
-      int local_node_size = 0;
-      elem_ptr[0] = 0;
-
-      // Cycle through partition k
-      int n = 0;
-      for ( int j = start; j < end; j++, n++ ){
-        int elem = elem_part[j];
-
-	// Add the element
-        for ( int i = elem_node_ptr[elem]; 
-	      i < elem_node_ptr[elem+1]; i++, local_node_size++ ){
-          int node = elem_node_con[i];
-          tacs_nodes[local_node_size] = new_nodes[node];
-	  elem_con[local_node_size] = new_nodes[node];          
-        }
-
-	elem_comp[n] = elem_component[elem];
-	elem_ptr[n+1] = local_node_size;
-      }
-
-      // Uniquify the list
-      local_node_size = FElibrary::uniqueSort(tacs_nodes, local_node_size);
-
-      // tacs_nodes is sorted and defines the local ordering 
-      // tacs_nodes[i] -> local node i      
-      for ( int j = 0; j < elem_ptr[n]; j++ ){
-	int * item = (int*)bsearch(&elem_con[j], tacs_nodes, local_node_size,
-				   sizeof(int), FElibrary::comparator);
-	if (item){
-	  elem_con[j] = item - tacs_nodes;
-	}
-	else {
-	  fprintf(stderr, 
-		  "[%d] TACSMeshLoader: could not find %d node in local list\n",
-		  rank, elem_con[j]);
-	  MPI_Abort(comm, 1);
-	}
-      }
-
-      // Copy over the data from the local node numbers
-      for ( int j = 0; j < local_node_size; j++ ){
-	int node = inv_new_nodes[tacs_nodes[j]];
-	xpts[3*j] = Xpts[3*node];
-	xpts[3*j+1] = Xpts[3*node+1];
-	xpts[3*j+2] = Xpts[3*node+2];
-      }
+    // Set the connectivity
+    creator->setGlobalConnectivity(num_nodes, num_elements,
+  				   elem_node_ptr, elem_node_conn,
+  				   elem_component);
     
-      // Create the CSR data structure required
-      if (k == root){
-	// Copy the values over from the nodes
-	num_local_nodes = local_node_size;
-	local_tacs_nodes = new int[ num_local_nodes ];
-	Xpts_local = new double[ 3*num_local_nodes ];
-	
-	memcpy(local_tacs_nodes, tacs_nodes, num_local_nodes*sizeof(int));
-	memcpy(Xpts_local, xpts, 3*num_local_nodes*sizeof(double));
-
-	// Copy over values for the elements
-	memcpy(local_component_nums, elem_comp, 
-	       num_owned_elements*sizeof(int));
-	memcpy(local_elem_node_ptr, elem_ptr, 
-	       (num_owned_elements+1)*sizeof(int));
-
-	local_elem_node_con = new int[local_elem_node_ptr[num_owned_elements]];
-	memcpy(local_elem_node_con, elem_con,
-	       local_elem_node_ptr[num_owned_elements]*sizeof(int));
-      }
-      else {
-        // Send the data to the other process
-	MPI_Send(&local_node_size, 1, MPI_INT, k, 1, comm);
-
-	MPI_Send(tacs_nodes, local_node_size, MPI_INT, k, 2, comm);
-	MPI_Send(xpts, 3*local_node_size, MPI_DOUBLE, k, 3, comm);
-
-	// Send the element data
-        MPI_Send(elem_comp, owned_elements[k], MPI_INT, k, 4, comm);
-        MPI_Send(elem_ptr, owned_elements[k]+1, MPI_INT, k, 5, comm);
-
-        MPI_Send(elem_con, elem_ptr[owned_elements[k]], MPI_INT, k, 6, comm);
-      }
-
-      start += owned_elements[k];
-    }
-
-    delete [] elem_part;
-    delete [] inv_new_nodes;
-    delete [] tacs_nodes;
-    delete [] elem_ptr;
-    delete [] elem_con;
-    delete [] elem_comp;
-    delete [] xpts;
-  }
-  else {
-    // Recv the data from the root process
-    MPI_Status status;
-    MPI_Recv(&num_local_nodes, 1, MPI_INT, 
-	     root, 1, comm, &status);
-
-    // Allocate space for the incoming data
-    local_tacs_nodes = new int[ num_local_nodes ];
-    Xpts_local = new double[ 3*num_local_nodes ];
-
-    MPI_Recv(local_tacs_nodes, num_local_nodes, MPI_INT, 
-	     root, 2, comm, &status);
-    MPI_Recv(Xpts_local, 3*num_local_nodes, MPI_DOUBLE, 
-	     root, 3, comm, &status);
-
-    // Receive the element data
-    MPI_Recv(local_component_nums, num_owned_elements, MPI_INT, 
-	     root, 4, comm, &status);
-    MPI_Recv(local_elem_node_ptr, num_owned_elements+1, MPI_INT, 
-	     root, 5, comm, &status);
-
-    int con_size = local_elem_node_ptr[num_owned_elements];
-    local_elem_node_con = new int[con_size];
-    MPI_Recv(local_elem_node_con, con_size, MPI_INT, 
-	     root, 6, comm, &status);
-  }
-  
-  int node_max_csr_size = local_elem_node_ptr[num_owned_elements];  
-  TACSAssembler * tacs = new TACSAssembler(comm, num_owned_nodes, vars_per_node,
-                                           num_owned_elements, num_local_nodes,
-                                           node_max_csr_size, num_load_cases);
-  // Sort out the boundary conditions
-  // Broadcast the boundary condition information
-  MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root, comm);
-
-  // Get the local node numbers for the boundary conditions
-  for ( int k = 0; k < num_bcs; k++ ){
-    int * item = (int*)bsearch(&bc_nodes[k], local_tacs_nodes, num_local_nodes, 
-			       sizeof(int), FElibrary::comparator);
-    if (item){
-      bc_nodes[k] = item - local_tacs_nodes;
-    }
-    else {
-      bc_nodes[k] = -1;
-    }
+    // Set the boundary conditions
+    creator->setBoundaryConditions(num_bcs, bc_nodes, bc_vars, bc_ptr);
+    
+    // Set the nodal locations
+    creator->setNodes(Xpts);
   }
 
-  // Add the node numbers - this steals the reference
-  tacs->addNodes(&local_tacs_nodes);
-  
-  // Add the elements
-  for ( int k = 0; k < num_owned_elements; k++ ){
-    TACSElement * element = elements[local_component_nums[k]];
-    if (!element){
-      fprintf(stderr, 
-              "[%d] TACSMeshLoader: Element undefined for component %d\n",
-              rank, local_component_nums[k]);
-      MPI_Abort(comm, 1);
-      return NULL;
-    }
+  // This call must occur on all processor
+  creator->setElements(elements, num_components);
 
-    // Add the element node numbers
-    int start = local_elem_node_ptr[k];
-    int end = local_elem_node_ptr[k+1];
-    tacs->addElement(element, &local_elem_node_con[start], end-start);
-  }
+  // Create the TACSAssembler object
+  TACSAssembler *tacs = creator->createTACS();
 
-  tacs->computeReordering(order_type, mat_type);
-
-  // Finalize the ordering
-  tacs->finalize();
-
-  // Set the nodes
-  TacsScalar * x;
-  tacs->getNodeArray(&x);
-  
-  for ( int k = 0; k < 3*num_local_nodes; k++ ){
-    x[k] = Xpts_local[k];
-  }
-
-  // Set the boundar conditions
-  int bvars[6];
-  TacsScalar bvals[6];
-  for ( int k = 0; k < num_bcs; k++ ){
-    if (bc_nodes[k] >= 0){
-      int nbcs = bc_ptr[k+1] - bc_ptr[k];
-      int n = 0;
-      for ( int j = 0; j < nbcs; j++ ){
-        if (bc_con[bc_ptr[k] + j] < vars_per_node){
-          bvars[n] = bc_con[bc_ptr[k] + j];
-          bvals[n] = bc_vals[bc_ptr[k] + j];
-          n++;
-        }
-      }
-      if (n > 0){
-        tacs->addBC(bc_nodes[k], bvars, bvals, n);
-      }
-    }
-  }
-  
-  if (rank == root){
-    delete [] new_nodes;
-    delete [] owned_elements;
-    delete [] owned_nodes;
-  }
-
-  delete [] partition;
-  delete [] local_elem_node_ptr;
-  delete [] local_elem_node_con;
-  delete [] Xpts_local;
-
-  return tacs;
-}
-
-/*
-  Given the split size, create a serial version of TACS
-*/
-TACSAssembler * TACSMeshLoader::createSerialTACS( int split_size,
-                                                  int vars_per_node,
-                                                  int num_load_cases ){
-  // Partition the problem
-  int * partition = new int[ num_elements ];
-  int * new_nodes = new int[ num_nodes ];
-  int * owned_elements = new int[ split_size ];
-  int * owned_nodes = new int[ split_size ];
-  
-  splitMesh(split_size, partition, new_nodes, 
-            owned_elements, owned_nodes);
-
-  int node_max_csr_size = elem_node_ptr[num_elements];
-  TACSAssembler * tacs = new TACSAssembler(MPI_COMM_SELF, 
-                                           num_nodes, vars_per_node,
-                                           num_elements, num_nodes,
-                                           node_max_csr_size, num_load_cases);
-  tacs->addNodes(&new_nodes);
-  
-  // Add the elements
-  for ( int k = 0; k < num_elements; k++ ){
-    TACSElement * element = elements[elem_component[k]];
-    if (!element){
-      int rank;
-      MPI_Comm_rank(comm, &rank);
-      fprintf(stderr, 
-              "[%d] TACSMeshLoader: Element undefined for component %d\n",
-              rank, elem_component[k]);
-      MPI_Abort(comm, 1);
-      return NULL;
-    }
-
-    // Add the element node numbers
-    int start = elem_node_ptr[k];
-    int end = elem_node_ptr[k+1];
-    tacs->addElement(element, &elem_node_con[start], end-start);
-  }
-
-  // Finalize the ordering
-  tacs->finalize();
-
-  // Set the nodes
-  TacsScalar * x;
-  tacs->getNodeArray(&x);
-  
-  for ( int k = 0; k < 3*num_nodes; k++ ){
-    x[k] = Xpts[k];
-  }
-
-  // Set the boundary condition information
-  int bvars[6];
-  TacsScalar bvals[6];
-  for ( int k = 0; k < num_bcs; k++ ){
-    int nbcs = bc_ptr[k+1] - bc_ptr[k];
-    int n = 0;
-    for ( int j = 0; j < nbcs; j++ ){
-      if (bc_con[bc_ptr[k] + j] < vars_per_node){
-        bvars[n] = bc_con[bc_ptr[k] + j];
-        bvals[n] = bc_vals[bc_ptr[k] + j];
-        n++;
-      }
-    }
-    if (n > 0){
-      tacs->addBC(bc_nodes[k], bvars, bvals, n);
-    }
-  }
-
-  delete [] partition;
-  delete [] owned_elements;
-  delete [] owned_nodes;
+  // Deallocate the creator object
+  creator->decref();
 
   return tacs;
 }
@@ -1958,21 +1429,13 @@ TACSAssembler * TACSMeshLoader::createSerialTACS( int split_size,
   Retrieve the number of elements owned by this processes
 */
 int TACSMeshLoader::getNumElements(){
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  if (!local_component_nums){
-    fprintf(stderr, "[%d] TACSMeshLoader: Cannot retrieve the number \
-of elements until the mesh is partitioned\n", rank);
-    return 0;
-  }
-
-  return num_owned_elements;
+  return num_elements;
 }
 
 /*
   Retrieve the array of elements corresponding to the
 */
+/*
 void TACSMeshLoader::getComponentNums( int comp_nums[], int num_elements ){
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -1988,12 +1451,13 @@ until the mesh is partitioned\n", rank);
 
   memcpy(comp_nums, local_component_nums, size*sizeof(int));
 }
-
+*/
 /*
   Retrieve the element numbers on each processor corresponding to
   the given component numbers.
 */
-int TACSMeshLoader::getComponentElementNums( int ** elem_nums,
+/*
+int TACSMeshLoader::getComponentElementNums( int *elem_nums[],
                                              int comp_nums[], int num_comps ){
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -2025,13 +1489,14 @@ mesh is partitioned\n", rank);
 
   return elem_size;
 }
-
+*/
 /*
   Set the function domain
 
   Given the function, and the set of component numbers that define
   the domain of interest, set the element numbers in the function that
 */
+/*
 void TACSMeshLoader::setFunctionDomain( TACSFunction * function,
 					int comp_nums[], int num_comps ){
   int *elems;
@@ -2039,590 +1504,6 @@ void TACSMeshLoader::setFunctionDomain( TACSFunction * function,
   function->setDomain(elems, num_elems);
   delete [] elems;
 }
-
-/*
-  Determine the number of elements that are in each component
 */
-void TACSMeshLoader::getNumElementsForComps( int * numElem, 
-					     int sizeNumComp ){
-  memset(numElem, 0, sizeof(int)*num_components);
-    
-  int rank;
-  int root =0;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root){
-    for (int i=0; i<num_elements; i++){
-      if (elem_component[i] < sizeNumComp){
-	numElem[elem_component[i]]++;
-      }
-    }
-  }
-}
 
-/*
-  Return the total number of elements
-*/
-int TACSMeshLoader::getTotalNumElements(){
-  return num_elements;
-}
 
-/*
-  Return the equilivent second-order connectivity of the entire mesh
-*/
-void TACSMeshLoader::getConnectivity( int* conn, 
-				      int sizeConn ){
-
-  memset(conn, 0, sizeof(int)*sizeConn);
-    
-  int rank;
-  int root =0;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root){
-    int ii=0;
-    for ( int i = 0; i < num_elements; i++ ){
-      int end = elem_node_ptr[i+1];
-
-      int j = elem_node_ptr[i];
-      // Extract only the linear connectivity...ignore mid side nodes
-      if (end - j == 4){
-	conn[ii  ] = elem_node_con[j  ];
-	conn[ii+1] = elem_node_con[j+1];
-	conn[ii+2] = elem_node_con[j+3];
-	conn[ii+3] = elem_node_con[j+2];
-	ii += 4;
-      }
-      else if (end - j == 9){
-	conn[ii  ] = elem_node_con[j  ];
-	conn[ii+1] = elem_node_con[j+2];
-	conn[ii+2] = elem_node_con[j+8];
-	conn[ii+3] = elem_node_con[j+6];
-	ii += 4;
-      }
-      else if (end - j == 16){
-	conn[ii  ] = elem_node_con[j  ];
-	conn[ii+1] = elem_node_con[j+3];
-	conn[ii+2] = elem_node_con[j+15];
-	conn[ii+3] = elem_node_con[j+12];
-	ii += 4;
-      }
-      else {
-	conn[ii  ] = -1;
-	conn[ii+1] = -1;
-	conn[ii+2] = -1;
-	conn[ii+3] = -1;
-	ii += 4;
-      }
-    }
-  }
-}
-
-/* 
-   Return the component number for each element
-*/
-void TACSMeshLoader::getElementComponents( int* compIDs, 
-					   int sizeCompIDs ){
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == 0){
-    for ( int i = 0; i < num_elements; i++ ){
-      compIDs[i] = elem_component[i];
-    }
-  }
-}
-
-/* 
-   Return the second-order connectivities for elements in component
-   'compID'. This is similar to getConnectivity() above.
-*/
-void TACSMeshLoader::getConnectivityForComp( int compID, int * conn, 
-					     int sizeConn ){
-  memset(conn, 0, sizeof(int)*sizeConn);
-    
-  int rank;
-  int root = 0;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root){
-    int ii = 0;
-    for ( int i = 0; i < num_elements; i++ ){
-      if (elem_component[i] == compID){
-	int end = elem_node_ptr[i+1];
-	int j = elem_node_ptr[i];
-	// Extract only the linear connectivity...ignore mid side nodes
-	if (end - j == 4){
-	  conn[ii  ] = elem_node_con[j  ];
-	  conn[ii+1] = elem_node_con[j+1];
-	  conn[ii+2] = elem_node_con[j+3];
-	  conn[ii+3] = elem_node_con[j+2];
-	  ii += 4;
-	}
-	else if (end - j == 9){
- 	  conn[ii  ] = elem_node_con[j  ];
-	  conn[ii+1] = elem_node_con[j+2];
-	  conn[ii+2] = elem_node_con[j+8];
-	  conn[ii+3] = elem_node_con[j+6];
-	  ii += 4;
-	}
-	else if (end - j == 16){
- 	  conn[ii  ] = elem_node_con[j  ];
-	  conn[ii+1] = elem_node_con[j+3];
-	  conn[ii+2] = elem_node_con[j+15];
-	  conn[ii+3] = elem_node_con[j+12];
-	  ii += 4;
-	}
-      }
-    }
-  }
-}
-
-/*
-  This function returns the nodes specified by the indices in nodeList
-*/
-void TACSMeshLoader::getNodes( int * nodeList, int nNodes, 
-			       double * pts, int nPts ){
-  int rank;
-  int root = 0;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root){
-    int ii = 0;
-    for ( int i = 0; i < nNodes; i++ ) {
-      pts[3*ii  ] = Xpts[3*nodeList[i]  ];
-      pts[3*ii+1] = Xpts[3*nodeList[i]+1];
-      pts[3*ii+2] = Xpts[3*nodeList[i]+2];
-      ii++; 
-    }
-  }
-}
-
-/*
-  This function returns original nodes in the BDF ordering
-*/
-void TACSMeshLoader::getOrigNodes( double * xOrig, int n){
-  int rank;
-  int root =0;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root){
-    memcpy(xOrig, Xpts_unsorted, n*sizeof(double));
-  }
-}
-
-/*
-  This function returns original node numbers in the BDF ordering
-*/
-void TACSMeshLoader::getOrigNodeNums( int * nodeNumsOrig, int n){
-  int rank;
-  int root =0;
-  MPI_Comm_rank(comm, &rank);
-  if (rank == root){
-    memcpy(nodeNumsOrig, node_nums, n*sizeof(int));
-  }
-}
-
-/*
-  Create a static string that is the prefix for the NASTRAN file
-*/
-static const char nastran_file_header[] =
-  "$ Generated by TACS - NASTRAN interface\n\
-$ Nastran input desk\n\
-SOL 101\n\
-TIME 99999\n\
-CEND\n\
-ECHO = NONE\n\
-STRAIN = ALL\n\
-SPC = 1\n\
-STRESS = ALL\n\
-LOAD = 1\n\
-DISP = ALL\n\
-$\n\
-BEGIN BULK\n\
-$\n\
-PARAM,AUTOSPC,NO\n\
-PARAM,GRDPNT,1\n\
-PARAM,K6ROT,1e5\n\
-PARAM,OGEOM,YES\n\
-PARAM,COUPMASS,-1\n\
-PARAM,MAXRATIO,1.0e7\n\
-PARAM,POST,-1\n\
-PARAM,WTMASS,1.0\n";
-
-/*
-  Write a BDF file with the material properties taken from the
-  TACSAssembler object 
-*/
-void TACSMeshLoader::writeBDF( const char * fileName, TacsScalar * bdfNodes, 
-			       int * nodeNums, int nBDFNodes ){
-  int size;
-  MPI_Comm_size(comm, &size);
-
-  if (size > 1){
-    fprintf(stderr, "TACSMeshLoader::writeBDF() only works in serial\n");
-    return;
-  }
-
-  FILE *fp = fopen(fileName, "w");
-  if (fp){
-    fprintf(fp, nastran_file_header);
-
-    //  ----------- Write the Grid Nodes -----------
-    fprintf(fp, "$       grid data              0\n");
-    int coordDisp = 0;
-    int coordId = 0;
-    int seid = 0;
-    for ( int i = 0; i < nBDFNodes/3; i++){
-      fprintf(fp, "%8s%16d%16d%16.9f%16.9f*%7d\n","GRID*   ", 
-	      nodeNums[i], coordId,
-	      RealPart(bdfNodes[3*i]), 
-	      RealPart(bdfNodes[3*i+1]), i+1);
-      fprintf(fp, "*%7d%16.9f%16d%16s%16d        \n", 
-	      i+1, RealPart(bdfNodes[3*i+2]), 
-	      coordDisp, " ", seid);
-    }
-
-    // ================================================== 
-    // WARNING: THE FOLLOWING ELEMENT WRITING IS HORRENDOUSLY
-    // INEFFICIENT: WE LOOP OVER ALL ELEMENTS FOR EACH COMPONENT
-    // DESCRIPTION SELECTING ONLY THE ONES WE NEED. FOR LARGE NUMBERS OF
-    // COMPONENTS THIS YIELDS A n^2 LOOP.  CONSIDER DOING A INVERSE
-    // MAPPING THAT SHOULD BE MORE EFFICIENT.
-    // ==================================================
-    
-    //  ----------- Write the Descriptions------
-    for ( int ii = 0; ii < num_components; ii++ ){
-      fprintf(fp, "%-41s","$       Shell element data for family");
-      fprintf(fp, "%-33s\n", &component_descript[33*ii]);
-    
-      //  ----------- Write the Elements ----------
-      for ( int i = 0; i < num_elements; i++ ){
-	if (elem_component[i] == ii) {
-	  int end = elem_node_ptr[i+1];
-	  int j = elem_node_ptr[i];
-	  int partId = elem_component[i]+1;
-	  if (end - j == 4){
-	    fprintf(fp, "%-8s%8d%8d%8d%8d%8d%8d%8d\n", "CQUADR", 
-		    i+1, partId, nodeNums[elem_node_con[j]],
-		    nodeNums[elem_node_con[j+1]], 
-		    nodeNums[elem_node_con[j+3]], 
-		    nodeNums[elem_node_con[j+2]], partId);
-	  }
-	  else if (end - j == 9){
-	    fprintf(fp, "%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n", "CQUAD", 
-		    i+1, partId, nodeNums[elem_node_con[j]],
-		    nodeNums[elem_node_con[j+2]], 
-		    nodeNums[elem_node_con[j+8]], 
-		    nodeNums[elem_node_con[j+6]],
-		    nodeNums[elem_node_con[j+1]], 
-		    nodeNums[elem_node_con[j+5]]);
-	    fprintf(fp, "%-8s%8d%8d%8d%8d\n", " ", 
-		    nodeNums[elem_node_con[j+7]], 
-		    nodeNums[elem_node_con[j+3]],
-		    nodeNums[elem_node_con[j+4]], partId);
-	  }
-	  else if (end -j == 2){
-	    /*
-	    TACSElement * elem = elements[ii];
-	    EBBeam * beam = dynamic_cast<EBBeam*>(elem);
-	    if (beam){
-	      enum EBBeamReferenceDirection ref_dir_type = beam->getRefDirType();
-	      const TacsScalar * ref_dir = beam->getRefAxis();
-	      		
-	      if (ref_dir_type == STRONG_AXIS){
-		printf("ERROR: bdf output does not work for beams with STRONG_AXIS specified.\n");
-		fclose(fp);
-		return;
-	      }
-	      fprintf(fp, "%-8s%8d%8d%8d%8d%8f%8f%8f\n", "CBAR", 
-		      i+1, partId, nodeNums[elem_node_con[j]],
-		      nodeNums[elem_node_con[j+1]], 
-		      RealPart(ref_dir[0]), 
-		      RealPart(ref_dir[1]), 
-		      RealPart(ref_dir[2]));
-	    }
-	    */
-	  }
-	}
-      }
-    }
-    
-    //  ----------- Write the Constraints -------
-    fprintf(fp, "$       Single point Constraint\n");
-    char bcString[8];
-
-    for ( int k = 0; k < num_bcs; k++ ){
-      // Print node number
-      fprintf(fp, "%8s%8d%8d", "SPC     ", 1, nodeNums[orig_bc_nodes[k]]);
-      
-      // Clear BC String
-      for ( int j = 0; j < 8; j++ ){
-	bcString[j] = ' ';
-      }
-
-      int kk = 0;
-      for ( int j = orig_bc_ptr[k]; j < orig_bc_ptr[k+1]; j++ ){
-	if (orig_bc_con[j] == 0)
-	  bcString[7-kk] = '1';
-	if (orig_bc_con[j] == 1)
-	  bcString[7-kk] = '2';
-	if (orig_bc_con[j] == 2)
-	  bcString[7-kk] = '3';
-	if (orig_bc_con[j] == 3)
-	  bcString[7-kk] = '4';
-	if (orig_bc_con[j] == 4)
-	  bcString[7-kk] = '5';
-	if (orig_bc_con[j] == 5)
-	  bcString[7-kk] = '6';
-	kk += 1;
-      }
-
-      // Print bc string and the value
-      fprintf(fp, "%8s%8.6f\n", bcString, orig_bc_vals[orig_bc_ptr[k]]);
-    }
-
-    writeBDFConstitutive(fp); 
-    
-    // Signal end of bulk data section and close file handle
-    fprintf(fp, "ENDDATA\n");
-    fclose(fp);
-  }
-}
-
-/*
-  Write the constitutve data from the TACSMeshLoader class to a new
-  BDF file. This does not write any nodal information or
-  connectivities.
-
-  Note this code is serial. If you try to run it in parallell then it
-  will use results from just the root processor. This will work but
-  may not provide the most up-to-date constitutive data since not all
-  processors will modify the constitutive objects stored in
-  TACSMeshLoader. This can be fixed by assigning the design variables
-  individually to each element in the TACSMeshLoader class.
-
-  input:
-  filename: the file name that will be written
-*/
-void TACSMeshLoader::writeBDFConstitutive( const char *filename ){
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  if (rank == 0){
-    // Open the file on the root processor
-    FILE *fp = fopen(filename, "w");
-
-    if (fp){
-      // Print the NASTRAN header info
-      fprintf(fp, nastran_file_header);
-
-      // Write all the constitutive data
-      writeBDFConstitutive(fp);
-      
-      // End the data
-      fprintf(fp, "ENDDATA\n");
-
-      // Close the file
-      fclose(fp);
-    }
-  }
-}
-
-/*
-  Write the constitutive data from the TACSMeshLoader class to a bdf
-  file.
-
-  Note that this code does not close the file handle and assumes that
-  it has been properly opened. This code is serial and can only be run
-  on a single processor.
-
-  input:
-  fp:   an open file handle
-*/
-void TACSMeshLoader::writeBDFConstitutive( FILE *fp ){
-  if (fp){
-    // Scan through all the components and write out the constitutive data 
-    // for each one as long as it is an FSDT or beam element
-    int matCount = 0;
-    for ( int i = 0; i < num_components; i++ ){
-      int PID = i+1;
-
-      // Get the base constitutive objective
-      TACSConstitutive * con = elements[i]->getConstitutive();
-
-      // Flag if the constitutive object is written
-      int conWritten = 0;
-
-      // Currently we can only deal with constitutive classes that
-      // inherit from FSDTStiffness or EBStiffness
-      
-      FSDTStiffness * fcon = dynamic_cast<FSDTStiffness*>(con);
-      if (fcon){
-
- 	// Flag the constiutive object as being written
-	conWritten = 1;
-	
-	//First Get the stiffness
-	TacsScalar A[6], B[6], D[6], As[3];
-	double gpt[2] = {0.0, 0.0};
-	
-	TacsScalar rho, mass[3];
-	rho = 0.0;
-	mass[0] = mass[1] = mass[2] = 0.0;
-
-	fcon->getStiffness(gpt, A, B, D, As);
-	fcon->pointwiseMass(gpt, mass);
-	rho = fcon->getDensity();
-      
-	if (rho == 0.0){
-	  printf("Warning: the FSDTconsitutive class did not implement getDensity().\
- Mass properties *WILL BE WRONG IN BDF FILE!*\n");
-	  rho = 1.0;
-	}
-
-	// This should give the average thickness
-	TacsScalar tfact = 1.0;
-	TacsScalar t = mass[0]/rho;
-	
-	if (mass[2] != 0.0){
-	  tfact = (12.0*mass[2])/(rho*t*t*t); 
-	}
-	
-	// Reconstruct the ref axis information
-	const TacsScalar * tmp = fcon->getRefAxis();
-	TacsScalar axis[3];
-	axis[0] = tmp[0];
-	axis[1] = tmp[1];
-	axis[2] = tmp[2];
-	  
-	// Check if the axis is exactly equal to 0,0,0
-	if (axis[0] == 0.0 && axis[1] == 0.0 && axis[2] == 0.0){
-	  //Axis is not defined so it shouldn't matter:
-	  axis[0] = 1.0;
-	}
-
-	// Generate another vector that is not parallel and not
-	// parallel to the axis. 
-	TacsScalar v1[3], zaxis[3];
-	v1[0] = 0.0;
-	v1[1] = 1.0;
-	v1[2] = 0.0;
-	Tensor::normalize3D(v1);
-
-	// Check if the dot product is 1.0
-	TacsScalar dp = Tensor::dot3D(v1, axis);
-	if (abs(dp) > 1-1e-15){
-	  // Use a different axis
-	  v1[0] = 1.0;
-	  v1[1] = 0.0;
-	  v1[2] = 0.0;
-	}
-	Tensor::crossProduct3D(zaxis, axis, v1);
-
-	// Write the 4 material identifiers
-	int MID1 = matCount+1;
-	int MID2 = matCount+2;
-	int MID3 = matCount+3;
-	int MID4 = matCount+4;
-	double A1 = 0.0;
-	double A2 = 0.0;
-	double A3 = 0.0;
-	double Tref = 293.15;
-	TacsScalar t2 = t*t;
-	TacsScalar t3 = t*t*t*tfact;
-	
-	fprintf(fp, "%8s%16d%16.9e%16.9e%16.9e*\n",   "MAT2*   ", 
-		MID1, RealPart(A[0]/t), RealPart(A[1]/t), RealPart(A[2]/t));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e*\n", " ", 
-		RealPart(A[3]/t), RealPart(A[4]/t), RealPart(A[5]/t), 
-		RealPart(rho));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e\n", " ", 
-		A1, A2, A3, Tref);
-	
-	fprintf(fp, "%8s%16d%16.9e%16.9e%16.9e*\n",   "MAT2*   ", 
-		MID2, RealPart(12*D[0]/t3), 
-		RealPart(12*D[1]/t3), RealPart(12*D[2]/t3));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e*\n", " ", 
-		RealPart(12*D[3]/t3), RealPart(12*D[4]/t3), 
-		RealPart(12*D[5]/t3), RealPart(rho));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e\n", " ", 
-		A1, A2, A3, Tref);
-      
-	fprintf(fp, "%8s%16d%16.9e%16.9e%16.9e*\n",   "MAT2*   ", 
-		MID3, RealPart(As[0]/t), RealPart(As[1]/t), 0.0);
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e*\n", " ", 
-		RealPart(As[2]/t), 0.0, 0.0, RealPart(rho));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e\n", " ", 
-		A1, A2, A3, Tref);
-	
-	fprintf(fp, "%8s%16d%16.9e%16.9e%16.9e*\n",   "MAT2*   ", 
-		MID4, -RealPart(B[0]/t2), -RealPart(B[1]/t2), 
-		-RealPart(B[2]/t2));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e*\n", " ", 
-		-RealPart(B[3]/t2), -RealPart(B[4]/t2), 
-		-RealPart(B[5]/t2), RealPart(rho));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e%16.9e\n", " ", 
-		A1, A2, A3, Tref);
-	
-	// And the PSHELL entry
-	double NSM = 0.0;
-	fprintf(fp, "%-8s", "PSHELL*");
-	fprintf(fp, "%16d", PID);
-	fprintf(fp, "%16d", MID1);
-	fprintf(fp, "%16.9e", RealPart(t));
-	fprintf(fp, "%16d*\n", MID2);
-	fprintf(fp, "*%7s", " ");
-	fprintf(fp, "%16.9e", RealPart(tfact));
-	fprintf(fp, "%16d", MID3);
-	fprintf(fp, "%16.9e", 1.0);
-	fprintf(fp, "%16.9e*\n", NSM);
-	fprintf(fp, "*%7s", " ");
-	fprintf(fp, "%16s", " ");
-	fprintf(fp, "%16s", " ");
-	fprintf(fp, "%16d\n", MID4);
-      
-	// And finally the coordinate system.
-	fprintf(fp, "%-8s", "CORD2R");
-	fprintf(fp, "%8d", i+1);
-	fprintf(fp, "%8d", 0);
-	fprintf(fp, "%8.3f", 0.0);
-	fprintf(fp, "%8.3f", 0.0);
-	fprintf(fp, "%8.3f", 0.0);
-	fprintf(fp, "%8.3f", RealPart(zaxis[0]));
-	fprintf(fp, "%8.3f", RealPart(zaxis[1]));
-	fprintf(fp, "%8.3f\n", RealPart(zaxis[2]));
-	fprintf(fp, "        %8.3f%8.3f%8.3f\n",
-		RealPart(axis[0]), RealPart(axis[1]), 
-		RealPart(axis[2]));
-	
-	matCount += 4;
-      }
-
-      /*
-      EBStiffness * econ = dynamic_cast<EBStiffness*>(con);
-      if (econ){
-	// Flag the constiutive object as being written
-	conWritten = 1;
-
-	// And the PBEAM entry
-	double NSM = 0.0;
-	fprintf(fp, "%-8s%16d%16d%16.9e%16.9e*\n",   "PBAR*",
-		PID, matCount+1, RealPart(econ->A), 
-		RealPart(econ->Iy));
-	fprintf(fp, "*%7s%16.9e%16.9e%16.9e\n", " ",
-		RealPart(econ->Ix), RealPart(econ->J), NSM);
-
-	// Now write a MAT1 entry.
-	fprintf(fp, "%-8s%16d%16.9e%16.9e%16s*\n",   "MAT1*",
-		matCount+1, RealPart(econ->E), 
-		RealPart(econ->G), " ");
-	fprintf(fp, "*%7s%16.9e\n", " ", RealPart(econ->rho));
-	
-	matCount += 1;
-      }
-      */
-
-      if (conWritten == 0){
-	printf("Cannot write BDF file. Must consist of only constitutive \
-objects that inherit from FSDTStiffness and EBStiffness\n");
-	return;
-      }
-    }
-  }
-}
-   
