@@ -71,6 +71,9 @@ TACSCreator::~TACSCreator(){
   if (bc_nodes){ delete [] bc_nodes; }
   if (bc_vars){ delete [] bc_vars; }
   if (bc_ptr){ delete [] bc_ptr; }
+  if (dep_node_ptr){ delete [] dep_node_ptr; }
+  if (dep_node_conn){ delete [] dep_node_conn; }
+  if (dep_node_weights){ delete [] dep_node_weights; }
 
   if (elements){
     for ( int i = 0; i < num_elem_ids; i++ ){
@@ -216,7 +219,7 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     splitSerialMesh(size, partition, new_nodes, new_dep_nodes,
 		    owned_elements, owned_nodes, owned_dep_nodes);    
   }
-
+  
   // The number of local and owned nodes and the number of
   // elements for each processor in the mesh
   int num_local_dep_nodes = 0;
@@ -277,23 +280,29 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     qsort(elem_part, num_elements, sizeof(int), compare_arg_sort);
     arg_sort_list = NULL;
 
-    // Modify the dependent nodes
-    int *dep_nodes_part = new int[ num_dependent_nodes ];
-    for ( int k = 0; k < num_dependent_nodes; k++ ){
-      dep_nodes_part[k] = k;
-    }
+    // Determine a sorted ordering of the new dependent nodes
+    // that can be used to map depedent nodes to process owners
+    int *dep_nodes_part = NULL;
+    if (num_dependent_nodes > 0){
+      dep_nodes_part = new int[ num_dependent_nodes ];
+      for ( int k = 0; k < num_dependent_nodes; k++ ){
+	dep_nodes_part[k] = k;
+      }
 
-    // Now new_dep_nodes[dep_nodes_part[k]] is sorted
-    arg_sort_list = new_dep_nodes;
-    qsort(dep_nodes_part, num_dependent_nodes, 
-	  sizeof(int), compare_arg_sort);
-    arg_sort_list = NULL;
+      // Now new_dep_nodes[dep_nodes_part[k]] is sorted
+      arg_sort_list = new_dep_nodes;
+      qsort(dep_nodes_part, num_dependent_nodes, 
+	    sizeof(int), compare_arg_sort);
+      arg_sort_list = NULL;
+    }
 
     // Compute the local CSR data structure on this process
     // Use an upper bound for the memory requirements
-    int *tacs_nodes = new int[ elem_node_ptr[num_elements] ];
+    int max_conn_size = elem_node_ptr[num_elements];
+    int *tacs_nodes = new int[ num_nodes ];
+    int *tacs_node_flags = new int[ num_nodes ];
     int *elem_ptr = new int[ num_elements+1 ];
-    int *elem_conn = new int[ elem_node_ptr[num_elements] ];
+    int *elem_conn = new int[ max_conn_size ];
     int *elem_ids = new int[ num_elements ];
     TacsScalar *xpts = new TacsScalar[ 3*num_nodes ];
 
@@ -305,6 +314,11 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
       dep_ptr = new int[ num_dependent_nodes+1 ];
       dep_conn = new int[ dep_node_ptr[num_dependent_nodes] ];
       dep_weights = new double[ dep_node_ptr[num_dependent_nodes] ];
+    }
+
+    // Set the node flags to -1
+    for ( int i = 0; i < num_nodes; i++ ){
+      tacs_node_flags[i] = -1;
     }
 
     // Loop over all the processors on the root processor and 
@@ -338,13 +352,16 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	// that belongs to partition k
 	int iend = elem_node_ptr[elem+1];
         for ( int i = elem_node_ptr[elem]; i < iend; i++ ){
-	  // Get all the node indices associated with the element
+	  // Get add the node indices associated with the element
           int node = elem_node_conn[i];
 	  if (node >= 0){
 	    // Add the global index to the list of global
 	    // nodes
-	    tacs_nodes[local_node_size] = new_nodes[node];
-	    local_node_size++;
+	    if (tacs_node_flags[node] != k){
+	      tacs_node_flags[node] = k;
+	      tacs_nodes[local_node_size] = new_nodes[node];
+	      local_node_size++;
+	    }
 
 	    // Add the global connectivity index - this will
 	    // be converted to a local index later.
@@ -354,6 +371,20 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	  else {
 	    // Convert to the dependent node index
 	    node = -node-1;
+
+	    // Add the node numbers from the dependent node
+	    // relationships to the tacs_nodes array so that they get
+	    // a local node number associated with them, whether they 
+	    // are in an element or not.
+	    for ( int ip = dep_node_ptr[node]; 
+		  ip < dep_node_ptr[node+1]; ip++ ){
+	      int ind_node = dep_node_conn[ip];
+	      if (tacs_node_flags[ind_node] != k){
+		tacs_node_flags[ind_node] = k;
+		tacs_nodes[local_node_size] = new_nodes[ind_node];
+		local_node_size++;
+	      }
+	    }
 
 	    // Find the new (local) index of the dependent node 
 	    // on processor k
@@ -365,7 +396,7 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 
 	// Set the element 
 	elem_ids[n] = elem_id_nums[elem];
-	elem_ptr[n+1] = local_node_size;
+	elem_ptr[n+1] = local_conn_size;
       }
 
       // All of the independent nodes have been added to the array
@@ -384,36 +415,39 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	  int *item = (int*)bsearch(&elem_conn[j], tacs_nodes, 
 				    local_node_size,
 				    sizeof(int), FElibrary::comparator);
+
 	  if (item){
 	    elem_conn[j] = item - tacs_nodes;
 	  }
 	  else {
 	    fprintf(stderr, 
-		    "[%d] TACSCreator could not find %d node in local list\n",
+		    "[%d] TACSCreator: %d node not in local list\n",
 		    rank, elem_conn[j]);
 	    MPI_Abort(comm, 1);
 	  }
 	}
       }
       
-      // Compute the end index for the number of dependent nodes
-      // on processor k
-      int jend = dep_node_offset + owned_dep_nodes[k];
-
       // Loop over all of the local dependent nodes and find the
       // local node numbers for the dependent weights. Also copy over
       // the dependent weight data.
-      int dep_conn_len = 0;
       if (num_dependent_nodes > 0){
+	// Keep track of the offset into the pointer array
+	int dep_conn_len = 0;
 	dep_ptr[0] = 0;
+
+	// Compute the end index for the number of dependent nodes
+	// on processor k
+	int jend = dep_node_offset + owned_dep_nodes[k];
+
 	for ( int j = dep_node_offset, m = 0; j < jend; j++, m++ ){
-	  int dep_index = dep_nodes_part[k];
+	  int dep_index = dep_nodes_part[j];
 	  
 	  // Loop over the dependent nodes within this list
 	  for ( int i = dep_node_ptr[dep_index];
 		i < dep_node_ptr[dep_index+1]; i++ ){
 	    // Get the node
-	    int node = dep_node_conn[i];
+	    int node = new_nodes[dep_node_conn[i]];
 	    
 	    // Find the local node within the element connectivity list
 	    int *item = (int*)bsearch(&node, tacs_nodes, 
@@ -428,8 +462,8 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
 	    }
 	    else {
 	      fprintf(stderr, 
-		      "[%d] TACSCreator could not find %d node in local list\n",
-		      rank, node);
+		      "[%d] TACSCreator: %d dep node %d node not in local list\n",
+		      rank, dep_index, node);
 	      MPI_Abort(comm, 1);
 	    }
 	  }
@@ -506,13 +540,15 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     delete [] elem_part;
     delete [] inv_new_nodes;
     delete [] tacs_nodes;
+    delete [] tacs_node_flags;
     delete [] elem_ptr;
     delete [] elem_conn;
     delete [] elem_ids;
     delete [] xpts;
-    delete [] dep_ptr;
-    delete [] dep_conn;
-    delete [] dep_weights;
+    if (dep_nodes_part){ delete [] dep_nodes_part; }
+    if (dep_ptr){ delete [] dep_ptr; }
+    if (dep_conn){ delete [] dep_conn; }
+    if (dep_weights){ delete [] dep_weights; }
   }
   else {
     // Recv the data from the root process
@@ -556,6 +592,41 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     MPI_Recv(local_elem_node_conn, con_size, MPI_INT, 
 	     root_rank, 9, comm, &status);
   }
+
+  // Broadcast the boundary condition information
+  MPI_Bcast(&num_bcs, 1, MPI_INT, root_rank, comm);
+
+  // Broadcast all the boundary conditions to all processors
+  if (rank != root_rank){
+    if (bc_nodes){ delete [] bc_nodes; }
+    bc_nodes = new int[ num_bcs ];
+  }
+  MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root_rank, comm);
+
+  // Broacast the boundary condition pointer array 
+  if (rank != root_rank){
+    if (bc_ptr){ delete [] bc_ptr; }
+    bc_ptr = new int[ num_bcs+1 ];
+  }
+  MPI_Bcast(bc_ptr, num_bcs+1, MPI_INT, root_rank, comm);
+
+  if (rank != root_rank){
+    if (bc_vars){ delete [] bc_vars; }
+    bc_vars = new int[ bc_ptr[num_bcs] ]; 
+  }
+  MPI_Bcast(bc_vars, bc_ptr[num_bcs], MPI_INT, root_rank, comm);
+  
+  for ( int k = 0; k < num_bcs; k++ ){
+    int * item = (int*)bsearch(&bc_nodes[k], 
+			       local_tacs_nodes, num_local_nodes, 
+			       sizeof(int), FElibrary::comparator);
+    if (item){
+      bc_nodes[k] = item - local_tacs_nodes;
+    }
+    else {
+      bc_nodes[k] = -1;
+    }
+  }
   
   int node_max_csr_size = local_elem_node_ptr[num_owned_elements];  
   TACSAssembler * tacs = new TACSAssembler(comm, num_owned_nodes, vars_per_node,
@@ -598,44 +669,7 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
   TacsScalar *x;
   tacs->getNodeArray(&x);
   memcpy(x, Xpts_local, 3*num_local_nodes*sizeof(TacsScalar));
-
-  // Broadcast the boundary condition information
-  MPI_Bcast(&num_bcs, 1, MPI_INT, root_rank, comm);
-
-  // Broadcast all the boundary conditions to all processors
-  if (rank != root_rank){
-    if (bc_nodes){ delete [] bc_nodes; }
-    bc_nodes = new int[ num_bcs ];
-  }
-  MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root_rank, comm);
-
-  // Broacast the boundary condition pointer array 
-  if (rank != root_rank){
-    if (bc_ptr){ delete [] bc_ptr; }
-    bc_ptr = new int[ num_bcs+1 ];
-  }
-  MPI_Bcast(bc_ptr, num_bcs+1, MPI_INT, root_rank, comm);
-
-  if (rank != root_rank){
-    if (bc_vars){ delete [] bc_vars; }
-    bc_vars = new int[ bc_ptr[num_bcs] ]; 
-  }
-  MPI_Bcast(bc_vars, bc_ptr[num_bcs], MPI_INT, root_rank, comm);
-  
-  // Get the local node numbers for the boundary conditions
-  const int *tacs_nodes = NULL;
-  tacs->getTacsNodeNums(&tacs_nodes);
-
-  for ( int k = 0; k < num_bcs; k++ ){
-    int * item = (int*)bsearch(&bc_nodes[k], tacs_nodes, num_local_nodes, 
-			       sizeof(int), FElibrary::comparator);
-    if (item){
-      bc_nodes[k] = item - local_tacs_nodes;
-    }
-    else {
-      bc_nodes[k] = -1;
-    }
-  }
+  tacs->setNodes(NULL);
 
   // Allocate the arrays to store the variable values
   int *bvars = new int[ vars_per_node ];
@@ -777,105 +811,11 @@ void TACSCreator::splitSerialMesh( int split_size,
   }
   dep_node_elem_ptr[0] = 0;
 
-  // Now set up an element mask so that elements linked through a
-  // common dependent node must lie on the same processor
-  int *elem_mask = new int[ num_elements ];
-  int *inv_elem_mask = new int[ num_elements ];
-  int *elem_queue = new int[ num_elements ];
-  for ( int i = 0; i < num_elements; i++ ){
-    elem_mask[i] = -1;
-  }
-  
-  // Search through the dependent nodes and label all elements that
-  // share a common dependent node
-  int num_masked_elems = 0;
-  int inv_mask_index = 0;
-  for ( int i = 0; i < num_dependent_nodes; i++ ){
-    int queue_count = 0;
-    for ( int jp = dep_node_elem_ptr[i]; 
-	  jp < dep_node_elem_ptr[i+1]; jp++ ){
-
-      // Get the dependent element variable
-      int elem = dep_node_elem_conn[jp];
-      if (elem_mask[elem] < 0){
-	elem_queue[queue_count] = elem;
-	elem_mask[elem] = num_masked_elems;
-	queue_count++;
-
-	inv_elem_mask[inv_mask_index] = elem;
-	inv_mask_index++;
-      }
-    }
-
-    // Increment the mask number only if we find a new
-    // dependent node that is not yet masked
-    int new_flag = (queue_count > 0);
-
-    while (queue_count > 0){
-      // Search for adjacent elements that share another
-      // common element
-      queue_count--;
-      int elem = elem_queue[queue_count];
-      for ( int jp = elem_node_ptr[elem]; 
-	    jp < elem_node_ptr[elem+1]; jp++ ){
-	// Get the node and check if it is a dependent node
-	int node = elem_node_conn[jp];
-
-	if (node < 0){
-	  // Compute the dependent node index
-	  node = -node-1;
-	
-	  // Now find the elements associated with this dependent node
-	  // and add them to the queue
-	  for ( int kp = dep_node_elem_ptr[node]; 
-		kp < dep_node_elem_ptr[node+1]; kp++ ){
-
-	    // Get the dependent element variable
-	    int new_elem = dep_node_elem_conn[kp];
-	    if (elem_mask[new_elem] < 0){
-	      elem_queue[queue_count] = new_elem;
-	      elem_mask[new_elem] = num_masked_elems;
-	      queue_count++;
-
-	      inv_elem_mask[inv_mask_index] = new_elem;
-	      inv_mask_index++;
-	    }
-	  }
-	}
-      }
-    }
-
-    // If a new unmasked element/node was found, then
-    // increment the number of masked elements
-    if (new_flag){
-      num_masked_elems++;
-    }
-  }
-
-  // Set the remaining nodes
-  for ( int i = 0; i < num_elements; i++ ){
-    if (elem_mask[i] < 0){
-      elem_mask[i] = num_masked_elems;
-      num_masked_elems++;
-
-      inv_elem_mask[inv_mask_index] = i;
-      inv_mask_index++;
-    }
-  }
-
-  // Delete the element queue
-  delete [] elem_queue;
-  
-  // Now that the element mask has been created, we don't need
-  // the dependent element connectivity information anymore
-  delete [] dep_node_elem_ptr;
-  delete [] dep_node_elem_conn;
-
   // Now we set up the element to element connectivity using the 
   // set of maksed elements. For this to work within METIS, we have
   // to remove the diagonal contribution so that there is no
   // self-reference in the graph.
-  int *elem_ptr = new int[ num_masked_elems+1 ];
+  int *elem_ptr = new int[ num_elements+1 ];
   elem_ptr[0] = 0;
 
   // Information to keep track of how big the data structure is
@@ -889,50 +829,39 @@ void TACSCreator::splitSerialMesh( int split_size,
   // Assemble things one row at a time
   int *row = new int[ num_elements ];
 
-  for ( int i = 0, index = 0; i < num_masked_elems; i++ ){    
+  for ( int i = 0; i < num_elements; i++ ){
     // Set the size of the new row in the data structure to zero
     int row_size = 0;
 
-    // While the mask remains unchanged - still equal to the element
-    // mask number i - continue to add the connectivity to the current
-    // row without changing the mask number.
-    while (index < num_elements &&
-	   elem_mask[inv_elem_mask[index]] == i){
-      int elem = inv_elem_mask[index];
+    // From the element number, find the independent nodes 
+    // that are associated with this element number
+    int jpend = elem_node_ptr[i+1];
+    for ( int jp = elem_node_ptr[i]; jp < jpend; jp++ ){
+      int node = elem_node_conn[jp];
 
-      // From the element number, find the independent nodes 
-      // that are associated with this element number
-      int jpend = elem_node_ptr[elem+1];
-      for ( int jp = elem_node_ptr[elem]; jp < jpend; jp++ ){
-	int node = elem_node_conn[jp];
+      if (node >= 0){
+	// Add the element->element data
+	int kpend = node_elem_ptr[node+1];
+	for ( int kp = node_elem_ptr[node]; kp < kpend; kp++ ){
 
-	if (node >= 0){
-	  // Add all the masked components to the array
-	  int kpend = node_elem_ptr[node+1];
-	  for ( int kp = node_elem_ptr[node]; kp < kpend; kp++ ){
+	  // Get the index of the new element
+	  int new_elem = node_elem_conn[kp];
 
-	    // Get the index of the new masked element
-	    int new_elem = elem_mask[node_elem_conn[kp]];
-
-	    // Check if adding another element will exceed the size
-	    // of the array. If it will, sort the array and remove
-	    // duplicates. This is guaranteed to make additional 
-	    // room.
-	    if (row_size >= num_elements){
-	      row_size = FElibrary::uniqueSort(row, row_size);
-	    }
-
-	    // Append the masked element index to the list
-	    row[row_size] = new_elem;
-	    row_size++;
+	  // Check if adding another element will exceed the size
+	  // of the array. If it will, sort the array and remove
+	  // duplicates. This is guaranteed to make additional 
+	  // room.
+	  if (row_size >= num_elements){
+	    row_size = FElibrary::uniqueSort(row, row_size);
 	  }
+
+	  // Append the element index to the list
+	  row[row_size] = new_elem;
+	  row_size++;
 	}
       }
-      
-      // Increment the index counter
-      index++;
     }
-
+    
     // Sort the element indices and remove duplicates from the
     // array
     row_size = FElibrary::uniqueSort(row, row_size);
@@ -957,9 +886,6 @@ void TACSCreator::splitSerialMesh( int split_size,
     elem_ptr[i+1] = elem_conn_size;
   }
 
-  // Free the inverse element mask
-  delete [] inv_elem_mask;
-
   // Free the memory for data that is not needed 
   delete [] row;
   
@@ -969,9 +895,6 @@ void TACSCreator::splitSerialMesh( int split_size,
 
   // Partition the mesh using METIS.
   if (split_size > 1){
-    // Allocate the element partition
-    int *elem_part = new int[ num_masked_elems ];
-    
     int options[5];
     options[0] = 0; // use the default options
     int wgtflag = 0; // weights are on the verticies
@@ -981,24 +904,17 @@ void TACSCreator::splitSerialMesh( int split_size,
     int *adjwgts = NULL;  // Weights on the edges or adjacency
       
     if (split_size < 8){
-      METIS_PartGraphRecursive(&num_masked_elems, elem_ptr, elem_conn, 
-                               vwgts, adjwgts, 
+      METIS_PartGraphRecursive(&num_elements, elem_ptr, elem_conn,
+                               vwgts, adjwgts,
                                &wgtflag, &numflag, &split_size, 
-                               options, &edgecut, elem_part);
+                               options, &edgecut, partition);
     }
     else {
-      METIS_PartGraphKway(&num_masked_elems, elem_ptr, elem_conn, 
+      METIS_PartGraphKway(&num_elements, elem_ptr, elem_conn,
                           vwgts, adjwgts, 
                           &wgtflag, &numflag, &split_size, 
-                          options, &edgecut, elem_part);
+                          options, &edgecut, partition);
     }
-
-    // Un-mask the partition
-    for ( int i = 0; i < num_elements; i++ ){
-      partition[i] = elem_part[elem_mask[i]];
-    }
-
-    delete [] elem_part;
   }
   else {
     // If there is no split, just assign all elements to the
@@ -1008,7 +924,7 @@ void TACSCreator::splitSerialMesh( int split_size,
     }
   }
 
-  // Free the masked element connectivity and element pointer
+  // Free the element connectivity and element pointer
   delete [] elem_conn;
   delete [] elem_ptr;
 
@@ -1028,12 +944,11 @@ void TACSCreator::splitSerialMesh( int split_size,
   memset(new_nodes, 0, num_nodes*sizeof(int));
   memset(new_dep_nodes, 0, num_dependent_nodes*sizeof(int));
 
-  // Keep a count that is the new global ordering of the nodes
+  // Keep track of the new global ordering of the nodes
   // within the finite-element mesh.
-  int count = 0;
   for ( int j = 0; j < num_elements; j++ ){
     // The owner of element j
-    int owner = partition[elem_mask[j]];
+    int owner = partition[j];
     owned_elements[owner]++;
 
     // Assign the un-assigned nodes associated with element j
@@ -1044,7 +959,6 @@ void TACSCreator::splitSerialMesh( int split_size,
 	if (!new_nodes[node]){
 	  new_nodes[node] = 1;
 	  owned_nodes[owner]++;
-	  count++;
 	}
       }
       else {
@@ -1052,7 +966,6 @@ void TACSCreator::splitSerialMesh( int split_size,
 	if (!new_dep_nodes[node]){
 	  new_dep_nodes[node] = 1;
 	  owned_dep_nodes[owner]++;
-	  count++;
 	}
       }
     }
@@ -1079,7 +992,7 @@ void TACSCreator::splitSerialMesh( int split_size,
   // Set the dependent node offset. This is zero such that
   // new_dep_nodes are always the local dependent node indices
   int *split_dep_offset = new int[ split_size ];
-  split_offset[0] = 0;
+  split_dep_offset[0] = 0;
   for ( int k = 1; k < split_size; k++ ){
     split_dep_offset[k] = split_dep_offset[k-1] + owned_dep_nodes[k-1];
   }
@@ -1106,9 +1019,6 @@ void TACSCreator::splitSerialMesh( int split_size,
       }
     }
   }
-
-  // Free the element mask
-  delete [] elem_mask;
 
   // Free the split offset and split dependent node offset arrays
   delete [] split_offset;

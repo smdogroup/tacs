@@ -47,12 +47,12 @@ void PlaneStressTri6::getShapeFunctions( const double pt[],
 */
 void PlaneStressTri6::getShapeFunctions( const double pt[], double N[] ){
   // shape function values
-  N[0] = 2.0*(1.0-(pt[0]+pt[1]))*(0.5-(pt[0]+pt[1]));
-  N[1] = 2.0*pt[0]*(pt[0]-0.5);
-  N[2] = 2.0*pt[1]*(pt[1]-0.5);
-  N[3] = 2.0*pt[0]*(1.0-(pt[0]+pt[1]));
+  N[0] = 2.0*(1.0 - (pt[0] + pt[1]))*(0.5 - (pt[0] + pt[1]));
+  N[1] = 2.0*pt[0]*(pt[0] - 0.5);
+  N[2] = 2.0*pt[1]*(pt[1] - 0.5);
+  N[3] = 4.0*pt[0]*(1.0 - (pt[0] + pt[1]));
   N[4] = 4.0*pt[0]*pt[1];
-  N[5] = 2.0*pt[1]*(1.0-(pt[0]+pt[1]));
+  N[5] = 4.0*pt[1]*(1.0 - (pt[0] + pt[1]));
 }
 
 /*

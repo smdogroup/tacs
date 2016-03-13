@@ -24,7 +24,7 @@ class TACSAssembler : public TACSObject {
  public:
   static const int TACS_SPATIAL_DIM = 3;
 
-  enum OrderingType { NO_ORDER, // No ordering
+  enum OrderingType { NATURAL_ORDER, // Natural ordering
                       RCM_ORDER, // Reverse Cuthill Mackee ordering
                       AMD_ORDER, // Approximate minimum degree
 		      ND_ORDER, // Nested disection

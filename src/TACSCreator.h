@@ -22,13 +22,14 @@ class TACSCreator : public TACSObject {
 
   // Set the boundary conditions
   // ---------------------------
-  void setBoundaryConditions( int _num_bcs, int *_bc_nodes, int *_bc_vars,
-			      int *_bc_ptr );
+  void setBoundaryConditions( int _num_bcs, int *_bc_nodes, 
+			      int *_bc_vars, int *_bc_ptr );
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
   void setDependentNodes( int num_dep_nodes, int *_dep_node_ptr,
-			  int *_dep_node_conn, TacsScalar *_dep_node_weights );
+			  int *_dep_node_conn, 
+			  TacsScalar *_dep_node_weights );
 
   // Set the elements into TACS creator
   // ----------------------------------

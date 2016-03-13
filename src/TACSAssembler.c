@@ -535,13 +535,15 @@ after finalize()\n", mpiRank);
   Set the nodes from the node map object
 */
 void TACSAssembler::setNodes( BVec *X ){
-  // Get the local array of node locations
-  TacsScalar *vals;
-  int nvals = X->getArray(&vals);
+  if (X){
+    // Get the local array of node locations
+    TacsScalar *vals;
+    int nvals = X->getArray(&vals);
+    
+    // Copy over the nodal location values
+    memcpy(Xpts, vals, nvals*sizeof(TacsScalar));
+  }
 
-  // Copy over the nodal location values
-  memcpy(Xpts, vals, nvals*sizeof(TacsScalar));
-  
   // Set the locations of the dependent nodes
   setDependentVariables(TACS_SPATIAL_DIM, Xpts);
 }
@@ -1094,7 +1096,7 @@ void TACSAssembler::computeMatReordering( enum OrderingType order_type,
       }
     }
   }
-  else if (order_type == NO_ORDER){
+  else if (order_type == NATURAL_ORDER){
     if (perm){
       for ( int k = 0; k < nvars; k++ ){
         perm[k] = k;
@@ -1913,9 +1915,10 @@ FEMat * TACSAssembler::createFEMat( enum OrderingType order_type ){
 	    mpiRank);
     return NULL;
   }
-  if (order_type == NO_ORDER){
+  if (order_type == NATURAL_ORDER){
     fprintf(stderr, 
-	    "[%d] Cannot call createFEMat() with order_type == NO_ORDER\n",
+	    "[%d] Cannot call createFEMat() with \
+order_type == NATURAL_ORDER\n",
 	    mpiRank);
     order_type = TACS_AMD_ORDER;
   }
