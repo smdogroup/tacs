@@ -55,7 +55,8 @@ int main( int argc, char *argv[] ){
 	}
 
 	// Now, create the TACSAssembler object
-	tacs = mesh->createTACS(2);
+        int vars_per_node = 2;
+	tacs = mesh->createTACS(vars_per_node);
 	tacs->incref();
       }
     }

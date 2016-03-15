@@ -745,9 +745,7 @@ void TACSCreator::splitSerialMesh( int split_size,
   // Compute the node to element CSR data structure for both
   // the indepedent and dependent nodes
   int *node_elem_ptr = new int[ num_nodes+1 ];
-  int *dep_node_elem_ptr = new int[ num_dependent_nodes+1 ];
   memset(node_elem_ptr, 0, (num_nodes+1)*sizeof(int));
-  memset(dep_node_elem_ptr, 0, (num_dependent_nodes+1)*sizeof(int));
     
   for ( int i = 0; i < num_elements; i++ ){
     int end = elem_node_ptr[i+1]; 
@@ -757,13 +755,6 @@ void TACSCreator::splitSerialMesh( int split_size,
 	// This is an independent node
 	node_elem_ptr[node+1]++;
       }
-      else {
-	// This is a dependent node. Compute the dependent node
-	// number and add it to the dependent node connectivity
-	// counter
-	node = -node-1;
-	dep_node_elem_ptr[node+1]++;
-      }
     }
   }
 
@@ -772,12 +763,6 @@ void TACSCreator::splitSerialMesh( int split_size,
     node_elem_ptr[i+1] += node_elem_ptr[i];
   }
   int *node_elem_conn = new int[ node_elem_ptr[num_nodes] ];
-
-  // Determine the size of the dependent node to element array
-  for ( int i = 0; i < num_dependent_nodes; i++ ){
-    dep_node_elem_ptr[i+1] += dep_node_elem_ptr[i];
-  }
-  int *dep_node_elem_conn = new int[ dep_node_elem_ptr[num_dependent_nodes] ];
 
   // Fill in the entries of the node->element data structure
   for ( int i = 0; i < num_elements; i++ ){
@@ -789,13 +774,6 @@ void TACSCreator::splitSerialMesh( int split_size,
 	node_elem_conn[node_elem_ptr[node]] = i;
 	node_elem_ptr[node]++;
       }
-      else {
-	// This is a dependent node. Compute the dependent node
-	// number and add the element to the connectivity list
-	node = -node-1;
-	dep_node_elem_conn[dep_node_elem_ptr[node]] = i;
-	dep_node_elem_ptr[node]++;
-      }
     }
   }
   
@@ -804,12 +782,6 @@ void TACSCreator::splitSerialMesh( int split_size,
     node_elem_ptr[i] = node_elem_ptr[i-1];
   }
   node_elem_ptr[0] = 0;
-
-  // Reset the dep_elem_ptr array to the correct values
-  for ( int i = num_dependent_nodes; i > 0; i-- ){
-    dep_node_elem_ptr[i] = dep_node_elem_ptr[i-1];
-  }
-  dep_node_elem_ptr[0] = 0;
 
   // Now we set up the element to element connectivity using the 
   // set of maksed elements. For this to work within METIS, we have

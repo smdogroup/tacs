@@ -230,6 +230,11 @@ int main( int argc, char *argv[] ){
     delete [] elem_node_conn;
     delete [] elem_id_nums;
     delete [] bc_nodes;
+    delete [] dep_ptr;
+    delete [] dep_conn;
+    delete [] dep_weights;
+    delete [] anodes;
+    delete [] bnodes;
   }
 
   // This call must occur on all processor
