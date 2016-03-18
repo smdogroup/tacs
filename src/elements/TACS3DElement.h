@@ -11,6 +11,7 @@
 
 #include "TACSElement.h"
 #include "SolidStiffness.h"
+#include "FElibrary.h"
 
 /*
   The following class defines a generic three-dimensional element
@@ -59,7 +60,7 @@ class TACS3DElement : public TACSElement {
 
   // Compute the strain in the element
   // ---------------------------------
-  void EvalStrain( TacsScalar strain[], const TacsScalar J[],
+  void evalStrain( TacsScalar strain[], const TacsScalar J[],
 		   const double Na[], const double Nb[], const double Nc[],
 		   const TacsScalar vars[] );
  
@@ -162,7 +163,8 @@ class TACS3DElement : public TACSElement {
 				 const TacsScalar psi[], 
 				 const TacsScalar phi[],
 				 const TacsScalar Xpts[],
-				 const TacsScalar vars[] );
+				 const TacsScalar vars[] ){}
+
   // Functions for evaluating global functionals of interest
   // -------------------------------------------------------
   TACSConstitutive * getConstitutive(){ return stiff; }
@@ -572,7 +574,7 @@ void TACS3DElement<NUM_NODES>::getDisplGradientSens( TacsScalar Ud[],
   vars:       the variables
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::EvalStrain( TacsScalar strain[], 
+void TACS3DElement<NUM_NODES>::evalStrain( TacsScalar strain[], 
 					   const TacsScalar J[],
 					   const double Na[], 
 					   const double Nb[], 
@@ -1059,7 +1061,7 @@ void TACS3DElement<NUM_NODES>::computeEnergies( TacsScalar *_Te,
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, Nc, vars);
+    evalStrain(strain, J, Na, Nb, Nc, vars);
  
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
@@ -1134,7 +1136,7 @@ void TACS3DElement<NUM_NODES>::getResidual( TacsScalar res[],
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, Nc, vars);
+    evalStrain(strain, J, Na, Nb, Nc, vars);
  
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
@@ -1224,7 +1226,7 @@ void TACS3DElement<NUM_NODES>::getJacobian( TacsScalar mat[],
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, Nc, vars);
+    evalStrain(strain, J, Na, Nb, Nc, vars);
  
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
@@ -1330,7 +1332,7 @@ void TACS3DElement<NUM_NODES>::addAdjResProduct( double scale,
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, Nc, vars);
+    evalStrain(strain, J, Na, Nb, Nc, vars);
         
     // Get the derivative of the strain with respect to the nodal
     // displacements
@@ -1372,165 +1374,13 @@ void TACS3DElement<NUM_NODES>::addAdjResProduct( double scale,
   Xpts:    the element nodal locations
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::getAdjResXptSens( TacsScalar XptSens[],
-						 const TacsScalar psi[],
-						 const TacsScalar Xpts[],
-						 const TacsScalar vars[],
-						 const TacsScalar dvars[],
-						 const TacsScalar ddvars[]){
-  memset(res, 0, 3*NUM_NODES*NUM_VARIABLES*sizeof(TacsScalar));
-}
-
-/*
-  Compute the derivative of the residuals with respect to one of the
-  material design variables.
-
-  output:
-  res:    the derivative of the residual w.r.t. the material design var
-  
-  input:
-  dvNum:   the design variable number 
-  vars:    the variables
-  Xpts:    the element nodal locations
-*/
-template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::getResDVSens( int dvNum, 
-					     TacsScalar * res, 
-					     const TacsScalar Xpts[],
-					     const TacsScalar vars[]){
-  memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
-
-  if (dvNum < 0 || !stiff->ownsDesignVar(dvNum)){
-    return;
-  }
-
-  // The shape functions associated with the element
-  double N[NUM_NODES];
-  double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
-  
-  // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
-  // Get the number of quadrature points
-  int numGauss = getNumGaussPts();
-
-  for ( int n = 0; n < numGauss; n++ ){
-    // Retrieve the quadrature points and weight
-    double pt[3];
-    double weight = getGaussWtsPts(n, pt);
-
-    // Compute the element shape functions
-    getShapeFunctions(pt, N, Na, Nb, Nc);
-
-    // Compute the derivative of X with respect to the
-    // coordinate directions
-    TacsScalar X[3], Xa[9];
-    solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
-
-    // Compute the determinant of Xa and the transformation
-    TacsScalar J[9];
-    TacsScalar h = FElibrary::jacobian3d(Xa, J);
-    h = h*weight;
-
-    // Compute the strain
-    TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, Nc, vars);
- 
-    // Compute the corresponding stress
-    TacsScalar stress[NUM_STRESSES];
-    stiff->calculateStressDVSens(dvNum, pt, strain, stress);
-       
-    // Get the derivative of the strain with respect to the nodal
-    // displacements
-    getBmat(B, J, Na, Nb, Nc, vars);
-
-    TacsScalar *b = B;
-    for ( int i = 0; i < NUM_VARIABLES; i++ ){
-      res[i] += h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2] +
-		   b[3]*stress[3] + b[4]*stress[4] + b[5]*stress[5]);
-      b += 6;
-    }
-  }
-}
-
-/*
-  Add the product of the adjoint vector times the derivative of the
-  residuals multiplied by a scalar to the given derivative vector.
-
-  output:
-  mat:     the element tangent stiffness matrix
-  res:     the element residual
-  
-  input:
-  psi:     the element adjoint variables
-  vars:    the element variables
-  Xpts:    the element nodal locations in R^{3}
-*/
-template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::addAdjResDVSensProduct( TacsScalar alpha,
-						       TacsScalar dvSens[], 
-						       int dvLen,
-						       const TacsScalar psi[],
-						       const TacsScalar vars[],
-						       const TacsScalar Xpts[] ){
-  // The shape functions associated with the element
-  double N[NUM_NODES];
-  double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
-  
-  // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
-  // Get the number of quadrature points
-  int numGauss = getNumGaussPts();
-
-  for ( int n = 0; n < numGauss; n++ ){
-    // Retrieve the quadrature points and weights
-    double pt[3];
-    double weight = getGaussWtsPts(n, pt);
-
-    // Compute the element shape functions
-    getShapeFunctions(pt, N, Na, Nb, Nc);
-
-    // Compute the derivative of X with respect to the
-    // coordinate directions
-    TacsScalar X[3], Xa[9];
-    solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
-
-    // Compute the determinant of Xa and the transformation
-    TacsScalar J[9];
-    TacsScalar h = FElibrary::jacobian3d(Xa, J);
-    h = h*weight;
-
-    // Compute the strain
-    TacsScalar strain[NUM_STRESSES];
-    EvalStrain(strain, J, Na, Nb, Nc, vars);
-        
-    // Get the derivative of the strain with respect to the nodal
-    // displacements
-    getBmat(B, J, Na, Nb, Nc, vars);
-
-    // Compute the product of psi^{T}*B^{T}
-    TacsScalar bpsi[NUM_STRESSES];
-    memset(bpsi, 0, NUM_STRESSES*sizeof(TacsScalar));
-
-    TacsScalar *b = B;
-    const TacsScalar *ps = psi;
-    for ( int i = 0; i < NUM_VARIABLES; i++ ){
-      bpsi[0] += ps[0]*b[0];
-      bpsi[1] += ps[0]*b[1];
-      bpsi[2] += ps[0]*b[2];
-      bpsi[3] += ps[0]*b[3];
-      bpsi[4] += ps[0]*b[4];
-      bpsi[5] += ps[0]*b[5];
-      b += 6;
-      ps++;
-    }
-    
-    // Add the term: alpha*psi^{T}*B^{T}*dC/dx*strain to the vector
-    // dvSens - Note that this is much more efficient than computing
-    // the terms component by component
-    stiff->addStressDVSens(pt, strain, alpha*h, bpsi, dvSens, dvLen);
-  }
+void TACS3DElement<NUM_NODES>::getAdjResXptProduct( TacsScalar XptSens[],
+						    const TacsScalar psi[],
+						    const TacsScalar Xpts[],
+						    const TacsScalar vars[],
+						    const TacsScalar dvars[],
+						    const TacsScalar ddvars[] ){
+  memset(XptSens, 0, 3*NUM_NODES*sizeof(TacsScalar));
 }
 
 /*
@@ -1591,7 +1441,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       
       // Compute the strain
       TacsScalar strain[NUM_STRESSES];
-      EvalStrain(strain, J, Na, Nb, Nc, vars);
+      evalStrain(strain, J, Na, Nb, Nc, vars);
       
       // Get the derivative of the strain with respect to the nodal
       // displacements
@@ -1618,7 +1468,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       }
 
       // Add the result to the design variable vector
-      stiff->addStressDVSens(pt, bphi, alpha*h, bpsi, dvSens, dvLen);
+      stiff->addStressDVSens(pt, bphi, scale*h, bpsi, dvSens, dvLen);
     }
   }
   else if (matType == MASS_MATRIX){
@@ -1664,7 +1514,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       }
 
       // Add the result to the design variable vector
-      TacsScalar rho_alpha = alpha*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
+      TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
 				      upsi[2]*uphi[2]);
       stiff->addPointwiseMassDVSens(pt, &rho_alpha, dvSens, dvLen);
     }
@@ -1721,7 +1571,7 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       
       // Get the pointwise mass
       TacsScalar ptmass[3];
-      stiff->pointwiseMass(pt, ptmass);
+      stiff->getPointwiseMass(pt, ptmass);
 
       // Fill-in the upper-portion of the matrix
       for ( int j = 0; j < NUM_NODES; j++ ){
@@ -1850,7 +1700,7 @@ void TACS3DElement<NUM_NODES>::getStrain( TacsScalar strain[],
   FElibrary::jacobian3d(Xa, J);
 
   // Compute the strain
-  EvalStrain(strain, J, Na, Nb, Nc, vars);
+  evalStrain(strain, J, Na, Nb, Nc, vars);
 }
 
 /*
@@ -1870,7 +1720,7 @@ void TACS3DElement<NUM_NODES>::getStrain( TacsScalar strain[],
   Xpts:        the element nodal locations
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[], 
+void TACS3DElement<NUM_NODES>::addStrainSVSens( TacsScalar sens[],
 						const double pt[], 
 						const TacsScalar scale,
 						const TacsScalar strainSens[], 
@@ -1947,9 +1797,6 @@ void TACS3DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
   // Compute the determinant of Xa and the transformation
   TacsScalar J[9];
   FElibrary::jacobian3d(Xa, J);
-
-  // Compute the strain
-  EvalStrain(strain, J, Na, Nb, Nc, vars);
 
   // Compute the derivative of the strain w.r.t. nocal coordinates
   getStrainXptSens(strainXptSens, J, Xa, 

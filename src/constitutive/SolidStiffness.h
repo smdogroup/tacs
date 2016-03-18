@@ -30,12 +30,8 @@ class SolidStiffness : public TACSConstitutive {
   // Return the mass moments
   // -----------------------
   int getNumMassMoments(){ return 1; }
-  void pointwiseMass( const double gpt[], TacsScalar mass[] ){
+  void getPointwiseMass( const double gpt[], TacsScalar mass[] ){
     mass[0] = rho;
-  }
-  void pointwiseMassDVSens( int dvNum, const double gpt[],
-                            TacsScalar massDVSens[] ){
-    massDVSens[0] = 0.0;
   }
 
   // Extra info about the constitutive class

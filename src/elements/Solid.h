@@ -8,7 +8,6 @@
   Not for commercial purposes.
 
   The following code uses templates to allow for arbitrary order elements.
-
 */
 
 #include "TACS3DElement.h"
@@ -26,7 +25,7 @@ class Solid : public TACS3DElement<order*order*order> {
 
   // Return the name of this element
   // -------------------------------
-  const char * elementName() const { return elemName; }
+  const char * elementName(){ return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -49,6 +48,9 @@ class Solid : public TACS3DElement<order*order*order> {
   void getOutputConnectivity( int * con, int node );
 
  private:
+  // The number of nodes in the element
+  static const int NUM_NODES = order*order*order;
+
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
@@ -62,7 +64,7 @@ Solid<order>::Solid( SolidStiffness * _stiff,
 		     SolidElementType type, 
 		     int _componentNum ):
 TACS3DElement<order*order*order>(_stiff, (type == LINEAR), _componentNum){
-  numGauss = FElibrary:getGaussPtsWts(order, &gaussPts, &gaussWts);
+  numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 } 
 
 template <int order>
@@ -195,7 +197,7 @@ void Solid<order>::getOutputData( unsigned int out_type,
 
 	// Compute the strain
 	TacsScalar strain[6];
-	this->getStrain(strain, J, Na, Nb, Nc, vars);
+	this->evalStrain(strain, J, Na, Nb, Nc, vars);
 	
         if (out_type & TACSElement::OUTPUT_STRAINS){
           for ( int k = 0; k < 6; k++ ){
@@ -265,3 +267,5 @@ void Solid<order>::getOutputConnectivity( int *con, int node ){
     }
   }
 }
+
+#endif // TACS_SOLID_H
