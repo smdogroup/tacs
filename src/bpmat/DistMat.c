@@ -855,18 +855,18 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
   }
   
   for ( int i = 0; i < nvars; i++ ){
-    for ( int j = varp[i]; j < varp[i+1]; j++ ){
+    for ( int ip = varp[i]; ip < varp[i+1]; ip++ ){
       // Check if the row is on this processor
-      if (avars[j] >= 0){
+      if (avars[ip] >= 0){
 	// Add values to the diagonal
-	Aloc->addRowWeightValues(weights[j], avars[j], 
+	Aloc->addRowWeightValues(weights[ip], avars[ip], 
 				 nvars, varp, avars, weights, 
 				 mv, &values[mv*i*bsize]);
 	
 	// Add values to the off-diagonal
-	int r = avars[j] - Np;
+	int r = avars[ip] - Np;
 	if (r >= 0 && r < Nc){
-	  Bext->addRowWeightValues(weights[j], r, 
+	  Bext->addRowWeightValues(weights[ip], r, 
 				   nvars, varp, bvars, weights, 
 				   mv, &values[mv*i*bsize]);
 	}
@@ -875,45 +875,47 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
 		  mpiRank);
 	}
       }
-      else if (bvars[j] >= 0){
+      else if (bvars[ip] >= 0){
 	// The row is not on this processor, search for it in the
 	// off-processor part that we'll have to communicate later
 	// Locate the row within ext_rows
-	int * item = (int*)bsearch(&vars[j], ext_rows, next_rows, 
+	int * item = (int*)bsearch(&vars[ip], ext_rows, next_rows, 
 				   sizeof(int), FElibrary::comparator);
 	if (item){
 	  int r_ext = item - ext_rows;
 	  
 	  // Find the values within ext_cols
-	  for ( int j = 0; j < n; j++ ){
-	    int c = vars[j];
-	    TacsScalar aw = weights[j]*weights[j];
+          for ( int j = 0; j < nvars; j++ ){
+            for ( int jp = varp[j]; jp < varp[j+1]; jp++ ){
+              int c = vars[jp];
+              TacsScalar aw = weights[ip]*weights[jp];
 	    
-	    if (c >= 0 && aw != 0.0){
-	      int start = ext_rowp[r_ext];
-	      int size = ext_rowp[r_ext+1] - start;
-	      item = (int*)bsearch(&c, &ext_cols[start], size, 
-				   sizeof(int), FElibrary::comparator);
-	      
-	      if (item){
-		TacsScalar * a = &ext_A[b2*(item - ext_cols)];
-		
-		for ( int ii = 0; ii < bsize; ii++ ){
-		  for ( int jj = 0; jj < bsize; jj++ ){
-		    a[ii*bsize + jj] += aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
-		  }
-		}
-	      }
-	      else {
-		fprintf(stderr, "[%d] DistMat error: could not find col \
-(%d,%d) r_ext = %d\n", mpiRank, vars[j], c, r_ext);
-	      }
-	    }
+              if (c >= 0 && aw != 0.0){
+                int start = ext_rowp[r_ext];
+                int size = ext_rowp[r_ext+1] - start;
+                item = (int*)bsearch(&c, &ext_cols[start], size, 
+                                     sizeof(int), FElibrary::comparator);
+                
+                if (item){
+                  TacsScalar * a = &ext_A[b2*(item - ext_cols)];
+                  
+                  for ( int ii = 0; ii < bsize; ii++ ){
+                    for ( int jj = 0; jj < bsize; jj++ ){
+                      a[ii*bsize + jj] += aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                    }
+                  }
+                }
+                else {
+                  fprintf(stderr, "[%d] DistMat error: could not find col \
+(%d,%d) r_ext = %d\n", mpiRank, vars[jp], c, r_ext);
+                }
+              }
+            }
 	  }
 	}
 	else {
 	  fprintf(stderr, "[%d] DistMat error: could not find row %d\n", 
-		  mpiRank, vars[j]);
+		  mpiRank, vars[ip]);
 	}
       }
     }

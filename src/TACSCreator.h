@@ -17,19 +17,23 @@ class TACSCreator : public TACSObject {
   // Set the connectivity for the global mesh
   // ----------------------------------------
   void setGlobalConnectivity( int _num_nodes, int _num_elements,
-			      int *_elem_node_ptr, int *_elem_node_conn,
-			      int *_elem_id_nums );
+			      const int *_elem_node_ptr, 
+                              const int *_elem_node_conn,
+			      const int *_elem_id_nums );
 
   // Set the boundary conditions
   // ---------------------------
-  void setBoundaryConditions( int _num_bcs, int *_bc_nodes, 
-			      int *_bc_vars, int *_bc_ptr );
+  void setBoundaryConditions( int _num_bcs, 
+                              const int *_bc_nodes, 
+			      const int *_bc_vars, 
+                              const int *_bc_ptr );
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
-  void setDependentNodes( int num_dep_nodes, int *_dep_node_ptr,
-			  int *_dep_node_conn, 
-			  TacsScalar *_dep_node_weights );
+  void setDependentNodes( int num_dep_nodes, 
+                          const int *_dep_node_ptr,
+			  const int *_dep_node_conn, 
+			  const TacsScalar *_dep_node_weights );
 
   // Set the elements into TACS creator
   // ----------------------------------
@@ -37,7 +41,7 @@ class TACSCreator : public TACSObject {
 
   // Set the nodal locations
   // -----------------------
-  void setNodes( TacsScalar *_Xpts );
+  void setNodes( const TacsScalar *_Xpts );
 
   // Create the TACSAssembler object
   // -------------------------------
@@ -46,12 +50,17 @@ class TACSCreator : public TACSObject {
 			     enum TACSAssembler::MatrixOrderingType mat_type =
 			     TACSAssembler::DIRECT_SCHUR );
 
+  // Get the new node numbers
+  // ------------------------
+  int getNodeNums( const int **_new_nodes ){ 
+    *_new_nodes = new_nodes;
+    return num_nodes; 
+  }
+
  private:
   // Partition the mesh stored internally
   void splitSerialMesh( int split_size, int *partition, 
-			int *new_nodes, int *new_dep_nodes,
-			int *owned_elements, int *owned_nodes, 
-			int *owned_dep_nodes );
+			int *owned_elements, int *owned_nodes );
 
   // The number of variables per node in the mesh
   int vars_per_node;
@@ -84,6 +93,9 @@ class TACSCreator : public TACSObject {
   // Elements corresponding to the 
   int num_elem_ids;
   TACSElement **elements;
+
+  // The new node numbers for the independent nodes
+  int *new_nodes;
 };
 
 #endif // TACS_CREATOR_H

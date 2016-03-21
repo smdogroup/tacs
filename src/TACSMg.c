@@ -132,6 +132,7 @@ void TACSMg::setLevel( int level, TACSAssembler * _tacs,
   tacs[level] = _tacs;
   tacs[level]->incref();
 
+  iters[level] = 1;
   if (_iters > 0){
     iters[level] = _iters;
   }
@@ -234,12 +235,15 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
   // that they have already been assembled
   for ( int i = 0; i < nlevels-1; i++ ){
     if (tacs[i]){
-      tacs[i]->assembleMatType(matType, mat[i], matOr);
+      // tacs[i]->assembleMatType(matType, mat[i], matOr);
+    
+      tacs[i]->assembleJacobian(NULL, mat[i], 1.0, 0.0, 0.0, matOr);
     }
   }
 
   // Assemble the coarsest problem
-  tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+  // tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+  tacs[nlevels-1]->assembleJacobian(NULL, root_mat, 1.0, 0.0, 0.0, matOr);
 
   // For all but the lowest level, set up the SOR object
   for ( int i = 0; i < nlevels-1; i++ ){

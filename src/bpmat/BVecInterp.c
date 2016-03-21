@@ -80,11 +80,12 @@ void BVecInterpMultTransposeAdd6( int bsize, int nrows,
   3. A call to finalize() is made to finish initialization
   4. Calls can be made to mult, multAdd, multTranspose, and multTransposeAdd
 */
-BVecInterp::BVecInterp( VarMap * in, VarMap * out ){
-  inMap = in;
+BVecInterp::BVecInterp( TACSAssembler *in, 
+                        TACSAssembler *out ){
+  inMap = in->getVarMap();
   inMap->incref();
 
-  outMap = out;
+  outMap = out->getVarMap();
   outMap->incref();
   
   bsize = inMap->getBlockSize();
@@ -227,7 +228,7 @@ BVecInterp::~BVecInterp(){
 void BVecInterp::addInterp( int num, TacsScalar w[], 
 			    int vars[], int size ){
   if (num >= outOwnerRange[mpiRank] &&
-      num <  outOwnerRange[mpiRank+1]){
+      num < outOwnerRange[mpiRank+1]){
     // This code stores the values locally until the finalize call is
     // made. First, check if the current size of the allocated memory is
     // sufficient to store the interpolation. If not, allocate larger

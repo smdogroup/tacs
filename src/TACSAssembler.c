@@ -2366,11 +2366,12 @@ void TACSAssembler::assembleJacobian( BVec *residual,
 				      double alpha, double beta, double gamma,
 				      MatrixOrientation matOr ){
   // Zero the residual and the matrix
-  residual->zeroEntries();
+  if (residual){ 
+    int size = varsPerNode*(numNodes + numDependentNodes);
+    memset(localRes, 0, size*sizeof(TacsScalar));
+    residual->zeroEntries(); 
+  }
   A->zeroEntries();
-
-  int size = varsPerNode*(numNodes + numDependentNodes);
-  memset(localRes, 0, size*sizeof(TacsScalar));
 
   // Run the p-threaded version of the assembly code
   if (thread_info->getNumThreads() > 1){
@@ -2416,30 +2417,36 @@ void TACSAssembler::assembleJacobian( BVec *residual,
       getValues(varsPerNode, i, localDotVars, dvars);
       getValues(varsPerNode, i, localDDotVars, ddvars);
 
-      // Generate the Jacobian of the element
-      elements[i]->getResidual(elemRes, elemXpts, 
-			       vars, dvars, ddvars);
+      // Compute and add the contributions to the residual
+      if (residual){
+        elements[i]->getResidual(elemRes, elemXpts, 
+                                 vars, dvars, ddvars);
+        addValues(varsPerNode, i, elemRes, localRes);
+      }
+
+      // Compute and add the contributions to the Jacobian
       elements[i]->getJacobian(elemMat, alpha, beta, gamma,
 			       elemXpts, vars, dvars, ddvars);
-      
-      // Insert the values into the global matrix
-      addValues(varsPerNode, i, elemRes, localRes);
       addMatValues(A, i, elemMat, elementIData, elemWeights);
     }
   }
 
   // Add the dependent-residual terms
-  addDependentResidual(varsPerNode, localRes);
+  if (residual){ addDependentResidual(varsPerNode, localRes); }
 
   // Do any matrix and residual assembly if required
   A->beginAssembly();
-  vecDist->beginReverse(localRes, residual, BVecDistribute::ADD);
+  if (residual){
+    vecDist->beginReverse(localRes, residual, BVecDistribute::ADD);
+  }
 
   A->endAssembly();
-  vecDist->endReverse(localRes, residual, BVecDistribute::ADD);
+  if (residual){
+    vecDist->endReverse(localRes, residual, BVecDistribute::ADD);
+  }
 
   // Apply the boundary conditions
-  applyBCs(residual, localVars);
+  if (residual){ applyBCs(residual, localVars); }
   A->applyBCs();
 }
 
@@ -2452,9 +2459,9 @@ void TACSAssembler::assembleJacobian( BVec *residual,
   matType:      the matrix type defined in Element.h
   matOr:        the matrix orientation: NORMAL or TRANSPOSE
 */
-void TACSAssembler::assembleMatType(  ElementMatrixType matType,
-				      TACSMat *A, 
-				      MatrixOrientation matOr ){
+void TACSAssembler::assembleMatType( ElementMatrixType matType,
+                                     TACSMat *A, 
+                                     MatrixOrientation matOr ){
   // Zero the matrix
   A->zeroEntries();
 

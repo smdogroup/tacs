@@ -10,11 +10,12 @@
 
 #include "BVec.h"
 #include "BVecDist.h"
+#include "TACSAssembler.h"
 
 /*
   BVecInterp: Interpolate with constant weights between two vectors
   that are not the same size. This applies the same weights to all
-  components of the blocks in each BVec object. 
+  components of the blocks in each BVec object.
 
   This interpolation class is limited in the following sense:
 
@@ -45,7 +46,7 @@
 */
 class BVecInterp : public TACSObject {
  public:
-  BVecInterp( VarMap * in, VarMap * out );
+  BVecInterp( TACSAssembler *in, TACSAssembler *out );
   ~BVecInterp();
 
   // Add components of the interpolation
