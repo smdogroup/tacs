@@ -3494,8 +3494,10 @@ void TACSAssembler::evalAdjointResXptSensProducts( int loadCase,
   returns:     the element pointer associated with elemNum
 */
 TACSElement * TACSAssembler::getElement( int elemNum,
-					 TacsScalar *elemVars, 
-					 TacsScalar *elemXpts ){
+					 TacsScalar *elemXpts,
+					 TacsScalar *vars,
+					 TacsScalar *dvars,
+					 TacsScalar *ddvars ){
   // Check if the element number is in the right range
   if (elemNum < 0 || elemNum >= numElements){
     fprintf(stderr, "[%d] Element number %d out of range [0,%d)\n",
@@ -3503,9 +3505,11 @@ TACSElement * TACSAssembler::getElement( int elemNum,
     return NULL;
   }
 
-  getValues(varsPerNode, elemNum, localVars, elemVars);
-  getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts);
-  
+  if (elemXpts){ getValues(TACS_SPATIAL_DIM, elemNum, Xpts, elemXpts); }
+  if (vars){ getValues(varsPerNode, elemNum, localVars, vars); }
+  if (dvars){ getValues(varsPerNode, elemNum, localVars, dvars); }
+  if (ddvars){ getValues(varsPerNode, elemNum, localVars, ddvars); }
+
   return elements[elemNum];
 }
 

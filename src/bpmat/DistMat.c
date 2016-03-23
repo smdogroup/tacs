@@ -600,10 +600,20 @@ void DistMat::initPersistent(){
     send_proc = new int[ nsends ];      
     send_status = new MPI_Status[ nsends ];      
   }
+  else {
+    sends = NULL;
+    send_proc = NULL;
+    send_status = NULL;
+  }
   if (nreceives > 0){
     receives = new MPI_Request[ nreceives ];
     receive_proc = new int[ nreceives ]; 
     receive_status = new MPI_Status[ nreceives ];
+  }
+  else {
+    receives = NULL;
+    receive_proc = NULL;
+    receive_status = NULL;
   }
 
   // Set up the sends
@@ -1121,5 +1131,7 @@ void DistMat::endAssembly(){
   }
 
   // Wait for all the sending requests
-  MPI_Waitall(nsends, sends, MPI_STATUSES_IGNORE);
+  if (nsends > 0){
+    MPI_Waitall(nsends, sends, MPI_STATUSES_IGNORE);
+  }
 }

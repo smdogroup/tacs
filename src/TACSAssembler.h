@@ -171,7 +171,9 @@ class TACSAssembler : public TACSObject {
   TACSElement ** getElements(){ return elements; }
   TACSElement * getElement( int elemNum,
 			    TacsScalar *elemXpts,
-			    TacsScalar *elemVars );
+			    TacsScalar *vars,
+			    TacsScalar *dvars,
+			    TacsScalar *ddvars );
 
   // Get information about the output files
   // --------------------------------------

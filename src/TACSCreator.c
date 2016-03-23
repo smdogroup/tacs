@@ -14,14 +14,22 @@ static void extend_int_array( int ** array, int old_len,
 }
 
 /*
-  Functions for sorting a list such that:
+  Functions for sorting a list such that once the list is sorted:
 
   arg_sort_list[list[i]] is in ascending order
 */
 static const int * arg_sort_list = NULL;
 
 static int compare_arg_sort( const void * a, const void * b ){
-  return arg_sort_list[*(int*)a] - arg_sort_list[*(int*)b];
+  const int aval = arg_sort_list[*(int*)a];
+  const int bval = arg_sort_list[*(int*)b];
+
+  // Break ties using the index of the list
+  if (aval == bval){
+    return *(const int*)(a) - *(const int*)(b);
+  }
+  
+  return aval - bval;
 }
 
 /*
@@ -61,6 +69,9 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
 
   // Set the dependent node pointers to zero
   new_nodes = NULL;
+
+  // The element partition
+  partition = NULL;
 }
 
 /*
@@ -78,7 +89,8 @@ TACSCreator::~TACSCreator(){
   if (dep_node_conn){ delete [] dep_node_conn; }
   if (dep_node_weights){ delete [] dep_node_weights; }
   if (new_nodes){ delete [] new_nodes; }
-  
+  if (partition){ delete [] partition; }
+
   if (elements){
     for ( int i = 0; i < num_elem_ids; i++ ){
       if (elements[i]){ elements[i]->decref(); }
@@ -193,12 +205,27 @@ void TACSCreator::setNodes( const TacsScalar *_Xpts ){
   memcpy(Xpts, _Xpts, 3*num_nodes*sizeof(TacsScalar));
 }
 
+
+/*
+  Get the new node numbers
+*/
+int TACSCreator::getNodeNums( const int **_new_nodes ){ 
+  *_new_nodes = new_nodes;
+  return num_nodes; 
+}
+
+/*
+  Get the element partition
+*/
+int TACSCreator::getElementPartition( const int **_partition ){
+  *_partition = partition;
+}
+
 /*
   Create the instance of the TACSAssembler object and return it.
 
   This code partitions the mesh, calls for the elements to be
   allocated and returns a valid instance of the TACSAssembler object.
-
 */
 TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_type,
 					enum TACSAssembler::MatrixOrderingType mat_type ){
@@ -207,7 +234,6 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
   MPI_Comm_rank(comm, &rank);
 
   // These arrays are only significant on the root processor
-  int *partition = NULL;
   int *owned_elements = NULL;
   int *owned_nodes = NULL;
 
@@ -218,8 +244,7 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     owned_elements = new int[ size ];
     owned_nodes = new int[ size ];
     
-    splitSerialMesh(size, partition, 
-                    owned_elements, owned_nodes);
+    splitSerialMesh(size, owned_elements, owned_nodes);
   }
   
   // The number of local and owned nodes and the number of
@@ -714,7 +739,6 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
   }
 
   // Free all the remaining memory
-  delete [] partition;
   delete [] local_elem_node_ptr;
   delete [] local_elem_node_conn;
   delete [] local_elem_id_nums;
@@ -735,12 +759,10 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
   split_size:      the number of segments in the partition
 
   output:
-  partition:       the element->processor assignment
   owned_elements:  number of elements owned by processor i
   owned_nodes:     number of nodes owned by processor i
 */
 void TACSCreator::splitSerialMesh( int split_size, 
-				   int *partition, 
 				   int *owned_elements, 
 				   int *owned_nodes ){
   // Allocate space for the new node numbers and the new dependent
@@ -804,7 +826,7 @@ void TACSCreator::splitSerialMesh( int split_size,
   int *elem_conn = new int[ max_elem_conn_size ];
 
   // Assemble things one row at a time
-  int *row = new int[ num_elements ];
+  int *row = new int[ num_elements+1 ];
 
   for ( int i = 0; i < num_elements; i++ ){
     // Set the size of the new row in the data structure to zero

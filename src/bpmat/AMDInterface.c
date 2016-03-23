@@ -300,7 +300,7 @@ static void amd_update_hash( int * hash,
 
   nvars: The dimensions of the square input matrix
 
-  rowp: A integer that points to the beginnning entry for each row in
+  rowp: An integer that points to the beginnning entry for each row in
   cols
 
   cols: An array of the entries in A. During the computation this is
@@ -391,8 +391,7 @@ initial data structure\n");
   for ( int i = 0; i < nvars; nsvars++ ){
     // Select the pivots
     int piv = -1;
-    // int min_degree = nvars-i;
-    int min_degree = nvars;
+    int min_degree = nvars+1;
 
     if (i < nvars - ninterface_nodes){
       // Find the minimum degree variable

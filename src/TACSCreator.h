@@ -50,16 +50,14 @@ class TACSCreator : public TACSObject {
 			     enum TACSAssembler::MatrixOrderingType mat_type =
 			     TACSAssembler::DIRECT_SCHUR );
 
-  // Get the new node numbers
+  // Get the new node numbers and element partition
   // ------------------------
-  int getNodeNums( const int **_new_nodes ){ 
-    *_new_nodes = new_nodes;
-    return num_nodes; 
-  }
+  int getNodeNums( const int **_new_nodes );
+  int getElementPartition( const int **_partition );
 
  private:
   // Partition the mesh stored internally
-  void splitSerialMesh( int split_size, int *partition, 
+  void splitSerialMesh( int split_size,
 			int *owned_elements, int *owned_nodes );
 
   // The number of variables per node in the mesh
@@ -96,6 +94,9 @@ class TACSCreator : public TACSObject {
 
   // The new node numbers for the independent nodes
   int *new_nodes;
+
+  // The element partition
+  int *partition;
 };
 
 #endif // TACS_CREATOR_H
