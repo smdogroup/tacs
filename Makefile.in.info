@@ -12,6 +12,9 @@ RM = rm -f
 # Set up for parallel make
 MAKE = make -j 8
 
+# Set the ar flags
+AR_FLAGS = rcs
+
 # Flags for debugging and regular compilation versions
 EXTRA_DEBUG_CC_FLAGS = -fPIC -g 
 EXTRA_CC_FLAGS = -fPIC -O2

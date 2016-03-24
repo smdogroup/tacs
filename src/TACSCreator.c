@@ -204,6 +204,13 @@ void TACSCreator::setElements( TACSElement **_elements, int _num_elem_ids ){
 }
 
 /*
+  Set the element creator callback function
+*/
+void TACSCreator::setElementCreator( TACSElement* (*func)(int) ){
+  element_creator = func;
+}
+
+/*
   Set the nodal locations
 */
 void TACSCreator::setNodes( const TacsScalar *_Xpts ){
@@ -693,20 +700,46 @@ TACSAssembler* TACSCreator::createTACS(){
   }
 
   // Add the elements
-  for ( int k = 0; k < num_owned_elements; k++ ){
-    TACSElement * element = elements[local_elem_id_nums[k]];
-    if (!element){
-      fprintf(stderr, 
-              "[%d] TACSMeshLoader: Element undefined for component %d\n",
-              rank, local_elem_id_nums[k]);
-      MPI_Abort(comm, 1);
-      return NULL;
+  if (elements){
+    for ( int k = 0; k < num_owned_elements; k++ ){
+      TACSElement * element = elements[local_elem_id_nums[k]];
+      if (!element){
+	fprintf(stderr, 
+		"[%d] TACSCreator: Element undefined for element ID %d\n",
+		rank, local_elem_id_nums[k]);
+	MPI_Abort(comm, 1);
+	return NULL;
+      }
+      
+      // Add the element node numbers
+      int start = local_elem_node_ptr[k];
+      int end = local_elem_node_ptr[k+1];
+      tacs->addElement(element, &local_elem_node_conn[start], end-start);
     }
-
-    // Add the element node numbers
-    int start = local_elem_node_ptr[k];
-    int end = local_elem_node_ptr[k+1];
-    tacs->addElement(element, &local_elem_node_conn[start], end-start);
+  }
+  else if (element_creator){
+    for ( int k = 0; k < num_owned_elements; k++ ){
+      TACSElement * element = element_creator(local_elem_id_nums[k]);     
+      if (!element){
+	fprintf(stderr, 
+		"[%d] TACSCreator: Callback failed for element ID %d\n",
+		rank, local_elem_id_nums[k]);
+	MPI_Abort(comm, 1);
+	return NULL;
+      }
+      
+      // Add the element node numbers
+      int start = local_elem_node_ptr[k];
+      int end = local_elem_node_ptr[k+1];
+      tacs->addElement(element, &local_elem_node_conn[start], end-start);
+    }
+  }
+  else {
+    fprintf(stderr, 
+	    "[%d] TACSCreator: Elements and callback not defined\n",
+	    rank);
+    MPI_Abort(comm, 1);
+    return NULL;
   }
 
   // Use the reordering if the flag has been set in the

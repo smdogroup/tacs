@@ -1,14 +1,32 @@
 #ifndef TACS_CREATOR_H
 #define TACS_CREATOR_H
 
+#include "TACSAssembler.h"
+
 /*
   The following file contains the TACSCreator object which can be used
   to create TACSAssembler object for finite-element analysis.
 
+  This code automatically redistributes a serial mesh in parallel. It cannot
+  handle extremely large meshes, but is useful for many moderate-scale 
+  applications.
+
+  The user must specify the connectivity, boundary conditions,
+  elements, node locations and optionally any dependent nodes that are
+  defined.  The elements may be provided in a list, or a callback
+  function can be used to create them. In the case of the callback,
+  the function is called repeatedly for every element within the
+  finite-element mesh (not just once per element-id number).
+
+  The user may wish to modify the ordering of TACS. This can be done
+  by specifying the reordering type prior to calling createTACS().
+
+  The new node numbers and new element partition can be retrieved from
+  the creator object using the getNodeNums()/getElementPartion().
+  Note that it is guaranteed that on each partiton, the elements will
+  be numbered in ascending global order. This can be used to remap the
+  distributed element order back to the original element order.
 */
-
-#include "TACSAssembler.h"
-
 class TACSCreator : public TACSObject {
  public:
   TACSCreator( MPI_Comm comm, int _vars_per_node );
@@ -38,6 +56,7 @@ class TACSCreator : public TACSObject {
   // Set the elements into TACS creator
   // ----------------------------------
   void setElements( TACSElement **_elements, int _num_elem_ids );
+  void setElementCreator( TACSElement* (*func)(int) );
 
   // Set the nodal locations
   // -----------------------
@@ -61,6 +80,9 @@ class TACSCreator : public TACSObject {
   // Partition the mesh stored internally
   void splitSerialMesh( int split_size,
 			int *owned_elements, int *owned_nodes );
+  
+  // The magic element-generator function pointer
+  TACSElement* (*element_creator)( int elem_id );
 
   // Set the type of reordering to use
   int use_reordering;
