@@ -43,15 +43,17 @@ class TACSCreator : public TACSObject {
   // -----------------------
   void setNodes( const TacsScalar *_Xpts );
 
+  // Set the type of ordering to use
+  // -------------------------------
+  void setReorderingType( enum TACSAssembler::OrderingType _order_type,
+                          enum TACSAssembler::MatrixOrderingType _mat_type );
+
   // Create the TACSAssembler object
   // -------------------------------
-  TACSAssembler *createTACS( enum TACSAssembler::OrderingType order_type =
-			     TACSAssembler::ND_ORDER,
-			     enum TACSAssembler::MatrixOrderingType mat_type =
-			     TACSAssembler::DIRECT_SCHUR );
+  TACSAssembler *createTACS();
 
   // Get the new node numbers and element partition
-  // ------------------------
+  // ----------------------------------------------
   int getNodeNums( const int **_new_nodes );
   int getElementPartition( const int **_partition );
 
@@ -59,6 +61,11 @@ class TACSCreator : public TACSObject {
   // Partition the mesh stored internally
   void splitSerialMesh( int split_size,
 			int *owned_elements, int *owned_nodes );
+
+  // Set the type of reordering to use
+  int use_reordering;
+  enum TACSAssembler::OrderingType order_type;
+  enum TACSAssembler::MatrixOrderingType mat_type;
 
   // The number of variables per node in the mesh
   int vars_per_node;

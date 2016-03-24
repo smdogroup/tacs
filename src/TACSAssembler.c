@@ -716,64 +716,81 @@ int TACSAssembler::computeCouplingElements( int ** _celems ){
 */
 void TACSAssembler::computeReordering( enum OrderingType order_type,
                                        enum MatrixOrderingType mat_type ){
-
   // The ownership range of the nodes
   const int * ownerRange;
   int rank, size;
   varMap->getOwnerRange(&ownerRange, &rank, &size);
 
-  // Figure out which nodes are not owned locally
+  // Figure out how many of the local nodes are not owned by this
+  // processor.
   int nextern_nodes = numNodes - 
     (ownerRange[mpiRank+1] - ownerRange[mpiRank]);
 
+  // Create a sorted list of externally owned node numbers
   int * sorted_extern_nodes = new int[ nextern_nodes ];
 
+  // Go through all the node numbers and determine which ones are
+  // owned by other processors
   nextern_nodes = 0;
   for ( int i = 0; i < numNodes; i++ ){
-    if (tacsNodeNums[i] <  ownerRange[mpiRank] ||
+    if (tacsNodeNums[i] < ownerRange[mpiRank] ||
         tacsNodeNums[i] >= ownerRange[mpiRank+1]){
       sorted_extern_nodes[nextern_nodes] = tacsNodeNums[i];
       nextern_nodes++;
     }
   }
 
+  // Create a unique list of non-local nodes. Check to see that the
+  // unique list is equal in length to the original array - i.e. the
+  // original nodes are uniquely defined.
   if (nextern_nodes != FElibrary::uniqueSort(sorted_extern_nodes, 
 					     nextern_nodes)){
     fprintf(stderr, "[%d] Error, external nodes are not unique\n", 
 	    mpiRank);
   }
 
-  int * extern_ptr   = new int[ mpiSize+1 ];
+  // Determine the range of non-local node numbers that are owned
+  // by other processors. Match the intervals of these nodes within
+  // the sorted external node list in preparation for sending their
+  // values to the destination processors.
+  int * extern_ptr = new int[ mpiSize+1 ];
   int * extern_count = new int[ mpiSize ];
-
   FElibrary::matchIntervals(mpiSize, ownerRange, 
 			    nextern_nodes, sorted_extern_nodes, extern_ptr);
 
+  // Determine the number of nodes destined for each processor
   for ( int i = 0; i < mpiSize; i++ ){
     extern_count[i] = extern_ptr[i+1] - extern_ptr[i];
   }
 
+  // Set up the receive counts/offsets from the other processors
   int * recv_count = new int[ mpiSize ];
-  int * recv_ptr   = new int[ mpiSize+1 ];
-
+  int * recv_ptr = new int[ mpiSize+1 ];
   MPI_Alltoall(extern_count, 1, MPI_INT, recv_count, 1, MPI_INT, tacs_comm);
 
+  // Count up the number of received nodes and offsets from all the
+  // other processors to this processor
   recv_ptr[0] = 0;
   for ( int i = 0; i < mpiSize; i++ ){
     recv_ptr[i+1] = recv_ptr[i] + recv_count[i];
   }
 
+  // Receive the nodes from the other processors using all-to-all
+  // communication with the other processors
   int nrecv_nodes = recv_ptr[mpiSize];
   int * recv_nodes = new int[ nrecv_nodes ];
-  
   MPI_Alltoallv(sorted_extern_nodes, extern_count, extern_ptr, MPI_INT, 
 		recv_nodes, recv_count, recv_ptr, MPI_INT, tacs_comm);
    
+  // Sort the list of nodes that were received by other processors. 
+  // These are the nodes that this processor owns that are referenced
+  // by other processors.
   int * sorted_recv_nodes = new int[ nrecv_nodes ];
   memcpy(sorted_recv_nodes, recv_nodes, nrecv_nodes*sizeof(int));
   int nrecv_sorted = FElibrary::uniqueSort(sorted_recv_nodes, nrecv_nodes);
 
-  // Find the indices of the received nodes
+  // Find the indices of the received nodes that are referenced
+  // by other processors
   int * sorted_recv_index = new int[ nrecv_sorted ];  
   int nc = 0;
   for ( int j = 0; j < numNodes; j++ ){
@@ -796,12 +813,14 @@ have been set\n", mpiRank);
   // re-ordering schemes
   int * new_node_nums = new int[ numNodes ];
 
+  // Metis can't handle the non-zero diagonal in the CSR data structure
   int no_diagonal = 0;
-  if (order_type == ND_ORDER){ // Metis can't handle the non-zero diagonal
+  if (order_type == ND_ORDER){ 
     no_diagonal = 1;
   }
 
-  // If using only one processor, order everything
+  // If using only one processor, order everything. In this case
+  // there is no distinction between local and global ordering.
   if (mpiSize == 1){
     // The node connectivity
     int *rowp, *cols;
@@ -813,10 +832,14 @@ have been set\n", mpiRank);
     delete [] cols;
   }
   else {
-    // First compute which variables to add
+    // First, find the reduced nodes - the set of nodes 
+    // that are only referenced by this processor. These 
+    // can be reordered without affecting other processors.
     int * reduced_nodes = new int[ numNodes ];
     memset(reduced_nodes, 0, numNodes*sizeof(int));
 
+    // Label all the external nodes with a negative index.
+    // This will eliminate them from the connectivity.
     for ( int i = 0; i < numNodes; i++ ){
       if (tacsNodeNums[i] < ownerRange[mpiRank] ||
           tacsNodeNums[i] >= ownerRange[mpiRank+1]){
@@ -831,6 +854,9 @@ have been set\n", mpiRank);
         reduced_nodes[cnode] = -1;
       }   
 
+      // If we want an approximate schur ordering, where the
+      // nodes that couple to other processors are ordered last,
+      // we also add these nodes to the reduced set.
       if (mat_type == APPROXIMATE_SCHUR){
         // Compute the ordering for the
         int *rowp, *cols;
@@ -845,8 +871,12 @@ have been set\n", mpiRank);
           }
         }
 
+        // Add to the reduced set of nodes all those nodes that
+        // couple to a boundary node through the governing
+        // equations. This ensures that the equations
+        // that reference a boundary node are ordered last as well.
         for ( int i = 0; i < numNodes; i++ ){
-          if (tacsNodeNums[i] <  ownerRange[mpiRank] ||
+          if (tacsNodeNums[i] < ownerRange[mpiRank] ||
               tacsNodeNums[i] >= ownerRange[mpiRank+1]){
             for ( int j = rowp[i]; j < rowp[i+1]; j++ ){
               reduced_nodes[cols[j]] = -1;
@@ -877,7 +907,8 @@ have been set\n", mpiRank);
     computeMatReordering(order_type, num_reduced_nodes, rowp, cols,
                          NULL, new_reduced_vars);
 
-    // Place the result back into the new_node_nums - add the ownership offset
+    // Place the result back into the new_node_nums - add the
+    // ownership offset
     int node_offset = ownerRange[mpiRank];
     for ( int i = 0, j = 0; i < numNodes; i++ ){
       if (reduced_nodes[i] >= 0){
@@ -925,6 +956,8 @@ have been set\n", mpiRank);
       computeMatReordering(order_type, num_reduced_nodes, rowp, cols,
                            NULL, new_reduced_vars);
 
+      // Set the new variable numbers for the boundary nodes
+      // and include their offset
       for ( int i = 0, j = 0; i < numNodes; i++ ){
         if (reduced_nodes[i] >= 0){
           new_node_nums[i] = node_offset + new_reduced_vars[j];
@@ -949,14 +982,18 @@ have been set\n", mpiRank);
     recv_nodes[i] = new_node_nums[sorted_recv_index[index]];
   }
 
-  // Now send these back to the requesting process
+  // Now send the new node numbers back to the other processors 
+  // that reference them. This also uses all-to-all communication.
   int * sorted_new_extern_nodes = new int[ nextern_nodes ];
   MPI_Alltoallv(recv_nodes, recv_count, recv_ptr, MPI_INT,
 		sorted_new_extern_nodes, extern_count, extern_ptr, MPI_INT, 
 		tacs_comm);
 
+  // Once the new node numbers from other processors is received
+  // apply these new node numbers back to the locally owned
+  // reference numbers.
   for ( int i = 0; i < numNodes; i++ ){
-    if (tacsNodeNums[i] <  ownerRange[mpiRank] ||
+    if (tacsNodeNums[i] < ownerRange[mpiRank] ||
         tacsNodeNums[i] >= ownerRange[mpiRank+1]){
       // Find tacsNodeNums[i] in sorted_extern_nodes
       int * item = (int *) bsearch(&tacsNodeNums[i], sorted_extern_nodes, 
@@ -972,29 +1009,8 @@ have been set\n", mpiRank);
     }
   }
 
+  // Copy over the new node numbers
   memcpy(tacsNodeNums, new_node_nums, numNodes*sizeof(int));
-
-  // Figure out the schur_indices
-  // This may not be neccessary any more. The local Schur variables
-  // can be ordered arbitrarily now. Note that the reordering code
-  // could be skipped if the FEMat type is used because the ordering
-  // takes place on the initial creation of that matrix type.
-  /*
-  if (mat_type == DIRECT_SCHUR){
-    int nschur = nextern_nodes + nrecv_nodes;
-    int * schur_nodes = new int[ nschur ];
-
-    memcpy(schur_nodes, sorted_new_extern_nodes, 
-	   nextern_nodes*sizeof(int));
-    memcpy(&schur_nodes[nextern_nodes], recv_nodes, 
-	   nrecv_nodes*sizeof(int));
-
-    nschur = FElibrary::uniqueSort(schur_nodes, nschur);
-
-    schur_indices = new BVecIndices(&schur_nodes, nschur);
-    schur_indices->incref();
-  }
-  */
 
   // This code checks to see if the nodes have been uniquely defined.
   // This is useful for checking that the nodes have been defined
@@ -1005,7 +1021,6 @@ have been set\n", mpiRank);
             mpiRank, nnodes, numNodes);
   }
   
-
   delete [] sorted_new_extern_nodes;
   delete [] sorted_extern_nodes;
   delete [] extern_ptr;
@@ -1015,7 +1030,6 @@ have been set\n", mpiRank);
   delete [] recv_nodes;
   delete [] sorted_recv_nodes;
   delete [] sorted_recv_index;
-
   delete [] new_node_nums;
 }
 
@@ -1044,7 +1058,6 @@ have been set\n", mpiRank);
 void TACSAssembler::computeMatReordering( enum OrderingType order_type, 
                                           int nvars, int * rowp, int * cols,
                                           int * perm, int * new_vars ){
-  
   int * _perm = perm;
   int * _new_vars = new_vars;
 
@@ -1054,7 +1067,6 @@ void TACSAssembler::computeMatReordering( enum OrderingType order_type,
   if (order_type == RCM_ORDER){
     int root_node = 0;
     int n_rcm_iters = 1;
-
     matutils::ComputeRCMOrder(nvars, rowp, cols,
                               _new_vars, root_node, n_rcm_iters);
 
@@ -1066,7 +1078,6 @@ void TACSAssembler::computeMatReordering( enum OrderingType order_type,
   }
   else if (order_type == AMD_ORDER){
     double control[AMD_CONTROL], info[AMD_INFO];
-    
     amd_defaults(control); // Use the default values
     amd_order(nvars, rowp, cols, _perm, 
               control, info);
@@ -1088,7 +1099,8 @@ void TACSAssembler::computeMatReordering( enum OrderingType order_type,
     int ncoupling_nodes = 0;
     int * coupling_nodes = NULL;
     amd_order_interface(nvars, rowp, cols, _perm, 
-                        coupling_nodes, ncoupling_nodes, use_exact_degree);
+                        coupling_nodes, ncoupling_nodes,
+                        use_exact_degree);
 
     if (new_vars){
       for ( int k = 0; k < nvars; k++ ){
@@ -1113,21 +1125,24 @@ void TACSAssembler::computeMatReordering( enum OrderingType order_type,
   if (!new_vars){ delete [] _new_vars; }
 }
 
-/*!  
-  The following function creates a data structure that links nodes
-  to elements - this reverses the existing data structure that links
+/*!
+  The following function creates a data structure that links nodes to
+  elements - this reverses the existing data structure that links
   elements to nodes but keeps the original in tact.
 
   The algorithm proceeds as follows:
+
   1. The size of the arrays are determined by finding how many nodes
   point to each element
-  2. The index into the nodeElem array is determined by adding up the 
+
+  2. The index into the nodeElem array is determined by adding up the
   contributions from all previous entries.
-  3. The original data structure is again traversed and this time an 
+
+  3. The original data structure is again traversed and this time an
   element number is associated with each element.
 */
-void TACSAssembler::computeNodeToElementCSR( int ** _nodeElemIndex, 
-					     int ** _nodeElem ){
+void TACSAssembler::computeNodeToElementCSR( int **_nodeElemIndex, 
+					     int **_nodeElem ){
   // Determine the element adjacency
   // Go through and add up each time an element refers to a node
   int * nodeElementIndex = new int[ numNodes+1 ];

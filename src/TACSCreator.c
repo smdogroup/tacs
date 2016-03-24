@@ -41,6 +41,12 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
   comm = _comm;
   root_rank = 0;
 
+  // Set the type of reordering to use. By default
+  // this reordering is not applied to the mesh.
+  use_reordering = 0;
+  order_type = TACSAssembler::NATURAL_ORDER;
+  mat_type = TACSAssembler::DIRECT_SCHUR;
+
   // Set the number of variables per node in the mesh
   vars_per_node = _vars_per_node;
 
@@ -205,6 +211,15 @@ void TACSCreator::setNodes( const TacsScalar *_Xpts ){
   memcpy(Xpts, _Xpts, 3*num_nodes*sizeof(TacsScalar));
 }
 
+/*
+  Set the type of ordering to use
+*/
+void TACSCreator::setReorderingType( enum TACSAssembler::OrderingType _order_type,
+                                     enum TACSAssembler::MatrixOrderingType _mat_type ){
+  use_reordering = 1;
+  order_type = _order_type;
+  mat_type = _mat_type;
+}
 
 /*
   Get the new node numbers
@@ -227,8 +242,7 @@ int TACSCreator::getElementPartition( const int **_partition ){
   This code partitions the mesh, calls for the elements to be
   allocated and returns a valid instance of the TACSAssembler object.
 */
-TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_type,
-					enum TACSAssembler::MatrixOrderingType mat_type ){
+TACSAssembler* TACSCreator::createTACS(){
   int size, rank;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
@@ -695,7 +709,11 @@ TACSAssembler* TACSCreator::createTACS( enum TACSAssembler::OrderingType order_t
     tacs->addElement(element, &local_elem_node_conn[start], end-start);
   }
 
-  tacs->computeReordering(order_type, mat_type);
+  // Use the reordering if the flag has been set in the
+  // TACSCreator object
+  if (use_reordering){
+    tacs->computeReordering(order_type, mat_type);
+  }
 
   // Finalize the ordering
   tacs->finalize();
