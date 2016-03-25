@@ -56,7 +56,7 @@ class TACSCreator : public TACSObject {
   // Set the elements into TACS creator
   // ----------------------------------
   void setElements( TACSElement **_elements, int _num_elem_ids );
-  void setElementCreator( TACSElement* (*func)(int) );
+  void setElementCreator( TACSElement* (*func)(int, int) );
 
   // Set the nodal locations
   // -----------------------
@@ -67,6 +67,10 @@ class TACSCreator : public TACSObject {
   void setReorderingType( enum TACSAssembler::OrderingType _order_type,
                           enum TACSAssembler::MatrixOrderingType _mat_type );
 
+  // Partition the mesh 
+  // ------------------
+  void partitionMesh( int split_size=0 );
+
   // Create the TACSAssembler object
   // -------------------------------
   TACSAssembler *createTACS();
@@ -75,14 +79,12 @@ class TACSCreator : public TACSObject {
   // ----------------------------------------------
   int getNodeNums( const int **_new_nodes );
   int getElementPartition( const int **_partition );
+  int getNumOwnedNodes( int **_owned_nodes );
+  int getNumOwnedElements( int **_owned_elements );
 
- private:
-  // Partition the mesh stored internally
-  void splitSerialMesh( int split_size,
-			int *owned_elements, int *owned_nodes );
-  
+ private:  
   // The magic element-generator function pointer
-  TACSElement* (*element_creator)( int elem_id );
+  TACSElement* (*element_creator)( int local, int elem_id );
 
   // Set the type of reordering to use
   int use_reordering;
@@ -120,6 +122,9 @@ class TACSCreator : public TACSObject {
   // Elements corresponding to the 
   int num_elem_ids;
   TACSElement **elements;
+
+  // Keep the number of owned nodes/elements
+  int *owned_nodes, *owned_elements;
 
   // The new node numbers for the independent nodes
   int *new_nodes;

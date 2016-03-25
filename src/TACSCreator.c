@@ -78,6 +78,12 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
 
   // The element partition
   partition = NULL;
+  owned_elements = NULL;
+  owned_nodes = NULL;
+
+  // Set the elements array to NULL
+  elements = NULL;
+  element_creator = NULL;
 }
 
 /*
@@ -96,6 +102,8 @@ TACSCreator::~TACSCreator(){
   if (dep_node_weights){ delete [] dep_node_weights; }
   if (new_nodes){ delete [] new_nodes; }
   if (partition){ delete [] partition; }
+  if (owned_elements){ delete [] owned_elements; }
+  if (owned_nodes){ delete [] owned_nodes; }
 
   if (elements){
     for ( int i = 0; i < num_elem_ids; i++ ){
@@ -192,7 +200,7 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
 }
 
 /*
-  Set the elements
+  Set the elements with an array indexed by element id
 */
 void TACSCreator::setElements( TACSElement **_elements, int _num_elem_ids ){
   num_elem_ids = _num_elem_ids;
@@ -206,7 +214,7 @@ void TACSCreator::setElements( TACSElement **_elements, int _num_elem_ids ){
 /*
   Set the element creator callback function
 */
-void TACSCreator::setElementCreator( TACSElement* (*func)(int) ){
+void TACSCreator::setElementCreator( TACSElement* (*func)(int, int) ){
   element_creator = func;
 }
 
@@ -244,6 +252,20 @@ int TACSCreator::getElementPartition( const int **_partition ){
 }
 
 /*
+  Get the number of nodes owned by each processor
+*/
+int TACSCreator::getNumOwnedNodes( int **_owned_nodes ){
+  *_owned_nodes = owned_nodes;
+}
+
+/*
+  Get the number of elements owned by each processor
+*/
+int TACSCreator::getNumOwnedElements( int **_owned_elements ){
+  *_owned_elements = owned_elements;
+}
+
+/*
   Create the instance of the TACSAssembler object and return it.
 
   This code partitions the mesh, calls for the elements to be
@@ -254,18 +276,10 @@ TACSAssembler* TACSCreator::createTACS(){
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
 
-  // These arrays are only significant on the root processor
-  int *owned_elements = NULL;
-  int *owned_nodes = NULL;
-
-  if (rank == root_rank){   
+  if (rank == root_rank && !partition){   
     // Partition the mesh using the serial code on the root
     // processor.
-    partition = new int[ num_elements ];
-    owned_elements = new int[ size ];
-    owned_nodes = new int[ size ];
-    
-    splitSerialMesh(size, owned_elements, owned_nodes);
+    partitionMesh(size);
   }
   
   // The number of local and owned nodes and the number of
@@ -719,7 +733,7 @@ TACSAssembler* TACSCreator::createTACS(){
   }
   else if (element_creator){
     for ( int k = 0; k < num_owned_elements; k++ ){
-      TACSElement * element = element_creator(local_elem_id_nums[k]);     
+      TACSElement * element = element_creator(k, local_elem_id_nums[k]);
       if (!element){
 	fprintf(stderr, 
 		"[%d] TACSCreator: Callback failed for element ID %d\n",
@@ -782,12 +796,6 @@ TACSAssembler* TACSCreator::createTACS(){
   // Free the bvars/bvals arrays
   delete [] bvars;
   delete [] bvals;
-  
-  // Free memory only allocated on the root processor
-  if (rank == root_rank){
-    delete [] owned_elements;
-    delete [] owned_nodes;
-  }
 
   // Free all the remaining memory
   delete [] local_elem_node_ptr;
@@ -808,16 +816,40 @@ TACSAssembler* TACSCreator::createTACS(){
 
   input:
   split_size:      the number of segments in the partition
-
-  output:
-  owned_elements:  number of elements owned by processor i
-  owned_nodes:     number of nodes owned by processor i
 */
-void TACSCreator::splitSerialMesh( int split_size, 
-				   int *owned_elements, 
-				   int *owned_nodes ){
+void TACSCreator::partitionMesh( int split_size ){
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+  if (rank != root_rank){
+    return;
+  }
+
+  // Deallocate any member data that was previously allocated
+  if (new_nodes){ delete [] new_nodes; }
+  if (partition){ delete [] partition; }
+  if (owned_elements){ delete [] owned_elements; }
+  if (owned_nodes){ delete [] owned_nodes; }
+
+  // Allocate the arrays to store the number of owned elements and
+  // nodes
+  int size;
+  MPI_Comm_size(comm, &size);
+  owned_elements = new int[ size ];
+  owned_nodes = new int[ size ];
+  
+  // Set the number of nodes/elements to zero
+  memset(owned_elements, 0, size*sizeof(int));
+  memset(owned_nodes, 0, size*sizeof(int));
+
+  // Set the split size to ensure that it is less than the 
+  // comm size
+  if (split_size <= 0 || split_size > size){
+    split_size = size;
+  }
+
   // Allocate space for the new node numbers and the new dependent
   // node numbers
+  partition = new int[ num_elements ];
   new_nodes = new int[ num_nodes ];
  
   // Compute the node to element CSR data structure for both
