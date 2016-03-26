@@ -133,10 +133,11 @@ class BVec : public TACSVec {
 
   virtual const char * TACSObjectName();
 
-  void getOwnership( int * _mpiRank, int * _mpiSize, const int ** _ownerRange ){
-    *_mpiRank = mpiRank;
-    *_mpiSize = mpiSize;
-    *_ownerRange = ownerRange;
+  void getOwnership( int * _mpiRank, int * _mpiSize, 
+                     const int ** _ownerRange ){
+    if (_mpiRank){ *_mpiRank = mpiRank; }
+    if (_mpiSize){ *_mpiSize = mpiSize; }
+    if (_ownerRange){ *_ownerRange = ownerRange; }
   }  
 
  private:

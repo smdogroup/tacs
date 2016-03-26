@@ -1327,7 +1327,7 @@ void TACS3DElement<NUM_NODES>::addAdjResProduct( double scale,
 
     // Compute the determinant of Xa and the transformation
     TacsScalar J[9];
-    TacsScalar h = FElibrary::jacobian2d(Xa, J);
+    TacsScalar h = FElibrary::jacobian3d(Xa, J);
     h = h*weight;
 
     // Compute the strain

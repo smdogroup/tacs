@@ -3134,7 +3134,6 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
   }
 
   TacsScalar * dvSensVals = new TacsScalar[ numDVs*numAdjoints ];
-  
   memset(dvSens, 0, numDVs*numAdjoints*sizeof(TacsScalar));    
   memset(dvSensVals, 0, numDVs*numAdjoints*sizeof(TacsScalar));
 
@@ -3187,20 +3186,23 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
 	double scale = 1.0;
 	getValues(varsPerNode, i, &localAdjoint[nvars*k], elemAdjoint);
 	
-	elements[i]->addAdjResProduct(scale, &dvSens[k*numDVs], numDVs,
+	elements[i]->addAdjResProduct(scale, &dvSensVals[k*numDVs], numDVs,
 				      elemAdjoint, elemXpts,
 				      vars, dvars, ddvars);
       }
     }
   }
 
+  // Free the local adjoint array
+  delete [] localAdjoint;
+
   // Collect the products from all processes
   // Component wise summation
   MPI_Allreduce(dvSensVals, dvSens, numDVs*numAdjoints, TACS_MPI_TYPE, 
 		MPI_SUM, tacs_comm);
 
+  // Free the allocated design vars
   delete [] dvSensVals;
-  delete [] localAdjoint;
 }
 
 /*

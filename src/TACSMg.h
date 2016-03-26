@@ -58,6 +58,9 @@ class TACSMg : public TACSPc {
 
   // Assemble the given finite-element matrix at all levels
   // ------------------------------------------------------
+  void assembleJacobian( BVec *res, 
+                         double alpha, double beta, double gamma,
+                         MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType = STIFFNESS_MATRIX, 
 			MatrixOrientation matOr = NORMAL );
 

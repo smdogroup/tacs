@@ -229,21 +229,59 @@ void TACSMg::factor(){
   Set up the multi-grid data by computing the matrices at each
   multi-grid level within the problem. 
 */
+void TACSMg::assembleJacobian( BVec *res, 
+                               double alpha, double beta, double gamma,
+                               MatrixOrientation matOr ){
+  // Assemble the matrices if they are locally owned, otherwise assume
+  // that they have already been assembled
+  if (tacs[0]){
+    tacs[0]->assembleJacobian(res, mat[0], 
+                              alpha, beta, gamma, matOr);
+  }
+
+  for ( int i = 0; i < nlevels-1; i++ ){
+    if (tacs[i]){
+      tacs[i]->assembleJacobian(NULL, mat[i], 
+                                alpha, beta, gamma, matOr);
+    }
+  }
+
+  // Assemble the coarsest problem
+  if (tacs[nlevels-1]){
+    tacs[nlevels-1]->assembleJacobian(NULL, root_mat, 
+                                      alpha, beta, gamma, matOr);
+  }
+
+  // For all but the lowest level, set up the SOR object
+  for ( int i = 0; i < nlevels-1; i++ ){
+    if (!psor[i]){
+      // Do not zero the initial guess for the PSOR object
+      int zero_guess = 0; 
+      psor[i] = new PSOR(mat[i], zero_guess, sor_omega, 
+			 sor_iters, sor_symmetric);
+      psor[i]->incref();
+    }
+  }
+}
+
+/*
+  Set up the multi-grid data by computing the matrices at each
+  multi-grid level within the problem. 
+*/
 void TACSMg::assembleMatType( ElementMatrixType matType, 
 			      MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
   for ( int i = 0; i < nlevels-1; i++ ){
     if (tacs[i]){
-      // tacs[i]->assembleMatType(matType, mat[i], matOr);
-    
-      tacs[i]->assembleJacobian(NULL, mat[i], 1.0, 0.0, 0.0, matOr);
+      tacs[i]->assembleMatType(matType, mat[i], matOr);
     }
   }
 
-  // Assemble the coarsest problem
-  // tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
-  tacs[nlevels-1]->assembleJacobian(NULL, root_mat, 1.0, 0.0, 0.0, matOr);
+  // Assemble the coarsest problem 
+  if (tacs[nlevels-1]){
+    tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+  }
 
   // For all but the lowest level, set up the SOR object
   for ( int i = 0; i < nlevels-1; i++ ){
