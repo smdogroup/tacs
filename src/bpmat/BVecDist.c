@@ -279,7 +279,7 @@ BVecDistribute::BVecDistribute( VarMap * _rmap, BVecIndices * _bindex ){
   rmap = _rmap;
   rmap->incref();
 
-  MPI_Comm_dup(rmap->getMPIComm(), &comm);
+  comm = rmap->getMPIComm();
   rmap->getOwnerRange(&ownerRange, &mpiRank, &mpiSize);
   bsize = rmap->getBlockSize();
 
@@ -449,10 +449,7 @@ BVecDistribute::~BVecDistribute(){
     delete [] receives;
     delete [] receive_status;
   }
-
-  MPI_Comm_free(&comm);
 }
-
 
 int BVecDistribute::getDim(){ return bindex->getNumIndices(); }
 

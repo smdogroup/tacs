@@ -73,8 +73,8 @@ void TACSAssembler::init( MPI_Comm _tacs_comm,
 			  int _nodeMaxCSRsize ){
   TacsInitialize();
   
-  // Duplicate the communicator for MPI communication
-  MPI_Comm_dup(_tacs_comm, &tacs_comm);
+  // Copy the communicator for MPI communication
+  tacs_comm = _tacs_comm;
 
   // If MPI is being used, get the rank of the current 
   // process and the total number of processes
@@ -184,8 +184,6 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
 */
 TACSAssembler::~TACSAssembler(){
   TacsFinalize();
-
-  MPI_Comm_free(&tacs_comm);
 
   pthread_mutex_destroy(&tacs_mutex);
   delete tacsPInfo;
