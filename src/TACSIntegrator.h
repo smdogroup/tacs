@@ -9,34 +9,29 @@
 /*
   A DIRK integration scheme for TACS
 */
-class TacsDIRKIntegrator {
+class TacsDIRKIntegrator : public TACSObject {
 
  public:
 
   // constructor for DIRK object
-  TacsDIRKIntegrator(int numStages, int numVars, double tInit, double tFinal, int numStepsPerSec);
+  TacsDIRKIntegrator(int numStages, int numVars, double tInit, double tFinal, int numStepsPerSec, int max_newton_iters);
   
   // dectructor for DIRK object
   ~TacsDIRKIntegrator();
 
   // integrate call
-  void integrate(TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  void integrate(TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
   
  private:
 
   // private variables
-
   double h;
   double tInit, tFinal;
-  double time;
 
   int numStepsPerSec;
   int numSteps;
 
   int numVars;
-  
-  int currentStage;
-
   int numStages, order;
   
   // variables for Butcher tableau
@@ -48,39 +43,35 @@ class TacsDIRKIntegrator {
   // stage residual and jacobianx
   double *RS, *JS;
   
-  int max_newton_iters = 25;
+  int max_newton_iters;
+  
+  // global index of stage
+  int stageOffCtr;
+
+  int currentStage;
   
   // private functions
-  void setup_butcher_tableau();
-  void check_butcher_tableau();
+  void setupButcherTableau();
+  void checkButcherTableau();
 
   // returns the starting index of Butcher tableau
   int getIdx(int stageNum);
 
-  void compute_stage_values(TacsScalar tk, TacsScalar *qk, TacsScalar *qdotk, TacsScalar *qddotk);
-  void time_march(int k, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
-  void reset_stage_values();
+  void computeStageValues(TacsScalar tk, TacsScalar *qk, TacsScalar *qdotk, TacsScalar *qddotk);
+  void timeMarch(int k, TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  void resetStageValues();
 
   // external function and residual assembly as needed by the scheme
-  void compute_residual(TacsScalar *Rki, TacsScalar tS, TacsScalar *qS,
-			TacsScalar *qdotS, TacsScalar *qddotS);
-  void compute_jacobian(TacsScalar *Jki, TacsScalar tS, TacsScalar *qS, 
-			TacsScalar *qdotS, TacsScalar *qddotS);
+  void computeResidual(TacsScalar *Rki, TacsScalar tS, TacsScalar *qS,
+			TacsScalar *qdotS, TacsScalar *qddotS);  
+  void computeJacobian(TacsScalar *J,
+			double alpha, double beta, double gamma,
+			TacsScalar t, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
 
   // external interface for solving the linear system
-  void newton_solve(TacsScalar t, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
-  void state_update(TacsScalar * res);
-
-  // function writes the time history to a file
-  void writeSolution();
-
+  void nonlinearSolve(TacsScalar t, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  void updateState(TacsScalar * res, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+ 
 };
 
 #endif
-
-
-
-
-
-
-

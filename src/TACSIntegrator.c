@@ -3,14 +3,20 @@
 
 /*
   Constructor for TacsDIRKIntegrator
-  
-  input:
-  tInit: initial time
-  h: time step size
-  num_stages: number of stages in implicit Runge Kutta
+
+  Input:
+
+  numStages: the number of Runge-Kutta stages
+  numVars : the number of varibles/degrees of freedom in the system
+  tInit: the initial time
+  tFinal: the final time
+  numStepsPerSec: the number of steps to take for each second
 
 */
-TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  double _tInit, double _tFinal, int _numStepsPerSec){
+TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  
+				       double _tInit, double _tFinal, 
+				       int _numStepsPerSec,
+				       int _max_newton_iters){
 
   // copy over the input parameters
   numStages = _numStages;
@@ -18,6 +24,7 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  double _tI
   tInit = _tInit;
   tFinal = _tFinal;
   numStepsPerSec = _numStepsPerSec;
+  max_newton_iters = _max_newton_iters;
 
   // sanity check the input params
 
@@ -25,7 +32,7 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  double _tI
   h = 1.0/numStepsPerSec;
 
   // compute the total number of time steps
-  numSteps = int(numStepsPerSec*(tFinal-tInit));
+  numSteps = int(numStepsPerSec*(tFinal-tInit)) + 1;
 
   // allocate space for stage variables
   tS = new TacsScalar[numStages];
@@ -39,16 +46,6 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  double _tI
   memset(qdotS, 0, numStages*numVars*sizeof(TacsScalar));
   memset(qddotS, 0, numStages*numVars*sizeof(TacsScalar));
   
-  // allocate space for the stage residual and jacobian. Since we
-  // solve for each stage successively, so we don't have to make space
-  // for all the stages
-  RS = new TacsScalar[numVars];
-  JS = new TacsScalar[numVars*numVars];
-
-  // initialize stage residual and jacobian
-  memset(RS, 0, numVars*sizeof(TacsScalar));
-  memset(JS, 0, numVars*numVars*sizeof(TacsScalar));
-
   // allocate space for Butcher tableau
   A = new double[numStages*(numStages+1)/2];
   B = new double[numStages];
@@ -60,7 +57,7 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  double _tI
   memset(C, 0, numStages*sizeof(double));
 
   // now add entries into the Butcher tableau
-  setup_butcher_tableau();
+  setupButcherTableau();
   
 }
 
@@ -79,15 +76,12 @@ TacsDIRKIntegrator::~TacsDIRKIntegrator(){
   delete [] qdotS;
   delete [] qddotS;
 
-  delete [] RS;
-  delete [] JS;
-
 }
 
 /*
   Function that adds the entries into Butcher tableau
 */
-void TacsDIRKIntegrator::setup_butcher_tableau(){
+void TacsDIRKIntegrator::setupButcherTableau(){
   
   if (numStages == 1) {
 
@@ -148,14 +142,14 @@ void TacsDIRKIntegrator::setup_butcher_tableau(){
   }
 
   // check for the consistency of butcher tableau entries
-  check_butcher_tableau();
+  checkButcherTableau();
 
 }
 
 /*
   Function that checks the consistency of Butcher tableau values
 */
-void TacsDIRKIntegrator::check_butcher_tableau(){
+void TacsDIRKIntegrator::checkButcherTableau(){
 
   double tmp;
 
@@ -171,7 +165,8 @@ void TacsDIRKIntegrator::check_butcher_tableau(){
 
     // check the difference
     if (fabs(C[i] - tmp) >= 1.0e-6) {
-      fprintf(stderr, "WARNING: Sum A[%d,:] != C[%d] i.e. %f != %f \n", i, i, C[i], tmp);
+      fprintf(stderr, "WARNING: Sum A[%d,:] != C[%d] i.e. %f != %f \n", 
+	      i, i, C[i], tmp);
     }
    
   }
@@ -190,77 +185,87 @@ void TacsDIRKIntegrator::check_butcher_tableau(){
 /*
   Function that wraps the integration logic.
 */
-void TacsDIRKIntegrator::integrate(TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot){
+void TacsDIRKIntegrator::integrate(TacsScalar *time, 
+				   TacsScalar *q, 
+				   TacsScalar *qdot, 
+				   TacsScalar *qddot){
   
   for (int k = 1; k <= numSteps; k++) {
     
-    // find the stage derivatives at the current step
-    int idx = (k-1)*numSteps;
-
     // pass in the global states at previous time step
-    compute_stage_values(double(k)*h, &q[idx], &qdot[idx], &qddot[idx]);
+    computeStageValues(time[k-1], &q[(k-1)*numVars], &qdot[(k-1)*numVars], 
+			 &qddot[(k-1)*numVars]);
     
     // advance the state to the current step
-    time_march(k, q, qdot, qddot);
+    timeMarch(k, time, q, qdot, qddot);
 
     // set the stage values to zero
-    reset_stage_values();
+    resetStageValues();
     
   }
   
 }
 
 /*
-  Function that computes the values at each time step. The values that
-  are computed are qS, tS and qdotS. These are used in subsequently in
-  the call to time_march function.
+  Function that computes the values at each time step. 
+
+  Input: 
+  The global states and time for at the prvious time-step
+
+  Output:
+  The state states tS, qS, qdotS and qdotS
 */
-void TacsDIRKIntegrator::compute_stage_values(TacsScalar tk, TacsScalar *qk, TacsScalar *qdotk, TacsScalar *qddotk){
+void TacsDIRKIntegrator::computeStageValues(TacsScalar tk, 
+					      TacsScalar *qk, 
+					      TacsScalar *qdotk, 
+					      TacsScalar *qddotk){
 
   currentStage = 0;
 
   // stage offset for q values
-  int soffset = 0;
-  
+  stageOffCtr= 0;
+
   for (int i = 0; i < numStages; i++) {
 
-    // printf("time=%f, stage = %d, soffset=%d\n", tk, i, soffset);
-
     // compute the stage time
-    tS[i] = time + C[i]*h;
+    tS[i] = tk + C[i]*h;
 
     // initial guess for qddotS
     for (int n = 0; n < numVars; n++) {
-      qddotS[soffset+n] = 1.0;
+      qddotS[stageOffCtr+n] = 1.0;
     }
 
     // prepare qdotS
+    int stageOffCtr2 = 0;
     for (int n = 0; n < numVars; n++) {  
       TacsScalar tmp = 0.0;
-      int idx1 = getIdx(i+1);
       for (int j = 0; j <= i; j++) {
-	tmp += A[idx1]*qddotS[n];
+	int idx1 = getIdx(j);
+	tmp += A[idx1]*qddotS[stageOffCtr2 + n];
+	stageOffCtr2 +=  numVars;
 	idx1++;
       }
-      qdotS[soffset+n] = qdotk[n] + h* tmp;
+      qdotS[stageOffCtr+n] = qdotk[n] + h*tmp;
     }
     
     // prepare qS
+    stageOffCtr2 = 0;
     for (int n = 0; n < numVars; n++) {  
       TacsScalar tmp = 0.0;
-      int idx2 = getIdx(i+1);
       for (int j = 0; j <= i; j++) {
-	tmp += A[idx2]*qdotS[n];
+	int idx2 = getIdx(j);
+	tmp += A[idx2]*qdotS[stageOffCtr2 + n];
+	stageOffCtr2 +=  numVars;
 	idx2++;
       }
-      qS[soffset+n] = qk[n] + h* tmp;
+      qS[stageOffCtr+n] = qk[n] + h*tmp;
     }
-    
+
     // solve the nonlinear system of stage equations for qddotS
-    newton_solve(tS[i], &qdotS[soffset], &qdotS[soffset], &qddotS[soffset]);
+    nonlinearSolve(tS[i], &qS[stageOffCtr], &qdotS[stageOffCtr], &qddotS[stageOffCtr]);
 
     // recompute the offsets
-    soffset +=  numVars;
+    stageOffCtr +=  numVars;
 
     // increament the global stage counter
     currentStage ++;
@@ -274,51 +279,74 @@ void TacsDIRKIntegrator::compute_stage_values(TacsScalar tk, TacsScalar *qk, Tac
 */
 int TacsDIRKIntegrator::getIdx(int stageNum){
   
-  if (stageNum == 1) {
+  if (stageNum == 0) {
     return 0;
-  } else if (stageNum == 2) {
+  } else if (stageNum == 1) {
     return 1;
-  } else if (stageNum == 3) {
+  } else if (stageNum == 2) {
     return 3;
-  }  else if (stageNum == 4) {
+  }  else if (stageNum == 3) {
     return 6;
   }
 
 }
 
 /*
-  Solve the stage equations using Newton's method
-*/
-void TacsDIRKIntegrator::newton_solve(TacsScalar tS, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot){
+  Solve the nonlinear stage equations using Newton's method.
 
+  Input: 
+  
+  The stage-state variable values, where qddotS is a guessed
+  solution -- qdotS, qS are computed from qddotS 
+  
+  Output: 
+  
+  qS, qdotS, qddotS solved iteratively until the corresponding
+  residual R = 0
+*/
+void TacsDIRKIntegrator::nonlinearSolve(TacsScalar t, TacsScalar *q, 
+				      TacsScalar *qdot, TacsScalar *qddot){
+
+  // size of the linear system
   int size = numVars;
   
+  // make space for residual and the jacobian
   TacsScalar *res = new TacsScalar[numVars];
   TacsScalar *D = new TacsScalar[numVars*numVars];
 
+  // used by lapack
   int *dpiv = new int[numVars];
 
+  // some tolerances 
   double atol = 1e-30; 
   double rtol = 1.0e-8;
 
+  // initialize the norms
   TacsScalar init_norm = 0.0;
   TacsScalar norm = 0.0;
 
-  for (int n = 0; n < max_newton_iters; n++) {
+  // iterate until max iters or R <= tol
+  int n;
+  for (n = 0; n < max_newton_iters; n++) {
     
+    // make sure the residual and jacobian are zeroed
+    memset(res, 0, numVars*sizeof(TacsScalar));
+    memset(D, 0, numVars*numVars*sizeof(TacsScalar));
+
     // get the residual
-    compute_residual(res, tS, qS, qdotS, qddotS);
+    computeResidual(res, t, q, qdot, qddot);
     
     // get the jacobian
-    compute_jacobian(D, tS, qS, qdotS, qddotS);
-
+    computeJacobian(D, 1.0, h*A[0], h*A[0]*h*A[0],
+		     t, q, qdot, qddot);
+    
     // Compute the l2 norm of the residual
-    double norm = 0.0;
+    norm = 0.0;
     for ( int i = 0; i < numVars; i++ ){
       norm += res[i]*res[i];
     }
     norm = sqrt(norm);
-
+    
     // Check if the norm of the residuals is a NaN - if so then
     // quit the integration
     if (norm != norm){ 
@@ -337,10 +365,9 @@ void TacsDIRKIntegrator::newton_solve(TacsScalar tS, TacsScalar *q, TacsScalar *
     }
 
     // Check whether the Newton iteration was successful
-    if (n >= max_newton_iters && norm >= rtol*init_norm){
+    if (n == max_newton_iters && norm >= rtol*init_norm){
       fprintf(stderr,
-	      "Newton iteration for time step %d failed to converge\n",
-	      n);
+	      "Newton iteration failed to converge in %d iters \n", n);
       break;
     }
 
@@ -352,15 +379,19 @@ void TacsDIRKIntegrator::newton_solve(TacsScalar tS, TacsScalar *q, TacsScalar *
     }
 
     int one = 1;
-    LAPACKgetrs("N", &size, &one, D, &size, dpiv, res, &size, &info);
+    LAPACKgetrs("T", &size, &one, D, &size, dpiv, res, &size, &info);
     if (info){
       fprintf(stderr,"LAPACK GETRS output error %d\n", info);
     }
 
     // update the solution at the current iteration
-    state_update(&res[0]);
-
+    updateState(res, q, qdot, qddot);
+        
   }
+
+  // write a summary
+  printf("Stage=%d, Stage Time=%f, # Newton iters=%d, |R|=%e \n", 
+	 currentStage, t, n, norm);
 
   delete [] res;
   delete [] D;
@@ -370,52 +401,75 @@ void TacsDIRKIntegrator::newton_solve(TacsScalar tS, TacsScalar *q, TacsScalar *
 
 /*
   Update the state variable values after each Newton iteration
+
+  Input: 
+  The corresponding stage-states (q, qdot, qddot)
+
+  Output:
+  Updated stage-states (q, qdot, qddot)
+
 */
 
-void TacsDIRKIntegrator::state_update(TacsScalar * res) {
+void TacsDIRKIntegrator::updateState(TacsScalar * res, 
+				      TacsScalar *q, 
+				      TacsScalar *qdot, 
+				      TacsScalar *qddot) {
 
   // update qddot
   for (int i = 0; i < numVars; i++) {
-    qddotS[i] = qddotS[i] - res[i];
+    qddot[i] = qddot[i] - res[i];
   }
 
   // update qdot
   for (int i = 0; i < numVars; i++) {
-    qdotS[i] = qdotS[i] - h*A[0]*res[i];
+    qdot[i] = qdot[i] - h*A[0]*res[i];
   }
 
   // update q
   for (int i = 0; i < numVars; i++) {
-    qS[i] = qS[i] - h*A[0]*h*A[0]*res[i];
+    q[i] = q[i] - h*A[0]*h*A[0]*res[i];
   }
 
 }
 
 /*
   Function that advances the states and time to next time step
+  
+  Input:
+  The pointers to the global state variables q, qdot, qddot
+  
+  Output:
+  Updated global state variables q, qdot, qddot at the time step
+  
 */
-void TacsDIRKIntegrator::time_march(int k, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot){
+void TacsDIRKIntegrator::timeMarch(int k, TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot){
   
   // advance the time
-  time = time + h;
-  
-  // compute the summation
-  TacsScalar tmp = 0.0;
-  for (int j = 0; j < numStages; j++) {
-    tmp += B[j]*qdotS[j];
-  }
+  time[k] = time[k-1] + h;
   
   // advance the state
-  q[k] = q[k-1] + h*tmp;
-
-  // compute the summation
-  tmp = 0.0;
-  for (int j = 0; j < numStages; j++) {
-    tmp += B[j]*qddotS[j];
+  int ctr = 0;
+  for (int i = 0; i < numVars; i++) {
+    TacsScalar tmp = 0.0;
+    for (int j = 0; j < numStages; j++) {
+      tmp += B[j]*qdotS[ctr+j];
+      ctr += numVars;
+    }
+    q[k*numVars+i] = q[(k-1)*numVars+i] + h*tmp;
   }
 
-  // advance the velocity states
-  qdot[k] = qdot[k-1] + h*tmp;
+  // advance the velocity state
+  ctr = 0;
+  for (int i = 0; i < numVars; i++) {
+    TacsScalar tmp = 0.0;
+    for (int j = 0; j < numStages; j++) {
+      tmp += B[j]*qddotS[ctr+j];
+      ctr += numVars;
+    }
+    qdot[k*numVars+i] = qdot[(k-1)*numVars+i] + h*tmp;
+  }
+  
+  // qddot?
 
 }
 
@@ -423,47 +477,71 @@ void TacsDIRKIntegrator::time_march(int k, TacsScalar *q, TacsScalar *qdot, Tacs
   Function that sets the arrays used during previous time marching
   step to zero, to make way for the next time step
 */
-void TacsDIRKIntegrator::reset_stage_values(){
+void TacsDIRKIntegrator::resetStageValues(){
   
   memset(tS, 0, numStages*sizeof(TacsScalar));
-  memset(qS, 0, numStages*sizeof(TacsScalar));
-  memset(qdotS, 0, numStages*sizeof(TacsScalar));
-  memset(qddotS, 0, numStages*sizeof(TacsScalar));
 
-  memset(RS, 0, numStages*sizeof(TacsScalar));
-  memset(JS, 0, numStages*numStages*sizeof(TacsScalar));
-
+  memset(qS, 0, numStages*numVars*sizeof(TacsScalar));
+  memset(qdotS, 0, numStages*numVars*sizeof(TacsScalar));
+  memset(qddotS, 0, numStages*numVars*sizeof(TacsScalar));
+  
 }
 
 /*
-  Residual implementation
+  The Residual implementation
+  
+  Input:
+  The pointers at the current stage i.e. qS, qdotS and qddotS
+
+  Output:
+  res is filled with computed residual values
+
 */
-void TacsDIRKIntegrator::compute_residual(TacsScalar *R, 
+void TacsDIRKIntegrator::computeResidual(TacsScalar *res, 
 					  TacsScalar t, 
 					  TacsScalar *q,
 					  TacsScalar *qdot, 
 					  TacsScalar *qddot){
 
+  res[0] = qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
+  res[1] = qddot[1] - 0.05*qdot[1]*qdot[0] + q[1]*q[0];
+
 }
 
 
 /*
-  Jacobian implementation
+  The Jacobian implementation
+
+  Input:
+  The pointers at the current stage i.e. qS, qdotS and qddotS
+
+  Output:
+  J is filled with computed jacobian values
+
 */
-void TacsDIRKIntegrator::compute_jacobian(TacsScalar *J, 
-					  TacsScalar t, 
-					  TacsScalar *q, 
-					  TacsScalar *qdot, 
-					  TacsScalar *qddot){
+void TacsDIRKIntegrator::computeJacobian(TacsScalar *J,
+					  double alpha, double beta, double gamma, 
+					  TacsScalar t, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot){
+
+  // derivative wrt qddot
+  J[0] = alpha*1.0;
+  J[1] = alpha*0.0;
+  J[2] = alpha*0.0;
+  J[3] = alpha*1.0;
+
+  // derivative wrt qdot
+  J[0] += beta*0.02*qdot[1];
+  J[1] += beta*0.02*qdot[0];
+  J[2] += beta*-0.05*qdot[1];
+  J[3] += beta*-0.05*qdot[0];
+
+  // derivative wrt q
+  J[0] += gamma*5.0;
+  J[1] += gamma*0.0;
+  J[2] += gamma*q[1];
+  J[3] += gamma*q[0];
+
 }
-
-					  
-					  
-
-
-					  
-
-
 
 
 
