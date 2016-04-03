@@ -13,6 +13,7 @@ CXX_OBJS = TACSObject.o \
 	TACSCreator.o \
 	TACSMg.o \
 	TACSBuckling.o \
+	TACSNonLinearSolver.o \
 	TACSIntegrator.o
 
 DIR=${TACS_DIR}/src

@@ -5,18 +5,53 @@
 #include <stdlib.h>
 #include <string.h>
 #include "TACSObject.h"
+#include "TACSNonLinearSolver.h"
+
+/*
+  Abstract class for integration schemes to extend
+*/
+
+class TacsIntegrator : public TACSObject {
+
+ public:
+ 
+  TacsIntegrator();
+  virtual ~TacsIntegrator(){}
+  virtual void integrate(TacsScalar *time, TacsScalar *q, 
+			 TacsScalar *qdot, TacsScalar *qddot){}
+  
+ protected:
+  
+  int maxNewtonIters;
+  
+  double h;
+  double tInit, tFinal;
+
+  // integration coefficients
+  double alpha, beta, gamma;
+
+  int numStepsPerSec;
+  int numSteps;
+  
+  int numVars;
+
+  int currentTimeStep;
+
+  TacsNonLinearSolver *nonlinearSolver;
+
+};
 
 /*
   A DIRK integration scheme for TACS
 */
-class TacsDIRKIntegrator : public TACSObject {
+class TacsDIRKIntegrator : public TacsIntegrator {
 
  public:
 
   // constructor for DIRK object
   TacsDIRKIntegrator(int numStages, int numVars, double tInit, 
 		     double tFinal, int numStepsPerSec, 
-		     int max_newton_iters);
+		     int maxNewtonIters);
   
   // destructor for DIRK object
   ~TacsDIRKIntegrator();
@@ -26,32 +61,25 @@ class TacsDIRKIntegrator : public TACSObject {
   
  private:
 
+  //------------------------------------------------------------------//
   // private variables
-  double h;
-  double tInit, tFinal;
+  //------------------------------------------------------------------//
 
-  int numStepsPerSec;
-  int numSteps;
-
-  int numVars;
-  int numStages, order;
-
-  int max_newton_iters;
+  // the number of stage in RK scheme
+  int numStages;
+  
+  // the order of accuracy of the scheme
+  int order;
   
   // variables for Butcher tableau
   double *A, *B, *C;
-
+  
   // stage values (computed at each time stage for each time step)
   double  *tS, *qS, *qdotS, *qddotS;
-  
-  // global index of stage
-  int stageOffCtr;
-  
-  // variables to keep track of current stage and time index
-  int currentStage;
-  int currentTimeStep;
 
+  //------------------------------------------------------------------//
   // private functions
+  //------------------------------------------------------------------//
 
   void setupButcherTableau();
   void checkButcherTableau();
@@ -61,18 +89,34 @@ class TacsDIRKIntegrator : public TACSObject {
 
   void computeStageValues(TacsScalar tk, TacsScalar *qk, TacsScalar *qdotk, TacsScalar *qddotk);
   void timeMarch(int k, TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
-
   void resetStageValues();
 
-  void computeResidual(TacsScalar *Rki, TacsScalar tS, TacsScalar *qS,
-			TacsScalar *qdotS, TacsScalar *qddotS);  
-  void computeJacobian(TacsScalar *J,
-			double alpha, double beta, double gamma,
-			TacsScalar t, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+};
 
-  void nonlinearSolve(TacsScalar t, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
-  void updateState(TacsScalar * sol, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
- 
+/*
+  BDF integration scheme for TACS
+*/
+
+class TacsBDFIntegrator : public TacsIntegrator {
+
+ public:
+  
+  // constructor for BDF object
+  TacsBDFIntegrator(int numVars, double tInit, 
+		    double tFinal, int numStepsPerSec, 
+		    int maxNewtonIters, int maxBDFOrder);
+  
+  // destructor for BDF object
+  ~TacsBDFIntegrator();
+  
+  // integrate call
+  void integrate(TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  
+ private:
+  
+  int maxBDFOrder;
+
 };
 
 #endif
+
