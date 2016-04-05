@@ -14,29 +14,31 @@
 class TacsIntegrator : public TACSObject {
 
  public:
- 
-  TacsIntegrator();
-  virtual ~TacsIntegrator(){}
+  
+  TacsIntegrator(int numVars, double tInit, 
+		 double tFinal, int numStepsPerSec, 
+		 int maxNewtonIters, double _atol, double _rtol);
+  
+  ~TacsIntegrator();
+  
   virtual void integrate(TacsScalar *time, TacsScalar *q, 
 			 TacsScalar *qdot, TacsScalar *qddot){}
   
  protected:
-  
-  int maxNewtonIters;
-  
+ 
+  int numVars;
+ 
   double h;
   double tInit, tFinal;
 
-  // integration coefficients
-  double alpha, beta, gamma;
-
   int numStepsPerSec;
-  int numSteps;
-  
-  int numVars;
-
+  int numSteps; 
   int currentTimeStep;
 
+  double alpha, beta, gamma;
+  
+  // nonlinear solver
+  int maxNewtonIters;
   TacsNonLinearSolver *nonlinearSolver;
 
 };
@@ -49,9 +51,10 @@ class TacsDIRKIntegrator : public TacsIntegrator {
  public:
 
   // constructor for DIRK object
-  TacsDIRKIntegrator(int numStages, int numVars, double tInit, 
+  TacsDIRKIntegrator(int numVars, double tInit, 
 		     double tFinal, int numStepsPerSec, 
-		     int maxNewtonIters);
+		     int maxNewtonIters, double atol, double rtol,
+		     int numStages);
   
   // destructor for DIRK object
   ~TacsDIRKIntegrator();
@@ -72,10 +75,10 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   int order;
   
   // variables for Butcher tableau
-  double *A, *B, *C;
+  double *A=NULL, *B=NULL, *C=NULL;
   
   // stage values (computed at each time stage for each time step)
-  double  *tS, *qS, *qdotS, *qddotS;
+  double  *tS=NULL, *qS=NULL, *qdotS=NULL, *qddotS=NULL;
 
   //------------------------------------------------------------------//
   // private functions
@@ -104,7 +107,8 @@ class TacsBDFIntegrator : public TacsIntegrator {
   // constructor for BDF object
   TacsBDFIntegrator(int numVars, double tInit, 
 		    double tFinal, int numStepsPerSec, 
-		    int maxNewtonIters, int maxBDFOrder);
+		    int maxNewtonIters, double atol, double rtol,
+		    int maxBDFOrder);
   
   // destructor for BDF object
   ~TacsBDFIntegrator();
@@ -114,7 +118,23 @@ class TacsBDFIntegrator : public TacsIntegrator {
   
  private:
   
+  TacsScalar *res = NULL;
+  TacsScalar *D = NULL;
+    
+  // The BDF coefficients for time integration
+  double bdf_coeff[4], bddf_coeff[9];
+  
   int maxBDFOrder;
+
+  // Retireve the BDF coefficients
+  int getBDFCoeff(double bdf[], int order );
+  void get2ndBDFCoeff(const int k, double bdf[], int *nbdf,
+		      double bddf[], int *nbddf,
+		      const int max_order);
+  
+  // approximate derivatives using BDF stencil
+  void approxStates(TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  void setCoeffs(double alpha, double beta, double gamma);
 
 };
 

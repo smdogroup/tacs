@@ -3,8 +3,277 @@
 
 /*
   Abstract class for integration schemes to extend
+
+  Input:
+
+  numVars : the number of varibles/degrees of freedom in the system
+  tInit: the initial time
+  tFinal: the final time
+  numStepsPerSec: the number of steps to take for each second
+  maxNewtonIters: the max number of Newton iterations
+  
 */
-TacsIntegrator::TacsIntegrator() {
+TacsIntegrator::TacsIntegrator(int _numVars, double _tInit, 
+			       double _tFinal, int _numStepsPerSec, 
+			       int _maxNewtonIters, double _atol, double _rtol) {
+  
+  // copy over the input parameters
+  numVars = _numVars;
+  tInit = _tInit;
+  tFinal = _tFinal;
+  numStepsPerSec = _numStepsPerSec;
+  maxNewtonIters = _maxNewtonIters;
+
+  // compute the step size
+  h = 1.0/double(numStepsPerSec);
+
+  // compute the total number of time steps
+  numSteps = int(double(numStepsPerSec)*(tFinal-tInit)) + 1;
+
+  // create an instance of a nonlinear solver
+  nonlinearSolver =  new TacsNewtonSolver(_numVars, _maxNewtonIters, _atol, _rtol);
+  nonlinearSolver->incref();
+
+}
+
+/*
+  Base class destructor for the integration schemes
+*/
+TacsIntegrator::~TacsIntegrator(){
+
+  nonlinearSolver->decref();
+
+}
+
+/*
+  Constructor for BDF Integration scheme
+
+  Input:
+
+  numVars : the number of varibles/degrees of freedom in the system
+  tInit: the initial time
+  tFinal: the final time
+  numStepsPerSec: the number of steps to take for each second
+  maxNewtonIters: the max number of Newton iterations
+  
+*/
+TacsBDFIntegrator:: TacsBDFIntegrator(int _numVars, double _tInit, 
+				      double _tFinal, int _numStepsPerSec, 
+				      int _maxNewtonIters, double _atol, double _rtol,
+				      int _maxBDFOrder) 
+: TacsIntegrator(_numVars, _tInit,  _tFinal,  _numStepsPerSec, _maxNewtonIters, _atol, _rtol) {
+  
+  // copy over the variables
+  maxBDFOrder = _maxBDFOrder;
+
+  // Truncate the maximum order to 3rd order
+  maxBDFOrder = (maxBDFOrder <= 3 ? 
+		 maxBDFOrder : 3);
+
+  // allocate space for the residuals
+  res = new TacsScalar[numVars];
+  memset(res, 0, numVars*sizeof(TacsScalar));
+    
+  // allocate space for the jacobian
+  D = new TacsScalar[numVars*numVars];
+  memset(D, 0, numVars*numVars*sizeof(TacsScalar));
+  
+}
+
+/*
+  Destructor for TACSBDFIntegrator
+*/
+TacsBDFIntegrator::~TacsBDFIntegrator(){
+
+  delete [] res;
+  delete [] D;
+
+}
+
+/*
+  Set the coefficients for Jacobian linearization and evaluation
+*/
+void TacsBDFIntegrator::setCoeffs(double _alpha, double _beta, double _gamma){
+  alpha = _alpha;
+  beta  = _beta;
+  gamma = _gamma;
+}
+
+/*
+  Integration logic of BDF
+  
+  Input:
+  
+  time: pointer to global time
+  q: pointer to the position states (initial value should be set)
+  qdot: pointer to the velocity states (initial value should be set)
+  qddot: pointer to the acceleration states
+
+*/
+void TacsBDFIntegrator::integrate(TacsScalar *time, 
+				  TacsScalar *q, 
+				  TacsScalar *qdot, 
+				  TacsScalar *qddot){
+  
+  currentTimeStep = 0;
+  
+  for (int k = 1; k < numSteps; k++) {
+    
+    currentTimeStep ++;
+
+    // approximate states and their derivatives using BDF formula
+    approxStates(q, qdot, qddot);
+    
+    // get the coeffcients for residual linearization during the nonlinear solve
+    setCoeffs(bddf_coeff[0]/h/h, bdf_coeff[0]/h, 1.0);
+    
+    // solve the nonlinear system of equations for q
+    nonlinearSolver->solve(alpha, beta, gamma,
+			   time[k], &q[k*numVars], &qdot[k*numVars], &qddot[k*numVars]);
+    
+    time[k] = time[k-1] + h;
+    
+  }
+  
+}
+
+/*
+  Approximate states at the current time step using the BDF
+  coefficients and previous time step values of the states
+
+  Input:   
+  pointers to the global states q, qdot, qddot
+  
+*/
+void TacsBDFIntegrator::approxStates(TacsScalar *q, 
+				     TacsScalar *qdot, 
+				     TacsScalar *qddot){
+  
+  int k = currentTimeStep;
+  int idx =  k*numVars;
+  
+  // get the BDF coefficients
+  int nbdf, nbddf;
+  get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, 
+		 maxBDFOrder);
+  
+  // Copy the values of q from the previous time step
+  memcpy(&q[idx], &q[numVars*(k-1)], numVars*sizeof(TacsScalar));
+  
+  // approximate qdot using BDF formula
+  for ( int i = 0; i < nbdf; i++ ){
+    const TacsScalar *qi = &q[numVars*(k-i)];
+    double scale = bdf_coeff[i]/h;
+    for ( int j = 0; j < numVars; j++ ){
+      qdot[idx+j] += scale*qi[j];
+    }
+  }
+
+  // approximate qddot using BDF formula
+  for ( int i = 0; i < nbddf; i++ ){
+    const TacsScalar *qi = &q[numVars*(k-i)];
+    double scale = bddf_coeff[i]/h/h;
+    for ( int j = 0; j < numVars; j++ ){
+      qddot[idx+j] += scale*qi[j];
+    }
+  }
+
+  // If required, add the contribution to the second derivative
+  // from the initial values of the first derivatives
+  if (k == nbdf-1){
+    double scale = bdf_coeff[nbdf-1]/h;
+    for ( int j = 0; j < numVars; j++ ){
+      qddot[idx+j] += scale*qdot[(k-1)*numVars+j];
+    }
+  }
+
+}
+
+/*
+  This code computes the BDF coefficients for first and second
+  derivative approximations.
+  
+  input:
+  k:         the integration time step
+  max_order: the maximum order to use
+  
+  output:
+  bdf:    the first derivative approximation
+  nbdf:   the number first derivative of coefficients
+  bddf:   the second derivative approximation
+  nbddf:  the number second derivative of coefficients
+*/
+void TacsBDFIntegrator::get2ndBDFCoeff( const int k, 
+					double bdf[], int *nbdf,
+					double bddf[], int *nbddf,
+					const int max_order ){
+  // Construct the second-order BDF scheme
+  memset(bddf, 0, (2*max_order+1)*sizeof(double));
+  memset(bdf, 0, (max_order+1)*sizeof(double));
+
+  // For the first time step, set the first coefficient to 1.0, 
+  // but set the number of coefficients to zero
+  if (k == 0){
+    bdf[0] = 1.0;
+    *nbdf = 0;
+    *nbddf = 0;
+
+    return;
+  }
+
+  // Get the first-order coefficients - one greater than the maximum
+  // order of coefficients
+  int order = (k < max_order ? k : max_order);
+  *nbdf = getBDFCoeff(bdf, order)+1;
+  *nbddf = 2*(*nbdf)-1;
+  if (*nbddf > k+1){
+    *nbddf = k+1;
+  }
+
+  // Now, compute the second-order coefficients
+  for ( int j = 0; j < *nbdf && (k - j > 0); j++ ){
+    // order >= 1 always
+    int order = (k-j < max_order ? k-j : max_order);
+    double bdf2[5];
+    int len = getBDFCoeff(bdf2, order)+1;
+
+    for ( int i = 0; i < len; i++ ){
+      bddf[j + i] += bdf[j]*bdf2[i];
+    }
+  }
+}
+
+/*
+  Get the first-order BDF coefficients of order <= 3 
+
+  input:
+  order:  order of the backwards-difference coefficients
+
+  output: 
+  bdf:    the backwards difference coefficients
+*/ 
+int TacsBDFIntegrator::getBDFCoeff( double bdf[], 
+				    int order ){
+  if (order <= 1){
+    bdf[0] = 1.0;
+    bdf[1] = -1.0;
+    return 1;
+  }
+  else if (order == 2){
+    bdf[0] =  1.5;
+    bdf[1] = -2.0;
+    bdf[2] =  0.5;
+    return 2;
+  }
+  else if (order >= 3){
+    bdf[0] =  35.0/24.0;
+    bdf[1] = -15.0/8.0;
+    bdf[2] =  3.0/8.0;
+    bdf[3] =  1.0/24.0;
+    return 3;
+  }
+
+  return 0;
 }
 
 /*
@@ -20,29 +289,16 @@ TacsIntegrator::TacsIntegrator() {
   maxNewtonIters: the max number of Newton iterations
 
 */
-TacsDIRKIntegrator::TacsDIRKIntegrator(int _numStages, int _numVars,  
+TacsDIRKIntegrator::TacsDIRKIntegrator(int _numVars,  
 				       double _tInit, double _tFinal, 
 				       int _numStepsPerSec,
-				       int _maxNewtonIters) 
-: TacsIntegrator() {
-
-  // copy over the input parameters
-  numStages = _numStages;
-  numVars = _numVars;
-  tInit = _tInit;
-  tFinal = _tFinal;
-  numStepsPerSec = _numStepsPerSec;
-
-  // create an instance of a nonlinear solver
-  nonlinearSolver =  new TacsNewtonSolver(_numVars, _maxNewtonIters, 1e-30, 1.0e-8);
-  nonlinearSolver->incref();
+				       int _maxNewtonIters, double _atol, double _rtol,
+				       int _numStages) 
+: TacsIntegrator(_numVars, _tInit,  _tFinal,  _numStepsPerSec, _maxNewtonIters, _atol, _rtol) {
   
-  // compute the step size
-  h = 1.0/double(numStepsPerSec);
-
-  // compute the total number of time steps
-  numSteps = int(double(numStepsPerSec)*(tFinal-tInit)) + 1;
-
+  // copy over the variables
+  numStages = _numStages;
+  
   // allocate space for stage variables
   tS = new TacsScalar[numStages];
   qS = new TacsScalar[numStages*numVars];
@@ -88,8 +344,6 @@ TacsDIRKIntegrator::~TacsDIRKIntegrator(){
   delete [] qS;
   delete [] qdotS;
   delete [] qddotS;
-
-  nonlinearSolver->decref();
 
 }
 
@@ -198,7 +452,15 @@ void TacsDIRKIntegrator::checkButcherTableau(){
 }
 
 /*
-  Function that wraps the integration logic.
+  Integration logic of DIRK
+  
+  Input:
+  
+  time: pointer to global time
+  q: pointer to the position states (initial value should be set)
+  qdot: pointer to the velocity states (initial value should be set)
+  qddot: pointer to the acceleration states
+
 */
 void TacsDIRKIntegrator::integrate(TacsScalar *time, 
 				   TacsScalar *q, 
@@ -238,9 +500,9 @@ void TacsDIRKIntegrator::integrate(TacsScalar *time,
   The stage states tS, qS, qdotS and qdotS
 */
 void TacsDIRKIntegrator::computeStageValues(TacsScalar tk, 
-					      TacsScalar *qk, 
-					      TacsScalar *qdotk, 
-					      TacsScalar *qddotk){
+					    TacsScalar *qk, 
+					    TacsScalar *qdotk, 
+					    TacsScalar *qddotk){
 
   // global counter to the current stage
   int currentStage = 0;
@@ -342,6 +604,18 @@ void TacsDIRKIntegrator::timeMarch(int k, TacsScalar *time, TacsScalar *q,
     }
     qdot[k*numVars+i] = qdot[(k-1)*numVars+i] + h*tmp;
   }
+
+  // advance the acceleration state
+  for (int i = 0; i < numVars; i++) {
+    TacsScalar tmp = 0.0;
+    int ctr = 0;
+    for (int j = 0; j < numStages; j++) {
+      tmp += B[j]*qddotS[ctr+i];
+      ctr += numVars;
+    }
+    qddot[k*numVars+i] = qddot[(k-1)*numVars+i] + tmp;
+  }
+
   
 }
 
