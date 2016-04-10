@@ -171,9 +171,9 @@ class TACS3DElement : public TACSElement {
 
   // Evaluate the determinant of the Jacobian and its derivative
   // -----------------------------------------------------------
-  TacsScalar getJacobian( const double * pt, const TacsScalar Xpts[] );
-  TacsScalar getJacobianXptSens( TacsScalar * sh, const double * pt, 
-				 const TacsScalar Xpts[] );
+  TacsScalar getDetJacobian( const double * pt, const TacsScalar Xpts[] );
+  TacsScalar getDetJacobianXptSens( TacsScalar * sh, const double * pt, 
+                                    const TacsScalar Xpts[] );
 
   // Compute the point-wise strain and its derivative
   // ------------------------------------------------
@@ -1183,7 +1183,6 @@ void TACS3DElement<NUM_NODES>::getResidual( TacsScalar res[],
   vars:    the element variables
   dvars:   time derivative of the element variables
   ddvars:  second time derivative of the element variables
-
 */
 template <int NUM_NODES>
 void TACS3DElement<NUM_NODES>::getJacobian( TacsScalar mat[],
@@ -1604,8 +1603,8 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
   Xpts:  the element nodes
 */
 template <int NUM_NODES>
-TacsScalar TACS3DElement<NUM_NODES>::getJacobian( const double pt[], 
-						  const TacsScalar Xpts[] ){
+TacsScalar TACS3DElement<NUM_NODES>::getDetJacobian( const double pt[], 
+                                                     const TacsScalar Xpts[] ){
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
@@ -1633,9 +1632,9 @@ TacsScalar TACS3DElement<NUM_NODES>::getJacobian( const double pt[],
   Xpts:  the element nodes
 */
 template <int NUM_NODES>
-TacsScalar TACS3DElement<NUM_NODES>::getJacobianXptSens( TacsScalar * hXptSens, 
-							 const double * pt,
-							 const TacsScalar Xpts[] ){
+TacsScalar TACS3DElement<NUM_NODES>::getDetJacobianXptSens( TacsScalar * hXptSens, 
+                                                            const double * pt,
+                                                            const TacsScalar Xpts[] ){
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];

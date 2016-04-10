@@ -1,5 +1,5 @@
-#ifndef TACS_PLANE_STRESS_H
-#define TACS_PLANE_STRESS_H
+#ifndef TACS_PLANE_STRESS_QUAD_H
+#define TACS_PLANE_STRESS_QUAD_H
 
 /*
   Plane stress element implementation. 
@@ -14,14 +14,14 @@
 #include "FElibrary.h"
 
 template <int order>
-class PlaneStress : public TACS2DElement<order*order> {
+class PlaneStressQuad : public TACS2DElement<order*order> {
  public:
   enum PlaneStressElementType { LINEAR, NONLINEAR };
 
-  PlaneStress( PlaneStressStiffness * _stiff, 
-	       PlaneStressElementType type = LINEAR, 
-	       int _componentNum = 0 );
-  ~PlaneStress();
+  PlaneStressQuad( PlaneStressStiffness * _stiff, 
+                   PlaneStressElementType type = LINEAR, 
+                   int _componentNum = 0 );
+  ~PlaneStressQuad();
 
   // Return the name of this element
   // -------------------------------
@@ -40,9 +40,9 @@ class PlaneStress : public TACS2DElement<order*order> {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount( int * nelems, int * nnodes, int * ncsr );
+  void addOutputCount( int *nelems, int *nnodes, int *ncsr );
   void getOutputData( unsigned int out_type, 
-		      double * data, int ld_data, 
+		      double *data, int ld_data, 
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
@@ -59,24 +59,24 @@ class PlaneStress : public TACS2DElement<order*order> {
 };
 
 template <int order>
-PlaneStress<order>::PlaneStress( PlaneStressStiffness * _stiff, 
-				     PlaneStressElementType type, 
-				     int _componentNum ):
+PlaneStressQuad<order>::PlaneStressQuad( PlaneStressStiffness * _stiff, 
+                                         PlaneStressElementType type, 
+                                         int _componentNum ):
 TACS2DElement<order*order>(_stiff, type == LINEAR, _componentNum){  
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 }
 
 template <int order>
-PlaneStress<order>::~PlaneStress(){}
+PlaneStressQuad<order>::~PlaneStressQuad(){}
 
 template <int order>
-const char * PlaneStress<order>::elemName = "PlaneStress";
+const char * PlaneStressQuad<order>::elemName = "PlaneStressQuad";
 
 /*
   Get the number of Gauss points in the Gauss quadrature scheme
 */
 template <int order>
-int PlaneStress<order>::getNumGaussPts(){
+int PlaneStressQuad<order>::getNumGaussPts(){
   return numGauss*numGauss;
 }
 
@@ -84,7 +84,7 @@ int PlaneStress<order>::getNumGaussPts(){
   Get the Gauss points
 */
 template <int order>
-double PlaneStress<order>::getGaussWtsPts( int npoint, double pt[] ){
+double PlaneStressQuad<order>::getGaussWtsPts( int npoint, double pt[] ){
   // Compute the n/m/p indices of the Gauss quadrature scheme
   int m = (int)((npoint)/(numGauss));
   int n = npoint - numGauss*m;
@@ -99,8 +99,8 @@ double PlaneStress<order>::getGaussWtsPts( int npoint, double pt[] ){
   Evaluate the shape functions and their derivatives
 */
 template <int order>
-void PlaneStress<order>::getShapeFunctions( const double pt[], 
-					    double N[] ){
+void PlaneStressQuad<order>::getShapeFunctions( const double pt[], 
+                                                double N[] ){
   FElibrary::biLagrangeSF(N, pt, order);
 }
 
@@ -109,8 +109,8 @@ void PlaneStress<order>::getShapeFunctions( const double pt[],
   parametric element location 
 */
 template <int order>
-void PlaneStress<order>::getShapeFunctions( const double pt[], double N[],
-					    double Na[], double Nb[] ){
+void PlaneStressQuad<order>::getShapeFunctions( const double pt[], double N[],
+                                                double Na[], double Nb[] ){
   FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
 }
 
@@ -119,8 +119,8 @@ void PlaneStress<order>::getShapeFunctions( const double pt[], double N[],
   this element.  
 */
 template <int order>
-void PlaneStress<order>::addOutputCount( int *nelems, 
-					 int *nnodes, int *ncsr ){
+void PlaneStressQuad<order>::addOutputCount( int *nelems, 
+                                             int *nnodes, int *ncsr ){
   *nelems += (order-1)*(order-1);
   *nnodes += order*order;
   *ncsr += 4*(order-1)*(order-1);
@@ -148,10 +148,10 @@ void PlaneStress<order>::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 template <int order>
-void PlaneStress<order>::getOutputData( unsigned int out_type, 
-					double *data, int ld_data,
-					const TacsScalar Xpts[],
-					const TacsScalar vars[] ){
+void PlaneStressQuad<order>::getOutputData( unsigned int out_type, 
+                                            double *data, int ld_data,
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[] ){
   for ( int m = 0; m < order; m++ ){
     for ( int n = 0; n < order; n++ ){
       int p = n + order*m;
@@ -242,7 +242,7 @@ void PlaneStress<order>::getOutputData( unsigned int out_type,
   less global
 */
 template <int order>
-void PlaneStress<order>::getOutputConnectivity( int *con, int node ){
+void PlaneStressQuad<order>::getOutputConnectivity( int *con, int node ){
   int p = 0;
   for ( int m = 0; m < order-1; m++ ){
     for ( int n = 0; n < order-1; n++ ){

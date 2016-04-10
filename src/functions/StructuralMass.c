@@ -21,7 +21,7 @@ void StructuralMass::preInitialize(){
   this->initialized(); // No further initialization necessary
 }
 
-void StructuralMass::elementWiseInitialize( TACSElement * element, int elemNum ){
+void StructuralMass::elementWiseInitialize( TACSElement *element, int elemNum ){
   int numNodes = element->numNodes();
   if ( numNodes > maxNumNodes ){
     maxNumNodes = numNodes;
@@ -33,7 +33,7 @@ void StructuralMass::postInitialize(){}
 /*
   Get the sizes of the work arrays required for evaluation
 */
-void StructuralMass::getEvalWorkSizes( int * iwork, int * work ){
+void StructuralMass::getEvalWorkSizes( int *iwork, int *work ){
   *iwork = 0;
   *work = 1;
 }
@@ -50,7 +50,7 @@ void StructuralMass::preEval( const int _iter ){
   mass for all threads
 */
 void StructuralMass::preEvalThread( const int iter, 
-                                    int * iwork, TacsScalar * work ){
+                                    int *iwork, TacsScalar *work ){
   work[0] = 0.0;
 }
   
@@ -58,27 +58,25 @@ void StructuralMass::preEvalThread( const int iter,
   Evaluate the mass for each element in the domain
 */
 void StructuralMass::elementWiseEval( const int iter, 
-				      TACSElement * element, int elemNum,
+				      TACSElement *element, int elemNum,
 				      const TacsScalar Xpts[],
 				      const TacsScalar vars[], 
-                                      int * iwork, TacsScalar * work ){
+                                      int *iwork, TacsScalar *work ){
   int numGauss = element->getNumGaussPts();
-  TACSConstitutive * material = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!material){
-    return;
-  }
-
-  for ( int i = 0; i < numGauss; i++ ){
-    TacsScalar ptmass[6];
-    double pt[3];
-    double gauss_weight = element->getGaussWtsPts(i, pt);
-    TacsScalar h = element->getJacobian(pt, Xpts);
-    material->getPointwiseMass(pt, ptmass);
-
-    work[0] += gauss_weight*h*ptmass[0];
+  if (constitutive){
+    for ( int i = 0; i < numGauss; i++ ){
+      TacsScalar ptmass[6];
+      double pt[3];
+      double gauss_weight = element->getGaussWtsPts(i, pt);
+      TacsScalar h = element->getDetJacobian(pt, Xpts);
+      constitutive->getPointwiseMass(pt, ptmass);
+      
+      work[0] += gauss_weight*h*ptmass[0];
+    }
   }
 }
 
@@ -86,7 +84,7 @@ void StructuralMass::elementWiseEval( const int iter,
   Add the contribution from the mass from all threads
 */
 void StructuralMass::postEvalThread( const int iter,
-                                     int * iwork, TacsScalar * work ){
+                                     int *iwork, TacsScalar *work ){
   totalMass += work[0];
 }
 
@@ -112,35 +110,33 @@ int StructuralMass::getXptSensWorkSize(){
   locations.
 */
 void StructuralMass::elementWiseXptSens( TacsScalar fXptSens[],
-					 TACSElement * element, int elemNum,
+					 TACSElement *element, int elemNum,
 					 const TacsScalar Xpts[],
 					 const TacsScalar vars[], 
-                                         TacsScalar * work ){
+                                         TacsScalar *work ){
   double pt[3]; // The gauss point
   int numGauss = element->getNumGaussPts();
   int numNodes = element->numNodes();
-  TACSConstitutive * material = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!material){
-    return;
-  }
-
-  TacsScalar * hXptSens = &work[0];
-
-  // Add the sensitivity due to the material
-  TacsScalar ptmass[6];
-  for ( int i = 0; i < numGauss; i++ ){
-    TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
-    element->getJacobianXptSens(hXptSens, pt, Xpts);
-
-    material->getPointwiseMass(pt, ptmass);
-
-    for ( int k = 0; k < 3*numNodes; k++ ){
-      fXptSens[k] += gauss_weight*hXptSens[k]*ptmass[0];
+  if (constitutive){
+    TacsScalar *hXptSens = &work[0];
+    
+    // Add the sensitivity due to the constitutive
+    TacsScalar ptmass[6];
+    for ( int i = 0; i < numGauss; i++ ){
+      TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
+      element->getDetJacobianXptSens(hXptSens, pt, Xpts);
+      
+      constitutive->getPointwiseMass(pt, ptmass);
+      
+      for ( int k = 0; k < 3*numNodes; k++ ){
+        fXptSens[k] += gauss_weight*hXptSens[k]*ptmass[0];
+      }
     }
   }
 }
@@ -157,30 +153,28 @@ int StructuralMass::getDVSensWorkSize(){
   design variables
 */
 void StructuralMass::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-					TACSElement * element, int elemNum,
+					TACSElement *element, int elemNum,
 					const TacsScalar Xpts[],
                                         const TacsScalar vars[],  
-					TacsScalar * work ){
+					TacsScalar *work ){
   double pt[3];
   int numGauss = element->getNumGaussPts();
-  TACSConstitutive * material = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!material){
-    return;
-  }
-
-  // The coefficients on the mass moments
-  TacsScalar alpha[6] = {1.0, 0.0, 0.0,
-			 0.0, 0.0, 0.0};
-  
-  // Add the sensitivity from the first mass moment
-  for ( int i = 0; i < numGauss; i++ ){
-    TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
-    TacsScalar h = element->getJacobian(pt, Xpts);
+  if (constitutive){
+    // The coefficients on the mass moments
+    TacsScalar alpha[6] = {1.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0};
     
-    alpha[0] = gauss_weight*h;
-    material->addPointwiseMassDVSens(pt, alpha, fdvSens, numDVs);
+    // Add the sensitivity from the first mass moment
+    for ( int i = 0; i < numGauss; i++ ){
+      TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
+      TacsScalar h = element->getDetJacobian(pt, Xpts);
+    
+      alpha[0] = gauss_weight*h;
+      constitutive->addPointwiseMassDVSens(pt, alpha, fdvSens, numDVs);
+    }
   }
 }

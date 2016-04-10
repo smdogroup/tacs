@@ -155,7 +155,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
     // Compute the derivative of X with respect to the
     // coordinate directions
     TacsScalar X[3], Xa[4];
-    this->solidJacobian(X, Xa, N, Na, Nb, Xpts);
+    this->planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];

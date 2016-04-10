@@ -143,62 +143,64 @@ void KSFailure::elementWiseEval( const int iter,
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
-  // Set the strain buffer
-  TacsScalar * strain = &work[3];
- 
-  if (iter == 0){    
-    // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      element->getGaussWtsPts(i, pt);
-
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
-
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= loadFactor;
-      }      
+  if (constitutive){
+    // Set the strain buffer
+    TacsScalar * strain = &work[3];
+    
+    if (iter == 0){    
+      // With the first iteration, find the maximum over the domain
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        element->getGaussWtsPts(i, pt);
+        
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
       
-      // Determine the failure criteria
-      TacsScalar fail;
-      constitutive->failure(pt, strain, &fail);
-
-      // Set the maximum failure load
-      if (fail > work[0]){
-	work[0] = fail;
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= loadFactor;
+        }      
+        
+        // Determine the failure criteria
+        TacsScalar fail;
+        constitutive->failure(pt, strain, &fail);
+        
+        // Set the maximum failure load
+        if (fail > work[0]){
+          work[0] = fail;
+        }
       }
     }
-  }
-  else {
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      double weight = element->getGaussWtsPts(i, pt);
-
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
-
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= loadFactor;        
-      }
-
-      // Determine the failure criteria again
-      TacsScalar fail;
-      constitutive->failure(pt, strain, &fail);
-
-      // Add the failure load to the sum
-      TacsScalar fexp = exp(ksWeight*(fail - maxFail));
-
-      if (ksType == DISCRETE){
-	work[1] += fexp;
-      }
-      else {
-	// Get the determinant of the Jacobian
-	TacsScalar h = element->getJacobian(pt, Xpts);
-	work[1] += h*weight*fexp;
+    else {
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        double weight = element->getGaussWtsPts(i, pt);
+        
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
+        
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= loadFactor;        
+        }
+        
+        // Determine the failure criteria again
+        TacsScalar fail;
+        constitutive->failure(pt, strain, &fail);
+        
+        // Add the failure load to the sum
+        TacsScalar fexp = exp(ksWeight*(fail - maxFail));
+        
+        if (ksType == DISCRETE){
+          work[1] += fexp;
+        }
+        else {
+          // Get the determinant of the Jacobian
+          TacsScalar h = element->getDetJacobian(pt, Xpts);
+          work[1] += h*weight*fexp;
+        }
       }
     }
   }
@@ -266,50 +268,52 @@ void KSFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
   
   // Zero the derivative of the function w.r.t. the element state variables
   memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * failSens = &work[maxNumStresses];
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * failSens = &work[maxNumStresses];
   
-  for ( int i = 0; i < numGauss; i++ ){
-    double pt[3];
-    double weight = element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      double pt[3];
+      double weight = element->getGaussWtsPts(i, pt);
         
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
             
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= loadFactor;      
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= loadFactor;      
+      }
 
-    // Determine the strain failure criteria
-    TacsScalar fail;
-    constitutive->failure(pt, strain, &fail);
+      // Determine the strain failure criteria
+      TacsScalar fail;
+      constitutive->failure(pt, strain, &fail);
     
-    // Determine the sensitivity of the failure criteria to the 
-    // design variables and stresses
-    constitutive->failureStrainSens(pt, strain, failSens);
+      // Determine the sensitivity of the failure criteria to the 
+      // design variables and stresses
+      constitutive->failureStrainSens(pt, strain, failSens);
     
-    // Compute the sensitivity contribution
-    TacsScalar ksPtWeight = 0.0;
-    if (ksType == DISCRETE){
-      // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
-      ksPtWeight = loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
-    }
-    else {
-      // Get the determinant of the Jacobian
-      TacsScalar h = element->getJacobian(pt, Xpts);
+      // Compute the sensitivity contribution
+      TacsScalar ksPtWeight = 0.0;
+      if (ksType == DISCRETE){
+        // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
+        ksPtWeight = loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
+      }
+      else {
+        // Get the determinant of the Jacobian
+        TacsScalar h = element->getDetJacobian(pt, Xpts);
 
-      ksPtWeight = h*weight*loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
-    }
+        ksPtWeight = h*weight*loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
+      }
 
-    // Determine the sensitivity of the state variables to SV
-    element->addStrainSVSens(elemSVSens, pt, ksPtWeight, 
-			     failSens, Xpts, vars);
+      // Determine the sensitivity of the state variables to SV
+      element->addStrainSVSens(elemSVSens, pt, ksPtWeight, 
+                               failSens, Xpts, vars);
+    }
   }
 }
 
@@ -339,62 +343,64 @@ void KSFailure::elementWiseXptSens( TacsScalar fXptSens[],
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   // Zero the sensitivity w.r.t. the nodes
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * failSens = &work[maxNumStresses];
-  TacsScalar * hXptSens = &work[2*maxNumStresses];
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * failSens = &work[maxNumStresses];
+    TacsScalar * hXptSens = &work[2*maxNumStresses];
   
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    double weight = element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      double weight = element->getGaussWtsPts(i, pt);
 
-    // Get the strain at the current point within the element
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain at the current point within the element
+      element->getStrain(strain, pt, Xpts, vars);
 
-    // Multiply by the load factor
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= loadFactor;
-    }
-
-    // Determine the strain failure criteria
-    TacsScalar fail; 
-    constitutive->failure(pt, strain, &fail);
-
-    // Determine the sensitivity of the failure criteria to 
-    // the design variables and stresses
-    constitutive->failureStrainSens(pt, strain, failSens);
-
-    // Compute the sensitivity contribution
-    if (ksType == DISCRETE){
-      // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
-      TacsScalar ksPtWeight = 
-	loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
-      
-      element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
-				Xpts, vars);
-    }
-    else {
-      // Get the derivative of the determinant of the Jacobian
-      // w.r.t. the nodes
-      TacsScalar h = element->getJacobianXptSens(hXptSens, pt, Xpts);
-
-      // Compute the derivative of the KS functional
-      TacsScalar ksExp = exp(ksWeight*(fail - maxFail))/ksFailSum;
-      TacsScalar ksHptWeight = weight*ksExp/ksWeight;
-      TacsScalar ksPtWeight = h*weight*loadFactor*ksExp;
-
-      for ( int j = 0; j < 3*numNodes; j++ ){
-	fXptSens[j] += ksHptWeight*hXptSens[j];
+      // Multiply by the load factor
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= loadFactor;
       }
 
-      element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
-				Xpts, vars);
+      // Determine the strain failure criteria
+      TacsScalar fail; 
+      constitutive->failure(pt, strain, &fail);
+
+      // Determine the sensitivity of the failure criteria to 
+      // the design variables and stresses
+      constitutive->failureStrainSens(pt, strain, failSens);
+
+      // Compute the sensitivity contribution
+      if (ksType == DISCRETE){
+        // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
+        TacsScalar ksPtWeight = 
+          loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
+      
+        element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
+                                  Xpts, vars);
+      }
+      else {
+        // Get the derivative of the determinant of the Jacobian
+        // w.r.t. the nodes
+        TacsScalar h = element->getDetJacobianXptSens(hXptSens, pt, Xpts);
+
+        // Compute the derivative of the KS functional
+        TacsScalar ksExp = exp(ksWeight*(fail - maxFail))/ksFailSum;
+        TacsScalar ksHptWeight = weight*ksExp/ksWeight;
+        TacsScalar ksPtWeight = h*weight*loadFactor*ksExp;
+
+        for ( int j = 0; j < 3*numNodes; j++ ){
+          fXptSens[j] += ksHptWeight*hXptSens[j];
+        }
+
+        element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
+                                  Xpts, vars);
+      }
     }
   }
 }
@@ -424,43 +430,46 @@ void KSFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
 
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    double weight = element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      double weight = element->getGaussWtsPts(i, pt);
 
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
 
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= loadFactor;        
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= loadFactor;        
+      }
     
-    // Determine the strain failure criteria
-    TacsScalar fail; 
-    constitutive->failure(pt, strain, &fail);
+      // Determine the strain failure criteria
+      TacsScalar fail; 
+      constitutive->failure(pt, strain, &fail);
 
-    // Add contribution from the design variable sensitivity 
-    // of the failure calculation     
-    // Compute the sensitivity contribution
-    TacsScalar ksPtWeight = 0.0;
-    if (ksType == DISCRETE){
-      // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
-      ksPtWeight = exp(ksWeight*(fail - maxFail))/ksFailSum;
-    }
-    else {
-      // Get the determinant of the Jacobian
-      TacsScalar h = element->getJacobian(pt, Xpts);
+      // Add contribution from the design variable sensitivity 
+      // of the failure calculation     
+      // Compute the sensitivity contribution
+      TacsScalar ksPtWeight = 0.0;
+      if (ksType == DISCRETE){
+        // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx 
+        ksPtWeight = exp(ksWeight*(fail - maxFail))/ksFailSum;
+      }
+      else {
+        // Get the determinant of the Jacobian
+        TacsScalar h = element->getDetJacobian(pt, Xpts);
       
-      ksPtWeight = h*weight*exp(ksWeight*(fail - maxFail))/ksFailSum;
-    }
+        ksPtWeight = h*weight*exp(ksWeight*(fail - maxFail))/ksFailSum;
+      }
 
-    constitutive->addFailureDVSens(pt, strain, ksPtWeight,
-				   fdvSens, numDVs);
+      constitutive->addFailureDVSens(pt, strain, ksPtWeight,
+                                     fdvSens, numDVs);
+    }
   }
 }
+  

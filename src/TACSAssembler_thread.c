@@ -67,7 +67,8 @@ void * TACSAssembler::assembleRes_thread( void * t ){
 		      tacs->localDDotVars, ddvars);
   
       // Generate the Jacobian of the element
-      element->getResidual(elemRes, elemXpts, vars, dvars, ddvars);
+      element->getResidual(tacs->time, elemRes, elemXpts, 
+                           vars, dvars, ddvars);
 
       // Add the values to the residual when the memory unlocks
       pthread_mutex_lock(&tacs->tacs_mutex);
@@ -140,9 +141,9 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
 		      tacs->localDDotVars, ddvars);
   
       // Generate the Jacobian of the element
-      element->getResidual(elemRes, elemXpts, 
+      element->getResidual(tacs->time, elemRes, elemXpts, 
 			   vars, dvars, ddvars);
-      element->getJacobian(elemMat, 
+      element->getJacobian(tacs->time, elemMat, 
 			   alpha, beta, gamma,
 			   elemXpts, vars, dvars, ddvars);
       
@@ -419,7 +420,8 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
 			&localAdjoint[nvars*k], elemAdjoint);
 
 	double scale = 1.0;
-	element->addAdjResProduct(scale, &fdvSens[k*numDVs], numDVs,
+	element->addAdjResProduct(tacs->time, 
+                                  scale, &fdvSens[k*numDVs], numDVs,
 				  elemAdjoint, elemXpts,
 				  vars, dvars, ddvars);
       }

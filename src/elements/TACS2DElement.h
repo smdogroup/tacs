@@ -41,7 +41,7 @@ class TACS2DElement : public TACSElement {
 
   // Compute the position vector and its derivative
   // ----------------------------------------------
-  void solidJacobian( TacsScalar X[], TacsScalar Xa[],
+  void planeJacobian( TacsScalar X[], TacsScalar Xa[],
 		      const double N[], const double Na[], const double Nb[], 
 		      const TacsScalar Xpts[] );
   
@@ -142,9 +142,9 @@ class TACS2DElement : public TACSElement {
 
   // Evaluate the determinant of the Jacobian and its derivative
   // -----------------------------------------------------------
-  TacsScalar getJacobian( const double * pt, const TacsScalar Xpts[] );
-  TacsScalar getJacobianXptSens( TacsScalar * sh, const double * pt, 
-				 const TacsScalar Xpts[] );
+  TacsScalar getDetJacobian( const double * pt, const TacsScalar Xpts[] );
+  TacsScalar getDetJacobianXptSens( TacsScalar * sh, const double * pt, 
+                                    const TacsScalar Xpts[] );
 
   // Compute the point-wise strain and its derivative
   // ------------------------------------------------
@@ -320,7 +320,7 @@ void TACS2DElement<NUM_NODES>::getDesignVarRange( TacsScalar lowerBound[],
   Xpts:        the nodal locations
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::solidJacobian( TacsScalar X[], 
+void TACS2DElement<NUM_NODES>::planeJacobian( TacsScalar X[], 
 					      TacsScalar Xa[],
 					      const double N[], 
 					      const double Na[], 
@@ -791,7 +791,7 @@ void TACS2DElement<NUM_NODES>::computeEnergies( TacsScalar *_Te,
     // Compute the derivative of X with respect to the
     // coordinate directions
     TacsScalar X[3], Xa[9];
-    solidJacobian(X, Xa, N, Na, Nb, Xpts);
+    planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
@@ -864,7 +864,7 @@ void TACS2DElement<NUM_NODES>::getResidual( TacsScalar * res,
     // Compute the derivative of X with respect to the
     // coordinate directions
     TacsScalar X[3], Xa[9];
-    solidJacobian(X, Xa, N, Na, Nb, Xpts);
+    planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
@@ -951,7 +951,7 @@ void TACS2DElement<NUM_NODES>::getJacobian( TacsScalar mat[],
     // Compute the derivative of X with respect to the
     // coordinate directions
     TacsScalar X[3], Xa[4];
-    solidJacobian(X, Xa, N, Na, Nb, Xpts);
+    planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
@@ -1054,7 +1054,7 @@ void TACS2DElement<NUM_NODES>::addAdjResProduct( double scale,
     // Compute the derivative of X with respect to the
     // coordinate directions
     TacsScalar X[3], Xa[4];
-    solidJacobian(X, Xa, N, Na, Nb, Xpts);
+    planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
@@ -1131,7 +1131,7 @@ void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       // Compute the derivative of X with respect to the
       // coordinate directions
       TacsScalar X[3], Xa[4];
-      solidJacobian(X, Xa, N, Na, Nb, Xpts);
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
       
       // Compute the determinant of Xa and the transformation
       TacsScalar J[4];
@@ -1172,8 +1172,8 @@ void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
   Xpts:  the element nodes
 */
 template <int NUM_NODES>
-TacsScalar TACS2DElement<NUM_NODES>::getJacobian( const double pt[], 
-						  const TacsScalar Xpts[] ){
+TacsScalar TACS2DElement<NUM_NODES>::getDetJacobian( const double pt[], 
+                                                     const TacsScalar Xpts[] ){
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1182,7 +1182,7 @@ TacsScalar TACS2DElement<NUM_NODES>::getJacobian( const double pt[],
   // Compute the derivative of the shape functions w.r.t. the 
   // parametric locations
   TacsScalar X[3], Xa[4];
-  solidJacobian(X, Xa, N, Na, Nb, Xpts);
+  planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
   return FElibrary::jacobian2d(Xa);
 }
@@ -1201,9 +1201,9 @@ TacsScalar TACS2DElement<NUM_NODES>::getJacobian( const double pt[],
   Xpts:  the element nodes
 */
 template <int NUM_NODES>
-TacsScalar TACS2DElement<NUM_NODES>::getJacobianXptSens( TacsScalar * hXptSens, 
-							 const double * pt,
-							 const TacsScalar Xpts[] ){
+TacsScalar TACS2DElement<NUM_NODES>::getDetJacobianXptSens( TacsScalar * hXptSens, 
+                                                            const double * pt,
+                                                            const TacsScalar Xpts[] ){
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1212,7 +1212,7 @@ TacsScalar TACS2DElement<NUM_NODES>::getJacobianXptSens( TacsScalar * hXptSens,
   // Compute the derivative of the shape functions w.r.t. the 
   // parametric locations
   TacsScalar X[3], Xa[4];
-  solidJacobian(X, Xa, N, Na, Nb, Xpts);
+  planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
   // Evaluate the determinant of the Jacobian
   TacsScalar J[4];
@@ -1258,7 +1258,7 @@ void TACS2DElement<NUM_NODES>::getStrain( TacsScalar strain[],
 
   // Compute the derivative of X with respect to the coordinate directions
   TacsScalar X[3], Xa[4];
-  solidJacobian(X, Xa, N, Na, Nb, Xpts);
+  planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
   // Compute the determinant of Xa and the transformation
   TacsScalar J[4];
@@ -1304,7 +1304,7 @@ void TACS2DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[],
   // Compute the derivative of X with respect to the coordinate
   // directions
   TacsScalar X[3], Xa[4];
-  solidJacobian(X, Xa, N, Na, Nb, Xpts);
+  planeJacobian(X, Xa, N, Na, Nb, Xpts);
   
   // Compute the determinant of Xa and the transformation
   TacsScalar J[4];
@@ -1343,7 +1343,6 @@ void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
 						 const TacsScalar strainSens[], 
 						 const TacsScalar Xpts[],
 						 const TacsScalar vars[] ){
-
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1357,7 +1356,7 @@ void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
   // Compute the derivative of X with respect to the coordinate
   // directions
   TacsScalar X[3], Xa[4];
-  solidJacobian(X, Xa, N, Na, Nb, Xpts);
+  planeJacobian(X, Xa, N, Na, Nb, Xpts);
   
   // Compute the determinant of Xa and the transformation
   TacsScalar J[4];

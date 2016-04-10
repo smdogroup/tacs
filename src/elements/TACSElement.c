@@ -166,6 +166,9 @@ TestElement::TestElement( TACSElement * _element,
   generate_random_array(dvars, nvars);
   generate_random_array(ddvars, nvars);
   
+  // Set the time parameter
+  time = 0.0;
+
   // Default parameter values
   dh = 1e-7;
   print_level = 0;
@@ -207,9 +210,9 @@ int TestElement::testStiffnessMat( int col ){
   else {
     generate_random_array(vars_pert, nvars);
   }
-
+  
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  element->getJacobian(mat, alpha, beta, gamma,
+  element->getJacobian(time, mat, alpha, beta, gamma,
 		       Xpts, vars, dvars, ddvars);
 
   int one = 1;
@@ -218,10 +221,10 @@ int TestElement::testStiffnessMat( int col ){
            vars_pert, &one, &b, result, &one);
 
   forward_perturb(vars_copy, nvars, vars, vars_pert, dh);
-  element->getResidual(res, Xpts, vars_copy, dvars, ddvars);
+  element->getResidual(time, res, Xpts, vars_copy, dvars, ddvars);
 
   backward_perturb(vars_copy, nvars, vars, vars_pert, dh);
-  element->getResidual(res, Xpts, vars_copy, dvars, ddvars);
+  element->getResidual(time, res, Xpts, vars_copy, dvars, ddvars);
 
   form_approximate(res, temp, nvars, dh);
 
@@ -271,121 +274,6 @@ int TestElement::testStiffnessMat( int col ){
   return (max_err > fail_atol || max_rel > fail_rtol);
 }
 
-/*
-  Test the sensitivity of the matrix w.r.t. the design variables
-*/
-/*
-int TestElement::testMatDVSens( ElementMatrixType type ){
-  // Get the design variables associated with this element
-  int ndvs = element->getNumDesignVars();
-  int * dv_nums = new int[ ndvs ];
-  int dv_index = 0;
-  if (!element->getDesignVarNums(dv_nums, &dv_index, ndvs)){
-    fprintf(stderr, 
-            "The number of design variables defined by %s is inconsistent\n",
-            element->elementName());
-    return 0;
-  }
-  
-  int max_dv = 0;
-  for ( int k = 0; k < ndvs; k++ ){
-    if (dv_nums[k]+1 > max_dv){
-      max_dv = dv_nums[k]+1;
-    }
-  }
-
-  TacsScalar * dvs = new TacsScalar[ max_dv ];
-  element->getDesignVars(dvs, max_dv);
-
-  if (print_level){
-    fprintf(stderr, 
-	    "Testing the matrix sensivity w.r.t. the design variables \
-for element %s.\n",
-	    element->elementName());
-  }
-
-  int fail_flag = 0;
-
-  int nvars = element->numVariables();
-  TacsScalar * res = new TacsScalar[nvars];
-  TacsScalar * matSens = new TacsScalar[nvars*nvars];
-  TacsScalar * matSensApprox = new TacsScalar[nvars*nvars];
-  TacsScalar * temp = new TacsScalar[nvars*nvars];
-
-  const char * descript = "StiffMatDVSens";
-  if (type == MASS_MATRIX){
-    descript = "MassMatDVSens";
-  }
-  else if (type == GEOMETRIC_STIFFNESS_MATRIX){
-    descript = "GeoStiffMatDVSens";
-  }
-
-  for ( int k = 0; k < dv_index; k++ ){
-    // Compute the derivative of the residual here
-    element->getMatTypeDVSens(dv_nums[k], type, 1.0, matSens, vars, 
-			      Xpts, NORMAL);
-
-    // Test the residual here
-    TacsScalar x = dvs[dv_nums[k]];
-    dvs[dv_nums[k]] = x + dh;
-    element->setDesignVars(dvs, max_dv);
-    if (type == STIFFNESS_MATRIX){
-      element->getMat(matSensApprox, res, vars, Xpts, NORMAL);
-    }
-    else {
-      element->getMatType(type, 1.0, matSensApprox, vars, Xpts, NORMAL);
-    }
-
-    dvs[dv_nums[k]] = x - dh;
-    element->setDesignVars(dvs, max_dv);
-    if (type == STIFFNESS_MATRIX){
-      element->getMat(temp, res, vars, Xpts, NORMAL);
-    }
-    else {
-      element->getMatType(type, 1.0, temp, vars,  Xpts, NORMAL);
-    }
-    
-    dvs[dv_nums[k]] = x;
-    element->setDesignVars(dvs, max_dv);
-
-    form_approximate(matSensApprox, temp, nvars*nvars, dh);
-
-    // Compute the error
-    int max_err_index, max_rel_index;
-    double max_err = get_max_error(matSens, matSensApprox, 
-                                   nvars*nvars, &max_err_index);
-    double max_rel = get_max_rel_error(matSens, matSensApprox, 
-                                       nvars*nvars, &max_rel_index);
-   
-    if (print_level > 0){
-      fprintf(stderr, "Max Err dv %3d: %10.4e in component %d.\n",
-	      dv_nums[k], max_err, max_err_index);
-      fprintf(stderr, "Max REr dv %3d: %10.4e in component %d.\n",
-	      dv_nums[k], max_rel, max_rel_index);
-    }
-    // Print the error if required
-    if (print_level > 1){
-      fprintf(stderr, 
-              "The sensitivity of the matrix w.r.t. dv %d is \n",
-              dv_nums[k]);
-      print_error_components(stderr, descript,
-                             matSens, matSensApprox, nvars*nvars);
-    }
-    if (print_level){ fprintf(stderr, "\n"); }
-
-    fail_flag = (fail_flag || (max_err > fail_atol || max_rel > fail_rtol));
-  }
-
-  delete [] dv_nums;
-  delete [] dvs;
-  delete [] matSens;
-  delete [] matSensApprox;
-  delete [] temp;
-  delete [] res;
-
-  return fail_flag;
-}
-*/
 /*
   Test the derivative of the strain with respect to the state
   variables
@@ -489,7 +377,7 @@ int TestElement::testJacobianXptSens( const double pt[] ){
   generate_random_array(Xpt_pert, nnodes);
 
   // Compute the sensitivity
-  element->getJacobianXptSens(jacXptSens, pt, Xpts);
+  element->getDetJacobianXptSens(jacXptSens, pt, Xpts);
   
   int one = 1;
   TacsScalar a = 1.0, b = 0.0;
@@ -497,10 +385,10 @@ int TestElement::testJacobianXptSens( const double pt[] ){
            Xpt_pert, &one, &b, &jacSens, &one);
   
   forward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  jacSensApprox = element->getJacobian(pt, Xpt_copy);
+  jacSensApprox = element->getDetJacobian(pt, Xpt_copy);
 
   backward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  temp = element->getJacobian(pt, Xpt_copy);
+  temp = element->getDetJacobian(pt, Xpt_copy);
 
   form_approximate(&jacSensApprox, &temp, 1, dh);
 
@@ -536,92 +424,6 @@ int TestElement::testJacobianXptSens( const double pt[] ){
   return (max_err > fail_atol || max_rel > fail_rtol);
 }
 
-/*
-  Test the derivative of the strain w.r.t. the nodal coordinates
-*/
-/*
-int TestElement::testStrainXptSens( const double pt[] ){
-  // First, test the derivative w.r.t. the nodal coordinates
-  int nstress = element->numStresses();
-  int nnodes = 3*element->numNodes(); // actually 3 times the number of nodes
-  TacsScalar * temp = new TacsScalar[nstress];
-  TacsScalar * strainSens = new TacsScalar[nstress];
-  TacsScalar * strainSensApprox = new TacsScalar[nnodes];
-  TacsScalar * strainXptSens = new TacsScalar[nnodes];
-  TacsScalar * Xpt_pert = new TacsScalar[nnodes];
-  TacsScalar * Xpt_copy = new TacsScalar[nnodes];
-  
-  generate_random_array(Xpt_pert, nnodes);
-
-  // Compute the sensitivity
-  element->addStrainXptSens(temp, strainXptSens, pt, Xpts, vars);
-  element->getStrain(strainSens, pt, Xpts, vars);
-
-  if (print_level > 0){
-    int max_err_index, max_rel_index;
-    double max_err = get_max_error(strainSens, temp,
-                                   nstress, &max_err_index);
-    double max_rel = get_max_rel_error(strainSens, temp,
-                                       nstress, &max_rel_index);
-
-    fprintf(stderr, 
-	    "Testing consistency of the strain calculations for element %s\n",
-            element->elementName());
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
-    fprintf(stderr, "\n");
-  }
-
-  int one = 1;
-  TacsScalar a = 1.0, b = 0.0;
-  BLASgemv("N", &nstress, &nnodes, &a, strainXptSens, &nstress,
-           Xpt_pert, &one, &b, strainSens, &one);
-  
-  forward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  element->getStrain(strainSensApprox, pt, Xpt_copy, vars);
-    
-  backward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  element->getStrain(temp, pt, Xpt_copy, vars);
-    
-  form_approximate(strainSensApprox, temp, nstress, dh);
-    
-  // Compute the error
-  int max_err_index, max_rel_index;
-  double max_err = get_max_error(strainSens, strainSensApprox, 
-                                 nstress, &max_err_index);
-  double max_rel = get_max_rel_error(strainSens, strainSensApprox, 
-                                     nstress, &max_rel_index);
-    
-  if (print_level > 0){
-    fprintf(stderr, 
-            "Testing the strain sensivity w.r.t. the nodes for element %s.\n",
-            element->elementName());
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }  
-  // Print the error if required
-  if (print_level > 1){
-    fprintf(stderr, 
-            "The sensitivity of the strain w.r.t. the nodal locations\n");
-    print_error_components(stderr, "strainXptSens", 
-                           strainSens, strainSensApprox, nstress);
-  }
-  if (print_level){ fprintf(stderr, "\n"); }
-  
-  delete [] strainXptSens;
-  delete [] Xpt_pert;
-  delete [] strainSens;
-  delete [] strainSensApprox;
-  delete [] Xpt_copy;
-  delete [] temp;
-
-  return (max_err > fail_atol || max_rel > fail_rtol);
-}
-*/
 /*
   Test the implementation of a constitutive class
 */

@@ -5,8 +5,7 @@
   TACSAssembler assembles the residuals and matrices required for
   analysis and sensitivity analysis.
 
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
+  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
 */
 
 class TACSAssembler; 
@@ -85,6 +84,11 @@ class TACSAssembler : public TACSObject {
   // ------------------------------------------
   void finalize();
 
+  // Return the underlying TACS node numbers
+  // ---------------------------------------
+  void getTacsNodeNums( int localNodes[], int numNodes );
+  int getTacsNodeNums( const int ** _tacsNodeNums );
+
   // Set the nodes in TACS 
   // ---------------------
   void setNodes( BVec *X ); 
@@ -103,6 +107,15 @@ class TACSAssembler : public TACSObject {
   DistMat * createMat();
   FEMat * createFEMat( enum OrderingType order_type=TACS_AMD_ORDER );
 
+  // Set/get the simulation time
+  // ---------------------------
+  void setSimulationTime( double _time );
+  double getSimulationTime();
+
+  // Retrieve the initial conditions for the simulation
+  // --------------------------------------------------
+  void getInitConditions( BVec *vars, BVec *dvars );
+
   // Methods for manipulating internal variable values
   // -------------------------------------------------
   void zeroVariables();
@@ -111,15 +124,10 @@ class TACSAssembler : public TACSObject {
   
   // Methods for setting/getting variables
   // -------------------------------------
-  void getVariables( BVec * stateVars );
-  void setVariables( BVec * stateVars );
-  void setDotVariables( BVec * stateVars );
-  void setDDotVariables( BVec * stateVars );
-
-  // Return the underlying TACS node numbers
-  // ---------------------------------------
-  void getTacsNodeNums( int localNodes[], int numNodes );
-  int getTacsNodeNums( const int ** _tacsNodeNums );
+  void getVariables( BVec *stateVars );
+  void setVariables( BVec *stateVars );
+  void setDotVariables( BVec *stateVars );
+  void setDDotVariables( BVec *stateVars );
 
   // Residual and Jacobian assembly
   // ------------------------------
@@ -147,7 +155,6 @@ class TACSAssembler : public TACSObject {
   void evalSVSens( TACSFunction *function, BVec *vec );
   void evalAdjointResProducts( BVec **adjoint, int numAdjoints,
                                TacsScalar * dvSens, int numDVs );
-
   // void evalXptSens( TACSFunction **funcs, int numFuncs,
   //                   TACSVec *fXptSens );
   // void evalAdjointResXptSensProducts( BVec ** adjoint, int numAdjoints,
@@ -245,13 +252,17 @@ class TACSAssembler : public TACSObject {
   void initializeArrays();
 
   inline int getValues( const int perNode, const int elemNum, 
-			const TacsScalar * local, TacsScalar * vals );
+			const TacsScalar *local, TacsScalar *vals );
   inline int addValues( const int perNode, const int elemNum, 
-			const TacsScalar * vals, TacsScalar * local );
-  inline void addMatValues( TACSMat * A, const int elemNum, 
-			    const TacsScalar * mat,
-			    int * item, TacsScalar * temp );
+			const TacsScalar *vals, TacsScalar *local );
+  inline int setValues( const int perNode, const int elemNum,
+                        const TacsScalar *vals, TacsScalar *local );
+  inline void addMatValues( TACSMat *A, const int elemNum, 
+			    const TacsScalar *mat,
+			    int *item, TacsScalar *temp );
 
+  // Initialize the functions in the list if they have not been 
+  // initialized already
   void initializeFunctions( TACSFunction ** functions, int numFuncs );
 
   // The static member functions that are used to p-thread TACSAssembler
@@ -276,6 +287,9 @@ class TACSAssembler : public TACSObject {
   // These are created once - all subsequent calls use this data.
   BVecIndices *feMatBIndices, *feMatCIndices;
   BVecDistribute *feMatBMap, *feMatCMap;
+
+  // The global simulation time variable
+  double time;
 
   // variables/elements have been initialized
   int meshFinalizedFlag;
@@ -388,10 +402,11 @@ class TACSAssembler : public TACSObject {
   static const char * tacsName;
 };
 
-/*! 
+/*!  
   Get the values associated with an element from the local array.
 
-  These are private functions and therefore no bounds checking is performed.
+  These are private functions and therefore no bounds checking is
+  performed.
 
   local:  the local values of a vector (input)
   nnodes: the number of nodes
@@ -463,6 +478,32 @@ inline int TACSAssembler::getValues( const int perNode,
 	vals[4] = local[j+4];
 	vals[5] = local[j+5];
 	vals += 6;
+      }
+      break;
+    case 7:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 7*nodes[i];
+	vals[0] = local[j];
+	vals[1] = local[j+1];
+	vals[2] = local[j+2];
+	vals[3] = local[j+3];
+	vals[4] = local[j+4];
+	vals[6] = local[j+6];
+	vals += 7;
+      }
+      break;
+    case 8:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 8*nodes[i];
+	vals[0] = local[j];
+	vals[1] = local[j+1];
+	vals[2] = local[j+2];
+	vals[3] = local[j+3];
+	vals[4] = local[j+4];
+	vals[5] = local[j+5];
+        vals[6] = local[j+6];
+        vals[7] = local[j+7];
+	vals += 8;
       }
       break;
     default:
@@ -586,6 +627,58 @@ inline int TACSAssembler::getValues( const int perNode,
 	vals += 6;
       }
       break;
+    case 7:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 7*nodes[i];
+	if (j >= 0){
+	  vals[0] = local[j];
+	  vals[1] = local[j+1];
+	  vals[2] = local[j+2];
+	  vals[3] = local[j+3];
+	  vals[4] = local[j+4];
+	  vals[5] = local[j+5];
+          vals[6] = local[j+6];
+	}
+	else {
+	  j = 7*(numNodes-1)-j;
+	  vals[0] = local[j];
+	  vals[1] = local[j+1];
+	  vals[2] = local[j+2];
+	  vals[3] = local[j+3];
+	  vals[4] = local[j+4];
+	  vals[5] = local[j+5];
+          vals[6] = local[j+6];
+	}
+	vals += 7;
+      }
+      break;
+    case 8:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 8*nodes[i];
+	if (j >= 0){
+	  vals[0] = local[j];
+	  vals[1] = local[j+1];
+	  vals[2] = local[j+2];
+	  vals[3] = local[j+3];
+	  vals[4] = local[j+4];
+	  vals[5] = local[j+5];
+          vals[6] = local[j+6];
+          vals[7] = local[j+7];
+	}
+	else {
+	  j = 8*(numNodes-1)-j;
+	  vals[0] = local[j];
+	  vals[1] = local[j+1];
+	  vals[2] = local[j+2];
+	  vals[3] = local[j+3];
+	  vals[4] = local[j+4];
+	  vals[5] = local[j+5];
+          vals[6] = local[j+6];
+          vals[7] = local[j+7];
+	}
+	vals += 8;
+      }
+      break;
     default:
       for ( int i = 0; i < nnodes; i++ ){
 	int j = perNode*nodes[i];
@@ -612,7 +705,8 @@ inline int TACSAssembler::getValues( const int perNode,
 /*! 
   Add values associated with an element into the local array.
 
-  These are private functions and therefore no bounds checking is performed.
+  These are private functions and therefore no bounds checking is
+  performed.
 
   local:  the local values of a vector (output)
   nnodes: the number of nodes
@@ -684,6 +778,33 @@ inline int TACSAssembler::addValues( const int perNode,
 	local[j+4] += vals[4]; 
 	local[j+5] += vals[5]; 
 	vals += 6;
+      }
+      break;
+    case 7:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 7*nodes[i];
+	local[j] += vals[0]; 
+	local[j+1] += vals[1]; 
+	local[j+2] += vals[2]; 
+	local[j+3] += vals[3]; 
+	local[j+4] += vals[4]; 
+	local[j+5] += vals[5]; 
+	local[j+6] += vals[6]; 
+	vals += 7;
+      }
+      break;
+    case 8:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 8*nodes[i];
+	local[j] += vals[0]; 
+	local[j+1] += vals[1]; 
+	local[j+2] += vals[2]; 
+	local[j+3] += vals[3]; 
+	local[j+4] += vals[4]; 
+	local[j+5] += vals[5]; 
+        local[j+6] += vals[6]; 
+        local[j+7] += vals[7]; 
+	vals += 8;
       }
       break;
     default:
@@ -807,6 +928,58 @@ inline int TACSAssembler::addValues( const int perNode,
 	vals += 6;
       }
       break;
+    case 7:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 7*nodes[i];
+	if (j >= 0){
+	  local[j] += vals[0]; 
+	  local[j+1] += vals[1]; 
+	  local[j+2] += vals[2]; 
+	  local[j+3] += vals[3]; 
+	  local[j+4] += vals[4]; 
+	  local[j+5] += vals[5]; 
+          local[j+6] += vals[6]; 
+	}
+	else {
+	  j = 7*(numNodes-1)-j;
+	  local[j] += vals[0]; 
+	  local[j+1] += vals[1]; 
+	  local[j+2] += vals[2]; 
+	  local[j+3] += vals[3]; 
+	  local[j+4] += vals[4]; 
+	  local[j+5] += vals[5]; 
+          local[j+6] += vals[6]; 
+	}
+	vals += 7;
+      }
+      break;
+    case 8:
+      for ( int i = 0; i < nnodes; i++ ){
+	int j = 8*nodes[i];
+	if (j >= 0){
+	  local[j] += vals[0]; 
+	  local[j+1] += vals[1]; 
+	  local[j+2] += vals[2]; 
+	  local[j+3] += vals[3]; 
+	  local[j+4] += vals[4]; 
+	  local[j+5] += vals[5]; 
+          local[j+6] += vals[6]; 
+          local[j+7] += vals[7]; 
+	}
+	else {
+	  j = 8*(numNodes-1)-j;
+	  local[j] += vals[0]; 
+	  local[j+1] += vals[1]; 
+	  local[j+2] += vals[2]; 
+	  local[j+3] += vals[3]; 
+	  local[j+4] += vals[4]; 
+	  local[j+5] += vals[5]; 
+          local[j+6] += vals[6]; 
+          local[j+7] += vals[7]; 
+	}
+	vals += 8;
+      }
+      break;
     default:
       for ( int i = 0; i < nnodes; i++ ){
 	int j = perNode*nodes[i];
@@ -825,6 +998,142 @@ inline int TACSAssembler::addValues( const int perNode,
       }
       break;
     }
+  }
+
+  return nnodes;
+}
+
+/*!  
+  Set the values associated with an element from the local array.
+
+  These are private functions and therefore no bounds checking is
+  performed.
+
+  nnodes: the number of nodes
+  nodes:  the node numbers
+  vals:   the values from each node
+  local:  the local values of a vector output
+*/
+inline int TACSAssembler::setValues( const int perNode,
+				     const int elemNum, 
+				     const TacsScalar *vals,
+				     TacsScalar *local ){
+  int start = elementNodeIndex[elemNum];
+  int nnodes = elementNodeIndex[elemNum+1] - start;
+  const int *nodes = &elementLocalNodes[start];
+
+  switch (perNode){
+  case 1:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = nodes[i];
+      if (j >= 0){
+	local[j] = vals[0];
+      }
+      vals++;
+    }
+    break;
+  case 2:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 2*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+      }
+      vals += 2;
+    }
+    break;
+  case 3:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 3*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+        local[j+2] = vals[2];
+      }
+      vals += 3;
+    }
+    break;
+  case 4:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 4*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+        local[j+2] = vals[2];
+        local[j+3] = vals[3];
+      }
+      vals += 4;
+    }
+    break;
+  case 5:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 5*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+        local[j+2] = vals[2];
+        local[j+3] = vals[3];
+        local[j+4] = vals[4];
+      }
+      vals += 5;
+    }
+    break;
+  case 6:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 6*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+        local[j+2] = vals[2];
+        local[j+3] = vals[3];
+        local[j+4] = vals[4];
+        local[j+5] = vals[5];
+      }
+      vals += 6;
+    }
+    break;
+  case 7:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 7*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+        local[j+2] = vals[2];
+        local[j+3] = vals[3];
+        local[j+4] = vals[4];
+        local[j+5] = vals[5];
+        local[j+6] = vals[6];
+      }
+      vals += 7;
+    }
+    break;
+  case 8:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = 8*nodes[i];
+      if (j >= 0){
+        local[j] = vals[0];
+        local[j+1] = vals[1];
+        local[j+2] = vals[2];
+        local[j+3] = vals[3];
+        local[j+4] = vals[4];
+        local[j+5] = vals[5];
+        local[j+6] = vals[6];
+        local[j+7] = vals[7];
+      }
+      vals += 8;
+    }
+    break;
+  default:
+    for ( int i = 0; i < nnodes; i++ ){
+      int j = perNode*nodes[i];
+      if (j >= 0){
+        for ( int n = 0; n < perNode; n++, j++ ){
+          local[j] = vals[n];
+        }
+      }
+      vals += perNode;
+    }
+    break;
   }
 
   return nnodes;
