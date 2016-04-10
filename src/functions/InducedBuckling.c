@@ -180,73 +180,75 @@ void InducedBuckling::elementWiseEval( const int iter,
  
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[3];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[3];
+    if (iter == 0){    
+      // With the first iteration, find the maximum over the domain
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        element->getGaussWtsPts(i, pt);
 
-  if (iter == 0){    
-    // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      element->getGaussWtsPts(i, pt);
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
 
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
-
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= load_factor;
-      }      
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= load_factor;
+        }      
       
-      // Determine the buckling criteria
-      TacsScalar buckling;
-      constitutive->buckling(strain, &buckling);
+        // Determine the buckling criteria
+        TacsScalar buckling;
+        constitutive->buckling(strain, &buckling);
 
-      // Set the maximum buckling load
-      if (buckling > work[0]){
-	work[0] = buckling;
+        // Set the maximum buckling load
+        if (buckling > work[0]){
+          work[0] = buckling;
+        }
       }
     }
-  }
-  else {
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      element->getGaussWtsPts(i, pt);
+    else {
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        element->getGaussWtsPts(i, pt);
 
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
 
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= load_factor;
-      }
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= load_factor;
+        }
 
-      // Determine the buckling criteria again
-      TacsScalar buckling;
-      constitutive->buckling(strain, &buckling);
+        // Determine the buckling criteria again
+        TacsScalar buckling;
+        constitutive->buckling(strain, &buckling);
 
-      if (norm_type == POWER || norm_type == DISCRETE_POWER){
-        TacsScalar fp = pow(fabs(buckling/maxBuckling), P);
-        work[1] += (buckling/maxBuckling)*fp;
-        work[2] += fp;
-      }
-      else if (norm_type == POWER_SQUARED || norm_type == DISCRETE_POWER_SQUARED){
-        TacsScalar fp = pow(fabs(buckling/maxBuckling), P);
-        work[1] += (buckling*buckling/maxBuckling)*fp;
-        work[2] += fp;
-      }
-      else if (norm_type == EXPONENTIAL || norm_type == DISCRETE_EXPONENTIAL){
-        TacsScalar efp = exp(P*(buckling - maxBuckling));
-        work[1] += (buckling/maxBuckling)*efp;
-        work[2] += efp;
-      }
-      else if (norm_type == EXPONENTIAL_SQUARED || norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-        TacsScalar efp = exp(P*(buckling - maxBuckling));
-        work[1] += (buckling*buckling/maxBuckling)*efp;
-        work[2] += efp;
+        if (norm_type == POWER || 
+            norm_type == DISCRETE_POWER){
+          TacsScalar fp = pow(fabs(buckling/maxBuckling), P);
+          work[1] += (buckling/maxBuckling)*fp;
+          work[2] += fp;
+        }
+        else if (norm_type == POWER_SQUARED || 
+                 norm_type == DISCRETE_POWER_SQUARED){
+          TacsScalar fp = pow(fabs(buckling/maxBuckling), P);
+          work[1] += (buckling*buckling/maxBuckling)*fp;
+          work[2] += fp;
+        }
+        else if (norm_type == EXPONENTIAL || 
+                 norm_type == DISCRETE_EXPONENTIAL){
+          TacsScalar efp = exp(P*(buckling - maxBuckling));
+          work[1] += (buckling/maxBuckling)*efp;
+          work[2] += efp;
+        }
+        else if (norm_type == EXPONENTIAL_SQUARED || 
+                 norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+          TacsScalar efp = exp(P*(buckling - maxBuckling));
+          work[1] += (buckling*buckling/maxBuckling)*efp;
+          work[2] += efp;
+        }
       }
     }
   }
@@ -257,8 +259,8 @@ void InducedBuckling::elementWiseEval( const int iter,
   post-evaluation code once.
 */
 void InducedBuckling::postEvalThread( const int iter,
-				     int * iwork, 
-				     TacsScalar * work ){
+                                      int * iwork, 
+                                      TacsScalar * work ){
   if (iter == 0){
     if (work[0] > maxBuckling){
       maxBuckling = work[0];
@@ -336,67 +338,68 @@ void InducedBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * bucklingSens = &work[max_stresses];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * bucklingSens = &work[max_stresses];
-
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
         
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
             
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= load_factor;      
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= load_factor;      
+      }
 
-    // Determine the strain buckling criteria
-    TacsScalar buckling;
-    constitutive->buckling(strain, &buckling);
+      // Determine the strain buckling criteria
+      TacsScalar buckling;
+      constitutive->buckling(strain, &buckling);
     
-    // Determine the sensitivity of the buckling criteria to the 
-    // design variables and stresses
-    constitutive->bucklingStrainSens(strain, bucklingSens);
+      // Determine the sensitivity of the buckling criteria to the 
+      // design variables and stresses
+      constitutive->bucklingStrainSens(strain, bucklingSens);
     
-    // Compute the derivative of the induced aggregation with respect
-    // to the buckling function
-    TacsScalar s = 0.0;
-    if (norm_type == POWER || norm_type == DISCRETE_POWER){
-      TacsScalar g = buckling/maxBuckling;
-      TacsScalar fp = pow(fabs(g), P);
+      // Compute the derivative of the induced aggregation with respect
+      // to the buckling function
+      TacsScalar s = 0.0;
+      if (norm_type == POWER || norm_type == DISCRETE_POWER){
+        TacsScalar g = buckling/maxBuckling;
+        TacsScalar fp = pow(fabs(g), P);
 
-      s = ((1.0 + P)*g*bucklingDenom - 
-		    P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);    
+        s = ((1.0 + P)*g*bucklingDenom - 
+             P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);    
+      }
+      else if (norm_type == POWER_SQUARED || 
+               norm_type == DISCRETE_POWER_SQUARED){
+        TacsScalar g = buckling/maxBuckling;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((2.0 + P)*buckling*g*bucklingDenom - 
+             P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);    
+      }
+      else if (norm_type == EXPONENTIAL || 
+               norm_type == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(buckling - maxBuckling));
+
+        s = (((1.0 + P*buckling)*bucklingDenom -
+              P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == EXPONENTIAL_SQUARED || 
+               norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(buckling - maxBuckling));
+
+        s = (((2.0 + P*buckling)*buckling*bucklingDenom -
+              P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
+      }
+
+      // Determine the sensitivity of the state variables to SV
+      element->addStrainSVSens(elemSVSens, pt, load_factor*s,
+                               bucklingSens, Xpts, vars);
     }
-    else if (norm_type == POWER_SQUARED || norm_type == DISCRETE_POWER_SQUARED){
-      TacsScalar g = buckling/maxBuckling;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((2.0 + P)*buckling*g*bucklingDenom - 
-		    P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);    
-    }
-    else if (norm_type == EXPONENTIAL || norm_type == DISCRETE_EXPONENTIAL){
-      TacsScalar efp = exp(P*(buckling - maxBuckling));
-
-      s = (((1.0 + P*buckling)*bucklingDenom -
-		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == EXPONENTIAL_SQUARED || norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(buckling - maxBuckling));
-
-      s = (((2.0 + P*buckling)*buckling*bucklingDenom -
-		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
-    }
-
-    // Determine the sensitivity of the state variables to SV
-    element->addStrainSVSens(elemSVSens, pt, load_factor*s,
-			     bucklingSens, Xpts, vars);
   }
 }
 
@@ -433,66 +436,67 @@ void InducedBuckling::elementWiseXptSens( TacsScalar fXptSens[],
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * bucklingSens = &work[max_stresses];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * bucklingSens = &work[max_stresses];
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
 
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    element->getGaussWtsPts(i, pt);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
 
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= load_factor;
+      }
 
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= load_factor;
+      // Determine the strain buckling criteria
+      TacsScalar buckling; 
+      constitutive->buckling(strain, &buckling);
+
+      // Determine the sensitivity of the buckling criteria to 
+      // the design variables and stresses
+      constitutive->bucklingStrainSens(strain, bucklingSens);
+
+      // Compute the derivative of the induced aggregation with respect
+      // to the buckling function
+      TacsScalar s = 0.0;
+      if (norm_type == POWER || norm_type == DISCRETE_POWER){
+        TacsScalar g = buckling/maxBuckling;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((1.0 + P)*g*bucklingDenom - 
+             P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == POWER_SQUARED || 
+               norm_type == DISCRETE_POWER_SQUARED){
+        TacsScalar g = buckling/maxBuckling;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((2.0 + P)*buckling*g*bucklingDenom - 
+             P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == EXPONENTIAL || 
+               norm_type == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(buckling - maxBuckling));
+
+        s = (((1.0 + P*buckling)*bucklingDenom -
+              P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == EXPONENTIAL_SQUARED || 
+               norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(buckling - maxBuckling));
+
+        s = (((2.0 + P*buckling)*buckling*bucklingDenom -
+              P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
+      }
+
+      element->addStrainXptSens(fXptSens, pt, s*load_factor,
+                                bucklingSens, Xpts, vars);
     }
-
-    // Determine the strain buckling criteria
-    TacsScalar buckling; 
-    constitutive->buckling(strain, &buckling);
-
-    // Determine the sensitivity of the buckling criteria to 
-    // the design variables and stresses
-    constitutive->bucklingStrainSens(strain, bucklingSens);
-
-    // Compute the derivative of the induced aggregation with respect
-    // to the buckling function
-    TacsScalar s = 0.0;
-    if (norm_type == POWER || norm_type == DISCRETE_POWER){
-      TacsScalar g = buckling/maxBuckling;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((1.0 + P)*g*bucklingDenom - 
-		    P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == POWER_SQUARED || norm_type == DISCRETE_POWER_SQUARED){
-      TacsScalar g = buckling/maxBuckling;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((2.0 + P)*buckling*g*bucklingDenom - 
-		    P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == EXPONENTIAL || norm_type == DISCRETE_EXPONENTIAL){
-      TacsScalar efp = exp(P*(buckling - maxBuckling));
-
-      s = (((1.0 + P*buckling)*bucklingDenom -
-		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == EXPONENTIAL_SQUARED || norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(buckling - maxBuckling));
-
-      s = (((2.0 + P*buckling)*buckling*bucklingDenom -
-		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
-    }
-
-    element->addStrainXptSens(fXptSens, pt, s*load_factor,
-			      bucklingSens, Xpts, vars);
   }
 }
 
@@ -520,60 +524,61 @@ void InducedBuckling::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){  
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      element->getGaussWtsPts(i, pt);
     
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
     
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= load_factor;        
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= load_factor;        
+      }
 
-    // Determine the strain buckling criteria
-    TacsScalar buckling; 
-    constitutive->buckling(strain, &buckling);
+      // Determine the strain buckling criteria
+      TacsScalar buckling; 
+      constitutive->buckling(strain, &buckling);
 
-    // Compute the derivative of the induced aggregation with
-    // respect to the buckling function
-    TacsScalar s = 0.0;
-    if (norm_type == POWER || norm_type == DISCRETE_POWER){
-      TacsScalar g = buckling/maxBuckling;
-      TacsScalar fp = pow(fabs(g), P);
+      // Compute the derivative of the induced aggregation with
+      // respect to the buckling function
+      TacsScalar s = 0.0;
+      if (norm_type == POWER || norm_type == DISCRETE_POWER){
+        TacsScalar g = buckling/maxBuckling;
+        TacsScalar fp = pow(fabs(g), P);
       
-      s = ((1.0 + P)*g*bucklingDenom - 
-		    P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == POWER_SQUARED || norm_type == DISCRETE_POWER_SQUARED){
-      TacsScalar g = buckling/maxBuckling;
-      TacsScalar fp = pow(fabs(g), P);
+        s = ((1.0 + P)*g*bucklingDenom - 
+             P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == POWER_SQUARED || 
+               norm_type == DISCRETE_POWER_SQUARED){
+        TacsScalar g = buckling/maxBuckling;
+        TacsScalar fp = pow(fabs(g), P);
       
-      s = ((2.0 + P)*buckling*g*bucklingDenom - 
-		    P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == EXPONENTIAL || norm_type == DISCRETE_EXPONENTIAL){
-      TacsScalar efp = exp(P*(buckling - maxBuckling));
+        s = ((2.0 + P)*buckling*g*bucklingDenom - 
+             P*bucklingNumer)*fp/(g*bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == EXPONENTIAL || 
+               norm_type == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(buckling - maxBuckling));
 	  
-      s = (((1.0 + P*buckling)*bucklingDenom -
-		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
-    }
-    else if (norm_type == EXPONENTIAL_SQUARED || norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(buckling - maxBuckling));
+        s = (((1.0 + P*buckling)*bucklingDenom -
+              P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
+      }
+      else if (norm_type == EXPONENTIAL_SQUARED || 
+               norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(buckling - maxBuckling));
 	  
-      s = (((2.0 + P*buckling)*buckling*bucklingDenom -
-		     P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
-    }
+        s = (((2.0 + P*buckling)*buckling*bucklingDenom -
+              P*maxBuckling*bucklingNumer)*efp)/(bucklingDenom*bucklingDenom);
+      }
 
-    // Add the contribution to the sensitivity of the buckling load
-    constitutive->addBucklingDVSens(strain, s,
-				   fdvSens, numDVs);
+      // Add the contribution to the sensitivity of the buckling load
+      constitutive->addBucklingDVSens(strain, s,
+                                      fdvSens, numDVs);
+    }
   }
 }

@@ -4,19 +4,168 @@
 /*
   Basic Element and ElementTraction definitions
 
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
+  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved.
 
-  The purpose of this file is to provide an interface for creating and storing 
-  different instances of the finite elements that will be used by TACS. 
-  This is what should be extended when including more elements and not the 
-  underlying TACS implementation itself. 
+  The purpose of this file is to provide an interface for creating and
+  storing different instances of the finite elements that will be used
+  by TACS.  This is what should be extended when including more
+  elements and not the underlying TACS implementation itself.
 */
 
 #include "TACSObject.h"
 #include "TACSConstitutive.h"
 
-enum ElementType { POINT_ELEMENT,
+/*
+  TACSElement is the base class from which all other elements inherit.
+  The functions in this class are broken into a few different groups:
+
+  Functions inherited from TACSOptObject:
+  ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void getDesignVarRange( TacsScalar lowerBound[], 
+			  TacsScalar upperBound[], int numDVs );
+
+  These functions are used to set and retrieve variable information 
+  and set up internal data for sensitivity calculations. Further details
+  can be found in TACSObject.h
+
+  Required information about the sizes of stresses/nodes/variables
+  ----------------------------------------------------------------
+  int numDisplacements();
+  int numStresses();
+  int numNodes();
+  int numVariables();
+
+  These functions return the size of the displacements (number of
+  degrees of freedom at each node), the number of nodes, the number of
+  stresses and the number of variables required for this element.
+
+  Information required for output visualization
+  ---------------------------------------------
+
+  const char * elementName();
+  const char * displacementName( int i );
+  const char * stressName( int i );
+  const char * strainName( int i );
+  const char * extraName( int i );
+  int numExtras();
+  ElementType getElementType();
+
+  The functions returning char* provide a name for the
+  displacement/strain etc.  components that are useful for writing
+  output files with named fields. numDisplacements() etc. provides the
+  number of components in each field. getElementType() provides an
+  enumerated type that idicates the underlying type of element (BEAM,
+  SHELL etc.). Note that different element classes can return the same
+  ElementType.
+  
+  Visualization is a critical component of any finite-element analysis.
+  The following functions are used to retrieve the element-level data
+  for post-analysis visualization. 
+
+  addOutputCount(): Add the number of nodes and number of csr entries
+  that are requried for this element
+
+  getOutputData(): Get the output data of a given type from the element.
+
+  getOutputConnectivity(): Get the connectivity of the data
+
+  Functions for analysis:
+  -----------------------
+  
+  getInitCondition(): Return the initial conditions associated with
+  the element.
+
+  computeEnergies(): Compute the kinetic and potential energies
+  of this element at the provided time
+
+  getResisudal(): Returns the residual associated with this element.
+  This includes all time-dependent components of the residual.
+
+  getJacobian(): Returns the Jacobian of the governing equations
+  provided by the getResidual() call. 
+
+  getMatType(): Return a time-independent element matrix of a given
+  type as specified by the ElementMatrixType enumeration. This can be
+  used to evaluate mass and geometric stiffness matrices. Note that
+  not all element classes implement all the matrix types.
+
+  Functions for sensitivity analysis:
+  -----------------------------------
+  
+  There are two main types of derivatives that are handled within the
+  TACSElement class: material design variables and geometric design
+  variables. The underlying assumption in TACS is that the geometry
+  variables only change the nodal coordinates. Thus, all geometric
+  sensivity information can be expanded through a derivative of the
+  element residuals w.r.t. the nodal coordinates.
+
+  For efficiency reasons, the TACSElement code computes the derivative
+  of the product of the adjoint variables and the element residuals.
+  The derivative of this product can be computed more efficiently than
+  computing the derivative with respect to each design variable 
+  or node in sequence. The sensitivity functions are:
+
+  addInitConditionAdjResProduct(): Add the derivative of the product
+  of the adjoint variables and the initial conditions with respect
+  to material (or other) design variables
+
+  addInitConditionAdjResXptProduct(): Compute the derivative of the
+  product of the adjoint variables and the initial conditions with
+  respect to node locations.
+
+  addAdjResProduct(): Add the derivative of the product of the adjoint
+  variables and the residual to the material design variable vector
+  
+  getAdjResXptProduct(): Get the derivative of the product of the
+  adjoint variables and the adjoint with respect to the node locations
+
+  addMatDVSensInnerProduct(): Compute the derivative of the inner
+  product of the given matrix type with respect to the material design
+  variables.
+
+  getMatSVSensInnerProduct(): Compute the derivative of the inner
+  product of the given matrix type with respect to the state
+  variables.  (This is used when the matrix type depends on the state
+  variables e.g. the geometric stiffness matrix)
+
+  Post-processing functions:
+  --------------------------
+
+  There are several post-processing calculations that are useful for
+  evaluating functions of interest. These functions are primarily
+  used in the TACSFunction classes for evaluating output functions
+  of interest.
+
+  TACSConstitutive * getConstitutive(): return the constitutive
+  relationship object (this may return NULL if no constitutive class
+  is provided).
+
+  getNumGaussPts(): Get the number of quadrature points in the element
+  
+  getGaussWtsPts(): Get the quadrature locations and weights
+
+  getShapeFunctions(): Return the shape functions for this element
+
+  getJacobian(): Get the determinant of the Jacobian evaluated at the 
+  specified parametric location
+
+  getJacobianXptSens(): Return the derivative of the determinant of 
+  the Jacobian w.r.t. all nodal coordinates.
+
+  getStrain(): Retrieve the strain evaluated at a parametric location 
+
+  addStrainXptSens(): Add the derivative of the strain w.r.t. all
+  nodal locations to the provided input
+
+  addStrainSVSens(): Add the derivative of the strain w.r.t. all nodal
+  displacements
+*/
+
+// The element types used for visualization
+enum ElementType { ELEMENT_NONE,
+                   POINT_ELEMENT,
 		   EULER_BEAM,
 		   TIMOSHENKO_BEAM,
 		   PLANE_STRESS,
@@ -33,214 +182,38 @@ enum ElementMatrixType { STIFFNESS_MATRIX,
 //! Provide the matrix in either the normal or the transpose 
 enum MatrixOrientation { NORMAL, TRANSPOSE };
 
-
-/*
-  This is the base Element class that all other elements inherit.
-  The functions in this class are broken into a few different groups:
-
-  Functions inherited from TACSOptObject:
-  ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs ) const;
-  void getDesignVarRange( TacsScalar lowerBound[], 
-			  TacsScalar upperBound[], int numDVs ) const;
-
-  These functions are used to set and retrieve variable information 
-  and set up internal data for sensitivity calculations. Further details
-  can be found in TACSObject.h
-
-  Information about sizes and names of variables:
-  -----------------------------------------------
-
-  const char * elementName() const;
-  const char * displacementName( int i ) const;
-  const char * stressName( int i ) const;
-  const char * strainName( int i ) const;
-  const char * extraName( int i ) const;
-  int numDisplacements() const;
-  int numStresses() const;
-  int numNodes() const;
-  int numVariables() const;
-  int numExtras() const;
-  ElementType getElementType();
-
-  The functions returning char* provide a name for the
-  displacement/strain etc.  components that is useful for writing
-  output files with named fields. numDisplacements() etc. provides the
-  number of components in each field. getElementType() provides an
-  enumerated type that idicates the underlying type of element (BEAM,
-  SHELL etc.). Note that different element classes can return the same
-  ElementType. 
-
-  Functions for analysis:
-  -----------------------
-
-  getRes(): Returns the residual of the strain energy components for
-  the element. For a linear element this is Ke * ue (where Ke and ue
-  are the element stiffness matrix and ue are the element
-  variables). Note that surface traction forces and nodal loads are
-  applied elsewhere.
-
-  getMat(): Returns the element stiffness matrix and residual (the
-  same as above) for given values of the local variables. For a linear
-  element this returns Ke, while for a nonlinear element this returns
-  the tangent stiffness matrix.
-
-  getMatType(): Return an element matrix of a given type as specified
-  by the ElementMatrixType enumeration. This can be used to evaluate
-  mass and geometric stiffness matrices. Note that not all element
-  classes implement all the matrix types.
-
-  Functions for sensitivity analysis:
-  -----------------------------------
-  
-  There are two types of sensitivities that are considered: one for
-  material design variables and the other for geometric design
-  variables.  One important assumption is that the geometry variables
-  only change the nodal coordinates. Thus, all geometric sensivity
-  information can be expanded through a derivative of the element
-  residuals w.r.t. the nodal coordinates.
-
-  There are two types of ways sensitivity information is returned:
-  For the residual calculations, the derivative of the residual w.r.t.
-  the design variable or all nodal coordinates are returned. 
-  For the matrix sensitivity routines for the nodal sensitivities,
-  the directional derivative is returned: ie, the derivative times the
-  components of the sensitivity. (This avoids trying to return a 3rd
-  order tensor.)
-
-  getResDVSens(): Return the derivative of the residual w.r.t. the
-  currently set design variable. These are usually just the material
-  design variables.
-
-  getResXptSens(): Return the (transpose of the) derivative of the
-  residual with respect to the nodal coordinates. (Note that the
-  transpose is returned because it is easier to compute it in this
-  manner. Thus res[i] i = 0 ... nvars-1 represents the derivative
-  w.r.t. the first nodal coordinate Xpt[0])
-
-  getMatTypeDVSens(): Return the derivative of a given matrix type
-  w.r.t. the set design variable.
-
-  getMatTypeXptSens(): Return the derivative of the matrix w.r.t. the
-  nodal coordinates times the sensitivity of the nodal coordinates.
-  This is a projected derivative. Note that these computations are
-  often much more computationally expensive and can take a
-  considerable amount of time.
-
-  Post-processing functions:
-  --------------------------
-
-  There are several post-processing calculations that are useful for
-  evaluating structural functions of interest. These may be used to
-  obtain the underlying consitutive class, the Gauss points and
-  weights, the determinant of the Jacobian and the the strain and
-  derivative of the strain. These are used by the TACSFunction classes
-  for evaluating the compliance and the K.S. function.
-
-  TACSConstitutive * getConstitutive(): return the constitutive relationship
-
-  getJacobian(): Get the determinant of the Jacobian evaluated at the 
-  specified parametric location
-
-  getJacobianXptSens(): Return the derivative of the determinant of 
-  the Jacobian w.r.t. all nodal coordinates.
-
-  getPtwiseStrain(): Retrieve the strain evaluated at a parametric location 
-
-  getPtwiseStrainXptSens(): The derivative of the strain w.r.t. all nodal
-  locations
-
-  addPtwiseStrainSVSens(): The derivative of the strain w.r.t. all nodal
-  displacements  
-
-  Functions for aerostructural coupling
-  -------------------------------------
-
-  The following functions are used to transmit a set of forces to the
-  structure through a series of rigid links. The absolution location
-  of the aerodynamic points are provided (Xa). These functions then
-  evaluate the rigid displacements (RD) and forces (RF) by evaluating
-  the structural surface at the provided parametric location. 
-  
-  getClosestPt(): Get the parametric locatio of the closest point on
-  the element to the physical location provided. This is required for
-  pre-processing the closest parametric locations to all the
-  aerodynamic points in advance.
-
-  The displacement extrapolation functions:
-  getRD(): Extrapolate the displacement to the aerodynamic surface
-
-  getRDXptSens(): Take the sensitivity of the extranpolation to the
-  aerodynamic surface w.r.t. the nodal locations - this provides a
-  projected derivative.
-
-  getRDTranspose(): The transpose operation - this is required for
-  computing the aerostructural adjoint
-
-  The consistent force calculation:
-  getRF(): Get the force for the element given the aerodynamic force
-  and the parametric location 
-  
-  getRFXptSens(): Get the derivative of the force w.r.t. the nodal 
-  locations - a projected derivative.
-
-  getRFTranspose(): Get the transpose of the force transfer
-
-  Functions for generating output
-  -------------------------------
-  
-  Visualization is a critical component of any finite-element analysis.
-  The following functions are used to retrieve the element-level data
-  for post-analysis visualization. 
-
-  addOutputCount(): Add the number of nodes and number of csr entries
-  that are requried for this element
-
-  getOutputData(): Get the output data of a given type from the element.
-
-  getOutputConnectivity(): Get the connectivity of the data
-*/
+// The TACSElement base class
 class TACSElement : public TACSOptObject {
  public: 
-  // These constants are used to denote which output to obtain
-  // ---------------------------------------------------------
-  static const unsigned int OUTPUT_NODES = 1;
-  static const unsigned int OUTPUT_DISPLACEMENTS = 2;
-  static const unsigned int OUTPUT_STRAINS = 4;
-  static const unsigned int OUTPUT_STRESSES = 8;
-  static const unsigned int OUTPUT_EXTRAS = 16;
-  static const unsigned int OUTPUT_COORDINATES = 32;
-
   TACSElement( int _componentNum = 0 ){
     componentNum = _componentNum;
   }
   virtual ~TACSElement(){}
 
-  // Retrieve information about the name and quantity of variables
-  // -------------------------------------------------------------
-  virtual const char * elementName() = 0;
-  virtual const char * displacementName( int i ) = 0;
-  virtual const char * stressName( int i ) = 0;
-  virtual const char * strainName( int i ) = 0;
-  virtual const char * extraName( int i ) = 0;
-
   // Get the number of displacements, stresses, nodes, etc.
   // ------------------------------------------------------
-  virtual int numDisplacements() = 0;
-  virtual int numStresses() = 0;
-  virtual int numNodes() = 0;
-  virtual int numVariables() = 0;
-  virtual int numExtras() = 0;
-  virtual enum ElementType getElementType() = 0;
+  virtual int numDisplacements() = 0; // Degrees of freedom per node
+  virtual int numStresses() = 0; // Number of stresses (possibly zero)
+  virtual int numNodes() = 0; // Number of nodes for this element
+  
+  // Number of variables for this element (nodes times dof/node)
+  virtual int numVariables(){ 
+    return numNodes()*numDisplacements();
+  }
 
-  // Return the name of the element
-  // ------------------------------
-  virtual const char * TACSObjectName(){ return this->elementName(); }
+  // Retrieve the initial conditions and add the derivative
+  // ------------------------------------------------------
+  virtual void getInitCondition( TacsScalar vars[],
+                                 TacsScalar dvars[],
+                                 const TacsScalar Xpts[] ){
+    memset(vars, 0, numVariables()*sizeof(TacsScalar));
+    memset(dvars, 0, numVariables()*sizeof(TacsScalar));
+  }
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  virtual void computeEnergies( TacsScalar *_Te, 
+  virtual void computeEnergies( double time,
+                                TacsScalar *_Te, 
 				TacsScalar *_Pe,
 				const TacsScalar Xpts[],
 				const TacsScalar vars[],
@@ -248,7 +221,7 @@ class TACSElement : public TACSOptObject {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  virtual void getResidual( TacsScalar res[],
+  virtual void getResidual( double time, TacsScalar res[],
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
 			    const TacsScalar dvars[],
@@ -256,32 +229,42 @@ class TACSElement : public TACSOptObject {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  virtual void getJacobian( TacsScalar J[],
+  virtual void getJacobian( double time, TacsScalar J[],
 			    double alpha, double beta, double gamma,
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
 			    const TacsScalar dvars[],
 			    const TacsScalar ddvars[] ) = 0;
 
-  // Add the product of the adjoint with the derivative of the design variables
-  // --------------------------------------------------------------------------
-  virtual void addAdjResProduct( double scale,
+  // Add the product of the initial condition with the adjoint variables
+  // -------------------------------------------------------------------
+  virtual void addInitConditionAdjResProduct( TacsScalar fdvSens[], int dvLen,
+                                              const TacsScalar adjVars[],
+                                              const TacsScalar adjDVars[],
+                                              const TacsScalar Xpts[] ){}
+  virtual void getInitConditionAdjResXptProduct( TacsScalar fXptSens[],
+                                                 const TacsScalar adjVars[],
+                                                 const TacsScalar adjDVars[],
+                                                 const TacsScalar Xpts[] ){
+    memset(fXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
+  }
+
+  // Add the product of the adjoint variables with the derivative of the residual
+  // ----------------------------------------------------------------------------
+  virtual void addAdjResProduct( double time, double scale,
 				 TacsScalar dvSens[], int dvLen,
 				 const TacsScalar psi[],
 				 const TacsScalar Xpts[],
 				 const TacsScalar vars[],
 				 const TacsScalar dvars[],
 				 const TacsScalar ddvars[] ){}
-
-  // Add the product of the adjoint with the derivative of the design variables
-  // --------------------------------------------------------------------------  
-  virtual void getAdjResXptProduct( TacsScalar XptSens[],
+  virtual void getAdjResXptProduct( double time, TacsScalar fXptSens[],
 				    const TacsScalar psi[],
 				    const TacsScalar Xpts[],
 				    const TacsScalar vars[],
 				    const TacsScalar dvars[],
 				    const TacsScalar ddvars[] ){
-    memset(XptSens, 0, 3*numNodes()*sizeof(TacsScalar));
+    memset(fXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
   }
 
   // Retrieve a specific time-independent matrix from the element
@@ -317,32 +300,34 @@ class TACSElement : public TACSOptObject {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  virtual TACSConstitutive * getConstitutive() = 0;
+  virtual TACSConstitutive * getConstitutive(){ return NULL; }
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
-  virtual int getNumGaussPts() = 0;
+  virtual int getNumGaussPts(){ return 0; }
 
   // Get the quadrature points and weights
   // -------------------------------------
-  virtual double getGaussWtsPts( const int num, double * pt ) = 0;
+  virtual double getGaussWtsPts( const int num, double * pt ){}
 
   // Get the shape functions from the element
   // ----------------------------------------
-  virtual void getShapeFunctions( const double pt[], double N[] ) = 0;
+  virtual void getShapeFunctions( const double pt[], double N[] ){}
   
-  // Return the determinant of the Jacobian at this point
-  // ----------------------------------------------------
-  virtual TacsScalar getJacobian( const double * pt, 
-				  const TacsScalar Xpts[] ) = 0;
+  // Return the determinant of the Jacobian of the transformation
+  // ------------------------------------------------------------
+  virtual TacsScalar getDetJacobian( const double * pt, 
+                                     const TacsScalar Xpts[] ){ 
+    return 0.0; 
+  }
 
   // Return the determinant of the Jacobian and its sensitivity at this point
   // ------------------------------------------------------------------------
-  virtual TacsScalar getJacobianXptSens( TacsScalar * hXptSens, 
-                                         const double * pt, 
-					 const TacsScalar Xpts[] ){
+  virtual TacsScalar getDetJacobianXptSens( TacsScalar * hXptSens, 
+                                            const double * pt, 
+                                            const TacsScalar Xpts[] ){
     memset(hXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
-    return getJacobian(pt, Xpts);
+    return getDetJacobian(pt, Xpts);
   }
 
   // This function returns the strain evaluated at pt
@@ -350,7 +335,7 @@ class TACSElement : public TACSOptObject {
   virtual void getStrain( TacsScalar strain[], 
 			  const double pt[], 
 			  const TacsScalar Xpts[],
-			  const TacsScalar vars[] ) = 0;
+			  const TacsScalar vars[] ){}
 
   // This function returns the sensitivity of the strain w.r.t. Xpts
   // ---------------------------------------------------------------
@@ -370,16 +355,42 @@ class TACSElement : public TACSOptObject {
 				const TacsScalar Xpts[],
 				const TacsScalar vars[] ){}
 
-  // Functions for retrieving data from the element
-  // ----------------------------------------------    
+  // These constants are used to denote which output to obtain
+  // ---------------------------------------------------------
+  static const unsigned int OUTPUT_NODES = 1;
+  static const unsigned int OUTPUT_DISPLACEMENTS = 2;
+  static const unsigned int OUTPUT_STRAINS = 4;
+  static const unsigned int OUTPUT_STRESSES = 8;
+  static const unsigned int OUTPUT_EXTRAS = 16;
+  static const unsigned int OUTPUT_COORDINATES = 32;
+
+  // Retrieve information about the name and quantity of variables
+  // -------------------------------------------------------------
+  virtual const char * elementName(){ return NULL; }
+  virtual const char * displacementName( int i ){ return NULL; }
+  virtual const char * stressName( int i ){ return NULL; }
+  virtual const char * strainName( int i ){ return NULL; }
+  virtual const char * extraName( int i ){ return NULL; }
+
+  // Return the name of the element
+  // ------------------------------
+  virtual const char * TACSObjectName(){ return this->elementName(); }
+
+  // Get the number of extras and element type information
+  // -----------------------------------------------------
+  virtual int numExtras(){ return 0; }
+  virtual enum ElementType getElementType(){ return ELEMENT_NONE; }
+
+  // Functions for retrieving data from the element for visualization
+  // ----------------------------------------------------------------
   void setComponentNum( int comp_num ){ componentNum = comp_num; }
   int getComponentNum(){ return componentNum; }
-  virtual void addOutputCount( int * nelems, int * nnodes, int * ncsr ) = 0;
+  virtual void addOutputCount( int *nelems, int *nnodes, int *ncsr ){}
   virtual void getOutputData( unsigned int out_type,
 			      double * data, int ld_data,
 			      const TacsScalar Xpts[],
-			      const TacsScalar vars[] ) = 0;
-  virtual void getOutputConnectivity( int * con, int start_node ) = 0;
+			      const TacsScalar vars[] ){}
+  virtual void getOutputConnectivity( int * con, int start_node ){}
 
  private: 
   int componentNum;
@@ -439,14 +450,11 @@ class TestElement : public TACSObject {
   // Tests for consistency amongst the analysis functions
   // ----------------------------------------------------
   int testStiffnessMat( int col = -1 );
-  int testMatDVSens( ElementMatrixType type );
   int testStrainSVSens( const double pt[] );
   
   // Tests for the sensitivities w.r.t. nodal coordinates
   // ----------------------------------------------------
   int testJacobianXptSens( const double pt[] );
-  // int testStrainXptSens( const double pt[] );
-  // int testResXptSens( TacsScalar alpha = 1.0 );
 
   // Design variable sensitivity tests
   // ---------------------------------
@@ -457,6 +465,9 @@ class TestElement : public TACSObject {
 
  private:
   TacsScalar dh; // Step size
+
+  // The time parameter
+  double time;
 
   // print_level: 0 - print nothing, 
   // 1 - print summary, 2 - print everything

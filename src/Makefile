@@ -12,7 +12,7 @@ CXX_OBJS = TACSObject.o \
 	TACSAssembler_thread.o \
 	TACSCreator.o \
 	TACSMg.o \
-	TACSBuckling.o \
+	TACSBuckling.o #\
 	TACSIntegrator.o
 
 DIR=${TACS_DIR}/src

@@ -81,6 +81,9 @@ void TACSAssembler::init( MPI_Comm _tacs_comm,
   MPI_Comm_rank(tacs_comm, &mpiRank);
   MPI_Comm_size(tacs_comm, &mpiSize);
 
+  // Set the simulation time to 0
+  time = 0.0;
+
   // Now set up the default pthread info
   thread_info = new TACSThreadInfo(1); // Set up the info class with 1 thread
   thread_info->incref();
@@ -2168,6 +2171,46 @@ void TACSAssembler::addDependentResidual( const int perNode,
 }
 
 /*
+  Retrieve the initial conditions associated with the problem
+*/
+void TACSAssembler::getInitConditions( BVec *vars, BVec *dvars ){
+  int size = varsPerNode*(numNodes + numDependentNodes);
+  memset(localVars, 0, size*sizeof(TacsScalar));
+  memset(localDotVars, 0, size*sizeof(TacsScalar));
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *elemVars, *elemDVars, *elemXpts;
+  getDataPointers(elementData, &elemVars, &elemDVars, NULL, NULL,
+		  &elemXpts, NULL, NULL, NULL);
+
+  // Retrieve the initial condition values from each element
+  for ( int i = 0; i < numElements; i++ ){    
+    getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
+    elements[i]->getInitCondition(elemVars, elemDVars, elemXpts);
+
+    // Set the values into the array
+    setValues(varsPerNode, i, elemVars, localVars);
+    setValues(varsPerNode, i, elemDVars, localDotVars);
+  }
+
+  // Set the dependent node values internally
+  setDependentVariables(varsPerNode, localVars);
+  setDependentVariables(varsPerNode, localDotVars);
+
+  // Set the variable values
+  vecDist->beginReverse(localVars, vars, 
+			BVecDistribute::INSERT);
+  vecDist->endReverse(localVars, vars,
+		      BVecDistribute::INSERT);
+
+  // Set the variable derivatives
+  vecDist->beginReverse(localDotVars, dvars, 
+			BVecDistribute::INSERT);
+  vecDist->endReverse(localDotVars, dvars,
+		      BVecDistribute::INSERT);
+}
+
+/*
   Zero the entries of the local variables
 */
 void TACSAssembler::zeroVariables(){
@@ -2256,6 +2299,20 @@ void TACSAssembler::getTacsNodeNums( int localNodes[], int _numNodes ){
   }
 }
 
+/*
+  Set the simulation time internally in the TACSAssembler object
+*/
+void TACSAssembler::setSimulationTime( double _time ){
+  time = _time;
+}
+
+/*
+  Retrieve the simulation time from the TACSAssembler object
+*/
+double TACSAssembler::getSimulationTime(){
+  return time;
+}
+
 /*!
   Return the array of tacsNodeNums 
 
@@ -2341,7 +2398,8 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
       getValues(varsPerNode, i, localVars, vars);
       getValues(varsPerNode, i, localDotVars, dvars);
       getValues(varsPerNode, i, localDDotVars, ddvars);
-      elements[i]->getResidual(elemRes, elemXpts, vars, dvars, ddvars);
+      elements[i]->getResidual(time, elemRes, elemXpts, 
+                               vars, dvars, ddvars);
       
       // Add the values
       addValues(varsPerNode, i, elemRes, localRes);
@@ -2432,13 +2490,13 @@ void TACSAssembler::assembleJacobian( BVec *residual,
 
       // Compute and add the contributions to the residual
       if (residual){
-        elements[i]->getResidual(elemRes, elemXpts, 
+        elements[i]->getResidual(time, elemRes, elemXpts, 
                                  vars, dvars, ddvars);
         addValues(varsPerNode, i, elemRes, localRes);
       }
 
       // Compute and add the contributions to the Jacobian
-      elements[i]->getJacobian(elemMat, alpha, beta, gamma,
+      elements[i]->getJacobian(time, elemMat, alpha, beta, gamma,
 			       elemXpts, vars, dvars, ddvars);
       addMatValues(A, i, elemMat, elementIData, elemWeights);
     }
@@ -3184,7 +3242,8 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
 	double scale = 1.0;
 	getValues(varsPerNode, i, &localAdjoint[nvars*k], elemAdjoint);
 	
-	elements[i]->addAdjResProduct(scale, &dvSensVals[k*numDVs], numDVs,
+	elements[i]->addAdjResProduct(time, scale, 
+                                      &dvSensVals[k*numDVs], numDVs,
 				      elemAdjoint, elemXpts,
 				      vars, dvars, ddvars);
       }

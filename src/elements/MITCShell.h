@@ -143,14 +143,14 @@ class MITCShell : public TACSShell {
   
   // Return the determinant of the Jacobian at this point
   // ----------------------------------------------------
-  TacsScalar getJacobian( const double * pt, 
-			  const TacsScalar Xpts[] );
+  TacsScalar getDetJacobian( const double * pt, 
+                             const TacsScalar Xpts[] );
 
   // Return the determinant of the Jacobian and its sensitivity at this point
   // ------------------------------------------------------------------------
-  TacsScalar getJacobianXptSens( TacsScalar * hXptSens, 
-				 const double * pt, 
-				 const TacsScalar Xpts[] );
+  TacsScalar getDetJacobianXptSens( TacsScalar * hXptSens, 
+                                    const double * pt, 
+                                    const TacsScalar Xpts[] );
 
   // This function returns the strain evaluated at pt
   // ------------------------------------------------
@@ -2116,8 +2116,8 @@ void MITCShell<order>::getShapeFunctions( const double pt[], double N[] ){
   Xpts: the element nodes
 */
 template <int order>
-TacsScalar MITCShell<order>::getJacobian( const double * pt, 
-					  const TacsScalar Xpts[] ){
+TacsScalar MITCShell<order>::getDetJacobian( const double * pt, 
+                                             const TacsScalar Xpts[] ){
   TacsScalar X[3], Xd[9];
   TacsScalar normal[3];
   double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
@@ -2147,9 +2147,9 @@ TacsScalar MITCShell<order>::getJacobian( const double * pt,
   Xpts: the element nodes
 */
 template <int order>
-TacsScalar MITCShell<order>::getJacobianXptSens( TacsScalar * hXptSens, 
-						 const double * pt, 
-						 const TacsScalar Xpts[] ){
+TacsScalar MITCShell<order>::getDetJacobianXptSens( TacsScalar * hXptSens, 
+                                                    const double * pt, 
+                                                    const TacsScalar Xpts[] ){
   TacsScalar h = 0.0;
   TacsScalar X[3], Xd[9], XdSens[9];
   double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];

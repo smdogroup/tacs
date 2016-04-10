@@ -124,56 +124,54 @@ void KSBuckling::elementWiseEval( const int iter,
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
-
-  // Set the strain buffer
-  TacsScalar * strain = &work[2];
+  if (constitutive){
+    // Set the strain buffer
+    TacsScalar * strain = &work[2];
  
-  if (iter == 0){    
-    // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      element->getGaussWtsPts(i, pt);
+    if (iter == 0){    
+      // With the first iteration, find the maximum over the domain
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        element->getGaussWtsPts(i, pt);
 
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
 
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= loadFactor;
-      }      
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= loadFactor;
+        }      
       
-      // Determine the buckling criteria
-      TacsScalar buckling;
-      constitutive->buckling(strain, &buckling);
+        // Determine the buckling criteria
+        TacsScalar buckling;
+        constitutive->buckling(strain, &buckling);
 
-      // Set the maximum buckling load
-      if (buckling > work[0]){
-	work[0] = buckling;
+        // Set the maximum buckling load
+        if (buckling > work[0]){
+          work[0] = buckling;
+        }
       }
     }
-  }
-  else {
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      element->getGaussWtsPts(i, pt);
+    else {
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        element->getGaussWtsPts(i, pt);
 
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
 
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= loadFactor;        
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= loadFactor;        
+        }
+
+        // Determine the buckling criteria again
+        TacsScalar buckling;
+        constitutive->buckling(strain, &buckling);
+
+        // Add the buckling load to the sum
+        work[1] += exp(ksWeight*(buckling - maxBuckling));
       }
-
-      // Determine the buckling criteria again
-      TacsScalar buckling;
-      constitutive->buckling(strain, &buckling);
-
-      // Add the buckling load to the sum
-      work[1] += exp(ksWeight*(buckling - maxBuckling));
     }
   }
 }
@@ -241,40 +239,38 @@ void KSBuckling::elementWiseSVSens( TacsScalar * elemSVSens,
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
-
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * bucklingSens = &work[maxNumStresses];
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * bucklingSens = &work[maxNumStresses];
   
-  for ( int i = 0; i < numGauss; i++ ){
-    double pt[3];
-    element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
         
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
             
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= loadFactor;      
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= loadFactor;      
+      }
 
-    // Determine the strain buckling criteria
-    TacsScalar buckling;
-    constitutive->buckling(strain, &buckling);
+      // Determine the strain buckling criteria
+      TacsScalar buckling;
+      constitutive->buckling(strain, &buckling);
     
-    // Determine the sensitivity of the buckling criteria to the 
-    // design variables and stresses
-    constitutive->bucklingStrainSens(strain, bucklingSens);
+      // Determine the sensitivity of the buckling criteria to the 
+      // design variables and stresses
+      constitutive->bucklingStrainSens(strain, bucklingSens);
     
-    // ksBucklingSum += exp(ksWeight*(buckling - maxBuckling));
-    TacsScalar ksLocal = exp(ksWeight*(buckling - maxBuckling));
+      // ksBucklingSum += exp(ksWeight*(buckling - maxBuckling));
+      TacsScalar ksLocal = exp(ksWeight*(buckling - maxBuckling));
                
-    // Determine the sensitivity of the state variables to SV
-    element->addStrainSVSens(elemSVSens, pt, 
-			     loadFactor*(ksLocal/ksBucklingSum),
-			     bucklingSens, Xpts, vars);
+      // Determine the sensitivity of the state variables to SV
+      element->addStrainSVSens(elemSVSens, pt, 
+                               loadFactor*(ksLocal/ksBucklingSum),
+                               bucklingSens, Xpts, vars);
+    }
   }
 }
 
@@ -304,41 +300,39 @@ void KSBuckling::elementWiseXptSens( TacsScalar fXptSens[],
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
-
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * bucklingSens = &work[maxNumStresses];
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * bucklingSens = &work[maxNumStresses];
   
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
 
-    // Get the strain at the current point within the element
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain at the current point within the element
+      element->getStrain(strain, pt, Xpts, vars);
 
-    // Multiply by the load factor
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= loadFactor;
-    }
+      // Multiply by the load factor
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= loadFactor;
+      }
 
-    // Determine the strain buckling criteria
-    TacsScalar buckling; 
-    constitutive->buckling(strain, &buckling);
+      // Determine the strain buckling criteria
+      TacsScalar buckling; 
+      constitutive->buckling(strain, &buckling);
 
-    // Determine the sensitivity of the buckling criteria to 
-    // the design variables and stresses
-    constitutive->bucklingStrainSens(strain, bucklingSens);
+      // Determine the sensitivity of the buckling criteria to 
+      // the design variables and stresses
+      constitutive->bucklingStrainSens(strain, bucklingSens);
 
-    // ksBucklingSum += exp(ksWeight*(buckling - maxBuckling));
-    TacsScalar ksLocal = loadFactor*exp(ksWeight*(buckling - maxBuckling));
+      // ksBucklingSum += exp(ksWeight*(buckling - maxBuckling));
+      TacsScalar ksLocal = loadFactor*exp(ksWeight*(buckling - maxBuckling));
 	
-    ksLocal = (ksLocal/ksBucklingSum);
-    element->addStrainXptSens(fXptSens, pt, ksLocal, bucklingSens,
-			      Xpts, vars);
+      ksLocal = (ksLocal/ksBucklingSum);
+      element->addStrainXptSens(fXptSens, pt, ksLocal, bucklingSens,
+                                Xpts, vars);
+    }
   }
 }
 
@@ -365,36 +359,34 @@ void KSBuckling::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      element->getGaussWtsPts(i, pt);
     
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
     
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= loadFactor;        
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= loadFactor;        
+      }
     
-    // Determine the strain buckling criteria
-    TacsScalar buckling; 
-    constitutive->buckling(strain, &buckling);
+      // Determine the strain buckling criteria
+      TacsScalar buckling; 
+      constitutive->buckling(strain, &buckling);
     
-    // Add contribution from the design variable sensitivity 
-    // of the buckling calculation     
-    // ksBucklingSum += exp(ksWeight*(buckling - maxBuckling));
-    TacsScalar ksLocal = exp(ksWeight*(buckling - maxBuckling));
+      // Add contribution from the design variable sensitivity 
+      // of the buckling calculation     
+      // ksBucklingSum += exp(ksWeight*(buckling - maxBuckling));
+      TacsScalar ksLocal = exp(ksWeight*(buckling - maxBuckling));
 	
-    // Add the contribution to the sensitivity of the buckling load
-    constitutive->addBucklingDVSens(strain, (ksLocal/ksBucklingSum),
-				    fdvSens, numDVs);
+      // Add the contribution to the sensitivity of the buckling load
+      constitutive->addBucklingDVSens(strain, (ksLocal/ksBucklingSum),
+                                      fdvSens, numDVs);
+    }
   }
 }

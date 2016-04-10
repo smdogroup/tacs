@@ -175,100 +175,98 @@ void InducedFailure::elementWiseEval( const int iter,
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
  
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[3];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[3];
+    if (iter == 0){    
+      // With the first iteration, find the maximum over the domain
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        element->getGaussWtsPts(i, pt);
 
-  if (iter == 0){    
-    // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      element->getGaussWtsPts(i, pt);
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
 
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
-
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= load_factor;
-      }      
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= load_factor;
+        }      
       
-      // Determine the failure criteria
-      TacsScalar fail;
-      constitutive->failure(pt, strain, &fail);
+        // Determine the failure criteria
+        TacsScalar fail;
+        constitutive->failure(pt, strain, &fail);
 
-      // Set the maximum failure load
-      if (fail > work[0]){
-	work[0] = fail;
+        // Set the maximum failure load
+        if (fail > work[0]){
+          work[0] = fail;
+        }
       }
     }
-  }
-  else {
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
-      double pt[3];
-      double weight = element->getGaussWtsPts(i, pt);
+    else {
+      for ( int i = 0; i < numGauss; i++ ){
+        // Get the Gauss points one at a time
+        double pt[3];
+        double weight = element->getGaussWtsPts(i, pt);
 
-      // Get the determinant of the Jacobian
-      TacsScalar h = element->getJacobian(pt, Xpts);
+        // Get the determinant of the Jacobian
+        TacsScalar h = element->getDetJacobian(pt, Xpts);
 
-      // Get the strain
-      element->getStrain(strain, pt, Xpts, vars);
+        // Get the strain
+        element->getStrain(strain, pt, Xpts, vars);
 
-      for ( int k = 0; k < numStresses; k++ ){
-        strain[k] *= load_factor;
-      }
+        for ( int k = 0; k < numStresses; k++ ){
+          strain[k] *= load_factor;
+        }
 
-      // Determine the failure criteria again
-      TacsScalar fail;
-      constitutive->failure(pt, strain, &fail);
+        // Determine the failure criteria again
+        TacsScalar fail;
+        constitutive->failure(pt, strain, &fail);
 
-      if (norm_type == POWER){
-	TacsScalar fp = pow(fabs(fail/max_fail), P);
-        work[1] += weight*h*(fail/max_fail)*fp;
-	work[2] += weight*h*fp;
-      }
-      else if (norm_type == DISCRETE_POWER){
-	TacsScalar fp = pow(fabs(fail/max_fail), P);
-        work[1] += (fail/max_fail)*fp;
-	work[2] += fp;
-      }
-      else if (norm_type == POWER_SQUARED){
-	TacsScalar fp = pow(fabs(fail/max_fail), P);
-        work[1] += weight*h*(fail*fail/max_fail)*fp;
-	work[2] += weight*h*fp;
-      }
-      else if (norm_type == DISCRETE_POWER_SQUARED){
-	TacsScalar fp = pow(fabs(fail/max_fail), P);
-        work[1] += (fail*fail/max_fail)*fp;
-	work[2] += fp;
-      }
-      else if (norm_type == EXPONENTIAL){
-	TacsScalar efp = exp(P*(fail - max_fail));
-        work[1] += weight*h*(fail/max_fail)*efp;
-	work[2] += weight*h*efp;
-      }
-      else if (norm_type == DISCRETE_EXPONENTIAL){
-	TacsScalar efp = exp(P*(fail - max_fail));
-        work[1] += (fail/max_fail)*efp;
-	work[2] += efp;
-      }
-      else if (norm_type == EXPONENTIAL_SQUARED){
-	TacsScalar efp = exp(P*(fail - max_fail));
-        work[1] += weight*h*(fail*fail/max_fail)*efp;
-	work[2] += weight*h*efp;
-      }
-      else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-	TacsScalar efp = exp(P*(fail - max_fail));
-        work[1] += (fail*fail/max_fail)*efp;
-	work[2] += efp;
+        if (norm_type == POWER){
+          TacsScalar fp = pow(fabs(fail/max_fail), P);
+          work[1] += weight*h*(fail/max_fail)*fp;
+          work[2] += weight*h*fp;
+        }
+        else if (norm_type == DISCRETE_POWER){
+          TacsScalar fp = pow(fabs(fail/max_fail), P);
+          work[1] += (fail/max_fail)*fp;
+          work[2] += fp;
+        }
+        else if (norm_type == POWER_SQUARED){
+          TacsScalar fp = pow(fabs(fail/max_fail), P);
+          work[1] += weight*h*(fail*fail/max_fail)*fp;
+          work[2] += weight*h*fp;
+        }
+        else if (norm_type == DISCRETE_POWER_SQUARED){
+          TacsScalar fp = pow(fabs(fail/max_fail), P);
+          work[1] += (fail*fail/max_fail)*fp;
+          work[2] += fp;
+        }
+        else if (norm_type == EXPONENTIAL){
+          TacsScalar efp = exp(P*(fail - max_fail));
+          work[1] += weight*h*(fail/max_fail)*efp;
+          work[2] += weight*h*efp;
+        }
+        else if (norm_type == DISCRETE_EXPONENTIAL){
+          TacsScalar efp = exp(P*(fail - max_fail));
+          work[1] += (fail/max_fail)*efp;
+          work[2] += efp;
+        }
+        else if (norm_type == EXPONENTIAL_SQUARED){
+          TacsScalar efp = exp(P*(fail - max_fail));
+          work[1] += weight*h*(fail*fail/max_fail)*efp;
+          work[2] += weight*h*efp;
+        }
+        else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+          TacsScalar efp = exp(P*(fail - max_fail));
+          work[1] += (fail*fail/max_fail)*efp;
+          work[2] += efp;
+        }
       }
     }
   }
@@ -350,102 +348,100 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
   
   // Zero the derivative w.r.t. the state variables
   memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * failSens = &work[max_stresses];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * failSens = &work[max_stresses];
-
-  for ( int i = 0; i < numGauss; i++ ){
-    double pt[3];
-    double weight = element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      double pt[3];
+      double weight = element->getGaussWtsPts(i, pt);
         
-    // Get the determinant of the Jacobian
-    TacsScalar h = element->getJacobian(pt, Xpts);
+      // Get the determinant of the Jacobian
+      TacsScalar h = element->getDetJacobian(pt, Xpts);
 
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
             
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= load_factor;      
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= load_factor;      
+      }
 
-    // Determine the strain failure criteria
-    TacsScalar fail;
-    constitutive->failure(pt, strain, &fail);
+      // Determine the strain failure criteria
+      TacsScalar fail;
+      constitutive->failure(pt, strain, &fail);
     
-    // Determine the sensitivity of the failure criteria to the 
-    // design variables and stresses
-    constitutive->failureStrainSens(pt, strain, failSens);
+      // Determine the sensitivity of the failure criteria to the 
+      // design variables and stresses
+      constitutive->failureStrainSens(pt, strain, failSens);
     
-    // Compute the derivative of the induced aggregation with respect
-    // to the failure function
-    TacsScalar s = 0.0;
-    if (norm_type == POWER){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
+      // Compute the derivative of the induced aggregation with respect
+      // to the failure function
+      TacsScalar s = 0.0;
+      if (norm_type == POWER){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
 
-      s = weight*h*((1.0 + P)*g*fail_denom - 
-		    P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+        s = weight*h*((1.0 + P)*g*fail_denom - 
+                      P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+      }
+      else if (norm_type == DISCRETE_POWER){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((1.0 + P)*g*fail_denom - 
+             P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+      }
+      else if (norm_type == POWER_SQUARED){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = weight*h*((2.0 + P)*fail*g*fail_denom - 
+                      P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+      }
+      else if (norm_type == DISCRETE_POWER_SQUARED){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((2.0 + P)*fail*g*fail_denom - 
+             P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+      }
+      else if (norm_type == EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = weight*h*(((1.0 + P*fail)*fail_denom -
+                       P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = (((1.0 + P*fail)*fail_denom -
+              P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = weight*h*(((2.0 + P*fail)*fail*fail_denom -
+                       P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = (((2.0 + P*fail)*fail*fail_denom -
+              P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+
+      // Determine the sensitivity of the state variables to SV
+      element->addStrainSVSens(elemSVSens, pt, load_factor*s,
+                               failSens, Xpts, vars);
     }
-    else if (norm_type == DISCRETE_POWER){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((1.0 + P)*g*fail_denom - 
-	   P*fail_numer)*fp/(g*fail_denom*fail_denom);    
-    }
-    else if (norm_type == POWER_SQUARED){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = weight*h*((2.0 + P)*fail*g*fail_denom - 
-		    P*fail_numer)*fp/(g*fail_denom*fail_denom);    
-    }
-    else if (norm_type == DISCRETE_POWER_SQUARED){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((2.0 + P)*fail*g*fail_denom - 
-	   P*fail_numer)*fp/(g*fail_denom*fail_denom);    
-    }
-    else if (norm_type == EXPONENTIAL){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = weight*h*(((1.0 + P*fail)*fail_denom -
-		     P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_EXPONENTIAL){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = (((1.0 + P*fail)*fail_denom -
-	   P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = weight*h*(((2.0 + P*fail)*fail*fail_denom -
-		     P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = (((2.0 + P*fail)*fail*fail_denom -
-	   P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-
-    // Determine the sensitivity of the state variables to SV
-    element->addStrainSVSens(elemSVSens, pt, load_factor*s,
-			     failSens, Xpts, vars);
   }
 }
 
@@ -475,124 +471,122 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   // Zero the sensitivity w.r.t. the nodes
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
+    TacsScalar * failSens = &work[max_stresses];
+    TacsScalar * hXptSens = &work[2*max_stresses];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-  TacsScalar * failSens = &work[max_stresses];
-  TacsScalar * hXptSens = &work[2*max_stresses];
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      double weight = element->getGaussWtsPts(i, pt);
 
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    double weight = element->getGaussWtsPts(i, pt);
+      // Get the derivative of the determinant of the Jacobian w.r.t. the nodes
+      TacsScalar h = element->getDetJacobianXptSens(hXptSens, pt, Xpts);
 
-    // Get the derivative of the determinant of the Jacobian w.r.t. the nodes
-    TacsScalar h = element->getJacobianXptSens(hXptSens, pt, Xpts);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
 
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= load_factor;
+      }
 
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= load_factor;
+      // Determine the strain failure criteria
+      TacsScalar fail; 
+      constitutive->failure(pt, strain, &fail);
+
+      // Determine the sensitivity of the failure criteria to 
+      // the design variables and stresses
+      constitutive->failureStrainSens(pt, strain, failSens);
+
+      // Compute the derivative of the induced aggregation with respect
+      // to the failure function
+      TacsScalar s = 0.0;
+      TacsScalar sx = 0.0;
+      if (norm_type == POWER){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = weight*h*((1.0 + P)*g*fail_denom - 
+                      P*fail_numer)*fp/(g*fail_denom*fail_denom);
+        sx = ((fail*fail_denom - 
+               max_fail*fail_numer)*weight*fp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_POWER){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((1.0 + P)*g*fail_denom - 
+             P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+        sx = 0.0;
+      }
+      else if (norm_type == POWER_SQUARED){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = weight*h*((2.0 + P)*fail*g*fail_denom - 
+                      P*fail_numer)*fp/(g*fail_denom*fail_denom);
+        sx = ((fail*fail*fail_denom - 
+               max_fail*fail_numer)*weight*fp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_POWER_SQUARED){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        s = ((2.0 + P)*fail*g*fail_denom - 
+             P*fail_numer)*fp/(g*fail_denom*fail_denom);    
+        sx = 0.0;
+      }
+      else if (norm_type == EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = weight*h*(((1.0 + P*fail)*fail_denom -
+                       P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+        sx = ((fail*fail_denom - 
+               max_fail*fail_numer)*weight*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = (((1.0 + P*fail)*fail_denom -
+              P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+        sx = 0.0;
+      }
+      else if (norm_type == EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = weight*h*(((2.0 + P*fail)*fail*fail_denom -
+                       P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+        sx = ((fail*fail*fail_denom - 
+               max_fail*fail_numer)*weight*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - max_fail));
+
+        s = (((2.0 + P*fail)*fail*fail_denom -
+              P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+        sx = 0.0;
+      }
+
+      // Add the contribution from the derivative of the determinant of the
+      // Jacobian w.r.t. the nodes
+      for ( int j = 0; j < 3*numNodes; j++ ){
+        fXptSens[j] += sx*hXptSens[j];
+      }
+
+      // Add the contribution from the derivative of the strain w.r.t.
+      // the nodal locations
+      element->addStrainXptSens(fXptSens, pt, s*load_factor,
+                                failSens, Xpts, vars);
     }
-
-    // Determine the strain failure criteria
-    TacsScalar fail; 
-    constitutive->failure(pt, strain, &fail);
-
-    // Determine the sensitivity of the failure criteria to 
-    // the design variables and stresses
-    constitutive->failureStrainSens(pt, strain, failSens);
-
-    // Compute the derivative of the induced aggregation with respect
-    // to the failure function
-    TacsScalar s = 0.0;
-    TacsScalar sx = 0.0;
-    if (norm_type == POWER){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = weight*h*((1.0 + P)*g*fail_denom - 
-		    P*fail_numer)*fp/(g*fail_denom*fail_denom);
-      sx = ((fail*fail_denom - 
-	     max_fail*fail_numer)*weight*fp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_POWER){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((1.0 + P)*g*fail_denom - 
-	   P*fail_numer)*fp/(g*fail_denom*fail_denom);    
-      sx = 0.0;
-    }
-    else if (norm_type == POWER_SQUARED){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = weight*h*((2.0 + P)*fail*g*fail_denom - 
-		    P*fail_numer)*fp/(g*fail_denom*fail_denom);
-      sx = ((fail*fail*fail_denom - 
-	     max_fail*fail_numer)*weight*fp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_POWER_SQUARED){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
-
-      s = ((2.0 + P)*fail*g*fail_denom - 
-	   P*fail_numer)*fp/(g*fail_denom*fail_denom);    
-      sx = 0.0;
-    }
-    else if (norm_type == EXPONENTIAL){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = weight*h*(((1.0 + P*fail)*fail_denom -
-		     P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-      sx = ((fail*fail_denom - 
-	     max_fail*fail_numer)*weight*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_EXPONENTIAL){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = (((1.0 + P*fail)*fail_denom -
-	   P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-      sx = 0.0;
-    }
-    else if (norm_type == EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = weight*h*(((2.0 + P*fail)*fail*fail_denom -
-		     P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-      sx = ((fail*fail*fail_denom - 
-	     max_fail*fail_numer)*weight*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(fail - max_fail));
-
-      s = (((2.0 + P*fail)*fail*fail_denom -
-	   P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-      sx = 0.0;
-    }
-
-    // Add the contribution from the derivative of the determinant of the
-    // Jacobian w.r.t. the nodes
-    for ( int j = 0; j < 3*numNodes; j++ ){
-      fXptSens[j] += sx*hXptSens[j];
-    }
-
-    // Add the contribution from the derivative of the strain w.r.t.
-    // the nodal locations
-    element->addStrainXptSens(fXptSens, pt, s*load_factor,
-			      failSens, Xpts, vars);
   }
 }
 
@@ -621,94 +615,92 @@ void InducedFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
   int numGauss = element->getNumGaussPts();
 
   // Get the constitutive object for this element
-  TACSConstitutive * constitutive = element->getConstitutive();
+  TACSConstitutive *constitutive = element->getConstitutive();
   
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
+  if (constitutive){
+    // Set pointers into the buffer
+    TacsScalar * strain = &work[0];
 
-  // Set pointers into the buffer
-  TacsScalar * strain = &work[0];
-
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the gauss point
-    double pt[3];
-    double weight = element->getGaussWtsPts(i, pt);
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the gauss point
+      double pt[3];
+      double weight = element->getGaussWtsPts(i, pt);
     
-    // Get the determinant of the Jacobian
-    TacsScalar h = element->getJacobian(pt, Xpts);
+      // Get the determinant of the Jacobian
+      TacsScalar h = element->getDetJacobian(pt, Xpts);
     
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
     
-    for ( int k = 0; k < numStresses; k++ ){
-      strain[k] *= load_factor;        
-    }
+      for ( int k = 0; k < numStresses; k++ ){
+        strain[k] *= load_factor;        
+      }
 
-    // Determine the strain failure criteria
-    TacsScalar fail; 
-    constitutive->failure(pt, strain, &fail);
+      // Determine the strain failure criteria
+      TacsScalar fail; 
+      constitutive->failure(pt, strain, &fail);
 
-    // Compute the derivative of the induced aggregation with
-    // respect to the failure function
-    TacsScalar s = 0.0;
-    if (norm_type == POWER){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
+      // Compute the derivative of the induced aggregation with
+      // respect to the failure function
+      TacsScalar s = 0.0;
+      if (norm_type == POWER){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
       
-      s = weight*h*((1.0 + P)*g*fail_denom - 
-		    P*fail_numer)*fp/(g*fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_POWER){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
+        s = weight*h*((1.0 + P)*g*fail_denom - 
+                      P*fail_numer)*fp/(g*fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_POWER){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
       
-      s = ((1.0 + P)*g*fail_denom - 
-	   P*fail_numer)*fp/(g*fail_denom*fail_denom);
-    }
-    else if (norm_type == POWER_SQUARED){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
+        s = ((1.0 + P)*g*fail_denom - 
+             P*fail_numer)*fp/(g*fail_denom*fail_denom);
+      }
+      else if (norm_type == POWER_SQUARED){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
       
-      s = weight*h*((2.0 + P)*fail*g*fail_denom - 
-		    P*fail_numer)*fp/(g*fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_POWER_SQUARED){
-      TacsScalar g = fail/max_fail;
-      TacsScalar fp = pow(fabs(g), P);
+        s = weight*h*((2.0 + P)*fail*g*fail_denom - 
+                      P*fail_numer)*fp/(g*fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_POWER_SQUARED){
+        TacsScalar g = fail/max_fail;
+        TacsScalar fp = pow(fabs(g), P);
 	  
-      s = ((2.0 + P)*fail*g*fail_denom - 
-	   P*fail_numer)*fp/(g*fail_denom*fail_denom);
-    }
-    else if (norm_type == EXPONENTIAL){
-      TacsScalar efp = exp(P*(fail - max_fail));
+        s = ((2.0 + P)*fail*g*fail_denom - 
+             P*fail_numer)*fp/(g*fail_denom*fail_denom);
+      }
+      else if (norm_type == EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - max_fail));
 	  
-      s = weight*h*(((1.0 + P*fail)*fail_denom -
-		     P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_EXPONENTIAL){
-      TacsScalar efp = exp(P*(fail - max_fail));
+        s = weight*h*(((1.0 + P*fail)*fail_denom -
+                       P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - max_fail));
 	  
-      s = (((1.0 + P*fail)*fail_denom -
-	    P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(fail - max_fail));
+        s = (((1.0 + P*fail)*fail_denom -
+              P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - max_fail));
 	  
-      s = weight*h*(((2.0 + P*fail)*fail*fail_denom -
-		     P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
-    else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-      TacsScalar efp = exp(P*(fail - max_fail));
+        s = weight*h*(((2.0 + P*fail)*fail*fail_denom -
+                       P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
+      else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - max_fail));
 	  
-      s = (((2.0 + P*fail)*fail*fail_denom -
-	    P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
-    }
+        s = (((2.0 + P*fail)*fail*fail_denom -
+              P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
+      }
 
-    // Add the contribution to the sensitivity of the failure load
-    constitutive->addFailureDVSens(pt, strain, s,
-				   fdvSens, numDVs);
+      // Add the contribution to the sensitivity of the failure load
+      constitutive->addFailureDVSens(pt, strain, s,
+                                     fdvSens, numDVs);
+    }
   }
 }
