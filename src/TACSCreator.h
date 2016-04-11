@@ -51,7 +51,7 @@ class TACSCreator : public TACSObject {
   void setDependentNodes( int num_dep_nodes, 
                           const int *_dep_node_ptr,
 			  const int *_dep_node_conn, 
-			  const TacsScalar *_dep_node_weights );
+			  const double *_dep_node_weights );
 
   // Set the elements into TACS creator
   // ----------------------------------
@@ -104,7 +104,7 @@ class TACSCreator : public TACSObject {
   // The dependent node data, connectivity and weights
   int num_dependent_nodes;
   int *dep_node_ptr, *dep_node_conn;
-  TacsScalar *dep_node_weights;
+  double *dep_node_weights;
 
   // The element connectivity
   int *elem_node_ptr, *elem_node_conn;

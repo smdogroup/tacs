@@ -45,7 +45,7 @@ class TacsIntegrator : public TACSObject {
   void setMaxNewtonIters(int _max_newton_iters){max_newton_iters = _max_newton_iters;};
   void setRelTol(double _rtol){rtol = _rtol;};
   void setAbsTol(double _atol){atol = _atol;};
-  void setPrintLevel(int _print_level);
+  void setPrintLevel(int _print_level){print_level = _print_level;};
   
  protected:
 

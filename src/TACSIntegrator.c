@@ -52,7 +52,7 @@ TacsIntegrator::TacsIntegrator(TACSAssembler * _tacs,
   }
 
   // store time
-  time = new TacsScalar[num_time_steps];
+  time = new double[num_time_steps];
   memset(time, 0, num_time_steps*sizeof(double));
 
   //------------------------------------------------------------------//
@@ -117,6 +117,12 @@ TacsIntegrator::~TacsIntegrator(){
   pc->decref();
   ksm->decref();
   
+  delete [] time;
+
+  delete [] q;
+  delete [] qdot;
+  delete [] qddot;
+  
 }
 
 /*
@@ -159,7 +165,7 @@ void TacsIntegrator::newtonSolve(double alpha, double beta, double gamma,
     
     // Write a summary
     if(print_level>0) {
-      printf("# Newton iters=%d, |R|=%e \n", n, norm);
+      printf("# Newton iters=%d, |R|=%e \n", n, RealPart(norm));
     }
     // Record the residual norm at the first Newton iteration
     if (n == 0){
@@ -227,7 +233,7 @@ void TacsIntegrator::writeSolution(const char *filename) {
 
     // Write the states (q, qdot, qddot) to file
     for (int j = 0; j < num_vars; j++) {
-      fprintf(fp, "%e %e %e ", qvals[j], qdotvals[j], qddotvals[j]);
+      fprintf(fp, "%e %e %e ", RealPart(qvals[j]), RealPart(qdotvals[j]), RealPart(qddotvals[j]));
     }
 
     fprintf(fp, "\n");
@@ -405,8 +411,7 @@ void TacsBDFIntegrator::get2ndBDFCoeff( const int k,
   output: 
   bdf:    the backwards difference coefficients
 */ 
-int TacsBDFIntegrator::getBDFCoeff( double bdf[], 
-				    int order ){
+int TacsBDFIntegrator::getBDFCoeff( double bdf[], int order ){
   if (order <= 1){
     bdf[0] = 1.0;
     bdf[1] = -1.0;
@@ -455,7 +460,7 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(TACSAssembler * _tacs,
   qddotS = new BVec*[num_stages];
 
   // store stage time
-  tS = new TacsScalar[num_stages];
+  tS = new double[num_stages];
   memset(tS, 0, num_stages*sizeof(double));
   
   // create state vectors for TACS during each timestep
@@ -506,6 +511,10 @@ TacsDIRKIntegrator::~TacsDIRKIntegrator(){
 
   // cleanup stage time
   delete [] tS;
+
+  delete [] qS;
+  delete [] qdotS;
+  delete [] qddotS;
 
 }
 
@@ -636,29 +645,7 @@ void TacsDIRKIntegrator::integrate(){
     timeMarch(time, q, qdot, qddot);
     
   }
-  
 
-  TacsScalar *qvals, *qdotvals, *qddotvals;
-  
-  // write results into a file
-  FILE *fp = fopen("dirk.dat", "w");
-  
-  int cnt = 0;
-  for (int k = 0; k < num_time_steps; k++) {
-    
-    // copy the values from BVec
-    q[k]->getArray(&qvals);
-    qdot[k]->getArray(&qdotvals);
-    qddot[k]->getArray(&qddotvals);
-  
-    fprintf(fp, "%e ", time[k]);
-    for (int j = 0; j < 2; j++) {
-      fprintf(fp, "%e %e %e ", qvals[j], qdotvals[j], qddotvals[j]);
-    }
-    fprintf(fp, "\n");
-  }
-  fclose(fp);
-  
 }
 
 /*
