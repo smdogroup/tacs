@@ -3627,7 +3627,7 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   test->setPrintLevel(print_level);
   
   printf("Testing element %s\n", elements[elemNum]->elementName());
-  if (test->testStiffnessMat()){ printf("Stiffness matrix failed\n"); }
+  if (test->testJacobian()){ printf("Stiffness matrix failed\n"); }
   else { printf("Stiffness matrix passed\n"); }
   if (test->testJacobianXptSens(pt)){ printf("Jacobian XptSens failed\n"); }
   else { printf("Jacobian XptSens passed\n"); }
