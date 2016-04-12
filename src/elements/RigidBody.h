@@ -10,10 +10,6 @@
 #include "TACSElement.h"
 #include "TACSGibbVector.h"
 
-void writeErrorComponents( FILE * fp, const char * descript,
-			   TacsScalar * a, TacsScalar * b, 
-			   int size, double rel_err = 1e-12 );
-
 /*
   A reference coordinate system that is built to enable a change in
   orientation of coordinate frames as a function of input vectors.

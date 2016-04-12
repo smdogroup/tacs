@@ -925,32 +925,32 @@ void TACSRigidBody::computeEnergies( double time,
   const TaccScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
 
-  // Set the Euler parameters
-  const TacsScalar *q = &vars[3];
+  // Set the pointers to the Euler parameters
   TacsScalar eta = vars[3];
   const TacsScalar *eps = &vars[4];
   TacsScalar deta = dvars[3];
   const TacsScalar *deps = &dvars[4];
 
-  // Retrieve the initial matrix
+  // Retrieve the rotation matrix for the initial reference
+  // configuration
   const TacsScalar *C0;
   CRef->getRotation(&C0);
 
-  // Compute the rotation matrix as a function of the
-    // Euler parameters
-    TacsScalar Cr[9], C[9];
-    Cr[0] = 1.0 - 2.0*(p[2]*p[2] + p[3]*p[3]);
-    Cr[1] = 2.0*(p[1]*p[2] + p[3]*p[0]);
-    Cr[2] = 2.0*(p[1]*p[3] - p[2]*p[0]);
-
-    Cr[3] = 2.0*(p[2]*p[1] - p[3]*p[0]);
-    Cr[4] = 1.0 - 2.0*(p[1]*p[1] + p[3]*p[3]);
-    Cr[5] = 2.0*(p[2]*p[3] + p[1]*p[0]);
-
-    Cr[6] = 2.0*(p[3]*p[1] + p[2]*p[0]);
-    Cr[7] = 2.0*(p[3]*p[2] - p[1]*p[0]);
-    Cr[8] = 1.0 - 2.0*(p[1]*p[1] + p[2]*p[2]);
-    matMatMult(Cr, C0, C);
+  // Compute the rotation matrix as a function of the Euler parameters
+  // and multiply by the reference configuration
+  TacsScalar Cr[9], C[9];
+  Cr[0] = 1.0 - 2.0*(eps[1]*eps[1] + eps[2]*eps[2]);
+  Cr[1] = 2.0*(eps[0]*eps[1] + eps[2]*eta);
+  Cr[2] = 2.0*(eps[0]*eps[2] - eps[1]*eta);
+  
+  Cr[3] = 2.0*(eps[1]*eps[0] - eps[2]*eta);
+  Cr[4] = 1.0 - 2.0*(eps[0]*eps[0] + eps[2]*eps[2]);
+  Cr[5] = 2.0*(eps[1]*eps[2] + eps[0]*eta);
+  
+  Cr[6] = 2.0*(eps[2]*eps[0] + eps[1]*eta);
+  Cr[7] = 2.0*(eps[2]*eps[1] - eps[0]*eta);
+  Cr[8] = 1.0 - 2.0*(eps[0]*eps[0] + eps[1]*eps[1]);
+  matMatMult(Cr, C0, C);
 
   // Compute the angular velocity from the Euler parameters
   // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
