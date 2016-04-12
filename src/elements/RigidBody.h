@@ -7,56 +7,12 @@
   Copyright (c) 2015-2016 Graeme Kennedy. All rights reserved. 
 */
 
-#include "TACSObject.h"
-#include "BCSCMatPivot.h"
+#include "TACSElement.h"
+#include "TACSGibbVector.h"
 
 void writeErrorComponents( FILE * fp, const char * descript,
 			   TacsScalar * a, TacsScalar * b, 
 			   int size, double rel_err = 1e-12 );
-
-/*
-  A 3-vector class. The components of this vector must always be set
-  in the inertial reference frame. The components of this vector can
-  be set as design variables that modify either initial conditions or
-  the initial orientation of the bodies within the multibody system.
-*/
-class TACSDynVector : public TACSObject {
- public:
-  TACSDynVector( const TacsScalar _x[] );
-  TACSDynVector( const TacsScalar _x[], const int _xDV[] );
-  ~TACSDynVector(){}
-
-  void getVector( const TacsScalar **_x );
-  void getVectorDesignVarNums( const int **_xDV ){ *_xDV = xDV; }
-  void setDesignVars( const TacsScalar *dvs, int numDVs );
-  void getDesignVars( TacsScalar *dvs, int numDVs );
-  inline void addPointAdjResProduct( TacsScalar fdvSens[], int numDVs,
-				     TacsScalar scale,
-				     const TacsScalar psi[] );
- private:
-  TacsScalar x[3];
-  int xDV[3];
-};
-
-/*
-  Add the derivative associated with the point locations to the vector.
-
-  input:
-  numDVs:  the number of design variables
-  scale:   the sensitivity is multiplied by this scalar
-  psi:     the adjoint vector
-  
-  input/output:
-  fdvSens: the array of derivatives
-*/
-inline void TACSDynVector::addPointAdjResProduct( TacsScalar fdvSens[], 
-						  int numDVs,
-						  TacsScalar scale,
-						  const TacsScalar psi[] ){
-  if (xDV[0] >= 0 && xDV[0] < numDVs){ fdvSens[xDV[0]] += scale*psi[0]; }
-  if (xDV[1] >= 0 && xDV[1] < numDVs){ fdvSens[xDV[1]] += scale*psi[1]; }
-  if (xDV[2] >= 0 && xDV[2] < numDVs){ fdvSens[xDV[2]] += scale*psi[2]; }
-}
 
 /*
   A reference coordinate system that is built to enable a change in
@@ -71,12 +27,12 @@ inline void TACSDynVector::addPointAdjResProduct( TacsScalar fdvSens[],
   coordinate vector and the orthogonal complement along (r2 - r0)
   forms the second basis vector.
 */
-class TACSDynFrame : public TACSObject {
+class TACSRefFrame : public TACSObject {
  public:
-  TACSDynFrame( TACSDynVector *_r0, 
-		TACSDynVector *_r1,
-		TACSDynVector *_r2 );
-  ~TACSDynFrame();
+  TACSRefFrame( TACSGibbsVector *_r0, 
+		TACSGibbsVector *_r1,
+		TACSGibbsVector *_r2 );
+  ~TACSRefFrame();
   void initialize();
   void getRotation( const TacsScalar ** _C );
   void setDesignVars( const TacsScalar *dvs, int numDVs );
@@ -97,7 +53,7 @@ class TACSDynFrame : public TACSObject {
   TacsScalar dC2d1[9], dC2d2[9]; 
 
   // The basis points for the reference frame
-  TACSDynVector *r0, *r1, *r2;
+  TACSGibbsVector *r0, *r1, *r2;
 };
 
 /*
@@ -118,38 +74,75 @@ class TACSDynFrame : public TACSObject {
   internal reactions are treated within the kinematic constraint class
   defined below.
 */
-class TACSDynBody : public TACSObject {
+class TACSRigidBody : public TACSElement {
  public:
-  enum RotationParam { EULER_ANGLES,
-		       EULER_PARAMETERS };
-
-  TACSDynBody( enum RotationParam _rot_param,
-	       const TacsScalar _mass, 
+  TACSRigidBody( const TacsScalar _mass, 
 	       const TacsScalar _c[], 
 	       const TacsScalar _J[],
-	       TACSDynFrame *_CInit,
-	       TACSDynVector *_rInit, 
-	       TACSDynVector *_vInit, 
-	       TACSDynVector *_omegaInit, 
-	       TACSDynVector *_gvec );
-  ~TACSDynBody();
+	       TACSRefFrame *_CInit,
+	       TACSGibbsVector *_rInit, 
+	       TACSGibbsVector *_vInit, 
+	       TACSGibbsVector *_omegaInit, 
+	       TACSGibbsVector *_gvec );
+  ~TACSRigidBody();
 
-  // Set the design variables numbers
-  // --------------------------------
+  // Set design variables numbers associated with the inertial props.
+  // ----------------------------------------------------------------
   void setDesignVarNums( int _massDV, const int _cDV[], 
 			 const int _JDV[] );
 
-  // Retrieve the number of kinematic/dynamic dof
+  // Return the number of displacements and nodes
   // --------------------------------------------
-  int getNumDof( int *_nkin, int *_ndyn ){
-    if (_nkin){ *_nkin = nkin; }
-    if (_ndyn){ *_ndyn = ndyn; }
-  }
-  
+  int numDisplacements(){ return 8; }
+  int numNodes(){ return 1; }
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void getResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void getJacobian( double time, TacsScalar J[],
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+
   // Set and retrieve design variable values
   // ---------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
+  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Set and retrieve the variables
   // ------------------------------
@@ -160,10 +153,10 @@ class TACSDynBody : public TACSObject {
 		     const TacsScalar *_omega[] );
   void getInitVariables( TacsScalar qkin[],
 			 TacsScalar qdyn[] );
-  void getInitVariables( TACSDynFrame **_CInit,
-			 TACSDynVector **_rInit, 
-			 TACSDynVector **_vInit,
-			 TACSDynVector **_omegaInit );
+  void getInitVariables( TACSRefFrame **_CInit,
+			 TACSGibbsVector **_rInit, 
+			 TACSGibbsVector **_vInit,
+			 TACSGibbsVector **_omegaInit );
 
   // Routines for evaluating the transformation matrix
   // -------------------------------------------------
@@ -237,10 +230,10 @@ class TACSDynBody : public TACSObject {
   TacsScalar J[6]; // The second moment of inertia
 
   // The initial position, velocity, angular velocity
-  TACSDynVector *rInit, *vInit, *omegaInit;
+  TACSGibbsVector *rInit, *vInit, *omegaInit;
 
   // The initial reference frame
-  TACSDynFrame *CRef;
+  TACSRefFrame *CRef;
 
   // The design variable numbers associated with the inertial properties
   int massDV, cDV[3], JDV[6];
@@ -339,9 +332,9 @@ class TACSDynSphericalJoint : public TACSDynKinematicCon {
  public:
   TACSDynSphericalJoint( TACSDynBody *_body1,
 			 TACSDynBody *_body2,
-			 TACSDynVector *_point );
+			 TACSGibbsVector *_point );
   TACSDynSphericalJoint( TACSDynBody *_body1, 
-			 TACSDynVector *_point );
+			 TACSGibbsVector *_point );
   ~TACSDynSphericalJoint();
 
   void setDesignVars( const TacsScalar dvs[], int numDVs );
@@ -404,7 +397,7 @@ class TACSDynSphericalJoint : public TACSDynKinematicCon {
   static const int ncon = 6;
 
   TACSDynBody *bodyA, *bodyB; // The rigid bodies
-  TACSDynVector *point; // The point where the bodies are fixed
+  TACSGibbsVector *point; // The point where the bodies are fixed
 
   TacsScalar xI[3]; // Fixed point/fixed separation
   TacsScalar xA[3]; // Position with first body-frame
@@ -446,8 +439,8 @@ class TACSDynRevoluteJoint : public TACSDynKinematicCon {
  public:
   TACSDynRevoluteJoint( TACSDynBody *_bodyA, 
 			TACSDynBody *_bodyB, 
-			TACSDynVector *_point,
-			TACSDynVector *_rev );
+			TACSGibbsVector *_point,
+			TACSGibbsVector *_rev );
   ~TACSDynRevoluteJoint();
 
   // Set and get the design variable values
@@ -520,7 +513,7 @@ class TACSDynRevoluteJoint : public TACSDynKinematicCon {
 
   // The bodies and vectors of interest
   TACSDynBody *bodyA, *bodyB; // The rigid bodies
-  TACSDynVector *point, *rev; // The fixed point and revolute direction
+  TACSGibbsVector *point, *rev; // The fixed point and revolute direction
 
   // The revolute direction in the first and second bodies
   TacsScalar revA[3], revB[3];

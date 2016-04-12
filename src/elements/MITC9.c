@@ -1473,7 +1473,7 @@ void MITC9::computeAngularVelocity( TacsScalar omega[],
     TacsScalar deta = dvars[3];
     const TacsScalar *deps = &dvars[4];
 
-    // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta) 
+    // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
     crossProduct(-2.0, eps, deps, omega);
     vecAxpy(2.0*eta, deps, omega);
     vecAxpy(-2.0*deta, eps, omega);

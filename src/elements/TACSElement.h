@@ -193,9 +193,13 @@ class TACSElement : public TACSOptObject {
   // Get the number of displacements, stresses, nodes, etc.
   // ------------------------------------------------------
   virtual int numDisplacements() = 0; // Degrees of freedom per node
-  virtual int numStresses() = 0; // Number of stresses (possibly zero)
   virtual int numNodes() = 0; // Number of nodes for this element
   
+  // Number of stresses (possibly zero)
+  virtual int numStresses(){ 
+    return 0; 
+  } 
+
   // Number of variables for this element (nodes times dof/node)
   virtual int numVariables(){ 
     return numNodes()*numDisplacements();
