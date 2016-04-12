@@ -1,12 +1,11 @@
-#ifndef TACS_DYNAMICS_ALGEBRA_H
-#define TACS_DYNAMICS_ALGEBRA_H
+#ifndef TACS_ELEMENT_ALGEBRA_H
+#define TACS_ELEMENT_ALGEBRA_H
 
 /*
   A header file with lots of useful linear algebra. Note that this is
   designed to be included in .c/.cpp files directly.
 
   Copyright (c) 2015 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
 */
 
 /*
@@ -625,6 +624,5 @@ static inline TacsScalar mat3x3Inner( const TacsScalar A[],
 	  x[1]*(A[3]*y[0] + A[4]*y[1] + A[5]*y[2]) +
 	  x[2]*(A[6]*y[0] + A[7]*y[1] + A[8]*y[2]));
 }
-				      
 
-#endif // TACS_DYNAMICS_ALGEBRA_H
+#endif // TACS_ALGEBRA_H

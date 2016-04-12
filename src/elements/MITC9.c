@@ -1,6 +1,5 @@
-#include "TACSDynElement.h"
-#include "TACSDynAlgebra.h"
-#include "TACSDynBody.h"
+#include "MITC9.h"
+#include "TACSElementAlgebra.h"
 #include "FElibrary.h"
 
 /*
@@ -603,257 +602,80 @@ static inline void computeQtr2ndDeriv( const TacsScalar v[],
   dv += 3;
 }
 
-MITC9::MITC9( TacsScalar density, TacsScalar E, 
-	      TacsScalar nu, TacsScalar t, TacsScalar _g[] ){
-  TacsScalar G = 0.5*E/(1.0 + nu);
+/*
+  Constructor for the MITC9 element class
 
-  // Compute the areal density and moment of inertia
-  rho = density*t;
-  rhoI = density*t*t*t/12.0;
+  input:
+  stiff:      the stiffness object
+  gravity:    the gravity vector
+  vInit:      the initial velocity
+  omegaInit:  the initial angular velocity
+*/
+MITC9::MITC9( FSDTStiffness *_stiff, TACSGibbsVector *_gravity,
+              TACSGibbsVector *_vInit,
+              TACSGibbsVector *_omegaInit ){
+  // Set the stiffness 
+  stiff = _stiff;
+  stiff->incref();
 
-  D[0] = D[3] = (E*t*t*t)/(12.0*(1.0 - nu*nu));
-  D[1] = nu*D[0];
-  D[5] = (G*t*t*t)/12.0;
-  D[2] = D[4] = 0.0;
+  // Copy over the vectors (if they are defined)
+  gravity = _gravity;
+  vInit = _vInit;
+  omegaInit = _omegaInit;
+  if (gravity){ gravity->incref(); }
+  if (vInit){ vInit->incref(); }
+  if (omegaInit){ omegaInit->incref(); }
 
-  A[0] = A[3] = (E*t)/(1.0 - nu*nu);
-  A[1] = nu*A[0];
-  A[5] = G*t;
-  A[2] = A[4] = 0.0;
-
-  As[0] = As[2] = (5.0/6.0)*G*t;
-  As[1] = 0.0;
-
-  // Set the penalty
-  kpenalty = 10.0*t*G;
-
-  // Set the gravity vector in the global frame
-  g[0] = _g[0];
-  g[1] = _g[1];
-  g[2] = _g[2];
-  
   // Get the Gauss quadrature points and weights
   FElibrary::getGaussPtsWts(ORDER, &gaussPts, &gaussWts);
 }
 
-MITC9::~MITC9(){}
-
-/*
-  The following function tests the consistency of the implementation
-  of the residuals and the energy expressions, relying on Lagrange's
-  equations. 
-
-  This function uses finite-differences to compute the derivatives
-  within Lagrange's equations and compares the result with the
-  residual computed using the residual routine.
-
-  Lagrange's equations of motion are given as follows:
-
-  d/dt(dL/d(dot{q})^{T}) - dL/dq^{T} = 0
-
-  This can be evaluated using finite-differencing as follows:
-
-  dL/dqi(q, dq) .= (L(q, dq + h*ei) - L(q, dq - h*ei))/h
-
-  d(f(q, dq))/dt .= 
-  (f(q + dt*dq, dq + dt*ddq) - f(q - dt*dq, dq - dt*ddq))/dt
-*/
-void MITC9::testResidual( double dh, 
-			  const TacsScalar X[],
-			  const TacsScalar vars[],
-			  const TacsScalar dvars[],
-			  const TacsScalar ddvars[] ){
-  // Temporary vectors containing the derivative
-  TacsScalar fd[8*NUM_NODES], res1[8*NUM_NODES], res2[8*NUM_NODES];
-
-  // The values of the variables at the perturbed locations
-  TacsScalar q[8*NUM_NODES], dq[8*NUM_NODES];
-
-  // Compute the values of the variables at (t + dt)
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] + dh*dvars[i];
-    dq[i] = dvars[i] + dh*ddvars[i];
-  }
-
-  // Evaluate the derivative w.r.t. dot{q}
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    // Evaluate the finite-difference for component i
-    TacsScalar T1, P1, T2, P2;
-    TacsScalar dqtmp = dq[i];
-    dq[i] = dqtmp + dh;
-    computeEnergies(&T1, &P1, X, q, dq);
-
-    dq[i] = dqtmp - dh;
-    computeEnergies(&T2, &P2, X, q, dq);
-
-    // Compute and store the approximation
-    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
-    dq[i] = dqtmp;
-  }
-
-  // Compute the values of the variables at (t - dt)
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] - dh*dvars[i];
-    dq[i] = dvars[i] - dh*ddvars[i];
-  }
-
-  // Evaluate the derivative w.r.t. dot{q}
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    // Evaluate the finite-difference for component i
-    TacsScalar T1, P1, T2, P2;
-    TacsScalar dqtmp = dq[i];
-    dq[i] = dqtmp + dh;
-    computeEnergies(&T1, &P1, X, q, dq);
-
-    dq[i] = dqtmp - dh;
-    computeEnergies(&T2, &P2, X, q, dq);
-
-    // Compute and store the approximation
-    res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
-    dq[i] = dqtmp;
-  }
-
-  // Evaluate the finite-difference for the first term in Largrange's
-  // equations of motion
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    fd[i] = 0.5*(res1[i] - res2[i])/dh;
-  }
-
-  // Reset the values of q and dq at time t
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i];
-    dq[i] = dvars[i];
-  }
-
-  // Compute the contribution from dL/dq^{T}
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    // Evaluate the finite-difference for component i
-    TacsScalar T1, P1, T2, P2;
-    TacsScalar qtmp = q[i];
-    q[i] = qtmp + dh;
-    computeEnergies(&T1, &P1, X, q, dq);
-
-    q[i] = qtmp - dh;
-    computeEnergies(&T2, &P2, X, q, dq);
-
-    // Compute and store the approximation
-    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
-    q[i] = qtmp;
-  }
-
-  // Add the result to the finite-difference result
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    fd[i] -= res1[i];
-  }
-
-  // Evaluate the residual using the code
-  getResidual(res1, X, vars, dvars, ddvars);
-
-  // Write out the error components
-  writeErrorComponents(stdout, "Res error",
-		       res1, fd, 8*NUM_NODES);
-}
-
-/*
-  The following function tests the consistency between the
-  implementation of the residuals and the implementation of the system
-  Jacobian.
-
-  input:
-  dh:   the finite-difference step size
-  X:    the nodal coordinates
-  vars:   the finite-element variables
-  dvars:  the time derivative of the varaibles
-*/
-void MITC9::testJacobian( double dh, 
-			  double alpha, double beta, double gamma,
-			  const TacsScalar X[],
-			  const TacsScalar vars[],
-			  const TacsScalar dvars[],
-			  const TacsScalar ddvars[] ){
-  // The computed Jacobian of the element matrix
-  TacsScalar J[64*NUM_NODES*NUM_NODES];
-
-  // The finite-difference result
-  TacsScalar fd[8*NUM_NODES], res[8*NUM_NODES];
-  
-  // The perturb direction to test
-  TacsScalar perb[8*NUM_NODES];
-
-  // Temporary variables and their time derivatives
-  TacsScalar q[8*NUM_NODES], dq[8*NUM_NODES], ddq[8*NUM_NODES];
-
-  // Set random perburbed values
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
-  }
-
-#ifdef TACS_USE_COMPLEX
-  // Set the values for the first evaluation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] + TacsScalar(0.0, dh*alpha)*perb[i];
-    dq[i] = dvars[i] + TacsScalar(0.0, dh*beta)*perb[i];
-    ddq[i] = ddvars[i] + TacsScalar(0.0, dh*gamma)*perb[i];
-  }
-
-  // Get the residual at vars + alpha*perb, ... etc.
-  getResidual(fd, X, q, dq, ddq);
-
-  // Form the finite-difference matrix-vector approximation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    fd[i] = ImagPart(fd[i])/dh;
-  }
-#else
-  // Set the values for the first evaluation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] + dh*alpha*perb[i];
-    dq[i] = dvars[i] + dh*beta*perb[i];
-    ddq[i] = ddvars[i] + dh*gamma*perb[i];
-  }
-
-  // Get the residual at vars + alpha*perb, ... etc.
-  getResidual(fd, X, q, dq, ddq);
-
-  // Set the values for the first evaluation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] - dh*alpha*perb[i];
-    dq[i] = dvars[i] - dh*beta*perb[i];
-    ddq[i] = ddvars[i] - dh*gamma*perb[i];
-  }
-
-  // Get the residual at vars + alpha*perb, ... etc.
-  getResidual(res, X, q, dq, ddq);
-
-  // Form the finite-difference matrix-vector approximation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    fd[i] = 0.5*(fd[i] - res[i])/dh;
-  }
-#endif // TACS_USE_COMPLEX
-
-  // Get the Jacobian computed by the element
-  getJacobian(J, alpha, beta, gamma, X, vars, dvars, ddvars);
-  
-  // Compute the product: res = J*perb
-  // Recall that the Jacobian matrix is stored in row-major order
-  memset(res, 0, 8*NUM_NODES*sizeof(TacsScalar));
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    for ( int j = 0; j < 8*NUM_NODES; j++ ){
-      res[i] += J[8*NUM_NODES*i + j]*perb[j];
-    }
-  }
-
-  // Print out the results to stdout
-  writeErrorComponents(stdout, "Jacobian error",
-		       res, fd, 8*NUM_NODES);
+MITC9::~MITC9(){
+  stiff->decref();
+  if (gravity){ gravity->decref(); }
+  if (vInit){ vInit->decref(); }
+  if (omegaInit){ omegaInit->decref(); }
 }
 
 /*
   Retrieve the initial values of the design variables
 */
-void MITC9::getInitVariables( TacsScalar q[] ){
-  memset(q, 0, 8*NUM_NODES*sizeof(TacsScalar));
+void MITC9::getInitCondition( TacsScalar vars[], 
+			      TacsScalar dvars[],
+			      const TacsScalar X[] ){
+  memset(vars, 0, 8*NUM_NODES*sizeof(TacsScalar));
+  memset(dvars, 0, 8*NUM_NODES*sizeof(TacsScalar));
+
+  // The initial quaternions are eta = 1.0, eps = 0
   for ( int i = 0; i < NUM_NODES; i++ ){
-    q[8*i + 3] = 1.0;
+    vars[8*i + 3] = 1.0;
+  }
+
+  // If the initial velocity is defined
+  if (vInit){
+    const TacsScalar *v0;
+    vInit->getVector(&v0);
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      dvars[8*i] = v0[0];
+      dvars[8*i+1] = v0[1];
+      dvars[8*i+2] = v0[2];
+    }
+  }
+  
+  // If the initial angular velocity is defined
+  if (omegaInit){
+    const TacsScalar *omega;
+    omegaInit->getVector(&omega);
+    
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      // dot{u} = v + r^{x}*omega
+      crossProductAdd(1.0, omega, &X[3*i], &dvars[8*i]);
+      
+      // d{eps}/dt = 0.5*omega
+      dvars[8*i+4] = 0.5*omega[0];
+      dvars[8*i+5] = 0.5*omega[1];
+      dvars[8*i+6] = 0.5*omega[2];
+    }
   }
 }
 
@@ -864,8 +686,9 @@ void MITC9::getInitVariables( TacsScalar q[] ){
   These can be used to verify that the equations of motion are
   implemented correctly, since the element implements a method based
   on Lagrange's equations of motion.
-
+  
   input:
+  time:   the simulation time
   vars:   the values of the variables
   dvars:  the time-derivative of the variables
 
@@ -873,11 +696,20 @@ void MITC9::getInitVariables( TacsScalar q[] ){
   Te:     the kinetic energy
   Pe:     the potential energy
 */
-void MITC9::computeEnergies( TacsScalar *_Te, 
+void MITC9::computeEnergies( double time,
+                             TacsScalar *_Te, 
 			     TacsScalar *_Pe,
 			     const TacsScalar X[],
 			     const TacsScalar vars[],
 			     const TacsScalar dvars[] ){
+  // Set the gravity vector - if one exists
+  TacsScalar g[3] = {0.0, 0.0, 0.0};
+  if (gravity){
+    const TacsScalar *_g;
+    gravity->getVector(&_g);
+    g[0] = _g[0];  g[1] = _g[1];  g[2] = _g[2];
+  }
+
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
   computeFrames(Xr, X);
@@ -903,7 +735,11 @@ void MITC9::computeEnergies( TacsScalar *_Te,
       // Set the Gauss quadrature points
       const double u = gaussPts[i];
       const double v = gaussPts[j];
-      
+
+      // The parametric point required for evaluating
+      // stresses/strains within the element
+      const double pt[2] = {u, v};
+
       // Evaluate the shape functions
       double N[NUM_NODES];
       computeShapeFunc(u, v, N);
@@ -930,6 +766,10 @@ void MITC9::computeEnergies( TacsScalar *_Te,
       TacsScalar h = inv3x3(Xd, Xdinv);
       h *= gaussWts[i]*gaussWts[j];
 
+      // Evaluate the areal mass properties
+      TacsScalar rho[2];
+      stiff->getPointwiseMass(pt, rho);
+
       // The following is used to evaluate the kinetic energy
       // ---------------------------------------------------
       // Evaluate the velocity at the quadrature point
@@ -944,8 +784,8 @@ void MITC9::computeEnergies( TacsScalar *_Te,
       TacsScalar omegn = vecDot(omeg, fn);
 
       // Add the contributions to the kinetic energy
-      Te += 0.5*h*(rho*vecDot(v0, v0) + 
-		   rhoI*(vecDot(omeg, omeg) - omegn*omegn));
+      Te += 0.5*h*(rho[0]*vecDot(v0, v0) + 
+		   rho[1]*(vecDot(omeg, omeg) - omegn*omegn));
 
       // The following code is used to evaluate the potential energy
       // -----------------------------------------------------------
@@ -1002,7 +842,9 @@ void MITC9::computeEnergies( TacsScalar *_Te,
       addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 
       // Compute the stress based on the strain values
-      computeStress(s, e);
+      TacsScalar A[6], Bc[6], D[6], As[3];
+      TacsScalar kpenalty = stiff->getStiffness(pt, A, Bc, D, As);
+      stiff->calculateStress(A, Bc, D, As, e, s);
 
       // Compute the terms for the potential energy due to gravity
       TacsScalar U[3];
@@ -1012,7 +854,7 @@ void MITC9::computeEnergies( TacsScalar *_Te,
       // potential energy computation
       Pe += 0.5*h*(strainProduct(s, e) + 
 		   kpenalty*rot*rot - 
-		   2.0*rho*vecDot(g, U));
+		   2.0*rho[0]*vecDot(g, U));
     }
   }
 
@@ -1053,12 +895,21 @@ void MITC9::computeEnergies( TacsScalar *_Te,
   output:
   res:    the residuals
 */
-void MITC9::getResidual( TacsScalar res[],
+void MITC9::getResidual( double time,
+                         TacsScalar res[],
 			 const TacsScalar X[],
 			 const TacsScalar vars[],
 			 const TacsScalar dvars[],
 			 const TacsScalar ddvars[] ){
   memset(res, 0, 8*NUM_NODES*sizeof(TacsScalar));
+
+  // Set the gravity vector - if one exists
+  TacsScalar g[3] = {0.0, 0.0, 0.0};
+  if (gravity){
+    const TacsScalar *_g;
+    gravity->getVector(&_g);
+    g[0] = _g[0];  g[1] = _g[1];  g[2] = _g[2];
+  }
 
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
@@ -1082,9 +933,13 @@ void MITC9::getResidual( TacsScalar res[],
   for ( int j = 0; j < ORDER; j++ ){
     for ( int i = 0; i < ORDER; i++ ){
       // Set the Gauss quadrature points
-      double u = gaussPts[i];
-      double v = gaussPts[j];
+      const double u = gaussPts[i];
+      const double v = gaussPts[j];
       
+      // The parametric point required for evaluating
+      // stresses/strains within the element
+      const double pt[2] = {u, v};
+
       // Evaluate the shape functions
       double N[NUM_NODES];
       computeShapeFunc(u, v, N);
@@ -1111,6 +966,10 @@ void MITC9::getResidual( TacsScalar res[],
       TacsScalar Xdinv[9];
       TacsScalar h = inv3x3(Xd, Xdinv);
       h *= gaussWts[i]*gaussWts[j];
+
+      // Evaluate the areal mass properties
+      TacsScalar rho[2];
+      stiff->getPointwiseMass(pt, rho);
 
       // The following is used to evaluate the kinetic energy
       // ---------------------------------------------------
@@ -1141,9 +1000,9 @@ void MITC9::getResidual( TacsScalar res[],
       const TacsScalar *q = vars, *dq = dvars;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
 	// Add the contributions from the rectilinear velocity
-	r[0] += h*N[ii]*rho*a0[0];
-	r[1] += h*N[ii]*rho*a0[1];
-	r[2] += h*N[ii]*rho*a0[2];
+	r[0] += h*N[ii]*rho[0]*a0[0];
+	r[1] += h*N[ii]*rho[0]*a0[1];
+	r[2] += h*N[ii]*rho[0]*a0[2];
 
 	// Add the contributions from the angular velocity
 	// S^{T}*dw + 2*dot{S}^{T}*w
@@ -1153,14 +1012,14 @@ void MITC9::getResidual( TacsScalar res[],
 	const TacsScalar *deps = &dq[4];
 
 	// Add S^{T}*dw
-	r[3] -= 2.0*h*N[ii]*rhoI*vecDot(eps, dw);
-	crossProductAdd(2.0*h*N[ii]*rhoI, eps, dw, &r[4]);
-	vecAxpy(2.0*h*N[ii]*eta*rhoI, dw, &r[4]);
+	r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
+	crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
+	vecAxpy(2.0*h*N[ii]*eta*rho[1], dw, &r[4]);
 
 	// Add 2*dot{S}^{T}*w
-	r[3] -= 4.0*h*N[ii]*rhoI*vecDot(deps, w);
-	crossProductAdd(4.0*h*N[ii]*rhoI, deps, w, &r[4]);
-	vecAxpy(4.0*h*N[ii]*deta*rhoI, w, &r[4]);
+	r[3] -= 4.0*h*N[ii]*rho[1]*vecDot(deps, w);
+	crossProductAdd(4.0*h*N[ii]*rho[1], deps, w, &r[4]);
+	vecAxpy(4.0*h*N[ii]*deta*rho[1], w, &r[4]);
 
 	r += 8;
 	q += 8;
@@ -1222,8 +1081,10 @@ void MITC9::getResidual( TacsScalar res[],
       addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
 
       // Compute the stress based on the strain values
-      TacsScalar s[8];
-      computeStress(s, e);
+      TacsScalar s[8]; // The stress components
+      TacsScalar A[6], Bc[6], D[6], As[3];
+      TacsScalar kpenalty = stiff->getStiffness(pt, A, Bc, D, As);
+      stiff->calculateStress(A, Bc, D, As, e, s);
 
       // Scale the rotation by the in-plane penalty term
       rot *= kpenalty;
@@ -1232,9 +1093,9 @@ void MITC9::getResidual( TacsScalar res[],
       r = res;
       TacsScalar *b = B, *br = Brot;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	r[0] += h*(strainProduct(s, &b[0]) + rot*br[0] - rho*N[ii]*g[0]);
-	r[1] += h*(strainProduct(s, &b[8]) + rot*br[1] - rho*N[ii]*g[1]);
-	r[2] += h*(strainProduct(s, &b[16]) + rot*br[2] - rho*N[ii]*g[2]);
+	r[0] += h*(strainProduct(s, &b[0]) + rot*br[0] - rho[0]*N[ii]*g[0]);
+	r[1] += h*(strainProduct(s, &b[8]) + rot*br[1] - rho[0]*N[ii]*g[1]);
+	r[2] += h*(strainProduct(s, &b[16]) + rot*br[2] - rho[0]*N[ii]*g[2]);
 	r[3] += h*(strainProduct(s, &b[24]) + rot*br[3]);
 	r[4] += h*(strainProduct(s, &b[32]) + rot*br[4]);
 	r[5] += h*(strainProduct(s, &b[40]) + rot*br[5]);
@@ -1290,7 +1151,7 @@ void MITC9::getResidual( TacsScalar res[],
   output:
   J:       the Jacobian matrix
 */
-void MITC9::getJacobian( TacsScalar J[],
+void MITC9::getJacobian( double time, TacsScalar J[],
 			 double alpha, double beta, double gamma,
 			 const TacsScalar X[],
 			 const TacsScalar vars[],
@@ -1326,9 +1187,13 @@ void MITC9::getJacobian( TacsScalar J[],
   for ( int j = 0; j < ORDER; j++ ){
     for ( int i = 0; i < ORDER; i++ ){
       // Set the Gauss quadrature points
-      double u = gaussPts[i];
-      double v = gaussPts[j];
-      
+      const double u = gaussPts[i];
+      const double v = gaussPts[j];
+ 
+      // The parametric point required for evaluating
+      // stresses/strains within the element
+      const double pt[2] = {u, v};
+
       // Evaluate the shape functions
       double N[NUM_NODES];
       computeShapeFunc(u, v, N);
@@ -1355,10 +1220,14 @@ void MITC9::getJacobian( TacsScalar J[],
       TacsScalar h = inv3x3(Xd, Xdinv);
       h *= gaussWts[i]*gaussWts[j];
 
+      // Evaluate the areal mass properties
+      TacsScalar rho[2];
+      stiff->getPointwiseMass(pt, rho);
+
       // Add the contributions from the linear motion
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
 	for ( int jj = 0; jj < NUM_NODES; jj++ ){
-	  const TacsScalar scale = gamma*h*N[ii]*N[jj]*rho;
+	  const TacsScalar scale = gamma*h*N[ii]*N[jj]*rho[0];
 	  // Add the contributions from the rectilinear velocity
 	  J[8*NUM_NODES*(8*ii) + 8*jj] += scale;
 	  J[8*NUM_NODES*(8*ii+1) + 8*jj+1] += scale;
@@ -1400,7 +1269,7 @@ void MITC9::getJacobian( TacsScalar J[],
 	const int ldj = 8*NUM_NODES;
 
 	// Add the diagonal terms
-	const TacsScalar dscale = h*N[ii]*rhoI;
+	const TacsScalar dscale = h*N[ii]*rho[1];
 	addSTransDeriv(alpha*dscale, dw, Jp, ldj);
 	addSTransDeriv(2.0*beta*dscale, w, Jp, ldj);
 
@@ -1408,7 +1277,7 @@ void MITC9::getJacobian( TacsScalar J[],
 	const TacsScalar *q = vars, *dq = dvars, *ddq = ddvars;
 	for ( int jj = 0; jj < NUM_NODES; jj++ ){
 	  // Set the common scaling factor for all terms
-	  const TacsScalar scale = h*N[ii]*N[jj]*rhoI;
+	  const TacsScalar scale = h*N[ii]*N[jj]*rho[1];
 
 	  // Set the pointer to the Jacobian entries that will
 	  // be added
@@ -1451,6 +1320,10 @@ void MITC9::getJacobian( TacsScalar J[],
 	// Everything left in this function is proportional to
 	// h*alpha, so we scale h by alpha
 	h *= alpha;
+
+        // Evaluate the stiffness terms at the parametric point
+        TacsScalar A[6], Bc[6], D[6], As[3];
+        TacsScalar kpenalty = stiff->getStiffness(pt, A, Bc, D, As);
 
 	// Evaluate the tying strain interpolation
 	double N13[6], N23[6];
@@ -1511,9 +1384,9 @@ void MITC9::getJacobian( TacsScalar J[],
 	addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 	addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
 
-	// Compute the stress based on the strain values
-	TacsScalar s[8];
-	computeStress(s, e);
+        // Compute the stress based on the strain values
+        TacsScalar s[8]; // The stress components
+        stiff->calculateStress(A, Bc, D, As, e, s);
 
 	// Add to the weights
 	addTyingGmatWeights(w13, w23, h, s,
@@ -1528,8 +1401,9 @@ void MITC9::getJacobian( TacsScalar J[],
 	  for ( int ik = 0; ik < 7; ik++ ){
 	    // Compute the stress from the 8*i + ik component
 	    TacsScalar sbii[8];
-	    computeStress(sbii, &B[8*(8*ii + ik)]);
-	    
+            stiff->calculateStress(A, Bc, D, As, 
+                                   &B[8*(8*ii + ik)], sbii);
+
 	    // Compute the 
 	    TacsScalar pr = kpenalty*Brot[8*ii + ik];
 
@@ -2826,6 +2700,10 @@ void MITC9::addTyingStrain( TacsScalar e[],
   e[7] = 2.0*(A11*G13 + A21*G23);
 }
 
+/*
+  Add the tying coefficients required to compute the geometric
+  stiffness matrix term
+*/
 void MITC9::addTyingGmatWeights( TacsScalar w13[],
 				 TacsScalar w23[],
 				 const TacsScalar scalar,
@@ -3274,10 +3152,14 @@ void MITC9::addGRotMat( TacsScalar J[],
 /*
   Evaluate the strain at a parametric point within the element
 */
-TacsScalar MITC9::getStrain( TacsScalar Xp[], TacsScalar e[],
-			     const double u, const double v,
-			     const TacsScalar X[],
-			     const TacsScalar vars[] ){
+void MITC9::getStrain( TacsScalar e[],
+                       const double pt[],
+                       const TacsScalar X[],
+                       const TacsScalar vars[] ){
+  // Set the u/v locations
+  const double u = pt[0];
+  const double v = pt[1];
+
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
   computeFrames(Xr, X);
@@ -3362,23 +3244,13 @@ TacsScalar MITC9::getStrain( TacsScalar Xp[], TacsScalar e[],
   
   // Add the contribution from the tying straint
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
-
-  // Add the term due to the potential energy
-  TacsScalar rot = computeRotPenalty(N, Xa, Xb, Ua, Ub, vars);
-
-  // Also, compute the position
-  TacsScalar U[3];
-  innerProduct(N, X, Xp);
-  innerProduct8(N, vars, U);
-  vecAxpy(1.0, U, Xp);
-
-  return rot;
 }
 
 /*
   Test the implementation of the strain by comparing against a
   rigid-body displacement and rotation.  
 */
+/*
 void MITC9::testStrain( const TacsScalar X[] ){
   TacsScalar vars[8*NUM_NODES];
   memset(vars, 0, sizeof(vars));
@@ -3578,3 +3450,4 @@ void MITC9::testStrain( const TacsScalar X[] ){
   }
 }
 			
+*/

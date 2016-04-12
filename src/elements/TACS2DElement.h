@@ -104,26 +104,26 @@ class TACS2DElement : public TACSElement {
   
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( TacsScalar *_Te, TacsScalar *_Pe,
+  void computeEnergies( double time, TacsScalar *_Te, TacsScalar *_Pe,
 			const TacsScalar Xpts[], const TacsScalar vars[],
 			const TacsScalar dvars[] );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( TacsScalar res[], const TacsScalar Xpts[],
+  void getResidual( double time, TacsScalar res[], const TacsScalar Xpts[],
 		    const TacsScalar vars[], const TacsScalar dvars[],
 		    const TacsScalar ddvars[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( TacsScalar J[],
+  void getJacobian( double time, TacsScalar J[],
 		    double alpha, double beta, double gamma,
 		    const TacsScalar Xpts[], const TacsScalar vars[],
 		    const TacsScalar dvars[], const TacsScalar ddvars[] );
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
-  void addAdjResProduct( double scale,
+  void addAdjResProduct( double time, double scale,
 			 TacsScalar dvSens[], int dvLen,
 			 const TacsScalar psi[], const TacsScalar Xpts[],
 			 const TacsScalar vars[], const TacsScalar dvars[],
@@ -762,7 +762,8 @@ void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
   dvars:   the time derivatives of the nodal variables
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::computeEnergies( TacsScalar *_Te, 
+void TACS2DElement<NUM_NODES>::computeEnergies( double time, 
+                                                TacsScalar *_Te, 
 						TacsScalar *_Pe,
 						const TacsScalar Xpts[],
 						const TacsScalar vars[],
@@ -836,7 +837,8 @@ void TACS2DElement<NUM_NODES>::computeEnergies( TacsScalar *_Te,
   Xpts:    the element nodal locations in R^{3}
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::getResidual( TacsScalar * res, 
+void TACS2DElement<NUM_NODES>::getResidual( double time, 
+                                            TacsScalar * res, 
 					    const TacsScalar Xpts[],
 					    const TacsScalar vars[],
 					    const TacsScalar dvars[],
@@ -920,7 +922,8 @@ void TACS2DElement<NUM_NODES>::getResidual( TacsScalar * res,
   ddvars:  second time derivative of the element variables
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::getJacobian( TacsScalar mat[],
+void TACS2DElement<NUM_NODES>::getJacobian( double time,
+                                            TacsScalar mat[],
 					    double alpha, 
 					    double beta, 
 					    double gamma,
@@ -1026,7 +1029,7 @@ void TACS2DElement<NUM_NODES>::getJacobian( TacsScalar mat[],
   Xpts:    the element nodal locations in R^{3}
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::addAdjResProduct( double scale,
+void TACS2DElement<NUM_NODES>::addAdjResProduct( double time, double scale,
 						 TacsScalar dvSens[], int dvLen,
 						 const TacsScalar psi[], 
 						 const TacsScalar Xpts[],

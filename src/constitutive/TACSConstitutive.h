@@ -31,12 +31,12 @@ class TACSConstitutive : public TACSSparseConObject {
 
   // Define the object name 
   // ----------------------
-  virtual const char * constitutiveName() const = 0;
+  virtual const char * constitutiveName() = 0;
   const char * TACSObjectName();
   
   // Return the number of stress and strain components
   // -------------------------------------------------
-  virtual int getNumStresses() const = 0;
+  virtual int getNumStresses() = 0;
   
   // Return the stress as a function of the strain at the Gauss point
   // ----------------------------------------------------------------

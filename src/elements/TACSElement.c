@@ -191,9 +191,212 @@ TestElement::~TestElement(){
 }
 
 /*
+  The following function tests the consistency of the implementation
+  of the residuals and the energy expressions, relying on Lagrange's
+  equations. 
+
+  This function uses finite-differences to compute the derivatives
+  within Lagrange's equations and compares the result with the
+  residual computed using the residual routine.
+
+  Lagrange's equations of motion are given as follows:
+
+  d/dt(dL/d(dot{q})^{T}) - dL/dq^{T} = 0
+
+  This can be evaluated using finite-differencing as follows:
+
+  dL/dqi(q, dq) .= (L(q, dq + h*ei) - L(q, dq - h*ei))/h
+
+  d(f(q, dq))/dt .= 
+  (f(q + dt*dq, dq + dt*ddq) - f(q - dt*dq, dq - dt*ddq))/dt
+*/
+/*
+int TestElement::testResidual(){
+  // Compute the values of the variables at (t + dt)
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    q[i] = vars[i] + dh*dvars[i];
+    dq[i] = dvars[i] + dh*ddvars[i];
+  }
+
+  // Evaluate the derivative w.r.t. dot{q}
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar T1, P1, T2, P2;
+    TacsScalar dqtmp = dq[i];
+    dq[i] = dqtmp + dh;
+    element->computeEnergies(time, &T1, &P1, X, q, dq);
+
+    dq[i] = dqtmp - dh;
+    computeEnergies(&T2, &P2, X, q, dq);
+
+    // Compute and store the approximation
+    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+    dq[i] = dqtmp;
+  }
+
+  // Compute the values of the variables at (t - dt)
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    q[i] = vars[i] - dh*dvars[i];
+    dq[i] = dvars[i] - dh*ddvars[i];
+  }
+
+  // Evaluate the derivative w.r.t. dot{q}
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar T1, P1, T2, P2;
+    TacsScalar dqtmp = dq[i];
+    dq[i] = dqtmp + dh;
+    computeEnergies(&T1, &P1, X, q, dq);
+
+    dq[i] = dqtmp - dh;
+    computeEnergies(&T2, &P2, X, q, dq);
+
+    // Compute and store the approximation
+    res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+    dq[i] = dqtmp;
+  }
+
+  // Evaluate the finite-difference for the first term in Largrange's
+  // equations of motion
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    fd[i] = 0.5*(res1[i] - res2[i])/dh;
+  }
+
+  // Reset the values of q and dq at time t
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    q[i] = vars[i];
+    dq[i] = dvars[i];
+  }
+
+  // Compute the contribution from dL/dq^{T}
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar T1, P1, T2, P2;
+    TacsScalar qtmp = q[i];
+    q[i] = qtmp + dh;
+    computeEnergies(&T1, &P1, X, q, dq);
+
+    q[i] = qtmp - dh;
+    computeEnergies(&T2, &P2, X, q, dq);
+
+    // Compute and store the approximation
+    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+    q[i] = qtmp;
+  }
+
+  // Add the result to the finite-difference result
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    fd[i] -= res1[i];
+  }
+
+  // Evaluate the residual using the code
+  getResidual(res1, X, vars, dvars, ddvars);
+
+  // Write out the error components
+  writeErrorComponents(stdout, "Res error",
+		       res1, fd, 8*NUM_NODES);
+}
+*/
+
+/*
+  The following function tests the consistency between the
+  implementation of the residuals and the implementation of the system
+  Jacobian.
+
+  input:
+  dh:   the finite-difference step size
+  X:    the nodal coordinates
+  vars:   the finite-element variables
+  dvars:  the time derivative of the varaibles
+*/
+/*
+void MITC9::testJacobian( double dh, 
+			  double alpha, double beta, double gamma,
+			  const TacsScalar X[],
+			  const TacsScalar vars[],
+			  const TacsScalar dvars[],
+			  const TacsScalar ddvars[] ){
+  // The computed Jacobian of the element matrix
+  TacsScalar J[64*NUM_NODES*NUM_NODES];
+
+  // The finite-difference result
+  TacsScalar fd[8*NUM_NODES], res[8*NUM_NODES];
+  
+  // The perturb direction to test
+  TacsScalar perb[8*NUM_NODES];
+
+  // Temporary variables and their time derivatives
+  TacsScalar q[8*NUM_NODES], dq[8*NUM_NODES], ddq[8*NUM_NODES];
+
+  // Set random perburbed values
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+#ifdef TACS_USE_COMPLEX
+  // Set the values for the first evaluation
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    q[i] = vars[i] + TacsScalar(0.0, dh*alpha)*perb[i];
+    dq[i] = dvars[i] + TacsScalar(0.0, dh*beta)*perb[i];
+    ddq[i] = ddvars[i] + TacsScalar(0.0, dh*gamma)*perb[i];
+  }
+
+  // Get the residual at vars + alpha*perb, ... etc.
+  getResidual(fd, X, q, dq, ddq);
+
+  // Form the finite-difference matrix-vector approximation
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    fd[i] = ImagPart(fd[i])/dh;
+  }
+#else
+  // Set the values for the first evaluation
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    q[i] = vars[i] + dh*alpha*perb[i];
+    dq[i] = dvars[i] + dh*beta*perb[i];
+    ddq[i] = ddvars[i] + dh*gamma*perb[i];
+  }
+
+  // Get the residual at vars + alpha*perb, ... etc.
+  getResidual(fd, X, q, dq, ddq);
+
+  // Set the values for the first evaluation
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    q[i] = vars[i] - dh*alpha*perb[i];
+    dq[i] = dvars[i] - dh*beta*perb[i];
+    ddq[i] = ddvars[i] - dh*gamma*perb[i];
+  }
+
+  // Get the residual at vars + alpha*perb, ... etc.
+  getResidual(res, X, q, dq, ddq);
+
+  // Form the finite-difference matrix-vector approximation
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    fd[i] = 0.5*(fd[i] - res[i])/dh;
+  }
+#endif // TACS_USE_COMPLEX
+
+  // Get the Jacobian computed by the element
+  getJacobian(J, alpha, beta, gamma, X, vars, dvars, ddvars);
+  
+  // Compute the product: res = J*perb
+  // Recall that the Jacobian matrix is stored in row-major order
+  memset(res, 0, 8*NUM_NODES*sizeof(TacsScalar));
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    for ( int j = 0; j < 8*NUM_NODES; j++ ){
+      res[i] += J[8*NUM_NODES*i + j]*perb[j];
+    }
+  }
+
+  // Print out the results to stdout
+  writeErrorComponents(stdout, "Jacobian error",
+		       res, fd, 8*NUM_NODES);
+}
+*/
+
+/*
   Test the stiffness matrix using the residual function
 */
-int TestElement::testStiffnessMat( int col ){
+int TestElement::testJacobian( int col ){
   int nvars = element->numVariables();
   
   TacsScalar * result = new TacsScalar[nvars];

@@ -449,7 +449,8 @@ class TestElement : public TACSObject {
 
   // Tests for consistency amongst the analysis functions
   // ----------------------------------------------------
-  int testStiffnessMat( int col = -1 );
+  int testResidual(); 
+  int testJacobian( int col = -1 );
   int testStrainSVSens( const double pt[] );
   
   // Tests for the sensitivities w.r.t. nodal coordinates

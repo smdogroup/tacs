@@ -12,7 +12,8 @@ CXX_OBJS = TACSElement.o \
 	TACSShell.o \
 	ShellUtils.o \
 	LargeRotUtils.o \
-	PlaneStressTri6.o
+	PlaneStressTri6.o \
+	MITC9.o
 
 DIR=${TACS_DIR}/src/elements
 
