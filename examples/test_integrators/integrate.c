@@ -1,138 +1,108 @@
+#include "TACSCreator.h"
+#include "TACSAssembler.h"
+#include "TACSDummyElement.h"
 #include "TACSIntegrator.h"
 
 /*
-  Function that tests the integration logic in TACS
+  Function that tests the BDF and DIRK integration schemes within TACS
+  on a test function that is implemented in TACSDummyElement class
 */
 int main( int argc, char *argv[] ){
   
   MPI_Init(&argc, &argv);
 
-  int numStages = 1;
-  int numVars = 2;
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  /*-----------------------------------------------------------------*/
+  /*                    Create TACS Element                          */
+  /*-----------------------------------------------------------------*/
+
+  TACSElement *elem = new TACSDummyElement();
+  elem->incref();
   
-  double tInit = 0.0;
-  double tFinal = 25.0;
+  /*-----------------------------------------------------------------*/
+  /*                    Create TACS Creator                          */
+  /*-----------------------------------------------------------------*/
 
-  int numStepsPerSec = 10;
-  int nSteps = int(double(numStepsPerSec)*(tFinal-tInit)) + 1;
+  int vars_per_node = 2;
+  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, vars_per_node);
+  creator->incref();
 
-  int max_newton_iters = 25;
-  double atol = 1.0e-30;
-  double rtol = 1.0e-8;
+  creator->setElements(&elem, 1);
+  creator->setBoundaryConditions(0, NULL, NULL, NULL);
+
+  // Points into the starting index of the connectivity array and is of
+  // length num_elements+1
+  const int elem_node_ptr[] = {0,1}; 
+
+  const int elem_node_conn[] = {0};
+
+  // Associate elements with element id numbers
+  const int elem_id_nums[] = {0}; 
+
+  int num_nodes = 1, num_elements = 1;
+  creator->setGlobalConnectivity(num_nodes, num_elements,
+				 elem_node_ptr, elem_node_conn, elem_id_nums);
   
-  // create space for states
-  TacsScalar *q = new TacsScalar[numVars*nSteps];
-  TacsScalar *qdot = new TacsScalar[numVars*nSteps];
-  TacsScalar *qddot = new TacsScalar[numVars*nSteps];
-  TacsScalar *time = new TacsScalar[nSteps];
+  const TacsScalar xpts[] = {0,0,0};
+  creator->setNodes(xpts);
+
+  /*-----------------------------------------------------------------*/
+  /*                    Create TACS Assembler                        */
+  /*-----------------------------------------------------------------*/
   
-  // initialize the states with zeroes
-  memset(q, 0, numVars*nSteps*sizeof(TacsScalar));
-  memset(qdot, 0, numVars*nSteps*sizeof(TacsScalar));
-  memset(qddot, 0, numVars*nSteps*sizeof(TacsScalar));
-  memset(time, 0, nSteps*sizeof(TacsScalar));
+  TACSAssembler *tacs = creator->createTACS();
+  tacs->incref();
+ 
+  /*-----------------------------------------------------------------*/
+  /*                    Test DIRK Scheme                             */
+  /*-----------------------------------------------------------------*/
 
-  // set initial condition
-  time[0] = 0.0;
+  printf(">> Testing DIRK\n");  
+ 
+  double tinit = 0.0;
+  double tfinal = 25.0;
+  int num_steps_per_sec = 10;
 
-  // initial q values for all variables
-  q[0] = 1.0;
-  q[1] = 2.0;
-
-  // initial qdot values for all variables
-  qdot[0] = 0.0;
-  qdot[1] = 0.0;
-
-  printf("Integrating using DIRK \n");  
-
-  // create an integrator object
-  TacsIntegrator *dirk = new TacsDIRKIntegrator(numVars, 
-						tInit, tFinal, 
-						numStepsPerSec,
-						max_newton_iters, 
-						atol, rtol,
-						numStages);
-
+  int num_stages = 1;
+  
+  TacsIntegrator *dirk = new TacsDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
+						num_stages);
   dirk->incref();
-  dirk->integrate(time, q, qdot, qddot);
 
-  // write results
-  FILE *fp = fopen("solution_dirk.dat", "w");
- 
-  int cnt = 0;
-  for (int k = 0; k < nSteps; k++) {
-    fprintf(fp, "%e ", time[k]);
-    for (int j = 0; j < numVars; j++) {
-      fprintf(fp, "%e %e %e ", q[cnt], qdot[cnt], qddot[cnt]);
-      cnt++;
-    }
-    fprintf(fp, "\n");
-  }
-  fclose(fp);
+  dirk->integrate();
+  dirk->writeSolution("dirk.dat");
 
-  printf("DIRK complete \n");  
-  
-  // initialize the states with zeroes
-  memset(q, 0, numVars*nSteps*sizeof(TacsScalar));
-  memset(qdot, 0, numVars*nSteps*sizeof(TacsScalar));
-  memset(qddot, 0, numVars*nSteps*sizeof(TacsScalar));
-  memset(time, 0, nSteps*sizeof(TacsScalar));
-
-  // set initial condition
-  time[0] = 0.0;
-
-  // initial q values for all variables
-  q[0] = 1.0;
-  q[1] = 2.0;
-
-  // initial qdot values for all variables
-  qdot[0] = 0.0;
-  qdot[1] = 0.0;
-
-  printf("Integrating using BDF\n");  
-
-  int maxBDFOrder = 2;
-
-  // create an integrator object
-  TacsIntegrator *bdf = new TacsBDFIntegrator(numVars, 
-					      tInit, tFinal, 
-					      numStepsPerSec,
-					      max_newton_iters, 
-					      atol, rtol,
-					      maxBDFOrder);
-  
-  bdf->incref();
-  bdf->integrate(time, q, qdot, qddot);
-  
-  // write results
-  fp = fopen("solution_bdf.dat", "w");
- 
-  cnt = 0;
-  for (int k = 0; k < nSteps; k++) {
-    fprintf(fp, "%e ", time[k]);
-    for (int j = 0; j < numVars; j++) {
-      fprintf(fp, "%e %e %e ", q[cnt], qdot[cnt], qddot[cnt]);
-      cnt++;
-    }
-    fprintf(fp, "\n");
-  }
-  fclose(fp);
-
-  printf("BDF complete \n");
-
-  delete [] time;
-  delete [] q;
-  delete [] qdot;
-  delete [] qddot;
- 
   dirk->decref();
+  
+  printf(">> Testing DIRK complete\n");  
+
+  //-----------------------------------------------------------------//
+  //                    Test BDF Scheme                             //
+  //-----------------------------------------------------------------//
+  
+  printf(">> Testing BDF\n");  
+
+  int max_bdf_order = 2;
+  TacsIntegrator *bdf = new TacsBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
+					      max_bdf_order);
+  bdf->incref();
+
+  bdf->integrate();
+  bdf->writeSolution("bdf.dat");
+
   bdf->decref();
+
+  printf(">> BDF complete \n");
+
+  // Deallocate objects
+
+  tacs->decref();
+  elem->decref();
+  creator->decref();
 
   MPI_Finalize();
 
   return (0);
 }
-
-
-
-

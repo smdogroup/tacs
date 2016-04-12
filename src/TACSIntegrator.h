@@ -1,140 +1,183 @@
 #ifndef TACS_INTEGRATOR_H
 #define TACS_INTEGRATOR_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "TACSObject.h"
-#include "TACSNonLinearSolver.h"
+#include "TACSAssembler.h"
+#include "KSM.h"
 
 /*
-  Abstract class for integration schemes to extend
+  Base class for integration schemes. This base class contains common
+  methods and variables pertaining to the integration schemes used in
+  TACS.
+
+  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
+
 */
 
 class TacsIntegrator : public TACSObject {
-
  public:
   
-  TacsIntegrator(int numVars, double tInit, 
-		 double tFinal, int numStepsPerSec, 
-		 int maxNewtonIters, double _atol, double _rtol);
-  
+  // Parent class constructor for integration schemes
+  //-------------------------------------------------
+  TacsIntegrator(TACSAssembler *_tacs, 
+		 double _tinit, double _tfinal, int _num_steps_per_sec);
+
+  // Destructor
+  //-----------
   ~TacsIntegrator();
   
-  virtual void integrate(TacsScalar *time, TacsScalar *q, 
-			 TacsScalar *qdot, TacsScalar *qddot){}
+  // Method to solve the non-linear system using Newton's method
+  //------------------------------------------------------------
+  void newtonSolve(double alpha, double beta, double gamma,
+		   double t, BVec *q, BVec *qdot, 
+		   BVec *qddot);
+
+  // Call this function after integrating to write the solution to file
+  //-------------------------------------------------------------------
+  void writeSolution(const char *filename);
+
+  // Pure virtual function that the derived classes must override/implement
+  //-----------------------------------------------------------------------
+  virtual void integrate() = 0;
+
+  // Setters
+  //--------
+  void setMaxNewtonIters(int _max_newton_iters){max_newton_iters = _max_newton_iters;};
+  void setRelTol(double _rtol){rtol = _rtol;};
+  void setAbsTol(double _atol){atol = _atol;};
+  void setPrintLevel(int _print_level){print_level = _print_level;};
   
  protected:
- 
-  int numVars;
- 
-  double h;
-  double tInit, tFinal;
 
-  int numStepsPerSec;
-  int numSteps; 
-  int currentTimeStep;
-
-  double alpha, beta, gamma;
+  // Instance of TACS
+  TACSAssembler *tacs; 
   
-  // nonlinear solver
-  int maxNewtonIters;
-  TacsNonLinearSolver *nonlinearSolver;
+  // Store the history of states over time
+  BVec **q, **qdot, **qddot;
+  double *time;
+  
+  // Class variables used to manage/monitor time marching in integration schemes
+  int num_time_steps, num_steps_per_sec, current_time_step; 
+  double h, tinit, tfinal;
+
+  // Print and output options
+  int print_level;
+
+  // Variables controlling the nonlinear solution
+  int max_newton_iters;
+  double atol, rtol;
+
+  // Matrices and vectors for the nonlinear solution
+  BVec *res, *update;  // Residual and Newton update
+  FEMat *D;            // Matrix associated with Preconditioner
+  TACSMat *mat;        // Jacobian matrix
+  TACSPc *pc;          // Preconditioner
+  TACSKsm *ksm;        // KSM solver
 
 };
 
 /*
-  A DIRK integration scheme for TACS
+  DIRK integration scheme for TACS
 */
 class TacsDIRKIntegrator : public TacsIntegrator {
 
  public:
 
-  // constructor for DIRK object
-  TacsDIRKIntegrator(int numVars, double tInit, 
-		     double tFinal, int numStepsPerSec, 
-		     int maxNewtonIters, double atol, double rtol,
-		     int numStages);
+  // Constructor for DIRK object
+  //----------------------------
+  TacsDIRKIntegrator(TACSAssembler * _tacs, 
+		     double _tinit, double _tfinal, int _num_steps_per_sec, 
+		     int num_stages);
   
-  // destructor for DIRK object
+  // Desctructor
+  //------------
   ~TacsDIRKIntegrator();
-
-  // integrate call
-  void integrate(TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  
+  // function to call to integrate in time
+  //--------------------------------------
+  void integrate();
   
  private:
 
-  //------------------------------------------------------------------//
-  // private variables
-  //------------------------------------------------------------------//
-
   // the number of stage in RK scheme
-  int numStages;
+  int num_stages;
   
   // the order of accuracy of the scheme
   int order;
   
   // variables for Butcher tableau
-  double *A=NULL, *B=NULL, *C=NULL;
+  double *A, *B, *C;
   
   // stage values (computed at each time stage for each time step)
-  double  *tS=NULL, *qS=NULL, *qdotS=NULL, *qddotS=NULL;
+  double *tS;
+  BVec **qS, **qdotS, **qddotS;
 
-  //------------------------------------------------------------------//
-  // private functions
-  //------------------------------------------------------------------//
-
+  // Functions related to Butcher Tableau
+  //-------------------------------------
   void setupButcherTableau();
   void checkButcherTableau();
 
-  // returns the starting index of Butcher tableau
+  // Returns the starting index of Butcher tableau
+  //----------------------------------------------
   int getIdx(int stageNum);
 
-  void computeStageValues(TacsScalar tk, TacsScalar *qk, TacsScalar *qdotk, TacsScalar *qddotk);
-  void timeMarch(int k, TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  // Compute the stages stage values 
+  //---------------------------------
+  void computeStageValues();
+
+  // Advance the time and states to next step
+  //-----------------------------------------
+  void timeMarch(double *time, BVec **q, BVec **qdot, BVec **qddot);
+
+  // Set the stage states and time to zero after each global timestep
+  //-----------------------------------------------------------------
   void resetStageValues();
 
 };
 
 /*
-  BDF integration scheme for TACS
+  BDF integration scheme for TACS which extends TacsIntegrator
 */
 
 class TacsBDFIntegrator : public TacsIntegrator {
 
  public:
   
-  // constructor for BDF object
-  TacsBDFIntegrator(int numVars, double tInit, 
-		    double tFinal, int numStepsPerSec, 
-		    int maxNewtonIters, double atol, double rtol,
-		    int maxBDFOrder);
+  // Constructor for BDF object
+  //---------------------------
+  TacsBDFIntegrator(TACSAssembler * _tacs, 
+		    double _tinit, double _tfinal, int _num_steps_per_sec, 
+		    int max_bdf_order);
   
-  // destructor for BDF object
+  // Destructor for BDF object
+  //--------------------------
   ~TacsBDFIntegrator();
   
-  // integrate call
-  void integrate(TacsScalar *time, TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
+  // Function that integrates forward in time
+  //-----------------------------------------
+  void integrate();
   
- private:
-  
-  TacsScalar *res = NULL;
-  TacsScalar *D = NULL;
-    
-  // The BDF coefficients for time integration
-  double bdf_coeff[4], bddf_coeff[9];
-  
-  int maxBDFOrder;
+ private:  
 
-  // Retireve the BDF coefficients
+  // Maximum order of the BDF integration scheme
+  int max_bdf_order;
+  
+  // Class variable to store BDF coefficients
+  double bdf_coeff[4], bddf_coeff[9];
+
+  // Retrieve the first order BDF coefficients
+  //------------------------------------------
   int getBDFCoeff(double bdf[], int order );
+
+  // Retrieve the second order BDF coefficients
+  //------------------------------------------
   void get2ndBDFCoeff(const int k, double bdf[], int *nbdf,
 		      double bddf[], int *nbddf,
 		      const int max_order);
   
   // approximate derivatives using BDF stencil
-  void approxStates(TacsScalar *q, TacsScalar *qdot, TacsScalar *qddot);
-  void setCoeffs(double alpha, double beta, double gamma);
+  //------------------------------------------
+  void approxStates(BVec **q, BVec **qdot, BVec **qddot);
 
 };
 
