@@ -931,27 +931,6 @@ void TACSRigidBody::computeEnergies( double time,
   TacsScalar deta = dvars[3];
   const TacsScalar *deps = &dvars[4];
 
-  // Retrieve the rotation matrix for the initial reference
-  // configuration
-  const TacsScalar *C0;
-  CRef->getRotation(&C0);
-
-  // Compute the rotation matrix as a function of the Euler parameters
-  // and multiply by the reference configuration
-  TacsScalar Cr[9], C[9];
-  Cr[0] = 1.0 - 2.0*(eps[1]*eps[1] + eps[2]*eps[2]);
-  Cr[1] = 2.0*(eps[0]*eps[1] + eps[2]*eta);
-  Cr[2] = 2.0*(eps[0]*eps[2] - eps[1]*eta);
-  
-  Cr[3] = 2.0*(eps[1]*eps[0] - eps[2]*eta);
-  Cr[4] = 1.0 - 2.0*(eps[0]*eps[0] + eps[2]*eps[2]);
-  Cr[5] = 2.0*(eps[1]*eps[2] + eps[0]*eta);
-  
-  Cr[6] = 2.0*(eps[2]*eps[0] + eps[1]*eta);
-  Cr[7] = 2.0*(eps[2]*eps[1] - eps[0]*eta);
-  Cr[8] = 1.0 - 2.0*(eps[0]*eps[0] + eps[1]*eps[1]);
-  matMatMult(Cr, C0, C);
-
   // Compute the angular velocity from the Euler parameters
   // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
   TacsScalar omega[3];
@@ -977,7 +956,19 @@ void TACSRigidBody::computeEnergies( double time,
 }
 
 /*
-  Compute the governing equations for the rigid body motion.
+  Compute the residual of the governing equations for the rigid body
+  motion.
+
+  The equations of motion for the rigid body are derived using
+  Lagrange's equations of motion with constraints. Within each body,
+  the constraint enforcing the norm on the quaternion is imposed
+  directly. The motion equations are written as follows:
+
+
+  For the governing
+
+  S^{T}*J*dot{omega} + 2*dot{S}^{T}*J*omega - A^{T}*lambda
+
 
 */
 void TACSRigidBody::getResidual( double time, 
@@ -986,7 +977,67 @@ void TACSRigidBody::getResidual( double time,
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
+  // Zero the residual entries
+  memset(res, 0, 8*sizeof(TacsScalar));
 
+  // Set the location and its time derivatives
+  const TaccScalar *r0 = &vars[0];
+  const TacsScalar *v0 = &dvars[0]; 
+  const Tacsscalar *a0 = &ddvars[0];
+
+  // Set the pointers to the Euler parameters and all their time
+  // derivatives
+  TacsScalar eta = vars[3];
+  const TacsScalar *eps = &vars[4];
+  TacsScalar deta = dvars[3];
+  const TacsScalar *deps = &dvars[4];
+  TacsScalar ddeta = ddvars[3];
+  const TacsScalar *ddeps = &ddvars[4];
+
+  // Compute the angular velocity from the Euler parameters
+  // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
+  TacsScalar omega[3];
+  crossProduct(-2.0, eps, deps, omega);
+  vecAxpy(2.0*eta, deps, omega);
+  vecAxpy(-2.0*deta, eps, omega);
+
+  // Compute the angular acceleration
+  // domega = S(dot{q})*dot{q} + S(q)*ddot{q}
+  TacsScalar domega[3];
+  crossProduct(-2.0, deps, deps, domega);
+  vecAxpy(2.0*deta, deps, domega);
+  vecAxpy(-2.0*deta, deps, domega);
+  
+  crossProductAdd(-2.0, eps, ddeps, domega);
+  vecAxpy(2.0*eta, ddeps, domega);
+  vecAxpy(-2.0*ddeta, eps, domega);
+
+  // Compute the cross product
+  TacsScalar cdw[3];
+  crossProduct(1.0, c, domega, cdw);
+
+  // The dynamics for the reference point
+  r[0] = mass*a0[0] - cdw[0];
+  r[1] = mass*a0[1] - cdw[1];
+  r[2] = mass*a0[2] - cdw[2];
+
+  // Compute dw = J*domega
+  TacsScalar w[3], dw[3]
+
+  // The dynamics for the rotation
+  // Add S^{T}*dw
+  r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
+  crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
+  vecAxpy(2.0*h*N[ii]*eta*rho[1], dw, &r[4]);
+
+  // Add 2*dot{S}^{T}*w
+  r[3] -= 4.0*h*N[ii]*rho[1]*vecDot(deps, w);
+  crossProductAdd(4.0*h*N[ii]*rho[1], deps, w, &r[4]);
+  vecAxpy(4.0*h*N[ii]*deta*rho[1], w, &r[4]);
+
+	r += 8;
+	q += 8;
+	dq += 8;
 
 }
 

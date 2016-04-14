@@ -84,7 +84,8 @@ class TACSRigidBody : public TACSElement {
 
   // Set design variables numbers associated with the inertial props.
   // ----------------------------------------------------------------
-  void setDesignVarNums( int _massDV, const int _cDV[], 
+  void setDesignVarNums( int _massDV, 
+                         const int _cDV[], 
 			 const int _JDV[] );
 
   // Return the number of displacements and nodes
