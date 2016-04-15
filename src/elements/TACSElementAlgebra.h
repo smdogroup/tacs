@@ -625,4 +625,309 @@ static inline TacsScalar mat3x3Inner( const TacsScalar A[],
 	  x[2]*(A[6]*y[0] + A[7]*y[1] + A[8]*y[2]));
 }
 
+/*
+  Given the quaternion parameters, compute the rotation matrix.
+
+  input:
+  eta:    the quaternion scalar
+  eps:    the quaternion 3-vector
+
+  output:
+  C:      the rotation matrix
+*/
+static inline void computeRotationMat( const TacsScalar eta,
+                                       const TacsScalar eps[],
+                                       TacsScalar C[] ){
+  C[0] = 1.0 - 2.0*(eps[1]*eps[1] + eps[2]*eps[2]);
+  C[1] = 2.0*(eps[0]*eps[1] + eps[2]*eta);
+  C[2] = 2.0*(eps[0]*eps[2] - eps[1]*eta);
+  
+  C[3] = 2.0*(eps[1]*eps[0] - eps[2]*eta);
+  C[4] = 1.0 - 2.0*(eps[0]*eps[0] + eps[2]*eps[2]);
+  C[5] = 2.0*(eps[1]*eps[2] + eps[0]*eta);
+  
+  C[6] = 2.0*(eps[2]*eps[0] + eps[1]*eta);
+  C[7] = 2.0*(eps[2]*eps[1] - eps[0]*eta);
+  C[8] = 1.0 - 2.0*(eps[0]*eps[0] + eps[1]*eps[1]);
+}
+
+/*
+  Compute the product of the 3x4 rotation rate matrix with the
+  given components of the quaternion vector. 
+
+  y <- S(eta, eps)*x 
+  y <- -2*eps*xeta + 2*(eta*I - eps^{x})*xeps
+
+  input: 
+  eta:   the quaternion scalar
+  eps:   the quaternion vector
+  xeta:  the x component of the scalar
+  xeps:  the x components of the vector
+  
+  output:
+  y:     3-vector containing the result
+*/
+static inline void computeSRateProduct( const TacsScalar eta,
+                                        const TacsScalar eps[],
+                                        const TacsScalar xeta,
+                                        const TacsScalar xeps[],
+                                        TacsScalar y[] ){
+  crossProduct(-2.0, eps, xeps, y);
+  vecAxpy(2.0*eta, xeps, y);
+  vecAxpy(-2.0*xeta, eps, y);
+}
+
+/*
+  Add the product of the 3x4 rotation rate matrix with the given
+  components of the quaternion vector.
+
+  y <- y + a*S(eta, eps)*x 
+  y <- y - 2*a*eps*xeta + 2*a*(eta*I - eps^{x})*xeps
+
+  input: 
+  eta:   the quaternion scalar
+  eps:   the quaternion vector
+  xeta:  the x component of the scalar
+  xeps:  the x components of the vector
+  
+  output:
+  y:     3-vector containing the result
+*/
+static inline void addSRateProduct( const TacsScalar eta,
+                                    const TacsScalar eps[],
+                                    const TacsScalar xeta,
+                                    const TacsScalar xeps[],
+                                    TacsScalar y[] ){
+  crossProductAdd(-2.0, eps, xeps, y);
+  vecAxpy(2.0*eta, xeps, y);
+  vecAxpy(-2.0*xeta, eps, y);
+}
+
+/*
+  Add the product of the transpose of the 3x4 rotation rate matrix
+  with the given components of x.
+
+  y <- y + a*S(eta, eps)^{T}*x
+  
+  [ yeta ] += a*S^{T}*x = [      2*a*eps^{T}*x      ]
+  [ yeps ] +=             [ 2*a*(eta*I + eps^{x})*x ] 
+  
+
+  input: 
+  a:     the scalar input
+  eta:   the quaternion scalar
+  eps:   the quaternion vector
+  x:     the 3-vector input
+  
+  output:
+  yeps:  the scalar component of the output
+  yeta:  the 3-vector component of the output
+*/
+static inline void addSRateTransProduct( const TacsScalar a,
+                                         const TacsScalar eta,
+                                         const TacsScalar eps[],
+                                         const TacsScalar x[],
+                                         TacsScalar *yeta,
+                                         TacsScalar yeps[] ){
+  *yeta -= 2.0*a*vecDot(eps, x);
+  crossProductAdd(2.0*a, eps, x, yeps);
+  vecAxpy(2.0*a, x, yeps);
+}
+
+/*
+  Compute the 3x4 rotation rate matrix that takes the quaternion rates
+  and returns the angular velocity:
+
+  S = 2[ -eps | (eta*I - eps^{x}) ]
+
+  input: 
+  eta:   the quaternion scalar
+  eps:   the quaternion vector
+  
+  output:
+  S:     the 3x4 rate matrix
+*/
+static inline void computeSRateMat( const TacsScalar eta,
+                                    const TacsScalar eps[],
+                                    TacsScalar S[] ){
+  S[0] = -2.0*eps[0];
+  S[1] = 2.0*eta;
+  S[2] = 2.0*eps[2];
+  S[3] = -2.0*eps[1];
+
+  S[4] = -2.0*eps[1];
+  S[5] = -2.0*eps[2];
+  S[6] = 2.0*eta;
+  S[7] = 2.0*eps[0];
+
+  S[8] = -2.0*eps[2];
+  S[9] = 2.0*eps[1];
+  S[10] = -2.0*eps[0];
+  S[11] = 2.0*eta;
+}
+
+/*
+  Add the 4x4 matrix from the derivative of the transpose of the
+  angular rate S matrix
+
+  d(S^{T}*v)/dq = 
+  [ 0 | -v^{T} ]
+  [ v | -v^{x} ]
+
+  input:
+  a:      a scalar multiplier on the contribution
+  v:      the input vector
+  ldd:    the leading dimension of the Jacobian matrix
+
+  output:
+  D:      the Jacobian matrix to which the the contribution is added
+*/
+static inline void addSRateMatTransDeriv( const TacsScalar a,
+                                          const TacsScalar v[],
+                                          TacsScalar D[],
+                                          const int ldd ){
+  const TacsScalar b = 2.0*a;
+  D[1] -= b*v[0];
+  D[2] -= b*v[1];
+  D[3] -= b*v[2];
+  D += ldd;
+
+  D[0] += b*v[0];
+  D[2] += b*v[2];
+  D[3] -= b*v[1];
+  D += ldd;
+
+  D[0] += b*v[1];
+  D[1] -= b*v[2];
+  D[3] += b*v[0];
+  D += ldd;
+
+  D[0] += b*v[2];
+  D[1] += b*v[1];
+  D[2] -= b*v[0];
+}
+
+/*
+  Compute: D += a*A^{T}*B where a is a scalar, and A and B are 3x4
+  matrices stored in column-major order.
+
+  input: 
+  a:    the scalar multiple
+  A:    3x4 matrix in row-major order
+  B:    3x4 matrix in row-major order
+  ldd:  the leading row dimension of the Jacobian matrix D
+
+  output:
+  D:    the result is added to this matrix D += a*A^{T}*B
+*/
+static inline void add3x4Product( const TacsScalar a,
+				  const TacsScalar A[],
+				  const TacsScalar B[],
+				  TacsScalar D[],
+				  const int ldd ){
+  D[0] += a*(A[0]*B[0] + A[4]*B[4] + A[8]*B[8]);
+  D[1] += a*(A[0]*B[1] + A[4]*B[5] + A[8]*B[9]);
+  D[2] += a*(A[0]*B[2] + A[4]*B[6] + A[8]*B[10]);
+  D[3] += a*(A[0]*B[3] + A[4]*B[7] + A[8]*B[11]);
+  D += ldd;
+
+  D[0] += a*(A[1]*B[0] + A[5]*B[4] + A[9]*B[8]);
+  D[1] += a*(A[1]*B[1] + A[5]*B[5] + A[9]*B[9]);
+  D[2] += a*(A[1]*B[2] + A[5]*B[6] + A[9]*B[10]);
+  D[3] += a*(A[1]*B[3] + A[5]*B[7] + A[9]*B[11]);
+  D += ldd;
+
+  D[0] += a*(A[2]*B[0] + A[6]*B[4] + A[10]*B[8]);
+  D[1] += a*(A[2]*B[1] + A[6]*B[5] + A[10]*B[9]);
+  D[2] += a*(A[2]*B[2] + A[6]*B[6] + A[10]*B[10]);
+  D[3] += a*(A[2]*B[3] + A[6]*B[7] + A[10]*B[11]);
+  D += ldd;
+
+  D[0] += a*(A[3]*B[0] + A[7]*B[4] + A[11]*B[8]);
+  D[1] += a*(A[3]*B[1] + A[7]*B[5] + A[11]*B[9]);
+  D[2] += a*(A[3]*B[2] + A[7]*B[6] + A[11]*B[10]);
+  D[3] += a*(A[3]*B[3] + A[7]*B[7] + A[11]*B[11]);
+}
+
+/*
+  Compute the second derivative of the product of the transpose of a
+  quaternion-parametrized rotation matrix with a vector, i.e.:
+
+  d^2/dq^2(C^{T}*v)
+
+  where v is a constant vector. Note that the second derivative of the
+  rotation matrix is a constant and so this code only depends on the
+  input vector v.
+
+  The order of the derivatives is as follows:
+  d^2(C^{T}*v)/(d(eta)d(epsilon_{i})
+
+  d^2(C^{T}*v)/(d(epsilon_{i})d(epsilon_{j})
+
+  for (i,j) = (0,0), (0,1), (0,2), (1,1), (1,2), (2,2)
+
+  The result is stored in a 9x3 array in row-major order.
+
+  input:
+  v:    the constant vector in the multiplication C^{T}*v
+
+  output:
+  dv    the second derivatives of C^{T}*v w.r.t q
+*/
+static inline void computeQtr2ndDeriv( const TacsScalar v[],
+				       TacsScalar dv[] ){
+  // Derivatives of eta and eps
+  dv[0] = 0.0;
+  dv[1] = -2.0*v[2];
+  dv[2] = 2.0*v[1];
+  dv += 3;
+
+  dv[0] = 2.0*v[2];
+  dv[1] = 0.0;
+  dv[2] = -2.0*v[0];
+  dv += 3;
+
+  dv[0] = -2.0*v[1];
+  dv[1] = 2.0*v[0];
+  dv[2] = 0.0;
+  dv += 3;
+
+  // Second derivatives w.r.t eps
+  // C,11
+  dv[0] = 0.0;
+  dv[1] = -4.0*v[1];
+  dv[2] = -4.0*v[2];
+  dv += 3;
+
+  // C,12
+  dv[0] = 2.0*v[1];
+  dv[1] = 2.0*v[0];
+  dv[2] = 0.0;
+  dv += 3;
+
+  // C,13
+  dv[0] = 2.0*v[2];
+  dv[1] = 0.0;
+  dv[2] = 2.0*v[0];
+  dv += 3;
+
+  // C,22
+  dv[0] = -4.0*v[0];
+  dv[1] = 0.0;
+  dv[2] = -4.0*v[2];
+  dv += 3;
+
+  // C,23
+  dv[0] = 0.0;
+  dv[1] = 2.0*v[2];
+  dv[2] = 2.0*v[1];
+  dv += 3;
+
+  // C,33
+  dv[0] = -4.0*v[0];
+  dv[1] = -4.0*v[1];
+  dv[2] = 0.0;
+  dv += 3;
+}
+
 #endif // TACS_ALGEBRA_H

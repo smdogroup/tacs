@@ -355,79 +355,6 @@ static inline void assembleFrame( const TacsScalar Xa[],
 }
 
 /*
-  Add the 4x4 matrix from the derivative of the transpose of the
-  angular rate kinematic S matrix
-
-  d(S^{T}*v)/dq = 
-  [ 0 | -v^{T} ]
-  [ v | -v^{x} ]
-
-  input:
-  a:      a scalar multiplier on the contribution
-  v:      the input vector
-  ldd:    the leading dimension of the Jacobian matrix
-
-  output:
-  D:      the Jacobian matrix to which the the contribution is added
-*/
-static inline void addSTransDeriv( const TacsScalar a,
-				   const TacsScalar v[],
-				   TacsScalar D[],
-				   const int ldd ){
-  const TacsScalar b = 2.0*a;
-  D[1] -= b*v[0];
-  D[2] -= b*v[1];
-  D[3] -= b*v[2];
-  D += ldd;
-
-  D[0] += b*v[0];
-  D[2] += b*v[2];
-  D[3] -= b*v[1];
-  D += ldd;
-
-  D[0] += b*v[1];
-  D[1] -= b*v[2];
-  D[3] += b*v[0];
-  D += ldd;
-
-  D[0] += b*v[2];
-  D[1] += b*v[1];
-  D[2] -= b*v[0];
-}
-
-/*
-  Compute the 3x4 rotation rate matrix that takes the quaternion rates
-  and returns the angular velocity:
-
-  S = 2[ -eps | (eta*I - eps^{x}) ]
-
-  input: 
-  eta:   the quaternion scalar
-  eps:   the quaternion vector
-  
-  output:
-  S:     the 3x4 rate matrix
-*/
-static inline void computeRateMatrix( const TacsScalar eta,
-				      const TacsScalar eps[],
-				      TacsScalar S[] ){
-  S[0] = -2.0*eps[0];
-  S[1] = 2.0*eta;
-  S[2] = 2.0*eps[2];
-  S[3] = -2.0*eps[1];
-
-  S[4] = -2.0*eps[1];
-  S[5] = -2.0*eps[2];
-  S[6] = 2.0*eta;
-  S[7] = 2.0*eps[0];
-
-  S[8] = -2.0*eps[2];
-  S[9] = 2.0*eps[1];
-  S[10] = -2.0*eps[0];
-  S[11] = 2.0*eta;
-}
-
-/*
   Compute the 3x4 matrix from the following matrix-matrix product:
 
   A = J*S = 2(I - n*n^{T})*[ -eps | (eta*I - eps^{x}) ] 
@@ -449,7 +376,7 @@ static inline void computeNormalRateProduct( const TacsScalar n[],
 					     TacsScalar A[] ){
   // Compute the rate matrix
   TacsScalar S[12];
-  computeRateMatrix(eta, eps, S);
+  computeSRateMat(eta, eps, S);
   
   // Pre-multiply the S matrix by (I - n*n^{T})
   TacsScalar ns = 0.0;
@@ -477,129 +404,6 @@ static inline void computeNormalRateProduct( const TacsScalar n[],
   A[3] = S[3] - n[0]*ns;
   A[7] = S[7] - n[1]*ns;
   A[11] = S[11] - n[2]*ns;
-}
-
-/*
-  Compute: D += a*A^{T}*B where a is a scalar, and A and B are 3x4
-  matrices stored in column-major order.
-
-  input: 
-  a:    the scalar multiple
-  A:    3x4 matrix in row-major order
-  B:    3x4 matrix in row-major order
-  ldd:  the leading row dimension of the Jacobian matrix D
-
-  output:
-  D:    the result is added to this matrix D += a*A^{T}*B
-*/
-static inline void add3x4Product( const TacsScalar a,
-				  const TacsScalar A[],
-				  const TacsScalar B[],
-				  TacsScalar D[],
-				  const int ldd ){
-  D[0] += a*(A[0]*B[0] + A[4]*B[4] + A[8]*B[8]);
-  D[1] += a*(A[0]*B[1] + A[4]*B[5] + A[8]*B[9]);
-  D[2] += a*(A[0]*B[2] + A[4]*B[6] + A[8]*B[10]);
-  D[3] += a*(A[0]*B[3] + A[4]*B[7] + A[8]*B[11]);
-  D += ldd;
-
-  D[0] += a*(A[1]*B[0] + A[5]*B[4] + A[9]*B[8]);
-  D[1] += a*(A[1]*B[1] + A[5]*B[5] + A[9]*B[9]);
-  D[2] += a*(A[1]*B[2] + A[5]*B[6] + A[9]*B[10]);
-  D[3] += a*(A[1]*B[3] + A[5]*B[7] + A[9]*B[11]);
-  D += ldd;
-
-  D[0] += a*(A[2]*B[0] + A[6]*B[4] + A[10]*B[8]);
-  D[1] += a*(A[2]*B[1] + A[6]*B[5] + A[10]*B[9]);
-  D[2] += a*(A[2]*B[2] + A[6]*B[6] + A[10]*B[10]);
-  D[3] += a*(A[2]*B[3] + A[6]*B[7] + A[10]*B[11]);
-  D += ldd;
-
-  D[0] += a*(A[3]*B[0] + A[7]*B[4] + A[11]*B[8]);
-  D[1] += a*(A[3]*B[1] + A[7]*B[5] + A[11]*B[9]);
-  D[2] += a*(A[3]*B[2] + A[7]*B[6] + A[11]*B[10]);
-  D[3] += a*(A[3]*B[3] + A[7]*B[7] + A[11]*B[11]);
-}
-
-/*
-  Compute the second derivative of the product of the transpose of a
-  quaternion-parametrized rotation matrix with a vector, i.e.:
-
-  d^2/dq^2(C^{T}*v)
-
-  where v is a constant vector. Note that the second derivative of the
-  rotation matrix is a constant and so this code only depends on the
-  input vector v.
-
-  The order of the derivatives is as follows:
-  d^2(C^{T}*v)/(d(eta)d(epsilon_{i})
-
-  d^2(C^{T}*v)/(d(epsilon_{i})d(epsilon_{j})
-
-  for (i,j) = (0,0), (0,1), (0,2), (1,1), (1,2), (2,2)
-
-  The result is stored in a 9x3 array in row-major order.
-
-  input:
-  v:    the constant vector in the multiplication C^{T}*v
-
-  output:
-  dv    the second derivatives of C^{T}*v w.r.t q
-*/
-static inline void computeQtr2ndDeriv( const TacsScalar v[],
-				       TacsScalar dv[] ){
-  // Derivatives of eta and eps
-  dv[0] = 0.0;
-  dv[1] = -2.0*v[2];
-  dv[2] = 2.0*v[1];
-  dv += 3;
-
-  dv[0] = 2.0*v[2];
-  dv[1] = 0.0;
-  dv[2] = -2.0*v[0];
-  dv += 3;
-
-  dv[0] = -2.0*v[1];
-  dv[1] = 2.0*v[0];
-  dv[2] = 0.0;
-  dv += 3;
-
-  // Second derivatives w.r.t eps
-  // C,11
-  dv[0] = 0.0;
-  dv[1] = -4.0*v[1];
-  dv[2] = -4.0*v[2];
-  dv += 3;
-
-  // C,12
-  dv[0] = 2.0*v[1];
-  dv[1] = 2.0*v[0];
-  dv[2] = 0.0;
-  dv += 3;
-
-  // C,13
-  dv[0] = 2.0*v[2];
-  dv[1] = 0.0;
-  dv[2] = 2.0*v[0];
-  dv += 3;
-
-  // C,22
-  dv[0] = -4.0*v[0];
-  dv[1] = 0.0;
-  dv[2] = -4.0*v[2];
-  dv += 3;
-
-  // C,23
-  dv[0] = 0.0;
-  dv[1] = 2.0*v[2];
-  dv[2] = 2.0*v[1];
-  dv += 3;
-
-  // C,33
-  dv[0] = -4.0*v[0];
-  dv[1] = -4.0*v[1];
-  dv[2] = 0.0;
-  dv += 3;
 }
 
 /*
@@ -1270,8 +1074,8 @@ void MITC9::getJacobian( double time, TacsScalar J[],
 
 	// Add the diagonal terms
 	const TacsScalar dscale = h*N[ii]*rho[1];
-	addSTransDeriv(alpha*dscale, dw, Jp, ldj);
-	addSTransDeriv(2.0*beta*dscale, w, Jp, ldj);
+	addSRateMatTransDeriv(alpha*dscale, dw, Jp, ldj);
+	addSRateMatTransDeriv(2.0*beta*dscale, w, Jp, ldj);
 
 	// Add the result to the Jacobian matrix
 	const TacsScalar *q = vars, *dq = dvars, *ddq = ddvars;
@@ -1285,15 +1089,15 @@ void MITC9::getJacobian( double time, TacsScalar J[],
 	  
 	  // Compute S = S(q)
 	  TacsScalar Sjj[12];
-	  computeRateMatrix(q[3], &q[4], Sjj);
+	  computeSRateMat(q[3], &q[4], Sjj);
 
 	  // Compute dot{S} = S(dot{q})
 	  TacsScalar dSjj[12];
-	  computeRateMatrix(dq[3], &dq[4], dSjj);
+	  computeSRateMat(dq[3], &dq[4], dSjj);
 
 	  // Compute ddot{S} = S(ddot{q})
 	  TacsScalar ddSjj[12];
-	  computeRateMatrix(ddq[3], &ddq[4], ddSjj);
+	  computeSRateMat(ddq[3], &ddq[4], ddSjj);
 
 	  // Add the Jacobian terms from the DOF:
 	  // T(dw) - S^{T}*J*S(ddot{q}) - 2*dot{S}^{T}*J*dot{S}

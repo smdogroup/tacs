@@ -905,6 +905,17 @@ void TACSRigidBody::addRotationAdjResProduct( TacsScalar fdvSens[],
 /*
   Compute the kinematic and potential energies of the rigid body
 
+  The kinetic energy is given by:
+  
+  T = 0.5*m*v0^{T}*v0 + 0.5*omega^{T}*J*omega
+  .   + v0^{T}*C^{T}*omega^{x}*c
+
+  where r0 and v0 are expressed in the global reference frame, and C
+  is the rotation matrix from the global to body-fixed frames. The
+  potential energy is due to the force of gravity
+
+  U = -m*g^{T}*r0 - g^{T}*C^{T}*c
+
   input:
   time:   the simulation time
   X:      the reference node location
@@ -931,12 +942,13 @@ void TACSRigidBody::computeEnergies( double time,
   TacsScalar deta = dvars[3];
   const TacsScalar *deps = &dvars[4];
 
+  // Compute the rotation matrix
+  TacsScalar C[9];
+  computeRotationMat(eta, eps, C);
+
   // Compute the angular velocity from the Euler parameters
-  // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
   TacsScalar omega[3];
-  crossProduct(-2.0, eps, deps, omega);
-  vecAxpy(2.0*eta, deps, omega);
-  vecAxpy(-2.0*deta, eps, omega);
+  computeSRateProduct(eta, eps, deta, deps, omega);
 
   // Add the contribution from the linear motion
   *Te = 0.5*mass*vecDot(v0, v0);
@@ -964,10 +976,23 @@ void TACSRigidBody::computeEnergies( double time,
   the constraint enforcing the norm on the quaternion is imposed
   directly. The motion equations are written as follows:
 
+  m*ddot{r} - c^{x}*dot{omega} - mass*g = 0
+  S^{T}*dot{y} + 2*dot{S}^{T}*y - A^{T}*lambda = 0
 
-  For the governing
+  where y = J*omega + c^{x}*v
 
-  S^{T}*J*dot{omega} + 2*dot{S}^{T}*J*omega - A^{T}*lambda
+  Note that the matrix S relates the quaternion rates to the angular
+  acceleration such that omega = S*dot{q}. The matrix S is given by:
+  
+  S(q) = 2[ -eps | (eta*I - eps^{x}) ]
+
+  Note that the matrix S has the property that dot{S} = S(dot{q}).
+  The transpose of S is given as follows:
+
+  S^{T} = [      2*eps^{T}      ]
+  .       [ 2*(eta*I + eps^{x}) ] 
+  
+  
 
 
 */
@@ -995,49 +1020,41 @@ void TACSRigidBody::getResidual( double time,
   const TacsScalar *ddeps = &ddvars[4];
 
   // Compute the angular velocity from the Euler parameters
-  // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
   TacsScalar omega[3];
-  crossProduct(-2.0, eps, deps, omega);
-  vecAxpy(2.0*eta, deps, omega);
-  vecAxpy(-2.0*deta, eps, omega);
+  computeSRateProduct(eta, eps, deta, deps, omega);
 
   // Compute the angular acceleration
   // domega = S(dot{q})*dot{q} + S(q)*ddot{q}
   TacsScalar domega[3];
-  crossProduct(-2.0, deps, deps, domega);
-  vecAxpy(2.0*deta, deps, domega);
-  vecAxpy(-2.0*deta, deps, domega);
-  
-  crossProductAdd(-2.0, eps, ddeps, domega);
-  vecAxpy(2.0*eta, ddeps, domega);
-  vecAxpy(-2.0*ddeta, eps, domega);
+  computeSRateProduct(deta, deps, deta, deps, domega);
+  addSRateProduct(eta, eps, ddeta, ddeps, domega);
 
   // Compute the cross product
   TacsScalar cdw[3];
   crossProduct(1.0, c, domega, cdw);
-
+  
   // The dynamics for the reference point
-  r[0] = mass*a0[0] - cdw[0];
-  r[1] = mass*a0[1] - cdw[1];
-  r[2] = mass*a0[2] - cdw[2];
+  r[0] = mass*(a0[0] - g[0]) - cdw[0];
+  r[1] = mass*(a0[1] - g[1]) - cdw[1];
+  r[2] = mass*(a0[2] - g[2]) - cdw[2];
+  
+  // Compute y = J*omega + c^{x}*v0
+  TacsScalar y[3];
+  matSymmMult(J, omega, y);
+  crossProductAdd(1.0, c, v0, y);
 
-  // Compute dw = J*domega
-  TacsScalar w[3], dw[3]
+  // Compute dy = J*dot{omega} + c^{x}*dot{v0}
+  TacsScalar dy[3];
+  matSymmMult(J, domega, dy);
+  crossProductAdd(1.0, c, a0, dy);
 
   // The dynamics for the rotation
-  // Add S^{T}*dw
-  r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
-  crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
-  vecAxpy(2.0*h*N[ii]*eta*rho[1], dw, &r[4]);
+  // Add S^{T}*dy
+  addSRateTransProduct(1.0, eta, eps, dy, &r[3], &r[4]);
 
-  // Add 2*dot{S}^{T}*w
-  r[3] -= 4.0*h*N[ii]*rho[1]*vecDot(deps, w);
-  crossProductAdd(4.0*h*N[ii]*rho[1], deps, w, &r[4]);
-  vecAxpy(4.0*h*N[ii]*deta*rho[1], w, &r[4]);
+  // Add 2*dot{S}^{T}*y
+  addSRateTransProduct(2.0, deta, deps, y, &r[3], &r[4]);
 
-	r += 8;
-	q += 8;
-	dq += 8;
 
 }
 
@@ -1599,721 +1616,6 @@ void TACSRigidBody::addAdjInitVariableProduct( TacsScalar fdvSens[],
   omegaInit->addPointAdjResProduct(fdvSens, numDVs, 1.0, t);
 }
 
-/*
-  Test the implementation of the residual-adjoint product.
-
-  This code tests the derivative of the adjoint-residual product code
-  using either finite-difference or complex step checks. The type of
-  check depends on how the code is compiled.
-
-  Note that this performs a finite-difference step check for all
-  components of the gradient (from 0 to numDVs-1), so this can be
-  costly if the number of gradient components is large.
-
-  input:
-  numDVs:   the number of design variables
-  dh:       the finite-difference step size
-*/
-void TACSRigidBody::testAdjResProduct( int numDVs, double dh ){
-  // Allocate design variable arrays
-  TacsScalar *x = new TacsScalar[ numDVs ];
-  TacsScalar *fdvSens = new TacsScalar[ numDVs ];
-  TacsScalar *fd = new TacsScalar[ numDVs ];
-
-  // Set random variables/time derivatives
-  const int max_kin = 7;
-  TacsScalar qkin[max_kin], dqkin[max_kin], kinAdj[max_kin];
-  TacsScalar qdyn[ndyn], dqdyn[ndyn], dynAdj[ndyn];
-
-  // Set the kinematic variables
-  for ( int k = 0; k < nkin; k++ ){
-    qkin[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    dqkin[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    kinAdj[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-
-  // Set the dynamic variables
-  for ( int k = 0; k < ndyn; k++ ){
-    qdyn[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    dqdyn[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    dynAdj[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-
-  // Get the design variable values
-  getDesignVars(x, numDVs);
-  setDesignVars(x, numDVs);
-
-  // Set the variables
-  setVariables(qkin, qdyn);
-
-  // Evaluate the derivative
-  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
-  memset(fd, 0, numDVs*sizeof(TacsScalar));
-  addAdjResProduct(fdvSens, numDVs, dqkin, dqdyn,
-		   kinAdj, dynAdj);
-
-  // Evaluate the residual
-  for ( int k = 0; k < numDVs; k++ ){
-    TacsScalar rkin[max_kin], rdyn[ndyn];
-    TacsScalar xtmp = x[k];
-
-#ifdef TACS_USE_COMPLEX
-    // Evaluate the matrix at x + j*dh
-    x[k] = xtmp + TacsScalar(0.0, dh);
-    setDesignVars(x, numDVs);
-    setVariables(qkin, qdyn);
-    getResidual(rkin, rdyn, dqkin, dqdyn);
-    TacsScalar f1 = 0.0;
-    for ( int j = 0; j < nkin; j++ ){
-      f1 += rkin[j]*kinAdj[j];
-    }
-    for ( int j = 0; j < ndyn; j++ ){
-      f1 += rdyn[j]*dynAdj[j];
-    }
-    fd[k] = ImagPart(f1)/dh;
-#else
-    // Evaluate C at (x + dh)
-    x[k] = xtmp + dh;
-    setDesignVars(x, numDVs);
-    setVariables(qkin, qdyn);
-    getResidual(rkin, rdyn, dqkin, dqdyn);
-    TacsScalar f1 = 0.0;
-    for ( int j = 0; j < nkin; j++ ){
-      f1 += rkin[j]*kinAdj[j];
-    }
-    for ( int j = 0; j < ndyn; j++ ){
-      f1 += rdyn[j]*dynAdj[j];
-    }
-    
-    // Evaluate C at (x - dh)
-    x[k] = xtmp - dh;
-    setDesignVars(x, numDVs);
-    setVariables(qkin, qdyn);
-    getResidual(rkin, rdyn, dqkin, dqdyn);
-    TacsScalar f2 = 0.0;
-    for ( int j = 0; j < nkin; j++ ){
-      f2 += rkin[j]*kinAdj[j];
-    }
-    for ( int j = 0; j < ndyn; j++ ){
-      f2 += rdyn[j]*dynAdj[j];
-    }
-    	
-    fd[k] = 0.5*(f1 - f2)/dh;
-#endif // TACS_USE_COMPLEX
-    x[k] = xtmp;
-  }
-  
-  // Set the design variable values back to their original values
-  setDesignVars(x, numDVs);
-
-  // Write all the error components to stdout
-  writeErrorComponents(stdout, "adjResProduct",
-		       fdvSens, fd, numDVs);
-
-  delete [] x;
-  delete [] fdvSens;
-  delete [] fd;
-}
-
-/*
-  Test that the elements of this matrix inserted within the Jacobian
-  matrix correspond to a correct derivative of the residuals with
-  respect to the state variables q and qdot. 
-
-  input:
-  alpha:  the coefficient for the state variables
-  beta:   the coefficient on the time-derivatives
-  q:      the dynamic states
-  qdot:   the time derivative of the dynamic states
-  dh:     the finite-difference (or complex-step) step size
-*/
-void TACSRigidBody::testJacobian( double alpha, double beta, 
-				const TacsScalar qkin[],
-				const TacsScalar qdyn[],
-				const TacsScalar qkinDot[],
-				const TacsScalar qdynDot[],
-				double dh ){
-  // The Jacobian matrix
-  const int max_kin = 7, max_dyn = 6;
-  const int max_dof = max_kin + max_dyn;
-  TacsScalar D11[max_kin*max_kin], D12[max_kin*max_dyn];
-  TacsScalar D21[max_dyn*max_kin], D22[max_dyn*max_dyn];
-  TacsScalar qtmp[max_dof], qdottmp[max_dof];
-  TacsScalar res[max_dof], dRdq[max_dof];
-
-  // Evaluate the Jacobian dynamics
-  setVariables(qkin, qdyn);
-  getJacobian(D11, D12, D21, D22, 
-	      alpha, beta, qkinDot, qdynDot);
-
-  // The number of degrees of freedom/residuals
-  int ndof = nkin + ndyn;
-
-  for ( int i = 0; i < ndof; i++ ){
-    memcpy(qtmp, qkin, nkin*sizeof(TacsScalar));
-    memcpy(qdottmp, qkinDot, nkin*sizeof(TacsScalar));
-
-    memcpy(&qtmp[nkin], qdyn, ndyn*sizeof(TacsScalar));
-    memcpy(&qdottmp[nkin], qdynDot, ndyn*sizeof(TacsScalar));
-
-#ifdef TACS_USE_COMPLEX
-    // Use complex-step for verification
-    qtmp[i] += alpha*TacsScalar(0.0, dh);
-    qdottmp[i] += beta*TacsScalar(0.0, dh);
-    setVariables(&qtmp[0], &qtmp[nkin]);
-    getResidual(&dRdq[0], &dRdq[nkin], 
-		&qdottmp[0], &qdottmp[nkin]);
-
-    for ( int j = 0; j < ndof; j++ ){
-      dRdq[j] = ImagPart(dRdq[j])/dh;
-    }
-#else 
-    // Use finite-difference for verification
-    TacsScalar q = qtmp[i];
-    TacsScalar qdot = qdottmp[i];
-    qtmp[i] = q + alpha*dh;
-    qdottmp[i] = qdot + beta*dh;
-    setVariables(&qtmp[0], &qtmp[nkin]);
-    getResidual(&dRdq[0], &dRdq[nkin], 
-		&qdottmp[0], &qdottmp[nkin]);
-
-    qtmp[i] = q - alpha*dh;
-    qdottmp[i] = qdot - beta*dh;
-    setVariables(&qtmp[0], &qtmp[nkin]);
-    getResidual(&res[0], &res[nkin], 
-		&qdottmp[0], &qdottmp[nkin]);
-
-    for ( int j = 0; j < ndof; j++ ){
-      dRdq[j] = 0.5*(dRdq[j] - res[j])/dh;
-    }
-#endif // TACS_USE_COMPLEX
-
-    // Extract the computed derivative from D
-    if (i < nkin){
-      for ( int j = 0; j < nkin; j++ ){
-	res[j] = D11[i + nkin*j];
-      }
-      for ( int j = 0; j < ndyn; j++ ){
-	res[j+nkin] = D21[i + nkin*j];
-      }
-    }
-    else {
-      for ( int j = 0; j < nkin; j++ ){
-	res[j] = D12[i-nkin + ndyn*j];
-      }
-      for ( int j = 0; j < ndyn; j++ ){
-	res[j+nkin] = D22[i-nkin + ndyn*j];
-      }
-    }
-  
-    // Print the results of the comparison to the screen
-    char descript[64];
-    sprintf(descript, "Column %d", i);
-    writeErrorComponents(stdout, descript, res, dRdq, ndof);
-  }
-}
-
-/*
-  Test the derivatives of the kinematic constraints with respect to
-  the forces/torques and the kinematic variables in each body.
-*/
-void TACSDynKinematicCon::testJacobian( double alpha,
-					const TacsScalar fr[],
-					double dh ){
-  // Temporary variables required for the computations
-  const int max_kin = 7, max_dyn = 6;
-  const int max_con = 6;
-  TacsScalar D[max_kin*max_kin];
-  TacsScalar rdyn[max_dyn], drdfr[max_dyn], frtmp[max_dyn];
-
-  // Retrieve the bodies associated with this kinematic constraint
-  TACSRigidBody *bodies[2];
-  getBodies(&bodies[0], &bodies[1]);
-
-  int nbody = 0;
-  if (bodies[0] && bodies[1]){
-    nbody = 2;
-  }
-  else if (bodies[0]){
-    nbody = 1;
-  }
-
-  // Generate a random set of dynamic and kinematic variables
-  TacsScalar qkinA[max_kin], qdynA[max_dyn];
-  TacsScalar qkinB[max_kin], qdynB[max_dyn];
-  for ( int k = 0; k < max_kin; k++ ){
-    qkinA[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    qkinB[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-  for ( int k = 0; k < max_dyn; k++ ){
-    qdynA[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    qdynB[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-
-  // Set the kinematic dynamic constraints in the bodies
-  if (bodies[0]){
-    bodies[0]->setVariables(qkinA, qdynA);
-  }
-  if (bodies[1]){
-    bodies[1]->setVariables(qkinB, qdynB);
-  }
-
-  // Get the residual and Jacobian
-  getJacobian(D, alpha, fr);
-
-  // Get the number of constraints
-  int ncon = 0;
-  getNumDof(&ncon);
-
-  // Copy the values of fr to a temporary vector
-  memcpy(frtmp, fr, ncon*sizeof(TacsScalar));
-
-  // Loop over each component of the force/torques
-  for ( int i = 0; i < ncon; i++ ){
-    TacsScalar tmp = frtmp[i];
-
-#ifdef TACS_USE_COMPLEX
-    // Perturb a component of the forces/torques
-    frtmp[i] = tmp + alpha*TacsScalar(0.0, dh);
-    getResidual(drdfr, frtmp);
-
-    // Compute the partial derivative
-    for ( int k = 0; k < ncon; k++ ){
-      drdfr[k] = ImagPart(drdfr[k])/dh;
-    }
-#else
-    // Perturb a component of the forces/torques
-    frtmp[i] = tmp + alpha*dh;
-    getResidual(drdfr, frtmp);
-
-    // Perturb a component of the forces/torques
-    frtmp[i] = tmp - alpha*dh;
-    getResidual(rdyn, frtmp);
-
-    // Compute the partial derivative
-    for ( int k = 0; k < ncon; k++ ){
-      drdfr[k] = 0.5*(drdfr[k] - rdyn[k])/dh;
-    }
-#endif // TACS_USE_COMPLEX
-    // Reset the value of the force/torque
-    frtmp[i] = tmp;
-
-    // Extract a column from D
-    for ( int k = 0; k < ncon; k++ ){
-      rdyn[k] = D[i + ncon*k];
-    }
-
-    // Print out the errors to stdout
-    char descript[64];
-    sprintf(descript, "D[con,con] %d", i+1);
-    writeErrorComponents(stdout, descript, rdyn, drdfr, ncon);
-  }
-
-  // Loop through a list of bodies and test the Jacobian for each one
-  for ( int n = 0; n < nbody; n++ ){
-    // Temp space for the derivative of the residuals w.r.t. the
-    // kinematic variables
-    TacsScalar drdq[max_dyn];
-    
-    // Set pointers to the right body variables
-    TacsScalar *qkin = qkinA, *qdyn = qdynA;
-    if (n == 1){
-      qkin = qkinB;
-      qdyn = qdynB;
-    }
-
-    // Get the number of kinematic variables
-    int nkin, ndyn;
-    bodies[n]->getNumDof(&nkin, &ndyn);
-
-    // First, set the kinematic/dynamic variables in the body
-    bodies[n]->setVariables(qkin, qdyn);
-    memset(D, 0, ncon*nkin*sizeof(TacsScalar));
-    addBodyJacobian(D, alpha, bodies[n], fr);
-
-    // Test the coupling between the body dynamics and the kinematics
-    // added from the kinematic constraint itself
-    for ( int i = 0; i < nkin; i++ ){
-      TacsScalar tmp = qkin[i];
-
-#ifdef TACS_USE_COMPLEX
-      // Perturb a component of the forces/torques
-      qkin[i] = tmp + alpha*TacsScalar(0.0, dh);
-      bodies[n]->setVariables(qkin, qdyn);
-      memset(drdq, 0, ndyn*sizeof(TacsScalar));
-      addBodyResidual(drdq, bodies[n], fr);
-
-      // Compute the partial derivative
-      for ( int k = 0; k < ndyn; k++ ){
-	drdq[k] = ImagPart(drdq[k])/dh;
-      }
-#else
-      // Perturb a component of the forces/torques
-      qkin[i] = tmp + alpha*dh;
-      bodies[n]->setVariables(qkin, qdyn);
-      memset(drdq, 0, ndyn*sizeof(TacsScalar));
-      addBodyResidual(drdq, bodies[n], fr);
-
-      // Perturb a component of the forces/torques
-      qkin[i] = tmp - alpha*dh;
-      bodies[n]->setVariables(qkin, qdyn);
-      memset(rdyn, 0, ndyn*sizeof(TacsScalar));
-      addBodyResidual(rdyn, bodies[n], fr);
-
-      // Compute the partial derivative
-      for ( int k = 0; k < ndyn; k++ ){
-	drdq[k] = 0.5*(drdq[k] - rdyn[k])/dh;
-      }
-#endif // TACS_USE_COMPLEX
-      // Reset the value of the force/torque
-      qkin[i] = tmp;
-
-      // Extract a column from D
-      for ( int k = 0; k < ndyn; k++ ){
-	rdyn[k] = D[i + nkin*k];
-      }
-
-      // Print out the errors to stdout
-      char descript[64];
-      sprintf(descript, "D[dyn,kin] %d", i+1);
-      writeErrorComponents(stdout, descript, rdyn, drdq, 6);
-    }
-
-    // Set the kinematic/dynamic variables in the body
-    bodies[n]->setVariables(qkin, qdyn);
-    TacsScalar Dcon[max_con*max_kin], Ddyn[max_dyn*max_con];
-    getOffDiagJacobian(Dcon, Ddyn, alpha, bodies[n], fr);
-
-    // Test the coupling between the body dynamics and the kinematics
-    // added from the kinematic constraint itself
-    for ( int i = 0; i < nkin; i++ ){
-      TacsScalar tmp = qkin[i];
-
-#ifdef TACS_USE_COMPLEX
-      // Perturb a component of the forces/torques
-      qkin[i] = tmp + alpha*TacsScalar(0.0, dh);
-      bodies[n]->setVariables(qkin, qdyn);
-      getResidual(drdq, fr);
-
-      // Compute the partial derivative
-      for ( int k = 0; k < ncon; k++ ){
-	drdq[k] = ImagPart(drdq[k])/dh;
-      }
-#else
-      // Perturb a component of the forces/torques
-      qkin[i] = tmp + alpha*dh;
-      bodies[n]->setVariables(qkin, qdyn);
-      getResidual(drdq, fr);
-
-      // Perturb a component of the forces/torques
-      qkin[i] = tmp - alpha*dh;
-      bodies[n]->setVariables(qkin, qdyn);
-      getResidual(rdyn, fr);
-
-      // Compute the partial derivative
-      for ( int k = 0; k < ncon; k++ ){
-	drdq[k] = 0.5*(drdq[k] - rdyn[k])/dh;
-      }
-#endif // TACS_USE_COMPLEX
-      // Reset the value of the force/torque
-      qkin[i] = tmp;
-
-      // Extract a column from D
-      for ( int k = 0; k < ncon; k++ ){
-	rdyn[k] = Dcon[i + nkin*k];
-      }
-
-      // Print out the errors to stdout
-      char descript[64];
-      sprintf(descript, "D[con,kin] %d", i+1);
-      writeErrorComponents(stdout, descript, rdyn, drdq, ncon);
-    }
-
-    // Set the kinematic/dynamic variables back into the body
-    bodies[n]->setVariables(qkin, qdyn);
-    
-    // Copy the values of fr to a temporary vector
-    memcpy(frtmp, fr, ncon*sizeof(TacsScalar));
-
-    // Test the coupling between the body dynamics and the kinematics
-    // added from the kinematic constraint itself
-    for ( int i = 0; i < ncon; i++ ){
-      TacsScalar tmp = frtmp[i];
-
-#ifdef TACS_USE_COMPLEX
-      // Perturb a component of the forces/torques
-      frtmp[i] = tmp + alpha*TacsScalar(0.0, dh);
-      memset(drdq, 0, ndyn*sizeof(TacsScalar));
-      addBodyResidual(drdq, bodies[n], frtmp);
-
-      // Compute the partial derivative
-      for ( int k = 0; k < ndyn; k++ ){
-	drdq[k] = ImagPart(drdq[k])/dh;
-      }
-#else
-      // Perturb a component of the forces/torques
-      frtmp[i] = tmp + alpha*dh;
-      memset(drdq, 0, ndyn*sizeof(TacsScalar));
-      addBodyResidual(drdq, bodies[n], frtmp);
-
-      // Perturb a component of the forces/torques
-      frtmp[i] = tmp - alpha*dh;
-      memset(rdyn, 0, ndyn*sizeof(TacsScalar));
-      addBodyResidual(rdyn, bodies[n], frtmp);
-
-      // Compute the partial derivative
-      for ( int k = 0; k < ndyn; k++ ){
-	drdq[k] = 0.5*(drdq[k] - rdyn[k])/dh;
-      }
-#endif // TACS_USE_COMPLEX
-      // Reset the value of the force/torque
-      frtmp[i] = tmp;
-
-      // Extract a column from D
-      for ( int k = 0; k < ndyn; k++ ){
-	rdyn[k] = Ddyn[i + ncon*k];
-      }
-
-      // Print out the errors to stdout
-      char descript[64];
-      sprintf(descript, "D[dyn,con] %d", i+1);
-      writeErrorComponents(stdout, descript, rdyn, drdq, 6);
-    }
-  }
-}
-
-/*
-  Test the derivative of the product of the adjoint and the residual
-  of the kinematic constraint w.r.t. the design variables.
-
-  input:
-  numDVs: the number of design variables to test
-  dh:     the finite-difference (complex-step) step size 
-*/
-void TACSDynKinematicCon::testAdjResProduct( int numDVs, double dh ){
-  // Allocate design variable arrays
-  TacsScalar *x = new TacsScalar[ numDVs ];
-  
-  // Memory for the derivative w.r.t. the design variables
-  TacsScalar *fdvSens = new TacsScalar[ numDVs ];
-  TacsScalar *fd = new TacsScalar[ numDVs ];
-
-  // Retrieve the bodies associated with this kinematic constraint
-  TACSRigidBody *bodies[2];
-  getBodies(&bodies[0], &bodies[1]);
-
-  int nbody = 0;
-  if (bodies[0] && bodies[1]){
-    nbody = 2;
-  }
-  else if (bodies[0]){
-    nbody = 1;
-  }
-
-  // Set random variables/time derivatives
-  const int max_nkin = 7, max_ndyn = 6, max_ncon = 6;
-  TacsScalar qkinA[max_nkin], qkinB[max_nkin];
-  TacsScalar qdynA[max_ndyn], qdynB[max_ndyn];
-  TacsScalar conAdj[max_ncon], fr[max_ncon];
-  TacsScalar dynAdj[max_ndyn];
-
-  // Retrieve the number of constraints 
-  int ncon = 0;
-  getNumDof(&ncon);
-
-  // Set the kinematic variables
-  for ( int k = 0; k < max_nkin; k++ ){
-    qkinA[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    qkinB[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-
-  // Set the dynamic variables
-  for ( int k = 0; k < max_ndyn; k++ ){
-    qdynA[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    qdynB[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    dynAdj[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-
-  // Set the constraint values
-  for ( int k = 0; k < ncon; k++ ){
-    conAdj[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    fr[k] = -0.5 + (1.0*rand())/RAND_MAX;
-  }
-
-  // Set the kinematic dynamic constraints in the bodies
-  getDesignVars(x, numDVs);
-  setDesignVars(x, numDVs);
-
-  // Set the variables in the bodies
-  if (bodies[0]){
-    bodies[0]->setVariables(qkinA, qdynA); 
-  }
-  if (bodies[1]){
-    bodies[1]->setVariables(qkinB, qdynB); 
-  }
-
-  // Evaluate the derivative
-  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
-  memset(fd, 0, numDVs*sizeof(TacsScalar));
-  addAdjResProduct(fdvSens, numDVs, conAdj, fr);
-
-  // Evaluate the finite-difference (or complex-step) derivative
-  // approximation
-  for ( int k = 0; k < numDVs; k++ ){
-    TacsScalar rcon[max_ncon];
-    TacsScalar xtmp = x[k];
-
-#ifdef TACS_USE_COMPLEX
-    // Evaluate the residual at x + j*dh
-    x[k] = xtmp + TacsScalar(0.0, dh);
-    setDesignVars(x, numDVs);
-    // Set the variables in the bodies
-    if (bodies[0]){
-      bodies[0]->setVariables(qkinA, qdynA); 
-    }
-    if (bodies[1]){
-      bodies[1]->setVariables(qkinB, qdynB); 
-    }
-    getResidual(rcon, fr);
-    TacsScalar f1 = 0.0;
-    for ( int j = 0; j < ncon; j++ ){
-      f1 += rcon[j]*conAdj[j];
-    }
-    fd[k] = ImagPart(f1)/dh;
-#else
-    // Evaluate C at (x + dh)
-    x[k] = xtmp + dh;
-    setDesignVars(x, numDVs);
-    // Set the variables in the bodies
-    if (bodies[0]){
-      bodies[0]->setVariables(qkinA, qdynA); 
-    }
-    if (bodies[1]){
-      bodies[1]->setVariables(qkinB, qdynB); 
-    }
-    getResidual(rcon, fr);
-    TacsScalar f1 = 0.0;
-    for ( int j = 0; j < ncon; j++ ){
-      f1 += rcon[j]*conAdj[j];
-    }
-    
-    // Evaluate C at (x - dh)
-    x[k] = xtmp - dh;
-    setDesignVars(x, numDVs);
-    // Set the variables in the bodies
-    if (bodies[0]){
-      bodies[0]->setVariables(qkinA, qdynA); 
-    }
-    if (bodies[1]){
-      bodies[1]->setVariables(qkinB, qdynB); 
-    }
-    getResidual(rcon, fr);
-    TacsScalar f2 = 0.0;
-    for ( int j = 0; j < ncon; j++ ){
-      f2 += rcon[j]*conAdj[j];
-    }
-    	
-    fd[k] = 0.5*(f1 - f2)/dh;
-#endif // TACS_USE_COMPLEX
-    x[k] = xtmp;
-  }
-  
-  // Set the design variables back to their orginal values
-  setDesignVars(x, numDVs);
-
-  // Write all the error components to stdout
-  writeErrorComponents(stdout, "kinConAdjResProduct", 
-		       fdvSens, fd, numDVs);
-
-  // Loop over all the bodies in the computation
-  for ( int i = 0; i < 2; i++ ){
-    if (!bodies[i]){
-      continue;
-    }
-
-    int ndyn = 0;
-    bodies[i]->getNumDof(NULL, &ndyn);
-   
-    // Evaluate the finite-difference (or complex-step) derivative
-    // approximation
-    memset(fd, 0, numDVs*sizeof(TacsScalar));
-    memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
-    addBodyAdjResProduct(fdvSens, numDVs, dynAdj, bodies[i], fr);
-
-    for ( int k = 0; k < numDVs; k++ ){
-      TacsScalar rdyn[max_ndyn];
-      TacsScalar xtmp = x[k];
-
-#ifdef TACS_USE_COMPLEX
-      // Evaluate the residual at x + j*dh
-      x[k] = xtmp + TacsScalar(0.0, dh);
-      setDesignVars(x, numDVs);
-      // Set the variables in the bodies
-      if (bodies[0]){
-	bodies[0]->setVariables(qkinA, qdynA); 
-      }
-      if (bodies[1]){
-	bodies[1]->setVariables(qkinB, qdynB); 
-      }
-      memset(rdyn, 0, sizeof(rdyn));
-      addBodyResidual(rdyn, bodies[i], fr);
-      TacsScalar f1 = 0.0;
-      for ( int j = 0; j < ndyn; j++ ){
-	f1 += rdyn[j]*dynAdj[j];
-      }
-      fd[k] = ImagPart(f1)/dh;
-#else
-      // Evaluate C at (x + dh)
-      x[k] = xtmp + dh;
-      setDesignVars(x, numDVs);
-      // Set the variables in the bodies
-      if (bodies[0]){
-	bodies[0]->setVariables(qkinA, qdynA); 
-      }
-      if (bodies[1]){
-	bodies[1]->setVariables(qkinB, qdynB); 
-      }
-      memset(rdyn, 0, sizeof(rdyn));
-      addBodyResidual(rdyn, bodies[i], fr);
-      TacsScalar f1 = 0.0;
-      for ( int j = 0; j < ndyn; j++ ){
-	f1 += rdyn[j]*dynAdj[j];
-      }
-    
-      // Evaluate C at (x - dh)
-      x[k] = xtmp - dh;
-      setDesignVars(x, numDVs);
-      // Set the variables in the bodies
-      if (bodies[0]){
-	bodies[0]->setVariables(qkinA, qdynA); 
-      }
-      if (bodies[1]){
-	bodies[1]->setVariables(qkinB, qdynB); 
-      }
-      memset(rdyn, 0, sizeof(rdyn));
-      addBodyResidual(rdyn, bodies[i], fr);
-      TacsScalar f2 = 0.0;
-      for ( int j = 0; j < ndyn; j++ ){
-	f2 += rdyn[j]*dynAdj[j];
-      }
-      
-      fd[k] = 0.5*(f1 - f2)/dh;
-#endif // TACS_USE_COMPLEX
-      x[k] = xtmp;
-    }
-
-    // Set the design variables back to their orginal values
-    setDesignVars(x, numDVs);
-
-    // Write all the error components to stdout
-    writeErrorComponents(stdout, "dynConAdjResProduct", 
-			 fdvSens, fd, numDVs);
-  }  
-
-  delete [] x;
-  delete [] fd;
-  delete [] fdvSens;
-}
 
 /*
   The following class implements a spherical joint between two rigid
