@@ -1266,7 +1266,6 @@ void MITC9::getJacobian( double time, TacsScalar J[],
 /*
   Given the nodal degrees of freedom and their time-derivatives,
   compute the angular velocity at each node
-
 */
 void MITC9::computeAngularVelocity( TacsScalar omega[],
 				    const TacsScalar vars[],
@@ -1290,9 +1289,7 @@ void MITC9::computeAngularVelocity( TacsScalar omega[],
 
 /*
   Given the nodal degrees of freedom and their first and second
-  time-derivatives, compute the angular acceleration at the nodes. 
-
-
+  time-derivatives, compute the angular acceleration at the nodes.
 */
 void MITC9::computeAngularAccel( TacsScalar domega[],
 				 const TacsScalar vars[],
@@ -1307,11 +1304,7 @@ void MITC9::computeAngularAccel( TacsScalar domega[],
     TacsScalar ddeta = ddvars[3];
     const TacsScalar *ddeps = &ddvars[4];
 
-    // domega = S(dot{q})*dot{q} + S(q)*ddot{q}
-    crossProduct(-2.0, deps, deps, domega);
-    vecAxpy(2.0*deta, deps, domega);
-    vecAxpy(-2.0*deta, deps, domega);
-
+    // domega = S(q)*ddot{q}
     crossProductAdd(-2.0, eps, ddeps, domega);
     vecAxpy(2.0*eta, ddeps, domega);
     vecAxpy(-2.0*ddeta, eps, domega);

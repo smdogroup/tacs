@@ -93,6 +93,18 @@ class TACSRigidBody : public TACSElement {
   int numDisplacements(){ return 8; }
   int numNodes(){ return 1; }
 
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+
+  // Retrieve the initial values of the state variables
+  // --------------------------------------------------
+  void getInitCondition( TacsScalar vars[],
+			 TacsScalar dvars[],
+			 const TacsScalar X[] );
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
@@ -118,81 +130,6 @@ class TACSRigidBody : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
-
-  // Set and retrieve design variable values
-  // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // Set and retrieve the variables
-  // ------------------------------
-  void setVariables( const TacsScalar qkin[], 
-		     const TacsScalar qdyn[] );
-  void getVariables( const TacsScalar *_r0[], 
-		     const TacsScalar *_v0[],
-		     const TacsScalar *_omega[] );
-  void getInitVariables( TacsScalar qkin[],
-			 TacsScalar qdyn[] );
-  void getInitVariables( TACSRefFrame **_CInit,
-			 TACSGibbsVector **_rInit, 
-			 TACSGibbsVector **_vInit,
-			 TACSGibbsVector **_omegaInit );
-
-  // Routines for evaluating the transformation matrix
-  // -------------------------------------------------
-  void getRotation( const TacsScalar *C[] );
-  void getRotationDeriv( const TacsScalar *C[],
-			 const TacsScalar *Cd[],
-			 int *nparam );
-  void addRotationAdjResProduct( TacsScalar fdvSens[], int numDVs,
-				 const TacsScalar psi[],
-				 const TacsScalar phi[] );
-  void testRotation( TacsScalar qkin[], double dh ); 
-  
-  // Retrieve the interial properties (in the body-fixed frame)
-  // ----------------------------------------------------------
-  void getInertial( TacsScalar *_mass, 
-		    const TacsScalar *_c[], 
-		    const TacsScalar *_J[] );
-  void addInertialAdjResProduct( TacsScalar fdvSens[], int numDVs, 
-				 TacsScalar dmdx, 
-				 const TacsScalar dcdx[],
-				 const TacsScalar dJdx[] );
-
-  // Compute the kinematic and potential energies
-  // --------------------------------------------
-  void getEnergies( TacsScalar *Te, TacsScalar *Pe );
-
-  // Add the residuals from the governing equations: R(q, qdot) = 0
-  // --------------------------------------------------------------
-  void getResidual( TacsScalar rkin[], TacsScalar rdyn[],
-		    const TacsScalar qkinDot[], 
-		    const TacsScalar qdynDot[] );
-
-  // Add the linear combination of the Jacobians [dR/dq + alpha*dR/dqdot]
-  // --------------------------------------------------------------------
-  void getJacobian( TacsScalar D11[], TacsScalar D12[],
-		    TacsScalar D21[], TacsScalar D22[], 
-		    double alpha, double beta,
-		    const TacsScalar qkinDot[],
-		    const TacsScalar qdynDot[] );
 
   // Test the Jacobian implementation
   // --------------------------------
