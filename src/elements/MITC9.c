@@ -1101,16 +1101,16 @@ void MITC9::getJacobian( double time, TacsScalar J[],
 
 	  // Add the Jacobian terms from the DOF:
 	  // T(dw) - S^{T}*J*S(ddot{q}) - 2*dot{S}^{T}*J*dot{S}
-	  add3x4Product(-alpha*scale, JSii, ddSjj, Jp, ldj);
-	  add3x4Product(-2.0*alpha*scale, JdSii, dSjj, Jp, ldj);
+	  addBlock3x4Product(-alpha*scale, JSii, ddSjj, Jp, ldj);
+	  addBlock3x4Product(-2.0*alpha*scale, JdSii, dSjj, Jp, ldj);
 
 	  // Add the Jacobian terms from the first time derivatives:
 	  // 2*dot{S}^{T}*J*S
-	  add3x4Product(2.0*beta*scale, JdSii, Sjj, Jp, ldj);
+	  addBlock3x4Product(2.0*beta*scale, JdSii, Sjj, Jp, ldj);
 
 	  // Add the Jacobian terms from the second time derivatives:
 	  // S^{T}*J*S
-	  add3x4Product(gamma*scale, JSii, Sjj, Jp, ldj);
+	  addBlock3x4Product(gamma*scale, JSii, Sjj, Jp, ldj);
 
 	  q += 8;
 	  dq += 8;

@@ -157,6 +157,72 @@ static inline void matMatTransMultAdd( const TacsScalar A[],
 }
 
 /*
+  Multiply the matrix by 
+
+  [ A[0] A[1] A[2] ][ B[0]  B[1]  B[2]  B[3] ]
+  [ A[3] A[4] A[5] ][ B[4]  B[5]  B[6]  B[7] ]
+  [ A[6] A[7] A[8] ][ B[8]  B[9]  B[10] B[11] ]
+  
+  input:
+  A:   a symmetric 3x3 matrix
+  B:   a 3x4 matrix in row-major order
+
+  output:
+  C:   a 3x4 matrix in row-major order
+*/
+static inline void matMat3x4Mult( const TacsScalar A[],
+                                  const TacsScalar B[],
+                                  TacsScalar C[] ){
+  C[0] = A[0]*B[0] + A[1]*B[4] + A[2]*B[8];
+  C[1] = A[0]*B[1] + A[1]*B[5] + A[2]*B[9];
+  C[2] = A[0]*B[2] + A[1]*B[6] + A[2]*B[10];
+  C[3] = A[0]*B[3] + A[1]*B[7] + A[2]*B[11];
+
+  C[4] = A[3]*B[0] + A[4]*B[4] + A[5]*B[8];
+  C[5] = A[3]*B[1] + A[4]*B[5] + A[5]*B[9];
+  C[6] = A[3]*B[2] + A[4]*B[6] + A[5]*B[10];
+  C[7] = A[3]*B[3] + A[4]*B[7] + A[5]*B[11];
+
+  C[8] = A[6]*B[0] + A[7]*B[4] + A[8]*B[8];
+  C[9] = A[6]*B[1] + A[7]*B[5] + A[8]*B[9];
+  C[10]= A[6]*B[2] + A[7]*B[6] + A[8]*B[10];
+  C[11]= A[6]*B[3] + A[7]*B[7] + A[8]*B[11];
+}
+
+/*
+  Multiply a symmetric matrix by a 3x4 row-major matrix
+
+  [ A[0] A[1] A[2] ][ B[0]  B[1]  B[2]  B[3] ]
+  [ A[1] A[3] A[4] ][ B[4]  B[5]  B[6]  B[7] ]
+  [ A[2] A[4] A[5] ][ B[8]  B[9]  B[10] B[11] ]
+
+  input:
+  A:   a symmetric 3x3 matrix
+  B:   a 3x4 matrix in row-major order
+
+  output:
+  C:   a 3x4 matrix in row-major order
+*/
+static inline void matSymmMat3x4Mult( const TacsScalar A[],
+                                      const TacsScalar B[],
+                                      TacsScalar C[] ){
+  C[0] = A[0]*B[0] + A[1]*B[4] + A[2]*B[8];
+  C[1] = A[0]*B[1] + A[1]*B[5] + A[2]*B[9];
+  C[2] = A[0]*B[2] + A[1]*B[6] + A[2]*B[10];
+  C[3] = A[0]*B[3] + A[1]*B[7] + A[2]*B[11];
+
+  C[4] = A[1]*B[0] + A[3]*B[4] + A[4]*B[8];
+  C[5] = A[1]*B[1] + A[3]*B[5] + A[4]*B[9];
+  C[6] = A[1]*B[2] + A[3]*B[6] + A[4]*B[10];
+  C[7] = A[1]*B[3] + A[3]*B[7] + A[4]*B[11];
+
+  C[8] = A[2]*B[0] + A[4]*B[4] + A[5]*B[8];
+  C[9] = A[2]*B[1] + A[4]*B[5] + A[5]*B[9];
+  C[10]= A[2]*B[2] + A[4]*B[6] + A[5]*B[10];
+  C[11]= A[2]*B[3] + A[4]*B[7] + A[5]*B[11];
+}
+
+/*
   Compute y <- A^{T}*x
 
   input:
@@ -365,6 +431,121 @@ static inline void vecNormDeriv( TacsScalar nrm,
   D[6] =-s*x[2]*x[0];
   D[7] =-s*x[2]*x[1];
   D[8] = s*(t - x[2]*x[2]);
+}
+
+/*
+  Set the 3x3 matrix as a skew symmetric matrix
+
+  C = a*b^{x}
+
+  where a is a scalar and b is 3-vector
+
+  input:
+  a:    a scalar
+  b:    a 3-vector
+
+  output:
+  C:    the result is added to this matrix
+*/
+static inline void setMatSkew( const TacsScalar a,
+                               const TacsScalar b[],
+                               TacsScalar C[] ){
+  C[0] = 0.0;
+  C[1] = -a*b[2];
+  C[2] = a*b[1];
+
+  C[3] = a*b[2];
+  C[4] = 0.0;
+  C[5] = -a*b[0];
+
+  C[6] = -a*b[1];
+  C[7] = a*b[0];
+  C[8] = 0.0;
+}
+
+/*
+  Add the skew matrix to a 3x3 matrix
+
+  C += a*b^{x}
+
+  where a is a scalar and b is 3-vector
+
+  input:
+  a:    a scalar
+  b:    a 3-vector
+
+  output:
+  C:    the result is added to this matrix
+*/
+static inline void addMatSkew( const TacsScalar a,
+                               const TacsScalar b[],
+                               TacsScalar C[] ){
+  C[1] -= a*b[2];
+  C[2] += a*b[1];
+
+  C[3] += a*b[2];
+  C[5] -= a*b[0];
+
+  C[6] -= a*b[1];
+  C[7] += a*b[0];
+}
+
+/*
+  Set the product of two skew matrices into the matrix
+
+  C = a*b^{x}*c^{x} = a*(c*b^{T} - c^{T}*b*I)
+
+  input:
+  a:    a scalar
+  b:    a 3-vector
+
+  output:
+  C:    the result is added to this matrix
+*/
+static inline void setMatSkewSkew( const TacsScalar a,
+                                   const TacsScalar b[],
+                                   const TacsScalar c[],
+                                   TacsScalar C[] ){
+  C[0] = -a*(c[1]*b[1] + c[2]*b[2]);
+  C[1] = a*c[0]*b[1];
+  C[2] = a*c[0]*b[2];
+
+  C[3] = a*c[1]*b[0];
+  C[4] = -a*(c[0]*b[0] + c[2]*b[2]);
+  C[5] = a*c[1]*b[2];
+
+  C[6] = a*c[2]*b[0];
+  C[7] = a*c[2]*b[1];
+  C[8] = -a*(c[0]*b[0] + c[1]*b[1]);
+}
+
+/*
+  Add the product of two skew matrices to the matrix
+
+  C += a*b^{x}*c^{x} = a*(c*b^{T} - c^{T}*b*I)
+
+  input:
+  a:    a scalar
+  b:    a 3-vector
+
+  output:
+  C:    the result is added to this matrix
+*/
+static inline void addMatSkewSkew( const TacsScalar a,
+                                   const TacsScalar b[],
+                                   const TacsScalar c[],
+                                   TacsScalar C[] ){
+  C[0] -= a*(c[1]*b[1] + c[2]*b[2]);
+  C[1] += a*c[0]*b[1];
+  C[2] += a*c[0]*b[2];
+
+  C[3] += a*c[1]*b[0];
+  C[4] -= a*(c[0]*b[0] + c[2]*b[2]);
+  C[5] += a*c[1]*b[2];
+
+  C[6] += a*c[2]*b[0];
+  C[7] += a*c[2]*b[1];
+  C[8] -= a*(c[0]*b[0] + c[1]*b[1]);
 }
 
 /*
@@ -812,6 +993,112 @@ static inline void addDMatTransProduct( const TacsScalar a,
   crossProductAdd(-4.0*a, v, t, yeps);
 }
 
+
+/*
+  Compute the elements of the D(v) matrix
+
+  D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+*/
+static inline void computeDMat( const TacsScalar eta,
+                                const TacsScalar eps[],
+                                const TacsScalar v[],
+                                TacsScalar D[] ){
+  D[0] = 2*(v[1]*eps[2] - v[2]*eps[1]);
+  D[1] = 2*(v[1]*eps[1] + v[2]*eps[2]);
+  D[2] = 2*(eps[0]*v[1] - 2*v[0]*eps[1] - eta*v[2]);
+  D[3] = 2*(eps[0]*v[2] - 2*v[0]*eps[2] + eta*v[1]);
+
+  D[4] = 2*(v[2]*eps[0] - v[0]*eps[2]);
+  D[5] = 2*(eps[1]*v[0] - 2*v[1]*eps[0] + eta*v[2]);
+  D[6] = 2*(v[0]*eps[0] + v[2]*eps[2]);
+  D[7] = 2*(eps[1]*v[2] - 2*v[1]*eps[2] - eta*v[0]);
+
+  D[8] = 2*(v[0]*eps[1] - v[1]*eps[0]);
+  D[9] = 2*(eps[2]*v[0] - 2*v[2]*eps[0] - eta*v[1]);
+  D[10]= 2*(eps[2]*v[1] - 2*v[2]*eps[1] + eta*v[0]);
+  D[11]= 2*(v[0]*eps[0] + v[1]*eps[1]);
+}
+
+/*
+  Add the 3x4 matrix E(v) to the block matrix
+
+  E(v) = 2*[ -v^{x}*eps | (eps*v^{T} - 2*v*eps^{T} - eta*^{x} + v^{T}*eps*1) ]
+  
+  input:
+  a:    the scalar value
+  eta:   the scalar quaternion
+  eps:   the 3-vector quaternion components
+  v:     the 3-vector v
+  ldd:   the leading dimension (row-dimension) of D
+
+  output:
+  D:     the result is added to this matrix 
+*/
+static inline void addBlockEMat( const TacsScalar a,
+                                 const TacsScalar eta,
+                                 const TacsScalar eps[],
+                                 const TacsScalar v[],
+                                 TacsScalar D[],
+                                 const int ldd ){
+  D[0] += 2*a*(v[2]*eps[1] - v[1]*eps[2]);
+  D[1] += 2*a*(v[1]*eps[1] + v[2]*eps[2]);
+  D[2] += 2*a*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
+  D[3] += 2*a*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
+  D += ldd;
+
+  D[0] += 2*a*(v[0]*eps[2] - v[2]*eps[0]);
+  D[1] += 2*a*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
+  D[2] += 2*a*(v[0]*eps[0] + v[2]*eps[2]);
+  D[3] += 2*a*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
+  D += ldd;
+
+  D[0] += 2*a*(v[1]*eps[0] - v[0]*eps[1]);
+  D[1] += 2*a*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
+  D[2] += 2*a*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
+  D[3] += 2*a*(v[0]*eps[0] + v[1]*eps[1]);
+}
+
+/*
+  Add the transpose of the 3x4 matrix E(v) to the block matrix
+
+  E(v) = 2*[ -v^{x}*eps | (eps*v^{T} - 2*v*eps^{T} - eta*^{x} + v^{T}*eps*1) ]
+  
+  input:
+  a:    the scalar value
+  eta:   the scalar quaternion
+  eps:   the 3-vector quaternion components
+  v:     the 3-vector v
+  ldd:   the leading dimension (row-dimension) of D
+
+  output:
+  D:     the result is added to this matrix 
+*/
+static inline void addBlockEMatTrans( const TacsScalar a,
+                                      const TacsScalar eta,
+                                      const TacsScalar eps[],
+                                      const TacsScalar v[],
+                                      TacsScalar D[],
+                                      const int ldd ){
+  D[0] += 2*a*(v[2]*eps[1] - v[1]*eps[2]);
+  D[1] += 2*a*(v[0]*eps[2] - v[2]*eps[0]);
+  D[2] += 2*a*(v[1]*eps[0] - v[0]*eps[1]);
+  D += ldd;
+
+  D[0] += 2*a*(v[1]*eps[1] + v[2]*eps[2]);
+  D[1] += 2*a*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
+  D[2] += 2*a*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
+  D += ldd;
+
+  D[0] += 2*a*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
+  D[1] += 2*a*(v[0]*eps[0] + v[2]*eps[2]);
+  D[2] += 2*a*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
+  D += ldd;
+
+  D[0] += 2*a*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
+  D[1] += 2*a*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
+  D[2] += 2*a*(v[0]*eps[0] + v[1]*eps[1]);
+}
 /*
   Add the 4x4 matrix from the derivative of the transpose of the
   angular rate S matrix
@@ -854,6 +1141,78 @@ static inline void addSRateMatTransDeriv( const TacsScalar a,
 }
 
 /*
+  Compute the product of a 3x3 and 3x4 matrix and add the result to
+  the block matrix D
+  
+  D += A*B
+
+  input: 
+  A:    a 3x3 matrix in row-major order
+  B:    a 3x4 matrix in row-major order
+
+  output:
+  D:    the result is added to this matrix
+*/
+static inline void addBlock3x3x4Product( const TacsScalar A[],
+                                         const TacsScalar B[],
+                                         TacsScalar D[],
+                                         const int ldd ){
+  D[0] += A[0]*B[0] + A[1]*B[4] + A[2]*B[8];
+  D[1] += A[0]*B[1] + A[1]*B[5] + A[2]*B[9];
+  D[2] += A[0]*B[2] + A[1]*B[6] + A[2]*B[10];
+  D[3] += A[0]*B[3] + A[1]*B[7] + A[2]*B[11];
+  D += ldd;
+
+  D[0] += A[3]*B[0] + A[4]*B[4] + A[5]*B[8];
+  D[1] += A[3]*B[1] + A[4]*B[5] + A[5]*B[9];
+  D[2] += A[3]*B[2] + A[4]*B[6] + A[5]*B[10];
+  D[3] += A[3]*B[3] + A[4]*B[7] + A[5]*B[11];
+  D += ldd;
+
+  D[0] += A[6]*B[0] + A[7]*B[4] + A[8]*B[8];
+  D[1] += A[6]*B[1] + A[7]*B[5] + A[8]*B[9];
+  D[2] += A[6]*B[2] + A[7]*B[6] + A[8]*B[10];
+  D[3] += A[6]*B[3] + A[7]*B[7] + A[8]*B[11];
+}
+
+/*
+  Compute the product of a 3x3 and 3x4 matrix and add the result to
+  the block matrix D
+  
+  D += A^{T}*B
+
+  input: 
+  A:    a 3x4 matrix in row-major order
+  B:    a 3x4 matrix in row-major order
+
+  output:
+  D:    the result is added to this matrix
+*/
+static inline void addBlock4x3x3Product( const TacsScalar A[],
+                                         const TacsScalar B[],
+                                         TacsScalar D[],
+                                         const int ldd ){
+  D[0] += A[0]*B[0] + A[4]*B[3] + A[8]*B[6];
+  D[1] += A[0]*B[1] + A[4]*B[4] + A[8]*B[7];
+  D[2] += A[0]*B[2] + A[4]*B[5] + A[8]*B[8];
+  D += ldd;
+
+  D[0] += A[1]*B[0] + A[5]*B[3] + A[9]*B[6];
+  D[1] += A[1]*B[1] + A[5]*B[4] + A[9]*B[7];
+  D[2] += A[1]*B[2] + A[5]*B[5] + A[9]*B[8];
+  D += ldd;
+
+  D[0] += A[2]*B[0] + A[6]*B[3] + A[10]*B[6];
+  D[1] += A[2]*B[1] + A[6]*B[4] + A[10]*B[7];
+  D[2] += A[2]*B[2] + A[6]*B[5] + A[10]*B[8];
+  D += ldd;
+
+  D[0] += A[3]*B[0] + A[7]*B[3] + A[11]*B[6];
+  D[1] += A[3]*B[1] + A[7]*B[4] + A[11]*B[7];
+  D[2] += A[3]*B[2] + A[7]*B[5] + A[11]*B[8];
+}
+
+/*
   Compute: D += a*A^{T}*B where a is a scalar, and A and B are 3x4
   matrices stored in column-major order.
 
@@ -866,11 +1225,11 @@ static inline void addSRateMatTransDeriv( const TacsScalar a,
   output:
   D:    the result is added to this matrix D += a*A^{T}*B
 */
-static inline void add3x4Product( const TacsScalar a,
-				  const TacsScalar A[],
-				  const TacsScalar B[],
-				  TacsScalar D[],
-				  const int ldd ){
+static inline void addBlock3x4Product( const TacsScalar a,
+                                       const TacsScalar A[],
+                                       const TacsScalar B[],
+                                       TacsScalar D[],
+                                       const int ldd ){
   D[0] += a*(A[0]*B[0] + A[4]*B[4] + A[8]*B[8]);
   D[1] += a*(A[0]*B[1] + A[4]*B[5] + A[8]*B[9]);
   D[2] += a*(A[0]*B[2] + A[4]*B[6] + A[8]*B[10]);

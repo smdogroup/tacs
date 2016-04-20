@@ -410,7 +410,7 @@ TACSRigidBody::TACSRigidBody( const TacsScalar _mass,
   g[1] = 0.324;
   g[2] = -0.94;
 
-  g[0] = g[1] = g[2] = 0.0;
+  // g[0] = g[1] = g[2] = 0.0;
 
   /* // Copy over the initial reference frame */
   /* CRef = _CRef; */
@@ -761,14 +761,14 @@ void TACSRigidBody::getResidual( double time,
 /*
   Compute the Jacobian of the governing equations
 */
-void TACSRigidBody::getJacobian( double time, TacsScalar J[],
+void TACSRigidBody::getJacobian( double time, TacsScalar mat[],
                                  double alpha, double beta, double gamma,
                                  const TacsScalar X[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
   // Zero the residual entries
-  memset(J, 0, 64*sizeof(TacsScalar));
+  memset(mat, 0, 64*sizeof(TacsScalar));
 
   // Set the location and its time derivatives
   const TacsScalar *r0 = &vars[0];
@@ -788,22 +788,103 @@ void TACSRigidBody::getJacobian( double time, TacsScalar J[],
   TacsScalar C[9];
   computeRotationMat(eta, eps, C);
 
+  // Compute the rotation rate matrices
+  TacsScalar S[12], Sdot[12], Sddot[12];
+  computeSRateMat(eta, eps, S);
+  computeSRateMat(deta, deps, Sdot);
+  computeSRateMat(ddeta, ddeps, Sddot);
+
   // Compute the angular velocity and acceleration from the Euler
   // parameters
   TacsScalar omega[3], domega[3];
   computeSRateProduct(eta, eps, deta, deps, omega);
   computeSRateProduct(eta, eps, ddeta, ddeps, domega);
 
-  // Add the components from the linear terms 
-  J[0] += gamma*mass;
-  J[9] += gamma*mass;
-  J[18] += gamma*mass;
+  // Add the components from the position governing equation
+  // -------------------------------------------------------
+  mat[0] += gamma*mass;
+  mat[9] += gamma*mass;
+  mat[18] += gamma*mass;
 
-  // Add the term - gamma*C^{T}*c^{x}*S
+  // Add the terms that take the form C^{T}*A*S
+  TacsScalar A[12], B[12];
+  setMatSkew(-gamma, c, A);
+  addMatSkewSkew(-2.0*beta, omega, c, A);
+  addMatSkewSkew(beta, c, omega, A);
 
-  // Add the term beta*C^{T}*((c^{x}*omega)^{x} - omega^{x}*c^{x})*S
+  // Add the product C^{T}*A*S = B*S to the Jacobian matrix
+  matTransMatMult(C, A, B);
+  addBlock3x3x4Product(B, S, &mat[3], 8);
 
+  // Add the term alpha*C^{T}*c^{x}*ddot{S}
+  setMatSkew(alpha, c, A);
+  matTransMatMult(C, A, B);
+  addBlock3x3x4Product(B, Sddot, &mat[3], 8);
 
+  // Add the term alpha*C^{T}*c^{x}*ddot{S}
+  setMatSkewSkew(2.0*alpha, omega, c, A);
+  addMatSkewSkew(-alpha, c, omega, A);
+  matTransMatMult(C, A, B);
+  addBlock3x3x4Product(B, Sdot, &mat[3], 8);
+  
+  // Add the term -E(c^{x}*domega + omega^{x}*c^{x}*omega)
+  // t2 = c^{x}*domega + omega^{x}*c^{x}*omega
+  TacsScalar t1[3], t2[3];
+  crossProduct(1.0, c, omega, t1);
+  crossProduct(1.0, omega, t1, t2);
+  crossProductAdd(1.0, c, domega, t2);
+  addBlockEMat(-alpha, eta, eps, t2, &mat[3], 8);
+
+  // Add the terms from the governing equations for the quaternions
+  // --------------------------------------------------------------
+
+  // Add the term S^{T}*(gamma*c^{x} + beta*c^{x}*omega^{x})*C
+  setMatSkew(gamma, c, A);
+  addMatSkewSkew(-beta, c, omega, A);
+  matMatMult(A, C, B);
+  addBlock4x3x3Product(S, B, &mat[24], 8);
+
+  // Add the term  2*beta*dot{S}^{T}*c^{x}*C
+  setMatSkew(2*beta, c, A);
+  matMatMult(A, C, B);
+  addBlock4x3x3Product(Sdot, B, &mat[24], 8);
+
+  // Add E^{T}(c^{x}*omega)
+  crossProduct(beta, c, omega, t1);
+  addBlockEMatTrans(1.0, eta, eps, t1, &mat[24], 8);
+
+  // Add terms to the derivative of the quaternion governing
+  // equations with respect to the quaternions
+
+  // Add S^{T}*J*S to the matrix
+  matSymmMat3x4Mult(J, S, A);
+  addBlock3x4Product(gamma, S, A, &mat[27], 8);
+
+  // Add dot{S}^{T}*J*S
+  addBlock3x4Product(2.0*beta, Sdot, A, &mat[27], 8);
+
+  // Add S^{T}*J*ddot{S}
+  addBlock3x4Product(alpha, A, Sddot, &mat[27], 8);
+
+  // Compute S^{T}*c^{x}*(C*v0)^{x}*S
+  TacsScalar v[3];
+  matMult(C, v0, v);
+  setMatSkewSkew(beta, c, v, A);
+  matMat3x4Mult(A, S, B);
+  addBlock3x4Product(1.0, S, B, &mat[27], 8);
+
+  // Compute t1 = J*omega + c^{x}*(C*dot{r})
+  matSymmMult(J, omega, t1);
+  crossProductAdd(1.0, c, v, t1);
+  addSRateMatTransDeriv(2*beta, t1, &mat[27], 8);
+
+  // Add the term D(dot{r})^{T}*c^{x}*S
+  setMatSkew(beta, c, A);
+  matMat3x4Mult(A, S, B);
+  computeDMat(eta, eps, v0, A);
+  addBlock3x4Product(1.0, A, B, &mat[27], 8);
+
+  // Add the terms from the Lagrange multipliers
 }
 
 /*
@@ -949,3 +1030,116 @@ void TACSRigidBody::testResidual( double dh ){
 		       res1, fd, 8);
 }
 
+/*
+  The following function tests the consistency between the
+  implementation of the residuals and the implementation of the system
+  Jacobian.
+
+  input:
+  dh:      the finite-difference step size
+  alpha:   coefficient for the variables
+  beta:    coefficient for the time derivative variables
+  gamma:   coefficient for the second time derivative variables
+*/
+void TACSRigidBody::testJacobian( double dh, 
+                                  double alpha, 
+                                  double beta, 
+                                  double gamma ){
+  double time = 0.0;
+
+  // Set the position vector
+  TacsScalar X[3] = {0.0, 0.0, 0.0};
+
+  // Set the variable values
+  TacsScalar vars[8], dvars[8], ddvars[8];
+
+  // Compute the variable values
+  for ( int i = 0; i < 7; i++ ){
+    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // The computed Jacobian of the element matrix
+  TacsScalar mat[64];
+
+  // The finite-difference result
+  TacsScalar fd[8], res[8];
+  
+  // The perturb direction to test
+  TacsScalar perb[8];
+
+  // Temporary variables and their time derivatives
+  TacsScalar q[8], dq[8], ddq[8];
+
+  // Set random perburbed values
+  for ( int i = 0; i < 8; i++ ){
+    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  for ( int ii = 0; ii < 8; ii++ ){
+    memset(perb, 0, 8*sizeof(TacsScalar));
+    perb[ii] = 1.0;
+
+#ifdef TACS_USE_COMPLEX
+    // Set the values for the first evaluation
+    for ( int i = 0; i < 8; i++ ){
+      q[i] = vars[i] + TacsScalar(0.0, dh*alpha)*perb[i];
+      dq[i] = dvars[i] + TacsScalar(0.0, dh*beta)*perb[i];
+      ddq[i] = ddvars[i] + TacsScalar(0.0, dh*gamma)*perb[i];
+    }
+
+    // Get the residual at vars + alpha*perb, ... etc.
+    getResidual(time, fd, X, q, dq, ddq);
+
+    // Form the finite-difference matrix-vector approximation
+    for ( int i = 0; i < 8; i++ ){
+      fd[i] = ImagPart(fd[i])/dh;
+    }
+#else
+    // Set the values for the first evaluation
+    for ( int i = 0; i < 8; i++ ){
+      q[i] = vars[i] + dh*alpha*perb[i];
+      dq[i] = dvars[i] + dh*beta*perb[i];
+      ddq[i] = ddvars[i] + dh*gamma*perb[i];
+    }
+
+    // Get the residual at vars + alpha*perb, ... etc.
+    getResidual(time, fd, X, q, dq, ddq);
+
+    // Set the values for the first evaluation
+    for ( int i = 0; i < 8; i++ ){
+      q[i] = vars[i] - dh*alpha*perb[i];
+      dq[i] = dvars[i] - dh*beta*perb[i];
+      ddq[i] = ddvars[i] - dh*gamma*perb[i];
+    }
+
+    // Get the residual at vars + alpha*perb, ... etc.
+    getResidual(time, res, X, q, dq, ddq);
+
+    // Form the finite-difference matrix-vector approximation
+    for ( int i = 0; i < 8; i++ ){
+      fd[i] = 0.5*(fd[i] - res[i])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+
+    // Get the Jacobian computed by the element
+    getJacobian(time, mat, alpha, beta, gamma, 
+                X, vars, dvars, ddvars);
+  
+    // Compute the product: res = J*perb
+    // Recall that the Jacobian matrix is stored in row-major order
+    memset(res, 0, 8*sizeof(TacsScalar));
+    for ( int i = 0; i < 8; i++ ){
+      for ( int j = 0; j < 8; j++ ){
+        res[i] += mat[8*i + j]*perb[j];
+      }
+    }
+
+    // Print out the results to stdout
+    char outname[128];
+    sprintf(outname, "Jacobian col %d", ii);
+    writeErrorComponents(stdout, outname,
+                         res, fd, 8);
+  }
+}

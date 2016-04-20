@@ -129,6 +129,8 @@ class TACSRigidBody : public TACSElement {
   // Test the residual implementation
   // --------------------------------
   void testResidual( double dh );
+  void testJacobian( double dh, double alpha, 
+                     double beta, double gamma );
 
  private:
   TacsScalar mass; // The mass of the rigid body
