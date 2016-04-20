@@ -25,6 +25,8 @@ class TACSGibbsVector : public TACSObject {
   void addPointAdjResProduct( TacsScalar fdvSens[], int numDVs,
                               TacsScalar scale,
                               const TacsScalar psi[] );
+  void getVectorDesignVarNums( const int **dvs );
+
  private:
   TacsScalar x[3];
   int xDV[3];
@@ -124,6 +126,16 @@ inline void TACSGibbsVector::addPointAdjResProduct( TacsScalar fdvSens[],
   if (xDV[0] >= 0 && xDV[0] < numDVs){ fdvSens[xDV[0]] += scale*psi[0]; }
   if (xDV[1] >= 0 && xDV[1] < numDVs){ fdvSens[xDV[1]] += scale*psi[1]; }
   if (xDV[2] >= 0 && xDV[2] < numDVs){ fdvSens[xDV[2]] += scale*psi[2]; }
+}
+
+/*
+  Retrieve the design variable numbers from the Gibbs vector object
+
+  output:
+  dvs:  the design variable numbers
+*/
+inline void TACSGibbsVector::getVectorDesignVarNums( const int **dvs ){
+  *dvs = xDV;
 }
 
 #endif // TACS_GIBBS_VECTOR_H

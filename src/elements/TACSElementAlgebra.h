@@ -639,15 +639,15 @@ static inline void computeRotationMat( const TacsScalar eta,
                                        const TacsScalar eps[],
                                        TacsScalar C[] ){
   C[0] = 1.0 - 2.0*(eps[1]*eps[1] + eps[2]*eps[2]);
-  C[1] = 2.0*(eps[0]*eps[1] + eps[2]*eta);
-  C[2] = 2.0*(eps[0]*eps[2] - eps[1]*eta);
-  
-  C[3] = 2.0*(eps[1]*eps[0] - eps[2]*eta);
+  C[1] = 2.0*(eps[0]*eps[1] + eta*eps[2]);
+  C[2] = 2.0*(eps[0]*eps[2] - eta*eps[1]);
+
+  C[3] = 2.0*(eps[1]*eps[0] - eta*eps[2]);
   C[4] = 1.0 - 2.0*(eps[0]*eps[0] + eps[2]*eps[2]);
-  C[5] = 2.0*(eps[1]*eps[2] + eps[0]*eta);
-  
-  C[6] = 2.0*(eps[2]*eps[0] + eps[1]*eta);
-  C[7] = 2.0*(eps[2]*eps[1] - eps[0]*eta);
+  C[5] = 2.0*(eps[1]*eps[2] + eta*eps[0]);
+
+  C[6] = 2.0*(eps[2]*eps[0] + eta*eps[1]);
+  C[7] = 2.0*(eps[2]*eps[1] - eta*eps[0]);
   C[8] = 1.0 - 2.0*(eps[0]*eps[0] + eps[1]*eps[1]);
 }
 
@@ -731,7 +731,7 @@ static inline void addSRateTransProduct( const TacsScalar a,
                                          TacsScalar yeps[] ){
   *yeta -= 2.0*a*vecDot(eps, x);
   crossProductAdd(2.0*a, eps, x, yeps);
-  vecAxpy(2.0*a, x, yeps);
+  vecAxpy(2.0*a*eta, x, yeps);
 }
 
 /*
@@ -764,6 +764,52 @@ static inline void computeSRateMat( const TacsScalar eta,
   S[9] = 2.0*eps[1];
   S[10] = -2.0*eps[0];
   S[11] = 2.0*eta;
+}
+
+/*
+  Compute the product of the matrix 
+
+  y <- y + a*D(v)^{T}*x 
+
+  The matrix D(v) is the derivative of d(C*v)/dq and is given as
+  follows:
+
+  D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+  
+  D(v)^{T}*x = 2*[ -eps^{T}*v^{x}*x ]
+  .              [ eps^{x}*v^{x}*x - eta*v^{x}*x - 2*v^{x}*eps^{x}*x ]
+  
+  input: 
+  a:    the scalar input
+  v:    the vector input for D(v)
+  x:    the multiplier vector
+  eta:  the quaternion scalar
+  eps:  the quaternion 3-vector
+
+  output:
+  yeta:  the quaternion output scalar
+  eps:   the quaternion output 3-vector
+*/
+static inline void addDMatTransProduct( const TacsScalar a,
+                                        const TacsScalar v[],
+                                        const TacsScalar x[],
+                                        const TacsScalar eta,
+                                        const TacsScalar eps[],
+                                        TacsScalar *yeta,
+                                        TacsScalar yeps[] ){
+  // Compute the cross product
+  TacsScalar t[3];
+  crossProduct(1.0, v, x, t);
+  *yeta -= 2.0*a*vecDot(eps, t);
+
+  // Add the term 2*eps^{x}*v^{x}*x - 2*eta* v^{x}*x
+  crossProductAdd(2.0*a, eps, t, yeps);
+  crossProductAdd(-2.0*a*eta, v, x, yeps);
+
+  // Compute the final term -4*v^{x}*eps^{x}*x
+  crossProduct(1.0, eps, x, t);
+  crossProductAdd(-4.0*a, v, t, yeps);
 }
 
 /*
