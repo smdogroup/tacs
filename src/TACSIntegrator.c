@@ -744,7 +744,6 @@ void TacsDIRKIntegrator::timeMarch( double *time,
   for (int j = 0; j < num_stages; j++) {
     qddot[k]->axpy(B[j], qddotS[j]);
   }
-  qddot[k]->axpy(1.0, qddot[k-1]);
   
 }
 
