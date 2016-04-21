@@ -999,25 +999,81 @@ static inline void addDMatTransProduct( const TacsScalar a,
 
   D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
 
+  input:
+  eta:   the quaternion scalar
+  eps:   the quaternion 3-vector
+  v:     the input vector
+
+  output:
+  D:     the 3x4 derivative matrix
 */
 static inline void computeDMat( const TacsScalar eta,
                                 const TacsScalar eps[],
                                 const TacsScalar v[],
                                 TacsScalar D[] ){
-  D[0] = 2*(v[1]*eps[2] - v[2]*eps[1]);
-  D[1] = 2*(v[1]*eps[1] + v[2]*eps[2]);
-  D[2] = 2*(eps[0]*v[1] - 2*v[0]*eps[1] - eta*v[2]);
-  D[3] = 2*(eps[0]*v[2] - 2*v[0]*eps[2] + eta*v[1]);
+  D[0] = 2.0*(v[1]*eps[2] - v[2]*eps[1]);
+  D[1] = 2.0*(v[1]*eps[1] + v[2]*eps[2]);
+  D[2] = 2.0*(eps[0]*v[1] - 2.0*v[0]*eps[1] - eta*v[2]);
+  D[3] = 2.0*(eps[0]*v[2] - 2.0*v[0]*eps[2] + eta*v[1]);
 
-  D[4] = 2*(v[2]*eps[0] - v[0]*eps[2]);
-  D[5] = 2*(eps[1]*v[0] - 2*v[1]*eps[0] + eta*v[2]);
-  D[6] = 2*(v[0]*eps[0] + v[2]*eps[2]);
-  D[7] = 2*(eps[1]*v[2] - 2*v[1]*eps[2] - eta*v[0]);
+  D[4] = 2.0*(v[2]*eps[0] - v[0]*eps[2]);
+  D[5] = 2.0*(eps[1]*v[0] - 2.0*v[1]*eps[0] + eta*v[2]);
+  D[6] = 2.0*(v[0]*eps[0] + v[2]*eps[2]);
+  D[7] = 2.0*(eps[1]*v[2] - 2.0*v[1]*eps[2] - eta*v[0]);
 
-  D[8] = 2*(v[0]*eps[1] - v[1]*eps[0]);
-  D[9] = 2*(eps[2]*v[0] - 2*v[2]*eps[0] - eta*v[1]);
-  D[10]= 2*(eps[2]*v[1] - 2*v[2]*eps[1] + eta*v[0]);
-  D[11]= 2*(v[0]*eps[0] + v[1]*eps[1]);
+  D[8] = 2.0*(v[0]*eps[1] - v[1]*eps[0]);
+  D[9] = 2.0*(eps[2]*v[0] - 2.0*v[2]*eps[0] - eta*v[1]);
+  D[10]= 2.0*(eps[2]*v[1] - 2.0*v[2]*eps[1] + eta*v[0]);
+  D[11]= 2.0*(v[0]*eps[0] + v[1]*eps[1]);
+}
+
+/*
+  Add the derivative of the matrix d(D(v)^{T}*w)/dq to the provided
+  block matrix. The derivative takes the form:
+
+  TD(v,w) = 2*[ 0           (w^{x}*v)^{T}                     ]
+  .           [ w^{x}*v     v*w^{T} + w*v^{T} - 2*(v^{T}*w)*I ]
+
+  input:
+  a:     scalar factor
+  v:     the input 3-vector
+  w:     the second input 3-vector
+  ldd:   the leading row dimension of the block matrix D
+
+  output:
+  D:     the resulting block matrix  
+*/
+static inline void addBlockDMatTransDeriv( const TacsScalar a,
+                                           const TacsScalar v[],
+                                           const TacsScalar w[],
+                                           TacsScalar D[],
+                                           const int ldd ){
+  const TacsScalar b = 2*a;
+  // Compute the cross product w^{x}*v
+  TacsScalar t[3];
+  crossProduct(1.0, w, v, t);
+
+  D[1] += b*t[0];
+  D[2] += b*t[1];
+  D[3] += b*t[2];
+  D += ldd;
+
+  D[0] += b*t[0];
+  D[1] -= 2.0*b*(v[1]*w[1] + v[2]*w[2]);
+  D[2] += b*(v[0]*w[1] + w[0]*v[1]);
+  D[3] += b*(v[0]*w[2] + w[0]*v[2]);
+  D += ldd;
+
+  D[0] += b*t[1];
+  D[1] += b*(v[1]*w[0] + w[1]*v[0]);
+  D[2] -= 2.0*b*(v[0]*w[0] + v[2]*w[2]);
+  D[3] += b*(v[1]*w[2] + w[1]*v[2]);
+  D += ldd;
+
+  D[0] += b*t[2];
+  D[1] += b*(v[2]*w[0] + w[2]*v[0]);
+  D[2] += b*(v[2]*w[1] + w[2]*v[1]);
+  D[3] -= 2.0*b*(v[0]*w[0] + v[1]*w[1]);
 }
 
 /*
@@ -1041,22 +1097,23 @@ static inline void addBlockEMat( const TacsScalar a,
                                  const TacsScalar v[],
                                  TacsScalar D[],
                                  const int ldd ){
-  D[0] += 2*a*(v[2]*eps[1] - v[1]*eps[2]);
-  D[1] += 2*a*(v[1]*eps[1] + v[2]*eps[2]);
-  D[2] += 2*a*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
-  D[3] += 2*a*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
+  const TacsScalar b = 2.0*a;
+  D[0] += b*(v[2]*eps[1] - v[1]*eps[2]);
+  D[1] += b*(v[1]*eps[1] + v[2]*eps[2]);
+  D[2] += b*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
+  D[3] += b*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
   D += ldd;
 
-  D[0] += 2*a*(v[0]*eps[2] - v[2]*eps[0]);
-  D[1] += 2*a*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
-  D[2] += 2*a*(v[0]*eps[0] + v[2]*eps[2]);
-  D[3] += 2*a*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
+  D[0] += b*(v[0]*eps[2] - v[2]*eps[0]);
+  D[1] += b*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
+  D[2] += b*(v[0]*eps[0] + v[2]*eps[2]);
+  D[3] += b*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
   D += ldd;
 
-  D[0] += 2*a*(v[1]*eps[0] - v[0]*eps[1]);
-  D[1] += 2*a*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
-  D[2] += 2*a*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
-  D[3] += 2*a*(v[0]*eps[0] + v[1]*eps[1]);
+  D[0] += b*(v[1]*eps[0] - v[0]*eps[1]);
+  D[1] += b*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
+  D[2] += b*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
+  D[3] += b*(v[0]*eps[0] + v[1]*eps[1]);
 }
 
 /*
@@ -1080,24 +1137,25 @@ static inline void addBlockEMatTrans( const TacsScalar a,
                                       const TacsScalar v[],
                                       TacsScalar D[],
                                       const int ldd ){
-  D[0] += 2*a*(v[2]*eps[1] - v[1]*eps[2]);
-  D[1] += 2*a*(v[0]*eps[2] - v[2]*eps[0]);
-  D[2] += 2*a*(v[1]*eps[0] - v[0]*eps[1]);
+  const TacsScalar b = 2.0*a;
+  D[0] += b*(v[2]*eps[1] - v[1]*eps[2]);
+  D[1] += b*(v[0]*eps[2] - v[2]*eps[0]);
+  D[2] += b*(v[1]*eps[0] - v[0]*eps[1]);
   D += ldd;
 
-  D[0] += 2*a*(v[1]*eps[1] + v[2]*eps[2]);
-  D[1] += 2*a*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
-  D[2] += 2*a*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
+  D[0] += b*(v[1]*eps[1] + v[2]*eps[2]);
+  D[1] += b*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
+  D[2] += b*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
   D += ldd;
 
-  D[0] += 2*a*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
-  D[1] += 2*a*(v[0]*eps[0] + v[2]*eps[2]);
-  D[2] += 2*a*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
+  D[0] += b*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
+  D[1] += b*(v[0]*eps[0] + v[2]*eps[2]);
+  D[2] += b*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
   D += ldd;
 
-  D[0] += 2*a*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
-  D[1] += 2*a*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
-  D[2] += 2*a*(v[0]*eps[0] + v[1]*eps[1]);
+  D[0] += b*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
+  D[1] += b*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
+  D[2] += b*(v[0]*eps[0] + v[1]*eps[1]);
 }
 /*
   Add the 4x4 matrix from the derivative of the transpose of the

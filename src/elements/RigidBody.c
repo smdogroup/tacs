@@ -729,33 +729,33 @@ void TACSRigidBody::getResidual( double time,
   // Add res += S^{T}*t2
   addSRateTransProduct(1.0, eta, eps, t2,
                        &res[3], &res[4]);
-  
+
   // Compute t2 = J*omega + c^{x}*C*dot{r}
   matMult(C, v0, t1);
   crossProduct(1.0, c, t1, t2);
   matSymmMultAdd(J, omega, t2);
   
   // Add res[3:] += 2.0*dot{S}^{T}*t2 
-   addSRateTransProduct(2.0, deta, deps, t2,
-                        &res[3], &res[4]);
+  addSRateTransProduct(2.0, deta, deps, t2,
+                       &res[3], &res[4]);
 
-  // Add res += D(dot(r))^{T}*c^{x}*omega
+  // Add res += D(dot(r))^{T}*c^{x}*omega  
   crossProduct(1.0, c, omega, t1);
   addDMatTransProduct(1.0, v0, t1, eta, eps,
                       &res[3], &res[4]);
- 
+  
   // Add res -= D(g)^{T}*c
   addDMatTransProduct(-1.0, g, c, eta, eps,
                       &res[3], &res[4]);
-
+  
   // Add the Lagrange multiplier term
-  res[3] -= eta*vars[7];
-  res[4] -= eps[0]*vars[7];
-  res[5] -= eps[1]*vars[7];
-  res[6] -= eps[2]*vars[7];
+  res[3] -= 2.0*eta*vars[7];
+  res[4] -= 2.0*eps[0]*vars[7];
+  res[5] -= 2.0*eps[1]*vars[7];
+  res[6] -= 2.0*eps[2]*vars[7];
 
   // Compute the quaternion constraint
-  res[7] = 1.0 - eta*eta - vecDot(eps, eps);
+  res[7] = 1.0 - eta*eta - vecDot(eps, eps);  
 }
 
 /*
@@ -863,8 +863,12 @@ void TACSRigidBody::getJacobian( double time, TacsScalar mat[],
   // Add dot{S}^{T}*J*S
   addBlock3x4Product(2.0*beta, Sdot, A, &mat[27], 8);
 
-  // Add S^{T}*J*ddot{S}
-  addBlock3x4Product(alpha, A, Sddot, &mat[27], 8);
+  // Add -alpha*S^{T}*J*ddot{S}
+  addBlock3x4Product(-alpha, A, Sddot, &mat[27], 8);
+
+  // Add the term -2*alpha*dot{S}^{T}*J*dot{S}
+  matSymmMat3x4Mult(J, Sdot, A);
+  addBlock3x4Product(-2.0*alpha, Sdot, A, &mat[27], 8);
 
   // Compute S^{T}*c^{x}*(C*v0)^{x}*S
   TacsScalar v[3];
@@ -884,7 +888,71 @@ void TACSRigidBody::getJacobian( double time, TacsScalar mat[],
   computeDMat(eta, eps, v0, A);
   addBlock3x4Product(1.0, A, B, &mat[27], 8);
 
+  // Compute t1 = C*ddot{r} - omega^{x}*(C*dot{r})
+  matMult(C, a0, t1);
+  crossProductAdd(-1.0, omega, v, t1);
+
+  // Compute t2 = c^{x}*(C*ddot{r} - omega^{x}*C*dot{r})
+  crossProduct(1.0, c, t1, t2);
+
+  // Add t2 += J*domega 
+  matSymmMultAdd(J, domega, t2);
+
+  // Add the derivative TS(t1) to the Jacobian matrix
+  addSRateMatTransDeriv(alpha, t2, &mat[27], 8);
+
+  // Compute the derivatives of C*v0 and C*a0 w.r.t. q
+  TacsScalar Dv0[12], Da0[12];
+  computeDMat(eta, eps, v0, Dv0);
+  computeDMat(eta, eps, a0, Da0);
+
+  // Add the term alpha*S^{T}*c^{x}*D(a0)
+  setMatSkew(1.0, c, A);
+  matMat3x4Mult(A, Da0, B);
+  addBlock3x4Product(alpha, S, B, &mat[27], 8);
+
+  // Add the term -alpha*S^{T}*c^{x}*omega^{x}*D(v0)
+  setMatSkewSkew(-1.0, c, omega, A);
+  matMat3x4Mult(A, Dv0, B);
+  addBlock3x4Product(alpha, S, B, &mat[27], 8);
+
+  // Add the term alpha*S^{T}*c^{x}*v^{x}*Sdot
+  setMatSkewSkew(-1.0, c, v, A);
+  matMat3x4Mult(A, Sdot, B);
+  addBlock3x4Product(alpha, S, B, &mat[27], 8);
+
+  // Add the term 2*dot{S}^{T}*c^{x}*D(dot{r})
+  setMatSkew(1.0, c, A);
+  matMat3x4Mult(A, Dv0, B);
+  addBlock3x4Product(2.0*alpha, Sdot, B, &mat[27], 8);
+
+  // Add the derivative: d(D(v0)^{T}*t1)/dq with t1 = c^{x}*omega
+  crossProduct(1.0, c, omega, t1);
+  addBlockDMatTransDeriv(alpha, v0, t1, &mat[27], 8);
+
+  // Add the derivative -alpha*D(v0)^{T}*c^{x}*dot{S}
+  setMatSkew(1.0, c, A);
+  matMat3x4Mult(A, Sdot, B);
+  addBlock3x4Product(-alpha, Dv0, B, &mat[27], 8);
+
+  // Add the derivative: -d(D(g)^{T}*c)/dq
+  addBlockDMatTransDeriv(-alpha, g, c, &mat[27], 8);
+
   // Add the terms from the Lagrange multipliers
+  mat[31] -= 2.0*alpha*eta;
+  mat[39] -= 2.0*alpha*eps[0];
+  mat[47] -= 2.0*alpha*eps[1];
+  mat[55] -= 2.0*alpha*eps[2];
+  
+  mat[59] -= 2.0*alpha*eta;
+  mat[60] -= 2.0*alpha*eps[0];
+  mat[61] -= 2.0*alpha*eps[1];
+  mat[62] -= 2.0*alpha*eps[2];
+
+  mat[27] -= 2.0*alpha*vars[7];
+  mat[36] -= 2.0*alpha*vars[7];
+  mat[45] -= 2.0*alpha*vars[7];
+  mat[54] -= 2.0*alpha*vars[7];
 }
 
 /*

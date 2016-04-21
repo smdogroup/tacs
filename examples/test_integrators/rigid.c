@@ -10,7 +10,7 @@ int main( int argc, char *argv[] ){
 
   // Zero the Jacobian coefficients
   double alpha = 1.26, beta = 0.35, gamma = 4.34;
-  alpha = gamma = 0.0;
+  beta = gamma = 0.0;
 
   TACSRigidBody *body = new TACSRigidBody(mass, c, J);
   body->incref();
