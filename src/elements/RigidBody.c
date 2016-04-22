@@ -406,9 +406,9 @@ TACSRigidBody::TACSRigidBody( const TacsScalar _mass,
   // g[1] = _g[1];
   // g[2] = _g[2];
 
-  g[0] = 0.35;
-  g[1] = 0.324;
-  g[2] = -0.94;
+  g[0] = 0.0;
+  g[1] = 0.0;
+  g[2] = -1.0;
 
   // g[0] = g[1] = g[2] = 0.0;
 

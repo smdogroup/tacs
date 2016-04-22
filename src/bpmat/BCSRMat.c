@@ -1088,6 +1088,35 @@ void BCSRMat::initBlockImpl(){
     bfactorlower_thread = BCSRMatFactorLower6_thread;
     bfactorupper_thread = BCSRMatFactorUpper6_thread;
     break;
+  case 8:
+    // These are tuning parameters
+    data->matvec_group_size = 16;
+    data->matmat_group_size = 4;
+
+    // The serial versions
+    bfactor    = BCSRMatFactor8;
+    applylower = BCSRMatApplyLower8;
+    applyupper = BCSRMatApplyUpper8;
+    bmult      = BCSRMatVecMult8;
+    bmultadd   = BCSRMatVecMultAdd8;
+    bmatmult   = BCSRMatMatMultAdd8;
+    bfactorlower = BCSRMatFactorLower8;
+    bfactorupper = BCSRMatFactorUpper8;
+    applypartiallower = BCSRMatApplyPartialLower8;
+    applypartialupper = BCSRMatApplyPartialUpper8;
+    applyschur        = BCSRMatApplyFactorSchur8;
+    applysor  = BCSRMatApplySOR8;
+    applyssor = BCSRMatApplySSOR8;
+
+    // The threaded versions
+    bmultadd_thread = BCSRMatVecMultAdd8_thread;
+    bfactor_thread = BCSRMatFactor8_thread;
+    applylower_thread = BCSRMatApplyLower8_thread;
+    applyupper_thread = BCSRMatApplyUpper8_thread;
+    bmatmult_thread = BCSRMatMatMultAdd8_thread;
+    bfactorlower_thread = BCSRMatFactorLower8_thread;
+    bfactorupper_thread = BCSRMatFactorUpper8_thread;
+    break;
   default:
     break;
   }  

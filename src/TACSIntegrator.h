@@ -11,16 +11,15 @@
   TACS.
 
   Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
-
 */
 
 class TacsIntegrator : public TACSObject {
  public:
-  
   // Parent class constructor for integration schemes
   //-------------------------------------------------
-  TacsIntegrator(TACSAssembler *_tacs, 
-		 double _tinit, double _tfinal, int _num_steps_per_sec);
+  TacsIntegrator( TACSAssembler *_tacs, 
+                  double _tinit, double _tfinal, 
+                  int _num_steps_per_sec );
 
   // Destructor
   //-----------
@@ -28,13 +27,13 @@ class TacsIntegrator : public TACSObject {
   
   // Method to solve the non-linear system using Newton's method
   //------------------------------------------------------------
-  void newtonSolve(double alpha, double beta, double gamma,
-		   double t, BVec *q, BVec *qdot, 
-		   BVec *qddot);
+  void newtonSolve( double alpha, double beta, double gamma,
+                    double t, BVec *q, BVec *qdot, 
+                    BVec *qddot );
 
   // Call this function after integrating to write the solution to file
   //-------------------------------------------------------------------
-  void writeSolution(const char *filename);
+  void writeSolution( const char *filename );
 
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
@@ -42,13 +41,16 @@ class TacsIntegrator : public TACSObject {
 
   // Setters
   //--------
-  void setMaxNewtonIters(int _max_newton_iters){max_newton_iters = _max_newton_iters;};
-  void setRelTol(double _rtol){rtol = _rtol;};
-  void setAbsTol(double _atol){atol = _atol;};
-  void setPrintLevel(int _print_level){print_level = _print_level;};
+  void setMaxNewtonIters( int _max_newton_iters ){
+    max_newton_iters = _max_newton_iters;
+  }
+  void setRelTol( double _rtol ){ rtol = _rtol; }
+  void setAbsTol( double _atol ){ atol = _atol; }
+  void setPrintLevel( int _print_level ){ 
+    print_level = _print_level; 
+  }
   
  protected:
-
   // Instance of TACS
   TACSAssembler *tacs; 
   
@@ -56,7 +58,8 @@ class TacsIntegrator : public TACSObject {
   BVec **q, **qdot, **qddot;
   double *time;
   
-  // Class variables used to manage/monitor time marching in integration schemes
+  // Class variables used to manage/monitor time marching in
+  // integration schemes
   int num_time_steps, num_steps_per_sec, current_time_step; 
   double h, tinit, tfinal;
 
@@ -73,21 +76,18 @@ class TacsIntegrator : public TACSObject {
   TACSMat *mat;        // Jacobian matrix
   TACSPc *pc;          // Preconditioner
   TACSKsm *ksm;        // KSM solver
-
 };
 
 /*
   DIRK integration scheme for TACS
 */
 class TacsDIRKIntegrator : public TacsIntegrator {
-
  public:
-
   // Constructor for DIRK object
   //----------------------------
-  TacsDIRKIntegrator(TACSAssembler * _tacs, 
-		     double _tinit, double _tfinal, int _num_steps_per_sec, 
-		     int num_stages);
+  TacsDIRKIntegrator( TACSAssembler * _tacs, 
+                      double _tinit, double _tfinal, int _num_steps_per_sec, 
+                      int num_stages );
   
   // Desctructor
   //------------
@@ -98,7 +98,6 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   void integrate();
   
  private:
-
   // the number of stage in RK scheme
   int num_stages;
   
@@ -132,7 +131,6 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // Set the stage states and time to zero after each global timestep
   //-----------------------------------------------------------------
   void resetStageValues();
-
 };
 
 /*

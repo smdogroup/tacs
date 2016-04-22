@@ -1,3 +1,4 @@
+#include <math.h>
 #include "TACSIntegrator.h"
 
 /*
@@ -10,9 +11,9 @@
   tfinal: the final time
   num_steps_per_sec: the number of steps to take for each second
 */
-TacsIntegrator::TacsIntegrator(TACSAssembler * _tacs,
-			       double _tinit, double _tfinal, int _num_steps_per_sec) {
-  
+TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
+                                double _tinit, double _tfinal, 
+                                int _num_steps_per_sec ){
   // copy over the input parameters
   tacs = _tacs;
   tacs->incref();
@@ -28,7 +29,7 @@ TacsIntegrator::TacsIntegrator(TACSAssembler * _tacs,
   num_time_steps = int(double(num_steps_per_sec)*(tfinal-tinit)) + 1;
 
   // Default print level
-  print_level = 0;
+  print_level = 1;
 
   //------------------------------------------------------------------//
   //                     Time history of states                       //
@@ -91,14 +92,12 @@ TacsIntegrator::TacsIntegrator(TACSAssembler * _tacs,
   ksm->incref();
   
   ksm->setTolerances(rtol, atol);
-
 }
 
 /*
   Destructor
 */
 TacsIntegrator::~TacsIntegrator(){
-
   // Dereference TACS
   tacs->decref();
 
@@ -118,11 +117,9 @@ TacsIntegrator::~TacsIntegrator(){
   ksm->decref();
   
   delete [] time;
-
   delete [] q;
   delete [] qdot;
   delete [] qddot;
-  
 }
 
 /*
@@ -137,26 +134,25 @@ TacsIntegrator::~TacsIntegrator(){
   Output: q, qdot, qddot updated iteratively until the corresponding
   residual R = 0
 */
-void TacsIntegrator::newtonSolve(double alpha, double beta, double gamma,
-				 double t, BVec *q, BVec *qdot, 
-				 BVec *qddot){
-     
+void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
+                                  double t, BVec *q, BVec *qdot, 
+                                  BVec *qddot ){
   // Initialize the norms
   TacsScalar init_norm = 0.0;
   TacsScalar norm = 0.0;
 
   // Iterate until max iters or R <= tol
-  for (int n = 0; n < max_newton_iters; n++) {
-
+  for ( int n = 0; n < max_newton_iters; n++ ){
     // Set the supplied initial input states into TACS
     tacs->setVariables(q);
     tacs->setDotVariables(qdot);
     tacs->setDDotVariables(qddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
-    if (n % 5 == 0) {
+    if (1){ // n % 5 == 0){
       tacs->assembleJacobian(res, mat, alpha, beta, gamma, NORMAL);
-    } else{
+    } 
+    else {
       tacs->assembleRes(res);
     }    
 
@@ -164,7 +160,7 @@ void TacsIntegrator::newtonSolve(double alpha, double beta, double gamma,
     norm = res->norm();
     
     // Write a summary
-    if(print_level>0) {
+    if(print_level > 0) {
       printf("# Newton iters=%d, |R|=%e \n", n, RealPart(norm));
     }
     // Record the residual norm at the first Newton iteration
@@ -174,7 +170,8 @@ void TacsIntegrator::newtonSolve(double alpha, double beta, double gamma,
            
     // Check if the norm of the residuals is a NaN
     if (norm != norm){ 
-      fprintf(stderr, "Newton iteration %d, failed with NaN residual norm\n", n);
+      /* fprintf(stderr,  */
+      /*         "Newton iteration %d, failed with NaN residual norm\n", n); */
       break;
     }
     
@@ -184,33 +181,30 @@ void TacsIntegrator::newtonSolve(double alpha, double beta, double gamma,
     }
 
     // Factor the preconditioner
-    if (n % 5 == 0) {
+    if (1){ //n % 5 == 0){
       pc->factor();
     }
    
     // Solve for update using KSM
     ksm->solve(res, update);
-     
+
     // Update the state variables using the solution
-    qddot->axpy(-alpha, update);
+    qddot->axpy(-gamma, update);
     qdot->axpy(-beta, update);
-    q->axpy(-gamma, update);
+    q->axpy(-alpha, update);
 
     // Check whether the Newton iteration was successful
     if (n == max_newton_iters && norm >= rtol*init_norm){
       fprintf(stderr,"Newton iteration failed to converge in %d iters\n", n);
       break;
-    }    
-
+    }
   }
-
 }
 
 /*
   Function that writes time, q, qdot, qddot to file
 */
-void TacsIntegrator::writeSolution(const char *filename) {
-
+void TacsIntegrator::writeSolution( const char *filename ){
   // Temporary variables to access the states at each time
   TacsScalar *qvals, *qdotvals, *qddotvals;
 
@@ -221,8 +215,7 @@ void TacsIntegrator::writeSolution(const char *filename) {
   // Open a new file
   FILE *fp = fopen(filename, "w");
  
-  for (int k = 0; k < num_time_steps; k++) {
-    
+  for ( int k = 0; k < num_time_steps; k++ ){    
     // Copy over the state values from BVec
     q[k]->getArray(&qvals);
     qdot[k]->getArray(&qdotvals);
@@ -232,16 +225,15 @@ void TacsIntegrator::writeSolution(const char *filename) {
     fprintf(fp, "%e ", time[k]);
 
     // Write the states (q, qdot, qddot) to file
-    for (int j = 0; j < num_vars; j++) {
-      fprintf(fp, "%e %e %e ", RealPart(qvals[j]), RealPart(qdotvals[j]), RealPart(qddotvals[j]));
+    for ( int j = 0; j < num_vars; j++ ){
+      fprintf(fp, "%e %e %e ", RealPart(qvals[j]), 
+              RealPart(qdotvals[j]), RealPart(qddotvals[j]));
     }
-
     fprintf(fp, "\n");
   }
 
   // Close the file
   fclose(fp);
-
 }
 
 /*
@@ -253,41 +245,37 @@ void TacsIntegrator::writeSolution(const char *filename) {
   num_steps_per_sec: the number of steps to take for each second
 */
 
-TacsBDFIntegrator:: TacsBDFIntegrator(TACSAssembler * _tacs, 
-				      double _tinit, double _tfinal, int _num_steps_per_sec, 
-				      int _max_bdf_order)
-: TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
-		
+TacsBDFIntegrator:: TacsBDFIntegrator( TACSAssembler * _tacs, 
+                                       double _tinit, double _tfinal, 
+                                       int _num_steps_per_sec, 
+                                       int _max_bdf_order ):
+TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){		
   // copy over the variables
   max_bdf_order = _max_bdf_order;
 
   // Truncate the maximum order to 3rd order
   max_bdf_order = (max_bdf_order <= 3 ? 
 		   max_bdf_order : 3);
-
 }
 
 /*
   Destructor for TACSBDFIntegrator
 */
-TacsBDFIntegrator::~TacsBDFIntegrator(){
-}
+TacsBDFIntegrator::~TacsBDFIntegrator(){}
 
 /*
   Integration logic of BDF. Use this function to march in time. The
   solution over time is set into the class variables q, qdot and qddot
   and time.
 */
-void TacsBDFIntegrator::integrate() {
-
+void TacsBDFIntegrator::integrate(){
   current_time_step = 0;
 
   // initial condition
-  q[0]->set(1.0);
+  tacs->getInitConditions(q[0], qdot[0]);
 
-  for (int k = 1; k < num_time_steps; k++) {
-
-    current_time_step ++;
+  for ( int k = 1; k < num_time_steps; k++ ){
+    current_time_step++;
 
     // Approximate states and their derivatives using BDF formula
     approxStates(q, qdot, qddot);
@@ -302,9 +290,7 @@ void TacsBDFIntegrator::integrate() {
     
     // Advance time (states are already advanced at the end of Newton solve)
     time[k] = time[k-1] + h;
-    
   }
-  
 }
 
 /*
@@ -314,10 +300,8 @@ void TacsBDFIntegrator::integrate() {
   
   Input:
   pointers to the global states q, qdot, qddot
-  
 */
-void TacsBDFIntegrator::approxStates(BVec **q, BVec **qdot, BVec **qddot) {
-  
+void TacsBDFIntegrator::approxStates( BVec **q, BVec **qdot, BVec **qddot ){
   int k = current_time_step;
   
   // get the BDF coefficients
@@ -345,7 +329,6 @@ void TacsBDFIntegrator::approxStates(BVec **q, BVec **qdot, BVec **qddot) {
     double scale = bdf_coeff[nbdf-1]/h;
     qddot[k]->axpy(scale, qdot[k-1]);
   }
-
 }
 
 /*
@@ -439,18 +422,17 @@ int TacsBDFIntegrator::getBDFCoeff( double bdf[], int order ){
 
   Input:
 
-  num_stages: the number of Runge-Kutta stages
-  tinit: the initial time
-  tfinal: the final time
+  num_stages:        the number of Runge-Kutta stages
+  tinit:             the initial time
+  tfinal:            the final time
   num_steps_per_sec: the number of steps to take for each second
-  max_newton_iters: the max number of Newton iterations
-
+  max_newton_iters:  the max number of Newton iterations
 */
-TacsDIRKIntegrator::TacsDIRKIntegrator(TACSAssembler * _tacs, 
-				       double _tinit, double _tfinal, int _num_steps_per_sec,
-				       int _num_stages) 
-: TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){ 
-  
+TacsDIRKIntegrator::TacsDIRKIntegrator( TACSAssembler * _tacs, 
+                                        double _tinit, double _tfinal, 
+                                        int _num_steps_per_sec,
+                                        int _num_stages ): 
+TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){   
   // copy over the variables
   num_stages = _num_stages;
   
@@ -464,8 +446,7 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(TACSAssembler * _tacs,
   memset(tS, 0, num_stages*sizeof(double));
   
   // create state vectors for TACS during each timestep
-  for (int k = 0; k < num_stages; k++) {
-    
+  for ( int k = 0; k < num_stages; k++ ){
     qS[k] = tacs->createVec(); 
     qS[k]->incref(); 
     
@@ -474,7 +455,6 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(TACSAssembler * _tacs,
 
     qddotS[k] = tacs->createVec(); 
     qddotS[k]->incref(); 
-
   }
   
   // Allocate space for Butcher tableau
@@ -489,21 +469,19 @@ TacsDIRKIntegrator::TacsDIRKIntegrator(TACSAssembler * _tacs,
 
   // Add entries into the Butcher tableau
   setupButcherTableau();
-
 }
 
 /*
   Destructor for TacsDIRKIntegrator
 */
 TacsDIRKIntegrator::~TacsDIRKIntegrator(){
-  
   // Cleanup Butcher's Tableau
   delete [] A;
   delete [] B;
   delete [] C;
 
   // Cleanup stage stages
-  for (int i=0; i < num_stages; i++){
+  for ( int i = 0; i < num_stages; i++ ){
     qS[i]->decref();
     qdotS[i]->decref();
     qddotS[i]->decref();
@@ -515,28 +493,21 @@ TacsDIRKIntegrator::~TacsDIRKIntegrator(){
   delete [] qS;
   delete [] qdotS;
   delete [] qddotS;
-
 }
 
 /*
   Function that puts the entries into Butcher tableau
 */
 void TacsDIRKIntegrator::setupButcherTableau(){
-  
-  if (num_stages == 1) {
-
+  if (num_stages == 1){
     // Implicit mid-point rule (A-stable)
-
     A[0] = 0.5;
     B[0] = 1.0;
     C[0] = 0.5;
-
     order = 2;
-    
-  } else if (num_stages == 2) {
-
+  } 
+  else if (num_stages == 2){
     // Crouzeix formula (A-stable)
-
     double tmp = 1.0/(2.0*sqrt(3.0));
 
     A[0] = 0.5 + tmp;
@@ -549,14 +520,11 @@ void TacsDIRKIntegrator::setupButcherTableau(){
     C[0] = 0.5 + tmp;
     C[1] = 0.5 - tmp;
 
-    order = 3; 
-    
-  } else if (num_stages == 3) {
-
+    order = 3;     
+  } 
+  else if (num_stages == 3){
     // Crouzeix formula (A-stable)
-
-    double PI  = 22.0/7.0;
-    double alpha = 2.0*cos(PI/18.0)/sqrt(3.0);
+    double alpha = 2.0*cos(M_PI/18.0)/sqrt(3.0);
     
     A[0] = (1.0 + alpha)*0.5;
     A[1] = -0.5*alpha;
@@ -574,52 +542,47 @@ void TacsDIRKIntegrator::setupButcherTableau(){
     C[2] = 0.5*(1.0-alpha);
 
     order = 4;
-
-  } else {
-
+  }
+  else {
     fprintf(stderr, "ERROR: Invalid number of stages %d\n", num_stages);
-    exit(-1);
-    
+    num_stages = 1;
+    setupButcherTableau();
   }
 
   // check for the consistency of butcher tableau entries
   checkButcherTableau();
-
 }
 
 /*
   Function that checks the consistency of Butcher tableau values
 */
 void TacsDIRKIntegrator::checkButcherTableau(){
-
   double tmp;
 
   // Check #1: sum(A(i,:)) = C(i)  
   int idx = -1;
-  for (int i = 0; i < num_stages; i++) {
-    
+  for ( int i = 0; i < num_stages; i++ ){
     tmp = 0.0;
-    for (int j = 0; j <= i; j++) {
-      idx ++;
+    for ( int j = 0; j <= i; j++ ){
+      idx++;
       tmp += A[idx];
     }
 
     // Check the difference
     if (fabs(C[i] - tmp) >= 1.0e-6) {
-      fprintf(stderr, "WARNING: Sum A[%d,:] != C[%d] i.e. %f != %f \n", i, i, C[i], tmp);
-    }
-   
+      fprintf(stderr, "WARNING: Sum A[%d,:] != C[%d] i.e. %f != %f \n", 
+              i, i, C[i], tmp);
+    }  
   }
   
   // Check #2: sum(B) = 1.0
   tmp = 0.0;
-  for (int i = 0; i < num_stages; i++) {
+  for ( int i = 0; i < num_stages; i++ ){
     tmp += B[i];
   }
   if (fabs(1.0 - tmp) >= 1.0e-6) {
     fprintf(stderr, "WARNING: Sum B != 1.0 \n");
   }
-  
 }
 
 /*
@@ -628,24 +591,20 @@ void TacsDIRKIntegrator::checkButcherTableau(){
   and time.
 */
 void TacsDIRKIntegrator::integrate(){
-  
   current_time_step = 0;
   
   // initial condition
-  q[0]->set(1.0);
+  tacs->getInitConditions(q[0], qdot[0]);
 
-  for (int k = 1; k < num_time_steps; k++) {
-
-    current_time_step ++;
+  for ( int k = 1; k < num_time_steps; k++ ){
+    current_time_step++;
        
     // Compute the stage states qS, qdotS, qddotS based on the DIRK formula
     computeStageValues();
     
     // Advance the global state to the next time
     timeMarch(time, q, qdot, qddot);
-    
   }
-
 }
 
 /*
@@ -654,24 +613,27 @@ void TacsDIRKIntegrator::integrate(){
   and sets the stage states tS, qS, qdotS and qdotS.
 */
 void TacsDIRKIntegrator::computeStageValues(){
-
   int k = current_time_step;
 
   // Set the stage values tS, qS, qdotS, qddotS to zero before
   // evaluting them at the current time step
   resetStageValues();
 
-  for (int i = 0; i < num_stages; i++) {
-
+  for ( int i = 0; i < num_stages; i++ ){
     // Compute the stage time
     tS[i] = time[k-1] + C[i]*h;
 
     // Initial guess for qddotS
-    qddotS[i]->set(1.0);
+    if (i == 0){
+      qddotS[i]->copyValues(qddot[k-1]);
+    }
+    else {
+      qddotS[i]->copyValues(qddotS[i-1]);
+    }
 
     // Compute qdotS
     int idx1 = getIdx(i);
-    for (int j = 0; j <= i; j++) {
+    for ( int j = 0; j <= i; j++ ){
       qdotS[i]->axpy(h*A[idx1], qddotS[j]);
       idx1++;
     }
@@ -679,28 +641,26 @@ void TacsDIRKIntegrator::computeStageValues(){
 
     // Compute qS
     int idx2 = getIdx(i);
-    for (int j = 0; j <= i; j++) {
+    for ( int j = 0; j <= i; j++ ){
       qS[i]->axpy(h*A[idx2], qdotS[j]);
       idx2++;
     }
     qS[i]->axpy(1.0, q[k-1]);
     
     // Determine the coefficients for linearizing the Residual
-    double alpha = 1.0;
+    double alpha = h*A[0]*h*A[0];
     double beta  = h*A[0]; 
-    double gamma = h*A[0]*h*A[0];
+    double gamma = 1.0;
 
     // Solve the nonlinear system of stage equations
     newtonSolve(alpha, beta, gamma, tS[i], qS[i], qdotS[i], qddotS[i]);
-   
   }
-  
 }
 
 /*
   Start index of the Butcher Tableau A for the supplied stage
 */
-int TacsDIRKIntegrator::getIdx(int stageNum){
+int TacsDIRKIntegrator::getIdx( int stageNum ){
   return stageNum*(stageNum+1)/2;
 }
 
@@ -713,33 +673,30 @@ int TacsDIRKIntegrator::getIdx(int stageNum){
   
   Output:
   Updated global state variables q, qdot, qddot at the time step
-  
 */
 void TacsDIRKIntegrator::timeMarch( double *time, 
-				    BVec **q, BVec **qdot, BVec **qddot){
-  
+				    BVec **q, BVec **qdot, BVec **qddot ){
   int k = current_time_step;
   
   // advance the time
   time[k] = time[k-1] + h;
   
   // advance the position state
-  for (int j = 0; j < num_stages; j++) {
+  for ( int j = 0; j < num_stages; j++ ){
     q[k]->axpy(h*B[j], qdotS[j]);
   }
   q[k]->axpy(1.0, q[k-1]);
 
   // advance the velocity state
-  for (int j = 0; j < num_stages; j++) {
+  for ( int j = 0; j < num_stages; j++ ){
     qdot[k]->axpy(h*B[j], qddotS[j]);
   }
   qdot[k]->axpy(1.0, qdot[k-1]);
 
   // advance the acceleration state
-  for (int j = 0; j < num_stages; j++) {
+  for ( int j = 0; j < num_stages; j++ ){
     qddot[k]->axpy(B[j], qddotS[j]);
   }
-  
 }
 
 /*
@@ -747,7 +704,6 @@ void TacsDIRKIntegrator::timeMarch( double *time,
   step to zero, to make way for the next time step
 */
 void TacsDIRKIntegrator::resetStageValues(){
-
   memset(tS, 0, num_stages*sizeof(double));
 
   for (int i=0; i < num_stages; i++){
@@ -755,5 +711,4 @@ void TacsDIRKIntegrator::resetStageValues(){
     qdotS[i]->zeroEntries();
     qddotS[i]->zeroEntries();
   }
-
 }
