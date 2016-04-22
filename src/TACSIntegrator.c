@@ -133,6 +133,11 @@ TacsIntegrator::~TacsIntegrator(){
   
   Output: q, qdot, qddot updated iteratively until the corresponding
   residual R = 0
+  
+  alpha: multiplier for derivative of Residual wrt to q
+  beta : multiplier for derivative of Residual wrt to qdot
+  gamma: multiplier for derivative of Residual wrt to qddot
+
 */
 void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                   double t, BVec *q, BVec *qdot, 
@@ -271,7 +276,7 @@ TacsBDFIntegrator::~TacsBDFIntegrator(){}
 void TacsBDFIntegrator::integrate(){
   current_time_step = 0;
 
-  // initial condition
+  // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
   for ( int k = 1; k < num_time_steps; k++ ){
@@ -281,9 +286,9 @@ void TacsBDFIntegrator::integrate(){
     approxStates(q, qdot, qddot);
     
     // Determine the coefficients for Jacobian Assembly
-    int alpha = bddf_coeff[0]/h/h;
+    int gamma = bddf_coeff[0]/h/h;
     int beta = bdf_coeff[0]/h;
-    int gamma = 1.0;
+    int alpha = 1.0;
 
     // Solve the nonlinear system of equations
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
@@ -593,7 +598,7 @@ void TacsDIRKIntegrator::checkButcherTableau(){
 void TacsDIRKIntegrator::integrate(){
   current_time_step = 0;
   
-  // initial condition
+  // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
   for ( int k = 1; k < num_time_steps; k++ ){
@@ -648,9 +653,9 @@ void TacsDIRKIntegrator::computeStageValues(){
     qS[i]->axpy(1.0, q[k-1]);
     
     // Determine the coefficients for linearizing the Residual
-    double alpha = h*A[0]*h*A[0];
-    double beta  = h*A[0]; 
     double gamma = 1.0;
+    double beta  = h*A[0]; 
+    double alpha = h*A[0]*h*A[0];
 
     // Solve the nonlinear system of stage equations
     newtonSolve(alpha, beta, gamma, tS[i], qS[i], qdotS[i], qddotS[i]);

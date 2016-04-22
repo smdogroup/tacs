@@ -87,10 +87,10 @@ class TACSDummyElement : public TACSElement {
     //    printf("get Jacobian \n");
 
     // derivative wrt qddot
-    J[0] = alpha*1.0;
-    J[1] = alpha*0.0;
-    J[2] = alpha*0.0;
-    J[3] = alpha*1.0;
+    J[0] = gamma*1.0;
+    J[1] = gamma*0.0;
+    J[2] = gamma*0.0;
+    J[3] = gamma*1.0;
 
     // derivative wrt qdot
     J[0] += beta*0.02*qdot[1];
@@ -99,10 +99,10 @@ class TACSDummyElement : public TACSElement {
     J[3] += beta*-0.05*qdot[0];
 
     // derivative wrt q
-    J[0] += gamma*5.0;
-    J[1] += gamma*0.0;
-    J[2] += gamma*q[1];
-    J[3] += gamma*q[0];
+    J[0] += alpha*5.0;
+    J[1] += alpha*0.0;
+    J[2] += alpha*q[1];
+    J[3] += alpha*q[0];
 
   }
 
