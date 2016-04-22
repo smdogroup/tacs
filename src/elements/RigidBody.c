@@ -1122,7 +1122,7 @@ void TACSRigidBody::testJacobian( double dh,
   TacsScalar vars[8], dvars[8], ddvars[8];
 
   // Compute the variable values
-  for ( int i = 0; i < 7; i++ ){
+  for ( int i = 0; i < 8; i++ ){
     vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
     dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
     ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
@@ -1209,5 +1209,267 @@ void TACSRigidBody::testJacobian( double dh,
     sprintf(outname, "Jacobian col %d", ii);
     writeErrorComponents(stdout, outname,
                          res, fd, 8);
+  }
+}
+
+TACSSphericalConstraint::TACSSphericalConstraint(){
+  xA[0] = xA[1] = xA[2] = 1.0;
+  xB[0] = xB[1] = xB[2] = 1.0;
+}
+
+/*
+  Retrieve the initial conditions for the state variables
+*/
+void TACSSphericalConstraint::getInitCondition( TacsScalar vars[],
+                                                TacsScalar dvars[],
+                                                const TacsScalar X[] ){
+  for ( int i = 0; i < 2; i++ ){
+    vars[8*i+3] = 1.0;
+  }
+}
+
+/*
+  Compute the kinetic and potential energy within the element
+*/
+void TACSSphericalConstraint::computeEnergies( double time,
+                                               TacsScalar *_Te, 
+                                               TacsScalar *_Pe,
+                                               const TacsScalar Xpts[],
+                                               const TacsScalar vars[],
+                                               const TacsScalar dvars[] ){
+  *_Te = 0.0;
+  *_Pe = 0.0;
+}
+
+/*
+  Compute the residual of the governing equations
+*/
+void TACSSphericalConstraint::getResidual( double time, TacsScalar res[],
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[],
+                                           const TacsScalar ddvars[] ){
+  // Zero the residual
+  memset(res, 0, 24*sizeof(TacsScalar));
+
+  // Set pointers to the residual of each body
+  TacsScalar *resA = &res[0];
+  TacsScalar *resB = &res[8];
+
+  // The residual for the constraint equations
+  TacsScalar *resC = &res[16];
+
+  // Set the variables for body A
+  const TacsScalar *rA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the variables for body B
+  const TacsScalar *rB = &vars[8];
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
+
+  // Set the Lagrange multipliers for the constraint
+  const TacsScalar *lam = &vars[16];
+
+  // Compute the rotation matrices for each body
+  TacsScalar CA[9], CB[9];
+  computeRotationMat(etaA, epsA, CA);
+  computeRotationMat(etaB, epsB, CB);
+
+  // Add the terms for body A
+  vecAxpy(1.0, lam, &resA[0]);
+  addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
+                      &resA[3], &resA[4]);
+
+  // Add the terms for body B
+  vecAxpy(-1.0, lam, &resB[0]);
+  addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
+                      &resB[3], &resB[4]);
+
+  // Evaluate the constraint
+  // Set resC = rA + CA^{T}*xA
+  matMultTrans(CA, xA, resC);
+  vecAxpy(1.0, rA, resC);
+
+  // Compute t = CB^{T}*xB + rB
+  TacsScalar t[3];
+  matMultTrans(CB, xB, t);
+  vecAxpy(1.0, rB, t);
+
+  // Complete the evaluation of the constraint
+  vecAxpy(-1.0, t, resC);
+
+  // Add the dummy constraints for the remaining Lagrange multiplier
+  // variables
+  for ( int i = 3; i < 8; i++ ){
+    resC[i] = lam[i];
+  }
+}
+
+/*
+  Compute the Jacobian of the residuals of the governing equations
+*/
+void TACSSphericalConstraint::getJacobian( double time, TacsScalar J[],
+                                           double alpha, 
+                                           double beta, 
+                                           double gamma,
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[],
+                                           const TacsScalar ddvars[] ){
+  // Zero the Jacobian of the matrix
+  memset(J, 0, 24*24*sizeof(TacsScalar));
+
+  // Set the variables for body A
+  const TacsScalar *rA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the variables for body B
+  const TacsScalar *rB = &vars[8];
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
+
+  // Set the Lagrange multipliers for the constraint
+  const TacsScalar *lam = &vars[16];
+
+  // Add the identity matricies to the Jacobian
+  addBlockIdent(alpha, &J[16], 24);
+  addBlockIdent(-alpha, &J[8*24 + 16], 24);
+
+  addBlockIdent(alpha, &J[16*24], 24);
+  addBlockIdent(-alpha, &J[16*24+8], 24);
+
+  // Add the terms corresponding to the second derivative
+  // terms
+  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*25], 24);
+  addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*25], 24);
+
+  // Add the terms from the derivatives w.r.t. lambdas
+  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*24+16], 24);
+  addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*24+16], 24);
+
+  // Add the terms from the derivatives of the constraint
+  addBlockEMat(alpha, etaA, epsA, xA, &J[16*24+3], 24);
+  addBlockEMat(-alpha, etaB, epsB, xB, &J[16*24+11], 24);
+
+  // Add the Jacobian entries for the dummy constraints
+  for ( int i = 19; i < 24; i++ ){
+    J[25*i] = alpha;
+  }
+}
+
+/*
+  The following function tests the consistency between the
+  implementation of the residuals and the implementation of the system
+  Jacobian.
+
+  input:
+  dh:      the finite-difference step size
+  alpha:   coefficient for the variables
+  beta:    coefficient for the time derivative variables
+  gamma:   coefficient for the second time derivative variables
+*/
+void TACSSphericalConstraint::testJacobian( double dh, 
+                                            double alpha, 
+                                            double beta, 
+                                            double gamma ){
+  double time = 0.0;
+
+  // Set the position vector
+  TacsScalar X[3] = {0.0, 0.0, 0.0};
+
+  // Set the variable values
+  TacsScalar vars[24], dvars[24], ddvars[24];
+
+  // Compute the variable values
+  for ( int i = 0; i < 24; i++ ){
+    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // The computed Jacobian of the element matrix
+  TacsScalar mat[24*24];
+
+  // The finite-difference result
+  TacsScalar fd[24], res[24];
+  
+  // The perturb direction to test
+  TacsScalar perb[24];
+
+  // Temporary variables and their time derivatives
+  TacsScalar q[24], dq[24], ddq[24];
+
+  // Set random perburbed values
+  for ( int i = 0; i < 24; i++ ){
+    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  for ( int ii = 0; ii < 24; ii++ ){
+    memset(perb, 0, 24*sizeof(TacsScalar));
+    perb[ii] = 1.0;
+
+#ifdef TACS_USE_COMPLEX
+    // Set the values for the first evaluation
+    for ( int i = 0; i < 24; i++ ){
+      q[i] = vars[i] + TacsScalar(0.0, dh*alpha)*perb[i];
+      dq[i] = dvars[i] + TacsScalar(0.0, dh*beta)*perb[i];
+      ddq[i] = ddvars[i] + TacsScalar(0.0, dh*gamma)*perb[i];
+    }
+
+    // Get the residual at vars + alpha*perb, ... etc.
+    getResidual(time, fd, X, q, dq, ddq);
+
+    // Form the finite-difference matrix-vector approximation
+    for ( int i = 0; i < 24; i++ ){
+      fd[i] = ImagPart(fd[i])/dh;
+    }
+#else
+    // Set the values for the first evaluation
+    for ( int i = 0; i < 24; i++ ){
+      q[i] = vars[i] + dh*alpha*perb[i];
+      dq[i] = dvars[i] + dh*beta*perb[i];
+      ddq[i] = ddvars[i] + dh*gamma*perb[i];
+    }
+
+    // Get the residual at vars + alpha*perb, ... etc.
+    getResidual(time, fd, X, q, dq, ddq);
+
+    // Set the values for the first evaluation
+    for ( int i = 0; i < 24; i++ ){
+      q[i] = vars[i] - dh*alpha*perb[i];
+      dq[i] = dvars[i] - dh*beta*perb[i];
+      ddq[i] = ddvars[i] - dh*gamma*perb[i];
+    }
+
+    // Get the residual at vars + alpha*perb, ... etc.
+    getResidual(time, res, X, q, dq, ddq);
+
+    // Form the finite-difference matrix-vector approximation
+    for ( int i = 0; i < 24; i++ ){
+      fd[i] = 0.5*(fd[i] - res[i])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+
+    // Get the Jacobian computed by the element
+    getJacobian(time, mat, alpha, beta, gamma, 
+                X, vars, dvars, ddvars);
+  
+    // Compute the product: res = J*perb
+    // Recall that the Jacobian matrix is stored in row-major order
+    memset(res, 0, 24*sizeof(TacsScalar));
+    for ( int i = 0; i < 24; i++ ){
+      for ( int j = 0; j < 24; j++ ){
+        res[i] += mat[24*i + j]*perb[j];
+      }
+    }
+
+    // Print out the results to stdout
+    char outname[128];
+    sprintf(outname, "Jacobian col %d", ii);
+    writeErrorComponents(stdout, outname,
+                         res, fd, 24, 1e-6);
   }
 }

@@ -62,8 +62,8 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
 
   // Default parameters for Newton solve
   max_newton_iters = 25;
-  atol = 1.0e-30;
-  rtol = 1.0e-12;
+  atol = 1.0e-16;
+  rtol = 1.0e-10;
 
   // Create vector for storing the residual at each Newton iteration
   res = tacs->createVec();
@@ -137,7 +137,6 @@ TacsIntegrator::~TacsIntegrator(){
   alpha: multiplier for derivative of Residual wrt to q
   beta : multiplier for derivative of Residual wrt to qdot
   gamma: multiplier for derivative of Residual wrt to qddot
-
 */
 void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                   double t, BVec *q, BVec *qdot, 
@@ -145,6 +144,14 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
   // Initialize the norms
   TacsScalar init_norm = 0.0;
   TacsScalar norm = 0.0;
+
+  if (print_level > 0){
+    fprintf(stdout, "%12s %8s %12s %12s %12s %12s\n",
+            "time", "Newton", "tcpu", "|R|", "|R|/|R0|", "delta");
+  }
+  
+  double delta = gamma;
+  double t0 = MPI_Wtime();
 
   // Iterate until max iters or R <= tol
   for ( int n = 0; n < max_newton_iters; n++ ){
@@ -154,8 +161,18 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     tacs->setDDotVariables(qddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
-    if (1){ // n % 5 == 0){
-      tacs->assembleJacobian(res, mat, alpha, beta, gamma, NORMAL);
+    if (n % 5 == 0){
+      if (n > 0){
+        double frac = 10.0*RealPart(norm/(init_norm + rtol));
+        if (frac < 1.0){
+          delta = frac*gamma;
+        }
+        else {
+          delta = gamma;
+        }
+      }
+
+      tacs->assembleJacobian(res, mat, alpha, beta, gamma + delta, NORMAL);
     } 
     else {
       tacs->assembleRes(res);
@@ -164,19 +181,27 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Compute the L2-norm of the residual
     norm = res->norm();
     
-    // Write a summary
-    if(print_level > 0) {
-      printf("# Newton iters=%d, |R|=%e \n", n, RealPart(norm));
-    }
     // Record the residual norm at the first Newton iteration
     if (n == 0){
       init_norm = norm;
     }
+
+    // Write a summary
+    if(print_level > 0) {
+      if (n == 0){
+        fprintf(stdout, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e\n",
+                t, n, MPI_Wtime()-t0, norm, norm/init_norm, delta);
+      }
+      else {
+        fprintf(stdout, "%12s %8d %12.5e %12.5e %12.5e %12.5e\n",
+                " ", n, MPI_Wtime()-t0, norm, norm/init_norm, delta);
+      }
+    }
            
     // Check if the norm of the residuals is a NaN
     if (norm != norm){ 
-      /* fprintf(stderr,  */
-      /*         "Newton iteration %d, failed with NaN residual norm\n", n); */
+      fprintf(stderr,
+              "Newton iteration %d, failed with NaN residual norm\n", n);
       break;
     }
     
@@ -186,7 +211,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Factor the preconditioner
-    if (1){ //n % 5 == 0){
+    if (n % 5 == 0){
       pc->factor();
     }
    
@@ -249,7 +274,6 @@ void TacsIntegrator::writeSolution( const char *filename ){
   tfinal: the final time
   num_steps_per_sec: the number of steps to take for each second
 */
-
 TacsBDFIntegrator:: TacsBDFIntegrator( TACSAssembler * _tacs, 
                                        double _tinit, double _tfinal, 
                                        int _num_steps_per_sec, 

@@ -556,24 +556,24 @@ static inline void addMatSkewSkew( const TacsScalar a,
   input:
   a:    the scalar
   A:    the 3x3 block matrix
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
   
   in/out:
   D: the block matrix with in row-major order
 */
 static inline void addBlockMat( const TacsScalar a,
 				const TacsScalar A[],
-				const int ldr, TacsScalar D[] ){
+				TacsScalar D[], const int ldd ){
   D[0] += a*A[0];
   D[1] += a*A[1];
   D[2] += a*A[2];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*A[3];
   D[1] += a*A[4];
   D[2] += a*A[5];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*A[6];
   D[1] += a*A[7];
   D[2] += a*A[8];
@@ -587,24 +587,24 @@ static inline void addBlockMat( const TacsScalar a,
   input:
   a:    the scalar
   A:    the 3x3 block matrix
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
   
   in/out:
   D:    the block matrix with in row-major order
 */
 static inline void addBlockMatTrans( const TacsScalar a,
 				     const TacsScalar A[],
-				     const int ldr, TacsScalar D[] ){
+				     TacsScalar D[], const int ldd ){
   D[0] += a*A[0];
   D[1] += a*A[3];
   D[2] += a*A[6];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*A[1];
   D[1] += a*A[4];
   D[2] += a*A[7];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*A[2];
   D[1] += a*A[5];
   D[2] += a*A[8];
@@ -618,17 +618,17 @@ static inline void addBlockMatTrans( const TacsScalar a,
   input:
   a:    the scalar
   A:    the 3-vector to add to the matrix
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
   
   in/out:
   D:    the block matrix with in row-major order
 */
 static inline void addVecMat( const TacsScalar a,
 			      const TacsScalar A[],
-			      const int ldr, 
-			      TacsScalar D[] ){
-  D[0] += a*A[0]; D += ldr;
-  D[0] += a*A[1]; D += ldr;
+			      TacsScalar D[],
+                              const int ldd ){
+  D[0] += a*A[0]; D += ldd;
+  D[0] += a*A[1]; D += ldd;
   D[0] += a*A[2];
 }
 
@@ -640,24 +640,24 @@ static inline void addVecMat( const TacsScalar a,
   input:
   a:    the scalar
   A:    the 3x3 block matrix
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
   
   in/out:
   D: the block matrix with in row-major order
 */
 static inline void addBlockSymmMat( const TacsScalar a,
 				    const TacsScalar A[],
-				    const int ldr, TacsScalar D[] ){
+				    TacsScalar D[], const int ldd ){
   D[0] += a*A[0];
   D[1] += a*A[1];
   D[2] += a*A[2];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*A[1];
   D[1] += a*A[3];
   D[2] += a*A[4];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*A[2];
   D[1] += a*A[4];
   D[2] += a*A[5];
@@ -668,19 +668,19 @@ static inline void addBlockSymmMat( const TacsScalar a,
 
   input:
   a:    the scalar
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
  
   in/out:
   D:    the block matrix in row-major order
 */
 static inline void addBlockIdent( const TacsScalar a,
-				  const int ldr, TacsScalar D[] ){
+				  TacsScalar D[], const int ldd ){
   D[0] += a;
 
-  D += ldr;
+  D += ldd;
   D[1] += a;
 
-  D += ldr;
+  D += ldd;
   D[2] += a;
 }
 
@@ -690,22 +690,22 @@ static inline void addBlockIdent( const TacsScalar a,
   input:
   a:    the scalar
   x:    the vector 
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
  
   in/out:
   D:    the block matrix in row-major order
 */
 static inline void addBlockSkew( const TacsScalar a,
 				 const TacsScalar x[],
-				 const int ldr, TacsScalar D[] ){
+				 TacsScalar D[], const int ldd ){
   D[1] -= a*x[2];
   D[2] += a*x[1];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*x[2];
   D[2] -= a*x[0];
 
-  D += ldr;
+  D += ldd;
   D[0] -= a*x[1];
   D[1] += a*x[0];
 }
@@ -719,7 +719,7 @@ static inline void addBlockSkew( const TacsScalar a,
   a:    the scalar
   x:    the first vector 
   y:    the second vectorr
-  ldr:  the leading row-dimension of the D matrix
+  ldd:  the leading row-dimension of the D matrix
  
   in/out:
   D:    the block matrix in row-major order
@@ -727,17 +727,17 @@ static inline void addBlockSkew( const TacsScalar a,
 static inline void addBlockSkewSkew( const TacsScalar a,
 				     const TacsScalar x[],
 				     const TacsScalar y[],
-				     const int ldr, TacsScalar D[] ){
+                                     TacsScalar D[], const int ldd ){
   D[0] -= a*(x[1]*y[1] + x[2]*y[2]);
   D[1] += a*y[0]*x[1];
   D[2] += a*y[0]*x[2];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*y[1]*x[0];
   D[1] -= a*(x[0]*y[0] + x[2]*y[2]);
   D[2] += a*y[1]*x[2];
 
-  D += ldr;
+  D += ldd;
   D[0] += a*y[2]*x[0];
   D[1] += a*y[2]*x[1];
   D[2] -= a*(x[0]*y[0] + x[1]*y[1]);
@@ -993,6 +993,47 @@ static inline void addDMatTransProduct( const TacsScalar a,
   crossProductAdd(-4.0*a, v, t, yeps);
 }
 
+/*
+  Compute the product of the matrix 
+
+  y <- y + a*E(v)^{T}*x 
+
+  The matrix E(v) is the derivative of d(C^{T}*v)/dq and is given as
+  follows:
+
+  E(v) = 2*[ -v^{x}*eps | (v^{x}*eps^{x} - eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+  input: 
+  a:    the scalar input
+  v:    the vector input for D(v)
+  x:    the multiplier vector
+  eta:  the quaternion scalar
+  eps:  the quaternion 3-vector
+
+  output:
+  yeta:  the quaternion output scalar
+  eps:   the quaternion output 3-vector
+*/
+static inline void addEMatTransProduct( const TacsScalar a,
+                                        const TacsScalar v[],
+                                        const TacsScalar x[],
+                                        const TacsScalar eta,
+                                        const TacsScalar eps[],
+                                        TacsScalar *yeta,
+                                        TacsScalar yeps[] ){
+  // Compute the cross product
+  TacsScalar t[3];
+  crossProduct(1.0, v, x, t);
+  *yeta += 2.0*a*vecDot(eps, t);
+
+  // Add the term 2*eps^{x}*v^{x}*x + 2*eta*v^{x}*x
+  crossProductAdd(2.0*a, eps, t, yeps);
+  crossProductAdd(2.0*a*eta, v, x, yeps);
+
+  // Compute the final term -4*v^{x}*eps^{x}*x
+  crossProduct(1.0, eps, x, t);
+  crossProductAdd(-4.0*a, v, t, yeps);
+}
 
 /*
   Compute the elements of the D(v) matrix
@@ -1157,6 +1198,7 @@ static inline void addBlockEMatTrans( const TacsScalar a,
   D[1] += b*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
   D[2] += b*(v[0]*eps[0] + v[1]*eps[1]);
 }
+ 
 /*
   Add the 4x4 matrix from the derivative of the transpose of the
   angular rate S matrix
