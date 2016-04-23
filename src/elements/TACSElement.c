@@ -160,7 +160,13 @@ TestElement::TestElement( TACSElement * _element,
   dvars = new TacsScalar[ nvars ];
   ddvars = new TacsScalar[ nvars ];
   Xpts = new TacsScalar[ nnodes ];
-  memcpy(Xpts, _Xpts, nnodes*sizeof(TacsScalar));
+
+  if (_Xpts){
+    memcpy(Xpts, _Xpts, nnodes*sizeof(TacsScalar));
+  }
+  else {
+    generate_random_array(Xpts, nnodes);
+  }
 
   generate_random_array(vars, nvars);
   generate_random_array(dvars, nvars);
@@ -195,6 +201,10 @@ TestElement::~TestElement(){
   of the residuals and the energy expressions, relying on Lagrange's
   equations. 
 
+  NOTE: This function only works when the Lagrange's equations do not
+  have any constraints. Element-specific code is needed when Largrange
+  multipliers are embedded within the element variables.
+
   This function uses finite-differences to compute the derivatives
   within Lagrange's equations and compares the result with the
   residual computed using the residual routine.
@@ -210,24 +220,35 @@ TestElement::~TestElement(){
   d(f(q, dq))/dt .= 
   (f(q + dt*dq, dq + dt*ddq) - f(q - dt*dq, dq - dt*ddq))/dt
 */
-/*
 int TestElement::testResidual(){
+  // Retrieve the number of variables
+  int nvars = element->numVariables();
+
+  // Allocate temporary arrays for the computation
+  TacsScalar *q = new TacsScalar[ nvars ];
+  TacsScalar *dq = new TacsScalar[ nvars ];
+
+  // Temporary storage for the residuals
+  TacsScalar *res1 = new TacsScalar[ nvars ];
+  TacsScalar *res2 = new TacsScalar[ nvars ];
+  TacsScalar *fd = new TacsScalar[ nvars ];
+
   // Compute the values of the variables at (t + dt)
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     q[i] = vars[i] + dh*dvars[i];
     dq[i] = dvars[i] + dh*ddvars[i];
   }
 
   // Evaluate the derivative w.r.t. dot{q}
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar dqtmp = dq[i];
     dq[i] = dqtmp + dh;
-    element->computeEnergies(time, &T1, &P1, X, q, dq);
+    element->computeEnergies(time, &T1, &P1, Xpts, q, dq);
 
     dq[i] = dqtmp - dh;
-    computeEnergies(&T2, &P2, X, q, dq);
+    element->computeEnergies(time, &T2, &P2, Xpts, q, dq);
 
     // Compute and store the approximation
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
@@ -235,21 +256,21 @@ int TestElement::testResidual(){
   }
 
   // Compute the values of the variables at (t - dt)
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     q[i] = vars[i] - dh*dvars[i];
     dq[i] = dvars[i] - dh*ddvars[i];
   }
 
   // Evaluate the derivative w.r.t. dot{q}
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar dqtmp = dq[i];
     dq[i] = dqtmp + dh;
-    computeEnergies(&T1, &P1, X, q, dq);
+    element->computeEnergies(time, &T1, &P1, Xpts, q, dq);
 
     dq[i] = dqtmp - dh;
-    computeEnergies(&T2, &P2, X, q, dq);
+    element->computeEnergies(time, &T2, &P2, Xpts, q, dq);
 
     // Compute and store the approximation
     res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
@@ -258,26 +279,26 @@ int TestElement::testResidual(){
 
   // Evaluate the finite-difference for the first term in Largrange's
   // equations of motion
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     fd[i] = 0.5*(res1[i] - res2[i])/dh;
   }
 
   // Reset the values of q and dq at time t
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     q[i] = vars[i];
     dq[i] = dvars[i];
   }
 
   // Compute the contribution from dL/dq^{T}
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar qtmp = q[i];
     q[i] = qtmp + dh;
-    computeEnergies(&T1, &P1, X, q, dq);
+    element->computeEnergies(time, &T1, &P1, Xpts, q, dq);
 
     q[i] = qtmp - dh;
-    computeEnergies(&T2, &P2, X, q, dq);
+    element->computeEnergies(time, &T2, &P2, Xpts, q, dq);
 
     // Compute and store the approximation
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
@@ -285,18 +306,45 @@ int TestElement::testResidual(){
   }
 
   // Add the result to the finite-difference result
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < nvars; i++ ){
     fd[i] -= res1[i];
   }
 
   // Evaluate the residual using the code
-  getResidual(res1, X, vars, dvars, ddvars);
+  element->getResidual(time, res1, Xpts, vars, dvars, ddvars);
 
-  // Write out the error components
-  writeErrorComponents(stdout, "Res error",
-		       res1, fd, 8*NUM_NODES);
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(res1, fd, nvars, &max_err_index);
+  double max_rel = get_max_rel_error(res1, fd, nvars, &max_rel_index);
+
+  if (print_level > 0){
+    fprintf(stderr, 
+            "Testing the residual implementation for element %s.\n",
+            element->elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+
+  // Print the error if required
+  if (print_level > 1){
+    fprintf(stderr, 
+            "The difference between the FD and true residual is:");
+    print_error_components(stderr, "Res error",
+                           res1, fd, nvars);
+  }
+  if (print_level){ fprintf(stderr, "\n"); }
+
+  delete [] q;
+  delete [] dq;
+  delete [] res1;
+  delete [] res2;
+  delete [] fd;
+
+  return (max_err > fail_atol || max_rel > fail_rtol);
 }
-*/
 
 /*
   The following function tests the consistency between the
@@ -304,131 +352,55 @@ int TestElement::testResidual(){
   Jacobian.
 
   input:
-  dh:   the finite-difference step size
-  X:    the nodal coordinates
-  vars:   the finite-element variables
-  dvars:  the time derivative of the varaibles
-*/
-/*
-void MITC9::testJacobian( double dh, 
-			  double alpha, double beta, double gamma,
-			  const TacsScalar X[],
-			  const TacsScalar vars[],
-			  const TacsScalar dvars[],
-			  const TacsScalar ddvars[] ){
-  // The computed Jacobian of the element matrix
-  TacsScalar J[64*NUM_NODES*NUM_NODES];
-
-  // The finite-difference result
-  TacsScalar fd[8*NUM_NODES], res[8*NUM_NODES];
-  
-  // The perturb direction to test
-  TacsScalar perb[8*NUM_NODES];
-
-  // Temporary variables and their time derivatives
-  TacsScalar q[8*NUM_NODES], dq[8*NUM_NODES], ddq[8*NUM_NODES];
-
-  // Set random perburbed values
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
-  }
-
-#ifdef TACS_USE_COMPLEX
-  // Set the values for the first evaluation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] + TacsScalar(0.0, dh*alpha)*perb[i];
-    dq[i] = dvars[i] + TacsScalar(0.0, dh*beta)*perb[i];
-    ddq[i] = ddvars[i] + TacsScalar(0.0, dh*gamma)*perb[i];
-  }
-
-  // Get the residual at vars + alpha*perb, ... etc.
-  getResidual(fd, X, q, dq, ddq);
-
-  // Form the finite-difference matrix-vector approximation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    fd[i] = ImagPart(fd[i])/dh;
-  }
-#else
-  // Set the values for the first evaluation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] + dh*alpha*perb[i];
-    dq[i] = dvars[i] + dh*beta*perb[i];
-    ddq[i] = ddvars[i] + dh*gamma*perb[i];
-  }
-
-  // Get the residual at vars + alpha*perb, ... etc.
-  getResidual(fd, X, q, dq, ddq);
-
-  // Set the values for the first evaluation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    q[i] = vars[i] - dh*alpha*perb[i];
-    dq[i] = dvars[i] - dh*beta*perb[i];
-    ddq[i] = ddvars[i] - dh*gamma*perb[i];
-  }
-
-  // Get the residual at vars + alpha*perb, ... etc.
-  getResidual(res, X, q, dq, ddq);
-
-  // Form the finite-difference matrix-vector approximation
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    fd[i] = 0.5*(fd[i] - res[i])/dh;
-  }
-#endif // TACS_USE_COMPLEX
-
-  // Get the Jacobian computed by the element
-  getJacobian(J, alpha, beta, gamma, X, vars, dvars, ddvars);
-  
-  // Compute the product: res = J*perb
-  // Recall that the Jacobian matrix is stored in row-major order
-  memset(res, 0, 8*NUM_NODES*sizeof(TacsScalar));
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
-    for ( int j = 0; j < 8*NUM_NODES; j++ ){
-      res[i] += J[8*NUM_NODES*i + j]*perb[j];
-    }
-  }
-
-  // Print out the results to stdout
-  writeErrorComponents(stdout, "Jacobian error",
-		       res, fd, 8*NUM_NODES);
-}
-*/
-
-/*
-  Test the stiffness matrix using the residual function
+  col:   test only the specified column of the matrix
 */
 int TestElement::testJacobian( int col ){
   int nvars = element->numVariables();
   
-  TacsScalar * result = new TacsScalar[nvars];
-  TacsScalar * temp = new TacsScalar[nvars];
-  TacsScalar * vars_pert = new TacsScalar[nvars]; // perturbation for vars
-  TacsScalar * vars_copy = new TacsScalar[nvars];
-  TacsScalar * res = new TacsScalar[nvars];
-  TacsScalar * mat = new TacsScalar[nvars*nvars];
+  TacsScalar *result = new TacsScalar[nvars];
+  TacsScalar *temp = new TacsScalar[nvars];
+  TacsScalar *pert = new TacsScalar[nvars]; // perturbation for vars
+
+  TacsScalar *q = new TacsScalar[nvars];
+  TacsScalar *dq = new TacsScalar[nvars];
+  TacsScalar *ddq = new TacsScalar[nvars];
+  TacsScalar *res = new TacsScalar[nvars];
+  TacsScalar *mat = new TacsScalar[nvars*nvars];
 
   if (col >= 0 && col < nvars){
-    memset(vars_pert, 0, nvars*sizeof(TacsScalar));
-    vars_pert[col] = 1.0;
+    memset(pert, 0, nvars*sizeof(TacsScalar));
+    pert[col] = 1.0;
   }
   else {
-    generate_random_array(vars_pert, nvars);
+    generate_random_array(pert, nvars);
   }
   
-  double alpha = 1.0, beta = 0.0, gamma = 0.0;
+  // Compute the Jacobian
+  double alpha = (1.0*rand())/RAND_MAX;
+  double beta = (1.0*rand())/RAND_MAX;
+  double gamma = (1.0*rand())/RAND_MAX;
   element->getJacobian(time, mat, alpha, beta, gamma,
 		       Xpts, vars, dvars, ddvars);
 
+  // Evaluate the Jacobian
   int one = 1;
   TacsScalar a = 1.0, b = 0.0;
   BLASgemv("T", &nvars, &nvars, &a, mat, &nvars,
-           vars_pert, &one, &b, result, &one);
+           pert, &one, &b, result, &one);
 
-  forward_perturb(vars_copy, nvars, vars, vars_pert, dh);
-  element->getResidual(time, res, Xpts, vars_copy, dvars, ddvars);
+  // Perturb the variables in the forward sense
+  forward_perturb(q, nvars, vars, pert, alpha*dh);
+  forward_perturb(dq, nvars, dvars, pert, beta*dh);
+  forward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
+  element->getResidual(time, res, Xpts, q, dq, ddq);
 
-  backward_perturb(vars_copy, nvars, vars, vars_pert, dh);
-  element->getResidual(time, res, Xpts, vars_copy, dvars, ddvars);
+  // Perturb the variables in the backward sens
+  backward_perturb(q, nvars, vars, pert, alpha*dh);
+  backward_perturb(dq, nvars, dvars, pert, beta*dh);
+  backward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
+  element->getResidual(time, temp, Xpts, q, dq, ddq);
 
+  // Form the FD/CS approximate
   form_approximate(res, temp, nvars, dh);
 
   // Compute the error
@@ -469,8 +441,10 @@ int TestElement::testJacobian( int col ){
 
   delete [] result;
   delete [] temp;
-  delete [] vars_pert;
-  delete [] vars_copy;
+  delete [] pert;
+  delete [] q;
+  delete [] dq;
+  delete [] ddq;
   delete [] res;
   delete [] mat;
 
@@ -488,15 +462,15 @@ int TestElement::testStrainSVSens( const double pt[] ){
   int nvars = element->numVariables();
   int nstress = element->numStresses();
 
-  TacsScalar * strain = new TacsScalar[nstress];
-  TacsScalar * elementSens = new TacsScalar[nvars];
-  TacsScalar * elementSensApprox = new TacsScalar[nvars];
-  TacsScalar * temp = new TacsScalar[nvars];
+  TacsScalar *strain = new TacsScalar[nstress];
+  TacsScalar *elementSens = new TacsScalar[nvars];
+  TacsScalar *elementSensApprox = new TacsScalar[nvars];
+  TacsScalar *temp = new TacsScalar[nvars];
 
-  TacsScalar * vars_copy = new TacsScalar[nvars];
+  TacsScalar *vars_copy = new TacsScalar[nvars];
 
   // Randomly assign the strainSens
-  TacsScalar * strainSens = new TacsScalar[nstress];
+  TacsScalar *strainSens = new TacsScalar[nstress];
   generate_random_array(strainSens, nstress);
 
   TacsScalar scale = 1.0;

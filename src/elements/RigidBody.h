@@ -151,8 +151,6 @@ class TACSRigidBody : public TACSElement {
 
 /*
   Spherical constraint
-
-
 */
 class TACSSphericalConstraint : public TACSElement {
  public:
@@ -195,11 +193,56 @@ class TACSSphericalConstraint : public TACSElement {
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
 
-  // Test the Jacobian
-  void testJacobian( double dh, double alpha, 
-                     double beta, double gamma );
  private:
   TacsScalar xA[3], xB[3];
+};
+
+/*
+  Revolute constraint
+*/
+class TACSRevoluteConstraint : public TACSElement {
+ public:
+  TACSRevoluteConstraint();
+  
+  // Return the number of displacements and nodes
+  // --------------------------------------------
+  int numDisplacements(){ return 8; }
+  int numNodes(){ return 3; }
+
+  // Retrieve the initial values for the state variables
+  // ---------------------------------------------------
+  void getInitCondition( TacsScalar vars[],
+                         TacsScalar dvars[],
+                         const TacsScalar X[] );
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void getResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void getJacobian( double time, TacsScalar J[],
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+ private:
+  TacsScalar xA[3], xB[3];
+  TacsScalar eA[3], eB1[3], eB2[3];
 };
 
 #endif // TACS_RIGID_BODY_DYNAMICS_H

@@ -433,7 +433,7 @@ class TACSElement : public TACSOptObject {
 class TestElement : public TACSObject {
  public:
   TestElement( TACSElement * _element, 
-	       const TacsScalar _Xpts[] );
+	       const TacsScalar _Xpts[]=NULL );
   ~TestElement();
 
   // Set parameters within the test object
@@ -460,13 +460,6 @@ class TestElement : public TACSObject {
   // Tests for the sensitivities w.r.t. nodal coordinates
   // ----------------------------------------------------
   int testJacobianXptSens( const double pt[] );
-
-  // Design variable sensitivity tests
-  // ---------------------------------
-  // int testResDVSens();
-  // int testForceTransferDVSens();
-  // int testStiffnessMatDVSens();
-  // int testMassMatDVSens();
 
  private:
   TacsScalar dh; // Step size
@@ -512,17 +505,11 @@ class TestConstitutive : public TACSObject {
   // Test the failure load implementation
   // ------------------------------------
   int testFailStrainSens( const double pt[] );
-  // int testFailDVSens( const double pt[] );
 
   // Test the buckling implementation
   // --------------------------------
   int testBucklingStrainSens();
-  // int testBucklingDVSens();
 
-  // Test the mass implementation
-  // ----------------------------
-  // int testMassDVSens( const double pt[] );
-  
  private:
   void compute_strain( TacsScalar strain[], 
                        const double pt[],

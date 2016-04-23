@@ -19,7 +19,6 @@ int main( int argc, char *argv[] ){
   bodyA->incref();
   
   // bodyA->testResidual(1e-4);
-  // bodyA->testJacobian(1e-6, alpha, beta, gamma);
 
   // Modify the inertial properties
   mass *= 2.0;
@@ -31,7 +30,14 @@ int main( int argc, char *argv[] ){
   TACSSphericalConstraint *con = new TACSSphericalConstraint();
   con->incref();
 
-  // con->testJacobian(1e-6, alpha, beta, gamma);
+  TACSRevoluteConstraint *rev = new TACSRevoluteConstraint();
+
+  // TestElement *test = new TestElement(rev);
+  TestElement *test = new TestElement(rev);
+  test->setPrintLevel(2);
+  for ( int i = 0; i < 24; i++ ){
+    test->testJacobian(i);
+  }
 
   // Set up the TACSAssembler object
   int num_nodes = 3;
@@ -73,8 +79,8 @@ int main( int argc, char *argv[] ){
   // bdf->integrate();
 
   // Integrate the equations of motion forward in time
-  dirk->integrate();
-  dirk->writeSolution("solution.dat");
+  // dirk->integrate();
+  // dirk->writeSolution("solution.dat");
 
   bdf->decref();
   dirk->decref();

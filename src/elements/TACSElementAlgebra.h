@@ -1069,6 +1069,39 @@ static inline void computeDMat( const TacsScalar eta,
 }
 
 /*
+  Compute the elements of the E(v) matrix
+
+  E(v) = 2*[ -v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} + 2*eps^{x}*v^{x}) ]
+
+  input:
+  eta:   the quaternion scalar
+  eps:   the quaternion 3-vector
+  v:     the input vector
+
+  output:
+  E:     the 3x4 derivative matrix
+*/
+static inline void computeEMat( const TacsScalar eta,
+                                const TacsScalar eps[],
+                                const TacsScalar v[],
+                                TacsScalar E[] ){
+  E[0] = 2.0*(v[2]*eps[1] - v[1]*eps[2]);
+  E[1] = 2.0*(v[1]*eps[1] + v[2]*eps[2]);
+  E[2] = 2.0*(eps[0]*v[1] - 2.0*v[0]*eps[1] + eta*v[2]);
+  E[3] = 2.0*(eps[0]*v[2] - 2.0*v[0]*eps[2] - eta*v[1]);
+
+  E[4] = 2.0*(v[0]*eps[2] - v[2]*eps[0]);
+  E[5] = 2.0*(eps[1]*v[0] - 2.0*v[1]*eps[0] - eta*v[2]);
+  E[6] = 2.0*(v[0]*eps[0] + v[2]*eps[2]);
+  E[7] = 2.0*(eps[1]*v[2] - 2.0*v[1]*eps[2] + eta*v[0]);
+
+  E[8] = 2.0*(v[1]*eps[0] - v[0]*eps[1]);
+  E[9] = 2.0*(eps[2]*v[0] - 2.0*v[2]*eps[0] + eta*v[1]);
+  E[10]= 2.0*(eps[2]*v[1] - 2.0*v[2]*eps[1] - eta*v[0]);
+  E[11]= 2.0*(v[0]*eps[0] + v[1]*eps[1]);
+}
+
+/*
   Add the derivative of the matrix d(D(v)^{T}*w)/dq to the provided
   block matrix. The derivative takes the form:
 

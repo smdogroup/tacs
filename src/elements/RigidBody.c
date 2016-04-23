@@ -1360,116 +1360,256 @@ void TACSSphericalConstraint::getJacobian( double time, TacsScalar J[],
   }
 }
 
+
+
+
+TACSRevoluteConstraint::TACSRevoluteConstraint(){
+  xA[0] = xA[1] = xA[2] = 1.0;
+  xB[0] = xB[1] = xB[2] = 1.0;
+
+  eA[0] = eA[1] = eA[2] = 0.0;
+  eB1[0] = eB1[1] = eB1[2] = 0.0;
+  eB2[0] = eB2[1] = eB2[2] = 0.0;
+
+  eA[0] = 1.0;
+  eB1[1] = 1.0;
+  eB2[2] = 1.0;
+}
+
 /*
-  The following function tests the consistency between the
-  implementation of the residuals and the implementation of the system
-  Jacobian.
-
-  input:
-  dh:      the finite-difference step size
-  alpha:   coefficient for the variables
-  beta:    coefficient for the time derivative variables
-  gamma:   coefficient for the second time derivative variables
+  Retrieve the initial conditions for the state variables
 */
-void TACSSphericalConstraint::testJacobian( double dh, 
-                                            double alpha, 
-                                            double beta, 
-                                            double gamma ){
-  double time = 0.0;
+void TACSRevoluteConstraint::getInitCondition( TacsScalar vars[],
+                                               TacsScalar dvars[],
+                                               const TacsScalar X[] ){
+  for ( int i = 0; i < 2; i++ ){
+    vars[8*i+3] = 1.0;
+  }
+}
 
-  // Set the position vector
-  TacsScalar X[3] = {0.0, 0.0, 0.0};
+/*
+  Compute the kinetic and potential energy within the element
+*/
+void TACSRevoluteConstraint::computeEnergies( double time,
+                                              TacsScalar *_Te, 
+                                              TacsScalar *_Pe,
+                                              const TacsScalar Xpts[],
+                                              const TacsScalar vars[],
+                                              const TacsScalar dvars[] ){
+  *_Te = 0.0;
+  *_Pe = 0.0;
+}
 
-  // Set the variable values
-  TacsScalar vars[24], dvars[24], ddvars[24];
+/*
+  Compute the residual of the governing equations
+*/
+void TACSRevoluteConstraint::getResidual( double time, TacsScalar res[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[] ){
+  // Zero the residual
+  memset(res, 0, 24*sizeof(TacsScalar));
 
-  // Compute the variable values
-  for ( int i = 0; i < 24; i++ ){
-    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
-    dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
-    ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  // Set pointers to the residual of each body
+  TacsScalar *resA = &res[0];
+  TacsScalar *resB = &res[8];
+
+  // The residual for the constraint equations
+  TacsScalar *resC = &res[16];
+
+  // Set the variables for body A
+  const TacsScalar *rA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the variables for body B
+  const TacsScalar *rB = &vars[8];
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
+
+  // Set the Lagrange multipliers for the constraint
+  const TacsScalar *lam = &vars[16];
+
+  // Compute the rotation matrices for each body
+  TacsScalar CA[9], CB[9];
+  computeRotationMat(etaA, epsA, CA);
+  computeRotationMat(etaB, epsB, CB);
+
+  // Add the terms for body A
+  vecAxpy(1.0, lam, &resA[0]);
+  addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
+                      &resA[3], &resA[4]);
+
+  // Add the terms for body B
+  vecAxpy(-1.0, lam, &resB[0]);
+  addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
+                      &resB[3], &resB[4]);
+
+  // Evaluate the constraint
+  // Set resC = rA + CA^{T}*xA
+  matMultTrans(CA, xA, resC);
+  vecAxpy(1.0, rA, resC);
+
+  // Compute t = CB^{T}*xB + rB
+  TacsScalar t[3];
+  matMultTrans(CB, xB, t);
+  vecAxpy(1.0, rB, t);
+
+  // Complete the evaluation of the constraint
+  vecAxpy(-1.0, t, resC);
+
+  // Add the revolute direction constraint
+  TacsScalar tA[3], tB1[3], tB2[3];
+  matMultTrans(CA, eA, tA);
+  matMultTrans(CB, eB1, tB1);
+  matMultTrans(CB, eB2, tB2);
+
+  // Compute the contributions to the first revolute constraint
+  resC[3] = vecDot(tA, tB1);
+
+  // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
+  addEMatTransProduct(lam[3], eA, tB1, etaA, epsA, 
+                      &resA[3], &resA[4]);
+  // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
+  addEMatTransProduct(lam[3], eB1, tA, etaB, epsB,
+                      &resB[3], &resB[4]);
+
+  // Compute the contributions to the second revolute constraint
+  resC[4] = vecDot(tA, tB2);
+
+  // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
+  addEMatTransProduct(lam[4], eA, tB2, etaA, epsA, 
+                      &resA[3], &resA[4]);
+  // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
+  addEMatTransProduct(lam[4], eB2, tA, etaB, epsB,
+                      &resB[3], &resB[4]);
+
+  // Add the dummy constraints for the remaining Lagrange multiplier
+  // variables
+  for ( int i = 5; i < 8; i++ ){
+    resC[i] = lam[i];
+  }
+}
+
+/*
+  Compute the Jacobian of the residuals of the governing equations
+*/
+void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
+                                           double alpha, 
+                                           double beta, 
+                                           double gamma,
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[],
+                                           const TacsScalar ddvars[] ){
+  // Zero the Jacobian of the matrix
+  memset(J, 0, 24*24*sizeof(TacsScalar));
+
+  // Set the variables for body A
+  const TacsScalar *rA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the variables for body B
+  const TacsScalar *rB = &vars[8];
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
+
+  // Set the Lagrange multipliers for the constraint
+  const TacsScalar *lam = &vars[16];
+
+  // Compute the rotation matrices for each body
+  TacsScalar CA[9], CB[9];
+  computeRotationMat(etaA, epsA, CA);
+  computeRotationMat(etaB, epsB, CB);
+
+  // Add the revolute direction constraint
+  TacsScalar tA[3], tB1[3], tB2[3];
+  matMultTrans(CA, eA, tA);
+  matMultTrans(CB, eB1, tB1);
+  matMultTrans(CB, eB2, tB2);
+
+  TacsScalar gA[4], gB[4];
+
+  // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
+  memset(gA, 0, sizeof(gA));
+  addEMatTransProduct(alpha, eA, tB1, etaA, epsA, 
+                      &gA[0], &gA[1]);
+  // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
+  memset(gB, 0, sizeof(gB));
+  addEMatTransProduct(alpha, eB1, tA, etaB, epsB,
+                      &gB[0], &gB[1]);
+
+  // Add the constraint terms to the matrix
+  for ( int i = 0; i < 4; i++ ){
+    J[24*(i+3) + 19] = gA[i];
+    J[24*(i+11) + 19] = gB[i];
+    J[19*24 + i+3] = gA[i];
+    J[19*24 + i+11] = gB[i];
   }
 
-  // The computed Jacobian of the element matrix
-  TacsScalar mat[24*24];
+  // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
+  memset(gA, 0, sizeof(gA));
+  addEMatTransProduct(alpha, eA, tB2, etaA, epsA, 
+                      &gA[0], &gA[1]);
+  // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
+  memset(gB, 0, sizeof(gB));
+  addEMatTransProduct(alpha, eB2, tA, etaB, epsB,
+                      &gB[0], &gB[1]);
 
-  // The finite-difference result
-  TacsScalar fd[24], res[24];
-  
-  // The perturb direction to test
-  TacsScalar perb[24];
-
-  // Temporary variables and their time derivatives
-  TacsScalar q[24], dq[24], ddq[24];
-
-  // Set random perburbed values
-  for ( int i = 0; i < 24; i++ ){
-    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  // Add the constraint terms to the matrix
+  for ( int i = 0; i < 4; i++ ){
+    J[24*(i+3) + 20] = gA[i];
+    J[24*(i+11) + 20] = gB[i];
+    J[20*24 + i+3] = gA[i];
+    J[20*24 + i+11] = gB[i];
   }
 
-  for ( int ii = 0; ii < 24; ii++ ){
-    memset(perb, 0, 24*sizeof(TacsScalar));
-    perb[ii] = 1.0;
+  // Add the identity matricies to the Jacobian
+  addBlockIdent(alpha, &J[16], 24);
+  addBlockIdent(-alpha, &J[8*24 + 16], 24);
 
-#ifdef TACS_USE_COMPLEX
-    // Set the values for the first evaluation
-    for ( int i = 0; i < 24; i++ ){
-      q[i] = vars[i] + TacsScalar(0.0, dh*alpha)*perb[i];
-      dq[i] = dvars[i] + TacsScalar(0.0, dh*beta)*perb[i];
-      ddq[i] = ddvars[i] + TacsScalar(0.0, dh*gamma)*perb[i];
-    }
+  addBlockIdent(alpha, &J[16*24], 24);
+  addBlockIdent(-alpha, &J[16*24+8], 24);
 
-    // Get the residual at vars + alpha*perb, ... etc.
-    getResidual(time, fd, X, q, dq, ddq);
+  // Add the terms corresponding to the second derivative
+  // terms
+  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*25], 24);
+  addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*25], 24);
 
-    // Form the finite-difference matrix-vector approximation
-    for ( int i = 0; i < 24; i++ ){
-      fd[i] = ImagPart(fd[i])/dh;
-    }
-#else
-    // Set the values for the first evaluation
-    for ( int i = 0; i < 24; i++ ){
-      q[i] = vars[i] + dh*alpha*perb[i];
-      dq[i] = dvars[i] + dh*beta*perb[i];
-      ddq[i] = ddvars[i] + dh*gamma*perb[i];
-    }
+  // Add the terms from the derivatives w.r.t. lambdas
+  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*24+16], 24);
+  addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*24+16], 24);
 
-    // Get the residual at vars + alpha*perb, ... etc.
-    getResidual(time, fd, X, q, dq, ddq);
+  // Add the terms from the derivatives of the constraint
+  addBlockEMat(alpha, etaA, epsA, xA, &J[16*24+3], 24);
+  addBlockEMat(-alpha, etaB, epsB, xB, &J[16*24+11], 24);
 
-    // Set the values for the first evaluation
-    for ( int i = 0; i < 24; i++ ){
-      q[i] = vars[i] - dh*alpha*perb[i];
-      dq[i] = dvars[i] - dh*beta*perb[i];
-      ddq[i] = ddvars[i] - dh*gamma*perb[i];
-    }
+  // Add the diagonal contributions to the constraint tA^{T}*tB1 = 0
+  addBlockDMatTransDeriv(alpha*lam[3], tB1, eA, &J[3*25], 24);
+  addBlockDMatTransDeriv(alpha*lam[3], tA, eB1, &J[11*25], 24);
 
-    // Get the residual at vars + alpha*perb, ... etc.
-    getResidual(time, res, X, q, dq, ddq);
+  // Add the contributions from the off-diagonal blocks
+  TacsScalar EA[12], EB[12];
+  computeEMat(etaA, epsA, eA, EA);
+  computeEMat(etaB, epsB, eB1, EB);
 
-    // Form the finite-difference matrix-vector approximation
-    for ( int i = 0; i < 24; i++ ){
-      fd[i] = 0.5*(fd[i] - res[i])/dh;
-    }
-#endif // TACS_USE_COMPLEX
+  addBlock3x4Product(alpha*lam[3], EA, EB, &J[3*24+11], 24);
+  addBlock3x4Product(alpha*lam[3], EB, EA, &J[11*24+3], 24);
 
-    // Get the Jacobian computed by the element
-    getJacobian(time, mat, alpha, beta, gamma, 
-                X, vars, dvars, ddvars);
-  
-    // Compute the product: res = J*perb
-    // Recall that the Jacobian matrix is stored in row-major order
-    memset(res, 0, 24*sizeof(TacsScalar));
-    for ( int i = 0; i < 24; i++ ){
-      for ( int j = 0; j < 24; j++ ){
-        res[i] += mat[24*i + j]*perb[j];
-      }
-    }
+  // Add the diagonal contributions to the constraint tA^{T}*tB2 = 0
+  addBlockDMatTransDeriv(alpha*lam[4], tB2, eA, &J[3*25], 24);
+  addBlockDMatTransDeriv(alpha*lam[4], tA, eB2, &J[11*25], 24);
 
-    // Print out the results to stdout
-    char outname[128];
-    sprintf(outname, "Jacobian col %d", ii);
-    writeErrorComponents(stdout, outname,
-                         res, fd, 24, 1e-6);
+  // Add the contributions from the off-diagonal blocks for the second constraint
+  computeEMat(etaB, epsB, eB2, EB);
+
+  addBlock3x4Product(alpha*lam[4], EA, EB, &J[3*24+11], 24);
+  addBlock3x4Product(alpha*lam[4], EB, EA, &J[11*24+3], 24);
+
+  // Add the Jacobian entries for the dummy constraints
+  for ( int i = 21; i < 24; i++ ){
+    J[25*i] = alpha;
   }
 }
