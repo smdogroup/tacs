@@ -7,7 +7,7 @@
 
 const char * PlaneStressStiffness::constName = "PlaneStressStiffness";
 
-const char * PlaneStressStiffness::constitutiveName() const { 
+const char * PlaneStressStiffness::constitutiveName(){ 
   return constName; 
 }
 
@@ -50,9 +50,9 @@ PlaneStressStiffness::PlaneStressStiffness(){
   rho = 0.0;
 }
 
-int PlaneStressStiffness::getNumStresses() const { return NUM_STRESSES; }
+int PlaneStressStiffness::getNumStresses(){ return NUM_STRESSES; }
 
-void PlaneStressStiffness::calculateStress( const double gpt[], 
+void PlaneStressStiffness::calculateStress( const double pt[], 
 					    const TacsScalar strain[],
 					    TacsScalar stress[] ){
   stress[0] = Cmat[0]*strain[0] + Cmat[1]*strain[1] + Cmat[2]*strain[2];

@@ -23,8 +23,9 @@ class PlaneStressStiffness : public TACSConstitutive {
 
   // Calculate the stress
   // --------------------
-  int getNumStresses() const;
-  void calculateStress( const double pt[], const TacsScalar strain[],
+  int getNumStresses();
+  void calculateStress( const double pt[], 
+                        const TacsScalar strain[],
 			TacsScalar stress[] );
 
   // Return the mass moments
@@ -36,7 +37,7 @@ class PlaneStressStiffness : public TACSConstitutive {
 
   // Extra info about the constitutive class
   // ---------------------------------------
-  const char * constitutiveName() const;
+  const char * constitutiveName();
 
  protected:
   PlaneStressStiffness();

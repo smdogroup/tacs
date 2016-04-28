@@ -55,7 +55,7 @@ class TACSCreator : public TACSObject {
 
   // Set the elements into TACS creator
   // ----------------------------------
-  void setElements( TACSElement **_elements, int _num_elem_ids );
+  void setElements( TACSElement **_elements, int _num_elems );
   void setElementCreator( TACSElement* (*func)(int, int) );
 
   // Set the nodal locations
