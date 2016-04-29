@@ -214,6 +214,19 @@ class TACSElement : public TACSOptObject {
     memset(dvars, 0, numVariables()*sizeof(TacsScalar));
   }
 
+  // Add the product of the initial condition with the adjoint variables
+  // -------------------------------------------------------------------
+  virtual void addInitConditionAdjResProduct( TacsScalar fdvSens[], int dvLen,
+                                              const TacsScalar adjVars[],
+                                              const TacsScalar adjDVars[],
+                                              const TacsScalar Xpts[] ){}
+  virtual void getInitConditionAdjResXptProduct( TacsScalar fXptSens[],
+                                                 const TacsScalar adjVars[],
+                                                 const TacsScalar adjDVars[],
+                                                 const TacsScalar Xpts[] ){
+    memset(fXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
+  }
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   virtual void computeEnergies( double time,
@@ -239,19 +252,6 @@ class TACSElement : public TACSOptObject {
 			    const TacsScalar vars[],
 			    const TacsScalar dvars[],
 			    const TacsScalar ddvars[] ) = 0;
-
-  // Add the product of the initial condition with the adjoint variables
-  // -------------------------------------------------------------------
-  virtual void addInitConditionAdjResProduct( TacsScalar fdvSens[], int dvLen,
-                                              const TacsScalar adjVars[],
-                                              const TacsScalar adjDVars[],
-                                              const TacsScalar Xpts[] ){}
-  virtual void getInitConditionAdjResXptProduct( TacsScalar fXptSens[],
-                                                 const TacsScalar adjVars[],
-                                                 const TacsScalar adjDVars[],
-                                                 const TacsScalar Xpts[] ){
-    memset(fXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
-  }
 
   // Add the product of the adjoint variables with the derivative of the residual
   // ----------------------------------------------------------------------------

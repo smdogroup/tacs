@@ -69,7 +69,7 @@ class isoFSDTStiffness : public FSDTStiffness {
 
   // Return the name of the constitutive object
   // ------------------------------------------
-  const char * constitutiveName() const { return constName; }
+  const char * constitutiveName(){ return constName; }
 
  private:
   // Calculate the state of plane stress within the element
