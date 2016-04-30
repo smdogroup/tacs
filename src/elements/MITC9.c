@@ -699,14 +699,12 @@ void MITC9::computeEnergies( double time,
   output:
   res:    the residuals
 */
-void MITC9::getResidual( double time,
+void MITC9::addResidual( double time,
                          TacsScalar res[],
 			 const TacsScalar X[],
 			 const TacsScalar vars[],
 			 const TacsScalar dvars[],
 			 const TacsScalar ddvars[] ){
-  memset(res, 0, 8*NUM_NODES*sizeof(TacsScalar));
-
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -930,7 +928,7 @@ void MITC9::getResidual( double time,
 }
 
 /*
-  Get the Jacobian for the governing equations
+  Add the Jacobian for the governing equations
 
   The following code computes the Jacobian of the equations of motion
   involving a linear combination of the Jacobian w.r.t. the variables
@@ -955,14 +953,12 @@ void MITC9::getResidual( double time,
   output:
   J:       the Jacobian matrix
 */
-void MITC9::getJacobian( double time, TacsScalar J[],
+void MITC9:addJacobian( double time, TacsScalar J[],
 			 double alpha, double beta, double gamma,
 			 const TacsScalar X[],
 			 const TacsScalar vars[],
 			 const TacsScalar dvars[],
 			 const TacsScalar ddvars[] ){
-  memset(J, 0, 64*NUM_NODES*NUM_NODES*sizeof(TacsScalar));
-
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
   computeFrames(Xr, X);

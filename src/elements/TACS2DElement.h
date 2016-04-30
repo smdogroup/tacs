@@ -110,13 +110,13 @@ class TACS2DElement : public TACSElement {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( double time, TacsScalar res[], const TacsScalar Xpts[],
+  void addResidual( double time, TacsScalar res[], const TacsScalar Xpts[],
 		    const TacsScalar vars[], const TacsScalar dvars[],
 		    const TacsScalar ddvars[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
 		    double alpha, double beta, double gamma,
 		    const TacsScalar Xpts[], const TacsScalar vars[],
 		    const TacsScalar dvars[], const TacsScalar ddvars[] );
@@ -837,14 +837,12 @@ void TACS2DElement<NUM_NODES>::computeEnergies( double time,
   Xpts:    the element nodal locations in R^{3}
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::getResidual( double time, 
+void TACS2DElement<NUM_NODES>::addResidual( double time, 
                                             TacsScalar * res, 
 					    const TacsScalar Xpts[],
 					    const TacsScalar vars[],
 					    const TacsScalar dvars[],
 					    const TacsScalar ddvars[] ){
-  memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
-
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -906,7 +904,7 @@ void TACS2DElement<NUM_NODES>::getResidual( double time,
 }
 
 /*
-  Get the Jacobian of the governing equations - the exact Jacobian of
+  Add the Jacobian of the governing equations - the exact Jacobian of
   the residual expression.
 
   output:
@@ -922,7 +920,7 @@ void TACS2DElement<NUM_NODES>::getResidual( double time,
   ddvars:  second time derivative of the element variables
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::getJacobian( double time,
+void TACS2DElement<NUM_NODES>::addJacobian( double time,
                                             TacsScalar mat[],
 					    double alpha, 
 					    double beta, 
@@ -931,8 +929,6 @@ void TACS2DElement<NUM_NODES>::getJacobian( double time,
 					    const TacsScalar vars[],
 					    const TacsScalar dvars[], 
 					    const TacsScalar ddvars[] ){
-  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
-
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];

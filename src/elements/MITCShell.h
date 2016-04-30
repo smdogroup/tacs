@@ -66,14 +66,14 @@ class MITCShell : public TACSShell {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( TacsScalar res[], const TacsScalar Xpts[],
+  void addResidual( TacsScalar res[], const TacsScalar Xpts[],
 		    const TacsScalar vars[],
 		    const TacsScalar dvars[],
 		    const TacsScalar ddvars[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( TacsScalar J[],
+  void addJacobian( TacsScalar J[],
 		    double alpha, double beta, double gamma,
 		    const TacsScalar Xpts[],
 		    const TacsScalar vars[],

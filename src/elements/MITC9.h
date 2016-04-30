@@ -61,7 +61,7 @@ class MITC9 : public TACSElement {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( double time, 
+  void addResidual( double time, 
                     TacsScalar res[],
 		    const TacsScalar X[],
 		    const TacsScalar vars[],
@@ -70,7 +70,7 @@ class MITC9 : public TACSElement {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
 		    double alpha, double beta, double gamma,
 		    const TacsScalar X[],
 		    const TacsScalar vars[],

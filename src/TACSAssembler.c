@@ -1,8 +1,7 @@
 #include "TACSAssembler.h"
-#include "FElibrary.h"
-#include "tacslapack.h"
 
 // Reordering implementation 
+#include "FElibrary.h"
 #include "MatUtils.h"
 #include "AMDInterface.h"
 #include "amd.h"
@@ -11,7 +10,7 @@
 /*
   TACSAssembler implementation
 
-  Copyright (c) 2010-2015 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
 */
 
@@ -120,14 +119,19 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   maxElementSize = 0;
   maxElementIndepNodes = 0;
 
+  // Set the auxiliary element class to NULL
+  aux_elements = NULL;
+
   // Information for setting boundary conditions and distributing variables
   varMap = new VarMap(tacs_comm, numOwnedNodes, varsPerNode);
   varMap->incref();
 
-  int nbc_est = 100; // estimate 100 bcs at first, but this can be expanded
+  // Estimate 100 bcs at first, but this is expanded as required
+  int nbc_est = 100; 
   bcMap = new BCMap(nbc_est);
   bcMap->incref();
 
+  // Set the distribution object to NULL at first
   vecDist = NULL;
   vecDistIndices = NULL;
 
@@ -561,6 +565,31 @@ void TACSAssembler::getNodes( BVec *X ){
 */
 void TACSAssembler::getNodeArray( TacsScalar **_Xpts ){
   *_Xpts = Xpts;
+}
+
+/*
+  Set the auxiliary elements within the TACSAssembler object
+  
+  This only needs to be done once sometime during initialization.  If
+  you need to change the loads repeatedly, this can be called
+  repeatedly. No check is made at this point that you haven't done
+  something odd. Note that the code assumes that the elements defined
+  here perfectly overlap the non-zero pattern of the elements set
+  internally within TACS already.
+*/
+void TACSAssembler::setAuxElements( TACSAuxElements *_aux_elems ){
+  // Increase the reference count to the input elements (Note that
+  // the input may be NULL to over-write the internal object
+  if (_aux_elems){
+    _aux_elems->incref();
+  }
+
+  // Decrease the reference count if the old object is not NULL
+  if (aux_elements){
+    aux_elements->decref();
+  }
+
+  aux_elements = _aux_elems;
 }
 
 /*!  
@@ -1702,16 +1731,15 @@ were defined more than once\n", mpiRank);
 /*!
   Collect all the design variable values assigned by this process
 
-  This code does not ensure consistency of the design variable
-  values between processes. If the values of the design 
-  variables are inconsistent to begin with, the maximum
-  design variable value is returned. Call setDesignVars to make
-  them consistent.
+  This code does not ensure consistency of the design variable values
+  between processes. If the values of the design variables are
+  inconsistent to begin with, the maximum design variable value is
+  returned. Call setDesignVars to make them consistent.
 
   Each process contains objects that maintain their own design
-  variable values. Ensuring the consistency of the ordering is
-  up to the user. Having multiply-defined design variable numbers
-  corresponding to different design variables results in undefined 
+  variable values. Ensuring the consistency of the ordering is up to
+  the user. Having multiply-defined design variable numbers
+  corresponding to different design variables results in undefined
   behaviour.
 
   dvs:    the array of design variable values (output)
@@ -1724,6 +1752,15 @@ void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
   // Get the design variables from the elements on this process 
   for ( int i = 0; i < numElements; i++ ){
     elements[i]->getDesignVars(tempDVs, numDVs);
+  }
+  
+  // Get the design variables from the auxiliary elements
+  if (aux_elements){
+    TACSAuxElems *aux;
+    int naux = aux_elements->getAuxElements(&aux);
+    for ( int i = 0; i < naux; i++ ){
+      aux[i].elem->getDesignVars(tempDVs, numDVs);
+    }
   }
 
   MPI_Allreduce(tempDVs, dvs, numDVs, TACS_MPI_TYPE, 
@@ -1745,6 +1782,15 @@ void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
 void TACSAssembler::setDesignVars( const TacsScalar dvs[], int numDVs ){
   for ( int i = 0; i < numElements; i++ ){
     elements[i]->setDesignVars(dvs, numDVs);
+  }
+
+  // Set the design variables in the auxiliary elements
+  if (aux_elements){
+    TACSAuxElems *aux;
+    int naux = aux_elements->getAuxElements(&aux);
+    for ( int i = 0; i < naux; i++ ){
+      aux[i].elem->setDesignVars(dvs, numDVs);
+    }
   }
 }
 
@@ -1771,6 +1817,15 @@ void TACSAssembler::getDesignVarRange( TacsScalar lowerBound[],
   // Get the design variables from the elements on this process 
   for ( int i = 0; i < numElements; i++ ){
     elements[i]->getDesignVarRange(tempLB, tempUB, numDVs);
+  }
+
+  // Get the design variable range from the auxiliary elements
+  if (aux_elements){
+    TACSAuxElems *aux;
+    int naux = aux_elements->getAuxElements(&aux);
+    for ( int i = 0; i < naux; i++ ){
+      aux[i].elem->getDesignVarRange(tempLB, tempUB, numDVs);
+    }
   }
 
   // Take the max of the lower bounds
@@ -2393,15 +2448,34 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
 		    &vars, &dvars, &ddvars, &elemRes,
 		    &elemXpts, NULL, NULL, NULL);
 
+    // Get the auxiliary elements
+    int naux = 0, aux_count = 0;
+    TACSAuxElems *aux = NULL;
+    if (aux_elements){
+      naux = aux_elements->getAuxElements(&aux);
+    }
+
+    // Go through and add the residuals from all the elements
     for ( int i = 0; i < numElements; i++ ){    
       getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
       getValues(varsPerNode, i, localVars, vars);
       getValues(varsPerNode, i, localDotVars, dvars);
       getValues(varsPerNode, i, localDDotVars, ddvars);
-      elements[i]->getResidual(time, elemRes, elemXpts, 
+
+      // Add the residual from the working element
+      int nvars = elements[i]->numVariables();
+      memset(elemRes, 0, nvars*sizeof(TacsScalar));
+      elements[i]->addResidual(time, elemRes, elemXpts, 
                                vars, dvars, ddvars);
       
-      // Add the values
+      // Add the residual from any auxiliary elements
+      while (aux_count < naux && aux[aux_count].num == i){
+        aux[aux_count]->addResidual(time, elemRes, elemXpts,
+                                    vars, dvars, ddvars);
+        aux_count++;
+      }
+
+      // Add the residual values
       addValues(varsPerNode, i, elemRes, localRes);
     }
   }

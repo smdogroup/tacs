@@ -80,11 +80,11 @@
   computeEnergies(): Compute the kinetic and potential energies
   of this element at the provided time
 
-  getResisudal(): Returns the residual associated with this element.
-  This includes all time-dependent components of the residual.
+  addResidual(): Add the residual associated with this element.  This
+  includes all time-dependent components of the residual.
 
-  getJacobian(): Returns the Jacobian of the governing equations
-  provided by the getResidual() call. 
+  addJacobian(): Add the Jacobian of the governing equations
+  provided by the addResidual() call. 
 
   getMatType(): Return a time-independent element matrix of a given
   type as specified by the ElementMatrixType enumeration. This can be
@@ -148,10 +148,10 @@
 
   getShapeFunctions(): Return the shape functions for this element
 
-  getJacobian(): Get the determinant of the Jacobian evaluated at the 
+  getDetJacobian(): Get the determinant of the Jacobian evaluated at the 
   specified parametric location
 
-  getJacobianXptSens(): Return the derivative of the determinant of 
+  getDetJacobianXptSens(): Return the derivative of the determinant of 
   the Jacobian w.r.t. all nodal coordinates.
 
   getStrain(): Retrieve the strain evaluated at a parametric location 
@@ -225,7 +225,7 @@ class TACSElement : public TACSOptObject {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  virtual void getResidual( double time, TacsScalar res[],
+  virtual void addResidual( double time, TacsScalar res[],
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
 			    const TacsScalar dvars[],
@@ -233,7 +233,7 @@ class TACSElement : public TACSOptObject {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  virtual void getJacobian( double time, TacsScalar J[],
+  virtual void addJacobian( double time, TacsScalar J[],
 			    double alpha, double beta, double gamma,
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
@@ -262,14 +262,12 @@ class TACSElement : public TACSOptObject {
 				 const TacsScalar vars[],
 				 const TacsScalar dvars[],
 				 const TacsScalar ddvars[] ){}
-  virtual void getAdjResXptProduct( double time, TacsScalar fXptSens[],
+  virtual void addAdjResXptProduct( double time, TacsScalar fXptSens[],
 				    const TacsScalar psi[],
 				    const TacsScalar Xpts[],
 				    const TacsScalar vars[],
 				    const TacsScalar dvars[],
-				    const TacsScalar ddvars[] ){
-    memset(fXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
-  }
+				    const TacsScalar ddvars[] ){}
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------

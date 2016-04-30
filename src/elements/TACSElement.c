@@ -311,7 +311,8 @@ int TestElement::testResidual(){
   }
 
   // Evaluate the residual using the code
-  element->getResidual(time, res1, Xpts, vars, dvars, ddvars);
+  memset(res1, 0, nvars*sizeof(TacsScalar));
+  element->addResidual(time, res1, Xpts, vars, dvars, ddvars);
 
   // Compute the error
   int max_err_index, max_rel_index;
@@ -379,7 +380,8 @@ int TestElement::testJacobian( int col ){
   double alpha = (1.0*rand())/RAND_MAX;
   double beta = (1.0*rand())/RAND_MAX;
   double gamma = (1.0*rand())/RAND_MAX;
-  element->getJacobian(time, mat, alpha, beta, gamma,
+  memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
+  element->addJacobian(time, mat, alpha, beta, gamma,
 		       Xpts, vars, dvars, ddvars);
 
   // Evaluate the Jacobian
@@ -392,13 +394,15 @@ int TestElement::testJacobian( int col ){
   forward_perturb(q, nvars, vars, pert, alpha*dh);
   forward_perturb(dq, nvars, dvars, pert, beta*dh);
   forward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
-  element->getResidual(time, res, Xpts, q, dq, ddq);
+  memset(res, 0, nvars*sizeof(TacsScalar));
+  element->addResidual(time, res, Xpts, q, dq, ddq);
 
   // Perturb the variables in the backward sens
   backward_perturb(q, nvars, vars, pert, alpha*dh);
   backward_perturb(dq, nvars, dvars, pert, beta*dh);
   backward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
-  element->getResidual(time, temp, Xpts, q, dq, ddq);
+  memset(tmp, 0, nvars*sizeof(TacsScalar));
+  element->addResidual(time, temp, Xpts, q, dq, ddq);
 
   // Form the FD/CS approximate
   form_approximate(res, temp, nvars, dh);

@@ -10,17 +10,41 @@
 
 class TACSAssembler; 
 
+// Basic analysis classes
 #include "TACSObject.h"
 #include "TACSFunction.h"
 #include "TACSElement.h"
+#include "TACSAuxElements.h"
 
-#include "BVec.h" 
+// Linear algebra classes
+#include "BVec.h"
 #include "BVecDist.h"
-#include "DistMat.h"  
+#include "DistMat.h"
 #include "FEMat.h"
 
+/*
+  TACSAssembler
+
+  This is the main class required for structural analysis using TACS.
+  Basic operations required for analysis and design optimization
+  should be performed using this class, rather than with element-level
+  functions. This class is used to assemble residuals and Jacobians
+  required for analysis. The class also implements the routines
+  necessary to compute the adjoint. These operations include parallel
+  function evaluation, derivative evaluation and the implementation of
+  terms required for the adjoint method.
+
+  TACSAssembler can be instantiated and initialized directly through
+  API calls, or through other TACS objects which perform the
+  initialization process.  Once the TACSAssembler object is
+  initialized, however, subsequent calls to the code work regardless
+  of how the object was created. In addition, once TACSAssembler is
+  created, the parallelism is transparent. All analysis calls are
+  collective on the tacs_comm communicator.
+*/
 class TACSAssembler : public TACSObject {
  public:
+  // There are always 3 coordinates (even for 2D problems)
   static const int TACS_SPATIAL_DIM = 3;
 
   enum OrderingType { NATURAL_ORDER, // Natural ordering
@@ -31,7 +55,9 @@ class TACSAssembler : public TACSObject {
   enum MatrixOrderingType { ADDITIVE_SCHWARZ, 
                             APPROXIMATE_SCHUR,
                             DIRECT_SCHUR };
-
+  
+  // Create the TACSAssembler object in parallel
+  // -------------------------------------------
   TACSAssembler( MPI_Comm _tacs_comm,
 		 int numOwnedNodes, int _varsPerNode,
 		 int _numElements, int _numNodes,
@@ -100,6 +126,10 @@ class TACSAssembler : public TACSObject {
   void addBC( int nodeNum, const int bcNums[], int nbcs );
   void addBC( int nodeNum, const int bcNums[], 
 	      const TacsScalar bcVals[], int nbcs );
+
+  // Set auxiliary elements into the TACSAssembler object
+  // ----------------------------------------------------
+  void setAuxElements( TACSAuxElements *aux_elems );
 
   // Create vectors/matrices
   // -----------------------
@@ -278,10 +308,10 @@ class TACSAssembler : public TACSObject {
   // static void * evalXptSens_thread( void * t );
   static void * evalDVSens_thread( void * t );
 
-  VarMap * varMap; // Variable ownership map
-  BCMap * bcMap; // Boundary condition data
-  BVecDistribute * vecDist; // Distribute the vector
-  BVecIndices * vecDistIndices; // The tacsVarNum indices
+  VarMap *varMap; // Variable ownership map
+  BCMap *bcMap; // Boundary condition data
+  BVecDistribute *vecDist; // Distribute the vector
+  BVecIndices *vecDistIndices; // The tacsVarNum indices
 
   // Additional, persistent information for the FEMat class
   // These are created once - all subsequent calls use this data.
@@ -336,6 +366,9 @@ class TACSAssembler : public TACSObject {
 
   // The x,y,z positions/sensitivities of all the local nodes
   TacsScalar *Xpts; // The nodal locations
+
+  // The auxiliary element class
+  TACSAuxElements *aux_elements;
 
   // The data required to perform parallel operations
   // MPI info

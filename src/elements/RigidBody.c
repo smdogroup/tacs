@@ -663,15 +663,12 @@ void TACSRigidBody::computeEnergies( double time,
   output:
   res:     the residual of the governing equations
 */
-void TACSRigidBody::getResidual( double time, 
+void TACSRigidBody::addResidual( double time, 
                                  TacsScalar res[],
                                  const TacsScalar X[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
-  // Zero the residual entries
-  memset(res, 0, 8*sizeof(TacsScalar));
-
   // Set the location and its time derivatives
   const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
@@ -761,15 +758,12 @@ void TACSRigidBody::getResidual( double time,
 /*
   Compute the Jacobian of the governing equations
 */
-void TACSRigidBody::getJacobian( double time, TacsScalar mat[],
+void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
                                  double alpha, double beta, double gamma,
                                  const TacsScalar X[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
-  // Zero the residual entries
-  memset(mat, 0, 64*sizeof(TacsScalar));
-
   // Set the location and its time derivatives
   const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
@@ -1091,7 +1085,8 @@ void TACSRigidBody::testResidual( double dh ){
   }
 
   // Evaluate the residual using the code
-  getResidual(time, res1, X, vars, dvars, ddvars);
+  memset(res1, 0, 8*sizeof(TacsScalar));
+  addResidual(time, res1, X, vars, dvars, ddvars);
 
   // Write out the error components
   writeErrorComponents(stdout, "Res error",
@@ -1158,7 +1153,8 @@ void TACSRigidBody::testJacobian( double dh,
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    getResidual(time, fd, X, q, dq, ddq);
+    memset(fd, 0, 8*sizeof(TacsScalar));
+    addResidual(time, fd, X, q, dq, ddq);
 
     // Form the finite-difference matrix-vector approximation
     for ( int i = 0; i < 8; i++ ){
@@ -1173,7 +1169,8 @@ void TACSRigidBody::testJacobian( double dh,
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    getResidual(time, fd, X, q, dq, ddq);
+    memset(fd, 0, 8*sizeof(TacsScalar));
+    addResidual(time, fd, X, q, dq, ddq);
 
     // Set the values for the first evaluation
     for ( int i = 0; i < 8; i++ ){
@@ -1183,7 +1180,8 @@ void TACSRigidBody::testJacobian( double dh,
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    getResidual(time, res, X, q, dq, ddq);
+    memset(res, 0, 8*sizeof(TacsScalar));
+    addResidual(time, res, X, q, dq, ddq);
 
     // Form the finite-difference matrix-vector approximation
     for ( int i = 0; i < 8; i++ ){
@@ -1192,7 +1190,8 @@ void TACSRigidBody::testJacobian( double dh,
 #endif // TACS_USE_COMPLEX
 
     // Get the Jacobian computed by the element
-    getJacobian(time, mat, alpha, beta, gamma, 
+    memset(mat, 0, 64*sizeof(TacsScalar));
+    addJacobian(time, mat, alpha, beta, gamma, 
                 X, vars, dvars, ddvars);
   
     // Compute the product: res = J*perb
@@ -1244,14 +1243,11 @@ void TACSSphericalConstraint::computeEnergies( double time,
 /*
   Compute the residual of the governing equations
 */
-void TACSSphericalConstraint::getResidual( double time, TacsScalar res[],
+void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
                                            const TacsScalar Xpts[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
-  // Zero the residual
-  memset(res, 0, 24*sizeof(TacsScalar));
-
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
   TacsScalar *resB = &res[8];
@@ -1289,7 +1285,7 @@ void TACSSphericalConstraint::getResidual( double time, TacsScalar res[],
 
   // Evaluate the constraint
   // Set resC = rA + CA^{T}*xA
-  matMultTrans(CA, xA, resC);
+  matMultTransAdd(CA, xA, resC);
   vecAxpy(1.0, rA, resC);
 
   // Compute t = CB^{T}*xB + rB
@@ -1303,14 +1299,14 @@ void TACSSphericalConstraint::getResidual( double time, TacsScalar res[],
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables
   for ( int i = 3; i < 8; i++ ){
-    resC[i] = lam[i];
+    resC[i] += lam[i];
   }
 }
 
 /*
   Compute the Jacobian of the residuals of the governing equations
 */
-void TACSSphericalConstraint::getJacobian( double time, TacsScalar J[],
+void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
                                            double alpha, 
                                            double beta, 
                                            double gamma,
@@ -1318,9 +1314,6 @@ void TACSSphericalConstraint::getJacobian( double time, TacsScalar J[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
-  // Zero the Jacobian of the matrix
-  memset(J, 0, 24*24*sizeof(TacsScalar));
-
   // Set the variables for body A
   const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
@@ -1356,7 +1349,7 @@ void TACSSphericalConstraint::getJacobian( double time, TacsScalar J[],
 
   // Add the Jacobian entries for the dummy constraints
   for ( int i = 19; i < 24; i++ ){
-    J[25*i] = alpha;
+    J[25*i] += alpha;
   }
 }
 
@@ -1403,14 +1396,11 @@ void TACSRevoluteConstraint::computeEnergies( double time,
 /*
   Compute the residual of the governing equations
 */
-void TACSRevoluteConstraint::getResidual( double time, TacsScalar res[],
+void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
                                           const TacsScalar Xpts[],
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[] ){
-  // Zero the residual
-  memset(res, 0, 24*sizeof(TacsScalar));
-
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
   TacsScalar *resB = &res[8];
@@ -1448,7 +1438,7 @@ void TACSRevoluteConstraint::getResidual( double time, TacsScalar res[],
 
   // Evaluate the constraint
   // Set resC = rA + CA^{T}*xA
-  matMultTrans(CA, xA, resC);
+  matMultTransAdd(CA, xA, resC);
   vecAxpy(1.0, rA, resC);
 
   // Compute t = CB^{T}*xB + rB
@@ -1466,7 +1456,7 @@ void TACSRevoluteConstraint::getResidual( double time, TacsScalar res[],
   matMultTrans(CB, eB2, tB2);
 
   // Compute the contributions to the first revolute constraint
-  resC[3] = vecDot(tA, tB1);
+  resC[3] += vecDot(tA, tB1);
 
   // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
   addEMatTransProduct(lam[3], eA, tB1, etaA, epsA, 
@@ -1476,7 +1466,7 @@ void TACSRevoluteConstraint::getResidual( double time, TacsScalar res[],
                       &resB[3], &resB[4]);
 
   // Compute the contributions to the second revolute constraint
-  resC[4] = vecDot(tA, tB2);
+  resC[4] += vecDot(tA, tB2);
 
   // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
   addEMatTransProduct(lam[4], eA, tB2, etaA, epsA, 
@@ -1488,14 +1478,14 @@ void TACSRevoluteConstraint::getResidual( double time, TacsScalar res[],
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables
   for ( int i = 5; i < 8; i++ ){
-    resC[i] = lam[i];
+    resC[i] += lam[i];
   }
 }
 
 /*
   Compute the Jacobian of the residuals of the governing equations
 */
-void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
+void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
                                            double alpha, 
                                            double beta, 
                                            double gamma,
@@ -1503,9 +1493,6 @@ void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
-  // Zero the Jacobian of the matrix
-  memset(J, 0, 24*24*sizeof(TacsScalar));
-
   // Set the variables for body A
   const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
@@ -1543,10 +1530,10 @@ void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
 
   // Add the constraint terms to the matrix
   for ( int i = 0; i < 4; i++ ){
-    J[24*(i+3) + 19] = gA[i];
-    J[24*(i+11) + 19] = gB[i];
-    J[19*24 + i+3] = gA[i];
-    J[19*24 + i+11] = gB[i];
+    J[24*(i+3) + 19] += gA[i];
+    J[24*(i+11) + 19] += gB[i];
+    J[19*24 + i+3] += gA[i];
+    J[19*24 + i+11] += gB[i];
   }
 
   // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
@@ -1560,10 +1547,10 @@ void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
 
   // Add the constraint terms to the matrix
   for ( int i = 0; i < 4; i++ ){
-    J[24*(i+3) + 20] = gA[i];
-    J[24*(i+11) + 20] = gB[i];
-    J[20*24 + i+3] = gA[i];
-    J[20*24 + i+11] = gB[i];
+    J[24*(i+3) + 20] += gA[i];
+    J[24*(i+11) + 20] += gB[i];
+    J[20*24 + i+3] += gA[i];
+    J[20*24 + i+11] += gB[i];
   }
 
   // Add the identity matricies to the Jacobian
@@ -1602,7 +1589,8 @@ void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
   addBlockDMatTransDeriv(alpha*lam[4], tB2, eA, &J[3*25], 24);
   addBlockDMatTransDeriv(alpha*lam[4], tA, eB2, &J[11*25], 24);
 
-  // Add the contributions from the off-diagonal blocks for the second constraint
+  // Add the contributions from the off-diagonal blocks for the second
+  // constraint
   computeEMat(etaB, epsB, eB2, EB);
 
   addBlock3x4Product(alpha*lam[4], EA, EB, &J[3*24+11], 24);
@@ -1610,6 +1598,6 @@ void TACSRevoluteConstraint::getJacobian( double time, TacsScalar J[],
 
   // Add the Jacobian entries for the dummy constraints
   for ( int i = 21; i < 24; i++ ){
-    J[25*i] = alpha;
+    J[25*i] += alpha;
   }
 }

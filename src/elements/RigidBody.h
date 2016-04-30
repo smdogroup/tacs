@@ -111,7 +111,7 @@ class TACSRigidBody : public TACSElement {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( double time, TacsScalar res[],
+  void addResidual( double time, TacsScalar res[],
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
@@ -119,7 +119,7 @@ class TACSRigidBody : public TACSElement {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
@@ -178,7 +178,7 @@ class TACSSphericalConstraint : public TACSElement {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( double time, TacsScalar res[],
+  void addResidual( double time, TacsScalar res[],
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
@@ -186,7 +186,7 @@ class TACSSphericalConstraint : public TACSElement {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
@@ -226,7 +226,7 @@ class TACSRevoluteConstraint : public TACSElement {
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void getResidual( double time, TacsScalar res[],
+  void addResidual( double time, TacsScalar res[],
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
@@ -234,7 +234,7 @@ class TACSRevoluteConstraint : public TACSElement {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void getJacobian( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
