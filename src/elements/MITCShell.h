@@ -59,21 +59,23 @@ class MITCShell : public TACSShell {
   
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( TacsScalar *_Te, TacsScalar *_Pe,
+  void computeEnergies( double time,
+                        TacsScalar *_Te, TacsScalar *_Pe,
 			const TacsScalar Xpts[],
 			const TacsScalar vars[],
 			const TacsScalar dvars[] );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( TacsScalar res[], const TacsScalar Xpts[],
+  void addResidual( double time, 
+                    TacsScalar res[], const TacsScalar Xpts[],
 		    const TacsScalar vars[],
 		    const TacsScalar dvars[],
 		    const TacsScalar ddvars[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
 		    double alpha, double beta, double gamma,
 		    const TacsScalar Xpts[],
 		    const TacsScalar vars[],
@@ -82,7 +84,7 @@ class MITCShell : public TACSShell {
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
-  void addAdjResProduct( double scale,
+  void addAdjResProduct( double time, double scale,
 			 TacsScalar dvSens[], int dvLen,
 			 const TacsScalar psi[],
 			 const TacsScalar Xpts[],
@@ -92,7 +94,8 @@ class MITCShell : public TACSShell {
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------  
-  void getAdjResXptProduct( TacsScalar XptSens[],
+  void getAdjResXptProduct( double time, 
+                            TacsScalar XptSens[],
 			    const TacsScalar psi[],
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
@@ -127,7 +130,7 @@ class MITCShell : public TACSShell {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  TACSConstitutive * getConstitutive();
+  TACSConstitutive * getConstitutive(){ return stiff; }
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
@@ -255,6 +258,158 @@ int MITCShell<order>::numVariables(){
 }
 
 /*
+  Compute the kinetic energy and strain energy (potential energy)
+  contribution from this element. These are assigned (not added)
+  to the output values of Pe and Te.
+
+  input:
+  time:    the simulation time
+  Xpts:    the nodal locations
+  vars:    the element variables
+  dvars:   the time derivative of the element variables
+
+  output:
+  Te:      the kinetic energy within the body
+  Pe:      the potential energy of the body
+*/
+template <int order>
+void MITCShell<order>::computeEnergies( double time,
+                                        TacsScalar *_Te, 
+                                        TacsScalar *_Pe,
+                                        const TacsScalar Xpts[],
+                                        const TacsScalar vars[],
+                                        const TacsScalar dvars[] ){
+  
+  // Geometric data
+  TacsScalar X[3], Xd[9], Xdd[9];
+  TacsScalar normal[3], normal_xi[3], normal_eta[3];
+
+  // Transformation and the transformation derivative w.r.t. zeta
+  TacsScalar t[9], tx[9], ztx[9]; 
+
+  TacsScalar U[NUM_DISPS], Ud[2*NUM_DISPS];
+  double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+  double Naa[NUM_NODES], Nab[NUM_NODES], Nbb[NUM_NODES];
+
+  // Interpolations for the shear components
+  double N11[NUM_G11], N22[NUM_G22], N12[NUM_G12];
+
+  // The interpolated tensorial shear components
+  TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
+  TacsScalar g13[NUM_G13], g23[NUM_G23];
+
+  // The derivatives of the displacement strain at the tying points
+  TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
+  TacsScalar b12[3*NUM_NODES*NUM_G12];
+  TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
+
+  // The stress and strain variables
+  TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
+
+  // The derivative of rthe rotation penalty term
+  TacsScalar drot[NUM_VARIABLES];
+
+  // The element kinetic and potential energies
+  TacsScalar Pe = 0.0, Te = 0.0;
+  
+  // Compute the values of the tensorial strain at the tying points
+  if (type == LARGE_ROTATION){
+    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
+				 b11, b22, b12, b23, b13, 
+				 knots, pknots, vars, Xpts);
+  }
+  else {
+    compute_tying_bmat<order>((type == LINEAR),
+			      g11, g22, g12, g23, g13,
+			      b11, b22, b12, b23, b13,
+			      knots, pknots, vars, Xpts);
+  }
+
+  for ( int m = 0; m < numGauss; m++ ){
+    for ( int n = 0; n < numGauss; n++ ){
+      // Set the quadrature point
+      double pt[2];
+      pt[0] = gaussPts[n];
+      pt[1] = gaussPts[m];
+
+      // Evaluate the stiffness at the parametric point within the
+      // element
+      TacsScalar At[6], Bt[6], Dt[6], Ats[3];
+      TacsScalar kpenalty = stiff->getStiffness(pt, At, Bt, Dt, Ats);
+	
+      // Calculate the shape functions and the Jacobian/Hessian of the
+      // shell position at the quadrature point
+      shell_hessian(order, X, Xd, Xdd, 
+                    N, Na, Nb, Naa, Nab, Nbb,
+                    pt, Xpts);
+      compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
+
+      // Compute the transformation from the global coordinates to
+      // local shell coordinates
+      TacsScalar h = 0.0;
+      if (stiff->getTransformType() == FSDTStiffness::NATURAL){
+	h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
+                              Xd, Xdd);
+      }
+      else {
+	const TacsScalar * axis = stiff->getRefAxis();
+	h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
+                                      normal_eta, axis, Xd, Xdd);
+      }
+      h = gaussWts[n]*gaussWts[m]*h;
+
+      // Compute the strain and rotation at the qudrature point
+      TacsScalar rot = 0.0; 
+      if (type == LINEAR){
+	linear_bend_strain(strain, &rot, U, Ud, 
+                           t, tx, ztx, 
+                           normal, normal_xi, normal_eta);
+      }
+      else if (type == NONLINEAR){
+	nonlinear_bend_strain(strain, &rot, U, Ud, 
+                              t, tx, ztx, 
+                              normal, normal_xi, normal_eta);
+      }
+      else {
+	// Rotation matrix data
+	TacsScalar C[9], Ct[27], Ctt[54];
+
+	// Compute the rotation matrices
+	TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
+	TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
+	TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
+	compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
+	compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
+
+	// Evaluate the in-plane rotation term
+	rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud, 
+				      C, Ct, N, Na, Nb);
+	
+	// Calculate the deformation at the current point... 
+	large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx, 
+			      normal, normal_xi, normal_eta);
+      }
+
+      // Evaluate the strain interpolation at this point
+      tying_interpolation<order>(pt, N11, N22, N12, 
+                                 knots, pknots);
+      add_tying_strain<order>(strain, tx, 
+                              g11, g22, g12, g23, g13,
+                              N11, N22, N12);
+      
+      // Compute the stress at the current Gauss point
+      stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
+
+      Pe += 0.5*h*(strain_product(stress, strain) + kpenalty*rot*rot);
+    }
+  }
+
+  *_Te = Te;
+  *_Pe = Pe;  
+}
+
+/*
+  Compute the residuals of the governing equations of motion. 
   Get the element residuals corresponding to the strain energy
   contributions (e.g. not the work terms)
 
@@ -266,9 +421,12 @@ int MITCShell<order>::numVariables(){
   Xpts:    the element nodal locations in R^{3}
 */
 template <int order>
-void MITCShell<order>::getRes( TacsScalar * res, 
-			       const TacsScalar vars[],
-			       const TacsScalar Xpts[] ){
+void MITCShell<order>::addResidual( double time, 
+                                    TacsScalar res[], 
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -292,23 +450,10 @@ void MITCShell<order>::getRes( TacsScalar * res,
   TacsScalar b12[3*NUM_NODES*NUM_G12];
   TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
 
-  double gpt[2] = {0.0, 0.0};
-
+  // The strain an rotation matrices
   TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
   TacsScalar drot[NUM_VARIABLES];
   TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
-  // Store the stiffness information for the element
-  TacsScalar At[6], Bt[6], Dt[6], Ats[3];
-  TacsScalar k_penalty = 0.0;
-
-  // Zero the residual
-  memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
-
-  // Evaluate the stiffness matrix
-  if (!stiff->isVariableStiffness()){
-    k_penalty = stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-  }
   
   if (type == LARGE_ROTATION){
     compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
@@ -324,20 +469,25 @@ void MITCShell<order>::getRes( TacsScalar * res,
 
   for ( int m = 0; m < numGauss; m++ ){
     for ( int n = 0; n < numGauss; n++ ){
-      gpt[0] = gaussPts[n];
-      gpt[1] = gaussPts[m];
+      // Set the quadrature point
+      double pt[2];
+      pt[0] = gaussPts[n];
+      pt[1] = gaussPts[m];
 
-      // Evaluate the stiffness matrix if required
-      if (stiff->isVariableStiffness()){
-        k_penalty = stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-      }
+      // Evaluate the stiffness at the parametric point within the
+      // element
+      TacsScalar At[6], Bt[6], Dt[6], Ats[3];
+      TacsScalar kpenalty = stiff->getStiffness(pt, At, Bt, Dt, Ats);
 	
-      // Calculate the shape functions
+      // Calculate the shape functions and the Jacobian/Hessian of the
+      // shell position at the quadrature point
       shell_hessian(order, X, Xd, Xdd, 
                     N, Na, Nb, Naa, Nab, Nbb,
-                    gpt, Xpts);
+                    pt, Xpts);
       compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
 
+      // Compute the transformation from the global coordinates to
+      // local shell coordinates
       TacsScalar h = 0.0;
       if (stiff->getTransformType() == FSDTStiffness::NATURAL){
 	h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
@@ -350,8 +500,8 @@ void MITCShell<order>::getRes( TacsScalar * res,
       }
       h = gaussWts[n]*gaussWts[m]*h;
 
-      // Calculate the deformation at the current point... 
-      TacsScalar rot = 0.0; // Difference between inplane/drilling rotation
+      // Compute the strain and rotation at the qudrature point
+      TacsScalar rot = 0.0; 
       if (type == LINEAR){
 	linear_bend_strain(strain, &rot, U, Ud, 
                            t, tx, ztx, 
@@ -391,7 +541,7 @@ void MITCShell<order>::getRes( TacsScalar * res,
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(gpt, N11, N22, N12, 
+      tying_interpolation<order>(pt, N11, N22, N12, 
                                  knots, pknots);
       add_tying_strain<order>(strain, tx, 
                               g11, g22, g12, g23, g13,
@@ -401,7 +551,7 @@ void MITCShell<order>::getRes( TacsScalar * res,
                             N11, N22, N12);
       
       // Compute the stress at the current Gauss point
-      stiff->calcStress(At, Bt, Dt, Ats, strain, stress);
+      stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
       for ( int i = 0; i < NUM_NODES; i++ ){
 	for ( int ii = 0; ii < NUM_DISPS; ii++ ){	    
@@ -409,7 +559,7 @@ void MITCShell<order>::getRes( TacsScalar * res,
 
 	  res[row] += 
 	    h*(strain_product(&B[NUM_STRESSES*row], stress) +
-	       k_penalty*rot*drot[row]);
+	       kpenalty*rot*drot[row]);
 	}
       }
     }
@@ -417,7 +567,7 @@ void MITCShell<order>::getRes( TacsScalar * res,
 }
 
 /*
-  Get the element tangent stiffness matrix - the exact Jacobian of the
+  Add the element tangent stiffness matrix - the exact Jacobian of the
   residual expressions.
 
   output:
@@ -430,10 +580,13 @@ void MITCShell<order>::getRes( TacsScalar * res,
   matOr:   the matrix orientation (NORMAL or TRANSPOSE)
 */
 template <int order>
-void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res, 
-			       const TacsScalar vars[],
-			       const TacsScalar Xpts[], 
-			       MatrixOrientation matOr ){
+void MITCShell<order>::addJacobian( double time, 
+                                    TacsScalar J[],
+                                    double alpha, double beta, double gamma,
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -467,20 +620,8 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
   TacsScalar BStress[NUM_STRESSES];
   TacsScalar drot[NUM_VARIABLES];
 
-  // Store the stiffness information for the element
-  TacsScalar At[6], Bt[6], Dt[6], Ats[3];
-  TacsScalar k_penalty = 0.0;
-
-  // Zero the element matrix and the residual
-  memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
-  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
-
-  // Evaluate the stiffness matrix
-  double gpt[2] = {0.0, 0.0};
-  if (!stiff->isVariableStiffness()){
-    k_penalty = stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-  }
-  
+  // Evaluate the strain and derivative of the strain at the
+  // tying points within the element
   if (type == LARGE_ROTATION){
     compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
 				 b11, b22, b12, b23, b13, 
@@ -495,20 +636,24 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
 
   for ( int m = 0; m < numGauss; m++ ){
     for ( int n = 0; n < numGauss; n++ ){
-      gpt[0] = gaussPts[n];
-      gpt[1] = gaussPts[m];
-      
-      // Evaluate the stiffness matrix if required
-      if (stiff->isVariableStiffness()){
-        k_penalty = stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-      }
+      // Set the quadrature point
+      double pt[2];
+      pt[0] = gaussPts[n];
+      pt[1] = gaussPts[m];
 
-      // Calculate the shape functions	
+      // Evaluate the stiffness at the parametric point within the
+      // element
+      TacsScalar At[6], Bt[6], Dt[6], Ats[3];
+      TacsScalar kpenalty = stiff->getStiffness(pt, At, Bt, Dt, Ats);
+
+      // Compute the shape functions and evaluate the surface derivatives
+      // at the quadrature point
       shell_hessian(order, X, Xd, Xdd, 
-                    N, Na, Nb, Naa, Nab, Nbb,
-                    gpt, Xpts);
+                    N, Na, Nb, Naa, Nab, Nbb, pt, Xpts);
       compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
       
+      // Compute the transformation matrix from the global coordinate
+      // system to the shell-aligned frame
       TacsScalar h = 0.0;
       if (stiff->getTransformType() == FSDTStiffness::NATURAL){
 	h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
@@ -519,8 +664,10 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
 	h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
                                       normal_eta, axis, Xd, Xdd);
       }
-      h = gaussWts[n]*gaussWts[m]*h;
 
+      // Scale the determinant of the Jacobian transformation by the
+      // quadrature weight at this point
+      h = gaussWts[n]*gaussWts[m]*h;
 
       // Store the difference between the rotation variable
       // and the in-plane rotation
@@ -563,7 +710,7 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
       }
       
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(gpt, N11, N22, N12, 
+      tying_interpolation<order>(pt, N11, N22, N12, 
                                  knots, pknots);
 
       // Add the interpolated strain and the interpolated b-matrix to the
@@ -573,26 +720,18 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
       add_tying_bmat<order>(B, NUM_NODES, tx, b11, b22, b12, b23, b13, 
                             N11, N22, N12);
 
-      stiff->calcStress(At, Bt, Dt, Ats, strain, stress);
+      stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
-      // Loop through all displacements except for the z-rotation
-      for ( int i = 0; i < NUM_NODES; i++ ){
-	for ( int ii = 0; ii < NUM_DISPS; ii++ ){	  
-	  int row = ii + NUM_DISPS*i;
-
-	  // Determine the contribution to the residual
-	  res[row] += 
-	    h*(strain_product(&B[row*NUM_STRESSES], stress) + 
-               k_penalty*rot*drot[row]);	  
-	}
-      }
+      // Scale the determinant of the Jacobian matrix by the alpha
+      // scaling factor
+      TacsScalar ha = h*alpha;
 
       for ( int i = 0; i < NUM_NODES; i++ ){
 	for ( int ii = 0; ii < NUM_DISPS; ii++ ){
 	  int row = ii + NUM_DISPS*i;
 	  
 	  // Calculate the stress associated with B
-          stiff->calcStress(At, Bt, Dt, Ats, 
+          stiff->calculateStress(At, Bt, Dt, Ats, 
                                  &B[row*NUM_STRESSES], BStress);
 	  
 	  for ( int j = 0; j <= i; j++ ){
@@ -601,34 +740,34 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
 	      int col = jj + NUM_DISPS*j;
 	      
 	      // The regular element matrix
-	      mat[col + row*NUM_VARIABLES] += 
-		h*(strain_product(BStress, &B[col*NUM_STRESSES]) +    
-		  k_penalty*drot[row]*drot[col]);	      
+	      J[col + row*NUM_VARIABLES] += 
+		ha*(strain_product(BStress, &B[col*NUM_STRESSES]) +    
+                    kpenalty*drot[row]*drot[col]);	      
 	    }
 	  }
 	}
       }
 
       if (type == NONLINEAR){
-        nonlinear_bend_stress_bmat(mat, NUM_NODES, h, stress, 
+        nonlinear_bend_stress_bmat(J, NUM_NODES, ha, stress, 
                                    N, Na, Nb, t, tx, ztx,
                                    normal, normal_xi, normal_eta);
-        add_nonlinear_tying_stress_nmat<order>(mat, h, stress,
+        add_nonlinear_tying_stress_nmat<order>(J, ha, stress,
                                                tx, N11, N22, N12,
                                                knots, pknots, Xpts);
       }
       else if (type == LARGE_ROTATION){
 	// Add the second-derivative contributions from the bending strain
-	add_large_rot_bend_stress_bmat(mat, NUM_NODES, h, stress, 
+	add_large_rot_bend_stress_bmat(J, NUM_NODES, ha, stress, 
 				       N, Na, Nb, U, Ud, C, Ct, Ctt, Cttt, 
 				       t, tx, ztx, normal, normal_xi, normal_eta);
 	
 	// Add the contributions to the second derivative of the tying strain
-	add_lr_tying_stress_nmat<order>(mat, h, stress, n13, n23, tx, 
+	add_lr_tying_stress_nmat<order>(J, ha, stress, n13, n23, tx, 
 					N11, N22, N12, knots, pknots); 
 	
 	// Add the second derivative of the in-plane penalty
-	add_inplane_penalty(mat, NUM_NODES, h*k_penalty*rot, Xd, Ud, 
+	add_inplane_penalty(J, NUM_NODES, ha*kpenalty*rot, Xd, Ud, 
 			    Ct, Ctt, N, Na, Nb);
       }
     }
@@ -638,7 +777,7 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
   // Take the lower triangle and copy to the upper triangle
   for ( int row = 0; row < NUM_VARIABLES; row++ ){
     for ( int col = row+1; col < NUM_VARIABLES; col++ ){
-      mat[col + row*NUM_VARIABLES] = mat[row + col*NUM_VARIABLES];
+      J[col + row*NUM_VARIABLES] = J[row + col*NUM_VARIABLES];
     }
   }
 }
@@ -651,77 +790,88 @@ void MITCShell<order>::getMat( TacsScalar * mat, TacsScalar * res,
 
   input:
   matType:     the matrix type (e.g. MASS_MATRIX)
-  scaleFactor: scale factor such that mat = scaleFactor*M
   vars:        the element variables
   Xpts:        the nodal coordinates in R^{3}
-  matOr:       the matrix orientation either NORMAL or TRANSPOSE
 */
 template <int order>
-void MITCShell<order>::getMatType( ElementMatrixTypes matType, 
-				   TacsScalar scaleFactor, TacsScalar * mat, 
+void MITCShell<order>::getMatType( ElementMatrixType matType, 
+				   TacsScalar * mat, 
 				   const TacsScalar vars[], 
-				   const TacsScalar Xpts[], 
-				   MatrixOrientation matOr ){  
+				   const TacsScalar Xpts[] ){
   memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
   
   if (matType == MASS_MATRIX){
-    double gpt[2] = {0.0, 0.0};
-    double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
-	gpt[0] = gaussPts[n];
-	gpt[1] = gaussPts[m];
+        // Set the quadrature point within the element
+        double pt[2];
+	pt[0] = gaussPts[n];
+	pt[1] = gaussPts[m];
 
+        // Evaluate the shape functions and the derivative of the
+        // shell surface location along the u/v directions
 	TacsScalar X[3], Xd[9], normal[3];
-	shell_jacobian(order, X, Xd, N, Na, Nb, gpt, Xpts);
-	Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-	Tensor::normalize3D(normal);
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+	shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
 
+        // Compute the normal vector and set it in the final row
+        // of the Xd transformation matrix
+	Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
+	Tensor::normalize3D(normal);       
 	for ( int i = 0; i < 3; i++ ){
 	  Xd[6+i] = normal[i]; 
 	}
 
+        // Compute the determinant of the jacobian transformation and
+        // scale it by the qudrature weight
 	TacsScalar h = FElibrary::jacobian3d(Xd);
-	h = scaleFactor*gaussWts[n]*gaussWts[m]*h;
+	h = gaussWts[n]*gaussWts[m]*h;
 
-        TacsScalar mass[3];
-	stiff->pointwiseMass(gpt, mass);
+        // Get the pointwise mass at the quadrature point
+        TacsScalar mass[2];
+	stiff->getPointwiseMass(pt, mass);
 
+        // Add the kinetic energy terms from the displacement
+        TacsScalar Am = mass[0]*h;
 	for ( int i = 0; i < NUM_NODES; i++ ){
-	  for ( int ii = 0; ii < 3; ii++ ){
-	    int row = ii + NUM_DISPS*i;
-	    for ( int j = 0; j < NUM_NODES; j++ ){
+          for ( int j = 0; j < NUM_NODES; j++ ){
+            for ( int ii = 0; ii < 3; ii++ ){
+              int row = ii + NUM_DISPS*i;
 	      int col = ii + NUM_DISPS*j;	      
-	      mat[col + row*NUM_VARIABLES] += mass[0]*h*N[i]*N[j];
+	      mat[col + row*NUM_VARIABLES] += Am*N[i]*N[j];
 	    }
 	  }
 	}
 
-	for ( int ii = 3; ii < NUM_DISPS; ii++ ){	 
-	  for ( int jj = 3; jj < NUM_DISPS; jj++ ){
-	    TacsScalar a[3] = { 0.0, 0.0, 0.0 };
-	    TacsScalar b[3] = { 0.0, 0.0, 0.0 };
+        // Add the contribution due to the rotational terms
+        TacsScalar Dm = mass[1]*h;
+        TacsScalar D[9];
+        D[0] = Dm*(1.0 - normal[0]*normal[0]);
+        D[1] = -Dm*normal[0]*normal[1];
+        D[2] = -Dm*normal[0]*normal[2];
 
-	    TacsScalar phi_a[3], phi_b[3];
-	    a[ii-3] = 1.0;
-	    b[jj-3] = 1.0;
+        D[3] = -Dm*normal[1]*normal[0];
+        D[4] = Dm*(1.0 - normal[1]*normal[1]);
+        D[5] = -Dm*normal[1]*normal[2];
 
-	    Tensor::crossProduct3D(phi_a, a, normal);
-	    Tensor::crossProduct3D(phi_b, b, normal);
-	    TacsScalar weight = Tensor::dot3D(phi_a, phi_b);
+        D[6] = -Dm*normal[2]*normal[0];
+        D[7] = -Dm*normal[2]*normal[1];
+        D[8] = Dm*(1.0 - normal[2]*normal[2]);
 
-	    for ( int i = 0; i < NUM_NODES; i++ ){
-	      int row = ii + NUM_DISPS*i;
-	      for ( int j = 0; j < NUM_NODES; j++ ){
-		int col = jj + NUM_DISPS*j;		
-		mat[col + row*NUM_VARIABLES] += mass[2]*weight*h*N[i]*N[j];
+        // Add the values to the matrix
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          for ( int j = 0; j < NUM_NODES; j++ ){
+            for ( int ii = 0; ii < 3; ii++ ){
+              int row = 3+ii + NUM_DISPS*i;
+              for ( int jj = 0; jj < 3; jj++ ){
+		int col = 3+jj + NUM_DISPS*j;		
+		mat[col + row*NUM_VARIABLES] += D[ii + 3*jj]*N[i]*N[j];
 	      }
 	    }
 	  }
 	}
       }
-    }    
+    }
   }
   else if (matType == GEOMETRIC_STIFFNESS_MATRIX &&
 	   type == LINEAR){
@@ -747,15 +897,7 @@ void MITCShell<order>::getMatType( ElementMatrixTypes matType,
     // The stress/strain values
     TacsScalar stress[NUM_STRESSES], strain[NUM_STRESSES];
 
-    // Store the stiffness information for the element
-    TacsScalar At[6], Bt[6], Dt[6], Ats[3];
-
-    // Evaluate the stiffness matrix
-    if (!stiff->isVariableStiffness()){
-      double pt[2] = {0.0, 0.0};
-      stiff->getStiffness(pt, At, Bt, Dt, Ats);
-    }
-
+    // Compute the tying strain
     const int is_linear = 1;
     compute_tying_strain<order>(is_linear,
 				g11, g22, g12, g23, g13, 
@@ -763,21 +905,22 @@ void MITCShell<order>::getMatType( ElementMatrixTypes matType,
 
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
-	double gpt[2];
-	gpt[0] = gaussPts[n];
-	gpt[1] = gaussPts[m];
+        // Set the quadrature point
+        double pt[2];
+        pt[0] = gaussPts[n];
+        pt[1] = gaussPts[m];
 
-        // Evaluate the stiffness matrix if required
-        if (stiff->isVariableStiffness()){
-          stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-        }
+        // Evaluate the stiffness at the parametric point within the
+        // element
+        TacsScalar At[6], Bt[6], Dt[6], Ats[3];
+        stiff->getStiffness(pt, At, Bt, Dt, Ats);
 		
 	// Calculate the shape functions
 	shell_hessian(order, X, Xd, Xdd, 
-                      N, Na, Nb, Naa, Nab, Nbb,
-                      gpt, Xpts);
+                      N, Na, Nb, Naa, Nab, Nbb, pt, Xpts);
 	compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
       
+        // Compute the transformation
 	TacsScalar h = 0.0;
 	if (stiff->getTransformType() == FSDTStiffness::NATURAL){
 	  h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
@@ -788,22 +931,21 @@ void MITCShell<order>::getMatType( ElementMatrixTypes matType,
 	  h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
                                         normal_eta, axis, Xd, Xdd);
 	}
-	h = gaussWts[n]*gaussWts[m]*h*scaleFactor;
+	h = gaussWts[n]*gaussWts[m]*h;
 
 	// Calculate the strain/bmat at the current point... 
 	TacsScalar rot;
-	linear_bend_strain(strain, &rot, U, Ud, 
-                           t, tx, ztx, 
+	linear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
                            normal, normal_xi, normal_eta);
       
 	// Evaluate the strain interpolation at this point
-	tying_interpolation<order>(gpt, N11, N22, N12, 
+	tying_interpolation<order>(pt, N11, N22, N12, 
                                    knots, pknots);
 	add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
                                 N11, N22, N12);
 
 	// Compute the stress at this Gauss point
-        stiff->calcStress(At, Bt, Dt, Ats, strain, stress);
+        stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
       
 	// Add the geometric stiffness terms
 	nonlinear_bend_stress_bmat(mat, NUM_NODES, h, stress, 
@@ -826,6 +968,186 @@ void MITCShell<order>::getMatType( ElementMatrixTypes matType,
 }
 
 /*
+  Compute the derivative of the product of the residual with the
+  adjoint vector psi with respect to the design variables.  The result
+  is added to a design-variable array.
+
+  input:
+  time:     the simulation time
+  scale:    the scaling factor applied to the derivative
+  dvLen:    the length of the design variable vector
+  psi:      the left-multiplying vector
+  phi:      the right-multiplying vector
+  vars:     the element state variables
+  Xpts:     the nodal locations for this element
+
+  output:
+  dvSens:   the result is added to this vector
+*/
+template <int order>
+void MITCShell<order>::addAdjResProduct( double time, 
+                                         double scale,
+                                         TacsScalar fdvSens[], int dvLen,
+                                         const TacsScalar psi[],
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[],
+                                         const TacsScalar dvars[],
+                                         const TacsScalar ddvars[] ){
+  // Geometric data
+  TacsScalar X[3], Xd[9], Xdd[9];
+  TacsScalar normal[3], normal_xi[3], normal_eta[3];
+
+  // Transformation and the transformation derivative w.r.t. zeta
+  TacsScalar t[9], tx[9], ztx[9]; 
+
+  TacsScalar U[NUM_DISPS], Ud[2*NUM_DISPS];
+  double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+  double Naa[NUM_NODES], Nab[NUM_NODES], Nbb[NUM_NODES];
+
+  // Interpolations for the shear components
+  double N11[NUM_G11], N22[NUM_G22], N12[NUM_G12];
+
+  // The interpolated tensorial shear components
+  TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
+  TacsScalar g13[NUM_G13], g23[NUM_G23];
+
+  // The derivatives of the displacement strain
+  TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
+  TacsScalar b12[3*NUM_NODES*NUM_G12];
+  TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
+
+  TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
+  TacsScalar drot[NUM_VARIABLES];
+  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+
+  // Compute the tying terms in the matrix
+  if (type == LARGE_ROTATION){
+    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
+				 b11, b22, b12, b23, b13, 
+				 knots, pknots, vars, Xpts);
+  }
+  else {
+    compute_tying_bmat<order>((type == LINEAR),
+			      g11, g22, g12, g23, g13,
+			      b11, b22, b12, b23, b13,
+			      knots, pknots, vars, Xpts);
+  }
+
+  for ( int m = 0; m < numGauss; m++ ){
+    for ( int n = 0; n < numGauss; n++ ){
+      // Set the quadrature point within the element
+      double pt[2];
+      pt[0] = gaussPts[n];
+      pt[1] = gaussPts[m];
+	
+      // Compute the shape functions and the derivatives of the 
+      // position of the shell with respect to the coordinates
+      shell_hessian(order, X, Xd, Xdd, 
+                    N, Na, Nb, Naa, Nab, Nbb, pt, Xpts);
+      compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
+
+      // Compute the coordinate transformation
+      TacsScalar h = 0.0;
+      if (stiff->getTransformType() == FSDTStiffness::NATURAL){
+	h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
+                              Xd, Xdd);
+      }
+      else {
+	const TacsScalar * axis = stiff->getRefAxis();
+	h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
+                                      normal_eta, axis, Xd, Xdd);
+      }
+
+      // Scale the determinant of the Jacobian transformation by the
+      // quadrature weight
+      h = gaussWts[n]*gaussWts[m]*h;
+
+      // Calculate the deformation at the current point... 
+      TacsScalar rot = 0.0;
+      if (type == LINEAR){
+	linear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
+                           normal, normal_xi, normal_eta);
+	linear_bend_bmat(B, drot, NUM_NODES,
+                         N, Na, Nb, t, tx, ztx,
+                         normal, normal_xi, normal_eta);
+      }
+      else if (type == NONLINEAR){
+	nonlinear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
+                              normal, normal_xi, normal_eta);
+	nonlinear_bend_bmat(B, drot, NUM_NODES,
+                            N, Na, Nb, U, Ud, t, tx, ztx,
+                            normal, normal_xi, normal_eta);
+      }
+      else {
+	// Rotation matrix data
+	TacsScalar C[9], Ct[27], Ctt[54];
+
+	// Compute the rotation matrices
+	TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
+	TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
+	TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
+	compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
+	compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
+
+	// Evaluate the in-plane rotation term
+	rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud, 
+				      C, Ct, N, Na, Nb);
+	
+	// Calculate the deformation at the current point... 
+	large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx, 
+			      normal, normal_xi, normal_eta);
+	large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt, 
+			    t, tx, ztx, normal, normal_xi, normal_eta);
+      }
+
+      // Evaluate the strain interpolation at this point
+      tying_interpolation<order>(pt, N11, N22, N12, 
+                                 knots, pknots);
+      add_tying_strain<order>(strain, tx, 
+                              g11, g22, g12, g23, g13,
+                              N11, N22, N12);
+      add_tying_bmat<order>(B, NUM_NODES, tx,
+                            b11, b22, b12, b23, b13, 
+                            N11, N22, N12);
+
+      // Compute the product of psi^{T}*B^{T}
+      TacsScalar bpsi[NUM_STRESSES], brot = 0.0;
+      memset(bpsi, 0, NUM_STRESSES*sizeof(TacsScalar));
+
+      TacsScalar *b = B, *dr = drot;
+      const TacsScalar *ps = psi;
+      for ( int i = 0; i < NUM_VARIABLES; i++ ){
+	bpsi[0] += ps[0]*b[0];
+	bpsi[1] += ps[0]*b[1];
+	bpsi[2] += ps[0]*b[2];
+	bpsi[3] += ps[0]*b[3];
+	bpsi[4] += ps[0]*b[4];
+	bpsi[5] += ps[0]*b[5];
+	bpsi[6] += ps[0]*b[6];	
+	bpsi[7] += ps[0]*b[7];
+
+	brot += ps[0]*dr[0];
+	b += NUM_STRESSES;
+	dr++;
+	ps++;
+      }
+
+      // Scale the strain and rotational terms by scale*h
+      for ( int i = 0; i < NUM_STRESSES; i++ ){
+        bpsi[i] *= scale*h;
+      }
+      brot *= scale*h;
+      
+      // Add the term: scale*psi^{T}*B^{T}*dC/dx*strain to the vector
+      // dvSens - Note that this is much more efficient than computing
+      // the terms component by component
+      stiff->addStiffnessDVSens(pt, strain, bpsi, brot*rot,
+				fdvSens, dvLen);
+    }
+  }
+}
+
+/*
   Evaluate the derivative of the element residuals with respect
   to the nodal coordinates e.g res = dR/dXpts
 
@@ -837,11 +1159,16 @@ void MITCShell<order>::getMatType( ElementMatrixTypes matType,
   Xpts:    the element nodal locations
 */
 template <int order>
-void MITCShell<order>::getResXptSens( TacsScalar * res, 
-				      const TacsScalar vars[], 
-				      const TacsScalar Xpts[] ){
-  memset(res, 0, 3*NUM_NODES*NUM_VARIABLES*sizeof(TacsScalar));
+void MITCShell<order>::getAdjResXptProduct( double time, 
+                                            TacsScalar XptSens[],
+                                            const TacsScalar psi[],
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[] ){
+  memset(XptSens, 0, 3*NUM_NODES*sizeof(TacsScalar));
   
+  /*
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -1023,174 +1350,7 @@ void MITCShell<order>::getResXptSens( TacsScalar * res,
 				 res, h, stress, tx, dtx,
 				 knots, pknots, vars, Xpts, N11, N22, N12);
     }
-  }
-}
-
-/*
-  Compute the derivative of the product of the residual with the
-  adjoint vector psi with respect to the design variables.  The result
-  is added to a design-variable array.
-
-  input:
-  alpha:    the scaling factor applied to the derivative
-  dvLen:    the length of the design variable vector
-  psi:      the left-multiplying vector
-  phi:      the right-multiplying vector
-  vars:     the element state variables
-  Xpts:     the nodal locations for this element
-
-  output:
-  dvSens:   the result is added to this vector
-*/
-template <int order>
-void MITCShell<order>::addAdjResDVSensProduct( TacsScalar alpha,
-					       TacsScalar dvSens[], int dvLen,
-					       const TacsScalar psi[],
-					       const TacsScalar vars[],
-					       const TacsScalar Xpts[] ){
-  // Geometric data
-  TacsScalar X[3], Xd[9], Xdd[9];
-  TacsScalar normal[3], normal_xi[3], normal_eta[3];
-
-  // Transformation and the transformation derivative w.r.t. zeta
-  TacsScalar t[9], tx[9], ztx[9]; 
-
-  TacsScalar U[NUM_DISPS], Ud[2*NUM_DISPS];
-  double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-  double Naa[NUM_NODES], Nab[NUM_NODES], Nbb[NUM_NODES];
-
-  // Interpolations for the shear components
-  double N11[NUM_G11], N22[NUM_G22], N12[NUM_G12];
-
-  // The interpolated tensorial shear components
-  TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
-  TacsScalar g13[NUM_G13], g23[NUM_G23];
-
-  // The derivatives of the displacement strain
-  TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
-  TacsScalar b12[3*NUM_NODES*NUM_G12];
-  TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
-
-  TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
-  TacsScalar drot[NUM_VARIABLES];
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
-  // Compute the tying terms in the matrix
-  if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
-				 b11, b22, b12, b23, b13, 
-				 knots, pknots, vars, Xpts);
-  }
-  else {
-    compute_tying_bmat<order>((type == LINEAR),
-			      g11, g22, g12, g23, g13,
-			      b11, b22, b12, b23, b13,
-			      knots, pknots, vars, Xpts);
-  }
-
-  for ( int m = 0; m < numGauss; m++ ){
-    for ( int n = 0; n < numGauss; n++ ){
-      double gpt[2];
-      gpt[0] = gaussPts[n];
-      gpt[1] = gaussPts[m];
-	
-      // Calculate the shape functions
-      shell_hessian(order, X, Xd, Xdd, 
-                    N, Na, Nb, Naa, Nab, Nbb,
-                    gpt, Xpts);
-      compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
-
-      TacsScalar h = 0.0;
-      if (stiff->getTransformType() == FSDTStiffness::NATURAL){
-	h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
-                              Xd, Xdd);
-      }
-      else {
-	const TacsScalar * axis = stiff->getRefAxis();
-	h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
-                                      normal_eta, axis, Xd, Xdd);
-      }
-      h = gaussWts[n]*gaussWts[m]*h;
-
-      // Calculate the deformation at the current point... 
-      TacsScalar rot = 0.0; // Difference between inplane/drilling rotation
-      if (type == LINEAR){
-	linear_bend_strain(strain, &rot, U, Ud, 
-                           t, tx, ztx, 
-                           normal, normal_xi, normal_eta);
-	linear_bend_bmat(B, drot, NUM_NODES,
-                         N, Na, Nb, t, tx, ztx,
-                         normal, normal_xi, normal_eta);
-      }
-      else if (type == NONLINEAR){
-	nonlinear_bend_strain(strain, &rot, U, Ud, 
-                              t, tx, ztx, 
-                              normal, normal_xi, normal_eta);
-	nonlinear_bend_bmat(B, drot, NUM_NODES,
-                            N, Na, Nb, U, Ud, t, tx, ztx,
-                            normal, normal_xi, normal_eta);
-      }
-      else {
-	// Rotation matrix data
-	TacsScalar C[9], Ct[27], Ctt[54];
-
-	// Compute the rotation matrices
-	TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
-	TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
-	TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
-	compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
-	compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
-
-	// Evaluate the in-plane rotation term
-	rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud, 
-				      C, Ct, N, Na, Nb);
-	
-	// Calculate the deformation at the current point... 
-	large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx, 
-			      normal, normal_xi, normal_eta);
-	large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt, 
-			    t, tx, ztx, normal, normal_xi, normal_eta);
-      }
-
-      // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(gpt, N11, N22, N12, 
-                                 knots, pknots);
-      add_tying_strain<order>(strain, tx, 
-                              g11, g22, g12, g23, g13,
-                              N11, N22, N12);
-      add_tying_bmat<order>(B, NUM_NODES, tx,
-                            b11, b22, b12, b23, b13, 
-                            N11, N22, N12);
-
-      // Compute the product of psi^{T}*B^{T}
-      TacsScalar bpsi[NUM_STRESSES], brot = 0.0;
-      memset(bpsi, 0, NUM_STRESSES*sizeof(TacsScalar));
-
-      TacsScalar *b = B, *dr = drot;
-      const TacsScalar *ps = psi;
-      for ( int i = 0; i < NUM_VARIABLES; i++ ){
-	bpsi[0] += ps[0]*b[0];
-	bpsi[1] += ps[0]*b[1];
-	bpsi[2] += ps[0]*b[2];
-	bpsi[3] += ps[0]*b[3];
-	bpsi[4] += ps[0]*b[4];
-	bpsi[5] += ps[0]*b[5];
-	bpsi[6] += ps[0]*b[6];	
-	bpsi[7] += ps[0]*b[7];
-
-	brot += ps[0]*dr[0];
-	b += NUM_STRESSES;
-	dr++;
-	ps++;
-      }
-
-      // Add the term: alpha*psi^{T}*B^{T}*dC/dx*strain to the vector
-      // dvSens - Note that this is much more efficient than computing
-      // the terms component by component
-      stiff->addStiffnessDVSens(gpt, alpha*h, bpsi, strain, brot, rot,
-				dvSens, dvLen);
-    }
-  }
+    }*/
 }
 
 /*
@@ -1201,7 +1361,7 @@ void MITCShell<order>::addAdjResDVSensProduct( TacsScalar alpha,
 
   input:
   matType:  the type of matrix
-  alpha:    the scaling factor applied to the derivative
+  scale:    the scaling factor applied to the derivative
   dvLen:    the length of the design variable vector
   psi:      the left-multiplying vector
   phi:      the right-multiplying vector
@@ -1212,9 +1372,9 @@ void MITCShell<order>::addAdjResDVSensProduct( TacsScalar alpha,
   dvSens:   the result is added to this vector
 */
 template <int order>
-void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
-						 TacsScalar alpha,
-						 TacsScalar dvSens[], int dvLen,
+void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
+						 TacsScalar scale,
+						 TacsScalar fdvSens[], int dvLen,
 						 const TacsScalar psi[], 
 						 const TacsScalar phi[],
 						 const TacsScalar vars[],
@@ -1262,14 +1422,14 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
     
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
-	double gpt[2];
-	gpt[0] = gaussPts[n];
-	gpt[1] = gaussPts[m];
+        // Set the quadrature points
+	double pt[2];
+	pt[0] = gaussPts[n];
+	pt[1] = gaussPts[m];
 	
 	// Calculate the shape functions
 	shell_hessian(order, X, Xd, Xdd, 
-		      N, Na, Nb, Naa, Nab, Nbb,
-		      gpt, Xpts);
+		      N, Na, Nb, Naa, Nab, Nbb, pt, Xpts);
 	compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
 	
 	TacsScalar h = 0.0;
@@ -1287,8 +1447,7 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
 	// Calculate the deformation at the current point... 
 	TacsScalar rot = 0.0; // Difference between inplane/drilling rotation
 	if (type == LINEAR){
-	  linear_bend_strain(strain, &rot, U, Ud, 
-			     t, tx, ztx, 
+	  linear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
 			     normal, normal_xi, normal_eta);
 	  linear_bend_bmat(B, drot, NUM_NODES,
 			   N, Na, Nb, t, tx, ztx,
@@ -1296,7 +1455,7 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
 	}
 
 	// Evaluate the strain interpolation at this point
-	tying_interpolation<order>(gpt, N11, N22, N12, 
+	tying_interpolation<order>(pt, N11, N22, N12, 
 				   knots, pknots);
 	add_tying_strain<order>(strain, tx, 
 				g11, g22, g12, g23, g13,
@@ -1332,41 +1491,47 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
 	  dr++; ps++; ph++;
 	}
 
-	// Add the term: alpha*psi^{T}*B^{T}*dC/dx*strain to the vector
+        for ( int i = 0; i < NUM_STRESSES; i++ ){
+          bpsi[i] *= scale*h;
+        }
+
+	// Add the term: scale*psi^{T}*B^{T}*dC/dx*strain to the vector
 	// dvSens - Note that this is much more efficient than computing
 	// the terms component by component
-	stiff->addStiffnessDVSens(gpt, alpha*h, bpsi, bphi, brpsi, brphi,
-				  dvSens, dvLen);
+	stiff->addStiffnessDVSens(pt, bpsi, bphi, brpsi*brphi,
+				  fdvSens, dvLen);
       }
     }
   }
-  else if (matType == MASS_MATRIX){
-    double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-    
+  else if (matType == MASS_MATRIX){   
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
-	double gpt[2];
-	gpt[0] = gaussPts[n];
-	gpt[1] = gaussPts[m];
+        // Set the quadrature points
+        double pt[2];
+	pt[0] = gaussPts[n];
+	pt[1] = gaussPts[m];
 	
+        // Evaluate the shape functions and the derivatives of the
+        // position of the shell surface
 	TacsScalar X[3], Xd[9], normal[3];
-	shell_jacobian(order, X, Xd, N, Na, Nb, gpt, Xpts);
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+	shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
+
+        // Compute the normal to the surface
 	Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
 	Tensor::normalize3D(normal);
-	
 	for ( int i = 0; i < 3; i++ ){
 	  Xd[6+i] = normal[i]; 
 	}
 	
+        // Compute the determinant of the shell position
 	TacsScalar h = FElibrary::jacobian3d(Xd);
 	h = gaussWts[n]*gaussWts[m]*h;
 
 	// Compute the nodal accelerations at the quadrature point
 	TacsScalar upsi[6], uphi[6];
-	upsi[0] = upsi[1] = upsi[2] = 
-	  upsi[3] = upsi[4] = upsi[5] = 0.0;
-	uphi[0] = uphi[1] = uphi[2] = 
-	  uphi[3] = uphi[4] = uphi[5] = 0.0;
+	upsi[0] = upsi[1] = upsi[2] = upsi[3] = upsi[4] = upsi[5] = 0.0;
+	uphi[0] = uphi[1] = uphi[2] = uphi[3] = uphi[4] = uphi[5] = 0.0;
 	
 	double *ns = N;
 	const TacsScalar *ps = psi, *ph = phi;
@@ -1378,24 +1543,23 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
 	  uphi[0] += ns[0]*ph[0];  uphi[1] += ns[0]*ph[1];  
 	  uphi[2] += ns[0]*ph[2];  uphi[3] += ns[0]*ph[3];
 	  uphi[4] += ns[0]*ph[4];  uphi[5] += ns[0]*ph[5];
-	  
-	  ps += 6; ph += 6; ns++;
+          ps += 6; ph += 6; ns++;
 	}
 	
 	// Compute the weights on each component of the mass moments
-	TacsScalar rho_alpha[3];
-	rho_alpha[0] = alpha*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
+	TacsScalar rho_scale[3];
+	rho_scale[0] = scale*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
 				upsi[2]*uphi[2]);
-	rho_alpha[1] = 0.0;
+	rho_scale[1] = 0.0;
 
 	TacsScalar tphi[3], tpsi[3];
 	Tensor::crossProduct3D(tphi, &uphi[3], normal);
 	Tensor::crossProduct3D(tpsi, &upsi[3], normal);
-	rho_alpha[2] = alpha*h*(tphi[0]*tpsi[0] + tphi[1]*tpsi[1] + 
+	rho_scale[2] = scale*h*(tphi[0]*tpsi[0] + tphi[1]*tpsi[1] + 
 				tphi[2]*tpsi[2]);
 	
 	// Add the result to the design variable vector
-	stiff->addPointwiseMassDVSens(gpt, rho_alpha, dvSens, dvLen);
+	stiff->addPointwiseMassDVSens(pt, rho_scale, fdvSens, dvLen);
       }
     }
   }
@@ -1480,11 +1644,15 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
 					      tx, N11, N22, N12,
 					      knots, pknots, Xpts);
 
-	// Add the term: alpha*psi^{T}*B^{T}*dC/dx*strain to the vector
+        for ( int i = 0; i < NUM_STRESSES; i++ ){
+          strain[i] *= scale*h;
+        }
+
+	// Add the term: scale*psi^{T}*B^{T}*dC/dx*strain to the vector
 	// dvSens - Note that this is much more efficient than computing
 	// the terms component by component
-	stiff->addStiffnessDVSens(gpt, alpha*h, strain, bstrain, 0.0, 0.0,
-				  dvSens, dvLen);
+	stiff->addStiffnessDVSens(gpt, strain, bstrain, 0.0,
+				  fdvSens, dvLen);
       }
     }
   }
@@ -1498,7 +1666,7 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
 
   input:
   matType:  the type of matrix
-  alpha:    the scaling factor applied to the derivative
+  scale:    the scaling factor applied to the derivative
   psi:      the left-multiplying vector
   phi:      the right-multiplying vector
   vars:     the element state variables
@@ -1508,8 +1676,7 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixTypes matType,
   res:      the derivative of the inner product w.r.t. vars
 */
 template <int order>
-void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
-						 TacsScalar alpha, 
+void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
 						 TacsScalar res[],
 						 const TacsScalar psi[], 
 						 const TacsScalar phi[],
@@ -1549,15 +1716,6 @@ void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
     TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
     TacsScalar drot[NUM_VARIABLES];
 
-    // Store the stiffness information for the element
-    TacsScalar At[6], Bt[6], Dt[6], Ats[3];
-
-    // Evaluate the stiffness matrix
-    if (!stiff->isVariableStiffness()){
-      double gpt[2] = {0.0, 0.0};
-      stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-    }
-
     // Compute the tying strain values
     const int is_linear = 1;
     compute_tying_bmat<order>(is_linear,
@@ -1567,19 +1725,18 @@ void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
 
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
-	double gpt[2];
-	gpt[0] = gaussPts[n];
-	gpt[1] = gaussPts[m];
-		
-	// Evaluate the stiffness matrix if required
-	if (stiff->isVariableStiffness()){
-	  stiff->getStiffness(gpt, At, Bt, Dt, Ats);
-	}
-
+	// Set the quadrature point
+        double pt[2];
+	pt[0] = gaussPts[n];
+	pt[1] = gaussPts[m];
+	
+        // Evaluate the stiffness properties at the quadrature poitn
+        TacsScalar At[6], Bt[6], Dt[6], Ats[3];
+        stiff->getStiffness(pt, At, Bt, Dt, Ats);
+	
 	// Calculate the shape functions
 	shell_hessian(order, X, Xd, Xdd, 
-                      N, Na, Nb, Naa, Nab, Nbb,
-                      gpt, Xpts);
+                      N, Na, Nb, Naa, Nab, Nbb, pt, Xpts);
 	compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
       
 	TacsScalar h = 0.0;
@@ -1592,7 +1749,7 @@ void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
 	  h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
                                         normal_eta, axis, Xd, Xdd);
 	}
-	h = alpha*gaussWts[n]*gaussWts[m]*h;
+	h = gaussWts[n]*gaussWts[m]*h;
 
 	// Calculate the strain/bmat at the current point... 
 	TacsScalar rot;
@@ -1603,7 +1760,7 @@ void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
 			 normal, normal_xi, normal_eta);
       
 	// Evaluate the strain interpolation at this point
-	tying_interpolation<order>(gpt, N11, N22, N12, 
+	tying_interpolation<order>(pt, N11, N22, N12, 
                                    knots, pknots);
 	add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
                                 N11, N22, N12);
@@ -1626,7 +1783,7 @@ void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
 					      knots, pknots, Xpts);
 
 	// Compute the stress at the current Gauss point
-	stiff->calcStress(At, Bt, Dt, Ats, bstrain, bstress);
+	stiff->calculateStress(At, Bt, Dt, Ats, bstrain, bstress);
 
 	for ( int i = 0; i < NUM_NODES; i++ ){
 	  for ( int ii = 0; ii < NUM_DISPS; ii++ ){	    
@@ -1635,417 +1792,6 @@ void MITCShell<order>::addMatSVSensInnerProduct( ElementMatrixTypes matType,
 	      h*strain_product(&B[NUM_STRESSES*row], bstress);
 	  }
 	}
-      }
-    }
-  }
-}
-
-/*
-  Compute the derivative of the residuals with respect to one of the
-  material design variables.
-
-  output:
-  res:    the derivative of the residual w.r.t. the material design var
-  
-  input:
-  dvNum:   the design variable number 
-  vars:    the variables
-  Xpts:    the element nodal locations
-*/
-template <int order>
-void MITCShell<order>::getResDVSens( int dvNum, TacsScalar * res, 
-                                     const TacsScalar vars[], 
-				     const TacsScalar Xpts[] ){
-  memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
-  
-  if (dvNum >= 0 && stiff->ownsDesignVar(dvNum)){
-    // Geometric data
-    TacsScalar X[3], Xd[9], Xdd[9];
-    TacsScalar normal[3], normal_xi[3], normal_eta[3];
-    
-    // Transformation and the transformation derivative w.r.t. zeta
-    TacsScalar t[9], tx[9], ztx[9]; 
-    
-    TacsScalar U[NUM_DISPS], Ud[2*NUM_DISPS];
-    double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-    double Naa[NUM_NODES], Nab[NUM_NODES], Nbb[NUM_NODES];
-    
-    // Interpolations for the shear components
-    double N11[NUM_G11], N22[NUM_G22], N12[NUM_G12];
-    
-    // The interpolated tensorial shear components
-    TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
-    TacsScalar g13[NUM_G13], g23[NUM_G23];
-    
-    // The derivatives of the displacement strain
-    TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
-    TacsScalar b12[3*NUM_NODES*NUM_G12];
-    TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
-    
-    double gpt[2] = {0.0, 0.0};
-    
-    TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
-    TacsScalar drot[NUM_VARIABLES];
-    TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-    
-    // Store the stiffness information for the element
-    TacsScalar sAt[6], sBt[6], sDt[6], sAts[3];
-    TacsScalar k_penalty_sens = 0.0;
-
-    // Evaluate the stiffness matrix
-    if (!stiff->isVariableStiffness()){
-      k_penalty_sens = stiff->getStiffnessDVSens(dvNum, gpt, 
-						 sAt, sBt, sDt, sAts);
-    }
-    
-    if (type == LARGE_ROTATION){
-      compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
-				   b11, b22, b12, b23, b13, 
-				   knots, pknots, vars, Xpts);
-    }
-    else {
-      compute_tying_bmat<order>((type == LINEAR),
-				g11, g22, g12, g23, g13,
-				b11, b22, b12, b23, b13,
-				knots, pknots, vars, Xpts);
-    }
-
-    for ( int m = 0; m < numGauss; m++ ){
-      for ( int n = 0; n < numGauss; n++ ){
-	gpt[0] = gaussPts[n];
-	gpt[1] = gaussPts[m];
-
-        if (stiff->isVariableStiffness()){
-          k_penalty_sens = 
-            stiff->getStiffnessDVSens(dvNum, gpt, 
-				      sAt, sBt, sDt, sAts);
-        }
-	
-	// Calculate the shape functions
-	shell_hessian(order, X, Xd, Xdd, 
-                      N, Na, Nb, Naa, Nab, Nbb,
-                      gpt, Xpts);
-	compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
-	
-	TacsScalar h = 0.0;
-	if (stiff->getTransformType() == FSDTStiffness::NATURAL){
-	  h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
-                                Xd, Xdd);
-	}
-	else {
-	  const TacsScalar * axis = stiff->getRefAxis();
-	  h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
-                                        normal_eta, axis, Xd, Xdd);
-	}
-	h = gaussWts[n]*gaussWts[m]*h;
-	
-	// Calculate the deformation at the current point... 
-	TacsScalar rot;
-	if (type == LINEAR){
-	  linear_bend_strain(strain, &rot, U, Ud, 
-                             t, tx, ztx, 
-                             normal, normal_xi, normal_eta);
-	  linear_bend_bmat(B, drot, NUM_NODES,
-                           N, Na, Nb, t, tx, ztx,
-                           normal, normal_xi, normal_eta);
-	}
-	else if (type == NONLINEAR){
-	  nonlinear_bend_strain(strain, &rot, U, Ud,  t, tx, ztx, 
-                                normal, normal_xi, normal_eta);
-	  nonlinear_bend_bmat(B, drot, NUM_NODES, N, Na, Nb, U, Ud, t, tx, ztx,
-                              normal, normal_xi, normal_eta);
-	}
-	else {
-	  // Rotation matrix data
-	  TacsScalar C[9], Ct[27], Ctt[54];
-	  
-	  // Compute the rotation matrices
-	  TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
-	  TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
-	  TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
-	  compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
-	  compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
-	  
-	  // Evaluate the in-plane rotation term
-	  rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud, 
-					C, Ct, N, Na, Nb);
-	  
-	  // Calculate the deformation at the current point... 
-	  large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx, 
-				normal, normal_xi, normal_eta);
-	  large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt, 
-			      t, tx, ztx, normal, normal_xi, normal_eta);
-	}
-
-	// Evaluate the strain interpolation at this point
-	tying_interpolation<order>(gpt, N11, N22, N12, 
-                                   knots, pknots);
-	add_tying_strain<order>(strain, tx, 
-                                g11, g22, g12, g23, g13,
-                                N11, N22, N12);
-	add_tying_bmat<order>(B, NUM_NODES, tx,
-                              b11, b22, b12, b23, b13, 
-                              N11, N22, N12);
-	
-        // Calculate the sensitivity of the stress at the current point
-	stiff->calcStress(sAt, sBt, sDt, sAts, strain, stress);
-
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  for ( int ii = 0; ii < NUM_DISPS; ii++ ){	    
-	    int row = ii + NUM_DISPS*i;	    
-	    res[row] += 
-	      h*(strain_product(&B[NUM_STRESSES*row], stress) +
-		 k_penalty_sens*rot*drot[row]);
-	  }
-	}
-      }
-    }
-  }
-}
-  
-/*
-  Get the derivative of the specified matrix type with respect to the
-  element nodal locations.
-*/
-template <int order>
-void MITCShell<order>::getMatTypeXptSens( ElementMatrixTypes matType, 
-					  TacsScalar scaleFactor, 
-					  TacsScalar * mat, 
-					  const TacsScalar vars[],
-					  const TacsScalar Xpts[], 
-					  const TacsScalar XptSens[], 
-					  MatrixOrientation matOr ){
-  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
-}
-
-/*
-  Get the derivative of the specified matrix type with respect to the
-  material design variables.
-  
-  output:
-  mat:         the element matrix 
-
-  input:
-  dvNum:       the design variable number
-  matType:     the element matrix type
-  scaleFactor: the scale factor 
-  vars:        the element variables
-  Xpts:        the element nodes
-  matOr:       the matrix orientation
-*/
-template <int order>
-void MITCShell<order>::getMatTypeDVSens( int dvNum,
-                                         ElementMatrixTypes matType, 
-					 TacsScalar scaleFactor, 
-					 TacsScalar * mat, 
-					 const TacsScalar vars[], 
-					 const TacsScalar Xpts[], 
-					 MatrixOrientation matOr ){
-
-  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
-  
-  if (dvNum >= 0 && stiff->ownsDesignVar(dvNum)){
-    if (matType == MASS_MATRIX){
-      double gpt[2] = {0.0, 0.0};
-      double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-
-      for ( int m = 0; m < numGauss; m++ ){
-        for ( int n = 0; n < numGauss; n++ ){
-          gpt[0] = gaussPts[n];
-          gpt[1] = gaussPts[m];
-	
-          TacsScalar X[3], Xd[9], normal[3];
-          shell_jacobian(order, X, Xd, N, Na, Nb, gpt, Xpts);
-          Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-          Tensor::normalize3D(normal);
-	
-          for ( int i = 0; i < 3; i++ ){
-            Xd[6+i] = normal[i]; 
-          }
-	  
-          TacsScalar h = FElibrary::jacobian3d(Xd);
-          h = scaleFactor*gaussWts[n]*gaussWts[m]*h;
-
-          TacsScalar massDVSens[3];
-          stiff->pointwiseMassDVSens(dvNum, gpt, massDVSens);
-	  
-          for ( int i = 0; i < NUM_NODES; i++ ){
-            for ( int ii = 0; ii < 3; ii++ ){
-              int row = ii + NUM_DISPS*i;	      
-              for ( int j = 0; j < NUM_NODES; j++ ){
-                int col = ii + NUM_DISPS*j;		
-                mat[col + row*NUM_VARIABLES] += h*massDVSens[0]*N[i]*N[j];
-              }
-            }
-          }
-	  
-          for ( int ii = 3; ii < NUM_DISPS; ii++ ){	 
-            for ( int jj = 3; jj < NUM_DISPS; jj++ ){
-              TacsScalar a[3] = { 0.0, 0.0, 0.0 };
-              TacsScalar b[3] = { 0.0, 0.0, 0.0 };
-	      
-              TacsScalar phi_a[3], phi_b[3];
-              a[ii-3] = 1.0;
-              b[jj-3] = 1.0;
-	      
-              Tensor::crossProduct3D(phi_a, a, normal);
-              Tensor::crossProduct3D(phi_b, b, normal);
-              TacsScalar weight = Tensor::dot3D(phi_a, phi_b);
-	      
-              for ( int i = 0; i < NUM_NODES; i++ ){
-                int row = ii + NUM_DISPS*i;
-
-                for ( int j = 0; j < NUM_NODES; j++ ){
-                  int col = jj + NUM_DISPS*j;
-		  
-                  mat[col + row*NUM_VARIABLES] += 
-                    massDVSens[2]*weight*h*N[i]*N[j];
-                }
-              }
-            }	  
-          }
-        }    
-      }
-    }    
-    else if (matType == STIFFNESS_MATRIX &&
-	     type != LARGE_ROTATION){
-      TacsScalar X[3], Xd[9], Xdd[9];
-      TacsScalar normal[3], normal_xi[3], normal_eta[3];
-      // Transformation and the transformation derivative w.r.t. zeta
-      TacsScalar t[9], tx[9], ztx[9]; 
-  
-      TacsScalar U[NUM_DISPS], Ud[2*NUM_DISPS];
-      double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-      double Naa[NUM_NODES], Nab[NUM_NODES], Nbb[NUM_NODES];
-
-      // Interpolations for the shear components
-      double N11[NUM_G11], N22[NUM_G22], N12[NUM_G12];
-
-      // The interpolated tensorial shear components
-      TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
-      TacsScalar g13[NUM_G13], g23[NUM_G23];
-
-      // The derivatives of the displacement strain
-      TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
-      TacsScalar b12[3*NUM_NODES*NUM_G12];
-      TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
-  
-      double gpt[2] = {0.0, 0.0};
-
-      TacsScalar stress[NUM_STRESSES], strain[NUM_STRESSES];
-      TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-      TacsScalar BStress[NUM_STRESSES];
-
-      TacsScalar drot[NUM_VARIABLES];
-
-      // Store the stiffness information for the element
-      TacsScalar sAt[6], sBt[6], sDt[6], sAts[3];
-      TacsScalar k_penalty_sens = 0.0;
-
-      // Evaluate the stiffness matrix
-      if (!stiff->isVariableStiffness()){
-        k_penalty_sens = stiff->getStiffnessDVSens(dvNum, gpt, 
-                                                        sAt, sBt, sDt, sAts);
-      }
-
-      compute_tying_bmat<order>((type == LINEAR),
-				g11, g22, g12, g23, g13,
-				b11, b22, b12, b23, b13,
-				knots, pknots, vars, Xpts);
-
-      for ( int m = 0; m < numGauss; m++ ){
-        for ( int n = 0; n < numGauss; n++ ){
-          gpt[0] = gaussPts[n];
-          gpt[1] = gaussPts[m];
-	
-          // Evaluate the stiffness matrix
-          if (stiff->isVariableStiffness()){
-            k_penalty_sens = 
-              stiff->getStiffnessDVSens(dvNum, gpt, 
-                                             sAt, sBt, sDt, sAts);
-          }
-
-          // Calculate the shape functions
-          shell_hessian(order, X, Xd, Xdd, 
-                        N, Na, Nb, Naa, Nab, Nbb,
-                        gpt, Xpts);
-          compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
-	     
-          TacsScalar h = 0.0;
-          if (stiff->getTransformType() == FSDTStiffness::NATURAL ){
-            h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
-                                  Xd, Xdd);
-          }
-          else {
-            const TacsScalar * axis = stiff->getRefAxis();
-            h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
-                                          normal_eta, axis, Xd, Xdd);
-          }
-          h = gaussWts[n]*gaussWts[m]*h;
-	
-          // Calculate the strain at the current point... 
-          TacsScalar rot;
-          if (type == LINEAR){
-            linear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
-                               normal, normal_xi, normal_eta);
-            linear_bend_bmat(B, drot, NUM_NODES, N, Na, Nb, t, tx, ztx,
-                             normal, normal_xi, normal_eta);
-          }
-          else {
-            nonlinear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
-                                  normal, normal_xi, normal_eta);
-            nonlinear_bend_bmat(B, drot, NUM_NODES, N, Na, Nb, U, Ud, t, tx, ztx,
-                                normal, normal_xi, normal_eta);
-          }
-	
-          // Evaluate the strain interpolation at this point
-          tying_interpolation<order>(gpt, N11, N22, N12, knots, pknots);
-          add_tying_strain<order>(strain, tx, 
-                                  g11, g22, g12, g23, g13,
-                                  N11, N22, N12);
-          add_tying_bmat<order>(B, NUM_NODES, tx,
-                                b11, b22, b12, b23, b13, 
-                                N11, N22, N12);
-	
-          stiff->calcStress(sAt, sBt, sDt, sAts, strain, stress);
-	
-          // Loop through all displacements except for the z-rotation
-          for ( int i = 0; i < NUM_NODES; i++ ){
-            for ( int ii = 0; ii < NUM_DISPS; ii++ ){
-              int row = ii + NUM_DISPS*i;
-	    
-              // Calculate the stress associated with Bi
-              stiff->calcStress(sAt, sBt, sDt, sAts, 
-                                     &B[row*NUM_STRESSES], BStress);
-	    
-              for ( int j = 0; j <= i; j++ ){
-                int end = ( j == i ? ii : NUM_DISPS-1 );
-                for ( int jj = 0; jj <= end; jj++ ){
-                  int col = jj + NUM_DISPS*j;
-		
-                  // The regular element matrix
-                  mat[col + row*NUM_VARIABLES] += 
-                    h*(strain_product(BStress, &B[col*NUM_STRESSES]) +    
-                       k_penalty_sens*drot[row]*drot[col]);
-                }
-              }
-            }
-          }
-
-          if (type == NONLINEAR){
-            nonlinear_bend_stress_bmat(mat, NUM_NODES, h, stress, 
-                                       N, Na, Nb, t, tx, ztx,
-                                       normal, normal_xi, 
-                                       normal_eta);
-          }
-        }
-      }
-    
-      // Copy over the matrix
-      for ( int row = 0; row < NUM_VARIABLES; row++ ){
-        for ( int col = row+1; col < NUM_VARIABLES; col++ ){
-          mat[col + row*NUM_VARIABLES] = mat[row + col*NUM_VARIABLES];
-        }
       }
     }
   }
@@ -2188,7 +1934,7 @@ TacsScalar MITCShell<order>::getDetJacobianXptSens( TacsScalar * hXptSens,
 */
 template <int order>
 void MITCShell<order>::getStrain( TacsScalar strain[], 
-				  const double * pt,
+				  const double pt[],
 				  const TacsScalar Xpts[],
 				  const TacsScalar vars[] ){
   // Geometric data
@@ -2209,7 +1955,7 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
   TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
   TacsScalar g13[NUM_G13], g23[NUM_G23];
 
-  // The derivatives of the displacement strain
+  // The derivatives of the displacement strain at the tying points
   TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
   TacsScalar b12[3*NUM_NODES*NUM_G12];
   TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
@@ -2279,7 +2025,7 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
 
   output:
   strain:  the strain evaluate at the pamametric point pt
-  strainXptSens: the derivative of the straint w.r.t. the nodal locations
+  strainXptSens: the derivative of the strain w.r.t. the nodal locations
 
   input:
   pt:            the parametric point within the element
@@ -2287,12 +2033,12 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
   Xpts:          the nodal locations
 */
 template <int order>
-void MITCShell<order>::addStrainXptSens( TacsScalar strain[], 
-					 TacsScalar strainXptSens[], 
-					 const double * pt,
-					 const TacsScalar vars[], 
-					 const TacsScalar Xpts[] ){ 
-  
+void MITCShell<order>::addStrainXptSens( TacsScalar strainXptSens[],
+                                         const double pt[], 
+                                         const TacsScalar scale,
+                                         const TacsScalar strainSens[], 
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[] ){  
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -2322,6 +2068,9 @@ void MITCShell<order>::addStrainXptSens( TacsScalar strain[],
   TacsScalar dg11[3*NUM_G11*NUM_NODES], dg22[3*NUM_G22*NUM_NODES], 
     dg12[3*NUM_G12*NUM_NODES];
   TacsScalar dg13[3*NUM_G13*NUM_NODES], dg23[3*NUM_G23*NUM_NODES];
+
+  // The strain
+  TacsScalar strain[NUM_STRESSES];
 
   // Evaluate the tying interpolation
   tying_interpolation<order>(pt, N11, N22, N12, 
@@ -2411,19 +2160,17 @@ void MITCShell<order>::addStrainXptSens( TacsScalar strain[],
  
   input:
   pt:          parametric point used to evaluate the derivative [-1, 1]^{2}
-  scaleFactor: scale ther result by this scalar
-  strainSens:  the sensitivity of each straint component 
+  strainSens:  the sensitivity of each strain component 
   vars:        the element variables
   Xpts:        the element nodal locations
 */
 template <int order>
-void MITCShell<order>::addStrainSVSens( TacsScalar elementSens[], 
-					const double * pt, 
-					const TacsScalar scaleFactor, 
-					const TacsScalar strainSens[],
-					const TacsScalar vars[],  
-					const TacsScalar Xpts[] ){
-
+void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[], 
+                                        const double pt[], 
+                                        const TacsScalar scale,
+                                        const TacsScalar strainSens[], 
+                                        const TacsScalar Xpts[],
+                                        const TacsScalar vars[] ){
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
   // Transformation and the transformation derivative w.r.t. zeta
@@ -2507,8 +2254,7 @@ void MITCShell<order>::addStrainSVSens( TacsScalar elementSens[],
                         N11, N22, N12);
 
   for ( int k = 0; k < NUM_VARIABLES; k++ ){
-    elementSens[k] += scaleFactor*strain_product(strainSens, 
-						 &B[k*NUM_STRESSES]);
+    strainSVSens[k] += strain_product(strainSens, &B[k*NUM_STRESSES]);
   }
 }
 

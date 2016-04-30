@@ -332,7 +332,7 @@ int TestElement::testResidual(){
   // Print the error if required
   if (print_level > 1){
     fprintf(stderr, 
-            "The difference between the FD and true residual is:");
+            "The difference between the FD and true residual is:\n");
     print_error_components(stderr, "Res error",
                            res1, fd, nvars);
   }
