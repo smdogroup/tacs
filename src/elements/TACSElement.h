@@ -2,7 +2,7 @@
 #define TACS_ELEMENT_H
 
 /*
-  Basic Element and ElementTraction definitions
+  Basic TACSElement definition
 
   Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved.
 
