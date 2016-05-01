@@ -401,7 +401,7 @@ int TestElement::testJacobian( int col ){
   backward_perturb(q, nvars, vars, pert, alpha*dh);
   backward_perturb(dq, nvars, dvars, pert, beta*dh);
   backward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
-  memset(tmp, 0, nvars*sizeof(TacsScalar));
+  memset(temp, 0, nvars*sizeof(TacsScalar));
   element->addResidual(time, temp, Xpts, q, dq, ddq);
 
   // Form the FD/CS approximate

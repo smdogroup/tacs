@@ -953,7 +953,7 @@ void MITC9::addResidual( double time,
   output:
   J:       the Jacobian matrix
 */
-void MITC9:addJacobian( double time, TacsScalar J[],
+void MITC9::addJacobian( double time, TacsScalar J[],
 			 double alpha, double beta, double gamma,
 			 const TacsScalar X[],
 			 const TacsScalar vars[],

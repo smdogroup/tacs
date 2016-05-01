@@ -48,6 +48,13 @@ void * TACSAssembler::assembleRes_thread( void * t ){
   TacsScalar *elemRes = &data[3*s];
   TacsScalar *elemXpts = &data[4*s];
 
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (tacs->aux_elements){
+    naux = tacs->aux_elements->getAuxElements(&aux);
+  }
+
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
@@ -65,10 +72,27 @@ void * TACSAssembler::assembleRes_thread( void * t ){
 		      tacs->localDotVars, dvars);
       tacs->getValues(tacs->varsPerNode, elemIndex, 
 		      tacs->localDDotVars, ddvars);
+
+      // Retrieve the number of element variables
+      int nvars = element->numVariables();
+      memset(elemRes, 0, nvars*sizeof(TacsScalar));
   
       // Generate the Jacobian of the element
-      element->getResidual(tacs->time, elemRes, elemXpts, 
+      element->addResidual(tacs->time, elemRes, elemXpts, 
                            vars, dvars, ddvars);
+
+      // Increment the aux counter until we possibly have
+      // aux[aux_count].num == elemIndex
+      while (aux_count < naux && aux[aux_count].num < elemIndex){
+        aux_count++;
+      }
+
+      // Add the residual from the auxiliary elements 
+      while (aux_count < naux && aux[aux_count].num == elemIndex){
+        aux[aux_count].elem->addResidual(tacs->time, elemRes, elemXpts, 
+                                         vars, dvars, ddvars);
+        aux_count++;
+      }
 
       // Add the values to the residual when the memory unlocks
       pthread_mutex_lock(&tacs->tacs_mutex);
@@ -122,6 +146,13 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
   TacsScalar *elemWeights = &data[4*s + sx];
   TacsScalar *elemMat = &data[4*s + sx + sw];
 
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (tacs->aux_elements){
+    naux = tacs->aux_elements->getAuxElements(&aux);
+  }
+
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
@@ -140,12 +171,33 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
       tacs->getValues(tacs->varsPerNode, elemIndex, 
 		      tacs->localDDotVars, ddvars);
   
+      // Retrieve the number of element variables
+      int nvars = element->numVariables();
+      memset(elemRes, 0, nvars*sizeof(TacsScalar));
+      memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
+  
       // Generate the Jacobian of the element
-      element->getResidual(tacs->time, elemRes, elemXpts, 
-			   vars, dvars, ddvars);
-      element->getJacobian(tacs->time, elemMat, 
+      element->addResidual(tacs->time, elemRes, elemXpts, 
+                           vars, dvars, ddvars);
+      element->addJacobian(tacs->time, elemMat, 
 			   alpha, beta, gamma,
 			   elemXpts, vars, dvars, ddvars);
+
+      // Increment the aux counter until we possibly have
+      // aux[aux_count].num == elemIndex
+      while (aux_count < naux && aux[aux_count].num < elemIndex){
+        aux_count++;
+      }
+
+      // Add the residual from the auxiliary elements 
+      while (aux_count < naux && aux[aux_count].num == elemIndex){
+        aux[aux_count].elem->addResidual(tacs->time, elemRes, elemXpts, 
+                                         vars, dvars, ddvars);
+        aux[aux_count].elem->addJacobian(tacs->time, elemMat, 
+                                         alpha, beta, gamma,
+                                         elemXpts, vars, dvars, ddvars);
+        aux_count++;
+      }
       
       pthread_mutex_lock(&tacs->tacs_mutex);
       // Add values to the residual

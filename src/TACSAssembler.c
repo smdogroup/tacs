@@ -228,12 +228,11 @@ TACSAssembler::~TACSAssembler(){
   if (vecDistIndices){ vecDistIndices->decref(); }
   else { delete [] tacsNodeNums; }  
 
-  // Objects allocated in initializeArrays()
+  // Delete arrays allocated in initializeArrays()
   if (localRes){ delete [] localRes; }
   if (localVars){ delete [] localVars; }
   if (localDotVars){ delete [] localDotVars; }
   if (localDDotVars){ delete [] localDDotVars; }
-
   if (elementData){ delete [] elementData; }
   if (elementIData){ delete [] elementIData; }
 
@@ -1756,11 +1755,7 @@ void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
   
   // Get the design variables from the auxiliary elements
   if (aux_elements){
-    TACSAuxElems *aux;
-    int naux = aux_elements->getAuxElements(&aux);
-    for ( int i = 0; i < naux; i++ ){
-      aux[i].elem->getDesignVars(tempDVs, numDVs);
-    }
+    aux_elements->getDesignVars(dvs, numDVs);
   }
 
   MPI_Allreduce(tempDVs, dvs, numDVs, TACS_MPI_TYPE, 
@@ -1786,11 +1781,7 @@ void TACSAssembler::setDesignVars( const TacsScalar dvs[], int numDVs ){
 
   // Set the design variables in the auxiliary elements
   if (aux_elements){
-    TACSAuxElems *aux;
-    int naux = aux_elements->getAuxElements(&aux);
-    for ( int i = 0; i < naux; i++ ){
-      aux[i].elem->setDesignVars(dvs, numDVs);
-    }
+    aux_elements->setDesignVars(dvs, numDVs);
   }
 }
 
@@ -1821,11 +1812,7 @@ void TACSAssembler::getDesignVarRange( TacsScalar lowerBound[],
 
   // Get the design variable range from the auxiliary elements
   if (aux_elements){
-    TACSAuxElems *aux;
-    int naux = aux_elements->getAuxElements(&aux);
-    for ( int i = 0; i < naux; i++ ){
-      aux[i].elem->getDesignVarRange(tempLB, tempUB, numDVs);
-    }
+    aux_elements->getDesignVarRange(tempLB, tempUB, numDVs);
   }
 
   // Take the max of the lower bounds
@@ -2411,9 +2398,16 @@ void TACSAssembler::assembleRes( BVec *residual ){
   residual:      the residual of the governing equations
 */
 void TACSAssembler::assembleResNoBCs( BVec *residual ){
+  // Sort the list of auxiliary elements - this only performs the
+  // sort if it is required (if new elements are added)
+  if (aux_elements){
+    aux_elements->sort();
+  }
+
   // Zero the residual
   residual->zeroEntries();
 
+  // Zero the local residual values
   int size = varsPerNode*(numNodes + numDependentNodes);
   memset(localRes, 0, size*sizeof(TacsScalar));
 
@@ -2450,7 +2444,7 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
 
     // Get the auxiliary elements
     int naux = 0, aux_count = 0;
-    TACSAuxElems *aux = NULL;
+    TACSAuxElem *aux = NULL;
     if (aux_elements){
       naux = aux_elements->getAuxElements(&aux);
     }
@@ -2470,8 +2464,8 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
       
       // Add the residual from any auxiliary elements
       while (aux_count < naux && aux[aux_count].num == i){
-        aux[aux_count]->addResidual(time, elemRes, elemXpts,
-                                    vars, dvars, ddvars);
+        aux[aux_count].elem->addResidual(time, elemRes, elemXpts,
+                                         vars, dvars, ddvars);
         aux_count++;
       }
 
@@ -2518,6 +2512,12 @@ void TACSAssembler::assembleJacobian( BVec *residual,
   }
   A->zeroEntries();
 
+  // Sort the list of auxiliary elements - this call only performs the
+  // sort if it is required (if new elements are added)
+  if (aux_elements){
+    aux_elements->sort();
+  }
+
   // Run the p-threaded version of the assembly code
   if (thread_info->getNumThreads() > 1){
     // Set the number of completed elements to zero
@@ -2556,22 +2556,51 @@ void TACSAssembler::assembleJacobian( BVec *residual,
 		    &vars, &dvars, &ddvars, &elemRes,
 		    &elemXpts, NULL, &elemWeights, &elemMat);
 
+    // Set the data for the auxiliary elements - if there are any
+    int naux = 0, aux_count = 0;
+    TACSAuxElem *aux = NULL;
+    if (aux_elements){
+      naux = aux_elements->getAuxElements(&aux);
+    }
+
     for ( int i = 0; i < numElements; i++ ){
       getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
       getValues(varsPerNode, i, localVars, vars);
       getValues(varsPerNode, i, localDotVars, dvars);
       getValues(varsPerNode, i, localDDotVars, ddvars);
 
+      // Get the number of variables from the element
+      int nvars = elements[i]->numVariables();
+
       // Compute and add the contributions to the residual
       if (residual){
-        elements[i]->getResidual(time, elemRes, elemXpts, 
+        memset(elemRes, 0, nvars*sizeof(TacsScalar));
+        elements[i]->addResidual(time, elemRes, elemXpts, 
                                  vars, dvars, ddvars);
-        addValues(varsPerNode, i, elemRes, localRes);
       }
 
       // Compute and add the contributions to the Jacobian
-      elements[i]->getJacobian(time, elemMat, alpha, beta, gamma,
+      memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
+      elements[i]->addJacobian(time, elemMat, alpha, beta, gamma,
 			       elemXpts, vars, dvars, ddvars);
+
+      // Add the contribution to the residual and the Jacobian
+      // from the auxiliary elements - if any
+      while (aux_count < naux && aux[aux_count].num == i){
+        if (residual){
+          aux[aux_count].elem->addResidual(time, elemRes, elemXpts,
+                                           vars, dvars, ddvars);
+        }
+        aux[aux_count].elem->addJacobian(time, elemMat, 
+                                         alpha, beta, gamma,
+                                         elemXpts, vars, dvars, ddvars);
+        
+        aux_count++;
+      }
+
+      if (residual){
+        addValues(varsPerNode, i, elemRes, localRes);
+      }
       addMatValues(A, i, elemMat, elementIData, elemWeights);
     }
   }
@@ -3263,9 +3292,16 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
     setDependentVariables(varsPerNode, &localAdjoint[k*nvars]);
   }
 
+  // Allocate space for the design derivative
   TacsScalar * dvSensVals = new TacsScalar[ numDVs*numAdjoints ];
   memset(dvSens, 0, numDVs*numAdjoints*sizeof(TacsScalar));    
   memset(dvSensVals, 0, numDVs*numAdjoints*sizeof(TacsScalar));
+
+  // Sort the list of auxiliary elements - this only performs the
+  // sort if it is required (if new elements are added)
+  if (aux_elements){
+    aux_elements->sort();
+  }
 
   if (thread_info->getNumThreads() > 1){
     tacsPInfo->tacs = this;
@@ -3303,6 +3339,13 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
     getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
 		    &elemXpts, NULL, NULL, NULL);
 
+    // Set the data for the auxiliary elements - if there are any
+    int naux = 0, aux_count = 0;
+    TACSAuxElem *aux = NULL;
+    if (aux_elements){
+      naux = aux_elements->getAuxElements(&aux);
+    }
+
     for ( int i = 0; i < numElements; i++ ){
       // Find the variables and nodes
       int nnodes = getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
@@ -3320,6 +3363,14 @@ void TACSAssembler::evalAdjointResProducts( BVec ** adjoint, int numAdjoints,
                                       &dvSensVals[k*numDVs], numDVs,
 				      elemAdjoint, elemXpts,
 				      vars, dvars, ddvars);
+
+        // Add the contribution from the auxiliary elements
+        while (aux_count < naux && aux[aux_count].num == i){
+          aux[aux_count].elem->addAdjResProduct(time, scale,
+                                                &dvSensVals[k*numDVs], numDVs,
+                                                elemAdjoint, elemXpts,
+                                                vars, dvars, ddvars);
+        }
       }
     }
   }
