@@ -79,16 +79,15 @@
   the code somewhat.
 */
 FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap, 
-              int nlocal_vars, const int * rowp, const int * cols, 
+              int bsize, int nlocal_vars, 
+              const int * rowp, const int * cols, 
               BVecIndices * b_local_indices, BVecDistribute * _b_map, 
               BVecIndices * c_local_indices, BVecDistribute * _c_map,
 	      BCMap * _bcs ){
-
   bcs = _bcs;
   if (bcs){ bcs->incref(); }
 
   // Get the block size 
-  int bs = _rmap->getBlockSize();
   int rank;
   MPI_Comm_rank(_rmap->getMPIComm(), &rank);
 
@@ -127,7 +126,6 @@ FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap,
   int * erowp = new int[ Nb+1 ];
   int * frowp = new int[ Nc+1 ];
   int * crowp = new int[ Nc+1 ];
-
   memset(browp, 0, (Nb+1)*sizeof(int));
   memset(erowp, 0, (Nb+1)*sizeof(int));
   memset(frowp, 0, (Nc+1)*sizeof(int));
@@ -285,18 +283,17 @@ FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap,
 
   // Create the block matrices
   MPI_Comm comm = _rmap->getMPIComm();
-  BCSRMat * _B = new BCSRMat(comm, thread_info, bs, Nb, Nb, &browp, &bcols);
-  BCSRMat * _E = new BCSRMat(comm, thread_info, bs, Nb, Nc, &erowp, &ecols);
-  BCSRMat * _F = new BCSRMat(comm, thread_info, bs, Nc, Nb, &frowp, &fcols);
-  BCSRMat * _C = new BCSRMat(comm, thread_info, bs, Nc, Nc, &crowp, &ccols);
+  BCSRMat * _B = new BCSRMat(comm, thread_info, bsize, Nb, Nb, &browp, &bcols);
+  BCSRMat * _E = new BCSRMat(comm, thread_info, bsize, Nb, Nc, &erowp, &ecols);
+  BCSRMat * _F = new BCSRMat(comm, thread_info, bsize, Nc, Nb, &frowp, &fcols);
+  BCSRMat * _C = new BCSRMat(comm, thread_info, bsize, Nc, Nc, &crowp, &ccols);
 
   // Insure that the inverse look-up has been allocated
   (_b_map->getBVecIndices())->setUpInverse();
   (_c_map->getBVecIndices())->setUpInverse(); 
 
   // Initialize the underlying class
-  init(_rmap, _B, _E, _F, _C,
-       _b_map, _c_map);
+  init(_rmap, _B, _E, _F, _C, _b_map, _c_map);
 }
 
 FEMat::~FEMat(){
@@ -319,7 +316,6 @@ void FEMat::addValues( int nrow, const int * row,
 		       int ncol, const int * col,  
 		       int nv, int mv, const TacsScalar * values ){ 
   int bsize = B->getBlockSize();
-
   BVecIndices * bindx = b_map->getBVecIndices();
   BVecIndices * cindx = c_map->getBVecIndices();
   
@@ -522,7 +518,7 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
   Create a vector that is compatible with this matrix
 */
 TACSVec * FEMat::createVec(){
-  return new BVec(rmap, bcs);
+  return new BVec(rmap, B->getBlockSize(), bcs);
 }
 
 /*

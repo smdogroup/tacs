@@ -18,15 +18,13 @@
   input:
   comm:  this object is defined over all processors in this comm
   N:     the number of nodes for this processor
-  bsize: the block size (variables per node)
 */
-VarMap::VarMap( MPI_Comm _comm, int _N, int _bsize ){
+VarMap::VarMap( MPI_Comm _comm, int _N ){
   comm = _comm;
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
   
   N = _N;
-  bsize = _bsize;  
   // The ownership ranges for all processes
   ownerRange = new int[ mpiSize+1 ];
   memset(ownerRange, 0, (mpiSize+1)*sizeof(int));
@@ -194,7 +192,7 @@ int BCMap::getBCs( const int ** _local, const int ** _global,
   rmap:   the variable->processor map for the unknowns
   bcs:    the boundary conditions associated with this vector
 */
-BVec::BVec( VarMap * _rmap, BCMap * _bcs ){
+BVec::BVec( VarMap * _rmap, int _bsize, BCMap * _bcs ){
   rmap = _rmap;
   rmap->incref();
 
@@ -202,10 +200,10 @@ BVec::BVec( VarMap * _rmap, BCMap * _bcs ){
   bcs = _bcs;
   if (bcs){ bcs->incref(); }
 
+  bsize = _bsize;
   comm = rmap->getMPIComm();
   rmap->getOwnerRange(&ownerRange, &mpiRank, &mpiSize);
-  bsize = rmap->getBlockSize();
-  size = bsize * rmap->getDim();
+  size = bsize*rmap->getDim();
 
   displaced = NULL;
   x = new TacsScalar[ size ];
@@ -222,8 +220,8 @@ BVec::BVec( VarMap * _rmap, BCMap * _bcs ){
   comm:  the communicator that this object is distributed over
   size:  the number of local entries stored by this vector
 */
-BVec::BVec( MPI_Comm _comm, int _size ){
-  bsize = 1;
+BVec::BVec( MPI_Comm _comm, int _size, int _bsize ){
+  bsize = _bsize;
   size = _size;
   comm = _comm;
   rmap = NULL;

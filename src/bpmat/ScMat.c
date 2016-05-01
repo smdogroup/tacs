@@ -84,9 +84,7 @@ void ScMat::init( VarMap * _rmap,
   int bs = B->getBlockSize();
   if (bs != E->getBlockSize() ||
       bs != F->getBlockSize() ||
-      bs != C->getBlockSize() ||
-      bs != b_map->getBlockSize() ||
-      bs != c_map->getBlockSize()){
+      bs != C->getBlockSize()){
     fprintf(stderr, "ScMat error: block sizes do not match\n" );
     return;
   }
@@ -123,12 +121,11 @@ match dimensions of C\n" );
   }
   
   // Allocate the memory for the preconditioning operations
-  local_size = b_map->getSize() + c_map->getSize();
-  local_offset = b_map->getSize();
+  local_size = bs*(b_map->getDim() + c_map->getDim());
+  local_offset = bs*b_map->getDim();
 
   xlocal = new TacsScalar[local_size];
   ylocal = new TacsScalar[local_size];
-
   memset(xlocal, 0, local_size*sizeof(TacsScalar));
   memset(ylocal, 0, local_size*sizeof(TacsScalar));
 }
@@ -156,7 +153,7 @@ ScMat::~ScMat(){
   nc:  the column dimension
 */
 void ScMat::getSize( int * nr, int * nc ){
-  int bs = rmap->getBlockSize();
+  int bs = B->getBlockSize();
   *nr = bs*rmap->getDim();
   *nc = bs*rmap->getDim();
 }
@@ -477,8 +474,7 @@ PcScMat::PcScMat( ScMat * smat, int levFill, double fill,
 
   // Set up information required for the global Schur complement matrix
   // Set the variable map
-  int bsize = rmap->getBlockSize();
-  schur_map = new VarMap(comm, nlocal_schur, bsize);
+  schur_map = new VarMap(comm, nlocal_schur);
   schur_map->incref();
 
   // Create the index set for the new Schur complement variables
@@ -510,6 +506,7 @@ PcScMat::PcScMat( ScMat * smat, int levFill, double fill,
   schur_index->getIndices(&new_global_schur_vars);
 
   // Determine the number of blocks to use per block-cylic block
+  int bsize = B->getBlockSize();
   int csr_blocks_per_block = 36/bsize;
 
   // Create the global block-cyclic Schur complement matrix
@@ -519,8 +516,8 @@ PcScMat::PcScMat( ScMat * smat, int levFill, double fill,
   pdmat->incref();
 
   // Allocate space for local storage of vectors
-  int xsize = b_map->getSize();
-  int ysize = c_map->getSize();
+  int xsize = bsize*b_map->getDim();
+  int ysize = bsize*c_map->getDim();
   xlocal = new TacsScalar[ xsize ];
   yinterface = new TacsScalar[ ysize ];
 
@@ -528,8 +525,10 @@ PcScMat::PcScMat( ScMat * smat, int levFill, double fill,
   memset(yinterface, 0, ysize*sizeof(TacsScalar));
 
   // Allocate the Schur complement vectors 
-  yschur = new BVec(schur_map);  yschur->incref();
-  gschur = new BVec(schur_map);  gschur->incref();
+  yschur = new BVec(schur_map, bsize);
+  gschur = new BVec(schur_map, bsize);
+  yschur->incref();
+  gschur->incref();
 }
 
 /*
@@ -584,7 +583,8 @@ void PcScMat::testSchurComplement( TACSVec * tin, TACSVec * tout ){
     // Test two methods of computing the effect of the Schur complement
     out->zeroEntries();
     
-    int c_size = c_map->getSize();
+    int bsize = B->getBlockSize();
+    int c_size = bsize*c_map->getDim();
     TacsScalar * temp = new TacsScalar[c_size];
     c_map->beginForward(in, yinterface);
     c_map->endForward(in, yinterface);
@@ -878,7 +878,8 @@ void PcScMat::applyFactor( TACSVec * tin, TACSVec * tout ){
     // Compute yinterface = yinterface - L^{-1} E y
     // Note: scale y, by -1 first 
     schur_dist->endForward(yschur, yinterface);
-    int one = 1, len = c_map->getSize();
+    int one = 1;
+    int len = Bpc->getBlockSize()*c_map->getDim();
     TacsScalar alpha = -1.0; 
     BLASscal(&len, &alpha, yinterface, &one);
     

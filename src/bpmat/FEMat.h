@@ -36,7 +36,8 @@
 class FEMat : public ScMat {
  public:
   FEMat( TACSThreadInfo * thread_info, VarMap * _rmap, 
-	 int nlocal_vars, const int * rowp, const int * cols, 
+	 int bsize, int nlocal_vars, 
+         const int * rowp, const int * cols, 
 	 BVecIndices * b_local_indices, BVecDistribute * _b_map, 
          BVecIndices * c_local_indices, BVecDistribute * _c_map,
 	 BCMap * _bcs = NULL );

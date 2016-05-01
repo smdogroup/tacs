@@ -21,13 +21,13 @@
 */
 class BVecIndices : public TACSObject {
  public:
-  BVecIndices( int ** _indices, int _nindices );
+  BVecIndices( int **_indices, int _nindices );
   ~BVecIndices();
 
   // Retrieve information about the indices
   // --------------------------------------
   int getNumIndices();
-  int getIndices( int ** _indices );
+  int getIndices( int **_indices );
   int isSorted();
 
   // Set up/use an arg-sorted array to find the reverse
@@ -37,11 +37,10 @@ class BVecIndices : public TACSObject {
   int findIndex( int index ); // Find the index k such that indices[k] = index
 
  private:
-  int * indices;
+  int *indices;
   int nindices;
   int issorted;
-
-  int * index_args;
+  int *index_args;
 };
 
 /*!
@@ -54,7 +53,7 @@ class BVecIndices : public TACSObject {
   This class performs the following operation:
 
   for i = 1:nvars:
-  local[i] = vec[ vars[i] ]
+  local[i] = vec[vars[i]]
 
   where vars[i] are possibly non-local variables.
 
@@ -62,7 +61,7 @@ class BVecIndices : public TACSObject {
   following operation takes place,
 
   for i = 1:nvars:
-  vec[ vars[i] ] += local[i]
+  vec[vars[i]] += local[i]
 
   This operation is useful for assembling the residual equations
   within the finite--element method.
@@ -70,35 +69,33 @@ class BVecIndices : public TACSObject {
 class BVecDistribute : public TACSObject {
  public:
   enum OpType { INSERT, ADD };
-  BVecDistribute( VarMap * rmap, BVecIndices * bindex );
+  BVecDistribute( VarMap *rmap, BVecIndices *bindex );
   ~BVecDistribute();
 
   // Get the size of the local array
   // All arrays passed must be at least this size
   // --------------------------------------------
   int getDim();
-  int getBlockSize();
-  int getSize();
-  BVecIndices * getBVecIndices();
+  BVecIndices *getBVecIndices();
 
   // Transfer the data to the array provided
   // ---------------------------------------
-  void beginForward( BVec * vec, TacsScalar * local, int var_offset = 0 ); 
-  void endForward( BVec * vec, TacsScalar * local );
+  void beginForward( BVec *vec, TacsScalar *local, 
+                     int var_offset = 0 ); 
+  void endForward( BVec *vec, TacsScalar *local );
 
   // Add or insert data back into the vector
   // ---------------------------------------
-  void beginReverse( TacsScalar * local, BVec * vec, enum OpType op = ADD ); 
-  void endReverse( TacsScalar * local, BVec * vec, enum OpType op = ADD );    
+  void beginReverse( TacsScalar *local, BVec *vec, enum OpType op=ADD ); 
+  void endReverse( TacsScalar *local, BVec *vec, enum OpType op=ADD );    
 
   MPI_Comm getMPIComm();
-
-  const char * TACSObjectName();
+  const char *TACSObjectName();
 
  private:
   // Block-specific implementation pointers
   // --------------------------------------
-  void initImpl();
+  void initImpl( int bsize );
   void (*bgetvars)( int bsize, int nvars, int * vars, int lower,
 		    TacsScalar * x, TacsScalar * y, 
 		    BVecDistribute::OpType op );
@@ -108,8 +105,8 @@ class BVecDistribute : public TACSObject {
 
   // Data defining the distribution of the variables
   VarMap * rmap;
-  int bsize;
 
+  // The communicator and the MPI data
   MPI_Comm comm;
   int mpiRank, mpiSize;
   const int * ownerRange;
@@ -122,36 +119,36 @@ class BVecDistribute : public TACSObject {
   // -----------------------------------------------------------
   int sorted_flag;
   int nvars_unsorted;
-  int * ext_unsorted_index;
-  TacsScalar * ext_sorted_vals;
+  int *ext_unsorted_index;
+  TacsScalar *ext_sorted_vals;
 
   // Data for collecting external variables
   // --------------------------------------
   int next_vars;
-  int * ext_ptr;  // Displacements into the local external array
-  int * ext_vars; // External variables that are requested by this process
+  int *ext_ptr;  // Displacements into the local external array
+  int *ext_vars; // External variables that are requested by this process
   int extval_size;
 
   // Data for the requested values
-  int * req_ptr;  // Displacement into requested array
-  int * req_vars; // Variables that have been requested
+  int *req_ptr;  // Displacement into requested array
+  int *req_vars; // Variables that have been requested
   int reqval_size;
-  TacsScalar * reqvals;
+  TacsScalar *reqvals;
 
   // Sending data
   int n_req_proc; // Processes to send non-zero mesages to
-  int * req_proc; 
-  MPI_Request * sends;
-  MPI_Status * send_status;
+  int *req_proc; 
+  MPI_Request *sends;
+  MPI_Status *send_status;
 
   // Receiving data
   int n_ext_proc; // Externall processes to expect non-zero receives from
-  int * ext_proc;
+  int *ext_proc;
 
-  MPI_Request * receives;
-  MPI_Status * receive_status;
+  MPI_Request *receives;
+  MPI_Status *receive_status;
 
-  static const char * name;
+  static const char *name;
 };
 
 #endif

@@ -81,18 +81,16 @@ void BVecInterpMultTransposeAdd6( int bsize, int nrows,
   4. Calls can be made to mult, multAdd, multTranspose, and multTransposeAdd
 */
 BVecInterp::BVecInterp( TACSAssembler *in, 
-                        TACSAssembler *out ){
+                        TACSAssembler *out,
+                        int _bsize ){
   inMap = in->getVarMap();
   inMap->incref();
 
   outMap = out->getVarMap();
   outMap->incref();
   
-  bsize = inMap->getBlockSize();
-  if (bsize != outMap->getBlockSize()){
-    fprintf(stderr, "Error in BVecInterp: block sizes do not match\n");
-    return;
-  }
+  // The block size to be used 
+  bsize = _bsize;
 
   // Make sure that the MPI communicators from the input/output
   // vectors are the same

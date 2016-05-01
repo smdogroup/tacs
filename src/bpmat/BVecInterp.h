@@ -46,7 +46,7 @@
 */
 class BVecInterp : public TACSObject {
  public:
-  BVecInterp( TACSAssembler *in, TACSAssembler *out );
+  BVecInterp( TACSAssembler *in, TACSAssembler *out, int _bsize );
   ~BVecInterp();
 
   // Add components of the interpolation

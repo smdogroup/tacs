@@ -28,15 +28,23 @@ class TACSShellTraction : public TACSElement {
   TACSShellTraction( TacsScalar _tx[], 
                      TacsScalar _ty[],
                      TacsScalar _tz[] ){
-    memcpy(tx, _tx, order*order*sizeof(TacsScalar));
-    memcpy(ty, _ty, order*order*sizeof(TacsScalar));
-    memcpy(tz, _tz, order*order*sizeof(TacsScalar));
+    memcpy(tx, _tx, NUM_NODES*sizeof(TacsScalar));
+    memcpy(ty, _ty, NUM_NODES*sizeof(TacsScalar));
+    memcpy(tz, _tz, NUM_NODES*sizeof(TacsScalar));
   }
+  TACSShellTraction( TacsScalar _tx,
+                     TacsScalar _ty,
+                     TacsScalar _tz ){
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      tx[i] = _tx;  ty[i] = _ty;  tz[i] = _tz;
+    }
+  }
+                     
 
   // Return the number of displacements, stresses and nodes
   // ------------------------------------------------------
   int numDisplacements(){ return 6; }
-  int numNodes(){ return order*order; }
+  int numNodes(){ return NUM_NODES; }
   int numStresses(){ return 0; }
   
   // Compute the kinetic and potential energy within the element
@@ -58,7 +66,7 @@ class TACSShellTraction : public TACSElement {
                     const TacsScalar ddvars[] ){
     // Get the quadrature points and weights
     const double *gaussPts, *gaussWts;
-    FElibrary::int getGaussPtsWts(order, &gaussPts, &gaussWts);
+    FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 
     // Add the residual due to the shell traction
     for ( int m = 0; m < order; m++ ){
@@ -72,6 +80,10 @@ class TACSShellTraction : public TACSElement {
 	double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
         TacsScalar X[3], Xd[9];
         shellutils::shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
+
+        // Determine the normal direction and normalize it
+	Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
+	Tensor::normalize3D(&Xd[6]);
         	  
         // Compute the determinant of the Jacobian
 	TacsScalar h = FElibrary::jacobian3d(Xd);
@@ -80,7 +92,7 @@ class TACSShellTraction : public TACSElement {
 	// Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
-	for ( int i = 0; i < order*order; i++ ){
+	for ( int i = 0; i < NUM_NODES; i++ ){
 	  Tx += tx[i]*N[i];
 	  Ty += ty[i]*N[i];
 	  Tz += tz[i]*N[i];
@@ -89,7 +101,7 @@ class TACSShellTraction : public TACSElement {
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         TacsScalar *r = res;
-	for ( int i = 0; i < order*order; i++ ){
+	for ( int i = 0; i < NUM_NODES; i++ ){
 	  r[0] -= h*Tx*N[i];
 	  r[1] -= h*Ty*N[i];
 	  r[2] -= h*Tz*N[i];

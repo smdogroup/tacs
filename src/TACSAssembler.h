@@ -74,7 +74,9 @@ class TACSAssembler : public TACSObject {
   int getNumNodes(){ return numNodes; }
   int getNumDependentNodes(){ return numDependentNodes; }
   int getNumElements(){ return numElements; }
-  VarMap * getVarMap(){ return varMap; }
+  VarMap *getVarMap(){ return varMap; }
+  BCMap *getBCMap(){ return bcMap; }
+  BVecDistribute *getBVecDistribute(){ return vecDist; }
 
   // Add nodes to TACS
   // -----------------
@@ -240,17 +242,26 @@ class TACSAssembler : public TACSObject {
   // --------------------------------------
   void setNumThreads( int t );
 
+  // Add values to the local components of a vector
+  // ----------------------------------------------
+  inline int getValues( const int perNode, const int elemNum, 
+			const TacsScalar *local, TacsScalar *vals );
+  inline int addValues( const int perNode, const int elemNum, 
+			const TacsScalar *vals, TacsScalar *local );
+  inline int setValues( const int perNode, const int elemNum,
+                        const TacsScalar *vals, TacsScalar *local );
+
+  // Set the dependent nodal values based on the independent nodes
+  // -------------------------------------------------------------
+  void setDependentVariables( const int perNode, TacsScalar * vars );
+  void addDependentResidual( const int perNode, TacsScalar * vars );
+
  private:
   // Contruct the TACSAssembler object, given the initial information
   // ----------------------------------------------------------------
   void init( MPI_Comm _tacs_comm, int numOwnedNodes, int _varsPerNode,
 	     int _numElements, int _numNodes, int _numDependentNodes,
 	     int _nodeMaxCSRsize );
-
-  // Set the dependent nodal values based on the independent nodes
-  // -------------------------------------------------------------
-  void setDependentVariables( const int perNode, TacsScalar * vars );
-  void addDependentResidual( const int perNode, TacsScalar * vars );
 
   // Get pointers to the start-locations within the data array
   // ---------------------------------------------------------
@@ -281,12 +292,7 @@ class TACSAssembler : public TACSObject {
   // ----------------------------------------------------------------
   void initializeArrays();
 
-  inline int getValues( const int perNode, const int elemNum, 
-			const TacsScalar *local, TacsScalar *vals );
-  inline int addValues( const int perNode, const int elemNum, 
-			const TacsScalar *vals, TacsScalar *local );
-  inline int setValues( const int perNode, const int elemNum,
-                        const TacsScalar *vals, TacsScalar *local );
+  // Add values into the matrix
   inline void addMatValues( TACSMat *A, const int elemNum, 
 			    const TacsScalar *mat,
 			    int *item, TacsScalar *temp );

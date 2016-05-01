@@ -22,10 +22,9 @@
 */
 class VarMap : public TACSObject {
  public:
-  VarMap( MPI_Comm _comm, int _N, int _bsize );
+  VarMap( MPI_Comm _comm, int _N );
   ~VarMap();
 
-  int getBlockSize(){ return bsize; }
   int getDim(){ return N; }
   MPI_Comm getMPIComm(){ return comm; }
   void getOwnerRange( const int ** _ownerRange, 
@@ -35,15 +34,11 @@ class VarMap : public TACSObject {
   }  
 
  private:
-  MPI_Comm comm;
-
-  // Ownership range information
-  int * ownerRange;
-  int mpiSize;
-  int mpiRank;
-
-  int N;     // Number of variables
-  int bsize; // Variable block size
+  MPI_Comm comm; // The MPI communicator
+  int *ownerRange; // The ownership range of the variables
+  int mpiSize; // Number of MPI procs
+  int mpiRank; // MPI rank
+  int N; // Number of nodes on this processor
 };
 
 /*
@@ -87,9 +82,8 @@ class BCMap : public TACSObject {
 */
 class BVec : public TACSVec {
  public: 
-  BVec( VarMap * _rmap, 
-	BCMap * bcs = NULL ); // Create a vector with a given rmap/bcs
-  BVec( MPI_Comm _comm, int size );
+  BVec( VarMap * _rmap, int bsize, BCMap * bcs=NULL );
+  BVec( MPI_Comm _comm, int size, int bsize );
   ~BVec();  
 
   // The basic vector operations
@@ -129,34 +123,34 @@ class BVec : public TACSVec {
 
   // These functions are sometimes required
   // --------------------------------------
-  BCMap * getBCMap(){ return bcs; }    // This may return NULL
+  BCMap *getBCMap(){ return bcs; }    // This may return NULL
 
   virtual const char * TACSObjectName();
 
-  void getOwnership( int * _mpiRank, int * _mpiSize, 
-                     const int ** _ownerRange ){
-    if (_mpiRank){ *_mpiRank = mpiRank; }
-    if (_mpiSize){ *_mpiSize = mpiSize; }
-    if (_ownerRange){ *_ownerRange = ownerRange; }
+  void getOwnership( int *_mpiRank, int *_mpiSize, const int **_ownerRange ){
+    *_mpiRank = mpiRank;
+    *_mpiSize = mpiSize;
+    *_ownerRange = ownerRange;
   }  
 
  private:
-  VarMap * rmap;
+  VarMap *rmap;
 
   MPI_Comm comm;
-  const int * ownerRange;
+  const int *ownerRange;
   int mpiSize;
   int mpiRank;
 
-  TacsScalar * x;
-  TacsScalar * displaced; // The displaced array x 
-  int bsize;            // The block size
-  int size;             // The size of the array
+  TacsScalar *x;
+  TacsScalar *displaced; // The displaced array x 
+  int bsize; // The block size
+  int size; // The size of the array
 
   // These may be defined - if they're not, applyBCs has no effect
-  BCMap * bcs;      // Local boundary conditions -- already in local coordiantes
+  // Local boundary conditions -- already in local numbering
+  BCMap *bcs;
 
-  static const char * vecName;
+  static const char *vecName;
 };
 
 #endif

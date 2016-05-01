@@ -16,7 +16,8 @@
 */
 class DistMat : public PMat {
  public:
-  DistMat( TACSThreadInfo * thread_info, VarMap * _rmap, 
+  DistMat( TACSThreadInfo * thread_info, 
+           VarMap * _rmap, int bsize,
 	   int next_vars, const int * rowp, const int * cols, 
 	   BVecIndices * bindex,
 	   BCMap * _bcs = NULL );

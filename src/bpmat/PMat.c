@@ -48,21 +48,31 @@ PMat::PMat(){
   rmap = NULL;
   Aloc = NULL;
   Bext = NULL;
-  bcs  = NULL;
+  bcs = NULL;
   col_map = NULL;
   x_ext = NULL;
   N = 0; Nc = 0; Np = 0; bsize = 0;
 }
 
+/*
+  Initialize the PMat object
+*/
 void PMat::init( VarMap * _rmap,
 		 BCSRMat * _Aloc, BCSRMat * _Bext,
 		 BVecDistribute * _col_map,
 		 BCMap * _bcs ){
+  // Set the variable map and the local matrix components
+  rmap = _rmap;
+  Aloc = _Aloc;
+  Bext = _Bext;
+  rmap->incref();
+  Aloc->incref();
+  Bext->incref();
+  
+  bcs  = _bcs;   
+  if (bcs){ bcs->incref(); }
 
-  rmap = _rmap;  rmap->incref();  
-  Aloc = _Aloc;  Aloc->incref();
-  Bext = _Bext;  Bext->incref();
-  bcs  = _bcs;   if (bcs){ bcs->incref(); }
+  // No external column map
   col_map = NULL;
   x_ext = NULL;
 
@@ -92,16 +102,16 @@ external block matrix do not match\n");
   }
 
   bsize = Aloc->getBlockSize();
-  if (Bext->getBlockSize() != bsize ||
-       col_map->getBlockSize() != bsize){
+  if (Bext->getBlockSize() != bsize){
     fprintf(stderr, "Block sizes do not match\n");
     return;
   }
 
-  int len = col_map->getSize();
+  // Allocate the external array
+  int len = bsize*col_map->getDim();
   x_ext = new TacsScalar[ len ];
-  memset(x_ext,0,len*sizeof(TacsScalar));
-  ext_offset = bsize * Np;
+  memset(x_ext, 0, len*sizeof(TacsScalar));
+  ext_offset = bsize*Np;
 }
 
 PMat::~PMat(){
@@ -278,7 +288,7 @@ void PMat::applyBCs(){
 }
 
 TACSVec * PMat::createVec(){
-  return new BVec(rmap, bcs);
+  return new BVec(rmap, Aloc->getBlockSize(), bcs);
 }
 
 /*!
@@ -345,16 +355,19 @@ const char * PMat::TACSObjectName(){
 
 const char * PMat::matName = "PMat";
 
-/*!
-  Build a simple SOR or Symmetric-SOR preconditioner for A
+/*
+  Build a simple SOR or Symmetric-SOR preconditioner for the matrix
 */
-PSOR::PSOR( PMat * mat, int _zero_guess, TacsScalar _omega, int _iters, 
+PSOR::PSOR( PMat * mat, int _zero_guess, 
+            TacsScalar _omega, int _iters, 
 	    int _isSymmetric ){
+  // Get the on- and off-diagonal components of the matrix
   mat->getBCSRMat(&Aloc, &Bext);
   Aloc->incref();
   Bext->incref();
 
-  TACSVec * tbvec = mat->createVec();
+  // Create a vector to store temporary data for the relaxation
+  TACSVec *tbvec = mat->createVec();
   bvec = dynamic_cast<BVec*>(tbvec);
   if (bvec){
     bvec->incref();
@@ -368,20 +381,26 @@ PSOR::PSOR( PMat * mat, int _zero_guess, TacsScalar _omega, int _iters,
   col_map->incref();
 
   // Get the number of variables in the row map
-  int b, N, Nc;
-  mat->getRowMap(&b, &N, &Nc);
+  int bsize, N, Nc;
+  mat->getRowMap(&bsize, &N, &Nc);
 
-  ext_offset = b*(N-Nc);
+  // Compute the offset to the off-processor terms
+  ext_offset = bsize*(N-Nc);
   
-  int ysize = col_map->getSize();
+  // Compute the size of the external components
+  int ysize = bsize*col_map->getDim();
   yext = new TacsScalar[ ysize ];  
 
+  // Store the relaxation options 
   zero_guess = _zero_guess;
   omega = _omega;
   iters = _iters;
   isSymmetric = _isSymmetric;
 }
 
+/*
+  Free the SOR preconditioner
+*/
 PSOR::~PSOR(){
   Aloc->decref();
   Bext->decref();
@@ -412,22 +431,20 @@ void PSOR::factor(){
   where b = x - Bext * yext
 */
 void PSOR::applyFactor( TACSVec * txvec, TACSVec * tyvec ){
+  // Covert to BVec objects
   BVec *xvec, *yvec;
-
   xvec = dynamic_cast<BVec*>(txvec);
   yvec = dynamic_cast<BVec*>(tyvec);
 
   if (xvec && yvec){
     // Apply the ILU factorization to a vector
     TacsScalar *x, *y, *b;
-
     yvec->getArray(&y);
     xvec->getArray(&x);
     bvec->getArray(&b);
     
     if (zero_guess){
-      yvec->zeroEntries();
-      
+      yvec->zeroEntries();      
       if (isSymmetric){
         Aloc->applySSOR(x, y, omega, iters);
       }
@@ -439,13 +456,17 @@ void PSOR::applyFactor( TACSVec * txvec, TACSVec * tyvec ){
       // Begin sending the external-interface values
       col_map->beginForward(yvec, yext);
       
+      // Zero entries in the local vector
       bvec->zeroEntries();
       
       // Finish sending the external-interface unknowns
       col_map->endForward(yvec, yext);
       
-      Bext->mult(yext, &b[ext_offset]);     // b = Bext * yext
-      bvec->axpby(1.0, -1.0, xvec);         // b = xvec - Bext * yext
+      // Compute b[ext_offset] = Bext*yext
+      Bext->mult(yext, &b[ext_offset]); 
+
+      // Compute b = xvec - Bext*yext
+      bvec->axpby(1.0, -1.0, xvec);         
       
       if (isSymmetric){
         Aloc->applySSOR(b, y, omega, iters);
@@ -804,9 +825,9 @@ GlobalSchurMat::GlobalSchurMat( PMat * mat, BCSRMat * _Apc ){
 
   varoffset = N-Nc;
   nvars = bsize*Nc;
-  rmap = new VarMap(mat->getMPIComm(), Nc, bsize);
+  rmap = new VarMap(mat->getMPIComm(), Nc);
 
-  int xsize = col_map->getSize();
+  int xsize = bsize*col_map->getDim();
   x_ext = new TacsScalar[ xsize ];  
 }
 
@@ -873,5 +894,5 @@ void GlobalSchurMat::multOffDiag( BVec * xvec, BVec * yvec ){
 
 // Return a new Vector
 TACSVec * GlobalSchurMat::createVec(){
-  return new BVec(rmap);
+  return new BVec(rmap, Apc->getBlockSize());
 }

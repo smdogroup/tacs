@@ -53,15 +53,14 @@
   7. The CSR data structures from all procs are merged
   8. The persistent data communication paths are initialized 
 */
-DistMat::DistMat( TACSThreadInfo * thread_info, VarMap * _rmap,
+DistMat::DistMat( TACSThreadInfo * thread_info, 
+                  VarMap * _rmap, int bsize,
 		  int num_ext_vars, const int * rowp, const int * cols, 
 		  BVecIndices * bindex, BCMap * _bcs ){
-
-  int * ext_vars;
-
   comm = _rmap->getMPIComm();
   _rmap->getOwnerRange(&ownerRange, &mpiRank, &mpiSize);
 
+  int * ext_vars;
   if (bindex->getIndices(&ext_vars) != num_ext_vars){
     fprintf(stderr, "[%d] DistMat error: number of indices provided must be \
 equal to the number of rows\n", mpiRank);
@@ -69,7 +68,6 @@ equal to the number of rows\n", mpiRank);
   }
 
   // Get the non-zero pattern of the input matrix
-  int bs = _rmap->getBlockSize();
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
 
@@ -258,10 +256,10 @@ equal to the number of rows\n", mpiRank);
 		   &np, &Browp, &Bcols);
 
   // Allocate space for in-coming matrix elements
-  ext_A = new TacsScalar[ bs*bs*ext_rowp[next_rows] ];
-  in_A  = new TacsScalar[ bs*bs*in_rowp[nin_rows] ];
+  ext_A = new TacsScalar[ bsize*bsize*ext_rowp[next_rows] ];
+  in_A  = new TacsScalar[ bsize*bsize*in_rowp[nin_rows] ];
 
-  int len = bs*bs*ext_rowp[next_rows];
+  int len = bsize*bsize*ext_rowp[next_rows];
   for ( int k = 0; k < len; k++ ){
     ext_A[k] = 0.0;
   }
@@ -270,9 +268,10 @@ equal to the number of rows\n", mpiRank);
   int n = ownerRange[mpiRank+1] - ownerRange[mpiRank];
   int m = n;
 
-  BCSRMat * _Aloc = new BCSRMat(comm, thread_info, bs, n, m, &Arowp, &Acols);
+  BCSRMat * _Aloc = new BCSRMat(comm, thread_info, 
+                                bsize, n, m, &Arowp, &Acols);
   BCSRMat * _Bext = new BCSRMat(comm, thread_info,
-                                bs, n-np, col_vars_size, &Browp, &Bcols);
+                                bsize, n-np, col_vars_size, &Browp, &Bcols);
   
   // Finally, initialize PMat
   init(_rmap, _Aloc, _Bext, _col_map, _bcs);

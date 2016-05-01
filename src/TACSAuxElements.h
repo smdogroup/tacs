@@ -12,7 +12,12 @@
 #include "TACSElement.h"
 
 /*
-  The following is th
+  The following class defines a single auxiliary element and
+  its associated element number. 
+  
+  This class does not need to be instantiated by the user - this is a
+  class used within TACSAuxElements/TACSAssembler to facilitate the
+  sorting/searching of auxiliary elements.
 */
 class TACSAuxElem {
  public:
@@ -23,16 +28,11 @@ class TACSAuxElem {
 /*
   The TACSAuxiliaryElements class 
 
-  This class is a simple way to add tractions/body forces into 
-  TACS 
-
-  a class for adding extra
-  forces/elements/contributions to the Jacobian.
-
-  The following class defines a group of extra elements that can be
-  added to the TACSAssembler object. These additional elements can
-  only contribute existing the non-zero
-  
+  This class provides a way to add extra elements - often defining
+  body-loads, tractions etc. for elements within the TACSAssembler
+  class. These elements are restricted to have the exact same non-zero
+  pattern as the existing elements that are set in the TACSAssembler
+  object.   
 */
 class TACSAuxElements : public TACSOptObject {
  public:
@@ -62,6 +62,7 @@ class TACSAuxElements : public TACSOptObject {
   void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
   
   // Print the name of the TACSObject
+  // --------------------------------
   const char* TACSObjectName(){ return auxName; }
 
  private:

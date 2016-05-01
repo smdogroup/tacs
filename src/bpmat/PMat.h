@@ -91,9 +91,9 @@ class PMat : public TACSMat {
   // Variable data
   // -------------
   int bsize; // The block size
-  int N;     // The number of local rows
-  int Nc;    // The number of equations that are coupled to other processors
-  int Np;    // The number of local-only equations Np + Nc = N
+  int N; // The number of local rows
+  int Nc; // The number of equations that are coupled to other processors
+  int Np; // The number of local-only equations Np + Nc = N
 
  private: 
 
@@ -128,14 +128,13 @@ class PSOR : public TACSPc {
   int iters;
   int isSymmetric;
 
-  BCSRMat * Aloc;
-  BCSRMat * Bext;
+  BCSRMat *Aloc;
+  BCSRMat *Bext;
+  BVec *bvec;
 
-  BVec * bvec;
-
-  BVecDistribute * col_map;
+  BVecDistribute *col_map;
   int ext_offset;
-  TacsScalar * yext;
+  TacsScalar *yext;
 };
 
 /*

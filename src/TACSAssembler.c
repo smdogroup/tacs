@@ -123,7 +123,7 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   aux_elements = NULL;
 
   // Information for setting boundary conditions and distributing variables
-  varMap = new VarMap(tacs_comm, numOwnedNodes, varsPerNode);
+  varMap = new VarMap(tacs_comm, numOwnedNodes);
   varMap->incref();
 
   // Estimate 100 bcs at first, but this is expanded as required
@@ -1908,7 +1908,7 @@ BVec * TACSAssembler::createVec(){
     return NULL;
   }
 
-  return new BVec(varMap, bcMap);
+  return new BVec(varMap, varsPerNode, bcMap);
 }
 
 /*!
@@ -1921,15 +1921,20 @@ DistMat * TACSAssembler::createMat(){
     return NULL;
   }
   
+  // Compute the local connectivity
   int * rowp, * cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
   
-  DistMat * dmat = new DistMat(thread_info, varMap, numNodes, rowp, cols,
+  // Create the distributed matrix class
+  DistMat * dmat = new DistMat(thread_info, varMap, varsPerNode,
+                               numNodes, rowp, cols,
 			       vecDistIndices, bcMap);
 
+  // Free the local connectivity
   delete [] rowp;
   delete [] cols;
 
+  // Return the resulting matrix object
   return dmat;
 }
 
@@ -2147,7 +2152,8 @@ order_type == NATURAL_ORDER\n",
   int * rowp, * cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
-  FEMat * fmat = new FEMat(thread_info, varMap, numNodes, rowp, cols,
+  FEMat * fmat = new FEMat(thread_info, varMap, 
+                           varsPerNode, numNodes, rowp, cols,
                            feMatBIndices, feMatBMap,
                            feMatCIndices, feMatCMap, bcMap);
 
