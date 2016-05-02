@@ -71,6 +71,7 @@ class TACSAssembler : public TACSObject {
 
   // Return important information about the TACS object
   // --------------------------------------------------
+  int getVarsPerNode(){ return varsPerNode; }
   int getNumNodes(){ return numNodes; }
   int getNumDependentNodes(){ return numDependentNodes; }
   int getNumElements(){ return numElements; }
