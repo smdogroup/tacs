@@ -2254,7 +2254,7 @@ void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[],
                         N11, N22, N12);
 
   for ( int k = 0; k < NUM_VARIABLES; k++ ){
-    strainSVSens[k] += strain_product(strainSens, &B[k*NUM_STRESSES]);
+    strainSVSens[k] += scale*strain_product(strainSens, &B[k*NUM_STRESSES]);
   }
 }
 
