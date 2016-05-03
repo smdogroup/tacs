@@ -14,6 +14,7 @@
 #define LAPACKdspgv dspgv_
 #define LAPACKdsbev dsbev_
 #define LAPACKdsbgv dsbgv_
+#define LAPACKdgelss dgelss_
 #define LAPACKdsbgvx dsbgvx_
 #define LAPACKdsyev dsyev_
 #define LAPACKdpbsv dpbsv_
@@ -213,6 +214,11 @@ extern "C" {
 			    int * IL, int * IU, double * ABSTOL, int * M,
 			    double * W, double * Z, int * LDZ, double * work,
 			    int * iwork, int * ifail, int * info );
+
+  // Solve an over or underdetermined system of equations
+  extern void LAPACKdgelss( int *m, int *n, int *nrhs, double *a, int *lda,
+                            double *b, int *ldb, double *s, double *rcond,
+                            int *rank, double *work, int *lwork, int *info );
 
   // Compute the eigenvalues and optionally the eigenvectors of a
   // symmetric, tridiagonal system
