@@ -133,6 +133,7 @@ class TACSAssembler : public TACSObject {
   // Set auxiliary elements into the TACSAssembler object
   // ----------------------------------------------------
   void setAuxElements( TACSAuxElements *aux_elems );
+  TACSAuxElements *getAuxElements();
 
   // Create vectors/matrices
   // -----------------------

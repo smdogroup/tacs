@@ -816,204 +816,228 @@ TACSAssembler* TACSCreator::createTACS(){
 
   input:
   split_size:      the number of segments in the partition
+  part:            (optional) the specified partition
 */
-void TACSCreator::partitionMesh( int split_size ){
+void TACSCreator::partitionMesh( int split_size, 
+                                 const int *part ){
   int rank;
   MPI_Comm_rank(comm, &rank);
   if (rank != root_rank){
     return;
   }
 
-  // Deallocate any member data that was previously allocated
+  // Deallocate data that may have been allocated on a 
+  // previous call
   if (new_nodes){ delete [] new_nodes; }
-  if (partition){ delete [] partition; }
   if (owned_elements){ delete [] owned_elements; }
   if (owned_nodes){ delete [] owned_nodes; }
 
   // Allocate the arrays to store the number of owned elements and
   // nodes
-  int size;
-  MPI_Comm_size(comm, &size);
-  owned_elements = new int[ size ];
-  owned_nodes = new int[ size ];
-  
-  // Set the number of nodes/elements to zero
-  memset(owned_elements, 0, size*sizeof(int));
-  memset(owned_nodes, 0, size*sizeof(int));
+  int mpi_size;
+  MPI_Comm_size(comm, &mpi_size);
 
   // Set the split size to ensure that it is less than the 
   // comm size
-  if (split_size <= 0 || split_size > size){
-    split_size = size;
+  if (split_size <= 0 || split_size > mpi_size){
+    split_size = mpi_size;
   }
 
-  // Allocate space for the new node numbers and the new dependent
-  // node numbers
-  partition = new int[ num_elements ];
-  new_nodes = new int[ num_nodes ];
+  if (part){
+    // If the partition is specified, then delete the old
+    // one if it is defined
+    if (partition){ delete [] partition; }
+    partition = NULL;
+
+    // Check whether the suggested partition is legitimate 
+    int legit = 1;
+    for ( int i = 0; i < num_elements; i++ ){
+      if (part[i] < 0 || part[i] >= split_size){
+        legit = 0;
+        break;
+      }
+    }
+
+    // If the partition is legit, copy it over
+    if (legit){
+      partition = new int[ num_elements ];
+      memcpy(partition, part, num_elements*sizeof(int));
+    }
+  }
+
+  if (!partition){
+    // Allocate space for the new node numbers and the new dependent
+    // node numbers
+    partition = new int[ num_elements ];
  
-  // Compute the node to element CSR data structure for both
-  // the indepedent and dependent nodes
-  int *node_elem_ptr = new int[ num_nodes+1 ];
-  memset(node_elem_ptr, 0, (num_nodes+1)*sizeof(int));
+    // Compute the node to element CSR data structure for both
+    // the indepedent and dependent nodes
+    int *node_elem_ptr = new int[ num_nodes+1 ];
+    memset(node_elem_ptr, 0, (num_nodes+1)*sizeof(int));
     
-  for ( int i = 0; i < num_elements; i++ ){
-    int end = elem_node_ptr[i+1]; 
-    for ( int j = elem_node_ptr[i]; j < end; j++ ){
-      int node = elem_node_conn[j];
-      if (node >= 0){
-	// This is an independent node
-	node_elem_ptr[node+1]++;
+    for ( int i = 0; i < num_elements; i++ ){
+      int end = elem_node_ptr[i+1]; 
+      for ( int j = elem_node_ptr[i]; j < end; j++ ){
+        int node = elem_node_conn[j];
+        if (node >= 0){
+          // This is an independent node
+          node_elem_ptr[node+1]++;
+        }
       }
     }
-  }
 
-  // Determine the size of the node to element array
-  for ( int i = 0; i < num_nodes; i++ ){
-    node_elem_ptr[i+1] += node_elem_ptr[i];
-  }
-  int *node_elem_conn = new int[ node_elem_ptr[num_nodes] ];
+    // Determine the size of the node to element array
+    for ( int i = 0; i < num_nodes; i++ ){
+      node_elem_ptr[i+1] += node_elem_ptr[i];
+    }
+    int *node_elem_conn = new int[ node_elem_ptr[num_nodes] ];
 
-  // Fill in the entries of the node->element data structure
-  for ( int i = 0; i < num_elements; i++ ){
-    int end = elem_node_ptr[i+1];
-    for ( int j = elem_node_ptr[i]; j < end; j++ ){
-      int node = elem_node_conn[j];
-      if (node >= 0){
-	// This is an independent node
-	node_elem_conn[node_elem_ptr[node]] = i;
-	node_elem_ptr[node]++;
+    // Fill in the entries of the node->element data structure
+    for ( int i = 0; i < num_elements; i++ ){
+      int end = elem_node_ptr[i+1];
+      for ( int j = elem_node_ptr[i]; j < end; j++ ){
+        int node = elem_node_conn[j];
+        if (node >= 0){
+          // This is an independent node
+          node_elem_conn[node_elem_ptr[node]] = i;
+          node_elem_ptr[node]++;
+        }
       }
     }
-  }
   
-  // Reset the node_elem_ptr array to the correct values
-  for ( int i = num_nodes; i > 0; i-- ){
-    node_elem_ptr[i] = node_elem_ptr[i-1];
-  }
-  node_elem_ptr[0] = 0;
-
-  // Now we set up the element to element connectivity using the 
-  // set of maksed elements. For this to work within METIS, we have
-  // to remove the diagonal contribution so that there is no
-  // self-reference in the graph.
-  int *elem_ptr = new int[ num_elements+1 ];
-  elem_ptr[0] = 0;
-
-  // Information to keep track of how big the data structure is
-  int elem_conn_size = 0;
-
-  // Estimate the maximum size of the connectivity data
-  const int ROW_SIZE_EST = 27;
-  int max_elem_conn_size = ROW_SIZE_EST*num_elements;
-  int *elem_conn = new int[ max_elem_conn_size ];
-
-  // Assemble things one row at a time
-  int *row = new int[ num_elements+1 ];
-
-  for ( int i = 0; i < num_elements; i++ ){
-    // Set the size of the new row in the data structure to zero
-    int row_size = 0;
-
-    // From the element number, find the independent nodes 
-    // that are associated with this element number
-    int jpend = elem_node_ptr[i+1];
-    for ( int jp = elem_node_ptr[i]; jp < jpend; jp++ ){
-      int node = elem_node_conn[jp];
-
-      if (node >= 0){
-	// Add the element->element data
-	int kpend = node_elem_ptr[node+1];
-	for ( int kp = node_elem_ptr[node]; kp < kpend; kp++ ){
-
-	  // Get the index of the new element
-	  int new_elem = node_elem_conn[kp];
-
-	  // Check if adding another element will exceed the size
-	  // of the array. If it will, sort the array and remove
-	  // duplicates. This is guaranteed to make additional 
-	  // room.
-	  if (row_size >= num_elements){
-	    row_size = FElibrary::uniqueSort(row, row_size);
-	  }
-
-	  // Append the element index to the list
-	  row[row_size] = new_elem;
-	  row_size++;
-	}
-      }
+    // Reset the node_elem_ptr array to the correct values
+    for ( int i = num_nodes; i > 0; i-- ){
+      node_elem_ptr[i] = node_elem_ptr[i-1];
     }
+    node_elem_ptr[0] = 0;
+
+    // Now we set up the element to element connectivity using the 
+    // set of maksed elements. For this to work within METIS, we have
+    // to remove the diagonal contribution so that there is no
+    // self-reference in the graph.
+    int *elem_ptr = new int[ num_elements+1 ];
+    elem_ptr[0] = 0;
+
+    // Information to keep track of how big the data structure is
+    int elem_conn_size = 0;
+
+    // Estimate the maximum size of the connectivity data
+    const int ROW_SIZE_EST = 27;
+    int max_elem_conn_size = ROW_SIZE_EST*num_elements;
+    int *elem_conn = new int[ max_elem_conn_size ];
+
+    // Assemble things one row at a time
+    int *row = new int[ num_elements+1 ];
+
+    for ( int i = 0; i < num_elements; i++ ){
+      // Set the size of the new row in the data structure to zero
+      int row_size = 0;
+
+      // From the element number, find the independent nodes 
+      // that are associated with this element number
+      int jpend = elem_node_ptr[i+1];
+      for ( int jp = elem_node_ptr[i]; jp < jpend; jp++ ){
+        int node = elem_node_conn[jp];
+
+        if (node >= 0){
+          // Add the element->element data
+          int kpend = node_elem_ptr[node+1];
+          for ( int kp = node_elem_ptr[node]; kp < kpend; kp++ ){
+            // Get the index of the new element
+            int new_elem = node_elem_conn[kp];
+
+            // Check if adding another element will exceed the size
+            // of the array. If it will, sort the array and remove
+            // duplicates. This is guaranteed to make additional 
+            // room.
+            if (row_size >= num_elements){
+              row_size = FElibrary::uniqueSort(row, row_size);
+            }
+
+            // Append the element index to the list
+            row[row_size] = new_elem;
+            row_size++;
+          }
+        }
+      }
     
-    // Sort the element indices and remove duplicates from the
-    // array
-    row_size = FElibrary::uniqueSort(row, row_size);
+      // Sort the element indices and remove duplicates from the
+      // array
+      row_size = FElibrary::uniqueSort(row, row_size);
 
-    // Check if adding this new row to the data structure will excee
-    if (elem_conn_size + row_size > max_elem_conn_size){
-      max_elem_conn_size += 0.5*max_elem_conn_size;
-      if (max_elem_conn_size < elem_conn_size + row_size){
-        max_elem_conn_size += elem_conn_size + row_size;
+      // Check if adding this new row to the data structure will excee
+      if (elem_conn_size + row_size > max_elem_conn_size){
+        max_elem_conn_size += 0.5*max_elem_conn_size;
+        if (max_elem_conn_size < elem_conn_size + row_size){
+          max_elem_conn_size += elem_conn_size + row_size;
+        }
+        extend_int_array(&elem_conn, elem_conn_size, 
+                         max_elem_conn_size);
       }
-      extend_int_array(&elem_conn, elem_conn_size, 
-                       max_elem_conn_size);
+
+      // Add the elements - minus the diagonal entry
+      for ( int j = 0; j < row_size; j++ ){
+        if (row[j] != i){ // Not the diagonal 
+          elem_conn[elem_conn_size] = row[j];
+          elem_conn_size++;
+        }
+      }
+      elem_ptr[i+1] = elem_conn_size;
     }
 
-    // Add the elements - minus the diagonal entry
-    for ( int j = 0; j < row_size; j++ ){
-      if (row[j] != i){ // Not the diagonal 
-        elem_conn[elem_conn_size] = row[j];
-        elem_conn_size++;
-      }
-    }
-    elem_ptr[i+1] = elem_conn_size;
-  }
-
-  // Free the memory for data that is not needed 
-  delete [] row;
+    // Free the memory for data that is not needed 
+    delete [] row;
   
-  // Free the node to element pointer
-  delete [] node_elem_ptr;
-  delete [] node_elem_conn;
+    // Free the node to element pointer
+    delete [] node_elem_ptr;
+    delete [] node_elem_conn;
 
-  // Partition the mesh using METIS.
-  if (split_size > 1){
-    int options[5];
-    options[0] = 0; // use the default options
-    int wgtflag = 0; // weights are on the verticies
-    int numflag = 0; // C style numbering 
-    int edgecut = -1; 
-    int *vwgts = NULL; // Weights on the vertices 
-    int *adjwgts = NULL;  // Weights on the edges or adjacency
+    // Partition the mesh using METIS.
+    if (split_size > 1){
+      int options[5];
+      options[0] = 0; // use the default options
+      int wgtflag = 0; // weights are on the verticies
+      int numflag = 0; // C style numbering 
+      int edgecut = -1; 
+      int *vwgts = NULL; // Weights on the vertices 
+      int *adjwgts = NULL;  // Weights on the edges or adjacency
       
-    if (split_size < 8){
-      METIS_PartGraphRecursive(&num_elements, elem_ptr, elem_conn,
-                               vwgts, adjwgts,
-                               &wgtflag, &numflag, &split_size, 
-                               options, &edgecut, partition);
+      if (split_size < 8){
+        METIS_PartGraphRecursive(&num_elements, elem_ptr, elem_conn,
+                                 vwgts, adjwgts,
+                                 &wgtflag, &numflag, &split_size, 
+                                 options, &edgecut, partition);
+      }
+      else {
+        METIS_PartGraphKway(&num_elements, elem_ptr, elem_conn,
+                            vwgts, adjwgts, 
+                            &wgtflag, &numflag, &split_size, 
+                            options, &edgecut, partition);
+      }
     }
     else {
-      METIS_PartGraphKway(&num_elements, elem_ptr, elem_conn,
-                          vwgts, adjwgts, 
-                          &wgtflag, &numflag, &split_size, 
-                          options, &edgecut, partition);
+      // If there is no split, just assign all elements to the
+      // root processor
+      for ( int k = 0; k < num_elements; k++ ){
+        partition[k] = 0;
+      }
     }
-  }
-  else {
-    // If there is no split, just assign all elements to the
-    // root processor
-    for ( int k = 0; k < num_elements; k++ ){
-      partition[k] = 0;
-    }
+
+    // Free the element connectivity and element pointer
+    delete [] elem_conn;
+    delete [] elem_ptr;
   }
 
-  // Free the element connectivity and element pointer
-  delete [] elem_conn;
-  delete [] elem_ptr;
-
-  // Now, re-order the variables so that they are almost contiguous
+  // Now, re-order the node numbers so that they are almost contiguous
   // over each processor 
-  memset(owned_nodes, 0, split_size*sizeof(int));
-  memset(owned_elements, 0, split_size*sizeof(int));
+  new_nodes = new int[ num_nodes ];
+  owned_elements = new int[ mpi_size ];
+  owned_nodes = new int[ mpi_size ];
+  
+  // Set the number of nodes/elements to zero
+  memset(new_nodes, 0, num_nodes*sizeof(int));
+  memset(owned_elements, 0, mpi_size*sizeof(int));
+  memset(owned_nodes, 0, mpi_size*sizeof(int));
 
   // Set up an array that tracks the mapping from the old
   // node ordering to the new node ordering. The array stores
@@ -1021,11 +1045,8 @@ void TACSCreator::partitionMesh( int split_size ){
   // stored at the index new_nodes[i].
 
   // First, treat new_nodes as an array of flags that indicate
-  // whether this node has been counted yet.
-  memset(new_nodes, 0, num_nodes*sizeof(int));
-
-  // Keep track of the new global ordering of the nodes
-  // within the finite-element mesh.
+  // whether this node has been counted yet. Keep track of the new
+  // global ordering of the nodes within the finite-element mesh.
   for ( int j = 0; j < num_elements; j++ ){
     // The owner of element j
     int owner = partition[j];

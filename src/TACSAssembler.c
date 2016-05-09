@@ -591,6 +591,15 @@ void TACSAssembler::setAuxElements( TACSAuxElements *_aux_elems ){
   aux_elements = _aux_elems;
 }
 
+/*
+  Retrieve the auxiliary element object from TACSAssembler
+
+  Warning: The auxiliary element object may be NULL
+*/
+TACSAuxElements* TACSAssembler::getAuxElements(){
+  return aux_elements;
+}
+
 /*!  
   Compute the local node numbers that correspond to the coupling
   nodes connected to elements on other processes.

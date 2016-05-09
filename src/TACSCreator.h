@@ -69,7 +69,7 @@ class TACSCreator : public TACSObject {
 
   // Partition the mesh 
   // ------------------
-  void partitionMesh( int split_size=0 );
+  void partitionMesh( int split_size=0, const int *part=NULL );
 
   // Create the TACSAssembler object
   // -------------------------------

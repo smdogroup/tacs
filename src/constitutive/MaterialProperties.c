@@ -680,7 +680,7 @@ TacsScalar OrthoPly::calculateFailLoadStrainSens( TacsScalar cSens[],
   TacsScalar pos = 0.0;
   TacsScalar pa = 0.0, pb = 0.0, pc = 0.0;
 
-  if ( fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF ){
+  if (fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF){
     pos = HUGE_FAILURE_LOAD;
   }
   else if ( c >= 0.0 ){
@@ -785,7 +785,7 @@ TacsScalar OrthoPly::calculateFailLoadAngleSens( TacsScalar * posSens,
   TacsScalar pos = 0.0;
   TacsScalar pa = 0.0, pb = 0.0, pc = 0.0;
 
-  if ( fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF ){
+  if (fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF){
     pos = HUGE_FAILURE_LOAD;
   }
   else if ( c >= 0.0 ){
