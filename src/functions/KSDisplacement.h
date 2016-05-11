@@ -1,52 +1,30 @@
-#ifndef TACS_KS_FAILURE_H
-#define TACS_KS_FAILURE_H
+#ifndef TACS_KS_DISPLACEMENT_H
+#define TACS_KS_DISPLACEMENT_H
 
 /*
-  Compute the KS function in TACS  
+  Compute the KS function of the displacement
   
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
 */
 
 #include "TACSFunction.h"
 
 /*
-  The following class implements the methods from TACSFunction.h
-  necessary to calculate the KS function of either a stress or strain
-  failure criteria over the domain of some finite element model.
-
-  Each class should only ever be passed to a single instance of
-  TACS. If the KS function needs to be calculated for separate
-  instances, this should be handled by separate instances of
-  KSFailure.
-
-  The failure load is calculated using the strain-based failure
-  criteria from the base Constitutive class which requires linear and
-  constant components of the strain to determine the failure load.
- 
-  The arguments to the KSFailure class are:
-
-  ksWeight:  the ks weight used in the calculation
-
-  optional arguments: 
-
-  elementNums, numElements -- these specify a subdomain of the TACS
-  model over which the KS function should be calculated by passing in
-  the element numbers and number of elements in the subdomain.
-
-  note: if no subdomain is specified, the calculation takes place over
-  all the elements in the model 
+  The following function computes the approximate maximum displacement
+  along a specified direction. 
 */
-class KSFailure : public TACSFunction {
+class KSDisplacement : public TACSFunction {
  public:
-  enum KSFailureType { DISCRETE, CONTINUOUS };
+  static const int MAX_DISPLACEMENTS = 8;
+  enum KSDisplacementType { DISCRETE, CONTINUOUS };
 
-  KSFailure( TACSAssembler * _tacs, 
-	     int _elementNums[], int _numElements, 
-	     double ksWeight, double alpha = 1.0 );
-  KSFailure( TACSAssembler * _tacs, 
-	     double ksWeight, double alpha = 1.0 );
-  ~KSFailure();
+  KSDisplacement( TACSAssembler * _tacs, const TacsScalar d[],
+                  int _elementNums[], int _numElements, 
+                  double ksWeight, double alpha = 1.0 );
+  KSDisplacement( TACSAssembler * _tacs, const TacsScalar d[],
+                  double ksWeight, double alpha = 1.0 );
+  ~KSDisplacement();
 
   // Retrieve the name of the function
   // ---------------------------------
@@ -54,7 +32,7 @@ class KSFailure : public TACSFunction {
 
   // Set parameters for the KS function
   // ----------------------------------
-  void setKSFailureType( enum KSFailureType type );
+  void setKSDisplacementType( enum KSDisplacementType type );
   double getParameter();
   void setParameter( double _ksWeight );
   void setLoadFactor( TacsScalar _loadFactor );
@@ -79,7 +57,7 @@ class KSFailure : public TACSFunction {
 
   // Return the value of the function
   // --------------------------------
-  TacsScalar getValue(){ return ksFail; }
+  TacsScalar getValue(){ return ksDisp; }
 
   // State variable sensitivities
   // ----------------------------
@@ -110,7 +88,10 @@ class KSFailure : public TACSFunction {
   
  private:
   // The type of aggregation to use
-  enum KSFailureType ksType;
+  enum KSDisplacementType ksType;
+
+  // The direction for the displacement
+  TacsScalar dir[MAX_DISPLACEMENTS];
 
   // The weight on the ks function value
   double ksWeight;
@@ -118,19 +99,16 @@ class KSFailure : public TACSFunction {
   // The integral scaling value
   double alpha;
 
-  // Load factor applied to the strain
-  TacsScalar loadFactor; 
-
   // The maximum number of nodes/stresses in any given element
-  int maxNumNodes, maxNumStresses;
+  int maxNumNodes;
 
   // The name of the function
   static const char * funcName;
 
-  // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxFail)
+  // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxDisp)
   // and the value of the KS function
-  TacsScalar ksFailSum, ksFailWeightSum, maxFail;
-  TacsScalar ksFail;
+  TacsScalar ksDispSum, ksDispWeightSum, maxDisp;
+  TacsScalar ksDisp;
 };
 
 #endif 

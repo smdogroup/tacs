@@ -76,6 +76,17 @@ class TACSMeshLoader : public TACSObject {
   // void setFunctionDomain( TACSFunction * function, 
   //                         int comp_nums[], int num_comps );
 
+  void getConnectivity( int *_num_nodes, int *_num_elements,
+                        const int **_elem_node_ptr, 
+                        const int **_elem_node_conn,
+                        const double **_Xpts ){
+    if (_num_nodes){ *_num_nodes = num_nodes; }
+    if (_num_elements){ *_num_elements = num_elements; }
+    if (_elem_node_ptr){ *_elem_node_ptr = elem_node_ptr; }
+    if (_elem_node_conn){ *_elem_node_conn = elem_node_conn; }
+    if (_Xpts){ *_Xpts = Xpts; }
+  }
+
  private:
   // Communicator for all processors
   MPI_Comm comm;

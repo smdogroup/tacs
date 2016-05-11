@@ -11,6 +11,7 @@ CXX_OBJS = TACSFunction.o \
 	Compliance.o \
 	KSFailure.o \
 	KSBuckling.o \
+	KSDisplacement.o \
 	InducedFailure.o \
 	InducedBuckling.o \
 	StructuralMass.o 
