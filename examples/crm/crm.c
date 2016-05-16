@@ -53,8 +53,30 @@ int main( int argc, char **argv ){
   mat->applyBCs();
   PcScMat *pc = new PcScMat(mat, 10000, 10, 1); 
   pc->incref();
-
+  BVec *ans = tacs->createVec();
+  ans->incref();
+  BVec *f = tacs->createVec();
+  f->incref();
+  f->set(1.0);
+  f->applyBCs();
   pc->factor();
+  pc->applyFactor(f, ans);
+  tacs->setVariables(ans);
+  
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
+                             TACSElement::OUTPUT_DISPLACEMENTS |
+                             TACSElement::OUTPUT_STRAINS |
+                             TACSElement::OUTPUT_STRESSES |
+                             TACSElement::OUTPUT_EXTRAS);
+  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  f5->incref();
+
+  // Write the displacements
+  f5->writeToFile("ucrm.f5");
+
+  // Delete the viewer
+  f5->decref();
 
   mat->decref();
   pc->decref();
