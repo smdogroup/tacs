@@ -310,7 +310,9 @@ class TACSElement : public TACSOptObject {
 
   // Get the quadrature points and weights
   // -------------------------------------
-  virtual double getGaussWtsPts( const int num, double * pt ){}
+  virtual double getGaussWtsPts( const int num, double * pt ){
+    return 0.0;
+  }
 
   // Get the shape functions from the element
   // ----------------------------------------

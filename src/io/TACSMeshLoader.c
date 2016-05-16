@@ -579,11 +579,8 @@ const char * TACSMeshLoader::getElementDescript( int comp_num ){
   information from the bulk data section.
 
   Only the element types, boundary conditions, connectivitiy and GRID
-  entries are scanned.  Any entries
-
-
-constituentries scanned are the entries beginning with elem_types
-  and any GRID/GRID* entries.
+  entries are scanned.  Any entries associated with constitutive
+  properties are ignored.
 */
 int TACSMeshLoader::scanBDFFile( const char * file_name ){
   int rank;
