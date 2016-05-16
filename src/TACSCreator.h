@@ -78,9 +78,9 @@ class TACSCreator : public TACSObject {
   // Get the new node numbers and element partition
   // ----------------------------------------------
   int getNodeNums( const int **_new_nodes );
-  int getElementPartition( const int **_partition );
-  int getNumOwnedNodes( int **_owned_nodes );
-  int getNumOwnedElements( int **_owned_elements );
+  void getElementPartition( const int **_partition );
+  void getNumOwnedNodes( int **_owned_nodes );
+  void getNumOwnedElements( int **_owned_elements );
 
  private:  
   // The magic element-generator function pointer

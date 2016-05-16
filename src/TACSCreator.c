@@ -247,21 +247,21 @@ int TACSCreator::getNodeNums( const int **_new_nodes ){
 /*
   Get the element partition
 */
-int TACSCreator::getElementPartition( const int **_partition ){
-  *_partition = partition;
+void TACSCreator::getElementPartition( const int **_partition ){
+  if (_partition){ *_partition = partition; }
 }
 
 /*
   Get the number of nodes owned by each processor
 */
-int TACSCreator::getNumOwnedNodes( int **_owned_nodes ){
+void TACSCreator::getNumOwnedNodes( int **_owned_nodes ){
   *_owned_nodes = owned_nodes;
 }
 
 /*
   Get the number of elements owned by each processor
 */
-int TACSCreator::getNumOwnedElements( int **_owned_elements ){
+void TACSCreator::getNumOwnedElements( int **_owned_elements ){
   *_owned_elements = owned_elements;
 }
 
