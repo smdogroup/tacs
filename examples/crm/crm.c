@@ -5,25 +5,29 @@
 
 int main( int argc, char **argv ){
 
+  // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
-
-  const char *filename = "CRM_box_2nd.bdf";
-
   MPI_Comm comm = MPI_COMM_WORLD;
 
+  // Write name of BDF file to be load to char array
+  const char *filename = "CRM_box_2nd.bdf";
+
+  // Create instance of mesh loader class and load file
   TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
-
   mesh->scanBDFFile(filename);
 
+  // Get number of components prescribed in BDF file
   int num_components = mesh->getNumComponents();
 
-  double rho = 2500.0; // kg/m^3
-  double E = 70e9;
-  double nu = 0.3;
-  double kcorr = 5.0/6.0;
-  double ys = 350e6;
+  // Set material properties needed to create constituitive object 
+  double rho = 2500.0; // density, kg/m^3
+  double E = 70e9; // elastic modulus, Pa
+  double nu = 0.3; // poisson's ratio
+  double kcorr = 5.0/6.0; // shear correction factor
+  double ys = 350e6; // yield stress, Pa
 
+  // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ){
     const char *descriptor = mesh->getElementDescript(i);
     double min_thickness = 0.01;
@@ -32,8 +36,11 @@ int main( int argc, char **argv ){
     isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
         thickness, i, min_thickness, max_thickness); 
 
+    // Initialize element object
     TACSElement *element = NULL;
 
+    // Create element object using constituitive information and type defined in
+    // descriptor
     if ( strcmp(descriptor, "CQUAD") == 0 || 
          strcmp(descriptor, "CQUADR") == 0 ||
          strcmp(descriptor, "CQUAD4") == 0) {
@@ -42,24 +49,39 @@ int main( int argc, char **argv ){
     mesh->setElement(i, element);
   }
 
+  // Create assembler object from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(6);
   tacs->incref();
   mesh->decref();
 
+  // Create instance of matrix class to begin building stiffness matrix
   FEMat *mat = tacs->createFEMat(); 
   mat->incref();
 
+  // Build stiffness matrix
   tacs->assembleJacobian(NULL, mat, 1, 0, 0);
   mat->applyBCs();
+
+  // Create preconditioner matrix
   PcScMat *pc = new PcScMat(mat, 10000, 10, 1); 
   pc->incref();
+
+  // Create distributed vector to store displacements and rotations
   BVec *ans = tacs->createVec();
   ans->incref();
+
+  // Create disctributed vector to store loads
   BVec *f = tacs->createVec();
   f->incref();
+
+  // Set all the entries in load vector to specified value
   f->set(1.0);
   f->applyBCs();
+
+  // LU factorization of stiffness matrix
   pc->factor();
+
+  // Get solution and store in ans
   pc->applyFactor(f, ans);
   tacs->setVariables(ans);
   
