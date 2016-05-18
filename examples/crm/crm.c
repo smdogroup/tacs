@@ -12,7 +12,7 @@ int main( int argc, char **argv ){
   // Write name of BDF file to be load to char array
   const char *filename = "CRM_box_2nd.bdf";
 
-  // Create instance of mesh loader class and load file
+  // Create the mesh loader object and load file
   TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
   mesh->scanBDFFile(filename);
@@ -20,7 +20,7 @@ int main( int argc, char **argv ){
   // Get number of components prescribed in BDF file
   int num_components = mesh->getNumComponents();
 
-  // Set material properties needed to create constituitive object 
+  // Set properties needed to create stiffness object 
   double rho = 2500.0; // density, kg/m^3
   double E = 70e9; // elastic modulus, Pa
   double nu = 0.3; // poisson's ratio
@@ -49,37 +49,37 @@ int main( int argc, char **argv ){
     mesh->setElement(i, element);
   }
 
-  // Create assembler object from mesh loader object
+  // Create tacs assembler from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(6);
   tacs->incref();
   mesh->decref();
 
-  // Create instance of matrix class to begin building stiffness matrix
-  FEMat *mat = tacs->createFEMat(); 
+  // Create matrix and vectors 
+  BVec *ans = tacs->createVec(); // displacements and rotations
+  BVec *f = tacs->createVec(); // loads
+  FEMat *mat = tacs->createFEMat(); // preconditioner
+
+  // Increment reference count to the matrix/vectors
+  ans->incref();
+  f->incref();
   mat->incref();
 
-  // Build stiffness matrix
-  tacs->assembleJacobian(NULL, mat, 1, 0, 0);
-  mat->applyBCs();
-
-  // Create preconditioner matrix
-  PcScMat *pc = new PcScMat(mat, 10000, 10, 1); 
+  // Allocate the factorization
+  int lev = 10000;
+  double fill = 10.0;
+  int reorder_schur = 1;
+  PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur); 
   pc->incref();
 
-  // Create distributed vector to store displacements and rotations
-  BVec *ans = tacs->createVec();
-  ans->incref();
-
-  // Create disctributed vector to store loads
-  BVec *f = tacs->createVec();
-  f->incref();
+  // Assemble and factor the stiffness/Jacobian matrix
+  double alpha = 1.0, beta = 0.0, gamma = 0.0;
+  tacs->assembleJacobian(NULL, mat, alpha, beta, gamma);
+  mat->applyBCs();
+  pc->factor(); // LU factorization of stiffness matrix
 
   // Set all the entries in load vector to specified value
   f->set(1.0);
   f->applyBCs();
-
-  // LU factorization of stiffness matrix
-  pc->factor();
 
   // Get solution and store in ans
   pc->applyFactor(f, ans);
