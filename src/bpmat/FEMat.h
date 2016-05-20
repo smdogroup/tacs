@@ -49,7 +49,8 @@ class FEMat : public ScMat {
                   int nv, int mv, const TacsScalar * values );  
   void addWeightValues( int nvars, const int *varp, const int *vars,
 			const TacsScalar *weights,
-			int nv, int mv, const TacsScalar *values );
+			int nv, int mv, const TacsScalar *values,
+                        MatrixOrientation matOr=NORMAL );
   void applyBCs();
   TACSVec * createVec();  
  

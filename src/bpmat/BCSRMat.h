@@ -4,6 +4,7 @@
 #include "pthread.h"
 #include "TACSObject.h"
 #include "BCSRMatImpl.h"
+#include "KSM.h"
 
 /*!
   Block Compressed Sparse Row format matrix.
@@ -51,7 +52,8 @@ class BCSRMat : public TACSObject {
   void addRowWeightValues( TacsScalar alpha, int row,
 			   int nwrows, const int *wrowp,
 			   const int *wcols, const TacsScalar * weights,
-			   int nca, const TacsScalar * avals );
+			   int nca, const TacsScalar * avals,
+                           MatrixOrientation matOr=NORMAL );
   void addBlockRowValues( int row, int ncol, 
 			  const int * col, const TacsScalar * a );
   void zeroRow( int row, int nvars, const int * vnums, int ident = 0 );

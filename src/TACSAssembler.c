@@ -7,6 +7,9 @@
 #include "amd.h"
 #include "tacsmetis.h"
 
+// BLAS/LAPACK header
+#include "tacslapack.h"
+
 /*
   TACSAssembler implementation
 
@@ -214,6 +217,9 @@ TACSAssembler::~TACSAssembler(){
   if (depNodeWeights){ delete [] depNodeWeights; }
 
   delete [] Xpts;
+
+  // Decrease the reference count
+  if (aux_elements){ aux_elements->decref(); }
 
   // Decrease the reference count to objects allocated in finalize
   if (varMap){ varMap->decref(); }
@@ -2608,15 +2614,14 @@ void TACSAssembler::assembleJacobian( BVec *residual,
         }
         aux[aux_count].elem->addJacobian(time, elemMat, 
                                          alpha, beta, gamma,
-                                         elemXpts, vars, dvars, ddvars);
-        
+                                         elemXpts, vars, dvars, ddvars);        
         aux_count++;
       }
 
       if (residual){
         addValues(varsPerNode, i, elemRes, localRes);
       }
-      addMatValues(A, i, elemMat, elementIData, elemWeights);
+      addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
   }
 
@@ -2696,7 +2701,7 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
       elements[i]->getMatType(matType, elemMat, elemXpts, vars);
 
       // Add the values into the element
-      addMatValues(A, i, elemMat, elementIData, elemWeights);
+      addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
   }
 
@@ -3548,6 +3553,116 @@ void TACSAssembler::evalMatSVSensInnerProduct( TacsScalar scale,
   
   // Free the allocated memory
   delete [] localVals;
+}
+
+/*
+  Evaluate the matrix-free Jacobian-vector product of the input vector
+  x and store the result in the output vector y.
+
+  This code does not assemble a matrix, but does compute the
+  element-wise matricies. This code is not a finite-difference
+  matrix-vector product implementation.
+
+  Since the element Jacobian matrices are computed exactly, we can
+  evaluate either a regular matrix-product or the transpose matrix
+  product.
+
+  input:
+  scale:     the scalar coefficient
+  alpha:     coefficient on the variables
+  beta:      coefficient on the time-derivative terms
+  gamma:     coefficient on the second time derivative term
+  x:         the input vector
+  matOr:     the matrix orientation
+  
+  output:
+  y:         the output vector y <- y + scale*J^{Op}*x
+*/
+void TACSAssembler::addJacobianVecProduct( TacsScalar scale, 
+                                           double alpha, double beta, double gamma,
+                                           BVec *x, BVec *y,
+                                           MatrixOrientation matOr ){
+  // Add the result to the residual
+  int size = varsPerNode*(numNodes + numDependentNodes);
+  TacsScalar *xlocal = new TacsScalar[ size ];
+  memset(localRes, 0, size*sizeof(TacsScalar));
+
+  // Send the variables forward
+  vecDist->beginForward(x, xlocal);
+  vecDist->endForward(x, xlocal);
+  setDependentVariables(varsPerNode, xlocal);
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *vars, *dvars, *ddvars, *yvars, *elemXpts;
+  TacsScalar *elemWeights, *elemMat;
+  getDataPointers(elementData, 
+                  &vars, &dvars, &ddvars, &yvars,
+                  &elemXpts, NULL, &elemWeights, &elemMat);
+  
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (aux_elements){
+    naux = aux_elements->getAuxElements(&aux);
+  }
+
+  for ( int i = 0; i < numElements; i++ ){
+    getValues(TACS_SPATIAL_DIM, i, Xpts, elemXpts);
+    getValues(varsPerNode, i, localVars, vars);
+    getValues(varsPerNode, i, localDotVars, dvars);
+    getValues(varsPerNode, i, localDDotVars, ddvars);
+    
+    // Get the number of variables from the element
+    int nvars = elements[i]->numVariables();
+    
+    // Compute and add the contributions to the Jacobian
+    memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
+    elements[i]->addJacobian(time, elemMat, alpha, beta, gamma,
+                             elemXpts, vars, dvars, ddvars);
+
+    // Add the contribution to the residual and the Jacobian
+    // from the auxiliary elements - if any
+    while (aux_count < naux && aux[aux_count].num == i){
+      aux[aux_count].elem->addJacobian(time, elemMat, 
+                                       alpha, beta, gamma,
+                                       elemXpts, vars, dvars, ddvars);      
+      aux_count++;
+    }
+
+    // Temporarily set the variable array as the element input array
+    // and get the local variable input values from the local array.
+    TacsScalar *xvars = vars;
+    getValues(varsPerNode, i, xlocal, xvars);
+   
+    // Take the matrix vector product. Note the matrix is stored in
+    // row-major order and BLAS assumes column-major order. As a
+    // result, the transpose arguments are reversed.
+    TacsScalar zero = 0.0;
+    int incx = 1;
+    if (matOr == NORMAL){
+      BLASgemv("T", &nvars, &nvars, &scale, elemMat, &nvars, 
+               xvars, &incx, &zero, yvars, &incx);
+    }
+    else {
+      BLASgemv("N", &nvars, &nvars, &scale, elemMat, &nvars, 
+               xvars, &incx, &zero, yvars, &incx);
+    }
+
+    // Add the residual values
+    addValues(varsPerNode, i, yvars, localRes);
+  }
+
+  // Add the dependent-variable residual from the dependent nodes
+  addDependentResidual(varsPerNode, localRes);
+
+  // Assemble the full residual
+  vecDist->beginReverse(localRes, y, BVecDistribute::ADD);
+  vecDist->endReverse(localRes, y, BVecDistribute::ADD);
+
+  // Set the boundary conditions
+  y->applyBCs();
+
+  delete [] xlocal;
 }
 
 /*

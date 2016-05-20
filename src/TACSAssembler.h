@@ -207,6 +207,13 @@ class TACSAssembler : public TACSObject {
 				  ElementMatrixType matType, 
 				  BVec *psi, BVec *phi, BVec *res );
 
+  // Compute the matrix-free Jacobian-vector product
+  // -----------------------------------------------
+  void addJacobianVecProduct( TacsScalar scale, 
+                              double alpha, double beta, double gamma,
+                              BVec *x, BVec *y,
+                              MatrixOrientation matOr=NORMAL );
+
   // Return an element and the variables associated with that element
   // ----------------------------------------------------------------
   TACSElement ** getElements(){ return elements; }
@@ -297,7 +304,8 @@ class TACSAssembler : public TACSObject {
   // Add values into the matrix
   inline void addMatValues( TACSMat *A, const int elemNum, 
 			    const TacsScalar *mat,
-			    int *item, TacsScalar *temp );
+			    int *item, TacsScalar *temp,
+                            MatrixOrientation matOr );
 
   // Initialize the functions in the list if they have not been 
   // initialized already
@@ -1203,7 +1211,8 @@ inline int TACSAssembler::setValues( const int perNode,
 inline void TACSAssembler::addMatValues( TACSMat * A, 
 					 const int elemNum, 
 					 const TacsScalar * mat,
-					 int * itemp, TacsScalar * temp ){
+					 int * itemp, TacsScalar * temp,
+                                         MatrixOrientation matOr ){
   int start = elementNodeIndex[elemNum];
   int end = elementNodeIndex[elemNum+1];
   int nnodes = end - start;
@@ -1251,7 +1260,7 @@ inline void TACSAssembler::addMatValues( TACSMat * A,
 
     // Add the values to the matrix
     A->addWeightValues(nnodes, varp, vars, weights,
-		       nvars, nvars, mat);
+		       nvars, nvars, mat, matOr);
   }
 }
 

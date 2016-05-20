@@ -205,7 +205,7 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
 		      elemRes, tacs->localRes);
 
       // Add values to the matrix
-      tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights);
+      tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
       pthread_mutex_unlock(&tacs->tacs_mutex);
     }
   }
@@ -270,7 +270,7 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
       
       pthread_mutex_lock(&tacs->tacs_mutex);
       // Add values to the matrix
-      tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights);
+      tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
       pthread_mutex_unlock(&tacs->tacs_mutex);
     }
   }

@@ -419,13 +419,14 @@ void FEMat::addValues( int nrow, const int * row,
 */
 void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
 			     const TacsScalar *weights,
-			     int nv, int mv, const TacsScalar *values ){
+			     int nv, int mv, const TacsScalar *values,
+                             MatrixOrientation matOr ){
   // The block size for the matrix
   int bsize = B->getBlockSize();
 
   // Get the index sets corresponding to the B/C matrices
-  BVecIndices * bindx = b_map->getBVecIndices();
-  BVecIndices * cindx = c_map->getBVecIndices();
+  BVecIndices *bindx = b_map->getBVecIndices();
+  BVecIndices *cindx = c_map->getBVecIndices();
   
   // The number of variables we'll have to convert = row dim(W^{T})
   int n = varp[nvars];
@@ -476,36 +477,43 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
     }
   }
 
+  // Set the increment along the row or column of the matrix depending
+  // on whether we are adding the original matrix or its transpose
+  int incr = mv;
+  if (matOr == TRANSPOSE){
+    incr = 1;
+  }
+
   // Now, loop over the rows and add each one to the corresponding
-  // B and F matrices and possibly F or C matrix if cflag is true
+  // B nd F matrices and possibly F or C matrix if cflag is true
   for ( int i = 0; i < nvars; i++ ){
     for ( int j = varp[i]; j < varp[i+1]; j++ ){
       // Check where to place this value
       if (bvars[j] >= 0){
-	B->addRowWeightValues(weights[j], bvars[j], 
-			      nvars, varp, bvars, weights, 
-			      mv, &values[mv*i*bsize]);      
-	if (cflag){
-	  E->addRowWeightValues(weights[j], bvars[j], 
-				nvars, varp, cvars, weights, 
-				mv, &values[mv*i*bsize]);
-	}
+        B->addRowWeightValues(weights[j], bvars[j], 
+                              nvars, varp, bvars, weights, 
+                              mv, &values[incr*i*bsize]);      
+        if (cflag){
+          E->addRowWeightValues(weights[j], bvars[j], 
+                                nvars, varp, cvars, weights, 
+                                mv, &values[incr*i*bsize]);
+        }
       }
       else if (cvars[j] >= 0){
-	F->addRowWeightValues(weights[j], cvars[j], 
-			      nvars, varp, bvars, weights, 
-			      mv, &values[mv*i*bsize]);
-	if (cflag){
-	  C->addRowWeightValues(weights[j], cvars[j], 
-				nvars, varp, cvars, weights, 
-				mv, &values[mv*i*bsize]);      
-	}
+        F->addRowWeightValues(weights[j], cvars[j], 
+                              nvars, varp, bvars, weights, 
+                              mv, &values[incr*i*bsize]);
+        if (cflag){
+          C->addRowWeightValues(weights[j], cvars[j], 
+                                nvars, varp, cvars, weights, 
+                                mv, &values[incr*i*bsize]);      
+        }
       }
       else {
-	int rank;
-	MPI_Comm_rank(b_map->getMPIComm(), &rank);
-	fprintf(stderr, "[%d] Global row variable %d not found\n",
-		rank, vars[j]);
+        int rank;
+        MPI_Comm_rank(b_map->getMPIComm(), &rank);
+        fprintf(stderr, "[%d] Global row variable %d not found\n",
+                rank, vars[j]);
       }
     }
   }

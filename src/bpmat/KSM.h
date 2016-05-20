@@ -11,6 +11,12 @@
 #include <math.h>
 #include "TACSObject.h"
 
+/*
+  The following enumeration defines whether the matrix is either the
+  normal or the transpose orientation.
+*/
+enum MatrixOrientation { NORMAL, TRANSPOSE };
+
 /*!
   The abstract vector class. 
 
@@ -85,7 +91,8 @@ class TACSMat : public TACSObject {
 			  int nv, int mv, const TacsScalar * values ){}
   virtual void addWeightValues( int nvars, const int *varp, const int *vars,
 				const TacsScalar *weights,
-				int nv, int mv, const TacsScalar *values ){}
+				int nv, int mv, const TacsScalar *values,
+                                MatrixOrientation matOr=NORMAL ){}
   virtual void applyBCs(){}
   virtual void beginAssembly(){}
   virtual void endAssembly(){}

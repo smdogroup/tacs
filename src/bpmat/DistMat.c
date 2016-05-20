@@ -805,7 +805,8 @@ void DistMat::addValues( int nrow, const int * row,
 */
 void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
 			       const TacsScalar *weights,
-			       int nv, int mv, const TacsScalar *values ){
+			       int nv, int mv, const TacsScalar *values,
+                               MatrixOrientation matOr ){
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
 
@@ -863,37 +864,44 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
     }
   }
   
+  // Set the increment along the row or column of the matrix depending
+  // on whether we are adding the original matrix or its transpose
+  int incr = mv;
+  if (matOr == TRANSPOSE){
+    incr = 1;
+  }
+
   for ( int i = 0; i < nvars; i++ ){
     for ( int ip = varp[i]; ip < varp[i+1]; ip++ ){
       // Check if the row is on this processor
       if (avars[ip] >= 0){
-	// Add values to the diagonal
-	Aloc->addRowWeightValues(weights[ip], avars[ip], 
-				 nvars, varp, avars, weights, 
-				 mv, &values[mv*i*bsize]);
+        // Add values to the diagonal
+        Aloc->addRowWeightValues(weights[ip], avars[ip], 
+                                 nvars, varp, avars, weights, 
+                                 mv, &values[incr*i*bsize]);
 	
-	// Add values to the off-diagonal
-	int r = avars[ip] - Np;
-	if (r >= 0 && r < Nc){
-	  Bext->addRowWeightValues(weights[ip], r, 
-				   nvars, varp, bvars, weights, 
-				   mv, &values[mv*i*bsize]);
-	}
-	else if (nb > 0){
-	  fprintf(stderr, "[%d] DistMat error, some values were not added\n",
-		  mpiRank);
-	}
+        // Add values to the off-diagonal
+        int r = avars[ip] - Np;
+        if (r >= 0 && r < Nc){
+          Bext->addRowWeightValues(weights[ip], r, 
+                                   nvars, varp, bvars, weights, 
+                                   mv, &values[incr*i*bsize]);
+        }
+        else if (nb > 0){
+          fprintf(stderr, "[%d] DistMat error, some values were not added\n",
+                  mpiRank);
+        }
       }
       else if (bvars[ip] >= 0){
-	// The row is not on this processor, search for it in the
-	// off-processor part that we'll have to communicate later
-	// Locate the row within ext_rows
-	int * item = (int*)bsearch(&vars[ip], ext_rows, next_rows, 
-				   sizeof(int), FElibrary::comparator);
-	if (item){
-	  int r_ext = item - ext_rows;
+        // The row is not on this processor, search for it in the
+        // off-processor part that we'll have to communicate later
+        // Locate the row within ext_rows
+        int * item = (int*)bsearch(&vars[ip], ext_rows, next_rows, 
+                                   sizeof(int), FElibrary::comparator);
+        if (item){
+          int r_ext = item - ext_rows;
 	  
-	  // Find the values within ext_cols
+          // Find the values within ext_cols
           for ( int j = 0; j < nvars; j++ ){
             for ( int jp = varp[j]; jp < varp[j+1]; jp++ ){
               int c = vars[jp];
@@ -908,9 +916,18 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
                 if (item){
                   TacsScalar * a = &ext_A[b2*(item - ext_cols)];
                   
-                  for ( int ii = 0; ii < bsize; ii++ ){
-                    for ( int jj = 0; jj < bsize; jj++ ){
-                      a[ii*bsize + jj] += aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                  if (matOr == NORMAL){
+                    for ( int ii = 0; ii < bsize; ii++ ){
+                      for ( int jj = 0; jj < bsize; jj++ ){
+                        a[ii*bsize + jj] += aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                      }
+                    }
+                  }
+                  else {
+                    for ( int ii = 0; ii < bsize; ii++ ){
+                      for ( int jj = 0; jj < bsize; jj++ ){
+                        a[ii*bsize + jj] += aw*values[mv*(jj + j*bsize) + (ii + i*bsize)];
+                      }
                     }
                   }
                 }
@@ -920,12 +937,12 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
                 }
               }
             }
-	  }
-	}
-	else {
-	  fprintf(stderr, "[%d] DistMat error: could not find row %d\n", 
-		  mpiRank, vars[ip]);
-	}
+          }
+        }
+        else {
+          fprintf(stderr, "[%d] DistMat error: could not find row %d\n", 
+                  mpiRank, vars[ip]);
+        }
       }
     }
   }

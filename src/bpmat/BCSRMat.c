@@ -1803,12 +1803,14 @@ void BCSRMat::addRowValues( int row, int ncol, const int * col,
   col      the column indices 
   weights  the number of weights; len(weights) = ncol
   nca      number of columns in the matrix avals
-  avals    the values to add to the column
+  avals    the values to add
+  matOr:   the matrix orientation  
 */
 void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
 				  int nwrows, const int *wrowp,
-				  const int *wcols, const TacsScalar * weights,
-				  int nca, const TacsScalar * avals ){
+				  const int *wcols, const TacsScalar *weights,
+				  int nca, const TacsScalar *avals,
+                                  MatrixOrientation matOr ){
   if (nwrows <= 0 || alpha == 0.0){
     return;
   }
@@ -1844,16 +1846,40 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
 	  else {
 	    // Place the values into the array
 	    int cp = item - cols;
-	    int bj = bsize*i;
 	    TacsScalar * a = &(data->A[b2*cp]);
 	    
-	    for ( int jj = 0; jj < bsize; jj++ ){
-	      int njj = nca*jj;
-	      int bjj = bsize*jj;
-	      for ( int ii = 0; ii < bsize; ii++ ){
-		a[ii + bjj] += aw*avals[ii + bj + njj];
-	      }
-	    }
+            if (matOr == NORMAL){
+              // Set the offset in the dense input row to the current
+              // block matrix entry added to the BCSRMat
+              const int offset = bsize*i;
+
+              // Loop over the rows of the input matrix
+              for ( int ii = 0; ii < bsize; ii++ ){
+                const TacsScalar *arow = &avals[nca*ii + offset];
+
+                // Add the row entries to the block row
+                TacsScalar *Arow = &a[ii*bsize];
+                for ( int jj = 0; jj < bsize; jj++ ){
+                  Arow[jj] += aw*arow[jj];
+                }
+              }
+            }
+            else {
+              // Set the offset in the dense input row to the current
+              // block matrix entry added to the BCSRMat
+              const int offset = bsize*i;
+
+              // Loop over the rows of the input matrix
+              for ( int ii = 0; ii < bsize; ii++ ){
+                const TacsScalar *acol = &avals[ii + offset];
+
+                // Add the row entries to the block row
+                TacsScalar *Arow = &a[ii*bsize];
+                for ( int jj = 0; jj < bsize; jj++ ){
+                  Arow[jj] += aw*acol[nca*jj];
+                }
+              }
+            }
 	  }
 	}
 	else {

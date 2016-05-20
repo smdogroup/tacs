@@ -179,9 +179,6 @@ enum ElementMatrixType { STIFFNESS_MATRIX,
 			 GEOMETRIC_STIFFNESS_MATRIX, 
 			 STIFFNESS_PRODUCT_DERIVATIVE };
 
-//! Provide the matrix in either the normal or the transpose 
-enum MatrixOrientation { NORMAL, TRANSPOSE };
-
 // The TACSElement base class
 class TACSElement : public TACSOptObject {
  public: 
