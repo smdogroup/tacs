@@ -50,28 +50,7 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar q[],
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
-
-    //    printf("getResidual: \n");
-    
-    res[0] = qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
-    res[1] = qddot[1] - 0.05*qdot[0]*qdot[1] + q[0]*q[1];
-
-    /*
-    printf("xpts[0]=%e \n",Xpts[0]);
-    printf("xpts[1]=%e \n",Xpts[1]);
-
-    printf("q[0]=%e \n",q[0]);
-    printf("q[1]=%e \n",q[1]);
-
-    printf("qdot[0]=%e \n",qdot[0]);
-    printf("qdot[1]=%e \n",qdot[1]);
-
-    printf("qddot[0]=%e \n",qddot[0]);
-    printf("qddot[1]=%e \n",qddot[1]);
-
-    printf("res[0]=%e \n",res[0]);
-    printf("res[1]=%e \n",res[1]);
-    */
+    exit(-1);
   }
 
   // Compute the Jacobian of the governing equations
@@ -83,8 +62,30 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar q[],
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
+    exit(-1);
+  }
 
-    //    printf("get Jacobian \n");
+  // Compute the Residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( double time, TacsScalar res[],
+		    const TacsScalar Xpts[],
+		    const TacsScalar q[],
+		    const TacsScalar qdot[],
+		    const TacsScalar qddot[] ) {
+
+    res[0] = qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
+    res[1] = qddot[1] - 0.05*qdot[0]*qdot[1] + q[0]*q[1];
+
+  }
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void addJacobian( double time, TacsScalar J[],
+		    double alpha, double beta, double gamma,
+		    const TacsScalar Xpts[],
+		    const TacsScalar q[],
+		    const TacsScalar qdot[],
+		    const TacsScalar qddot[] ) {
 
     // derivative wrt qddot
     J[0] = gamma*1.0;
@@ -103,8 +104,8 @@ class TACSDummyElement : public TACSElement {
     J[1] += alpha*0.0;
     J[2] += alpha*q[1];
     J[3] += alpha*q[0];
-
   }
+
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
@@ -217,8 +218,3 @@ class TACSDummyElement : public TACSElement {
 };
 
 #endif // TACS_DUMMY_ELEMENT_H
-
-
-
-
-

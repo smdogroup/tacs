@@ -41,7 +41,7 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   qddot = new BVec*[num_time_steps];
 
   // create state vectors for TACS during each timestep
-  for (int k = 0; k < num_time_steps; k++) {
+  for ( int k = 0; k < num_time_steps; k++ ) {
     q[k] = tacs->createVec(); 
     q[k]->incref(); 
 
@@ -92,6 +92,13 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   ksm->incref();
   
   ksm->setTolerances(rtol, atol);
+
+  //------------------------------------------------------------------//
+  //                     Adjoint initialization                       //
+  //------------------------------------------------------------------//
+  
+  func = NULL;
+  num_func = 0;
 }
 
 /*
@@ -102,7 +109,7 @@ TacsIntegrator::~TacsIntegrator(){
   tacs->decref();
 
   // Dereference position, velocity and acceleration states
-  for (int k = 0; k < num_time_steps; k++) {
+  for ( int k = 0; k < num_time_steps; k++ ) {
     q[k]->decref();
     qdot[k]->decref();
     qddot[k]->decref();
@@ -120,6 +127,14 @@ TacsIntegrator::~TacsIntegrator(){
   delete [] q;
   delete [] qdot;
   delete [] qddot;
+
+  if ( num_func > 0 ) {
+    // Dereference the objective/constraint functions
+    for ( int k = 0; k < num_func; k++ ) {
+      func[num_func]->decref();
+    }
+    delete [] func;
+  }  
 }
 
 /*
@@ -285,12 +300,27 @@ TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
   // Truncate the maximum order to 3rd order
   max_bdf_order = (max_bdf_order <= 3 ? 
 		   max_bdf_order : 3);
+
+  // Adjoint variables
+  psi = new BVec*[num_time_steps];
+
+  // Create state vectors for TACS during each timestep
+  for (int k = 0; k < num_time_steps; k++) {
+    psi[k] = tacs->createVec(); 
+    psi[k]->incref(); 
+  }
 }
 
 /*
   Destructor for TACSBDFIntegrator
 */
-TacsBDFIntegrator::~TacsBDFIntegrator(){}
+TacsBDFIntegrator::~TacsBDFIntegrator(){
+  // Delete the adjoint variables
+  for (int k = 0; k < num_time_steps; k++) {
+    psi[k]->decref();
+  }
+  delete [] psi;
+}
 
 /*
   Integration logic of BDF. Use this function to march in time. The
@@ -302,6 +332,7 @@ void TacsBDFIntegrator::integrate(){
 
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
+  //q[0]->set(1.0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;
@@ -310,9 +341,9 @@ void TacsBDFIntegrator::integrate(){
     approxStates(q, qdot, qddot);
     
     // Determine the coefficients for Jacobian Assembly
-    int gamma = bddf_coeff[0]/h/h;
-    int beta = bdf_coeff[0]/h;
-    int alpha = 1.0;
+    double gamma = bddf_coeff[0]/h/h;
+    double beta = bdf_coeff[0]/h;
+    double alpha = 1.0;
 
     // Solve the nonlinear system of equations
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
@@ -320,6 +351,70 @@ void TacsBDFIntegrator::integrate(){
     // Advance time (states are already advanced at the end of Newton solve)
     time[k] = time[k-1] + h;
   }
+}
+
+/*
+  Solves for the adjoint variables psi[k] marching backwards in time.
+*/
+void TacsBDFIntegrator::adjointSolve(){
+  for ( int k = num_time_steps; k >= 1; k-- ){
+    current_time_step = k;
+
+    // Get the BDF coefficients at this time step
+    int nbdf, nbddf;
+    get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
+
+    // Determine the linearization coefficients for Jacobian Assembly
+    double gamma = bddf_coeff[0]/h/h;
+    double beta = bdf_coeff[0]/h;
+    double alpha = 1.0;
+
+    // Setup the linear system for adjoint solve (gamma + delta?)
+    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+    setupAdjointRHS(res, k, nbdf, nbddf, alpha, beta, gamma);
+    
+    // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
+    pc->factor();
+    pc->applyFactor(res, psi[k]);
+  }
+
+  // Compute the total derivative
+}
+
+/*
+  Assembles the right hand side of the adjoint equation.
+  
+  output:
+  res: right hand side vector for the adjoint linear system
+*/
+void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int k,
+					 int nbdf, int nbddf, 
+					 double alpha, double beta, double gamma ){
+  // Zero the RHS vector each time
+  res->zeroEntries();
+
+  // Add the contribution from the objective function df/dq. For now
+  // adding the contributions from the last time step alone.
+  // (currently setup for a single function only)
+  if ( k == num_time_steps ){
+    tacs->evalSVSens(func[0], res);
+  }
+  
+  // Add contribution from the first derivative terms d{R}d{qdot}
+  double scale;
+  for ( int i = 1; i < nbdf; i++ ){
+    scale = bdf_coeff[i]/h;
+    tacs->addJacobianVecProduct(scale, alpha, beta, gamma, psi[k-i], res, TRANSPOSE);
+  }
+  
+  // Add contribution from the second derivative terms d{R}d{qddot}
+  for ( int i = 1; i < nbddf; i++ ){
+    scale = bddf_coeff[i]/h/h;
+    tacs->addJacobianVecProduct(scale, alpha, beta, gamma, psi[k-i], res, TRANSPOSE);
+  }
+
+  // Negative the RHS
+  res->scale(-1.0);
 }
 
 /*
@@ -615,6 +710,12 @@ void TacsDIRKIntegrator::checkButcherTableau(){
 }
 
 /*
+  Solves for the adjoint variables psi[k,i] marching backwards in time.
+*/
+void TacsDIRKIntegrator::adjointSolve(){
+}
+
+/*
   Integration logic of DIRK. Use this function to march in time. The
   solution over time is set into the class variables q, qdot and qddot
   and time.
@@ -624,6 +725,7 @@ void TacsDIRKIntegrator::integrate(){
   
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
+  //q[0]->set(1.0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;

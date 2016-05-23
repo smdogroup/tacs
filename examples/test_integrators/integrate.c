@@ -63,8 +63,8 @@ int main( int argc, char *argv[] ){
  
   double tinit = 0.0;
   double tfinal = 25.0;
-  int num_steps_per_sec = 10;
 
+  int num_steps_per_sec = 10;
   int num_stages = 1;
   
   TacsIntegrator *dirk = new TacsDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,

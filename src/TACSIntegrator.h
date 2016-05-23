@@ -39,6 +39,10 @@ class TacsIntegrator : public TACSObject {
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
 
+  // Pure virtual function for solving the adjoint variables
+  //--------------------------------------------------------
+  virtual void adjointSolve() = 0;
+
   // Setters
   //--------
   void setMaxNewtonIters( int _max_newton_iters ){
@@ -48,6 +52,14 @@ class TacsIntegrator : public TACSObject {
   void setAbsTol( double _atol ){ atol = _atol; }
   void setPrintLevel( int _print_level ){ 
     print_level = _print_level; 
+  }
+
+  // Set the objective/constraint function of interest and increment the counter
+  //----------------------------------------------------------------------------
+  void setFunction(TACSFunction *_func){
+    func[num_func] = _func;
+    func[num_func]->incref();
+    num_func++;
   }
   
  protected:
@@ -76,6 +88,10 @@ class TacsIntegrator : public TACSObject {
   TACSMat *mat;        // Jacobian matrix
   TACSPc *pc;          // Preconditioner
   TACSKsm *ksm;        // KSM solver
+
+  // The objective and contraint functions
+  TACSFunction **func;
+  int num_func;
 };
 
 /*
@@ -96,6 +112,10 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // function to call to integrate in time
   //--------------------------------------
   void integrate();
+
+  // solve for adjoint variables
+  //----------------------------
+  void adjointSolve();
   
  private:
   // the number of stage in RK scheme
@@ -110,6 +130,9 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // stage values (computed at each time stage for each time step)
   double *tS;
   BVec **qS, **qdotS, **qddotS;
+
+  // Adjoint variables
+  BVec ***psi;
 
   // Functions related to Butcher Tableau
   //-------------------------------------
@@ -154,6 +177,10 @@ class TacsBDFIntegrator : public TacsIntegrator {
   // Function that integrates forward in time
   //-----------------------------------------
   void integrate();
+
+  // solve for adjoint variables
+  //----------------------------
+  void adjointSolve();
   
  private:  
 
@@ -162,6 +189,9 @@ class TacsBDFIntegrator : public TacsIntegrator {
   
   // Class variable to store BDF coefficients
   double bdf_coeff[4], bddf_coeff[9];
+
+  // Adjoint variables
+  BVec **psi;
 
   // Retrieve the first order BDF coefficients
   //------------------------------------------
@@ -177,6 +207,10 @@ class TacsBDFIntegrator : public TacsIntegrator {
   //------------------------------------------
   void approxStates(BVec **q, BVec **qdot, BVec **qddot);
 
+  // Setup the right hand side of the adjoint equation
+  //------------------------------------------
+  void setupAdjointRHS(BVec *res, int k, int nbdf, int nbddf, 
+		       double alpha, double beta, double gamma);
 };
 
 #endif

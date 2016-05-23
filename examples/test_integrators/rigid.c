@@ -76,11 +76,12 @@ int main( int argc, char *argv[] ){
                                                  steps_per_second, 2);
   bdf->incref();
 
-  // bdf->integrate();
+  bdf->integrate();
+  dirk->writeSolution("solutionBDF.dat");
 
   // Integrate the equations of motion forward in time
-  // dirk->integrate();
-  // dirk->writeSolution("solution.dat");
+  dirk->integrate();
+  dirk->writeSolution("solutionDIRK.dat");
 
   bdf->decref();
   dirk->decref();
