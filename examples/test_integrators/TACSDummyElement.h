@@ -73,8 +73,8 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
 
-    res[0] = qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
-    res[1] = qddot[1] - 0.05*qdot[0]*qdot[1] + q[0]*q[1];
+    res[0] += qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
+    res[1] += qddot[1] - 0.05*qdot[0]*qdot[1] + q[0]*q[1];
 
   }
 
@@ -88,10 +88,10 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar qddot[] ) {
 
     // derivative wrt qddot
-    J[0] = gamma*1.0;
-    J[1] = gamma*0.0;
-    J[2] = gamma*0.0;
-    J[3] = gamma*1.0;
+    J[0] += gamma*1.0;
+    J[1] += gamma*0.0;
+    J[2] += gamma*0.0;
+    J[3] += gamma*1.0;
 
     // derivative wrt qdot
     J[0] += beta*0.02*qdot[1];
@@ -154,15 +154,15 @@ class TACSDummyElement : public TACSElement {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  TACSConstitutive * getConstitutive(){}
+  TACSConstitutive * getConstitutive(){ return NULL; }
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
-  int getNumGaussPts(){}
+  int getNumGaussPts(){ return 0; }
   
   // Get the quadrature points and weights
   // -------------------------------------
-  double getGaussWtsPts( const int num, double * pt ) {}
+  double getGaussWtsPts( const int num, double * pt ) { return 0.0; }
 
   // Get the shape functions from the element
   // ----------------------------------------
@@ -170,14 +170,14 @@ class TACSDummyElement : public TACSElement {
   
   // Return the determinant of the Jacobian at this point
   // ----------------------------------------------------
-  TacsScalar getJacobian( const double * pt, 
-			  const TacsScalar Xpts[] ){}
+  TacsScalar getDetJacobian( const double * pt, 
+			     const TacsScalar Xpts[] ){ return 0.0; }
   
   // Return the determinant of the Jacobian and its sensitivity at this point
   // ------------------------------------------------------------------------
-  TacsScalar getJacobianXptSens( TacsScalar * hXptSens, 
-				 const double * pt, 
-				 const TacsScalar Xpts[] ){}
+  TacsScalar getDetJacobianXptSens( TacsScalar * hXptSens, 
+				    const double * pt, 
+				    const TacsScalar Xpts[] ){ return 0.0; }
 
   // This function returns the strain evaluated at pt
   // ------------------------------------------------

@@ -56,10 +56,23 @@ class TacsIntegrator : public TACSObject {
 
   // Set the objective/constraint function of interest and increment the counter
   //----------------------------------------------------------------------------
-  void setFunction(TACSFunction *_func){
-    func[num_func] = _func;
-    func[num_func]->incref();
-    num_func++;
+  void setFunction( TACSFunction **_func, int _num_funcs ){
+    // Increase the reference counts to the functions
+    for ( int i = 0; i < _num_funcs; i++ ){
+      _func[i]->incref();
+    }
+
+    // Delete the references to the old functions
+    if (func){
+      for ( int i = 0; i < num_func; i++ ){
+	func[i]->decref();	
+      }
+      delete [] func;
+    }
+    
+    num_func = _num_funcs;
+    func = new TACSFunction*[ num_func ];
+    memcpy(func, _func, num_func*sizeof(TACSFunction*));    
   }
   
  protected:
@@ -69,6 +82,9 @@ class TacsIntegrator : public TACSObject {
   // Store the history of states over time
   BVec **q, **qdot, **qddot;
   double *time;
+
+  // Number of state variables
+  int num_state_vars;
   
   // Class variables used to manage/monitor time marching in
   // integration schemes
@@ -186,7 +202,10 @@ class TacsBDFIntegrator : public TacsIntegrator {
 
   // Maximum order of the BDF integration scheme
   int max_bdf_order;
-  
+
+  // Number of first and second order BDF coefficients
+  int nbdf, nbddf;
+
   // Class variable to store BDF coefficients
   double bdf_coeff[4], bddf_coeff[9];
 
@@ -209,7 +228,7 @@ class TacsBDFIntegrator : public TacsIntegrator {
 
   // Setup the right hand side of the adjoint equation
   //------------------------------------------
-  void setupAdjointRHS(BVec *res, int k, int nbdf, int nbddf, 
+  void setupAdjointRHS(BVec *res, int k, int j, 
 		       double alpha, double beta, double gamma);
 };
 

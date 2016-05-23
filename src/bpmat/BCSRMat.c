@@ -1846,7 +1846,7 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
 	  else {
 	    // Place the values into the array
 	    int cp = item - cols;
-	    TacsScalar * a = &(data->A[b2*cp]);
+	    TacsScalar *A = &(data->A[b2*cp]);
 	    
             if (matOr == NORMAL){
               // Set the offset in the dense input row to the current
@@ -1858,7 +1858,7 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
                 const TacsScalar *arow = &avals[nca*ii + offset];
 
                 // Add the row entries to the block row
-                TacsScalar *Arow = &a[ii*bsize];
+                TacsScalar *Arow = &A[ii*bsize];
                 for ( int jj = 0; jj < bsize; jj++ ){
                   Arow[jj] += aw*arow[jj];
                 }
@@ -1874,7 +1874,7 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
                 const TacsScalar *acol = &avals[ii + offset];
 
                 // Add the row entries to the block row
-                TacsScalar *Arow = &a[ii*bsize];
+                TacsScalar *Arow = &A[ii*bsize];
                 for ( int jj = 0; jj < bsize; jj++ ){
                   Arow[jj] += aw*acol[nca*jj];
                 }

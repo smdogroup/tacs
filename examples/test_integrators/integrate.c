@@ -2,7 +2,7 @@
 #include "TACSAssembler.h"
 #include "TACSDummyElement.h"
 #include "TACSIntegrator.h"
-
+#include "KSFailure.h"
 /*
   Function that tests the BDF and DIRK integration schemes within TACS
   on a test function that is implemented in TACSDummyElement class
@@ -39,7 +39,7 @@ int main( int argc, char *argv[] ){
   const int elem_node_conn[] = {0};
 
   // Associate elements with element id numbers
-  const int elem_id_nums[] = {0}; 
+  int elem_id_nums[] = {0}; 
 
   int num_nodes = 1, num_elements = 1;
   creator->setGlobalConnectivity(num_nodes, num_elements,
@@ -84,7 +84,7 @@ int main( int argc, char *argv[] ){
   
   printf(">> Testing BDF\n");  
 
-  int max_bdf_order = 2;
+  int max_bdf_order = 3;
   TacsIntegrator *bdf = new TacsBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
 					      max_bdf_order);
   bdf->incref();
@@ -92,11 +92,19 @@ int main( int argc, char *argv[] ){
   bdf->integrate();
   bdf->writeSolution("bdf.dat");
 
+  // Create an objective function
+  TACSFunction *func =  new KSFailure(tacs, elem_id_nums, num_elements, 1.0, 100.0);
+  func->incref();
+
+  bdf->setFunction(&func, 1);
+  bdf->adjointSolve();
+
   bdf->decref();
 
   printf(">> BDF complete \n");
 
   // Deallocate objects
+  func->decref();
 
   tacs->decref();
   elem->decref();

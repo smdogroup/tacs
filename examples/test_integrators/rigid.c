@@ -1,6 +1,7 @@
 #include "TACSIntegrator.h"
 #include "TACSAssembler.h"
 #include "RigidBody.h"
+#include "KSFailure.h"
 
 int main( int argc, char *argv[] ){
   // Initialize MPI
@@ -63,6 +64,10 @@ int main( int argc, char *argv[] ){
   tacs->addElement(con, conn, 3);
 
   tacs->finalize();
+  int elem_id_nums[] = {0, 1}; 
+
+  // Create an objective function
+  TACSFunction *func =  new KSFailure(tacs, elem_id_nums, num_elems, 1.0, 100.0);
 
   // Create the TACSIntegrator object
   double t_init = 0.0, t_final = 1.0;
@@ -71,20 +76,25 @@ int main( int argc, char *argv[] ){
   TacsDIRKIntegrator *dirk = new TacsDIRKIntegrator(tacs, t_init, t_final,
                                                     steps_per_second, num_stages);
   dirk->incref();
-
-  TacsBDFIntegrator *bdf = new TacsBDFIntegrator(tacs, t_init, t_final,
-                                                 steps_per_second, 2);
-  bdf->incref();
-
-  bdf->integrate();
-  dirk->writeSolution("solutionBDF.dat");
-
-  // Integrate the equations of motion forward in time
+  
   dirk->integrate();
   dirk->writeSolution("solutionDIRK.dat");
 
-  bdf->decref();
   dirk->decref();
+  
+  TacsBDFIntegrator *bdf = new TacsBDFIntegrator(tacs, t_init, t_final,
+                                                 steps_per_second, 2);
+  bdf->incref();
+  
+  bdf->integrate();
+
+  bdf->setFunction(&func, 1);
+  bdf->adjointSolve();
+
+  bdf->writeSolution("solutionBDF.dat");
+
+  bdf->decref();
+
   tacs->decref();
   bodyA->decref();
   bodyB->decref();

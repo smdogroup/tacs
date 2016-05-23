@@ -12,4 +12,4 @@ debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
 
 clean:
-	rm -f *.o integrate
+	rm -f *.o integrate rigid
