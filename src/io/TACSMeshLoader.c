@@ -90,13 +90,12 @@ static int compare_arg_sort( const void * a, const void * b ){
   Read a line from the buffer.
 
   Return the number of read characters. Do not exceed the buffer
-  length len.
+  length.
 
   Given the line buffer 'line', and the size of the line buffer line_len
-
 */
-static int read_buffer_line( char * line, size_t line_len, 
-                             size_t * loc, char * buffer, size_t buffer_len ){
+static int read_buffer_line( char *line, size_t line_len, 
+                             size_t *loc, char *buffer, size_t buffer_len ){
   size_t i = 0;
   for ( ; (i < line_len) && (*loc < buffer_len); i++, (*loc)++ ){
     if (buffer[*loc] == '\n'){
@@ -104,8 +103,11 @@ static int read_buffer_line( char * line, size_t line_len,
     }
     line[i] = buffer[*loc];    
   }
+  if (i < line_len){
+    line[i] = '\0';
+  }
 
-  // Read until the end of the line or
+  // Read until the end of the line
   while ((*loc < buffer_len) && (buffer[*loc] != '\n')){
     (*loc)++;
   }
@@ -295,28 +297,25 @@ static void parse_node_short_free_field( char * line, int * node,
 static void parse_element_field( char line[], 
 				 int * elem_num, int * component_num,
 				 int * node_nums, int num_nodes ){
-  int n = 0; // The number of parsed nodes
   char node[9];
   int entry = 8;
 
-  if (n == 0){ 
-    strncpy(node, &line[entry], 8);
-    node[8] = '\0';
-    *elem_num = atoi(node);
-    entry += 8;
-    
-    strncpy(node, &line[entry], 8);
-    node[8] = '\0';
-    *component_num = atoi(node);
-    entry += 8;
-  }
-
+  strncpy(node, &line[entry], 8);
+  node[8] = '\0';
+  *elem_num = atoi(node);
+  entry += 8;
+  
+  strncpy(node, &line[entry], 8);
+  node[8] = '\0';
+  *component_num = atoi(node);
+  entry += 8;
+  
   if (*component_num <= 0){
     fprintf(stderr, 
 	    "Error: The component numbers must be strictly positive\n");
   }
   
-  for ( ; n < num_nodes && entry < 80; entry += 8, n++ ){
+  for ( int n = 0; n < num_nodes && entry < 80; entry += 8, n++ ){
     // Parse the line containing the entry
     strncpy(node, &line[entry], 8);
     node[8] = '\0';
