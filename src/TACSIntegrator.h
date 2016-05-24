@@ -172,8 +172,7 @@ class TacsDIRKIntegrator : public TacsIntegrator {
 
   // Setup the right hand side of the adjoint equation
   //------------------------------------------
-  void setupAdjointRHS(BVec *res, int func_num, 
-		       double alpha, double beta, double gamma);
+  void setupAdjointRHS(BVec *res, int func_num);
 };
 
 /*
@@ -232,8 +231,7 @@ class TacsBDFIntegrator : public TacsIntegrator {
 
   // Setup the right hand side of the adjoint equation
   //------------------------------------------
-  void setupAdjointRHS(BVec *res, int func_num, 
-		       double alpha, double beta, double gamma);
+  void setupAdjointRHS(BVec *res, int func_num);
 };
 
 #endif

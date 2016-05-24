@@ -337,7 +337,6 @@ void TacsBDFIntegrator::integrate(){
 
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
-  q[0]->set(1.0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;
@@ -378,35 +377,19 @@ void TacsBDFIntegrator::adjointSolve(){
     tacs->setDotVariables(qdot[k]);
     tacs->setDDotVariables(qddot[k]);
     
-    // Setup the linear system for adjoint solve (gamma + delta?)
+    // Setup the linear system for adjoint solve
     tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
 
     // Perform LU factorization of the jacobian matrix
     pc->factor();
    
     // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
-    for ( int j = 0; j < num_func; j++ ){
-      // Assemble the RHS for the current function
-      setupAdjointRHS(&res[0], j, alpha, beta, gamma);
-   
-      // Apply the factorization for each RHS
-      pc->applyFactor(&res[0], psi[k]);
-    }
-  }
+    // Assemble the RHS for the current function
+    setupAdjointRHS(&res[0], 0);
 
-  // Print Lagrange multipliers
-  /*
-    TacsScalar *psivals;
-    for ( int k = 0; k < num_time_steps; k++ ){    
-    psi[k]->getArray(&psivals);
-   
-    printf("\n");
-    for ( int j = 0; j < num_state_vars; j++ ){
-    printf(" %e ", psivals[j]);
-    }
-    printf("\n");
-    }
-  */
+    // Apply the factorization for each RHS
+    pc->applyFactor(&res[0], psi[k]);
+  }
 
   // Compute the total derivative
 }
@@ -416,17 +399,12 @@ void TacsBDFIntegrator::adjointSolve(){
   
   input:
   res  : the right hand side vector in the linear system
-  k    : the index of the current time step
   func_num: the index of the current objective function
-  alpha: multiplier for derivative of Residual wrt to q
-  beta : multiplier for derivative of Residual wrt to qdot
-  gamma: multiplier for derivative of Residual wrt to qddot
 
   output:
   res: right hand side vector for the adjoint linear system
 */
-void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num,
-					 double alpha, double beta, double gamma ){
+void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   int k = current_time_step;
   
   // Zero the RHS vector each time
@@ -452,7 +430,7 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num,
     tacs->setDotVariables(qdot[k-i]);
     tacs->setDDotVariables(qddot[k-i]);
   
-    tacs->addJacobianVecProduct(scale, alpha, beta, gamma, psi[k-i], res, TRANSPOSE);
+    tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k-i], res, TRANSPOSE);
   }
  
   // Add contribution from the second derivative terms d{R}d{qddot}
@@ -464,7 +442,7 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num,
     tacs->setDotVariables(qdot[k-i]);
     tacs->setDDotVariables(qddot[k-i]);
   
-    tacs->addJacobianVecProduct(scale, alpha, beta, gamma, psi[k-i], res, TRANSPOSE);
+    tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k-i], res, TRANSPOSE);
   }
 
   // Negative the RHS
@@ -607,7 +585,7 @@ TacsDIRKIntegrator::TacsDIRKIntegrator( TACSAssembler * _tacs,
                                         double _tinit, double _tfinal, 
                                         int _num_steps_per_sec,
                                         int _num_stages ): 
-TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){   
+TacsIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){   
   // copy over the variables
   num_stages = _num_stages;
   
@@ -805,13 +783,11 @@ void TacsDIRKIntegrator::adjointSolve(){
       pc->factor();
       
       // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
-      for ( int j = 0; j < num_func; j++ ){
-	// Assemble the RHS for the current function
-	setupAdjointRHS(&res[0], j, alpha, beta, gamma);
+      // Assemble the RHS for the current function
+      setupAdjointRHS(&res[0], 0);
 	
-	// Apply the factorization for each RHS
-	pc->applyFactor(&res[0], psi[toffset+i]);
-      }
+      // Apply the factorization for each RHS
+      pc->applyFactor(&res[0], psi[toffset+i]);
     }
   }
 }
@@ -821,18 +797,12 @@ void TacsDIRKIntegrator::adjointSolve(){
   
   input:
   res  : the right hand side vector in the linear system
-  k    : the index of the current time step
   func_num: the index of the current objective function
-  alpha: multiplier for derivative of Residual wrt to q
-  beta : multiplier for derivative of Residual wrt to qdot
-  gamma: multiplier for derivative of Residual wrt to qddot
 
   output:
   res: right hand side vector for the adjoint linear system
 */
-void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num,
-					  double alpha, double beta, double gamma ){
-
+void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   int k = current_time_step;
   int i = current_stage;
 
@@ -841,16 +811,19 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num,
   // Zero the RHS vector each time
   res->zeroEntries();
   
-  // Add the contribution from the j-th objective function df/dq at
+  // Add the contribution from the objective function df/dq at
   // the last time step
   double scale;
   if ( k == num_time_steps - 1 ){
     for ( int j = i; j < num_stages; j++ ){
-      // Part 1
+      double weight = B[j];
+
+      // Part 1 (Add FUNCTIONAL contribution from stages of CURRENT time step)
       int idx1 = getIdx(j);
+      scale = 0.0;
       for ( int p = i; p <= j; p++ ){
 	int idx2 = getIdx(p);
-	scale = A[idx1+i]*A[idx2+i];
+	scale += weight*A[idx1+i]*A[idx2+i];
       }
 
       // Set the required states into TACS before calling the
@@ -860,21 +833,22 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num,
       tacs->setDDotVariables(qddotS[toffset+j]);
 
       // Evalute the sensitivity
-      tacs->evalSVSens(func[func_num], res);	
-      res->scale(B[j]*scale);
+      tacs->evalSVSens(func[func_num], res);
+      res->scale(scale);
       
-      // Part 2 (Add contribution from next time step)
-      if ( k < num_time_steps - 1 ){
+      // Part 2 (Add FUNCTIONAL contribution from stages of the NEXT time step)
+      // Note: skipped at the last time step as we don't have any future states
+      if ( k < num_time_steps - 1 ){ 
 	double scale1 = 0.0;
 	for ( int p = i; p < num_stages; p++ ){
 	  int idx2 = getIdx(p);
-	  scale1 += A[idx2+i]*B[p];
+	  scale1 += weight*A[idx2+i]*B[p];
 	}
 
 	double scale2 = 0.0;
 	int idx = getIdx(j);
-	for ( int p = 0; p < j; p++ ){
-	  scale2 += B[i]*A[idx+p];
+	for ( int p = 1; p <= j; p++ ){
+	  scale2 += weight*B[i]*A[idx+p];
 	}
 
 	scale = scale1 + scale2;
@@ -882,20 +856,49 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num,
 	// Set the required states into TACS before calling the
 	// derivative evaluation
 
-	int off = (k)*num_stages;
+	int off = k*num_stages; // Points to the next time step
 
 	tacs->setVariables(qS[off+j]);
 	tacs->setDotVariables(qdotS[off+j]);
 	tacs->setDDotVariables(qddotS[off+j]);
 
-	// Evalute the sensitivity
 	tacs->evalSVSens(func[func_num], res);
-	res->scale(B[j]*scale);
-      } // contribution from next time step
-    }  // stage loop
-  } // function contribution
- 
-  // Negative the RHS
+	res->scale(scale);
+
+	// Part 3: Add inter-stage contributions from the same time step
+	// 'scale' is same as previously computed 'scale'
+	tacs->addJacobianVecProduct(scale, 1.0, 0.0, 0.0, psi[off+j], res, TRANSPOSE); 
+
+	scale = weight*B[i]/h;
+	tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[off+j], res, TRANSPOSE);
+      } 
+    }  
+  } 
+
+  // Part 4: Add contributions from stages of CURRENT time step
+  for ( int j = i+1; j < num_stages; j++ ){
+    double weight = B[j];
+
+    // Set the required states into TACS before calling the
+    // derivative evaluation
+    tacs->setVariables(qS[toffset+j]);
+    tacs->setDotVariables(qdotS[toffset+j]);
+    tacs->setDDotVariables(qddotS[toffset+j]);
+
+    int idx1 = getIdx(j);
+    scale = weight*A[idx1+i]/h;
+    tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[toffset+j], res, TRANSPOSE);
+
+    scale = 0.0;
+    for ( int p = i; p <= j; p++ ){
+      int idx2 = getIdx(p);
+      scale += weight*A[idx1+i]*A[idx2+i];
+    }
+    tacs->addJacobianVecProduct(scale, 1.0, 0.0, 0.0, psi[toffset+j], res, TRANSPOSE);
+
+  }
+
+  // Negate the RHS
   res->scale(-1.0);
 }
 
@@ -909,7 +912,6 @@ void TacsDIRKIntegrator::integrate(){
   
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
-  q[0]->set(1.0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;
