@@ -97,6 +97,9 @@ class TacsIntegrator : public TACSObject {
   // Variables controlling the nonlinear solution
   int max_newton_iters;
   double atol, rtol;
+  
+  // Frequency of Jacobian recomputation during nonlinear solve
+  int jac_comp_freq;
 
   // Matrices and vectors for the nonlinear solution
   BVec *res, *update;  // Residual and Newton update

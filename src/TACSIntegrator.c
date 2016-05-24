@@ -63,6 +63,9 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   //                     Newton's method                              //
   //------------------------------------------------------------------//
 
+  // Frequency of Jacobian recomputation during nonlinear solve
+  jac_comp_freq = 1;
+
   // Default parameters for Newton solve
   max_newton_iters = 25;
   atol = 1.0e-16;
@@ -179,7 +182,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     tacs->setDDotVariables(qddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
-    if (n % 3 == 0){
+    if (n % jac_comp_freq == 0){
       if (n > 0){
         double frac = 10.0*RealPart(norm/(init_norm + rtol));
         if (frac < 1.0){
@@ -228,7 +231,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Factor the preconditioner
-    if (n % 3 == 0){
+    if (n % jac_comp_freq == 0){
       pc->factor();
     }
    
@@ -392,17 +395,19 @@ void TacsBDFIntegrator::adjointSolve(){
   }
 
   // Print Lagrange multipliers
-  TacsScalar *psivals;
-  for ( int k = 0; k < num_time_steps; k++ ){    
+  /*
+    TacsScalar *psivals;
+    for ( int k = 0; k < num_time_steps; k++ ){    
     psi[k]->getArray(&psivals);
    
     printf("\n");
     for ( int j = 0; j < num_state_vars; j++ ){
-      printf(" %e ", psivals[j]);
+    printf(" %e ", psivals[j]);
     }
     printf("\n");
-  }
-  
+    }
+  */
+
   // Compute the total derivative
 }
 
@@ -827,6 +832,71 @@ void TacsDIRKIntegrator::adjointSolve(){
 */
 void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num,
 					  double alpha, double beta, double gamma ){
+
+  int k = current_time_step;
+  int i = current_stage;
+
+  int toffset = (k-1)*num_stages;
+  
+  // Zero the RHS vector each time
+  res->zeroEntries();
+  
+  // Add the contribution from the j-th objective function df/dq at
+  // the last time step
+  double scale;
+  if ( k == num_time_steps - 1 ){
+    for ( int j = i; j < num_stages; j++ ){
+      // Part 1
+      int idx1 = getIdx(j);
+      for ( int p = i; p <= j; p++ ){
+	int idx2 = getIdx(p);
+	scale = A[idx1+i]*A[idx2+i];
+      }
+
+      // Set the required states into TACS before calling the
+      // derivative evaluation
+      tacs->setVariables(qS[toffset+j]);
+      tacs->setDotVariables(qdotS[toffset+j]);
+      tacs->setDDotVariables(qddotS[toffset+j]);
+
+      // Evalute the sensitivity
+      tacs->evalSVSens(func[func_num], res);	
+      res->scale(B[j]*scale);
+      
+      // Part 2 (Add contribution from next time step)
+      if ( k < num_time_steps - 1 ){
+	double scale1 = 0.0;
+	for ( int p = i; p < num_stages; p++ ){
+	  int idx2 = getIdx(p);
+	  scale1 += A[idx2+i]*B[p];
+	}
+
+	double scale2 = 0.0;
+	int idx = getIdx(j);
+	for ( int p = 0; p < j; p++ ){
+	  scale2 += B[i]*A[idx+p];
+	}
+
+	scale = scale1 + scale2;
+
+	// Set the required states into TACS before calling the
+	// derivative evaluation
+
+	int off = (k)*num_stages;
+
+	tacs->setVariables(qS[off+j]);
+	tacs->setDotVariables(qdotS[off+j]);
+	tacs->setDDotVariables(qddotS[off+j]);
+
+	// Evalute the sensitivity
+	tacs->evalSVSens(func[func_num], res);
+	res->scale(B[j]*scale);
+      } // contribution from next time step
+    }  // stage loop
+  } // function contribution
+ 
+  // Negative the RHS
+  res->scale(-1.0);
 }
 
 /*
@@ -875,18 +945,16 @@ void TacsDIRKIntegrator::computeStageValues(){
     }
 
     // Compute qdotS
-    int idx1 = getIdx(i);
+    int idx = getIdx(i);
     for ( int j = 0; j <= i; j++ ){
-      qdotS[toffset+i]->axpy(h*A[idx1], qddotS[toffset+j]);
-      idx1++;
+      qdotS[toffset+i]->axpy(h*A[idx+j], qddotS[toffset+j]);
     }
     qdotS[toffset+i]->axpy(1.0, qdot[k-1]);
 
     // Compute qS
-    int idx2 = getIdx(i);
+    idx = getIdx(i);
     for ( int j = 0; j <= i; j++ ){
-      qS[toffset+i]->axpy(h*A[idx2], qdotS[toffset+j]);
-      idx2++;
+      qS[toffset+i]->axpy(h*A[idx+j], qdotS[toffset+j]);
     }
     qS[toffset+i]->axpy(1.0, q[k-1]);
     
@@ -942,3 +1010,7 @@ void TacsDIRKIntegrator::timeMarch( double *time,
     qddot[k]->axpy(B[j], qddotS[toffset+j]);
   }
 }
+
+
+
+
