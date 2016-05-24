@@ -361,12 +361,7 @@ void TacsBDFIntegrator::integrate(){
 void TacsBDFIntegrator::adjointSolve(){
   for ( int k = num_time_steps-1; k >= 1; k-- ){
     current_time_step = k;
-    
-    // Set the states variables into TACS
-    tacs->setVariables(q[k]);
-    tacs->setDotVariables(qdot[k]);
-    tacs->setDDotVariables(qddot[k]);
-
+   
     // Get the BDF coefficients at this time step
     get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
 
@@ -375,17 +370,22 @@ void TacsBDFIntegrator::adjointSolve(){
     double beta = bdf_coeff[0]/h;
     double alpha = 1.0;
 
+    // Set the states variables into TACS
+    tacs->setVariables(q[k]);
+    tacs->setDotVariables(qdot[k]);
+    tacs->setDDotVariables(qddot[k]);
+    
     // Setup the linear system for adjoint solve (gamma + delta?)
     tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
 
     // Perform LU factorization of the jacobian matrix
     pc->factor();
-    
+   
     // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
     for ( int j = 0; j < num_func; j++ ){
       // Assemble the RHS for the current function
-      setupAdjointRHS(&res[0], k, j, alpha, beta, gamma);
-      
+      setupAdjointRHS(&res[0], j, alpha, beta, gamma);
+   
       // Apply the factorization for each RHS
       pc->applyFactor(&res[0], psi[k]);
     }
@@ -395,13 +395,14 @@ void TacsBDFIntegrator::adjointSolve(){
   TacsScalar *psivals;
   for ( int k = 0; k < num_time_steps; k++ ){    
     psi[k]->getArray(&psivals);
-
-    //    printf("\n");
+   
+    printf("\n");
     for ( int j = 0; j < num_state_vars; j++ ){
-      //printf(" %e ", psivals[j]);
+      printf(" %e ", psivals[j]);
     }
-    //    printf("\n");
+    printf("\n");
   }
+  
   // Compute the total derivative
 }
 
@@ -411,7 +412,7 @@ void TacsBDFIntegrator::adjointSolve(){
   input:
   res  : the right hand side vector in the linear system
   k    : the index of the current time step
-  j    : the index of the current objective function
+  func_num: the index of the current objective function
   alpha: multiplier for derivative of Residual wrt to q
   beta : multiplier for derivative of Residual wrt to qdot
   gamma: multiplier for derivative of Residual wrt to qddot
@@ -419,26 +420,45 @@ void TacsBDFIntegrator::adjointSolve(){
   output:
   res: right hand side vector for the adjoint linear system
 */
-void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int k, int j,
+void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num,
 					 double alpha, double beta, double gamma ){
+  int k = current_time_step;
+  
   // Zero the RHS vector each time
   res->zeroEntries();
-
+     
   // Add the contribution from the j-th objective function df/dq. 
   if ( k == num_time_steps - 1 ){
-    tacs->evalSVSens(func[j], res);
-  }
+    // Set the states variables into TACS
+    tacs->setVariables(q[k]);
+    tacs->setDotVariables(qdot[k]);
+    tacs->setDDotVariables(qddot[k]);
   
+    tacs->evalSVSens(func[func_num], res);
+  }
+
   // Add contribution from the first derivative terms d{R}d{qdot}
   double scale;
   for ( int i = 1; i < nbdf; i++ ){
     scale = bdf_coeff[i]/h;
+  
+    // Set the states variables into TACS
+    tacs->setVariables(q[k-i]);
+    tacs->setDotVariables(qdot[k-i]);
+    tacs->setDDotVariables(qddot[k-i]);
+  
     tacs->addJacobianVecProduct(scale, alpha, beta, gamma, psi[k-i], res, TRANSPOSE);
   }
  
   // Add contribution from the second derivative terms d{R}d{qddot}
   for ( int i = 1; i < nbddf; i++ ){
     scale = bddf_coeff[i]/h/h;
+    
+    // Set the states variables into TACS
+    tacs->setVariables(q[k-i]);
+    tacs->setDotVariables(qdot[k-i]);
+    tacs->setDDotVariables(qddot[k-i]);
+  
     tacs->addJacobianVecProduct(scale, alpha, beta, gamma, psi[k-i], res, TRANSPOSE);
   }
 
@@ -619,6 +639,15 @@ TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
 
   // Add entries into the Butcher tableau
   setupButcherTableau();
+
+  // Allocate space for adjoint variables
+  psi = new BVec*[num_time_steps*num_stages];
+
+  // Create adjoint vectors
+  for (int k = 0; k < num_time_steps*num_stages; k++) {
+    psi[k] = tacs->createVec(); 
+    psi[k]->incref(); 
+  }
 }
 
 /*
@@ -643,6 +672,12 @@ TacsDIRKIntegrator::~TacsDIRKIntegrator(){
   delete [] qS;
   delete [] qdotS;
   delete [] qddotS;
+
+  // Delete the adjoint variables
+  for (int k = 0; k < num_time_steps*num_stages; k++) {
+    psi[k]->decref();
+  }
+  delete [] psi;
 }
 
 /*
@@ -736,9 +771,62 @@ void TacsDIRKIntegrator::checkButcherTableau(){
 }
 
 /*
-  Solves for the adjoint variables psi[k,i] marching backwards in time.
+  Solves for the adjoint variables psi[k,i] marching backwards in time
+  and stage
 */
 void TacsDIRKIntegrator::adjointSolve(){
+  for ( int k = num_time_steps-1; k >= 1; k-- ){
+    for ( int i = num_stages-1; i >= 0; i-- ){
+      current_time_step = k;
+      current_stage = i;
+      
+      // Find the offset
+      int toffset = (k-1)*num_stages;
+
+      // Determine the coefficients for linearizing the Residual
+      double gamma = 1.0;
+      double beta  = h*A[0]; 
+      double alpha = h*A[0]*h*A[0];
+
+      // Set the stage states variables into TACS
+      tacs->setVariables(qS[toffset+i]);
+      tacs->setDotVariables(qdotS[toffset+i]);
+      tacs->setDDotVariables(qddotS[toffset+i]);
+      
+      // Setup the linear system for adjoint solve (gamma + delta?)
+      tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+      
+      // Perform LU factorization of the jacobian matrix
+      pc->factor();
+      
+      // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
+      for ( int j = 0; j < num_func; j++ ){
+	// Assemble the RHS for the current function
+	setupAdjointRHS(&res[0], j, alpha, beta, gamma);
+	
+	// Apply the factorization for each RHS
+	pc->applyFactor(&res[0], psi[toffset+i]);
+      }
+    }
+  }
+}
+
+/*
+  Assembles the right hand side of the adjoint equation.
+  
+  input:
+  res  : the right hand side vector in the linear system
+  k    : the index of the current time step
+  func_num: the index of the current objective function
+  alpha: multiplier for derivative of Residual wrt to q
+  beta : multiplier for derivative of Residual wrt to qdot
+  gamma: multiplier for derivative of Residual wrt to qddot
+
+  output:
+  res: right hand side vector for the adjoint linear system
+*/
+void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num,
+					  double alpha, double beta, double gamma ){
 }
 
 /*
@@ -854,6 +942,3 @@ void TacsDIRKIntegrator::timeMarch( double *time,
     qddot[k]->axpy(B[j], qddotS[toffset+j]);
   }
 }
-
-
-

@@ -88,7 +88,7 @@ class TacsIntegrator : public TACSObject {
   
   // Class variables used to manage/monitor time marching in
   // integration schemes
-  int num_time_steps, num_steps_per_sec, current_time_step; 
+  int num_time_steps, num_steps_per_sec, current_time_step, current_stage; 
   double h, tinit, tfinal;
 
   // Print and output options
@@ -148,7 +148,7 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   BVec **qS, **qdotS, **qddotS;
 
   // Adjoint variables
-  BVec ***psi;
+  BVec **psi;
 
   // Functions related to Butcher Tableau
   //-------------------------------------
@@ -166,6 +166,11 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // Advance the time and states to next step
   //-----------------------------------------
   void timeMarch(double *time, BVec **q, BVec **qdot, BVec **qddot);
+
+  // Setup the right hand side of the adjoint equation
+  //------------------------------------------
+  void setupAdjointRHS(BVec *res, int func_num, 
+		       double alpha, double beta, double gamma);
 };
 
 /*
@@ -224,7 +229,7 @@ class TacsBDFIntegrator : public TacsIntegrator {
 
   // Setup the right hand side of the adjoint equation
   //------------------------------------------
-  void setupAdjointRHS(BVec *res, int k, int j, 
+  void setupAdjointRHS(BVec *res, int func_num, 
 		       double alpha, double beta, double gamma);
 };
 
