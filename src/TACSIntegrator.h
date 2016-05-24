@@ -166,10 +166,6 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // Advance the time and states to next step
   //-----------------------------------------
   void timeMarch(double *time, BVec **q, BVec **qdot, BVec **qddot);
-
-  // Set the stage states and time to zero after each global timestep
-  //-----------------------------------------------------------------
-  void resetStageValues();
 };
 
 /*

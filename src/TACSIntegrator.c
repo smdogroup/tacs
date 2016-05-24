@@ -334,7 +334,7 @@ void TacsBDFIntegrator::integrate(){
 
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
-  //  q[0]->set(1.0);
+  q[0]->set(1.0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;
@@ -587,16 +587,16 @@ TacsIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
   num_stages = _num_stages;
   
   // allocate space for stage state variables
-  qS = new BVec*[num_stages];
-  qdotS = new BVec*[num_stages];
-  qddotS = new BVec*[num_stages];
+  qS = new BVec*[num_stages*num_time_steps];
+  qdotS = new BVec*[num_stages*num_time_steps];
+  qddotS = new BVec*[num_stages*num_time_steps];
 
   // store stage time
-  tS = new double[num_stages];
-  memset(tS, 0, num_stages*sizeof(double));
+  tS = new double[num_stages*num_time_steps];
+  memset(tS, 0, num_stages*num_time_steps*sizeof(double));
   
   // create state vectors for TACS during each timestep
-  for ( int k = 0; k < num_stages; k++ ){
+  for ( int k = 0; k < num_stages*num_time_steps; k++ ){
     qS[k] = tacs->createVec(); 
     qS[k]->incref(); 
     
@@ -631,7 +631,7 @@ TacsDIRKIntegrator::~TacsDIRKIntegrator(){
   delete [] C;
 
   // Cleanup stage stages
-  for ( int i = 0; i < num_stages; i++ ){
+  for ( int i = 0; i < num_stages*num_time_steps; i++ ){
     qS[i]->decref();
     qdotS[i]->decref();
     qddotS[i]->decref();
@@ -751,6 +751,7 @@ void TacsDIRKIntegrator::integrate(){
   
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
+  q[0]->set(1.0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;
@@ -769,39 +770,37 @@ void TacsDIRKIntegrator::integrate(){
   and sets the stage states tS, qS, qdotS and qdotS.
 */
 void TacsDIRKIntegrator::computeStageValues(){
-  int k = current_time_step;
 
-  // Set the stage values tS, qS, qdotS, qddotS to zero before
-  // evaluting them at the current time step
-  resetStageValues();
+  int k = current_time_step;
+  int toffset = (k-1)*num_stages;
 
   for ( int i = 0; i < num_stages; i++ ){
     // Compute the stage time
-    tS[i] = time[k-1] + C[i]*h;
+    tS[toffset+i] = time[k-1] + C[i]*h;
 
     // Initial guess for qddotS
     if (i == 0){
-      qddotS[i]->copyValues(qddot[k-1]);
+      qddotS[toffset+i]->copyValues(qddot[k-1]);
     }
     else {
-      qddotS[i]->copyValues(qddotS[i-1]);
+      qddotS[toffset+i]->copyValues(qddotS[toffset+i-1]);
     }
 
     // Compute qdotS
     int idx1 = getIdx(i);
     for ( int j = 0; j <= i; j++ ){
-      qdotS[i]->axpy(h*A[idx1], qddotS[j]);
+      qdotS[toffset+i]->axpy(h*A[idx1], qddotS[toffset+j]);
       idx1++;
     }
-    qdotS[i]->axpy(1.0, qdot[k-1]);
+    qdotS[toffset+i]->axpy(1.0, qdot[k-1]);
 
     // Compute qS
     int idx2 = getIdx(i);
     for ( int j = 0; j <= i; j++ ){
-      qS[i]->axpy(h*A[idx2], qdotS[j]);
+      qS[toffset+i]->axpy(h*A[idx2], qdotS[toffset+j]);
       idx2++;
     }
-    qS[i]->axpy(1.0, q[k-1]);
+    qS[toffset+i]->axpy(1.0, q[k-1]);
     
     // Determine the coefficients for linearizing the Residual
     double gamma = 1.0;
@@ -809,7 +808,7 @@ void TacsDIRKIntegrator::computeStageValues(){
     double alpha = h*A[0]*h*A[0];
 
     // Solve the nonlinear system of stage equations
-    newtonSolve(alpha, beta, gamma, tS[i], qS[i], qdotS[i], qddotS[i]);
+    newtonSolve(alpha, beta, gamma, tS[toffset+i], qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
   }
 }
 
@@ -833,37 +832,28 @@ int TacsDIRKIntegrator::getIdx( int stageNum ){
 void TacsDIRKIntegrator::timeMarch( double *time, 
 				    BVec **q, BVec **qdot, BVec **qddot ){
   int k = current_time_step;
+  int toffset = (k-1)*num_stages;
   
   // advance the time
   time[k] = time[k-1] + h;
   
   // advance the position state
   for ( int j = 0; j < num_stages; j++ ){
-    q[k]->axpy(h*B[j], qdotS[j]);
+    q[k]->axpy(h*B[j], qdotS[toffset+j]);
   }
   q[k]->axpy(1.0, q[k-1]);
 
   // advance the velocity state
   for ( int j = 0; j < num_stages; j++ ){
-    qdot[k]->axpy(h*B[j], qddotS[j]);
+    qdot[k]->axpy(h*B[j], qddotS[toffset+j]);
   }
   qdot[k]->axpy(1.0, qdot[k-1]);
 
   // advance the acceleration state
   for ( int j = 0; j < num_stages; j++ ){
-    qddot[k]->axpy(B[j], qddotS[j]);
+    qddot[k]->axpy(B[j], qddotS[toffset+j]);
   }
 }
 
-/*
-  Function that sets the arrays used during previous time marching
-  step to zero, to make way for the next time step
-*/
-void TacsDIRKIntegrator::resetStageValues(){
-  memset(tS, 0, num_stages*sizeof(double));
-  for (int i=0; i < num_stages; i++){
-    qS[i]->zeroEntries();
-    qdotS[i]->zeroEntries();
-    qddotS[i]->zeroEntries();
-  }
-}
+
+
