@@ -34,8 +34,8 @@ SO_LINK_FLAGS=-fPIC -shared
 # SO_EXT=so
 # SO_LINK_FLAGS=-fPIC -dynamiclib -single_module -undefined dynamic_lookup -multiply_defined suppress
 
-# swig python interface generation utility (must be at least version 1.3.*)
-SWIG = swig
+# Cython command
+CYTHON=cython
 
 # This uses the default installation of LAPACK. 
 # Use an optimized version of LAPACK if available.
