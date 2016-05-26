@@ -302,8 +302,7 @@ cdef _init_Assembler(TACSAssembler *ptr):
    tacs.ptr.incref()
    return tacs
 
-cdef class Assembler:
-   cdef TACSAssembler *ptr
+cdef class Assembler:   
    def __cinit__(self):
       '''
       Constructor for the TACSAssembler object

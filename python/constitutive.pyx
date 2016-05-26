@@ -54,11 +54,8 @@ cdef class PlaneStress(Constitutive):
       self.ptr = new PlaneStressStiffness(rho, E, nu)
       self.ptr.incref()
       return
-
-   ## def getPlaneStress(self):
-   ##    return _dynamicPlaneStress(self.ptr)
    
-cdef class Solid(Constitutive):
+cdef class solid(Constitutive):
    def __cinit__(self, rho, E, nu):
       '''
       Wraps the SolidStiffness class that is used with 3D elements

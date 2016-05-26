@@ -36,10 +36,11 @@ cdef class FSDT(Constitutive):
 cdef class PlaneStress(Constitutive):
     pass
    
-cdef class Solid(Constitutive):
+cdef class solid(Constitutive):
     pass
 
 # Special functions required for converting pointers
 cdef extern from "":
     PlaneStressStiffness* _dynamicPlaneStress"dynamic_cast<PlaneStressStiffness*>"(TACSConstitutive*) except NULL
     FSDTStiffness* _dynamicFSDT"dynamic_cast<FSDTStiffness*>"(TACSConstitutive*) except NULL
+    SolidStiffness* _dynamicSolid"dynamic_cast<SolidStiffness*>"(TACSConstitutive*) except NULL

@@ -17,9 +17,9 @@ cdef extern from "TACSElement.h":
         NONLINEAR
         LARGE_ROTATION
 
-# cdef extern from "TACSGibbsVector.h":
-#     cdef cppcalss TACSGibbsVector(TACSObject):
-#         TACSGibbsVector(TacsScalar _x[]);
+cdef extern from "TACSGibbsVector.h":
+    cdef cppclass TACSGibbsVector(TACSObject):
+        TACSGibbsVector(TacsScalar x[])
 
 # Template
 cdef extern from "TACSElementTemplates.h":
@@ -40,23 +40,30 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass MITCShell2(TACSElement):
         MITCShell2(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
+    cdef cppclass MITCShell3(TACSElement):
+        MITCShell3(FSDTStiffness *stiff, ElementBehaviorType type, int)
+        
+    cdef cppclass MITCShell4(TACSElement):
+        MITCShell4(FSDTStiffness *stiff, ElementBehaviorType type, int)
+
+    # Declare the Solid elements
+    cdef cppclass Solid2(TACSElement):
+        Solid2(SolidStiffness *stiff, ElementBehaviorType type, int)
+
+    cdef cppclass Solid3(TACSElement):
+        Solid3(SolidStiffness *stiff, ElementBehaviorType type, int)
+
+    cdef cppclass Solid4(TACSElement):
+        Solid4(SolidStiffness *stiff, ElementBehaviorType type, int)
+
+
 cdef extern from "PlaneStressTri6.h":
     cdef cppclass PlaneStressTri6(TACSElement):
         PlaneStressTri6(PlaneStressStiffness *stiff, 
                         ElementBehaviorType type, int)
 
-# cdef extern from "MITCShell.h":
-#     cdef cppclass MITCShell(TACSShell)[int]:
-#         MITCShell(FSDTStiffness *_stiff, ElementBehaviorType _type, int)
 
 # cdef extern from  "MITC9.h":
 #     cdef cppclass MITC9(TACSElement):
 #         MITC9(FSDTStiffness *_stiff, TACSGibbsVector *_gravity=NULL,
 #               TACSGibbsVector *_vInit=NULL, TACSGibbsVector *_omegaInit=NULL)
-
-# cdef extern from "Solid.h":
-#     enum SolidElementType"Solid::SolidElementType":
-#         LINEAR"Solid::LINEAR"
-#         NONLINEAR"Solid::NONLINEAR"
-#     cdef cppclass Solid(TACS3DElement)[int]:
-#         Solid(SolidStiffness *_stiff, SolidElementType elem_type=LINEAR, int)

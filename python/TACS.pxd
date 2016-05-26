@@ -217,6 +217,9 @@ cdef extern from "TACSAssembler.h":
       void testFunction(TACSFunction *func, int num_dvs,
                         double dh)
       MPI_Comm getMPIComm()
+
+cdef class Assembler:
+   cdef TACSAssembler *ptr
       
 cdef extern from "TACSMeshLoader.h":
    cdef cppclass TACSMeshLoader(TACSObject):
