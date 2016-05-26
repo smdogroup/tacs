@@ -1,6 +1,6 @@
 #include "TACSIntegrator.h"
 #include "TACSMeshLoader.h"
-#include "MITCShell.h"
+#include "MITC9.h"
 #include "isoFSDTStiffness.h"
 /*
   Function that sets up the rotor blade dynamics in TACS and
@@ -17,7 +17,7 @@ int main( int argc, char **argv ){
   /*-----------------------------------------------------------------*/
 
   // Write name of BDF file to be load to char array
-  const char *filename = "rotor.bdf";
+  const char *filename = "test.bdf";
 
   // Create the mesh loader object and load file
   TACSMeshLoader *mesh = new TACSMeshLoader(comm);
@@ -34,6 +34,16 @@ int main( int argc, char **argv ){
   double kcorr = 5.0/6.0;   // shear correction factor
   double ys = 350e6;        // yield stress, Pa
 
+  int vars_per_node = 6;
+
+  // Set up the global Gibbs vectors
+  TacsScalar g[] = {0.0, 0.0, -9.81};
+  TacsScalar v_init[] = {0.0, 0.0, 0.0};
+  TacsScalar omega_init[] = {0.0, 0.0, 0.0};
+  TACSGibbsVector *gravity = new TACSGibbsVector(g);
+  TACSGibbsVector *v0 = new TACSGibbsVector(v_init);
+  TACSGibbsVector *omega0 = new TACSGibbsVector(omega_init);
+
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ){
     const char *descriptor = mesh->getElementDescript(i);
@@ -48,21 +58,36 @@ int main( int argc, char **argv ){
 
     // Create element object using constituitive information and type defined in
     // the descriptor
-    if ( strcmp(descriptor, "CQUAD") == 0 || 
-         strcmp(descriptor, "CQUADR") == 0 ||
-         strcmp(descriptor, "CQUAD4") == 0) {
-      element = new MITCShell<2>(stiff, TACSShell::LINEAR, i);
+    if (strcmp(descriptor, "CQUAD") == 0){
+      element = new MITC9(stiff, gravity, v0, omega0);
     }
     else {
       printf("TACS Warning: Unsupported element %s in BDF file\n", descriptor);
     }
+
+    // Set the number of displacements
+    vars_per_node = element->numDisplacements();
     mesh->setElement(i, element);
   }
 
   // Create tacs assembler from mesh loader object
-  TACSAssembler *tacs = mesh->createTACS(6);
+  TACSAssembler *tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
   mesh->decref();
+
+  /*
+  // Extract the element
+  TacsScalar Xpts[3*9];
+  TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
+
+  // Test the element;
+  TestElement *test = new TestElement(elem, Xpts);
+  test->setPrintLevel(2);
+  test->testResidual();
+  for ( int k = 0; k < elem->numVariables(); k++ ){
+    test->testJacobian(k);
+  }
+  */
 
   /*-----------------------------------------------------------------*/
   /*------------------ Time Integration and Adjoint Solve -----------*/
@@ -70,12 +95,13 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 25.0;
-  int num_steps_per_sec = 10, num_stages = 3, max_bdf_order = 3;
+  double tinit = 0.0, tfinal = 1.0;
+  int num_steps_per_sec = 1000, num_stages = 3, max_bdf_order = 3;
 
   // Create functions for adjoint solve
   TACSFunction *func = NULL;
-  
+
+  /*  
   // Integrate using DIRK
   integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
 				      num_steps_per_sec, num_stages);
@@ -86,6 +112,7 @@ int main( int argc, char **argv ){
   integrator->adjointSolve();
 
   integrator->decref();
+  */
 
   // Integrate using BDF
   integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
@@ -97,7 +124,8 @@ int main( int argc, char **argv ){
   integrator->adjointSolve();
 
   integrator->decref();
-  
+
+
   tacs->decref();
   MPI_Finalize();
 

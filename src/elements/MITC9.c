@@ -137,7 +137,7 @@ static inline void innerProduct( const double Na[],
 
 /*
   Compute the inner product of a set of shape functions (or
-  their derivative) with a 3*NUM_NODES array of nodes, variables
+  their derivative) with a 8*NUM_NODES array of nodes, variables
   etc.
 
   input:
@@ -1301,7 +1301,7 @@ void MITC9::computeAngularAccel( TacsScalar domega[],
     const TacsScalar *ddeps = &ddvars[4];
 
     // domega = S(q)*ddot{q}
-    crossProductAdd(-2.0, eps, ddeps, domega);
+    crossProduct(-2.0, eps, ddeps, domega);
     vecAxpy(2.0*eta, ddeps, domega);
     vecAxpy(-2.0*ddeta, eps, domega);
 

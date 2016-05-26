@@ -34,7 +34,8 @@ class MITC9 : public TACSElement {
   static const int ORDER = 3;
   static const int NUM_NODES = ORDER*ORDER;
 
-  MITC9( FSDTStiffness *_stiff, TACSGibbsVector *_gravity=NULL,
+  MITC9( FSDTStiffness *_stiff, 
+         TACSGibbsVector *_gravity=NULL,
          TACSGibbsVector *_vInit=NULL, 
          TACSGibbsVector *_omegaInit=NULL );
   ~MITC9();
@@ -87,20 +88,6 @@ class MITC9 : public TACSElement {
   // Test the strain implementation
   // ------------------------------
   void testStrain( const TacsScalar X[] );
-
-  // Code to test the residual and Jacobian implementations
-  // ------------------------------------------------------
-  void testResidual( double dh, 
-		     const TacsScalar X[],
-		     const TacsScalar vars[],
-		     const TacsScalar dvars[],
-		     const TacsScalar ddvars[] );
-  void testJacobian( double dh, 
-		     double alpha, double beta, double gamma,
-		     const TacsScalar X[],
-		     const TacsScalar vars[],
-		     const TacsScalar dvars[],
-		     const TacsScalar ddvars[] );  
 
  private:
   // Helper functions required for analysis

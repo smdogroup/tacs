@@ -629,220 +629,230 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     read_buffer_line(line[0], sizeof(line[0]), 
                      &buffer_loc, buffer, buffer_len);
 
-    int node;
-    double x, y, z;
-    int inBulk = 0;
+    // Flags which indicate where the bulk data begins
+    int in_bulk = 0;
     int bulk_start = 0;
+   
+    // Scan the file for the begin bulk location. If none exists, then
+    // the whole file is treated as bulk data.
     while (buffer_loc < buffer_len){
-      // We don't start recording anything until we have detected the
-      // BEGIN BULK command.
-      if (inBulk == 0){
-	if (strncmp(line[0], "BEGIN BULK", 10) == 0){
-	  inBulk = 1;
-	  bulk_start = buffer_loc;
-	}
-	read_buffer_line(line[0], sizeof(line[0]), 
-			 &buffer_loc, buffer, buffer_len);
+      if (strncmp(line[0], "BEGIN BULK", 10) == 0){
+        in_bulk = 1;
+        bulk_start = buffer_loc;
       }
-      else {	
-	if (line[0][0] != '$'){ // A comment line
-	  // Check for GRID or GRID*
-	  if (strncmp(line[0], "GRID*", 5) == 0){
-	    if (!read_buffer_line(line[1], sizeof(line[1]), 
-				  &buffer_loc, buffer, buffer_len)){
-	      fail = 1;
-	      break;
-	    }
-	    parse_node_long_field(line[0], line[1], &node, &x, &y, &z);
-	    num_nodes++;
-	  }
-	  else if (strncmp(line[0], "GRID", 4) == 0){
-	    parse_node_short_free_field(line[0], &node, &x, &y, &z);
-	    num_nodes++;
-	  }
-	  else if (strncmp(line[0], "CBAR", 4) == 0){
-	    // Read in the component number and nodes associated with
-	    // this element
-	    int elem_num, component_num;
-	    int nodes[2]; // Should have at most four nodes
-	    parse_element_field(line[0],
-				&elem_num, &component_num,
-				nodes, 2);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 2;
-	    num_elements++;
-	  }
-	  else if (strncmp(line[0], "CHEXA", 5) == 0){
-	    if (!read_buffer_line(line[1], sizeof(line[1]), 
-				  &buffer_loc, buffer, buffer_len)){
-	      fail = 1; break;
-	    }
-
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num, nodes[8]; 
-	    parse_element_field2(line[0], line[1], 
-				 &elem_num, &component_num, 
-				 nodes, 8);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 8;
-	    num_elements++;
-	  }
-	  else if (strncmp(line[0], "CHEXA27", 7) == 0){
-	    for ( int i = 1; i < 4; i++ ){
-	      if (!read_buffer_line(line[i], sizeof(line[i]), 
-				    &buffer_loc, buffer, buffer_len)){
-		fail = 1; break;
-	      }
-	    }
-
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num, nodes[27];
-	    parse_element_field4(line[0], line[1], line[2], line[3],
-				 &elem_num, &component_num, 
-				 nodes, 27);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 27;
-	    num_elements++;
-	  }
-	  else if (strncmp(line[0], "CHEXA64", 7) == 0){
-	    for ( int i = 1; i < 9; i++ ){
-	      if (!read_buffer_line(line[i], sizeof(line[i]), 
-				    &buffer_loc, buffer, buffer_len)){
-		fail = 1; break;
-	      }
-	    }
-
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num, nodes[27];
-	    parse_element_field9(line[0], line[1], line[2], line[3], line[4],
-				 line[5], line[6], line[7], line[8],
-				 &elem_num, &component_num, 
-				 nodes, 64);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 64;
-	    num_elements++;
-	  }
-	  else if (strncmp(line[0], "CQUAD16", 7) == 0){
-	    if (!read_buffer_line(line[1], sizeof(line[1]), 
-				  &buffer_loc, buffer, buffer_len)){
-	      fail = 1; break;
-	    }
-	    if (!read_buffer_line(line[2], sizeof(line[2]), 
-				  &buffer_loc, buffer, buffer_len)){
-	      fail = 1; break;
-	    }
-
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num;
-	    int nodes[16]; // Should have at most four nodes
-	    parse_element_field3(line[0], line[1], line[2],
-				 &elem_num, &component_num,
-				 nodes, 16);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 16;
-	    num_elements++;
-	  }
-	  else if (strncmp(line[0], "CQUAD9", 6) == 0){
-	    if (!read_buffer_line(line[1], sizeof(line[1]), 
-				  &buffer_loc, buffer, buffer_len)){
-	      fail = 1; break;
-	    }
-
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num;
-	    int nodes[9]; // Should have at most four nodes
-	    parse_element_field2(line[0], line[1],
-				 &elem_num, &component_num,
-				 nodes, 9);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 9;
-	    num_elements++;
-	  }
-	  else if (strncmp(line[0], "CQUAD4", 6) == 0 || 
-		   strncmp(line[0], "CQUADR", 6) == 0){
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num;
-	    int nodes[4]; // Should have at most four nodes
-	    parse_element_field(line[0],
-				&elem_num, &component_num,
-				nodes, 4);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 4;
-	    num_elements++;
-	  }  
-	  else if (strncmp(line[0], "CQUAD", 5) == 0){
-	    if (!read_buffer_line(line[1], sizeof(line[1]), 
-				  &buffer_loc, buffer, buffer_len)){
-	      fail = 1; break;
-	    }
-
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num;
-	    int nodes[9]; // Should have at most four nodes
-	    parse_element_field2(line[0], line[1],
-				 &elem_num, &component_num,
-				 nodes, 9);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-
-	    elem_con_size += 9;
-	    num_elements++;
-	  }      
-	  else if (strncmp(line[0], "SPC", 3) == 0){
-	    bc_vars_size += 6;
-	    num_bcs++;
-	  }
-	  else if (strncmp(line[0], "FFORCE", 6) == 0){	  
-	    // Read in the component number and nodes associated with this element
-	    int elem_num, component_num;
-	    int nodes[1]; // Should have at most four nodes
-	    parse_element_field(line[0],
-				&elem_num, &component_num,
-				nodes, 1);
-
-	    if (component_num > num_components){
-	      num_components = component_num;
-	    }
-	    elem_con_size += 1;
-	    num_elements++;
-	  }
-	}
-
-	read_buffer_line(line[0], sizeof(line[0]), 
-			 &buffer_loc, buffer, buffer_len);
-      }
+      read_buffer_line(line[0], sizeof(line[0]), 
+                       &buffer_loc, buffer, buffer_len);
     }
 
+    // Treat the entire file as bulk data 
+    if (!in_bulk){
+      in_bulk = 1;
+    }
+
+    // Set the starting location
+    buffer_loc = bulk_start;
+
+    while (buffer_loc < buffer_len){
+      if (line[0][0] != '$'){ // This is not a comment line
+        int node;
+        double x, y, z;
+
+        // Check for GRID or GRID*
+        if (strncmp(line[0], "GRID*", 5) == 0){
+          if (!read_buffer_line(line[1], sizeof(line[1]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1;
+            break;
+          }
+          parse_node_long_field(line[0], line[1], &node, &x, &y, &z);
+          num_nodes++;
+        }
+        else if (strncmp(line[0], "GRID", 4) == 0){
+          parse_node_short_free_field(line[0], &node, &x, &y, &z);
+          num_nodes++;
+        }
+        else if (strncmp(line[0], "CBAR", 4) == 0){
+          // Read in the component number and nodes associated with
+          // this element
+          int elem_num, component_num;
+          int nodes[2]; // Should have at most four nodes
+          parse_element_field(line[0],
+                              &elem_num, &component_num,
+                              nodes, 2);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 2;
+          num_elements++;
+        }
+        else if (strncmp(line[0], "CHEXA", 5) == 0){
+          if (!read_buffer_line(line[1], sizeof(line[1]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1; break;
+          }
+
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num, nodes[8]; 
+          parse_element_field2(line[0], line[1], 
+                               &elem_num, &component_num, 
+                               nodes, 8);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 8;
+          num_elements++;
+        }
+        else if (strncmp(line[0], "CHEXA27", 7) == 0){
+          for ( int i = 1; i < 4; i++ ){
+            if (!read_buffer_line(line[i], sizeof(line[i]), 
+                                  &buffer_loc, buffer, buffer_len)){
+              fail = 1; break;
+            }
+          }
+
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num, nodes[27];
+          parse_element_field4(line[0], line[1], line[2], line[3],
+                               &elem_num, &component_num, 
+                               nodes, 27);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 27;
+          num_elements++;
+        }
+        else if (strncmp(line[0], "CHEXA64", 7) == 0){
+          for ( int i = 1; i < 9; i++ ){
+            if (!read_buffer_line(line[i], sizeof(line[i]), 
+                                  &buffer_loc, buffer, buffer_len)){
+              fail = 1; break;
+            }
+          }
+
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num, nodes[27];
+          parse_element_field9(line[0], line[1], line[2], line[3], line[4],
+                               line[5], line[6], line[7], line[8],
+                               &elem_num, &component_num, 
+                               nodes, 64);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 64;
+          num_elements++;
+        }
+        else if (strncmp(line[0], "CQUAD16", 7) == 0){
+          if (!read_buffer_line(line[1], sizeof(line[1]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1; break;
+          }
+          if (!read_buffer_line(line[2], sizeof(line[2]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1; break;
+          }
+
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[16]; // Should have at most four nodes
+          parse_element_field3(line[0], line[1], line[2],
+                               &elem_num, &component_num,
+                               nodes, 16);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 16;
+          num_elements++;
+        }
+        else if (strncmp(line[0], "CQUAD9", 6) == 0){
+          if (!read_buffer_line(line[1], sizeof(line[1]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1; break;
+          }
+
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[9]; // Should have at most four nodes
+          parse_element_field2(line[0], line[1],
+                               &elem_num, &component_num,
+                               nodes, 9);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 9;
+          num_elements++;
+        }
+        else if (strncmp(line[0], "CQUAD4", 6) == 0 || 
+                 strncmp(line[0], "CQUADR", 6) == 0){
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[4]; // Should have at most four nodes
+          parse_element_field(line[0],
+                              &elem_num, &component_num,
+                              nodes, 4);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 4;
+          num_elements++;
+        }  
+        else if (strncmp(line[0], "CQUAD", 5) == 0){
+          if (!read_buffer_line(line[1], sizeof(line[1]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1; break;
+          }
+
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[9]; // Should have at most four nodes
+          parse_element_field2(line[0], line[1],
+                               &elem_num, &component_num,
+                               nodes, 9);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 9;
+          num_elements++;
+        }      
+        else if (strncmp(line[0], "SPC", 3) == 0){
+          bc_vars_size += 6;
+          num_bcs++;
+        }
+        else if (strncmp(line[0], "FFORCE", 6) == 0){	  
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[1]; // Should have at most four nodes
+          parse_element_field(line[0],
+                              &elem_num, &component_num,
+                              nodes, 1);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+          elem_con_size += 1;
+          num_elements++;
+        }
+      }
+
+      read_buffer_line(line[0], sizeof(line[0]), 
+                       &buffer_loc, buffer, buffer_len);
+    }
+  
     // Allocate space for everything    
     node_nums = new int[ num_nodes ];
     Xpts_unsorted = new double[ 3*num_nodes ];
@@ -885,24 +895,11 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     // ICEM-generated bdf file
     int component_counter = 0;
 
-    while (buffer_loc < buffer_len){
-      if (strncmp(line[0], "$CDSCRPT", 8) == 0){
-        // A non-standard - pyLayout specific - description of the
-        // component. This is very useful for describing what the
-        // components actually are with a string.
-        // Again use a fixed width format
-        char comp[33];
-        strncpy(comp, &line[0][8], 16);
-        comp[16] = '\0';
-        int comp_num = atoi(comp)-1;
-        strncpy(comp, &line[0][24], 32);
-        comp[32] = '\0';
-        // Remove white space
-	if (comp_num >= 0 && comp_num < num_components){
-	  sscanf(comp, "%s", &component_descript[33*comp_num]);
-	}
-      }
-      else if (strncmp(line[0], "$       Shell", 13) == 0){
+    while (buffer_loc < buffer_len){        
+      int node;
+      double x, y, z;
+
+      if (strncmp(line[0], "$       Shell", 13) == 0){
         // A standard icem output - description of each
         // component. This is very useful for describing what the
         // components actually are with a string.

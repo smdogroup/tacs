@@ -172,6 +172,8 @@ TestElement::TestElement( TACSElement * _element,
   generate_random_array(dvars, nvars);
   generate_random_array(ddvars, nvars);
   
+  element->getInitCondition(vars, dvars, Xpts);
+
   // Set the time parameter
   time = 0.0;
 
