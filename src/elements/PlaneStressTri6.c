@@ -2,7 +2,7 @@
 #include "FElibrary.h"
 
 PlaneStressTri6::PlaneStressTri6( PlaneStressStiffness * _stiff, 
-				  PlaneStressElementType type,
+                                  ElementBehaviorType type,
 				  int _componentNum ):
 TACS2DElement<6>(_stiff, type == LINEAR, _componentNum){}
 

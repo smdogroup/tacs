@@ -48,7 +48,7 @@ template <int order>
 class MITCShell : public TACSShell {
  public:
   MITCShell( FSDTStiffness * _stiff,
-	     TACSShellType _type = LINEAR, 
+	     ElementBehaviorType type = LINEAR, 
 	     int _componentNum = 0 );
   ~MITCShell();
   
@@ -210,8 +210,7 @@ class MITCShell : public TACSShell {
   }
 
   // The type of strain expressions to use
-  TACSShell::TACSShellType type;
-
+  ElementBehaviorType type;
   // The quadrature scheme for integrating the residual/stiffness
   // matrix -- this is Gauss quadrature
   int numGauss;
@@ -226,7 +225,7 @@ const double MITCShellFirstOrderKnots[2] = {-1.0, 1.0};
 
 template <int order>
 MITCShell<order>::MITCShell( FSDTStiffness * _stiff, 
-			     TACSShell::TACSShellType _type, 
+			     ElementBehaviorType _type, 
 			     int _componentNum ):
 TACSShell(_stiff, _componentNum){
   type = _type;

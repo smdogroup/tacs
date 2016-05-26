@@ -12,14 +12,13 @@
 
 #include "TACS2DElement.h"
 #include "FElibrary.h"
+#include "TACSElement.h"
 
 template <int order>
 class PlaneStressQuad : public TACS2DElement<order*order> {
  public:
-  enum PlaneStressElementType { LINEAR, NONLINEAR };
-
   PlaneStressQuad( PlaneStressStiffness * _stiff, 
-                   PlaneStressElementType type = LINEAR, 
+                   ElementBehaviorType type = LINEAR, 
                    int _componentNum = 0 );
   ~PlaneStressQuad();
 
@@ -60,7 +59,7 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
 
 template <int order>
 PlaneStressQuad<order>::PlaneStressQuad( PlaneStressStiffness * _stiff, 
-                                         PlaneStressElementType type, 
+                                         ElementBehaviorType type, 
                                          int _componentNum ):
 TACS2DElement<order*order>(_stiff, type == LINEAR, _componentNum){  
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);

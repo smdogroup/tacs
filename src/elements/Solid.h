@@ -16,10 +16,8 @@
 template <int order>
 class Solid : public TACS3DElement<order*order*order> {
  public:
-  enum SolidElementType { LINEAR, NONLINEAR };
-  
   Solid( SolidStiffness * _stiff, 
-	 SolidElementType type = LINEAR, 
+	 ElementBehaviorType type = LINEAR, 
 	 int _componentNum = 0 ); 
   ~Solid();
 
@@ -61,7 +59,7 @@ class Solid : public TACS3DElement<order*order*order> {
 
 template <int order>
 Solid<order>::Solid( SolidStiffness * _stiff, 
-		     SolidElementType type, 
+		     ElementBehaviorType type, 
 		     int _componentNum ):
 TACS3DElement<order*order*order>(_stiff, (type == LINEAR), _componentNum){
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
