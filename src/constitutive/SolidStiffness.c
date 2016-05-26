@@ -2,7 +2,7 @@
 
 const char * SolidStiffness::constName = "SolidStiffness";
 
-const char * SolidStiffness::constitutiveName() const {
+const char * SolidStiffness::constitutiveName(){
   return constName;
 }
   
@@ -137,7 +137,7 @@ SolidStiffness::SolidStiffness(){
   rho = 0.0;
 }
 
-int SolidStiffness::getNumStresses() const { return NUM_STRESSES; }
+int SolidStiffness::getNumStresses(){ return NUM_STRESSES; }
 
 void SolidStiffness::calculateStress( const double gpt[], 
 				      const TacsScalar strain[],

@@ -2,13 +2,13 @@
 #define TACS_PLANE_STRESS_TRI6_H
 
 #include "TACS2DElement.h"
+#include "TACSElement.h"
 
 class PlaneStressTri6 : public TACS2DElement<6> {
  public:
-  enum PlaneStressElementType { LINEAR, NONLINEAR };
-
+  
   PlaneStressTri6( PlaneStressStiffness * _stiff, 
-		   PlaneStressElementType type = LINEAR, 
+		   ElementBehaviorType type = LINEAR, 
 		   int _componentNum = 0 );
   ~PlaneStressTri6();
   

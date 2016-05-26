@@ -179,6 +179,11 @@ enum ElementMatrixType { STIFFNESS_MATRIX,
 			 GEOMETRIC_STIFFNESS_MATRIX, 
 			 STIFFNESS_PRODUCT_DERIVATIVE };
 
+// Element behavior types
+enum ElementBehaviorType{LINEAR, 
+                         NONLINEAR,
+                         LARGE_ROTATION};
+
 // The TACSElement base class
 class TACSElement : public TACSOptObject {
  public: 

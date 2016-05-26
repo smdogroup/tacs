@@ -16,8 +16,6 @@
 */
 class TACSShell : public TACSElement {
  public:
-  enum TACSShellType { LINEAR, NONLINEAR, LARGE_ROTATION };
-
   // Define some constants for this element type
   static const int NUM_DISPS = 6;
   static const int NUM_STRESSES = 8;

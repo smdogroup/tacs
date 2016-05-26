@@ -6,7 +6,7 @@ PY_INCLUDE = ${PYTHON_INCLUDE} -I${NUMPY_DIR} -I${MPI4PY_DIR}
 CYTHON_INCLUDE = -I${NUMPY_DIR} -I${MPI4PY_DIR}
 
 # ParOpt shared objects
-CYTHON_SO = TACS.${SO_EXT} 
+CYTHON_SO = TACS.${SO_EXT} constitutive.${SO_EXT} elements.${SO_EXT} functions.${SO_EXT}
 
 default: ${CYTHON_SO}
 
@@ -20,7 +20,7 @@ debug: default
 	${CXX} ${TACS_CC_FLAGS} ${PY_INCLUDE} -c $< -o $@
 
 %.${SO_EXT}:%.o
-	${CXX} ${SO_LINK_FLAGS} $< ${TACS_LD_FLAGS} -o $@
+	${CXX} ${SO_LINK_FLAGS} $<  ${TACS_LD_FLAGS} -o $@
 
 clean:
 	${RM} *.cpp

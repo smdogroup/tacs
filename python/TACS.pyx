@@ -20,34 +20,9 @@ from TACS cimport *
 
 cdef extern from "mpi-compat.h":
    pass
-
-# A generic wrapper class for the TACSElement object
-cdef _init_Element(TACSElement *ptr):
-   elem = Element()
-   elem.ptr = ptr
-   elem.ptr.incref()
-   return elem
-
-cdef class Element:
-   cdef TACSElement *ptr
-   def __cinit__(self):
-      self.ptr = NULL
-      self.ptr.incref()
-
-   def __dealloc__(self):
-      if self.ptr:
-         self.ptr.decref()
-      return
    
 # A generic wrapper class for the TACSFunction object
-cdef _init_Function(TACSFunction *ptr):
-   func = Function()
-   func.ptr = ptr
-   func.ptr.incref()
-   return func
-
 cdef class Function:
-   cdef TACSFunction *ptr
    def __cinit__(self):
       self.ptr = NULL
       return
@@ -230,8 +205,8 @@ cdef class Pc:
       This creates a default preconditioner depending on the matrix
       type.
       '''
-      cdef PMat *p_ptr = dynamicPMat(mat.ptr)
-      cdef ScMat *sc_ptr = dynamicScMat(mat.ptr)
+      cdef PMat *p_ptr = _dynamicPMat(mat.ptr)
+      cdef ScMat *sc_ptr = _dynamicScMat(mat.ptr)
 
       # Set the defaults for the direct factorization
       cdef int lev_fill = 1000000
@@ -327,8 +302,7 @@ cdef _init_Assembler(TACSAssembler *ptr):
    tacs.ptr.incref()
    return tacs
 
-cdef class Assembler:
-   cdef TACSAssembler *ptr
+cdef class Assembler:   
    def __cinit__(self):
       '''
       Constructor for the TACSAssembler object
@@ -624,9 +598,11 @@ cdef class Assembler:
       cdef int num_dvs = fdvSens.shape[0]
       self.ptr.evalDVSens(&func.ptr, num_funcs,
                           <TacsScalar*>fdvSens.data, num_dvs)
+
       return
 
    def evalSVSens(self, Function func, Vec vec):
+
       '''
       Evaluate the derivative of the function w.r.t. the state
       variables.
@@ -845,4 +821,3 @@ cdef class MeshLoader:
       '''
       return _init_Assembler(self.ptr.createTACS(varsPerNode,
                                                  order_type, mat_type))
-

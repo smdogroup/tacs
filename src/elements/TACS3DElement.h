@@ -1374,7 +1374,8 @@ void TACS3DElement<NUM_NODES>::addAdjResProduct( double time,
   Xpts:    the element nodal locations
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::addAdjResXptProduct( TacsScalar XptSens[],
+void TACS3DElement<NUM_NODES>::addAdjResXptProduct( double time, 
+                                                    TacsScalar fXptSens[],
 						    const TacsScalar psi[],
 						    const TacsScalar Xpts[],
 						    const TacsScalar vars[],

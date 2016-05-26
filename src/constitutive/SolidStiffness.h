@@ -20,7 +20,7 @@ class SolidStiffness : public TACSConstitutive {
 
   // Calculate the stress
   // --------------------
-  int getNumStresses() const;
+  int getNumStresses();
   void calculateStress( const double gpt[], const TacsScalar strain[],
 			TacsScalar stress[] );
   void calculateStressDVSens( int dvNum, 
@@ -36,7 +36,7 @@ class SolidStiffness : public TACSConstitutive {
 
   // Extra info about the constitutive class
   // ---------------------------------------
-  const char * constitutiveName() const;
+  const char * constitutiveName();
   
  protected:
   SolidStiffness();
