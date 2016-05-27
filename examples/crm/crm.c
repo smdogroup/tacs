@@ -2,7 +2,6 @@
 #include "MITCShell.h"
 #include "isoFSDTStiffness.h"
 
-
 int main( int argc, char **argv ){
 
   // Intialize MPI and declare communicator
@@ -44,7 +43,7 @@ int main( int argc, char **argv ){
     if ( strcmp(descriptor, "CQUAD") == 0 || 
          strcmp(descriptor, "CQUADR") == 0 ||
          strcmp(descriptor, "CQUAD4") == 0) {
-      element = new MITCShell<2>(stiff, TACSShell::LINEAR, i);
+      element = new MITCShell<2>(stiff, LINEAR, i);
     }
     mesh->setElement(i, element);
   }

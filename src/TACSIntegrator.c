@@ -68,8 +68,8 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
 
   // Default parameters for Newton solve
   max_newton_iters = 25;
-  atol = 1.0e-16;
-  rtol = 1.0e-10;
+  atol = 1.0e-12;
+  rtol = 1.0e-8;
 
   // Create vector for storing the residual at each Newton iteration
   res = tacs->createVec();
@@ -234,7 +234,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if (n % jac_comp_freq == 0){
       pc->factor();
     }
-   
+    
     // Solve for update using KSM
     ksm->solve(res, update);
 
@@ -249,6 +249,12 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
   }
+}
+
+/*
+  Creates an f5 file for each time step and writes the data
+*/
+void TacsIntegrator::writeSolutionToF5(){
 }
 
 /*
@@ -392,6 +398,19 @@ void TacsBDFIntegrator::adjointSolve(){
   }
 
   // Compute the total derivative
+  
+  // Print Lagrange multipliers
+  if ( print_level > 1 ){
+    TacsScalar *psivals;
+    for ( int k = 0; k < num_time_steps; k++ ){    
+      psi[k]->getArray(&psivals);
+      printf("\n");
+      for ( int j = 0; j < num_state_vars; j++ ){
+	printf(" %e ", psivals[j]);
+      }
+      printf("\n");
+    }
+  }
 }
 
 /*

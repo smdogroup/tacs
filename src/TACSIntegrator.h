@@ -35,6 +35,11 @@ class TacsIntegrator : public TACSObject {
   //-------------------------------------------------------------------
   void writeSolution( const char *filename );
 
+  // Call this function after integrating to write the solution to f5
+  // file
+  //-------------------------------------------------------------------
+  void writeSolutionToF5();
+
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
