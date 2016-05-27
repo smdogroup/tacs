@@ -3,7 +3,6 @@ from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
 # Import numpy 
-import numpy as np
 cimport numpy as np
 
 # Ensure that numpy is initialized
@@ -11,6 +10,7 @@ np.import_array()
 
 # Import the definition required for const strings
 from libc.string cimport const_char
+from libc.stdlib cimport malloc, free
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
@@ -20,6 +20,26 @@ from TACS cimport *
 
 cdef extern from "mpi-compat.h":
    pass
+
+# Import the element types
+PY_ELEMENT_NONE = ELEMENT_NONE
+PY_POINT_ELEMENT = POINT_ELEMENT
+PY_EULER_BEAM = EULER_BEAM
+PY_TIMOSHENKO_BEAM = TIMOSHENKO_BEAM
+PY_PLANE_STRESS = PLANE_STRESS
+PY_SHELL = SHELL 
+PY_SOLID = SOLID
+PY_Q3D_ELEMENT = Q3D_ELEMENT
+
+# Import the element matrix types
+PY_STIFFNESS_MATRIX = STIFFNESS_MATRIX
+PY_MASS_MATRIX = MASS_MATRIX
+PY_GEOMETRIC_STIFFNESS_MATRIX = GEOMETRIC_STIFFNESS_MATRIX
+PY_STIFFNESS_PRODUCT_DERIVATIVE = STIFFNESS_PRODUCT_DERIVATIVE
+
+# Import the orientations
+PY_NORMAL = NORMAL
+PY_TRANSPOSE = TRANSPOSE
    
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
@@ -205,7 +225,7 @@ cdef class Pc:
       This creates a default preconditioner depending on the matrix
       type.
       '''
-      cdef PMat *p_ptr = _dynamicPMat(mat.ptr)
+      cdef PMat *p_ptr = NULL #_dynamicPMat(mat.ptr)
       cdef ScMat *sc_ptr = _dynamicScMat(mat.ptr)
 
       # Set the defaults for the direct factorization
@@ -213,7 +233,7 @@ cdef class Pc:
       cdef double fill = 10.0
       cdef int reorder = 1
       
-      if sc_ptr:
+      if sc_ptr != NULL:
          self.ptr = new PcScMat(sc_ptr, lev_fill, fill, reorder)
       else:
          self.ptr = new AdditiveSchwarz(p_ptr, 5, 10.0)
@@ -703,6 +723,14 @@ cdef class Assembler:
     
 # Wrap the TACStoFH5 class
 cdef class ToFH5:
+   NODES = 1
+   NODES = 1
+   DISPLACEMENTS = 2
+   STRAINS = 4
+   STRESSES = 8
+   EXTRAS = 16
+   COORDINATES = 32
+
    cdef TACSToFH5 *ptr
    def __cinit__(self, Assembler tacs, ElementType elem_type,
                  int out_type):
@@ -752,14 +780,62 @@ cdef class Creator:
                              np.ndarray[int, ndim=1, mode='c'] elem_node_ptr, 
                              np.ndarray[int, ndim=1, mode='c'] elem_node_conn,
                              np.ndarray[int, ndim=1, mode='c'] elem_id_nums):
-      num_elements = elem_node_ptr.shape[0]-1
+      '''Set the connectivity and the element id numbers'''
+      cdef int num_elements = elem_node_ptr.shape[0]-1
       assert(num_elements == elem_id_nums.shape[0])
-      
       self.ptr.setGlobalConnectivity(num_nodes, num_elements,
                                      <int*>elem_node_ptr.data,
                                      <int*>elem_node_conn.data,
                                      <int*>elem_id_nums.data)
-      
+      return
+
+   def setBoundaryConditions(self, np.ndarray[int, ndim=1, mode='c'] nodes,
+                             np.ndarray[int, ndim=1, mode='c'] bcvars,
+                             np.ndarray[int, ndim=1, mode='c'] ptr):
+      '''Set the boundary conditions'''
+      cdef int num_bcs = nodes.shape[0]
+      self.ptr.setBoundaryConditions(num_bcs, <int*>nodes.data,
+                                     <int*>bcvars.data, <int*>ptr.data)
+      return
+
+   def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
+                         np.ndarray[int, ndim=1, mode='c'] dep_conn,
+                         np.ndarray[double, ndim=1, mode='c'] dep_weights):
+
+
+      return
+
+   def setElements(self, elements):
+      '''Set the elements'''
+
+      # Allocate an array for the element pointers
+      cdef TACSElement **elems
+      elems = <TACSElement**>malloc(len(elements)*sizeof(TACSElement*))
+      if elems is NULL:
+         raise MemoryError()
+
+      for i in xrange(len(elements)):
+         elems[i] = (<Element>elements[i]).ptr
+
+      self.ptr.setElements(elems, len(elements))
+
+      # Free the allocated array
+      free(elems)
+
+      return
+   
+   def setNodes(self, np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts):
+      self.ptr.setNodes(<TacsScalar*>Xpts.data)
+      return
+
+   def setReorderingType(self, OrderingType order_type,
+                         MatrixOrderingType mat_type):
+      self.ptr.setReorderingType(order_type, mat_type)
+      return
+
+   def createTACS(self):
+      return _init_Assembler(self.ptr.createTACS())
+   
 # Wrap the TACSMeshLoader class
 cdef class MeshLoader:
    cdef TACSMeshLoader *ptr

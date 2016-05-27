@@ -3,8 +3,6 @@ from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
 # Import numpy
-import numpy as np
-cimport numpy as np
 from libc.string cimport const_char
 
 # Typdef 
