@@ -34,7 +34,7 @@ using namespace largerot;
   as long as the rotations remain moderate. 
 
   In the MITC approach, the strain compoennts susceptible to locking
-  are interpolated with appropriate low-order polynomails. In plance
+  are interpolated with appropriate low-order polynomials. In plance
   of interpolating the shear and in-plane components directly, the
   tensorial strains are interpolated and transformed back to the local
   coordinate strains at the interpolation points (also called tying

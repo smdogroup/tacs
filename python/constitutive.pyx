@@ -37,7 +37,7 @@ cdef class FSDT(Constitutive):
       self.ptr = NULL
       return
 
-cdef class isoFSDT(Constitutive):
+cdef class isoFSDT(FSDT):
    def __cinit__(self, rho, E, nu, kcorr, ys, t, tNum, minT, maxT):
       '''
       Wraps the isoFSDTStiffness class that is used with shell elements

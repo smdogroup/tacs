@@ -150,7 +150,7 @@ cdef class Constitutive:
 
 cdef extern from "TACSAssembler.h":
    enum OrderingType"TACSAssembler::OrderingType":
-      NO_ORDER"TACSAssembler::NO_ORDER"
+      NATURAL_ORDER"TACSAssembler::NATURAL_ORDER"
       RCM_ORDER"TACSAssembler::RCM_ORDER"
       AMD_ORDER"TACSAssembler::AMD_ORDER"
       ND_ORDER"TACSAssembler::ND_ORDER"

@@ -871,13 +871,17 @@ cdef class MeshLoader:
       '''
       Return the component description
       '''
-      return self.ptr.getComponentDescript(comp_num)
+      cdef bytes py_string
+      py_string = self.ptr.getComponentDescript(comp_num)
+      return py_string
    
    def getElementDescript(self, int comp_num):
       '''
       Retrieve the element description corresponding to the component number
       '''
-      return self.getElementDescript(comp_num)
+      cdef bytes py_string
+      py_string = self.ptr.getElementDescript(comp_num)
+      return py_string
    
    def setElement(self, int comp_num, Element elem):
       '''
@@ -891,8 +895,8 @@ cdef class MeshLoader:
    def getNumElement(self):
       return self.ptr.getNumElements()
     
-   def createTACS(self, int varsPerNode, OrderingType order_type,
-                  MatrixOrderingType mat_type):
+   def createTACS(self, int varsPerNode, OrderingType order_type=NATURAL_ORDER,
+                  MatrixOrderingType mat_type=DIRECT_SCHUR):
       '''
       Create a distribtued version of TACS
       '''
