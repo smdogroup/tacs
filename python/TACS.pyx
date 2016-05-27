@@ -4,6 +4,7 @@ cimport mpi4py.MPI as MPI
 
 # Import numpy 
 cimport numpy as np
+import numpy as np
 
 # Ensure that numpy is initialized
 np.import_array()
@@ -835,7 +836,7 @@ cdef class Creator:
 
    def createTACS(self):
       return _init_Assembler(self.ptr.createTACS())
-   
+    
 # Wrap the TACSMeshLoader class
 cdef class MeshLoader:
    cdef TACSMeshLoader *ptr
@@ -897,3 +898,27 @@ cdef class MeshLoader:
       '''
       return _init_Assembler(self.ptr.createTACS(varsPerNode,
                                                  order_type, mat_type))
+
+   def getConnectivity(self):
+      cdef int num_nodes
+      cdef int num_elements
+      cdef const int *elem_ptr
+      cdef const int *elem_conn
+      cdef const double *Xpts
+
+      self.ptr.getConnectivity(&num_nodes, &num_elements,
+                               &elem_ptr, &elem_conn, &Xpts)
+
+      ptr = np.zeros(num_elements+1, dtype=np.int)
+      for i in xrange(num_elements+1):
+         ptr[i] = elem_ptr[i]
+
+      conn = np.zeros(ptr[-1], dtype=np.int)
+      for i in xrange(ptr[-1]):
+         conn[i] = elem_conn[i]
+
+      X = np.zeros(3*num_nodes)
+      for i in xrange(3*num_nodes):
+         X[i] = Xpts[i]
+
+      return ptr, conn, X

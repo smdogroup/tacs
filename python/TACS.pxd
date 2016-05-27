@@ -230,8 +230,12 @@ cdef extern from "TACSMeshLoader.h":
       int getNumNodes()
       int getNumElements()
       TACSAssembler* createTACS(int vars_per_node,
-                                  OrderingType order_type,
-                                  MatrixOrderingType mat_type)
+                                OrderingType order_type,
+                                MatrixOrderingType mat_type)
+      void getConnectivity(int *_num_nodes, int *_num_elements,
+                           int **_elem_node_ptr, 
+                           int **_elem_node_conn,
+                           double **_Xpts)
 
 cdef extern from "TACSCreator.h":
    cdef cppclass TACSCreator(TACSObject):
