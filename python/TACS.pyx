@@ -226,7 +226,7 @@ cdef class Pc:
       This creates a default preconditioner depending on the matrix
       type.
       '''
-      cdef PMat *p_ptr = NULL #_dynamicPMat(mat.ptr)
+      cdef PMat *p_ptr = _dynamicPMat(mat.ptr)
       cdef ScMat *sc_ptr = _dynamicScMat(mat.ptr)
 
       # Set the defaults for the direct factorization
@@ -600,51 +600,53 @@ cdef class Assembler:
       self.ptr.assembleMatType(matType, A.ptr, matOr)
       return
       
-   def evalFunctions(self, functions):
+   def evalFunctions(self, funclist):
       '''
       Evaluate a list of TACS function
       '''
+
+      # Allocate the array of TACSFunction pointers
       cdef TACSFunction **funcs
-      funcs = <TACSFunction**>malloc(len(functions)*sizeof(TACSFunction*))
+      funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
       if funcs is NULL:
          raise MemoryError()
 
-      for i in xrange(len(functions)):
-         funcs[i] = (<Function>functions[i]).ptr
+      for i in xrange(len(funclist)):
+         funcs[i] = (<Function>funclist[i]).ptr
+
+      # Allocate the numpy array of function values
+      cdef np.ndarray fvals = np.zeros(len(funclist))
          
-      cdef TacsScalar val
-      self.ptr.evalFunctions(funcs, len(functions), &val)
+      self.ptr.evalFunctions(funcs, len(funclist), <TacsScalar*>fvals.data)
+      
       # Free the allocated array
       free(funcs)
       
-      return val
+      return fvals
 
-   def evalDVSens(self, functions, int numDVs):
+   def evalDVSens(self, funclist, int numDVs):
       '''
       Evaluate the derivative of a list of functions w.r.t. the design
       variables.
       '''
       
+      # Copy over the TACSFunction pointers
       cdef TACSFunction **funcs
-      cdef TacsScalar *dvSens
-
-      funcs = <TACSFunction**>malloc(len(functions)*sizeof(TACSFunction*))
+      funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
       if funcs is NULL:
          raise MemoryError()
 
-      for i in xrange(len(functions)):
-         funcs[i] = (<Function>functions[i]).ptr
+      for i in xrange(len(funclist)):
+         funcs[i] = (<Function>funclist[i]).ptr
 
-      dvSens = <TacsScalar*>malloc(numDVs*sizeof(TacsScalar*))
+      # Allocate the numpy return array
+      cdef np.ndarray dv_sens = np.zeros(numDVs*len(funclist))
 
-      self.ptr.evalDVSens(funcs, len(functions), dvSens, numDVs)
+      self.ptr.evalDVSens(funcs, len(funclist),
+                          <TacsScalar*>(dv_sens.data), numDVs)
 
-      dv_sens = np.zeros(numDVs*len(functions))
-      for i in xrange(numDVs*len(functions)):
-         dv_sens[i] = dvSens[i]
       # Free allocated memory
       free(funcs)
-      free(dvSens)
       return dv_sens
 
    def evalSVSens(self, Function func, Vec vec):
@@ -683,14 +685,11 @@ cdef class Assembler:
 
       for i in xrange(len(adjoint)):
          adj[i] = (<Vec>adjoint[i]).ptr
-         
-      dvSens = <TacsScalar*>malloc(numDVs*sizeof(TacsScalar*))
-      
-      self.ptr.evalAdjointResProducts(adj, len(adjoint), dvSens, numDVs)
 
-      dv_sens = np.zeros(numDVs*len(adjoint))
-      for i in xrange(numDVs*len(adjoint)):
-         dv_sens[i] = dvSens[i]
+      cdef np.ndarray dv_sens = np.zeros(numDVs*len(adjoint))
+      self.ptr.evalAdjointResProducts(adj, len(adjoint),
+                                      <TacsScalar*>dv_sens.data, numDVs)
+
       # Free allocated memory
       free(adj)
       return
@@ -761,7 +760,6 @@ cdef class Assembler:
     
 # Wrap the TACStoFH5 class
 cdef class ToFH5:
-   NODES = 1
    NODES = 1
    DISPLACEMENTS = 2
    STRAINS = 4
@@ -953,15 +951,15 @@ cdef class MeshLoader:
       self.ptr.getConnectivity(&num_nodes, &num_elements,
                                &elem_ptr, &elem_conn, &Xpts)
 
-      ptr = np.zeros(num_elements+1, dtype=np.int)
+      cdef np.ndarray ptr = np.zeros(num_elements+1, dtype=np.int)
       for i in xrange(num_elements+1):
          ptr[i] = elem_ptr[i]
 
-      conn = np.zeros(ptr[-1], dtype=np.int)
+      cdef np.ndarray conn = np.zeros(ptr[-1], dtype=np.int)
       for i in xrange(ptr[-1]):
          conn[i] = elem_conn[i]
 
-      X = np.zeros(3*num_nodes)
+      cdef np.ndarray X = np.zeros(3*num_nodes)
       for i in xrange(3*num_nodes):
          X[i] = Xpts[i]
 

@@ -5,7 +5,7 @@ import numpy as np
 from mpi4py import MPI
 
 # Import TACS and assorted repositories
-from tacs import TACS, elements, constitutive
+from tacs import TACS, elements, constitutive, functions
 
 # Allocate the TACS creator
 comm = MPI.COMM_WORLD
@@ -107,6 +107,19 @@ pc.applyFactor(res, ans)
 ans.scale(-1.0)
 
 tacs.setVariables(ans)
+
+# Create the function list
+funcs = []
+
+# Create the KS function
+ksweight = 100.0
+for i in xrange(1):
+    funcs.append(functions.ksfailure(tacs, ksweight))
+
+func_vals = tacs.evalFunctions(funcs)
+print func_vals
+
+fdvsens = tacs.evalDVSens(funcs, nnodes)
 
 # Set the element flag
 flag = (TACS.ToFH5.NODES |

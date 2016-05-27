@@ -32,8 +32,8 @@ cdef extern from "KSM.h":
 
 # Special functions required for converting pointers
 cdef extern from "":
-   ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*) except NULL
-   PMat* _dynamicPMat "dynamic_cast<PMat*>"(TACSMat*) except NULL
+   ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
+   PMat* _dynamicPMat "dynamic_cast<PMat*>"(TACSMat*)
 
 cdef extern from "TACSObject.h":
    cdef cppclass TACSObject:
