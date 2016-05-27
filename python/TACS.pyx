@@ -600,33 +600,58 @@ cdef class Assembler:
       self.ptr.assembleMatType(matType, A.ptr, matOr)
       return
       
-   def evalFunction(self, Function func):
+   def evalFunctions(self, functions):
       '''
-      Evaluate a TACS function
+      Evaluate a list of TACS function
       '''
-      cdef int num_funcs = 1
+      cdef TACSFunction **funcs
+      funcs = <TACSFunction**>malloc(len(functions)*sizeof(TACSFunction*))
+      if funcs is NULL:
+         raise MemoryError()
+
+      for i in xrange(len(functions)):
+         funcs[i] = (<Function>functions[i]).ptr
+         
       cdef TacsScalar val
-      self.ptr.evalFunctions(&func.ptr, num_funcs, &val)
+      self.ptr.evalFunctions(funcs, len(functions), &val)
+      # Free the allocated array
+      free(funcs)
+      
       return val
 
-   def evalDVSens(self, Function func, 
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] fdvSens):
+   def evalDVSens(self, functions, int numDVs):
       '''
-      Evaluate the derivative of a function w.r.t. the design
+      Evaluate the derivative of a list of functions w.r.t. the design
       variables.
       '''
-      cdef int num_funcs = 1
-      cdef int num_dvs = fdvSens.shape[0]
-      self.ptr.evalDVSens(&func.ptr, num_funcs,
-                          <TacsScalar*>fdvSens.data, num_dvs)
+      
+      cdef TACSFunction **funcs
+      cdef TacsScalar *dvSens
 
-      return
+      funcs = <TACSFunction**>malloc(len(functions)*sizeof(TACSFunction*))
+      if funcs is NULL:
+         raise MemoryError()
+
+      for i in xrange(len(functions)):
+         funcs[i] = (<Function>functions[i]).ptr
+
+      dvSens = <TacsScalar*>malloc(numDVs*sizeof(TacsScalar*))
+
+      self.ptr.evalDVSens(funcs, len(functions), dvSens, numDVs)
+
+      dv_sens = np.zeros(numDVs*len(functions))
+      for i in xrange(numDVs*len(functions)):
+         dv_sens[i] = dvSens[i]
+      # Free allocated memory
+      free(funcs)
+      free(dvSens)
+      return dv_sens
 
    def evalSVSens(self, Function func, Vec vec):
 
       '''
       Evaluate the derivative of the function w.r.t. the state
-      variables.
+      variables.b
       
       function: the function pointer
       vec:      the derivative of the function w.r.t. the state variables 
@@ -634,8 +659,7 @@ cdef class Assembler:
       self.ptr.evalSVSens(func.ptr, vec.ptr)
       return
 
-   def evalAdjointResProduct(self, Vec adjoint,
-                             np.ndarray[TacsScalar,ndim=1,mode='c'] fdvSens):
+   def evalAdjointResProduct(self, adjoint, int numDVs):
       '''
       This function is collective on all TACSAssembler processes. This
       computes the product of the derivative of the residual
@@ -651,11 +675,24 @@ cdef class Assembler:
                     and the adjoint
       num_dvs:      the number of design variables
       '''
-      cdef int num_adjoints = 1
-      cdef int num_dvs = fdvSens.shape[0]
-      self.ptr.evalAdjointResProducts(&adjoint.ptr, num_adjoints,
-                                      <TacsScalar*>fdvSens.data,
-                                      num_dvs)
+      cdef BVec **adj
+      cdef TacsScalar *dvSens
+      adj = <BVec**>malloc(len(adjoint)*sizeof(BVec*))
+      if adj is NULL:
+         raise MemoryError()
+
+      for i in xrange(len(adjoint)):
+         adj[i] = (<Vec>adjoint[i]).ptr
+         
+      dvSens = <TacsScalar*>malloc(numDVs*sizeof(TacsScalar*))
+      
+      self.ptr.evalAdjointResProducts(adj, len(adjoint), dvSens, numDVs)
+
+      dv_sens = np.zeros(numDVs*len(adjoint))
+      for i in xrange(numDVs*len(adjoint)):
+         dv_sens[i] = dvSens[i]
+      # Free allocated memory
+      free(adj)
       return
         
    def testElement(self, int elemNum, int print_level):
@@ -900,6 +937,9 @@ cdef class MeshLoader:
                                                  order_type, mat_type))
 
    def getConnectivity(self):
+      '''
+      Return the connectivity of the mesh
+      '''
       cdef int num_nodes
       cdef int num_elements
       cdef const int *elem_ptr
