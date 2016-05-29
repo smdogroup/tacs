@@ -75,7 +75,6 @@ cdef class PlaneStress(Constitutive):
          nu = args[2]
          self.ptr = new PlaneStressStiffness(rho, E, nu)
       else:
-         print 'Allocated?'
          self.ptr = new PlaneStressStiffness()
          
       self.ptr.incref()
