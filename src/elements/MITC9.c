@@ -4,10 +4,102 @@
 
 /*
   Rigid-body dynamics routines for TACS
-
+  
   Copyright (c) 2015-2016 Graeme Kennedy. All rights reserved. 
 */
 
+/* 
+   Return the number of displacements
+*/
+int MITC9::numDisplacements(){ return NUM_DISPS; }
+
+/*
+  Return the number of stresses
+*/
+int MITC9::numStresses(){ return NUM_STRESSES; }
+  
+/*
+  Return the number of extras
+*/
+int MITC9::numExtras(){ return NUM_EXTRAS; }
+
+/*
+  Return the number of FE nodes
+*/
+int MITC9::numNodes(){ return NUM_NODES; }
+
+/*
+  Return the ElementType
+*/
+ElementType MITC9::getElementType(){ return SHELL; }
+
+/* 
+   Set up the internal static data for the names of the element,
+   displacements, stresses, strains and extra variables, respectively.
+*/
+const char * MITC9::elemName = "MITC9";
+  
+const char * MITC9::dispNames[] = { "u0", "v0", "w0", 
+				    "eta", "rotx", "roty", "rotz", "lam" };
+  
+const char * MITC9::stressNames[] = { "sx0", "sy0", "sxy0", 
+				      "sx1", "sy1", "sxy1", 
+				      "syz0", "sxz0" };
+  
+const char * MITC9::strainNames[] = { "ex0", "ey0", "exy0", 
+				      "ex1", "ey1", "exy1", 
+				      "eyz0", "exz0" };
+  
+const char * MITC9::extraNames[] = { "lambda", "buckling",
+				     "dv1", "dv2" };
+
+/*
+  Returns the elementName
+*/
+const char * MITC9::elementName(){ 
+  return elemName;
+}
+
+/*
+  Returns the displacement names
+*/
+const char * MITC9::displacementName( int i ){
+  if (i >= 0 && i < NUM_DISPS){
+    return dispNames[i];
+  }
+  return "";
+}
+
+/*
+  Returns the name of the stresses
+*/
+const char * MITC9::stressName( int i ){ 
+  if (i >= 0 && i < NUM_STRESSES){
+    return stressNames[i];
+  }
+  return "";
+}
+
+/*
+  Returns the name of the strains
+*/
+const char * MITC9::strainName( int i ){
+  if (i >= 0 && i < NUM_STRESSES){
+    return strainNames[i];
+  }
+  return "";
+}
+
+/*
+  Returns the extra names
+*/
+const char * MITC9::extraName( int i ){
+  if (i >= 0 && i < NUM_EXTRAS){
+    return extraNames[i];
+  }
+  return "";
+}
+  
 /*
   Evaluate the shape functions of the element given the u/v
   coordinates of the point
@@ -3044,7 +3136,7 @@ void MITC9::getStrain( TacsScalar e[],
   rigid-body displacement and rotation.  
 */
 /*
-void MITC9::testStrain( const TacsScalar X[] ){
+  void MITC9::testStrain( const TacsScalar X[] ){
   TacsScalar vars[8*NUM_NODES];
   memset(vars, 0, sizeof(vars));
 
@@ -3077,14 +3169,14 @@ void MITC9::testStrain( const TacsScalar X[] ){
 
   // Compute the variables and set the quaternion values
   for ( int k = 0; k < NUM_NODES; k++ ){
-    // Compute the displacements
-    matMultTrans(C, &X[3*k], &vars[8*k]);
-    for ( int i = 0; i < 3; i++ ){
-      vars[8*k+i] += u0[i];
-    }
+  // Compute the displacements
+  matMultTrans(C, &X[3*k], &vars[8*k]);
+  for ( int i = 0; i < 3; i++ ){
+  vars[8*k+i] += u0[i];
+  }
 
-    // Copy the values of the quaternions
-    memcpy(&vars[8*k+3], q, 4*sizeof(TacsScalar));
+  // Copy the values of the quaternions
+  memcpy(&vars[8*k+3], q, 4*sizeof(TacsScalar));
   }
 
   // Compute the strain given the rigid rotation/translation
@@ -3181,7 +3273,7 @@ void MITC9::testStrain( const TacsScalar X[] ){
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 
   for ( int k = 0; k < 8; k++ ){
-    printf("strain[%d] = %15.5e\n", k, RealPart(e[k]));
+  printf("strain[%d] = %15.5e\n", k, RealPart(e[k]));
   }
   
   // Compute the derivatives of the directors
@@ -3202,45 +3294,45 @@ void MITC9::testStrain( const TacsScalar X[] ){
   TacsScalar fd[8];
 
   for ( int k = 0; k < 8*NUM_NODES; k++ ){
-    TacsScalar vtmp = vars[k];
-    vars[k] = vtmp + dh;
+  TacsScalar vtmp = vars[k];
+  vars[k] = vtmp + dh;
 
-    // Compute the directors at the nodes
-    computeDirectors(dir, vars, Xr);
+  // Compute the directors at the nodes
+  computeDirectors(dir, vars, Xr);
 
-    // Compute the tensorial shear strain at the tying points
-    computeTyingStrain(g13, g23, X, Xr, vars, dir);
+  // Compute the tensorial shear strain at the tying points
+  computeTyingStrain(g13, g23, X, Xr, vars, dir);
 
-    // Compute the derivatives of Ua/Ub along the given directions
-    innerProduct8(Na, vars, Ua);
-    innerProduct8(Nb, vars, Ub);
-    innerProduct(N, dir, d);
-    assembleFrame(Ua, Ub, d, Ur);
+  // Compute the derivatives of Ua/Ub along the given directions
+  innerProduct8(Na, vars, Ua);
+  innerProduct8(Nb, vars, Ub);
+  innerProduct(N, dir, d);
+  assembleFrame(Ua, Ub, d, Ur);
 
-    // Now compute the derivatives of the director along each
-    // coordinate direction
-    innerProduct(Na, dir, da);
-    innerProduct(Nb, dir, db);
-    zero[0] = zero[1] = zero[2] = 0.0;
-    assembleFrame(da, db, zero, dr);
+  // Now compute the derivatives of the director along each
+  // coordinate direction
+  innerProduct(Na, dir, da);
+  innerProduct(Nb, dir, db);
+  zero[0] = zero[1] = zero[2] = 0.0;
+  assembleFrame(da, db, zero, dr);
     
-    evalStrain(fd, Ur, dr, Xdinv, zXdinv, T);
+  evalStrain(fd, Ur, dr, Xdinv, zXdinv, T);
   
-    // Add the contribution from the tying straint
-    addTyingStrain(fd, N13, N23, g13, g23, Xdinv, T);
+  // Add the contribution from the tying straint
+  addTyingStrain(fd, N13, N23, g13, g23, Xdinv, T);
 
-    for ( int i = 0; i < 8; i++ ){
-      fd[i] = (fd[i] - e[i])/dh;
-    }
-
-    vars[k] = vtmp;
-    
-    // Write out the error components
-    char descript[64];
-    sprintf(descript, "B%d", k);
-    writeErrorComponents(stdout, descript,
-			 &B[8*k], fd, 8);
+  for ( int i = 0; i < 8; i++ ){
+  fd[i] = (fd[i] - e[i])/dh;
   }
-}
+
+  vars[k] = vtmp;
+    
+  // Write out the error components
+  char descript[64];
+  sprintf(descript, "B%d", k);
+  writeErrorComponents(stdout, descript,
+  &B[8*k], fd, 8);
+  }
+  }
 			
 */

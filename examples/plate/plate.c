@@ -3,6 +3,7 @@
 #include "MITC9.h"
 #include "isoFSDTStiffness.h"
 #include "KSFailure.h"
+#include "TACSShellTraction.h"
 /*
   Function that sets up the rotor blade dynamics in TACS and
   integrates over time, solve the adjoint.
@@ -75,8 +76,6 @@ int main( int argc, char **argv ){
   // Create tacs assembler from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
-  mesh->decref();
-
   /*
   // Extract the element
   TacsScalar Xpts[3*9];
@@ -90,6 +89,20 @@ int main( int argc, char **argv ){
   test->testJacobian(k);
   }
   */
+
+  // Create the traction class
+  TACSElement *trac = new TACSShellTraction<3>(1.0, 1.0, 1.0);
+  trac->incref();
+
+  // Create the auxiliary element class
+  int nelems = tacs->getNumElements();
+  TACSAuxElements *aux = new TACSAuxElements(nelems);
+  aux->incref();
+
+  for ( int i = 0; i < nelems; i++ ){
+    aux->addElement(i, trac);
+  }
+  tacs->setAuxElements(aux);
 
   /*-----------------------------------------------------------------*/
   /*------------------ Time Integration and Adjoint Solve -----------*/
@@ -125,13 +138,32 @@ int main( int argc, char **argv ){
 
   integrator->setPrintLevel(1);
   integrator->integrate();
-  integrator->writeSolution("bdf.dat");
-  integrator->setFunction(&func, 1);
-  integrator->adjointSolve();
-  
-  integrator->decref();
-  
+  integrator->writeSolutionToF5();
 
+  // integrator->setFunction(&func, 1);
+  // integrator->adjointSolve(); 
+
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
+                             TACSElement::OUTPUT_DISPLACEMENTS |
+                             TACSElement::OUTPUT_STRAINS |
+                             TACSElement::OUTPUT_STRESSES |
+                             TACSElement::OUTPUT_EXTRAS);
+
+  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  f5->incref();
+
+  // Write the displacements
+  f5->writeToFile("solution.f5");
+
+  // Delete the viewer
+  f5->decref();
+
+  integrator->decref();
+
+  mesh->decref();
+  aux->decref();
+  trac->decref();
   tacs->decref();
   MPI_Finalize();
 

@@ -33,7 +33,10 @@ class MITC9 : public TACSElement {
  public:
   static const int ORDER = 3;
   static const int NUM_NODES = ORDER*ORDER;
-
+  static const int NUM_DISPS = 8;
+  static const int NUM_STRESSES = 8;
+  static const int NUM_EXTRAS = 4;
+  
   MITC9( FSDTStiffness *_stiff, 
          TACSGibbsVector *_gravity=NULL,
          TACSGibbsVector *_vInit=NULL, 
@@ -42,9 +45,20 @@ class MITC9 : public TACSElement {
 
   // Return the sizes of the array components
   // ----------------------------------------
-  int numDisplacements(){ return 8; }
-  int numStresses(){ return 8; }
-  int numNodes(){ return NUM_NODES; }
+  int numDisplacements();
+  int numStresses();
+  int numExtras();
+  int numNodes();
+  
+  // Functions to determine the variable names and quantities
+  // --------------------------------------------------------
+  const char * elementName();
+  const char * displacementName( int i );
+  const char * stressName( int i );
+  const char * strainName( int i );
+  const char * extraName( int i );
+  
+  ElementType getElementType();
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
@@ -88,7 +102,7 @@ class MITC9 : public TACSElement {
   // Test the strain implementation
   // ------------------------------
   void testStrain( const TacsScalar X[] );
-
+  
  private:
   // Helper functions required for analysis
   void computeAngularVelocity( TacsScalar omega[],
@@ -221,6 +235,12 @@ class MITC9 : public TACSElement {
 
   // Initial velocity/angular velocity
   TACSGibbsVector *vInit, *omegaInit;
-};
 
+  // The names of the displacements, stresses etc.
+  static const char * elemName;
+  static const char * dispNames[NUM_DISPS];
+  static const char * stressNames[NUM_STRESSES];
+  static const char * strainNames[NUM_STRESSES];
+  static const char * extraNames[NUM_EXTRAS];
+};
 #endif // TACS_MITC9_H
