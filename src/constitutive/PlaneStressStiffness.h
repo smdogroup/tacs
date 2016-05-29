@@ -16,6 +16,7 @@
 class PlaneStressStiffness : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 3;
+  PlaneStressStiffness();
   PlaneStressStiffness( TacsScalar _rho, TacsScalar E, TacsScalar nu );
   PlaneStressStiffness( TacsScalar _rho, TacsScalar E1, 
 			TacsScalar E2, TacsScalar G12, TacsScalar nu12 );
@@ -40,8 +41,6 @@ class PlaneStressStiffness : public TACSConstitutive {
   const char * constitutiveName();
 
  protected:
-  PlaneStressStiffness();
-
   // The stiffness matrix
   TacsScalar Cmat[6]; 
 
