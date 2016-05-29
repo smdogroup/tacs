@@ -42,7 +42,7 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
 
 # A generic wrapper class for the TACSConstitutive object
 cdef class Constitutive:
-   def __cinit__(self):
+   def __cinit__(self, *args, **kwargs):
       self.ptr = NULL
       return
    def __dealloc__(self):
@@ -65,11 +65,19 @@ cdef class isoFSDT(FSDT):
       return
 
 cdef class PlaneStress(Constitutive):
-   def __cinit__(self, rho, E, nu, *args, **kwargs):
+   def __cinit__(self, *args, **kwargs):
       '''
       Wraps the PlaneStressStiffness class that is used with 2D elements
       '''
-      self.ptr = new PlaneStressStiffness(rho, E, nu)
+      if len(args) == 3:
+         rho = args[0]
+         E = args[1]
+         nu = args[2]
+         self.ptr = new PlaneStressStiffness(rho, E, nu)
+      else:
+         print 'Allocated?'
+         self.ptr = new PlaneStressStiffness()
+         
       self.ptr.incref()
       return
    
@@ -82,7 +90,8 @@ cdef class solid(Constitutive):
       self.ptr.incref()
       return
 
-# Wrapper for the PlaneStressStiffness object
+# Callbacks for the python-level implementation of the
+# PlaneStressStiffness object.
 cdef void ps_calculatestress(void *_self, const double *pt,
                              const TacsScalar *strain,
                              TacsScalar *stress):
@@ -223,6 +232,7 @@ cdef void ps_addfaildvsens(void *_self, const double *pt,
 
    return
 
+# Python-level interface for the plane stress constitutive object
 cdef class pyPlaneStress(PlaneStress):
    def __cinit__(self, rho, E, nu, *args, **kwargs):
       cdef PSStiffnessWrapper *pointer
@@ -259,6 +269,193 @@ cdef class pyPlaneStress(PlaneStress):
 
    def failureStrainSens(self, pt, e):
       return np.zeros(3)
+
+   def addFailureDVSens(self, pt, e, alpha, fdvs):
+      return
+
+# Callbacks for the python-level implementation of the
+# PlaneStressStiffness object.
+cdef TacsScalar fsdt_getstiffness(void *_self, const double *pt,
+                                  TacsScalar *a, TacsScalar *b,
+                                  TacsScalar *d, TacsScalar *as):
+   # Extract the parametric point
+   p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+
+   # Get the numpy arrays for the stiffness object
+   A, B, D, As, rot = (<object>_self).getStiffness(p)
+
+   # Copy over the stiffness values
+   for i in xrange(6):
+      a[i] = A[i]
+      b[i] = B[i]
+      d[i] = D[i]
+
+   # Set the out-of-plane shear stiffness
+   as[0] = As[0]
+   as[1] = As[1]
+   as[2] = As[2]
+   
+   return rot
+
+cdef void fsdt_addstiffnessdvsens(void *_self, const double *pt,
+                                  const TacsScalar *strain,
+                                  const TacsScalar *psi,
+                                  TacsScalar rotPsi,
+                                  TacsScalar *fdvSens, int dvLen):
+   # Extract the strain
+   cdef np.ndarray e = np.zeros(8)
+   for i in xrange(8):
+      e[i] = strain[i]
+   cdef np.ndarray ps = np.zeros(8)
+   for i in xrange(8):
+      ps[i] = psi[i]
+      
+   # Extract the parametric point
+   cdef np.ndarray p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+
+   # Wrap the python array
+   fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
+
+   # Add the derivative to the array
+   (<object>_self).addStiffnessDVSens(p, e, ps, rotPsi, fdvs)
+
+   return
+
+cdef void fsdt_getpointwisemass(void *_self, const double *pt,
+                                TacsScalar *mass):
+   # Extract the parametric point
+   cdef np.ndarray p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+
+   rho = (<object>_self).getPointwiseMass(p)
+   mass[0] = rho[0]
+   mass[1] = rho[1]
+
+   return
+
+cdef void fsdt_addpointwisemassdvsens(void *_self, const double *pt,
+                                      const TacsScalar *alpha,
+                                      TacsScalar *fdvSens, int dvLen):
+   # Extract the parametric point
+   cdef np.ndarray p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+
+   # Set the scalar
+   cdef np.ndarray avals = np.zeros(2)
+   avals[0] = alpha[0]
+   avals[1] = alpha[1]
+
+   # Wrap the python array
+   fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
+
+   (<object>_self).addPointwiseMassDVSens(p, avals, fdvs)
+   
+   return
+
+cdef TacsScalar fsdt_fail(void *_self, const double *pt,
+                          const TacsScalar *strain):
+   cdef TacsScalar fval = 0.0
+
+   # Extract the strain
+   cdef np.ndarray e = np.zeros(8)
+   for i in xrange(8):
+      e[i] = strain[i]
+      
+   # Extract the parametric point
+   cdef np.ndarray p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+   
+   fval = (<object>_self).failure(p, e)
+
+   return fval
+
+cdef void fsdt_failstrainsens(void *_self, const double *pt,
+                              const TacsScalar *strain,
+                              TacsScalar *sens):
+   # Extract the strain
+   cdef np.ndarray e = np.zeros(8)
+   for i in xrange(8):
+      e[i] = strain[i]
+
+   # Extract the parametric point
+   cdef np.ndarray p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+   
+   fsens = (<object>_self).failureStrainSens(p, e)
+
+   for i in xrange(8):
+      sens[i] = fsens[i]
+
+   return
+
+cdef void fsdt_addfaildvsens(void *_self, const double *pt,
+                             const TacsScalar *strain, 
+                             TacsScalar alpha,
+                             TacsScalar *fdvSens, int dvLen):
+   # Extract the strain
+   cdef np.ndarray e = np.zeros(8)
+   for i in xrange(8):
+      e[i] = strain[i]
+   
+   # Extract the parametric point
+   cdef np.ndarray p = np.zeros(2)
+   p[0] = pt[0]
+   p[1] = pt[1]
+
+   # Wrap the python array
+   fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
+   
+   (<object>_self).addFailureDVSens(p, e, alpha, fdvs)
+
+   return
+
+# Python-level interface for the plane stress constitutive object
+cdef class pyFSDT(FSDT):
+   def __cinit__(self, *args, **kwargs):
+      cdef FSDTStiffnessWrapper *pointer
+      pointer = new FSDTStiffnessWrapper()
+      pointer.incref()
+      
+      # Set the function pointers
+      pointer.self_ptr = <void*>self
+      pointer.getstiffness = fsdt_getstiffness
+      pointer.addstiffnessdvsens = fsdt_addstiffnessdvsens
+      pointer.getpointwisemass = fsdt_getpointwisemass
+      pointer.addpointwisemassdvsens = fsdt_addpointwisemassdvsens
+      pointer.fail = fsdt_fail
+      pointer.failstrainsens = fsdt_failstrainsens
+      pointer.addfaildvsens = fsdt_addfaildvsens
+
+      self.ptr = pointer
+      return
+
+   def getStiffness(self, pt):
+      '''Return the A, B, D, As matrices and the rotational stiffness'''
+      return np.zeros(6), np.zeros(6), np.zeros(6), np.zeros(3), 0.0
+
+   def addStiffnessDVSens(self, pt, e, psi, rot, fdvs):
+      '''Add the derivative of the inner product to the fdvs array'''
+      return
+
+   def getPointwiseMass(self, pt):
+      return np.zeros(2)
+
+   def addPointwiseMassDVSens(p, alpha, fdvs):
+      return
+
+   def failure(self, pt, e):
+      return 0.0
+
+   def failureStrainSens(self, pt, e):
+      return np.zeros(8)
 
    def addFailureDVSens(self, pt, e, alpha, fdvs):
       return

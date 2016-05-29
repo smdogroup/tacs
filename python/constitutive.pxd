@@ -37,19 +37,39 @@ cdef extern from "TACSConstitutiveWrapper.h":
 
         # Member functions
         void *self_ptr
-        void (*calculatestress)(void *, const double *, 
-                                const TacsScalar *, TacsScalar*)
-        void (*addstressdvsens)(void *, const double *, const TacsScalar *,
-                                TacsScalar, const TacsScalar *,
-                                TacsScalar *, int)
-        void (*getpointwisemass)(void *, const double *, TacsScalar *)
-        void (*addpointwisemassdvsens)(void *, const double *,
-                                       const TacsScalar *, TacsScalar *, int )
-        TacsScalar (*fail)(void *, const double *, const TacsScalar *)
-        void (*failstrainsens)(void *, const double *,
-                               const TacsScalar *, TacsScalar *)
-        void (*addfaildvsens)(void *, const double *, const TacsScalar *, 
-                              TacsScalar, TacsScalar *, int)
+        void (*calculatestress)(void*, const double*, 
+                                const TacsScalar*, TacsScalar*)
+        void (*addstressdvsens)(void*, const double*, const TacsScalar*,
+                                TacsScalar, const TacsScalar*,
+                                TacsScalar*, int)
+        void (*getpointwisemass)(void*, const double*, TacsScalar*)
+        void (*addpointwisemassdvsens)(void*, const double*,
+                                       const TacsScalar*, TacsScalar*, int )
+        TacsScalar (*fail)(void*, const double*, const TacsScalar*)
+        void (*failstrainsens)(void*, const double*,
+                               const TacsScalar*, TacsScalar*)
+        void (*addfaildvsens)(void*, const double*, const TacsScalar*, 
+                              TacsScalar, TacsScalar*, int)
+
+    cdef cppclass FSDTStiffnessWrapper(FSDTStiffness):
+        FSDTStiffnessWrapper()
+
+        # Member functions
+        void *self_ptr
+        TacsScalar (*getstiffness)(void*, const double*, 
+                                   TacsScalar*, TacsScalar*,
+                                   TacsScalar*, TacsScalar*)
+        void (*addstiffnessdvsens)(void*, const double*, const TacsScalar*,
+                                   const TacsScalar*, TacsScalar,
+                                   TacsScalar*, int)
+        void (*getpointwisemass)(void*, const double*, TacsScalar*)
+        void (*addpointwisemassdvsens)(void*, const double*,
+                                       const TacsScalar*, TacsScalar*, int )
+        TacsScalar (*fail)(void*, const double*, const TacsScalar*)
+        void (*failstrainsens)(void*, const double*,
+                               const TacsScalar*, TacsScalar*)
+        void (*addfaildvsens)(void*, const double*, const TacsScalar*, 
+                              TacsScalar, TacsScalar*, int)
 
 cdef class FSDT(Constitutive):
     pass
