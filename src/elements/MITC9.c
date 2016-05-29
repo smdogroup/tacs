@@ -3035,6 +3035,80 @@ void MITC9::addGRotMat( TacsScalar J[],
 }
 
 /*
+  Get the constitutive object
+*/
+TACSConstitutive *MITC9::getConstitutive(){
+  return stiff;
+}
+
+/*
+  Return the number of quadrature points
+*/
+int MITC9::getNumGaussPts(){ 
+  return ORDER*ORDER;
+}
+
+/*
+  Return the quadrature points and weights
+*/
+double MITC9::getGaussWtsPts( const int num, double pt[] ){
+  int m = (int)(num/ORDER);
+  int n = num % ORDER;
+  pt[0] = gaussPts[n];
+  pt[1] = gaussPts[m];    
+  
+  return gaussWts[n]*gaussWts[m];
+}
+
+/*
+  Get the values of the shape functions
+*/
+void MITC9::getShapeFunctions( const double pt[], double N[] ){
+  computeShapeFunc(pt[0], pt[1], N);
+}
+
+/*
+  Retrieve the determinant of the Jacobian transformation matrix
+*/
+TacsScalar MITC9::getDetJacobian( const double pt[],
+                                  const TacsScalar X[] ){
+  // Set the u/v locations
+  const double u = pt[0];
+  const double v = pt[1];
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES];
+  computeShapeFunc(u, v, N);
+
+  // Evaluate the derivatives of the shape functions
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  computeShapeFunc(u, v, Na, Nb);
+
+  // Compute the derivative along the shape function
+  // directions
+  TacsScalar Xa[3], Xb[3];
+  innerProduct(Na, X, Xa);
+  innerProduct(Nb, X, Xb);
+
+  // Compute the frame normal
+  TacsScalar fn[3];
+  computeFrameNormal(N, Xr, fn);
+  
+  // Evaluate the derivatives in the locally-aligned frame
+  TacsScalar Xd[9], Xdinv[9];
+  assembleFrame(Xa, Xb, fn, Xd);
+
+  // Compute the derivatives of the shape functions
+  TacsScalar h = inv3x3(Xd, Xdinv);
+
+  return h;
+}
+
+/*
   Evaluate the strain at a parametric point within the element
 */
 void MITC9::getStrain( TacsScalar e[],

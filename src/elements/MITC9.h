@@ -92,6 +92,25 @@ class MITC9 : public TACSElement {
 		    const TacsScalar dvars[],
 		    const TacsScalar ddvars[] );
 
+
+  // Member functions for evaluating global functions of interest
+  // ------------------------------------------------------------
+  TACSConstitutive * getConstitutive();
+  
+  // Get the number of Gauss quadrature points
+  // -----------------------------------------
+  int getNumGaussPts();
+  double getGaussWtsPts( const int num, double pt[] );
+
+  // Get the shape functions from the element
+  // ----------------------------------------
+  void getShapeFunctions( const double pt[], double N[] );
+  
+  // Return the determinant of the Jacobian of the transformation
+  // ------------------------------------------------------------
+  TacsScalar getDetJacobian( const double * pt, 
+                             const TacsScalar Xpts[] );
+
   // Get the strain and the parametric location from the element
   // -----------------------------------------------------------
   void getStrain( TacsScalar e[],
