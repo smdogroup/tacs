@@ -34,14 +34,16 @@ cdef class Element:
          self.ptr.decref()
       return
 
-# cdef class GibbsVector:
-#     def __cinit__(self, np.ndarray[TacsScalar, ndim=1,mode='c']x):
-#         self.ptr = new TACSGibbsVector(<TacsScalar*>x.data)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
+cdef class GibbsVector:
+    cdef TACSGibbsVector *ptr
+    def __cinit__(self, np.ndarray[TacsScalar, ndim=1,mode='c']x):
+        assert(len(x) == 3)
+        self.ptr = new TACSGibbsVector(<TacsScalar*>x.data)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
     
 cdef class PlaneQuad(Element):
     def __cinit__(self, int order, PlaneStress stiff,
