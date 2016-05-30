@@ -1,5 +1,6 @@
 #include <math.h>
 #include "TACSIntegrator.h"
+#include "tacslapack.h"
 /*
   Base class constructor for integration schemes. This base class
   contains common methods and variables pertaining to the integration
@@ -87,7 +88,7 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   mat->incref();
     
   // Allocate the factorization
-  int lev = 4500; double fill = 10.0; int reorder_schur = 1;
+  int lev = 4500; double fill = 5.0; int reorder_schur = 1;
   pc = new PcScMat(D, lev, fill, reorder_schur);
   pc->incref();
     
@@ -143,7 +144,6 @@ TacsIntegrator::~TacsIntegrator(){
 }
 
 /*
-
   Drives the residual R(t,q,qdot,qddot) to zero using Newton's method
   with KSM solver
 
@@ -191,7 +191,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
           delta = gamma;
         }
       }
-      tacs->assembleJacobian(res, mat, alpha, beta, gamma, NORMAL);
+      tacs->assembleJacobian(res, mat, alpha, beta, gamma + delta, NORMAL);
     } 
     else {
       tacs->assembleRes(res);
@@ -236,7 +236,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     
     // Solve for update using KSM
     ksm->solve(res, update);
-
+   
     // Update the state variables using the solution
     qddot->axpy(-gamma, update);
     qdot->axpy(-beta, update);
@@ -248,13 +248,6 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
   }
-}
-
-/*
-  Creates an f5 file for each time step and writes the data
-*/
-void TacsIntegrator::writeSolutionToF5(){
-
 }
 
 /*
@@ -286,6 +279,89 @@ void TacsIntegrator::writeSolution( const char *filename ){
 
   // Close the file
   fclose(fp);
+}
+
+/*
+  Creates an f5 file for each time step and writes the data in the
+  provided directory
+*/
+void TacsIntegrator::writeSolutionToF5( const char *dirname ){
+
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
+                             TACSElement::OUTPUT_DISPLACEMENTS |
+                             TACSElement::OUTPUT_STRAINS |
+                             TACSElement::OUTPUT_STRESSES |
+                             TACSElement::OUTPUT_EXTRAS);
+
+  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  f5->incref();
+
+  // Write the displacements
+  f5->writeToFile("solution.f5");
+
+  // Delete the viewer
+  f5->decref();
+}
+
+/*
+  Set the relative tolerance for GMRES solver
+*/
+void TacsIntegrator::setRelTol( double _rtol ){ 
+  rtol = _rtol; 
+}
+
+/*
+  Set the absolute tolerance for GMRES solver
+*/
+void TacsIntegrator::setAbsTol( double _atol ){ 
+  atol = _atol; 
+}
+
+/*
+  Set the maximum number of allowed Newton iterations for the solution
+  of nonlinear system
+*/
+void TacsIntegrator::setMaxNewtonIters( int _max_newton_iters ){
+  max_newton_iters = _max_newton_iters;
+}
+
+/*
+  Control the amount of information printed to the console
+*/
+void TacsIntegrator::setPrintLevel( int _print_level ){ 
+  print_level = _print_level; 
+}
+
+/*
+  Number of times the Jacobian is recomputed/assembled during each
+  nonlinear solve
+*/
+void TacsIntegrator::setJacAssemblyFreq( int _jac_comp_freq ){ 
+  jac_comp_freq = _jac_comp_freq; 
+}
+
+/*
+  Set the pointer to the functions of interest that take part in the
+  adjoint solve. If called for the second time the new set of
+  functions will replace the existing ones.
+*/
+void TacsIntegrator::setFunction( TACSFunction **_func, int _num_funcs ){
+  // Delete the references to the old functions
+  if (func){
+    for ( int i = 0; i < num_func; i++ ){
+      func[i]->decref();	
+    }
+    delete [] func;
+  }
+  // Increase the reference counts to the functions
+  for ( int i = 0; i < _num_funcs; i++ ){
+    _func[i]->incref();
+  }
+    
+  num_func = _num_funcs;
+  func = new TACSFunction*[ num_func ];
+  memcpy(func, _func, num_func*sizeof(TACSFunction*));    
 }
 
 /*
@@ -367,7 +443,14 @@ void TacsBDFIntegrator::integrate(){
   Solves for the adjoint variables psi[k] marching backwards in time.
 */
 void TacsBDFIntegrator::adjointSolve(){
-  for ( int k = num_time_steps-1; k >= 1; k-- ){
+  // Check whether the function has been set
+  if (num_func == 0 || func == NULL) {
+    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
+    return;
+  }
+
+  // March backwards in time (initial condition not evaluated)
+  for ( int k = num_time_steps-1; k > 0; k-- ){
     current_time_step = k;
    
     // Get the BDF coefficients at this time step
@@ -396,22 +479,6 @@ void TacsBDFIntegrator::adjointSolve(){
     // Apply the factorization for each RHS
     pc->applyFactor(res, psi[k]);
 
-    TacsScalar *resvals;
-    res->getArray(&resvals);
-
-    printf("\nrhs = ");
-    for ( int j = 0; j < num_state_vars; j++ ){
-      printf(" %e ", resvals[j]);
-    }
-    printf("\n");
-
-    printf("\n q = ");
-    q[k]->getArray(&resvals);
-    for ( int j = 0; j < num_state_vars; j++ ){
-      printf(" %e ", resvals[j]);
-    }
-    printf("\n");
-    exit(-1);    
   }
 
   // Compute the total derivative
@@ -419,7 +486,7 @@ void TacsBDFIntegrator::adjointSolve(){
   // Print Lagrange multipliers
   if ( print_level > 1 ){
     TacsScalar *psivals;
-    for ( int k = 0; k < num_time_steps; k++ ){    
+    for ( int k = 1; k < num_time_steps; k++ ){    
       psi[k]->getArray(&psivals);
       printf("\n");
       for ( int j = 0; j < num_state_vars; j++ ){
@@ -452,8 +519,24 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
     tacs->setVariables(q[k]);
     tacs->setDotVariables(qdot[k]);
     tacs->setDDotVariables(qddot[k]);
-    printf("Evaluating SV Sens \n");
+
+    // Must evaluate the function before the SVSens call
+    TacsScalar funcVals;
+    tacs->evalFunctions(&func[func_num], 1, &funcVals);
+
+    // Evalute the state variable sensitivity
     tacs->evalSVSens(func[func_num], res);
+    
+    // Check if there was any contribution from the SVSens. The norm
+    // of the rhs vector shouldn't be zero or shouldn't contain Nan,
+    // Inf's etc
+    TacsScalar norm = res->norm();
+    if (norm != norm){ 
+      fprintf(stdout, "TACS Warning: Invalid entries detected in the adjoint RHS vector\n");
+    } 
+    else if (norm <= 1.0e-15) { 
+      fprintf(stdout, "TACS Warning: Zero RHS in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.\n");
+    }
   }
 
   // Add contribution from the first derivative terms d{R}d{qdot}
@@ -794,14 +877,20 @@ void TacsDIRKIntegrator::checkButcherTableau(){
   and stage
 */
 void TacsDIRKIntegrator::adjointSolve(){
-  for ( int k = num_time_steps-1; k >= 1; k-- ){
+  // Check whether the function has been set
+  if (num_func == 0 || func == NULL) {
+    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
+    return;
+  }
+
+  // March backwards in time (initial condition not evaluated)
+  for ( int k = num_time_steps-1; k > 0; k-- ){
+    // March backwards in stag
+    int toffset = (k-1)*num_stages;
     for ( int i = num_stages-1; i >= 0; i-- ){
       current_time_step = k;
       current_stage = i;
       
-      // Find the offset
-      int toffset = (k-1)*num_stages;
-
       // Determine the coefficients for linearizing the Residual
       double gamma = 1.0;
       double beta  = h*A[0]; 
@@ -824,6 +913,24 @@ void TacsDIRKIntegrator::adjointSolve(){
 	
       // Apply the factorization for each RHS
       pc->applyFactor(&res[0], psi[toffset+i]);
+    }
+  }
+
+  // Compute the total derivative
+  
+  // Print Lagrange multipliers
+  if ( print_level > 1 ){
+    TacsScalar *psivals;
+    for ( int k = 1; k < num_time_steps; k++ ){   
+      int toffset = (k-1)*num_stages;
+      for ( int i = 0; i < num_stages; i++ ){ 
+	psi[toffset+i]->getArray(&psivals);
+      }
+      printf("\n");
+      for ( int j = 0; j < num_state_vars; j++ ){
+	printf(" %e ", psivals[j]);
+      }
+      printf("\n");
     }
   }
 }
@@ -868,7 +975,11 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
       tacs->setDotVariables(qdotS[toffset+j]);
       tacs->setDDotVariables(qddotS[toffset+j]);
 
-      // Evalute the sensitivity
+      // Must evaluate the function before the SVSens call
+      TacsScalar funcVals;
+      tacs->evalFunctions(&func[func_num], 1, &funcVals);
+
+      // Evalute the state variable sensitivity
       tacs->evalSVSens(func[func_num], res);
       res->scale(scale);
       

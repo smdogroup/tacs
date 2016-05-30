@@ -32,15 +32,33 @@ class TacsIntegrator : public TACSObject {
                     double t, BVec *q, BVec *qdot, 
                     BVec *qddot );
 
-  // Call this function after integrating to write the solution to file
-  //-------------------------------------------------------------------
+  // Call this function after integrating to write the solution to
+  // file in ASCII text format (might be slower for bigger problems)
+  // ------------------------------------------------------------------
   void writeSolution( const char *filename );
 
   // Call this function after integrating to write the solution to f5
-  // file
-  //-------------------------------------------------------------------
-  void writeSolutionToF5();
+  // file in the user specified directory. Since it is written in
+  // binary form, it is faster.
+  // ------------------------------------------------------------------
+  void writeSolutionToF5( const char *dirname );
 
+  // Useful setters for class variables. These setters must be called
+  // before calling the 'integrate()' function. These won't have any
+  // effect after the integrate call has been made as default values
+  // would have been used during time integration.
+  // -----------------------------------------------------------------
+  void setRelTol( double _rtol );
+  void setAbsTol( double _atol );
+  void setMaxNewtonIters( int _max_newton_iters );
+  void setPrintLevel( int _print_level );
+  void setJacAssemblyFreq( int _jac_comp_freq );
+  
+  // Set the objective/constraint functions of interest and increment.
+  // This function should be called before the adjointSolve call.
+  // -----------------------------------------------------------------
+  void setFunction( TACSFunction **_func, int _num_funcs );
+  
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
@@ -48,38 +66,6 @@ class TacsIntegrator : public TACSObject {
   // Pure virtual function for solving the adjoint variables
   //--------------------------------------------------------
   virtual void adjointSolve() = 0;
-
-  // Setters
-  //--------
-  void setMaxNewtonIters( int _max_newton_iters ){
-    max_newton_iters = _max_newton_iters;
-  }
-  void setRelTol( double _rtol ){ rtol = _rtol; }
-  void setAbsTol( double _atol ){ atol = _atol; }
-  void setPrintLevel( int _print_level ){ 
-    print_level = _print_level; 
-  }
-
-  // Set the objective/constraint function of interest and increment the counter
-  //----------------------------------------------------------------------------
-  void setFunction( TACSFunction **_func, int _num_funcs ){
-    // Increase the reference counts to the functions
-    for ( int i = 0; i < _num_funcs; i++ ){
-      _func[i]->incref();
-    }
-
-    // Delete the references to the old functions
-    if (func){
-      for ( int i = 0; i < num_func; i++ ){
-	func[i]->decref();	
-      }
-      delete [] func;
-    }
-    
-    num_func = _num_funcs;
-    func = new TACSFunction*[ num_func ];
-    memcpy(func, _func, num_func*sizeof(TACSFunction*));    
-  }
   
  protected:
   // Instance of TACS
