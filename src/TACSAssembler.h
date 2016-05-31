@@ -120,6 +120,7 @@ class TACSAssembler : public TACSObject {
 
   // Set the nodes in TACS 
   // ---------------------
+  BVec *createNodeVec();
   void setNodes( BVec *X ); 
   void getNodes( BVec *X );
   void getNodeArray( TacsScalar **_Xpts );

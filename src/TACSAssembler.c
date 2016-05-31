@@ -541,17 +541,20 @@ after finalize()\n", mpiRank);
   elementNodeIndex = *elemindex;  *elemindex = NULL;
 }
 
+/*
+  Create a global vector of node locations
+*/
+BVec *TACSAssembler::createNodeVec(){
+  return new BVec(varMap, TACS_SPATIAL_DIM);
+}
+
 /*!
   Set the nodes from the node map object
 */
 void TACSAssembler::setNodes( BVec *X ){
   if (X){
-    // Get the local array of node locations
-    TacsScalar *vals;
-    int nvals = X->getArray(&vals);
-    
-    // Copy over the nodal location values
-    memcpy(Xpts, vals, nvals*sizeof(TacsScalar));
+    vecDist->beginForward(X, Xpts);
+    vecDist->endForward(X, Xpts);
   }
 
   // Set the locations of the dependent nodes
@@ -562,7 +565,9 @@ void TACSAssembler::setNodes( BVec *X ){
   Get the node locations from TACS
 */
 void TACSAssembler::getNodes( BVec *X ){
-  // We need to implement this still  
+  // Set the node locations
+  vecDist->beginReverse(Xpts, X, BVecDistribute::INSERT);
+  vecDist->endReverse(Xpts, X, BVecDistribute::INSERT);  
 }
 
 /*!

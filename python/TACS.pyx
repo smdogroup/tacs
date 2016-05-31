@@ -463,7 +463,27 @@ cdef class Assembler:
       '''
       self.ptr.setNumThreads(t)
       return
-      
+
+   def createNodeVec(self):
+      '''
+      Create a distributed node vector
+      '''
+      return _init_Vec(self.ptr.createNodeVec())
+
+   def setNodes(self, Vec X):
+      '''
+      Set the node locations
+      '''
+      self.ptr.setNodes(X.ptr)
+      return
+
+   def getNodes(self, Vec X):
+      '''
+      Get the node locations
+      '''
+      self.ptr.getNodes(X.ptr)
+      return
+   
    def createVec(self):
       '''
       Create a distributed vector.

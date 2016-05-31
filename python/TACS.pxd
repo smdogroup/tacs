@@ -172,6 +172,7 @@ cdef extern from "TACSAssembler.h":
       int getNumNodes()
       int getNumDependentNodes()
       int getNumElements()
+      BVec *createNodeVec()
       void setNodes(BVec* x)
       void getNodes(BVec* x)
       void getDesignVars(TacsScalar* dvs, int ndvs)
