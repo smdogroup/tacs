@@ -93,6 +93,8 @@ cdef extern from "BVec.h":
    cdef cppclass BVec(TACSVec):
       BVec(VarMap* rmap, BCMap* bcs)
       int getSize(int *size) 
+      int getArray(TacsScalar ** array)
+      void placeArray(TacsScalar * _x)
       int readFromFile(const_char *filename)
       int writeToFile(const_char *filename)
         
