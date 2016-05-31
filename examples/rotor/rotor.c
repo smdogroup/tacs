@@ -44,12 +44,13 @@ int main( int argc, char **argv ){
   TacsScalar g[] = {0.0, 0.0, -9.81};
   TacsScalar v_init[] = {0.0, 0.0, 0.0};
   TacsScalar omega_init[] = {0.0, 0.0, 0.0}; 
+
   TACSGibbsVector *gravity = new TACSGibbsVector(g); gravity->incref();
   TACSGibbsVector *v0 = new TACSGibbsVector(v_init); v0->incref();
   TACSGibbsVector *omega0 = new TACSGibbsVector(omega_init); omega0->incref();
 
   // Loop over components, creating constituitive object for each
-  for ( int i = 0; i < num_components; i++ ){
+  for ( int i = 0; i < num_components; i++ ) {
     const char *descriptor = mesh->getElementDescript(i);
     double min_thickness = 0.01;
     double max_thickness = 0.20;
@@ -126,8 +127,8 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.3;
-  int num_steps_per_sec = 10, num_stages = 1, max_bdf_order = 2;
+  double tinit = 0.0, tfinal = 0.5;
+  int num_steps_per_sec = 10, num_stages = 2, max_bdf_order = 2;
 
   // Create functions for adjoint solve
   TACSFunction *func = new KSFailure(tacs, 100.0, 1.0);
