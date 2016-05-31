@@ -22,7 +22,7 @@ from constitutive cimport *
 cdef extern from "mpi-compat.h":
    pass
 
-# This class wraps a C++ array with a numpy array for later useage
+# This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
    '''Return a numpy version of the array'''
    # Set the shape of the array

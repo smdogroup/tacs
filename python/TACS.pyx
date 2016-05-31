@@ -60,6 +60,29 @@ cdef _init_Vec(BVec *ptr):
    vec.ptr.incref()
    return vec
 
+# This wraps a C++ array with a numpy array for later useage
+cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
+                      PyObject *ptr):
+   '''Return a numpy version of the array'''
+   # Set the shape of the array
+   cdef int size = 1
+   cdef np.npy_intp shape[1]
+   cdef np.ndarray ndarray
+
+   # Set the first entry of the shape array
+   shape[0] = <np.npy_intp>dim1
+      
+   # Create the array itself - Note that this function will not
+   # delete the data once the ndarray goes out of scope
+   ndarray = np.PyArray_SimpleNewFromData(size, shape,
+                                          nptype, data_ptr)
+
+   # Set the base class who owns the memory
+   if ptr != NULL:
+      ndarray.base = ptr
+
+   return ndarray
+
 cdef class Vec:
    cdef BVec *ptr
    def __cinit__(self):
@@ -86,13 +109,12 @@ cdef class Vec:
       Get the local values
       ''' 
       cdef TacsScalar *array
-      size  = self.ptr.getArray(&array)
+      cdef int size = self.ptr.getArray(&array)
 
-      cdef np.ndarray array_out = np.zeros(size)
-      for i in xrange(size):
-          array_out[i] = array[i]
-      
-      return array_out
+      arry = inplace_array_1d(np.NPY_DOUBLE, size, <void*>array, 
+                              <PyObject*>self)
+      Py_INCREF(self)
+      return arry
 
    def applyBCs(self):
       '''
@@ -101,13 +123,6 @@ cdef class Vec:
       self.ptr.applyBCs()
       return
 
-   def placeArray(self, np.ndarray[double, ndim=1, mode='c'] array):
-      '''
-      Place an array into the vector
-      '''
-      self.ptr.placeArray(&array[0])
-      return
-      
    def norm(self):
       '''
       Vector norm
