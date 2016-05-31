@@ -62,8 +62,7 @@ cdef extern from "PlaneStressTri6.h":
         PlaneStressTri6(PlaneStressStiffness *stiff, 
                         ElementBehaviorType type, int)
 
-
-# cdef extern from  "MITC9.h":
-#     cdef cppclass MITC9(TACSElement):
-#         MITC9(FSDTStiffness *_stiff, TACSGibbsVector *_gravity=NULL,
-#               TACSGibbsVector *_vInit=NULL, TACSGibbsVector *_omegaInit=NULL)
+cdef extern from  "MITC9.h":
+    cdef cppclass MITC9(TACSElement):
+        MITC9(FSDTStiffness *_stiff, TACSGibbsVector *_gravity=NULL,
+              TACSGibbsVector *_vInit=NULL, TACSGibbsVector *_omegaInit=NULL)

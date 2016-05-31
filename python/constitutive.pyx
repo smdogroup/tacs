@@ -45,10 +45,6 @@ cdef class Constitutive:
    def __cinit__(self, *args, **kwargs):
       self.ptr = NULL
       return
-   def __dealloc__(self):
-      if self.ptr:
-         self.ptr.decref()
-      return
 
 cdef class FSDT(Constitutive):
    def __cinit__(self, *args, **kwargs):
@@ -88,6 +84,27 @@ cdef class solid(Constitutive):
       self.ptr = new SolidStiffness(rho, E, nu)
       self.ptr.incref()
       return
+
+cdef void getdesignvars(void *_self, double *x, int dvLen):
+   '''Get the design variable values'''
+   xvals = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>x)
+   (<object>_self).getDesignVars(xvals)
+   return
+
+cdef void setdesignvars(void *_self, const double *x, int dvLen):
+   '''Set the design variable values'''
+   cdef np.ndarray xvals = np.zeros(dvLen)
+   for i in xrange(dvLen):
+      xvals[i] = x[i]
+   (<object>_self).setDesignVars(xvals)
+   return
+
+cdef void getdesignvarrange(void *_self, double *lb, double *ub, int dvLen):
+   '''Get the design variable range'''
+   xlb = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>lb)
+   xub = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>ub)
+   (<object>_self).getDesignVarRange(xlb, xub)
+   return
 
 # Callbacks for the python-level implementation of the
 # PlaneStressStiffness object.
@@ -233,13 +250,16 @@ cdef void ps_addfaildvsens(void *_self, const double *pt,
 
 # Python-level interface for the plane stress constitutive object
 cdef class pyPlaneStress(PlaneStress):
-   def __cinit__(self, rho, E, nu, *args, **kwargs):
+   def __cinit__(self, *args, **kwargs):
       cdef PSStiffnessWrapper *pointer
       pointer = new PSStiffnessWrapper()
       pointer.incref()
       
       # Set the function pointers
       pointer.self_ptr = <void*>self
+      pointer.setdesignvars = setdesignvars
+      pointer.getdesignvars = getdesignvars
+      pointer.getdesignvarrange = getdesignvarrange
       pointer.calculatestress = ps_calculatestress
       pointer.addstressdvsens = ps_addstressdvsens
       pointer.getpointwisemass = ps_getpointwisemass
@@ -249,6 +269,19 @@ cdef class pyPlaneStress(PlaneStress):
       pointer.addfaildvsens = ps_addfaildvsens
 
       self.ptr = pointer
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
+   def setDesignVars(self, x):
+      return
+
+   def getDesignVars(self, x):
+      return
+
+   def getDesignVarRange(self, lb, ub):
       return
 
    def calculateStress(self, pt, e):
@@ -425,6 +458,9 @@ cdef class pyFSDT(FSDT):
       
       # Set the function pointers
       pointer.self_ptr = <void*>self
+      pointer.setdesignvars = setdesignvars
+      pointer.getdesignvars = getdesignvars
+      pointer.getdesignvarrange = getdesignvarrange
       pointer.getstiffness = fsdt_getstiffness
       pointer.addstiffnessdvsens = fsdt_addstiffnessdvsens
       pointer.getpointwisemass = fsdt_getpointwisemass
@@ -434,6 +470,19 @@ cdef class pyFSDT(FSDT):
       pointer.addfaildvsens = fsdt_addfaildvsens
 
       self.ptr = pointer
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
+   def setDesignVars(self, x):
+      return
+
+   def getDesignVars(self, x):
+      return
+
+   def getDesignVarRange(self, lb, ub):
       return
 
    def getStiffness(self, pt):

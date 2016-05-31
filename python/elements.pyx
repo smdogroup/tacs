@@ -29,11 +29,6 @@ cdef class Element:
       self.ptr = NULL
       return
 
-   def __dealloc__(self):
-      if self.ptr:
-         self.ptr.decref()
-      return
-
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
     def __cinit__(self, np.ndarray[TacsScalar, ndim=1,mode='c']x):
@@ -64,6 +59,10 @@ cdef class PlaneQuad(Element):
             self.ptr.incref()
         return
 
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+
 cdef class PlaneTri6(Element):
     def __cinit__(self, PlaneStress stiff,
                   ElementBehaviorType elem_type=LINEAR,
@@ -74,6 +73,10 @@ cdef class PlaneTri6(Element):
         cdef PlaneStressStiffness *con = _dynamicPlaneStress(stiff.ptr)
         self.ptr = new PlaneStressTri6(con, elem_type, component_num)
         self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        self.ptr.decref()
         return
 
 cdef class MITCShell(Element):
@@ -92,6 +95,10 @@ cdef class MITCShell(Element):
         elif order == 4:
             self.ptr = new MITCShell4(con, elem_type, component_num)
             self.ptr.incref()
+            
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
 cdef class Solid(Element):
     def __cinit__(self, int order, solid stiff, ElementBehaviorType elem_type=LINEAR,
@@ -109,6 +116,10 @@ cdef class Solid(Element):
         elif order == 4:
             self.ptr = new Solid4(con, elem_type, component_num)
             self.ptr.incref()
+            
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
         
 # cdef class mitc9(Element):
 #     def __cinit__(self, FSDT stiff, GibbsVector gravity=None,

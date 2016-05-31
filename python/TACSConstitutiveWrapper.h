@@ -22,6 +22,9 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
  public:
   PSStiffnessWrapper(){
     self_ptr = NULL;
+    setdesignvars = NULL;
+    getdesignvars = NULL;
+    getdesignvarrange = NULL;
     calculatestress = NULL;
     addstressdvsens = NULL;
     getpointwisemass = NULL;
@@ -41,6 +44,9 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
   // Function pointers
   // -----------------
   void *self_ptr; // Pointer to the python object
+  void (*setdesignvars)( void *, const TacsScalar *, int );
+  void (*getdesignvars)( void *, TacsScalar *, int );
+  void (*getdesignvarrange)( void *, TacsScalar *, TacsScalar *, int );
   void (*calculatestress)( void *, const double *, 
                            const TacsScalar *, TacsScalar* );
   void (*addstressdvsens)( void *, const double *, const TacsScalar *,
@@ -54,6 +60,24 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
                           const TacsScalar *, TacsScalar * );
   void (*addfaildvsens)( void *, const double *, const TacsScalar *, 
                          TacsScalar, TacsScalar *, int );
+
+  // Design variable access functions
+  // --------------------------------
+  void setDesignVars( const TacsScalar *x, int dvLen ){
+    if (self_ptr && setdesignvars){
+      setdesignvars(self_ptr, x, dvLen);
+    }
+  }
+  void getDesignVars( TacsScalar *x, int dvLen ){
+    if (self_ptr && getdesignvars){
+      getdesignvars(self_ptr, x, dvLen);
+    }
+  }
+  void getDesignVarRange( TacsScalar *lb, TacsScalar *ub, int dvLen ){
+    if (self_ptr && getdesignvarrange){
+      getdesignvarrange(self_ptr, lb, ub, dvLen);
+    }
+  }
 
   // Stress member functions
   // -----------------------
@@ -119,6 +143,9 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
  public:
   FSDTStiffnessWrapper(){
     self_ptr = NULL;
+    setdesignvars = NULL;
+    getdesignvars = NULL;
+    getdesignvarrange = NULL;
     getstiffness = NULL;
     addstiffnessdvsens = NULL;
     getpointwisemass = NULL;
@@ -138,6 +165,9 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
   // Function pointers
   // -----------------
   void *self_ptr; // Pointer to the python object
+  void (*setdesignvars)( void *, const TacsScalar *, int );
+  void (*getdesignvars)( void *, TacsScalar *, int );
+  void (*getdesignvarrange)( void *, TacsScalar *, TacsScalar *, int );
   TacsScalar (*getstiffness)( void *, const double *, 
                               TacsScalar*, TacsScalar*, 
                               TacsScalar*, TacsScalar* );
@@ -152,6 +182,24 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
                           const TacsScalar *, TacsScalar * );
   void (*addfaildvsens)( void *, const double *, const TacsScalar *, 
                          TacsScalar, TacsScalar *, int );
+
+  // Design variable access functions
+  // --------------------------------
+  void setDesignVars( const TacsScalar *x, int dvLen ){
+    if (self_ptr && setdesignvars){
+      setdesignvars(self_ptr, x, dvLen);
+    }
+  }
+  void getDesignVars( TacsScalar *x, int dvLen ){
+    if (self_ptr && getdesignvars){
+      getdesignvars(self_ptr, x, dvLen);
+    }
+  }
+  void getDesignVarRange( TacsScalar *lb, TacsScalar *ub, int dvLen ){
+    if (self_ptr && getdesignvarrange){
+      getdesignvarrange(self_ptr, lb, ub, dvLen);
+    }
+  }
 
   // Stress member functions
   // -----------------------

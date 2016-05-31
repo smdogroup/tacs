@@ -26,3 +26,5 @@ clean:
 	${RM} *.cpp
 	${RM} *.${SO_EXT}
 	${RM} *.o
+
+.SECONDARY:

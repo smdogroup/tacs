@@ -37,6 +37,9 @@ cdef extern from "TACSConstitutiveWrapper.h":
 
         # Member functions
         void *self_ptr
+        void (*setdesignvars)(void*, const TacsScalar*, int)
+        void (*getdesignvars)(void*, TacsScalar*, int)
+        void (*getdesignvarrange)(void*, TacsScalar*, TacsScalar*, int)
         void (*calculatestress)(void*, const double*, 
                                 const TacsScalar*, TacsScalar*)
         void (*addstressdvsens)(void*, const double*, const TacsScalar*,
@@ -56,6 +59,9 @@ cdef extern from "TACSConstitutiveWrapper.h":
 
         # Member functions
         void *self_ptr
+        void (*setdesignvars)(void*, const TacsScalar*, int)
+        void (*getdesignvars)(void*, TacsScalar*, int)
+        void (*getdesignvarrange)(void*, TacsScalar*, TacsScalar*, int)
         TacsScalar (*getstiffness)(void*, const double*, 
                                    TacsScalar*, TacsScalar*,
                                    TacsScalar*, TacsScalar*)
