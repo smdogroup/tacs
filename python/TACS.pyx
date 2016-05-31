@@ -80,12 +80,32 @@ cdef class Vec:
       '''
       self.ptr.zeroEntries()
       return
+
+   def getArray(self):
+      '''
+      Get the local values
+      ''' 
+      cdef TacsScalar *array
+      size  = self.ptr.getArray(&array)
+
+      cdef np.ndarray array_out = np.zeros(size)
+      for i in xrange(size):
+          array_out[i] = array[i]
       
+      return array_out
+
    def applyBCs(self):
       '''
       Apply the Dirichlet boundary conditions to the matrix
       '''
       self.ptr.applyBCs()
+      return
+
+   def placeArray(self, np.ndarray[double, ndim=1, mode='c'] array):
+      '''
+      Place an array into the vector
+      '''
+      self.ptr.placeArray(&array[0])
       return
       
    def norm(self):
