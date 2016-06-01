@@ -86,11 +86,40 @@ int main( int argc, char **argv ){
   tacs->incref();
   mesh->decref();
 
-  /*
-  // Extract the element
+    // Extract the element
   TacsScalar Xpts[3*9];
   TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
 
+  BVec *u = tacs->createVec();
+  
+  int size;
+  u->getSize(&size);
+
+  TacsScalar *q = new TacsScalar[ size ];
+  TacsScalar *qdot = new TacsScalar[ size ];
+  TacsScalar *qddot = new TacsScalar[ size ];
+  for ( int k = 0; k < size; k++ ){
+    q[k] = -0.5 + (1.0*rand())/RAND_MAX;
+    qdot[k] = -0.5 + (1.0*rand())/RAND_MAX;
+    qddot[k] = -0.5 + (1.0*rand())/RAND_MAX;
+  }
+
+  TacsScalar *uvals;
+  u->getArray(&uvals);
+    
+  for ( int i = 0; i < size; i++) {
+    printf("q[%d]=%e\n", i, uvals[i]);
+  }
+
+  u->setArray(q);
+  u->getArray(&uvals);
+  for ( int i = 0; i < size; i++) {
+    printf("q[%d]=%e\n", i, uvals[i]);
+  }
+
+  exit(-1);
+
+  /*
   // Test the element;
   TestElement *test = new TestElement(elem, Xpts);
   test->setPrintLevel(2);
@@ -142,7 +171,7 @@ int main( int argc, char **argv ){
   //*****************************************************************//
   // Integrate using DIRK
   //*****************************************************************//
-
+  
   integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
 				      num_steps_per_sec, num_stages);
   integrator->incref();
@@ -166,6 +195,7 @@ int main( int argc, char **argv ){
   integrator->adjointSolve();
 
   integrator->decref();
+  exit(-1);
 
   //*****************************************************************//
   // Integrate using BDF
@@ -187,7 +217,7 @@ int main( int argc, char **argv ){
   // Solve the equations over time
   printf(">> Integrating using BDF\n");
 
-  integrator->integrate();
+  integrator->integrate(); 
 
   // Set the function and solve for the adjoint variables
   printf(">> Adjoint solve using BDF\n");

@@ -28,7 +28,7 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   // compute the total number of time steps
   num_time_steps = int(double(num_steps_per_sec)*(tfinal-tinit)) + 1;
 
-  printf("num time steps: %d\n", num_time_steps);
+  printf("num_time_steps: %d\n", num_time_steps);
 
   // Default print level
   print_level = 1;
@@ -533,28 +533,32 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   // Add contribution from the first derivative terms d{R}d{qdot}
   double scale;
   for ( int i = 1; i < nbdf; i++ ) {
-    if ( k+i <= num_time_steps-1 ) {
+    if ( k+i <= num_time_steps -1 ) {
       scale = bdf_coeff[i]/h;
-  
+ 
       // Set the states variables into TACS
       tacs->setVariables(q[k+i]);
       tacs->setDotVariables(qdot[k+i]);
       tacs->setDDotVariables(qddot[k+i]);
-  
+      
+      printf("|psi[%d]=%e %e %e  %e %e|\n", k+i, q[k+i]->norm(),qdot[k+i]->norm(), qddot[k+i]->norm(), res->norm(), scale);
+      
       tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k+i], res, TRANSPOSE);
+
+      printf("|psi[%d]=%e %e %e  %e |\n", k+i, q[k+i]->norm(),qdot[k+i]->norm(), qddot[k+i]->norm(), res->norm());
     }
   }
  
   // Add contribution from the second derivative terms d{R}d{qddot}
   for ( int i = 1; i < nbddf; i++ ) {
-    if ( k+i <= num_time_steps-1 ) {
+    if ( k+i <= num_time_steps -1 ) {
       scale = bddf_coeff[i]/h/h;
     
       // Set the states variables into TACS
       tacs->setVariables(q[k+i]);
       tacs->setDotVariables(qdot[k+i]);
       tacs->setDDotVariables(qddot[k+i]);
-  
+      
       tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k+i], res, TRANSPOSE);
     }
   }
@@ -566,7 +570,7 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
     fprintf(stdout, "TACS Warning: Invalid entries detected in the adjoint RHS vector\n");
   } 
   else if (norm <= 1.0e-15) { 
-    fprintf(stdout, "TACS Warning: Zero RHS at time step %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.\n", k);
+    fprintf(stdout, "TACS Warning: Zero RHS at time step %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.| \n", k);
   }
 
   // Negative the RHS
@@ -958,7 +962,7 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   
   // Zero the RHS vector each time
   res->zeroEntries();
-  
+
   // Add the contribution from the objective function df/dq at
   // the last time step
   double scale;
@@ -1023,10 +1027,15 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
       // Part 3: Add inter-stage residual contributions from the
       // same time step 'scale' is same as previously computed
       // 'scale'
+      printf("|psi[%d]=%e %e %e %e %e %e|\n", off+j, qS[off+j]->norm(),qdotS[off+j]->norm(), qddotS[off+j]->norm(), psi[off+j]->norm(), res->norm(), scale);
       tacs->addJacobianVecProduct(scale, 1.0, 0.0, 0.0, psi[off+j], res, TRANSPOSE); 
+      printf("|psi[%d]=%e %e %e %e %e %e|\n\n", off+j, qS[off+j]->norm(),qdotS[off+j]->norm(), qddotS[off+j]->norm(), psi[off+j]->norm(), res->norm(), scale);
 
       scale = weight*B[i]/h;
+      printf("|psi[%d]=%e %e %e %e %e %e|\n", off+j, qS[off+j]->norm(),qdotS[off+j]->norm(), qddotS[off+j]->norm(), psi[off+j]->norm(), res->norm(), scale);
       tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[off+j], res, TRANSPOSE);
+      printf("|psi[%d]=%e %e %e %e %e %e|\n\n", off+j, qS[off+j]->norm(),qdotS[off+j]->norm(), qddotS[off+j]->norm(),  psi[off+j]->norm(), res->norm(), scale);
+
     }
   }  
 
@@ -1060,6 +1069,8 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   } 
   else if (norm <= 1.0e-15) { 
     fprintf(stdout, "TACS Warning: Zero RHS at time step %d stage %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.\n", k, i);
+  } else {
+    fprintf(stdout, "k=%d i=%d ||RHS||=%e\n",k, i, norm);
   }
 
   // Negate the RHS

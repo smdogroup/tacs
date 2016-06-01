@@ -584,6 +584,13 @@ void BVec::setRand( double lower, double upper ){
 }
 
 /*
+  Set an array into this vector
+*/
+void BVec::setArray(TacsScalar * _x){
+  x = _x;
+}
+
+/*
   Place an array into the place of the local storage for this vector
 */
 void BVec::placeArray( TacsScalar * _x ){

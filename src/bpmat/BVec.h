@@ -107,6 +107,9 @@ class BVec : public TACSVec {
   void applyBCs();                    // Zero rows corresponding to BCs
   void placeArray( TacsScalar * _x ); // Place the array x[] into the vector
   void restoreArray();                // Restore the original array
+  void setArray( TacsScalar * _x );   // Sets the array into the
+				      // vector without making a copy
+				      // of the existing values
 
   void initRand(); // Initialize the random number generator
   void setRand( double lower, double upper ); // Set values to a random number
