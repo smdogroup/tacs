@@ -53,12 +53,23 @@ class TacsIntegrator : public TACSObject {
   void setMaxNewtonIters( int _max_newton_iters );
   void setPrintLevel( int _print_level );
   void setJacAssemblyFreq( int _jac_comp_freq );
+  void setUseLapack( int _use_lapack );
   
+  // Calls LAPACK for the the solution of the linear system Ax =
+  // b. The matrix A should be supplied in row major order
+  void linearSolve( TacsScalar *A, TacsScalar *b, int size );
+    
   // Set the objective/constraint functions of interest and increment.
   // This function should be called before the adjointSolve call.
   // -----------------------------------------------------------------
   void setFunction( TACSFunction **_func, int _num_funcs );
+
+  // Update TACS states with the supplied ones (q, qdot, qddot)
+  void setTACSStates( BVec *q, BVec *qdot, BVec * qddot );
   
+  // Sanity checks on the RHS of the adjoint linear system
+  void checkAdjointRHS( BVec *rhs );
+
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
@@ -92,6 +103,9 @@ class TacsIntegrator : public TACSObject {
   
   // Frequency of Jacobian recomputation during nonlinear solve
   int jac_comp_freq;
+
+  // Flag to switch to LAPACK for linear solve
+  int use_lapack;
 
   // Matrices and vectors for the nonlinear solution
   BVec *res, *update;  // Residual and Newton update
@@ -225,6 +239,5 @@ class TacsBDFIntegrator : public TacsIntegrator {
   //------------------------------------------
   void setupAdjointRHS(BVec *res, int func_num);
 };
-
 #endif
 
