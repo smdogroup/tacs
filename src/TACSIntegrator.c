@@ -247,7 +247,9 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
       linearSolve(J, R, num_state_vars);
 
       // Set the lapack solution into the distributed vector
-      update->setArray(R);
+      TacsScalar *resvals;
+      update->getArray(&resvals);
+      memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));      
     }
     
     // Update the state variables using the solution
