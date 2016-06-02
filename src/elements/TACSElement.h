@@ -457,6 +457,7 @@ class TestElement : public TACSObject {
   // ----------------------------------------------------
   int testResidual(); 
   int testJacobian( int col = -1 );
+  int testAdjResProduct( const TacsScalar *x, int dvLen );
   int testStrainSVSens( const double pt[] );
   
   // Tests for the sensitivities w.r.t. nodal coordinates

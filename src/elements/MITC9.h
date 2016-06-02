@@ -60,6 +60,13 @@ class MITC9 : public TACSElement {
   
   ElementType getElementType();
 
+  // Functions for handling the design variables
+  // -------------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void getDesignVarRange( TacsScalar lowerBound[], 
+			  TacsScalar upperBound[], int numDVs );
+
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
   void getInitCondition( TacsScalar vars[],
@@ -92,6 +99,15 @@ class MITC9 : public TACSElement {
 		    const TacsScalar dvars[],
 		    const TacsScalar ddvars[] );
 
+  // Add the product of the adjoint with the derivative of the design variables
+  // --------------------------------------------------------------------------
+  void addAdjResProduct( double time, double scale,
+			 TacsScalar dvSens[], int dvLen,
+			 const TacsScalar psi[],
+			 const TacsScalar Xpts[],
+			 const TacsScalar vars[],
+			 const TacsScalar dvars[],
+			 const TacsScalar ddvars[] );
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------

@@ -171,8 +171,22 @@ TestElement::TestElement( TACSElement * _element,
   generate_random_array(vars, nvars);
   generate_random_array(dvars, nvars);
   generate_random_array(ddvars, nvars);
-  
-  element->getInitCondition(vars, dvars, Xpts);
+
+  if (strcmp(element->elementName(), "MITC9") == 0){
+    // Enforce the quaternion constraint
+    for ( int i = 0; i < element->numNodes(); i++ ){
+      vars[8*i+7] = 0.0;
+      TacsScalar *v = &vars[8*i+3];
+      
+      // Compute the factor such that the norm of the
+      // quaternions have a unit norm
+      TacsScalar factor = 
+        1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+      for ( int k = 0; k < 4; k++ ){
+        v[k] *= factor;
+      }
+    }
+  }
 
   // Set the time parameter
   time = 0.0;
@@ -542,6 +556,114 @@ int TestElement::testStrainSVSens( const double pt[] ){
                            elementSens, elementSensApprox, nvars);
   }
   if (print_level){ fprintf(stderr, "\n"); }
+
+  return (max_err > fail_atol || max_rel > fail_rtol);
+}
+
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to material design variables.
+*/
+int TestElement::testAdjResProduct( const TacsScalar *x, 
+                                    int dvLen ){
+  int nvars = element->numVariables();
+  element->setDesignVars(x, dvLen);
+
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *result = new TacsScalar[ dvLen ];
+
+  // Generate a random array of values
+  TacsScalar *adjoint = new TacsScalar[ nvars ];
+  generate_random_array(adjoint, nvars);
+
+  // Zero the result
+  memset(result, 0, dvLen*sizeof(TacsScalar));
+
+  // Evaluate the derivative of the adjoint-residual product
+  double scale = 1.0;
+  element->addAdjResProduct(time, scale,
+                            result, dvLen, adjoint,
+                            Xpts, vars, dvars, ddvars);
+  
+  // Compute the product of the result with a perturbation 
+  // vector that is equal to perturb = sign(result[k])
+  TacsScalar dpdx = 0.0;
+  for ( int k = 0; k < dvLen; k++ ){
+    dpdx += fabs(result[k]);
+  }
+
+  // Allocate an array to store the perturbed design variable
+  // values
+  TacsScalar *xpert = new TacsScalar[ dvLen ];
+
+  // Perturb the design variables: xpert = x + dh*sign(result[k])
+  for ( int k = 0; k < dvLen; k++ ){
+    if (result[k] >= 0){
+      xpert[k] = x[k] + dh;
+    }
+    else {
+      xpert[k] = x[k] - dh;
+    }
+  }
+  element->setDesignVars(xpert, dvLen);
+
+  // Allocate a residual vector and zero it
+  TacsScalar *res = new TacsScalar[ nvars ];
+  memset(res, 0, nvars*sizeof(TacsScalar));
+  element->addResidual(time, res, Xpts, vars, dvars, ddvars);
+  TacsScalar p1 = 0.0;
+  for ( int k = 0; k < nvars; k++ ){
+    p1 += res[k]*adjoint[k];
+  }
+
+  // Pertub the design variables: xpert = x - dh*sign(result[k])
+  for ( int k = 0; k < dvLen; k++ ){
+    if (result[k] >= 0){
+      xpert[k] = x[k] - dh;
+    }
+    else {
+      xpert[k] = x[k] + dh;
+    }
+  }
+  element->setDesignVars(xpert, dvLen);
+
+  // Compute the residual again
+  memset(res, 0, nvars*sizeof(TacsScalar));
+  element->addResidual(time, res, Xpts, vars, dvars, ddvars);
+  TacsScalar p2 = 0.0;
+  for ( int k = 0; k < nvars; k++ ){
+    p2 += res[k]*adjoint[k];
+  }
+
+  // Compute the finite-difference approximation
+  TacsScalar fd_dpdx = 0.5*(p1 - p2)/dh;
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(&dpdx, &fd_dpdx, 1, &max_err_index);
+  double max_rel = get_max_rel_error(&dpdx, &fd_dpdx, 1, &max_rel_index);
+
+  if (print_level > 0){
+    fprintf(stderr, 
+            "Testing the derivative of the adjoint-residual product for %s\n",
+            element->elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+	    max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+	    max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (print_level > 1){
+    print_error_components(stderr, "Adj-Res product",
+                           &dpdx, &fd_dpdx, 1);
+  }
+  if (print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] adjoint;
+  delete [] xpert;
+  delete [] res;
 
   return (max_err > fail_atol || max_rel > fail_rtol);
 }

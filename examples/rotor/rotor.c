@@ -86,7 +86,6 @@ int main( int argc, char **argv ){
   tacs->incref();
   mesh->decref();
 
-  /*
   // Extract the element
   TacsScalar Xpts[3*9];
   TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
@@ -96,9 +95,8 @@ int main( int argc, char **argv ){
   test->setPrintLevel(2);
   test->testResidual();
   for ( int k = 0; k < elem->numVariables(); k++ ){
-  test->testJacobian(k);
+    test->testJacobian(k);
   }
-  */
 
   /*-----------------------------------------------------------------*/
   /*-------------------------Setup Forces----------------------------*/

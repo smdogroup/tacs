@@ -130,7 +130,7 @@ void isoFSDTStiffness::addStiffnessDVSens( const double pt[],
   if (tNum >= 0 && tNum < dvLen){
     // Compute the derivative of the stiffness coefficients
     TacsScalar A = E/(1.0 - nu*nu);
-    TacsScalar D = t*A/4.0;
+    TacsScalar D = t*t*A/4.0;
 
     // Store the derivative of the stress values
     TacsScalar s[8];
@@ -138,7 +138,7 @@ void isoFSDTStiffness::addStiffnessDVSens( const double pt[],
     // Compute the in-plane resultants
     s[0] = A*(e[0] + nu*e[1]);
     s[1] = A*(e[1] + nu*e[0]);
-    s[2] = G*t*e[2];
+    s[2] = G*e[2];
     
     // Compute the bending moments
     s[3] = D*(e[3] + nu*e[4]);

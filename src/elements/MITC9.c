@@ -99,7 +99,29 @@ const char * MITC9::extraName( int i ){
   }
   return "";
 }
-  
+
+/*
+  Set the design variable values
+*/
+void MITC9::setDesignVars( const TacsScalar dvs[], int numDVs ){
+  stiff->setDesignVars(dvs, numDVs);
+}
+
+/*
+  Get the design variable values
+*/
+void MITC9::getDesignVars( TacsScalar dvs[], int numDVs ){
+  stiff->getDesignVars(dvs, numDVs);
+}
+
+/*
+  Get the design variable range
+*/
+void MITC9::getDesignVarRange( TacsScalar lb[], 
+                               TacsScalar ub[], int numDVs ){
+  stiff->getDesignVarRange(lb, ub, numDVs);
+}
+
 /*
   Evaluate the shape functions of the element given the u/v
   coordinates of the point
@@ -734,7 +756,7 @@ void MITC9::computeEnergies( double time,
       TacsScalar e[8], s[8];
       evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
 
-      // Add the contribution from the tying straint
+      // Add the contribution from the tying strain
       addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 
       // Compute the stress based on the strain values
@@ -1348,6 +1370,243 @@ void MITC9::addJacobian( double time, TacsScalar J[],
     Jp[ldj+1] += 2.0*alpha*lamb;
     Jp[2*(ldj+1)] += 2.0*alpha*lamb;
     Jp[3*(ldj+1)] += 2.0*alpha*lamb;
+  }
+}
+
+/*
+  Add the derivative of the product of the adjoint variables with the
+  residuals to the given design variable vector.
+
+  input:
+  time:     the simulation time
+  scale:    the scalar factor applied to the result
+  fdvSens:  the derivative (times scale) is accumulated in this array
+  dvLen:    the design array length
+  psi:      the adjoint vector
+  X:        the node locations
+  vars:     the variable values
+  dvars:    the time derivatives of the variable values
+  ddvars:   the second time derivative of the variable values
+*/
+void MITC9::addAdjResProduct( double time, double scale,
+                              TacsScalar fdvSens[], int dvLen,
+                              const TacsScalar psi[],
+                              const TacsScalar X[],
+                              const TacsScalar vars[],
+                              const TacsScalar dvars[],
+                              const TacsScalar ddvars[] ){
+  // Set the gravity vector - if one exists
+  TacsScalar g[3] = {0.0, 0.0, 0.0};
+  if (gravity){
+    const TacsScalar *_g;
+    gravity->getVector(&_g);
+    g[0] = _g[0];  g[1] = _g[1];  g[2] = _g[2];
+  }
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the angular velocity and acceleration at the nodes
+  TacsScalar omega[3*NUM_NODES], domega[3*NUM_NODES];
+  computeAngularVelocity(omega, vars, dvars);
+  computeAngularAccel(domega, vars, dvars, ddvars);
+
+  // Compute the derivatives of the directors
+  TacsScalar dir[3*NUM_NODES], dirdq[12*NUM_NODES];
+  computeDirectors(dir, vars, Xr);
+  computeDirectorDeriv(dirdq, vars, Xr);
+
+  // Compute the derivative of the tying strain
+  TacsScalar g13[6], g23[6];
+  TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
+  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
+
+  for ( int j = 0; j < ORDER; j++ ){
+    for ( int i = 0; i < ORDER; i++ ){
+      // Set the Gauss quadrature points
+      const double u = gaussPts[i];
+      const double v = gaussPts[j];
+      
+      // The parametric point required for evaluating
+      // stresses/strains within the element
+      const double pt[2] = {u, v};
+
+      // Evaluate the shape functions
+      double N[NUM_NODES];
+      computeShapeFunc(u, v, N);
+
+      // Evaluate the derivatives of the shape functions
+      double Na[NUM_NODES], Nb[NUM_NODES];
+      computeShapeFunc(u, v, Na, Nb);
+
+      // Compute the derivative along the shape function
+      // directions
+      TacsScalar Xa[3], Xb[3];
+      innerProduct(Na, X, Xa);
+      innerProduct(Nb, X, Xb);
+
+      // Compute the frame normal
+      TacsScalar fn[3];
+      computeFrameNormal(N, Xr, fn);
+
+      // Evaluate the derivatives in the locally-aligned frame
+      TacsScalar Xd[9];
+      assembleFrame(Xa, Xb, fn, Xd);
+
+      // Compute the derivatives of the shape functions
+      TacsScalar Xdinv[9];
+      TacsScalar h = inv3x3(Xd, Xdinv);
+      h *= scale*gaussWts[i]*gaussWts[j];
+
+      // Evaluate the areal mass properties
+      TacsScalar rho[2];
+      stiff->getPointwiseMass(pt, rho);
+
+      // The following is used to evaluate the kinetic energy
+      // ---------------------------------------------------
+      // Evaluate the velocity at the quadrature point
+      TacsScalar a0[3];
+      innerProduct8(N, ddvars, a0);
+
+      // Compute the value of omega at the current point
+      TacsScalar omeg[3], domeg[3];
+      innerProduct(N, omega, omeg);
+      innerProduct(N, domega, domeg);
+
+      // Remove the normal component from angular velocity/accel.
+      // w = (I - fn*fn^{T})*omega
+      TacsScalar tmp, w[3], dw[3];
+      tmp = vecDot(omeg, fn);
+      w[0] = omeg[0] - tmp*fn[0];
+      w[1] = omeg[1] - tmp*fn[1];
+      w[2] = omeg[2] - tmp*fn[2];
+
+      tmp = vecDot(domeg, fn);
+      dw[0] = domeg[0] - tmp*fn[0];
+      dw[1] = domeg[1] - tmp*fn[1];
+      dw[2] = domeg[2] - tmp*fn[2];
+
+      // Add the contribution to the residual
+      TacsScalar mscale[2] = {0.0, 0.0};
+      const TacsScalar *p = psi;
+      const TacsScalar *q = vars, *dq = dvars;
+      for ( int ii = 0; ii < NUM_NODES; ii++ ){
+	// Add the contributions from the rectilinear velocity
+        mscale[0] += h*N[ii]*(a0[0]*p[0] + a0[1]*p[1] + a0[2]*p[2]);
+
+	// Add the contributions from the angular velocity
+	// S^{T}*dw + 2*dot{S}^{T}*w
+	TacsScalar eta = q[3];
+	const TacsScalar *eps = &q[4];
+	TacsScalar deta = dq[3];
+	const TacsScalar *deps = &dq[4];
+
+	// Add p^{T}*S^{T}*dw
+        TacsScalar t[3];
+        crossProduct(1.0, eps, dw, t);
+	mscale[1] -= 2.0*p[3]*h*N[ii]*vecDot(eps, dw);
+        mscale[1] += 2.0*h*N[ii]*(eta*vecDot(dw, &p[4]) + vecDot(t, &p[4]));
+
+	// Add p^{T}*2*dot{S}^{T}*w
+        crossProduct(1.0, deps, w, t);
+	mscale[1] -= 4.0*p[3]*h*N[ii]*vecDot(deps, w);
+        mscale[1] += 4.0*h*N[ii]*(deta*vecDot(w, &p[4]) + vecDot(t, &p[4]));
+
+        // Increment the pointers to the variables/multipliers
+	q += 8;
+	dq += 8;
+        p += 8;
+      }
+
+      // The following code is used to evaluate the potential energy
+      // -----------------------------------------------------------
+      // Evaluate the tying strain interpolation
+      double N13[6], N23[6];
+      computeTyingFunc(u, v, N13, N23);
+
+      // Compute the through-thickness derivative of [X,r]^{-1}
+      TacsScalar zXdinv[9];
+      computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+
+      // Compute the derivatives of Ua/Ub along the given directions
+      TacsScalar Ur[9], Ua[3], Ub[3], d[3];
+      innerProduct8(Na, vars, Ua);
+      innerProduct8(Nb, vars, Ub);
+      innerProduct(N, dir, d);
+      assembleFrame(Ua, Ub, d, Ur);
+
+      // Now compute the derivatives of the director along each
+      // coordinate direction
+      TacsScalar dr[9], da[3], db[3], zero[3];
+      innerProduct(Na, dir, da);
+      innerProduct(Nb, dir, db);
+      zero[0] = zero[1] = zero[2] = 0.0;
+      assembleFrame(da, db, zero, dr);
+
+      // Add the term due to the potential energy
+      TacsScalar Brot[8*NUM_NODES];
+      TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
+					  Xa, Xb, Ua, Ub, vars);
+
+      // Compute the transformation to the locally-aligned frame
+      TacsScalar T[9]; 
+
+      // Compute the cross product to find the normal direction
+      TacsScalar normal[3];
+      crossProduct(1.0, Xa, Xb, normal);
+      TacsScalar nrm = sqrt(vecDot(normal, normal));
+      vecScale(1.0/nrm, normal);
+
+      // Scale the Xa direction so that it is a unit vector
+      nrm = sqrt(vecDot(Xa, Xa));
+      vecScale(1.0/nrm, Xa);
+      // Compute the second perpendicular direction 
+      crossProduct(1.0, normal, Xa, Xb);
+      assembleFrame(Xa, Xb, normal, T);
+
+      // Compute the displacement-based strain
+      TacsScalar e[8], B[64*NUM_NODES];
+      evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+
+      // Add the contribution from the tying strain
+      addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+      addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
+
+      // Set the Lagrange multiplier associated with the strain
+      TacsScalar epsi[8];
+      TacsScalar rotPsi = 0.0;
+      epsi[0] = epsi[1] = epsi[2] = epsi[3] =
+        epsi[4] = epsi[5] = epsi[6] = epsi[7] = 0.0;
+
+      TacsScalar *b = B, *br = Brot;
+      for ( int ii = 0; ii < 8*NUM_NODES; ii++ ){
+        epsi[0] += b[0]*psi[ii];
+        epsi[1] += b[1]*psi[ii];
+        epsi[2] += b[2]*psi[ii];
+        epsi[3] += b[3]*psi[ii];
+        epsi[4] += b[4]*psi[ii];
+        epsi[5] += b[5]*psi[ii];
+        epsi[6] += b[6]*psi[ii];
+        epsi[7] += b[7]*psi[ii];
+        rotPsi += br[0]*psi[ii];
+        b += 8;
+        br++;
+      }
+
+      // Scale the psi vector by the determinant of the Jacobian
+      // transformation
+      for ( int k = 0; k < 8; k++ ){
+        epsi[k] *= h;
+      }
+
+      // Add the derivative contribution from the mass/area
+      stiff->addPointwiseMassDVSens(pt, mscale, fdvSens, dvLen);
+
+      // Add the derivative
+      stiff->addStiffnessDVSens(pt, e, epsi, h*rot*rotPsi,
+                                fdvSens, dvLen);
+    }
   }
 }
 
@@ -3201,7 +3460,7 @@ void MITC9::getStrain( TacsScalar e[],
   // Compute the displacement-based strain
   evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
   
-  // Add the contribution from the tying straint
+  // Add the contribution from the tying strain
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 }
 
@@ -3343,7 +3602,7 @@ void MITC9::getStrain( TacsScalar e[],
   TacsScalar e[8];
   evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
   
-  // Add the contribution from the tying straint
+  // Add the contribution from the tying strain
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 
   for ( int k = 0; k < 8; k++ ){
@@ -3392,7 +3651,7 @@ void MITC9::getStrain( TacsScalar e[],
     
   evalStrain(fd, Ur, dr, Xdinv, zXdinv, T);
   
-  // Add the contribution from the tying straint
+  // Add the contribution from the tying strain
   addTyingStrain(fd, N13, N23, g13, g23, Xdinv, T);
 
   for ( int i = 0; i < 8; i++ ){

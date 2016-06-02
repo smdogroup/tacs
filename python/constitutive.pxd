@@ -7,6 +7,9 @@ import numpy as np
 cimport numpy as np
 from libc.string cimport const_char
 
+# Import C methods for python
+from cpython cimport PyObject, Py_INCREF
+
 # Import from TACS for definitions
 from TACS cimport *
 
@@ -33,10 +36,9 @@ cdef extern from "SolidStiffness.h":
 
 cdef extern from "TACSConstitutiveWrapper.h":
     cdef cppclass PSStiffnessWrapper(PlaneStressStiffness):
-        PSStiffnessWrapper()
+        PSStiffnessWrapper(PyObject *obj)
 
         # Member functions
-        void *self_ptr
         void (*setdesignvars)(void*, const TacsScalar*, int)
         void (*getdesignvars)(void*, TacsScalar*, int)
         void (*getdesignvarrange)(void*, TacsScalar*, TacsScalar*, int)
@@ -55,10 +57,9 @@ cdef extern from "TACSConstitutiveWrapper.h":
                               TacsScalar, TacsScalar*, int)
 
     cdef cppclass FSDTStiffnessWrapper(FSDTStiffness):
-        FSDTStiffnessWrapper()
+        FSDTStiffnessWrapper(PyObject *obj)
 
         # Member functions
-        void *self_ptr
         void (*setdesignvars)(void*, const TacsScalar*, int)
         void (*getdesignvars)(void*, TacsScalar*, int)
         void (*getdesignvarrange)(void*, TacsScalar*, TacsScalar*, int)

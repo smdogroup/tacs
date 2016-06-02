@@ -252,11 +252,10 @@ cdef void ps_addfaildvsens(void *_self, const double *pt,
 cdef class pyPlaneStress(PlaneStress):
    def __cinit__(self, *args, **kwargs):
       cdef PSStiffnessWrapper *pointer
-      pointer = new PSStiffnessWrapper()
+      pointer = new PSStiffnessWrapper(<PyObject*>self)
       pointer.incref()
       
       # Set the function pointers
-      pointer.self_ptr = <void*>self
       pointer.setdesignvars = setdesignvars
       pointer.getdesignvars = getdesignvars
       pointer.getdesignvarrange = getdesignvarrange
@@ -453,11 +452,10 @@ cdef void fsdt_addfaildvsens(void *_self, const double *pt,
 cdef class pyFSDT(FSDT):
    def __cinit__(self, *args, **kwargs):
       cdef FSDTStiffnessWrapper *pointer
-      pointer = new FSDTStiffnessWrapper()
+      pointer = new FSDTStiffnessWrapper(<PyObject*>self)
       pointer.incref()
       
       # Set the function pointers
-      pointer.self_ptr = <void*>self
       pointer.setdesignvars = setdesignvars
       pointer.getdesignvars = getdesignvars
       pointer.getdesignvarrange = getdesignvarrange

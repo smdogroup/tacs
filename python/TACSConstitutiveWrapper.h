@@ -13,6 +13,7 @@
 
 #include "PlaneStressStiffness.h"
 #include "FSDTStiffness.h"
+#include "Python.h"
 
 /*
   The following class implements a basic wrapper for the
@@ -20,8 +21,14 @@
 */
 class PSStiffnessWrapper : public PlaneStressStiffness {
  public:
-  PSStiffnessWrapper(){
-    self_ptr = NULL;
+  PSStiffnessWrapper( PyObject *_self_ptr ){
+    self_ptr = _self_ptr;
+
+    // This causes a circular reference so the object is never
+    // deleted. This should be fixed properly using weak references,
+    // but I'm not 100% sure how to do this yet...
+    Py_INCREF(self_ptr);
+
     setdesignvars = NULL;
     getdesignvars = NULL;
     getdesignvarrange = NULL;
@@ -33,7 +40,9 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
     failstrainsens = NULL;
     addfaildvsens = NULL;
   }
-  ~PSStiffnessWrapper(){}
+  ~PSStiffnessWrapper(){
+    Py_DECREF(self_ptr);
+  }
 
   // Define the object name 
   // ----------------------
@@ -43,7 +52,7 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
 
   // Function pointers
   // -----------------
-  void *self_ptr; // Pointer to the python object
+  PyObject *self_ptr; // Pointer to the python object
   void (*setdesignvars)( void *, const TacsScalar *, int );
   void (*getdesignvars)( void *, TacsScalar *, int );
   void (*getdesignvarrange)( void *, TacsScalar *, TacsScalar *, int );
@@ -141,8 +150,9 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
 */
 class FSDTStiffnessWrapper : public FSDTStiffness {
  public:
-  FSDTStiffnessWrapper(){
-    self_ptr = NULL;
+  FSDTStiffnessWrapper( PyObject *_self_ptr ){
+    self_ptr = _self_ptr;
+    Py_INCREF(self_ptr);
     setdesignvars = NULL;
     getdesignvars = NULL;
     getdesignvarrange = NULL;
@@ -154,7 +164,9 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
     failstrainsens = NULL;
     addfaildvsens = NULL;
   }
-  ~FSDTStiffnessWrapper(){}
+  ~FSDTStiffnessWrapper(){
+    Py_DECREF(self_ptr);
+  }
 
   // Define the object name 
   // ----------------------
@@ -164,7 +176,7 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
 
   // Function pointers
   // -----------------
-  void *self_ptr; // Pointer to the python object
+  PyObject *self_ptr; // Pointer to the python object
   void (*setdesignvars)( void *, const TacsScalar *, int );
   void (*getdesignvars)( void *, TacsScalar *, int );
   void (*getdesignvarrange)( void *, TacsScalar *, TacsScalar *, int );
