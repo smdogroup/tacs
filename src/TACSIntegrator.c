@@ -28,8 +28,6 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   // compute the total number of time steps
   num_time_steps = int(double(num_steps_per_sec)*(tfinal-tinit)) + 1;
 
-  printf("num time steps: %d\n", num_time_steps);
-
   // Default print level
   print_level = 1;
 
@@ -66,8 +64,11 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   //------------------------------------------------------------------//
 
   // Frequency of Jacobian recomputation during nonlinear solve
-  jac_comp_freq = 1;
+  jac_comp_freq = 3;
 
+  // Set the default LINEAR solver
+  use_lapack = 0;
+  
   // Default parameters for Newton solve
   max_newton_iters = 25;
   atol = 1.0e-12;
@@ -178,9 +179,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
   // Iterate until max iters or R <= tol
   for ( int n = 0; n < max_newton_iters; n++ ){
     // Set the supplied initial input states into TACS
-    tacs->setVariables(q);
-    tacs->setDotVariables(qdot);
-    tacs->setDDotVariables(qddot);
+    setTACSStates(q, qdot, qddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
     if (n % jac_comp_freq == 0){
@@ -230,15 +229,29 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if (norm < rtol*init_norm || norm < atol){
       break;
     }
+    
+    if (!use_lapack) {    
+      // LU Factor the matrix when needed
+      if (n % jac_comp_freq == 0){
+	pc->factor();
+      }  
+      // Solve for update using KSM
+      ksm->solve(res, update);
+    }
+    else {
+      // Use lapack for linear solve      
+      TacsScalar *R, *J, *sol;
+      res->getArray(&R);
+      //mat->getMatrix(&J);
+      
+      linearSolve(J, R, num_state_vars);
 
-    // Factor the preconditioner
-    if (n % jac_comp_freq == 0){
-      pc->factor();
+      // Set the lapack solution into the distributed vector
+      TacsScalar *resvals;
+      update->getArray(&resvals);
+      memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));      
     }
     
-    // Solve for update using KSM
-    ksm->solve(res, update);
-   
     // Update the state variables using the solution
     qddot->axpy(-gamma, update);
     qdot->axpy(-beta, update);
@@ -344,6 +357,33 @@ void TacsIntegrator::setJacAssemblyFreq( int _jac_comp_freq ){
 }
 
 /*
+  Set whether or not to use LAPACK for linear solve
+*/
+void TacsIntegrator::setUseLapack( int _use_lapack ) {
+  use_lapack = _use_lapack;
+}
+
+/*
+  Solves the system Ax=b using LAPACK. The matrix's array A should be
+  supplied in row major order.
+*/
+void TacsIntegrator::linearSolve(TacsScalar *A, TacsScalar *b, int size) {
+  //  int size = num_state_vars;
+  int *dpiv = new int[size];
+  int info = 0;
+  LAPACKgetrf(&size, &size, A, &size, dpiv, &info);
+  if (info){
+    fprintf(stderr,"LAPACK GETRF output error %d\n", info);
+  }
+  
+  int one = 1;
+  LAPACKgetrs("T", &size, &one, A, &size, dpiv, b, &size, &info);
+  if (info){
+    fprintf(stderr,"LAPACK GETRS output error %d\n", info);
+  }
+}
+
+/*
   Set the pointer to the functions of interest that take part in the
   adjoint solve. If called for the second time the new set of
   functions will replace the existing ones.
@@ -364,6 +404,31 @@ void TacsIntegrator::setFunction( TACSFunction **_func, int _num_funcs ){
   num_func = _num_funcs;
   func = new TACSFunction*[ num_func ];
   memcpy(func, _func, num_func*sizeof(TACSFunction*));    
+}
+
+/*
+  Update TACS states with the supplied ones (q, qdot, qddot)
+*/
+void TacsIntegrator::setTACSStates( BVec *q, BVec *qdot, BVec * qddot ){
+  tacs->setVariables(q);
+  tacs->setDotVariables(qdot);
+  tacs->setDDotVariables(qddot);
+}
+
+/*
+  Perform sanity checks on the right hand side of adjoint linear
+  system
+*/
+void TacsIntegrator::checkAdjointRHS(BVec *rhs){
+  // The norm of the rhs vector shouldn't be zero or shouldn't contain
+  // Nan, Inf's etc
+  TacsScalar norm = rhs->norm();
+  if (norm != norm){ 
+    fprintf(stdout, "TACS Warning: Invalid entries detected in the adjoint RHS vector\n");
+  } 
+  else if (norm <= 1.0e-15) { 
+    fprintf(stdout, "TACS Warning: Zero RHS in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.\n");
+  }
 }
 
 /*
@@ -464,9 +529,7 @@ void TacsBDFIntegrator::adjointSolve(){
     double alpha = 1.0;
 
     // Set the states variables into TACS
-    tacs->setVariables(q[k]);
-    tacs->setDotVariables(qdot[k]);
-    tacs->setDDotVariables(qddot[k]);
+    setTACSStates(q[k], qdot[k], qddot[k]);
     
     // Setup the linear system for adjoint solve
     tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
@@ -518,9 +581,7 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   // Add the contribution from the j-th objective function df/dq. 
   if ( k == num_time_steps - 1 ) {
     // Set the states variables into TACS
-    tacs->setVariables(q[k]);
-    tacs->setDotVariables(qdot[k]);
-    tacs->setDDotVariables(qddot[k]);
+    setTACSStates(q[k], qdot[k], qddot[k]);
 
     // Must evaluate the function before the SVSens call
     TacsScalar funcVals;
@@ -533,28 +594,18 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   // Add contribution from the first derivative terms d{R}d{qdot}
   double scale;
   for ( int i = 1; i < nbdf; i++ ) {
-    if ( k+i <= num_time_steps-1 ) {
+    if ( k+i <= num_time_steps -1 ) {
       scale = bdf_coeff[i]/h;
-  
-      // Set the states variables into TACS
-      tacs->setVariables(q[k+i]);
-      tacs->setDotVariables(qdot[k+i]);
-      tacs->setDDotVariables(qddot[k+i]);
-  
+      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
       tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k+i], res, TRANSPOSE);
     }
   }
  
   // Add contribution from the second derivative terms d{R}d{qddot}
   for ( int i = 1; i < nbddf; i++ ) {
-    if ( k+i <= num_time_steps-1 ) {
+    if ( k+i <= num_time_steps -1 ) {
       scale = bddf_coeff[i]/h/h;
-    
-      // Set the states variables into TACS
-      tacs->setVariables(q[k+i]);
-      tacs->setDotVariables(qdot[k+i]);
-      tacs->setDDotVariables(qddot[k+i]);
-  
+      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
       tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k+i], res, TRANSPOSE);
     }
   }
@@ -566,8 +617,11 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
     fprintf(stdout, "TACS Warning: Invalid entries detected in the adjoint RHS vector\n");
   } 
   else if (norm <= 1.0e-15) { 
-    fprintf(stdout, "TACS Warning: Zero RHS at time step %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.\n", k);
+    fprintf(stdout, "TACS Warning: Zero RHS at time step %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.| \n", k);
   }
+
+  // Sanity check on the adjiont RHS
+  checkAdjointRHS(res);
 
   // Negative the RHS
   res->scale(-1.0);
@@ -902,9 +956,7 @@ void TacsDIRKIntegrator::adjointSolve(){
       double alpha = h*A[0]*h*A[0];
 
       // Set the stage states variables into TACS
-      tacs->setVariables(qS[toffset+i]);
-      tacs->setDotVariables(qdotS[toffset+i]);
-      tacs->setDDotVariables(qddotS[toffset+i]);
+      setTACSStates(qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
       
       // Setup the linear system for adjoint solve (gamma + delta?)
       tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
@@ -958,7 +1010,7 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   
   // Zero the RHS vector each time
   res->zeroEntries();
-  
+
   // Add the contribution from the objective function df/dq at
   // the last time step
   double scale;
@@ -976,9 +1028,7 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
 
       // Set the required states into TACS before calling the
       // derivative evaluation
-      tacs->setVariables(qS[toffset+j]);
-      tacs->setDotVariables(qdotS[toffset+j]);
-      tacs->setDDotVariables(qddotS[toffset+j]);
+      setTACSStates(qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
 
       // Must evaluate the function before the SVSens call
       TacsScalar funcVals;
@@ -1003,9 +1053,8 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
       }
       scale = scale1 + scale2;
 
-      tacs->setVariables(qS[off+j]);
-      tacs->setDotVariables(qdotS[off+j]);
-      tacs->setDDotVariables(qddotS[off+j]);
+      // Set the states into TACS
+      setTACSStates(qS[off+j], qdotS[off+j], qddotS[off+j]);
 
       // Part 2 (Add FUNCTIONAL contribution from stages of the NEXT
       // time step) Note: skipped at the last time step as we don't
@@ -1024,7 +1073,7 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
       // same time step 'scale' is same as previously computed
       // 'scale'
       tacs->addJacobianVecProduct(scale, 1.0, 0.0, 0.0, psi[off+j], res, TRANSPOSE); 
-
+      
       scale = weight*B[i]/h;
       tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[off+j], res, TRANSPOSE);
     }
@@ -1034,12 +1083,9 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
   for ( int j = i+1; j < num_stages; j++ ){
     double weight = B[j];
 
-    // Set the required states into TACS before calling the
-    // derivative evaluation
-    tacs->setVariables(qS[toffset+j]);
-    tacs->setDotVariables(qdotS[toffset+j]);
-    tacs->setDDotVariables(qddotS[toffset+j]);
-
+    // Set the required states into TACS
+    setTACSStates(qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
+    
     int idx1 = getIdx(j);
     scale = weight*A[idx1+i]/h;
     tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[toffset+j], res, TRANSPOSE);
@@ -1052,15 +1098,8 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
     tacs->addJacobianVecProduct(scale, 1.0, 0.0, 0.0, psi[toffset+j], res, TRANSPOSE);
   }
 
-  // The norm of the rhs vector shouldn't be zero or shouldn't contain
-  // Nan, Inf's etc
-  TacsScalar norm = res->norm();
-  if (norm != norm){ 
-    fprintf(stdout, "TACS Warning: Invalid entries detected in the adjoint RHS vector\n");
-  } 
-  else if (norm <= 1.0e-15) { 
-    fprintf(stdout, "TACS Warning: Zero RHS at time step %d stage %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.\n", k, i);
-  }
+  // Sanity check on the adjiont RHS
+  checkAdjointRHS(res);
 
   // Negate the RHS
   res->scale(-1.0);

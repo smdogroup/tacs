@@ -140,7 +140,7 @@ int main( int argc, char **argv ){
   //*****************************************************************//
   // Integrate using DIRK
   //*****************************************************************//
-
+  
   integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
 				      num_steps_per_sec, num_stages);
   integrator->incref();
@@ -151,7 +151,7 @@ int main( int argc, char **argv ){
   integrator->setMaxNewtonIters(24);
   integrator->setPrintLevel(2);
   integrator->setJacAssemblyFreq(1);
-
+  
   // Solve the equations over time
   printf(">> Integrating using DIRK\n");
 
@@ -185,7 +185,7 @@ int main( int argc, char **argv ){
   // Solve the equations over time
   printf(">> Integrating using BDF\n");
 
-  integrator->integrate();
+  integrator->integrate(); 
 
   // Set the function and solve for the adjoint variables
   printf(">> Adjoint solve using BDF\n");
@@ -208,3 +208,62 @@ int main( int argc, char **argv ){
 
   return 0;
 }
+// Test code for checking the linear solve
+/*
+  TacsScalar *A, *b;
+  
+  A = new TacsScalar[1];
+  b = new TacsScalar[1];
+  
+  A[0] = 2.5;
+  A[1] = 3.0;
+  A[2] = 4.0;
+  A[3] = 5.0;
+
+  b[0] = 3.0;
+  b[1] = 4.5;
+
+  integrator->linearSolve(A, b, 2);
+
+  printf("b= %f %f\n", b[0], b[1]);
+*/
+
+// Test the element
+/*
+  TestElement *test = new TestElement(elem, Xpts);
+  test->setPrintLevel(2);
+  test->testResidual();
+  for ( int k = 0; k < elem->numVariables(); k++ ){
+  test->testJacobian(k);
+  }
+*/
+
+// Testing logic of setting values in to the distributed vector
+/*
+  BVec *u = tacs->createVec();
+  int size;
+  u->getSize(&size);
+
+  TacsScalar *uvals;
+  u->getArray(&uvals);
+
+  // print original values
+  for ( int i = 0; i < size; i++) {
+  printf("q[%d]=%e\n", i, uvals[i]);
+  }  
+
+  // Generate random values for q
+  TacsScalar *q = new TacsScalar[ size ];
+  for ( int k = 0; k < size; k++ ){
+  q[k] = -0.5 + (1.0*rand())/RAND_MAX;
+  }
+  
+  // Overwrite the original values with new random values
+  memcpy(uvals, q, size*sizeof(TacsScalar));
+
+  // Once again fetch the pointer from the distributed vector
+  u->getArray(&uvals);
+  for ( int i = 0; i < size; i++) {
+  printf("q[%d]=%e\n", i, uvals[i]);
+  }
+*/

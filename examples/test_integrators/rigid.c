@@ -1,8 +1,10 @@
 #include "TACSIntegrator.h"
 #include "TACSAssembler.h"
 #include "RigidBody.h"
-#include "KSFailure.h"
 
+/*
+  Function to test the rigid body dynamics implementation
+*/
 int main( int argc, char *argv[] ){
   // Initialize MPI
   MPI_Init(&argc, &argv);
@@ -71,12 +73,19 @@ int main( int argc, char *argv[] ){
 
   // Create the TACSIntegrator object
   double t_init = 0.0, t_final = 1.0;
-  int steps_per_second = 100;
-  int num_stages = 2;
+  int steps_per_second = 100; int num_stages = 2;
   TacsDIRKIntegrator *dirk = new TacsDIRKIntegrator(tacs, t_init, t_final,
                                                     steps_per_second, num_stages);
   dirk->incref();
+
+  // Set optional parameters
+  dirk->setRelTol(1.0e-10);
+  dirk->setAbsTol(1.0e-14);
+  dirk->setMaxNewtonIters(24);
+  dirk->setPrintLevel(2);
+  dirk->setJacAssemblyFreq(1);
   
+  // Integrate and write solution to file
   dirk->integrate();
   dirk->writeSolution("solutionDIRK.dat");
 
@@ -85,16 +94,22 @@ int main( int argc, char *argv[] ){
   TacsBDFIntegrator *bdf = new TacsBDFIntegrator(tacs, t_init, t_final,
                                                  steps_per_second, 2);
   bdf->incref();
-  
+
+  // Set optional parameters
+  bdf->setRelTol(1.0e-10);
+  bdf->setAbsTol(1.0e-14);
+  bdf->setMaxNewtonIters(24);
+  bdf->setPrintLevel(2);
+  bdf->setJacAssemblyFreq(1);
+
   bdf->integrate();
 
-  bdf->setFunction(&func, 1);
-  bdf->adjointSolve();
-
+  // Integrate and write solution to file
   bdf->writeSolution("solutionBDF.dat");
 
   bdf->decref();
 
+  // Delete objects
   tacs->decref();
   bodyA->decref();
   bodyB->decref();
