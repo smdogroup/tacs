@@ -134,6 +134,15 @@ class MITC9 : public TACSElement {
                   const TacsScalar X[],
                   const TacsScalar vars[] );
 
+  // This function adds the sensitivity of the strain to the state variables
+  // -----------------------------------------------------------------------
+  void addStrainSVSens( TacsScalar sens[],
+			const double pt[], 
+			const TacsScalar scale,
+			const TacsScalar esens[], 
+			const TacsScalar Xpts[],
+			const TacsScalar vars[] );
+
   // Test the strain implementation
   // ------------------------------
   void testStrain( const TacsScalar X[] );

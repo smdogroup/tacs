@@ -1007,7 +1007,7 @@ void MITC9::addResidual( double time,
 
       // Add the contribution to the residual
       r = res;
-      TacsScalar *b = B, *br = Brot;
+      const TacsScalar *b = B, *br = Brot;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
 	r[0] += h*(strainProduct(s, &b[0]) + rot*br[0] - rho[0]*N[ii]*g[0]);
 	r[1] += h*(strainProduct(s, &b[8]) + rot*br[1] - rho[0]*N[ii]*g[1]);
@@ -1321,7 +1321,7 @@ void MITC9::addJacobian( double time, TacsScalar J[],
 	    // Compute the 
 	    TacsScalar pr = kpenalty*Brot[8*ii + ik];
 
-	    TacsScalar *b = B, *br = Brot;
+	    const TacsScalar *b = B, *br = Brot;
 	    TacsScalar *Jp = &J[8*NUM_NODES*(8*ii + ik)];
 	    for ( int jj = 0; jj < NUM_NODES; jj++ ){
 	      Jp[0] += h*(strainProduct(sbii, &b[0]) + pr*br[0]);
@@ -1579,7 +1579,7 @@ void MITC9::addAdjResProduct( double time, double scale,
       epsi[0] = epsi[1] = epsi[2] = epsi[3] =
         epsi[4] = epsi[5] = epsi[6] = epsi[7] = 0.0;
 
-      TacsScalar *b = B, *br = Brot;
+      const TacsScalar *b = B, *br = Brot;
       for ( int ii = 0; ii < 8*NUM_NODES; ii++ ){
         epsi[0] += b[0]*psi[ii];
         epsi[1] += b[1]*psi[ii];
@@ -3463,6 +3463,117 @@ void MITC9::getStrain( TacsScalar e[],
   // Add the contribution from the tying strain
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
 }
+
+/*
+  Add the derivative of the product of the array esens with the strain
+  with respect to the state variables
+*/
+void MITC9::addStrainSVSens( TacsScalar sens[],
+                             const double pt[], 
+                             const TacsScalar scale,
+                             const TacsScalar esens[], 
+                             const TacsScalar X[],
+                             const TacsScalar vars[] ){
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the derivatives of the directors
+  TacsScalar dir[3*NUM_NODES], dirdq[12*NUM_NODES];
+  computeDirectors(dir, vars, Xr);
+  computeDirectorDeriv(dirdq, vars, Xr);
+
+  // Compute the derivative of the tying strain
+  TacsScalar g13[6], g23[6];
+  TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
+  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
+
+  // Set the parametric locations
+  const double u = pt[0];
+  const double v = pt[1];
+
+  // Evaluate the shape functions
+  double N[NUM_NODES];
+  computeShapeFunc(u, v, N);
+
+  // Evaluate the derivatives of the shape functions
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  computeShapeFunc(u, v, Na, Nb);
+
+  // Compute the derivative along the shape function
+  // directions
+  TacsScalar Xa[3], Xb[3];
+  innerProduct(Na, X, Xa);
+  innerProduct(Nb, X, Xb);
+
+  // Compute the frame normal
+  TacsScalar fn[3];
+  computeFrameNormal(N, Xr, fn);
+
+  // Evaluate the derivatives in the locally-aligned frame
+  TacsScalar Xd[9];
+  assembleFrame(Xa, Xb, fn, Xd);
+
+  // Compute the derivatives of the shape functions
+  TacsScalar Xdinv[9];
+  inv3x3(Xd, Xdinv);
+
+  // Evaluate the tying strain interpolation
+  double N13[6], N23[6];
+  computeTyingFunc(u, v, N13, N23);
+
+  // Compute the through-thickness derivative of [X,r]^{-1}
+  TacsScalar zXdinv[9];
+  computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+
+  // Compute the derivatives of Ua/Ub along the given directions
+  TacsScalar Ur[9], Ua[3], Ub[3], d[3];
+  innerProduct8(Na, vars, Ua);
+  innerProduct8(Nb, vars, Ub);
+  innerProduct(N, dir, d);
+  assembleFrame(Ua, Ub, d, Ur);
+
+  // Now compute the derivatives of the director along each
+  // coordinate direction
+  TacsScalar dr[9], da[3], db[3], zero[3];
+  innerProduct(Na, dir, da);
+  innerProduct(Nb, dir, db);
+  zero[0] = zero[1] = zero[2] = 0.0;
+  assembleFrame(da, db, zero, dr);
+
+  // Compute the transformation to the locally-aligned frame
+  TacsScalar T[9]; 
+
+  // Compute the cross product to find the normal direction
+  TacsScalar normal[3];
+  crossProduct(1.0, Xa, Xb, normal);
+  TacsScalar nrm = sqrt(vecDot(normal, normal));
+  vecScale(1.0/nrm, normal);
+  
+  // Scale the Xa direction so that it is a unit vector
+  nrm = sqrt(vecDot(Xa, Xa));
+  vecScale(1.0/nrm, Xa);
+  // Compute the second perpendicular direction 
+  crossProduct(1.0, normal, Xa, Xb);
+  assembleFrame(Xa, Xb, normal, T);
+  
+  // Compute the displacement-based strain
+  TacsScalar e[8], B[64*NUM_NODES];
+  evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+  
+  // Add the contribution from the tying straint
+  addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+  addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
+
+  const TacsScalar *b = B;
+  for ( int ii = 0; ii < 8*NUM_NODES; ii++ ){
+    sens[ii] += 
+      scale*(b[0]*esens[0] + b[1]*esens[1] + b[2]*esens[2] + b[3]*esens[3] +
+             b[4]*esens[4] + b[5]*esens[5] + b[6]*esens[6] + b[7]*esens[7]);
+    b += 8;
+  }
+}
+
 
 /*
   Test the implementation of the strain by comparing against a
