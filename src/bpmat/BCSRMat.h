@@ -59,6 +59,7 @@ class BCSRMat : public TACSObject {
   void zeroRow( int row, int nvars, const int * vnums, int ident = 0 );
   void getArrays( int * _bsize, int * nrows, int * ncols, 
 		  const int ** rowp, const int ** cols, TacsScalar ** Avals );
+  void getDenseColumnMajor( TacsScalar *A );
 
   void copyValues( BCSRMat * mat );
   void scale( TacsScalar alpha );

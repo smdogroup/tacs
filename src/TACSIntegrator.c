@@ -240,16 +240,32 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
     else {
       // Use lapack for linear solve      
-      TacsScalar *R, *J, *sol;
+      TacsScalar *R, *sol;
       res->getArray(&R);
-      //mat->getMatrix(&J);
-      
-      linearSolve(J, R, num_state_vars);
 
-      // Set the lapack solution into the distributed vector
-      TacsScalar *resvals;
-      update->getArray(&resvals);
-      memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));      
+      // The following code retrieves a dense column-major 
+      // matrix from the FEMat matrix
+      TacsScalar *J = NULL;
+      FEMat *femat = dynamic_cast<FEMat*>(mat);
+      if (femat){
+        int bsize, nrows;
+        BCSRMat *B;
+        femat->getBCSRMat(&B, NULL, NULL, NULL);
+        B->getArrays(&bsize, &nrows, NULL, 
+                     NULL, NULL, NULL);
+        
+        J = new TacsScalar[ bsize*bsize*nrows*nrows ];
+        B->getDenseColumnMajor(J);
+
+        // Perform the linear solve
+        linearSolve(J, R, num_state_vars);
+        delete [] J;
+
+        // Set the lapack solution into the distributed vector
+        TacsScalar *resvals;
+        update->getArray(&resvals);
+        memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));      
+      }
     }
     
     // Update the state variables using the solution

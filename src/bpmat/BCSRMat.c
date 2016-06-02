@@ -2167,6 +2167,37 @@ void BCSRMat::getArrays( int * _bsize, int * _nrows, int * _ncols,
   if(Avals){ *Avals = data->A; }
 }
 
+/*
+  Get the matrix in a dense column-major format appropriate for LAPACK
+*/
+void BCSRMat::getDenseColumnMajor( TacsScalar *D ){
+  const int bsize = data->bsize;
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const TacsScalar *A = data->A;
+
+  // The leading dimension of the dense column matrix
+  const int ldd = bsize*nrows;
+
+  // Loop over the block rows
+  for ( int ib = 0; ib < nrows; ib++ ){
+    // Loop over the block columns
+    for ( int jp = rowp[ib]; jp < rowp[ib]; jp++ ){
+      int jb = cols[jb];
+
+      // Now iterate over the block indices
+      for ( int ii = 0; ii < bsize; ii++ ){
+        int i = ii + bsize*ib;
+        for ( int jj = 0; jj < bsize; jj++ ){
+          int j = jj + bsize*jb;
+          D[i + ldd*j] = A[jj + bsize*ii];
+        }
+      }
+    }
+  }
+}
+
 /*!
   Copy values from the given matrix into this matrix.
 
