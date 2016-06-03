@@ -169,11 +169,10 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
   TacsScalar norm = 0.0;
 
   if (print_level > 0){
-    fprintf(stdout, "%12s %8s %12s %12s %12s %12s\n",
-            "time", "Newton", "tcpu", "|R|", "|R|/|R0|", "delta");
+    fprintf(stdout, "%12s %8s %12s %12s %12s\n",
+            "time", "Newton", "tcpu", "|R|", "|R|/|R0|");
   }
   
-  double delta = gamma;
   double t0 = MPI_Wtime();
 
   // Iterate until max iters or R <= tol
@@ -183,21 +182,12 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
     // Assemble the Jacobian matrix once in five newton iterations
     if (n % jac_comp_freq == 0){
-      if (n > 0){
-        double frac = 10.0*RealPart(norm/(init_norm + rtol));
-        if (frac < 1.0){
-          delta = frac*gamma;
-        }
-        else {
-          delta = gamma;
-        }
-      }
-      tacs->assembleJacobian(res, mat, alpha, beta, gamma + delta, NORMAL);
-    } 
+      tacs->assembleJacobian(res, mat, alpha, beta, gamma, NORMAL);
+    }
     else {
       tacs->assembleRes(res);
-    }    
-
+    }
+    
     // Compute the L2-norm of the residual
     norm = res->norm();
     
@@ -209,12 +199,12 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Write a summary
     if(print_level > 0) {
       if (n == 0){
-        fprintf(stdout, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e\n",
-                t, n, MPI_Wtime()-t0, norm, norm/init_norm, delta);
+        fprintf(stdout, "%12.5e %8d %12.5e %12.5e %12.5e \n",
+                t, n, MPI_Wtime()-t0, norm, norm/init_norm);
       }
       else {
-        fprintf(stdout, "%12s %8d %12.5e %12.5e %12.5e %12.5e\n",
-                " ", n, MPI_Wtime()-t0, norm, norm/init_norm, delta);
+        fprintf(stdout, "%12s %8d %12.5e %12.5e %12.5e\n",
+                " ", n, MPI_Wtime()-t0, norm, norm/init_norm);
       }
     }
            
@@ -239,35 +229,41 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
       ksm->solve(res, update);
     }
     else {
-      // Use lapack for linear solve      
-      TacsScalar *R, *sol;
+      // Get the right hand side as an array
+      TacsScalar *R;
       res->getArray(&R);
-
+      
       // The following code retrieves a dense column-major 
       // matrix from the FEMat matrix
-      TacsScalar *J = NULL;
+      TacsScalar *J;
       FEMat *femat = dynamic_cast<FEMat*>(mat);
       if (femat){
         int bsize, nrows;
-        BCSRMat *B;
+	BCSRMat *B;
         femat->getBCSRMat(&B, NULL, NULL, NULL);
-        B->getArrays(&bsize, &nrows, NULL, 
-                     NULL, NULL, NULL);
-        
-        J = new TacsScalar[ bsize*bsize*nrows*nrows ];
-        B->getDenseColumnMajor(J);
+        B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+	
+	J = new TacsScalar[ bsize*bsize*nrows*nrows ];
 
-        // Perform the linear solve
-        linearSolve(J, R, num_state_vars);
-        delete [] J;
-
-        // Set the lapack solution into the distributed vector
-        TacsScalar *resvals;
-        update->getArray(&resvals);
-        memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));      
+        // Get the matrix in LAPACK column major order
+	B->getDenseColumnMajor(J);
       }
+      else {
+	fprintf(stderr,"Casting to FEMat failed\n");
+	exit(-1);
+      }
+
+      // Perform the linear solve
+      linearSolve(J, R, num_state_vars);
+
+      // Set the lapack solution into the distributed vector
+      TacsScalar *resvals;
+      update->getArray(&resvals);
+      memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));
+
+      if (J) { delete [] J; }
     }
-    
+
     // Update the state variables using the solution
     qddot->axpy(-gamma, update);
     qdot->axpy(-beta, update);
@@ -381,22 +377,32 @@ void TacsIntegrator::setUseLapack( int _use_lapack ) {
 
 /*
   Solves the system Ax=b using LAPACK. The matrix's array A should be
-  supplied in row major order.
+  supplied in column major order.
 */
 void TacsIntegrator::linearSolve(TacsScalar *A, TacsScalar *b, int size) {
-  //  int size = num_state_vars;
   int *dpiv = new int[size];
-  int info = 0;
+  int info = 0, one = 1;
+
+  // Perform LU factorization
   LAPACKgetrf(&size, &size, A, &size, dpiv, &info);
   if (info){
     fprintf(stderr,"LAPACK GETRF output error %d\n", info);
-  }
+    if (info < 0) {
+      fprintf(stderr,"LAPACK GETRF: %d-th argument had an illegal value\n", info);
+    } else {
+      fprintf(stderr,"LAPACK GETRF: The factorization has been completed, but the factor U(%d,%d) is exactly singular, and division by zero will occur if it is used to solve a system of equations\n", info, info);
+    }
+    exit(-1);
+  } 
   
-  int one = 1;
-  LAPACKgetrs("T", &size, &one, A, &size, dpiv, b, &size, &info);
+  // Apply factorization
+  LAPACKgetrs("N", &size, &one, A, &size, dpiv, b, &size, &info);
   if (info){
     fprintf(stderr,"LAPACK GETRS output error %d\n", info);
+    exit(-1);
   }
+
+  delete [] dpiv;
 }
 
 /*
@@ -511,7 +517,7 @@ void TacsBDFIntegrator::integrate(){
     
     // Determine the coefficients for Jacobian Assembly
     double gamma = bddf_coeff[0]/h/h;
-    double beta = bdf_coeff[0]/h;
+    double beta  = bdf_coeff[0]/h;
     double alpha = 1.0;
 
     // Solve the nonlinear system of equations
@@ -974,7 +980,7 @@ void TacsDIRKIntegrator::adjointSolve(){
       // Set the stage states variables into TACS
       setTACSStates(qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
       
-      // Setup the linear system for adjoint solve (gamma + delta?)
+      // Setup the linear system for adjoint solve
       tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
       
       // Perform LU factorization of the jacobian matrix

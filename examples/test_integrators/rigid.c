@@ -36,11 +36,13 @@ int main( int argc, char *argv[] ){
   TACSRevoluteConstraint *rev = new TACSRevoluteConstraint();
 
   // TestElement *test = new TestElement(rev);
-  TestElement *test = new TestElement(rev);
-  test->setPrintLevel(2);
-  for ( int i = 0; i < 24; i++ ){
+  /*
+    TestElement *test = new TestElement(rev);
+    test->setPrintLevel(2);
+    for ( int i = 0; i < 24; i++ ){
     test->testJacobian(i);
-  }
+    }
+  */
 
   // Set up the TACSAssembler object
   int num_nodes = 3;
@@ -66,10 +68,6 @@ int main( int argc, char *argv[] ){
   tacs->addElement(con, conn, 3);
 
   tacs->finalize();
-  int elem_id_nums[] = {0, 1}; 
-
-  // Create an objective function
-  TACSFunction *func =  new KSFailure(tacs, elem_id_nums, num_elems, 1.0, 100.0);
 
   // Create the TACSIntegrator object
   double t_init = 0.0, t_final = 1.0;
@@ -82,8 +80,9 @@ int main( int argc, char *argv[] ){
   dirk->setRelTol(1.0e-10);
   dirk->setAbsTol(1.0e-14);
   dirk->setMaxNewtonIters(24);
-  dirk->setPrintLevel(2);
+  dirk->setPrintLevel(1);
   dirk->setJacAssemblyFreq(1);
+  dirk->setUseLapack(0);
   
   // Integrate and write solution to file
   dirk->integrate();
@@ -99,12 +98,12 @@ int main( int argc, char *argv[] ){
   bdf->setRelTol(1.0e-10);
   bdf->setAbsTol(1.0e-14);
   bdf->setMaxNewtonIters(24);
-  bdf->setPrintLevel(2);
+  bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
-
-  bdf->integrate();
+  bdf->setUseLapack(0);
 
   // Integrate and write solution to file
+  bdf->integrate();
   bdf->writeSolution("solutionBDF.dat");
 
   bdf->decref();

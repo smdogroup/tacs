@@ -2177,21 +2177,24 @@ void BCSRMat::getDenseColumnMajor( TacsScalar *D ){
   const int *cols = data->cols;
   const TacsScalar *A = data->A;
 
+  // Zero the array first and fill the non-zeros alone
+  memset(D, 0, bsize*bsize*nrows*nrows*sizeof(TacsScalar));
+
   // The leading dimension of the dense column matrix
   const int ldd = bsize*nrows;
 
   // Loop over the block rows
   for ( int ib = 0; ib < nrows; ib++ ){
     // Loop over the block columns
-    for ( int jp = rowp[ib]; jp < rowp[ib]; jp++ ){
-      int jb = cols[jb];
+    for ( int jp = rowp[ib]; jp < rowp[ib+1]; jp++ ){
+      int jb = cols[jp];
 
       // Now iterate over the block indices
       for ( int ii = 0; ii < bsize; ii++ ){
-        int i = ii + bsize*ib;
+	int i = ii + bsize*ib;
         for ( int jj = 0; jj < bsize; jj++ ){
-          int j = jj + bsize*jb;
-          D[i + ldd*j] = A[jj + bsize*ii];
+	  int j = jj + bsize*jb;
+	  D[i + ldd*j] = A[bsize*bsize*jp + jj + bsize*ii ];
         }
       }
     }
