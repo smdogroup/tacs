@@ -2188,13 +2188,14 @@ void BCSRMat::getDenseColumnMajor( TacsScalar *D ){
     // Loop over the block columns
     for ( int jp = rowp[ib]; jp < rowp[ib+1]; jp++ ){
       int jb = cols[jp];
+      const TacsScalar *a = &A[bsize*bsize*jp];
 
       // Now iterate over the block indices
       for ( int ii = 0; ii < bsize; ii++ ){
 	int i = ii + bsize*ib;
         for ( int jj = 0; jj < bsize; jj++ ){
 	  int j = jj + bsize*jb;
-	  D[i + ldd*j] = A[bsize*bsize*jp + jj + bsize*ii ];
+	  D[i + ldd*j] = a[jj + bsize*ii];
         }
       }
     }

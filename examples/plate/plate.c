@@ -31,12 +31,12 @@ int main( int argc, char **argv ){
 
   // Set properties needed to create stiffness object 
   double rho = 2500.0;      // density, kg/m^3
-  double E = 70e9;          // elastic modulus, Pa
+  double E = 70e3;          // elastic modulus, Pa
   double nu = 0.3;          // poisson's ratio
   double kcorr = 5.0/6.0;   // shear correction factor
   double ys = 350e6;        // yield stress, Pa
 
-  int vars_per_node = 6;
+  int vars_per_node = 8;
 
   // Set up the global Gibbs vectors
   TacsScalar g[] = {0.0, 0.0, -9.81};
@@ -92,7 +92,7 @@ int main( int argc, char **argv ){
   /*-----------------------------------------------------------------*/
   /*-------------------------Setup Forces----------------------------*/
   /*-----------------------------------------------------------------*/
-
+  /*
   // Create the traction
   TACSElement *trac = new TACSShellTraction<2>(1.0, 1.0, 1.0);
   trac->incref();
@@ -109,7 +109,7 @@ int main( int argc, char **argv ){
   
   // Set the auxiliary element in to TACS
   tacs->setAuxElements(aux);
-
+  */
   /*-----------------------------------------------------------------*/
   /*------------------ Time Integration and Adjoint Solve -----------*/
   /*-----------------------------------------------------------------*/
@@ -117,7 +117,7 @@ int main( int argc, char **argv ){
   TacsIntegrator *integrator = NULL;
 
   double tinit = 0.0, tfinal = 0.5;
-  int num_steps_per_sec = 100, num_stages = 2, max_bdf_order = 2;
+  int num_steps_per_sec = 100, num_stages = 3, max_bdf_order = 2;
 
   // Create functions for adjoint solve
   TACSFunction *func = new KSFailure(tacs, 100.0, 1.0);
@@ -142,7 +142,7 @@ int main( int argc, char **argv ){
   integrator->setMaxNewtonIters(24);
   integrator->setPrintLevel(2);
   integrator->setJacAssemblyFreq(1);
-  integrator->setUseLapack(1);
+  integrator->setUseLapack(0);
 
   // Solve the equations over time
   printf(">> Integrating using DIRK\n");
@@ -156,11 +156,11 @@ int main( int argc, char **argv ){
   // integrator->adjointSolve();
 
   integrator->decref();
-
+ 
   //*****************************************************************//
   // Integrate using BDF
   //*****************************************************************//
-
+  /*
   integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
 				     num_steps_per_sec, max_bdf_order);
   integrator->incref();
@@ -187,7 +187,7 @@ int main( int argc, char **argv ){
   //integrator->adjointSolve();
 
   integrator->decref();
-
+*/
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS |
@@ -207,8 +207,8 @@ int main( int argc, char **argv ){
   v0->decref();
   omega0->decref();
   mesh->decref();
-  aux->decref();
-  trac->decref();
+  // aux->decref();
+  // trac->decref();
   tacs->decref();
   MPI_Finalize();
 

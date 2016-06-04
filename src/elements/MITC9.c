@@ -1031,7 +1031,7 @@ void MITC9::addResidual( double time,
     TacsScalar lamb = vars[8*i+7];
 
     // Enforce the quaternion constraint
-    res[8*i+7] = q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+    res[8*i+7] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
 
     // Add the result to the governing equations
     res[8*i+3] += 2.0*q[0]*lamb;
@@ -1354,16 +1354,16 @@ void MITC9::addJacobian( double time, TacsScalar J[],
     TacsScalar lamb = vars[8*i+7];
 
     // Add the constraint terms
-    Jp[4] = 2.0*alpha*q[0];
-    Jp[4+ldj] = 2.0*alpha*q[1];
-    Jp[4+2*ldj] = 2.0*alpha*q[2];
-    Jp[4+3*ldj] = 2.0*alpha*q[3];
+    Jp[4] += 2.0*alpha*q[0];
+    Jp[4+ldj] += 2.0*alpha*q[1];
+    Jp[4+2*ldj] += 2.0*alpha*q[2];
+    Jp[4+3*ldj] += 2.0*alpha*q[3];
 
     // Enforce the quaternion constraint
-    Jp[4*ldj] = 2.0*alpha*q[0];
-    Jp[4*ldj+1] = 2.0*alpha*q[1];
-    Jp[4*ldj+2] = 2.0*alpha*q[2];
-    Jp[4*ldj+3] = 2.0*alpha*q[3];
+    Jp[4*ldj] += 2.0*alpha*q[0];
+    Jp[4*ldj+1] += 2.0*alpha*q[1];
+    Jp[4*ldj+2] += 2.0*alpha*q[2];
+    Jp[4*ldj+3] += 2.0*alpha*q[3];
 
     // Add the terms to the diagonal
     Jp[0] += 2.0*alpha*lamb;

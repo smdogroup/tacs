@@ -444,6 +444,13 @@ any more elements\n", mpiRank);
     return -1;
   }  
 
+  // Check if the number of variables per node matches
+  if (element->numDisplacements() != varsPerNode){
+    fprintf(stderr, "[%d] Variables per node does not match element\n",
+            mpiRank);
+    return -1;
+  }
+
   // Determine if the maximum number of variables and nodes needs to be changed
   int elemSize = element->numVariables();
   if (elemSize  > maxElementSize){
@@ -598,8 +605,20 @@ void TACSAssembler::setAuxElements( TACSAuxElements *_aux_elems ){
   if (aux_elements){
     aux_elements->decref();
   }
-
   aux_elements = _aux_elems;
+
+  // Check whether the auxiliary elements match
+  int naux = 0;
+  TACSAuxElem *aux = NULL;
+  naux = aux_elements->getAuxElements(&aux);
+  for ( int k = 0; k < naux; k++ ){
+    int elem = aux[k].num;
+    if (elements[elem]->numVariables() != 
+        aux[k].elem->numVariables()){
+      fprintf(stderr, "[%d] Auxiliary element sizes do not match\n",
+              mpiRank);
+    }
+  }
 }
 
 /*
