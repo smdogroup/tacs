@@ -309,10 +309,9 @@ void TacsIntegrator::writeSolution( const char *filename ){
 }
 
 /*
-  Creates an f5 file for each time step and writes the data in the
-  provided directory
+  Creates an f5 file for each time step and writes the data
 */
-void TacsIntegrator::writeSolutionToF5( const char *dirname ){
+void TacsIntegrator::writeSolutionToF5(){
 
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
@@ -321,12 +320,22 @@ void TacsIntegrator::writeSolutionToF5( const char *dirname ){
                              TACSElement::OUTPUT_STRESSES |
                              TACSElement::OUTPUT_EXTRAS);
 
+  // Create a viewer
   TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
   f5->incref();
 
-  // Write the displacements
-  f5->writeToFile("solution.f5");
+  for ( int k = 0; k < num_time_steps; k++ ){    
+    // Set the current states into TACS
+    setTACSStates(q[k], qdot[k], qddot[k]);
 
+    // Make a filename
+    char fname[128];
+    sprintf(fname, "output/solution_%d.f5", k);
+
+    // Write the solution
+    f5->writeToFile(fname);
+
+  }
   // Delete the viewer
   f5->decref();
 }
