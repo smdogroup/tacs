@@ -38,10 +38,9 @@ class TacsIntegrator : public TACSObject {
   void writeSolution( const char *filename );
 
   // Call this function after integrating to write the solution to f5
-  // file in the user specified directory. Since it is written in
-  // binary form, it is faster.
+  // file. Since it is written in binary form, it is faster.
   // ------------------------------------------------------------------
-  void writeSolutionToF5( const char *dirname );
+  void writeSolutionToF5();
 
   // Useful setters for class variables. These setters must be called
   // before calling the 'integrate()' function. These won't have any
