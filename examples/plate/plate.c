@@ -43,7 +43,7 @@ int main( int argc, char **argv ){
 
   // Set properties needed to create stiffness object 
   double rho = 2500.0;      // density, kg/m^3
-  double E = 70e3;          // elastic modulus, Pa
+  double E = 70e9;          // elastic modulus, Pa
   double nu = 0.3;          // poisson's ratio
   double kcorr = 5.0/6.0;   // shear correction factor
   double ys = 350e6;        // yield stress, Pa
@@ -132,29 +132,28 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.5;
-  int num_steps_per_sec = 100, num_stages = 3, max_bdf_order = 3;
+  double tinit = 0.0, tfinal = 0.25;
+  int num_steps_per_sec = 250, num_stages = 3, max_bdf_order = 3;
 
   // Create functions for adjoint solve
   TACSFunction *func = new KSFailure(tacs, 100.0, 1.0);
 
   // Evaluate the function
   TacsScalar *funcVals = new TacsScalar[1];
-  tacs->evalFunctions( &func, 1, funcVals);
+  tacs->evalFunctions(&func, 1, funcVals);
   printf("KSFailure:%f\n=", funcVals[0]);
   delete [] funcVals;
 
   // Create an array of design variables
   int num_dvs = num_components;
 
-  TacsScalar *x = new TacsScalar[num_dvs];
-
-  TacsScalar *dfdx = new TacsScalar[num_dvs];
+  TacsScalar *x = new TacsScalar[ num_dvs ];
+  TacsScalar *dfdx = new TacsScalar[ num_dvs ];
   memset(dfdx, 0, num_dvs*sizeof(TacsScalar));
 
   // Ensure consistency of the design variable values
-  /* tacs->getDesignVars(x, num_dvs); */
-  /* tacs->setDesignVars(x, num_dvs); */
+  tacs->getDesignVars(x, num_dvs);
+  tacs->setDesignVars(x, num_dvs);
 
   if (!use_bdf) {
 
@@ -167,7 +166,7 @@ int main( int argc, char **argv ){
     integrator->incref();
 
     // Set optional parameters
-    integrator->setRelTol(1.0e-10);
+    integrator->setRelTol(1.0e-8);
     integrator->setAbsTol(1.0e-12);
     integrator->setMaxNewtonIters(24);
     integrator->setPrintLevel(2);
@@ -175,9 +174,10 @@ int main( int argc, char **argv ){
     integrator->setUseLapack(0);
 
     integrator->integrate();
-    integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
-    integrator->writeSolution("dirk.dat");
     integrator->writeSolutionToF5();
+    // integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
+    // integrator->writeSolution("dirk.dat");
+    
 
     integrator->decref();
 
@@ -192,7 +192,7 @@ int main( int argc, char **argv ){
     integrator->incref();
 
     // Set optional parameters
-    integrator->setRelTol(1.0e-10);
+    integrator->setRelTol(1.0e-8);
     integrator->setAbsTol(1.0e-12);
     integrator->setMaxNewtonIters(24);
     integrator->setPrintLevel(2);
@@ -200,17 +200,17 @@ int main( int argc, char **argv ){
     integrator->setUseLapack(0);
     
     integrator->integrate();
-    integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
-    integrator->testGradient(&func, 1, num_dvs, 1.0e-6);
-    integrator->writeSolution("bdf.dat");
+    /* integrator->adjointSolve(&func, 1, x, dfdx, num_dvs); */
+    /* integrator->testGradient(&func, 1, num_dvs, 1.0e-6); */
+    /* integrator->writeSolution("bdf.dat"); */
     integrator->writeSolutionToF5();
 
     integrator->decref();
 
   }
 
-  delete dfdx;
-  delete x;
+  delete [] dfdx;
+  delete [] x;
 
   gravity->decref();
   v0->decref();

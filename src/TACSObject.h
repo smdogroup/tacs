@@ -145,7 +145,7 @@ class TACSOptObject : public TACSObject {
     dvs:    An array of the design variable values 
     numDVs: The size of the array dvs
   */ 
-  virtual void getDesignVars( TacsScalar dvs[], int numDVs ) const {}
+  virtual void getDesignVars( TacsScalar dvs[], int numDVs ){}
 
   /*!
     Get the range of allowable design variable values
@@ -155,7 +155,7 @@ class TACSOptObject : public TACSObject {
     numDVs:      The size of the arrays lowerBound and upperBound
   */
   virtual void getDesignVarRange( TacsScalar lowerBound[], 
-				  TacsScalar upperBound[], int numDVs ) const {}
+				  TacsScalar upperBound[], int numDVs ){}
 };
 
 /*!  

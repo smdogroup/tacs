@@ -177,13 +177,15 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
   double t0 = MPI_Wtime();
 
   // Iterate until max iters or R <= tol
+  double delta = 0.0;
   for ( int n = 0; n < max_newton_iters; n++ ){
     // Set the supplied initial input states into TACS
     setTACSStates(q, qdot, qddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
     if (n % jac_comp_freq == 0){
-      tacs->assembleJacobian(res, mat, alpha, beta, gamma, NORMAL);
+      tacs->assembleJacobian(res, mat, alpha, beta, 
+                             gamma + delta, NORMAL);
     }
     else {
       tacs->assembleRes(res);
@@ -331,7 +333,7 @@ void TacsIntegrator::writeSolutionToF5(){
 
     // Make a filename
     char fname[128];
-    sprintf(fname, "output/solution_%d.f5", k);
+    sprintf(fname, "output/solution_%04d.f5", k);
 
     // Write the solution
     f5->writeToFile(fname);

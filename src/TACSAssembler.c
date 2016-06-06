@@ -1794,7 +1794,7 @@ void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
   
   // Get the design variables from the auxiliary elements
   if (aux_elements){
-    aux_elements->getDesignVars(dvs, numDVs);
+    aux_elements->getDesignVars(tempDVs, numDVs);
   }
 
   MPI_Allreduce(tempDVs, dvs, numDVs, TACS_MPI_TYPE, 

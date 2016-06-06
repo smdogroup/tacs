@@ -830,7 +830,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           num_elements++;
         }      
         else if (strncmp(line[0], "SPC", 3) == 0){
-          bc_vars_size += 6;
+          bc_vars_size += 8;
           num_bcs++;
         }
         else if (strncmp(line[0], "FFORCE", 6) == 0){	  
@@ -1211,9 +1211,9 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 	  
 	  // Read in the dof that will be constrained
 	  for ( int k = 24; k < 32; k++ ){
-	    char dofs[7] = "123456";
+	    char dofs[9] = "12345678";
 	    
-	    for ( int j = 0; j < 6; j++ ){
+	    for ( int j = 0; j < 8; j++ ){
 	      if (dofs[j] == line[0][k]){
 		bc_vars[bc_vars_size] = j;
 		bc_vals[bc_vars_size] = val;

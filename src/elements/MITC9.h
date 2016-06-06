@@ -143,6 +143,15 @@ class MITC9 : public TACSElement {
 			const TacsScalar Xpts[],
 			const TacsScalar vars[] );
 
+  // Functions for post-processing
+  // -----------------------------
+  void addOutputCount( int * nelems, int * nnodes, int * ncsr );
+  void getOutputData( unsigned int out_type, 
+		      double * data, int ld_data,
+		      const TacsScalar Xpts[],
+		      const TacsScalar vars[] );
+  void getOutputConnectivity( int * con, int node );
+
   // Test the strain implementation
   // ------------------------------
   void testStrain( const TacsScalar X[] );
