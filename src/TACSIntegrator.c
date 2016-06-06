@@ -577,9 +577,7 @@ void TacsBDFIntegrator::adjointSolve(){
 
   }
 
-  // Compute the total derivative
-  
-  // Print Lagrange multipliers
+  // Print Lagrange multipliers (just here for temporary debugging)
   if ( print_level > 1 ){
     TacsScalar *psivals;
     for ( int k = 1; k < num_time_steps; k++ ){    
@@ -591,6 +589,78 @@ void TacsBDFIntegrator::adjointSolve(){
       printf("\n");
     }
   }
+
+  /* 
+     Next we compute the total derivative of the function with respect
+     to the design variables. d{}/d{}'s are partial derivatives.
+     
+     df/dx =  d{f}/d{x] + psi^T d{R}/d{x}
+
+     Note:
+     
+     (1) Currently use just with a single function f. For more
+     functions use the same calling sequence: 
+     . setFunction(f, 1)
+     . adjointSolve()
+     using the integrator object
+
+     (2) Works with consitutive design variables only
+     
+  */
+  
+  //  How to set 'X' at which DFDX is evaluated and what is the length
+  //  of x (i.e.) the num_dvs. X values typically come from the
+  //  optimizer but not sure how this maps to the material design
+  //  variables within TACS.
+  
+  int num_dvs = 1; // where to get this from?
+
+  // Create an array of design variables
+  TacsScalar *x = new TacsScalar[num_dvs];
+  x[0] = 1.0;
+  
+  // Set the design varible values into TACS
+  tacs->setDesignVars(x, num_dvs);
+ 
+  // Create an array for the total derivative
+  TacsScalar *dfdx = new TacsScalar[num_dvs];
+  memset(dfdx, 0, num_dvs*sizeof(TacsScalar));
+  TacsScalar *dfdxTmp = new TacsScalar[num_dvs];
+  
+  // Multiply the lagrange multipliers with d{R}/d{x}
+  for (int k = 1; k < num_time_steps; k++) {
+    // Set the state variables into TACS
+    setTACSStates(q[k], qdot[k], qddot[k]);
+
+    // Add dfdx contribution from the last time step
+    if ( k == num_time_steps-1 ){
+      // Must evaluate the function before the DVSens call
+      TacsScalar funcVals;
+      tacs->evalFunctions(&func[0], 1, &funcVals);
+
+      tacs->evalDVSens(&func[0], num_func, dfdxTmp, num_dvs);
+      for ( int m = 0; m < num_dvs; m++) {
+	dfdx[m] += dfdxTmp[m];
+      }      
+      // Print the total derivative
+      for ( int m = 0; m < num_dvs; m++) {
+	printf("BDF: x[%d]=%e dfdx[%d]=%e \n", m, x[m], m, dfdx[m]);
+      }
+    }
+    tacs->evalAdjointResProducts(&psi[k], 1, dfdxTmp, num_dvs);
+    for ( int m = 0; m < num_dvs; m++) {
+      dfdx[m] += dfdxTmp[m];
+    }
+  }
+  
+  // Print the total derivative
+  for ( int m =0; m < num_dvs; m++) {
+    printf("BDF: x[%d]=%e dfdx[%d]=%e \n", m, x[m], m, dfdx[m]);
+  }
+
+  delete [] dfdx;  
+  delete [] dfdxTmp;  
+  delete [] x;
 }
 
 /*
@@ -641,17 +711,7 @@ void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
     }
   }
   
-  // The norm of the rhs vector shouldn't be zero or shouldn't contain
-  // Nan, Inf's etc
-  TacsScalar norm = res->norm();
-  if (norm != norm) { 
-    fprintf(stdout, "TACS Warning: Invalid entries detected in the adjoint RHS vector\n");
-  } 
-  else if (norm <= 1.0e-15) { 
-    fprintf(stdout, "TACS Warning: Zero RHS at time step %d in adjoint linear system. The Lagrange multipliers will be zero. Check the state variables/SVSens implementation.| \n", k);
-  }
-
-  // Sanity check on the adjiont RHS
+  // Sanity check on the adjoint RHS
   checkAdjointRHS(res);
 
   // Negative the RHS
@@ -672,8 +732,11 @@ void TacsBDFIntegrator::approxStates( BVec **q, BVec **qdot, BVec **qddot ){
   // get the BDF coefficients
   get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
   
-  // copy over the q values from previous time step into the current q
+  // Extrapolate to next time step: q[k] = q[k-1] + h*qdot[k-1] +
+  // h^2/2*qddot[k-1] (helps reduce the initial residual)
   q[k]->copyValues(q[k-1]);
+  q[k]->axpy(h, qdot[k-1]);
+  q[k]->axpy(h*h/2.0, qddot[k-1]);
 
   // approximate qdot using BDF formula
   for ( int i = 0; i < nbdf; i++ ){
@@ -1003,9 +1066,7 @@ void TacsDIRKIntegrator::adjointSolve(){
       pc->applyFactor(&res[0], psi[toffset+i]);
     }
   }
-
-  // Compute the total derivative
-  
+ 
   // Print Lagrange multipliers
   if ( print_level > 1 ){
     TacsScalar *psivals;
@@ -1021,6 +1082,76 @@ void TacsDIRKIntegrator::adjointSolve(){
       }
     }
   }
+
+  /* 
+     Next we compute the total derivative of the function with respect
+     to the design variables. d{}/d{}'s are partial derivatives.
+     
+     df/dx =  d{f}/d{x] + psi^T d{R}/d{x}
+     
+     Note:
+     
+     (1) Currently use just with a single function f. For more
+     functions use the same calling sequence: 
+     . setFunction(f, 1)
+     . adjointSolve()
+     using the integrator object
+     
+     (2) Works with consitutive design variables only
+     
+  */
+  
+  //  How to set 'X' at which DFDX is evaluated and what is the length
+  //  of x (i.e.) the num_dvs. X values typically come from the
+  //  optimizer but not sure how this maps to the material design
+  //  variables within TACS.
+
+  int num_dvs = 1; // where to get this from?
+
+  // Create an array of design variables
+  TacsScalar *x = new TacsScalar[num_dvs];
+  x[0] = 1.0;
+
+  // Set the design varible values into TACS
+  tacs->setDesignVars(x, num_dvs);
+  
+  // Create an array for the total derivative
+  TacsScalar *dfdx = new TacsScalar[num_dvs];
+  memset(dfdx, 0, num_dvs*sizeof(TacsScalar));
+  TacsScalar *dfdxTmp = new TacsScalar[num_dvs];
+
+  // Multiply the lagrange multipliers with d{R}/d{x}
+  for (int k = num_time_steps-1; k < num_time_steps; k++) {
+    for (int i = 0; i < num_stages; i++) {
+      // Set the states into TACS
+      setTACSStates(qS[k*num_stages+i], qdotS[k*num_stages+i], qddotS[k*num_stages+i]);
+      // Add dfdx contribution from the last time step
+      if ( k == num_time_steps-1 ){
+	// Must evaluate the function before the DVSens call
+	TacsScalar funcVals;
+	tacs->evalFunctions(&func[0], 1, &funcVals);
+       
+       	tacs->evalDVSens(&func[0], num_func, dfdxTmp, num_dvs);
+	for ( int m = 0; m < num_dvs; m++) {
+	  dfdx[m] += dfdxTmp[m];
+	}      
+      }
+      // Add the contribution from psi[k,i]^T d{R}/d{x}
+      tacs->evalAdjointResProducts(&psi[k*num_stages+i], 1, dfdxTmp, num_dvs);
+      for ( int m = 0; m < num_dvs; m++) {
+	dfdx[m] += dfdxTmp[m];
+      }
+    }
+  }
+
+  // Print the total derivative
+  for ( int m =0; m < num_dvs; m++) {
+    printf("DIRK: x[%d]=%e dfdx[%d]=%e \n", m, x[m], m, dfdx[m]);
+  }
+
+  delete [] dfdx;  
+  delete [] dfdxTmp;  
+  delete [] x;
 }
 
 /*

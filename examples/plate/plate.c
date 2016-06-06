@@ -7,12 +7,24 @@
 /*
   Function that sets up the rotor blade dynamics in TACS and
   integrates over time, solve the adjoint.
+
+  ./plate BDF/DIRK
 */
 int main( int argc, char **argv ){
 
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
+
+  // Choice of integrator from command line
+  int use_bdf = 0, test_element = 0;;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp("BDF", argv[i]) == 0){
+      use_bdf = 1;
+    } else if (strcmp("test_element", argv[i]) == 0){
+      test_element = 1;
+    }
+  }
 
   /*-----------------------------------------------------------------*/
   /*----------------Load Mesh and Setup TACS ------------------------*/
@@ -76,17 +88,21 @@ int main( int argc, char **argv ){
   // Create tacs assembler from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
-  
-  // Extract the element
-  TacsScalar Xpts[3*9];
-  TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
 
-  // Test the element;
-  TestElement *test = new TestElement(elem, Xpts);
-  test->setPrintLevel(2);
-  test->testResidual();
-  for ( int k = 0; k < elem->numVariables(); k++ ){
-    test->testJacobian(k);
+  if (test_element) {
+    // Extract the element
+    TacsScalar Xpts[3*9];
+    TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
+    
+    // Test the element;
+    TestElement *test = new TestElement(elem, Xpts);
+    test->incref();
+    test->setPrintLevel(2);
+    test->testResidual();
+    for ( int k = 0; k < elem->numVariables(); k++ ){
+      test->testJacobian(k);
+    }
+    test->decref();
   }
   
   /*-----------------------------------------------------------------*/
@@ -117,7 +133,7 @@ int main( int argc, char **argv ){
   TacsIntegrator *integrator = NULL;
 
   double tinit = 0.0, tfinal = 0.5;
-  int num_steps_per_sec = 100, num_stages = 3, max_bdf_order = 2;
+  int num_steps_per_sec = 100, num_stages = 3, max_bdf_order = 3;
 
   // Create functions for adjoint solve
   TACSFunction *func = new KSFailure(tacs, 100.0, 1.0);
@@ -125,91 +141,77 @@ int main( int argc, char **argv ){
   // Evaluate the function
   TacsScalar *funcVals = new TacsScalar[1];
   tacs->evalFunctions( &func, 1, funcVals);
-
   printf("KSFailure:%f\n=", funcVals[0]);
+  delete [] funcVals;
 
-  //*****************************************************************//
-  // Integrate using DIRK
-  //*****************************************************************//
+  if (!use_bdf) {
+
+    //*****************************************************************//
+    // Integrate using DIRK
+    //*****************************************************************//
+
+    integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
+					num_steps_per_sec, num_stages);
+    integrator->incref();
+
+    // Set optional parameters
+    integrator->setRelTol(1.0e-10);
+    integrator->setAbsTol(1.0e-12);
+    integrator->setMaxNewtonIters(24);
+    integrator->setPrintLevel(2);
+    integrator->setJacAssemblyFreq(1);
+    integrator->setUseLapack(0);
+
+    // Solve the equations over time
+    printf(">> Integrating using DIRK\n");
+    integrator->integrate();
+    integrator->writeSolution("dirk.dat");
+
+    // Set the function and solve for the adjoint variables
+    printf(">> Adjoint solve using DIRK\n");
+    integrator->setFunction(&func, 1);
+    integrator->adjointSolve();
+
+    integrator->decref();
+
+  } else {
+
+    //*****************************************************************//
+    // Integrate using BDF
+    //*****************************************************************// 
   
-  integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
-				      num_steps_per_sec, num_stages);
-  integrator->incref();
+    integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
+				       num_steps_per_sec, max_bdf_order);
+    integrator->incref();
 
-  // Set optional parameters
-  integrator->setRelTol(1.0e-7);
-  integrator->setAbsTol(1.0e-12);
-  integrator->setMaxNewtonIters(24);
-  integrator->setPrintLevel(2);
-  integrator->setJacAssemblyFreq(1);
-  integrator->setUseLapack(0);
+    // Set optional parameters
+    integrator->setRelTol(1.0e-10);
+    integrator->setAbsTol(1.0e-12);
+    integrator->setMaxNewtonIters(24);
+    integrator->setPrintLevel(2);
+    integrator->setJacAssemblyFreq(1);
+    integrator->setUseLapack(0);
 
-  // Solve the equations over time
-  printf(">> Integrating using DIRK\n");
+    // Solve the equations over time
+    printf(">> Integrating using BDF\n");
+    integrator->integrate();
+    integrator->writeSolution("bdf.dat");
 
-  integrator->integrate();
+    // Set the function and solve for the adjoint variables
+    printf(">> Adjoint solve using BDF\n");
+    integrator->setFunction(&func, 1);
+    integrator->adjointSolve();
+  }
 
-  // Set the function and solve for the adjoint variables
-  printf(">> Adjoint solve using DIRK\n");
-
-  // integrator->setFunction(&func, 1);
-  // integrator->adjointSolve();
-
-  integrator->decref();
- 
-  //*****************************************************************//
-  // Integrate using BDF
-  //*****************************************************************//
-  /*
-  integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
-				     num_steps_per_sec, max_bdf_order);
-  integrator->incref();
-  
-  func = new KSFailure(tacs, 100.0, 1.0);
-
-  // Set optional parameters
-  integrator->setRelTol(1.0e-7);
-  integrator->setAbsTol(1.0e-12);
-  integrator->setMaxNewtonIters(24);
-  integrator->setPrintLevel(2);
-  integrator->setJacAssemblyFreq(1);
-  integrator->setUseLapack(1);
-
-  // Solve the equations over time
-  printf(">> Integrating using BDF\n");
-
-  integrator->integrate();
-
-  // Set the function and solve for the adjoint variables
-  printf(">> Adjoint solve using BDF\n");
-
-  //integrator->setFunction(&func, 1);
-  //integrator->adjointSolve();
-
-  integrator->decref();
-*/
-  // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
-
-  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
-  f5->incref();
-
-  // Write the displacements
-  f5->writeToFile("solution.f5");
-
-  // Delete the viewer
-  f5->decref();
   gravity->decref();
   v0->decref();
   omega0->decref();
   mesh->decref();
+  tacs->decref();
+
   // aux->decref();
   // trac->decref();
-  tacs->decref();
+  
   MPI_Finalize();
 
   return 0;
