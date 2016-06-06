@@ -25,23 +25,7 @@ class TacsIntegrator : public TACSObject {
   // Destructor
   //-----------
   ~TacsIntegrator();
-  
-  // Method to solve the non-linear system using Newton's method
-  //------------------------------------------------------------
-  void newtonSolve( double alpha, double beta, double gamma,
-                    double t, BVec *q, BVec *qdot, 
-                    BVec *qddot );
-
-  // Call this function after integrating to write the solution to
-  // file in ASCII text format (might be slower for bigger problems)
-  // ------------------------------------------------------------------
-  void writeSolution( const char *filename );
-
-  // Call this function after integrating to write the solution to f5
-  // file. Since it is written in binary form, it is faster.
-  // ------------------------------------------------------------------
-  void writeSolutionToF5();
-
+ 
   // Useful setters for class variables. These setters must be called
   // before calling the 'integrate()' function. These won't have any
   // effect after the integrate call has been made as default values
@@ -53,7 +37,33 @@ class TacsIntegrator : public TACSObject {
   void setPrintLevel( int _print_level );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
+
+  // Call this function after integrating to write the solution to
+  // file in ASCII text format (might be slower for bigger problems)
+  // ------------------------------------------------------------------
+  void writeSolution( const char *filename );
+
+  // Call this function after integrating to write the solution to f5
+  // file. Since it is written in binary form, it is faster.
+  // ------------------------------------------------------------------
+  void writeSolutionToF5();
+
+  // Pure virtual function that the derived classes must override/implement
+  //-----------------------------------------------------------------------
+  virtual void integrate() = 0;
+
+  // Pure virtual function for solving the adjoint variables
+  //--------------------------------------------------------
+  virtual void adjointSolve( TACSFunction **_func, int _num_funcs, 
+			     TacsScalar *x, TacsScalar *dfdx, int num_dv ) = 0;
   
+ protected:
+  // Method to solve the non-linear system using Newton's method
+  //------------------------------------------------------------
+  void newtonSolve( double alpha, double beta, double gamma,
+                    double t, BVec *q, BVec *qdot, 
+                    BVec *qddot );
+
   // Calls LAPACK for the the solution of the linear system Ax =
   // b. The matrix A should be supplied in row major order
   void linearSolve( TacsScalar *A, TacsScalar *b, int size );
@@ -69,15 +79,6 @@ class TacsIntegrator : public TACSObject {
   // Sanity checks on the RHS of the adjoint linear system
   void checkAdjointRHS( BVec *rhs );
 
-  // Pure virtual function that the derived classes must override/implement
-  //-----------------------------------------------------------------------
-  virtual void integrate() = 0;
-
-  // Pure virtual function for solving the adjoint variables
-  //--------------------------------------------------------
-  virtual void adjointSolve() = 0;
-  
- protected:
   // Instance of TACS
   TACSAssembler *tacs; 
   
@@ -139,7 +140,8 @@ class TacsDIRKIntegrator : public TacsIntegrator {
 
   // solve for adjoint variables
   //----------------------------
-  void adjointSolve();
+  void adjointSolve( TACSFunction **_func, int _num_funcs, 
+		     TacsScalar *x, TacsScalar *dfdx, int num_dvs );
   
  private:
   // the number of stage in RK scheme
@@ -204,7 +206,8 @@ class TacsBDFIntegrator : public TacsIntegrator {
 
   // solve for adjoint variables
   //----------------------------
-  void adjointSolve();
+  void adjointSolve( TACSFunction **_func, int _num_funcs, 
+		     TacsScalar *x, TacsScalar *dfdx, int num_dvs );
   
  private:  
 

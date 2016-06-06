@@ -110,7 +110,7 @@ int main( int argc, char **argv ){
   /*-----------------------------------------------------------------*/
   /*
   // Create the traction
-  TACSElement *trac = new TACSShellTraction<2>(1.0, 1.0, 1.0);
+  TACSElement *trac = new TACSShellTraction<3>(0.0, 0.0, 0.01);
   trac->incref();
   
   // Create the auxiliary element class
@@ -120,7 +120,7 @@ int main( int argc, char **argv ){
 
   // Associate the traction with each auxiliary element
   for ( int i = 0; i < nelems; i++ ){
-    aux->addElement(i, trac);
+  aux->addElement(i, trac);
   }
   
   // Set the auxiliary element in to TACS
@@ -144,6 +144,18 @@ int main( int argc, char **argv ){
   printf("KSFailure:%f\n=", funcVals[0]);
   delete [] funcVals;
 
+  // Create an array of design variables
+  int num_dvs = num_components;
+
+  TacsScalar *x = new TacsScalar[num_dvs];
+
+  TacsScalar *dfdx = new TacsScalar[num_dvs];
+  memset(dfdx, 0, num_dvs*sizeof(TacsScalar));
+
+  // Ensure consistency of the design variable values
+  /* tacs->getDesignVars(x, num_dvs); */
+  /* tacs->setDesignVars(x, num_dvs); */
+
   if (!use_bdf) {
 
     //*****************************************************************//
@@ -162,15 +174,9 @@ int main( int argc, char **argv ){
     integrator->setJacAssemblyFreq(1);
     integrator->setUseLapack(0);
 
-    // Solve the equations over time
-    printf(">> Integrating using DIRK\n");
     integrator->integrate();
+    integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
     integrator->writeSolution("dirk.dat");
-
-    // Set the function and solve for the adjoint variables
-    printf(">> Adjoint solve using DIRK\n");
-    integrator->setFunction(&func, 1);
-    integrator->adjointSolve();
 
     integrator->decref();
 
@@ -179,7 +185,7 @@ int main( int argc, char **argv ){
     //*****************************************************************//
     // Integrate using BDF
     //*****************************************************************// 
-  
+
     integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
 				       num_steps_per_sec, max_bdf_order);
     integrator->incref();
@@ -191,17 +197,17 @@ int main( int argc, char **argv ){
     integrator->setPrintLevel(2);
     integrator->setJacAssemblyFreq(1);
     integrator->setUseLapack(0);
-
-    // Solve the equations over time
-    printf(">> Integrating using BDF\n");
+    
     integrator->integrate();
+    integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
     integrator->writeSolution("bdf.dat");
 
-    // Set the function and solve for the adjoint variables
-    printf(">> Adjoint solve using BDF\n");
-    integrator->setFunction(&func, 1);
-    integrator->adjointSolve();
+    integrator->decref();
+
   }
+
+  delete dfdx;
+  delete x;
 
   gravity->decref();
   v0->decref();
