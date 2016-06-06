@@ -154,14 +154,15 @@ int main( int argc, char **argv ){
   
   // Solve the equations over time
   printf(">> Integrating using DIRK\n");
-
+  
   integrator->integrate();
+  integrator->writeSolutionToF5();
 
   // Set the function and solve for the adjoint variables
   printf(">> Adjoint solve using DIRK\n");
 
-  integrator->setFunction(&func, 1);
-  integrator->adjointSolve();
+  //  integrator->setFunction(&func, 1);
+  //  integrator->adjointSolve();
 
   integrator->decref();
 
@@ -186,12 +187,13 @@ int main( int argc, char **argv ){
   printf(">> Integrating using BDF\n");
 
   integrator->integrate(); 
+  integrator->writeSolutionToF5();
 
   // Set the function and solve for the adjoint variables
   printf(">> Adjoint solve using BDF\n");
 
-  integrator->setFunction(&func, 1);
-  integrator->adjointSolve();
+  /* integrator->setFunction(&func, 1); */
+  /* integrator->adjointSolve(); */
   
   integrator->decref();
 

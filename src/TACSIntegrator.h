@@ -48,6 +48,10 @@ class TacsIntegrator : public TACSObject {
   // ------------------------------------------------------------------
   void writeSolutionToF5();
 
+  // A function to test the adjoint implementation
+  //------------------------------------------------
+  void testGradient( TACSFunction **funcs, int numFuncs, int numDVs, double dh );
+  
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;

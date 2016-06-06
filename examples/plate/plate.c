@@ -177,6 +177,7 @@ int main( int argc, char **argv ){
     integrator->integrate();
     integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
     integrator->writeSolution("dirk.dat");
+    integrator->writeSolutionToF5();
 
     integrator->decref();
 
@@ -200,7 +201,9 @@ int main( int argc, char **argv ){
     
     integrator->integrate();
     integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
+    integrator->testGradient(&func, 1, num_dvs, 1.0e-6);
     integrator->writeSolution("bdf.dat");
+    integrator->writeSolutionToF5();
 
     integrator->decref();
 

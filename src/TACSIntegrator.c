@@ -54,6 +54,7 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
 
   // Get the number of state variables and store into the class variable
   q[0]->getSize(&num_state_vars);
+  printf("num_state_vars:%d\n",num_state_vars);
   
   // store time
   time = new double[num_time_steps];
@@ -338,6 +339,72 @@ void TacsIntegrator::writeSolutionToF5(){
   }
   // Delete the viewer
   f5->decref();
+}
+
+/*
+  Function to test the adjoint implementation using complex
+  step/finite difference method
+*/
+void TacsIntegrator::testGradient( TACSFunction **funcs, int numFuncs, 
+				   int numDVs, double dh ) {
+  // Allocate a design variable array
+  TacsScalar *x = new TacsScalar[numDVs]; 
+ 
+  TacsScalar *fvals = new TacsScalar[numFuncs];
+  TacsScalar *ftmp = new TacsScalar[numFuncs];
+  
+  // Get the design variables
+  tacs->getDesignVars(x, numDVs);
+  tacs->setDesignVars(x, numDVs);
+  
+  // Integrate
+  integrate();
+ 
+  // Evaluate the functions at the current time 
+  tacs->evalFunctions(funcs, numFuncs, fvals);   
+  
+  // Find a finite-difference (or complex-step) approximation of the
+  // total derivative
+  TacsScalar *fd = new TacsScalar[ numDVs*numFuncs ];
+  for ( int k = 0; k < numDVs; k++ ){
+    TacsScalar xtmp = x[k];
+
+#ifdef TACS_USE_COMPLEX
+    // Evaluate the matrix at x + j*dh
+    x[k] = xtmp + TacsScalar(0.0, dh);
+    tacs->setDesignVars(x, numDVs);
+    
+    // Integrate with perturbed x
+    integrate();
+
+    // Evaluate the function value for the perturbed x
+    tacs->evalFunctions(funcs, numFuncs, ftmp);  
+  
+    for ( int j = 0; j < numFuncs; j++ ){
+      fd[k+j*numDVs] = ImagPart(ftmp[j])/dh;
+    }
+#else
+    // Evaluate the matrix at x + j*dh
+    x[k] = xtmp + dh;
+    tacs->setDesignVars(x, numDVs);
+    
+    integrate();
+
+    // Evaluate the function value for the perturbed x
+    tacs->evalFunctions(funcs, numFuncs, ftmp);  
+
+    for ( int j = 0; j < numFuncs; j++ ){
+      fd[k+j*numDVs] = (ftmp[j] - fvals[j])/dh;
+      printf("fd[%d]=%e\n", k+j*numDVs, fd[k+j*numDVs]);
+    }
+#endif // TACS_USE_COMPLEX
+    x[k] = xtmp;
+  }
+
+  delete [] x;
+  delete [] fvals;
+  delete [] ftmp; 
+  delete [] fd;
 }
 
 /*
