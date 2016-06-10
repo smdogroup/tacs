@@ -54,7 +54,6 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
 
   // Get the number of state variables and store into the class variable
   q[0]->getSize(&num_state_vars);
-  printf("num_state_vars:%d\n",num_state_vars);
   
   // store time
   time = new double[num_time_steps];
@@ -278,6 +277,37 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
   }
+}
+
+/*
+  Solve the adjoint linear system for the lagrange multipliers
+  
+  Input: The state variable values q, qdot, qddot are supplied at the
+  time step/stage
+  
+  alpha: multiplier for derivative of Residual wrt to q
+  beta : multiplier for derivative of Residual wrt to qdot
+  gamma: multiplier for derivative of Residual wrt to qddot
+
+  Output: The lagrange multipliers: psi
+*/
+void TacsIntegrator::adjointSolve( BVec *psi, double alpha, double beta, double gamma,
+				   double t, BVec *q, BVec *qdot, BVec *qddot ) {
+  // Use the res BVec for storing the adjoint rhs
+  res->zeroEntries();
+  
+  // Set the supplied input states into TACS
+  setTACSStates(q, qdot, qddot);
+  
+  // Assemble the Jacobian matrix once in five newton iterations
+  tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+  
+  // Assemble the right-hand side
+  assembleAdjointRHS(res, 0);
+  
+  // Solve the linear system
+  pc->factor();
+  pc->applyFactor(res, psi); //ksm->solve(res, psi);
 }
 
 /*
@@ -532,6 +562,38 @@ void TacsIntegrator::checkAdjointRHS(BVec *rhs){
 }
 
 /*
+  Compute the gradient for the given functions of interest with
+  respect to the design variable.
+*/
+void TacsIntegrator::getAdjointGradient( TACSFunction **_func, int _num_funcs, 
+					 int _num_dv, TacsScalar *x, TacsScalar *dfdx ) {
+  // Set the number of design variables into integrator
+  num_design_vars = _num_dv;
+
+  // Set the design variables
+  tacs->getDesignVars(x, num_design_vars);
+  tacs->setDesignVars(x, num_design_vars);
+  
+  // Set the functions into integrator
+  setFunction(_func, _num_funcs);
+  
+  // Check whether the function has been set properly
+  if (num_func == 0 || func == NULL) {
+    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
+    return;
+  }
+  
+  // Integrate forward in time to solve for the states (q, qdot, qddot)
+  integrate();
+    
+  // March backwards in time and solve for the lagrange multipliers
+  marchBackwards();
+  
+  // Compute the total derivative using the lagrange multipliers
+  computeTotalDerivative(dfdx);
+}
+  
+/*
   Constructor for BDF Integration scheme
 
   Input:
@@ -574,135 +636,6 @@ TacsBDFIntegrator::~TacsBDFIntegrator(){
     psi[k]->decref();
   }
   delete [] psi;
-}
-
-/*
-  Integration logic of BDF. Use this function to march in time. The
-  solution over time is set into the class variables q, qdot and qddot
-  and time.
-*/
-void TacsBDFIntegrator::integrate(){
-  current_time_step = 0;
-
-  // Initial condition
-  tacs->getInitConditions(q[0], qdot[0]);
-
-  for ( int k = 1; k < num_time_steps; k++ ){
-    current_time_step++;
-
-    // Approximate states and their derivatives using BDF formula
-    approxStates(q, qdot, qddot);
-    
-    // Determine the coefficients for Jacobian Assembly
-    double gamma = bddf_coeff[0]/(h*h);
-    double beta  = bdf_coeff[0]/h;
-    double alpha = 1.0;
-
-    // Advance time (states are already advanced at the end of Newton
-    // solve)
-    time[k] = time[k-1] + h;
-
-    // Solve the nonlinear system of equations
-    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
-  }
-}
-
-/*
-  Solves for the adjoint variables psi[k] marching backwards in time.
-*/
-void TacsBDFIntegrator::adjointSolve( TACSFunction **_func, int _num_funcs, 
-				      TacsScalar *x, TacsScalar *dfdx, int num_dvs ){
-  // Set the functions into TACS
-  setFunction(_func, _num_funcs);
-  
-  // Check whether the function has been set properly
-  if (num_func == 0 || func == NULL) {
-    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
-    return;
-  }
-  
-  // March backwards in time (initial condition not evaluated)
-  for ( int k = num_time_steps-1; k > 0; k-- ){
-    current_time_step = k;
-   
-    // Get the BDF coefficients at this time step
-    get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
-
-    // Determine the linearization coefficients for Jacobian Assembly
-    double gamma = bddf_coeff[0]/h/h;
-    double beta = bdf_coeff[0]/h;
-    double alpha = 1.0;
-
-    // Set the states variables into TACS
-    setTACSStates(q[k], qdot[k], qddot[k]);
-    
-    // Setup the linear system for adjoint solve
-    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
-    
-    // Perform LU factorization of the jacobian matrix
-    pc->factor();
-   
-    // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
-    // Assemble the RHS for the current function
-    setupAdjointRHS(res, 0);
-
-    // Apply the factorization for each RHS
-    // pc->applyFactor(res, psi[k]);
-    ksm->solve(&res[0], psi[k]);
-  }
-
-  // Print Lagrange multipliers (just here for temporary debugging)
-  if ( print_level > 1 ){
-    TacsScalar *psivals;
-    for ( int k = 1; k < num_time_steps; k++ ){    
-      psi[k]->getArray(&psivals);
-      printf("\n");
-      for ( int j = 0; j < num_state_vars; j++ ){
-	printf(" %e ", psivals[j]);
-      }
-      printf("\n");
-    }
-  }
-
-  /* 
-     Next we compute the total derivative of the function with respect
-     to the design variables. d{}/d{}'s are partial derivatives.
-     
-     df/dx =  d{f}/d{x] + psi^T d{R}/d{x}     
-  */
-  
-  // Create an array for the total derivative
-  TacsScalar *dfdxTmp = new TacsScalar[num_dvs];
-  
-  // Set DVs into TACS
-  // tacs->setDesignVars(x, num_dvs);
-  
-  // Multiply the lagrange multipliers with d{R}/d{x}
-  for (int k = 1; k < num_time_steps; k++) {
-    // Set the state variables into TACS
-    setTACSStates(q[k], qdot[k], qddot[k]);
-    
-    // Add dfdx contribution from the last time step
-    if ( k == num_time_steps-1 ){
-      tacs->evalDVSens(&func[0], 1, dfdxTmp, num_dvs);
-      for ( int m = 0; m < num_dvs; m++) {
-	dfdx[m] += dfdxTmp[m];
-      }      
-    }
-
-    // Add the contribution from psi[k]^T d{R}/d{x}
-    tacs->evalAdjointResProducts(&psi[k], 1, dfdxTmp, num_dvs);
-    for ( int m = 0; m < num_dvs; m++) {
-      dfdx[m] += dfdxTmp[m];
-    }
-  }
-
-  // Print the total derivative
-  for ( int m =0; m < num_dvs; m++ ) {
-    printf("BDF: dfdx[%d]=%e \n", m, dfdx[m]);
-  }
-
-  delete [] dfdxTmp;  
 }
 
 /*
@@ -882,6 +815,153 @@ int TacsBDFIntegrator::getBDFCoeff( double bdf[], int order ){
     return 3;
   }
   return 0;
+}
+
+/*
+  Integration logic of BDF. Use this function to march in time. The
+  solution over time is set into the class variables q, qdot and qddot
+  and time.
+*/
+void TacsBDFIntegrator::integrate(){
+  current_time_step = 0;
+
+  // Initial condition
+  tacs->getInitConditions(q[0], qdot[0]);
+
+  for ( int k = 1; k < num_time_steps; k++ ){
+    current_time_step++;
+    
+    // Advance time (states are already advanced at the end of Newton solve)
+    time[k] = time[k-1] + h;
+
+    // Approximate states and their derivatives using BDF formula
+    approxStates(q, qdot, qddot);
+    
+    // Determine the coefficients for Jacobian Assembly
+    double gamma = bddf_coeff[0]/h/h;
+    double beta  = bdf_coeff[0]/h;
+    double alpha = 1.0;
+
+    // Solve the nonlinear system of equations
+    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
+  }
+}
+
+/*
+  March backward in time and solve for the adjoint variables
+*/
+void TacsBDFIntegrator::marchBackwards() {
+  
+  // March backwards in time (initial condition not evaluated)
+  for ( int k = num_time_steps-1; k > 0; k-- ){
+    current_time_step = k;
+    
+    // Get the BDF coefficients at this time step
+    get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
+
+    // Determine the linearization coefficients for Jacobian Assembly
+    double gamma = bddf_coeff[0]/h/h;
+    double beta = bdf_coeff[0]/h;
+    double alpha = 1.0;
+
+    // Solve the adjoint linear system
+    adjointSolve(psi[k],  alpha,  beta, gamma, time[k], q[k], qdot[k], qddot[k]);    
+  }
+}
+ 
+/*
+  Assembles the right hand side of the adjoint equation.
+  
+  input:
+  res  : the right hand side vector in the linear system
+  func_num: the index of the current objective function
+
+  output:
+  res: right hand side vector for the adjoint linear system
+*/
+void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
+  int k = current_time_step;
+  
+  // Zero the RHS vector each time
+  res->zeroEntries();
+     
+  // Add the contribution from the j-th objective function df/dq. 
+  if ( k == num_time_steps - 1 ) {
+    // Set the states variables into TACS
+    setTACSStates(q[k], qdot[k], qddot[k]);
+
+    // Must evaluate the function before the SVSens call
+    TacsScalar funcVals;
+    tacs->evalFunctions(&func[func_num], 1, &funcVals);
+
+    // Evalute the state variable sensitivity
+    tacs->evalSVSens(func[func_num], res);
+  }
+
+  // Add contribution from the first derivative terms d{R}d{qdot}
+  double scale;
+  for ( int i = 1; i < nbdf; i++ ) {
+    if ( k+i <= num_time_steps -1 ) {
+      scale = bdf_coeff[i]/h;
+      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
+      tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k+i], res, TRANSPOSE);
+    }
+  }
+ 
+  // Add contribution from the second derivative terms d{R}d{qddot}
+  for ( int i = 1; i < nbddf; i++ ) {
+    if ( k+i <= num_time_steps -1 ) {
+      scale = bddf_coeff[i]/h/h;
+      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
+      tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k+i], res, TRANSPOSE);
+    }
+  }
+  
+  // Sanity check on the adjoint RHS
+  checkAdjointRHS(res);
+
+  // Negative the RHS
+  res->scale(-1.0);
+}
+
+/*
+  Computes the total derivative of the function with respect
+  to the design variables. d{}/d{}'s are partial derivatives.
+     
+  df/dx =  d{f}/d{x] + psi^T d{R}/d{x}     
+  
+*/
+void TacsBDFIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
+  
+  // Create an array for the total derivative
+  TacsScalar *dfdxTmp = new TacsScalar[num_design_vars];
+    
+  // Multiply the lagrange multipliers with d{R}/d{x}
+  for (int k = 1; k < num_time_steps; k++) {
+    // Set the state variables into TACS
+    setTACSStates(q[k], qdot[k], qddot[k]);
+    
+    // Add dfdx contribution from the last time step
+    if ( k == num_time_steps-1 ){
+      tacs->evalDVSens(&func[0], 1, dfdxTmp, num_design_vars);
+      for ( int m = 0; m < num_design_vars; m++) {
+	dfdx[m] += dfdxTmp[m];
+      }      
+    }
+
+    // Add the contribution from psi[k]^T d{R}/d{x}
+    tacs->evalAdjointResProducts(&psi[k], 1, dfdxTmp, num_design_vars);
+    for ( int m = 0; m < num_design_vars; m++) {
+      dfdx[m] += dfdxTmp[m];
+    }
+  }
+
+  // Print the total derivative
+  for ( int m = 0; m < num_design_vars; m++ ) {
+    printf("BDF: dfdx[%d]=%e \n", m, dfdx[m]);
+  }
+
+  delete [] dfdxTmp;  
 }
 
 /*
@@ -1067,112 +1147,142 @@ void TacsDIRKIntegrator::checkButcherTableau(){
   }
 }
 
-/*
-  Solves for the adjoint variables psi[k,i] marching backwards in time
-  and stage
-*/
-void TacsDIRKIntegrator::adjointSolve( TACSFunction **_func, int _num_funcs, 
-				       TacsScalar *x, TacsScalar *dfdx, int num_dvs ){
-  // Set the functions into integrator
-  setFunction(_func, _num_funcs);
-  
-  // Check whether the function has been set properly
-  if (num_func == 0 || func == NULL) {
-    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
-    return;
-  }
 
+/*
+  Function that computes the stage values at each time step. This
+  function uses the global states and time at the previous time-step
+  and sets the stage states tS, qS, qdotS and qdotS.
+*/
+void TacsDIRKIntegrator::computeStageValues(){
+
+  int k = current_time_step;
+  int toffset = k*num_stages;
+
+  for ( int i = 0; i < num_stages; i++ ){
+    // Compute the stage time
+    tS[toffset+i] = time[k-1] + C[i]*h;
+
+    // Initial guess for qddotS
+    if (i == 0){
+      qddotS[toffset+i]->copyValues(qddot[k-1]);
+    }
+    else {
+      qddotS[toffset+i]->copyValues(qddotS[toffset+i-1]);
+    }
+
+    // Compute qdotS
+    int idx = getIdx(i);
+    for ( int j = 0; j <= i; j++ ){
+      qdotS[toffset+i]->axpy(h*A[idx+j], qddotS[toffset+j]);
+    }
+    qdotS[toffset+i]->axpy(1.0, qdot[k-1]);
+
+    // Compute qS
+    idx = getIdx(i);
+    for ( int j = 0; j <= i; j++ ){
+      qS[toffset+i]->axpy(h*A[idx+j], qdotS[toffset+j]);
+    }
+    qS[toffset+i]->axpy(1.0, q[k-1]);
+    
+    // Determine the coefficients for linearizing the Residual
+    double gamma = 1.0;
+    double beta  = h*A[0]; 
+    double alpha = h*A[0]*h*A[0];
+
+    // Solve the nonlinear system of stage equations
+    newtonSolve(alpha, beta, gamma, tS[toffset+i], qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
+  }
+}
+
+/*
+  Start index of the Butcher Tableau A for the supplied stage
+*/
+int TacsDIRKIntegrator::getIdx( int stageNum ){
+  return stageNum*(stageNum+1)/2;
+}
+
+/*
+  Function that advances the global states q, qdot, qddot and time to
+  next time step
+  
+  Input:
+  The pointers to the global state variables q, qdot, qddot
+  
+  Output:
+  Updated global state variables q, qdot, qddot at the time step
+*/
+void TacsDIRKIntegrator::timeMarch( double *time, 
+				    BVec **q, BVec **qdot, BVec **qddot ){
+  int k = current_time_step;
+  int toffset = k*num_stages;
+  
+  // advance the time
+  time[k] = time[k-1] + h;
+  
+  // advance the position state
+  for ( int j = 0; j < num_stages; j++ ){
+    q[k]->axpy(h*B[j], qdotS[toffset+j]);
+  }
+  q[k]->axpy(1.0, q[k-1]);
+
+  // advance the velocity state
+  for ( int j = 0; j < num_stages; j++ ){
+    qdot[k]->axpy(h*B[j], qddotS[toffset+j]);
+  }
+  qdot[k]->axpy(1.0, qdot[k-1]);
+
+  // advance the acceleration state
+  for ( int j = 0; j < num_stages; j++ ){
+    qddot[k]->axpy(B[j], qddotS[toffset+j]);
+  }
+}
+
+/*
+  Integration logic of DIRK. Use this function to march in time. The
+  solution over time is set into the class variables q, qdot and qddot
+  and time.
+*/
+void TacsDIRKIntegrator::integrate(){
+  current_time_step = 0;
+  
+  // Initial condition
+  tacs->getInitConditions(q[0], qdot[0]);
+
+  for ( int k = 1; k < num_time_steps; k++ ){
+    current_time_step++;
+       
+    // Compute the stage states qS, qdotS, qddotS based on the DIRK formula
+    computeStageValues();
+    
+    // Advance the global state to the next time
+    timeMarch(time, q, qdot, qddot);
+  }
+}
+
+/*
+  March backward in time and solve for the adjoint variables
+*/
+void TacsDIRKIntegrator::marchBackwards() {
+  
   // March backwards in time (initial condition not evaluated)
-  for ( int k = num_time_steps-1; k > 0; k-- ){
+  for ( int k = num_time_steps-1; k > 0; k-- ) {
     // March backwards in stage
     int toffset = k*num_stages;
-    for ( int i = num_stages-1; i >= 0; i-- ){
-      current_time_step = k;
-      current_stage = i;
-      
+    for ( int i = num_stages-1; i >= 0; i-- ) {
+      current_time_step = k; current_stage = i;
+
       // Determine the coefficients for linearizing the Residual
       double gamma = 1.0;
       double beta  = h*A[0]; 
       double alpha = h*A[0]*h*A[0];
 
-      // Set the stage states variables into TACS
-      setTACSStates(qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
-      
-      // Setup the linear system for adjoint solve
-      tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
-      
-      // Perform LU factorization of the jacobian matrix
-      pc->factor();
-      
-      // Solve for the adjoint variables at the k-th step [mat]^T psi[k] = res^T
-      // Assemble the RHS for the current function
-      setupAdjointRHS(&res[0], 0);
-	
-      // Apply the factorization for each RHS
-      // pc->applyFactor(&res[0], psi[toffset+i]);
-      ksm->solve(&res[0], psi[toffset+i]);
-    }
-  }
- 
-  // Print Lagrange multipliers
-  if ( print_level > 1 ){
-    TacsScalar *psivals;
-    for ( int k = 1; k < num_time_steps; k++ ) {   
-      int toffset = k*num_stages;
-      for ( int i = 0; i < num_stages; i++ ) { 
-	psi[toffset+i]->getArray(&psivals);
-	printf("\n");
-	for ( int j = 0; j < num_state_vars; j++ ) {
-	  printf(" %e ", psivals[j]);
-	}
-	printf("\n");
-      }
-    }
-  }
-
-  /* 
-     Next we compute the total derivative of the function with respect
-     to the design variables. d{}/d{}'s are partial derivatives.
-     
-     df/dx =  d{f}/d{x] + psi^T d{R}/d{x}     
-  */
-  
-  // Create an array for the total derivative
-  TacsScalar *dfdxTmp = new TacsScalar[num_dvs];
-    
-  // Multiply the lagrange multipliers with d{R}/d{x}
-  for (int k = num_time_steps-1; k < num_time_steps; k++) {
-    for (int i = 0; i < num_stages; i++) {
-      // Set the states into TACS
-      setTACSStates(qS[k*num_stages+i], qdotS[k*num_stages+i], qddotS[k*num_stages+i]);
-      
-      // Add dfdx contribution from the last time step
-      if ( k == num_time_steps-1 ){
-	// Must evaluate the function before the DVSens call
-	TacsScalar funcVals;
-	tacs->evalFunctions(&func[0], 1, &funcVals);
-       
-       	tacs->evalDVSens(&func[0], num_func, dfdxTmp, num_dvs);
-	for ( int m = 0; m < num_dvs; m++) {
-	  dfdx[m] += dfdxTmp[m];
-	}      
-      }
-
-      // Add the contribution from psi[k,i]^T d{R}/d{x}
-      tacs->evalAdjointResProducts(&psi[k*num_stages+i], 1, dfdxTmp, num_dvs);
-      for ( int m = 0; m < num_dvs; m++) {
-	dfdx[m] += dfdxTmp[m];
-      }
-    }
-  }
-
-  // Print the total derivative
-  for ( int m =0; m < num_dvs; m++) {
-    printf("DIRK: dfdx[%d]=%e \n", m, dfdx[m]);
-  }
-
-  delete [] dfdxTmp;  
+      // Solve the adjoint linear system
+      adjointSolve(psi[toffset+i], alpha, beta, gamma, tS[toffset+i], 
+		   qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
+    } // stage
+  } // time
 }
+
 
 /*
   Assembles the right hand side of the adjoint equation.
@@ -1184,7 +1294,7 @@ void TacsDIRKIntegrator::adjointSolve( TACSFunction **_func, int _num_funcs,
   output:
   res: right hand side vector for the adjoint linear system
 */
-void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
+void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   int k = current_time_step;
   int i = current_stage;
 
@@ -1280,124 +1390,19 @@ void TacsDIRKIntegrator::setupAdjointRHS( BVec *res, int func_num ){
     tacs->addJacobianVecProduct(scale, 1.0, 0.0, 0.0, psi[toffset+j], res, TRANSPOSE);
   }
 
-  // Sanity check on the adjiont RHS
+  // Sanity check on the adjoint RHS
   checkAdjointRHS(res);
 
   // Negate the RHS
   res->scale(-1.0);
 }
 
-/*
-  Integration logic of DIRK. Use this function to march in time. The
-  solution over time is set into the class variables q, qdot and qddot
-  and time.
-*/
-void TacsDIRKIntegrator::integrate(){
-  current_time_step = 0;
-  
-  // Initial condition
-  tacs->getInitConditions(q[0], qdot[0]);
-
-  for ( int k = 1; k < num_time_steps; k++ ){
-    current_time_step++;
-       
-    // Compute the stage states qS, qdotS, qddotS based on the DIRK formula
-    computeStageValues();
-    
-    // Advance the global state to the next time
-    timeMarch(time, q, qdot, qddot);
-  }
-}
 
 /*
-  Function that computes the stage values at each time step. This
-  function uses the global states and time at the previous time-step
-  and sets the stage states tS, qS, qdotS and qdotS.
+  Compute the total derivative by using the computed lagrange
+  multipliers
 */
-void TacsDIRKIntegrator::computeStageValues(){
-
-  int k = current_time_step;
-  int toffset = k*num_stages;
-
-  for ( int i = 0; i < num_stages; i++ ){
-    // Compute the stage time
-    tS[toffset+i] = time[k-1] + C[i]*h;
-
-    // Initial guess for qddotS
-    if (i == 0){
-      qddotS[toffset+i]->copyValues(qddot[k-1]);
-    }
-    else {
-      qddotS[toffset+i]->copyValues(qddotS[toffset+i-1]);
-    }
-
-    // Compute qdotS
-    int idx = getIdx(i);
-    for ( int j = 0; j <= i; j++ ){
-      qdotS[toffset+i]->axpy(h*A[idx+j], qddotS[toffset+j]);
-    }
-    qdotS[toffset+i]->axpy(1.0, qdot[k-1]);
-
-    // Compute qS
-    idx = getIdx(i);
-    for ( int j = 0; j <= i; j++ ){
-      qS[toffset+i]->axpy(h*A[idx+j], qdotS[toffset+j]);
-    }
-    qS[toffset+i]->axpy(1.0, q[k-1]);
-    
-    // Determine the coefficients for linearizing the Residual
-    double gamma = 1.0;
-    double beta  = h*A[0]; 
-    double alpha = h*A[0]*h*A[0];
-
-    // Solve the nonlinear system of stage equations
-    newtonSolve(alpha, beta, gamma, tS[toffset+i], qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
-  }
+void TacsDIRKIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
+  // Yet to implement // Debugging Lagrange multipliers
 }
-
-/*
-  Start index of the Butcher Tableau A for the supplied stage
-*/
-int TacsDIRKIntegrator::getIdx( int stageNum ){
-  return stageNum*(stageNum+1)/2;
-}
-
-/*
-  Function that advances the global states q, qdot, qddot and time to
-  next time step
-  
-  Input:
-  The pointers to the global state variables q, qdot, qddot
-  
-  Output:
-  Updated global state variables q, qdot, qddot at the time step
-*/
-void TacsDIRKIntegrator::timeMarch( double *time, 
-				    BVec **q, BVec **qdot, BVec **qddot ){
-  int k = current_time_step;
-  int toffset = k*num_stages;
-  
-  // advance the time
-  time[k] = time[k-1] + h;
-  
-  // advance the position state
-  for ( int j = 0; j < num_stages; j++ ){
-    q[k]->axpy(h*B[j], qdotS[toffset+j]);
-  }
-  q[k]->axpy(1.0, q[k-1]);
-
-  // advance the velocity state
-  for ( int j = 0; j < num_stages; j++ ){
-    qdot[k]->axpy(h*B[j], qddotS[toffset+j]);
-  }
-  qdot[k]->axpy(1.0, qdot[k-1]);
-
-  // advance the acceleration state
-  for ( int j = 0; j < num_stages; j++ ){
-    qddot[k]->axpy(B[j], qddotS[toffset+j]);
-  }
-}
-
-
-
 
