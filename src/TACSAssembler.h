@@ -160,6 +160,8 @@ class TACSAssembler : public TACSObject {
   // Methods for setting/getting variables
   // -------------------------------------
   void getVariables( BVec *stateVars );
+  void setVariables( double _time, 
+                     BVec *q, BVec *qdot, BVec *qddot );
   void setVariables( BVec *stateVars );
   void setDotVariables( BVec *stateVars );
   void setDDotVariables( BVec *stateVars );

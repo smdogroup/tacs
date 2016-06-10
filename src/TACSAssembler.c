@@ -2324,6 +2324,23 @@ void TACSAssembler::zeroDDotVariables(){
 }
 
 /*
+  Set the value of the time/variables/time derivatives simultaneously
+*/
+void TACSAssembler::setVariables( double _time, 
+                                  BVec *q, BVec *qdot, BVec *qddot ){
+  time = _time;
+  /*
+  vecDist->beginForward(q, qdot, qddot, 
+                        localVars, localDotVars, localDDotVars); 
+  vecDist->endForward(q, qdot, qddot, 
+                      localVars, localDotVars, localDDotVars); 
+  */
+  setDependentVariables(varsPerNode, localVars);
+  setDependentVariables(varsPerNode, localDotVars);
+  setDependentVariables(varsPerNode, localDDotVars);
+}
+
+/*
   Set the values of the state variables for the given load case
 */
 void TACSAssembler::setVariables( BVec * stateVars ){

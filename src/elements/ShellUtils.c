@@ -4302,6 +4302,70 @@ void compute_tensorial_components( const int order,
 }
 
 /*
+  Compute the displacement within the shell
+
+  input:
+  num_nodes:   the number of nodes
+  vars:        the values of the state variables
+  N:           the shape functions
+
+  output:
+  U:           the displacements at the parametric point withinn the element
+*/
+void compute_shell_U( const int num_nodes,
+                      TacsScalar U[],
+                      const TacsScalar vars[], 
+                      const double N[] ){
+  if (num_nodes == 4){
+    U[0] = vars[0]*N[0] + vars[6]*N[1]  + vars[12]*N[2] + vars[18]*N[3];
+    U[1] = vars[1]*N[0] + vars[7]*N[1]  + vars[13]*N[2] + vars[19]*N[3];
+    U[2] = vars[2]*N[0] + vars[8]*N[1]  + vars[14]*N[2] + vars[20]*N[3];
+    U[3] = vars[3]*N[0] + vars[9]*N[1]  + vars[15]*N[2] + vars[21]*N[3];
+    U[4] = vars[4]*N[0] + vars[10]*N[1] + vars[16]*N[2] + vars[22]*N[3];
+    U[5] = vars[5]*N[0] + vars[11]*N[1] + vars[17]*N[2] + vars[23]*N[3];
+  }
+  else if (num_nodes == 9){
+    U[0] = (vars[0]*N[0] + vars[6]*N[1]  + vars[12]*N[2] + vars[18]*N[3] + vars[24]*N[4] + vars[30]*N[5] + vars[36]*N[6] + vars[42]*N[7] + vars[48]*N[8]); 
+    U[1] = (vars[1]*N[0] + vars[7]*N[1]  + vars[13]*N[2] + vars[19]*N[3] + vars[25]*N[4] + vars[31]*N[5] + vars[37]*N[6] + vars[43]*N[7] + vars[49]*N[8]);
+    U[2] = (vars[2]*N[0] + vars[8]*N[1]  + vars[14]*N[2] + vars[20]*N[3] + vars[26]*N[4] + vars[32]*N[5] + vars[38]*N[6] + vars[44]*N[7] + vars[50]*N[8]);
+    U[3] = (vars[3]*N[0] + vars[9]*N[1]  + vars[15]*N[2] + vars[21]*N[3] + vars[27]*N[4] + vars[33]*N[5] + vars[39]*N[6] + vars[45]*N[7] + vars[51]*N[8]);
+    U[4] = (vars[4]*N[0] + vars[10]*N[1] + vars[16]*N[2] + vars[22]*N[3] + vars[28]*N[4] + vars[34]*N[5] + vars[40]*N[6] + vars[46]*N[7] + vars[52]*N[8]);
+    U[5] = (vars[5]*N[0] + vars[11]*N[1] + vars[17]*N[2] + vars[23]*N[3] + vars[29]*N[4] + vars[35]*N[5] + vars[41]*N[6] + vars[47]*N[7] + vars[53]*N[8]);
+  }
+  else if (num_nodes == 16){
+    U[0] = (vars[0]*N[0]  + vars[6]*N[1]  + vars[12]*N[2]  + vars[18]*N[3]  + vars[24]*N[4]  + vars[30]*N[5]  + vars[36]*N[6]  + vars[42]*N[7] + 
+	    vars[48]*N[8] + vars[54]*N[9] + vars[60]*N[10] + vars[66]*N[11] + vars[72]*N[12] + vars[78]*N[13] + vars[84]*N[14] + vars[90]*N[15]);
+    U[1] = (vars[1]*N[0]  + vars[7]*N[1]  + vars[13]*N[2]  + vars[19]*N[3]  + vars[25]*N[4]  + vars[31]*N[5]  + vars[37]*N[6]  + vars[43]*N[7] + 
+	    vars[49]*N[8] + vars[55]*N[9] + vars[61]*N[10] + vars[67]*N[11] + vars[73]*N[12] + vars[79]*N[13] + vars[85]*N[14] + vars[91]*N[15]);
+    U[2] = (vars[2]*N[0]  + vars[8]*N[1]  + vars[14]*N[2]  + vars[20]*N[3]  + vars[26]*N[4]  + vars[32]*N[5]  + vars[38]*N[6]  + vars[44]*N[7] + 
+	    vars[50]*N[8] + vars[56]*N[9] + vars[62]*N[10] + vars[68]*N[11] + vars[74]*N[12] + vars[80]*N[13] + vars[86]*N[14] + vars[92]*N[15]);
+    U[3] = (vars[3]*N[0]  + vars[9]*N[1]  + vars[15]*N[2]  + vars[21]*N[3]  + vars[27]*N[4]  + vars[33]*N[5]  + vars[39]*N[6]  + vars[45]*N[7] + 
+	    vars[51]*N[8] + vars[57]*N[9] + vars[63]*N[10] + vars[69]*N[11] + vars[75]*N[12] + vars[81]*N[13] + vars[87]*N[14] + vars[93]*N[15]);
+    U[4] = (vars[4]*N[0]  + vars[10]*N[1] + vars[16]*N[2]  + vars[22]*N[3]  + vars[28]*N[4]  + vars[34]*N[5]  + vars[40]*N[6]  + vars[46]*N[7] +
+	    vars[52]*N[8] + vars[58]*N[9] + vars[64]*N[10] + vars[70]*N[11] + vars[76]*N[12] + vars[82]*N[13] + vars[88]*N[14] + vars[94]*N[15]);
+    U[5] = (vars[5]*N[0]  + vars[11]*N[1] + vars[17]*N[2]  + vars[23]*N[3]  + vars[29]*N[4]  + vars[35]*N[5]  + vars[41]*N[6]  + vars[47]*N[7] + 
+	    vars[53]*N[8] + vars[59]*N[9] + vars[65]*N[10] + vars[71]*N[11] + vars[77]*N[12] + vars[83]*N[13] + vars[89]*N[14] + vars[95]*N[15]);
+  }
+  else {
+    U[0] = U[1] = U[2] = U[3] = U[4] = U[5] = 0.0;
+    
+    const TacsScalar * v = vars;
+    for ( int i = 0; i < num_nodes; i++ ){
+      U[0] += v[0]*N[0];
+      U[1] += v[1]*N[0];
+      U[2] += v[2]*N[0];
+      U[3] += v[3]*N[0];
+      U[4] += v[4]*N[0];
+      U[5] += v[5]*N[0];
+      v += 6;
+      N++;
+    }
+  }
+}
+
+
+
+/*
   Compute the displacement and the derivative of the displacement
   along the parametric directions
 

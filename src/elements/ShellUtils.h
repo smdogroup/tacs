@@ -607,6 +607,13 @@ void add_nonlinear_bend_bmat_sens( TacsScalar res[], int num_points,
 				   int num_components );
 
 /*
+  Compute the displacements at a parametric point within the element
+*/
+void compute_shell_U( const int num_nodes,
+                      TacsScalar U[],
+                      const TacsScalar vars[], 
+                      const double N[] );
+/*
   Compute the displacement and the derivative of the displacement
   along the parametric directions
 

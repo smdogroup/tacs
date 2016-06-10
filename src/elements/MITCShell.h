@@ -552,14 +552,36 @@ void MITCShell<order>::addResidual( double time,
       // Compute the stress at the current Gauss point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
+      // Get the pointwise mass at the quadrature point
+      TacsScalar mass[2];
+      stiff->getPointwiseMass(pt, mass);
+
+      // Compute the accelerations at the current point due to the
+      // ddvars input. Store the accelerations in the variable U[].
+      compute_shell_U(NUM_NODES, U, ddvars, N);
+
+      TacsScalar *r = res;
+      const TacsScalar *b = B;
+      const TacsScalar *br = drot;
       for ( int i = 0; i < NUM_NODES; i++ ){
 	for ( int ii = 0; ii < NUM_DISPS; ii++ ){	    
-	  int row = ii + NUM_DISPS*i;
-
-	  res[row] += 
-	    h*(strain_product(&B[NUM_STRESSES*row], stress) +
-	       kpenalty*rot*drot[row]);
+          r[ii] += h*(strain_product(b, stress) + kpenalty*rot*br[0]);
+          b += NUM_STRESSES;
+          br++;
 	}
+
+        // Add the inertial terms from the accelerations
+        r[0] += h*N[i]*mass[0]*U[0];
+        r[1] += h*N[i]*mass[0]*U[1];
+        r[2] += h*N[i]*mass[0]*U[2];
+
+        // Add the inertial terms from the rotations
+        TacsScalar d = normal[0]*U[3] + normal[1]*U[4] + normal[2]*U[5];
+        r[3] += h*N[i]*mass[1]*(U[3] - normal[0]*d);
+        r[4] += h*N[i]*mass[1]*(U[4] - normal[1]*d);
+        r[5] += h*N[i]*mass[1]*(U[5] - normal[2]*d);
+
+        r += NUM_DISPS;
       }
     }
   }
@@ -721,9 +743,14 @@ void MITCShell<order>::addJacobian( double time,
 
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
+      // Get the pointwise mass at the quadrature point
+      TacsScalar mass[2];
+      stiff->getPointwiseMass(pt, mass);
+
       // Scale the determinant of the Jacobian matrix by the alpha
       // scaling factor
       TacsScalar ha = h*alpha;
+      TacsScalar hg = h*gamma;
 
       for ( int i = 0; i < NUM_NODES; i++ ){
 	for ( int ii = 0; ii < NUM_DISPS; ii++ ){
@@ -768,6 +795,46 @@ void MITCShell<order>::addJacobian( double time,
 	// Add the second derivative of the in-plane penalty
 	add_inplane_penalty(J, NUM_NODES, ha*kpenalty*rot, Xd, Ud, 
 			    Ct, Ctt, N, Na, Nb);
+      }
+
+      // Add the kinetic energy terms from the displacement
+      TacsScalar Am = hg*mass[0];
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        for ( int j = 0; j < NUM_NODES; j++ ){
+          for ( int ii = 0; ii < 3; ii++ ){
+            int row = ii + NUM_DISPS*i;
+            int col = ii + NUM_DISPS*j;	      
+            J[col + row*NUM_VARIABLES] += Am*N[i]*N[j];
+          }
+        }
+      }
+
+      // Add the contribution due to the rotational terms
+      TacsScalar Dm = hg*mass[1];
+      TacsScalar D[9];
+      D[0] = Dm*(1.0 - normal[0]*normal[0]);
+      D[1] = -Dm*normal[0]*normal[1];
+      D[2] = -Dm*normal[0]*normal[2];
+      
+      D[3] = -Dm*normal[1]*normal[0];
+      D[4] = Dm*(1.0 - normal[1]*normal[1]);
+      D[5] = -Dm*normal[1]*normal[2];
+      
+      D[6] = -Dm*normal[2]*normal[0];
+      D[7] = -Dm*normal[2]*normal[1];
+      D[8] = Dm*(1.0 - normal[2]*normal[2]);
+
+      // Add the values to the matrix
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        for ( int j = 0; j < NUM_NODES; j++ ){
+          for ( int ii = 0; ii < 3; ii++ ){
+            int row = 3+ii + NUM_DISPS*i;
+            for ( int jj = 0; jj < 3; jj++ ){
+              int col = 3+jj + NUM_DISPS*j;		
+              J[col + row*NUM_VARIABLES] += D[ii + 3*jj]*N[i]*N[j];
+            }
+          }
+        }
       }
     }
   }

@@ -132,8 +132,8 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.25;
-  int num_steps_per_sec = 250, num_stages = 3, max_bdf_order = 3;
+  double tinit = 0.0, tfinal = 0.2;
+  int num_steps_per_sec = 1000, num_stages = 3, max_bdf_order = 3;
 
   // Create functions for adjoint solve
   TACSFunction *func = new KSFailure(tacs, 100.0, 1.0);
@@ -166,7 +166,7 @@ int main( int argc, char **argv ){
     integrator->incref();
 
     // Set optional parameters
-    integrator->setRelTol(1.0e-8);
+    integrator->setRelTol(1.0e-7);
     integrator->setAbsTol(1.0e-12);
     integrator->setMaxNewtonIters(24);
     integrator->setPrintLevel(2);
@@ -192,7 +192,7 @@ int main( int argc, char **argv ){
     integrator->incref();
 
     // Set optional parameters
-    integrator->setRelTol(1.0e-8);
+    integrator->setRelTol(1.0e-7);
     integrator->setAbsTol(1.0e-12);
     integrator->setMaxNewtonIters(24);
     integrator->setPrintLevel(2);

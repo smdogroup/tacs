@@ -594,15 +594,16 @@ void TacsBDFIntegrator::integrate(){
     approxStates(q, qdot, qddot);
     
     // Determine the coefficients for Jacobian Assembly
-    double gamma = bddf_coeff[0]/h/h;
+    double gamma = bddf_coeff[0]/(h*h);
     double beta  = bdf_coeff[0]/h;
     double alpha = 1.0;
 
+    // Advance time (states are already advanced at the end of Newton
+    // solve)
+    time[k] = time[k-1] + h;
+
     // Solve the nonlinear system of equations
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
-    
-    // Advance time (states are already advanced at the end of Newton solve)
-    time[k] = time[k-1] + h;
   }
 }
 
