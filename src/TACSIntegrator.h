@@ -52,14 +52,27 @@ class TacsIntegrator : public TACSObject {
   //------------------------------------------------
   void testGradient( TACSFunction **funcs, int numFuncs, int numDVs, double dh );
   
+  // Function for returning the adjoint derivative for the functions
+  //------------------------------------------------------------------
+  void getAdjointGradient( TACSFunction **func, int num_funcs, 
+			   int num_dv, TacsScalar *x, TacsScalar *dfdx);
+
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
 
-  // Pure virtual function for solving the adjoint variables
-  //--------------------------------------------------------
-  virtual void adjointSolve( TACSFunction **_func, int _num_funcs, 
-			     TacsScalar *x, TacsScalar *dfdx, int num_dv ) = 0;
+  // Pure virtual function for marching backwards in stage and time
+  //---------------------------------------------------------------
+  virtual void marchBackwards() = 0;
+  
+  // Pure virtual function for assembling the right hand side of adjoint equation
+  //-----------------------------------------------------------------------------
+  virtual void assembleAdjointRHS( BVec *rhs, int func_num ) = 0;
+
+  // Pure virtual function for computing the total derivative after
+  // solving for lagrange multipliers
+  //----------------------------------------------------------------
+  virtual void computeTotalDerivative(TacsScalar *dfdx) = 0;
   
  protected:
   // Method to solve the non-linear system using Newton's method
@@ -68,6 +81,11 @@ class TacsIntegrator : public TACSObject {
                     double t, BVec *q, BVec *qdot, 
                     BVec *qddot );
 
+  // Method to solve the adjoint-linear system using Newton's method
+  //-----------------------------------------------------------------
+  void adjointSolve( BVec *psi, double alpha, double beta, double gamma,
+		     double t, BVec *q, BVec *qdot, BVec *qddot );
+  
   // Calls LAPACK for the the solution of the linear system Ax =
   // b. The matrix A should be supplied in row major order
   void linearSolve( TacsScalar *A, TacsScalar *b, int size );
@@ -92,6 +110,9 @@ class TacsIntegrator : public TACSObject {
 
   // Number of state variables
   int num_state_vars;
+  
+  // Number of design variables
+  int num_design_vars;
   
   // Class variables used to manage/monitor time marching in
   // integration schemes
@@ -141,12 +162,20 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // function to call to integrate in time
   //--------------------------------------
   void integrate();
-
-  // solve for adjoint variables
-  //----------------------------
-  void adjointSolve( TACSFunction **_func, int _num_funcs, 
-		     TacsScalar *x, TacsScalar *dfdx, int num_dvs );
   
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+   void marchBackwards();
+  
+  // Function for assembling the right hand side of adjoint equation
+  //----------------------------------------------------------------
+  void assembleAdjointRHS( BVec *rhs, int func_num );
+
+  // Function for computing the total derivative after solving for
+  // lagrange multipliers
+  // ----------------------------------------------------------------
+  void computeTotalDerivative( TacsScalar *dfdx );
+
  private:
   // the number of stage in RK scheme
   int num_stages;
@@ -208,11 +237,19 @@ class TacsBDFIntegrator : public TacsIntegrator {
   //-----------------------------------------
   void integrate();
 
-  // solve for adjoint variables
-  //----------------------------
-  void adjointSolve( TACSFunction **_func, int _num_funcs, 
-		     TacsScalar *x, TacsScalar *dfdx, int num_dvs );
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+  void marchBackwards();
   
+  // Function for assembling the right hand side of adjoint equation
+  //----------------------------------------------------------------
+  void assembleAdjointRHS( BVec *rhs, int func_num );
+
+  // Function for computing the total derivative after solving for
+  // lagrange multipliers
+  // ----------------------------------------------------------------
+  void computeTotalDerivative( TacsScalar *dfdx );
+
  private:  
 
   // Maximum order of the BDF integration scheme
