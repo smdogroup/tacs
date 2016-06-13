@@ -1390,7 +1390,7 @@ TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
   MPI_Comm_rank(comm, &rank);
 
   // Allocate the TACS creator
-  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, vars_per_node);
+  TACSCreator *creator = new TACSCreator(comm, vars_per_node);
   creator->incref();
 
   if (rank == root){
