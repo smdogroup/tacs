@@ -132,7 +132,7 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.001;
+  double tinit = 0.0, tfinal = 0.01;
   int num_steps_per_sec = 100, num_stages = 3, max_bdf_order = 3;
   
   static const int NUM_FUNCS = 1;
