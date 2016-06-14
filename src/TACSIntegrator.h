@@ -97,9 +97,6 @@ class TacsIntegrator : public TACSObject {
   // This function should be called before the adjointSolve call.
   // -----------------------------------------------------------------
   void setFunction( TACSFunction **_func, int _num_funcs );
-
-  // Update TACS states with the supplied ones (q, qdot, qddot)
-  void setTACSStates( BVec *q, BVec *qdot, BVec * qddot );
   
   // Sanity checks on the RHS of the adjoint linear system
   void checkAdjointRHS( BVec *rhs );
