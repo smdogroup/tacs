@@ -59,6 +59,9 @@ class TacsIntegrator : public TACSObject {
   void getAdjointGradient( TACSFunction **func, int num_funcs, 
 			   int num_dv, TacsScalar *x, 
 			   TacsScalar *fvals, TacsScalar *dfdx );
+  
+  // Update TACS states with the supplied ones (q, qdot, qddot)
+  void setTACSStates( BVec *q, BVec *qdot, BVec * qddot );
 
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
