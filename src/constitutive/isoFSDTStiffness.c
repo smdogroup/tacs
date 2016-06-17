@@ -225,7 +225,7 @@ void isoFSDTStiffness::failureStrainSens( const double gpt[],
   surfaces with respect to the design variable
 */
 void isoFSDTStiffness::addFailureDVSens( const double pt[],
-                                         const double strain[],
+                                         const TacsScalar strain[],
                                          TacsScalar alpha,
                                          TacsScalar dvSens[], int dvLen ){
   if (tNum >= 0 && tNum < dvLen){

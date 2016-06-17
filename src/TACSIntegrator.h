@@ -80,8 +80,14 @@ class TacsIntegrator : public TACSObject {
   // solving for lagrange multipliers
   //----------------------------------------------------------------
   virtual void computeTotalDerivative(TacsScalar *dfdx) = 0;
+
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
+				     TacsScalar *funcVals) = 0;
   
-  // Method to solve the non-linear system using Newton's method
+  //Method to solve the non-linear system using Newton's method
   //------------------------------------------------------------
   void newtonSolve( double alpha, double beta, double gamma,
                     double t, BVec *q, BVec *qdot, 
@@ -212,6 +218,13 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // lagrange multipliers
   // ----------------------------------------------------------------
   void computeTotalDerivative( TacsScalar *dfdx );
+
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
+				     TacsScalar *funcVals);
+  
 };
 
 /*
@@ -276,6 +289,12 @@ class TacsBDFIntegrator : public TacsIntegrator {
   // lagrange multipliers
   // ----------------------------------------------------------------
   void computeTotalDerivative( TacsScalar *dfdx );
+
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
+				     TacsScalar *funcVals);
 };
 #endif
 

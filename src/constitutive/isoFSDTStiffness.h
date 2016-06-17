@@ -59,7 +59,7 @@ class isoFSDTStiffness : public FSDTStiffness {
                           const TacsScalar strain[],
                           TacsScalar sens[] );
   void addFailureDVSens( const double pt[],
-                         const double strain[],
+                         const TacsScalar strain[],
                          TacsScalar alpha,
                          TacsScalar dvSens[], int dvLen );
 

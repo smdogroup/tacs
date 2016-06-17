@@ -599,7 +599,7 @@ int TestElement::testAdjResProduct( const TacsScalar *x,
 
   // Perturb the design variables: xpert = x + dh*sign(result[k])
   for ( int k = 0; k < dvLen; k++ ){
-    if (result[k] >= 0){
+    if (result[k] >= 0.0){
       xpert[k] = x[k] + dh;
     }
     else {
@@ -619,7 +619,7 @@ int TestElement::testAdjResProduct( const TacsScalar *x,
 
   // Pertub the design variables: xpert = x - dh*sign(result[k])
   for ( int k = 0; k < dvLen; k++ ){
-    if (result[k] >= 0){
+    if (result[k] >= 0.0){
       xpert[k] = x[k] - dh;
     }
     else {
