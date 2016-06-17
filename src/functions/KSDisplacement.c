@@ -252,7 +252,7 @@ void KSDisplacement::postEval( const int iter ){
     MPI_Allreduce(&temp, &ksDispSum, 1, TACS_MPI_TYPE, 
 		  MPI_SUM, tacs->getMPIComm());
 
-    printf("maxDisp = %15.5f\n", maxDisp);
+    printf("maxDisp = %15.5f\n", RealPart(maxDisp));
 
     // Compute the final value of the KS function on all processors
     ksDisp = maxDisp + log(ksDispSum/alpha)/ksWeight;

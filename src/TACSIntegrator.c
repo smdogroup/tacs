@@ -393,6 +393,8 @@ void TacsIntegrator::getApproxGradient( TACSFunction **funcs, int numFuncs,
 
     // Evaluate the function value for the perturbed x
     evalTimeAvgFunctions(funcs, num_func, ftmp); 
+    
+    // Evaluate the CS derivative
     for ( int j = 0; j < num_func; j++ ){
       dfdx[k+j*num_design_vars] = ImagPart(ftmp[j])/dh;
     }
@@ -405,6 +407,8 @@ void TacsIntegrator::getApproxGradient( TACSFunction **funcs, int numFuncs,
 
     // Evaluate the function value for the perturbed x
     evalTimeAvgFunctions(funcs, num_func, ftmp); 
+
+    // Evaluate the FD derivative
     for ( int j = 0; j < num_func; j++ ){
       dfdx[k+j*num_design_vars] = (ftmp[j] - fvals[j])/dh;
     }
