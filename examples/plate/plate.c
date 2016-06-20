@@ -173,7 +173,8 @@ int main( int argc, char **argv ){
     integrator->incref();
     
     integrator->setJacAssemblyFreq(1);
-
+    integrator->setUseApproxDerivatives(1);
+   
     integrator->getAdjointGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdx);
     printf("Compliance = %e\n", RealPart(funcVals[0])); 
 

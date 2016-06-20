@@ -37,6 +37,7 @@ class TacsIntegrator : public TACSObject {
   void setPrintLevel( int _print_level );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
+  void setUseApproxDerivatives( int _use_approx_derivatives );
 
   // Call this function after integrating to write the solution to
   // file in ASCII text format (might be slower for bigger problems)
@@ -140,6 +141,7 @@ class TacsIntegrator : public TACSObject {
 
   // Flag to switch to LAPACK for linear solve
   int use_lapack;
+  int use_approx_derivatives;
 
   // Matrices and vectors for the nonlinear solution
   BVec *res, *update;  // Residual and Newton update
@@ -149,8 +151,8 @@ class TacsIntegrator : public TACSObject {
   TACSKsm *ksm;        // KSM solver
 
   // The objective and contraint functions
-  TACSFunction **func;
-  int num_func;
+  TACSFunction **funcs;
+  int num_funcs;
 };
 
 /*
