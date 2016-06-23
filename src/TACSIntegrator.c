@@ -858,7 +858,7 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
        
   // Add the contribution from the j-th objective function df/dq. 
   // Set the states variables into TACS
-  setTACSStates( q[k], qdot[k], qddot[k]);
+  setTACSStates(q[k], qdot[k], qddot[k]);
 
   // Must evaluate the function before the SVSens call
   TacsScalar funcVals;
@@ -904,8 +904,7 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   Computes the total derivative of the function with respect
   to the design variables. d{}/d{}'s are partial derivatives.
      
-  df/dx =  d{f}/d{x] + psi^T d{R}/d{x}     
-  
+  df/dx =  d{f}/d{x] + psi^T d{R}/d{x}
 */
 void TacsBDFIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
   // Create an array for the total derivative
@@ -935,12 +934,10 @@ void TacsBDFIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
   }
 
   /*
-    Add the contribution from the initial condition.
-    
-    Using adjoint variables from the second time-step and qddot[1] is
-    perhaps the best approximation compared to qddot[0] = 0.0
+    Add the contribution from the initial condition using adjoint
+    variables from the second time-step
   */
-  setTACSStates(q[0], qdot[0], qddot[1]);
+  setTACSStates(q[0], qdot[0], qddot[0]);
 
   tacs->evalDVSens(&funcs[0], 1, dfdxTmp, num_design_vars);
   for ( int m = 0; m < num_funcs*num_design_vars; m++) {
@@ -978,6 +975,7 @@ void TacsBDFIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
       funcVals[j] += h*ftmp[j];
     }        
   }
+  delete [] ftmp;
 }
 
 /*
@@ -1427,7 +1425,8 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   multipliers
 */
 void TacsDIRKIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
-  printf("Yet to implement computeTotalDerivative. Debugging Adjoint vars.");
+  printf("Will perhaps use BDF logic of computing total derivatives as we have
+q's and lambda's computed already");
   exit(-1);
 }
 
@@ -1441,11 +1440,40 @@ void TacsIntegrator::setTACSStates( BVec *q, BVec *qdot, BVec * qddot ){
 }
 
 /*
-  Evaluate the time average of functions: F = \sum_{k=0}^N h f(q,t)
+  Evaluate the time average of functions
+
+  F = \sum_{k=0}^N h_k \sum_{j=0}^s b_j f(q_{k,j},t)
+  
+  Might consider using a similar time-averaging formulation as BDF
+  since we have the adjoint variables for the time step computed and
+  states variables as well -- If so this function will be implemented
+  in the parent class.
 */
 void TacsDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
 					       int numFuncs, 
 					       TacsScalar *funcVals) {
-  printf("ERROR: Implement time average for DIRK");
-  exit(-1);
+  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
+
+  TacsScalar *ftmp = new TacsScalar[numFuncs];  
+
+  // Loop over time steps
+  for ( int k = 0; k < num_time_steps; k++ ) {
+    int toffset = k*num_stages;
+
+    // Loop over all stages
+    for ( int j = 0; j < num_stages; j++ ){
+
+      // Set the states into TACS
+      setTACSStates(qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
+      
+      // Evaluate the functions
+      tacs->evalFunctions(funcs, numFuncs, ftmp); 
+      
+      // Compute the mean function value (h is the weight)
+      for ( int i = 0; i < numFuncs; i++ ) {
+	funcVals[i] += h*B[j]*ftmp[i];
+      }        
+    }
+  }
+  delete [] ftmp;
 }
