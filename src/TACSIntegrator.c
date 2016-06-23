@@ -1425,8 +1425,8 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   multipliers
 */
 void TacsDIRKIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
-  printf("Will perhaps use BDF logic of computing total derivatives as we have
-q's and lambda's computed already");
+  //  printf("Will perhaps use BDF logic of computing total derivatives as we have
+  //q's and lambda's computed already");
   exit(-1);
 }
 
