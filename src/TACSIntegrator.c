@@ -23,10 +23,10 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   num_steps_per_sec = _num_steps_per_sec;
 
   // compute the step size
-  h = 1.0/double(num_steps_per_sec);
+  h = 1.0/num_steps_per_sec;
 
   // compute the total number of time steps
-  num_time_steps = int(double(num_steps_per_sec)*(tfinal-tinit)) + 1;
+  num_time_steps = int(num_steps_per_sec*(tfinal-tinit)) + 1;
 
   // Default print level
   print_level = 1;
@@ -69,10 +69,13 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   // Set the default LINEAR solver
   use_lapack = 0;
   
+  // Use FD approximation for dfdx, dfdq
+  use_approx_derivatives = 0;
+  
   // Default parameters for Newton solve
   max_newton_iters = 25;
   atol = 1.0e-12;
-  rtol = 1.0e-6;
+  rtol = 1.0e-10;
 
   // Create vector for storing the residual at each Newton iteration
   res = tacs->createVec();
@@ -106,8 +109,8 @@ TacsIntegrator::TacsIntegrator( TACSAssembler * _tacs,
   //                     Adjoint parameters                           //
   //------------------------------------------------------------------//
   
-  func = NULL;
-  num_func = 0;
+  funcs = NULL;
+  num_funcs = 0;
 }
 
 /*
@@ -137,12 +140,12 @@ TacsIntegrator::~TacsIntegrator(){
   delete [] qdot;
   delete [] qddot;
 
-  if ( num_func > 0 ) {
+  if ( num_funcs > 0 ) {
     // Dereference the objective/constraint functions
-    for ( int j = 0; j < num_func; j++ ) {
-      func[j]->decref();
+    for ( int j = 0; j < num_funcs; j++ ) {
+      funcs[j]->decref();
     }
-    delete [] func;
+    delete [] funcs;
   }  
 }
 
@@ -179,7 +182,7 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
   double delta = 0.0;
   for ( int n = 0; n < max_newton_iters; n++ ){
     // Set the supplied initial input states into TACS
-    setTACSStates(q, qdot, qddot);
+    setTACSStates( q, qdot, qddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
     if (n % jac_comp_freq == 0){
@@ -202,11 +205,13 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if(print_level > 0) {
       if (n == 0){
         fprintf(stdout, "%12.5e %8d %12.5e %12.5e %12.5e \n",
-                t, n, MPI_Wtime()-t0, norm, norm/init_norm);
+                t, n, MPI_Wtime()-t0, 
+		RealPart(norm), RealPart(norm/init_norm));
       }
       else {
         fprintf(stdout, "%12s %8d %12.5e %12.5e %12.5e\n",
-                " ", n, MPI_Wtime()-t0, norm, norm/init_norm);
+                " ", n, MPI_Wtime()-t0, 
+		RealPart(norm), RealPart(norm/init_norm));
       }
     }
            
@@ -231,39 +236,8 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
       ksm->solve(res, update);
     }
     else {
-      // Get the right hand side as an array
-      TacsScalar *R;
-      res->getArray(&R);
-      
-      // The following code retrieves a dense column-major 
-      // matrix from the FEMat matrix
-      TacsScalar *J;
-      FEMat *femat = dynamic_cast<FEMat*>(mat);
-      if (femat){
-        int bsize, nrows;
-	BCSRMat *B;
-        femat->getBCSRMat(&B, NULL, NULL, NULL);
-        B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
-	
-	J = new TacsScalar[ bsize*bsize*nrows*nrows ];
-
-        // Get the matrix in LAPACK column major order
-	B->getDenseColumnMajor(J);
-      }
-      else {
-	fprintf(stderr,"Casting to FEMat failed\n");
-	exit(-1);
-      }
-
-      // Perform the linear solve
-      linearSolve(J, R, num_state_vars);
-
-      // Set the lapack solution into the distributed vector
-      TacsScalar *resvals;
-      update->getArray(&resvals);
-      memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));
-
-      if (J) { delete [] J; }
+      // Perform the linear solve using LAPACK (serial only)
+      lapackLinearSolve(res, mat, update);
     }
 
     // Update the state variables using the solution
@@ -293,8 +267,9 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
 */
 void TacsIntegrator::adjointSolve( BVec *psi, double alpha, double beta, double gamma,
 				   double t, BVec *q, BVec *qdot, BVec *qddot ) {
-  // Use the res BVec for storing the adjoint rhs
+  // Zero the entries
   res->zeroEntries();
+  psi->zeroEntries();
   
   // Set the supplied input states into TACS
   setTACSStates(q, qdot, qddot);
@@ -307,13 +282,13 @@ void TacsIntegrator::adjointSolve( BVec *psi, double alpha, double beta, double 
   
   // Solve the linear system
   pc->factor();
-  pc->applyFactor(res, psi); //ksm->solve(res, psi);
+  ksm->solve(res, psi); 
 }
 
 /*
   Function that writes time, q, qdot, qddot to file
 */
-void TacsIntegrator::writeSolution( const char *filename ){
+void TacsIntegrator::writeSolution( const char *filename ) {
   // Temporary variables to access the states at each time
   TacsScalar *qvals, *qdotvals, *qddotvals;
 
@@ -326,10 +301,8 @@ void TacsIntegrator::writeSolution( const char *filename ){
     qdot[k]->getArray(&qdotvals);
     qddot[k]->getArray(&qddotvals);
   
-    // Write the time
+    // Write the time and states to file
     fprintf(fp, "%e ", time[k]);
-
-    // Write the states (q, qdot, qddot) to file
     for ( int j = 0; j < num_state_vars; j++ ){
       fprintf(fp, "%e %e %e ", RealPart(qvals[j]), 
               RealPart(qdotvals[j]), RealPart(qddotvals[j]));
@@ -345,7 +318,6 @@ void TacsIntegrator::writeSolution( const char *filename ){
   Creates an f5 file for each time step and writes the data
 */
 void TacsIntegrator::writeSolutionToF5(){
-
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS |
@@ -359,7 +331,7 @@ void TacsIntegrator::writeSolutionToF5(){
 
   for ( int k = 0; k < num_time_steps; k++ ){    
     // Set the current states into TACS
-    setTACSStates(q[k], qdot[k], qddot[k]);
+    setTACSStates( q[k], qdot[k], qddot[k]);
 
     // Make a filename
     char fname[128];
@@ -374,69 +346,83 @@ void TacsIntegrator::writeSolutionToF5(){
 }
 
 /*
-  Function to test the adjoint implementation using complex
-  step/finite difference method
+  Function that returns the finite-difference/complex-step gradient
+  (used for testing purposes)
 */
-void TacsIntegrator::testGradient( TACSFunction **funcs, int numFuncs, 
-				   int numDVs, double dh ) {
-  // Allocate a design variable array
-  TacsScalar *x = new TacsScalar[numDVs]; 
- 
-  TacsScalar *fvals = new TacsScalar[numFuncs];
-  TacsScalar *ftmp = new TacsScalar[numFuncs];
+void TacsIntegrator::getApproxGradient( TACSFunction **funcs, int numFuncs, 
+					int numDVs, TacsScalar *x, 
+					TacsScalar *fvals, TacsScalar *dfdx, 
+					double dh ) {
+  // Copy the inputs
+  num_design_vars = numDVs;
+  num_funcs = numFuncs;
+
+  // Zero the return variables
+  memset(fvals, 0, num_funcs*sizeof(TacsScalar));
+  memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
+
+  // Set the design variables
+  tacs->setDesignVars(x, num_design_vars);
   
-  // Get the design variables
-  tacs->getDesignVars(x, numDVs);
-  tacs->setDesignVars(x, numDVs);
+  // Set the functions into integrator
+  setFunction(funcs, num_funcs);
   
-  // Integrate
+  // Check whether the function has been set properly
+  if (num_funcs == 0 || funcs == NULL) {
+    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
+    return;
+  }
+
+  TacsScalar *ftmp = new TacsScalar[num_funcs];
+  
+  // Integrate forward in time
   integrate();
  
   // Evaluate the functions at the current time 
-  tacs->evalFunctions(funcs, numFuncs, fvals);   
+  evalTimeAvgFunctions(funcs, num_funcs, fvals); 
   
   // Find a finite-difference (or complex-step) approximation of the
   // total derivative
-  TacsScalar *fd = new TacsScalar[ numDVs*numFuncs ];
-  for ( int k = 0; k < numDVs; k++ ){
+  for ( int k = 0; k < num_design_vars; k++ ){
     TacsScalar xtmp = x[k];
-
 #ifdef TACS_USE_COMPLEX
-    // Evaluate the matrix at x + j*dh
+    // Perturb the DV
     x[k] = xtmp + TacsScalar(0.0, dh);
-    tacs->setDesignVars(x, numDVs);
+
+    // Set the perturbed vector into TACS
+    tacs->setDesignVars(x, num_design_vars);
     
     // Integrate with perturbed x
     integrate();
 
     // Evaluate the function value for the perturbed x
-    tacs->evalFunctions(funcs, numFuncs, ftmp);  
-  
-    for ( int j = 0; j < numFuncs; j++ ){
-      fd[k+j*numDVs] = ImagPart(ftmp[j])/dh;
+    evalTimeAvgFunctions(funcs, num_funcs, ftmp); 
+    
+    // Evaluate the CS derivative
+    for ( int j = 0; j < num_funcs; j++ ){
+      dfdx[k+j*num_design_vars] = ImagPart(ftmp[j])/dh;
     }
 #else
     // Evaluate the matrix at x + j*dh
     x[k] = xtmp + dh;
-    tacs->setDesignVars(x, numDVs);
+    tacs->setDesignVars(x, num_design_vars);
     
     integrate();
 
     // Evaluate the function value for the perturbed x
-    tacs->evalFunctions(funcs, numFuncs, ftmp);  
+    evalTimeAvgFunctions(funcs, num_funcs, ftmp); 
 
-    for ( int j = 0; j < numFuncs; j++ ){
-      fd[k+j*numDVs] = (ftmp[j] - fvals[j])/dh;
-      printf("fd[%d]=%e\n", k+j*numDVs, fd[k+j*numDVs]);
+    // Evaluate the FD derivative
+    for ( int j = 0; j < num_funcs; j++ ){
+      dfdx[k+j*num_design_vars] = (ftmp[j] - fvals[j])/dh;
     }
 #endif // TACS_USE_COMPLEX
     x[k] = xtmp;
   }
+  // Make sure the DV's in TACS are the same
+  tacs->setDesignVars(x, num_design_vars);
 
-  delete [] x;
-  delete [] fvals;
-  delete [] ftmp; 
-  delete [] fd;
+  delete [] ftmp;
 }
 
 /*
@@ -484,15 +470,49 @@ void TacsIntegrator::setUseLapack( int _use_lapack ) {
 }
 
 /*
-  Solves the system Ax=b using LAPACK. The matrix's array A should be
-  supplied in column major order.
+  Set whether or not to use LAPACK for linear solve
 */
-void TacsIntegrator::linearSolve(TacsScalar *A, TacsScalar *b, int size) {
+void TacsIntegrator::setUseApproxDerivatives( int _use_approx_derivatives ) {
+  use_approx_derivatives = _use_approx_derivatives;
+}
+
+/*
+  Solves the linear system Ax=b using LAPACK. The execution should be
+  in serial mode.
+*/
+void TacsIntegrator::lapackLinearSolve( BVec *res, TACSMat *mat, BVec *update ) {
+  // Serial only usage for debugging
+  // Get the right hand side as an array
+  TacsScalar *R;
+  res->getArray(&R);
+      
+  // The following code retrieves a dense column-major 
+  // matrix from the FEMat matrix
+  TacsScalar *J;
+  FEMat *femat = dynamic_cast<FEMat*>(mat);
+  if (femat){
+    int bsize, nrows;
+    BCSRMat *B;
+    femat->getBCSRMat(&B, NULL, NULL, NULL);
+    B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+	
+    J = new TacsScalar[ bsize*bsize*nrows*nrows ];
+
+    // Get the matrix in LAPACK column major order
+    B->getDenseColumnMajor(J);
+  }
+  else {
+    fprintf(stderr,"Casting to FEMat failed\n");
+    exit(-1);
+  }
+
+  // Perform the linear solve
+  int size = num_state_vars;
   int *dpiv = new int[size];
   int info = 0, one = 1;
 
   // Perform LU factorization
-  LAPACKgetrf(&size, &size, A, &size, dpiv, &info);
+  LAPACKgetrf(&size, &size, J, &size, dpiv, &info);
   if (info){
     fprintf(stderr,"LAPACK GETRF output error %d\n", info);
     if (info < 0) {
@@ -504,13 +524,20 @@ void TacsIntegrator::linearSolve(TacsScalar *A, TacsScalar *b, int size) {
   } 
   
   // Apply factorization
-  LAPACKgetrs("N", &size, &one, A, &size, dpiv, b, &size, &info);
+  LAPACKgetrs("N", &size, &one, J, &size, dpiv, R, &size, &info);
   if (info){
     fprintf(stderr,"LAPACK GETRS output error %d\n", info);
     exit(-1);
   }
 
   delete [] dpiv;
+
+  // Set the lapack solution into the distributed vector
+  TacsScalar *resvals;
+  update->getArray(&resvals);
+  memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));
+
+  if (J) { delete [] J; }
 }
 
 /*
@@ -518,38 +545,29 @@ void TacsIntegrator::linearSolve(TacsScalar *A, TacsScalar *b, int size) {
   adjoint solve. If called for the second time the new set of
   functions will replace the existing ones.
 */
-void TacsIntegrator::setFunction( TACSFunction **_func, int _num_funcs ){
-  // Delete the references to the old functions
-  if (func){
-    for ( int i = 0; i < num_func; i++ ){
-      func[i]->decref();	
+void TacsIntegrator::setFunction( TACSFunction **_funcs, int _num_funcs ) {
+  // Delete the references to the old funcstions
+  if (funcs){
+    for ( int i = 0; i < num_funcs; i++ ){
+      funcs[i]->decref();	
     }
-    delete [] func;
+    delete [] funcs;
   }
   // Increase the reference counts to the functions
   for ( int i = 0; i < _num_funcs; i++ ){
-    _func[i]->incref();
+    _funcs[i]->incref();
   }
     
-  num_func = _num_funcs;
-  func = new TACSFunction*[ num_func ];
-  memcpy(func, _func, num_func*sizeof(TACSFunction*));    
-}
-
-/*
-  Update TACS states with the supplied ones (q, qdot, qddot)
-*/
-void TacsIntegrator::setTACSStates( BVec *q, BVec *qdot, BVec * qddot ){
-  tacs->setVariables(q);
-  tacs->setDotVariables(qdot);
-  tacs->setDDotVariables(qddot);
+  num_funcs = _num_funcs;
+  funcs = new TACSFunction*[ num_funcs ];
+  memcpy(funcs, _funcs, num_funcs*sizeof(TACSFunction*));    
 }
 
 /*
   Perform sanity checks on the right hand side of adjoint linear
   system
 */
-void TacsIntegrator::checkAdjointRHS(BVec *rhs){
+void TacsIntegrator::checkAdjointRHS( BVec *rhs ) {
   // The norm of the rhs vector shouldn't be zero or shouldn't contain
   // Nan, Inf's etc
   TacsScalar norm = rhs->norm();
@@ -565,27 +583,35 @@ void TacsIntegrator::checkAdjointRHS(BVec *rhs){
   Compute the gradient for the given functions of interest with
   respect to the design variable.
 */
-void TacsIntegrator::getAdjointGradient( TACSFunction **_func, int _num_funcs, 
-					 int _num_dv, TacsScalar *x, TacsScalar *dfdx ) {
-  // Set the number of design variables into integrator
+void TacsIntegrator::getAdjointGradient( TACSFunction **_funcs, int _num_funcs, 
+					 int _num_dv, TacsScalar *x, 
+					 TacsScalar *fvals, TacsScalar *dfdx ) {
+  // Copy the inputs
   num_design_vars = _num_dv;
+  num_funcs = _num_funcs;
+  
+  // Zero the return variables
+  memset(fvals, 0, num_funcs*sizeof(TacsScalar));
+  memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
 
   // Set the design variables
-  tacs->getDesignVars(x, num_design_vars);
   tacs->setDesignVars(x, num_design_vars);
   
   // Set the functions into integrator
-  setFunction(_func, _num_funcs);
+  setFunction(_funcs, num_funcs);
   
   // Check whether the function has been set properly
-  if (num_func == 0 || func == NULL) {
+  if (num_funcs == 0 || funcs == NULL) {
     fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
     return;
   }
-  
+ 
   // Integrate forward in time to solve for the states (q, qdot, qddot)
   integrate();
-    
+
+  // Evaluate the functions at the current time 
+  evalTimeAvgFunctions(funcs, num_funcs, fvals); 
+  
   // March backwards in time and solve for the lagrange multipliers
   marchBackwards();
   
@@ -636,61 +662,6 @@ TacsBDFIntegrator::~TacsBDFIntegrator(){
     psi[k]->decref();
   }
   delete [] psi;
-}
-
-/*
-  Assembles the right hand side of the adjoint equation.
-  
-  input:
-  res  : the right hand side vector in the linear system
-  func_num: the index of the current objective function
-
-  output:
-  res: right hand side vector for the adjoint linear system
-*/
-void TacsBDFIntegrator::setupAdjointRHS( BVec *res, int func_num ){
-  int k = current_time_step;
-  
-  // Zero the RHS vector each time
-  res->zeroEntries();
-     
-  // Add the contribution from the j-th objective function df/dq. 
-  if ( k == num_time_steps - 1 ) {
-    // Set the states variables into TACS
-    setTACSStates(q[k], qdot[k], qddot[k]);
-
-    // Must evaluate the function before the SVSens call
-    TacsScalar funcVals;
-    tacs->evalFunctions(&func[func_num], 1, &funcVals);
-
-    // Evalute the state variable sensitivity
-    tacs->evalSVSens(func[func_num], res);
-  }
-
-  // Add contribution from the first derivative terms d{R}d{qdot}
-  double scale;
-  for ( int i = 1; i < nbdf; i++ ) {
-    if ( k+i <= num_time_steps -1 ) {
-      scale = bdf_coeff[i]/h;
-      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
-      tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k+i], res, TRANSPOSE);
-    }
-  }
- 
-  // Add contribution from the second derivative terms d{R}d{qddot}
-  for ( int i = 1; i < nbddf; i++ ) {
-    if ( k+i <= num_time_steps -1 ) {
-      scale = bddf_coeff[i]/h/h;
-      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
-      tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k+i], res, TRANSPOSE);
-    }
-  }
-  
-  // Sanity check on the adjoint RHS
-  checkAdjointRHS(res);
-
-  // Negative the RHS
-  res->scale(-1.0);
 }
 
 /*
@@ -823,13 +794,17 @@ int TacsBDFIntegrator::getBDFCoeff( double bdf[], int order ){
   and time.
 */
 void TacsBDFIntegrator::integrate(){
-  current_time_step = 0;
-
   // Initial condition
   tacs->getInitConditions(q[0], qdot[0]);
-
+  
   for ( int k = 1; k < num_time_steps; k++ ){
-    current_time_step++;
+    current_time_step = k;
+    
+    // Zero the states (these may not be zero when integrate() is
+    // called for the second time)
+    q[k]->zeroEntries();
+    qdot[k]->zeroEntries();
+    qddot[k]->zeroEntries();
     
     // Advance time (states are already advanced at the end of Newton solve)
     time[k] = time[k-1] + h;
@@ -850,12 +825,11 @@ void TacsBDFIntegrator::integrate(){
 /*
   March backward in time and solve for the adjoint variables
 */
-void TacsBDFIntegrator::marchBackwards() {
-  
+void TacsBDFIntegrator::marchBackwards() {  
   // March backwards in time (initial condition not evaluated)
   for ( int k = num_time_steps-1; k > 0; k-- ){
     current_time_step = k;
-    
+
     // Get the BDF coefficients at this time step
     get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
 
@@ -881,38 +855,40 @@ void TacsBDFIntegrator::marchBackwards() {
 */
 void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   int k = current_time_step;
-  
-  // Zero the RHS vector each time
-  res->zeroEntries();
-     
+       
   // Add the contribution from the j-th objective function df/dq. 
-  if ( k == num_time_steps - 1 ) {
-    // Set the states variables into TACS
-    setTACSStates(q[k], qdot[k], qddot[k]);
+  // Set the states variables into TACS
+  setTACSStates( q[k], qdot[k], qddot[k]);
 
-    // Must evaluate the function before the SVSens call
-    TacsScalar funcVals;
-    tacs->evalFunctions(&func[func_num], 1, &funcVals);
+  // Must evaluate the function before the SVSens call
+  TacsScalar funcVals;
+  tacs->evalFunctions(&funcs[0], 1, &funcVals);
 
-    // Evalute the state variable sensitivity
-    tacs->evalSVSens(func[func_num], res);
+  printf("norm before: %e\n", res->norm());
+  // Evalute the state variable sensitivity
+  if (use_approx_derivatives) {
+    tacs->getApproxFunctionSVSens(funcs[0], res, 1.0e-8);
   }
+  else {
+    tacs->evalSVSens(funcs[0], res);
+  }
+  printf("norm after:%e \n", res->norm());
 
   // Add contribution from the first derivative terms d{R}d{qdot}
   double scale;
   for ( int i = 1; i < nbdf; i++ ) {
-    if ( k+i <= num_time_steps -1 ) {
+    if ( k+i < num_time_steps ) {
       scale = bdf_coeff[i]/h;
-      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
+      setTACSStates( q[k+i], qdot[k+i], qddot[k+i]);
       tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k+i], res, TRANSPOSE);
     }
   }
  
   // Add contribution from the second derivative terms d{R}d{qddot}
   for ( int i = 1; i < nbddf; i++ ) {
-    if ( k+i <= num_time_steps -1 ) {
+    if ( k+i < num_time_steps ) {
       scale = bddf_coeff[i]/h/h;
-      setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
+      setTACSStates( q[k+i], qdot[k+i], qddot[k+i]);
       tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k+i], res, TRANSPOSE);
     }
   }
@@ -932,36 +908,76 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   
 */
 void TacsBDFIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
-  
   // Create an array for the total derivative
   TacsScalar *dfdxTmp = new TacsScalar[num_design_vars];
-    
-  // Multiply the lagrange multipliers with d{R}/d{x}
+  
+  // Multiply the adjoint variables with d{R}/d{x}
   for (int k = 1; k < num_time_steps; k++) {
     // Set the state variables into TACS
     setTACSStates(q[k], qdot[k], qddot[k]);
     
     // Add dfdx contribution from the last time step
-    if ( k == num_time_steps-1 ){
-      tacs->evalDVSens(&func[0], 1, dfdxTmp, num_design_vars);
-      for ( int m = 0; m < num_design_vars; m++) {
-	dfdx[m] += dfdxTmp[m];
-      }      
+    if (use_approx_derivatives) { 
+      tacs->getApproxFunctionDVSens(funcs, num_funcs, num_design_vars, dfdxTmp, 1.0e-8);
     }
-
+    else {
+      tacs->evalDVSens(&funcs[0], 1, dfdxTmp, num_design_vars); 
+    }
+    for ( int m = 0; m < num_funcs*num_design_vars; m++) {
+      dfdx[m] += h*dfdxTmp[m];
+    }  
+      
     // Add the contribution from psi[k]^T d{R}/d{x}
     tacs->evalAdjointResProducts(&psi[k], 1, dfdxTmp, num_design_vars);
-    for ( int m = 0; m < num_design_vars; m++) {
-      dfdx[m] += dfdxTmp[m];
-    }
+    for ( int m = 0; m < num_funcs*num_design_vars; m++) {
+      dfdx[m] += h*dfdxTmp[m];
+    }  
   }
 
-  // Print the total derivative
-  for ( int m = 0; m < num_design_vars; m++ ) {
-    printf("BDF: dfdx[%d]=%e \n", m, dfdx[m]);
+  /*
+    Add the contribution from the initial condition.
+    
+    Using adjoint variables from the second time-step and qddot[1] is
+    perhaps the best approximation compared to qddot[0] = 0.0
+  */
+  setTACSStates(q[0], qdot[0], qddot[1]);
+
+  tacs->evalDVSens(&funcs[0], 1, dfdxTmp, num_design_vars);
+  for ( int m = 0; m < num_funcs*num_design_vars; m++) {
+    dfdx[m] += h*dfdxTmp[m];
+  }    
+
+  tacs->evalAdjointResProducts(&psi[1], 1, dfdxTmp, num_design_vars);
+  for ( int m = 0; m < num_funcs*num_design_vars; m++) {
+    dfdx[m] += h*dfdxTmp[m];
   }
 
-  delete [] dfdxTmp;  
+  delete [] dfdxTmp;
+}
+
+/*
+  Evaluate the time average of functions: F = \sum_{k=0}^N h f(q,t)
+*/
+void TacsBDFIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
+					      int numFuncs, 
+					      TacsScalar *funcVals) {
+  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
+  
+  TacsScalar *ftmp = new TacsScalar[numFuncs];  
+  
+  // Loop over time steps
+  for ( int k = 0; k < num_time_steps; k++ ) {
+    // Set the states into TACS
+    setTACSStates(q[k], qdot[k], qddot[k]);
+
+    // Evaluate the functions
+    tacs->evalFunctions(funcs, numFuncs, ftmp); 
+    
+    // Compute the mean function value (h is the weight)
+    for ( int j = 0; j < numFuncs; j++ ) {
+      funcVals[j] += h*ftmp[j];
+    }        
+  }
 }
 
 /*
@@ -1159,6 +1175,12 @@ void TacsDIRKIntegrator::computeStageValues(){
   int toffset = k*num_stages;
 
   for ( int i = 0; i < num_stages; i++ ){
+    // Zero the states (these may not be zero when integrate() is
+    // called for the second time)
+    qS[toffset+i]->zeroEntries();
+    qdotS[toffset+i]->zeroEntries();
+    qddotS[toffset+i]->zeroEntries();
+
     // Compute the stage time
     tS[toffset+i] = time[k-1] + C[i]*h;
 
@@ -1250,6 +1272,12 @@ void TacsDIRKIntegrator::integrate(){
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step++;
+    
+    // Zero the states (these may not be zero when integrete() is
+    // called for the second time)
+    q[k]->zeroEntries();
+    qdot[k]->zeroEntries();
+    qddot[k]->zeroEntries();
        
     // Compute the stage states qS, qdotS, qddotS based on the DIRK formula
     computeStageValues();
@@ -1262,10 +1290,9 @@ void TacsDIRKIntegrator::integrate(){
 /*
   March backward in time and solve for the adjoint variables
 */
-void TacsDIRKIntegrator::marchBackwards() {
-  
+void TacsDIRKIntegrator::marchBackwards( ) {
   // March backwards in time (initial condition not evaluated)
-  for ( int k = num_time_steps-1; k > 0; k-- ) {
+  for ( int k = num_time_steps-1; k > 0; k-- ) {    
     // March backwards in stage
     int toffset = k*num_stages;
     for ( int i = num_stages-1; i >= 0; i-- ) {
@@ -1299,9 +1326,6 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   int i = current_stage;
 
   int toffset = k*num_stages;
-  
-  // Zero the RHS vector each time
-  res->zeroEntries();
 
   // Add the contribution from the objective function df/dq at
   // the last time step
@@ -1320,14 +1344,15 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
 
       // Set the required states into TACS before calling the
       // derivative evaluation
-      setTACSStates(qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
+      setTACSStates( qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
 
       // Must evaluate the function before the SVSens call
       TacsScalar funcVals;
-      tacs->evalFunctions(&func[func_num], 1, &funcVals);
+      tacs->evalFunctions(&funcs[func_num], 1, &funcVals);
 
       // Evalute the state variable sensitivity
-      tacs->evalSVSens(func[func_num], res);
+      //      tacs->getApproxFunctionSVSens(&func[0], num_design_vars, dfdxTmp, 1.0e-8);
+      tacs->evalSVSens(funcs[func_num], res);
       res->scale(scale);
     }
     else {
@@ -1346,7 +1371,7 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
       scale = scale1 + scale2;
 
       // Set the states into TACS
-      setTACSStates(qS[off+j], qdotS[off+j], qddotS[off+j]);
+      setTACSStates( qS[off+j], qdotS[off+j], qddotS[off+j]);
 
       // Part 2 (Add FUNCTIONAL contribution from stages of the NEXT
       // time step) Note: skipped at the last time step as we don't
@@ -1355,9 +1380,9 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
       if ( k == num_time_steps - 2 ) { 
 	// Must evaluate the function before the SVSens call
 	TacsScalar funcVals;
-	tacs->evalFunctions(&func[func_num], 1, &funcVals);
+	tacs->evalFunctions(&funcs[func_num], 1, &funcVals);
 	
-	tacs->evalSVSens(func[func_num], res);
+	tacs->evalSVSens(funcs[func_num], res);
 	res->scale(scale);
       } 
 	
@@ -1376,7 +1401,7 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
     double weight = B[j];
 
     // Set the required states into TACS
-    setTACSStates(qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
+    setTACSStates( qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
     
     int idx1 = getIdx(j);
     scale = weight*A[idx1+i]/h;
@@ -1397,12 +1422,30 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   res->scale(-1.0);
 }
 
-
 /*
   Compute the total derivative by using the computed lagrange
   multipliers
 */
 void TacsDIRKIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
-  // Yet to implement // Debugging Lagrange multipliers
+  printf("Yet to implement computeTotalDerivative. Debugging Adjoint vars.");
+  exit(-1);
 }
 
+/*
+  Update TACS states with the supplied ones (q, qdot, qddot)
+*/
+void TacsIntegrator::setTACSStates( BVec *q, BVec *qdot, BVec * qddot ){
+  tacs->setVariables(q);
+  tacs->setDotVariables(qdot);
+  tacs->setDDotVariables(qddot);
+}
+
+/*
+  Evaluate the time average of functions: F = \sum_{k=0}^N h f(q,t)
+*/
+void TacsDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
+					       int numFuncs, 
+					       TacsScalar *funcVals) {
+  printf("ERROR: Implement time average for DIRK");
+  exit(-1);
+}

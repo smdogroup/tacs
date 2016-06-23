@@ -37,6 +37,7 @@ class TacsIntegrator : public TACSObject {
   void setPrintLevel( int _print_level );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
+  void setUseApproxDerivatives( int _use_approx_derivatives );
 
   // Call this function after integrating to write the solution to
   // file in ASCII text format (might be slower for bigger problems)
@@ -48,19 +49,26 @@ class TacsIntegrator : public TACSObject {
   // ------------------------------------------------------------------
   void writeSolutionToF5();
 
-  // A function to test the adjoint implementation
-  //------------------------------------------------
-  void testGradient( TACSFunction **funcs, int numFuncs, int numDVs, double dh );
+  // Get the finite-difference/complex-step gradient for testing purposes
+  //---------------------------------------------------------------------
+  void getApproxGradient( TACSFunction **func, int num_funcs, 
+			  int num_dv, TacsScalar *x, 
+			  TacsScalar *fvals, TacsScalar *dfdx, double dh );
   
   // Function for returning the adjoint derivative for the functions
-  //------------------------------------------------------------------
+  //----------------------------------------------------------------
   void getAdjointGradient( TACSFunction **func, int num_funcs, 
-			   int num_dv, TacsScalar *x, TacsScalar *dfdx);
+			   int num_dv, TacsScalar *x, 
+			   TacsScalar *fvals, TacsScalar *dfdx );
+  
+  // Update TACS states with the supplied ones (q, qdot, qddot)
+  void setTACSStates( BVec *q, BVec *qdot, BVec * qddot );
 
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
 
+ protected:
   // Pure virtual function for marching backwards in stage and time
   //---------------------------------------------------------------
   virtual void marchBackwards() = 0;
@@ -73,9 +81,14 @@ class TacsIntegrator : public TACSObject {
   // solving for lagrange multipliers
   //----------------------------------------------------------------
   virtual void computeTotalDerivative(TacsScalar *dfdx) = 0;
+
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
+				     TacsScalar *funcVals) = 0;
   
- protected:
-  // Method to solve the non-linear system using Newton's method
+  //Method to solve the non-linear system using Newton's method
   //------------------------------------------------------------
   void newtonSolve( double alpha, double beta, double gamma,
                     double t, BVec *q, BVec *qdot, 
@@ -87,16 +100,13 @@ class TacsIntegrator : public TACSObject {
 		     double t, BVec *q, BVec *qdot, BVec *qddot );
   
   // Calls LAPACK for the the solution of the linear system Ax =
-  // b. The matrix A should be supplied in row major order
-  void linearSolve( TacsScalar *A, TacsScalar *b, int size );
+  // b. Serial execution mode only.
+  void lapackLinearSolve( BVec *res, TACSMat *mat, BVec *update );
     
   // Set the objective/constraint functions of interest and increment.
   // This function should be called before the adjointSolve call.
   // -----------------------------------------------------------------
   void setFunction( TACSFunction **_func, int _num_funcs );
-
-  // Update TACS states with the supplied ones (q, qdot, qddot)
-  void setTACSStates( BVec *q, BVec *qdot, BVec * qddot );
   
   // Sanity checks on the RHS of the adjoint linear system
   void checkAdjointRHS( BVec *rhs );
@@ -131,6 +141,7 @@ class TacsIntegrator : public TACSObject {
 
   // Flag to switch to LAPACK for linear solve
   int use_lapack;
+  int use_approx_derivatives;
 
   // Matrices and vectors for the nonlinear solution
   BVec *res, *update;  // Residual and Newton update
@@ -140,8 +151,8 @@ class TacsIntegrator : public TACSObject {
   TACSKsm *ksm;        // KSM solver
 
   // The objective and contraint functions
-  TACSFunction **func;
-  int num_func;
+  TACSFunction **funcs;
+  int num_funcs;
 };
 
 /*
@@ -163,19 +174,6 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   //--------------------------------------
   void integrate();
   
-  // Function for marching backwards in stage and time
-  //---------------------------------------------------
-   void marchBackwards();
-  
-  // Function for assembling the right hand side of adjoint equation
-  //----------------------------------------------------------------
-  void assembleAdjointRHS( BVec *rhs, int func_num );
-
-  // Function for computing the total derivative after solving for
-  // lagrange multipliers
-  // ----------------------------------------------------------------
-  void computeTotalDerivative( TacsScalar *dfdx );
-
  private:
   // the number of stage in RK scheme
   int num_stages;
@@ -210,9 +208,25 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   //-----------------------------------------
   void timeMarch(double *time, BVec **q, BVec **qdot, BVec **qddot);
 
-  // Setup the right hand side of the adjoint equation
-  //------------------------------------------
-  void setupAdjointRHS(BVec *res, int func_num);
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+   void marchBackwards();
+  
+  // Function for assembling the right hand side of adjoint equation
+  //----------------------------------------------------------------
+  void assembleAdjointRHS( BVec *rhs, int func_num );
+
+  // Function for computing the total derivative after solving for
+  // lagrange multipliers
+  // ----------------------------------------------------------------
+  void computeTotalDerivative( TacsScalar *dfdx );
+
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
+				     TacsScalar *funcVals);
+  
 };
 
 /*
@@ -236,19 +250,6 @@ class TacsBDFIntegrator : public TacsIntegrator {
   // Function that integrates forward in time
   //-----------------------------------------
   void integrate();
-
-  // Function for marching backwards in stage and time
-  //---------------------------------------------------
-  void marchBackwards();
-  
-  // Function for assembling the right hand side of adjoint equation
-  //----------------------------------------------------------------
-  void assembleAdjointRHS( BVec *rhs, int func_num );
-
-  // Function for computing the total derivative after solving for
-  // lagrange multipliers
-  // ----------------------------------------------------------------
-  void computeTotalDerivative( TacsScalar *dfdx );
 
  private:  
 
@@ -278,9 +279,24 @@ class TacsBDFIntegrator : public TacsIntegrator {
   //------------------------------------------
   void approxStates(BVec **q, BVec **qdot, BVec **qddot);
 
-  // Setup the right hand side of the adjoint equation
-  //------------------------------------------
-  void setupAdjointRHS(BVec *res, int func_num);
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+  void marchBackwards();
+  
+  // Function for assembling the right hand side of adjoint equation
+  //----------------------------------------------------------------
+  void assembleAdjointRHS( BVec *rhs, int func_num );
+
+  // Function for computing the total derivative after solving for
+  // lagrange multipliers
+  // ----------------------------------------------------------------
+  void computeTotalDerivative( TacsScalar *dfdx );
+
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
+				     TacsScalar *funcVals);
 };
 #endif
 

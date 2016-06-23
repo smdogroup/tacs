@@ -1,8 +1,8 @@
 # Generate a plate mesh
 import numpy as np
 
-nx = 10
-ny = 10
+nx = 1
+ny = 1
 nodes = np.arange(1, (2*nx+1)*(2*ny+1)+1, dtype=np.int).reshape(2*nx+1, 2*ny+1)
 
 x = np.linspace(0, 1, 2*nx+1)

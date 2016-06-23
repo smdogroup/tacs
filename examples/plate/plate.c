@@ -4,6 +4,7 @@
 #include "isoFSDTStiffness.h"
 #include "KSFailure.h"
 #include "TACSShellTraction.h"
+#include "Compliance.h"
 /*
   Function that sets up the rotor blade dynamics in TACS and
   integrates over time, solve the adjoint.
@@ -52,7 +53,7 @@ int main( int argc, char **argv ){
 
   // Set up the global Gibbs vectors
   TacsScalar g[] = {0.0, 0.0, -9.81};
-  TacsScalar v_init[] = {0.0, 0.0, 0.0};
+  TacsScalar v_init[] = {0.25, 0.25, 0.25};
   TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
   TACSGibbsVector *gravity = new TACSGibbsVector(g); gravity->incref();
@@ -63,10 +64,10 @@ int main( int argc, char **argv ){
   for ( int i = 0; i < num_components; i++ ) {
     const char *descriptor = mesh->getElementDescript(i);
     double min_thickness = 0.01;
-    double max_thickness = 0.20;
-    double thickness = 0.01;
+    double max_thickness = 0.1;
+    double thickness = 0.05;
     isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
-        thickness, i, min_thickness, max_thickness); 
+						   thickness, i, min_thickness, max_thickness); 
 
     // Initialize element object
     TACSElement *element = NULL;
@@ -125,93 +126,75 @@ int main( int argc, char **argv ){
   
   // Set the auxiliary element in to TACS
   tacs->setAuxElements(aux);
-  */
+
   /*-----------------------------------------------------------------*/
   /*------------------ Time Integration and Adjoint Solve -----------*/
   /*-----------------------------------------------------------------*/
 
-  TacsIntegrator *integrator = NULL;
-
-  double tinit = 0.0, tfinal = 0.2;
-  int num_steps_per_sec = 1000, num_stages = 3, max_bdf_order = 3;
-
-  // Create functions for adjoint solve
-  TACSFunction *func = new KSFailure(tacs, 100.0, 1.0);
-
+  int num_dvs = num_components;
+  
+  static const int NUM_FUNCS = 1;
+  TACSFunction * func[NUM_FUNCS];
+  
+  //  func[0] = new KSFailure(tacs, 100.0, 1.0);
+  func[0] = new Compliance(tacs);
+  func[0]->incref();
+   
   // Evaluate the function
-  TacsScalar *funcVals = new TacsScalar[1];
-  tacs->evalFunctions(&func, 1, funcVals);
-  printf("KSFailure:%f\n=", funcVals[0]);
-  delete [] funcVals;
+  TacsScalar *funcVals = new TacsScalar[NUM_FUNCS];
+
+  TacsScalar *dfdx = new TacsScalar[NUM_FUNCS*num_dvs];
+  memset(dfdx, 0, NUM_FUNCS*num_dvs*sizeof(TacsScalar));
+  
+  TacsScalar *dfdxTmp = new TacsScalar[NUM_FUNCS*num_dvs];
+  memset(dfdxTmp, 0, NUM_FUNCS*num_dvs*sizeof(TacsScalar));
 
   // Create an array of design variables
-  int num_dvs = num_components;
-
   TacsScalar *x = new TacsScalar[ num_dvs ];
-  TacsScalar *dfdx = new TacsScalar[ num_dvs ];
-  memset(dfdx, 0, num_dvs*sizeof(TacsScalar));
+  x[0] = 0.03; 
 
-  // Ensure consistency of the design variable values
-  tacs->getDesignVars(x, num_dvs);
-  tacs->setDesignVars(x, num_dvs);
+  TacsIntegrator *integrator = NULL;
 
-  if (!use_bdf) {
+  double tinit = 0.0, tfinal = 0.02;
+  int num_steps_per_sec = 1000;
 
-    //*****************************************************************//
-    // Integrate using DIRK
-    //*****************************************************************//
+  int num_stages = 3, max_bdf_order = 3;
+  
+   if (!use_bdf) { 
 
-    integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
-					num_steps_per_sec, num_stages);
-    integrator->incref();
-
-    // Set optional parameters
-    integrator->setRelTol(1.0e-7);
-    integrator->setAbsTol(1.0e-12);
-    integrator->setMaxNewtonIters(24);
-    integrator->setPrintLevel(2);
-    integrator->setJacAssemblyFreq(1);
-    integrator->setUseLapack(0);
+    integrator = new TacsDIRKIntegrator( tacs, tinit, tfinal, num_steps_per_sec, num_stages ); 
+    integrator->incref(); 
 
     integrator->integrate();
-    integrator->writeSolutionToF5();
-    // integrator->adjointSolve(&func, 1, x, dfdx, num_dvs);
-    // integrator->writeSolution("dirk.dat");
-    
+   
+  } else { 
 
-    integrator->decref();
-
-  } else {
-
-    //*****************************************************************//
-    // Integrate using BDF
-    //*****************************************************************// 
-
-    integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
-				       num_steps_per_sec, max_bdf_order);
+    integrator = new TacsBDFIntegrator( tacs, tinit, tfinal, num_steps_per_sec, max_bdf_order );
     integrator->incref();
-
-    // Set optional parameters
-    integrator->setRelTol(1.0e-7);
-    integrator->setAbsTol(1.0e-12);
-    integrator->setMaxNewtonIters(24);
-    integrator->setPrintLevel(2);
-    integrator->setJacAssemblyFreq(1);
-    integrator->setUseLapack(0);
     
-    integrator->integrate();
-    /* integrator->adjointSolve(&func, 1, x, dfdx, num_dvs); */
-    /* integrator->testGradient(&func, 1, num_dvs, 1.0e-6); */
-    /* integrator->writeSolution("bdf.dat"); */
-    integrator->writeSolutionToF5();
+    integrator->setJacAssemblyFreq(1);
+    integrator->setUseApproxDerivatives(1);
+   
+    integrator->getAdjointGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdx);
+    printf("Compliance = %e\n", RealPart(funcVals[0])); 
 
-    integrator->decref();
+    integrator->getApproxGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdxTmp, 1.0e-8);
+    printf("Compliance = %e\n", RealPart(funcVals[0])); 
+
+    for ( int i = 0; i < num_dvs; i++) {
+      printf("dfdx[%d] = %e %e %e \n", i, RealPart(dfdx[i]), RealPart(dfdxTmp[i]), (RealPart(dfdx[i]) - RealPart(dfdxTmp[i])));
+    } 
 
   }
 
-  delete [] dfdx;
-  delete [] x;
+  integrator->decref();
+  func[0]->decref();
 
+  delete [] dfdx;
+  delete [] dfdxTmp;
+  delete [] x;
+  delete [] funcVals;
+ 
   gravity->decref();
   v0->decref();
   omega0->decref();

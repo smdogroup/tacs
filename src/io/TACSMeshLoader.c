@@ -869,7 +869,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     // Boundary condition information
     bc_nodes = new int[ num_bcs ];
     bc_ptr = new int[ num_bcs+1 ];
-    bc_vals = new double[ bc_vars_size ];
+    bc_vals = new TacsScalar[ bc_vars_size ];
     bc_vars = new int[ bc_vars_size ];
     bc_ptr[0] = 0;
 
@@ -1266,7 +1266,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     // Now node_nums[node_args[k]] and elem_nums[elem_args[k] are sorted.
 
     // Create the output for the nodes
-    Xpts = new double[3*num_nodes];
+    Xpts = new TacsScalar[3*num_nodes];
 
     for ( int k = 0; k < num_nodes; k++ ){
       int n = node_args[k];
@@ -1390,7 +1390,7 @@ TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
   MPI_Comm_rank(comm, &rank);
 
   // Allocate the TACS creator
-  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, vars_per_node);
+  TACSCreator *creator = new TACSCreator(comm, vars_per_node);
   creator->incref();
 
   if (rank == root){

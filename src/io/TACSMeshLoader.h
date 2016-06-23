@@ -79,7 +79,7 @@ class TACSMeshLoader : public TACSObject {
   void getConnectivity( int *_num_nodes, int *_num_elements,
                         const int **_elem_node_ptr, 
                         const int **_elem_node_conn,
-                        const double **_Xpts ){
+                        const TacsScalar **_Xpts ){
     if (_num_nodes){ *_num_nodes = num_nodes; }
     if (_num_elements){ *_num_elements = num_elements; }
     if (_elem_node_ptr){ *_elem_node_ptr = elem_node_ptr; }
@@ -101,7 +101,7 @@ class TACSMeshLoader : public TACSObject {
   double *Xpts_unsorted; 
 
   // Reduced set of contiguous nodes 
-  double *Xpts;
+  TacsScalar *Xpts;
 
   // The mesh and element connectivity
   int num_nodes, num_elements;
@@ -116,7 +116,7 @@ class TACSMeshLoader : public TACSObject {
   // The boundary conditions
   int num_bcs;
   int *bc_nodes, *bc_vars, *bc_ptr;
-  double *bc_vals;
+  TacsScalar *bc_vals;
 };
 
 #endif
