@@ -699,30 +699,20 @@ cdef class Assembler:
       
       return fvals
 
-   def evalDVSens(self, funclist, int numDVs):
+   def evalDVSens(self, func, np.ndarray[TacsScalar, mode='c'] A):
       '''
       Evaluate the derivative of a list of functions w.r.t. the design
       variables.
       '''
-      
-      # Copy over the TACSFunction pointers
-      cdef TACSFunction **funcs
-      funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
-      if funcs is NULL:
-         raise MemoryError()
+      cdef int num_funcs = 1
+      cdef TACSFunction **funcs = &((<Function>func).ptr)
+      cdef int num_design_vars = A.shape[0]
+      cdef TacsScalar *Avals = <TacsScalar*>A.data
 
-      for i in xrange(len(funclist)):
-         funcs[i] = (<Function>funclist[i]).ptr
+      # Evaluate the derivative of the functions
+      self.ptr.evalDVSens(funcs, num_funcs, Avals, num_design_vars)
 
-      # Allocate the numpy return array
-      cdef np.ndarray dv_sens = np.zeros(numDVs*len(funclist))
-
-      self.ptr.evalDVSens(funcs, len(funclist),
-                          <TacsScalar*>(dv_sens.data), numDVs)
-
-      # Free allocated memory
-      free(funcs)
-      return dv_sens
+      return
 
    def evalSVSens(self, Function func, Vec vec):
 
@@ -736,7 +726,7 @@ cdef class Assembler:
       self.ptr.evalSVSens(func.ptr, vec.ptr)
       return
 
-   def evalAdjointResProduct(self, adjoint, int numDVs):
+   def evalAdjointResProduct(self, adjoint, np.ndarray[TacsScalar, mode='c'] A):
       '''
       This function is collective on all TACSAssembler processes. This
       computes the product of the derivative of the residual
@@ -752,21 +742,12 @@ cdef class Assembler:
                     and the adjoint
       num_dvs:      the number of design variables
       '''
-      cdef BVec **adj
-      cdef TacsScalar *dvSens
-      adj = <BVec**>malloc(len(adjoint)*sizeof(BVec*))
-      if adj is NULL:
-         raise MemoryError()
+      cdef int num_adj = 1
+      cdef BVec **adj = &((<Vec>adjoint).ptr)
+      cdef TacsScalar *Avals = <TacsScalar*>A.data
+      cdef int num_design_vars = A.shape[0]
 
-      for i in xrange(len(adjoint)):
-         adj[i] = (<Vec>adjoint[i]).ptr
-
-      cdef np.ndarray dv_sens = np.zeros(numDVs*len(adjoint))
-      self.ptr.evalAdjointResProducts(adj, len(adjoint),
-                                      <TacsScalar*>dv_sens.data, numDVs)
-
-      # Free allocated memory
-      free(adj)
+      self.ptr.evalAdjointResProducts(adj, num_adj, Avals, num_design_vars)
       return
         
    def testElement(self, int elemNum, int print_level):

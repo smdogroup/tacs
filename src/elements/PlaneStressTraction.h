@@ -105,6 +105,7 @@ class PSQuadTraction : public TACSElement {
         for ( int i = 0; i < order; i++ ){
           r[0] -= hsurf*na[i]*nb[j]*Tx;
           r[1] -= hsurf*na[i]*nb[j]*Ty;
+          r += 2;
         }
       }
     }

@@ -245,12 +245,6 @@ class TACSAssembler : public TACSObject {
   void testConstitutive( int elemNum, int print_level );
   void testFunction( TACSFunction * func, 
                      int num_design_vars, double dh );
-
-  // Functions to return approximate sensitivities
-  void getApproxFunctionDVSens( TACSFunction ** funcs, int num_funcs,
-				int num_design_vars, TacsScalar * dfdx, 
-				double dh );
-  void getApproxFunctionSVSens( TACSFunction * func, BVec * dfdq, double dh );
   
   // Retrieve the MPI communicator
   // -----------------------------
