@@ -78,7 +78,7 @@ class TACSCreator : public TACSObject {
   // Get the new node numbers and element partition
   // ----------------------------------------------
   int getNodeNums( const int **_new_nodes );
-  void getElementPartition( const int **_partition );
+  int getElementPartition( const int **_partition );
   void getNumOwnedNodes( int **_owned_nodes );
   void getNumOwnedElements( int **_owned_elements );
 

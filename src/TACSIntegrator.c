@@ -813,7 +813,7 @@ void TacsBDFIntegrator::integrate(){
     approxStates(q, qdot, qddot);
     
     // Determine the coefficients for Jacobian Assembly
-    double gamma = bddf_coeff[0]/h/h;
+    double gamma = bddf_coeff[0]/(h*h);
     double beta  = bdf_coeff[0]/h;
     double alpha = 1.0;
 
@@ -864,7 +864,6 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   TacsScalar funcVals;
   tacs->evalFunctions(&funcs[0], 1, &funcVals);
 
-  printf("norm before: %e\n", res->norm());
   // Evalute the state variable sensitivity
   if (use_approx_derivatives) {
     tacs->getApproxFunctionSVSens(funcs[0], res, 1.0e-8);
@@ -872,7 +871,6 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   else {
     tacs->evalSVSens(funcs[0], res);
   }
-  printf("norm after:%e \n", res->norm());
 
   // Add contribution from the first derivative terms d{R}d{qdot}
   double scale;

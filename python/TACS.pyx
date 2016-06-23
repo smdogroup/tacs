@@ -196,6 +196,21 @@ cdef class Vec:
       '''
       return self.ptr.readFromFile(&filename[0])
 
+cdef class AuxElements:
+   cdef TACSAuxElements *ptr
+   def __cinit__(self):
+      self.ptr = new TACSAuxElements(100)
+      self.ptr.incref()
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+   
+   def addElement(self, int num, Element elem):
+      self.ptr.addElement(num, elem.ptr)
+      return
+
 # Python class for corresponding instance Mat
 cdef _init_Mat(TACSMat *ptr):
    mat = Mat()
@@ -462,6 +477,11 @@ cdef class Assembler:
       Set the number of threads to use in computation
       '''
       self.ptr.setNumThreads(t)
+      return
+
+   def setAuxElements(self, AuxElements elems):
+      '''Set the auxiliary elements'''
+      self.ptr.setAuxElements(elems.ptr)
       return
 
    def createNodeVec(self):
@@ -892,8 +912,6 @@ cdef class Creator:
    def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
                          np.ndarray[int, ndim=1, mode='c'] dep_conn,
                          np.ndarray[double, ndim=1, mode='c'] dep_weights):
-
-
       return
 
    def setElements(self, elements):
@@ -923,6 +941,20 @@ cdef class Creator:
                          MatrixOrderingType mat_type):
       self.ptr.setReorderingType(order_type, mat_type)
       return
+
+   def getElementPartition(self):
+      '''Retrieve the element partition'''
+      cdef const int *part = NULL
+      cdef int nelems = 0
+      nelems = self.ptr.getElementPartition(&part)
+
+      # Create the partition array and return it
+      partition = np.zeros(nelems, dtype=np.intc)
+      for i in xrange(nelems):
+         partition[i] = part[i]
+
+      # Retrun the copy of the partition array
+      return partition
 
    def createTACS(self):
       return _init_Assembler(self.ptr.createTACS())

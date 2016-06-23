@@ -236,7 +236,10 @@ class TACSElement : public TACSOptObject {
 				TacsScalar *_Pe,
 				const TacsScalar Xpts[],
 				const TacsScalar vars[],
-				const TacsScalar dvars[] ) = 0;
+				const TacsScalar dvars[] ){
+    *_Te = 0.0;  
+    *_Pe = 0.0;
+  }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -253,7 +256,7 @@ class TACSElement : public TACSOptObject {
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
 			    const TacsScalar dvars[],
-			    const TacsScalar ddvars[] ) = 0;
+			    const TacsScalar ddvars[] ){}
 
   // Add the product of the adjoint variables with the derivative of the residual
   // ----------------------------------------------------------------------------

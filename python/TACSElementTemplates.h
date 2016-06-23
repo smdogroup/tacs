@@ -2,6 +2,7 @@
 #define TACS_ELEMENT_TEMPLATES_H
 
 #include "PlaneStressQuad.h"
+#include "PlaneStressTraction.h"
 #include "MITCShell.h"
 #include "Solid.h"
 
@@ -9,6 +10,9 @@
 #define PlaneStressQuad2 PlaneStressQuad<2>
 #define PlaneStressQuad3 PlaneStressQuad<3>
 #define PlaneStressQuad4 PlaneStressQuad<4>
+#define PSQuadTraction2 PSQuadTraction<2>
+#define PSQuadTraction3 PSQuadTraction<3>
+#define PSQuadTraction4 PSQuadTraction<4>
 #define MITCShell2 MITCShell<2>
 #define MITCShell3 MITCShell<3>
 #define MITCShell4 MITCShell<4>

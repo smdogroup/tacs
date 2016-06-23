@@ -150,6 +150,11 @@ cdef class Function:
 cdef class Constitutive:
    cdef TACSConstitutive *ptr
 
+cdef extern from "TACSAuxElements.h":
+   cdef cppclass TACSAuxElements(TACSObject):
+      TACSAuxElements(int)
+      void addElement(int, TACSElement*)
+      
 cdef extern from "TACSAssembler.h":
    enum OrderingType"TACSAssembler::OrderingType":
       NATURAL_ORDER"TACSAssembler::NATURAL_ORDER"
@@ -180,6 +185,10 @@ cdef extern from "TACSAssembler.h":
       void getDesignVarRange(TacsScalar* lb, TacsScalar* ub,
                              int ndvs)
       void setNumThreads(int t)
+
+      # Set the auxiliary element class
+      void setAuxElements(TACSAuxElements*)
+      TACSAuxElements *getAuxElements()
       
       # Create vectors/matrices
       BVec* createVec()
@@ -258,6 +267,7 @@ cdef extern from "TACSCreator.h":
       void setReorderingType(OrderingType _order_type,
                              MatrixOrderingType _mat_type)
       void partitionMesh(int split_size, int *part)
+      int getElementPartition(const int **)
       TACSAssembler *createTACS()
       
 cdef extern from "TACSToFH5.h":

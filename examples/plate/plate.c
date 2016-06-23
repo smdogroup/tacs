@@ -66,8 +66,9 @@ int main( int argc, char **argv ){
     double min_thickness = 0.01;
     double max_thickness = 0.1;
     double thickness = 0.05;
-    isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
-						   thickness, i, min_thickness, max_thickness); 
+    isoFSDTStiffness *stiff = 
+      new isoFSDTStiffness(rho, E, nu, kcorr, ys,
+                           thickness, i, min_thickness, max_thickness); 
 
     // Initialize element object
     TACSElement *element = NULL;

@@ -27,4 +27,3 @@ clean:
 	${RM} *.${SO_EXT}
 	${RM} *.o
 
-.SECONDARY:

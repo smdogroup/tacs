@@ -48,6 +48,19 @@ cdef extern from "TACSElementTemplates.h":
       PlaneStressQuad4(PlaneStressStiffness *stiff, 
                        ElementBehaviorType type, int)
 
+   # Declare theee PSQuadTraction elements
+   cdef cppclass PSQuadTraction2(TACSElement):
+      PSQuadTraction2(int, TacsScalar, TacsScalar)
+      PSQuadTraction2(int, TacsScalar*, TacsScalar*)
+
+   cdef cppclass PSQuadTraction3(TACSElement):
+      PSQuadTraction3(int, TacsScalar, TacsScalar)
+      PSQuadTraction3(int, TacsScalar*, TacsScalar*)
+
+   cdef cppclass PSQuadTraction4(TACSElement):
+      PSQuadTraction4(int, TacsScalar, TacsScalar)
+      PSQuadTraction4(int, TacsScalar*, TacsScalar*)
+
    # Declare the MITCShell elements
    cdef cppclass MITCShell2(TACSElement):
       MITCShell2(FSDTStiffness *stiff, ElementBehaviorType type, int)

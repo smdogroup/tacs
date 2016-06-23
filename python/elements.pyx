@@ -100,6 +100,30 @@ cdef class PlaneQuad(Element):
       self.ptr.decref()
       return
 
+cdef class PSQuadTraction(Element):
+   def __cinit__(self, int surf,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] ty):
+      assert(len(tx) == len(ty))
+      cdef int order = len(tx)
+      if order == 2:
+         self.ptr = new PSQuadTraction2(surf, <TacsScalar*>tx.data,
+                                        <TacsScalar*>ty.data)
+         self.ptr.incref()
+      elif order == 3:
+         self.ptr = new PSQuadTraction3(surf, <TacsScalar*>tx.data,
+                                        <TacsScalar*>ty.data)
+         self.ptr.incref()
+      elif order == 4:
+         self.ptr = new PSQuadTraction2(surf, <TacsScalar*>tx.data,
+                                        <TacsScalar*>ty.data)
+         self.ptr.incref()
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
 cdef class PlaneTri6(Element):
    def __cinit__(self, PlaneStress stiff,
                  ElementBehaviorType elem_type=LINEAR,

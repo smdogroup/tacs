@@ -247,8 +247,9 @@ int TACSCreator::getNodeNums( const int **_new_nodes ){
 /*
   Get the element partition
 */
-void TACSCreator::getElementPartition( const int **_partition ){
+int TACSCreator::getElementPartition( const int **_partition ){
   if (_partition){ *_partition = partition; }
+  return num_elements;
 }
 
 /*
@@ -303,7 +304,7 @@ TACSAssembler* TACSCreator::createTACS(){
 
   // Loacal nodal information
   int *local_tacs_nodes = NULL;
-  double *Xpts_local = NULL;
+  TacsScalar *Xpts_local = NULL;
 
   // Local dependent node information
   int *local_dep_node_ptr = NULL;
@@ -551,9 +552,9 @@ TACSAssembler* TACSCreator::createTACS(){
 	num_local_nodes = local_node_size;
         num_local_dep_nodes = local_dep_node_size;
 	local_tacs_nodes = new int[ num_local_nodes ];
-	Xpts_local = new double[ 3*num_local_nodes ];	
+	Xpts_local = new TacsScalar[ 3*num_local_nodes ];	
 	memcpy(local_tacs_nodes, tacs_nodes, num_local_nodes*sizeof(int));
-	memcpy(Xpts_local, xpts, 3*num_local_nodes*sizeof(double));
+	memcpy(Xpts_local, xpts, 3*num_local_nodes*sizeof(TacsScalar));
 
 	if (num_local_dep_nodes > 0){
 	  // Copy over the data for the dependent nodes
@@ -627,7 +628,7 @@ TACSAssembler* TACSCreator::createTACS(){
 
     // Allocate space for the incoming data
     local_tacs_nodes = new int[ num_local_nodes ];
-    Xpts_local = new double[ 3*num_local_nodes ];
+    Xpts_local = new TacsScalar[ 3*num_local_nodes ];
 
     MPI_Recv(local_tacs_nodes, num_local_nodes, MPI_INT, 
 	     root_rank, 3, comm, &status);
