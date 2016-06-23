@@ -48,8 +48,9 @@ template <int order>
 class MITCShell : public TACSShell {
  public:
   MITCShell( FSDTStiffness * _stiff,
-	     ElementBehaviorType type = LINEAR, 
-	     int _componentNum = 0 );
+	     ElementBehaviorType type=LINEAR, 
+	     int _componentNum=0,
+             int _use_lobatto_quadrature=0 );
   ~MITCShell();
   
   // How many nodes/variables per element
@@ -217,8 +218,8 @@ class MITCShell : public TACSShell {
   const double *gaussWts, *gaussPts;
 
   // The knot locations
-  const double * knots; // "order" Gauss points
-  const double * pknots; // "order"-1 Gauss points
+  const double *knots; // "order" Gauss points
+  const double *pknots; // "order"-1 Gauss points
 };
 
 const double MITCShellFirstOrderKnots[2] = {-1.0, 1.0};
@@ -226,13 +227,36 @@ const double MITCShellFirstOrderKnots[2] = {-1.0, 1.0};
 template <int order>
 MITCShell<order>::MITCShell( FSDTStiffness * _stiff, 
 			     ElementBehaviorType _type, 
-			     int _componentNum ):
+			     int _componentNum, 
+                             int use_lobatto_quadrature ):
 TACSShell(_stiff, _componentNum){
   type = _type;
   
-  unsigned int gaussOrder = order;
-  numGauss = FElibrary::getGaussPtsWts(gaussOrder, &gaussPts, &gaussWts);
-
+  if (use_lobatto_quadrature){
+    if (order == 2){
+      numGauss = 3;
+      gaussPts = FElibrary::lobattoPts3;
+      gaussWts = FElibrary::lobattoWts3;
+    }
+    else if (order == 3){
+      numGauss = 4;
+      gaussPts = FElibrary::lobattoPts4;
+      gaussWts = FElibrary::lobattoWts4;
+    }
+    else if (order == 4){
+      numGauss = 5;
+      gaussPts = FElibrary::lobattoPts5;
+      gaussWts = FElibrary::lobattoWts5;
+    }
+    else {
+      unsigned int gaussOrder = order;
+      numGauss = FElibrary::getGaussPtsWts(gaussOrder, &gaussPts, &gaussWts);   
+    }
+  }
+  else {
+    unsigned int gaussOrder = order;
+    numGauss = FElibrary::getGaussPtsWts(gaussOrder, &gaussPts, &gaussWts);
+  }
   // Get the knot points - the order and order-1-th Gauss points
   if (order == 2){
     knots = MITCShellFirstOrderKnots;
