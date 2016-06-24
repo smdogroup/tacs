@@ -84,7 +84,6 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
    return ndarray
 
 cdef class Vec:
-   cdef BVec *ptr
    def __cinit__(self):
       '''
       A generic wrapper for any of the TACS vector types

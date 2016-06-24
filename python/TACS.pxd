@@ -150,6 +150,9 @@ cdef class Function:
 cdef class Constitutive:
    cdef TACSConstitutive *ptr
 
+cdef class Vec:
+   cdef BVec *ptr
+   
 cdef extern from "TACSAuxElements.h":
    cdef cppclass TACSAuxElements(TACSObject):
       TACSAuxElements(int)

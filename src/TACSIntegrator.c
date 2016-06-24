@@ -865,13 +865,8 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   tacs->evalFunctions(&funcs[0], 1, &funcVals);
 
   // Evalute the state variable sensitivity
-  if (use_approx_derivatives) {
-    tacs->getApproxFunctionSVSens(funcs[0], res, 1.0e-8);
-  }
-  else {
-    tacs->evalSVSens(funcs[0], res);
-  }
-
+  tacs->evalSVSens(funcs[0], res);
+  
   // Add contribution from the first derivative terms d{R}d{qdot}
   double scale;
   for ( int i = 1; i < nbdf; i++ ) {
@@ -914,12 +909,7 @@ void TacsBDFIntegrator::computeTotalDerivative(TacsScalar *dfdx) {
     setTACSStates(q[k], qdot[k], qddot[k]);
     
     // Add dfdx contribution from the last time step
-    if (use_approx_derivatives) { 
-      tacs->getApproxFunctionDVSens(funcs, num_funcs, num_design_vars, dfdxTmp, 1.0e-8);
-    }
-    else {
-      tacs->evalDVSens(&funcs[0], 1, dfdxTmp, num_design_vars); 
-    }
+    tacs->evalDVSens(&funcs[0], 1, dfdxTmp, num_design_vars); 
     for ( int m = 0; m < num_funcs*num_design_vars; m++) {
       dfdx[m] += h*dfdxTmp[m];
     }  
@@ -1347,7 +1337,6 @@ void TacsDIRKIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
       tacs->evalFunctions(&funcs[func_num], 1, &funcVals);
 
       // Evalute the state variable sensitivity
-      //      tacs->getApproxFunctionSVSens(&func[0], num_design_vars, dfdxTmp, 1.0e-8);
       tacs->evalSVSens(funcs[func_num], res);
       res->scale(scale);
     }

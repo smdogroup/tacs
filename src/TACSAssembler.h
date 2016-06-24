@@ -254,6 +254,14 @@ class TACSAssembler : public TACSObject {
   // --------------------------------------
   void setNumThreads( int t );
 
+  // Retrieve the local values of the residuals/local values
+  // -------------------------------------------------------
+  void getLocalArrays( const TacsScalar **_Xpts,
+                       TacsScalar **_localRes,
+                       const TacsScalar **_localVars,
+                       const TacsScalar **_localDotVars,
+                       const TacsScalar **_localDDotVars );
+
   // Add values to the local components of a vector
   // ----------------------------------------------
   inline int getValues( const int perNode, const int elemNum, 

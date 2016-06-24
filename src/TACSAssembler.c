@@ -1872,6 +1872,21 @@ void TACSAssembler::setNumThreads( int t ){
   thread_info->setNumThreads(t);  
 }
 
+/*
+  Retrieve the local variable arrays
+*/
+void TACSAssembler::getLocalArrays( const TacsScalar **_Xpts,
+                                    TacsScalar **_localRes,
+                                    const TacsScalar **_localVars,
+                                    const TacsScalar **_localDotVars,
+                                    const TacsScalar **_localDDotVars ){
+  if (_Xpts){ *_Xpts = Xpts; }
+  if (_localRes){ *_localRes = localRes; }
+  if (_localVars){ *_localVars = localVars; }
+  if (_localDotVars){ *_localDotVars = localDotVars; }
+  if (_localDDotVars){ *_localDDotVars = localDDotVars; }
+}
+
 /*!
   Initialize several arrays that will be used during the course 
   of the analysis
