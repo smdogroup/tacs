@@ -137,7 +137,6 @@ int main( int argc, char **argv ){
   static const int NUM_FUNCS = 1;
   TACSFunction * func[NUM_FUNCS];
   
-  //  func[0] = new KSFailure(tacs, 100.0, 1.0);
   func[0] = new Compliance(tacs);
   func[0]->incref();
    
@@ -156,10 +155,10 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.02;
+  double tinit = 0.0, tfinal = 0.01;
   int num_steps_per_sec = 1000;
 
-  int num_stages = 3, max_bdf_order = 3;
+  int num_stages = 3, max_bdf_order = 1;
   
    if (!use_bdf) { 
 
@@ -179,7 +178,7 @@ int main( int argc, char **argv ){
     integrator->getAdjointGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdx);
     printf("Compliance = %e\n", RealPart(funcVals[0])); 
 
-    integrator->getApproxGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdxTmp, 1.0e-8);
+    integrator->getApproxGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdxTmp, 1.0e-30);
     printf("Compliance = %e\n", RealPart(funcVals[0])); 
 
     for ( int i = 0; i < num_dvs; i++) {

@@ -492,21 +492,21 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
       if (bvars[j] >= 0){
         B->addRowWeightValues(weights[j], bvars[j], 
                               nvars, varp, bvars, weights, 
-                              mv, &values[incr*i*bsize]);      
+                              mv, &values[incr*i*bsize], matOr);
         if (cflag){
           E->addRowWeightValues(weights[j], bvars[j], 
                                 nvars, varp, cvars, weights, 
-                                mv, &values[incr*i*bsize]);
+                                mv, &values[incr*i*bsize], matOr);
         }
       }
       else if (cvars[j] >= 0){
         F->addRowWeightValues(weights[j], cvars[j], 
                               nvars, varp, bvars, weights, 
-                              mv, &values[incr*i*bsize]);
+                              mv, &values[incr*i*bsize], matOr);
         if (cflag){
           C->addRowWeightValues(weights[j], cvars[j], 
                                 nvars, varp, cvars, weights, 
-                                mv, &values[incr*i*bsize]);      
+                                mv, &values[incr*i*bsize], matOr);
         }
       }
       else {

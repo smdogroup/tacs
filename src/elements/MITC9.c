@@ -1594,6 +1594,12 @@ void MITC9::addAdjResProduct( double time, double scale,
         br++;
       }
 
+      // Add the contribution from the gravity load
+      for ( int ii = 0; ii < NUM_NODES; ii++ ){
+        mscale[0] -= 
+          h*N[ii]*(g[0]*psi[8*ii] + g[1]*psi[8*ii+1] + g[2]*psi[8*ii+2]);
+      }
+
       // Scale the psi vector by the determinant of the Jacobian
       // transformation
       for ( int k = 0; k < 8; k++ ){

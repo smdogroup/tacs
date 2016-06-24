@@ -1232,7 +1232,7 @@ inline void TACSAssembler::addMatValues( TACSMat * A,
   // Add the element values to the matrix
   const int *nodeNums = &elementTacsNodes[start];
 
-  if (numDependentNodes == 0){
+  if (0){ // numDependentNodes == 0){
     // If we have no dependent nodes, then we don't need to do
     // anything extra here
     A->addValues(nnodes, nodeNums, nnodes, nodeNums, 
