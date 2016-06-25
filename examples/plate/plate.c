@@ -155,7 +155,7 @@ int main( int argc, char **argv ){
 
   TacsIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.01;
+  double tinit = 0.0, tfinal = 0.005;
   int num_steps_per_sec = 1000;
 
   int num_stages = 3, max_bdf_order = 1;
@@ -169,22 +169,27 @@ int main( int argc, char **argv ){
    
   } else { 
 
-    integrator = new TacsBDFIntegrator( tacs, tinit, tfinal, num_steps_per_sec, max_bdf_order );
+    integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
+                                       num_steps_per_sec, max_bdf_order);
     integrator->incref();
-    
     integrator->setJacAssemblyFreq(1);
-    integrator->setUseApproxDerivatives(1);
    
-    integrator->getAdjointGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdx);
-    printf("Compliance = %e\n", RealPart(funcVals[0])); 
+    integrator->getAdjointGradient(func, NUM_FUNCS, x, num_dvs,
+                                   funcVals, dfdx);
+    printf("Compliance = %15.9e\n", RealPart(funcVals[0])); 
 
-    integrator->getApproxGradient(func, NUM_FUNCS, num_dvs, x, funcVals, dfdxTmp, 1.0e-30);
-    printf("Compliance = %e\n", RealPart(funcVals[0])); 
+    integrator->getApproxGradient(func, NUM_FUNCS, x, num_dvs, 
+                                  funcVals, dfdxTmp, 1.0e-30);
+    printf("Compliance = %15.9e\n", RealPart(funcVals[0])); 
 
+    printf("dfdx[   ]: %15s %15s %15s\n",
+           "Analytic", "FD/CS", "Error");
     for ( int i = 0; i < num_dvs; i++) {
-      printf("dfdx[%d] = %e %e %e \n", i, RealPart(dfdx[i]), RealPart(dfdxTmp[i]), (RealPart(dfdx[i]) - RealPart(dfdxTmp[i])));
-    } 
-
+      printf("dfdx[%3d]: %15.8e %15.8e %15.8e \n", 
+             i, RealPart(dfdx[i]), 
+             RealPart(dfdxTmp[i]), 
+             (RealPart(dfdx[i]) - RealPart(dfdxTmp[i])));
+    }
   }
 
   integrator->decref();

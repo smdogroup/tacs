@@ -1219,10 +1219,10 @@ inline int TACSAssembler::setValues( const int perNode,
   output:
   A:          the matrix to which the element-matrix is added
 */
-inline void TACSAssembler::addMatValues( TACSMat * A, 
+inline void TACSAssembler::addMatValues( TACSMat *A, 
 					 const int elemNum, 
-					 const TacsScalar * mat,
-					 int * itemp, TacsScalar * temp,
+					 const TacsScalar *mat,
+					 int *itemp, TacsScalar *temp,
                                          MatrixOrientation matOr ){
   int start = elementNodeIndex[elemNum];
   int end = elementNodeIndex[elemNum+1];
@@ -1232,7 +1232,7 @@ inline void TACSAssembler::addMatValues( TACSMat * A,
   // Add the element values to the matrix
   const int *nodeNums = &elementTacsNodes[start];
 
-  if (0){ // numDependentNodes == 0){
+  if (matOr == NORMAL && numDependentNodes == 0){
     // If we have no dependent nodes, then we don't need to do
     // anything extra here
     A->addValues(nnodes, nodeNums, nnodes, nodeNums, 

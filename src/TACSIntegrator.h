@@ -52,13 +52,13 @@ class TacsIntegrator : public TACSObject {
   // Get the finite-difference/complex-step gradient for testing purposes
   //---------------------------------------------------------------------
   void getApproxGradient( TACSFunction **func, int num_funcs, 
-			  int num_dv, TacsScalar *x, 
+			  TacsScalar *x, int num_dv, 
 			  TacsScalar *fvals, TacsScalar *dfdx, double dh );
   
   // Function for returning the adjoint derivative for the functions
   //----------------------------------------------------------------
   void getAdjointGradient( TACSFunction **func, int num_funcs, 
-			   int num_dv, TacsScalar *x, 
+			   TacsScalar *x, int num_dv, 
 			   TacsScalar *fvals, TacsScalar *dfdx );
   
   // Update TACS states with the supplied ones (q, qdot, qddot)

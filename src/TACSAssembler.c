@@ -1720,8 +1720,11 @@ were defined more than once\n", mpiRank);
     }
   }
 
-  // Populate the depNodeToTacs pointer. This array enables faster
-  // access of the
+  // Set up data for any dependent nodes. Note that the minimum
+  // number of independent nodes is set as the maximum number
+  // of element node by default. This is required for addMatValues()
+  // to have enough memory for TRANSPOSE matrix assembly.
+  maxElementIndepNodes = maxElementNodes;
   if (numDependentNodes > 0){
     depNodeToTacs = new int[ depNodeIndex[numDependentNodes] ];
     for ( int i = 0; i < depNodeIndex[numDependentNodes]; i++ ){
@@ -1735,7 +1738,6 @@ were defined more than once\n", mpiRank);
     }
 
     // Compute the maximum number of independent nodes
-    maxElementIndepNodes = 0;
     for ( int i = 0; i < numElements; i++ ){
       int jend = elementNodeIndex[i+1];
       int nnodes = 0;

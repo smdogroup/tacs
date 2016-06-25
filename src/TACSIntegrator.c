@@ -265,7 +265,8 @@ void TacsIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
   Output: The lagrange multipliers: psi
 */
-void TacsIntegrator::adjointSolve( BVec *psi, double alpha, double beta, double gamma,
+void TacsIntegrator::adjointSolve( BVec *psi, 
+                                   double alpha, double beta, double gamma,
 				   double t, BVec *q, BVec *qdot, BVec *qddot ) {
   // Zero the entries
   res->zeroEntries();
@@ -277,21 +278,6 @@ void TacsIntegrator::adjointSolve( BVec *psi, double alpha, double beta, double 
   // Assemble the Jacobian matrix once in five newton iterations
   tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
   
-
-  // Test consistency of the transpose system
-  BVec *random = tacs->createVec();
-  random->setRand(-1.0, 1.0);
-  random->applyBCs();
-  BVec *temp1 = tacs->createVec();
-  BVec *temp2 = tacs->createVec();
-  
-  tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, random, temp1, TRANSPOSE);
-  mat->mult(random, temp2);
-  temp1->axpy(-1.0, temp2);
-
-  printf("Transpose check: %16.8e\n", RealPart(temp1->norm()));
-
-
   // Assemble the right-hand side
   assembleAdjointRHS(res, 0);
   
@@ -365,7 +351,7 @@ void TacsIntegrator::writeSolutionToF5(){
   (used for testing purposes)
 */
 void TacsIntegrator::getApproxGradient( TACSFunction **funcs, int numFuncs, 
-					int numDVs, TacsScalar *x, 
+					TacsScalar *x, int numDVs,
 					TacsScalar *fvals, TacsScalar *dfdx, 
 					double dh ) {
   // Copy the inputs
@@ -389,13 +375,17 @@ void TacsIntegrator::getApproxGradient( TACSFunction **funcs, int numFuncs,
   }
 
   TacsScalar *ftmp = new TacsScalar[num_funcs];
-  
+
+  // Only perform the forward integration if we're using
+  // a finite-difference approximation
+#ifndef TACS_USE_COMPLEX
   // Integrate forward in time
   integrate();
  
   // Evaluate the functions at the current time 
   evalTimeAvgFunctions(funcs, num_funcs, fvals); 
-  
+#endif
+
   // Find a finite-difference (or complex-step) approximation of the
   // total derivative
   for ( int k = 0; k < num_design_vars; k++ ){
@@ -411,11 +401,11 @@ void TacsIntegrator::getApproxGradient( TACSFunction **funcs, int numFuncs,
     integrate();
 
     // Evaluate the function value for the perturbed x
-    evalTimeAvgFunctions(funcs, num_funcs, ftmp); 
+    evalTimeAvgFunctions(funcs, num_funcs, fvals); 
     
     // Evaluate the CS derivative
     for ( int j = 0; j < num_funcs; j++ ){
-      dfdx[k+j*num_design_vars] = ImagPart(ftmp[j])/dh;
+      dfdx[k+j*num_design_vars] = ImagPart(fvals[j])/dh;
     }
 #else
     // Evaluate the matrix at x + j*dh
@@ -599,7 +589,7 @@ void TacsIntegrator::checkAdjointRHS( BVec *rhs ) {
   respect to the design variable.
 */
 void TacsIntegrator::getAdjointGradient( TACSFunction **_funcs, int _num_funcs, 
-					 int _num_dv, TacsScalar *x, 
+					 TacsScalar *x, int _num_dv, 
 					 TacsScalar *fvals, TacsScalar *dfdx ) {
   // Copy the inputs
   num_design_vars = _num_dv;
@@ -854,7 +844,8 @@ void TacsBDFIntegrator::marchBackwards() {
     double alpha = 1.0;
 
     // Solve the adjoint linear system
-    adjointSolve(psi[k],  alpha,  beta, gamma, time[k], q[k], qdot[k], qddot[k]);    
+    adjointSolve(psi[k],  alpha,  beta, gamma, time[k], 
+                 q[k], qdot[k], qddot[k]);    
   }
 }
  
@@ -883,26 +874,27 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   tacs->evalSVSens(funcs[0], res);
   
   // Add contribution from the first derivative terms d{R}d{qdot}
-  double scale;
   for ( int i = 1; i < nbdf; i++ ) {
     if (k+i < num_time_steps){
-      scale = bdf_coeff[i]/h;
+      double scale = bdf_coeff[i]/h;
       setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
-      tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, psi[k+i], res, TRANSPOSE);
+      tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, 
+                                  psi[k+i], res, TRANSPOSE);
     }
   }
  
   // Add contribution from the second derivative terms d{R}d{qddot}
   for ( int i = 1; i < nbddf; i++ ) {
     if (k+i < num_time_steps){
-      scale = bddf_coeff[i]/(h*h);
+      double scale = bddf_coeff[i]/(h*h);
       setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
-      tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, psi[k+i], res, TRANSPOSE);
+      tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, 
+                                  psi[k+i], res, TRANSPOSE);
     }
   }
-  
+
   // Sanity check on the adjoint RHS
-  checkAdjointRHS(res);
+  // checkAdjointRHS(res);
 }
 
 /*

@@ -1727,28 +1727,28 @@ void BCSRMat::scale( TacsScalar alpha ){
   message.
   
   Input:
-  row      == the value of the row index
-  ncol     == the number of columns to add
-  col      == the column indices (before being offset)
-  nca      == the number of columns in a
-  avals    == the values 
+  row:       the value of the row index
+  ncol:      the number of columns to add
+  col:       the column indices (before being offset)
+  nca:       the number of columns in a
+  avals:     the values 
 */
-void BCSRMat::addRowValues( int row, int ncol, const int * col, 
-			    int nca, const TacsScalar * avals ){
+void BCSRMat::addRowValues( int row, int ncol, const int *col, 
+			    int nca, const TacsScalar *avals ){
   if (ncol <= 0){
     return;
   }
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize*bsize;
 
   if (row >= 0 && row < nrows){
     int row_size = rowp[row+1] - rowp[row];
-    const int * col_array = &cols[rowp[row]];
+    const int *col_array = &cols[rowp[row]];
 
     for ( int j = 0; j < ncol; j++ ){      
       int c = col[j];
@@ -1757,8 +1757,8 @@ void BCSRMat::addRowValues( int row, int ncol, const int * col,
 	continue;
       }
       else if (c < ncols){
-	int * item = (int*)bsearch(&c, col_array, row_size, 
-                                   sizeof(int), FElibrary::comparator);
+	int *item = (int*)bsearch(&c, col_array, row_size, 
+                                  sizeof(int), FElibrary::comparator);
 
 	if (item == NULL){
 	  fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
@@ -1767,7 +1767,7 @@ void BCSRMat::addRowValues( int row, int ncol, const int * col,
 	  // Place the values into the array
 	  int cp = item - cols;
 	  int bj = bsize*j;
-	  TacsScalar * a = &(data->A[b2*cp]);
+	  TacsScalar *a = &(data->A[b2*cp]);
 
 	  for ( int jj = 0; jj < bsize; jj++ ){
 	    int njj = nca*jj;
@@ -1785,7 +1785,8 @@ void BCSRMat::addRowValues( int row, int ncol, const int * col,
     }
   }
   else {
-    fprintf(stderr, "BCSRMat error: row %d out of range [0,%d)\n", row, nrows);
+    fprintf(stderr, "BCSRMat error: row %d out of range [0,%d)\n", 
+            row, nrows);
   }
 }
 
@@ -1796,6 +1797,18 @@ void BCSRMat::addRowValues( int row, int ncol, const int * col,
   message. The entries in avals are multiplied both by the scalar
   alpha and the values stored in weights.
   
+  NORMAL:
+  
+  | A11 | A12 | A13 |
+  | A21 | A22 | A23 |
+  | A31 | A32 | A33 |
+
+  TRANSPOSE:
+
+  | A11' | A21' | A31' |
+  | A12' | A22' | A32' |
+  | A13' | A23' | A33' |
+
   input:
   alpha    the value of the scalar multiplier
   row      the row index
@@ -1808,7 +1821,8 @@ void BCSRMat::addRowValues( int row, int ncol, const int * col,
 */
 void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
 				  int nwrows, const int *wrowp,
-				  const int *wcols, const TacsScalar *weights,
+				  const int *wcols, 
+                                  const TacsScalar *weights,
 				  int nca, const TacsScalar *avals,
                                   MatrixOrientation matOr ){
   if (nwrows <= 0 || alpha == 0.0){
@@ -1817,14 +1831,14 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize*bsize;
 
   if (row >= 0 && row < nrows){
     int row_size = rowp[row+1] - rowp[row];
-    const int * col_array = &cols[rowp[row]];
+    const int *col_array = &cols[rowp[row]];
 
     for ( int i = 0; i < nwrows; i++ ){
       for ( int jp = wrowp[i]; jp < wrowp[i+1]; jp++ ){
@@ -1837,11 +1851,12 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
 	  continue;
 	}
 	else if (c < ncols){
-	  int * item = (int*)bsearch(&c, col_array, row_size, 
-				     sizeof(int), FElibrary::comparator);
+	  int *item = (int*)bsearch(&c, col_array, row_size, 
+                                    sizeof(int), FElibrary::comparator);
 
 	  if (item == NULL){
-	    fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
+	    fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", 
+                    row, c);
 	  }
 	  else {
 	    // Place the values into the array
@@ -1867,7 +1882,7 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
             else {
               // Set the offset in the dense input row to the current
               // block matrix entry added to the BCSRMat
-              const int offset = bsize*i;
+              const int offset = nca*bsize*i;
 
               // Loop over the rows of the input matrix
               for ( int ii = 0; ii < bsize; ii++ ){
@@ -1890,7 +1905,8 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
     }
   }
   else {
-    fprintf(stderr, "BCSRMat error: row %d out of range [0,%d)\n", row, nrows);
+    fprintf(stderr, "BCSRMat error: row %d out of range [0,%d)\n", 
+            row, nrows);
   }
 }
 
@@ -1900,27 +1916,27 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
   insert values outside these entries will generate an error message.
   
   Input:
-  row      == the value of the row index
-  ncol     == the number of columns to add
-  col      == the column indices (before being offset)
-  avals    == the values 
+  row:        the value of the row index
+  ncol:       the number of columns to add
+  col:        the column indices (before being offset)
+  avals:      the values 
 */
-void BCSRMat::addBlockRowValues( int row, int ncol, const int * col, 
-				 const TacsScalar * avals ){
+void BCSRMat::addBlockRowValues( int row, int ncol, const int *col, 
+				 const TacsScalar *avals ){
   if (ncol <= 0){
     return;
   }
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize*bsize;
 
   if (row >= 0 && row < nrows){
     int row_size = rowp[row+1] - rowp[row];
-    const int * col_array = &cols[rowp[row]];
+    const int *col_array = &cols[rowp[row]];
 
     for ( int j = 0; j < ncol; j++ ){      
       int c = col[j];
@@ -1929,8 +1945,8 @@ void BCSRMat::addBlockRowValues( int row, int ncol, const int * col,
 	continue;
       }
       else if (c < ncols){
-	int * item = (int*)bsearch(&c, col_array, row_size, 
-                                   sizeof(int), FElibrary::comparator);
+	int *item = (int*)bsearch(&c, col_array, row_size, 
+                                  sizeof(int), FElibrary::comparator);
 
 	if (item == NULL){
 	  fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
@@ -1938,7 +1954,7 @@ void BCSRMat::addBlockRowValues( int row, int ncol, const int * col,
 	else {
 	  // Add values into the array
 	  int cp = item - cols;
-	  TacsScalar * a = &(data->A[b2*cp]);
+	  TacsScalar *a = &(data->A[b2*cp]);
 
 	  for ( int k = 0; k < b2; k++ ){
 	    a[k] += avals[b2*j + k];
@@ -1952,7 +1968,8 @@ out of range [0,%d)\n", c, ncols);
     }
   }
   else {
-    fprintf(stderr, "BCSRMat error: row %d out of range [0,%d)\n", row, nrows);
+    fprintf(stderr, "BCSRMat error: row %d out of range [0,%d)\n", 
+            row, nrows);
   }
 }
 
@@ -1965,7 +1982,7 @@ out of range [0,%d)\n", c, ncols);
   ident == a flag to indicate whether to set the diagonal 
   element to the identity  
 */
-void BCSRMat::zeroRow( int row, int nvars, const int * vnums, int ident ){
+void BCSRMat::zeroRow( int row, int nvars, const int *vnums, int ident ){
   if (row >= 0 && row < data->nrows){
     for ( int k = 0; k < nvars; k++ ){
       if (vnums[k] < 0 || vnums[k] >= data->bsize){
@@ -1974,14 +1991,14 @@ out of range\n", vnums[k]);
       }
     }
 
-    const int * rowp = data->rowp;
-    const int * cols = data->cols;
+    const int *rowp = data->rowp;
+    const int *cols = data->cols;
     const int bsize = data->bsize;
     const int b2 = bsize*bsize;
 
     int end = rowp[row+1];
     for ( int j = rowp[row]; j < end; j++ ){
-      TacsScalar * a = &(data->A[b2*j]);
+      TacsScalar *a = &(data->A[b2*j]);
       
       for ( int i = 0; i < nvars; i++ ){
 	int ii = vnums[i];
@@ -2010,13 +2027,13 @@ out of range\n", vnums[k]);
   .   [ F, C ]
 */
 void BCSRMat::partition( int nrows_p, 
-			 BCSRMat ** Bmat, BCSRMat ** Emat,
-			 BCSRMat ** Fmat, BCSRMat ** Cmat ){ 
+			 BCSRMat **Bmat, BCSRMat **Emat,
+			 BCSRMat **Fmat, BCSRMat **Cmat ){ 
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int * diag = data->diag;
   const TacsScalar * A = data->A;
