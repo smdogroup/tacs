@@ -153,16 +153,50 @@ int main( int argc, char **argv ){
   TacsScalar *x = new TacsScalar[ num_dvs ];
   x[0] = 0.03; 
 
-  TacsIntegrator *integrator = NULL;
+  TacsBDFIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.005;
+  double tinit = 0.0, tfinal = 0.01;
   int num_steps_per_sec = 1000;
 
-  int num_stages = 3, max_bdf_order = 1;
+  int num_stages = 3, max_bdf_order = 2;
   
+
+  integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
+                                     num_steps_per_sec, max_bdf_order);
+  integrator->incref();
+  integrator->setJacAssemblyFreq(1);
+
+  TacsScalar fval = integrator->forward(x, num_dvs, func[0]);
+  integrator->reverse(dfdx, num_dvs, func[0]);
+
+  double fd = 0.0;
+
+#ifdef TACS_USE_COMPLEX
+  double dh = 1e-30;
+  x[0] = x[0] + TacsScalar(0.0, dh);
+  TacsScalar cs_fval = integrator->forward(x, num_dvs, func[0]);
+
+  fd = ImagPart(cs_fval)/dh;
+#else
+  double dh = 1e-6;
+  
+  x[0] = x[0] + dh;
+  TacsScalar fval2 = integrator->forward(x, num_dvs, func[0]);
+
+  fd = (fval2 - fval)/dh;
+#endif
+  printf("dfdx[   ]: %15s %15s %15s\n",
+         "Analytic", "FD/CS", "Error");
+  printf("dfdx[%3d]: %15.8e %15.8e %15.8e \n", 
+         0, RealPart(dfdx[0]), 
+         RealPart(fd), 
+         (RealPart(dfdx[0]) - RealPart(fd)));
+
+  /*
    if (!use_bdf) { 
 
-    integrator = new TacsDIRKIntegrator( tacs, tinit, tfinal, num_steps_per_sec, num_stages ); 
+    integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal, 
+                                        num_steps_per_sec, num_stages); 
     integrator->incref(); 
 
     integrator->integrate();
@@ -173,13 +207,13 @@ int main( int argc, char **argv ){
                                        num_steps_per_sec, max_bdf_order);
     integrator->incref();
     integrator->setJacAssemblyFreq(1);
-   
+
     integrator->getAdjointGradient(func, NUM_FUNCS, x, num_dvs,
                                    funcVals, dfdx);
     printf("Compliance = %15.9e\n", RealPart(funcVals[0])); 
 
     integrator->getApproxGradient(func, NUM_FUNCS, x, num_dvs, 
-                                  funcVals, dfdxTmp, 1.0e-30);
+                                  funcVals, dfdxTmp, 1e-30);
     printf("Compliance = %15.9e\n", RealPart(funcVals[0])); 
 
     printf("dfdx[   ]: %15s %15s %15s\n",
@@ -191,6 +225,7 @@ int main( int argc, char **argv ){
              (RealPart(dfdx[i]) - RealPart(dfdxTmp[i])));
     }
   }
+  */
 
   integrator->decref();
   func[0]->decref();

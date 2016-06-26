@@ -37,7 +37,6 @@ class TacsIntegrator : public TACSObject {
   void setPrintLevel( int _print_level );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
-  void setUseApproxDerivatives( int _use_approx_derivatives );
 
   // Call this function after integrating to write the solution to
   // file in ASCII text format (might be slower for bigger problems)
@@ -62,7 +61,7 @@ class TacsIntegrator : public TACSObject {
 			   TacsScalar *fvals, TacsScalar *dfdx );
   
   // Update TACS states with the supplied ones (q, qdot, qddot)
-  void setTACSStates( BVec *q, BVec *qdot, BVec * qddot );
+  void setTACSStates( BVec *q, BVec *qdot, BVec *qddot );
 
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
@@ -80,7 +79,7 @@ class TacsIntegrator : public TACSObject {
   // Pure virtual function for computing the total derivative after
   // solving for lagrange multipliers
   //----------------------------------------------------------------
-  virtual void computeTotalDerivative(TacsScalar *dfdx) = 0;
+  virtual void computeTotalDerivative( TacsScalar *dfdx ) = 0;
 
   // Evaluate time average of the function value using discretization
   // from the integration scheme
@@ -141,7 +140,6 @@ class TacsIntegrator : public TACSObject {
 
   // Flag to switch to LAPACK for linear solve
   int use_lapack;
-  int use_approx_derivatives;
 
   // Matrices and vectors for the nonlinear solution
   BVec *res, *update;  // Residual and Newton update
@@ -247,6 +245,11 @@ class TacsBDFIntegrator : public TacsIntegrator {
   //--------------------------
   ~TacsBDFIntegrator();
   
+  TacsScalar forward( const TacsScalar *x, int num_design_vars,
+                      TACSFunction *func );
+  void reverse( TacsScalar *dfdx, int num_design_vars,
+                TACSFunction *func );
+
   // Function that integrates forward in time
   //-----------------------------------------
   void integrate();
