@@ -833,8 +833,7 @@ TacsScalar TacsBDFIntegrator::forward( const TacsScalar *x,
   tacs->getInitConditions(q[0], qdot[0]);
   qddot[0]->zeroEntries();
 
-  TacsScalar fval;
-  tacs->evalFunctions(&func, 1, &fval);
+  TacsScalar fval = 0.0;
 
   for ( int k = 1; k < num_time_steps; k++ ){
     time[k] = time[k-1] + h;
@@ -894,7 +893,6 @@ TacsScalar TacsBDFIntegrator::forward( const TacsScalar *x,
 void TacsBDFIntegrator::reverse( TacsScalar *dfdx,
                                  int num_design_vars,
                                  TACSFunction *func ){
-
   int num_rhs = (2*max_bdf_order+1) + 1;
   BVec **rhs = new BVec*[ num_rhs ];
   for ( int i = 0; i < num_rhs; i++ ){
@@ -967,25 +965,6 @@ void TacsBDFIntegrator::reverse( TacsScalar *dfdx,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
   March backward in time and solve for the adjoint variables
 */
@@ -1023,17 +1002,6 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
 
   // get the BDF coefficients
   get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
-      
-  printf("k: %d ", k);
-  for ( int i = 0; i < nbdf; i++ ){
-    printf("%e ", bdf_coeff[i]);
-  }
-
-  printf("\nk: %d ", k);
-  for ( int i = 0; i < nbddf; i++ ){
-    printf("%e ", bddf_coeff[i]);
-  }
-  printf("\n");
 
   // Add the contribution from the j-th objective function df/dq. 
   // Set the states variables into TACS
@@ -1196,15 +1164,6 @@ TacsIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){
 
   // Add entries into the Butcher tableau
   setupButcherTableau();
-
-  // Allocate space for adjoint variables
-  psi = new BVec*[num_time_steps*num_stages];
-
-  // Create adjoint vectors
-  for (int k = 0; k < num_time_steps*num_stages; k++) {
-    psi[k] = tacs->createVec(); 
-    psi[k]->incref(); 
-  }
 }
 
 /*
@@ -1327,6 +1286,165 @@ void TacsDIRKIntegrator::checkButcherTableau(){
   }
 }
 
+/*
+  Integrate forward in time
+*/
+TacsScalar TacsDIRKIntegrator::forward( const TacsScalar *x, 
+                                        int num_design_vars,
+                                        TACSFunction *func ){
+  tacs->setDesignVars(x, num_design_vars);
+
+  // Get the initial condition
+  tacs->getInitConditions(q[0], qdot[0]);
+  qddot[0]->zeroEntries();
+
+  TacsScalar fval = 0.0;
+
+  for ( int k = 0; k < num_time_steps; k++ ){
+    // Set the pointer to the stage values
+    BVec **qs = &qS[num_stages*k];
+    BVec **qdots = &qdotS[num_stages*k];
+    BVec **qddots = &qddotS[num_stages*k];
+    
+    for ( int i = 0; i < num_stages; i++ ){
+      // Zero the states (these may not be zero when integrate() is
+      // called for the second time)
+      qs[i]->zeroEntries();
+      qdots[i]->zeroEntries();
+      qddots[i]->zeroEntries();
+
+      // Compute the stage time
+      double t = time[k-1] + C[i]*h;
+
+      // Initial guess for qddotS
+      if (i == 0){
+        qddots[i]->copyValues(qddot[k-1]);
+      }
+      else {
+        qddots[i]->copyValues(qddots[i-1]);
+      }
+
+      // Compute qdotS
+      int idx = getIdx(i);
+      qdots[i]->copyValues(qdot[k]);
+      for ( int j = 0; j <= i; j++ ){
+        qdots[i]->axpy(h*A[idx+j], qddots[j]);
+      }
+
+      // Compute qS
+      qs[i]->copyValues(q[k-1]);
+      for ( int j = 0; j <= i; j++ ){
+        qs[i]->axpy(h*A[idx+j], qdots[j]);
+      }
+    
+      // Determine the coefficients for linearizing the Residual
+      double gamma = 1.0;
+      double beta  = h*A[idx+i]; 
+      double alpha = beta*beta;
+
+      // Solve the nonlinear system of stage equations
+      newtonSolve(alpha, beta, gamma, t,
+                  qs[i], qdots[i], qddots[i]);
+    }
+
+    // advance the time
+    time[k] = time[k-1] + h;
+    
+    // advance the position state
+    q[k]->copyValues(q[k-1]);
+    for ( int j = 0; j < num_stages; j++ ){
+      q[k]->axpy(h*B[j], qdots[j]);
+    }
+
+    // advance the velocity state
+    qdot[k]->copyValues(qdot[k-1]);
+    for ( int j = 0; j < num_stages; j++ ){
+      qdot[k]->axpy(h*B[j], qddots[j]);
+    }
+    
+    // advance the acceleration state
+    qddot[k]->zeroEntries();
+    for ( int j = 0; j < num_stages; j++ ){
+      qddot[k]->axpy(B[j], qddots[j]);
+    }
+  }
+
+  return fval;
+}
+
+void TacsDIRKIntegrator::reverse( TacsScalar *dfdx, 
+                                  int num_design_vars,
+                                  TACSFunction *func ){
+  BVec *adjoint = tacs->createVec();
+  adjoint->incref();
+
+  BVec **stage_adjoint = new BVec*[ num_stages ];
+  BVec **stage_rhs = new BVec*[ num_stages ];
+  for ( int i = 0; i < num_stages; i++ ){
+    stage_adjoint[i] = tacs->createVec();
+    stage_adjoint[i]->incref();
+
+    stage_rhs[i] = tacs->createVec();
+    stage_rhs[i]->incref();
+  }
+
+  TacsScalar *tmp = new TacsScalar[ num_design_vars ];
+  memset(dfdx, 0, num_design_vars*sizeof(TacsScalar));
+
+  for ( int k = num_time_steps-1; k >= 1; k-- ){
+    // Set the pointer to the stage values
+    BVec **qs = &qS[num_stages*k];
+    BVec **qdots = &qdotS[num_stages*k];
+    BVec **qddots = &qddotS[num_stages*k];
+
+    for ( int i = num_stages-1; i >= 0; i-- ){
+      // Get the index
+      int idx = getIdx(i);
+
+      // Compute the time
+      double t = time[k-1] + C[i]*h;
+
+      // Determine the coefficients for linearizing the Residual
+      double gamma = 1.0;
+      double beta  = h*A[idx+i]; 
+      double alpha = beta*beta;
+
+      // Set the variables
+      tacs->setVariables(qs[i]);
+      tacs->setDotVariables(qdots[i]);
+      tacs->setDDotVariables(qddots[i]);
+      
+      // Solve the transpose of the Jacobian
+      tacs->assembleJacobian(NULL, mat, 
+                             alpha, beta, gamma, TRANSPOSE);
+      pc->factor();
+      ksm->solve(stage_rhs[i], stage_adjoint[i]);
+
+      // Add the adjoint transpose
+      for ( 
+
+    }
+  }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
   Function that computes the stage values at each time step. This
@@ -1376,7 +1494,8 @@ void TacsDIRKIntegrator::computeStageValues(){
     double alpha = h*A[0]*h*A[0];
 
     // Solve the nonlinear system of stage equations
-    newtonSolve(alpha, beta, gamma, tS[toffset+i], qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
+    newtonSolve(alpha, beta, gamma, tS[toffset+i], 
+                qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
   }
 }
 

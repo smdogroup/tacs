@@ -167,6 +167,13 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   // Desctructor
   //------------
   ~TacsDIRKIntegrator();
+
+
+  TacsScalar forward( const TacsScalar *x, int num_design_vars,
+                      TACSFunction *func );
+  void reverse( TacsScalar *dfdx, int num_design_vars,
+                TACSFunction *func );
+
   
   // function to call to integrate in time
   //--------------------------------------
