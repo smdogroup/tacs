@@ -1020,20 +1020,17 @@ void TacsBDFIntegrator::marchBackwards() {
 */
 void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   int k = current_time_step;
+     
+  /* printf("k: %d ", k); */
+  /* for ( int i = 0; i < nbdf; i++ ){ */
+  /*   printf("%e ", bdf_coeff[i]); */
+  /* } */
 
-  // get the BDF coefficients
-  get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
-      
-  printf("k: %d ", k);
-  for ( int i = 0; i < nbdf; i++ ){
-    printf("%e ", bdf_coeff[i]);
-  }
-
-  printf("\nk: %d ", k);
-  for ( int i = 0; i < nbddf; i++ ){
-    printf("%e ", bddf_coeff[i]);
-  }
-  printf("\n");
+  /* printf("\nk: %d ", k); */
+  /* for ( int i = 0; i < nbddf; i++ ){ */
+  /*   printf("%e ", bddf_coeff[i]); */
+  /* } */
+  /* printf("\n"); */
 
   // Add the contribution from the j-th objective function df/dq. 
   // Set the states variables into TACS
@@ -1049,6 +1046,7 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   // Add contribution from the first derivative terms d{R}d{qdot}
   for ( int i = 1; i < nbdf; i++ ) {
     if (k+i < num_time_steps){
+      get2ndBDFCoeff(k+i, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
       double scale = bdf_coeff[i]/h;
       setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
       tacs->addJacobianVecProduct(scale, 0.0, 1.0, 0.0, 
@@ -1059,6 +1057,7 @@ void TacsBDFIntegrator::assembleAdjointRHS( BVec *res, int func_num ){
   // Add contribution from the second derivative terms d{R}d{qddot}
   for ( int i = 1; i < nbddf; i++ ) {
     if (k+i < num_time_steps){
+      get2ndBDFCoeff(k+i, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
       double scale = bddf_coeff[i]/(h*h);
       setTACSStates(q[k+i], qdot[k+i], qddot[k+i]);
       tacs->addJacobianVecProduct(scale, 0.0, 0.0, 1.0, 
