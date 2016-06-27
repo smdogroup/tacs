@@ -155,7 +155,7 @@ int main( int argc, char **argv ){
 
   TacsBDFIntegrator *integrator = NULL;
 
-  double tinit = 0.0, tfinal = 0.01;
+  double tinit = 0.0, tfinal = 0.001;
   int num_steps_per_sec = 1000;
 
   int num_stages = 3, max_bdf_order = 2;
@@ -165,6 +165,22 @@ int main( int argc, char **argv ){
                                      num_steps_per_sec, max_bdf_order);
   integrator->incref();
   integrator->setJacAssemblyFreq(1);
+
+  integrator->getAdjointGradient(func, NUM_FUNCS, x, num_dvs,
+				 funcVals, dfdx);
+
+  printf("Compliance = %15.9e\n", RealPart(funcVals[0])); 
+
+  integrator->getApproxGradient(func, NUM_FUNCS, x, num_dvs, 
+				funcVals, dfdxTmp, 1e-30);
+
+  printf("dfdx[   ]: %15s %15s %15s\n",
+         "Analytic", "FD/CS", "Error");
+  printf("dfdx[%3d]: %15.8e %15.8e %15.8e \n", 
+         0, RealPart(dfdx[0]), 
+         RealPart(dfdxTmp[0]), 
+         (RealPart(dfdx[0]) - RealPart(dfdxTmp[0])));
+
 
   TacsScalar fval = integrator->forward(x, num_dvs, func[0]);
   integrator->reverse(dfdx, num_dvs, func[0]);
