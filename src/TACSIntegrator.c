@@ -513,7 +513,9 @@ void TacsIntegrator::lapackLinearSolve( BVec *res, TACSMat *mat, BVec *update ) 
     if (info < 0) {
       fprintf(stderr,"LAPACK GETRF: %d-th argument had an illegal value\n", info);
     } else {
-      fprintf(stderr,"LAPACK GETRF: The factorization has been completed, but the factor U(%d,%d) is exactly singular, and division by zero will occur if it is used to solve a system of equations\n", info, info);
+      fprintf(stderr,"LAPACK GETRF: The factorization has been completed, \
+but the factor U(%d,%d) is exactly singular, and division by zero will occur \
+if it is used to solve a system of equations\n", info, info);
     }
     exit(-1);
   } 
@@ -1423,7 +1425,6 @@ void TacsDIRKIntegrator::reverse( TacsScalar *dfdx,
       ksm->solve(stage_rhs[i], stage_adjoint[i]);
 
       // Add the adjoint transpose
-      for ( 
 
     }
   }
