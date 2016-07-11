@@ -31,7 +31,19 @@ cdef extern from "TACSElement.h":
       
 cdef extern from "TACSGibbsVector.h":
    cdef cppclass TACSGibbsVector(TACSObject):
-      TACSGibbsVector(TacsScalar x[])
+      TACSGibbsVector(const TacsScalar x[])
+
+cdef extern from "RigidBody.h":
+   cdef cppclass TACSRigidBody(TACSElement):
+      TACSRigidBody(const TacsScalar, const TacsScalar*,
+                    const TacsScalar*)
+      void setDesignVarNums(int, const int*, const int*)
+
+   cdef cppclass TACSSphericalConstraint(TACSElement):
+      TACSSphericalConstraint()
+
+   cdef cppclass TACSRevoluteConstraint(TACSElement):
+      TACSRevoluteConstraint()
 
 # Template
 cdef extern from "TACSElementTemplates.h":

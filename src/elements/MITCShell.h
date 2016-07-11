@@ -1257,7 +1257,6 @@ void MITCShell<order>::getAdjResXptProduct( double time,
                                             const TacsScalar dvars[],
                                             const TacsScalar ddvars[] ){
   memset(XptSens, 0, 3*NUM_NODES*sizeof(TacsScalar));
-  
   /*
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
@@ -1440,7 +1439,8 @@ void MITCShell<order>::getAdjResXptProduct( double time,
 				 res, h, stress, tx, dtx,
 				 knots, pknots, vars, Xpts, N11, N22, N12);
     }
-    }*/
+  }
+  //*/
 }
 
 /*

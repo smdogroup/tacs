@@ -76,7 +76,58 @@ cdef class GibbsVector:
    def __dealloc__(self):
       self.ptr.decref()
       return
-   
+
+cdef class RigidBody(Element):
+   def __cinit__(self, TacsScalar mass,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] c,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] J,
+                 int mdv=-1,
+                 np.ndarray[int, ndim=1, mode='c'] cdvs=None,
+                 np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
+      cdef TACSRigidBody *rbptr = NULL
+      cdef int *_cdvs = NULL
+      cdef int *_Jdvs = NULL
+
+      # Assign the the variable numbers if they are supplied by the
+      # user
+      if cdvs is not None:
+         _cdvs = <int*>cdvs.data
+      if Jdvs is not None:
+         _Jdvs = <int*>Jdvs.data
+
+      # Allocate the rigid body object and set the design variables
+      rbptr = new TACSRigidBody(mass, <TacsScalar*>c.data, <TacsScalar*>J.data)
+      rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
+
+      # Increase the reference count to the underlying object
+      self.ptr = rbptr 
+      self.ptr.incref()
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
+cdef class SphericalConstraint(Element):
+   def __cinit__(self):
+      self.ptr = new TACSSphericalConstraint()
+      self.ptr.incref()
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
+cdef class RevoluteConstraint(Element):
+   def __cinit__(self):
+      self.ptr = new TACSRevoluteConstraint()
+      self.ptr.incref()
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
 cdef class PlaneQuad(Element):
    def __cinit__(self, int order, PlaneStress stiff,
                  ElementBehaviorType elem_type=LINEAR,
