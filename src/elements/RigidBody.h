@@ -29,7 +29,7 @@ class TACSRefFrame : public TACSObject {
 		TACSGibbsVector *_r1,
 		TACSGibbsVector *_r2 );
   ~TACSRefFrame();
-  void initialize();
+
   void getRotation( const TacsScalar ** _C );
   void setDesignVars( const TacsScalar *dvs, int numDVs );
   void getDesignVars( TacsScalar *dvs, int numDVs );
@@ -39,6 +39,9 @@ class TACSRefFrame : public TACSObject {
   void testRotation( int numDVs, double dh );
 
  private:
+  // Recompute the rotation matrix
+  void initialize();
+
   // The rotation matrix associated with this reference frame
   TacsScalar C[9];
 
@@ -72,9 +75,14 @@ class TACSRefFrame : public TACSObject {
 */
 class TACSRigidBody : public TACSElement {
  public:
-  TACSRigidBody( const TacsScalar _mass, 
-                 const TacsScalar _c[], 
-                 const TacsScalar _J[] );
+  TACSRigidBody( TACSRefFrame *_CRef,
+                 const TacsScalar _mass, 
+                 const TacsScalar _cRef[], 
+                 const TacsScalar _JRef[],
+                 TACSGibbsVector *_gvec, 
+                 TACSGibbsVector *_rInit,
+                 TACSGibbsVector *_vInit,
+                 TACSGibbsVector *_omegaInit );
   ~TACSRigidBody();
 
   // Set design variables numbers associated with the inertial props.
@@ -87,6 +95,7 @@ class TACSRigidBody : public TACSElement {
   // --------------------------------------------
   int numDisplacements(){ return 8; }
   int numNodes(){ return 1; }
+  const char* elementName(){ return elem_name; }
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -132,7 +141,20 @@ class TACSRigidBody : public TACSElement {
   void testJacobian( double dh, double alpha, 
                      double beta, double gamma );
 
+  // Functions for post-processing
+  // -----------------------------
+  void addOutputCount( int *nelems, int *nnodes, int *ncsr );
+  void getOutputData( unsigned int out_type, 
+		      double *data, int ld_data, 
+		      const TacsScalar Xpts[],
+		      const TacsScalar vars[] );
+  void getOutputConnectivity( int *con, int node );
+
  private:
+  // Recompute the inertial properties in the global ref. frame
+  void updateInertialProperties();
+
+  // The inertial properties in the global reference frame
   TacsScalar mass; // The mass of the rigid body
   TacsScalar c[3]; // The first moment of inertia
   TacsScalar J[6]; // The second moment of inertia
@@ -140,13 +162,22 @@ class TACSRigidBody : public TACSElement {
   // The initial position, velocity, angular velocity
   TACSGibbsVector *rInit, *vInit, *omegaInit;
 
+  // The accel. due to gravity in the global ref. frame
+  TACSGibbsVector *gvec; 
+  
   // The initial reference frame
   TACSRefFrame *CRef;
 
+  // The inertial properties in the locally-aligned body frame
+  // oriented with respect to CRef
+  TacsScalar cRef[3];
+  TacsScalar JRef[6];
+  
   // The design variable numbers associated with the inertial properties
   int massDV, cDV[3], JDV[6];
 
-  TacsScalar g[3]; // The accel. due to gravity in the global ref. frame
+  // The name of the element
+  static const char *elem_name;
 };
 
 /*
@@ -160,6 +191,7 @@ class TACSSphericalConstraint : public TACSElement {
   // --------------------------------------------
   int numDisplacements(){ return 8; }
   int numNodes(){ return 3; }
+  const char* elementName(){ return elem_name; }
 
   // Retrieve the initial values for the state variables
   // ---------------------------------------------------
@@ -195,6 +227,7 @@ class TACSSphericalConstraint : public TACSElement {
 
  private:
   TacsScalar xA[3], xB[3];
+  static const char *elem_name;
 };
 
 /*
@@ -208,6 +241,7 @@ class TACSRevoluteConstraint : public TACSElement {
   // --------------------------------------------
   int numDisplacements(){ return 8; }
   int numNodes(){ return 3; }
+  const char* elementName(){ return elem_name; }
 
   // Retrieve the initial values for the state variables
   // ---------------------------------------------------
@@ -243,6 +277,7 @@ class TACSRevoluteConstraint : public TACSElement {
  private:
   TacsScalar xA[3], xB[3];
   TacsScalar eA[3], eB1[3], eB2[3];
+  static const char *elem_name;
 };
 
 #endif // TACS_RIGID_BODY_DYNAMICS_H

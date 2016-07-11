@@ -77,10 +77,22 @@ cdef class GibbsVector:
       self.ptr.decref()
       return
 
+cdef class RefFrame:
+   cdef TACSRefFrame *ptr
+   def __cinit__(self, GibbsVector r0, GibbsVector r1, GibbsVector r2):
+      self.ptr = new TACSRefFrame(r0.ptr, r1.ptr, r2.ptr)
+      self.ptr.incref()
+      return
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
 cdef class RigidBody(Element):
-   def __cinit__(self, TacsScalar mass,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] c,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] J,
+   def __cinit__(self, RefFrame frame, TacsScalar mass,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
+                 GibbsVector g, GibbsVector r0,
+                 GibbsVector v0, GibbsVector omega0,
                  int mdv=-1,
                  np.ndarray[int, ndim=1, mode='c'] cdvs=None,
                  np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
@@ -96,7 +108,9 @@ cdef class RigidBody(Element):
          _Jdvs = <int*>Jdvs.data
 
       # Allocate the rigid body object and set the design variables
-      rbptr = new TACSRigidBody(mass, <TacsScalar*>c.data, <TacsScalar*>J.data)
+      rbptr = new TACSRigidBody(frame.ptr, mass, <TacsScalar*>cRef.data,
+                                <TacsScalar*>JRef.data, g.ptr, r0.ptr,
+                                v0.ptr, omega0.ptr)
       rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
       # Increase the reference count to the underlying object

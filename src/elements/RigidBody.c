@@ -374,74 +374,70 @@ void TACSRefFrame::testRotation( int numDVs, double dh ){
   The constructor for the rigid body dynamics 
 
   input:
-  rot_param:  the rotation matrix parametrization
   mass:       the mass of the body
   c:          the first moment of inertia
   J:          the symmetric second moment of inertia
   g:          the acceleration due to gravity in the global frame
 */
-TACSRigidBody::TACSRigidBody( const TacsScalar _mass, 
-                              const TacsScalar _c[], 
-                              const TacsScalar _J[] ){
+TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
+                              const TacsScalar _mass, 
+                              const TacsScalar _cRef[], 
+                              const TacsScalar _JRef[],
+                              TACSGibbsVector *_gvec, 
+                              TACSGibbsVector *_rInit,
+                              TACSGibbsVector *_vInit,
+                              TACSGibbsVector *_omegaInit ){
   // Copy over the property values
   mass = _mass;
 
-  // Copy over the first moment of inertia properties
-  c[0] = _c[0];
-  c[1] = _c[1];
-  c[2] = _c[2];
+  // Copy over the inertial properties in the Ref reference frame
+  for ( int k = 0; k < 3; k++ ){
+    cRef[k] = _cRef[k];
+  }
+  for ( int k = 0; k < 6; k++ ){
+    JRef[k] = _JRef[k];
+  }
 
-  // Copy over the second moment of inertia properties
-  J[0] = _J[0];
-  J[1] = _J[1];
-  J[2] = _J[2];
-  J[3] = _J[3];
-  J[4] = _J[4];
-  J[5] = _J[5];
+  // Copy over the reference frame
+  CRef = _CRef;
 
-  // Copy the accel. due to gravity
-  const TacsScalar *_g;
-  // gvec->getVector(&_g);
-  // g[0] = _g[0];
-  // g[1] = _g[1];
-  // g[2] = _g[2];
+  // Copy over the initial vectors. Note that these vectors
+  // are in the global reference frame.
+  gvec = _gvec;
+  rInit = _rInit;
+  vInit = _vInit;
+  omegaInit = _omegaInit;
 
-  g[0] = 0.0;
-  g[1] = 0.0;
-  g[2] = -1.0;
-
-  // g[0] = g[1] = g[2] = 0.0;
-
-  /* // Copy over the initial reference frame */
-  /* CRef = _CRef; */
-
-  /* // Copy over the initial vectors of everything */
-  /* rInit = _rInit; */
-  /* vInit = _vInit; */
-  /* omegaInit = _omegaInit; */
-
-  /* // Increment the reference counts for things */
-  /* CRef->incref(); */
-  /* rInit->incref(); */
-  /* vInit->incref(); */
-  /* omegaInit->incref(); */
+  // Increment the reference counts for things
+  CRef->incref();
+  gvec->incref();
+  rInit->incref();
+  vInit->incref();
+  omegaInit->incref();
 
   // Set the design variable numbers for the inertial properties
   massDV = -1;
   cDV[0] = cDV[1] = cDV[2] = -1;
   JDV[0] = JDV[1] = JDV[2] = 
     JDV[3] = JDV[4] = JDV[5] = -1;
+
+  // Update the inertial properties
+  updateInertialProperties();
 }
 
 /*
   Decrease the reference counts to everything
 */
 TACSRigidBody::~TACSRigidBody(){
-  /* CRef->decref(); */
-  /* rInit->decref(); */
-  /* vInit->decref(); */
-  /* omegaInit->decref(); */
+  CRef->decref();
+  gvec->decref();
+  rInit->decref();
+  vInit->decref();
+  omegaInit->decref();
 }
+
+// Set the element name
+const char *TACSRigidBody::elem_name = "TACSRigidBody";
 
 /*
   Set the design variable numbers associated with the inertial
@@ -483,14 +479,14 @@ void TACSRigidBody::setDesignVars( const TacsScalar dvs[], int numDVs ){
   // Set the moment of mass variable
   for ( int k = 0; k < 3; k++ ){
     if (cDV[k] >= 0 && cDV[k] < numDVs){
-      c[k] = dvs[cDV[k]];
+      cRef[k] = dvs[cDV[k]];
     }
   }
   
   // Set the second moment of mass variables
   for ( int k = 0; k < 6; k++ ){
     if (JDV[k] >= 0 && JDV[k] < numDVs){
-      J[k] = dvs[JDV[k]];
+      JRef[k] = dvs[JDV[k]];
     }
   }
 
@@ -498,9 +494,14 @@ void TACSRigidBody::setDesignVars( const TacsScalar dvs[], int numDVs ){
   CRef->setDesignVars(dvs, numDVs);
 
   // Set the design variable values for the initial vectors
+  gvec->setDesignVars(dvs, numDVs);
   rInit->setDesignVars(dvs, numDVs);
   vInit->setDesignVars(dvs, numDVs);
   omegaInit->setDesignVars(dvs, numDVs);
+
+  // Update the inertial properties based on the design variable
+  // values
+  updateInertialProperties();
 }
 
 /*
@@ -515,14 +516,14 @@ void TACSRigidBody::getDesignVars( TacsScalar dvs[], int numDVs ){
   // Get the moment of mass variables
   for ( int k = 0; k < 3; k++ ){
     if (cDV[k] >= 0 && cDV[k] < numDVs){
-      dvs[cDV[k]] = c[k];
+      dvs[cDV[k]] = cRef[k];
     }
   }
   
   // Get the second moment of mass variables
   for ( int k = 0; k < 6; k++ ){
     if (JDV[k] >= 0 && JDV[k] < numDVs){
-      dvs[JDV[k]] = J[k];
+      dvs[JDV[k]] = JRef[k];
     }
   }
 
@@ -530,6 +531,7 @@ void TACSRigidBody::getDesignVars( TacsScalar dvs[], int numDVs ){
   CRef->getDesignVars(dvs, numDVs);
 
   // Get the design variable values for the initial vectors
+  gvec->getDesignVars(dvs, numDVs);
   rInit->getDesignVars(dvs, numDVs);
   vInit->getDesignVars(dvs, numDVs);
   omegaInit->getDesignVars(dvs, numDVs);
@@ -541,6 +543,53 @@ void TACSRigidBody::getDesignVars( TacsScalar dvs[], int numDVs ){
 void TACSRigidBody::getDesignVarRange( TacsScalar lb[], 
                                        TacsScalar ub[],
                                        int numDVs ){}
+
+/*
+  Set the inertial properties in the global frame based on the
+  inertial properties in the reference frame
+*/
+void TACSRigidBody::updateInertialProperties(){
+  const TacsScalar *C;
+  CRef->getRotation(&C);
+
+  // Convert the first moment of inertial from the local to the
+  // inertial reference frame
+  matMultTrans(C, cRef, c);
+
+  // Copy the J values to a row
+  TacsScalar Jtmp[9], CJtmp[9];
+
+  // Compute CJtmp = C^{T}*JRef;
+  Jtmp[0] = JRef[0];
+  Jtmp[1] = JRef[1];
+  Jtmp[2] = JRef[2];
+  matMultTrans(C, Jtmp, &CJtmp[0]);
+
+  Jtmp[0] = JRef[1];
+  Jtmp[1] = JRef[4];
+  Jtmp[2] = JRef[5];
+  matMultTrans(C, Jtmp, &CJtmp[3]);
+
+  Jtmp[0] = JRef[2];
+  Jtmp[1] = JRef[4];
+  Jtmp[2] = JRef[5];
+  matMultTrans(C, Jtmp, &CJtmp[6]);
+
+  // Compute Jtmp = C^{T}*[C^{T}*J]^{T} = C^{T}*[CJtmp]^{T}. Note that
+  // the matrix CJtmp is stored in column-major order so this
+  // multiplication is in fact C^{T}*[CJtmp]^{T}
+  matTransMatMult(C, CJtmp, Jtmp);
+
+  // Copy the symmetric values from the computation
+  J[0] = Jtmp[0];
+  J[1] = Jtmp[1];
+  J[2] = Jtmp[2];
+
+  J[3] = Jtmp[4];
+  J[4] = Jtmp[6];
+
+  J[5] = Jtmp[8];
+}
 
 /*
   Retrieve the initial values if the kinematic and dynamic variables
@@ -587,6 +636,10 @@ void TACSRigidBody::computeEnergies( double time,
                                      const TacsScalar X[],
                                      const TacsScalar vars[],
                                      const TacsScalar dvars[] ){  
+  // Get the acceleration due to gravity
+  const TacsScalar *g;
+  gvec->getVector(&g);
+
   // Set the location
   const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
@@ -669,6 +722,10 @@ void TACSRigidBody::addResidual( double time,
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
+  // Get the acceleration due to gravity
+  const TacsScalar *g;
+  gvec->getVector(&g);
+
   // Set the location and its time derivatives
   const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
@@ -764,6 +821,10 @@ void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
+  // Get the acceleration due to gravity
+  const TacsScalar *g;
+  gvec->getVector(&g);
+
   // Set the location and its time derivatives
   const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
@@ -1211,10 +1272,111 @@ void TACSRigidBody::testJacobian( double dh,
   }
 }
 
+/*
+  Get the connectivity count
+*/
+void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
+  (*nelems)++;
+  *nnodes += 8;
+  *ncsr += 8;
+}
+
+/*
+  Retrieve the data associated with the element
+*/
+void TACSRigidBody::getOutputData( unsigned int out_type, 
+                                   double *data, int ld_data, 
+                                   const TacsScalar Xpts[],
+                                   const TacsScalar vars[] ){
+  // The initial location of the c.m. of the object  
+  TacsScalar cmpt[3]; 
+  for ( int k = 0; k < 3; k++ ){
+    cmpt[k] = c[k]/mass;
+  }
+
+  // First, compute the second moment of area about the
+  // center of mass
+  TacsScalar Jc[6];
+  Jc[0] = J[0] - c[0]*c[0]/mass;
+  Jc[1] = J[1] - c[0]*c[1]/mass;
+  Jc[2] = J[2] - c[0]*c[2]/mass;
+  Jc[3] = J[3] - c[1]*c[1]/mass;
+  Jc[4] = J[4] - c[1]*c[2]/mass;
+  Jc[5] = J[5] - c[2]*c[2]/mass;
+
+  // The effective lengths along each coordinate direction
+  TacsScalar L[3]; 
+  L[0] = sqrt(6.0*(Jc[3] + Jc[5] - Jc[0])/mass);
+  L[1] = sqrt(6.0*(Jc[0] + Jc[5] - Jc[3])/mass);
+  L[2] = sqrt(6.0*(Jc[0] + Jc[3] - Jc[5])/mass);
+
+  for ( int iz = 0; iz < 2; iz++ ){
+    for ( int iy = 0; iy < 2; iy++ ){
+      for ( int ix = 0; ix < 2; ix++ ){
+        // Keep track of where to write in the data
+        int index = 0;
+
+        // Compute the initial base-points for each node
+        TacsScalar x[3];
+        x[0] = cmpt[0] + (ix - 0.5)*L[0];
+        x[1] = cmpt[1] + (iy - 0.5)*L[1];
+        x[2] = cmpt[2] + (iz - 0.5)*L[2];
+
+        if (out_type & TACSElement::OUTPUT_NODES){
+          // Write out the nodal locations
+          for ( int k = 0; k < 3; k++ ){
+            data[index+k] = RealPart(x[k]);
+          }
+          index += 3;
+        }
+        if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
+          // Write out the displacements at each node
+          const TacsScalar *r0 = &vars[0];
+          TacsScalar eta = vars[3];
+          const TacsScalar *eps = &vars[4];
+          
+          // Compute the rotation matrix
+          TacsScalar C[9];
+          computeRotationMat(eta, eps, C);
+
+          // Compute the new point location
+          TacsScalar xpt[3];
+          matMultTrans(C, x, xpt);
+
+          for ( int k = 0; k < 3; k++ ){
+            data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
+          }
+          index += 3;
+        }
+        
+        data += ld_data;
+      }
+    }
+  }
+}
+
+/*
+  Get the connectivity associated with this element
+*/
+void TACSRigidBody::getOutputConnectivity( int * con, int node ){
+  con[0] = node;
+  con[1] = node+1;
+  con[2] = node+3;
+  con[3] = node+2;
+  con[4] = node+4;
+  con[5] = node+5;
+  con[6] = node+7;
+  con[7] = node+6;
+}
+
+
+
 TACSSphericalConstraint::TACSSphericalConstraint(){
   xA[0] = xA[1] = xA[2] = 1.0;
   xB[0] = xB[1] = xB[2] = 1.0;
 }
+
+const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 
 /*
   Retrieve the initial conditions for the state variables
@@ -1368,6 +1530,8 @@ TACSRevoluteConstraint::TACSRevoluteConstraint(){
   eB1[1] = 1.0;
   eB2[2] = 1.0;
 }
+
+const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
 
 /*
   Retrieve the initial conditions for the state variables
