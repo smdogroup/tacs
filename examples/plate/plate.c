@@ -125,7 +125,8 @@ int main( int argc, char **argv ){
     // Extract the element
     TacsScalar Xpts[3*9];
     TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
-    
+    elem->incref();
+
     // Test the element;
     TestElement *test = new TestElement(elem, Xpts);
     test->incref();
@@ -135,6 +136,7 @@ int main( int argc, char **argv ){
       test->testJacobian(k);
     }
     test->decref();
+    elem->decref();
   }
   
   /*-----------------------------------------------------------------*/
@@ -211,7 +213,7 @@ int main( int argc, char **argv ){
   obj->setFunction(func, NUM_FUNCS);
 
   // COMPLEX STEP
-  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-20);
+  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
 
   // ADJOINT NEW
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
@@ -280,9 +282,14 @@ int main( int argc, char **argv ){
   tacs->decref();
   
   delete [] dfdx;
+  delete [] dfdx1;
   delete [] dfdxTmp;
+
   delete [] x;
+
   delete [] funcVals;
+  delete [] funcVals1;
+  delete [] funcValsTmp;
 
   MPI_Finalize();
   return 0;

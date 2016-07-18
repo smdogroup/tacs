@@ -284,9 +284,6 @@ class TACSBDFIntegrator : public TACSIntegrator {
   // Class variable to store BDF coefficients
   double bdf_coeff[4], bddf_coeff[9];
 
-  // Adjoint variables
-  BVec **psi;
-
   // Retrieve the first order BDF coefficients
   //------------------------------------------
   int getBDFCoeff(double bdf[], int order );

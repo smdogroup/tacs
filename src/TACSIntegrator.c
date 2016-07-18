@@ -650,10 +650,10 @@ implementation.\n");
   tfinal: the final time
   num_steps_per_sec: the number of steps to take for each second
 */
-TACSBDFIntegrator:: TACSBDFIntegrator( TACSAssembler * _tacs, 
-                                       double _tinit, double _tfinal, 
-                                       int _num_steps_per_sec, 
-                                       int _max_bdf_order ):
+TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs, 
+                                      double _tinit, double _tfinal, 
+                                      int _num_steps_per_sec, 
+                                      int _max_bdf_order ):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){		
   // copy over the variables
   max_bdf_order = _max_bdf_order;
@@ -1722,8 +1722,12 @@ void TACSDIRKIntegrator::marchBackwards( ) {
   }
 
   delete [] psi;
+  delete [] psiTmp;
   delete [] phi;
+  delete [] phiTmp;
   delete [] lambda;
+  delete [] rhs;
+  delete [] dfdq;
 }
 
 /*
