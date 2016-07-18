@@ -123,7 +123,7 @@ int main( int argc, char **argv ){
   /*------------------ Time Integration and Adjoint Solve -----------*/
   /*-----------------------------------------------------------------*/
 
-  TacsIntegrator *integrator = NULL;
+  TACSIntegrator *integrator = NULL;
 
   double tinit = 0.0, tfinal = 0.5;
   int num_steps_per_sec = 10, num_stages = 2, max_bdf_order = 2;
@@ -141,7 +141,7 @@ int main( int argc, char **argv ){
   // Integrate using DIRK
   //*****************************************************************//
   
-  integrator = new TacsDIRKIntegrator(tacs, tinit, tfinal,
+  integrator = new TACSDIRKIntegrator(tacs, tinit, tfinal,
 				      num_steps_per_sec, num_stages);
   integrator->incref();
 
@@ -170,7 +170,7 @@ int main( int argc, char **argv ){
   // Integrate using BDF
   //*****************************************************************//
 
-  integrator = new TacsBDFIntegrator(tacs, tinit, tfinal, 
+  integrator = new TACSBDFIntegrator(tacs, tinit, tfinal, 
 				     num_steps_per_sec, max_bdf_order);
   integrator->incref();
   

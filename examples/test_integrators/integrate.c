@@ -59,7 +59,7 @@ int main( int argc, char *argv[] ){
 
   double tinit = 0.0; double tfinal = 25.0;
   int num_steps_per_sec = 10; int num_stages = 1;
-  TacsIntegrator *dirk = new TacsDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
+  TACSDIRKIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
 						num_stages);
   dirk->incref();
 
@@ -73,6 +73,7 @@ int main( int argc, char *argv[] ){
 
   // Integrate and write solution to file
   dirk->integrate();
+  //  dirk->forward(NULL, NULL, NULL);
   dirk->writeSolution("dirk.dat");
 
   dirk->decref();
@@ -82,7 +83,7 @@ int main( int argc, char *argv[] ){
   //-----------------------------------------------------------------//
   
   int max_bdf_order = 2;
-  TacsIntegrator *bdf = new TacsBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
+  TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
 					      max_bdf_order);
   bdf->incref();
 
@@ -96,6 +97,7 @@ int main( int argc, char *argv[] ){
 
   // Integrate and write solution to file
   bdf->integrate();
+  // bdf->forward(NULL, NULL, NULL);
   bdf->writeSolution("bdf.dat");
 
   bdf->decref();

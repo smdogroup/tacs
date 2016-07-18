@@ -410,8 +410,8 @@ void PDMat::merge_nz_pattern( int root, int * rowp, int * cols,
     compute_symbolic_factor(&root_rowp, &root_cols, root_col_size);
     int final_nnz = root_rowp[nrows];    
     
-    printf("[%d] PDMat factorization: M: %d N: %d\n",
-           root, m, n);
+    //    printf("[%d] PDMat factorization: M: %d N: %d\n",
+    //           root, m, n);
     if (m && n){
       printf("[%d] initial density: %4.3f factor fill in: %4.3f\n",
              root, (1.0*init_nnz)/(nrows*ncols), 

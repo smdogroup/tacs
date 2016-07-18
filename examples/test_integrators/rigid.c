@@ -72,7 +72,7 @@ int main( int argc, char *argv[] ){
   // Create the TACSIntegrator object
   double t_init = 0.0, t_final = 1.0;
   int steps_per_second = 100; int num_stages = 2;
-  TacsDIRKIntegrator *dirk = new TacsDIRKIntegrator(tacs, t_init, t_final,
+  TACSDIRKIntegrator *dirk = new TACSDIRKIntegrator(tacs, t_init, t_final,
                                                     steps_per_second, num_stages);
   dirk->incref();
 
@@ -90,7 +90,7 @@ int main( int argc, char *argv[] ){
 
   dirk->decref();
   
-  TacsBDFIntegrator *bdf = new TacsBDFIntegrator(tacs, t_init, t_final,
+  TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, t_init, t_final,
                                                  steps_per_second, 2);
   bdf->incref();
 

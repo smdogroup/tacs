@@ -6,26 +6,28 @@
 #include "KSM.h"
 #include "TACSToFH5.h"
 
+// Type of integrator to use. The following are the supported methods.
+//--------------------------------------------------------------------
+enum IntegratorType { BDF1, BDF2, BDF3,       // Backward-difference methods
+                      DIRK2, DIRK3, DIRK4 };  // Diagonally-Implicit-Runge-Kutta methods
+
 /*
   Base class for integration schemes. This base class contains common
   methods and variables pertaining to the integration schemes used in
   TACS.
-
+  
   Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
 */
 
-class TacsIntegrator : public TACSObject {
+class TACSIntegrator : public TACSObject {
  public:
-  // Parent class constructor for integration schemes
-  //-------------------------------------------------
-  TacsIntegrator( TACSAssembler *_tacs, 
-                  double _tinit, double _tfinal, 
-                  int _num_steps_per_sec );
+  // Factory method for intantiating integrators of supplied type
+  //-------------------------------------------------------------
+  static TACSIntegrator* getInstance( TACSAssembler *_tacs, 
+                                      double _tinit, double _tfinal, 
+                                      int _num_steps_per_sec, 
+                                      enum IntegratorType type );
 
-  // Destructor
-  //-----------
-  ~TacsIntegrator();
- 
   // Useful setters for class variables. These setters must be called
   // before calling the 'integrate()' function. These won't have any
   // effect after the integrate call has been made as default values
@@ -50,42 +52,52 @@ class TacsIntegrator : public TACSObject {
 
   // Get the finite-difference/complex-step gradient for testing purposes
   //---------------------------------------------------------------------
-  void getApproxGradient( TACSFunction **func, int num_funcs, 
-			  TacsScalar *x, int num_dv, 
-			  TacsScalar *fvals, TacsScalar *dfdx, double dh );
+  void getFDFuncGrad( int num_dv, TacsScalar *x,
+		      TacsScalar *fvals, TacsScalar *dfdx, double dh );
   
   // Function for returning the adjoint derivative for the functions
   //----------------------------------------------------------------
-  void getAdjointGradient( TACSFunction **func, int num_funcs, 
-			   TacsScalar *x, int num_dv, 
-			   TacsScalar *fvals, TacsScalar *dfdx );
-  
-  // Update TACS states with the supplied ones (q, qdot, qddot)
-  void setTACSStates( BVec *q, BVec *qdot, BVec *qddot );
+  void getFuncGrad( int num_dv, TacsScalar *x,
+		    TacsScalar *fvals, TacsScalar *dfdx );
+
+  // Set the objective/constraint functions of interest and increment.
+  // -----------------------------------------------------------------
+  void setFunction( TACSFunction **_func, int _num_funcs );
 
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
 
  protected:
+  // Parent class constructor for integration schemes
+  //-------------------------------------------------
+  TACSIntegrator( TACSAssembler *_tacs, 
+                  double _tinit, double _tfinal, 
+                  int _num_steps_per_sec ); 
+
+  // Destructor
+  //-----------
+  ~TACSIntegrator();
+
   // Pure virtual function for marching backwards in stage and time
   //---------------------------------------------------------------
   virtual void marchBackwards() = 0;
-  
-  // Pure virtual function for assembling the right hand side of adjoint equation
-  //-----------------------------------------------------------------------------
-  virtual void assembleAdjointRHS( BVec *rhs, int func_num ) = 0;
-
-  // Pure virtual function for computing the total derivative after
-  // solving for lagrange multipliers
-  //----------------------------------------------------------------
-  virtual void computeTotalDerivative( TacsScalar *dfdx ) = 0;
 
   // Evaluate time average of the function value using discretization
   // from the integration scheme
   //---------------------------------------------------------------------
-  virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
-				     TacsScalar *funcVals) = 0;
+  virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals) = 0;
+    
+  // Update TACS states with the supplied ones (q, qdot, qddot)
+  void setTACSStates( BVec *q, BVec *qdot, BVec *qddot );
+
+  // Add up the function contribution from each time step
+  //-----------------------------------------------------
+  void addFunctionContribution( double scale );
+
+  // Add up the total derivative after solving for adjoint variables
+  // ----------------------------------------------------------------
+  void addTotalDerivative( double scale, BVec **adjoint );
   
   //Method to solve the non-linear system using Newton's method
   //------------------------------------------------------------
@@ -93,22 +105,16 @@ class TacsIntegrator : public TACSObject {
                     double t, BVec *q, BVec *qdot, 
                     BVec *qddot );
 
-  // Method to solve the adjoint-linear system using Newton's method
-  //-----------------------------------------------------------------
-  void adjointSolve( BVec *psi, double alpha, double beta, double gamma,
-		     double t, BVec *q, BVec *qdot, BVec *qddot );
-  
   // Calls LAPACK for the the solution of the linear system Ax =
   // b. Serial execution mode only.
   void lapackLinearSolve( BVec *res, TACSMat *mat, BVec *update );
-    
-  // Set the objective/constraint functions of interest and increment.
-  // This function should be called before the adjointSolve call.
-  // -----------------------------------------------------------------
-  void setFunction( TACSFunction **_func, int _num_funcs );
   
   // Sanity checks on the RHS of the adjoint linear system
   void checkAdjointRHS( BVec *rhs );
+
+  //-------------------------------------------------------------------------------------//
+  //                                 Variables
+  //-------------------------------------------------------------------------------------//
 
   // Instance of TACS
   TACSAssembler *tacs; 
@@ -125,7 +131,7 @@ class TacsIntegrator : public TACSObject {
   
   // Class variables used to manage/monitor time marching in
   // integration schemes
-  int num_time_steps, num_steps_per_sec, current_time_step, current_stage; 
+  int num_time_steps, num_steps_per_sec; 
   double h, tinit, tfinal;
 
   // Print and output options
@@ -149,42 +155,55 @@ class TacsIntegrator : public TACSObject {
   TACSKsm *ksm;        // KSM solver
 
   // The objective and contraint functions
-  TACSFunction **funcs;
   int num_funcs;
+  TACSFunction **funcs;
+
+  // Pointers to the memory for storing function and derivative values
+  TacsScalar *fvals;
+  TacsScalar *dfdx;
+
+  // Number of right hand sides we store during adjoint solve
+  int num_adjoint_rhs; 
 };
 
 /*
   DIRK integration scheme for TACS
 */
-class TacsDIRKIntegrator : public TacsIntegrator {
+class TACSDIRKIntegrator : public TACSIntegrator {
  public:
   // Constructor for DIRK object
   //----------------------------
-  TacsDIRKIntegrator( TACSAssembler * _tacs, 
+  TACSDIRKIntegrator( TACSAssembler * _tacs, 
                       double _tinit, double _tfinal, int _num_steps_per_sec, 
                       int num_stages );
   
   // Desctructor
   //------------
-  ~TacsDIRKIntegrator();
+  ~TACSDIRKIntegrator();
 
-
+  // Integrate forward in time
+  //--------------------------
   TacsScalar forward( const TacsScalar *x, int num_design_vars,
                       TACSFunction *func );
+
+  // March backwards and find total derivative
+  //------------------------------------------
   void reverse( TacsScalar *dfdx, int num_design_vars,
                 TACSFunction *func );
-
   
-  // function to call to integrate in time
+  // Function to call to integrate in time
   //--------------------------------------
   void integrate();
-  
- private:
-  // the number of stage in RK scheme
-  int num_stages;
-  
+
+ protected:
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
+
+ private:  
   // the order of accuracy of the scheme
-  int order;
+  int num_stages, order;
   
   // variables for Butcher tableau
   double *A, *B, *C;
@@ -193,76 +212,69 @@ class TacsDIRKIntegrator : public TacsIntegrator {
   double *tS;
   BVec **qS, **qdotS, **qddotS;
 
-  // Adjoint variables
-  BVec **psi;
-
   // Functions related to Butcher Tableau
   //-------------------------------------
   void setupButcherTableau();
   void checkButcherTableau();
 
-  // Returns the starting index of Butcher tableau
-  //----------------------------------------------
-  int getIdx(int stageNum);
+  // Returns the starting index of corresponding Butcher tableau row
+  //----------------------------------------------------------------
+  int getIdx( int stageNum );
 
-  // Compute the stages stage values 
-  //---------------------------------
-  void computeStageValues();
+  // Approximate derivatives using DIRK formulae
+  //--------------------------------------------
+  void approxStates( int current_step, int current_stage );
 
   // Advance the time and states to next step
   //-----------------------------------------
-  void timeMarch(double *time, BVec **q, BVec **qdot, BVec **qddot);
+  void computeTimeStepStates(int k,  BVec **q, BVec **qdot, BVec **qddot);
 
   // Function for marching backwards in stage and time
   //---------------------------------------------------
-   void marchBackwards();
+  void marchBackwards();
   
-  // Function for assembling the right hand side of adjoint equation
-  //----------------------------------------------------------------
-  void assembleAdjointRHS( BVec *rhs, int func_num );
-
-  // Function for computing the total derivative after solving for
-  // lagrange multipliers
-  // ----------------------------------------------------------------
-  void computeTotalDerivative( TacsScalar *dfdx );
-
-  // Evaluate time average of the function value using discretization
-  // from the integration scheme
-  //---------------------------------------------------------------------
-  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
-				     TacsScalar *funcVals);
-  
+  // Get the coefficients for adding inter-stage contributions during adjoint solve
+  //-------------------------------------------------------------------------------
+  void getCoeffsInterStage( int i, int j, double *alpha, double *beta, double *gamma );
 };
 
 /*
-  BDF integration scheme for TACS which extends TacsIntegrator
+  BDF integration scheme for TACS which extends TACSIntegrator
 */
 
-class TacsBDFIntegrator : public TacsIntegrator {
-
+class TACSBDFIntegrator : public TACSIntegrator {
  public:
-  
   // Constructor for BDF object
   //---------------------------
-  TacsBDFIntegrator(TACSAssembler * _tacs, 
+  TACSBDFIntegrator(TACSAssembler * _tacs, 
 		    double _tinit, double _tfinal, int _num_steps_per_sec, 
 		    int max_bdf_order);
   
   // Destructor for BDF object
   //--------------------------
-  ~TacsBDFIntegrator();
+  ~TACSBDFIntegrator();
   
+  // Integrate forward in time and find the solution
+  //-------------------------------------------------
   TacsScalar forward( const TacsScalar *x, int num_design_vars,
                       TACSFunction *func );
+
+  // March backwards in time and find the derivatives
+  //-------------------------------------------------
   void reverse( TacsScalar *dfdx, int num_design_vars,
                 TACSFunction *func );
-
+  
   // Function that integrates forward in time
   //-----------------------------------------
   void integrate();
-
+  
+ protected:
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
+  
  private:  
-
   // Maximum order of the BDF integration scheme
   int max_bdf_order;
 
@@ -287,26 +299,10 @@ class TacsBDFIntegrator : public TacsIntegrator {
   
   // approximate derivatives using BDF stencil
   //------------------------------------------
-  void approxStates(BVec **q, BVec **qdot, BVec **qddot);
+  void approxStates( int current_step );
 
   // Function for marching backwards in stage and time
   //---------------------------------------------------
   void marchBackwards();
-  
-  // Function for assembling the right hand side of adjoint equation
-  //----------------------------------------------------------------
-  void assembleAdjointRHS( BVec *rhs, int func_num );
-
-  // Function for computing the total derivative after solving for
-  // lagrange multipliers
-  // ----------------------------------------------------------------
-  void computeTotalDerivative( TacsScalar *dfdx );
-
-  // Evaluate time average of the function value using discretization
-  // from the integration scheme
-  //---------------------------------------------------------------------
-  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs,
-				     TacsScalar *funcVals);
 };
 #endif
-

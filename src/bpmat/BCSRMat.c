@@ -423,9 +423,9 @@ must agree ncol(A) != nrow(B)\n");
   if (init_size > 0){
     int rank;
     MPI_Comm_rank(comm, &rank);
-    printf("[%d] BCSRMat: (C + A*B) Input fill ratio %4.2f, actual \
-fill ratio: %4.2f, nnz(ILU) = %d\n", rank, fill, 
-	   (1.0*rowp[nrows])/init_size, rowp[nrows]);
+/*     printf("[%d] BCSRMat: (C + A*B) Input fill ratio %4.2f, actual \ */
+/* fill ratio: %4.2f, nnz(ILU) = %d\n", rank, fill,  */
+/* 	   (1.0*rowp[nrows])/init_size, rowp[nrows]); */
   }
     
   delete [] tcols;
@@ -696,9 +696,9 @@ void BCSRMat::computeILUk( BCSRMat * mat, int levFill,
   if (mat->data->rowp[nrows] > 0){
     int rank;
     MPI_Comm_rank(comm, &rank);
-    printf("[%d] BCSRMat: ILU(%d) Input fill ratio %4.2f, actual \
-fill ratio: %4.2f, nnz(ILU) = %d\n", rank, levFill, fill, 
-	   (1.0*rowp[nrows])/mat->data->rowp[nrows], rowp[nrows]);
+/*     printf("[%d] BCSRMat: ILU(%d) Input fill ratio %4.2f, actual \ */
+/* fill ratio: %4.2f, nnz(ILU) = %d\n", rank, levFill, fill,  */
+/* 	   (1.0*rowp[nrows])/mat->data->rowp[nrows], rowp[nrows]); */
   }
 
   delete [] rcols;
