@@ -96,7 +96,9 @@ cdef class Integrator:
         num_funcs = len(funclist)
         for i in xrange(num_funcs):
             funcs[i] = (<Function>funclist[i]).ptr
-        self.ptr.setFunction(funcs, num_funcs)            
+        self.ptr.setFunction(funcs, num_funcs)
+        # Need to free memory but integrator needs it ()
+        # free(funcs)
         return
 
     def setPrintLevel(self, int print_level):
@@ -123,9 +125,14 @@ cdef class Integrator:
         self.ptr.setUseLapack(use_lapack)
         return
 
-    def writeSolutionToF5(self):
-        self.ptr.writeSolutionToF5()
-        return
+    ## def configureOutput(self,
+    ##                     ToFH5 f5,
+    ##                     int write_freq = 0,
+    ##                     char* file_format   = ''):
+    ##     if file_format is None:
+    ##         file_format = 'solution_%4d.f5'            
+    ##     self.ptr.configureOutput(f5, write_freq, &file_format[0])
+    ##     return
 
 cdef class BDFIntegrator(Integrator):
     '''

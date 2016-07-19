@@ -40,16 +40,24 @@ class TACSIntegrator : public TACSObject {
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
 
+  // Set the objective/constraint functions of interest and increment.
+  // -----------------------------------------------------------------
+  void setFunction( TACSFunction **_func, int _num_funcs );
+
   // Call this function after integrating to write the solution to
   // file in ASCII text format (might be slower for bigger problems)
   // ------------------------------------------------------------------
   void writeSolution( const char *filename );
-
+  
   // Call this function after integrating to write the solution to f5
   // file. Since it is written in binary form, it is faster.
   // ------------------------------------------------------------------
   void writeSolutionToF5();
 
+  // Configure the F5 file output
+  //-----------------------------
+  void configureOutput(TACSToFH5 *_viewer, int _write_freq, char *_f5_file_fmt);
+  
   // Get the finite-difference/complex-step gradient for testing purposes
   //---------------------------------------------------------------------
   void getFDFuncGrad( int num_dv, TacsScalar *x,
@@ -59,10 +67,6 @@ class TACSIntegrator : public TACSObject {
   //----------------------------------------------------------------
   void getFuncGrad( int num_dv, TacsScalar *x,
 		    TacsScalar *fvals, TacsScalar *dfdx );
-
-  // Set the objective/constraint functions of interest and increment.
-  // -----------------------------------------------------------------
-  void setFunction( TACSFunction **_func, int _num_funcs );
 
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
@@ -87,7 +91,7 @@ class TACSIntegrator : public TACSObject {
   // from the integration scheme
   //---------------------------------------------------------------------
   virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals) = 0;
-    
+
   // Update TACS states with the supplied ones (q, qdot, qddot)
   void setTACSStates( BVec *q, BVec *qdot, BVec *qddot );
 
@@ -107,10 +111,17 @@ class TACSIntegrator : public TACSObject {
 
   // Calls LAPACK for the the solution of the linear system Ax =
   // b. Serial execution mode only.
+  //-------------------------------------------------------------
   void lapackLinearSolve( BVec *res, TACSMat *mat, BVec *update );
   
   // Sanity checks on the RHS of the adjoint linear system
-  void checkAdjointRHS( BVec *rhs );
+  //------------------------------------------------------
+  static void checkAdjointRHS( BVec *rhs );
+    
+  // Get a formatted filename based on the current time step for
+  // tecplot output
+  //-----------------------------------------------------------
+  static void getString(char *buffer, const char * format, ... );
 
   //-------------------------------------------------------------------------------------//
   //                                 Variables
@@ -164,6 +175,11 @@ class TACSIntegrator : public TACSObject {
 
   // Number of right hand sides we store during adjoint solve
   int num_adjoint_rhs; 
+
+  // Tecplot output related variables
+  TACSToFH5 *f5;
+  char* f5_file_fmt;
+  int f5_write_freq;
 };
 
 /*

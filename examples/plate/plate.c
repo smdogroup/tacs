@@ -207,6 +207,7 @@ int main( int argc, char **argv ){
   // Set options
   obj->setJacAssemblyFreq(1);
   obj->setPrintLevel(0);
+  obj->configureOutput(NULL, 1, "plate_%04d.f5");
   
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);

@@ -558,6 +558,17 @@ void TACSIntegrator::setFunction( TACSFunction **_funcs, int _num_funcs ) {
 }
 
 /*
+  Configure the F5 output 
+ */
+void TACSIntegrator::configureOutput(TACSToFH5 *_viewer, 
+                                     int _write_freq, 
+                                     char *_f5_file_fmt ) {
+  this->f5             = _viewer;
+  this->f5_write_freq  = _write_freq;
+  this->f5_file_fmt    = _f5_file_fmt;
+}
+
+/*
   Solves the linear system Ax=b using LAPACK. The execution should be
   in serial mode.
 */
@@ -642,6 +653,19 @@ implementation.\n");
   }
 }
   
+/*
+  Function that returns a buffer that is formatted with the supplied
+  format specifiers and arguments. Note that this function takes
+  variable number of arguments. The argument list and format needs to
+  be consistent.
+*/
+void TACSIntegrator::getString(char *buffer, const char * format, ... ){
+  va_list args;
+  va_start(args, format);
+  vsprintf(buffer, format, args); 
+  va_end(args);
+}
+
 /*
   Constructor for BDF Integration scheme
 
@@ -830,6 +854,16 @@ void TACSBDFIntegrator::integrate( ){
     // Solve the nonlinear system of equations. Note that the states
     // will be advanced at the end of Newton solve
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
+    
+    // Write the tecplot output to disk if sought
+    if(f5_write_freq && k % f5_write_freq == 0 && f5){
+      // Create a buffer for filename 
+      char buffer[128];
+      // Format the buffer based on the time step
+      getString(buffer, f5_file_fmt, k);      
+      // Write the f5 file for this time step
+      f5->writeToFile(buffer);
+    }
   }
 }
 
@@ -1027,6 +1061,9 @@ void TACSBDFIntegrator::marchBackwards( ) {
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(1.0, psi[n]);
       rhs[adj_index*num_funcs+n]->scale(-1.0);
+
+      // Sanity check on the RHS
+      //checkAdjointRHS(rhs[adj_index*num_funcs+n]);
     }
     
     // Setup the Jacobian
@@ -1517,6 +1554,16 @@ void TACSDIRKIntegrator::integrate( ){
     // Compute the state varialbes at the current time step using the
     // intermediate stage states
     computeTimeStepStates(k, q, qdot, qddot);
+
+    // Write the tecplot output to disk if sought
+    if(f5_write_freq && k % f5_write_freq == 0 && f5){
+      // Create a buffer for filename 
+      char buffer[128];
+      // Format the buffer based on the time step
+      getString(buffer, f5_file_fmt, k);      
+      // Write the f5 file for this time step
+      f5->writeToFile(buffer);
+    }
   }
 }
 /*
@@ -1617,6 +1664,9 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       
         // Negate the RHS
 	rhs[i*num_funcs+n]->scale(-1.0);
+
+        // Sanity check on the RHS
+        //checkAdjointRHS(rhs[i*num_funcs+n]);
       }
      
       // Setup the Jacobian

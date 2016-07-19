@@ -33,9 +33,9 @@ cdef extern from "TACSIntegrator.h":
       void setMaxNewtonIters(int max_newton_iters)
       void setJacAssemblyFreq(int jac_comp_freq)
       void setUseLapack(int use_lapack)
-
-      # Write F5 files
-      void writeSolutionToF5()
+      
+      # Configure writing F5 files
+      void configureOutput(TACSToFH5 *viewer, int write_freq, char *f5_file_fmt)
 
    # BDF Implementation of the integrator
    cdef cppclass TACSBDFIntegrator(TACSIntegrator):
