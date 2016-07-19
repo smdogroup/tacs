@@ -379,8 +379,35 @@ cdef class Assembler:
       '''
       self.ptr = NULL
       return
+
+   @staticmethod
+   def getInstance(MPI.Comm comm, int numOwnedNodes,
+                   int varsPerNode, int numElements, 
+                   int numNodes, int nodeMaxCSRsize,
+                   int numDependentNodes=0):
+      '''
+      Static factory method for creating an instance of Assembler
+      '''
+      cdef MPI_Comm c_comm =  comm.ob_mpi
+
+      tacs = Assembler()
+
+      if numDependentNodes is 0:
+         tacs.ptr = new TACSAssembler(c_comm, numOwnedNodes,
+                                      varsPerNode,  numElements, 
+                                      numNodes, nodeMaxCSRsize)
+      else:
+         tacs.ptr = new TACSAssembler(c_comm, numOwnedNodes,
+                                      varsPerNode,  numElements, 
+                                      numNodes, numDependentNodes,
+                                      nodeMaxCSRsize)
+      tacs.ptr.incref()
+      return tacs
    
    def __dealloc__(self):
+      '''
+      Destructor for Assembler
+      '''
       if self.ptr:
          self.ptr.decref()
       return
@@ -622,7 +649,32 @@ cdef class Assembler:
       '''
       self.ptr.assembleRes(residual.ptr)
       return
-      
+
+   def addNode(self, int localNodeNum, int tacsNodeNum):
+      '''
+      Adds a single node into TACS
+      '''
+      self.ptr.addNode(localNodeNum, tacsNodeNum)
+      return
+
+   def addNodes(self, np.ndarray[int, ndim=1, mode='c'] localNodeNums,
+                np.ndarray[int, ndim=1, mode='c'] tacsNodeNums):
+      '''
+      Adds an array of nodes into TACS. The number of nodes is
+      determined from the size of the input array.
+      '''
+      self.ptr.addNodes(<int*>localNodeNums.data, <int*>tacsNodeNums.data, len(localNodeNums))
+      return
+
+   def addElement(self,
+                  Element elem,
+                  np.ndarray[int, ndim=1, mode='c'] localNodeNums,
+                  int numElemNodes):
+      '''
+      Add the element into TACS
+      '''
+      return self.ptr.addElement(elem.ptr, <int*>localNodeNums.data, numElemNodes)
+   
    def assembleJacobian(self, Vec residual, Mat A,
                         double alpha, double beta, double gamma,
                         MatrixOrientation matOr=NORMAL):
@@ -812,7 +864,16 @@ cdef class Assembler:
       # comm = MPI.Comm()
       # comm.ob_mpi = c_comm
       return None
-    
+
+   def finalize(self):
+      '''
+      Function to call after all the nodes and elements have been
+      added into the created instance of TACS. This function need not
+      be called when tacs is created using TACSCreator class.
+      '''
+      self.ptr.finalize()
+      return
+   
 # Wrap the TACStoFH5 class
 cdef class ToFH5:
    NODES = 1

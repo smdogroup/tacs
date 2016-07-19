@@ -174,6 +174,9 @@ cdef extern from "TACSAssembler.h":
    cdef cppclass TACSAssembler(TACSObject):
       TACSAssembler(MPI_Comm _tacs_comm, int numOwnedNodes,
                     int _varsPerNode, int _numElements, 
+                    int _numNodes, int _nodeMaxCSRsize)
+      TACSAssembler(MPI_Comm _tacs_comm, int numOwnedNodes,
+                    int _varsPerNode, int _numElements, 
                     int _numNodes, int numDependentNodes,
                     int _nodeMaxCSRsize)
       # Return information about the TACSObject
@@ -209,6 +212,14 @@ cdef extern from "TACSAssembler.h":
       void setDDotVariables(BVec* stateVars)
       void getVariables(BVec* stateVars)
 
+      # Add nodes to TACS
+      void addNode(int locaNodeNum, int tacsNodeNum)
+      void addNodes(int localNodeNum[], int tacsNodeNum[], int numNodes)
+
+      # Add elements to TACS
+      int addElement(TACSElement *element, int localNodes[], int numElemNodes)
+
+      # Assembly routines
       void assembleRes(BVec* residual)
       void assembleJacobian(BVec* residual,
                             TACSMat* A, double alpha,
@@ -216,7 +227,8 @@ cdef extern from "TACSAssembler.h":
                             MatrixOrientation matOr)
       void assembleMatType(ElementMatrixType matType, 
                            TACSMat* A, MatrixOrientation matOr) 
-      
+
+      # Evaluation routines
       void evalFunctions(TACSFunction **functions, int numFuncs,
                          TacsScalar *funcVals)
       void evalDVSens(TACSFunction **funcs, int numFuncs,
@@ -224,12 +236,20 @@ cdef extern from "TACSAssembler.h":
       void evalSVSens(TACSFunction *function, BVec* vec)
       void evalAdjointResProducts(BVec** adjoint, int numAdjoint,
                                   TacsScalar* dvSens, int num_dvs)
-      
+
+      # Test routines
       void testElement(int elemNum, int print_level)
       void testConstitutive(int elemNum, int print_level)
       void testFunction(TACSFunction *func, int num_dvs,
                         double dh)
+
+
+      # MPI communicator
       MPI_Comm getMPIComm()
+
+      # Finalize the mesh - no further elements or nodes may be added
+      # following this call
+      void finalize()
 
 cdef class Assembler:
    cdef TACSAssembler *ptr

@@ -25,8 +25,10 @@ thickness     = 0.05    # currrent thickness of elements in m
 
 # Properties for dynamics
 gravity = elements.GibbsVector(np.array([0.0, 0.0, -9.81]))
-v0      = elements.GibbsVector(np.array([0.25, 0.25, 0.25]))
-w0      = elements.GibbsVector(np.array([0., 0., 0.]))
+#v0      = elements.GibbsVector(np.array([0.1, 0.1, 0.1]))
+#w0      = elements.GibbsVector(np.array([0.3, 0.1, 0.2]))
+v0      = elements.GibbsVector(np.array([0., 0.0, 0.0]))
+w0      = elements.GibbsVector(np.array([0.0, 0.0, 0.0]))
 
 # Loop over components, creating stiffness and element object for each
 num_components = mesh.getNumComponents()
@@ -44,7 +46,7 @@ tacs = mesh.createTACS(8)
 
 # Create the function list
 funcs = []
-funcs.append(functions.ksfailure(tacs, 100.0))
+funcs.append(functions.ksfailure(tacs, 100.0, 1.0))
 funcs.append(functions.compliance(tacs))
 
 # Setup design variables and allocate space for the function values

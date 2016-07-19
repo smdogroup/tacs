@@ -75,6 +75,9 @@ int main( int argc, char **argv ){
   TacsScalar v_init[] = {0.0, 0.0, 0.0};
   TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
+  /* TacsScalar v_init[] = {0.1, 0.1, 0.1}; */
+  /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
+
   TACSGibbsVector *gravity = new TACSGibbsVector(g); 
   gravity->incref();
 
@@ -194,7 +197,7 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 0.02; int num_steps_per_sec = 1000;
+  double tinit = 0.0, tfinal = 1.e-2; int num_steps_per_sec = 1000;
 
   TACSIntegrator *obj =  TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                      num_steps_per_sec, 
@@ -203,11 +206,7 @@ int main( int argc, char **argv ){
 
   // Set options
   obj->setJacAssemblyFreq(1);
-  obj->setRelTol(1e-10);
-  obj->setAbsTol(1e-12);
-  obj->setMaxNewtonIters(5);
   obj->setPrintLevel(0);
-  obj->setUseLapack(0);
   
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);
