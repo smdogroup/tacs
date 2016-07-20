@@ -185,7 +185,8 @@ TACSIntegrator::~TACSIntegrator(){
 /*
   Update TACS states with the supplied ones (q, qdot, qddot)
 */
-void TACSIntegrator::setTACSStates( BVec *q, BVec *qdot, BVec * qddot ){
+void TACSIntegrator::setTACSStates( double time, BVec *q, BVec *qdot, BVec * qddot ){
+  tacs->setSimulationTime(time);
   tacs->setVariables(q);
   tacs->setDotVariables(qdot);
   tacs->setDDotVariables(qddot);
@@ -253,7 +254,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   double delta = 0.0;
   for ( int n = 0; n < max_newton_iters; n++ ){
     // Set the supplied initial input states into TACS
-    setTACSStates(u, udot, uddot);
+    setTACSStates(t, u, udot, uddot);
 
     // Assemble the Jacobian matrix once in five newton iterations
     if (n % jac_comp_freq == 0){
@@ -370,7 +371,7 @@ void TACSIntegrator::writeSolutionToF5(){
 
   for ( int k = 0; k < num_time_steps; k++ ){    
     // Set the current states into TACS
-    setTACSStates( q[k], qdot[k], qddot[k]);
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
 
     // Make a filename
     char fname[128];
@@ -1043,7 +1044,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
     double alpha = 1.0;
 
     // Set the stages
-    this->setTACSStates(q[k], qdot[k], qddot[k]);
+    this->setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
@@ -1612,6 +1613,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
     int toffset = k*num_stages;
 
     // Set the pointer to the stage values
+    double *ts = &tS[toffset];
     BVec **qs = &qS[toffset];
     BVec **qdots = &qdotS[toffset];
     BVec **qddots = &qddotS[toffset];
@@ -1634,7 +1636,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       double alpha = beta*h*A[idx+i];
 
       // Set the stages
-      this->setTACSStates(qs[i], qdots[i], qddots[i]);
+      this->setTACSStates(ts[i], qs[i], qdots[i], qddots[i]);
 
       //--------------------------------------------------------------//
       // Assemble the right hand side
@@ -1793,7 +1795,7 @@ void TACSBDFIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
   // Loop over time steps
   for ( int k = 1; k < num_time_steps; k++ ) {
     // Set the states into TACS
-    setTACSStates(q[k], qdot[k], qddot[k]);
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
 
     // Evaluate the functions
     tacs->evalFunctions(funcs, numFuncs, ftmp); 
@@ -1825,7 +1827,7 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
     for ( int j = 0; j < num_stages; j++ ){
 
       // Set the states into TACS
-      setTACSStates(qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
+      setTACSStates(tS[toffset+j], qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
       
       // Evaluate the functions
       tacs->evalFunctions(funcs, numFuncs, ftmp); 

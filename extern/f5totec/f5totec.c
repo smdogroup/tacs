@@ -65,7 +65,7 @@ zone type\n");
   INTEGER4 num_elements = _num_elements;
   INTEGER4 num_faces = 0; // For all zones allowed here
   INTEGER4 icmax = 0, jcmax = 0, kcmax = 0; // Ignored
-  INTEGER4 strand_id = 0;
+  INTEGER4 strand_id = 1;
   INTEGER4 parent_zone = 0;
   INTEGER4 is_block = 1; // Apparently this always needs to be 1
   // These are only for cell-based finite element data - we use node-based

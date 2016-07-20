@@ -94,7 +94,7 @@ class TACSIntegrator : public TACSObject {
   virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals) = 0;
 
   // Update TACS states with the supplied ones (q, qdot, qddot)
-  void setTACSStates( BVec *q, BVec *qdot, BVec *qddot );
+  void setTACSStates( double time, BVec *q, BVec *qdot, BVec *qddot );
 
   // Add up the function contribution from each time step
   //-----------------------------------------------------
