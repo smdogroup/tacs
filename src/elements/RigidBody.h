@@ -186,6 +186,7 @@ class TACSRigidBody : public TACSElement {
 class TACSSphericalConstraint : public TACSElement {
  public:
   TACSSphericalConstraint( );
+  TACSSphericalConstraint( TACSGibbsVector *_xA,  TACSGibbsVector *_xB );
   
   // Return the number of displacements and nodes
   // --------------------------------------------
@@ -235,8 +236,10 @@ class TACSSphericalConstraint : public TACSElement {
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
-  TACSRevoluteConstraint();
-  
+  TACSRevoluteConstraint( );
+  TACSRevoluteConstraint( TACSGibbsVector *_xA, TACSGibbsVector *_xB,
+                          TACSGibbsVector *_eA,  
+                          TACSGibbsVector *_eB1, TACSGibbsVector *_eB2 );
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }

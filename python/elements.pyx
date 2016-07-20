@@ -123,8 +123,8 @@ cdef class RigidBody(Element):
       return
 
 cdef class SphericalConstraint(Element):
-   def __cinit__(self):
-      self.ptr = new TACSSphericalConstraint()
+   def __cinit__(self, GibbsVector xA, GibbsVector xB):
+      self.ptr = new TACSSphericalConstraint(xA.ptr, xB.ptr)
       self.ptr.incref()
       return
 
@@ -133,8 +133,11 @@ cdef class SphericalConstraint(Element):
       return
 
 cdef class RevoluteConstraint(Element):
-   def __cinit__(self):
-      self.ptr = new TACSRevoluteConstraint()
+   def __cinit__(self,
+                 GibbsVector xA, GibbsVector xB,
+                 GibbsVector eA, 
+                 GibbsVector eB1, GibbsVector eB2):
+      self.ptr = new TACSRevoluteConstraint(xA.ptr, xB.ptr, eA.ptr, eB1.ptr, eB2.ptr)
       self.ptr.incref()
       return
 

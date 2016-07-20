@@ -1,6 +1,7 @@
 #ifndef TACS_INTEGRATOR_H
 #define TACS_INTEGRATOR_H
 
+#include <stdarg.h>
 #include "TACSObject.h"
 #include "TACSAssembler.h"
 #include "KSM.h"

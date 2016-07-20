@@ -1370,10 +1370,26 @@ void TACSRigidBody::getOutputConnectivity( int * con, int node ){
 }
 
 
-
+/*
+  Constructor for spherical constraint
+ */
 TACSSphericalConstraint::TACSSphericalConstraint(){
   xA[0] = xA[1] = xA[2] = 1.0;
   xB[0] = xB[1] = xB[2] = 1.0;
+}
+
+/*
+  Constructor for spherical constraint
+*/
+TACSSphericalConstraint::TACSSphericalConstraint( TACSGibbsVector *_xA,
+                                                  TACSGibbsVector *_xB ){
+  // Retrive the arrays from Gibbs vectors
+  const TacsScalar *xA, *xB;
+  _xA->getVector(&xA);
+  _xB->getVector(&xB);
+ 
+  memcpy(this->xA, xA, 3*sizeof(TacsScalar));
+  memcpy(this->xB, xB, 3*sizeof(TacsScalar));
 }
 
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
@@ -1515,8 +1531,43 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
   }
 }
 
+/*
+  Constructor for revolute contraint taking Gibbs vectors as
+  inputs. A refers to bodyA and B refers to bodyB.
 
+  input:
+  xA: position from the joint to bodyA (or the reverse)
+  xB: position from the joint to body B
+  eA:
+  eB1:
+  eB2:
 
+ */
+TACSRevoluteConstraint::TACSRevoluteConstraint(  TACSGibbsVector *_xA,  TACSGibbsVector *_xB,
+                                                 TACSGibbsVector *_eA,  
+                                                 TACSGibbsVector *_eB1,  TACSGibbsVector *_eB2 ) {
+  // Retrive the positions from Gibbs vectors
+  const TacsScalar *xA, *xB;
+  _xA->getVector(&xA);
+  _xB->getVector(&xB);
+  
+  memcpy(this->xA, xA, 3*sizeof(TacsScalar));
+  memcpy(this->xB, xB, 3*sizeof(TacsScalar));
+  
+  // Retrieve the 
+  const TacsScalar *eA;
+  _eA->getVector(&eA);
+  
+  memcpy(this->eA, eA, 3*sizeof(TacsScalar));
+
+  // Retrieve the 
+  const TacsScalar *eB1, *eB2;
+  _eB1->getVector(&eB1);
+  _eB2->getVector(&eB2);
+
+  memcpy(this->eB1, eB1, 3*sizeof(TacsScalar));
+  memcpy(this->eB2, eB2, 3*sizeof(TacsScalar));
+}
 
 TACSRevoluteConstraint::TACSRevoluteConstraint(){
   xA[0] = xA[1] = xA[2] = 1.0;

@@ -856,7 +856,7 @@ void TACSBDFIntegrator::integrate( ){
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
     
     // Write the tecplot output to disk if sought
-    if(f5_write_freq && k % f5_write_freq == 0 && f5){
+    if(f5 && f5_write_freq > 0 && k % f5_write_freq == 0){
       // Create a buffer for filename 
       char buffer[128];
       // Format the buffer based on the time step
@@ -1556,7 +1556,7 @@ void TACSDIRKIntegrator::integrate( ){
     computeTimeStepStates(k, q, qdot, qddot);
 
     // Write the tecplot output to disk if sought
-    if(f5_write_freq && k % f5_write_freq == 0 && f5){
+    if(f5 && f5_write_freq > 0 && k % f5_write_freq == 0){
       // Create a buffer for filename 
       char buffer[128];
       // Format the buffer based on the time step
