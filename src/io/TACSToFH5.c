@@ -198,7 +198,10 @@ void TACSToFH5::writeToFile( const char * filename ){
   dim1 = node_range[rank+1] - node_range[rank];
   dim2 = nvals;
 
-  char data_name[] = "data"; 
+  // Write the data with a time stamp from the simulation in TACS
+  char data_name[128];
+  double t = tacs->getSimulationTime();
+  sprintf(data_name, "data t=%.10e", t);
   file->writeZoneData(data_name, FH5File::FH5_DOUBLE, variable_names,
                       data, dim1, dim2);
   delete [] data;

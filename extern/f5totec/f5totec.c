@@ -50,7 +50,8 @@ int create_tec_file( char * data_info, char * var_names,
   num_elements == The number of elements
 */
 int create_fe_tec_zone( char * zone_name, ZoneType _zone_type,
-			int _num_points, int _num_elements ){
+			int _num_points, int _num_elements,
+                        double solution_time=0.0 ){
   if ( _zone_type == ORDERED ||
        _zone_type == FEPOLYGON ||
        _zone_type == FEPOLYHEDRA ){
@@ -64,7 +65,6 @@ zone type\n");
   INTEGER4 num_elements = _num_elements;
   INTEGER4 num_faces = 0; // For all zones allowed here
   INTEGER4 icmax = 0, jcmax = 0, kcmax = 0; // Ignored
-  double solution_time = 0.0;
   INTEGER4 strand_id = 0;
   INTEGER4 parent_zone = 0;
   INTEGER4 is_block = 1; // Apparently this always needs to be 1
@@ -167,6 +167,7 @@ int main( int argc, char * argv[] ){
 
   // Retrieve all the data from the file including the variables, connectivity
   // and component numbers
+  double solution_time = 0.0;
   int * element_comp_num = NULL;
   int * conn = NULL;
   double * data = NULL;
@@ -198,7 +199,13 @@ int main( int argc, char * argv[] ){
         conn = (int*)vdata;
       }
     }
-    else if (strcmp(zone_name, "data") == 0){
+    else if (strncmp(zone_name, "data", 4) == 0){
+      // Try to retrieve the solution time - this may fail if an older
+      // version of the F5 file is used
+      if (!(sscanf(zone_name, "data t=%lf", &solution_time) == 1)){
+        solution_time = 0.0;
+      }
+
       // Initialize the tecplot file with the variables
       char * vars = new char[ strlen(var_names)+1 ];
       strcpy(vars, var_names);
@@ -243,7 +250,8 @@ int main( int argc, char * argv[] ){
   for ( int k = 0; k < num_comp; k++ ){
     // Count up the number of elements that use the connectivity
     char * comp_name = file->getComponentName(k);
-    printf("Converting zone %d: %s\n", k, comp_name);
+    printf("Converting zone %d: %s at time %g\n", 
+           k, comp_name, solution_time);
 
     memset(reduced_points, 0, num_points*sizeof(int));
     memset(reduced_conn, 0, conn_dim*num_elements*sizeof(int));
@@ -275,8 +283,9 @@ int main( int argc, char * argv[] ){
     npts--;
 
     if (nelems > 0 && npts > 0){
-      // Create the zone
-      create_fe_tec_zone(comp_name, zone_type, npts, nelems);
+      // Create the zone with the solution time
+      create_fe_tec_zone(comp_name, zone_type, npts, nelems,
+                         solution_time);
 
       // Retrieve the data
       for ( int j = 0; j < num_variables; j++ ){

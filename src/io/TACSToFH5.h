@@ -1,5 +1,5 @@
-#ifndef TACS_FH5_H
-#define TACS_FH5_H
+#ifndef TACS_TO_FH5_H
+#define TACS_TO_FH5_H
 
 /*
   Create an FH5 file from the TACSAssembler object
@@ -28,7 +28,7 @@ class TACSToFH5 : public TACSObject {
 
  private:
   // Get a character string of the variable names
-  char * getElementVarNames();
+  char *getElementVarNames();
 
   TACSAssembler  * tacs;
   enum ElementType elem_type;
@@ -44,4 +44,4 @@ class TACSToFH5 : public TACSObject {
   char * variable_names; // The names of all the variables
 };
 
-#endif // TACS_FH5
+#endif // TACS_TO_FH5

@@ -200,6 +200,10 @@ cdef extern from "TACSAssembler.h":
       BVec* createVec()
       DistMat* createMat()
       FEMat* createFEMat(OrderingType order_type)
+
+      # Set/get the simulation time
+      void setSimulationTime(double)
+      double getSimulationTime()      
       
       # Zero the variables
       void zeroVariables()
@@ -298,3 +302,43 @@ cdef extern from "TACSToFH5.h":
       TACSToFH5(TACSAssembler * _tacs, ElementType _elem_type, int _out_type)
       void setComponentName(int comp_num, char *group_name)
       void writeToFile(char *filename)
+
+cdef extern from "TACSIntegrator.h":
+   # Declare the TACSIntegrator base class
+   cdef cppclass TACSIntegrator(TACSObject):      
+      # Integrate forward in time
+      void integrate()
+
+      # Returns the adjoint gradient for all functions that are set into TACS
+      void getFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
+                       TacsScalar *dfdx)
+
+      # Returns the finite-difference gradient for all the functions that are set into TACS
+      void getFDFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
+                         TacsScalar *dfdx, double dh)
+
+      # Setters for class variables
+      void setFunction(TACSFunction **func, int num_funcs)
+      void setPrintLevel(int print_level)
+      void setRelTol(double rtol)
+      void setAbsTol(double atol)
+      void setMaxNewtonIters(int max_newton_iters)
+      void setJacAssemblyFreq(int jac_comp_freq)
+      void setUseLapack(int use_lapack)
+
+      # Configure writing F5 files
+      void configureOutput(TACSToFH5 *viewer, int write_freq, char *f5_file_fmt)
+
+   # BDF Implementation of the integrator
+   cdef cppclass TACSBDFIntegrator(TACSIntegrator):
+      TACSBDFIntegrator(TACSAssembler *tacs,
+                        double tinit, double tfinal,
+                        int num_steps_per_sec,
+                        int max_bdf_order)
+
+   # DIRK Implementation of the integrator
+   cdef cppclass TACSDIRKIntegrator(TACSIntegrator):
+      TACSDIRKIntegrator(TACSAssembler *tacs,
+                        double tinit, double tfinal,
+                        int num_steps_per_sec,
+                        int num_stages)

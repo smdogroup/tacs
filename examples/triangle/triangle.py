@@ -149,6 +149,8 @@ ans.scale(-1.0)
 
 tacs.setVariables(ans)
 
+tacs.setSimulationTime(0.15)
+
 # Create the function list
 funcs = []
 
