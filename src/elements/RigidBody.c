@@ -440,6 +440,20 @@ TACSRigidBody::~TACSRigidBody(){
 const char *TACSRigidBody::elem_name = "TACSRigidBody";
 
 /*
+  Returns the displacement names
+*/
+const char * TACSRigidBody::displacementName( int i ){
+  return "";
+}
+
+/*
+  Returns the extra names
+*/
+const char * TACSRigidBody::extraName( int i ){
+  return "";
+}
+
+/*
   Set the design variable numbers associated with the inertial
   properties of the body
 

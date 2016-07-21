@@ -15,9 +15,10 @@ cdef extern from "TACSElement.h":
        EULER_BEAM
        TIMOSHENKO_BEAM
        PLANE_STRESS
-       SHELL 
+       SHELL
        SOLID
        Q3D_ELEMENT
+       RIGID
 
    enum ElementMatrixType:
        STIFFNESS_MATRIX

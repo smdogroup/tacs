@@ -171,7 +171,8 @@ enum ElementType { ELEMENT_NONE,
 		   PLANE_STRESS,
 		   SHELL, 
 		   SOLID,
-		   Q3D_ELEMENT };
+		   Q3D_ELEMENT,
+                   RIGID};
 
 // The different element matrix types
 enum ElementMatrixType { STIFFNESS_MATRIX, 

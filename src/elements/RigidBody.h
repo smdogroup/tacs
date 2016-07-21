@@ -97,6 +97,12 @@ class TACSRigidBody : public TACSElement {
   int numNodes(){ return 1; }
   const char* elementName(){ return elem_name; }
 
+  // Functions to determine the variable names and quantities
+  // --------------------------------------------------------
+  const char* displacementName( int i );
+  const char* extraName( int i );  
+  ElementType getElementType(){ return RIGID; }
+
   // Set and retrieve design variable values
   // ---------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
@@ -149,7 +155,6 @@ class TACSRigidBody : public TACSElement {
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
-
  private:
   // Recompute the inertial properties in the global ref. frame
   void updateInertialProperties();
