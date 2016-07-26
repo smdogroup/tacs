@@ -58,7 +58,7 @@ int main( int argc, char *argv[] ){
   /*-----------------------------------------------------------------*/
 
   double tinit = 0.0; double tfinal = 25.0;
-  int num_steps_per_sec = 10; int num_stages = 1;
+  int num_steps_per_sec = 10; int num_stages = 2;
   TACSDIRKIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
 						num_stages);
   dirk->incref();
@@ -82,7 +82,7 @@ int main( int argc, char *argv[] ){
   //                    Test BDF Scheme                             //
   //-----------------------------------------------------------------//
   
-  int max_bdf_order = 2;
+  int max_bdf_order = 3;
   TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
 					      max_bdf_order);
   bdf->incref();
@@ -101,6 +101,31 @@ int main( int argc, char *argv[] ){
   bdf->writeSolution("bdf.dat");
 
   bdf->decref();
+
+
+  //-----------------------------------------------------------------//
+  //                    Test ABM Scheme                             //
+  //-----------------------------------------------------------------//
+  
+  int max_abm_order = 6;
+  TACSABMIntegrator *abm = new TACSABMIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
+					      max_abm_order);
+  abm->incref();
+
+  // Set optional parameters
+  abm->setRelTol(1.0e-12);
+  abm->setAbsTol(1.0e-14);
+  abm->setMaxNewtonIters(24);
+  abm->setPrintLevel(1);
+  abm->setJacAssemblyFreq(1);
+  abm->setUseLapack(0);
+
+  // Integrate and write solution to file
+  abm->integrate();
+  // abm->forward(NULL, NULL, NULL);
+  abm->writeSolution("abm.dat");
+
+  abm->decref();
 
   // Deallocate objects
   tacs->decref();

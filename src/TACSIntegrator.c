@@ -38,6 +38,25 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
     fprintf(stdout, ">> TACSIntegrator: Instantiating BDF Order 3 integrator...\n");
     return new TACSBDFIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 3);
 
+  } else if ( type == ABM1 ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 1 integrator...\n");
+    return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
+  } else if ( type == ABM2 ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 2 integrator...\n");
+    return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
+  } else if ( type == ABM3 ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 3 integrator...\n");
+    return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 3);
+  } else if ( type == ABM4 ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 4 integrator...\n");
+    return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 4);
+  } else if ( type == ABM5 ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 5 integrator...\n");
+    return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 5);
+  } else if ( type == ABM6 ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 6 integrator...\n");
+    return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 6);
+
   } else { // default
     fprintf(stdout, ">> TACSIntegrator: Instantiating the default DIRK Order 2 integrator...\n");
     return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
@@ -352,6 +371,22 @@ void TACSIntegrator::writeSolution( const char *filename ) {
 
   // Close the file
   fclose(fp);
+}
+
+
+/*
+  Writes the output as an f5 file. Note the states and time must be
+  set appropriately before calling this function.
+*/
+void TACSIntegrator::writeStepToF5( int k ){
+  if(f5 && f5_write_freq > 0 && k % f5_write_freq == 0){
+    // Create a buffer for filename 
+    char buffer[128];
+    // Format the buffer based on the time step
+    getString(buffer, f5_file_fmt, k);      
+    // Write the f5 file for this time step
+    f5->writeToFile(buffer);
+  }
 }
 
 /*
@@ -674,6 +709,7 @@ void TACSIntegrator::getString(char *buffer, const char * format, ... ){
   tinit: the initial time
   tfinal: the final time
   num_steps_per_sec: the number of steps to take for each second
+  max_bdf_order: global order of accuracy
 */
 TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs, 
                                       double _tinit, double _tfinal, 
@@ -839,7 +875,10 @@ int TACSBDFIntegrator::getBDFCoeff( double bdf[], int order ){
 void TACSBDFIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
-    
+  
+  // Write the tecplot output to disk if sought
+  writeStepToF5(0);    
+
   for ( int k = 1; k < num_time_steps; k++ ){
     // Advance time
     time[k] = time[k-1] + h;
@@ -857,14 +896,7 @@ void TACSBDFIntegrator::integrate( ){
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
     
     // Write the tecplot output to disk if sought
-    if(f5 && f5_write_freq > 0 && k % f5_write_freq == 0){
-      // Create a buffer for filename 
-      char buffer[128];
-      // Format the buffer based on the time step
-      getString(buffer, f5_file_fmt, k);      
-      // Write the f5 file for this time step
-      f5->writeToFile(buffer);
-    }
+    writeStepToF5(k);
   }
 }
 
@@ -1125,7 +1157,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
   tinit:             the initial time
   tfinal:            the final time
   num_steps_per_sec: the number of steps to take for each second
-  max_newton_iters:  the max number of Newton iterations
+  num_stages:        the number of stages in DIRK
 */
 TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs, 
                                         double _tinit, double _tfinal, 
@@ -1329,7 +1361,7 @@ TacsScalar TACSDIRKIntegrator::forward( const TacsScalar *x,
       }
       
       // Compute qdotS
-      int idx = getIdx(i);
+      int idx = getRowIdx(i);
       qdots[i]->copyValues(qdot[k-1]);
       for ( int j = 0; j <= i; j++ ){
         qdots[i]->axpy(h*A[idx+j], qddots[j]);
@@ -1416,14 +1448,14 @@ void TACSDIRKIntegrator::approxStates( int current_step, int current_stage ){
 
   // Compute qdotS
   qdotS[toffset+i]->copyValues(qdot[k-1]);
-  int idx = getIdx(i);
+  int idx = getRowIdx(i);
   for ( int j = 0; j <= i; j++ ){
     qdotS[toffset+i]->axpy(h*A[idx+j], qddotS[toffset+j]);
   }
 
   // Compute qS
   qS[toffset+i]->copyValues(q[k-1]);
-  idx = getIdx(i);
+  idx = getRowIdx(i);
   for ( int j = 0; j <= i; j++ ){
     qS[toffset+i]->axpy(h*A[idx+j], qdotS[toffset+j]);
   }    
@@ -1432,7 +1464,7 @@ void TACSDIRKIntegrator::approxStates( int current_step, int current_stage ){
 /*
   Start index of the Butcher Tableau A for the supplied stage
 */
-int TACSDIRKIntegrator::getIdx( int stageNum ){
+int TACSDIRKIntegrator::getRowIdx( int stageNum ){
   return stageNum*(stageNum+1)/2;
 }
 
@@ -1525,6 +1557,9 @@ void TACSDIRKIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
+  // Write the tecplot output to disk if sought
+  writeStepToF5(0);    
+
   for ( int k = 1; k < num_time_steps; k++ ){    
     // Find the offset to current state values
     int toffset = k*num_stages;           
@@ -1538,7 +1573,7 @@ void TACSDIRKIntegrator::integrate( ){
       approxStates(k, i);
 
       // Determine the coefficients for linearizing the Residual
-      int idx = getIdx(i);
+      int idx = getRowIdx(i);
 
       double gamma = 1.0;
       double beta  = h*A[idx+i]; 
@@ -1557,14 +1592,7 @@ void TACSDIRKIntegrator::integrate( ){
     computeTimeStepStates(k, q, qdot, qddot);
 
     // Write the tecplot output to disk if sought
-    if(f5 && f5_write_freq > 0 && k % f5_write_freq == 0){
-      // Create a buffer for filename 
-      char buffer[128];
-      // Format the buffer based on the time step
-      getString(buffer, f5_file_fmt, k);      
-      // Write the f5 file for this time step
-      f5->writeToFile(buffer);
-    }
+    writeStepToF5(k);
   }
 }
 /*
@@ -1628,7 +1656,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       double t = time[k-1] + C[i]*h;
 
       // Get the starting index for the corresponding Butcher's tableau row
-      int idx = getIdx(i);
+      int idx = getRowIdx(i);
 
       // Determine the coefficients for linearizing the Residual
       double gamma = B[i];
@@ -1659,7 +1687,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
         // Add up the contribution from PSI to this RHS
         TacsScalar scale = 0.0;
         for ( int jj = i; jj < num_stages; jj++ ){
-          idx = getIdx(jj);
+          idx = getRowIdx(jj);
           scale += B[jj]*h*A[idx+i];
         }
         rhs[i*num_funcs+n]->axpy(scale, psi[n]);
@@ -1839,4 +1867,206 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
     }
   }
   delete [] ftmp;
+}
+
+/*
+  Constructor for ABM Integration scheme
+
+  Input:
+  tinit: the initial time
+  tfinal: the final time
+  num_steps_per_sec: the number of steps to take for each second
+  max_abm_order: the maximum global order of accuracy
+*/
+TACSABMIntegrator::TACSABMIntegrator( TACSAssembler * _tacs, 
+                                      double _tinit, double _tfinal, 
+                                      int _num_steps_per_sec, 
+                                      int _max_abm_order ):
+TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){		
+  // copy over the variables
+  max_abm_order = _max_abm_order;
+
+  // Sanity check on the input order
+  max_abm_order = ((max_abm_order <= 6 && max_abm_order >= 1) ?
+		   max_abm_order : 2);
+  
+  // Setup ABM Coefficents
+  A = new double[max_abm_order*(max_abm_order+1)/2];
+  memset(A, 0, max_abm_order*(max_abm_order+1)/2*sizeof(double)); // Lower triangular matrix
+  setupABMCoeffs(max_abm_order, A);
+  checkABMCoeffs();
+
+  // As many RHS as the number of second derivative coeffs
+  num_adjoint_rhs = max_abm_order;
+}
+
+/*
+  Setup the coefficients needed for the ABM integration based on the
+  maximum requested order and stores in the array
+*/
+void TACSABMIntegrator::setupABMCoeffs( int max_order, double *A ) {
+  for ( int order = 1; order <= max_abm_order; order++ ){
+    // Set the coefficients
+    if ( order == 1 ) {  
+      A[0] = 1.0;
+    } else if ( order == 2 ) {
+      A[1] = 1.0/2.0;
+      A[2] = 1.0/2.0;
+    } else if ( order == 3 ) {
+      A[3] = 5.0/12.0;
+      A[4] = 8.0/12.0;
+      A[5] = -1.0/12.0;
+    } else if ( order == 4 ) {
+      A[6] = 9.0/24.0;
+      A[7] = 19.0/24.0;
+      A[8] = -5.0/24.0;
+      A[9] = 1.0/24.0;
+    } else if ( order == 5 ) {
+      A[10] =  251.0/720.0;
+      A[11] =  646.0/720.0;
+      A[12] = -264.0/720.0;
+      A[13] =  106.0/720.0;
+      A[14] = -19.0/720.0;
+    } else if ( order == 6 ) {
+      A[15] =  475.0/1440.0;
+      A[16] = 1427.0/1440.0;
+      A[17] = -798.0/1440.0;
+      A[18] =  482.0/1440.0;
+      A[19] = -173.0/1440.0;
+      A[20] =   27.0/1440.0;
+    } else {
+      fprintf(stderr, "WARNING: Wrong ABM order %d out of %d\n", order, max_abm_order);
+    }
+  }
+}
+
+/*
+  Destructor for TACSABMIntegrator
+*/
+TACSABMIntegrator::~TACSABMIntegrator(){ delete [] A; }
+
+/*
+  Start index of the the row of ABM coefficient matrix.
+*/
+int TACSABMIntegrator::getRowIdx( int row ){
+  return row*(row+1)/2;
+}
+
+/*
+  Start index of the the row of ABM coefficient matrix.
+*/
+int TACSABMIntegrator::getOrder( int k ){
+  int order = k;
+  if (order > max_abm_order ) order = max_abm_order;
+  return order;
+}
+
+/*
+  Sanity check on the ABM coefficient values 
+*/
+void TACSABMIntegrator::checkABMCoeffs(){
+  for ( int order = 1; order <= max_abm_order; order++ ){
+    int start_idx = getRowIdx(order-1);
+    int end_idx = getRowIdx(order);
+    double sum = 0.0;
+    for ( int i = start_idx; i < end_idx; i++ ){
+      sum += A[i];
+    }
+    if (abs(sum-1.0) > 1.e-15) {
+      fprintf(stderr, "WARNING: Wrong ABM coefficients for \
+order %d max order %d sum %f\n", order, max_abm_order, sum);
+    }
+  }
+}
+
+/*
+  Approximate states (q, qdot, qddot) at the current time step using
+  the ABM coefficients and previous time step values of the states q,
+  qdot and qddot. The accelration states are the unknowns from which
+  the velocity states and position states are obtained.
+  
+  input:
+  pointers to the global states q, qdot, qddot
+
+  output:
+  the state vectors (q, qdot, qddot) are prepared for nonlinear solve
+*/
+void TACSABMIntegrator::approxStates( int current_step, int current_order ){
+  int k    = current_step;
+  int m    = current_order;
+  int ridx = getRowIdx(m-1);
+
+  // Zero the current states (these may not be zero when integrate() is
+  // called for the second time)
+  q[k]->zeroEntries();
+  qdot[k]->zeroEntries();
+  qddot[k]->zeroEntries();
+  
+  // Initial guess for qddot -- copy over previous accelearation states
+  qddot[k]->copyValues(qddot[k-1]);
+
+  // Approximate qdot using qdot and qddot:
+  // qdot[k] = qdot[k-1] + \sum _{i=0}^{m-1} h A_i qddot[k-i]
+  qdot[k]->copyValues(qdot[k-1]);
+  for ( int i = 0; i <= m-1; i++ ){
+    qdot[k]->axpy(h*A[ridx+i], qddot[k-i]);
+  }
+
+  // Approximate q using q and qdot:
+  // q[k] = q[k-1] + \sum _{i=0}^{m-1} h A_i qdot[k-i]
+  q[k]->copyValues(q[k-1]);
+  for ( int i = 0; i <= m-1; i++ ){
+    q[k]->axpy(h*A[ridx+i], qdot[k-i]);
+  }
+}
+
+/*
+  Integate forward in time using the initial conditions retrieved from
+  TACS
+*/
+void TACSABMIntegrator::integrate( ){
+  // Get the initial condition
+  tacs->getInitConditions(q[0], qdot[0]);
+  
+  // Write the tecplot output to disk if sought
+  writeStepToF5(0);    
+
+  for ( int k = 1; k < num_time_steps; k++ ){
+    // Determine the order of approximation
+    int m   = getOrder(k);
+    int idx = getRowIdx(m-1); // order starts with 1 but the table starts at 0
+
+    // Advance time
+    time[k] = time[k-1] + h;
+    
+    // Approximate states and their derivatives using ABM formula
+    approxStates(k, m);
+
+    // Determine the coefficients for linearizing the Residual
+    double gamma = 1.0;
+    double beta  = h*A[idx]; 
+    double alpha = beta*h*A[idx];
+
+    // Solve the nonlinear system of stage equations starting with the approximated states
+    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
+
+    // Write the tecplot output to disk if sought
+    writeStepToF5(k);
+  }
+}
+
+/*
+  March backwards in time to solve for adjoint variables and computing
+  total derivatives
+*/
+void TACSABMIntegrator::marchBackwards( ){
+}
+
+/*
+  Evaluate time average of the function value using discretization
+  from the integration scheme
+*/
+void TACSABMIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
+                                              int numFuncs, 
+                                              TacsScalar *funcVals) {
 }

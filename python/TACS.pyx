@@ -1253,3 +1253,19 @@ cdef class DIRKIntegrator(Integrator):
       self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, num_stages)
       self.ptr.incref()
       return
+
+cdef class ABMIntegrator(Integrator):
+   '''
+   Adams-Bashforth-Moulton method for integration. This currently
+   supports upto sixth order accuracy in time integration.
+   '''    
+   def __cinit__(self, Assembler tacs,
+                 double tinit, double tfinal,
+                 int num_steps_per_sec,
+                 int max_abm_order):
+      '''
+      Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
+      '''
+      self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_abm_order)
+      self.ptr.incref()
+      return

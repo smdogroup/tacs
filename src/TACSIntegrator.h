@@ -9,8 +9,9 @@
 
 // Type of integrator to use. The following are the supported methods.
 //--------------------------------------------------------------------
-enum IntegratorType { BDF1, BDF2, BDF3,       // Backward-difference methods
-                      DIRK2, DIRK3, DIRK4 };  // Diagonally-Implicit-Runge-Kutta methods
+enum IntegratorType { BDF1, BDF2, BDF3,                   // Backward-difference methods
+                      ABM1, ABM2, ABM3, ABM4, ABM5, ABM6, // Adams-Bashforth-method
+                      DIRK2, DIRK3, DIRK4 };              // Diagonally-Implicit-Runge-Kutta methods
 
 /*
   Base class for integration schemes. This base class contains common
@@ -49,6 +50,10 @@ class TACSIntegrator : public TACSObject {
   // file in ASCII text format (might be slower for bigger problems)
   // ------------------------------------------------------------------
   void writeSolution( const char *filename );
+
+  // Write a single step to F5 file created based on the step number
+  //----------------------------------------------------------------
+  void writeStepToF5( int step=0 );
   
   // Call this function after integrating to write the solution to f5
   // file. Since it is written in binary form, it is faster.
@@ -236,7 +241,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 
   // Returns the starting index of corresponding Butcher tableau row
   //----------------------------------------------------------------
-  int getIdx( int stageNum );
+  int getRowIdx( int stageNum );
 
   // Approximate derivatives using DIRK formulae
   //--------------------------------------------
@@ -318,5 +323,58 @@ class TACSBDFIntegrator : public TACSIntegrator {
   // Function for marching backwards in stage and time
   //---------------------------------------------------
   void marchBackwards();
+};
+
+/*
+  BDF integration scheme for TACS which extends TACSIntegrator
+*/
+
+class TACSABMIntegrator : public TACSIntegrator {
+ public:
+  // Constructor for ABM object
+  //---------------------------
+  TACSABMIntegrator(TACSAssembler * _tacs, 
+		    double _tinit, double _tfinal, int _num_steps_per_sec, 
+		    int max_abm_order);
+  
+  // Destructor for ABM object
+  //--------------------------
+  ~TACSABMIntegrator();
+  
+  // Function that integrates forward in time
+  //-----------------------------------------
+  void integrate();
+  
+ private:   
+  // Start index of the the row of ABM coefficient matrix.
+  // -----------------------------------------------------
+  int getRowIdx( int stageNum );
+
+  // Order of integration to use for the current time step k
+  //--------------------------------------------------------
+  int getOrder( int k );
+
+  // Create a table of coeffs for ABM
+  void setupABMCoeffs( int max_order, double *A);
+  void checkABMCoeffs();
+
+  // Approximate derivatives using ABM stencil
+  //------------------------------------------
+  void approxStates( int current_step, int current_order );
+  
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
+
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+  void marchBackwards();
+  
+  // Maximum order of the ABM integration scheme
+  int max_abm_order;
+
+  // ABM Coefficients
+  double *A;
 };
 #endif

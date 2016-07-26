@@ -343,3 +343,10 @@ cdef extern from "TACSIntegrator.h":
                         double tinit, double tfinal,
                         int num_steps_per_sec,
                         int num_stages)
+      
+   # ABM Implementation of the integrator
+   cdef cppclass TACSABMIntegrator(TACSIntegrator):
+      TACSABMIntegrator(TACSAssembler *tacs,
+                        double tinit, double tfinal,
+                        int num_steps_per_sec,
+                        int max_abm_order)
