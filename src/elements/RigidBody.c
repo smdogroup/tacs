@@ -439,18 +439,25 @@ TACSRigidBody::~TACSRigidBody(){
 // Set the element name
 const char *TACSRigidBody::elem_name = "TACSRigidBody";
 
+// Set the displacement names
+const char *TACSRigidBody::disp_names[] = {
+  "u", "v", "w", "eta", "eps1", "eps2", "eps3", "lambda" };
+
 /*
   Returns the displacement names
 */
 const char * TACSRigidBody::displacementName( int i ){
-  return "";
+  if (i >= 0 && i < 8){
+    return disp_names[i];
+  }
+  return NULL;
 }
 
 /*
   Returns the extra names
 */
 const char * TACSRigidBody::extraName( int i ){
-  return "";
+  return NULL;
 }
 
 /*
@@ -1290,7 +1297,7 @@ void TACSRigidBody::testJacobian( double dh,
   Get the connectivity count
 */
 void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
-  (*nelems)++;
+  *nelems += 1;
   *nnodes += 8;
   *ncsr += 8;
 }
@@ -1323,6 +1330,10 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   L[0] = sqrt(6.0*(Jc[3] + Jc[5] - Jc[0])/mass);
   L[1] = sqrt(6.0*(Jc[0] + Jc[5] - Jc[3])/mass);
   L[2] = sqrt(6.0*(Jc[0] + Jc[3] - Jc[5])/mass);
+
+  L[0] = 1.0;
+  L[1] = 0.25;
+  L[2] = 0.1;
 
   for ( int iz = 0; iz < 2; iz++ ){
     for ( int iy = 0; iy < 2; iy++ ){
@@ -1361,8 +1372,20 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
             data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
           }
           index += 3;
+
+          // Add the eta variable
+          data[index] = eta;
+          index++;
+
+          // Add the epsilon quaternion components
+          for ( int k = 0; k < 3; k++ ){
+            data[index+k] = eps[k];
+          }
+          index += 3;
+
+          // Add the Lagrange multiplier
+          data[index] = vars[7];
         }
-        
         data += ld_data;
       }
     }
@@ -1372,7 +1395,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 /*
   Get the connectivity associated with this element
 */
-void TACSRigidBody::getOutputConnectivity( int * con, int node ){
+void TACSRigidBody::getOutputConnectivity( int *con, int node ){
   con[0] = node;
   con[1] = node+1;
   con[2] = node+3;
@@ -1382,7 +1405,6 @@ void TACSRigidBody::getOutputConnectivity( int * con, int node ){
   con[6] = node+7;
   con[7] = node+6;
 }
-
 
 /*
   Constructor for spherical constraint
@@ -1557,9 +1579,11 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
   eB2:
 
  */
-TACSRevoluteConstraint::TACSRevoluteConstraint(  TACSGibbsVector *_xA,  TACSGibbsVector *_xB,
-                                                 TACSGibbsVector *_eA,  
-                                                 TACSGibbsVector *_eB1,  TACSGibbsVector *_eB2 ) {
+TACSRevoluteConstraint::TACSRevoluteConstraint( TACSGibbsVector *_xA,  
+                                                TACSGibbsVector *_xB,
+                                                TACSGibbsVector *_eA,  
+                                                TACSGibbsVector *_eB1,  
+                                                TACSGibbsVector *_eB2 ){
   // Retrive the positions from Gibbs vectors
   const TacsScalar *xA, *xB;
   _xA->getVector(&xA);

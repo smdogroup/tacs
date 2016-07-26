@@ -166,7 +166,8 @@ void TACSToFH5::writeToFile( const char * filename ){
       elem_type == TIMOSHENKO_BEAM){
     con_size = 2;
   }
-  else if (elem_type == SOLID){
+  else if (elem_type == SOLID || 
+           elem_type == RIGID){
     con_size = 8;
   }
 

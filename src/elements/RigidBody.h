@@ -183,6 +183,7 @@ class TACSRigidBody : public TACSElement {
 
   // The name of the element
   static const char *elem_name;
+  static const char *disp_names[8];
 };
 
 /*
