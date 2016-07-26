@@ -1374,17 +1374,17 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
           index += 3;
 
           // Add the eta variable
-          data[index] = eta;
+          data[index] = RealPart(eta);
           index++;
 
           // Add the epsilon quaternion components
           for ( int k = 0; k < 3; k++ ){
-            data[index+k] = eps[k];
+            data[index+k] = RealPart(eps[k]);
           }
           index += 3;
 
           // Add the Lagrange multiplier
-          data[index] = vars[7];
+          data[index] = RealPart(vars[7]);
         }
         data += ld_data;
       }

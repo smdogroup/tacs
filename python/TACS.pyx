@@ -1269,3 +1269,17 @@ cdef class ABMIntegrator(Integrator):
       self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_abm_order)
       self.ptr.incref()
       return
+
+cdef class NBGIntegrator(Integrator):
+   '''
+   Newmark-Beta-Gamma method for integration.
+   '''    
+   def __cinit__(self, Assembler tacs,
+                 double tinit, double tfinal,
+                 int num_steps_per_sec):
+      '''
+      Constructor for Newmark-Beta-Gamma method of integration
+      '''
+      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec)
+      self.ptr.incref()
+      return

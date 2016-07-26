@@ -57,6 +57,11 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
     fprintf(stdout, ">> TACSIntegrator: Instantiating ABM Order 6 integrator...\n");
     return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 6);
 
+    // Newmark Beta Gamma Method
+  } else if ( type == NBG ) {
+    fprintf(stdout, ">> TACSIntegrator: Instantiating NBG integrator...\n");
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec);
+
   } else { // default
     fprintf(stdout, ">> TACSIntegrator: Instantiating the default DIRK Order 2 integrator...\n");
     return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
@@ -875,7 +880,7 @@ int TACSBDFIntegrator::getBDFCoeff( double bdf[], int order ){
 void TACSBDFIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
-  
+
   // Write the tecplot output to disk if sought
   writeStepToF5(0);    
 
@@ -1094,9 +1099,6 @@ void TACSBDFIntegrator::marchBackwards( ) {
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(1.0, psi[n]);
       rhs[adj_index*num_funcs+n]->scale(-1.0);
-
-      // Sanity check on the RHS
-      //checkAdjointRHS(rhs[adj_index*num_funcs+n]);
     }
     
     // Setup the Jacobian
@@ -1694,9 +1696,6 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       
         // Negate the RHS
 	rhs[i*num_funcs+n]->scale(-1.0);
-
-        // Sanity check on the RHS
-        //checkAdjointRHS(rhs[i*num_funcs+n]);
       }
      
       // Setup the Jacobian
@@ -1866,6 +1865,63 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
       }        
     }
   }
+  delete [] ftmp;
+}
+
+/*
+  Evaluate time average of the function value using discretization
+  from the integration scheme
+*/
+void TACSABMIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
+                                              int numFuncs, 
+                                              TacsScalar *funcVals) {
+  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
+ 
+  TacsScalar *ftmp = new TacsScalar[numFuncs];  
+  
+  // Loop over time steps
+  for ( int k = 1; k < num_time_steps; k++ ) {
+    // Set the states into TACS
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    
+    // Evaluate the functions
+    tacs->evalFunctions(funcs, numFuncs, ftmp); 
+    
+    // Compute the mean function value (h is the weight)
+    for ( int j = 0; j < numFuncs; j++ ) {
+      funcVals[j] += h*ftmp[j];
+    }        
+  }
+  
+  delete [] ftmp;
+}
+
+
+/*
+  Evaluate time average of the function value using discretization
+  from the integration scheme
+*/
+void TACSNBGIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
+                                              int numFuncs, 
+                                              TacsScalar *funcVals) {
+  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
+ 
+  TacsScalar *ftmp = new TacsScalar[numFuncs];  
+  
+  // Loop over time steps
+  for ( int k = 1; k < num_time_steps; k++ ) {
+    // Set the states into TACS
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    
+    // Evaluate the functions
+    tacs->evalFunctions(funcs, numFuncs, ftmp); 
+    
+    // Compute the mean function value (h is the weight)
+    for ( int j = 0; j < numFuncs; j++ ) {
+      funcVals[j] += h*ftmp[j];
+    }        
+  }
+  
   delete [] ftmp;
 }
 
@@ -2060,13 +2116,188 @@ void TACSABMIntegrator::integrate( ){
   total derivatives
 */
 void TACSABMIntegrator::marchBackwards( ){
+  // Adjoint variables for each function of interest
+  BVec **psi = new BVec*[ num_funcs ];
+  for ( int n = 0; n < num_funcs; n++ ){
+    psi[n] = tacs->createVec();
+    psi[n]->incref();
+  }
+  
+  // Right hand sides for adjoint linear-system
+  BVec **rhs = new BVec*[ num_funcs*num_adjoint_rhs ];
+  for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
+    rhs[n] = tacs->createVec();
+    rhs[n]->incref();
+  }
+ 
+ // March backwards in time (initial condition not evaluated)
+  for ( int k = num_time_steps-1; k >=1 ; k-- ){
+    // Determine the order of approximation used at this step
+    int m   = getOrder(k);
+
+    // Determine the corresponding start index of the coefficient matrix
+    int idx = getRowIdx(m-1);
+
+    // Determine the coefficients for Jacobian assembly
+    double gamma = 1.0;
+    double beta  = h*A[idx]; 
+    double alpha = beta*h*A[idx];
+
+    // Set the stages
+    this->setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    
+    // Find the adjoint index
+    int adj_index = k % num_adjoint_rhs;
+
+    // Setup the adjoint RHS
+    TacsScalar ftmp;
+    for ( int n = 0; n < num_funcs; n++ ){
+      // Evaluate the function
+      tacs->evalFunctions(&funcs[n], 1, &ftmp);
+      fvals[n] += h*ftmp;
+
+      // Add up the contribution from function state derivative to RHS
+      tacs->evalSVSens(funcs[n], psi[n]);
+
+      // Add the contributions to the current adjoint RHS
+      rhs[adj_index*num_funcs+n]->axpy(alpha, psi[n]);
+      rhs[adj_index*num_funcs+n]->scale(-1.0);
+    }
+
+    // Setup the Jacobian
+    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+
+    // LU factorization of the Jacobian
+    pc->factor();
+    
+    // Apply the factorization for all right hand sides and solve for
+    // the adjoint variables
+    for ( int n = 0; n < num_funcs; n++ ){
+      ksm->solve(rhs[adj_index*num_funcs + n], psi[n]);
+      rhs[adj_index*num_funcs+n]->zeroEntries();
+    }
+
+    // Add total derivative contributions from this step to all
+    // functions
+    this->addTotalDerivative(h, psi);
+  }
+
+  // Freeup objects
+  // Adjoint variables for each function of interest
+  for ( int n = 0; n < num_funcs; n++ ){
+    psi[n]->decref();
+  }
+  delete [] psi;
+
+  // Right hand sides for adjoint linear-system
+  for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
+    rhs[n]->decref();
+  }
+  delete [] rhs;  
+}
+
+//----------------------------------------------------------//
+//               Newmark Beta Gamma Method (NBG)            //  
+//----------------------------------------------------------//
+
+/*
+  Constructor for NBG Integration scheme
+
+  Input:
+  tinit: the initial time
+  tfinal: the final time
+  num_steps_per_sec: the number of steps to take for each second
+*/
+TACSNBGIntegrator::TACSNBGIntegrator( TACSAssembler * _tacs, 
+                                      double _tinit, double _tfinal, 
+                                      int _num_steps_per_sec):
+TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){}
+
+/*
+  Destructor for TACSNBGIntegrator
+*/
+TACSNBGIntegrator::~TACSNBGIntegrator(){}
+
+/*
+  Approximate states (q, qdot, qddot) at the current time step using
+  the NBG formula and previous time step values of the states q, qdot
+  and qddot. The accelration states are the unknowns from which the
+  velocity states and position states are obtained.
+  
+  input:
+  pointers to the global states q, qdot, qddot
+
+  output:
+  the state vectors (q, qdot, qddot) are prepared for nonlinear solve
+*/
+void TACSNBGIntegrator::approxStates( int current_step ){
+  int k    = current_step;
+  double scale  = 0.0;
+
+  // Zero the current states (these may not be zero when integrate() is
+  // called for the second time)
+  q[k]->zeroEntries();
+  qdot[k]->zeroEntries();
+  qddot[k]->zeroEntries();
+  
+  // Initial guess for qddot -- copy over previous acceleration states
+  qddot[k]->copyValues(qddot[k-1]);
+
+  // Approximate qdot using qdot and qddot:
+  // qdot[k] = qdot[k-1] + (1-GAMMA) h qddot[k-1]) + GAMMA h qddot[k]
+  qdot[k]->copyValues(qdot[k-1]);
+
+  scale = (1.0-GAMMA)*h;
+  qdot[k]->axpy(h*0.5, qddot[k-1]);
+
+  scale = GAMMA*h;
+  qdot[k]->axpy(h*0.5, qddot[k]);
+
+  // Approximate q using q, qdot and qddot:
+  // q[k] = q[k-1] + h qdot[k-1] + h^2(1-2*BETA)/2 qddot[k-1] + h^2 BETA qddot[k])
+  q[k]->copyValues(q[k-1]);
+  q[k]->axpy(h, qdot[k-1]);
+
+  scale = h*h*(1.0-2.0*BETA)/2.0;
+  q[k]->axpy(scale, qddot[k-1]);
+
+  scale = h*h*BETA;
+  q[k]->axpy(scale, qddot[k]);
 }
 
 /*
-  Evaluate time average of the function value using discretization
-  from the integration scheme
+  Integate forward in time using the initial conditions retrieved from
+  TACS
 */
-void TACSABMIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
-                                              int numFuncs, 
-                                              TacsScalar *funcVals) {
+void TACSNBGIntegrator::integrate( ){
+  // Get the initial condition
+  tacs->getInitConditions(q[0], qdot[0]);
+
+  // Write the tecplot output to disk if sought
+  writeStepToF5(0);    
+
+  for ( int k = 1; k < num_time_steps; k++ ){
+    // Advance time
+    time[k] = time[k-1] + h;
+    
+    // Approximate states and their derivatives using ABM formula
+    approxStates(k);
+    
+    // Determine the coefficients for linearizing the Residual
+    double gamma = 1.0;
+    double beta  = GAMMA*h; 
+    double alpha = BETA*h*h;
+
+    // Solve the nonlinear system of stage equations starting with the approximated states
+    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
+
+    // Write the tecplot output to disk if sought
+    writeStepToF5(k);
+  }
 }
+
+/*
+  March backwards in time to solve for adjoint variables and computing
+  total derivatives
+*/
+void TACSNBGIntegrator::marchBackwards( ){}

@@ -29,19 +29,41 @@ int main( int argc, char **argv ){
   int test_element = 0;
   enum IntegratorType type = BDF1;
   for ( int i = 0; i < argc; i++ ){
+    // Backward Difference Formulae
     if (strcmp("BDF1", argv[i]) == 0){
       type = BDF1;
     } else if (strcmp("BDF2", argv[i]) == 0){
       type = BDF2;
     } else if (strcmp("BDF3", argv[i]) == 0){
       type = BDF3;
+
+      // Adams-Bashforth-Moulton
+    } else if (strcmp("ABM1", argv[i]) == 0){
+      type = ABM1;
+    } else if (strcmp("ABM2", argv[i]) == 0){
+      type = ABM2;
+    } else if (strcmp("ABM3", argv[i]) == 0){
+      type = ABM3;
+    } else if (strcmp("ABM4", argv[i]) == 0){
+      type = ABM4;
+    } else if (strcmp("ABM5", argv[i]) == 0){
+      type = ABM5;
+    } else if (strcmp("ABM6", argv[i]) == 0){
+      type = ABM6;
+
+      // Diagonally Implicit Runge Kutta
     } else if (strcmp("DIRK2", argv[i]) == 0){
       type = DIRK2;
     } else if (strcmp("DIRK3", argv[i]) == 0){
       type = DIRK3;
     } else if (strcmp("DIRK4", argv[i]) == 0){
       type = DIRK4;
+
+      // Newmark-Beta-Gamma method
+    } else if (strcmp("NBG", argv[i]) == 0){
+      type = NBG;
     }
+
     if (strcmp("test_element", argv[i]) == 0){
       test_element = 1;
     }
@@ -75,7 +97,7 @@ int main( int argc, char **argv ){
   TacsScalar v_init[] = {0.0, 0.0, 0.0};
   TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
-  /* TacsScalar v_init[] = {0.1, 0.1, 0.1}; */
+  /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
 
   TACSGibbsVector *gravity = new TACSGibbsVector(g); 
@@ -197,7 +219,7 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 1.e-2; int num_steps_per_sec = 1000;
+  double tinit = 0.0, tfinal = 10.e-3; int num_steps_per_sec = 1000;
 
   TACSIntegrator *obj =  TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                      num_steps_per_sec, 
@@ -206,7 +228,7 @@ int main( int argc, char **argv ){
 
   // Set options
   obj->setJacAssemblyFreq(1);
-  obj->setPrintLevel(0);
+  obj->setPrintLevel(1);
   obj->configureOutput(NULL, 1, "plate_%04d.f5");
   
   // Set functions of interest

@@ -11,7 +11,8 @@
 //--------------------------------------------------------------------
 enum IntegratorType { BDF1, BDF2, BDF3,                   // Backward-difference methods
                       ABM1, ABM2, ABM3, ABM4, ABM5, ABM6, // Adams-Bashforth-method
-                      DIRK2, DIRK3, DIRK4 };              // Diagonally-Implicit-Runge-Kutta methods
+                      DIRK2, DIRK3, DIRK4,                // Diagonally-Implicit-Runge-Kutta methods
+                      NBG};                               // Newmark Beta Gamma Method
 
 /*
   Base class for integration schemes. This base class contains common
@@ -326,9 +327,8 @@ class TACSBDFIntegrator : public TACSIntegrator {
 };
 
 /*
-  BDF integration scheme for TACS which extends TACSIntegrator
+  Adams-Bashforth-Moulton integration scheme for TACS
 */
-
 class TACSABMIntegrator : public TACSIntegrator {
  public:
   // Constructor for ABM object
@@ -377,4 +377,43 @@ class TACSABMIntegrator : public TACSIntegrator {
   // ABM Coefficients
   double *A;
 };
+
+/*
+  Newmark Beta Gamma Method (NBG) integration scheme for TACS
+*/
+class TACSNBGIntegrator : public TACSIntegrator {
+ public:
+  // Constructor for NBG object
+  //---------------------------
+  TACSNBGIntegrator(TACSAssembler * _tacs, 
+		    double _tinit, double _tfinal, 
+                    int _num_steps_per_sec);
+  
+  // Destructor for NBG object
+  //--------------------------
+  ~TACSNBGIntegrator();
+  
+  // Function that integrates forward in time
+  //-----------------------------------------
+  void integrate();
+  
+ private:
+  // Approximate derivatives using NBG formula
+  //------------------------------------------
+  void approxStates( int current_step );
+  
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
+
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+  void marchBackwards();
+  
+  // Newmark Coefficients
+  static const double BETA  = 0.25;
+  static const double GAMMA = 0.50;
+};
+
 #endif

@@ -53,12 +53,14 @@ int main( int argc, char *argv[] ){
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
  
+  double tinit = 0.0; double tfinal = 10.0;
+  int num_steps_per_sec = 10;
+
   /*-----------------------------------------------------------------*/
   /*                    Test DIRK Scheme                             */
   /*-----------------------------------------------------------------*/
 
-  double tinit = 0.0; double tfinal = 25.0;
-  int num_steps_per_sec = 10; int num_stages = 2;
+  int num_stages = 2;
   TACSDIRKIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
 						num_stages);
   dirk->incref();
@@ -102,7 +104,6 @@ int main( int argc, char *argv[] ){
 
   bdf->decref();
 
-
   //-----------------------------------------------------------------//
   //                    Test ABM Scheme                             //
   //-----------------------------------------------------------------//
@@ -122,10 +123,30 @@ int main( int argc, char *argv[] ){
 
   // Integrate and write solution to file
   abm->integrate();
-  // abm->forward(NULL, NULL, NULL);
   abm->writeSolution("abm.dat");
 
   abm->decref();
+
+  //-----------------------------------------------------------------//
+  //                    Test NBG Scheme                             //
+  //-----------------------------------------------------------------//
+  
+  TACSNBGIntegrator *nbg = new TACSNBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec);
+  nbg->incref();
+
+  // Set optional parameters
+  nbg->setRelTol(1.0e-12);
+  nbg->setAbsTol(1.0e-14);
+  nbg->setMaxNewtonIters(24);
+  nbg->setPrintLevel(1);
+  nbg->setJacAssemblyFreq(1);
+  nbg->setUseLapack(0);
+
+  // Integrate and write solution to file
+  nbg->integrate();
+  nbg->writeSolution("nbg.dat");
+
+  nbg->decref();
 
   // Deallocate objects
   tacs->decref();
