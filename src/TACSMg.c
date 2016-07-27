@@ -59,18 +59,18 @@ not make any sense!\n");
   }
 
   // Create the pointers to the matrices
-  mat = new PMat*[ nlevels-1 ];
+  mat = new TACSMat*[ nlevels-1 ];
  
   // should re-assemble this matrix
   restrct = new BVecInterp*[ nlevels-1 ];
   interp = new BVecInterp*[ nlevels-1 ];
-  psor = new PSOR*[ nlevels-1 ]; 
+  pc = new TACSPc*[ nlevels-1 ]; 
 
   for ( int i = 0; i < nlevels-1; i++ ){
     restrct[i] = NULL;
     interp[i] = NULL;
     mat[i] = NULL;
-    psor[i] = NULL;
+    pc[i] = NULL;
   }
 
   monitor = NULL;
@@ -93,7 +93,7 @@ TACSMg::~TACSMg(){
     if (mat[i]){ mat[i]->decref(); }
     if (restrct[i]){ restrct[i]->decref(); }
     if (interp[i]){ interp[i]->decref(); }
-    if (psor[i]){ psor[i]->decref(); }
+    if (pc[i]){ pc[i]->decref(); }
   }
 
   if (monitor){ monitor->decref(); }
@@ -109,7 +109,7 @@ TACSMg::~TACSMg(){
 
   delete [] restrct;
   delete [] interp;
-  delete [] psor;
+  delete [] pc;
 }
 
 /*
@@ -151,19 +151,27 @@ void TACSMg::setLevel( int level, TACSAssembler * _tacs,
     interp[level] = _interp;
     interp[level]->incref();
     
-    mat[level] = tacs[level]->createMat();
+    PMat *pmat = tacs[level]->createMat();
+    mat[level] = pmat;
     mat[level]->incref();
+
+    // Do not zero the initial guess for the PSOR object
+    int zero_guess = 0; 
+    pc[level] = new PSOR(pmat, zero_guess, sor_omega, 
+			 sor_iters, sor_symmetric);
+    pc[level]->incref();
   }
   else {
     // Set up the root matrix
-    root_mat = tacs[level]->createFEMat();
+    FEMat *femat = tacs[level]->createFEMat();
+    root_mat = femat;
     root_mat->incref();
 
     // Set up the root preconditioner/solver
     int lev = 10000;
     double fill = 15.0;
     int reorder_schur = 1; 
-    root_pc = new PcScMat(root_mat, lev, fill, reorder_schur);
+    root_pc = new PcScMat(femat, lev, fill, reorder_schur);
     root_pc->incref();
   }
   
@@ -219,7 +227,7 @@ void TACSMg::setDesignVars( const TacsScalar dvs[], int numDVs ){
 */
 void TACSMg::factor(){
   for ( int i = 0; i < nlevels-1; i++ ){
-    if (psor[i]){ psor[i]->factor(); }
+    if (pc[i]){ pc[i]->factor(); }
   }
 
   if (root_pc){ root_pc->factor(); }
@@ -251,17 +259,6 @@ void TACSMg::assembleJacobian( BVec *res,
     tacs[nlevels-1]->assembleJacobian(NULL, root_mat, 
                                       alpha, beta, gamma, matOr);
   }
-
-  // For all but the lowest level, set up the SOR object
-  for ( int i = 0; i < nlevels-1; i++ ){
-    if (!psor[i]){
-      // Do not zero the initial guess for the PSOR object
-      int zero_guess = 0; 
-      psor[i] = new PSOR(mat[i], zero_guess, sor_omega, 
-			 sor_iters, sor_symmetric);
-      psor[i]->incref();
-    }
-  }
 }
 
 /*
@@ -281,17 +278,6 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
   // Assemble the coarsest problem 
   if (tacs[nlevels-1]){
     tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
-  }
-
-  // For all but the lowest level, set up the SOR object
-  for ( int i = 0; i < nlevels-1; i++ ){
-    if (!psor[i]){
-      // Do not zero the initial guess for the PSOR object
-      int zero_guess = 0; 
-      psor[i] = new PSOR(mat[i], zero_guess, sor_omega, 
-			 sor_iters, sor_symmetric);
-      psor[i]->incref();
-    }
   }
 }
 
@@ -379,7 +365,7 @@ void TACSMg::applyFactor( TACSVec * bvec, TACSVec * xvec ){
 */
 TacsScalar TACSMg::applyMg( int level ){
   // Pre-smooth at the current level
-  psor[level]->applyFactor(b[level], x[level]);  
+  pc[level]->applyFactor(b[level], x[level]);  
 
   // Compute r[level] = b[level] - A*x[level]
   mat[level]->mult(x[level], r[level]);
@@ -412,7 +398,7 @@ TacsScalar TACSMg::applyMg( int level ){
   x[level]->applyBCs();
 
   // Post-Smooth the residual
-  psor[level]->applyFactor(b[level], x[level]);  
+  pc[level]->applyFactor(b[level], x[level]);  
 
   return norm;
 }
