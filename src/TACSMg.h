@@ -110,10 +110,10 @@ class TACSMg : public TACSPc {
   BVecInterp **restrct, **interp;
 
   // The matrices/preconditioner objects required for multigrid
-  FEMat * root_mat; // The root matrix 
-  PcScMat * root_pc; // The root direct solver
-  PMat ** mat; // The matrices associated with each level
-  PSOR ** psor; // The smoothers for all but the lowest level
+  TACSMat * root_mat; // The root matrix 
+  TACSPc * root_pc; // The root direct solver
+  TACSMat ** mat; // The matrices associated with each level
+  TACSPc ** pc; // The smoothers for all but the lowest level
 };
 
 #endif
