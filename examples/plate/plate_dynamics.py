@@ -55,8 +55,8 @@ write_freq = 1  # Set to 0 if no output is sought
 #---------------------------------------------------------------------!
 
 tinit             = 0.00
-tfinal            = 0.025
-num_steps_per_sec = 1000
+tfinal            = 0.25
+num_steps_per_sec = 100
 
 #---------------------------------------------------------------------!
 # Properties for dynamics (Initial Conditions)
@@ -102,7 +102,7 @@ tacs = mesh.createTACS(8)
 f5 = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
 
 # Use Newmark-Beta-Gamma integrator for time integration
-solver = TACS.NBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec)
+solver = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 2)
 solver.setPrintLevel(1)
 solver.configureOutput(f5, write_freq, f5_format)
 solver.integrate()

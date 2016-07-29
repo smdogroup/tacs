@@ -132,7 +132,7 @@ dfdx_fd         = np.zeros(num_funcs*num_design_vars)
 # BDF Integrator
 for bdf_order in [1,2,3]:
     bdf = TACS.BDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec, bdf_order)
-    bdf.setPrintLevel(0)
+    bdf.setPrintLevel(1)
     bdf.setJacAssemblyFreq(1)
     bdf.setFunction(funcs)
 
@@ -151,7 +151,7 @@ for bdf_order in [1,2,3]:
 # DIRK Integrator
 for num_stages in [1,2,3]:
     dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, num_stages)
-    dirk.setPrintLevel(0)
+    dirk.setPrintLevel(1)
     dirk.setJacAssemblyFreq(1)
     dirk.setFunction(funcs)
 
@@ -170,7 +170,7 @@ for num_stages in [1,2,3]:
 # ABM Integrator
 for abm_order in [1,2,3,4,5,6]:
     abm = TACS.ABMIntegrator(tacs, tinit, tfinal, num_steps_per_sec, abm_order)
-    abm.setPrintLevel(0)
+    abm.setPrintLevel(1)
     abm.setJacAssemblyFreq(1)
     abm.setFunction(funcs)
 
@@ -185,4 +185,3 @@ for abm_order in [1,2,3,4,5,6]:
 
     print("Error for ABM order ", abm_order)
     print(fvals-fvals_fd, dfdx-dfdx_fd)
-
