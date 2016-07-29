@@ -4,10 +4,10 @@
 #include "TACSElement.h"
 
 /*
-  A dummy implementation of TACSElement class with a random nonlinear
-  ode -- used to test integration schemes. When using this element make
-  sure to set the initial conditions within TACSIntegrator or the
-  residuals will be zero throughout.
+  A dummy implementation of TACSElement class with spring mass damper
+  equations -- used to test integration schemes. When using this
+  element make sure to set the initial conditions within
+  TACSIntegrator or the residuals will be zero throughout.
 
   Example:
 
@@ -18,14 +18,19 @@
 
   tacs->getInitConditions(q[0], qdot[0]);
 */
-class TACSDummyElement : public TACSElement {
+class TACSSMDElement : public TACSElement {
  public:
-  TACSDummyElement(){}
-  ~TACSDummyElement(){}
+  TACSSMDElement(){}
+  ~TACSSMDElement(){}
   
+  // Design variables
+  static const TacsScalar M = 1.00;
+  static const TacsScalar C = 0.02;
+  static const TacsScalar K = 5.00;
+
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
-  const char * elementName() { return  "TACSDummyODE"; } 
+  const char * elementName() { return  "TACSSpringMassDamper"; } 
   const char * displacementName( int i ) {}
   const char * stressName( int i ) {}
   const char * strainName( int i ) {}
@@ -33,10 +38,10 @@ class TACSDummyElement : public TACSElement {
   
   // Get the number of displacements, stresses, nodes, etc.
   // ------------------------------------------------------
-  int numDisplacements() { return 2; } // should equal num_state_vars
+  int numDisplacements() { return 1; } // should equal num_state_vars
   int numStresses() { return 0; }
   int numNodes() { return 1; }
-  int numVariables() { return 2; } // should equal num_state_vars
+  int numVariables() { return 1; } // should equal num_state_vars
   int numExtras(){ return 0; }
   enum ElementType getElementType(){return SHELL;}
 
@@ -83,10 +88,7 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar q[],
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
-
-    res[0] += qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
-    res[1] += qddot[1] - 0.05*qdot[0]*qdot[1] + q[0]*q[1];
-
+    res[0] += M*qddot[0] + C*qdot[0] + K*q[0];
   }
 
   // Compute the Jacobian of the governing equations
@@ -97,24 +99,7 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar q[],
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
-
-    // derivative wrt qddot
-    J[0] += gamma*1.0;
-    J[1] += gamma*0.0;
-    J[2] += gamma*0.0;
-    J[3] += gamma*1.0;
-
-    // derivative wrt qdot
-    J[0] += beta*0.02*qdot[1];
-    J[1] += beta*0.02*qdot[0];
-    J[2] += beta*-0.05*qdot[1];
-    J[3] += beta*-0.05*qdot[0];
-
-    // derivative wrt q
-    J[0] += alpha*5.0;
-    J[1] += alpha*0.0;
-    J[2] += alpha*q[1];
-    J[3] += alpha*q[0];
+    J[0] += M*gamma + C*beta + K*alpha;
   }
 
 

@@ -171,11 +171,19 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   ksm->setTolerances(rtol, atol);
 
   //------------------------------------------------------------------//
-  // Variables used in adjoint solve
+  // Variables used in adjoint solve (use setFunction(...) to set these
   //------------------------------------------------------------------//
   
   num_funcs = 0;
   funcs = NULL;
+
+  //------------------------------------------------------------------//
+  // Tecplot solution export (use configureOutput(...) to set these
+  //------------------------------------------------------------------//
+  
+  f5_write_freq = 0;
+  f5_file_fmt = NULL;
+  f5 = NULL;
 }
 
 /*
@@ -384,7 +392,7 @@ void TACSIntegrator::writeSolution( const char *filename ) {
   set appropriately before calling this function.
 */
 void TACSIntegrator::writeStepToF5( int k ){
-  if(f5 && f5_write_freq > 0 && k % f5_write_freq == 0){
+  if(f5 && f5_write_freq > 0 && ((k != 0) ? k % f5_write_freq : 1)){
     // Create a buffer for filename 
     char buffer[128];
     // Format the buffer based on the time step
