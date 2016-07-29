@@ -27,7 +27,7 @@ int main( int argc, char **argv ){
 
   // Parse command line arguments
   int test_element = 0;
-  enum IntegratorType type = BDF1;
+  enum IntegratorType type = NBG;
   for ( int i = 0; i < argc; i++ ){
     // Backward Difference Formulae
     if (strcmp("BDF1", argv[i]) == 0){
@@ -94,7 +94,7 @@ int main( int argc, char **argv ){
 
   // Set properties for dynamics
   TacsScalar g[] = {0.0, 0.0, -9.81};
-  TacsScalar v_init[] = {0.0, 0.0, 0.0};
+  TacsScalar v_init[] = {0.0, 0.0, 1.e-2};
   TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
@@ -187,6 +187,16 @@ int main( int argc, char **argv ){
   tacs->setAuxElements(aux);
   */
 
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
+                             TACSElement::OUTPUT_DISPLACEMENTS |
+                             TACSElement::OUTPUT_STRAINS |
+                             TACSElement::OUTPUT_STRESSES |
+                             TACSElement::OUTPUT_EXTRAS);
+
+  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  f5->incref();
+
   /*-----------------------------------------------------------------*/
   /*------------------ Time Integration and Adjoint Solve -----------*/
   /*-----------------------------------------------------------------*/
@@ -219,23 +229,25 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 10.e-3; int num_steps_per_sec = 1000;
+  double tinit = 0.0, tfinal = 100.e-3; int num_steps_per_sec = 1000;
 
-  TACSIntegrator *obj =  TACSIntegrator::getInstance(tacs, tinit, tfinal, 
-                                                     num_steps_per_sec, 
-                                                     type);
+  TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
+                                                    num_steps_per_sec, 
+                                                    type);
   obj->incref();
 
   // Set options
   obj->setJacAssemblyFreq(1);
+  obj->setAbsTol(1.0e-10);
+  obj->setRelTol(1.0e-8);
   obj->setPrintLevel(1);
-  obj->configureOutput(NULL, 1, "plate_%04d.f5");
+  obj->configureOutput(f5, 1, "plate_%04d.f5");
   
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);
 
   // COMPLEX STEP
-  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
+  //  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
 
   // ADJOINT NEW
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
