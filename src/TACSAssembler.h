@@ -192,6 +192,8 @@ class TACSAssembler : public TACSObject {
   void evalSVSens( TACSFunction *function, BVec *vec );
   void evalAdjointResProducts( BVec **adjoint, int numAdjoints,
                                TacsScalar * dvSens, int numDVs );
+  void evalEnergies( TacsScalar *energies );
+  
   // void evalXptSens( TACSFunction **funcs, int numFuncs,
   //                   TACSVec *fXptSens );
   // void evalAdjointResXptSensProducts( BVec ** adjoint, int numAdjoints,

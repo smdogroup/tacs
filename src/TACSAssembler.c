@@ -2561,6 +2561,55 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
   vecDist->endReverse(localRes, residual, BVecDistribute::ADD);
 }
 
+/*
+  Evaluates the total kinetic and potential energies of the structure
+*/
+void TACSAssembler::evalEnergies( TacsScalar * energies ) {
+  if (thread_info->getNumThreads() > 1){
+    fprintf(stderr, "[%d] Cannot evaluate energies: UNIMPLEMENTED \n", mpiRank);
+    return;
+  } else {
+    // Array for storing local kinetic and potential energies
+    TacsScalar * elem_energies = new TacsScalar[ 2 ];
+    memset(elem_energies, 0, 2*sizeof(TacsScalar));
+ 
+    // Retrieve pointers to temporary storage
+    TacsScalar *elem_vars, *elem_dvars, *elem_xpts;
+    getDataPointers(elementData, &elem_vars, &elem_dvars, 
+                    NULL, NULL, &elem_xpts, NULL, NULL, NULL);
+
+    // Loop over all elements and add individual contributions to the
+    // total energy
+    for ( int i = 0; i < numElements; i++ ){
+      // Determine the values of the state variables for the current
+      // element
+      getValues(TACS_SPATIAL_DIM, i, Xpts, elem_xpts);
+      getValues(varsPerNode, i, localVars, elem_vars);
+      getValues(varsPerNode, i, localDotVars, elem_dvars);
+
+      // Compute and add the element's contributions to the total
+      // energy
+      if (energies){
+        elements[i]->computeEnergies(time, 
+                                     &elem_energies[0], &elem_energies[1], 
+                                     elem_xpts, elem_vars, elem_dvars);
+      }
+    } // end for
+
+    MPI_Allreduce(elem_energies, energies, 2, TACS_MPI_TYPE, 
+                  MPI_SUM, tacs_comm);
+  
+    printf( "num_elements: %d Energies: TE=%e KE=%e  PE=%e \n\n", 
+            numElements, 
+            RealPart(energies[0] + energies[1]),
+            RealPart(energies[0]), 
+            RealPart(energies[1]));
+    
+    // Free the allocated array
+    delete [] elem_energies;
+  } 
+} 
+  
 /*!
   Assemble the Jacobian matrix
 
