@@ -62,9 +62,9 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
     fprintf(stdout, ">> TACSIntegrator: Instantiating NBG integrator...\n");
     return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec);
 
-  } else { // default
-    fprintf(stdout, ">> TACSIntegrator: Instantiating the default DIRK Order 2 integrator...\n");
-    return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
+  } else { // default NBG integrator
+    fprintf(stdout, ">> TACSIntegrator: Instantiating NBG integrator...\n");
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec);
   }  
 }
 
@@ -96,8 +96,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   // compute the total number of time steps
   num_time_steps = int(num_steps_per_sec*(tfinal-tinit)) + 1;
 
-  // Default print level
+  // Default print level and logging control
   print_level = 1;
+  logfp       = stdout;
+  logfilename = NULL;
 
   //------------------------------------------------------------------//
   //                     Time history of states                       //
@@ -170,26 +172,28 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   
   ksm->setTolerances(rtol, atol);
 
-  //------------------------------------------------------------------//
-  // Variables used in adjoint solve (use setFunction(...) to set these
-  //------------------------------------------------------------------//
-  
+  // Variables used in adjoint solve (use setFunction(...) to set these 
   num_funcs = 0;
   funcs = NULL;
 
-  //------------------------------------------------------------------//
   // Tecplot solution export (use configureOutput(...) to set these
-  //------------------------------------------------------------------//
-  
   f5_write_freq = 0;
   f5_file_fmt = NULL;
   f5 = NULL;
+
+  // Allocate space for kinetic and potential energies
+  energies = new TacsScalar[ 2 ];
 }
 
 /*
   Destructor for base class
 */
 TACSIntegrator::~TACSIntegrator(){
+  // Close any open file pointers
+  if (logfp != stdout && logfp){
+    fclose(logfp);
+  }
+
   // Dereference TACS
   tacs->decref();
 
@@ -208,10 +212,26 @@ TACSIntegrator::~TACSIntegrator(){
   pc->decref();
   ksm->decref();
   
-  delete [] time;
-  delete [] q;
-  delete [] qdot;
-  delete [] qddot;
+  if (time) { delete [] time; }
+  if (q)    { delete [] q; }
+  if (qdot) { delete [] qdot; }
+  if (qddot) { delete [] qddot; }
+
+  if (energies) { delete [] energies; }
+}
+
+/*
+  Use this to set the values of class variables. Might be handy to
+  pass a python dictionary/map containing the parameters read from an
+  input file/user supplied. Yet to be implemented.
+ */
+void TACSIntegrator::setParameters( ... ){}
+
+/*
+  Set whether the LU factorization was done on the Jacobian
+*/
+void TACSIntegrator::setIsFactorized( int flag ){
+  factorized = flag;
 }
 
 /*
@@ -272,57 +292,63 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                   double t, BVec *u, BVec *udot, 
                                   BVec *uddot ){
   // Initialize the norms
-  TacsScalar init_norm = 0.0;
-  TacsScalar norm = 0.0;
+  init_norm = 0.0;
+  norm = 0.0;
 
-  if (print_level > 0){
-    fprintf(stdout, "%12s %8s %12s %12s %12s\n",
-            "time", "Newton", "tcpu", "|R|", "|R|/|R0|");
+  if (print_level >= 2){
+    fprintf(logfp, "%12s %8s %12s %12s %12s %12s\n",
+            "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "delta");
   }
   
   double t0 = MPI_Wtime();
 
   // Iterate until max iters or R <= tol
   double delta = 0.0;
-  for ( int n = 0; n < max_newton_iters; n++ ){
+  for ( niter = 0; niter < max_newton_iters; niter++ ){
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
 
+    // Use a globalization based on a dual-type time step method
+    /*
+      double delta = alpha;
+      if (n > 0){
+      double frac = 10.0*RealPart(norm/(init_norm + rtol));
+      if (frac < 1.0){
+      delta = frac*alpha;
+      }
+      else {
+      delta = alpha;
+      }
+      }
+    */
     // Assemble the Jacobian matrix once in five newton iterations
-    if (n % jac_comp_freq == 0){
-      tacs->assembleJacobian(res, mat, alpha, beta, 
+    if (niter % jac_comp_freq == 0){
+      tacs->assembleJacobian(res, mat, alpha, beta + delta, 
                              gamma + delta, NORMAL);
     }
     else {
       tacs->assembleRes(res);
     }
-    
+   
     // Compute the L2-norm of the residual
     norm = res->norm();
     
     // Record the residual norm at the first Newton iteration
-    if (n == 0){
+    if (niter == 0){
       init_norm = norm;
     }
 
-    // Write a summary
-    if(print_level > 0) {
-      if (n == 0){
-        fprintf(stdout, "%12.5e %8d %12.5e %12.5e %12.5e \n",
-                t, n, MPI_Wtime()-t0, 
-		RealPart(norm), RealPart(norm/init_norm));
-      }
-      else {
-        fprintf(stdout, "%12s %8d %12.5e %12.5e %12.5e\n",
-                " ", n, MPI_Wtime()-t0, 
-		RealPart(norm), RealPart(norm/init_norm));
-      }
+    // Write a summary    
+    if(print_level >= 2) {
+      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e\n",
+              t, niter, MPI_Wtime()-t0, 
+              RealPart(norm),  (niter == 0) ? 1.0 : RealPart(norm/init_norm), delta);
     }
-           
+
     // Check if the norm of the residuals is a NaN
     if (norm != norm){ 
       fprintf(stderr,
-              "Newton iteration %d, failed with NaN residual norm\n", n);
+              "Newton iteration %d, failed with NaN residual norm\n", niter);
       break;
     }
     
@@ -333,7 +359,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     
     if (!use_lapack) {    
       // LU Factor the matrix when needed
-      if (n % jac_comp_freq == 0){
+      if (niter % jac_comp_freq == 0){
 	pc->factor();
       }  
       // Solve for update using KSM
@@ -350,8 +376,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     u->axpy(-alpha, update);
 
     // Check whether the Newton iteration was successful
-    if (n == max_newton_iters && norm >= rtol*init_norm){
-      fprintf(stderr,"Newton iteration failed to converge in %d iters\n", n);
+    if (niter == max_newton_iters && norm >= rtol*init_norm){
+      fprintf(stderr,"Newton iteration failed to converge in %d iters\n", niter);
       break;
     }
   }
@@ -392,7 +418,21 @@ void TACSIntegrator::writeSolution( const char *filename ) {
   set appropriately before calling this function.
 */
 void TACSIntegrator::writeStepToF5( int k ){
-  if(f5 && f5_write_freq > 0 && ((k != 0) ? k % f5_write_freq : 1)){
+  int write_now = 0;
+
+  // Don't write if f5_write_freq is set to 0. If write output is
+  // sought, force writing initial(k=0) and final (k=num_time_steps-1)
+  // time steps as they are the most important outputs that an user
+  // would need
+  if (f5_write_freq > 0) {
+    if ( k == 0 || k == num_time_steps-1 ){
+      write_now = 1;
+    } else {
+      write_now = (k % f5_write_freq == 0);
+    }
+  }
+  
+  if(f5 && f5_file_fmt && write_now) {
     // Create a buffer for filename 
     char buffer[128];
     // Format the buffer based on the time step
@@ -445,7 +485,7 @@ void TACSIntegrator::getFuncGrad( int _num_dv, TacsScalar *_x,
 
   // Check whether the function has been set properly
   if (this->num_funcs == 0 || this->funcs == NULL) {
-    fprintf(stdout, 
+    fprintf(stderr, 
             "TACS Warning: Function is not set, skipping adjoint solve. \n");
     return;
   }
@@ -475,7 +515,7 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
 
   // Check whether the function has been set properly
   if (this->num_funcs == 0 || this->funcs == NULL) {
-    fprintf(stdout, "TACS Warning: Function is not set, skipping adjoint solve. \n");
+    fprintf(stderr, "TACS Warning: Function is not set, skipping adjoint solve. \n");
     return;
   }
   
@@ -577,10 +617,21 @@ void TACSIntegrator::setMaxNewtonIters( int _max_newton_iters ){
 }
 
 /*
-  Control the amount of information printed to the console
+  Control the amount of information printed to the console and the
+  logging stream
 */
-void TACSIntegrator::setPrintLevel( int _print_level ){ 
-  print_level = _print_level; 
+void TACSIntegrator::setPrintLevel( int _print_level, char *_logfilename ){ 
+  print_level = _print_level;
+  if ( _logfilename && !( strlen(_logfilename) == 0) ) {
+    // Set the log file name
+    logfilename = _logfilename;
+    // Close any non stdout logstreams
+    if (logfp != stdout && logfp){
+      fclose(logfp);
+    }
+    // Open a new file for logstream
+    logfp = fopen(logfilename, "w");
+  }
 }
 
 /*
@@ -692,11 +743,11 @@ void TACSIntegrator::checkAdjointRHS( BVec *rhs ) {
   // Nan, Inf's etc
   TacsScalar norm = rhs->norm();
   if (norm != norm){ 
-    fprintf(stdout, "TACS Warning: Invalid entries detected in \
+    fprintf(stderr, "TACS Warning: Invalid entries detected in \
 the adjoint RHS vector\n");
   } 
   else if (norm <= 1.0e-15) { 
-    fprintf(stdout, "TACS Warning: Zero RHS in adjoint linear system. \
+    fprintf(stderr, "TACS Warning: Zero RHS in adjoint linear system. \
 The adjoint variables will be zero. Check the state variables/SVSens \
 implementation.\n");
   }
@@ -714,6 +765,47 @@ void TACSIntegrator::getString(char *buffer, const char * format, ... ){
   vsprintf(buffer, format, args); 
   va_end(args);
 }
+
+/*
+  Implement all the tasks to perform during each time step
+*/
+void TACSIntegrator::doEachTimeStep( int current_step ) {
+  // Write the tecplot output to disk if sought
+  writeStepToF5(current_step);    
+
+  if ( current_step == 0) {
+    // Log information
+    if (print_level >= 1){
+      fprintf(logfp, "Variables=\n%12s %8s %12s %12s %15s %15s %15s\n", 
+              "time", "NItrs", "|R|", "|R|/|R0|",
+              "KineticEnrgy", "PotentialEnrgy",
+              "EInit-E");
+      
+      // Compute the initial energy
+      tacs->evalEnergies(energies);
+      init_energy = energies[0] + energies[1];
+
+      // Log the details
+      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
+              time[0], 0, 0.0, 1.0,
+              RealPart(energies[0]), RealPart(energies[1]),  0.0);
+    }
+  } else {
+    // Print out the time step summary
+    if (print_level >= 1){
+      tacs->evalEnergies(energies);
+      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
+	      time[current_step], niter+1, RealPart(norm), RealPart(norm/(rtol + init_norm)),
+	      RealPart(energies[0]), RealPart(energies[1]), 
+	      RealPart((init_energy - (energies[0] + energies[1]))));
+    }
+  }
+}
+
+/*
+  Implement all the tasks to perform during each nonlinear solve
+*/
+void TACSIntegrator::doEachNonLinearIter( int iter_num) {}
 
 /*
   Constructor for BDF Integration scheme
@@ -889,9 +981,9 @@ void TACSBDFIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
-  // Write the tecplot output to disk if sought
-  writeStepToF5(0);    
-
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(0);
+  
   for ( int k = 1; k < num_time_steps; k++ ){
     // Advance time
     time[k] = time[k-1] + h;
@@ -907,9 +999,9 @@ void TACSBDFIntegrator::integrate( ){
     // Solve the nonlinear system of equations. Note that the states
     // will be advanced at the end of Newton solve
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
-    
-    // Write the tecplot output to disk if sought
-    writeStepToF5(k);
+
+    // Perform logging, tecplot export, etc.
+    doEachTimeStep(k);      
   }
 }
 
@@ -1567,8 +1659,8 @@ void TACSDIRKIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
-  // Write the tecplot output to disk if sought
-  writeStepToF5(0);    
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(0);   
 
   for ( int k = 1; k < num_time_steps; k++ ){    
     // Find the offset to current state values
@@ -1601,8 +1693,8 @@ void TACSDIRKIntegrator::integrate( ){
     // intermediate stage states
     computeTimeStepStates(k, q, qdot, qddot);
 
-    // Write the tecplot output to disk if sought
-    writeStepToF5(k);
+    // Perform logging, tecplot export, etc.
+    doEachTimeStep(k);
   }
 }
 /*
@@ -2092,8 +2184,8 @@ void TACSABMIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
   
-  // Write the tecplot output to disk if sought
-  writeStepToF5(0);    
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(0);
 
   for ( int k = 1; k < num_time_steps; k++ ){
     // Determine the order of approximation
@@ -2114,8 +2206,8 @@ void TACSABMIntegrator::integrate( ){
     // Solve the nonlinear system of stage equations starting with the approximated states
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
 
-    // Write the tecplot output to disk if sought
-    writeStepToF5(k);
+    // Perform logging, tecplot export, etc.
+    doEachTimeStep(k);
   }
 }
 
@@ -2281,8 +2373,8 @@ void TACSNBGIntegrator::integrate( ){
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
-  // Write the tecplot output to disk if sought
-  writeStepToF5(0);    
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(0); 
 
   for ( int k = 1; k < num_time_steps; k++ ){
     // Advance time
@@ -2299,8 +2391,8 @@ void TACSNBGIntegrator::integrate( ){
     // Solve the nonlinear system of stage equations starting with the approximated states
     newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
 
-    // Write the tecplot output to disk if sought
-    writeStepToF5(k);
+    // Perform logging, tecplot export, etc.
+    doEachTimeStep(k);
   }
 }
 
@@ -2308,4 +2400,139 @@ void TACSNBGIntegrator::integrate( ){
   March backwards in time to solve for adjoint variables and computing
   total derivatives
 */
-void TACSNBGIntegrator::marchBackwards( ){}
+void TACSNBGIntegrator::marchBackwards( ){
+  int num_adjoint_rhs = 2; // NBG is a one step method (uses
+                           // information from previous and current
+                           // steps)
+  BVec **psi    = new BVec*[ num_funcs ];
+  BVec **phi    = new BVec*[ num_funcs ];
+  BVec **lambda = new BVec*[ num_funcs ];
+  BVec **dfdq   = new BVec*[ num_funcs ];
+  BVec **rhs    = new BVec*[ num_funcs*num_adjoint_rhs ];
+
+  for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
+    if (n < num_funcs) {    
+      psi[n] = tacs->createVec();
+      psi[n]->incref();
+
+      phi[n] = tacs->createVec();
+      phi[n]->incref();
+      
+      lambda[n] = tacs->createVec();
+      lambda[n]->incref();
+      
+      dfdq[n] = tacs->createVec();
+      dfdq[n]->incref();
+    }
+    rhs[n] = tacs->createVec();
+    rhs[n]->incref();
+  }
+
+  // March backwards in time (initial condition not evaluated)
+  for ( int k = num_time_steps-1; k >=1 ; k-- ){
+    // Determine the coefficients for Jacobian assembly
+    double gamma = 1.0/(h*h);
+    double beta  = GAMMA/h; 
+    double alpha = BETA;
+
+    // Set the stages
+    this->setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    
+    // Find the adjoint index
+    int adj_index = k % num_adjoint_rhs;
+
+    //---------------------------------------------------------------//
+    // Setup the adjoint RHS
+    //---------------------------------------------------------------//
+
+    TacsScalar ftmp;
+    for ( int n = 0; n < num_funcs; n++ ){
+      // Evaluate the function
+      tacs->evalFunctions(&funcs[n], 1, &ftmp);
+      fvals[n] += h*ftmp;
+
+      // Add up the contribution from function state derivative to RHS
+      tacs->evalSVSens(funcs[n], dfdq[n]);
+
+      // Add the contributions to the current adjoint RHS
+      rhs[adj_index*num_funcs+n]->axpy(alpha, dfdq[n]);
+      rhs[adj_index*num_funcs+n]->scale(-1.0);
+    }
+
+    // Setup the Jacobian
+    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+
+    // LU factorization of the Jacobian
+    pc->factor();
+    
+    // Apply the factorization for all right hand sides and solve for
+    // the adjoint variables
+    for ( int n = 0; n < num_funcs; n++ ){
+      ksm->solve(rhs[adj_index*num_funcs+n], lambda[n]);
+      rhs[adj_index*num_funcs+n]->zeroEntries();
+    }
+
+    // Add total derivative contributions from this step for all
+    // functions
+    this->addTotalDerivative(h, lambda);
+
+    //-------------------------------------------------------------//
+    // Put the contribution from this step to the next adjoint RHS //
+    //-------------------------------------------------------------//
+
+    for ( int ii = 1; ii < num_adjoint_rhs ; ii++ ){
+      int rhs_index = (k - ii) % num_adjoint_rhs;
+      for ( int n = 0; n < num_funcs; n++ ){
+        gamma = 0.0;
+        beta  = 1.0/h;
+        alpha = (0.5 + GAMMA);
+
+        // Add function contribution
+        rhs[rhs_index*num_funcs+n]->axpy(alpha, dfdq[n]);
+
+        // Add Residual-Adjoint Product
+        tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
+                                    lambda[n], rhs[rhs_index*num_funcs+n], 
+                                    TRANSPOSE);
+
+        // Add the cumulative contributions
+        rhs[rhs_index*num_funcs+n]->axpy(beta/h, psi[n]);
+        rhs[rhs_index*num_funcs+n]->axpy(alpha/h, phi[n]);
+        
+        // Find the new PSI
+        gamma = 0.0; beta  = h;  alpha = h*h;
+
+        psi[n]->axpy(h, phi[n]);
+        psi[n]->axpy(alpha, dfdq[n]);
+        tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
+                                    lambda[n], psi[n], 
+                                    TRANSPOSE);
+        
+        // Find the new PHI
+        gamma = 0.0; beta  = 0.0; alpha = h;
+
+        phi[n]->axpy(alpha, dfdq[n]);
+        tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
+                                    lambda[n], phi[n], 
+                                    TRANSPOSE);
+
+      }
+    }
+  }
+
+  // Freeup objects
+  for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
+    if (n < num_funcs) {    
+      psi[n]->decref();
+      phi[n]->decref();     
+      lambda[n]->decref();
+      dfdq[n]->decref();
+    }
+    rhs[n]->decref();
+  }
+  delete [] psi;
+  delete [] phi;
+  delete [] lambda;
+  delete [] rhs;
+  delete [] dfdq;
+}

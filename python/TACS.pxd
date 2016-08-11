@@ -320,7 +320,7 @@ cdef extern from "TACSIntegrator.h":
 
       # Setters for class variables
       void setFunction(TACSFunction **func, int num_funcs)
-      void setPrintLevel(int print_level)
+      void setPrintLevel(int print_level, char *filename)
       void setRelTol(double rtol)
       void setAbsTol(double atol)
       void setMaxNewtonIters(int max_newton_iters)

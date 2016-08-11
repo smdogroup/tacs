@@ -1195,8 +1195,8 @@ cdef class Integrator:
       # free(funcs)
       return
 
-   def setPrintLevel(self, int print_level):
-      self.ptr.setPrintLevel(print_level)
+   def setPrintLevel(self, int print_level, char *filename=''):
+      self.ptr.setPrintLevel(print_level, &filename[0])
       return
    
    def setRelTol(self, double rtol):

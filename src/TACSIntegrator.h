@@ -39,7 +39,7 @@ class TACSIntegrator : public TACSObject {
   void setRelTol( double _rtol );
   void setAbsTol( double _atol );
   void setMaxNewtonIters( int _max_newton_iters );
-  void setPrintLevel( int _print_level );
+  void setPrintLevel( int _print_level, char* logfilename );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
 
@@ -60,6 +60,12 @@ class TACSIntegrator : public TACSObject {
   // file. Since it is written in binary form, it is faster.
   // ------------------------------------------------------------------
   void writeSolutionToF5();
+  
+  // Functions to pack common logics in one place and use them in
+  // appropriate places
+  //------------------------------------------------------------------
+  void doEachTimeStep( int current_step );
+  void doEachNonLinearIter( int iter_num); 
 
   // Configure the F5 file output
   //-----------------------------
@@ -75,6 +81,10 @@ class TACSIntegrator : public TACSObject {
   void getFuncGrad( int num_dv, TacsScalar *x,
 		    TacsScalar *fvals, TacsScalar *dfdx );
 
+  // Setter for parameters used in the parent class and subclasses
+  //--------------------------------------------------------------
+  void setParameters( ... );
+  
   // Pure virtual function that the derived classes must override/implement
   //-----------------------------------------------------------------------
   virtual void integrate() = 0;
@@ -99,6 +109,12 @@ class TACSIntegrator : public TACSObject {
   //---------------------------------------------------------------------
   virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals) = 0;
 
+  // Set and get information about the state of factorization of the
+  // Jacobian matrix. This functions are used to reduce the number of
+  // LU factozations whenever possible.
+  // ----------------------------------------------------------------
+  void setIsFactorized( int flag );
+
   // Update TACS states with the supplied ones (q, qdot, qddot)
   void setTACSStates( double time, BVec *q, BVec *qdot, BVec *qddot );
 
@@ -113,8 +129,7 @@ class TACSIntegrator : public TACSObject {
   //Method to solve the non-linear system using Newton's method
   //------------------------------------------------------------
   void newtonSolve( double alpha, double beta, double gamma,
-                    double t, BVec *q, BVec *qdot, 
-                    BVec *qddot );
+                    double t, BVec *q, BVec *qdot, BVec *qddot );
 
   // Calls LAPACK for the the solution of the linear system Ax =
   // b. Serial execution mode only.
@@ -153,7 +168,12 @@ class TACSIntegrator : public TACSObject {
   double h, tinit, tfinal;
 
   // Print and output options
+  // 0 = off
+  // 1 = summary per time step
+  // 2 = summary per Newton solve iteration
   int print_level;
+  FILE *logfp;
+  char *logfilename;
 
   // Variables controlling the nonlinear solution
   int max_newton_iters;
@@ -166,11 +186,14 @@ class TACSIntegrator : public TACSObject {
   int use_lapack;
 
   // Matrices and vectors for the nonlinear solution
-  BVec *res, *update;  // Residual and Newton update
-  FEMat *D;            // Matrix associated with Preconditioner
-  TACSMat *mat;        // Jacobian matrix
-  TACSPc *pc;          // Preconditioner
-  TACSKsm *ksm;        // KSM solver
+  BVec *res, *update;         // Residual and Newton update
+  FEMat *D;                   // Matrix associated with Preconditioner
+  TACSMat *mat;               // Jacobian matrix
+  TACSPc *pc;                 // Preconditioner
+  TACSKsm *ksm;               // KSM solver
+  int factorized;             // Set whether the matrix is factorized
+  int niter;                  // Newton iteration number
+  TacsScalar norm, init_norm; // Norms and initial norms
 
   // The objective and contraint functions
   int num_funcs;
@@ -187,6 +210,10 @@ class TACSIntegrator : public TACSObject {
   TACSToFH5 *f5;
   char* f5_file_fmt;
   int f5_write_freq;
+
+  // Keep track of energies
+  TacsScalar *energies;
+  TacsScalar init_energy;
 };
 
 /*
@@ -392,7 +419,7 @@ class TACSNBGIntegrator : public TACSIntegrator {
   // Destructor for NBG object
   //--------------------------
   ~TACSNBGIntegrator();
-  
+
   // Function that integrates forward in time
   //-----------------------------------------
   void integrate();
@@ -410,10 +437,29 @@ class TACSNBGIntegrator : public TACSIntegrator {
   // Function for marching backwards in stage and time
   //---------------------------------------------------
   void marchBackwards();
-  
-  // Newmark Coefficients
-  static const double BETA  = 0.25;
-  static const double GAMMA = 0.50;
+
+  // Average Constant Accelearation (second order unconditionally stable rho =Inf)
+  static const double BETA   = 0.25;
+  static const double GAMMA  = 0.50;
+
+  //Other popular sets of values in Newmark family of integrators
+  /*
+  // Fox & Goodwin  (third order & conditionally stable rho=2.45)
+  static const double BETA   = 1.0/12.0;
+  static const double GAMMA  = 0.50;
+
+  // Linear Acceleration (second order & conditionally stable rho=3.46)
+  static const double BETA   = 1.0/6.0;
+  static const double GAMMA  = 0.50;
+
+  // Central Difference (second order & conditionally stable rho=2)
+  static const double BETA   = 1.0/2.0;
+  static const double GAMMA  = 0.50;
+
+  // Purely Explicit (firstorder & conditionally stable rho=0)
+  static const double BETA   = 0.0;
+  static const double GAMMA  = 0.0;
+  */
 };
 
 #endif

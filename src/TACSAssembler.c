@@ -2565,6 +2565,10 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
   Evaluates the total kinetic and potential energies of the structure
 */
 void TACSAssembler::evalEnergies( TacsScalar * energies ) {
+  // zero the energies
+  energies[0] = 0.0;
+  energies[1] = 0.0;
+
   if (thread_info->getNumThreads() > 1){
     fprintf(stderr, "[%d] Cannot evaluate energies: UNIMPLEMENTED \n", mpiRank);
     return;
@@ -2598,13 +2602,13 @@ void TACSAssembler::evalEnergies( TacsScalar * energies ) {
 
     MPI_Allreduce(elem_energies, energies, 2, TACS_MPI_TYPE, 
                   MPI_SUM, tacs_comm);
-  
+    /*  
     printf( "num_elements: %d Energies: TE=%e KE=%e  PE=%e \n\n", 
             numElements, 
             RealPart(energies[0] + energies[1]),
             RealPart(energies[0]), 
             RealPart(energies[1]));
-    
+    */
     // Free the allocated array
     delete [] elem_energies;
   } 
