@@ -622,9 +622,48 @@ void TACSRigidBody::updateInertialProperties(){
 void TACSRigidBody::getInitCondition( TacsScalar vars[],
                                       TacsScalar dvars[],
                                       const TacsScalar X[] ){
+  // Set everything to zero first
   memset(vars, 0, 8*sizeof(TacsScalar));
   memset(dvars, 0, 8*sizeof(TacsScalar));
+
+  // Get the initial position
+  const TacsScalar *r;
+  rInit->getVector(&r);
+
+  vars[0] = r[0];
+  vars[1] = r[1];
+  vars[2] = r[2];
+  
+  // Set eta as 1
   vars[3] = 1.0;
+
+  // What about rotation? (epsx, epsy, epzz) // Need to compute?
+  //vars[4] = ;
+  
+  // What about lambda?
+  vars[7] = 1.0;
+
+  // Get the initial velocity
+  const TacsScalar *v;
+  vInit->getVector(&v);
+
+  dvars[0] = v[0];
+  dvars[1] = v[1];
+  dvars[2] = v[2];
+
+  // Get the initial angular velocity
+  const TacsScalar *w;
+  omegaInit->getVector(&w);
+
+  // Set etadot as 1
+  dvars[3] = 1.0;
+
+  dvars[4] = w[0];
+  dvars[5] = w[1];
+  dvars[6] = w[2];
+
+  // What about dlambda?
+  dvars[7] = 1.0;  
 }
 
 /*
@@ -828,9 +867,9 @@ void TACSRigidBody::addResidual( double time,
   res[4] -= 2.0*eps[0]*vars[7];
   res[5] -= 2.0*eps[1]*vars[7];
   res[6] -= 2.0*eps[2]*vars[7];
-
+  
   // Compute the quaternion constraint
-  res[7] = 1.0 - eta*eta - vecDot(eps, eps);  
+  res[7] = 1.0 - eta*eta - vecDot(eps, eps);
 }
 
 /*
@@ -1038,7 +1077,7 @@ void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
 
   This function uses finite-differences to compute the derivatives
   within Lagrange's equations and compares the result with the
-  residual computed using the residual routine.
+  residuals of the EOM computed using the residual routine.
 
   Lagrange's equations of motion are given as follows:
 

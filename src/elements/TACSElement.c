@@ -172,8 +172,10 @@ TestElement::TestElement( TACSElement * _element,
   generate_random_array(dvars, nvars);
   generate_random_array(ddvars, nvars);
 
+  // Handles the elements that contain the Lagrange multiplier
   const char *name = element->elementName(); 
-  if (name && strcmp(name, "MITC9") == 0){
+  if (name && ((strcmp(name, "MITC9") == 0) || 
+               (strcmp(name, "TACSRigidBody") == 0))){
     // Enforce the quaternion constraint
     for ( int i = 0; i < element->numNodes(); i++ ){
       vars[8*i+7] = 0.0;
