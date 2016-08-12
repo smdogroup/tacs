@@ -795,7 +795,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
     if (print_level >= 1){
       tacs->evalEnergies(energies);
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
-	      time[current_step], niter+1, RealPart(norm), RealPart(norm/(rtol + init_norm)),
+	      time[current_step], niter, RealPart(norm), RealPart(norm/(rtol + init_norm)),
 	      RealPart(energies[0]), RealPart(energies[1]), 
 	      RealPart((init_energy - (energies[0] + energies[1]))));
     }
@@ -806,6 +806,36 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
   Implement all the tasks to perform during each nonlinear solve
 */
 void TACSIntegrator::doEachNonLinearIter( int iter_num) {}
+
+/*
+  Integate forward in time using the initial conditions retrieved from
+  TACS
+*/
+void TACSIntegrator::integrate( ){
+  // Get the initial condition
+  tacs->getInitConditions(q[0], qdot[0]);
+
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(0);
+
+  for ( int k = 1; k < num_time_steps; k++ ){
+    // Advance time
+    time[k] = time[k-1] + h;
+    
+    // Approximate states and their derivatives using ABM formula
+    approxStates(k);
+
+    // Determine the coefficients for linearizing the Residual
+    double alpha, beta, gamma;   
+    getLinearizationCoeffs(k, &alpha, &beta, &gamma);
+
+    // Solve the nonlinear system of stage equations starting with the approximated states
+    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
+
+    // Perform logging, tecplot export, etc.
+    doEachTimeStep(k);
+  }
+}
 
 /*
   Constructor for BDF Integration scheme
@@ -970,39 +1000,6 @@ int TACSBDFIntegrator::getBDFCoeff( double bdf[], int order ){
     return 3;
   }
   return 0;
-}
-
-/*
-  Integration logic of BDF. Use this function to march in time. The
-  solution over time is set into the class variables q, qdot and qddot
-  and time.
-*/
-void TACSBDFIntegrator::integrate( ){
-  // Get the initial condition
-  tacs->getInitConditions(q[0], qdot[0]);
-
-  // Perform logging, tecplot export, etc.
-  doEachTimeStep(0);
-  
-  for ( int k = 1; k < num_time_steps; k++ ){
-    // Advance time
-    time[k] = time[k-1] + h;
-
-    // Approximate states and their derivatives using BDF formula
-    approxStates(k);
-    
-    // Determine the coefficients for Jacobian Assembly
-    double gamma = bddf_coeff[0]/(h*h);
-    double beta  = bdf_coeff[0]/h;
-    double alpha = 1.0;
-
-    // Solve the nonlinear system of equations. Note that the states
-    // will be advanced at the end of Newton solve
-    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
-
-    // Perform logging, tecplot export, etc.
-    doEachTimeStep(k);      
-  }
 }
 
 /*
@@ -2147,9 +2144,9 @@ order %d max order %d sum %f\n", order, max_abm_order, sum);
   output:
   the state vectors (q, qdot, qddot) are prepared for nonlinear solve
 */
-void TACSABMIntegrator::approxStates( int current_step, int current_order ){
+void TACSABMIntegrator::approxStates( int current_step ){
   int k    = current_step;
-  int m    = current_order;
+  int m    = getOrder(k);
   int ridx = getRowIdx(m-1);
 
   // Zero the current states (these may not be zero when integrate() is
@@ -2173,41 +2170,6 @@ void TACSABMIntegrator::approxStates( int current_step, int current_order ){
   q[k]->copyValues(q[k-1]);
   for ( int i = 0; i <= m-1; i++ ){
     q[k]->axpy(h*A[ridx+i], qdot[k-i]);
-  }
-}
-
-/*
-  Integate forward in time using the initial conditions retrieved from
-  TACS
-*/
-void TACSABMIntegrator::integrate( ){
-  // Get the initial condition
-  tacs->getInitConditions(q[0], qdot[0]);
-  
-  // Perform logging, tecplot export, etc.
-  doEachTimeStep(0);
-
-  for ( int k = 1; k < num_time_steps; k++ ){
-    // Determine the order of approximation
-    int m   = getOrder(k);
-    int idx = getRowIdx(m-1); // order starts with 1 but the table starts at 0
-
-    // Advance time
-    time[k] = time[k-1] + h;
-    
-    // Approximate states and their derivatives using ABM formula
-    approxStates(k, m);
-
-    // Determine the coefficients for linearizing the Residual
-    double gamma = 1.0;
-    double beta  = h*A[idx]; 
-    double alpha = beta*h*A[idx];
-
-    // Solve the nonlinear system of stage equations starting with the approximated states
-    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
-
-    // Perform logging, tecplot export, etc.
-    doEachTimeStep(k);
   }
 }
 
@@ -2366,37 +2328,6 @@ void TACSNBGIntegrator::approxStates( int current_step ){
 }
 
 /*
-  Integate forward in time using the initial conditions retrieved from
-  TACS
-*/
-void TACSNBGIntegrator::integrate( ){
-  // Get the initial condition
-  tacs->getInitConditions(q[0], qdot[0]);
-
-  // Perform logging, tecplot export, etc.
-  doEachTimeStep(0); 
-
-  for ( int k = 1; k < num_time_steps; k++ ){
-    // Advance time
-    time[k] = time[k-1] + h;
-    
-    // Approximate states and their derivatives using ABM formula
-    approxStates(k);
-    
-    // Determine the coefficients for linearizing the Residual
-    double gamma = 1.0;
-    double beta  = GAMMA*h; 
-    double alpha = BETA*h*h;
-
-    // Solve the nonlinear system of stage equations starting with the approximated states
-    newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
-
-    // Perform logging, tecplot export, etc.
-    doEachTimeStep(k);
-  }
-}
-
-/*
   March backwards in time to solve for adjoint variables and computing
   total derivatives
 */
@@ -2535,4 +2466,32 @@ void TACSNBGIntegrator::marchBackwards( ){
   delete [] lambda;
   delete [] rhs;
   delete [] dfdq;
+}
+/*
+  Return the  coefficients for linearizing the Residual using ABM method
+*/
+void TACSABMIntegrator::getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma ) {
+  int m   = getOrder(k);    // Determine the order of approximation
+  int idx = getRowIdx(m-1); // Order starts with 1 but the table starts at 0
+  *gamma = 1.0;
+  *beta  = h*A[idx]; 
+  *alpha = h*A[idx]*h*A[idx];
+}
+
+/*
+  Return the coefficients for linearizing the Residual using NBG method
+*/
+void TACSNBGIntegrator::getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma ) {
+  *gamma = 1.0;
+  *beta  = GAMMA*h; 
+  *alpha = BETA*h*h;
+}
+
+/*
+  Return the coefficients for linearizing the Residual using BDF method
+*/
+void TACSBDFIntegrator::getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma ) {
+  *gamma = bddf_coeff[0]/(h*h);
+  *beta  = bdf_coeff[0]/h;
+  *alpha = 1.0;
 }

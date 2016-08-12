@@ -69,7 +69,7 @@ int main( int argc, char *argv[] ){
   dirk->setRelTol(1.0e-12);
   dirk->setAbsTol(1.0e-14);
   dirk->setMaxNewtonIters(24);
-  dirk->setPrintLevel(0);
+  dirk->setPrintLevel(0, NULL);
   dirk->setJacAssemblyFreq(1);
   dirk->setUseLapack(0);
 
@@ -93,7 +93,7 @@ int main( int argc, char *argv[] ){
   bdf->setRelTol(1.0e-12);
   bdf->setAbsTol(1.0e-14);
   bdf->setMaxNewtonIters(24);
-  bdf->setPrintLevel(0);
+  bdf->setPrintLevel(0, NULL);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
 
@@ -117,7 +117,7 @@ int main( int argc, char *argv[] ){
   abm->setRelTol(1.0e-12);
   abm->setAbsTol(1.0e-14);
   abm->setMaxNewtonIters(24);
-  abm->setPrintLevel(1);
+  abm->setPrintLevel(0, NULL);
   abm->setJacAssemblyFreq(1);
   abm->setUseLapack(0);
 
@@ -138,7 +138,7 @@ int main( int argc, char *argv[] ){
   nbg->setRelTol(1.0e-12);
   nbg->setAbsTol(1.0e-14);
   nbg->setMaxNewtonIters(24);
-  nbg->setPrintLevel(1);
+  nbg->setPrintLevel(0, NULL);
   nbg->setJacAssemblyFreq(1);
   nbg->setUseLapack(0);
 
