@@ -2564,18 +2564,18 @@ void TACSAssembler::assembleResNoBCs( BVec *residual ){
 /*
   Evaluates the total kinetic and potential energies of the structure
 */
-void TACSAssembler::evalEnergies( TacsScalar * energies ) {
-  // zero the energies
-  energies[0] = 0.0;
-  energies[1] = 0.0;
+void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
+  // Zero the kinetic and potential energy
+  *Te = 0.0;
+  *Pe = 0.0;
 
   if (thread_info->getNumThreads() > 1){
     fprintf(stderr, "[%d] Cannot evaluate energies: UNIMPLEMENTED \n", mpiRank);
     return;
-  } else {
+  } 
+  else {
     // Array for storing local kinetic and potential energies
-    TacsScalar * elem_energies = new TacsScalar[ 2 ];
-    memset(elem_energies, 0, 2*sizeof(TacsScalar));
+    TacsScalar elem_energies[2] = {0.0, 0.0};
  
     // Retrieve pointers to temporary storage
     TacsScalar *elem_vars, *elem_dvars, *elem_xpts;
@@ -2593,24 +2593,24 @@ void TACSAssembler::evalEnergies( TacsScalar * energies ) {
 
       // Compute and add the element's contributions to the total
       // energy
-      if (energies){
-        elements[i]->computeEnergies(time, 
-                                     &elem_energies[0], &elem_energies[1], 
-                                     elem_xpts, elem_vars, elem_dvars);
-      }
-    } // end for
+      TacsScalar elemTe, elemPe;
+      elements[i]->computeEnergies(time, &elemTe, &elemPe,
+                                   elem_xpts, elem_vars, elem_dvars);
 
-    MPI_Allreduce(elem_energies, energies, 2, TACS_MPI_TYPE, 
+      // Add up the kinetic and potential energy
+      *Te += elemTe;
+      *Pe += elemPe;
+    }
+
+    // Sum up the kinetic and potential energies across all processors
+    TacsScalar input[2], output[2];
+    input[0] = *Te;
+    input[1] = *Pe;    
+    MPI_Allreduce(input, output, 2, TACS_MPI_TYPE, 
                   MPI_SUM, tacs_comm);
-    /*  
-    printf( "num_elements: %d Energies: TE=%e KE=%e  PE=%e \n\n", 
-            numElements, 
-            RealPart(energies[0] + energies[1]),
-            RealPart(energies[0]), 
-            RealPart(energies[1]));
-    */
-    // Free the allocated array
-    delete [] elem_energies;
+
+    *Te = output[0];
+    *Pe = output[1];
   } 
 } 
   

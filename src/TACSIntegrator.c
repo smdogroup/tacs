@@ -782,7 +782,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
               "EInit-E");
       
       // Compute the initial energy
-      tacs->evalEnergies(energies);
+      tacs->evalEnergies(&energies[0], &energies[1]);
       init_energy = energies[0] + energies[1];
 
       // Log the details
@@ -793,7 +793,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
   } else {
     // Print out the time step summary
     if (print_level >= 1){
-      tacs->evalEnergies(energies);
+      tacs->evalEnergies(&energies[0], &energies[1]);
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
 	      time[current_step], niter+1, RealPart(norm), RealPart(norm/(rtol + init_norm)),
 	      RealPart(energies[0]), RealPart(energies[1]), 

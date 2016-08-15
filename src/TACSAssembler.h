@@ -166,6 +166,10 @@ class TACSAssembler : public TACSObject {
   void setDotVariables( BVec *stateVars );
   void setDDotVariables( BVec *stateVars );
 
+  // Evaluate the kinetic and potential energy
+  // -----------------------------------------
+  void evalEnergies( TacsScalar *Te, TacsScalar *Pe );
+
   // Residual and Jacobian assembly
   // ------------------------------
   void assembleRes( BVec *residual );
@@ -191,9 +195,7 @@ class TACSAssembler : public TACSObject {
                    TacsScalar *fdvSens, int numDVs );
   void evalSVSens( TACSFunction *function, BVec *vec );
   void evalAdjointResProducts( BVec **adjoint, int numAdjoints,
-                               TacsScalar * dvSens, int numDVs );
-  void evalEnergies( TacsScalar *energies );
-  
+                               TacsScalar * dvSens, int numDVs );  
   // void evalXptSens( TACSFunction **funcs, int numFuncs,
   //                   TACSVec *fXptSens );
   // void evalAdjointResXptSensProducts( BVec ** adjoint, int numAdjoints,
