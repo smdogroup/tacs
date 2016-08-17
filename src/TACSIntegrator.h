@@ -24,6 +24,16 @@ enum IntegratorType { BDF1, BDF2, BDF3,                   // Backward-difference
 
 class TACSIntegrator : public TACSObject {
  public:
+  // Parent class constructor for integration schemes
+  //-------------------------------------------------
+  TACSIntegrator( TACSAssembler *_tacs, 
+                  double _tinit, double _tfinal, 
+                  int _num_steps_per_sec ); 
+
+  // Destructor
+  //-----------
+  ~TACSIntegrator();
+
   // Factory method for intantiating integrators of supplied type
   //-------------------------------------------------------------
   static TACSIntegrator* getInstance( TACSAssembler *_tacs, 
@@ -85,20 +95,20 @@ class TACSIntegrator : public TACSObject {
   //--------------------------------------------------------------
   void setParameters( ... );
   
-  // Pure virtual function that the derived classes must override/implement
-  //-----------------------------------------------------------------------
-  virtual void integrate() = 0;
-
+  // Function that the derived classes may override/implement that
+  // covers the whole integration logic. A default implementation
+  // suitable for most integration schemes is provided in this base
+  // class itself.
+  // ---------------------------------------------------------------
+  void integrate();
  protected:
-  // Parent class constructor for integration schemes
-  //-------------------------------------------------
-  TACSIntegrator( TACSAssembler *_tacs, 
-                  double _tinit, double _tfinal, 
-                  int _num_steps_per_sec ); 
+  // Approximate derivatives using DIRK formulae
+  //--------------------------------------------
+  virtual void approxStates( int current_step ) = 0;
 
-  // Destructor
-  //-----------
-  ~TACSIntegrator();
+  // Approximate derivatives using DIRK formulae
+  //--------------------------------------------
+  virtual void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma ) = 0;
 
   // Pure virtual function for marching backwards in stage and time
   //---------------------------------------------------------------
@@ -244,14 +254,25 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   // Function to call to integrate in time
   //--------------------------------------
   void integrate();
-
  protected:
+  // Approximate derivatives using DIRK formulae
+  //--------------------------------------------
+  void approxStates( int current_step, int current_stage );
+  void approxStates( int current_step );
+
+  // Approximate derivatives using DIRK formulae
+  //--------------------------------------------
+  void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma );
+
+  // Function for marching backwards in stage and time
+  //---------------------------------------------------
+  void marchBackwards();
+
   // Evaluate time average of the function value using discretization
   // from the integration scheme
   //---------------------------------------------------------------------
   void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
-
- private:  
+ private:
   // the order of accuracy of the scheme
   int num_stages, order;
   
@@ -271,18 +292,10 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   //----------------------------------------------------------------
   int getRowIdx( int stageNum );
 
-  // Approximate derivatives using DIRK formulae
-  //--------------------------------------------
-  void approxStates( int current_step, int current_stage );
-
   // Advance the time and states to next step
   //-----------------------------------------
   void computeTimeStepStates(int k,  BVec **q, BVec **qdot, BVec **qddot);
 
-  // Function for marching backwards in stage and time
-  //---------------------------------------------------
-  void marchBackwards();
-  
   // Get the coefficients for adding inter-stage contributions during adjoint solve
   //-------------------------------------------------------------------------------
   void getCoeffsInterStage( int i, int j, double *alpha, double *beta, double *gamma );
@@ -313,17 +326,19 @@ class TACSBDFIntegrator : public TACSIntegrator {
   //-------------------------------------------------
   void reverse( TacsScalar *dfdx, int num_design_vars,
                 TACSFunction *func );
-  
-  // Function that integrates forward in time
-  //-----------------------------------------
-  void integrate();
-  
  protected:
   // Evaluate time average of the function value using discretization
   // from the integration scheme
   //---------------------------------------------------------------------
   void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
-  
+
+  // Approximate derivatives using BDF formulae
+  //--------------------------------------------
+  void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma );
+
+  // Approximate derivatives using BDF stencil
+  //------------------------------------------
+  void approxStates( int current_step );  
  private:  
   // Maximum order of the BDF integration scheme
   int max_bdf_order;
@@ -344,10 +359,6 @@ class TACSBDFIntegrator : public TACSIntegrator {
 		      double bddf[], int *nbddf,
 		      const int max_order);
   
-  // approximate derivatives using BDF stencil
-  //------------------------------------------
-  void approxStates( int current_step );
-
   // Function for marching backwards in stage and time
   //---------------------------------------------------
   void marchBackwards();
@@ -367,12 +378,20 @@ class TACSABMIntegrator : public TACSIntegrator {
   // Destructor for ABM object
   //--------------------------
   ~TACSABMIntegrator();
+ protected:
+  // Evaluate time average of the function value using discretization
+  // from the integration scheme
+  //---------------------------------------------------------------------
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
+
+  // Approximate derivatives using ABM stencil
+  //------------------------------------------
+  void approxStates( int current_step );
   
-  // Function that integrates forward in time
-  //-----------------------------------------
-  void integrate();
-  
- private:   
+  // Approximate derivatives using ABM formulae
+  //--------------------------------------------
+  void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma );
+ private:  
   // Start index of the the row of ABM coefficient matrix.
   // -----------------------------------------------------
   int getRowIdx( int stageNum );
@@ -384,15 +403,6 @@ class TACSABMIntegrator : public TACSIntegrator {
   // Create a table of coeffs for ABM
   void setupABMCoeffs( int max_order, double *A);
   void checkABMCoeffs();
-
-  // Approximate derivatives using ABM stencil
-  //------------------------------------------
-  void approxStates( int current_step, int current_order );
-  
-  // Evaluate time average of the function value using discretization
-  // from the integration scheme
-  //---------------------------------------------------------------------
-  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
 
   // Function for marching backwards in stage and time
   //---------------------------------------------------
@@ -419,12 +429,11 @@ class TACSNBGIntegrator : public TACSIntegrator {
   // Destructor for NBG object
   //--------------------------
   ~TACSNBGIntegrator();
+ protected:
+  // Approximate derivatives using ABM formulae
+  //--------------------------------------------
+  void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma );
 
-  // Function that integrates forward in time
-  //-----------------------------------------
-  void integrate();
-  
- private:
   // Approximate derivatives using NBG formula
   //------------------------------------------
   void approxStates( int current_step );
@@ -434,6 +443,7 @@ class TACSNBGIntegrator : public TACSIntegrator {
   //---------------------------------------------------------------------
   void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
 
+ private:
   // Function for marching backwards in stage and time
   //---------------------------------------------------
   void marchBackwards();
