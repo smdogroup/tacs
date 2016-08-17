@@ -117,7 +117,7 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   }
 
   // Initialize some information about the number of items
-  meshFinalizedFlag = 0;
+  meshInitializedFlag = 0;
   maxElementNodes = 0;
   maxElementSize = 0;
   maxElementIndepNodes = 0;
@@ -221,7 +221,7 @@ TACSAssembler::~TACSAssembler(){
   // Decrease the reference count
   if (aux_elements){ aux_elements->decref(); }
 
-  // Decrease the reference count to objects allocated in finalize
+  // Decrease the reference count to objects allocated in initialize
   if (varMap){ varMap->decref(); }
   if (bcMap){ bcMap->decref(); }
   if (vecDist){ vecDist->decref(); }
@@ -258,8 +258,8 @@ MPI_Comm TACSAssembler::getMPIComm(){
   Each node is associated with a local and a global numbering scheme.
 */
 void TACSAssembler::addNode( int _localNodeNum, int _tacsNodeNum ){
-  if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addNode() after finalize()\n", 
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addNode() after initialize()\n", 
 	    mpiRank);
     return;
   }
@@ -283,8 +283,8 @@ node index %d\n", mpiRank, _tacsNodeNum);
 */
 void TACSAssembler::addNodes( int _localNodeNums[], int _tacsNodeNums[], 
 			      int _numNodes ){
-  if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addNodes() after finalize()\n", 
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addNodes() after initialize()\n", 
 	    mpiRank);
     return;
   }  
@@ -309,8 +309,8 @@ node index %d\n", mpiRank, _tacsNodeNums[i]);
   Add all the tacsNodeNums at once.
 */
 void TACSAssembler::addNodes( int ** _tacsNodeNums ){
-  if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addNodes() after finalize()\n", 
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addNodes() after initialize()\n", 
 	    mpiRank);
     return;
   }
@@ -328,8 +328,8 @@ void TACSAssembler::addNodes( int ** _tacsNodeNums ){
 void TACSAssembler::setDependentNodes( int **_depNodeIndex, 
 				       int **_depNodeToLocal,
 				       double **_depNodeWeights ){
-  if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call setDependentNodes() after finalize()\n", 
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call setDependentNodes() after initialize()\n", 
 	    mpiRank);
     return;
   }
@@ -357,8 +357,8 @@ void TACSAssembler::setDependentNodes( int **_depNodeIndex,
   vectors/matrices that are created using TACSAssembler.
 */
 void TACSAssembler::addBC( int nodeNum, const int bcNums[], int nbcs ){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addBC() before finalize()\n", mpiRank);
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addBC() before initialize()\n", mpiRank);
   }
   
   if (nodeNum < 0 || nodeNum >= numNodes){
@@ -376,8 +376,8 @@ void TACSAssembler::addBC( int nodeNum, const int bcNums[], int nbcs ){
 */
 void TACSAssembler::addBC( int nodeNum, const int bcNums[], 
 			   const TacsScalar bcVals[], int nbcs ){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addBC() before finalize()\n", mpiRank);
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addBC() before initialize()\n", mpiRank);
   }
   
   if (nodeNum < 0 || nodeNum >= numNodes){
@@ -438,8 +438,8 @@ int TACSAssembler::addElement( TACSElement * element, int _localNodeNums[],
 any more elements\n", mpiRank);
     return -1;
   }
-  else if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addElement() after finalize()\n", 
+  else if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addElement() after initialize()\n", 
 	    mpiRank);
     return -1;
   }  
@@ -496,8 +496,8 @@ out of range. Setting to zero\n", mpiRank, _localNodeNums[j]);
   Add all the elements at once
 */
 void TACSAssembler::addElements( TACSElement ***_elements ){
-  if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call addElements() after finalize()\n", 
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call addElements() after initialize()\n", 
 	    mpiRank);
     return;
   }
@@ -535,9 +535,9 @@ void TACSAssembler::addElements( TACSElement ***_elements ){
 */
 void TACSAssembler::setElementConnectivity( int **elemindex, 
 					    int **elemnodes ){
-  if (meshFinalizedFlag){
+  if (meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call setElementConnectivity() \
-after finalize()\n", mpiRank);
+after initialize()\n", mpiRank);
     return;
   }  
   
@@ -639,9 +639,12 @@ TACSAuxElements* TACSAssembler::getAuxElements(){
   all the local coupling nodes are found.  
 */
 int TACSAssembler::computeCouplingNodes( int ** _cnodes ){
-  int * nodes = new int[ numNodes ];
+  // Copy all of the coupling nodes
+  int *nodes = new int[ numNodes ];
   memcpy(nodes, tacsNodeNums, numNodes*sizeof(int));
 
+  // Sort the nodes so that we can determine which intervals should
+  // go to which processors
   int nnodes = FElibrary::uniqueSort(nodes, numNodes);
   if (nnodes != numNodes){
     fprintf(stderr, "[%d] TACSAssembler error, nodes must be \
@@ -653,9 +656,8 @@ uniquely defined! \n", mpiRank);
   int rank, size;
   varMap->getOwnerRange(&ownerRange, &rank, &size);
 
-  int * ext_ptr   = new int[ mpiSize+1 ];
-  int * ext_count = new int[ mpiSize ];
-
+  int *ext_ptr = new int[ mpiSize+1 ];
+  int *ext_count = new int[ mpiSize ];
   FElibrary::matchIntervals(mpiSize, ownerRange, nnodes, nodes, ext_ptr);
 
   // Send the nodes owned by other processors the information
@@ -665,9 +667,8 @@ uniquely defined! \n", mpiRank);
     if (i == mpiRank){ ext_count[i] = 0; }
   }
 
-  int * recv_count = new int[ mpiSize ];
-  int * recv_ptr   = new int[ mpiSize+1 ];
-
+  int *recv_count = new int[ mpiSize ];
+  int *recv_ptr = new int[ mpiSize+1 ];
   MPI_Alltoall(ext_count, 1, MPI_INT, recv_count, 1, MPI_INT, tacs_comm);
 
   // Now, send the node numbers to the other processors
@@ -677,7 +678,7 @@ uniquely defined! \n", mpiRank);
   }
 
   // Number of nodes that will be received from other procs
-  int * recv_nodes = new int[ recv_ptr[mpiSize] ];
+  int *recv_nodes = new int[ recv_ptr[mpiSize] ];
   MPI_Alltoallv(nodes, ext_count, ext_ptr, MPI_INT, 
 		recv_nodes, recv_count, recv_ptr, MPI_INT, tacs_comm);
 
@@ -686,7 +687,7 @@ uniquely defined! \n", mpiRank);
 
   int numOwnedNodes = ownerRange[mpiRank+1] - ownerRange[mpiRank];
   int ncnodes = nextern_unique + (numNodes - numOwnedNodes);
-  int * cnodes = new int[ ncnodes ];
+  int *cnodes = new int[ ncnodes ];
   memset(cnodes, 0, ncnodes*sizeof(int));
 
   // Find recv_nodes[i] in tacsNodeNums[j]
@@ -712,6 +713,7 @@ uniquely defined! \n", mpiRank);
     }
   }
 
+  // Uniquely sort the coupling nodes
   ncnodes = FElibrary::uniqueSort(cnodes, ncnodes);
 
   delete [] nodes;
@@ -732,16 +734,21 @@ uniquely defined! \n", mpiRank);
   CSR data structure. From these, collect all elements that "own" a
   node that is referred to from another process.  
 */
-int TACSAssembler::computeCouplingElements( int ** _celems ){
-  int * cnodes;
+int TACSAssembler::computeCouplingElements( int **_celems ){
+  // Compute the nodes that couple to other processors
+  int *cnodes;
   int ncnodes = computeCouplingNodes(&cnodes);
 
+  // Compute the node->element data structure
   int *nodeElemIndex, *nodeElems;
   computeNodeToElementCSR(&nodeElemIndex, &nodeElems);
 
+  // Determine the elements that contain a coupling node
   int ncelems = 0;
-  int * celems = new int[ numElements ];
+  int *celems = new int[ numElements ];
 
+  // Loop over all the coupling nodes and add all the elements
+  // touched by each coupling node
   for ( int i = 0; i < ncnodes; i++ ){
     int cnode = cnodes[i];
     for ( int j = nodeElemIndex[cnode]; j < nodeElemIndex[cnode+1]; j++ ){
@@ -751,8 +758,10 @@ int TACSAssembler::computeCouplingElements( int ** _celems ){
     }
   }
 
+  // Free the data
   delete [] nodeElemIndex;
   delete [] nodeElems;
+  delete [] cnodes;
 
   *_celems = celems;
   return ncelems;
@@ -1640,8 +1649,8 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int ** _rowp, int ** _cols,
 }
 
 /*!  
-  The function finalize performs a number of synchronization tasks
-  that prepare the finite-element model for use.
+  The function initialize performs a number of synchronization
+  tasks that prepare the finite-element model for use.
 
   tacsNodeNums[i] is the global node number for the local node number i
 
@@ -1654,16 +1663,16 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int ** _rowp, int ** _cols,
   collects them into an array This requires a sorted array of global
   node numbers.  
 */
-void TACSAssembler::finalize(){
-  if (meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call finalize() more than once!\n", 
+void TACSAssembler::initialize(){
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call initialize() more than once!\n", 
 	    mpiRank);
     return;
   }
   
   // Flag to indicate that we've initialized TACSAssembler -
   // the initialization can only be done once
-  meshFinalizedFlag = 1;
+  meshInitializedFlag = 1;
 
   if (currElement < numElements || currNode < numNodes){
     fprintf(stderr, "[%d] Error: Insufficient definition of the \
@@ -1958,8 +1967,8 @@ void TACSAssembler::getDataPointers( TacsScalar *data,
   second, unless they share are exactly the parallel layout.
 */
 BVec * TACSAssembler::createVec(){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call createVec() before finalize()\n", 
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call createVec() before initialize()\n", 
 	    mpiRank);
     return NULL;
   }
@@ -1971,8 +1980,8 @@ BVec * TACSAssembler::createVec(){
   Create a distributed matrix.
 */
 DistMat * TACSAssembler::createMat(){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call createMat() before finalize()\n", 
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call createMat() before initialize()\n", 
 	    mpiRank);
     return NULL;
   }
@@ -2029,8 +2038,8 @@ DistMat * TACSAssembler::createMat(){
   a permutation of the rows (equations).
 */
 FEMat * TACSAssembler::createFEMat( enum OrderingType order_type ){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call createFEMat() before finalize()\n", 
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n", 
 	    mpiRank);
     return NULL;
   }
@@ -2195,9 +2204,9 @@ order_type == NATURAL_ORDER\n",
     feMatBIndices->incref();
     feMatCIndices->incref();
 
-    BVecIndices * tlocal = new BVecIndices(&tacs_local_nodes, nlocal_nodes);
-    BVecIndices * tcoupling = new BVecIndices(&tacs_coupling_nodes, 
-                                              ncoupling_nodes);
+    BVecIndices *tlocal = new BVecIndices(&tacs_local_nodes, nlocal_nodes);
+    BVecIndices *tcoupling = new BVecIndices(&tacs_coupling_nodes, 
+                                             ncoupling_nodes);
     feMatBMap = new BVecDistribute(varMap, tlocal);
     feMatCMap = new BVecDistribute(varMap, tcoupling);
     feMatBMap->incref();
@@ -2205,13 +2214,13 @@ order_type == NATURAL_ORDER\n",
   }
 
   // Compute he local non-zero pattern
-  int * rowp, * cols;
+  int *rowp, *cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
-  FEMat * fmat = new FEMat(thread_info, varMap, 
-                           varsPerNode, numNodes, rowp, cols,
-                           feMatBIndices, feMatBMap,
-                           feMatCIndices, feMatCMap, bcMap);
+  FEMat *fmat = new FEMat(thread_info, varMap, 
+                          varsPerNode, numNodes, rowp, cols,
+                          feMatBIndices, feMatBMap,
+                          feMatCIndices, feMatCMap, bcMap);
 
   delete [] rowp;
   delete [] cols;
@@ -2440,7 +2449,7 @@ double TACSAssembler::getSimulationTime(){
   tacsNodeNums: constant pointer to the array of all TACS variable numbers
 */
 int TACSAssembler::getTacsNodeNums( const int ** _tacsNodeNums ){ 
-  if (meshFinalizedFlag){
+  if (meshInitializedFlag){
     *_tacsNodeNums = tacsNodeNums; 
     return numNodes;
   }
@@ -3967,8 +3976,8 @@ TACSElement * TACSAssembler::getElement( int elemNum,
   print_level: the print level to use   
 */
 void TACSAssembler::testElement( int elemNum, int print_level ){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call testElement() before finalize()\n", 
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call testElement() before initialize()\n", 
 	    mpiRank);
     return;
   }
@@ -4032,8 +4041,8 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   print_level: the print level to use for the test
 */
 void TACSAssembler::testConstitutive( int elemNum, int print_level ){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call testConstitutive() before finalize()\n", 
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call testConstitutive() before initialize()\n", 
 	    mpiRank);
     return;
   }
@@ -4091,8 +4100,9 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
 void TACSAssembler::testFunction( TACSFunction * func, 
 				  int num_design_vars,
 				  double dh ){
-  if (!meshFinalizedFlag){
-    fprintf(stderr, "[%d] Cannot call testFunction() before finalize()\n", 
+  if (!meshInitializedFlag){
+    fprintf(stderr, 
+            "[%d] Cannot call testFunction() before initialize()\n", 
 	    mpiRank);
     return;
   }

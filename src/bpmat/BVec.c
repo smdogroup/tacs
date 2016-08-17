@@ -10,7 +10,7 @@
 */
 
 /*!
-  VarMap
+  TACSVarMap
   
   Defines the variable map from the parallel distribution of variables
   to each process
@@ -19,43 +19,58 @@
   comm:  this object is defined over all processors in this comm
   N:     the number of nodes for this processor
 */
-VarMap::VarMap( MPI_Comm _comm, int _N ){
+TACSVarMap::TACSVarMap( MPI_Comm _comm, int _N ){
   comm = _comm;
-  MPI_Comm_rank(comm, &mpiRank);
-  MPI_Comm_size(comm, &mpiSize);
   
-  N = _N;
+  // Get the communicator size
+  int mpi_size;
+  MPI_Comm_size(comm, &mpi_size);
+
   // The ownership ranges for all processes
-  ownerRange = new int[ mpiSize+1 ];
-  memset(ownerRange, 0, (mpiSize+1)*sizeof(int));
+  N = _N;
+  ownerRange = new int[ mpi_size+1 ];
+  memset(ownerRange, 0, (mpi_size+1)*sizeof(int));
 
   // Get the number of variables 
   ownerRange[0] = 0;
   MPI_Allgather(&N, 1, MPI_INT, &ownerRange[1], 1, MPI_INT, comm);
-  
-  for ( int i = 0; i < mpiSize; i++ ){    
+
+  // Set the ownership values so that they range over
+  // the owned unknown node numbers
+  for ( int i = 0; i < mpi_size; i++ ){    
     ownerRange[i+1] += ownerRange[i];
   }
 }
 
-VarMap::~VarMap(){
+TACSVarMap::~TACSVarMap(){
   delete [] ownerRange;
 }
 
-/*!
-  BCMap class 
+int TACSVarMap::getDim(){ 
+  return N; 
+}
 
-  Defines the Dirichlet boundary conditions for the vector
-  and matrix classes.
+MPI_Comm TACSVarMap::getMPIComm(){ return comm; }
+
+void TACSVarMap::getOwnerRange( const int ** _ownerRange ){
+  *_ownerRange = ownerRange;
+}  
+
+/*!
+  TACSBcMap class 
+
+  Defines the Dirichlet boundary conditions for the vector and matrix
+  classes.
 
   input:
   num_bcs:  an estimate of the number of boundary conditions
 */
-BCMap::BCMap( int num_bcs ){
+TACSBcMap::TACSBcMap( int num_bcs ){
   num_bcs = (num_bcs >= 0 ? num_bcs : 0);
   max_size = num_bcs;
+
   // Usually, there are 6 or fewer dof per node
-  max_var_ptr_size = 6*(num_bcs+1); 
+  max_var_ptr_size = 8*(num_bcs+1); 
 
   // Set the increment to be equal to the number of bcs set
   bc_increment = max_size+1;
@@ -74,7 +89,7 @@ BCMap::BCMap( int num_bcs ){
   Delete all boundary condition information that this
   object allocated
 */
-BCMap::~BCMap(){
+TACSBcMap::~TACSBcMap(){
   delete [] local;
   delete [] global;
   delete [] var_ptr;
@@ -95,7 +110,7 @@ BCMap::~BCMap(){
   bc_vals:    the value to apply
   nvals:      the number of values to apply at this node
 */
-void BCMap::addBC( int local_var, int global_var, 
+void TACSBcMap::addBC( int local_var, int global_var, 
 		   const int bc_nums[], const TacsScalar bc_vals[], 
 		   int _nvals ){
   // If the number of boundary conditions exceeds the available
@@ -173,9 +188,9 @@ void BCMap::addBC( int local_var, int global_var,
   vars:        the variable number to apply the BC
   values:      the value to apply
 */
-int BCMap::getBCs( const int ** _local, const int ** _global,
-		   const int ** _var_ptr, 
-		   const int ** _vars, const TacsScalar ** _values ){
+int TACSBcMap::getBCs( const int ** _local, const int ** _global,
+                       const int ** _var_ptr, 
+                       const int ** _vars, const TacsScalar ** _values ){
   *_local = local;
   *_global = global;
   *_var_ptr = var_ptr;
@@ -192,74 +207,92 @@ int BCMap::getBCs( const int ** _local, const int ** _global,
   rmap:   the variable->processor map for the unknowns
   bcs:    the boundary conditions associated with this vector
 */
-BVec::BVec( VarMap * _rmap, int _bsize, BCMap * _bcs ){
-  rmap = _rmap;
-  rmap->incref();
+TACSBVec::TACSBVec( TACSVarMap *map, int _bsize, 
+                    TACSBcMap *_bcs, 
+                    TACSBVecDistribute *_ext_dist ){
+  var_map = map;
+  var_map->incref();
 
   // Copy the boundary conditions
   bcs = _bcs;
   if (bcs){ bcs->incref(); }
 
+  // Set the block size
   bsize = _bsize;
-  comm = rmap->getMPIComm();
-  rmap->getOwnerRange(&ownerRange, &mpiRank, &mpiSize);
-  size = bsize*rmap->getDim();
+  size = bsize*var_map->getDim();
 
-  displaced = NULL;
+  // Allocate the array of owned unknowns
   x = new TacsScalar[ size ];
   memset(x, 0, size*sizeof(TacsScalar));
+
+  // Set the external data
+  ext_dist = _ext_dist;
+  if (ext_dist){
+    ext_dist->incref();
+    ext_size = bsize*ext_dist->getDim();
+    x_ext = new TacsScalar[ ext_size ];
+
+    // Create the communicator context
+    ext_ctx = ext_dist->createCtx(bsize);
+    ext_ctx->incref();
+  }
+  else {
+    ext_size = 0;
+    x_ext = NULL;
+    ext_ctx = NULL;
+  }
 }
 
 /*
-  Create the block-based parallel vector without a VarMap object
-  or boundary conditions - this is required for some parallel 
-  matrix objects, or other situtations in which neither object
-  exists.
+  Create the block-based parallel vector without a TACSVarMap object
+  or boundary conditions - this is required for some parallel matrix
+  objects, or other situtations in which neither object exists.
 
   input:
   comm:  the communicator that this object is distributed over
   size:  the number of local entries stored by this vector
 */
-BVec::BVec( MPI_Comm _comm, int _size, int _bsize ){
+TACSBVec::TACSBVec( MPI_Comm _comm, int _size, int _bsize ){
   bsize = _bsize;
   size = _size;
   comm = _comm;
-  rmap = NULL;
+  var_map = NULL;
   bcs = NULL;
-  ownerRange = NULL;
-  displaced = NULL;
+
   x = new TacsScalar[ size ];
   memset(x, 0, size*sizeof(TacsScalar));
+
+  // Zero/NULL the external data
+  ext_size = 0;
+  x_ext = NULL;
+  ext_dist = NULL;
+  ext_ctx = NULL;
 }
 
-BVec::~BVec(){
-  if (rmap){ rmap->decref(); }
+TACSBVec::~TACSBVec(){
+  if (var_map){ var_map->decref(); }
   if (bcs){  bcs->decref();  }
-
   if (x){ delete [] x; }
-  if (displaced){ delete [] displaced; }
+  if (x_ext){ delete [] x_ext; }
+  if (ext_dist){ ext_dist->decref(); }
+  if (ext_ctx){ ext_ctx->decref(); }
 }
 
 /*
   Get the local size of the vector on this processor
 */
-void BVec::getSize( int * _size ){
+void TACSBVec::getSize( int * _size ){
   *_size = size;
 }
 
 /*
   Compute the norm of the vector
 */
-TacsScalar BVec::norm(){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::scale Error, no array\n", mpiRank);
-    return (0.0);
-  }
-
+TacsScalar TACSBVec::norm(){
   // Compute the norm for each processor
   TacsScalar res, sum;
 #if defined(TACS_USE_COMPLEX) 
-  res = TacsScalar(0.0);
+  res = 0.0;
   int i = 0;
   int rem = size%4;
   TacsScalar * y = x;
@@ -287,39 +320,27 @@ TacsScalar BVec::norm(){
 /*
   Scale the vector by a scalar
 */
-void BVec::scale( TacsScalar alpha ){        
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::scale Error, no array\n", mpiRank);
-    return;
-  }
-
+void TACSBVec::scale( TacsScalar alpha ){        
   int one = 1;
   BLASscal(&size, &alpha, x, &one);
-
   TacsAddFlops(size);
 }
 
 /*
   Compute the dot product of two vectors
 */
-TacsScalar BVec::dot( TACSVec * tvec ){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::dot Error, no array\n", mpiRank);
-    return TacsScalar(0.0);
-  }
-
+TacsScalar TACSBVec::dot( TACSVec * tvec ){
   TacsScalar sum = 0.0;
-  BVec * vec = dynamic_cast<BVec*>(tvec);
+  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
-      fprintf(stderr, "[%d] BVec::dot Error, the sizes must be \
-the same\n", mpiRank);
-      return TacsScalar(0.0);
+      fprintf(stderr, "TACSBVec::dot Error, the sizes must be the same\n");
+      return 0.0;
     }
     
     TacsScalar res;
 #if defined(TACS_USE_COMPLEX) 
-    res = TacsScalar(0.0);
+    res = 0.0;
     int i = 0;
     int rem = size%4;
     TacsScalar * y = x;
@@ -341,7 +362,7 @@ the same\n", mpiRank);
     MPI_Allreduce(&res, &sum, 1, TACS_MPI_TYPE, MPI_SUM, comm);
   }
   else {
-    fprintf(stderr, "BVec type error: Input must be BVec\n");
+    fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
   }
 
   TacsAddFlops(2*size);
@@ -354,25 +375,20 @@ the same\n", mpiRank);
   computations since there are fewer gather operations for the same
   number of dot products.
 */
-void BVec::mdot( TACSVec ** tvec, TacsScalar * ans, int nvecs ){
-  if (!x){ 
-    fprintf( stderr, "[%d] BVec::dot Error, no array\n", mpiRank );
-    return;
-  }
-
+void TACSBVec::mdot( TACSVec ** tvec, TacsScalar * ans, int nvecs ){
   for ( int k = 0; k < nvecs; k++ ){
     ans[k] = 0.0;
 
-    BVec * vec = dynamic_cast<BVec*>(tvec[k]);
+    TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec[k]);
     if (vec){
       if (vec->size != size){
-        fprintf(stderr, "[%d] BVec::dot Error, the sizes must be \
-the same\n", mpiRank);    
+        fprintf(stderr, 
+                "TACSBVec::dot Error, the sizes must be the same\n");
         continue;
       }
 
 #if defined(TACS_USE_COMPLEX) 
-      TacsScalar res = TacsScalar(0.0);
+      TacsScalar res = 0.0;
       int i = 0;
       int rem = size % 4;
       TacsScalar * y = x;
@@ -395,7 +411,7 @@ the same\n", mpiRank);
 #endif
     }
     else {
-      fprintf(stderr, "BVec type error: Input must be BVec\n");
+      fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
     }
   }
 
@@ -407,18 +423,12 @@ the same\n", mpiRank);
 /*
   Compute y = alpha*x + y
 */
-void BVec::axpy( TacsScalar alpha, TACSVec * tvec ){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::axpy Error, no array\n", mpiRank);
-    return;
-  }
-  
-  BVec * vec = dynamic_cast<BVec*>(tvec);
+void TACSBVec::axpy( TacsScalar alpha, TACSVec *tvec ){
+  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
 
   if (vec){
     if (vec->size != size){
-      fprintf(stderr, "[%d] BVec::axpy Error, the sizes must be \
-the same\n", mpiRank);
+      fprintf(stderr, "TACSBVec::axpy Error, the sizes must be the same\n");
       return;
     }
     
@@ -426,7 +436,7 @@ the same\n", mpiRank);
     BLASaxpy(&size, &alpha, vec->x, &one, x, &one);
   }
   else {
-    fprintf(stderr, "BVec type error: Input must be BVec\n");
+    fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
   }
 
   TacsAddFlops(2*size);
@@ -435,26 +445,19 @@ the same\n", mpiRank);
 /*
   Compute x <- alpha * vec + beta * x
 */
-void BVec::axpby( TacsScalar alpha, TacsScalar beta, TACSVec * tvec ){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::axpby Error no array\n", mpiRank);
-    return;
-  }
-
-  BVec * vec = dynamic_cast<BVec*>(tvec);
+void TACSBVec::axpby( TacsScalar alpha, TacsScalar beta, TACSVec *tvec ){
+  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
 
   if (vec){
     if (vec->size != size){
-      fprintf(stderr, "[%d] BVec::axpby Error sizes must be \
-the same\n", mpiRank);
+      fprintf(stderr, "TACSBVec::axpby Error sizes must be the same\n");
       return;
     }
 
     int i = 0;
     int rem = size % 4;
-    
-    TacsScalar * y = x;
-    TacsScalar * z = vec->x;
+    TacsScalar *y = x;
+    TacsScalar *z = vec->x;
     
     for ( ; i < rem; i++ ){
       y[0] = beta*y[0] + alpha*z[0];
@@ -466,13 +469,12 @@ the same\n", mpiRank);
       y[1] = beta*y[1] + alpha*z[1];
       y[2] = beta*y[2] + alpha*z[2];
       y[3] = beta*y[3] + alpha*z[3];
-      
       y += 4;
       z += 4;
     }
   }
   else {
-    fprintf(stderr, "BVec type error: Input must be BVec\n");
+    fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
   }
 
   TacsAddFlops(3*size);
@@ -481,17 +483,12 @@ the same\n", mpiRank);
 /*
   Copy the values x <- vec->x
 */
-void BVec::copyValues( TACSVec * tvec ){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::scale Error, no array\n", mpiRank);
-    return;
-  }
-  
-  BVec * vec = dynamic_cast<BVec*>(tvec);
+void TACSBVec::copyValues( TACSVec *tvec ){
+  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
-      fprintf(stderr, "[%d] BVec::copyValues error, sizes must be \
-the same\n", mpiRank);
+      fprintf(stderr, 
+              "TACSBVec::copyValues error, sizes must be the same\n");
       return;
     }
     
@@ -499,31 +496,21 @@ the same\n", mpiRank);
     BLAScopy(&size, vec->x, &one, x, &one);
   }
   else {
-    fprintf(stderr, "BVec type error: Input must be BVec\n");
+    fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
   }
 }
 
 /*
   Zero all the entries in the vector
 */
-void BVec::zeroEntries(){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::zeroEntries Error, no array\n", mpiRank);
-    return;
-  }
-
+void TACSBVec::zeroEntries(){
   memset(x, 0, size*sizeof(TacsScalar));
 }
 
 /*
   Set all the entries in the vector to val
 */
-void BVec::set( TacsScalar val ){
-  if (!x){ 
-    fprintf(stderr, "[%d] BVec::set Error, no array\n", mpiRank);
-    return;
-  }
-
+void TACSBVec::set( TacsScalar val ){
   int i = 0;
   int rem = size%4;
   TacsScalar * y = x;
@@ -542,7 +529,7 @@ void BVec::set( TacsScalar val ){
 /*
   Initialize the random value generator 
 */
-void BVec::initRand(){
+void TACSBVec::initRand(){
   unsigned int t = time(NULL);
   MPI_Bcast(&t, 1, MPI_INT, 0, comm);
   srand(t);
@@ -552,25 +539,27 @@ void BVec::initRand(){
   Set all the values in the vector using a uniform pseudo-random
   distribution over an interval between lower/upper.
 */  
-void BVec::setRand( double lower, double upper ){
-  if (!x ){ 
-    fprintf(stderr, "[%d] BVec::setRand Error, no array\n", mpiRank);
-    return;
-  }
-
-  if (!ownerRange){
+void TACSBVec::setRand( double lower, double upper ){
+  if (!var_map){
     for ( int i = 0; i < size; i++ ){
       x[i] = lower + ((upper - lower)*rand())/(1.0*RAND_MAX);
     }
   }
   else {
+    int mpi_size, mpi_rank;
+    MPI_Comm_size(comm, &mpi_size);
+    MPI_Comm_rank(comm, &mpi_rank);
+
+    const int *owner_range;
+    var_map->getOwnerRange(&owner_range);
+
     // Generate random values for each processor sequentially.
     // This should result in the same number of calls on all
     // processors.
-    for ( int k = 0; k < mpiSize; k++ ){
-      if (k != mpiRank){
-	int end = bsize*ownerRange[k+1];
-	for ( int i = bsize*ownerRange[k]; i < end; i++ ){
+    for ( int k = 0; k < mpi_size; k++ ){
+      if (k != mpi_rank){
+	int end = bsize*owner_range[k+1];
+	for ( int i = bsize*owner_range[k]; i < end; i++ ){
 	  rand(); 
 	}
       }
@@ -584,38 +573,9 @@ void BVec::setRand( double lower, double upper ){
 }
 
 /*
-  Place an array into the place of the local storage for this vector
-*/
-void BVec::placeArray( TacsScalar * _x ){
-  if (!displaced){
-    displaced = x;
-    x = _x;
-  }
-  else {
-    fprintf(stderr, "[%d] Bvec::placeArray Error, already displaced \
-array\n", mpiRank);
-  }
-}
-
-/*
-  Restore the array displaced by the call to placeArray() with the
-  original arrayremove the 'placed' array with the original array 
-*/
-void BVec::restoreArray(){
-  if (displaced){
-    x = displaced;
-    displaced = NULL;
-  }
-  else {
-    fprintf(stderr, "[%d] Bvec::restoreArray Error, no array to restore\n", 
-            mpiRank);
-  }
-}
-
-/*
   Retrieve the locally stored values from the array
 */
-int BVec::getArray( TacsScalar ** array ){
+int TACSBVec::getArray( TacsScalar ** array ){
   *array = x;
   return size;
 }
@@ -623,78 +583,37 @@ int BVec::getArray( TacsScalar ** array ){
 /*
   Apply the Dirichlet boundary conditions to the vector
 */
-void BVec::applyBCs(){
+void TACSBVec::applyBCs(){
   // apply the boundary conditions
   if (bcs && x){
+    int mpi_rank, mpi_size;
+    MPI_Comm_size(comm, &mpi_size);
+    MPI_Comm_rank(comm, &mpi_rank);
+    
+    // Get ownership range
+    const int *owner_range;
+    var_map->getOwnerRange(&owner_range);
+
+    // Get the values from the boundary condition arrays
     const int *local, *global, *var_ptr, *vars;
     const TacsScalar *values;
     int nbcs = bcs->getBCs(&local, &global, &var_ptr, &vars, &values);
 
     for ( int i = 0; i < nbcs; i++ ){
-      if ( global[i] >= ownerRange[mpiRank] &&
-	   global[i] <  ownerRange[mpiRank+1] ){
-	int var = bsize*(global[i] - ownerRange[mpiRank]);
+      if (global[i] >= owner_range[mpi_rank] &&
+          global[i] < owner_range[mpi_rank+1]){
+	int var = bsize*(global[i] - owner_range[mpi_rank]);
 	
 	for ( int k = var_ptr[i]; k < var_ptr[i+1]; k++ ){ 
 	  // Scan through the rows to be zeroed
-	  x[var + vars[k]] = TacsScalar(0.0);      
+	  x[var + vars[k]] = 0.0;      
 	}
       }
     }
   }
 }
 
-/*
-  Copy values from vec to this. This can be done without parallel 
-  communication.
-*/
-void BVec::copySeqValues( BVec * vec ){
-  if (!x){ 
-    fprintf( stderr, "[%d] BVec::copySeqValues Error, no array\n", mpiRank );
-    return;
-  }
-  else if (vec->size != ownerRange[mpiSize]){
-    fprintf( stderr, "[%d] BVec::copySeqValues Error, vectors must be the \
-same size\n", mpiRank );
-    return;
-  }
-
-  int end   = ownerRange[mpiRank+1];
-  int start = ownerRange[mpiRank];
-  for ( int i = start; i < end; i++ ){
-    x[i - start] = vec->x[i];
-  }
-}
-  
-/*!
-  Set values from this into vec. This must be done with MPI_Allgather. 
-*/
-void BVec::setValuesSeq( BVec * vec ){
-  if (!x){ 
-    fprintf( stderr, "[%d] BVec::setValuesSeq Error, no array\n", mpiRank );
-    return;
-  }
-  else if (vec->size != ownerRange[mpiSize]){
-    fprintf( stderr, "[%d] BVec::setValuesSeq: error, vectors must be \
-the same size\n", mpiRank );
-    return;
-  }
-
-  int * count = new int[ mpiSize ];
-  int * ptr   = new int[ mpiSize ];
-  for ( int i = 0; i < mpiSize; i++ ){
-    ptr[i] = ownerRange[i];
-    count[i] = ownerRange[i+1] - ownerRange[i];
-  }
-
-  MPI_Allgatherv(x, size, TACS_MPI_TYPE, 
-                 vec->x, count, ptr, TACS_MPI_TYPE, comm);
-
-  delete [] ptr;
-  delete [] count;
-}
-
-const char * BVec::TACSObjectName(){
+const char * TACSBVec::TACSObjectName(){
   return vecName;
 }
 
@@ -708,31 +627,38 @@ const char * BVec::TACSObjectName(){
   int                       The length of the vector
   len * sizeof(TacsScalar)  The vector entries
 */
-int BVec::writeToFile( const char * filename ){
-  char * fname = new char[ strlen(filename)+1 ];
+int TACSBVec::writeToFile( const char * filename ){
+  int mpi_rank, mpi_size;
+  MPI_Comm_rank(comm, &mpi_rank);
+  MPI_Comm_size(comm, &mpi_size);
+
+  // Copy the filename
+  char *fname = new char[ strlen(filename)+1 ];
   strcpy(fname, filename);
 
-  int * range = new int[ mpiSize+1 ];
+  // Get the range of variable numbers
+  int *range = new int[ mpi_size+1 ];
   range[0] = 0;
   MPI_Allgather(&size, 1, MPI_INT, &range[1], 1, MPI_INT, comm);
-  for ( int i = 0; i < mpiSize; i++ ){
+  for ( int i = 0; i < mpi_size; i++ ){
     range[i+1] += range[i];
   }
 
+  // Open the MPI file
   int fail = 0;
   MPI_File fp = NULL;
   MPI_File_open(comm, fname, MPI_MODE_WRONLY | MPI_MODE_CREATE, 
                 MPI_INFO_NULL, &fp);
 
   if (fp){
-    if ( mpiRank == 0 ){
-      MPI_File_write(fp, &range[mpiSize], 1, MPI_INT, MPI_STATUS_IGNORE);
+    if (mpi_rank == 0){
+      MPI_File_write(fp, &range[mpi_size], 1, MPI_INT, MPI_STATUS_IGNORE);
     }
 
     char datarep[] = "native";
     MPI_File_set_view(fp, sizeof(int), TACS_MPI_TYPE, TACS_MPI_TYPE, 
                       datarep, MPI_INFO_NULL);
-    MPI_File_write_at_all(fp, range[mpiRank], x, size, TACS_MPI_TYPE, 
+    MPI_File_write_at_all(fp, range[mpi_rank], x, size, TACS_MPI_TYPE, 
                           MPI_STATUS_IGNORE);
     MPI_File_close(&fp);
   }
@@ -749,22 +675,27 @@ int BVec::writeToFile( const char * filename ){
 /*!
   Read values from a binary data file.
 
-  The size of this vector must be the size of the vector
-  originally stored in the file otherwise nothing is read in.
+  The size of this vector must be the size of the vector originally
+  stored in the file otherwise nothing is read in.
 
   The file format is as follows:
   int                       The length of the vector
   len * sizeof(TacsScalar)  The vector entries
-*/
-  
-int BVec::readFromFile( const char * filename ){
-  char * fname = new char[ strlen(filename)+1 ];
+*/  
+int TACSBVec::readFromFile( const char * filename ){
+  int mpi_rank, mpi_size;
+  MPI_Comm_rank(comm, &mpi_rank);
+  MPI_Comm_size(comm, &mpi_size);
+
+  // Copy the filename
+  char *fname = new char[ strlen(filename)+1 ];
   strcpy(fname, filename);
 
-  int * range = new int[ mpiSize+1 ];
+  // Get the range of variable numbers
+  int *range = new int[ mpi_size+1 ];
   range[0] = 0;
   MPI_Allgather(&size, 1, MPI_INT, &range[1], 1, MPI_INT, comm);
-  for ( int i = 0; i < mpiSize; i++ ){
+  for ( int i = 0; i < mpi_size; i++ ){
     range[i+1] += range[i];
   }
 
@@ -774,20 +705,20 @@ int BVec::readFromFile( const char * filename ){
 
   if (fp){
     int len = 0;
-    if ( mpiRank == 0 ){
+    if ( mpi_rank == 0 ){
       MPI_File_read(fp, &len, 1, MPI_INT, MPI_STATUS_IGNORE);
     }
     MPI_Bcast(&len, 1, MPI_INT, 0, comm);
-    if (len != range[mpiSize]){
-      fprintf( stderr, "[%d] Cannot read BVec from file, incorrect size \
- %d != %d \n", mpiRank, range[mpiSize], len );
+    if (len != range[mpi_size]){
+      fprintf( stderr, "[%d] Cannot read TACSBVec from file, incorrect size \
+ %d != %d \n", mpi_rank, range[mpi_size], len );
       memset(x, 0, size*sizeof(TacsScalar));
     }
 
     char datarep[] = "native";
     MPI_File_set_view(fp, sizeof(int), TACS_MPI_TYPE, TACS_MPI_TYPE, 
                       datarep, MPI_INFO_NULL);
-    MPI_File_read_at_all(fp, range[mpiRank], x, size, TACS_MPI_TYPE, 
+    MPI_File_read_at_all(fp, range[mpi_rank], x, size, TACS_MPI_TYPE, 
                          MPI_STATUS_IGNORE);
     MPI_File_close(&fp);
   }
@@ -801,4 +732,38 @@ int BVec::readFromFile( const char * filename ){
   return fail;
 }
 
-const char * BVec::vecName = "BVec";
+/*
+  Convert the global ordering into ids
+*/
+int TACSBVec::convertIndex( int n, const int *index, int *ids ){
+
+}
+
+int TACSBVec::convertIndex( int n, int *ids ){
+
+}
+
+  // Add/set/get the values from the array
+  // -------------------------------------
+void TACSBVec::addValues( int n, const int *ids, 
+                          const TacsScalar *vals ){
+
+}
+
+void TACSBVec::setValues( int n, const int *ids, 
+                          const TacsScalar *vals ){
+
+}
+
+void TACSBVec::getValues( int n, const int *ids, TacsScalar *vals ){
+  int mpi_size, mpi_rank;
+  MPI_Comm_size(comm, &mpi_size);
+  MPI_Comm_rank(comm, &mpi_rank);
+
+  const int *owner_range;
+  var_map->getOwnerRange(&owner_range);
+
+}
+
+
+const char * TACSBVec::vecName = "TACSBVec";

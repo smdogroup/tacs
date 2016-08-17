@@ -390,7 +390,6 @@ cdef class Assembler:
       Static factory method for creating an instance of Assembler
       '''
       cdef MPI_Comm c_comm =  comm.ob_mpi
-
       tacs = Assembler()
 
       if numDependentNodes is 0:

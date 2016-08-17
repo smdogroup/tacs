@@ -8,6 +8,8 @@
   Not for commercial purposes.
 */
 
+class TACSVarMap;
+
 #include "BVec.h"
 
 /*
@@ -19,22 +21,22 @@
 
   This object takes ownership of the array that is passed in.
 */
-class BVecIndices : public TACSObject {
+class TACSBVecIndices : public TACSObject {
  public:
-  BVecIndices( int **_indices, int _nindices );
-  ~BVecIndices();
+  TACSBVecIndices( int **_indices, int _nindices );
+  ~TACSBVecIndices();
 
   // Retrieve information about the indices
   // --------------------------------------
   int getNumIndices();
-  int getIndices( int **_indices );
+  int getIndices( const int **_indices );
   int isSorted();
 
   // Set up/use an arg-sorted array to find the reverse
   // map to find k such that indices[k] = var 
   // --------------------------------------------------
   void setUpInverse();
-  int findIndex( int index ); // Find the index k such that indices[k] = index
+  int findIndex( int index );
 
  private:
   int *indices;
@@ -42,6 +44,11 @@ class BVecIndices : public TACSObject {
   int issorted;
   int *index_args;
 };
+
+/*
+  Declare the TACSBVecDistCtx class
+*/
+class TACSBVecDistCtx;
 
 /*!
   Distribute vector components to other processors and collect 
@@ -66,28 +73,37 @@ class BVecIndices : public TACSObject {
   This operation is useful for assembling the residual equations
   within the finite--element method.
 */
-class BVecDistribute : public TACSObject {
+class TACSBVecDistribute : public TACSObject {
  public:
   enum OpType { INSERT, ADD };
-  BVecDistribute( VarMap *rmap, BVecIndices *bindex );
-  ~BVecDistribute();
+  TACSBVecDistribute( TACSVarMap *rmap, TACSBVecIndices *bindex );
+  ~TACSBVecDistribute();
+
+  // Create a context to send/recv the data
+  // --------------------------------------
+  TACSBVecDistCtx *createCtx( int bsize );
 
   // Get the size of the local array
   // All arrays passed must be at least this size
   // --------------------------------------------
   int getDim();
-  BVecIndices *getBVecIndices();
+  TACSBVecIndices *getIndices();
 
   // Transfer the data to the array provided
   // ---------------------------------------
-  void beginForward( BVec *vec, TacsScalar *local, 
-                     int var_offset = 0 ); 
-  void endForward( BVec *vec, TacsScalar *local );
+  void beginForward( TACSBVecDistCtx *ctx,
+                     TacsScalar *global, TacsScalar *local );
+  void endForward( TACSBVecDistCtx *ctx,
+                   TacsScalar *global, TacsScalar *local );
 
   // Add or insert data back into the vector
   // ---------------------------------------
-  void beginReverse( TacsScalar *local, BVec *vec, enum OpType op=ADD ); 
-  void endReverse( TacsScalar *local, BVec *vec, enum OpType op=ADD );    
+  void beginReverse( TACSBVecDistCtx *ctx,
+                     TacsScalar *local, TacsScalar *global, 
+                     enum OpType op=ADD ); 
+  void endReverse( TACSBVecDistCtx *ctx,
+                   TacsScalar *local, TacsScalar *global,
+                   enum OpType op=ADD );    
 
   MPI_Comm getMPIComm();
   const char *TACSObjectName();
@@ -96,59 +112,92 @@ class BVecDistribute : public TACSObject {
   // Block-specific implementation pointers
   // --------------------------------------
   void initImpl( int bsize );
-  void (*bgetvars)( int bsize, int nvars, int * vars, int lower,
-		    TacsScalar * x, TacsScalar * y, 
-		    BVecDistribute::OpType op );
-  void (*bsetvars)( int bsize, int nvars, int * vars, int lower,
-		    TacsScalar * x, TacsScalar * y, 
-		    BVecDistribute::OpType op );
-
-  // Data defining the distribution of the variables
-  VarMap * rmap;
+  void (*bgetvars)( int bsize, int nvars, const int *vars, int lower,
+		    TacsScalar *x, TacsScalar *y, 
+		    TACSBVecDistribute::OpType op );
+  void (*bsetvars)( int bsize, int nvars, const int *vars, int lower,
+		    TacsScalar *x, TacsScalar *y, 
+		    TACSBVecDistribute::OpType op );
 
   // The communicator and the MPI data
   MPI_Comm comm;
-  int mpiRank, mpiSize;
-  const int * ownerRange;
+
+  // Data defining the distribution of the variables
+  TACSVarMap *rmap;
 
   // Object containing the indices of the external variables
   // -------------------------------------------------------
-  BVecIndices * bindex;
+  TACSBVecIndices *bindex;
 
-  // Data for dealing with an array that is not sorted or unique
+  // Data for dealing with indices that are not sorted or unique
   // -----------------------------------------------------------
   int sorted_flag;
   int nvars_unsorted;
-  int *ext_unsorted_index;
-  TacsScalar *ext_sorted_vals;
+  int *ext_sorted;
+  int *ext_unsorted;
 
   // Data for collecting external variables
   // --------------------------------------
   int next_vars;
-  int *ext_ptr;  // Displacements into the local external array
-  int *ext_vars; // External variables that are requested by this process
-  int extval_size;
+  int *ext_ptr; // Displacements into the local external array
+  const int *ext_vars; // External variables requested by this process
 
   // Data for the requested values
   int *req_ptr;  // Displacement into requested array
   int *req_vars; // Variables that have been requested
-  int reqval_size;
-  TacsScalar *reqvals;
 
   // Sending data
   int n_req_proc; // Processes to send non-zero mesages to
   int *req_proc; 
-  MPI_Request *sends;
-  MPI_Status *send_status;
 
   // Receiving data
   int n_ext_proc; // Externall processes to expect non-zero receives from
   int *ext_proc;
 
-  MPI_Request *receives;
-  MPI_Status *receive_status;
-
   static const char *name;
+};
+
+/*
+  Context for the distribute vector class. Note that this class can
+  only be created by the TACSBVecDistribute class itself so that the
+  data is allocated correctly.
+*/
+class TACSBVecDistCtx : public TACSObject {
+ private:
+  TACSBVecDistCtx( TACSBVecDistribute *_me, 
+                   int _bsize ){
+    bsize = _bsize;
+    me = _me;
+    ext_sorted_vals = NULL;
+    reqvals = NULL;
+    sends = NULL;
+    recvs = NULL;
+  }
+  ~TACSBVecDistCtx(){
+    if (ext_sorted_vals){ delete [] ext_sorted_vals; }
+    if (reqvals){ delete [] reqvals;  }
+    if (sends){ delete [] sends; }
+    if (recvs){ delete [] recvs; }
+  }
+
+  // The block size for this context
+  int bsize;
+
+  // Pointer to ensure the context is used correctly
+  TACSBVecDistribute *me;
+  
+  // The external data sorted
+  TacsScalar *ext_sorted_vals;
+
+  // The requested values
+  TacsScalar *reqvals;
+
+  // The MPI requests for either the sends or recvs
+  MPI_Request *sends;
+  MPI_Request *recvs;
+
+  // Friend class declaration
+  friend class TACSBVecDistribute;
 };
 
 #endif

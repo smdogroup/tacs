@@ -10,7 +10,6 @@
 
 #include "BVec.h"
 #include "BVecDist.h"
-#include "TACSAssembler.h"
 
 /*
   BVecInterp: Interpolate with constant weights between two vectors
@@ -44,40 +43,40 @@
   This class is used extensively in the TACS implementation of
   multigrid.
 */
-class BVecInterp : public TACSObject {
+class TACSBVecInterp : public TACSObject {
  public:
-  BVecInterp( TACSAssembler *in, TACSAssembler *out, int _bsize );
-  ~BVecInterp();
+  TACSBVecInterp( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
+  ~TACSBVecInterp();
 
   // Add components of the interpolation
   // -----------------------------------
   void addInterp( int vNum, TacsScalar weights[], int inNums[], int size );
-  void finalize();
+  void initialize();
 
   // Perform the foward interpolation
   // --------------------------------
-  void mult( BVec * in, BVec * out );
-  void multAdd( BVec * in, BVec * add, BVec * out );
+  void mult( TACSBVec *in, TACSBVec *out );
+  void multAdd( TACSBVec *in, TACSBVec *add, TACSBVec *out );
 
   // Perform the transpose interpolation
   // -----------------------------------
-  void multTranspose( BVec * in, BVec * out );
-  void multTransposeAdd( BVec * in, BVec * add, BVec * out );
+  void multTranspose( TACSBVec *in, TACSBVec *out );
+  void multTransposeAdd( TACSBVec *in, TACSBVec *add, TACSBVec *out );
 
-  void printInterp( const char * filename );
+  void printInterp( const char *filename );
 
  private:
   // The MPI communicator
   MPI_Comm comm;
 
   void (*multadd)( int bsize, int nrows, 
-		   const int * rowp, const int * cols,
-		   const TacsScalar * weights,
-		   const TacsScalar * x, TacsScalar * y );
+		   const int *rowp, const int *cols,
+		   const TacsScalar *weights,
+		   const TacsScalar *x, TacsScalar *y );
   void (*multtransadd)( int bsize, int nrows, 
-			const int * rowp, const int * cols,
-			const TacsScalar * weights,
-			const TacsScalar * x, TacsScalar * y );
+			const int *rowp, const int *cols,
+			const TacsScalar *weights,
+			const TacsScalar *x, TacsScalar *y );
 
   // The on and off-processor parts of the interpolation
   // These are dynamically expanded if they are not large enough
@@ -102,15 +101,12 @@ class BVecInterp : public TACSObject {
 
   // The number of local rows from outMap
   int N, bsize;
-  VarMap *inMap, *outMap;
-
-  // Information for the input/output variables
-  int mpiRank;
-  const int *inOwnerRange, *outOwnerRange;
+  TACSVarMap *inMap, *outMap;
 
   // The object responsible for fetching/distributing the 
   // external variables
-  BVecDistribute * vecDist;
+  TACSBVecDistribute *vecDist;
+  TACSBVecDistCtx *ctx;
 };
 
 #endif

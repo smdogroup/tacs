@@ -37,6 +37,8 @@ CXX_OBJS = BCSRMat.o \
 	BCSCMatPivot.o \
 	PDMatPivot.o
 
+
+
 DIR=${TACS_DIR}/src/bpmat
 
 CXX_OBJS := $(CXX_OBJS:%=$(DIR)/%)

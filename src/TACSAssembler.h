@@ -108,15 +108,18 @@ class TACSAssembler : public TACSObject {
   void computeReordering( enum OrderingType order_type, 
                           enum MatrixOrderingType mat_type );
 
-  // Finalize the mesh - no further elements or 
-  // nodes may be added following this call
-  // ------------------------------------------
-  void finalize();
+  // Initialize the mesh
+  // -------------------
+  void initialize();
 
   // Return the underlying TACS node numbers
   // ---------------------------------------
   void getTacsNodeNums( int localNodes[], int numNodes );
   int getTacsNodeNums( const int ** _tacsNodeNums );
+
+
+
+
 
   // Set the nodes in TACS 
   // ---------------------
@@ -159,9 +162,9 @@ class TACSAssembler : public TACSObject {
   
   // Methods for setting/getting variables
   // -------------------------------------
-  void getVariables( BVec *stateVars );
   void setVariables( double _time, 
                      BVec *q, BVec *qdot, BVec *qddot );
+  void getVariables( BVec *stateVars );
   void setVariables( BVec *stateVars );
   void setDotVariables( BVec *stateVars );
   void setDDotVariables( BVec *stateVars );
@@ -353,7 +356,7 @@ class TACSAssembler : public TACSObject {
   double time;
 
   // variables/elements have been initialized
-  int meshFinalizedFlag;
+  int meshInitializedFlag;
 
   int varsPerNode; // number of variables per node
   int maxElementNodes; // maximum number of ind. and dep. nodes for any element
@@ -380,26 +383,21 @@ class TACSAssembler : public TACSObject {
   int *depNodeToTacs;
   double *depNodeWeights;
 
-  // For use during set up - before call to finalize
-  int currElement; // Number of elements currently added (max val. numElements)
-  int currNode; // Number of nodes currently added (max val. numNodes)
-
   // The local list of elements
   TACSElement **elements;
 
-  // Memory for the variables/residuals
-  TacsScalar *localVars, *localDotVars, *localDDotVars;
-  TacsScalar *localRes; // Local residual values being assembled
+  // The auxiliary element class
+  TACSAuxElements *auxElements;
+
+  // Memory for the variables
+  TACSBVec *varsVec, *dotVarsVec, *ddotVarsVec;
+
+  // Memory for the node locations
+  TACSBVec *xptVec;
 
   // Memory for the element residuals and variables
   TacsScalar *elementData; // Space for element residuals/matrices
   int *elementIData; // Space for element index data
-
-  // The x,y,z positions/sensitivities of all the local nodes
-  TacsScalar *Xpts; // The nodal locations
-
-  // The auxiliary element class
-  TACSAuxElements *aux_elements;
 
   // The data required to perform parallel operations
   // MPI info
@@ -463,7 +461,7 @@ class TACSAssembler : public TACSObject {
   pthread_mutex_t tacs_mutex; // The mutex object for coordinating assembly ops.
 
   // The name of the TACSAssembler object
-  static const char * tacsName;
+  static const char *tacsName;
 };
 
 /*!  

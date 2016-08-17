@@ -53,19 +53,26 @@
   7. The CSR data structures from all procs are merged
   8. The persistent data communication paths are initialized 
 */
-DistMat::DistMat( TACSThreadInfo * thread_info, 
-                  VarMap * _rmap, int bsize,
-		  int num_ext_vars, const int * rowp, const int * cols, 
-		  BVecIndices * bindex, BCMap * _bcs ){
-  comm = _rmap->getMPIComm();
-  _rmap->getOwnerRange(&ownerRange, &mpiRank, &mpiSize);
+DistMat::DistMat( TACSThreadInfo *thread_info, 
+                  TACSVarMap *map, int bsize,
+		  int num_ext_vars, const int *rowp, const int *cols, 
+		  TACSBVecIndices *bindex, TACSBcMap *bc_map ){
+  comm = map->getMPIComm();
 
-  int * ext_vars;
+  int mpiRank, mpiSize;
+  MPI_Comm_rank(map->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(map->getMPIComm(), &mpiSize);
+
+  // Get the external variables
+  const int *ext_vars;
   if (bindex->getIndices(&ext_vars) != num_ext_vars){
     fprintf(stderr, "[%d] DistMat error: number of indices provided must be \
 equal to the number of rows\n", mpiRank);
     return;
   }
+  
+  const int *ownerRange;
+  map->getOwnerRange(&ownerRange);
 
   // Get the non-zero pattern of the input matrix
   int lower = ownerRange[mpiRank];
@@ -93,7 +100,8 @@ equal to the number of rows\n", mpiRank);
   int next_row_init = next_rows;
   next_rows = FElibrary::uniqueSort(ext_rows, next_rows);
   if (next_row_init != next_rows){
-    fprintf(stderr, "[%d] DistMat error, ext_vars are not unique\n", mpiRank);
+    fprintf(stderr, "[%d] DistMat error, ext_vars are not unique\n", 
+            mpiRank);
   }
 
   // Create the off-process CSR data structure that will be sent to 
@@ -103,8 +111,8 @@ equal to the number of rows\n", mpiRank);
 
   for ( int i = 0; i < num_ext_vars; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
-      int * item = (int*)bsearch(&ext_vars[i], ext_rows, next_rows, 
-				 sizeof(int), FElibrary::comparator);
+      int *item = (int*)bsearch(&ext_vars[i], ext_rows, next_rows, 
+                                sizeof(int), FElibrary::comparator);
       int index = item - ext_rows;
       ext_rowp[index+1] = rowp[i+1] - rowp[i];    
     }
@@ -120,8 +128,8 @@ equal to the number of rows\n", mpiRank);
 
   for ( int i = 0; i < num_ext_vars; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
-      int * item = (int*)bsearch(&ext_vars[i], ext_rows, next_rows, 
-				 sizeof(int), FElibrary::comparator);     
+      int *item = (int*)bsearch(&ext_vars[i], ext_rows, next_rows, 
+                                sizeof(int), FElibrary::comparator);     
       int index = item - ext_rows;
 
       for ( int j = ext_rowp[index], jj = rowp[i]; 
@@ -131,13 +139,14 @@ equal to the number of rows\n", mpiRank);
 
       int size = ext_rowp[index+1] - ext_rowp[index];
       if (size != FElibrary::uniqueSort(&ext_cols[ext_rowp[index]], size)){
-	fprintf(stderr, "[%d] DistMat error, array is not unique\n", mpiRank);
+	fprintf(stderr, "[%d] DistMat error, array is not unique\n", 
+                mpiRank);
       }
     }
   }
   
   // Match the intervals of the external variables to be sent to other processes
-  ext_row_ptr   = new int[ mpiSize+1 ];
+  ext_row_ptr = new int[ mpiSize+1 ];
   ext_row_count = new int[ mpiSize ];
 
   FElibrary::matchIntervals(mpiSize, ownerRange, next_rows, ext_rows, ext_row_ptr);
@@ -163,7 +172,7 @@ equal to the number of rows\n", mpiRank);
 		in_rows, in_row_count, in_row_ptr, MPI_INT, comm);
   
   // Prepare to pass information from ext_rowp to in_rowp
-  int * ext_row_var_count = new int[ next_rows ];
+  int *ext_row_var_count = new int[ next_rows ];
   for ( int k = 0; k < next_rows; k++ ){
     ext_row_var_count[k] = ext_rowp[k+1] - ext_rowp[k];
   }
@@ -184,11 +193,11 @@ equal to the number of rows\n", mpiRank);
   // Pass ext_cols to in_cols
   in_cols = new int[ in_rowp[nin_rows] ];
 
-  int * ext_cols_ptr   = new int[ mpiSize ];
-  int * ext_cols_count = new int[ mpiSize ];
+  int *ext_cols_ptr   = new int[ mpiSize ];
+  int *ext_cols_count = new int[ mpiSize ];
 
-  int * in_cols_ptr   = new int[ mpiSize ];
-  int * in_cols_count = new int[ mpiSize ];
+  int *in_cols_ptr   = new int[ mpiSize ];
+  int *in_cols_count = new int[ mpiSize ];
 
   for ( int i = 0; i < mpiSize; i++ ){
     ext_cols_ptr[i]   = ext_rowp[ ext_row_ptr[i] ];    
@@ -216,7 +225,7 @@ equal to the number of rows\n", mpiRank);
   // Now, set up the column map using in_cols  
   int max_col_vars_size = 5*nz_per_row + next_rows;
   int col_vars_size = 0;
-  int * col_vars = new int[ max_col_vars_size ];
+  int *col_vars = new int[ max_col_vars_size ];
 
   // Get contributions from ext_rows
   for ( int i = 0; i < next_rows; i++ ){
@@ -241,8 +250,8 @@ equal to the number of rows\n", mpiRank);
     col_vars_size = FElibrary::uniqueSort(col_vars, col_vars_size);
   }
 
-  BVecIndices * col_indices = new BVecIndices(&col_vars, col_vars_size);
-  BVecDistribute * _col_map = new BVecDistribute(_rmap, col_indices);
+  TACSBVecIndices *col_indices = new TACSBVecIndices(&col_vars, col_vars_size);
+  TACSBVecDistribute *col_map = new TACSBVecDistribute(map, col_indices);
   col_map_size = col_indices->getIndices(&col_map_vars);
 
   // Assemble everything into on and off-diagonal parts
@@ -251,13 +260,12 @@ equal to the number of rows\n", mpiRank);
 
   setUpLocalExtCSR(num_ext_vars, ext_vars, rowp, cols,
 		   ownerRange[mpiRank], ownerRange[mpiRank+1],
-		   nz_per_row,
-		   &Arowp, &Acols,
+		   nz_per_row, &Arowp, &Acols,
 		   &np, &Browp, &Bcols);
 
   // Allocate space for in-coming matrix elements
   ext_A = new TacsScalar[ bsize*bsize*ext_rowp[next_rows] ];
-  in_A  = new TacsScalar[ bsize*bsize*in_rowp[nin_rows] ];
+  in_A = new TacsScalar[ bsize*bsize*in_rowp[nin_rows] ];
 
   int len = bsize*bsize*ext_rowp[next_rows];
   for ( int k = 0; k < len; k++ ){
@@ -268,13 +276,13 @@ equal to the number of rows\n", mpiRank);
   int n = ownerRange[mpiRank+1] - ownerRange[mpiRank];
   int m = n;
 
-  BCSRMat * _Aloc = new BCSRMat(comm, thread_info, 
-                                bsize, n, m, &Arowp, &Acols);
-  BCSRMat * _Bext = new BCSRMat(comm, thread_info,
-                                bsize, n-np, col_vars_size, &Browp, &Bcols);
+  BCSRMat *aloc = new BCSRMat(comm, thread_info, 
+                              bsize, n, m, &Arowp, &Acols);
+  BCSRMat *bext = new BCSRMat(comm, thread_info,
+                              bsize, n-np, col_vars_size, &Browp, &Bcols);
   
   // Finally, initialize PMat
-  init(_rmap, _Aloc, _Bext, _col_map, _bcs);
+  init(map, aloc, bext, col_map, bc_map);
 
   // Set up the presistent communication amongst processors
   initPersistent();
@@ -315,24 +323,28 @@ DistMat::~DistMat(){
   [ B, E ][ x ]
   [ F, C ][ y ] + [ Bext ][ y_ext ] = 0  
 */
-void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars, 
-				const int * rowp, const int * cols,
+void DistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars, 
+				const int *rowp, const int *cols,
 				int lower, int upper,
 				int nz_per_row,
 				int ** _Arowp, int ** _Acols,
-				int * _np, int ** _Browp, int ** _Bcols ){
+				int *_np, int ** _Browp, int ** _Bcols ){
+
+  int mpiRank, mpiSize;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiSize);
 
   // For each row, find the non-zero pattern
-  int A_max_row_size = 2 * nz_per_row;
-  int * A_row_vars = new int[ A_max_row_size ];
+  int A_max_row_size = 2 *nz_per_row;
+  int *A_row_vars = new int[ A_max_row_size ];
 
-  int B_max_row_size = 2 * nz_per_row;
-  int * B_row_vars = new int[ B_max_row_size ];
+  int B_max_row_size = 2 *nz_per_row;
+  int *B_row_vars = new int[ B_max_row_size ];
 
   int A_rows = upper - lower;
 
-  int * A_rowp = new int[ A_rows+1 ];
-  int * B_rowp = new int[ A_rows+1 ];
+  int *A_rowp = new int[ A_rows+1 ];
+  int *B_rowp = new int[ A_rows+1 ];
 
   for ( int i = 0; i < A_rows+1; i++ ){
     A_rowp[i] = 0;
@@ -340,7 +352,7 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
   }
 
   // Set up a temporary array to keep track of the variables in ext_vars
-  int * var_map = new int[ A_rows ];
+  int *var_map = new int[ A_rows ];
   for ( int i = 0; i < A_rows; i++ ){
     var_map[i] = -1;
   }
@@ -394,9 +406,9 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
       if (in_row_count[k] > 0){
 	// Try to find the variable in the k-th input - these are sorted 
 	// locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
-	int * item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]], 
-				   in_row_count[k], sizeof(int), 
-				   FElibrary::comparator);
+	int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]], 
+                                  in_row_count[k], sizeof(int), 
+                                  FElibrary::comparator);
 
 	if (item){
 	  int row = item - &in_rows[in_row_ptr[k]];
@@ -457,7 +469,7 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
 
   int nc = A_rows - np;
   if (np > 0){
-    int * temp = new int[ nc+1 ];
+    int *temp = new int[ nc+1 ];
     for ( int i = 0; i < nc+1; i++ ){
       temp[i] = B_rowp[i+np];
     }
@@ -466,8 +478,8 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
   }
 
   // Now, go through and build up A_cols/B_cols
-  int * A_cols = new int[ A_rowp[A_rows] ];
-  int * B_cols = new int[ B_rowp[nc] ];
+  int *A_cols = new int[ A_rowp[A_rows] ];
+  int *B_cols = new int[ B_rowp[nc] ];
   
   // Size the A_rowp/B_rowp arrays
   for ( int i = 0; i < A_rows; i++ ){ // For each variable
@@ -500,9 +512,9 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
       if (in_row_count[k] > 0){
 	// Try to find the variable in the k-th input - these are sorted 
 	// locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
-	int * item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]], 
-				   in_row_count[k], sizeof(int), 
-				   FElibrary::comparator);
+	int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]], 
+                                  in_row_count[k], sizeof(int), 
+                                  FElibrary::comparator);
 
 	if (item){
 	  int row = item - &in_rows[in_row_ptr[k]];
@@ -528,7 +540,7 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
     }
 
     // Sort the entries and remove duplicates
-    A_row_size = FElibrary::uniqueSort( A_row_vars, A_row_size );
+    A_row_size = FElibrary::uniqueSort(A_row_vars, A_row_size);
     for ( int j = A_rowp[var - lower], k = 0; k < A_row_size; j++, k++ ){
       A_cols[j] = A_row_vars[k];      
     }
@@ -537,9 +549,9 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
     B_row_size = FElibrary::uniqueSort(B_row_vars, B_row_size);
     if (var - lower >= np){
       for ( int k = 0; k < B_row_size; k++ ){
-	int * item = (int*)bsearch(&B_row_vars[k], col_map_vars, 
-				   col_map_size, sizeof(int), 
-				   FElibrary::comparator);
+	int *item = (int*)bsearch(&B_row_vars[k], col_map_vars, 
+                                  col_map_size, sizeof(int), 
+                                  FElibrary::comparator);
 	
 	if (!item){
 	  fprintf(stderr, "[%d] Error: variable %d not in column map\n", 
@@ -576,6 +588,10 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, int * ext_vars,
 void DistMat::initPersistent(){   
   int bsize = Aloc->getBlockSize();
   
+  int mpiRank, mpiSize;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiSize);
+
   // Count up the number of non-zero send/receives
   nreceives = 0;
   nsends = 0;
@@ -661,9 +677,9 @@ void DistMat::initPersistent(){
   nv, mv:   number of true rows/columns in the dense matrix
   values:   the dense matrix values
 */
-void DistMat::addValues( int nrow, const int * row, 
-			 int ncol, const int * col,
-			 int nv, int mv, const TacsScalar * values ){
+void DistMat::addValues( int nrow, const int *row, 
+			 int ncol, const int *col,
+			 int nv, int mv, const TacsScalar *values ){
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
 
@@ -683,6 +699,12 @@ void DistMat::addValues( int nrow, const int * row,
     bcols = &array[ncol];
   }
 
+  int mpiRank;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
+
   // The lower/upper variable ranges
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
@@ -700,8 +722,8 @@ void DistMat::addValues( int nrow, const int * row,
     }
     else if (c >= 0){
       // The column is in the B off-processor part 
-      int * item = (int*)bsearch(&c, col_map_vars, col_map_size, 
-				 sizeof(int), FElibrary::comparator);
+      int *item = (int*)bsearch(&c, col_map_vars, col_map_size, 
+                                sizeof(int), FElibrary::comparator);
       if (item){
 	nb++;
 	bcols[i] = item - col_map_vars;
@@ -741,8 +763,8 @@ void DistMat::addValues( int nrow, const int * row,
       // The row is not on this processor, search for it in the
       // off-processor part that we'll have to communicate later
       // Locate the row within ext_rows
-      int * item = (int*)bsearch(&r, ext_rows, next_rows, 
-				 sizeof(int), FElibrary::comparator);
+      int *item = (int*)bsearch(&r, ext_rows, next_rows, 
+                                sizeof(int), FElibrary::comparator);
       if (item){
 	int r_ext = item - ext_rows;
 
@@ -757,7 +779,7 @@ void DistMat::addValues( int nrow, const int * row,
 				 sizeof(int), FElibrary::comparator);
 
 	    if (item){
-	      TacsScalar * a = &ext_A[b2*(item - ext_cols)];
+	      TacsScalar *a = &ext_A[b2*(item - ext_cols)];
 	      
 	      for ( int ii = 0; ii < bsize; ii++ ){
 		for ( int jj = 0; jj < bsize; jj++ ){
@@ -829,6 +851,12 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
     bvars = &array[n];
   }
 
+  int mpiRank;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
+
   // The lower/upper variable ranges
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
@@ -846,8 +874,8 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
     }
     else if (c >= 0){
       // The column is in the B off-processor part 
-      int * item = (int*)bsearch(&c, col_map_vars, col_map_size, 
-				 sizeof(int), FElibrary::comparator);
+      int *item = (int*)bsearch(&c, col_map_vars, col_map_size, 
+                                sizeof(int), FElibrary::comparator);
       if (item){
 	nb++;
 	bvars[i] = item - col_map_vars;
@@ -896,8 +924,8 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
         // The row is not on this processor, search for it in the
         // off-processor part that we'll have to communicate later
         // Locate the row within ext_rows
-        int * item = (int*)bsearch(&vars[ip], ext_rows, next_rows, 
-                                   sizeof(int), FElibrary::comparator);
+        int *item = (int*)bsearch(&vars[ip], ext_rows, next_rows, 
+                                  sizeof(int), FElibrary::comparator);
         if (item){
           int r_ext = item - ext_rows;
 	  
@@ -914,7 +942,7 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
                                      sizeof(int), FElibrary::comparator);
                 
                 if (item){
-                  TacsScalar * a = &ext_A[b2*(item - ext_cols)];
+                  TacsScalar *a = &ext_A[b2*(item - ext_cols)];
                   
                   if (matOr == NORMAL){
                     for ( int ii = 0; ii < bsize; ii++ ){
@@ -953,10 +981,9 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
 /*!
   Given a non-zero pattern, pass in the values for the array
 */
-void DistMat::setValues( int nvars, const int * ext_vars,
-			 const int * rowp, const int * cols, 
-			 TacsScalar * avals ){
-
+void DistMat::setValues( int nvars, const int *ext_vars,
+			 const int *rowp, const int *cols, 
+			 TacsScalar *avals ){
   zeroEntries();
 
   int bsize = Aloc->getBlockSize();
@@ -971,11 +998,17 @@ void DistMat::setValues( int nvars, const int * ext_vars,
     }
   }
 
+  int mpiRank;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
+
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
   
-  int * acols = new int[ 2*max_row ];
-  int * bcols = &acols[max_row];
+  int *acols = new int[ 2*max_row ];
+  int *bcols = &acols[max_row];
 
   for ( int i = 0; i < nvars; i++ ){
     int row = ext_vars[i];
@@ -997,8 +1030,8 @@ void DistMat::setValues( int nvars, const int * ext_vars,
 	  acols[k] = col - lower;
 	}
 	else {
-	  int * item = (int*)bsearch(&col, col_map_vars, col_map_size, 
-				     sizeof(int), FElibrary::comparator);
+	  int *item = (int*)bsearch(&col, col_map_vars, col_map_size, 
+                                    sizeof(int), FElibrary::comparator);
 	  bcols[k] = item - col_map_vars;
 	  nb++;
 	}
@@ -1018,8 +1051,8 @@ void DistMat::setValues( int nvars, const int * ext_vars,
       }
     }
     else {
-      int * item = (int*)bsearch(&row, ext_rows, next_rows, 
-				 sizeof(int), FElibrary::comparator);
+      int *item = (int*)bsearch(&row, ext_rows, next_rows, 
+                                sizeof(int), FElibrary::comparator);
 
       if (item){
 	int r_ext = item - ext_rows;
@@ -1036,7 +1069,7 @@ void DistMat::setValues( int nvars, const int * ext_vars,
 				 sizeof(int), FElibrary::comparator);
 	    
 	    if (item){
-	      TacsScalar * a = &ext_A[b2*(item - ext_cols)];    
+	      TacsScalar *a = &ext_A[b2*(item - ext_cols)];    
 	      memcpy(a, &avals[b2*j], b2*sizeof(TacsScalar));
 	    }
 	    else {
@@ -1075,17 +1108,22 @@ void DistMat::zeroEntries(){
 void DistMat::beginAssembly(){
   if (nreceives > 0){
     int ierr = MPI_Startall(nreceives, receives);
-    if (ierr != MPI_SUCCESS){ 
+    if (ierr != MPI_SUCCESS){
+      int mpiRank;
+      MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
       int len;
       char err_str[MPI_MAX_ERROR_STRING];
       MPI_Error_string(ierr, err_str, &len);
-      fprintf(stderr, "[%d] DistMat::beginAssembly MPI startall receives error\n%s\n", 
+      fprintf(stderr, 
+              "[%d] DistMat::beginAssembly MPI startall receives error\n%s\n", 
 	      mpiRank, err_str);
     }      
   }
   if (nsends > 0){
     int ierr = MPI_Startall(nsends, sends);
     if (ierr != MPI_SUCCESS){ 
+      int mpiRank;
+      MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
       int len;
       char err_str[MPI_MAX_ERROR_STRING];
       MPI_Error_string(ierr, err_str, &len);
@@ -1105,6 +1143,12 @@ void DistMat::endAssembly(){
   // and the local variables (for Bext)
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
+  
+  int mpiRank;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
 
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
@@ -1127,7 +1171,7 @@ void DistMat::endAssembly(){
       int row = in_rows[j] - lower;
 
       for ( int k = in_rowp[j]; k < in_rowp[j+1]; k++ ){
-	TacsScalar * a = &in_A[b2*k];
+	TacsScalar *a = &in_A[b2*k];
 
 	int col = in_cols[k];
 	if (col >= lower && col < upper){
@@ -1135,8 +1179,8 @@ void DistMat::endAssembly(){
 	  Aloc->addBlockRowValues(row, 1, &col, a);
 	}
 	else {
-	  int * item = (int*)bsearch(&col, col_map_vars, col_map_size, 
-				     sizeof(int), FElibrary::comparator);
+	  int *item = (int*)bsearch(&col, col_map_vars, col_map_size, 
+                                    sizeof(int), FElibrary::comparator);
 	  if (item){
 	    int c = item - col_map_vars;
 	    Bext->addBlockRowValues(row - Np, 1, &c, a);
