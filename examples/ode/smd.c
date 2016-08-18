@@ -1,6 +1,6 @@
 #include "TACSCreator.h"
 #include "TACSAssembler.h"
-#include "TACSDummyElement.h"
+#include "TACSSMDElement.h"
 #include "TACSIntegrator.h"
 
 /*
@@ -18,14 +18,14 @@ int main( int argc, char *argv[] ){
   /*                    Create TACS Element                          */
   /*-----------------------------------------------------------------*/
 
-  TACSElement *elem = new TACSDummyElement();
+  TACSElement *elem = new TACSSMDElement();
   elem->incref();
   
   /*-----------------------------------------------------------------*/
   /*                    Create TACS Creator                          */
   /*-----------------------------------------------------------------*/
 
-  int vars_per_node = 2;
+  int vars_per_node = 1;
   TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, vars_per_node);
   creator->incref();
 
@@ -54,7 +54,7 @@ int main( int argc, char *argv[] ){
   tacs->incref();
  
   double tinit = 0.0; double tfinal = 10.0;
-  int num_steps_per_sec = 10;
+  int num_steps_per_sec = 100;
 
   /*-----------------------------------------------------------------*/
   /*                    Test DIRK Scheme                             */
@@ -66,17 +66,16 @@ int main( int argc, char *argv[] ){
   dirk->incref();
 
   // Set optional parameters
-  dirk->setRelTol(1.0e-12);
-  dirk->setAbsTol(1.0e-14);
+  dirk->setRelTol(1.0e-10);
+  dirk->setAbsTol(1.0e-12);
   dirk->setMaxNewtonIters(24);
-  dirk->setPrintLevel(0);
+  dirk->setPrintLevel(1);
   dirk->setJacAssemblyFreq(1);
   dirk->setUseLapack(0);
 
   // Integrate and write solution to file
   dirk->integrate();
-  //  dirk->forward(NULL, NULL, NULL);
-  dirk->writeSolution("dirk.dat");
+  dirk->writeSolution("smd-dirk.dat");
 
   dirk->decref();
   
@@ -90,17 +89,16 @@ int main( int argc, char *argv[] ){
   bdf->incref();
 
   // Set optional parameters
-  bdf->setRelTol(1.0e-12);
-  bdf->setAbsTol(1.0e-14);
+  bdf->setRelTol(1.0e-10);
+  bdf->setAbsTol(1.0e-12);
   bdf->setMaxNewtonIters(24);
-  bdf->setPrintLevel(0);
+  bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
 
   // Integrate and write solution to file
   bdf->integrate();
-  // bdf->forward(NULL, NULL, NULL);
-  bdf->writeSolution("bdf.dat");
+  bdf->writeSolution("smd-bdf.dat");
 
   bdf->decref();
 
@@ -114,8 +112,8 @@ int main( int argc, char *argv[] ){
   abm->incref();
 
   // Set optional parameters
-  abm->setRelTol(1.0e-12);
-  abm->setAbsTol(1.0e-14);
+  abm->setRelTol(1.0e-10);
+  abm->setAbsTol(1.0e-12);
   abm->setMaxNewtonIters(24);
   abm->setPrintLevel(1);
   abm->setJacAssemblyFreq(1);
@@ -123,7 +121,7 @@ int main( int argc, char *argv[] ){
 
   // Integrate and write solution to file
   abm->integrate();
-  abm->writeSolution("abm.dat");
+  abm->writeSolution("smd-abm.dat");
 
   abm->decref();
 
@@ -135,8 +133,8 @@ int main( int argc, char *argv[] ){
   nbg->incref();
 
   // Set optional parameters
-  nbg->setRelTol(1.0e-12);
-  nbg->setAbsTol(1.0e-14);
+  nbg->setRelTol(1.0e-10);
+  nbg->setAbsTol(1.0e-12);
   nbg->setMaxNewtonIters(24);
   nbg->setPrintLevel(1);
   nbg->setJacAssemblyFreq(1);
@@ -144,7 +142,7 @@ int main( int argc, char *argv[] ){
 
   // Integrate and write solution to file
   nbg->integrate();
-  nbg->writeSolution("nbg.dat");
+  nbg->writeSolution("smd-nbg.dat");
 
   nbg->decref();
 

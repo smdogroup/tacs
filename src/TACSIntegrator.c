@@ -134,7 +134,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   //------------------------------------------------------------------//
 
   // Frequency of Jacobian recomputation during nonlinear solve
-  jac_comp_freq = 3;
+  jac_comp_freq = 1;
 
   // Set the default LINEAR solver
   use_lapack = 0;
@@ -796,7 +796,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
     if (print_level >= 1){
       tacs->evalEnergies(&energies[0], &energies[1]);
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
-	      time[current_step], niter+1, RealPart(norm), RealPart(norm/(rtol + init_norm)),
+	      time[current_step], niter, RealPart(norm), RealPart(norm/(rtol + init_norm)),
 	      RealPart(energies[0]), RealPart(energies[1]), 
 	      RealPart((init_energy - (energies[0] + energies[1]))));
     }
