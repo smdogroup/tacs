@@ -60,70 +60,90 @@ int main( int argc, char *argv[] ){
   /*                    Test DIRK Scheme                             */
   /*-----------------------------------------------------------------*/
 
-  int num_stages = 2;
-  TACSDIRKIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
-						num_stages);
-  dirk->incref();
+  TACSDIRKIntegrator *dirk = NULL;
+  int max_num_stages = 3;
+  for ( int k = 1; k <= max_num_stages; k++ ) {
 
-  // Set optional parameters
-  dirk->setRelTol(1.0e-10);
-  dirk->setAbsTol(1.0e-12);
-  dirk->setMaxNewtonIters(24);
-  dirk->setPrintLevel(1);
-  dirk->setJacAssemblyFreq(1);
-  dirk->setUseLapack(0);
+    dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, k);
+    dirk->incref();
 
-  // Integrate and write solution to file
-  dirk->integrate();
-  dirk->writeSolution("osc-dirk.dat");
+    // Set optional parameters
+    dirk->setRelTol(1.0e-10);
+    dirk->setAbsTol(1.0e-12);
+    dirk->setMaxNewtonIters(24);
+    dirk->setPrintLevel(1);
+    dirk->setJacAssemblyFreq(1);
+    dirk->setUseLapack(0);
 
-  dirk->decref();
-  
+    // Integrate and write solution to file
+    dirk->integrate();
+
+    // Write Solution
+    char fname[128];
+    sprintf(fname, "osc-dirk-order%d.dat", k+1);
+    dirk->writeSolution(fname);
+
+    dirk->decref();
+  }
+
   //-----------------------------------------------------------------//
   //                    Test BDF Scheme                             //
   //-----------------------------------------------------------------//
   
+  TACSBDFIntegrator *bdf = NULL;
   int max_bdf_order = 3;
-  TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
-					      max_bdf_order);
-  bdf->incref();
+  for ( int k = 1; k <= max_bdf_order; k++ ) {
 
-  // Set optional parameters
-  bdf->setRelTol(1.0e-10);
-  bdf->setAbsTol(1.0e-12);
-  bdf->setMaxNewtonIters(24);
-  bdf->setPrintLevel(1);
-  bdf->setJacAssemblyFreq(1);
-  bdf->setUseLapack(0);
+    bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec, k);
+    bdf->incref();
 
-  // Integrate and write solution to file
-  bdf->integrate();
-  bdf->writeSolution("osc-bdf.dat");
+    // Set optional parameters
+    bdf->setRelTol(1.0e-10);
+    bdf->setAbsTol(1.0e-12);
+    bdf->setMaxNewtonIters(24);
+    bdf->setPrintLevel(1);
+    bdf->setJacAssemblyFreq(1);
+    bdf->setUseLapack(0);
 
-  bdf->decref();
+    // Integrate and write solution to file
+    bdf->integrate();
+
+    // Write Solution
+    char fname[128];
+    sprintf(fname, "osc-bdf-order%d.dat", k);
+    bdf->writeSolution(fname);
+
+    bdf->decref();
+  }
 
   //-----------------------------------------------------------------//
   //                    Test ABM Scheme                             //
   //-----------------------------------------------------------------//
   
+  TACSABMIntegrator *abm = NULL;
   int max_abm_order = 6;
-  TACSABMIntegrator *abm = new TACSABMIntegrator(tacs, tinit, tfinal, num_steps_per_sec,
-					      max_abm_order);
-  abm->incref();
+  for ( int k = 1; k <= max_abm_order; k++ ) {
+    abm = new TACSABMIntegrator(tacs, tinit, tfinal, num_steps_per_sec, k);
+    abm->incref();
 
-  // Set optional parameters
-  abm->setRelTol(1.0e-10);
-  abm->setAbsTol(1.0e-12);
-  abm->setMaxNewtonIters(24);
-  abm->setPrintLevel(1);
-  abm->setJacAssemblyFreq(1);
-  abm->setUseLapack(0);
+    // Set optional parameters
+    abm->setRelTol(1.0e-10);
+    abm->setAbsTol(1.0e-12);
+    abm->setMaxNewtonIters(24);
+    abm->setPrintLevel(1);
+    abm->setJacAssemblyFreq(1);
+    abm->setUseLapack(0);
 
-  // Integrate and write solution to file
-  abm->integrate();
-  abm->writeSolution("osc-abm.dat");
+    // Integrate and write solution to file
+    abm->integrate();
 
-  abm->decref();
+    // Write Solution
+    char fname[128];
+    sprintf(fname, "osc-abm-order%d.dat", k);
+    abm->writeSolution(fname);
+
+    abm->decref();
+  }
 
   //-----------------------------------------------------------------//
   //                    Test NBG Scheme                             //
@@ -142,7 +162,7 @@ int main( int argc, char *argv[] ){
 
   // Integrate and write solution to file
   nbg->integrate();
-  nbg->writeSolution("osc-nbg.dat");
+  nbg->writeSolution("osc-nbg-order2.dat");
 
   nbg->decref();
 
