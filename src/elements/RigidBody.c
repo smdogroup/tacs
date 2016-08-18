@@ -56,9 +56,11 @@ void writeErrorComponents( FILE * fp, const char * descript,
 /*
   A reference coordinate frame
 
-  This code generates a reference frame from three vectors.  The
+  This code generates a reference frame from three vectors. The
   vectors define a primary direction and a secondary direction which
-  are used to three orthonormal/right-handed vectors.
+  are used to three orthonormal/right-handed vectors. These position
+  vectors must be specified with reference to a global reference
+  frame.
 
   input:
   r0:    the base point of the coordinate frame
@@ -95,13 +97,17 @@ void TACSRefFrame::getRotation( const TacsScalar **_C ){
 
 /*
   Update the coordinate frame to reflect any changes to the vectors
-  that form the basis of the initial transformation matrix. 
+  that form the basis of the initial transformation matrix.
 
   This should be called once during the initial condition
   calculation. This will enable the modification of reference frames
   based solely on moving points.
 */
 void TACSRefFrame::initialize(){
+  //-----------------------------------------------------------------//
+  // Setup the reference frame
+  //-----------------------------------------------------------------//
+
   // Compute the initial position based on v1
   const TacsScalar *x0, *x1, *x2;
   r0->getVector(&x0);
@@ -141,10 +147,15 @@ void TACSRefFrame::initialize(){
   C[4] = invC2norm*s2[1];
   C[5] = invC2norm*s2[2];
 
-  // Compute the third basis vector
+  // Compute the third basis vector (stored as the third row in
+  // rotation matrix). We use compute handed dextral set of basis
+  // vectors.
   crossProduct(1.0, &C[0], &C[3], &C[6]);
 
+  //-----------------------------------------------------------------//
   // Code to compute the derivative
+  //-----------------------------------------------------------------//
+
   // The derivative of C1 w.r.t. d1 = (x1 - x0)
   vecNormDeriv(C1norm, d1, dC1d1);
 
@@ -191,7 +202,8 @@ void TACSRefFrame::initialize(){
 
 /*
   Set the design variables into the three points which define the
-  reference frame.
+  reference frame and recompute the rotation matrix with new set of
+  design varaibles
 
   input:
   dvs:     the design variable values
@@ -199,9 +211,12 @@ void TACSRefFrame::initialize(){
 */
 void TACSRefFrame::setDesignVars( const TacsScalar *dvs, 
 				  int numDVs ){
+  // Set the design varibles
   r0->setDesignVars(dvs, numDVs);
   r1->setDesignVars(dvs, numDVs);
   r2->setDesignVars(dvs, numDVs);
+
+  // Recompute the rotation matrix and other variables
   initialize();
 }
 
@@ -403,9 +418,9 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
 
   // Copy over the initial vectors. Note that these vectors
   // are in the global reference frame.
-  gvec = _gvec;
-  rInit = _rInit;
-  vInit = _vInit;
+  gvec      = _gvec;
+  rInit     = _rInit;
+  vInit     = _vInit;
   omegaInit = _omegaInit;
 
   // Increment the reference counts for things
@@ -415,7 +430,7 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
   vInit->incref();
   omegaInit->incref();
 
-  // Set the design variable numbers for the inertial properties
+  // Initialize the design variable numbers for the inertial properties
   massDV = -1;
   cDV[0] = cDV[1] = cDV[2] = -1;
   JDV[0] = JDV[1] = JDV[2] = 
@@ -478,7 +493,7 @@ void TACSRigidBody::setDesignVarNums( int _massDV,
     cDV[1] = _cDV[1];
     cDV[2] = _cDV[2];
   }
-  if (_JDV){
+ if (_JDV){
     JDV[0] = _JDV[0];
     JDV[1] = _JDV[1];
     JDV[2] = _JDV[2];
@@ -637,9 +652,6 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   // Set eta as 1
   vars[3] = 1.0;
 
-  // What about rotation? (epsx, epsy, epzz) // Need to compute?
-  //vars[4] = ;
-  
   // What about lambda?
   vars[7] = 1.0;
 
@@ -661,9 +673,6 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   dvars[4] = w[0];
   dvars[5] = w[1];
   dvars[6] = w[2];
-
-  // What about dlambda?
-  dvars[7] = 1.0;  
 }
 
 /*
