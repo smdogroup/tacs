@@ -211,7 +211,6 @@ void PMat::addDiag( TacsScalar alpha ){
 */
 void PMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
-
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
 

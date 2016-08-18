@@ -8,6 +8,64 @@
   Not for commercial purposes.
 */
 
+
+/*!
+  TACSVarMap
+  
+  Defines the variable map from the parallel distribution of variables
+  to each process
+
+  input:
+  comm:  this object is defined over all processors in this comm
+  N:     the number of nodes for this processor
+*/
+TACSVarMap::TACSVarMap( MPI_Comm _comm, int _N ){
+  comm = _comm;
+  
+  // Get the communicator size
+  int mpi_size;
+  MPI_Comm_size(comm, &mpi_size);
+
+  // The ownership ranges for all processes
+  N = _N;
+  ownerRange = new int[ mpi_size+1 ];
+  memset(ownerRange, 0, (mpi_size+1)*sizeof(int));
+
+  // Get the number of variables 
+  ownerRange[0] = 0;
+  MPI_Allgather(&N, 1, MPI_INT, &ownerRange[1], 1, MPI_INT, comm);
+
+  // Set the ownership values so that they range over
+  // the owned unknown node numbers
+  for ( int i = 0; i < mpi_size; i++ ){    
+    ownerRange[i+1] += ownerRange[i];
+  }
+}
+
+TACSVarMap::~TACSVarMap(){
+  delete [] ownerRange;
+}
+
+/*
+  Get the number of nodes on this processor
+*/
+int TACSVarMap::getDim(){ 
+  return N; 
+}
+
+/*
+  Get the MPI communicator
+*/
+MPI_Comm TACSVarMap::getMPIComm(){ return comm; }
+
+/*
+  Get the ownership range for this processor
+*/
+void TACSVarMap::getOwnerRange( const int ** _ownerRange ){
+  *_ownerRange = ownerRange;
+}  
+
+
 /*!
   BVecIndices class definitions
 */
@@ -94,7 +152,7 @@ int TACSBVecIndices::isSorted(){ return issorted; }
 */
 void TACSBVecIndices::setUpInverse(){ 
   if (!index_args){ 
-    index_args = new int[ nindices+1 ]; 
+    index_args = new int[ nindices ]; 
     for ( int k = 0; k < nindices; k++ ){ 
       index_args[k] = k; 
     }
@@ -192,45 +250,45 @@ int TACSBVecIndices::findIndex( int var ){
 */
 void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
 		     TacsScalar * x, TacsScalar * y, 
-		     TACSBVecDistribute::OpType op );
+		     TACSBVecOperation op );
 void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
 		     TacsScalar * x, TacsScalar * y, 
-		     TACSBVecDistribute::OpType op );
+		     TACSBVecOperation op );
 
 void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 
 void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 
 void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 
 void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 
 void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op );
+		      TACSBVecOperation op );
 
 /*! 
   Distribute vector components to other processors.
@@ -374,12 +432,8 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
   // Allocate an array to store the requests from each processor
   req_vars = new int[ req_ptr[mpi_size] ];
 
-  // This is required b/c some OpenMPI implementations suck and don't
-  // declare things const void* where they should
-  int *ext_vars_nonconst = const_cast<int*>(ext_vars);
-
   // Transmit the external variables to the owners
-  MPI_Alltoallv(ext_vars_nonconst, ext_count, full_ext_ptr, MPI_INT, 
+  MPI_Alltoallv((void*)ext_vars, ext_count, full_ext_ptr, MPI_INT, 
 		req_vars, req_count, full_req_ptr, MPI_INT, comm);
 
   // Delete the requesting processors
@@ -472,15 +526,23 @@ TACSBVecDistCtx *TACSBVecDistribute::createCtx( int bsize ){
   return ctx;
 }
 
-
+/*
+  Get the number of indices
+*/
 int TACSBVecDistribute::getDim(){ 
   return bindex->getNumIndices(); 
 }
 
+/*
+  Get the communicator
+*/
 MPI_Comm TACSBVecDistribute::getMPIComm(){ 
   return comm; 
 }
 
+/*
+  Get the index list
+*/
 TACSBVecIndices * TACSBVecDistribute::getIndices(){ 
   return bindex; 
 }
@@ -534,7 +596,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
 
   // Copy the global values to their requesters
   bgetvars(bsize, req_ptr[n_req_proc], req_vars, lower,
-           global, reqvals, INSERT);
+           global, reqvals, INSERT_VALUES);
 
   for ( int i = 0; i < n_req_proc; i++ ){
     // Initiate the sends and receives
@@ -556,7 +618,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
         int size = ext_ptr[i+1] - start;
 
         bgetvars(bsize, size, &ext_vars[start], lower,
-                 global, &local[bsize*start], INSERT);
+                 global, &local[bsize*start], INSERT_VALUES);
       }
       else {
 	int start = bsize*ext_ptr[i];
@@ -577,7 +639,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
         int size = ext_ptr[i] - start;
 
         bgetvars(bsize, size, &ext_vars[start], lower,
-                 global, &ext_sorted_vals[bsize*start], INSERT);
+                 global, &ext_sorted_vals[bsize*start], INSERT_VALUES);
       }
       else {
 	int start = bsize*ext_ptr[i];
@@ -612,7 +674,7 @@ void TACSBVecDistribute::endForward( TACSBVecDistCtx *ctx,
 
     // Copy over the values from the sorted to the unsorted array
     bgetvars(ctx->bsize, nvars_unsorted, ext_unsorted, 0,
-             ctx->ext_sorted_vals, local, INSERT);
+             ctx->ext_sorted_vals, local, INSERT_VALUES);
   }
 }
 
@@ -628,7 +690,7 @@ void TACSBVecDistribute::endForward( TACSBVecDistCtx *ctx,
 void TACSBVecDistribute::beginReverse( TACSBVecDistCtx *ctx,
                                        TacsScalar *local,
                                        TacsScalar *global, 
-                                       enum OpType op ){
+                                       TACSBVecOperation op ){
   if (this != ctx->me){
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
     return;
@@ -701,7 +763,7 @@ void TACSBVecDistribute::beginReverse( TACSBVecDistCtx *ctx,
 void TACSBVecDistribute::endReverse( TACSBVecDistCtx *ctx,
                                      TacsScalar *local, 
                                      TacsScalar *global,
-                                     enum OpType op ){
+                                     TACSBVecOperation op ){
   if (this != ctx->me){
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
     return;
@@ -776,8 +838,8 @@ void TACSBVecDistribute::initImpl( int bsize ){
 */
 void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
 		     TacsScalar * x, TacsScalar * y, 
-		     TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		     TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
@@ -806,8 +868,8 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
 */
 void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
 		     TacsScalar * x, TacsScalar * y, 
-		     TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		     TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
@@ -834,8 +896,8 @@ void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
 // ---------------
 void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       *y = x[v];
@@ -853,8 +915,8 @@ void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
 
 void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       y[v] = *x;
@@ -875,8 +937,8 @@ void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
 // ---------------
 void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[0] = x[v];
@@ -896,8 +958,8 @@ void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
 
 void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[v  ] = x[0];
@@ -920,8 +982,8 @@ void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
 // ---------------
 void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[0] = x[v];
@@ -943,8 +1005,8 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
 
 void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[v  ] = x[0];
@@ -969,8 +1031,8 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
 // ---------------
 void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[0] = x[v];
@@ -996,8 +1058,8 @@ void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
 
 void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[v  ] = x[0];
@@ -1026,8 +1088,8 @@ void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
 // ---------------
 void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[0] = x[v];
@@ -1055,8 +1117,8 @@ void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
 
 void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
-		      TACSBVecDistribute::OpType op ){
-  if (op == TACSBVecDistribute::INSERT){
+		      TACSBVecOperation op ){
+  if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[v  ] = x[0];

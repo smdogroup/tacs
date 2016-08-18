@@ -9,12 +9,14 @@ include ../TACS_Common.mk
 
 CXX_OBJS = TACSObject.o \
 	TACSAssembler.o \
-	TACSAssembler_thread.o \
 	TACSAuxElements.o \
 	TACSCreator.o \
-	TACSMg.o \
-	TACSBuckling.o \
-	TACSIntegrator.o
+	TACSMg.o
+
+#	TACSBuckling.o
+#	TACSIntegrator.o
+#	TACSAssembler_thread.o
+
 
 DIR=${TACS_DIR}/src
 

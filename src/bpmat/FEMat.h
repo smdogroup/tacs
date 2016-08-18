@@ -35,27 +35,27 @@
 */
 class FEMat : public ScMat {
  public:
-  FEMat( TACSThreadInfo * thread_info, VarMap * _rmap, 
+  FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap, 
 	 int bsize, int nlocal_vars, 
-         const int * rowp, const int * cols, 
-	 BVecIndices * b_local_indices, BVecDistribute * _b_map, 
-         BVecIndices * c_local_indices, BVecDistribute * _c_map,
-	 BCMap * _bcs = NULL );
+         const int *rowp, const int *cols, 
+	 TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
+         TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map,
+	 TACSBcMap *_bcs=NULL );
   ~FEMat();
     
   // Functions for setting values in the matrix
   // ------------------------------------------
-  void addValues( int nrow, const int * row, int ncol, const int * col,
-                  int nv, int mv, const TacsScalar * values );  
+  void addValues( int nrow, const int *row, int ncol, const int *col,
+                  int nv, int mv, const TacsScalar *values );  
   void addWeightValues( int nvars, const int *varp, const int *vars,
 			const TacsScalar *weights,
 			int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=NORMAL );
   void applyBCs();
-  TACSVec * createVec();  
+  TACSVec *createVec();  
  
- private:  
-  BCMap * bcs; // Boundary conditions
+ private:
+  TACSBcMap *bcs; // Boundary conditions
   int Nb, Nc;  // Size of B/C
 };
 

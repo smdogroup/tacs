@@ -2591,15 +2591,14 @@ int BCSRMat::isEqual( BCSRMat * mat, double tol ){
   
   TacsScalar * a = new TacsScalar[ bsize*nrows ];
   TacsScalar * b = new TacsScalar[ bsize*nrows ];
-  
   TacsScalar * x = new TacsScalar[ bsize*ncols ];
 
   for ( int i = 0; i < bsize*ncols; i++ ){
     x[i] = (2.0*rand())/(RAND_MAX - 1.0) - 1.0;
   }
 
-  mat->mult( x, a );
-  mult( x, b );
+  mat->mult(x, a);
+  mult(x, b);
 
   TacsScalar norm = 0.0;
   for ( int i = 0; i < bsize*nrows; i++ ){

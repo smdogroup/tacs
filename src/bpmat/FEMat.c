@@ -78,12 +78,12 @@
   However, the matrix A is provided in a CSR format. This complicates
   the code somewhat.
 */
-FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap, 
+FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap, 
               int bsize, int nlocal_vars, 
-              const int * rowp, const int * cols, 
-              BVecIndices * b_local_indices, BVecDistribute * _b_map, 
-              BVecIndices * c_local_indices, BVecDistribute * _c_map,
-	      BCMap * _bcs ){
+              const int *rowp, const int *cols, 
+              TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
+              TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map,
+	      TACSBcMap *_bcs ){
   bcs = _bcs;
   if (bcs){ bcs->incref(); }
 
@@ -92,10 +92,9 @@ FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap,
   MPI_Comm_rank(_rmap->getMPIComm(), &rank);
 
   // bi : i in B -> bi[i] in A
-  int *bi, *ci;
+  const int *bi, *ci;
   b_local_indices->getIndices(&bi);
   c_local_indices->getIndices(&ci);
-
   int Nb = b_local_indices->getNumIndices();
   int Nc = c_local_indices->getNumIndices();
 
@@ -112,20 +111,18 @@ FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap,
   for ( int i = 0; i < nlocal_vars; i++ ){
     binv[i] = cinv[i] = -1;
   }
-
   for ( int i = 0; i < Nb; i++ ){
     binv[bi[i]] = i;
   }
-
   for ( int i = 0; i < Nc; i++ ){
     cinv[ci[i]] = i;
   }
 
   // Count up the size of the b matrix
-  int * browp = new int[ Nb+1 ];
-  int * erowp = new int[ Nb+1 ];
-  int * frowp = new int[ Nc+1 ];
-  int * crowp = new int[ Nc+1 ];
+  int *browp = new int[ Nb+1 ];
+  int *erowp = new int[ Nb+1 ];
+  int *frowp = new int[ Nc+1 ];
+  int *crowp = new int[ Nc+1 ];
   memset(browp, 0, (Nb+1)*sizeof(int));
   memset(erowp, 0, (Nb+1)*sizeof(int));
   memset(frowp, 0, (Nc+1)*sizeof(int));
@@ -184,10 +181,10 @@ FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap,
   // Now, prepare to add in all the indices.
   // This modifies the pointers *rowp, these
   // will be adjusted back after the computation
-  int * bcols = new int[ browp[Nb] ];
-  int * ecols = new int[ erowp[Nb] ];
-  int * fcols = new int[ frowp[Nc] ];
-  int * ccols = new int[ crowp[Nc] ];
+  int *bcols = new int[ browp[Nb] ];
+  int *ecols = new int[ erowp[Nb] ];
+  int *fcols = new int[ frowp[Nc] ];
+  int *ccols = new int[ crowp[Nc] ];
 
   // Count up the size of the different matrices
   for ( int i = 0; i < Nb; i++ ){
@@ -283,14 +280,14 @@ FEMat::FEMat( TACSThreadInfo * thread_info, VarMap * _rmap,
 
   // Create the block matrices
   MPI_Comm comm = _rmap->getMPIComm();
-  BCSRMat * _B = new BCSRMat(comm, thread_info, bsize, Nb, Nb, &browp, &bcols);
-  BCSRMat * _E = new BCSRMat(comm, thread_info, bsize, Nb, Nc, &erowp, &ecols);
-  BCSRMat * _F = new BCSRMat(comm, thread_info, bsize, Nc, Nb, &frowp, &fcols);
-  BCSRMat * _C = new BCSRMat(comm, thread_info, bsize, Nc, Nc, &crowp, &ccols);
+  BCSRMat *_B = new BCSRMat(comm, thread_info, bsize, Nb, Nb, &browp, &bcols);
+  BCSRMat *_E = new BCSRMat(comm, thread_info, bsize, Nb, Nc, &erowp, &ecols);
+  BCSRMat *_F = new BCSRMat(comm, thread_info, bsize, Nc, Nb, &frowp, &fcols);
+  BCSRMat *_C = new BCSRMat(comm, thread_info, bsize, Nc, Nc, &crowp, &ccols);
 
   // Insure that the inverse look-up has been allocated
-  (_b_map->getBVecIndices())->setUpInverse();
-  (_c_map->getBVecIndices())->setUpInverse(); 
+  (_b_map->getIndices())->setUpInverse();
+  (_c_map->getIndices())->setUpInverse(); 
 
   // Initialize the underlying class
   init(_rmap, _B, _E, _F, _C, _b_map, _c_map);
@@ -312,12 +309,12 @@ FEMat::~FEMat(){
   statically allocated array, otherwise dynamically allocate temporary
   arrays to store the indices.  
 */
-void FEMat::addValues( int nrow, const int * row,
-		       int ncol, const int * col,  
-		       int nv, int mv, const TacsScalar * values ){ 
+void FEMat::addValues( int nrow, const int *row,
+		       int ncol, const int *col,  
+		       int nv, int mv, const TacsScalar *values ){ 
   int bsize = B->getBlockSize();
-  BVecIndices * bindx = b_map->getBVecIndices();
-  BVecIndices * cindx = c_map->getBVecIndices();
+  TACSBVecIndices *bindx = b_map->getIndices();
+  TACSBVecIndices *cindx = c_map->getIndices();
   
   // Set up storage for the values of the local variable numbers
   int array[256];
@@ -425,8 +422,8 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
   int bsize = B->getBlockSize();
 
   // Get the index sets corresponding to the B/C matrices
-  BVecIndices *bindx = b_map->getBVecIndices();
-  BVecIndices *cindx = c_map->getBVecIndices();
+  TACSBVecIndices *bindx = b_map->getIndices();
+  TACSBVecIndices *cindx = c_map->getIndices();
   
   // The number of variables we'll have to convert = row dim(W^{T})
   int n = varp[nvars];
@@ -525,8 +522,8 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
 /*
   Create a vector that is compatible with this matrix
 */
-TACSVec * FEMat::createVec(){
-  return new BVec(rmap, B->getBlockSize(), bcs);
+TACSVec *FEMat::createVec(){
+  return new TACSBVec(rmap, B->getBlockSize(), bcs);
 }
 
 /*
@@ -536,12 +533,14 @@ TACSVec * FEMat::createVec(){
 */
 void FEMat::applyBCs(){
   if (bcs){
-    BVecIndices * bindx = b_map->getBVecIndices();
-    BVecIndices * cindx = c_map->getBVecIndices();
+    TACSBVecIndices *bindx = b_map->getIndices();
+    TACSBVecIndices *cindx = c_map->getIndices();
+    
+    int mpiRank;
+    MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
 
-    const int * ownerRange;
-    int mpiRank, mpiSize;
-    rmap->getOwnerRange(&ownerRange, &mpiRank, &mpiSize);
+    const int *ownerRange;
+    rmap->getOwnerRange(&ownerRange);
 
     // apply the boundary conditions
     const int *local, *global, *var_ptr, *vars;

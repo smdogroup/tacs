@@ -8,9 +8,35 @@
   Not for commercial purposes.
 */
 
-class TACSVarMap;
+#include "TACSObject.h"
 
-#include "BVec.h"
+enum TACSBVecOperation { INSERT_VALUES, ADD_VALUES };
+
+/*
+  Declare the TACSBVecDistCtx class
+*/
+class TACSBVecDistCtx;
+
+/*!
+  Variable map for the parallel distribution of a vector
+
+  This class defines the mapping between the variables and processors
+  and should be instantiated once for each analysis model.
+*/
+class TACSVarMap : public TACSObject {
+ public:
+  TACSVarMap( MPI_Comm _comm, int _N );
+  ~TACSVarMap();
+
+  int getDim();
+  MPI_Comm getMPIComm();
+  void getOwnerRange( const int **_ownerRange );
+
+ private:
+  MPI_Comm comm; // The MPI communicator
+  int *ownerRange; // The ownership range of the variables
+  int N; // Number of nodes on this processor
+};
 
 /*
   A class containing a pointer to an array of indices.  These indices
@@ -45,11 +71,6 @@ class TACSBVecIndices : public TACSObject {
   int *index_args;
 };
 
-/*
-  Declare the TACSBVecDistCtx class
-*/
-class TACSBVecDistCtx;
-
 /*!
   Distribute vector components to other processors and collect 
   contributions from other processors.
@@ -75,7 +96,6 @@ class TACSBVecDistCtx;
 */
 class TACSBVecDistribute : public TACSObject {
  public:
-  enum OpType { INSERT, ADD };
   TACSBVecDistribute( TACSVarMap *rmap, TACSBVecIndices *bindex );
   ~TACSBVecDistribute();
 
@@ -100,10 +120,10 @@ class TACSBVecDistribute : public TACSObject {
   // ---------------------------------------
   void beginReverse( TACSBVecDistCtx *ctx,
                      TacsScalar *local, TacsScalar *global, 
-                     enum OpType op=ADD ); 
+                     TACSBVecOperation op=ADD_VALUES );
   void endReverse( TACSBVecDistCtx *ctx,
                    TacsScalar *local, TacsScalar *global,
-                   enum OpType op=ADD );    
+                   TACSBVecOperation op=ADD_VALUES );
 
   MPI_Comm getMPIComm();
   const char *TACSObjectName();
@@ -114,10 +134,10 @@ class TACSBVecDistribute : public TACSObject {
   void initImpl( int bsize );
   void (*bgetvars)( int bsize, int nvars, const int *vars, int lower,
 		    TacsScalar *x, TacsScalar *y, 
-		    TACSBVecDistribute::OpType op );
+		    TACSBVecOperation op );
   void (*bsetvars)( int bsize, int nvars, const int *vars, int lower,
 		    TacsScalar *x, TacsScalar *y, 
-		    TACSBVecDistribute::OpType op );
+		    TACSBVecOperation op );
 
   // The communicator and the MPI data
   MPI_Comm comm;
@@ -163,6 +183,14 @@ class TACSBVecDistribute : public TACSObject {
   data is allocated correctly.
 */
 class TACSBVecDistCtx : public TACSObject {
+ public:
+  ~TACSBVecDistCtx(){
+    if (ext_sorted_vals){ delete [] ext_sorted_vals; }
+    if (reqvals){ delete [] reqvals;  }
+    if (sends){ delete [] sends; }
+    if (recvs){ delete [] recvs; }
+  }
+
  private:
   TACSBVecDistCtx( TACSBVecDistribute *_me, 
                    int _bsize ){
@@ -172,12 +200,6 @@ class TACSBVecDistCtx : public TACSObject {
     reqvals = NULL;
     sends = NULL;
     recvs = NULL;
-  }
-  ~TACSBVecDistCtx(){
-    if (ext_sorted_vals){ delete [] ext_sorted_vals; }
-    if (reqvals){ delete [] reqvals;  }
-    if (sends){ delete [] sends; }
-    if (recvs){ delete [] recvs; }
   }
 
   // The block size for this context

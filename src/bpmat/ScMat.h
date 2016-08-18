@@ -142,6 +142,8 @@ class PcScMat : public TACSPc {
 
   TACSBVecDistribute *b_map; // The map for the local entries
   TACSBVecDistribute *c_map; // The map for the Schur complement
+  TACSBVecDistCtx *b_ctx;
+  TACSBVecDistCtx *c_ctx;
 
   int monitor_factor; // Monitor the factorization time
   int monitor_back_solve; // Monitor the back-solves
@@ -158,12 +160,14 @@ class PcScMat : public TACSPc {
   // (in xlocal/ylocal) to the global Schur complement system (scmat).
   TACSVarMap *schur_map; // The variable map associated with Sc
   TACSBVecDistribute *schur_dist; // The map that distributes the Schur complement
+  TACSBVecDistCtx *schur_ctx; // The context for the distribution object
   int use_pdmat_alltoall; // Use the Alltoall version for matrix assembly
 
   // This object defines a mapping between the variables in the
   // global vectors (from ScMat - in/out in applyFactor) and the 
   // global Schur complement system (scmat).
   TACSBVecDistribute *tacs_schur_dist;
+  TACSBVecDistCtx *tacs_schur_ctx;
 
   TacsScalar *xlocal; // The local variables 
   TacsScalar *yinterface; // The interface variables

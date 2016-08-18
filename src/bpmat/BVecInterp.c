@@ -956,13 +956,13 @@ void TACSBVecInterp::multTranspose( TACSBVec *inVec, TACSBVec *outVec ){
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);
 
   // Initialize communication to the off-processor part
-  vecDist->beginReverse(ctx, x_ext, out, TACSBVecDistribute::ADD);
+  vecDist->beginReverse(ctx, x_ext, out, ADD_VALUES);
 
   // Multiply the on-processor part
   multtransadd(bsize, N, rowp, cols, weights, in, out);
   
   // Finalize the communication to the off-processor part
-  vecDist->endReverse(ctx, x_ext, out, TACSBVecDistribute::ADD);
+  vecDist->endReverse(ctx, x_ext, out, ADD_VALUES);
 }
 
 /*
@@ -1003,13 +1003,13 @@ void TACSBVecInterp::multTransposeAdd( TACSBVec *inVec, TACSBVec *addVec,
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);
 
   // Initialize communication to the off-processor part
-  vecDist->beginReverse(ctx, x_ext, out, TACSBVecDistribute::ADD);
+  vecDist->beginReverse(ctx, x_ext, out, ADD_VALUES);
 
   // Multiply the on-processor part
   multtransadd(bsize, N, rowp, cols, weights, in, out);
   
   // Finalize the communication to the off-processor part
-  vecDist->endReverse(ctx, x_ext, out, TACSBVecDistribute::ADD);
+  vecDist->endReverse(ctx, x_ext, out, ADD_VALUES);
 }
 
 /*

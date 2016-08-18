@@ -186,7 +186,7 @@ void ScMat::copyValues( TACSMat *mat ){
   // Safely down-cast the matrix to an ScMat - returns NULL
   // if this is not possible
   ScMat *smat = dynamic_cast<ScMat*>(mat);
-  if (smat ){
+  if (smat){
     B->copyValues(smat->B);
     E->copyValues(smat->E);
     F->copyValues(smat->F);
@@ -215,7 +215,7 @@ void ScMat::scale( TacsScalar alpha ){
 */
 void ScMat::axpy( TacsScalar alpha, TACSMat *mat ){
   ScMat *smat = dynamic_cast<ScMat*>(mat);
-  if (smat ){
+  if (smat){
     B->axpy(alpha, smat->B);
     E->axpy(alpha, smat->E);
     F->axpy(alpha, smat->F);
@@ -231,7 +231,7 @@ void ScMat::axpy( TacsScalar alpha, TACSMat *mat ){
 */
 void ScMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
   ScMat *smat = dynamic_cast<ScMat*>(mat);
-  if (smat ){
+  if (smat){
     B->axpby(alpha, beta, smat->B);
     E->axpby(alpha, beta, smat->E);
     F->axpby(alpha, beta, smat->F);
@@ -301,15 +301,13 @@ void ScMat::mult( TACSVec *txvec, TACSVec *tyvec ){
                &ylocal[local_offset], &ylocal[local_offset]);
     
     // Start sending the values back to y
-    c_map->beginReverse(c_ctx, &ylocal[local_offset], 
-                        y, TACSBVecDistribute::ADD);
-    
+    c_map->beginReverse(c_ctx, &ylocal[local_offset], y, ADD_VALUES);
     E->multAdd(&xlocal[local_offset], ylocal, ylocal);
 
     // Finish transmitting the values back to y
-    b_map->beginReverse(b_ctx, ylocal, y, TACSBVecDistribute::INSERT);
-    c_map->endReverse(c_ctx, &ylocal[local_offset], y, TACSBVecDistribute::ADD);
-    b_map->endReverse(b_ctx, ylocal, y, TACSBVecDistribute::INSERT);
+    b_map->beginReverse(b_ctx, ylocal, y, INSERT_VALUES);
+    c_map->endReverse(c_ctx, &ylocal[local_offset], y, ADD_VALUES);
+    b_map->endReverse(b_ctx, ylocal, y, INSERT_VALUES);
   }
   else {
     fprintf(stderr, "ScMat type error: Input/output must be TACSBVec\n");
@@ -359,18 +357,24 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   monitor_back_solve = 0;
 
   // By default use the less-memory intensive option 
-  // (but this may be slower!)
   use_pdmat_alltoall = 0; 
 
   // Perform the symbolic factorization of the [ B, E; F, C ] matrix
   int use_full_schur = 1; // Use the exact F * B^{-1} * E 
-  // int use_full_schur = 0; // Use an approximation - discarding elements
+  
+  // Get the block size
+  int bsize = B->getBlockSize();
 
   b_map = smat->getLocalMap();
-  b_map->incref();
-
   c_map = smat->getSchurMap();
+  b_map->incref();
   c_map->incref();
+
+  // Create the contexts
+  c_ctx = c_map->createCtx(bsize);
+  b_ctx = b_map->createCtx(bsize);
+  c_ctx->incref();
+  b_ctx->incref();
 
   // Symbolically calculate Sc = C - F * B^{-1} * E
   TACSVarMap *rmap = smat->getVarMap();
@@ -422,7 +426,7 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   }
 
   // Gather all the global Schur variables to the root process
-  MPI_Gatherv(global_schur_vars, nglobal_schur, MPI_INT,
+  MPI_Gatherv((void*)global_schur_vars, nglobal_schur, MPI_INT,
               global_schur_root, global_schur_count, global_schur_ptr,
               MPI_INT, root, comm);
 
@@ -490,16 +494,20 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
 
   // Set up information required for the global Schur complement matrix
   // Set the variable map
-  schur_map = new VarMap(comm, nlocal_schur);
+  schur_map = new TACSVarMap(comm, nlocal_schur);
   schur_map->incref();
 
   // Create the index set for the new Schur complement variables
   TACSBVecIndices *schur_index =
     new TACSBVecIndices(&new_global_schur_vars, nglobal_schur);
   
-  // Create the Schur complement matrix
+  // Create the Schur complement variable distribution object
   schur_dist = new TACSBVecDistribute(schur_map, schur_index);
   schur_dist->incref();
+  
+  // Create the Schur complement context
+  schur_ctx = schur_dist->createCtx(bsize);
+  schur_ctx->incref();
 
   TACSBVecIndices *tacs_schur_index = 
     new TACSBVecIndices(&tacs_schur_vars, nlocal_schur);
@@ -508,6 +516,10 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   tacs_schur_dist = new TACSBVecDistribute(smat->getVarMap(), 
                                            tacs_schur_index);
   tacs_schur_dist->incref();
+
+  // Create the context for the Schur complement in the global indices
+  tacs_schur_ctx = tacs_schur_dist->createCtx(bsize);
+  tacs_schur_ctx->incref();
 
   // Retrieve the non-zero pattern from the local Schur complement
   int bs, nschur_vars;
@@ -519,14 +531,13 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   // Determine the size of the global Schur complement
   int M = nunique_schur;
   int N = nunique_schur;
-  schur_index->getIndices(&new_global_schur_vars);
+  schur_index->getIndices(&global_schur_vars);
 
   // Determine the number of blocks to use per block-cylic block
-  int bsize = B->getBlockSize();
   int csr_blocks_per_block = 36/bsize;
 
   // Create the global block-cyclic Schur complement matrix
-  pdmat = new PDMat(comm, M, N, bsize, new_global_schur_vars, 
+  pdmat = new PDMat(comm, M, N, bsize, global_schur_vars, 
                     nschur_vars, rowp, cols, csr_blocks_per_block,
                     reorder_schur_complement);
   pdmat->incref();
@@ -571,6 +582,12 @@ PcScMat::~PcScMat(){
   schur_dist->decref();
   tacs_schur_dist->decref();
 
+  // Free the contexts
+  c_ctx->decref();
+  b_ctx->decref();
+  schur_ctx->decref();
+  tacs_schur_ctx->decref();
+
   // Free the global Schur complement matrix
   pdmat->decref();
 
@@ -591,42 +608,51 @@ PcScMat::~PcScMat(){
   populated until this time.  
 */
 void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
-  TACSBVec *in, *out;
-  in = dynamic_cast<TACSBVec*>(tin);
-  out = dynamic_cast<TACSBVec*>(tout);
+  TACSBVec *invec, *outvec;
+  invec = dynamic_cast<TACSBVec*>(tin);
+  outvec = dynamic_cast<TACSBVec*>(tout);
 
-  if (in && out){
+  if (invec && outvec){
     // Test two methods of computing the effect of the Schur complement
-    out->zeroEntries();
+    outvec->zeroEntries();
     
+    // Get the array
+    TacsScalar *in, *out;
+    invec->getArray(&in);
+    outvec->getArray(&out);
+
+    // Allocate a temporary array to store c-entries
     int bsize = B->getBlockSize();
     int c_size = bsize*c_map->getDim();
     TacsScalar *temp = new TacsScalar[c_size];
-    c_map->beginForward(in, yinterface);
-    c_map->endForward(in, yinterface);
-    
-    Sc->mult(yinterface, temp);
-    
-    c_map->beginReverse(temp, out, TACSBVecDistribute::ADD);
-    c_map->endReverse(temp, out, TACSBVecDistribute::ADD);
+
+    // Comput the schur complement product
+    c_map->beginForward(c_ctx, in, yinterface);
+    c_map->endForward(c_ctx, in, yinterface);
+    Sc->mult(yinterface, temp);    
+    c_map->beginReverse(c_ctx, temp, out, ADD_VALUES);
+    c_map->endReverse(c_ctx, temp, out, ADD_VALUES);
     
     delete [] temp;
     
-    schur_dist->beginReverse(yinterface, yschur, TACSBVecDistribute::INSERT);
-    schur_dist->endReverse(yinterface, yschur, TACSBVecDistribute::INSERT);
+    // Compute the schur complement product a second way
+    TacsScalar *y;
+    int y_size =  yschur->getArray(&y);
+    schur_dist->beginReverse(schur_ctx, yinterface, 
+                             y, INSERT_VALUES);
+    schur_dist->endReverse(schur_ctx, yinterface, 
+                           y, INSERT_VALUES);
     
-    TacsScalar *y, *g;
-    int y_size = yschur->getArray(&y);
-    gschur->getArray(&g);
+    TacsScalar *g;
+    yschur->getArray(&y);
     pdmat->mult(y_size, y, g);
     
-    TacsScalar outnorm = out->norm();
+    TacsScalar outnorm = outvec->norm();
     TacsScalar gnorm = gschur->norm();
     
     // Now collect the elements directly using the tacs_schur_dist object
-    yschur->getArray(&y);
-    tacs_schur_dist->beginForward(in, y);
-    tacs_schur_dist->endForward(in, y);
+    tacs_schur_dist->beginForward(tacs_schur_ctx, in, y);
+    tacs_schur_dist->endForward(tacs_schur_ctx, in, y);
     
     pdmat->mult(y_size, y, g);
     TacsScalar gnorm2 = gschur->norm(); 
@@ -753,7 +779,7 @@ void PcScMat::factor(){
 
   // Retrieve the indices for the local Schur complement
   TACSBVecIndices *schur_index = schur_dist->getIndices();
-  int *sc_vars;
+  const int *sc_vars;
   schur_index->getIndices(&sc_vars);
 
   // Add the values into the global Schur complement matrix
@@ -796,7 +822,7 @@ void PcScMat::factor(){
   
   The following relationships hold:
 
-  x = B^{-1} (f - E y)
+  x = B^{-1}(f - E y)
   F B^{-1} (f - E y) + C y = g
 
   Collecting these, results in the Schur complement system:
@@ -827,11 +853,11 @@ void PcScMat::factor(){
 */
 void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
   // First, perform a safe down-cast from TACSVec to BVec
-  TACSBVec *in, *out;
-  in = dynamic_cast<TACSBVec*>(tin);
-  out = dynamic_cast<TACSBVec*>(tout);
+  TACSBVec *invec, *outvec;
+  invec = dynamic_cast<TACSBVec*>(tin);
+  outvec = dynamic_cast<TACSBVec*>(tout);
 
-  if (in && out){
+  if (invec && outvec){
     // Set the variables for the back-solve monitor
     double local_time = 0.0;
     double schur_time = 0.0;
@@ -839,15 +865,20 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     if (monitor_back_solve){
       local_time = -MPI_Wtime();
     }
+
+    // Get the input and output arrays
+    TacsScalar *in, *out;
+    invec->getArray(&in);
+    outvec->getArray(&out);
     
     // Pass g to the global Schur complement
     TacsScalar *g;
     int gschur_size = gschur->getArray(&g);
-    tacs_schur_dist->beginForward(in, g);
+    tacs_schur_dist->beginForward(tacs_schur_ctx, in, g);
 
     // Re-order the local variables into xlocal
-    b_map->beginForward(in, xlocal);
-    b_map->endForward(in, xlocal);
+    b_map->beginForward(b_ctx, in, xlocal);
+    b_map->endForward(b_ctx, in, xlocal);
 
     // xlocal = L^{-1} f 
     Bpc->applyLower(xlocal, xlocal);
@@ -858,11 +889,13 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     // Transmit yinterface to the Schur complement system
     // Pass F U^{-1} L^{-1} f to yschur
     yschur->zeroEntries();
-    schur_dist->beginReverse(yinterface, yschur, TACSBVecDistribute::ADD);
+    TacsScalar *y;
+    yschur->getArray(&y);
+    schur_dist->beginReverse(schur_ctx, yinterface, y, ADD_VALUES);
 
     // Finish accepting g from the global input vector
-    tacs_schur_dist->endForward(in, g);
-    schur_dist->endReverse(yinterface, yschur, TACSBVecDistribute::ADD); 
+    tacs_schur_dist->endForward(tacs_schur_ctx, in, g);
+    schur_dist->endReverse(schur_ctx, yinterface, y, ADD_VALUES);
     
     // Compute the right hand side: g - F U^{-1} L^{-1} f
     gschur->axpy(-1.0, yschur);
@@ -884,16 +917,15 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     yschur->copyValues(gschur);
 
     // Pass yschur solution back to the local variables
-    schur_dist->beginForward(yschur, yinterface);
+    schur_dist->beginForward(schur_ctx, y, yinterface);
     
     // Pass yschur also to the global variables
-    TacsScalar *y;
-    yschur->getArray(&y);
-    tacs_schur_dist->beginReverse(y, out, TACSBVecDistribute::INSERT);
+    tacs_schur_dist->beginReverse(tacs_schur_ctx, y, out, 
+                                  INSERT_VALUES);
     
     // Compute yinterface = yinterface - L^{-1} E y
     // Note: scale y, by -1 first 
-    schur_dist->endForward(yschur, yinterface);
+    schur_dist->endForward(schur_ctx, y, yinterface);
     int one = 1;
     int len = Bpc->getBlockSize()*c_map->getDim();
     TacsScalar alpha = -1.0; 
@@ -905,9 +937,10 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     // Compute xlocal = U^{-1} xlocal
     Bpc->applyUpper(xlocal, xlocal);
     
-    b_map->beginReverse(xlocal, out, TACSBVecDistribute::INSERT);
-    tacs_schur_dist->endReverse(y, out, TACSBVecDistribute::INSERT);
-    b_map->endReverse(xlocal, out, TACSBVecDistribute::INSERT);    
+    b_map->beginReverse(b_ctx, xlocal, out, INSERT_VALUES);
+    tacs_schur_dist->endReverse(tacs_schur_ctx, y, out, 
+                                INSERT_VALUES);
+    b_map->endReverse(b_ctx, xlocal, out, INSERT_VALUES);
     
     if (monitor_back_solve){
       local_time += MPI_Wtime();
