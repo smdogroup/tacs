@@ -49,7 +49,7 @@ class TACSIntegrator : public TACSObject {
   void setRelTol( double _rtol );
   void setAbsTol( double _atol );
   void setMaxNewtonIters( int _max_newton_iters );
-  void setPrintLevel( int _print_level, char* logfilename );
+  void setPrintLevel( int _print_level, char* logfilename = NULL);
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
 
@@ -100,7 +100,7 @@ class TACSIntegrator : public TACSObject {
   // suitable for most integration schemes is provided in this base
   // class itself.
   // ---------------------------------------------------------------
-  void integrate();
+  virtual void integrate();
  protected:
   // Approximate derivatives using DIRK formulae
   //--------------------------------------------
@@ -258,11 +258,11 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   // Approximate derivatives using DIRK formulae
   //--------------------------------------------
   void approxStates( int current_step, int current_stage );
-  void approxStates( int current_step );
+  void approxStates( int current_step ){}
 
   // Approximate derivatives using DIRK formulae
   //--------------------------------------------
-  void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma );
+  void getLinearizationCoeffs( int k, double *alpha, double *beta, double *gamma ){}
 
   // Function for marching backwards in stage and time
   //---------------------------------------------------

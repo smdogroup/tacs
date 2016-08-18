@@ -480,11 +480,11 @@ void TACSIntegrator::writeSolutionToF5(){
 void TACSIntegrator::getFuncGrad( int _num_dv, TacsScalar *_x,
 				  TacsScalar *_fvals, TacsScalar *_dfdx ) {
   // Copy the inputs
-  this->num_design_vars = _num_dv;
+  num_design_vars = _num_dv;
   tacs->setDesignVars(_x, num_design_vars);
 
   // Check whether the function has been set properly
-  if (this->num_funcs == 0 || this->funcs == NULL) {
+  if (num_funcs == 0 || funcs == NULL) {
     fprintf(stderr, 
             "TACS Warning: Function is not set, skipping adjoint solve. \n");
     return;
@@ -496,10 +496,10 @@ void TACSIntegrator::getFuncGrad( int _num_dv, TacsScalar *_x,
   memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
 
   // Integrate forward in time to solve for the states (q, qdot, qddot)
-  this->integrate();
+  integrate();
   
   // March backwards in time and solve for the adjoint variables
-  this->marchBackwards();
+  marchBackwards();
 }
 
 /*
@@ -510,11 +510,11 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
 				    TacsScalar *_fvals, TacsScalar *_dfdx, 
 				    double dh ) {
   // Copy the inputs
-  this->num_design_vars = _num_dv;
+  num_design_vars = _num_dv;
   tacs->setDesignVars(_x, num_design_vars);
 
   // Check whether the function has been set properly
-  if (this->num_funcs == 0 || this->funcs == NULL) {
+  if (num_funcs == 0 || funcs == NULL) {
     fprintf(stderr, "TACS Warning: Function is not set, skipping adjoint solve. \n");
     return;
   }
@@ -527,7 +527,8 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
   TacsScalar *ftmp = new TacsScalar[num_funcs];
   memset(ftmp, 0, num_funcs*sizeof(TacsScalar));
 
-  // Perform the forward integration if we're using a finite-difference approximation
+  // Perform the forward integration if we're using a
+  // finite-difference approximation
 
 #ifndef TACS_USE_COMPLEX
   
@@ -653,8 +654,8 @@ void TACSIntegrator::setUseLapack( int _use_lapack ) {
   Set the functions of interest that take part in the adjoint solve.
 */
 void TACSIntegrator::setFunction( TACSFunction **_funcs, int _num_funcs ) {
-  this->num_funcs = _num_funcs;
-  this->funcs = _funcs;
+  num_funcs = _num_funcs;
+  funcs = _funcs;
 }
 
 /*
@@ -663,9 +664,9 @@ void TACSIntegrator::setFunction( TACSFunction **_funcs, int _num_funcs ) {
 void TACSIntegrator::configureOutput(TACSToFH5 *_viewer, 
                                      int _write_freq, 
                                      char *_f5_file_fmt ) {
-  this->f5             = _viewer;
-  this->f5_write_freq  = _write_freq;
-  this->f5_file_fmt    = _f5_file_fmt;
+  f5             = _viewer;
+  f5_write_freq  = _write_freq;
+  f5_file_fmt    = _f5_file_fmt;
 }
 
 /*
@@ -811,7 +812,7 @@ void TACSIntegrator::doEachNonLinearIter( int iter_num) {}
   Integate forward in time using the initial conditions retrieved from
   TACS
 */
-void TACSIntegrator::integrate( ){
+void TACSIntegrator::integrate( ) {
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
@@ -1170,7 +1171,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
   // March backwards in time (initial condition not evaluated)
   for ( int k = num_time_steps-1; k >=1 ; k-- ){
     // Get the BDF coefficients at this time step
-    this->get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
+    get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
 
     // Determine the linearization coefficients for Jacobian Assembly
     double gamma = bddf_coeff[0]/(h*h);
@@ -1178,7 +1179,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
     double alpha = 1.0;
 
     // Set the stages
-    this->setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
@@ -1213,7 +1214,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
 
     // Add total derivative contributions from this step to all
     // functions
-    this->addTotalDerivative(h, psi);
+    addTotalDerivative(h, psi);
 
     // Drop the contributions from this step to other right hand sides
     for ( int ii = 1; (ii < nbdf || ii < nbddf); ii++ ){
@@ -1652,7 +1653,7 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step, BVec **q, BVec
   solution over time is set into the class variables q, qdot and qddot
   and time.
 */
-void TACSDIRKIntegrator::integrate( ){
+void TACSDIRKIntegrator::integrate( ) {
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
 
@@ -1763,7 +1764,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       double alpha = beta*h*A[idx+i];
 
       // Set the stages
-      this->setTACSStates(ts[i], qs[i], qdots[i], qddots[i]);
+      setTACSStates(ts[i], qs[i], qdots[i], qddots[i]);
 
       //--------------------------------------------------------------//
       // Assemble the right hand side
@@ -1810,7 +1811,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 
       // Add total derivative contributions from this step to all
       // functions
-      this->addTotalDerivative(h*B[i], &lambda[i*num_funcs]);
+      addTotalDerivative(h*B[i], &lambda[i*num_funcs]);
       
       //--------------------------------------------------------------//
       // Put the contributions from this stage to the right hand sides
@@ -2253,7 +2254,7 @@ void TACSABMIntegrator::marchBackwards( ){
 
     // Add total derivative contributions from this step for all
     // functions
-    this->addTotalDerivative(h, lambda);
+    addTotalDerivative(h, lambda);
 
     //-------------------------------------------------------------//
     // Put the contribution from this step to the next adjoint RHS //
@@ -2437,7 +2438,7 @@ void TACSNBGIntegrator::marchBackwards( ){
     double alpha = BETA;
 
     // Set the stages
-    this->setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
@@ -2475,7 +2476,7 @@ void TACSNBGIntegrator::marchBackwards( ){
 
     // Add total derivative contributions from this step for all
     // functions
-    this->addTotalDerivative(h, lambda);
+    addTotalDerivative(h, lambda);
 
     //-------------------------------------------------------------//
     // Put the contribution from this step to the next adjoint RHS //
