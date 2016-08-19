@@ -245,8 +245,8 @@ int main( int argc, char *argv[] ){
   tacs->incref();
 
   // Create the preconditioner
-  BVec *res = tacs->createVec();
-  BVec *ans = tacs->createVec();
+  TACSBVec *res = tacs->createVec();
+  TACSBVec *ans = tacs->createVec();
   FEMat *mat = tacs->createFEMat();
 
   // Increment the reference count to the matrix/vectors

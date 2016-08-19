@@ -454,7 +454,7 @@ TACSAssembler* TACSCreator::createTACS(){
 	  // Loop over the dependent nodes within this list
 	  for ( int i = dep_node_ptr[dep_node];
 		i < dep_node_ptr[dep_node+1]; i++ ){
-            dep_conn[dep_conn_len] = dep_node_conn[i];
+            dep_conn[dep_conn_len] = new_nodes[dep_node_conn[i]];
             dep_weights[dep_conn_len] = dep_node_weights[i];
             dep_conn_len++;
           }
@@ -660,25 +660,6 @@ TACSAssembler* TACSCreator::createTACS(){
     return NULL;
   }
 
-  // Use the reordering if the flag has been set in the
-  // TACSCreator object
-  // if (use_reordering){
-  //   tacs->computeReordering(order_type, mat_type);
-  // }
-
-  // Finish the initialization of TACS
-  tacs->initialize();
-
-  TACSBVec *X = tacs->createNodeVec();
-  X->incref();
-
-  // Copy the node locations to the vector
-  TacsScalar *Xpt_vals;
-  X->getArray(&Xpt_vals);
-  memcpy(Xpt_vals, Xpts_local, 3*num_owned_nodes*sizeof(TacsScalar));
-  tacs->setNodes(X);
-  X->decref();
-
   // Allocate the arrays to store the variable values
   int *bvars = new int[ vars_per_node ];
   TacsScalar *bvals = new TacsScalar[ vars_per_node ];
@@ -700,6 +681,25 @@ TACSAssembler* TACSCreator::createTACS(){
       }
     }
   }
+
+  // Use the reordering if the flag has been set in the
+  // TACSCreator object
+  // if (use_reordering){
+  //   tacs->computeReordering(order_type, mat_type);
+  // }
+
+  // Finish the initialization of TACS
+  tacs->initialize();
+
+  TACSBVec *X = tacs->createNodeVec();
+  X->incref();
+
+  // Copy the node locations to the vector
+  TacsScalar *Xpt_vals;
+  X->getArray(&Xpt_vals);
+  memcpy(Xpt_vals, Xpts_local, 3*num_owned_nodes*sizeof(TacsScalar));
+  tacs->setNodes(X);
+  X->decref();
 
   // Free the bvars/bvals arrays
   delete [] bvars;

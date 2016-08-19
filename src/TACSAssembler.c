@@ -90,6 +90,9 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   maxElementSize = 0;
   maxElementIndepNodes = 0;
 
+  // Set the elements array to NULL
+  elements = NULL;
+
   // Set the auxiliary element class to NULL
   auxElements = NULL;
 
@@ -276,6 +279,23 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     return 1;
   }
 
+  if (elements){
+    for ( int i = 0; i < numElements; i++ ){
+      _elements[i]->incref();
+      if (elements[i]){ elements[i]->decref(); }
+      elements[i] = _elements[i];
+    }
+  }
+  else {
+    elements = new TACSElement*[ numElements ];
+    memset(elements, 0, numElements*sizeof(TACSElement*));
+
+    for ( int i = 0; i < numElements; i++ ){
+      _elements[i]->incref();
+      elements[i] = _elements[i];
+    }
+  }
+
   // Determine the maximum number of nodes per element
   maxElementSize = 0;
   maxElementNodes = 0;
@@ -300,11 +320,6 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     if (elemSize > maxElementNodes){
       maxElementNodes = elemSize;
     }
-
-    // Increase the reference count to the element
-    _elements[i]->incref();
-    if (elements[i]){ elements[i]->decref(); }
-    elements[i] = _elements[i];
   }
 
   // If the connectivity is set, determine if it is consistent
@@ -1077,7 +1092,7 @@ int TACSAssembler::getLocalNodeNum( int node ){
   varMap->getOwnerRange(&ownerRange); 
 
   if (node >= ownerRange[mpiRank] &&
-      node < ownerRange[mpiRank]){
+      node < ownerRange[mpiRank+1]){
     node = (node - ownerRange[mpiRank]) + extNodeOffset;
   }
   else if (node >= 0){
@@ -1701,7 +1716,8 @@ int TACSAssembler::computeCouplingNodes( int **_cnodes ){
   // Match the intervals for the external node numbers
   int *ext_ptr = new int[ mpiSize+1 ];
   int *ext_count = new int[ mpiSize ];
-  FElibrary::matchIntervals(mpiSize, ownerRange, numNodes, ext_nodes, ext_ptr);
+  FElibrary::matchIntervals(mpiSize, ownerRange, 
+                            numExtNodes, ext_nodes, ext_ptr);
 
   // Send the nodes owned by other processors the information
   // First count up how many will go to each process
@@ -1739,7 +1755,7 @@ int TACSAssembler::computeCouplingNodes( int **_cnodes ){
   }
 
   // Add the coupling nodes received from other processors
-  for ( int i = 0; i < nextern_unique; i++ ){
+  for ( int i = 0; i < nextern_unique; i++, index++ ){
     cnodes[index] = getLocalNodeNum(recv_nodes[i]);
   }
 
@@ -1819,11 +1835,6 @@ int TACSAssembler::initialize(){
 	    mpiRank);
     return 1;
   }
-  
-  // Flag to indicate that we've initialized TACSAssembler -
-  // the initialization can only be done once
-  meshInitializedFlag = 1;
-
   if (numDependentNodes > 0 && !depNodes){
     fprintf(stderr, "[%d] Error: Dependent nodes not defined\n",
 	    mpiRank);
@@ -1844,6 +1855,10 @@ int TACSAssembler::initialize(){
   if (!tacsExtNodeNums){
     computeExtNodes();
   }
+
+  // Flag to indicate that we've initialized TACSAssembler -
+  // the initialization can only be done once
+  meshInitializedFlag = 1;
 
   // Set up data for any dependent nodes. Note that the minimum
   // number of independent nodes is set as the maximum number
@@ -2123,10 +2138,10 @@ order_type == NATURAL_ORDER\n",
     int ncoupling_nodes = 0;
     
     // The local nodes and their
-    int * perm_local_nodes = NULL;
-    int * tacs_local_nodes = NULL;
-    int * perm_coupling_nodes = NULL;
-    int * tacs_coupling_nodes = NULL;
+    int *perm_local_nodes = NULL;
+    int *tacs_local_nodes = NULL;
+    int *perm_coupling_nodes = NULL;
+    int *tacs_coupling_nodes = NULL;
 
     if (order_type == TACS_AMD_ORDER){
       // Use the AMD ordering scheme in TACS to compute an ordering of

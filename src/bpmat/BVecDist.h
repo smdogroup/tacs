@@ -174,6 +174,10 @@ class TACSBVecDistribute : public TACSObject {
   int n_ext_proc; // Externall processes to expect non-zero receives from
   int *ext_proc;
 
+  // The size of the receiving data on this processor
+  int ext_self_ptr;
+  int ext_self_size;
+
   static const char *name;
 };
 

@@ -167,6 +167,9 @@ TACSBVec::TACSBVec( TACSVarMap *map, int _bsize,
   var_map = map;
   var_map->incref();
 
+  // Get the MPI communicator
+  comm = var_map->getMPIComm();
+
   // Copy the boundary conditions
   bcs = _bcs;
   if (bcs){ bcs->incref(); }
@@ -182,8 +185,9 @@ TACSBVec::TACSBVec( TACSVarMap *map, int _bsize,
   // Set the external data
   ext_dist = _ext_dist;
   if (ext_dist){
-    ext_indices = ext_dist->getIndices();
     ext_dist->incref();
+    ext_indices = ext_dist->getIndices();
+    ext_indices->incref();
     ext_size = bsize*ext_dist->getDim();
     x_ext = new TacsScalar[ ext_size ];
     memset(x_ext, 0, ext_size*sizeof(TacsScalar));

@@ -400,8 +400,8 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
 
   // Number of variables requested from mpiRank by processor i
   int *req_count = new int[ mpi_size ];
-  int *full_req_ptr = new int[ mpi_size ];
-  req_ptr[0] = 0;
+  int *full_req_ptr = new int[ mpi_size+1 ];
+  full_req_ptr[0] = 0;
 
   // Get the ownership range
   const int *owner_range;
@@ -430,7 +430,7 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
   }
 
   // Allocate an array to store the requests from each processor
-  req_vars = new int[ req_ptr[mpi_size] ];
+  req_vars = new int[ full_req_ptr[mpi_size] ];
 
   // Transmit the external variables to the owners
   MPI_Alltoallv((void*)ext_vars, ext_count, full_ext_ptr, MPI_INT, 
@@ -453,17 +453,21 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
       nr++;
     }
   }
+
+  // Set the size of the self data
+  ext_self_ptr = full_ext_ptr[mpi_rank];
+  ext_self_size = full_ext_ptr[mpi_rank+1] - full_ext_ptr[mpi_rank];
   
   // Number of external processors from which we are getting external
   // variable values
   n_ext_proc = ne;
   ext_proc = new int[ ne ];
-  ext_ptr = new int[ ne ];
+  ext_ptr = new int[ ne+1 ];
 
   // Number of processors to which we are sending data
   n_req_proc = nr;
   req_proc = new int[ nr ];
-  req_ptr = new int[ nr ];
+  req_ptr = new int[ nr+1 ];
 
   // Set pointers to the external/requests processor ranks
   ne = nr = 0;
@@ -480,6 +484,10 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
       nr++;
     }
   }
+
+  // Set the last entry of the pointer arrays
+  req_ptr[nr] = full_req_ptr[mpi_size];
+  ext_ptr[ne] = full_ext_ptr[mpi_size];
 
   // Free the full data
   delete [] full_req_ptr;
@@ -608,47 +616,35 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
   }
 
   if (sorted_flag){
+    // Copy over the local values
+    bgetvars(bsize, ext_self_size, &ext_vars[ext_self_ptr], lower,
+             global, &local[bsize*ext_self_ptr], INSERT_VALUES);
+
     // If the receiving array is sorted, it can be placed directly
     // into local array
     for ( int i = 0; i < n_ext_proc; i++ ){
       int dest = ext_proc[i];
-      if (dest == mpi_rank){
-        // Copy over the local values
-        int start = ext_ptr[i];
-        int size = ext_ptr[i+1] - start;
-
-        bgetvars(bsize, size, &ext_vars[start], lower,
-                 global, &local[bsize*start], INSERT_VALUES);
-      }
-      else {
-	int start = bsize*ext_ptr[i];
-	int size = bsize*ext_ptr[i+1] - start;
-
-	MPI_Irecv(&local[start], size, TACS_MPI_TYPE, 
-                  dest, tag, comm, &recvs[i]);
-      }
+      int start = bsize*ext_ptr[i];
+      int size = bsize*ext_ptr[i+1] - start;
+      
+      MPI_Irecv(&local[start], size, TACS_MPI_TYPE, 
+                dest, tag, comm, &recvs[i]);     
     }
   }
   else {
+    // Copy the local values first
+    bgetvars(bsize, ext_self_size, &ext_vars[ext_self_ptr], lower,
+             global, &ext_sorted_vals[bsize*ext_self_ptr], INSERT_VALUES);
+
     // If the receiving array is not sorted, the data must 
     // first be placed in a receiving array
     for ( int i = 0; i < n_ext_proc; i++ ){
       int dest = ext_proc[i];
-      if (dest == mpi_rank){
-        int start = ext_ptr[i];
-        int size = ext_ptr[i] - start;
-
-        bgetvars(bsize, size, &ext_vars[start], lower,
-                 global, &ext_sorted_vals[bsize*start], INSERT_VALUES);
-      }
-      else {
-	int start = bsize*ext_ptr[i];
-	int size = bsize*ext_ptr[i+1] - start;
-
-	MPI_Irecv(&ext_sorted_vals[start], size, TACS_MPI_TYPE, 
-                  dest, tag, comm, &recvs[i]);
-      }
+      int start = bsize*ext_ptr[i];
+      int size = bsize*ext_ptr[i+1] - start;
       
+      MPI_Irecv(&ext_sorted_vals[start], size, TACS_MPI_TYPE, 
+                dest, tag, comm, &recvs[i]);
     }
   }
 }
@@ -725,6 +721,10 @@ void TACSBVecDistribute::beginReverse( TACSBVecDistCtx *ctx,
              local, ext_sorted_vals, op);
     local = ext_sorted_vals;
   }
+
+  // Do the sends on myself
+  bsetvars(bsize, ext_self_size, &ext_vars[ext_self_ptr], lower,
+           &local[bsize*ext_self_ptr], global, op);
     
   // Note that the receives/send MPI_Requests have been reversed --
   // this is because they are allocated for the forward operation -
@@ -732,19 +732,10 @@ void TACSBVecDistribute::beginReverse( TACSBVecDistCtx *ctx,
   int tag = 1;
   for ( int i = 0; i < n_ext_proc; i++ ){
     int dest = ext_proc[i];
-    if (dest == mpi_rank){
-      // Perform the on-process part
-      int start = ext_ptr[i];
-      int size = ext_ptr[i+1] - start;
-      bsetvars(bsize, size, &ext_vars[start], lower,
-               &local[bsize*start], global, op);
-    }
-    else {
-      int start = bsize*ext_ptr[i];
-      int size = bsize*ext_ptr[i+1] - start;
-      MPI_Isend(&local[start], size, TACS_MPI_TYPE, 
-                dest, tag, comm, &recvs[i]);
-    }
+    int start = bsize*ext_ptr[i];
+    int size = bsize*ext_ptr[i+1] - start;
+    MPI_Isend(&local[start], size, TACS_MPI_TYPE, 
+              dest, tag, comm, &recvs[i]);
   }
   
   for ( int i = 0; i < n_req_proc; i++ ){
