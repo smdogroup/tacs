@@ -51,7 +51,7 @@ class TACSMg : public TACSPc {
     
   // Set the state/design variables of all lower finite-element models
   // -----------------------------------------------------------------
-  void setVariables( BVec * vec ); 
+  void setVariables( TACSBVec * vec ); 
   void setDesignVars( const TacsScalar dvs[], int numDVs );
 
   // Assemble the given finite-element matrix at all levels

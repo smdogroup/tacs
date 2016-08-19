@@ -79,22 +79,27 @@ class TACSAssembler : public TACSObject {
   int setElements( TACSElement **_elements );
   int setDependentNodes( const int *_depNodeIndex, 
                          const int *_depNodeToTacs,
-                         const double **_depNodeWeights );
+                         const double *_depNodeWeights );
+
+  // Associate a Dirichlet boundary condition with the given variables
+  // -----------------------------------------------------------------
+  void addBCs( int nnodes, const int *nodes, 
+               int nbcs=-1, const int *vars=NULL, 
+               const TacsScalar *vals=NULL );
   
   // Functions for performing ordering based on RCM
   // ----------------------------------------------
-  void computeReordering( enum OrderingType order_type, 
-                          enum MatrixOrderingType mat_type );
+  // void computeReordering( enum OrderingType order_type, 
+  //                         enum MatrixOrderingType mat_type );
 
   // Initialize the mesh
   // -------------------
   int initialize();
 
-  // Associate a Dirichlet boundary condition with the given variables
-  // -----------------------------------------------------------------
-  void addBC( int nodeNum, const int bcNums[], int nbcs );
-  void addBC( int nodeNum, const int bcNums[], 
-	      const TacsScalar bcVals[], int nbcs );
+  // Set auxiliary elements into the TACSAssembler object
+  // ----------------------------------------------------
+  void setAuxElements( TACSAuxElements *aux_elems );
+  TACSAuxElements *getAuxElements();
 
   // Set the nodes in TACS 
   // ---------------------
@@ -102,21 +107,14 @@ class TACSAssembler : public TACSObject {
   void setNodes( TACSBVec *X ); 
   void getNodes( TACSBVec *X );
 
-  // Set auxiliary elements into the TACSAssembler object
-  // ----------------------------------------------------
-  void setAuxElements( TACSAuxElements *aux_elems );
-  TACSAuxElements *getAuxElements();
-
-  // Create vectors/matrices
-  // -----------------------
-  TACSBVec *createVec();
-  DistMat *createMat();
-  FEMat *createFEMat( enum OrderingType order_type=TACS_AMD_ORDER );
-
   // Set/get the simulation time
   // ---------------------------
   void setSimulationTime( double _time );
   double getSimulationTime();
+
+  // Create vectors
+  // --------------
+  TACSBVec *createVec();
 
   // Methods for manipulating internal variable values
   // -------------------------------------------------
@@ -126,8 +124,15 @@ class TACSAssembler : public TACSObject {
   
   // Methods for setting/getting variables
   // -------------------------------------
-  void setVariables( TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
-  void getVariables( TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
+  void setVariables( TACSBVec *q, 
+                     TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
+  void getVariables( TACSBVec *q, 
+                     TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
+
+  // Create the matrices that can be used for analysis
+  // -------------------------------------------------
+  DistMat *createMat();
+  FEMat *createFEMat( enum OrderingType order_type=TACS_AMD_ORDER );
 
   // Retrieve the initial conditions for the simulation
   // --------------------------------------------------
@@ -145,6 +150,10 @@ class TACSAssembler : public TACSObject {
 			 MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType,
 			TACSMat *A, MatrixOrientation matOr=NORMAL );
+  void addJacobianVecProduct( TacsScalar scale, 
+                              double alpha, double beta, double gamma,
+                              TACSBVec *x, TACSBVec *y,
+                              MatrixOrientation matOr=NORMAL );
 
   // Design variable handling
   // ------------------------
@@ -182,34 +191,22 @@ class TACSAssembler : public TACSObject {
 				  ElementMatrixType matType, 
 				  TACSBVec *psi, TACSBVec *phi, TACSBVec *res );
 
-  // Compute the matrix-free Jacobian-vector product
-  // -----------------------------------------------
-  void addJacobianVecProduct( TacsScalar scale, 
-                              double alpha, double beta, double gamma,
-                              TACSBVec *x, TACSBVec *y,
-                              MatrixOrientation matOr=NORMAL );
-
   // Return an element and the variables associated with that element
   // ----------------------------------------------------------------
   TACSElement **getElements(){ return elements; }
-  TACSElement *getElement( int elemNum,
-                           TacsScalar *elemXpts,
-                           TacsScalar *vars,
-                           TacsScalar *dvars,
-                           TacsScalar *ddvars );
 
   // Get information about the output files
   // --------------------------------------
   int getNumComponents();
   void getOutputNodeRange( enum ElementType elem_type, 
-			   int ** _node_range );
+			   int **_node_range );
   void getOutputConnectivity( enum ElementType elem_type,
-                              int ** _component_nums,
-			      int ** _csr, int ** _csr_range, 
-			      int ** _node_range );
+                              int **_component_nums,
+			      int **_csr, int **_csr_range, 
+			      int **_node_range );
   void getOutputData( enum ElementType elem_type,
 		      unsigned int out_type,
-		      double * data, int nvals );
+		      double *data, int nvals );
 
   // Test the given element, constitutive or function class
   // ------------------------------------------------------
@@ -241,6 +238,9 @@ class TACSAssembler : public TACSObject {
 
   // Functions that are used to perform reordering
   // ---------------------------------------------
+  int computeExtNodes();
+  int getLocalNodeNum( int node );
+  int getGlobalNodeNum( int node );
   void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, int nodiag=0 );
   int computeCouplingNodes( int **_cnodes );
   int computeCouplingElements( int **_celems );
@@ -305,11 +305,12 @@ class TACSAssembler : public TACSObject {
   int numElements; // number of elements
   int numNodes; // number of nodes referenced by this process
   int numOwnedNodes; // number of nodes owned by this processor
+  int numExtNodes; // number of extneral nodes 
   int numDependentNodes; // number of dependent nodes
 
-  // The global TACS ordering for this processor
-  int tacsNodeOffset; // Offset to the first owned node on this proc
-  int *tacsNodeNums; // node numbers associated with TACS
+  // Node numbers that are referred to from this processor
+  int *tacsExtNodeNums; // node numbers associated with TACS
+  int extNodeOffset; // Offset into the external nodes
 
   // Variables that define the CSR data structure to 
   // store the element -> node information

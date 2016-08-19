@@ -98,10 +98,10 @@ class TACSLinearBuckling : public TACSObject {
 */
 class TACSFrequencyAnalysis : public TACSObject {
  public:
-  TACSFrequencyAnalysis( TACSAssembler * _tacs,
+  TACSFrequencyAnalysis( TACSAssembler *_tacs,
 			 TacsScalar _sigma,
-			 TACSMat * _mmat, TACSMat * _kmat,
-			 TACSKsm * _solver, int max_lanczos, 
+			 TACSMat *_mmat, TACSMat *_kmat,
+			 TACSKsm *_solver, int max_lanczos, 
 			 int num_eigvals, double _eig_tol );
   ~TACSFrequencyAnalysis();
 

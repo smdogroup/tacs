@@ -1,5 +1,7 @@
 #include "TACSAssembler.h"
 
+#define TACS_HAS_AMD_PACKAGE
+
 // Reordering implementation 
 #include "FElibrary.h"
 #include "MatUtils.h"
@@ -62,6 +64,11 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
   numOwnedNodes = _numOwnedNodes;
   numDependentNodes = _numDependentNodes;
 
+  // These values will be computed later
+  numExtNodes = 0;
+  numNodes = 0;
+  extNodeOffset = 0;
+
   // Print out the number of local nodes and elements
   printf("[%d] Creating TACSAssembler with numOwnedNodes = %d \
 numElements = %d\n", mpiRank, numOwnedNodes, numElements);
@@ -94,6 +101,9 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   int nbc_est = 100; 
   bcMap = new TACSBcMap(nbc_est);
   bcMap->incref();
+
+  // Set the external node numbers to NULL
+  tacsExtNodeNums = NULL;
 
   // Set the distribution object to NULL at first
   vecDist = NULL;
@@ -139,23 +149,25 @@ TACSAssembler::~TACSAssembler(){
   // Delete nodal information
   if (elementNodeIndex){ delete [] elementNodeIndex; }
   if (elementTacsNodes){ delete [] elementTacsNodes; }
-  if (tacsNodeNums){ delete [] tacsNodeNums; }  
+  if (tacsExtNodeNums){ delete [] tacsExtNodeNums; }  
 
+  // Decreate the ref. count for the dependent node information
   if (depNodes){ depNodes->decref(); }
 
-  // Decrease the reference count
+  // Decrease the reference count to the auxiliary elements
   if (auxElements){ auxElements->decref(); }
 
   // Decrease the reference count to objects allocated in initialize
   if (varMap){ varMap->decref(); }
   if (bcMap){ bcMap->decref(); }
   if (vecDist){ vecDist->decref(); }
+  if (vecDistIndices){ vecDistIndices->decref(); }
 
+  // Decrease ref. count for the FEMat data if it is allocated
   if (feMatBIndices){ feMatBIndices->decref(); }
   if (feMatCIndices){ feMatCIndices->decref(); }
   if (feMatBMap){ feMatBMap->decref(); }
   if (feMatCMap){ feMatCMap->decref(); }
-  if (vecDistIndices){ vecDistIndices->decref(); }
 
   // Delete arrays allocated in initializeArrays()
   if (elementData){ delete [] elementData; }
@@ -200,70 +212,14 @@ int TACSAssembler::setElementConnectivity( const int *conn,
   // Free the data if it has already been set before
   if (elementTacsNodes){ delete [] elementTacsNodes; }
   if (elementNodeIndex){ delete [] elementNodeIndex; }
-  if (tacsNodeNums){ delete [] tacsNodeNums; }
 
   int size = ptr[numElements];
   elementNodeIndex = new int[ numElements+1 ] ;
   elementTacsNodes = new int[ size ];
   memcpy(elementNodeIndex, ptr, (numElements+1)*sizeof(int));
 
-  // Copy the node numbers and sort them uniquely to determine the number
-  // of local nodes
+  // Copy the node numbers
   memcpy(elementTacsNodes, conn, size*sizeof(int));
-  numNodes = FElibrary::uniqueSort(elementTacsNodes, size);
-
-  // Copy the global TACS node numbers to create an implied local
-  // node number
-  tacsNodeNums = new int[ numNodes ];
-  memcpy(tacsNodeNums, elementTacsNodes, numNodes*sizeof(int));
-
-  // Recopy the connectivity array
-  memcpy(elementTacsNodes, conn, size*sizeof(int));
-
-  // Perform some checks to see if the mesh is consistent
-  const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
-  int *item = (int*)bsearch(&ownerRange[mpiRank], tacsNodeNums, numNodes,
-                            sizeof(int), FElibrary::comparator);
-  
-  if (item){
-    tacsNodeOffset = item - tacsNodeNums;
-  }
-  else {
-    fprintf(stderr, 
-            "[%d] First owned node not referenced by local connectivity\n",
-            mpiRank);
-    fail = 1;
-    return fail;
-  }
-  
-  // Check that the local element ordering is contiguous
-  int last = ownerRange[mpiRank+1]-1;
-  item = (int*)bsearch(&last, tacsNodeNums, numNodes,
-                       sizeof(int), FElibrary::comparator);
-  
-  if (item){
-    // Compute the length of the array between the first and last
-    // locally owned entries. If this sorted and unique list length is
-    // not equal to the number of owned nodes, then the mesh is not
-    // contiguously ordered.
-    int len = ((item - tacsNodeNums) - tacsNodeOffset) + 1;
-    
-    if (len != (ownerRange[mpiRank+1] - ownerRange[mpiRank])){
-      fprintf(stderr, 
-              "[%d] Mesh is not ordered contiguously\n",
-              mpiRank);
-      fail = 1;
-      return fail;
-    }
-  }
-  else {
-    fprintf(stderr, 
-            "[%d] Last owned node not referenced by local connectivity\n",
-            mpiRank);
-    fail = 1;
-    return fail;
-  }
 
   // If the elements are set, check the connectivity
   if (elements){
@@ -280,11 +236,13 @@ int TACSAssembler::setElementConnectivity( const int *conn,
 
   // Check that the node numbers are all within range and that the
   // dependent node numbers (if any) are in range
+  const int *ownerRange;
+  varMap->getOwnerRange(&ownerRange);
+
   for ( int i = 0; i < numElements; i++ ){
     int jend = elementNodeIndex[i+1];
     for ( int j = elementNodeIndex[i]; j < jend; j++ ){
-      if (elementTacsNodes[j] >= 0 && 
-          elementTacsNodes[j] >= ownerRange[mpiSize]){
+      if (elementTacsNodes[j] >= ownerRange[mpiSize]){
         fprintf(stderr, 
                 "[%d] Element %d contains node number out of range\n",
                 mpiRank, i);
@@ -380,7 +338,7 @@ int TACSAssembler::setElements( TACSElement **_elements ){
 */
 int TACSAssembler::setDependentNodes( const int *_depNodePtr, 
                                       const int *_depNodeToTacs,
-                                      const double **_depNodeWeights ){
+                                      const double *_depNodeWeights ){
   if (meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call setDependentNodes() after initialize()\n", 
 	    mpiRank);
@@ -389,6 +347,29 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
 
   // Free the data if the dependent nodes have already been set
   if (depNodes){ depNodes->decref(); }
+
+  // Get the ownership range of the nodes
+  const int *ownerRange;
+  varMap->getOwnerRange(&ownerRange);
+
+  // Check that all the independent nodes are positive and are within an
+  // allowable range
+  for ( int i = 0; i < numDependentNodes; i++ ){
+    for ( int jp = _depNodePtr[i]; jp < _depNodePtr[i+1]; jp++ ){
+      if (_depNodeToTacs[jp] >= ownerRange[mpiSize]){
+        fprintf(stderr, 
+                "[%d] Dependent node %d contains node number out of range\n",
+                mpiRank, i);
+        return 1;
+      }
+      else if (_depNodeToTacs[jp] < 0){
+        fprintf(stderr, 
+                "[%d] Dependent node %d contains dependent node %d\n",
+                mpiRank, i, _depNodeToTacs[jp]);
+        return 1;
+      }
+    }
+  }
 
   // Allocate the new memory and copy over the data
   int *depNodePtr = new int[ numDependentNodes+1 ];
@@ -414,23 +395,28 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
   Set the boundary conditions object that will be associated with the
   vectors/matrices that are created using TACSAssembler.
 */
-/*
-void TACSAssembler::addBC( int nodeNum, const int bcNums[], int nbcs ){
+void TACSAssembler::addBCs( int nnodes, const int *nodes, 
+                            int nbcs, const int *vars,
+                            const TacsScalar *vals ){
   if (meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call addBC() after initialize()\n", 
 	    mpiRank);
     return;
   }
 
-  if (nodeNum < 0 || nodeNum >= numNodes){
-    fprintf(stderr, "[%d] Warning, addBC node number %d out of range\n", 
-	    mpiRank, nodeNum);
-  }
-  else {
-    bcMap->addBC(nodeNum, tacsNodeNums[nodeNum], bcNums, NULL, nbcs);
+  // Get the ownership range
+  const int *ownerRange;
+  varMap->getOwnerRange(&ownerRange);
+
+  // Add all the boundary conditions within the specified owner range
+  for ( int i = 0; i < nnodes; i++ ){
+    if (nodes[i] >= ownerRange[mpiRank] &&
+        nodes[i] < ownerRange[mpiRank+1]){
+      int local = nodes[i] - ownerRange[mpiRank];
+      bcMap->addBC(local, nodes[i], vars, vals, nbcs);
+    }
   }
 }
-*/
 
 /*
   Create a global vector of node locations
@@ -506,6 +492,101 @@ TACSAuxElements *TACSAssembler::getAuxElements(){
   return auxElements;
 }
 
+/*
+  Compute the external list of nodes and sort these nodes
+
+  This code is called automatically by TACSAssembler and is private.
+  This code computes numExtNodes and allocates the array
+  tacsExtNodeNums for use in other functions. This function should
+  only be called once during reordering or during initialization.  
+*/
+int TACSAssembler::computeExtNodes(){
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call computeExtNodes() after initialize()\n", 
+	    mpiRank);
+    return 1;
+  }
+  if (!elementNodeIndex){
+    fprintf(stderr, "[%d] Cannot call computeExtNodes() element \
+connectivity not defined\n", mpiRank);
+    return 1;
+  }
+
+  // Get the ownership range of the nodes
+  const int *ownerRange;
+  varMap->getOwnerRange(&ownerRange);
+
+  // Find the maximum possible size of array
+  int max_size = elementNodeIndex[numElements];
+  
+  // Get the dependent node connectivity information (if any) and
+  // increase the size of the array to account for any external dependent
+  // nodes we may find.
+  const int *depNodePtr = NULL;
+  const int *depNodeConn = NULL;
+  if (depNodes){
+    depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
+    max_size += depNodePtr[numDependentNodes];
+  }
+
+  // Keep track of the external nodes that we've found
+  int ext_size = 0;
+  int *ext_list = new int[ max_size ];
+
+  // First loop over the element connectivity
+  for ( int i = 0; i < elementNodeIndex[numElements]; i++ ){
+    int node = elementTacsNodes[i];
+
+    // Check if the node is external
+    if ((node >= 0) && 
+        (node < ownerRange[mpiRank] || 
+         node >= ownerRange[mpiRank+1])){
+      ext_list[ext_size] = node;
+      ext_size++;
+    }
+  }
+
+  // Loop over the dependent nodes
+  if (depNodes){
+    int end = depNodePtr[numDependentNodes];
+    for ( int i = 0; i < end; i++ ){
+      int node = depNodeConn[i];
+
+      // Check if the node is external
+      if ((node >= 0) && 
+          (node < ownerRange[mpiRank] || 
+           node >= ownerRange[mpiRank+1])){
+        ext_list[ext_size] = node;
+        ext_size++;
+      }
+    }
+  }
+
+  // Sort the list of nodes
+  numExtNodes = FElibrary::uniqueSort(ext_list, ext_size);
+
+  // Allocate an array of the external nodes that is tight
+  // to the number of external nodes
+  tacsExtNodeNums = new int[ numExtNodes ];
+  memcpy(tacsExtNodeNums, ext_list, numExtNodes*sizeof(int));
+  
+  // Free the original list of external nodes;
+  delete [] ext_list;
+
+  // Now the total number of nodes is equal to the external nodes 
+  // plus the locally owned nodes
+  numNodes = numOwnedNodes + numExtNodes;
+
+  // Find the offset into the external node list
+  extNodeOffset = 0;
+  while (extNodeOffset < numExtNodes &&
+         tacsExtNodeNums[extNodeOffset] < ownerRange[mpiRank]){
+    extNodeOffset++;
+  }
+
+  return 0;
+}
+
 /*!
   Compute a reordering of the nodes.
 
@@ -530,8 +611,26 @@ TACSAuxElements *TACSAssembler::getAuxElements(){
   find extern_nodes[i] == sorted_extern_nodes[j]
   assign new_var = new_sorted_extern_nodes[j]
 */
+/*
 void TACSAssembler::computeReordering( enum OrderingType order_type,
                                        enum MatrixOrderingType mat_type ){
+  // Return if the element connectivity not set
+  if (!elementNodeIndex){
+    fprintf(stderr, 
+            "[%d] Must define element connectivity before reordering\n",
+            mpIRank);
+    return;
+  }
+  if (tacsExtNodeNums){
+    fprintf(stderr, 
+            "[%d] TACSAssembler::computeReordering() can only be called once\n",
+            mpIRank);
+    return;
+  }
+
+  // Compute the external nodes
+  computeExtNodes();
+
   // The ownership range of the nodes
   const int *ownerRange;
   varMap->getOwnerRange(&ownerRange);
@@ -847,6 +946,7 @@ have been set\n", mpiRank);
   delete [] sorted_recv_index;
   delete [] new_node_nums;
 }
+*/
 
 /*
   Compute the reordering for the given matrix.
@@ -958,6 +1058,131 @@ void TACSAssembler::computeMatReordering( enum OrderingType order_type,
   if (!new_vars){ delete [] _new_vars; }
 }
 
+/*
+  The following function returns a local node number based on the
+  provided (global) TACS node number.
+
+  If the node number is on this processor, no search is required,
+  however, if the node is externally owned, then a binary search is
+  needed to determine the index into the off-processor list of nodes.
+
+  input:
+  node:     the global TACS node number unique across all processors
+
+  returns:  the local node number
+*/
+int TACSAssembler::getLocalNodeNum( int node ){
+  // Get the ownership range
+  const int *ownerRange;
+  varMap->getOwnerRange(&ownerRange); 
+
+  if (node >= ownerRange[mpiRank] &&
+      node < ownerRange[mpiRank]){
+    node = (node - ownerRange[mpiRank]) + extNodeOffset;
+  }
+  else if (node >= 0){
+    const int *ext_nodes = NULL;
+    if (tacsExtNodeNums){
+      ext_nodes = tacsExtNodeNums;
+    }
+    else if (vecDistIndices){
+      vecDistIndices->getIndices(&ext_nodes);
+    }
+    else {
+      fprintf(stderr, "[%d] External nodes not defined\n", mpiRank);
+      return -1;      
+    }
+
+    // Find the local index for external nodes
+    int *item = (int*)bsearch(&node, ext_nodes, numExtNodes,
+                              sizeof(int), FElibrary::comparator);
+
+    // Check if the item is found in the list
+    if (item){
+      if (node < ownerRange[mpiRank]){
+        node = (item - ext_nodes); 
+      }
+      else {
+        node = extNodeOffset + numOwnedNodes + (item - ext_nodes); 
+      }
+    }
+    else {
+      fprintf(stderr, 
+              "[%d] External node %d not in external node list\n",
+              mpiRank, node);
+      return -1;
+    }
+  }
+  else {
+    fprintf(stderr, 
+            "[%d] Cannot compute local number for dependent node %d\n",
+            mpiRank, node);
+    return -1;
+  }
+
+  return node;
+}
+
+/*
+  Given the local node number find the corresponding global TACS node
+  number
+
+  This function is the inverse of the getLocalNodeNum() function
+  defined above.
+
+  input:
+  node:   the local node number
+
+  returns: the global TACS node number
+*/
+int TACSAssembler::getGlobalNodeNum( int node ){
+  // Get the ownership range
+  const int *ownerRange;
+  varMap->getOwnerRange(&ownerRange); 
+
+  if (node < extNodeOffset){
+    const int *ext_nodes = NULL;
+    if (tacsExtNodeNums){
+      ext_nodes = tacsExtNodeNums;
+    }
+    else if (vecDistIndices){
+      vecDistIndices->getIndices(&ext_nodes);
+    }
+    else {
+      fprintf(stderr, "[%d] External nodes not defined\n", mpiRank);
+      return -1;      
+    }
+
+    return ext_nodes[node];
+  }
+  else if (node < extNodeOffset + numOwnedNodes){
+    return (node - extNodeOffset) + ownerRange[mpiRank];
+  }
+  else if (node < numNodes){
+    const int *ext_nodes = NULL;
+    if (tacsExtNodeNums){
+      ext_nodes = tacsExtNodeNums;
+    }
+    else if (vecDistIndices){
+      vecDistIndices->getIndices(&ext_nodes);
+    }
+    else {
+      fprintf(stderr, "[%d] External nodes not defined\n", mpiRank);
+      return -1;      
+    }
+
+    return ext_nodes[node - (extNodeOffset + numOwnedNodes)];
+  }
+  else {
+    fprintf(stderr, 
+            "[%d] Local node number %d out of range\n",
+            mpiRank, node);
+    return -1;
+  }
+
+  return node;
+}
+
 /*!
   The following function creates a data structure that links nodes to
   elements - this reverses the existing data structure that links
@@ -986,10 +1211,6 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
   if (depNodes){
     depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
   }
-
-  // Get the ownership range
-  const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
  
   // Loop over all the elements and count up the number of times
   // each node refers to each element
@@ -998,16 +1219,9 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
     for ( int jp = elementNodeIndex[i]; jp < end; jp++ ){
       // Check whether this is locally owned or not
       int node = elementTacsNodes[jp];
-      if (node >= ownerRange[mpiRank] &&
-          node < ownerRange[mpiRank]){
-        node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-        nodeElementPtr[node+1]++;
-      }
-      else if (node >= 0){
-        // Find the local index for external nodes
-        int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                  sizeof(int), FElibrary::comparator);
-        node = (item - tacsNodeNums);
+ 
+      if (node >= 0){
+        node = getLocalNodeNum(node);
         nodeElementPtr[node+1]++;
       }
       else if (node < 0){
@@ -1016,19 +1230,8 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
 	int dep_node = -node-1;
 	int kend = depNodePtr[dep_node+1];
 	for ( int kp = depNodePtr[dep_node]; kp < kend; kp++ ){
-	  int node = depNodeConn[kp];
-          if (node >= ownerRange[mpiRank] &&
-              node < ownerRange[mpiRank]){
-            node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-            nodeElementPtr[node+1]++;
-          }
-          else if (node >= 0){
-            // Find the local index for external nodes
-            int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                      sizeof(int), FElibrary::comparator);
-            node = (item - tacsNodeNums);
-            nodeElementPtr[node+1]++;
-          }
+	  node = getLocalNodeNum(depNodeConn[kp]);
+          nodeElementPtr[node+1]++;
         }
       }
     }
@@ -1050,17 +1253,8 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
     for ( int jp = elementNodeIndex[i]; jp < end; jp++ ){
       // Check whether this is locally owned or not
       int node = elementTacsNodes[jp];
-      if (node >= ownerRange[mpiRank] &&
-          node < ownerRange[mpiRank]){
-        node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-        nodeToElements[nodeElementPtr[node]] = i;
-        nodeElementPtr[node]++;
-      }
-      else if (node >= 0){
-        // Find the local index for external nodes
-        int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                  sizeof(int), FElibrary::comparator);
-        node = (item - tacsNodeNums);
+      if (node >= 0){
+        node = getLocalNodeNum(node);
         nodeToElements[nodeElementPtr[node]] = i;
         nodeElementPtr[node]++;
       }
@@ -1070,20 +1264,10 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
 	int dep_node = -node-1;
 	int kend = depNodePtr[dep_node+1];
 	for ( int kp = depNodePtr[dep_node]; kp < kend; kp++ ){
-	  int node = depNodeConn[kp];
-          if (node >= ownerRange[mpiRank] &&
-              node < ownerRange[mpiRank]){
-            node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-            nodeElementPtr[node+1]++;
-          }
-          else if (node >= 0){
-            // Find the local index for external nodes
-            int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                      sizeof(int), FElibrary::comparator);
-            node = (item - tacsNodeNums);
-            nodeToElements[nodeElementPtr[node]] = i;
-            nodeElementPtr[node]++;
-          }
+	  node = depNodeConn[kp];
+          node = getLocalNodeNum(node);
+          nodeToElements[nodeElementPtr[node]] = i;
+          nodeElementPtr[node]++;
         }
       }
     }
@@ -1135,14 +1319,10 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   int *rowp = new int[ numNodes+1 ];
   memset(rowp, 0, (numNodes+1)*sizeof(int));
 
-  // Get the node -> element data structure
+  // Create the node -> element data structure
   int *nodeElementPtr = NULL;
   int *nodeToElements = NULL;
   computeNodeToElementCSR(&nodeElementPtr, &nodeToElements);
-
-  // Get the ownership range
-  const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
 
   // If we have dependent nodes, use a different algorithm 
   if (depNodes){
@@ -1199,22 +1379,13 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
 
 	// Scan through all the nodes belonging to this element
 	int kend = elementNodeIndex[elem+1];
-	int r = rowp[i];
+	int row = rowp[i];
 	for ( int kp = elementNodeIndex[elem]; kp < kend; kp++ ){
 	  int node = elementTacsNodes[kp];
 	  if (node >= 0){
-            if (node >= ownerRange[mpiRank] &&
-                node < ownerRange[mpiRank]){
-              node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-              cols[r] = node;   r++;
-            }
-            else {              
-              // Find the local index for external nodes
-              int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                        sizeof(int), FElibrary::comparator);
-              node = (item - tacsNodeNums);
-              cols[r] = node;   r++;
-            }
+            node = getLocalNodeNum(node);
+            cols[row] = node;   
+            row++;
           }
           else {
             // This is a dependent-node, determine which independent
@@ -1223,24 +1394,15 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
             int pend = depNodePtr[dep_node+1];
             for ( int p = depNodePtr[dep_node]; p < pend; p++ ){
               node = depNodeConn[p];
-              if (node >= ownerRange[mpiRank] &&
-                  node < ownerRange[mpiRank]){
-                node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-                cols[r] = node;   r++;
-              }
-              else {              
-                // Find the local index for external nodes
-                int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                          sizeof(int), FElibrary::comparator);
-                node = (item - tacsNodeNums);
-                cols[r] = node;   r++;
-              }
+              node = getLocalNodeNum(node);
+              cols[row] = node;   
+              row++;
             }
           }
         }
 
         // Reset the pointer to this row
-	rowp[i] = r;
+	rowp[i] = row;
       }
     }
 
@@ -1279,26 +1441,16 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
       for ( int jp = nodeElementPtr[i]; jp < nodeElementPtr[i+1]; jp++ ){
 	int elem = nodeToElements[jp];
         
-        // Add the columns
-	int r = rowp[i];
+        // Add the columns to this row of the sparse matrix
+	int row = rowp[i];
         int kend = elementNodeIndex[elem+1];
 	for ( int kp = elementNodeIndex[elem]; kp < kend; kp++ ){
           int node = elementTacsNodes[kp];
-          // Check if the node is within bounds
-          if (node >= ownerRange[mpiRank] &&
-              node < ownerRange[mpiRank]){
-            node = (node - ownerRange[mpiRank]) + tacsNodeOffset;
-            cols[r] = node;   r++;
-          }
-          else {              
-            // Find the local index for external nodes
-            int *item = (int*)bsearch(&node, tacsNodeNums, numNodes,
-                                      sizeof(int), FElibrary::comparator);
-            node = (item - tacsNodeNums);
-            cols[r] = node;   r++;
-          }
+          node = getLocalNodeNum(node);
+          cols[row] = node;   
+          row++;
 	}
-	rowp[i] = r;
+	rowp[i] = row;
       }
     }
 
@@ -1336,8 +1488,8 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   nodiag:   flag to indicate whether to remove the diagonal matrix entry
 
   output:
-  rowp = the row pointer corresponding to CSR data structure
-  cols = the column indices for each row of the CSR data structure
+  rowp:     the row pointer corresponding to CSR data structure
+  cols:     the column indices for each row of the CSR data structure
 */
 void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols, 
 					       int nrnodes, const int *rnodes,
@@ -1345,21 +1497,29 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   int *cols = NULL;
   int *rowp = new int[ nrnodes+1 ];
   memset(rowp, 0, (nrnodes+1)*sizeof(int));
-  /*
-  int *nodeElems = NULL;
-  int *nodeElemIndex = NULL;
-  computeNodeToElementCSR(&nodeElemIndex, &nodeElems);
 
-  if (numDependentNodes > 0){
+  // Create/get the node -> element data structure
+  int *nodeElementPtr = NULL;
+  int *nodeToElements = NULL;
+  computeNodeToElementCSR(&nodeElementPtr, &nodeToElements);
+
+  if (depNodes){
+    const int *depNodePtr = NULL;
+    const int *depNodeConn = NULL;
+    depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
+
     // Count the number of nodes associated with each element
-    int * nodeCount = new int[ numElements ];
+    int *nodeCount = new int[ numElements ];
     memset(nodeCount, 0, numElements*sizeof(int));
 
     for ( int i = 0; i < numElements; i++ ){
       int jend = elementNodeIndex[i+1];
       for ( int j = elementNodeIndex[i]; j < jend; j++ ){
-	int node = elementLocalNodes[j];
+	int node = elementTacsNodes[j];
+
 	if (node >= 0){
+          // Convert to the local node number
+          node = getLocalNodeNum(node);
 	  if (rnodes[node] >= 0){
 	    nodeCount[i]++;
 	  }
@@ -1367,9 +1527,9 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
 	else {
 	  // Find the dependent node
 	  int dep = -node-1;
-	  for ( int k = depNodePtr[dep]; 
-		k < depNodePtr[dep+1]; k++ ){
-	    if (rnodes[depNodeToLocal[k]] >= 0){
+	  for ( int k = depNodePtr[dep]; k < depNodePtr[dep+1]; k++ ){
+            node = getLocalNodeNum(depNodeConn[k]);
+	    if (rnodes[node] >= 0){
 	      nodeCount[i]++;
 	    }
 	  }
@@ -1381,9 +1541,9 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
     // using the node->element data
     for ( int i = 0; i < numNodes; i++ ){
       int node = rnodes[i];
-      if (node >= 0){      
-	for ( int j = nodeElemIndex[i]; j < nodeElemIndex[i+1]; j++ ){
-	  int elem = nodeElems[j];
+      if (node >= 0){
+	for ( int j = nodeElementPtr[i]; j < nodeElementPtr[i+1]; j++ ){
+	  int elem = nodeToElements[j];
 	  rowp[node+1] += nodeCount[elem];
 	}
       }
@@ -1402,20 +1562,22 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
     for ( int i = 0; i < numNodes; i++ ){
       int node = rnodes[i];
       if (node >= 0){
-	for ( int j = nodeElemIndex[i]; j < nodeElemIndex[i+1]; j++ ){
-	  int elem = nodeElems[j];
+	for ( int j = nodeElementPtr[i]; j < nodeElementPtr[i+1]; j++ ){
+	  int elem = nodeToElements[j];
 	  int kend = elementNodeIndex[elem+1];
 
 	  // Scan through all the nodes belonging to this element
-	  int r = rowp[node];
+	  int row = rowp[node];
 	  for ( int k = elementNodeIndex[elem]; k < kend; k++ ){
-	    int local = elementLocalNodes[k]; 
+	    int local = elementTacsNodes[k]; 
 	    if (local >= 0){
+              // Get the local node number
+              local = getLocalNodeNum(local);
 	      int rn = rnodes[local];
-	      if (rn >= 0){
-		// This is an independent node
-		cols[r] = rn;  
-		r++;
+              // This is an independent node
+              if (rn >= 0){
+		cols[row] = rn;  
+		row++;
 	      }
 	    }
 	    else {
@@ -1424,15 +1586,16 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
 	      int dep = -local-1;
 	      int pend = depNodePtr[dep+1];
 	      for ( int p = depNodePtr[dep]; p < pend; p++ ){
-		int rn = rnodes[depNodeToLocal[p]];
+                local = getLocalNodeNum(local);
+		int rn = rnodes[local];
 		if (rn >= 0){
-		  cols[r] = rn; 
-		  r++;
+		  cols[row] = rn; 
+		  row++;
 		}
 	      }
 	    }
 	  }
-	  rowp[node] = r;
+	  rowp[node] = row;
 	}
       }
     }
@@ -1451,13 +1614,14 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
     for ( int i = 0; i < numNodes; i++ ){
       int node = rnodes[i];
       if (node >= 0){      
-	for ( int j = nodeElemIndex[i]; j < nodeElemIndex[i+1]; j++ ){
-	  int elem = nodeElems[j];
+	for ( int j = nodeElementPtr[i]; j < nodeElementPtr[i+1]; j++ ){
+	  int elem = nodeToElements[j];
 	  // Count up the number of reduced nodes that are required here.
 	  int count = 0;
-	  for ( int k = elementNodeIndex[elem]; 
-		k < elementNodeIndex[elem+1]; k++ ){
-	    if (rnodes[elementLocalNodes[k]] >= 0){
+	  for ( int k = elementNodeIndex[elem]; k < elementNodeIndex[elem+1]; k++ ){
+            int local = elementTacsNodes[k];
+            local = getLocalNodeNum(local);
+	    if (rnodes[local] >= 0){
 	      count++;
 	    }
 	  }
@@ -1480,18 +1644,19 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
     for ( int i = 0; i < numNodes; i++ ){
       int node = rnodes[i];
       if (node >= 0){
-	for ( int j = nodeElemIndex[i]; j < nodeElemIndex[i+1]; j++ ){
-	  int elem = nodeElems[j];     
-	  int r = rowp[node];
-	  for ( int k = elementNodeIndex[elem]; 
-		k < elementNodeIndex[elem+1]; k++ ){
-	    int rn = rnodes[elementLocalNodes[k]];
+	for ( int j = nodeElementPtr[i]; j < nodeElementPtr[i+1]; j++ ){
+	  int elem = nodeToElements[j];     
+	  int row = rowp[node];
+	  for ( int k = elementNodeIndex[elem]; k < elementNodeIndex[elem+1]; k++ ){
+            int local = elementTacsNodes[k];
+            local = getLocalNodeNum(local);
+	    int rn = rnodes[local];
 	    if (rn >= 0){
-	      cols[r] = rn;
-	      r++;
+	      cols[row] = rn;
+	      row++;
 	    }
 	  }
-	  rowp[node] = r;
+	  rowp[node] = row;
 	}
       }
     }
@@ -1506,9 +1671,9 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   // Go through and sort/uniquify each row and remove the diagonal if requested
   matutils::SortAndUniquifyCSR(nrnodes, rowp, cols, nodiag);
 
-  delete [] nodeElems;
-  delete [] nodeElemIndex;
-  */
+  // Free the node -> element data structure
+  delete [] nodeToElements;
+  delete [] nodeElementPtr;
 
   *_rowp = rowp;
   *_cols = cols;
@@ -1522,15 +1687,21 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   to the owning process. On the owner, scan through the arrays until
   all the local coupling nodes are found.  
 */
-int TACSAssembler::computeCouplingNodes( int ** _cnodes ){
+int TACSAssembler::computeCouplingNodes( int **_cnodes ){
   // Get the ownership range and match the intervals of ownership
   const int *ownerRange;
   varMap->getOwnerRange(&ownerRange);
 
+  // Get the external node numbers
+  const int *ext_nodes = tacsExtNodeNums;
+  if (vecDistIndices){
+    vecDistIndices->getIndices(&ext_nodes);
+  }
+
+  // Match the intervals for the external node numbers
   int *ext_ptr = new int[ mpiSize+1 ];
   int *ext_count = new int[ mpiSize ];
-  FElibrary::matchIntervals(mpiSize, ownerRange, 
-                            numNodes, tacsNodeNums, ext_ptr);
+  FElibrary::matchIntervals(mpiSize, ownerRange, numNodes, ext_nodes, ext_ptr);
 
   // Send the nodes owned by other processors the information
   // First count up how many will go to each process
@@ -1551,42 +1722,31 @@ int TACSAssembler::computeCouplingNodes( int ** _cnodes ){
 
   // Number of nodes that will be received from other procs
   int *recv_nodes = new int[ recv_ptr[mpiSize] ];
-  MPI_Alltoallv(tacsNodeNums, ext_count, ext_ptr, MPI_INT, 
+  MPI_Alltoallv((void*)ext_nodes, ext_count, ext_ptr, MPI_INT, 
 		recv_nodes, recv_count, recv_ptr, MPI_INT, tacs_comm);
 
   // Uniquely sort the recieved nodes
   int nextern_unique = FElibrary::uniqueSort(recv_nodes, recv_ptr[mpiSize]);
 
   // Count up the number of coupling nodes
-  int ncnodes = nextern_unique + (numNodes - numOwnedNodes);
+  int ncnodes = nextern_unique + numExtNodes;
   int *cnodes = new int[ ncnodes ];
-  memset(cnodes, 0, ncnodes*sizeof(int));
 
-  // Find recv_nodes[i] in tacsNodeNums[j]
-  // assign cnodes[i] = j
-  int nc = 0;
-  for ( int j = 0; j < numNodes; j++ ){
-    int * item = (int*)bsearch(&tacsNodeNums[j], recv_nodes, nextern_unique, 
-                               sizeof(int), FElibrary::comparator);
-    if (item){
-      cnodes[item-recv_nodes] = j;
-      nc++;
-      if (nc == nextern_unique){ break; }      
-    }
+  // Automatically add in the external node numbers
+  int index = 0;
+  for ( int i = 0; i < extNodeOffset; i++, index++ ){
+    cnodes[index] = i;
   }
 
-  // Now add in the nodes that are reference locally, but out of
-  // the ownership range
-  for ( int k = 0, j = nextern_unique; k < numNodes; k++ ){
-    if (tacsNodeNums[k] < ownerRange[mpiRank] ||
-        tacsNodeNums[k] >= ownerRange[mpiRank+1]){
-      cnodes[j] = k;
-      j++;
-    }
+  // Add the coupling nodes received from other processors
+  for ( int i = 0; i < nextern_unique; i++ ){
+    cnodes[index] = getLocalNodeNum(recv_nodes[i]);
   }
 
-  // Uniquely sort the coupling nodes
-  ncnodes = FElibrary::uniqueSort(cnodes, ncnodes);
+  // add in the remaining external nodes
+  for ( int i = extNodeOffset; i < numExtNodes; i++, index++ ){
+    cnodes[index] = numOwnedNodes + i;
+  }
 
   delete [] ext_ptr;
   delete [] ext_count;
@@ -1611,8 +1771,8 @@ int TACSAssembler::computeCouplingElements( int **_celems ){
   int ncnodes = computeCouplingNodes(&cnodes);
 
   // Compute the node->element data structure
-  int *nodeElemIndex, *nodeElems;
-  computeNodeToElementCSR(&nodeElemIndex, &nodeElems);
+  int *nodeElementPtr, *nodeToElements;
+  computeNodeToElementCSR(&nodeElementPtr, &nodeToElements);
 
   // Determine the elements that contain a coupling node
   int ncelems = 0;
@@ -1622,16 +1782,16 @@ int TACSAssembler::computeCouplingElements( int **_celems ){
   // touched by each coupling node
   for ( int i = 0; i < ncnodes; i++ ){
     int cnode = cnodes[i];
-    for ( int j = nodeElemIndex[cnode]; j < nodeElemIndex[cnode+1]; j++ ){
-      int elem = nodeElems[j];
 
+    for ( int j = nodeElementPtr[cnode]; j < nodeElementPtr[cnode+1]; j++ ){
+      int elem = nodeToElements[j];
       ncelems = FElibrary::mergeArrays(celems, ncelems, &elem, 1);      
     }
   }
 
   // Free the data
-  delete [] nodeElemIndex;
-  delete [] nodeElems;
+  delete [] nodeElementPtr;
+  delete [] nodeToElements;
   delete [] cnodes;
 
   *_celems = celems;
@@ -1679,6 +1839,11 @@ int TACSAssembler::initialize(){
 	    mpiRank);
     return 1;
   }
+  
+  // If the external nodes have not been computed, compute them now...
+  if (!tacsExtNodeNums){
+    computeExtNodes();
+  }
 
   // Set up data for any dependent nodes. Note that the minimum
   // number of independent nodes is set as the maximum number
@@ -1708,28 +1873,10 @@ int TACSAssembler::initialize(){
     }
   }
 
-  // Get the ownership range of the nodes
-  const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
-
-  // Create the off-processor components
-  int size = numNodes - numOwnedNodes;
-  int *indices = new int[ size ];
-
-  // Take the indices from the off-processor part of the array
-  for ( int i = 0; i < tacsNodeOffset; i++ ){
-    indices[i] = tacsNodeNums[i];
-  }
-  
-  // Take the remaining off-processor part
-  int remain = numNodes - numOwnedNodes - tacsNodeOffset;
-  for ( int i = 0; i < remain; i++ ){
-    indices[i + tacsNodeOffset] = 
-      tacsNodeNums[tacsNodeOffset + numOwnedNodes + i];
-  }
-
   // Create the distribution between the local nodes and the global ones
-  vecDistIndices = new TACSBVecIndices(&indices, size);
+  vecDistIndices = new TACSBVecIndices(&tacsExtNodeNums,
+                                       numExtNodes);
+  tacsExtNodeNums = NULL;
   vecDistIndices->incref();
   vecDistIndices->setUpInverse();
   
@@ -1883,7 +2030,7 @@ void TACSAssembler::setNumThreads( int t ){
   Vector classes initialized by one TACS object, cannot be used by a
   second, unless they share are exactly the parallel layout.
 */
-TACSBVec * TACSAssembler::createVec(){
+TACSBVec *TACSAssembler::createVec(){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createVec() before initialize()\n", 
 	    mpiRank);
@@ -1898,7 +2045,7 @@ TACSBVec * TACSAssembler::createVec(){
 /*!
   Create a distributed matrix.
 */
-DistMat * TACSAssembler::createMat(){
+DistMat *TACSAssembler::createMat(){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createMat() before initialize()\n", 
 	    mpiRank);
@@ -1955,7 +2102,7 @@ DistMat * TACSAssembler::createMat(){
   where P^{T} is a permutation of the columns (variables), while P is
   a permutation of the rows (equations).
 */
-FEMat * TACSAssembler::createFEMat( enum OrderingType order_type ){
+FEMat *TACSAssembler::createFEMat( enum OrderingType order_type ){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n", 
 	    mpiRank);
@@ -2016,14 +2163,14 @@ order_type == NATURAL_ORDER\n",
       tacs_local_nodes = new int[ nlocal_nodes ];
       for ( int i = 0; i < nlocal_nodes; i++ ){
         perm_local_nodes[i] = perm[i];
-        tacs_local_nodes[i] = tacsNodeNums[perm_local_nodes[i]];
+        tacs_local_nodes[i] = getGlobalNodeNum(perm_local_nodes[i]);
       }
 
       perm_coupling_nodes = new int[ ncoupling_nodes ];
       tacs_coupling_nodes = new int[ ncoupling_nodes ];
       for ( int i = 0; i < ncoupling_nodes; i++ ){
         perm_coupling_nodes[i] = perm[i + nlocal_nodes];
-        tacs_coupling_nodes[i] = tacsNodeNums[perm_coupling_nodes[i]];
+        tacs_coupling_nodes[i] = getGlobalNodeNum(perm_coupling_nodes[i]);
       }
 
       delete [] perm;
@@ -2071,7 +2218,7 @@ order_type == NATURAL_ORDER\n",
         for ( int i = 0; i < ncoupling_nodes; i++ ){
           // Permute the coupling_nodes array - store in perm_coupling_nodes
           perm_coupling_nodes[i] = coupling_nodes[perm_coupling_nodes[i]];
-          tacs_coupling_nodes[i] = tacsNodeNums[perm_coupling_nodes[i]];
+          tacs_coupling_nodes[i] = getGlobalNodeNum(perm_coupling_nodes[i]);
         }
         
         delete [] rowp;
@@ -2104,7 +2251,7 @@ order_type == NATURAL_ORDER\n",
       for ( int i = 0; i < nlocal_nodes; i++ ){
         // Permute the local nodes and record the corresponding tacs variables
         perm_local_nodes[i] = local_nodes[perm_local_nodes[i]];
-        tacs_local_nodes[i] = tacsNodeNums[perm_local_nodes[i]];
+        tacs_local_nodes[i] = getGlobalNodeNum(perm_local_nodes[i]);
       }
       
       delete [] rowp;
@@ -2219,6 +2366,18 @@ void TACSAssembler::setVariables( TACSBVec *q,
 }
 
 /*
+  Get the variables from the vectors in TACS
+*/
+void TACSAssembler::getVariables( TACSBVec *q, 
+                                  TACSBVec *qdot, 
+                                  TACSBVec *qddot ){
+  // Copy the values to the array. Only local values are 
+  // copied, not external/dependents
+  if (q){ q->copyValues(varsVec); }
+  if (qdot){ qdot->copyValues(dvarsVec); }
+  if (qddot){ qddot->copyValues(ddvarsVec); }}
+
+/*
   Set the simulation time internally in the TACSAssembler object
 */
 void TACSAssembler::setSimulationTime( double _time ){
@@ -2230,21 +2389,6 @@ void TACSAssembler::setSimulationTime( double _time ){
 */
 double TACSAssembler::getSimulationTime(){
   return time;
-}
-
-/*!
-  Return the array of tacsNodeNums 
-
-  tacsNodeNums: constant pointer to the array of all TACS variable numbers
-*/
-int TACSAssembler::getTacsNodeNums( const int **_tacsNodeNums ){ 
-  if (tacsNodeNums){
-    *_tacsNodeNums = tacsNodeNums; 
-    return numNodes;
-  }
-  
-  *_tacsNodeNums = NULL;
-  return 0;
 }
 
 /*!  
@@ -2859,11 +3003,11 @@ void TACSAssembler::evalFunctions( TACSFunction **functions,
   Note that a function should be evaluated - using evalFunction - before
   its derivatives can be evaluated.
 
-  The design variable sensitivities are divided into two distinct sets:
-  material-dependent design variables and shape design variables. The
-  shape design variables are handled through the TACSNodeMap class. The
-  material-dependent design variables are handled through the element 
-  classes themselves.
+  The design variable sensitivities are divided into two distinct
+  sets: material-dependent design variables and shape design
+  variables. The shape design variables are handled through the
+  TACSNodeMap class. The material-dependent design variables are
+  handled through the element classes themselves.
 
   In this code, the derivative of the function w.r.t. the
   shape-dependent design variables is handled first. The derivative of
@@ -3885,7 +4029,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
   temp->axpy(TacsScalar(0.0, dh), pert);
-  setVariables(temp, NULL, NULL);
+  setVariables(temp);
 
   evalFunctions(&func, 1, &fd);
   fd = ImagPart(fd)/dh;
@@ -3893,20 +4037,20 @@ void TACSAssembler::testFunction( TACSFunction *func,
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
   temp->axpy(dh, pert);
-  setVariables(temp, NULL, NULL);
+  setVariables(temp);
   evalFunctions(&func, 1, &fval0);
 
   // Evaluate the function at vars - dh*pert
   temp->copyValues(vars);
   temp->axpy(-dh, pert);
-  setVariables(temp, NULL, NULL);
+  setVariables(temp);
   evalFunctions(&func, 1, &fval1);
   
   fd = 0.5*(fval0 - fval1)/dh;
 #endif // TACS_USE_COMPLEX
 
   // Reset the variable values
-  setVariables(vars, NULL, NULL);
+  setVariables(vars);
 
   // Evaluate the state variable sensitivity
   evalFunctions(&func, 1, &ftmp);
