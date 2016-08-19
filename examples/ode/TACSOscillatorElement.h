@@ -1,31 +1,29 @@
-#ifndef TACS_DUMMY_ELEMENT_H
-#define TACS_DUMMY_ELEMENT_H
+#ifndef TACS_OSCILLATOR_ELEMENT_H
+#define TACS_OSCILLATOR_ELEMENT_H
 
 #include "TACSElement.h"
 
 /*
-  A dummy implementation of TACSElement class with a random nonlinear
-  ode -- used to test integration schemes. When using this element make
-  sure to set the initial conditions within TACSIntegrator or the
-  residuals will be zero throughout.
+  A test implementation of TACSElement class with a two-DOF aero
+  elastic oscillator system. The degrees of freedom are pitching and
+  plunging states.
 
-  Example:
-
-  q[0]->set(1.3);
-  qdot[0]->set(0.2);
-
-  in lieu of:
-
-  tacs->getInitConditions(q[0], qdot[0]);
+  Reference:
+  Zhao, L. and Yang, Z., ``Chaotic motions of an airfoil with
+  non-linear stiffness in incompressible flow,'' Journal of Sound and
+  Vibration, Vol. 138, No. 2, 1990, pp. 245–254.
 */
-class TACSDummyElement : public TACSElement {
+class TACSOscillatorElement : public TACSElement {
  public:
-  TACSDummyElement(){}
-  ~TACSDummyElement(){}
+  TACSOscillatorElement(){}
+  ~TACSOscillatorElement(){}
+
+  // Design variables
+  static const TacsScalar Q = 8.00; // reduced dynamic pressure
   
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
-  const char * elementName() { return  "TACSDummyODE"; } 
+  const char * elementName() { return  "TACSOscillatorODE"; } 
   const char * displacementName( int i ) {}
   const char * stressName( int i ) {}
   const char * strainName( int i ) {}
@@ -83,10 +81,13 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar q[],
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
+    // first equation
+    res[0] += qddot[0] + 0.25*qdot[1] + 0.1*qdot[0] 
+      + 0.2*q[0] + 0.1*Q*q[1];
 
-    res[0] += qddot[0] + 0.02*qdot[0]*qdot[1] + 5.0*q[0];
-    res[1] += qddot[1] - 0.05*qdot[0]*qdot[1] + q[0]*q[1];
-
+    // second equation
+    res[1] += 0.25*qddot[0] + 0.5*qddot[1] 
+      + 0.1*qdot[1] + 0.5*q[1] + 20.0*q[1]*q[1]*q[1] - 0.1*Q*q[1];
   }
 
   // Compute the Jacobian of the governing equations
@@ -98,25 +99,62 @@ class TACSDummyElement : public TACSElement {
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
 
-    // derivative wrt qddot
+    //-------------------------------------------------------------//
+    // Add dR/dUDDOT
+    //-------------------------------------------------------------//
+
+    // derivative of first equation
+
     J[0] += gamma*1.0;
     J[1] += gamma*0.0;
-    J[2] += gamma*0.0;
-    J[3] += gamma*1.0;
 
-    // derivative wrt qdot
-    J[0] += beta*0.02*qdot[1];
-    J[1] += beta*0.02*qdot[0];
-    J[2] += beta*-0.05*qdot[1];
-    J[3] += beta*-0.05*qdot[0];
+    // derivative of second equation
 
-    // derivative wrt q
-    J[0] += alpha*5.0;
-    J[1] += alpha*0.0;
-    J[2] += alpha*q[1];
-    J[3] += alpha*q[0];
+    J[2] += gamma*0.25;
+    J[3] += gamma*0.50;
+
+
+    //-------------------------------------------------------------//
+    // Add dR/dUDOT
+    //-------------------------------------------------------------//
+
+    // derivative of first equation
+
+    J[0] += beta*0.10;
+    J[1] += beta*0.25;
+
+    // derivative of second equation
+
+    J[2] += beta*0.0;
+    J[3] += beta*0.1;
+
+
+    //-------------------------------------------------------------//
+    // Add dR/du
+    //-------------------------------------------------------------//
+
+    // derivative of first equation
+
+    J[0] += alpha*0.2;
+    J[1] += alpha*0.1*Q;
+
+    // derivative of second equation
+
+    J[2] += alpha*0.0;
+    J[3] += alpha*(0.5 + 60.0*q[1]*q[1] - 0.1*Q);
   }
 
+  // Retrieve the initial values of the state variables
+  // --------------------------------------------------
+  void getInitCondition( TacsScalar vars[],
+			 TacsScalar dvars[],
+			 const TacsScalar X[] ){
+    vars[0] = 2.0;
+    vars[1] = 1.0;
+
+    dvars[0] = 0.2;
+    dvars[1] = -0.1;
+  }  
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
@@ -228,4 +266,4 @@ class TACSDummyElement : public TACSElement {
   
 };
 
-#endif // TACS_DUMMY_ELEMENT_H
+#endif // TACS_OSCILLATOR_ELEMENT_H

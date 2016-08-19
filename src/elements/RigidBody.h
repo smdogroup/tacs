@@ -2,9 +2,14 @@
 #define TACS_RIGID_BODY_DYNAMICS_H
 
 /*
-  Rigid-body dynamics routines for TACS
+  Rigid-body dynamics classes for TACS.
+  
+  1. TACSRefFrame
+  2. TACSRigidBody
+  3. TACSSphericalConstraint
+  4. TACSRevoluteConstraint
 
-  Copyright (c) 2015-2016 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2015-2016 Graeme Kennedy. All rights reserved.
 */
 
 #include "TACSElement.h"
@@ -30,16 +35,29 @@ class TACSRefFrame : public TACSObject {
 		TACSGibbsVector *_r2 );
   ~TACSRefFrame();
 
+  // Returns the rotation matrix associated with the frame of ref.
+  //--------------------------------------------------------------
   void getRotation( const TacsScalar ** _C );
+  
+  // Getters and setters for DVs
+  //----------------------------
   void setDesignVars( const TacsScalar *dvs, int numDVs );
   void getDesignVars( TacsScalar *dvs, int numDVs );
+
+  // Product of adjoint variables with rotation parametrization
+  //-----------------------------------------------------------
   void addRotationAdjResProduct( TacsScalar fdvSens[], int numDVs,
 				 const TacsScalar psi[],
 				 const TacsScalar phi[] );
+
+  // Routine to perform sanity checks on the implementations of
+  // the frame of reference
+  //-----------------------------------------------------------
   void testRotation( int numDVs, double dh );
 
  private:
   // Recompute the rotation matrix
+  //------------------------------
   void initialize();
 
   // The rotation matrix associated with this reference frame
@@ -63,15 +81,15 @@ class TACSRefFrame : public TACSObject {
   this may change in the future.)
 
   In this class, all inertial properties (with the exception of the
-  body mass of course) are expressed in a body-fixed reference frame.
+  body mass of course) are expressed initially in a body-fixed
+  reference frame, but are later converted into a Newtonian frame.
   The body-fixed frame is defined by an initial reference
-  configuration plus a rotation parametrized either using Euler angles
-  or Euler parameters/quaternions.
+  configuration plus a rotation parametrized either using Euler
+  parameters/quaternions.
 
   Kinematic constraints add additional internal reaction forces and
   torques are required to complete the full multibody system. These
-  internal reactions are treated within the kinematic constraint class
-  defined below.
+  internal reactions are treated within the kinematic constraint class.
 */
 class TACSRigidBody : public TACSElement {
  public:
@@ -87,9 +105,7 @@ class TACSRigidBody : public TACSElement {
 
   // Set design variables numbers associated with the inertial props.
   // ----------------------------------------------------------------
-  void setDesignVarNums( int _massDV, 
-                         const int _cDV[], 
-			 const int _JDV[] );
+  void setDesignVarNums( int _massDV, const int _cDV[], const int _JDV[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------

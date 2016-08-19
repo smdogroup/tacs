@@ -229,13 +229,13 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 100.e-3; int num_steps_per_sec = 1000;
+  double tinit = 0.0, tfinal = 100.e-3; int num_steps_per_sec = 1000;  
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
                                                     type);
   obj->incref();
-
+  
   // Set options
   obj->setJacAssemblyFreq(1);
   obj->setAbsTol(1.0e-10);
@@ -246,10 +246,10 @@ int main( int argc, char **argv ){
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);
 
-  // COMPLEX STEP
-  //  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
+  // Complex step
+  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-16);
 
-  // ADJOINT NEW
+  // Adjoint gradient
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
 
   for( int j = 0; j < NUM_FUNCS; j++) {

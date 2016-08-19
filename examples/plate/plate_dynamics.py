@@ -55,7 +55,7 @@ write_freq = 1  # Set to 0 if no output is sought
 #---------------------------------------------------------------------!
 
 tinit             = 0.00
-tfinal            = 0.25
+tfinal            = 0.10
 num_steps_per_sec = 100
 
 #---------------------------------------------------------------------!
@@ -83,7 +83,7 @@ thickness     = 0.05    # currrent thickness of elements in m
 # Load input BDF, set properties and create TACS
 #---------------------------------------------------------------------!
 
-mesh        = TACS.MeshLoader(comm)
+mesh = TACS.MeshLoader(comm)
 mesh.scanBDFFile(bdfFileName)
 
 num_components = mesh.getNumComponents()
@@ -102,7 +102,8 @@ tacs = mesh.createTACS(8)
 f5 = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
 
 # Use Newmark-Beta-Gamma integrator for time integration
-solver = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 2)
-solver.setPrintLevel(1)
+solver = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 3)
+solver.setJacAssemblyFreq(1)
+solver.setPrintLevel(2)
 solver.configureOutput(f5, write_freq, f5_format)
 solver.integrate()

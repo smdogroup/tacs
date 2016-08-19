@@ -1,22 +1,11 @@
-#ifndef TACS_DUMMY_ELEMENT_H
-#define TACS_DUMMY_ELEMENT_H
+#ifndef TACS_SMD_ELEMENT_H
+#define TACS_SMD_ELEMENT_H
 
 #include "TACSElement.h"
 
 /*
-  A dummy implementation of TACSElement class with spring mass damper
-  equations -- used to test integration schemes. When using this
-  element make sure to set the initial conditions within
-  TACSIntegrator or the residuals will be zero throughout.
-
-  Example:
-
-  q[0]->set(1.3);
-  qdot[0]->set(0.2);
-
-  in lieu of:
-
-  tacs->getInitConditions(q[0], qdot[0]);
+  A test implementation of TACSElement class with a Spring mass
+  damper system ODE.
 */
 class TACSSMDElement : public TACSElement {
  public:
@@ -30,7 +19,7 @@ class TACSSMDElement : public TACSElement {
 
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
-  const char * elementName() { return  "TACSSpringMassDamper"; } 
+  const char * elementName() { return  "TACSSpringMassDamperODE"; } 
   const char * displacementName( int i ) {}
   const char * stressName( int i ) {}
   const char * strainName( int i ) {}
@@ -102,6 +91,14 @@ class TACSSMDElement : public TACSElement {
     J[0] += M*gamma + C*beta + K*alpha;
   }
 
+  // Retrieve the initial values of the state variables
+  // --------------------------------------------------
+  void getInitCondition( TacsScalar vars[],
+			 TacsScalar dvars[],
+			 const TacsScalar X[] ){
+    vars[0]  = 0.5;
+    dvars[0] = 0.1;
+  }
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
@@ -210,7 +207,6 @@ class TACSSMDElement : public TACSElement {
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] ) {}
   void getOutputConnectivity( int * con, int start_node ) {}
-  
 };
 
-#endif // TACS_DUMMY_ELEMENT_H
+#endif // TACS_SMD_ELEMENT_H

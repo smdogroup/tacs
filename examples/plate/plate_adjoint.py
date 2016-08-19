@@ -132,7 +132,7 @@ dfdx_fd         = np.zeros(num_funcs*num_design_vars)
 # BDF Integrator
 for bdf_order in [1,2,3]:
     bdf = TACS.BDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec, bdf_order)
-    bdf.setPrintLevel(1)
+    bdf.setPrintLevel(0)
     bdf.setJacAssemblyFreq(1)
     bdf.setFunction(funcs)
 
@@ -148,29 +148,10 @@ for bdf_order in [1,2,3]:
     print("Error for BDF order ", bdf_order)
     print(fvals-fvals_fd, dfdx-dfdx_fd)
 
-# DIRK Integrator
-for num_stages in [1,2,3]:
-    dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, num_stages)
-    dirk.setPrintLevel(1)
-    dirk.setJacAssemblyFreq(1)
-    dirk.setFunction(funcs)
-
-    print("")
-    print("Evaluating adjoint gradient for DIRK method of order ", num_stages+1)
-    dirk.getFuncGrad(num_design_vars, x, fvals, dfdx)
-    print(fvals, dfdx)
-
-    print("Evaluating finite difference gradient DIRK method of order ", num_stages+1)
-    dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
-    print(fvals_fd, dfdx_fd)
-
-    print("Error for DIRK order ", num_stages+1)
-    print(fvals-fvals_fd, dfdx-dfdx_fd)
-
 # ABM Integrator
-for abm_order in [1,2,3,4,5,6]:
+for abm_order in [1, 2, 3, 4, 5, 6]:
     abm = TACS.ABMIntegrator(tacs, tinit, tfinal, num_steps_per_sec, abm_order)
-    abm.setPrintLevel(1)
+    abm.setPrintLevel(0)
     abm.setJacAssemblyFreq(1)
     abm.setFunction(funcs)
 
@@ -184,4 +165,41 @@ for abm_order in [1,2,3,4,5,6]:
     print(fvals_fd, dfdx_fd)
 
     print("Error for ABM order ", abm_order)
+    print(fvals-fvals_fd, dfdx-dfdx_fd)
+
+# NBG Integrator
+nbg = TACS.NBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec)
+nbg.setPrintLevel(0)
+nbg.setJacAssemblyFreq(1)
+nbg.setFunction(funcs)
+
+print("")
+print("Evaluating adjoint gradient for NBG method")
+nbg.getFuncGrad(num_design_vars, x, fvals, dfdx)
+print(fvals, dfdx)
+
+print("Evaluating finite difference gradient NBG method ")
+nbg.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
+print(fvals_fd, dfdx_fd)
+
+print("Error for NBG")
+print(fvals-fvals_fd, dfdx-dfdx_fd)
+
+# DIRK Integrator
+for num_stages in [1,2,3]:
+    dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, num_stages)
+    dirk.setPrintLevel(0)
+    dirk.setJacAssemblyFreq(1)
+    dirk.setFunction(funcs)
+
+    print("")
+    print("Evaluating adjoint gradient for DIRK method of order ", num_stages+1)
+    dirk.getFuncGrad(num_design_vars, x, fvals, dfdx)
+    print(fvals, dfdx)
+
+    print("Evaluating finite difference gradient DIRK method of order ", num_stages+1)
+    dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
+    print(fvals_fd, dfdx_fd)
+
+    print("Error for DIRK order ", num_stages+1)
     print(fvals-fvals_fd, dfdx-dfdx_fd)
