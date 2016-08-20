@@ -77,10 +77,10 @@ class TACSAssembler : public TACSObject {
                int nbcs=-1, const int *vars=NULL, 
                const TacsScalar *vals=NULL );
   
-  // Functions for performing ordering based on RCM
-  // ----------------------------------------------
-  // void computeReordering( enum OrderingType order_type, 
-  //                         enum MatrixOrderingType mat_type );
+  // Reorder the unknowns according to the specified reordering
+  // ----------------------------------------------------------
+  void computeReordering( enum OrderingType order_type, 
+                          enum MatrixOrderingType mat_type );
 
   // Initialize the mesh
   // -------------------
@@ -242,7 +242,10 @@ class TACSAssembler : public TACSObject {
   int getLocalNodeNum( int node );
   int getGlobalNodeNum( int node );
   void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, int nodiag=0 );
-  int computeCouplingNodes( int **_cnodes );
+  int computeCouplingNodes( int **_couplingNodes,
+                            int **_extPtr=NULL, int **_extCount=NULL,
+                            int **_recvPtr=NULL, int **_recvCount=NULL,
+                            int **_recvNodes=NULL );
   int computeCouplingElements( int **_celems );
 
   // Functions for ordering the variables

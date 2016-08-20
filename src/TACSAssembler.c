@@ -660,15 +660,25 @@ connectivity not defined\n", mpiRank);
 /*!
   Compute a reordering of the nodes.
 
-  1. Determine the nodes that are locally owned and those that are
-  required from other processors.
-  2. Distribute the unknown nodes to the owning processes. 
-  These are the recv_nodes -> sort them to sorted_recv_nodes.
-  3. Find the indices of the recieved nodes.
-  4. Order the locally owned nodes based on the input ordering.
-  5. Based on the recvied indices, set the outgoing node numbers
-  back into the recieving array.
-  6. Set the new values of the nodes on the requesting processes
+  This function should be called after the element connectivity,
+  boundary conditions and optionally the dependent nodes are set, but
+  before the call to initialize().
+
+  This code computes and stores a reordering based on both the matrix
+  type and the ordering type. The matrix type determines what
+  constitutes a coupling node and what does not. The matrix type only
+  impacts the ordering in parallel computations.
+
+  The algorithm proceeds as follows:
+
+  1. Compute the coupling nodes referenced by another processor
+    
+  2. Order the locally owned nodes based on the input ordering.
+  
+  3. Based on the recvied coupling nodes, set the outgoing node
+  numbers back into the recieving array.
+  
+  4. Set the new values of the nodes on the requesting processes
 
   The nodes are transfered as follows
   extern_nodes -> sorted_extern_nodes -> recv_nodes -> sorted_recv_nodes
@@ -681,126 +691,41 @@ connectivity not defined\n", mpiRank);
   find extern_nodes[i] == sorted_extern_nodes[j]
   assign new_var = new_sorted_extern_nodes[j]
 */
-/*
 void TACSAssembler::computeReordering( enum OrderingType order_type,
                                        enum MatrixOrderingType mat_type ){
   // Return if the element connectivity not set
   if (!elementNodeIndex){
     fprintf(stderr, 
             "[%d] Must define element connectivity before reordering\n",
-            mpIRank);
+            mpiRank);
     return;
   }
   if (tacsExtNodeNums){
     fprintf(stderr, 
             "[%d] TACSAssembler::computeReordering() can only be called once\n",
-            mpIRank);
+            mpiRank);
     return;
   }
 
   // Compute the external nodes
   computeExtNodes();
 
-  // The ownership range of the nodes
-  const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
-
-  // Figure out how many of the local nodes are not owned by this
-  // processor.
-  int nextern_nodes = numNodes - 
-    (ownerRange[mpiRank+1] - ownerRange[mpiRank]);
-
-  // Create a sorted list of externally owned node numbers
-  int *sorted_extern_nodes = new int[ nextern_nodes ];
-
-  // Go through all the node numbers and determine which ones are
-  // owned by other processors
-  nextern_nodes = 0;
-  for ( int i = 0; i < numNodes; i++ ){
-    if (tacsNodeNums[i] < ownerRange[mpiRank] ||
-        tacsNodeNums[i] >= ownerRange[mpiRank+1]){
-      sorted_extern_nodes[nextern_nodes] = tacsNodeNums[i];
-      nextern_nodes++;
-    }
-  }
-
-  // Create a unique list of non-local nodes. Check to see that the
-  // unique list is equal in length to the original array - i.e. the
-  // original nodes are uniquely defined.
-  if (nextern_nodes != FElibrary::uniqueSort(sorted_extern_nodes, 
-					     nextern_nodes)){
-    fprintf(stderr, "[%d] Error, external nodes are not unique\n", 
-	    mpiRank);
-  }
-
-  // Determine the range of non-local node numbers that are owned
-  // by other processors. Match the intervals of these nodes within
-  // the sorted external node list in preparation for sending their
-  // values to the destination processors.
-  int * extern_ptr = new int[ mpiSize+1 ];
-  int * extern_count = new int[ mpiSize ];
-  FElibrary::matchIntervals(mpiSize, ownerRange, 
-			    nextern_nodes, sorted_extern_nodes, extern_ptr);
-
-  // Determine the number of nodes destined for each processor
-  for ( int i = 0; i < mpiSize; i++ ){
-    extern_count[i] = extern_ptr[i+1] - extern_ptr[i];
-  }
-
-  // Set up the receive counts/offsets from the other processors
-  int * recv_count = new int[ mpiSize ];
-  int * recv_ptr = new int[ mpiSize+1 ];
-  MPI_Alltoall(extern_count, 1, MPI_INT, recv_count, 1, MPI_INT, tacs_comm);
-
-  // Count up the number of received nodes and offsets from all the
-  // other processors to this processor
-  recv_ptr[0] = 0;
-  for ( int i = 0; i < mpiSize; i++ ){
-    recv_ptr[i+1] = recv_ptr[i] + recv_count[i];
-  }
-
-  // Receive the nodes from the other processors using all-to-all
-  // communication with the other processors
-  int nrecv_nodes = recv_ptr[mpiSize];
-  int *recv_nodes = new int[ nrecv_nodes ];
-  MPI_Alltoallv(sorted_extern_nodes, extern_count, extern_ptr, MPI_INT, 
-		recv_nodes, recv_count, recv_ptr, MPI_INT, tacs_comm);
-   
-  // Sort the list of nodes that were received by other processors. 
-  // These are the nodes that this processor owns that are referenced
-  // by other processors.
-  int *sorted_recv_nodes = new int[ nrecv_nodes ];
-  memcpy(sorted_recv_nodes, recv_nodes, nrecv_nodes*sizeof(int));
-  int nrecv_sorted = FElibrary::uniqueSort(sorted_recv_nodes, nrecv_nodes);
-
-  // Find the indices of the received nodes that are referenced
-  // by other processors
-  int *sorted_recv_index = new int[ nrecv_sorted ];  
-  int nc = 0;
-  for ( int j = 0; j < numNodes; j++ ){
-    int * item = (int *) bsearch(&tacsNodeNums[j], sorted_recv_nodes, 
-				 nrecv_sorted, sizeof(int), 
-				 FElibrary::comparator);
-    if (item){
-      sorted_recv_index[item-sorted_recv_nodes] = j;
-      nc++;
-      if (nc == nrecv_sorted){ break; }
-    }
-  }
-
-  if (nc != nrecv_sorted){
-    fprintf(stderr, "[%d] Error, not all received nodes \
-have been set\n", mpiRank);
-  }
+  // Compute the local node numbers that correspond to the
+  // coupling nodes
+  int *couplingNodes;
+  int *extPtr, *extCount;
+  int *recvPtr, *recvCount, *recvNodes;
+  int numCoupling = computeCouplingNodes(&couplingNodes, &extPtr, &extCount,
+                                         &recvPtr, &recvCount, &recvNodes);
 
   // The new node numbers to be set according to the different
   // re-ordering schemes
-  int *new_node_nums = new int[ numNodes ];
+  int *newNodeNums = new int[ numNodes ];
 
   // Metis can't handle the non-zero diagonal in the CSR data structure
-  int no_diagonal = 0;
+  int noDiagonal = 0;
   if (order_type == ND_ORDER){ 
-    no_diagonal = 1;
+    noDiagonal = 1;
   }
 
   // If using only one processor, order everything. In this case
@@ -808,9 +733,9 @@ have been set\n", mpiRank);
   if (mpiSize == 1){
     // The node connectivity
     int *rowp, *cols;
-    computeLocalNodeToNodeCSR(&rowp, &cols, no_diagonal);
+    computeLocalNodeToNodeCSR(&rowp, &cols, noDiagonal);
     computeMatReordering(order_type, numNodes, rowp, cols, 
-                         NULL, new_node_nums);
+                         NULL, newNodeNums);
 
     delete [] rowp;
     delete [] cols;
@@ -819,112 +744,99 @@ have been set\n", mpiRank);
     // First, find the reduced nodes - the set of nodes 
     // that are only referenced by this processor. These 
     // can be reordered without affecting other processors.
-    int * reduced_nodes = new int[ numNodes ];
-    memset(reduced_nodes, 0, numNodes*sizeof(int));
+    int *reducedNodes = new int[ numNodes ];
+    memset(reducedNodes, 0, numNodes*sizeof(int));
 
-    // Label all the external nodes with a negative index.
-    // This will eliminate them from the connectivity.
-    for ( int i = 0; i < numNodes; i++ ){
-      if (tacsNodeNums[i] < ownerRange[mpiRank] ||
-          tacsNodeNums[i] >= ownerRange[mpiRank+1]){
-        reduced_nodes[i] = -1;
-      }
+    // Add all the nodes that are external to this processor
+    for ( int i = 0; i < extNodeOffset; i++ ){
+      reducedNodes[i] = -1;
+    }
+    for ( int i = extNodeOffset + numOwnedNodes; i < numNodes; i++ ){
+      reducedNodes[i] = -1;
     }
 
-    if (mat_type == APPROXIMATE_SCHUR ||
-        mat_type == DIRECT_SCHUR){
-      for ( int i = 0; i < nrecv_sorted; i++ ){
-        int cnode = sorted_recv_index[i];
-        reduced_nodes[cnode] = -1;
-      }   
-
+    // Depending on the matrix type, also add the external dependent
+    // nodes and nodes that also couple to those nodes
+    if (mat_type == DIRECT_SCHUR){
+      for ( int i = 0; i < numCoupling; i++ ){
+        int node = couplingNodes[i];
+        reducedNodes[node] = -1;
+      }
+    }
+    else if (mat_type == APPROXIMATE_SCHUR){
       // If we want an approximate schur ordering, where the
       // nodes that couple to other processors are ordered last,
       // we also add these nodes to the reduced set.
-      if (mat_type == APPROXIMATE_SCHUR){
-        // Compute the ordering for the
-        int *rowp, *cols;
-        computeLocalNodeToNodeCSR(&rowp, &cols);
+      int *rowp, *cols;
+      computeLocalNodeToNodeCSR(&rowp, &cols);
 
-        // Order all nodes linked by an equation to an external node
-        // This ordering is better for the PMat class
-        for ( int i = 0; i < nrecv_sorted; i++ ){
-          int var = sorted_recv_index[i];
-          for ( int j = rowp[var]; j < rowp[var+1]; j++ ){
-            reduced_nodes[cols[j]] = -1;
-          }
+      // Order all nodes linked by an equation to an external node
+      // This ordering is required for the approximate Schur method
+      for ( int i = 0; i < numCoupling; i++ ){
+        int node = couplingNodes[i];
+        for ( int jp = rowp[node]; jp < rowp[node+1]; jp++ ){
+          reducedNodes[cols[jp]] = -1;
         }
-
-        // Add to the reduced set of nodes all those nodes that
-        // couple to a boundary node through the governing
-        // equations. This ensures that the equations
-        // that reference a boundary node are ordered last as well.
-        for ( int i = 0; i < numNodes; i++ ){
-          if (tacsNodeNums[i] < ownerRange[mpiRank] ||
-              tacsNodeNums[i] >= ownerRange[mpiRank+1]){
-            for ( int j = rowp[i]; j < rowp[i+1]; j++ ){
-              reduced_nodes[cols[j]] = -1;
-            }
-          }
-        }
-
-        delete [] rowp;
-        delete [] cols;
       }
-    }   
+
+      delete [] rowp;
+      delete [] cols;
+    }
 
     // Now, order all nodes that are non-negative
-    int num_reduced_nodes = 0;
+    int numReducedNodes = 0;
     for ( int i = 0; i < numNodes; i++ ){
-      if (reduced_nodes[i] >= 0){
-        reduced_nodes[i] = num_reduced_nodes;
-        num_reduced_nodes++;
+      if (reducedNodes[i] >= 0){
+        reducedNodes[i] = numReducedNodes;
+        numReducedNodes++;
       }
     }
 
     // Compute the reordering for the reduced set of nodes
-    int * new_reduced_vars = new int[ num_reduced_nodes ];
+    int *newReducedNodes = new int[ numReducedNodes ];
     int *rowp, *cols;
     computeLocalNodeToNodeCSR(&rowp, &cols, 
-                              num_reduced_nodes, reduced_nodes, 
-                              no_diagonal);
-    computeMatReordering(order_type, num_reduced_nodes, rowp, cols,
-                         NULL, new_reduced_vars);
+                              numReducedNodes, reducedNodes, 
+                              noDiagonal);
+    computeMatReordering(order_type, numReducedNodes, rowp, cols,
+                         NULL, newReducedNodes);
+    delete [] rowp;
+    delete [] cols;
 
-    // Place the result back into the new_node_nums - add the
+    // Place the result back into the newNodeNums - add the
     // ownership offset
-    int node_offset = ownerRange[mpiRank];
+    const int *ownerRange;
+    varMap->getOwnerRange(&ownerRange);
+    int offset = ownerRange[mpiRank];
     for ( int i = 0, j = 0; i < numNodes; i++ ){
-      if (reduced_nodes[i] >= 0){
-        new_node_nums[i] = node_offset + new_reduced_vars[j];
+      if (reducedNodes[i] >= 0){
+        newNodeNums[i] = offset + newReducedNodes[j];
         j++;
       }
     }
 
+    delete [] newReducedNodes;
+
     // Add the offset to the total number of reduced nodes
-    node_offset += num_reduced_nodes; 
+    offset += numReducedNodes; 
 
-    delete [] rowp;
-    delete [] cols;
-    delete [] new_reduced_vars;
-
-    // Now, order any remaining variables
-    num_reduced_nodes = 0;
-    for ( int i = 0; i < numNodes; i++ ){
+    // Now, order any remaining variables that have not yet been
+    // ordered. These are the coupling variables (if any) that
+    // have been labeled before.
+    numReducedNodes = 0;
+    for ( int i = extNodeOffset; i < extNodeOffset + numOwnedNodes; i++ ){
       // If the node has not been ordered and is within the ownership
       // range of this process, order it now.
-      if (reduced_nodes[i] < 0 && 
-          (tacsNodeNums[i] >= ownerRange[mpiRank] &&
-           tacsNodeNums[i] <  ownerRange[mpiRank+1])){
-        reduced_nodes[i] = num_reduced_nodes; 
-        num_reduced_nodes++;
+      if (reducedNodes[i] < 0){
+        reducedNodes[i] = numReducedNodes; 
+        numReducedNodes++;
       }
       else {
-        reduced_nodes[i] = -1;
+        reducedNodes[i] = -1;
       }
     }
 
-    if (num_reduced_nodes > 0){
+    if (numReducedNodes > 0){
       // Additive Schwarz ordering should number all locally owned
       // nodes first, and should not require this second ordering.
       if (mat_type == ADDITIVE_SCHWARZ){
@@ -933,90 +845,72 @@ have been set\n", mpiRank);
       }
 
       // Order any remaning variables that are locally owned
-      new_reduced_vars = new int[ num_reduced_nodes ];
+      newReducedNodes = new int[ numReducedNodes ];
       computeLocalNodeToNodeCSR(&rowp, &cols, 
-                                num_reduced_nodes, reduced_nodes, 
-                                no_diagonal);
-      computeMatReordering(order_type, num_reduced_nodes, rowp, cols,
-                           NULL, new_reduced_vars);
+                                numReducedNodes, reducedNodes, 
+                                noDiagonal);
+      computeMatReordering(order_type, numReducedNodes, rowp, cols,
+                           NULL, newReducedNodes);
+
+      // Free the allocate CSR data structure
+      delete [] rowp;
+      delete [] cols;
 
       // Set the new variable numbers for the boundary nodes
       // and include their offset
       for ( int i = 0, j = 0; i < numNodes; i++ ){
-        if (reduced_nodes[i] >= 0){
-          new_node_nums[i] = node_offset + new_reduced_vars[j];
+        if (reducedNodes[i] >= 0){
+          newNodeNums[i] = offset + newReducedNodes[j];
           j++;
         }
       }
 
-      delete [] new_reduced_vars;
-      delete [] rowp;
-      delete [] cols;
+      // Free the new node numbers
+      delete [] newReducedNodes;
     }
 
-    delete [] reduced_nodes;
+    delete [] reducedNodes;
   }
+
+  // So now we have new node numbers for the nodes owned by this
+  // processor, but the other processors do not have these new numbers
+  // yet.
 
   // Find the values assigned to the nodes requested from external nodes
   // recv_nodes is now an outgoing list of nodes to other processes
-  for ( int i = 0; i < nrecv_nodes; i++ ){
-    int *item = (int*)bsearch(&recv_nodes[i], sorted_recv_nodes, nrecv_sorted,
-                              sizeof(int), FElibrary::comparator);
-    int index = item - sorted_recv_nodes;
-    recv_nodes[i] = new_node_nums[sorted_recv_index[index]];
+  for ( int i = 0; i < recvPtr[mpiSize]; i++ ){
+    int node = getLocalNodeNum(recvNodes[i]);
+    recvNodes[i] = newNodeNums[node];
   }
 
   // Now send the new node numbers back to the other processors 
   // that reference them. This also uses all-to-all communication.
-  int * sorted_new_extern_nodes = new int[ nextern_nodes ];
-  MPI_Alltoallv(recv_nodes, recv_count, recv_ptr, MPI_INT,
-		sorted_new_extern_nodes, extern_count, extern_ptr, MPI_INT, 
+  int *newExtNodes = new int[ extPtr[mpiSize] ];
+  MPI_Alltoallv(recvNodes, recvCount, recvPtr, MPI_INT,
+		newExtNodes, extCount, extPtr, MPI_INT,
 		tacs_comm);
 
   // Once the new node numbers from other processors is received
   // apply these new node numbers back to the locally owned
   // reference numbers.
-  for ( int i = 0; i < numNodes; i++ ){
-    if (tacsNodeNums[i] < ownerRange[mpiRank] ||
-        tacsNodeNums[i] >= ownerRange[mpiRank+1]){
-      // Find tacsNodeNums[i] in sorted_extern_nodes
-      int *item = (int*)bsearch(&tacsNodeNums[i], sorted_extern_nodes, 
-                                nextern_nodes, sizeof(int), 
-                                FElibrary::comparator);
-      if (item){
-	new_node_nums[i] = sorted_new_extern_nodes[item-sorted_extern_nodes];
-      }
-      else {
-	fprintf(stderr, "[%d] Error, could not find recvieved node\n", 
-		mpiRank);
-      }
-    }
+  const int *extNodes;
+  extDistIndices->getIndices(&extNodes);
+  for ( int i = 0; i < extPtr[mpiSize]; i++ ){
+    int node = getLocalNodeNum(extNodes[i]);
+    newNodeNums[node] = newExtNodes[i];
   }
 
-  // Copy over the new node numbers
-  memcpy(tacsNodeNums, new_node_nums, numNodes*sizeof(int));
+  // Now, go through the connectivity, dependent nodes, etc. and
+  // redefine the node data
 
-  // This code checks to see if the nodes have been uniquely defined.
-  // This is useful for checking that the nodes have been defined
-  // correctly.
-  int nnodes = FElibrary::uniqueSort(new_node_nums, numNodes);
-  if (nnodes != numNodes){
-    fprintf(stderr, "[%d] Error, nodes are not unique %d < %d \n", 
-            mpiRank, nnodes, numNodes);
-  }
-  
-  delete [] sorted_new_extern_nodes;
-  delete [] sorted_extern_nodes;
-  delete [] extern_ptr;
-  delete [] extern_count;
-  delete [] recv_count;
-  delete [] recv_ptr;
-  delete [] recv_nodes;
-  delete [] sorted_recv_nodes;
-  delete [] sorted_recv_index;
-  delete [] new_node_nums;
+
+  delete [] couplingNodes;
+  delete [] extPtr;
+  delete [] extCount;
+  delete [] recvPtr;
+  delete [] recvCount;
+  delete [] recvNodes;
 }
-*/
 
 /*
   Compute the reordering for the given matrix.
@@ -1757,76 +1651,86 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   to the owning process. On the owner, scan through the arrays until
   all the local coupling nodes are found.  
 */
-int TACSAssembler::computeCouplingNodes( int **_cnodes ){
+int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
+                                         int **_extPtr,
+                                         int **_extCount,
+                                         int **_recvPtr,
+                                         int **_recvCount,
+                                         int **_recvNodes ){
   // Get the ownership range and match the intervals of ownership
   const int *ownerRange;
   varMap->getOwnerRange(&ownerRange);
 
   // Get the external node numbers
-  const int *ext_nodes = tacsExtNodeNums;
+  const int *extNodes = tacsExtNodeNums;
   if (extDistIndices){
-    extDistIndices->getIndices(&ext_nodes);
+    extDistIndices->getIndices(&extNodes);
   }
 
   // Match the intervals for the external node numbers
-  int *ext_ptr = new int[ mpiSize+1 ];
-  int *ext_count = new int[ mpiSize ];
+  int *extPtr = new int[ mpiSize+1 ];
+  int *extCount = new int[ mpiSize ];
   FElibrary::matchIntervals(mpiSize, ownerRange, 
-                            numExtNodes, ext_nodes, ext_ptr);
+                            numExtNodes, extNodes, extPtr);
 
   // Send the nodes owned by other processors the information
   // First count up how many will go to each process
   for ( int i = 0; i < mpiSize; i++ ){
-    ext_count[i] = ext_ptr[i+1] - ext_ptr[i];
-    if (i == mpiRank){ ext_count[i] = 0; }
+    extCount[i] = extPtr[i+1] - extPtr[i];
+    if (i == mpiRank){ extCount[i] = 0; }
   }
 
-  int *recv_count = new int[ mpiSize ];
-  int *recv_ptr = new int[ mpiSize+1 ];
-  MPI_Alltoall(ext_count, 1, MPI_INT, recv_count, 1, MPI_INT, tacs_comm);
+  int *recvCount = new int[ mpiSize ];
+  int *recvPtr = new int[ mpiSize+1 ];
+  MPI_Alltoall(extCount, 1, MPI_INT, recvCount, 1, MPI_INT, tacs_comm);
 
   // Now, send the node numbers to the other processors
-  recv_ptr[0] = 0;
+  recvPtr[0] = 0;
   for ( int i = 0; i < mpiSize; i++ ){
-    recv_ptr[i+1] = recv_ptr[i] + recv_count[i];
+    recvPtr[i+1] = recvPtr[i] + recvCount[i];
   }
 
   // Number of nodes that will be received from other procs
-  int *recv_nodes = new int[ recv_ptr[mpiSize] ];
-  MPI_Alltoallv((void*)ext_nodes, ext_count, ext_ptr, MPI_INT, 
-		recv_nodes, recv_count, recv_ptr, MPI_INT, tacs_comm);
+  int *recvNodes = new int[ recvPtr[mpiSize] ];
+  MPI_Alltoallv((void*)extNodes, extCount, extPtr, MPI_INT, 
+		recvNodes, recvCount, recvPtr, MPI_INT, tacs_comm);
 
   // Uniquely sort the recieved nodes
-  int nextern_unique = FElibrary::uniqueSort(recv_nodes, recv_ptr[mpiSize]);
+  int nextern_unique = FElibrary::uniqueSort(recvNodes, recvPtr[mpiSize]);
 
   // Count up the number of coupling nodes
-  int ncnodes = nextern_unique + numExtNodes;
-  int *cnodes = new int[ ncnodes ];
+  int numCouplingNodes = nextern_unique + numExtNodes;
+  int *couplingNodes = new int[ numCouplingNodes ];
 
   // Automatically add in the external node numbers
   int index = 0;
   for ( int i = 0; i < extNodeOffset; i++, index++ ){
-    cnodes[index] = i;
+    couplingNodes[index] = i;
   }
 
   // Add the coupling nodes received from other processors
   for ( int i = 0; i < nextern_unique; i++, index++ ){
-    cnodes[index] = getLocalNodeNum(recv_nodes[i]);
+    couplingNodes[index] = getLocalNodeNum(recvNodes[i]);
   }
 
   // add in the remaining external nodes
   for ( int i = extNodeOffset; i < numExtNodes; i++, index++ ){
-    cnodes[index] = numOwnedNodes + i;
+    couplingNodes[index] = numOwnedNodes + i;
   }
 
-  delete [] ext_ptr;
-  delete [] ext_count;
-  delete [] recv_ptr;
-  delete [] recv_count;
-  delete [] recv_nodes;  
+  if (_extPtr){ *_extPtr = extPtr; }
+  else { delete [] extPtr; }
+  if (_extCount){ *_extCount = extCount; }
+  else { delete [] extCount; }
+  if (_recvPtr){ *_recvPtr = recvPtr; }
+  else { delete [] recvPtr; }
+  if (_recvCount){ *_recvCount = recvCount; }
+  else { delete [] recvCount; }
+  if (_recvNodes){ *_recvNodes = recvNodes; }
+  else { delete [] recvNodes; }
 
-  *_cnodes = cnodes;
-  return ncnodes;
+  *_couplingNodes = couplingNodes;
+  return numCouplingNodes;
 }
 
 /*!
@@ -1836,37 +1740,38 @@ int TACSAssembler::computeCouplingNodes( int **_cnodes ){
   CSR data structure. From these, collect all elements that "own" a
   node that is referred to from another process.  
 */
-int TACSAssembler::computeCouplingElements( int **_celems ){
+int TACSAssembler::computeCouplingElements( int **_couplingElems ){
   // Compute the nodes that couple to other processors
-  int *cnodes;
-  int ncnodes = computeCouplingNodes(&cnodes);
+  int *couplingNodes;
+  int numCouplingNodes = computeCouplingNodes(&couplingNodes);
 
   // Compute the node->element data structure
   int *nodeElementPtr, *nodeToElements;
   computeNodeToElementCSR(&nodeElementPtr, &nodeToElements);
 
   // Determine the elements that contain a coupling node
-  int ncelems = 0;
-  int *celems = new int[ numElements ];
+  int numCouplingElems = 0;
+  int *couplingElems = new int[ numElements ];
 
   // Loop over all the coupling nodes and add all the elements
   // touched by each coupling node
-  for ( int i = 0; i < ncnodes; i++ ){
-    int cnode = cnodes[i];
+  for ( int i = 0; i < numCouplingNodes; i++ ){
+    int cnode = couplingNodes[i];
 
     for ( int j = nodeElementPtr[cnode]; j < nodeElementPtr[cnode+1]; j++ ){
       int elem = nodeToElements[j];
-      ncelems = FElibrary::mergeArrays(celems, ncelems, &elem, 1);      
+      numCouplingElems = FElibrary::mergeArrays(couplingElems, 
+                                                numCouplingElems, &elem, 1);      
     }
   }
 
   // Free the data
   delete [] nodeElementPtr;
   delete [] nodeToElements;
-  delete [] cnodes;
+  delete [] couplingNodes;
 
-  *_celems = celems;
-  return ncelems;
+  *_couplingElems = couplingElems;
+  return numCouplingElems;
 }
 
 /*!  
