@@ -54,8 +54,8 @@ cdef class Function:
          self.ptr.decref()
       return
    
-# A generic wrapper for a TACSVec class - usually BVec
-cdef _init_Vec(BVec *ptr):
+# A generic wrapper for a TACSVec class - usually TACSBVec
+cdef _init_Vec(TACSBVec *ptr):
    vec = Vec()
    vec.ptr = ptr
    vec.ptr.incref()
@@ -382,27 +382,18 @@ cdef class Assembler:
       return
 
    @staticmethod
-   def getInstance(MPI.Comm comm, int numOwnedNodes,
-                   int varsPerNode, int numElements, 
-                   int numNodes, int nodeMaxCSRsize,
-                   int numDependentNodes=0):
+   def create(MPI.Comm comm, int varsPerNode,
+              int numOwnedNodes, int numElements, 
+              int numDependentNodes=0):
       '''
       Static factory method for creating an instance of Assembler
       '''
-      cdef MPI_Comm c_comm =  comm.ob_mpi
-      tacs = Assembler()
-
-      if numDependentNodes is 0:
-         tacs.ptr = new TACSAssembler(c_comm, numOwnedNodes,
-                                      varsPerNode,  numElements, 
-                                      numNodes, nodeMaxCSRsize)
-      else:
-         tacs.ptr = new TACSAssembler(c_comm, numOwnedNodes,
-                                      varsPerNode,  numElements, 
-                                      numNodes, numDependentNodes,
-                                      nodeMaxCSRsize)
-      tacs.ptr.incref()
-      return tacs
+      cdef MPI_Comm c_comm = comm.ob_mpi
+      cdef TACSAssembler *tacs = NULL
+      tacs = new TACSAssembler(c_comm, varsPerNode,
+                              numOwnedNodes, numElements, 
+                              numDependentNodes)
+      return _init_Assembler(tacs)
    
    def __dealloc__(self):
       '''
@@ -615,33 +606,42 @@ cdef class Assembler:
       self.ptr.zeroDDotVariables()
       return
    
-   def setVariables(self, Vec stateVars):
+   def setVariables(self, Vec vec=None,
+                    Vec dvec=None, Vec ddvec=None):
       '''
       Set the values of the state variables
       '''
-      self.ptr.setVariables(stateVars.ptr)
-      return
+      cdef TACSBVec *cvec = NULL
+      cdef TACSBVec *cdvec = NULL
+      cdef TACSBVec *cddvec = NULL
+
+      if vec is not None:
+         cvec = vec.ptr
+      if dvec is not None:
+         cdvec = dvec.ptr
+      if ddvec is not None:
+         cddvec = ddvec.ptr
       
-   def getVariables(self, Vec stateVars):
-      '''
-      Get the values of the state variables
-      '''
-      self.ptr.getVariables(stateVars.ptr)
+      self.ptr.setVariables(cvec, cdvec, cddvec)
       return
-    
-   def setDotVariables(self, Vec stateVars):
+
+   def getVariables(self, Vec vec=None,
+                    Vec dvec=None, Vec ddvec=None):
       '''
-      Set the values of the time-derivative of the state variables
+      Set the values of the state variables
       '''
-      self.ptr.setDotVariables(stateVars.ptr)
-      return
-    
-   def setDDotVariables(self, Vec stateVars):
-      '''
-      Set the values of the 2nd time derivative of the state 
-      variables
-      '''
-      self.ptr.setDDotVariables(stateVars.ptr)
+      cdef TACSBVec *cvec = NULL
+      cdef TACSBVec *cdvec = NULL
+      cdef TACSBVec *cddvec = NULL
+
+      if vec is not None:
+         cvec = vec.ptr
+      if dvec is not None:
+         cdvec = dvec.ptr
+      if ddvec is not None:
+         cddvec = ddvec.ptr
+      
+      self.ptr.getVariables(cvec, cdvec, cddvec)
       return
     
    def assembleRes(self, Vec residual):
@@ -658,31 +658,6 @@ cdef class Assembler:
       '''
       self.ptr.assembleRes(residual.ptr)
       return
-
-   def addNode(self, int localNodeNum, int tacsNodeNum):
-      '''
-      Adds a single node into TACS
-      '''
-      self.ptr.addNode(localNodeNum, tacsNodeNum)
-      return
-
-   def addNodes(self, np.ndarray[int, ndim=1, mode='c'] localNodeNums,
-                np.ndarray[int, ndim=1, mode='c'] tacsNodeNums):
-      '''
-      Adds an array of nodes into TACS. The number of nodes is
-      determined from the size of the input array.
-      '''
-      self.ptr.addNodes(<int*>localNodeNums.data, <int*>tacsNodeNums.data, len(localNodeNums))
-      return
-
-   def addElement(self,
-                  Element elem,
-                  np.ndarray[int, ndim=1, mode='c'] localNodeNums,
-                  int numElemNodes):
-      '''
-      Add the element into TACS
-      '''
-      return self.ptr.addElement(elem.ptr, <int*>localNodeNums.data, numElemNodes)
    
    def assembleJacobian(self, Vec residual, Mat A,
                         double alpha, double beta, double gamma,
@@ -770,7 +745,7 @@ cdef class Assembler:
       cdef TacsScalar *Avals = <TacsScalar*>A.data
 
       # Evaluate the derivative of the functions
-      self.ptr.evalDVSens(funcs, num_funcs, Avals, num_design_vars)
+      self.ptr.addDVSens(funcs, num_funcs, Avals, num_design_vars)
 
       return
 
@@ -783,7 +758,7 @@ cdef class Assembler:
       function: the function pointer
       vec:      the derivative of the function w.r.t. the state variables 
       '''
-      self.ptr.evalSVSens(func.ptr, vec.ptr)
+      self.ptr.addSVSens(func.ptr, vec.ptr)
       return
 
    def evalAdjointResProduct(self, adjoint, np.ndarray[TacsScalar, mode='c'] A):
@@ -803,11 +778,11 @@ cdef class Assembler:
       num_dvs:      the number of design variables
       '''
       cdef int num_adj = 1
-      cdef BVec **adj = &((<Vec>adjoint).ptr)
+      cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
       cdef TacsScalar *Avals = <TacsScalar*>A.data
       cdef int num_design_vars = A.shape[0]
 
-      self.ptr.evalAdjointResProducts(adj, num_adj, Avals, num_design_vars)
+      self.ptr.addAdjointResProducts(adj, num_adj, Avals, num_design_vars)
       return
         
    def testElement(self, int elemNum, int print_level):
@@ -874,13 +849,13 @@ cdef class Assembler:
       # comm.ob_mpi = c_comm
       return None
 
-   def finalize(self):
+   def initialize(self):
       '''
       Function to call after all the nodes and elements have been
       added into the created instance of TACS. This function need not
       be called when tacs is created using TACSCreator class.
       '''
-      self.ptr.finalize()
+      self.ptr.initialize()
       return
    
 # Wrap the TACStoFH5 class
@@ -1067,7 +1042,8 @@ cdef class MeshLoader:
    def getNumElement(self):
       return self.ptr.getNumElements()
     
-   def createTACS(self, int varsPerNode, OrderingType order_type=NATURAL_ORDER,
+   def createTACS(self, int varsPerNode,
+                  OrderingType order_type=NATURAL_ORDER,
                   MatrixOrderingType mat_type=DIRECT_SCHUR):
       '''
       Create a distribtued version of TACS
@@ -1102,183 +1078,181 @@ cdef class MeshLoader:
 
       return ptr, conn, X
 
-
-
-# A generic abstract class for all integrators implemented in TACS
-cdef class Integrator:
-   '''
-   Class containing functions for solving the equations forward in
-   time and adjoint.
-   '''    
-   cdef TACSIntegrator *ptr
+# # A generic abstract class for all integrators implemented in TACS
+# cdef class Integrator:
+#    '''
+#    Class containing functions for solving the equations forward in
+#    time and adjoint.
+#    '''    
+#    cdef TACSIntegrator *ptr
    
-   def __cinit__(self):
-      self.ptr = NULL
-      return
+#    def __cinit__(self):
+#       self.ptr = NULL
+#       return
    
-   def __dealloc__(self):
-      if self.ptr:
-         self.ptr.decref()
-      return
+#    def __dealloc__(self):
+#       if self.ptr:
+#          self.ptr.decref()
+#       return
       
-   def integrate(self):
-      '''
-      Integrates the governing equations forward in time
-      '''
-      self.ptr.integrate()
-      return
+#    def integrate(self):
+#       '''
+#       Integrates the governing equations forward in time
+#       '''
+#       self.ptr.integrate()
+#       return
 
-   def getFuncGrad(self,
-                   int num_dv,
-                   np.ndarray[TacsScalar, ndim=1, mode='c'] x,
-                   np.ndarray[TacsScalar, ndim=1, mode='c'] fvals,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx):
-      '''
-      Returns the function values and derivatives with respect to
-      design variables for the given array of design variables
+#    def getFuncGrad(self,
+#                    int num_dv,
+#                    np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+#                    np.ndarray[TacsScalar, ndim=1, mode='c'] fvals,
+#                   np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx):
+#       '''
+#       Returns the function values and derivatives with respect to
+#       design variables for the given array of design variables
       
-      input:
-      x: array of design variables
+#       input:
+#       x: array of design variables
       
-      output:
-      fvals: array of function values
-      dfdx: gradient of function with respect to design variables
-      '''
-      self.ptr.getFuncGrad(num_dv,
-                           <TacsScalar*>x.data,
-                           <TacsScalar*>fvals.data,
-                           <TacsScalar*>dfdx.data)
-      return
+#       output:
+#       fvals: array of function values
+#       dfdx: gradient of function with respect to design variables
+#       '''
+#       self.ptr.getFuncGrad(num_dv,
+#                            <TacsScalar*>x.data,
+#                            <TacsScalar*>fvals.data,
+#                            <TacsScalar*>dfdx.data)
+#       return
 
-   def getFDFuncGrad(self,
-                     int num_dv,
-                     np.ndarray[TacsScalar, ndim=1, mode='c'] x,
-                     np.ndarray[TacsScalar, ndim=1, mode='c'] fvals,
-                     np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx,
-                     double dh):
-      '''
-      Returns the function values and derivatives with respect to
-      design variables for the given array of design variables using
-      finite differences/complex step
+#    def getFDFuncGrad(self,
+#                      int num_dv,
+#                      np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+#                      np.ndarray[TacsScalar, ndim=1, mode='c'] fvals,
+#                      np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx,
+#                      double dh):
+#       '''
+#       Returns the function values and derivatives with respect to
+#       design variables for the given array of design variables using
+#       finite differences/complex step
       
-      input:
-      x: array of design variables
-      dh: finite differences/complex step perturbation step size
+#       input:
+#       x: array of design variables
+#       dh: finite differences/complex step perturbation step size
       
-      output:
-      fvals: array of function values
-      dfdx: gradient of function with respect to design variables
-      '''
-      self.ptr.getFDFuncGrad(num_dv,
-                             <TacsScalar*>x.data,
-                             <TacsScalar*>fvals.data,
-                             <TacsScalar*>dfdx.data, dh)
-      return
+#       output:
+#       fvals: array of function values
+#       dfdx: gradient of function with respect to design variables
+#       '''
+#       self.ptr.getFDFuncGrad(num_dv,
+#                              <TacsScalar*>x.data,
+#                              <TacsScalar*>fvals.data,
+#                              <TacsScalar*>dfdx.data, dh)
+#       return
 
-   def setFunction(self, funclist):
-      '''
-      Sets the functions for obtaining the derivatives. This
-      function should be called before seeking the gradient from
-      this class.
-      '''
-      # Allocate the array of TACSFunction pointers
-      cdef TACSFunction **funcs
-      funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
-      if funcs is NULL:
-         raise MemoryError()
-      num_funcs = len(funclist)
-      for i in xrange(num_funcs):
-         funcs[i] = (<Function>funclist[i]).ptr
-      self.ptr.setFunction(funcs, num_funcs)
-      # Need to free memory but integrator needs it ()
-      # free(funcs)
-      return
+#    def setFunction(self, funclist):
+#       '''
+#       Sets the functions for obtaining the derivatives. This
+#       function should be called before seeking the gradient from
+#       this class.
+#       '''
+#       # Allocate the array of TACSFunction pointers
+#       cdef TACSFunction **funcs
+#       funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
+#       if funcs is NULL:
+#          raise MemoryError()
+#       num_funcs = len(funclist)
+#       for i in xrange(num_funcs):
+#          funcs[i] = (<Function>funclist[i]).ptr
+#       self.ptr.setFunction(funcs, num_funcs)
+#       # Need to free memory but integrator needs it ()
+#       # free(funcs)
+#       return
 
-   def setPrintLevel(self, int print_level, char *filename=''):
-      self.ptr.setPrintLevel(print_level, &filename[0])
-      return
+#    def setPrintLevel(self, int print_level, char *filename=''):
+#       self.ptr.setPrintLevel(print_level, &filename[0])
+#       return
    
-   def setRelTol(self, double rtol):
-      self.ptr.setRelTol(rtol)
-      return
+#    def setRelTol(self, double rtol):
+#       self.ptr.setRelTol(rtol)
+#       return
    
-   def setAbsTol(self, double atol):
-      self.ptr.setAbsTol(atol)
-      return
+#    def setAbsTol(self, double atol):
+#       self.ptr.setAbsTol(atol)
+#       return
    
-   def setMaxNewtonIters(self, int max_newton_iters):
-      self.ptr.setMaxNewtonIters(max_newton_iters)
-      return
+#    def setMaxNewtonIters(self, int max_newton_iters):
+#       self.ptr.setMaxNewtonIters(max_newton_iters)
+#       return
    
-   def setJacAssemblyFreq(self, int freq):
-      self.ptr.setJacAssemblyFreq(freq)
-      return
+#    def setJacAssemblyFreq(self, int freq):
+#       self.ptr.setJacAssemblyFreq(freq)
+#       return
    
-   def setUseLapack(self, int use_lapack):
-      self.ptr.setUseLapack(use_lapack)
-      return
+#    def setUseLapack(self, int use_lapack):
+#       self.ptr.setUseLapack(use_lapack)
+#       return
    
-   def configureOutput(self, ToFH5 f5, int write_freq=0,
-                       char *file_format='solution_%4d.f5'):
-      self.ptr.configureOutput(f5.ptr, write_freq, &file_format[0])
-      return
+#    def configureOutput(self, ToFH5 f5, int write_freq=0,
+#                        char *file_format='solution_%4d.f5'):
+#       self.ptr.configureOutput(f5.ptr, write_freq, &file_format[0])
+#       return
 
-cdef class BDFIntegrator(Integrator):
-   '''
-   Backward-Difference method for integration. This currently
-   supports upto third order accuracy in time integration.
-   '''    
-   def __cinit__(self, Assembler tacs,
-                 double tinit, double tfinal,
-                 int num_steps_per_sec,
-                 int max_bdf_order):
-      '''
-      Constructor for BDF Integrators of order 1, 2 and 3
-      '''
-      self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_bdf_order)
-      self.ptr.incref()
-      return
+# cdef class BDFIntegrator(Integrator):
+#    '''
+#    Backward-Difference method for integration. This currently
+#    supports upto third order accuracy in time integration.
+#    '''    
+#    def __cinit__(self, Assembler tacs,
+#                  double tinit, double tfinal,
+#                  int num_steps_per_sec,
+#                  int max_bdf_order):
+#       '''
+#       Constructor for BDF Integrators of order 1, 2 and 3
+#       '''
+#       self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_bdf_order)
+#       self.ptr.incref()
+#       return
 
-cdef class DIRKIntegrator(Integrator):
-   '''
-   Diagonally-Implicit-Runge-Kutta integration class. This supports
-   upto fourth order accuracy in time and domain. One stage DIRK is
-   second order accurate, two stage DIRK is third order accurate and
-   '''    
-   def __cinit__(self, Assembler tacs,
-                 double tinit, double tfinal,
-                 int num_steps_per_sec,
-                 int num_stages):
-      self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, num_stages)
-      self.ptr.incref()
-      return
+# cdef class DIRKIntegrator(Integrator):
+#    '''
+#    Diagonally-Implicit-Runge-Kutta integration class. This supports
+#    upto fourth order accuracy in time and domain. One stage DIRK is
+#    second order accurate, two stage DIRK is third order accurate and
+#    '''    
+#    def __cinit__(self, Assembler tacs,
+#                  double tinit, double tfinal,
+#                  int num_steps_per_sec,
+#                  int num_stages):
+#       self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, num_stages)
+#       self.ptr.incref()
+#       return
 
-cdef class ABMIntegrator(Integrator):
-   '''
-   Adams-Bashforth-Moulton method for integration. This currently
-   supports upto sixth order accuracy in time integration.
-   '''    
-   def __cinit__(self, Assembler tacs,
-                 double tinit, double tfinal,
-                 int num_steps_per_sec,
-                 int max_abm_order):
-      '''
-      Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
-      '''
-      self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_abm_order)
-      self.ptr.incref()
-      return
+# cdef class ABMIntegrator(Integrator):
+#    '''
+#    Adams-Bashforth-Moulton method for integration. This currently
+#    supports upto sixth order accuracy in time integration.
+#    '''    
+#    def __cinit__(self, Assembler tacs,
+#                  double tinit, double tfinal,
+#                  int num_steps_per_sec,
+#                  int max_abm_order):
+#       '''
+#       Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
+#       '''
+#       self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_abm_order)
+#       self.ptr.incref()
+#       return
 
-cdef class NBGIntegrator(Integrator):
-   '''
-   Newmark-Beta-Gamma method for integration.
-   '''    
-   def __cinit__(self, Assembler tacs,
-                 double tinit, double tfinal,
-                 int num_steps_per_sec):
-      '''
-      Constructor for Newmark-Beta-Gamma method of integration
-      '''
-      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec)
-      self.ptr.incref()
-      return
+# cdef class NBGIntegrator(Integrator):
+#    '''
+#    Newmark-Beta-Gamma method for integration.
+#    '''    
+#    def __cinit__(self, Assembler tacs,
+#                  double tinit, double tfinal,
+#                  int num_steps_per_sec):
+#       '''
+#       Constructor for Newmark-Beta-Gamma method of integration
+#       '''
+#       self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec)
+#       self.ptr.incref()
+#       return

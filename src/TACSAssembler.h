@@ -63,16 +63,6 @@ class TACSAssembler : public TACSObject {
 		 int _numDependentNodes );
   ~TACSAssembler();
 
-  // Return important information about the TACS object
-  // --------------------------------------------------
-  int getVarsPerNode(){ return varsPerNode; }
-  int getNumNodes(){ return numNodes; }
-  int getNumDependentNodes(){ return numDependentNodes; }
-  int getNumElements(){ return numElements; }
-  TACSVarMap *getVarMap(){ return varMap; }
-  TACSBcMap *getBcMap(){ return bcMap; }
-  TACSBVecDistribute *getBVecDistribute(){ return vecDist; }
-
   // Set the connectivity in TACS
   // ----------------------------
   int setElementConnectivity( const int *conn, const int *ptr );
@@ -95,6 +85,16 @@ class TACSAssembler : public TACSObject {
   // Initialize the mesh
   // -------------------
   int initialize();
+
+  // Return important information about the TACS object
+  // --------------------------------------------------
+  int getVarsPerNode(){ return varsPerNode; }
+  int getNumNodes(){ return numNodes; }
+  int getNumDependentNodes(){ return numDependentNodes; }
+  int getNumElements(){ return numElements; }
+  TACSVarMap *getVarMap(){ return varMap; }
+  TACSBcMap *getBcMap(){ return bcMap; }
+  TACSBVecDistribute *getBVecDistribute(){ return vecDist; }
 
   // Set auxiliary elements into the TACSAssembler object
   // ----------------------------------------------------
