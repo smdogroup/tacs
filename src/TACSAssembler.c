@@ -109,8 +109,11 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   tacsExtNodeNums = NULL;
 
   // Set the distribution object to NULL at first
-  vecDist = NULL;
-  vecDistIndices = NULL;
+  extDist = NULL;
+  extDistIndices = NULL;
+
+  // DistMat specific objects
+  distMatIndices = NULL;
 
   // FEMat-specific objects
   feMatBIndices = feMatCIndices = NULL;
@@ -163,8 +166,11 @@ TACSAssembler::~TACSAssembler(){
   // Decrease the reference count to objects allocated in initialize
   if (varMap){ varMap->decref(); }
   if (bcMap){ bcMap->decref(); }
-  if (vecDist){ vecDist->decref(); }
-  if (vecDistIndices){ vecDistIndices->decref(); }
+  if (extDist){ extDist->decref(); }
+  if (extDistIndices){ extDistIndices->decref(); }
+
+  // Decrease ref. count for DistMat data
+  if (distMatIndices){ distMatIndices->decref(); }
 
   // Decrease ref. count for the FEMat data if it is allocated
   if (feMatBIndices){ feMatBIndices->decref(); }
@@ -187,6 +193,55 @@ const char * TACSAssembler::tacsName = "TACSAssembler";
 */
 MPI_Comm TACSAssembler::getMPIComm(){
   return tacs_comm;
+}
+
+/*
+  Get the number of unknowns per node
+*/
+int TACSAssembler::getVarsPerNode(){ 
+  return varsPerNode; 
+}
+
+/*
+  Get the number of local nodes
+*/ 
+int TACSAssembler::getNumNodes(){ 
+  return numNodes; 
+}
+
+/*
+  Get the number of dependent nodes
+*/
+int TACSAssembler::getNumDependentNodes(){ 
+  return numDependentNodes; 
+}
+
+/*
+  Get the number of elements
+*/
+int TACSAssembler::getNumElements(){ 
+  return numElements; 
+}
+
+/*
+  Get the node-processor assignment
+*/
+TACSVarMap *TACSAssembler::getVarMap(){ 
+  return varMap; 
+}
+
+/*
+  Get the boundary conditions
+*/
+TACSBcMap *TACSAssembler::getBcMap(){ 
+  return bcMap; 
+}
+
+/*
+  Get the external indices
+*/
+TACSBVecDistribute *TACSAssembler::getBVecDistribute(){ 
+  return extDist; 
 }
 
 /*!
@@ -438,7 +493,7 @@ void TACSAssembler::addBCs( int nnodes, const int *nodes,
 */
 TACSBVec *TACSAssembler::createNodeVec(){
   return new TACSBVec(varMap, TACS_SPATIAL_DIM, NULL, 
-                      vecDist, depNodes);
+                      extDist, depNodes);
 }
 
 /*!
@@ -1100,8 +1155,8 @@ int TACSAssembler::getLocalNodeNum( int node ){
     if (tacsExtNodeNums){
       ext_nodes = tacsExtNodeNums;
     }
-    else if (vecDistIndices){
-      vecDistIndices->getIndices(&ext_nodes);
+    else if (extDistIndices){
+      extDistIndices->getIndices(&ext_nodes);
     }
     else {
       fprintf(stderr, "[%d] External nodes not defined\n", mpiRank);
@@ -1160,8 +1215,8 @@ int TACSAssembler::getGlobalNodeNum( int node ){
     if (tacsExtNodeNums){
       ext_nodes = tacsExtNodeNums;
     }
-    else if (vecDistIndices){
-      vecDistIndices->getIndices(&ext_nodes);
+    else if (extDistIndices){
+      extDistIndices->getIndices(&ext_nodes);
     }
     else {
       fprintf(stderr, "[%d] External nodes not defined\n", mpiRank);
@@ -1178,8 +1233,8 @@ int TACSAssembler::getGlobalNodeNum( int node ){
     if (tacsExtNodeNums){
       ext_nodes = tacsExtNodeNums;
     }
-    else if (vecDistIndices){
-      vecDistIndices->getIndices(&ext_nodes);
+    else if (extDistIndices){
+      extDistIndices->getIndices(&ext_nodes);
     }
     else {
       fprintf(stderr, "[%d] External nodes not defined\n", mpiRank);
@@ -1709,8 +1764,8 @@ int TACSAssembler::computeCouplingNodes( int **_cnodes ){
 
   // Get the external node numbers
   const int *ext_nodes = tacsExtNodeNums;
-  if (vecDistIndices){
-    vecDistIndices->getIndices(&ext_nodes);
+  if (extDistIndices){
+    extDistIndices->getIndices(&ext_nodes);
   }
 
   // Match the intervals for the external node numbers
@@ -1889,14 +1944,14 @@ int TACSAssembler::initialize(){
   }
 
   // Create the distribution between the local nodes and the global ones
-  vecDistIndices = new TACSBVecIndices(&tacsExtNodeNums,
+  extDistIndices = new TACSBVecIndices(&tacsExtNodeNums,
                                        numExtNodes);
   tacsExtNodeNums = NULL;
-  vecDistIndices->incref();
-  vecDistIndices->setUpInverse();
+  extDistIndices->incref();
+  extDistIndices->setUpInverse();
   
-  vecDist = new TACSBVecDistribute(varMap, vecDistIndices);
-  vecDist->incref();
+  extDist = new TACSBVecDistribute(varMap, extDistIndices);
+  extDist->incref();
 
   // Allocate the vectors
   varsVec = createVec();  varsVec->incref();
@@ -2054,11 +2109,20 @@ TACSBVec *TACSAssembler::createVec(){
 
   // Create the vector with all the bells and whistles 
   return new TACSBVec(varMap, varsPerNode, 
-                      bcMap, vecDist, depNodes);
+                      bcMap, extDist, depNodes);
 }
 
 /*!
-  Create a distributed matrix.
+  Create a distributed matrix
+
+  This matrix is distributed in block-rows. Each processor owns a
+  local part of the matrix and an off-diagonal part which couples
+  between processors.
+ 
+  This code creates a local array of global indices that is used to
+  determine the destination for each entry in the sparse matrix.  This
+  TACSBVecIndices object is reused if any subsequent DistMat objects
+  are created.
 */
 DistMat *TACSAssembler::createMat(){
   if (!meshInitializedFlag){
@@ -2067,6 +2131,18 @@ DistMat *TACSAssembler::createMat(){
     return NULL;
   }
   
+  // Create the distMat indices if they do not already exist
+  if (!distMatIndices){
+    // Get the global node numbering
+    int *indices = new int[ numNodes ];
+    for ( int i = 0; i < numNodes; i++ ){
+      indices[i] = getGlobalNodeNum(i);
+    }
+
+    distMatIndices = new TACSBVecIndices(&indices, numNodes);
+    distMatIndices->incref();
+  }
+
   // Compute the local connectivity
   int *rowp, *cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
@@ -2074,7 +2150,7 @@ DistMat *TACSAssembler::createMat(){
   // Create the distributed matrix class
   DistMat *dmat = new DistMat(thread_info, varMap, varsPerNode,
                               numNodes, rowp, cols,
-                              vecDistIndices, bcMap);
+                              distMatIndices, bcMap);
 
   // Free the local connectivity
   delete [] rowp;

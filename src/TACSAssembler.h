@@ -88,13 +88,13 @@ class TACSAssembler : public TACSObject {
 
   // Return important information about the TACS object
   // --------------------------------------------------
-  int getVarsPerNode(){ return varsPerNode; }
-  int getNumNodes(){ return numNodes; }
-  int getNumDependentNodes(){ return numDependentNodes; }
-  int getNumElements(){ return numElements; }
-  TACSVarMap *getVarMap(){ return varMap; }
-  TACSBcMap *getBcMap(){ return bcMap; }
-  TACSBVecDistribute *getBVecDistribute(){ return vecDist; }
+  int getVarsPerNode();
+  int getNumNodes();
+  int getNumDependentNodes();
+  int getNumElements();
+  TACSVarMap *getVarMap();
+  TACSBcMap *getBcMap();
+  TACSBVecDistribute *getBVecDistribute();
 
   // Set auxiliary elements into the TACSAssembler object
   // ----------------------------------------------------
@@ -283,10 +283,13 @@ class TACSAssembler : public TACSObject {
 
   TACSVarMap *varMap; // Variable ownership map
   TACSBcMap *bcMap; // Boundary condition data
-  TACSBVecDistribute *vecDist; // Distribute the vector
-  TACSBVecIndices *vecDistIndices; // The tacsVarNum indices
+  TACSBVecDistribute *extDist; // Distribute the vector
+  TACSBVecIndices *extDistIndices; // The tacsVarNum indices
 
-  // Additional, persistent information for the FEMat class
+  // Additional information information for the DistMat class
+  TACSBVecIndices *distMatIndices;
+
+  // Additional ordering information for the FEMat class
   // These are created once - all subsequent calls use this data.
   TACSBVecIndices *feMatBIndices, *feMatCIndices;
   TACSBVecDistribute *feMatBMap, *feMatCMap;
