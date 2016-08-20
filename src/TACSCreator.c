@@ -465,8 +465,8 @@ TACSAssembler* TACSCreator::createTACS(){
       }
 
       // Copy over the node data from the old indices
-      for ( int i = start_node; i < end_node; i++ ){
-        int node = inv_new_nodes[i];
+      for ( int i = 0, j = start_node; j < end_node; i++, j++ ){
+        int node = inv_new_nodes[j];
 	xpts[3*i] = Xpts[3*node];
 	xpts[3*i+1] = Xpts[3*node+1];
 	xpts[3*i+2] = Xpts[3*node+2];

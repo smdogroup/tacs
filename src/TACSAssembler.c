@@ -1118,7 +1118,7 @@ int TACSAssembler::getLocalNodeNum( int node ){
         node = (item - ext_nodes); 
       }
       else {
-        node = extNodeOffset + numOwnedNodes + (item - ext_nodes); 
+        node = numOwnedNodes + (item - ext_nodes); 
       }
     }
     else {
@@ -1186,7 +1186,7 @@ int TACSAssembler::getGlobalNodeNum( int node ){
       return -1;      
     }
 
-    return ext_nodes[node - (extNodeOffset + numOwnedNodes)];
+    return ext_nodes[node - numOwnedNodes];
   }
   else {
     fprintf(stderr, 

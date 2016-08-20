@@ -158,26 +158,25 @@ class TACSBVecDistribute : public TACSObject {
 
   // Data for collecting external variables
   // --------------------------------------
-  int next_vars;
+  int n_ext_proc; // number of external procs
+  int *ext_proc; //  Externall processes
   int *ext_ptr; // Displacements into the local external array
+  int *ext_count; // Count per proc
+  int next_vars; // Number of external vars
   const int *ext_vars; // External variables requested by this process
 
   // Data for the requested values
-  int *req_ptr;  // Displacement into requested array
-  int *req_vars; // Variables that have been requested
-
-  // Sending data
   int n_req_proc; // Processes to send non-zero mesages to
-  int *req_proc; 
-
-  // Receiving data
-  int n_ext_proc; // Externall processes to expect non-zero receives from
-  int *ext_proc;
+  int *req_proc; // The processors to send
+  int *req_ptr;  // Displacement into requested array
+  int *req_count; // number of nodes to send to each proc
+  int *req_vars; // Variables that have been requested
 
   // The size of the receiving data on this processor
   int ext_self_ptr;
-  int ext_self_size;
+  int ext_self_count;
 
+  // Set the name of the object
   static const char *name;
 };
 
@@ -188,23 +187,11 @@ class TACSBVecDistribute : public TACSObject {
 */
 class TACSBVecDistCtx : public TACSObject {
  public:
-  ~TACSBVecDistCtx(){
-    if (ext_sorted_vals){ delete [] ext_sorted_vals; }
-    if (reqvals){ delete [] reqvals;  }
-    if (sends){ delete [] sends; }
-    if (recvs){ delete [] recvs; }
-  }
+  ~TACSBVecDistCtx();
 
  private:
   TACSBVecDistCtx( TACSBVecDistribute *_me, 
-                   int _bsize ){
-    bsize = _bsize;
-    me = _me;
-    ext_sorted_vals = NULL;
-    reqvals = NULL;
-    sends = NULL;
-    recvs = NULL;
-  }
+                   int _bsize );
 
   // The block size for this context
   int bsize;
@@ -221,6 +208,10 @@ class TACSBVecDistCtx : public TACSObject {
   // The MPI requests for either the sends or recvs
   MPI_Request *sends;
   MPI_Request *recvs;
+
+  // Set the send and recv tags
+  int ctx_tag;
+  static int tag_value;
 
   // Friend class declaration
   friend class TACSBVecDistribute;

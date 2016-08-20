@@ -284,7 +284,7 @@ int main( int argc, char *argv[] ){
 
   // Free everything
   f5->decref();
-  
+ 
   // Decrease the reference count to the linear algebra objects
   pc->decref();
   mat->decref();
@@ -296,7 +296,7 @@ int main( int argc, char *argv[] ){
   elem->decref();
   tacs->decref();
   creator->decref();
-
+ 
   MPI_Finalize();
   return (0);
 }
