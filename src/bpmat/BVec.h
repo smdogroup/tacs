@@ -20,28 +20,41 @@
 */
 class TACSBcMap : public TACSObject {
  public:
-  TACSBcMap( int num_bcs );
+  TACSBcMap( int bsize, int num_bcs );
   ~TACSBcMap();
 
   // Add/get the boundary conditions stored in this object
   // -----------------------------------------------------
-  void addBC( int local_var, int global_var, 
-	      const int bc_nums[], const TacsScalar bc_vals[], 
-	      int _nvals );
-  int getBCs( const int **_local, const int **_global,
-	      const int **_var_ptr, 
+  void addBC( int node, int nvals, 
+	      const int *bc_nums=NULL, const TacsScalar *bc_vals=NULL );
+  int getBCs( const int **_nodes,
 	      const int **_vars, const TacsScalar **_values );
 
+  // Get the node numbers associated with the BCs for reordering
+  // -----------------------------------------------------------
+  int getBCNodeNums( int **_nodes );
+
+  // Add the boundary condition using the binary flags directly
+  // ----------------------------------------------------------
+  void addBinaryFlagBC( int node, int _vars );
+
  private:
+  // Set the block size
+  int bsize;
+
   // Information used to apply boundary conditions
-  int *local, *global;
-  int *var_ptr, *vars;
-  TacsScalar *values;
+  int *nodes;
+
+  // The total number of boundary conditions
   int nbcs;
 
+  // The local index of the unknowns and the values
+  int *vars;
+  TacsScalar *values;
+
   // Set the boundary condition sizes
-  int max_size, max_var_ptr_size;
-  int bc_increment, var_ptr_increment;
+  int max_size;
+  int bc_increment;
 };
 
 /*
@@ -64,11 +77,22 @@ class TACSBVecDepNodes : public TACSObject {
     delete [] dep_conn;
     delete [] dep_weights;
   }
+  
+  // Get the dependent connectivity and weights
+  // ------------------------------------------
   int getDepNodes( const int **_dep_ptr, const int **_dep_conn,
                    const double **_dep_weights ){
     if (_dep_ptr){ *_dep_ptr = dep_ptr; }
     if (_dep_conn){ *_dep_conn = dep_conn; }
     if (_dep_weights){ *_dep_weights = dep_weights; }
+    return ndep_nodes;
+  }
+
+  // Get the dependent node connectivity for reordering
+  // --------------------------------------------------
+  int getDepNodeReorder( const int **_dep_ptr, int **_dep_conn ){
+    if (_dep_ptr){ *_dep_ptr = dep_ptr; }
+    if (_dep_conn){ *_dep_conn = dep_conn; }
     return ndep_nodes;
   }
 
@@ -118,7 +142,7 @@ class TACSBVec : public TACSVec {
   void set( TacsScalar val );         // Set all values of the vector
   void zeroEntries();                 // Zero all the entries
   int getArray( TacsScalar **vals );  // Get the local values
-  void applyBCs();                    // Zero rows corresponding to BCs
+  void applyBCs( TACSVec *vec=NULL ); // Zero rows corresponding to BCs
   void initRand();                    // Init random number generator
   void setRand( double lower, double upper ); // Set random values
 

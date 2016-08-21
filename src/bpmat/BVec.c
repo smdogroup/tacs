@@ -16,26 +16,24 @@
   classes.
 
   input:
+  bsize:    the block size
   num_bcs:  an estimate of the number of boundary conditions
 */
-TACSBcMap::TACSBcMap( int num_bcs ){
-  num_bcs = (num_bcs >= 0 ? num_bcs : 0);
-  max_size = num_bcs;
+TACSBcMap::TACSBcMap( int _bsize, int num_bcs ){
+  // Set the block size
+  bsize = _bsize;
 
-  // Usually, there are 6 or fewer dof per node
-  max_var_ptr_size = 8*(num_bcs+1); 
+  // Set the number of boundary conditions
+  num_bcs = (num_bcs >= 100 ? num_bcs : 100);
+  max_size = num_bcs;
 
   // Set the increment to be equal to the number of bcs set
   bc_increment = max_size+1;
-  var_ptr_increment = max_var_ptr_size;
 
   nbcs = 0;
-  global = new int[ max_size ];
-  local = new int[ max_size ];
-  var_ptr = new int[ max_size+1 ];
-  vars = new int[ max_var_ptr_size ];  
-  values = new TacsScalar[ max_var_ptr_size ];  
-  var_ptr[0] = 0;
+  nodes = new int[ max_size ];
+  vars = new int[ max_size ];
+  values = new TacsScalar[ bsize*max_size ];
 }
 
 /*
@@ -43,113 +41,134 @@ TACSBcMap::TACSBcMap( int num_bcs ){
   object allocated
 */
 TACSBcMap::~TACSBcMap(){
-  delete [] local;
-  delete [] global;
-  delete [] var_ptr;
+  delete [] nodes;
   delete [] vars;  
   delete [] values;
 }
 
 /*
-  Add a Dirichlet boundary condition with the specified local
-  variable, global variable and the local Dirichlet BC number/value
-  pair. Note, if no values are specified, they are assumed to be
-  zero for each variable.
+  Add a Dirichlet boundary condition for the specified global variable
+  number and the local Dirichlet BC number/value pair. Note, if no
+  values are specified, they are assumed to be zero for each variable.
 
   input:
-  local_var:  the local node number
-  global_var: the global node number
-  bc_nums:    the variable number to apply the BC
+  node:       the global node number
+  bc_vars:    the nodal variable number to apply the BC
   bc_vals:    the value to apply
   nvals:      the number of values to apply at this node
 */
-void TACSBcMap::addBC( int local_var, int global_var, 
-		   const int bc_nums[], const TacsScalar bc_vals[], 
-		   int _nvals ){
+void TACSBcMap::addBC( int node, int nvals,
+                       const int *bc_vars, const TacsScalar *bc_vals ){
   // If the number of boundary conditions exceeds the available
   // space, allocate more space and copy over the arrays
   if (nbcs+1 >= max_size){
     max_size = max_size + bc_increment;
-    int * temp_local = new int[ max_size ];
-    int * temp_global = new int[ max_size ];
-    int * temp_ptr = new int[ max_size+1 ];
+    int *temp_nodes = new int[ max_size ];
+    int *temp_vars = new int[ max_size ];
+    TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
+    memcpy(temp_nodes, nodes, nbcs*sizeof(int));
+    memcpy(temp_vars, vars, nbcs*sizeof(int));
+    memcpy(temp_values, values, bsize*nbcs*sizeof(int));
 
-    for ( int i = 0; i < nbcs; i++ ){
-      temp_local[i] = local[i];
-      temp_global[i] = global[i];
-      temp_ptr[i] = var_ptr[i];
-    }
-    temp_ptr[nbcs] = var_ptr[nbcs];
-
-    delete [] local;
-    delete [] global;
-    delete [] var_ptr;
-    local = temp_local;
-    global = temp_global;
-    var_ptr = temp_ptr;
+    // Free the old arrays
+    delete [] nodes;
+    delete [] vars;
+    delete [] values;
+    
+    // Copy over the new arrays
+    nodes = temp_nodes;
+    vars = temp_vars;
+    values = temp_values;
   }
 
   // Set the new variable information
-  local[nbcs] = local_var;
-  global[nbcs] = global_var;
-  var_ptr[nbcs+1] = var_ptr[nbcs] + _nvals;
+  nodes[nbcs] = node;
+  memset(&values[bsize*nbcs], 0, bsize*sizeof(TacsScalar));
+  vars[nbcs] = 0;
 
-  // If the number of boundary condition values/vars exceeds
-  // the available space, allocate more space and copy over the
-  // values from the old array
-  if (var_ptr[nbcs+1]+1 >= max_var_ptr_size){
-    max_var_ptr_size = var_ptr[nbcs+1] + var_ptr_increment;
-
-    int * temp_vars = new int[ max_var_ptr_size ];
-    TacsScalar * temp_vals = new TacsScalar[ max_var_ptr_size ];
-    for ( int i = 0; i < var_ptr[nbcs]; i++ ){
-      temp_vars[i] = vars[i];
-      temp_vals[i] = values[i];
+  if (bc_vars && bc_vals){
+    for ( int i = 0; i < nvals; i++ ){
+      vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
+      values[bsize*nbcs + bc_vars[i]] = bc_vals[i];
     }
-
-    delete [] vars;
-    delete [] values;
-    vars = temp_vars;
-    values = temp_vals;
   }
-
-  if (bc_vals){
-    // If values are specified, copy over the values
-    for ( int i = var_ptr[nbcs], k = 0; i < var_ptr[nbcs+1]; i++, k++ ){
-      vars[i] = bc_nums[k];
-      values[i] = bc_vals[k];
-    }  
+  else if (bc_vars){
+    for ( int i = 0; i < nvals; i++ ){
+      vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
+    }
   }
   else {
-    // If no values are specified, assume the values are zero
-    for ( int i = var_ptr[nbcs], k = 0; i < var_ptr[nbcs+1]; i++, k++ ){
-      vars[i] = bc_nums[k];
-      values[i] = 0.0;
-    }  
+    for ( int i = 0; i < nvals; i++ ){
+      vars[nbcs] = vars[nbcs] | (1 << i);
+    }
   }
+  
+  // Increment the boundary conditions
   nbcs++;
 }
 
 /*
-  Retrieve the boundary conditions that have been set locally
-  within this object
+  Add a Dirichlet boundary condition using the specified global
+  variable and a binary flag where each bit indicates which local
+  variables should be constrained. This is the format used to store
+  this information internally.
+
+  input:
+  node:   the global node number
+  vars:   value of the binary flags indicating which unknowns to zero
+*/
+void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
+  // If the number of boundary conditions exceeds the available
+  // space, allocate more space and copy over the arrays
+  if (nbcs+1 >= max_size){
+    max_size = max_size + bc_increment;
+    int *temp_nodes = new int[ max_size ];
+    int *temp_vars = new int[ max_size ];
+    TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
+    memcpy(temp_nodes, nodes, nbcs*sizeof(int));
+    memcpy(temp_vars, vars, nbcs*sizeof(int));
+    memcpy(temp_values, values, bsize*nbcs*sizeof(int));
+
+    // Free the old arrays
+    delete [] nodes;
+    delete [] vars;
+    delete [] values;
+    
+    // Copy over the new arrays
+    nodes = temp_nodes;
+    vars = temp_vars;
+    values = temp_values;
+  }
+
+  // Set the new variable information
+  nodes[nbcs] = node;
+  memset(&values[bsize*nbcs], 0, bsize*sizeof(TacsScalar));
+  vars[nbcs] = _vars;
+  nbcs++;
+}
+
+/*
+  Retrieve the boundary conditions that have been set locally within
+  this object
 
   output:
-  local_vars:  the local node numbers
-  global_vars: the global node numbers
-  var_ptr:     the pointer into the list of nodal vars/values
-  vars:        the variable number to apply the BC
-  values:      the value to apply
+  nodes:       the global node numbers
+  vars:        node unknown numbers to apply boundary conditions
+  values:      the values of the boundary conditions to apply
 */
-int TACSBcMap::getBCs( const int ** _local, const int ** _global,
-                       const int ** _var_ptr, 
-                       const int ** _vars, const TacsScalar ** _values ){
-  *_local = local;
-  *_global = global;
-  *_var_ptr = var_ptr;
-  *_vars = vars;
-  *_values = values;
+int TACSBcMap::getBCs( const int **_nodes,
+                       const int **_vars, const TacsScalar **_values ){
+  if (_nodes){ *_nodes = nodes; }
+  if (_vars){ *_vars = vars; }
+  if (_values){ *_values = values; }
+  return nbcs;
+}
 
+/*
+  Retrieve the boundary condition node numbers
+*/
+int TACSBcMap::getBCNodeNums( int **_nodes ){
+  if (_nodes){ *_nodes = nodes; }
   return nbcs;
 }
 
@@ -263,7 +282,7 @@ TACSBVec::~TACSBVec(){
 /*
   Get the local size of the vector on this processor
 */
-void TACSBVec::getSize( int * _size ){
+void TACSBVec::getSize( int *_size ){
   *_size = size;
 }
 
@@ -277,7 +296,7 @@ TacsScalar TACSBVec::norm(){
   res = 0.0;
   int i = 0;
   int rem = size%4;
-  TacsScalar * y = x;
+  TacsScalar *y = x;
   for ( ; i < rem; i++ ){
     res += y[0]*y[0];
     y++;
@@ -311,9 +330,9 @@ void TACSBVec::scale( TacsScalar alpha ){
 /*
   Compute the dot product of two vectors
 */
-TacsScalar TACSBVec::dot( TACSVec * tvec ){
+TacsScalar TACSBVec::dot( TACSVec *tvec ){
   TacsScalar sum = 0.0;
-  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
+  TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
       fprintf(stderr, "TACSBVec::dot Error, the sizes must be the same\n");
@@ -325,8 +344,8 @@ TacsScalar TACSBVec::dot( TACSVec * tvec ){
     res = 0.0;
     int i = 0;
     int rem = size%4;
-    TacsScalar * y = x;
-    TacsScalar * z = vec->x;
+    TacsScalar *y = x;
+    TacsScalar *z = vec->x;
     for ( ; i < rem; i++ ){
       res += y[0]*z[0];
       y++; z++;
@@ -357,11 +376,11 @@ TacsScalar TACSBVec::dot( TACSVec * tvec ){
   computations since there are fewer gather operations for the same
   number of dot products.
 */
-void TACSBVec::mdot( TACSVec ** tvec, TacsScalar * ans, int nvecs ){
+void TACSBVec::mdot( TACSVec **tvec, TacsScalar *ans, int nvecs ){
   for ( int k = 0; k < nvecs; k++ ){
     ans[k] = 0.0;
 
-    TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec[k]);
+    TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec[k]);
     if (vec){
       if (vec->size != size){
         fprintf(stderr, 
@@ -373,8 +392,8 @@ void TACSBVec::mdot( TACSVec ** tvec, TacsScalar * ans, int nvecs ){
       TacsScalar res = 0.0;
       int i = 0;
       int rem = size % 4;
-      TacsScalar * y = x;
-      TacsScalar * z = vec->x;
+      TacsScalar *y = x;
+      TacsScalar *z = vec->x;
       for ( ; i < rem; i++ ){
         res += y[0]*z[0];
         y++; z++;
@@ -406,7 +425,7 @@ void TACSBVec::mdot( TACSVec ** tvec, TacsScalar * ans, int nvecs ){
   Compute y = alpha*x + y
 */
 void TACSBVec::axpy( TacsScalar alpha, TACSVec *tvec ){
-  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
+  TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
 
   if (vec){
     if (vec->size != size){
@@ -425,10 +444,10 @@ void TACSBVec::axpy( TacsScalar alpha, TACSVec *tvec ){
 }
 
 /*
-  Compute x <- alpha * vec + beta * x
+  Compute x <- alpha *vec + beta *x
 */
 void TACSBVec::axpby( TacsScalar alpha, TacsScalar beta, TACSVec *tvec ){
-  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
+  TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
 
   if (vec){
     if (vec->size != size){
@@ -466,7 +485,7 @@ void TACSBVec::axpby( TacsScalar alpha, TacsScalar beta, TACSVec *tvec ){
   Copy the values x <- vec->x
 */
 void TACSBVec::copyValues( TACSVec *tvec ){
-  TACSBVec * vec = dynamic_cast<TACSBVec*>(tvec);
+  TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
       fprintf(stderr, 
@@ -503,7 +522,7 @@ void TACSBVec::zeroEntries(){
 void TACSBVec::set( TacsScalar val ){
   int i = 0;
   int rem = size%4;
-  TacsScalar * y = x;
+  TacsScalar *y = x;
 
   for ( ; i < rem; i++ ){
     y[0] = val;
@@ -565,7 +584,7 @@ void TACSBVec::setRand( double lower, double upper ){
 /*
   Retrieve the locally stored values from the array
 */
-int TACSBVec::getArray( TacsScalar ** array ){
+int TACSBVec::getArray( TacsScalar **array ){
   *array = x;
   return size;
 }
@@ -573,11 +592,16 @@ int TACSBVec::getArray( TacsScalar ** array ){
 /*
   Apply the Dirichlet boundary conditions to the vector
 */
-void TACSBVec::applyBCs(){
+void TACSBVec::applyBCs( TACSVec *tvec ){
+  TacsScalar *uvals = NULL;
+  if (tvec){
+    TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
+    vec->getArray(&uvals);
+  }
+
   // apply the boundary conditions
   if (bcs && x){
-    int mpi_rank, mpi_size;
-    MPI_Comm_size(comm, &mpi_size);
+    int mpi_rank;
     MPI_Comm_rank(comm, &mpi_rank);
     
     // Get ownership range
@@ -585,25 +609,42 @@ void TACSBVec::applyBCs(){
     var_map->getOwnerRange(&owner_range);
 
     // Get the values from the boundary condition arrays
-    const int *local, *global, *var_ptr, *vars;
+    const int *nodes, *vars;
     const TacsScalar *values;
-    int nbcs = bcs->getBCs(&local, &global, &var_ptr, &vars, &values);
+    int nbcs = bcs->getBCs(&nodes, &vars, &values);
 
-    for ( int i = 0; i < nbcs; i++ ){
-      if (global[i] >= owner_range[mpi_rank] &&
-          global[i] < owner_range[mpi_rank+1]){
-	int var = bsize*(global[i] - owner_range[mpi_rank]);
-	
-	for ( int k = var_ptr[i]; k < var_ptr[i+1]; k++ ){ 
-	  // Scan through the rows to be zeroed
-	  x[var + vars[k]] = 0.0;      
-	}
+    if (uvals){
+      for ( int i = 0; i < nbcs; i++ ){
+        if (nodes[i] >= owner_range[mpi_rank] &&
+            nodes[i] < owner_range[mpi_rank+1]){
+          int var = bsize*(nodes[i] - owner_range[mpi_rank]);
+          for ( int k = 0; k < bsize; k++ ){
+            if (vars[i] & (1 << k)){
+              // Scan through the rows to be zeroed
+              x[var + k] = uvals[var + k] - values[var + k];      
+            }
+          }
+        }
+      }
+    }
+    else {
+      for ( int i = 0; i < nbcs; i++ ){
+        if (nodes[i] >= owner_range[mpi_rank] &&
+            nodes[i] < owner_range[mpi_rank+1]){
+          int var = bsize*(nodes[i] - owner_range[mpi_rank]);
+          for ( int k = 0; k < bsize; k++ ){
+            if (vars[i] & (1 << k)){
+              // Scan through the rows to be zeroed
+              x[var + k] = 0.0;
+            }
+          }
+        }
       }
     }
   }
 }
 
-const char * TACSBVec::TACSObjectName(){
+const char *TACSBVec::TACSObjectName(){
   return vecName;
 }
 
@@ -615,9 +656,9 @@ const char * TACSBVec::TACSObjectName(){
 
   The file format is as follows:
   int                       The length of the vector
-  len * sizeof(TacsScalar)  The vector entries
+  len *sizeof(TacsScalar)  The vector entries
 */
-int TACSBVec::writeToFile( const char * filename ){
+int TACSBVec::writeToFile( const char *filename ){
   int mpi_rank, mpi_size;
   MPI_Comm_rank(comm, &mpi_rank);
   MPI_Comm_size(comm, &mpi_size);
@@ -670,9 +711,9 @@ int TACSBVec::writeToFile( const char * filename ){
 
   The file format is as follows:
   int                       The length of the vector
-  len * sizeof(TacsScalar)  The vector entries
+  len *sizeof(TacsScalar)  The vector entries
 */  
-int TACSBVec::readFromFile( const char * filename ){
+int TACSBVec::readFromFile( const char *filename ){
   int mpi_rank, mpi_size;
   MPI_Comm_rank(comm, &mpi_rank);
   MPI_Comm_size(comm, &mpi_size);
@@ -987,4 +1028,4 @@ void TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
   }
 }
 
-const char * TACSBVec::vecName = "TACSBVec";
+const char *TACSBVec::vecName = "TACSBVec";

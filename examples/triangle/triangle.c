@@ -240,10 +240,14 @@ int main( int argc, char *argv[] ){
   // This call must occur on all processor
   creator->setElements(&elem, 1);
 
+  // Set the reordering type
+  creator->setReorderingType(TACSAssembler::TACS_AMD_ORDER,
+                             TACSAssembler::APPROXIMATE_SCHUR);
+
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
-
+  
   // Create the preconditioner
   TACSBVec *res = tacs->createVec();
   TACSBVec *ans = tacs->createVec();

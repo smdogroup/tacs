@@ -529,7 +529,7 @@ TACSVec *FEMat::createVec(){
 /*
   Apply the Dirichlet boundary conditions by zeroing the rows
   associated with the boundary conditions and setting corresponding
-  the diagonal entries to 1.
+  the diagonal entries to 1.  
 */
 void FEMat::applyBCs(){
   if (bcs){
@@ -543,35 +543,31 @@ void FEMat::applyBCs(){
     rmap->getOwnerRange(&ownerRange);
 
     // apply the boundary conditions
-    const int *local, *global, *var_ptr, *vars;
+    const int *nodes, *vars;
     const TacsScalar *values;
-    int nbcs = bcs->getBCs(&local, &global, &var_ptr, &vars, &values);
+    int nbcs = bcs->getBCs(&nodes, &vars, &values);
 
     // Get the matrix values
     for ( int i = 0; i < nbcs; i++ ){
       // Find block i and zero out the variables associated with it
-      int bcvar = global[i];
-      int start = var_ptr[i];
-      int nvars = var_ptr[i+1] - start;
-      
-      int br = bindx->findIndex(bcvar), cr = 0;
+      int br = bindx->findIndex(nodes[i]), cr = 0;
       if (br >= 0){
 	int ident = 1; // Replace the diagonal with the identity matrix
-	B->zeroRow(br, nvars, &vars[start], ident);
+	B->zeroRow(br, vars[i], ident);
 	ident = 0;
-	E->zeroRow(br, nvars, &vars[start], ident);	
+	E->zeroRow(br, vars[i], ident);	
       }
-      else if ((cr = cindx->findIndex(bcvar)) >= 0){
+      else if ((cr = cindx->findIndex(nodes[i])) >= 0){
         int cident = 0;
         int fident = 0;
-        if (bcvar >= ownerRange[mpiRank] &&
-            bcvar <  ownerRange[mpiRank+1]){ 
+        if (nodes[i] >= ownerRange[mpiRank] &&
+            nodes[i] < ownerRange[mpiRank+1]){ 
           // Only use the identity here if it is locally owned
           cident = 1;
         }
-        F->zeroRow(cr, nvars, &vars[start], fident);
-        C->zeroRow(cr, nvars, &vars[start], cident);	  	
-      }      
+        F->zeroRow(cr, vars[i], fident);
+        C->zeroRow(cr, vars[i], cident);
+      }
     }
   }
 }

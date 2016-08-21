@@ -684,13 +684,14 @@ TACSAssembler* TACSCreator::createTACS(){
 
   // Use the reordering if the flag has been set in the
   // TACSCreator object
-  // if (use_reordering){
-  //   tacs->computeReordering(order_type, mat_type);
-  // }
+  if (use_reordering){
+    tacs->computeReordering(order_type, mat_type);
+  }
 
   // Finish the initialization of TACS
   tacs->initialize();
 
+  // Create the new node vector
   TACSBVec *X = tacs->createNodeVec();
   X->incref();
 
@@ -698,6 +699,13 @@ TACSAssembler* TACSCreator::createTACS(){
   TacsScalar *Xpt_vals;
   X->getArray(&Xpt_vals);
   memcpy(Xpt_vals, Xpts_local, 3*num_owned_nodes*sizeof(TacsScalar));
+
+  // Reorder the node vector
+  if (use_reordering){
+    tacs->reorderVec(X);
+  }
+
+  // Set the node locations
   tacs->setNodes(X);
   X->decref();
 

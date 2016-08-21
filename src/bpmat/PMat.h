@@ -91,8 +91,8 @@ class PMat : public TACSMat {
 
   // Sizes/dimensions of the matrix
   int bsize; // The block size
-  int N; // The number of local rows
-  int Nc; // The number of equations that are coupled to other processors
+  int N; // Number of local rows
+  int Nc; // Number of equations that are coupled to other processors
   int Np; // The number of local-only equations Np + Nc = N
 
  private: 

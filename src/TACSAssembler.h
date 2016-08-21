@@ -86,8 +86,14 @@ class TACSAssembler : public TACSObject {
   // -------------------
   int initialize();
 
-  // Return important information about the TACS object
-  // --------------------------------------------------
+  // Functions for retrieving the reordering
+  // ---------------------------------------
+  void getReordering( int *oldToNew );
+  void reorderVec( TACSBVec *vec );
+
+  // Return important information about the TACSAssembler object
+  // -----------------------------------------------------------
+  MPI_Comm getMPIComm();
   int getVarsPerNode();
   int getNumNodes();
   int getNumDependentNodes();
@@ -170,33 +176,28 @@ class TACSAssembler : public TACSObject {
   void addSVSens( TACSFunction *function, TACSBVec *vec );
   void addXptSens( TACSFunction **funcs, int numFuncs,
                    TACSBVec **fXptSens );
-
   void addAdjointResProducts( TACSBVec **adjoint, int numAdjoints,
                               TacsScalar *dvSens, int numDVs );
-  /*
-  void evalAdjointResXptSensProducts( TACSBVec **adjoint, int numAdjoints,
-    				      TACSBVec *adjXptSensProduct );
-  */
+  void addAdjointResXptSensProducts( TACSBVec **adjoint, int numAdjoints,
+                                     TACSBVec **adjXptSens );
 
-  // Evaluate the derivative of the inner product of two vectors and a matrix
-  // ------------------------------------------------------------------------
+  // Add the derivatives of inner products
+  // -------------------------------------
   void addMatDVSensInnerProduct( TacsScalar scale, 
                                  ElementMatrixType matType, 
                                  TACSBVec *psi, TACSBVec *phi,
                                  TacsScalar *dvSens, int numDVs );
-
-  // Evaluate the partial derivative of the inner product with a matrix
-  // ------------------------------------------------------------------
   void evalMatSVSensInnerProduct( TacsScalar scale,
 				  ElementMatrixType matType, 
-				  TACSBVec *psi, TACSBVec *phi, TACSBVec *res );
+				  TACSBVec *psi, TACSBVec *phi, 
+                                  TACSBVec *res );
 
   // Return an element and the variables associated with that element
   // ----------------------------------------------------------------
-  TACSElement **getElements(){ return elements; }
+  TACSElement **getElements();
 
-  // Get information about the output files
-  // --------------------------------------
+  // Get information about the output files this is used by TACSToFH5
+  // ----------------------------------------------------------------
   int getNumComponents();
   void getOutputNodeRange( enum ElementType elem_type, 
 			   int **_node_range );
@@ -215,17 +216,9 @@ class TACSAssembler : public TACSObject {
   void testFunction( TACSFunction * func, 
                      int num_design_vars, double dh );
   
-  // Retrieve the MPI communicator
-  // -----------------------------
-  MPI_Comm getMPIComm();
-
   // Set the number of threads to work with
   // --------------------------------------
   void setNumThreads( int t );
-
-  // Get a constant pointer to the tacs node numbers
-  // -----------------------------------------------
-  int getTacsNodeNums( const int **_tacsNodeNums );
 
  private:
   // Get pointers to the start-locations within the data array
@@ -255,11 +248,14 @@ class TACSAssembler : public TACSObject {
 				  int nrnodes, const int *rnodes,
 				  int nodiag );
 
-  // Compute the reordering for a sub-matrix
-  // ---------------------------------------
+  // Compute the reordering for a local matrix
+  // -----------------------------------------
   void computeMatReordering( enum OrderingType order_type, 
                              int nvars, int *rowp, int *cols,
                              int *perm, int *new_vars );
+
+  // Scatter the boundary conditions on external nodes
+  void scatterExternalBCs();
 
   // Add values into the matrix
   inline void addMatValues( TACSMat *A, const int elemNum, 
@@ -289,6 +285,9 @@ class TACSAssembler : public TACSObject {
   TACSBVecDistribute *extDist; // Distribute the vector
   TACSBVecIndices *extDistIndices; // The tacsVarNum indices
 
+  // Reordering information
+  TACSBVecIndices *newNodeIndices;
+
   // Additional information information for the DistMat class
   TACSBVecIndices *distMatIndices;
 
@@ -305,7 +304,7 @@ class TACSAssembler : public TACSObject {
 
   // Information about the
   int varsPerNode; // number of variables per node
-  int maxElementNodes; // maximum number of ind. and dep. nodes for any element
+  int maxElementNodes; // maximum number of ind. and dep. element nodes
   int maxElementSize; // maximum number of variables for any element
   int maxElementIndepNodes; // maximum number of independent nodes 
   int numElements; // number of elements
@@ -401,8 +400,10 @@ class TACSAssembler : public TACSObject {
   // The pthread data required to pthread tacs operations
   int numCompletedElements; // Keep track of how much work has been done
   TACSThreadInfo *thread_info;// The pthread object
-  pthread_t threads[TACSThreadInfo::TACS_MAX_NUM_THREADS]; // The thread objects
-  pthread_mutex_t tacs_mutex; // The mutex object for coordinating assembly ops.
+  
+  // The thread objects
+  pthread_t threads[TACSThreadInfo::TACS_MAX_NUM_THREADS]; 
+  pthread_mutex_t tacs_mutex; // The mutex for coordinating assembly ops.
 
   // The name of the TACSAssembler object
   static const char *tacsName;

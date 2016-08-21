@@ -266,29 +266,25 @@ void PMat::applyBCs(){
     rmap->getOwnerRange(&ownerRange);
 
     // apply the boundary conditions
-    const int *local, *global, *var_ptr, *vars;
+    const int *nodes, *vars;
     const TacsScalar *values;
-    int nbcs = bcs->getBCs(&local, &global, &var_ptr, &vars, &values);
+    int nbcs = bcs->getBCs(&nodes, &vars, &values);
 
     // Get the matrix values
     for ( int i = 0; i < nbcs; i++){
       // Find block i and zero out the variables associated with it
-      if (global[i] >= ownerRange[mpi_rank] &&
-          global[i] < ownerRange[mpi_rank+1]){
-
-	int bvar  = global[i] - ownerRange[mpi_rank];
-	int start = var_ptr[i];
-	int nvars = var_ptr[i+1] - start;
-
+      if (nodes[i] >= ownerRange[mpi_rank] &&
+          nodes[i] < ownerRange[mpi_rank+1]){
+	int bvar  = nodes[i] - ownerRange[mpi_rank];
 	int ident = 1; // Replace the diagonal with the identity matrix
-	Aloc->zeroRow(bvar, nvars, &vars[start], ident);
+	Aloc->zeroRow(bvar, vars[i], ident);
 
 	// Now, check if the variable will be
 	// in the off diagonal block (potentially)
 	bvar = bvar - (N-Nc);
 	if (bvar >= 0){
 	  ident = 0;
-	  Bext->zeroRow(bvar, nvars, &vars[start], ident);
+	  Bext->zeroRow(bvar, vars[i], ident);
 	}
       }
     }      
