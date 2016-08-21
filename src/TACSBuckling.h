@@ -25,10 +25,10 @@
 */
 class TACSLinearBuckling : public TACSObject {
  public:
-  TACSLinearBuckling( TACSAssembler * _tacs, 
+  TACSLinearBuckling( TACSAssembler *_tacs, 
 		      TacsScalar _sigma,
 		      TACSMat *_gmat, TACSMat *_kmat, 
-		      TACSMat *_aux_mat, TACSKsm * _solver,
+		      TACSMat *_aux_mat, TACSKsm *_solver,
 		      int _max_lanczos_vecs, 
 		      int _num_eigvals, double _eig_tol );
   ~TACSLinearBuckling();
@@ -40,13 +40,13 @@ class TACSLinearBuckling : public TACSObject {
 
   // Solve the eigenvalue problem
   // ----------------------------
-  void solve( KSMPrint * ksm_print = NULL );
+  void solve( KSMPrint *ksm_print = NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
   // Extract the eigenvalue or check the solution 
   // --------------------------------------------
-  TacsScalar extractEigenvalue( int n, TacsScalar * error );
-  TacsScalar extractEigenvector( int n, BVec * ans, TacsScalar * error );
+  TacsScalar extractEigenvalue( int n, TacsScalar *error );
+  TacsScalar extractEigenvector( int n, TACSBVec *ans, TacsScalar *error );
   void checkEigenvector( int n );
   TacsScalar checkOrthogonality();
   void printOrthogonality();
@@ -73,8 +73,8 @@ class TACSLinearBuckling : public TACSObject {
   TACSMat *aux_mat, *kmat, *gmat;
 
   // Vectors used in the analysis
-  BVec * path; // The solution path
-  BVec *res, *update, *eigvec;  
+  TACSBVec *path; // The solution path
+  TACSBVec *res, *update, *eigvec;  
 };
 
 /*!  
@@ -109,31 +109,31 @@ class TACSFrequencyAnalysis : public TACSObject {
   // ----------------------------------------
   TacsScalar getSigma();
   void setSigma( TacsScalar _sigma );
-  void solve( KSMPrint * ksm_print = NULL );
+  void solve( KSMPrint *ksm_print = NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
   // Extract and check the solution 
   // ------------------------------
-  TacsScalar extractEigenvalue( int n, TacsScalar * error );
-  TacsScalar extractEigenvector( int n, BVec * ans, TacsScalar * error );
+  TacsScalar extractEigenvalue( int n, TacsScalar *error );
+  TacsScalar extractEigenvector( int n, TACSBVec *ans, TacsScalar *error );
   void checkEigenvector( int n );
   TacsScalar checkOrthogonality();
 
  private:
-  TACSAssembler * tacs;
+  TACSAssembler *tacs;
  
   // The matrices used in the analysis
   TACSMat *mmat; // The mass matrix
   TACSMat *kmat; // The stiffness matrix
   TACSKsm *solver; // Associated with kmat
-  TACSPc *pc;      // The preconditioner
+  TACSPc *pc; // The preconditioner
 
   TacsScalar sigma;
   EPGeneralizedShiftInvert *ep_op;
   SEP *sep;
 
   // Vectors required for eigen-sensitivity analysis
-  BVec *eigvec, *res;
+  TACSBVec *eigvec, *res;
 };
 
 #endif 

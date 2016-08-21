@@ -275,10 +275,10 @@ class TACSAssembler : public TACSObject {
   static void *assembleJacobian_thread( void *t );
   static void *assembleMatType_thread( void *t );
   // static void *adjointResXptSensProduct_thread( void *t );
-  static void *adjointResProduct_thread( void *t );
-  static void *evalFunctions_thread( void *t );
+  // static void *adjointResProduct_thread( void *t );
+  // static void *evalFunctions_thread( void *t );
   // static void *evalXptSens_thread( void *t );
-  static void *evalDVSens_thread( void *t );
+  // static void *evalDVSens_thread( void *t );
 
   TACSVarMap *varMap; // Variable ownership map
   TACSBcMap *bcMap; // Boundary condition data
@@ -355,6 +355,8 @@ class TACSAssembler : public TACSObject {
   public:
     TACSAssemblerPthreadInfo(){
       tacs = NULL; 
+      // Residual
+      res = NULL;
       // Matrix information
       mat = NULL;
       alpha = beta = gamma = 0.0;
@@ -364,18 +366,20 @@ class TACSAssembler : public TACSObject {
       funcIteration = 0;
       numFuncs = 0;
       functions = NULL;
-      // df/dx and adjoint-dR/dx product data
+      // df/dx and adjoint-dR/dx data
       numDesignVars = 0;
       numAdjoints = 0;
       fdvSens = NULL;
       fXptSens = NULL;
-      adjointVars = NULL;
-      adjXptSensProduct = NULL;
+      adjoints = NULL;
     }
 
     // The data required to perform most of the matrix
     // assembly.
     TACSAssembler *tacs;
+
+    // Information for residual assembly
+    TACSBVec *res;
 
     // Information for matrix assembly
     TACSMat *mat;
@@ -389,12 +393,11 @@ class TACSAssembler : public TACSObject {
     int numFuncs;
     TACSFunction **functions;
     TacsScalar *fdvSens; // df/dx
-    TacsScalar *fXptSens; // df/dXpts
+    TACSBVec **fXptSens;
 
     // Information for adjoint-dR/dx products
     int numAdjoints;
-    TacsScalar *adjointVars;
-    TacsScalar *adjXptSensProduct;
+    TACSBVec **adjoints;
   } *tacsPInfo;
 
   // The pthread data required to pthread tacs operations

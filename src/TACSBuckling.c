@@ -32,10 +32,10 @@
   num_eigvals:  Number of converged eigenvalues required
   eig_tol:      Tolerance of the eigenvalues
 */
-TACSLinearBuckling::TACSLinearBuckling( TACSAssembler * _tacs, 
+TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_tacs, 
                                         TacsScalar _sigma, 
 					TACSMat *_gmat, TACSMat *_kmat, 
-					TACSMat *_aux_mat, TACSKsm * _solver,
+					TACSMat *_aux_mat, TACSKsm *_solver,
                                         int _max_lanczos_vecs, 
 					int _num_eigvals, 
                                         double _eig_tol ){
@@ -56,7 +56,7 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler * _tacs,
   solver->incref();
 
   // Get the operators
-  TACSMat * mat;
+  TACSMat *mat;
   solver->getOperators(&mat, &pc);
 
   // Check that the matrix associated with the solver object
@@ -158,7 +158,7 @@ void TACSLinearBuckling::setSigma( TacsScalar _sigma ){
 
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x 
 */
-void TACSLinearBuckling::solve( KSMPrint * ksm_print ){
+void TACSLinearBuckling::solve( KSMPrint *ksm_print ){
   tacs->zeroVariables();
   tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
 
@@ -189,15 +189,15 @@ void TACSLinearBuckling::solve( KSMPrint * ksm_print ){
   Extract the eigenvalue from the analysis.
 */
 TacsScalar TACSLinearBuckling::extractEigenvalue( int n, 
-						  TacsScalar * error ){
+						  TacsScalar *error ){
   return sep->extractEigenvalue(n, error);
 }
 
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSLinearBuckling::extractEigenvector( int n, BVec * ans, 
-                                                   TacsScalar * error ){
+TacsScalar TACSLinearBuckling::extractEigenvector( int n, TACSBVec *ans, 
+                                                   TacsScalar *error ){
   return sep->extractEigenvector(n, ans, error);
 }
 
@@ -220,8 +220,8 @@ void TACSLinearBuckling::printOrthogonality(){
 */
 void TACSLinearBuckling::checkEigenvector( int n ){
   // Test the eignevalue
-  BVec * t1 = tacs->createVec();   
-  BVec * t2 = tacs->createVec();   
+  TACSBVec *t1 = tacs->createVec();   
+  TACSBVec *t2 = tacs->createVec();   
   t1->incref();
   t2->incref();
 
@@ -259,7 +259,7 @@ void TACSLinearBuckling::checkEigenvector( int n ){
   t2->decref();
 }
 
-/*  
+/* 
   The function computes the derivatives of the buckling eigenvalues.
 
   Compute the derivative of the eignevalues w.r.t. the design
@@ -295,7 +295,7 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
 					  TacsScalar fdvSens[], 
 					  int numDVs ){
   // Allocate extra temporary space for the derivative
-  TacsScalar * temp = new TacsScalar[ numDVs ];
+  TacsScalar *temp = new TacsScalar[ numDVs ];
 
   // Copy over the values of the stiffness matrix, factor
   // the stiffness matrix.
@@ -307,17 +307,12 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
 
   // Evaluate the partial derivative for the stiffness matrix
-  tacs->evalMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
-				  eigvec, eigvec, fdvSens, numDVs);
+  tacs->addMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
+                                 eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->evalMatDVSensInnerProduct(1.0, GEOMETRIC_STIFFNESS_MATRIX,
-				  eigvec, eigvec, temp, numDVs);
-
-  // Add the result to the derivative
-  for ( int i = 0; i < numDVs; i++ ){
-    fdvSens[i] += eig*temp[i];
-  }
+  tacs->addMatDVSensInnerProduct(eig, GEOMETRIC_STIFFNESS_MATRIX,
+                                 eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate derivative of the inner product with respect to 
   // the path variables
@@ -327,7 +322,8 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  tacs->evalAdjointResProducts(&update, 1, temp, numDVs);
+  memset(temp, 0, numDVs*sizeof(TacsScalar));
+  tacs->addAdjointResProducts(&update, 1, temp, numDVs);
 
   // Add the result to the derivative
   for ( int i = 0; i < numDVs; i++ ){
@@ -345,8 +341,11 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   for ( int i = 0; i < numDVs; i++ ){
     fdvSens[i] *= scale;
   }
-
   delete [] temp;
+
+  // All reduce across the processors
+  MPI_Allreduce(MPI_IN_PLACE, fdvSens, numDVs, MPI_INT,
+                MPI_SUM, tacs->getMPIComm());
 }
 
 /*!
@@ -368,11 +367,11 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   num_eigvals: the number of eigenvalues to use
   eig_tol:     the eigenproblem tolerance
 */
-TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler * _tacs, 
+TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs, 
                                               TacsScalar _sigma, 
-                                              TACSMat * _mmat, 
-					      TACSMat * _kmat,
-                                              TACSKsm * _solver,
+                                              TACSMat *_mmat, 
+					      TACSMat *_kmat,
+                                              TACSKsm *_solver,
                                               int max_lanczos, 
 					      int num_eigvals,
                                               double eig_tol ){
@@ -391,7 +390,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler * _tacs,
 
   // Store the pointer to the KSM solver and ensure that the solver
   // is associated with the stiffness matrix object
-  TACSMat * mat;
+  TACSMat *mat;
   solver = _solver; 
   solver->incref();
   solver->getOperators(&mat, &pc);
@@ -448,7 +447,7 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
 /*
   Solve the eigenvalue problem
 */
-void TACSFrequencyAnalysis::solve( KSMPrint * ksm_print ){
+void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
   tacs->zeroVariables();
   tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
   tacs->assembleMatType(MASS_MATRIX, mmat);
@@ -466,15 +465,15 @@ void TACSFrequencyAnalysis::solve( KSMPrint * ksm_print ){
   Extract the eigenvalue from the analysis
 */
 TacsScalar TACSFrequencyAnalysis::extractEigenvalue( int n, 
-                                                     TacsScalar * error ){
+                                                     TacsScalar *error ){
   return sep->extractEigenvalue(n, error);
 }
 
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSFrequencyAnalysis::extractEigenvector( int n, BVec * ans, 
-                                                      TacsScalar * error ){
+TacsScalar TACSFrequencyAnalysis::extractEigenvector( int n, TACSBVec *ans, 
+                                                      TacsScalar *error ){
   return sep->extractEigenvector(n, ans, error);
 }
 
@@ -506,25 +505,20 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 					     TacsScalar fdvSens[], 
 					     int numDVs ){
   // Allocate extra space for the derivative
-  TacsScalar * temp = new TacsScalar[ numDVs ];
+  TacsScalar *temp = new TacsScalar[ numDVs ];
 
   // Extract the eigenvalue and eigenvector
   TacsScalar error;
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
   
   // Evaluate the partial derivative for the stiffness matrix
-  tacs->evalMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
-				  eigvec, eigvec, fdvSens, numDVs);
+  tacs->addMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
+                                 eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->evalMatDVSensInnerProduct(1.0, MASS_MATRIX,
-				  eigvec, eigvec, temp, numDVs);
+  tacs->addMatDVSensInnerProduct(-eig, MASS_MATRIX,
+                                 eigvec, eigvec, temp, numDVs);
   
-  // Add the result to the derivative
-  for ( int i = 0; i < numDVs; i++ ){
-    fdvSens[i] -= eig*temp[i];
-  }
-
   // Finish computing the derivative
   mmat->mult(eigvec, res);
   TacsScalar scale = 1.0/res->dot(eigvec);
@@ -535,6 +529,10 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
   }
 
   delete [] temp;
+
+  // All reduce across the processors
+  MPI_Allreduce(MPI_IN_PLACE, fdvSens, numDVs, MPI_INT,
+                MPI_SUM, tacs->getMPIComm());
 }
 
 /*!
@@ -547,8 +545,8 @@ void TACSFrequencyAnalysis::checkEigenvector( int n ){
   tacs->assembleMatType(MASS_MATRIX, mmat);
 
   // Create temporary arrays required
-  BVec * t1 = tacs->createVec();   
-  BVec * t2 = tacs->createVec();   
+  TACSBVec *t1 = tacs->createVec();   
+  TACSBVec *t2 = tacs->createVec();   
   t1->incref();
   t2->incref();
 

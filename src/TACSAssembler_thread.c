@@ -29,17 +29,19 @@ void TACSAssembler::schedPthreadJob( TACSAssembler * tacs,
   
   tacs:     the pointer to the TACSAssembler object
 */
-void * TACSAssembler::assembleRes_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
+void *TACSAssembler::assembleRes_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
+    static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler * tacs = pinfo->tacs;
+  TACSAssembler *tacs = pinfo->tacs;
+  TACSBVec *res = pinfo->res;
 
   // Allocate a temporary array large enough to store everything required  
   int s = tacs->maxElementSize;
   int sx = 3*tacs->maxElementNodes;
   int dataSize = 4*s + sx;
-  TacsScalar * data = new TacsScalar[ dataSize ];
+  TacsScalar *data = new TacsScalar[ dataSize ];
   
   // Set pointers to the allocate memory
   TacsScalar *vars = &data[0];
@@ -51,8 +53,8 @@ void * TACSAssembler::assembleRes_thread( void * t ){
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
   TACSAuxElem *aux = NULL;
-  if (tacs->aux_elements){
-    naux = tacs->aux_elements->getAuxElements(&aux);
+  if (tacs->auxElements){
+    naux = tacs->auxElements->getAuxElements(&aux);
   }
 
   while (tacs->numCompletedElements < tacs->numElements){
@@ -61,21 +63,16 @@ void * TACSAssembler::assembleRes_thread( void * t ){
     
     if (elemIndex >= 0){
       // Get the element object
-      TACSElement * element = tacs->elements[elemIndex];
+      TACSElement *element = tacs->elements[elemIndex];
 
       // Retrieve the variable values
-      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemIndex, 
-		      tacs->Xpts, elemXpts);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars, vars);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localDotVars, dvars);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localDDotVars, ddvars);
-
-      // Retrieve the number of element variables
-      int nvars = element->numVariables();
-      memset(elemRes, 0, nvars*sizeof(TacsScalar));
+      int ptr = tacs->elementNodeIndex[elemIndex];
+      int len = tacs->elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &tacs->elementTacsNodes[ptr];
+      tacs->xptVec->getValues(len, nodes, elemXpts);
+      tacs->varsVec->getValues(len, nodes, vars);
+      tacs->dvarsVec->getValues(len, nodes, dvars);
+      tacs->ddvarsVec->getValues(len, nodes, ddvars);
   
       // Generate the Jacobian of the element
       element->addResidual(tacs->time, elemRes, elemXpts, 
@@ -96,8 +93,7 @@ void * TACSAssembler::assembleRes_thread( void * t ){
 
       // Add the values to the residual when the memory unlocks
       pthread_mutex_lock(&tacs->tacs_mutex);
-      tacs->addValues(tacs->varsPerNode, elemIndex, 
-		      elemRes, tacs->localRes);
+      res->setValues(len, nodes, elemRes, ADD_VALUES);
       pthread_mutex_unlock(&tacs->tacs_mutex);
     }
   }
@@ -116,12 +112,13 @@ void * TACSAssembler::assembleRes_thread( void * t ){
   tacs:     the pointer to the TACSAssembler object
   A:        the generic TACSMat base class
 */
-void * TACSAssembler::assembleJacobian_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+void *TACSAssembler::assembleJacobian_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
   TACSAssembler *tacs = pinfo->tacs;
+  TACSBVec *res = pinfo->res;
   TACSMat *A = pinfo->mat;
   double alpha = pinfo->alpha;
   double beta = pinfo->beta;
@@ -134,8 +131,8 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
   int sx = 3*tacs->maxElementNodes;
   int sw = tacs->maxElementIndepNodes;
   int dataSize = 4*s + sx + s*s + sw;
-  TacsScalar * data = new TacsScalar[ dataSize ];
-  int * idata = new int[ sw + tacs->maxElementNodes + 1 ];
+  TacsScalar *data = new TacsScalar[ dataSize ];
+  int *idata = new int[ sw + tacs->maxElementNodes + 1 ];
 
   // Set pointers to the allocate memory
   TacsScalar *vars = &data[0];
@@ -149,8 +146,8 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
   TACSAuxElem *aux = NULL;
-  if (tacs->aux_elements){
-    naux = tacs->aux_elements->getAuxElements(&aux);
+  if (tacs->auxElements){
+    naux = tacs->auxElements->getAuxElements(&aux);
   }
 
   while (tacs->numCompletedElements < tacs->numElements){
@@ -159,17 +156,16 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
     
     if (elemIndex >= 0){
       // Get the element object
-      TACSElement * element = tacs->elements[elemIndex];
+      TACSElement *element = tacs->elements[elemIndex];
 
       // Retrieve the variable values
-      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemIndex, 
-		      tacs->Xpts, elemXpts);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars, vars);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localDotVars, dvars);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localDDotVars, ddvars);
+      int ptr = tacs->elementNodeIndex[elemIndex];
+      int len = tacs->elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &tacs->elementTacsNodes[ptr];
+      tacs->xptVec->getValues(len, nodes, elemXpts);
+      tacs->varsVec->getValues(len, nodes, vars);
+      tacs->dvarsVec->getValues(len, nodes, dvars);
+      tacs->ddvarsVec->getValues(len, nodes, ddvars);
   
       // Retrieve the number of element variables
       int nvars = element->numVariables();
@@ -201,8 +197,7 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
       
       pthread_mutex_lock(&tacs->tacs_mutex);
       // Add values to the residual
-      tacs->addValues(tacs->varsPerNode, elemIndex, 
-		      elemRes, tacs->localRes);
+      if (res){ res->setValues(len, nodes, elemRes, ADD_VALUES); }
 
       // Add values to the matrix
       tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
@@ -227,13 +222,13 @@ void * TACSAssembler::assembleJacobian_thread( void * t ){
   matType:      the matrix type defined in Element.h
   matOr:        the matrix orientation: NORMAL or TRANSPOSE
 */
-void * TACSAssembler::assembleMatType_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+void *TACSAssembler::assembleMatType_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler * tacs = pinfo->tacs;
-  TACSMat * A = pinfo->mat;
+  TACSAssembler *tacs = pinfo->tacs;
+  TACSMat *A = pinfo->mat;
   ElementMatrixType matType = pinfo->matType;
   MatrixOrientation matOr = pinfo->matOr;
 
@@ -242,8 +237,8 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
   int sx = 3*tacs->maxElementNodes;
   int sw = tacs->maxElementIndepNodes;
   int dataSize = 3*s + sx + s*s + sw;
-  TacsScalar * data = new TacsScalar[ dataSize ];
-  int * idata = new int[ sw + tacs->maxElementNodes + 1 ];
+  TacsScalar *data = new TacsScalar[ dataSize ];
+  int *idata = new int[ sw + tacs->maxElementNodes + 1 ];
   
   TacsScalar *vars = &data[0];
   TacsScalar *elemRes = &data[s];
@@ -257,13 +252,15 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
     
     if (elemIndex >= 0){
       // Get the element
-      TACSElement * element = tacs->elements[elemIndex];
+      TACSElement *element = tacs->elements[elemIndex];
       
       // Retrieve the variable values
-      tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemIndex, 
-		      tacs->Xpts, elemXpts);
-      tacs->getValues(tacs->varsPerNode, elemIndex, 
-		      tacs->localVars, vars);
+      // Retrieve the variable values
+      int ptr = tacs->elementNodeIndex[elemIndex];
+      int len = tacs->elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &tacs->elementTacsNodes[ptr];
+      tacs->xptVec->getValues(len, nodes, elemXpts);
+      tacs->varsVec->getValues(len, nodes, vars);
 
       // Retrieve the type of the matrix
       element->getMatType(matType, elemMat, elemXpts, vars);
@@ -299,15 +296,15 @@ void * TACSAssembler::assembleMatType_thread( void * t ){
   adjXptSensProduct: adjXptSensProduct = Phi^{T}*dR/dXpts
 */
 /*
-void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+void *TACSAssembler::adjointResXptSensProduct_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler * tacs = pinfo->tacs;
-  TacsScalar * localAdjoint = pinfo->adjointVars;
+  TACSAssembler *tacs = pinfo->tacs;
+  TacsScalar *localAdjoint = pinfo->adjointVars;
   int numAdjoints = pinfo->numAdjoints;
-  TacsScalar * adjXptSensProduct = pinfo->adjXptSensProduct;
+  TacsScalar *adjXptSensProduct = pinfo->adjXptSensProduct;
 
   // The number of local variables
   int nvars = tacs->varsPerNode*tacs->numNodes;
@@ -316,24 +313,24 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
   int s = tacs->maxElementSize;
   int sx = 3*tacs->maxElementNodes;
   int dataSize = 2*s + sx + s*sx;
-  TacsScalar * data = new TacsScalar[ dataSize ];
+  TacsScalar *data = new TacsScalar[ dataSize ];
   
-  TacsScalar * elemVars = &data[0];
-  TacsScalar * elemXpts = &data[s];
-  TacsScalar * elemResXptSens = &data[s + sx];
+  TacsScalar *elemVars = &data[0];
+  TacsScalar *elemXpts = &data[s];
+  TacsScalar *elemResXptSens = &data[s + sx];
 
   // Allocate memory for the element adjoint variables and 
   // elemXptSens = the product of the element adjoint variables and
   // the derivative of the residuals w.r.t. the nodes
-  TacsScalar * elemAdjoint = new TacsScalar[ s*numAdjoints ];
-  TacsScalar * elemXptSens = new TacsScalar[ sx*numAdjoints ];
+  TacsScalar *elemAdjoint = new TacsScalar[ s*numAdjoints ];
+  TacsScalar *elemXptSens = new TacsScalar[ sx*numAdjoints ];
     
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
     
     if (elemIndex >= 0){
-      TACSElement * element = tacs->elements[elemIndex];
+      TACSElement *element = tacs->elements[elemIndex];
       
       // Get the variables and nodes for this element
       int nnodes = tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, 
@@ -361,7 +358,7 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
       // Add the contributions from the derivative of the consistent forces
       // w.r.t. the element nodes
       while ((index < numElems) && (elemNums[index] == elemIndex)){
-        TACSElementTraction * elemTraction =
+        TACSElementTraction *elemTraction =
           tacs->surfaceTractions->getElement(index);
         elemTraction->addForceXptSens(lambda, elemResXptSens,
                                       elemVars, elemXpts);
@@ -371,7 +368,7 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
       // Compute the product of the derivative of the residual w.r.t. the
       // nodal coordinates and the adjoint variables
       // Need to compute: 
-      // elemXptSens = elemResXptSens^{T} * elemAdjoint
+      // elemXptSens = elemResXptSens^{T} *elemAdjoint
       int nenodes = 3*nnodes;
       TacsScalar alpha = 1.0, beta = 0.0;
       BLASgemm("T", "N", &nenodes, &numAdjoints, &nevars,
@@ -411,8 +408,9 @@ void * TACSAssembler::adjointResXptSensProduct_thread( void * t ){
 
   numAdjoints:       the number of adjoint vectors
 */
-void * TACSAssembler::adjointResProduct_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+/*
+void *TACSAssembler::adjointResProduct_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
@@ -432,8 +430,8 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
   int sx = 3*tacs->maxElementNodes;
   int sw = tacs->maxElementIndepNodes;
   int dataSize = 4*s + sx + s*s + sw;
-  TacsScalar * data = new TacsScalar[ dataSize ];
-  int * idata = new int[ sw + tacs->maxElementNodes + 1 ];
+  TacsScalar *data = new TacsScalar[ dataSize ];
+  int *idata = new int[ sw + tacs->maxElementNodes + 1 ];
 
   // Set pointers to the allocate memory
   TacsScalar *vars = &data[0];
@@ -452,7 +450,7 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
     TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
     
     if (elemIndex >= 0){
-      TACSElement * element = tacs->elements[elemIndex];
+      TACSElement *element = tacs->elements[elemIndex];
 
       // Retrieve the variable values
       int nnodes = 
@@ -491,7 +489,7 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/
 /*
   Threaded computation of a series of functions
 
@@ -502,16 +500,17 @@ void * TACSAssembler::adjointResProduct_thread( void * t ){
   numFuncs:  the number of functions
   functions: the array of functions to be evaluated
 */
-void * TACSAssembler::evalFunctions_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+/*
+void *TACSAssembler::evalFunctions_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler * tacs = pinfo->tacs;
+  TACSAssembler *tacs = pinfo->tacs;
   int iter = pinfo->funcIteration;
   int numFuncs = pinfo->numFuncs;
-  TACSFunction ** funcs = pinfo->functions;
-  TacsScalar * fXptSens = pinfo->fXptSens;
+  TACSFunction **funcs = pinfo->functions;
+  TacsScalar *fXptSens = pinfo->fXptSens;
 
   // Determine the sizes of the work arrays
   int iwork_size = 0, work_size = 0;
@@ -523,14 +522,14 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
   }
 
   // Allocate the integer data
-  int * idata = new int[ 3*(numFuncs+1) + iwork_size ];
+  int *idata = new int[ 3*(numFuncs+1) + iwork_size ];
   memset(idata, 0, 3*(numFuncs+1)*sizeof(int));
   
   // Set pointers into the idata array for the work/offsets/
-  int * iwork_ptr = &idata[0];
-  int * work_ptr = &idata[numFuncs+1];
-  int * funcElemDomainSize = &idata[2*(numFuncs+1)];
-  int * iwork = &idata[3*(numFuncs+1)];
+  int *iwork_ptr = &idata[0];
+  int *work_ptr = &idata[numFuncs+1];
+  int *funcElemDomainSize = &idata[2*(numFuncs+1)];
+  int *iwork = &idata[3*(numFuncs+1)];
 
   // Determine the maximum work size amongst all functions
   for ( int k = 0; k < numFuncs; k++ ){
@@ -554,12 +553,12 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
   // Compute the total number of elements to visit for all functions
   int totalSize = 0;
   for ( int k = 0; k < numFuncs; k++ ){
-    TACSFunction * function = funcs[k];
+    TACSFunction *function = funcs[k];
 
     // Determine the size of the 
     if (function->getDomain() == TACSFunction::SUB_DOMAIN){
       // Get the function sub-domain
-      const int * elemSubList;
+      const int *elemSubList;
       totalSize += function->getElements(&elemSubList);
     }
     else {
@@ -579,11 +578,11 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
 
   // Retrieve the function from the function list
   int funcIndex = 0;
-  TACSFunction * function = funcs[0];
+  TACSFunction *function = funcs[0];
 
   // Set the work/iwork arrays to the first function
-  int * iwork_array = &iwork[iwork_ptr[0]];
-  TacsScalar * work_array = &work[work_ptr[0]];
+  int *iwork_array = &iwork[iwork_ptr[0]];
+  TacsScalar *work_array = &work[work_ptr[0]];
 
   while (funcIndex < numFuncs && 
          tacs->numCompletedElements < totalSize){
@@ -616,12 +615,12 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
       
       if (function->getDomain() == TACSFunction::SUB_DOMAIN){
         // Get the function sub-domain
-        const int * elemSubList;
+        const int *elemSubList;
         function->getElements(&elemSubList);
         
         // Retrieve the actual element number from the index list
         int elemNum = elemSubList[elemIndex];
-        TACSElement * element = tacs->elements[elemNum];
+        TACSElement *element = tacs->elements[elemNum];
         
         // Determine the values of the state variables for subElem
 	tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
@@ -635,7 +634,7 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
       }
       else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
         int elemNum = elemIndex;
-        TACSElement * element = tacs->elements[elemNum];
+        TACSElement *element = tacs->elements[elemNum];
         
         // Determine the values of the state variables for elemNum
 	tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
@@ -664,7 +663,7 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/
 /*
   Threaded computation of df/dXpts 
 
@@ -681,15 +680,15 @@ void * TACSAssembler::evalFunctions_thread( void * t ){
   fXptSens:  the derivative of the functions w.r.t. the nodes
 */
 /*
-void * TACSAssembler::evalXptSens_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+void *TACSAssembler::evalXptSens_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler * tacs = pinfo->tacs;
+  TACSAssembler *tacs = pinfo->tacs;
   int numFuncs = pinfo->numFuncs;
-  TACSFunction ** funcs = pinfo->functions;
-  TacsScalar * fXptSens = pinfo->fXptSens;
+  TACSFunction **funcs = pinfo->functions;
+  TacsScalar *fXptSens = pinfo->fXptSens;
 
   // Determine the maximum work size amongst all functions
   int max_work_size = 0;
@@ -706,24 +705,24 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
   int sx = 3*tacs->maxElementNodes;
   int dataSize = 2*s + sx + s*sx + max_work_size;
 
-  TacsScalar * data = new TacsScalar[ dataSize ];  
-  TacsScalar * elemVars = &data[0];
-  TacsScalar * elemXpts = &data[s];
-  TacsScalar * elementXptSens = &data[s + sx];
-  TacsScalar * work = &data[s + sx + s*sx];
+  TacsScalar *data = new TacsScalar[ dataSize ];  
+  TacsScalar *elemVars = &data[0];
+  TacsScalar *elemXpts = &data[s];
+  TacsScalar *elementXptSens = &data[s + sx];
+  TacsScalar *work = &data[s + sx + s*sx];
 
   // Compute the total number of elements to visit for all functions
   int totalSize = 0;
-  int * funcElemDomainSize = new int[ numFuncs+1 ];
+  int *funcElemDomainSize = new int[ numFuncs+1 ];
   memset(funcElemDomainSize, 0, (numFuncs+1)*sizeof(int));
 
   for ( int k = 0; k < numFuncs; k++ ){
-    TACSFunction * function = funcs[k];
+    TACSFunction *function = funcs[k];
 
     // Determine the size of the 
     if (function->getDomain() == TACSFunction::SUB_DOMAIN){
       // Get the function sub-domain
-      const int * elemSubList;
+      const int *elemSubList;
       totalSize += function->getElements(&elemSubList);
     }
     else {
@@ -735,7 +734,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
 
   // Retrieve the function from the function list
   int funcIndex = 0;
-  TACSFunction * function = funcs[0];
+  TACSFunction *function = funcs[0];
 
   while (funcIndex < numFuncs && 
          tacs->numCompletedElements < totalSize){
@@ -764,12 +763,12 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
     
       if (function->getDomain() == TACSFunction::SUB_DOMAIN){
         // Get the function sub-domain
-        const int * elemSubList;
+        const int *elemSubList;
         function->getElements(&elemSubList);
       
         // Retrieve the actual element number from the index list
         int elemNum = elemSubList[elemIndex];
-        TACSElement * element = tacs->elements[elemNum];
+        TACSElement *element = tacs->elements[elemNum];
 
         // Determine the values of the state variables for subElem
         tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
@@ -789,7 +788,7 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
       }
       else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
         int elemNum = elemIndex;
-        TACSElement * element = tacs->elements[elemNum];
+        TACSElement *element = tacs->elements[elemNum];
 
         // Determine the values of the state variables for elemNum
         tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
@@ -831,8 +830,9 @@ void * TACSAssembler::evalXptSens_thread( void * t ){
   output:
   fdvSens:  the derivative of the functions w.r.t. the nodes
 */
-void * TACSAssembler::evalDVSens_thread( void * t ){
-  TACSAssemblerPthreadInfo * pinfo = 
+/*
+void *TACSAssembler::evalDVSens_thread( void *t ){
+  TACSAssemblerPthreadInfo *pinfo = 
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
@@ -851,7 +851,7 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
   }
 
   // Allocate space for the local contributions to the dvSens
-  TacsScalar * fdvSens = new TacsScalar[ numFuncs*numDVs ];
+  TacsScalar *fdvSens = new TacsScalar[ numFuncs*numDVs ];
   memset(fdvSens, 0, numFuncs*numDVs*sizeof(TacsScalar));
 
   // Allocate a temporary array large enough to store
@@ -860,23 +860,23 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
   int sx = 3*tacs->maxElementNodes;
   int dataSize = 2*s + sx + max_work_size;
 
-  TacsScalar * data = new TacsScalar[ dataSize ];  
-  TacsScalar * elemVars = &data[0];
-  TacsScalar * elemXpts = &data[s];
-  TacsScalar * work = &data[s + sx];
+  TacsScalar *data = new TacsScalar[ dataSize ];  
+  TacsScalar *elemVars = &data[0];
+  TacsScalar *elemXpts = &data[s];
+  TacsScalar *work = &data[s + sx];
 
   // Compute the total number of elements to visit for all functions
   int totalSize = 0;
-  int * funcElemDomainSize = new int[ numFuncs+1 ];
+  int *funcElemDomainSize = new int[ numFuncs+1 ];
   memset(funcElemDomainSize, 0, (numFuncs+1)*sizeof(int));
 
   for ( int k = 0; k < numFuncs; k++ ){
-    TACSFunction * function = funcs[k];
+    TACSFunction *function = funcs[k];
 
     // Determine the size of the 
     if (function->getDomain() == TACSFunction::SUB_DOMAIN){
       // Get the function sub-domain
-      const int * elemSubList;
+      const int *elemSubList;
       totalSize += function->getElements(&elemSubList);
     }
     else {
@@ -888,7 +888,7 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
   
   // Retrieve the function from the function list
   int funcIndex = 0;
-  TACSFunction * function = funcs[0];
+  TACSFunction *function = funcs[0];
 
   while (funcIndex < numFuncs && 
          tacs->numCompletedElements < totalSize){
@@ -917,12 +917,12 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
 
       if (function->getDomain() == TACSFunction::SUB_DOMAIN){
         // Get the function sub-domain
-        const int * elemSubList;
+        const int *elemSubList;
         function->getElements(&elemSubList);
       
         // Retrieve the actual element number from the index list
         int elemNum = elemSubList[elemIndex];
-        TACSElement * element = tacs->elements[elemNum];
+        TACSElement *element = tacs->elements[elemNum];
 
         // Determine the values of the state variables for subElem
         tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
@@ -937,7 +937,7 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
       }
       else if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
         int elemNum = elemIndex;
-        TACSElement * element = tacs->elements[elemNum];
+        TACSElement *element = tacs->elements[elemNum];
       
         // Determine the values of the state variables for elemNum
         tacs->getValues(TACSAssembler::TACS_SPATIAL_DIM, elemNum, 
@@ -965,4 +965,4 @@ void * TACSAssembler::evalDVSens_thread( void * t ){
 
   pthread_exit(NULL);
 }
-
+*/

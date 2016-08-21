@@ -2656,7 +2656,6 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   residual->zeroEntries();
 
   if (thread_info->getNumThreads() > 1){
-    /*
     // Set the number of completed elements to zero
     numCompletedElements = 0;
     tacsPInfo->tacs = this;
@@ -2679,7 +2678,6 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
 
     // Destroy the attribute
     pthread_attr_destroy(&attr); 
-    */
   }
   else {
     // Retrieve pointers to temporary storage
@@ -2815,10 +2813,10 @@ void TACSAssembler::assembleJacobian( TACSBVec *residual,
 
   // Run the p-threaded version of the assembly code
   if (thread_info->getNumThreads() > 1){
-    /*
     // Set the number of completed elements to zero
     numCompletedElements = 0;
     tacsPInfo->tacs = this;
+    tacsPInfo->res = residual;
     tacsPInfo->mat = A;
     tacsPInfo->alpha = alpha;
     tacsPInfo->beta = beta;
@@ -2843,7 +2841,6 @@ void TACSAssembler::assembleJacobian( TACSBVec *residual,
 
     // Destroy the attribute
     pthread_attr_destroy(&attr);
-    */
   }
   else {
     // Retrieve pointers to temporary storage
@@ -2938,7 +2935,6 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
   A->zeroEntries();
 
   if (thread_info->getNumThreads() > 1){
-    /*
     // Set the number of completed elements to zero
     numCompletedElements = 0;    
     tacsPInfo->tacs = this;
@@ -2964,7 +2960,6 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
 
     // Destroy the attribute
     pthread_attr_destroy(&attr);
-    */
   }
   else {
     // Retrieve pointers to temporary storage
