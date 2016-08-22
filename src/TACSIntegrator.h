@@ -126,7 +126,7 @@ class TACSIntegrator : public TACSObject {
   void setIsFactorized( int flag );
 
   // Update TACS states with the supplied ones (q, qdot, qddot)
-  void setTACSStates( double time, BVec *q, BVec *qdot, BVec *qddot );
+  void setTACSStates( double time, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
 
   // Add up the function contribution from each time step
   //-----------------------------------------------------
@@ -134,21 +134,21 @@ class TACSIntegrator : public TACSObject {
 
   // Add up the total derivative after solving for adjoint variables
   // ----------------------------------------------------------------
-  void addTotalDerivative( double scale, BVec **adjoint );
+  void addTotalDerivative( double scale, TACSBVec **adjoint );
   
   //Method to solve the non-linear system using Newton's method
   //------------------------------------------------------------
   void newtonSolve( double alpha, double beta, double gamma,
-                    double t, BVec *q, BVec *qdot, BVec *qddot );
+                    double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
 
   // Calls LAPACK for the the solution of the linear system Ax =
   // b. Serial execution mode only.
   //-------------------------------------------------------------
-  void lapackLinearSolve( BVec *res, TACSMat *mat, BVec *update );
+  void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
   
   // Sanity checks on the RHS of the adjoint linear system
   //------------------------------------------------------
-  static void checkAdjointRHS( BVec *rhs );
+  static void checkAdjointRHS( TACSBVec *rhs );
     
   // Get a formatted filename based on the current time step for
   // tecplot output
@@ -163,7 +163,7 @@ class TACSIntegrator : public TACSObject {
   TACSAssembler *tacs; 
   
   // Store the history of states over time
-  BVec **q, **qdot, **qddot;
+  TACSBVec **q, **qdot, **qddot;
   double *time;
 
   // Number of state variables
@@ -196,7 +196,7 @@ class TACSIntegrator : public TACSObject {
   int use_lapack;
 
   // Matrices and vectors for the nonlinear solution
-  BVec *res, *update;         // Residual and Newton update
+  TACSBVec *res, *update;     // Residual and Newton update
   FEMat *D;                   // Matrix associated with Preconditioner
   TACSMat *mat;               // Jacobian matrix
   TACSPc *pc;                 // Preconditioner
@@ -281,7 +281,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   
   // stage values (computed at each time stage for each time step)
   double *tS;
-  BVec **qS, **qdotS, **qddotS;
+  TACSBVec **qS, **qdotS, **qddotS;
 
   // Functions related to Butcher Tableau
   //-------------------------------------
@@ -294,7 +294,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 
   // Advance the time and states to next step
   //-----------------------------------------
-  void computeTimeStepStates(int k,  BVec **q, BVec **qdot, BVec **qddot);
+  void computeTimeStepStates( int k,  TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot );
 
   // Get the coefficients for adding inter-stage contributions during adjoint solve
   //-------------------------------------------------------------------------------
@@ -382,8 +382,8 @@ class TACSABMIntegrator : public TACSIntegrator {
   // Evaluate time average of the function value using discretization
   // from the integration scheme
   //---------------------------------------------------------------------
-  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
-
+  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals );
+ 
   // Approximate derivatives using ABM stencil
   //------------------------------------------
   void approxStates( int current_step );
