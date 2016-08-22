@@ -60,8 +60,8 @@ DistMat::DistMat( TACSThreadInfo *thread_info,
   comm = map->getMPIComm();
 
   int mpiRank, mpiSize;
-  MPI_Comm_rank(map->getMPIComm(), &mpiRank);
-  MPI_Comm_rank(map->getMPIComm(), &mpiSize);
+  MPI_Comm_rank(comm, &mpiRank);
+  MPI_Comm_size(comm, &mpiSize);
 
   // Get the external variables
   const int *ext_vars;
@@ -156,7 +156,7 @@ equal to the number of rows\n", mpiRank);
   }
 
   in_row_count = new int[ mpiSize ];
-  in_row_ptr   = new int[ mpiSize+1 ];
+  in_row_ptr= new int[ mpiSize+1 ];
 
   MPI_Alltoall(ext_row_count, 1, MPI_INT, in_row_count, 1, MPI_INT, comm);
 
@@ -193,17 +193,16 @@ equal to the number of rows\n", mpiRank);
   // Pass ext_cols to in_cols
   in_cols = new int[ in_rowp[nin_rows] ];
 
-  int *ext_cols_ptr   = new int[ mpiSize ];
+  int *ext_cols_ptr = new int[ mpiSize ];
   int *ext_cols_count = new int[ mpiSize ];
-
-  int *in_cols_ptr   = new int[ mpiSize ];
+  int *in_cols_ptr = new int[ mpiSize ];
   int *in_cols_count = new int[ mpiSize ];
 
   for ( int i = 0; i < mpiSize; i++ ){
-    ext_cols_ptr[i]   = ext_rowp[ ext_row_ptr[i] ];    
+    ext_cols_ptr[i] = ext_rowp[ ext_row_ptr[i] ];    
     ext_cols_count[i] = ext_rowp[ ext_row_ptr[i+1] ] - ext_rowp[ ext_row_ptr[i] ];
-    in_cols_ptr[i]    = in_rowp[ in_row_ptr[i] ];
-    in_cols_count[i]  = in_rowp[ in_row_ptr[i+1] ] - in_rowp[ in_row_ptr[i] ]; 
+    in_cols_ptr[i] = in_rowp[ in_row_ptr[i] ];
+    in_cols_count[i] = in_rowp[ in_row_ptr[i+1] ] - in_rowp[ in_row_ptr[i] ]; 
   }
 
   // Send the column numbers to the other processors
@@ -212,7 +211,6 @@ equal to the number of rows\n", mpiRank);
 
   delete [] ext_cols_count;
   delete [] ext_cols_ptr;
-
   delete [] in_cols_count;
   delete [] in_cols_ptr;
 
@@ -329,10 +327,9 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars,
 				int nz_per_row,
 				int ** _Arowp, int ** _Acols,
 				int *_np, int ** _Browp, int ** _Bcols ){
-
   int mpiRank, mpiSize;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiSize);
+  MPI_Comm_rank(comm, &mpiRank);
+  MPI_Comm_size(comm, &mpiSize);
 
   // For each row, find the non-zero pattern
   int A_max_row_size = 2 *nz_per_row;
@@ -342,7 +339,6 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars,
   int *B_row_vars = new int[ B_max_row_size ];
 
   int A_rows = upper - lower;
-
   int *A_rowp = new int[ A_rows+1 ];
   int *B_rowp = new int[ A_rows+1 ];
 
@@ -589,8 +585,8 @@ void DistMat::initPersistent(){
   int bsize = Aloc->getBlockSize();
   
   int mpiRank, mpiSize;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiSize);
+  MPI_Comm_rank(comm, &mpiRank);
+  MPI_Comm_size(comm, &mpiSize);
 
   // Count up the number of non-zero send/receives
   nreceives = 0;
@@ -700,7 +696,7 @@ void DistMat::addValues( int nrow, const int *row,
   }
 
   int mpiRank;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(comm, &mpiRank);
   
   const int *ownerRange;
   rmap->getOwnerRange(&ownerRange);
@@ -852,7 +848,7 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
   }
 
   int mpiRank;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(comm, &mpiRank);
   
   const int *ownerRange;
   rmap->getOwnerRange(&ownerRange);
@@ -999,7 +995,7 @@ void DistMat::setValues( int nvars, const int *ext_vars,
   }
 
   int mpiRank;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(comm, &mpiRank);
   
   const int *ownerRange;
   rmap->getOwnerRange(&ownerRange);
@@ -1110,7 +1106,7 @@ void DistMat::beginAssembly(){
     int ierr = MPI_Startall(nreceives, receives);
     if (ierr != MPI_SUCCESS){
       int mpiRank;
-      MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+      MPI_Comm_rank(comm, &mpiRank);
       int len;
       char err_str[MPI_MAX_ERROR_STRING];
       MPI_Error_string(ierr, err_str, &len);
@@ -1123,7 +1119,7 @@ void DistMat::beginAssembly(){
     int ierr = MPI_Startall(nsends, sends);
     if (ierr != MPI_SUCCESS){ 
       int mpiRank;
-      MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+      MPI_Comm_rank(comm, &mpiRank);
       int len;
       char err_str[MPI_MAX_ERROR_STRING];
       MPI_Error_string(ierr, err_str, &len);
@@ -1145,7 +1141,7 @@ void DistMat::endAssembly(){
   int b2 = bsize*bsize;
   
   int mpiRank;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+  MPI_Comm_rank(comm, &mpiRank);
 
   const int *ownerRange;
   rmap->getOwnerRange(&ownerRange);

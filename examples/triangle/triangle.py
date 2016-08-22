@@ -160,9 +160,6 @@ for i in xrange(1):
     funcs.append(functions.ksfailure(tacs, ksweight))
 
 func_vals = tacs.evalFunctions(funcs)
-print func_vals
-
-# fdvsens = tacs.evalDVSens(funcs, nnodes)
 
 # Set the element flag
 flag = (TACS.ToFH5.NODES |

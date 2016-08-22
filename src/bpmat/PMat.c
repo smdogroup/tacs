@@ -844,16 +844,15 @@ GlobalSchurMat::~GlobalSchurMat(){
   delete [] x_ext;
 }
 
-void GlobalSchurMat::getSize( int * _nr, int * _nc ){
+void GlobalSchurMat::getSize( int *_nr, int *_nc ){
   // Get the local dimensions of the matrix
   *_nr = nvars;
   *_nc = nvars;
 }
 
 // Compute y <- A * x 
-void GlobalSchurMat::mult( TACSVec * txvec, TACSVec * tyvec ){
+void GlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
-
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
 

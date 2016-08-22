@@ -103,6 +103,12 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   bcMap = new TACSBcMap(varsPerNode, nbc_est);
   bcMap->incref();
 
+  // Set the internal vector values to NULL
+  varsVec = NULL;
+  dvarsVec = NULL;
+  ddvarsVec = NULL;
+  xptVec = NULL;
+
   // Set the external node numbers to NULL
   tacsExtNodeNums = NULL;
 
@@ -152,6 +158,12 @@ TACSAssembler::~TACSAssembler(){
     }
     delete [] elements;
   }
+
+  // Decref the variables/node vectors
+  if (varsVec){ varsVec->decref(); }
+  if (dvarsVec){ dvarsVec->decref(); }
+  if (ddvarsVec){ ddvarsVec->decref(); }
+  if (xptVec){ xptVec->decref(); }
 
   // Delete nodal information
   if (elementNodeIndex){ delete [] elementNodeIndex; }
@@ -499,7 +511,7 @@ void TACSAssembler::addBCs( int nnodes, const int *nodes,
   // Adjust the input to the addBC call. If no vars are specified,
   // set the number of boundary conditions equal to the number of
   // variables per node
-  if (!vars){
+  if (!vars || (nbcs < 0)){
     nbcs = varsPerNode;
   }
 
@@ -2028,7 +2040,7 @@ void TACSAssembler::scatterExternalBCs(){
 
     // Record the number of newly added nodes
     recvPtr[k+1] = 2*index;
-    recvCount[k] = 2*(index - recvPtr[k]);
+    recvCount[k] = 2*index - recvPtr[k];
   }
 
   // Send the counts to the other procs
@@ -2293,6 +2305,7 @@ DistMat *TACSAssembler::createMat(){
 
     distMatIndices = new TACSBVecIndices(&indices, numNodes);
     distMatIndices->incref();
+    distMatIndices->setUpInverse();
   }
 
   // Compute the local connectivity
@@ -2634,6 +2647,54 @@ double TACSAssembler::getSimulationTime(){
   return time;
 }
 
+/*
+  Evaluates the total kinetic and potential energies of the structure
+*/
+void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
+  // Zero the kinetic and potential energy
+  *Te = 0.0;
+  *Pe = 0.0;
+
+  // Array for storing local kinetic and potential energies
+  TacsScalar elem_energies[2] = {0.0, 0.0};
+ 
+  // Retrieve pointers to temporary storage
+  TacsScalar *vars, *dvars, *elemXpts;
+  getDataPointers(elementData, &vars, &dvars, 
+                  NULL, NULL, &elemXpts, NULL, NULL, NULL);
+  
+  // Loop over all elements and add individual contributions to the
+  // total energy
+  for ( int i = 0; i < numElements; i++ ){
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, vars);
+    dvarsVec->getValues(len, nodes, dvars);
+    
+    // Compute and add the element's contributions to the total
+    // energy
+    TacsScalar elemTe, elemPe;
+    elements[i]->computeEnergies(time, &elemTe, &elemPe,
+                                 elemXpts, vars, dvars);
+    
+    // Add up the kinetic and potential energy
+    *Te += elemTe;
+    *Pe += elemPe;
+  }
+  
+  // Sum up the kinetic and potential energies across all processors
+  TacsScalar input[2], output[2];
+  input[0] = *Te;
+  input[1] = *Pe;    
+  MPI_Allreduce(input, output, 2, TACS_MPI_TYPE, 
+                MPI_SUM, tacs_comm);
+  
+  *Te = output[0];
+  *Pe = output[1]; 
+} 
+
 /*!  
   Assemble the residual associated with the input load case.  
   
@@ -2728,54 +2789,6 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   // Apply the boundary conditions for the residual
   residual->applyBCs(varsVec);
 }
-
-/*
-  Evaluates the total kinetic and potential energies of the structure
-*/
-void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
-  // Zero the kinetic and potential energy
-  *Te = 0.0;
-  *Pe = 0.0;
-
-  // Array for storing local kinetic and potential energies
-  TacsScalar elem_energies[2] = {0.0, 0.0};
- 
-  // Retrieve pointers to temporary storage
-  TacsScalar *vars, *dvars, *elemXpts;
-  getDataPointers(elementData, &vars, &dvars, 
-                  NULL, NULL, &elemXpts, NULL, NULL, NULL);
-  
-  // Loop over all elements and add individual contributions to the
-  // total energy
-  for ( int i = 0; i < numElements; i++ ){
-    int ptr = elementNodeIndex[i];
-    int len = elementNodeIndex[i+1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
-    xptVec->getValues(len, nodes, elemXpts);
-    varsVec->getValues(len, nodes, vars);
-    dvarsVec->getValues(len, nodes, dvars);
-    
-    // Compute and add the element's contributions to the total
-    // energy
-    TacsScalar elemTe, elemPe;
-    elements[i]->computeEnergies(time, &elemTe, &elemPe,
-                                 elemXpts, vars, dvars);
-    
-    // Add up the kinetic and potential energy
-    *Te += elemTe;
-    *Pe += elemPe;
-  }
-  
-  // Sum up the kinetic and potential energies across all processors
-  TacsScalar input[2], output[2];
-  input[0] = *Te;
-  input[1] = *Pe;    
-  MPI_Allreduce(input, output, 2, TACS_MPI_TYPE, 
-                MPI_SUM, tacs_comm);
-  
-  *Te = output[0];
-  *Pe = output[1]; 
-} 
   
 /*!
   Assemble the Jacobian matrix

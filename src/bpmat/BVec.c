@@ -61,14 +61,14 @@ void TACSBcMap::addBC( int node, int nvals,
                        const int *bc_vars, const TacsScalar *bc_vals ){
   // If the number of boundary conditions exceeds the available
   // space, allocate more space and copy over the arrays
-  if (nbcs+1 >= max_size){
+  if (nbcs >= max_size){
     max_size = max_size + bc_increment;
     int *temp_nodes = new int[ max_size ];
     int *temp_vars = new int[ max_size ];
     TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
     memcpy(temp_nodes, nodes, nbcs*sizeof(int));
     memcpy(temp_vars, vars, nbcs*sizeof(int));
-    memcpy(temp_values, values, bsize*nbcs*sizeof(int));
+    memcpy(temp_values, values, bsize*nbcs*sizeof(TacsScalar));
 
     // Free the old arrays
     delete [] nodes;
@@ -621,7 +621,7 @@ void TACSBVec::applyBCs( TACSVec *tvec ){
           for ( int k = 0; k < bsize; k++ ){
             if (vars[i] & (1 << k)){
               // Scan through the rows to be zeroed
-              x[var + k] = uvals[var + k] - values[var + k];      
+              x[var + k] = uvals[var + k] - values[bsize*i + k];      
             }
           }
         }
