@@ -930,13 +930,13 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     int len = Bpc->getBlockSize()*c_map->getDim();
     TacsScalar alpha = -1.0; 
     BLASscal(&len, &alpha, yinterface, &one);
-    
+
     // Compute xlocal = xlocal - L^{-1} E * yinterface
     Epc->multAdd(yinterface, xlocal, xlocal);
     
     // Compute xlocal = U^{-1} xlocal
     Bpc->applyUpper(xlocal, xlocal);
-    
+
     b_map->beginReverse(b_ctx, xlocal, out, INSERT_VALUES);
     tacs_schur_dist->endReverse(tacs_schur_ctx, y, out, 
                                 INSERT_VALUES);

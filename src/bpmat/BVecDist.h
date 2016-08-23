@@ -112,9 +112,11 @@ class TACSBVecDistribute : public TACSObject {
   // Transfer the data to the array provided
   // ---------------------------------------
   void beginForward( TACSBVecDistCtx *ctx,
-                     TacsScalar *global, TacsScalar *local );
+                     TacsScalar *global, TacsScalar *local,
+                     const int node_offset=0 );
   void endForward( TACSBVecDistCtx *ctx,
-                   TacsScalar *global, TacsScalar *local );
+                   TacsScalar *global, TacsScalar *local,
+                   const int node_offset=0 );
 
   // Add or insert data back into the vector
   // ---------------------------------------
@@ -154,7 +156,7 @@ class TACSBVecDistribute : public TACSObject {
   int sorted_flag;
   int nvars_unsorted;
   int *ext_sorted;
-  int *ext_unsorted;
+  int *ext_unsorted_index;
 
   // Data for collecting external variables
   // --------------------------------------

@@ -862,10 +862,10 @@ void GlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
     yvec->getArray(&y);  
     
     // Begin sending the external-interface values
-    ext_dist->beginForward(ctx, &x[varoffset], x_ext);
+    ext_dist->beginForward(ctx, x, x_ext, varoffset);
     
     // Finish sending the external-interface unknowns
-    ext_dist->endForward(ctx, &x[varoffset], x_ext);
+    ext_dist->endForward(ctx, x, x_ext, varoffset);
     Bext->mult(x_ext, y);
     
     // Apply L^{-1}
@@ -889,10 +889,10 @@ void GlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){
   yvec->getArray(&y);  
 
   // Begin sending the external-interface values
-  ext_dist->beginForward(ctx, &x[varoffset], x_ext);
+  ext_dist->beginForward(ctx, x, x_ext, varoffset);
   
   // Finish sending the external-interface unknowns
-  ext_dist->endForward(ctx, &x[varoffset], x_ext);
+  ext_dist->endForward(ctx, x, x_ext, varoffset);
   Bext->mult(x_ext, y);
 }
 

@@ -358,7 +358,7 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
     ext_vars = vars;
     next_vars = nvars;
     nvars_unsorted = 0;
-    ext_unsorted = NULL;
+    ext_unsorted_index = NULL;
     ext_sorted = NULL;
   }
   else {
@@ -368,20 +368,21 @@ TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
 
     // Allocate the ext_vars array
     ext_sorted = new int[ nvars ];
-    ext_unsorted = new int[ nvars_unsorted ];
-
-    memcpy(ext_sorted, vars, nvars_unsorted*sizeof(int));
-    memcpy(ext_unsorted, vars, nvars_unsorted*sizeof(int));
+    ext_unsorted_index = new int[ nvars ];
+    memcpy(ext_sorted, vars, nvars*sizeof(int));
+    memcpy(ext_unsorted_index, vars, nvars*sizeof(int));
 
     // Uniquely sort the array
     next_vars = FElibrary::uniqueSort(ext_sorted, nvars);
 
     // For each value, go through and find the matching index
     for ( int i = 0; i < nvars_unsorted; i++ ){
-      int * item = (int*) bsearch(&ext_unsorted[i], ext_sorted, next_vars, 
+      int * item = (int*) bsearch(&ext_unsorted_index[i], ext_sorted, next_vars, 
                                   sizeof(int), FElibrary::comparator);
 
-      ext_unsorted[i] = item - ext_sorted;
+      // ext_unsorted_index[i] points from variable ext_unsorted[i] to the
+      // index of the array in ext_sorted
+      ext_unsorted_index[i] = item - ext_sorted;
     }
 
     // Set ext_vars = ext_sorted
@@ -522,7 +523,7 @@ TACSBVecDistribute::~TACSBVecDistribute(){
 
   if (!sorted_flag){
     delete [] ext_sorted;
-    delete [] ext_unsorted;
+    delete [] ext_unsorted_index;
   }
   
   bindex->decref();
@@ -590,7 +591,8 @@ TACSBVecIndices * TACSBVecDistribute::getIndices(){
 */
 void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
                                        TacsScalar *global, 
-                                       TacsScalar *local ){
+                                       TacsScalar *local,
+                                       const int node_offset ){
   if (this != ctx->me){
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
     return;
@@ -615,7 +617,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
   rmap->getOwnerRange(&owner_range);
 
   // Set the lower offset
-  int lower = bsize*owner_range[mpi_rank];
+  int lower = bsize*(owner_range[mpi_rank] + node_offset);
 
   // Copy the global values to their requesters
   bgetvars(bsize, req_ptr[n_req_proc], req_vars, lower,
@@ -669,7 +671,8 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
 */
 void TACSBVecDistribute::endForward( TACSBVecDistCtx *ctx,
                                      TacsScalar *global, 
-                                     TacsScalar *local ){
+                                     TacsScalar *local,
+                                     const int node_offset ){
   if (this != ctx->me){
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
     return;
@@ -684,7 +687,7 @@ void TACSBVecDistribute::endForward( TACSBVecDistCtx *ctx,
     initImpl(ctx->bsize);
 
     // Copy over the values from the sorted to the unsorted array
-    bgetvars(ctx->bsize, nvars_unsorted, ext_unsorted, 0,
+    bgetvars(ctx->bsize, nvars_unsorted, ext_unsorted_index, 0,
              ctx->ext_sorted_vals, local, INSERT_VALUES);
   }
 }
@@ -730,9 +733,9 @@ void TACSBVecDistribute::beginReverse( TACSBVecDistCtx *ctx,
   // large enough to store the sorted external values
   if (!sorted_flag){
     // Copy over the values from the sorted to the unsorted array
-    int len = bsize*ext_ptr[n_ext_proc];
+    int len = bsize*next_vars;
     memset(ext_sorted_vals, 0, len*sizeof(TacsScalar));
-    bsetvars(bsize, nvars_unsorted, ext_unsorted, 0,
+    bsetvars(bsize, nvars_unsorted, ext_unsorted_index, 0,
              local, ext_sorted_vals, op);
     local = ext_sorted_vals;
   }

@@ -208,6 +208,9 @@ int main( int argc, char * argv[] ){
     else if (strcmp(argv[k], "ND") == 0){ 
       order_type = TACSAssembler::ND_ORDER; reorder = 1;
     }
+    else if (strcmp(argv[k], "TACS_AMD") == 0){
+      order_type = TACSAssembler::TACS_AMD_ORDER; reorder = 1;
+    }
     else if (strcmp(argv[k], "DirectSchur") == 0){ 
       mat_type = TACSAssembler::DIRECT_SCHUR; reorder = 1;
     }
@@ -271,6 +274,10 @@ int main( int argc, char * argv[] ){
   // These calls compute the symbolic factorization and allocate
   // the space required for the preconditioners
   if (use_fe_mat){
+    // Set the level of fill to be large
+    lev_fill = 1000;
+
+    // Create the FE matrix
     FEMat *_kmat = tacs->createFEMat(order_type);
     FEMat *_mmat = tacs->createFEMat();
     int reorder_schur = 1;
@@ -316,7 +323,7 @@ int main( int argc, char * argv[] ){
 
   // Now, set up the solver
   int use_gmres = 1;
-  int gmres_iters = 15; 
+  int gmres_iters = 80; 
   int nrestart = 2; // Number of allowed restarts
   int is_flexible = 1; // Is a flexible preconditioner?
 
@@ -355,13 +362,6 @@ int main( int argc, char * argv[] ){
   if (rank == 0){
     printf("|R|: %15.5e\n", RealPart(norm));
   }
-
-  /* tacs->assembleJacobian(res, kmat, alpha, beta, gamma); */
-  /* if (rank == 0){ */
-  /*   printf("|R|: %15.5e\n", RealPart(norm)); */
-  /* } */
-
-  tacs->setVariables(res);
 
   // Output for visualization
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
