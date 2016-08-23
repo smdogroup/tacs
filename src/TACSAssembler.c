@@ -3505,12 +3505,14 @@ void TACSAssembler::addXptSens( TACSFunction **funcs, int numFuncs,
   function: the function pointer
   vec:      the derivative of the function w.r.t. the state variables
 */
-void TACSAssembler::addSVSens( TACSFunction *function, TACSBVec *vec ){
+void TACSAssembler::addSVSens( TACSFunction **funcs, int numFuncs, 
+                               TACSBVec **vec ){
   // First check if this is the right assembly object
-  if (this != function->getTACS()){
-    fprintf(stderr, "[%d] Cannot evaluate function, wrong TACS object\n",
-	    mpiRank);
-    return;
+  for ( int k = 0; k < numFuncs; k++ ){
+    if (this != funcs[k]->getTACS()){
+      fprintf(stderr, "[%d] Cannot evaluate function %s, wrong TACS object\n", 
+              mpiRank, funcs[k]->functionName());
+    }
   }
 
   // Retrieve pointers to temporary storage
@@ -3519,53 +3521,66 @@ void TACSAssembler::addSVSens( TACSFunction *function, TACSBVec *vec ){
 		  &elemXpts, NULL, NULL, NULL);
 
   // Perform the initialization if neccessary
-  initializeFunctions(&function, 1);
+  initializeFunctions(funcs, numFuncs);
   
-  // Default work arrays
-  TacsScalar * work = NULL;
-  TacsScalar work_default[128];
-  int work_size = function->getSVSensWorkSize();
-  if (work_size > 128){ work = new TacsScalar[ work_size ]; }
-  else { work = work_default; }
+  for ( int k = 0; k < numFuncs; k++ ){
+    TACSFunction * function = funcs[k];
 
-  if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
-    for ( int i = 0; i < numElements; i++ ){
-      // Determine the values of the state variables for subElem
-      int ptr = elementNodeIndex[i];
-      int len = elementNodeIndex[i+1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
-      xptVec->getValues(len, nodes, elemXpts);
-      varsVec->getValues(len, nodes, vars);
-         
-      // Evaluate the element-wise sensitivity of the function
-      function->elementWiseSVSens(elemRes, elements[i], i, 
-				  elemXpts, vars, work);
-      vec->setValues(len, nodes, elemRes, ADD_VALUES);
-    }
-  }
-  else if (function->getDomain() == TACSFunction::SUB_DOMAIN){
-    const int * elementNums;
-    int subDomainSize = function->getElements(&elementNums);
+    // Default work arrays
+    TacsScalar * work = NULL;
+    TacsScalar work_default[128];
+    int work_size = function->getSVSensWorkSize();
+    if (work_size > 128){ work = new TacsScalar[ work_size ]; }
+    else { work = work_default; }
     
-    for ( int i = 0; i < subDomainSize; i++ ){
-      int elemNum = elementNums[i];
-      if (elemNum >= 0 && elemNum < numElements){	
-      	// Determine the values of the state variables for the current element
-        int ptr = elementNodeIndex[elemNum];
-        int len = elementNodeIndex[elemNum+1] - ptr;
+    if (function->getDomain() == TACSFunction::ENTIRE_DOMAIN){
+      for ( int i = 0; i < numElements; i++ ){
+        // Determine the values of the state variables for subElem
+        int ptr = elementNodeIndex[i];
+        int len = elementNodeIndex[i+1] - ptr;
         const int *nodes = &elementTacsNodes[ptr];
         xptVec->getValues(len, nodes, elemXpts);
         varsVec->getValues(len, nodes, vars);
-
-        // Evaluate the sensitivity
-      	function->elementWiseSVSens(elemRes, elements[elemNum], elemNum, 
-				    elemXpts, vars, work);
-        vec->setValues(len, nodes, elemRes, ADD_VALUES);
+        
+        // Evaluate the element-wise sensitivity of the function
+        function->elementWiseSVSens(elemRes, elements[i], i, 
+                                    elemXpts, vars, work);
+        vec[k]->setValues(len, nodes, elemRes, ADD_VALUES);
       }
     }
+    else if (function->getDomain() == TACSFunction::SUB_DOMAIN){
+      const int * elementNums;
+      int subDomainSize = function->getElements(&elementNums);
+      
+      for ( int i = 0; i < subDomainSize; i++ ){
+        int elemNum = elementNums[i];
+        if (elemNum >= 0 && elemNum < numElements){	
+          // Determine the values of the state variables for the current element
+          int ptr = elementNodeIndex[elemNum];
+          int len = elementNodeIndex[elemNum+1] - ptr;
+          const int *nodes = &elementTacsNodes[ptr];
+          xptVec->getValues(len, nodes, elemXpts);
+          varsVec->getValues(len, nodes, vars);
+          
+          // Evaluate the sensitivity
+          function->elementWiseSVSens(elemRes, elements[elemNum], elemNum, 
+                                      elemXpts, vars, work);
+          vec[k]->setValues(len, nodes, elemRes, ADD_VALUES);
+        }
+      }
+    }
+
+    if (work_size > 128){ delete [] work; }
+
+    // Add the values into the array
+    vec[k]->beginSetValues(ADD_VALUES);
   }
 
-  if (work_size > 128){ delete [] work; }
+  // Finish adding the values
+  for ( int k = 0; k < numFuncs; k++ ){
+    vec[k]->endSetValues(ADD_VALUES);
+    vec[k]->applyBCs();
+  }
 }
 
 /*
@@ -3780,7 +3795,7 @@ void TACSAssembler::addAdjointResXptSensProducts( TACSBVec **adjoint,
 
         adjXptSens[k]->setValues(len, nodes, xptSens, ADD_VALUES);
       }
-    }
+    }   
   }
 }
 
@@ -4269,7 +4284,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
 
   // Evaluate the state variable sensitivity
   evalFunctions(&func, 1, &ftmp);
-  addSVSens(func, temp);
+  addSVSens(&func, 1, &temp);
   pdf = temp->dot(pert);
 
   if (mpiRank == 0){

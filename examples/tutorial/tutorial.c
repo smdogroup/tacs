@@ -1,4 +1,3 @@
-
 /*
   A pressure-loaded plate example for TACS.
 
@@ -10,6 +9,7 @@
 #include "TACSShellTraction.h"
 #include "isoFSDTStiffness.h"
 #include "TACSToFH5.h"
+#include "KSFailure.h"
 
 /*
   The following example demonstrates the use of TACS on a pressure
@@ -51,6 +51,15 @@ int main( int argc, char * argv[] ){
     }
     if (sscanf(argv[k], "ny=%d", &_ny) == 1){
       ny = (_ny > 2 ? _ny : 2);
+    }
+  }
+
+  // Look for a finite-difference step interval
+  double dh = 1e-6;
+  for ( int k = 0; k < argc; k++ ){
+    if (sscanf(argv[k], "dh=%lf", &dh) == 1){
+      // Check that the step size makes sense
+      if (dh < 0){ dh = 1e-6; }
     }
   }
 
@@ -183,6 +192,7 @@ int main( int argc, char * argv[] ){
 
   // Set the elements into the mesh
   tacs->setElements(elements);
+  delete [] elements;
 
   // Set the boundary conditions - this will only record the
   // boundary conditions on its own nodes
@@ -192,7 +202,7 @@ int main( int argc, char * argv[] ){
   }
 
   // Reorder the nodal variables
-  int use_fe_mat = 0;
+  int use_fe_mat = 1;
   int reorder = 0;
   enum TACSAssembler::OrderingType order_type = TACSAssembler::ND_ORDER;
   enum TACSAssembler::MatrixOrderingType mat_type = 
@@ -220,13 +230,11 @@ int main( int argc, char * argv[] ){
     else if (strcmp(argv[k], "AdditiveSchwarz") == 0){ 
       mat_type = TACSAssembler::ADDITIVE_SCHWARZ; reorder = 1;
     }
-    else if (strcmp(argv[k], "DirectSolve") == 0){
-      use_fe_mat = 1;
-    }
   }
 
-  // Reorder the nodal variables
-  if (reorder){
+  // If we're going to use the FEMat class, then we don't need to
+  // perform a reordering
+  if (!use_fe_mat){
     tacs->computeReordering(order_type, mat_type);
   }
 
@@ -248,9 +256,7 @@ int main( int argc, char * argv[] ){
   }
 
   // Reorder the vector if required
-  if (reorder){
-    tacs->reorderVec(X);
-  }
+  tacs->reorderVec(X);  
 
   // Set the node locations
   tacs->setNodes(X);
@@ -311,7 +317,23 @@ int main( int argc, char * argv[] ){
   TACSBVec *ans = tacs->createVec();  ans->incref();
   TACSBVec *tmp = tacs->createVec();  tmp->incref();
 
-  // Assemble the Jacobian of governing equations
+  /*
+    Assemble the Jacobian of governing equations. Note that the alpha,
+    beta and gamma coefficients represent the coefficients of the
+    structural governing equations for the variables, their first
+    derivatives and their second derivatives, respectively such that:
+
+    kmat = J = alpha*dR/du + beta*dR/d(dot{u}) + gamma*dR/d(ddot{u})
+
+    In general, when the governing equations are non-symmetric, the
+    assembleJacobian code takes a matrix orientation argument which
+    permits the assembly of the transpose of the governing equations
+    such that
+
+    kmat = J^{T}
+
+    This capability is required for the adjoint equations.
+  */
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   tacs->assembleJacobian(res, kmat, alpha, beta, gamma);
 
@@ -375,76 +397,122 @@ int main( int argc, char * argv[] ){
   f5->decref();
 
   /*
-  // Now calculate the total derivate
-  TacsScalar * dfdx = new TacsScalar[ num_design_vars ];
+    Now we will use TACS to compute the total derivative of a function
+    of interest with respect to design variables. The design variable
+    numbers are set in the constitutive object. 
 
-  // Compliance * func = new Compliance(tacs);
-  PNormFailure * func = new PNormFailure(tacs, 10.0);
+    The user is in charge of the design variable numbering. It can be
+    either local to each processor or global across all processors.
+    When it is a global ordering, as it is in this tutorial, the user
+    is responsible for suming the contributions to the gradient across
+    all processors in the communicator. In more advanced applications,
+    the design vector can be distributed, in which case the the design
+    variable numbers are local. In this case, the user can reduce the
+    design variable values across all processors in the mesh in a
+    consistent manner.
+
+    In this tutorial we will not use geometric design variables which
+    modify the nodal locations within the mesh. (The geometric
+    derivative evaluation routines are denoted "XptSens" and operate
+    on TACSBVec objects of the same dimension/parallel layout as the
+    vectors created during the createNodeVec() call.)
+  */
+
+  // The number of design variable values
+  int numDesignVars = nx*ny;
+
+  // The function that we will use: The KS failure function evaluated
+  // over all the elements in the mesh
+  double ksRho = 100.0;
+  TACSFunction *func = new KSFailure(tacs, ksRho);
   func->incref();
 
-  // Evaluate the func
-  TacsScalar comp0 = tacs->evalFunction(loadCase, func);
+  // Allocate an array for the design variable values
+  TacsScalar *x = new TacsScalar[ numDesignVars ];
+  tacs->getDesignVars(x, numDesignVars);
 
-  TacsScalar * dvs = new TacsScalar[ num_design_vars ];
-  tacs->getDesignVars(dvs, num_design_vars); 
-  tacs->setDesignVars(dvs, num_design_vars);
+  /*
+    Since the design variable vector is a global vector for this case,
+    we find the maximum design variable value. Note that here we use
+    TACS_MPI_MAX which is defined for real and complex numbers
+    (MPI_MAX is not defined for complex numbers).
+  */
+  MPI_Allreduce(MPI_IN_PLACE, x, numDesignVars, TACS_MPI_TYPE,
+                TACS_MPI_MAX, tacs_comm);
 
-  // Re-evaluate the problem   
-  tacs->zeroVariables(loadCase);
-  tacs->assembleMat(loadCase, kmat, res);
-  pc->factor(); 
+  // Now, set the design variables values to ensure that they are
+  // locally consistent
+  tacs->setDesignVars(x, numDesignVars); 
 
-  ksm->solve(res, ans);
+  // Evaluate the function
+  TacsScalar ksFuncVal = 0.0;
+  tacs->evalFunctions(&func, 1, &ksFuncVal);
+
+  // Now, compute the total derivative of the function of interest
+  TacsScalar *dfdx = new TacsScalar[ numDesignVars ];
+  memset(dfdx, 0, numDesignVars*sizeof(TacsScalar));
+
+  // Evaluate the partial derivative w.r.t. the design variables
+  tacs->addDVSens(&func, 1, dfdx, numDesignVars);
+
+  // Evaluate the partial derivative
+  TACSBVec *dfdu = tacs->createVec();
+  dfdu->incref();
+
+  // Add the partial derivative of the function w.r.t. the state
+  // variables. In this case, we do not need to zero dfdu since it is
+  // zeroed on initialization, however, in general it is good practice
+  // to zero them unless you're absolutely sure...
+  dfdu->zeroEntries();
+  tacs->addSVSens(&func, 1, &dfdu);
+
+  // Solve for the adjoint variables
+  ksm->solve(dfdu, ans);
   ans->scale(-1.0);
-  tacs->setVariables(loadCase, ans);  
 
-  comp0 = tacs->evalFunction(loadCase, func);
-  if (rank == 0){
-    printf("The %s is %15.8f \n", func->functionName(), RealPart(comp0));
-  }
+  // Compute the total derivative
+  tacs->addAdjointResProducts(&ans, 1, dfdx, numDesignVars);
 
-  tacs->evalSVSens(loadCase, func, res);
-  ksm->solve(res, ans);
-
-  // Evaluate the product of the adjoint variables with the derivative of the
-  // residuals w.r.t. the design variables
-  TacsScalar * adjResProduct = new TacsScalar[ num_design_vars ];
-  tacs->evalAdjointResProduct(loadCase, ans, 
-                              adjResProduct, num_design_vars);
-
-  tacs->evalDVSens(loadCase, func, dfdx, num_design_vars);
-
-  for ( int k = 0; k < num_design_vars; k++ ){
-    dfdx[k] -= adjResProduct[k];
-  }
+  // Add up the contributions across all processors
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, numDesignVars, TACS_MPI_TYPE, 
+                MPI_SUM, tacs_comm);
 
   // Now check with a finite-difference projected derivative
-  double dh = 0.5e-5;
-
   TacsScalar proj_deriv = 0.0;
-  for ( int k = 0; k < num_design_vars; k++ ){
-    double pert = sin((k*M_PI)/(num_design_vars-1));
-
-    dvs[k] += pert*dh;
-    proj_deriv += pert*dfdx[k];    
+  for ( int k = 0; k < numDesignVars; k++ ){
+    proj_deriv += fabs(dfdx[k]);
+    if (dfdx[k] > 0){
+      x[k] += dh;
+    }
+    else {
+      x[k] -= dh;
+    }
   }
 
-  tacs->setDesignVars(dvs, num_design_vars);
+  // Set the new design variable values
+  tacs->setDesignVars(x, numDesignVars);
 
-  // Re-evaluate the problem   
-  tacs->zeroVariables(loadCase);
-  tacs->assembleMat(loadCase, kmat, res);
-  pc->factor(); 
+  // Evaluate the problem again and compare the results
+  tacs->zeroVariables();
+  tacs->assembleJacobian(res, kmat, alpha, beta, gamma);
 
+  // Factor the preconditioner
+  pc->factor();
+
+  // Solve the problem
   ksm->solve(res, ans);
   ans->scale(-1.0);
-  tacs->setVariables(loadCase, ans);
+  tacs->setVariables(ans);
+  
+  // Evaluate the function
+  TacsScalar ksFuncVal1 = 0.0;
+  tacs->evalFunctions(&func, 1, &ksFuncVal1);
 
-  // Evaluate the func
-  TacsScalar comp1 = tacs->evalFunction(loadCase, func);
+  // Compare with finite-difference and print the result
   if (rank == 0){
-    TacsScalar fd = (comp1 - comp0)/dh;
-    printf("The %s is %15.8f \n", func->functionName(), RealPart(comp1));
+    TacsScalar fd = (ksFuncVal1 - ksFuncVal)/dh;
+    printf("The %s is %15.8f \n", func->functionName(), 
+           RealPart(ksFuncVal));
     printf("The projected derivative is             %20.8e \n", 
            RealPart(proj_deriv));
     printf("The finite-difference approximation is  %20.8e \n", 
@@ -453,13 +521,13 @@ int main( int argc, char * argv[] ){
 	   fabs(RealPart((fd - proj_deriv)/fd)));
   } 
 
-  delete [] dvs;
+  // Clean up data required by the adjoint
+  delete [] x;
   delete [] dfdx;
-  delete [] adjResProduct;
-
   func->decref();
-  */
+  dfdu->decref();
 
+  // Clean up data required for the analysis (and adjoint too)
   ksm->decref();
   pc->decref();
   kmat->decref();

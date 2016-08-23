@@ -173,7 +173,8 @@ class TACSAssembler : public TACSObject {
                       TacsScalar *funcVals );
   void addDVSens( TACSFunction **funcs, int numFuncs,
                   TacsScalar *fdvSens, int numDVs );
-  void addSVSens( TACSFunction *function, TACSBVec *vec );
+  void addSVSens( TACSFunction **funcs, int numFuncs,
+                  TACSBVec **fuSens );
   void addXptSens( TACSFunction **funcs, int numFuncs,
                    TACSBVec **fXptSens );
   void addAdjointResProducts( TACSBVec **adjoint, int numAdjoints,
@@ -196,6 +197,17 @@ class TACSAssembler : public TACSObject {
   // ----------------------------------------------------------------
   TACSElement **getElements();
 
+  // Test the given element, constitutive or function class
+  // ------------------------------------------------------
+  void testElement( int elemNum, int print_level );
+  void testConstitutive( int elemNum, int print_level );
+  void testFunction( TACSFunction * func, 
+                     int num_design_vars, double dh );
+  
+  // Set the number of threads to work with
+  // --------------------------------------
+  void setNumThreads( int t );
+
   // Get information about the output files this is used by TACSToFH5
   // ----------------------------------------------------------------
   int getNumComponents();
@@ -208,17 +220,6 @@ class TACSAssembler : public TACSObject {
   void getOutputData( enum ElementType elem_type,
 		      unsigned int out_type,
 		      double *data, int nvals );
-
-  // Test the given element, constitutive or function class
-  // ------------------------------------------------------
-  void testElement( int elemNum, int print_level );
-  void testConstitutive( int elemNum, int print_level );
-  void testFunction( TACSFunction * func, 
-                     int num_design_vars, double dh );
-  
-  // Set the number of threads to work with
-  // --------------------------------------
-  void setNumThreads( int t );
 
  private:
   // Get pointers to the start-locations within the data array

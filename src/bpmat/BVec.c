@@ -901,9 +901,12 @@ void TACSBVec::endSetValues( TACSBVecOperation op ){
     ext_dist->endReverse(ext_ctx, x_ext, x, op);
   }
 
-  // Zero the external part
+  // Zero the external part and dependent parts
   if (x_ext){
     memset(x_ext, 0, ext_size*sizeof(TacsScalar));
+  }
+  if (x_dep){
+    memset(x_dep, 0, dep_size*sizeof(TacsScalar));
   }
 }
 

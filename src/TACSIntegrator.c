@@ -1106,7 +1106,7 @@ void TACSBDFIntegrator::reverse( TacsScalar *dfdx,
     TacsScalar ftmp;
     tacs->evalFunctions(&func, 1, &ftmp);
     adj->zeroEntries();
-    tacs->addSVSens(func, adj);
+    tacs->addSVSens(&func, 1, &adj);
     rhs[adj_index]->axpy(-1.0, adj);
 
     // Add the terms from the partial derivative w.r.t. 
@@ -1195,7 +1195,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
 
       // Add up the contribution from function state derivative to RHS
       psi[n]->zeroEntries();
-      tacs->addSVSens(funcs[n], psi[n]);
+      tacs->addSVSens(&funcs[n], 1, &psi[n]);
 
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(1.0, psi[n]);
@@ -1782,7 +1782,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 
         // Add up the contribution from its derivative to RHS (drdq.lam)
 	dfdq[i*num_funcs+n]->zeroEntries();
-        tacs->addSVSens(funcs[n], dfdq[i*num_funcs+n]);
+        tacs->addSVSens(&funcs[n], 1, &dfdq[i*num_funcs+n]);
 	rhs[i*num_funcs+n]->axpy(alpha, dfdq[i*num_funcs+n]);
 
         // Add up the contribution from PSI to this RHS
@@ -2236,7 +2236,7 @@ void TACSABMIntegrator::marchBackwards( ){
 
       // Add up the contribution from function state derivative to RHS
       dfdq[n]->zeroEntries();
-      tacs->addSVSens(funcs[n], dfdq[n]);
+      tacs->addSVSens(&funcs[n], 1, &dfdq[n]);
 
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(alpha, dfdq[n]);
@@ -2460,7 +2460,7 @@ void TACSNBGIntegrator::marchBackwards( ){
 
       // Add up the contribution from function state derivative to RHS
       dfdq[n]->zeroEntries();
-      tacs->addSVSens(funcs[n], dfdq[n]);
+      tacs->addSVSens(&funcs[n], 1, &dfdq[n]);
 
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(alpha, dfdq[n]);
