@@ -102,6 +102,12 @@ class TACSAssembler : public TACSObject {
   TACSBcMap *getBcMap();
   TACSBVecDistribute *getBVecDistribute();
 
+  // Get the maximum sizes
+  // ---------------------
+  int getMaxElementNodes();
+  int getMaxElementVariables();
+  int getMaxElementStrains();
+
   // Set auxiliary elements into the TACSAssembler object
   // ----------------------------------------------------
   void setAuxElements( TACSAuxElements *aux_elems );
@@ -175,10 +181,10 @@ class TACSAssembler : public TACSObject {
                   TacsScalar *fdvSens, int numDVs );
   void addSVSens( TACSFunction **funcs, int numFuncs,
                   TACSBVec **fuSens );
-  void addXptSens( TACSFunction **funcs, int numFuncs,
-                   TACSBVec **fXptSens );
   void addAdjointResProducts( TACSBVec **adjoint, int numAdjoints,
                               TacsScalar *dvSens, int numDVs );
+  void addXptSens( TACSFunction **funcs, int numFuncs,
+                   TACSBVec **fXptSens );
   void addAdjointResXptSensProducts( TACSBVec **adjoint, int numAdjoints,
                                      TACSBVec **adjXptSens );
 
@@ -305,14 +311,17 @@ class TACSAssembler : public TACSObject {
 
   // Information about the
   int varsPerNode; // number of variables per node
-  int maxElementNodes; // maximum number of ind. and dep. element nodes
-  int maxElementSize; // maximum number of variables for any element
-  int maxElementIndepNodes; // maximum number of independent nodes 
   int numElements; // number of elements
   int numNodes; // number of nodes referenced by this process
   int numOwnedNodes; // number of nodes owned by this processor
   int numExtNodes; // number of extneral nodes 
   int numDependentNodes; // number of dependent nodes
+
+  // Maximum element information
+  int maxElementStrain; // maximum number of strains components
+  int maxElementNodes; // maximum number of ind. and dep. element nodes
+  int maxElementSize; // maximum number of variables for any element
+  int maxElementIndepNodes; // maximum number of independent nodes 
 
   // Node numbers that are referred to from this processor
   int *tacsExtNodeNums; // node numbers associated with TACS

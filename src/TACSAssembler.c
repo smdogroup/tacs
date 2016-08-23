@@ -82,8 +82,11 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
            recv_info[0], recv_info[1]);
   }
 
-  // Initialize some information about the number of items
+  // The mesh has not been initialized yet...
   meshInitializedFlag = 0;
+
+  // Initialize the maximum element propertie
+  maxElementStrain = 0;
   maxElementNodes = 0;
   maxElementSize = 0;
   maxElementIndepNodes = 0;
@@ -261,6 +264,27 @@ TACSBVecDistribute *TACSAssembler::getBVecDistribute(){
 }
 
 /*
+  Get the maximum number of variables per node
+*/
+int TACSAssembler::getMaxElementNodes(){
+  return maxElementNodes;
+}
+
+/*
+  Get the maximum number of element variables
+*/
+int TACSAssembler::getMaxElementVariables(){
+  return maxElementSize;
+}
+
+/*
+  Get the maximum number of strain components
+*/
+int TACSAssembler::getMaxElementStrains(){
+  return maxElementStrain;
+}
+
+/*
   Get the array of elements from TACSAssembler
 */
 TACSElement **TACSAssembler::getElements(){ 
@@ -361,6 +385,7 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     return 1;
   }
 
+  // Copy over the element pointers into a local array
   if (elements){
     for ( int i = 0; i < numElements; i++ ){
       _elements[i]->incref();
@@ -371,7 +396,6 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   else {
     elements = new TACSElement*[ numElements ];
     memset(elements, 0, numElements*sizeof(TACSElement*));
-
     for ( int i = 0; i < numElements; i++ ){
       _elements[i]->incref();
       elements[i] = _elements[i];
@@ -379,6 +403,7 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   }
 
   // Determine the maximum number of nodes per element
+  maxElementStrain = 0;
   maxElementSize = 0;
   maxElementNodes = 0;
 
@@ -401,6 +426,11 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     elemSize = _elements[i]->numNodes();
     if (elemSize > maxElementNodes){
       maxElementNodes = elemSize;
+    }
+
+    elemSize = _elements[i]->numStrains();
+    if (elemSize >= maxElementStrain){
+      maxElementStrain = elemSize;
     }
   }
 
@@ -2366,8 +2396,7 @@ FEMat *TACSAssembler::createFEMat( enum OrderingType order_type ){
   }
   if (order_type == NATURAL_ORDER){
     fprintf(stderr, 
-	    "[%d] Cannot call createFEMat() with \
-order_type == NATURAL_ORDER\n",
+	    "[%d] Cannot call createFEMat() with order_type == NATURAL_ORDER\n",
 	    mpiRank);
     order_type = TACS_AMD_ORDER;
   }
@@ -2524,7 +2553,8 @@ order_type == NATURAL_ORDER\n",
     feMatBIndices->incref();
     feMatCIndices->incref();
 
-    TACSBVecIndices *tlocal = new TACSBVecIndices(&tacs_local_nodes, nlocal_nodes);
+    TACSBVecIndices *tlocal = new TACSBVecIndices(&tacs_local_nodes, 
+                                                  nlocal_nodes);
     TACSBVecIndices *tcoupling = new TACSBVecIndices(&tacs_coupling_nodes, 
                                                      ncoupling_nodes);
     feMatBMap = new TACSBVecDistribute(varMap, tlocal);
@@ -2999,87 +3029,6 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
   A->beginAssembly();
   A->endAssembly();
   A->applyBCs();
-}
-
-/*
-  Initialize a list of functions
-  
-  Every function must be initialized - usually just once - before it
-  can be evaluated. This is handled automatically within
-  TACSAssembler.
-
-  Check whether the functions are associated with this TACSAssembler
-  object.  Next, call preInitalize() for each function in the list.
-  Go through the function domain and call initialize for each element
-  in the domain. Finally, call post initialize for each function in
-  the list.
-
-  functions:  an array of function values
-  numFuncs:   the number of functions
-*/
-void TACSAssembler::initializeFunctions( TACSFunction **functions, 
-					 int numFuncs ){
-  // First check if this is the right assembly object
-  for ( int k = 0; k < numFuncs; k++ ){
-    if (this != functions[k]->getTACS()){
-      fprintf(stderr, "[%d] Cannot evaluate function %s, wrong \
-TACSAssembler object\n", mpiRank, functions[k]->functionName());
-      return;
-    }
-  }
-
-  // Test which functions have been initialized
-  int count = 0;
-  for ( int k = 0; k < numFuncs; k++ ){
-    if (!functions[k]->isInitialized()){
-      count++;
-    }
-  }
-
-  if (count == 0){
-    return;
-  }
-
-  // Create an index-list of the functions that haven't been
-  // initialized yet
-  int * list = new int[ count ];
-  int j = 0;
-  for ( int k = 0; k < numFuncs; k++ ){
-    if (!functions[k]->isInitialized()){
-      list[j] = k;
-      j++;
-    }
-  }
-
-  // Now initialize the functions
-  for ( int k = 0; k < count; k++ ){
-    functions[list[k]]->preInitialize();
-  }
-    
-  for ( int k = 0; k < count; k++ ){
-    if (functions[list[k]]->getDomain() == TACSFunction::ENTIRE_DOMAIN){
-      for ( int i = 0; i < numElements; i++ ){
-	functions[list[k]]->elementWiseInitialize(elements[i], i);
-      }
-    }
-    else if (functions[list[k]]->getDomain() == TACSFunction::SUB_DOMAIN){
-      const int * elementNums;
-      int subDomainSize = functions[list[k]]->getElements(&elementNums);
-    
-      for ( int i = 0; i < subDomainSize; i++ ){
-	int elemNum = elementNums[i];
-        if (elemNum >= 0 && elemNum < numElements){
-	  functions[list[k]]->elementWiseInitialize(elements[elemNum], elemNum);
-	}
-      }      
-    }
-  }
-  
-  for ( int k = 0; k < count; k++ ){
-    functions[list[k]]->postInitialize();
-  }
-
-  delete [] list;
 }
 
 /*

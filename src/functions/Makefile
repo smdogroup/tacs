@@ -8,8 +8,9 @@ include ../../Makefile.in
 include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
-	Compliance.o \
-	KSFailure.o \
+	KSFailure.o
+
+#	Compliance.o \
 	KSBuckling.o \
 	KSDisplacement.o \
 	InducedFailure.o \

@@ -129,7 +129,7 @@ class KSFailure : public TACSFunction {
 
   // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxFail)
   // and the value of the KS function
-  TacsScalar ksFailSum, ksFailWeightSum, maxFail;
+  TacsScalar ksFailSum, maxFail;
   TacsScalar ksFail;
 };
 
