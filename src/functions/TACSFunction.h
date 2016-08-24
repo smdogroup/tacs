@@ -9,8 +9,24 @@ class TACSFunction;
 
 /*!
   Copyright (c) 2013 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
+*/
 
+
+/*
+  Base class for the TACSFunctionCtx. Each context is function-specific
+  and is designed to store information required to 
+
+  It's implementation is designed to be opaque to the user, but its
+  data is required when evaluating the function. It is used to store
+  information for each thread in the function/gradient evaluation.
+*/
+class TACSFunctionCtx {
+ public:
+  TACSFunctionCtx( TACSFunction *_me ){ me = _me; }
+  TACSFunction *me;
+};
+
+/*
   TACSFunction is the base class used to calculate the values of 
   functions of interest within TACS. This class also defines the 
   methods required for gradient evaluation. This class should be
@@ -71,13 +87,14 @@ class TACSFunction;
 */
 class TACSFunction : public TACSObject {
  public:
-  enum FunctionDomain { ENTIRE_DOMAIN, SUB_DOMAIN, NO_DOMAIN };
-  
+  enum FunctionDomainType { ENTIRE_DOMAIN, SUB_DOMAIN, NO_DOMAIN };
+  enum FunctionEvaluationType { SINGLE_STAGE, TWO_STAGE };
+  enum FunctionStageType { INITIALIZATION, INTEGRATION };
+
   TACSFunction( TACSAssembler *_tacs, 
-		FunctionDomain _funcDomain = ENTIRE_DOMAIN, 
-		int _maxElems = 0, int _numIterations = 1 );
-  TACSFunction( TACSAssembler *_tacs, int _elemNums[], int _numElems, 
-		int maxElems = -1, int _numIterations = 1 );
+		FunctionDomain _funcDomain=ENTIRE_DOMAIN,
+                FunctionEvaluationType _funcEval=SINGLE_STAGE,
+		int _maxElems=0 );
   virtual ~TACSFunction();
 
   virtual const char * functionName() = 0;
@@ -85,49 +102,36 @@ class TACSFunction : public TACSObject {
 
   // Functions for setting/adjusting the domain
   // ------------------------------------------
-  FunctionDomain getDomain(); 
-  void setDomainSize( int _maxElems );
-  void setMaxDomainSize();
+  FunctionDomainType getDomainType();
+  FunctionEvaluationType getFunctionEvalType();
+
+  // Set the function domain by adding or setting element numbers
+  // ------------------------------------------------------------
   void setDomain( int _elemNums[], int _numElems );
   void addDomain( int elemNums[], int numElems );
-  int getNumElements();  
-  int getElements( const int ** _elemNums );
 
-  //! Return associated TACSAssembler object
+  // Retrieve information about the domain
+  // -------------------------------------
+  int getElementNums( const int **_elemNums );
+
+  // Return associated TACSAssembler object
   // ---------------------------------------
-  TACSAssembler * getTACS();
-
-  // Get the number of iterations required through pre/element-wise/post calls
-  // -------------------------------------------------------------------------
-  int getNumIterations(){ return numIterations; }
-
-  // Test if the function has been initialized
-  // -----------------------------------------
-  int isInitialized() const { return initFlag; }
-
-  // Perform initialization of the functions
-  // ---------------------------------------
-  virtual void preInitialize(){}
-  virtual void elementWiseInitialize( TACSElement * element, int elemNum ){}
-  virtual void postInitialize(){}
+  TACSAssembler *getTACS();
 
   // Get the integer/scalar work sizes required for this function
   // ------------------------------------------------------------
-  
+  virtual TACSFunctionCtx *createFuncCtx();
+  virtual void destroyFuncCtx( TACSFunctionCtx **ctx );
+ 
   // Evaluate the function - initialize/call once per element/post-processing
   // ------------------------------------------------------------------------
-  virtual void getEvalWorkSizes( int * iwork, int * work );
-  virtual void preEval( const int iter ){} 
-  virtual void preEvalThread( const int iter, 
-                              int * iwork, TacsScalar * work ){}
-  virtual void elementWiseEval( const int iter, 
-				TACSElement * element, int elemNum,
+  virtual void preEval( FunctionEvaluationType ftype ){}
+  virtual void elementWiseEval( FunctionEvaluationType ftype,
+				TACSElement *element, int elemNum,
 				const TacsScalar Xpts[],
                                 const TacsScalar vars[], 
-				int * iwork, TacsScalar * work ){}
-  virtual void postEvalThread( const int iter, 
-                               int * iwork, TacsScalar * work ){}
-  virtual void postEval( const int iter ){}
+				TACSFunctionCtx *ctx );
+  virtual void postEval( FunctionEvaluationType ftype ){}
 
   // Return the value of the function
   // --------------------------------
@@ -135,51 +139,47 @@ class TACSFunction : public TACSObject {
 
   // Calculate the sensitivity w.r.t. the state variables
   // ----------------------------------------------------
-  virtual int getSVSensWorkSize();
-  virtual void elementWiseSVSens( TacsScalar * elemSVSens, 
-				  TACSElement * element, 
+  virtual void elementWiseSVSens( TacsScalar *elemSVSens, 
+				  TACSElement *element, 
 				  int elemNum, 
 				  const TacsScalar Xpts[], 
 				  const TacsScalar vars[], 
-				  TacsScalar * work ){
+				  TACSFunctionCtx *ctx ){
     int numVars = element->numVariables();
     memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
   }
 
   // Calculate the sensitivity w.r.t. the design variables
   // -----------------------------------------------------
-  virtual int getDVSensWorkSize();
   virtual void elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-				  TACSElement * element, int elemNum,
+				  TACSElement *element, int elemNum,
 				  const TacsScalar Xpts[],
                                   const TacsScalar vars[], 
-				  TacsScalar * work ){}
+				  TACSFunctionCtx *ctx ){}
 
-  virtual int getXptSensWorkSize();
+  // Calculate the sensitivity w.r.t. the node locations
+  // ---------------------------------------------------
   virtual void elementWiseXptSens( TacsScalar fXptSens[],
-				   TACSElement * element, int elemNum,
+				   TACSElement *element, int elemNum,
 				   const TacsScalar Xpts[],
                                    const TacsScalar vars[], 
-				   TacsScalar * work ){
+				   TACSFunctionCtx *ctx ){
     int numNodes = element->numNodes();
     memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
   }
 
  protected:
-  //! The function has been initialized - no further initialization necessary 
-  void initialized(){ initFlag = 1; } 
-
-  // Number of iterations through pre/element-wise/post eval required
-  // ---------------------------------------------------------------- 
-  int numIterations;
-  TACSAssembler * tacs;
+  TACSAssembler *tacs;
   
  private:
-  FunctionDomain funcDomain; 
-  int maxElems;   // The maximum size of currently allocated elemNums array
-  int numElems;   // The number of elements actually stored in elemNums
-  int * elemNums; // A list of element numbers
-  int initFlag;   // if (initFlag) the function has been initialized
+  // Store the function domain type
+  FunctionDomainType funcDomain; 
+  FunctionEvaluationType funcEvalType;
+
+  // Store the element domain information
+  int maxElems; // maximum size of currently allocated elemNums array
+  int numElems; // number of elements actually stored in elemNums
+  int *elemNums; // sorted array of element numbers
 };
 
 #endif

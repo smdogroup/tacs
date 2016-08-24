@@ -75,65 +75,6 @@ TACSFunction::~TACSFunction(){
 }
 
 /*
-  Get the sizes of the work arrays used for the function evaluations
-  The arrays are allocated externally in order to be thread-safe.  
-*/
-void TACSFunction::getEvalWorkSizes( int * iwork, int * work ){
-  *iwork = 0, *work = 0;
-}
-
-int TACSFunction::getSVSensWorkSize(){
-  return 0;
-}
-
-int TACSFunction::getDVSensWorkSize(){
-  return 0;
-}
-
-int TACSFunction::getXptSensWorkSize(){
-  return 0;
-}
-
-/*
-  Extend the size of the domain to maxElems.
-
-  input:
-  maxElems:  the new maximum size of the domain
-*/
-void TACSFunction::setDomainSize( int _maxElems ){
-  if (funcDomain == NO_DOMAIN){
-    fprintf(stderr, "Cannot set function domain for %s\n",
-	    this->functionName());
-    return;
-  }
-  else if (maxElems < _maxElems){
-    funcDomain = SUB_DOMAIN;
-    maxElems = _maxElems;
-
-    int * temp = new int[ maxElems ];
-      
-    int i = 0;
-    for ( ; i < numElems; i++ ){
-      temp[i] = elemNums[i];
-    }
-
-    if ( elemNums ){
-      delete [] elemNums;
-    }
-
-    elemNums = temp;
-  }
-}
-
-/*
-  Extend the size of the domain to tacs->getNumElements().
-  All that should ever be required!
-*/
-void TACSFunction::setMaxDomainSize(){
-  setDomainSize(tacs->getNumElements());
-}
-
-/*
   Overwrite the domain in the function with a new set of elements.
   This reallocates the existing array if it is not long enough.  
  
@@ -172,7 +113,7 @@ void TACSFunction::setDomain( int _elemNums[], int _numElems ){
   not long enough, create a new one that is large enough for
   everything. This creates an array that is exactly large enough - if
   many elements are going to be added, you should calculate in advance
-  how many and allocate enough to start with.  
+  how many and allocate enough to start with.
 
   input:
   elemNums: the element numbers to add to the domain
@@ -224,23 +165,26 @@ const char * TACSFunction::TACSObjectName(){ return this->functionName(); }
 /*
   Retrieve the type of domain specified by this object
 */
-enum TACSFunction::FunctionDomain TACSFunction::getDomain(){
+enum TACSFunction::FunctionDomainType TACSFunction::getDomainType(){
   return funcDomain; 
 }
 
 /*
-  Retrieve the number of elements in the domain of this object
+  Retrieve the type of function
 */
-int TACSFunction::getNumElements(){
-  return numElems;
+enum TACSFunction::FunctionEvaluationType TACSFunction::getFunctionEvalType(){
+  return funcEvalType;
 }
 
 /*
   Get the elements in the domain of this object
 */
-int TACSFunction::getElements( const int ** _elemNums ){
-  *_elemNums = elemNums;
+int TACSFunction::getElementNums( const int **_elemNums ){
+  if (_elemNums){ *_elemNums = elemNums; }
   return numElems;
 }
 
+/*
+  Get the TACSAssembler object associated with this function
+*/
 TACSAssembler * TACSFunction::getTACS(){ return tacs; }

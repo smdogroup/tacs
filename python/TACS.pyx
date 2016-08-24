@@ -54,8 +54,8 @@ cdef class Function:
          self.ptr.decref()
       return
    
-# A generic wrapper for a TACSVec class - usually BVec
-cdef _init_Vec(BVec *ptr):
+# A generic wrapper for a TACSVec class - usually TACSBVec
+cdef _init_Vec(TACSBVec *ptr):
    vec = Vec()
    vec.ptr = ptr
    vec.ptr.incref()
@@ -382,28 +382,18 @@ cdef class Assembler:
       return
 
    @staticmethod
-   def getInstance(MPI.Comm comm, int numOwnedNodes,
-                   int varsPerNode, int numElements, 
-                   int numNodes, int nodeMaxCSRsize,
-                   int numDependentNodes=0):
+   def create(MPI.Comm comm, int varsPerNode,
+              int numOwnedNodes, int numElements, 
+              int numDependentNodes=0):
       '''
       Static factory method for creating an instance of Assembler
       '''
-      cdef MPI_Comm c_comm =  comm.ob_mpi
-
-      tacs = Assembler()
-
-      if numDependentNodes is 0:
-         tacs.ptr = new TACSAssembler(c_comm, numOwnedNodes,
-                                      varsPerNode,  numElements, 
-                                      numNodes, nodeMaxCSRsize)
-      else:
-         tacs.ptr = new TACSAssembler(c_comm, numOwnedNodes,
-                                      varsPerNode,  numElements, 
-                                      numNodes, numDependentNodes,
-                                      nodeMaxCSRsize)
-      tacs.ptr.incref()
-      return tacs
+      cdef MPI_Comm c_comm = comm.ob_mpi
+      cdef TACSAssembler *tacs = NULL
+      tacs = new TACSAssembler(c_comm, varsPerNode,
+                              numOwnedNodes, numElements, 
+                              numDependentNodes)
+      return _init_Assembler(tacs)
    
    def __dealloc__(self):
       '''
@@ -616,33 +606,42 @@ cdef class Assembler:
       self.ptr.zeroDDotVariables()
       return
    
-   def setVariables(self, Vec stateVars):
+   def setVariables(self, Vec vec=None,
+                    Vec dvec=None, Vec ddvec=None):
       '''
       Set the values of the state variables
       '''
-      self.ptr.setVariables(stateVars.ptr)
-      return
+      cdef TACSBVec *cvec = NULL
+      cdef TACSBVec *cdvec = NULL
+      cdef TACSBVec *cddvec = NULL
+
+      if vec is not None:
+         cvec = vec.ptr
+      if dvec is not None:
+         cdvec = dvec.ptr
+      if ddvec is not None:
+         cddvec = ddvec.ptr
       
-   def getVariables(self, Vec stateVars):
-      '''
-      Get the values of the state variables
-      '''
-      self.ptr.getVariables(stateVars.ptr)
+      self.ptr.setVariables(cvec, cdvec, cddvec)
       return
-    
-   def setDotVariables(self, Vec stateVars):
+
+   def getVariables(self, Vec vec=None,
+                    Vec dvec=None, Vec ddvec=None):
       '''
-      Set the values of the time-derivative of the state variables
+      Set the values of the state variables
       '''
-      self.ptr.setDotVariables(stateVars.ptr)
-      return
-    
-   def setDDotVariables(self, Vec stateVars):
-      '''
-      Set the values of the 2nd time derivative of the state 
-      variables
-      '''
-      self.ptr.setDDotVariables(stateVars.ptr)
+      cdef TACSBVec *cvec = NULL
+      cdef TACSBVec *cdvec = NULL
+      cdef TACSBVec *cddvec = NULL
+
+      if vec is not None:
+         cvec = vec.ptr
+      if dvec is not None:
+         cdvec = dvec.ptr
+      if ddvec is not None:
+         cddvec = ddvec.ptr
+      
+      self.ptr.getVariables(cvec, cdvec, cddvec)
       return
     
    def assembleRes(self, Vec residual):
@@ -659,31 +658,6 @@ cdef class Assembler:
       '''
       self.ptr.assembleRes(residual.ptr)
       return
-
-   def addNode(self, int localNodeNum, int tacsNodeNum):
-      '''
-      Adds a single node into TACS
-      '''
-      self.ptr.addNode(localNodeNum, tacsNodeNum)
-      return
-
-   def addNodes(self, np.ndarray[int, ndim=1, mode='c'] localNodeNums,
-                np.ndarray[int, ndim=1, mode='c'] tacsNodeNums):
-      '''
-      Adds an array of nodes into TACS. The number of nodes is
-      determined from the size of the input array.
-      '''
-      self.ptr.addNodes(<int*>localNodeNums.data, <int*>tacsNodeNums.data, len(localNodeNums))
-      return
-
-   def addElement(self,
-                  Element elem,
-                  np.ndarray[int, ndim=1, mode='c'] localNodeNums,
-                  int numElemNodes):
-      '''
-      Add the element into TACS
-      '''
-      return self.ptr.addElement(elem.ptr, <int*>localNodeNums.data, numElemNodes)
    
    def assembleJacobian(self, Vec residual, Mat A,
                         double alpha, double beta, double gamma,
@@ -771,7 +745,7 @@ cdef class Assembler:
       cdef TacsScalar *Avals = <TacsScalar*>A.data
 
       # Evaluate the derivative of the functions
-      self.ptr.evalDVSens(funcs, num_funcs, Avals, num_design_vars)
+      self.ptr.addDVSens(funcs, num_funcs, Avals, num_design_vars)
 
       return
 
@@ -784,7 +758,7 @@ cdef class Assembler:
       function: the function pointer
       vec:      the derivative of the function w.r.t. the state variables 
       '''
-      self.ptr.evalSVSens(func.ptr, vec.ptr)
+      self.ptr.addSVSens(func.ptr, vec.ptr)
       return
 
    def evalAdjointResProduct(self, adjoint, np.ndarray[TacsScalar, mode='c'] A):
@@ -804,11 +778,11 @@ cdef class Assembler:
       num_dvs:      the number of design variables
       '''
       cdef int num_adj = 1
-      cdef BVec **adj = &((<Vec>adjoint).ptr)
+      cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
       cdef TacsScalar *Avals = <TacsScalar*>A.data
       cdef int num_design_vars = A.shape[0]
 
-      self.ptr.evalAdjointResProducts(adj, num_adj, Avals, num_design_vars)
+      self.ptr.addAdjointResProducts(adj, num_adj, Avals, num_design_vars)
       return
         
    def testElement(self, int elemNum, int print_level):
@@ -875,13 +849,13 @@ cdef class Assembler:
       # comm.ob_mpi = c_comm
       return None
 
-   def finalize(self):
+   def initialize(self):
       '''
       Function to call after all the nodes and elements have been
       added into the created instance of TACS. This function need not
       be called when tacs is created using TACSCreator class.
       '''
-      self.ptr.finalize()
+      self.ptr.initialize()
       return
    
 # Wrap the TACStoFH5 class
@@ -1068,7 +1042,8 @@ cdef class MeshLoader:
    def getNumElement(self):
       return self.ptr.getNumElements()
     
-   def createTACS(self, int varsPerNode, OrderingType order_type=NATURAL_ORDER,
+   def createTACS(self, int varsPerNode,
+                  OrderingType order_type=NATURAL_ORDER,
                   MatrixOrderingType mat_type=DIRECT_SCHUR):
       '''
       Create a distribtued version of TACS
@@ -1102,8 +1077,6 @@ cdef class MeshLoader:
          X[i] = Xpts[i]
 
       return ptr, conn, X
-
-
 
 # A generic abstract class for all integrators implemented in TACS
 cdef class Integrator:

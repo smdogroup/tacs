@@ -77,12 +77,12 @@ void KSFailure::preInitialize(){
 
 void KSFailure::elementWiseInitialize( TACSElement * element, int elemNum ){
   int numStresses = element->numStresses();
-  if ( numStresses > maxNumStresses ){
+  if (numStresses > maxNumStresses){
     maxNumStresses = numStresses;
   }
 
   int numNodes = element->numNodes();
-  if ( numNodes > maxNumNodes ){
+  if (numNodes > maxNumNodes){
     maxNumNodes = numNodes;
   }
 }  
@@ -96,7 +96,6 @@ void KSFailure::preEval( const int iter ){
   if (iter == 0){ 
     maxFail = -1e20;
     ksFailSum = 0.0;
-    ksFailWeightSum = 0.0; 
     ksFail = 0.0;
   }
 }
@@ -115,7 +114,6 @@ void KSFailure::getEvalWorkSizes( int * iwork, int * work ){
   The content of these buffers consist of the following:
   work[0]: the maximum pointwise failure value
   work[1]: the sum of exp(ks_weight*(f[i] - max{f[i]}))
-  work[2]: the sum of f[i]*exp(ks_weight*(f[i] - max{f[i]}))
 */
 void KSFailure::preEvalThread( const int iter, 
 			       int * iwork, TacsScalar * work ){
@@ -129,7 +127,6 @@ void KSFailure::preEvalThread( const int iter,
   The content of these buffers consist of the following:
   work[0]: the maximum pointwise failure value
   work[1]: the sum of exp(ks_weight*(f[i] - max{f[i]}))
-  work[2]: the sum of f[i]*exp(ks_weight*(f[i] - max{f[i]}))
 */
 void KSFailure::elementWiseEval( const int iter, 
 				 TACSElement * element, int elemNum,

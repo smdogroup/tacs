@@ -56,7 +56,7 @@ class BCSRMat : public TACSObject {
                            MatrixOrientation matOr=NORMAL );
   void addBlockRowValues( int row, int ncol, 
 			  const int *col, const TacsScalar *a );
-  void zeroRow( int row, int nvars, const int *vnums, int ident = 0 );
+  void zeroRow( int row, int vars, int ident=0 );
   void getArrays( int *_bsize, int *nrows, int *ncols, 
 		  const int **rowp, const int **cols, TacsScalar **Avals );
 

@@ -36,10 +36,10 @@
 */
 class PMat : public TACSMat {
  public:
-  PMat( VarMap * rmap,
-	BCSRMat * _Aloc, BCSRMat * _Bext,
-	BVecDistribute * _col_map,
-	BCMap * _bcs = NULL );
+  PMat( TACSVarMap *rmap,
+	BCSRMat *_Aloc, BCSRMat *_Bext,
+	TACSBVecDistribute *_col_map,
+	TACSBcMap *_bcs=NULL );
   ~PMat();
 
   // Functions for setting values in the matrix
@@ -49,62 +49,61 @@ class PMat : public TACSMat {
 
   // Functions required for solving linear systems
   // ---------------------------------------------
-  void getSize( int * _nr, int * _nc ); // Get the local dimensions of the matrix
-  void mult( TACSVec * x, TACSVec * y );   // y <- A*x 
-  TACSVec * createVec(); // Create a vector to operate on
-
-  void copyValues( TACSMat * mat ); // Copy the values from another PMat
-  void scale( TacsScalar alpha ); // Scale the matrix by a value
-  void axpy( TacsScalar alpha, TACSMat * mat ); // Compute y <- y + alpha*x
+  void getSize( int *_nr, int *_nc );          // Get the local dimensions
+  void mult( TACSVec *x, TACSVec *y );         // y <- A*x 
+  TACSVec *createVec();                        // Create a vector
+  void copyValues( TACSMat *mat );             // Copy matrix entries
+  void scale( TacsScalar alpha );              // Scale the matrix
+  void axpy( TacsScalar alpha, TACSMat *mat ); // Compute y <- y + alpha*x
   void axpby( TacsScalar alpha, 
-	      TacsScalar beta, TACSMat * mat ); // Compute y <- alpha*x + beta*y
+	      TacsScalar beta, TACSMat *mat ); // Compute y <- alpha*x + beta*y
 
   void addDiag( TacsScalar alpha );
 
   // Other miscelaneous functions
   // ----------------------------
-  void getBCSRMat( BCSRMat ** A, BCSRMat ** B ); // Access the underlying mats
-  void getRowMap( int * bs, int * _N, int * _Nc );
-  void getColMap( int * bs, int * _M );
-  VarMap * getRowMap(){ return rmap; }
-  void getExtColMap( BVecDistribute ** ext_map );  // Access the column map  
-  void printNzPattern( const char * fileName );    // Print the non-zero pattern
+  void getBCSRMat( BCSRMat ** A, BCSRMat ** B );  // Access the underlying mats
+  void getRowMap( int *bs, int *_N, int *_Nc );
+  void getColMap( int *bs, int *_M );
+  TACSVarMap *getRowMap(){ return rmap; }
+  void getExtColMap( TACSBVecDistribute **ext_map ); // Access the column map  
+  void printNzPattern( const char *fileName );      // Print the non-zero pattern
 
-  const char * TACSObjectName();
+  const char *TACSObjectName();
   MPI_Comm getMPIComm(){ return rmap->getMPIComm(); }
 
  protected:
   PMat();
 
-  void init( VarMap * _rmap, 
-	     BCSRMat * _Aloc, BCSRMat * _Bext,
-	     BVecDistribute * _col_map,
-	     BCMap * _bcs = NULL );
+  // Common initialization routine
+  void init( TACSVarMap *_rmap, 
+	     BCSRMat *_Aloc, BCSRMat *_Bext,
+	     TACSBVecDistribute *_col_map,
+	     TACSBcMap *_bcs=NULL );
 
-  // Matrix data
-  // -----------
-  VarMap * rmap; // Map for the rows 
-  BCSRMat * Aloc;
-  BCSRMat * Bext;
-  BVecDistribute * col_map; 
+  // Local entries for the matrix
+  BCSRMat *Aloc, *Bext;
+    
+  // Map the local entries into the global data
+  TACSVarMap *rmap;
+  TACSBVecDistribute *ext_dist; 
+  TACSBVecDistCtx *ctx;
 
-  // Variable data
-  // -------------
+  // Sizes/dimensions of the matrix
   int bsize; // The block size
-  int N; // The number of local rows
-  int Nc; // The number of equations that are coupled to other processors
+  int N; // Number of local rows
+  int Nc; // Number of equations that are coupled to other processors
   int Np; // The number of local-only equations Np + Nc = N
 
  private: 
-
-  // BC information
-  // --------------
-  BCMap * bcs;
+  // Boundary condition information
+  TACSBcMap *bcs;
     
-  TacsScalar * x_ext; // External values - used for matrix-vector products
+  // External values - used for matrix-vector products
+  TacsScalar *x_ext; 
   int ext_offset;
 
-  static const char * matName;
+  static const char *matName;
 };
 
 /*
@@ -115,24 +114,25 @@ class PMat : public TACSMat {
 */
 class PSOR : public TACSPc {
  public:
-  PSOR( PMat * mat, int _zero_guess, 
+  PSOR( PMat *mat, int _zero_guess, 
 	TacsScalar _omega, int _iters, int _isSymmetric );
   ~PSOR();
 
   void factor();
-  void applyFactor( TACSVec * xvec, TACSVec * yvec );
+  void applyFactor( TACSVec *xvec, TACSVec *yvec );
 
  private:
-  int zero_guess;
-  TacsScalar omega;
+  // Information about how to handle the smoother
   int iters;
-  int isSymmetric;
+  TacsScalar omega;
+  int zero_guess, isSymmetric;
 
-  BCSRMat *Aloc;
-  BCSRMat *Bext;
-  BVec *bvec;
+  // Pointers to the local/external matrix
+  BCSRMat *Aloc, *Bext;
+  TACSBVec *bvec;
 
-  BVecDistribute *col_map;
+  TACSBVecDistribute *ext_dist;
+  TACSBVecDistCtx *ctx;
   int ext_offset;
   TacsScalar *yext;
 };
@@ -148,18 +148,18 @@ class PSOR : public TACSPc {
 */
 class AdditiveSchwarz : public TACSPc {
  public:
-  AdditiveSchwarz( PMat * mat, int levFill, double fill );
+  AdditiveSchwarz( PMat *mat, int levFill, double fill );
   ~AdditiveSchwarz();
 
   void setDiagShift( TacsScalar _alpha );
   void factor();
-  void applyFactor( TACSVec * xvec, TACSVec * yvec );
-  void applyFactor( TACSVec * yvec );
+  void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void applyFactor( TACSVec *yvec );
 
  private:
-  BCSRMat * Aloc;
+  BCSRMat *Aloc;
   TacsScalar alpha;
-  BCSRMat * Apc;
+  BCSRMat *Apc;
 };
 
 /*
@@ -176,36 +176,36 @@ class AdditiveSchwarz : public TACSPc {
 */
 class GlobalSchurMat : public TACSMat {
  public:
-  GlobalSchurMat( PMat * mat, BCSRMat * Apc );
+  GlobalSchurMat( PMat *mat, BCSRMat *Apc );
   ~GlobalSchurMat();
 
   // These functions have no effect for this matrix
   // ----------------------------------------------
   void zeroEntries(){}
-  void addValues( int nrow, const int * row, int ncol, const int * col,
-		  int nv, int mv, const TacsScalar * values ){} 
+  void addValues( int nrow, const int *row, int ncol, const int *col,
+		  int nv, int mv, const TacsScalar *values ){} 
   void applyBCs(){}
   void beginAssembly(){}
   void endAssembly(){}
 
   // Functions used to solve the linear system
   // -----------------------------------------
-  void getSize( int * _nr, int * _nc );  // Get the local dimensions of the matrix
-  void mult( TACSVec * x, TACSVec * y );  // y <- A * x 
-  TACSVec * createVec(); // Create a vector to operate on
+  void getSize( int *_nr, int *_nc );
+  void mult( TACSVec *x, TACSVec *y );
+  TACSVec *createVec();
 
-  // Multiply y <- Bext * x_ext 
-  void multOffDiag( BVec * x, BVec * y );
+  // Multiply y <- Bext *x_ext 
+  void multOffDiag( TACSBVec *x, TACSBVec *y );
 
  private:
-  VarMap * rmap;  // The variable map for the interface variables
-  BCSRMat * Apc;  // The factored diagonal matrix 
-  BCSRMat * Bext; // The off-diagonal part
-  BVecDistribute * col_map; 
+  TACSVarMap *rmap; // The variable map for the interface variables
+  BCSRMat *Apc; // The factored diagonal matrix 
+  BCSRMat *Bext; // The off-diagonal part
+  TACSBVecDistribute *ext_dist; 
+  TACSBVecDistCtx *ctx;
 
-  int varoffset;
-  int nvars;
-  TacsScalar * x_ext;
+  int nvars, varoffset;
+  TacsScalar *x_ext;
 };
 
 /*!
@@ -213,30 +213,29 @@ class GlobalSchurMat : public TACSMat {
 */
 class ApproximateSchur : public TACSPc {
  public:
-  ApproximateSchur( PMat * mat, int levFill, double fill, 
-		    int inner_gmres_iters, double inner_rtol = 1e-3, 
-		    double inner_atol = 1e-30 );
+  ApproximateSchur( PMat *mat, int levFill, double fill, 
+		    int inner_gmres_iters, double inner_rtol=1e-3, 
+		    double inner_atol=1e-30 );
   ~ApproximateSchur();
 
   void setDiagShift( TacsScalar _alpha );
-  void setMonitor( KSMPrint * ksm_print );
+  void setMonitor( KSMPrint *ksm_print );
   void factor();
-  void applyFactor( TACSVec * xvec, TACSVec * yvec );
-  void printNzPattern( const char * fileName );
+  void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void printNzPattern( const char *fileName );
 
  private:
-  BVec *rvec, *wvec;
-  PMat * mat;
-  BCSRMat * Aloc;
+  TACSBVec *rvec, *wvec;
+  PMat *mat;
+  BCSRMat *Aloc, *Apc;
   TacsScalar alpha;
-  BCSRMat * Apc;
  
-  int start;
-  int end;
-  int var_offset;
+  // Offsets into the array
+  int start, end, var_offset;
 
-  GlobalSchurMat * gsmat;
-  TACSKsm * inner_ksm;
+  // Global Schur matrix and its associated KSM object
+  GlobalSchurMat *gsmat;
+  TACSKsm *inner_ksm;
 };
 
 #endif

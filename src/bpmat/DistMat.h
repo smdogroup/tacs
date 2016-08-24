@@ -16,19 +16,19 @@
 */
 class DistMat : public PMat {
  public:
-  DistMat( TACSThreadInfo * thread_info, 
-           VarMap * _rmap, int bsize,
-	   int next_vars, const int * rowp, const int * cols, 
-	   BVecIndices * bindex,
-	   BCMap * _bcs = NULL );
+  DistMat( TACSThreadInfo *thread_info, 
+           TACSVarMap *_rmap, int bsize,
+	   int next_vars, const int *rowp, const int *cols, 
+	   TACSBVecIndices *bindex,
+	   TACSBcMap *_bcs = NULL );
   ~DistMat();
     
   // Functions for setting values in the matrix
   // ------------------------------------------
   void zeroEntries();
-  void addValues( int nrow, const int * row, 
-		  int ncol, const int * col,  
-		  int nv, int mv, const TacsScalar * values ); 
+  void addValues( int nrow, const int *row, 
+		  int ncol, const int *col,  
+		  int nv, int mv, const TacsScalar *values ); 
   void addWeightValues( int nvars, const int *varp, const int *vars,
 			const TacsScalar *weights,
 			int nv, int mv, const TacsScalar *values,
@@ -38,17 +38,17 @@ class DistMat : public PMat {
   
   // Set values into the matrix from the local BCSRMat
   // -------------------------------------------------
-  void setValues( int nvars, const int * ext_vars,
-		  const int * rowp, const int * cols, TacsScalar * avals );
+  void setValues( int nvars, const int *ext_vars,
+		  const int *rowp, const int *cols, TacsScalar *avals );
 
  private:
   // Set up the local/external CSR data structure
-  void setUpLocalExtCSR( int next_vars, int * ext_vars, 
-			 const int * rowp, const int * cols,
+  void setUpLocalExtCSR( int next_vars, const int *ext_vars, 
+			 const int *rowp, const int *cols,
 			 int lower, int upper,
 			 int nz_per_row,
 			 int ** _Arowp, int ** _Acols,
-			 int * _Np, int ** _Browp, int ** _Bcols );
+			 int *_Np, int ** _Browp, int ** _Bcols );
 
   // Initialize the persistent communication requests 
   void initPersistent();
@@ -56,13 +56,11 @@ class DistMat : public PMat {
   // Variables for the column map
   // ----------------------------
   int col_map_size;
-  int * col_map_vars;
+  const int *col_map_vars;
  
   // Information about assembling the non-zero pattern
   // -------------------------------------------------
   MPI_Comm comm;
-  const int * ownerRange;
-  int mpiSize, mpiRank;
   
   // Data destined for other processes
   // ---------------------------------
@@ -72,7 +70,8 @@ class DistMat : public PMat {
   int *ext_rowp;
   int *ext_cols;
 
-  TacsScalar * ext_A; // Pointer to the external data
+  // Pointer to the external data
+  TacsScalar *ext_A; 
   
   // Data received from other processes
   // ----------------------------------
@@ -82,7 +81,8 @@ class DistMat : public PMat {
   int *in_rowp;
   int *in_cols;
 
-  TacsScalar * in_A; // Pointer to incoming data
+  // Pointer to incoming data
+  TacsScalar *in_A; 
 
   // Information for the persistent communication set up
   // ---------------------------------------------------

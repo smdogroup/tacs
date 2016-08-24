@@ -43,9 +43,9 @@ class KSFailure : public TACSFunction {
 
   KSFailure( TACSAssembler * _tacs, 
 	     int _elementNums[], int _numElements, 
-	     double ksWeight, double alpha = 1.0 );
+	     double ksWeight, double alpha=1.0 );
   KSFailure( TACSAssembler * _tacs, 
-	     double ksWeight, double alpha = 1.0 );
+	     double ksWeight, double alpha=1.0 );
   ~KSFailure();
 
   // Retrieve the name of the function
@@ -129,7 +129,7 @@ class KSFailure : public TACSFunction {
 
   // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxFail)
   // and the value of the KS function
-  TacsScalar ksFailSum, ksFailWeightSum, maxFail;
+  TacsScalar ksFailSum, maxFail;
   TacsScalar ksFail;
 };
 

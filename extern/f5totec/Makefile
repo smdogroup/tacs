@@ -8,4 +8,4 @@ f5totec: f5totec.o
 	${CXX} -Wl,--no-as-needed f5totec.o ../tecio/tecio.a ${TACS_LD_FLAGS} -o f5totec
 
 clean:
-	${RM} f5totec 
+	${RM} f5totec *.o

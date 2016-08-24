@@ -59,11 +59,10 @@
 */
 class PDMat : public TACSObject {
  public:
- 
   // Create a sparse matrix
   PDMat( MPI_Comm _comm, int csr_m, int csr_n, 
-	 int csr_bsize, const int * csr_vars, 
-	 int nvars, const int * csr_rowp, const int * csr_cols,
+	 int csr_bsize, const int *csr_vars, 
+	 int nvars, const int *csr_rowp, const int *csr_cols,
 	 int csr_blocks_per_block, int reorder_blocks );
 
   // Create a dense matrix
@@ -72,58 +71,58 @@ class PDMat : public TACSObject {
 
   // Functions for various parts of the matrix
   // -----------------------------------------
-  void getSize( int * nr, int * nc );
-  void getProcessGridSize( int * _nprows, int * _npcols );
+  void getSize( int *nr, int *nc );
+  void getProcessGridSize( int *_nprows, int *_npcols );
   void setMonitorFactorFlag( int flag );
 
   // Functions for setting values into the matrix
   // --------------------------------------------
   void zeroEntries();
-  void addAllValues( int csr_bsize, int nvars, const int * vars,
-                     const int * csr_rowp, const int * csr_cols, 
-                     TacsScalar * vals );
-  void addAlltoallValues( int csr_bsize, int nvars, const int * vars,
-			  const int * csr_rowp, const int * csr_cols, 
-			  TacsScalar * vals );
+  void addAllValues( int csr_bsize, int nvars, const int *vars,
+                     const int *csr_rowp, const int *csr_cols, 
+                     TacsScalar *vals );
+  void addAlltoallValues( int csr_bsize, int nvars, const int *vars,
+			  const int *csr_rowp, const int *csr_cols, 
+			  TacsScalar *vals );
   void setRand();
 
   // Matrix operations - note that factorization is in-place
   // -------------------------------------------------------
-  void mult( TacsScalar * x, TacsScalar * y );
-  void mult( int local_size, TacsScalar * x, TacsScalar * y );
-  void applyFactor( TacsScalar * x );
-  void applyFactor( int local_size, TacsScalar * x ); // This is faster
+  void mult( TacsScalar *x, TacsScalar *y );
+  void mult( int local_size, TacsScalar *x, TacsScalar *y );
+  void applyFactor( TacsScalar *x );
+  void applyFactor( int local_size, TacsScalar *x ); // This is faster
   void factor();
 
  private:
   void init_proc_grid( int size );
   void init_nz_arrays();
   void init_row_counts();
-  void merge_nz_pattern( int root, int * rowp, int * cols,
+  void merge_nz_pattern( int root, int *rowp, int *cols,
                          int reorder_blocks );
   void compute_symbolic_factor( int ** _rowp, int ** _cols, 
 				int max_size );
-  void init_ptr_arrays( int * rowp, int * cols );
-  int get_block_num( int var, const int * ptr );
+  void init_ptr_arrays( int *rowp, int *cols );
+  int get_block_num( int var, const int *ptr );
   int add_values( int rank, int i, int j, 
 		  int csr_bsize, int csr_i, int csr_j, 
-		  TacsScalar * b );
+		  TacsScalar *b );
 
   // Helper functions for applying the lower-triangular back-solve
-  void lower_column_update( int col, TacsScalar * x, 
-                            TacsScalar * xsum, TacsScalar * xlocal,
-                            int * row_sum_count, int * row_sum_recvd );
-  void add_lower_row_sum( int row, TacsScalar * x, 
-                          TacsScalar * xsum, TacsScalar * xlocal,
-                          int * row_sum_count, int * row_sum_recvd );
+  void lower_column_update( int col, TacsScalar *x, 
+                            TacsScalar *xsum, TacsScalar *xlocal,
+                            int *row_sum_count, int *row_sum_recvd );
+  void add_lower_row_sum( int row, TacsScalar *x, 
+                          TacsScalar *xsum, TacsScalar *xlocal,
+                          int *row_sum_count, int *row_sum_recvd );
 
   // Helper functions for applying the upper-triangular back-solve
-  void upper_column_update( int col, TacsScalar * x, 
-                            TacsScalar * xsum, TacsScalar * xlocal,
-                            int * row_sum_count, int * row_sum_recv );
-  void add_upper_row_sum( int row, TacsScalar * x, 
-                          TacsScalar * xsum, TacsScalar * xlocal,
-                          int * row_sum_count, int * row_sum_recv );
+  void upper_column_update( int col, TacsScalar *x, 
+                            TacsScalar *xsum, TacsScalar *xlocal,
+                            int *row_sum_count, int *row_sum_recv );
+  void add_upper_row_sum( int row, TacsScalar *x, 
+                          TacsScalar *xsum, TacsScalar *xlocal,
+                          int *row_sum_count, int *row_sum_recv );
 
   // Given the i/j location within the matrix, determine the owner
   int get_block_owner( int i, int j ) const {
@@ -144,7 +143,7 @@ class PDMat : public TACSObject {
 
   // Get the process column and row of the given rank process
   // Return 1 upon success 
-  int get_proc_row_column( int rank, int * proc_row, int * proc_col ) const {
+  int get_proc_row_column( int rank, int *proc_row, int *proc_col ) const {
     for ( int i = 0; i < nprows; i++ ){
       for ( int j = 0; j < npcols; j++ ){
         if (proc_grid[j + i*npcols] == rank){
@@ -164,7 +163,7 @@ class PDMat : public TACSObject {
   static const int BACKSOLVE_BUFF_SIZE = 64;
 
   // Retrieve the block matrix at the specified entry
-  TacsScalar * get_block( int rank, int i, int j );
+  TacsScalar *get_block( int rank, int i, int j );
 
   // The communicator for this matrix
   MPI_Comm comm; 

@@ -43,10 +43,10 @@
 */
 class ScMat : public TACSMat {
  public:
-  ScMat( VarMap * _rmap,
-	 BCSRMat * _B, BCSRMat * _E, BCSRMat * _F, BCSRMat * _C,
-	 BVecDistribute * _b_map,
-	 BVecDistribute * _c_map );
+  ScMat( TACSVarMap *_rmap,
+	 BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
+	 TACSBVecDistribute *_b_map,
+	 TACSBVecDistribute *_c_map );
   ~ScMat();
 
   // Functions for setting values in the matrix
@@ -55,12 +55,12 @@ class ScMat : public TACSMat {
 
   // Functions required for solving linear systems
   // ---------------------------------------------
-  void getSize( int * _nr, int * _nc );
-  void mult( TACSVec * x, TACSVec * y );
-  void copyValues( TACSMat * mat );
+  void getSize( int *_nr, int *_nc );
+  void mult( TACSVec *x, TACSVec *y );
+  void copyValues( TACSMat *mat );
   void scale( TacsScalar alpha );
-  void axpy( TacsScalar alpha, TACSMat * x );
-  void axpby( TacsScalar alpha, TacsScalar beta, TACSMat * x );
+  void axpy( TacsScalar alpha, TACSMat *x );
+  void axpby( TacsScalar alpha, TacsScalar beta, TACSMat *x );
   void addDiag( TacsScalar alpha );
 
   // Get the underlying representation for ScMat
@@ -68,29 +68,30 @@ class ScMat : public TACSMat {
   void getBCSRMat( BCSRMat ** _B, BCSRMat ** _E,
 		   BCSRMat ** _F, BCSRMat ** _C );
 
-  BVecDistribute * getLocalMap(){ return b_map; }
-  BVecDistribute * getSchurMap(){ return c_map; }
-
-  VarMap * getVarMap(){ return rmap; }
+  TACSBVecDistribute *getLocalMap(){ return b_map; }
+  TACSBVecDistribute *getSchurMap(){ return c_map; }
+  TACSVarMap *getVarMap(){ return rmap; }
 
  protected:
   ScMat();
-  void init( VarMap * _rmap,
-	     BCSRMat * _B, BCSRMat * _E, BCSRMat * _F, BCSRMat * _C,
-             BVecDistribute * _b_map, 
-             BVecDistribute * _c_map );
+  void init( TACSVarMap *_rmap,
+	     BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
+             TACSBVecDistribute *_b_map, 
+             TACSBVecDistribute *_c_map );
 
-  BCSRMat *B, *E, *F, *C;
-
-  VarMap * rmap;          // Global row map
-  BVecDistribute * b_map; // Collect variables for B/E
-  BVecDistribute * c_map; // Collect variables for C/F
-  
+  BCSRMat *B, *E, *F, *C; // The local matrices
+  TACSVarMap *rmap; // Global row map
+  TACSBVecDistribute *b_map; // Collect variables for B/E
+  TACSBVecDistribute *c_map; // Collect variables for C/F
+  TACSBVecDistCtx *b_ctx, *c_ctx;
  private:
+  // The local sizes/offsets
   int local_size, local_offset;
-  TacsScalar *xlocal, *ylocal; // The local variables used for mat-vec products
 
-  static const char * matName;
+  // The local variables used for mat-vec products
+  TacsScalar *xlocal, *ylocal; 
+
+  static const char *matName;
 };
 
 /*!
@@ -115,15 +116,15 @@ class ScMat : public TACSMat {
 */
 class PcScMat : public TACSPc {
  public:
-  PcScMat( ScMat * smat, int levFill, double fill, 
+  PcScMat( ScMat *smat, int levFill, double fill, 
            int reorder_schur_complement );
   ~PcScMat();
 
   // Functions associated with the factorization
   // -------------------------------------------
   void factor();
-  void applyFactor( TACSVec * xvec, TACSVec * yvec );
-  void testSchurComplement( TACSVec * in, TACSVec * out );
+  void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void testSchurComplement( TACSVec *in, TACSVec *out );
 
   // Monitor the factorization time on each process
   // ----------------------------------------------
@@ -135,37 +136,42 @@ class PcScMat : public TACSPc {
   void setAlltoallAssemblyFlag( int flag );
 
  private:
-  BCSRMat *B, *E, *F, *C;   // The block matrices
+  BCSRMat *B, *E, *F, *C; // The block matrices
   BCSRMat *Bpc, *Epc, *Fpc; // The diagonal contributions
-  BCSRMat *Sc;              // Schur complement from this proc.
+  BCSRMat *Sc; // Schur complement from this proc.
 
-  BVecDistribute * b_map;      // The map for the local entries
-  BVecDistribute * c_map;      // The map for the Schur complement
+  TACSBVecDistribute *b_map; // The map for the local entries
+  TACSBVecDistribute *c_map; // The map for the Schur complement
+  TACSBVecDistCtx *b_ctx;
+  TACSBVecDistCtx *c_ctx;
 
   int monitor_factor; // Monitor the factorization time
   int monitor_back_solve; // Monitor the back-solves
 
-  // The permutation matrices - only allocated if the permutation is performed
+  // The permutation matrices - only allocated if the permutation is
+  // performed
   int *perm, *iperm;
 
   // The partially dense matrix
-  PDMat * pdmat; // This stores the Schur complement
+  PDMat *pdmat; // This stores the Schur complement
 
   // There are two Schur maps here:
   // These objects defines a mapping between the local C-variables
   // (in xlocal/ylocal) to the global Schur complement system (scmat).
-  VarMap * schur_map;          // The variable map associated with Sc
-  BVecDistribute * schur_dist; // The map that distributes the Schur complement
-  int use_pdmat_alltoall;      // Use the Alltoall version for matrix assembly
+  TACSVarMap *schur_map; // The variable map associated with Sc
+  TACSBVecDistribute *schur_dist; // The map that distributes the Schur complement
+  TACSBVecDistCtx *schur_ctx; // The context for the distribution object
+  int use_pdmat_alltoall; // Use the Alltoall version for matrix assembly
 
   // This object defines a mapping between the variables in the
   // global vectors (from ScMat - in/out in applyFactor) and the 
   // global Schur complement system (scmat).
-  BVecDistribute * tacs_schur_dist;
+  TACSBVecDistribute *tacs_schur_dist;
+  TACSBVecDistCtx *tacs_schur_ctx;
 
   TacsScalar *xlocal; // The local variables 
   TacsScalar *yinterface; // The interface variables
-  BVec *gschur, *yschur; // The Schur complement vectors
+  TACSBVec *gschur, *yschur; // The Schur complement vectors
 };
 
 #endif

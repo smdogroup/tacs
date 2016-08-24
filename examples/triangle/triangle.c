@@ -240,13 +240,17 @@ int main( int argc, char *argv[] ){
   // This call must occur on all processor
   creator->setElements(&elem, 1);
 
+  // Set the reordering type
+  creator->setReorderingType(TACSAssembler::TACS_AMD_ORDER,
+                             TACSAssembler::APPROXIMATE_SCHUR);
+
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
-
+  
   // Create the preconditioner
-  BVec *res = tacs->createVec();
-  BVec *ans = tacs->createVec();
+  TACSBVec *res = tacs->createVec();
+  TACSBVec *ans = tacs->createVec();
   FEMat *mat = tacs->createFEMat();
 
   // Increment the reference count to the matrix/vectors
@@ -284,7 +288,7 @@ int main( int argc, char *argv[] ){
 
   // Free everything
   f5->decref();
-  
+ 
   // Decrease the reference count to the linear algebra objects
   pc->decref();
   mat->decref();
@@ -296,7 +300,7 @@ int main( int argc, char *argv[] ){
   elem->decref();
   tacs->decref();
   creator->decref();
-
+ 
   MPI_Finalize();
   return (0);
 }

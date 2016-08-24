@@ -40,7 +40,7 @@ int comparator( const void * a, const void * b );
   return value is the number of non-negative design variables
   &dvNums[start] is the start of the new array of unique design vars...
 */
-int uniqueSort( int * dvNums, int numDVs );
+int uniqueSort( int *dvNums, int numDVs );
 
 /*!
   Merge two sorted arrays into a single sorted array, in place.
@@ -52,7 +52,7 @@ int uniqueSort( int * dvNums, int numDVs );
 
   Memory requirements: note that len(a) >= na + nb
 */
-int mergeArrays( int * a, int na, const int * b, int nb );
+int mergeArrays( int *a, int na, const int *b, int nb );
 
 /*!
   Find the interval such that the given index satisfies:

@@ -91,8 +91,8 @@ cdef extern from "BVec.h":
    cdef cppclass BCMap(TACSObject):
       BCMap(int num_bcs)
         
-   cdef cppclass BVec(TACSVec):
-      BVec(VarMap* rmap, BCMap* bcs)
+   cdef cppclass TACSBVec(TACSVec):
+      TACSBVec(VarMap* rmap, BCMap* bcs)
       int getSize(int *size) 
       int getArray(TacsScalar ** array)
       void placeArray(TacsScalar * _x)
@@ -152,7 +152,7 @@ cdef class Constitutive:
    cdef TACSConstitutive *ptr
 
 cdef class Vec:
-   cdef BVec *ptr
+   cdef TACSBVec *ptr
    
 cdef extern from "TACSAuxElements.h":
    cdef cppclass TACSAuxElements(TACSObject):
@@ -173,32 +173,48 @@ cdef extern from "TACSAssembler.h":
       DIRECT_SCHUR"TACSAssembler::DIRECT_SCHUR"
 
    cdef cppclass TACSAssembler(TACSObject):
-      TACSAssembler(MPI_Comm _tacs_comm, int numOwnedNodes,
-                    int _varsPerNode, int _numElements, 
-                    int _numNodes, int _nodeMaxCSRsize)
-      TACSAssembler(MPI_Comm _tacs_comm, int numOwnedNodes,
-                    int _varsPerNode, int _numElements, 
-                    int _numNodes, int numDependentNodes,
-                    int _nodeMaxCSRsize)
+      TACSAssembler(MPI_Comm tacs_comm, int varsPerNode,
+                    int numOwnedNodes, int numElements,
+                    int numDependentNodes)
+
+      # Set the element connectivity 
+      int setElementConnectivity(int *conn, int *ptr)
+      int setElements(TACSElement **elements)
+      int setDependentNodes(int *depNodeIndex, 
+                            int *depNodeToTacs,
+                            double *depNodeWeights)
+
+      # Add boundary conditions
+      void addBCs(int nnodes, int *nodes, 
+                  int nbcs=-1, int *vars=NULL, 
+                  TacsScalar *vals=NULL)
+      
       # Return information about the TACSObject
       int getNumNodes()
       int getNumDependentNodes()
       int getNumElements()
-      BVec *createNodeVec()
-      void setNodes(BVec* x)
-      void getNodes(BVec* x)
-      void getDesignVars(TacsScalar* dvs, int ndvs)
-      void setDesignVars(TacsScalar* dvs, int ndvs)
-      void getDesignVarRange(TacsScalar* lb, TacsScalar* ub,
-                             int ndvs)
-      void setNumThreads(int t)
+
+      # MPI communicator
+      MPI_Comm getMPIComm()
+
+      # Finalize the mesh - no further elements or nodes may be added
+      # following this call
+      void initialize()
 
       # Set the auxiliary element class
       void setAuxElements(TACSAuxElements*)
       TACSAuxElements *getAuxElements()
-      
+
+      TACSBVec *createNodeVec()
+      void setNodes(TACSBVec* x)
+      void getNodes(TACSBVec* x)
+      void getDesignVars(TacsScalar* dvs, int ndvs)
+      void setDesignVars(TacsScalar* dvs, int ndvs)
+      void getDesignVarRange(TacsScalar* lb, TacsScalar* ub,
+                             int ndvs)
+
       # Create vectors/matrices
-      BVec* createVec()
+      TACSBVec* createVec()
       DistMat* createMat()
       FEMat* createFEMat(OrderingType order_type)
 
@@ -212,21 +228,12 @@ cdef extern from "TACSAssembler.h":
       void zeroDDotVariables()
 
       # Set and retrieve the state variables
-      void setVariables(BVec* stateVars)
-      void setDotVariables(BVec* stateVars)
-      void setDDotVariables(BVec* stateVars)
-      void getVariables(BVec* stateVars)
-
-      # Add nodes to TACS
-      void addNode(int locaNodeNum, int tacsNodeNum)
-      void addNodes(int localNodeNum[], int tacsNodeNum[], int numNodes)
-
-      # Add elements to TACS
-      int addElement(TACSElement *element, int localNodes[], int numElemNodes)
+      void setVariables(TACSBVec*, TACSBVec*, TACSBVec*)
+      void getVariables(TACSBVec*, TACSBVec*, TACSBVec*)
 
       # Assembly routines
-      void assembleRes(BVec* residual)
-      void assembleJacobian(BVec* residual,
+      void assembleRes(TACSBVec* residual)
+      void assembleJacobian(TACSBVec* residual,
                             TACSMat* A, double alpha,
                             double beta, double gamma,
                             MatrixOrientation matOr)
@@ -236,25 +243,20 @@ cdef extern from "TACSAssembler.h":
       # Evaluation routines
       void evalFunctions(TACSFunction **functions, int numFuncs,
                          TacsScalar *funcVals)
-      void evalDVSens(TACSFunction **funcs, int numFuncs,
-                      TacsScalar *fdvsSens, int ndvs)
-      void evalSVSens(TACSFunction *function, BVec* vec)
-      void evalAdjointResProducts(BVec** adjoint, int numAdjoint,
-                                  TacsScalar* dvSens, int num_dvs)
+      void addDVSens(TACSFunction **funcs, int numFuncs,
+                     TacsScalar *fdvsSens, int ndvs)
+      void addSVSens(TACSFunction *function, TACSBVec* vec)
+      void addAdjointResProducts(TACSBVec **adjoint, int numAdjoint,
+                                 TacsScalar *dvSens, int num_dvs)
 
       # Test routines
       void testElement(int elemNum, int print_level)
       void testConstitutive(int elemNum, int print_level)
       void testFunction(TACSFunction *func, int num_dvs,
                         double dh)
-
-
-      # MPI communicator
-      MPI_Comm getMPIComm()
-
-      # Finalize the mesh - no further elements or nodes may be added
-      # following this call
-      void finalize()
+                        
+      # Set the number of threads
+      void setNumThreads(int t)
 
 cdef class Assembler:
    cdef TACSAssembler *ptr

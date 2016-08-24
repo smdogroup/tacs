@@ -1752,7 +1752,6 @@ void BCSRMat::addRowValues( int row, int ncol, const int *col,
 
     for ( int j = 0; j < ncol; j++ ){      
       int c = col[j];
-
       if (c < 0){ // Skip entries that are negative
 	continue;
       }
@@ -1976,21 +1975,12 @@ out of range [0,%d)\n", c, ncols);
 /*!
   Zero the row values. Possibly set the diagonal elements to unity.
   
-  row   == the row of the matrix
-  nvars == the number of variables
-  vnums == the variables (within the block) to zero
-  ident == a flag to indicate whether to set the diagonal 
-  element to the identity  
+  row:      the row of the matrix
+  vars:     an integer containing binary variables
+  ident:    flag to indicate whether to set the diagonal to 1
 */
-void BCSRMat::zeroRow( int row, int nvars, const int *vnums, int ident ){
+void BCSRMat::zeroRow( int row, int vars, int ident ){
   if (row >= 0 && row < data->nrows){
-    for ( int k = 0; k < nvars; k++ ){
-      if (vnums[k] < 0 || vnums[k] >= data->bsize){
-	fprintf(stderr, "BCSRMat error: variable %d \
-out of range\n", vnums[k]);
-      }
-    }
-
     const int *rowp = data->rowp;
     const int *cols = data->cols;
     const int bsize = data->bsize;
@@ -1999,18 +1989,19 @@ out of range\n", vnums[k]);
     int end = rowp[row+1];
     for ( int j = rowp[row]; j < end; j++ ){
       TacsScalar *a = &(data->A[b2*j]);
-      
-      for ( int i = 0; i < nvars; i++ ){
-	int ii = vnums[i];
-	for ( int jj = 0; jj < bsize; jj++ ){
-	  a[bsize*ii + jj] = 0.0;
-	}
+      for ( int ii = 0; ii < bsize; ii++ ){
+        if (vars & (1 << ii)){
+          for ( int jj = 0; jj < bsize; jj++ ){
+            a[bsize*ii + jj] = 0.0;
+          }
+        }
       }
       if (ident && row == cols[j]){
-	for ( int i = 0; i < nvars; i++ ){
-	  int ii = vnums[i];
-	  a[(bsize+1)*ii] = 1.0;
-	}
+        for ( int ii = 0; ii < bsize; ii++ ){
+          if (vars & (1 << ii)){
+            a[(bsize+1)*ii] = 1.0;
+          }
+        }
       }
     }
   }
@@ -2591,15 +2582,14 @@ int BCSRMat::isEqual( BCSRMat * mat, double tol ){
   
   TacsScalar * a = new TacsScalar[ bsize*nrows ];
   TacsScalar * b = new TacsScalar[ bsize*nrows ];
-  
   TacsScalar * x = new TacsScalar[ bsize*ncols ];
 
   for ( int i = 0; i < bsize*ncols; i++ ){
     x[i] = (2.0*rand())/(RAND_MAX - 1.0) - 1.0;
   }
 
-  mat->mult( x, a );
-  mult( x, b );
+  mat->mult(x, a);
+  mult(x, b);
 
   TacsScalar norm = 0.0;
   for ( int i = 0; i < bsize*nrows; i++ ){

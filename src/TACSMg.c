@@ -45,9 +45,9 @@ not make any sense!\n");
   iters = new int[ nlevels ];    
 
   // The solution, residual and right-hand-side at each iteration
-  x = new BVec*[ nlevels ];
-  b = new BVec*[ nlevels ];
-  r = new BVec*[ nlevels ];
+  x = new TACSBVec*[ nlevels ];
+  b = new TACSBVec*[ nlevels ];
+  r = new TACSBVec*[ nlevels ];
 
   // Initialie the data in the arrays
   for ( int i = 0; i < nlevels; i++ ){ 
@@ -62,8 +62,8 @@ not make any sense!\n");
   mat = new TACSMat*[ nlevels-1 ];
  
   // should re-assemble this matrix
-  restrct = new BVecInterp*[ nlevels-1 ];
-  interp = new BVecInterp*[ nlevels-1 ];
+  restrct = new TACSBVecInterp*[ nlevels-1 ];
+  interp = new TACSBVecInterp*[ nlevels-1 ];
   pc = new TACSPc*[ nlevels-1 ]; 
 
   for ( int i = 0; i < nlevels-1; i++ ){
@@ -126,8 +126,8 @@ TACSMg::~TACSMg(){
   interp:    the interpolation operator
   iters:     the number of iterations to take at this level
 */
-void TACSMg::setLevel( int level, TACSAssembler * _tacs,
-		       BVecInterp * _restrct, BVecInterp * _interp, 
+void TACSMg::setLevel( int level, TACSAssembler *_tacs,
+		       TACSBVecInterp *_restrct, TACSBVecInterp *_interp, 
 		       int _iters ){
   tacs[level] = _tacs;
   tacs[level]->incref();
@@ -193,7 +193,7 @@ void TACSMg::setLevel( int level, TACSAssembler * _tacs,
   input:
   vec:      the input vector of state variables
 */
-void TACSMg::setVariables( BVec * vec ){
+void TACSMg::setVariables( TACSBVec *vec ){
   tacs[0]->setVariables(vec);
 
   for ( int i = 0; i < nlevels-1; i++ ){
@@ -237,7 +237,7 @@ void TACSMg::factor(){
   Set up the multi-grid data by computing the matrices at each
   multi-grid level within the problem. 
 */
-void TACSMg::assembleJacobian( BVec *res, 
+void TACSMg::assembleJacobian( TACSBVec *res, 
                                double alpha, double beta, double gamma,
                                MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
@@ -286,7 +286,7 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
 
   Return NULL if no such matrix exists.
 */
-TACSMat * TACSMg::getMat( int level ){
+TACSMat *TACSMg::getMat( int level ){
   if (level >= 0 && level < nlevels-1){
     return mat[level];
   }
@@ -297,7 +297,7 @@ TACSMat * TACSMg::getMat( int level ){
 /*
   Set the monitor to use internally for printing out convergence data.
 */
-void TACSMg::setMonitor( KSMPrint * _monitor ){
+void TACSMg::setMonitor( KSMPrint *_monitor ){
   if (_monitor){
     _monitor->incref();
   }
@@ -310,7 +310,7 @@ void TACSMg::setMonitor( KSMPrint * _monitor ){
 /*
   Repeatedly apply the multi-grid method until the problem is solved
 */
-void TACSMg::solve( BVec * bvec, BVec * xvec, int max_iters,
+void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
 		    double rtol, double atol ){
   b[0] = bvec; // Set the RHS at the finest level
   x[0] = xvec; // Set the solution at the finest level
@@ -339,16 +339,16 @@ void TACSMg::solve( BVec * bvec, BVec * xvec, int max_iters,
 
   Assume an initial guess of zero. 
 */
-void TACSMg::applyFactor( TACSVec * bvec, TACSVec * xvec ){
-  b[0] = dynamic_cast<BVec*>(bvec); // Set the RHS at the finest level
-  x[0] = dynamic_cast<BVec*>(xvec); // Set the solution at the finest level
+void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
+  b[0] = dynamic_cast<TACSBVec*>(bvec); // Set the RHS at the finest level
+  x[0] = dynamic_cast<TACSBVec*>(xvec); // Set the solution at the finest level
 
   if (b[0] && x[0]){
     x[0]->zeroEntries();
     applyMg(0);
   }
   else {
-    fprintf(stderr, "TACSMg type error: Input/output must be BVec\n");
+    fprintf(stderr, "TACSMg type error: Input/output must be TACSBVec\n");
   }
   
   b[0] = NULL;
