@@ -1,74 +1,101 @@
 #include "InducedFailure.h"
+#include "TACSAssembler.h"
 
 /*
   Copyright (c) 2012 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
 */
-const char * InducedFailure::funcName = "InducedFailure";
 
 /*
-  Initialize the InducedFailure class properties
+  The context for the TACSInducedFailure function
+*/
+class InducedFailureCtx : public TACSFunctionCtx {
+ public:
+  InducedFailureCtx( TACSFunction *ks,
+                     int maxStrains,
+                     int maxNodes ){
+    max_fail = -1e20;
+    fail_numer = 0.0;
+    fail_denom = 0.0;
+
+    // Allocate the working array
+    work = new TacsScalar[2*maxStrains + 3*maxNodes];
+    
+    // Set the pointers into the work array
+    strain = &work[0];
+    failSens = &work[maxStrains];
+    hXptSens = &work[2*maxStrains];
+  }
+  ~InducedFailureCtx(){
+    delete [] work;
+  }
+
+  // Data to be used for the function computation
+  TacsScalar max_fail;
+  TacsScalar fail_numer;
+  TacsScalar fail_denom;
+  TacsScalar *strain;
+  TacsScalar *failSens;
+  TacsScalar *hXptSens;
+  TacsScalar *work;
+};
+
+/*
+  Initialize the TACSInducedFailure class properties
 
   Evaluate the Induced only on the elements specified
 */
-InducedFailure::InducedFailure( TACSAssembler * _tacs, 
-				int _elementNums[], 
-				int _numElements, double _P ):
-TACSFunction(_tacs, _elementNums, _numElements, _numElements, 2){ 
+TACSInducedFailure::TACSInducedFailure( TACSAssembler *_tacs, 
+                                        double _P,
+                                        InducedConstitutiveFunction func ):
+TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
+             TACSFunction::TWO_STAGE, 0){
+  // Set the penalization information
   P = _P;
   norm_type = EXPONENTIAL;
   load_factor = 1.0;
 
-  max_nodes = 0;
-  max_stresses = 0;
+  // Set the constitutive evaluation type
+  con_type = func;
 
+  // Get the maximum size of the elements from TACS
+  max_nodes = _tacs->getMaxElementNodes();
+  max_stresses = _tacs->getMaxElementStrains();
+
+  // Initialize values
   max_fail = 0.0;
   fail_numer = 0.0;
   fail_denom = 0.0;
-  func_val = 0.0;
-}
-
-/*
-  Evaluate the P-norm over the entire domain
-*/
-InducedFailure::InducedFailure( TACSAssembler * _tacs, double _P ):
-TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN, 0, 2){ 
-  P = _P;
-  norm_type = EXPONENTIAL;
-  load_factor = 1.0;
-
-  max_nodes = 0;
-  max_stresses = 0;
-
-  max_fail = 0.0;
-  fail_numer = 0.0;
-  fail_denom = 0.0;
-  func_val = 0.0;
 }
 
 /*
   Delete all the allocated data
 */
-InducedFailure::~InducedFailure(){}
+TACSInducedFailure::~TACSInducedFailure(){}
+
+/*
+  The name of the function class
+*/
+const char * TACSInducedFailure::funcName = "TACSInducedFailure";
 
 /*
   Set the value of P
 */
-void InducedFailure::setParameter( double _P ){
+void TACSInducedFailure::setParameter( double _P ){
   P = _P;
 }
 
 /*
   Retrieve the value of P
 */
-double InducedFailure::getParameter(){
+double TACSInducedFailure::getParameter(){
   return P;
 }
 
 /*
   Set the type of p-norm to use
 */
-void InducedFailure::setInducedType( enum InducedNormType type ){
+void TACSInducedFailure::setInducedType( enum InducedNormType type ){
   norm_type = type;
 }
 
@@ -76,196 +103,192 @@ void InducedFailure::setInducedType( enum InducedNormType type ){
   Set the load factor - load factor of applied before testing the
   failure criterion 
 */
-void InducedFailure::setLoadFactor( TacsScalar _load_factor ){
+void TACSInducedFailure::setLoadFactor( TacsScalar _load_factor ){
   if (_load_factor >= 1.0){ 
     load_factor = _load_factor;
   }
 }
 
 /*
-  Retrieve the function name
+  Retrieve the function value
 */
-const char * InducedFailure::functionName(){ return funcName; }
-
-/*
-  Perform the pre-initialization before each function in the domain is
-  called with elementWiseInitialize
-*/
-void InducedFailure::preInitialize(){
-  this->initialized(); // No further initialization necessary
+TacsScalar TACSInducedFailure::getFunctionValue(){
+  // Compute the final value of the function on all processors
+  return max_fail*fail_numer/fail_denom;
 }
 
 /*
-  Determine the maximum number of stresses and maximum number of nodes
-  in any element 
+  Retrieve the function name
 */
-void InducedFailure::elementWiseInitialize( TACSElement * element, int elemNum ){
-  int numStresses = element->numStresses();
-  if ( numStresses > max_stresses ){
-    max_stresses = numStresses;
-  }
-
-  int numNodes = element->numNodes();
-  if ( numNodes > max_nodes ){
-    max_nodes = numNodes;
-  }
-}  
+const char *TACSInducedFailure::functionName(){ return funcName; }
 
 /*
-  Allocate data required to evaluate the function and its derivatives
+  Allocate and return the function-specific context
 */
-void InducedFailure::postInitialize(){}
+TACSFunctionCtx *TACSInducedFailure::createFunctionCtx(){
+  return new InducedFailureCtx(this, max_stresses, max_nodes);
+}
 
 /*
-  Perform pre-evaluation operations
-  
-  Iter denotes whether this is the first time through evaluating the
-  function or the second time through.
+  Initialize the internal values stored within the KS function
 */
-void InducedFailure::preEval( const int iter ){
-  if (iter == 0){
+void TACSInducedFailure::initEvaluation( EvaluationType ftype ){
+  if (ftype == TACSFunction::INITIALIZE){
     max_fail = -1e20;
-    func_val = 0.0;
+  }
+  else if (ftype == TACSFunction::INTEGRATE){
     fail_numer = 0.0;
     fail_denom = 0.0;
   }
 }
 
 /*
-  Determine the size of the work + iwork arrays
+  Reduce the function values across all MPI processes
 */
-void InducedFailure::getEvalWorkSizes( int * iwork, int * work ){
-  *iwork = 0;
-  *work = 3 + max_stresses;
+void TACSInducedFailure::finalEvaluation( EvaluationType ftype ){
+  if (ftype == TACSFunction::INITIALIZE){
+    // Distribute the values of the KS function computed on this domain    
+    TacsScalar temp = max_fail;
+    MPI_Allreduce(&temp, &max_fail, 1, TACS_MPI_TYPE, 
+                  TACS_MPI_MAX, tacs->getMPIComm());
+  }
+  else if (ftype == TACSFunction::INTEGRATE){
+    // Find the sum of the ks contributions from all processes
+    TacsScalar in[2], out[2];
+    in[0] = fail_numer;
+    in[1] = fail_denom;
+
+    MPI_Allreduce(in, out, 2, TACS_MPI_TYPE, MPI_SUM, tacs->getMPIComm());
+
+    fail_numer = out[0];
+    fail_denom = out[1];
+  }
 }
 
 /*
-  Initialize the components of the work array
-
-  The content of these buffers consist of the following:
-  work[0]: the maximum pointwise failure value
-  work[1]: the integral of (f, g(f, P))
-  work[2]: the integral of g(f, P)
-
-  g(f, P) = f^{P}, or exp(P*f)
+  Perform the element-wise evaluation of the TACSInducedFailure
+  function.
 */
-void InducedFailure::preEvalThread( const int iter, 
-				    int * iwork, TacsScalar * work ){
-  work[0] = -1e20; // Initialize the maximum failure function value
-  work[1] = 0.0; 
-  work[2] = 0.0;
-}
+void TACSInducedFailure::elementWiseEval( EvaluationType ftype,
+                                          TACSElement *element, 
+                                          int elemNum,
+                                          const TacsScalar Xpts[], 
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[], 
+                                          const TacsScalar ddvars[],
+                                          TACSFunctionCtx *fctx ){
+  InducedFailureCtx *ctx = dynamic_cast<InducedFailureCtx*>(fctx);
 
-/*
-  Perform the element-wise evaluation of the InducedFailure function.
-
-  The content of these buffers consist of the following:
-  work[0]: the maximum pointwise failure value
-  work[1]: the integral of exp(ks_weight*(f - max{f}))
-*/
-void InducedFailure::elementWiseEval( const int iter,
-				      TACSElement * element, int elemNum,
-				      const TacsScalar Xpts[],
-				      const TacsScalar vars[],
-				      int * iwork, TacsScalar * work ){
-  // Retrieve the number of stress components for this element
-  int numStresses = element->numStresses();
-
-  // Get the number of quadrature points for this element
-  int numGauss = element->getNumGaussPts();
-
-  // Get the constitutive object for this element
-  TACSConstitutive *constitutive = element->getConstitutive();
- 
-  // If the element does not define a constitutive class, 
-  // return without adding any contribution to the function
-  if (constitutive){
-    // Set pointers into the buffer
-    TacsScalar * strain = &work[3];
-
-    if (iter == 0){    
-      // With the first iteration, find the maximum over the domain
-      for ( int i = 0; i < numGauss; i++ ){
-        // Get the Gauss points one at a time
-        double pt[3];
-        element->getGaussWtsPts(i, pt);
-
-        // Get the strain
-        element->getStrain(strain, pt, Xpts, vars);
-
-        for ( int k = 0; k < numStresses; k++ ){
-          strain[k] *= load_factor;
-        }      
+  if (ctx){
+    // Retrieve the number of stress components for this element
+    int numStresses = element->numStresses();
+    
+    // Get the number of quadrature points for this element
+    int numGauss = element->getNumGaussPts();
+    
+    // Get the constitutive object for this element
+    TACSConstitutive *constitutive = element->getConstitutive();
+    
+    // If the element does not define a constitutive class, 
+    // return without adding any contribution to the function
+    if (constitutive){
+      // Set pointers into the buffer
+      TacsScalar *strain = ctx->strain;
       
-        // Determine the failure criteria
-        TacsScalar fail;
-        constitutive->failure(pt, strain, &fail);
+      if (ftype == TACSFunction::INITIALIZE){
+        // With the first iteration, find the maximum over the domain
+        for ( int i = 0; i < numGauss; i++ ){
+          // Get the Gauss points one at a time
+          double pt[3];
+          element->getGaussWtsPts(i, pt);
+          
+          // Get the strain
+          element->getStrain(strain, pt, Xpts, vars);
 
-        // Set the maximum failure load
-        if (fail > work[0]){
-          work[0] = fail;
+          for ( int k = 0; k < numStresses; k++ ){
+            strain[k] *= load_factor;
+          }      
+          
+          // Determine the failure criteria
+          TacsScalar fail;
+          if (con_type == FAILURE){
+            constitutive->failure(pt, strain, &fail);
+          }
+          else {
+            constitutive->buckling(strain, &fail);
+          }
+
+          // Set the maximum failure load
+          if (fail > ctx->max_fail){
+            ctx->max_fail = fail;
+          }
         }
       }
-    }
-    else {
-      for ( int i = 0; i < numGauss; i++ ){
-        // Get the Gauss points one at a time
-        double pt[3];
-        double weight = element->getGaussWtsPts(i, pt);
+      else {
+        for ( int i = 0; i < numGauss; i++ ){
+          // Get the Gauss points one at a time
+          double pt[3];
+          double weight = element->getGaussWtsPts(i, pt);
+          
+          // Get the determinant of the Jacobian
+          TacsScalar h = element->getDetJacobian(pt, Xpts);
+          
+          // Get the strain
+          element->getStrain(strain, pt, Xpts, vars);
+          
+          for ( int k = 0; k < numStresses; k++ ){
+            strain[k] *= load_factor;
+          }
 
-        // Get the determinant of the Jacobian
-        TacsScalar h = element->getDetJacobian(pt, Xpts);
+          // Determine the failure criteria again
+          TacsScalar fail;
+          if (con_type == FAILURE){
+            constitutive->failure(pt, strain, &fail);
+          }
+          else {
+            constitutive->buckling(strain, &fail);
+          }
 
-        // Get the strain
-        element->getStrain(strain, pt, Xpts, vars);
-
-        for ( int k = 0; k < numStresses; k++ ){
-          strain[k] *= load_factor;
-        }
-
-        // Determine the failure criteria again
-        TacsScalar fail;
-        constitutive->failure(pt, strain, &fail);
-
-        if (norm_type == POWER){
-          TacsScalar fp = pow(fabs(fail/max_fail), P);
-          work[1] += weight*h*(fail/max_fail)*fp;
-          work[2] += weight*h*fp;
-        }
-        else if (norm_type == DISCRETE_POWER){
-          TacsScalar fp = pow(fabs(fail/max_fail), P);
-          work[1] += (fail/max_fail)*fp;
-          work[2] += fp;
-        }
-        else if (norm_type == POWER_SQUARED){
-          TacsScalar fp = pow(fabs(fail/max_fail), P);
-          work[1] += weight*h*(fail*fail/max_fail)*fp;
-          work[2] += weight*h*fp;
-        }
-        else if (norm_type == DISCRETE_POWER_SQUARED){
-          TacsScalar fp = pow(fabs(fail/max_fail), P);
-          work[1] += (fail*fail/max_fail)*fp;
-          work[2] += fp;
-        }
-        else if (norm_type == EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - max_fail));
-          work[1] += weight*h*(fail/max_fail)*efp;
-          work[2] += weight*h*efp;
-        }
-        else if (norm_type == DISCRETE_EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - max_fail));
-          work[1] += (fail/max_fail)*efp;
-          work[2] += efp;
-        }
-        else if (norm_type == EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - max_fail));
-          work[1] += weight*h*(fail*fail/max_fail)*efp;
-          work[2] += weight*h*efp;
-        }
-        else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - max_fail));
-          work[1] += (fail*fail/max_fail)*efp;
-          work[2] += efp;
+          if (norm_type == POWER){
+            TacsScalar fp = pow(fabs(fail/max_fail), P);
+            ctx->fail_numer += weight*h*(fail/max_fail)*fp;
+            ctx->fail_denom += weight*h*fp;
+          }
+          else if (norm_type == DISCRETE_POWER){
+            TacsScalar fp = pow(fabs(fail/max_fail), P);
+            ctx->fail_numer += (fail/max_fail)*fp;
+            ctx->fail_denom += fp;
+          }
+          else if (norm_type == POWER_SQUARED){
+            TacsScalar fp = pow(fabs(fail/max_fail), P);
+            ctx->fail_numer += weight*h*(fail*fail/max_fail)*fp;
+            ctx->fail_denom += weight*h*fp;
+          }
+          else if (norm_type == DISCRETE_POWER_SQUARED){
+            TacsScalar fp = pow(fabs(fail/max_fail), P);
+            ctx->fail_numer += (fail*fail/max_fail)*fp;
+            ctx->fail_denom += fp;
+          }
+          else if (norm_type == EXPONENTIAL){
+            TacsScalar efp = exp(P*(fail - max_fail));
+            ctx->fail_numer += weight*h*(fail/max_fail)*efp;
+            ctx->fail_denom += weight*h*efp;
+          }
+          else if (norm_type == DISCRETE_EXPONENTIAL){
+            TacsScalar efp = exp(P*(fail - max_fail));
+            ctx->fail_numer += (fail/max_fail)*efp;
+            ctx->fail_denom += efp;
+          }
+          else if (norm_type == EXPONENTIAL_SQUARED){
+            TacsScalar efp = exp(P*(fail - max_fail));
+            ctx->fail_numer += weight*h*(fail*fail/max_fail)*efp;
+            ctx->fail_denom += weight*h*efp;
+          }
+          else if (norm_type == DISCRETE_EXPONENTIAL_SQUARED){
+            TacsScalar efp = exp(P*(fail - max_fail));
+            ctx->fail_numer += (fail*fail/max_fail)*efp;
+            ctx->fail_denom += efp;
+          }
         }
       }
     }
@@ -276,89 +299,59 @@ void InducedFailure::elementWiseEval( const int iter,
   For each thread used to evaluate the function, call the 
   post-evaluation code once.
 */
-void InducedFailure::postEvalThread( const int iter,
-				     int * iwork, 
-				     TacsScalar * work ){
-  if (iter == 0){
-    if (work[0] > max_fail){
-      max_fail = work[0];
+void TACSInducedFailure::finalThread( const double tcoef,
+                                      EvaluationType ftype,
+                                      TACSFunctionCtx *fctx ){
+  InducedFailureCtx *ctx = dynamic_cast<InducedFailureCtx*>(fctx);
+
+  if (ctx){
+    if (ftype == TACSFunction::INITIALIZE){
+      if (ctx->max_fail > max_fail){
+        max_fail = ctx->max_fail;
+      }
+    }
+    else if (ftype == TACSFunction::INTEGRATE){
+      fail_numer += ctx->fail_numer;
+      fail_denom += ctx->fail_denom;
     }
   }
-  else if (iter == 1){
-    fail_numer += work[1];
-    fail_denom += work[2];
-  }
-}
-
-/*
-  Reduce the function values across all MPI processes
-*/
-void InducedFailure::postEval( const int iter ){
-  if (iter == 0){
-    // Distribute the values of the KS function computed on this domain    
-    TacsScalar temp = max_fail;
-    MPI_Allreduce(&temp, &max_fail, 1, TACS_MPI_TYPE, 
-                  TACS_MPI_MAX, tacs->getMPIComm());
-  }
-  else if (iter == 1){
-    // Find the sum of the ks contributions from all processes
-    TacsScalar in[2], out[2];
-    in[0] = fail_numer;
-    in[1] = fail_denom;
-
-    MPI_Allreduce(in, out, 2, TACS_MPI_TYPE, MPI_SUM, tacs->getMPIComm());
-
-    fail_numer = out[0];
-    fail_denom = out[1];
-
-    // Compute the function value
-    func_val = max_fail*fail_numer/fail_denom;
-  }
-}
-
-/*
-  Get the function value
-*/
-TacsScalar InducedFailure::getValue(){
-  return func_val;
-}
-
-/*
-  Return the size of the buffer for the state variable sensitivities
-*/
-int InducedFailure::getSVSensWorkSize(){
-  return 2*max_stresses;
 }
 
 /*
   Determine the derivative of the P-norm function w.r.t. the state
   variables over this element.
 */
-void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens, 
-					TACSElement * element, int elemNum,
-					const TacsScalar Xpts[],
-					const TacsScalar vars[],
-					TacsScalar * work ){
-  // Get the number of stress components and total number of variables
-  // for this element.
-  int numStresses = element->numStresses();
-  int numVars = element->numVariables();
-
-  // Get the quadrature scheme information
-  int numGauss = element->getNumGaussPts();
+void TACSInducedFailure::getElementSVSens( double alpha, double beta, 
+                                           double gamma, 
+                                           TacsScalar *elemSVSens, 
+                                           TACSElement *element, 
+                                           int elemNum,
+                                           const TacsScalar Xpts[], 
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[], 
+                                           const TacsScalar ddvars[],
+                                           TACSFunctionCtx *fctx ){
+  InducedFailureCtx *ctx = dynamic_cast<InducedFailureCtx*>(fctx);
 
   // Get the constitutive object
   TACSConstitutive *constitutive = element->getConstitutive();
-  
-  // Zero the derivative w.r.t. the state variables
+
+  // Zero the derivative of the function w.r.t. the element state
+  // variables
+  int numVars = element->numVariables();
   memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
 
-  // If the element does not define a constitutive class, 
-  // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    // Get the number of stress components and total number of
+    // variables for this element.
+    int numStresses = element->numStresses();
+
+    // Get the quadrature scheme information
+    int numGauss = element->getNumGaussPts();
+
     // Set pointers into the buffer
-    TacsScalar * strain = &work[0];
-    TacsScalar * failSens = &work[max_stresses];
+    TacsScalar *strain = ctx->strain;
+    TacsScalar *failSens = ctx->failSens;
 
     for ( int i = 0; i < numGauss; i++ ){
       double pt[3];
@@ -366,43 +359,46 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
         
       // Get the determinant of the Jacobian
       TacsScalar h = element->getDetJacobian(pt, Xpts);
-
+        
       // Get the strain
       element->getStrain(strain, pt, Xpts, vars);
-            
+        
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= load_factor;      
       }
-
-      // Determine the strain failure criteria
+        
       TacsScalar fail;
-      constitutive->failure(pt, strain, &fail);
-    
-      // Determine the sensitivity of the failure criteria to the 
-      // design variables and stresses
-      constitutive->failureStrainSens(pt, strain, failSens);
-    
-      // Compute the derivative of the induced aggregation with respect
-      // to the failure function
+      if (con_type == FAILURE){
+        // Evaluate the failure criter and its derivative
+        constitutive->failure(pt, strain, &fail);
+        constitutive->failureStrainSens(pt, strain, failSens);
+      }
+      else {
+        constitutive->buckling(strain, &fail);
+        constitutive->bucklingStrainSens(strain, failSens);
+      }
+
+      // Compute the derivative of the induced aggregation with
+      // respect to the failure function
       TacsScalar s = 0.0;
       if (norm_type == POWER){
         TacsScalar g = fail/max_fail;
         TacsScalar fp = pow(fabs(g), P);
-
+          
         s = weight*h*((1.0 + P)*g*fail_denom - 
                       P*fail_numer)*fp/(g*fail_denom*fail_denom);    
       }
       else if (norm_type == DISCRETE_POWER){
         TacsScalar g = fail/max_fail;
         TacsScalar fp = pow(fabs(g), P);
-
+          
         s = ((1.0 + P)*g*fail_denom - 
              P*fail_numer)*fp/(g*fail_denom*fail_denom);    
       }
       else if (norm_type == POWER_SQUARED){
         TacsScalar g = fail/max_fail;
         TacsScalar fp = pow(fabs(g), P);
-
+          
         s = weight*h*((2.0 + P)*fail*g*fail_denom - 
                       P*fail_numer)*fp/(g*fail_denom*fail_denom);    
       }
@@ -439,57 +435,55 @@ void InducedFailure::elementWiseSVSens( TacsScalar * elemSVSens,
       }
 
       // Determine the sensitivity of the state variables to SV
-      element->addStrainSVSens(elemSVSens, pt, load_factor*s,
+      element->addStrainSVSens(elemSVSens, pt, alpha*load_factor*s,
                                failSens, Xpts, vars);
     }
   }
 }
 
 /*
-  Return the size of the work array for XptSens function
+  Determine the derivative of the function with respect to the element
+  nodal locations 
 */
-int InducedFailure::getXptSensWorkSize(){
-  return 2*max_stresses + 3*max_nodes;
-}
-
-/*
-  Determine the derivative of the function with respect to 
-  the element nodal locations
-*/
-void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
-					 TACSElement * element, int elemNum,
-					 const TacsScalar Xpts[],
-					 const TacsScalar vars[],
-					 TacsScalar * work ){
-  // Get the number of stress components, the total number of
-  // variables, and the total number of nodes
-  int numStresses = element->numStresses();
-  int numVars = element->numVariables();
-  int numNodes = element->numNodes();
-
-  // Get the quadrature scheme information
-  int numGauss = element->getNumGaussPts();
+void TACSInducedFailure::getElementXptSens( const double tcoef, 
+                                            TacsScalar fXptSens[],
+                                            TACSElement *element, 
+                                            int elemNum,
+                                            const TacsScalar Xpts[], 
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[], 
+                                            const TacsScalar ddvars[],
+                                            TACSFunctionCtx *fctx ){
+  InducedFailureCtx *ctx = dynamic_cast<InducedFailureCtx*>(fctx);
 
   // Get the constitutive object for this element
   TACSConstitutive *constitutive = element->getConstitutive();
 
   // Zero the sensitivity w.r.t. the nodes
+  int numNodes = element->numNodes();
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
 
-  // If the element does not define a constitutive class, 
-  // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    // Get the number of stress components, the total number of
+    // variables, and the total number of nodes
+    int numStresses = element->numStresses();
+    int numVars = element->numVariables();
+
+    // Get the quadrature scheme information
+    int numGauss = element->getNumGaussPts();
+    
     // Set pointers into the buffer
-    TacsScalar * strain = &work[0];
-    TacsScalar * failSens = &work[max_stresses];
-    TacsScalar * hXptSens = &work[2*max_stresses];
+    TacsScalar *strain = ctx->strain;
+    TacsScalar *failSens = ctx->failSens;
+    TacsScalar *hXptSens = ctx->hXptSens;
 
     for ( int i = 0; i < numGauss; i++ ){
       // Get the gauss point
       double pt[3];
       double weight = element->getGaussWtsPts(i, pt);
 
-      // Get the derivative of the determinant of the Jacobian w.r.t. the nodes
+      // Get the derivative of the determinant of the Jacobian
+      // w.r.t. the nodes
       TacsScalar h = element->getDetJacobianXptSens(hXptSens, pt, Xpts);
 
       // Get the strain
@@ -501,11 +495,14 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
 
       // Determine the strain failure criteria
       TacsScalar fail; 
-      constitutive->failure(pt, strain, &fail);
-
-      // Determine the sensitivity of the failure criteria to 
-      // the design variables and stresses
-      constitutive->failureStrainSens(pt, strain, failSens);
+      if (con_type == FAILURE){
+        constitutive->failure(pt, strain, &fail);
+        constitutive->failureStrainSens(pt, strain, failSens);
+      }
+      else {
+        constitutive->buckling(strain, &fail);
+        constitutive->bucklingStrainSens(strain, failSens);
+      }
 
       // Compute the derivative of the induced aggregation with respect
       // to the failure function
@@ -576,8 +573,12 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
         sx = 0.0;
       }
 
-      // Add the contribution from the derivative of the determinant of the
-      // Jacobian w.r.t. the nodes
+      // Scale the scaling factors by the coefficient
+      sx *= tcoef;
+      s *= tcoef;
+
+      // Add the contribution from the derivative of the determinant
+      // of the Jacobian w.r.t. the nodes
       for ( int j = 0; j < 3*numNodes; j++ ){
         fXptSens[j] += sx*hXptSens[j];
       }
@@ -591,37 +592,35 @@ void InducedFailure::elementWiseXptSens( TacsScalar fXptSens[],
 }
 
 /*
-  Return the size of the maximum work array required for DVSens
+  Determine the derivative of the function with respect to the design
+  variables defined by the element - usually just the
+  constitutive/material design variables.  
 */
-int InducedFailure::getDVSensWorkSize(){
-  return max_stresses;
-}
-
-/*
-  Determine the derivative of the function with respect to 
-  the design variables defined by the element - usually just
-  the constitutive/material design variables.
-*/
-void InducedFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-					TACSElement * element, int elemNum,
-					const TacsScalar vars[],
-					const TacsScalar Xpts[],
-					TacsScalar * work ){ 
-  // Get the number of stress components, the total number of
-  // variables, and the total number of nodes
-  int numStresses = element->numStresses();
-
-  // Get the quadrature scheme information
-  int numGauss = element->getNumGaussPts();
+void TACSInducedFailure::addElementDVSens( const double tcoef, 
+                                           TacsScalar *fdvSens, int numDVs,
+                                           TACSElement *element, int elemNum,
+                                           const TacsScalar Xpts[], 
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[], 
+                                           const TacsScalar ddvars[],
+                                           TACSFunctionCtx *fctx ){
+  InducedFailureCtx *ctx = dynamic_cast<InducedFailureCtx*>(fctx);
 
   // Get the constitutive object for this element
   TACSConstitutive *constitutive = element->getConstitutive();
   
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    // Get the number of stress components, the total number of
+    // variables, and the total number of nodes
+    int numStresses = element->numStresses();
+    
+    // Get the quadrature scheme information
+    int numGauss = element->getNumGaussPts();
+    
     // Set pointers into the buffer
-    TacsScalar * strain = &work[0];
+    TacsScalar *strain = ctx->strain;
 
     for ( int i = 0; i < numGauss; i++ ){
       // Get the gauss point
@@ -639,8 +638,13 @@ void InducedFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
       }
 
       // Determine the strain failure criteria
-      TacsScalar fail; 
-      constitutive->failure(pt, strain, &fail);
+      TacsScalar fail;
+      if (con_type == FAILURE){
+        constitutive->failure(pt, strain, &fail);
+      }
+      else {
+        constitutive->buckling(strain, &fail);
+      }
 
       // Compute the derivative of the induced aggregation with
       // respect to the failure function
@@ -697,10 +701,18 @@ void InducedFailure::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
         s = (((2.0 + P*fail)*fail*fail_denom -
               P*max_fail*fail_numer)*efp)/(fail_denom*fail_denom);
       }
+      
+      // Scale the coefficient by the input
+      s *= tcoef;
 
-      // Add the contribution to the sensitivity of the failure load
-      constitutive->addFailureDVSens(pt, strain, s,
-                                     fdvSens, numDVs);
+      if (con_type == FAILURE){
+        // Add the contribution to the sensitivity of the failure load
+        constitutive->addFailureDVSens(pt, strain, s,
+                                       fdvSens, numDVs);
+      }
+      else {
+        constitutive->addBucklingDVSens(strain, s, fdvSens, numDVs);
+      }
     }
   }
 }

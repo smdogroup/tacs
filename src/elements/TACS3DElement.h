@@ -132,7 +132,8 @@ class TACS3DElement : public TACSElement {
 
   // Add the product of the adjoint with the derivative of the design variables
   // -------------------------------------------------------------------------- 
-  void addAdjResXptProduct( double time, TacsScalar fXptSens[],
+  void addAdjResXptProduct( double time, double scale, 
+                            TacsScalar fXptSens[],
 			    const TacsScalar psi[],
 			    const TacsScalar Xpts[],
 			    const TacsScalar vars[],
@@ -1374,7 +1375,8 @@ void TACS3DElement<NUM_NODES>::addAdjResProduct( double time,
   Xpts:    the element nodal locations
 */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::addAdjResXptProduct( double time, 
+void TACS3DElement<NUM_NODES>::addAdjResXptProduct( double time,
+                                                    double scale,
                                                     TacsScalar fXptSens[],
 						    const TacsScalar psi[],
 						    const TacsScalar Xpts[],

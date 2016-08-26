@@ -79,8 +79,8 @@ class TACSAssembler : public TACSObject {
   
   // Reorder the unknowns according to the specified reordering
   // ----------------------------------------------------------
-  void computeReordering( enum OrderingType order_type, 
-                          enum MatrixOrderingType mat_type );
+  void computeReordering( OrderingType order_type, 
+                          MatrixOrderingType mat_type );
 
   // Initialize the mesh
   // -------------------
@@ -157,8 +157,8 @@ class TACSAssembler : public TACSObject {
   // Residual and Jacobian assembly
   // ------------------------------
   void assembleRes( TACSBVec *residual );
-  void assembleJacobian( TACSBVec *residual, TACSMat *A,
-			 double alpha, double beta, double gamma,
+  void assembleJacobian( double alpha, double beta, double gamma,
+			 TACSBVec *residual, TACSMat *A,
 			 MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType,
 			TACSMat *A, MatrixOrientation matOr=NORMAL );
@@ -177,16 +177,28 @@ class TACSAssembler : public TACSObject {
   // -----------------------------------
   void evalFunctions( TACSFunction **funcs, int numFuncs,
                       TacsScalar *funcVals );
-  void addDVSens( TACSFunction **funcs, int numFuncs,
+
+  // Steady or unsteady derivative evaluation
+  // ----------------------------------------
+  void addDVSens( double coef, TACSFunction **funcs, int numFuncs,
                   TacsScalar *fdvSens, int numDVs );
-  void addSVSens( TACSFunction **funcs, int numFuncs,
+  void addSVSens( double alpha, double beta, double gamma,
+                  TACSFunction **funcs, int numFuncs,
                   TACSBVec **fuSens );
-  void addAdjointResProducts( TACSBVec **adjoint, int numAdjoints,
+  void addAdjointResProducts( double scale, 
+                              TACSBVec **adjoint, int numAdjoints,
                               TacsScalar *dvSens, int numDVs );
-  void addXptSens( TACSFunction **funcs, int numFuncs,
+  void addXptSens( double coef, TACSFunction **funcs, int numFuncs,
                    TACSBVec **fXptSens );
-  void addAdjointResXptSensProducts( TACSBVec **adjoint, int numAdjoints,
+  void addAdjointResXptSensProducts( double scale,
+                                     TACSBVec **adjoint, int numAdjoints,
                                      TACSBVec **adjXptSens );
+
+  // Advanced function interface - for time integration
+  // --------------------------------------------------
+  void integrateFunctions( double tcoef,
+                           TACSFunction::EvaluationType ftype,
+                           TACSFunction **funcs, int numFuncs );
 
   // Add the derivatives of inner products
   // -------------------------------------
@@ -217,13 +229,13 @@ class TACSAssembler : public TACSObject {
   // Get information about the output files this is used by TACSToFH5
   // ----------------------------------------------------------------
   int getNumComponents();
-  void getOutputNodeRange( enum ElementType elem_type, 
+  void getOutputNodeRange( ElementType elem_type, 
 			   int **_node_range );
-  void getOutputConnectivity( enum ElementType elem_type,
+  void getOutputConnectivity( ElementType elem_type,
                               int **_component_nums,
 			      int **_csr, int **_csr_range, 
 			      int **_node_range );
-  void getOutputData( enum ElementType elem_type,
+  void getOutputData( ElementType elem_type,
 		      unsigned int out_type,
 		      double *data, int nvals );
 
@@ -257,7 +269,7 @@ class TACSAssembler : public TACSObject {
 
   // Compute the reordering for a local matrix
   // -----------------------------------------
-  void computeMatReordering( enum OrderingType order_type, 
+  void computeMatReordering( OrderingType order_type, 
                              int nvars, int *rowp, int *cols,
                              int *perm, int *new_vars );
 
@@ -269,10 +281,6 @@ class TACSAssembler : public TACSObject {
 			    const TacsScalar *mat,
 			    int *item, TacsScalar *temp,
                             MatrixOrientation matOr );
-
-  // Initialize the functions in the list if they have not been 
-  // initialized already
-  void initializeFunctions( TACSFunction **functions, int numFuncs );
 
   // The static member functions that are used to p-thread TACSAssembler
   // operations... These are the most time-consuming operations.

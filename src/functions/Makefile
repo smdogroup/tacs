@@ -8,14 +8,12 @@ include ../../Makefile.in
 include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
-	KSFailure.o
+	KSFailure.o \
+	Compliance.o \
+	InducedFailure.o
+#	StructuralMass.o 
+#	KSDisplacement.o
 
-#	Compliance.o \
-	KSBuckling.o \
-	KSDisplacement.o \
-	InducedFailure.o \
-	InducedBuckling.o \
-	StructuralMass.o 
 
 DIR=${TACS_DIR}/src/functions
 

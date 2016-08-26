@@ -268,7 +268,8 @@ class TACSElement : public TACSOptObject {
 				 const TacsScalar vars[],
 				 const TacsScalar dvars[],
 				 const TacsScalar ddvars[] ){}
-  virtual void addAdjResXptProduct( double time, TacsScalar fXptSens[],
+  virtual void addAdjResXptProduct( double time, double scale,
+                                    TacsScalar fXptSens[],
 				    const TacsScalar psi[],
 				    const TacsScalar Xpts[],
 				    const TacsScalar vars[],

@@ -335,7 +335,7 @@ int main( int argc, char * argv[] ){
     This capability is required for the adjoint equations.
   */
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  tacs->assembleJacobian(res, kmat, alpha, beta, gamma);
+  tacs->assembleJacobian(alpha, beta, gamma, res, kmat);
 
   // This call copies then factors the matrix
   double t0 = MPI_Wtime();
@@ -424,7 +424,7 @@ int main( int argc, char * argv[] ){
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
   double ksRho = 100.0;
-  TACSFunction *func = new KSFailure(tacs, ksRho);
+  TACSFunction *func = new TACSKSFailure(tacs, ksRho);
   func->incref();
 
   // Allocate an array for the design variable values
@@ -453,7 +453,7 @@ int main( int argc, char * argv[] ){
   memset(dfdx, 0, numDesignVars*sizeof(TacsScalar));
 
   // Evaluate the partial derivative w.r.t. the design variables
-  tacs->addDVSens(&func, 1, dfdx, numDesignVars);
+  tacs->addDVSens(1.0, &func, 1, dfdx, numDesignVars);
 
   // Evaluate the partial derivative
   TACSBVec *dfdu = tacs->createVec();
@@ -464,14 +464,13 @@ int main( int argc, char * argv[] ){
   // zeroed on initialization, however, in general it is good practice
   // to zero them unless you're absolutely sure...
   dfdu->zeroEntries();
-  tacs->addSVSens(&func, 1, &dfdu);
+  tacs->addSVSens(alpha, beta, gamma, &func, 1, &dfdu);
 
   // Solve for the adjoint variables
   ksm->solve(dfdu, ans);
-  ans->scale(-1.0);
-
+  
   // Compute the total derivative
-  tacs->addAdjointResProducts(&ans, 1, dfdx, numDesignVars);
+  tacs->addAdjointResProducts(-1.0, &ans, 1, dfdx, numDesignVars);
 
   // Add up the contributions across all processors
   MPI_Allreduce(MPI_IN_PLACE, dfdx, numDesignVars, TACS_MPI_TYPE, 
@@ -494,7 +493,7 @@ int main( int argc, char * argv[] ){
 
   // Evaluate the problem again and compare the results
   tacs->zeroVariables();
-  tacs->assembleJacobian(res, kmat, alpha, beta, gamma);
+  tacs->assembleJacobian(alpha, beta, gamma, res, kmat);
 
   // Factor the preconditioner
   pc->factor();

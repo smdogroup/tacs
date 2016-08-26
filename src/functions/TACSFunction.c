@@ -1,4 +1,5 @@
 #include "TACSFunction.h"
+#include "TACSAssembler.h"
 #include "FElibrary.h"
 
 /*
@@ -15,53 +16,24 @@
   input:
   tacs:          the TACSAssembler object
   funcDomain:    the domain type
+  funcEval:      the type of evaluation to use
   maxElems:      the maximum number of elements expected
-  numIterations: iterations required to evaluate the function
 */
-TACSFunction::TACSFunction( TACSAssembler * _tacs, FunctionDomain _funcDomain, 
-			    int _maxElems, int _numIterations ): 
-numIterations(_numIterations){
+TACSFunction::TACSFunction( TACSAssembler *_tacs,
+                            DomainType _funcDomain,
+                            StageType _funcStages,
+                            int _maxElems ){
   tacs = _tacs;
   tacs->incref();
 
-  initFlag = 0;
-  funcDomain = _funcDomain;
+  // Set function domain and function evaluation type
+  funcDomain = _funcDomain;  
+  funcStageType = _funcStages;
   
+  // Set the domain elements
   maxElems = (_maxElems > 0 ? _maxElems : 0);
   numElems = 0;
   elemNums = NULL;
-}
-
-/*
-  Create the function base class with the specified element domain.
-  The element domain is indicated by the element numbers.
-
-  input:
-  tacs:          the TACSAssembler object
-  elemNums:      the element numbers
-  numElems:      the number of elements in elemNums
-  maxElems:      the maximum number of elements expected
-  numIterations: iterations required to evaluate the function
-*/ 
-TACSFunction::TACSFunction( TACSAssembler * _tacs, int _elemNums[], 
-			    int _numElems, int _maxElems, 
-			    int _numIterations ): 
-numIterations(_numIterations){
-  tacs = _tacs;
-  tacs->incref();
-
-  initFlag = 0;
-  funcDomain = SUB_DOMAIN;
-
-  maxElems = (_maxElems > _numElems ? _maxElems : _numElems);
-  numElems = _numElems;
-  elemNums = new int[ maxElems ];
-  
-  for ( int i = 0; i < numElems; i++ ){
-    elemNums[i] = _elemNums[i];
-  }
-
-  numElems = FElibrary::uniqueSort(elemNums, numElems);
 }
 
 /*
@@ -72,6 +44,20 @@ TACSFunction::~TACSFunction(){
     delete [] elemNums;
   }
   tacs->decref();
+}
+
+/*
+  Retrieve the type of domain specified by this object
+*/
+enum TACSFunction::DomainType TACSFunction::getDomainType(){
+  return funcDomain; 
+}
+
+/*
+  Retrieve the type of function
+*/
+enum TACSFunction::StageType TACSFunction::getStageType(){
+  return funcStageType;
 }
 
 /*
@@ -161,20 +147,6 @@ void TACSFunction::addDomain( int _elemNums[], int _numElems ){
   Retrieve the name of the function object
 */
 const char * TACSFunction::TACSObjectName(){ return this->functionName(); }
-
-/*
-  Retrieve the type of domain specified by this object
-*/
-enum TACSFunction::FunctionDomainType TACSFunction::getDomainType(){
-  return funcDomain; 
-}
-
-/*
-  Retrieve the type of function
-*/
-enum TACSFunction::FunctionEvaluationType TACSFunction::getFunctionEvalType(){
-  return funcEvalType;
-}
 
 /*
   Get the elements in the domain of this object

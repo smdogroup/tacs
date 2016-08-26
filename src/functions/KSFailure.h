@@ -37,16 +37,15 @@
   note: if no subdomain is specified, the calculation takes place over
   all the elements in the model 
 */
-class KSFailure : public TACSFunction {
+class TACSKSFailure : public TACSFunction {
  public:
   enum KSFailureType { DISCRETE, CONTINUOUS };
+  enum KSConstitutiveFunction { FAILURE, BUCKLING };
 
-  KSFailure( TACSAssembler * _tacs, 
-	     int _elementNums[], int _numElements, 
-	     double ksWeight, double alpha=1.0 );
-  KSFailure( TACSAssembler * _tacs, 
-	     double ksWeight, double alpha=1.0 );
-  ~KSFailure();
+  TACSKSFailure( TACSAssembler * _tacs, double ksWeight, 
+                 KSConstitutiveFunction func=FAILURE,
+                 double alpha=1.0 );
+  ~TACSKSFailure();
 
   // Retrieve the name of the function
   // ---------------------------------
@@ -59,58 +58,69 @@ class KSFailure : public TACSFunction {
   void setParameter( double _ksWeight );
   void setLoadFactor( TacsScalar _loadFactor );
 
-  // Functions for initialization
-  // ----------------------------
-  void preInitialize();
-  void elementWiseInitialize( TACSElement * element, int elemNum );
-  void postInitialize();
+  // Set the value of the failure offset for numerical stability
+  // -----------------------------------------------------------
+  void setMaxFailOffset( TacsScalar _maxFail ){
+    maxFail = _maxFail;
+  }
 
-  // Functions for evaluation
-  // ------------------------
-  void getEvalWorkSizes( int * iwork, int * work );
-  void preEval( const int iter );
-  void preEvalThread( const int iter, int * iwork, TacsScalar * work );
-  void elementWiseEval( const int iter, TACSElement * element, int elemNum,
-                        const TacsScalar Xpts[], 
-			const TacsScalar vars[],
-			int * iwork, TacsScalar * work );
-  void postEvalThread( const int iter, int * iwork, TacsScalar * work );
-  void postEval( const int iter );
+  // Create the function context for evaluation
+  // ------------------------------------------
+  TACSFunctionCtx *createFunctionCtx();
+
+  // Collective calls on the TACS MPI Comm
+  // -------------------------------------
+  void initEvaluation( EvaluationType ftype );
+  void finalEvaluation( EvaluationType ftype );
+
+  // Functions for integration over the structural domain on each thread
+  // -------------------------------------------------------------------
+  void initThread( double tcoef,
+                   EvaluationType ftype,
+                   TACSFunctionCtx *ctx );
+  void elementWiseEval( EvaluationType ftype,
+                        TACSElement *element, int elemNum,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TACSFunctionCtx *ctx );
+  void finalThread( double tcoef, 
+                    EvaluationType ftype,
+                    TACSFunctionCtx *ctx );
 
   // Return the value of the function
   // --------------------------------
-  TacsScalar getValue(){ return ksFail; }
+  TacsScalar getFunctionValue();
 
   // State variable sensitivities
   // ----------------------------
-  int getSVSensWorkSize();
-  void elementWiseSVSens( TacsScalar * elemSVSens, 
-                          TACSElement * element, int elemNum,
-                          const TacsScalar Xpts[],
-			  const TacsScalar vars[], 
-			  TacsScalar * work );
+  void getElementSVSens( double alpha, double beta, double gamma, 
+                         TacsScalar *elemSVSens, 
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx );
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  int getDVSensWorkSize();
-  void elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-                          TACSElement * element, int elemNum,
-                          const TacsScalar Xpts[],
-			  const TacsScalar vars[], 
-			  TacsScalar * work );
+  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx );
 
   // Nodal sensitivities
   // -------------------
-  int getXptSensWorkSize();
-  void elementWiseXptSens( TacsScalar fXptSens[],
-			   TACSElement * element, int elemNum, 
-			   const TacsScalar Xpts[], 
-			   const TacsScalar vars[],
-			   TacsScalar * work );
-  
+  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
+                          TACSElement *element, int elemNum,
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          const TacsScalar dvars[], const TacsScalar ddvars[],
+                          TACSFunctionCtx *ctx ); 
  private:
   // The type of aggregation to use
-  enum KSFailureType ksType;
+  KSFailureType ksType;
+
+  // The constitutive function to use
+  KSConstitutiveFunction conType;
 
   // The weight on the ks function value
   double ksWeight;
@@ -122,15 +132,14 @@ class KSFailure : public TACSFunction {
   TacsScalar loadFactor; 
 
   // The maximum number of nodes/stresses in any given element
-  int maxNumNodes, maxNumStresses;
+  int maxNumNodes, maxNumStrains;
 
   // The name of the function
-  static const char * funcName;
+  static const char *funcName;
 
   // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxFail)
   // and the value of the KS function
   TacsScalar ksFailSum, maxFail;
-  TacsScalar ksFail;
 };
 
 #endif 

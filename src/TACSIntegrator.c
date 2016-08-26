@@ -260,13 +260,13 @@ void TACSIntegrator::addTotalDerivative( double scale, TACSBVec **adjoint ) {
   TacsScalar *tmp = new TacsScalar[ num_design_vars*num_funcs ];
   // Add the partial derivative w.r.t. the design variables
   memset(tmp, 0, num_design_vars*num_funcs*sizeof(TacsScalar));
-  tacs->addDVSens(funcs, num_funcs, tmp, num_design_vars);
+  tacs->addDVSens(1.0, funcs, num_funcs, tmp, num_design_vars);
   for ( int m = 0; m < num_design_vars*num_funcs; m++ ){
     dfdx[m] += scale*tmp[m];
   }
 
   // Add the Adjoint-Residual partial derivative contributions
-  tacs->addAdjointResProducts(adjoint, num_funcs, tmp, num_design_vars);
+  tacs->addAdjointResProducts(1.0, adjoint, num_funcs, tmp, num_design_vars);
   memset(tmp, 0, num_design_vars*num_funcs*sizeof(TacsScalar));
   for ( int m = 0; m < num_design_vars*num_funcs; m++ ){
     dfdx[m] += scale*tmp[m];
@@ -323,8 +323,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     */
     // Assemble the Jacobian matrix once in five newton iterations
     if (niter % jac_comp_freq == 0){
-      tacs->assembleJacobian(res, mat, alpha, beta + delta, 
-                             gamma + delta, NORMAL);
+      tacs->assembleJacobian(alpha, beta + delta, gamma + delta,
+                             res, mat, NORMAL);
     }
     else {
       tacs->assembleRes(res);
@@ -1106,25 +1106,25 @@ void TACSBDFIntegrator::reverse( TacsScalar *dfdx,
     TacsScalar ftmp;
     tacs->evalFunctions(&func, 1, &ftmp);
     adj->zeroEntries();
-    tacs->addSVSens(&func, 1, &adj);
+    tacs->addSVSens(1.0, 0.0, 0.0, &func, 1, &adj);
     rhs[adj_index]->axpy(-1.0, adj);
 
     // Add the terms from the partial derivative w.r.t. 
     // the design variables
     memset(tmp, 0, num_design_vars*sizeof(TacsScalar));
-    tacs->addDVSens(&func, 1, tmp, num_design_vars);
+    tacs->addDVSens(1.0, &func, 1, tmp, num_design_vars);
     for ( int i = 0; i < num_design_vars; i++ ){
       dfdx[i] += h*tmp[i];
     }
 
     // Solve the adjoint
-    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+    tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
     pc->factor();
     ksm->solve(rhs[adj_index], adj);
 
     // Add the result from the total derivative
     memset(tmp, 0, num_design_vars*sizeof(TacsScalar));
-    tacs->addAdjointResProducts(&adj, 1, tmp, num_design_vars);
+    tacs->addAdjointResProducts(1.0, &adj, 1, tmp, num_design_vars);
     for ( int i = 0; i < num_design_vars; i++ ){
       dfdx[i] += h*tmp[i];
     }
@@ -1195,7 +1195,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
 
       // Add up the contribution from function state derivative to RHS
       psi[n]->zeroEntries();
-      tacs->addSVSens(&funcs[n], 1, &psi[n]);
+      tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &psi[n]);
 
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(1.0, psi[n]);
@@ -1203,7 +1203,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
     }
     
     // Setup the Jacobian
-    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+    tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
     // LU factorization of the Jacobian
     pc->factor();
@@ -1782,7 +1782,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 
         // Add up the contribution from its derivative to RHS (drdq.lam)
 	dfdq[i*num_funcs+n]->zeroEntries();
-        tacs->addSVSens(&funcs[n], 1, &dfdq[i*num_funcs+n]);
+        tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[i*num_funcs+n]);
 	rhs[i*num_funcs+n]->axpy(alpha, dfdq[i*num_funcs+n]);
 
         // Add up the contribution from PSI to this RHS
@@ -1801,7 +1801,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       }
      
       // Setup the Jacobian
-      tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+      tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
       // LU factorization of the Jacobian
       pc->factor();
@@ -2236,7 +2236,7 @@ void TACSABMIntegrator::marchBackwards( ){
 
       // Add up the contribution from function state derivative to RHS
       dfdq[n]->zeroEntries();
-      tacs->addSVSens(&funcs[n], 1, &dfdq[n]);
+      tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[n]);
 
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(alpha, dfdq[n]);
@@ -2245,7 +2245,7 @@ void TACSABMIntegrator::marchBackwards( ){
     }
 
     // Setup the Jacobian
-    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+    tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
     // LU factorization of the Jacobian
     pc->factor();
@@ -2460,7 +2460,7 @@ void TACSNBGIntegrator::marchBackwards( ){
 
       // Add up the contribution from function state derivative to RHS
       dfdq[n]->zeroEntries();
-      tacs->addSVSens(&funcs[n], 1, &dfdq[n]);
+      tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[n]);
 
       // Add the contributions to the current adjoint RHS
       rhs[adj_index*num_funcs+n]->axpy(alpha, dfdq[n]);
@@ -2468,7 +2468,7 @@ void TACSNBGIntegrator::marchBackwards( ){
     }
 
     // Setup the Jacobian
-    tacs->assembleJacobian(NULL, mat, alpha, beta, gamma, TRANSPOSE);
+    tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
     // LU factorization of the Jacobian
     pc->factor();

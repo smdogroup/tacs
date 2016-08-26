@@ -294,9 +294,6 @@ void TACSLinearBuckling::checkEigenvector( int n ){
 void TACSLinearBuckling::evalEigenDVSens( int n, 
 					  TacsScalar fdvSens[], 
 					  int numDVs ){
-  // Allocate extra temporary space for the derivative
-  TacsScalar *temp = new TacsScalar[ numDVs ];
-
   // Copy over the values of the stiffness matrix, factor
   // the stiffness matrix.
   aux_mat->copyValues(kmat);
@@ -322,17 +319,15 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  memset(temp, 0, numDVs*sizeof(TacsScalar));
-  tacs->addAdjointResProducts(&update, 1, temp, numDVs);
-
-  // Add the result to the derivative
-  for ( int i = 0; i < numDVs; i++ ){
-    fdvSens[i] -= eig*temp[i];
-  }
+  tacs->addAdjointResProducts(-eig, &update, 1, fdvSens, numDVs);
 
   // Now compute the inner product: u^{T}*G*u
   gmat->mult(eigvec, res);
   TacsScalar scale = res->dot(eigvec);
+
+  // All reduce across the processors
+  MPI_Allreduce(MPI_IN_PLACE, fdvSens, numDVs, MPI_INT,
+                MPI_SUM, tacs->getMPIComm());
 
   // Prepare to scale the final result
   scale = -1.0/scale;
@@ -341,11 +336,6 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   for ( int i = 0; i < numDVs; i++ ){
     fdvSens[i] *= scale;
   }
-  delete [] temp;
-
-  // All reduce across the processors
-  MPI_Allreduce(MPI_IN_PLACE, fdvSens, numDVs, MPI_INT,
-                MPI_SUM, tacs->getMPIComm());
 }
 
 /*!

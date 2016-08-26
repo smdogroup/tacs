@@ -237,27 +237,27 @@ void TACSMg::factor(){
   Set up the multi-grid data by computing the matrices at each
   multi-grid level within the problem. 
 */
-void TACSMg::assembleJacobian( TACSBVec *res, 
-                               double alpha, double beta, double gamma,
+void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
+                               TACSBVec *res, 
                                MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
   if (tacs[0]){
-    tacs[0]->assembleJacobian(res, mat[0], 
-                              alpha, beta, gamma, matOr);
+    tacs[0]->assembleJacobian(alpha, beta, gamma,
+                              res, mat[0], matOr);
   }
 
   for ( int i = 0; i < nlevels-1; i++ ){
     if (tacs[i]){
-      tacs[i]->assembleJacobian(NULL, mat[i], 
-                                alpha, beta, gamma, matOr);
+      tacs[i]->assembleJacobian(alpha, beta, gamma,
+                                NULL, mat[i], matOr);
     }
   }
 
   // Assemble the coarsest problem
   if (tacs[nlevels-1]){
-    tacs[nlevels-1]->assembleJacobian(NULL, root_mat, 
-                                      alpha, beta, gamma, matOr);
+    tacs[nlevels-1]->assembleJacobian(alpha, beta, gamma, 
+                                      NULL, root_mat, matOr);
   }
 }
 

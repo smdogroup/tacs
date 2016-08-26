@@ -1,131 +1,77 @@
 #include "Compliance.h"
+#include "TACSAssembler.h"
 
 /*
   Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
 */
 
-const char * Compliance::funcName = "Compliance";
+/*
+  The context for the TACSKSFailure function
+*/
+class ComplianceCtx : public TACSFunctionCtx {
+ public:
+  ComplianceCtx( TACSFunction *ks,
+                 int maxStrains,
+                 int maxNodes ){
+    // Set the compliance
+    compliance = 0.0;
+
+    // Allocate the working array
+    work = new TacsScalar[2*maxStrains + 3*maxNodes];
+    
+    // Set the pointers into the work array
+    strain = &work[0];
+    stress = &work[maxStrains];
+    hXptSens = &work[2*maxStrains];
+  }
+  ~ComplianceCtx(){
+    delete [] work;
+  }
+
+  // Data to be used for the function computation
+  TacsScalar compliance;
+  TacsScalar *strain, *stress;
+  TacsScalar *hXptSens;
+  TacsScalar *work;
+};
 
 /*
   Initialize the Compliance class properties
 */
-Compliance::Compliance( TACSAssembler * _tacs, 
-                        int _elementNums[], int _numElements ):
-TACSFunction(_tacs, _elementNums, _numElements){
-  maxNumNodes = 0;
-  maxNumStresses = 0;
+TACSCompliance::TACSCompliance( TACSAssembler *_tacs ): 
+TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
+             TACSFunction::SINGLE_STAGE, 0){
+  maxNumNodes = _tacs->getMaxElementNodes();
+  maxNumStresses = _tacs->getMaxElementStrains();
 }
 
-Compliance::Compliance( TACSAssembler * _tacs ): 
-TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN){ 
-  maxNumNodes = 0;
-  maxNumStresses = 0;
+TACSCompliance::~TACSCompliance(){}
+
+const char *TACSCompliance::funcName = "TACSCompliance";
+
+const char *TACSCompliance::functionName(){ 
+  return funcName; 
 }
-
-Compliance::~Compliance(){}
-
-const char * Compliance::functionName(){ return funcName; }
-
-void Compliance::preInitialize(){
-  this->initialized(); // No further initialization necessary
-}
-
-void Compliance::elementWiseInitialize( TACSElement * element, int elemNum ){
-  int numStresses = element->numStresses();
-  if (numStresses > maxNumStresses){
-    maxNumStresses = numStresses;
-  }
-
-  int numNodes = element->numNodes();
-  if (numNodes > maxNumNodes){
-    maxNumNodes = numNodes;
-  }
-}
-  
-void Compliance::postInitialize(){}
 
 /*
-  Get the sizes of the work arrays required for evaluation
+  Retrieve the function value
 */
-void Compliance::getEvalWorkSizes( int * iwork, int * work ){
-  *iwork = 0;
-  *work = 2*maxNumStresses + 1;
+TacsScalar TACSCompliance::getFunctionValue(){
+  return compliance;
 }
 
 /*
   Set the compliance to zero on all MPI processes
 */
-void Compliance::preEval( const int iter ){
+void TACSCompliance::initEvaluation( EvaluationType ftype ){
   compliance = 0.0;
-}
-
-/*
-  Set up the threaded execution of the evaluation function
-
-  The work array contains the following information:
-  work[0]: The compliance evaluated by this thread
-*/
-void Compliance::preEvalThread( const int iter, 
-                                int * iwork, TacsScalar * work ){
-  work[0] = 0.0;
-}
-
-/*
-  Evaluate the compliance contributed by this element and add the
-  result to work[0].
-*/
-void Compliance::elementWiseEval( const int iter, 
-                                  TACSElement * element, int elemNum,
-				  const TacsScalar Xpts[],
-				  const TacsScalar vars[], 
-                                  int * iwork, TacsScalar * work ){
-  double pt[3];
-  int numGauss = element->getNumGaussPts();
-  int numStresses = element->numStresses();
-  TACSConstitutive * constitutive = element->getConstitutive();
-
-  // If the element does not define a constitutive class, 
-  // return without adding any contribution to the function
-  if (!constitutive){
-    return;
-  }
-
-  // Pointer to the strain/stress
-  TacsScalar * strain = &work[1];
-  TacsScalar * stress = &work[1 + maxNumStresses];
-
-  // With the first iteration, find the minimum over the domain
-  for ( int i = 0; i < numGauss; i++ ){
-    // Get the Gauss points one at a time
-    TacsScalar weight = element->getGaussWtsPts(i, pt);
-    TacsScalar h = element->getDetJacobian(pt, Xpts);
-      
-    // Get the strain
-    element->getStrain(strain, pt, Xpts, vars);
-    constitutive->calculateStress(pt, strain, stress);
-
-    // Calculate the compliance
-    TacsScalar SEdensity = 0.0;
-    for ( int k = 0; k < numStresses; k++ ){
-      SEdensity += stress[k]*strain[k];
-    }
-    work[0] += weight*h*SEdensity;
-  }
-}
-
-/*
-  Add the contribution from the thread to the compliance
-*/
-void Compliance::postEvalThread( const int iter,
-                                 int * iwork, TacsScalar * work ){
-  compliance += work[0];
 }
 
 /*
   Sum the compliance across all MPI processors
 */
-void Compliance::postEval( const int iter ){
+void TACSCompliance::finalEvaluation( EvaluationType ftype ){
   // Distribute the values of the KS function computed on this domain    
   TacsScalar temp = compliance;
   MPI_Allreduce(&temp, &compliance, 1, TACS_MPI_TYPE,
@@ -133,37 +79,101 @@ void Compliance::postEval( const int iter ){
 }
 
 /*
-  Return the size of the buffer for the state variable sensitivities
+  Set up the threaded execution of the evaluation function
 */
-int Compliance::getSVSensWorkSize(){
-  return 2*maxNumStresses;
+void TACSCompliance::initThread( const double tcoef,
+                                 EvaluationType ftype,
+                                 TACSFunctionCtx *fctx ){
+  ComplianceCtx *ctx = dynamic_cast<ComplianceCtx*>(fctx);
+  if (ctx){
+    ctx->compliance = 0.0;
+  }
 }
 
 /*
-  These functions are used to determine the sensitivity of the function to the
-  state variables.
+  Evaluate the compliance contributed by this element
 */
-void Compliance::elementWiseSVSens( TacsScalar * elemSVSens, 
-				    TACSElement * element, int elemNum,
-				    const TacsScalar Xpts[],
-				    const TacsScalar vars[], 
-                                    TacsScalar * work ){
-  double pt[3];
-  int numGauss = element->getNumGaussPts();
-  int numVars = element->numVariables();
-  TACSConstitutive * constitutive = element->getConstitutive();
-  
+void TACSCompliance::elementWiseEval( EvaluationType ftype,
+                                      TACSElement *element, int elemNum,
+                                      const TacsScalar Xpts[], 
+                                      const TacsScalar vars[],
+                                      const TacsScalar dvars[], 
+                                      const TacsScalar ddvars[],
+                                      TACSFunctionCtx *fctx ){
+  ComplianceCtx *ctx = dynamic_cast<ComplianceCtx*>(fctx);
+  TACSConstitutive *constitutive = element->getConstitutive();
+
+  if (ctx && constitutive){
+    int numGauss = element->getNumGaussPts();
+    int numStresses = element->numStresses();
+
+    // Pointer to the strain/stress
+    TacsScalar *strain = ctx->strain;
+    TacsScalar *stress = ctx->stress;
+
+    // With the first iteration, find the minimum over the domain
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the Gauss points one at a time
+      double pt[3];
+      TacsScalar weight = element->getGaussWtsPts(i, pt);
+      TacsScalar h = element->getDetJacobian(pt, Xpts);
+      
+      // Get the strain
+      element->getStrain(strain, pt, Xpts, vars);
+      constitutive->calculateStress(pt, strain, stress);
+      
+      // Calculate the compliance
+      TacsScalar SEdensity = 0.0;
+      for ( int k = 0; k < numStresses; k++ ){
+        SEdensity += stress[k]*strain[k];
+      }
+      ctx->compliance += weight*h*SEdensity;
+    }
+  }
+}
+
+/*
+  Add the contribution from the thread to the compliance
+*/
+void TACSCompliance::finalThread( const double tcoef,
+                                  EvaluationType ftype,
+                                  TACSFunctionCtx *fctx ){
+  ComplianceCtx *ctx = dynamic_cast<ComplianceCtx*>(fctx);
+  if (ctx){
+    compliance += tcoef*ctx->compliance;
+  }
+}
+
+/*
+  These functions are used to determine the sensitivity of the
+  function to the state variables.
+*/
+void TACSCompliance::getElementSVSens( double alpha, double beta, double gamma, 
+                                       TacsScalar *elemSVSens, 
+                                       TACSElement *element, int elemNum,
+                                       const TacsScalar Xpts[], 
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[], 
+                                       const TacsScalar ddvars[],
+                                       TACSFunctionCtx *fctx ){
+  ComplianceCtx *ctx = dynamic_cast<ComplianceCtx*>(fctx);
+  TACSConstitutive *constitutive = element->getConstitutive();
+
   // Zero the contribution from this element
+  int numVars = element->numVariables();
   memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
-  
+
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    int numGauss = element->getNumGaussPts();
+    
     // Set the stress/strain arrays
-    TacsScalar * strain = &work[0];
-    TacsScalar * stress = &work[maxNumStresses];
+    TacsScalar *strain = ctx->strain;
+    TacsScalar *stress = ctx->stress;
     
     for ( int i = 0; i < numGauss; i++ ){
+      double pt[3];
       TacsScalar weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
     
@@ -171,50 +181,53 @@ void Compliance::elementWiseSVSens( TacsScalar * elemSVSens,
       element->getStrain(strain, pt, Xpts, vars);
       constitutive->calculateStress(pt, strain, stress);
        
-      // Add the sensitivity of the compliance to the strain c = e^{T} * D * e    
+      // Add the sensitivity of the compliance to the strain 
+      // c = e^{T} * D * e    
       // dc/du = 2.0 * e^{T} * D * de/du
-      element->addStrainSVSens(elemSVSens, pt, 2.0*h, stress, 
+      element->addStrainSVSens(elemSVSens, pt, 2.0*h*alpha, stress, 
                                Xpts, vars);
     }
   }
 }
 
 /*
-  Return the size of the work array for the XptSens calculations
-*/
-int Compliance::getXptSensWorkSize(){
-  return 2*maxNumStresses + 3*maxNumNodes;
-}
-
-/*
   Retrieve the element contribution to the derivative of the function
   w.r.t. the element nodes
 */
-void Compliance::elementWiseXptSens( TacsScalar fXptSens[],
-				     TACSElement * element, int elemNum,
-				     const TacsScalar Xpts[],
-				     const TacsScalar vars[],
-                                     TacsScalar * work  ){
-  int numGauss = element->getNumGaussPts();
-  int numNodes = element->numNodes();
-  int numStresses = element->numStresses();
-  TACSConstitutive * constitutive = element->getConstitutive();
+void TACSCompliance::getElementXptSens( const double tcoef, 
+                                        TacsScalar fXptSens[],
+                                        TACSElement *element, int elemNum,
+                                        const TacsScalar Xpts[], 
+                                        const TacsScalar vars[],
+                                        const TacsScalar dvars[], 
+                                        const TacsScalar ddvars[],
+                                        TACSFunctionCtx *fctx ){
+  ComplianceCtx *ctx = dynamic_cast<ComplianceCtx*>(fctx);
+  TACSConstitutive *constitutive = element->getConstitutive();
 
+  // Zero the sensitivity
+  int numNodes = element->numNodes();
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    int numGauss = element->getNumGaussPts();  
+    int numStresses = element->numStresses();
+
     // Set the stress/strain arrays
-    TacsScalar * strain = &work[0];
-    TacsScalar * stress = &work[maxNumStresses];
-    TacsScalar * hXptSens = &work[2*maxNumStresses];
-  
+    TacsScalar *strain = ctx->strain;
+    TacsScalar *stress = ctx->stress;
+    TacsScalar *hXptSens = ctx->hXptSens;
+    
     for ( int i = 0; i < numGauss; i++ ){
       // Get the gauss point
       double pt[3];
       TacsScalar weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = element->getDetJacobianXptSens(hXptSens, pt, Xpts);
+
+      // Scale the weight by the linear coefficient
+      weight *= tcoef;
 
       // Add contribution to the sensitivity from the strain calculation
       element->getStrain(strain, pt, Xpts, vars);
@@ -234,37 +247,35 @@ void Compliance::elementWiseXptSens( TacsScalar fXptSens[],
       }
 
       // Add the terms from the derivative of the strain w.r.t. nodes
-      element->addStrainXptSens(fXptSens, pt, 2.0*h,
+      element->addStrainXptSens(fXptSens, pt, 2.0*h*weight,
                                 stress, Xpts, vars);
     }
   }
 }
 
 /*
-  Return the size of the work array for the XptSens calculations
-*/
-int Compliance::getDVSensWorkSize(){
-  return maxNumStresses;
-}
-
-/*
   Evaluate the derivative of the compliance w.r.t. the material
   design variables
 */
-void Compliance::elementWiseDVSens( TacsScalar fdvSens[], int numDVs, 
-				    TACSElement * element, int elemNum,
-				    const TacsScalar Xpts[],
-				    const TacsScalar vars[],
-                                    TacsScalar * work ){
-  int numGauss = element->getNumGaussPts();
-  int numStresses = element->numStresses();
-  TACSConstitutive * constitutive = element->getConstitutive();
+void TACSCompliance::addElementDVSens( const double tcoef, 
+                                       TacsScalar *fdvSens, int numDVs,
+                                       TACSElement *element, int elemNum,
+                                       const TacsScalar Xpts[], 
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[], 
+                                       const TacsScalar ddvars[],
+                                       TACSFunctionCtx *fctx ){
+  ComplianceCtx *ctx = dynamic_cast<ComplianceCtx*>(fctx);
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    int numGauss = element->getNumGaussPts();
+    int numStresses = element->numStresses();
+
     // Set the stress/strain arrays
-    TacsScalar * strain = &work[0];
+    TacsScalar *strain = ctx->strain;
     
     for ( int i = 0; i < numGauss; i++ ){
       // Get the quadrature point

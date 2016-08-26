@@ -17,7 +17,7 @@ class StructuralMass : public TACSFunction {
   StructuralMass( TACSAssembler * _tacs );
   ~StructuralMass();
   
-  const char * functionName();
+  const char *functionName();
 
   // Functions for initialization
   // ----------------------------

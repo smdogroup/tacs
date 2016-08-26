@@ -49,7 +49,7 @@
   while if it is negative, the KS functional is conservative.
 */
 
-class InducedFailure : public TACSFunction {
+class TACSInducedFailure : public TACSFunction {
  public:
   enum InducedNormType { EXPONENTIAL, POWER, 
 			 EXPONENTIAL_SQUARED, POWER_SQUARED,
@@ -57,88 +57,97 @@ class InducedFailure : public TACSFunction {
 			 DISCRETE_POWER, 
 			 DISCRETE_EXPONENTIAL_SQUARED,
 			 DISCRETE_POWER_SQUARED };
+  enum InducedConstitutiveFunction { FAILURE, BUCKLING };
 
-  InducedFailure( TACSAssembler * _tacs, int _elementNums[], 
-		  int _numElements, double _P );
-  InducedFailure( TACSAssembler * _tacs, double _P );
-  ~InducedFailure();
+  TACSInducedFailure( TACSAssembler *_tacs, double _P,
+                      InducedConstitutiveFunction func=FAILURE );
+  ~TACSInducedFailure();
 
   // Retrieve the name of the function
   // ---------------------------------
   const char * functionName();
 
-  // Set parameters to control how the induced failure functions are evaluated
-  // -------------------------------------------------------------------------
+  // Set parameters to control how the induced functions are evaluated
+  // -----------------------------------------------------------------
   void setParameter( double _P );
   double getParameter();
   void setInducedType( enum InducedNormType _norm_type );
   void setLoadFactor( TacsScalar _loadFactor );
 
-  // Functions for initialization
-  // ----------------------------
-  void preInitialize();
-  void elementWiseInitialize( TACSElement * element, int elemNum );
-  void postInitialize();
+  // Set the value of the failure offset for numerical stability
+  // -----------------------------------------------------------
+  void setMaxFailOffset( TacsScalar _max_fail ){
+    max_fail = _max_fail;
+  }
 
-  // Functions for evaluation
-  // ------------------------
-  void getEvalWorkSizes( int * iwork, int * work );
-  void preEval( const int iter );
-  void preEvalThread( const int iter, int * iwork, TacsScalar * work );
-  void elementWiseEval( const int iter, TACSElement * element, int elemNum,
-                        const TacsScalar Xpts[], 
-			const TacsScalar vars[],
-			int * iwork, TacsScalar * work );
-  void postEvalThread( const int iter, int * iwork, TacsScalar * work );
-  void postEval( const int iter );
+  // Create the function context for evaluation
+  // ------------------------------------------
+  TACSFunctionCtx *createFunctionCtx();
+
+  // Collective calls on the TACS MPI Comm
+  // -------------------------------------
+  void initEvaluation( EvaluationType ftype );
+  void finalEvaluation( EvaluationType ftype );
+
+  // Functions for integration over the structural domain on each thread
+  // -------------------------------------------------------------------
+  void initThread( double tcoef,
+                   EvaluationType ftype,
+                   TACSFunctionCtx *ctx );
+  void elementWiseEval( EvaluationType ftype,
+                        TACSElement *element, int elemNum,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TACSFunctionCtx *ctx );
+  void finalThread( double tcoef, 
+                    EvaluationType ftype,
+                    TACSFunctionCtx *ctx );
 
   // Return the value of the function
   // --------------------------------
-  TacsScalar getValue();
+  TacsScalar getFunctionValue();
 
   // State variable sensitivities
   // ----------------------------
-  int getSVSensWorkSize();
-  void elementWiseSVSens( TacsScalar * elemSVSens, 
-                          TACSElement * element, int elemNum,
-                          const TacsScalar Xpts[],
-			  const TacsScalar vars[], 
-			  TacsScalar * work );
+  void getElementSVSens( double alpha, double beta, double gamma, 
+                         TacsScalar *elemSVSens, 
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx );
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  int getDVSensWorkSize();
-  void elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-                          TACSElement * element, int elemNum,
-                          const TacsScalar Xpts[],
-			  const TacsScalar vars[], 
-			  TacsScalar * work );
+  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx );
 
   // Nodal sensitivities
   // -------------------
-  int getXptSensWorkSize();
-  void elementWiseXptSens( TacsScalar fXptSens[],
-			   TACSElement * element, int elemNum, 
-			   const TacsScalar Xpts[], 
-			   const TacsScalar vars[],
-			   TacsScalar * work );
+  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
+                          TACSElement *element, int elemNum,
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          const TacsScalar dvars[], const TacsScalar ddvars[],
+                          TACSFunctionCtx *ctx ); 
 
  private:
   // The type of norm to evaluate
   InducedNormType norm_type;
+  InducedConstitutiveFunction con_type;
 
   TacsScalar load_factor; // Load factor applied to the strain
   int max_nodes, max_stresses; // The max number of nodes/stresses
 
-  // The name of the function
-  static const char * funcName;
-
   TacsScalar max_fail; // The maximum failure function at a Gauss point
   TacsScalar fail_numer, fail_denom; // The numerator and denominator
-  TacsScalar func_val;  // The value of the P-norm
   
   // The P in the P-norm
   double P;
+
+  // The name of the function
+  static const char *funcName;
 };
 
 #endif 
