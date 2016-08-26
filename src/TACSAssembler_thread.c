@@ -173,8 +173,10 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
       memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
   
       // Generate the Jacobian of the element
-      element->addResidual(tacs->time, elemRes, elemXpts, 
-                           vars, dvars, ddvars);
+      if (res){
+        element->addResidual(tacs->time, elemRes, elemXpts, 
+                             vars, dvars, ddvars);
+      }
       element->addJacobian(tacs->time, elemMat, 
 			   alpha, beta, gamma,
 			   elemXpts, vars, dvars, ddvars);
@@ -187,8 +189,10 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
 
       // Add the residual from the auxiliary elements 
       while (aux_count < naux && aux[aux_count].num == elemIndex){
-        aux[aux_count].elem->addResidual(tacs->time, elemRes, elemXpts, 
-                                         vars, dvars, ddvars);
+        if (res){
+          aux[aux_count].elem->addResidual(tacs->time, elemRes, elemXpts, 
+                                           vars, dvars, ddvars);
+        }
         aux[aux_count].elem->addJacobian(tacs->time, elemMat, 
                                          alpha, beta, gamma,
                                          elemXpts, vars, dvars, ddvars);

@@ -17,3 +17,8 @@ complex_debug: debug
 
 clean:
 	rm -f *.o plate
+
+test: default
+	python generate_plate.py
+	mpirun -np 1 ./plate
+	mpirun -np 2 ./plate

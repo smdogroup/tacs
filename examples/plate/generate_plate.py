@@ -9,8 +9,8 @@ x = np.linspace(0, 1, 2*nx+1)
 y = np.linspace(0, 1, 2*ny+1)
 
 fp = open('plate.bdf', 'w')
-# fp.write('$ Input file for a square clamped plate\n')
-# fp.write('SOL 103\nCEND\nBEGIN BULK\n')
+fp.write('$ Input file for a square clamped plate\n')
+fp.write('SOL 103\nCEND\nBEGIN BULK\n')
 
 # Write the grid points to a file
 for j in xrange(2*ny+1):
@@ -52,5 +52,5 @@ for i in xrange(2*nx+1):
     fp.write('%-8s%8d%8d%8s%8.6f\n'%
              ('SPC', 1, nodes[i, 0], spc, 0.0))
 
-# fp.write('END BULK')
+fp.write('END BULK')
 fp.close()

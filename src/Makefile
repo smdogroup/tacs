@@ -16,8 +16,6 @@ CXX_OBJS = TACSObject.o \
 	TACSAssembler_thread.o \
 	TACSIntegrator.o
 
-
-
 DIR=${TACS_DIR}/src
 
 CXX_OBJS := $(CXX_OBJS:%=$(DIR)/%)
@@ -29,4 +27,4 @@ debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
 
 clean:
-	${RM} ${CXX_OBJS}
+	${RM} *.o

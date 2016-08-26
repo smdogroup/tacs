@@ -11,3 +11,9 @@ debug: default
 
 clean:
 	rm -f *.o tutorial
+
+test: default
+	mpirun -np 1 ./tutorial
+	mpirun -np 3 ./tutorial
+	mpirun -np 4 ./tutorial
+	mpirun -np 8 ./tutorial

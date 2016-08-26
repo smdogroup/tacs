@@ -402,7 +402,54 @@ cdef class Assembler:
       if self.ptr:
          self.ptr.decref()
       return
+
+   def setElementConnectivity(self,
+                              np.ndarray[int, ndim=1, mode='c'] conn,
+                              np.ndarray[int, ndim=1, mode='c'] ptr):
+      '''Set the connectivity'''
+      cdef int num_elements = ptr.shape[0]-1
+      assert(num_elements == self.getNumElements())
+
+      # Set the connectivity into TACSAssembler
+      self.ptr.setElementConnectivity(<int*>conn.data, <int*>ptr.data)
+      
+      return
    
+   def setElements(self, elements):
+      '''Set the elements in to TACSAssembler'''
+      assert(len(elements) == self.getNumElements())
+
+      # Allocate an array for the element pointers
+      cdef TACSElement **elems
+      elems = <TACSElement**>malloc(len(elements)*sizeof(TACSElement*))
+      if elems is NULL:
+         raise MemoryError()
+
+      for i in xrange(len(elements)):
+         elems[i] = (<Element>elements[i]).ptr
+
+      self.ptr.setElements(elems)
+
+      # Free the allocated array
+      free(elems)
+
+      return
+
+   def addBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes):
+      cdef int nnodes = nodes.shape[0]
+      cdef int *node_nums = <int*>nodes.data
+      self.ptr.addBCs(nnodes, node_nums, -1, NULL, NULL)
+      return
+
+   def initialize(self):
+      '''
+      Function to call after all the nodes and elements have been
+      added into the created instance of TACS. This function need not
+      be called when tacs is created using TACSCreator class.
+      '''
+      self.ptr.initialize()
+      return
+
    def getNumNodes(self):
       '''
       Return the number of nodes in the TACSAssembler
@@ -422,7 +469,7 @@ cdef class Assembler:
       return self.ptr.getNumElements()
    
    def getDesignVars(self, 
-                     np.ndarray[TacsScalar, ndim=1, mode='c']dvs):
+                     np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
       '''
       Collect all the design variable values assigned by this 
       process
@@ -449,7 +496,7 @@ cdef class Assembler:
       return
       
    def setDesignVars(self, 
-                     np.ndarray[TacsScalar, ndim=1, mode='c']dvs):
+                     np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
       '''
       Set the design variables.
       
@@ -466,8 +513,8 @@ cdef class Assembler:
       return
 
    def getDesignVarRange(self, 
-                         np.ndarray[TacsScalar,ndim=1,mode='c']lb,
-                         np.ndarray[TacsScalar,ndim=1,mode='c']ub):
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] lb,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] ub):
       '''
       Retrieve the design variable range.
       
@@ -680,8 +727,12 @@ cdef class Assembler:
       A:         the Jacobian matrix
       matOr:     the matrix orientation NORMAL or TRANSPOSE
       '''
+      cdef TACSBVec *res = NULL
+      if residual is not None:
+         res = residual.ptr
+      
       self.ptr.assembleJacobian(alpha, beta, gamma,
-                                residual.ptr, A.ptr, matOr)
+                                res, A.ptr, matOr)
       return
 
    def assembleMatType(self, ElementMatrixType matType,
@@ -789,6 +840,28 @@ cdef class Assembler:
       self.ptr.addAdjointResProducts(1.0, adj, num_adj,
                                      Avals, num_design_vars)
       return
+
+   def addMatDVSensInnerProduct(self, TacsScalar scale,
+                                ElementMatrixType matType, 
+                                Vec psi, Vec phi,
+                                np.ndarray[TacsScalar, mode='c'] A):
+      '''
+      Add the derivative of the inner product of the specified matrix
+      with the input vectors to the design variable sensitivity vector
+      A.
+      '''
+      cdef int num_design_vars = A.shape[0]
+      cdef TacsScalar *Avals = <TacsScalar*>A.data
+      self.ptr.addMatDVSensInnerProduct(scale, matType, psi.ptr, phi.ptr,
+                                        Avals, num_design_vars)
+      return
+      
+   def evalMatSVSensInnerProduct(self, TacsScalar scale,
+                                 ElementMatrixType matType, 
+                                 Vec psi, Vec phi, Vec res):
+      self.ptr.evalMatSVSensInnerProduct(scale, matType,
+                                         psi.ptr, phi.ptr, res.ptr)
+      return      
         
    def testElement(self, int elemNum, int print_level):
       '''
@@ -850,18 +923,7 @@ cdef class Assembler:
       Retrieve the MPI Communicator
       '''
       cdef MPI_Comm c_comm = self.ptr.getMPIComm()
-      # comm = MPI.Comm()
-      # comm.ob_mpi = c_comm
-      return None
-
-   def initialize(self):
-      '''
-      Function to call after all the nodes and elements have been
-      added into the created instance of TACS. This function need not
-      be called when tacs is created using TACSCreator class.
-      '''
-      self.ptr.initialize()
-      return
+      return MPI.COMM_WORLD
    
 # Wrap the TACStoFH5 class
 cdef class ToFH5:

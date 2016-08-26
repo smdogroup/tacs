@@ -186,9 +186,12 @@ cdef extern from "TACSAssembler.h":
 
       # Add boundary conditions
       void addBCs(int nnodes, int *nodes, 
-                  int nbcs=-1, int *vars=NULL, 
-                  TacsScalar *vals=NULL)
-      
+                  int nbcs, int *vars, TacsScalar *vals)
+
+      # Finalize the mesh - no further elements or nodes may be added
+      # following this call
+      void initialize()
+
       # Return information about the TACSObject
       int getNumNodes()
       int getNumDependentNodes()
@@ -196,10 +199,6 @@ cdef extern from "TACSAssembler.h":
 
       # MPI communicator
       MPI_Comm getMPIComm()
-
-      # Finalize the mesh - no further elements or nodes may be added
-      # following this call
-      void initialize()
 
       # Set the auxiliary element class
       void setAuxElements(TACSAuxElements*)
@@ -258,6 +257,16 @@ cdef extern from "TACSAssembler.h":
                                         TACSBVec **adjoint, int numAdjoints,
                                         TACSBVec **adjXptSens)
 
+      # Add the derivative of the inner product with a matrix
+      void addMatDVSensInnerProduct(TacsScalar scale, 
+                                    ElementMatrixType matType, 
+                                    TACSBVec *psi, TACSBVec *phi,
+                                    TacsScalar *dvSens, int numDVs)
+      void evalMatSVSensInnerProduct(TacsScalar scale,
+                                     ElementMatrixType matType, 
+                                     TACSBVec *psi, TACSBVec *phi, 
+                                     TACSBVec *res)
+      
       # Test routines
       void testElement(int elemNum, int print_level)
       void testConstitutive(int elemNum, int print_level)

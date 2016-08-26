@@ -1,10 +1,16 @@
-#include "PlaneStress.h"
+#include "PlaneStressQuad.h"
 #include "TACSMeshLoader.h"
 
+/*
+  The following test illustrates the use of PlaneStressQuad elements
+  and demonstrates how to load a BDF file using the TACSMeshLoader
+  object. This example can be run in parallel.
+*/
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
-  // Create the mesh loader object
+  // Create the mesh loader object on MPI_COMM_WORLD. The
+  // TACSAssembler object will be created on the same comm
   TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
   mesh->incref();
 
@@ -12,8 +18,8 @@ int main( int argc, char *argv[] ){
   PlaneStressStiffness *stiff = new PlaneStressStiffness(1.0, 70e3, 0.3);
   stiff->incref();
 
-  // The TACSAssembler object - which should be allocated if the
-  // mesh is loaded correctly
+  // The TACSAssembler object - which should be allocated if the mesh
+  // is loaded correctly
   TACSAssembler *tacs = NULL;
 
   // Try to load the input file as a BDF file through the
@@ -38,14 +44,14 @@ int main( int argc, char *argv[] ){
 	  // Get the BDF description of the element
 	  const char *elem_descript = mesh->getElementDescript(i);
 	  if (strcmp(elem_descript, "CQUAD4") == 0){
-	    elem = new PlaneStress<2>(stiff);
+	    elem = new PlaneStressQuad<2>(stiff);
 	  }
 	  else if (strcmp(elem_descript, "CQUAD") == 0 ||
 		   strcmp(elem_descript, "CQUAD9") == 0){
-	    elem = new PlaneStress<3>(stiff);
+	    elem = new PlaneStressQuad<3>(stiff);
 	  }
 	  else if (strcmp(elem_descript, "CQUAD16") == 0){
-	    elem = new PlaneStress<4>(stiff);
+	    elem = new PlaneStressQuad<4>(stiff);
 	  }
 
 	  // Set the element object into the mesh loader class
@@ -70,8 +76,8 @@ int main( int argc, char *argv[] ){
 
   if (tacs){
     // Create the preconditioner
-    BVec *res = tacs->createVec();
-    BVec *ans = tacs->createVec();
+    TACSBVec *res = tacs->createVec();
+    TACSBVec *ans = tacs->createVec();
     FEMat *mat = tacs->createFEMat();
   
     // Increment the reference count to the matrix/vectors
@@ -85,16 +91,24 @@ int main( int argc, char *argv[] ){
     int reorder_schur = 1;
     PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur);
     pc->incref();
-    
+
+    // Allocate the GMRES object
+    int gmres_iters = 80; 
+    int nrestart = 2; // Number of allowed restarts
+    int is_flexible = 0; // Is a flexible preconditioner?
+    TACSKsm *ksm = new GMRES(mat, pc, gmres_iters, 
+                             nrestart, is_flexible);
+    ksm->incref();
+
     // Assemble and factor the stiffness/Jacobian matrix
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
-    tacs->assembleJacobian(res, mat, alpha, beta, gamma);
+    tacs->assembleJacobian(alpha, beta, gamma, res, mat);
     mat->applyBCs();
     pc->factor();
     
     res->set(1.0);
     res->applyBCs();
-    pc->applyFactor(res, ans);
+    ksm->solve(res, ans);
     tacs->setVariables(ans);
 
     // Create an TACSToFH5 object for writing output to files
@@ -111,6 +125,7 @@ int main( int argc, char *argv[] ){
     f5->decref();
     
     // Decrease the reference count to the linear algebra objects
+    ksm->decref();
     pc->decref();
     mat->decref();
     ans->decref();

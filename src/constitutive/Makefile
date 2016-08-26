@@ -26,4 +26,4 @@ debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
 
 clean:
-	${RM} ${CXX_OBJS}
+	${RM} *.o

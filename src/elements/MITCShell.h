@@ -885,9 +885,9 @@ void MITCShell<order>::addJacobian( double time,
 */
 template <int order>
 void MITCShell<order>::getMatType( ElementMatrixType matType, 
-				   TacsScalar * mat, 
-				   const TacsScalar vars[], 
-				   const TacsScalar Xpts[] ){
+				   TacsScalar *mat, 
+				   const TacsScalar Xpts[],
+                                   const TacsScalar vars[] ){
   memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
   
   if (matType == MASS_MATRIX){
