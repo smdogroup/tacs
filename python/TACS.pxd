@@ -233,9 +233,8 @@ cdef extern from "TACSAssembler.h":
 
       # Assembly routines
       void assembleRes(TACSBVec* residual)
-      void assembleJacobian(TACSBVec* residual,
-                            TACSMat* A, double alpha,
-                            double beta, double gamma,
+      void assembleJacobian(double alpha, double beta, double gamma,
+                            TACSBVec* residual, TACSMat* A, 
                             MatrixOrientation matOr)
       void assembleMatType(ElementMatrixType matType, 
                            TACSMat* A, MatrixOrientation matOr) 
@@ -243,11 +242,21 @@ cdef extern from "TACSAssembler.h":
       # Evaluation routines
       void evalFunctions(TACSFunction **functions, int numFuncs,
                          TacsScalar *funcVals)
-      void addDVSens(TACSFunction **funcs, int numFuncs,
-                     TacsScalar *fdvsSens, int ndvs)
-      void addSVSens(TACSFunction *function, TACSBVec* vec)
-      void addAdjointResProducts(TACSBVec **adjoint, int numAdjoint,
-                                 TacsScalar *dvSens, int num_dvs)
+
+      # Derivative evaluation routines
+      void addDVSens(double coef, TACSFunction **funcs, int numFuncs,
+                     TacsScalar *fdvSens, int numDVs)
+      void addSVSens(double alpha, double beta, double gamma,
+                     TACSFunction **funcs, int numFuncs,
+                     TACSBVec **fuSens)
+      void addAdjointResProducts(double scale, 
+                                 TACSBVec **adjoint, int numAdjoints,
+                                 TacsScalar *dvSens, int numDVs)
+      void addXptSens(double coef, TACSFunction **funcs, int numFuncs,
+                      TACSBVec **fXptSens)
+      void addAdjointResXptSensProducts(double scale,
+                                        TACSBVec **adjoint, int numAdjoints,
+                                        TACSBVec **adjXptSens)
 
       # Test routines
       void testElement(int elemNum, int print_level)

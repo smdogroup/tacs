@@ -12,53 +12,55 @@
 /*
   Evaluate the structural mass of the structure
 */
-class StructuralMass : public TACSFunction {
+class TACSStructuralMass : public TACSFunction {
  public:
-  StructuralMass( TACSAssembler * _tacs );
-  ~StructuralMass();
+  TACSStructuralMass( TACSAssembler * _tacs );
+  ~TACSStructuralMass();
   
   const char *functionName();
 
-  // Functions for initialization
-  // ----------------------------
-  void preInitialize();
-  void elementWiseInitialize( TACSElement * element, int elemNum );
-  void postInitialize();
+  // Create the function context for evaluation
+  // ------------------------------------------
+  TACSFunctionCtx *createFunctionCtx();
 
-  // Functions for evaluation
-  // ------------------------
-  void getEvalWorkSizes( int * iwork, int * work );
-  void preEval( const int iter );
-  void preEvalThread( const int iter, int * iwork, TacsScalar * work );
-  void elementWiseEval( const int iter, TACSElement * element, int elemNum,
-                        const TacsScalar Xpts[], 
-			const TacsScalar vars[],
-			int * iwork, TacsScalar * work );
-  void postEvalThread( const int iter, int * iwork, TacsScalar * work );
-  void postEval( const int iter );
+  // Collective calls on the TACS MPI Comm
+  // -------------------------------------
+  void initEvaluation( EvaluationType ftype );
+  void finalEvaluation( EvaluationType ftype );
+
+  // Functions for integration over the structural domain on each thread
+  // -------------------------------------------------------------------
+  void initThread( double tcoef,
+                   EvaluationType ftype,
+                   TACSFunctionCtx *ctx );
+  void elementWiseEval( EvaluationType ftype,
+                        TACSElement *element, int elemNum,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TACSFunctionCtx *ctx );
+  void finalThread( double tcoef, 
+                    EvaluationType ftype,
+                    TACSFunctionCtx *ctx );
 
   // Return the value of the function
   // --------------------------------
-  TacsScalar getValue(){ return totalMass; }
+  TacsScalar getFunctionValue();
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  int getDVSensWorkSize();
-  void elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-                          TACSElement * element, int elemNum,
-                          const TacsScalar Xpts[],
-			  const TacsScalar vars[], 
-			  TacsScalar * work );
+  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx );
 
   // Nodal sensitivities
   // -------------------
-  int getXptSensWorkSize();
-  void elementWiseXptSens( TacsScalar fXptSens[],
-			   TACSElement * element, int elemNum, 
-			   const TacsScalar Xpts[], 
-			   const TacsScalar vars[],
-			   TacsScalar * work );
-
+  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
+                          TACSElement *element, int elemNum,
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          const TacsScalar dvars[], const TacsScalar ddvars[],
+                          TACSFunctionCtx *ctx ); 
  private:
   // Max. number of nodes
   int maxNumNodes;

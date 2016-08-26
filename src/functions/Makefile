@@ -10,10 +10,8 @@ include ../../TACS_Common.mk
 CXX_OBJS = TACSFunction.o \
 	KSFailure.o \
 	Compliance.o \
-	InducedFailure.o
-#	StructuralMass.o 
-#	KSDisplacement.o
-
+	InducedFailure.o \
+	StructuralMass.o
 
 DIR=${TACS_DIR}/src/functions
 

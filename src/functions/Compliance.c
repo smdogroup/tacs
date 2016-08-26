@@ -55,6 +55,13 @@ const char *TACSCompliance::functionName(){
 }
 
 /*
+  Create the context for this function
+*/
+TACSFunctionCtx *TACSCompliance::createFunctionCtx(){
+  return new ComplianceCtx(this, maxNumStresses, maxNumNodes);
+}
+
+/*
   Retrieve the function value
 */
 TacsScalar TACSCompliance::getFunctionValue(){

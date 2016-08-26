@@ -103,9 +103,9 @@ int main( int argc, char * argv[] ){
 
   // There are no dependent nodes in this problem
   int numDependentNodes = 0;
-  TACSAssembler * tacs = new TACSAssembler(tacs_comm, varsPerNode,
-					   numOwnedNodes, numElements,
-                                           numDependentNodes);
+  TACSAssembler *tacs = new TACSAssembler(tacs_comm, varsPerNode,
+                                          numOwnedNodes, numElements,
+                                          numDependentNodes);
   tacs->incref(); // Increase the reference count to TACSAssembler
 
   // Set the global element index for the first and last element 

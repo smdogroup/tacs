@@ -166,6 +166,26 @@ void TACSInducedFailure::finalEvaluation( EvaluationType ftype ){
 }
 
 /*
+  For each thread used to evaluate the function, call the 
+  post-evaluation code once.
+*/
+void TACSInducedFailure::initThread( const double tcoef,
+                                     EvaluationType ftype,
+                                     TACSFunctionCtx *fctx ){
+  InducedFailureCtx *ctx = dynamic_cast<InducedFailureCtx*>(fctx);
+
+  if (ctx){
+    if (ftype == TACSFunction::INITIALIZE){
+      ctx->max_fail = -1e20;
+    }
+    else if (ftype == TACSFunction::INTEGRATE){
+      ctx->fail_numer = 0.0;
+      ctx->fail_denom = 0.0;
+    }
+  }
+}
+
+/*
   Perform the element-wise evaluation of the TACSInducedFailure
   function.
 */

@@ -17,33 +17,52 @@ cdef extern from "TACSFunction.h":
         NO_DOMAIN        
     
 cdef extern from "Compliance.h":
-    cdef cppclass Compliance(TACSFunction):
-        Compliance(TACSAssembler *tacs)
+    cdef cppclass TACSCompliance(TACSFunction):
+        TACSCompliance(TACSAssembler *tacs)
 
 cdef extern from "StructuralMass.h":
-    cdef cppclass StructuralMass(TACSFunction):
-        StructuralMass(TACSAssembler *tacs)
+    cdef cppclass TACSStructuralMass(TACSFunction):
+        TACSStructuralMass(TACSAssembler *tacs)
 
 cdef extern from "KSFailure.h":
-    cdef cppclass KSFailure(TACSFunction):
-        KSFailure(TACSAssembler *tacs, double ksWeight, double alpha)
+    enum KSFailureType"TACSKFailure::KSFailureType":
+        DISCRETE"TACSKFailure::DISCRETE"
+        CONTINUOUS"TACSKFailure::CONTINUOUS"
+        
+    enum KSConstitutiveFunction"TACSKSFailure::KSConstitutiveFunction":
+        KS_FAILURE"TACSKSFailure::FAILURE"
+        KS_BUCKLING"TACSKSFailure::BUCKLING"
 
-cdef extern from "KSBuckling.h":
-    cdef cppclass KSBuckling(TACSFunction):
-        KSBuckling(TACSAssembler* tacs, TacsScalar ksWeight)
-
-cdef extern from "KSDisplacement.h":
-    cdef cppclass KSDisplacement(TACSFunction):
-        KSDisplacement(TACSAssembler* tacs, TacsScalar d[],
-                       double ksWeight, double alpha)
-
-cdef extern from "InducedBuckling.h":
-    cdef cppclass InducedBuckling(TACSFunction):
-        InducedBuckling(TACSAssembler* tacs, int elementNums[],
-                        int numElements, double P)
+    cdef cppclass TACSKSFailure(TACSFunction):
+        TACSKSFailure(TACSAssembler *tacs, double ksWeight,  
+                      KSConstitutiveFunction func,
+                      double alpha)
+        void setKSFailureType(KSFailureType ftype)
+        double getParameter()
+        void setParameter(double _ksWeight)
+        void setLoadFactor(TacsScalar _loadFactor)
+        void setMaxFailOffset(TacsScalar _maxFail)
 
 cdef extern from "InducedFailure.h":
-    cdef cppclass InducedFailure(TACSFunction):
-        InducedFailure(TACSAssembler* tacs, int elementNums[],
-                       int numElements, double P)
-    
+    enum InducedNormType"TACSInducedFailure::InducedNormType":
+        EXPONENTIAL"TACSInducedFailure::EXPONENTIAL"
+        POWER"TACSInducedFailure::POWER"
+        EXPONENTIAL_SQUARED"TACSInducedFailure::EXPONENTIAL_SQUARED"
+        POWER_SQUARED"TACSInducedFailure::POWER_SQUARED"
+        DISCRETE_EXPONENTIAL"TACSInducedFailure::DISCRETE_EXPONENTIAL"
+        DISCRETE_POWER"TACSInducedFailure::DISCRETE_POWER"
+        DISCRETE_EXPONENTIAL_SQUARED"TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED"
+        DISCRETE_POWER_SQUARED"TACSInducedFailure::DISCRETE_POWER_SQUARED"
+
+    enum InducedConstitutiveFunction"TACSInducedFailure::InducedConstitutiveFunction":
+        INDUCED_FAILURE"TACSInducedFailure::FAILURE"
+        INDUCED_BUCKLING"TACSInducedFailure::BUCKLING"
+      
+    cdef cppclass TACSInducedFailure(TACSFunction):
+        TACSInducedFailure(TACSAssembler *tacs, double P,
+                           InducedConstitutiveFunction func)
+        void setInducedType(InducedNormType _norm_type)
+        void setParameter(double _P)
+        double getParameter()
+        void setLoadFactor(TacsScalar _loadFactor)
+        void setMaxFailOffset(TacsScalar _max_fail)

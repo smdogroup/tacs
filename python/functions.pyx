@@ -32,68 +32,40 @@ cdef class Function:
          self.ptr.decref()
       return
 
-cdef class compliance(Function):
+cdef class Compliance(Function):
     def __cinit__(self, Assembler tacs):
         '''
         Wrap the function Compliance
         '''
-        self.ptr = new Compliance(tacs.ptr)
+        self.ptr = new TACSCompliance(tacs.ptr)
         self.ptr.incref()
         return
     
-cdef class mass(Function):
+cdef class StructuralMass(Function):
     def __cinit__(self, Assembler tacs):
         '''
         Wrap the function StructuralMass
         '''
-        self.ptr = new StructuralMass(tacs.ptr)
+        self.ptr = new TACSStructuralMass(tacs.ptr)
         self.ptr.incref()
         return
 
-cdef class ksfailure(Function):
+cdef class KSFailure(Function):
     def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
         '''
         Wrap the function KSFailure
         '''
-        self.ptr = new KSFailure(tacs.ptr, ksWeight, alpha)
-        self.ptr.incref()
-        return
-    
-cdef class ksbuckling(Function):
-    def __cinit__(self, Assembler tacs, double ksWeight):
-        '''
-        Wrap the function KSBuckling
-        '''
-        self.ptr = new KSBuckling(tacs.ptr, ksWeight)
+        self.ptr = new TACSKSFailure(tacs.ptr, ksWeight,
+                                     KS_FAILURE, alpha)
         self.ptr.incref()
         return
 
-cdef class ksdisplacement(Function):
-    def __cinit__(self, Assembler tacs, np.ndarray[TacsScalar, ndim=1, mode='c']d,
-                  double ksWeight, double alpha=1.0):
-        '''
-        Wrap the function KSDisplacement
-        '''
-        self.ptr = new KSDisplacement(tacs.ptr, <TacsScalar*>d.data, ksWeight, alpha)
-        self.ptr.incref()
-        return
-
-cdef class inducedbuckling(Function):
-    def __cinit__(self, Assembler tacs, np.ndarray[int, ndim=1, mode='c']elemNums, double P):
-        '''
-        Wrap the function InducedBuckling
-        '''
-        self.ptr = new InducedBuckling(tacs.ptr, <int*>elemNums.data,
-                                       elemNums.shape[0], P)
-        self.ptr.incref()
-        return
-
-cdef class inducedfailure(Function):
-    def __cinit__(self, Assembler tacs, np.ndarray[int, ndim=1, mode='c']elemNums, double P):
+cdef class InducedFailure(Function):
+    def __cinit__(self, Assembler tacs, double P):
         '''
         Wrap the function InducedFailure
         '''
-        self.ptr = new InducedFailure(tacs.ptr, <int*>elemNums.data,
-                                      elemNums.shape[0], P)
+        self.ptr = new TACSInducedFailure(tacs.ptr, P,
+                                          INDUCED_FAILURE)
         self.ptr.incref()
         return

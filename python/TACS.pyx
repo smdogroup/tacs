@@ -659,8 +659,8 @@ cdef class Assembler:
       self.ptr.assembleRes(residual.ptr)
       return
    
-   def assembleJacobian(self, Vec residual, Mat A,
-                        double alpha, double beta, double gamma,
+   def assembleJacobian(self, double alpha, double beta, double gamma,
+                        Vec residual, Mat A,
                         MatrixOrientation matOr=NORMAL):
       '''
       Assemble the Jacobian matrix
@@ -673,16 +673,15 @@ cdef class Assembler:
       matrix assembly also performs any communication required so that
       the matrix can be used immediately after assembly.
 
-      residual:  the residual of the governing equations
-      A:         the Jacobian matrix
       alpha:     coefficient on the variables
       beta:      coefficient on the time-derivative terms
       gamma:     coefficient on the second time derivative term
+      residual:  the residual of the governing equations
+      A:         the Jacobian matrix
       matOr:     the matrix orientation NORMAL or TRANSPOSE
       '''
-      self.ptr.assembleJacobian(residual.ptr, 
-                                A.ptr, alpha, beta,
-                                gamma, matOr)
+      self.ptr.assembleJacobian(alpha, beta, gamma,
+                                residual.ptr, A.ptr, matOr)
       return
 
    def assembleMatType(self, ElementMatrixType matType,
@@ -745,7 +744,7 @@ cdef class Assembler:
       cdef TacsScalar *Avals = <TacsScalar*>A.data
 
       # Evaluate the derivative of the functions
-      self.ptr.addDVSens(funcs, num_funcs, Avals, num_design_vars)
+      self.ptr.addDVSens(1.0, funcs, num_funcs, Avals, num_design_vars)
 
       return
 
@@ -758,7 +757,12 @@ cdef class Assembler:
       function: the function pointer
       vec:      the derivative of the function w.r.t. the state variables 
       '''
-      self.ptr.addSVSens(func.ptr, vec.ptr)
+      cdef int num_funcs = 1
+      cdef TACSFunction **funcs = &((<Function>func).ptr)
+      cdef TACSBVec **vecs = &((<Vec>vec).ptr)
+
+      # Add the derivative
+      self.ptr.addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, vecs)
       return
 
    def evalAdjointResProduct(self, adjoint, np.ndarray[TacsScalar, mode='c'] A):
@@ -782,7 +786,8 @@ cdef class Assembler:
       cdef TacsScalar *Avals = <TacsScalar*>A.data
       cdef int num_design_vars = A.shape[0]
 
-      self.ptr.addAdjointResProducts(adj, num_adj, Avals, num_design_vars)
+      self.ptr.addAdjointResProducts(1.0, adj, num_adj,
+                                     Avals, num_design_vars)
       return
         
    def testElement(self, int elemNum, int print_level):

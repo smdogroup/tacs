@@ -71,7 +71,7 @@ class TACSInducedFailure : public TACSFunction {
   // -----------------------------------------------------------------
   void setParameter( double _P );
   double getParameter();
-  void setInducedType( enum InducedNormType _norm_type );
+  void setInducedType( InducedNormType _norm_type );
   void setLoadFactor( TacsScalar _loadFactor );
 
   // Set the value of the failure offset for numerical stability

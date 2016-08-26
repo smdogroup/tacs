@@ -1,73 +1,113 @@
 #include "StructuralMass.h"
+#include "TACSAssembler.h"
 
 /*
   Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
 */
 
-const char * StructuralMass::funcName = "StructuralMass";
+/*
+  The context for the TACSKSFailure function
+*/
+class StructuralMassCtx : public TACSFunctionCtx {
+ public:
+  StructuralMassCtx( TACSFunction *mfunc,
+                     int maxNodes ){
+    mass = 0.0;
+    hXptSens = new TacsScalar[ maxNodes ];
+  }
+  ~StructuralMassCtx(){
+    delete [] hXptSens;
+  }
 
-StructuralMass::StructuralMass( TACSAssembler * _tacs ):
+  // Data to be used for the function computation
+  TacsScalar mass;
+  TacsScalar *hXptSens;
+};
+
+/*
+  Allocate the structural mass function
+*/
+TACSStructuralMass::TACSStructuralMass( TACSAssembler *_tacs ):
 TACSFunction(_tacs){
   totalMass = 0.0;
-  maxNumNodes = 0;
+  maxNumNodes = _tacs->getMaxElementNodes();
 }
 
-StructuralMass::~StructuralMass(){}
+/*
+  Destructor for the structural mass
+*/
+TACSStructuralMass::~TACSStructuralMass(){}
 
-const char * StructuralMass::functionName(){ return funcName; }
-  
-void StructuralMass::preInitialize(){
-  this->initialized(); // No further initialization necessary
+const char *TACSStructuralMass::funcName = "StructuralMass";
+
+/*
+  The structural mass function name
+*/
+const char *TACSStructuralMass::functionName(){ 
+  return funcName; 
 }
 
-void StructuralMass::elementWiseInitialize( TACSElement *element, int elemNum ){
-  int numNodes = element->numNodes();
-  if ( numNodes > maxNumNodes ){
-    maxNumNodes = numNodes;
+/*
+  Get the function name
+*/
+TacsScalar TACSStructuralMass::getFunctionValue(){
+  return totalMass;
+}
+
+/*
+  Create the function context
+*/
+TACSFunctionCtx *TACSStructuralMass::createFunctionCtx(){
+  return new StructuralMassCtx(this, maxNumNodes);
+}
+
+/*
+  Initialize the mass to zero
+*/
+void TACSStructuralMass::initEvaluation( EvaluationType ftype ){
+  totalMass = 0.0;
+}
+
+/*
+  Sum the mass across all MPI processes
+*/
+void TACSStructuralMass::finalEvaluation( EvaluationType ftype ){
+  TacsScalar temp = totalMass;
+  MPI_Allreduce(&temp, &totalMass, 1, TACS_MPI_TYPE, 
+                MPI_SUM, tacs->getMPIComm());
+}
+
+/*
+  Initialize the context for threaded execution
+*/
+void TACSStructuralMass::initThread( double tcoef,
+                                     EvaluationType ftype,
+                                     TACSFunctionCtx *fctx ){
+  StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
+  if (ctx){
+    ctx->mass = 0.0;
   }
-}  
-
-void StructuralMass::postInitialize(){}
-
-/*
-  Get the sizes of the work arrays required for evaluation
-*/
-void StructuralMass::getEvalWorkSizes( int *iwork, int *work ){
-  *iwork = 0;
-  *work = 1;
 }
-
-/*
-  Set the total mass to zero on all MPI processes
-*/
-void StructuralMass::preEval( const int _iter ){
-  totalMass = TacsScalar(0.0);
-}
-
-/*
-  Set the first element of the work array to zero - the total
-  mass for all threads
-*/
-void StructuralMass::preEvalThread( const int iter, 
-                                    int *iwork, TacsScalar *work ){
-  work[0] = 0.0;
-}
-  
+ 
 /*
   Evaluate the mass for each element in the domain
 */
-void StructuralMass::elementWiseEval( const int iter, 
-				      TACSElement *element, int elemNum,
-				      const TacsScalar Xpts[],
-				      const TacsScalar vars[], 
-                                      int *iwork, TacsScalar *work ){
-  int numGauss = element->getNumGaussPts();
+void TACSStructuralMass::elementWiseEval(  EvaluationType ftype,
+                                           TACSElement *element, 
+                                           int elemNum,
+                                           const TacsScalar Xpts[], 
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[], 
+                                           const TacsScalar ddvars[],
+                                           TACSFunctionCtx *fctx ){
+  StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
   TACSConstitutive *constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
+    int numGauss = element->getNumGaussPts();
     for ( int i = 0; i < numGauss; i++ ){
       TacsScalar ptmass[6];
       double pt[3];
@@ -75,7 +115,7 @@ void StructuralMass::elementWiseEval( const int iter,
       TacsScalar h = element->getDetJacobian(pt, Xpts);
       constitutive->getPointwiseMass(pt, ptmass);
       
-      work[0] += gauss_weight*h*ptmass[0];
+      ctx->mass += gauss_weight*h*ptmass[0];
     }
   }
 }
@@ -83,55 +123,48 @@ void StructuralMass::elementWiseEval( const int iter,
 /*
   Add the contribution from the mass from all threads
 */
-void StructuralMass::postEvalThread( const int iter,
-                                     int *iwork, TacsScalar *work ){
-  totalMass += work[0];
-}
-
-/*
-  Sum the mass across all MPI processes
-*/
-void StructuralMass::postEval( int _iter ){
-  TacsScalar temp = totalMass;
-  MPI_Allreduce(&temp, &totalMass, 1, TACS_MPI_TYPE, 
-                MPI_SUM, tacs->getMPIComm());
-}
-
-/*
-  Determine the size of the array required for computing the 
-  derivative of the Jacobian w.r.t. the nodal locations.
-*/
-int StructuralMass::getXptSensWorkSize(){
-  return 3*maxNumNodes;
+void TACSStructuralMass::finalThread( double tcoef, 
+                                      EvaluationType ftype,
+                                      TACSFunctionCtx *fctx ){
+  StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
+  if (ctx){
+    totalMass += ctx->mass;
+  }
 }
 
 /*
   Determine the derivative of the mass w.r.t. the element nodal
-  locations.
+  locations.  
 */
-void StructuralMass::elementWiseXptSens( TacsScalar fXptSens[],
-					 TACSElement *element, int elemNum,
-					 const TacsScalar Xpts[],
-					 const TacsScalar vars[], 
-                                         TacsScalar *work ){
-  double pt[3]; // The gauss point
-  int numGauss = element->getNumGaussPts();
+void TACSStructuralMass::getElementXptSens( double tcoef, 
+                                            TacsScalar fXptSens[],
+                                            TACSElement *element, 
+                                            int elemNum,
+                                            const TacsScalar Xpts[], 
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[], 
+                                            const TacsScalar ddvars[],
+                                            TACSFunctionCtx *fctx ){
   int numNodes = element->numNodes();
-  TACSConstitutive *constitutive = element->getConstitutive();
-
   memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
+
+  // Get the objects
+  StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
+  TACSConstitutive *constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
-    TacsScalar *hXptSens = &work[0];
-    
-    // Add the sensitivity due to the constitutive
-    TacsScalar ptmass[6];
+  if (ctx && constitutive){
+    TacsScalar *hXptSens = ctx->hXptSens;
+  
+    int numGauss = element->getNumGaussPts();  
+    // Add the sensitivity due to det of the Jacobian
     for ( int i = 0; i < numGauss; i++ ){
+      double pt[3]; // The gauss point
       TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
       element->getDetJacobianXptSens(hXptSens, pt, Xpts);
       
+      TacsScalar ptmass[6];
       constitutive->getPointwiseMass(pt, ptmass);
       
       for ( int k = 0; k < 3*numNodes; k++ ){
@@ -142,34 +175,32 @@ void StructuralMass::elementWiseXptSens( TacsScalar fXptSens[],
 }
 
 /*
-  The size of the work array required for the DVSens calcs = 0
-*/
-int StructuralMass::getDVSensWorkSize(){
-  return 0;
-}
-
-/*
   Determine the derivative of the mass w.r.t. the material
   design variables
 */
-void StructuralMass::elementWiseDVSens( TacsScalar fdvSens[], int numDVs,
-					TACSElement *element, int elemNum,
-					const TacsScalar Xpts[],
-                                        const TacsScalar vars[],  
-					TacsScalar *work ){
-  double pt[3];
-  int numGauss = element->getNumGaussPts();
+void TACSStructuralMass::addElementDVSens( double tcoef, 
+                                           TacsScalar *fdvSens, int numDVs,
+                                           TACSElement *element, int elemNum,
+                                           const TacsScalar Xpts[], 
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[], 
+                                           const TacsScalar ddvars[],
+                                           TACSFunctionCtx *fctx ){
+  // Get the objects
+  StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
   TACSConstitutive *constitutive = element->getConstitutive();
 
   // If the element does not define a constitutive class, 
   // return without adding any contribution to the function
-  if (constitutive){
+  if (ctx && constitutive){
     // The coefficients on the mass moments
     TacsScalar alpha[6] = {1.0, 0.0, 0.0,
-                           0.0, 0.0, 0.0};
-    
+                           0.0, 0.0, 0.0};  
+    int numGauss = element->getNumGaussPts();
+  
     // Add the sensitivity from the first mass moment
     for ( int i = 0; i < numGauss; i++ ){
+      double pt[3];
       TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = element->getDetJacobian(pt, Xpts);
     
