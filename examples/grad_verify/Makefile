@@ -22,4 +22,4 @@ test: default
 	mpirun -np 4 ./grad_verify CRM_box_2nd.bdf
 
 test_complex: complex
-	mpirun -np 4 ./grad_verify CRM_box_2nd.bdf
+	mpirun -np 4 ./grad_verify CRM_box_2nd.bdf dh=1e-30

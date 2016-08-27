@@ -251,8 +251,14 @@ int main( int argc, char * argv[] ){
   // Alllocate the design variable vector/arrays
   TacsScalar *xvals = new TacsScalar[ num_design_vars ];
   TacsScalar *xtemp = new TacsScalar[ num_design_vars ];
-  double *dfdx = new double[ NUM_FUNCS*num_design_vars ];
-  memset(dfdx, 0, NUM_FUNCS*num_design_vars*sizeof(double));
+
+  // Adjoint-based gradient evaluation
+  TacsScalar *dfdx = new TacsScalar[ NUM_FUNCS*num_design_vars ];
+  memset(dfdx, 0, NUM_FUNCS*num_design_vars*sizeof(TacsScalar));
+
+  // Finite-difference gradient
+  double *fd = new double[ NUM_FUNCS*num_design_vars ];
+  memset(fd, 0, NUM_FUNCS*num_design_vars*sizeof(double));
 
   // Set the design variable values
   for ( int i = 0; i < num_design_vars; i++ ){
@@ -277,7 +283,7 @@ int main( int argc, char * argv[] ){
   int fd_flag = 0, test_flag = 0;
   double dh = 1e-6;
   for ( int k = 0; k < argc; k++ ){
-    if (sscanf(argv[k], "fd=%le", &dh) == 1){
+    if (sscanf(argv[k], "dh=%lf", &dh) == 1){
       fd_flag = 1;
     }
     else if (sscanf(argv[k], "num_grad_comp=%d", 
@@ -285,28 +291,94 @@ int main( int argc, char * argv[] ){
       num_grad_comp = (num_design_vars > num_grad_comp ? 
 		       num_grad_comp : num_design_vars);
     }
-    else if (strcmp(argv[k], "fd") == 0){
-      fd_flag = 1;
-    }
     if (strcmp(argv[k], "test") == 0){
       test_flag = 1;
     }
   }
 
   // Print out the finite-difference interval
-  if (fd_flag && rank == 0){
+  if (rank == 0){
+#ifdef TACS_USE_COMPLEX
+    printf("Complex-step interval: %le\n", dh);
+#else
     printf("Finite-difference interval: %le\n", dh);
+#endif
   }
 
+  // First solve the governing equations
+  tacs->zeroVariables();
+  tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
+  pc->factor();
+  gmres->solve(res, ans);
+  ans->scale(-1.0);
+  tacs->setVariables(ans);
+  
+  // Write the solution to an .f5 file
+  if (f5){
+    // Find the location of the first '.' in the string
+    char * outfile = new char[ strlen(bdf_file)+5 ];
+    int len = strlen(bdf_file);
+    int i = len-1;
+    for ( ; i >= 0; i-- ){
+      if (bdf_file[i] == '.'){ 
+        break; 
+      }     
+    }
+    
+    // Copy the entire input string to the filename
+    strcpy(outfile, bdf_file);
+    
+    // Over-write the last part of the string
+    strcpy(&outfile[i], ".f5");
+    
+    // Write out the file
+    f5->writeToFile(outfile);
+    delete [] outfile;
+  }
+
+  // Evaluate each of the functions
+  TacsScalar fvals[NUM_FUNCS];
+  tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
+  
+  // Evaluate the partial derivative of each function w.r.t. x
+  tacs->addDVSens(1.0, funcs, NUM_FUNCS, 
+                  dfdx, num_design_vars);
+  
+  // Create the adjoint variables for each function of interest
+  TACSBVec *adjoints[NUM_FUNCS];
+  TACSBVec *dfdu[NUM_FUNCS];
+  for ( int j = 0; j < NUM_FUNCS; j++ ){
+    adjoints[j] = tacs->createVec();
+    adjoints[j]->incref();
+    dfdu[j] = tacs->createVec();
+    dfdu[j]->incref();
+  }
+  
+  // Evaluate the partial derivative of each function of interest
+  // w.r.t. the state variables and compute the adjoint
+  tacs->addSVSens(1.0, 0.0, 0.0, funcs, NUM_FUNCS, dfdu);
+  
+  // Solve all of the adjoint equations
+  for ( int j = 0; j < NUM_FUNCS; j++ ){
+    gmres->solve(dfdu[j], adjoints[j]);
+  }
+  
+  // Evaluate the adjoint-residual product
+  tacs->addAdjointResProducts(-1.0, adjoints, NUM_FUNCS,
+                              dfdx, num_design_vars);
+  
+  // Delete all of the adjoints
+  for ( int j = 0; j < NUM_FUNCS; j++ ){
+    adjoints[j]->decref();
+    dfdu[j]->decref();
+  }
+  
+  // Add up the contributions across all processors
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, NUM_FUNCS*num_design_vars,
+                TACS_MPI_TYPE, MPI_SUM, comm);
+  
   // Test the function that will be used
   if (test_flag){
-    tacs->zeroVariables();
-    tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
-    pc->factor();
-    gmres->solve(res, ans);
-    ans->scale(-1.0);
-    tacs->setVariables(ans);
-  
     // Test the derivatives of the functions of interest w.r.t. the
     // state and design variables
     for ( int k = 0; k < NUM_FUNCS; k++ ){
@@ -316,7 +388,6 @@ int main( int argc, char * argv[] ){
 
 #if TACS_USE_COMPLEX
   // Compute the total derivative using the complex-step method
-
   for ( int k = 0; k < num_grad_comp; k++ ){
     // (xvals[k] + dh)
     memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
@@ -340,65 +411,21 @@ int main( int argc, char * argv[] ){
     // Compute their derivative based on the complex component
     // of the function value
     for ( int j = 0; j < NUM_FUNCS; j++ ){
-      dfdx[k + j*num_design_vars] = ImagPart(fvals[j])/dh;
+      fd[k + j*num_design_vars] = ImagPart(fvals[j])/dh;
     }
   }
 
 #else // !TACS_USE_COMPLEX
-  if (fd_flag){
-    // Test the structural sensitivities
-    for ( int k = 0; k < num_grad_comp; k++ ){
-      // (xvals[ok] + dh)
-      memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
-      xtemp[k] += dh;
-
-      // Set the perturbed value of the design variables
-      tacs->setDesignVars(xtemp, num_design_vars);
+  // Test the structural sensitivities
+  for ( int k = 0; k < num_grad_comp; k++ ){
+    // (xvals[ok] + dh)
+    memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
+    xtemp[k] += dh;
+    
+    // Set the perturbed value of the design variables
+    tacs->setDesignVars(xtemp, num_design_vars);
       
-      // Solve the problem
-      tacs->zeroVariables();
-      tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
-      pc->factor();
-      gmres->solve(res, ans);
-      ans->scale(-1.0);
-      tacs->setVariables(ans);
-
-      // Evaluate the function at the perturbed solution
-      TacsScalar fvals[NUM_FUNCS];
-      tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
-      for ( int j = 0; j < NUM_FUNCS; j++ ){
-        dfdx[k + j*num_design_vars] = fvals[j];
-      }
-
-      // (xvals[k] - dh)
-      memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
-      xtemp[k] -= dh;
-
-      // Set the perturbed values of the design variables
-      tacs->setDesignVars(xtemp, num_design_vars);
-
-      // Solve the finite-element problem at the perturbed values
-      // of the design variables
-      tacs->zeroVariables();
-      tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
-      pc->factor();
-      gmres->solve(res, ans);
-      ans->scale(-1.0);
-      tacs->setVariables(ans);
-
-      // Complete the finite-difference computation for each function
-      tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
-      for ( int j = 0; j < NUM_FUNCS; j++ ){
-        dfdx[k + j*num_design_vars] = 0.5*(dfdx[k + j*num_design_vars] -
-					   fvals[j])/dh;
-      }
-    }
-  }
-  else {
-    // Compute the derivatives of the functions of interest
-    // using the adjoint method.
-
-    // First solve the governing equations
+    // Solve the problem
     tacs->zeroVariables();
     tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
     pc->factor();
@@ -406,69 +433,35 @@ int main( int argc, char * argv[] ){
     ans->scale(-1.0);
     tacs->setVariables(ans);
 
-    // Write the solution to an .f5 file
-    if (f5){
-      // Find the location of the first '.' in the string
-      char * outfile = new char[ strlen(bdf_file)+5 ];
-      int len = strlen(bdf_file);
-      int i = len-1;
-      for ( ; i >= 0; i-- ){
-	if (bdf_file[i] == '.'){ 
-	  break; 
-	}     
-      }
-      
-      // Copy the entire input string to the filename
-      strcpy(outfile, bdf_file);
-
-      // Over-write the last part of the string
-      strcpy(&outfile[i], ".f5");
-
-      // Write out the file
-      f5->writeToFile(outfile);
-      delete [] outfile;
-    }
-
-    // Evaluate each of the functions
+    // Evaluate the function at the perturbed solution
     TacsScalar fvals[NUM_FUNCS];
     tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
-  
-    // Evaluate the partial derivative of each function w.r.t. x
-    tacs->addDVSens(1.0, funcs, NUM_FUNCS, 
-                    dfdx, num_design_vars);
-
-    // Create the adjoint variables for each function of interest
-    TACSBVec *adjoints[NUM_FUNCS];
-    TACSBVec *dfdu[NUM_FUNCS];
     for ( int j = 0; j < NUM_FUNCS; j++ ){
-      adjoints[j] = tacs->createVec();
-      adjoints[j]->incref();
-      dfdu[j] = tacs->createVec();
-      dfdu[j]->incref();
+      fd[k + j*num_design_vars] = fvals[j];
     }
 
-    // Evaluate the partial derivative of each function of interest
-    // w.r.t. the state variables and compute the adjoint
-    tacs->addSVSens(1.0, 0.0, 0.0, funcs, NUM_FUNCS, dfdu);
+    // (xvals[k] - dh)
+    memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
+    xtemp[k] -= dh;
 
-    // Solve all of the adjoint equations
-    for ( int j = 0; j < NUM_FUNCS; j++ ){
-      gmres->solve(dfdu[j], adjoints[j]);
-    }
-    
-    // Evaluate the adjoint-residual product
-    tacs->addAdjointResProducts(-1.0, adjoints, NUM_FUNCS,
-                                dfdx, num_design_vars);
-         
-    // Delete all of the adjoints
-    for ( int j = 0; j < NUM_FUNCS; j++ ){
-      adjoints[j]->decref();
-      dfdu[j]->decref();
-    }
+    // Set the perturbed values of the design variables
+    tacs->setDesignVars(xtemp, num_design_vars);
 
-    // Add up the contributions across all processors
-    MPI_Allreduce(MPI_IN_PLACE, dfdx, NUM_FUNCS*num_design_vars,
-                  TACS_MPI_TYPE, MPI_SUM, comm);
+    // Solve the finite-element problem at the perturbed values
+    // of the design variables
+    tacs->zeroVariables();
+    tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
+    pc->factor();
+    gmres->solve(res, ans);
+    ans->scale(-1.0);
+    tacs->setVariables(ans);
+
+    // Complete the finite-difference computation for each function
+    tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
+    for ( int j = 0; j < NUM_FUNCS; j++ ){
+      dfdx[k + j*num_design_vars] = 0.5*(dfdx[k + j*num_design_vars] -
+                                         fvals[j])/dh;
+    }
   }
 #endif // TACS_USE_COMPLEX
 
@@ -477,8 +470,14 @@ int main( int argc, char * argv[] ){
     for ( int j = 0; j < NUM_FUNCS; j++ ){
       printf("Sensitivities for funcion %s\n",
              funcs[j]->functionName());
+      printf("%25s %25s %25s\n",
+             "Adjoint", "FD/CS", "Abs. error");
       for ( int k = 0; k < num_grad_comp; k++ ){
-        printf("%25.15e\n", RealPart(dfdx[k + j*num_design_vars]));
+        printf("%25.15e %25.15e %25.15e\n", 
+               RealPart(dfdx[k + j*num_design_vars]),
+               fd[k + j*num_design_vars],
+               RealPart(dfdx[k + j*num_design_vars]) -
+               fd[k + j*num_design_vars]);
       }
     }
   }
