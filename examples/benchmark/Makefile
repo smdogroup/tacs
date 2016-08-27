@@ -17,3 +17,9 @@ complex_debug: debug
 
 clean:
 	rm -f *.o benchmark
+
+test: default
+	./benchmark
+
+test_complex: complex
+	./benchmark

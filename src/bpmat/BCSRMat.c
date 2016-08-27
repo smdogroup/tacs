@@ -419,15 +419,7 @@ must agree ncol(A) != nrow(B)\n");
   if (max_size > nnz){
     matutils::ExtendArray(&cols, nnz, nnz);
   }
-
-  if (init_size > 0){
-    int rank;
-    MPI_Comm_rank(comm, &rank);
-/*     printf("[%d] BCSRMat: (C + A*B) Input fill ratio %4.2f, actual \ */
-/* fill ratio: %4.2f, nnz(ILU) = %d\n", rank, fill,  */
-/* 	   (1.0*rowp[nrows])/init_size, rowp[nrows]); */
-  }
-    
+   
   delete [] tcols;
 
   data->rowp = rowp;
@@ -696,9 +688,9 @@ void BCSRMat::computeILUk( BCSRMat * mat, int levFill,
   if (mat->data->rowp[nrows] > 0){
     int rank;
     MPI_Comm_rank(comm, &rank);
-/*     printf("[%d] BCSRMat: ILU(%d) Input fill ratio %4.2f, actual \ */
-/* fill ratio: %4.2f, nnz(ILU) = %d\n", rank, levFill, fill,  */
-/* 	   (1.0*rowp[nrows])/mat->data->rowp[nrows], rowp[nrows]); */
+    printf("[%d] BCSRMat: ILU(%d) Input fill ratio %4.2f, actual \
+fill ratio: %4.2f, nnz(ILU) = %d\n", rank, levFill, fill,
+	   (1.0*rowp[nrows])/mat->data->rowp[nrows], rowp[nrows]);
   }
 
   delete [] rcols;
@@ -816,14 +808,6 @@ BCSRMat * BCSRMat::computeILUkEpc( BCSRMat * Emat, const int * levs,
     matutils::ExtendArray(&ecols, size, size);
   }
 
-  if (mat_size > 0){
-    int rank;
-    MPI_Comm_rank(comm, &rank);
-    printf("[%d] BCSRMat: L^{-1}*E Input fill ratio %4.2f, actual \
-fill ratio: %4.2f, nnz(ILU) = %d\n", rank, fill, 
-	   (1.0*erowp[Emat->data->nrows])/mat_size, erowp[Emat->data->nrows]);
-  }
-
   return new BCSRMat(comm, thread_info, Emat->data->bsize, 
                      Emat->data->nrows, Emat->data->ncols, &erowp, &ecols);
 }
@@ -934,14 +918,6 @@ BCSRMat * BCSRMat::computeILUkFpc( BCSRMat * Fmat, const int * levs,
   // Clip the fcols array to the correct length
   if (max_size > size){
     matutils::ExtendArray(&fcols, size, size);
-  }
-
-  if (mat_size > 0){
-    int rank;
-    MPI_Comm_rank(comm, &rank);
-    printf("[%d] BCSRMat: F*U^{-1} Input fill ratio %4.2f, actual \
-fill ratio: %4.2f, nnz(ILU) = %d\n", rank, fill, 
-	   (1.0*frowp[Fmat->data->nrows])/mat_size, frowp[Fmat->data->nrows]);
   }
 
   return new BCSRMat(comm, thread_info, Fmat->data->bsize, 

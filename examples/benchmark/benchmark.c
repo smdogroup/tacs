@@ -1,13 +1,13 @@
 #include <stdio.h>
 
 #include "TACSAssembler.h"
+#include "GSEP.h"
+#include "isoFSDTStiffness.h"
 #include "PlaneStressQuad.h"
 #include "MITCShell.h"
-#include "isoFSDTStiffness.h"
-#include "GSEP.h"
+#include "TACSShellTraction.h"
 #include "Compliance.h"
 #include "KSFailure.h"
-#include "TACSToFH5.h"
 
 /*
   Create a plane stress stiffness object with default properties
@@ -38,7 +38,7 @@ void createShellElement( int order, int num, TACSElement **elem ){
 
   FSDTStiffness *stiff = new isoFSDTStiffness(rho, E, mu, kcorr, ys, 
                                               thickness, num);
-
+  *elem = NULL;
   if (order == 2){
     *elem = new MITCShell<2>(stiff);
   }
@@ -47,6 +47,23 @@ void createShellElement( int order, int num, TACSElement **elem ){
   }
   else if (order == 4){
     *elem = new MITCShell<4>(stiff);
+  }
+}
+
+/*
+  Create the shell traction
+*/
+void createShellTraction( int order, int num, TACSElement **elem ){
+  TacsScalar tx = 0.0, ty = 0.0, tz = 10.0;
+  *elem = NULL;
+  if (order == 2){
+    *elem = new TACSShellTraction<2>(tx, ty, tz);
+  }
+  else if (order == 3){
+    *elem = new TACSShellTraction<3>(tx, ty, tz);
+  }
+  else if (order == 4){
+    *elem = new TACSShellTraction<4>(tx, ty, tz);
   }
 }
   
@@ -108,6 +125,7 @@ TACSAssembler *create2DModel( MPI_Comm comm, int varsPerNode,
 
   // Create and set the elements
   TACSElement **elements = new TACSElement*[ numElements ];
+  TACSAuxElements *aux = new TACSAuxElements(numElements);
   
   for ( int k = 0, elem = firstElem; elem < lastElem; k++, elem++ ){
     if (varsPerNode == 2){ 
@@ -116,6 +134,9 @@ TACSAssembler *create2DModel( MPI_Comm comm, int varsPerNode,
     }
     else { // This must be a shell
       createShellElement(order, elem, &elements[k]);
+      TACSElement *trac;
+      createShellTraction(order, elem, &trac);
+      aux->addElement(k, trac);
     }
   }
 
@@ -194,6 +215,9 @@ TACSAssembler *create2DModel( MPI_Comm comm, int varsPerNode,
   tacs->setNodes(X);
   X->decref();
 
+  // Set the shell order
+  tacs->setAuxElements(aux);
+
   return tacs;
 }
 
@@ -261,7 +285,6 @@ void testEigenSolver( TACSAssembler *tacs,
                             nrestart, gmres_iters, isflexible);
   solver->incref();
   solver->setTolerances(1e-10, 1e-30);
-  solver->setMonitor(new KSMPrintStdout("GCROT", rank, 5));
 
   int max_eigs = 40;
   EPOperator *ep_op = new EPGeneralizedShiftInvert(sigma, solver, mass_mat);
@@ -407,11 +430,7 @@ void testSolve( TACSAssembler *tacs,
   printf("[%d] FLOPS: %15.5e FLOP rate: %15.5e\n", rank, flops, flops/(stop-start));
   
   // Set up the problem
-  // GMRES *solver = new GMRES(mat, pc, gmres_iters, 2, isflexible);
-  int outer_iters = 30;
-  int nrestart = outer_iters;
-  GCROT *solver = new GCROT(mat, pc, outer_iters, 
-                            nrestart, gmres_iters, isflexible);
+  GMRES *solver = new GMRES(mat, pc, gmres_iters, 2, isflexible);
   solver->incref();
   solver->setTolerances(1e-10, 1e-30);
   solver->setMonitor(new KSMPrintStdout(" Iteration", rank, 5)); 
@@ -639,7 +658,7 @@ void testDVSensThreads( TACSAssembler *tacs, int numDVs ){
     t0 = MPI_Wtime() - t0;
 
     if (rank == 0){
-      printf("Time for 5 calls to TACSAssembler::evalDVSens(), \
+      printf("Time for 5 calls to TACSAssembler::addDVSens(), \
 num_threads %2d: %15.6f\n", p, t0);
     }
   }
@@ -656,7 +675,7 @@ num_threads %2d: %15.6f\n", p, t0);
     t0 = MPI_Wtime() - t0;
    
     if (rank == 0){
-      printf("Time for 5 calls to TACSAssembler::evalAdjointResProducts(), \
+      printf("Time for 5 calls to TACSAssembler::addAdjointResProducts(), \
 num_threads %2d: %15.6f\n", p, t0);
     }
   }
@@ -688,10 +707,10 @@ int main( int argc, char *argv[] ){
   int ny = 75;
 
   // Retrieve the options
-  int noptions = 0;
+  int noptions = 7;
   const char *opts[] = 
     {"AMD", "DirectSchur", "nx=50", "ny=50",
-     "varsPerNode=6", "order=3"};
+     "varsPerNode=6", "order=3", "levFill=1000"};
 
   for ( int k = 0; k < noptions; k++ ){
     if (sscanf(opts[k], "nx=%d", &nx) == 1){}
@@ -701,7 +720,7 @@ int main( int argc, char *argv[] ){
       if (order > 4){ order = 4; }
     }
     if (sscanf(opts[k], "varsPerNode=%d", &varsPerNode) == 1){
-      if (varsPerNode != 2 || varsPerNode != 6){
+      if (!(varsPerNode == 2 || varsPerNode == 6)){
         varsPerNode = 2;
       }
     }
@@ -730,7 +749,7 @@ int main( int argc, char *argv[] ){
                   noptions, opts);
   tacs->incref();
 
-  // Test the BCSRMat implementation
+  // Test the BCSRMat implementation with threads
   testBCSRMat(tacs);
 
   int max_num_threads = 8;
@@ -743,9 +762,7 @@ int main( int argc, char *argv[] ){
     // Test solve the first level for now
     testSolve(tacs, noptions, opts);
   }
-  testDVSensThreads(tacs, nelems);
-  testEigenSolver(tacs, noptions, opts);
- 
+
   tacs->decref(); 
   MPI_Finalize();
 

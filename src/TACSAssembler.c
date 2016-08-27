@@ -3134,101 +3134,60 @@ void TACSAssembler::integrateFunctions( double tcoef,
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
 		    &elemXpts, NULL, NULL, NULL);
      
-  if (thread_info->getNumThreads() > 1){
-    /*
-    // Initialize the threads
-    tacsPInfo->tacs = this;
-    tacsPInfo->functions = functions;
-    tacsPInfo->numFuncs = numFuncs;
+  for ( int k = 0; k < numFuncs; k++ ){
+    TACSFunctionCtx *ctx = 
+      funcs[k]->createFunctionCtx();
+        
+    // Initialize the function evaluation context
+    funcs[k]->initThread(tcoef, ftype, ctx);
 
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    for ( int iter = 0; iter < num_iters; iter++ ){
-      // Initialize the pre-evaluation iterations
-      for ( int k = 0; k < numFuncs; k++ ){
-        functions[k]->preEval(iter);
-      }
-
-      tacsPInfo->funcIteration = iter;
-      numCompletedElements = 0;
-
-      for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-        pthread_create(&threads[k], &attr, 
-                       TACSAssembler::evalFunctions_thread,
-                       (void*)tacsPInfo);
-      }
-      
-      // Join all the threads
-      for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-        pthread_join(threads[k], NULL);
-      }
-    
-      // Initialize the pre-evaluation iterations
-      for ( int k = 0; k < numFuncs; k++ ){
-        functions[k]->postEval(iter);
+    if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
+      for ( int i = 0; i < numElements; i++ ){
+        // Determine the values of the state variables for the
+        // current element
+        int ptr = elementNodeIndex[i];
+        int len = elementNodeIndex[i+1] - ptr;
+        const int *nodes = &elementTacsNodes[ptr];
+        xptVec->getValues(len, nodes, elemXpts);
+        varsVec->getValues(len, nodes, vars);
+        dvarsVec->getValues(len, nodes, dvars);
+        ddvarsVec->getValues(len, nodes, ddvars);
+          
+        // Evaluate the element-wise component of the function
+        funcs[k]->elementWiseEval(ftype, elements[i], i, 
+                                  elemXpts, vars, dvars, ddvars, ctx);
       }
     }
-    */
-  }
-  else {
-    for ( int k = 0; k < numFuncs; k++ ){
-      TACSFunctionCtx *ctx = 
-        funcs[k]->createFunctionCtx();
+    else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
+      const int * elementNums;
+      int subDomainSize = funcs[k]->getElementNums(&elementNums);
         
-      // Initialize the function evaluation context
-      funcs[k]->initThread(tcoef, ftype, ctx);
-
-      if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
-        for ( int i = 0; i < numElements; i++ ){
-          // Determine the values of the state variables for the
-          // current element
-          int ptr = elementNodeIndex[i];
-          int len = elementNodeIndex[i+1] - ptr;
+      for ( int i = 0; i < subDomainSize; i++ ){
+        int elemNum = elementNums[i];
+          
+        if (elemNum >= 0 && elemNum < numElements){
+          // Determine the values of the state variables 
+          // for the current element
+          int ptr = elementNodeIndex[elemNum];
+          int len = elementNodeIndex[elemNum+1] - ptr;
           const int *nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
           ddvarsVec->getValues(len, nodes, ddvars);
-          
+
           // Evaluate the element-wise component of the function
-          funcs[k]->elementWiseEval(ftype, elements[i], i, 
+          funcs[k]->elementWiseEval(ftype, elements[elemNum], elemNum,
                                     elemXpts, vars, dvars, ddvars, ctx);
         }
       }
-      else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
-        const int * elementNums;
-        int subDomainSize = funcs[k]->getElementNums(&elementNums);
-        
-        for ( int i = 0; i < subDomainSize; i++ ){
-          int elemNum = elementNums[i];
-          
-          if (elemNum >= 0 && elemNum < numElements){
-            // Determine the values of the state variables 
-            // for the current element
-            int ptr = elementNodeIndex[elemNum];
-            int len = elementNodeIndex[elemNum+1] - ptr;
-            const int *nodes = &elementTacsNodes[ptr];
-            xptVec->getValues(len, nodes, elemXpts);
-            varsVec->getValues(len, nodes, vars);
-            dvarsVec->getValues(len, nodes, dvars);
-            ddvarsVec->getValues(len, nodes, ddvars);
-
-            // Evaluate the element-wise component of the function
-            funcs[k]->elementWiseEval(ftype, elements[elemNum], elemNum,
-                                      elemXpts, vars, dvars, ddvars, ctx);
-          }
-        }
-      }
-      
-      // Record the local values stored in the context
-      funcs[k]->finalThread(tcoef, ftype, ctx);
-
-      // Free the function context
-      if (ctx){ delete ctx; }
     }
+      
+    // Record the local values stored in the context
+    funcs[k]->finalThread(tcoef, ftype, ctx);
+
+    // Free the function context
+    if (ctx){ delete ctx; }
   }
 }
 
@@ -3274,87 +3233,54 @@ void TACSAssembler::addDVSens( double coef,
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
 		  &elemXpts, NULL, NULL, NULL);
 
-  if (thread_info->getNumThreads() > 1){
-    /*
-    tacsPInfo->tacs = this;
-    tacsPInfo->functions = funcs;
-    tacsPInfo->numFuncs = numFuncs;
-    tacsPInfo->numDesignVars = numDVs;
-    tacsPInfo->fdvSens = fdvSens;
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Now compute df/dx
-    numCompletedElements = 0;
+  // For each function, evaluate the derivative w.r.t. the 
+  // design variables for each element
+  for ( int k = 0; k < numFuncs; k++ ){
+    TACSFunctionCtx *ctx = 
+      funcs[k]->createFunctionCtx();
     
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, 
-		     TACSAssembler::evalDVSens_thread,
-                     (void*)tacsPInfo);
-    }
-    
-    // Join all the threads
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_join(threads[k], NULL);
-    }
-
-    // Destroy the attribute
-    pthread_attr_destroy(&attr);
-    */
-  }
-  else {
-    // For each function, evaluate the derivative w.r.t. the 
-    // design variables for each element
-    for ( int k = 0; k < numFuncs; k++ ){
-      TACSFunctionCtx *ctx = 
-        funcs[k]->createFunctionCtx();
+    if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
+      // Get the funcs[k] sub-domain
+      const int * elemSubList;
+      int numSubElems = funcs[k]->getElementNums(&elemSubList);
+      
+      for ( int i = 0; i < numSubElems; i++ ){
+        int elemNum = elemSubList[i];
+        // Determine the values of the state variables for subElem
+        int ptr = elementNodeIndex[elemNum];
+        int len = elementNodeIndex[elemNum+1] - ptr;
+        const int *nodes = &elementTacsNodes[ptr];
+        xptVec->getValues(len, nodes, elemXpts);
+        varsVec->getValues(len, nodes, vars);
+        dvarsVec->getValues(len, nodes, dvars);
+        ddvarsVec->getValues(len, nodes, ddvars);
         
-      if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
-        // Get the funcs[k] sub-domain
-        const int * elemSubList;
-        int numSubElems = funcs[k]->getElementNums(&elemSubList);
-      
-        for ( int i = 0; i < numSubElems; i++ ){
-          int elemNum = elemSubList[i];
-          // Determine the values of the state variables for subElem
-          int ptr = elementNodeIndex[elemNum];
-          int len = elementNodeIndex[elemNum+1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
-          xptVec->getValues(len, nodes, elemXpts);
-          varsVec->getValues(len, nodes, vars);
-          dvarsVec->getValues(len, nodes, dvars);
-          ddvarsVec->getValues(len, nodes, ddvars);
- 
-          // Evaluate the element-wise sensitivity of the function
-          funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
-                                     elements[elemNum], elemNum, 
-                                     elemXpts, vars, dvars, ddvars, ctx);
-        }
+        // Evaluate the element-wise sensitivity of the function
+        funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
+                                   elements[elemNum], elemNum, 
+                                   elemXpts, vars, dvars, ddvars, ctx);
       }
-      else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
-        for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
-          // Determine the values of the state variables for elemNum
-          int ptr = elementNodeIndex[elemNum];
-          int len = elementNodeIndex[elemNum+1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
-          xptVec->getValues(len, nodes, elemXpts);
-          varsVec->getValues(len, nodes, vars);
-          dvarsVec->getValues(len, nodes, dvars);
-          ddvarsVec->getValues(len, nodes, ddvars);
-
-          // Evaluate the element-wise sensitivity of the function
-          funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
-                                     elements[elemNum], elemNum, 
-                                     elemXpts, vars, dvars, ddvars, ctx);
-        }
-      }
-      
-      // Free the context
-      if (ctx){ delete ctx; }
     }
+    else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
+      for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
+        // Determine the values of the state variables for elemNum
+        int ptr = elementNodeIndex[elemNum];
+        int len = elementNodeIndex[elemNum+1] - ptr;
+        const int *nodes = &elementTacsNodes[ptr];
+        xptVec->getValues(len, nodes, elemXpts);
+        varsVec->getValues(len, nodes, vars);
+        dvarsVec->getValues(len, nodes, dvars);
+        ddvarsVec->getValues(len, nodes, ddvars);
+
+        // Evaluate the element-wise sensitivity of the function
+        funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
+                                   elements[elemNum], elemNum, 
+                                   elemXpts, vars, dvars, ddvars, ctx);
+      }
+    }
+      
+    // Free the context
+    if (ctx){ delete ctx; }
   }
 }
 
@@ -3392,84 +3318,55 @@ void TACSAssembler::addXptSens( double coef,
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
 		  &elemXpts, &elemXptSens, NULL, NULL);
 
-  if (thread_info->getNumThreads() > 1){
-    /*
-    tacsPInfo->tacs = this;
-    tacsPInfo->functions = funcs;
-    tacsPInfo->numFuncs = numFuncs;
-
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Compute the derivative of the functions w.r.t. the nodes
-    numCompletedElements = 0;
-    tacsPInfo->fXptSens = fXptSens;
-
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, 
-		     TACSAssembler::evalXptSens_thread,
-		     (void*)tacsPInfo);
-    }
-
-    // Join all the threads
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_join(threads[k], NULL);
-    }
-    */
-  }
-  else {
-    // For each function, evaluate the derivative w.r.t. the 
-    // nodal locations for all elements or part of the domain
-    for ( int k = 0; k < numFuncs; k++ ){
-      TACSFunctionCtx *ctx = 
-        funcs[k]->createFunctionCtx();
+  // For each function, evaluate the derivative w.r.t. the 
+  // nodal locations for all elements or part of the domain
+  for ( int k = 0; k < numFuncs; k++ ){
+    TACSFunctionCtx *ctx = 
+      funcs[k]->createFunctionCtx();
   
-      if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
-	// Get the function sub-domain
-	const int * elemSubList;
-	int numSubElems = funcs[k]->getElementNums(&elemSubList);
-	for ( int i = 0; i < numSubElems; i++ ){
-	  int elemNum = elemSubList[i];
-	  // Determine the values of the state variables for subElem
-          int ptr = elementNodeIndex[elemNum];
-          int len = elementNodeIndex[elemNum+1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
-          xptVec->getValues(len, nodes, elemXpts);
-          varsVec->getValues(len, nodes, vars);
-          dvarsVec->getValues(len, nodes, dvars);
-          ddvarsVec->getValues(len, nodes, ddvars);
+    if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
+      // Get the function sub-domain
+      const int * elemSubList;
+      int numSubElems = funcs[k]->getElementNums(&elemSubList);
+      for ( int i = 0; i < numSubElems; i++ ){
+        int elemNum = elemSubList[i];
+        // Determine the values of the state variables for subElem
+        int ptr = elementNodeIndex[elemNum];
+        int len = elementNodeIndex[elemNum+1] - ptr;
+        const int *nodes = &elementTacsNodes[ptr];
+        xptVec->getValues(len, nodes, elemXpts);
+        varsVec->getValues(len, nodes, vars);
+        dvarsVec->getValues(len, nodes, dvars);
+        ddvarsVec->getValues(len, nodes, ddvars);
           
-	  // Evaluate the element-wise sensitivity of the function
-	  funcs[k]->getElementXptSens(coef, elemXptSens, 
-                                      elements[elemNum], elemNum, 
-                                      elemXpts, vars, dvars, ddvars, ctx);
-	  fXptSens[k]->setValues(len, nodes, elemXptSens, ADD_VALUES);
-	}
+        // Evaluate the element-wise sensitivity of the function
+        funcs[k]->getElementXptSens(coef, elemXptSens, 
+                                    elements[elemNum], elemNum, 
+                                    elemXpts, vars, dvars, ddvars, ctx);
+        fXptSens[k]->setValues(len, nodes, elemXptSens, ADD_VALUES);
       }
-      else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
-	for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
-	  // Determine the values of the state variables for elemNum
-          int ptr = elementNodeIndex[elemNum];
-          int len = elementNodeIndex[elemNum+1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
-          xptVec->getValues(len, nodes, elemXpts);
-          varsVec->getValues(len, nodes, vars);
-          dvarsVec->getValues(len, nodes, dvars);
-          ddvarsVec->getValues(len, nodes, ddvars);
-      
-	  // Evaluate the element-wise sensitivity of the function
-	  funcs[k]->getElementXptSens(coef, elemXptSens, 
-                                      elements[elemNum], elemNum, 
-                                      elemXpts, vars, dvars, ddvars, ctx);
-	  fXptSens[k]->setValues(len, nodes, elemXptSens, ADD_VALUES);
-	}
-      }
-  
-      // Free the context
-      if (ctx){ delete ctx; }
     }
+    else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
+      for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
+        // Determine the values of the state variables for elemNum
+        int ptr = elementNodeIndex[elemNum];
+        int len = elementNodeIndex[elemNum+1] - ptr;
+        const int *nodes = &elementTacsNodes[ptr];
+        xptVec->getValues(len, nodes, elemXpts);
+        varsVec->getValues(len, nodes, vars);
+        dvarsVec->getValues(len, nodes, dvars);
+        ddvarsVec->getValues(len, nodes, ddvars);
+      
+        // Evaluate the element-wise sensitivity of the function
+        funcs[k]->getElementXptSens(coef, elemXptSens, 
+                                    elements[elemNum], elemNum, 
+                                    elemXpts, vars, dvars, ddvars, ctx);
+        fXptSens[k]->setValues(len, nodes, elemXptSens, ADD_VALUES);
+      }
+    }
+  
+    // Free the context
+    if (ctx){ delete ctx; }
   }
 }
 
@@ -3600,77 +3497,44 @@ void TACSAssembler::addAdjointResProducts( double scale,
     auxElements->sort();
   }
 
-  if (thread_info->getNumThreads() > 1){
-    /*
-    tacsPInfo->tacs = this;
-    tacsPInfo->numAdjoints = numAdjoints;
-    tacsPInfo->adjointVars = localAdjoint;
-    tacsPInfo->numDesignVars = numDVs;
-    tacsPInfo->fdvSens = dvSensVals;
+  // Retrieve pointers to temporary storage
+  TacsScalar *vars, *dvars, *ddvars;
+  TacsScalar *elemXpts, *elemAdjoint;
+  getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
+                  &elemXpts, NULL, NULL, NULL);
 
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Now compute Phi^{T} * dR/dx 
-    numCompletedElements = 0;
-
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, 
-                     TACSAssembler::adjointResProduct_thread,
-                     (void*)tacsPInfo);
-    }
-    
-    // Join all the threads
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_join(threads[k], NULL);
-    }
-
-    // Destroy the attribute
-    pthread_attr_destroy(&attr);
-    */
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (auxElements){
+    naux = auxElements->getAuxElements(&aux);
   }
-  else {
-    // Retrieve pointers to temporary storage
-    TacsScalar *vars, *dvars, *ddvars;
-    TacsScalar *elemXpts, *elemAdjoint;
-    getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
-		    &elemXpts, NULL, NULL, NULL);
 
-    // Set the data for the auxiliary elements - if there are any
-    int naux = 0, aux_count = 0;
-    TACSAuxElem *aux = NULL;
-    if (auxElements){
-      naux = auxElements->getAuxElements(&aux);
-    }
-
-    for ( int i = 0; i < numElements; i++ ){
-      // Find the variables and nodes
-      int ptr = elementNodeIndex[i];
-      int len = elementNodeIndex[i+1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
-      xptVec->getValues(len, nodes, elemXpts);
-      varsVec->getValues(len, nodes, vars);
-      dvarsVec->getValues(len, nodes, dvars);
-      ddvarsVec->getValues(len, nodes, ddvars);
+  for ( int i = 0; i < numElements; i++ ){
+    // Find the variables and nodes
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, vars);
+    dvarsVec->getValues(len, nodes, dvars);
+    ddvarsVec->getValues(len, nodes, ddvars);
       
-      // Get the adjoint variables
-      for ( int k = 0; k < numAdjoints; k++ ){
-	adjoint[k]->getValues(len, nodes, elemAdjoint);
-	elements[i]->addAdjResProduct(time, scale, 
-                                      &fdvSens[k*numDVs], numDVs,
-				      elemAdjoint, elemXpts,
-				      vars, dvars, ddvars);
+    // Get the adjoint variables
+    for ( int k = 0; k < numAdjoints; k++ ){
+      adjoint[k]->getValues(len, nodes, elemAdjoint);
+      elements[i]->addAdjResProduct(time, scale, 
+                                    &fdvSens[k*numDVs], numDVs,
+                                    elemAdjoint, elemXpts,
+                                    vars, dvars, ddvars);
 
-        // Add the contribution from the auxiliary elements
-        while (aux_count < naux && aux[aux_count].num == i){
-          aux[aux_count].elem->addAdjResProduct(time, scale,
-                                                &fdvSens[k*numDVs], numDVs,
-                                                elemAdjoint, elemXpts,
-                                                vars, dvars, ddvars);
-          aux_count++;
-        }
+      // Add the contribution from the auxiliary elements
+      while (aux_count < naux && aux[aux_count].num == i){
+        aux[aux_count].elem->addAdjResProduct(time, scale,
+                                              &fdvSens[k*numDVs], numDVs,
+                                              elemAdjoint, elemXpts,
+                                              vars, dvars, ddvars);
+        aux_count++;
       }
     }
   }
@@ -3709,77 +3573,48 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
     auxElements->sort();
   }
 
-  if (thread_info->getNumThreads() > 1){
-    /*
-    tacsPInfo->tacs = this;
-    tacsPInfo->numAdjoints = numAdjoints;
-    tacsPInfo->adjointVars = localAdjoint;
+  // Retrieve pointers to temporary storage
+  TacsScalar *vars, *dvars, *ddvars;
+  TacsScalar *elemXpts, *elemAdjoint, *xptSens;
+  getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
+                  &elemXpts, &xptSens, NULL, NULL);
 
-    // Create the joinable attribute
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    // Set the vector to store Phi^{T} dR/dXpts
-    numCompletedElements = 0;
-    tacsPInfo->adjXptSensProduct = adjXptSensProduct;
-
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_create(&threads[k], &attr, 
-		     TACSAssembler::adjointResXptSensProduct_thread,
-		     (void*)tacsPInfo);
-    }
-    
-    // Join all the threads
-    for ( int k = 0; k < thread_info->getNumThreads(); k++ ){
-      pthread_join(threads[k], NULL);
-    }
-    */
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (auxElements){
+    naux = auxElements->getAuxElements(&aux);
   }
-  else {
-    // Retrieve pointers to temporary storage
-    TacsScalar *vars, *dvars, *ddvars;
-    TacsScalar *elemXpts, *elemAdjoint, *xptSens;
-    getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
-		    &elemXpts, &xptSens, NULL, NULL);
 
-    // Set the data for the auxiliary elements - if there are any
-    int naux = 0, aux_count = 0;
-    TACSAuxElem *aux = NULL;
-    if (auxElements){
-      naux = auxElements->getAuxElements(&aux);
-    }
-
-    for ( int i = 0; i < numElements; i++ ){
-      // Find the variables and nodes
-      int ptr = elementNodeIndex[i];
-      int len = elementNodeIndex[i+1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
-      xptVec->getValues(len, nodes, elemXpts);
-      varsVec->getValues(len, nodes, vars);
-      dvarsVec->getValues(len, nodes, dvars);
-      ddvarsVec->getValues(len, nodes, ddvars);
+  for ( int i = 0; i < numElements; i++ ){
+    // Find the variables and nodes
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, vars);
+    dvarsVec->getValues(len, nodes, dvars);
+    ddvarsVec->getValues(len, nodes, ddvars);
       
-      // Get the adjoint variables
-      for ( int k = 0; k < numAdjoints; k++ ){
-        memset(xptSens, 0, TACS_SPATIAL_DIM*len*sizeof(TacsScalar));
-	adjoint[k]->getValues(len, nodes, elemAdjoint);
-	elements[i]->addAdjResXptProduct(time, scale, xptSens,
-                                         elemAdjoint, elemXpts,
-                                         vars, dvars, ddvars);
+    // Get the adjoint variables
+    for ( int k = 0; k < numAdjoints; k++ ){
+      memset(xptSens, 0, TACS_SPATIAL_DIM*len*sizeof(TacsScalar));
+      adjoint[k]->getValues(len, nodes, elemAdjoint);
+      elements[i]->addAdjResXptProduct(time, scale, xptSens,
+                                       elemAdjoint, elemXpts,
+                                       vars, dvars, ddvars);
 
-        // Add the contribution from the auxiliary elements
-        while (aux_count < naux && aux[aux_count].num == i){
-          aux[aux_count].elem->addAdjResXptProduct(time, scale, xptSens,
-                                                   elemAdjoint, elemXpts,
-                                                   vars, dvars, ddvars);
-          aux_count++;
-        }
-
-        adjXptSens[k]->setValues(len, nodes, xptSens, ADD_VALUES);
+      // Add the contribution from the auxiliary elements
+      while (aux_count < naux && aux[aux_count].num == i){
+        aux[aux_count].elem->addAdjResXptProduct(time, scale, xptSens,
+                                                 elemAdjoint, elemXpts,
+                                                 vars, dvars, ddvars);
+        aux_count++;
       }
-    }   
-  }
+
+      adjXptSens[k]->setValues(len, nodes, xptSens, ADD_VALUES);
+    }
+  }   
 }
 
 /*

@@ -291,11 +291,11 @@ class TACSAssembler : public TACSObject {
   static void *assembleRes_thread( void *t );
   static void *assembleJacobian_thread( void *t );
   static void *assembleMatType_thread( void *t );
+  static void *integrateFunctions_thread( void *t );
+  static void *addDVSens_thread( void *t );
   // static void *adjointResXptSensProduct_thread( void *t );
-  // static void *adjointResProduct_thread( void *t );
-  // static void *evalFunctions_thread( void *t );
+  // static void *adjointResProduct_thread( void *t );  
   // static void *evalXptSens_thread( void *t );
-  // static void *evalDVSens_thread( void *t );
 
   TACSVarMap *varMap; // Variable ownership map
   TACSBcMap *bcMap; // Boundary condition data
@@ -375,18 +375,15 @@ class TACSAssembler : public TACSObject {
   public:
     TACSAssemblerPthreadInfo(){
       tacs = NULL; 
-      // Residual
       res = NULL;
-      // Matrix information
       mat = NULL;
       alpha = beta = gamma = 0.0;
       matType = STIFFNESS_MATRIX;
       matOr = NORMAL;
-      // Function data
-      funcIteration = 0;
+      coef = 0.0;
       numFuncs = 0;
       functions = NULL;
-      // df/dx and adjoint-dR/dx data
+      ftype = TACSFunction::INTEGRATE;
       numDesignVars = 0;
       numAdjoints = 0;
       fdvSens = NULL;
@@ -408,10 +405,12 @@ class TACSAssembler : public TACSObject {
     MatrixOrientation matOr;
 
     // Information required for the computation of f or df/dx
-    unsigned int funcIteration;
-    int numDesignVars;
+    double coef;
     int numFuncs;
     TACSFunction **functions;
+    TACSFunction::EvaluationType ftype;
+
+    int numDesignVars;
     TacsScalar *fdvSens; // df/dx
     TACSBVec **fXptSens;
 

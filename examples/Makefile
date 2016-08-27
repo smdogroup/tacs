@@ -9,6 +9,7 @@ include ../TACS_Common.mk
 
 EXAMPLE_SUBDIRS = \
 	tutorial \
+	benchmark \
 	annulus \
 	cylinder \
 	triangle \
