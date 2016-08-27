@@ -60,7 +60,7 @@ class TACSAssembler : public TACSObject {
   // -------------------------------------------
   TACSAssembler( MPI_Comm _tacs_comm, int _varsPerNode,
 		 int _numOwnedNodes, int _numElements, 
-		 int _numDependentNodes );
+		 int _numDependentNodes=0 );
   ~TACSAssembler();
 
   // Set the connectivity in TACS
@@ -211,9 +211,11 @@ class TACSAssembler : public TACSObject {
 				  TACSBVec *psi, TACSBVec *phi, 
                                   TACSBVec *res );
 
-  // Return an element and the variables associated with that element
-  // ----------------------------------------------------------------
+  // Return elements and node numbers
+  // --------------------------------
   TACSElement **getElements();
+  TACSElement *getElement( int elem, TacsScalar *Xpts, TacsScalar *vars, 
+                           TacsScalar *dvars, TacsScalar *ddvars );
 
   // Test the given element, constitutive or function class
   // ------------------------------------------------------

@@ -11,3 +11,8 @@ debug: default
 
 clean:
 	rm -f *.o triangle
+
+test: default
+	mpirun -np 1 ./triangle
+	mpirun -np 2 ./triangle
+	mpirun -np 4 ./triangle

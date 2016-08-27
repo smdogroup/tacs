@@ -267,13 +267,19 @@ int main( int argc, char *argv[] ){
 
   // Assemble and factor the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  tacs->assembleJacobian(res, mat, alpha, beta, gamma);
+  tacs->assembleJacobian(alpha, beta, gamma, res, mat);
   mat->applyBCs();
   pc->factor();
 
+  int gmres_iters = 10; // Number of GMRES iterations 
+  int nrestart = 2; // Number of allowed restarts
+  int is_flexible = 1; // Is a flexible preconditioner?
+  GMRES *gmres = new GMRES(mat, pc, gmres_iters, 
+                           nrestart, is_flexible);
+
   res->set(1.0);
   res->applyBCs();
-  pc->applyFactor(res, ans);
+  gmres->solve(res, ans);
   tacs->setVariables(ans);
 
   // Create an TACSToFH5 object for writing output to files

@@ -36,15 +36,14 @@ for i in xrange(num_components):
 tacs = struct_mesh.createTACS(6)
 
 # Set up functions to evaluate (just computing mass of structure as example)
-mass = functions.mass(tacs)
+mass = functions.StructuralMass(tacs)
 funclist = [mass]
 
 # Evaluate functions
 fvals = tacs.evalFunctions(funclist)
 massval = fvals[0]
-print
-print "Mass: ", massval
-print
+if tacs_comm.rank == 0:
+    print "Mass: ", massval
 
 # Create matrix and distributed vectors
 res = tacs.createVec()
@@ -58,7 +57,7 @@ pc = TACS.Pc(mat)
 alpha = 1.0
 beta = 0.0
 gamma = 0.0
-tacs.assembleJacobian(res, mat, alpha, beta, gamma)
+tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
 # Get numpy array from distributed vector object and write in loads

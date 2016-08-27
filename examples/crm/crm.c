@@ -54,8 +54,8 @@ int main( int argc, char **argv ){
   mesh->decref();
 
   // Create matrix and vectors 
-  BVec *ans = tacs->createVec(); // displacements and rotations
-  BVec *f = tacs->createVec(); // loads
+  TACSBVec *ans = tacs->createVec(); // displacements and rotations
+  TACSBVec *f = tacs->createVec(); // loads
   FEMat *mat = tacs->createFEMat(); // preconditioner
 
   // Increment reference count to the matrix/vectors
@@ -72,7 +72,7 @@ int main( int argc, char **argv ){
 
   // Assemble and factor the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  tacs->assembleJacobian(NULL, mat, alpha, beta, gamma);
+  tacs->assembleJacobian(alpha, beta, gamma, NULL, mat);
   mat->applyBCs();
   pc->factor(); // LU factorization of stiffness matrix
 

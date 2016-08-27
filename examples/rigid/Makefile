@@ -17,3 +17,6 @@ complex_debug: debug
 
 clean:
 	rm -f *.o rigid
+
+test: default
+	mpirun -np 1 ./rigid

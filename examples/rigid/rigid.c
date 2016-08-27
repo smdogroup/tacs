@@ -48,32 +48,28 @@ int main( int argc, char *argv[] ){
   int num_nodes = 3;
   int vars_per_node = 8;
   int num_elems = 3;
-  int max_csr = 2;
 
-  TACSAssembler *tacs = new TACSAssembler(MPI_COMM_WORLD,
-                                          num_nodes, vars_per_node,
-                                          num_elems, num_nodes,
-                                          max_csr);
+  TACSAssembler *tacs = 
+    new TACSAssembler(MPI_COMM_WORLD, vars_per_node,
+                      num_nodes, num_elems);
   tacs->incref();
 
-  // Add the nodes and the connectivity
-  int conn[] = {0, 1, 2};
-  tacs->addNode(0, 0);
-  tacs->addNode(1, 1);
-  tacs->addNode(2, 2);
-  
-  // Add the connectivity
-  tacs->addElement(bodyA, &conn[0], 1);
-  tacs->addElement(bodyB, &conn[1], 1);
-  tacs->addElement(con, conn, 3);
+  // Set the elements
+  TACSElement *elements[] = {bodyA, bodyB, con};
+  tacs->setElements(elements);
 
-  tacs->finalize();
+  // Set the connectivity
+  int conn[] = {0, 1, 0, 1, 2};
+  int ptr[] = {0, 1, 2, 5};
+  tacs->setElementConnectivity(conn, ptr);
+  tacs->initialize();
 
   // Create the TACSIntegrator object
   double t_init = 0.0, t_final = 1.0;
   int steps_per_second = 100; int num_stages = 2;
-  TACSDIRKIntegrator *dirk = new TACSDIRKIntegrator(tacs, t_init, t_final,
-                                                    steps_per_second, num_stages);
+  TACSDIRKIntegrator *dirk = 
+    new TACSDIRKIntegrator(tacs, t_init, t_final,
+                           steps_per_second, num_stages);
   dirk->incref();
 
   // Set optional parameters
@@ -87,11 +83,11 @@ int main( int argc, char *argv[] ){
   // Integrate and write solution to file
   dirk->integrate();
   dirk->writeSolution("solutionDIRK.dat");
-
   dirk->decref();
   
-  TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, t_init, t_final,
-                                                 steps_per_second, 2);
+  TACSBDFIntegrator *bdf = 
+    new TACSBDFIntegrator(tacs, t_init, t_final,
+                          steps_per_second, 2);
   bdf->incref();
 
   // Set optional parameters
@@ -105,7 +101,6 @@ int main( int argc, char *argv[] ){
   // Integrate and write solution to file
   bdf->integrate();
   bdf->writeSolution("solutionBDF.dat");
-
   bdf->decref();
 
   // Delete objects

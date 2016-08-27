@@ -291,6 +291,29 @@ TACSElement **TACSAssembler::getElements(){
   return elements; 
 }
 
+/*
+  Get the element object and the corresponding element variables
+*/
+TACSElement *TACSAssembler::getElement( int elem, TacsScalar *Xpts, 
+                                        TacsScalar *vars, 
+                                        TacsScalar *dvars, 
+                                        TacsScalar *ddvars ){
+  if (elements && xptVec && 
+      (elem >= 0 && elem < numElements)){
+    int ptr = elementNodeIndex[elem];
+    int len = elementNodeIndex[elem+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    if (Xpts){ xptVec->getValues(len, nodes, Xpts); }
+    if (vars){ varsVec->getValues(len, nodes, vars); }
+    if (dvars){ dvarsVec->getValues(len, nodes, dvars); }
+    if (ddvars){ ddvarsVec->getValues(len, nodes, ddvars); }
+
+    return elements[elem];
+  }
+
+  return NULL;
+}
+
 /*!
   Set the element connectivity.
 

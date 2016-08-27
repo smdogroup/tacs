@@ -11,3 +11,7 @@ debug: default
 
 clean:
 	rm -f *.o crm
+
+test: default
+	mpirun -np 2 ./crm
+	mpirun -np 2 python crm.py 
