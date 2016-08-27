@@ -31,6 +31,7 @@
 #include "TACSAssembler.h"
 #include "TACSToFH5.h"
 #include "TACSAuxElements.h"
+#include "TACSCreator.h"
 
 class TACSMeshLoader : public TACSObject {
  public:
@@ -50,8 +51,6 @@ class TACSMeshLoader : public TACSObject {
   // Set the elements corresponding to each of the component numbers 
   // ---------------------------------------------------------------
   void setElement( int component_num, TACSElement *_element );
-  void addAuxElement( TACSAuxElements *aux, int component_num,
-                      TACSElement *_element );
 
   // Retrieve the element numbers corresponding to the given 
   // component numbers
@@ -75,8 +74,13 @@ class TACSMeshLoader : public TACSObject {
 
   // Set the domain of a structural function with component numbers
   // --------------------------------------------------------------
-  // void setFunctionDomain( TACSFunction * function, 
-  //                         int comp_nums[], int num_comps );
+  void addFunctionDomain( TACSFunction *function, 
+                          int comp_nums[], int num_comps );
+
+  // Add the auxiliary element to the given component
+  // ------------------------------------------------
+  void addAuxElement( TACSAuxElements *aux, int component_num,
+                      TACSElement *_element );
 
   void getConnectivity( int *_num_nodes, int *_num_elements,
                         const int **_elem_node_ptr, 
@@ -92,6 +96,9 @@ class TACSMeshLoader : public TACSObject {
  private:
   // Communicator for all processors
   MPI_Comm comm;
+
+  // The underlying creator object
+  TACSCreator *creator;
 
   // The element corresponding to each of the component numbers
   TACSElement **elements;

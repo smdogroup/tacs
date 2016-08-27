@@ -19,7 +19,7 @@ clean:
 	rm -f *.o grad_verify
 
 test: default
-	mpirun -np 2 ./grad_verify
+	mpirun -np 4 ./grad_verify CRM_box_2nd.bdf
 
 test_complex: complex
-	mpirun -np 2 ./grad_verify
+	mpirun -np 4 ./grad_verify CRM_box_2nd.bdf

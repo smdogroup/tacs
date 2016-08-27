@@ -481,7 +481,7 @@ int main( int argc, char * argv[] ){
   for ( int k = 0; k < numDesignVars; k++ ){
     proj_deriv += fabs(dfdx[k]);
 #ifdef TACS_USE_COMPLEX
-    if (dfdx[k] > 0){
+    if (RealPart(dfdx[k]) > 0){
       x[k] = TacsScalar(x[k], dh);
     }
     else {

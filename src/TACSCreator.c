@@ -70,8 +70,9 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
 
   // Boundary condition information
   bc_nodes = NULL;
-  bc_vars = NULL;
   bc_ptr = NULL;
+  bc_vars = NULL;
+  bc_vals = NULL;
 
   // Set the dependent node pointers to zero
   new_nodes = NULL;
@@ -84,6 +85,11 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
   // Set the elements array to NULL
   elements = NULL;
   element_creator = NULL;
+
+  // Information about the partitioned mesh
+  num_owned_elements = 0;
+  num_owned_nodes = 0;
+  local_elem_id_nums = NULL;
 }
 
 /*
@@ -96,6 +102,7 @@ TACSCreator::~TACSCreator(){
   if (Xpts){ delete [] Xpts; }
   if (bc_nodes){ delete [] bc_nodes; }
   if (bc_vars){ delete [] bc_vars; }
+  if (bc_vals){ delete [] bc_vals; }
   if (bc_ptr){ delete [] bc_ptr; }
   if (dep_node_ptr){ delete [] dep_node_ptr; }
   if (dep_node_conn){ delete [] dep_node_conn; }
@@ -104,6 +111,7 @@ TACSCreator::~TACSCreator(){
   if (partition){ delete [] partition; }
   if (owned_elements){ delete [] owned_elements; }
   if (owned_nodes){ delete [] owned_nodes; }
+  if (local_elem_id_nums){ delete [] local_elem_id_nums; }
 
   if (elements){
     for ( int i = 0; i < num_elem_ids; i++ ){
@@ -164,8 +172,9 @@ void TACSCreator::setDependentNodes( int num_dep_nodes,
 */
 void TACSCreator::setBoundaryConditions( int _num_bcs, 
 					 const int *_bc_nodes, 
+					 const int *_bc_ptr,
                                          const int *_bc_vars,
-					 const int *_bc_ptr ){
+                                         const TacsScalar *_bc_vals ){
   // Set the number of boundary conditions and the node numbers
   // to which they correspond
   num_bcs = _num_bcs;
@@ -175,13 +184,22 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
   // Allocate space for the boundary condition pointer
   bc_ptr = new int[ num_bcs+1 ];
 
-  if (_bc_vars){
+  if (_bc_ptr && _bc_vars){
     // Copy over the boundary condition variable pointer
     memcpy(bc_ptr, _bc_ptr, (num_bcs+1)*sizeof(int));
   
     // Allocate the number of variables
     bc_vars = new int[ bc_ptr[num_bcs] ];
     memcpy(bc_vars, _bc_vars, bc_ptr[num_bcs]*sizeof(int));
+
+    // Allocate and set the variable values
+    bc_vals = new TacsScalar[ bc_ptr[num_bcs] ];
+    if (_bc_vals){
+      memcpy(bc_vals, _bc_vals, bc_ptr[num_bcs]*sizeof(TacsScalar));
+    }
+    else {
+      memset(bc_vals, 0, bc_ptr[num_bcs]*sizeof(TacsScalar));
+    }
   }
   else {
     // Since the bc_vars array is input as NULL, assume that
@@ -196,6 +214,10 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
 	bc_vars[bc_ptr[i]+j] = j;
       }
     }
+
+    // Allocate the values array and set it equal to zero
+    bc_vals = new TacsScalar[ bc_ptr[num_bcs] ];
+    memset(bc_vals, 0, bc_ptr[num_bcs]*sizeof(TacsScalar));
   }
 }
 
@@ -285,8 +307,8 @@ TACSAssembler* TACSCreator::createTACS(){
   
   // The number of local and owned nodes and the number of
   // elements for each processor in the mesh
-  int num_owned_nodes = 0;
-  int num_owned_elements = 0; 
+  num_owned_nodes = 0;
+  num_owned_elements = 0; 
   MPI_Scatter(owned_nodes, 1, MPI_INT, 
               &num_owned_nodes, 1, MPI_INT, root_rank, comm);
   MPI_Scatter(owned_elements, 1, MPI_INT, 
@@ -300,7 +322,10 @@ TACSAssembler* TACSCreator::createTACS(){
   // this processor
   int *local_elem_node_ptr = new int[ num_owned_elements+1 ];
   int *local_elem_node_conn = NULL;
-  int *local_elem_id_nums = new int[ num_owned_elements ];
+  
+  // This will be used later to determine which elements belong to
+  // which domain within the finite-element mesh
+  local_elem_id_nums = new int[ num_owned_elements ];
 
   // Loacal nodal information
   TacsScalar *Xpts_local = NULL;
@@ -600,6 +625,12 @@ TACSAssembler* TACSCreator::createTACS(){
     bc_vars = new int[ bc_ptr[num_bcs] ]; 
   }
   MPI_Bcast(bc_vars, bc_ptr[num_bcs], MPI_INT, root_rank, comm);
+
+  if (rank != root_rank){
+    if (bc_vals){ delete [] bc_vals; }
+    bc_vals = new TacsScalar[ bc_ptr[num_bcs] ]; 
+  }
+  MPI_Bcast(bc_vals, bc_ptr[num_bcs], TACS_MPI_TYPE, root_rank, comm);
   
   int node_max_csr_size = local_elem_node_ptr[num_owned_elements];  
   TACSAssembler * tacs = 
@@ -672,7 +703,7 @@ TACSAssembler* TACSCreator::createTACS(){
       for ( int j = 0; j < nbcs; j++ ){
         if (bc_vars[bc_ptr[k] + j] < vars_per_node){
           bvars[n] = bc_vars[bc_ptr[k] + j];
-          bvals[n] = 0.0;
+          bvals[n] = bc_vals[bc_ptr[k] + j];
           n++;
         }
       }
@@ -681,6 +712,16 @@ TACSAssembler* TACSCreator::createTACS(){
       }
     }
   }
+
+  // Free the bvars/bvals arrays
+  delete [] bvars;
+  delete [] bvals;
+
+  // We no longer need the boundary condition information
+  delete [] bc_nodes;  bc_nodes = NULL;
+  delete [] bc_ptr;    bc_ptr = NULL;
+  delete [] bc_vars;   bc_vars = NULL;
+  delete [] bc_vals;   bc_vals = NULL;
 
   // Use the reordering if the flag has been set in the
   // TACSCreator object
@@ -709,14 +750,9 @@ TACSAssembler* TACSCreator::createTACS(){
   tacs->setNodes(X);
   X->decref();
 
-  // Free the bvars/bvals arrays
-  delete [] bvars;
-  delete [] bvals;
-
   // Free all the remaining memory
   delete [] local_elem_node_ptr;
   delete [] local_elem_node_conn;
-  delete [] local_elem_id_nums;
   delete [] Xpts_local;
 
   return tacs;
@@ -1016,3 +1052,38 @@ void TACSCreator::partitionMesh( int split_size,
   delete [] split_offset;
 }
 
+/*
+  Retrieve the element numbers on each processor corresponding to the
+  given component numbers.
+*/
+int TACSCreator::getElementIdNums( int ids[], int num_ids, 
+                                   int **elem_nums ){
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+  if (!local_elem_id_nums){
+    fprintf(stderr, "[%d] TACSCreator: Cannot get elements until \
+mesh is partitioned\n", rank);
+    *elem_nums = NULL;
+    return 0;
+  }
+
+  // Sort the component numbers on input
+  num_ids = FElibrary::uniqueSort(ids, num_ids);
+
+  int *all_elems = new int[ num_owned_elements ];
+  int elem_size = 0;
+  for ( int k = 0; k < num_owned_elements; k++ ){
+    if (bsearch(&local_elem_id_nums[k], ids, num_ids,
+                sizeof(int), FElibrary::comparator)){
+      all_elems[elem_size] = k;
+      elem_size++;
+    }
+  }
+  
+  // Truncate the array to the correct size
+  *elem_nums = new int[ elem_size ];
+  memcpy(*elem_nums, all_elems, elem_size*sizeof(int));
+  delete [] all_elems;
+
+  return elem_size;
+}

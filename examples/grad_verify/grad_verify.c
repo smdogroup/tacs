@@ -3,6 +3,7 @@
 #include "MITCShell.h"
 #include "TACSShellTraction.h"
 #include "isoFSDTStiffness.h"
+#include "Compliance.h"
 #include "KSFailure.h"
 #include "InducedFailure.h"
 #include "StructuralMass.h"
@@ -63,7 +64,7 @@ int main( int argc, char * argv[] ){
   mesh->incref();
 
   // Scan the BDF file to get the input data
-  mesh->scanBdfFile(bdf_file);
+  mesh->scanBDFFile(bdf_file);
 
   // Get the number of BDF components within the file
   int num_components = mesh->getNumComponents();
@@ -100,14 +101,14 @@ int main( int argc, char * argv[] ){
     // Allocate the element
     TACSElement *elem = NULL;
     if (strcmp(elem_descript, "CQUAD4") == 0){
-      elem = new MITCShell<2>(cons[k], LINEAR, elem_id);
+      elem = new MITCShell<2>(con, LINEAR, elem_id);
     }
     else if (strcmp(elem_descript, "CQUAD9") == 0 ||
              strcmp(elem_descript, "CQUAD") == 0){
-      elem = new MITCShell<3>(cons[k], LINEAR, elem_id);
+      elem = new MITCShell<3>(con, LINEAR, elem_id);
     }
     else if (strcmp(elem_descript, "CQUAD16") == 0){
-      elem = new MITCShell<4>(cons[k], LINEAR, elem_id);
+      elem = new MITCShell<4>(con, LINEAR, elem_id);
     }
     
     // Set the element object into the mesh
@@ -136,13 +137,14 @@ int main( int argc, char * argv[] ){
   // Set a gravity load
   TACSAuxElements *aux = new TACSAuxElements(tacs->getNumElements());
   
-  // Add the gravity load to all the element in the mesh
+  // Add a traction in the negative z-direction
+  TacsScalar tx = 0.0, ty = 0.0, tz = -1e3;
   for ( int k = 0; k < mesh->getNumComponents(); k++ ){
     // Get the element description
     const char *elem_descript = mesh->getElementDescript(k); 
 
     // Allocate the associate gravity traction
-    TACSElementTraction *elem = NULL;
+    TACSElement *elem = NULL;
     if (strcmp(elem_descript, "CQUAD4") == 0){
       elem = new TACSShellTraction<2>(tx, ty, tz);
     }
@@ -259,8 +261,8 @@ int main( int argc, char * argv[] ){
 
   // Ensure consistency of the design variable values
   tacs->getDesignVars(xvals, num_design_vars);
-  MPI_Allreduce(MPI_IN_PLACE, x, num_design_vars, TACS_MPI_TYPE,
-                TACS_MPI_MAX, tacs_comm);
+  MPI_Allreduce(MPI_IN_PLACE, xvals, num_design_vars, TACS_MPI_TYPE,
+                TACS_MPI_MAX, comm);
 
   // Set the design variables
   tacs->setDesignVars(xvals, num_design_vars);
@@ -354,16 +356,16 @@ int main( int argc, char * argv[] ){
       tacs->setDesignVars(xtemp, num_design_vars);
       
       // Solve the problem
-      tacs->zeroVariables(load_case);
-      tacs->assembleMat(load_case, mat, res);
+      tacs->zeroVariables();
+      tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
       pc->factor();
       gmres->solve(res, ans);
       ans->scale(-1.0);
-      tacs->setVariables(load_case, ans);
+      tacs->setVariables(ans);
 
       // Evaluate the function at the perturbed solution
       TacsScalar fvals[NUM_FUNCS];
-      tacs->evalFunctions(load_case, funcs, NUM_FUNCS, fvals);
+      tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
       for ( int j = 0; j < NUM_FUNCS; j++ ){
         dfdx[k + j*num_design_vars] = fvals[j];
       }
@@ -377,15 +379,15 @@ int main( int argc, char * argv[] ){
 
       // Solve the finite-element problem at the perturbed values
       // of the design variables
-      tacs->zeroVariables(load_case);
-      tacs->assembleMat(load_case, mat, res);
+      tacs->zeroVariables();
+      tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
       pc->factor();
       gmres->solve(res, ans);
       ans->scale(-1.0);
-      tacs->setVariables(load_case, ans);
+      tacs->setVariables(ans);
 
       // Complete the finite-difference computation for each function
-      tacs->evalFunctions(load_case, funcs, NUM_FUNCS, fvals);
+      tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
       for ( int j = 0; j < NUM_FUNCS; j++ ){
         dfdx[k + j*num_design_vars] = 0.5*(dfdx[k + j*num_design_vars] -
 					   fvals[j])/dh;
@@ -397,12 +399,12 @@ int main( int argc, char * argv[] ){
     // using the adjoint method.
 
     // First solve the governing equations
-    tacs->zeroVariables(load_case);
-    tacs->assembleMat(load_case, mat, res);
+    tacs->zeroVariables();
+    tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
     pc->factor();
     gmres->solve(res, ans);
     ans->scale(-1.0);
-    tacs->setVariables(load_case, ans);
+    tacs->setVariables(ans);
 
     // Write the solution to an .f5 file
     if (f5){
@@ -423,48 +425,50 @@ int main( int argc, char * argv[] ){
       strcpy(&outfile[i], ".f5");
 
       // Write out the file
-      f5->writeToFile(load_case, outfile);
+      f5->writeToFile(outfile);
       delete [] outfile;
     }
 
     // Evaluate each of the functions
     TacsScalar fvals[NUM_FUNCS];
-    tacs->evalFunctions(load_case, funcs, NUM_FUNCS, fvals);
+    tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
   
     // Evaluate the partial derivative of each function w.r.t. x
-    tacs->evalDVSens(load_case, funcs, NUM_FUNCS, 
-                     dfdx, num_design_vars);
+    tacs->addDVSens(1.0, funcs, NUM_FUNCS, 
+                    dfdx, num_design_vars);
 
     // Create the adjoint variables for each function of interest
-    BVec * adjoints[NUM_FUNCS];
+    TACSBVec *adjoints[NUM_FUNCS];
+    TACSBVec *dfdu[NUM_FUNCS];
     for ( int j = 0; j < NUM_FUNCS; j++ ){
       adjoints[j] = tacs->createVec();
       adjoints[j]->incref();
+      dfdu[j] = tacs->createVec();
+      dfdu[j]->incref();
     }
 
     // Evaluate the partial derivative of each function of interest
     // w.r.t. the state variables and compute the adjoint
+    tacs->addSVSens(1.0, 0.0, 0.0, funcs, NUM_FUNCS, dfdu);
+
+    // Solve all of the adjoint equations
     for ( int j = 0; j < NUM_FUNCS; j++ ){
-      tacs->evalSVSens(load_case, funcs[j], res);
-      gmres->solve(res, adjoints[j]);
+      gmres->solve(dfdu[j], adjoints[j]);
     }
     
     // Evaluate the adjoint-residual product
-    TacsScalar * adj_prod = new TacsScalar[ NUM_FUNCS*num_design_vars ];
-    tacs->evalAdjointResProducts(load_case, adjoints, NUM_FUNCS,
-				 adj_prod, num_design_vars);
-     
-    // Add the result into the total derivative
-    for ( int k = 0; k < NUM_FUNCS*num_design_vars; k++ ){
-      dfdx[k] -= adj_prod[k];
-    }
-    
+    tacs->addAdjointResProducts(-1.0, adjoints, NUM_FUNCS,
+                                dfdx, num_design_vars);
+         
     // Delete all of the adjoints
     for ( int j = 0; j < NUM_FUNCS; j++ ){
       adjoints[j]->decref();
+      dfdu[j]->decref();
     }
-    
-    delete [] adj_prod;
+
+    // Add up the contributions across all processors
+    MPI_Allreduce(MPI_IN_PLACE, dfdx, NUM_FUNCS*num_design_vars,
+                  TACS_MPI_TYPE, MPI_SUM, comm);
   }
 #endif // TACS_USE_COMPLEX
 

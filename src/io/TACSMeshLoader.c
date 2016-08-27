@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "TACSMeshLoader.h"
-#include "TACSCreator.h"
 #include "FElibrary.h"
 
 /*!
@@ -506,6 +505,9 @@ TACSMeshLoader::TACSMeshLoader( MPI_Comm _comm ){
   elements = NULL;
   component_elems = NULL;
   component_descript = NULL;
+
+  // Set the creator object to NULL
+  creator = NULL;
 }
 
 /*
@@ -534,6 +536,9 @@ TACSMeshLoader::~TACSMeshLoader(){
   if (component_descript){ delete [] component_descript; }
   if (Xpts_unsorted){ delete [] Xpts_unsorted;}
   if (node_nums) {delete [] node_nums;}
+
+  // Free the creator object
+  if (creator){ creator->decref(); }
 }
 
 /*
@@ -1354,16 +1359,15 @@ int TACSMeshLoader::getNumNodes(){
 /*
   Create a TACSToFH5 file creation object
 */
-TACSToFH5 * TACSMeshLoader::createTACSToFH5( TACSAssembler * tacs,
-                                             enum ElementType elem_type,
-                                             unsigned int write_flag ){
+TACSToFH5 *TACSMeshLoader::createTACSToFH5( TACSAssembler *tacs,
+                                            ElementType elem_type,
+                                            unsigned int write_flag ){
   // Set the component numbers in the elements
   for ( int k = 0; k < num_components; k++ ){
     elements[k]->setComponentNum(k);
   }
 
   TACSToFH5 * f5 = new TACSToFH5(tacs, elem_type, write_flag);
-
   for ( int k = 0; k < num_components; k++ ){
     if (strlen(&component_descript[33*k]) == 0){
       char name[64];
@@ -1381,9 +1385,9 @@ TACSToFH5 * TACSMeshLoader::createTACSToFH5( TACSAssembler * tacs,
 /*
   Create a distributed version of TACS
 */
-TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
-					    enum TACSAssembler::OrderingType order_type, 
-					    enum TACSAssembler::MatrixOrderingType mat_type ){
+TACSAssembler *TACSMeshLoader::createTACS( int vars_per_node,
+                                           TACSAssembler::OrderingType order_type, 
+                                           TACSAssembler::MatrixOrderingType mat_type ){
   // Set the root processor
   const int root = 0;
 
@@ -1392,7 +1396,7 @@ TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
   MPI_Comm_rank(comm, &rank);
 
   // Allocate the TACS creator
-  TACSCreator *creator = new TACSCreator(comm, vars_per_node);
+  creator = new TACSCreator(comm, vars_per_node);
   creator->incref();
 
   if (rank == root){
@@ -1402,10 +1406,22 @@ TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
   				   elem_component);
     
     // Set the boundary conditions
-    creator->setBoundaryConditions(num_bcs, bc_nodes, bc_vars, bc_ptr);
+    creator->setBoundaryConditions(num_bcs, bc_nodes, 
+                                   bc_ptr, bc_vars, bc_vals);
     
     // Set the nodal locations
     creator->setNodes(Xpts);
+
+    // Free things that are no longer required
+    delete [] elem_node_ptr;   elem_node_ptr = NULL;
+    delete [] elem_node_conn;  elem_node_conn = NULL;
+    delete [] elem_component;  elem_component = NULL;
+
+    // Free the boundary conditions
+    delete [] bc_nodes;   bc_nodes = NULL;
+    delete [] bc_ptr;     bc_ptr = NULL;
+    delete [] bc_vars;    bc_vars = NULL;
+    delete [] bc_vals;    bc_vals = NULL;
   }
 
   // This call must occur on all processor
@@ -1413,9 +1429,6 @@ TACSAssembler * TACSMeshLoader::createTACS( int vars_per_node,
 
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
-
-  // Deallocate the creator object
-  creator->decref();
 
   return tacs;
 }
@@ -1428,77 +1441,36 @@ int TACSMeshLoader::getNumElements(){
 }
 
 /*
-  Retrieve the array of elements corresponding to the
-*/
-/*
-void TACSMeshLoader::getComponentNums( int comp_nums[], int num_elements ){
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  if (!local_component_nums){
-    fprintf(stderr, "[%d] TACSMeshLoader: Cannot retrieve the component numbers \
-until the mesh is partitioned\n", rank);
-    return;
-  }
-
-  int size = (num_owned_elements < num_elements ? num_owned_elements :
-              num_elements);
-
-  memcpy(comp_nums, local_component_nums, size*sizeof(int));
-}
-*/
-/*
-  Retrieve the element numbers on each processor corresponding to
-  the given component numbers.
-*/
-/*
-int TACSMeshLoader::getComponentElementNums( int *elem_nums[],
-                                             int comp_nums[], int num_comps ){
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  if (!local_component_nums){
-    fprintf(stderr, "[%d] TACSMeshLoader: Cannot get elements until \
-mesh is partitioned\n", rank);
-    *elem_nums = NULL;
-    return 0;
-  }
-
-  // Sort the component numbers on input
-  qsort(comp_nums, num_comps, sizeof(int), FElibrary::comparator);
-
-  int * all_elems = new int[ num_owned_elements ];
-  int elem_size = 0;
-  for ( int k = 0; k < num_owned_elements; k++ ){
-    if (bsearch(&local_component_nums[k], comp_nums, num_comps,
-                sizeof(int), FElibrary::comparator)){
-      all_elems[elem_size] = k;
-      elem_size++;
-    }
-  }
-
-  *elem_nums = new int[ elem_size ];
-  memcpy(*elem_nums, all_elems, elem_size*sizeof(int));
-
-  delete [] all_elems;
-
-  return elem_size;
-}
-*/
-/*
   Set the function domain
 
-  Given the function, and the set of component numbers that define
-  the domain of interest, set the element numbers in the function that
+  Given the function, and the set of component numbers that define the
+  domain of interest, set the element numbers in the function that
 */
-/*
-void TACSMeshLoader::setFunctionDomain( TACSFunction * function,
+void TACSMeshLoader::addFunctionDomain( TACSFunction * function,
 					int comp_nums[], int num_comps ){
-  int *elems;
-  int num_elems = getComponentElementNums(&elems, comp_nums, num_comps);
-  function->setDomain(elems, num_elems);
-  delete [] elems;
+  if (creator){
+    int *elems;
+    int num_elems = creator->getElementIdNums(comp_nums, num_comps,
+                                              &elems);
+    function->addDomain(elems, num_elems);
+    delete [] elems;
+  }  
 }
-*/
 
+/*
+  Add the auxiliary element to the given domain specified by the
+  component number
+*/
+void TACSMeshLoader::addAuxElement( TACSAuxElements *aux, int component_num,
+                                    TACSElement *element ){
+  if (creator){
+    int *elems;
+    int num_elems = creator->getElementIdNums(&component_num, 1,
+                                              &elems);
+    for ( int i = 0; i < num_elems; i++ ){
+      aux->addElement(elems[i], element);
+    }
+    delete [] elems;
+  }
+}
 

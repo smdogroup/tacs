@@ -215,7 +215,7 @@ int main( int argc, char *argv[] ){
   				   elem_id_nums);
     
     // Set the boundary conditions
-    creator->setBoundaryConditions(num_bcs, bc_nodes, NULL, NULL);
+    creator->setBoundaryConditions(num_bcs, bc_nodes);
     
     // Set the nodal locations
     creator->setNodes(Xpts);

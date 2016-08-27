@@ -1658,7 +1658,7 @@ void MITCShell<order>::getAdjResXptProduct( double time,
 */
 template <int order>
 void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
-						 TacsScalar scale,
+						 double scale,
 						 TacsScalar fdvSens[], int dvLen,
 						 const TacsScalar psi[], 
 						 const TacsScalar phi[],
@@ -2104,8 +2104,7 @@ int MITCShell<order>::getNumGaussPts(){
   pt:   the Gauss point for the given index
 */
 template <int order>
-TacsScalar MITCShell<order>::getGaussWtsPts( const int num, 
-					     double * pt ){
+double MITCShell<order>::getGaussWtsPts( const int num, double *pt ){
   int m = (int)(num/numGauss);
   int n = num % numGauss;
   pt[0] = gaussPts[n];

@@ -43,8 +43,9 @@ class TACSCreator : public TACSObject {
   // ---------------------------
   void setBoundaryConditions( int _num_bcs, 
                               const int *_bc_nodes, 
-			      const int *_bc_vars, 
-                              const int *_bc_ptr );
+                              const int *_bc_ptr=NULL,
+			      const int *_bc_vars=NULL,
+                              const TacsScalar *_bc_vals=NULL );
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
@@ -74,6 +75,11 @@ class TACSCreator : public TACSObject {
   // Create the TACSAssembler object
   // -------------------------------
   TACSAssembler *createTACS();
+
+  // Get local element numbers with the given set of element-id numbers
+  // ------------------------------------------------------------------
+  int getElementIdNums( int ids[], int num_ids, 
+                        int **elem_nums );
 
   // Get the new node numbers and element partition
   // ----------------------------------------------
@@ -115,11 +121,12 @@ class TACSCreator : public TACSObject {
   // Boundary conditions
   int num_bcs;
   int *bc_nodes, *bc_vars, *bc_ptr;
+  TacsScalar *bc_vals;
 
   // The node locations
   TacsScalar *Xpts;
 
-  // Elements corresponding to the 
+  // Elements and the corresponding element id numbers
   int num_elem_ids;
   TACSElement **elements;
 
@@ -131,6 +138,10 @@ class TACSCreator : public TACSObject {
 
   // The element partition
   int *partition;
+
+  // Local information about the partitioned mesh
+  int num_owned_elements, num_owned_nodes;
+  int *local_elem_id_nums;
 };
 
 #endif // TACS_CREATOR_H
