@@ -37,7 +37,7 @@ class EBStiffness : public TACSConstitutive {
 
   // Retrieve the stiffness
   // ----------------------
-  virtual void getStiffness( const double pt[], TacsScalar Ct[] ); 
+  virtual void getStiffness( const double pt[], TacsScalar Ct[] );
 
   // Calculate the stress
   // --------------------
