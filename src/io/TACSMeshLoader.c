@@ -547,14 +547,14 @@ int TACSMeshLoader::getNumComponents(){
   Set the element associated with a given component number
 */
 void TACSMeshLoader::setElement( int component_num, 
-				 TACSElement * _element ){
+				 TACSElement *_element ){
   if (_element && (component_num >= 0) && (component_num < num_components)){
     _element->incref();
     elements[component_num] = _element;
   }
 }
 
-const char * TACSMeshLoader::getComponentDescript( int comp_num ){
+const char *TACSMeshLoader::getComponentDescript( int comp_num ){
   if (component_descript && (comp_num >= 0) && 
       (comp_num < num_components)){
     return &component_descript[33*comp_num];
@@ -565,7 +565,7 @@ const char * TACSMeshLoader::getComponentDescript( int comp_num ){
 /*
   Retrieve the element description corresponding to the component number
 */
-const char * TACSMeshLoader::getElementDescript( int comp_num ){
+const char *TACSMeshLoader::getElementDescript( int comp_num ){
   if (component_elems && (comp_num >= 0) && 
       (comp_num < num_components)){
     return &component_elems[9*comp_num];
@@ -693,7 +693,8 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             fail = 1; break;
           }
 
-          // Read in the component number and nodes associated with this element
+          // Read in the component number and nodes associated with
+          // this element
           int elem_num, component_num, nodes[8]; 
           parse_element_field2(line[0], line[1], 
                                &elem_num, &component_num, 
@@ -714,7 +715,8 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             }
           }
 
-          // Read in the component number and nodes associated with this element
+          // Read in the component number and nodes associated with
+          // this element
           int elem_num, component_num, nodes[27];
           parse_element_field4(line[0], line[1], line[2], line[3],
                                &elem_num, &component_num, 

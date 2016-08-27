@@ -9,9 +9,19 @@ default: ${OBJS}
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
 
+complex: TACS_DEF="-DTACS_USE_COMPLEX"
+complex: default
+
+complex_debug: TACS_DEF="-DTACS_USE_COMPLEX"
+complex_debug: debug
+
 clean:
 	rm -f *.o crm
 
 test: default
 	mpirun -np 2 ./crm
 	mpirun -np 2 python crm.py 
+
+test_complex: complex
+	mpirun -np 2 ./crm
+#	mpirun -np 2 python crm.py 

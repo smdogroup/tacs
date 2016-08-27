@@ -13,7 +13,10 @@ CXX_OBJS = TACSConstitutive.o \
 	SolidStiffness.o \
 	PlaneStressStiffness.o \
 	FSDTStiffness.o \
-	isoFSDTStiffness.o 
+	isoFSDTStiffness.o \
+	compFSDTStiffness.o \
+	EBStiffness.o \
+	TACSPanelAnalysis.o
 
 DIR=${TACS_DIR}/src/constitutive
 

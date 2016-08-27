@@ -480,12 +480,21 @@ int main( int argc, char * argv[] ){
   TacsScalar proj_deriv = 0.0;
   for ( int k = 0; k < numDesignVars; k++ ){
     proj_deriv += fabs(dfdx[k]);
+#ifdef TACS_USE_COMPLEX
+    if (dfdx[k] > 0){
+      x[k] = TacsScalar(x[k], dh);
+    }
+    else {
+      x[k] = TacsScalar(x[k], -dh);
+    }
+#else
     if (dfdx[k] > 0){
       x[k] += dh;
     }
     else {
       x[k] -= dh;
     }
+#endif
   }
 
   // Set the new design variable values
@@ -509,7 +518,12 @@ int main( int argc, char * argv[] ){
 
   // Compare with finite-difference and print the result
   if (rank == 0){
-    TacsScalar fd = (ksFuncVal1 - ksFuncVal)/dh;
+    TacsScalar fd = 0.0;
+#ifdef TACS_USE_COMPLEX
+    fd = ImagPart(ksFuncVal1)/dh;
+#else
+    fd = (ksFuncVal1 - ksFuncVal)/dh;
+#endif
     printf("The %s is %15.8f \n", func->functionName(), 
            RealPart(ksFuncVal));
     printf("The projected derivative is             %20.8e \n", 

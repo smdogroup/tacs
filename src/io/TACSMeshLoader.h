@@ -26,11 +26,11 @@
   in to the object based on the component number.
 */
 
-#include "mpi.h"
 #include "TACSObject.h"
 #include "TACSElement.h"
 #include "TACSAssembler.h"
 #include "TACSToFH5.h"
+#include "TACSAuxElements.h"
 
 class TACSMeshLoader : public TACSObject {
  public:
@@ -39,17 +39,19 @@ class TACSMeshLoader : public TACSObject {
 
   // Read a BDF file for input
   // -------------------------
-  int scanBDFFile( const char * file_name );
+  int scanBDFFile( const char *file_name );
 
   // Get information about the mesh after scanning
   // ---------------------------------------------
   int getNumComponents();
-  const char* getComponentDescript( int comp_num );
-  const char* getElementDescript( int comp_num );
+  const char *getComponentDescript( int comp_num );
+  const char *getElementDescript( int comp_num );
 
   // Set the elements corresponding to each of the component numbers 
   // ---------------------------------------------------------------
-  void setElement( int component_num, TACSElement * _element );
+  void setElement( int component_num, TACSElement *_element );
+  void addAuxElement( TACSAuxElements *aux, int component_num,
+                      TACSElement *_element );
 
   // Retrieve the element numbers corresponding to the given 
   // component numbers
@@ -59,16 +61,16 @@ class TACSMeshLoader : public TACSObject {
 
   // Create a TACSToFH5 file writer
   // ------------------------------
-  TACSToFH5* createTACSToFH5( TACSAssembler * tacs,
+  TACSToFH5 *createTACSToFH5( TACSAssembler *tacs,
 			      enum ElementType elem_type,
 			      unsigned int write_flag );
 
   // Distribute the mesh and create TACS
   // -----------------------------------
-  TACSAssembler* createTACS( int vars_per_node,
-			     enum TACSAssembler::OrderingType order_type = 
+  TACSAssembler *createTACS( int vars_per_node,
+			     TACSAssembler::OrderingType order_type = 
 			     TACSAssembler::NATURAL_ORDER, 
-			     enum TACSAssembler::MatrixOrderingType mat_type = 
+			     TACSAssembler::MatrixOrderingType mat_type = 
 			     TACSAssembler::DIRECT_SCHUR);
 
   // Set the domain of a structural function with component numbers

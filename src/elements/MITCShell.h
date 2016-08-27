@@ -890,7 +890,202 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
                                    const TacsScalar vars[] ){
   memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
   
-  if (matType == MASS_MATRIX){
+  if (matType == STIFFNESS_MATRIX){
+    // Geometric data
+    TacsScalar X[3], Xd[9], Xdd[9];
+    TacsScalar normal[3], normal_xi[3], normal_eta[3];
+    
+    // Transformation and the transformation derivative w.r.t. zeta
+    TacsScalar t[9], tx[9], ztx[9]; 
+    
+    TacsScalar U[NUM_DISPS], Ud[2*NUM_DISPS];
+    double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+    double Naa[NUM_NODES], Nab[NUM_NODES], Nbb[NUM_NODES];
+    
+    // Interpolations for the shear components
+    double N11[NUM_G11], N22[NUM_G22], N12[NUM_G12];
+    
+    // The interpolated tensorial shear components
+    TacsScalar g11[NUM_G11], g22[NUM_G22], g12[NUM_G12];
+    TacsScalar g13[NUM_G13], g23[NUM_G23];
+    
+    // The derivatives of the displacement strain
+    TacsScalar b11[3*NUM_NODES*NUM_G11], b22[3*NUM_NODES*NUM_G22];
+    TacsScalar b12[3*NUM_NODES*NUM_G12];
+    TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
+    
+    // The second derivatives of the tying strain
+    TacsScalar n13[12*order*order*(order*order+1)*NUM_G13];
+    TacsScalar n23[12*order*order*(order*order+1)*NUM_G23];
+    
+    // The stress and strain information
+    TacsScalar stress[NUM_STRESSES], strain[NUM_STRESSES];
+    TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+    TacsScalar BStress[NUM_STRESSES];
+    TacsScalar drot[NUM_VARIABLES];
+    
+    // Evaluate the strain and derivative of the strain at the
+    // tying points within the element
+    if (type == LARGE_ROTATION){
+      compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
+                                   b11, b22, b12, b23, b13, 
+                                   knots, pknots, vars, Xpts);
+    }
+    else {
+      compute_tying_bmat<order>((type == LINEAR),
+                                g11, g22, g12, g23, g13,
+                                b11, b22, b12, b23, b13,
+                                knots, pknots, vars, Xpts);
+    }
+    
+    for ( int m = 0; m < numGauss; m++ ){
+      for ( int n = 0; n < numGauss; n++ ){
+        // Set the quadrature point
+        double pt[2];
+        pt[0] = gaussPts[n];
+        pt[1] = gaussPts[m];
+        
+        // Evaluate the stiffness at the parametric point within the
+        // element
+        TacsScalar At[6], Bt[6], Dt[6], Ats[3];
+        TacsScalar kpenalty = stiff->getStiffness(pt, At, Bt, Dt, Ats);
+        
+        // Compute the shape functions and evaluate the surface derivatives
+        // at the quadrature point
+        shell_hessian(order, X, Xd, Xdd, 
+                      N, Na, Nb, Naa, Nab, Nbb, pt, Xpts);
+        compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
+        
+        // Compute the transformation matrix from the global coordinate
+        // system to the shell-aligned frame
+        TacsScalar h = 0.0;
+        if (stiff->getTransformType() == FSDTStiffness::NATURAL){
+          h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, 
+                                Xd, Xdd);
+        }
+        else {
+          const TacsScalar * axis = stiff->getRefAxis();
+          h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, 
+                                        normal_eta, axis, Xd, Xdd);
+        }
+        
+        // Scale the determinant of the Jacobian transformation by the
+        // quadrature weight at this point
+        h = gaussWts[n]*gaussWts[m]*h;
+        
+        // Store the difference between the rotation variable
+        // and the in-plane rotation
+        TacsScalar rot = 0.0;
+        
+        // Rotation matrix data
+        TacsScalar C[9], Ct[27], Ctt[54], Cttt[63];
+        
+        // Compute the strain at the current point
+        if (type == LINEAR){
+          linear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
+                             normal, normal_xi, normal_eta);
+          linear_bend_bmat(B, drot, NUM_NODES, N, Na, Nb, t, tx, ztx,
+                           normal, normal_xi, normal_eta);
+        }
+        else if (type == NONLINEAR){
+          nonlinear_bend_strain(strain, &rot, U, Ud, t, tx, ztx, 
+                                normal, normal_xi, normal_eta);
+          nonlinear_bend_bmat(B, drot, NUM_NODES, N, Na, Nb, U, Ud, t, tx, ztx,
+                              normal, normal_xi, normal_eta);
+        }
+        else {
+          // Compute the rotation matrices
+          TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
+          TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
+          TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
+          compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
+          compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
+          compute_3rd_rate_matrix(Cttt, c1, s1, c2, s2, c3, s3);
+	
+          // Evaluate the in-plane rotation term
+          rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud, 
+                                        C, Ct, N, Na, Nb);
+
+          // Calculate the strain/bmat at the current point 
+          large_rot_bend_strain(strain, U, Ud, C, Ct,
+                                t, tx, ztx, normal, normal_xi, normal_eta);
+          large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt, 
+                              t, tx, ztx, normal, normal_xi, normal_eta);
+        }
+        
+        // Evaluate the strain interpolation at this point
+        tying_interpolation<order>(pt, N11, N22, N12, 
+                                   knots, pknots);
+
+        // Add the interpolated strain and the interpolated b-matrix to the
+        // point-wise strain and strain-derivative (B)
+        add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
+                                N11, N22, N12);
+        add_tying_bmat<order>(B, NUM_NODES, tx, b11, b22, b12, b23, b13, 
+                              N11, N22, N12);
+
+        stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
+
+        // Get the pointwise mass at the quadrature point
+        TacsScalar mass[2];
+        stiff->getPointwiseMass(pt, mass);
+        
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          for ( int ii = 0; ii < NUM_DISPS; ii++ ){
+            int row = ii + NUM_DISPS*i;
+            
+            // Calculate the stress associated with B
+            stiff->calculateStress(At, Bt, Dt, Ats, 
+                                   &B[row*NUM_STRESSES], BStress);
+            
+            for ( int j = 0; j <= i; j++ ){
+              int end = ( j == i ? ii : NUM_DISPS-1);
+              for ( int jj = 0; jj <= end; jj++ ){
+                int col = jj + NUM_DISPS*j;
+                
+                // The regular element matrix
+                mat[col + row*NUM_VARIABLES] += 
+                  h*(strain_product(BStress, &B[col*NUM_STRESSES]) +    
+                     kpenalty*drot[row]*drot[col]);	      
+              }
+            }
+          }
+        }
+        
+        if (type == NONLINEAR){
+          nonlinear_bend_stress_bmat(mat, NUM_NODES, h, stress, 
+                                     N, Na, Nb, t, tx, ztx,
+                                     normal, normal_xi, normal_eta);
+          add_nonlinear_tying_stress_nmat<order>(mat, h, stress,
+                                                 tx, N11, N22, N12,
+                                                 knots, pknots, Xpts);
+        }
+        else if (type == LARGE_ROTATION){
+          // Add the second-derivative contributions from the bending strain
+          add_large_rot_bend_stress_bmat(mat, NUM_NODES, h, stress, 
+                                         N, Na, Nb, U, Ud, C, Ct, Ctt, Cttt, 
+                                         t, tx, ztx, normal, normal_xi, normal_eta);
+	
+          // Add the contributions to the second derivative of the tying strain
+          add_lr_tying_stress_nmat<order>(mat, h, stress, n13, n23, tx, 
+                                          N11, N22, N12, knots, pknots); 
+          
+          // Add the second derivative of the in-plane penalty
+          add_inplane_penalty(mat, NUM_NODES, h*kpenalty*rot, Xd, Ud, 
+                              Ct, Ctt, N, Na, Nb);
+        }
+        
+        // Copy over the matrix
+        // Take the lower triangle and copy to the upper triangle
+        for ( int row = 0; row < NUM_VARIABLES; row++ ){
+          for ( int col = row+1; col < NUM_VARIABLES; col++ ){
+            mat[col + row*NUM_VARIABLES] = mat[row + col*NUM_VARIABLES];
+          }
+        }
+      }
+    }
+  }
+  else if (matType == MASS_MATRIX){
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
         // Set the quadrature point within the element

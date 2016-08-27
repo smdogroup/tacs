@@ -229,8 +229,8 @@ void TACSCreator::setNodes( const TacsScalar *_Xpts ){
 /*
   Set the type of ordering to use
 */
-void TACSCreator::setReorderingType( enum TACSAssembler::OrderingType _order_type,
-                                     enum TACSAssembler::MatrixOrderingType _mat_type ){
+void TACSCreator::setReorderingType( TACSAssembler::OrderingType _order_type,
+                                     TACSAssembler::MatrixOrderingType _mat_type ){
   use_reordering = 1;
   order_type = _order_type;
   mat_type = _mat_type;

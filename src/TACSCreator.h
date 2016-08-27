@@ -64,8 +64,8 @@ class TACSCreator : public TACSObject {
 
   // Set the type of ordering to use
   // -------------------------------
-  void setReorderingType( enum TACSAssembler::OrderingType _order_type,
-                          enum TACSAssembler::MatrixOrderingType _mat_type );
+  void setReorderingType( TACSAssembler::OrderingType _order_type,
+                          TACSAssembler::MatrixOrderingType _mat_type );
 
   // Partition the mesh 
   // ------------------
@@ -88,8 +88,8 @@ class TACSCreator : public TACSObject {
 
   // Set the type of reordering to use
   int use_reordering;
-  enum TACSAssembler::OrderingType order_type;
-  enum TACSAssembler::MatrixOrderingType mat_type;
+  TACSAssembler::OrderingType order_type;
+  TACSAssembler::MatrixOrderingType mat_type;
 
   // The number of variables per node in the mesh
   int vars_per_node;
