@@ -94,7 +94,7 @@ int main( int argc, char * argv[] ){
   int numOwnedNodes = nodesPerProc;
   int numElements = elemsPerProc;
 
-  // On the ast rank, adjust the ownership so we get the
+  // On the last rank, adjust the ownership so we get the
   // total that we need
   if (rank == size-1){
     numOwnedNodes = (nx+1)*(ny+1) - nodesPerProc*(size-1);
