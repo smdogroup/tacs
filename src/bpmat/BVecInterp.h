@@ -100,7 +100,7 @@ class TACSBVecInterp : public TACSObject {
   TacsScalar *x_ext; // Variable values from other processors
 
   // The number of local rows from outMap
-  int N, bsize;
+  int N, M, bsize;
   TACSVarMap *inMap, *outMap;
 
   // The object responsible for fetching/distributing the 

@@ -383,15 +383,15 @@ PSOR::PSOR( PMat *mat, int _zero_guess,
   // Compute the offset to the off-processor terms
   ext_offset = bsize*(N-Nc);
 
-  // Compute the size of the external components
-  int ysize = bsize*ext_dist->getDim();
-  yext = new TacsScalar[ ysize ];  
-
   // Get the external column map - a VecDistribute object
   mat->getExtColMap(&ext_dist);
   ext_dist->incref();
   ctx = ext_dist->createCtx(bsize);
   ctx->incref();
+
+  // Compute the size of the external components
+  int ysize = bsize*ext_dist->getDim();
+  yext = new TacsScalar[ ysize ];  
   
   // Store the relaxation options 
   zero_guess = _zero_guess;

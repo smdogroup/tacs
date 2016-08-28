@@ -13,7 +13,8 @@
 #include "BVecInterp.h"
 
 /*
-  Perform multi-grid solution of a large linear system.
+  This class implements a geometric multi-grid solution method as
+  either a preconditioner or a solution method.
 
   This uses geometric multigrid where a number of related
   finite-element models are used to assemble a related series of
@@ -46,7 +47,7 @@ class TACSMg : public TACSPc {
   // Set the data for the multi-grid level
   // -------------------------------------
   void setLevel( int level, TACSAssembler *_tacs,
-		 TACSBVecInterp *restrct, TACSBVecInterp *interp,
+                 TACSBVecInterp *interp,
 		 int _iters=1 );
     
   // Set the state/design variables of all lower finite-element models
@@ -104,8 +105,8 @@ class TACSMg : public TACSPc {
   // The solution, right-hand-side and residual on each level
   TACSBVec **x, **b, **r;
 
-  // The restriction/interpolation operators
-  TACSBVecInterp **restrct, **interp;
+  // The interpolation operators
+  TACSBVecInterp **interp;
 
   // The matrices/preconditioner objects required for multigrid
   TACSMat *root_mat; // The root matrix 

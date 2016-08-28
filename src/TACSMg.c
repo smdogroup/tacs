@@ -62,12 +62,10 @@ not make any sense!\n");
   mat = new TACSMat*[ nlevels-1 ];
  
   // should re-assemble this matrix
-  restrct = new TACSBVecInterp*[ nlevels-1 ];
   interp = new TACSBVecInterp*[ nlevels-1 ];
   pc = new TACSPc*[ nlevels-1 ]; 
 
   for ( int i = 0; i < nlevels-1; i++ ){
-    restrct[i] = NULL;
     interp[i] = NULL;
     mat[i] = NULL;
     pc[i] = NULL;
@@ -91,7 +89,6 @@ TACSMg::~TACSMg(){
 
   for ( int i = 0; i < nlevels-1; i++ ){
     if (mat[i]){ mat[i]->decref(); }
-    if (restrct[i]){ restrct[i]->decref(); }
     if (interp[i]){ interp[i]->decref(); }
     if (pc[i]){ pc[i]->decref(); }
   }
@@ -106,8 +103,6 @@ TACSMg::~TACSMg(){
   delete [] x;
   delete [] r;
   delete [] b;
-
-  delete [] restrct;
   delete [] interp;
   delete [] pc;
 }
@@ -122,12 +117,11 @@ TACSMg::~TACSMg(){
   input:
   level:     the multigrid level
   tacs:      the TACSAssembler object
-  restrict:  the restriction operator
   interp:    the interpolation operator
   iters:     the number of iterations to take at this level
 */
 void TACSMg::setLevel( int level, TACSAssembler *_tacs,
-		       TACSBVecInterp *_restrct, TACSBVecInterp *_interp, 
+		       TACSBVecInterp *_interp, 
 		       int _iters ){
   tacs[level] = _tacs;
   tacs[level]->incref();
@@ -140,14 +134,10 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
   // Only define the restriction/interpolation 
   // operators for level < nlevels-1
   if (level < nlevels-1){
-    if (!_restrct && !_interp){
-      fprintf(stderr, "TACSMg: Must define restriction and prolongation\
+    if (!_interp){
+      fprintf(stderr, "TACSMg: Must define prolongation\
  operators for all but the coarsest problem\n");
     }
-
-    restrct[level] = _restrct;    
-    restrct[level]->incref();
-
     interp[level] = _interp;
     interp[level]->incref();
     
@@ -197,7 +187,7 @@ void TACSMg::setVariables( TACSBVec *vec ){
   tacs[0]->setVariables(vec);
 
   for ( int i = 0; i < nlevels-1; i++ ){
-    restrct[i]->mult(x[i], x[i+1]);
+    interp[i]->multTranspose(x[i], x[i+1]);
     x[i+1]->applyBCs();
     tacs[i+1]->setVariables(x[i+1]);
   }
@@ -340,8 +330,11 @@ void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
   Assume an initial guess of zero. 
 */
 void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
-  b[0] = dynamic_cast<TACSBVec*>(bvec); // Set the RHS at the finest level
-  x[0] = dynamic_cast<TACSBVec*>(xvec); // Set the solution at the finest level
+  // Set the RHS at the finest level
+  b[0] = dynamic_cast<TACSBVec*>(bvec); 
+
+  // Set the solution at the finest level
+  x[0] = dynamic_cast<TACSBVec*>(xvec); 
 
   if (b[0] && x[0]){
     x[0]->zeroEntries();
@@ -375,7 +368,7 @@ TacsScalar TACSMg::applyMg( int level ){
 
   // Restrict the residual to the next lowest level 
   // to form the RHS at that level
-  restrct[level]->mult(r[level], b[level+1]);
+  interp[level]->multTranspose(r[level], b[level+1]);
   b[level+1]->applyBCs();
 
   // If we've made it to the lowest level, apply the direct solver

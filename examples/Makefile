@@ -14,14 +14,23 @@ EXAMPLE_SUBDIRS = \
 	cylinder \
 	triangle \
 	crm \
+	mg \
 	stiffened_panel \
 	grad_verify \
 	profile_elements \
 	rigid
 
-default: test
+default:
+	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
+	  echo "making $@ in $$subdir"; \
+	  echo; (cd $$subdir && $(MAKE)); \
+	done
 
-complex: test_complex
+complex:
+	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
+	  echo "making $@ in $$subdir"; \
+	  echo; (cd $$subdir && $(MAKE) complex); \
+	done
 
 test:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \

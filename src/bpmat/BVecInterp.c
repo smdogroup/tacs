@@ -81,8 +81,8 @@ void BVecInterpMultTransposeAdd6( int bsize, int nrows,
   4. Calls can be made to mult, multAdd, multTranspose, and multTransposeAdd
 */
 TACSBVecInterp::TACSBVecInterp( TACSVarMap *_inMap,
-                        TACSVarMap *_outMap,
-                        int _bsize ){
+                                TACSVarMap *_outMap,
+                                int _bsize ){
   inMap = _inMap;
   inMap->incref();
 
@@ -110,6 +110,7 @@ or congruent. Cannot form interpolant.\n");
   // Initialize the on- and off-processor temporary storage that 
   // will be used to store the interpolation weights
   N = outMap->getDim();
+  M = inMap->getDim();
 
   on_size = 0;
   max_on_size = N;
@@ -222,7 +223,7 @@ TACSBVecInterp::~TACSBVecInterp(){
   size:     the number of points used in the interpolation
 */
 void TACSBVecInterp::addInterp( int num, TacsScalar w[], 
-			    int vars[], int size ){
+                                int vars[], int size ){
   // Get the MPI rank
   int mpi_rank;
   MPI_Comm_rank(comm, &mpi_rank);
@@ -261,7 +262,8 @@ void TACSBVecInterp::addInterp( int num, TacsScalar w[],
       on_weights = new TacsScalar[ max_on_weights ];
 
       memcpy(on_vars, tmp_vars, on_rowp[on_size]*sizeof(int));
-      memcpy(on_weights, tmp_weights, on_rowp[on_size]*sizeof(TacsScalar));
+      memcpy(on_weights, tmp_weights, 
+             on_rowp[on_size]*sizeof(TacsScalar));
       delete [] tmp_vars;
       delete [] tmp_weights;
     }
@@ -304,7 +306,8 @@ void TACSBVecInterp::addInterp( int num, TacsScalar w[],
       off_weights = new TacsScalar[ max_off_weights ];
 
       memcpy(off_vars, tmp_vars, off_rowp[off_size]*sizeof(int));
-      memcpy(off_weights, tmp_weights, off_rowp[off_size]*sizeof(TacsScalar));
+      memcpy(off_weights, tmp_weights, 
+             off_rowp[off_size]*sizeof(TacsScalar));
       delete [] tmp_vars;
       delete [] tmp_weights;
     }
@@ -377,10 +380,10 @@ void TACSBVecInterp::initialize(){
     tmp_weights_ptr[i+1] = tmp_weights_ptr[i] + tmp_weights_count[i];
   }
 
-  // Allocate memory for the temporary data storage. Note that we store
-  // the number of weights per row, rather than a pointer to data
-  // (like CSR format) since this will be easier to transfer between
-  // processors since the relative offset won't change. 
+  // Allocate memory for the temporary data storage. Note that we
+  // store the number of weights per row, rather than a pointer to
+  // data (like CSR format) since this will be easier to transfer
+  // between processors since the relative offset won't change.
   int *tmp_nums = new int[ off_size ];
   int *tmp_weights_per_row = new int[ off_size ];
   int *tmp_vars = new int[ off_rowp[off_size] ];
@@ -544,9 +547,7 @@ void TACSBVecInterp::initialize(){
       ext_rowp[num+1] += num_ext;
     }
     else {
-      // Print an error message. This should never happen since
-      // we've gone out of our way to check that this condition
-      // should not appear
+      // Print an error message. This should never happen. 
       fprintf(stderr, "Error, local interpolation variable out of range\n");
     }
   }
@@ -581,9 +582,7 @@ void TACSBVecInterp::initialize(){
       ext_rowp[num+1] += num_ext;
     }
     else {
-      // Print an error message. This should never happen since
-      // we've gone out of our way to check that this condition
-      // should not appear
+      // Print an error message. This should never happen.
       fprintf(stderr, "Error, local interpolation variable out of range\n");
     
       // Increment the pointer to the input array
@@ -591,9 +590,9 @@ void TACSBVecInterp::initialize(){
     }
   }
 
-  // Increment the rowp pointers to the local and external data so that
-  // we have not just the counts, but the offsets into the global variable
-  // arrays
+  // Increment the rowp pointers to the local and external data so
+  // that we have not just the counts, but the offsets into the global
+  // variable arrays
   rowp[0] = 0;
   ext_rowp[0] = 0;
   for ( int i = 0; i < N; i++ ){
@@ -606,9 +605,9 @@ void TACSBVecInterp::initialize(){
   cols = new int[ rowp[N] ];
   ext_cols = new int[ ext_rowp[N] ];
 
-  // Add the contributions to the CSR data structure from the on-processor
-  // data. Note that this adjusts the rowp and ext_rowp data. This
-  // must be restored afterwards.
+  // Add the contributions to the CSR data structure from the
+  // on-processor data. Note that this adjusts the rowp and ext_rowp
+  // data. This must be restored afterwards.
   for ( int i = 0; i < on_size; i++ ){
     // Compute the on-processor variable number
     int num = on_nums[i];
@@ -790,10 +789,10 @@ void TACSBVecInterp::initialize(){
     ext_cols[j] = item - ext_vars;
   }
 
-  // ext_rowp/ext_cols/ext_weights now contains the off-diagonal components
-  // this object now can distribute between the two variables
+  // ext_rowp/ext_cols/ext_weights now contains the off-diagonal
+  // components this object now can distribute them
   TACSBVecIndices *bindex = new TACSBVecIndices(&ext_vars, num_ext_vars);
-  vecDist = new TACSBVecDistribute(inMap, bindex); // vecDist now owns ext_vars
+  vecDist = new TACSBVecDistribute(inMap, bindex); 
   vecDist->incref();
 
   // Create a vect distribution context
@@ -826,13 +825,16 @@ void TACSBVecInterp::initialize(){
       w += ext_weights[j];
     }
 
-    // Normalize the weights
     if (w != 0.0){
+      // Compute the inverse of the weights
+      w = 1.0/w;
+
+      // Normalize the weights
       for ( int j = rowp[i]; j < rowp[i+1]; j++ ){
-        weights[j] /= w;
+        weights[j] *= w;
       }
       for ( int j = ext_rowp[i]; j < ext_rowp[i+1]; j++ ){
-	ext_weights[j] /= w;
+	ext_weights[j] *= w;
       }
     }
   }
@@ -891,7 +893,7 @@ void TACSBVecInterp::mult( TACSBVec *inVec, TACSBVec *outVec ){
   outVec: the interpolated output vector
 */
 void TACSBVecInterp::multAdd( TACSBVec *inVec, TACSBVec *addVec, 
-			  TACSBVec *outVec ){
+                              TACSBVec *outVec ){
   if (!vecDist){
     fprintf(stderr, 
             "Must call initialize() before using TACSBVecInterp object\n");
@@ -1039,7 +1041,7 @@ void TACSBVecInterp::printInterp( const char *filename ){
   The idea is that these will run faster than a generic implementation
   of the matrix-vector multiplication. These will be most important
   for very large meshes where the number of interpolations requried
-  (say within a multigrid algorithm) is considerably higher.
+  (say within a multigrid algorithm) is considerably higher.  
 */
 
 /*
