@@ -20,5 +20,11 @@ clean:
 
 test: default
 	python generate_plate.py
-	mpirun -np 1 ./plate
-	mpirun -np 2 ./plate
+	mpirun -np 1 ./plate NBG
+	mpirun -np 1 ./plate BDF1
+	mpirun -np 1 ./plate BDF2
+	mpirun -np 1 ./plate BDF3
+	mpirun -np 1 ./plate DIRK2
+	mpirun -np 1 ./plate DIRK3
+	mpirun -np 1 ./plate DIRK4
+	mpirun -np 1 ./plate ABM1

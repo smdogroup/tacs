@@ -266,8 +266,8 @@ void TACSIntegrator::addTotalDerivative( double scale, TACSBVec **adjoint ) {
   }
 
   // Add the Adjoint-Residual partial derivative contributions
-  tacs->addAdjointResProducts(1.0, adjoint, num_funcs, tmp, num_design_vars);
   memset(tmp, 0, num_design_vars*num_funcs*sizeof(TacsScalar));
+  tacs->addAdjointResProducts(1.0, adjoint, num_funcs, tmp, num_design_vars);
   for ( int m = 0; m < num_design_vars*num_funcs; m++ ){
     dfdx[m] += scale*tmp[m];
   }
@@ -1147,7 +1147,7 @@ void TACSBDFIntegrator::reverse( TacsScalar *dfdx,
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_design_vars, MPI_INT, 
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_design_vars, TACS_MPI_TYPE, 
                 MPI_SUM, tacs->getMPIComm());
 }
 
@@ -2455,6 +2455,7 @@ void TACSNBGIntegrator::marchBackwards( ){
     TacsScalar ftmp;
     for ( int n = 0; n < num_funcs; n++ ){
       // Evaluate the function
+      ftmp = 0.0;
       tacs->evalFunctions(&funcs[n], 1, &ftmp);
       fvals[n] += h*ftmp;
 
@@ -2527,6 +2528,9 @@ void TACSNBGIntegrator::marchBackwards( ){
       }
     }
   }
+
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_design_vars, TACS_MPI_TYPE, 
+                MPI_SUM, tacs->getMPIComm());
 
   // Freeup objects
   for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){

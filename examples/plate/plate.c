@@ -207,13 +207,13 @@ int main( int argc, char **argv ){
   static const int NUM_FUNCS = 3;
   TACSFunction * func[NUM_FUNCS];
   
-  func[0] = new Compliance(tacs);
+  func[0] = new TACSCompliance(tacs);
   func[0]->incref();
   
-  func[1] = new StructuralMass(tacs);
+  func[1] = new TACSStructuralMass(tacs);
   func[1]->incref();
 
-  func[2] = new KSFailure(tacs, 100.0, 1.0);
+  func[2] = new TACSKSFailure(tacs, 100.0);
   func[2]->incref();
 
   TacsScalar *funcVals     = new TacsScalar[NUM_FUNCS]; // adjoint
@@ -229,7 +229,7 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 100.e-3; int num_steps_per_sec = 1000;  
+  double tinit = 0.0, tfinal = 10.e-3; int num_steps_per_sec = 1000;  
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
@@ -241,7 +241,7 @@ int main( int argc, char **argv ){
   obj->setAbsTol(1.0e-10);
   obj->setRelTol(1.0e-8);
   obj->setPrintLevel(1);
-  obj->configureOutput(f5, 1, "plate_%04d.f5");
+  obj->configureOutput(NULL, 0, "plate_%04d.f5");
   
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);
