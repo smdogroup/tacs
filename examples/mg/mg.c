@@ -11,12 +11,13 @@
   creator object 
 */
 void createTACS( MPI_Comm comm, int nx, int ny,
-                 TACSAssembler **_tacs, TACSCreator **_creator ){
+                 TACSAssembler **_tacs, TACSCreator **_creator,
+                 int *part=NULL ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   // Set the number of nodes/elements on this proc
-  int varsPerNode = 6;  
+  int varsPerNode = 6;
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
@@ -85,6 +86,13 @@ void createTACS( MPI_Comm comm, int nx, int ny,
     // Set the nodal locations
     creator->setNodes(Xpts);
     delete [] Xpts;
+
+    // Set the partition
+    if (part){
+      int size;
+      MPI_Comm_size(comm, &size);
+      creator->partitionMesh(size, part);
+    }
   }
 
   // Create and set the element
@@ -166,6 +174,17 @@ int main( int argc, char *argv[] ){
   int nx = 128;
   int ny = 128;
 
+  // Get the global size of the mesh from the input
+  for ( int k = 0; k < argc; k++ ){
+    int xpow;
+    if (sscanf(argv[k], "xpow=%d", &xpow) == 1){
+      if (xpow < 5){ xpow = 5; }
+      if (xpow > 10){ xpow = 10; }
+      nx = 1 << xpow;
+      ny = 1 << xpow;
+    }
+  }
+
   // Create the multigrid object
   double omega = 0.75;
   int sor_iters = 1;
@@ -175,9 +194,28 @@ int main( int argc, char *argv[] ){
 
   // Create the TACS/Creator objects for all levels
   for ( int i = 0; i < nlevels; i++ ){
-    createTACS(comm, nx/(1 << i), ny/(1 << i), &tacs[i], &creator[i]);
+    int *part = NULL;
+    int Nx = nx/(1 << i), Ny = ny/(1 << i);
+
+    if (i > 0 && rank == 0){
+      // Note that the partition array is only allocated
+      // on the root processor
+      const int *fine_part;
+      creator[i-1]->getElementPartition(&fine_part);
+      part = new int[ Nx*Ny ];
+      for ( int j = 0; j < Ny; j++ ){
+        for ( int i = 0; i < Nx; i++ ){
+          part[i + Nx*j] = fine_part[2*i + 4*Nx*j];
+        }
+      }
+    }
+
+    createTACS(comm, Nx, Ny, &tacs[i], &creator[i], part);
     tacs[i]->incref();
     creator[i]->incref();
+    if (part){
+      delete [] part;
+    }
   }
 
   // Create the interpolation operators

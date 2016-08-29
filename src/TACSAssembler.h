@@ -284,19 +284,6 @@ class TACSAssembler : public TACSObject {
 			    int *item, TacsScalar *temp,
                             MatrixOrientation matOr );
 
-  // The static member functions that are used to p-thread TACSAssembler
-  // operations... These are the most time-consuming operations.
-  static void schedPthreadJob( TACSAssembler *tacs,
-                               int *index, int total_size );
-  static void *assembleRes_thread( void *t );
-  static void *assembleJacobian_thread( void *t );
-  static void *assembleMatType_thread( void *t );
-  static void *integrateFunctions_thread( void *t );
-  static void *addDVSens_thread( void *t );
-  // static void *adjointResXptSensProduct_thread( void *t );
-  // static void *adjointResProduct_thread( void *t );  
-  // static void *evalXptSens_thread( void *t );
-
   TACSVarMap *varMap; // Variable ownership map
   TACSBcMap *bcMap; // Boundary condition data
   TACSBVecDistribute *extDist; // Distribute the vector
@@ -366,6 +353,14 @@ class TACSAssembler : public TACSObject {
   // MPI info
   int mpiRank, mpiSize;
   MPI_Comm tacs_comm;
+
+  // The static member functions that are used to p-thread TACSAssembler
+  // operations... These are the most time-consuming operations.
+  static void schedPthreadJob( TACSAssembler *tacs,
+                               int *index, int total_size );
+  static void *assembleRes_thread( void *t );
+  static void *assembleJacobian_thread( void *t );
+  static void *assembleMatType_thread( void *t );
 
   // Class to store specific information about the threaded
   // operations to perform. Note that assembly operations are
