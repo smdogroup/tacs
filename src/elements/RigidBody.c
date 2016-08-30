@@ -676,6 +676,13 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
 }
 
 /*
+  Retrieve the position of the rigid body
+*/
+TACSGibbsVector* TACSRigidBody::getPosition(){
+  return rInit;
+}
+
+/*
   Compute the kinematic and potential energies of the rigid body
 
   The kinetic energy is given by:

@@ -131,6 +131,10 @@ class TACSRigidBody : public TACSElement {
 			 TacsScalar dvars[],
 			 const TacsScalar X[] );
 
+  // Retrieve the position of the rigid body
+  // ---------------------------------------
+  TACSGibbsVector* getPosition();
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
