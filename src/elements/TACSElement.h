@@ -309,7 +309,7 @@ class TACSElement : public TACSOptObject {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  virtual TACSConstitutive * getConstitutive(){ return NULL; }
+  virtual TACSConstitutive *getConstitutive(){ return NULL; }
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
@@ -377,15 +377,15 @@ class TACSElement : public TACSOptObject {
 
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
-  virtual const char * elementName(){ return NULL; }
-  virtual const char * displacementName( int i ){ return NULL; }
-  virtual const char * stressName( int i ){ return NULL; }
-  virtual const char * strainName( int i ){ return NULL; }
-  virtual const char * extraName( int i ){ return NULL; }
+  virtual const char *elementName(){ return NULL; }
+  virtual const char *displacementName( int i ){ return NULL; }
+  virtual const char *stressName( int i ){ return NULL; }
+  virtual const char *strainName( int i ){ return NULL; }
+  virtual const char *extraName( int i ){ return NULL; }
 
   // Return the name of the element
   // ------------------------------
-  virtual const char * TACSObjectName(){ return this->elementName(); }
+  virtual const char *TACSObjectName(){ return this->elementName(); }
 
   // Get the number of extras and element type information
   // -----------------------------------------------------
@@ -402,7 +402,6 @@ class TACSElement : public TACSOptObject {
 			      const TacsScalar Xpts[],
 			      const TacsScalar vars[] ){}
   virtual void getOutputConnectivity( int * con, int start_node ){}
-
 
   // Test functions used to test the derivative evaluation code
   // ----------------------------------------------------------
