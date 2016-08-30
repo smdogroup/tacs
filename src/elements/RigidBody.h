@@ -255,9 +255,9 @@ class TACSSphericalConstraint : public TACSElement {
                     const TacsScalar ddvars[] );
 
  private:
-  TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
-  TACSGibbsVector   *point;         // The point where the joint is located in global frame
   TACSRigidBody     *bodyA, *bodyB; // The rigid bodies involved in the joint
+  TACSGibbsVector   *point;         // The point where the joint is located in global frame
+  TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
   static const char *elem_name;     // The name of the element
 };
 
@@ -266,9 +266,12 @@ class TACSSphericalConstraint : public TACSElement {
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
-  TACSRevoluteConstraint( TACSGibbsVector *_xA, TACSGibbsVector *_xB,
-                          TACSGibbsVector *_eA,  
-                          TACSGibbsVector *_eB1, TACSGibbsVector *_eB2 );
+  TACSRevoluteConstraint( TACSRigidBody *_bodyA, 
+                          TACSRigidBody *_bodyB, 
+                          TACSGibbsVector *_point, 
+                          TACSGibbsVector *_eAVec );
+  ~TACSRevoluteConstraint();
+
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
@@ -307,9 +310,12 @@ class TACSRevoluteConstraint : public TACSElement {
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
  private:
-  TacsScalar xA[3], xB[3];
-  TacsScalar eA[3], eB1[3], eB2[3];
-  static const char *elem_name;
+  TACSRigidBody     *bodyA, *bodyB;   // The rigid bodies involved in the joint
+  TACSGibbsVector   *point;           // The point where the joint is located in global frame
+  TACSGibbsVector   *eAVec;           // The revolute direction in global frame
+  TACSGibbsVector   *xAVec, *xBVec;   // The positions of joint from each body in global frame
+  TACSGibbsVector   *eB1Vec, *eB2Vec; // The positions of joint from each body in global frame
+  static const char *elem_name;       // The name of the element
 };
 
 #endif // TACS_RIGID_BODY_DYNAMICS_H

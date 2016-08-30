@@ -1478,7 +1478,7 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
   TACSGibbsVector *rAVec = bodyA->getPosition();
   TACSGibbsVector *rBVec = bodyB->getPosition();
 
-    // Retrieve the coordinates of the point
+  // Retrieve the coordinates of the point
   const TacsScalar *pt;
   point->getVector(&pt);
 
@@ -1671,39 +1671,77 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
   inputs. A refers to bodyA and B refers to bodyB.
 
   input:
-  xA: position from the joint to bodyA (or the reverse)
-  xB: position from the joint to body B
-  eA:
-  eB1:
-  eB2:
+  bodyA : pointer to bodyA
+  bodyB : pointer to bodyB
+  point : the position of the joint from the global reference point
+  rev   : the revolute direction in global frame
+*/
+TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA, 
+                                                TACSRigidBody *_bodyB, 
+                                                TACSGibbsVector *_point, 
+                                                TACSGibbsVector *_eAVec ){
+  // Copy over the input arguments
+  bodyA = _bodyA; bodyA->incref();
+  bodyB = _bodyB; bodyB->incref();
+  point = _point; point->incref();
+  eAVec = _eAVec; eAVec->incref();
 
- */
-TACSRevoluteConstraint::TACSRevoluteConstraint( TACSGibbsVector *_xA,  
-                                                TACSGibbsVector *_xB,
-                                                TACSGibbsVector *_eA,  
-                                                TACSGibbsVector *_eB1,  
-                                                TACSGibbsVector *_eB2 ){
-  // Retrive the positions from Gibbs vectors
-  const TacsScalar *xA, *xB;
-  _xA->getVector(&xA);
-  _xB->getVector(&xB);
-  
-  memcpy(this->xA, xA, 3*sizeof(TacsScalar));
-  memcpy(this->xB, xB, 3*sizeof(TacsScalar));
-  
-  // Retrieve the 
-  const TacsScalar *eA;
-  _eA->getVector(&eA);
-  
-  memcpy(this->eA, eA, 3*sizeof(TacsScalar));
+  // Fetch the positions of each bodies in global frame and set into the class variable
+  TACSGibbsVector *rAVec = bodyA->getPosition();
+  TACSGibbsVector *rBVec = bodyB->getPosition();
 
-  // Retrieve the 
-  const TacsScalar *eB1, *eB2;
-  _eB1->getVector(&eB1);
-  _eB2->getVector(&eB2);
+  // Retrieve the coordinates of the point of location of the joint
+  const TacsScalar *pt;
+  point->getVector(&pt);
 
-  memcpy(this->eB1, eB1, 3*sizeof(TacsScalar));
-  memcpy(this->eB2, eB2, 3*sizeof(TacsScalar));
+  // Retrieve the values of the position vectors of bodies
+  const TacsScalar *rA, *rB;
+  rAVec->getVector(&rA);
+  rBVec->getVector(&rB);
+
+  // Determine the position of the joint from bodyA : 
+  // xAVec = point - rAVec
+  TacsScalar xA[3];
+  for ( int i = 0; i < 3; i++ ){
+    xA[i] = pt[i] - rA[i];
+  }
+  xAVec = new TACSGibbsVector(xA);
+  xAVec->incref();
+
+  // Determine the position of the joint from bodyB : 
+  // xBVec = point - rBVec
+  TacsScalar xB[3];
+  for ( int i = 0; i < 3; i++ ){
+    xB[i] = pt[i] - rB[i];
+  }
+  xBVec = new TACSGibbsVector(xB);
+  xBVec->incref();
+
+  // Compute the other normal vectors making a triad with the revolute
+  // vector in a right hand sense
+  TacsScalar eB1[3]; // need to compute properly
+  eB1Vec = new TACSGibbsVector(eB1);
+  eB1Vec->incref();
+
+  TacsScalar eB2[3]; // need to compute properly
+  eB2Vec = new TACSGibbsVector(eB2);
+  eB2Vec->incref();
+}
+
+/*
+  Destuctor for the revolute constraint
+*/
+TACSRevoluteConstraint::~TACSRevoluteConstraint(){
+  bodyA->decref();
+  bodyB->decref();
+  point->decref();
+  eAVec->decref();
+
+  xAVec->decref();
+  xBVec->decref();
+  
+  eB1Vec->decref();
+  eB2Vec->decref();
 }
 
 const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
@@ -1765,6 +1803,11 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
   computeRotationMat(etaA, epsA, CA);
   computeRotationMat(etaB, epsB, CB);
 
+  // Retrieve the pointers to xAVec and xBVec
+  const TacsScalar *xA, *xB;
+  xAVec->getVector(&xA);
+  xBVec->getVector(&xB);
+
   // Add the terms for body A
   vecAxpy(1.0, lam, &resA[0]);
   addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
@@ -1787,6 +1830,12 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
 
   // Complete the evaluation of the constraint
   vecAxpy(-1.0, t, resC);
+
+  // Retrieve the pointers to eA, eB1, eB2
+  const TacsScalar *eA, *eB1, *eB2;
+  eAVec->getVector(&eA);
+  eB1Vec->getVector(&eB1);
+  eB2Vec->getVector(&eB2);
 
   // Add the revolute direction constraint
   TacsScalar tA[3], tB1[3], tB2[3];
@@ -1825,13 +1874,13 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
   Compute the Jacobian of the residuals of the governing equations
 */
 void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
-                                           double alpha, 
-                                           double beta, 
-                                           double gamma,
-                                           const TacsScalar Xpts[],
-                                           const TacsScalar vars[],
-                                           const TacsScalar dvars[],
-                                           const TacsScalar ddvars[] ){
+                                          double alpha, 
+                                          double beta, 
+                                          double gamma,
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[] ){
   // Set the variables for body A
   const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
@@ -1849,6 +1898,12 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
   TacsScalar CA[9], CB[9];
   computeRotationMat(etaA, epsA, CA);
   computeRotationMat(etaB, epsB, CB);
+
+  // Retrieve the pointers to eA, eB1, eB2
+  const TacsScalar *eA, *eB1, *eB2;
+  eAVec->getVector(&eA);
+  eB1Vec->getVector(&eB1);
+  eB2Vec->getVector(&eB2);
 
   // Add the revolute direction constraint
   TacsScalar tA[3], tB1[3], tB2[3];
@@ -1898,6 +1953,11 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
 
   addBlockIdent(alpha, &J[16*24], 24);
   addBlockIdent(-alpha, &J[16*24+8], 24);
+
+  // Retrieve the pointers to xAVec and xBVec
+  const TacsScalar *xA, *xB;
+  xAVec->getVector(&xA);
+  xBVec->getVector(&xB);
 
   // Add the terms corresponding to the second derivative
   // terms
