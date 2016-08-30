@@ -27,11 +27,11 @@ void TacsZeroNumFlops(){
   These definite the min/max operations for complex values
 */
 #ifdef TACS_USE_COMPLEX
-void TacsMPIComplexMax( void * _in, void * _out, int * count, 
-			MPI_Datatype * data ){
+void TacsMPIComplexMax( void *_in, void *_out, int *count, 
+			MPI_Datatype *data ){
   if (*data == MPI_DOUBLE_COMPLEX){
-    TacsScalar * in = (TacsScalar*) _in;
-    TacsScalar * out = (TacsScalar*) _out;
+    TacsScalar *in = (TacsScalar*) _in;
+    TacsScalar *out = (TacsScalar*) _out;
 
     // Compare the real parts of the array
     for ( int i = 0; i < *count; i++ ){
@@ -42,11 +42,11 @@ void TacsMPIComplexMax( void * _in, void * _out, int * count,
   }
 }
 
-void TacsMPIComplexMin( void * _in, void * _out, int * count, 
-			MPI_Datatype * data ){
+void TacsMPIComplexMin( void *_in, void *_out, int *count, 
+			MPI_Datatype *data ){
   if (*data == MPI_DOUBLE_COMPLEX){
-    TacsScalar * in = (TacsScalar*) _in;
-    TacsScalar * out = (TacsScalar*) _out;
+    TacsScalar *in = (TacsScalar*) _in;
+    TacsScalar *out = (TacsScalar*) _out;
 
     // Compare the real parts of the array
     for ( int i = 0; i < *count; i++ ){
@@ -103,9 +103,6 @@ TACSObject::~TACSObject(){}
 */
 void TACSObject::incref(){ 
   ref_count++; 
-#ifdef TACS_DEBUG
-  allocation_counter++;
-#endif
 }
 
 /*!
@@ -113,15 +110,11 @@ void TACSObject::incref(){
 */
 void TACSObject::decref(){
   ref_count--;
-  
-#ifdef TACS_DEBUG
-  allocation_counter--;
-#endif
 
   if (ref_count == 0){
 #ifdef TACS_DEBUG
-    fprintf(stderr, "Delete object %s (%d)\n",
-            this->TACSObjectName(), allocation_counter);
+    fprintf(stderr, "Deleting object %s\n",
+            this->TACSObjectName());
     delete this;
 #else
     delete this;
@@ -137,11 +130,9 @@ void TACSObject::decref(){
 int TACSObject::refcount(){ return ref_count; }
 
 //! Return the name of the object
-const char * TACSObject::TACSObjectName(){ return tacsDefault; }
+const char *TACSObject::TACSObjectName(){ return tacsDefault; }
 
-const char * TACSObject::tacsDefault = "TACSObject";
-
-int TACSObject::allocation_counter = 0;
+const char *TACSObject::tacsDefault = "TACSObject";
 
 /*
   Implementation of the TACSThreadInfo object

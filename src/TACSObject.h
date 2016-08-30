@@ -111,13 +111,11 @@ class TACSObject {
 
   // Return the name of the object
   // -----------------------------
-  virtual const char * TACSObjectName();
+  virtual const char *TACSObjectName();
 
  private:
   int ref_count;
-
-  static const char * tacsDefault;
-  static int allocation_counter;
+  static const char *tacsDefault;
 };
 
 /*!  

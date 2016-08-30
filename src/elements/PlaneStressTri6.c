@@ -4,7 +4,7 @@
 PlaneStressTri6::PlaneStressTri6( PlaneStressStiffness * _stiff, 
                                   ElementBehaviorType type,
 				  int _componentNum ):
-TACS2DElement<6>(_stiff, type == LINEAR, _componentNum){}
+TACS2DElement<6>(_stiff, type, _componentNum){}
 
 PlaneStressTri6::~PlaneStressTri6(){}
 
@@ -85,7 +85,7 @@ double PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
     pt[0] = 3.0/5.0;
     pt[1] = 1.0/5.0;
     return 25.0/48.0;
-  default:	
+  default:
     break;
   }
 
