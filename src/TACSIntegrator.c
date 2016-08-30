@@ -1147,7 +1147,7 @@ void TACSBDFIntegrator::reverse( TacsScalar *dfdx,
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_design_vars, TACS_MPI_TYPE, 
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, TACS_MPI_TYPE, 
                 MPI_SUM, tacs->getMPIComm());
 }
 
@@ -2529,7 +2529,7 @@ void TACSNBGIntegrator::marchBackwards( ){
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_design_vars, TACS_MPI_TYPE, 
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, TACS_MPI_TYPE, 
                 MPI_SUM, tacs->getMPIComm());
 
   // Freeup objects
