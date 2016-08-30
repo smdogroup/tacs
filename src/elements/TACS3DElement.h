@@ -716,17 +716,16 @@ void TACS3DElement<NUM_NODES>::addGeoStiffness( TacsScalar mat[],
 	TacsScalar Dzi = Na[i]*J[2] + Nb[i]*J[5] + Nc[i]*J[8];
 
 	// Add the contributions to the stiffness matrix
-	mat[3*i + 3*j*NUM_VARIABLES] += h*stress[0]*Dxi*Dxj;
-	mat[3*i+1 + 3*j*NUM_VARIABLES] += h*stress[5]*(Dxi*Dyj + Dxj*Dyi);
-	mat[3*i+2 + 3*j*NUM_VARIABLES] += h*stress[4]*(Dxi*Dzj + Dxj*Dzi);
+        TacsScalar scale = h*(stress[0]*Dxi*Dxj +
+                              stress[1]*Dyi*Dyj +
+                              stress[2]*Dzi*Dzj +
+                              stress[3]*(Dyi*Dzj + Dyj*Dzi) +
+                              stress[4]*(Dxi*Dzj + Dxj*Dzi) +
+                              stress[5]*(Dxi*Dyj + Dxj*Dyi));
 
-	mat[3*i + (3*j+1)*NUM_VARIABLES] += h*stress[4]*(Dxi*Dzj + Dxj*Dzi);
-	mat[3*i+1 + (3*j+1)*NUM_VARIABLES] += h*stress[1]*Dyi*Dyj;
-	mat[3*i+2 + (3*j+1)*NUM_VARIABLES] += h*stress[3]*(Dyi*Dzj + Dyj*Dzi);
-
-	mat[3*i + (3*j+2)*NUM_VARIABLES] += h*stress[4]*(Dxi*Dzj + Dxj*Dzi);
-	mat[3*i+1 + (3*j+2)*NUM_VARIABLES] += h*stress[3]*(Dyi*Dzj + Dyj*Dzi);
-	mat[3*i+2 + (3*j+2)*NUM_VARIABLES] += h*stress[2]*Dzi*Dzj;
+	mat[3*i + 3*j*NUM_VARIABLES] += scale;
+	mat[3*i+1 + (3*j+1)*NUM_VARIABLES] += scale;
+	mat[3*i+2 + (3*j+2)*NUM_VARIABLES] += scale;
       }
     }
   }
@@ -1232,7 +1231,7 @@ void TACS3DElement<NUM_NODES>::addJacobian( double time,
     stiff->calculateStress(pt, strain, stress);
        
     // Add the stress times the second derivative of the strain
-    addGeoStiffness(mat, h, stress, J, Na, Nb, Nc);
+    addGeoStiffness(mat, alpha*h, stress, J, Na, Nb, Nc);
 
     // Get the derivative of the strain with respect to the nodal
     // displacements
@@ -1657,9 +1656,9 @@ TacsScalar TACS3DElement<NUM_NODES>::getDetJacobianXptSens( TacsScalar * hXptSen
       XaSens[0] = XaSens[1] = XaSens[2] = 0.0;
       XaSens[3] = XaSens[4] = XaSens[5] = 0.0;
       XaSens[6] = XaSens[7] = XaSens[8] = 0.0;      
-      XaSens[k] = Na[i];
-      XaSens[k+3] = Nb[i];
-      XaSens[k+6] = Nc[i];
+      XaSens[3*k] = Na[i];
+      XaSens[3*k+1] = Nb[i];
+      XaSens[3*k+2] = Nc[i];
 
       FElibrary::jacobian3dSens(Xa, XaSens, &hXptSens[0]);
       hXptSens++;

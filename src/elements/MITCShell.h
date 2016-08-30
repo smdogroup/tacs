@@ -668,8 +668,8 @@ void MITCShell<order>::addJacobian( double time,
   // Evaluate the strain and derivative of the strain at the
   // tying points within the element
   if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13, 
-				 b11, b22, b12, b23, b13, 
+    compute_lr_tying_nmat<order>(g11, g22, g12, g23, g13, 
+				 b11, b22, b12, b23, b13, n23, n13,
 				 knots, pknots, vars, Xpts);
   }
   else {

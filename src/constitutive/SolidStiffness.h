@@ -50,7 +50,7 @@ class SolidStiffness : public TACSConstitutive {
   TacsScalar rho;
 
  private:
-  static const char * constName;
+  static const char *constName;
 };
 
 inline void SolidStiffness::calcStress( const TacsScalar e[],

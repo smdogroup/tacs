@@ -9,13 +9,6 @@
   Not for commercial purposes.
 */
 
-/*! 
-  The maximum number of stress components. This maximum applies to 
-  testing only and can be increased if necessary.
-*/
-
-static const int MAX_STRESSES = 20;
-
 /*
   It is not necessary to override these function in order to implement the class
 */
@@ -304,3 +297,496 @@ void TACSConstitutive::writeBucklingEnvelope( const char * file_name, int npts,
     delete [] C;
   }
 }
+
+
+/*
+  This generates strains from a given stress.
+
+  This results in more realistic stress levels and avoids issues
+  realted to very large stress resulting in unrealistic failure
+  prediction.  
+*/
+/*
+void TestConstitutive::compute_strain( TacsScalar strain[], 
+                                       const double pt[],
+                                       const TacsScalar stress[] ){
+  int nstress = con->getNumStresses();
+
+  TacsScalar *C = new TacsScalar[ nstress*nstress ];
+  memset(C, 0, nstress*nstress*sizeof(TacsScalar));
+
+  for ( int k = 0; k < nstress; k++ ){
+    memset(strain, 0, nstress*sizeof(TacsScalar));
+
+    strain[k] = 1.0;
+    con->calculateStress(pt, strain, &C[nstress*k]);
+  }
+
+  memcpy(strain, stress, nstress*sizeof(TacsScalar));
+
+  // Solve for the strain given the stresses
+  int *ipiv = new int[ nstress ];
+  int one = 1;
+  int info = 0;
+  LAPACKgesv(&nstress, &one, C, &nstress, ipiv, 
+             strain, &nstress, &info);
+  if (info != 0){
+    fprintf(stderr, "Problem with the constitutive matrix!\n");
+  }
+
+  delete [] C;
+  delete [] ipiv;
+}
+*/
+/*
+  Test the sensitivity of the strain to a failure 
+*/
+/*
+int TestConstitutive::testFailStrainSens( const double pt[] ){
+  int nstress = con->getNumStresses();
+
+  TacsScalar *strain = new TacsScalar[ nstress ];
+  TacsScalar *sens = new TacsScalar[ nstress ];
+  TacsScalar *strainCopy = new TacsScalar[ nstress ];
+  TacsScalar *sensApprox = new TacsScalar[ nstress ];
+
+  // First use sens as a temporary randomly generated array
+  // These respresent randomly generated stresses on the interval [-1, 1]
+  generate_random_array(sens, nstress, -1.0, 1.0);
+
+  // Now geneate the corresponding strains
+  compute_strain(strain, pt, sens);
+  con->failureStrainSens(pt, strain, sens);
+
+  // Determine approximations of sens
+  for ( int k = 0; k < nstress; k++ ){
+    memcpy(strainCopy, strain, nstress*sizeof(TacsScalar));
+#ifdef TACS_USE_COMPLEX
+    strainCopy[k] += TacsScalar(0.0, dh);
+    TacsScalar forward;
+    con->failure(pt, strainCopy, &forward);    
+    sensApprox[k] = ImagPart(forward)/dh;
+#else  
+    TacsScalar e = strainCopy[k];
+    strainCopy[k] = e + dh;
+    TacsScalar forward;
+    con->failure(pt, strainCopy, &forward);    
+
+    strainCopy[k] = e - dh;
+    TacsScalar backward;
+    con->failure(pt, strainCopy, &backward);
+    sensApprox[k] = (forward - backward)/(2.0*dh);
+#endif
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(sens, sensApprox, 
+				 nstress, &max_err_index);
+  double max_rel = get_max_rel_error(sens, sensApprox, 
+				     nstress, &max_rel_index);
+
+  int test_failflag = (max_err > test_failatol || max_rel > test_failrtol);
+
+  if (test_print_level > 0){
+    fprintf(stderr, 
+	    "Testing the failure sensivity for %s.\n",
+	    con->constitutiveName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+	    max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+	    max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    fprintf(stderr, 
+            "The sensitivity of the failure criteria w.r.t. \
+the components of strain\n");
+    print_error_components(stderr, "failStrainSens", 
+                           sens, sensApprox, nstress);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] sens;
+  delete [] strain;
+  delete [] strainCopy;
+  delete [] sensApprox;
+
+  return test_failflag;
+}
+*/
+/*
+int TestConstitutive::testFailDVSens( const double pt[], int ndvs ){ 
+  int nstress = con->getNumStresses();
+
+  TacsScalar *strain = new TacsScalar[ nstress ];
+  TacsScalar *stress = new TacsScalar[ nstress ];
+
+  // Randomly generate the stresses for failure criteria calculations
+  generate_random_array(stress, nstress);
+
+  // Determine the corresponding strains
+  compute_strain(strain, pt, stress);
+  delete [] stress;
+
+  // Next, determine the design variables to use.
+  // Get the design variables associated with this constitutive class.
+  int *dv_nums = new int[ ndvs ];
+  int dv_index = 0;
+  if (!con->getDesignVarNums(dv_nums, &dv_index, ndvs)){
+    fprintf(stderr, 
+            "The number of design variables defined by %s is inconsistent\n",
+            con->constitutiveName());
+    return 0;
+  }
+  
+  int max_dv = 0;
+  for ( int k = 0; k < ndvs; k++ ){
+    if (dv_nums[k]+1 > max_dv){
+      max_dv = dv_nums[k]+1;
+    }
+  }
+
+  TacsScalar *dvs = new TacsScalar[ max_dv ];
+  con->getDesignVars(dvs, max_dv);
+
+  if (test_print_level){
+    fprintf(stderr, 
+	    "Testing the sensivity of the failure criteria w.r.t. the \
+design variables for constitutive class %s.\n",
+	    con->constitutiveName());
+  }
+
+  int test_failflag = 0;
+
+  for ( int k = 0; k < dv_index; k++ ){
+    // Compute the derivative of the residual here
+    TacsScalar failSens;
+    con->failureDVSens(dv_nums[k], pt, strain, &failSens);
+
+    TacsScalar x = dvs[dv_nums[k]];
+#ifdef TACS_USE_COMPLEX
+    dvs[dv_nums[k]] = x + TacsScalar(0.0, dh);
+    con->setDesignVars(dvs, max_dv);
+    TacsScalar forward;
+    con->failure(pt, strain, &forward);
+
+    TacsScalar failSensApprox = ImagPart(forward)/dh;
+#else
+    // Compute the finite-difference derivative
+    dvs[dv_nums[k]] = x + dh;
+    con->setDesignVars(dvs, max_dv);
+    TacsScalar forward;
+    con->failure(pt, strain, &forward);
+
+    dvs[dv_nums[k]] = x - dh;
+    con->setDesignVars(dvs, max_dv);
+    TacsScalar backward;
+    con->failure(pt, strain, &backward);
+
+    TacsScalar failSensApprox = (forward - backward)/(2.0*dh);
+#endif // TACS_USE_COMPLEX
+
+    dvs[dv_nums[k]] = x;
+    con->setDesignVars(dvs, max_dv);
+
+    // Compute the error
+    int max_err_index, max_rel_index;
+    double max_err = get_max_error(&failSens, &failSensApprox, 
+                                   1, &max_err_index);
+    double max_rel = get_max_rel_error(&failSens, &failSensApprox,
+                                       1, &max_rel_index);
+   
+    if (test_print_level > 0){
+      fprintf(stderr, "Max Err dv %3d: %10.4e in component %d.\n",
+	      dv_nums[k], max_err, max_err_index);
+      fprintf(stderr, "Max REr dv %3d: %10.4e in component %d.\n",
+	      dv_nums[k], max_rel, max_rel_index);
+    }
+    // Print the error if required
+    if (test_print_level > 1){
+      fprintf(stderr, 
+              "The sensitivity failure criteria w.r.t. dv %d is \n",
+              dv_nums[k]);
+      print_error_components(stderr, "failDVSens", 
+                             &failSens, &failSensApprox, 1);
+    }
+    if (test_print_level){ fprintf(stderr, "\n"); }
+
+    test_failflag = (test_failflag || (max_err > test_failatol || max_rel > test_failrtol));
+  }
+
+  delete [] strain;
+  delete [] dvs;
+  delete [] dv_nums;
+
+  return test_failflag;
+}
+*/
+/*
+int TestConstitutive::testMassDVSens( const double pt[] ){ 
+  // Next, determine the design variables to use.
+  // Get the design variables associated with this constitutive class.
+  int ndvs = con->getNumDesignVars();
+  int *dv_nums = new int[ ndvs ];
+  int dv_index = 0;
+  if (!con->getDesignVarNums(dv_nums, &dv_index, ndvs)){
+    fprintf(stderr, 
+            "The number of design variables defined by %s is inconsistent\n",
+            con->constitutiveName());
+    return 0;
+  }
+  
+  int max_dv = 0;
+  for ( int k = 0; k < ndvs; k++ ){
+    if (dv_nums[k]+1 > max_dv){
+      max_dv = dv_nums[k]+1;
+    }
+  }
+
+  TacsScalar *dvs = new TacsScalar[ max_dv ];
+  con->getDesignVars(dvs, max_dv);
+
+  if (test_print_level){
+    fprintf(stderr, 
+	    "Testing the sensivity w.r.t. the design variables \
+for constitutive class %s.\n",
+	    con->constitutiveName());
+  }
+
+  int test_failflag = 0;
+
+  for ( int k = 0; k < dv_index; k++ ){
+    // Compute the derivative of the residual here
+    TacsScalar massSens[6];
+    con->pointwiseMassDVSens(dv_nums[k], pt, massSens);
+
+    // Test the residual here
+    TacsScalar x = dvs[dv_nums[k]];
+#ifdef TACS_USE_COMPLEX
+    dvs[dv_nums[k]] = x + TacsScalar(0.0, dh);
+    con->setDesignVars(dvs, max_dv);
+    TacsScalar forward[6];
+    con->pointwiseMass(pt, forward);    
+    TacsScalar massSensApprox = ImagPart(forward[0])/dh;
+#else
+    dvs[dv_nums[k]] = x + dh;
+    TacsScalar forward[6];
+    con->setDesignVars(dvs, max_dv);
+    con->pointwiseMass(pt, forward);
+
+    dvs[dv_nums[k]] = x - dh;
+    TacsScalar backward[6];
+    con->setDesignVars(dvs, max_dv);
+    con->pointwiseMass(pt, backward);
+
+    TacsScalar massSensApprox = (forward[0] - backward[0])/(2.0*dh);
+#endif // TACS_USE_COMPLEX
+    dvs[dv_nums[k]] = x;
+    con->setDesignVars(dvs, max_dv);
+
+    // Compute the error
+    int max_err_index, max_rel_index;
+    double max_err = get_max_error(massSens, &massSensApprox, 
+                                   1, &max_err_index);
+    double max_rel = get_max_rel_error(massSens, &massSensApprox,
+                                       1, &max_rel_index);
+   
+    if (test_print_level > 0){
+      fprintf(stderr, "Max Err dv %3d: %10.4e in component %d.\n",
+	      dv_nums[k], max_err, max_err_index);
+      fprintf(stderr, "Max REr dv %3d: %10.4e in component %d.\n",
+	      dv_nums[k], max_rel, max_rel_index);
+    }
+    // Print the error if required
+    if (test_print_level > 1){
+      fprintf(stderr, 
+              "The sensitivity mass w.r.t. dv %d is \n",
+              dv_nums[k]);
+      print_error_components(stderr, "massDVSens", 
+                             massSens, &massSensApprox, 1);
+    }
+    if (test_print_level){ fprintf(stderr, "\n"); }
+
+    test_failflag = (test_failflag || (max_err > test_failatol || max_rel > test_failrtol));
+  }
+
+  delete [] dvs;
+  delete [] dv_nums;
+
+  return test_failflag;
+}
+*/
+/*
+  Test the sensitivity of the strain to a buckling 
+*/
+/*
+int TestConstitutive::testBucklingStrainSens(){
+  int nstress = con->getNumStresses();
+
+  TacsScalar *strain = new TacsScalar[ nstress ];
+  TacsScalar *sens = new TacsScalar[ nstress ];
+  TacsScalar *strainCopy = new TacsScalar[ nstress ];
+  TacsScalar *sensApprox = new TacsScalar[ nstress ];
+
+  // First use conSens and linSens as temporary, randomly generated arrays
+  // These respresent randomly generated stresses on the interval [-1, 1]
+  // memset(conSens, 0, nstress*sizeof(TacsScalar));
+  generate_random_array(sens, nstress, -1.0, 1.0);
+
+  // Now geneate the corresponding strains
+  double pt[3] = {0.0, 0.0, 0.0};
+  compute_strain(strain, pt, sens);
+  con->bucklingStrainSens(strain, sens);
+
+  // Determine approximations of sens
+  for ( int k = 0; k < nstress; k++ ){
+    memcpy(strainCopy, strain, nstress*sizeof(TacsScalar));
+    TacsScalar e = strainCopy[k];
+    strainCopy[k] = e + dh;
+    TacsScalar forward;
+    con->buckling(strainCopy, &forward);
+
+    strainCopy[k] = e - dh;
+    TacsScalar backward;
+    con->buckling(strainCopy, &backward);
+    sensApprox[k] = (forward - backward)/(2.0*dh);
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(sens, sensApprox, 
+				 nstress, &max_err_index);
+  double max_rel = get_max_rel_error(sens, sensApprox, 
+				     nstress, &max_rel_index);
+
+  int test_failflag = (max_err > test_failatol || max_rel > test_failrtol);
+
+  if (test_print_level > 0){
+    fprintf(stderr, 
+	    "Testing the buckling sensivity for %s.\n",
+	    con->constitutiveName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+	    max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+	    max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    fprintf(stderr, 
+            "The sensitivity of the buckling criteria w.r.t. \
+the components of strain\n");
+    print_error_components(stderr, "bucklingStrainSens", 
+                           sens, sensApprox, nstress);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] sens;
+  delete [] strain;
+  delete [] strainCopy;
+  delete [] sensApprox;
+
+  return test_failflag;
+}
+*/
+/*
+int TestConstitutive::testBucklingDVSens(){ 
+  int nstress = con->getNumStresses();
+
+  TacsScalar *strain = new TacsScalar[ nstress ];
+  TacsScalar *stress = new TacsScalar[ nstress ];
+
+  // Randomly generate the stresses for buckling criteria calculations
+  generate_random_array(stress, nstress);
+
+  // Determine the corresponding strains
+  double pt[3] = {0.0, 0.0, 0.0};
+  compute_strain(strain, pt, stress);
+  delete [] stress;
+
+  // Next, determine the design variables to use.
+  // Get the design variables associated with this constitutive class.
+  int ndvs = con->getNumDesignVars();
+  int *dv_nums = new int[ ndvs ];
+  int dv_index = 0;
+  if (!con->getDesignVarNums(dv_nums, &dv_index, ndvs)){
+    fprintf(stderr, 
+            "The number of design variables defined by %s is inconsistent\n",
+            con->constitutiveName());
+    return 0;
+  }
+  
+  int max_dv = 0;
+  for ( int k = 0; k < ndvs; k++ ){
+    if (dv_nums[k]+1 > max_dv){
+      max_dv = dv_nums[k]+1;
+    }
+  }
+
+  TacsScalar *dvs = new TacsScalar[ max_dv ];
+  con->getDesignVars(dvs, max_dv);
+
+  if (test_print_level){
+    fprintf(stderr, 
+	    "Testing the sensivity of the buckling criteria w.r.t. the \
+design variables for constitutive class %s.\n",
+	    con->constitutiveName());
+  }
+
+  int test_failflag = 0;
+
+  for ( int k = 0; k < dv_index; k++ ){
+    // Compute the derivative of the residual here
+    TacsScalar bucklingSens;
+    con->bucklingDVSens(dv_nums[k], strain, &bucklingSens);
+
+    // Test the residual here
+    TacsScalar x = dvs[dv_nums[k]];
+    dvs[dv_nums[k]] = x + dh;
+    con->setDesignVars(dvs, max_dv);
+    TacsScalar forward;
+    con->buckling(strain, &forward);
+
+    dvs[dv_nums[k]] = x - dh;
+    con->setDesignVars(dvs, max_dv);
+    TacsScalar backward;
+    con->buckling(strain, &backward);
+    
+    dvs[dv_nums[k]] = x;
+    con->setDesignVars(dvs, max_dv);
+
+    TacsScalar bucklingSensApprox = (forward - backward)/(2.0*dh);
+
+    // Compute the error
+    int max_err_index, max_rel_index;
+    double max_err = get_max_error(&bucklingSens, &bucklingSensApprox, 
+                                   1, &max_err_index);
+    double max_rel = get_max_rel_error(&bucklingSens, &bucklingSensApprox,
+                                       1, &max_rel_index);
+   
+    if (test_print_level > 0){
+      fprintf(stderr, "Max Err dv %3d: %10.4e in component %d.\n",
+	      dv_nums[k], max_err, max_err_index);
+      fprintf(stderr, "Max REr dv %3d: %10.4e in component %d.\n",
+	      dv_nums[k], max_rel, max_rel_index);
+    }
+    // Print the error if required
+    if (test_print_level > 1){
+      fprintf(stderr, 
+              "The sensitivity buckling criteria w.r.t. dv %d is \n",
+              dv_nums[k]);
+      print_error_components(stderr, "bucklingDVSens", 
+                             &bucklingSens, &bucklingSensApprox, 1);
+    }
+    if (test_print_level){ fprintf(stderr, "\n"); }
+
+    test_failflag = (test_failflag || (max_err > test_failatol || max_rel > test_failrtol));
+  }
+
+  delete [] strain;
+  delete [] dvs;
+  delete [] dv_nums;
+
+  return test_failflag;
+}
+*/

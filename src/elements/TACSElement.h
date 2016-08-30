@@ -403,137 +403,35 @@ class TACSElement : public TACSOptObject {
 			      const TacsScalar vars[] ){}
   virtual void getOutputConnectivity( int * con, int start_node ){}
 
+
+  // Test functions used to test the derivative evaluation code
+  // ----------------------------------------------------------
+  static void setFailTolerances( double fail_rtol, double fail_atol );
+  static void setPrintLevel( int flag );
+  static void setStepSize( TacsScalar dh );
+
+  int testResidual( double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[] ); 
+  int testJacobian( double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], int col=-1 );
+  int testAdjResProduct( const TacsScalar *x, int dvLen,
+                         double time, const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[] );
+  int testStrainSVSens( const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[] );
+  int testJacobianXptSens( const TacsScalar Xpts[] );
+
  private: 
   int componentNum;
-};
 
-/*
-  This class is used to test the element implementation
-
-  Each function tests a single function within the Element class for
-  internal self-consistency. These functions test three types of 
-  quantities:
-
-  1. Consistency between the residual calculation and the calculation
-  of the Jacobian of the residuals. 
-
-  2. Consistency between the element calculations and derivatives
-  with respect to the nodal coordinates (XptSens functions.)
-
-  3. Consistency between element calculations and the derivatives
-  with respect to material design variables (DVSens functions.)
-
-  The error in each component is measured against the global relative
-  tolerance fail_rtol and the global absolute tolerance fail_atol. If
-  the component in any component of the derivatives is greater than
-  either of these tolerances, the function returns a non-zero fail
-  flag (indicating failure.) Otherwise the function returns 0 to
-  indicate that no failure has occured. It is important to note that
-  the absolute tolerance check is sensitive to the order of magnitude
-  of the quantities. Setting the print level to greater than 0 prints
-  all components.
-
-  Note that if no variables are supplied to the class, it generates a
-  random set of variables on the interval [-1, 1]. (Such large
-  displacements often produce large residuals.)
-*/
-class TestElement : public TACSObject {
- public:
-  TestElement( TACSElement * _element, 
-	       const TacsScalar _Xpts[]=NULL );
-  ~TestElement();
-
-  // Set parameters within the test object
-  // -------------------------------------
-  void setFailTolerances( double _fail_rtol, double _fail_atol ){
-    fail_rtol = _fail_rtol;
-    fail_atol = _fail_atol;
-  }
-
-  void setPrintLevel( int _flag ){
-    print_level = _flag;
-  }
-
-  void setStepSize( TacsScalar _dh ){
-    dh = _dh;
-  }
-
-  // Tests for consistency amongst the analysis functions
-  // ----------------------------------------------------
-  int testResidual(); 
-  int testJacobian( int col = -1 );
-  int testAdjResProduct( const TacsScalar *x, int dvLen );
-  int testStrainSVSens( const double pt[] );
-  
-  // Tests for the sensitivities w.r.t. nodal coordinates
-  // ----------------------------------------------------
-  int testJacobianXptSens( const double pt[] );
-
- private:
-  TacsScalar dh; // Step size
-
-  // The time parameter
-  double time;
-
-  // print_level: 0 - print nothing, 
-  // 1 - print summary, 2 - print everything
-  int print_level; 
-
-  // A test fails if the relative or absolute tolerances are greater
-  // than these values
-  double fail_rtol, fail_atol;
-
-  TACSElement *element;
-  TacsScalar *vars, *dvars, *ddvars, *Xpts;
-};
-
-/*
-  Test the implementation of the constitutive class
-*/
-class TestConstitutive : public TACSObject {
- public:
-  TestConstitutive( TACSConstitutive * _con );
-  ~TestConstitutive();
-
-  // Set parameters within the test object
-  // -------------------------------------
-  void setFailTolerances( double _fail_rtol, double _fail_atol ){
-    fail_rtol = _fail_rtol;
-    fail_atol = _fail_atol;
-  }
-
-  void setPrintLevel( int _flag ){
-    print_level = _flag;
-  }
-
-  void setStepSize( TacsScalar _dh ){
-    dh = _dh;
-  }
-  
-  // Test the failure load implementation
-  // ------------------------------------
-  int testFailStrainSens( const double pt[] );
-
-  // Test the buckling implementation
-  // --------------------------------
-  int testBucklingStrainSens();
-
- private:
-  void compute_strain( TacsScalar strain[], 
-                       const double pt[],
-                       const TacsScalar stress[] );
-
-  // The constitutive relationship to test
-  TACSConstitutive * con;
-
-  TacsScalar dh; // Step size
-
-  // print_level: 0 - print nothing, 1 - print summary, 2 - print everything
-  int print_level; 
-
-  // A test fails if the relative or absolute tolerances are greater than
-  // these values
-  double fail_rtol, fail_atol;  
+  // Static information used in the test functions
+  static int test_print_level;
+  static double test_step_size;
+  static double test_fail_rtol;
+  static double test_fail_atol;
 };
 
 #endif

@@ -3867,6 +3867,7 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   getDataPointers(elementData, NULL, NULL, NULL, NULL,
 		  &elemXpts, NULL, NULL, NULL);
 
+  /*
   int ptr = elementNodeIndex[elemNum];
   int len = elementNodeIndex[elemNum+1] - ptr;
   const int *nodes = &elementTacsNodes[ptr];
@@ -3886,7 +3887,7 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   else { printf("Jacobian XptSens passed\n"); }
   if (test->testStrainSVSens(pt)){ printf("Strain SVSens failed\n"); }
   else { printf("Strain SVSens passed\n"); }
-  /*if
+  if
  (test->testResXptSens()){ printf("Res XptSens failed\n"); }
   else { printf("Res XptSens passed\n"); }
   if (test->testStrainXptSens(pt)){ printf("Strain XptSens failed\n"); }
@@ -3902,10 +3903,9 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   if (test->testMatDVSens(GEOMETRIC_STIFFNESS_MATRIX)){ 
     printf("Geometric stiffness matrix DVSens failed\n"); }
   else { printf("Geometric stiffness Matrix DVSens passed\n"); }
-  */
   printf("\n");
-  
   test->decref();
+  */
 }
 
 /*
@@ -3929,9 +3929,10 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
     return;
   }
 
-  TACSConstitutive * stiffness = elements[elemNum]->getConstitutive();
+  TACSConstitutive *stiffness = elements[elemNum]->getConstitutive();
   
   if (stiffness){
+    /*
     double pt[] = {0.0, 0.0, 0.0};
     TestConstitutive * test = new TestConstitutive(stiffness);
     test->incref();
@@ -3942,17 +3943,16 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
     else { printf("Fail StrainSens passed\n"); }
     if (test->testBucklingStrainSens()){ printf("Buckling StrainSens failed\n"); }
     else { printf("Buckling StrainSens passed\n"); }
-    /*
     if (test->testMassDVSens(pt)){ printf("Mass DVSens failed\n"); }
     else { printf("Mass DVSens passed\n"); }
     if (test->testFailDVSens(pt)){ printf("Fail DVSens failed\n"); }
     else { printf("Fail DVSens passed\n"); }
     if (test->testBucklingDVSens()){ printf("Buckling DVSens failed\n"); }
     else { printf("Buckling DVSens passed\n"); }
-    */
     printf("\n");
  
     test->decref();
+    */
   }
 }
 

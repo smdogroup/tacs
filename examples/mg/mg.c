@@ -166,9 +166,10 @@ int main( int argc, char *argv[] ){
   MPI_Comm_rank(comm, &rank);
 
   // Number of different levels
-  const int nlevels = 3;
-  TACSAssembler *tacs[nlevels];
-  TACSCreator *creator[nlevels];
+  int nlevels = 3;
+  int max_nlevels = 5;
+  TACSAssembler *tacs[max_nlevels];
+  TACSCreator *creator[max_nlevels];
 
   // Set the dimension of the largest meshes
   int nx = 128;
@@ -182,6 +183,10 @@ int main( int argc, char *argv[] ){
       if (xpow > 10){ xpow = 10; }
       nx = 1 << xpow;
       ny = 1 << xpow;
+    }
+    if (sscanf(argv[k], "nlevels=%d", &nlevels) == 1){
+      if (nlevels < 2){ nlevels = 2; }
+      if (nlevels > max_nlevels){ nlevels = max_nlevels; }
     }
   }
 

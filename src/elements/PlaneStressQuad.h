@@ -17,14 +17,14 @@
 template <int order>
 class PlaneStressQuad : public TACS2DElement<order*order> {
  public:
-  PlaneStressQuad( PlaneStressStiffness * _stiff, 
-                   ElementBehaviorType type = LINEAR, 
+  PlaneStressQuad( PlaneStressStiffness *_stiff, 
+                   ElementBehaviorType type=LINEAR, 
                    int _componentNum = 0 );
   ~PlaneStressQuad();
 
   // Return the name of this element
   // -------------------------------
-  const char* elementName(){ return elemName; }
+  const char *elementName(){ return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -44,7 +44,7 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
 		      double *data, int ld_data, 
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] );
-  void getOutputConnectivity( int * con, int node );
+  void getOutputConnectivity( int *con, int node );
 
  private:
   static const int NUM_NODES = order*order;
@@ -54,14 +54,14 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
   const double *gaussWts, *gaussPts;
 
   // Store the name of the element
-  static const char * elemName;
+  static const char *elemName;
 };
 
 template <int order>
-PlaneStressQuad<order>::PlaneStressQuad( PlaneStressStiffness * _stiff, 
+PlaneStressQuad<order>::PlaneStressQuad( PlaneStressStiffness *_stiff, 
                                          ElementBehaviorType type, 
                                          int _componentNum ):
-TACS2DElement<order*order>(_stiff, type == LINEAR, _componentNum){  
+TACS2DElement<order*order>(_stiff, type, _componentNum){  
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 }
 
@@ -69,7 +69,7 @@ template <int order>
 PlaneStressQuad<order>::~PlaneStressQuad(){}
 
 template <int order>
-const char * PlaneStressQuad<order>::elemName = "PlaneStressQuad";
+const char *PlaneStressQuad<order>::elemName = "PlaneStressQuad";
 
 /*
   Get the number of Gauss points in the Gauss quadrature scheme
