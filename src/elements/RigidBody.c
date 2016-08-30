@@ -1462,10 +1462,18 @@ void TACSRigidBody::getOutputConnectivity( int *con, int node ){
 }
 
 /*
-  Constructor for spherical constraint
+  Construct a spherical constraint with the two bodies involved and a
+  position vector measured from the global frame to the point where
+  the spherical joint is located.
 */
-TACSSphericalConstraint::TACSSphericalConstraint( TACSGibbsVector *_xA,
-                                                  TACSGibbsVector *_xB ){
+TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA, 
+                                                  TACSRigidBody *_bodyB, 
+                                                  TACSGibbsVector *_point ){
+  // Copy over the arguments
+  bodyA = _bodyA; bodyA->incref();
+  bodyB = _bodyB; bodyB->incref();
+  point = _point; point->incref();
+    /*
   // Retrive the arrays from Gibbs vectors
   const TacsScalar *xA, *xB;
   _xA->getVector(&xA);
@@ -1473,6 +1481,16 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSGibbsVector *_xA,
  
   memcpy(this->xA, xA, 3*sizeof(TacsScalar));
   memcpy(this->xB, xB, 3*sizeof(TacsScalar));
+    */
+}
+
+/*
+  Destructor for spherical constraint
+*/
+TACSSphericalConstraint::~TACSSphericalConstraint(){
+  bodyA->decref();
+  bodyB->decref();
+  point->decref();
 }
 
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
