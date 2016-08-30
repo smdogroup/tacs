@@ -183,6 +183,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Allocate space for kinetic and potential energies
   energies = new TacsScalar[ 2 ];
+
+  // MPI information
+  MPI_Comm_rank(tacs->getMPIComm(), &mpiRank);
+  MPI_Comm_size(tacs->getMPIComm(), &mpiSize); 
 }
 
 /*
@@ -387,6 +391,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   Function that writes time, q, qdot, qddot to file
 */
 void TACSIntegrator::writeSolution( const char *filename ) {
+  if (mpiRank != 0) { return; }
   // Temporary variables to access the states at each time
   TacsScalar *qvals, *qdotvals, *qddotvals;
 
@@ -412,18 +417,13 @@ void TACSIntegrator::writeSolution( const char *filename ) {
   fclose(fp);
 }
 
-
 /*
-  Writes the output as an f5 file. Note the states and time must be
-  set appropriately before calling this function.
+  Don't write if f5_write_freq is set to 0. If write output is sought,
+  force writing initial(k=0) and final (k=num_time_steps-1) time steps
+  as they are the most important outputs that an user would need
 */
-void TACSIntegrator::writeStepToF5( int k ){
-  int write_now = 0;
-
-  // Don't write if f5_write_freq is set to 0. If write output is
-  // sought, force writing initial(k=0) and final (k=num_time_steps-1)
-  // time steps as they are the most important outputs that an user
-  // would need
+int TACSIntegrator::getWriteFlag( int k ){
+  int write_now;
   if (f5_write_freq > 0) {
     if ( k == 0 || k == num_time_steps-1 ){
       write_now = 1;
@@ -431,8 +431,17 @@ void TACSIntegrator::writeStepToF5( int k ){
       write_now = (k % f5_write_freq == 0);
     }
   }
-  
-  if(f5 && f5_file_fmt && write_now) {
+  return write_now;
+}
+
+/*
+  Writes the output as an f5 file. Note the states and time must be
+  set appropriately before calling this function.
+*/
+void TACSIntegrator::writeStepToF5( int k ){
+  if (mpiRank != 0) { return; }
+ 
+  if(f5 && f5_file_fmt && getWriteFlag(k)) {
     // Create a buffer for filename 
     char buffer[128];
     // Format the buffer based on the time step
@@ -443,10 +452,20 @@ void TACSIntegrator::writeStepToF5( int k ){
 }
 
 /*
-  Creates an f5 file for each time step and writes the data
+  Creates an f5 file for each time step and writes the data. This call
+  is distributed in time. This may be faster than calling f5 output at each step
 */
 void TACSIntegrator::writeSolutionToF5(){
-  // Create an TACSToFH5 object for writing output to files
+
+  // Take write_flag and element type as inputs too.
+  
+  int is, ie, idec;
+  idec = num_time_steps/mpiSize;
+  is   = idec*mpiRank + 1;
+  ie   = idec*(mpiRank + 1);
+  if ( mpiRank == mpiSize - 1) { ie = num_time_steps; }
+
+  //Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS |
                              TACSElement::OUTPUT_STRAINS |
@@ -457,7 +476,9 @@ void TACSIntegrator::writeSolutionToF5(){
   TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
   f5->incref();
 
-  for ( int k = 0; k < num_time_steps; k++ ){    
+  for ( int k = is; k < ie; k++ ){    
+    printf("[%d] Writing f5 file for step : %d \n", mpiRank, k);
+
     // Set the current states into TACS
     setTACSStates(time[k], q[k], qdot[k], qddot[k]);
 
@@ -660,7 +681,7 @@ void TACSIntegrator::setFunction( TACSFunction **_funcs, int _num_funcs ) {
 
 /*
   Configure the F5 output 
- */
+*/
 void TACSIntegrator::configureOutput(TACSToFH5 *_viewer, 
                                      int _write_freq, 
                                      char *_f5_file_fmt ) {

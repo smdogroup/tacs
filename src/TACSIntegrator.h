@@ -224,6 +224,14 @@ class TACSIntegrator : public TACSObject {
   // Keep track of energies
   TacsScalar *energies;
   TacsScalar init_energy;
+
+  // MPI information
+  int mpiRank, mpiSize;
+
+ private:
+  // Returns a boolean integer flag to write the output at the time
+  // step or not
+  int getWriteFlag( int step );
 };
 
 /*
