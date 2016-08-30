@@ -1456,14 +1456,6 @@ void TACSRigidBody::getOutputConnectivity( int *con, int node ){
 
 /*
   Constructor for spherical constraint
- */
-TACSSphericalConstraint::TACSSphericalConstraint(){
-  xA[0] = xA[1] = xA[2] = 1.0;
-  xB[0] = xB[1] = xB[2] = 1.0;
-}
-
-/*
-  Constructor for spherical constraint
 */
 TACSSphericalConstraint::TACSSphericalConstraint( TACSGibbsVector *_xA,
                                                   TACSGibbsVector *_xB ){
@@ -1653,19 +1645,6 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSGibbsVector *_xA,
 
   memcpy(this->eB1, eB1, 3*sizeof(TacsScalar));
   memcpy(this->eB2, eB2, 3*sizeof(TacsScalar));
-}
-
-TACSRevoluteConstraint::TACSRevoluteConstraint(){
-  xA[0] = xA[1] = xA[2] = 1.0;
-  xB[0] = xB[1] = xB[2] = 1.0;
-
-  eA[0] = eA[1] = eA[2] = 0.0;
-  eB1[0] = eB1[1] = eB1[2] = 0.0;
-  eB2[0] = eB2[1] = eB2[2] = 0.0;
-
-  eA[0] = 1.0;
-  eB1[1] = 1.0;
-  eB2[2] = 1.0;
 }
 
 const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
