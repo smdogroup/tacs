@@ -255,10 +255,10 @@ class TACSSphericalConstraint : public TACSElement {
                     const TacsScalar ddvars[] );
 
  private:
-  TacsScalar xA[3], xB[3];
-  TACSRigidBody *bodyA, *bodyB; // The rigid bodies
-  TACSGibbsVector *point; // The point where the bodies are fixed
-  static const char *elem_name;
+  TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
+  TACSGibbsVector   *point;         // The point where the joint is located in global frame
+  TACSRigidBody     *bodyA, *bodyB; // The rigid bodies involved in the joint
+  static const char *elem_name;     // The name of the element
 };
 
 /*

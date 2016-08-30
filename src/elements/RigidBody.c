@@ -1473,15 +1473,37 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
   bodyA = _bodyA; bodyA->incref();
   bodyB = _bodyB; bodyB->incref();
   point = _point; point->incref();
-    /*
-  // Retrive the arrays from Gibbs vectors
-  const TacsScalar *xA, *xB;
-  _xA->getVector(&xA);
-  _xB->getVector(&xB);
- 
-  memcpy(this->xA, xA, 3*sizeof(TacsScalar));
-  memcpy(this->xB, xB, 3*sizeof(TacsScalar));
-    */
+
+  // Fetch the positions of each bodies in global frame and set into the class variable
+  TACSGibbsVector *rAVec = bodyA->getPosition();
+  TACSGibbsVector *rBVec = bodyB->getPosition();
+
+    // Retrieve the coordinates of the point
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Retrieve the values of the position vectors of bodies
+  const TacsScalar *rA, *rB;
+  rAVec->getVector(&rA);
+  rBVec->getVector(&rB);
+
+  // Determine the position of the joint from bodyA : 
+  // xAVec = point - rAVec
+  TacsScalar xA[3];
+  for ( int i = 0; i < 3; i++ ){
+    xA[i] = pt[i] - rA[i];
+  }
+  xAVec = new TACSGibbsVector(xA);
+  xAVec->incref();
+
+  // Determine the position of the joint from bodyB : 
+  // xBVec = point - rBVe
+  TacsScalar xB[3];
+  for ( int i = 0; i < 3; i++ ){
+    xB[i] = pt[i] - rB[i];
+  }
+  xBVec = new TACSGibbsVector(xB);
+  xBVec->incref();
 }
 
 /*
@@ -1491,6 +1513,8 @@ TACSSphericalConstraint::~TACSSphericalConstraint(){
   bodyA->decref();
   bodyB->decref();
   point->decref();
+  xAVec->decref();
+  xBVec->decref();
 }
 
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
@@ -1552,6 +1576,11 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
   computeRotationMat(etaA, epsA, CA);
   computeRotationMat(etaB, epsB, CB);
 
+  // Retrieve the pointers to xAVec and xBVec
+  const TacsScalar *xA, *xB;
+  xAVec->getVector(&xA);
+  xBVec->getVector(&xB);
+
   // Add the terms for body A
   vecAxpy(1.0, lam, &resA[0]);
   addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
@@ -1612,6 +1641,11 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
 
   addBlockIdent(alpha, &J[16*24], 24);
   addBlockIdent(-alpha, &J[16*24+8], 24);
+
+  // Retrieve the pointers to xAVec and xBVec
+  const TacsScalar *xA, *xB;
+  xAVec->getVector(&xA);
+  xBVec->getVector(&xB);
 
   // Add the terms corresponding to the second derivative
   // terms
