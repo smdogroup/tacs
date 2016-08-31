@@ -9,14 +9,13 @@
 */
 class TACSSMDElement : public TACSElement {
  public:
-  TACSSMDElement(){}
+  TACSSMDElement(){
+    M = 1.00;
+    C = 0.00;
+    K = 5.00;
+  }
   ~TACSSMDElement(){}
   
-  // Design variables
-  static const TacsScalar M = 1.00;
-  static const TacsScalar C = 0.02;
-  static const TacsScalar K = 5.00;
-
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
   const char * elementName() { return  "TACSSpringMassDamperODE"; } 
@@ -76,7 +75,7 @@ class TACSSMDElement : public TACSElement {
   void getInitCondition( TacsScalar vars[],
 			 TacsScalar dvars[],
 			 const TacsScalar X[] ){
-    vars[0]  = 0.5;
+    vars[0]  = 0.0;
     dvars[0] = 0.1;
   }
 
@@ -187,6 +186,9 @@ class TACSSMDElement : public TACSElement {
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] ) {}
   void getOutputConnectivity( int * con, int start_node ) {}
+ private:
+  // Design variables
+  TacsScalar M, C, K;
 };
 
 #endif // TACS_SMD_ELEMENT_H

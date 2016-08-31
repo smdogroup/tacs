@@ -140,6 +140,9 @@ int main( int argc, char **argv ){
   TACSAssembler *tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
 
+  // Set the frequency of residual consistency check with energy principles
+  tacs->setResidualTestFreq(2);
+
   /*-----------------------------------------------------------------*/
   /*-------------------------Setup Forces----------------------------*/
   /*-----------------------------------------------------------------*/

@@ -15,11 +15,10 @@
 */
 class TACSOscillatorElement : public TACSElement {
  public:
-  TACSOscillatorElement(){}
+  TACSOscillatorElement(){
+    Q = 8.0;
+  }
   ~TACSOscillatorElement(){}
-
-  // Design variables
-  static const TacsScalar Q = 8.00; // reduced dynamic pressure
   
   // Retrieve information about the name and quantity of variables
   // -------------------------------------------------------------
@@ -240,7 +239,9 @@ class TACSOscillatorElement : public TACSElement {
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] ) {}
   void getOutputConnectivity( int * con, int start_node ) {}
-  
+ private:
+  // Design variables
+  TacsScalar Q; // reduced dynamic pressure
 };
 
 #endif // TACS_OSCILLATOR_ELEMENT_H
