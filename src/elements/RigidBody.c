@@ -1684,6 +1684,22 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
 }
 
 /*
+  Set the design variable values
+*/
+void TACSSphericalConstraint::setDesignVars( const TacsScalar dvs[], 
+                                             int numDVs ){
+  point->setDesignVars(dvs, numDVs);
+  updatePoints();
+}
+
+/*
+  Get the design variable values associated with the joint location
+*/
+void TACSSphericalConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
+  point->getDesignVars(dvs, numDVs);
+}
+
+/*
   Constructor for revolute contraint taking Gibbs vectors as
   inputs. A refers to bodyA and B refers to bodyB.
 
@@ -2083,4 +2099,20 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
   for ( int i = 21; i < 24; i++ ){
     J[25*i] += alpha;
   }
+}
+
+/*
+  Set the design variable values
+*/
+void TACSRevoluteConstraint::setDesignVars( const TacsScalar dvs[], 
+                                             int numDVs ){
+  point->setDesignVars(dvs, numDVs);
+  updatePoints();
+}
+
+/*
+  Get the design variable values associated with the joint location
+*/
+void TACSRevoluteConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
+  point->getDesignVars(dvs, numDVs);
 }

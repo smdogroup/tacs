@@ -216,6 +216,11 @@ class TACSSphericalConstraint : public TACSElement {
                            TACSGibbsVector *_point );
   ~TACSSphericalConstraint();
 
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
@@ -272,6 +277,11 @@ class TACSRevoluteConstraint : public TACSElement {
                           TACSGibbsVector *_point, 
                           TACSGibbsVector *_eAVec );
   ~TACSRevoluteConstraint();
+
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
 
   // Return the number of displacements and nodes
   // --------------------------------------------
