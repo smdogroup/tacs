@@ -31,6 +31,12 @@ default:
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT} ${TACS_OBJS}
+	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
+	   echo; (cd python && $(MAKE) TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
+	else \
+	   echo; (cd python && $(MAKE) TACS_DIR=${TACS_DIR}) || exit 1; \
+	fi
+	@echo; python -c "from tacs import TACS, elements, constitutive, functions"
 
 debug:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
@@ -47,6 +53,12 @@ debug:
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT} ${TACS_OBJS}
+	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
+	   echo; (cd python && $(MAKE) debug TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
+	else \
+	   echo; (cd python && $(MAKE) debug TACS_DIR=${TACS_DIR}) || exit 1; \
+	fi
+	@echo; python -c "from tacs import TACS, elements, constitutive, functions"
 
 complex: TACS_IS_COMPLEX=true
 complex: default
@@ -61,4 +73,4 @@ clean:
 	  echo; \
 	     (cd $$subdir && $(MAKE) $@ TACS_DIR=${TACS_DIR}) || exit 1; \
 	done
-	@echo
+	@echo; (cd python && $(MAKE) $@ TACS_DIR=${TACS_DIR}) || exit 1; \

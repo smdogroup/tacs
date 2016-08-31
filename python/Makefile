@@ -26,6 +26,4 @@ debug: default
 	${CXX} ${SO_LINK_FLAGS} $<  ${TACS_LD_FLAGS} -o $@
 
 clean:
-	${RM} *.cpp
-	${RM} *.${SO_EXT}
-	${RM} *.o
+	${RM} *.cpp *.${SO_EXT} *.o
