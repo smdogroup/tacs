@@ -24,47 +24,87 @@ cdef extern from "mpi-compat.h":
    pass
 
 # A generic wrapper class for the TACSElement object
-cdef class Element:
-   def __cinit__(self):
-       self.ptr = NULL
-       return
+## cdef class Element:
+##    '''
+##    Base element class
+##    '''
+##    cdef TACSElement *ptr
+   
+##    def __cinit__(self):
+##       self.ptr = NULL
+##       return
+   
+##    def __dealloc__(self):
+##       if self.ptr:
+##          self.ptr.decref()
+##          return
+      
+##    def setFailTolerances(self, double rtol, double atol):
+##       self.ptr.setFailTolerances(rtol, atol)
+##       return
+    
+##    def setPrintLevel(self, int lev):
+##       self.ptr.setPrintLevel(lev)
+##       return
+   
+##    def setStepSize(self, double dh):
+##       self.ptr.setStepSize(dh)
+##       return
 
-cdef class TestElem:
-   cdef TestElement *ptr
-   def __cinit__(self, Element elem):
-      self.ptr = new TestElement(elem.ptr, NULL)
-      self.ptr.incref()
-
-   def __dealloc__(self):
-      self.ptr.decref()
-      return
-
-   def setFailTolerances(self, double rtol, double atol):
-      self.ptr.setFailTolerances(rtol, atol)
-      return
-
-   def setPrintLevel(self, int lev):
-      self.ptr.setPrintLevel(lev)
-      return
-
-   def setStepSize(self, double dh):
-      self.ptr.setStepSize(dh)
-      return
-
-   def testResidual(self):
-      return self.ptr.testResidual()
-
-   def testJacobian(self, int col=-1):
-      return self.ptr.testJacobian(col)
-
-   def testAdjResProduct(self, np.ndarray[TacsScalar, ndim=1, mode='c'] x):
-      return self.ptr.testAdjResProduct(<TacsScalar*>x.data, len(x))
-
-   def testStrainSVSens(self, np.ndarray[double, ndim=1, mode='c'] pt):
-      return self.ptr.testStrainSVSens(<double*>pt.data)
-
-   def testJacobianXptSens(self, np.ndarray[double, ndim=1, mode='c'] pt):
-      return self.ptr.testJacobianXptSens(<double*>pt.data)
+##    def testResidual(self,
+##                     double time,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars):
+##       return self.ptr.testResidual(time,
+##                                    <TacsScalar*>Xpts.data,
+##                                    <TacsScalar*>vars.data,
+##                                    <TacsScalar*>dvars.data,
+##                                    <TacsScalar*>ddvars.data)
+   
+##    def testJacobian(self,
+##                     double time,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+##                     np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
+##                     int col=-1):
+##       return self.ptr.testJacobian(time,
+##                                    <TacsScalar*>Xpts.data,
+##                                    <TacsScalar*>vars.data,
+##                                    <TacsScalar*>dvars.data,
+##                                    <TacsScalar*>ddvars.data,
+##                                    col)
+   
+##    def testAdjResProduct(self,
+##                          np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+##                          double time,
+##                          np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
+##                          np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+##                          np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+##                          np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars):
+##       return self.ptr.testAdjResProduct(<TacsScalar*>x.data,
+##                                         len(x),
+##                                         time,
+##                                         <TacsScalar*>Xpts.data,
+##                                         <TacsScalar*>vars.data,
+##                                         <TacsScalar*>dvars.data,
+##                                         <TacsScalar*>ddvars.data)
+   
+##    def testStrainSVSens(self, 
+##                         np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
+##                         np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+##                         np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+##                         np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars):
+##       return self.ptr.testStrainSVSens(<TacsScalar*>Xpts.data,
+##                                        <TacsScalar*>vars.data,
+##                                        <TacsScalar*>dvars.data,
+##                                        <TacsScalar*>ddvars.data)
+   
+##    def testJacobianXptSens(self,
+##                            np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts):
+##       return self.ptr.testJacobianXptSens(<TacsScalar*>Xpts.data)
 
 cdef class GibbsVector:
    cdef TACSGibbsVector *ptr
@@ -123,28 +163,32 @@ cdef class RigidBody(Element):
       return
 
 cdef class SphericalConstraint(Element):
-   def __cinit__(self, GibbsVector xA, GibbsVector xB):
-      self.ptr = new TACSSphericalConstraint(xA.ptr, xB.ptr)
+   def __cinit__(self,
+                 RigidBody bodyA,
+                 RigidBody bodyB,
+                 GibbsVector point):
+#      self.ptr = new TACSSphericalConstraint(<TACSRigidBody*> bodyA.ptr, <TACSRigidBody*> bodyB.ptr, point.ptr)
       self.ptr.incref()
       return
-
+   
    def __dealloc__(self):
       self.ptr.decref()
       return
-
+   
 cdef class RevoluteConstraint(Element):
    def __cinit__(self,
-                 GibbsVector xA, GibbsVector xB,
-                 GibbsVector eA, 
-                 GibbsVector eB1, GibbsVector eB2):
-      self.ptr = new TACSRevoluteConstraint(xA.ptr, xB.ptr, eA.ptr, eB1.ptr, eB2.ptr)
+                 RigidBody bodyA,
+                 RigidBody bodyB,
+                 GibbsVector point,
+                 GibbsVector eA):
+      self.ptr = new TACSRevoluteConstraint(<TACSRigidBody*> bodyA.ptr, <TACSRigidBody*> bodyB.ptr, point.ptr, eA.ptr)
       self.ptr.incref()
       return
-
+   
    def __dealloc__(self):
       self.ptr.decref()
       return
-
+   
 cdef class PlaneQuad(Element):
    def __cinit__(self, int order, PlaneStress stiff,
                  ElementBehaviorType elem_type=LINEAR,
