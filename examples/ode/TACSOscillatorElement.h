@@ -51,29 +51,6 @@ class TACSOscillatorElement : public TACSElement {
 			const TacsScalar vars[],
 			const TacsScalar dvars[] ) {}
 
-  // Compute the residual of the governing equations
-  // -----------------------------------------------
-  void getResidual( double time, 
-		    TacsScalar res[],
-		    const TacsScalar Xpts[],
-		    const TacsScalar q[],
-		    const TacsScalar qdot[],
-		    const TacsScalar qddot[] ) {
-    exit(-1);
-  }
-
-  // Compute the Jacobian of the governing equations
-  // -----------------------------------------------
-  void getJacobian( double time, 
-		    TacsScalar J[],
-		    double alpha, double beta, double gamma,
-		    const TacsScalar Xpts[],
-		    const TacsScalar q[],
-		    const TacsScalar qdot[],
-		    const TacsScalar qddot[] ) {
-    exit(-1);
-  }
-
   // Compute the Residual of the governing equations
   // -----------------------------------------------
   void addResidual( double time, TacsScalar res[],
@@ -81,11 +58,11 @@ class TACSOscillatorElement : public TACSElement {
 		    const TacsScalar q[],
 		    const TacsScalar qdot[],
 		    const TacsScalar qddot[] ) {
-    // first equation
+    // First equation
     res[0] += qddot[0] + 0.25*qdot[1] + 0.1*qdot[0] 
       + 0.2*q[0] + 0.1*Q*q[1];
 
-    // second equation
+    // Second equation
     res[1] += 0.25*qddot[0] + 0.5*qddot[1] 
       + 0.1*qdot[1] + 0.5*q[1] + 20.0*q[1]*q[1]*q[1] - 0.1*Q*q[1];
   }

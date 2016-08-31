@@ -15,8 +15,8 @@
  
   BDF1 BDF2 BDF3    : for BDF integrators
   DIRK2 DIRK3 DIRK4 : for DIRK integrators
-
-  test_element : for testing the element
+  ABM1-6            : for ABM integrators
+  NBG               : for Newmark integrator
 */
 int main( int argc, char **argv ){
 
@@ -66,10 +66,6 @@ int main( int argc, char **argv ){
     } else if (strcmp("NBG", argv[i]) == 0){
       type = NBG;
     }
-
-    if (strcmp("test_element", argv[i]) == 0){
-      test_element = 1;
-    }
   }
 
   /*-----------------------------------------------------------------*/
@@ -89,37 +85,32 @@ int main( int argc, char **argv ){
   int num_components = mesh->getNumComponents();
 
   // Set properties for structural elements
-  double rho = 2500.0;      // density, kg/m^3
-  double E = 70e9;          // elastic modulus, Pa
-  double nu = 0.3;          // poisson's ratio
-  double kcorr = 5.0/6.0;   // shear correction factor
-  double ys = 350e6;        // yield stress, Pa
+  double rho   = 2500.0;  // density, kg/m^3
+  double E     = 70e9;    // elastic modulus, Pa
+  double nu    = 0.3;     // poisson's ratio
+  double kcorr = 5.0/6.0; // shear correction factor
+  double ys    = 350e6;   // yield stress, Pa
 
   // Set properties for dynamics
-  TacsScalar g[] = {0.0, 0.0, -9.81};
-  TacsScalar v_init[] = {0.0, 0.0, 1.e-2};
+  TacsScalar g[]          = {0.0, 0.0, -9.81};
+  TacsScalar v_init[]     = {0.0, 0.0, 1.e-2};
   TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
 
-  TACSGibbsVector *gravity = new TACSGibbsVector(g); 
-  gravity->incref();
-
-  TACSGibbsVector *v0 = new TACSGibbsVector(v_init); 
-  v0->incref();
-
-  TACSGibbsVector *omega0 = new TACSGibbsVector(omega_init); 
-  omega0->incref();
+  TACSGibbsVector *gravity = new TACSGibbsVector(g);  gravity->incref();
+  TACSGibbsVector *v0      = new TACSGibbsVector(v_init); v0->incref();
+  TACSGibbsVector *omega0  = new TACSGibbsVector(omega_init); omega0->incref();
 
   int vars_per_node;
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ) {
-    const char *descriptor = mesh->getElementDescript(i);
-    double min_thickness = 0.01;
-    double max_thickness = 0.1;
-    double thickness = 0.05;
-    isoFSDTStiffness *stiff =  new isoFSDTStiffness(rho, E, nu, kcorr, ys,
+    const char       *descriptor    = mesh->getElementDescript(i);
+    double            min_thickness = 0.01;
+    double            max_thickness = 0.1;
+    double            thickness     = 0.05;
+    isoFSDTStiffness *stiff         = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
 						    thickness, i, 
 						    min_thickness, max_thickness); 
     stiff->incref();
@@ -149,24 +140,6 @@ int main( int argc, char **argv ){
   TACSAssembler *tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
 
-  if (test_element) {
-    // Extract the element
-    TacsScalar Xpts[3*9];
-    TACSElement *elem = tacs->getElement(0, Xpts, NULL, NULL, NULL);
-    elem->incref();
-
-    // Test the element;
-    TestElement *test = new TestElement(elem, Xpts);
-    test->incref();
-    test->setPrintLevel(2);
-    test->testResidual();
-    for ( int k = 0; k < elem->numVariables(); k++ ){
-      test->testJacobian(k);
-    }
-    test->decref();
-    elem->decref();
-  }
-  
   /*-----------------------------------------------------------------*/
   /*-------------------------Setup Forces----------------------------*/
   /*-----------------------------------------------------------------*/
@@ -209,22 +182,16 @@ int main( int argc, char **argv ){
   // Create functions of interest  
   static const int NUM_FUNCS = 3;
   TACSFunction * func[NUM_FUNCS];
-  
-  func[0] = new TACSCompliance(tacs);
-  func[0]->incref();
-  
-  func[1] = new TACSStructuralMass(tacs);
-  func[1]->incref();
-
-  func[2] = new TACSKSFailure(tacs, 100.0);
-  func[2]->incref();
+  func[0] = new TACSCompliance(tacs); func[0]->incref();
+  func[1] = new TACSStructuralMass(tacs); func[1]->incref();
+  func[2] = new TACSKSFailure(tacs, 100.0); func[2]->incref();
 
   TacsScalar *funcVals     = new TacsScalar[NUM_FUNCS]; // adjoint
   TacsScalar *funcValsTmp  = new TacsScalar[NUM_FUNCS]; // CSD
   TacsScalar *funcVals1    = new TacsScalar[NUM_FUNCS]; // forward/reverse
 
-  TacsScalar *dfdx = new TacsScalar[NUM_FUNCS*num_dvs];  // adjoint
-  TacsScalar *dfdx1 = new TacsScalar[NUM_FUNCS*num_dvs]; // CSD
+  TacsScalar *dfdx    = new TacsScalar[NUM_FUNCS*num_dvs]; // adjoint
+  TacsScalar *dfdx1   = new TacsScalar[NUM_FUNCS*num_dvs]; // CSD
   TacsScalar *dfdxTmp = new TacsScalar[NUM_FUNCS*num_dvs]; // forward/reverse
 
   // Create an array of design variables
@@ -232,7 +199,10 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 10.e-3; int num_steps_per_sec = 1000;
+  double tinit             = 0.0;
+  double tfinal            = 10.e-3; 
+  int    num_steps_per_sec = 1000;
+
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
                                                     type);
@@ -243,7 +213,7 @@ int main( int argc, char **argv ){
   obj->setAbsTol(1.0e-10);
   obj->setRelTol(1.0e-8);
   obj->setPrintLevel(1);
-  //  obj->configureOutput(f5, 1, "plate_%04d.f5");
+  obj->configureOutput(NULL, 1, "plate_%04d.f5");
   obj->writeSolutionToF5();
   
   // Set functions of interest
@@ -255,6 +225,7 @@ int main( int argc, char **argv ){
   // Adjoint gradient
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
 
+  // Print error summary
   for( int j = 0; j < NUM_FUNCS; j++) {
     printf("[%d] CSD      func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcValsTmp[j]));
     for ( int n = 0; n < num_dvs; n++) {

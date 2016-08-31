@@ -53,7 +53,7 @@ int main( int argc, char *argv[] ){
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
  
-  double tinit = 0.0; double tfinal = 10.0;
+  double tinit = 0.0; double tfinal = 1.0;
   int num_steps_per_sec = 100;
 
   /*-----------------------------------------------------------------*/
@@ -86,6 +86,7 @@ int main( int argc, char *argv[] ){
     dirk->decref();
   }
 
+  
   //-----------------------------------------------------------------//
   //                    Test BDF Scheme                             //
   //-----------------------------------------------------------------//
@@ -115,7 +116,7 @@ int main( int argc, char *argv[] ){
 
     bdf->decref();
   }
-
+  
   //-----------------------------------------------------------------//
   //                    Test ABM Scheme                             //
   //-----------------------------------------------------------------//
