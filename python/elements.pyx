@@ -128,6 +128,7 @@ cdef class RefFrame:
       return
 
 cdef class RigidBody(Element):
+   cdef TACSRigidBody *rbptr
    def __cinit__(self, RefFrame frame, TacsScalar mass,
                  np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
                  np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
@@ -136,7 +137,6 @@ cdef class RigidBody(Element):
                  int mdv=-1,
                  np.ndarray[int, ndim=1, mode='c'] cdvs=None,
                  np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
-      cdef TACSRigidBody *rbptr = NULL
       cdef int *_cdvs = NULL
       cdef int *_Jdvs = NULL
 
@@ -148,13 +148,13 @@ cdef class RigidBody(Element):
          _Jdvs = <int*>Jdvs.data
 
       # Allocate the rigid body object and set the design variables
-      rbptr = new TACSRigidBody(frame.ptr, mass, <TacsScalar*>cRef.data,
-                                <TacsScalar*>JRef.data, g.ptr, r0.ptr,
-                                v0.ptr, omega0.ptr)
-      rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
+      self.rbptr = new TACSRigidBody(frame.ptr, mass, <TacsScalar*>cRef.data,
+                                     <TacsScalar*>JRef.data, g.ptr, r0.ptr,
+                                     v0.ptr, omega0.ptr)
+      self.rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
       # Increase the reference count to the underlying object
-      self.ptr = rbptr 
+      self.ptr = self.rbptr 
       self.ptr.incref()
       return
 
@@ -164,10 +164,10 @@ cdef class RigidBody(Element):
 
 cdef class SphericalConstraint(Element):
    def __cinit__(self,
-                 RigidBody bodyA,
-                 RigidBody bodyB,
+                 RigidBody bodyA, RigidBody bodyB,
                  GibbsVector point):
-#      self.ptr = new TACSSphericalConstraint(<TACSRigidBody*> bodyA.ptr, <TACSRigidBody*> bodyB.ptr, point.ptr)
+      self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
+                                             point.ptr)
       self.ptr.incref()
       return
    
@@ -177,11 +177,10 @@ cdef class SphericalConstraint(Element):
    
 cdef class RevoluteConstraint(Element):
    def __cinit__(self,
-                 RigidBody bodyA,
-                 RigidBody bodyB,
-                 GibbsVector point,
-                 GibbsVector eA):
-      self.ptr = new TACSRevoluteConstraint(<TACSRigidBody*> bodyA.ptr, <TACSRigidBody*> bodyB.ptr, point.ptr, eA.ptr)
+                 RigidBody bodyA, RigidBody bodyB,
+                 GibbsVector point, GibbsVector eA):
+      self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
+                                            point.ptr, eA.ptr)
       self.ptr.incref()
       return
    
@@ -227,7 +226,7 @@ cdef class PSQuadTraction(Element):
                                         <TacsScalar*>ty.data)
          self.ptr.incref()
       elif order == 4:
-         self.ptr = new PSQuadTraction2(surf, <TacsScalar*>tx.data,
+         self.ptr = new PSQuadTraction4(surf, <TacsScalar*>tx.data,
                                         <TacsScalar*>ty.data)
          self.ptr.incref()
       return

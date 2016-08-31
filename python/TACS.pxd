@@ -5,8 +5,16 @@ cimport mpi4py.MPI as MPI
 # Import numpy
 from libc.string cimport const_char
 
-# Typdef 
+# Import numpy 
+cimport numpy as np
+import numpy as np
+
+# Typdefs required for either real or complex mode
 ctypedef double TacsScalar
+TACS_NPY_SCALAR = np.NPY_DOUBLE
+
+# ctypedef complex TacsScalar
+# TACS_NPY_SCALAR = np.NPY_COMPLEX
 
 cdef extern from "TACSElement.h":
    enum ElementType:

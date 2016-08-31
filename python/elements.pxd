@@ -56,8 +56,8 @@ cdef extern from "RigidBody.h":
       void setDesignVarNums(int, const int*, const int*)
 
    cdef cppclass TACSSphericalConstraint(TACSElement):
-      TACSSphericalConstrain(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
-                             TACSGibbsVector *point)
+      TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                              TACSGibbsVector *point)
 
    cdef cppclass TACSRevoluteConstraint(TACSElement):
       TACSRevoluteConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
