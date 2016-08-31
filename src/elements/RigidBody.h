@@ -107,6 +107,12 @@ class TACSRigidBody : public TACSElement {
   // ----------------------------------------------------------------
   void setDesignVarNums( int _massDV, const int _cDV[], const int _JDV[] );
 
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
@@ -118,12 +124,6 @@ class TACSRigidBody : public TACSElement {
   const char* displacementName( int i );
   const char* extraName( int i );  
   ElementType getElementType(){ return RIGID; }
-
-  // Set and retrieve design variable values
-  // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
