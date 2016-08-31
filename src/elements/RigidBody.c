@@ -1520,6 +1520,13 @@ TACSSphericalConstraint::~TACSSphericalConstraint(){
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 
 /*
+  Update the local data
+*/
+void TACSSphericalConstraint::updatePoints( ){
+
+}
+
+/*
   Retrieve the initial conditions for the state variables
 */
 void TACSSphericalConstraint::getInitCondition( TacsScalar vars[],
@@ -1690,16 +1697,20 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
   TACSGibbsVector *rAVec = bodyA->getPosition();
   TACSGibbsVector *rBVec = bodyB->getPosition();
 
-  // Retrieve the coordinates of the point of location of the joint
+  // Retrieve the revolute direction in global frame
+  const TacsScalar *rev;
+  eAVec->getVector(&rev);
+
+  // Retrieve the coordinates of the point of location of the joint in global frame
   const TacsScalar *pt;
   point->getVector(&pt);
 
-  // Retrieve the values of the position vectors of bodies
+  // Retrieve the values of the position vectors of bodies in global frame
   const TacsScalar *rA, *rB;
   rAVec->getVector(&rA);
   rBVec->getVector(&rB);
 
-  // Determine the position of the joint from bodyA : 
+  // Determine the position of the joint from bodyA in global frame
   // xAVec = point - rAVec
   TacsScalar xA[3];
   for ( int i = 0; i < 3; i++ ){
@@ -1708,7 +1719,7 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
   xAVec = new TACSGibbsVector(xA);
   xAVec->incref();
 
-  // Determine the position of the joint from bodyB : 
+  // Determine the position of the joint from bodyB in global frame
   // xBVec = point - rBVec
   TacsScalar xB[3];
   for ( int i = 0; i < 3; i++ ){
@@ -1717,15 +1728,36 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
   xBVec = new TACSGibbsVector(xB);
   xBVec->incref();
 
-  // Compute the other normal vectors making a triad with the revolute
-  // vector in a right hand sense
-  TacsScalar eB1[3]; // need to compute properly
-  eB1Vec = new TACSGibbsVector(eB1);
-  eB1Vec->incref();
+  // Find the minimum absolute component of eAVec along any coordinate
+  // direction. Set the vector components of e along this direction
+  // to maximize orthogonality among the coordinate directions. For
+  // the purpose of optimization, this direction is fixed at
+  // initialization.
+  TacsScalar e[3];
+  e[0] = e[1] = e[2] = 0.0;
+  if ((fabs(rev[0]) <= fabs(rev[1])) && 
+      (fabs(rev[0]) <= fabs(rev[2]))){
+    e[0] = 1.0;
+  }
+  else if ((fabs(rev[1]) <= fabs(rev[0])) && 
+           (fabs(rev[1]) <= fabs(rev[2]))){
+    e[1] = 1.0;
+  }
+  else {
+    e[2] = 1.0;
+  }
+  eVec = new TACSGibbsVector(e);
+  eVec->incref();
 
-  TacsScalar eB2[3]; // need to compute properly
+  // Compute the eB1 and eB2 directions based on e
+  TacsScalar eB1[3], eB2[3];
+  crossProduct(1.0, rev, e, eB2);
   eB2Vec = new TACSGibbsVector(eB2);
   eB2Vec->incref();
+
+  crossProduct(1.0, eB2, rev, eB1);
+  eB1Vec = new TACSGibbsVector(eB1);
+  eB1Vec->incref();
 }
 
 /*
@@ -1736,12 +1768,20 @@ TACSRevoluteConstraint::~TACSRevoluteConstraint(){
   bodyB->decref();
   point->decref();
   eAVec->decref();
+  eVec->decref();
 
   xAVec->decref();
   xBVec->decref();
   
   eB1Vec->decref();
   eB2Vec->decref();
+}
+
+/*
+  Update the local data
+ */
+void TACSRevoluteConstraint::updatePoints( int init_e ){
+
 }
 
 const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
