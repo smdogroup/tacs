@@ -24,6 +24,9 @@ int main( int argc, char **argv ){
   MPI_Init(&argc, &argv);
 
   MPI_Comm comm = MPI_COMM_WORLD;
+  int mpiRank, mpiSize;
+  MPI_Comm_rank(comm, &mpiRank);
+  MPI_Comm_size(comm, &mpiSize);
 
   // Parse command line arguments
   int test_element = 0;
@@ -131,7 +134,7 @@ int main( int argc, char **argv ){
       element->incref();
     }
     else {
-      printf("TACS Warning: Unsupported element %s in BDF file\n", descriptor);
+      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", mpiRank, descriptor);
     }
 
     // Set the number of displacements
@@ -229,8 +232,7 @@ int main( int argc, char **argv ){
   x[0] = 0.03; 
 
   // Set paramters for time marching
-  double tinit = 0.0, tfinal = 10.e-3; int num_steps_per_sec = 1000;  
-
+  double tinit = 0.0, tfinal = 10.e-3; int num_steps_per_sec = 1000;
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
                                                     type);
@@ -241,19 +243,20 @@ int main( int argc, char **argv ){
   obj->setAbsTol(1.0e-10);
   obj->setRelTol(1.0e-8);
   obj->setPrintLevel(1);
-  obj->configureOutput(NULL, 0, "plate_%04d.f5");
+  //  obj->configureOutput(f5, 1, "plate_%04d.f5");
+  obj->writeSolutionToF5();
   
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);
 
   // Complex step
-  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-16);
+  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
 
   // Adjoint gradient
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
 
   for( int j = 0; j < NUM_FUNCS; j++) {
-    printf("CSD      func: %d fval: %15.8e dfdx:", j, RealPart(funcValsTmp[j]));
+    printf("[%d] CSD      func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcValsTmp[j]));
     for ( int n = 0; n < num_dvs; n++) {
       printf(" %15.8e ",  RealPart(dfdxTmp[n+j*num_dvs]));
     }
@@ -262,7 +265,7 @@ int main( int argc, char **argv ){
   printf("\n");
  
   for( int j = 0; j < NUM_FUNCS; j++) {
-    printf("Adj NEW  func: %d fval: %15.8e dfdx:", j, RealPart(funcVals[j]));
+    printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcVals[j]));
     for ( int n = 0; n < num_dvs; n++) {
       printf(" %15.8e ",  RealPart(dfdx[n+j*num_dvs]));
     }
@@ -272,7 +275,7 @@ int main( int argc, char **argv ){
 
   // Error Summary
   for ( int j = 0; j < NUM_FUNCS; j++ ) {
-    printf("Error Adj NEW  func: %d ferror: %15.8e dfdx error:", j, RealPart(funcValsTmp[j])-RealPart(funcVals[j]) );
+    printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", mpiRank, j, RealPart(funcValsTmp[j])-RealPart(funcVals[j]) );
     for ( int n = 0; n < num_dvs; n++ ) {
       printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx[j*num_dvs+n]) );
     }
@@ -284,7 +287,7 @@ int main( int argc, char **argv ){
   /* for( int j = 0; j < NUM_FUNCS; j++) { */
   /*   funcVals1[j] = obj->forward(x, num_dvs, func[j]); */
   /*   obj->reverse(&dfdx1[j], num_dvs, func[j]); */
-  /*   printf("BDF Adj FR   func: %d fval: %15.8e dfdx:", j, RealPart(funcVals1[j])); */
+  /*   printf("[%d] BDF Adj FR   func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcVals1[j])); */
   /*   for ( int n = 0; n < num_dvs; n++) { */
   /*     printf(" %15.8e ",  RealPart(dfdx1[j*num_dvs+n])); */
   /*   } */
@@ -294,7 +297,7 @@ int main( int argc, char **argv ){
 
   /* // Error Summary */
   /* for ( int j = 0; j < NUM_FUNCS; j++ ) { */
-  /*   printf("Error Adj FR   func: %d ferror: %15.8e dfdx error:", j, RealPart(funcValsTmp[j])-RealPart(funcVals1[j]) ); */
+  /*   printf("[%d] Error Adj FR   func: %d ferror: %15.8e dfdx error:", mpiRank, j, RealPart(funcValsTmp[j])-RealPart(funcVals1[j]) ); */
   /*   for ( int n = 0; n < num_dvs; n++ ) { */
   /*     printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx1[j*num_dvs+n]) ); */
   /*   } */
