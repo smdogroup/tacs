@@ -1474,6 +1474,10 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
   bodyB = _bodyB; bodyB->incref();
   point = _point; point->incref();
 
+  // Set class variables to NULL
+  xAVec = NULL;
+  xBVec = NULL;
+  
   updatePoints();
 }
 
@@ -1517,7 +1521,7 @@ void TACSSphericalConstraint::updatePoints( ){
   for ( int i = 0; i < 3; i++ ){
     xA[i] = pt[i] - rA[i];
   }
-  if (xAVec) {
+  if (xAVec!=NULL) {
     xAVec->decref();
   }
   xAVec = new TACSGibbsVector(xA);
@@ -1529,7 +1533,7 @@ void TACSSphericalConstraint::updatePoints( ){
   for ( int i = 0; i < 3; i++ ){
     xB[i] = pt[i] - rB[i];
   }
-  if (xBVec) {
+  if (xBVec!=NULL) {
     xBVec->decref();
   }
   xBVec = new TACSGibbsVector(xB);
@@ -1718,6 +1722,10 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
   bodyB = _bodyB; bodyB->incref();
   point = _point; point->incref();
   eAVec = _eAVec; eAVec->incref();
+
+  // Set class variables to NULL
+  xAVec  = xBVec = NULL;
+  eB1Vec = eB2Vec = eVec = NULL;
 
   int init_e = 1;
   updatePoints(init_e);
