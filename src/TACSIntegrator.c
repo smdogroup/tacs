@@ -2371,7 +2371,11 @@ void TACSABMIntegrator::marchBackwards( ){
 TACSNBGIntegrator::TACSNBGIntegrator( TACSAssembler * _tacs, 
                                       double _tinit, double _tfinal, 
                                       int _num_steps_per_sec):
-TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){}
+TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
+ BETA   = 0.25;
+ GAMMA  = 0.50;
+
+}
 
 /*
   Destructor for TACSNBGIntegrator

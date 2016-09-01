@@ -2783,7 +2783,6 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   rhs:      the residual output
 */
 void TACSAssembler::assembleRes( TACSBVec *residual ){
-  printf("Assemblign residual sjkfhasdjkhfjkasdhfjksad h;jfa sdh;f\n");
   // Sort the list of auxiliary elements - this only performs the
   // sort if it is required (if new elements are added)
   if (auxElements){
@@ -2823,7 +2822,7 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
     getDataPointers(elementData, 
 		    &vars, &dvars, &ddvars, &elemRes,
 		    &elemXpts, NULL, NULL, NULL);
-
+    
     // Get the auxiliary elements
     int naux = 0, aux_count = 0;
     TACSAuxElem *aux = NULL;

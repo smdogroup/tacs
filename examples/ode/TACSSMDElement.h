@@ -75,8 +75,8 @@ class TACSSMDElement : public TACSElement {
   void getInitCondition( TacsScalar vars[],
 			 TacsScalar dvars[],
 			 const TacsScalar X[] ){
-    vars[0]  = 0.0;
-    dvars[0] = 0.1;
+    vars[0]  = 0.1;
+    dvars[0] = 0.0;
   }
 
   // Add the product of the adjoint with the derivative of the design variables

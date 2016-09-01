@@ -457,8 +457,7 @@ class TACSNBGIntegrator : public TACSIntegrator {
   void marchBackwards();
 
   // Average Constant Accelearation (second order unconditionally stable rho =Inf)
-  static const double BETA   = 0.25;
-  static const double GAMMA  = 0.50;
+  double BETA, GAMMA;
 
   //Other popular sets of values in Newmark family of integrators
   /*
