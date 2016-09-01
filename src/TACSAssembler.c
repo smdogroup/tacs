@@ -319,7 +319,7 @@ TACSElement *TACSAssembler::getElement( int elem, TacsScalar *Xpts,
 */
 void TACSAssembler::setResidualTestFreq( int _residual_test_freq ){
   residual_test_freq = _residual_test_freq;
-  if (residual_test_freq > 2) residual_test_freq = 2; // print level
+  if (residual_test_freq > 2) residual_test_freq = 2; // alias for print level
 }
 
 /*
@@ -328,7 +328,16 @@ void TACSAssembler::setResidualTestFreq( int _residual_test_freq ){
 */
 void TACSAssembler::setJacobianTestFreq( int _jacobian_test_freq ){
   jacobian_test_freq = _jacobian_test_freq;
-    if (jacobian_test_freq > 2) jacobian_test_freq = 2; // print level
+  if (jacobian_test_freq > 2) jacobian_test_freq = 2; // alias for print level
+}
+
+/*
+  Set the finite difference step size for checking the consistency of
+  (1) The residual with energy principles
+  (2) The jacobian with residual implementation
+*/
+void TACSAssembler::setStepSize( double _dh ){
+  dh = _dh;
 }
 
 /*!
@@ -1949,11 +1958,17 @@ int TACSAssembler::computeCouplingElements( int **_couplingElems ){
   node numbers.  
 */
 int TACSAssembler::initialize(){ 
-  // Frequency of testing the consistency of the residuals with the energies
+  // Frequency of testing the consistency of the residuals with the
+  // energies
   residual_test_freq = 0;
 
-  // Frequency of testing the consistency of the jacobian with the residuals
+  // Frequency of testing the consistency of the jacobian with the
+  // residuals
   jacobian_test_freq = 0;
+
+  // Finite difference step size for residual and jacobian tests
+  // realtime
+  dh = 1.0e-7;
 
   if (meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call initialize() more than once!\n", 
@@ -2849,9 +2864,9 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
       // Check is the residual is consistent with the energy
       // principles for this element
       if (residual_test_freq > 0){
+        elements[i]->setStepSize(dh);
         elements[i]->setPrintLevel(residual_test_freq);
-        elements[i]->testResidual(time, elemXpts, 
-                                  vars, dvars, ddvars);
+        elements[i]->testResidual(time, elemXpts, vars, dvars, ddvars);
       }
 
       // Add the residual from any auxiliary elements
@@ -2976,9 +2991,9 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
         // Check is the residual is consistent with the energy
         // principles for this element
         if (residual_test_freq > 0){
+          elements[i]->setStepSize(dh);
           elements[i]->setPrintLevel(residual_test_freq);
-          elements[i]->testResidual(time, elemXpts, 
-                                    vars, dvars, ddvars);
+          elements[i]->testResidual(time, elemXpts, vars, dvars, ddvars);
         }
       }
 
@@ -2986,6 +3001,14 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
       memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
       elements[i]->addJacobian(time, elemMat, alpha, beta, gamma,
 			       elemXpts, vars, dvars, ddvars);
+
+      // Check is the jacobian is consistent with the residual
+      // implementation
+      if (jacobian_test_freq > 0){
+        elements[i]->setStepSize(dh);
+        elements[i]->setPrintLevel(jacobian_test_freq);
+        elements[i]->testJacobian(time, elemXpts, vars, dvars, ddvars);
+      }
 
       // Add the contribution to the residual and the Jacobian
       // from the auxiliary elements - if any
