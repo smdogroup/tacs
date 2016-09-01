@@ -241,6 +241,10 @@ int main( int argc, char * argv[] ){
   // Perform initialization - cannot add any more elements/vars etc
   tacs->initialize();
 
+  // Set whether to test the residual implementation is consistent
+  // with the energy principles
+  tacs->setResidualTestFreq(0);
+
   // Create the node vector
   TACSBVec *X = tacs->createNodeVec();
   X->incref();

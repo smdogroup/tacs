@@ -107,6 +107,12 @@ class TACSRigidBody : public TACSElement {
   // ----------------------------------------------------------------
   void setDesignVarNums( int _massDV, const int _cDV[], const int _JDV[] );
 
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
@@ -118,12 +124,6 @@ class TACSRigidBody : public TACSElement {
   const char* displacementName( int i );
   const char* extraName( int i );  
   ElementType getElementType(){ return RIGID; }
-
-  // Set and retrieve design variable values
-  // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
@@ -216,6 +216,11 @@ class TACSSphericalConstraint : public TACSElement {
                            TACSGibbsVector *_point );
   ~TACSSphericalConstraint();
 
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
@@ -255,6 +260,7 @@ class TACSSphericalConstraint : public TACSElement {
                     const TacsScalar ddvars[] );
 
  private:
+  void updatePoints();              // Update the local data
   TACSRigidBody     *bodyA, *bodyB; // The rigid bodies involved in the joint
   TACSGibbsVector   *point;         // The point where the joint is located in global frame
   TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
@@ -272,6 +278,11 @@ class TACSRevoluteConstraint : public TACSElement {
                           TACSGibbsVector *_eAVec );
   ~TACSRevoluteConstraint();
 
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
@@ -310,11 +321,13 @@ class TACSRevoluteConstraint : public TACSElement {
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
  private:
+  void updatePoints( int init_e=0 );  // Update the local data
   TACSRigidBody     *bodyA, *bodyB;   // The rigid bodies involved in the joint
   TACSGibbsVector   *point;           // The point where the joint is located in global frame
   TACSGibbsVector   *eAVec;           // The revolute direction in global frame
   TACSGibbsVector   *xAVec, *xBVec;   // The positions of joint from each body in global frame
-  TACSGibbsVector   *eB1Vec, *eB2Vec; // The positions of joint from each body in global frame
+  TACSGibbsVector   *eB1Vec, *eB2Vec; // The positions of joint from each body in global fram
+  TACSGibbsVector   *eVec;            // The coordinate direction in global frame with minimal dot product with eAVec
   static const char *elem_name;       // The name of the element
 };
 

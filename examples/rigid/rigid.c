@@ -18,7 +18,7 @@ int main( int argc, char *argv[] ){
   // Zero the Jacobian coefficients
   double alpha = 1.26, beta = 0.35, gamma = 4.34;
 
-  TACSRigidBody *bodyA = new TACSRigidBody(mass, c, J);
+  TACSRigidBody *bodyA;// = new TACSRigidBody(mass, c, J);
   bodyA->incref();
   
   // bodyA->testResidual(1e-4);
@@ -26,14 +26,14 @@ int main( int argc, char *argv[] ){
   // Modify the inertial properties
   mass *= 2.0;
   J[0] += 1.0;
-  TACSRigidBody *bodyB = new TACSRigidBody(mass, c, J);
+  TACSRigidBody *bodyB;// = new TACSRigidBody(mass, c, J);
   bodyB->incref();
 
   // Create the constraint
-  TACSSphericalConstraint *con = new TACSSphericalConstraint();
-  con->incref();
+  TACSSphericalConstraint *con;// = new TACSSphericalConstraint();
+  //  con->incref();
 
-  TACSRevoluteConstraint *rev = new TACSRevoluteConstraint();
+  //  TACSRevoluteConstraint *rev = new TACSRevoluteConstraint();
 
   // TestElement *test = new TestElement(rev);
   /*
@@ -107,7 +107,7 @@ int main( int argc, char *argv[] ){
   tacs->decref();
   bodyA->decref();
   bodyB->decref();
-  con->decref();
+  //  con->decref();
 
   MPI_Finalize();
   return (0);

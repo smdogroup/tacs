@@ -372,7 +372,6 @@ int TACSElement::testJacobian( double time,
   memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
   addJacobian(time, mat, alpha, beta, gamma,
 		       Xpts, vars, dvars, ddvars);
-  printf("col = %d\n", col);
 
   // Evaluate the Jacobian
   int one = 1;

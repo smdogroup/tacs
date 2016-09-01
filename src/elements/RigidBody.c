@@ -1474,36 +1474,7 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
   bodyB = _bodyB; bodyB->incref();
   point = _point; point->incref();
 
-  // Fetch the positions of each bodies in global frame and set into the class variable
-  TACSGibbsVector *rAVec = bodyA->getPosition();
-  TACSGibbsVector *rBVec = bodyB->getPosition();
-
-  // Retrieve the coordinates of the point
-  const TacsScalar *pt;
-  point->getVector(&pt);
-
-  // Retrieve the values of the position vectors of bodies
-  const TacsScalar *rA, *rB;
-  rAVec->getVector(&rA);
-  rBVec->getVector(&rB);
-
-  // Determine the position of the joint from bodyA : 
-  // xAVec = point - rAVec
-  TacsScalar xA[3];
-  for ( int i = 0; i < 3; i++ ){
-    xA[i] = pt[i] - rA[i];
-  }
-  xAVec = new TACSGibbsVector(xA);
-  xAVec->incref();
-
-  // Determine the position of the joint from bodyB : 
-  // xBVec = point - rBVe
-  TacsScalar xB[3];
-  for ( int i = 0; i < 3; i++ ){
-    xB[i] = pt[i] - rB[i];
-  }
-  xBVec = new TACSGibbsVector(xB);
-  xBVec->incref();
+  updatePoints();
 }
 
 /*
@@ -1518,6 +1489,52 @@ TACSSphericalConstraint::~TACSSphericalConstraint(){
 }
 
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
+
+/*
+  Update the local data. This takes the initial reference points for
+  the bodies A and B, given as rA and rB, and the initial point for
+  the connection between the A and B bodies, "point pt", and computes
+  the vectors xA and xB in the global frame.
+*/
+void TACSSphericalConstraint::updatePoints( ){
+ // Fetch the positions of each bodies in global frame and set into
+ // the class variable
+  TACSGibbsVector *rAVec = bodyA->getPosition();
+  TACSGibbsVector *rBVec = bodyB->getPosition();
+
+  // Retrieve the coordinates of the point in the global frame
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Retrieve the values of the position vectors of bodies in the global frame
+  const TacsScalar *rA, *rB;
+  rAVec->getVector(&rA);
+  rBVec->getVector(&rB);
+
+  // Determine the position of the joint from bodyA in the global frame
+  // xAVec = point - rAVec
+  TacsScalar xA[3];
+  for ( int i = 0; i < 3; i++ ){
+    xA[i] = pt[i] - rA[i];
+  }
+  if (xAVec) {
+    xAVec->decref();
+  }
+  xAVec = new TACSGibbsVector(xA);
+  xAVec->incref();
+
+  // Determine the position of the joint from bodyB in the global frame
+  // xBVec = point - rBVe
+  TacsScalar xB[3];
+  for ( int i = 0; i < 3; i++ ){
+    xB[i] = pt[i] - rB[i];
+  }
+  if (xBVec) {
+    xBVec->decref();
+  }
+  xBVec = new TACSGibbsVector(xB);
+  xBVec->incref();
+}
 
 /*
   Retrieve the initial conditions for the state variables
@@ -1667,6 +1684,22 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
 }
 
 /*
+  Set the design variable values
+*/
+void TACSSphericalConstraint::setDesignVars( const TacsScalar dvs[], 
+                                             int numDVs ){
+  point->setDesignVars(dvs, numDVs);
+  updatePoints();
+}
+
+/*
+  Get the design variable values associated with the joint location
+*/
+void TACSSphericalConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
+  point->getDesignVars(dvs, numDVs);
+}
+
+/*
   Constructor for revolute contraint taking Gibbs vectors as
   inputs. A refers to bodyA and B refers to bodyB.
 
@@ -1686,46 +1719,8 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
   point = _point; point->incref();
   eAVec = _eAVec; eAVec->incref();
 
-  // Fetch the positions of each bodies in global frame and set into the class variable
-  TACSGibbsVector *rAVec = bodyA->getPosition();
-  TACSGibbsVector *rBVec = bodyB->getPosition();
-
-  // Retrieve the coordinates of the point of location of the joint
-  const TacsScalar *pt;
-  point->getVector(&pt);
-
-  // Retrieve the values of the position vectors of bodies
-  const TacsScalar *rA, *rB;
-  rAVec->getVector(&rA);
-  rBVec->getVector(&rB);
-
-  // Determine the position of the joint from bodyA : 
-  // xAVec = point - rAVec
-  TacsScalar xA[3];
-  for ( int i = 0; i < 3; i++ ){
-    xA[i] = pt[i] - rA[i];
-  }
-  xAVec = new TACSGibbsVector(xA);
-  xAVec->incref();
-
-  // Determine the position of the joint from bodyB : 
-  // xBVec = point - rBVec
-  TacsScalar xB[3];
-  for ( int i = 0; i < 3; i++ ){
-    xB[i] = pt[i] - rB[i];
-  }
-  xBVec = new TACSGibbsVector(xB);
-  xBVec->incref();
-
-  // Compute the other normal vectors making a triad with the revolute
-  // vector in a right hand sense
-  TacsScalar eB1[3]; // need to compute properly
-  eB1Vec = new TACSGibbsVector(eB1);
-  eB1Vec->incref();
-
-  TacsScalar eB2[3]; // need to compute properly
-  eB2Vec = new TACSGibbsVector(eB2);
-  eB2Vec->incref();
+  int init_e = 1;
+  updatePoints(init_e);
 }
 
 /*
@@ -1736,6 +1731,7 @@ TACSRevoluteConstraint::~TACSRevoluteConstraint(){
   bodyB->decref();
   point->decref();
   eAVec->decref();
+  eVec->decref();
 
   xAVec->decref();
   xBVec->decref();
@@ -1745,6 +1741,110 @@ TACSRevoluteConstraint::~TACSRevoluteConstraint(){
 }
 
 const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
+
+/*
+  Read the data from the given initial point vectors/locations and
+  re-compute the internal data that is requied to evaluate the
+  kinematic constraints.
+
+  This code computes the required vectors in the body-fixed coordinate
+  frames. In particular, the code computes:
+  
+  xA = pt - rA
+  xB = pt - rB
+
+  where pt is the attachment point, and rA and rB are the initial
+  points of bodies A and B in the global (inertial) reference frame.
+*/
+void TACSRevoluteConstraint::updatePoints( int init_e ){
+  // Fetch the positions of each bodies in global frame and set into
+  // the class variable
+  TACSGibbsVector *rAVec = bodyA->getPosition();
+  TACSGibbsVector *rBVec = bodyB->getPosition();
+
+  // Retrieve the revolute direction in global frame
+  const TacsScalar *rev;
+  eAVec->getVector(&rev);
+
+  // Retrieve the coordinates of the point of location of the joint in
+  // global frame
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Retrieve the values of the position vectors of bodies in global
+  // frame
+  const TacsScalar *rA, *rB;
+  rAVec->getVector(&rA);
+  rBVec->getVector(&rB);
+
+  // Determine the position of the joint from bodyA in global frame
+  // xAVec = point - rAVec
+  TacsScalar xA[3];
+  for ( int i = 0; i < 3; i++ ){
+    xA[i] = pt[i] - rA[i];
+  }
+  if (xAVec) {
+    xAVec->decref();
+  }
+  xAVec = new TACSGibbsVector(xA);
+  xAVec->incref();
+
+  // Determine the position of the joint from bodyB in global frame
+  // xBVec = point - rBVec
+  TacsScalar xB[3];
+  for ( int i = 0; i < 3; i++ ){
+    xB[i] = pt[i] - rB[i];
+  }
+  if (xBVec) {
+    xBVec->decref();
+  }
+  xBVec = new TACSGibbsVector(xB);
+  xBVec->incref();
+
+  // Find the minimum absolute component of eAVec along any coordinate
+  // direction. Set the vector components of e along this direction
+  // to maximize orthogonality among the coordinate directions. For
+  // the purpose of optimization, this direction is fixed at
+  // initialization.
+  TacsScalar e[3];
+  if (init_e){
+    e[0] = e[1] = e[2] = 0.0;
+    if ((fabs(rev[0]) <= fabs(rev[1])) && 
+        (fabs(rev[0]) <= fabs(rev[2]))){
+      e[0] = 1.0;
+    }
+    else if ((fabs(rev[1]) <= fabs(rev[0])) && 
+             (fabs(rev[1]) <= fabs(rev[2]))){
+      e[1] = 1.0;
+    }
+    else {
+      e[2] = 1.0;
+    }
+    eVec = new TACSGibbsVector(e);
+    eVec->incref();
+  }
+  else {
+    const TacsScalar *etmp;
+    eVec->getVector(&etmp);
+    memcpy(e, etmp, 3*sizeof(TacsScalar));
+  }
+
+  // Compute/recompute the eB1 and eB2 directions based on e
+  TacsScalar eB1[3], eB2[3];
+  crossProduct(1.0, rev, e, eB2);
+  if (eB2Vec){
+    eB2Vec->decref();
+  }
+  eB2Vec = new TACSGibbsVector(eB2);
+  eB2Vec->incref();
+  
+  crossProduct(1.0, eB2, rev, eB1);
+  if (eB1Vec){
+    eB1Vec->decref();
+  }
+  eB1Vec = new TACSGibbsVector(eB1);
+  eB1Vec->incref();
+}
 
 /*
   Retrieve the initial conditions for the state variables
@@ -1999,4 +2099,20 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
   for ( int i = 21; i < 24; i++ ){
     J[25*i] += alpha;
   }
+}
+
+/*
+  Set the design variable values
+*/
+void TACSRevoluteConstraint::setDesignVars( const TacsScalar dvs[], 
+                                             int numDVs ){
+  point->setDesignVars(dvs, numDVs);
+  updatePoints();
+}
+
+/*
+  Get the design variable values associated with the joint location
+*/
+void TACSRevoluteConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
+  point->getDesignVars(dvs, numDVs);
 }

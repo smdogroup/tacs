@@ -85,13 +85,13 @@ cdef class solid(Constitutive):
       self.ptr.incref()
       return
 
-cdef void getdesignvars(void *_self, double *x, int dvLen):
+cdef void getdesignvars(void *_self, TacsScalar *x, int dvLen):
    '''Get the design variable values'''
    xvals = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>x)
    (<object>_self).getDesignVars(xvals)
    return
 
-cdef void setdesignvars(void *_self, const double *x, int dvLen):
+cdef void setdesignvars(void *_self, const TacsScalar *x, int dvLen):
    '''Set the design variable values'''
    cdef np.ndarray xvals = np.zeros(dvLen)
    for i in xrange(dvLen):
@@ -99,7 +99,8 @@ cdef void setdesignvars(void *_self, const double *x, int dvLen):
    (<object>_self).setDesignVars(xvals)
    return
 
-cdef void getdesignvarrange(void *_self, double *lb, double *ub, int dvLen):
+cdef void getdesignvarrange(void *_self, TacsScalar *lb,
+                            TacsScalar *ub, int dvLen):
    '''Get the design variable range'''
    xlb = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>lb)
    xub = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>ub)
@@ -349,7 +350,7 @@ cdef void fsdt_addstiffnessdvsens(void *_self, const double *pt,
    p[1] = pt[1]
 
    # Wrap the python array
-   fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
+   fdvs = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>fdvSens)
 
    # Add the derivative to the array
    (<object>_self).addStiffnessDVSens(p, e, ps, rotPsi, fdvs)
@@ -383,7 +384,7 @@ cdef void fsdt_addpointwisemassdvsens(void *_self, const double *pt,
    avals[1] = alpha[1]
 
    # Wrap the python array
-   fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
+   fdvs = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>fdvSens)
 
    (<object>_self).addPointwiseMassDVSens(p, avals, fdvs)
    
@@ -442,7 +443,7 @@ cdef void fsdt_addfaildvsens(void *_self, const double *pt,
    p[1] = pt[1]
 
    # Wrap the python array
-   fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
+   fdvs = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>fdvSens)
    
    (<object>_self).addFailureDVSens(p, e, alpha, fdvs)
 

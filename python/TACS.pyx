@@ -111,7 +111,7 @@ cdef class Vec:
       cdef TacsScalar *array
       cdef int size = self.ptr.getArray(&array)
 
-      arry = inplace_array_1d(np.NPY_DOUBLE, size, <void*>array, 
+      arry = inplace_array_1d(TACS_NPY_SCALAR, size, <void*>array, 
                               <PyObject*>self)
       Py_INCREF(self)
       return arry

@@ -1,5 +1,5 @@
-#ifndef PLANE_STRESS_STIFFNESS_H
-#define PLANE_STRESS_STIFFNESS_H
+#ifndef TACS_PLANE_STRESS_STIFFNESS_H
+#define TACS_PLANE_STRESS_STIFFNESS_H
 
 /*
   Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
@@ -38,7 +38,7 @@ class PlaneStressStiffness : public TACSConstitutive {
 
   // Extra info about the constitutive class
   // ---------------------------------------
-  const char * constitutiveName();
+  const char *constitutiveName();
 
  protected:
   // The stiffness matrix
@@ -46,7 +46,7 @@ class PlaneStressStiffness : public TACSConstitutive {
 
   TacsScalar rho;
  private:
-  static const char * constName;
+  static const char *constName;
 };
 
 #endif

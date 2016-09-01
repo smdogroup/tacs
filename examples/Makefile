@@ -26,6 +26,12 @@ default:
 	  echo; (cd $$subdir && $(MAKE)); \
 	done
 
+debug:
+	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
+	  echo "making $@ in $$subdir"; \
+	  echo; (cd $$subdir && $(MAKE) debug); \
+	done
+
 complex:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
 	  echo "making $@ in $$subdir"; \

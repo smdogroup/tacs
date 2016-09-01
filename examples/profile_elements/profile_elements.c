@@ -54,16 +54,10 @@ void test_element( TACSElement *element,
 }
 
 /*
-  The following code testss the most costly pats of s of the element
-  computations: the assembly of the stiffness matrices and residuals
-  and the computation of the derivative of the residuals w.r.t. the
-  nodes.
-
-  These computations are repeated for a series of elements to mimic a
-  constant-size mesh with increasingly element order. These
-  computational costs, however, do not include the assembly costs of
-  placing the entries in the assembled global stiffness matrix or
-  residual.
+  The following code tests the element implementation to see if the
+  computation of the residual is consistent with the energy formulat,
+  to check if the Jacobian matrix is consistent with the residual and
+  to test certain design-dependent code. 
 
   Useage:
   ./profile_elements [fd=value]

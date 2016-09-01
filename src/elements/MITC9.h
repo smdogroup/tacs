@@ -52,11 +52,11 @@ class MITC9 : public TACSElement {
   
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
-  const char * elementName();
-  const char * displacementName( int i );
-  const char * stressName( int i );
-  const char * strainName( int i );
-  const char * extraName( int i );
+  const char *elementName();
+  const char *displacementName( int i );
+  const char *stressName( int i );
+  const char *strainName( int i );
+  const char *extraName( int i );
   
   ElementType getElementType();
 
@@ -111,7 +111,7 @@ class MITC9 : public TACSElement {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  TACSConstitutive * getConstitutive();
+  TACSConstitutive *getConstitutive();
   
   // Get the number of Gauss quadrature points
   // -----------------------------------------
@@ -290,10 +290,10 @@ class MITC9 : public TACSElement {
   TACSGibbsVector *vInit, *omegaInit;
 
   // The names of the displacements, stresses etc.
-  static const char * elemName;
-  static const char * dispNames[NUM_DISPS];
-  static const char * stressNames[NUM_STRESSES];
-  static const char * strainNames[NUM_STRESSES];
-  static const char * extraNames[NUM_EXTRAS];
+  static const char *elemName;
+  static const char *dispNames[NUM_DISPS];
+  static const char *stressNames[NUM_STRESSES];
+  static const char *strainNames[NUM_STRESSES];
+  static const char *extraNames[NUM_EXTRAS];
 };
 #endif // TACS_MITC9_H

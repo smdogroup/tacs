@@ -40,20 +40,11 @@ winitA   = elements.GibbsVector(np.array([.1, 10., 0.]))   # initial angular vel
 bodyA = elements.RigidBody(frameA,
                            massA, cA, JA,
                            g, rinitA, vinitA, winitA)
- 
-#===================================#
-# Create a test element for body A
-#===================================#
+## bodyA.setStepSize(dh)
+## bodyA.setPrintLevel(2)
+## bodyA.testResidual()
+## bodyA.testJacobian()
 
-print(">> Testing element...")
-
-for dh in [1.0e-5]:
-    test = elements.TestElem(bodyA)
-    test.setStepSize(dh)
-    test.setPrintLevel(2)
-    test.testResidual()
-    test.testJacobian()
-    
 #############################
 # Create an instance of TACS
 #############################
@@ -63,19 +54,22 @@ num_nodes           = 1
 num_owned_nodes     = 1
 vars_per_node       = 8 # should equal num_displacements
 num_elems           = 1
-max_csr             = 2
+num_dependent_nodes = 0
 
-num_dependent_nodes = None
-
-tacs = TACS.Assembler.getInstance(comm, num_owned_nodes,
-                                  vars_per_node, num_elems,
-                                  num_nodes, max_csr)
+tacs = TACS.Assembler(comm,
+                      vars_per_node, 
+                      num_owned_nodes,
+                      num_elems,
+                      num_dependent_nodes)
                           
 # Setup nodes and their connectivities
 node = np.arange(num_nodes, dtype=np.intc) # 0, 1, 2
 conn = np.arange(num_nodes, dtype=np.intc) # 0, 1, 2
 
-tacs.addNodes(node, conn)
+elemList = [bodyA]
+
+tacs.setElements(elemList)
+tacs.setNodes(node)
 tacs.addElement(bodyA, conn[0:], 1)
 
 tacs.finalize()

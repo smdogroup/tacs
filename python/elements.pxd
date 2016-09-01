@@ -16,18 +16,30 @@ cdef extern from "TACSElement.h":
       LINEAR
       NONLINEAR
       LARGE_ROTATION
-
-   cdef cppclass TestElement(TACSObject):
-      TestElement(TACSElement * _element, 
-                  const TacsScalar *_Xpts)
-      void setFailTolerances(double _fail_rtol, double _fail_atol)
-      void setPrintLevel(int _flag)
-      void setStepSize(TacsScalar _dh)
-      int testResidual()
-      int testJacobian(int col)
-      int testAdjResProduct(const TacsScalar *x, int dvLen)
-      int testStrainSVSens(const double pt[])
-      int testJacobianXptSens(const double pt[])
+   ## cdef cppclass TACSElement(TACSObject):
+   ##    void setFailTolerances(double _fail_rtol, double _fail_atol)
+   ##    void setPrintLevel(int _flag)
+   ##    void setStepSize(TacsScalar _dh)
+      
+   ##    # Tests the consistency of the residual with energy principles
+   ##    int testResidual(double time, const TacsScalar Xpts[],
+   ##                     const TacsScalar vars[], const TacsScalar dvars[],
+   ##                     const TacsScalar ddvars[])
+      
+   ##    # Tests the consistency of the Jacobian with the residual implementation
+   ##    int testJacobian(double time, const TacsScalar Xpts[],
+   ##                     const TacsScalar vars[], const TacsScalar dvars[],
+   ##                     const TacsScalar ddvars[], int col=-1)
+      
+   ##    # Tests the adjoint implementation
+   ##    int testAdjResProduct(const TacsScalar *x, int dvLen,
+   ##                          double time, const TacsScalar Xpts[],
+   ##                          const TacsScalar vars[], const TacsScalar dvars[],
+   ##                          const TacsScalar ddvars[])
+      
+   ##    int testStrainSVSens(const TacsScalar Xpts[], const TacsScalar vars[],
+   ##                         const TacsScalar dvars[], const TacsScalar ddvars[])
+   ##    int testJacobianXptSens(const TacsScalar Xpts[])
       
 cdef extern from "TACSGibbsVector.h":
    cdef cppclass TACSGibbsVector(TACSObject):
@@ -44,13 +56,13 @@ cdef extern from "RigidBody.h":
       void setDesignVarNums(int, const int*, const int*)
 
    cdef cppclass TACSSphericalConstraint(TACSElement):
-      TACSSphericalConstraint(TACSGibbsVector *xA,  TACSGibbsVector *xB)
+      TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                              TACSGibbsVector *point)
 
    cdef cppclass TACSRevoluteConstraint(TACSElement):
-      TACSRevoluteConstraint(TACSGibbsVector *_xA,  TACSGibbsVector *_xB,
-                             TACSGibbsVector *_eA,  
-                             TACSGibbsVector *_eB1,  TACSGibbsVector *_eB2)
-
+      TACSRevoluteConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                             TACSGibbsVector *point, TACSGibbsVector *eA)
+      
 # Template
 cdef extern from "TACSElementTemplates.h":
    # Declare the PlaneStressQuad elements

@@ -183,6 +183,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Allocate space for kinetic and potential energies
   energies = new TacsScalar[ 2 ];
+  energies[0] = 0.0;
+  energies[1] = 0.0;
+
+  init_energy = 0.0;
 
   // MPI information
   MPI_Comm_rank(tacs->getMPIComm(), &mpiRank);
@@ -476,9 +480,7 @@ void TACSIntegrator::writeSolutionToF5(){
   TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
   f5->incref();
 
-  for ( int k = is; k < ie; k++ ){    
-    printf("[%d] Writing f5 file for step : %d \n", mpiRank, k);
-
+  for ( int k = is; k < ie; k++ ){
     // Set the current states into TACS
     setTACSStates(time[k], q[k], qdot[k], qddot[k]);
 
@@ -488,7 +490,6 @@ void TACSIntegrator::writeSolutionToF5(){
 
     // Write the solution
     f5->writeToFile(fname);
-
   }
   // Delete the viewer
   f5->decref();
