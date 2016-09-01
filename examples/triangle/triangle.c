@@ -247,10 +247,6 @@ int main( int argc, char *argv[] ){
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
-  
-  // Set whether to test the residual implementation is consistent
-  // with the energy principles
-  tacs->setResidualTestFreq(0);
 
   // Create the preconditioner
   TACSBVec *res = tacs->createVec();
