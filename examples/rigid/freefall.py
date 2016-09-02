@@ -26,15 +26,15 @@ frameA = elements.RefFrame(rOA, rIA, rJA)                  # reference frame att
 # Setup mass properties for body A
 massA = 4.0                                                # mass [kg]
 cA    = np.array([0.0, 0.0, 0.0])                          # first moment of mass [kg.m]
-JA    = np.array([1.0,  0.0, 0.0,                          # second moment of mass [kg.m2]
-                        2.0, 0.0,
-                             0.75])
+JA    = np.array([1.0, 0.0, 0.0,                          # second moment of mass [kg.m2]
+                       1.0, 0.0,
+                            1.0])
 
 # Setup dynamics for body A
-g     = elements.GibbsVector(np.array([0.0, 0.0, -10.0]))  # acceleration due to gravity [kg.m.s-2]
+g     = elements.GibbsVector(np.array([0.0, 0.0, 00.0]))  # acceleration due to gravity [kg.m.s-2]
 rinitA   = elements.GibbsVector(np.array([0., 0., 0.]))    # initial position wrt to global frame [m]
-vinitA   = elements.GibbsVector(np.array([1., 1., 1.]))    # initial velocity wrt to global frame [m/s]
-winitA   = elements.GibbsVector(np.array([.1, 10., 0.]))   # initial angular velocity wrt to global frame [rad/s]
+vinitA   = elements.GibbsVector(np.array([0., 0., 0.]))    # initial velocity wrt to global frame [m/s]
+winitA   = elements.GibbsVector(np.array([0., 10., 0.]))   # initial angular velocity wrt to global frame [rad/s]
 
 # Create the body
 bodyA = elements.RigidBody(frameA,
@@ -56,23 +56,22 @@ vars_per_node       = 8 # should equal num_displacements
 num_elems           = 1
 num_dependent_nodes = 0
 
-tacs = TACS.Assembler(comm,
-                      vars_per_node, 
-                      num_owned_nodes,
-                      num_elems,
-                      num_dependent_nodes)
+tacs = TACS.Assembler.create(comm,
+                             vars_per_node, 
+                             num_owned_nodes,
+                             num_elems,
+                             num_dependent_nodes)
                           
 # Setup nodes and their connectivities
 node = np.arange(num_nodes, dtype=np.intc) # 0, 1, 2
 conn = np.arange(num_nodes, dtype=np.intc) # 0, 1, 2
+ptr = np.array([0, 1], dtype=np.intc)
 
 elemList = [bodyA]
 
 tacs.setElements(elemList)
-tacs.setNodes(node)
-tacs.addElement(bodyA, conn[0:], 1)
-
-tacs.finalize()
+tacs.setElementConnectivity(conn, ptr)
+tacs.initialize()
 
 #################################
 # Parameters for time integration
@@ -81,9 +80,9 @@ tacs.finalize()
 print(">> Setting up time integration")
 
 tinit             = 0.0
-tfinal            = 1.0
+tfinal            = 10.0
 
-num_steps_per_sec = 10
+num_steps_per_sec = 25
 
 # Create an FH5 object for teceplot output
 flag = (TACS.ToFH5.NODES | TACS.ToFH5.DISPLACEMENTS)
@@ -95,5 +94,5 @@ print(">> NBG Integration")
 nbg = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 2)
 nbg.setPrintLevel(2)
 nbg.setJacAssemblyFreq(1)
-nbg.configureOutput(f5, 10, "freefall/solution%04d.f5")
+nbg.configureOutput(f5, 1, "freefall/solution%04d.f5")
 nbg.integrate()
