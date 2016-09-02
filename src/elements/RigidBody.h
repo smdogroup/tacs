@@ -97,12 +97,25 @@ class TACSRigidBody : public TACSElement {
                  const TacsScalar _mass, 
                  const TacsScalar _cRef[], 
                  const TacsScalar _JRef[],
-                 TACSGibbsVector *_gvec, 
                  TACSGibbsVector *_rInit,
                  TACSGibbsVector *_vInit,
-                 TACSGibbsVector *_omegaInit );
+                 TACSGibbsVector *_omegaInit,                  
+                 TACSGibbsVector *_gvec );
   ~TACSRigidBody();
 
+  // Factory method for creating rigid bodies
+  //------------------------------------------
+  static TACSRigidBody* getInstance( const TacsScalar *r0,
+                                     const TacsScalar *t1,
+                                     const TacsScalar *t2,                                     
+                                     const TacsScalar mass, 
+                                     const TacsScalar cRef[], 
+                                     const TacsScalar JRef[],
+                                     const TacsScalar *rInit,
+                                     const TacsScalar *vInit,
+                                     const TacsScalar *omegaInit, 
+                                     const TacsScalar *gvec = NULL );
+ 
   // Set design variables numbers associated with the inertial props.
   // ----------------------------------------------------------------
   void setDesignVarNums( int _massDV, const int _cDV[], const int _JDV[] );

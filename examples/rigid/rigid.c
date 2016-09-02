@@ -10,9 +10,9 @@ int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
   // Construct the frame of reference
-  TacsScalar r0[3] = {0.0, 0.0, 0.0}; // The base point
-  TacsScalar r1[3] = {1.0, 0.0, 0.0}; // The first coordinate direction
-  TacsScalar r2[3] = {0.0, 1.0, 0.0}; // The second coordinate direction
+  const TacsScalar r0[3] = {0.0, 0.0, 0.0}; // The base point
+  const TacsScalar r1[3] = {1.0, 0.0, 0.0}; // The first coordinate direction
+  const TacsScalar r2[3] = {0.0, 1.0, 0.0}; // The second coordinate direction
   TACSGibbsVector *r0Vec = new TACSGibbsVector(r0); r0Vec->incref();
   TACSGibbsVector *r1Vec = new TACSGibbsVector(r1); r1Vec->incref();
   TACSGibbsVector *r2Vec = new TACSGibbsVector(r2); r2Vec->incref();
@@ -20,17 +20,17 @@ int main( int argc, char *argv[] ){
   TACSRefFrame *refFrameA = new TACSRefFrame(r0Vec, r1Vec, r2Vec);
 
   // Define the inertial properties
-  TacsScalar mass = 4.0;
-  TacsScalar c[]  = {0.5, 0.2, -0.1};
-  TacsScalar J[]  = {1.0, -0.1, 0.25,
-                     2.0, 0.1,
-                     0.75};
+  const TacsScalar mass = 4.0;
+  const TacsScalar c[]  = {0.5, 0.2, -0.1};
+  const TacsScalar J[]  = {1.0, -0.1, 0.25,
+                           2.0, 0.1,
+                           0.75};
 
   // Define dynamics properties
-  TacsScalar grav[3]      = {0.0, 0.0, -10.0}; // The acceleration due to gravity
-  TacsScalar rInit[3]     = {0.0, 0.0, 0.0}; // The initial position
-  TacsScalar vInit[3]     = {0.0, 1.0, 0.0}; // The initial velocity
-  TacsScalar omegaInit[3] = {0.0, 1.0, 0.0}; // The initial angular velocity
+  const TacsScalar grav[3]      = {0.0, 0.0, -10.0}; // The acceleration due to gravity
+  const TacsScalar rInit[3]     = {0.0, 0.0, 0.0}; // The initial position
+  const TacsScalar vInit[3]     = {0.0, 1.0, 0.0}; // The initial velocity
+  const TacsScalar omegaInit[3] = {0.0, 1.0, 0.0}; // The initial angular velocity
   TACSGibbsVector *gravVec      = new TACSGibbsVector(grav); gravVec->incref();
   TACSGibbsVector *rInitVec     = new TACSGibbsVector(rInit); rInitVec->incref();
   TACSGibbsVector *vInitVec     = new TACSGibbsVector(vInit); vInitVec->incref();
@@ -39,16 +39,22 @@ int main( int argc, char *argv[] ){
   // Construct a rigid body
   TACSRigidBody *bodyA = new  TACSRigidBody(refFrameA, 
                                             mass, c, J,
-                                            gravVec, rInitVec, vInitVec, omegaInitVec);
-  bodyA->incref();
-  
+                                            rInitVec, vInitVec, omegaInitVec, gravVec);
+
+  /*
+    TACSRigidBody *bodyA = TACSRigidBody::getInstance(r0, r1, r2,
+    mass, c, J, 
+    rInit, vInit, omegaInit, grav);
+    bodyA->incref();
+  */
+
   // Modify the inertial properties to use with the second body
-  mass *= 2.0;
-  J[0] += 1.0;
+  //  mass *= 2.0;
+  //   J[0] += 1.0;
   
   TACSRigidBody *bodyB = new  TACSRigidBody(refFrameA, 
                                             mass, c, J,
-                                            gravVec, rInitVec, vInitVec, omegaInitVec);
+                                            rInitVec, vInitVec, omegaInitVec, gravVec);
   bodyB->incref();
   
   // Create the constraint

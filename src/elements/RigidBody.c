@@ -9,6 +9,37 @@
 */
 
 /*
+  Factory method for easily creating rigid bodies
+*/
+static TACSRigidBody* getInstance( const TacsScalar *r0,
+                                   const TacsScalar *t1,
+                                   const TacsScalar *t2,                                     
+                                   const TacsScalar mass, 
+                                   const TacsScalar cRef[], 
+                                   const TacsScalar JRef[],
+                                   const TacsScalar *rInit,
+                                   const TacsScalar *vInit,
+                                   const TacsScalar *omegaInit, 
+                                   const TacsScalar *gvec = NULL ){
+  // Create a new frame associated with the body 
+  TACSGibbsVector *r0Vec = new TACSGibbsVector(r0);
+  TACSGibbsVector *t1Vec = new TACSGibbsVector(t1);
+  TACSGibbsVector *t2Vec = new TACSGibbsVector(t2);
+  TACSRefFrame *refFrame = new TACSRefFrame(r0Vec, t1Vec, t2Vec);
+
+  // Create vectors for characterizing the dynamics of the body
+  TACSGibbsVector *rInitVec     = new TACSGibbsVector(rInit); 
+  TACSGibbsVector *vInitVec     = new TACSGibbsVector(vInit); 
+  TACSGibbsVector *omegaInitVec = new TACSGibbsVector(omegaInit); 
+  TACSGibbsVector *gravVec      = new TACSGibbsVector(gvec);
+  
+  // Create and return the rigid body
+  return new  TACSRigidBody(refFrame,
+                            mass, cRef, JRef,
+                            gravVec, rInitVec, vInitVec, omegaInitVec);
+}
+
+/*
   Write the relative error for components of a vector for a
   finite-difference or complex-step study to a given file
 
@@ -398,10 +429,10 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
                               const TacsScalar _mass, 
                               const TacsScalar _cRef[], 
                               const TacsScalar _JRef[],
-                              TACSGibbsVector *_gvec, 
                               TACSGibbsVector *_rInit,
                               TACSGibbsVector *_vInit,
-                              TACSGibbsVector *_omegaInit ){
+                              TACSGibbsVector *_omegaInit,                  
+                              TACSGibbsVector *_gvec ){
   // Copy over the property values
   mass = _mass;
 
@@ -1521,7 +1552,7 @@ void TACSSphericalConstraint::updatePoints( ){
   for ( int i = 0; i < 3; i++ ){
     xA[i] = pt[i] - rA[i];
   }
-  if (xAVec!=NULL) {
+  if (xAVec) {
     xAVec->decref();
   }
   xAVec = new TACSGibbsVector(xA);
@@ -1533,7 +1564,7 @@ void TACSSphericalConstraint::updatePoints( ){
   for ( int i = 0; i < 3; i++ ){
     xB[i] = pt[i] - rB[i];
   }
-  if (xBVec!=NULL) {
+  if (xBVec) {
     xBVec->decref();
   }
   xBVec = new TACSGibbsVector(xB);
