@@ -53,9 +53,6 @@ int main( int argc, char *argv[] ){
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
 
-  // Set the frequency of residual consistency check with energy principles
-  tacs->setResidualTestFreq(1);
-
   double tinit = 0.0; double tfinal = 1.0;
   int num_steps_per_sec = 100;
 

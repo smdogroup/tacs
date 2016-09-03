@@ -63,12 +63,6 @@ class TACSAssembler : public TACSObject {
 		 int _numDependentNodes=0 );
   ~TACSAssembler();
 
-  // Setters for test functions
-  //---------------------------
-  void setResidualTestFreq( int residual_test_freq );
-  void setJacobianTestFreq( int jacobian_test_freq );
-  void setStepSize( double _dh );
-
   // Set the connectivity in TACS
   // ----------------------------
   int setElementConnectivity( const int *conn, const int *ptr );
@@ -334,11 +328,6 @@ class TACSAssembler : public TACSObject {
   // store the element -> node information
   int *elementNodeIndex;
   int *elementTacsNodes;
-
-  int residual_test_freq; // How frequently to test the residual implementation realtime
-  int jacobian_test_freq; // How frequently to test the jacobian implementation realtime
-
-  double dh;  // Finite difference step size
 
   // Variables that define the dependent node to independent node
   // dependence
