@@ -145,6 +145,9 @@ or congruent. Cannot form interpolant.\n");
   ext_weights = NULL;
   x_ext = NULL;
 
+  // NULL the transpose weight vector
+  transpose_weights = NULL;
+
   // Initialize the implementation
   multadd = BVecInterpMultAddGen;
   multtransadd = BVecInterpMultTransposeAddGen;
@@ -195,7 +198,7 @@ TACSBVecInterp::~TACSBVecInterp(){
   if (off_vars){ delete [] off_vars; }
   if (off_weights){ delete [] off_weights; }
 
-  // Deallocate data that may have been allocated in finalize()
+  // Deallocate data that may have been allocated in initialize()
   if (vecDist){ vecDist->decref(); }
   if (ctx){ ctx->decref(); }
   if (rowp){ delete [] rowp; }
@@ -205,6 +208,7 @@ TACSBVecInterp::~TACSBVecInterp(){
   if (ext_rowp){ delete [] ext_rowp; }
   if (ext_cols){ delete [] ext_cols; }
   if (ext_weights){ delete [] ext_weights; }
+  if (transpose_weights){ delete [] transpose_weights; }
 }
 
 /*
@@ -838,6 +842,45 @@ void TACSBVecInterp::initialize(){
       }
     }
   }
+
+  // Allocate the transpose weights
+  transpose_weights = new TacsScalar[ M ];
+  memset(transpose_weights, 0, M*sizeof(TacsScalar));
+
+  // Zero the external contribution and begin
+  memset(x_ext, 0, num_ext_vars*sizeof(TacsScalar));
+  for ( int i = 0; i < N; i++ ){
+    for ( int jp = ext_rowp[i]; jp < ext_rowp[i+1]; jp++ ){
+      x_ext[ext_cols[jp]] += ext_weights[jp];
+    }
+  }
+
+  // Allocate the context used for communicating the weights
+  TACSBVecDistCtx *ctx_weights = vecDist->createCtx(1);
+  ctx_weights->incref();
+  
+  // Begin transfering the column sums 
+  vecDist->beginReverse(ctx_weights, x_ext, transpose_weights, ADD_VALUES);
+  
+  for ( int i = 0; i < N; i++ ){
+    for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
+      transpose_weights[cols[jp]] += weights[jp];
+    }
+  }
+
+  // End transfering the weights
+  vecDist->endReverse(ctx_weights, x_ext, transpose_weights, ADD_VALUES);
+  ctx_weights->decref();
+
+  // Compute the inverse of the weights
+  for ( int i = 0; i < M; i++ ){
+    if (transpose_weights[i] != 0.0){
+      transpose_weights[i] = 1.0/transpose_weights[i];
+    }
+  }
+  
+  // Zero the external vector
+  memset(x_ext, 0, bsize*num_ext_vars*sizeof(TacsScalar));
 }
 
 /*
@@ -1012,6 +1055,34 @@ void TACSBVecInterp::multTransposeAdd( TACSBVec *inVec, TACSBVec *addVec,
   
   // Finalize the communication to the off-processor part
   vecDist->endReverse(ctx, x_ext, out, ADD_VALUES);
+}
+
+/*
+  Perform the weighted transpose interpolation
+
+  outVec <- Interp*inVec
+
+  input:
+  inVec:  the input vector
+
+  output:
+  outVec: the interpolated output vector
+*/
+void TACSBVecInterp::multWeightTranspose( TACSBVec *inVec, 
+                                          TACSBVec *outVec ){
+  // Perform the transpose operation
+  multTranspose(inVec, outVec);
+
+  // Retrieve the array from the output vector
+  TacsScalar *out;
+  outVec->getArray(&out);
+
+  // Normalize each component of the output vector by the weights
+  for ( int i = 0; i < M; i++ ){
+    for ( int k = 0; k < bsize; k++, out++ ){
+      out[0] *= transpose_weights[i];
+    }
+  }
 }
 
 /*

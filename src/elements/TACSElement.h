@@ -44,11 +44,11 @@
   Information required for output visualization
   ---------------------------------------------
 
-  const char * elementName();
-  const char * displacementName( int i );
-  const char * stressName( int i );
-  const char * strainName( int i );
-  const char * extraName( int i );
+  const char *elementName();
+  const char *displacementName( int i );
+  const char *stressName( int i );
+  const char *strainName( int i );
+  const char *extraName( int i );
   int numExtras();
   ElementType getElementType();
 
@@ -172,7 +172,7 @@ enum ElementType { ELEMENT_NONE,
 		   SHELL, 
 		   SOLID,
 		   Q3D_ELEMENT,
-                   RIGID};
+                   RIGID };
 
 // The different element matrix types
 enum ElementMatrixType { STIFFNESS_MATRIX, 
@@ -181,9 +181,9 @@ enum ElementMatrixType { STIFFNESS_MATRIX,
 			 STIFFNESS_PRODUCT_DERIVATIVE };
 
 // Element behavior types
-enum ElementBehaviorType{LINEAR, 
-                         NONLINEAR,
-                         LARGE_ROTATION};
+enum ElementBehaviorType{ LINEAR, 
+                          NONLINEAR,
+                          LARGE_ROTATION };
 
 // The TACSElement base class
 class TACSElement : public TACSOptObject {

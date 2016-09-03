@@ -51,6 +51,7 @@ int create_tec_file( char * data_info, char * var_names,
 */
 int create_fe_tec_zone( char * zone_name, ZoneType _zone_type,
 			int _num_points, int _num_elements,
+                        int use_strands=0,
                         double solution_time=0.0 ){
   if ( _zone_type == ORDERED ||
        _zone_type == FEPOLYGON ||
@@ -65,7 +66,7 @@ zone type\n");
   INTEGER4 num_elements = _num_elements;
   INTEGER4 num_faces = 0; // For all zones allowed here
   INTEGER4 icmax = 0, jcmax = 0, kcmax = 0; // Ignored
-  INTEGER4 strand_id = 1;
+  INTEGER4 strand_id = 0;
   INTEGER4 parent_zone = 0;
   INTEGER4 is_block = 1; // Apparently this always needs to be 1
   // These are only for cell-based finite element data - we use node-based
@@ -74,10 +75,15 @@ zone type\n");
   INTEGER4 total_num_face_nodes = 0;
   INTEGER4 num_connected_boundary_faces = 0;
   INTEGER4 total_num_boundary_connections = 0;
-  INTEGER4 * passive_var_list = NULL; // No passive variables
-  INTEGER4 * value_location = NULL; // All values are nodal values
-  INTEGER4 * share_var_from_zone = NULL;
+  INTEGER4 *passive_var_list = NULL; // No passive variables
+  INTEGER4 *value_location = NULL; // All values are nodal values
+  INTEGER4 *share_var_from_zone = NULL;
   INTEGER4 share_con_from_zone = 0;
+
+  // If we're using strands, set the strand ID
+  if (use_strands){
+    strand_id = 1;
+  }
 
   return TECZNE112(zone_name, &zone_type, &num_points, &num_elements, 
 		   &num_faces, &icmax, &jcmax, &kcmax,
@@ -120,8 +126,8 @@ int main( int argc, char * argv[] ){
   MPI_Init(&argc, &argv);
 
   // Test if the files exist/you have permission to modify them
-  char * infile;
-  char * outfile;
+  char *infile;
+  char *outfile;
 
   // Convert hdf5 file argv[1] to tecplot file argv[2]
   if (argc == 1){
@@ -129,24 +135,25 @@ int main( int argc, char * argv[] ){
     return (1);
   }
   
-  if (argc > 1){
-    infile = new char[ strlen(argv[1])+1 ];
-    strcpy(infile, argv[1]);
-  }
+  infile = new char[ strlen(argv[1])+1 ];
+  strcpy(infile, argv[1]);
 
-  if (argc > 2){
-    outfile = new char[ strlen(argv[2])+1 ];
-    strcpy(outfile, argv[2]);
+  // Set the output file
+  outfile = new char[ strlen(infile)+5 ];
+  int len = strlen(infile);
+  int i = len-1;
+  for ( ; i >= 0; i-- ){
+    if (infile[i] == '.'){ break; }     
   }
-  else {
-    outfile = new char[ strlen(infile)+5 ];
-    int len = strlen(infile);
-    int i = len-1;
-    for ( ; i >= 0; i-- ){
-      if (infile[i] == '.'){ break; }     
+  strcpy(outfile, infile);
+  strcpy(&outfile[i], ".plt");
+
+  // Check if we're going to use strands or not
+  int use_strands = 0;
+  for ( int k = 0; k < argc; k++ ){
+    if (strcmp(argv[k], "--use_strands") == 0){
+      use_strands = 1;
     }
-    strcpy(outfile, infile);
-    strcpy(&outfile[i], ".plt");
   }
 
   printf("Trying to convert FH5 file %s to tecplot file %s\n", 
@@ -168,9 +175,9 @@ int main( int argc, char * argv[] ){
   // Retrieve all the data from the file including the variables, connectivity
   // and component numbers
   double solution_time = 0.0;
-  int * element_comp_num = NULL;
-  int * conn = NULL;
-  double * data = NULL;
+  int *element_comp_num = NULL;
+  int *conn = NULL;
+  double *data = NULL;
   int conn_dim = 0, num_elements = 0, num_points = 0, num_variables = 0;
   file->firstZone();
   do {
@@ -184,7 +191,7 @@ int main( int argc, char * argv[] ){
     }
     
     if (strcmp(zone_name, "components") == 0){
-      void * vdata;
+      void *vdata;
       if (file->getZoneData(&zone_name, &var_names, &vdata, 
                             &dim1, &dim2)){
         element_comp_num = (int*)vdata;
@@ -193,7 +200,7 @@ int main( int argc, char * argv[] ){
     else if (strcmp(zone_name, "connectivity") == 0){
       num_elements = dim1;
       conn_dim = dim2;
-      void * vdata;
+      void *vdata;
       if (file->getZoneData(&zone_name, &var_names, &vdata, 
                             &dim1, &dim2)){
         conn = (int*)vdata;
@@ -207,7 +214,7 @@ int main( int argc, char * argv[] ){
       }
 
       // Initialize the tecplot file with the variables
-      char * vars = new char[ strlen(var_names)+1 ];
+      char *vars = new char[ strlen(var_names)+1 ];
       strcpy(vars, var_names);
       create_tec_file(data_info, vars,
 		      outfile, dir_name, FULL);
@@ -215,7 +222,7 @@ int main( int argc, char * argv[] ){
       delete [] vars;
  
       // Retrieve the data
-      void * vdata;
+      void *vdata;
       if (file->getZoneData(&zone_name, &var_names, &vdata, 
                             &dim1, &dim2)){
         num_points = dim1;
@@ -243,13 +250,13 @@ int main( int argc, char * argv[] ){
 
   int num_comp = file->getNumComponents();
 
-  int * reduced_points = new int[ num_points ];
-  int * reduced_conn = new int[ conn_dim*num_elements ];
-  double * reduced_data = new double[ num_points ];
+  int *reduced_points = new int[ num_points ];
+  int *reduced_conn = new int[ conn_dim*num_elements ];
+  double *reduced_data = new double[ num_points ];
 
   for ( int k = 0; k < num_comp; k++ ){
     // Count up the number of elements that use the connectivity
-    char * comp_name = file->getComponentName(k);
+    char *comp_name = file->getComponentName(k);
     printf("Converting zone %d: %s at time %g\n", 
            k, comp_name, solution_time);
 
@@ -285,7 +292,7 @@ int main( int argc, char * argv[] ){
     if (nelems > 0 && npts > 0){
       // Create the zone with the solution time
       create_fe_tec_zone(comp_name, zone_type, npts, nelems,
-                         solution_time);
+                         use_strands, solution_time);
 
       // Retrieve the data
       for ( int j = 0; j < num_variables; j++ ){

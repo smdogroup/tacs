@@ -83,7 +83,7 @@ class TACSMg : public TACSPc {
 
  private:
   // Recursive function to apply multi-grid at each level
-  TacsScalar applyMg( int level ); 
+  void applyMg( int level ); 
 
   // The MPI communicator for this object
   MPI_Comm comm;
