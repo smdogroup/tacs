@@ -1996,14 +1996,13 @@ void BCSRMat::zeroRow( int row, int vars, int ident ){
 void BCSRMat::partition( int nrows_p, 
 			 BCSRMat **Bmat, BCSRMat **Emat,
 			 BCSRMat **Fmat, BCSRMat **Cmat ){ 
-
   const int ncols = data->ncols;
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
   const int bsize = data->bsize;
-  const int * diag = data->diag;
-  const TacsScalar * A = data->A;
+  const int *diag = data->diag;
+  const TacsScalar *A = data->A;
 
   int b2 = bsize*bsize;
   *Bmat = NULL;

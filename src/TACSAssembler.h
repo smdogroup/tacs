@@ -101,6 +101,7 @@ class TACSAssembler : public TACSObject {
   TACSVarMap *getVarMap();
   TACSBcMap *getBcMap();
   TACSBVecDistribute *getBVecDistribute();
+  TACSBVecDepNodes *getBVecDepNodes();
 
   // Get the maximum sizes
   // ---------------------
@@ -214,8 +215,10 @@ class TACSAssembler : public TACSObject {
   // Return elements and node numbers
   // --------------------------------
   TACSElement **getElements();
-  TACSElement *getElement( int elem, TacsScalar *Xpts, TacsScalar *vars, 
-                           TacsScalar *dvars, TacsScalar *ddvars );
+  TACSElement *getElement( int elem, TacsScalar *Xpts=NULL, 
+                           TacsScalar *vars=NULL, TacsScalar *dvars=NULL, 
+                           TacsScalar *ddvars=NULL );
+  TACSElement *getElement( int elem, const int **nodes, int *len );
 
   // Test the given element, constitutive or function class
   // ------------------------------------------------------

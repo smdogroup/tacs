@@ -187,7 +187,12 @@ void TACSMg::setVariables( TACSBVec *vec ){
   tacs[0]->setVariables(vec);
 
   for ( int i = 0; i < nlevels-1; i++ ){
-    interp[i]->multTranspose(x[i], x[i+1]);
+    if (i == 0){
+      interp[i]->multWeightTranspose(vec, x[i+1]);
+    }
+    else {
+      interp[i]->multWeightTranspose(x[i], x[i+1]);
+    }
     x[i+1]->applyBCs();
     tacs[i+1]->setVariables(x[i+1]);
   }
@@ -308,7 +313,8 @@ void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
   // Compute the initial residual and multiply
   TacsScalar rhs_norm = 0.0;
   for ( int i = 0; i < max_iters; i++ ){
-    TacsScalar norm = applyMg(0);    
+    applyMg(0);
+    TacsScalar norm = r[0]->norm();
     if (monitor){ monitor->printResidual(i, norm); }
     if (i == 0){ 
       rhs_norm = norm; 
@@ -356,15 +362,13 @@ void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
   residual, restricting to the next level, applying multigrid, then
   post-smoothing.
 */
-TacsScalar TACSMg::applyMg( int level ){
+void TACSMg::applyMg( int level ){
   // Pre-smooth at the current level
   pc[level]->applyFactor(b[level], x[level]);  
 
   // Compute r[level] = b[level] - A*x[level]
   mat[level]->mult(x[level], r[level]);
   r[level]->axpby(1.0, -1.0, b[level]);
-
-  TacsScalar norm = r[level]->norm();
 
   // Restrict the residual to the next lowest level 
   // to form the RHS at that level
@@ -392,6 +396,4 @@ TacsScalar TACSMg::applyMg( int level ){
 
   // Post-Smooth the residual
   pc[level]->applyFactor(b[level], x[level]);  
-
-  return norm;
 }

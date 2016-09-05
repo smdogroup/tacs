@@ -264,6 +264,13 @@ TACSBVecDistribute *TACSAssembler::getBVecDistribute(){
 }
 
 /*
+  Get the dependent node vectors
+*/
+TACSBVecDepNodes *TACSAssembler::getBVecDepNodes(){
+  return depNodes;
+}
+
+/*
   Get the maximum number of variables per node
 */
 int TACSAssembler::getMaxElementNodes(){
@@ -311,6 +318,23 @@ TACSElement *TACSAssembler::getElement( int elem, TacsScalar *Xpts,
     return elements[elem];
   }
 
+  return NULL;
+}
+
+/*
+  Get the element object and the pointer to the node numbers 
+*/
+TACSElement *TACSAssembler::getElement( int elem, 
+                                        const int **nodes, int *len ){
+  if (elements && (elem >= 0 && elem < numElements)){
+    int ptr = elementNodeIndex[elem];
+    if (len){ *len = elementNodeIndex[elem+1] - ptr; }
+    if (nodes){ *nodes = &elementTacsNodes[ptr]; }
+    return elements[elem];
+  }
+
+  if (len){ *len = 0; }
+  if (nodes){ *nodes = NULL; }
   return NULL;
 }
 

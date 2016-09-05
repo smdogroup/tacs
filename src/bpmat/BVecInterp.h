@@ -63,6 +63,12 @@ class TACSBVecInterp : public TACSObject {
   void multTranspose( TACSBVec *in, TACSBVec *out );
   void multTransposeAdd( TACSBVec *in, TACSBVec *add, TACSBVec *out );
 
+  // Perform the weighted transpose interpolation
+  // --------------------------------------------
+  void multWeightTranspose( TACSBVec *in, TACSBVec *out );
+
+  // Print the interpolation
+  // -----------------------
   void printInterp( const char *filename );
 
  private:
@@ -102,6 +108,9 @@ class TACSBVecInterp : public TACSObject {
   // The number of local rows from outMap
   int N, M, bsize;
   TACSVarMap *inMap, *outMap;
+
+  // Store the transpose weights
+  TacsScalar *transpose_weights;
 
   // The object responsible for fetching/distributing the 
   // external variables
