@@ -50,9 +50,9 @@ class TACSRefFrame : public TACSObject {
 				 const TacsScalar psi[],
 				 const TacsScalar phi[] );
 
-  // Routine to perform sanity checks on the implementations of
-  // the frame of reference
-  //-----------------------------------------------------------
+  // Routine to perform sanity checks on the implementations of the
+  // frame of reference
+  // --------------------------------------------------------------
   void testRotation( int numDVs, double dh );
 
  private:
@@ -93,28 +93,25 @@ class TACSRefFrame : public TACSObject {
 */
 class TACSRigidBody : public TACSElement {
  public:
+  TACSRigidBody( const TacsScalar *r0,
+                 const TacsScalar *t1,
+                 const TacsScalar *t2,                                 
+                 const TacsScalar mass,
+                 const TacsScalar cRef[],
+                 const TacsScalar JRef[],
+                 const TacsScalar *rInit,
+                 const TacsScalar *vInit,
+                 const TacsScalar *omegaInit,
+                 const TacsScalar *gvec );
   TACSRigidBody( TACSRefFrame *_CRef,
-                 const TacsScalar _mass, 
-                 const TacsScalar _cRef[], 
+                 const TacsScalar _mass,
+                 const TacsScalar _cRef[],
                  const TacsScalar _JRef[],
                  TACSGibbsVector *_rInit,
                  TACSGibbsVector *_vInit,
-                 TACSGibbsVector *_omegaInit,                  
+                 TACSGibbsVector *_omegaInit,
                  TACSGibbsVector *_gvec );
   ~TACSRigidBody();
-
-  // Factory method for creating rigid bodies
-  //------------------------------------------
-  static TACSRigidBody* getInstance( const TacsScalar *r0,
-                                     const TacsScalar *t1,
-                                     const TacsScalar *t2,                                     
-                                     const TacsScalar mass, 
-                                     const TacsScalar cRef[], 
-                                     const TacsScalar JRef[],
-                                     const TacsScalar *rInit,
-                                     const TacsScalar *vInit,
-                                     const TacsScalar *omegaInit, 
-                                     const TacsScalar *gvec = NULL );
  
   // Set design variables numbers associated with the inertial props.
   // ----------------------------------------------------------------
@@ -226,6 +223,9 @@ class TACSSphericalConstraint : public TACSElement {
  public:
   TACSSphericalConstraint( TACSRigidBody *_bodyA, 
                            TACSRigidBody *_bodyB, 
+                           TacsScalar *_point );
+  TACSSphericalConstraint( TACSRigidBody *_bodyA,
+                           TACSRigidBody *_bodyB,
                            TACSGibbsVector *_point );
   ~TACSSphericalConstraint();
 
@@ -285,9 +285,13 @@ class TACSSphericalConstraint : public TACSElement {
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
-  TACSRevoluteConstraint( TACSRigidBody *_bodyA, 
-                          TACSRigidBody *_bodyB, 
-                          TACSGibbsVector *_point, 
+  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
+                          TACSRigidBody *_bodyB,
+                          TacsScalar *_point,
+                          TacsScalar *_eAVec );
+  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
+                          TACSRigidBody *_bodyB,
+                          TACSGibbsVector *_point,
                           TACSGibbsVector *_eAVec );
   ~TACSRevoluteConstraint();
 

@@ -50,19 +50,19 @@ cdef extern from "RigidBody.h":
       TACSRefFrame(TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
    
    cdef cppclass TACSRigidBody(TACSElement):
-      TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
-                    const TacsScalar*, TACSGibbsVector*,
-                    TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
+      TACSRigidBody(const TacsScalar*, const TacsScalar*, const TacsScalar*,
+                    const TacsScalar,  const TacsScalar*, const TacsScalar*,
+                    const TacsScalar*, const TacsScalar*, const TacsScalar*, const TacsScalar*)
       void setDesignVarNums(int, const int*, const int*)
 
    cdef cppclass TACSSphericalConstraint(TACSElement):
       TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
-                              TACSGibbsVector *point)
+                              TacsScalar* point)
 
    cdef cppclass TACSRevoluteConstraint(TACSElement):
       TACSRevoluteConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
-                             TACSGibbsVector *point, TACSGibbsVector *eA)
-      
+                             TacsScalar *point, TacsScalar *eA)
+
 # Template
 cdef extern from "TACSElementTemplates.h":
    # Declare the PlaneStressQuad elements

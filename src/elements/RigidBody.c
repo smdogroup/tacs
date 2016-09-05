@@ -9,37 +9,6 @@
 */
 
 /*
-  Factory method for easily creating rigid bodies
-*/
-static TACSRigidBody* getInstance( const TacsScalar *r0,
-                                   const TacsScalar *t1,
-                                   const TacsScalar *t2,                                     
-                                   const TacsScalar mass, 
-                                   const TacsScalar cRef[], 
-                                   const TacsScalar JRef[],
-                                   const TacsScalar *rInit,
-                                   const TacsScalar *vInit,
-                                   const TacsScalar *omegaInit, 
-                                   const TacsScalar *gvec = NULL ){
-  // Create a new frame associated with the body 
-  TACSGibbsVector *r0Vec = new TACSGibbsVector(r0);
-  TACSGibbsVector *t1Vec = new TACSGibbsVector(t1);
-  TACSGibbsVector *t2Vec = new TACSGibbsVector(t2);
-  TACSRefFrame *refFrame = new TACSRefFrame(r0Vec, t1Vec, t2Vec);
-
-  // Create vectors for characterizing the dynamics of the body
-  TACSGibbsVector *rInitVec     = new TACSGibbsVector(rInit); 
-  TACSGibbsVector *vInitVec     = new TACSGibbsVector(vInit); 
-  TACSGibbsVector *omegaInitVec = new TACSGibbsVector(omegaInit); 
-  TACSGibbsVector *gravVec      = new TACSGibbsVector(gvec);
-  
-  // Create and return the rigid body
-  return new  TACSRigidBody(refFrame,
-                            mass, cRef, JRef,
-                            gravVec, rInitVec, vInitVec, omegaInitVec);
-}
-
-/*
   Write the relative error for components of a vector for a
   finite-difference or complex-step study to a given file
 
@@ -414,6 +383,44 @@ void TACSRefFrame::testRotation( int numDVs, double dh ){
   // Free the allocated memory
   delete [] x;
   delete [] fdvSens;
+}
+
+/*
+  The constructor for the rigid body dynamics 
+
+  input:
+  mass:       the mass of the body
+  c:          the first moment of inertia
+  J:          the symmetric second moment of inertia
+  g:          the acceleration due to gravity in the global frame
+*/
+TACSRigidBody::TACSRigidBody( const TacsScalar *r0, 
+                              const TacsScalar *t1,
+                              const TacsScalar *t2,                                     
+                              const TacsScalar mass, 
+                              const TacsScalar cRef[], 
+                              const TacsScalar JRef[],
+                              const TacsScalar *rInit,
+                              const TacsScalar *vInit,
+                              const TacsScalar *omegaInit, 
+                              const TacsScalar *gvec ){
+  // Create a new frame associated with the body 
+  TACSGibbsVector *r0Vec = new TACSGibbsVector(r0);
+  TACSGibbsVector *t1Vec = new TACSGibbsVector(t1);
+  TACSGibbsVector *t2Vec = new TACSGibbsVector(t2);
+
+  TACSRefFrame *refFrame = new TACSRefFrame(r0Vec, t1Vec, t2Vec);
+
+  // Create vectors for characterizing the dynamics of the body
+  TACSGibbsVector *rInitVec     = new TACSGibbsVector(rInit); 
+  TACSGibbsVector *vInitVec     = new TACSGibbsVector(vInit); 
+  TACSGibbsVector *omegaInitVec = new TACSGibbsVector(omegaInit); 
+  TACSGibbsVector *gravVec      = new TACSGibbsVector(gvec);
+  
+  // Invoke the other constructor for rest of the initialization
+  TACSRigidBody(refFrame,
+                mass, cRef, JRef,
+                rInitVec, vInitVec, omegaInitVec, gravVec);
 }
 
 /*
@@ -1513,6 +1520,21 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
 }
 
 /*
+  Construct a spherical constraint with the two bodies involved and a
+  position vector measured from the global frame to the point where
+  the spherical joint is located.
+*/
+TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
+                                                  TACSRigidBody *_bodyB,
+                                                  TacsScalar *_point ){
+  // Create a gibbs vector for the joint-point
+  TACSGibbsVector *point = new TACSGibbsVector(_point);
+
+  // Invoke the other constuctor for rest of the initialization tasks
+  TACSSphericalConstraint(_bodyA, _bodyB, point);
+}
+
+/*
   Destructor for spherical constraint
 */
 TACSSphericalConstraint::~TACSSphericalConstraint(){
@@ -1732,6 +1754,29 @@ void TACSSphericalConstraint::setDesignVars( const TacsScalar dvs[],
 */
 void TACSSphericalConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
   point->getDesignVars(dvs, numDVs);
+}
+
+
+/*
+  Constructor for revolute contraint taking Gibbs vectors as
+  inputs. A refers to bodyA and B refers to bodyB.
+
+  input:
+  bodyA : pointer to bodyA
+  bodyB : pointer to bodyB
+  point : the position of the joint from the global reference point
+  rev   : the revolute direction in global frame
+*/
+TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA, 
+                                                TACSRigidBody *_bodyB, 
+                                                TacsScalar *_point, 
+                                                TacsScalar *_eA ){
+  // Create a gibbs vector for the joint-point
+  TACSGibbsVector *point = new TACSGibbsVector(_point);
+  TACSGibbsVector *eAVec = new TACSGibbsVector(_eA);
+
+  // Invoke the other constructor
+  TACSRevoluteConstraint(_bodyA, _bodyB, point, eAVec);
 }
 
 /*
