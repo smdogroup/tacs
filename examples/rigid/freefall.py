@@ -17,29 +17,27 @@ print("Num procs :", size, "Rank :", rank)
 print('>> Creating Body A...')
 
 # Setup reference frame for body A
-rOA    = elements.GibbsVector(np.array([0., 0., 0.]))      # base point of body A from the global frame
-rIA    = elements.GibbsVector(np.array([1., 0., 0.]))      # first coordinate direction wrt the base point
-rJA    = elements.GibbsVector(np.array([0., 1., 0.]))      # second coordinate direction wrt the base point
+rOA = np.array([0., 0., 0.])              # base point of body A from the global frame
+rIA = np.array([1., 0., 0.])              # first coordinate direction wrt the base point
+rJA = np.array([0., 1., 0.])              # second coordinate direction wrt the base point
 
-frameA = elements.RefFrame(rOA, rIA, rJA)                  # reference frame attached to body A
-
-# Setup mass properties for body A
-massA = 4.0                                                # mass [kg]
-cA    = np.array([0.0, 0.0, 0.0])                          # first moment of mass [kg.m]
-JA    = np.array([1.0, 0.0, 0.0,                          # second moment of mass [kg.m2]
-                       1.0, 0.0,
-                            1.0])
+# Inertial properties
+massA = 4.0                               # mass [kg]
+cA    = np.array([0.0, 0.0, 0.0])         # first moment of mass [kg.m]
+JA    = np.array([1.0, 0.0, 0.0,          # second moment of mass [kg.m2]
+                  1.0, 0.0,
+                  1.0])
 
 # Setup dynamics for body A
-g     = elements.GibbsVector(np.array([0.0, 0.0, 00.0]))  # acceleration due to gravity [kg.m.s-2]
-rinitA   = elements.GibbsVector(np.array([0., 0., 0.]))    # initial position wrt to global frame [m]
-vinitA   = elements.GibbsVector(np.array([0., 0., 0.]))    # initial velocity wrt to global frame [m/s]
-winitA   = elements.GibbsVector(np.array([0., 10., 0.]))   # initial angular velocity wrt to global frame [rad/s]
+rinitA = np.array([0., 0., 0.])    # initial position wrt to global frame [m]
+vinitA = np.array([0., 0., 0.])    # initial velocity wrt to global frame [m/s]
+winitA = np.array([0., 1., 0.])    # initial angular velocity wrt to global frame [rad/s]
+g      = np.array([0.0, 0.0, 0.0]) # acceleration due to gravity [kg.m.s-2]
 
 # Create the body
-bodyA = elements.RigidBody(frameA,
+bodyA = elements.RigidBody(rOA, rIA, rJA,
                            massA, cA, JA,
-                           g, rinitA, vinitA, winitA)
+                           rinitA, vinitA, winitA, g)
 ## bodyA.setStepSize(dh)
 ## bodyA.setPrintLevel(2)
 ## bodyA.testResidual()
