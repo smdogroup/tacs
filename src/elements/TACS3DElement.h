@@ -1222,50 +1222,55 @@ void TACS3DElement<NUM_NODES>::addJacobian( double time,
     TacsScalar h = FElibrary::jacobian3d(Xa, J);
     h = h*weight;
 
-    // Compute the strain
-    TacsScalar strain[NUM_STRESSES];
-    evalStrain(strain, J, Na, Nb, Nc, vars);
+    if (alpha != 0.0){
+      // Compute the strain
+      TacsScalar strain[NUM_STRESSES];
+      evalStrain(strain, J, Na, Nb, Nc, vars);
  
-    // Compute the corresponding stress
-    TacsScalar stress[NUM_STRESSES];
-    stiff->calculateStress(pt, strain, stress);
+      // Compute the corresponding stress
+      TacsScalar stress[NUM_STRESSES];
+      stiff->calculateStress(pt, strain, stress);
        
-    // Add the stress times the second derivative of the strain
-    addGeoStiffness(mat, alpha*h, stress, J, Na, Nb, Nc);
+      // Add the stress times the second derivative of the strain
+      addGeoStiffness(mat, alpha*h, stress, J, Na, Nb, Nc);
 
-    // Get the derivative of the strain with respect to the nodal
-    // displacements
-    getBmat(B, J, Na, Nb, Nc, vars);
+      // Get the derivative of the strain with respect to the nodal
+      // displacements
+      getBmat(B, J, Na, Nb, Nc, vars);
 
-    // Fill-in the upper portion of the matrix
-    TacsScalar *bj = B;
-    for ( int j = 0; j < NUM_VARIABLES; j++ ){
-      // Compute the stress at the given point
-      TacsScalar bs[NUM_STRESSES];
-      stiff->calculateStress(pt, bj, bs);
+      // Fill-in the upper portion of the matrix
+      TacsScalar *bj = B;
+      for ( int j = 0; j < NUM_VARIABLES; j++ ){
+        // Compute the stress at the given point
+        TacsScalar bs[NUM_STRESSES];
+        stiff->calculateStress(pt, bj, bs);
       
-      TacsScalar *bi = B;
-      for ( int i = 0; i <= j; i++ ){
-	mat[i + j*NUM_VARIABLES] += 
-	  alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2] +
-		   bi[3]*bs[3] + bi[4]*bs[4] + bi[5]*bs[5]);
-	bi += NUM_STRESSES;
+        TacsScalar *bi = B;
+        for ( int i = 0; i <= j; i++ ){
+          mat[i + j*NUM_VARIABLES] += 
+            alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2] +
+                     bi[3]*bs[3] + bi[4]*bs[4] + bi[5]*bs[5]);
+          bi += NUM_STRESSES;
+        }
+        bj += NUM_STRESSES;
       }
-      bj += NUM_STRESSES;
     }
-    // Get value of the mass/area at this point
-    TacsScalar mass;
-    stiff->getPointwiseMass(pt, &mass);
 
-    // Add the contributions from the stiffness matrix
-    TacsScalar scale = gamma*h*mass;
-    for ( int j = 0; j < NUM_NODES; j++ ){
-      for ( int i = 0; i <= j; i++ ){
-	mat[3*i + 3*j*NUM_VARIABLES] += scale*N[i]*N[j];
-	mat[3*i+1 + (3*j+1)*NUM_VARIABLES] += scale*N[i]*N[j];
-	mat[3*i+2 + (3*j+2)*NUM_VARIABLES] += scale*N[i]*N[j];
-      }
-    }    
+    if (gamma != 0.0){
+      // Get value of the mass/area at this point
+      TacsScalar mass;
+      stiff->getPointwiseMass(pt, &mass);
+
+      // Add the contributions from the stiffness matrix
+      TacsScalar scale = gamma*h*mass;
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        for ( int i = 0; i <= j; i++ ){
+          mat[3*i + 3*j*NUM_VARIABLES] += scale*N[i]*N[j];
+          mat[3*i+1 + (3*j+1)*NUM_VARIABLES] += scale*N[i]*N[j];
+          mat[3*i+2 + (3*j+2)*NUM_VARIABLES] += scale*N[i]*N[j];
+        }
+      }    
+    }
   }
 
   // Apply symmetry to the matrix

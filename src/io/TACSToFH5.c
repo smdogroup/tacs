@@ -24,7 +24,7 @@
   stresses for each element of type 'elem_type' in the TACSAssembler
   object. Note that this is a bit-wise OR operation.  
 */
-TACSToFH5::TACSToFH5( TACSAssembler * _tacs,
+TACSToFH5::TACSToFH5( TACSAssembler *_tacs,
                       enum ElementType _elem_type,
                       unsigned int _write_flag ){
   tacs = _tacs;
@@ -42,7 +42,7 @@ TACSToFH5::TACSToFH5( TACSAssembler * _tacs,
 
   // Get the size of the outputs
   int numElements = tacs->getNumElements();
-  TACSElement ** elements = tacs->getElements();
+  TACSElement **elements = tacs->getElements();
   for ( int i = 0; i < numElements; i++ ){
     if (elements[i] && elements[i]->getElementType() == elem_type){
       ndisplacements = elements[i]->numDisplacements();
@@ -109,7 +109,7 @@ TACSToFH5::~TACSToFH5(){
 /*
   Set the component names for the elements
 */
-void TACSToFH5::setComponentName( int comp_num, const char * group_name ){
+void TACSToFH5::setComponentName( int comp_num, const char *group_name ){
   if (comp_num >= 0 && comp_num < num_components){
     // If the name already exists, over-write it
     if (component_names[comp_num]){
@@ -131,13 +131,13 @@ void TACSToFH5::setComponentName( int comp_num, const char * group_name ){
   input:
   filename:  the name of the file to create
 */
-void TACSToFH5::writeToFile( const char * filename ){
+void TACSToFH5::writeToFile( const char *filename ){
   int rank, size;
   MPI_Comm_rank(tacs->getMPIComm(), &rank);
   MPI_Comm_size(tacs->getMPIComm(), &size);
 
   // Create the FH5 file object for writting
-  FH5File * file = new FH5File(tacs->getMPIComm());
+  FH5File *file = new FH5File(tacs->getMPIComm());
   file->incref();
 
   // Open the file - if possible for writing
@@ -190,7 +190,7 @@ void TACSToFH5::writeToFile( const char * filename ){
 
   // Allocate space for the output data - the nodes, displacements, stresses etc.
   int len = nvals*(node_range[rank+1] - node_range[rank]);
-  double * data = new double[ len ];
+  double *data = new double[ len ];
   memset(data, 0, len*sizeof(double));
 
   // Get the output data from TACS
@@ -215,12 +215,12 @@ void TACSToFH5::writeToFile( const char * filename ){
 /*
   Create a comma-separated list of the element variable names
 */
-char * TACSToFH5::getElementVarNames(){
+char *TACSToFH5::getElementVarNames(){
   // Find the first variable name
   int numElements = tacs->getNumElements();
-  TACSElement ** elements = tacs->getElements();
-  TACSElement * elem_match = NULL;
-  char * elem_vars = NULL;
+  TACSElement **elements = tacs->getElements();
+  TACSElement *elem_match = NULL;
+  char *elem_vars = NULL;
 
   for ( int i = 0; i < numElements; i++ ){
     if (elements[i] && elements[i]->getElementType() == elem_type){
@@ -237,7 +237,7 @@ char * TACSToFH5::getElementVarNames(){
     return elem_vars;
   }
 
-  char * output_names[7] = {NULL, NULL, NULL, 
+  char *output_names[7] = {NULL, NULL, NULL, 
                             NULL, NULL, NULL, NULL};
 
   if (write_flag & TACSElement::OUTPUT_NODES){ 
@@ -250,7 +250,7 @@ char * TACSToFH5::getElementVarNames(){
     for ( int i = 0; i < nd; i++ ){
       str_len += strlen(elem_match->displacementName(i))+1;
     }
-    char * temp = new char[ str_len ];
+    char *temp = new char[ str_len ];
     if (nd > 0){
       strcpy(temp, elem_match->displacementName(0));
       for ( int i = 1; i < nd; i++ ){
@@ -266,7 +266,7 @@ char * TACSToFH5::getElementVarNames(){
     for ( int i = 0; i < ns; i++ ){
       str_len += strlen(elem_match->strainName(i))+1;
     }
-    char * temp = new char[ str_len ];
+    char *temp = new char[ str_len ];
     if (ns > 0){
       strcpy(temp, elem_match->strainName(0));
       for ( int i = 1; i < ns; i++ ){
@@ -282,7 +282,7 @@ char * TACSToFH5::getElementVarNames(){
     for ( int i = 0; i < ns; i++ ){
       str_len += strlen(elem_match->stressName(i))+1;
     }
-    char * temp = new char[ str_len ];
+    char *temp = new char[ str_len ];
     if (ns > 0){
       strcpy(temp, elem_match->stressName(0));
       for ( int i = 1; i < ns; i++ ){
@@ -298,7 +298,7 @@ char * TACSToFH5::getElementVarNames(){
     for ( int i = 0; i < ne; i++ ){
       str_len += strlen(elem_match->extraName(i))+1;
     }
-    char * temp = new char[ str_len ];
+    char *temp = new char[ str_len ];
     if (ne > 0){
       strcpy(temp, elem_match->extraName(0));
       for ( int i = 1; i < ne; i++ ){
