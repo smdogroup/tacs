@@ -231,8 +231,8 @@ class TACSAssembler : public TACSObject {
   // --------------------------------------
   void setNumThreads( int t );
 
-  // Get information about the output files this is used by TACSToFH5
-  // ----------------------------------------------------------------
+  // Get information about the output files; For use by TACSToFH5
+  // ------------------------------------------------------------
   int getNumComponents();
   void getOutputNodeRange( ElementType elem_type, 
 			   int **_node_range );

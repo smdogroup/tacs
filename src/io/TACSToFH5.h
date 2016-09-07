@@ -13,24 +13,24 @@
 
 class TACSToFH5 : public TACSObject {
  public:
-  TACSToFH5( TACSAssembler * _tacs,
+  TACSToFH5( TACSAssembler *_tacs,
              enum ElementType _elem_type,
              unsigned int _out_type );
   ~TACSToFH5();
 
   // Set the group name for each zone
   // --------------------------------
-  void setComponentName( int comp_num, const char * group_name );
+  void setComponentName( int comp_num, const char *group_name );
   
   // Write the data to a file
   // ------------------------
-  void writeToFile( const char * filename );
+  void writeToFile( const char *filename );
 
  private:
   // Get a character string of the variable names
   char *getElementVarNames();
 
-  TACSAssembler  * tacs;
+  TACSAssembler *tacs;
   enum ElementType elem_type;
   unsigned int write_flag;
   int nvals;           // Number of total values per point
@@ -40,8 +40,8 @@ class TACSToFH5 : public TACSObject {
   int ncoordinates;    // Number of coordinates per point (always 9)
 
   int num_components; // The number of components in the model
-  char ** component_names; // The names of each of the components
-  char * variable_names; // The names of all the variables
+  char **component_names; // The names of each of the components
+  char *variable_names; // The names of all the variables
 };
 
 #endif // TACS_TO_FH5
