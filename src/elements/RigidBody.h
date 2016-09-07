@@ -93,16 +93,6 @@ class TACSRefFrame : public TACSObject {
 */
 class TACSRigidBody : public TACSElement {
  public:
-  TACSRigidBody( const TacsScalar *r0,
-                 const TacsScalar *t1,
-                 const TacsScalar *t2,                                 
-                 const TacsScalar mass,
-                 const TacsScalar cRef[],
-                 const TacsScalar JRef[],
-                 const TacsScalar *rInit,
-                 const TacsScalar *vInit,
-                 const TacsScalar *omegaInit,
-                 const TacsScalar *gvec );
   TACSRigidBody( TACSRefFrame *_CRef,
                  const TacsScalar _mass,
                  const TacsScalar _cRef[],
@@ -221,9 +211,6 @@ class TACSRigidBody : public TACSElement {
 */
 class TACSSphericalConstraint : public TACSElement {
  public:
-  TACSSphericalConstraint( TACSRigidBody *_bodyA, 
-                           TACSRigidBody *_bodyB, 
-                           TacsScalar *_point );
   TACSSphericalConstraint( TACSRigidBody *_bodyA,
                            TACSRigidBody *_bodyB,
                            TACSGibbsVector *_point );
@@ -285,10 +272,6 @@ class TACSSphericalConstraint : public TACSElement {
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
-  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
-                          TACSRigidBody *_bodyB,
-                          TacsScalar *_point,
-                          TacsScalar *_eAVec );
   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                           TACSRigidBody *_bodyB,
                           TACSGibbsVector *_point,

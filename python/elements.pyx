@@ -129,17 +129,11 @@ cdef class RefFrame:
 
 cdef class RigidBody(Element):
    cdef TACSRigidBody *rbptr
-   def __cinit__(self,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] base,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] coord_dir1,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] coord_dir2,
-                 TacsScalar mass,
+   def __cinit__(self, RefFrame frame, TacsScalar mass,
                  np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
                  np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] r0,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] v0,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] omega0,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] g,
+                 GibbsVector r0,
+                 GibbsVector v0, GibbsVector omega0, GibbsVector g,
                  int mdv=-1,
                  np.ndarray[int, ndim=1, mode='c'] cdvs=None,
                  np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
@@ -154,11 +148,9 @@ cdef class RigidBody(Element):
          _Jdvs = <int*>Jdvs.data
 
       # Allocate the rigid body object and set the design variables
-      self.rbptr = new TACSRigidBody(<TacsScalar*>base.data, <TacsScalar*>coord_dir1.data, <TacsScalar*>coord_dir2.data,
-                                     mass, <TacsScalar*>cRef.data, <TacsScalar*>JRef.data,
-                                     <TacsScalar*>r0.data,
-                                     <TacsScalar*>v0.data, <TacsScalar*>omega0.data,
-                                     <TacsScalar*>g.data)
+      self.rbptr = new TACSRigidBody(frame.ptr, mass, <TacsScalar*>cRef.data,
+                                     <TacsScalar*>JRef.data, r0.ptr,
+                                     v0.ptr, omega0.ptr, g.ptr)
       self.rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
       # Increase the reference count to the underlying object
@@ -173,24 +165,22 @@ cdef class RigidBody(Element):
 cdef class SphericalConstraint(Element):
    def __cinit__(self,
                  RigidBody bodyA, RigidBody bodyB,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] point):
+                 GibbsVector point):
       self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
-                                             <TacsScalar*> point.data)
+                                             point.ptr)
       self.ptr.incref()
       return
    
    def __dealloc__(self):
       self.ptr.decref()
       return
-
+   
 cdef class RevoluteConstraint(Element):
    def __cinit__(self,
                  RigidBody bodyA, RigidBody bodyB,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] point,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] eA):
+                 GibbsVector point, GibbsVector eA):
       self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
-                                            <TacsScalar*> point.data,
-                                            <TacsScalar*> eA.data)
+                                            point.ptr, eA.ptr)
       self.ptr.incref()
       return
    
