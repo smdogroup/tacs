@@ -837,6 +837,7 @@ void TACSIntegrator::doEachNonLinearIter( int iter_num) {}
 void TACSIntegrator::integrate( ) {
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
+  tacs->setVariables(q[0], qdot[0]);
 
   // Perform logging, tecplot export, etc.
   doEachTimeStep(0);
@@ -1681,6 +1682,7 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step, TACSBVec **q, 
 void TACSDIRKIntegrator::integrate( ) {
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
+  tacs->setVariables(q[0], qdot[0]);
 
   // Perform logging, tecplot export, etc.
   doEachTimeStep(0);   
