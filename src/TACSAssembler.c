@@ -2641,6 +2641,9 @@ void TACSAssembler::getInitConditions( TACSBVec *vars, TACSBVec *dvars ){
     xptVec->getValues(len, nodes, elemXpts);
 
     // Get the initial condition values
+    int nvars = elements[i]->numVariables();
+    memset(elemVars, 0, nvars*sizeof(TacsScalar));
+    memset(elemDVars, 0, nvars*sizeof(TacsScalar));
     elements[i]->getInitCondition(elemVars, elemDVars, elemXpts);
 
     // Set the values into the vectors

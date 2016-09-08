@@ -678,7 +678,7 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
 /*
   Retrieve the position of the rigid body
 */
-TACSGibbsVector* TACSRigidBody::getPosition(){
+TACSGibbsVector* TACSRigidBody::getInitPosition(){
   return rInit;
 }
 
@@ -1364,31 +1364,24 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
                                    double *data, int ld_data, 
                                    const TacsScalar Xpts[],
                                    const TacsScalar vars[] ){
-  // The initial location of the c.m. of the object  
-  TacsScalar cmpt[3]; 
-  for ( int k = 0; k < 3; k++ ){
-    cmpt[k] = c[k]/mass;
-  }
-
-  // First, compute the second moment of area about the
-  // center of mass
-  TacsScalar Jc[6];
-  Jc[0] = J[0] - c[0]*c[0]/mass;
-  Jc[1] = J[1] - c[0]*c[1]/mass;
-  Jc[2] = J[2] - c[0]*c[2]/mass;
-  Jc[3] = J[3] - c[1]*c[1]/mass;
-  Jc[4] = J[4] - c[1]*c[2]/mass;
-  Jc[5] = J[5] - c[2]*c[2]/mass;
-
   // The effective lengths along each coordinate direction
   TacsScalar L[3]; 
-  L[0] = sqrt(6.0*(Jc[3] + Jc[5] - Jc[0])/mass);
-  L[1] = sqrt(6.0*(Jc[0] + Jc[5] - Jc[3])/mass);
-  L[2] = sqrt(6.0*(Jc[0] + Jc[3] - Jc[5])/mass);
-
   L[0] = 1.0;
-  L[1] = 0.25;
-  L[2] = 0.1;
+  L[1] = 1.0;
+  L[2] = 1.0;
+  
+  // Get the initial vector location
+  const TacsScalar *rinit;
+  rInit->getVector(&rinit);
+
+  // Write out the displacements at each node
+  const TacsScalar *r0 = &vars[0];
+  TacsScalar eta = vars[3];
+  const TacsScalar *eps = &vars[4];
+  
+  // Compute the rotation matrix
+  TacsScalar C[9];
+  computeRotationMat(eta, eps, C);
 
   for ( int iz = 0; iz < 2; iz++ ){
     for ( int iy = 0; iy < 2; iy++ ){
@@ -1398,9 +1391,9 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 
         // Compute the initial base-points for each node
         TacsScalar x[3];
-        x[0] = cmpt[0] + (ix - 0.5)*L[0];
-        x[1] = cmpt[1] + (iy - 0.5)*L[1];
-        x[2] = cmpt[2] + (iz - 0.5)*L[2];
+        x[0] = (ix - 0.5)*L[0];
+        x[1] = (iy - 0.5)*L[1];
+        x[2] = (iz - 0.5)*L[2];
 
         if (out_type & TACSElement::OUTPUT_NODES){
           // Write out the nodal locations
@@ -1410,15 +1403,6 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
           index += 3;
         }
         if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-          // Write out the displacements at each node
-          const TacsScalar *r0 = &vars[0];
-          TacsScalar eta = vars[3];
-          const TacsScalar *eps = &vars[4];
-          
-          // Compute the rotation matrix
-          TacsScalar C[9];
-          computeRotationMat(eta, eps, C);
-
           // Compute the new point location
           TacsScalar xpt[3];
           matMultTrans(C, x, xpt);
@@ -1500,13 +1484,13 @@ const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
   the connection between the A and B bodies, "point pt", and computes
   the vectors xA and xB in the global frame.
 */
-void TACSSphericalConstraint::updatePoints( ){
+void TACSSphericalConstraint::updatePoints(){
  // Fetch the positions of each bodies in global frame and set into
  // the class variable
-  TACSGibbsVector *rAVec = bodyA->getPosition();
-  TACSGibbsVector *rBVec = bodyB->getPosition();
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  TACSGibbsVector *rBVec = bodyB->getInitPosition();
 
-  // Retrieve the coordinates of the point in the global frame
+  // Retrieve the coordinates of the joint point in the global frame
   const TacsScalar *pt;
   point->getVector(&pt);
 
@@ -1768,8 +1752,8 @@ const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
 void TACSRevoluteConstraint::updatePoints( int init_e ){
   // Fetch the positions of each bodies in global frame and set into
   // the class variable
-  TACSGibbsVector *rAVec = bodyA->getPosition();
-  TACSGibbsVector *rBVec = bodyB->getPosition();
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  TACSGibbsVector *rBVec = bodyB->getInitPosition();
 
   // Retrieve the revolute direction in global frame
   const TacsScalar *rev;

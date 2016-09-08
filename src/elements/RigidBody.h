@@ -74,6 +74,29 @@ class TACSRefFrame : public TACSObject {
 };
 
 /*
+  Class for visualizing rigid bodies with different geometries
+*/
+/*
+class TACSRigidBodyViz : public TACSObject {
+ public:
+  TACSRigidBodyViz( TacsScalar *_Xpt, int _npts, int _conn[], int _nelems ){
+    
+  }
+  TACSRigidBodyViz( TacsScalar L );
+  TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
+                    TacsScalar cx=0.0, TacsScalar cy=0.0, TacsScalar cz=0.0 );
+  
+  void getMesh( const TacsScalar **Xpts, int *npts, 
+                const int **conn, int *nelems );
+
+ private:
+  TacsScalar *Xpts;
+  int npts, nelems;
+  int *conn;
+};
+*/
+
+/*
   Dynamics for a single rigid body.
 
   This class handles the dynamics of a single free body subject to
@@ -133,7 +156,7 @@ class TACSRigidBody : public TACSElement {
 
   // Retrieve the position of the rigid body
   // ---------------------------------------
-  TACSGibbsVector* getPosition();
+  TACSGibbsVector* getInitPosition();
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
