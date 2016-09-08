@@ -237,6 +237,8 @@ class TACSSphericalConstraint : public TACSElement {
   TACSSphericalConstraint( TACSRigidBody *_bodyA,
                            TACSRigidBody *_bodyB,
                            TACSGibbsVector *_point );
+  TACSSphericalConstraint( TACSRigidBody *_bodyA,
+                           TACSGibbsVector *_point );
   ~TACSSphericalConstraint();
 
   // Set and retrieve design variable values
@@ -297,6 +299,9 @@ class TACSRevoluteConstraint : public TACSElement {
  public:
   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                           TACSRigidBody *_bodyB,
+                          TACSGibbsVector *_point,
+                          TACSGibbsVector *_eAVec );
+  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                           TACSGibbsVector *_point,
                           TACSGibbsVector *_eAVec );
   ~TACSRevoluteConstraint();
