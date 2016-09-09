@@ -237,73 +237,73 @@ class TACSSphericalConstraint : public TACSElement {
   TACSSphericalConstraint( TACSRigidBody *_bodyA,
                            TACSRigidBody *_bodyB,
                            TACSGibbsVector *_point );
-  TACSSphericalConstraint( TACSRigidBody *_bodyA,
-                           TACSGibbsVector *_point );
-  ~TACSSphericalConstraint();
+   TACSSphericalConstraint( TACSRigidBody *_bodyA,
+                            TACSGibbsVector *_point );
+   ~TACSSphericalConstraint();
 
-  // Set and retrieve design variable values
-  // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
+   // Set and retrieve design variable values
+   // ---------------------------------------
+   void setDesignVars( const TacsScalar dvs[], int numDVs );
+   void getDesignVars( TacsScalar dvs[], int numDVs );
 
-  // Return the number of displacements and nodes
-  // --------------------------------------------
-  int numDisplacements(){ return 8; }
-  int numNodes(){ return 3; }
-  const char* elementName(){ return elem_name; }
+   // Return the number of displacements and nodes
+   // --------------------------------------------
+   int numDisplacements(){ return 8; }
+   int numNodes();
+   const char* elementName(){ return elem_name; }
 
-  // Retrieve the initial values for the state variables
-  // ---------------------------------------------------
-  void getInitCondition( TacsScalar vars[],
-                         TacsScalar dvars[],
-                         const TacsScalar X[] );
+   // Retrieve the initial values for the state variables
+   // ---------------------------------------------------
+   void getInitCondition( TacsScalar vars[],
+                          TacsScalar dvars[],
+                          const TacsScalar X[] );
 
-  // Compute the kinetic and potential energy within the element
-  // -----------------------------------------------------------
-  void computeEnergies( double time,
-                        TacsScalar *_Te, 
-                        TacsScalar *_Pe,
-                        const TacsScalar Xpts[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+   // Compute the kinetic and potential energy within the element
+   // -----------------------------------------------------------
+   void computeEnergies( double time,
+                         TacsScalar *_Te, 
+                         TacsScalar *_Pe,
+                         const TacsScalar Xpts[],
+                         const TacsScalar vars[],
+                         const TacsScalar dvars[] );
 
-  // Compute the residual of the governing equations
-  // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+   // Compute the residual of the governing equations
+   // -----------------------------------------------
+   void addResidual( double time, TacsScalar res[],
+                     const TacsScalar Xpts[],
+                     const TacsScalar vars[],
+                     const TacsScalar dvars[],
+                     const TacsScalar ddvars[] );
 
-  // Compute the Jacobian of the governing equations
-  // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
-                    double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+   // Compute the Jacobian of the governing equations
+   // -----------------------------------------------
+   void addJacobian( double time, TacsScalar J[],
+                     double alpha, double beta, double gamma,
+                     const TacsScalar Xpts[],
+                     const TacsScalar vars[],
+                     const TacsScalar dvars[],
+                     const TacsScalar ddvars[] );
 
- private:
-  void updatePoints();              // Update the local data
-  TACSRigidBody     *bodyA, *bodyB; // The rigid bodies involved in the joint
-  TACSGibbsVector   *point;         // The point where the joint is located in global frame
-  TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
-  static const char *elem_name;     // The name of the element
-};
+  private:
+   void updatePoints();              // Update the local data
+   TACSRigidBody     *bodyA, *bodyB; // The rigid bodies involved in the joint
+   TACSGibbsVector   *point;         // The point where the joint is located in global frame
+   TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
+   static const char *elem_name;     // The name of the element
+ };
 
-/*
-  Revolute constraint
-*/
-class TACSRevoluteConstraint : public TACSElement {
- public:
-  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
-                          TACSRigidBody *_bodyB,
-                          TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec );
-  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
-                          TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec );
+ /*
+   Revolute constraint
+ */
+ class TACSRevoluteConstraint : public TACSElement {
+  public:
+   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
+                           TACSRigidBody *_bodyB,
+                           TACSGibbsVector *_point,
+                           TACSGibbsVector *_eAVec );
+   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
+                           TACSGibbsVector *_point,
+                           TACSGibbsVector *_eAVec );
   ~TACSRevoluteConstraint();
 
   // Set and retrieve design variable values
@@ -314,7 +314,7 @@ class TACSRevoluteConstraint : public TACSElement {
   // Return the number of displacements and nodes
   // --------------------------------------------
   int numDisplacements(){ return 8; }
-  int numNodes(){ return 3; }
+  int numNodes();
   const char* elementName(){ return elem_name; }
 
   // Retrieve the initial values for the state variables
