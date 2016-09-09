@@ -87,6 +87,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   tfinal            = _tfinal;
   num_steps_per_sec = _num_steps_per_sec;
 
+  // MPI information
+  MPI_Comm_rank(tacs->getMPIComm(), &mpiRank);
+  MPI_Comm_size(tacs->getMPIComm(), &mpiSize);
+  
   // Compute the step size
   h = 1.0/num_steps_per_sec;
 
@@ -97,6 +101,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   print_level = 1;
   logfp       = stdout;
   logfilename = NULL;
+  if (mpiRank != 0){logfp = NULL;}   // Only root writes log
 
   // State variables that store the entire time history
   q     = new TACSBVec*[num_time_steps];
@@ -175,10 +180,6 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   energies[1] = 0.0;
 
   init_energy = 0.0;
-
-  // MPI information
-  MPI_Comm_rank(tacs->getMPIComm(), &mpiRank);
-  MPI_Comm_size(tacs->getMPIComm(), &mpiSize); 
 }
 
 /*
@@ -237,7 +238,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   init_norm = 0.0;
   norm = 0.0;
 
-  if (print_level >= 2){
+  if ( logfp && print_level >= 2){
     fprintf(logfp, "%12s %8s %12s %12s %12s %12s\n",
             "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "delta");
   }
@@ -281,7 +282,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Write a summary    
-    if(print_level >= 2) {
+    if( logfp && print_level >= 2) {
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e\n",
               t, niter, MPI_Wtime()-t0, 
               RealPart(norm),  (niter == 0) ? 1.0 : RealPart(norm/init_norm), delta);
@@ -747,7 +748,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
 
   if ( current_step == 0) {
     // Log information
-    if (print_level >= 1){
+    if ( logfp && print_level >= 1){
       fprintf(logfp, "Variables=\n%12s %8s %12s %12s %15s %15s %15s\n", 
               "time", "NItrs", "|R|", "|R|/|R0|",
               "KineticEnrgy", "PotentialEnrgy",
@@ -764,7 +765,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
     }
   } else {
     // Print out the time step summary
-    if (print_level >= 1){
+    if ( logfp && print_level >= 1){
       tacs->evalEnergies(&energies[0], &energies[1]);
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
 	      time[current_step], niter, RealPart(norm), RealPart(norm/(rtol + init_norm)),
@@ -814,13 +815,15 @@ void TACSIntegrator::setMaxNewtonIters( int _max_newton_iters ){
 */
 void TACSIntegrator::setPrintLevel( int _print_level, char *_logfilename ){ 
   print_level = _print_level;
-  if ( _logfilename && !( strlen(_logfilename) == 0) ) {
+  if ( mpiRank == 0 && _logfilename && !( strlen(_logfilename) == 0) ) {
     // Set the log file name
     logfilename = _logfilename;
-    // Close any non stdout logstreams
+    
+    // Close any opened non stdout logstreams
     if (logfp != stdout && logfp){
       fclose(logfp);
     }
+    
     // Open a new file for logstream
     logfp = fopen(logfilename, "w");
   }
