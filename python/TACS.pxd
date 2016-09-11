@@ -10,7 +10,7 @@ cimport numpy as np
 import numpy as np
 
 # Typdefs required for either real or complex mode
-from TACSTypedefs cimport TacsScalar, TACS_NPY_SCALAR
+include "TacsTypedefs.pxi"
 
 cdef extern from "TACSElement.h":
    enum ElementType:

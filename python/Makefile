@@ -11,15 +11,25 @@ CYTHON_SO = TACS.${SO_EXT} \
 	elements.${SO_EXT} \
 	functions.${SO_EXT}
 
-default: ${CYTHON_SO}
+default: real_defs ${CYTHON_SO}
 
-complex: default
+complex: complex_defs ${CYTHON_SO}
 
 complex_debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 complex_debug: complex
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
+
+complex_defs:
+	@echo "ctypedef complex TacsScalar" > TacsTypedefs.pxi;
+	@echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > TacsDefs.pxi;
+	@echo "dtype = np.complex" >> TacsDefs.pxi;
+
+real_defs:
+	@echo "ctypedef double TacsScalar" > TacsTypedefs.pxi;
+	@echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > TacsDefs.pxi;
+	@echo "dtype = np.double" >> TacsDefs.pxi;
 
 %.cpp:%.pyx
 	${CYTHON} --cplus $*.pyx

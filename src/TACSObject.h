@@ -57,7 +57,7 @@ inline double RealPart( const double& r ){
   return r;
 }
 
-// Compute the absolute value of the function
+// Compute the absolute value
 inline TacsComplex fabs( const TacsComplex& c ){
   if (real(c) < 0.0){
     return -c;

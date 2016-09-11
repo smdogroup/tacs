@@ -9,7 +9,6 @@ include ../TACS_Common.mk
 
 EXAMPLE_SUBDIRS = \
 	tutorial \
-	benchmark \
 	annulus \
 	cylinder \
 	triangle \
@@ -18,7 +17,8 @@ EXAMPLE_SUBDIRS = \
 	stiffened_panel \
 	grad_verify \
 	profile_elements \
-	rigid
+	rigid \
+	benchmark
 
 default:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \

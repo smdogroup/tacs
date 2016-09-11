@@ -45,8 +45,12 @@ massval = fvals[0]
 if tacs_comm.rank == 0:
     print "Mass: ", massval
 
+x = np.zeros(num_components, TACS.dtype)
+tacs.getDesignVars(x)
+
 # Create matrix and distributed vectors
 res = tacs.createVec()
+forces = tacs.createVec()
 ans = tacs.createVec()
 mat = tacs.createFEMat()
 
@@ -57,19 +61,65 @@ pc = TACS.Pc(mat)
 alpha = 1.0
 beta = 0.0
 gamma = 0.0
+tacs.zeroVariables()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
 # Get numpy array from distributed vector object and write in loads
-res_array = res.getArray() 
-loads_and_moments = np.zeros(len(res_array))
-loads_and_moments[2::6] = 100. # uniform load in z direction
-res_array[:] = loads_and_moments[:]
-res.applyBCs()
+force_array = forces.getArray() 
+force_array[2::6] += 100.0 # uniform load in z direction
+forces.applyBCs()
 
-# Solve
-pc.applyFactor(res, ans) 
+# Solve the linear system
+pc.applyFactor(forces, ans)
 tacs.setVariables(ans)
+
+# Evaluate the function
+ksWeight = 100.0
+funcs = [functions.KSFailure(tacs, ksWeight)]
+fvals1 = tacs.evalFunctions(funcs)
+
+# Evaluate the derivative
+fdvSens = np.zeros(x.shape, TACS.dtype)
+product = np.zeros(x.shape, TACS.dtype)
+tacs.evalSVSens(funcs[0], res)
+pc.applyFactor(res, ans)
+tacs.evalDVSens(funcs[0], fdvSens)
+tacs.evalAdjointResProduct(ans, product)
+fdvSens = fdvSens - product
+
+# Evaluate the result
+result = np.sum(fdvSens).real
+
+# Set the complex step
+dh = 1e-6
+if TACS.dtype is np.complex:
+    dh = 1e-30
+    x = x + 1j*dh
+else:
+    x = x + dh
+
+# Set the design variables
+tacs.setDesignVars(x)
+
+# Compute the perturbed solution
+tacs.zeroVariables()
+tacs.assembleJacobian(alpha, beta, gamma, res, mat)
+pc.factor()
+pc.applyFactor(forces, ans)
+tacs.setVariables(ans)
+
+# Set the new complex step
+fvals2 = tacs.evalFunctions(funcs)
+
+if TACS.dtype is np.complex:
+    fd = fvals2.imag/dh
+else:
+    fd = (fvals2 - fvals1)/dh
+
+if tacs_comm.rank == 0:
+    print 'FD:     ', fd[0]
+    print 'Result: ', result
 
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |

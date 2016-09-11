@@ -20,92 +20,20 @@ from TACS cimport *
 from constitutive cimport *
 from elements cimport *
 
+# Include the definitions
+include "TacsDefs.pxi"
+
+# Include the mpi4py header
 cdef extern from "mpi-compat.h":
    pass
 
 # A generic wrapper class for the TACSElement object
-## cdef class Element:
-##    '''
-##    Base element class
-##    '''
-##    cdef TACSElement *ptr
+cdef class Element:
+   '''Base element class'''
+   def __cinit__(self):
+      self.ptr = NULL
+      return
    
-##    def __cinit__(self):
-##       self.ptr = NULL
-##       return
-   
-##    def __dealloc__(self):
-##       if self.ptr:
-##          self.ptr.decref()
-##          return
-      
-##    def setFailTolerances(self, double rtol, double atol):
-##       self.ptr.setFailTolerances(rtol, atol)
-##       return
-    
-##    def setPrintLevel(self, int lev):
-##       self.ptr.setPrintLevel(lev)
-##       return
-   
-##    def setStepSize(self, double dh):
-##       self.ptr.setStepSize(dh)
-##       return
-
-##    def testResidual(self,
-##                     double time,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars):
-##       return self.ptr.testResidual(time,
-##                                    <TacsScalar*>Xpts.data,
-##                                    <TacsScalar*>vars.data,
-##                                    <TacsScalar*>dvars.data,
-##                                    <TacsScalar*>ddvars.data)
-   
-##    def testJacobian(self,
-##                     double time,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
-##                     np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
-##                     int col=-1):
-##       return self.ptr.testJacobian(time,
-##                                    <TacsScalar*>Xpts.data,
-##                                    <TacsScalar*>vars.data,
-##                                    <TacsScalar*>dvars.data,
-##                                    <TacsScalar*>ddvars.data,
-##                                    col)
-   
-##    def testAdjResProduct(self,
-##                          np.ndarray[TacsScalar, ndim=1, mode='c'] x,
-##                          double time,
-##                          np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
-##                          np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
-##                          np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
-##                          np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars):
-##       return self.ptr.testAdjResProduct(<TacsScalar*>x.data,
-##                                         len(x),
-##                                         time,
-##                                         <TacsScalar*>Xpts.data,
-##                                         <TacsScalar*>vars.data,
-##                                         <TacsScalar*>dvars.data,
-##                                         <TacsScalar*>ddvars.data)
-   
-##    def testStrainSVSens(self, 
-##                         np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts,
-##                         np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
-##                         np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
-##                         np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars):
-##       return self.ptr.testStrainSVSens(<TacsScalar*>Xpts.data,
-##                                        <TacsScalar*>vars.data,
-##                                        <TacsScalar*>dvars.data,
-##                                        <TacsScalar*>ddvars.data)
-   
-##    def testJacobianXptSens(self,
-##                            np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts):
-##       return self.ptr.testJacobianXptSens(<TacsScalar*>Xpts.data)
-
 cdef class GibbsVector:
    cdef TACSGibbsVector *ptr
    def __cinit__(self, np.ndarray[TacsScalar, ndim=1, mode='c'] x):

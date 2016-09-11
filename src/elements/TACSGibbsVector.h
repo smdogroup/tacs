@@ -17,6 +17,8 @@ class TACSGibbsVector : public TACSObject {
  public:
   TACSGibbsVector( const TacsScalar _x[] );
   TACSGibbsVector( const TacsScalar _x[], const int _xDV[] );
+  TACSGibbsVector( TacsScalar x1, TacsScalar x2, TacsScalar x3,
+                   int n1=-1, int n2=-1, int n3=-1 );
   ~TACSGibbsVector(){}
 
   void getVector( const TacsScalar **_x );
@@ -54,6 +56,29 @@ inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[] ){
   x[1] = _x[1];
   x[2] = _x[2];
   xDV[0] = xDV[1] = xDV[2] = -1;
+}
+
+/*
+  The alternate constructor
+
+  Create the vector object using the coordinates of the point within
+  the inertial reference frame and the corresponding design variable
+  numbers.
+  
+  input:
+  x1, x2, x3:   the 3 coordinates
+  n1, n2, n3:   the design variable numbers
+*/
+inline TACSGibbsVector::TACSGibbsVector( TacsScalar x1, 
+                                         TacsScalar x2, 
+                                         TacsScalar x3,
+                                         int n1, int n2, int n3 ){
+  x[0] = x1;
+  x[1] = x2;
+  x[2] = x3;
+  xDV[0] = n1;
+  xDV[1] = n2;
+  xDV[2] = n3;
 }
 
 /*

@@ -19,6 +19,10 @@ from cpython cimport PyObject, Py_INCREF
 # Import the definitions
 from TACS cimport *
 
+# Include the definitions
+include "TacsDefs.pxi"
+
+# Include the mpi4py header
 cdef extern from "mpi-compat.h":
    pass
 
@@ -775,7 +779,7 @@ cdef class Assembler:
          funcs[i] = (<Function>funclist[i]).ptr
 
       # Allocate the numpy array of function values
-      cdef np.ndarray fvals = np.zeros(len(funclist))
+      cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
          
       self.ptr.evalFunctions(funcs, len(funclist), <TacsScalar*>fvals.data)
       
@@ -795,6 +799,7 @@ cdef class Assembler:
       cdef TacsScalar *Avals = <TacsScalar*>A.data
 
       # Evaluate the derivative of the functions
+      A[:] = 0.0
       self.ptr.addDVSens(1.0, funcs, num_funcs, Avals, num_design_vars)
 
       return
@@ -812,7 +817,8 @@ cdef class Assembler:
       cdef TACSFunction **funcs = &((<Function>func).ptr)
       cdef TACSBVec **vecs = &((<Vec>vec).ptr)
 
-      # Add the derivative
+      # Compute the derivative
+      vec.zeroEntries()
       self.ptr.addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, vecs)
       return
 
@@ -837,6 +843,8 @@ cdef class Assembler:
       cdef TacsScalar *Avals = <TacsScalar*>A.data
       cdef int num_design_vars = A.shape[0]
 
+      # Add the derivative of the product of the adjoint and residual 
+      A[:] = 0.0
       self.ptr.addAdjointResProducts(1.0, adj, num_adj,
                                      Avals, num_design_vars)
       return

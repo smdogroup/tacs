@@ -19,6 +19,10 @@ from cpython cimport PyObject, Py_INCREF
 from TACS cimport *
 from functions cimport *
 
+# Include the definitions
+include "TacsDefs.pxi"
+
+# Include the mpi4py header
 cdef extern from "mpi-compat.h":
    pass
 

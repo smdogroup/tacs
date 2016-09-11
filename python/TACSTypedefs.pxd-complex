@@ -1,3 +1,0 @@
-cimport numpy as np
-ctypedef complex TacsScalar
-TACS_NPY_SCALAR = np.NPY_COMPLEX
