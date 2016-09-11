@@ -115,23 +115,6 @@ int main( int argc, char *argv[] ){
 
   tacs->initialize();
 
-  TACSBVec *res = tacs->createVec(); res->incref();
-  TACSBVec *q = tacs->createVec(); q->incref();
-  TACSBVec *qdot = tacs->createVec(); qdot->incref();
-  tacs->getInitConditions(q, qdot);
-  tacs->setVariables(q, qdot);
-  tacs->assembleRes(res);
-  printf("||R||: %e\n", res->norm());
-  TacsScalar *R;
-  res->getArray(&R);
-  for ( int i = 0; i < 24; i++ ){
-    printf("R[%2d]: %e\n", i, R[i]);
-  }
-
-  res->decref();
-  q->decref();
-  qdot->decref();
-
   //--------------------------------------------------------------------//
   //                   Create the TACSIntegrator object                 //
   //--------------------------------------------------------------------//

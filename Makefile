@@ -32,8 +32,10 @@ default:
 	fi
 	${CXX} ${SO_LINK_FLAGS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT} ${TACS_OBJS}
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
-	   echo; (cd python && $(MAKE) TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
+	   echo; cp python/TACSTypedefs.pxd-complex python/TACSTypedefs.pxd; \
+           echo; (cd python && $(MAKE) complex TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
 	else \
+           echo; cp python/TACSTypedefs.pxd-real python/TACSTypedefs.pxd; \
 	   echo; (cd python && $(MAKE) TACS_DIR=${TACS_DIR}) || exit 1; \
 	fi
 	@echo; python -c "from tacs import TACS, elements, constitutive, functions"
@@ -54,8 +56,10 @@ debug:
 	fi
 	${CXX} ${SO_LINK_FLAGS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT} ${TACS_OBJS}
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
-	   echo; (cd python && $(MAKE) debug TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
+           echo; cp python/TACSTypedefs.pxd-complex python/TACSTypedefs.pxd; \
+	   echo; (cd python && $(MAKE) complex_debug TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
 	else \
+           echo; cp python/TACSTypedefs.pxd-real python/TACSTypedefs.pxd; \
 	   echo; (cd python && $(MAKE) debug TACS_DIR=${TACS_DIR}) || exit 1; \
 	fi
 	@echo; python -c "from tacs import TACS, elements, constitutive, functions"

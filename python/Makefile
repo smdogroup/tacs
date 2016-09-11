@@ -13,6 +13,11 @@ CYTHON_SO = TACS.${SO_EXT} \
 
 default: ${CYTHON_SO}
 
+complex: default
+
+complex_debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
+complex_debug: complex
+
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
 

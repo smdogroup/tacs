@@ -2576,7 +2576,7 @@ int BCSRMat::isEqual( BCSRMat * mat, double tol ){
   delete [] x;
 
   norm = sqrt(norm);
-  if (norm < tol){
+  if (RealPart(norm) < tol){
     printf("Matrices are essentially equal |A x - B x| = %15.5e \n", 
            RealPart(norm));
     return 1;

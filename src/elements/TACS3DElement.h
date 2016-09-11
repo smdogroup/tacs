@@ -1581,8 +1581,7 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       // Fill-in the upper-portion of the matrix
       for ( int j = 0; j < NUM_NODES; j++ ){
 	for ( int i = 0; i <= j; i++ ){
-	  double d = h*ptmass[0]*N[i]*N[j];
-
+	  TacsScalar d = h*ptmass[0]*N[i]*N[j];
 	  mat[3*i + 3*j*NUM_VARIABLES] += d;
 	  mat[3*i+1 + (3*j+1)*NUM_VARIABLES] += d;
 	  mat[3*i+2 + (3*j+2)*NUM_VARIABLES] += d;

@@ -39,8 +39,8 @@ int main( int argc, char * argv[] ){
   MPI_Comm_size(tacs_comm, &size);
 
   // Set the dimensions of the plate
-  TacsScalar Lx = 1.0;
-  TacsScalar Ly = 1.0;
+  double Lx = 1.0;
+  double Ly = 1.0;
 
   // Get the global size of the mesh from the input
   int nx = 30, ny = 30;
@@ -251,8 +251,8 @@ int main( int argc, char * argv[] ){
   for ( int k = 0, node = firstNode; node < lastNode; k += 3, node++ ){
     int i = node % (nx+1);
     int j = node/(nx+1);
-    Xpts[k] = Lx*i/nx;
-    Xpts[k+1] = Ly*j/ny;
+    Xpts[k] = i*Lx/nx;
+    Xpts[k+1] = j*Ly/ny;
   }
 
   // Reorder the vector if required
@@ -482,10 +482,10 @@ int main( int argc, char * argv[] ){
     proj_deriv += fabs(dfdx[k]);
 #ifdef TACS_USE_COMPLEX
     if (RealPart(dfdx[k]) > 0){
-      x[k] = TacsScalar(x[k], dh);
+      x[k] = x[k] + TacsScalar(0.0, dh);
     }
     else {
-      x[k] = TacsScalar(x[k], -dh);
+      x[k] = x[k] - TacsScalar(0.0, dh);
     }
 #else
     if (dfdx[k] > 0){

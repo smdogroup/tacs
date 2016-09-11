@@ -1878,12 +1878,12 @@ void TACSRevoluteConstraint::updatePoints( int init_e ){
   TacsScalar e[3];
   if (init_e){
     e[0] = e[1] = e[2] = 0.0;
-    if ((fabs(rev[0]) <= fabs(rev[1])) && 
-        (fabs(rev[0]) <= fabs(rev[2]))){
+    if ((fabs(RealPart(rev[0])) <= fabs(RealPart(rev[1]))) && 
+        (fabs(RealPart(rev[0])) <= fabs(RealPart(rev[2])))){
       e[0] = 1.0;
     }
-    else if ((fabs(rev[1]) <= fabs(rev[0])) && 
-             (fabs(rev[1]) <= fabs(rev[2]))){
+    else if ((fabs(RealPart(rev[1])) <= fabs(RealPart(rev[0]))) && 
+             (fabs(RealPart(rev[1])) <= fabs(RealPart(rev[2])))){
       e[1] = 1.0;
     }
     else {

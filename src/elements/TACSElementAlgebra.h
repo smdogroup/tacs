@@ -1122,7 +1122,7 @@ static inline void addBlockDMatTransDeriv( const TacsScalar a,
                                            const TacsScalar w[],
                                            TacsScalar D[],
                                            const int ldd ){
-  const TacsScalar b = 2*a;
+  const TacsScalar b = 2.0*a;
   // Compute the cross product w^{x}*v
   TacsScalar t[3];
   crossProduct(1.0, w, v, t);
@@ -1174,19 +1174,19 @@ static inline void addBlockEMat( const TacsScalar a,
   const TacsScalar b = 2.0*a;
   D[0] += b*(v[2]*eps[1] - v[1]*eps[2]);
   D[1] += b*(v[1]*eps[1] + v[2]*eps[2]);
-  D[2] += b*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
-  D[3] += b*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
+  D[2] += b*(eps[0]*v[1] - 2.0*v[0]*eps[1] + eta*v[2]);
+  D[3] += b*(eps[0]*v[2] - 2.0*v[0]*eps[2] - eta*v[1]);
   D += ldd;
 
   D[0] += b*(v[0]*eps[2] - v[2]*eps[0]);
-  D[1] += b*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
+  D[1] += b*(eps[1]*v[0] - 2.0*v[1]*eps[0] - eta*v[2]);
   D[2] += b*(v[0]*eps[0] + v[2]*eps[2]);
-  D[3] += b*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
+  D[3] += b*(eps[1]*v[2] - 2.0*v[1]*eps[2] + eta*v[0]);
   D += ldd;
 
   D[0] += b*(v[1]*eps[0] - v[0]*eps[1]);
-  D[1] += b*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
-  D[2] += b*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
+  D[1] += b*(eps[2]*v[0] - 2.0*v[2]*eps[0] + eta*v[1]);
+  D[2] += b*(eps[2]*v[1] - 2.0*v[2]*eps[1] - eta*v[0]);
   D[3] += b*(v[0]*eps[0] + v[1]*eps[1]);
 }
 
@@ -1218,17 +1218,17 @@ static inline void addBlockEMatTrans( const TacsScalar a,
   D += ldd;
 
   D[0] += b*(v[1]*eps[1] + v[2]*eps[2]);
-  D[1] += b*(eps[1]*v[0] - 2*v[1]*eps[0] - eta*v[2]);
-  D[2] += b*(eps[2]*v[0] - 2*v[2]*eps[0] + eta*v[1]);
+  D[1] += b*(eps[1]*v[0] - 2.0*v[1]*eps[0] - eta*v[2]);
+  D[2] += b*(eps[2]*v[0] - 2.0*v[2]*eps[0] + eta*v[1]);
   D += ldd;
 
-  D[0] += b*(eps[0]*v[1] - 2*v[0]*eps[1] + eta*v[2]);
+  D[0] += b*(eps[0]*v[1] - 2.0*v[0]*eps[1] + eta*v[2]);
   D[1] += b*(v[0]*eps[0] + v[2]*eps[2]);
-  D[2] += b*(eps[2]*v[1] - 2*v[2]*eps[1] - eta*v[0]);
+  D[2] += b*(eps[2]*v[1] - 2.0*v[2]*eps[1] - eta*v[0]);
   D += ldd;
 
-  D[0] += b*(eps[0]*v[2] - 2*v[0]*eps[2] - eta*v[1]);
-  D[1] += b*(eps[1]*v[2] - 2*v[1]*eps[2] + eta*v[0]);
+  D[0] += b*(eps[0]*v[2] - 2.0*v[0]*eps[2] - eta*v[1]);
+  D[1] += b*(eps[1]*v[2] - 2.0*v[1]*eps[2] + eta*v[0]);
   D[2] += b*(v[0]*eps[0] + v[1]*eps[1]);
 }
  

@@ -3660,7 +3660,7 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
   output:
   dvSens:    the derivative of the inner product 
 */
-void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale, 
+void TACSAssembler::addMatDVSensInnerProduct( double scale, 
                                               ElementMatrixType matType, 
                                               TACSBVec *psi, TACSBVec *phi,
                                               TacsScalar *fdvSens, int numDVs ){
@@ -3703,17 +3703,14 @@ void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
   of the inner product directly, saving computational time and memory.
 
   input:
-  scale:     the scaling parameter applied to the derivative
   matType:   the matrix type
   psi:       the left-multiplying vector
   phi:       the right-multiplying vector
-  numDVs:    the length of the design variable array
 
   output:
   res:       the derivative of the inner product w.r.t. the state vars
 */
-void TACSAssembler::evalMatSVSensInnerProduct( TacsScalar scale, 
-					       ElementMatrixType matType, 
+void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType, 
 					       TACSBVec *psi, TACSBVec *phi, 
                                                TACSBVec *res ){
   // Zero the entries in the residual vector

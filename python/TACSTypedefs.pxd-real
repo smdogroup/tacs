@@ -1,0 +1,3 @@
+cimport numpy as np
+ctypedef double TacsScalar
+TACS_NPY_SCALAR = np.NPY_DOUBLE

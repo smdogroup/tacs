@@ -367,11 +367,11 @@ int main( int argc, char *argv[] ){
 #ifdef TACS_USE_COMPLEX
   // Use a complex-step perturbation
   for ( int i = 0; i < ndvs; i++ ){
-    if (fdvSens[i] > 0.0){
-      x[i] = TacsScalar(x[i], dh);
+    if (RealPart(fdvSens[i]) > 0.0){
+      x[i] = x[i] + TacsScalar(0.0, dh);
     }
     else {
-      x[i] = TacsScalar(x[i], -dh);
+      x[i] = x[i] - TacsScalar(0.0, dh);
     }
   }
 #else

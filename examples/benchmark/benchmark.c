@@ -569,7 +569,7 @@ void testBCSRMat( TACSAssembler *tacs ){
       }
 
       for ( int i = 0; i < size; i++ ){
-        if (fabs(x[i] - 1.0) > 1e-8){
+        if (fabs(RealPart(x[i]) - 1.0) > 1e-8){
           printf("x[%d] = %15.8e\n", i, RealPart(x[i]));
         }
       }

@@ -151,7 +151,7 @@ void compFSDTStiffness::failure( const double pt[],
     getLaminaStrain(lamStrain, strain, tp);
     TacsScalar fval = ortho_ply[i]->failure(ply_angles[i], lamStrain);
 
-    if (fval > max){
+    if (RealPart(fval) > RealPart(max)){
       max = fval;
     }
     t0 += thickness[i];

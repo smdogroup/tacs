@@ -296,7 +296,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
     
     // Check if the Newton convergence tolerance is satisfied
-    if (norm < rtol*init_norm || norm < atol){
+    if (RealPart(norm) < rtol*RealPart(init_norm) || 
+        RealPart(norm) < atol){
       break;
     }
     
@@ -319,7 +320,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     u->axpy(-alpha, update);
 
     // Check whether the Newton iteration was successful
-    if (niter == max_newton_iters && norm >= rtol*init_norm){
+    if (niter == max_newton_iters && 
+        RealPart(norm) >= rtol*RealPart(init_norm)){
       fprintf(stderr,"Newton iteration failed to converge in %d iters\n", niter);
       break;
     }

@@ -19,8 +19,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <complex>
 #include "mpi.h"
-#include "complexify.h"
 
 extern MPI_Op TACS_MPI_MIN;
 extern MPI_Op TACS_MPI_MAX;
@@ -28,7 +28,8 @@ extern MPI_Op TACS_MPI_MAX;
 /*
   Use the cplx type for TacsComplex
 */
-typedef cplx TacsComplex;
+// typedef cplx TacsComplex;
+typedef std::complex<double> TacsComplex;
 
 /*
   Define the basic scalar type TacsScalar
@@ -40,6 +41,29 @@ typedef TacsComplex TacsScalar;
 #define TACS_MPI_TYPE MPI_DOUBLE
 typedef double TacsScalar;
 #endif
+
+// Define the real part function for the complex data type
+inline double RealPart( const TacsComplex& c ){
+  return real(c);
+}
+
+// Define the imaginary part function for the complex data type
+inline double ImagPart( const TacsComplex& c ){
+  return imag(c);
+}
+
+// Dummy function for real part
+inline double RealPart( const double& r ){
+  return r;
+}
+
+// Compute the absolute value of the function
+inline TacsComplex fabs( const TacsComplex& c ){
+  if (real(c) < 0.0){
+    return -c;
+  }
+  return c;
+}
 
 /*
   Define the macro to add flop counts. This does not work for threaded

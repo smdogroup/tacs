@@ -91,16 +91,14 @@ void matchIntervals( int mpiSize, const int ownerRange[],
 template <class ScalarType>
 void solveQERoots( ScalarType * r1, ScalarType * r2,
                    ScalarType a, ScalarType b, ScalarType c ){
-
   ScalarType discrim = b*b - 4.0*a*c;
-  if (discrim < 0.0){
+  if (RealPart(discrim) < 0.0){
     *r1 = *r2 = 0.0;
-
     return;
   }
 
-  if (a == 0.0){
-    if (b == 0.0){
+  if (RealPart(a) == 0.0){
+    if (RealPart(b) == 0.0){
       *r1 = *r2 = 0.0;
       return;
     }
@@ -108,7 +106,6 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
     // Solve b*x + c = 0
     *r1 = - c/b;
     *r2 = 0.0;
-
     return;
   }
 
@@ -116,7 +113,7 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
   // avoid truncation error
   discrim = sqrt(discrim);
 
-  if (b > 0.0){
+  if (RealPart(b) > 0.0){
     *r1 = -(b + discrim)/(2.0*a);
     *r2 = c/((*r1)*a);
   }

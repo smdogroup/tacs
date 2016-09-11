@@ -92,7 +92,7 @@ void TACSKSFailure::setParameter( double _ksWeight ){
   Set the load factor to some value greater than or equal to 1.0
 */
 void TACSKSFailure::setLoadFactor( TacsScalar _loadFactor ){
-  if (_loadFactor >= 1.0){ 
+  if (RealPart(_loadFactor) >= 1.0){ 
     loadFactor = _loadFactor;
   }
 }
@@ -216,7 +216,7 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
           }
 
           // Set the maximum failure load
-          if (fail > ctx->maxFail){
+          if (RealPart(fail) > RealPart(ctx->maxFail)){
             ctx->maxFail = fail;
           }
         }
@@ -272,7 +272,7 @@ void TACSKSFailure::finalThread( const double tcoef,
   
   if (ctx){
     if (ftype == TACSFunction::INITIALIZE){
-      if (ctx->maxFail > maxFail){
+      if (RealPart(ctx->maxFail) > RealPart(maxFail)){
         maxFail = ctx->maxFail;
       }
     }

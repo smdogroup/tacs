@@ -93,7 +93,7 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
 	TacsScalar fail, failSens;
 	failure(gpt, e, &fail);
 	
-	if (fabs(fail - 1.0) < tol){
+	if (fabs(RealPart(fail) - 1.0) < tol){
 	  break;
 	}
 
@@ -227,16 +227,16 @@ void TACSConstitutive::writeBucklingEnvelope( const char * file_name, int npts,
     FElibrary::solveQERoots(&P1, &P2, qa, qb, qc);
 
     // Assign the minimum positive root (if any) to P
-    if (P1 > 0.0 && P2 > 0.0){
+    if (RealPart(P1) > 0.0 && RealPart(P2) > 0.0){
       P = P1;
-      if (P2 < P1){
+      if (RealPart(P2) < RealPart(P1)){
 	P = P2;
       }
     }
-    else if (P1 > 0.0){
+    else if (RealPart(P1) > 0.0){
       P = P1;
     }
-    else if (P2 > 0.0){
+    else if (RealPart(P2) > 0.0){
       P = P2;
     }
     
@@ -257,7 +257,7 @@ void TACSConstitutive::writeBucklingEnvelope( const char * file_name, int npts,
 	TacsScalar bval, bvalSens;
 	buckling(e, &bval);
 	
-	if (fabs(bval - 1.0) < tol){
+	if (fabs(RealPart(bval) - 1.0) < tol){
 	  break;
 	}
 

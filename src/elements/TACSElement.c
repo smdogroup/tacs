@@ -93,7 +93,7 @@ static void print_error_components( FILE *fp, const char *descript,
 static void forward_perturb( TacsScalar *out, int size,
                              const TacsScalar *orig,
                              const TacsScalar *pert,
-                             TacsScalar dh ){
+                             double dh ){
 #ifdef TACS_USE_COMPLEX
   for ( int k = 0; k < size; k++ ){
     out[k] = orig[k] + TacsScalar(0.0, dh)*pert[k];
@@ -111,7 +111,7 @@ static void forward_perturb( TacsScalar *out, int size,
 static void backward_perturb( TacsScalar *out, int size,
                               const TacsScalar *orig,
                               const TacsScalar *pert,
-                              TacsScalar dh ){
+                              double dh ){
 #ifdef TACS_USE_COMPLEX
   for ( int k = 0; k < size; k++ ){
     out[k] = orig[k];
@@ -153,7 +153,7 @@ void TACSElement::setPrintLevel( int flag ){
   test_print_level = flag;
 }
 
-void TACSElement::setStepSize( TacsScalar dh ){
+void TACSElement::setStepSize( double dh ){
   test_step_size = dh;
 }
 
@@ -598,7 +598,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 #ifdef TACS_USE_COMPLEX
   // Perturb the design variables: xpert = x + dh*sign(result[k])
   for ( int k = 0; k < dvLen; k++ ){
-    if (result[k] >= 0.0){
+    if (RealPart(result[k]) >= 0.0){
       xpert[k] = x[k] + TacsScalar(0.0, dh);
     }
     else {

@@ -60,11 +60,15 @@ OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
   // are negative, make them positive
   Xt = _Xt;
   Xc = _Xc;
-  if (Xc < 0.0){ Xc *= -1.0; }
+  if (RealPart(Xc) < 0.0){ 
+    Xc *= -1.0; 
+  }
 
   Yt = _Yt;
   Yc = _Yc;
-  if (Yc < 0.0){ Yc *= -1.0; }
+  if (RealPart(Yc) < 0.0){ 
+    Yc *= -1.0; 
+  }
 
   S12 = _S12;
   C = _C;
@@ -90,7 +94,7 @@ OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
   F22 = 1.0/(Yt*Yc);
 
   F66 = 1.0/(S12*S12);
-  if (C != 0.0){
+  if (RealPart(C) != 0.0){
     F12 = 0.5*(1.0 - (F1 + F2)*C - (F11 + F22)*C*C)/(C*C);
   }
   else {
@@ -98,7 +102,7 @@ OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
   }
 
   // Check the stability criterion
-  if (F12*F12 >= F11*F22){
+  if (RealPart(F12*F12) >= RealPart(F11*F22)){
     fprintf(stderr, "OrthoPly: Value of C = %e results in non-physical \
 F12 = %e. Setting F12 = 0.\n", RealPart(C), RealPart(F12));
     fprintf(stderr, "OrthoPly: Tsai-Wu coefficients: F11: %e, F22: %e, \
@@ -278,10 +282,10 @@ void OrthoPly::getTsaiWu( TacsScalar *_F1, TacsScalar *_F2,
 void OrthoPly::getLaminateInvariants( TacsScalar *U1, TacsScalar *U2, 
 				      TacsScalar *U3, TacsScalar *U4,
 				      TacsScalar *U5, TacsScalar *U6 ){
-  *U1 = 0.125*(3*Q11 + 3*Q22 + 2*Q12 + 4*Q66);
+  *U1 = 0.125*(3.0*Q11 + 3.0*Q22 + 2.0*Q12 + 4.0*Q66);
   *U2 = 0.5*(Q11 - Q22);
-  *U3 = 0.125*(Q11 + Q22 - 2*Q12 - 4*Q66);
-  *U4 = 0.125*(Q11 + Q22 + 6*Q12 - 4*Q66);
+  *U3 = 0.125*(Q11 + Q22 - 2.0*Q12 - 4.0*Q66);
+  *U4 = 0.125*(Q11 + Q22 + 6.0*Q12 - 4.0*Q66);
   *U5 = 0.5*(Q44 + Q55);
   *U6 = 0.5*(Q44 - Q55);
 }
@@ -431,20 +435,21 @@ TacsScalar OrthoPly::failure( TacsScalar angle,
   else {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6];
-    f[0] =  e[0]/eXt;   f[1] = -e[0]/eXc;
-    f[2] =  e[1]/eYt;   f[3] = -e[1]/eYc;
-    f[4] =  e[2]/eS12;  f[5] = -e[2]/eS12;
+    f[0] = e[0]/eXt;   f[1] = -e[0]/eXc;
+    f[2] = e[1]/eYt;   f[3] = -e[1]/eYc;
+    f[4] = e[2]/eS12;  f[5] = -e[2]/eS12;
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (f[k] > max){ max = f[k]; }
+      if (RealPart(f[k]) > RealPart(max)){ 
+        max = f[k]; 
+      }
     }
 
     TacsScalar ksSum = 0.0;
     for ( int k = 0; k < 6; k++ ){
       ksSum += exp(ksWeight*(f[k] - max));
     }
-
     fail = max + log(ksSum)/ksWeight;
   }
 
@@ -477,13 +482,15 @@ TacsScalar OrthoPly::failureStrainSens( TacsScalar sens[],
   else {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6], fexp[6];
-    f[0] =  e[0]/eXt;   f[1] = -e[0]/eXc;
-    f[2] =  e[1]/eYt;   f[3] = -e[1]/eYc;
-    f[4] =  e[2]/eS12;  f[5] = -e[2]/eS12;
+    f[0] = e[0]/eXt;   f[1] = -e[0]/eXc;
+    f[2] = e[1]/eYt;   f[3] = -e[1]/eYc;
+    f[4] = e[2]/eS12;  f[5] = -e[2]/eS12;
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (f[k] > max){ max = f[k]; }
+      if (RealPart(f[k]) > RealPart(max)){
+        max = f[k]; 
+      }
     }
 
     TacsScalar ksSum = 0.0;
@@ -547,7 +554,9 @@ TacsScalar OrthoPly::failureAngleSens( TacsScalar * failSens,
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (f[k] > max){ max = f[k]; }
+      if (RealPart(f[k]) > RealPart(max)){
+        max = f[k]; 
+      }
     }
 
     TacsScalar ksSum = 0.0;
@@ -602,33 +611,30 @@ TacsScalar OrthoPly::calculateFailLoad( TacsScalar angle,
                   F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] + 
                   2.0*F12*cstr[0]*cstr[1] + 
                   F66*cstr[2]*cstr[2]) - 1.0;
-  
   TacsScalar b = (F1*lstr[0] + F2*lstr[1] + 
                   2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] + 
                   2.0*F12*(cstr[0]*lstr[1] + cstr[1]*lstr[0]) +
                   2.0*F66*cstr[2]*lstr[2]);
-  
   TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] + 
                   2.0*F12*lstr[0]*lstr[1] + 
                   F66*lstr[2]*lstr[2]);
-
   TacsScalar pos = 0.0;
 
-  if (fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF){
+  if (fabs(RealPart(a)) < LINEAR_STRESS_CUTOFF*RealPart(F11 + F22)){
     pos = HUGE_FAILURE_LOAD;
   }
-  else if (c >= 0.0){
+  else if (RealPart(c) >= 0.0){
     pos = 0.0;
   }
   else {
     TacsScalar discrim = b*b - 4.0*a*c;
-    if ( discrim < 0.0 ){
+    if (RealPart(discrim) < 0.0){
       pos = 0.0;
     }
     else {
       discrim = sqrt(discrim);
       
-      if (b >= 0.0){
+      if (RealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
       else { // b < 0.0
@@ -667,12 +673,10 @@ TacsScalar OrthoPly::calculateFailLoadStrainSens( TacsScalar cSens[],
                   F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] + 
                   2.0*F12*cstr[0]*cstr[1] + 
                   F66*cstr[2]*cstr[2]) - 1.0;
-
   TacsScalar b = (F1*lstr[0] + F2*lstr[1] + 
                   2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] + 
                   2.0*F12*(cstr[0]*lstr[1] + cstr[1]*lstr[0]) +
-                  2.0*F66*cstr[2]*lstr[2]);
-  
+                  2.0*F66*cstr[2]*lstr[2]);  
   TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] + 
                   2.0*F12*lstr[0]*lstr[1] + 
                   F66*lstr[2]*lstr[2]);
@@ -680,21 +684,21 @@ TacsScalar OrthoPly::calculateFailLoadStrainSens( TacsScalar cSens[],
   TacsScalar pos = 0.0;
   TacsScalar pa = 0.0, pb = 0.0, pc = 0.0;
 
-  if (fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF){
+  if (fabs(RealPart(a)) < LINEAR_STRESS_CUTOFF*RealPart(F11 + F22)){
     pos = HUGE_FAILURE_LOAD;
   }
-  else if ( c >= 0.0 ){
+  else if (RealPart(c) >= 0.0){
     pos = 0.0;
   }
   else {
     TacsScalar discrim = b*b - 4.0*a*c;
-    if ( discrim < 0.0 ){
+    if (RealPart(discrim) < 0.0){
       pos = 0.0;
     }
     else {
       discrim = sqrt(discrim);      
 
-      if (b >= 0.0){
+      if (RealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
       else {
@@ -712,19 +716,15 @@ TacsScalar OrthoPly::calculateFailLoadStrainSens( TacsScalar cSens[],
 
   cSens[0] = (pc*(F1 + 2.0*F11*cstr[0] + 2.0*F12*cstr[1]) +
               pb*(2.0*F11*lstr[0] + 2.0*F12*lstr[1]));
-
   cSens[1] = (pc*(F2 + 2.0*F12*cstr[0] + 2.0*F22*cstr[1]) +
               pb*(2.0*F12*lstr[0] + 2.0*F22*lstr[1]));
-
   cSens[2] = (pc*(2.0*F66*cstr[2]) +
               pb*(2.0*F66*lstr[2]));
 
   lSens[0] = (pb*(F1 + 2.0*F11*cstr[0] + 2.0*F12*cstr[1]) +
               pa*(2.0*F11*lstr[0] + 2.0*F12*lstr[1]));
-
   lSens[1] = (pb*(F2 + 2.0*F12*cstr[1] + 2.0*F22*cstr[1]) +
               pa*(2.0*F12*lstr[0] + 2.0*F22*lstr[1]));
-
   lSens[2] = (pb*(2.0*F66*cstr[2]) + 
               pa*(2.0*F66*lstr[2]));
   
@@ -771,12 +771,10 @@ TacsScalar OrthoPly::calculateFailLoadAngleSens( TacsScalar * posSens,
                   F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] + 
                   2.0*F12*cstr[0]*cstr[1] + 
                   F66*cstr[2]*cstr[2]) - 1.0;
-
   TacsScalar b = (F1*lstr[0] + F2*lstr[1] + 
                   2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] + 
                   2.0*F12*(cstr[0]*lstr[1] + cstr[1]*lstr[0]) +
                   2.0*F66*cstr[2]*lstr[2]);
-
   TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] + 
                   2.0*F12*lstr[0]*lstr[1] + 
                   F66*lstr[2]*lstr[2]);
@@ -785,21 +783,21 @@ TacsScalar OrthoPly::calculateFailLoadAngleSens( TacsScalar * posSens,
   TacsScalar pos = 0.0;
   TacsScalar pa = 0.0, pb = 0.0, pc = 0.0;
 
-  if (fabs(a)/(F11 + F22) < LINEAR_STRESS_CUTOFF){
+  if (fabs(RealPart(a)) < LINEAR_STRESS_CUTOFF*RealPart(F11 + F22)){
     pos = HUGE_FAILURE_LOAD;
   }
-  else if ( c >= 0.0 ){
+  else if (RealPart(c) >= 0.0){
     pos = 0.0;
   }
   else {
     TacsScalar discrim = b*b - 4.0*a*c;
-    if ( discrim < 0.0 ){
+    if (RealPart(discrim) < 0.0){
       pos = 0.0;
     }
     else {
       discrim = sqrt(discrim);
 
-      if (b >= 0.0){
+      if (RealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
       else {
@@ -816,14 +814,12 @@ TacsScalar OrthoPly::calculateFailLoadAngleSens( TacsScalar * posSens,
                    2.0*F11*cstr[0]*scstr[0] + 2.0*F22*cstr[1]*scstr[1] + 
                    2.0*F12*(cstr[0]*scstr[1] + scstr[0]*cstr[1] ) +
                    2.0*F66*cstr[2]*scstr[2]);
-
   TacsScalar sb = (F1*slstr[0] + F2*slstr[1] + 
                    2.0*F11*(cstr[0]*slstr[0] + scstr[0]*lstr[0]) + 
                    2.0*F22*(cstr[1]*slstr[1] + scstr[1]*lstr[1]) +
                    2.0*F12*(cstr[0]*slstr[1] + scstr[1]*lstr[0] +
                             scstr[0]*lstr[1] + cstr[1]*slstr[0]) +
                    2.0*F66*(cstr[2]*slstr[2] + scstr[2]*lstr[2]));
-
   TacsScalar sa = (2.0*F11*lstr[0]*slstr[0] + 2.0*F22*lstr[1]*slstr[1] + 
                    2.0*F12*(lstr[0]*slstr[1] + slstr[0]*lstr[1]) +
                    2.0*F66*lstr[2]*slstr[2]);

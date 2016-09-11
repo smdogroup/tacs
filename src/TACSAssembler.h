@@ -203,12 +203,11 @@ class TACSAssembler : public TACSObject {
 
   // Add the derivatives of inner products
   // -------------------------------------
-  void addMatDVSensInnerProduct( TacsScalar scale, 
+  void addMatDVSensInnerProduct( double scale,
                                  ElementMatrixType matType, 
                                  TACSBVec *psi, TACSBVec *phi,
                                  TacsScalar *dvSens, int numDVs );
-  void evalMatSVSensInnerProduct( TacsScalar scale,
-				  ElementMatrixType matType, 
+  void evalMatSVSensInnerProduct( ElementMatrixType matType, 
 				  TACSBVec *psi, TACSBVec *phi, 
                                   TACSBVec *res );
 

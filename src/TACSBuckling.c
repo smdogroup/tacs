@@ -308,18 +308,19 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->addMatDVSensInnerProduct(eig, GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->addMatDVSensInnerProduct(RealPart(eig), GEOMETRIC_STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate derivative of the inner product with respect to 
   // the path variables
-  tacs->evalMatSVSensInnerProduct(1.0, GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->evalMatSVSensInnerProduct(GEOMETRIC_STIFFNESS_MATRIX,
 				  eigvec, eigvec, res);
 
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  tacs->addAdjointResProducts(-eig, &update, 1, fdvSens, numDVs);
+  tacs->addAdjointResProducts(-RealPart(eig), &update, 1, 
+                              fdvSens, numDVs);
 
   // Now compute the inner product: u^{T}*G*u
   gmat->mult(eigvec, res);
@@ -506,7 +507,7 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->addMatDVSensInnerProduct(-eig, MASS_MATRIX,
+  tacs->addMatDVSensInnerProduct(-RealPart(eig), MASS_MATRIX,
                                  eigvec, eigvec, temp, numDVs);
   
   // Finish computing the derivative

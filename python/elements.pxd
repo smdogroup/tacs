@@ -16,30 +16,6 @@ cdef extern from "TACSElement.h":
       LINEAR
       NONLINEAR
       LARGE_ROTATION
-   ## cdef cppclass TACSElement(TACSObject):
-   ##    void setFailTolerances(double _fail_rtol, double _fail_atol)
-   ##    void setPrintLevel(int _flag)
-   ##    void setStepSize(TacsScalar _dh)
-      
-   ##    # Tests the consistency of the residual with energy principles
-   ##    int testResidual(double time, const TacsScalar Xpts[],
-   ##                     const TacsScalar vars[], const TacsScalar dvars[],
-   ##                     const TacsScalar ddvars[])
-      
-   ##    # Tests the consistency of the Jacobian with the residual implementation
-   ##    int testJacobian(double time, const TacsScalar Xpts[],
-   ##                     const TacsScalar vars[], const TacsScalar dvars[],
-   ##                     const TacsScalar ddvars[], int col=-1)
-      
-   ##    # Tests the adjoint implementation
-   ##    int testAdjResProduct(const TacsScalar *x, int dvLen,
-   ##                          double time, const TacsScalar Xpts[],
-   ##                          const TacsScalar vars[], const TacsScalar dvars[],
-   ##                          const TacsScalar ddvars[])
-      
-   ##    int testStrainSVSens(const TacsScalar Xpts[], const TacsScalar vars[],
-   ##                         const TacsScalar dvars[], const TacsScalar ddvars[])
-   ##    int testJacobianXptSens(const TacsScalar Xpts[])
       
 cdef extern from "TACSGibbsVector.h":
    cdef cppclass TACSGibbsVector(TACSObject):

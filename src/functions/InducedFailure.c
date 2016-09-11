@@ -104,7 +104,7 @@ void TACSInducedFailure::setInducedType( enum InducedNormType type ){
   failure criterion 
 */
 void TACSInducedFailure::setLoadFactor( TacsScalar _load_factor ){
-  if (_load_factor >= 1.0){ 
+  if (RealPart(_load_factor) >= 1.0){ 
     load_factor = _load_factor;
   }
 }
@@ -239,7 +239,7 @@ void TACSInducedFailure::elementWiseEval( EvaluationType ftype,
           }
 
           // Set the maximum failure load
-          if (fail > ctx->max_fail){
+          if (RealPart(fail) > RealPart(ctx->max_fail)){
             ctx->max_fail = fail;
           }
         }
@@ -326,7 +326,7 @@ void TACSInducedFailure::finalThread( const double tcoef,
 
   if (ctx){
     if (ftype == TACSFunction::INITIALIZE){
-      if (ctx->max_fail > max_fail){
+      if (RealPart(ctx->max_fail) > RealPart(max_fail)){
         max_fail = ctx->max_fail;
       }
     }

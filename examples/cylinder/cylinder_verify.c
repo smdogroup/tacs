@@ -253,7 +253,7 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
                                            double alpha, double beta,
                                            int order, int nx, int ny,
                                            double L, double R,
-                                           double load ){
+                                           TacsScalar load ){
   if (order < 2){ order = 2; }
   if (order > 4){ order = 4; }
 
@@ -376,9 +376,9 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
           }
           
           // Compute the pressure at this point in the shell
-          double x = Xpts[3*node];
-          double y =-R*atan2(Xpts[3*node+2], Xpts[3*node+1]);
-
+          double x = RealPart(Xpts[3*node]);
+          double y =-R*atan2(RealPart(Xpts[3*node+2]), 
+                             RealPart(Xpts[3*node+1]));
           pval[ii + order*jj] = load*sin(beta*x)*sin(alpha*y);
         }
       }
@@ -440,7 +440,8 @@ TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
 
         // Determine the coordinates on the shell 
         TacsScalar x = Xp[0];
-        TacsScalar y =-R*atan2(Xp[2], Xp[1]);
+        TacsScalar y =-R*atan2(RealPart(Xp[2]), 
+                               RealPart(Xp[1]));
         
         // Evaluate the radial displacement at this point from
         // the exact solution
@@ -508,8 +509,7 @@ TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
   TacsScalar c = Q33*(alpha*(U*rz + z*theta) + beta*(V + z*phi));
 
   TacsScalar x = (a*a + b*b - a*b);
-  TacsScalar y = 3*c*c;
-
+  TacsScalar y = 3.0*c*c;
   TacsScalar vm_max1 = sqrt(x*y/(x + y));
   TacsScalar vm_max2 = sqrt(x);
   TacsScalar vm_max3 = sqrt(y);
@@ -519,8 +519,12 @@ TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
   printf("Max 3: %25.10f\n", RealPart(vm_max3));
 
   TacsScalar vm_max = vm_max1; 
-  if (vm_max2 >= vm_max){ vm_max = vm_max2; }
-  if (vm_max3 >= vm_max){ vm_max = vm_max3; }
+  if (RealPart(vm_max2) >= RealPart(vm_max)){ 
+    vm_max = vm_max2; 
+  }
+  if (RealPart(vm_max3) >= RealPart(vm_max)){ 
+    vm_max = vm_max3; 
+  }
   *_vm_max = vm_max;
 
   // Compute the area of the cylinder
@@ -622,22 +626,28 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
   TacsScalar r1, r2;
   TacsScalar one = 1.0;
   FElibrary::solveQERoots(&r1, &r2, coef[1], coef[0], -one);
-  if (r1 > r2){ *unit_load = r1; }
+  if (RealPart(r1) > RealPart(r2)){ 
+    *unit_load = r1; 
+  }
   else { *unit_load = r2; }
 
-  if (tw_max2 > *tw_max){ 
+  if (RealPart(tw_max2) > RealPart(*tw_max)){ 
     *tw_max = tw_max2; 
 
     // Solve the quadratic equation: alpha*coef[0] - alpha**2*coef[1] - 1.0 = 0
     FElibrary::solveQERoots(&r1, &r2, coef[1], -coef[0], one);
-    if (r1 > r2){ *unit_load = r1; }
+    if (RealPart(r1) > RealPart(r2)){ 
+      *unit_load = r1; 
+    }
     else { *unit_load = r2; }
   }
-  if (tw_max3 > *tw_max){ 
+  if (RealPart(tw_max3) > RealPart(*tw_max)){ 
     *tw_max = tw_max3; 
     *unit_load = 1.0/sqrt(tw_max3);
   }
-  if (tw_max4 > *tw_max){ *tw_max = tw_max4; }
+  if (RealPart(tw_max4) > RealPart(*tw_max)){ 
+    *tw_max = tw_max4; 
+  }
 
   // There is probably a better way to do this, but this was the fastest to code
   for ( int i1 = 0; i1 <= P; i1++ ){
@@ -752,7 +762,8 @@ void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans,
     // Compute the u, v, w, theta, phi solution at this point within
     // the shell
     TacsScalar x = Xpts[3*node];
-    TacsScalar y =-R*atan2(Xpts[3*node+2], Xpts[3*node+1]);
+    TacsScalar y =-R*atan2(RealPart(Xpts[3*node+2]), 
+                           RealPart(Xpts[3*node+1]));
 
     TacsScalar u = U*sin(alpha*y)*cos(beta*x);
     TacsScalar v = V*cos(alpha*y)*sin(beta*x);
@@ -817,12 +828,12 @@ void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans,
     // Compute the u, v, w, theta, phi solution at this point within
     // the shell
     TacsScalar x = Xpts[3*node];
-    TacsScalar y =-R*atan2(Xpts[3*node+2], Xpts[3*node+1]);
+    TacsScalar y =-R*atan2(RealPart(Xpts[3*node+2]), 
+                           RealPart(Xpts[3*node+1]));
     
     TacsScalar n[2], t[2];
     n[0] =  cos(y/R);
     n[1] = -sin(y/R);
-
     t[0] = -sin(y/R);
     t[1] = -cos(y/R);
 
@@ -932,9 +943,9 @@ void write_exact_solution( const char * file_name,
   Perform a grid study using a series of nx values. Write the results
   to a file.
 */
-void grid_study( const char * file_name, 
-		 TacsScalar P, FSDTStiffness * stiffness, 
-		 TacsScalar load, TacsScalar R, TacsScalar L, 
+void grid_study( const char *file_name, 
+		 double P, FSDTStiffness *stiffness, 
+		 TacsScalar load, double R, double L, 
 		 double alpha, double beta, int order, 
 		 int max_quad_elev ){
 
@@ -1068,9 +1079,9 @@ int main( int argc, char * argv[] ){
   MPI_Init(&argc, &argv);
 
   // Set the shell geometry parameters
-  TacsScalar t = 1.0;
-  TacsScalar L = 100.0;
-  TacsScalar R = 100.0/M_PI;
+  double t = 1.0;
+  double L = 100.0;
+  double R = 100.0/M_PI;
 
   // Set the alpha and beta parameters
   int M = 4;

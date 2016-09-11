@@ -841,7 +841,7 @@ cdef class Assembler:
                                      Avals, num_design_vars)
       return
 
-   def addMatDVSensInnerProduct(self, TacsScalar scale,
+   def addMatDVSensInnerProduct(self, double scale,
                                 ElementMatrixType matType, 
                                 Vec psi, Vec phi,
                                 np.ndarray[TacsScalar, mode='c'] A):
@@ -856,10 +856,9 @@ cdef class Assembler:
                                         Avals, num_design_vars)
       return
       
-   def evalMatSVSensInnerProduct(self, TacsScalar scale,
-                                 ElementMatrixType matType, 
+   def evalMatSVSensInnerProduct(self, ElementMatrixType matType, 
                                  Vec psi, Vec phi, Vec res):
-      self.ptr.evalMatSVSensInnerProduct(scale, matType,
+      self.ptr.evalMatSVSensInnerProduct(matType,
                                          psi.ptr, phi.ptr, res.ptr)
       return      
         
@@ -1126,7 +1125,7 @@ cdef class MeshLoader:
       cdef int num_elements
       cdef const int *elem_ptr
       cdef const int *elem_conn
-      cdef const double *Xpts
+      cdef const TacsScalar *Xpts
 
       self.ptr.getConnectivity(&num_nodes, &num_elements,
                                &elem_ptr, &elem_conn, &Xpts)
