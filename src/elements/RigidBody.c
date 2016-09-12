@@ -9,6 +9,103 @@
 */
 
 /*
+  A generic constructor for the rigid body where the user can directly
+  supply the information about the geometry
+*/
+TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[] ){
+  // Copy over the inputs
+  npts   = _npts;
+  nelems = _nelems;
+  
+  Xpts = new TacsScalar[npts*3];
+  memcpy(Xpts, _Xpt, _npts*sizeof(TacsScalar));
+
+  conn = new int[npts*3];
+  memcpy(conn, _conn, _npts*sizeof(TacsScalar));
+}
+
+/*
+  Vizualization object for cube rigid body
+*/
+TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
+ 
+  // Set values for class variables
+  npts   = 8;
+  nelems = 1;
+  Xpts   = new TacsScalar[ npts*3 ];
+  conn   = new int[ npts*3 ];;
+
+  // Loop through all the nodes
+  for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
+    for ( int iy = 0; iy < 2; iy++ ){
+      for ( int ix = 0; ix < 2; ix++, pnum++ ){
+
+        // Compute the [x,y and z] coordinates of the current node
+        TacsScalar x[3];
+        x[0] = (ix - 0.5)*L;
+        x[1] = (iy - 0.5)*L;
+        x[2] = (iz - 0.5)*L;
+
+        // Store the current nodal location into the class variable
+	for ( int k = 0; k < 3; k++ ){
+          Xpts[pnum*3+k] = x[k];
+        }
+      }
+    }
+  }
+}
+
+/*
+  Vizualization object for cuboid rigid body
+*/
+TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
+                                    TacsScalar cx, TacsScalar cy, TacsScalar cz ){
+ 
+  // Set values for class variables
+  npts   = 8;
+  nelems = 1;
+  Xpts   = new TacsScalar[ npts*3 ];
+  conn   = new int[ npts*3 ];
+
+  // Loop through all the nodes
+  for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
+    for ( int iy = 0; iy < 2; iy++ ){
+      for ( int ix = 0; ix < 2; ix++, pnum++ ){
+
+        // Compute the [x,y and z] coordinates of the current node
+        TacsScalar x[3];
+        x[0] = (ix - 0.5)*Lx;
+        x[1] = (iy - 0.5)*Ly;
+        x[2] = (iz - 0.5)*Lz;
+
+        // Store the current nodal location into the class variable
+	for ( int k = 0; k < 3; k++ ){
+          Xpts[pnum*3+k] = x[k];
+        }
+      }
+    }
+  }
+}
+
+/*
+  Destructor
+*/
+TACSRigidBodyViz::~TACSRigidBodyViz(){
+  delete [] Xpts;
+  delete [] conn;
+}
+
+/*
+  Get the mesh for the rigid body
+*/
+void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems, const TacsScalar **_Xpts, const int **_conn ){
+  if(_npts){*_npts     = npts;}
+  if(_nelems){*_nelems = nelems;}
+  if(_Xpts){*_Xpts     = Xpts;}
+  if(_conn){*_conn     = conn;}
+}
+
+/*
   Write the relative error for components of a vector for a
   finite-difference or complex-step study to a given file
 
@@ -436,6 +533,8 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
   JDV[0] = JDV[1] = JDV[2] = 
     JDV[3] = JDV[4] = JDV[5] = -1;
   
+  viz = NULL;
+
   // Update the inertial properties
   updateInertialProperties();
 }
@@ -449,6 +548,7 @@ TACSRigidBody::~TACSRigidBody(){
   rInit->decref(); 
   vInit->decref(); 
   omegaInit->decref(); 
+  if (viz) { viz->decref(); }
 }
 
 // Set the element name
@@ -1362,14 +1462,20 @@ void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
 */
 void TACSRigidBody::getOutputData( unsigned int out_type, 
                                    double *data, int ld_data, 
-                                   const TacsScalar Xpts[],
+                                   const TacsScalar XptsDummy[],
                                    const TacsScalar vars[] ){
+  // Return if the visualization isn't set
+  if (!viz){
+    return;
+  }
+
   // The effective lengths along each coordinate direction
-  TacsScalar L[3]; 
-  L[0] = 1.0;
-  L[1] = 1.0;
-  L[2] = 1.0;
-  
+  /*  TacsScalar L[3]; 
+      L[0] = 1.0;
+      L[1] = 1.0;
+      L[2] = 1.0;
+  */
+
   // Get the initial vector location
   const TacsScalar *rinit;
   rInit->getVector(&rinit);
@@ -1383,21 +1489,28 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   TacsScalar C[9];
   computeRotationMat(eta, eps, C);
 
-  for ( int iz = 0; iz < 2; iz++ ){
+  // Get the nodal locations for the body
+  const TacsScalar *Xpts;
+  viz->getMesh(NULL, NULL, &Xpts, NULL);
+
+  for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
     for ( int iy = 0; iy < 2; iy++ ){
-      for ( int ix = 0; ix < 2; ix++ ){
+      for ( int ix = 0; ix < 2; ix++, pnum++ ){
         // Keep track of where to write in the data
         int index = 0;
 
         // Compute the initial base-points for each node
         TacsScalar x[3];
-        x[0] = (ix - 0.5)*L[0];
-        x[1] = (iy - 0.5)*L[1];
-        x[2] = (iz - 0.5)*L[2];
+        /*
+          x[0] = (ix - 0.5)*L[0];
+          x[1] = (iy - 0.5)*L[1];
+          x[2] = (iz - 0.5)*L[2];
+        */
 
         if (out_type & TACSElement::OUTPUT_NODES){
           // Write out the nodal locations
           for ( int k = 0; k < 3; k++ ){
+            x[k] = Xpts[pnum*3+k];
             data[index+k] = RealPart(x[k]);
           }
           index += 3;
@@ -1443,6 +1556,15 @@ void TACSRigidBody::getOutputConnectivity( int *con, int node ){
   con[5] = node+5;
   con[6] = node+7;
   con[7] = node+6;
+}
+
+/*
+  Sets the visualization information for the rigid body
+*/
+void TACSRigidBody::setVisualization( TACSRigidBodyViz *_viz ){
+  if (viz) { viz->decref(); }
+  viz = _viz;
+  viz->incref();
 }
 
 /*
