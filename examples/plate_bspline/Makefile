@@ -1,10 +1,12 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-OBJS = plate_bspline.o
+OBJS = plate_bspline.o \
+	plate_simple.o
 
 default: ${OBJS}
 	${CXX} -o plate plate_bspline.o ${TACS_LD_FLAGS}
+	${CXX} -o test_plate plate_simple.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
@@ -17,3 +19,4 @@ complex_debug: debug
 
 clean:
 	rm -f *.o plate
+	rm -f *.o test_plate
