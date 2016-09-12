@@ -798,11 +798,11 @@ void TACSBVecDistribute::endReverse( TACSBVecDistCtx *ctx,
            ctx->reqvals, global, op);
 }
 
-const char * TACSBVecDistribute::TACSObjectName(){
+const char *TACSBVecDistribute::TACSObjectName(){
   return name;
 }
 
-const char * TACSBVecDistribute::name = "TACSBVecDistribute";
+const char *TACSBVecDistribute::name = "TACSBVecDistribute";
 
 void TACSBVecDistribute::initImpl( int bsize ){
   bgetvars = VecDistGetVars;
@@ -845,7 +845,7 @@ void TACSBVecDistribute::initImpl( int bsize ){
   y[i] op x[var[i]]
 */
 void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
-		     TacsScalar * x, TacsScalar * y, 
+		     TacsScalar *x, TacsScalar *y, 
 		     TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -856,12 +856,23 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
       y += bsize;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){ // Add
     for ( int i = 0; i < nvars; i++ ){
-      int v = bsize * vars[i] - lower;
+      int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
 	y[k] += x[v + k];
       }        
+      y += bsize;
+    }
+  }
+  else { // Insert the non-zero values
+    for ( int i = 0; i < nvars; i++ ){
+      int v = bsize*vars[i] - lower;
+      for ( int k = 0; k < bsize; k++ ){
+        if (RealPart(x[v+k]) != 0.0){
+          y[k] = x[v + k];
+        }
+      }
       y += bsize;
     }
   }
@@ -874,7 +885,7 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
   y[var[i]] op x[i]
 */
 void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
-		     TacsScalar * x, TacsScalar * y, 
+		     TacsScalar *x, TacsScalar *y, 
 		     TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -885,22 +896,33 @@ void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
       x += bsize;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){ // Add
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
 	y[v + k] += x[k];
       }
       x += bsize;
-    }    
+    }
   }
-}  
+  else { // Insert the non-zero values
+    for ( int i = 0; i < nvars; i++ ){
+      int v = bsize*vars[i] - lower;
+      for ( int k = 0; k < bsize; k++ ){
+        if (RealPart(x[k]) != 0.0){
+          y[v + k] = x[k];
+        }
+      }
+      x += bsize;
+    }
+  }
+}
 
 // ---------------
 // Block size == 1
 // ---------------
 void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -909,17 +931,24 @@ void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
       y++;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       *y += x[v];                
       y++;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = vars[i] - lower;
+      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      y++;
+    }
+  }
 }
 
 void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -928,12 +957,19 @@ void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
       x++;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       y[v] += *x;
       x++;
     }    
+  }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = vars[i] - lower;
+      if (RealPart(x[0]) != 0.0){ y[v] = x[0]; }
+      x++;
+    }
   }
 }  
 
@@ -941,7 +977,7 @@ void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
 // Block size == 2
 // ---------------
 void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -951,7 +987,7 @@ void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
       y += 2;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[0] += x[v];      
@@ -959,10 +995,18 @@ void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
       y += 2;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 2*vars[i] - lower;
+      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      y += 2;
+    }
+  }
 }
 
 void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -972,7 +1016,7 @@ void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
       x += 2;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[v  ] += x[0];
@@ -980,13 +1024,21 @@ void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
       x += 2;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 2*vars[i] - lower;
+      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      x += 2;
+    }
+  }
 }  
 
 // ---------------
 // Block size == 3
 // ---------------
 void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -997,7 +1049,7 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
       y += 3;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[0] += x[v];      
@@ -1006,10 +1058,19 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
       y += 3;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 3*vars[i] - lower;
+      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (RealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      y += 3;
+    }
+  }
 }
 
 void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -1020,7 +1081,7 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
       x += 3;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[v  ] += x[0];
@@ -1029,13 +1090,22 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
       x += 3;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 3*vars[i] - lower;
+      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (RealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      x += 3;
+    }
+  }
 }  
 
 // ---------------
 // Block size == 5
 // ---------------
 void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -1048,7 +1118,7 @@ void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
       y += 5;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[0] += x[v];      
@@ -1059,10 +1129,21 @@ void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
       y += 5;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 5*vars[i] - lower;
+      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (RealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      if (RealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
+      if (RealPart(x[v+4]) != 0.0){ y[4] = x[v+4]; }
+      y += 5;
+    }
+  }
 }
 
 void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -1075,7 +1156,7 @@ void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
       x += 5;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[v  ] += x[0];
@@ -1086,13 +1167,24 @@ void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
       x += 5;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 5*vars[i] - lower;
+      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (RealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      if (RealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
+      if (RealPart(x[4]) != 0.0){ y[v+4] = x[4]; }
+      x += 5;
+    }
+  }
 }  
 
 // ---------------
 // Block size == 6
 // ---------------
 void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -1106,7 +1198,7 @@ void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
       y += 6;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[0] += x[v];      
@@ -1118,10 +1210,22 @@ void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
       y += 6;
     }    
   }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 6*vars[i] - lower;
+      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (RealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      if (RealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
+      if (RealPart(x[v+4]) != 0.0){ y[4] = x[v+4]; }
+      if (RealPart(x[v+5]) != 0.0){ y[5] = x[v+5]; }
+      y += 6;
+    }
+  }
 }
 
 void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
-		      TacsScalar * x, TacsScalar * y, 
+		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
@@ -1135,7 +1239,7 @@ void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
       x += 6;
     }
   }
-  else { // Add
+  else if (op == ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[v  ] += x[0];
@@ -1146,6 +1250,18 @@ void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
       y[v+5] += x[5];
       x += 6;
     }    
+  }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 6*vars[i] - lower;
+      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (RealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      if (RealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
+      if (RealPart(x[4]) != 0.0){ y[v+4] = x[4]; }
+      if (RealPart(x[5]) != 0.0){ y[v+5] = x[5]; }
+      x += 6;
+    }
   }
 }  
 

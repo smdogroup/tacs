@@ -2647,14 +2647,14 @@ void TACSAssembler::getInitConditions( TACSBVec *vars, TACSBVec *dvars ){
     elements[i]->getInitCondition(elemVars, elemDVars, elemXpts);
 
     // Set the values into the vectors
-    vars->setValues(len, nodes, elemVars, INSERT_VALUES);
-    dvars->setValues(len, nodes, elemDVars, INSERT_VALUES);
+    vars->setValues(len, nodes, elemVars, INSERT_NONZERO_VALUES);
+    dvars->setValues(len, nodes, elemDVars, INSERT_NONZERO_VALUES);
   }
 
-  vars->beginSetValues(INSERT_VALUES);
-  dvars->beginSetValues(INSERT_VALUES);
-  vars->endSetValues(INSERT_VALUES);
-  dvars->endSetValues(INSERT_VALUES);
+  vars->beginSetValues(INSERT_NONZERO_VALUES);
+  dvars->beginSetValues(INSERT_NONZERO_VALUES);
+  vars->endSetValues(INSERT_NONZERO_VALUES);
+  dvars->endSetValues(INSERT_NONZERO_VALUES);
 }
 
 /*

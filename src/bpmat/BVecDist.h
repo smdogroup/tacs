@@ -10,7 +10,8 @@
 
 #include "TACSObject.h"
 
-enum TACSBVecOperation { INSERT_VALUES, ADD_VALUES };
+enum TACSBVecOperation { INSERT_VALUES, ADD_VALUES,
+                         INSERT_NONZERO_VALUES };
 
 /*
   Declare the TACSBVecDistCtx class

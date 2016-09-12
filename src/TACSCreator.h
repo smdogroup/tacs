@@ -54,11 +54,6 @@ class TACSCreator : public TACSObject {
 			  const int *_dep_node_conn, 
 			  const double *_dep_node_weights );
 
-  // Set the elements into TACS creator
-  // ----------------------------------
-  void setElements( TACSElement **_elements, int _num_elems );
-  void setElementCreator( TACSElement* (*func)(int, int) );
-
   // Set the nodal locations
   // -----------------------
   void setNodes( const TacsScalar *_Xpts );
@@ -71,6 +66,11 @@ class TACSCreator : public TACSObject {
   // Partition the mesh 
   // ------------------
   void partitionMesh( int split_size=0, const int *part=NULL );
+
+  // Set the elements into TACS creator
+  // ----------------------------------
+  void setElements( TACSElement **_elements, int _num_elems );
+  void setElementCreator( TACSElement* (*func)(int, int) );
 
   // Create the TACSAssembler object
   // -------------------------------

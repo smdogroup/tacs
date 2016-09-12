@@ -793,10 +793,18 @@ void TACSBVec::setValues( int n, const int *index,
           y[0] = vals[0];
         }
       }
-      else {
+      else if (op == ADD_VALUES){
         // Add the values to the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
+        }
+      }
+      else {
+        // Insert only the non-zero values
+        for ( int k = 0; k < bsize; k++, vals++, y++ ){
+          if (RealPart(vals[0]) != 0.0){
+            y[0] = vals[0];
+          }
         }
       }
     }
@@ -811,10 +819,18 @@ void TACSBVec::setValues( int n, const int *index,
           y[0] = vals[0];
         }
       }
-      else {
+      else if (op == ADD_VALUES){
         // Add the values to the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
+        }
+      }
+      else {
+        // Insert only the non-zero values
+        for ( int k = 0; k < bsize; k++, vals++, y++ ){
+          if (RealPart(vals[0]) != 0.0){
+            y[0] = vals[0];
+          }
         }
       }
     }
@@ -828,10 +844,18 @@ void TACSBVec::setValues( int n, const int *index,
           y[0] += vals[0];
         }
       }
-      else {
+      else if (op == ADD_VALUES){
         // Add the values into the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
+        }
+      }
+      else {
+        // Insert only the non-zero values
+        for ( int k = 0; k < bsize; k++, vals++, y++ ){
+          if (RealPart(vals[0]) != 0.0){
+            y[0] = vals[0];
+          }
         }
       }
     }
