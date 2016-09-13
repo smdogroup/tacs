@@ -6,15 +6,14 @@
 
 class PlaneStressTri6 : public TACS2DElement<6> {
  public:
-  
-  PlaneStressTri6( PlaneStressStiffness * _stiff, 
-		   ElementBehaviorType type = LINEAR, 
-		   int _componentNum = 0 );
+  PlaneStressTri6( PlaneStressStiffness *_stiff, 
+		   ElementBehaviorType type=LINEAR, 
+		   int _componentNum=0 );
   ~PlaneStressTri6();
   
     // Return the name of this element
   // -------------------------------
-  const char * elementName(){ return elemName; }
+  const char *elementName(){ return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
