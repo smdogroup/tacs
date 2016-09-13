@@ -21,6 +21,7 @@ class TACSAssembler;
 #include "BVecDist.h"
 #include "DistMat.h"
 #include "FEMat.h"
+#include "SerialBCSCMat.h"
 
 /*
   TACSAssembler
@@ -146,6 +147,7 @@ class TACSAssembler : public TACSObject {
   // -------------------------------------------------
   DistMat *createMat();
   FEMat *createFEMat( enum OrderingType order_type=TACS_AMD_ORDER );
+  SerialBCSCMat *createSerialBCSCMat();
 
   // Retrieve the initial conditions for the simulation
   // --------------------------------------------------
@@ -221,7 +223,8 @@ class TACSAssembler : public TACSObject {
 
   // Test the given element, constitutive or function class
   // ------------------------------------------------------
-  void testElement( int elemNum, int print_level );
+  void testElement( int elemNum, int print_level, double dh=1e-6,
+                    double rtol=1e-8, double atol=1e-1 );
   void testConstitutive( int elemNum, int print_level );
   void testFunction( TACSFunction * func, 
                      int num_design_vars, double dh );

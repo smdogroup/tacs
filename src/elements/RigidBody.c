@@ -12,7 +12,8 @@
   A generic constructor for the rigid body where the user can directly
   supply the information about the geometry
 */
-TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[] ){
+TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, 
+                                    TacsScalar *_Xpt, int _conn[] ){
   // Copy over the inputs
   npts   = _npts;
   nelems = _nelems;
@@ -28,28 +29,25 @@ TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, in
   Vizualization object for cube rigid body
 */
 TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
- 
-  // Set values for class variables
+   // Set values for class variables
   npts   = 8;
   nelems = 1;
-  Xpts   = new TacsScalar[ npts*3 ];
-  conn   = new int[ npts*3 ];;
+  Xpts   = new TacsScalar[ 3*npts ];
+  conn   = new int[ 8*nelems ];
 
   // Loop through all the nodes
+  TacsScalar *x = Xpts;
   for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
     for ( int iy = 0; iy < 2; iy++ ){
       for ( int ix = 0; ix < 2; ix++, pnum++ ){
-
         // Compute the [x,y and z] coordinates of the current node
-        TacsScalar x[3];
         x[0] = (ix - 0.5)*L;
         x[1] = (iy - 0.5)*L;
         x[2] = (iz - 0.5)*L;
+        x += 3;
 
-        // Store the current nodal location into the class variable
-	for ( int k = 0; k < 3; k++ ){
-          Xpts[pnum*3+k] = x[k];
-        }
+        // Set the connectivity
+        conn[ix + 2*iy + 4*iz] = ix + 2*iy + 4*iz;
       }
     }
   }
@@ -60,28 +58,25 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
 */
 TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
                                     TacsScalar cx, TacsScalar cy, TacsScalar cz ){
- 
-  // Set values for class variables
+   // Set values for class variables
   npts   = 8;
   nelems = 1;
-  Xpts   = new TacsScalar[ npts*3 ];
-  conn   = new int[ npts*3 ];
+  Xpts   = new TacsScalar[ 3*npts ];
+  conn   = new int[ 8*nelems ];
 
   // Loop through all the nodes
-  for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
+  TacsScalar *x = Xpts;
+  for ( int iz = 0; iz < 2; iz++ ){
     for ( int iy = 0; iy < 2; iy++ ){
-      for ( int ix = 0; ix < 2; ix++, pnum++ ){
-
+      for ( int ix = 0; ix < 2; ix++ ){
         // Compute the [x,y and z] coordinates of the current node
-        TacsScalar x[3];
-        x[0] = (ix - 0.5)*Lx;
-        x[1] = (iy - 0.5)*Ly;
-        x[2] = (iz - 0.5)*Lz;
+        x[0] = cx + (ix - 0.5)*Lx;
+        x[1] = cy + (iy - 0.5)*Ly;
+        x[2] = cz + (iz - 0.5)*Lz;
+        x += 3;
 
-        // Store the current nodal location into the class variable
-	for ( int k = 0; k < 3; k++ ){
-          Xpts[pnum*3+k] = x[k];
-        }
+        // Set the connectivity
+        conn[ix + 2*iy + 4*iz] = ix + 2*iy + 4*iz;
       }
     }
   }
@@ -98,11 +93,13 @@ TACSRigidBodyViz::~TACSRigidBodyViz(){
 /*
   Get the mesh for the rigid body
 */
-void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems, const TacsScalar **_Xpts, const int **_conn ){
-  if(_npts){*_npts     = npts;}
-  if(_nelems){*_nelems = nelems;}
-  if(_Xpts){*_Xpts     = Xpts;}
-  if(_conn){*_conn     = conn;}
+void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems, 
+                                const TacsScalar **_Xpts, 
+                                const int **_conn ){
+  if(_npts){ *_npts = npts; }
+  if(_nelems){ *_nelems = nelems; }
+  if(_Xpts){ *_Xpts = Xpts; }
+  if(_conn){ *_conn = conn; }
 }
 
 /*
@@ -741,35 +738,36 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   memset(vars, 0, 8*sizeof(TacsScalar));
   memset(dvars, 0, 8*sizeof(TacsScalar));
 
-  // Get the initial position
-  const TacsScalar *r;
-  rInit->getVector(&r);
+  // Set the initial position vector
+  const TacsScalar *rinit;
+  rInit->getVector(&rinit);
+  vars[0] = rinit[0];
+  vars[1] = rinit[1];
+  vars[2] = rinit[2];
 
-  vars[0] = r[0];
-  vars[1] = r[1];
-  vars[2] = r[2];
-  
-  // Set eta as 1
+  // Set eta = 1.0
   vars[3] = 1.0;
 
-  // What about lambda?
+  // Set lambda = 1.0
   vars[7] = 1.0;
 
   // Get the initial velocity
   const TacsScalar *v;
   vInit->getVector(&v);
 
+  // Set the initial velocity
   dvars[0] = v[0];
   dvars[1] = v[1];
   dvars[2] = v[2];
+
+  // Set the initial d(eta)/dt = 1.0
+  dvars[3] = 1.0;
 
   // Get the initial angular velocity
   const TacsScalar *w;
   omegaInit->getVector(&w);
 
-  // Set etadot as 1
-  dvars[3] = 1.0;
-
+  // Set the angular velocity
   dvars[4] = w[0];
   dvars[5] = w[1];
   dvars[6] = w[2];
@@ -1452,9 +1450,15 @@ void TACSRigidBody::testJacobian( double dh,
   Get the connectivity count
 */
 void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
-  *nelems += 1;
-  *nnodes += 8;
-  *ncsr += 8;
+  int np = 0, ne = 0;
+  if (viz){
+    viz->getMesh(&np, &ne, NULL, NULL);
+  }
+  
+  // Add up the connectivity counts from the visualization object
+  *nelems += ne;
+  *nnodes += np;
+  *ncsr += 8*ne;
 }
 
 /*
@@ -1462,19 +1466,12 @@ void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
 */
 void TACSRigidBody::getOutputData( unsigned int out_type, 
                                    double *data, int ld_data, 
-                                   const TacsScalar XptsDummy[],
+                                   const TacsScalar Xpts[],
                                    const TacsScalar vars[] ){
   // Return if the visualization isn't set
   if (!viz){
     return;
   }
-
-  // The effective lengths along each coordinate direction
-  /*  TacsScalar L[3]; 
-      L[0] = 1.0;
-      L[1] = 1.0;
-      L[2] = 1.0;
-  */
 
   // Get the initial vector location
   const TacsScalar *rinit;
@@ -1490,72 +1487,75 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   computeRotationMat(eta, eps, C);
 
   // Get the nodal locations for the body
-  const TacsScalar *Xpts;
-  viz->getMesh(NULL, NULL, &Xpts, NULL);
+  int npts;
+  const TacsScalar *X;
+  viz->getMesh(&npts, NULL, &X, NULL);
 
-  for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
-    for ( int iy = 0; iy < 2; iy++ ){
-      for ( int ix = 0; ix < 2; ix++, pnum++ ){
-        // Keep track of where to write in the data
-        int index = 0;
+  // Set the locations/variables for all the points from the
+  // body-fixed reference frame
+  for ( int i = 0; i < npts; i++ ){
+    int index = 0;
+    
+    // Compute the initial base-points for each node
+    const TacsScalar *x = &X[3*i];
 
-        // Compute the initial base-points for each node
-        TacsScalar x[3];
-        /*
-          x[0] = (ix - 0.5)*L[0];
-          x[1] = (iy - 0.5)*L[1];
-          x[2] = (iz - 0.5)*L[2];
-        */
-
-        if (out_type & TACSElement::OUTPUT_NODES){
-          // Write out the nodal locations
-          for ( int k = 0; k < 3; k++ ){
-            x[k] = Xpts[pnum*3+k];
-            data[index+k] = RealPart(x[k]);
-          }
-          index += 3;
-        }
-        if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-          // Compute the new point location
-          TacsScalar xpt[3];
-          matMultTrans(C, x, xpt);
-
-          for ( int k = 0; k < 3; k++ ){
-            data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
-          }
-          index += 3;
-
-          // Add the eta variable
-          data[index] = RealPart(eta);
-          index++;
-
-          // Add the epsilon quaternion components
-          for ( int k = 0; k < 3; k++ ){
-            data[index+k] = RealPart(eps[k]);
-          }
-          index += 3;
-
-          // Add the Lagrange multiplier
-          data[index] = RealPart(vars[7]);
-        }
-        data += ld_data;
+    if (out_type & TACSElement::OUTPUT_NODES){
+      // Write out the nodal locations
+      for ( int k = 0; k < 3; k++ ){
+        data[index+k] = RealPart(x[k]);
       }
+      index += 3;
     }
+    if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
+      // Compute the new point location
+      TacsScalar xpt[3];
+      matMultTrans(C, x, xpt);
+
+      for ( int k = 0; k < 3; k++ ){
+        data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
+      }
+      index += 3;
+
+      // Add the eta variable
+      data[index] = RealPart(eta);
+      index++;
+
+      // Add the epsilon quaternion components
+      for ( int k = 0; k < 3; k++ ){
+        data[index+k] = RealPart(eps[k]);
+      }
+      index += 3;
+      
+      // Add the Lagrange multiplier
+      data[index] = RealPart(vars[7]);
+    }
+    data += ld_data;
   }
 }
 
 /*
   Get the connectivity associated with this element
 */
-void TACSRigidBody::getOutputConnectivity( int *con, int node ){
-  con[0] = node;
-  con[1] = node+1;
-  con[2] = node+3;
-  con[3] = node+2;
-  con[4] = node+4;
-  con[5] = node+5;
-  con[6] = node+7;
-  con[7] = node+6;
+void TACSRigidBody::getOutputConnectivity( int *out_conn, int node ){
+  if (viz){
+    int nelems = 0;
+    const int *conn;
+    viz->getMesh(NULL, &nelems, NULL, &conn);
+
+    // Loop over all the elements in the list
+    for ( int i = 0; i < nelems; i++ ){
+      out_conn[0] = node + conn[0];
+      out_conn[1] = node + conn[1];
+      out_conn[2] = node + conn[3];
+      out_conn[3] = node + conn[2];
+      out_conn[4] = node + conn[4];
+      out_conn[5] = node + conn[5];
+      out_conn[6] = node + conn[7];
+      out_conn[7] = node + conn[6];
+      out_conn += 8;
+      conn += 8;
+    }
+  }
 }
 
 /*
@@ -1684,16 +1684,7 @@ void TACSSphericalConstraint::updatePoints(){
 */
 void TACSSphericalConstraint::getInitCondition( TacsScalar vars[],
                                                 TacsScalar dvars[],
-                                                const TacsScalar X[] ){
-  // Set the Lagrange multipliers associated with the constraint
-  if (bodyA && bodyB){
-    for ( int i = 0; i < 2; i++ ){
-      vars[8*i+3] = 1.0;
-    }
-  } else {
-    vars[3] = 1.0;
-  }
-}
+                                                const TacsScalar X[] ){}
 
 /*
   Compute the kinetic and potential energy within the element
@@ -1718,56 +1709,76 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
                                            const TacsScalar ddvars[] ){
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
-  TacsScalar *resB = &res[8];
-
-  // The residual for the constraint equations
-  TacsScalar *resC = &res[16];
 
   // Set the variables for body A
   const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
+  
+  // The residual for the constraint equations
+  TacsScalar *resC = NULL;
 
-  // Set the variables for body B
-  const TacsScalar *rB = &vars[8];
-  const TacsScalar etaB = vars[11];
-  const TacsScalar *epsB = &vars[12];
+  // The Lagrange multipliers
+  const TacsScalar *lam = NULL;
 
-  // Set the Lagrange multipliers for the constraint
-  const TacsScalar *lam = &vars[16];
+  // Set the pointers depending on whether both body A and body B
+  // exist or not.
+  if (bodyB){
+    resC = &res[16];
+    lam = &vars[16];
+  }
+  else {
+    resC = &res[8];
+    lam = &vars[8];
+  }
 
   // Compute the rotation matrices for each body
-  TacsScalar CA[9], CB[9];
+  TacsScalar CA[9];
   computeRotationMat(etaA, epsA, CA);
-  computeRotationMat(etaB, epsB, CB);
 
   // Retrieve the pointers to xAVec and xBVec
-  const TacsScalar *xA, *xB;
+  const TacsScalar *xA;
   xAVec->getVector(&xA);
-  xBVec->getVector(&xB);
 
   // Add the terms for body A
   vecAxpy(1.0, lam, &resA[0]);
   addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
                       &resA[3], &resA[4]);
 
-  // Add the terms for body B
-  vecAxpy(-1.0, lam, &resB[0]);
-  addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
-                      &resB[3], &resB[4]);
-
   // Evaluate the constraint
   // Set resC = rA + CA^{T}*xA
   matMultTransAdd(CA, xA, resC);
   vecAxpy(1.0, rA, resC);
 
-  // Compute t = CB^{T}*xB + rB
-  TacsScalar t[3];
-  matMultTrans(CB, xB, t);
-  vecAxpy(1.0, rB, t);
+  if (bodyB){
+    // Set the residual for bodyB
+    TacsScalar *resB = &res[8];
 
-  // Complete the evaluation of the constraint
-  vecAxpy(-1.0, t, resC);
+    // Set the variables for body B
+    const TacsScalar *rB = &vars[8];
+    const TacsScalar etaB = vars[11];
+    const TacsScalar *epsB = &vars[12];
+
+    // Compute the rotation matrix for bodyB
+    TacsScalar CB[9];
+    computeRotationMat(etaB, epsB, CB);
+    
+    const TacsScalar *xB;
+    xBVec->getVector(&xB);
+    
+    // Add the terms for body B
+    vecAxpy(-1.0, lam, &resB[0]);
+    addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
+                        &resB[3], &resB[4]);
+
+    // Compute t = CB^{T}*xB + rB
+    TacsScalar t[3];
+    matMultTrans(CB, xB, t);
+    vecAxpy(1.0, rB, t);
+
+    // Complete the evaluation of the constraint
+    vecAxpy(-1.0, t, resC);
+  }
 
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables
@@ -1792,42 +1803,67 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
 
-  // Set the variables for body B
-  const TacsScalar *rB = &vars[8];
-  const TacsScalar etaB = vars[11];
-  const TacsScalar *epsB = &vars[12];
-
   // Set the Lagrange multipliers for the constraint
-  const TacsScalar *lam = &vars[16];
+  const TacsScalar *lam = NULL;
+
+  // Get the number of variables
+  const int nvars = numVariables();
+  
+  // Set the offset to the Lagrange multipliers
+  int offset = 0;
+  if (bodyB){
+    offset = 16;
+    lam = &vars[16];
+  }
+  else {
+    offset = 8;
+    lam = &vars[8];
+  }
 
   // Add the identity matricies to the Jacobian
-  addBlockIdent(alpha, &J[16], 24);
-  addBlockIdent(-alpha, &J[8*24 + 16], 24);
+  addBlockIdent(alpha, &J[offset], nvars);
+  addBlockIdent(alpha, &J[offset*nvars], nvars);
 
-  addBlockIdent(alpha, &J[16*24], 24);
-  addBlockIdent(-alpha, &J[16*24+8], 24);
-
-  // Retrieve the pointers to xAVec and xBVec
-  const TacsScalar *xA, *xB;
+  // Retrieve the pointers to xAVec
+  const TacsScalar *xA;
   xAVec->getVector(&xA);
-  xBVec->getVector(&xB);
 
-  // Add the terms corresponding to the second derivative
-  // terms
-  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*25], 24);
-  addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*25], 24);
+  // Add the second derivative terms
+  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*(nvars+1)], nvars);
 
-  // Add the terms from the derivatives w.r.t. lambdas
-  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*24+16], 24);
-  addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*24+16], 24);
+  // Add the term from the derivative w.r.t. lambda
+  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*nvars + offset], nvars);
+  
+  // Add the term from the derivative of the constraint
+  addBlockEMat(alpha, etaA, epsA, xA, &J[offset*nvars + 3], nvars);
 
-  // Add the terms from the derivatives of the constraint
-  addBlockEMat(alpha, etaA, epsA, xA, &J[16*24+3], 24);
-  addBlockEMat(-alpha, etaB, epsB, xB, &J[16*24+11], 24);
+  // Add the terms required for body B if it is defined
+  if (bodyB){
+    addBlockIdent(-alpha, &J[8*nvars + offset], nvars);
+    addBlockIdent(-alpha, &J[offset*nvars + 8], nvars);
+
+    // Set the variables for body B
+    const TacsScalar *rB = &vars[8];
+    const TacsScalar etaB = vars[11];
+    const TacsScalar *epsB = &vars[12];
+
+    // Retrieve the pointer to xBVec
+    const TacsScalar *xB;
+    xBVec->getVector(&xB);
+
+    // Add the second derivative terms
+    addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*(nvars+1)], nvars);
+    
+    // Add the terms from the derivatives w.r.t. lambdas
+    addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*nvars + offset], nvars);
+    
+    // Add the terms from the derivatives of the constraint
+    addBlockEMat(-alpha, etaB, epsB, xB, &J[offset*nvars + 11], nvars);
+  }
 
   // Add the Jacobian entries for the dummy constraints
-  for ( int i = 19; i < 24; i++ ){
-    J[25*i] += alpha;
+  for ( int i = offset+3; i < nvars; i++ ){
+    J[(nvars+1)*i] += alpha;
   }
 }
 
@@ -2042,16 +2078,7 @@ void TACSRevoluteConstraint::updatePoints( int init_e ){
 */
 void TACSRevoluteConstraint::getInitCondition( TacsScalar vars[],
                                                TacsScalar dvars[],
-                                               const TacsScalar X[] ){
-  // Set the Lagrange multipliers associated with the constraint
-  if (bodyA && bodyB){
-    for ( int i = 0; i < 2; i++ ){
-      vars[8*i+3] = 1.0;
-    }
-  } else {
-    vars[3] = 1.0;
-  }
-}
+                                               const TacsScalar X[] ){}
 
 /*
   Compute the kinetic and potential energy within the element

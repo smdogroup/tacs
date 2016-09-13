@@ -146,7 +146,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   update->incref();
   
   // Create a matrix for storing the Jacobian
-  D = tacs->createFEMat();
+  D = tacs->createFEMat(TACSAssembler::NATURAL_ORDER);
   D->incref();
 
   // Associate the maxtrix with FEMatrix
@@ -252,21 +252,21 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     setTACSStates(t, u, udot, uddot);
 
     // Use a globalization based on a dual-type time step method
+    delta = 0.25*gamma/(1+niter*niter);
     /*
-      double delta = alpha;
-      if (n > 0){
-      double frac = 10.0*RealPart(norm/(init_norm + rtol));
+    if (niter > 0){
+      double frac = RealPart(norm/(init_norm + rtol));
       if (frac < 1.0){
-      delta = frac*alpha;
+        delta = frac*gamma;
       }
       else {
-      delta = alpha;
+        delta = gamma;
       }
-      }
+    }
     */
     // Assemble the Jacobian matrix once in five newton iterations
     if (niter % jac_comp_freq == 0){
-      tacs->assembleJacobian(alpha, beta + delta, gamma + delta,
+      tacs->assembleJacobian(alpha, beta, gamma + delta,
                              res, mat, NORMAL);
     }
     else {
@@ -301,7 +301,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
     
-    if (!use_lapack) {    
+    if (!use_lapack){    
       // LU Factor the matrix when needed
       if (niter % jac_comp_freq == 0){
 	pc->factor();
@@ -451,8 +451,11 @@ void TACSIntegrator::configureOutput(TACSToFH5 *_viewer,
 void TACSIntegrator::integrate( ) {
   // Get the initial condition
   current_time_step = 0;
+
+  // Retrieve the initial conditions
   tacs->getInitConditions(q[0], qdot[0]);
   tacs->setVariables(q[0], qdot[0]);
+  tacs->zeroDDotVariables();
   
   // Perform logging, tecplot export, etc.
   doEachTimeStep(0);
@@ -915,8 +918,8 @@ TACSBDFIntegrator::~TACSBDFIntegrator(){
 void TACSBDFIntegrator::approxStates(){
   int k = current_time_step;
 
-  // Zero the current states (these may not be zero when integrate() is
-  // called for the second time)
+  // Zero the current states (these may not be zero when integrate()
+  // is called for the second time)
   q[k]->zeroEntries();
   qdot[k]->zeroEntries();
   qddot[k]->zeroEntries();
@@ -1500,7 +1503,8 @@ void TACSDIRKIntegrator::integrate( ) {
       double alpha, beta, gamma;
       getLinearizationCoeffs(&alpha, &beta, &gamma);
       
-      // Solve the nonlinear system of stage equations starting with the approximated states
+      // Solve the nonlinear system of stage equations starting with
+      // the approximated states
       newtonSolve(alpha, beta, gamma, tS[toffset+i], 
 		  qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
     }

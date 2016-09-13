@@ -270,7 +270,8 @@ cdef extern from "TACSAssembler.h":
                                      TACSBVec *res)
       
       # Test routines
-      void testElement(int elemNum, int print_level)
+      void testElement(int elemNum, int print_level, double dh,
+                       double rtol, double atol)
       void testConstitutive(int elemNum, int print_level)
       void testFunction(TACSFunction *func, int num_dvs,
                         double dh)

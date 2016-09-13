@@ -35,6 +35,7 @@ CXX_OBJS = BCSRMat.o \
 	PDMat.o \
 	AMDInterface.o \
 	BCSCMatPivot.o \
+	SerialBCSCMat.o \
 	PDMatPivot.o
 
 DIR=${TACS_DIR}/src/bpmat

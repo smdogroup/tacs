@@ -69,6 +69,7 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
   Xpts = NULL;
 
   // Boundary condition information
+  num_bcs = 0;
   bc_nodes = NULL;
   bc_ptr = NULL;
   bc_vars = NULL;
@@ -606,32 +607,34 @@ TACSAssembler* TACSCreator::createTACS(){
   // Broadcast the boundary condition information
   MPI_Bcast(&num_bcs, 1, MPI_INT, root_rank, comm);
 
-  // Broadcast all the boundary conditions to all processors
-  if (rank != root_rank){
-    if (bc_nodes){ delete [] bc_nodes; }
-    bc_nodes = new int[ num_bcs ];
+  if (num_bcs > 0){
+    // Broadcast all the boundary conditions to all processors
+    if (rank != root_rank){
+      if (bc_nodes){ delete [] bc_nodes; }
+      bc_nodes = new int[ num_bcs ];
+    }
+    MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root_rank, comm);
+    
+    // Broacast the boundary condition pointer array 
+    if (rank != root_rank){
+      if (bc_ptr){ delete [] bc_ptr; }
+      bc_ptr = new int[ num_bcs+1 ];
+    }
+    MPI_Bcast(bc_ptr, num_bcs+1, MPI_INT, root_rank, comm);
+    
+    if (rank != root_rank){
+      if (bc_vars){ delete [] bc_vars; }
+      bc_vars = new int[ bc_ptr[num_bcs] ]; 
+    }
+    MPI_Bcast(bc_vars, bc_ptr[num_bcs], MPI_INT, root_rank, comm);
+    
+    if (rank != root_rank){
+      if (bc_vals){ delete [] bc_vals; }
+      bc_vals = new TacsScalar[ bc_ptr[num_bcs] ]; 
+    }
+    MPI_Bcast(bc_vals, bc_ptr[num_bcs], TACS_MPI_TYPE, root_rank, comm);
   }
-  MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root_rank, comm);
 
-  // Broacast the boundary condition pointer array 
-  if (rank != root_rank){
-    if (bc_ptr){ delete [] bc_ptr; }
-    bc_ptr = new int[ num_bcs+1 ];
-  }
-  MPI_Bcast(bc_ptr, num_bcs+1, MPI_INT, root_rank, comm);
-
-  if (rank != root_rank){
-    if (bc_vars){ delete [] bc_vars; }
-    bc_vars = new int[ bc_ptr[num_bcs] ]; 
-  }
-  MPI_Bcast(bc_vars, bc_ptr[num_bcs], MPI_INT, root_rank, comm);
-
-  if (rank != root_rank){
-    if (bc_vals){ delete [] bc_vals; }
-    bc_vals = new TacsScalar[ bc_ptr[num_bcs] ]; 
-  }
-  MPI_Bcast(bc_vals, bc_ptr[num_bcs], TACS_MPI_TYPE, root_rank, comm);
-  
   int node_max_csr_size = local_elem_node_ptr[num_owned_elements];  
   TACSAssembler * tacs = 
     new TACSAssembler(comm, vars_per_node, num_owned_nodes,

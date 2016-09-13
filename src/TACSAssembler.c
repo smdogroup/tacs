@@ -2441,12 +2441,6 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
 	    mpiRank);
     return NULL;
   }
-  if (order_type == NATURAL_ORDER){
-    fprintf(stderr, 
-	    "[%d] Cannot call createFEMat() with order_type == NATURAL_ORDER\n",
-	    mpiRank);
-    order_type = TACS_AMD_ORDER;
-  }
 
   if (!feMatBMap){   
     // The number of local nodes and the number of coupling nodes
@@ -2624,10 +2618,39 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
   return fmat;
 }
 
+SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n", 
+	    mpiRank);
+    return NULL;
+  }
+  if (mpiSize > 1){
+    fprintf(stderr, "[%d] Cannot call createSerialCSCMat() with more than one processor\n",
+	    mpiRank);
+    return NULL;
+  }
+
+  // Compute he local non-zero pattern
+  int *rowp, *cols;
+  computeLocalNodeToNodeCSR(&rowp, &cols);
+
+  // Allocate the matrix
+  SerialBCSCMat *mat = new SerialBCSCMat(varMap, varsPerNode,
+                                         numNodes, numNodes,
+                                         rowp, cols, bcMap);
+  delete [] rowp;
+  delete [] cols;
+
+  return mat;
+}
+
 /*
   Retrieve the initial conditions associated with the problem
 */
 void TACSAssembler::getInitConditions( TACSBVec *vars, TACSBVec *dvars ){
+  vars->zeroEntries();
+  dvars->zeroEntries();
+
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemDVars, *elemXpts;
   getDataPointers(elementData, &elemVars, &elemDVars, NULL, NULL,
@@ -3874,7 +3897,8 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
   elemNum:     the element number to test
   print_level: the print level to use   
 */
-void TACSAssembler::testElement( int elemNum, int print_level ){
+void TACSAssembler::testElement( int elemNum, int print_level,
+                                 double dh, double rtol, double atol ){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call testElement() before initialize()\n", 
 	    mpiRank);
@@ -3887,49 +3911,28 @@ void TACSAssembler::testElement( int elemNum, int print_level ){
   }
 
   // Retrieve pointers to temporary storage
-  TacsScalar *elemXpts;
-  getDataPointers(elementData, NULL, NULL, NULL, NULL,
-		  &elemXpts, NULL, NULL, NULL);
+  TacsScalar *vars, *dvars, *ddvars, *elemXpts;
+  getDataPointers(elementData, 
+                  &vars, &dvars, &ddvars, NULL,
+                  &elemXpts, NULL, NULL, NULL);
 
-  /*
   int ptr = elementNodeIndex[elemNum];
   int len = elementNodeIndex[elemNum+1] - ptr;
   const int *nodes = &elementTacsNodes[ptr];
   xptVec->getValues(len, nodes, elemXpts);
+  varsVec->getValues(len, nodes, vars);
+  dvarsVec->getValues(len, nodes, dvars);
+  ddvarsVec->getValues(len, nodes, ddvars);
 
-  // Create the element test function
-  double pt[] = {0.0, 0.0, 0.0};
-  TestElement * test = new TestElement(elements[elemNum],
-				       elemXpts);
-  test->incref();
-  test->setPrintLevel(print_level);
+  TACSElement::setFailTolerances(rtol, atol);
+  TACSElement::setStepSize(dh);
+  TACSElement::setPrintLevel(print_level);
   
-  printf("Testing element %s\n", elements[elemNum]->elementName());
-  if (test->testJacobian()){ printf("Stiffness matrix failed\n"); }
-  else { printf("Stiffness matrix passed\n"); }
-  if (test->testJacobianXptSens(pt)){ printf("Jacobian XptSens failed\n"); }
-  else { printf("Jacobian XptSens passed\n"); }
-  if (test->testStrainSVSens(pt)){ printf("Strain SVSens failed\n"); }
-  else { printf("Strain SVSens passed\n"); }
-  if
- (test->testResXptSens()){ printf("Res XptSens failed\n"); }
-  else { printf("Res XptSens passed\n"); }
-  if (test->testStrainXptSens(pt)){ printf("Strain XptSens failed\n"); }
-  else { printf("Strain XptSens passed\n"); }
-  if (test->testResDVSens()){ printf("Res DVSens failed\n"); }
-  else { printf("Res DVSens passed\n"); }
-  if (test->testMatDVSens(STIFFNESS_MATRIX)){
-    printf("Stiffness matrix DVSens failed\n"); }
-  else { printf("Stiffness Matrix DVSens passed\n"); }
-  if (test->testMatDVSens(MASS_MATRIX)){
-    printf("Mass matrix DVSens failed\n"); }
-  else { printf("Mass Matrix DVSens passed\n"); }
-  if (test->testMatDVSens(GEOMETRIC_STIFFNESS_MATRIX)){ 
-    printf("Geometric stiffness matrix DVSens failed\n"); }
-  else { printf("Geometric stiffness Matrix DVSens passed\n"); }
-  printf("\n");
-  test->decref();
-  */
+  // Test the different element implementations
+  elements[elemNum]->testResidual(time, elemXpts, vars, dvars, ddvars);
+  for ( int col = 0; col < elements[elemNum]->numVariables(); col++ ){
+    elements[elemNum]->testJacobian(time, elemXpts, vars, dvars, ddvars, col);
+  }
 }
 
 /*

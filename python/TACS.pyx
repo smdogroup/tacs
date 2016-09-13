@@ -870,7 +870,8 @@ cdef class Assembler:
                                          psi.ptr, phi.ptr, res.ptr)
       return      
         
-   def testElement(self, int elemNum, int print_level):
+   def testElement(self, int elemNum, int print_level,
+                   double dh=1e-6, double rtol=1e-8, double atol=1e-1):
       '''
       Test the implementation of the given element number.
 
@@ -883,7 +884,7 @@ cdef class Assembler:
       elemNum:     the element number to test
       print_level: the print level to use 
       '''
-      self.ptr.testElement(elemNum, print_level)
+      self.ptr.testElement(elemNum, print_level, dh, rtol, atol)
       return
 
    def testConstitutive(self, int elemNum, print_level):
