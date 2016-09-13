@@ -31,17 +31,23 @@ int main( int argc, char *argv[] ){
                             1.0/3.0};
   
   // Define dynamics properties
-  const TacsScalar rAInit[3]     = {0.0, 5.0, 0.0}; // The initial position
+  const TacsScalar rAInit[3]     = {0.0, 2.0, 0.0}; // The initial position
   const TacsScalar vAInit[3]     = {0.0, 0.0, 0.0}; // The initial velocity
   const TacsScalar omegaAInit[3] = {0.0, 0.0, 0.0}; // The initial angular velocity
   TACSGibbsVector *rAInitVec     = new TACSGibbsVector(rAInit); rAInitVec->incref();
   TACSGibbsVector *vAInitVec     = new TACSGibbsVector(vAInit); vAInitVec->incref();
   TACSGibbsVector *omegaAInitVec = new TACSGibbsVector(omegaAInit); omegaAInitVec->incref();
 
+  // Create visualization
+  TACSRigidBodyViz *vizA = new TACSRigidBodyViz(0.5, 5.0, 0.5);
+  vizA->incref();
+
   // Construct a rigid body
   TACSRigidBody *bodyA = new  TACSRigidBody(refFrameA,
                                             mA, cA, JA,
                                             rAInitVec, vAInitVec, omegaAInitVec, gravVec);
+  bodyA->setVisualization(vizA);
+
   bodyA->incref();
 
   //------------------------------------------------------------------//
@@ -66,17 +72,23 @@ int main( int argc, char *argv[] ){
                             8.0/3.0};
 
   // Define dynamics properties
-  const TacsScalar rBInit[3]     = {0.0, 1.0, 1.0};   // The initial position
+  const TacsScalar rBInit[3]     = {0.0, 5.0, 1.0};   // The initial position
   const TacsScalar vBInit[3]     = {0.0, 0.0, 0.0};   // The initial velocity
   const TacsScalar omegaBInit[3] = {0.0, 0.0, 0.0};   // The initial angular velocity
   TACSGibbsVector *rBInitVec     = new TACSGibbsVector(rBInit); rBInitVec->incref();
   TACSGibbsVector *vBInitVec     = new TACSGibbsVector(vBInit); vBInitVec->incref();
   TACSGibbsVector *omegaBInitVec = new TACSGibbsVector(omegaBInit); omegaBInitVec->incref();
+
+  // Create visualization
+  TACSRigidBodyViz *vizB = new TACSRigidBodyViz(1.0);
+  vizB->incref();
   
   TACSRigidBody *bodyB = new  TACSRigidBody(refFrameA, 
                                             mB, cB, JB,
                                             rBInitVec, vBInitVec, omegaBInitVec, gravVec);
   bodyB->incref();
+
+  bodyB->setVisualization(vizB);
 
   //-----------------------------------------------------------------------//
   //                   Setup Revolute Joint                                //
@@ -169,7 +181,11 @@ int main( int argc, char *argv[] ){
   omegaBInitVec->decref();
 
   bodyA->decref();
+  vizA->decref();
+
   bodyB->decref();
+  vizB->decref();
+
   con->decref();
 
   tacs->decref();

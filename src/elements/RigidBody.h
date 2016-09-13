@@ -16,6 +16,25 @@
 #include "TACSGibbsVector.h"
 
 /*
+  Class for visualizing rigid bodies with different geometries
+*/
+class TACSRigidBodyViz : public TACSObject {
+ public:
+  TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[] );
+  TACSRigidBodyViz( TacsScalar L );
+  TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
+                    TacsScalar cx=0.0, TacsScalar cy=0.0, TacsScalar cz=0.0 );
+  ~TACSRigidBodyViz();
+  void getMesh( int *_npts, int *_nelems,
+                const TacsScalar **_Xpts, const int **_conn );
+
+ private:
+  TacsScalar *Xpts;
+  int npts, nelems;
+  int *conn;
+};
+
+/*
   A reference coordinate system that is built to enable a change in
   orientation of coordinate frames as a function of input vectors.
 
@@ -72,29 +91,6 @@ class TACSRefFrame : public TACSObject {
   // The basis points for the reference frame
   TACSGibbsVector *r0, *r1, *r2;
 };
-
-/*
-  Class for visualizing rigid bodies with different geometries
-*/
-/*
-class TACSRigidBodyViz : public TACSObject {
- public:
-  TACSRigidBodyViz( TacsScalar *_Xpt, int _npts, int _conn[], int _nelems ){
-    
-  }
-  TACSRigidBodyViz( TacsScalar L );
-  TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
-                    TacsScalar cx=0.0, TacsScalar cy=0.0, TacsScalar cz=0.0 );
-  
-  void getMesh( const TacsScalar **Xpts, int *npts, 
-                const int **conn, int *nelems );
-
- private:
-  TacsScalar *Xpts;
-  int npts, nelems;
-  int *conn;
-};
-*/
 
 /*
   Dynamics for a single rigid body.
@@ -198,6 +194,10 @@ class TACSRigidBody : public TACSElement {
 		      const TacsScalar Xpts[],
 		      const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
+
+  // Rigid body visualization
+  //-------------------------
+  void setVisualization( TACSRigidBodyViz *viz );
  private:
   // Recompute the inertial properties in the global ref. frame
   void updateInertialProperties();
@@ -223,6 +223,9 @@ class TACSRigidBody : public TACSElement {
   
   // The design variable numbers associated with the inertial properties
   int massDV, cDV[3], JDV[6];
+
+  // Visualization object
+  TACSRigidBodyViz *viz;
 
   // The name of the element
   static const char *elem_name;
