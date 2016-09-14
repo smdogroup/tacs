@@ -101,7 +101,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   print_level = 1;
   logfp       = stdout;
   logfilename = NULL;
-  if (mpiRank != 0){logfp = NULL;}   // Only root writes log
+  //  if (mpiRank != 0){logfp = NULL;}   // Only root writes log
 
   // State variables that store the entire time history
   q     = new TACSBVec*[num_time_steps];
@@ -161,6 +161,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
     
     // Associate the maxtrix with FEMatrix
     mat = D;
+    mat->incref();
   }
   else {
     SerialBCSCMat *A = tacs->createSerialBCSCMat();
@@ -358,13 +359,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   Function that writes time, q, qdot, qddot to file
 */
 void TACSIntegrator::writeSolution( const char *filename ) {
-  if (mpiRank != 0) { return; }
-  // Temporary variables to access the states at each time
-  TacsScalar *qvals, *qdotvals, *qddotvals;
-
-  // Open a new file
   FILE *fp = fopen(filename, "w");
- 
+  TacsScalar *qvals, *qdotvals, *qddotvals;
   for ( int k = 0; k < num_time_steps; k++ ){    
     // Copy over the state values from TACSBVec
     q[k]->getArray(&qvals);
@@ -379,8 +375,6 @@ void TACSIntegrator::writeSolution( const char *filename ) {
     }
     fprintf(fp, "\n");
   }
-
-  // Close the file
   fclose(fp);
 }
 
@@ -389,7 +383,7 @@ void TACSIntegrator::writeSolution( const char *filename ) {
   force writing initial(k=0) and final (k=num_time_steps-1) time steps
   as they are the most important outputs that an user would need
 */
-int TACSIntegrator::getWriteFlag( int k ){
+int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
   int write_now;
   if (f5_write_freq > 0) {
     if ( k == 0 || k == num_time_steps-1 ){
@@ -406,9 +400,8 @@ int TACSIntegrator::getWriteFlag( int k ){
   set appropriately before calling this function.
 */
 void TACSIntegrator::writeStepToF5( int k ){
-  if (mpiRank != 0) { return; }
- 
-  if(f5 && f5_file_fmt && getWriteFlag(k)) {
+  //  if (mpiRank != 0) { 
+  if(f5 && f5_file_fmt && getWriteFlag(k, f5_write_freq)) {
     // Create a buffer for filename 
     char buffer[128];
     // Format the buffer based on the time step
@@ -419,44 +412,31 @@ void TACSIntegrator::writeStepToF5( int k ){
 }
 
 /*
-  Creates an f5 file for each time step and writes the data. This call
-  is distributed in time. This may be faster than calling f5 output at each step
+  Creates an f5 file for each time step and writes the data.
 */
-void TACSIntegrator::writeSolutionToF5(){
+void TACSIntegrator::writeSolutionToF5( TACSToFH5 *_f5, int _f5_write_freq, char *_f5_file_fmt ){
+  /* Determine parallelism
+     int is, ie, idec;
+     idec = num_time_steps/mpiSize;
+     is   = idec*mpiRank;
+     ie   = idec*(mpiRank + 1);
+     if ( mpiRank == mpiSize - 1) { ie = num_time_steps-1; }
+  */
+  // Loop through all timesteps
+  for ( int k = 0; k < num_time_steps; k++ ){
+    // Determine if we should write output at this k
+    if(_f5 && _f5_file_fmt && getWriteFlag(k, _f5_write_freq)) {
+      // Set the current states into TACS
+      setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+      
+      // Create a filename and format based on the timestep
+      char fname[128];
+      getString(fname, _f5_file_fmt, k);
 
-  // Take write_flag and element type as inputs too.
-  
-  int is, ie, idec;
-  idec = num_time_steps/mpiSize;
-  is   = idec*mpiRank + 1;
-  ie   = idec*(mpiRank + 1);
-  if ( mpiRank == mpiSize - 1) { ie = num_time_steps; }
-
-  //Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
-
-  // Create a viewer
-  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
-  f5->incref();
-
-  for ( int k = is; k < ie; k++ ){
-    // Set the current states into TACS
-    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
-
-    // Make a filename
-    char fname[128];
-    sprintf(fname, "output/solution_%04d.f5", k);
-
-    // Write the solution
-    f5->writeToFile(fname);
+      // Write the solution
+      _f5->writeToFile(fname);
+    }
   }
-
-  // Delete the viewer
-  f5->decref();
 }
 
 /*
@@ -846,7 +826,7 @@ void TACSIntegrator::setMaxNewtonIters( int _max_newton_iters ){
 */
 void TACSIntegrator::setPrintLevel( int _print_level, char *_logfilename ){ 
   print_level = _print_level;
-  if ( mpiRank == 0 && _logfilename && !( strlen(_logfilename) == 0) ) {
+  if ( _logfilename && !( strlen(_logfilename) == 0) ) {
     // Set the log file name
     logfilename = _logfilename;
     

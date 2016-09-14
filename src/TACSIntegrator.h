@@ -71,7 +71,7 @@ class TACSIntegrator : public TACSObject {
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
   void writeSolution( const char *filename );
-  void writeSolutionToF5();                  
+  void writeSolutionToF5( TACSToFH5 *f5, int _write_freq, char *_f5_file_fmt );
   void writeStepToF5( int step = 0 );          
   void configureOutput( TACSToFH5 *_viewer, int _write_freq, char *_f5_file_fmt );
   
@@ -162,7 +162,7 @@ class TACSIntegrator : public TACSObject {
   //-----------------------------------------------------------------//
   
   static void getString( char *buffer, const char * format, ... );
-  int getWriteFlag( int step );
+  int getWriteFlag( int step, int f5_write_freq );
 
   //-----------------------------------------------------------------//
   //                   Private variables

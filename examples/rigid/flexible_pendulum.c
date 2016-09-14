@@ -184,7 +184,10 @@ int main( int argc, char *argv[] ){
 
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS);
+                             TACSElement::OUTPUT_DISPLACEMENTS |
+                             TACSElement::OUTPUT_STRAINS |
+                             TACSElement::OUTPUT_STRESSES |
+                             TACSElement::OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
 
   // Set up the parameters for the TACSIntegrator
@@ -202,14 +205,13 @@ int main( int argc, char *argv[] ){
   bdf->setRelTol(1.0e-8);
   bdf->setAbsTol(1.0e-12);
   bdf->setMaxNewtonIters(50);
-  bdf->setPrintLevel(2);
+  bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
-  bdf->configureOutput(f5, 1, "flexible-pendulum/pendulum_%04d.f5");
-
-  // Integrate and write solution to file
+  // bdf->configureOutput(f5, 1, "flexible-pendulum/pendulum_%04d.f5"); // Writes at the end of each time step
   bdf->integrate();
-  bdf->writeSolution("solutionBDF.dat");
+  // bdf->writeSolution("solutionBDF.dat");
+  bdf->writeSolutionToF5(f5, 1, "flexible-pendulum/pendulum_%04d.f5"); // Writes all at once at the end
 
   /*
   // Delete objects
