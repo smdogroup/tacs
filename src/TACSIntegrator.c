@@ -145,22 +145,31 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   update = tacs->createVec();
   update->incref();
   
+  /*
   // Create a matrix for storing the Jacobian
   D = tacs->createFEMat(TACSAssembler::NATURAL_ORDER);
   D->incref();
 
-  // Associate the maxtrix with FEMatrix
-  mat = D;
-  mat->incref();
-    
   // Allocate the factorization
   int lev = 4500; double fill = 10.0; int reorder_schur = 1;
   pc = new PcScMat(D, lev, fill, reorder_schur);
   pc->incref();
-    
+  
+  // Associate the maxtrix with FEMatrix
+  mat = D;
+  */
+  
+  SerialBCSCMat *A = tacs->createSerialBCSCMat();
+  pc = new SerialBCSCPc(A);
+  pc->incref();
+
+  mat = A;
+  mat->incref();
+  
+
   // The Krylov subspace method (KSM) associated with the solver
   int gmres_iters = 10, num_restarts = 0, is_flexible = 0;
-  ksm = new GMRES(D, pc, gmres_iters, num_restarts, is_flexible);
+  ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
   ksm->incref();
   
   ksm->setTolerances(rtol, atol);
@@ -243,6 +252,9 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
             "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "delta");
   }
   
+  TACSBVec *temp = tacs->createVec();
+  temp->incref();
+
   double t0 = MPI_Wtime();
 
   // Iterate until max iters or R <= tol
@@ -252,7 +264,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     setTACSStates(t, u, udot, uddot);
 
     // Use a globalization based on a dual-type time step method
-    delta = 0.25*gamma/(1+niter*niter);
+    // delta = 0.25*gamma/(1+niter*niter);
     /*
     if (niter > 0){
       double frac = RealPart(norm/(init_norm + rtol));
@@ -301,18 +313,26 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
     
-    if (!use_lapack){    
+    if (use_lapack){
+      // Perform the linear solve using LAPACK (serial only)
+      lapackLinearSolve(res, mat, update);
+    }
+    else {
       // LU Factor the matrix when needed
       if (niter % jac_comp_freq == 0){
 	pc->factor();
       }  
       // Solve for update using KSM
-      ksm->solve(res, update);
+      // ksm->solve(res, update);
+      pc->applyFactor(res, update);
     }
-    else {
-      // Perform the linear solve using LAPACK (serial only)
-      lapackLinearSolve(res, mat, update);
-    }
+
+    temp->zeroEntries();
+    mat->mult(update, temp);
+    temp->axpy(-1.0, res);
+    
+    printf("||J*update - res||: %e\n",
+           temp->norm());
 
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);
@@ -326,6 +346,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
   }
+
+  temp->decref();
 }
 
 /*
@@ -427,8 +449,8 @@ void TACSIntegrator::writeSolutionToF5(){
 
     // Write the solution
     f5->writeToFile(fname);
-
   }
+
   // Delete the viewer
   f5->decref();
 }
@@ -521,8 +543,8 @@ void TACSIntegrator::getFuncGrad( int _num_dv,
   (used for testing purposes)
 */
 void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
-                                        TacsScalar *_fvals, TacsScalar *_dfdx, 
-                                        double dh ) {
+                                    TacsScalar *_fvals, TacsScalar *_dfdx, 
+                                    double dh ) {
   // Copy the inputs
   num_design_vars = _num_dv;
   tacs->setDesignVars(_x, num_design_vars);
@@ -674,6 +696,11 @@ void TACSIntegrator::lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *u
   // Get the right hand side as an array
   TacsScalar *R;
   res->getArray(&R);
+
+  // Set the lapack solution into the distributed vector
+  TacsScalar *ans;
+  update->getArray(&ans);
+  memcpy(ans, R, num_state_vars*sizeof(TacsScalar));
       
   // The following code retrieves a dense column-major 
   // matrix from the FEMat matrix
@@ -715,18 +742,13 @@ if it is used to solve a system of equations\n", info, info);
   } 
   
   // Apply factorization
-  LAPACKgetrs("N", &size, &one, J, &size, dpiv, R, &size, &info);
+  LAPACKgetrs("N", &size, &one, J, &size, dpiv, ans, &size, &info);
   if (info){
     fprintf(stderr,"LAPACK GETRS output error %d\n", info);
     exit(-1);
   }
 
   delete [] dpiv;
-
-  // Set the lapack solution into the distributed vector
-  TacsScalar *resvals;
-  update->getArray(&resvals);
-  memcpy(resvals, R, num_state_vars*sizeof(TacsScalar));
 
   if (J) { delete [] J; }
 }
@@ -867,7 +889,8 @@ void TACSIntegrator::setIsFactorized( int flag ){
 /*
   Update TACS states with the supplied ones (q, qdot, qddot)
 */
-void TACSIntegrator::setTACSStates( double time, TACSBVec *q, TACSBVec *qdot, TACSBVec * qddot ){
+void TACSIntegrator::setTACSStates( double time, TACSBVec *q, 
+                                    TACSBVec *qdot, TACSBVec * qddot ){
   tacs->setSimulationTime(time);
   tacs->setVariables(q, qdot, qddot);
 }

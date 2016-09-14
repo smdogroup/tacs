@@ -171,6 +171,10 @@ int main( int argc, char *argv[] ){
   // This call must occur on all processor
   creator->setElements(&elem, 1);
 
+  // Set the reordering type
+  creator->setReorderingType(TACSAssembler::RCM_ORDER,
+                             TACSAssembler::DIRECT_SCHUR);
+
   // Create the TACS object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
@@ -195,9 +199,9 @@ int main( int argc, char *argv[] ){
   bdf->setRelTol(1.0e-8);
   bdf->setAbsTol(1.0e-12);
   bdf->setMaxNewtonIters(50);
-  bdf->setPrintLevel(1);
+  bdf->setPrintLevel(2);
   bdf->setJacAssemblyFreq(1);
-  bdf->setUseLapack(1);
+  bdf->setUseLapack(0);
   bdf->configureOutput(f5, 1, "flexible-pendulum/pendulum_%04d.f5");
 
   // Integrate and write solution to file
