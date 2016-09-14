@@ -933,8 +933,8 @@ void BCSRMat::setUpDiag(){
     int row_size = data->rowp[i+1] - data->rowp[i];
 
     // Figure out the location of the diagonal entry
-    int * item = (int*)bsearch(&i, &data->cols[data->rowp[i]], row_size, 
-                               sizeof(int), FElibrary::comparator);
+    int *item = (int*)bsearch(&i, &data->cols[data->rowp[i]], row_size, 
+                              sizeof(int), FElibrary::comparator);
     if (item == NULL){
       data->diag[i] = -1; // No diagonal entry
     }
@@ -1092,7 +1092,7 @@ void BCSRMat::initBlockImpl(){
     bmatmult_thread = BCSRMatMatMultAdd8_thread;
     bfactorlower_thread = BCSRMatFactorLower8_thread;
     bfactorupper_thread = BCSRMatFactorUpper8_thread;
-    break;
+    break;    
   default:
     break;
   }  

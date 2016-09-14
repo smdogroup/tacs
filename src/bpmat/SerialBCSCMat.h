@@ -36,9 +36,16 @@ class SerialBCSCMat : public TACSMat {
   BCSCMat *getBCSCMat();
 
  private:
+  // The non-zero information associated with the CSR data
+  int bsize, nrows;
+  int *rowp, *cols;
+
+  // The variable
   TACSVarMap *rmap;
-  BCSCMat *mat;
   TACSBcMap *bcs;
+
+  // The serial CSC matrix itself
+  BCSCMat *mat;
 };
 
 class SerialBCSCPc : public TACSPc {

@@ -2,6 +2,8 @@
 #include "TACSIntegrator.h"
 #include "RigidBody.h"
 #include "MITC9.h"
+#include "MITCShell.h"
+#include "TACSShellTraction.h"
 #include "isoFSDTStiffness.h"
 
 /*
@@ -16,13 +18,14 @@ int main( int argc, char *argv[] ){
   // Initialize the TACSCreator object on all processors
   int rank; 
   MPI_Comm_rank(comm, &rank); 
+
   int vars_per_node = 8;
   TACSCreator *creator = new TACSCreator(comm, vars_per_node);
   creator->incref();
 
   if (rank == 0){
-    int nl_elems = 5; // number of elements along the length
-    int nw_elems = 1; // number of element along a side of the box
+    int nl_elems = 10; // number of elements along the length
+    int nw_elems = 2; // number of element along a side of the box
 
     // Set the number of rigid elements/constraints: 1 rigid body
     // class and 2 constraint classes for each end of the flexible
@@ -155,7 +158,7 @@ int main( int argc, char *argv[] ){
 
   // Create the constitutive objects
   TacsScalar rho = 2500.0;
-  TacsScalar E = 10e6;
+  TacsScalar E = 70e9;
   TacsScalar nu = 0.3;
   TacsScalar kcorr = 5.0/6.0;
   TacsScalar yield_stress = 464.0e6;
@@ -183,7 +186,7 @@ int main( int argc, char *argv[] ){
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS);
   TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
-  
+
   // Set up the parameters for the TACSIntegrator
   double tinit = 0.0;
   double tfinal = 2.0;

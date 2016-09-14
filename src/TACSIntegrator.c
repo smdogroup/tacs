@@ -144,34 +144,39 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   // Create a vector for storing the Newton updates
   update = tacs->createVec();
   update->incref();
-  
-  /*
-  // Create a matrix for storing the Jacobian
-  D = tacs->createFEMat(TACSAssembler::NATURAL_ORDER);
-  D->incref();
 
-  // Allocate the factorization
-  int lev = 4500; double fill = 10.0; int reorder_schur = 1;
-  pc = new PcScMat(D, lev, fill, reorder_schur);
-  pc->incref();
+  // Set the D matrix to NULL
+  D = NULL;
   
-  // Associate the maxtrix with FEMatrix
-  mat = D;
-  */
-  
-  SerialBCSCMat *A = tacs->createSerialBCSCMat();
-  pc = new SerialBCSCPc(A);
-  pc->incref();
-
-  mat = A;
-  mat->incref();
-  
+  int use_femat = 1;
+  if (use_femat){
+    // Create a matrix for storing the Jacobian
+    D = tacs->createFEMat(); // TACSAssembler::NATURAL_ORDER);
+    D->incref();
+    
+    // Allocate the factorization
+    int lev = 100000; double fill = 10.0; int reorder_schur = 1;
+    pc = new PcScMat(D, lev, fill, reorder_schur);
+    pc->incref();
+    
+    // Associate the maxtrix with FEMatrix
+    mat = D;
+  }
+  else {
+    SerialBCSCMat *A = tacs->createSerialBCSCMat();
+    pc = new SerialBCSCPc(A);
+    pc->incref();
+    
+    mat = A;
+    mat->incref();
+  }
 
   // The Krylov subspace method (KSM) associated with the solver
   int gmres_iters = 10, num_restarts = 0, is_flexible = 0;
   ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
   ksm->incref();
-  
+
+  // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
   ksm->setTolerances(rtol, atol);
 
   // Variables used in adjoint solve (use setFunction(...) to set these 
@@ -210,7 +215,7 @@ TACSIntegrator::~TACSIntegrator(){
   // Dereference Newton's method objects
   res->decref();
   update->decref();
-  D->decref();
+  if (D){ D->decref(); }
   mat->decref();
   pc->decref();
   ksm->decref();
@@ -277,8 +282,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
     */
     // Assemble the Jacobian matrix once in five newton iterations
-    if (niter % jac_comp_freq == 0){
-      tacs->assembleJacobian(alpha, beta, gamma + delta,
+    if ((niter % jac_comp_freq) == 0){
+      tacs->assembleJacobian(alpha, beta, gamma,
                              res, mat, NORMAL);
     }
     else {
@@ -312,27 +317,26 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
         RealPart(norm) < atol){
       break;
     }
-    
+
     if (use_lapack){
       // Perform the linear solve using LAPACK (serial only)
       lapackLinearSolve(res, mat, update);
     }
     else {
       // LU Factor the matrix when needed
-      if (niter % jac_comp_freq == 0){
-	pc->factor();
+      if ((niter % jac_comp_freq) == 0){
+        pc->factor();
       }  
       // Solve for update using KSM
-      // ksm->solve(res, update);
-      pc->applyFactor(res, update);
+      ksm->solve(res, update);
     }
 
-    temp->zeroEntries();
+    /*
     mat->mult(update, temp);
     temp->axpy(-1.0, res);
-    
-    printf("||J*update - res||: %e\n",
-           temp->norm());
+    temp->applyBCs();
+    printf("||J*update - res||/||res||: %e\n", temp->norm()/res->norm());
+    */
 
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);

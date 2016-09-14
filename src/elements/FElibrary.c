@@ -9,7 +9,7 @@
 
 TACS_BEGIN_NAMESPACE(FElibrary)
 
-int comparator( const void * a, const void * b ){
+int comparator( const void *a, const void *b ){
   return (*(int*)a - *(int*)b);
 }
 
@@ -31,7 +31,7 @@ int comparator( const void * a, const void * b ){
   returns:
   the size of the unique list <= numDVs
 */
-int uniqueSort( int * dvNums, int numDVs ){
+int uniqueSort( int *dvNums, int numDVs ){
   // Sort the dvNums    
   qsort(dvNums, numDVs, sizeof(int), FElibrary::comparator);
 
@@ -66,7 +66,7 @@ int uniqueSort( int * dvNums, int numDVs ){
   2. Run through the list backwards placing elements into a[]
   when appropriate.
 */
-int mergeArrays( int * a, int na, const int * b, int nb ){
+int mergeArrays( int *a, int na, const int *b, int nb ){
   int ndup = 0;
 
   int j = 0, i = 0;
@@ -229,8 +229,8 @@ void matchIntervals( int mpiSize, const int ownerRange[],
   gaussWts: the Gauss quadrature weights
 */
 int getGaussPtsWts( int _numGauss, 
-		    const double ** gaussPts, 
-                    const double ** gaussWts ){
+		    const double **gaussPts, 
+                    const double **gaussWts ){
   return getGaussPtsWts(GAUSS_QUADRATURE,
 			_numGauss, gaussPts, gaussWts);
 }
@@ -251,8 +251,8 @@ int getGaussPtsWts( int _numGauss,
 */
 int getGaussPtsWts( enum QuadratureType quad,
 		    int _numGauss, 
-		    const double ** gaussPts, 
-                    const double ** gaussWts ){
+		    const double **gaussPts, 
+                    const double **gaussWts ){
   int numGauss = 1;
 
   if (quad == GAUSS_QUADRATURE){
@@ -473,7 +473,7 @@ void bspline_basis_test( int k ){
   n: the number of control points
   k: the order of the b-spline
 */
-int bspline_interval( double u, const double * T, int n, int k ){
+int bspline_interval( double u, const double *T, int n, int k ){
   if (u >= T[n]){
     return n-1;
   }
@@ -516,16 +516,16 @@ int bspline_interval( double u, const double * T, int n, int k ){
   u is on the idx-th knot span such that u is in the interval
   u \in [Tu[idx], Tu[idx+1]) 
 */
-void bspline_basis( double * N, const int idx, const double u, 
-                    const double * Tu, 
-                    const int ku, double * work ){
+void bspline_basis( double *N, const int idx, const double u, 
+                    const double *Tu, 
+                    const int ku, double *work ){
   N[0] = 1.0;
   
   // Set the pointers for the temporary work arrays
   // Note that left[j] = u - Tu[i+1 - j]
   // and right[j] = Tu[i+j] - u
-  double * left = &work[0];
-  double * right = &work[ku];
+  double *left = &work[0];
+  double *right = &work[ku];
   
   for ( int j = 1; j < ku; j++ ){
     left[j] = u - Tu[idx+1-j];
@@ -556,9 +556,9 @@ void bspline_basis( double * N, const int idx, const double u,
   u is on the idx-th knot span such that u is in the interval
   u \in [Tu[idx], Tu[idx+1]) 
 */
-void bspline_basis_derivative( double * N, const int idx, const double u,
-                               int ideriv, const double * Tu,
-                               const int ku, double * work ){
+void bspline_basis_derivative( double *N, const int idx, const double u,
+                               int ideriv, const double *Tu,
+                               const int ku, double *work ){
 
   if (ideriv >= ku){
     // Set all higher-order derivatives to zero
@@ -571,15 +571,15 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
   // Set the pointers for the temporary work arrays
   // Note that left[j] = u - Tu[i+1 - j]
   // and right[j] = Tu[i+j] - u
-  double * left = &work[0];
-  double * right = &work[ku];
+  double *left = &work[0];
+  double *right = &work[ku];
 
   // ndu is a matrix of total size ku*ku
   // The basis functions are stored in the upper triangular part of the matrix
   // such that N_{idx-j, i} = ndu[i + j*ku] if i >= j is the basis function.
   // The knot differences are stored in the lower portion of the matrix such that
   // ndu[i + j*ku] = u_{idx+i+1} - u_{idx+j-i}
-  double * ndu = &work[2*ku];
+  double *ndu = &work[2*ku];
   ndu[0] = 1.0;
 
   // Compute all orders of the basis functions
@@ -608,8 +608,8 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
   }
 
   // Set the temporary arrays for the a-coefficients
-  double * a0 = &work[0];
-  double * a1 = &work[ku];
+  double *a0 = &work[0];
+  double *a1 = &work[ku];
 
   for ( int i = 0; i < ku; i++ ){
     a0[0] = 1.0;
@@ -647,7 +647,7 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
       N[i + k*ku] = d;
 
       // Swap the rows of a
-      double * t = a0;
+      double *t = a0;
       a0 = a1;  a1 = t;
     }
   }
@@ -681,10 +681,10 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline1d( const double u, const int idu, const double * Tu, 
-                      const int nu, const int ku, const TacsScalar * coef,
-                      double * work ){
-  double * Nu = work;
+TacsScalar bspline1d( const double u, const int idu, const double *Tu, 
+                      const int nu, const int ku, const TacsScalar *coef,
+                      double *work ){
+  double *Nu = work;
 
   // Compute the knot span
   int intu = bspline_interval(u, Tu, nu, ku);
@@ -730,13 +730,13 @@ TacsScalar bspline1d( const double u, const int idu, const double * Tu,
 */
 TacsScalar bspline2d( const double u, const double v, 
                       const int idu, const int idv,
-                      const double * Tu, const double * Tv,
+                      const double *Tu, const double *Tv,
                       const int nu, const int nv, const int ku, const int kv, 
-                      const TacsScalar * coef,
-                      double * work ){
+                      const TacsScalar *coef,
+                      double *work ){
   // The basis functions
-  double * Nu = &work[0];
-  double * Nv = &work[(idu+1)*ku];
+  double *Nu = &work[0];
+  double *Nv = &work[(idu+1)*ku];
 
   // Compute the knot intervals
   int intu = bspline_interval(u, Tu, nu, ku);
@@ -797,15 +797,15 @@ TacsScalar bspline2d( const double u, const double v,
 */
 TacsScalar bspline3d( const double u, const double v, const double w, 
                       const int idu, const int idv, const int idw,
-                      const double * Tu, const double * Tv, const double * Tw,
+                      const double *Tu, const double *Tv, const double *Tw,
                       const int nu, const int nv, const int nw, 
                       const int ku, const int kv, const int kw, 
-                      const TacsScalar * coef,
-                      double * work ){
+                      const TacsScalar *coef,
+                      double *work ){
   // The basis functions
-  double * Nu = &work[0];
-  double * Nv = &work[(idu+1)*ku];
-  double * Nw = &work[(idu+1)*ku + (idv+1)*kv];
+  double *Nu = &work[0];
+  double *Nv = &work[(idu+1)*ku];
+  double *Nw = &work[(idu+1)*ku + (idv+1)*kv];
 
   // Compute the knot intervals
   int intu = bspline_interval(u, Tu, nu, ku);

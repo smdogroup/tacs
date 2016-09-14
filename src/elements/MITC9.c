@@ -846,6 +846,10 @@ void MITC9::addResidual( double time,
   TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
   computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
 
+  // Compute the area for this element: this is used to scale the
+  // constraint equations within the code
+  TacsScalar area = 0.0;
+
   for ( int j = 0; j < ORDER; j++ ){
     for ( int i = 0; i < ORDER; i++ ){
       // Set the Gauss quadrature points
@@ -882,6 +886,9 @@ void MITC9::addResidual( double time,
       TacsScalar Xdinv[9];
       TacsScalar h = inv3x3(Xd, Xdinv);
       h *= gaussWts[i]*gaussWts[j];
+
+      // Compute the area
+      area += h;
 
       // Evaluate the areal mass properties
       TacsScalar rho[2];
@@ -1025,19 +1032,22 @@ void MITC9::addResidual( double time,
     }
   }
 
+  // Set the scaling for the constraints
+  TacsScalar scale = area;
+
   // Add the constraints from the quaternion parametrization
   for ( int i = 0; i < NUM_NODES; i++ ){
     const TacsScalar *q = &vars[8*i+3];
     TacsScalar lamb = vars[8*i+7];
 
     // Enforce the quaternion constraint
-    res[8*i+7] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+    res[8*i+7] += scale*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0);
 
     // Add the result to the governing equations
-    res[8*i+3] += 2.0*q[0]*lamb;
-    res[8*i+4] += 2.0*q[1]*lamb;
-    res[8*i+5] += 2.0*q[2]*lamb;
-    res[8*i+6] += 2.0*q[3]*lamb;
+    res[8*i+3] += 2.0*scale*q[0]*lamb;
+    res[8*i+4] += 2.0*scale*q[1]*lamb;
+    res[8*i+5] += 2.0*scale*q[2]*lamb;
+    res[8*i+6] += 2.0*scale*q[3]*lamb;
   }
 }
 
@@ -1092,6 +1102,10 @@ void MITC9::addJacobian( double time, TacsScalar J[],
   TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
   computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
 
+  // Compute the area of this element: used to evaluate the
+  // constraints
+  TacsScalar area = 0.0;
+
   // The weights that are used for the geometric stiffness from
   // the tying strain
   TacsScalar w13[6], w23[6];
@@ -1133,6 +1147,9 @@ void MITC9::addJacobian( double time, TacsScalar J[],
       // Compute the derivatives of the shape functions
       TacsScalar h = inv3x3(Xd, Xdinv);
       h *= gaussWts[i]*gaussWts[j];
+
+      // Compute the area
+      area += h;
 
       // Evaluate the areal mass properties
       TacsScalar rho[2];
@@ -1345,6 +1362,9 @@ void MITC9::addJacobian( double time, TacsScalar J[],
   // Add the geometric stiffness terms from the tying strain
   addTyingGmat(J, w13, w23, X, Xr, vars, dir, dirdq);
 
+  // Set the scaling for the constraints
+  TacsScalar scale = area*alpha;
+
   // Add the constraints from the quaternions
   for ( int i = 0; i < NUM_NODES; i++ ){
     const TacsScalar *q = &vars[8*i+3];
@@ -1354,22 +1374,22 @@ void MITC9::addJacobian( double time, TacsScalar J[],
     TacsScalar lamb = vars[8*i+7];
 
     // Add the constraint terms
-    Jp[4] += 2.0*alpha*q[0];
-    Jp[4+ldj] += 2.0*alpha*q[1];
-    Jp[4+2*ldj] += 2.0*alpha*q[2];
-    Jp[4+3*ldj] += 2.0*alpha*q[3];
+    Jp[4] += 2.0*scale*q[0];
+    Jp[4+ldj] += 2.0*scale*q[1];
+    Jp[4+2*ldj] += 2.0*scale*q[2];
+    Jp[4+3*ldj] += 2.0*scale*q[3];
 
     // Enforce the quaternion constraint
-    Jp[4*ldj] += 2.0*alpha*q[0];
-    Jp[4*ldj+1] += 2.0*alpha*q[1];
-    Jp[4*ldj+2] += 2.0*alpha*q[2];
-    Jp[4*ldj+3] += 2.0*alpha*q[3];
+    Jp[4*ldj] += 2.0*scale*q[0];
+    Jp[4*ldj+1] += 2.0*scale*q[1];
+    Jp[4*ldj+2] += 2.0*scale*q[2];
+    Jp[4*ldj+3] += 2.0*scale*q[3];
 
     // Add the terms to the diagonal
-    Jp[0] += 2.0*alpha*lamb;
-    Jp[ldj+1] += 2.0*alpha*lamb;
-    Jp[2*(ldj+1)] += 2.0*alpha*lamb;
-    Jp[3*(ldj+1)] += 2.0*alpha*lamb;
+    Jp[0] += 2.0*scale*lamb;
+    Jp[ldj+1] += 2.0*scale*lamb;
+    Jp[2*(ldj+1)] += 2.0*scale*lamb;
+    Jp[3*(ldj+1)] += 2.0*scale*lamb;
   }
 }
 
