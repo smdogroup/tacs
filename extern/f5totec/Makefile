@@ -1,7 +1,7 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-default: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS} -I../tecio/tecsrc/ -I/usr/include
+default: TACS_CC_FLAGS=${TACS_OPT_CC_FLAGS} -I../tecio/tecsrc/ -I/usr/include
 default: f5totec
 
 f5totec: f5totec.o

@@ -17,7 +17,7 @@ AR_FLAGS = rcs
 
 # Flags for debugging and regular compilation versions
 EXTRA_DEBUG_CC_FLAGS = -fPIC -g 
-EXTRA_CC_FLAGS = -fPIC -O2
+EXTRA_CC_FLAGS = -fPIC -O3
 
 # Use this if you have problems with mpich
 # TACS_DEF = -DMPICH_IGNORE_CXX_SEEK
@@ -48,8 +48,8 @@ LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread
 # -DTACS_CPLUSPLUS_METIS to the TACS_DEF arguments below. If you
 # compile METIS using a C compiler, there should be no issues.
 
-METIS_INCLUDE = -I${TACS_DIR}/extern/metis-4.0.3/Lib
-METIS_LIB = ${TACS_DIR}/extern/metis-4.0.3/libmetis.a
+METIS_INCLUDE = -I${TACS_DIR}/extern/metis/include/
+METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # AMD is a set of routines for ordering matrices
 

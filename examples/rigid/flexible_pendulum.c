@@ -24,8 +24,8 @@ int main( int argc, char *argv[] ){
   creator->incref();
 
   if (rank == 0){
-    int nl_elems = 10; // number of elements along the length
-    int nw_elems = 2; // number of element along a side of the box
+    int nl_elems = 25; // number of elements along the length
+    int nw_elems = 5; // number of element along a side of the box
 
     // Set the number of rigid elements/constraints: 1 rigid body
     // class and 2 constraint classes for each end of the flexible

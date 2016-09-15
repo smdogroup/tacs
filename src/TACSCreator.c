@@ -949,25 +949,29 @@ void TACSCreator::partitionMesh( int split_size,
 
     // Partition the mesh using METIS.
     if (split_size > 1){
-      int options[5];
-      options[0] = 0; // use the default options
-      int wgtflag = 0; // weights are on the verticies
-      int numflag = 0; // C style numbering 
-      int edgecut = -1; 
-      int *vwgts = NULL; // Weights on the vertices 
-      int *adjwgts = NULL;  // Weights on the edges or adjacency
+      int ncon = 1; // "It should be at least 1"??
       
+      // Set the default options
+      int options[METIS_NOPTIONS];
+      METIS_SetDefaultOptions(options);
+
+      // Use 0-based numbering
+      options[METIS_OPTION_NUMBERING] = 0;
+        
+      // The objective value in METIS
+      int objval = 0;
+
       if (split_size < 8){
-        METIS_PartGraphRecursive(&num_elements, elem_ptr, elem_conn,
-                                 vwgts, adjwgts,
-                                 &wgtflag, &numflag, &split_size, 
-                                 options, &edgecut, partition);
+        METIS_PartGraphRecursive(&num_elements, &ncon, 
+                                 elem_ptr, elem_conn,
+                                 NULL, NULL, NULL, &split_size, 
+                                 NULL, NULL, options, &objval, partition);
       }
       else {
-        METIS_PartGraphKway(&num_elements, elem_ptr, elem_conn,
-                            vwgts, adjwgts, 
-                            &wgtflag, &numflag, &split_size, 
-                            options, &edgecut, partition);
+        METIS_PartGraphKway(&num_elements, &ncon, 
+                            elem_ptr, elem_conn,
+                            NULL, NULL, NULL, &split_size, 
+                            NULL, NULL, options, &objval, partition);
       }
     }
     else {

@@ -919,7 +919,7 @@ void TACSBDFIntegrator::approxStates(){
   // h^2/2*qddot[k-1] (helps reduce the initial residual)
   q[k]->copyValues(q[k-1]);
   q[k]->axpy(h, qdot[k-1]);
-  q[k]->axpy(h*h/2.0, qddot[k-1]);
+  q[k]->axpy(0.5*h*h, qddot[k-1]);
 
   // approximate qdot using BDF formula
   for ( int i = 0; i < nbdf; i++ ){

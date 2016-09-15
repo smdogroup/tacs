@@ -1124,9 +1124,13 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     }
   }
   else if (order_type == ND_ORDER){
-    int numflag = 0, options[8] = { 0, 0, 0, 0,  
-                                    0, 0, 0, 0 };
-    METIS_NodeND(&nvars, rowp, cols, &numflag, 
+    // Set the default options in METIS
+    int options[METIS_NOPTIONS];
+    METIS_SetDefaultOptions(options);
+
+    // Use 0-based numbering
+    options[METIS_OPTION_NUMBERING] = 0;
+    METIS_NodeND(&nvars, rowp, cols, NULL,
                  options, _perm, _new_vars);    
   }
   else if (order_type == TACS_AMD_ORDER){
