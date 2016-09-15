@@ -1083,7 +1083,7 @@ void BCSRMat::initBlockImpl(){
     applyschur        = BCSRMatApplyFactorSchur8;
     applysor  = BCSRMatApplySOR8;
     applyssor = BCSRMatApplySSOR8;
-
+    
     // The threaded versions
     bmultadd_thread = BCSRMatVecMultAdd8_thread;
     bfactor_thread = BCSRMatFactor8_thread;
@@ -1092,7 +1092,7 @@ void BCSRMat::initBlockImpl(){
     bmatmult_thread = BCSRMatMatMultAdd8_thread;
     bfactorlower_thread = BCSRMatFactorLower8_thread;
     bfactorupper_thread = BCSRMatFactorUpper8_thread;
-    break;    
+    break;
   default:
     break;
   }  

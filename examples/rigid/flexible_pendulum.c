@@ -190,6 +190,9 @@ int main( int argc, char *argv[] ){
                              TACSElement::OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
 
+  // Set the number of threads
+  tacs->setNumThreads(2);
+
   // Set up the parameters for the TACSIntegrator
   double tinit = 0.0;
   double tfinal = 2.0;

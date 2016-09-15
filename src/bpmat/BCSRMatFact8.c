@@ -10,14 +10,14 @@
 /*
   Factor the matrix using multiple threads.
 */
-void * BCSRMatFactor8_thread( void * t ){
-  BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
+void *BCSRMatFactor8_thread( void *t ){
+  BCSRMatThread *tdata = static_cast<BCSRMatThread*>(t);
 
   const int nrows = tdata->mat->nrows;
-  const int * rowp = tdata->mat->rowp;
-  const int * cols = tdata->mat->cols;
-  const int * diag = tdata->mat->diag;
-  TacsScalar * A = tdata->mat->A;
+  const int *rowp = tdata->mat->rowp;
+  const int *cols = tdata->mat->cols;
+  const int *diag = tdata->mat->diag;
+  TacsScalar *A = tdata->mat->A;
   const int group_size = 1;
 
   TacsScalar d00, d01, d02, d03, d04, d05, d06, d07;
@@ -50,10 +50,10 @@ void * BCSRMatFactor8_thread( void * t ){
       // for j in [low, high)
       for ( ; (cols[jp] < high) && (cols[jp] < row); jp++ ){
         int j = cols[jp];
-        TacsScalar * a = &A[64*jp];
-        TacsScalar * b = &A[64*diag[j]];
+        TacsScalar *a = &A[64*jp];
+        TacsScalar *b = &A[64*diag[j]];
         
-        // Multiply d = A[j] * A[diag[cj]]      
+        // Multiply d = A[j] *A[diag[cj]]      
         TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
         
         b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
@@ -254,7 +254,7 @@ void * BCSRMatFactor8_thread( void * t ){
       if (high-1 == row){
         // Invert the diagonal portion of the matrix
         TacsScalar D[64];
-        TacsScalar * a = &A[64*diag[row]];
+        TacsScalar *a = &A[64*diag[row]];
         D[0 ] = a[0 ]; D[1 ] = a[1 ]; D[2 ] = a[2 ]; D[3 ] = a[3 ]; D[4 ] = a[4 ]; D[5 ] = a[5 ]; D[6 ] = a[6 ]; D[7 ] = a[7 ];
         D[8 ] = a[8 ]; D[9 ] = a[9 ]; D[10] = a[10]; D[11] = a[11]; D[12] = a[12]; D[13] = a[13]; D[14] = a[14]; D[15] = a[15];
         D[16] = a[16]; D[17] = a[17]; D[18] = a[18]; D[19] = a[19]; D[20] = a[20]; D[21] = a[21]; D[22] = a[22]; D[23] = a[23];
@@ -282,20 +282,20 @@ void * BCSRMatFactor8_thread( void * t ){
 /*!
   Compute x = L_{B}^{-1} E
 */
-void * BCSRMatFactorLower8_thread( void * t ){
-  BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
+void *BCSRMatFactorLower8_thread( void *t ){
+  BCSRMatThread *tdata = static_cast<BCSRMatThread*>(t);
 
   const int nrows = tdata->mat->nrows;
-  const int * rowp = tdata->mat->rowp;
-  const int * cols = tdata->mat->cols;
-  const int * diag = tdata->mat->diag;
-  const TacsScalar * A = tdata->mat->A;
+  const int *rowp = tdata->mat->rowp;
+  const int *cols = tdata->mat->cols;
+  const int *diag = tdata->mat->diag;
+  const TacsScalar *A = tdata->mat->A;
   const int group_size = 1;
 
   // Retrieve the data required from the matrix
-  const int * erowp = tdata->Amat->rowp;
-  const int * ecols = tdata->Amat->cols;
-  TacsScalar * E = tdata->Amat->A;
+  const int *erowp = tdata->Amat->rowp;
+  const int *ecols = tdata->Amat->cols;
+  TacsScalar *E = tdata->Amat->A;
 
   while (tdata->num_completed_rows < nrows){
     int index, row, low, high;
@@ -311,15 +311,15 @@ void * BCSRMatFactorLower8_thread( void * t ){
 
       for ( ; (cols[jp] < high) && (jp < j_end); jp++ ){
         int j = cols[jp];      
-        const TacsScalar * d = &A[64*jp];
+        const TacsScalar *d = &A[64*jp];
 
         int k = erowp[row];
         int k_end = erowp[row+1];
-        TacsScalar * a = &E[64*k];
+        TacsScalar *a = &E[64*k];
 
         int p = erowp[j]; 
         int p_end = erowp[j+1];
-        TacsScalar * b = &E[64*p];
+        TacsScalar *b = &E[64*p];
 
         // Now, scan through row cj starting at the first entry past the
         // diagonal
@@ -332,84 +332,84 @@ void * BCSRMatFactorLower8_thread( void * t ){
           if (k < k_end && ecols[k] == ecols[p]){
             TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;  
             b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
-            a[0 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[8 ] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[16] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[24] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[32] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[40] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[48] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[56] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[16] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[24] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[32] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[40] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[48] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[56] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
             
             b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
-            a[1 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[9 ] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[17] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[25] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[33] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[41] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[49] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[57] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[9 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[17] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[25] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[33] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[41] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[49] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[57] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
             b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42]; b6 = b[50]; b7 = b[58];
-            a[2 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[10] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[18] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[26] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[34] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[42] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[50] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[58] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[2 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[10] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[18] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[26] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[34] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[42] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[50] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[58] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
             b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43]; b6 = b[51]; b7 = b[59];
-            a[3 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[11] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[19] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[27] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[35] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[43] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[51] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[59] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[3 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[11] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[19] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[27] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[35] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[43] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[51] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[59] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
             b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44]; b6 = b[52]; b7 = b[60];
-            a[4 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[12] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[20] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[28] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[36] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[44] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[52] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[60] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[4 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[12] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[20] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[28] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[36] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[44] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[52] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[60] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
             b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45]; b6 = b[53]; b7 = b[61];
-            a[5 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[13] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[21] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[29] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[37] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[45] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[53] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[61] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[5 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[13] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[21] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[29] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[37] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[45] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[53] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[61] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
             b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46]; b6 = b[54]; b7 = b[62];
-            a[6 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[14] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[22] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[30] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[38] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[46] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[54] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[62] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[6 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[14] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[22] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[30] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[38] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[46] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[54] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[62] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
             b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47]; b6 = b[55]; b7 = b[63];
-            a[7 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-            a[15] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-            a[23] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-            a[31] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-            a[39] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-            a[47] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-            a[55] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-            a[63] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+            a[7 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+            a[15] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+            a[23] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+            a[31] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+            a[39] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+            a[47] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+            a[55] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+            a[63] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
           }
           b += 64;
         }
@@ -425,20 +425,20 @@ void * BCSRMatFactorLower8_thread( void * t ){
 /*!
   Compute x = F U_{B}^{-1}
 */
-void * BCSRMatFactorUpper8_thread( void * t ){
-  BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
+void *BCSRMatFactorUpper8_thread( void *t ){
+  BCSRMatThread *tdata = static_cast<BCSRMatThread*>(t);
 
-  const int * rowp = tdata->mat->rowp;
-  const int * cols = tdata->mat->cols;
-  const int * diag = tdata->mat->diag;
-  const TacsScalar * A = tdata->mat->A;
+  const int *rowp = tdata->mat->rowp;
+  const int *cols = tdata->mat->cols;
+  const int *diag = tdata->mat->diag;
+  const TacsScalar *A = tdata->mat->A;
   const int group_size = 1;
 
   // Retrieve the data required from the matrix
   const int nrows_f = tdata->Amat->nrows;
-  const int * frowp = tdata->Amat->rowp;
-  const int * fcols = tdata->Amat->cols;
-  TacsScalar * F = tdata->Amat->A;
+  const int *frowp = tdata->Amat->rowp;
+  const int *fcols = tdata->Amat->cols;
+  TacsScalar *F = tdata->Amat->A;
 
   TacsScalar d00, d01, d02, d03, d04, d05, d06, d07;
   TacsScalar d10, d11, d12, d13, d14, d15, d16, d17;
@@ -461,10 +461,10 @@ void * BCSRMatFactorUpper8_thread( void * t ){
 
       for ( ; jp < j_end; jp++ ){
         int j = fcols[jp];      
-        TacsScalar * a = &F[36*jp];
-        const TacsScalar * b = &A[36*diag[j]];
+        TacsScalar *a = &F[64*jp];
+        const TacsScalar *b = &A[64*diag[j]];
       
-        // Multiply d = F[j] * A[diag[cj]]   
+        // Multiply d = F[j] *A[diag[cj]]   
         TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
         
         b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
@@ -668,12 +668,12 @@ void * BCSRMatFactorUpper8_thread( void * t ){
   non-zero pattern.  The entries are over-written, all operations are
   performed in place.
 */
-void BCSRMatFactor8( BCSRMatData * data ){
+void BCSRMatFactor8( BCSRMatData *data ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
-  const int * diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
 
   TacsScalar d00, d01, d02, d03, d04, d05, d06, d07;
   TacsScalar d10, d11, d12, d13, d14, d15, d16, d17;
@@ -697,10 +697,10 @@ void BCSRMatFactor8( BCSRMatData * data ){
 
     for ( int j = rowp[i]; cols[j] < i; j++ ){
       int cj = cols[j];
-      TacsScalar * a = &(data->A[64*j]);
-      TacsScalar * b = &(data->A[64*diag[cj]]);
+      TacsScalar *a = &(data->A[64*j]);
+      TacsScalar *b = &(data->A[64*diag[cj]]);
       
-      // Multiply d = A[j] * A[diag[cj]]      
+      // Multiply d = A[j] *A[diag[cj]]      
       TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
       b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
@@ -802,7 +802,7 @@ void BCSRMatFactor8( BCSRMatData * data ){
           k++; a += 64;
         }
 
-        // A[k] = A[k] - A[j] * A[p]
+        // A[k] = A[k] - A[j] *A[p]
         if (k < kend && cols[k] == cols[p]){
 	  b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40], b6 = b[48], b7 = b[56];
 	  a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
@@ -906,7 +906,7 @@ void BCSRMatFactor8( BCSRMatData * data ){
 
     // Invert the diagonal portion of the matrix
     TacsScalar D[64];
-    TacsScalar * a = &(data->A[64*diag[i]]);
+    TacsScalar *a = &(data->A[64*diag[i]]);
 
     D[0 ] = a[0 ]; D[1 ] = a[1 ]; D[2 ] = a[2 ]; D[3 ] = a[3 ]; D[4 ] = a[4 ]; D[5 ] = a[5 ]; D[6 ] = a[6 ]; D[7 ] = a[7 ];
     D[8 ] = a[8 ]; D[9 ] = a[9 ]; D[10] = a[10]; D[11] = a[11]; D[12] = a[12]; D[13] = a[13]; D[14] = a[14]; D[15] = a[15];
@@ -932,16 +932,16 @@ void BCSRMatFactor8( BCSRMatData * data ){
 /*!
   Compute x = L_{B}^{-1} E
 */
-void BCSRMatFactorLower8( BCSRMatData * data, BCSRMatData * Edata ){
+void BCSRMatFactorLower8( BCSRMatData *data, BCSRMatData *Edata ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
-  const int * diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
 
   // Retrieve the data required from the matrix
-  const int * erowp = Edata->rowp;
-  const int * ecols = Edata->cols;
+  const int *erowp = Edata->rowp;
+  const int *ecols = Edata->cols;
 
   // Keep track of the number of block matrix products
   int nz = 0;
@@ -953,15 +953,15 @@ void BCSRMatFactorLower8( BCSRMatData * data, BCSRMatData * Edata ){
 
     for ( int j = rowp[i]; j < j_end; j++ ){
       int cj = cols[j];      
-      TacsScalar * d = &(data->A[64*j]);
+      TacsScalar *d = &(data->A[64*j]);
 
       int k     = erowp[i];
       int k_end = erowp[i+1];
-      TacsScalar * a = &(Edata->A[64*k]);
+      TacsScalar *a = &(Edata->A[64*k]);
 
       int p     = erowp[cj]; 
       int p_end = erowp[cj+1];
-      TacsScalar * b = &(Edata->A[64*p]);
+      TacsScalar *b = &(Edata->A[64*p]);
 
       // Now, scan through row cj starting at the first entry past the
       // diagonal
@@ -971,87 +971,87 @@ void BCSRMatFactorLower8( BCSRMatData * data, BCSRMatData * Edata ){
 	  k++; a += 64;
 	}
 
-	if ( k < k_end && ecols[k] == ecols[p] ){
+	if (k < k_end && ecols[k] == ecols[p]){
 	  TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;  
           b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
-          a[0 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[8 ] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[16] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[24] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[32] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[40] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[48] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[56] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[16] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[24] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[32] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[40] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[48] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[56] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
-          a[1 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[9 ] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[17] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[25] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[33] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[41] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[49] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[57] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[9 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[17] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[25] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[33] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[41] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[49] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[57] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42]; b6 = b[50]; b7 = b[58];
-          a[2 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[10] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[18] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[26] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[34] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[42] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[50] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[58] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[2 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[10] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[18] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[26] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[34] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[42] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[50] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[58] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43]; b6 = b[51]; b7 = b[59];
-          a[3 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[11] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[19] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[27] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[35] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[43] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[51] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[59] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[3 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[11] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[19] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[27] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[35] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[43] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[51] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[59] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44]; b6 = b[52]; b7 = b[60];
-          a[4 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[12] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[20] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[28] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[36] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[44] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[52] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[60] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[4 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[12] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[20] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[28] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[36] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[44] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[52] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[60] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45]; b6 = b[53]; b7 = b[61];
-          a[5 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[13] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[21] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[29] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[37] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[45] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[53] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[61] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[5 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[13] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[21] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[29] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[37] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[45] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[53] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[61] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46]; b6 = b[54]; b7 = b[62];
-          a[6 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[14] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[22] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[30] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[38] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[46] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[54] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[62] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[6 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[14] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[22] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[30] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[38] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[46] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[54] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[62] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47]; b6 = b[55]; b7 = b[63];
-          a[7 ] = d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
-          a[15] = d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
-          a[23] = d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
-          a[31] = d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
-          a[39] = d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
-          a[47] = d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
-          a[55] = d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
-          a[63] = d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
+          a[7 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
+          a[15] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
+          a[23] -= d[16]*b0 + d[17]*b1 + d[18]*b2 + d[19]*b3 + d[20]*b4 + d[21]*b5 + d[22]*b6 + d[23]*b7;
+          a[31] -= d[24]*b0 + d[25]*b1 + d[26]*b2 + d[27]*b3 + d[28]*b4 + d[29]*b5 + d[30]*b6 + d[31]*b7;
+          a[39] -= d[32]*b0 + d[33]*b1 + d[34]*b2 + d[35]*b3 + d[36]*b4 + d[37]*b5 + d[38]*b6 + d[39]*b7;
+          a[47] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
+          a[55] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
+          a[63] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
 
           nz++;
 	}
@@ -1066,16 +1066,16 @@ void BCSRMatFactorLower8( BCSRMatData * data, BCSRMatData * Edata ){
 /*!
   Compute x = F U_{B}^{-1}
 */
-void BCSRMatFactorUpper8( BCSRMatData * data, BCSRMatData * Fdata ){
+void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
   // Retrieve the data required from the matrix
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
-  const int * diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
 
   // Retrieve the data required from the matrix
   const int nrows_f = Fdata->nrows;
-  const int * frowp = Fdata->rowp;
-  const int * fcols = Fdata->cols;
+  const int *frowp = Fdata->rowp;
+  const int *fcols = Fdata->cols;
 
   TacsScalar d00, d01, d02, d03, d04, d05, d06, d07;
   TacsScalar d10, d11, d12, d13, d14, d15, d16, d17;
@@ -1091,10 +1091,10 @@ void BCSRMatFactorUpper8( BCSRMatData * data, BCSRMatData * Fdata ){
 
     for ( int j = frowp[i]; j < j_end; j++ ){
       int cj = fcols[j];      
-      TacsScalar * a = &(Fdata->A[64*j]);
-      const TacsScalar * b = &(data->A[64*diag[cj]]);
+      TacsScalar *a = &(Fdata->A[64*j]);
+      const TacsScalar *b = &(data->A[64*diag[cj]]);
       
-      // Multiply d = F[j] * A[diag[cj]]      
+      // Multiply d = F[j]*A[diag[cj]]      
       TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
       b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
