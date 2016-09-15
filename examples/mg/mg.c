@@ -319,14 +319,19 @@ int main( int argc, char *argv[] ){
   int freq = 1;
   gmres->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
 
+  // The initial time
+  double t0 = MPI_Wtime();
+
   // Assemble the Jacobian matrix for each level
   mg->assembleJacobian(1.0, 0.0, 0.0, res);
-  
+
   // "Factor" the preconditioner
   mg->factor();
 
   // Compute the solution using GMRES
   gmres->solve(res, ans);
+
+  t0 = MPI_Wtime() - t0;
   
   // Set the variables into TACS
   ans->scale(-1.0);
@@ -336,6 +341,7 @@ int main( int argc, char *argv[] ){
   TacsScalar res_norm = res->norm();
   if (rank == 0){
     printf("||R||: %15.5e\n", RealPart(res_norm));
+    printf("Solution time: %e\n", t0);
   }
 
   // Output for visualization
