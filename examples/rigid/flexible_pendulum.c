@@ -196,12 +196,12 @@ int main( int argc, char *argv[] ){
   // Set up the parameters for the TACSIntegrator
   double tinit = 0.0;
   double tfinal = 2.0;
-  int steps_per_second = 250; 
+  int steps_per_second = 300; 
   int num_stages = 2;
   int max_bdf_order = 2;
-  TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal,
-                                                 steps_per_second, 
-                                                 max_bdf_order);
+  TACSBDFIntegrator *bdf = 
+    new TACSBDFIntegrator(tacs, tinit, tfinal,
+                          steps_per_second, max_bdf_order);
   bdf->incref();
   
   // Set optional parameters
@@ -211,10 +211,11 @@ int main( int argc, char *argv[] ){
   bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
-  // bdf->configureOutput(f5, 1, "flexible-pendulum/pendulum_%04d.f5"); // Writes at the end of each time step
+
+  // Writes at the end of each time step
+  bdf->configureOutput(f5, 1, "flexible-pendulum/pendulum_%04d.f5"); 
   bdf->integrate();
-  // bdf->writeSolution("solutionBDF.dat");
-  bdf->writeSolutionToF5(f5, 1, "flexible-pendulum/pendulum_%04d.f5"); // Writes all at once at the end
+  bdf->writeSolution("solutionBDF.dat");
 
   /*
   // Delete objects

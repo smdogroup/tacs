@@ -99,9 +99,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Default print level and logging control
   print_level = 1;
-  logfp       = stdout;
-  logfilename = NULL;
-  //  if (mpiRank != 0){logfp = NULL;}   // Only root writes log
+  logfp = NULL;
+  if (mpiRank == 0){ 
+    logfp = stdout; 
+  }
 
   // State variables that store the entire time history
   q     = new TACSBVec*[num_time_steps];
@@ -186,11 +187,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Tecplot solution export (use configureOutput(...) to set these
   f5_write_freq = 0;
-  f5_file_fmt   = NULL;
-  f5            = NULL;
+  f5_file_fmt = NULL;
+  f5 = NULL;
 
-  // Allocate space for kinetic and potential energies
-  energies = new TacsScalar[ 2 ];
+  // Set kinetic and potential energies
   energies[0] = 0.0;
   energies[1] = 0.0;
 
@@ -225,8 +225,7 @@ TACSIntegrator::~TACSIntegrator(){
   if (q)        { delete [] q; }
   if (qdot)     { delete [] qdot; }
   if (qddot)    { delete [] qddot; }
-
-  if (energies) { delete [] energies; }
+  if (f5_file_fmt){ delete [] f5_file_fmt; }
   
   // Dereference TACS
   tacs->decref();
@@ -253,13 +252,10 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   init_norm = 0.0;
   norm = 0.0;
 
-  if ( logfp && print_level >= 2){
+  if (logfp && print_level >= 2){
     fprintf(logfp, "%12s %8s %12s %12s %12s %12s\n",
             "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "delta");
   }
-  
-  TACSBVec *temp = tacs->createVec();
-  temp->incref();
 
   double t0 = MPI_Wtime();
 
@@ -269,19 +265,6 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
 
-    // Use a globalization based on a dual-type time step method
-    // delta = 0.25*gamma/(1+niter*niter);
-    /*
-    if (niter > 0){
-      double frac = RealPart(norm/(init_norm + rtol));
-      if (frac < 1.0){
-        delta = frac*gamma;
-      }
-      else {
-        delta = gamma;
-      }
-    }
-    */
     // Assemble the Jacobian matrix once in five newton iterations
     if ((niter % jac_comp_freq) == 0){
       tacs->assembleJacobian(alpha, beta, gamma,
@@ -300,16 +283,17 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Write a summary    
-    if( logfp && print_level >= 2) {
+    if(logfp && print_level >= 2){
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e\n",
-              t, niter, MPI_Wtime()-t0, 
-              RealPart(norm),  (niter == 0) ? 1.0 : RealPart(norm/init_norm), delta);
+              t, niter, MPI_Wtime()-t0, RealPart(norm),  
+              (niter == 0) ? 1.0 : RealPart(norm/init_norm), delta);
     }
 
     // Check if the norm of the residuals is a NaN
     if (norm != norm){ 
       fprintf(stderr,
-              "Newton iteration %d, failed with NaN residual norm\n", niter);
+              "Newton iteration %d, failed with NaN residual norm\n",
+              niter);
       break;
     }
     
@@ -332,13 +316,6 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       ksm->solve(res, update);
     }
 
-    /*
-    mat->mult(update, temp);
-    temp->axpy(-1.0, res);
-    temp->applyBCs();
-    printf("||J*update - res||/||res||: %e\n", temp->norm()/res->norm());
-    */
-
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);
     udot->axpy(-beta, update);
@@ -351,8 +328,6 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       break;
     }
   }
-
-  temp->decref();
 }
 
 /*
@@ -414,7 +389,9 @@ void TACSIntegrator::writeStepToF5( int k ){
 /*
   Creates an f5 file for each time step and writes the data.
 */
-void TACSIntegrator::writeSolutionToF5( TACSToFH5 *_f5, int _f5_write_freq, char *_f5_file_fmt ){
+void TACSIntegrator::writeSolutionToF5( TACSToFH5 *_f5, 
+                                        int _f5_write_freq, 
+                                        const char *_f5_file_fmt ){
   /* Determine parallelism
      int is, ie, idec;
      idec = num_time_steps/mpiSize;
@@ -442,19 +419,20 @@ void TACSIntegrator::writeSolutionToF5( TACSToFH5 *_f5, int _f5_write_freq, char
 /*
   Configure the F5 output 
  */
-void TACSIntegrator::configureOutput(TACSToFH5 *_viewer, 
-                                     int _write_freq, 
-                                     char *_f5_file_fmt ) {
-  f5             = _viewer;
-  f5_write_freq  = _write_freq;
-  f5_file_fmt    = _f5_file_fmt;
+void TACSIntegrator::configureOutput( TACSToFH5 *_viewer, 
+                                      int _write_freq, 
+                                      const char *_f5_file_fmt ){
+  f5 = _viewer;
+  f5_write_freq = _write_freq;
+  f5_file_fmt = new char[ strlen(_f5_file_fmt)+1 ];
+  strcpy(f5_file_fmt, _f5_file_fmt);
 }
 
 /*
   Integate forward in time using the initial conditions retrieved from
   TACS
 */
-void TACSIntegrator::integrate( ) {
+void TACSIntegrator::integrate(){
   // Get the initial condition
   current_time_step = 0;
 
@@ -755,18 +733,20 @@ void TACSIntegrator::getString(char *buffer, const char * format, ... ){
 */
 void TACSIntegrator::doEachTimeStep( int current_step ) {
   // Write the tecplot output to disk if sought
-  writeStepToF5(current_step);    
+  writeStepToF5(current_step);
 
-  if ( current_step == 0) {
+  // Evaluate the energies
+  tacs->evalEnergies(&energies[0], &energies[1]);
+
+  if (current_step == 0){
     // Log information
-    if ( logfp && print_level >= 1){
+    if (logfp && print_level >= 1){
       fprintf(logfp, "Variables=\n%12s %8s %12s %12s %15s %15s %15s\n", 
               "time", "NItrs", "|R|", "|R|/|R0|",
               "KineticEnrgy", "PotentialEnrgy",
               "EInit-E");
       
       // Compute the initial energy
-      tacs->evalEnergies(&energies[0], &energies[1]);
       init_energy = energies[0] + energies[1];
 
       // Log the details
@@ -774,12 +754,13 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
               time[0], 0, 0.0, 1.0,
               RealPart(energies[0]), RealPart(energies[1]),  0.0);
     }
-  } else {
+  } 
+  else {
     // Print out the time step summary
-    if ( logfp && print_level >= 1){
-      tacs->evalEnergies(&energies[0], &energies[1]);
+    if (logfp && print_level >= 1){
       fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
-	      time[current_step], niter, RealPart(norm), RealPart(norm/(rtol + init_norm)),
+	      time[current_step], niter, RealPart(norm), 
+              RealPart(norm/(rtol + init_norm)),
 	      RealPart(energies[0]), RealPart(energies[1]), 
 	      RealPart((init_energy - (energies[0] + energies[1]))));
     }
@@ -824,19 +805,19 @@ void TACSIntegrator::setMaxNewtonIters( int _max_newton_iters ){
   Control the amount of information printed to the console and the
   logging stream
 */
-void TACSIntegrator::setPrintLevel( int _print_level, char *_logfilename ){ 
+void TACSIntegrator::setPrintLevel( int _print_level, 
+                                    const char *logfilename ){ 
   print_level = _print_level;
-  if ( _logfilename && !( strlen(_logfilename) == 0) ) {
-    // Set the log file name
-    logfilename = _logfilename;
-    
+  if (logfilename){
     // Close any opened non stdout logstreams
-    if (logfp != stdout && logfp){
+    if (logfp && (logfp != stdout)){
       fclose(logfp);
     }
-    
+
     // Open a new file for logstream
-    logfp = fopen(logfilename, "w");
+    if (mpiRank == 0){
+      logfp = fopen(logfilename, "w");
+    }
   }
 }
 

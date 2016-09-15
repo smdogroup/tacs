@@ -343,7 +343,7 @@ cdef extern from "TACSIntegrator.h":
 
       # Setters for class variables
       void setFunction(TACSFunction **func, int num_funcs)
-      void setPrintLevel(int print_level, char *filename)
+      void setPrintLevel(int print_level, const_char *filename)
       void setRelTol(double rtol)
       void setAbsTol(double atol)
       void setMaxNewtonIters(int max_newton_iters)
@@ -351,7 +351,8 @@ cdef extern from "TACSIntegrator.h":
       void setUseLapack(int use_lapack)
 
       # Configure writing F5 files
-      void configureOutput(TACSToFH5 *viewer, int write_freq, char *f5_file_fmt)
+      void configureOutput(TACSToFH5 *viewer, int write_freq,
+                           const_char *f5_file_fmt)
 
    # BDF Implementation of the integrator
    cdef cppclass TACSBDFIntegrator(TACSIntegrator):

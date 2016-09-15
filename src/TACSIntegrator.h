@@ -9,10 +9,11 @@
 
 // Type of integrator to use. The following are the supported methods.
 //--------------------------------------------------------------------
-enum IntegratorType { BDF1, BDF2, BDF3,                   // Backward-difference methods
-                      ABM1, ABM2, ABM3, ABM4, ABM5, ABM6, // Adams-Bashforth-method
-                      DIRK2, DIRK3, DIRK4,                // Diagonally-Implicit-Runge-Kutta methods
-                      NBG };                              // Newmark Beta Gamma Method
+enum IntegratorType { 
+  BDF1, BDF2, BDF3,                   // Backward-difference methods
+  ABM1, ABM2, ABM3, ABM4, ABM5, ABM6, // Adams-Bashforth-method
+  DIRK2, DIRK3, DIRK4,                // Diagonally-Implicit-Runge-Kutta
+  NBG };                              // Newmark Beta Gamma Method
 
 /*
   Abstract base class for integration schemes.
@@ -37,7 +38,7 @@ class TACSIntegrator : public TACSObject {
 
   // Factory method for intantiating integrators of supplied type
   //-------------------------------------------------------------
-  static TACSIntegrator* getInstance( TACSAssembler *_tacs, 
+  static TACSIntegrator *getInstance( TACSAssembler *_tacs, 
                                       double _tinit,
                                       double _tfinal, 
                                       int _num_steps_per_sec, 
@@ -49,8 +50,11 @@ class TACSIntegrator : public TACSObject {
 
   // Function for returning the derivatives for the functions
   //----------------------------------------------------------
-  void getFuncGrad( int num_dv, TacsScalar *x, TacsScalar *fvals, TacsScalar *dfdx );
-  void getFDFuncGrad( int num_dv, TacsScalar *x, TacsScalar *fvals, TacsScalar *dfdx, double dh = 1.0e-8);
+  void getFuncGrad( int num_dv, TacsScalar *x, 
+                    TacsScalar *fvals, TacsScalar *dfdx );
+  void getFDFuncGrad( int num_dv, TacsScalar *x, 
+                      TacsScalar *fvals, TacsScalar *dfdx, 
+                      double dh=1.0e-8);
  
   // Useful setters for class variables. These setters must be called
   // before calling the 'integrate()' function. These won't have any
@@ -61,19 +65,22 @@ class TACSIntegrator : public TACSObject {
   void setRelTol( double _rtol );
   void setAbsTol( double _atol );
   void setMaxNewtonIters( int _max_newton_iters );
-  void setPrintLevel( int _print_level, char *logfilename = NULL);
+  void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
   void setFunction( TACSFunction **_func, int _num_funcs );
   void setIsFactorized( int flag );
-  void setTACSStates( double time, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
+  void setTACSStates( double time, TACSBVec *q, 
+                      TACSBVec *qdot, TACSBVec *qddot );
 
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
   void writeSolution( const char *filename );
-  void writeSolutionToF5( TACSToFH5 *f5, int _write_freq, char *_f5_file_fmt );
+  void writeSolutionToF5( TACSToFH5 *f5, int _write_freq, 
+                          const char *_f5_file_fmt );
   void writeStepToF5( int step = 0 );          
-  void configureOutput( TACSToFH5 *_viewer, int _write_freq, char *_f5_file_fmt );
+  void configureOutput( TACSToFH5 *_viewer, int _write_freq, 
+                        const char *_f5_file_fmt );
   
  protected:
 
@@ -84,19 +91,22 @@ class TACSIntegrator : public TACSObject {
   // Functions for solutions to linear and nonlinear problems
   // --------------------------------------------------------
   void newtonSolve( double alpha, double beta, double gamma,
-                    double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
+                    double t, TACSBVec *q, TACSBVec *qdot, 
+                    TACSBVec *qddot );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
     
   // Virtual functions for forward mode
   // -----------------------------------
   virtual void setupCoeffs() = 0;
   virtual void approxStates() = 0;
-  virtual void getLinearizationCoeffs( double *alpha, double *beta, double *gamma ) = 0;
+  virtual void getLinearizationCoeffs( double *alpha, double *beta, 
+                                       double *gamma ) = 0;
   
   // Virtual functions for reverse mode
   // ----------------------------------
   virtual void marchBackwards() = 0;
-  virtual void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
+  virtual void evalTimeAvgFunctions( TACSFunction **funcs, 
+                                     int numFuncs, TacsScalar *funcVals);
   
   // These functions are to be used during adjoint solve and total
   // derivative computations. Once the state variables are set, the
@@ -168,28 +178,27 @@ class TACSIntegrator : public TACSObject {
   //                   Private variables
   //-----------------------------------------------------------------//
 
-  int         print_level;      // 0 = off;
-                                // 1 = summary per time step;
-                                // 2 = summary per Newton solve iteration
-  FILE       *logfp;            // Pointer to the output filename
-  char       *logfilename;      // The name of the output file
-  TACSToFH5  *f5;               // Pointer to FH5 output object
-  char       *f5_file_fmt;      // Formatting of the output filename
-  int         f5_write_freq;    // How frequent to write the output
+  int print_level;      // 0 = off;
+                        // 1 = summary per time step;
+                        // 2 = summary per Newton solve iteration
+  FILE *logfp;          // Pointer to the output filename
+  TACSToFH5 *f5;        // Pointer to FH5 output object
+  char *f5_file_fmt;    // Formatting of the output filename
+  int f5_write_freq;    // How frequent to write the output
   
-  int         max_newton_iters; // The max number of nonlinear iterations
-  double      atol, rtol;
+  int max_newton_iters; // The max number of nonlinear iterations
+  double atol, rtol;
   
-  int         jac_comp_freq;    // Frequency of Jacobian recomputation during nonlinear solve
-  int         use_lapack;       // Flag to switch to LAPACK for linear solve
-  FEMat      *D;                // Matrix associated with Preconditioner
-  int         factorized;       // Set whether the matrix is factorized
-  int         niter;            // Newton iteration number
-  TacsScalar  norm, init_norm;  // Norms and initial norm
+  int jac_comp_freq;    // Frequency of Jacobian factorization
+  int use_lapack;       // Flag to switch to LAPACK for linear solve
+  FEMat *D;             // Matrix associated with Preconditioner
+  int factorized;       // Set whether the matrix is factorized
+  int niter;            // Newton iteration number
+  TacsScalar norm, init_norm;  // Norms and initial norm
   
-  TacsScalar *energies;         // Keep track of energies
-  TacsScalar  init_energy;      // The energy during time = 0
-  int         mpiRank, mpiSize; // MPI information
+  TacsScalar energies[2]; // Keep track of energies
+  TacsScalar init_energy; // The energy during time = 0
+  int mpiRank, mpiSize;   // MPI information
 };
 
 /*
