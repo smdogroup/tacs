@@ -19,7 +19,7 @@ int main( int argc, char *argv[] ){
   stiff->incref();
   
   // Create the plane stress element
-  TACSElement *elem = new PlaneStressQuad<2>(stiff);
+  TACSElement *elem = new PlaneStressQuad<4>(stiff);
   elem->incref();
 
   // Creating mesh on root processor
@@ -160,20 +160,21 @@ int main( int argc, char *argv[] ){
     /* for (int j = 0; j < ny+1; j++){ */
     /*   bc_nodes[j] = anodes[j*(nx+1)]; */
     /* } */
-    int num_nodes = 9;
-    int num_elems = 7;
-    int ndep_nodes = 5;
+    int num_nodes = 16;
+    int num_elems = 1;
+    int ndep_nodes = 0;
     
-    int conn[] = {0, 1, 3, 4,
-                  1, 2, 4, 5,
-                  3, 4, 6, 7,
-                  4, -1, -2, -5,
-                  -1, 5, -5, -3,
-                  -2, -5, 7, -4,
-                  -5, -3, -4, 8};
-    int ptr[] = {0, 4, 8, 12, 16, 20, 24, 28};
-    int elem_ids[] = {0, 0, 0, 0,
-                      0, 0, 0};    
+    /* int conn[] = {0, 1, 3, 4, */
+    /*               1, 2, 4, 5, */
+    /*               3, 4, 6, 7, */
+    /*               4, -1, -2, -5, */
+    /*               -1, 5, -5, -3, */
+    /*               -2, -5, 7, -4, */
+    /*               -5, -3, -4, 8}; */
+    int conn[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                  11, 12, 13, 14, 15};
+    int ptr[] = {0, 16};
+    int elem_ids[] = {0};
     int dep_conn[] = {4, 5,
                       4, 7,
                       5, 8,
@@ -183,17 +184,24 @@ int main( int argc, char *argv[] ){
     double dep_weights[] = {0.5, 0.5, 0.5, 0.5,
                             0.5, 0.5, 0.5, 0.5,
                             0.25, 0.25, 0.25, 0.25};    
-    int num_bcs = 3;
-    int bc_nodes[] = {0, 3, 6};    
+    int num_bcs = 4;
+    int bc_nodes[] = {0, 4, 8, 12};
     TacsScalar Xpts[] = {0.0, 0.0, 0.0,
                          1.0, 0.0, 0.0,
                          2.0, 0.0, 0.0,
+                         3.0, 0.0, 0.0,
                          0.0, 1.0, 0.0,
                          1.0, 1.0, 0.0,
                          2.0, 1.0, 0.0,
+                         3.0, 1.0, 0.0,
                          0.0, 2.0, 0.0,
                          1.0, 2.0, 0.0,
-                         2.0, 2.0, 0.0};
+                         2.0, 2.0, 0.0,
+                         3.0, 2.0, 0.0,
+                         0.0, 3.0, 0.0,
+                         1.0, 3.0, 0.0,
+                         2.0, 3.0, 0.0,
+                         3.0, 3.0, 0.0};
     // Set the connectivity
     creator->setGlobalConnectivity(num_nodes, num_elems,
                                    ptr, conn,
@@ -205,8 +213,8 @@ int main( int argc, char *argv[] ){
     creator->setNodes(Xpts);
 
     // Set the dependent nodes
-    creator->setDependentNodes(ndep_nodes, dep_ptr,
-                               dep_conn, dep_weights);
+    /* creator->setDependentNodes(ndep_nodes, dep_ptr, */
+    /*                            dep_conn, dep_weights); */
 
     /* // Free all the allocated data */
     /* delete [] Xpts; */
