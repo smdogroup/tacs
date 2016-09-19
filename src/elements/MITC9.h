@@ -296,4 +296,5 @@ class MITC9 : public TACSElement {
   static const char *strainNames[NUM_STRESSES];
   static const char *extraNames[NUM_EXTRAS];
 };
+
 #endif // TACS_MITC9_H

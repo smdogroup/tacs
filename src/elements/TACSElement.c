@@ -455,9 +455,7 @@ int TACSElement::testJacobian( double time,
   strain with respect to the element state variables.
 */
 int TACSElement::testStrainSVSens( const TacsScalar Xpts[],
-                                   const TacsScalar vars[],
-                                   const TacsScalar dvars[],
-                                   const TacsScalar ddvars[] ){
+                                   const TacsScalar vars[] ){
   // Set the parametric point within the element
   double pt[3];
   pt[0] = -1.0 + 2.0*rand()/RAND_MAX;
@@ -544,6 +542,117 @@ int TACSElement::testStrainSVSens( const TacsScalar Xpts[],
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
+  // Free the allocated data
+  delete [] strain;
+  delete [] strainSens;
+  delete [] elementSens;
+  delete [] elementSensApprox;
+  delete [] temp;
+  delete [] vars_copy;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+
+/*
+  Test the derivative of the strain with respect to the state
+  variables
+
+  addPtwiseStrainSVSens adds the derivative of a function of the
+  strain with respect to the element state variables.
+*/
+int TACSElement::testStrainXptSens( const TacsScalar Xpts[],
+                                    const TacsScalar vars[] ){
+  // Set the parametric point within the element
+  double pt[3];
+  pt[0] = -1.0 + 2.0*rand()/RAND_MAX;
+  pt[1] = -1.0 + 2.0*rand()/RAND_MAX;
+  pt[2] = -1.0 + 2.0*rand()/RAND_MAX;
+
+  // Allocate temporary arrays for the strain values
+  int nnodes = numNodes();
+  int nstress = numStresses();
+  TacsScalar *strain = new TacsScalar[ nstress ];
+  
+  // Set a random derivative of the strain
+  TacsScalar *strainSens = new TacsScalar[ nstress ];
+  generate_random_array(strainSens, nstress);
+
+  // Get the derivative of the strain w.r.t. the nodes
+  TacsScalar *deriv = new TacsScalar[ 3*nnodes ];
+  memset(deriv, 0, 3*nnodes*sizeof(TacsScalar));
+
+  TacsScalar scale = 1.0*rand()/RAND_MAX;
+  addStrainXptSens(deriv, pt, scale, strainSens, Xpts, vars);
+
+  // Allocate an array to store the derivative
+  TacsScalar *fd = new TacsScalar[ 3*nnodes ];
+  TacsScalar *X = new TacsScalar[ 3*nnodes ];
+
+  // The step length
+  double dh = test_step_size;
+
+  // Evaluate the derivative of the strain w.r.t. the node locations
+    for ( int k = 0; k < 3*nnodes; k++ ){
+    // Copy the points
+    memcpy(X, Xpts, 3*nnodes*sizeof(TacsScalar));
+
+    // Perturb the nodes in the forward sense
+    TacsScalar one = 1.0;
+    forward_perturb(&X[k], 1, &Xpts[k], &one, dh);
+    getStrain(strain, pt, X, vars);
+    TacsScalar p1 = 0.0;
+    for ( int i = 0; i < nstress; i++ ){
+      p1 += scale*strainSens[i]*strain[i];
+    }
+    
+    // Perturb the nodes in the reverse sense
+    backward_perturb(&X[k], 1, &Xpts[k], &one, dh);
+    getStrain(strain, pt, X, vars);
+    TacsScalar p2 = 0.0;
+    for ( int i = 0; i < nstress; i++ ){
+      p2 += scale*strainSens[i]*strain[i];
+    }
+    
+    // Form the approximation
+    form_approximate(&p1, &p2, 1, dh);
+
+    // Set the
+    fd[k] = p1;
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(deriv, fd, 3*nnodes,
+                                 &max_err_index);
+  double max_rel = get_max_rel_error(deriv, fd, 3*nnodes,
+                                     &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, 
+	    "Testing the strain sensivity w.r.t. node locations for %s.\n",
+	    elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+	    max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+	    max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    fprintf(stderr, 
+            "The sensitivity of the strain w.r.t. the state variables ons\n");
+    print_error_components(stderr, "strainXptSens", 
+                           deriv, fd, 3*nnodes);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  // Free the allocated data
+  delete [] strain;
+  delete [] X;
+  delete [] fd;
+  delete [] strainSens;
+  delete [] deriv;
+
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
 
@@ -567,9 +676,6 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[ nvars ];
   generate_random_array(adjoint, nvars);
-
-  // Zero the result
-  memset(result, 0, dvLen*sizeof(TacsScalar));
 
   // Evaluate the derivative of the adjoint-residual product
   double scale = 1.0;
@@ -684,6 +790,100 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   delete [] result;
   delete [] adjoint;
   delete [] xpert;
+  delete [] res;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to material design variables.
+*/
+int TACSElement::testAdjResXptProduct( double time, 
+                                       const TacsScalar Xpts[],
+                                       const TacsScalar vars[], 
+                                       const TacsScalar dvars[],
+                                       const TacsScalar ddvars[] ){
+  int nnodes = numNodes();
+  int nvars = numVariables();
+ 
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *result = new TacsScalar[ 3*nnodes ];
+  memset(result, 0, 3*nnodes*sizeof(TacsScalar));
+
+  // Generate a random array of values
+  TacsScalar *adjoint = new TacsScalar[ nvars ];
+  generate_random_array(adjoint, nvars);
+
+  // Evaluate the derivative of the adjoint-residual product
+  double scale = 1.0*rand()/RAND_MAX;
+  addAdjResXptProduct(time, scale, result, adjoint,
+                      Xpts, vars, dvars, ddvars);
+  
+  // The step length
+  double dh = test_step_size;
+
+  // Allocate space to store the results
+  TacsScalar *fd = new TacsScalar[ 3*nnodes ];
+  TacsScalar *X = new TacsScalar[ 3*nnodes ];
+  TacsScalar *res = new TacsScalar[ nvars ];
+
+  for ( int k = 0; k < 3*nnodes; k++ ){
+    // Copy the points
+    memcpy(X, Xpts, 3*nnodes*sizeof(TacsScalar));
+
+    // Perturb the nodes in the forward sense
+    TacsScalar one = 1.0;
+    forward_perturb(&X[k], 1, &Xpts[k], &one, dh);
+    memset(res, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, res, X, vars, dvars, ddvars);
+    TacsScalar p1 = 0.0;
+    for ( int i = 0; i < nvars; i++ ){
+      p1 += scale*adjoint[i]*res[i];
+    }
+    
+    // Perturb the nodes in the reverse sense
+    backward_perturb(&X[k], 1, &Xpts[k], &one, dh);
+    memset(res, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, res, X, vars, dvars, ddvars);
+    TacsScalar p2 = 0.0;
+    for ( int i = 0; i < nvars; i++ ){
+      p2 += scale*adjoint[i]*res[i];
+    }
+    
+    // Form the approximation
+    form_approximate(&p1, &p2, 1, dh);
+
+    // Set the
+    fd[k] = p1;
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(result, fd, 3*nnodes, &max_err_index);
+  double max_rel = get_max_rel_error(result, fd, 3*nnodes, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, 
+            "Testing the derivative of the adjoint-residual product for %s\n",
+            elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+	    max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+	    max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    print_error_components(stderr, "Adj-Res Xpt product",
+                           result, fd, 3*nnodes);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] adjoint;
+  delete [] fd;
+  delete [] X;
   delete [] res;
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);

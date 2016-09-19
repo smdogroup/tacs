@@ -79,7 +79,9 @@ class TACS2DElement : public TACSElement {
   
   // Compute the derivative of the strain with respect to the nodal coordinates
   // --------------------------------------------------------------------------
-  void getStrainXptSens( TacsScalar sens[], const TacsScalar J[], const TacsScalar Xa[], 
+  void addStrainXptSens( TacsScalar sens[], TacsScalar scale,
+                         const TacsScalar strainSens[],
+                         const TacsScalar J[], const TacsScalar Xa[], 
 			 const double Na[],  const double Nb[],
 			 const TacsScalar vars[] );
 
@@ -129,6 +131,16 @@ class TACS2DElement : public TACSElement {
 			 const TacsScalar psi[], const TacsScalar Xpts[],
 			 const TacsScalar vars[], const TacsScalar dvars[],
 			 const TacsScalar ddvars[] );
+
+  // Add the product of the adjoint with the derivative of the design variables
+  // -------------------------------------------------------------------------- 
+  void addAdjResXptProduct( double time, double scale, 
+                            TacsScalar fXptSens[],
+			    const TacsScalar psi[],
+			    const TacsScalar Xpts[],
+			    const TacsScalar vars[],
+			    const TacsScalar dvars[],
+			    const TacsScalar ddvars[] );
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
@@ -624,7 +636,9 @@ void TACS2DElement<NUM_NODES>::addGeoStiffness( TacsScalar mat[],
   d2 = Na[0]*J[1] + Nb[0]*J[3]
 */
 template <int NUM_NODES>
-void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
+void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar sens[],
+                                                 TacsScalar scale,
+                                                 const TacsScalar strainSens[],
 						 const TacsScalar J[], 
 						 const TacsScalar Xa[],
 						 const double Na[], 
@@ -647,6 +661,12 @@ void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
     vars += 2;
   }
 
+  // Compute the scaled strain sensitivity
+  TacsScalar eSens[3];
+  eSens[0] = scale*strainSens[0];
+  eSens[1] = scale*strainSens[1];
+  eSens[2] = scale*strainSens[2];
+
   if (strain_type == LINEAR){
     for ( int i = 0; i < NUM_NODES; i++ ){
       // JSens = -J*d(Xa)/dx*J
@@ -657,10 +677,10 @@ void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
       // in each coordinate direction
       TacsScalar Ja[4], Jb[4];
       Ja[0] = d1*J[0];   Ja[1] = d2*J[0];
-      Ja[3] = d1*J[2];   Ja[4] = d2*J[2];
+      Ja[2] = d1*J[2];   Ja[3] = d2*J[2];
 
       Jb[0] = d1*J[1];   Jb[1] = d2*J[1];
-      Jb[3] = d1*J[3];   Jb[4] = d2*J[3];
+      Jb[2] = d1*J[3];   Jb[3] = d2*J[3];
 
       // Compute the derivative of the displacement gradient
       // with respect to each of the three coordinate directions
@@ -679,15 +699,13 @@ void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
       Udb[1] = Ua[0]*Jb[1] + Ua[1]*Jb[3];
       Udb[3] = Ua[2]*Jb[1] + Ua[3]*Jb[3];
 
-      sens[0] = Uda[0];
-      sens[1] = Uda[3];
-      sens[2] = (Uda[1] + Uda[2]);
-      sens += 3;
+      sens[0] += (Uda[0]*eSens[0] + Uda[3]*eSens[1] +
+                 (Uda[1] + Uda[2])*eSens[2]);
+      sens++;
 
-      sens[0] = Udb[0];
-      sens[1] = Udb[3];
-      sens[2] = (Udb[1] + Udb[2]);
-      sens += 3;
+      sens[0] += (Udb[0]*eSens[0] + Udb[3]*eSens[1] +
+                  (Udb[1] + Udb[2])*eSens[2]);
+      sens += 2;
 
       Na++; Nb++;
     }
@@ -710,10 +728,10 @@ void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
       // in each coordinate direction
       TacsScalar Ja[4], Jb[4];
       Ja[0] = d1*J[0];   Ja[1] = d2*J[0];
-      Ja[3] = d1*J[2];   Ja[4] = d2*J[2];
+      Ja[2] = d1*J[2];   Ja[3] = d2*J[2];
 
       Jb[0] = d1*J[1];   Jb[1] = d2*J[1];
-      Jb[3] = d1*J[3];   Jb[4] = d2*J[3];
+      Jb[2] = d1*J[3];   Jb[3] = d2*J[3];
 
       // Compute the derivative of the displacement gradient
       // with respect to each of the three coordinate directions
@@ -733,17 +751,17 @@ void TACS2DElement<NUM_NODES>::getStrainXptSens( TacsScalar sens[],
       Udb[3] = Ua[2]*Jb[1] + Ua[3]*Jb[3];
 
       // Compute the derivative of the strain
-      sens[0] = Uda[0] + (Ud[0]*Uda[0] + Ud[2]*Uda[2]);
-      sens[1] = Uda[3] + (Ud[1]*Uda[1] + Ud[3]*Uda[3]);    
-      sens[2] = Uda[1] + Uda[2] + (Uda[0]*Ud[1] + Uda[2]*Ud[3] + 
-				   Ud[0]*Uda[1] + Ud[2]*Uda[3]);
-      sens += 3;
+      sens[0] += ((Uda[0] + (Ud[0]*Uda[0] + Ud[2]*Uda[2]))*eSens[0] +
+                  (Uda[3] + (Ud[1]*Uda[1] + Ud[3]*Uda[3]))*eSens[1] +
+                  (Uda[1] + Uda[2] + (Uda[0]*Ud[1] + Uda[2]*Ud[3] + 
+                                      Ud[0]*Uda[1] + Ud[2]*Uda[3]))*eSens[2]);
+      sens++;
 
-      sens[0] = Udb[0] + (Ud[0]*Udb[0] + Ud[2]*Udb[2]);
-      sens[1] = Udb[3] + (Ud[1]*Udb[1] + Ud[3]*Udb[3]);    
-      sens[2] = Udb[1] + Udb[2] + (Udb[0]*Ud[1] + Udb[2]*Ud[3] + 
-				   Ud[0]*Udb[1] + Ud[2]*Udb[3]);
-      sens += 3;
+      sens[0] += ((Udb[0] + (Ud[0]*Udb[0] + Ud[2]*Udb[2]))*eSens[0] +
+                  (Udb[3] + (Ud[1]*Udb[1] + Ud[3]*Udb[3]))*eSens[1] +    
+                  (Udb[1] + Udb[2] + (Udb[0]*Ud[1] + Udb[2]*Ud[3] + 
+                                      Ud[0]*Udb[1] + Ud[2]*Udb[3]))*eSens[2]);
+      sens += 2;
 
       Na++; Nb++;
     }
@@ -1094,6 +1112,74 @@ void TACS2DElement<NUM_NODES>::addAdjResProduct( double time, double scale,
 }
 
 /*
+  Add the product of the adjoint vector times the derivative of the
+  residuals multiplied by a scalar to the given derivative vector.
+
+  output:
+  fXptSens:  derivative of the product of psi^{T}*R w.r.t. node locations
+  
+  input:
+  time:      the simulation time
+  scale:     scale the result by this value
+  psi:       the adjoint variables
+  Xpts:      the element nodal locations
+  vars:      the element variables
+  dvars:     the first time derivative of the element variables
+  ddvars:    the second time derivative of the element variables
+*/
+template <int NUM_NODES>
+void TACS2DElement<NUM_NODES>::addAdjResXptProduct( double time, double scale,
+                                                    TacsScalar fXptSens[],
+                                                    const TacsScalar psi[], 
+                                                    const TacsScalar Xpts[],
+                                                    const TacsScalar vars[], 
+                                                    const TacsScalar dvars[],
+                                                    const TacsScalar ddvars[] ){
+  /*
+  // The shape functions associated with the element
+  double N[NUM_NODES];
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  
+  // The derivative of the stress with respect to the strain
+  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+
+  // Get the number of quadrature points
+  int numGauss = getNumGaussPts();
+
+  for ( int n = 0; n < numGauss; n++ ){
+    // Retrieve the quadrature points and weights
+    double pt[3];
+    double weight = getGaussWtsPts(n, pt);
+
+    // Compute the element shape functions
+    getShapeFunctions(pt, N, Na, Nb);
+
+    // Compute the derivative of X with respect to the
+    // coordinate directions
+    TacsScalar X[3], Xa[4];
+    planeJacobian(X, Xa, N, Na, Nb, Xpts);
+
+    // Compute the determinant of Xa and the transformation
+    TacsScalar J[4];
+    TacsScalar h = FElibrary::jacobian2d(Xa, J);
+    h = h*weight;
+
+    // Compute the derivative of the determinant w.r.t. node locations
+    TacsScalar hXptSens[3*NUM_NODES];
+    TacsScalar h = getDetJacobianXptSens(hXptSens, pt, XptSens);
+
+    // Compute the strain
+    TacsScalar strain[NUM_STRESSES];
+    evalStrain(strain, J, Na, Nb, vars);
+        
+    // Get the derivative of the strain with respect to the nodal
+    // displacements
+    getBmat(B, J, Na, Nb, vars);
+  }
+  */
+}
+
+/*
   Get the element matrix of the specified type (e.g. mass matrix)
   from the element. 
 
@@ -1353,9 +1439,6 @@ void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
-  // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
   // Compute the element shape functions
   getShapeFunctions(pt, N, Na, Nb);
   
@@ -1369,8 +1452,7 @@ void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
   FElibrary::jacobian2d(Xa, J);
 
   // Compute the derivative of the strain w.r.t. nocal coordinates
-  getStrainXptSens(strainXptSens, J, Xa, 
-		   Na, Nb, vars);
+  addStrainXptSens(strainXptSens, scale, strainSens, J, Xa, Na, Nb, vars);
 }
 
 #endif

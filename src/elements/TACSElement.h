@@ -118,7 +118,7 @@
   addAdjResProduct(): Add the derivative of the product of the adjoint
   variables and the residual to the material design variable vector
   
-  getAdjResXptProduct(): Get the derivative of the product of the
+  addAdjResXptProduct(): Add the derivative of the product of the
   adjoint variables and the adjoint with respect to the node locations
 
   addMatDVSensInnerProduct(): Compute the derivative of the inner
@@ -410,17 +410,26 @@ class TACSElement : public TACSOptObject {
   static void setStepSize( double dh );
 
   int testResidual( double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar vars[], 
+                    const TacsScalar dvars[],
                     const TacsScalar ddvars[] ); 
   int testJacobian( double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar vars[], 
+                    const TacsScalar dvars[],
                     const TacsScalar ddvars[], int col=-1 );
+  int testStrainSVSens( const TacsScalar Xpts[], 
+                        const TacsScalar vars[] );
+  int testStrainXptSens( const TacsScalar Xpts[], 
+                         const TacsScalar vars[] );
   int testAdjResProduct( const TacsScalar *x, int dvLen,
                          double time, const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar vars[], 
+                         const TacsScalar dvars[],
                          const TacsScalar ddvars[] );
-  int testStrainSVSens( const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[] );
+  int testAdjResXptProduct( double time, const TacsScalar Xpts[],
+                            const TacsScalar vars[], 
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[] );
   int testJacobianXptSens( const TacsScalar Xpts[] );
 
  private: 

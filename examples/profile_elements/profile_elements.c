@@ -47,7 +47,9 @@ void test_element( TACSElement *element,
 #endif
   element->testJacobian(time, Xpts, vars, dvars, ddvars, 1.0);
   element->testAdjResProduct(x, dvLen, time, Xpts, vars, dvars, ddvars);
-  element->testStrainSVSens(Xpts, vars, dvars, ddvars);
+  element->testAdjResXptProduct(time, Xpts, vars, dvars, ddvars);
+  element->testStrainSVSens(Xpts, vars);
+  element->testStrainXptSens(Xpts, vars);
   element->testJacobianXptSens(Xpts);
 
   delete [] x;
@@ -152,6 +154,7 @@ int main( int argc, char * argv[] ){
   ps->incref();
   
   TACSElement *elem = NULL;
+
   elem = new PlaneStressTri6(ps);  elem->incref();
   test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
   elem->decref();
@@ -176,7 +179,7 @@ int main( int argc, char * argv[] ){
   test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
   elem->decref();
   ps->decref();
-  
+
   // Create the solid stiffness classes
   SolidStiffness *stiff = new SolidStiffness(rho, E, nu);
   stiff->incref();

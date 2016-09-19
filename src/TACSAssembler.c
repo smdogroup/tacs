@@ -3933,10 +3933,17 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TACSElement::setPrintLevel(print_level);
   
   // Test the different element implementations
-  elements[elemNum]->testResidual(time, elemXpts, vars, dvars, ddvars);
+  elements[elemNum]->testResidual(time, elemXpts, 
+                                  vars, dvars, ddvars);
   for ( int col = 0; col < elements[elemNum]->numVariables(); col++ ){
-    elements[elemNum]->testJacobian(time, elemXpts, vars, dvars, ddvars, col);
+    elements[elemNum]->testJacobian(time, elemXpts, 
+                                    vars, dvars, ddvars, col);
   }
+  elements[elemNum]->testJacobianXptSens(elemXpts);
+  elements[elemNum]->testAdjResXptProduct(time, elemXpts, 
+                                          vars, dvars, ddvars);
+  elements[elemNum]->testStrainSVSens(elemXpts, vars);
+  elements[elemNum]->testStrainXptSens(elemXpts, vars);
 }
 
 /*
