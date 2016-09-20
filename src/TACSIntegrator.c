@@ -257,15 +257,14 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
             "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "delta");
   }
 
-  double t0 = MPI_Wtime();
-
   // Iterate until max iters or R <= tol
   double delta = 0.0;
   for ( niter = 0; niter < max_newton_iters; niter++ ){
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
 
-    // Assemble the Jacobian matrix once in five newton iterations
+    // Assemble the Jacobian matrix once in n newton iterations
+    double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       tacs->assembleJacobian(alpha, beta, gamma,
                              res, mat, NORMAL);
@@ -273,6 +272,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     else {
       tacs->assembleRes(res);
     }
+    t0 = MPI_Wtime() - t0;
+    time_fwd_assembly += t0;
    
     // Compute the L2-norm of the residual
     norm = res->norm();
@@ -309,11 +310,18 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
     else {
       // LU Factor the matrix when needed
+      double t1 = MPI_Wtime();
       if ((niter % jac_comp_freq) == 0){
         pc->factor();
-      }  
+      }
+      t1 = MPI_Wtime() - t1;
+      time_fwd_factor += t1;      
+ 
       // Solve for update using KSM
+      double t2 = MPI_Wtime();
       ksm->solve(res, update);
+      t2 = MPI_Wtime() - t2;
+      time_fwd_apply_factor += t2;
     }
 
     // Update the state variables using the solution
@@ -351,6 +359,34 @@ void TACSIntegrator::writeSolution( const char *filename ) {
     fprintf(fp, "\n");
   }
   fclose(fp);
+}
+
+/*
+  Prints the wall time taken during operations in TACSIntegrator
+   
+  input:
+  level: controls the level of detail requested in timing
+  t0   : reference time to normalize the times calculated within TACSIntegrator
+*/
+void TACSIntegrator::printWallTime( double t0, int level ){
+  if(level >= 0) { 
+    fprintf(logfp, "[%d] Total            : %8.2f %6.2f\n", mpiRank, t0, t0/t0); 
+    fprintf(logfp, "[%d] Integrator       : %8.2f %6.2f\n", mpiRank, time_forward + time_reverse, (time_forward +time_reverse)/t0); 
+  }
+
+  if (level >= 1) { 
+    fprintf(logfp, ".[%d] Forward         :  %8.2f %6.2f\n", mpiRank, time_forward, time_forward/t0); 
+  }
+
+  if (level >= 2) {
+    fprintf(logfp, "..[%d] Assembly       :   %8.2f %6.2f\n", mpiRank, time_fwd_assembly, time_fwd_assembly/t0);
+    fprintf(logfp, "..[%d] Factor         :   %8.2f %6.2f\n", mpiRank, time_fwd_factor, time_fwd_factor/t0);
+    fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", mpiRank, time_fwd_apply_factor, time_fwd_apply_factor/t0);
+  }
+
+  if (level >= 1) { 
+    fprintf(logfp, ".[%d] Reverse         :  %8.2f %6.2f\n", mpiRank, time_reverse, time_reverse/t0); 
+  }
 }
 
 /*
@@ -432,9 +468,15 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
   Integate forward in time using the initial conditions retrieved from
   TACS
 */
-void TACSIntegrator::integrate(){
-  // Get the initial condition
+void TACSIntegrator::integrate( ){
   current_time_step = 0;
+
+  // Keep track of the time taken for foward mode
+  time_forward = 0.0;
+  time_fwd_assembly = 0.0;
+  time_fwd_factor = 0.0;
+  time_fwd_apply_factor = 0.0;
+  double t0 = MPI_Wtime();
 
   // Retrieve the initial conditions
   tacs->getInitConditions(q[0], qdot[0]);
@@ -464,6 +506,10 @@ void TACSIntegrator::integrate(){
     // Perform logging, tecplot export, etc.
     doEachTimeStep(k);
   }
+
+  // Keep track of the time taken for foward mode
+  t0 = MPI_Wtime() - t0;
+  time_forward += t0;
 }
 
 /*
@@ -1046,6 +1092,14 @@ void TACSBDFIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
   the total derivatives
 */
 void TACSBDFIntegrator::marchBackwards( ) {
+  current_time_step = num_time_steps;
+
+  time_rev_assembly = 0.0;
+  time_rev_factor = 0.0;
+  time_rev_apply_factor = 0.0;
+  time_reverse = 0.0;
+  double t0 = MPI_Wtime();
+  
   // Adjoint variables for each function of interest
   TACSBVec **psi = new TACSBVec*[ num_funcs ];
   for ( int n = 0; n < num_funcs; n++ ){
@@ -1129,7 +1183,6 @@ void TACSBDFIntegrator::marchBackwards( ) {
     }
   }
   // Freeup objects
-
   // Adjoint variables for each function of interest
   for ( int n = 0; n < num_funcs; n++ ){
     psi[n]->decref();
@@ -1141,6 +1194,10 @@ void TACSBDFIntegrator::marchBackwards( ) {
     rhs[n]->decref();
   }
   delete [] rhs;
+
+  // Keep track of the time taken for foward mode
+  t0 = MPI_Wtime() - t0;
+  time_reverse += t0;
 }
 
 /*
@@ -1463,6 +1520,13 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step, TACSBVec **q, 
 */
 void TACSDIRKIntegrator::integrate( ) {
   current_time_step = 0;
+
+  // Keep track of the time taken for foward mode
+  time_forward = 0.0;
+  time_fwd_assembly = 0.0;
+  time_fwd_factor = 0.0;
+  time_fwd_apply_factor = 0.0;
+  double t0 = MPI_Wtime();
   
   // Get the initial condition
   tacs->getInitConditions(q[0], qdot[0]);
@@ -1507,11 +1571,23 @@ void TACSDIRKIntegrator::integrate( ) {
     // Perform logging, tecplot export, etc.
     doEachTimeStep(k);
   }
+
+  // Keep track of the time taken for foward mode
+  t0 = MPI_Wtime() - t0;
+  time_reverse += t0;
 }
 /*
   March backward in time and solve for the adjoint variables
 */
 void TACSDIRKIntegrator::marchBackwards( ) {
+  current_time_step = num_time_steps;
+
+  time_rev_assembly = 0.0;
+  time_rev_factor = 0.0;
+  time_rev_apply_factor = 0.0;
+  time_reverse = 0.0;
+  double t0 = MPI_Wtime();
+
   // Inter-step adjoint variables for each function of interest
   TACSBVec **psi = new TACSBVec*[ num_funcs ];
   TACSBVec **phi = new TACSBVec*[ num_funcs ];
@@ -1722,6 +1798,10 @@ void TACSDIRKIntegrator::marchBackwards( ) {
   delete [] lambda;
   delete [] rhs;
   delete [] dfdq;
+
+  // Keep track of the time taken for foward mode
+  t0 = MPI_Wtime() - t0;
+  time_reverse += t0;
 }
 
 /*
@@ -1895,6 +1975,14 @@ void TACSABMIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
   total derivatives
 */
 void TACSABMIntegrator::marchBackwards( ){
+  current_time_step = num_time_steps;
+  
+  time_rev_assembly = 0.0;
+  time_rev_factor = 0.0;
+  time_rev_apply_factor = 0.0;
+  time_reverse = 0.0;
+  double t0 = MPI_Wtime();
+
   int num_adjoint_rhs = 2; // ABM currently defaulted to one step
 
   // Adjoint variables
@@ -2044,6 +2132,10 @@ void TACSABMIntegrator::marchBackwards( ){
   delete [] lambda;
   delete [] rhs;
   delete [] dfdq;
+
+  // Keep track of the time taken for foward mode
+  t0 = MPI_Wtime() - t0;
+  time_reverse += t0;
 }
 
 /*
@@ -2194,6 +2286,14 @@ void TACSNBGIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
   total derivatives
 */
 void TACSNBGIntegrator::marchBackwards( ){
+  current_time_step = num_time_steps;
+
+  time_rev_assembly = 0.0;
+  time_rev_factor = 0.0;
+  time_rev_apply_factor = 0.0;
+  time_reverse = 0.0;
+  double t0 = MPI_Wtime();
+
   int num_adjoint_rhs = 2; // NBG is a one step method (uses
                            // information from previous and current
                            // steps)
@@ -2332,4 +2432,8 @@ void TACSNBGIntegrator::marchBackwards( ){
   delete [] lambda;
   delete [] rhs;
   delete [] dfdq;
+
+  // Keep track of the time taken for foward mode
+  t0 = MPI_Wtime() - t0;
+  time_reverse += t0;
 }
