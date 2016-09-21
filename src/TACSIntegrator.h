@@ -81,7 +81,18 @@ class TACSIntegrator : public TACSObject {
   void writeStepToF5( int step = 0 );          
   void configureOutput( TACSToFH5 *_viewer, int _write_freq, 
                         const char *_f5_file_fmt );
-  
+  void printWallTime( double t0, int level=1 );
+
+  // Variables that keep track of time
+  double time_fwd_assembly;
+  double time_fwd_factor;
+  double time_fwd_apply_factor;
+  double time_forward;
+
+  double time_rev_assembly;
+  double time_rev_factor;
+  double time_rev_apply_factor;
+  double time_reverse;
  protected:
 
   //------------------------------------------------------------------//
