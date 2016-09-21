@@ -125,6 +125,7 @@ class TACSBVec : public TACSVec {
 
   // The basic vector operations
   // ---------------------------
+  MPI_Comm getMPIComm(){ return comm; }
   void getSize( int *_size );                // Number of local entries
   int getBlockSize(){ return bsize; }        // Get the block size
   TacsScalar norm();                         // Compute the Cartesian 2 norm

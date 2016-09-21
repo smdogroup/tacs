@@ -168,7 +168,7 @@ void TACSStructuralMass::getElementXptSens( double tcoef,
       constitutive->getPointwiseMass(pt, ptmass);
       
       for ( int k = 0; k < 3*numNodes; k++ ){
-        fXptSens[k] += gauss_weight*hXptSens[k]*ptmass[0];
+        fXptSens[k] += tcoef*gauss_weight*hXptSens[k]*ptmass[0];
       }
     }
   }
@@ -204,7 +204,7 @@ void TACSStructuralMass::addElementDVSens( double tcoef,
       TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = element->getDetJacobian(pt, Xpts);
     
-      alpha[0] = gauss_weight*h;
+      alpha[0] = tcoef*gauss_weight*h;
       constitutive->addPointwiseMassDVSens(pt, alpha, fdvSens, numDVs);
     }
   }
