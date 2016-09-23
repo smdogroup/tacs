@@ -140,11 +140,12 @@ class TACSBVec : public TACSVec {
 
   // Get/set the vector elements
   // ---------------------------
-  void set( TacsScalar val );         // Set all values of the vector
-  void zeroEntries();                 // Zero all the entries
-  int getArray( TacsScalar **vals );  // Get the local values
-  void applyBCs( TACSVec *vec=NULL ); // Zero rows corresponding to BCs
-  void initRand();                    // Init random number generator
+  void set( TacsScalar val );           // Set all values of the vector
+  void zeroEntries();                   // Zero all the entries
+  int getArray( TacsScalar **vals );    // Get the local values
+  int getExtArray( TacsScalar **vals ); // Get the external values
+  void applyBCs( TACSVec *vec=NULL );   // Zero rows corresponding to BCs
+  void initRand();                      // Init random number generator
   void setRand( double lower, double upper ); // Set random values
 
   // Read/write the vector to a binary file -- the same on all procs
@@ -152,9 +153,11 @@ class TACSBVec : public TACSVec {
   int writeToFile( const char *filename );
   int readFromFile( const char *filename );
 
-  // These functions are sometimes required
-  // --------------------------------------
-  TACSBcMap *getBcMap(){ return bcs; }
+  // Retrieve objects stored within the vector class
+  // -----------------------------------------------
+  TACSBcMap *getBcMap();
+  TACSBVecIndices *getBVecIndices();
+  TACSBVecDistribute *getBVecDistribute();
 
   // Add/set the values from the array
   // ---------------------------------
