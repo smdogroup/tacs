@@ -585,7 +585,7 @@ void TACSBVec::setRand( double lower, double upper ){
   Retrieve the locally stored values from the array
 */
 int TACSBVec::getArray( TacsScalar **array ){
-  *array = x;
+  if (array){ *array = x; }
   return size;
 }
 

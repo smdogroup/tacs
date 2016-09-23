@@ -26,25 +26,18 @@
   processors. The non-zero contribution is first collected to the root
   processor, then distributed to all remaining processors.
 
-  Input:
-  ------
-
-  comm: the MPI communicator that defines the matrix
-
-  csr_m, csr_n: The number of block-CSR rows and columns
-  
-  csr_bsize: The input block-CSR block size
-
-  csr_vars: The global block-CSR variable numbers
-
-  csr_nvars, csr_rowp, csr_cols: The CSR non-zero pattern
-  
-  csr_blocks_per_block: The number of CSR blocks per block of the
-  non-zero pattern in the PDMat class.
+  input:
+  comm:                  MPI communicator for the matrix
+  csr_m, csr_n:          number of block-CSR rows and columns
+  csr_bsize:             input block-CSR block size
+  csr_vars:              global block-CSR variable numbers
+  csr_nvars:             number of CSR variables
+  csr_rowp:              CSR row pointer
+  csr_cols:              CSR non-zero columns 
+  csr_blocks_per_block:  number of CSR blocks per block
 
   Procedure:
   ----------
-  
   1. Determine the block layout structure for PDMat: populate bptr.
   2. Determine the PDMat CSR structure from the block CSR structure
   provided on each processor.
@@ -1667,12 +1660,12 @@ void PDMat::init_row_counts(){
   Procedure:
 
   This is an event-driven implementation of the back-solve that should
-  work better in parallel than a row-wise or coordinated variant. Note
-  that the back-solve is more challenging to implement in parallel
-  because the communication to computation ratio is higher. The
-  event-driven implementation works in two stages.  First, the L^{-1}
-  application, then the U^{-1} application. Both work in a similar
-  manner.
+  work better in parallel than a row-wise or a coordinated
+  variant. Note that the back-solve is more challenging to implement
+  in parallel because the communication to computation ratio is
+  higher. The event-driven implementation works in two stages.  First,
+  the L^{-1} application, then the U^{-1} application. Both work in a
+  similar manner.
 
   Algorithm for the application of L^{-1}:
 
