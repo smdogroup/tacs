@@ -146,44 +146,18 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   update = tacs->createVec();
   update->incref();
 
-  // Set the D matrix to NULL
-  D = NULL;
-  
-  int use_femat = 1;
-  if (use_femat){
-    // Create a matrix for storing the Jacobian
-    D = tacs->createFEMat(); // TACSAssembler::NATURAL_ORDER);
-    D->incref();
-    
-    // Allocate the factorization
-    int lev = 100000; double fill = 10.0; int reorder_schur = 1;
-    pc = new PcScMat(D, lev, fill, reorder_schur);
-    pc->incref();
-    
-    // Associate the maxtrix with FEMatrix
-    mat = D;
-    mat->incref();
-  }
-  else {
-    SerialBCSCMat *A = tacs->createSerialBCSCMat();
-    pc = new SerialBCSCPc(A);
-    pc->incref();
-    
-    mat = A;
-    mat->incref();
-  }
-
-  // The Krylov subspace method (KSM) associated with the solver
-  int gmres_iters = 10, num_restarts = 0, is_flexible = 0;
-  ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
-  ksm->incref();
-
-  // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
-  ksm->setTolerances(rtol, atol);
+  // Use TACS_AMD_ORDER by default
+  ordering_type = TACSAssembler::TACS_AMD_ORDER;
 
   // Variables used in adjoint solve (use setFunction(...) to set these 
   num_funcs = 0;
   funcs     = NULL;
+
+  // NULL the different KSM/solver objects
+  D = NULL;
+  mat = NULL;
+  pc = NULL;
+  ksm = NULL;
 
   // Tecplot solution export (use configureOutput(...) to set these
   f5_write_freq = 0;
@@ -217,9 +191,9 @@ TACSIntegrator::~TACSIntegrator(){
   res->decref();
   update->decref();
   if (D){ D->decref(); }
-  mat->decref();
-  pc->decref();
-  ksm->decref();
+  if (mat){ mat->decref(); }
+  if (pc){ pc->decref(); }
+  if (ksm){ ksm->decref(); }
   
   if (time)     { delete [] time; }
   if (q)        { delete [] q; }
@@ -248,6 +222,41 @@ TACSIntegrator::~TACSIntegrator(){
 void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                   double t, TACSBVec *u, TACSBVec *udot, 
                                   TACSBVec *uddot ){
+  if (!mat || !ksm){
+    // Set the D matrix to NULL
+    int use_femat = 1;
+    if (use_femat){
+      // Create a matrix for storing the Jacobian
+      D = tacs->createFEMat(ordering_type);
+      D->incref();
+      
+      // Allocate the factorization
+      int lev = 100000; double fill = 10.0; int reorder_schur = 1;
+      pc = new PcScMat(D, lev, fill, reorder_schur);
+      pc->incref();
+      
+      // Associate the maxtrix with FEMatrix
+      mat = D;
+      mat->incref();
+    }
+    else {
+      SerialBCSCMat *A = tacs->createSerialBCSCMat();
+      pc = new SerialBCSCPc(A);
+      pc->incref();
+      
+      mat = A;
+      mat->incref();
+    }
+  
+    // The Krylov subspace method (KSM) associated with the solver
+    int gmres_iters = 10, num_restarts = 0, is_flexible = 0;
+    ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
+    ksm->incref();
+  }
+
+  // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
+  ksm->setTolerances(rtol, atol);
+
   // Initialize the norms
   init_norm = 0.0;
   norm = 0.0;
@@ -904,6 +913,13 @@ void TACSIntegrator::setTACSStates( double time, TACSBVec *q,
                                     TACSBVec *qdot, TACSBVec * qddot ){
   tacs->setSimulationTime(time);
   tacs->setVariables(q, qdot, qddot);
+}
+
+/*
+  Set the ordering type within TACSIntegrator
+*/
+void TACSIntegrator::setOrderingType( TACSAssembler::OrderingType _type ){
+  ordering_type = _type;
 }
 
 /*
