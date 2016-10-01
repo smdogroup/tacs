@@ -1486,6 +1486,10 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   TacsScalar C[9];
   computeRotationMat(eta, eps, C);
 
+  // Get the reference rotation
+  const TacsScalar *Cr;
+  CRef->getRotation(&Cr);
+
   // Get the nodal locations for the body
   int npts;
   const TacsScalar *X;
@@ -1508,8 +1512,9 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
     }
     if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
       // Compute the new point location
-      TacsScalar xpt[3];
-      matMultTrans(C, x, xpt);
+      TacsScalar xr[3], xpt[3];
+      matMultTrans(C, x, xr);
+      matMultTrans(Cr, xr, xpt);
 
       for ( int k = 0; k < 3; k++ ){
         data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
