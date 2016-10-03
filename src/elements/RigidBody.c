@@ -1513,8 +1513,8 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
     if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
       // Compute the new point location
       TacsScalar xr[3], xpt[3];
-      matMultTrans(C, x, xr);
-      matMultTrans(Cr, xr, xpt);
+      matMultTrans(Cr, x, xr);
+      matMultTrans(C, xr, xpt);
 
       for ( int k = 0; k < 3; k++ ){
         data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);

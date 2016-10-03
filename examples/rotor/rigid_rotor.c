@@ -10,11 +10,10 @@ int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
   // The acceleration due to gravity in global frame of reference
-  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -10.0);
   gravVec->incref();
   
-  // The acceleration due to gravity in global frame of reference
-  TACSGibbsVector *omega = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSGibbsVector *omega = new TACSGibbsVector(0.0, 0.0, 0.1);
   omega->incref();
 
   // Define the zero vector
@@ -22,7 +21,7 @@ int main( int argc, char *argv[] ){
   zero->incref();
 
   // Define the inertial properties of the shaft
-  const TacsScalar mA    = 1.0;
+  const TacsScalar mA    = 1.0e-3;
   const TacsScalar cA[3] = {0.0, 0.0, 0.0};
   const TacsScalar JA[6] = {1.0/3.0, 0.0, 0.0,
                             1.0/3.0, 0.0,
@@ -66,7 +65,7 @@ int main( int argc, char *argv[] ){
   vizLSL1->incref();
   TACSRigidBody    *lsl1    = new TACSRigidBody(fLSL1,
                                                 mA, cA, JA,
-                                                rLSL1, zero, zero, gravVec);
+                                                rLSL1, zero, omega, gravVec);
   lsl1->incref();
   lsl1->setVisualization(vizLSL1);
 
@@ -86,7 +85,7 @@ int main( int argc, char *argv[] ){
   vizLSL2->incref();
   TACSRigidBody    *lsl2    = new TACSRigidBody(fLSL2,
                                                 mA, cA, JA,
-                                                rLSL2, zero, zero, gravVec);
+                                                rLSL2, zero, omega, gravVec);
   lsl2->incref();
   lsl2->setVisualization(vizLSL2);
 
@@ -108,7 +107,7 @@ int main( int argc, char *argv[] ){
   vizLSP->incref();
   TACSRigidBody    *lsp    = new TACSRigidBody(fLSP,
                                                mA, cA, JA,
-                                               rLSP, zero, zero, gravVec);
+                                               rLSP, zero, omega, gravVec);
   lsp->incref();
   lsp->setVisualization(vizLSP);
 
@@ -130,7 +129,7 @@ int main( int argc, char *argv[] ){
   vizUSP->incref();
   TACSRigidBody    *usp    = new TACSRigidBody(fUSP,
                                                mA, cA, JA,
-                                               rUSP, zero, zero, gravVec);
+                                               rUSP, zero, omega, gravVec);
   usp->incref();
   usp->setVisualization(vizUSP);
 
@@ -152,7 +151,7 @@ int main( int argc, char *argv[] ){
   vizUSL1->incref();
   TACSRigidBody    *usl1    = new TACSRigidBody(fUSL1,
                                                 mA, cA, JA,
-                                                rUSL1, zero, zero, gravVec);
+                                                rUSL1, zero, omega, gravVec);
   usl1->incref();
   usl1->setVisualization(vizUSL1);
 
@@ -174,7 +173,7 @@ int main( int argc, char *argv[] ){
   vizUSL2->incref();
   TACSRigidBody    *usl2    = new TACSRigidBody(fUSL2,
                                                 mA, cA, JA,
-                                                rUSL2, zero, zero, gravVec);
+                                                rUSL2, zero, omega, gravVec);
   usl2->incref();
   usl2->setVisualization(vizUSL2);
 
@@ -220,7 +219,7 @@ int main( int argc, char *argv[] ){
   vizPitch1->incref();
   TACSRigidBody    *pitch1    = new  TACSRigidBody(fPitch1,
                                                    mA, cA, JA,
-                                                   rPitch1, zero, zero, gravVec);
+                                                   rPitch1, zero, omega, gravVec);
   pitch1->incref();
   pitch1->setVisualization(vizPitch1);
 
@@ -242,7 +241,7 @@ int main( int argc, char *argv[] ){
   vizBlade2->incref();
   TACSRigidBody    *blade2    = new TACSRigidBody(fBlade2,
                                                   mA, cA, JA,
-                                                  rBlade2, zero, zero, gravVec);
+                                                  rBlade2, zero, omega, gravVec);
   blade2->incref();
   blade2->setVisualization(vizBlade2);
 
@@ -264,7 +263,7 @@ int main( int argc, char *argv[] ){
   vizPitch2->incref();
   TACSRigidBody    *pitch2    = new  TACSRigidBody(fPitch2,
                                                    mA, cA, JA,
-                                                   rPitch2, zero, zero, gravVec);
+                                                   rPitch2, zero, omega, gravVec);
   pitch2->incref();
   pitch2->setVisualization(vizPitch2);
 
@@ -286,7 +285,7 @@ int main( int argc, char *argv[] ){
   vizBlade3->incref();
   TACSRigidBody    *blade3    = new TACSRigidBody(fBlade3,
                                                   mA, cA, JA,
-                                                  rBlade3, zero, zero, gravVec);
+                                                  rBlade3, zero, omega, gravVec);
   blade3->incref();
   blade3->setVisualization(vizBlade3);
 
@@ -308,7 +307,7 @@ int main( int argc, char *argv[] ){
   vizPitch3->incref();
   TACSRigidBody    *pitch3    = new TACSRigidBody(fPitch3,
                                                   mA, cA, JA,
-                                                  rPitch3, zero, zero, gravVec);
+                                                  rPitch3, zero, omega, gravVec);
   pitch3->incref();
   pitch3->setVisualization(vizPitch3);
 
@@ -330,7 +329,7 @@ int main( int argc, char *argv[] ){
   vizBlade4->incref();
   TACSRigidBody    *blade4    = new TACSRigidBody(fBlade4,
                                                   mA, cA, JA,
-                                                  rBlade4, zero, zero, gravVec);
+                                                  rBlade4, zero, omega, gravVec);
   blade4->incref();
   blade4->setVisualization(vizBlade4);
 
@@ -360,10 +359,19 @@ int main( int argc, char *argv[] ){
   //              Constraints
   //------------------------------------------------------------------//
 
+  TACSGibbsVector         *xrev           = new TACSGibbsVector(1.0, 0.0, 0.0);
+  xrev->incref();
+
+  TACSGibbsVector         *yrev           = new TACSGibbsVector(0.0, 1.0, 0.0);
+  yrev->incref();
+
+  TACSGibbsVector         *zrev           = new TACSGibbsVector(0.0, 0.0, 1.0);
+  zrev->incref();
+    
   // shaft with base
   TACSGibbsVector         *pnt_shaft_base = new TACSGibbsVector(0.0, 0.0, 0.0);
   pnt_shaft_base->incref();
-  TACSSphericalConstraint *rev_shaft_base = new TACSSphericalConstraint(shaft, pnt_shaft_base); 
+  TACSRevoluteConstraint *rev_shaft_base = new TACSRevoluteConstraint(shaft, pnt_shaft_base, zrev); 
   rev_shaft_base->incref();
 
   // shaft with lower swash plate
@@ -438,9 +446,16 @@ int main( int argc, char *argv[] ){
   //              Set up the TACSAssembler object                     //
   //------------------------------------------------------------------//
 
-  int num_nodes     = 29;
+  /*
+  int num_nodes     = 10;
   int vars_per_node = 8;
-  int num_elems     = 29;
+  int num_elems     = 10;
+  */
+
+  int num_nodes     = 24;
+  int vars_per_node = 8;
+  int num_elems     = 24;
+
   TACSAssembler *tacs = new TACSAssembler(MPI_COMM_WORLD, vars_per_node,
                                           num_nodes, num_elems);
   tacs->incref();
@@ -453,9 +468,9 @@ int main( int argc, char *argv[] ){
                              blade2, pitch2, 
                              blade3, pitch3, 
                              blade4, pitch4,
-                             usl1, usl2,  // scissors links connecting swash plate to rotor
-                             lsp,
-                             lsl1, lsl2, //
+                             //        usl1, usl2,  // scissors links connecting swash plate to rotor
+                             //                             lsp,
+                             //                             lsl1, lsl2, //
                              // constraints
                              rev_shaft_base, 
                              rev_shaft_usp, 
@@ -466,21 +481,21 @@ int main( int argc, char *argv[] ){
   tacs->setElements(elements); 
   
   // Set the connectivity
-  int conn[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, // bodies
-                0,    15, // shaft_fix
-                0, 1, 16, // shaft and usp
-                0, 2, 17, // blade1 left
-                2, 3, 18, 
-                3, 1, 19,
-                0, 4, 20, // blade2 right
-                4, 5, 21,
-                5, 1, 22,
-                0, 6, 23, // blade3 into plane
-                6, 7, 24,
-                7, 1, 25,
-                0, 8, 26, // blade4 out of plane
-                8, 9, 27,
-                9, 1, 28};
+  int conn[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // 10, 11, 12, 13, 14, // bodies
+                0,    10, // shaft_fix
+                0, 1, 11, // shaft and usp
+                0, 2, 12, // blade1 left
+                2, 3, 13, 
+                3, 1, 14,
+                0, 4, 15, // blade2 right
+                4, 5, 16,
+                5, 1, 17,
+                0, 6, 18, // blade3 into plane
+                6, 7, 19,
+                7, 1, 20,
+                0, 8, 21, // blade4 out of plane
+                8, 9, 22,
+                9, 1, 23};
   int ptr[]  = {// bodies
                 0, 
                 1, 
@@ -488,16 +503,16 @@ int main( int argc, char *argv[] ){
                 4, 5, 
                 6, 7, 
                 8, 9, 
-                10, 11, 
-                12, 13, 14,
+                //              10, 11, 
+                //              12, 13, 14,
                 // constraints
-                15,         // shaft and base
-                17,         // shaft and upper swash plate
-                20, 23, 26, // blade left etc
-                29, 32, 35, // blade right etc
-                38, 41, 44, // blade in etc
-                47, 50, 53, // blade out etc
-                56};
+                10,         // shaft and base
+                12,         // shaft and upper swash plate
+                15, 18, 21, // blade left etc
+                24, 27, 30, // blade right etc
+                33, 36, 39, // blade in etc
+                42, 45, 48, // blade out etc
+                51};
   tacs->setElementConnectivity(conn, ptr);
   tacs->initialize();
 
@@ -512,16 +527,17 @@ int main( int argc, char *argv[] ){
   f5->incref();
 
   double tinit            = 0.0;
-  double tfinal           = 1.0;
+  double tfinal           = 10.0;
   int    steps_per_second = 100; 
   int    num_stages       = 2;
-  int    max_bdf_order    = 2;
+  int    max_bdf_order    = 1;
   TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal,
                                                  steps_per_second, 
                                                  max_bdf_order);
   bdf->incref();
   
   // Set optional parameters
+  bdf->setOrderingType(TACSAssembler::NATURAL_ORDER);
   bdf->setRelTol(1.0e-8);
   bdf->setAbsTol(1.0e-12);
   bdf->setMaxNewtonIters(24);
@@ -627,6 +643,10 @@ int main( int argc, char *argv[] ){
   vizPitch4->decref();
   pitch4->decref();
 
+  xrev->decref();
+  yrev->decref();
+  zrev->decref();
+  
   // shaft base constraint
   pnt_shaft_base->decref();
   rev_shaft_base->decref();
