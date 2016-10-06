@@ -2267,24 +2267,15 @@ void TACSAssembler::reorderVec( TACSBVec *vec ){
   numDVs: the number of design variables
 */
 void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
-  TacsScalar * tempDVs = new TacsScalar[ numDVs ];
-  memset(tempDVs, 0, numDVs*sizeof(TacsScalar));
-
   // Get the design variables from the elements on this process 
   for ( int i = 0; i < numElements; i++ ){
-    elements[i]->getDesignVars(tempDVs, numDVs);
+    elements[i]->getDesignVars(dvs, numDVs);
   }
   
   // Get the design variables from the auxiliary elements
   if (auxElements){
-    auxElements->getDesignVars(tempDVs, numDVs);
+    auxElements->getDesignVars(dvs, numDVs);
   }
-
-  MPI_Allreduce(tempDVs, dvs, numDVs, TACS_MPI_TYPE, 
-		TACS_MPI_MAX, tacs_comm);
-  
-  // Free the allocated array
-  delete [] tempDVs;
 }
 
 /*!
