@@ -1486,6 +1486,10 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   TacsScalar C[9];
   computeRotationMat(eta, eps, C);
 
+  // Get the reference rotation
+  const TacsScalar *Cr;
+  CRef->getRotation(&Cr);
+
   // Get the nodal locations for the body
   int npts;
   const TacsScalar *X;
@@ -1508,8 +1512,9 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
     }
     if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
       // Compute the new point location
-      TacsScalar xpt[3];
-      matMultTrans(C, x, xpt);
+      TacsScalar xr[3], xpt[3];
+      matMultTrans(Cr, x, xr);
+      matMultTrans(C, xr, xpt);
 
       for ( int k = 0; k < 3; k++ ){
         data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
@@ -1926,7 +1931,7 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                                                 TACSGibbsVector *_eAVec ){
   // Copy over the input arguments
   bodyA = _bodyA; bodyA->incref();
-  bodyB = NULL; bodyB->incref();
+  bodyB = NULL;
   point = _point; point->incref();
   eAVec = _eAVec; eAVec->incref();
 
@@ -2103,56 +2108,46 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
                                           const TacsScalar ddvars[] ){
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
-  TacsScalar *resB = &res[8];
-
-  // The residual for the constraint equations
-  TacsScalar *resC = &res[16];
 
   // Set the variables for body A
   const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
+  
+  // The residual for the constraint equations
+  TacsScalar *resC = NULL;
 
-  // Set the variables for body B
-  const TacsScalar *rB = &vars[8];
-  const TacsScalar etaB = vars[11];
-  const TacsScalar *epsB = &vars[12];
+  // The Lagrange multipliers
+  const TacsScalar *lam = NULL;
 
-  // Set the Lagrange multipliers for the constraint
-  const TacsScalar *lam = &vars[16];
+  // Set the pointers depending on whether both body A and body B
+  // exist or not.
+  if (bodyB){
+    resC = &res[16];
+    lam = &vars[16];
+  }
+  else {
+    resC = &res[8];
+    lam = &vars[8];
+  }
 
   // Compute the rotation matrices for each body
-  TacsScalar CA[9], CB[9];
+  TacsScalar CA[9];
   computeRotationMat(etaA, epsA, CA);
-  computeRotationMat(etaB, epsB, CB);
 
   // Retrieve the pointers to xAVec and xBVec
-  const TacsScalar *xA, *xB;
+  const TacsScalar *xA;
   xAVec->getVector(&xA);
-  xBVec->getVector(&xB);
 
   // Add the terms for body A
   vecAxpy(1.0, lam, &resA[0]);
   addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
                       &resA[3], &resA[4]);
 
-  // Add the terms for body B
-  vecAxpy(-1.0, lam, &resB[0]);
-  addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
-                      &resB[3], &resB[4]);
-
   // Evaluate the constraint
   // Set resC = rA + CA^{T}*xA
   matMultTransAdd(CA, xA, resC);
   vecAxpy(1.0, rA, resC);
-
-  // Compute t = CB^{T}*xB + rB
-  TacsScalar t[3];
-  matMultTrans(CB, xB, t);
-  vecAxpy(1.0, rB, t);
-
-  // Complete the evaluation of the constraint
-  vecAxpy(-1.0, t, resC);
 
   // Retrieve the pointers to eA, eB1, eB2
   const TacsScalar *eA, *eB1, *eB2;
@@ -2160,31 +2155,80 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
   eB1Vec->getVector(&eB1);
   eB2Vec->getVector(&eB2);
 
-  // Add the revolute direction constraint
-  TacsScalar tA[3], tB1[3], tB2[3];
-  matMultTrans(CA, eA, tA);
-  matMultTrans(CB, eB1, tB1);
-  matMultTrans(CB, eB2, tB2);
+  if (bodyB){
+    // Set the residual for bodyB
+    TacsScalar *resB = &res[8];
 
-  // Compute the contributions to the first revolute constraint
-  resC[3] += vecDot(tA, tB1);
+    // Set the variables for body B
+    const TacsScalar *rB = &vars[8];
+    const TacsScalar etaB = vars[11];
+    const TacsScalar *epsB = &vars[12];
 
-  // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
-  addEMatTransProduct(lam[3], eA, tB1, etaA, epsA, 
-                      &resA[3], &resA[4]);
-  // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
-  addEMatTransProduct(lam[3], eB1, tA, etaB, epsB,
-                      &resB[3], &resB[4]);
+    // Compute the rotation matrix for bodyB
+    TacsScalar CB[9];
+    computeRotationMat(etaB, epsB, CB);
+    
+    const TacsScalar *xB;
+    xBVec->getVector(&xB);
+    
+    // Add the terms for body B
+    vecAxpy(-1.0, lam, &resB[0]);
+    addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
+                        &resB[3], &resB[4]);
 
-  // Compute the contributions to the second revolute constraint
-  resC[4] += vecDot(tA, tB2);
+    // Compute t = CB^{T}*xB + rB
+    TacsScalar t[3];
+    matMultTrans(CB, xB, t);
+    vecAxpy(1.0, rB, t);
 
-  // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
-  addEMatTransProduct(lam[4], eA, tB2, etaA, epsA, 
-                      &resA[3], &resA[4]);
-  // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
-  addEMatTransProduct(lam[4], eB2, tA, etaB, epsB,
-                      &resB[3], &resB[4]);
+    // Complete the evaluation of the constraint
+    vecAxpy(-1.0, t, resC);
+
+    // Add the revolute direction constraint
+    TacsScalar tA[3], tB1[3], tB2[3];
+    matMultTrans(CA, eA, tA);
+    matMultTrans(CB, eB1, tB1);
+    matMultTrans(CB, eB2, tB2);
+
+    // Compute the contributions to the first revolute constraint
+    resC[3] += vecDot(tA, tB1);
+    
+    // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
+    addEMatTransProduct(lam[3], eA, tB1, etaA, epsA, 
+                        &resA[3], &resA[4]);
+    // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
+    addEMatTransProduct(lam[3], eB1, tA, etaB, epsB,
+                        &resB[3], &resB[4]);
+    
+    // Compute the contributions to the second revolute constraint
+    resC[4] += vecDot(tA, tB2);
+    
+    // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
+    addEMatTransProduct(lam[4], eA, tB2, etaA, epsA, 
+                        &resA[3], &resA[4]);
+    // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
+    addEMatTransProduct(lam[4], eB2, tA, etaB, epsB,
+                        &resB[3], &resB[4]);
+  }
+  else {
+    // Add the revolute direction constraint
+    TacsScalar tA[3];
+    matMultTrans(CA, eA, tA);
+
+    // Compute the contributions to the first revolute constraint
+    resC[3] += vecDot(tA, eB1);
+    
+    // Add the derivative (d(CA^{T}*eA)/dqA)*eB1 = E(eA)*tB
+    addEMatTransProduct(lam[3], eA, eB1, etaA, epsA, 
+                        &resA[3], &resA[4]);
+    
+    // Compute the contributions to the second revolute constraint
+    resC[4] += vecDot(tA, eB2);
+
+    // Add the derivative (d(CA^{T}*eA)/dqA)*eB2 = E(eA)*eB2
+    addEMatTransProduct(lam[4], eA, eB2, etaA, epsA, 
+                        &resA[3], &resA[4]);
+  }
 
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables
@@ -2209,18 +2253,43 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
 
-  // Set the variables for body B
-  const TacsScalar *rB = &vars[8];
-  const TacsScalar etaB = vars[11];
-  const TacsScalar *epsB = &vars[12];
-
   // Set the Lagrange multipliers for the constraint
-  const TacsScalar *lam = &vars[16];
+  const TacsScalar *lam = NULL;
 
-  // Compute the rotation matrices for each body
-  TacsScalar CA[9], CB[9];
+  // Get the number of variables
+  const int nvars = numVariables();
+  
+  // Set the offset to the Lagrange multipliers
+  int offset = 0;
+  if (bodyB){
+    offset = 16;
+    lam = &vars[16];
+  }
+  else {
+    offset = 8;
+    lam = &vars[8];
+  }
+  
+  // Compute the rotation matrix
+  TacsScalar CA[9];
   computeRotationMat(etaA, epsA, CA);
-  computeRotationMat(etaB, epsB, CB);
+
+  // Add the identity matricies to the Jacobian
+  addBlockIdent(alpha, &J[offset], nvars);
+  addBlockIdent(alpha, &J[offset*nvars], nvars);
+
+  // Retrieve the pointers to xAVec
+  const TacsScalar *xA;
+  xAVec->getVector(&xA);
+
+  // Add the second derivative terms
+  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*(nvars+1)], nvars);
+
+  // Add the term from the derivative w.r.t. lambda
+  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*nvars + offset], nvars);
+  
+  // Add the term from the derivative of the constraint
+  addBlockEMat(alpha, etaA, epsA, xA, &J[offset*nvars + 3], nvars);
 
   // Retrieve the pointers to eA, eB1, eB2
   const TacsScalar *eA, *eB1, *eB2;
@@ -2228,99 +2297,136 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
   eB1Vec->getVector(&eB1);
   eB2Vec->getVector(&eB2);
 
-  // Add the revolute direction constraint
-  TacsScalar tA[3], tB1[3], tB2[3];
-  matMultTrans(CA, eA, tA);
-  matMultTrans(CB, eB1, tB1);
-  matMultTrans(CB, eB2, tB2);
+  // Add the terms required for body B if it is defined
+  if (bodyB){
+    // Set the variables for body B
+    const TacsScalar *rB = &vars[8];
+    const TacsScalar etaB = vars[11];
+    const TacsScalar *epsB = &vars[12];
 
-  TacsScalar gA[4], gB[4];
+    // Compute the rotation matrix
+    TacsScalar CB[9];
+    computeRotationMat(etaB, epsB, CB);
 
-  // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
-  memset(gA, 0, sizeof(gA));
-  addEMatTransProduct(alpha, eA, tB1, etaA, epsA, 
-                      &gA[0], &gA[1]);
-  // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
-  memset(gB, 0, sizeof(gB));
-  addEMatTransProduct(alpha, eB1, tA, etaB, epsB,
-                      &gB[0], &gB[1]);
+    // Add the block identities
+    addBlockIdent(-alpha, &J[8*nvars + offset], nvars);
+    addBlockIdent(-alpha, &J[offset*nvars + 8], nvars);
 
-  // Add the constraint terms to the matrix
-  for ( int i = 0; i < 4; i++ ){
-    J[24*(i+3) + 19] += gA[i];
-    J[24*(i+11) + 19] += gB[i];
-    J[19*24 + i+3] += gA[i];
-    J[19*24 + i+11] += gB[i];
+    // Retrieve the pointer to xBVec
+    const TacsScalar *xB;
+    xBVec->getVector(&xB);
+
+    // Add the second derivative terms
+    addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*(nvars+1)], nvars);
+    
+    // Add the terms from the derivatives w.r.t. lambdas
+    addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*nvars + offset], nvars);
+    
+    // Add the terms from the derivatives of the constraint
+    addBlockEMat(-alpha, etaB, epsB, xB, &J[offset*nvars + 11], nvars);
+
+    // Add the revolute direction constraint
+    TacsScalar tA[3], tB1[3], tB2[3];
+    matMultTrans(CA, eA, tA);
+    matMultTrans(CB, eB1, tB1);
+    matMultTrans(CB, eB2, tB2);
+    
+    TacsScalar gA[4], gB[4];
+    
+    // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
+    memset(gA, 0, sizeof(gA));
+    addEMatTransProduct(alpha, eA, tB1, etaA, epsA, 
+                        &gA[0], &gA[1]);
+    // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
+    memset(gB, 0, sizeof(gB));
+    addEMatTransProduct(alpha, eB1, tA, etaB, epsB,
+                        &gB[0], &gB[1]);
+    
+    // Add the constraint terms to the matrix
+    for ( int i = 0; i < 4; i++ ){
+      J[nvars*(i+3) + 19] += gA[i];
+      J[nvars*(i+11) + 19] += gB[i];
+      J[19*nvars + i+3] += gA[i];
+      J[19*nvars + i+11] += gB[i];
+    }
+    
+    // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
+    memset(gA, 0, sizeof(gA));
+    addEMatTransProduct(alpha, eA, tB2, etaA, epsA, 
+                        &gA[0], &gA[1]);
+    // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
+    memset(gB, 0, sizeof(gB));
+    addEMatTransProduct(alpha, eB2, tA, etaB, epsB,
+                        &gB[0], &gB[1]);
+    
+    // Add the constraint terms to the matrix
+    for ( int i = 0; i < 4; i++ ){
+      J[nvars*(i+3) + 20] += gA[i];
+      J[nvars*(i+11) + 20] += gB[i];
+      J[20*nvars + i+3] += gA[i];
+      J[20*nvars + i+11] += gB[i];
+    }
+    
+    // Add the diagonal contributions to the constraint tA^{T}*tB1 = 0
+    addBlockDMatTransDeriv(alpha*lam[3], tB1, eA, &J[3*(nvars+1)], nvars);
+    addBlockDMatTransDeriv(alpha*lam[3], tA, eB1, &J[11*(nvars+1)], nvars);
+    
+    // Add the contributions from the off-diagonal blocks
+    TacsScalar EA[12], EB[12];
+    computeEMat(etaA, epsA, eA, EA);
+    computeEMat(etaB, epsB, eB1, EB);
+    
+    addBlock3x4Product(alpha*lam[3], EA, EB, &J[3*nvars+11], nvars);
+    addBlock3x4Product(alpha*lam[3], EB, EA, &J[11*nvars+3], nvars);
+    
+    // Add the diagonal contributions to the constraint tA^{T}*tB2 = 0
+    addBlockDMatTransDeriv(alpha*lam[4], tB2, eA, &J[3*(nvars+1)], nvars);
+    addBlockDMatTransDeriv(alpha*lam[4], tA, eB2, &J[11*(nvars+1)], nvars);
+    
+    // Add the contributions from the off-diagonal blocks for the second
+    // constraint
+    computeEMat(etaB, epsB, eB2, EB);
+    
+    addBlock3x4Product(alpha*lam[4], EA, EB, &J[3*nvars+11], nvars);
+    addBlock3x4Product(alpha*lam[4], EB, EA, &J[11*nvars+3], nvars);
   }
+  else {
+    // Add the revolute direction constraint
+    TacsScalar tA[3];
+    matMultTrans(CA, eA, tA);
 
-  // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
-  memset(gA, 0, sizeof(gA));
-  addEMatTransProduct(alpha, eA, tB2, etaA, epsA, 
-                      &gA[0], &gA[1]);
-  // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
-  memset(gB, 0, sizeof(gB));
-  addEMatTransProduct(alpha, eB2, tA, etaB, epsB,
-                      &gB[0], &gB[1]);
+    // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
+    TacsScalar gA[4];
+    memset(gA, 0, sizeof(gA));
+    addEMatTransProduct(alpha, eA, eB1, etaA, epsA, 
+                        &gA[0], &gA[1]);
+    
+    // Add the constraint terms to the matrix
+    for ( int i = 0; i < 4; i++ ){
+      J[nvars*(i+3) + offset+3] += gA[i];
+      J[(offset+3)*nvars + i+3] += gA[i];
+    }
 
-  // Add the constraint terms to the matrix
-  for ( int i = 0; i < 4; i++ ){
-    J[24*(i+3) + 20] += gA[i];
-    J[24*(i+11) + 20] += gB[i];
-    J[20*24 + i+3] += gA[i];
-    J[20*24 + i+11] += gB[i];
+    // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
+    memset(gA, 0, sizeof(gA));
+    addEMatTransProduct(alpha, eA, eB2, etaA, epsA, 
+                        &gA[0], &gA[1]);
+
+    for ( int i = 0; i < 4; i++ ){
+      J[nvars*(i+3) + offset+4] += gA[i];
+      J[(offset+4)*nvars + i+3] += gA[i];
+    }
+
+    // Add the diagonal contributions to the constraint tA^{T}*tB1 = 0
+    addBlockDMatTransDeriv(alpha*lam[3], eB1, eA, &J[3*(nvars+1)], nvars);
+        
+    // Add the diagonal contributions to the constraint tA^{T}*tB2 = 0
+    addBlockDMatTransDeriv(alpha*lam[4], eB2, eA, &J[3*(nvars+1)], nvars);
   }
-
-  // Add the identity matricies to the Jacobian
-  addBlockIdent(alpha, &J[16], 24);
-  addBlockIdent(-alpha, &J[8*24 + 16], 24);
-
-  addBlockIdent(alpha, &J[16*24], 24);
-  addBlockIdent(-alpha, &J[16*24+8], 24);
-
-  // Retrieve the pointers to xAVec and xBVec
-  const TacsScalar *xA, *xB;
-  xAVec->getVector(&xA);
-  xBVec->getVector(&xB);
-
-  // Add the terms corresponding to the second derivative
-  // terms
-  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*25], 24);
-  addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*25], 24);
-
-  // Add the terms from the derivatives w.r.t. lambdas
-  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*24+16], 24);
-  addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*24+16], 24);
-
-  // Add the terms from the derivatives of the constraint
-  addBlockEMat(alpha, etaA, epsA, xA, &J[16*24+3], 24);
-  addBlockEMat(-alpha, etaB, epsB, xB, &J[16*24+11], 24);
-
-  // Add the diagonal contributions to the constraint tA^{T}*tB1 = 0
-  addBlockDMatTransDeriv(alpha*lam[3], tB1, eA, &J[3*25], 24);
-  addBlockDMatTransDeriv(alpha*lam[3], tA, eB1, &J[11*25], 24);
-
-  // Add the contributions from the off-diagonal blocks
-  TacsScalar EA[12], EB[12];
-  computeEMat(etaA, epsA, eA, EA);
-  computeEMat(etaB, epsB, eB1, EB);
-
-  addBlock3x4Product(alpha*lam[3], EA, EB, &J[3*24+11], 24);
-  addBlock3x4Product(alpha*lam[3], EB, EA, &J[11*24+3], 24);
-
-  // Add the diagonal contributions to the constraint tA^{T}*tB2 = 0
-  addBlockDMatTransDeriv(alpha*lam[4], tB2, eA, &J[3*25], 24);
-  addBlockDMatTransDeriv(alpha*lam[4], tA, eB2, &J[11*25], 24);
-
-  // Add the contributions from the off-diagonal blocks for the second
-  // constraint
-  computeEMat(etaB, epsB, eB2, EB);
-
-  addBlock3x4Product(alpha*lam[4], EA, EB, &J[3*24+11], 24);
-  addBlock3x4Product(alpha*lam[4], EB, EA, &J[11*24+3], 24);
 
   // Add the Jacobian entries for the dummy constraints
-  for ( int i = 21; i < 24; i++ ){
-    J[25*i] += alpha;
+  for ( int i = offset+5; i < nvars; i++ ){
+    J[(nvars+1)*i] += alpha;
   }
 }
 
