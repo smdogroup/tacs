@@ -396,6 +396,14 @@ void TACSIntegrator::printWallTime( double t0, int level ){
   if (level >= 1) { 
     fprintf(logfp, ".[%d] Reverse         :  %8.2f %6.2f\n", mpiRank, time_reverse, time_reverse/t0); 
   }
+
+  if (level >= 2) {
+    fprintf(logfp, "..[%d] Assembly       :   %8.2f %6.2f\n", mpiRank, time_rev_assembly, time_rev_assembly/t0);
+    fprintf(logfp, "..[%d] Factor         :   %8.2f %6.2f\n", mpiRank, time_rev_factor, time_rev_factor/t0);
+    fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", mpiRank, time_rev_apply_factor, time_rev_apply_factor/t0);
+    fprintf(logfp, "..[%d] JacVecPdt      :   %8.2f %6.2f\n", mpiRank, time_rev_jac_pdt, time_rev_jac_pdt/t0);
+  }
+
 }
 
 /*
@@ -1169,6 +1177,8 @@ void TACSBDFIntegrator::marchBackwards( ) {
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
 
+    double tassembly = MPI_Wtime();
+
     // Evalute the function
     tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
 
@@ -1191,20 +1201,30 @@ void TACSBDFIntegrator::marchBackwards( ) {
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
+    tassembly = MPI_Wtime() - tassembly;
+    time_rev_assembly += tassembly;
+     
+    double tfactor = MPI_Wtime();
     // LU factorization of the Jacobian
     pc->factor();
-    
+    tfactor = MPI_Wtime() - tfactor;
+    time_rev_factor += tfactor;
+
+    double tapply = MPI_Wtime();
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
     for ( int n = 0; n < num_funcs; n++ ){
       ksm->solve(rhs[adj_index*num_funcs + n], psi[n]);
       rhs[adj_index*num_funcs+n]->zeroEntries();
     }
+    tapply = MPI_Wtime() - tapply;
+    time_rev_apply_factor += tapply;
 
     // Add total derivative contributions from this step to all
     // functions
     addToTotalDerivative(h, psi);
 
+    double jacpdt = MPI_Wtime();
     // Drop the contributions from this step to other right hand sides
     for ( int ii = 1; (ii < nbdf || ii < nbddf); ii++ ){
       int rhs_index = (k - ii) % num_adjoint_rhs;
@@ -1220,7 +1240,10 @@ void TACSBDFIntegrator::marchBackwards( ) {
 				    psi[n], rhs[rhs_index*num_funcs+n], TRANSPOSE);
       }
     }
+    jacpdt = MPI_Wtime() - jacpdt;
+    time_rev_jac_pdt += jacpdt;
   }
+
   // Freeup objects
   // Adjoint variables for each function of interest
   for ( int n = 0; n < num_funcs; n++ ){
