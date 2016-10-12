@@ -129,7 +129,6 @@ class TACSIntegrator : public TACSObject {
   // functions.
   //----------------------------------------------------------------
   /*
-  void addFunctions( double scale, TACSFunction **funcs,int num_funcs, TacsScalar *fvals );
   void addFuncSVSensToAdjointRHS( double alpha, double beta, double gamma, int index ) ;
   void addSVSensToAdjointRHS( double scale, double alpha, double beta, double gamma,
                               int adj_index, TACSFunction **funcs,
@@ -137,12 +136,12 @@ class TACSIntegrator : public TACSObject {
   void adjointSolve( int adj_index, TACSBVec **adjoint );
   */
   void addToTotalDerivative( double scale, TACSBVec **adjoint );
-  
+    
   // Functions to pack common logics (file io, output) in one place
   // and use them in appropriate places
   // ------------------------------------------------------------------
   void doEachTimeStep( int current_step );
-  void doEachNonLinearIter( int iter_num);
+  void doEachNonLinearIter( int iter_num );
                     
   //------------------------------------------------------------------//
   //                  Protected variables
@@ -176,7 +175,7 @@ class TACSIntegrator : public TACSObject {
   TACSBVec      **phi;                // adjoint variable accumulating q dependance
   TACSBVec      **lambda;             // adjoint variable qddot
   TACSBVec      **dfdq;               // storage vector for statevariable sensitivities
-  
+  int             initialized;        // flag that indicates whether the function has been initialized for evaluation
  private:
 
   //-----------------------------------------------------------------//

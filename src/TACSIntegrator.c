@@ -546,9 +546,20 @@ void TACSIntegrator::getFuncGrad( int _num_dv,
 
   // Integrate forward in time to solve for the states (q, qdot, qddot)
   integrate();
-  
-  // March backwards in time and solve for the adjoint variables
+
+  // Perform the initialization required to evaluate the function
+  for ( int n = 0; n < num_funcs; n++ ){
+    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+  }
+
+  // March backwards in time to solve for the adjoint variables and
+  // computing dfdx and function values
   marchBackwards();
+
+  // Reduce the function values on all processors
+  for ( int n = 0; n < num_funcs; n++ ){
+    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+  }
 
   // Reduce the gradients on all processors
   MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, TACS_MPI_TYPE, 
@@ -660,7 +671,12 @@ void TACSIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
                                            int numFuncs, 
                                            TacsScalar *funcVals) {
   memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
- 
+
+  // Perform the initialization required to evaluate the function
+  for ( int n = 0; n < num_funcs; n++ ){
+    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+  }
+  
   TacsScalar *ftmp = new TacsScalar[numFuncs];  
   memset(ftmp, 0, numFuncs*sizeof(TacsScalar));
   
@@ -669,16 +685,21 @@ void TACSIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
     // Set the states into TACS
     setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
-    // Evaluate the functions
+    // Evaluate and add the function values from this step
+    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, numFuncs);
 
-    tacs->evalFunctions(funcs, numFuncs, ftmp); 
-    
-    // Compute the mean function value (h is the weight)
-    for ( int j = 0; j < numFuncs; j++ ) {
-      funcVals[j] += h*ftmp[j];
-    }        
+    // Retrieve the function values
+    for ( int n = 0; n < num_funcs; n++ ){
+      fvals[n] += funcs[n]->getFunctionValue();
+    }
+
   }
-  
+
+  // Reduce the function values on all processors
+  for ( int n = 0; n < num_funcs; n++ ){
+    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+  }
+
   delete [] ftmp;
 }
 
@@ -1148,14 +1169,16 @@ void TACSBDFIntegrator::marchBackwards( ) {
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
 
-    // Setup the adjoint RHS
-    TacsScalar ftmp;
-    for ( int n = 0; n < num_funcs; n++ ){
-      // Add the contribution to function value from this stage
-      ftmp = 0.0;
-      tacs->evalFunctions(&funcs[n], 1, &ftmp);
-      fvals[n] += h*ftmp;
+    // Evalute the function
+    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
 
+    // Retrieve the function values
+    for ( int n = 0; n < num_funcs; n++ ){
+      fvals[n] += funcs[n]->getFunctionValue();
+    }
+
+    // Setup the adjoint RHS
+    for ( int n = 0; n < num_funcs; n++ ){
       // Add up the contribution from function state derivative to RHS
       psi[n]->zeroEntries();
       tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &psi[n]);
@@ -1677,19 +1700,21 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       //--------------------------------------------------------------//
       // Assemble the right hand side
       //--------------------------------------------------------------//
+
+      // Add the contribution to function value from this stage
+      tacs->integrateFunctions(h*B[i], TACSFunction::INTEGRATE, funcs, num_funcs);
+
+      // Retrieve the function values
+      for ( int n = 0; n < num_funcs; n++ ){
+        fvals[n] += funcs[n]->getFunctionValue();
+      }
       
       // Add function contributions
-      TacsScalar ftmp;
       for ( int n = 0; n < num_funcs; n++ ){
-        // Add up the function contribution (dfdq)
-        ftmp = 0.0;
-	tacs->evalFunctions(&funcs[n], 1, &ftmp);
-        fvals[n] += h*B[i]*ftmp;
-
         // Add up the contribution from its derivative to RHS (drdq.lam)
-	dfdq[i*num_funcs+n]->zeroEntries();
+        dfdq[i*num_funcs+n]->zeroEntries();
         tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[i*num_funcs+n]);
-	rhs[i*num_funcs+n]->axpy(alpha, dfdq[i*num_funcs+n]);
+        rhs[i*num_funcs+n]->axpy(alpha, dfdq[i*num_funcs+n]);
 
         // Add up the contribution from PSI to this RHS
         rhs[i*num_funcs+n]->axpy(B[i], phi[n]);
@@ -1842,12 +1867,13 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
       setTACSStates(tS[toffset+j], qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
       
       // Evaluate the functions
-      tacs->evalFunctions(funcs, numFuncs, ftmp); 
-      
-      // Compute the mean function value (h is the weight)
-      for ( int i = 0; i < numFuncs; i++ ) {
-	funcVals[i] += h*B[j]*ftmp[i];
-      }        
+      tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
+
+      // Retrieve the function values
+      for ( int n = 0; n < num_funcs; n++ ){
+        fvals[n] += funcs[n]->getFunctionValue();
+      }
+
     }
   }
   delete [] ftmp;
@@ -1992,7 +2018,7 @@ void TACSABMIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
 */
 void TACSABMIntegrator::marchBackwards( ){
   current_time_step = num_time_steps;
-  
+    
   time_rev_assembly = 0.0;
   time_rev_factor = 0.0;
   time_rev_apply_factor = 0.0;
@@ -2045,12 +2071,15 @@ void TACSABMIntegrator::marchBackwards( ){
     // Setup the adjoint RHS
     //---------------------------------------------------------------//
 
-    TacsScalar ftmp;
-    for ( int n = 0; n < num_funcs; n++ ){
-      // Evaluate the function
-      tacs->evalFunctions(&funcs[n], 1, &ftmp);
-      fvals[n] += h*ftmp;
+    // Evaluate the function
+    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
 
+    // Retrieve the function values
+    for ( int n = 0; n < num_funcs; n++ ){
+      fvals[n] += funcs[n]->getFunctionValue();
+    }
+
+    for ( int n = 0; n < num_funcs; n++ ){
       // Add up the contribution from function state derivative to RHS
       dfdq[n]->zeroEntries();
       tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[n]);
@@ -2133,6 +2162,7 @@ void TACSABMIntegrator::marchBackwards( ){
       }
     }
   }
+
   // Freeup objects
   for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
     if (n < num_funcs) {    
@@ -2303,7 +2333,7 @@ void TACSNBGIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
 */
 void TACSNBGIntegrator::marchBackwards( ){
   current_time_step = num_time_steps;
-
+  
   time_rev_assembly = 0.0;
   time_rev_factor = 0.0;
   time_rev_apply_factor = 0.0;
@@ -2356,13 +2386,15 @@ void TACSNBGIntegrator::marchBackwards( ){
     // Setup the adjoint RHS
     //---------------------------------------------------------------//
 
-    TacsScalar ftmp;
-    for ( int n = 0; n < num_funcs; n++ ){
-      // Evaluate the function
-      ftmp = 0.0;
-      tacs->evalFunctions(&funcs[n], 1, &ftmp);
-      fvals[n] += h*ftmp;
+    // Evaluate the function
+    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
 
+    // Retrieve the function values
+    for ( int n = 0; n < num_funcs; n++ ){
+      fvals[n] += funcs[n]->getFunctionValue();
+    }
+    
+    for ( int n = 0; n < num_funcs; n++ ){
       // Add up the contribution from function state derivative to RHS
       dfdq[n]->zeroEntries();
       tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[n]);
