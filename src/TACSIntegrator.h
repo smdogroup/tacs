@@ -93,6 +93,7 @@ class TACSIntegrator : public TACSObject {
   double time_rev_assembly;
   double time_rev_factor;
   double time_rev_apply_factor;
+  double time_rev_jac_pdt;
   double time_reverse;
  protected:
 

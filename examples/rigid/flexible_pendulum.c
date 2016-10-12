@@ -5,6 +5,7 @@
 #include "MITCShell.h"
 #include "TACSShellTraction.h"
 #include "isoFSDTStiffness.h"
+#include "KSFailure.h"
 
 /*
   Set up a double pendulum with a flexible attachment
@@ -12,6 +13,14 @@
 int main( int argc, char *argv[] ){
   // Initialize MPI
   MPI_Init(&argc, &argv);
+
+  int scale = 1;
+  for ( int i = 0; i < argc; i++ ){
+    if (sscanf(argv[i], "scale=%d", &scale) == 1){
+      if (scale < 0){ scale = 1; }
+      if (scale > 10){ scale = 10; }
+    }
+  }
 
   MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -24,8 +33,12 @@ int main( int argc, char *argv[] ){
   creator->incref();
 
   if (rank == 0){
-    int nl_elems = 25; // number of elements along the length
-    int nw_elems = 5; // number of element along a side of the box
+    printf("scale = %d\n", scale);
+  }
+
+  if (rank == 0){
+    int nl_elems = scale*25; // number of elements along the length
+    int nw_elems = scale*5; // number of element along a side of the box
 
     // Set the number of rigid elements/constraints: 1 rigid body
     // class and 2 constraint classes for each end of the flexible
@@ -191,14 +204,33 @@ int main( int argc, char *argv[] ){
   TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
 
   // Set the number of threads
-  tacs->setNumThreads(2);
+  tacs->setNumThreads(1);
+
+  // Set up the parameters for adjoint solve
+  int num_dvs = tacs->getNumComponents();
+  static const int NUM_FUNCS = 1;
+  TACSFunction *func[NUM_FUNCS];
+  func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
+
+  TacsScalar *funcVals     = new TacsScalar[NUM_FUNCS]; // adjoint
+  TacsScalar *funcValsTmp  = new TacsScalar[NUM_FUNCS]; // CSD
+  TacsScalar *funcVals1    = new TacsScalar[NUM_FUNCS]; // forward/reverse
+
+  TacsScalar *dfdx    = new TacsScalar[NUM_FUNCS*num_dvs]; // adjoint
+  TacsScalar *dfdx1   = new TacsScalar[NUM_FUNCS*num_dvs]; // CSD
+  TacsScalar *dfdxTmp = new TacsScalar[NUM_FUNCS*num_dvs]; // forward/reverse
+
+  // Create an array of design variables
+  TacsScalar *x = new TacsScalar[ num_dvs ]; 
+  x[0] = 0.3; 
 
   // Set up the parameters for the TACSIntegrator
   double tinit = 0.0;
-  double tfinal = 2.0;
-  int steps_per_second = 300; 
+  double tfinal = 0.1;
+  int steps_per_second = 1000; 
   int num_stages = 2;
   int max_bdf_order = 2;
+
   TACSBDFIntegrator *bdf = 
     new TACSBDFIntegrator(tacs, tinit, tfinal,
                           steps_per_second, max_bdf_order);
@@ -212,10 +244,52 @@ int main( int argc, char *argv[] ){
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
 
-  // Writes at the end of each time step
-  bdf->configureOutput(f5, 1, "flexible-pendulum/pendulum_%04d.f5"); 
-  bdf->integrate();
-  bdf->writeSolution("solutionBDF.dat");
+  // Set functions of interest
+  bdf->setFunction(func, NUM_FUNCS);
+
+  // Adjoint gradient
+  double t0 = MPI_Wtime();
+  bdf->getFuncGrad(num_dvs, x, funcVals, dfdx);
+  // bdf->integrate();
+  t0 = MPI_Wtime() - t0;
+    
+  // Print a summary of time taken
+  if (rank == 0){
+    bdf->printWallTime(t0, 2);
+
+  // Print the adjoint derivative values
+  for( int j = 0; j < NUM_FUNCS; j++) {
+    printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", rank, j, RealPart(funcVals[j]));
+    for ( int n = 0; n < num_dvs; n++) {
+      printf(" %15.8e ",  RealPart(dfdx[n+j*num_dvs]));
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  // Complex step verification
+  //  bdf->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
+
+  // Print complex step derivative values
+  for( int j = 0; j < NUM_FUNCS; j++) {
+    printf("[%d] CSD      func: %d fval: %15.8e dfdx:", rank, j, RealPart(funcValsTmp[j]));
+    for ( int n = 0; n < num_dvs; n++) {
+      printf(" %15.8e ",  RealPart(dfdxTmp[n+j*num_dvs]));
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  // Print the differences between complex step and adjoint derivtives
+  for ( int j = 0; j < NUM_FUNCS; j++ ) {
+    printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", rank, j, RealPart(funcValsTmp[j])-RealPart(funcVals[j]) );
+    for ( int n = 0; n < num_dvs; n++ ) {
+      printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx[j*num_dvs+n]) );
+    }
+    printf("\n");
+  }
+  printf("\n");
+  }
 
   /*
   // Delete objects
@@ -232,6 +306,13 @@ int main( int argc, char *argv[] ){
   creator->decref();
   tacs->decref();
   bdf->decref();
+
+  func[0]->decref();
+
+  delete [] x;
+  delete [] funcVals;
+  delete [] funcVals1;
+  delete [] funcValsTmp;
 
   MPI_Finalize();
 
