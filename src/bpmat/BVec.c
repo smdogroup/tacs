@@ -585,8 +585,37 @@ void TACSBVec::setRand( double lower, double upper ){
   Retrieve the locally stored values from the array
 */
 int TACSBVec::getArray( TacsScalar **array ){
-  *array = x;
+  if (array){ *array = x; }
   return size;
+}
+
+/*
+  Retrieve the external values stored on this processor
+*/
+int TACSBVec::getExtArray( TacsScalar **array ){
+  if (array){ *array = x_ext; }
+  return ext_size;
+}
+
+/*
+  Retrieve the boundary conditions associated with the vector
+*/
+TACSBcMap *TACSBVec::getBcMap(){ 
+  return bcs; 
+}
+
+/*
+  Retrieve the external index values
+*/
+TACSBVecIndices *TACSBVec::getBVecIndices(){
+  return ext_indices;
+}
+
+/*
+  Retrieve the external value distribution object
+*/
+TACSBVecDistribute *TACSBVec::getBVecDistribute(){
+  return ext_dist;
 }
 
 /*

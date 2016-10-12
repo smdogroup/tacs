@@ -72,6 +72,7 @@ class TACSIntegrator : public TACSObject {
   void setIsFactorized( int flag );
   void setTACSStates( double time, TACSBVec *q, 
                       TACSBVec *qdot, TACSBVec *qddot );
+  void setOrderingType( TACSAssembler::OrderingType _type );
 
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
@@ -211,6 +212,8 @@ class TACSIntegrator : public TACSObject {
   TacsScalar energies[2]; // Keep track of energies
   TacsScalar init_energy; // The energy during time = 0
   int mpiRank, mpiSize;   // MPI information
+
+  TACSAssembler::OrderingType ordering_type; // The type of ordering to use
 };
 
 /*

@@ -213,8 +213,8 @@ int main( int argc, char **argv ){
   obj->setAbsTol(1.0e-10);
   obj->setRelTol(1.0e-8);
   obj->setPrintLevel(1);
-  obj->configureOutput(NULL, 1, "plate_%04d.f5");
-  obj->writeSolutionToF5();
+  //  obj->configureOutput(NULL, 1, "plate_%04d.f5");
+  //  obj->writeSolutionToF5();
   
   // Set functions of interest
   obj->setFunction(func, NUM_FUNCS);

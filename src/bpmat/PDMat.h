@@ -21,7 +21,8 @@
   more difficult to implement but results in better parallelism for
   factorization. The 2D block-cyclic format repeats over blocks of
   rows and columns in the matrix. For instance, an 8-block cycle is
-  arranged as follows,
+  arranged as follows
+
    __ __ __ __
   |1 |2 |3 |4 |
   |__|__|__|__|
@@ -45,8 +46,8 @@
   The main purpose of this matrix class is to be used for an interface
   problem (the Schur-complement problem) in a precondition or direct
   solve. Therefore, there is no need to save the original values in
-  the matrix. As a result, the factorization is done in place, using the
-  existing non-zero pattern. 
+  the matrix. As a result, the factorization is done in place, using
+  the existing non-zero pattern.
 
   The main requirements for the code are:
 

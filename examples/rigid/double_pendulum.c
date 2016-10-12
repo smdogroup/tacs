@@ -9,6 +9,13 @@ int main( int argc, char *argv[] ){
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
+  int use_revolute = 0;
+  for ( int k = 0; k < argc; k++ ){
+    if (strcmp(argv[k], "revolute") == 0){
+      use_revolute = 1;
+    }
+  }
+
   // The acceleration due to gravity in global frame of reference
   TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.8);
 
@@ -65,9 +72,21 @@ int main( int argc, char *argv[] ){
   TACSGibbsVector *basePt = new TACSGibbsVector(0.0, 0.0, 0.0);
   TACSGibbsVector *touchAB = new TACSGibbsVector(0.0, 5.0, 0.0);
 
-  // Construct the spherical constraint
-  TACSSphericalConstraint *conA = new TACSSphericalConstraint(bodyA, basePt); 
-  TACSSphericalConstraint *conB = new TACSSphericalConstraint(bodyA, bodyB, touchAB);
+  // Create a revolute axis
+  TACSGibbsVector *rev = new TACSGibbsVector(1.0, 1.0, 1.0);
+  
+  // Set the constraints
+  TACSElement *conA, *conB;
+  if (use_revolute){
+    // Construct the revolute constraints
+    conA = new TACSRevoluteConstraint(bodyA, basePt, rev);
+    conB = new TACSRevoluteConstraint(bodyA, bodyB, touchAB, rev);
+  }
+  else {
+    // Construct the spherical constraint
+    conA = new TACSSphericalConstraint(bodyA, basePt);
+    conB = new TACSSphericalConstraint(bodyA, bodyB, touchAB);
+  }
   conA->incref();
   conB->incref();
 
@@ -95,6 +114,8 @@ int main( int argc, char *argv[] ){
   tacs->setElementConnectivity(conn, ptr);
   tacs->initialize();
 
+  tacs->testElement(2, 2);
+
   //--------------------------------------------------------------------//
   //                   Create the TACSIntegrator object                 //
   //--------------------------------------------------------------------//
@@ -106,8 +127,8 @@ int main( int argc, char *argv[] ){
   f5->incref();
 
   double tinit            = 0.0;
-  double tfinal           = 4.0;
-  int    steps_per_second = 100; 
+  double tfinal           = 8.0;
+  int    steps_per_second = 50; 
   int    num_stages       = 2;
   int    max_bdf_order    = 2;
   TACSBDFIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal,
@@ -122,6 +143,7 @@ int main( int argc, char *argv[] ){
   bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
+  bdf->setOrderingType(TACSAssembler::NATURAL_ORDER);
   bdf->configureOutput(f5, 1, "double-pendulum-output/pendulum_%04d.f5");
 
   // Integrate and write solution to file
