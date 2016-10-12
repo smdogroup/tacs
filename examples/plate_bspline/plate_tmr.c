@@ -348,7 +348,13 @@ int main( int argc, char *argv[] ){
   TacsScalar *res_array;
   int res_size = res->getArray(&res_array);
   res_array[res_size-1] = 1.0;
-  //res->set(1.0);
+  /* for (int i = 0; i < res_size; i++){ */
+  /*   res_array[i] = 1.0*i; */
+  /* } */
+  /* res->applyBCs(); */
+  /* tacs->setVariables(res); */
+  /* res_array[res_size-1] = 1.0; */
+  /* //res->set(1.0); */
   res->applyBCs();
   gmres->solve(res, ans);
   tacs->setVariables(ans);
