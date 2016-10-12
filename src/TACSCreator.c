@@ -181,7 +181,7 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
   num_bcs = _num_bcs;
   bc_nodes = new int[ num_bcs ];
   memcpy(bc_nodes, _bc_nodes, num_bcs*sizeof(int));
-
+  
   // Allocate space for the boundary condition pointer
   bc_ptr = new int[ num_bcs+1 ];
 
@@ -343,7 +343,7 @@ TACSAssembler* TACSCreator::createTACS(){
     for ( int j = 0; j < num_bcs; j++ ){
       bc_nodes[j] = new_nodes[bc_nodes[j]];
     }
-
+    
     // Find the inverse mapping between the new and old node
     // numbers so that it's faster to access
     int *inv_new_nodes = new int[ num_nodes ];
