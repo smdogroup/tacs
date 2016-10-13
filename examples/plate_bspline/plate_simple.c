@@ -1,4 +1,5 @@
 #include "PlaneStressQuad.h"
+#include "PlaneStressBspline.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
 
@@ -19,162 +20,38 @@ int main( int argc, char *argv[] ){
   stiff->incref();
   
   // Create the plane stress element
-  TACSElement *elem = new PlaneStressQuad<4>(stiff);
+  TACSElement *elem = new PlaneStressQuad<2>(stiff);
   elem->incref();
-
+  /* double Tu[] = {0.0,0.0,0.0,1.0,2.0,3.0,3.0,3.0}; */
+  /* double Tv[] = {0.0,0.0,0.0,1.0,2.0,3.0,3.0,3.0}; */
+  /* // Number of knot intervals without the repeating knots */
+  /* int Lu = 3, Lv = 3; */
+  /* TACSElement *elem[9]; */
+  /* for (int i = 0; i < 9; i++){ */
+  /*   elem[i] = new PlaneStressBspline(stiff,Tu,Tv, */
+  /*                                    Lu, Lv, NULL, LINEAR, */
+  /*                                    i/3, i); */
+  /*   elem[i]->incref(); */
+  /* }   */
+  
   // Creating mesh on root processor
   if (rank == 0){
-    /* // Create a mesh of quad elements */
-    /* int nx = 2, ny = 2; */
-    /* int num_elems = nx*ny; */
-    
-    /* // Allocate and number the nodes */
-    /* int lena = (nx+1)*(ny+1)+5; */
-    /* int *anodes = new int[lena]; */
-    /* memset(anodes, 0, lena*sizeof(int)); */
-
-    /* int dep_nodes = 0; */
-    /* // Set dependent nodes and weights */
-    /* for (int i = (nx+1)*(ny+1); i < lena; i++){ */
-    /*   anodes[i] = -dep_nodes-1; */
-    /*   dep_nodes++; */
-    /* } */
-    /* // Number the nodes */
-    /* int num_nodes = 0; */
-    /* for (int j = 0; j < ny+1; j++){ */
-    /*   for (int i = 0; i < nx+1; i++){ */
-    /*     int index = i+(nx+1)*j; */
-    /*     anodes[i+(nx+1)*j] = num_nodes; */
-    /*     num_nodes++; */
-    /*   } */
-    /* } */
-    /* // Allocate dependent node data structure */
-    /* int *dep_ptr = new int[dep_nodes+1]; */
-    /* int *dep_conn = new int[4*dep_nodes]; */
-    /* double *dep_weights = new double[4*dep_nodes]; */
-
-    /* dep_ptr[0] = 0; */
-    /* for (int i = 0; i < dep_nodes; i++){ */
-    /*   dep_ptr[i+1] = dep_ptr[i]+4; */
-    /* } */
-    /* int d_node = 4; */
-    /* // For 1st dependent node */
-    /* dep_weights[0] = 0.5; */
-    /* dep_weights[1] = 0.5; */
-    /* dep_weights[2] = 0.0; */
-    /* dep_weights[3] = 0.0; */
-    
-    /* dep_conn[0] = 4; */
-    /* dep_conn[1] = 5; */
-    /* dep_conn[2] = 7;  */
-    /* dep_conn[3] = 8; */
-    
-    /* // For 2nd dependent node */
-    /* dep_weights[1*4] = 0.5; */
-    /* dep_weights[1*4+1] = 0.0; */
-    /* dep_weights[1*4+2] = 0.5; */
-    /* dep_weights[1*4+3] = 0.0; */
-    
-    /* dep_conn[1*4] = 4; */
-    /* dep_conn[1*4+1] = 5; */
-    /* dep_conn[1*4+2] = 7;  */
-    /* dep_conn[1*4+3] = 8; */
-
-    /* // For 3rd dependent node */
-    /* dep_weights[2*4] = 0.25; */
-    /* dep_weights[2*4+1] = 0.25; */
-    /* dep_weights[2*4+2] = 0.25; */
-    /* dep_weights[2*4+3] = 0.25; */
-    
-    /* dep_conn[2*4] = 4; */
-    /* dep_conn[2*4+1] = 5; */
-    /* dep_conn[2*4+2] = 7;  */
-    /* dep_conn[2*4+3] = 8; */
-
-    /* // For 4th dependent node */
-    /* dep_weights[3*4] = 0.0; */
-    /* dep_weights[3*4+1] = 0.5; */
-    /* dep_weights[3*4+2] = 0.0; */
-    /* dep_weights[3*4+3] = 0.5; */
-    
-    /* dep_conn[3*4] = 4; */
-    /* dep_conn[3*4+1] = 5; */
-    /* dep_conn[3*4+2] = 7;  */
-    /* dep_conn[3*4+3] = 8; */
-    
-    /* // For 5th dependent node */
-    /* dep_weights[4*4] = 0.0; */
-    /* dep_weights[4*4+1] = 0.0; */
-    /* dep_weights[4*4+2] = 0.5; */
-    /* dep_weights[4*4+3] = 0.5; */
-    
-    /* dep_conn[4*4] = 4; */
-    /* dep_conn[4*4+1] = 5; */
-    /* dep_conn[4*4+2] = 7;  */
-    /* dep_conn[4*4+3] = 8; */
-      
-    /* // Set the length along the x and y direction */
-    /* double Lx = 2.0, Ly = 2.0; */
-    
-    /* // Create the nodes */
-    /* TacsScalar *Xpts = new TacsScalar[3*num_nodes]; */
-    
-    /* // Loop over the nodes */
-    /* for (int j = 0; j < ny+1; j++){ */
-    /*   for (int i = 0; i < nx+1; i++){ */
-    /*     int node = anodes[i+(nx+1)*j]; */
-    /*     if (node >= 0){ */
-    /*       Xpts[3*node] = Lx*i/nx; */
-    /*       Xpts[3*node+1] = Ly*j/ny; */
-    /*       Xpts[3*node+2] = 0.0; */
-    /*     } */
-    /*   } */
-    /* } */
-    
-    /* // Set up the element connectivity array */
-    /* int *elem_node_conn = new int[4*num_elems]; */
-    /* int *elem_node_ptr = new int[num_elems+1]; */
-    /* // Element counter */
-    /* int n = 0; */
-    /* int *conn = elem_node_conn; */
-    /* elem_node_ptr[0] = 0; */
-    /* // Add the element for the mesh */
-    /* for (int j = 0; j < ny; j++){ */
-    /*   for (int i = 0; i < nx; i++){ */
-    /*     conn[0] = anodes[i+(nx+1)*j]; */
-    /*     conn[1] = anodes[i+1+(nx+1)*j]; */
-    /*     conn[2] = anodes[i+(nx+1)*(j+1)]; */
-    /*     conn[3] = anodes[i+1+(nx+1)*(j+1)]; */
-    /*     conn += 4; */
-    /*     elem_node_ptr[n+1] = elem_node_ptr[n]+4; */
-    /*     n++; */
-    /*   } */
-    /* } */
-    /* // Set the identity numbers */
-    /* int *elem_id_nums = new int[num_elems]; */
-    /* memset(elem_id_nums, 0, num_elems*sizeof(int)); */
-    
-    /* // Set the boundary conditions */
-    /* int num_bcs = ny+1; */
-    /* int *bc_nodes = new int[num_bcs]; */
-    /* for (int j = 0; j < ny+1; j++){ */
-    /*   bc_nodes[j] = anodes[j*(nx+1)]; */
-    /* } */
     int num_nodes = 16;
-    int num_elems = 1;
+    int num_elems = 9;
     int ndep_nodes = 0;
-    
-    /* int conn[] = {0, 1, 3, 4, */
-    /*               1, 2, 4, 5, */
-    /*               3, 4, 6, 7, */
-    /*               4, -1, -2, -5, */
-    /*               -1, 5, -5, -3, */
-    /*               -2, -5, 7, -4, */
-    /*               -5, -3, -4, 8}; */
-    int conn[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                  11, 12, 13, 14, 15};
-    int ptr[] = {0, 16};
-    int elem_ids[] = {0};
+
+    int conn[] = {0,1,4,5,
+                  1,2,5,6,
+                  2,3,6,7,
+                  4,5,8,9,
+                  5,6,9,10,
+                  6,7,10,11,
+                  8,9,12,13,
+                  9,10,13,14,
+                  10,11,14,15};
+    int ptr[] = {0,4,8,12,16,20,24,28,32,36};
+    int elem_ids[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    //int elem_ids[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
     int dep_conn[] = {4, 5,
                       4, 7,
                       5, 8,
@@ -202,13 +79,15 @@ int main( int argc, char *argv[] ){
                          1.0, 3.0, 0.0,
                          2.0, 3.0, 0.0,
                          3.0, 3.0, 0.0};
+    
     // Set the connectivity
     creator->setGlobalConnectivity(num_nodes, num_elems,
                                    ptr, conn,
                                    elem_ids);
+    
     // Set the boundary conditions
     creator->setBoundaryConditions(num_bcs, bc_nodes);
-    
+
     // Set the nodal locations
     creator->setNodes(Xpts);
 
@@ -238,6 +117,9 @@ int main( int argc, char *argv[] ){
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
+  /* tacs->testElement(0,2); */
+  /* tacs->decref(); */
+  /* exit(0); */
   // Create the preconditioner
   TACSBVec *res = tacs->createVec();
   TACSBVec *ans = tacs->createVec();
@@ -274,14 +156,11 @@ int main( int argc, char *argv[] ){
   res->set(1.0);
   res->applyBCs();
   gmres->solve(res, ans);
-  /* // Set node numbering as displacement */
-  /* TacsScalar *res_array; */
-  /* int res_size = ans->getArray(&res_array); */
-  /* for (int i = 0; i < res_size; i++){ */
-  /*   res_array[i] = 1.0*i; */
-  /* } */
+  
   tacs->setVariables(ans);
-    
+  TacsScalar *ans_array;
+  int ans_size = ans->getArray(&ans_array);
+ 
   // Create TACSToFH5 object for writing to tecplot
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS |
@@ -304,6 +183,11 @@ int main( int argc, char *argv[] ){
 
   // Decrease the reference count to everything else
   stiff->decref();
+  /* if (elem){ */
+  /*   for (int i = 0; i < 9; i++){ */
+  /*     elem[i]->decref(); */
+  /*   } */
+  /* } */
   elem->decref();
   tacs->decref();
   creator->decref();
