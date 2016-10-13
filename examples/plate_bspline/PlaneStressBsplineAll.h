@@ -108,7 +108,6 @@ double PlaneStressBsplineAll<order>::getGaussWtsPts( const int num,
   
   pt[0] = gaussPts[n];
   pt[1] = gaussPts[m];
-  
   return gaussWts[n]*gaussWts[m];
 }
 
@@ -179,6 +178,7 @@ void PlaneStressBsplineAll<order>::getShapeFunctions( const double pt[],
   // Compute the knot intervals
   int intu = t1+order-1;
   int intv = t2+order-1;
+  
   // Convert parametric point to knot vector point
   double dNu[8], dNv[8], work[30];
   double u = Tu[intu]+Tu[intu+1]+pt[0]*(Tu[intu+1]-Tu[intu]);
@@ -193,6 +193,11 @@ void PlaneStressBsplineAll<order>::getShapeFunctions( const double pt[],
   // Compute the 2d shape functions and the partial derivative along
   // each direction
   if (order == 3){
+    /* printf("u: %e Nu: %e %e %e \n", u, dNu[0], dNu[1], */
+    /*        dNu[2]); */
+    /* printf("v: %e Nv: %e %e %e \n", v, dNv[0], dNv[1], */
+    /*        dNv[2]); */
+
     N[0] = dNu[0]*dNv[0];
     N[1] = dNu[1]*dNv[0];
     N[2] = dNu[2]*dNv[0];
@@ -204,6 +209,10 @@ void PlaneStressBsplineAll<order>::getShapeFunctions( const double pt[],
     N[6] = dNu[0]*dNv[2];
     N[7] = dNu[1]*dNv[2];
     N[8] = dNu[2]*dNv[2];
+    /* for (int i = 0; i < 9; i++){ */
+    /*   printf("N[%d]: %e \n", i, N[i]); */
+    /* } */
+    
     // Compute the partial derivative wrt u
     Na[0] = dNu[3]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
     Na[1] = dNu[4]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
@@ -229,7 +238,11 @@ void PlaneStressBsplineAll<order>::getShapeFunctions( const double pt[],
     Nb[7] = dNu[1]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
     Nb[8] = dNu[2]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;    
   }
-  else if (order == 4){    
+  else if (order == 4){
+    /* printf("u: %e Nu: %e %e %e %e \n", u, dNu[0], dNu[1], */
+    /*        dNu[2],dNu[3]); */
+    /* printf("v: %e Nv: %e %e %e %e \n", v, dNv[0], dNv[1], */
+    /*        dNv[2],dNv[3]); */
     N[0] = dNu[0]*dNv[0];
     N[1] = dNu[1]*dNv[0];
     N[2] = dNu[2]*dNv[0];
@@ -249,47 +262,51 @@ void PlaneStressBsplineAll<order>::getShapeFunctions( const double pt[],
     N[13] = dNu[1]*dNv[3];
     N[14] = dNu[2]*dNv[3];
     N[15] = dNu[3]*dNv[3];
+    
+    /* for (int i = 0; i < 16; i++){ */
+    /*   printf("N[%d]: %e \n", i, N[i]); */
+    /* } */
     // Compute the partial derivative wrt u
-    Na[0] = dNu[3]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[1] = dNu[4]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[2] = dNu[5]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[3] = dNu[6]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[0] = dNu[4]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[1] = dNu[5]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[2] = dNu[6]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[3] = dNu[7]*dNv[0]*(Tu[intu+1]-Tu[intu])*.5;
     
-    Na[4] = dNu[3]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[5] = dNu[4]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[6] = dNu[5]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[7] = dNu[6]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[4] = dNu[4]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[5] = dNu[5]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[6] = dNu[6]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[7] = dNu[7]*dNv[1]*(Tu[intu+1]-Tu[intu])*.5;
     
-    Na[8] = dNu[3]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[9] = dNu[4]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[10] = dNu[5]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[11] = dNu[6]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[8] = dNu[4]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[9] = dNu[5]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[10] = dNu[6]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[11] = dNu[7]*dNv[2]*(Tu[intu+1]-Tu[intu])*.5;
     
-    Na[12] = dNu[3]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[13] = dNu[4]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[14] = dNu[5]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
-    Na[15] = dNu[6]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[12] = dNu[4]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[13] = dNu[5]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[14] = dNu[6]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
+    Na[15] = dNu[7]*dNv[3]*(Tu[intu+1]-Tu[intu])*.5;
     
     // Compute the derivative wrt v
-    Nb[0] = dNu[0]*dNv[3]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[1] = dNu[1]*dNv[3]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[2] = dNu[2]*dNv[3]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[3] = dNu[3]*dNv[3]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[0] = dNu[0]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[1] = dNu[1]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[2] = dNu[2]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[3] = dNu[3]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
 
-    Nb[4] = dNu[0]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[5] = dNu[1]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[6] = dNu[2]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[7] = dNu[3]*dNv[4]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[4] = dNu[0]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[5] = dNu[1]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[6] = dNu[2]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[7] = dNu[3]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
     
-    Nb[8] = dNu[0]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[9] = dNu[1]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[10] = dNu[2]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;   
-    Nb[11] = dNu[3]*dNv[5]*(Tv[intv+1]-Tv[intv])*.5;   
+    Nb[8] = dNu[0]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[9] = dNu[1]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[10] = dNu[2]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;   
+    Nb[11] = dNu[3]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;   
     
-    Nb[12] = dNu[0]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[13] = dNu[1]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;
-    Nb[14] = dNu[2]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;   
-    Nb[15] = dNu[3]*dNv[6]*(Tv[intv+1]-Tv[intv])*.5;   
+    Nb[12] = dNu[0]*dNv[7]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[13] = dNu[1]*dNv[7]*(Tv[intv+1]-Tv[intv])*.5;
+    Nb[14] = dNu[2]*dNv[7]*(Tv[intv+1]-Tv[intv])*.5;   
+    Nb[15] = dNu[3]*dNv[7]*(Tv[intv+1]-Tv[intv])*.5;   
   }  
 }
 
@@ -300,10 +317,15 @@ void PlaneStressBsplineAll<order>::getShapeFunctions( const double pt[],
 template <int order>
 void PlaneStressBsplineAll<order>::addOutputCount( int *nelems, 
                                                    int *nnodes, 
-                                                   int *ncsr ){
-  *nelems += (order-2)*(order-2);
+                                                   int *ncsr ){  
+  *nelems += (order-1)*(order-1);
+  *nnodes += order*order;
+  *ncsr += 4*(order-1)*(order-1);
+  /*
+   *nelems += (order-2)*(order-2);
   *nnodes += (order-1)*(order-1);
   *ncsr += 4*(order-2)*(order-2);
+  */
 }
 
 /*
@@ -332,16 +354,28 @@ void PlaneStressBsplineAll<order>::getOutputData( unsigned int out_type,
                                                   double *data, int ld_data,
                                                   const TacsScalar Xpts[],
                                                   const TacsScalar vars[] ){
-  
+  /*  
   for (int m = 0; m < order-1; m++){
     for (int n = 0; n < order-1; n++){
       int p = n+(order-1)*m;
       int index = 0;
       // Compute the integration points in each direction
       double pt[2];
+
       pt[0] = -1.0 + 2.0*n/(order-2.0);
       pt[1] = -1.0 + 2.0*m/(order-2.0);
-      
+      */
+
+  for (int m = 0; m < order; m++){
+    for (int n = 0; n < order; n++){
+      int p = n+(order-1)*m;
+      int index = 0;
+      // Compute the integration points in each direction
+      double pt[2];
+
+      pt[0] = -1.0 + 2.0*n/(order-1.0);
+      pt[1] = -1.0 + 2.0*m/(order-1.0);
+
       // Compute the shape functions
       double N[NUM_NODES];
       double Na[NUM_NODES], Nb[NUM_NODES];
@@ -424,6 +458,17 @@ template <int order>
 void PlaneStressBsplineAll<order>::getOutputConnectivity( int *con, 
                                                           int node ){
   int p = 0;
+  for ( int m = 0; m < order-1; m++ ){
+    for ( int n = 0; n < order-1; n++ ){
+      con[4*p]   = node + n   + m*order;
+      con[4*p+1] = node + n+1 + m*order; 
+      con[4*p+2] = node + n+1 + (m+1)*order;
+      con[4*p+3] = node + n   + (m+1)*order;
+      p++;
+    }
+  }
+  /*
+  int p = 0;
   for ( int m = 0; m < order-2; m++ ){
     for ( int n = 0; n < order-2; n++ ){
       con[4*p] = (order-1)*(order-1)*pNum+n+(order-1)*m;
@@ -435,6 +480,7 @@ void PlaneStressBsplineAll<order>::getOutputConnectivity( int *con,
       p++;
     }
   }
+  */
 }
 
 /*
