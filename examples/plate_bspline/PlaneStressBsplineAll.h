@@ -432,8 +432,7 @@ void PlaneStressBsplineAll<order>::getOutputConnectivity( int *con,
       con[4*p+1] = (order-1)*(order-1)*pNum+n+1+(order-1)*m;
       con[4*p+2] = (order-1)*(order-1)*pNum+n+1+(order-1)*(m+1);
       con[4*p+3] = (order-1)*(order-1)*pNum+n+(order-1)*(m+1);
-      /* printf("pNum: %d %d, %d %d %d %d\n", pNum, node,  */
-      /*        con[4*p], con[4*p+1], con[4*p+2],con[4*p+3]); */
+     
       p++;
     }
   }

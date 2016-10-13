@@ -127,15 +127,12 @@ int main( int argc, char *argv[] ){
       for (int i = 0; i < Lu; i++){
         double Tu[] = {0.0,0.0,0.0,1.0,2.0,3.0,4.0,4.0,4.0};
         double Tv[] = {0.0,0.0,0.0,1.0,2.0,3.0,4.0,4.0,4.0};
+     
         elem[ind] = new PlaneStressBsplineAll<3>(stiff,Tu,Tv,
                                                  Lu, Lv,
                                                  LINEAR,
                                                  0, ind); 
-       
-        /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
-        /*                                    Lu, Lv, */
-        /*                                    LINEAR, */
-        /*                                    0, ind); */
+        
         elem[ind]->incref();
         ind++;
       }
@@ -155,12 +152,6 @@ int main( int argc, char *argv[] ){
                      &num_nodes, &num_elems_x,
                      &num_elems_y,
                      &ptr_c, &conn_c, order);
-    /* for (int i = 0; i < Lu*Lv; i++){ */
-    /*   for (int k = 0; k < 16; k++){ */
-    /*     printf("%d ", conn_c[16*i+k]); */
-    /*   } */
-    /*   printf("\n"); */
-    /* } */
 
     creator->setGlobalConnectivity(num_nodes, num_elems, 
                                    ptr_c, conn_c,elem_ids);
@@ -222,6 +213,7 @@ int main( int argc, char *argv[] ){
                              2.667, 4.0, 0.0,
                              3.333, 4.0, 0.0,
                              4.0, 4.0, 0.0};
+     
       // Set the nodal locations
       creator->setNodes(Xpts_c);
     }
@@ -265,35 +257,10 @@ int main( int argc, char *argv[] ){
       // Set the nodal locations
       creator->setNodes(Xpts_c);
     }
-    /* TacsScalar Xpts_c[] = {0.0, 0.0, 0.0, */
-    /*                        0.75, 0.0, 0.0, */
-    /*                        1.5, 0.0, 0.0, */
-    /*                        2.25, 0.0, 0.0, */
-    /*                        3.0, 0.0, 0.0, */
-    /*                        0.0, 0.75, 0.0, */
-    /*                        0.75, 0.75, 0.0, */
-    /*                        1.5, 0.75, 0.0, */
-    /*                        2.25, 0.75, 0.0, */
-    /*                        3.0, 0.75, 0.0, */
-    /*                        0.0, 1.5, 0.0, */
-    /*                        0.75, 1.5, 0.0, */
-    /*                        1.5, 1.5, 0.0, */
-    /*                        2.25, 1.5, 0.0, */
-    /*                        3.0, 1.5, 0.0, */
-    /*                        0.0, 2.25, 0.0, */
-    /*                        0.75, 2.25, 0.0, */
-    /*                        1.5, 2.25, 0.0, */
-    /*                        2.25, 2.25, 0.0, */
-    /*                        3.0, 2.25, 0.0, */
-    /*                        0.0, 3.0, 0.0, */
-    /*                        0.75, 3.0, 0.0, */
-    /*                        1.5, 3.0, 0.0, */
-    /*                        2.25, 3.0, 0.0, */
-    /*                        3.0, 3.0, 0.0};     */
-
   }
   // This call must occur on all processor
   creator->setElements(&elem[0], Lu*Lv);
+
   // Set the reordering typr
   creator->setReorderingType(TACSAssembler::NATURAL_ORDER,
                              TACSAssembler::APPROXIMATE_SCHUR);
@@ -324,15 +291,7 @@ int main( int argc, char *argv[] ){
   // Assemble and factor the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   tacs->assembleJacobian(alpha, beta, gamma, res, mat);
- 
-  /* TacsScalar *ans_array; */
-  /* int ans_size = ans->getArray(&ans_array); */
-  /* for (int i = 0; i < ans_size; i++){ */
-  /*   printf("%e \n", ans_array[i]); */
-  /* } */
-  /* printf("Ax = %e \n", ans->norm()); */
-  /* exit(0); */
-
+  
   mat->applyBCs();
   pc->factor();
   
@@ -345,24 +304,31 @@ int main( int argc, char *argv[] ){
   GMRES *gmres = new GMRES(mat, pc, gmres_iters,
                            nrestart, is_flexible);
   gmres->incref();
+  gmres->setTolerances(1e-12, 1e-30);
+  gmres->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
+
   TacsScalar *res_array;
   int res_size = res->getArray(&res_array);
   res_array[res_size-1] = 1.0;
-  /* for (int i = 0; i < res_size; i++){ */
-  /*   res_array[i] = 1.0*i; */
-  /* } */
-  /* res->applyBCs(); */
-  /* tacs->setVariables(res); */
-  /* res_array[res_size-1] = 1.0; */
-  /* //res->set(1.0); */
   res->applyBCs();
   gmres->solve(res, ans);
   tacs->setVariables(ans);
-  /* TacsScalar *ans_array;  */
-  /* int ans_size = ans->getArray(&ans_array); */
-  /* for (int i = 0; i < ans_size; i++){ */
-  /*   printf("%e \n", ans_array[i]); */
+
+  // Constant shear strain
+  /* TacsScalar *X, *a; */
+  /* TACSBVec *Xvec = tacs->createNodeVec(); */
+  /* Xvec->incref(); */
+  /* tacs->getNodes(Xvec); */
+
+  /* Xvec->getArray(&X); */
+  /* int asize = ans->getArray(&a)/2;  */
+
+  /* for ( int i = 0; i < asize; i++ ){ */
+  /*   a[2*i] = X[3*i+1]; */
+  /*   a[2*i+1] = X[3*i]; */
   /* } */
+  /* tacs->setVariables(ans); */
+
   // Create TACSToFH5 object for writing to tecplot
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS |
