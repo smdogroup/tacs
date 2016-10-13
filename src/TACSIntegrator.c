@@ -268,7 +268,6 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
             "alpha", "beta", "gamma","delta");
   }
 
-  double t0 = MPI_Wtime();
   // Iterate until max iters or R <= tol
   double delta = 0.0;
   for ( niter = 0; niter < max_newton_iters; niter++ ){
@@ -276,6 +275,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     setTACSStates(t, u, udot, uddot);
 
     // Assemble the Jacobian matrix once in n newton iterations
+    double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       tacs->assembleJacobian(alpha, beta, gamma,
                              res, mat, NORMAL);
