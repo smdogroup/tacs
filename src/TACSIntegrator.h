@@ -137,6 +137,8 @@ class TACSIntegrator : public TACSObject {
   void adjointSolve( int adj_index, TACSBVec **adjoint );
   */
   void addToTotalDerivative( double scale, TACSBVec **adjoint );
+  void addFunctions( int time_step, double tcoeff, TACSFunction **funcs, 
+                     int numFuncs, TacsScalar *funcVals);
     
   // Functions to pack common logics (file io, output) in one place
   // and use them in appropriate places
@@ -205,7 +207,7 @@ class TACSIntegrator : public TACSObject {
   FEMat *D;             // Matrix associated with Preconditioner
   int factorized;       // Set whether the matrix is factorized
   int niter;            // Newton iteration number
-  TacsScalar norm, init_norm;  // Norms and initial norm
+  TacsScalar norm, init_norm, update_norm;  // Norms and initial norm
   
   TacsScalar energies[2]; // Keep track of energies
   TacsScalar init_energy; // The energy during time = 0

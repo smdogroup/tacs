@@ -258,14 +258,17 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   ksm->setTolerances(rtol, atol);
 
   // Initialize the norms
+  update_norm = 0.0;
   init_norm = 0.0;
   norm = 0.0;
 
   if (logfp && print_level >= 2){
-    fprintf(logfp, "%12s %8s %12s %12s %12s %12s\n",
-            "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "delta");
+    fprintf(logfp, "%12s %8s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+            "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "|update|" , 
+            "alpha", "beta", "gamma","delta");
   }
 
+  double t0 = MPI_Wtime();
   // Iterate until max iters or R <= tol
   double delta = 0.0;
   for ( niter = 0; niter < max_newton_iters; niter++ ){
@@ -273,7 +276,6 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     setTACSStates(t, u, udot, uddot);
 
     // Assemble the Jacobian matrix once in n newton iterations
-    double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       tacs->assembleJacobian(alpha, beta, gamma,
                              res, mat, NORMAL);
@@ -294,9 +296,11 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
     // Write a summary    
     if(logfp && print_level >= 2){
-      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
               t, niter, MPI_Wtime()-t0, RealPart(norm),  
-              (niter == 0) ? 1.0 : RealPart(norm/init_norm), delta);
+              (niter == 0) ? 1.0 : RealPart(norm/init_norm), 
+              (niter == 0) ? 1.0 : RealPart(update_norm),
+              alpha, beta, gamma, delta);
     }
 
     // Check if the norm of the residuals is a NaN
@@ -304,6 +308,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       fprintf(stderr,
               "Newton iteration %d, failed with NaN residual norm\n",
               niter);
+      exit(-1);
       break;
     }
     
@@ -332,6 +337,9 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       t2 = MPI_Wtime() - t2;
       time_fwd_apply_factor += t2;
     }
+
+    // Find the norm of the update
+    update_norm = update->norm();
 
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);
@@ -554,20 +562,9 @@ void TACSIntegrator::getFuncGrad( int _num_dv,
 
   // Integrate forward in time to solve for the states (q, qdot, qddot)
   integrate();
-
-  // Perform the initialization required to evaluate the function
-  for ( int n = 0; n < num_funcs; n++ ){
-    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
-  }
-
-  // March backwards in time to solve for the adjoint variables and
-  // computing dfdx and function values
+  
+  // March backwards in time and solve for the adjoint variables
   marchBackwards();
-
-  // Reduce the function values on all processors
-  for ( int n = 0; n < num_funcs; n++ ){
-    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
-  }
 
   // Reduce the gradients on all processors
   MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, TACS_MPI_TYPE, 
@@ -664,10 +661,6 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
   // Make sure the DV's in TACS are the same as before
   tacs->setDesignVars(_x, num_design_vars);
 
-  // Reduce the gradients on all processors
-  MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, TACS_MPI_TYPE, 
-                MPI_SUM, tacs->getMPIComm());
-
   delete [] ftmp;
 }
 
@@ -680,35 +673,15 @@ void TACSIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
                                            TacsScalar *funcVals) {
   memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
 
-  // Perform the initialization required to evaluate the function
-  for ( int n = 0; n < num_funcs; n++ ){
-    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
-  }
-  
-  TacsScalar *ftmp = new TacsScalar[numFuncs];  
-  memset(ftmp, 0, numFuncs*sizeof(TacsScalar));
-  
   // Loop over time steps
   for ( int k = 1; k < num_time_steps; k++ ) {
     // Set the states into TACS
     setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
     // Evaluate and add the function values from this step
-    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, numFuncs);
-
-    // Retrieve the function values
-    for ( int n = 0; n < num_funcs; n++ ){
-      fvals[n] += funcs[n]->getFunctionValue();
-    }
+    this->addFunctions(k, h, funcs, numFuncs, funcVals); 
 
   }
-
-  // Reduce the function values on all processors
-  for ( int n = 0; n < num_funcs; n++ ){
-    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
-  }
-
-  delete [] ftmp;
 }
 
 
@@ -731,6 +704,49 @@ void TACSIntegrator::addToTotalDerivative( double scale, TACSBVec **adjoint ) {
     dfdx[m] += scale*tmp[m];
   }
   delete [] tmp;
+}
+
+
+/*
+  Evalute the functions using the integration coefficient
+*/
+void TACSIntegrator::addFunctions( int k, double tcoeff, TACSFunction **funcs,
+                                    int numFuncs, TacsScalar *funcVals ){
+  // Check whether these are two-stage or single-stage functions
+  int twoStage = 0;
+  for ( int n = 0; n < numFuncs; n++ ){
+    if (funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
+      twoStage = 1;
+      break;
+    }
+  }
+
+  // Initialize the function if had already not been initialized
+  if (twoStage){
+    for ( int n = 0; n < numFuncs; n++ ){
+      funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+    }
+    tacs->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
+                             funcs, numFuncs);
+    for ( int n = 0; n < numFuncs; n++ ){
+      funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);
+    }
+  }
+  
+  // Perform the integration required to evaluate the function
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+  }
+  tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
+                     funcs, numFuncs);
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+  }
+  
+  // Retrieve the function values
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcVals[n] += funcs[n]->getFunctionValue();
+  }
 }
 
 /*
@@ -825,8 +841,8 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
   if (current_step == 0){
     // Log information
     if (logfp && print_level >= 1){
-      fprintf(logfp, "Variables=\n%12s %8s %12s %12s %15s %15s %15s\n", 
-              "time", "NItrs", "|R|", "|R|/|R0|",
+      fprintf(logfp, "Variables=\n%12s %8s %12s %12s %12s %15s %15s %15s\n", 
+              "time", "NItrs", "|R|", "|R|/|R0|", "|update|",
               "KineticEnrgy", "PotentialEnrgy",
               "EInit-E");
       
@@ -834,17 +850,18 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       init_energy = energies[0] + energies[1];
 
       // Log the details
-      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
-              time[0], 0, 0.0, 1.0,
+      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %15.7e %15.7e %15.7e\n",
+              time[0], 0, 0.0, 1.0, 1.0,
               RealPart(energies[0]), RealPart(energies[1]),  0.0);
     }
   } 
   else {
     // Print out the time step summary
     if (logfp && print_level >= 1){
-      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %15.7e %15.7e %15.7e\n",
+      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %15.7e %15.7e %15.7e\n",
 	      time[current_step], niter, RealPart(norm), 
               RealPart(norm/(rtol + init_norm)),
+              RealPart(update_norm),
 	      RealPart(energies[0]), RealPart(energies[1]), 
 	      RealPart((init_energy - (energies[0] + energies[1]))));
     }
@@ -1180,12 +1197,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
     double tassembly = MPI_Wtime();
 
     // Evalute the function
-    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
-
-    // Retrieve the function values
-    for ( int n = 0; n < num_funcs; n++ ){
-      fvals[n] += funcs[n]->getFunctionValue();
-    }
+    this->addFunctions(k, h, funcs, num_funcs, fvals);
 
     // Setup the adjoint RHS
     for ( int n = 0; n < num_funcs; n++ ){
@@ -1725,12 +1737,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       //--------------------------------------------------------------//
 
       // Add the contribution to function value from this stage
-      tacs->integrateFunctions(h*B[i], TACSFunction::INTEGRATE, funcs, num_funcs);
-
-      // Retrieve the function values
-      for ( int n = 0; n < num_funcs; n++ ){
-        fvals[n] += funcs[n]->getFunctionValue();
-      }
+      this->addFunctions(k, h*B[i], funcs, num_funcs, fvals);
       
       // Add function contributions
       for ( int n = 0; n < num_funcs; n++ ){
@@ -1890,13 +1897,7 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
       setTACSStates(tS[toffset+j], qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
       
       // Evaluate the functions
-      tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
-
-      // Retrieve the function values
-      for ( int n = 0; n < num_funcs; n++ ){
-        fvals[n] += funcs[n]->getFunctionValue();
-      }
-
+      this->addFunctions(k, h*B[j], funcs, numFuncs, funcVals);
     }
   }
   delete [] ftmp;
@@ -2095,12 +2096,7 @@ void TACSABMIntegrator::marchBackwards( ){
     //---------------------------------------------------------------//
 
     // Evaluate the function
-    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
-
-    // Retrieve the function values
-    for ( int n = 0; n < num_funcs; n++ ){
-      fvals[n] += funcs[n]->getFunctionValue();
-    }
+    this->addFunctions(k, h, funcs, num_funcs, fvals);
 
     for ( int n = 0; n < num_funcs; n++ ){
       // Add up the contribution from function state derivative to RHS
@@ -2323,10 +2319,10 @@ void TACSNBGIntegrator::approxStates(){
   qdot[k]->copyValues(qdot[k-1]);
 
   scale = (1.0-GAMMA)*h;
-  qdot[k]->axpy(h*0.5, qddot[k-1]);
+  qdot[k]->axpy(scale, qddot[k-1]);
 
   scale = GAMMA*h;
-  qdot[k]->axpy(h*0.5, qddot[k]);
+  qdot[k]->axpy(scale, qddot[k]);
 
   // Approximate q using q, qdot and qddot:
   // q[k] = q[k-1] + h qdot[k-1] + h^2(1-2*BETA)/2 qddot[k-1] + h^2 BETA qddot[k])
@@ -2410,12 +2406,7 @@ void TACSNBGIntegrator::marchBackwards( ){
     //---------------------------------------------------------------//
 
     // Evaluate the function
-    tacs->integrateFunctions(h, TACSFunction::INTEGRATE, funcs, num_funcs);
-
-    // Retrieve the function values
-    for ( int n = 0; n < num_funcs; n++ ){
-      fvals[n] += funcs[n]->getFunctionValue();
-    }
+    this->addFunctions(k, h, funcs, num_funcs, fvals);
     
     for ( int n = 0; n < num_funcs; n++ ){
       // Add up the contribution from function state derivative to RHS
