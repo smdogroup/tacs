@@ -128,7 +128,7 @@ void TACSStructuralMass::finalThread( double tcoef,
                                       TACSFunctionCtx *fctx ){
   StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
   if (ctx){
-    totalMass += ctx->mass;
+    totalMass += tcoef*ctx->mass;
   }
 }
 

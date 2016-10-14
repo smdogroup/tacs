@@ -37,9 +37,9 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
 
   // Loop through all the nodes
   TacsScalar *x = Xpts;
-  for ( int iz = 0, pnum = 0; iz < 2; iz++ ){
+  for ( int iz = 0; iz < 2; iz++ ){
     for ( int iy = 0; iy < 2; iy++ ){
-      for ( int ix = 0; ix < 2; ix++, pnum++ ){
+      for ( int ix = 0; ix < 2; ix++ ){
         // Compute the [x,y and z] coordinates of the current node
         x[0] = (ix - 0.5)*L;
         x[1] = (iy - 0.5)*L;
@@ -737,14 +737,7 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   // Set everything to zero first
   memset(vars, 0, 8*sizeof(TacsScalar));
   memset(dvars, 0, 8*sizeof(TacsScalar));
-
-  // Set the initial position vector
-  const TacsScalar *rinit;
-  rInit->getVector(&rinit);
-  vars[0] = rinit[0];
-  vars[1] = rinit[1];
-  vars[2] = rinit[2];
-
+  
   // Set eta = 1.0
   vars[3] = 1.0;
 
@@ -1504,9 +1497,14 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
     const TacsScalar *x = &X[3*i];
 
     if (out_type & TACSElement::OUTPUT_NODES){
+      // Compute the new point location
+      TacsScalar xr[3], xpt[3];
+      matMultTrans(Cr, x, xr);
+      matMultTrans(C, xr, xpt);
+      
       // Write out the nodal locations
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = RealPart(x[k]);
+        data[index+k] = RealPart(xpt[k]);
       }
       index += 3;
     }
@@ -1517,7 +1515,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
       matMultTrans(C, xr, xpt);
 
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = RealPart(r0[k] + xpt[k] - x[k]);
+        data[index+k] = RealPart(r0[k]);
       }
       index += 3;
 

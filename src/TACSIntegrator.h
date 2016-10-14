@@ -130,7 +130,6 @@ class TACSIntegrator : public TACSObject {
   // functions.
   //----------------------------------------------------------------
   /*
-  void addFunctions( double scale, TACSFunction **funcs,int num_funcs, TacsScalar *fvals );
   void addFuncSVSensToAdjointRHS( double alpha, double beta, double gamma, int index ) ;
   void addSVSensToAdjointRHS( double scale, double alpha, double beta, double gamma,
                               int adj_index, TACSFunction **funcs,
@@ -138,12 +137,14 @@ class TACSIntegrator : public TACSObject {
   void adjointSolve( int adj_index, TACSBVec **adjoint );
   */
   void addToTotalDerivative( double scale, TACSBVec **adjoint );
-  
+  void addFunctions( int time_step, double tcoeff, TACSFunction **funcs, 
+                     int numFuncs, TacsScalar *funcVals);
+    
   // Functions to pack common logics (file io, output) in one place
   // and use them in appropriate places
   // ------------------------------------------------------------------
   void doEachTimeStep( int current_step );
-  void doEachNonLinearIter( int iter_num);
+  void doEachNonLinearIter( int iter_num );
                     
   //------------------------------------------------------------------//
   //                  Protected variables
@@ -177,7 +178,6 @@ class TACSIntegrator : public TACSObject {
   TACSBVec      **phi;                // adjoint variable accumulating q dependance
   TACSBVec      **lambda;             // adjoint variable qddot
   TACSBVec      **dfdq;               // storage vector for statevariable sensitivities
-  
  private:
 
   //-----------------------------------------------------------------//
@@ -207,7 +207,7 @@ class TACSIntegrator : public TACSObject {
   FEMat *D;             // Matrix associated with Preconditioner
   int factorized;       // Set whether the matrix is factorized
   int niter;            // Newton iteration number
-  TacsScalar norm, init_norm;  // Norms and initial norm
+  TacsScalar norm, init_norm, update_norm;  // Norms and initial norm
   
   TacsScalar energies[2]; // Keep track of energies
   TacsScalar init_energy; // The energy during time = 0
