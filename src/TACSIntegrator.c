@@ -283,8 +283,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     else {
       tacs->assembleRes(res);
     }
-    t0 = MPI_Wtime() - t0;
-    time_fwd_assembly += t0;
+    time_fwd_assembly += MPI_Wtime() - t0;
    
     // Compute the L2-norm of the residual
     norm = res->norm();
@@ -328,14 +327,12 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       if ((niter % jac_comp_freq) == 0){
         pc->factor();
       }
-      t1 = MPI_Wtime() - t1;
-      time_fwd_factor += t1;      
+      time_fwd_factor += MPI_Wtime() - t1;      
  
       // Solve for update using KSM
       double t2 = MPI_Wtime();
       ksm->solve(res, update);
-      t2 = MPI_Wtime() - t2;
-      time_fwd_apply_factor += t2;
+      time_fwd_apply_factor += MPI_Wtime() - t2;
     }
 
     // Find the norm of the update
@@ -533,8 +530,7 @@ void TACSIntegrator::integrate( ){
   }
 
   // Keep track of the time taken for foward mode
-  t0 = MPI_Wtime() - t0;
-  time_forward += t0;
+  time_forward += MPI_Wtime() - t0;
 }
 
 /*
@@ -1209,18 +1205,16 @@ void TACSBDFIntegrator::marchBackwards( ) {
       rhs[adj_index*num_funcs+n]->axpy(1.0, psi[n]);
       rhs[adj_index*num_funcs+n]->scale(-1.0);
     }
-    
+ 
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
-    tassembly = MPI_Wtime() - tassembly;
-    time_rev_assembly += tassembly;
+    time_rev_assembly += MPI_Wtime() - tassembly;
      
     double tfactor = MPI_Wtime();
     // LU factorization of the Jacobian
     pc->factor();
-    tfactor = MPI_Wtime() - tfactor;
-    time_rev_factor += tfactor;
+    time_rev_factor += MPI_Wtime() - tfactor;
 
     double tapply = MPI_Wtime();
     // Apply the factorization for all right hand sides and solve for
@@ -1229,14 +1223,14 @@ void TACSBDFIntegrator::marchBackwards( ) {
       ksm->solve(rhs[adj_index*num_funcs + n], psi[n]);
       rhs[adj_index*num_funcs+n]->zeroEntries();
     }
-    tapply = MPI_Wtime() - tapply;
-    time_rev_apply_factor += tapply;
+    time_rev_apply_factor += MPI_Wtime() - tapply;
+
+    double jacpdt = MPI_Wtime();
 
     // Add total derivative contributions from this step to all
     // functions
     addToTotalDerivative(h, psi);
-
-    double jacpdt = MPI_Wtime();
+    
     // Drop the contributions from this step to other right hand sides
     for ( int ii = 1; (ii < nbdf || ii < nbddf); ii++ ){
       int rhs_index = (k - ii) % num_adjoint_rhs;
@@ -1252,8 +1246,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
 				    psi[n], rhs[rhs_index*num_funcs+n], TRANSPOSE);
       }
     }
-    jacpdt = MPI_Wtime() - jacpdt;
-    time_rev_jac_pdt += jacpdt;
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
   }
 
   // Freeup objects
@@ -1270,8 +1263,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
   delete [] rhs;
 
   // Keep track of the time taken for foward mode
-  t0 = MPI_Wtime() - t0;
-  time_reverse += t0;
+  time_reverse += MPI_Wtime() - t0;
 }
 
 /*
@@ -1647,8 +1639,7 @@ void TACSDIRKIntegrator::integrate( ) {
   }
 
   // Keep track of the time taken for foward mode
-  t0 = MPI_Wtime() - t0;
-  time_reverse += t0;
+  time_reverse += MPI_Wtime() - t0;
 }
 /*
   March backward in time and solve for the adjoint variables
@@ -1871,8 +1862,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
   delete [] dfdq;
 
   // Keep track of the time taken for foward mode
-  t0 = MPI_Wtime() - t0;
-  time_reverse += t0;
+  time_reverse += MPI_Wtime() - t0;
 }
 
 /*
@@ -2199,8 +2189,7 @@ void TACSABMIntegrator::marchBackwards( ){
   delete [] dfdq;
 
   // Keep track of the time taken for foward mode
-  t0 = MPI_Wtime() - t0;
-  time_reverse += t0;
+  time_reverse += MPI_Wtime() - t0;
 }
 
 /*
@@ -2496,6 +2485,5 @@ void TACSNBGIntegrator::marchBackwards( ){
   delete [] dfdq;
 
   // Keep track of the time taken for foward mode
-  t0 = MPI_Wtime() - t0;
-  time_reverse += t0;
+  time_reverse += MPI_Wtime() - t0;
 }
