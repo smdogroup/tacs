@@ -8,7 +8,7 @@ template <int order>
 class PlaneStressBsplineAll : public TACS2DElement<order*order> {
  public:
   PlaneStressBsplineAll( PlaneStressStiffness *_stiff,
-                         double _Tu[], double _Tv[], 
+                         double *_Tu, double *_Tv, 
                          int _Lu, int _Lv, 
                          ElementBehaviorType type=LINEAR,
                          int _componentNum=0,
@@ -53,7 +53,7 @@ class PlaneStressBsplineAll : public TACS2DElement<order*order> {
   // Store the name of the element
   static const char *elemName;
   
-  double Tu[11], Tv[11];
+  double *Tu, *Tv;
   // Patch number
   int pNum;
   // Interval number in x,y
@@ -63,7 +63,7 @@ class PlaneStressBsplineAll : public TACS2DElement<order*order> {
 
 template <int order>
 PlaneStressBsplineAll<order>::PlaneStressBsplineAll( PlaneStressStiffness *_stiff,
-                                                     double _Tu[], double _Tv[], 
+                                                     double *_Tu, double *_Tv, 
                                                      int _Lu, int _Lv, 
                                                      ElementBehaviorType type,
                                                      int _componentNum,
@@ -75,16 +75,22 @@ TACS2DElement<order*order>(_stiff, type, _componentNum){
   
   // Copy over the patch number
   pNum = _pNum;
+  Tu = new double[Lu+1+2*(order-1)];
+  Tv = new double[Lv+1+2*(order-1)];
   memcpy(Tu, _Tu, (Lu+1+2*(order-1))*sizeof(double));
   memcpy(Tv, _Tv, (Lv+1+2*(order-1))*sizeof(double));
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+  
   // Compute the interval at which the patch is in
   t2 = int(floor(pNum/(Lu))); // y direction
   t1 = int(floor(pNum-t2*(Lu))); // x direction
 }
 
 template <int order>
-PlaneStressBsplineAll<order>::~PlaneStressBsplineAll(){}
+PlaneStressBsplineAll<order>::~PlaneStressBsplineAll(){
+  delete [] Tu;
+  delete [] Tv;
+}
 
 template <int order>
 const char *PlaneStressBsplineAll<order>::elemName = "PlaneStressBsplineAll";
