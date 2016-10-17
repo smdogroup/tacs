@@ -195,10 +195,10 @@ int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
   
   // Get the rank of the processor
-  int rank = 0,size = 0; 
+  int rank,size; 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+  
   // Allocate the TACS creator
   TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, 2);
   creator->incref();
@@ -250,8 +250,9 @@ int main( int argc, char *argv[] ){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         double *Tu, *Tv;
+        printf("1Lu: %d \n", Lu);
         knotVector(Lu, Lv,order, &Tu, &Tv);
-        
+        printf("2Lu: %d \n", Lu);
         /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
         /*                                    Lu, Lv, */
         /*                                    LINEAR, */
@@ -260,12 +261,13 @@ int main( int argc, char *argv[] ){
                                                  Lu, Lv,
                                                  LINEAR,
                                                  0, ind);
-        
+        printf("3Lu: %d \n", Lu);
         elem[ind]->incref();
         ind++;
       }
-    }
+    }    
   }
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   printf("rank: %d \n", rank);
   // Create mesh on root processor
   if (rank == 0){
@@ -278,7 +280,7 @@ int main( int argc, char *argv[] ){
     for (int i = 0; i < Lu*Lv; i++){
       elem_ids[i] = i*1;
     }
-    printf("Here \n");
+    
     controlPointMesh(&num_nodes_x, &num_nodes_y,
                      &num_nodes, &num_elems_x,
                      &num_elems_y,
@@ -291,7 +293,8 @@ int main( int argc, char *argv[] ){
                      4.0,5.0, 0.0, 
                      1.0, 9.0, 0.0, 
                      5.0, 9.0, 0.0};
-    printf("num_nodes: %d, num_elems: %d \n", num_nodes, num_elems);
+    printf("num_nodes: %d, num_elems: %d %d %d\n", num_nodes, num_elems,
+           Lu, Lv);
     creator->setGlobalConnectivity(num_nodes, num_elems, 
                                    ptr_c, conn_c,elem_ids);
     
@@ -413,8 +416,9 @@ int main( int argc, char *argv[] ){
       // Set the nodal locations
       creator->setNodes(Xpts_d);
     }
+    delete [] elem_ids;
   }
-  exit(0);
+  
   // This call must occur on all processor
   creator->setElements(&elem[0], Lu*Lv);
 
@@ -516,6 +520,7 @@ int main( int argc, char *argv[] ){
   }
   creator->decref();
 
+  
   MPI_Finalize();
   return 0;
 }
