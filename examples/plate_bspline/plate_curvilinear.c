@@ -110,7 +110,6 @@ void knotVector(int num_patches_x, int num_patches_y, int order,
 void controlXpts(double Xpts[], double **Xpts_c, 
                  int ncp_x, int ncp_y){
   double *_Xpts = new double[3*ncp_x*ncp_y];
-  
   int edge_index[] = {0, 1,
                       0, 2,
                       1, 3, 
@@ -119,20 +118,33 @@ void controlXpts(double Xpts[], double **Xpts_c,
   int ind = 0;
   // Compute the control points on the exterior boundary
   for (int i = 0; i < 4; i++){
+   
     double a[] = {Xpts[3*edge_index[2*i]], Xpts[3*edge_index[2*i]+1]};
     double b[] = {Xpts[3*edge_index[2*i+1]],Xpts[3*edge_index[2*i+1]+1]};
     
     double ix = (b[0]-a[0])/(ncp_x-1);
     double iy = (b[1]-a[1])/(ncp_y-1);
     
-    for (int j = 0; j < ncp_x; j++){
-      edge_pt[3*ind] = a[0]+j*ix;
-      edge_pt[3*ind+1] = a[1]+j*iy;
-      edge_pt[3*ind+2] = 0.0;
-      /* printf("edge: %d, %e %e \n", i, edge_pt[3*ind], edge_pt[3*ind+1]); */
-      ind++;
+    if (i == 1 || i == 2){
+      for (int j = 0; j < ncp_y; j++){
+        edge_pt[3*ind] = a[0]+j*ix;
+        edge_pt[3*ind+1] = a[1]+j*iy;
+        edge_pt[3*ind+2] = 0.0;
+        /* printf("edge: %d, %e %e \n", i, edge_pt[3*ind], edge_pt[3*ind+1]); */
+        ind++;      
+      }
+    }
+    else {
+      for (int j = 0; j < ncp_x; j++){
+        edge_pt[3*ind] = a[0]+j*ix;
+        edge_pt[3*ind+1] = a[1]+j*iy;
+        edge_pt[3*ind+2] = 0.0;
+        /* printf("edge: %d, %e %e \n", i, edge_pt[3*ind], edge_pt[3*ind+1]); */
+        ind++;      
+      }
     }
   }
+ 
   // Reset the counter
   ind = 0;
   // Initialize the control points
@@ -142,6 +154,7 @@ void controlXpts(double Xpts[], double **Xpts_c,
     _Xpts[3*ind+2] = edge_pt[3*ind+2];
     ind++;
   }
+  
   // Compute the internal control points
   for (int i = 0; i < ncp_y-2; i++){
     double a[] = {edge_pt[3*(ncp_x+i+1)],
@@ -170,6 +183,7 @@ void controlXpts(double Xpts[], double **Xpts_c,
     /*        _Xpts[3*ind], _Xpts[3*ind+1]); */
     ind++;
   }
+ 
   /* for (int i = 0; i < ind; i++){ */
   /*   printf("%d Xpts: %e %e %e \n", i, _Xpts[3*i], */
   /*          _Xpts[3*i+1], _Xpts[3*i+2]); */
