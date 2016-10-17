@@ -109,7 +109,8 @@ void knotVector(int num_patches_x, int num_patches_y, int order,
 // external points
 void controlXpts(double Xpts[], double **Xpts_c, 
                  int ncp_x, int ncp_y){
-  double _Xpts[3*ncp_x*ncp_y];
+  double *_Xpts = new double[3*ncp_x*ncp_y];
+  
   int edge_index[] = {0, 1,
                       0, 2,
                       1, 3, 
@@ -173,14 +174,14 @@ void controlXpts(double Xpts[], double **Xpts_c,
   /*   printf("%d Xpts: %e %e %e \n", i, _Xpts[3*i], */
   /*          _Xpts[3*i+1], _Xpts[3*i+2]); */
   /* } */
-  *Xpts_c = _Xpts;
+  *Xpts_c = _Xpts;  
 }
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
   
   // Get the rank of the processor
-  int rank,size; 
+  int rank = 0,size = 0; 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
@@ -194,39 +195,40 @@ int main( int argc, char *argv[] ){
   stiff->incref();
   
   // Number of knot intervals without the repeating knots
-  int Lu = 4, Lv = 4;
+  int Lu = 50, Lv = 50;
   TACSElement *elem[Lu*Lv];
   int ind = 0;
   int order = 3;
   // Order of the Bspline
   for (int k = 0; k < argc; k++){
-    int _order;
+    int _order, _Lu, _Lv;
     if (sscanf(argv[k], "order=%d", &_order) == 1){
       order = _order;
     }
+    if (sscanf(argv[k], "Lu=%d", &_Lu) == 1){
+      Lu = _Lu;
+    }
+    if (sscanf(argv[k], "Lv=%d", &_Lv) == 1){
+      Lv = _Lv;
+    }
   }
   printf("Order is %d \n", order);
- 
+  printf("Nx: %d \n", Lu);
+  printf("Ny: %d \n", Lv);
   
-  /* for (int i = 0; i < Lu+1+2*(order-1); i++){ */
-  /*   printf("Tu[%d] %e \n", i, Tu[i]); */
-  /* } */
-  /* exit(0); */
   if (order == 4){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
          double *Tu, *Tv;
          knotVector(Lu, Lv,order, &Tu, &Tv);
-        /* double Tu[] = {0.0,0.0,0.0,0.0,1.0,2.0,3.0,4.0,4.0,4.0,4.0}; */
-        /* double Tv[] = {0.0,0.0,0.0,0.0,1.0,2.0,3.0,4.0,4.0,4.0,4.0}; */
-        
-        elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
-                                                 Lu, Lv,
-                                                 LINEAR,
-                                                 0, ind);
-        
-        elem[ind]->incref();
-        ind++;
+         
+         elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
+                                                  Lu, Lv,
+                                                  LINEAR,
+                                                  0, ind);
+         
+         elem[ind]->incref();
+         ind++;
       }
     }
   }
@@ -235,10 +237,7 @@ int main( int argc, char *argv[] ){
       for (int i = 0; i < Lu; i++){
         double *Tu, *Tv;
         knotVector(Lu, Lv,order, &Tu, &Tv);
-         
-        /* double Tu[] = {0.0,0.0,0.0,1.0,2.0,3.0,4.0,4.0,4.0}; */
-        /* double Tv[] = {0.0,0.0,0.0,1.0,2.0,3.0,4.0,4.0,4.0}; */
-     
+        
         /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
         /*                                    Lu, Lv, */
         /*                                    LINEAR, */
@@ -253,16 +252,19 @@ int main( int argc, char *argv[] ){
       }
     }
   }
+  printf("rank: %d \n", rank);
   // Create mesh on root processor
   if (rank == 0){
     int num_nodes, num_nodes_x, num_nodes_y;
     int num_elems_x = 1*Lu, num_elems_y = 1*Lv;
     int num_elems = num_elems_x*num_elems_y;
     int *ptr_c, *conn_c;
-    int elem_ids[Lu*Lv];
+    printf("Here \n");
+    int *elem_ids = new int[Lu*Lv];
     for (int i = 0; i < Lu*Lv; i++){
       elem_ids[i] = i*1;
     }
+    printf("Here \n");
     controlPointMesh(&num_nodes_x, &num_nodes_y,
                      &num_nodes, &num_elems_x,
                      &num_elems_y,
@@ -275,6 +277,7 @@ int main( int argc, char *argv[] ){
                      4.0,5.0, 0.0, 
                      1.0, 9.0, 0.0, 
                      5.0, 9.0, 0.0};
+    printf("num_nodes: %d, num_elems: %d \n", num_nodes, num_elems);
     creator->setGlobalConnectivity(num_nodes, num_elems, 
                                    ptr_c, conn_c,elem_ids);
     
@@ -344,43 +347,7 @@ int main( int argc, char *argv[] ){
     if (order == 3){
       double *Xpts_d;
       controlXpts(Xpts, &Xpts_d, Lu+order-1, Lv+order-1);
-      /* TacsScalar Xpts_c[] = {0.0, 5.0, 0.0, */
-      /*                        0.8, 5.0, 0.0, */
-      /*                        1.6, 5.0, 0.0, */
-      /*                        2.4, 5.0, 0.0, */
-      /*                        3.2, 5.0, 0.0, */
-      /*                        4.0, 5.0, 0.0, */
-      /*                        0.0, 5.8, 0.0, */
-      /*                        0.8, 5.8, 0.0, */
-      /*                        1.6, 5.8, 0.0, */
-      /*                        2.4, 5.8, 0.0, */
-      /*                        3.2, 5.8, 0.0, */
-      /*                        4.0, 5.8, 0.0, */
-      /*                        0.0, 6.6, 0.0, */
-      /*                        0.8, 6.6, 0.0, */
-      /*                        1.6, 6.6, 0.0, */
-      /*                        2.4, 6.6, 0.0, */
-      /*                        3.2, 6.6, 0.0, */
-      /*                        4.0, 6.6, 0.0, */
-      /*                        0.0, 7.4, 0.0, */
-      /*                        0.8, 7.4, 0.0, */
-      /*                        1.6, 7.4, 0.0, */
-      /*                        2.4, 7.4, 0.0, */
-      /*                        3.2, 7.4, 0.0, */
-      /*                        4.0, 7.4, 0.0, */
-      /*                        0.0, 8.2, 0.0, */
-      /*                        0.8, 8.2, 0.0, */
-      /*                        1.6, 8.2, 0.0, */
-      /*                        2.4, 8.2, 0.0, */
-      /*                        3.2, 8.2, 0.0, */
-      /*                        4.0, 8.2, 0.0, */
-      /*                        0.0, 9.0, 0.0, */
-      /*                        0.8, 9.0, 0.0, */
-      /*                        1.6, 9.0, 0.0, */
-      /*                        2.4, 9.0, 0.0, */
-      /*                        3.2, 9.0, 0.0, */
-      /*                        4.0, 9.0, 0.0}; */
-
+      
       TacsScalar Xpts_c[] = {0.0, 5.0, 0.0,
                              0.8, 5.0, 0.0,
                              1.6, 5.0, 0.0,
@@ -417,19 +384,23 @@ int main( int argc, char *argv[] ){
                              3.4, 9.0, 0.0,
                              4.2, 9.0, 0.0,
                              5.0, 9.0, 0.0};
-      for (int i = 0; i < (Lu+(order-1))*(Lv+(order-1)); i++){
-        if (Xpts[3*i+2] != 0.0){
-          Xpts[3*i+2] = 0.0;
-        }
-        printf("Xpts[%d]: %e %e %e \n", i, Xpts_c[3*i], Xpts_c[3*i+1],
-               Xpts_c[3*i+2]);
-        printf("dXpts[%d]: %e %e %e \n", i, Xpts_d[3*i], Xpts_d[3*i+1],
-               Xpts_d[3*i+2]);
-      }
+      /* for (int i = 0; i < (Lu+(order-1))*(Lv+(order-1)); i++){ */
+      /*   /\* if (Xpts_d[3*i+2] != 0.0){ *\/ */
+      /*   /\*   printf("i: %d \n", i); *\/ */
+      /*   /\*   Xpts_d[3*i+2] = 0.0; *\/ */
+      /*   /\* } *\/ */
+      /*   /\* printf("Xpts[%d]: %e %e %e \n", i, Xpts_c[3*i], Xpts_c[3*i+1], *\/ */
+      /*   /\*        Xpts_c[3*i+2]); *\/ */
+      /*   printf("dXpts[%d]: %e %e %e \n", i, Xpts_d[3*i], Xpts_d[3*i+1], */
+      /*          Xpts_d[3*i+2]); */
+      /*   /\* printf("%d %d %d \n", Xpts_c[3*i]==Xpts_d[3*i],  *\/ */
+      /*   /\*        Xpts_c[3*i+1]==Xpts_d[3*i+1],Xpts_c[3*i+2]==Xpts_d[3*i+2]); *\/ */
+      /* } */
       // Set the nodal locations
-      creator->setNodes(Xpts_c);
+      creator->setNodes(Xpts_d);
     }
   }
+  exit(0);
   // This call must occur on all processor
   creator->setElements(&elem[0], Lu*Lv);
 
@@ -510,7 +481,7 @@ int main( int argc, char *argv[] ){
   TACSToFH5 *f5 = new TACSToFH5(tacs, PLANE_STRESS, write_flag);
   f5->incref();
   char filename[256];
-  sprintf(filename, "plate_curvilinear%d.f5",order);
+  sprintf(filename, "plate_curvilinear_order%d_%dx%d.f5",order, Lu, Lv);
   f5->writeToFile(filename);
   
   // Free everything
