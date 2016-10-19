@@ -10,7 +10,7 @@ int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
   // The acceleration due to gravity in global frame of reference
-  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -10.0);
+  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.81);
   gravVec->incref();
   
   TACSGibbsVector *omega = new TACSGibbsVector(0.0, 0.0, 1.0);
@@ -56,7 +56,6 @@ int main( int argc, char *argv[] ){
   //------------------------------------------------------------------//
   
   // USP is located 1.5m from the bottom of the shaft
-
   TACSGibbsVector  *rUSP   = new TACSGibbsVector(0.0, 0.0, 1.5); 
   rUSP->incref();
   TACSGibbsVector  *rUSPx  = new TACSGibbsVector(1.0, 0.0, 1.5);
@@ -183,7 +182,10 @@ int main( int argc, char *argv[] ){
   // shaft with upper swash plate
   TACSGibbsVector         *pnt_shaft_usp = new TACSGibbsVector(0.0, 0.0, 1.5);
   pnt_shaft_usp->incref();
-  TACSSphericalConstraint *sph_shaft_usp = new TACSSphericalConstraint(shaft, usp, pnt_shaft_usp);
+
+  TACSGibbsVector *usp_rev = new TACSGibbsVector(0.0, 0.15, 1.0);
+  // TACSRevoluteConstraint *sph_shaft_usp = new TACSRevoluteConstraint(shaft, usp, pnt_shaft_usp, usp_rev);
+  TACSRevoluteConstraint *sph_shaft_usp = new TACSRevoluteConstraint(usp, pnt_shaft_usp, usp_rev);
   sph_shaft_usp->incref();
 
   // inner blade 3 (along +y direction)
@@ -218,9 +220,9 @@ int main( int argc, char *argv[] ){
   //              Set up the TACSAssembler object                     //
   //------------------------------------------------------------------//
 
-  int num_nodes     = 14;  // Number of finite element nodes
-  int vars_per_node = 8;   // 
-  int num_elems     = 14;
+  int num_nodes     = 14; // Number of finite element nodes
+  int vars_per_node = 8;   
+  const int num_elems = 14;
 
   TACSAssembler *tacs = new TACSAssembler(MPI_COMM_WORLD, vars_per_node,
                                           num_nodes, num_elems);
@@ -257,7 +259,7 @@ int main( int argc, char *argv[] ){
   // Set the connectivity
   int conn[] = {0, 1, 2, 3, 4, 5,
                 0,    6, // shaft_fix
-                0, 1, 7, // shaft and usp
+                0,    7, // shaft and usp
                 0, 2, 8, // blade1 and shaft
                 2, 3, 9, // blade1 and pitch1
                 3, 1, 10, // pitch1 and usp
@@ -266,20 +268,37 @@ int main( int argc, char *argv[] ){
                 5, 1, 13  // pitch2 and usp
                };
 
-  int ptr[]  = {
-    // bodies
-    0, 1, 2, 3, 4, 5,
-    // constraints
-    6, 
-    8, 
-    11, 
-    14, 17, 20, 
-    23, 26, 29,
-    32};
+  // Pointer of length num_elements+1
+  int ptr[num_elems+1];
+  ptr[0] = 0;
+  for ( int k = 0; k < num_elems; k++ ){
+    ptr[k+1] = ptr[k] + elements[k]->numNodes();
+  }
     
   tacs->setElementConnectivity(conn, ptr);
   tacs->initialize();
 
+  /*
+  TACSBVec *vars, *dvars;
+  vars = tacs->createVec();
+  dvars = tacs->createVec();
+  tacs->getInitConditions(vars, dvars);
+  tacs->setVariables(vars, dvars);
+  tacs->testElement(1, 2);
+  tacs->testElement(7, 2);
+
+  TACSBVec *res = tacs->createVec();
+  tacs->assembleRes(res);
+  printf("||R||: %e\n", res->norm());
+
+  TacsScalar *r;
+  int size = res->getArray(&r);
+  for ( int i = 0; i < size; i++ ){
+    if (i > 0 && i % 8 == 0){ printf("Node: %d\n", i/8); }
+    printf("R[%3d] = %e\n", i, r[i]);
+  }
+  */
+  
   //------------------------------------------------------------------//
   //                 Create the TACSIntegrator object                 //
   //------------------------------------------------------------------//
@@ -291,12 +310,12 @@ int main( int argc, char *argv[] ){
   f5->incref();
 
   double tinit            = 0.0;
-  double tfinal           = 1.0;
-  int    steps_per_second = 300; 
+  double tfinal           = 10.0;
+  int    steps_per_second = 100; 
   int    num_stages       = 2;
   int    max_bdf_order    = 1;
   TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal,
-                                               steps_per_second, max_bdf_order);
+                                              steps_per_second, max_bdf_order);
   bdf->incref();
   
   // Set optional parameters
