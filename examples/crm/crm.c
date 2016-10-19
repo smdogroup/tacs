@@ -3,7 +3,6 @@
 #include "isoFSDTStiffness.h"
 
 int main( int argc, char **argv ){
-
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -47,11 +46,28 @@ int main( int argc, char **argv ){
     }
     mesh->setElement(i, element);
   }
-
+  
   // Create tacs assembler from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(6);
   tacs->incref();
   mesh->decref();
+
+#ifdef TACS_USE_COMPLEX
+  // Get the deseign variable values
+  TacsScalar *x = new TacsScalar[ num_components ];
+  memset(x, 0, num_components*sizeof(TacsScalar));
+
+  // Get the design variable values
+  tacs->getDesignVars(x, num_components);
+
+  double dh = 1e-30;
+  for ( int i = 0; i < num_components; i++ ){
+    x[i] = x[i] + TacsScalar(0.0, dh);
+  }
+
+  // Set the perturbed design variable values
+  tacs->setDesignVars(x, num_components);
+#endif // TACS_USE_COMPLEX
 
   // Create matrix and vectors 
   TACSBVec *ans = tacs->createVec(); // displacements and rotations
@@ -83,7 +99,20 @@ int main( int argc, char **argv ){
   // Get solution and store in ans
   pc->applyFactor(f, ans);
   tacs->setVariables(ans);
-  
+
+  // Print out the norm of the solution on the root processor
+  TacsScalar norm = ans->norm();
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+
+  if (rank == 0){
+#ifdef TACS_USE_COMPLEX
+    printf("||ans||: %e + j%e\n", RealPart(norm), ImagPart(norm));
+#else
+    printf("||ans||: %e\n", ans->norm());
+#endif
+  }
+
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS |

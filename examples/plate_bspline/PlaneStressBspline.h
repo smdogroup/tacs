@@ -3,7 +3,7 @@
 
 #include "TACS2DElement.h"
 #include "FElibrary.h"
-#include "TMRQuadtree.h"
+
 class PlaneStressBspline : public TACS2DElement<9> {
 public:
  PlaneStressBspline( PlaneStressStiffness *_stiff,
@@ -160,17 +160,14 @@ public:
           getXpts(Xpts_new, N, Xpts);
           for (int k = 0; k < 3; k++){
             data[index+k] = RealPart(Xpts_new[k]);
-            //data[index+k] = RealPart(nXpts[3*p+k]);
+            
           }
-          /* printf("pNum:%d %e %e %e \n", pNum, */
-          /*        Xpts_new[0],Xpts_new[1],Xpts_new[2]); */
           index += 3;
         }
         TacsScalar vars_new[2];
         if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
           this->getDisplacement(vars_new, N, vars);
-          /* printf("pNum[%d]: %e %e \n", pNum, */
-          /*        vars_new[0], vars_new[1]); */
+
           for (int k = 0; k < 2; k++){
             data[index+k] = RealPart(vars_new[k]);
           }
@@ -179,12 +176,7 @@ public:
         // Compute the directive of X wrt to coordinate directions
         TacsScalar X[3], Xa[4];
         this->planeJacobian(X, Xa, N, Na, Nb, Xpts);
-        /* for (int i = 0; i < NUM_NODES; i++){ */
-        /*   printf("N[%d]: %e \n", i, N[i]); */
-        /*   printf("Xpts[%d]: %e %e %e \n", i, */
-        /*          Xpts[3*i], Xpts[3*i+1], Xpts[3*i+2]); */
-        /* } */
-        /* printf("Xa: %e %e %e %e \n", Xa[0], Xa[1], Xa[2], Xa[3]); */
+
         // Compute the determinant of Xa and its transformation
         TacsScalar J[4];
         FElibrary::jacobian2d(Xa, J);
@@ -225,81 +217,6 @@ public:
         data += ld_data;
       }
     }
-
-
-    /* for (int m = 0; m < 3; m++){ */
-    /*   for (int n = 0; n < 3; n++){ */
-    /*     int p = n+3*m; */
-    /*     int index = 0; */
-    /*     if (out_type & TACSElement::OUTPUT_NODES){ */
-    /*       for ( int k = 0; k < 3; k++ ){ */
-    /*         data[index+k] = RealPart(Xpts[3*p+k]); */
-    /*       } */
-    /*       /\* printf("Xpts[%d]: %e %e %e\n", p,  *\/ */
-    /*       /\*        Xpts[3*p], Xpts[3*p+1], Xpts[3*p+2]); *\/ */
-    /*       index += 3; */
-    /*     } */
-    /*     if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){ */
-    /*       for ( int k = 0; k < 2; k++ ){ */
-    /*         data[index+k] = RealPart(vars[2*p+k]); */
-    /*       } */
-    /*       index += 2; */
-    /*     } */
-    /*     // Set the parametric point to extract the data */
-    /*     double pt[2]; */
-    /*     pt[0] = -1.0 + 2.0*n/2.0; */
-    /*     pt[1] = -1.0 + 2.0*m/2.0; */
-	
-    /*     // Compute the shape functions */
-    /*     double N[NUM_NODES]; */
-    /*     double Na[NUM_NODES], Nb[NUM_NODES]; */
-    /*     getShapeFunctions(pt, N, Na, Nb); */
-    /*     // Compute the derivative of X with respect to the */
-    /*     // coordinate directions */
-    /*     TacsScalar X[3], Xa[4]; */
-    /*     this->planeJacobian(X, Xa, N, Na, Nb, Xpts); */
-
-    /*     // Compute the determinant of Xa and the transformation */
-    /*     TacsScalar J[4]; */
-    /*     FElibrary::jacobian2d(Xa, J); */
-
-    /*     // Compute the strain */
-    /*     TacsScalar strain[3]; */
-    /*     this->evalStrain(strain, J, Na, Nb, vars); */
-	
-    /*     if (out_type & TACSElement::OUTPUT_STRAINS){ */
-    /*       for ( int k = 0; k < 3; k++ ){ */
-    /*         data[index+k] = RealPart(strain[k]); */
-    /*       } */
-    /*       index += 3; */
-    /*     } */
-    /*     if (out_type & TACSElement::OUTPUT_STRESSES){ */
-    /*       // Calculate the strain at the current point */
-    /*       TacsScalar stress[3]; */
-    /*       this->stiff->calculateStress(pt, strain, stress); */
-        
-    /*       for ( int k = 0; k < 3; k++ ){ */
-    /*         data[index+k] = RealPart(stress[k]); */
-    /*       } */
-    /*       index += 3; */
-    /*     } */
-    /*     if (out_type & TACSElement::OUTPUT_EXTRAS){ */
-    /*       // Compute the failure value */
-    /*       TacsScalar lambda; */
-    /*       this->stiff->failure(pt, strain, &lambda); */
-    /*       data[index] = RealPart(lambda); */
-
-    /*       this->stiff->buckling(strain, &lambda); */
-    /*       data[index+1] = RealPart(lambda); */
-
-    /*       data[index+2] = RealPart(this->stiff->getDVOutputValue(0, pt)); */
-    /*       data[index+3] = RealPart(this->stiff->getDVOutputValue(1, pt)); */
-
-    /*       index += this->NUM_EXTRAS; */
-    /*     } */
-    /*     data += ld_data; */
-    /*   } */
-    /* } */
   }
   void getOutputConnectivity( int *con, int node ){
     int p = 0;
@@ -312,17 +229,6 @@ public:
         p++;
       }
     }
-    /* for (int m = 0; m < 2; m++){ */
-    /*   for (int n = 0; n < 2; n++){ */
-    /*     con[4*p] = node+n+m*3; */
-    /*     con[4*p+1] = node+n+1+m*3; */
-    /*     con[4*p+2] = node+n+1+(m+1)*3; */
-    /*     con[4*p+3] = node+n+(m+1)*3; */
-    /*     /\* printf("pNum: %d %d, %d %d %d %d\n", pNum, node, *\/ */
-    /*     /\*        con[4*p], con[4*p+1], con[4*p+2],con[4*p+3]); *\/ */
-    /*     p++; */
-    /*   } */
-    /* } */
   } 
   void getXpts( TacsScalar U[], 
                 const double N[],

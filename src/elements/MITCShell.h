@@ -1646,8 +1646,8 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
 						 TacsScalar fdvSens[], int dvLen,
 						 const TacsScalar psi[], 
 						 const TacsScalar phi[],
-						 const TacsScalar vars[],
-						 const TacsScalar Xpts[] ){
+						 const TacsScalar Xpts[],
+                                                 const TacsScalar vars[] ){
   if (matType == STIFFNESS_MATRIX){
     // Geometric data
     TacsScalar X[3], Xd[9], Xdd[9];
@@ -1767,7 +1767,7 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
 	// Add the term: scale*psi^{T}*B^{T}*dC/dx*strain to the vector
 	// dvSens - Note that this is much more efficient than computing
 	// the terms component by component
-	stiff->addStiffnessDVSens(pt, bpsi, bphi, brpsi*brphi,
+	stiff->addStiffnessDVSens(pt, bpsi, bphi, scale*h*brpsi*brphi,
 				  fdvSens, dvLen);
       }
     }
@@ -1948,9 +1948,9 @@ template <int order>
 void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
 						 TacsScalar res[],
 						 const TacsScalar psi[], 
-						 const TacsScalar phi[],
-						 const TacsScalar vars[], 
-						 const TacsScalar Xpts[] ){
+						 const TacsScalar phi[], 
+						 const TacsScalar Xpts[],
+						 const TacsScalar vars[] ){
   if (matType == GEOMETRIC_STIFFNESS_MATRIX && 
       type == LINEAR){  
     // Geometric data
