@@ -15,7 +15,7 @@ default: ${OBJS}
 	${CXX} -o plate plate_bspline.o ${TACS_LD_FLAGS}
 	${CXX} -o test_plate plate_simple.o ${TACS_LD_FLAGS} 
 	${CXX} -o tmr plate_tmr.o ${TACS_LD_FLAGS} ${TMR_LD_FLAGS}
-	${CXX} -o curvilinear plate_curvilinear.o ${TACS_LD_FLAGS} ${TMR_LD_FLAGS}
+	${CXX} -o curvilinear plate_curvilinear.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: TMR_CC_FLAGS=${TMR_DEBUG_CC_FLAGS}

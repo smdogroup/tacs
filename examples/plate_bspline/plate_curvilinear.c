@@ -73,8 +73,6 @@ void controlPointMesh(int *num_nodes_x, int *num_nodes_y,
   }
   *ptr = _ptr;
   *conn = _conn;
-  //delete [] _ptr;
-  //delete [] _conn;
 }
 // Generate the knot vectors for given number of patches in the x and
 // y direction
@@ -212,8 +210,8 @@ int main( int argc, char *argv[] ){
   int Lu = 50, Lv = 50;
   TACSElement *elem[Lu*Lv];
   int ind = 0;
-  int order = 3;
   // Order of the Bspline
+  int order = 3;
   for (int k = 0; k < argc; k++){
     int _order, _Lu, _Lv;
     if (sscanf(argv[k], "order=%d", &_order) == 1){
@@ -230,19 +228,21 @@ int main( int argc, char *argv[] ){
   printf("Nx: %d \n", Lu);
   printf("Ny: %d \n", Lv);
   
+  double *Tu, *Tv;
+  knotVector(Lu, Lv,order, &Tu, &Tv);
+  /* for (int i = 0; i < Lu+1+2*(order-1); i++){ */
+  /*   printf("Tu[%d]: %e\n", i,Tu[i]); */
+  /* } */
   if (order == 4){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
-         double *Tu, *Tv;
-         knotVector(Lu, Lv,order, &Tu, &Tv);
-         
-         elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
-                                                  Lu, Lv,
-                                                  LINEAR,
-                                                  0, ind);
-         
-         elem[ind]->incref();
-         ind++;
+        elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
+                                                 Lu, Lv,
+                                                 LINEAR,
+                                                 0, ind);
+        
+        elem[ind]->incref();
+        ind++;
       }
     }
   }
@@ -250,9 +250,7 @@ int main( int argc, char *argv[] ){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         double *Tu, *Tv;
-        printf("1Lu: %d \n", Lu);
         knotVector(Lu, Lv,order, &Tu, &Tv);
-        printf("2Lu: %d \n", Lu);
         /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
         /*                                    Lu, Lv, */
         /*                                    LINEAR, */
@@ -261,7 +259,6 @@ int main( int argc, char *argv[] ){
                                                  Lu, Lv,
                                                  LINEAR,
                                                  0, ind);
-        printf("3Lu: %d \n", Lu);
         elem[ind]->incref();
         ind++;
       }
@@ -275,7 +272,7 @@ int main( int argc, char *argv[] ){
     int num_elems_x = 1*Lu, num_elems_y = 1*Lv;
     int num_elems = num_elems_x*num_elems_y;
     int *ptr_c, *conn_c;
-    printf("Here \n");
+    
     int *elem_ids = new int[Lu*Lv];
     for (int i = 0; i < Lu*Lv; i++){
       elem_ids[i] = i*1;
