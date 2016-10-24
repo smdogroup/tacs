@@ -7,7 +7,6 @@
 */
 #include "TACSConstitutive.h"
 #include "PlaneStressStiffness.h"
-
 /*
   Constitutive class for plane stress problems using B-spline 
   as filter
@@ -15,11 +14,15 @@
 class PlaneStressBsplineStiffness : public PlaneStressStiffness {
  public:
   static const int NUM_STRESSES = PlaneStressStiffness::NUM_STRESSES;
-  PlaneStressBsplineStiffness( TacsScalar *_rho, 
+  PlaneStressBsplineStiffness( TacsScalar _rho, 
                                TacsScalar _E, TacsScalar _nu,
+                               TacsScalar _ys, TacsScalar _epsilon,
+                               TacsScalar *_x, double _qpenalty,
+                               double _lower,
                                double *_Tu, double *_Tv,
-                               int _Lu, int _Lv, int _pNum );
-  ~PlaneStressBsplineStiffness(){}
+                               int _Lu, int _Lv, 
+                               int _pNum, int _order );
+  ~PlaneStressBsplineStiffness();
   // Functions for design variable control
   // -------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
@@ -59,20 +62,23 @@ class PlaneStressBsplineStiffness : public PlaneStressStiffness {
   // Misc helper functions
   // ---------------------
   int findPatch();
-  void getShapeFunctions( double pt[], 
+  void getShapeFunctions( const double pt[], 
                           double N[] );
   void computeIndexList( int **index,
                          int numDVs );
   
  private:
+  static const char * constName;
   // Knot vectors and its associated variables
   double *Tu, *Tv;
-  int Lu, Lv, pNum;
-  int order, index[16];
+  int Lu, Lv, pNum, t1, t2;
+  int order, *index;
   // The constitutive properties
   double E, nu, ys, rho, epsilon;
   TacsScalar *x, xw;
+  TacsScalar D11, D12, G;
   int dvNum;
   // The topology variables
   double q, lowerBound;
 };
+#endif //TACS_PLANE_STRESS_BSPLINE_STIFFNESS_H

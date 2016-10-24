@@ -1,5 +1,6 @@
 #include "PlaneStressBsplineStiffness.h"
 #include "YSlibrary.h"
+#include "FElibrary.h"
 /*
   Copyright (c) 2016 Graeme Kennedy. All rights reserved. 
   Not for commercial purposes.
@@ -50,7 +51,15 @@ PlaneStressBsplineStiffness::PlaneStressBsplineStiffness( TacsScalar _rho,
   q = _qpenalty;
   lowerBound = _lower;
   x = new TacsScalar[Lu*Lv];
-  xw = NULL;
+  xw = 0;
+  index = new int[order*order];
+}
+
+PlaneStressBsplineStiffness::~PlaneStressBsplineStiffness(){
+  delete x;
+  delete [] Tu;
+  delete [] Tv;
+  delete [] index;
 }
 int PlaneStressBsplineStiffness::getNumStresses(){
   return NUM_STRESSES;
@@ -61,13 +70,13 @@ void PlaneStressBsplineStiffness::setDesignVars( const TacsScalar dvs[],
   if (dvNum < numDVs){
     memcpy(x, dvs, numDVs*sizeof(TacsScalar));
   }    
-  computeIndex(&index, numDVs);
+  computeIndexList(&index, numDVs);
 }
 // Get the design variables
 void PlaneStressBsplineStiffness::getDesignVars( TacsScalar dvs[],
                                                  int numDVs ){
   if (dvNum < numDVs){
-    dvs[dvNum] = rho[dvNum];
+    dvs[dvNum] = xw;
   }
 }
 // Get the lower and upper bound of design variables
@@ -168,6 +177,8 @@ void PlaneStressBsplineStiffness::failure( const double pt[],
   // Compute the relaxation factor
   TacsScalar r_factor = 1.0;
   // Compute the topology variable
+  double N[16];
+  getShapeFunctions(pt, N);
   xw = 0.0;
   for (int i = 0; i < order*order; i++){
     xw += N[i]*x[index[i]];
@@ -189,6 +200,8 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
   // Compute the relaxation factor
   TacsScalar r_factor_sens = 0.0;
   // Compute the topology variable
+  double N[16];
+  getShapeFunctions(pt, N);
   xw = 0.0;
   for (int i = 0; i < order*order; i++){
     xw += N[i]*x[index[i]];
@@ -219,7 +232,8 @@ int PlaneStressBsplineStiffness::findPatch(){
   return -1;
 }
 
-void PlaneStressBsplineStiffness::getShapeFunctions( double pt[], double N[]){
+void PlaneStressBsplineStiffness::getShapeFunctions( const double pt[], 
+                                                     double N[]){
   // Do the filtering
   int intu = t1+order-1;
   int intv = t2+order-1;
@@ -227,9 +241,9 @@ void PlaneStressBsplineStiffness::getShapeFunctions( double pt[], double N[]){
   u *= 0.5;
   double v = Tv[intv]+Tv[intv+1]+pt[1]*(Tv[intv+1]-Tv[intv]);
   v *= 0.5;
-  double Nu[4], Nv[4], work[8], N[16];
+  double Nu[4], Nv[4], work[8];
   // Compute the basis values in each direction
-  FElibrary::bspline_basis_(Nu, intu, u, Tu, order, work);
+  FElibrary::bspline_basis(Nu, intu, u, Tu, order, work);
   FElibrary::bspline_basis(Nv, intv, v, Tv, order, work);
   
   if (order == 3){
