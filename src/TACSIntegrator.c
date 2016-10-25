@@ -313,7 +313,8 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     
     // Check if the Newton convergence tolerance is satisfied
     if (RealPart(norm) < rtol*RealPart(init_norm) || 
-        RealPart(norm) < atol){
+        RealPart(norm) < atol || 
+        (niter > 0 && RealPart(update_norm) < atol) ){
       break;
     }
 
