@@ -109,7 +109,7 @@ class TACSIntegrator : public TACSObject {
                     double t, TACSBVec *q, TACSBVec *qdot, 
                     TACSBVec *qddot );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
-  void lineSearch( double *alpha, double *beta, double *gamma, double f0, TACSBVec *d0 );
+  void lineSearch( double *alpha, double *beta, double *gamma, TacsScalar f0, TACSBVec *d0 );
     
   // Virtual functions for forward mode
   // -----------------------------------

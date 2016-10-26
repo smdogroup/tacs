@@ -845,8 +845,8 @@ if it is used to solve a system of equations\n", info, info);
   ensure a reduction in residual. The vector d is an ascent direction
   currently as we solved d = J^{-1} R instead of d = -J^{-1} R.
 */
-void TACSIntegrator::lineSearch(double *alpha, double *beta, double *gamma,
-                                double f0, TACSBVec *d0 ){  
+void TACSIntegrator::lineSearch( double *alpha, double *beta, double *gamma,
+                                 TacsScalar f0, TACSBVec *d0 ){  
   /*
   // Serial only usage for debugging
   // Get the right hand side as an array
@@ -918,13 +918,13 @@ void TACSIntegrator::lineSearch(double *alpha, double *beta, double *gamma,
   double fnew = RealPart(f->norm());
 
   // We can accept the alpha, beta, gamma as is
-  if (fnew < f0) {
+  if (RealPart(fnew) < RealPart(f0)) {
     return;
   }
 
   int iter = 0;
   double rho = 0.75;
-  while  (fnew > f0 && iter < 10 ) {
+  while  (RealPart(fnew) > RealPart(f0) && iter < 10 ) {
     iter += 1;
 
     if (logfp && print_level >= 3 && iter == 1){
@@ -934,7 +934,8 @@ void TACSIntegrator::lineSearch(double *alpha, double *beta, double *gamma,
     }
 
     if (logfp && print_level >= 3){
-      fprintf(logfp, "%12d %12.5e %12.5e %12.5e %12.5e %12.5e \n", iter, f0, fnew, 
+      fprintf(logfp, "%12d %12.5e %12.5e %12.5e %12.5e %12.5e \n", 
+              iter, RealPart(f0), RealPart(fnew), 
               *alpha, *beta, *gamma);
     }
     
@@ -2324,7 +2325,7 @@ void TACSABMIntegrator::marchBackwards( ){
 
         // Add contribution from psi
         rhs[rhs_index*num_funcs+n]->axpy(A[0], psi[n]);
-
+        
         /*
           gamma = 0.0;
           beta  = 1.0/h;
