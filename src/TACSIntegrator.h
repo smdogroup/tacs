@@ -68,6 +68,7 @@ class TACSIntegrator : public TACSObject {
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
+  void setUseLineSearch( int _use_line_search );
   void setFunction( TACSFunction **_func, int _num_funcs );
   void setIsFactorized( int flag );
   void setTACSStates( double time, TACSBVec *q, 
@@ -89,6 +90,7 @@ class TACSIntegrator : public TACSObject {
   double time_fwd_factor;
   double time_fwd_apply_factor;
   double time_forward;
+  double time_newton;
 
   double time_rev_assembly;
   double time_rev_factor;
@@ -107,6 +109,7 @@ class TACSIntegrator : public TACSObject {
                     double t, TACSBVec *q, TACSBVec *qdot, 
                     TACSBVec *qddot );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
+  void lineSearch( double *alpha, double *beta, double *gamma, double f0, TACSBVec *d0 );
     
   // Virtual functions for forward mode
   // -----------------------------------
@@ -204,11 +207,18 @@ class TACSIntegrator : public TACSObject {
   
   int jac_comp_freq;    // Frequency of Jacobian factorization
   int use_lapack;       // Flag to switch to LAPACK for linear solve
+  int use_line_search;  // Flag to make use of line search for nonlinear root finding
   FEMat *D;             // Matrix associated with Preconditioner
   int factorized;       // Set whether the matrix is factorized
   int niter;            // Newton iteration number
-  TacsScalar norm, init_norm, update_norm;  // Norms and initial norm
+  TacsScalar res_norm, init_res_norm; // Norm of the residual
+  TacsScalar update_norm; // Norm of the update
+  int term;                     // Termination of nonlinear solver 
+                                // 1: |R| < atol; 2: |dq| < atol
+                                // 3: |R|/|R0| < rtol
+                                // -1: max_newton_iters // -2: Nan
   
+ 
   TacsScalar energies[2]; // Keep track of energies
   TacsScalar init_energy; // The energy during time = 0
   int mpiRank, mpiSize;   // MPI information

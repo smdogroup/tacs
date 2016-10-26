@@ -222,6 +222,12 @@ TACSIntegrator::~TACSIntegrator(){
 void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                   double t, TACSBVec *u, TACSBVec *udot, 
                                   TACSBVec *uddot ){
+  // Store the alphas
+  double atmp, btmp, gtmp;
+  atmp = alpha;
+  btmp = beta;
+  gtmp = gamma;
+
   if (!mat || !ksm){
     // Set the D matrix to NULL
     int use_femat = 1;
@@ -231,7 +237,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       D->incref();
       
       // Allocate the factorization
-      int lev = 100000; double fill = 10.0; int reorder_schur = 1;
+      int lev = 10000000; double fill = 10.0; int reorder_schur = 1;
       pc = new PcScMat(D, lev, fill, reorder_schur);
       pc->incref();
       
@@ -249,7 +255,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
   
     // The Krylov subspace method (KSM) associated with the solver
-    int gmres_iters = 10, num_restarts = 0, is_flexible = 0;
+    int gmres_iters = 20, num_restarts = 0, is_flexible = 0;
     ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
     ksm->incref();
   }
@@ -257,20 +263,27 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
   ksm->setTolerances(rtol, atol);
 
-  // Initialize the norms
-  update_norm = 0.0;
-  init_norm = 0.0;
-  norm = 0.0;
+  // Initialize the update norms
+  update_norm = 1000.0; 
+
+  // Initialize the residual norms
+  init_res_norm = 0.0;
+  res_norm = 0.0;
+  term = 0;
 
   if (logfp && print_level >= 2){
-    fprintf(logfp, "%12s %8s %12s %12s %12s %12s %12s %12s %12s %12s\n",
-            "time", "NIter", "tcpu", "|R|", "|R|/|R0|", "|update|" , 
+    fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+            "time", "NIter", "|R|", "|R|/|R0|", "|dq|", 
             "alpha", "beta", "gamma","delta");
   }
+
+  // Track the time taken for newton solve at each time step
+  double tnewton = MPI_Wtime();
 
   // Iterate until max iters or R <= tol
   double delta = 0.0;
   for ( niter = 0; niter < max_newton_iters; niter++ ){
+    
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
 
@@ -286,35 +299,43 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     time_fwd_assembly += MPI_Wtime() - t0;
    
     // Compute the L2-norm of the residual
-    norm = res->norm();
+    res_norm = res->norm(); // *alpha
     
     // Record the residual norm at the first Newton iteration
     if (niter == 0){
-      init_norm = norm;
+      init_res_norm = res_norm;
     }
 
     // Write a summary    
     if(logfp && print_level >= 2){
-      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-              t, niter, MPI_Wtime()-t0, RealPart(norm),  
-              (niter == 0) ? 1.0 : RealPart(norm/init_norm), 
-              (niter == 0) ? 1.0 : RealPart(update_norm),
+      fprintf(logfp, "%12.5e %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+              t, niter, RealPart(res_norm),  
+              (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
+              RealPart(update_norm),  
               alpha, beta, gamma, delta);
     }
 
     // Check if the norm of the residuals is a NaN
-    if (norm != norm){ 
-      fprintf(stderr,
-              "Newton iteration %d, failed with NaN residual norm\n",
-              niter);
+    if (res_norm != res_norm || update_norm != update_norm ){ 
+      fprintf(stderr,"Newton iteration %d, failed with NaN residual norm\n", niter);
+      term = -2;
       exit(-1);
       break;
     }
     
+    // Check whether the update is sufficiently small
+    if (RealPart(update_norm) < atol){
+      term = 2;
+      break;
+    }
+
     // Check if the Newton convergence tolerance is satisfied
-    if (RealPart(norm) < rtol*RealPart(init_norm) || 
-        RealPart(norm) < atol || 
-        (niter > 0 && RealPart(update_norm) < atol) ){
+    if (RealPart(res_norm) < atol){
+      term = 1;
+      break;
+    }
+    if ( RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
+      term = 3;
       break;
     }
 
@@ -337,20 +358,27 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Find the norm of the update
-    update_norm = update->norm();
+    update_norm = update->norm();// *alpha
+
+    // Check if "update" is indeed a descent direction (J.update > 0)
+    if (use_line_search) {      
+      // Perform line search to ensure sufficient decrease
+      lineSearch(&alpha, &beta, &gamma, res_norm, update);
+    }
 
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);
     udot->axpy(-beta, update);
     u->axpy(-alpha, update);
-
-    // Check whether the Newton iteration was successful
-    if (niter == max_newton_iters && 
-        RealPart(norm) >= rtol*RealPart(init_norm)){
-      fprintf(stderr,"Newton iteration failed to converge in %d iters\n", niter);
-      break;
-    }
   }
+
+  // Failed nonlinear solution
+  if (niter == max_newton_iters) {
+    term = -1;
+  }
+
+  // Record the time taken for nonlinear solution
+  time_newton = MPI_Wtime() - tnewton;
 }
 
 /*
@@ -813,6 +841,128 @@ if it is used to solve a system of equations\n", info, info);
 }
 
 /*
+  Perform line search and return the alpha, beta, gamma that will
+  ensure a reduction in residual. The vector d is an ascent direction
+  currently as we solved d = J^{-1} R instead of d = -J^{-1} R.
+*/
+void TACSIntegrator::lineSearch(double *alpha, double *beta, double *gamma,
+                                double f0, TACSBVec *d0 ){  
+  /*
+  // Serial only usage for debugging
+  // Get the right hand side as an array
+  //TacsScalar *R;
+  //  res->getArray(&R);
+
+  // Set the lapack solution into the distributed vector
+  TacsScalar *ans;
+  update->getArray(&ans);
+  memcpy(ans, R, num_state_vars*sizeof(TacsScalar));
+      
+  // The following code retrieves a dense column-major 
+  // matrix from the FEMat matrix
+  TacsScalar *J;
+  FEMat *femat = dynamic_cast<FEMat*>(mat);
+  if (femat){
+  int bsize, nrows;
+  BCSRMat *B;
+  femat->getBCSRMat(&B, NULL, NULL, NULL);
+  B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+	
+  J = new TacsScalar[ bsize*bsize*nrows*nrows ];
+
+  // Get the matrix in LAPACK column major order
+  B->getDenseColumnMajor(J);
+  }
+  else {
+  fprintf(stderr,"Casting to FEMat failed\n");
+  exit(-1);
+  }
+
+    // Restore the original values. These may have been changed as a
+    // result of line search. We attempt to use the theoretical values
+    // as much as possible
+    alpha = atmp;
+    beta  = btmp;
+    gamma = gtmp;
+
+  // Check the sufficient decrease condition
+  // fnew  < f0 - C1*alpha*np.dot(J, d0)
+  // Compute the norm of the objective function
+
+  */
+
+  // Store the alphas
+  double atmp, btmp, gtmp;
+  atmp = *alpha;
+  btmp = *beta;
+  gtmp = *gamma;
+
+  TACSBVec *f     = tacs->createVec(); f->incref();
+  TACSBVec *u     = tacs->createVec(); u->incref();
+  TACSBVec *udot  = tacs->createVec(); udot->incref();
+  TACSBVec *uddot = tacs->createVec(); uddot->incref();
+ 
+  // Get the initial state variables from TACS
+  tacs->getVariables(u, udot, uddot);
+
+  // Apply the update
+  uddot->axpy(-(*gamma), d0);
+  udot->axpy(-(*beta), d0);
+  u->axpy(-(*alpha), d0);
+
+  // Set the trail states into TACS
+  tacs->setVariables(u, udot, uddot);
+
+  // Evaluate the function and compute the norm
+  tacs->assembleRes(f);
+  double fnew = RealPart(f->norm());
+
+  // We can accept the alpha, beta, gamma as is
+  if (fnew < f0) {
+    return;
+  }
+
+  int iter = 0;
+  double rho = 0.75;
+  while  (fnew > f0 && iter < 10 ) {
+    iter += 1;
+
+    if (logfp && print_level >= 3 && iter == 1){
+      fprintf(logfp, "%12s %12s %12s %12s %12s %12s\n",
+              "LSIter", "|R0|", "|R1|",
+              "alpha", "beta", "gamma");
+    }
+
+    if (logfp && print_level >= 3){
+      fprintf(logfp, "%12d %12.5e %12.5e %12.5e %12.5e %12.5e \n", iter, f0, fnew, 
+              *alpha, *beta, *gamma);
+    }
+    
+    // Reduce the step size by rho fraction
+    *alpha = rho*(*alpha);
+    *beta = rho*(*beta);
+    *gamma = rho*(*gamma);
+
+    // Apply the update
+    uddot->axpy(-(*gamma), d0);
+    udot->axpy(-(*beta), d0);
+    u->axpy(-(*alpha), d0);
+
+    // Set the trail states into TACS
+    tacs->setVariables(u, udot, uddot);
+
+    // Evaluate the function and compute the norm
+    tacs->assembleRes(f);
+    fnew = RealPart(f->norm());
+  }
+
+  f->decref();
+  u->decref();
+  udot->decref();
+  uddot->decref();
+}
+
+/*
   Function that returns a buffer that is formatted with the supplied
   format specifiers and arguments. Note that this function takes
   variable number of arguments. The argument list and format needs to
@@ -838,8 +988,8 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
   if (current_step == 0){
     // Log information
     if (logfp && print_level >= 1){
-      fprintf(logfp, "Variables=\n%12s %8s %12s %12s %12s %15s %15s %15s\n", 
-              "time", "NItrs", "|R|", "|R|/|R0|", "|update|",
+      fprintf(logfp, "Variables=\n%12s %12s %12s %12s %12s %12s %12s %15s %15s %15s\n", 
+              "time", "tnewton", "NItrs", "term", "|R|", "|R|/|R0|", "|dq|",
               "KineticEnrgy", "PotentialEnrgy",
               "EInit-E");
       
@@ -847,17 +997,29 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       init_energy = energies[0] + energies[1];
 
       // Log the details
-      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %15.7e %15.7e %15.7e\n",
-              time[0], 0, 0.0, 1.0, 1.0,
+      fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %15.7e %15.7e\n",
+              time[0], time_newton, 0, 0, 0.0, 0.0, 0.0,
               RealPart(energies[0]), RealPart(energies[1]),  0.0);
     }
   } 
   else {
     // Print out the time step summary
     if (logfp && print_level >= 1){
-      fprintf(logfp, "%12.5e %8d %12.5e %12.5e %12.5e %15.7e %15.7e %15.7e\n",
-	      time[current_step], niter, RealPart(norm), 
-              RealPart(norm/(rtol + init_norm)),
+
+      // Need a title for total summary as details of Newton iteration
+      // will overshadow this one line summary
+      if (print_level = 2){
+        fprintf(logfp, "Variables=\n%12s %12s %12s %12s %12s %12s %12s %15s %15s %15s\n", 
+                "time", "tnewton", "NItrs", "term", "|R|", "|R|/|R0|", "|dq|",
+                "KineticEnrgy", "PotentialEnrgy",
+                "EInit-E");
+      }
+
+      fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %15.7e %15.7e\n",
+	      time[current_step], time_newton,
+              niter, term,
+              RealPart(res_norm), 
+              RealPart(res_norm/(rtol + init_res_norm)),
               RealPart(update_norm),
 	      RealPart(energies[0]), RealPart(energies[1]), 
 	      RealPart((init_energy - (energies[0] + energies[1]))));
@@ -932,6 +1094,15 @@ void TACSIntegrator::setJacAssemblyFreq( int _jac_comp_freq ){
 */
 void TACSIntegrator::setUseLapack( int _use_lapack ) {
   use_lapack = _use_lapack;
+  // LAPACK works with natural ordering only
+  this->setOrderingType(TACSAssembler::NATURAL_ORDER);
+}
+
+/*
+  Use line search for the solution of nonlinear problem
+*/
+void TACSIntegrator::setUseLineSearch( int _use_line_search) {
+  use_line_search = _use_line_search;
 }
 
 /*
