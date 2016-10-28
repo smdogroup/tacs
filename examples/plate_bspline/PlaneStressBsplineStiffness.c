@@ -76,7 +76,12 @@ void PlaneStressBsplineStiffness::setDesignVars( const TacsScalar dvs[],
 void PlaneStressBsplineStiffness::getDesignVars( TacsScalar dvs[],
                                                  int numDVs ){
   if (dvNum < numDVs){
-    dvs[dvNum] = xw;
+    if (xw > 0){
+      dvs[dvNum] = xw;
+    }
+    else{
+      dvs[dvNum] = x[dvNum];
+    }
   }
 }
 // Get the lower and upper bound of design variables

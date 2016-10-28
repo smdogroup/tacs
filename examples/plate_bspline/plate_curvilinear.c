@@ -175,8 +175,8 @@ void controlXpts(double Xpts[], double **Xpts_c,
   }
   // Input the last exterior control points
   for (int i = 0; i < ncp_x; i++){
-    _Xpts[3*ind] = edge_pt[3*(3*ncp_x+i)+0];
-    _Xpts[3*ind+1] = edge_pt[3*(3*ncp_x+i)+1];
+    _Xpts[3*ind] = edge_pt[3*(ncp_x+2*ncp_y+i)+0];
+    _Xpts[3*ind+1] = edge_pt[3*(ncp_x+2*ncp_y+i)+1];
     _Xpts[3*ind+2] = 0.0;
     /* printf("%d Xpts: %e %e \n", i,  */
     /*        _Xpts[3*ind], _Xpts[3*ind+1]); */
@@ -223,7 +223,8 @@ int main( int argc, char *argv[] ){
   printf("Nx: %d \n", Lu);
   printf("Ny: %d \n", Lv);
 
-  TACSElement *elem[Lu*Lv];
+  TACSElement **elem = new TACSElement*[Lu*Lv];
+  
   double *Tu, *Tv;
   knotVector(Lu, Lv,order, &Tu, &Tv);
   
@@ -258,13 +259,16 @@ int main( int argc, char *argv[] ){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         // Create the stiffness object
-        PlaneStressBsplineStiffness *stiff = 
-          new PlaneStressBsplineStiffness(2700.0, 70.0e9,
-                                          0.3, 280e6, 0.0,
-                                          x, 0.0, 1e-3,
-                                          Tu, Tv, Lu, Lv,
-                                          ind, order);
+        /* PlaneStressBsplineStiffness *stiff =  */
+        /*   new PlaneStressBsplineStiffness(2700.0, 70.0e9, */
+        /*                                   0.3, 280e6, 0.0, */
+        /*                                   x, 0.0, 1e-3, */
+        /*                                   Tu, Tv, Lu, Lv, */
+        /*                                   ind, order); */
+        PlaneStressStiffness *stiff = 
+          new PlaneStressStiffness(2700.0,70.0e9, 0.3);
         stiff->incref();
+        
         /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
         /*                                    Lu, Lv, */
         /*                                    LINEAR, */
@@ -446,9 +450,9 @@ int main( int argc, char *argv[] ){
   /* tacs->decref(); */
   /* exit(0); */
   // Test the constitutive class
-  tacs->testConstitutive(0,2);
-  tacs->decref();
-  exit(0);
+  /* tacs->testConstitutive(0,2); */
+  /* tacs->decref(); */
+  /* exit(0); */
   // Create the preconditioner
   TACSBVec *res = tacs->createVec();
   TACSBVec *ans = tacs->createVec();
@@ -530,7 +534,7 @@ int main( int argc, char *argv[] ){
   res->decref();
   // Decrease the reference count to everything else
   if (elem){
-    for (int i = 0; i < 1; i++){
+    for (int i = 0; i < Lu*Lv; i++){
       elem[i]->decref();
     }
   }
