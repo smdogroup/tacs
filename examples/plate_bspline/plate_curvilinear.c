@@ -116,8 +116,7 @@ void controlXpts(double Xpts[], double **Xpts_c,
   double edge_pt[3*(2*ncp_x+2*ncp_y)];
   int ind = 0;
   // Compute the control points on the exterior boundary
-  for (int i = 0; i < 4; i++){
-   
+  for (int i = 0; i < 4; i++){   
     double a[] = {Xpts[3*edge_index[2*i]], Xpts[3*edge_index[2*i]+1]};
     double b[] = {Xpts[3*edge_index[2*i+1]],Xpts[3*edge_index[2*i+1]+1]};
     
@@ -232,17 +231,22 @@ int main( int argc, char *argv[] ){
   /*   printf("Tu[%d]: %e\n", i,Tu[i]); */
   /* } */
   TacsScalar *x = new TacsScalar[Lu*Lv];
-  memset(x, 0.5, Lu*Lv*sizeof(TacsScalar));
+  for (int i = 0; i < Lu*Lv; i++){
+    x[i] = 0.5;
+  }
+   
   if (order == 4){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         // Create the stiffness object
-        PlaneStressBsplineStiffness *stiff = 
-          new PlaneStressBsplineStiffness(2700.0, 70.0e9,
-                                          0.3, 280e6, 0.0,
-                                          x, 0.0, 1e-3,
-                                          Tu, Tv, Lu, Lv,
-                                          ind, order);
+        /* PlaneStressBsplineStiffness *stiff =  */
+        /*   new PlaneStressBsplineStiffness(2700.0, 70.0e9, */
+        /*                                   0.3, 280e6, 0.0, */
+        /*                                   x, 0.0, 1e-3, */
+        /*                                   Tu, Tv, Lu, Lv, */
+        /*                                   ind, order); */
+        PlaneStressStiffness *stiff = 
+          new PlaneStressStiffness(2700.0,70.0e9, 0.3);
         stiff->incref();
                                           
         elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
@@ -259,14 +263,14 @@ int main( int argc, char *argv[] ){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         // Create the stiffness object
-        /* PlaneStressBsplineStiffness *stiff =  */
-        /*   new PlaneStressBsplineStiffness(2700.0, 70.0e9, */
-        /*                                   0.3, 280e6, 0.0, */
-        /*                                   x, 0.0, 1e-3, */
-        /*                                   Tu, Tv, Lu, Lv, */
-        /*                                   ind, order); */
-        PlaneStressStiffness *stiff = 
-          new PlaneStressStiffness(2700.0,70.0e9, 0.3);
+        PlaneStressBsplineStiffness *stiff =
+          new PlaneStressBsplineStiffness(2700.0, 70.0e9,
+                                          0.3, 280e6, 0.0,
+                                          x, 0.0, 1e-3,
+                                          Tu, Tv, Lu, Lv,
+                                          ind, order);
+        /* PlaneStressStiffness *stiff =  */
+        /*   new PlaneStressStiffness(2700.0,70.0e9, 0.3); */
         stiff->incref();
         
         /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
@@ -445,6 +449,7 @@ int main( int argc, char *argv[] ){
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
+  tacs->setDesignVars(x, Lu*Lv);
   // Test the element
   /* tacs->testElement(0,2); */
   /* tacs->decref(); */
@@ -524,6 +529,9 @@ int main( int argc, char *argv[] ){
   f5->writeToFile(filename);
   
   // Free everything
+  if (x){
+    delete [] x;
+  }
   f5->decref();
   
   // Decrease the reference count to the linear algebra objects

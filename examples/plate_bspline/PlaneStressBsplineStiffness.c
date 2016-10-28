@@ -51,7 +51,8 @@ PlaneStressBsplineStiffness::PlaneStressBsplineStiffness( TacsScalar _rho,
   q = _qpenalty;
   lowerBound = _lower;
   x = new TacsScalar[Lu*Lv];
-  xw = 0;
+  memcpy(x, _x, Lu*Lv*sizeof(double));
+  xw = 0.0;
   index = new int[order*order];
 }
 
@@ -131,6 +132,7 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
   for (int i = 0; i < order*order; i++){
     xw += N[i]*x[index[i]];
   }
+  
   TacsScalar w = xw/(1.0+q*(1.0-xw));
   
   D11 = D*(1.0-nu)*w;
