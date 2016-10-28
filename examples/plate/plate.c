@@ -17,6 +17,13 @@
   DIRK2 DIRK3 DIRK4 : for DIRK integrators
   ABM1-6            : for ABM integrators
   NBG               : for Newmark integrator
+
+  test_gradient : to do a complex step verification of the adjoint gradient
+  test_element  : to test the element implementation
+  num_funcs     : 1 to 3 for the adjoint 
+  num_threads   : number of threads
+  write_solution: write solution to f5 frequency
+  print_level: 0, 1, 2
 */
 int main( int argc, char **argv ){
 
@@ -24,14 +31,34 @@ int main( int argc, char **argv ){
   MPI_Init(&argc, &argv);
 
   MPI_Comm comm = MPI_COMM_WORLD;
-  int mpiRank, mpiSize;
-  MPI_Comm_rank(comm, &mpiRank);
-  MPI_Comm_size(comm, &mpiSize);
-
+  int rank; 
+  MPI_Comm_rank(comm, &rank); 
+  
   // Parse command line arguments
+  int num_funcs = 1;
+  int num_threads = 1;
+  int test_gradient = 0;
   int test_element = 0;
-  enum IntegratorType type = NBG;
+  int write_solution = 0;
+  int print_level = 1;
+  enum IntegratorType type = BDF2;
   for ( int i = 0; i < argc; i++ ){
+
+    // Determine whether or not to test gradients with complex step
+    if (strcmp("help", argv[i]) == 0){
+      if (rank ==0){ 
+        printf("TACS time-dependent analysis of a plate located in the folder as plate.bdf\n\n");
+        printf("BDF1-3, DIRK2-4, ABM1-6, NBG : Selects the integrator to use\n");
+        printf("test_gradient                : Complex-step verification of adjoint gradient\n");
+        printf("num_funcs=1,2,3              : Number of functions for adjoint problem\n");
+        printf("num_threads=1,2,3...         : Number of threads to use\n");
+        printf("print_level=0,1,2            : Controls the amount of information to print\n");
+        printf("write_solution=0,1,2...      : Controls the frequency of f5 file output\n\n");
+      }
+      MPI_Finalize();
+      return 0;
+    }
+    
     // Backward Difference Formulae
     if (strcmp("BDF1", argv[i]) == 0){
       type = BDF1;
@@ -66,6 +93,39 @@ int main( int argc, char **argv ){
     } else if (strcmp("NBG", argv[i]) == 0){
       type = NBG;
     }
+
+    // Determine the number of functions for adjoint
+    if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
+      if (num_funcs < 0){ num_funcs = 1; }
+      if (num_funcs > 3){ num_funcs = 3; }
+      if (rank == 0){ printf("Number of functions : %d\n", num_funcs); }
+    }
+
+    // How frequent to write the f5 files
+    if (sscanf(argv[i], "write_solution=%d", &write_solution) == 1){
+      if (write_solution < 0){ write_solution = 0; }
+      if (rank == 0){ printf("Write solution freq : %d\n", write_solution); }
+    }
+
+    // Set the print level
+    if (sscanf(argv[i], "print_level=%d", &print_level) == 1){
+      if (print_level < 0){ print_level = 1; }
+      if (print_level > 3){ print_level = 3; }
+      if (rank == 0){ printf("Print level : %d\n", print_level); }
+    }
+
+    // Determine the number of threads
+    if (sscanf(argv[i], "num_threads=%d", &num_threads) == 1){
+      if (num_threads < 0){ num_threads = 1; }
+      if (num_threads > 24){ num_threads = 24; }
+      if (rank ==0){ printf("Number of threads : %d\n", num_threads); }
+    }
+
+    // Determine whether or not to test gradients with complex step
+    if (strcmp("test_gradient", argv[i]) == 0){
+      test_gradient = 1;
+      if (rank ==0){ printf("Enabled complex-step verification of gradients...\n"); }
+    }
   }
 
   /*-----------------------------------------------------------------*/
@@ -93,8 +153,8 @@ int main( int argc, char **argv ){
 
   // Set properties for dynamics
   TacsScalar g[]          = {0.0, 0.0, -9.81};
-  TacsScalar v_init[]     = {0.0, 0.0, 1.e-2};
-  TacsScalar omega_init[] = {0.0, 0.0, 0.0};
+  TacsScalar v_init[]     = {0.0, 0.0, 1.e-2}; // not being used currently
+  TacsScalar omega_init[] = {0.0, 0.0, 0.0};   // not being used currently
 
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
@@ -121,11 +181,11 @@ int main( int argc, char **argv ){
     // Create element object using constituitive information and type defined in
     // the descriptor
     if (strcmp(descriptor, "CQUAD") == 0){
-      element = new MITC9(stiff, gravity, v0, omega0);
+      element = new MITC9(stiff, gravity);
       element->incref();
     }
     else {
-      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", mpiRank, descriptor);
+      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", rank, descriptor);
     }
 
     // Set the number of displacements
@@ -180,19 +240,27 @@ int main( int argc, char **argv ){
   int num_dvs = num_components;
 
   // Create functions of interest  
-  static const int NUM_FUNCS = 3;
-  TACSFunction * func[NUM_FUNCS];
-  func[0] = new TACSCompliance(tacs); func[0]->incref();
-  func[1] = new TACSStructuralMass(tacs); func[1]->incref();
-  func[2] = new TACSKSFailure(tacs, 100.0); func[2]->incref();
+  TACSFunction * func[num_funcs];
+  if (num_funcs == 1){
+    func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
+  }
+  else if (num_funcs == 2){
+    func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
+    func[1] = new TACSCompliance(tacs); func[1]->incref();
+  } 
+  else if (num_funcs == 3){
+    func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
+    func[1] = new TACSCompliance(tacs); func[1]->incref();
+    func[2] = new TACSStructuralMass(tacs); func[2]->incref();
+  }
 
-  TacsScalar *funcVals     = new TacsScalar[NUM_FUNCS]; // adjoint
-  TacsScalar *funcValsTmp  = new TacsScalar[NUM_FUNCS]; // CSD
-  TacsScalar *funcVals1    = new TacsScalar[NUM_FUNCS]; // forward/reverse
+  TacsScalar *funcVals     = new TacsScalar[num_funcs]; // adjoint
+  TacsScalar *funcValsTmp  = new TacsScalar[num_funcs]; // CSD
+  TacsScalar *funcVals1    = new TacsScalar[num_funcs]; // forward/reverse
 
-  TacsScalar *dfdx    = new TacsScalar[NUM_FUNCS*num_dvs]; // adjoint
-  TacsScalar *dfdx1   = new TacsScalar[NUM_FUNCS*num_dvs]; // CSD
-  TacsScalar *dfdxTmp = new TacsScalar[NUM_FUNCS*num_dvs]; // forward/reverse
+  TacsScalar *dfdx    = new TacsScalar[num_funcs*num_dvs]; // adjoint
+  TacsScalar *dfdx1   = new TacsScalar[num_funcs*num_dvs]; // CSD
+  TacsScalar *dfdxTmp = new TacsScalar[num_funcs*num_dvs]; // forward/reverse
 
   // Create an array of design variables
   TacsScalar *x = new TacsScalar[ num_dvs ]; 
@@ -200,7 +268,7 @@ int main( int argc, char **argv ){
 
   // Set paramters for time marching
   double tinit             = 0.0;
-  double tfinal            = 10.e-3; 
+  double tfinal            = 100.0e-3; 
   int    num_steps_per_sec = 1000;
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
@@ -212,69 +280,64 @@ int main( int argc, char **argv ){
   obj->setJacAssemblyFreq(1);
   obj->setAbsTol(1.0e-10);
   obj->setRelTol(1.0e-8);
-  obj->setPrintLevel(1);
-  //  obj->configureOutput(NULL, 1, "plate_%04d.f5");
-  //  obj->writeSolutionToF5();
+  obj->setPrintLevel(print_level);
+  obj->configureOutput(f5, write_solution, "output/plate_%04d.f5");
   
-  // Set functions of interest
-  obj->setFunction(func, NUM_FUNCS);
+  // Set functions of interest for adjoint solve
+  obj->setFunction(func, num_funcs);
 
-  // Complex step
-  obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-8);
-
-  // Adjoint gradient
+  // Get the adjoint gradient
+  double t0 = MPI_Wtime();
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
+  t0 = MPI_Wtime() - t0;
 
-  // Print error summary
-  for( int j = 0; j < NUM_FUNCS; j++) {
-    printf("[%d] CSD      func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcValsTmp[j]));
-    for ( int n = 0; n < num_dvs; n++) {
-      printf(" %15.8e ",  RealPart(dfdxTmp[n+j*num_dvs]));
+  // Print a summary of time taken
+  if (rank == 0){
+    obj->printWallTime(t0, 2);
+
+    // Print the adjoint derivative values
+    for( int j = 0; j < num_funcs; j++) {
+      printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", rank, j, RealPart(funcVals[j]));
+      for ( int n = 0; n < num_dvs; n++) {
+        printf(" %15.8e ",  RealPart(dfdx[n+j*num_dvs]));
+      }
+      printf("\n");
     }
     printf("\n");
   }
-  printf("\n");
- 
-  for( int j = 0; j < NUM_FUNCS; j++) {
-    printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcVals[j]));
-    for ( int n = 0; n < num_dvs; n++) {
-      printf(" %15.8e ",  RealPart(dfdx[n+j*num_dvs]));
+
+  // Test the adjoint derivatives if sought
+  if (test_gradient){
+
+    if ( rank == 0) { 
+      printf("Finding complex-step gradient...\n");
     }
-    printf("\n");
-  }
-  printf("\n");
 
-  // Error Summary
-  for ( int j = 0; j < NUM_FUNCS; j++ ) {
-    printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", mpiRank, j, RealPart(funcValsTmp[j])-RealPart(funcVals[j]) );
-    for ( int n = 0; n < num_dvs; n++ ) {
-      printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx[j*num_dvs+n]) );
+    // Complex step verification
+    obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-16);
+
+    if ( rank == 0) { 
+      // Print complex step derivative values
+      for( int j = 0; j < num_funcs; j++) {
+        printf("[%d] CSD      func: %d fval: %15.8e dfdx:", rank, j, RealPart(funcValsTmp[j]));
+        for ( int n = 0; n < num_dvs; n++) {
+          printf(" %15.8e ",  RealPart(dfdxTmp[n+j*num_dvs]));
+        }
+        printf("\n");
+      }
+      printf("\n");
+
+      // Print the differences between complex step and adjoint derivtives
+      for ( int j = 0; j < num_funcs; j++ ) {
+        printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", rank, j, RealPart(funcValsTmp[j])-RealPart(funcVals[j]) );
+        for ( int n = 0; n < num_dvs; n++ ) {
+          printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx[j*num_dvs+n]) );
+        }
+        printf("\n");
+      }
+      printf("\n");
     }
-    printf("\n");
   }
-  printf("\n");
-
-  /* // ADJOINT FORWARD REVERSE */
-  /* for( int j = 0; j < NUM_FUNCS; j++) { */
-  /*   funcVals1[j] = obj->forward(x, num_dvs, func[j]); */
-  /*   obj->reverse(&dfdx1[j], num_dvs, func[j]); */
-  /*   printf("[%d] BDF Adj FR   func: %d fval: %15.8e dfdx:", mpiRank, j, RealPart(funcVals1[j])); */
-  /*   for ( int n = 0; n < num_dvs; n++) { */
-  /*     printf(" %15.8e ",  RealPart(dfdx1[j*num_dvs+n])); */
-  /*   } */
-  /*   printf("\n"); */
-  /* } */
-  /* printf("\n"); */
-
-  /* // Error Summary */
-  /* for ( int j = 0; j < NUM_FUNCS; j++ ) { */
-  /*   printf("[%d] Error Adj FR   func: %d ferror: %15.8e dfdx error:", mpiRank, j, RealPart(funcValsTmp[j])-RealPart(funcVals1[j]) ); */
-  /*   for ( int n = 0; n < num_dvs; n++ ) { */
-  /*     printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx1[j*num_dvs+n]) ); */
-  /*   } */
-  /*   printf("\n"); */
-  /* } */
-  /* printf("\n"); */
 
   obj->decref();
 
@@ -283,10 +346,19 @@ int main( int argc, char **argv ){
   v0->decref();
   omega0->decref();
 
-  func[0]->decref();
-  func[1]->decref();
-  func[2]->decref();
- 
+  if (num_funcs == 1){
+    func[0]->decref();
+  }
+  else if (num_funcs == 2){
+    func[0]->decref();
+    func[1]->decref();
+  } 
+  else if (num_funcs == 3){
+    func[0]->decref();
+    func[1]->decref();
+    func[2]->decref();
+  }
+
   tacs->decref();
   
   delete [] dfdx;
