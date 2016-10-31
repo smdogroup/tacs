@@ -331,8 +331,8 @@ void TACSInducedFailure::finalThread( const double tcoef,
       }
     }
     else if (ftype == TACSFunction::INTEGRATE){
-      fail_numer += ctx->fail_numer;
-      fail_denom += ctx->fail_denom;
+      fail_numer += tcoef*ctx->fail_numer;
+      fail_denom += tcoef*ctx->fail_denom;
     }
   }
 }
