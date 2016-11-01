@@ -305,10 +305,7 @@ int main( int argc, char *argv[] ){
                      &num_nodes, &num_elems_x,
                      &num_elems_y,
                      &ptr_c, &conn_c, order);
-    /* double Xpts[] = {0.0, 0.0, 0.0,  */
-    /*                  2.0, -1.0, 0.0, */
-    /*                  1.0, 2.0, 0.0, */
-    /*                  4.0, 2.0, 0.0}; */
+
     double Xpts[] = {0.0,5.0, 0.0,
                      4.0,5.0, 0.0, 
                      1.0, 9.0, 0.0, 

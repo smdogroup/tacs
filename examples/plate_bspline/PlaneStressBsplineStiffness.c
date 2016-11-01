@@ -53,7 +53,7 @@ PlaneStressBsplineStiffness::PlaneStressBsplineStiffness( TacsScalar _rho,
   x = new TacsScalar[Lu*Lv];
   memcpy(x, _x, Lu*Lv*sizeof(double));
   xw = 0.0;
-  index = new int[order*order];
+  index = new int[order*order];  
 }
 
 PlaneStressBsplineStiffness::~PlaneStressBsplineStiffness(){
@@ -77,7 +77,7 @@ void PlaneStressBsplineStiffness::setDesignVars( const TacsScalar dvs[],
 void PlaneStressBsplineStiffness::getDesignVars( TacsScalar dvs[],
                                                  int numDVs ){
   if (dvNum < numDVs){
-    if (xw > 0){
+    if (xw > 0.0){
       dvs[dvNum] = xw;
     }
     else{
@@ -99,11 +99,12 @@ void PlaneStressBsplineStiffness::getPointwiseMass( const double pt[],
                                                     TacsScalar mass[] ){
   double N[16];
   getShapeFunctions(pt, N);
-  // Compute the topology variable
   xw = 0.0;
+  // Compute the topology variable
   for (int i = 0; i < order*order; i++){
     xw += N[i]*x[index[i]];
   }
+ 
   mass[0] = xw*rho;
 }
 // Evaluate the derivative of the mass w.r.t. the design variable and 
@@ -114,7 +115,8 @@ void PlaneStressBsplineStiffness::addPointwiseMassDVSens( const double pt[],
   if (dvNum < dvLen){
     double N[16];
     getShapeFunctions(pt, N);
-    int ind = findPatch();
+    int ind = findPatch(pNum);
+    
     // Multiply by corresponding shape function for pNum
     dvSens[dvNum] += alpha[0]*rho*N[ind];
   }
@@ -170,7 +172,7 @@ void PlaneStressBsplineStiffness::addStressDVSens( const double pt[],
                                 psi[2]*s[2]+psi[3]*s[3]+ 
                                 psi[4]*s[4]+psi[5]*s[5]);
     // Add the shape function corresponding to pNum
-    int ind = findPatch();
+    int ind = findPatch(pNum);
     dvSens[dvNum] += N[ind]*inner;
     
   }
@@ -224,15 +226,15 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
   TacsScalar fail = VonMisesFailurePlaneStress(s,ys);
   TacsScalar inner = alpha*r_factor_sens*fail;
   // Add the shape function product corresponding to pNum
-  int ind = findPatch();
+  int ind = findPatch(pNum);
   dvSens[dvNum] += N[ind]*inner;
   
 }
 // Find the index in the shape function tensor that belongs to the
 // current patch
-int PlaneStressBsplineStiffness::findPatch(){
+int PlaneStressBsplineStiffness::findPatch(int _dvNum){
   for (int i = 0; i < order*order; i++){
-    if (pNum == index[i]){
+    if (_dvNum == index[i]){
       return i;
     }
   }
@@ -297,19 +299,19 @@ void PlaneStressBsplineStiffness::computeIndexList( int **index,
   // Check if patch is on the boundary (bottom, left, right, top)
   if (pNum < (order-2)*Lu || pNum % Lu == 0 || 
       (pNum-(order-3)) % Lu == 0 || 
-      (pNum-Lv) % Lu == 0 ||
+      pNum % Lu == Lu-1 ||
       (pNum-Lv+(order-3)) % Lu == 0 ||
       pNum >= numDVs-(order-2)*Lu){    
     
     int start = 0;
     // Check if it is at one of the four corner
     // Lower left corner
-    if (pNum < 2 || pNum == Lu || pNum == Lu+order-3){
+    if (pNum < 2 || pNum == Lu || pNum == Lu+order-3){      
       start = 0;
     }
     // Lower right corner
-    else if ((pNum >= Lu-2 && pNum < Lu) || pNum == Lu+Lv ||
-             pNum == Lu+Lv-(order-3)){
+    else if ((pNum >= Lu-2 && pNum < Lu) ||
+             pNum == 2*Lu-1 || pNum == 2*Lu-1-(order-3)){
       start = Lu-order;
     }
     // Top left corner
@@ -346,9 +348,9 @@ void PlaneStressBsplineStiffness::computeIndexList( int **index,
         }
       }
       // For the right vertical interior boundary patches
-      else if ((pNum-Lv) % Lu == 0 ||
+      else if (pNum % Lu == Lu-1 ||
                (pNum-Lv+(order-3)) % Lu == 0 ){
-        if ((pNum-Lv) % Lu == 0){
+        if (pNum % Lu == Lu-1){
           start = pNum-Lu-(order-1);
         }
         else{
@@ -384,4 +386,5 @@ void PlaneStressBsplineStiffness::computeIndexList( int **index,
   }
   *index = _index;
 }
+
 

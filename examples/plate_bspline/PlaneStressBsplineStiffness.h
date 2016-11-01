@@ -61,7 +61,7 @@ class PlaneStressBsplineStiffness : public PlaneStressStiffness {
   
   // Misc helper functions
   // ---------------------
-  int findPatch();
+  int findPatch(int _dvNum);
   void getShapeFunctions( const double pt[], 
                           double N[] );
   void computeIndexList( int **index,
