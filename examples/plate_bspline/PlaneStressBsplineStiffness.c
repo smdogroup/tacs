@@ -103,8 +103,7 @@ void PlaneStressBsplineStiffness::getPointwiseMass( const double pt[],
   // Compute the topology variable
   for (int i = 0; i < order*order; i++){
     xw += N[i]*x[index[i]];
-  }
- 
+  } 
   mass[0] = xw*rho;
 }
 // Evaluate the derivative of the mass w.r.t. the design variable and 
@@ -115,10 +114,15 @@ void PlaneStressBsplineStiffness::addPointwiseMassDVSens( const double pt[],
   if (dvNum < dvLen){
     double N[16];
     getShapeFunctions(pt, N);
-    int ind = findPatch(pNum);
+    //int ind = findPatch(pNum);
+    
+    // Multiply by corresponding shape function in the filter range
+    for (int i = 0; i < order*order; i++){
+      dvSens[index[i]] += alpha[0]*rho*N[i];
+    }
     
     // Multiply by corresponding shape function for pNum
-    dvSens[dvNum] += alpha[0]*rho*N[ind];
+    //dvSens[dvNum] += alpha[0]*rho*N[ind];
   }
 }
 // Calculate the stress at the integration point
@@ -142,8 +146,8 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
   G = 0.5*(1.0-2.0*nu)*D*w;  
   
   stress[0] = D11*strain[0]+D12*(strain[1]+strain[2]);
-  stress[0] = D11*strain[1]+D12*(strain[0]+strain[2]);
-  stress[0] = D11*strain[2]+D12*(strain[0]+strain[1]);
+  stress[1] = D11*strain[1]+D12*(strain[0]+strain[2]);
+  stress[2] = D11*strain[2]+D12*(strain[0]+strain[1]);
 
   stress[3] = G*strain[3];
   stress[4] = G*strain[4];
@@ -171,10 +175,10 @@ void PlaneStressBsplineStiffness::addStressDVSens( const double pt[],
     TacsScalar inner = alpha*w*(psi[0]*s[0]+psi[1]*s[1]+
                                 psi[2]*s[2]+psi[3]*s[3]+ 
                                 psi[4]*s[4]+psi[5]*s[5]);
-    // Add the shape function corresponding to pNum
-    int ind = findPatch(pNum);
-    dvSens[dvNum] += N[ind]*inner;
-    
+    // Add the shape function corresponding to the filter range
+    for (int i = 0; i < order*order; i++){
+      dvSens[index[i]] += inner*N[i];
+    }
   }
 }
 
@@ -225,9 +229,12 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
   TacsScalar w = (1.0+q)/(dxw*dxw);
   TacsScalar fail = VonMisesFailurePlaneStress(s,ys);
   TacsScalar inner = alpha*r_factor_sens*fail;
-  // Add the shape function product corresponding to pNum
-  int ind = findPatch(pNum);
-  dvSens[dvNum] += N[ind]*inner;
+  // Add the shape function product corresponding to filter range
+  for (int i = 0; i < order*order; i++){
+    dvSens[index[i]] += N[i]*inner;
+  }
+  /* int ind = findPatch(pNum); */
+  /* dvSens[dvNum] += N[ind]*inner; */
   
 }
 // Find the index in the shape function tensor that belongs to the
