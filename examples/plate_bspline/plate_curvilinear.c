@@ -1,5 +1,6 @@
 #include "PlaneStressBspline.h"
 #include "PlaneStressBsplineAll.h"
+#include "PlaneStressBsplineStiffness.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
 // Convert patch mesh to control point mesh
@@ -73,8 +74,6 @@ void controlPointMesh(int *num_nodes_x, int *num_nodes_y,
   }
   *ptr = _ptr;
   *conn = _conn;
-  //delete [] _ptr;
-  //delete [] _conn;
 }
 // Generate the knot vectors for given number of patches in the x and
 // y direction
@@ -117,8 +116,7 @@ void controlXpts(double Xpts[], double **Xpts_c,
   double edge_pt[3*(2*ncp_x+2*ncp_y)];
   int ind = 0;
   // Compute the control points on the exterior boundary
-  for (int i = 0; i < 4; i++){
-   
+  for (int i = 0; i < 4; i++){   
     double a[] = {Xpts[3*edge_index[2*i]], Xpts[3*edge_index[2*i]+1]};
     double b[] = {Xpts[3*edge_index[2*i+1]],Xpts[3*edge_index[2*i+1]+1]};
     
@@ -176,8 +174,8 @@ void controlXpts(double Xpts[], double **Xpts_c,
   }
   // Input the last exterior control points
   for (int i = 0; i < ncp_x; i++){
-    _Xpts[3*ind] = edge_pt[3*(3*ncp_x+i)+0];
-    _Xpts[3*ind+1] = edge_pt[3*(3*ncp_x+i)+1];
+    _Xpts[3*ind] = edge_pt[3*(ncp_x+2*ncp_y+i)+0];
+    _Xpts[3*ind+1] = edge_pt[3*(ncp_x+2*ncp_y+i)+1];
     _Xpts[3*ind+2] = 0.0;
     /* printf("%d Xpts: %e %e \n", i,  */
     /*        _Xpts[3*ind], _Xpts[3*ind+1]); */
@@ -202,18 +200,12 @@ int main( int argc, char *argv[] ){
   // Allocate the TACS creator
   TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, 2);
   creator->incref();
-
-  // Create the stiffness object
-  PlaneStressStiffness *stiff = new PlaneStressStiffness(2700.0,
-                                                         70.0e9, 0.3);
-  stiff->incref();
   
   // Number of knot intervals without the repeating knots
   int Lu = 50, Lv = 50;
-  TACSElement *elem[Lu*Lv];
   int ind = 0;
-  int order = 3;
   // Order of the Bspline
+  int order = 3;
   for (int k = 0; k < argc; k++){
     int _order, _Lu, _Lv;
     if (sscanf(argv[k], "order=%d", &_order) == 1){
@@ -229,30 +221,58 @@ int main( int argc, char *argv[] ){
   printf("Order is %d \n", order);
   printf("Nx: %d \n", Lu);
   printf("Ny: %d \n", Lv);
+
+  TACSElement **elem = new TACSElement*[Lu*Lv];
   
+  double *Tu, *Tv;
+  knotVector(Lu, Lv,order, &Tu, &Tv);
+  
+  /* for (int i = 0; i < Lu+1+2*(order-1); i++){ */
+  /*   printf("Tu[%d]: %e\n", i,Tu[i]); */
+  /* } */
+  TacsScalar *x = new TacsScalar[Lu*Lv];
+  for (int i = 0; i < Lu*Lv; i++){
+    x[i] = 0.5;
+  }
+   
   if (order == 4){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
-         double *Tu, *Tv;
-         knotVector(Lu, Lv,order, &Tu, &Tv);
-         
-         elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
-                                                  Lu, Lv,
-                                                  LINEAR,
-                                                  0, ind);
-         
-         elem[ind]->incref();
-         ind++;
+        // Create the stiffness object
+        /* PlaneStressBsplineStiffness *stiff =  */
+        /*   new PlaneStressBsplineStiffness(2700.0, 70.0e9, */
+        /*                                   0.3, 280e6, 0.0, */
+        /*                                   x, 0.0, 1e-3, */
+        /*                                   Tu, Tv, Lu, Lv, */
+        /*                                   ind, order); */
+        PlaneStressStiffness *stiff = 
+          new PlaneStressStiffness(2700.0,70.0e9, 0.3);
+        stiff->incref();
+                                          
+        elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
+                                                 Lu, Lv,
+                                                 LINEAR,
+                                                 0, ind);
+        stiff->decref();
+        elem[ind]->incref();
+        ind++;
       }
     }
   }
   else if (order == 3){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
-        double *Tu, *Tv;
-        printf("1Lu: %d \n", Lu);
-        knotVector(Lu, Lv,order, &Tu, &Tv);
-        printf("2Lu: %d \n", Lu);
+        // Create the stiffness object
+        PlaneStressBsplineStiffness *stiff =
+          new PlaneStressBsplineStiffness(2700.0, 70.0e9,
+                                          0.3, 280e6, 0.0,
+                                          x, 0.0, 1e-3,
+                                          Tu, Tv, Lu, Lv,
+                                          ind, order);
+        /* PlaneStressStiffness *stiff =  */
+        /*   new PlaneStressStiffness(2700.0,70.0e9, 0.3); */
+        stiff->incref();
+        
         /* elem[ind] = new PlaneStressBspline(stiff,Tu,Tv, */
         /*                                    Lu, Lv, */
         /*                                    LINEAR, */
@@ -261,7 +281,7 @@ int main( int argc, char *argv[] ){
                                                  Lu, Lv,
                                                  LINEAR,
                                                  0, ind);
-        printf("3Lu: %d \n", Lu);
+        stiff->decref();
         elem[ind]->incref();
         ind++;
       }
@@ -275,7 +295,7 @@ int main( int argc, char *argv[] ){
     int num_elems_x = 1*Lu, num_elems_y = 1*Lv;
     int num_elems = num_elems_x*num_elems_y;
     int *ptr_c, *conn_c;
-    printf("Here \n");
+    
     int *elem_ids = new int[Lu*Lv];
     for (int i = 0; i < Lu*Lv; i++){
       elem_ids[i] = i*1;
@@ -285,10 +305,7 @@ int main( int argc, char *argv[] ){
                      &num_nodes, &num_elems_x,
                      &num_elems_y,
                      &ptr_c, &conn_c, order);
-    /* double Xpts[] = {0.0, 0.0, 0.0,  */
-    /*                  2.0, -1.0, 0.0, */
-    /*                  1.0, 2.0, 0.0, */
-    /*                  4.0, 2.0, 0.0}; */
+
     double Xpts[] = {0.0,5.0, 0.0,
                      4.0,5.0, 0.0, 
                      1.0, 9.0, 0.0, 
@@ -429,7 +446,13 @@ int main( int argc, char *argv[] ){
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
+  tacs->setDesignVars(x, Lu*Lv);
+  // Test the element
   /* tacs->testElement(0,2); */
+  /* tacs->decref(); */
+  /* exit(0); */
+  // Test the constitutive class
+  /* tacs->testConstitutive(0,2); */
   /* tacs->decref(); */
   /* exit(0); */
   // Create the preconditioner
@@ -503,6 +526,9 @@ int main( int argc, char *argv[] ){
   f5->writeToFile(filename);
   
   // Free everything
+  if (x){
+    delete [] x;
+  }
   f5->decref();
   
   // Decrease the reference count to the linear algebra objects
@@ -512,15 +538,12 @@ int main( int argc, char *argv[] ){
   ans->decref();
   res->decref();
   // Decrease the reference count to everything else
-  stiff->decref();
   if (elem){
-    for (int i = 0; i < 1; i++){
+    for (int i = 0; i < Lu*Lv; i++){
       elem[i]->decref();
     }
   }
-  creator->decref();
-
-  
+  creator->decref();  
   MPI_Finalize();
   return 0;
 }
