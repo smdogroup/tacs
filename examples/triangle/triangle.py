@@ -157,7 +157,7 @@ funcs = []
 # Create the KS function
 ksweight = 100.0
 for i in xrange(1):
-    funcs.append(functions.ksfailure(tacs, ksweight))
+    funcs.append(functions.KSFailure(tacs, ksweight))
 
 func_vals = tacs.evalFunctions(funcs)
 
