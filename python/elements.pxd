@@ -19,7 +19,7 @@ cdef extern from "TACSElement.h":
       
 cdef extern from "TACSGibbsVector.h":
    cdef cppclass TACSGibbsVector(TACSObject):
-      TACSGibbsVector(const TacsScalar x[])
+      TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
 
 cdef extern from "RigidBody.h":
    cdef cppclass TACSRefFrame(TACSObject):
