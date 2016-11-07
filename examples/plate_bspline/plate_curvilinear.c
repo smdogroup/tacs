@@ -263,13 +263,15 @@ int main( int argc, char *argv[] ){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         // Create the stiffness object
+        
         PlaneStressBsplineStiffness *stiff =
           new PlaneStressBsplineStiffness(2700.0, 70.0e9,
                                           0.3, 280e6, 0.0,
                                           x, 0.0, 1e-3,
                                           Tu, Tv, Lu, Lv,
                                           ind, order);
-        /* PlaneStressStiffness *stiff =  */
+        
+         /* PlaneStressStiffness *stiff =  */
         /*   new PlaneStressStiffness(2700.0,70.0e9, 0.3); */
         stiff->incref();
         
@@ -448,9 +450,9 @@ int main( int argc, char *argv[] ){
   tacs->incref();
   tacs->setDesignVars(x, Lu*Lv);
   // Test the element
-  /* tacs->testElement(0,2); */
-  /* tacs->decref(); */
-  /* exit(0); */
+  tacs->testElement(0,2);
+  tacs->decref();
+  exit(0);
   // Test the constitutive class
   /* tacs->testConstitutive(0,2); */
   /* tacs->decref(); */

@@ -130,7 +130,7 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
                                                    const TacsScalar strain[],
                                                    TacsScalar stress[]){
   // Compute the material parameters
-  TacsScalar D = E/(1.0-nu*nu);
+ 
   double N[16];
   getShapeFunctions(pt, N);
   // Compute the topology variable
@@ -140,19 +140,11 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
   }
   
   TacsScalar w = xw/(1.0+q*(1.0-xw));
+  TacsScalar D = E/(1.0-nu*nu)*w;
   
-  D11 = D*(1.0-nu)*w;
-  D12 = D*nu*w;
-  G = 0.5*(1.0-2.0*nu)*D*w;  
-  
-  stress[0] = D11*strain[0]+D12*(strain[1]+strain[2]);
-  stress[1] = D11*strain[1]+D12*(strain[0]+strain[2]);
-  stress[2] = D11*strain[2]+D12*(strain[0]+strain[1]);
-
-  stress[3] = G*strain[3];
-  stress[4] = G*strain[4];
-  stress[5] = G*strain[5];
-  
+  stress[0] = D*strain[0]+nu*D*strain[1];
+  stress[1] = D*nu*strain[0]+D*strain[1];
+  stress[2] = 0.5*(1.0-nu)*D*strain[2];
 }
 // Compute the derivative of the stress w.r.t. the design variable
 void PlaneStressBsplineStiffness::addStressDVSens( const double pt[], 
