@@ -371,7 +371,7 @@ int TACSElement::testJacobian( double time,
   double gamma = (1.0*rand())/RAND_MAX;
   memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
   addJacobian(time, mat, alpha, beta, gamma,
-		       Xpts, vars, dvars, ddvars);
+              Xpts, vars, dvars, ddvars);
 
   // Evaluate the Jacobian
   int one = 1;
