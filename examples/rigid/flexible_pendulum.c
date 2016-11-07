@@ -31,8 +31,8 @@ int main( int argc, char *argv[] ){
     // Determine the problem size
     if (sscanf(argv[i], "scale=%d", &scale) == 1){
       if (scale < 0){ scale = 1; }
-      if (scale > 10){ scale = 10; }
-      if (rank ==0){ printf("Problem scale = %d\n", scale); }
+      if (scale > 100){ scale = 100; }
+      printf("Problem scale = %d\n", scale); 
     }
     // Determine the number of functions for adjoint
     if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
@@ -41,7 +41,7 @@ int main( int argc, char *argv[] ){
       if (rank == 0){ printf("Number of functions : %d\n", num_funcs); }
     }
 
-    // Determine the number of functions for adjoint
+    // Determine the number of threads
     if (sscanf(argv[i], "num_threads=%d", &num_threads) == 1){
       if (num_threads < 0){ num_threads = 1; }
       if (num_threads > 24){ num_threads = 24; }
@@ -195,7 +195,7 @@ int main( int argc, char *argv[] ){
   // Create the objects associated with the rigid-bodies
   // ---------------------------------------------------
   // The acceleration due to gravity in global frame of reference
-  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.8);
+  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.81);
 
   // Create the constitutive objects
   TacsScalar rho = 2500.0;
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] ){
   // Set up the parameters for the TACSIntegrator
   double tinit = 0.0;
   double tfinal = 0.1;
-  int steps_per_second = 1000; 
+  int steps_per_second = 100; 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     steps_per_second, 
                                                     type);
@@ -274,12 +274,15 @@ int main( int argc, char *argv[] ){
   
   // Set optional parameters
   obj->setRelTol(1.0e-8);
-  obj->setAbsTol(1.0e-12);
-  obj->setMaxNewtonIters(50);
-  obj->setPrintLevel(1);
+  obj->setAbsTol(1.0e-8);
+  obj->setMaxNewtonIters(10);
+  obj->setPrintLevel(3);
   obj->setJacAssemblyFreq(1);
   obj->setUseLapack(0);
-  
+  obj->setUseLineSearch(0);
+
+  //obj->configureOutput(f5, 10, "output/flex_pendulum_%04d.f5");
+
   // Set functions of interest
   obj->setFunction(func, num_funcs);
   

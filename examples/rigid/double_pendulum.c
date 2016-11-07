@@ -46,6 +46,7 @@ int main( int argc, char *argv[] ){
                                             mA, cA, JA,
                                             rAInitVec, zero, zero, gravVec);
   bodyA->setVisualization(vizA);
+  bodyA->setComponentNum(0);
   bodyA->incref();
 
   // Define the inertial properties
@@ -66,6 +67,7 @@ int main( int argc, char *argv[] ){
                                             mB, cB, JB,
                                             rBInitVec, zero, zero, gravVec);
   bodyB->setVisualization(vizB);
+  bodyA->setComponentNum(1);
   bodyB->incref();
 
   // Create the constraint points

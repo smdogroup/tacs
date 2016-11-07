@@ -132,6 +132,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Set the default LINEAR solver
   use_lapack = 0;
+  use_line_search = 0;
     
   // Default parameters for Newton solve
   max_newton_iters = 25;
@@ -237,7 +238,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       D->incref();
       
       // Allocate the factorization
-      int lev = 10000000; double fill = 10.0; int reorder_schur = 1;
+      int lev = 100000; double fill = 10.0; int reorder_schur = 1;
       pc = new PcScMat(D, lev, fill, reorder_schur);
       pc->incref();
       
@@ -255,7 +256,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
   
     // The Krylov subspace method (KSM) associated with the solver
-    int gmres_iters = 20, num_restarts = 0, is_flexible = 0;
+    int gmres_iters = 10, num_restarts = 0, is_flexible = 0;
     ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
     ksm->incref();
   }
@@ -282,8 +283,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
   // Iterate until max iters or R <= tol
   double delta = 0.0;
-  for ( niter = 0; niter < max_newton_iters; niter++ ){
-    
+  for ( niter = 0; niter < max_newton_iters; niter++ ){    
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
 
@@ -350,7 +350,7 @@ void TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
         pc->factor();
       }
       time_fwd_factor += MPI_Wtime() - t1;      
- 
+
       // Solve for update using KSM
       double t2 = MPI_Wtime();
       ksm->solve(res, update);
@@ -574,6 +574,10 @@ void TACSIntegrator::getFuncGrad( int _num_dv,
   num_design_vars = _num_dv;
   tacs->setDesignVars(_x, num_design_vars);
 
+  //tacs->getDesignVars(xvals, num_design_vars);
+  //MPI_Allreduce(MPI_IN_PLACE, xvals, num_design_vars, TACS_MPI_TYPE,
+  //TACS_MPI_MAX, comm);
+
   // Check whether the function has been set properly
   if (num_funcs == 0 || funcs == NULL) {
     fprintf(stderr, "TACS Warning: Function is not set\n");
@@ -606,6 +610,10 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
   // Copy the inputs
   num_design_vars = _num_dv;
   tacs->setDesignVars(_x, num_design_vars);
+
+  //tacs->getDesignVars(xvals, num_design_vars);
+  //MPI_Allreduce(MPI_IN_PLACE, xvals, num_design_vars, TACS_MPI_TYPE,
+  //TACS_MPI_MAX, comm);
 
   // Check whether the function has been set properly
   if (num_funcs == 0 || funcs == NULL) {

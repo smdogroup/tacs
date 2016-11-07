@@ -36,11 +36,9 @@ cdef class Element:
    
 cdef class GibbsVector:
    cdef TACSGibbsVector *ptr
-   def __cinit__(self, np.ndarray[TacsScalar, ndim=1, mode='c'] x):
-      assert(len(x) == 3)
-      self.ptr = new TACSGibbsVector(<TacsScalar*>x.data)
+   def __cinit__(self, x, y, z):
+      self.ptr = new TACSGibbsVector(x, y, z)
       self.ptr.incref()
-      return
    def __dealloc__(self):
       self.ptr.decref()
       return
