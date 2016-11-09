@@ -130,7 +130,6 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
                                                    const TacsScalar strain[],
                                                    TacsScalar stress[]){
   // Compute the material parameters
- 
   double N[16];
   getShapeFunctions(pt, N);
   // Compute the topology variable
@@ -145,6 +144,7 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
   stress[0] = D*strain[0]+nu*D*strain[1];
   stress[1] = D*nu*strain[0]+D*strain[1];
   stress[2] = 0.5*(1.0-nu)*D*strain[2];
+
 }
 // Compute the derivative of the stress w.r.t. the design variable
 void PlaneStressBsplineStiffness::addStressDVSens( const double pt[], 
@@ -161,15 +161,20 @@ void PlaneStressBsplineStiffness::addStressDVSens( const double pt[],
       xw += N[i]*x[index[i]];
     }
     TacsScalar s[6];
-    calculateStress(pt, strain,s);
     TacsScalar dxw = 1.0+q*(1.0-xw);
     TacsScalar w = ((1.0+q)/(dxw*dxw));
-    TacsScalar inner = alpha*w*(psi[0]*s[0]+psi[1]*s[1]+
-                                psi[2]*s[2]+psi[3]*s[3]+ 
-                                psi[4]*s[4]+psi[5]*s[5]);
+    TacsScalar D = E/(1.0-nu*nu)*w;
+    s[0] = D*strain[0]+nu*D*strain[1];
+    s[1] = D*nu*strain[0]+D*strain[1];
+    s[2] = 0.5*(1.0-nu)*D*strain[2];
+
+    s[3] = s[4] = s[5] = 0.0;
+    TacsScalar inner = alpha*(psi[0]*s[0]+psi[1]*s[1]+
+                              psi[2]*s[2]+psi[3]*s[3]+
+                              psi[4]*s[4]+psi[5]*s[5]);
     // Add the shape function corresponding to the filter range
     for (int i = 0; i < order*order; i++){
-      dvSens[index[i]] += inner*N[i];
+      dvSens[index[i]] += inner*N[i]*w;
     }
   }
 }
@@ -216,9 +221,14 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
     r_factor_sens = epsilon*d*d;
   }
   TacsScalar s[6];
-  calculateStress(pt, strain, s);
   TacsScalar dxw = 1.0+q*(1.0-xw);
   TacsScalar w = (1.0+q)/(dxw*dxw);
+  TacsScalar D = E/(1.0 - nu*nu)*w;
+  s[0] = D*strain[0]+nu*D*strain[1];
+  s[1] = D*nu*strain[0]+D*strain[1];
+  s[2] = 0.5*(1.0-nu)*D*strain[2];
+  
+  s[3] = s[4] = s[5] = 0.0;
   TacsScalar fail = VonMisesFailurePlaneStress(s,ys);
   TacsScalar inner = alpha*r_factor_sens*fail;
   // Add the shape function product corresponding to filter range
