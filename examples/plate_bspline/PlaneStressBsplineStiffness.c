@@ -181,6 +181,7 @@ void PlaneStressBsplineStiffness::addStressDVSens( const double pt[],
     if (is_simp){
       w = pow(xw,q-1)*q;
     }
+    
     TacsScalar D = E/(1.0-nu*nu)*w;
     s[0] = D*strain[0]+nu*D*strain[1];
     s[1] = D*nu*strain[0]+D*strain[1];
@@ -217,8 +218,12 @@ void PlaneStressBsplineStiffness::failure( const double pt[],
   if (epsilon > 0.0){
     r_factor = xw/(epsilon*(1.0-xw)+xw);
   }
-  TacsScalar s[6];
-  calculateStress(pt, strain, s);
+  TacsScalar s[3];
+  TacsScalar D = E/(1.0 - nu*nu);
+  s[0] = D*strain[0]+nu*D*strain[1];
+  s[1] = D*nu*strain[0]+D*strain[1];
+  s[2] = 0.5*(1.0-nu)*D*strain[2];
+  
   *fail = r_factor*VonMisesFailurePlaneStress(s,ys);
 }
 // Evaluate the failure criteria w.r.t. design variables
@@ -242,18 +247,18 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
     TacsScalar d = 1.0/(epsilon*(1.0-xw)+xw);
     r_factor_sens = epsilon*d*d;
   }
-  TacsScalar s[6];
+  TacsScalar s[3];
   TacsScalar dxw = 1.0+q*(1.0-xw);
   TacsScalar w = (1.0+q)/(dxw*dxw);
   if (is_simp){
     w = pow(xw,q-1)*q;
   }
-  TacsScalar D = E/(1.0 - nu*nu)*w;
+  
+  TacsScalar D = E/(1.0 - nu*nu);
   s[0] = D*strain[0]+nu*D*strain[1];
   s[1] = D*nu*strain[0]+D*strain[1];
   s[2] = 0.5*(1.0-nu)*D*strain[2];
-  
-  s[3] = s[4] = s[5] = 0.0;
+ 
   TacsScalar fail = VonMisesFailurePlaneStress(s,ys);
   TacsScalar inner = alpha*r_factor_sens*fail;
   // Add the shape function product corresponding to filter range
@@ -263,16 +268,36 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
     }
   }
 }
-/* // Find the index in the shape function tensor that belongs to the */
-/* // current patch */
-/* int PlaneStressBsplineStiffness::findPatch(int _dvNum){ */
-/*   for (int i = 0; i < order*order; i++){ */
-/*     if (_dvNum == index[i]){ */
-/*       return i; */
-/*     } */
-/*   } */
-/*   return -1; */
-/* } */
+
+void PlaneStressBsplineStiffness::failureStrainSens( const double pt[], 
+                                                     const TacsScalar strain[],
+                                                     TacsScalar sens[]){
+  TacsScalar s[3], ps_sens[3];
+  // Use the von Mises failure criterion
+  // Compute the relaxation factor
+  TacsScalar r_factor = 1.0;
+  // Compute the topology variable
+  double N[16];
+  getShapeFunctions(pt, N);
+  xw = 0.0;
+  for (int i = 0; i < order*order; i++){
+    if (index[i] != -1){
+      xw += N[i]*x[index[i]];
+    }
+  }
+  
+  if (epsilon > 0.0){
+    r_factor = xw/(epsilon*(1.0-xw)+xw);
+  }
+  TacsScalar D = E/(1.0 - nu*nu);
+  s[0] = D*strain[0]+nu*D*strain[1];
+  s[1] = D*nu*strain[0]+D*strain[1];
+  s[2] = 0.5*(1.0-nu)*D*strain[2];
+  TacsScalar fail = VonMisesFailurePlaneStressSens(ps_sens, s, ys);
+  sens[0] = r_factor*D*(ps_sens[0]+nu*ps_sens[1]);
+  sens[1] = r_factor*D*(nu*ps_sens[0]+ps_sens[1]);
+  sens[2] = r_factor*0.5*(1.0-nu)*D*ps_sens[2];
+}
 
 void PlaneStressBsplineStiffness::getShapeFunctions( const double pt[], 
                                                      double N[]){
