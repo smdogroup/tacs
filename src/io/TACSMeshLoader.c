@@ -581,6 +581,14 @@ void TACSMeshLoader::setElement( int component_num,
   }
 }
 
+/*
+  Set whether to convert to coordinate ordering before creating
+  elements
+*/
+void TACSMeshLoader::setConvertToCoordinate( int flag ){
+  convertToCoordinate = flag;
+}
+
 const char *TACSMeshLoader::getComponentDescript( int comp_num ){
   if (component_descript && (comp_num >= 0) && 
       (comp_num < num_components)){
