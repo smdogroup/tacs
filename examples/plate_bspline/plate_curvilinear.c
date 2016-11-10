@@ -157,8 +157,8 @@ void controlXpts(double Xpts[], double **Xpts_c,
   for (int i = 0; i < ncp_y-2; i++){
     double a[] = {edge_pt[3*(ncp_x+i+1)],
                   edge_pt[3*(ncp_x+i+1)+1]};
-    double b[] = {edge_pt[3*(2*ncp_x+i+1)],
-                  edge_pt[3*(2*ncp_x+i+1)+1]};
+    double b[] = {edge_pt[3*(ncp_x+ncp_y+i+1)],
+                  edge_pt[3*(ncp_x+ncp_y+i+1)+1]};
     /* printf("%d a: %e %e \n", i, a[0], a[1]); */
     /* printf("%d b: %e %e \n", i, b[0], b[1]); */
     double ix = (b[0]-a[0])/(ncp_x-1);
@@ -239,14 +239,14 @@ int main( int argc, char *argv[] ){
     for (int j = 0; j < Lv; j++){
       for (int i = 0; i < Lu; i++){
         // Create the stiffness object
-        /* PlaneStressBsplineStiffness *stiff =  */
-        /*   new PlaneStressBsplineStiffness(2700.0, 70.0e9, */
-        /*                                   0.3, 280e6, 0.0, */
-        /*                                   x, 0.0, 1e-3, */
-        /*                                   Tu, Tv, Lu, Lv, */
-        /*                                   ind, order); */
-        PlaneStressStiffness *stiff = 
-          new PlaneStressStiffness(2700.0,70.0e9, 0.3);
+        PlaneStressBsplineStiffness *stiff =
+          new PlaneStressBsplineStiffness(2700.0, 70.0e9,
+                                          0.3, 280e6, 0.01,
+                                          x, 0.0, 1e-3,
+                                          Tu, Tv, Lu, Lv,
+                                          ind, order);
+        /* PlaneStressStiffness *stiff =  */
+        /*   new PlaneStressStiffness(2700.0,70.0e9, 0.3); */
         stiff->incref();
                                           
         elem[ind] = new PlaneStressBsplineAll<4>(stiff,Tu,Tv,
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] ){
         
         PlaneStressBsplineStiffness *stiff =
           new PlaneStressBsplineStiffness(2700.0, 70.0e9,
-                                          0.3, 280e6, 0.0,
+                                          0.3, 280e6, 0.01,
                                           x, 0.0, 1e-3,
                                           Tu, Tv, Lu, Lv,
                                           ind, order);
@@ -308,10 +308,10 @@ int main( int argc, char *argv[] ){
                      &num_elems_y,
                      &ptr_c, &conn_c, order);
 
-    double Xpts[] = {0.0,5.0, 0.0,
-                     4.0,5.0, 0.0, 
-                     1.0, 9.0, 0.0, 
-                     5.0, 9.0, 0.0};
+    double Xpts[] = {0.0,0.0, 0.0,
+                     5.0,0.0, 0.0, 
+                     0.0, 5.0, 0.0, 
+                     5.0, 5.0, 0.0};
     printf("num_nodes: %d, num_elems: %d %d %d\n", num_nodes, num_elems,
            Lu, Lv);
     creator->setGlobalConnectivity(num_nodes, num_elems, 
@@ -449,10 +449,10 @@ int main( int argc, char *argv[] ){
   TACSAssembler *tacs = creator->createTACS();
   tacs->incref();
   tacs->setDesignVars(x, Lu*Lv);
-  // Test the element
-  tacs->testElement(0,2);
-  tacs->decref();
-  exit(0);
+  /* // Test the element */
+  /* tacs->testElement(0,2); */
+  /* tacs->decref(); */
+  /* exit(0); */
   // Test the constitutive class
   /* tacs->testConstitutive(0,2); */
   /* tacs->decref(); */

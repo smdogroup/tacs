@@ -22,7 +22,8 @@ PlaneStressBsplineStiffness::PlaneStressBsplineStiffness( TacsScalar _rho,
                                                           double *_Tu, double *_Tv,
                                                           int _Lu, int _Lv, 
                                                           int _pNum,
-                                                          int _order ){
+                                                          int _order,
+                                                          int _is_simp){
   // Number of knot intervals
   Lu = _Lu;
   Lv = _Lv;
@@ -54,6 +55,14 @@ PlaneStressBsplineStiffness::PlaneStressBsplineStiffness( TacsScalar _rho,
   memcpy(x, _x, Lu*Lv*sizeof(double));
   xw = 0.0;
   index = new int[order*order];  
+  is_simp = _is_simp;
+  // Compute the filter region for this element
+  computeIndexList(&index, Lu*Lv);
+  /* printf("index[%d]: ", pNum); */
+  /* for (int i = 0; i < order*order; i++){ */
+  /*   printf("%d ",index[i]); */
+  /* } */
+  /* printf("\n"); */
 }
 
 PlaneStressBsplineStiffness::~PlaneStressBsplineStiffness(){
@@ -70,8 +79,7 @@ void PlaneStressBsplineStiffness::setDesignVars( const TacsScalar dvs[],
                                                  int numDVs ){
   if (dvNum < numDVs){
     memcpy(x, dvs, numDVs*sizeof(TacsScalar));
-  }    
-  computeIndexList(&index, numDVs);
+  }  
 }
 // Get the design variables
 void PlaneStressBsplineStiffness::getDesignVars( TacsScalar dvs[],
@@ -102,8 +110,10 @@ void PlaneStressBsplineStiffness::getPointwiseMass( const double pt[],
   xw = 0.0;
   // Compute the topology variable
   for (int i = 0; i < order*order; i++){
-    xw += N[i]*x[index[i]];
-  } 
+    if (index[i] != -1){
+      xw += N[i]*x[index[i]];
+    } 
+  }
   mass[0] = xw*rho;
 }
 // Evaluate the derivative of the mass w.r.t. the design variable and 
@@ -114,15 +124,13 @@ void PlaneStressBsplineStiffness::addPointwiseMassDVSens( const double pt[],
   if (dvNum < dvLen){
     double N[16];
     getShapeFunctions(pt, N);
-    //int ind = findPatch(pNum);
     
     // Multiply by corresponding shape function in the filter range
     for (int i = 0; i < order*order; i++){
-      dvSens[index[i]] += alpha[0]*rho*N[i];
-    }
-    
-    // Multiply by corresponding shape function for pNum
-    //dvSens[dvNum] += alpha[0]*rho*N[ind];
+      if (index[i] != -1){
+        dvSens[index[i]] += alpha[0]*rho*N[i];
+      }
+    }    
   }
 }
 // Calculate the stress at the integration point
@@ -135,10 +143,15 @@ void PlaneStressBsplineStiffness::calculateStress( const double pt[],
   // Compute the topology variable
   xw = 0.0;
   for (int i = 0; i < order*order; i++){
-    xw += N[i]*x[index[i]];
+    if (index[i] != -1){
+      xw += N[i]*x[index[i]];
+    }
   }
   
   TacsScalar w = xw/(1.0+q*(1.0-xw));
+  if (is_simp){
+    w = pow(xw,q);
+  }
   TacsScalar D = E/(1.0-nu*nu)*w;
   
   stress[0] = D*strain[0]+nu*D*strain[1];
@@ -158,23 +171,28 @@ void PlaneStressBsplineStiffness::addStressDVSens( const double pt[],
     getShapeFunctions(pt, N);
     xw = 0.0;
     for (int i = 0; i < order*order; i++){
-      xw += N[i]*x[index[i]];
+      if (index[i] != -1){
+        xw += N[i]*x[index[i]];
+      }
     }
-    TacsScalar s[6];
+    TacsScalar s[3];
     TacsScalar dxw = 1.0+q*(1.0-xw);
     TacsScalar w = ((1.0+q)/(dxw*dxw));
+    if (is_simp){
+      w = pow(xw,q-1)*q;
+    }
     TacsScalar D = E/(1.0-nu*nu)*w;
     s[0] = D*strain[0]+nu*D*strain[1];
     s[1] = D*nu*strain[0]+D*strain[1];
     s[2] = 0.5*(1.0-nu)*D*strain[2];
 
-    s[3] = s[4] = s[5] = 0.0;
     TacsScalar inner = alpha*(psi[0]*s[0]+psi[1]*s[1]+
-                              psi[2]*s[2]+psi[3]*s[3]+
-                              psi[4]*s[4]+psi[5]*s[5]);
+                              psi[2]*s[2]);
     // Add the shape function corresponding to the filter range
     for (int i = 0; i < order*order; i++){
-      dvSens[index[i]] += inner*N[i]*w;
+      if (index[i] != -1){
+        dvSens[index[i]] += inner*N[i];
+      }
     }
   }
 }
@@ -191,7 +209,9 @@ void PlaneStressBsplineStiffness::failure( const double pt[],
   getShapeFunctions(pt, N);
   xw = 0.0;
   for (int i = 0; i < order*order; i++){
-    xw += N[i]*x[index[i]];
+    if (index[i] != -1){
+      xw += N[i]*x[index[i]];
+    }
   }
   
   if (epsilon > 0.0){
@@ -214,7 +234,9 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
   getShapeFunctions(pt, N);
   xw = 0.0;
   for (int i = 0; i < order*order; i++){
-    xw += N[i]*x[index[i]];
+    if (index[i] != -1){
+      xw += N[i]*x[index[i]];
+    }
   }
   if (epsilon > 0.0){
     TacsScalar d = 1.0/(epsilon*(1.0-xw)+xw);
@@ -223,6 +245,9 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
   TacsScalar s[6];
   TacsScalar dxw = 1.0+q*(1.0-xw);
   TacsScalar w = (1.0+q)/(dxw*dxw);
+  if (is_simp){
+    w = pow(xw,q-1)*q;
+  }
   TacsScalar D = E/(1.0 - nu*nu)*w;
   s[0] = D*strain[0]+nu*D*strain[1];
   s[1] = D*nu*strain[0]+D*strain[1];
@@ -233,22 +258,21 @@ void PlaneStressBsplineStiffness::addFailureDVSens( const double pt[],
   TacsScalar inner = alpha*r_factor_sens*fail;
   // Add the shape function product corresponding to filter range
   for (int i = 0; i < order*order; i++){
-    dvSens[index[i]] += N[i]*inner;
-  }
-  /* int ind = findPatch(pNum); */
-  /* dvSens[dvNum] += N[ind]*inner; */
-  
-}
-// Find the index in the shape function tensor that belongs to the
-// current patch
-int PlaneStressBsplineStiffness::findPatch(int _dvNum){
-  for (int i = 0; i < order*order; i++){
-    if (_dvNum == index[i]){
-      return i;
+    if (index[i] != -1){
+      dvSens[index[i]] += N[i]*inner;
     }
   }
-  return -1;
 }
+/* // Find the index in the shape function tensor that belongs to the */
+/* // current patch */
+/* int PlaneStressBsplineStiffness::findPatch(int _dvNum){ */
+/*   for (int i = 0; i < order*order; i++){ */
+/*     if (_dvNum == index[i]){ */
+/*       return i; */
+/*     } */
+/*   } */
+/*   return -1; */
+/* } */
 
 void PlaneStressBsplineStiffness::getShapeFunctions( const double pt[], 
                                                      double N[]){
@@ -305,84 +329,157 @@ void PlaneStressBsplineStiffness::computeIndexList( int **index,
                                                     int numDVs ){
   int count = 0;
   int *_index = new int[order*order];
+  memset(_index, 0, order*order*sizeof(int));
   // Check if patch is on the boundary (bottom, left, right, top)
-  if (pNum < (order-2)*Lu || pNum % Lu == 0 || 
-      (pNum-(order-3)) % Lu == 0 || 
+  if (pNum < Lu || pNum % Lu == 0 || 
       pNum % Lu == Lu-1 ||
+      pNum % Lu == Lu-1-(order-3) ||
       (pNum-Lv+(order-3)) % Lu == 0 ||
       pNum >= numDVs-(order-2)*Lu){    
-    
     int start = 0;
-    // Check if it is at one of the four corner
-    // Lower left corner
-    if (pNum < 2 || pNum == Lu || pNum == Lu+order-3){      
-      start = 0;
-    }
-    // Lower right corner
-    else if ((pNum >= Lu-2 && pNum < Lu) ||
-             pNum == 2*Lu-1 || pNum == 2*Lu-1-(order-3)){
-      start = Lu-order;
-    }
-    // Top left corner
-    else if ((pNum >= numDVs-Lu && pNum <= numDVs-Lu+1) ||
-             pNum == numDVs-2*Lu ||
-             pNum == numDVs-2*Lu+order-3){
-      start = numDVs-order*Lu;
-    }
-    // Top right corner
-    else if ((pNum >= numDVs-2 && pNum < numDVs) || 
-             pNum == numDVs-Lu-1 ||
-             pNum == numDVs-Lu-1-(order-3)){
-      start = numDVs-order-(order-1)*Lu;
-    }
-    // Left with the interior boundary patches
-    else {
-      // For the bottom interior boundary patches
-      if (pNum < (order-2)*Lu){
-        if (pNum < Lu){
-          start = pNum-1;
-        }
-        else{
-          start = pNum-Lu-1;
-        }
-      }
-      // For the left vertical interior boundary patches
-      else if (pNum % Lu == 0 || 
-               (pNum-(order-3)) % Lu == 0 ){
-        if (pNum % Lu == 0){
-          start = pNum-Lu;
-        }
-        else {
-          start = pNum-Lu-1;
-        }
-      }
-      // For the right vertical interior boundary patches
-      else if (pNum % Lu == Lu-1 ||
-               (pNum-Lv+(order-3)) % Lu == 0 ){
-        if (pNum % Lu == Lu-1){
-          start = pNum-Lu-(order-1);
-        }
-        else{
-          start = pNum-Lu-(order-2);
-        }
-      }
-      // For the top interior boundary patches
-      else {
-        if (pNum >= numDVs-Lu){
-          start = pNum-(order-1)*Lu-1;
-        }
-        else {
-          start = pNum-(order-2)*Lu-1;
-        }
-      }
-    }
-    // Assign the connectivity
-    for (int j = 0; j < order; j++){
+    //printf("pNum: %d \n", pNum);
+    // Bottom row elements
+    if (pNum < Lu){
       for (int i = 0; i < order; i++){
-        _index[count] = start+i+j*Lu;
+        _index[count] = -1;
+        count++;
+      }
+      // Check if it is at either corners
+      if (pNum == 0 || (pNum >= Lu-(order-2) && pNum < Lu)){
+        if (pNum == 0){
+          for (int j = 0; j < order-1; j++){
+            _index[count] = -1;
+            count++;
+            for (int i = 0; i < order-1; i++){
+              _index[count] = start+i+j*Lu;
+              count++;
+            }            
+          }
+        }
+        else {
+          start = pNum-1;
+          for (int j = 0; j < order-1; j++){
+            for (int i = 0; i < order-1; i++){
+              _index[count] = start+i+j*Lu;
+              if ((start+i+j*Lu) % Lu == 0){
+                _index[count] = -1;
+              }
+              count++;
+            }
+            _index[count] = -1;
+            count++;
+          }
+        }
+      }
+      else{
+        start = pNum-1;
+        for (int j = 0; j < order-1; j++){
+          for (int i = 0; i < order; i++){
+            _index[count] = start+i+j*Lu;
+            count++;
+          }
+        }
+      }
+    }
+    // Left column elements excluding the top row
+    else if ((pNum % Lu == 0 && pNum < Lu*Lv-(order-2)*Lu)){
+      // Left most column
+      if (pNum % Lu == 0){
+        start = pNum-Lu;
+        for (int j = 0; j < order; j++){
+          _index[count] = -1;
+          count++;
+          for (int i = 0; i < order-1; i++){
+            _index[count] = start+i+j*Lu;
+            count++;
+          }
+        }
+      }
+    }
+    // Right most column elements excluding the top row
+    else if ((pNum % Lu == Lu-1 ||
+              (pNum % Lu == Lu-1-(order-3)) ||
+             (pNum-Lv+(order-3)) % Lu == 0) && 
+             pNum < Lu*Lv-1-(order-3)*Lu && 
+             pNum < Lu*Lv-(order-2)*Lu){      
+      start = pNum-Lu-1;
+      for (int j = 0; j < order; j++){
+        for (int i = 0; i < order-1; i++){
+          _index[count] = start+i+j*Lu;
+          if ((start+i+j*Lu) % Lu == 0){
+            _index[count] = -1;
+          }
+          count++;
+        }
+        _index[count] = -1;
         count++;
       }
     }
+    // The top row
+    else {
+      // Check if the element are in the corner
+      // Left corner
+      if (pNum == numDVs-Lu || pNum == numDVs-Lu*(order-2)){
+        start = pNum-Lu;
+        for (int j = 0; j < order-(order-2); j++){
+          _index[count] = -1;
+          count++;
+          for (int i = 0; i < order-1; i++){
+            _index[count] = start+i+j*Lu;
+            count++;
+          }
+        }
+      }
+      // Right corner
+      else if (pNum == numDVs-1 || pNum == numDVs-1-Lu*(order-3)){
+        start = pNum-Lu-1;
+        for (int j = 0; j < order-(order-2)+(order-3); j++){
+          for (int i = 0; i < order-1; i++){
+            _index[count] = start+i+j*Lu;
+            if ((start+i+j*Lu) % Lu == 0 || start+i+j*Lu > numDVs){
+              _index[count] = -1;
+            }
+            count++;
+          }
+          _index[count] = -1;
+          count++;
+        }
+      }
+      // Top most row 
+      else if (pNum >= numDVs-Lu){
+        start = pNum-Lu-1;
+        for (int j = 0; j < order-(order-2); j++){
+          for (int i = 0; i < order; i++){
+            _index[count] = start+i+j*Lu;
+            if (start+i+j*Lu >= numDVs ||
+                ((start+i+j*Lu) % Lu == 0 && 
+                 (pNum-1) % Lu != 0)){
+              _index[count] = -1;
+            }
+            count++;
+          }
+        }
+      }
+      // For the row 2nd from the top i.e. for 4th order only
+      else {
+        start = pNum-Lu-1;
+        for (int j = 0; j < order-1; j++){
+          for (int i = 0; i < order; i++){
+            _index[count] = start+i+j*Lu;
+            if (start+i+j*Lu >= numDVs ||
+                ((start+i+j*Lu) % Lu == 0 && 
+                 (pNum-1) % Lu != 0)){
+              _index[count] = -1;
+            }
+            count++;
+          }
+        }
+      }
+      for (int i = count; i < order*order; i++){
+        _index[count] = -1;
+        count++;
+      }
+    }    
   }
   else{
     // Indices for interior patches
@@ -396,4 +493,31 @@ void PlaneStressBsplineStiffness::computeIndexList( int **index,
   *index = _index;
 }
 
+/*
+  Return the topology variable for this constitutive object
+*/
+TacsScalar PlaneStressBsplineStiffness::getDVOutputValue( int dv_index, 
+                                                          const double pt[] ){
+  if (dv_index == 0){
+    double N[16];
+    getShapeFunctions(pt, N);
+    xw = 0.0;
+    // Compute the topology variable
+    for (int i = 0; i < order*order; i++){
+      //printf("%d N[%d]: %e %e \n", pNum, index[i],x[index[i]],N[i]);
+      if (index[i] != -1){
+        xw += N[i]*x[index[i]];
+      }
+    }
+    //printf("xw: %e \n", xw);
+    return xw; 
+  }
+  else if (dv_index == 1){
+    /* TacsScalar m[1]; */
+    /* getPointwiseMass(pt, m); */
+    /* return m[0]; */
+    return x[dvNum];
+  }
+  return 0.0;
+}
 

@@ -21,7 +21,8 @@ class PlaneStressBsplineStiffness : public PlaneStressStiffness {
                                double _lower,
                                double *_Tu, double *_Tv,
                                int _Lu, int _Lv, 
-                               int _pNum, int _order );
+                               int _pNum, int _order,
+                               int _is_simp=0);
   ~PlaneStressBsplineStiffness();
   // Functions for design variable control
   // -------------------------------------
@@ -54,14 +55,14 @@ class PlaneStressBsplineStiffness : public PlaneStressStiffness {
                          const TacsScalar strain[],
                          TacsScalar alpha,
                          TacsScalar dvSens[], int dvLen );
-  
+  TacsScalar getDVOutputValue( int dv_index,
+                               const double pt[] );
   // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
   
   // Misc helper functions
   // ---------------------
-  int findPatch(int _dvNum);
   void getShapeFunctions( const double pt[], 
                           double N[] );
   void computeIndexList( int **index,
@@ -80,5 +81,6 @@ class PlaneStressBsplineStiffness : public PlaneStressStiffness {
   int dvNum;
   // The topology variables
   double q, lowerBound;
+  int is_simp;
 };
 #endif //TACS_PLANE_STRESS_BSPLINE_STIFFNESS_H
