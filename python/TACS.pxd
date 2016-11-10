@@ -290,6 +290,7 @@ cdef extern from "TACSMeshLoader.h":
       char *getComponentDescript(int comp_num)
       char *getElementDescript(int comp_num)
       void setElement(int component_num, TACSElement *_element)
+      void setConvertToCoordinate(int flag)
       int getNumNodes()
       int getNumElements()
       TACSAssembler*createTACS(int vars_per_node,

@@ -1110,7 +1110,11 @@ cdef class MeshLoader:
       Set the element associated with a given component number
       '''
       self.ptr.setElement(comp_num, elem.ptr)
-      
+   
+   def setConvertToCoordinate(self, int flag):
+      self.ptr.setConvertToCoordinate(flag)
+      return
+
    def getNumNodes(self):
       return self.ptr.getNumNodes()
 
