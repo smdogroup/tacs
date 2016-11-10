@@ -621,6 +621,10 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
   MPI_Comm_rank(comm, &rank);
   int fail = 0;
 
+  if ( rank ==  0 && convertToCoordinate != 0 ) {
+    printf("[%d] TACSMeshLoader: Enabled conversion to coordinate ordering for CQUAD/CQUAD9\n", rank);
+  }
+
   const int root = 0;
   if (rank == root){
     FILE * fp = fopen(file_name, "r"); 
@@ -865,9 +869,19 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           // Read in the component number and nodes associated with this element
           int elem_num, component_num;
           int nodes[9]; // Should have at most four nodes
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
+          if (!convertToCoordinate) {
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 nodes, 9);
+          } 
+          else {
+            int tmp[9];
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 tmp, 9);
+            // convert to coordinate ordering for gmsh
+            convert_to_coordinate(&nodes[0], &tmp[0]);
+          }
 
           if (component_num > num_components){
             num_components = component_num;
@@ -1204,9 +1218,19 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 	  // Read in the component number and nodes associated with this element
 	  int elem_num, component_num;
 	  int nodes[9]; // Should have at most four nodes
-	  parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
+          if (!convertToCoordinate) {
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 nodes, 9);
+          } 
+          else {
+            int tmp[9];
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 tmp, 9);
+            // convert to coordinate ordering for gmsh
+            convert_to_coordinate(&nodes[0], &tmp[0]);
+          }
 
 	  elem_nums[num_elements] = elem_num-1;
 	  elem_comp[num_elements] = component_num-1;
