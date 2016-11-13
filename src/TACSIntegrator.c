@@ -675,7 +675,7 @@ void TACSIntegrator::integrate( ){
     // Solve the nonlinear system of stage equations starting with the approximated states
     newton_term = newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
 
-    if (!isAdaptiveInstance()){S
+    if (!isAdaptiveInstance()){
 
       // Original solve failed
       if (newton_term < 0) {
@@ -1300,12 +1300,14 @@ void TACSIntegrator::printOptionSummary( FILE *fp ) {
   Print the adjoint options before marching backwards in time
 */
 void TACSIntegrator::printAdjointOptionSummary( FILE *fp ) {
-  fprintf(fp, "===============================================\n");
-  fprintf(fp, "Adjoint Mode : Parameter values\n");
-  fprintf(fp, "===============================================\n");
-  fprintf(fp, "%-30s %15d\n", "num_funcs", num_funcs);
-  fprintf(fp, "%-30s %15d\n", "num_design_vars", num_design_vars);
-  fprintf(fp, "===============================================\n");
+  if (fp){
+    fprintf(fp, "===============================================\n");
+    fprintf(fp, "Adjoint Mode : Parameter values\n");
+    fprintf(fp, "===============================================\n");
+    fprintf(fp, "%-30s %15d\n", "num_funcs", num_funcs);
+    fprintf(fp, "%-30s %15d\n", "num_design_vars", num_design_vars);
+    fprintf(fp, "===============================================\n");
+  }
 }
 
 /*
@@ -1609,7 +1611,7 @@ void TACSBDFIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
 void TACSBDFIntegrator::marchBackwards( ) {
   // Print adjoint mode summary before maching backwards
   printAdjointOptionSummary(logfp);
-
+    
   current_time_step = num_time_steps;
 
   time_rev_assembly = 0.0;
