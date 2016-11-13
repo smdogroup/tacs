@@ -156,7 +156,7 @@ int main( int argc, char *argv[] ){
   nbg->setRelTol(1.0e-10);
   nbg->setAbsTol(1.0e-12);
   nbg->setMaxNewtonIters(24);
-  nbg->setPrintLevel(1);
+  nbg->setPrintLevel(1, NULL);
   nbg->setJacAssemblyFreq(1);
   nbg->setUseLapack(0);
 

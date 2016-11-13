@@ -204,7 +204,6 @@ int main( int argc, char **argv ){
 
       stiff->decref();
       element->decref();
-
     }
     else {
       printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", rank, descriptor);
@@ -333,7 +332,7 @@ int main( int argc, char **argv ){
 
   // Set paramters for time marching
   double tinit             = 0.0;
-  double tfinal            = 0.001;
+  double tfinal            = 1.0;
   int    num_steps_per_sec = 1000;
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
