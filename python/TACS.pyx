@@ -1271,9 +1271,17 @@ cdef class Integrator:
       self.ptr.setUseLapack(use_lapack)
       return
    
+   def setUseFEMat(self, int use_femat):
+      self.ptr.setUseFEMat(use_femat)
+      return 
+  
    def configureOutput(self, ToFH5 f5, int write_freq=0,
                        char *file_format='solution_%4d.f5'):
       self.ptr.configureOutput(f5.ptr, write_freq, &file_format[0])
+      return
+
+   def configureAdaptiveMarch(self, int factor, int num_retry):
+      self.ptr.configureAdaptiveMarch(factor, num_retry)
       return
 
 cdef class BDFIntegrator(Integrator):

@@ -69,11 +69,11 @@ class TACSIntegrator : public TACSObject {
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
   void setUseLineSearch( int _use_line_search );
+  void setUseFEMat( int _use_femat );
   void setFunction( TACSFunction **_func, int _num_funcs );
   void setIsFactorized( int flag );
-  void setTACSStates( double time, TACSBVec *q, 
-                      TACSBVec *qdot, TACSBVec *qddot );
   void setOrderingType( TACSAssembler::OrderingType _type );
+  void setTACSStates( double time, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
 
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
@@ -83,7 +83,10 @@ class TACSIntegrator : public TACSObject {
   void writeStepToF5( int step = 0 );          
   void configureOutput( TACSToFH5 *_viewer, int _write_freq, 
                         const char *_f5_file_fmt );
+  void configureAdaptiveMarch( int factor, int num_retry );
   void printWallTime( double t0, int level=1 );
+  void printOptionSummary( FILE *fp );
+  void printAdjointOptionSummary( FILE *fp );
 
   // Variables that keep track of time
   double time_fwd_assembly;
@@ -102,10 +105,14 @@ class TACSIntegrator : public TACSObject {
   //------------------------------------------------------------------//
   //                  Protected functions
   //------------------------------------------------------------------//
+  void setAdaptiveInstance( int flag );
+  int isAdaptiveInstance();
+  int getNewtonTermFlag();
+  double getTACSStates( TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
 
   // Functions for solutions to linear and nonlinear problems
   // --------------------------------------------------------
-  void newtonSolve( double alpha, double beta, double gamma,
+  int newtonSolve( double alpha, double beta, double gamma,
                     double t, TACSBVec *q, TACSBVec *qdot, 
                     TACSBVec *qddot );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
@@ -148,11 +155,15 @@ class TACSIntegrator : public TACSObject {
   // ------------------------------------------------------------------
   void doEachTimeStep( int current_step );
   void doEachNonLinearIter( int iter_num );
+  int  doAdaptiveMarching();
                     
   //------------------------------------------------------------------//
   //                  Protected variables
   //------------------------------------------------------------------//
-  
+
+  FILE *logfp;                        // Pointer to the output filename
+  enum IntegratorType  mytype;        // Will be set the by child class
+
   TACSAssembler  *tacs;               // Instance of TACS
   TACSBVec      **q, **qdot, **qddot; // Store the history of states over time
   
@@ -194,29 +205,39 @@ class TACSIntegrator : public TACSObject {
   //                   Private variables
   //-----------------------------------------------------------------//
 
+  int adaptive_instance;        // Identifies whether it is a child
+                                // created during adaptive time
+                                // stepping
+  int num_adaptive_retry;
+  int adaptive_step_factor;
+
   int print_level;      // 0 = off;
                         // 1 = summary per time step;
                         // 2 = summary per Newton solve iteration
-  FILE *logfp;          // Pointer to the output filename
+
   TACSToFH5 *f5;        // Pointer to FH5 output object
   char *f5_file_fmt;    // Formatting of the output filename
   int f5_write_freq;    // How frequent to write the output
   
   int max_newton_iters; // The max number of nonlinear iterations
   double atol, rtol;
-  
   int jac_comp_freq;    // Frequency of Jacobian factorization
-  int use_lapack;       // Flag to switch to LAPACK for linear solve
   int use_line_search;  // Flag to make use of line search for nonlinear root finding
+
+  int use_lapack;       // Flag to switch to LAPACK for linear solve
+  int use_femat;         
+  int lev, fill, reorder_schur;
+  int gmres_iters, num_restarts, is_flexible;
+
   FEMat *D;             // Matrix associated with Preconditioner
   int factorized;       // Set whether the matrix is factorized
   int niter;            // Newton iteration number
   TacsScalar res_norm, init_res_norm; // Norm of the residual
   TacsScalar update_norm; // Norm of the update
-  int term;                     // Termination of nonlinear solver 
-                                // 1: |R| < atol; 2: |dq| < atol
-                                // 3: |R|/|R0| < rtol
-                                // -1: max_newton_iters // -2: Nan
+  int newton_term;        // Termination of nonlinear solver 
+                          // 1: |R| < atol; 2: |dq| < atol
+                          // 3: |R|/|R0| < rtol
+                          // -1: max_newton_iters // -2: Nan
   
  
   TacsScalar energies[2]; // Keep track of energies
