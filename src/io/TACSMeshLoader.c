@@ -891,6 +891,21 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           elem_con_size += 9;
           num_elements++;
         }      
+        else if (strncmp(line[0], "CTRIA3", 6) == 0){
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[3]; // Should have at most three nodes
+          parse_element_field(line[0],
+                              &elem_num, &component_num,
+                              nodes, 3);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 3;
+          num_elements++;
+        }  
         else if (strncmp(line[0], "SPC", 3) == 0){
           bc_vars_size += 8;
           num_bcs++;
@@ -1256,6 +1271,30 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             strcpy(&component_elems[9*(component_num-1)], "CQUAD");
           }
         }
+	else if (strncmp(line[0], "CTRIA3", 6) == 0){
+	  // Read in the component number and nodes associated with this element
+	  int elem_num, component_num;
+	  int nodes[3]; // Should have at most four nodes
+	  parse_element_field(line[0],
+			      &elem_num, &component_num,
+			      nodes, 3);
+	  
+	  // Add the element to the connectivity list
+	  elem_nums[num_elements] = elem_num-1;
+	  elem_comp[num_elements] = component_num-1;
+
+	  elem_con[elem_con_size]   = nodes[0]-1;
+	  elem_con[elem_con_size+1] = nodes[1]-1;
+	  elem_con[elem_con_size+2] = nodes[2]-1;
+	  elem_con_size += 3;
+
+	  elem_con_ptr[num_elements+1] = elem_con_size;
+	  num_elements++;
+
+          if (component_elems[9*(component_num-1)] == '\0'){
+            strcpy(&component_elems[9*(component_num-1)], "CTRIA3");
+          }
+	}
 	else if (strncmp(line[0], "FFORCE", 6) == 0){
 	  // Read in the component number and nodes associated 
 	  // with the following force
