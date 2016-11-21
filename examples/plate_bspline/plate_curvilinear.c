@@ -157,8 +157,8 @@ void controlXpts(double Xpts[], double **Xpts_c,
   for (int i = 0; i < ncp_y-2; i++){
     double a[] = {edge_pt[3*(ncp_x+i+1)],
                   edge_pt[3*(ncp_x+i+1)+1]};
-    double b[] = {edge_pt[3*(2*ncp_x+i+1)],
-                  edge_pt[3*(2*ncp_x+i+1)+1]};
+    double b[] = {edge_pt[3*(ncp_x+ncp_y+i+1)],
+                  edge_pt[3*(ncp_x+ncp_y+i+1)+1]};
     /* printf("%d a: %e %e \n", i, a[0], a[1]); */
     /* printf("%d b: %e %e \n", i, b[0], b[1]); */
     double ix = (b[0]-a[0])/(ncp_x-1);

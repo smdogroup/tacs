@@ -290,6 +290,7 @@ cdef extern from "TACSMeshLoader.h":
       char *getComponentDescript(int comp_num)
       char *getElementDescript(int comp_num)
       void setElement(int component_num, TACSElement *_element)
+      void setConvertToCoordinate(int flag)
       int getNumNodes()
       int getNumElements()
       TACSAssembler*createTACS(int vars_per_node,
@@ -349,10 +350,12 @@ cdef extern from "TACSIntegrator.h":
       void setMaxNewtonIters(int max_newton_iters)
       void setJacAssemblyFreq(int jac_comp_freq)
       void setUseLapack(int use_lapack)
-
+      void setUseFEMat( int _use_femat )
+      
       # Configure writing F5 files
       void configureOutput(TACSToFH5 *viewer, int write_freq,
                            const_char *f5_file_fmt)
+      void configureAdaptiveMarch( int factor, int num_retry )
 
    # BDF Implementation of the integrator
    cdef cppclass TACSBDFIntegrator(TACSIntegrator):

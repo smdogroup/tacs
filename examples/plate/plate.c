@@ -42,7 +42,8 @@ int main( int argc, char **argv ){
   int test_element = 0;
   int write_solution = 0;
   int print_level = 1;
-  enum IntegratorType type = BDF2;
+  enum IntegratorType type = BDF1;
+  int convert_mesh = 0;
   for ( int i = 0; i < argc; i++ ){
 
     // Determine whether or not to test gradients with complex step
@@ -51,10 +52,11 @@ int main( int argc, char **argv ){
         printf("TACS time-dependent analysis of a plate located in the folder as plate.bdf\n\n");
         printf("BDF1-3, DIRK2-4, ABM1-6, NBG : Selects the integrator to use\n");
         printf("test_gradient                : Complex-step verification of adjoint gradient\n");
-        printf("num_funcs=1,2,3 and 12n       : Number of functions for adjoint problem\n");
+        printf("num_funcs=1,2,3 and 12       : Number of functions for adjoint problem\n");
         printf("num_threads=1,2,3...         : Number of threads to use\n");
         printf("print_level=0,1,2            : Controls the amount of information to print\n");
-        printf("write_solution=0,1,2...      : Controls the frequency of f5 file output\n\n");
+        printf("write_solution=0,1,2...      : Controls the frequency of f5 file output\n");
+        printf("convert_mesh=0,1             : Converts the mesh to coordinate ordering if not supplied so\n\n");
       }
       MPI_Finalize();
       return 0;
@@ -126,6 +128,16 @@ int main( int argc, char **argv ){
       test_gradient = 1;
       if (rank ==0){ printf("Enabled complex-step verification of gradients...\n"); }
     }
+
+    // Determine whether or not to convert the connectivities to coordinate ordering
+    if (sscanf(argv[i], "convert_mesh=%d", &convert_mesh) == 1){
+      if (convert_mesh != 1){ 
+        convert_mesh = 0; 
+      } else {
+        convert_mesh = 1; 
+      }
+      if (rank == 0){ printf("Convert mesh to coordinate order : %d\n", convert_mesh); }
+    }
   }
 
   /*-----------------------------------------------------------------*/
@@ -138,6 +150,7 @@ int main( int argc, char **argv ){
   // Create the mesh loader object and load file
   TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
+  mesh->setConvertToCoordinate(convert_mesh);
 
   mesh->scanBDFFile(filename);
 
@@ -180,20 +193,21 @@ int main( int argc, char **argv ){
 
     // Create element object using constituitive information and type defined in
     // the descriptor
-    if (strcmp(descriptor, "CQUAD") == 0){
+    if (strcmp(descriptor, "CQUAD9") == 0 ||
+        strcmp(descriptor, "CQUAD") == 0 ) {
       element = new MITC9(stiff, gravity);
       element->incref();
+
+      // Set the number of displacements
+      vars_per_node = element->numDisplacements();
+      mesh->setElement(i, element);
+
+      stiff->decref();
+      element->decref();
     }
     else {
       printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", rank, descriptor);
     }
-
-    // Set the number of displacements
-    vars_per_node = element->numDisplacements();
-    mesh->setElement(i, element);
-
-    stiff->decref();
-    element->decref();
   }
 
   // Create tacs assembler from mesh loader object
@@ -318,7 +332,7 @@ int main( int argc, char **argv ){
 
   // Set paramters for time marching
   double tinit             = 0.0;
-  double tfinal            = 0.001;
+  double tfinal            = 1.0;
   int    num_steps_per_sec = 1000;
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
