@@ -181,7 +181,7 @@ int main( int argc, char * argv[] ){
   funcs[3] = func;
 
   // Set the induced norm failure types
-  TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
+  TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
   ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
   funcs[4] = ifunc;
 

@@ -315,7 +315,7 @@ cdef class KSM:
       '''
       Create a GMRES object for solving a linear system with or without a preconditioner.
       
-      This automatically allocates the requried Krylov subspace on
+      This automatically allocates the required Krylov subspace on
       initialization.
 
       input:
