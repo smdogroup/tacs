@@ -577,6 +577,7 @@ void TACSMeshLoader::setElement( int component_num,
 				 TACSElement *_element ){
   if (_element && (component_num >= 0) && (component_num < num_components)){
     _element->incref();
+    _element->setComponentNum(component_num);
     elements[component_num] = _element;
   }
 }
