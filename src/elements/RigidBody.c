@@ -2443,3 +2443,202 @@ void TACSRevoluteConstraint::setDesignVars( const TacsScalar dvs[],
 void TACSRevoluteConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
   point->getDesignVars(dvs, numDVs);
 }
+
+/*
+  Two-point rigid link constraint
+*/
+TACSRigidLink::TACSRigidLink( TACSRigidBody *_bodyA ){
+  bodyA = _bodyA;
+  bodyA->incref();
+}
+
+TACSRigidLink::~TACSRigidLink(){
+  bodyA->decref();
+}
+
+const char *TACSRigidLink::elem_name = "TACSRigidLink";
+
+/*
+  Return the number of displacements
+*/
+int TACSRigidLink::numDisplacements(){ 
+  return 8; 
+}
+
+/*
+  Return the number of nodes
+*/
+int TACSRigidLink::numNodes(){ 
+  return 3; 
+}
+
+/*
+  Return the element name
+*/
+const char* TACSRigidLink::elementName(){ 
+  return elem_name;
+}
+
+/*
+  Retrieve the initial values for the state variables
+*/
+void TACSRigidLink::getInitCondition( TacsScalar vars[],
+                                      TacsScalar dvars[],
+                                      const TacsScalar X[] ){}
+
+/*
+  Compute the kinetic and potential energy within the element
+*/
+void TACSRigidLink::computeEnergies( double time,
+                                     TacsScalar *_Te, 
+                                     TacsScalar *_Pe,
+                                     const TacsScalar Xpts[],
+                                     const TacsScalar vars[],
+                                     const TacsScalar dvars[] ){
+  *_Te = 0.0;
+  *_Pe = 0.0;
+}
+
+/*
+  Compute the residual of the governing equations
+*/
+void TACSRigidLink::addResidual( double time, TacsScalar res[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[] ){
+  // Set pointers to the residual
+  TacsScalar *resA = &res[0];
+  TacsScalar *resB = &res[8];
+  TacsScalar *resC = &res[16];
+
+  // Set the variables for body A
+  const TacsScalar *uA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the variables for point B
+  const TacsScalar *uB = &vars[8];
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
+
+  // Set the pointer to the multipliers
+  const TacsScalar *lam = &vars[16];
+
+  // Retrieve the initial position of body A
+  TACSGibbsVector *xAVec = bodyA->getInitPosition();
+  const TacsScalar *xA;
+  xAVec->getVector(&xA);
+
+  // Read from the node locations, the initial position of body B
+  const TacsScalar *xB = &Xpts[3];
+
+  // Compute the rotation matrix for body A
+  TacsScalar CA[9];
+  computeRotationMat(etaA, epsA, CA);
+
+  // Compute the distance between body A and the point B in the
+  // initial configuration
+  TacsScalar t[3];
+  t[0] = xA[0] - xB[0];
+  t[1] = xA[1] - xB[1];
+  t[2] = xA[2] - xB[2];
+
+  // Add the residual 
+  // resC = uB - uA + (xB - xA) - CA^{T}*(xB - xA)
+  resC[0] += uB[0] - uA[0];
+  resC[1] += uB[1] - uA[1];
+  resC[2] += uB[2] - uA[2];
+  vecAxpy(-1.0, t, resC);
+  matMultTransAdd(CA, t, resC);
+
+  // Add the residual for the quaternions
+  resC[3] += etaB - etaA;
+  resC[4] += epsB[0] - epsA[0];
+  resC[5] += epsB[1] - epsA[1];
+  resC[6] += epsB[2] - epsA[2];
+  
+  // Add the dummy constraint for the remaining multiplier 
+  resC[7] += lam[7];
+
+  // Add the terms from the first constraint
+  vecAxpy(-1.0, &lam[0], &resA[0]);
+  addEMatTransProduct(-1.0, t, &lam[0], etaA, epsA,
+                      &resA[3], &resA[4]);
+
+  vecAxpy(1.0, &lam[0], &resB[0]);
+  
+  // Add the terms from the second constraint
+  resA[3] -= lam[3];
+  vecAxpy(-1.0, &lam[4], &resA[4]);
+
+  resB[3] += lam[3];
+  vecAxpy(1.0, &lam[4], &resB[4]);
+}
+
+/*
+  Compute the Jacobian of the governing equations
+*/
+void TACSRigidLink::addJacobian( double time, TacsScalar J[],
+                                 double alpha, double beta, double gamma,
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[] ){
+  // Set the variables for body A
+  const TacsScalar *rA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the Lagrange multiplier variables
+  const TacsScalar *lam = &vars[16];
+
+  // The number of variables in the Jacobian matrix
+  const int nvars = 3*8;
+
+  // Retrieve the initial position of body A
+  TACSGibbsVector *xAVec = bodyA->getInitPosition();
+  const TacsScalar *xA;
+  xAVec->getVector(&xA);
+
+  // Read from the node locations, the initial position of body B
+  const TacsScalar *xB = &Xpts[3];
+
+  // Compute the rotation matrix for body A
+  TacsScalar CA[9];
+  computeRotationMat(etaA, epsA, CA);
+
+  // Compute the distance between body A and the point B in the
+  // initial configuration
+  TacsScalar t[3];
+  t[0] = xA[0] - xB[0];
+  t[1] = xA[1] - xB[1];
+  t[2] = xA[2] - xB[2];
+
+  // Derivatives of the position constraint
+  addBlockIdent(-alpha, &J[16*nvars], nvars);
+  addBlockIdent(alpha, &J[16*nvars+8], nvars);
+  addBlockEMat(alpha, etaA, epsA, t, &J[16*nvars + 3], nvars);
+
+  // Derivatives of the quaternion constraint
+  J[19*nvars + 11] += alpha; // etaB
+  J[19*nvars + 3] -= alpha;  // etaA
+  addBlockIdent(alpha, &J[20*nvars + 12], nvars);
+  addBlockIdent(-alpha, &J[20*nvars + 4], nvars);
+  
+  // Add the Jacobian contribution from the dummy constraint
+  J[nvars*nvars-1] += alpha; 
+
+  // Add the contributions from the derivative of resA
+  addBlockIdent(-alpha, &J[16], nvars);
+  addBlockDMatTransDeriv(-alpha, lam, t, &J[3], nvars);
+  addBlockIdent(alpha, &J[8*nvars + 16], nvars);
+
+  // Add the derivatives of the quaternion constraint w.r.t. lam[3]
+  J[3*nvars + 19] -= alpha;
+  J[11*nvars + 19] += alpha;
+ 
+  // Add the remaining quaternion constraint derivatives w.r.t. lam[4:]
+  addBlockIdent(-alpha, &J[4*nvars + 20], nvars);
+  addBlockIdent(alpha, &J[12*nvars + 20], nvars);
+}

@@ -1816,15 +1816,14 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
 	}
 	
 	// Compute the weights on each component of the mass moments
-	TacsScalar rho_scale[3];
+	TacsScalar rho_scale[2];
 	rho_scale[0] = scale*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
 				upsi[2]*uphi[2]);
-	rho_scale[1] = 0.0;
 
 	TacsScalar tphi[3], tpsi[3];
 	Tensor::crossProduct3D(tphi, &uphi[3], normal);
 	Tensor::crossProduct3D(tpsi, &upsi[3], normal);
-	rho_scale[2] = scale*h*(tphi[0]*tpsi[0] + tphi[1]*tpsi[1] + 
+	rho_scale[1] = scale*h*(tphi[0]*tpsi[0] + tphi[1]*tpsi[1] + 
 				tphi[2]*tpsi[2]);
 	
 	// Add the result to the design variable vector

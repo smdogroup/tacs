@@ -485,7 +485,7 @@ int bspline_interval( double u, const double *T, int n, int k ){
     int low = k-1;
     int high = n;
     int mid = low + (high - low)/2;
-    printf("u: %e %e %e \n", u, T[mid], T[mid+1]);
+
     while (u < T[mid] || u >= T[mid+1]){
       if (u < T[mid]){
         high = mid;

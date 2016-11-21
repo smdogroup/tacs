@@ -362,4 +362,56 @@ class TACSRevoluteConstraint : public TACSElement {
   static const char *elem_name;       // The name of the element
 };
 
+
+/*
+  Spherical constraint
+*/
+class TACSRigidLink : public TACSElement {
+ public:
+  TACSRigidLink( TACSRigidBody *_bodyA );
+  ~TACSRigidLink();
+
+  // Return the number of displacements and nodes
+  // --------------------------------------------
+  int numDisplacements();
+  int numNodes();
+  const char* elementName();
+
+  // Retrieve the initial values for the state variables
+  // ---------------------------------------------------
+  void getInitCondition( TacsScalar vars[],
+                         TacsScalar dvars[],
+                         const TacsScalar X[] );
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void addJacobian( double time, TacsScalar J[],
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+
+ private:
+  TACSRigidBody *bodyA; // The rigid body
+  static const char *elem_name; // The name of the element
+};
+
 #endif // TACS_RIGID_BODY_DYNAMICS_H

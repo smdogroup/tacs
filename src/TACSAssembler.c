@@ -539,8 +539,8 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
     for ( int jp = _depNodePtr[i]; jp < _depNodePtr[i+1]; jp++ ){
       if (_depNodeToTacs[jp] >= ownerRange[mpiSize]){
         fprintf(stderr, 
-                "[%d] Dependent node %d contains node number out of range\n",
-                mpiRank, i);
+                "[%d] Dependent node %d contains node number %d out of range\n",
+                mpiRank, i, _depNodeToTacs[jp]);
         return 1;
       }
       else if (_depNodeToTacs[jp] < 0){
