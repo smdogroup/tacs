@@ -115,6 +115,16 @@ cdef class RevoluteConstraint(Element):
    def __dealloc__(self):
       self.ptr.decref()
       return
+
+cdef class RigidLink(Element):
+   def __cinit__(self, RigidBody bodyA):
+      self.ptr = new TACSRigidLink(bodyA.rbptr)
+      self.ptr.incref()
+      return
+
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
    
 cdef class PlaneQuad(Element):
    def __cinit__(self, int order, PlaneStress stiff,

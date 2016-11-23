@@ -362,7 +362,6 @@ class TACSRevoluteConstraint : public TACSElement {
   static const char *elem_name;       // The name of the element
 };
 
-
 /*
   Spherical constraint
 */

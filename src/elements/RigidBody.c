@@ -2631,8 +2631,9 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
 
   // Add the contributions from the derivative of resA
   addBlockIdent(-alpha, &J[16], nvars);
-  addBlockDMatTransDeriv(-alpha, lam, t, &J[3], nvars);
+  addBlockDMatTransDeriv(-alpha, lam, t, &J[3*nvars + 3], nvars);
   addBlockIdent(alpha, &J[8*nvars + 16], nvars);
+  addBlockEMatTrans(-alpha, etaA, epsA, t, &J[3*nvars + 16], nvars);
 
   // Add the derivatives of the quaternion constraint w.r.t. lam[3]
   J[3*nvars + 19] -= alpha;

@@ -38,6 +38,9 @@ cdef extern from "RigidBody.h":
    cdef cppclass TACSRevoluteConstraint(TACSElement):
       TACSRevoluteConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
                              TACSGibbsVector *point, TACSGibbsVector *eA)
+
+   cdef cppclass TACSRigidLink(TACSElement):
+      TACSRigidLink(TACSRigidBody *bodyA)
       
 # Template
 cdef extern from "TACSElementTemplates.h":

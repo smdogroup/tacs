@@ -12,6 +12,9 @@
 #include "SolidStiffness.h"
 #include "Solid.h"
 
+// Include the multibody dynamics code
+#include "RigidBody.h"
+
 /*
   Generate a random array of values
 */
@@ -45,7 +48,7 @@ void test_element( TACSElement *element,
 #ifdef TACS_USE_COMPLEX
   TACSElement::setStepSize(1e-30);
 #endif
-  element->testJacobian(time, Xpts, vars, dvars, ddvars, 1.0);
+  element->testJacobian(time, Xpts, vars, dvars, ddvars);
   element->testAdjResProduct(x, dvLen, time, Xpts, vars, dvars, ddvars);
   element->testAdjResXptProduct(time, Xpts, vars, dvars, ddvars);
   element->testStrainSVSens(Xpts, vars);
@@ -90,7 +93,7 @@ int main( int argc, char * argv[] ){
   TACSElement::setFailTolerances(1e-1, 1e-12);
 #else
   TACSElement::setFailTolerances(1e-1, 1e-5);
-#endif
+`#endif
 
   // Set the print level
   TACSElement::setPrintLevel(2);
@@ -200,6 +203,70 @@ int main( int argc, char * argv[] ){
   test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
   elem->decref();
   stiff->decref();
+
+  // Test the rigid body code within TACS
+
+  // Generate a random arrary of variables conforming to the
+  // quaternion constraint
+  generate_random_array(vars, MAX_VARS);
+  for ( int i = 0; i < MAX_NODES; i++ ){
+    vars[8*i+7] = 0.0;
+    TacsScalar *v = &vars[8*i+3];
+    TacsScalar fact = 
+      1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+  }
+
+  // The acceleration due to gravity in global frame of reference
+  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.8);
+
+  // Define the zero vector
+  TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
+
+  // Construct the frame of reference
+  TACSGibbsVector *rA0Vec = new TACSGibbsVector(0.0, 0.0, 0.0); // The base point
+  TACSGibbsVector *rA1Vec = new TACSGibbsVector(1.0, 0.0, 0.0); // The first coordinate
+  TACSGibbsVector *rA2Vec = new TACSGibbsVector(0.0, 1.0, 0.0); // The second coordinate
+  TACSRefFrame *refFrameA = new TACSRefFrame(rA0Vec, rA1Vec, rA2Vec);
+
+  // Define the inertial properties
+  const TacsScalar mA    = 1.0;
+  const TacsScalar cA[3] = {0.0, 0.0, 0.0};
+  const TacsScalar JA[6] = {1.0/3.0, 0.0, 0.0,
+                            1.0/3.0, 0.0,
+                            1.0/3.0};
+  
+  // Define dynamics properties
+  TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0); 
+
+  // Construct a rigid body
+  TACSRigidBody *bodyA = new  TACSRigidBody(refFrameA,
+                                            mA, cA, JA,
+                                            rAInitVec, zero, zero, gravVec);
+  bodyA->incref();
+
+  // Test the rigid body
+  test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+  // Test the revolute constraint
+  TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
+  TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
+  TACSRevoluteConstraint *rev = new TACSRevoluteConstraint(bodyA, point, eRev);
+  rev->incref();
+
+  // Test the revolute constraint
+  test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  
+  // Test the rigid link code
+  TACSRigidLink *rlink = new TACSRigidLink(bodyA);
+  rlink->incref();
+
+  // Test the rigid link
+  test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+  // Decref everything
+  rev->decref();
+  bodyA->decref();
+  rlink->decref();
 
   MPI_Finalize();
   return (0);
