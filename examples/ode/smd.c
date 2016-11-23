@@ -71,7 +71,7 @@ int main( int argc, char *argv[] ){
     dirk->setRelTol(1.0e-10);
     dirk->setAbsTol(1.0e-12);
     dirk->setMaxNewtonIters(24);
-    dirk->setPrintLevel(1);
+    dirk->setPrintLevel(1, NULL);
     dirk->setJacAssemblyFreq(1);
     dirk->setUseLapack(0);
 

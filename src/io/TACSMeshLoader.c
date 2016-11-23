@@ -477,6 +477,24 @@ static void parse_element_field9( char line1[], char line2[], char line3[],
 }
 
 /*
+  Converts the connectivity information loaded from BDF file to
+  coordinate ordering used in TACS.
+*/
+static void convert_to_coordinate( int * coord, int * orig ){
+  coord[0] = orig[0];
+  coord[1] = orig[4];
+  coord[2] = orig[1];
+
+  coord[3] = orig[7];
+  coord[4] = orig[8];
+  coord[5] = orig[5];
+
+  coord[6] = orig[3];
+  coord[7] = orig[6];
+  coord[8] = orig[2];  
+}
+
+/*
   The TACSMeshLoader class
 
   To load a mesh, you first pass in the communicator on which TACS
@@ -508,6 +526,10 @@ TACSMeshLoader::TACSMeshLoader( MPI_Comm _comm ){
 
   // Set the creator object to NULL
   creator = NULL;
+  
+  // Default is not to convert to coordinate, the supplied BDF is
+  // assumed in order
+  convertToCoordinate = 0;
 }
 
 /*
@@ -555,8 +577,17 @@ void TACSMeshLoader::setElement( int component_num,
 				 TACSElement *_element ){
   if (_element && (component_num >= 0) && (component_num < num_components)){
     _element->incref();
+    _element->setComponentNum(component_num);
     elements[component_num] = _element;
   }
+}
+
+/*
+  Set whether to convert to coordinate ordering before creating
+  elements
+*/
+void TACSMeshLoader::setConvertToCoordinate( int flag ){
+  convertToCoordinate = flag;
 }
 
 const char *TACSMeshLoader::getComponentDescript( int comp_num ){
@@ -590,6 +621,10 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
   int rank;
   MPI_Comm_rank(comm, &rank);
   int fail = 0;
+
+  if ( rank ==  0 && convertToCoordinate != 0 ) {
+    printf("[%d] TACSMeshLoader: Enabled conversion to coordinate ordering for CQUAD/CQUAD9\n", rank);
+  }
 
   const int root = 0;
   if (rank == root){
@@ -788,10 +823,20 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 
           // Read in the component number and nodes associated with this element
           int elem_num, component_num;
-          int nodes[9]; // Should have at most four nodes
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
+          int nodes[9]; // Should have at most 9 nodes          
+          if (!convertToCoordinate) {
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 nodes, 9);
+          } 
+          else {
+            int tmp[9];
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 tmp, 9);
+            // convert to coordinate ordering for gmsh
+            convert_to_coordinate(&nodes[0], &tmp[0]);
+          }
 
           if (component_num > num_components){
             num_components = component_num;
@@ -825,9 +870,19 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           // Read in the component number and nodes associated with this element
           int elem_num, component_num;
           int nodes[9]; // Should have at most four nodes
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
+          if (!convertToCoordinate) {
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 nodes, 9);
+          } 
+          else {
+            int tmp[9];
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 tmp, 9);
+            // convert to coordinate ordering for gmsh
+            convert_to_coordinate(&nodes[0], &tmp[0]);
+          }
 
           if (component_num > num_components){
             num_components = component_num;
@@ -836,6 +891,21 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           elem_con_size += 9;
           num_elements++;
         }      
+        else if (strncmp(line[0], "CTRIA3", 6) == 0){
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[3]; // Should have at most three nodes
+          parse_element_field(line[0],
+                              &elem_num, &component_num,
+                              nodes, 3);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 3;
+          num_elements++;
+        }  
         else if (strncmp(line[0], "SPC", 3) == 0){
           bc_vars_size += 8;
           num_bcs++;
@@ -1097,12 +1167,22 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             fail = 1; break;
           }
 
-	  // Read in the component number and nodes associated with this element
-	  int elem_num, component_num;
-	  int nodes[9]; // Should have at most four nodes
-	  parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
+          // Read in the component number and nodes associated with this element
+          int elem_num, component_num;
+          int nodes[9]; // Should have at most 9 nodes          
+          if (!convertToCoordinate) {
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 nodes, 9);
+          } 
+          else {
+            int tmp[9];
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 tmp, 9);
+            // convert to coordinate ordering for gmsh
+            convert_to_coordinate(&nodes[0], &tmp[0]);
+          }
 
 	  elem_nums[num_elements] = elem_num-1;
 	  elem_comp[num_elements] = component_num-1;
@@ -1154,9 +1234,19 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 	  // Read in the component number and nodes associated with this element
 	  int elem_num, component_num;
 	  int nodes[9]; // Should have at most four nodes
-	  parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
+          if (!convertToCoordinate) {
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 nodes, 9);
+          } 
+          else {
+            int tmp[9];
+            parse_element_field2(line[0], line[1],
+                                 &elem_num, &component_num,
+                                 tmp, 9);
+            // convert to coordinate ordering for gmsh
+            convert_to_coordinate(&nodes[0], &tmp[0]);
+          }
 
 	  elem_nums[num_elements] = elem_num-1;
 	  elem_comp[num_elements] = component_num-1;
@@ -1181,6 +1271,30 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             strcpy(&component_elems[9*(component_num-1)], "CQUAD");
           }
         }
+	else if (strncmp(line[0], "CTRIA3", 6) == 0){
+	  // Read in the component number and nodes associated with this element
+	  int elem_num, component_num;
+	  int nodes[3]; // Should have at most four nodes
+	  parse_element_field(line[0],
+			      &elem_num, &component_num,
+			      nodes, 3);
+	  
+	  // Add the element to the connectivity list
+	  elem_nums[num_elements] = elem_num-1;
+	  elem_comp[num_elements] = component_num-1;
+
+	  elem_con[elem_con_size]   = nodes[0]-1;
+	  elem_con[elem_con_size+1] = nodes[1]-1;
+	  elem_con[elem_con_size+2] = nodes[2]-1;
+	  elem_con_size += 3;
+
+	  elem_con_ptr[num_elements+1] = elem_con_size;
+	  num_elements++;
+
+          if (component_elems[9*(component_num-1)] == '\0'){
+            strcpy(&component_elems[9*(component_num-1)], "CTRIA3");
+          }
+	}
 	else if (strncmp(line[0], "FFORCE", 6) == 0){
 	  // Read in the component number and nodes associated 
 	  // with the following force

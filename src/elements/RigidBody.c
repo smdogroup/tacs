@@ -744,26 +744,29 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   // Set lambda = 1.0
   vars[7] = 1.0;
 
+  // Get the initial position
+  const TacsScalar *r;
+  rInit->getVector(&r);
+
   // Get the initial velocity
   const TacsScalar *v;
   vInit->getVector(&v);
-
-  // Set the initial velocity
-  dvars[0] = v[0];
-  dvars[1] = v[1];
-  dvars[2] = v[2];
-
-  // Set the initial d(eta)/dt = 1.0
-  dvars[3] = 1.0;
 
   // Get the initial angular velocity
   const TacsScalar *w;
   omegaInit->getVector(&w);
 
+  // Set the initial velocity
+  TacsScalar t[3];
+  crossProduct(1.0, w, r, t);
+  dvars[0] = v[0] + t[0];
+  dvars[1] = v[1] + t[1];
+  dvars[2] = v[2] + t[2];
+
   // Set the angular velocity
-  dvars[4] = w[0];
-  dvars[5] = w[1];
-  dvars[6] = w[2];
+  dvars[4] = 0.5*w[0];
+  dvars[5] = 0.5*w[1];
+  dvars[6] = 0.5*w[2];
 }
 
 /*
@@ -1504,7 +1507,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
       
       // Write out the nodal locations
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = RealPart(xpt[k]);
+        data[index+k] = RealPart(rinit[k] + xpt[k]);
       }
       index += 3;
     }
@@ -1627,7 +1630,8 @@ TACSSphericalConstraint::~TACSSphericalConstraint(){
 int TACSSphericalConstraint::numNodes(){
   if(bodyA && bodyB){
     return 3;
-  } else {
+  } 
+  else {
     return 2;
   }
 }
@@ -1714,7 +1718,7 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
   TacsScalar *resA = &res[0];
 
   // Set the variables for body A
-  const TacsScalar *rA = &vars[0];
+  const TacsScalar *uA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
   
@@ -1751,6 +1755,12 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
   // Evaluate the constraint
   // Set resC = rA + CA^{T}*xA
   matMultTransAdd(CA, xA, resC);
+  vecAxpy(1.0, uA, resC);
+
+  // Get the initial position for bodyA
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  const TacsScalar *rA;
+  rAVec->getVector(&rA);
   vecAxpy(1.0, rA, resC);
 
   if (bodyB){
@@ -1758,7 +1768,7 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
     TacsScalar *resB = &res[8];
 
     // Set the variables for body B
-    const TacsScalar *rB = &vars[8];
+    const TacsScalar *uB = &vars[8];
     const TacsScalar etaB = vars[11];
     const TacsScalar *epsB = &vars[12];
 
@@ -1774,13 +1784,19 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
     addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
                         &resB[3], &resB[4]);
 
-    // Compute t = CB^{T}*xB + rB
+    // Compute t = CB^{T}*xB + uB
     TacsScalar t[3];
     matMultTrans(CB, xB, t);
-    vecAxpy(1.0, rB, t);
+    vecAxpy(1.0, uB, t);
 
     // Complete the evaluation of the constraint
     vecAxpy(-1.0, t, resC);
+
+    // Get the initial position for bodyB
+    TACSGibbsVector *rBVec = bodyB->getInitPosition();
+    const TacsScalar *rB;
+    rBVec->getVector(&rB);
+    vecAxpy(-1.0, rB, resC);
   }
 
   // Add the dummy constraints for the remaining Lagrange multiplier
@@ -1802,7 +1818,6 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
   // Set the variables for body A
-  const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
 
@@ -1846,7 +1861,6 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
     addBlockIdent(-alpha, &J[offset*nvars + 8], nvars);
 
     // Set the variables for body B
-    const TacsScalar *rB = &vars[8];
     const TacsScalar etaB = vars[11];
     const TacsScalar *epsB = &vars[12];
 
@@ -1967,7 +1981,8 @@ const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
 int TACSRevoluteConstraint::numNodes(){
   if(bodyA && bodyB){
     return 3;
-  } else {
+  } 
+  else {
     return 2;
   }
 }
@@ -2108,7 +2123,7 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
   TacsScalar *resA = &res[0];
 
   // Set the variables for body A
-  const TacsScalar *rA = &vars[0];
+  const TacsScalar *uA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
   
@@ -2145,6 +2160,12 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
   // Evaluate the constraint
   // Set resC = rA + CA^{T}*xA
   matMultTransAdd(CA, xA, resC);
+  vecAxpy(1.0, uA, resC);
+
+  // Get the initial position for bodyA
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  const TacsScalar *rA;
+  rAVec->getVector(&rA);
   vecAxpy(1.0, rA, resC);
 
   // Retrieve the pointers to eA, eB1, eB2
@@ -2158,7 +2179,7 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
     TacsScalar *resB = &res[8];
 
     // Set the variables for body B
-    const TacsScalar *rB = &vars[8];
+    const TacsScalar *uB = &vars[8];
     const TacsScalar etaB = vars[11];
     const TacsScalar *epsB = &vars[12];
 
@@ -2174,13 +2195,19 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
     addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
                         &resB[3], &resB[4]);
 
-    // Compute t = CB^{T}*xB + rB
+    // Compute t = CB^{T}*xB + uB
     TacsScalar t[3];
     matMultTrans(CB, xB, t);
-    vecAxpy(1.0, rB, t);
+    vecAxpy(1.0, uB, t);
 
     // Complete the evaluation of the constraint
     vecAxpy(-1.0, t, resC);
+
+    // Get the initial position for bodyB
+    TACSGibbsVector *rBVec = bodyB->getInitPosition();
+    const TacsScalar *rB;
+    rBVec->getVector(&rB);
+    vecAxpy(-1.0, rB, resC);
 
     // Add the revolute direction constraint
     TacsScalar tA[3], tB1[3], tB2[3];
@@ -2247,7 +2274,6 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[] ){
   // Set the variables for body A
-  const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
 
@@ -2298,7 +2324,6 @@ void TACSRevoluteConstraint::addJacobian( double time, TacsScalar J[],
   // Add the terms required for body B if it is defined
   if (bodyB){
     // Set the variables for body B
-    const TacsScalar *rB = &vars[8];
     const TacsScalar etaB = vars[11];
     const TacsScalar *epsB = &vars[12];
 

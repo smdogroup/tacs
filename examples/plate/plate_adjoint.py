@@ -25,6 +25,9 @@ solver. One can create new functions and append it to the list.
 import sys
 import numpy as np
 
+# Import argparse
+import argparse
+
 from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 
@@ -34,13 +37,23 @@ comm = MPI.COMM_WORLD
 #---------------------------------------------------------------------!
 # Parse command line arguments, if any
 #---------------------------------------------------------------------!
+# Parse the arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--dh', type=float, default=1.0e-8,
+                    help='FD/CSD step size')
+parser.add_argument('--convert_mesh', type=int, default=0,
+                    help='Converts nodes to coordinate ordering')
+args = parser.parse_args()
 
-for arg in sys.argv:
-    print arg
+#---------------------------------------------------------------------!
+# Set variable values based on command line arguments
+#---------------------------------------------------------------------!
 
+dh = args.dh
+convert_mesh = args.convert_mesh
 bdfFileName = "plate.bdf" # Specify the name of the file to load which
                           # contains the mesh
-                          
+
 #---------------------------------------------------------------------!
 # Set the design variables
 #---------------------------------------------------------------------!
@@ -69,9 +82,9 @@ num_steps_per_sec = 1000
 # Properties for dynamics (Initial Conditions)
 #---------------------------------------------------------------------!
 
-gravity = elements.GibbsVector(np.array([0.0, 0.0, -9.81]))
-v0      = elements.GibbsVector(np.array([0.0, 0.0, 0.0]))
-w0      = elements.GibbsVector(np.array([0., 0., 0.]))
+gravity = elements.GibbsVector(0.0, 0.0, -9.81)
+v0      = elements.GibbsVector(0.0, 0.0, 0.0)
+w0      = elements.GibbsVector(0., 0., 0.)
 
 #---------------------------------------------------------------------!
 # Properties for the structure
@@ -79,7 +92,7 @@ w0      = elements.GibbsVector(np.array([0., 0., 0.]))
 
 rho           = 2500.0  # density, kg/m^3
 E             = 70.0e9  # elastic modulus, Pa
-nu            = 0.3     # poisson's ratio
+nu            = 0.30    # poisson's ratio
 kcorr         = 5.0/6.0 # shear correction factor
 ys            = 350.0e6 # yield stress, Pa
 min_thickness = 0.01    # minimum thickness of elements in m
@@ -90,7 +103,9 @@ thickness     = 0.05    # currrent thickness of elements in m
 # Load input BDF, set properties and create TACS
 #---------------------------------------------------------------------!
 
-mesh            = TACS.MeshLoader(comm)
+mesh = TACS.MeshLoader(comm)
+mesh.setConvertToCoordinate(convert_mesh)
+
 mesh.scanBDFFile(bdfFileName)
 
 num_components  = mesh.getNumComponents()
@@ -103,15 +118,17 @@ for i in xrange(num_components):
         element = elements.MITC(stiff, gravity, v0, w0)        
         mesh.setElement(i, element)
 
-tacs            = mesh.createTACS(8)
+tacs = mesh.createTACS(8)
 
 #---------------------------------------------------------------------!
 # Create the function list for adjoint solve
 #---------------------------------------------------------------------!
 
 funcs = []
-funcs.append(functions.ksfailure(tacs, 100.0))
-funcs.append(functions.compliance(tacs))
+funcs.append(functions.KSFailure(tacs, 100.0))
+funcs.append(functions.Compliance(tacs))
+funcs.append(functions.InducedFailure(tacs, 20.0))
+funcs.append(functions.StructuralMass(tacs))
 
 #---------------------------------------------------------------------#
 # Setup space for function values and their gradients
@@ -127,79 +144,86 @@ fvals_fd        = np.zeros(num_funcs)
 dfdx_fd         = np.zeros(num_funcs*num_design_vars)
 
 #---------------------------------------------------------------------#
-# Test all BDF Integrators for these functions
+# Function to print errors and optionally store data for more post
+# processin
+#---------------------------------------------------------------------#
+
+data = []
+def print_details(method, function, index, stepsize, adj_dfdx, fd_dfdx):
+    #data.append([method, function, stepsize, adj_dfdx, fd_dfdx])
+    record = dict(method=method, function=function, index=index, dh=stepsize,
+                  adjoint=adj_dfdx, complex_step=fd_dfdx,
+                  error=fd_dfdx - adj_dfdx)
+    data.append(record)
+    print("%10s %20s %4d %25.16e %25.16e %25.16e %25.16e" %
+          (method, function, index, stepsize, adj_dfdx, fd_dfdx, fd_dfdx - adj_dfdx))
+    
 #---------------------------------------------------------------------#
 # BDF Integrator
+#---------------------------------------------------------------------#
+
 for bdf_order in [1,2,3]:
     bdf = TACS.BDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec, bdf_order)
     bdf.setPrintLevel(0)
     bdf.setJacAssemblyFreq(1)
     bdf.setFunction(funcs)
-
-    print("")
-    print("Evaluating adjoint gradient for BDF method of order ", bdf_order)
     bdf.getFuncGrad(num_design_vars, x, fvals, dfdx)
-    print(fvals, dfdx)
+    bdf.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
+    
+    fnum = 0
+    for func in funcs:        
+        print_details("BDF" + str(bdf_order), func.__class__.__name__, fnum,
+                      dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+        fnum += 1
 
-    print("Evaluating finite difference gradient BDF method of order ", bdf_order)
-    bdf.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
-    print(fvals_fd, dfdx_fd)
-
-    print("Error for BDF order ", bdf_order)
-    print(fvals-fvals_fd, dfdx-dfdx_fd)
-
+#---------------------------------------------------------------------#
 # ABM Integrator
+#---------------------------------------------------------------------#
+
 for abm_order in [1, 2, 3, 4, 5, 6]:
     abm = TACS.ABMIntegrator(tacs, tinit, tfinal, num_steps_per_sec, abm_order)
     abm.setPrintLevel(0)
     abm.setJacAssemblyFreq(1)
     abm.setFunction(funcs)
-
-    print("")
-    print("Evaluating adjoint gradient for ABM method of order ", abm_order)
     abm.getFuncGrad(num_design_vars, x, fvals, dfdx)
-    print(fvals, dfdx)
+    abm.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
+    fnum = 0
+    for func in funcs:        
+        print_details("ABM" + str(abm_order), func.__class__.__name__, fnum,
+                      dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+        fnum += 1
 
-    print("Evaluating finite difference gradient ABM method of order ", abm_order)
-    abm.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
-    print(fvals_fd, dfdx_fd)
-
-    print("Error for ABM order ", abm_order)
-    print(fvals-fvals_fd, dfdx-dfdx_fd)
-
+#---------------------------------------------------------------------#
 # NBG Integrator
+#---------------------------------------------------------------------#
+
 nbg = TACS.NBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec)
 nbg.setPrintLevel(0)
 nbg.setJacAssemblyFreq(1)
 nbg.setFunction(funcs)
-
-print("")
-print("Evaluating adjoint gradient for NBG method")
 nbg.getFuncGrad(num_design_vars, x, fvals, dfdx)
-print(fvals, dfdx)
+nbg.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
+fnum = 0
+for func in funcs:        
+    print_details("NBG2", func.__class__.__name__, fnum,
+                  dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+    fnum += 1
 
-print("Evaluating finite difference gradient NBG method ")
-nbg.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
-print(fvals_fd, dfdx_fd)
-
-print("Error for NBG")
-print(fvals-fvals_fd, dfdx-dfdx_fd)
-
+#---------------------------------------------------------------------#
 # DIRK Integrator
+#---------------------------------------------------------------------#
+
 for num_stages in [1,2,3]:
     dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, num_stages)
     dirk.setPrintLevel(0)
     dirk.setJacAssemblyFreq(1)
     dirk.setFunction(funcs)
-
-    print("")
-    print("Evaluating adjoint gradient for DIRK method of order ", num_stages+1)
     dirk.getFuncGrad(num_design_vars, x, fvals, dfdx)
-    print(fvals, dfdx)
+    dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
+    fnum = 0
+    for func in funcs:        
+        print_details("DIRK"+str(num_stages), func.__class__.__name__, fnum,
+                      dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+        fnum += 1
 
-    print("Evaluating finite difference gradient DIRK method of order ", num_stages+1)
-    dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, 1.0e-6)
-    print(fvals_fd, dfdx_fd)
-
-    print("Error for DIRK order ", num_stages+1)
-    print(fvals-fvals_fd, dfdx-dfdx_fd)
+#print data

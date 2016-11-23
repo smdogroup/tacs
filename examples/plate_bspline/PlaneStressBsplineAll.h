@@ -70,8 +70,8 @@ PlaneStressBsplineAll<order>::PlaneStressBsplineAll( PlaneStressStiffness *_stif
                                                      int _pNum ):
 TACS2DElement<order*order>(_stiff, type, _componentNum){
   // Number of knot intervals
-  Lu = _Lu;
-  Lv = _Lv;
+  Lu = 1*_Lu;
+  Lv = 1*_Lv;
   
   // Copy over the patch number
   pNum = _pNum;

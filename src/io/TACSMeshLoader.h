@@ -51,6 +51,7 @@ class TACSMeshLoader : public TACSObject {
   // Set the elements corresponding to each of the component numbers 
   // ---------------------------------------------------------------
   void setElement( int component_num, TACSElement *_element );
+  void setConvertToCoordinate( int flag );
 
   // Retrieve the element numbers corresponding to the given 
   // component numbers
@@ -126,6 +127,10 @@ class TACSMeshLoader : public TACSObject {
   int num_bcs;
   int *bc_nodes, *bc_vars, *bc_ptr;
   TacsScalar *bc_vals;
+
+  // Convert to TACS's coordinate ordering if necessary (need to
+  // convert if loading BDF from gmsh output)
+  int convertToCoordinate;
 };
 
 #endif

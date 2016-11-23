@@ -62,9 +62,9 @@ num_steps_per_sec = 100
 # Properties for dynamics (Initial Conditions)
 #---------------------------------------------------------------------!
 
-gravity = elements.GibbsVector(np.array([0.0, 0.0, -9.81]))
-v0      = elements.GibbsVector(np.array([0.0, 0.0, 0.0]))
-w0      = elements.GibbsVector(np.array([0., 0., 0.]))
+gravity = elements.GibbsVector(0.0, 0.0, -9.81)
+v0      = elements.GibbsVector(0.0, 0.0, 0.0)
+w0      = elements.GibbsVector(0.0, 0.0, 0.0)
 
 #---------------------------------------------------------------------!
 # Properties for the structure
@@ -92,7 +92,7 @@ for i in xrange(num_components):
     stiff      = constitutive.isoFSDT(rho, E, nu, kcorr, ys, thickness,
                                       i, min_thickness, max_thickness)
     element = None
-    if descriptor in ["CQUAD"]:
+    if descriptor in ["CQUAD", "CQUAD9"]:
         element = elements.MITC(stiff, gravity, v0, w0)        
     mesh.setElement(i, element)
 
