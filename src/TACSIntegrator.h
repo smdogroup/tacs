@@ -117,7 +117,14 @@ class TACSIntegrator : public TACSObject {
                     TACSBVec *qddot );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
   void lineSearch( double *alpha, double *beta, double *gamma, TacsScalar f0, TACSBVec *d0 );
-    
+
+  // Functions to aid adjoint solve
+  // -------------------------------
+  void addVectorTransProducts( TACSBVec **ans, 
+                               double alpha, double beta, double gamma,
+                               int num_funcs, TACSFunction **funcs,
+                               TACSBVec **input );
+
   // Virtual functions for forward mode
   // -----------------------------------
   virtual void setupCoeffs() = 0;
@@ -147,7 +154,7 @@ class TACSIntegrator : public TACSObject {
   void adjointSolve( int adj_index, TACSBVec **adjoint );
   */
   void addToTotalDerivative( double scale, TACSBVec **adjoint );
-  void addFunctions( int time_step, double tcoeff, TACSFunction **funcs, 
+  void addFunctions( double tcoeff, TACSFunction **funcs, 
                      int numFuncs, TacsScalar *funcVals);
     
   // Functions to pack common logics (file io, output) in one place
@@ -330,6 +337,7 @@ class TACSABMIntegrator : public TACSIntegrator {
   void getLinearizationCoeffs( double *alpha, double *beta, double *gamma );
   void marchBackwards();
  private:
+  int getCoeffIndex( int time_step );
   int getRowIdx( int row_num );
   int getOrder( int k );
   void checkABMCoeffs();
