@@ -300,6 +300,8 @@ cdef extern from "TACSMeshLoader.h":
                            int **_elem_node_ptr, 
                            int **_elem_node_conn,
                            TacsScalar**_Xpts)
+      void getBCs(int *_num_bcs, int **_bc_nodes, int **_bc_vars, 
+                  int **_bc_ptr, TacsScalar **_bc_vals)
 
 cdef extern from "TACSCreator.h":
    cdef cppclass TACSCreator(TACSObject):

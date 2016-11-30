@@ -1157,6 +1157,34 @@ cdef class MeshLoader:
 
       return ptr, conn, X
 
+   def getBCs(self):
+      '''
+      Return the boundary conditions associated with the file
+      '''
+      cdef int num_bcs
+      cdef const int *bc_nodes
+      cdef const int *bc_vars
+      cdef const int *bc_ptr
+      cdef const TacsScalar *bc_vals
+
+      self.ptr.getBCs(&num_bcs, &bc_nodes, &bc_vars, &bc_ptr, &bc_vals)
+
+      cdef np.ndarray nodes = np.zeros(num_bcs, dtype=np.int)
+      for i in xrange(num_bcs):
+         nodes[i] = bc_nodes[i]
+
+      cdef np.ndarray ptr = np.zeros(num_bcs+1, dtype=np.int)
+      for i in xrange(num_bcs+1):
+         ptr[i] = bc_ptr[i]
+
+      cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.int)
+      cdef np.ndarray vals = np.zeros(ptr[-1])
+      for i in xrange(ptr[-1]):
+         bvars[i] = bc_vars[i]
+         vals[i] = bc_vals[i]
+
+      return nodes, ptr, bvars, vals
+
 # A generic abstract class for all integrators implemented in TACS
 cdef class Integrator:
    '''

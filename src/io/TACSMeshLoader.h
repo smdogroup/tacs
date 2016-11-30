@@ -93,6 +93,14 @@ class TACSMeshLoader : public TACSObject {
     if (_elem_node_conn){ *_elem_node_conn = elem_node_conn; }
     if (_Xpts){ *_Xpts = Xpts; }
   }
+  void getBCs( int *_num_bcs, const int **_bc_nodes, const int **_bc_vars, 
+               const int **_bc_ptr, const TacsScalar **_bc_vals ){
+    if (_num_bcs){ *_num_bcs = num_bcs; }
+    if (_bc_nodes){ *_bc_nodes = bc_nodes; }
+    if (_bc_vars){ *_bc_vars = bc_vars; }
+    if (_bc_ptr){ *_bc_ptr = bc_ptr; }
+    if (_bc_vals){ *_bc_vals = bc_vals; }
+  }
 
  private:
   // Communicator for all processors
