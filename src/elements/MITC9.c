@@ -567,6 +567,7 @@ void MITC9::getInitCondition( TacsScalar vars[],
   // The initial quaternions are eta = 1.0, eps = 0
   for ( int i = 0; i < NUM_NODES; i++ ){
     vars[8*i + 3] = 1.0;
+    vars[8*i + 7] = 1.0;
   }
 
   // If the initial velocity is defined
