@@ -53,6 +53,16 @@ cdef class RefFrame:
       self.ptr.decref()
       return
 
+cdef class RigidBodyViz:
+   cdef TACSRigidBodyViz *ptr
+   def __cinit__(self, TacsScalar L):
+      self.ptr = new TACSRigidBodyViz(L)
+      self.ptr.incref()
+      return
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
 cdef class RigidBody(Element):
    cdef TACSRigidBody *rbptr
    def __cinit__(self, RefFrame frame, TacsScalar mass,
@@ -84,16 +94,23 @@ cdef class RigidBody(Element):
       self.ptr.incref()
       return
 
+   def setVisualization(self, RigidBodyViz viz):
+      self.rbptr.setVisualization(viz.ptr)
+
    def __dealloc__(self):
       self.ptr.decref()
       return
 
 cdef class SphericalConstraint(Element):
    def __cinit__(self,
-                 RigidBody bodyA, RigidBody bodyB,
-                 GibbsVector point):
-      self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
-                                             point.ptr)
+                 GibbsVector point,
+                 RigidBody bodyA, RigidBody bodyB=None):
+      if bodyB is None:
+         self.ptr = new TACSSphericalConstraint(bodyA.rbptr,
+                                                point.ptr)
+      else:
+         self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
+                                                point.ptr)
       self.ptr.incref()
       return
    

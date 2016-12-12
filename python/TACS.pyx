@@ -46,7 +46,19 @@ PY_STIFFNESS_PRODUCT_DERIVATIVE = STIFFNESS_PRODUCT_DERIVATIVE
 # Import the orientations
 PY_NORMAL = NORMAL
 PY_TRANSPOSE = TRANSPOSE
-   
+
+# Import the ordering types
+PY_NATURAL_ORDER = NATURAL_ORDER
+PY_RCM_ORDER = RCM_ORDER
+PY_AMD_ORDER = AMD_ORDER
+PY_ND_ORDER = ND_ORDER
+PY_TACS_AMD_ORDER = TACS_AMD_ORDER
+      
+# Import the matrix ordering types
+PY_ADDITIVE_SCHWARZ = ADDITIVE_SCHWARZ
+PY_APPROXIMATE_SCHUR = APPROXIMATE_SCHUR
+PY_DIRECT_SCHUR = DIRECT_SCHUR
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
    def __cinit__(self):
@@ -694,6 +706,21 @@ cdef class Assembler:
       
       self.ptr.getVariables(cvec, cdvec, cddvec)
       return
+
+   def getInitConditions(self, Vec vec=None, Vec dvec=None):
+      '''
+      Retrieve the initial conditions
+      '''
+      cdef TACSBVec *cvec = NULL
+      cdef TACSBVec *cdvec = NULL
+
+      if vec is not None:
+         cvec = vec.ptr
+      if dvec is not None:
+         cdvec = dvec.ptr
+
+      self.ptr.getInitConditions(cvec, cdvec)
+      return
     
    def assembleRes(self, Vec residual):
       '''
@@ -1302,6 +1329,14 @@ cdef class Integrator:
    def setUseFEMat(self, int use_femat):
       self.ptr.setUseFEMat(use_femat)
       return 
+
+   def setOrderingType(self, OrderingType order_type):
+      self.ptr.setOrderingType(order_type)
+      return
+
+   def setInitNewtonDeltaFraction(self, double frac):
+      self.ptr.setInitNewtonDeltaFraction(frac)
+      return
   
    def configureOutput(self, ToFH5 f5, int write_freq=0,
                        char *file_format='solution_%4d.f5'):

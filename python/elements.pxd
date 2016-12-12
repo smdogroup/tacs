@@ -24,15 +24,21 @@ cdef extern from "TACSGibbsVector.h":
 cdef extern from "RigidBody.h":
    cdef cppclass TACSRefFrame(TACSObject):
       TACSRefFrame(TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
+
+   cdef cppclass TACSRigidBodyViz(TACSObject):
+      TACSRigidBodyViz(TacsScalar L)
    
    cdef cppclass TACSRigidBody(TACSElement):
       TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
                     const TacsScalar*, TACSGibbsVector*,
                     TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
       void setDesignVarNums(int, const int*, const int*)
+      void setVisualization(TACSRigidBodyViz*)
 
    cdef cppclass TACSSphericalConstraint(TACSElement):
       TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                              TACSGibbsVector *point)
+      TACSSphericalConstraint(TACSRigidBody *bodyA,
                               TACSGibbsVector *point)
 
    cdef cppclass TACSRevoluteConstraint(TACSElement):

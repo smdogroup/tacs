@@ -165,6 +165,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
     
   // Default parameters for Newton solve
   max_newton_iters = 10;
+  init_newton_delta = 0.0;
   atol = 1.0e-12;
   rtol = 1.0e-8;
 
@@ -317,8 +318,8 @@ int TACSIntegrator::doAdaptiveMarching( ) {
   gamma: multiplier for derivative of Residual wrt to qddot
 */
 int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
-                                  double t, TACSBVec *u, TACSBVec *udot, 
-                                  TACSBVec *uddot ){
+                                 double t, TACSBVec *u, TACSBVec *udot, 
+                                 TACSBVec *uddot ){
   // Store the alphas
   double atmp, btmp, gtmp;
   atmp = alpha;
@@ -339,7 +340,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       // Associate the maxtrix with FEMatrix
       mat = D;
       mat->incref();
-    } else {
+    } 
+    else {
       SerialBCSCMat *A = tacs->createSerialBCSCMat();
       pc = new SerialBCSCPc(A);
       pc->incref();
@@ -385,7 +387,12 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Assemble the Jacobian matrix once in n newton iterations
     double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
-      tacs->assembleJacobian(alpha, beta, gamma,
+      delta = init_newton_delta*gamma;
+      if (niter > 0 && (res_norm < init_res_norm)){
+        delta *= (res_norm/init_res_norm);
+      }
+
+      tacs->assembleJacobian(alpha, beta, gamma + delta,
                              res, mat, NORMAL);
     }
     else {
@@ -430,13 +437,13 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       exit_flag = 1;
       break;
     }
-    if ( RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
+    if (RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
       exit_flag = 3;
       break;
     }
 
     if (use_lapack){
-      if (mpiSize > 1) {
+      if (mpiSize > 1){
         fprintf(stderr, "TACSIntegrator:: Using LAPACK in parallel!\n");
       }
       // Perform the linear solve using LAPACK (serial only)
@@ -1398,6 +1405,19 @@ double TACSIntegrator::getTACSStates( TACSBVec *q, TACSBVec *qdot, TACSBVec * qd
 */
 void TACSIntegrator::setOrderingType( TACSAssembler::OrderingType _type ){
   ordering_type = _type;
+}
+
+/*
+  Set the initial fraction for the delta parameter within the Newton
+  globalization strategy.
+*/
+void TACSIntegrator::setInitNewtonDeltaFraction( double frac ){
+  if (frac >= 0.0){
+    init_newton_delta = frac;
+  }
+  else {
+    init_newton_delta = 0.0;
+  }
 }
 
 /*

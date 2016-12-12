@@ -2613,6 +2613,12 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
   return fmat;
 }
 
+/*
+  Create a serial BCSC matrix that enables sparse factorization with
+  partial (row) pivoting. This matrix class is useful for debugging and
+  testing the effects of roundoff errors in the solution process.  It
+  does not work in parallel applications.
+*/
 SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n", 

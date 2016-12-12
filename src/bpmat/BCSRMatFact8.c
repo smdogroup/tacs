@@ -920,7 +920,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
     int ipiv[8];
     int info = BMatComputeInverse(a, D, ipiv, 8);
     
-    if ( info > 0 ){
+    if (info > 0){
       fprintf(stderr, "Error during factorization of diagonal %d in block row %d \n", i+1, info);
     }
   }

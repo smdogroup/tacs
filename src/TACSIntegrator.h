@@ -73,6 +73,7 @@ class TACSIntegrator : public TACSObject {
   void setFunction( TACSFunction **_func, int _num_funcs );
   void setIsFactorized( int flag );
   void setOrderingType( TACSAssembler::OrderingType _type );
+  void setInitNewtonDeltaFraction( double frac );
   void setTACSStates( double time, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
 
   // Functions to export the solution in raw and tecplot binary forms
@@ -245,7 +246,9 @@ class TACSIntegrator : public TACSObject {
                           // 1: |R| < atol; 2: |dq| < atol
                           // 3: |R|/|R0| < rtol
                           // -1: max_newton_iters // -2: Nan
-  
+
+  // Initial value of delta used in the globalization strategy
+  double init_newton_delta; 
  
   TacsScalar energies[2]; // Keep track of energies
   TacsScalar init_energy; // The energy during time = 0

@@ -233,6 +233,9 @@ cdef extern from "TACSAssembler.h":
       void setVariables(TACSBVec*, TACSBVec*, TACSBVec*)
       void getVariables(TACSBVec*, TACSBVec*, TACSBVec*)
 
+      # Get the initial conditions
+      void getInitConditions(TACSBVec*, TACSBVec*)
+      
       # Assembly routines
       void assembleRes(TACSBVec *residual)
       void assembleJacobian(double alpha, double beta, double gamma,
@@ -352,7 +355,9 @@ cdef extern from "TACSIntegrator.h":
       void setMaxNewtonIters(int max_newton_iters)
       void setJacAssemblyFreq(int jac_comp_freq)
       void setUseLapack(int use_lapack)
-      void setUseFEMat( int _use_femat )
+      void setUseFEMat(int _use_femat)
+      void setOrderingType(OrderingType)
+      void setInitNewtonDeltaFraction(double)
       
       # Configure writing F5 files
       void configureOutput(TACSToFH5 *viewer, int write_freq,

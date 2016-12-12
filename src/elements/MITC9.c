@@ -587,7 +587,7 @@ void MITC9::getInitCondition( TacsScalar vars[],
     omegaInit->getVector(&omega);
     
     for ( int i = 0; i < NUM_NODES; i++ ){
-      // dot{u} = v + r^{x}*omega
+      // dot{u} = v + omega^{x}*r
       crossProductAdd(1.0, omega, &X[3*i], &dvars[8*i]);
       
       // d{eps}/dt = 0.5*omega

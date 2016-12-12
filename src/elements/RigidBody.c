@@ -699,8 +699,8 @@ void TACSRigidBody::updateInertialProperties(){
   matMultTrans(C, Jtmp, &CJtmp[0]);
 
   Jtmp[0] = JRef[1];
-  Jtmp[1] = JRef[4];
-  Jtmp[2] = JRef[5];
+  Jtmp[1] = JRef[3];
+  Jtmp[2] = JRef[4];
   matMultTrans(C, Jtmp, &CJtmp[3]);
 
   Jtmp[0] = JRef[2];
@@ -2509,7 +2509,11 @@ const char* TACSRigidLink::elementName(){
 */
 void TACSRigidLink::getInitCondition( TacsScalar vars[],
                                       TacsScalar dvars[],
-                                      const TacsScalar X[] ){}
+                                      const TacsScalar X[] ){
+  for ( int k = 0; k < 8; k++ ){
+    vars[16+k] = 1.0;
+  }
+}
 
 /*
   Compute the kinetic and potential energy within the element
@@ -2578,7 +2582,7 @@ void TACSRigidLink::addResidual( double time, TacsScalar res[],
   matMultTransAdd(CA, t, resC);
 
   // Add the residual for the quaternions
-  resC[3] += etaB - etaA;
+  resC[3] += lam[3];
   resC[4] += epsB[0] - epsA[0];
   resC[5] += epsB[1] - epsA[1];
   resC[6] += epsB[2] - epsA[2];
@@ -2594,10 +2598,7 @@ void TACSRigidLink::addResidual( double time, TacsScalar res[],
   vecAxpy(1.0, &lam[0], &resB[0]);
   
   // Add the terms from the second constraint
-  resA[3] -= lam[3];
   vecAxpy(-1.0, &lam[4], &resA[4]);
-
-  resB[3] += lam[3];
   vecAxpy(1.0, &lam[4], &resB[4]);
 }
 
@@ -2646,8 +2647,6 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
   addBlockEMat(alpha, etaA, epsA, t, &J[16*nvars + 3], nvars);
 
   // Derivatives of the quaternion constraint
-  J[19*nvars + 11] += alpha; // etaB
-  J[19*nvars + 3] -= alpha;  // etaA
   addBlockIdent(alpha, &J[20*nvars + 12], nvars);
   addBlockIdent(-alpha, &J[20*nvars + 4], nvars);
   
@@ -2661,9 +2660,8 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
   addBlockEMatTrans(-alpha, etaA, epsA, t, &J[3*nvars + 16], nvars);
 
   // Add the derivatives of the quaternion constraint w.r.t. lam[3]
-  J[3*nvars + 19] -= alpha;
-  J[11*nvars + 19] += alpha;
- 
+  J[19*nvars + 19] += alpha;
+
   // Add the remaining quaternion constraint derivatives w.r.t. lam[4:]
   addBlockIdent(-alpha, &J[4*nvars + 20], nvars);
   addBlockIdent(alpha, &J[12*nvars + 20], nvars);
