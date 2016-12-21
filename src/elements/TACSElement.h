@@ -208,6 +208,11 @@ class TACSElement : public TACSOptObject {
     return numNodes()*numDisplacements();
   }
 
+  // Identifies whether the nodes are associated with the multipliers
+  virtual void getMultiplierNodeIds( int *ids ){
+    memset(ids, 0, numNodes()*sizeof(int));
+  }
+
   // Retrieve the initial conditions and add the derivative
   // ------------------------------------------------------
   virtual void getInitCondition( TacsScalar vars[],
