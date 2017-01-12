@@ -5,6 +5,7 @@
 import numpy as np
 from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
+import time
 
 # Load structural mesh from BDF file
 tacs_comm = MPI.COMM_WORLD
@@ -35,15 +36,17 @@ for i in xrange(num_components):
 # Create tacs assembler object from mesh loader
 tacs = struct_mesh.createTACS(6)
 
-# Set up functions to evaluate (just computing mass of structure as example)
+# Set up functions to evaluate
 mass = functions.StructuralMass(tacs)
-funclist = [mass]
+ksWeight = 50.0
+ksfailure = functions.KSFailure(tacs, ksWeight)
+funclist = [ksfailure]
 
 # Evaluate functions
 fvals = tacs.evalFunctions(funclist)
-massval = fvals[0]
+fval = fvals[0]
 if tacs_comm.rank == 0:
-    print "Mass: ", massval
+    print "function eval: ", fval
 
 x = np.zeros(num_components, TACS.dtype)
 tacs.getDesignVars(x)
@@ -62,8 +65,12 @@ alpha = 1.0
 beta = 0.0
 gamma = 0.0
 tacs.zeroVariables()
+print "Assembling and factoring linear system..."
+tic = time.clock()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
+toc = time.clock()
+print "Time to assemble and factor: ", toc - tic
 
 # Get numpy array from distributed vector object and write in loads
 force_array = forces.getArray() 
@@ -71,7 +78,11 @@ force_array[2::6] += 100.0 # uniform load in z direction
 forces.applyBCs()
 
 # Solve the linear system
+print "Solving linear system..."
+tic = time.clock()
 pc.applyFactor(forces, ans)
+toc = time.clock()
+print "Time to solve: ", toc - tic
 tacs.setVariables(ans)
 
 # Evaluate the function
@@ -79,34 +90,62 @@ ksWeight = 100.0
 funcs = [functions.KSFailure(tacs, ksWeight)]
 fvals1 = tacs.evalFunctions(funcs)
 
-# Evaluate the derivative
-fdvSens = np.zeros(x.shape, TACS.dtype)
-product = np.zeros(x.shape, TACS.dtype)
-tacs.evalSVSens(funcs[0], res)
-pc.applyFactor(res, ans)
-tacs.evalDVSens(funcs[0], fdvSens)
-tacs.evalAdjointResProduct(ans, product)
-fdvSens = fdvSens - product
+# Create distributed vector for node locations and fill it
+struct_X_vec = tacs.createNodeVec()
+tacs.getNodes(struct_X_vec)
+struct_X = struct_X_vec.getArray().astype(TACS.dtype)
+struct_nnodes = len(struct_X)/3
 
-# Evaluate the result
-result = np.sum(fdvSens).real
+# Evaluate the derivative w.r.t. node locations
+dvsens_vec = tacs.createNodeVec()
+tacs.evalXptSens(funcs[0], dvsens_vec)
+dvsens = dvsens_vec.getArray()
 
-# Set the complex step
-dh = 1e-6
+svsens_vec = tacs.createVec()
+tacs.evalSVSens(funcs[0], svsens_vec)
+svsens_vec.scale(-1.0)
+
+print "Solving for adjoint variables..."
+adj_vars_vec = tacs.createVec()
+tic = time.clock()
+pc.applyFactor(svsens_vec, adj_vars_vec)
+toc = time.clock()
+print "Time to solve: ", toc - tic
+
+product_vec = tacs.createNodeVec()
+tacs.evalAdjointResXptSensProduct(adj_vars_vec, product_vec)
+product = product_vec.getArray()
+deriv = dvsens + product
+
+# Perturb and set the node locations
+struct_X_pert = struct_X
+i_pert = 0
+dh = 1.0e-6
+
 if TACS.dtype is np.complex:
-    dh = 1e-30
-    x = x + 1j*dh
+    dh = 1.0e-30
+    struct_X_pert[i_pert] += 1j*dh
 else:
-    x = x + dh
-
-# Set the design variables
-tacs.setDesignVars(x)
+    struct_X_pert[i_pert] += dh
+    
+struct_X[:] = struct_X_pert[:]
+struct_X_vec.applyBCs()
+tacs.setNodes(struct_X_vec)
 
 # Compute the perturbed solution
 tacs.zeroVariables()
+print "Assembling and factoring perturbed linear system..."
+tic = time.clock()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
+toc = time.clock()
+print "Time to assemble and factor: ", toc - tic
+
+print "Solving perturbed linear system..."
+tic = time.clock()
 pc.applyFactor(forces, ans)
+toc = time.clock()
+print "Time to solve: ", toc - tic
 tacs.setVariables(ans)
 
 # Evaluate the function for perturbed solution
@@ -119,7 +158,7 @@ else:
 
 if tacs_comm.rank == 0:
     print 'FD:     ', fd[0]
-    print 'Result: ', result
+    print 'Result: ', deriv[i_pert].real
 
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |

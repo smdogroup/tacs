@@ -388,8 +388,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       delta = init_newton_delta*gamma;
-      if (niter > 0 && (res_norm < init_res_norm)){
-        delta *= (res_norm/init_res_norm);
+      if (niter > 0 && (RealPart(res_norm) < RealPart(init_res_norm))){
+        delta *= RealPart(res_norm/init_res_norm);
       }
 
       tacs->assembleJacobian(alpha, beta, gamma + delta,
