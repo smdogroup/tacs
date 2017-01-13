@@ -36,20 +36,18 @@ for i in xrange(num_components):
 # Create tacs assembler object from mesh loader
 tacs = struct_mesh.createTACS(6)
 
+# Create distributed vector for node locations and fill it
+struct_X_vec = tacs.createNodeVec()
+tacs.getNodes(struct_X_vec)
+struct_X = struct_X_vec.getArray()
+struct_nnodes = len(struct_X)/3
+
 # Set up functions to evaluate
 mass = functions.StructuralMass(tacs)
 ksWeight = 50.0
 ksfailure = functions.KSFailure(tacs, ksWeight)
-funclist = [ksfailure]
-
-# Evaluate functions
-fvals = tacs.evalFunctions(funclist)
-fval = fvals[0]
-if tacs_comm.rank == 0:
-    print "function eval: ", fval
-
-x = np.zeros(num_components, TACS.dtype)
-tacs.getDesignVars(x)
+# funcs = [mass]
+funcs = [ksfailure]
 
 # Create matrix and distributed vectors
 res = tacs.createVec()
@@ -65,12 +63,15 @@ alpha = 1.0
 beta = 0.0
 gamma = 0.0
 tacs.zeroVariables()
-print "Assembling and factoring linear system..."
 tic = time.clock()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 toc = time.clock()
-print "Time to assemble and factor: ", toc - tic
+
+if tacs_comm.rank == 0:
+    print "Assembled and factored linear system..."
+    print "Time to assemble and factor: ", toc - tic
+    print
 
 # Get numpy array from distributed vector object and write in loads
 force_array = forces.getArray() 
@@ -78,23 +79,22 @@ force_array[2::6] += 100.0 # uniform load in z direction
 forces.applyBCs()
 
 # Solve the linear system
-print "Solving linear system..."
 tic = time.clock()
 pc.applyFactor(forces, ans)
 toc = time.clock()
-print "Time to solve: ", toc - tic
 tacs.setVariables(ans)
 
-# Evaluate the function
-ksWeight = 100.0
-funcs = [functions.KSFailure(tacs, ksWeight)]
-fvals1 = tacs.evalFunctions(funcs)
+if tacs_comm.rank == 0:
+    print "Solved linear system..."
+    print "Time to solve: ", toc - tic
+    print
 
-# Create distributed vector for node locations and fill it
-struct_X_vec = tacs.createNodeVec()
-tacs.getNodes(struct_X_vec)
-struct_X = struct_X_vec.getArray().astype(TACS.dtype)
-struct_nnodes = len(struct_X)/3
+# Evaluate the function
+fvals1 = tacs.evalFunctions(funcs)
+fval = fvals1[0]
+if tacs_comm.rank == 0:
+    print "unperturbed function eval: ", fval
+    print
 
 # Evaluate the derivative w.r.t. node locations
 dvsens_vec = tacs.createNodeVec()
@@ -105,60 +105,77 @@ svsens_vec = tacs.createVec()
 tacs.evalSVSens(funcs[0], svsens_vec)
 svsens_vec.scale(-1.0)
 
-print "Solving for adjoint variables..."
 adj_vars_vec = tacs.createVec()
 tic = time.clock()
 pc.applyFactor(svsens_vec, adj_vars_vec)
 toc = time.clock()
-print "Time to solve: ", toc - tic
+
+if tacs_comm.rank == 0:
+    print "Solved for adjoint variables..."
+    print "Time to solve: ", toc - tic
+    print
 
 product_vec = tacs.createNodeVec()
 tacs.evalAdjointResXptSensProduct(adj_vars_vec, product_vec)
 product = product_vec.getArray()
+print dvsens
+print product
 deriv = dvsens + product
 
 # Perturb and set the node locations
-struct_X_pert = struct_X
-i_pert = 0
-dh = 1.0e-6
+pert_vec = tacs.createNodeVec()
+pert_vec.setRand()
 
 if TACS.dtype is np.complex:
     dh = 1.0e-30
-    struct_X_pert[i_pert] += 1j*dh
+    struct_X_vec.axpy(dh*1j, pert_vec)
 else:
-    struct_X_pert[i_pert] += dh
-    
-struct_X[:] = struct_X_pert[:]
-struct_X_vec.applyBCs()
+    dh = 1.0e-9
+    struct_X_vec.axpy(dh, pert_vec)
+
+tacs.testElement(0, 2)
+
+pert = pert_vec.getArray().astype(TACS.dtype)
 tacs.setNodes(struct_X_vec)
 
 # Compute the perturbed solution
 tacs.zeroVariables()
-print "Assembling and factoring perturbed linear system..."
 tic = time.clock()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 toc = time.clock()
-print "Time to assemble and factor: ", toc - tic
 
-print "Solving perturbed linear system..."
+if tacs_comm.rank == 0:
+    print "Assembled and factored perturbed linear system..."
+    print "Time to assemble and factor: ", toc - tic
+    print
+
 tic = time.clock()
 pc.applyFactor(forces, ans)
 toc = time.clock()
-print "Time to solve: ", toc - tic
 tacs.setVariables(ans)
+
+if tacs_comm.rank == 0:
+    print "Solved perturbed linear system..."
+    print "Time to solve: ", toc - tic
+    print
 
 # Evaluate the function for perturbed solution
 fvals2 = tacs.evalFunctions(funcs)
+fval2 = fvals2[0]
+if tacs_comm.rank == 0:
+    print "perturbed function eval: ", fval2
+    print
 
 if TACS.dtype is np.complex:
     fd = fvals2.imag/dh
 else:
     fd = (fvals2 - fvals1)/dh
 
+# Print comparison of derivative evaluations
 if tacs_comm.rank == 0:
     print 'FD:     ', fd[0]
-    print 'Result: ', deriv[i_pert].real
+    print 'Result: ', np.dot(deriv, pert).real
 
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |

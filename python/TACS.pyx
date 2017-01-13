@@ -884,8 +884,16 @@ cdef class Assembler:
       cdef TACSFunction **funcs = &((<Function>func).ptr)
       cdef TACSBVec **vecs = &((<Vec>vec).ptr)
 
+      # Zero the entries of the vector
+      vec.zeroEntries()
+
       # Compute the derivative
       self.ptr.addXptSens(1.0, funcs, num_funcs, vecs)
+
+      # Complete the parallel assembly of the sensitivity
+      vec.ptr.beginSetValues(ADD_VALUES)
+      vec.ptr.endSetValues(ADD_VALUES)
+
       return
 
    def evalAdjointResXptSensProduct(self, Vec adjoint, Vec prod):

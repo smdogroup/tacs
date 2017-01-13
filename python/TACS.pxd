@@ -35,6 +35,12 @@ cdef extern from "KSM.h":
        NORMAL
        TRANSPOSE
 
+cdef extern from "BVecDist.h":
+    enum TACSBVecOperation:
+       INSERT_VALUES
+       ADD_VALUES
+       INSERT_NONZERO_VALUES
+
 # Special functions required for converting pointers
 cdef extern from "":
    ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
@@ -101,6 +107,10 @@ cdef extern from "BVec.h":
       int getArray(TacsScalar **array)
       int readFromFile(const_char *filename)
       int writeToFile(const_char *filename)
+      void beginSetValues(TACSBVecOperation op)
+      void endSetValues(TACSBVecOperation op)
+      void beginDistributeValues()
+      void endDistributeValues()
         
 cdef extern from "PMat.h":
    cdef cppclass PMat(TACSMat):

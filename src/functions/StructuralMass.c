@@ -14,7 +14,7 @@ class StructuralMassCtx : public TACSFunctionCtx {
   StructuralMassCtx( TACSFunction *mfunc,
                      int maxNodes ){
     mass = 0.0;
-    hXptSens = new TacsScalar[ maxNodes ];
+    hXptSens = new TacsScalar[ 3*maxNodes ];
   }
   ~StructuralMassCtx(){
     delete [] hXptSens;
