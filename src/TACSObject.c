@@ -115,10 +115,8 @@ void TACSObject::decref(){
 #ifdef TACS_DEBUG
     fprintf(stderr, "Deleting object %s\n",
             this->TACSObjectName());
-    delete this;
-#else
-    delete this;
 #endif
+    delete this;
   }
   else if (ref_count < 0){
     fprintf(stderr, "Encountered a negative reference count for %s\n",

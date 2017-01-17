@@ -403,8 +403,6 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     compute_symbolic_factor(&root_rowp, &root_cols, root_col_size);
     int final_nnz = root_rowp[nrows];    
     
-    //    printf("[%d] PDMat factorization: M: %d N: %d\n",
-    //           root, m, n);
     if (m && n){
       printf("[%d] initial density: %4.3f factor fill in: %4.3f\n",
              root, (1.0*init_nnz)/(nrows*ncols), 
@@ -2364,7 +2362,7 @@ TacsScalar *PDMat::get_block( int rank, int i, int j ){
   TacsScalar *A = NULL;
 
   if (rank == get_block_owner(i, j)){	  
-    if ( i > j ){ // L
+    if (i > j){ // L
       int lp = Lcolp[j];
       int size = Lcolp[j+1] - Lcolp[j];
             
@@ -2376,7 +2374,7 @@ TacsScalar *PDMat::get_block( int rank, int i, int j ){
         A = &Lvals[lval_offset[lp]];
       }
     }
-    else if ( i == j ){ // D
+    else if (i == j){ // D
       A = &Dvals[dval_offset[i]];
     }
     else { // i < j : U

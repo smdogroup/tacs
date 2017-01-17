@@ -8,6 +8,51 @@
   Copyright (c) 2015-2016 Graeme Kennedy. All rights reserved. 
 */
 
+/*
+  Write the relative error for components of a vector for a
+  finite-difference or complex-step study to a given file
+
+  input:
+  fp:         the output file 
+  descript:   description of the component
+  a:          analytic values
+  b:          set of finite-difference/complex-step values
+  size:       the number of values
+  rel_err:    relative error tolerance
+*/
+static void writeErrorComponents( FILE *fp, const char *descript,
+                                  TacsScalar *a, TacsScalar *fd, 
+                                  int size, double rel_err=0.0 ){
+  int print_flag = 1;
+  for ( int i = 0; i < size; i++ ){
+    double rel = 0.0;
+    if (a[i] != 0.0){
+      rel = fabs(RealPart((a[i] - fd[i])/a[i]));
+    }
+    else {
+      rel = fabs(RealPart((a[i] - fd[i])));
+    }
+
+    if (rel > rel_err || a[i] != a[i] || fd[i] != fd[i]){
+      if (print_flag){
+	fprintf(fp, "%*s[   ] %15s %15s %15s\n",
+		(int)strlen(descript), "Val", "Analytic", 
+		"Approximate", "Rel. Error");
+	print_flag = 0;
+      }
+      if (a[i] != 0.0){
+	fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", 
+		descript, i, RealPart(a[i]), RealPart(fd[i]), 
+		fabs(RealPart((a[i] - fd[i])/a[i])));
+      }
+      else {
+	fprintf(fp, "%s[%3d] %15.6e %15.6e\n", 
+		descript, i, RealPart(a[i]), RealPart(fd[i]));
+      }
+    }
+  }  
+}
+
 /* 
    Return the number of displacements
 */
@@ -325,6 +370,56 @@ static inline void computeNormalRateMat( const double Na[],
 					 const TacsScalar Xr[], 
 					 const TacsScalar Xdinv[],
 					 TacsScalar zXdinv[] ){
+  // Compute the derivatives of the normal direction along the
+  // parametric directions
+  TacsScalar dn[9];
+
+  dn[2] = dn[5] = dn[8] = 0.0;
+  dn[0] = (Na[0]*Xr[2] + Na[1]*Xr[11] + Na[2]*Xr[20] +
+	   Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
+	   Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
+  dn[3] = (Na[0]*Xr[5] + Na[1]*Xr[14] + Na[2]*Xr[23] +
+	   Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
+	   Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
+  dn[6] = (Na[0]*Xr[8] + Na[1]*Xr[17] + Na[2]*Xr[26] +
+	   Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
+	   Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
+  
+  dn[1] = (Nb[0]*Xr[2] + Nb[1]*Xr[11] + Nb[2]*Xr[20] +
+	   Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
+	   Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
+  dn[4] = (Nb[0]*Xr[5] + Nb[1]*Xr[14] + Nb[2]*Xr[23] +
+	   Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
+	   Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
+  dn[7] = (Nb[0]*Xr[8] + Nb[1]*Xr[17] + Nb[2]*Xr[26] +
+	   Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
+	   Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
+
+  // Compute zXdinv = -Xdinv*dn*Xdinv
+  TacsScalar tmp[9];
+  matMatMult(dn, Xdinv, tmp);
+  matMatMult(Xdinv, tmp, zXdinv);
+
+  // Scale all the entries in zXdinv by -1
+  zXdinv[0] *= -1.0;
+  zXdinv[1] *= -1.0;
+  zXdinv[2] *= -1.0;
+  zXdinv[3] *= -1.0;
+  zXdinv[4] *= -1.0;
+  zXdinv[5] *= -1.0;
+  zXdinv[6] *= -1.0;
+  zXdinv[7] *= -1.0;
+  zXdinv[8] *= -1.0;
+}
+
+/*
+  Compute the derivative of the zXdinv matrix
+*/
+static inline void computeNormalRateMatSens( const double Na[],
+                                             const double Nb[],
+                                             const TacsScalar Xr[], 
+                                             const TacsScalar Xdinv[],
+                                             TacsScalar zXdinv[] ){
   // Compute the derivatives of the normal direction along the
   // parametric directions
   TacsScalar dn[9];
@@ -736,23 +831,8 @@ void MITC9::computeEnergies( double time,
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
-
-      // Compute the cross product to find the normal direction
-      TacsScalar normal[3];
-      crossProduct(1.0, Xa, Xb, normal);
-      TacsScalar nrm = sqrt(vecDot(normal, normal));
-      vecScale(1.0/nrm, normal);
-
-      // Scale the Xa direction so that it is a unit vector
-      nrm = sqrt(vecDot(Xa, Xa));
-      vecScale(1.0/nrm, Xa);
-
-      // Compute the second perpendicular direction 
-      crossProduct(1.0, normal, Xa, Xb);
-   
-      // Assemble the transformation matrix
-      assembleFrame(Xa, Xb, normal, T);
-
+      computeTransform(T, Xa, Xb);
+      
       // Compute the displacement-based strain
       TacsScalar e[8], s[8];
       evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
@@ -982,19 +1062,7 @@ void MITC9::addResidual( double time,
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
-
-      // Compute the cross product to find the normal direction
-      TacsScalar normal[3];
-      crossProduct(1.0, Xa, Xb, normal);
-      TacsScalar nrm = sqrt(vecDot(normal, normal));
-      vecScale(1.0/nrm, normal);
-
-      // Scale the Xa direction so that it is a unit vector
-      nrm = sqrt(vecDot(Xa, Xa));
-      vecScale(1.0/nrm, Xa);
-      // Compute the second perpendicular direction 
-      crossProduct(1.0, normal, Xa, Xb);
-      assembleFrame(Xa, Xb, normal, T);
+      computeTransform(T, Xa, Xb);
 
       // Compute the displacement-based strain
       TacsScalar e[8], B[64*NUM_NODES];
@@ -1291,22 +1359,7 @@ void MITC9::addJacobian( double time, TacsScalar J[],
 	
 	// Compute the transformation to the locally-aligned frame
 	TacsScalar T[9]; 
-	
-	// Compute the cross product to find the normal direction
-	TacsScalar normal[3];
-	crossProduct(1.0, Xa, Xb, normal);
-	TacsScalar nrm = sqrt(vecDot(normal, normal));
-	vecScale(1.0/nrm, normal);
-
-	// Scale the Xa direction so that it is a unit vector
-	nrm = sqrt(vecDot(Xa, Xa));
-	vecScale(1.0/nrm, Xa);
-
-	// Compute the second perpendicular direction 
-	crossProduct(1.0, normal, Xa, Xb);
-	
-	// Assemble the transformation matrix
-	assembleFrame(Xa, Xb, normal, T);
+        computeTransform(T, Xa, Xb);
 	
 	// Compute the displacement-based strain
 	TacsScalar e[8], B[64*NUM_NODES];
@@ -1572,19 +1625,7 @@ void MITC9::addAdjResProduct( double time, double scale,
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
-
-      // Compute the cross product to find the normal direction
-      TacsScalar normal[3];
-      crossProduct(1.0, Xa, Xb, normal);
-      TacsScalar nrm = sqrt(vecDot(normal, normal));
-      vecScale(1.0/nrm, normal);
-
-      // Scale the Xa direction so that it is a unit vector
-      nrm = sqrt(vecDot(Xa, Xa));
-      vecScale(1.0/nrm, Xa);
-      // Compute the second perpendicular direction 
-      crossProduct(1.0, normal, Xa, Xb);
-      assembleFrame(Xa, Xb, normal, T);
+      computeTransform(T, Xa, Xb);
 
       // Compute the displacement-based strain
       TacsScalar e[8], B[64*NUM_NODES];
@@ -1691,15 +1732,15 @@ void MITC9::computeAngularAccel( TacsScalar domega[],
 }
 
 /*
-  At each node in the finite-element, compute the derivatives of
-  the coordinates directions and assemble a locally-aligned reference
+  At each node in the finite-element, compute the derivatives of the
+  coordinate directions and assemble a locally-aligned reference
   frame.
 
   Each locally-aligned reference frame Xr[] consists of a 3x3 matrix
   stored in row-major order where the first direction is aligned
-  along the 1-direction and the third direction is normal to the 
-  local surface and the second direction is perpendicular to both
-  these directions. This can be written as follows:
+  along the 1-direction and the third direction is normal to the local
+  surface and the second direction is perpendicular to both these
+  directions. This can be written as follows:
 
   Xr = [X,xi1; X,xi2; n]
 
@@ -1740,6 +1781,106 @@ void MITC9::computeFrames( TacsScalar Xr[],
       Xr += 9;
     }
   }
+}
+
+/*
+  Given the non-orthonormal in-plane directions Xa/Xb which are the
+  parametric tangents, compute the transformation to the
+  locally-aligned frame for the strain.
+
+  input:
+  Xa:   tangent to the first parametric direction
+  Xb:   tangent to the second parametric direction
+
+  output:
+  T:    the transformation matrix
+*/
+void MITC9::computeTransform( TacsScalar T[],
+                              const TacsScalar Xa[],
+                              const TacsScalar Xb[] ){      
+  // Compute the cross product of Xa/Xb to find the normal direction
+  TacsScalar normal[3];
+  crossProduct(1.0, Xa, Xb, normal);
+  TacsScalar nrm = sqrt(vecDot(normal, normal));
+  vecScale(1.0/nrm, normal);
+
+  // The first coordinate direction
+  TacsScalar d1[3];
+  if (stiff->getTransformType() == FSDTStiffness::NATURAL){
+    // Scale the Xa direction so that it is a unit vector
+    TacsScalar invXa = 1.0/sqrt(vecDot(Xa, Xa));
+    d1[0] = invXa*Xa[0];
+    d1[1] = invXa*Xa[1];
+    d1[2] = invXa*Xa[2];
+  }
+  else {
+    // Retrieve the reference axis from the constitutive
+    // object
+    const TacsScalar *axis = stiff->getRefAxis();
+    TacsScalar an = vecDot(axis, normal);
+    
+    // Take the component of the reference axis perpendicular
+    // to the surface
+    d1[0] = axis[0] - an*normal[0];
+    d1[1] = axis[1] - an*normal[1];
+    d1[2] = axis[2] - an*normal[2];
+    
+    // Normalize the new direction
+    TacsScalar inv = 1.0/sqrt(vecDot(d1, d1));
+    vecScale(inv, d1);
+  }
+
+  // Compute the second perpendicular direction 
+  TacsScalar d2[3];
+  crossProduct(1.0, normal, d1, d2);
+  
+  // Assemble the transformation matrix
+  assembleFrame(d1, d2, normal, T);
+}
+
+/*
+  Compute the derivative of the transformation
+*/
+void MITC9::computeTransformSens( TacsScalar Xad[],
+                                  TacsScalar Xbd[],
+                                  const TacsScalar Td[],
+                                  const TacsScalar Xa[],
+                                  const TacsScalar Xb[] ){      
+  // Compute the cross product of Xa/Xb to find the normal direction
+  TacsScalar normal[3];
+  crossProduct(1.0, Xa, Xb, normal);
+  TacsScalar nrm = sqrt(vecDot(normal, normal));
+  vecScale(1.0/nrm, normal);
+
+  // The first coordinate direction
+  TacsScalar d1[3];
+  if (stiff->getTransformType() == FSDTStiffness::NATURAL){
+    // Scale the Xa direction so that it is a unit vector
+    TacsScalar invXa = 1.0/sqrt(vecDot(Xa, Xa));
+    d1[0] = invXa*Xa[0];
+    d1[1] = invXa*Xa[1];
+    d1[2] = invXa*Xa[2];
+  }
+  else {
+    // Retrieve the reference axis from the constitutive
+    // object
+    const TacsScalar *axis = stiff->getRefAxis();
+    TacsScalar an = vecDot(axis, normal);
+    
+    // Take the component of the reference axis perpendicular
+    // to the surface
+    d1[0] = axis[0] - an*normal[0];
+    d1[1] = axis[1] - an*normal[1];
+    d1[2] = axis[2] - an*normal[2];
+    
+    // Normalize the new direction
+    TacsScalar inv = 1.0/sqrt(vecDot(d1, d1));
+    vecScale(inv, d1);
+  }
+
+  // Compute the second perpendicular direction 
+  TacsScalar d2[3];
+  crossProduct(1.0, normal, d1, d2); 
 }
 
 /*
@@ -1956,9 +2097,109 @@ void MITC9::evalStrain( TacsScalar e[],
 }
 
 /*
+  Compute the derivative of the product of the strain with an input
+  vector with respect to all of the function inputs.
+
+  input:
+  scale:   scalar multiple for all components
+  eSens:   input sensitivity vector
+  Ur:      derivative of displacements w.r.t. shell coordinates
+  dr:      derivative of the direction w.r.t. shell coordinates
+  Xdinv:   the inverse of the Jacobian matrix
+  zXdinv:  the derivative of the inverse of the Jacobian w.r.t. z
+
+  output:
+  Urd:     derivative of the function w.r.t. Ur
+  drd:     derivative of the function w.r.t. dr
+  Xdinvd:  derivative of the function w.r.t. Xdinv
+  zXdinvd: derivative of the function w.r.t. Xdinvd
+*/
+void MITC9::evalStrainSens( TacsScalar Urd[], 
+                            TacsScalar drd[],
+                            TacsScalar Xdinvd[], 
+                            TacsScalar zXdinvd[],
+                            TacsScalar Td[], 
+                            TacsScalar scale, const TacsScalar eSens[],
+                            const TacsScalar Ur[], 
+                            const TacsScalar dr[], 
+                            const TacsScalar Xdinv[],
+                            const TacsScalar zXdinv[],
+                            const TacsScalar T[] ){
+  // Compute U0 = T^{T}*Ur*Xdinv*T
+  TacsScalar UrXdinv[9], UrXdinvT[9];
+  matMatMult(Ur, Xdinv, UrXdinv);
+  matMatMult(UrXdinv, T, UrXdinvT);
+
+  TacsScalar U0[9];
+  matTransMatMult(T, UrXdinvT, U0);
+
+  // Compute U1 = T^{T}*(dr*Xdinv + Ur*zXdinv)*T
+  TacsScalar U1[9], t2[9];
+  matMatMult(Ur, zXdinv, U1);
+  matMatMultAdd(dr, Xdinv, U1);
+  matMatMult(U1, T, t2);
+  matTransMatMult(T, t2, U1);
+
+  // Compute the derivative of the strain product w.r.t. U0
+  TacsScalar U0d[9];
+  U0d[0] = scale*(eSens[0]*(1.0 + U0[0]) + eSens[2]*U0[1] + 
+                  eSens[3]*U1[0] + eSens[5]*U1[1]);
+  U0d[1] = scale*(eSens[2]*(1.0 + U0[0]) + eSens[1]*U0[1] + 
+                  eSens[4]*U1[1] + eSens[5]*U1[0]);
+  U0d[2] = 0.0;
+  U0d[3] = scale*(eSens[2]*(1.0 + U0[4]) + eSens[0]*U0[3] +
+                  eSens[3]*U1[3] + eSens[5]*U1[4]);
+  U0d[4] = scale*(eSens[1]*(1.0 + U0[4]) + eSens[2]*U0[3] +
+                  eSens[4]*U1[4] + eSens[5]*U1[3]);
+  U0d[5] = 0.0;
+  U0d[6] = scale*(eSens[0]*U0[6] + eSens[2]*U0[7] +
+                  eSens[3]*U1[6] + eSens[5]*U1[7]);
+  U0d[7] = scale*(eSens[1]*U0[7] + eSens[2]*U0[6] +
+                  eSens[4]*U1[7] + eSens[5]*U1[6]);
+  U0d[8] = 0.0;
+
+  // Compute the derivative with respect to U1
+  TacsScalar U1d[9];
+  U1d[0] = scale*(eSens[3]*(1.0 + U0[0]) + eSens[5]*U0[1]);
+  U1d[1] = scale*(eSens[5]*(1.0 + U0[0]) + eSens[4]*U0[1]);
+  U1d[2] = 0.0;
+
+  U1d[3] = scale*(eSens[5]*(1.0 + U0[4]) + eSens[3]*U0[3]);
+  U1d[4] = scale*(eSens[4]*(1.0 + U0[4]) + eSens[5]*U0[3]);
+  U1d[5] = 0.0;
+
+  U1d[6] = scale*(eSens[3]*U0[6] + eSens[5]*U0[7]);
+  U1d[7] = scale*(eSens[4]*U0[7] + eSens[5]*U0[6]);
+  U1d[8] = 0.0;
+
+  // Xdinvd_{kl} = T^{T}*Ur*e_{i}*e_{j}^{T}*T
+  TacsScalar t[9];
+  matMatMult(Ur, U0d, Xdinvd);
+  matMatMultAdd(dr, U1d, Xdinvd);
+  matMatMult(Xdinvd, T, t);
+  matTransMatMult(T, t, Xdinvd);
+
+  // Compute Urd = T^{T}*(U0d*Xdinv + U1d*zXdinv)*T
+  matMatMult(U0d, Xdinv, Urd);
+  matMatMultAdd(U1d, zXdinv, Urd);
+  matMatMult(Urd, T, t);
+  matTransMatMult(T, t, Urd);
+
+  // Compute zXdinvd = T^{T}*Ur*U1d*T
+  matMatMult(Ur, U1d, zXdinvd);
+  matMatMult(zXdinvd, T, t);
+  matTransMatMult(T, t, zXdinvd);
+
+  // Add the contributions to drd
+  matMatMult(U1d, Xdinv, drd);
+  matMatMult(drd, T, t);
+  matTransMatMult(T, t, drd);
+
+}
+
+/*
   Evaluate the strain and the derivative of the strain w.r.t. the
   element variables. 
-
 */
 void MITC9::evalBmat( TacsScalar e[],
 		      TacsScalar B[],
@@ -2872,6 +3113,77 @@ void MITC9::addTyingStrain( TacsScalar e[],
 }
 
 /*
+  Add the derivative of the tying strain with respect to the inputs
+  to the output data
+*/
+void MITC9::addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
+                                TacsScalar Xdinvd[], TacsScalar Td[],
+                                TacsScalar scale, 
+                                const TacsScalar eSens[],
+                                const double N13[], 
+                                const double N23[],
+                                const TacsScalar g13[], 
+                                const TacsScalar g23[],
+                                const TacsScalar Xdinv[], 
+                                const TacsScalar T[] ){
+  // Compute the strain using the assumed strain distribution
+  // and the strain evaluated at the tying points
+  TacsScalar G13, G23;
+  G13 = (g13[0]*N13[0] + g13[1]*N13[1] + g13[2]*N13[2] +
+	 g13[3]*N13[3] + g13[4]*N13[4] + g13[5]*N13[5]);
+  G23 = (g23[0]*N23[0] + g23[1]*N23[1] + g23[2]*N23[2] +
+	 g23[3]*N23[3] + g23[4]*N23[4] + g23[5]*N23[5]);
+
+  // Compute the coefficients for the strain transformation. Note
+  // that the remaining values in the matrix A = Xdinv*T are either
+  // zero or unity.
+  TacsScalar A11, A12, A21, A22;
+
+  // A = Xdinv*T
+  A11 = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
+  A12 = Xdinv[0]*T[1] + Xdinv[1]*T[4] + Xdinv[2]*T[7];
+
+  A21 = Xdinv[3]*T[0] + Xdinv[4]*T[3] + Xdinv[5]*T[6];
+  A22 = Xdinv[3]*T[1] + Xdinv[4]*T[4] + Xdinv[5]*T[7];
+
+  // Compute and set the final strain values
+  // e = 2*A^{T}*G
+  // e[6] = 2.0*(A12*G13 + A22*G23);
+  // e[7] = 2.0*(A11*G13 + A21*G23);
+
+  TacsScalar G13d = 2.0*scale*(A12*eSens[6] + A11*eSens[7]);
+  TacsScalar G23d = 2.0*scale*(A22*eSens[6] + A21*eSens[7]);
+  
+  TacsScalar A11d = 2.0*scale*G13*eSens[7];
+  TacsScalar A12d = 2.0*scale*G13*eSens[6];
+  TacsScalar A21d = 2.0*scale*G23*eSens[7];
+  TacsScalar A22d = 2.0*scale*G23*eSens[6];
+
+  // Add the derivative to the transformation terms
+  Td[0] += Xdinv[0]*A11d + Xdinv[3]*A21d;
+  Td[1] += Xdinv[0]*A12d + Xdinv[3]*A22d;
+  Td[3] += Xdinv[1]*A11d + Xdinv[4]*A21d;
+  Td[4] += Xdinv[1]*A12d + Xdinv[4]*A22d;
+  Td[6] += Xdinv[2]*A11d + Xdinv[5]*A21d;
+  Td[7] += Xdinv[2]*A12d + Xdinv[5]*A22d;
+
+  // Add the terms to the Xdinv
+  Xdinvd[0] += T[0]*A11d + T[1]*A12d;
+  Xdinvd[1] += T[3]*A11d + T[4]*A12d;
+  Xdinvd[2] += T[6]*A11d + T[7]*A12d;
+
+  Xdinvd[3] += T[0]*A21d + T[1]*A22d;
+  Xdinvd[4] += T[3]*A21d + T[4]*A22d;
+  Xdinvd[5] += T[6]*A21d + T[7]*A22d;
+
+  // Add the terms from the tying strain interpolation
+  for ( int k = 0; k < 8; k++ ){
+    g13d[k] = N13[k]*G13d;
+    g23d[k] = N23[k]*G23d;
+  }
+}
+
+/*
   Add the tying coefficients required to compute the geometric
   stiffness matrix term
 */
@@ -3451,24 +3763,9 @@ void MITC9::getStrain( TacsScalar e[],
   computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
   
   // Compute the transformation to the locally-aligned frame
-  TacsScalar T[9]; 
-  
-  // Take the cross product to find the normal direction
-  TacsScalar normal[3];
-  crossProduct(1.0, Xa, Xb, normal);
-  TacsScalar nrm = sqrt(vecDot(normal, normal));
-  vecScale(1.0/nrm, normal);
-
-  // Scale the Xa direction so that it is a unit vector
-  nrm = sqrt(vecDot(Xa, Xa));
-  vecScale(1.0/nrm, Xa);
-  
-  // Compute the second perpendicular direction 
-  crossProduct(1.0, normal, Xa, Xb);
-  
-  // Assemble the transformation matrix
-  assembleFrame(Xa, Xb, normal, T);
-  
+  TacsScalar T[9];
+  computeTransform(T, Xa, Xb);
+    
   // Compute the derivatives of Ua/Ub along the given directions
   TacsScalar Ur[9], Ua[3], Ub[3], d[3];
   innerProduct8(Na, vars, Ua);
@@ -3570,19 +3867,7 @@ void MITC9::addStrainSVSens( TacsScalar sens[],
 
   // Compute the transformation to the locally-aligned frame
   TacsScalar T[9]; 
-
-  // Compute the cross product to find the normal direction
-  TacsScalar normal[3];
-  crossProduct(1.0, Xa, Xb, normal);
-  TacsScalar nrm = sqrt(vecDot(normal, normal));
-  vecScale(1.0/nrm, normal);
-  
-  // Scale the Xa direction so that it is a unit vector
-  nrm = sqrt(vecDot(Xa, Xa));
-  vecScale(1.0/nrm, Xa);
-  // Compute the second perpendicular direction 
-  crossProduct(1.0, normal, Xa, Xb);
-  assembleFrame(Xa, Xb, normal, T);
+  computeTransform(T, Xa, Xb);
   
   // Compute the displacement-based strain
   TacsScalar e[8], B[64*NUM_NODES];
@@ -3599,6 +3884,132 @@ void MITC9::addStrainSVSens( TacsScalar sens[],
              b[4]*esens[4] + b[5]*esens[5] + b[6]*esens[6] + b[7]*esens[7]);
     b += 8;
   }
+}
+
+/*
+  Add the derivative of the strain w.r.t. the node locations
+*/
+void MITC9::addStrainXptSens( TacsScalar eXpt[],
+                              const double pt[],
+                              const TacsScalar scale,
+                              const TacsScalar eSens[],
+                              const TacsScalar X[],
+                              const TacsScalar vars[] ){
+    // Set the u/v locations
+  const double u = pt[0];
+  const double v = pt[1];
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the directors at the nodes
+  TacsScalar dir[3*NUM_NODES];
+  computeDirectors(dir, vars, Xr);
+
+  // Compute the tensorial shear strain at the tying points
+  TacsScalar g13[6], g23[6];
+  computeTyingStrain(g13, g23, X, Xr, vars, dir);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES];
+  computeShapeFunc(u, v, N);
+
+  // Evaluate the derivatives of the shape functions
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  computeShapeFunc(u, v, Na, Nb);
+
+  // Compute the derivative along the shape function
+  // directions
+  TacsScalar Xa[3], Xb[3];
+  innerProduct(Na, X, Xa);
+  innerProduct(Nb, X, Xb);
+
+  // Compute the frame normal
+  TacsScalar fn[3];
+  computeFrameNormal(N, Xr, fn);
+  
+  // Evaluate the derivatives in the locally-aligned frame
+  TacsScalar Xd[9], Xdinv[9];
+  assembleFrame(Xa, Xb, fn, Xd);
+
+  // Compute the inverse of the transformation matrix
+  inv3x3(Xd, Xdinv);
+
+  // Evaluate the tying strain interpolation
+  double N13[6], N23[6];
+  computeTyingFunc(u, v, N13, N23);
+
+  // Compute the through-thickness derivative of [X,r]^{-1}
+  TacsScalar zXdinv[9];
+  computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+  
+  // Compute the transformation to the locally-aligned frame
+  TacsScalar T[9]; 
+  computeTransform(T, Xa, Xb);
+  
+  // Compute the derivatives of Ua/Ub along the given directions
+  TacsScalar Ur[9], Ua[3], Ub[3], d[3];
+  innerProduct8(Na, vars, Ua);
+  innerProduct8(Nb, vars, Ub);
+  innerProduct(N, dir, d);
+  assembleFrame(Ua, Ub, d, Ur);
+  
+  // Now compute the derivatives of the director along each
+  // coordinate direction
+  TacsScalar dr[9], da[3], db[3], zero[3];
+  innerProduct(Na, dir, da);
+  innerProduct(Nb, dir, db);
+  zero[0] = zero[1] = zero[2] = 0.0;
+  assembleFrame(da, db, zero, dr);
+  
+  // Compute the derivative w.r.t. Ur, dr, Xdinv, zXdinv and T
+  TacsScalar Urd[9], drd[9], Xdinvd[9], zXdinvd[9], Td[9];
+  evalStrainSens(Urd, drd, Xdinvd, zXdinvd, Td,
+                 scale, eSens, Ur, dr, Xdinv, zXdinv, T);
+  
+  // Add the contribution from the tying strain
+  TacsScalar g13d[8], g23d[8];
+  addTyingStrainSens(g13d, g23d, Xdinvd, Td,
+                     scale, eSens, N13, N23, g13, g23, Xdinv, T);
+
+  // Add the contributions to dird
+  TacsScalar dird[3*NUM_NODES];
+  for ( int k = 0; k < NUM_NODES; k++ ){
+    dird[3*k] = Na[k]*drd[0] + Nb[k]*drd[1] + N[k]*Urd[2];
+    dird[3*k+1] = Na[k]*drd[3] + Nb[k]*drd[4] + N[k]*Urd[5];
+    dird[3*k+2] = Na[k]*drd[6] + Nb[k]*drd[7] + N[k]*Urd[8];
+  }
+
+  // Compute the derivatives Xad and Xbd
+  TacsScalar Xad[3], Xbd[3];
+  computeTransformSens(Xad, Xbd, Td, Xa, Xb);
+
+  /*
+  // Compute the derivatives Xrd
+  TacsScalar Xrd[9*NUM_NODES];
+  computeNormalRateMatSens(Xrd, Xdinvd, zXdinvd,
+  Na, Nb, Xr, Xdinv, zXdinv);
+
+  // Compute the inverse of the transformation matrix
+  inv3x3Sens(Xdd, Xdinvd, Xd);
+
+  // Compute the frame normal
+  TacsScalar fnd[3];
+  computeFrameNormalSens(fnd, Xrd, N, Xr, fn);
+
+  // Compute the derivative along the shape function
+  // directions
+  for ( int k = 0; k < NUM_NODES; k++ ){
+    eXpt[3*k] = Na[k]*Xad[0] + Nb[k]*Xbd[0];
+    eXpt[3*k+1] = Na[k]*Xad[1] + Nb[k]*Xbd[1];
+    eXpt[3*k+2] = Na[k]*Xad[2] + Nb[k]*Xbd[2];
+  }
+  */
+  // input: g13d, g23d, 
+  // computeTyingStrain(g13d, g23d, X, Xr, vars, dir);
+  // computeDirectors(dir, vars, Xr);
+  // computeFrames(Xr, X);
 }
 
 /*
@@ -3738,8 +4149,7 @@ void MITC9::getOutputConnectivity( int * con, int node ){
   Test the implementation of the strain by comparing against a
   rigid-body displacement and rotation.  
 */
-/*
-  void MITC9::testStrain( const TacsScalar X[] ){
+void MITC9::testStrain( const TacsScalar X[] ){
   TacsScalar vars[8*NUM_NODES];
   memset(vars, 0, sizeof(vars));
 
@@ -3772,14 +4182,14 @@ void MITC9::getOutputConnectivity( int * con, int node ){
 
   // Compute the variables and set the quaternion values
   for ( int k = 0; k < NUM_NODES; k++ ){
-  // Compute the displacements
-  matMultTrans(C, &X[3*k], &vars[8*k]);
-  for ( int i = 0; i < 3; i++ ){
-  vars[8*k+i] += u0[i];
-  }
-
-  // Copy the values of the quaternions
-  memcpy(&vars[8*k+3], q, 4*sizeof(TacsScalar));
+    // Compute the displacements
+    matMultTrans(C, &X[3*k], &vars[8*k]);
+    for ( int i = 0; i < 3; i++ ){
+      vars[8*k+i] += u0[i];
+    }
+    
+    // Copy the values of the quaternions
+    memcpy(&vars[8*k+3], q, 4*sizeof(TacsScalar));
   }
 
   // Compute the strain given the rigid rotation/translation
@@ -3847,7 +4257,6 @@ void MITC9::getOutputConnectivity( int * con, int node ){
   
   // Compute the rotation penalty
   TacsScalar rot = computeRotPenalty(N, Xa, Xb, Ua, Ub, vars);
-  printf("rot = %15.5e\n", RealPart(rot));
 
   // Compute the transformation to the locally-aligned frame
   TacsScalar T[9]; 
@@ -3874,11 +4283,7 @@ void MITC9::getOutputConnectivity( int * con, int node ){
   
   // Add the contribution from the tying strain
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
-
-  for ( int k = 0; k < 8; k++ ){
-  printf("strain[%d] = %15.5e\n", k, RealPart(e[k]));
-  }
-  
+ 
   // Compute the derivatives of the directors
   TacsScalar dirdq[12*NUM_NODES];
   computeDirectorDeriv(dirdq, vars, Xr);
@@ -3897,45 +4302,124 @@ void MITC9::getOutputConnectivity( int * con, int node ){
   TacsScalar fd[8];
 
   for ( int k = 0; k < 8*NUM_NODES; k++ ){
-  TacsScalar vtmp = vars[k];
-  vars[k] = vtmp + dh;
+    TacsScalar vtmp = vars[k];
+    vars[k] = vtmp + dh;
 
-  // Compute the directors at the nodes
-  computeDirectors(dir, vars, Xr);
+    // Compute the directors at the nodes
+    computeDirectors(dir, vars, Xr);
 
-  // Compute the tensorial shear strain at the tying points
-  computeTyingStrain(g13, g23, X, Xr, vars, dir);
+    // Compute the tensorial shear strain at the tying points
+    computeTyingStrain(g13, g23, X, Xr, vars, dir);
 
-  // Compute the derivatives of Ua/Ub along the given directions
-  innerProduct8(Na, vars, Ua);
-  innerProduct8(Nb, vars, Ub);
-  innerProduct(N, dir, d);
-  assembleFrame(Ua, Ub, d, Ur);
+    // Compute the derivatives of Ua/Ub along the given directions
+    innerProduct8(Na, vars, Ua);
+    innerProduct8(Nb, vars, Ub);
+    innerProduct(N, dir, d);
+    assembleFrame(Ua, Ub, d, Ur);
 
-  // Now compute the derivatives of the director along each
-  // coordinate direction
-  innerProduct(Na, dir, da);
-  innerProduct(Nb, dir, db);
-  zero[0] = zero[1] = zero[2] = 0.0;
-  assembleFrame(da, db, zero, dr);
+    // Now compute the derivatives of the director along each
+    // coordinate direction
+    innerProduct(Na, dir, da);
+    innerProduct(Nb, dir, db);
+    zero[0] = zero[1] = zero[2] = 0.0;
+    assembleFrame(da, db, zero, dr);
     
-  evalStrain(fd, Ur, dr, Xdinv, zXdinv, T);
+    evalStrain(fd, Ur, dr, Xdinv, zXdinv, T);
   
-  // Add the contribution from the tying strain
-  addTyingStrain(fd, N13, N23, g13, g23, Xdinv, T);
+    // Add the contribution from the tying strain
+    addTyingStrain(fd, N13, N23, g13, g23, Xdinv, T);
 
-  for ( int i = 0; i < 8; i++ ){
-  fd[i] = (fd[i] - e[i])/dh;
-  }
+    for ( int i = 0; i < 8; i++ ){
+      fd[i] = (fd[i] - e[i])/dh;
+    }
 
-  vars[k] = vtmp;
+    vars[k] = vtmp;
     
-  // Write out the error components
-  char descript[64];
-  sprintf(descript, "B%d", k);
-  writeErrorComponents(stdout, descript,
-  &B[8*k], fd, 8);
+    // Write out the error components
+    char descript[64];
+    sprintf(descript, "B%d", k);
+    writeErrorComponents(stdout, descript,
+                         &B[8*k], fd, 8);
   }
-  }
-			
+}
+
+/*
+  Test helper member functions which are needed to compute the
+  geometric derivatives 
 */
+void MITC9::testXptSens( double dh ){
+  TacsScalar A[9];
+  for ( int i = 0; i < 9; i++ ){
+    A[i] = 1.0*rand()/RAND_MAX;
+  }
+
+  // Compute the inverse of the 3x3 matrix
+  TacsScalar Ainv[9];
+  inv3x3(A, Ainv);
+  
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar Ainvd[9];
+    memset(Ainvd, 0, 9*sizeof(TacsScalar));
+    Ainvd[i] = 1.0;
+
+    // Compute the derivative
+    TacsScalar Ad[9];
+    inv3x3Sens(Ad, Ainvd, Ainv);
+
+    TacsScalar At = A[i];
+    A[i] = At + dh;
+
+    // Compute the inverse at the perturbed result
+    TacsScalar fd[9];
+    inv3x3(A, fd);
+
+    // Compute the finite-difference result
+    for ( int j = 0; j < 9; j++ ){
+      fd[j] = (fd[j] - Ainv[j])/dh;
+    }
+
+    // Reset the value of A
+    A[i] = At;
+
+    // Write out the error components
+    char descript[64];
+    sprintf(descript, "inv3x3Sens[%d]", i);
+    writeErrorComponents(stdout, descript,
+                         Ad, fd, 9);
+  }
+
+  // Compute the derivative of the strain
+  TacsScalar Ur[9], dr[9];
+  TacsScalar Xdinv[9], zXdinv[9];
+  TacsScalar T[9];
+
+  // Assign random inputs
+  for ( int i = 0; i < 9; i++ ){
+    Ur[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    dr[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    Xdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    zXdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    T[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  /*
+  // Evaluate the strain
+  evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar Urd[9], drd[9], Xdinvd[9], zXdinvd[9]
+
+evalStrainSens( TacsScalar Urd[], TacsScalar drd[],
+                       TacsScalar Xdinvd[], TacsScalar zXdinvd[],
+                       TacsScalar Td[], 
+                       TacsScalar scale, const TacsScalar eSens[],
+                       const TacsScalar Ur[], 
+                       const TacsScalar dr[], 
+                       const TacsScalar Xdinv[], 
+                       const TacsScalar zXdinv[], 
+                       const TacsScalar T[] )
+
+  }
+  */
+
+}

@@ -348,8 +348,8 @@ class TACSElement : public TACSOptObject {
 			  const TacsScalar Xpts[],
 			  const TacsScalar vars[] ){}
 
-  // This function returns the sensitivity of the strain w.r.t. Xpts
-  // ---------------------------------------------------------------
+  // This function adds the sensitivity of the strain w.r.t. Xpts
+  // ------------------------------------------------------------
   virtual void addStrainXptSens( TacsScalar strainXptSens[],
 				 const double pt[], 
 				 const TacsScalar scale,

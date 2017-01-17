@@ -146,8 +146,8 @@ static inline void compute_jacobian_zeta_sens( TacsScalar dzJinv[],
   system.
 
   input:
-  t: the transformation
-  Jinv: the inverse of Xd
+  t:     the transformation
+  Jinv:  the inverse of Xd
   zJinv: the derivative of the inverse of Xd in the through-thickness
   direction
   
@@ -746,7 +746,6 @@ TacsScalar compute_transform_sens( TacsScalar dh[],
   Jinv == X_{,xi}^{-T}, the inverse of the Jacobian
   t    == The transformation from X to e
 */
-  
 TacsScalar compute_transform_refaxis( TacsScalar t[],
                                       TacsScalar tx[],
                                       TacsScalar ztx[],

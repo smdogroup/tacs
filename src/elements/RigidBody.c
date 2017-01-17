@@ -114,9 +114,9 @@ void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems,
   size:       the number of values
   rel_err:    relative error tolerance
 */
-void writeErrorComponents( FILE * fp, const char * descript,
-			   TacsScalar *a, TacsScalar *fd, 
-			   int size, double rel_err=1e-12 ){
+static void writeErrorComponents( FILE *fp, const char *descript,
+                                  TacsScalar *a, TacsScalar *fd, 
+                                  int size, double rel_err=1e-12 ){
   int print_flag = 1;
   for ( int i = 0; i < size; i++ ){
     double rel = 0.0;

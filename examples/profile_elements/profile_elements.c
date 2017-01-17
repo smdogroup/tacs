@@ -88,12 +88,13 @@ int main( int argc, char * argv[] ){
   generate_random_array(dvars, MAX_VARS);
   generate_random_array(ddvars, MAX_VARS);
 
-  // Set the tolerances depending on whether we're using complex step or not...
+  // Set the tolerances depending on whether we're using complex step
+  // or not...
 #ifdef TACS_USE_COMPLEX
   TACSElement::setFailTolerances(1e-1, 1e-12);
 #else
   TACSElement::setFailTolerances(1e-1, 1e-5);
-`#endif
+#endif
 
   // Set the print level
   TACSElement::setPrintLevel(2);
@@ -109,6 +110,7 @@ int main( int argc, char * argv[] ){
 
   // Allocate and test all the different types of shell elements
   TACSElement *shell = NULL;
+  /*
   shell = new MITCShell<2>(fsdt, LINEAR);  shell->incref();
   test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
   shell->decref();
@@ -134,7 +136,7 @@ int main( int argc, char * argv[] ){
   shell = new MITCShell<3>(fsdt, LARGE_ROTATION);  shell->incref();
   test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
   shell->decref();
-
+  */
   // Normalize the variables for unit quaternions
   for ( int i = 0; i < MAX_NODES; i++ ){
     vars[8*i+7] = 0.0;
@@ -142,13 +144,18 @@ int main( int argc, char * argv[] ){
     TacsScalar fact = 
       1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
   }
-
-  shell = new MITC9(fsdt); shell->incref();
+  
+  MITC9 *mitc9 = new MITC9(fsdt);
+  shell = mitc9;
+  shell->incref();
   test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
   shell->decref();
+  
+  mitc9->testXptSens(1e-6);
 
   fsdt->decref();
 
+  /*
   // Set the variables back to a random array
   generate_random_array(dvars, MAX_VARS);
 
@@ -267,6 +274,7 @@ int main( int argc, char * argv[] ){
   rev->decref();
   bodyA->decref();
   rlink->decref();
+  */
 
   MPI_Finalize();
   return (0);

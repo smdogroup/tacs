@@ -1527,7 +1527,7 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
       // Evaluate the strain interpolation at this point
       tying_interpolation<order>(pt, N11, N22, N12, knots, pknots);
 
-      TacsScalar h = 0.0;  
+      TacsScalar h = 0.0;
       if (stiff->getTransformType() == FSDTStiffness::NATURAL){
         h = compute_transform_sens(dh, t, dt, tx, dtx, ztx, dztx, 
                                    normal, dnormal, 
@@ -1536,7 +1536,7 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
                                    Xd, Xdd, Na, Nb, Naa, Nab, Nbb, NUM_NODES);
       }
       else {
-        const TacsScalar * axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis_sens(dh, t, dt, tx, dtx, ztx, dztx, 
                                            normal, dnormal, 
                                            normal_xi, dnormal_xi, 

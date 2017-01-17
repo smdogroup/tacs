@@ -762,6 +762,8 @@ static inline TacsScalar det3x3( const TacsScalar A[] ){
 
   input:
   A:          a 3x3 matrix in row major order
+
+  output:
   Ainv:       the inverse of the 3x3 matrix
   
   returns:    the determinant of A
@@ -784,8 +786,42 @@ static inline TacsScalar inv3x3( const TacsScalar A[],
   Ainv[6] = (A[3]*A[7] - A[4]*A[6])*detinv;
   Ainv[7] =-(A[0]*A[7] - A[1]*A[6])*detinv;
   Ainv[8] = (A[0]*A[4] - A[1]*A[3])*detinv;
-    
+
   return det;
+}
+
+/*
+  Compute the sensitivity of the 3x3 inverse matrix
+
+  input:
+  Ad:         a 3x3 matrix of the derivatives of A
+  A:          a 3x3 matrix in row major order
+
+  output:
+  Ainvd:      derivative of the inverse of the 3x3 matrix
+  
+  returns:    the determinant of A
+*/
+static inline TacsScalar inv3x3Sens( TacsScalar Ad[],
+                                     const TacsScalar Ainvd[],
+                                     const TacsScalar Ainv[] ){
+  // Ad_{kl} = -Ainv*d(A)/d(A_{ij})*Ainv*Ainvd_{ij}
+  //         = -Ainv_{ki}*Ainvd_{ij}*Ainv_{jl}
+  // Ad = -Ainv*Ainvd*Ainv^{T}
+  TacsScalar t[9];
+  matMatMult(Ainv, Ainvd, t);
+  matMatMult(t, Ainv, Ad);
+
+  Ad[0] = -Ad[0];
+  Ad[1] = -Ad[1];
+  Ad[2] = -Ad[2];
+  Ad[3] = -Ad[3];
+  Ad[4] = -Ad[4];
+  Ad[5] = -Ad[5];
+  Ad[6] = -Ad[6];
+  Ad[7] = -Ad[7];
+  Ad[8] = -Ad[8];
+  Ad[9] = -Ad[9];
 }
 
 /*
