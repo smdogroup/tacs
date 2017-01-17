@@ -332,15 +332,15 @@ class TACSElement : public TACSOptObject {
   
   // Return the determinant of the Jacobian of the transformation
   // ------------------------------------------------------------
-  virtual TacsScalar getDetJacobian( const double * pt, 
+  virtual TacsScalar getDetJacobian( const double pt[], 
                                      const TacsScalar Xpts[] ){ 
     return 0.0; 
   }
 
   // Return the determinant of the Jacobian and its sensitivity at this point
   // ------------------------------------------------------------------------
-  virtual TacsScalar getDetJacobianXptSens( TacsScalar * hXptSens, 
-                                            const double * pt, 
+  virtual TacsScalar getDetJacobianXptSens( TacsScalar *hXptSens, 
+                                            const double pt[], 
                                             const TacsScalar Xpts[] ){
     memset(hXptSens, 0, 3*numNodes()*sizeof(TacsScalar));
     return getDetJacobian(pt, Xpts);

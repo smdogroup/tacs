@@ -148,10 +148,10 @@ int main( int argc, char * argv[] ){
   MITC9 *mitc9 = new MITC9(fsdt);
   shell = mitc9;
   shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  shell->decref();
-  
+  // test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
   mitc9->testXptSens(1e-6);
+
+  shell->decref();
 
   fsdt->decref();
 
