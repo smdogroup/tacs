@@ -835,7 +835,7 @@ cdef class Assembler:
 
       '''
       Evaluate the derivative of the function w.r.t. the state
-      variables.b
+      variables.
       
       function: the function pointer
       vec:      the derivative of the function w.r.t. the state variables 
@@ -874,6 +874,41 @@ cdef class Assembler:
       A[:] = 0.0
       self.ptr.addAdjointResProducts(1.0, adj, num_adj,
                                      Avals, num_design_vars)
+      return
+
+   def evalXptSens(self, Function func, Vec vec):
+      '''
+      Evaluate the derivative of a list of functions w.r.t. the node locations
+      '''
+      cdef int num_funcs = 1
+      cdef TACSFunction **funcs = &((<Function>func).ptr)
+      cdef TACSBVec **vecs = &((<Vec>vec).ptr)
+
+      # Zero the entries of the vector
+      vec.zeroEntries()
+
+      # Compute the derivative
+      self.ptr.addXptSens(1.0, funcs, num_funcs, vecs)
+
+      # Complete the parallel assembly of the sensitivity
+      vec.ptr.beginSetValues(ADD_VALUES)
+      vec.ptr.endSetValues(ADD_VALUES)
+
+      return
+
+   def evalAdjointResXptSensProduct(self, Vec adjoint, Vec prod):
+      '''
+      This function is collective on all TACSAssembler processes. This
+      computes the product of the derivative of the residual
+      w.r.t. the node locations with several adjoint vectors
+      simultaneously. 
+      '''
+      cdef int num_adj = 1
+      cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
+      cdef TACSBVec **prods = &((<Vec>prod).ptr)
+
+      # Add the derivative of the product of the adjoint and residual 
+      self.ptr.addAdjointResXptSensProducts(1.0, adj, num_adj, prods)
       return
 
    def addMatDVSensInnerProduct(self, double scale,

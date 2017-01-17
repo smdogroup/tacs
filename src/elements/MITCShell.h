@@ -165,7 +165,7 @@ class MITCShell : public TACSShell {
 
   // This function returns the sensitivity of the strain w.r.t. Xpts
   // ---------------------------------------------------------------
-  void addStrainXptSens( TacsScalar strainXptSens[],
+  void addStrainXptSens( TacsScalar fXptSens[],
 			 const double pt[], 
 			 const TacsScalar scale,
 			 const TacsScalar strainSens[], 
@@ -2300,7 +2300,7 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
   Xpts:          the nodal locations
 */
 template <int order>
-void MITCShell<order>::addStrainXptSens( TacsScalar strainXptSens[],
+void MITCShell<order>::addStrainXptSens( TacsScalar fXptSens[],
                                          const double pt[], 
                                          const TacsScalar scale,
                                          const TacsScalar strainSens[], 
@@ -2336,8 +2336,12 @@ void MITCShell<order>::addStrainXptSens( TacsScalar strainXptSens[],
     dg12[3*NUM_G12*NUM_NODES];
   TacsScalar dg13[3*NUM_G13*NUM_NODES], dg23[3*NUM_G23*NUM_NODES];
 
-  // The strain
+  // The strain and the derivative of the strain w.r.t. nodes
   TacsScalar strain[NUM_STRESSES];
+  TacsScalar strainXptSens[3*NUM_STRESSES*NUM_NODES];
+
+  // Zero out the strain sensitivity
+  memset(strainXptSens, 0, 3*NUM_STRESSES*NUM_NODES*sizeof(TacsScalar));
 
   // Evaluate the tying interpolation
   tying_interpolation<order>(pt, N11, N22, N12, 
@@ -2367,7 +2371,6 @@ void MITCShell<order>::addStrainXptSens( TacsScalar strainXptSens[],
                                    Xd, Xdd, Na, Nb, Naa, Nab, Nbb, NUM_NODES);
   }
 
-  /*
   if (type == LARGE_ROTATION){
     // Rotation matrix data
     TacsScalar C[9], Ct[27];
@@ -2414,7 +2417,15 @@ void MITCShell<order>::addStrainXptSens( TacsScalar strainXptSens[],
                                g11, g22, g12, g23, g13,
                                dg11, dg22, dg12, dg23, dg13,
                                N11, N22, N12);
-  */
+
+  // Add the product of the input sensitivity and the derivative of the
+  // strain w.r.t. the node locations to the input vector
+  TacsScalar *s = strainXptSens;
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
+    for ( int j = 0; j < NUM_STRESSES; j++, s++ ){
+      fXptSens[i] += scale*s[0]*strainSens[j];
+    }
+  }
 }
 
 /*

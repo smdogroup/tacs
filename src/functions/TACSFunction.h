@@ -160,11 +160,11 @@ class TACSFunction : public TACSObject {
 
   // Nodal sensitivities
   // -------------------
-  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                          TACSElement *element, int elemNum,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx ){
+  virtual void getElementXptSens( double tcoef, TacsScalar fXptSens[],
+				  TACSElement *element, int elemNum,
+				  const TacsScalar Xpts[], const TacsScalar vars[],
+				  const TacsScalar dvars[], const TacsScalar ddvars[],
+				  TACSFunctionCtx *ctx ){
     int numNodes = element->numNodes();
     memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
   }
