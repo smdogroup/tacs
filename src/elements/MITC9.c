@@ -349,6 +349,42 @@ static inline void computeFrameNormal( const double N[],
 }
 
 /*
+  Compute the derivative of the frame normal
+
+*/
+static inline void addFrameNormalSens( const double fnd[],
+                                       const double N[],
+                                       TacsScalar Xrd[] ){
+  Xrd[2] += N[0]*fnd[0];
+  Xrd[5] += N[0]*fnd[1];
+  Xrd[8] += N[0]*fnd[2];
+  Xrd[11] += N[1]*fnd[0];
+  Xrd[14] += N[1]*fnd[1];
+  Xrd[17] += N[1]*fnd[2];
+  Xrd[20] += N[2]*fnd[0];
+  Xrd[23] += N[2]*fnd[1];
+  Xrd[26] += N[2]*fnd[2];
+  Xrd[29] += N[3]*fnd[0];
+  Xrd[32] += N[3]*fnd[1];
+  Xrd[35] += N[3]*fnd[2];
+  Xrd[38] += N[4]*fnd[0];
+  Xrd[41] += N[4]*fnd[1];
+  Xrd[44] += N[4]*fnd[2];
+  Xrd[47] += N[5]*fnd[0];
+  Xrd[50] += N[5]*fnd[1];
+  Xrd[53] += N[5]*fnd[2];
+  Xrd[56] += N[6]*fnd[0];
+  Xrd[59] += N[6]*fnd[1];
+  Xrd[62] += N[6]*fnd[2];
+  Xrd[65] += N[7]*fnd[0];
+  Xrd[68] += N[7]*fnd[1];
+  Xrd[71] += N[7]*fnd[2];
+  Xrd[74] += N[8]*fnd[0];
+  Xrd[77] += N[8]*fnd[1];
+  Xrd[80] += N[8]*fnd[2];
+}
+
+/*
   Compute the derivative of the normal direction w.r.t. the parametric
   directions and multiply them
 
@@ -412,16 +448,46 @@ static inline void computeNormalRateMat( const double Na[],
 }
 
 /*
-  Compute the derivative of the zXdinv matrix
+  Compute the derivative of the matrix zXdinv with respect to the
+  inputs. The matrix zXdinv is computed using the following expression
+  in index notation:
+
+  zXdinv_{kl} = -Xdinv_{kn}*dn_{nm}*Xdinv_{ml}
+
+  There are two main computations:
+  1. The evaluation of dn (the derivative of the normal direction)
+  2. The evaluation of zXdinv once dn is known
+
+  The contributions to the sensitivity of dn are:
+  
+  d(zXdinv_{kl})/d(dn{ij})
+  .  = -Xdinv_{kn}*delta_{ni}*delta_{mj}*Xdinv_{ml}
+  .  = -Xdinv_{ki}*Xdinv_{jl}
+
+  dnd_{ij} = zXdinvd_{kl}*d(zXdinv_{kl})/d(d_{ij})
+  .  = -zXdinvd_{kl}*Xdinv_{ki}*Xdinv_{jl}
+  
+  dnd = -Xdinv^{T}*zXdinvd*Xdinv^{T}
+  
+  The second contribution is:
+
+  d(zXdinv_{kl})/d(Xdinv_{ij})
+  .  = -Xdinv_{kn}*dn_{nm}*delta_{mi}*delta_{lj} 
+  .    -delta_{ki}*delta_{nj}*d_{nm}*Xdinv_{ml}
+
+  Xdinvd_{ij} = zXdinvd_{kl}*d(zXdinv_{kl})/d(Xdinv_{ij})
+  .  = -Xdinv_{kn}*dn_{ni}*zXdinvd_{kj}
+  .    -zXdinvd_{il}*dn_{jm}*Xdinv_{ml}
+
+  dnd += -(Xdinv*dn)^{T}*Xdinvd -Xdinvd*(dn*Xdinv)^{T}
 */
 static inline void computeNormalRateMatSens( TacsScalar Xrd[],
+                                             TacsScalar Xdinvd[],
                                              const TacsScalar zXdinvd[],
-                                             const TacsScalar Xdinvd[],
                                              const double Na[],
                                              const double Nb[],
                                              const TacsScalar Xr[], 
                                              const TacsScalar Xdinv[] ){
-  /*
   // Compute the derivatives of the normal direction along the
   // parametric directions
   TacsScalar dn[9];
@@ -445,23 +511,39 @@ static inline void computeNormalRateMatSens( TacsScalar Xrd[],
   dn[7] = (Nb[0]*Xr[8] + Nb[1]*Xr[17] + Nb[2]*Xr[26] +
 	   Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
 	   Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
+  
+  // Compute the contribution
+  // -dnd = Xdinv^{T}*zXdinvd*Xdinv^{T}
+  TacsScalar dnd[9], t[9];
+  matMatTransMult(zXdinvd, Xdinv, t);
+  matTransMatMult(Xdinv, t, dnd);
 
-  // Compute zXdinv = -Xdinv*dn*Xdinv
-  TacsScalar tmp[9];
-  matMatMult(dn, Xdinv, tmp);
-  matMatMult(Xdinv, tmp, zXdinv);
+  // Add the contribution to Xdinvd
+  // Xdinvd -= (Xdinv*dn)^{T}*Xdinvd + Xdinvd*(dn*Xdinv)^{T}
+  dn[0] = -dn[0];
+  dn[3] = -dn[3];
+  dn[6] = -dn[6];
 
-  // Scale all the entries in zXdinv by -1
-  zXdinv[0] *= -1.0;
-  zXdinv[1] *= -1.0;
-  zXdinv[2] *= -1.0;
-  zXdinv[3] *= -1.0;
-  zXdinv[4] *= -1.0;
-  zXdinv[5] *= -1.0;
-  zXdinv[6] *= -1.0;
-  zXdinv[7] *= -1.0;
-  zXdinv[8] *= -1.0;
-  */
+  dn[1] = -dn[1];
+  dn[4] = -dn[4];
+  dn[7] = -dn[7];
+  matMatMult(Xdinv, dn, t);
+  matTransMatMultAdd(t, zXdinvd, Xdinvd);
+  matMatMult(dn, Xdinv, t);
+  matMatTransMultAdd(zXdinvd, t, Xdinvd);
+
+  // Compute the contribution to Xrd
+  for ( int i = 0; i < 9; i++ ){
+    Xrd[9*i] = 0.0;
+    Xrd[1+9*i] = 0.0;
+    Xrd[2+9*i] = -(dnd[0]*Na[i] + dnd[1]*Nb[i]);
+    Xrd[3+9*i] = 0.0;
+    Xrd[4+9*i] = 0.0;
+    Xrd[5+9*i] = -(dnd[3]*Na[i] + dnd[4]*Nb[i]);
+    Xrd[6+9*i] = 0.0;
+    Xrd[7+9*i] = 0.0;
+    Xrd[8+9*i] = -(dnd[6]*Na[i] + dnd[7]*Nb[i]);
+  }
 }
 
 /*
@@ -1681,6 +1763,242 @@ void MITC9::addAdjResProduct( double time, double scale,
 }
 
 /*
+
+ */
+void MITC9::addAdjResXptProduct( double time, double scale,
+                                 TacsScalar fXptSens[],
+                                 const TacsScalar psi[],
+                                 const TacsScalar X[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[] ){
+  // Set the gravity vector - if one exists
+  TacsScalar g[3] = {0.0, 0.0, 0.0};
+  if (gravity){
+    const TacsScalar *_g;
+    gravity->getVector(&_g);
+    g[0] = _g[0];  g[1] = _g[1];  g[2] = _g[2];
+  }
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the angular velocity and acceleration at the nodes
+  TacsScalar omega[3*NUM_NODES], domega[3*NUM_NODES];
+  computeAngularVelocity(omega, vars, dvars);
+  computeAngularAccel(domega, vars, dvars, ddvars);
+
+  // Compute the derivatives of the directors
+  TacsScalar dir[3*NUM_NODES], dirdq[12*NUM_NODES];
+  computeDirectors(dir, vars, Xr);
+  computeDirectorDeriv(dirdq, vars, Xr);
+
+  // Compute the derivative of the tying strain
+  TacsScalar g13[6], g23[6];
+  TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
+  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
+
+  // Compute the area for this element: this is used to scale the
+  // constraint equations within the code
+  TacsScalar area = 0.0;
+
+  for ( int j = 0; j < ORDER; j++ ){
+    for ( int i = 0; i < ORDER; i++ ){
+      // Set the Gauss quadrature points
+      const double u = gaussPts[i];
+      const double v = gaussPts[j];
+      
+      // The parametric point required for evaluating
+      // stresses/strains within the element
+      const double pt[2] = {u, v};
+
+      // Evaluate the shape functions
+      double N[NUM_NODES];
+      computeShapeFunc(u, v, N);
+
+      // Evaluate the derivatives of the shape functions
+      double Na[NUM_NODES], Nb[NUM_NODES];
+      computeShapeFunc(u, v, Na, Nb);
+
+      // Compute the derivative along the shape function
+      // directions
+      TacsScalar Xa[3], Xb[3];
+      innerProduct(Na, X, Xa);
+      innerProduct(Nb, X, Xb);
+
+      // Compute the frame normal
+      TacsScalar fn[3];
+      computeFrameNormal(N, Xr, fn);
+
+      // Evaluate the derivatives in the locally-aligned frame
+      TacsScalar Xd[9];
+      assembleFrame(Xa, Xb, fn, Xd);
+
+      // Compute the derivatives of the shape functions
+      TacsScalar Xdinv[9];
+      TacsScalar h = inv3x3(Xd, Xdinv);
+      h *= gaussWts[i]*gaussWts[j];
+
+      // Compute the area
+      area += h;
+
+      // Evaluate the areal mass properties
+      TacsScalar rho[2];
+      stiff->getPointwiseMass(pt, rho);
+
+      // The following is used to evaluate the kinetic energy
+      // ---------------------------------------------------
+      // Evaluate the velocity at the quadrature point
+      TacsScalar a0[3];
+      innerProduct8(N, ddvars, a0);
+
+      // Compute the value of omega at the current point
+      TacsScalar omeg[3], domeg[3];
+      innerProduct(N, omega, omeg);
+      innerProduct(N, domega, domeg);
+
+      // Remove the normal component from angular velocity/accel.
+      // w = (I - fn*fn^{T})*omega
+      TacsScalar tmp, w[3], dw[3];
+      tmp = vecDot(omeg, fn);
+      w[0] = omeg[0] - tmp*fn[0];
+      w[1] = omeg[1] - tmp*fn[1];
+      w[2] = omeg[2] - tmp*fn[2];
+
+      tmp = vecDot(domeg, fn);
+      dw[0] = domeg[0] - tmp*fn[0];
+      dw[1] = domeg[1] - tmp*fn[1];
+      dw[2] = domeg[2] - tmp*fn[2];
+
+      // Add the contribution to the residual
+      // TacsScalar *r = res;
+      /*
+      const TacsScalar *q = vars, *dq = dvars;
+      for ( int ii = 0; ii < NUM_NODES; ii++ ){
+	// Add the contributions from the rectilinear velocity
+	r[0] += h*N[ii]*rho[0]*a0[0];
+	r[1] += h*N[ii]*rho[0]*a0[1];
+	r[2] += h*N[ii]*rho[0]*a0[2];
+
+	// Add the contributions from the angular velocity
+	// S^{T}*dw + 2*dot{S}^{T}*w
+	TacsScalar eta = q[3];
+	const TacsScalar *eps = &q[4];
+	TacsScalar deta = dq[3];
+	const TacsScalar *deps = &dq[4];
+
+	// Add S^{T}*dw
+	r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
+	crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
+	vecAxpy(2.0*h*N[ii]*eta*rho[1], dw, &r[4]);
+
+	// Add 2*dot{S}^{T}*w
+	r[3] -= 4.0*h*N[ii]*rho[1]*vecDot(deps, w);
+	crossProductAdd(4.0*h*N[ii]*rho[1], deps, w, &r[4]);
+	vecAxpy(4.0*h*N[ii]*deta*rho[1], w, &r[4]);
+
+	r += 8;
+	q += 8;
+	dq += 8;
+      }
+      */
+
+      // The following code is used to evaluate the potential energy
+      // -----------------------------------------------------------
+      // Evaluate the tying strain interpolation
+      double N13[6], N23[6];
+      computeTyingFunc(u, v, N13, N23);
+
+      // Compute the through-thickness derivative of [X,r]^{-1}
+      TacsScalar zXdinv[9];
+      computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+
+      // Compute the derivatives of Ua/Ub along the given directions
+      TacsScalar Ur[9], Ua[3], Ub[3], d[3];
+      innerProduct8(Na, vars, Ua);
+      innerProduct8(Nb, vars, Ub);
+      innerProduct(N, dir, d);
+      assembleFrame(Ua, Ub, d, Ur);
+
+      // Now compute the derivatives of the director along each
+      // coordinate direction
+      TacsScalar dr[9], da[3], db[3], zero[3];
+      innerProduct(Na, dir, da);
+      innerProduct(Nb, dir, db);
+      zero[0] = zero[1] = zero[2] = 0.0;
+      assembleFrame(da, db, zero, dr);
+
+      // Add the term due to the potential energy
+      TacsScalar Brot[8*NUM_NODES];
+      TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
+					  Xa, Xb, Ua, Ub, vars);
+
+      // Compute the transformation to the locally-aligned frame
+      TacsScalar T[9]; 
+      computeTransform(T, Xa, Xb);
+
+      // Compute the displacement-based strain
+      TacsScalar e[8], B[64*NUM_NODES];
+      evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+
+      // Add the contribution from the tying straint
+      addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+      addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
+
+      // Compute the stress based on the strain values
+      TacsScalar s[8]; // The stress components
+      TacsScalar A[6], Bc[6], D[6], As[3];
+      TacsScalar kpenalty = stiff->getStiffness(pt, A, Bc, D, As);
+      stiff->calculateStress(A, Bc, D, As, e, s);
+
+      // Scale the rotation by the in-plane penalty term
+      rot *= kpenalty;
+
+      // Add the contribution to the residual
+      /*
+      r = res;
+      const TacsScalar *b = B, *br = Brot;
+      for ( int ii = 0; ii < NUM_NODES; ii++ ){
+	r[0] += h*(strainProduct(s, &b[0]) + rot*br[0] - rho[0]*N[ii]*g[0]);
+	r[1] += h*(strainProduct(s, &b[8]) + rot*br[1] - rho[0]*N[ii]*g[1]);
+	r[2] += h*(strainProduct(s, &b[16]) + rot*br[2] - rho[0]*N[ii]*g[2]);
+	r[3] += h*(strainProduct(s, &b[24]) + rot*br[3]);
+	r[4] += h*(strainProduct(s, &b[32]) + rot*br[4]);
+	r[5] += h*(strainProduct(s, &b[40]) + rot*br[5]);
+	r[6] += h*(strainProduct(s, &b[48]) + rot*br[6]);
+	r[7] += h*(strainProduct(s, &b[56]) + rot*br[7]);
+
+	r += 8;
+	b += 64;
+	br += 8;
+      }
+      */
+    }
+  }
+
+  /*
+  // Set the scaling for the constraints
+  TacsScalar scale = area;
+
+  // Add the constraints from the quaternion parametrization
+  for ( int i = 0; i < NUM_NODES; i++ ){
+    const TacsScalar *q = &vars[8*i+3];
+    TacsScalar lamb = vars[8*i+7];
+
+    // Enforce the quaternion constraint
+    res[8*i+7] += scale*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0);
+
+    // Add the result to the governing equations
+    res[8*i+3] += 2.0*scale*q[0]*lamb;
+    res[8*i+4] += 2.0*scale*q[1]*lamb;
+    res[8*i+5] += 2.0*scale*q[2]*lamb;
+    res[8*i+6] += 2.0*scale*q[3]*lamb;
+  }
+  */
+}
+
+/*
   Given the nodal degrees of freedom and their time-derivatives,
   compute the angular velocity at each node
 */
@@ -1781,6 +2099,71 @@ void MITC9::computeFrames( TacsScalar Xr[],
 
       // Increment the pointer to the frames
       Xr += 9;
+    }
+  }
+}
+
+/*
+  Add the derivative of the frame computation to the output vector 
+
+  This code adds the contribution to the derivative of the frame
+  computation with respect to the node locations X.
+*/
+void MITC9::addFramesSens( TacsScalar Xd[],
+                           const TacsScalar Xrd[],
+                           const TacsScalar X[] ){
+  for ( int j = 0; j < ORDER; j++ ){
+    for ( int i = 0; i < ORDER; i++ ){
+      // Find the u/v values at the node locations
+      double u = -1.0 + 2.0*i/(ORDER-1.0);
+      double v = -1.0 + 2.0*j/(ORDER-1.0);
+
+      // Evaluate the shape functions
+      double Na[9], Nb[9];
+      computeShapeFunc(u, v, Na, Nb);
+
+      // Compute the derivative along the shape function
+      // directions
+      TacsScalar Xa[3], Xb[3];
+      innerProduct(Na, X, Xa);
+      innerProduct(Nb, X, Xb);
+
+      // Compute the cross product
+      TacsScalar n[3];
+      crossProduct(1.0, Xa, Xb, n);
+      TacsScalar invNrm = 1.0/sqrt(vecDot(n, n));
+      
+      // Compute the normal
+      TacsScalar nhat[3];
+      nhat[0] = invNrm*n[0];
+      nhat[1] = invNrm*n[1];
+      nhat[2] = invNrm*n[2];
+
+      TacsScalar Xad[3], Xbd[3], nhatd[3];
+      Xad[0] = Xrd[0];   Xad[1] = Xrd[3];   Xad[2] = Xrd[6];
+      Xbd[0] = Xrd[1];   Xbd[1] = Xrd[4];   Xbd[2] = Xrd[7];
+      nhatd[0] = Xrd[2]; nhatd[1] = Xrd[5]; nhatd[2] = Xrd[8];
+    
+      // Compute the sensitivity contribution from n = nhat/||nhat||
+      TacsScalar nd[3];
+      TacsScalar tmp = invNrm*invNrm*invNrm;
+      nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
+      nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
+      nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
+
+      // Add the derivative contribution to nd and Xbd
+      crossProductAdd(1.0, Xb, nd, Xad);
+      crossProduct(1.0, nd, Xa, Xbd);
+
+      // Add the contributions to the derivative
+      for ( int k = 0; k < NUM_NODES; k++ ){
+        Xd[3*k] += Na[k]*Xad[0] + Nb[k]*Xbd[0];
+        Xd[1+3*k] += Na[k]*Xad[1] + Nb[k]*Xbd[1];
+        Xd[2+3*k] += Na[k]*Xad[2] + Nb[k]*Xbd[2];
+      }
+
+      // Increment the pointer to the frames
+      Xrd += 9;
     }
   }
 }
@@ -1900,6 +2283,58 @@ void MITC9::computeTransformSens( TacsScalar Xad[],
     crossProduct(1.0, nd, Xa, Xbd);
   }
   else {
+    // Retrieve the reference axis from the constitutive
+    // object
+    const TacsScalar *axis = stiff->getRefAxis();
+    TacsScalar an = vecDot(axis, nhat);
+    
+    // Take the component of the reference axis perpendicular
+    // to the surface
+    TacsScalar t[3];
+    t[0] = axis[0] - an*nhat[0];
+    t[1] = axis[1] - an*nhat[1];
+    t[2] = axis[2] - an*nhat[2];
+    
+    // Normalize the new direction
+    TacsScalar d1[3];
+    TacsScalar inv = 1.0/sqrt(vecDot(t, t));
+    d1[0] = inv*t[0];
+    d1[1] = inv*t[1];
+    d1[2] = inv*t[2];
+
+    // Extract the seeds from the Td input array
+    TacsScalar d1d[3], d2d[3];
+    TacsScalar nhatd[3]; // normal seed
+    d1d[0] = Td[0];    d1d[1] = Td[3];    d1d[2] = Td[6];
+    d2d[0] = Td[1];    d2d[1] = Td[4];    d2d[2] = Td[7];
+    nhatd[0] = Td[2];  nhatd[1] = Td[5];  nhatd[2] = Td[8];
+
+    // Add the derivative contribution from d2 to nd and d1d
+    crossProductAdd(1.0, d2d, nhat, d1d);
+    crossProductAdd(1.0, d1, d2d, nhatd);
+    
+    // Compute df/dT*dT/d(d1)*d(d1/d(Xa))
+    TacsScalar tmp = inv*inv*inv;
+    TacsScalar td[3];
+    td[0] = tmp*((t[1]*t[1] + t[2]*t[2])*d1d[0] - t[0]*(t[1]*d1d[1] + t[2]*d1d[2]));
+    td[1] = tmp*((t[0]*t[0] + t[2]*t[2])*d1d[1] - t[1]*(t[0]*d1d[0] + t[2]*d1d[2]));
+    td[2] = tmp*((t[0]*t[0] + t[1]*t[1])*d1d[2] - t[2]*(t[0]*d1d[0] + t[1]*d1d[1]));
+
+    TacsScalar ta = vecDot(td, nhat);
+    nhatd[0] -= ta*axis[0] + an*td[0];
+    nhatd[1] -= ta*axis[1] + an*td[1];
+    nhatd[2] -= ta*axis[2] + an*td[2];
+
+    // Compute n = nhat/||nhat||
+    TacsScalar nd[3];
+    tmp = invNrm*invNrm*invNrm;
+    nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
+    nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
+    nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
+
+    // Add the derivative contribution to nd and Xbd
+    crossProduct(1.0, Xb, nd, Xad);
+    crossProduct(1.0, nd, Xa, Xbd);
   }
 }
 
@@ -1949,6 +2384,40 @@ void MITC9::computeDirectors( TacsScalar d[],
 
     d += 3; // Each director is a 3-vector
     Xr += 9; // Increment over each frame
+    vars += 8; // 8 variables per node
+  }
+}
+
+/*
+  Add the derivative of the directors to the local frame
+*/
+void MITC9::addDirectorsSens( TacsScalar Xrd[],
+                              const TacsScalar dd[],
+			      const TacsScalar vars[] ){
+  for ( int i = 0; i < NUM_NODES; i++ ){
+    // Set the pointer to the
+    const TacsScalar *q = &vars[3];
+
+    // Compute C = rot - I
+    TacsScalar C[9];
+    C[0] =-2.0*(q[2]*q[2] + q[3]*q[3]);
+    C[1] = 2.0*(q[1]*q[2] + q[3]*q[0]);
+    C[2] = 2.0*(q[1]*q[3] - q[2]*q[0]);
+
+    C[3] = 2.0*(q[2]*q[1] - q[3]*q[0]);
+    C[4] =-2.0*(q[1]*q[1] + q[3]*q[3]);
+    C[5] = 2.0*(q[2]*q[3] + q[1]*q[0]);
+
+    C[6] = 2.0*(q[3]*q[1] + q[2]*q[0]);
+    C[7] = 2.0*(q[3]*q[2] - q[1]*q[0]);
+    C[8] =-2.0*(q[1]*q[1] + q[2]*q[2]);
+
+    Xrd[2] += C[0]*dd[0] + C[1]*dd[1] + C[2]*dd[2];
+    Xrd[5] += C[3]*dd[0] + C[4]*dd[1] + C[5]*dd[2];
+    Xrd[8] += C[6]*dd[0] + C[7]*dd[1] + C[8]*dd[2];
+
+    dd += 3; // Each director is a 3-vector
+    Xrd += 9; // Increment over each frame
     vars += 8; // 8 variables per node
   }
 }
@@ -2726,9 +3195,8 @@ void MITC9::computeTyingStrain( TacsScalar g13[],
 
     // The derivative of the shell surface coordinates w.r.t. u and v
     // directions
-    TacsScalar Xa[3], Xb[3];
+    TacsScalar Xa[3];
     innerProduct(Na, X, Xa);
-    innerProduct(Nb, X, Xb);
 
     // Compute the frame normal at the current point
     TacsScalar fn[3];
@@ -2744,6 +3212,113 @@ void MITC9::computeTyingStrain( TacsScalar g13[],
     innerProduct8(Na, vars, Ua);
 
     g13[k] = 0.5*(vecDot(Xa, d) + vecDot(Ua, fn) + vecDot(Ua, d));
+  }
+
+  // The tying points where the strain will be evaluated
+  const double g23_upts[] = {-s, 0.0,  s, -s, 0.0, s};
+  const double g23_vpts[] = {-t,  -t, -t,  t,   t, t};
+
+  for ( int k = 0; k < 6; k++ ){
+    // Evaluate the element shape functions 
+    double N[9], Na[9], Nb[9];
+    computeShapeFunc(g23_upts[k], g23_vpts[k], N);
+    computeShapeFunc(g23_upts[k], g23_vpts[k], Na, Nb);
+
+    // The derivative of the shell surface coordinates w.r.t. u and v
+    // directions
+    TacsScalar Xb[3];
+    innerProduct(Nb, X, Xb);
+
+    // Compute the frame normal at the current point
+    TacsScalar fn[3];
+    computeFrameNormal(N, Xr, fn);
+
+    // Interpolate to compute the director at the current point
+    TacsScalar d[3];
+    innerProduct(N, dir, d);
+
+    // The derivatives of the displacements w.r.t. the u and v
+    // directions
+    TacsScalar Ub[3];
+    innerProduct8(Nb, vars, Ub);
+
+    g23[k] = 0.5*(vecDot(Xb, d) + vecDot(Ub, fn) + vecDot(Ub, d));
+  }
+}
+
+/*
+  Add the derivative of the tying strain computation to the output
+  vectors Xd, Xrd and dird
+*/
+void MITC9::addComputeTyingStrainSens( TacsScalar Xd[],
+                                       TacsScalar Xrd[],
+                                       TacsScalar dird[],
+                                       const TacsScalar g13d[], 
+                                       const TacsScalar g23d[],
+                                       const TacsScalar X[],
+                                       const TacsScalar Xr[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar dir[] ){
+  const double s = 0.774596669241483;
+  const double t = 0.577350269189626;
+
+  // The tying points where the strain will be evaluated
+  const double g13_upts[] = {-t,  t,  -t,   t, -t, t};
+  const double g13_vpts[] = {-s, -s, 0.0, 0.0,  s, s};
+
+  for ( int k = 0; k < 6; k++ ){
+    // Evaluate the element shape functions 
+    double N[9], Na[9], Nb[9];
+    computeShapeFunc(g13_upts[k], g13_vpts[k], N);
+    computeShapeFunc(g13_upts[k], g13_vpts[k], Na, Nb);
+
+    // The derivative of the shell surface coordinates w.r.t. u and v
+    // directions
+    TacsScalar Xa[3];
+    innerProduct(Na, X, Xa);
+
+    // Compute the frame normal at the current point
+    TacsScalar fn[3];
+    computeFrameNormal(N, Xr, fn);
+
+    // Interpolate to compute the director at the current point
+    TacsScalar d[3];
+    innerProduct(N, dir, d);
+
+    // The derivatives of the displacements w.r.t. the u and v
+    // directions
+    TacsScalar Ua[3];
+    innerProduct8(Na, vars, Ua);
+
+    // Extract the partials of g13
+    TacsScalar Xad[3], fnd[3];
+    TacsScalar scale = 0.5*g13d[k];
+    Xad[0] = scale*d[0];  
+    Xad[1] = scale*d[1];  
+    Xad[2] = scale*d[2];
+    
+    fnd[0] = scale*Ua[0]; 
+    fnd[1] = scale*Ua[1]; 
+    fnd[2] = scale*Ua[2];
+    
+    TacsScalar dd[3];
+    dd[0] = scale*(Xa[0] + Ua[0]);
+    dd[1] = scale*(Xa[1] + Ua[1]);
+    dd[2] = scale*(Xa[2] + Ua[2]);
+
+    // Add the normal frame component
+    addFrameNormalSens(fnd, N, Xrd);
+
+    // Add the contributions to dird and Xa
+    for ( int j = 0; j < NUM_NODES; j++ ){
+      Xd[3*j] += Na[j]*Xad[0];
+      Xd[1+3*j] += Na[j]*Xad[1];
+      Xd[2+3*j] += Na[j]*Xad[2];
+      
+      dird[3*j] += N[j]*dd[0];
+      dird[1+3*j] += N[j]*dd[1];
+      dird[2+3*j] += N[j]*dd[2];
+    }
   }
 
   // The tying points where the strain will be evaluated
@@ -2775,7 +3350,35 @@ void MITC9::computeTyingStrain( TacsScalar g13[],
     TacsScalar Ub[3];
     innerProduct8(Nb, vars, Ub);
 
-    g23[k] = 0.5*(vecDot(Xb, d) + vecDot(Ub, fn) + vecDot(Ub, d));
+    // Extract the partials of g13
+    TacsScalar Xbd[3], fnd[3];
+    TacsScalar scale = 0.5*g23d[k];
+    Xbd[0] = scale*d[0];  
+    Xbd[1] = scale*d[1];  
+    Xbd[2] = scale*d[2];
+    
+    fnd[0] = scale*Ub[0]; 
+    fnd[1] = scale*Ub[1]; 
+    fnd[2] = scale*Ub[2];
+    
+    TacsScalar dd[3];
+    dd[0] = scale*(Xb[0] + Ub[0]);
+    dd[1] = scale*(Xb[1] + Ub[1]);
+    dd[2] = scale*(Xb[2] + Ub[2]);
+
+    // Add the normal frame component
+    addFrameNormalSens(fnd, N, Xrd);
+
+    // Add the contributions to dird and Xa
+    for ( int j = 0; j < NUM_NODES; j++ ){
+      Xd[3*j] += Nb[j]*Xbd[0];
+      Xd[1+3*j] += Nb[j]*Xbd[1];
+      Xd[2+3*j] += Nb[j]*Xbd[2];
+      
+      dird[3*j] += N[j]*dd[0];
+      dird[1+3*j] += N[j]*dd[1];
+      dird[2+3*j] += N[j]*dd[2];
+    }
   }
 }
 
@@ -4014,31 +4617,38 @@ void MITC9::addStrainXptSens( TacsScalar eXpt[],
   TacsScalar Xad[3], Xbd[3];
   computeTransformSens(Xad, Xbd, Td, Xa, Xb);
 
-  /*
   // Compute the derivatives Xrd
   TacsScalar Xrd[9*NUM_NODES];
   computeNormalRateMatSens(Xrd, Xdinvd, zXdinvd,
-  Na, Nb, Xr, Xdinv, zXdinv);
+                           Na, Nb, Xr, Xdinv);
 
   // Compute the inverse of the transformation matrix
-  inv3x3Sens(Xdd, Xdinvd, Xd);
+  TacsScalar Xdd[9];
+  inv3x3Sens(Xdd, Xdinvd, Xdinv);
 
-  // Compute the frame normal
+  // Extract/add the sensitivities from the frame
   TacsScalar fnd[3];
-  computeFrameNormalSens(fnd, Xrd, N, Xr, fn);
+  fnd[0] = Xdd[2];  fnd[1] = Xdd[5];  fnd[2] = Xdd[8];
+  
+  // Add the contributions to Xad and Xbd
+  Xad[0] += Xdd[0];  Xad[1] += Xdd[3];  Xad[2] += Xdd[6];
+  Xbd[0] += Xdd[1];  Xbd[1] += Xdd[4];  Xbd[2] += Xdd[7];
+  
+  // // Compute the frame normal
+  addFrameNormalSens(fnd, N, Xrd);
 
-  // Compute the derivative along the shape function
-  // directions
+  // Add the derivatives the shape function directions
   for ( int k = 0; k < NUM_NODES; k++ ){
     eXpt[3*k] = Na[k]*Xad[0] + Nb[k]*Xbd[0];
     eXpt[3*k+1] = Na[k]*Xad[1] + Nb[k]*Xbd[1];
     eXpt[3*k+2] = Na[k]*Xad[2] + Nb[k]*Xbd[2];
   }
-  */
+  
   // input: g13d, g23d, 
-  // computeTyingStrain(g13d, g23d, X, Xr, vars, dir);
-  // computeDirectors(dir, vars, Xr);
-  // computeFrames(Xr, X);
+  addComputeTyingStrainSens(eXpt, Xrd, dird, 
+                            g13d, g23d, X, Xr, vars, dir);
+  addDirectorsSens(Xrd, dird, vars);
+  addFramesSens(eXpt, Xrd, X);
 }
 
 /*
@@ -4377,46 +4987,63 @@ void MITC9::testStrain( const TacsScalar X[] ){
   geometric derivatives 
 */
 void MITC9::testXptSens( double dh ){
-  TacsScalar A[9];
+  testInv3x3Sens(dh);
+  testStrainSens(dh);
+  testTransformSens(dh);
+  testNormalRateSens(dh);
+}
+
+/*
+  Test the derivative of the 3x3 inverse computation
+*/
+void MITC9::testInv3x3Sens( double dh ){
+  TacsScalar A[9], Ainvd[9];
   for ( int i = 0; i < 9; i++ ){
-    A[i] = 1.0*rand()/RAND_MAX;
+    A[i] = 1.0 + 2.0*rand()/RAND_MAX;
+    Ainvd[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
 
   // Compute the inverse of the 3x3 matrix
   TacsScalar Ainv[9];
   inv3x3(A, Ainv);
-  
+
+  TacsScalar fval = 0.0;
+  for ( int j = 0; j < 9; j++ ){
+    fval += Ainv[j]*Ainvd[j];
+  }
+
+  // Compute the derivative
+  TacsScalar Ad[9];
+  inv3x3Sens(Ad, Ainvd, Ainv);
+
+  // Form the finite-difference approximation for each component
+  TacsScalar fd[9];
   for ( int i = 0; i < 9; i++ ){
-    TacsScalar Ainvd[9];
-    memset(Ainvd, 0, 9*sizeof(TacsScalar));
-    Ainvd[i] = 1.0;
-
-    // Compute the derivative
-    TacsScalar Ad[9];
-    inv3x3Sens(Ad, Ainvd, Ainv);
-
     TacsScalar At = A[i];
+
+    // Compute the finite-difference value
     A[i] = At + dh;
+    inv3x3(A, Ainv);
 
-    // Compute the inverse at the perturbed result
-    TacsScalar fd[9];
-    inv3x3(A, fd);
-
-    // Compute the finite-difference result
+    // Compute the function and the finite-difference result
+    fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
-      fd[j] = (fd[j] - Ainv[j])/dh;
+      fd[i] += Ainv[j]*Ainvd[j];
     }
+    fd[i] = (fd[i] - fval)/dh;
 
     // Reset the value of A
     A[i] = At;
-
-    // Write out the error components
-    char descript[64];
-    sprintf(descript, "inv3x3Sens[%d]", i);
-    writeErrorComponents(stdout, descript,
-                         Ad, fd, 9);
   }
 
+  // Write out the error components
+  writeErrorComponents(stdout, "inv3x3Sens", Ad, fd, 9);
+}
+
+/*
+  Test the derivative of the strain
+*/
+void MITC9::testStrainSens( double dh ){
   // Select a random point and compute the shape functions
   double pt[2] = {-0.135, 0.223};
   double N13[6], N23[6];
@@ -4454,7 +5081,7 @@ void MITC9::testXptSens( double dh ){
   for ( int i = 0; i < 8; i++ ){
     eSens[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
-
+  
   TacsScalar fval = 0.0;
   for ( int j = 0; j < 8; j++ ){
     fval += scale*strain[j]*eSens[j];
@@ -4470,9 +5097,10 @@ void MITC9::testXptSens( double dh ){
                      scale, eSens, N13, N23, g13, g23, Xdinv, T);
 
   // Compute the derivative using finite-difference
-  TacsScalar e[8], fd[9];
+  TacsScalar e[8];
 
   // Compute the derivative w.r.t. Ur
+  TacsScalar fd[9];
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Ur[i];
     Ur[i] = Ur[i] + dh;
@@ -4575,8 +5203,13 @@ void MITC9::testXptSens( double dh ){
     g23[i] = tmp;
   }
   writeErrorComponents(stdout, "g23d", g23d, fd, 6);
+}
 
-
+/*
+  Test the derivative of the transformation to the locally-aligned
+  strain axis
+*/
+void MITC9::testTransformSens( double dh ){
   // Compute the transform as a function of Xa/Xb
   TacsScalar Xa[3], Xb[3];
   for ( int i = 0; i < 3; i++ ){
@@ -4584,13 +5217,14 @@ void MITC9::testXptSens( double dh ){
     Xb[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
 
+  TacsScalar T[9], Td[9];
   computeTransform(T, Xa, Xb);
   for ( int i = 0; i < 3; i++ ){
     Td[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
 
   // Compute a linear function of the transformation matrix components
-  fval = 0.0;
+  TacsScalar fval = 0.0;
   for ( int i = 0; i < 9; i++ ){
     fval += T[i]*Td[i];
   }
@@ -4599,6 +5233,7 @@ void MITC9::testXptSens( double dh ){
   TacsScalar Xad[3], Xbd[3];
   computeTransformSens(Xad, Xbd, Td, Xa, Xb);
   
+  TacsScalar fd[3];
   for ( int i = 0; i < 3; i++ ){
     TacsScalar tmp = Xa[i];
     Xa[i] = Xa[i] + dh;
@@ -4626,4 +5261,73 @@ void MITC9::testXptSens( double dh ){
     Xb[i] = tmp;
   }
   writeErrorComponents(stdout, "Xbd", Xbd, fd, 3);
+}
+
+/*
+  Test the implementation of the derivative of the through-thickness
+  derivative d(Xdinv)/dz 
+*/ 
+void MITC9::testNormalRateSens( double dh ){
+  double Na[9], Nb[9];
+  computeShapeFunc(-0.231, -0.734, Na, Nb);
+    
+  TacsScalar Xdinv[9];
+  for ( int i = 0; i < 9; i++ ){
+    Xdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  TacsScalar Xr[9*NUM_NODES];
+  for ( int i = 0; i < 9*NUM_NODES; i++ ){
+    Xr[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  
+  // Compute the normal rate matrix
+  TacsScalar zXdinv[9];
+  computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+  
+  TacsScalar Xdinvd[9], zXdinvd[9];
+  for ( int i = 0; i < 9; i++ ){
+    zXdinvd[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    Xdinvd[i] = 0.0;
+  }
+  
+  TacsScalar Xrd[9*NUM_NODES];
+  computeNormalRateMatSens(Xrd, Xdinvd, zXdinvd,
+                           Na, Nb, Xr, Xdinv);
+  
+  TacsScalar fval = 0.0;
+  for ( int j = 0; j < 9; j++ ){
+    fval += zXdinvd[j]*zXdinv[j];
+  }
+  
+  // Compute the derivative of a function of zXdinvd
+  // w.r.t. the components of Xr
+  TacsScalar fd[9*NUM_NODES];
+  
+  for ( int i = 0; i < 9*NUM_NODES; i++ ){
+    TacsScalar tmp = Xr[i];
+    Xr[i] = tmp + dh;
+    TacsScalar zXdinv2[9];
+    computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 9; j++ ){
+      fd[i] += zXdinvd[j]*zXdinv[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    Xr[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xrd", Xrd, fd, 9*NUM_NODES);
+  
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = Xdinv[i];
+    Xdinv[i] = tmp + dh;
+    TacsScalar zXdinv2[9];
+    computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 9; j++ ){
+      fd[i] += zXdinvd[j]*zXdinv[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    Xdinv[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xrd", Xdinvd, fd, 9);
 }

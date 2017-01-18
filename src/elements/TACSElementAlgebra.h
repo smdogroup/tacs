@@ -831,12 +831,18 @@ static inline TacsScalar inv3x3( const TacsScalar A[],
 static inline TacsScalar inv3x3Sens( TacsScalar Ad[],
                                      const TacsScalar Ainvd[],
                                      const TacsScalar Ainv[] ){
-  // Ad_{kl} = -Ainv*d(A)/d(A_{ij})*Ainv*Ainvd_{ij}
-  //         = -Ainv_{ki}*Ainvd_{ij}*Ainv_{jl}
-  // Ad = -Ainv*Ainvd*Ainv^{T}
+  // d(Ainv_{kl})/d(A_{ij}) 
+  //  = -Ainv_{kn}*delta_{ni}*delta{mj}*Ainv_{ml}
+  //  = -Ainv_{ki}*Ainv_{jl}
+
+  // Ad_{ij}
+  //  = d(Ainv_{kl})/d(A_{ij})*Ainvd_{kl}
+  //  = -Ainv_{ki}*Ainv_{jl}*Ainvd_{kl}
+  
+  // Ad = -Ainv^{T}*Ainvd*Ainv^{T}
   TacsScalar t[9];
-  matMatMult(Ainv, Ainvd, t);
-  matMatMult(t, Ainv, Ad);
+  matTransMatMult(Ainv, Ainvd, t);
+  matMatTransMult(t, Ainv, Ad);
 
   Ad[0] = -Ad[0];
   Ad[1] = -Ad[1];

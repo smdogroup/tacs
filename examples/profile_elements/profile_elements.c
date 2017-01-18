@@ -67,9 +67,16 @@ void test_element( TACSElement *element,
   Useage:
   ./profile_elements [fd=value]
 */
-int main( int argc, char * argv[] ){
+int main( int argc, char *argv[] ){
   // Initialize MPI
-  MPI_Init(&argc, &argv); 
+  MPI_Init(&argc, &argv);
+
+  // Test only the input element type - if specified, otherwise
+  // test everything
+  const char *ename = NULL;
+  if (argc > 1){
+    ename = argv[1];
+  }
 
   const int MAX_NODES = 27;
   const int MAX_VARS_PER_NODE = 8;
@@ -107,36 +114,49 @@ int main( int argc, char * argv[] ){
   FSDTStiffness *fsdt = new isoFSDTStiffness(rho, E, nu, kcorr, ys, t, 
                                              dv_num);
   fsdt->incref();
+  TacsScalar axis[3] = {1.0, -1.0, 0.5};
+  fsdt->setRefAxis(axis);
 
   // Allocate and test all the different types of shell elements
   TACSElement *shell = NULL;
-  /*
   shell = new MITCShell<2>(fsdt, LINEAR);  shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   shell->decref();
 
   shell = new MITCShell<3>(fsdt, LINEAR);  shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   shell->decref();
 
   // Nonlinear elements
   shell = new MITCShell<2>(fsdt, NONLINEAR);  shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   shell->decref();
 
   shell = new MITCShell<3>(fsdt, NONLINEAR);  shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   shell->decref();
 
   // Large rotation elements
   shell = new MITCShell<2>(fsdt, LARGE_ROTATION);  shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   shell->decref();
 
   shell = new MITCShell<3>(fsdt, LARGE_ROTATION);  shell->incref();
-  test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   shell->decref();
-  */
+
   // Normalize the variables for unit quaternions
   for ( int i = 0; i < MAX_NODES; i++ ){
     vars[8*i+7] = 0.0;
@@ -148,14 +168,14 @@ int main( int argc, char * argv[] ){
   MITC9 *mitc9 = new MITC9(fsdt);
   shell = mitc9;
   shell->incref();
-  // test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  mitc9->testXptSens(1e-6);
-
+  if (!ename || strcmp(ename, shell->elementName()) == 0){
+    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+    mitc9->testXptSens();
+  }
   shell->decref();
 
   fsdt->decref();
 
-  /*
   // Set the variables back to a random array
   generate_random_array(dvars, MAX_VARS);
 
@@ -166,27 +186,39 @@ int main( int argc, char * argv[] ){
   TACSElement *elem = NULL;
 
   elem = new PlaneStressTri6(ps);  elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
 
   elem = new PlaneStressQuad<2>(ps);  elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
   
   elem = new PlaneStressQuad<3>(ps);  elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
 
   elem = new PlaneStressTri6(ps, NONLINEAR);  elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
 
   elem = new PlaneStressQuad<2>(ps, NONLINEAR);  elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
     
   elem = new PlaneStressQuad<3>(ps, NONLINEAR);  elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
   ps->decref();
 
@@ -195,86 +227,95 @@ int main( int argc, char * argv[] ){
   stiff->incref();
   
   elem = new Solid<2>(stiff); elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
 
   elem = new Solid<3>(stiff); elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
   
   elem = new Solid<2>(stiff, NONLINEAR); elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
 
   elem = new Solid<3>(stiff, NONLINEAR); elem->incref();
-  test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  if (!ename || strcmp(ename, elem->elementName()) == 0){
+    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  }
   elem->decref();
   stiff->decref();
 
   // Test the rigid body code within TACS
 
-  // Generate a random arrary of variables conforming to the
-  // quaternion constraint
-  generate_random_array(vars, MAX_VARS);
-  for ( int i = 0; i < MAX_NODES; i++ ){
-    vars[8*i+7] = 0.0;
-    TacsScalar *v = &vars[8*i+3];
-    TacsScalar fact = 
-      1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+  if (!ename || strcmp(ename, "Rigid") == 0){
+    // Generate a random arrary of variables conforming to the
+    // quaternion constraint
+    generate_random_array(vars, MAX_VARS);
+    for ( int i = 0; i < MAX_NODES; i++ ){
+      vars[8*i+7] = 0.0;
+      TacsScalar *v = &vars[8*i+3];
+      TacsScalar fact = 
+        1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+    }
+
+    // The acceleration due to gravity in global frame of reference
+    TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.8);
+
+    // Define the zero vector
+    TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
+
+    // Construct the frame of reference
+    TACSGibbsVector *rA0Vec = new TACSGibbsVector(0.0, 0.0, 0.0); // The base point
+    TACSGibbsVector *rA1Vec = new TACSGibbsVector(1.0, 0.0, 0.0); // The first coordinate
+    TACSGibbsVector *rA2Vec = new TACSGibbsVector(0.0, 1.0, 0.0); // The second coordinate
+    TACSRefFrame *refFrameA = new TACSRefFrame(rA0Vec, rA1Vec, rA2Vec);
+
+    // Define the inertial properties
+    const TacsScalar mA    = 1.0;
+    const TacsScalar cA[3] = {0.0, 0.0, 0.0};
+    const TacsScalar JA[6] = {1.0/3.0, 0.0, 0.0,
+                              1.0/3.0, 0.0,
+                              1.0/3.0};
+  
+    // Define dynamics properties
+    TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0); 
+
+    // Construct a rigid body
+    TACSRigidBody *bodyA = new TACSRigidBody(refFrameA,
+                                             mA, cA, JA,
+                                             rAInitVec, zero, zero, gravVec);
+    bodyA->incref();
+
+    // Test the rigid body
+    test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Test the revolute constraint
+    TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
+    TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
+    TACSRevoluteConstraint *rev = new TACSRevoluteConstraint(bodyA, point, eRev);
+    rev->incref();
+
+    // Test the revolute constraint
+    test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  
+    // Test the rigid link code
+    TACSRigidLink *rlink = new TACSRigidLink(bodyA);
+    rlink->incref();
+
+    // Test the rigid link
+    test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Decref everything
+    rev->decref();
+    bodyA->decref();
+    rlink->decref();
   }
-
-  // The acceleration due to gravity in global frame of reference
-  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.8);
-
-  // Define the zero vector
-  TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
-
-  // Construct the frame of reference
-  TACSGibbsVector *rA0Vec = new TACSGibbsVector(0.0, 0.0, 0.0); // The base point
-  TACSGibbsVector *rA1Vec = new TACSGibbsVector(1.0, 0.0, 0.0); // The first coordinate
-  TACSGibbsVector *rA2Vec = new TACSGibbsVector(0.0, 1.0, 0.0); // The second coordinate
-  TACSRefFrame *refFrameA = new TACSRefFrame(rA0Vec, rA1Vec, rA2Vec);
-
-  // Define the inertial properties
-  const TacsScalar mA    = 1.0;
-  const TacsScalar cA[3] = {0.0, 0.0, 0.0};
-  const TacsScalar JA[6] = {1.0/3.0, 0.0, 0.0,
-                            1.0/3.0, 0.0,
-                            1.0/3.0};
-  
-  // Define dynamics properties
-  TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0); 
-
-  // Construct a rigid body
-  TACSRigidBody *bodyA = new  TACSRigidBody(refFrameA,
-                                            mA, cA, JA,
-                                            rAInitVec, zero, zero, gravVec);
-  bodyA->incref();
-
-  // Test the rigid body
-  test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-  // Test the revolute constraint
-  TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
-  TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
-  TACSRevoluteConstraint *rev = new TACSRevoluteConstraint(bodyA, point, eRev);
-  rev->incref();
-
-  // Test the revolute constraint
-  test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  
-  // Test the rigid link code
-  TACSRigidLink *rlink = new TACSRigidLink(bodyA);
-  rlink->incref();
-
-  // Test the rigid link
-  test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-  // Decref everything
-  rev->decref();
-  bodyA->decref();
-  rlink->decref();
-  */
 
   MPI_Finalize();
   return (0);
