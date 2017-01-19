@@ -1786,18 +1786,18 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
   // Compute the angular velocity and acceleration at the nodes
   TacsScalar omega[3*NUM_NODES], domega[3*NUM_NODES];
-  computeAngularVelocity(omega, vars, dvars);
-  computeAngularAccel(domega, vars, dvars, ddvars);
+  computeAngularVelocity(omega, vars, dvars); //************
+  computeAngularAccel(domega, vars, dvars, ddvars); //************
 
   // Compute the derivatives of the directors
   TacsScalar dir[3*NUM_NODES], dirdq[12*NUM_NODES];
   computeDirectors(dir, vars, Xr);
-  computeDirectorDeriv(dirdq, vars, Xr);
+  computeDirectorDeriv(dirdq, vars, Xr);  //************
 
   // Compute the derivative of the tying strain
   TacsScalar g13[6], g23[6];
   TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
-  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
+  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);  //************
 
   // Compute the area for this element: this is used to scale the
   // constraint equations within the code
@@ -1837,12 +1837,13 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
       // Compute the derivatives of the shape functions
       TacsScalar Xdinv[9];
-      TacsScalar h = inv3x3(Xd, Xdinv);
+      TacsScalar h = inv3x3(Xd, Xdinv);  //************
       h *= gaussWts[i]*gaussWts[j];
 
       // Compute the area
       area += h;
 
+      /*
       // Evaluate the areal mass properties
       TacsScalar rho[2];
       stiff->getPointwiseMass(pt, rho);
@@ -1873,7 +1874,7 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
       // Add the contribution to the residual
       // TacsScalar *r = res;
-      /*
+      
       const TacsScalar *q = vars, *dq = dvars;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
 	// Add the contributions from the rectilinear velocity
@@ -4329,11 +4330,79 @@ TacsScalar MITC9::getDetJacobian( const double pt[],
   computeFrameNormal(N, Xr, fn);
   
   // Evaluate the derivatives in the locally-aligned frame
-  TacsScalar Xd[9], Xdinv[9];
+  TacsScalar Xd[9];
   assembleFrame(Xa, Xb, fn, Xd);
 
-  // Compute the derivatives of the shape functions
-  TacsScalar h = inv3x3(Xd, Xdinv);
+  // Compute the determinant of the Jacobian transformation
+  return det3x3(Xd);
+}
+
+/*
+  Evaluate the determinant of the Jacobian transformation w.r.t.
+  the node locations
+*/
+TacsScalar MITC9::getDetJacobianXptSens( TacsScalar *hXptSens, 
+                                         const double pt[], 
+                                         const TacsScalar X[] ){
+  // Set the u/v locations
+  const double u = pt[0];
+  const double v = pt[1];
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES];
+  computeShapeFunc(u, v, N);
+
+  // Evaluate the derivatives of the shape functions
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  computeShapeFunc(u, v, Na, Nb);
+
+  // Compute the derivative along the shape function
+  // directions
+  TacsScalar Xa[3], Xb[3];
+  innerProduct(Na, X, Xa);
+  innerProduct(Nb, X, Xb);
+
+  // Compute the frame normal
+  TacsScalar fn[3];
+  computeFrameNormal(N, Xr, fn);
+  
+  // Evaluate the derivatives in the locally-aligned frame
+  TacsScalar Xd[9];
+  assembleFrame(Xa, Xb, fn, Xd);
+
+  // Compute the determinant of the Jacobian transformation
+  TacsScalar h = det3x3(Xd);
+
+  // Compute the derivative of the determinant
+  TacsScalar Xdd[9];
+  det3x3Sens(Xd, Xdd);
+
+  // Extract/add the sensitivities from the frame
+  TacsScalar fnd[3];
+  fnd[0] = Xdd[2];  fnd[1] = Xdd[5];  fnd[2] = Xdd[8];
+  
+  // Add the contributions to Xad and Xbd
+  TacsScalar Xad[3], Xbd[3];
+  Xad[0] = Xdd[0];  Xad[1] = Xdd[3];  Xad[2] = Xdd[6];
+  Xbd[0] = Xdd[1];  Xbd[1] = Xdd[4];  Xbd[2] = Xdd[7];
+  
+  // // Compute the frame normal
+  TacsScalar Xrd[9*NUM_NODES];
+  memset(Xrd, 0, 9*NUM_NODES*sizeof(TacsScalar));
+  addFrameNormalSens(fnd, N, Xrd);
+
+  // Add the derivatives the shape function directions
+  for ( int k = 0; k < NUM_NODES; k++ ){
+    hXptSens[3*k] = Na[k]*Xad[0] + Nb[k]*Xbd[0];
+    hXptSens[3*k+1] = Na[k]*Xad[1] + Nb[k]*Xbd[1];
+    hXptSens[3*k+2] = Na[k]*Xad[2] + Nb[k]*Xbd[2];
+  }
+  
+  addFramesSens(hXptSens, Xrd, X);
 
   return h;
 }

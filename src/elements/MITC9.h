@@ -131,8 +131,11 @@ class MITC9 : public TACSElement {
   
   // Return the determinant of the Jacobian of the transformation
   // ------------------------------------------------------------
-  TacsScalar getDetJacobian( const double * pt, 
-                             const TacsScalar Xpts[] );
+  TacsScalar getDetJacobian( const double pt[], 
+                             const TacsScalar X[] );
+  TacsScalar getDetJacobianXptSens( TacsScalar hXptSens[], 
+                                    const double pt[], 
+                                    const TacsScalar X[] );
 
   // Get the strain and the parametric location from the element
   // -----------------------------------------------------------
