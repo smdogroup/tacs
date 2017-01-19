@@ -5400,3 +5400,169 @@ void MITC9::testNormalRateSens( double dh ){
   }
   writeErrorComponents(stdout, "Xrd", Xdinvd, fd, 9);
 }
+
+/*
+  Test the derivative of the Bmat computation with respect to the
+  input parameters 
+*/
+void MITC9::testBmatSens( double dh ){
+  // Select a random point and compute the shape functions
+  double pt[2] = {-0.135, 0.223};
+  double N13[6], N23[6];
+  computeTyingFunc(pt[0], pt[1], N13, N23);
+
+  // Compute the derivative of the strain
+  TacsScalar Ur[9], dr[9];
+  TacsScalar Xdinv[9], zXdinv[9];
+  TacsScalar T[9];
+
+  // Assign random inputs
+  for ( int i = 0; i < 9; i++ ){
+    Ur[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    dr[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    Xdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    zXdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    T[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // Assign random tying strain
+  TacsScalar g13[6], g23[6];
+  for ( int i = 0; i < 6; i++ ){
+    g13[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    g23[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // Evaluate the strain
+  TacsScalar strain[8];
+  evalStrain(strain, Ur, dr, Xdinv, zXdinv, T);
+  addTyingStrain(strain, N13, N23, g13, g23, Xdinv, T);
+
+  // Set a random perturbation vector
+  TacsScalar scale = 1.25;
+  TacsScalar eSens[8];
+  for ( int i = 0; i < 8; i++ ){
+    eSens[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  
+  TacsScalar fval = 0.0;
+  for ( int j = 0; j < 8; j++ ){
+    fval += scale*strain[j]*eSens[j];
+  }
+
+  // Compute the derivative of the strain w.r.t. each 
+  // input component of the strain expression
+  TacsScalar Urd[9], drd[9], Xdinvd[9], zXdinvd[9], Td[9];
+  TacsScalar g13d[6], g23d[6];
+  evalStrainSens(Urd, drd, Xdinvd, zXdinvd, Td,
+                 scale, eSens, Ur, dr, Xdinv, zXdinv, T);
+  addTyingStrainSens(g13d, g23d, Xdinvd, Td,
+                     scale, eSens, N13, N23, g13, g23, Xdinv, T);
+
+  // Compute the derivative using finite-difference
+  TacsScalar e[8];
+
+  // Compute the derivative w.r.t. Ur
+  TacsScalar fd[9];
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = Ur[i];
+    Ur[i] = Ur[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    Ur[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Urd", Urd, fd, 9);
+
+  // Compute the derivative w.r.t. drd
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = dr[i];
+    dr[i] = dr[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    dr[i] = tmp;
+  }
+  writeErrorComponents(stdout, "drd", drd, fd, 9);
+
+  // Compute the derivative w.r.t. Xdinv
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = Xdinv[i];
+    Xdinv[i] = Xdinv[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    Xdinv[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xdinvd", Xdinvd, fd, 9);
+
+  // Compute the derivative w.r.t. zXdinvd
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = zXdinv[i];
+    zXdinv[i] = zXdinv[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    zXdinv[i] = tmp;
+  }
+  writeErrorComponents(stdout, "zXdinvd", zXdinvd, fd, 9);
+
+  // Compute the derivative w.r.t. Td
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = T[i];
+    T[i] = T[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    T[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Td", Td, fd, 9);
+
+  // Compute the derivative w.r.t. g13/g23
+  for ( int i = 0; i < 6; i++ ){
+    TacsScalar tmp = g13[i];
+    g13[i] = g13[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    g13[i] = tmp;
+  }
+  writeErrorComponents(stdout, "g13d", g13d, fd, 6);
+
+  for ( int i = 0; i < 6; i++ ){
+    TacsScalar tmp = g23[i];
+    g23[i] = g23[i] + dh;
+    evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
+    addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 8; j++ ){
+      fd[i] += scale*e[j]*eSens[j];
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    g23[i] = tmp;
+  }
+  writeErrorComponents(stdout, "g23d", g23d, fd, 6);
+}
