@@ -13,7 +13,7 @@ enum IntegratorType {
   BDF1, BDF2, BDF3,                   // Backward-difference methods
   ABM1, ABM2, ABM3, ABM4, ABM5, ABM6, // Adams-Bashforth-method
   DIRK2, DIRK3, DIRK4,                // Diagonally-Implicit-Runge-Kutta
-  NBG };                              // Newmark Beta Gamma Method
+  NBGE, NBG2, NBG3 };                 // Newmark Beta Gamma Method
 
 /*
   Abstract base class for integration schemes.
@@ -329,10 +329,10 @@ class TACSBDFIntegrator : public TACSIntegrator {
 class TACSABMIntegrator : public TACSIntegrator {
  public:
   TACSABMIntegrator( TACSAssembler *tacs, 
-		     double         tinit,
-                     double         tfinal,
-                     int            num_steps_per_sec, 
-		     int            max_abm_order );
+		     double tinit,
+                     double tfinal,
+                     int num_steps_per_sec, 
+		     int max_abm_order );
   ~TACSABMIntegrator();
  protected:
   void setupCoeffs();
@@ -355,9 +355,10 @@ class TACSABMIntegrator : public TACSIntegrator {
 class TACSNBGIntegrator : public TACSIntegrator {
  public:
   TACSNBGIntegrator( TACSAssembler *tacs, 
-		     double         tinit,
-                     double         tfinal, 
-                     int            num_steps_per_sec );
+		     double tinit,
+                     double tfinal, 
+                     int num_steps_per_sec,
+                     int order );
   ~TACSNBGIntegrator();
   
  protected:
@@ -366,6 +367,7 @@ class TACSNBGIntegrator : public TACSIntegrator {
   void getLinearizationCoeffs( double *alpha, double *beta, double *gamma );
   void marchBackwards();
  private:
+  int order;          // order of integration
   double BETA, GAMMA; // Newmark coefficients
 };
 

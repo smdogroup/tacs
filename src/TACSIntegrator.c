@@ -13,7 +13,7 @@
    tinit             : start time of simulation
    tfinal            : end time of simulation
    num_steps_per_sec : the number of steps to take per second
-   type              : type of integrator (BDF1-3, DIRK2-4, ABM1-6, NBG)
+   type              : type of integrator (BDF1-3, DIRK2-4, ABM1-6, NBG[E,2-3])
 */
 TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
                                              double _tinit, double _tfinal, 
@@ -47,12 +47,16 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
     return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 6);
 
     // Newmark Beta Gamma Method
-  } else if ( type == NBG ) {
-    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec);
+  } else if ( type == NBGE ) {
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
+  } else if ( type == NBG2 ) {
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
+  } else if ( type == NBG3 ) {
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 3);
     
   } else { 
-    // Default BDF1 integrator
-    return new TACSBDFIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
+    // Default BDF2 integrator
+    return new TACSBDFIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
   }  
 }
 
@@ -76,7 +80,9 @@ inline const char* getIntegratorType( enum IntegratorType type ) {
   case ABM5:   return "ABM5";
   case ABM6:   return "ABM6";
 
-  case NBG:    return "NBG";
+  case NBGE:    return "NBGE";
+  case NBG2:    return "NBG2";
+  case NBG3:    return "NBG3";
 
   default:      return "UNKNOWN";
   }
@@ -2828,10 +2834,21 @@ order %d max order %d sum %f\n", order, max_abm_order, sum);
 TACSNBGIntegrator::TACSNBGIntegrator( TACSAssembler * _tacs, 
                                       double _tinit,
                                       double _tfinal, 
-                                      int _num_steps_per_sec ):
+                                      int _num_steps_per_sec,
+                                      int _order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
-  // Set the integrator type
-  mytype = NBG;
+
+  // Set the integration order
+  order = _order;
+  
+  // Set the type of integrator
+  if ( order == 1) {
+    mytype = NBGE;
+  } else if ( order == 2) {
+    mytype = NBG2;
+  } else if ( order == 3) {
+    mytype = NBG2;
+  }
 
   // Setup the NBG coefficients
   setupCoeffs();
@@ -2846,27 +2863,38 @@ TACSNBGIntegrator::~TACSNBGIntegrator(){}
   Setup the coefficients for the the integration scheme
 */
 void TACSNBGIntegrator::setupCoeffs(){
-  BETA  = 0.25;
-  GAMMA = 0.50;
-  
-  //Other popular sets of values in Newmark family of integrators
-  /*
-  // Fox & Goodwin  (third order & conditionally stable rho=2.45)
-  BETA  = 1.0/12.0;
-  GAMMA = 0.50;
 
-  // Linear Acceleration (second order & conditionally stable rho=3.46)
-  BETA  = 1.0/6.0;
-  GAMMA = 0.50;
+  if (mytype == NBGE) {
 
-  // Central Difference (second order & conditionally stable rho=2)
-  BETA  = 1.0/2.0;
-  GAMMA = 0.50;
+    // Purely Explicit (firstorder & conditionally stable rho=0)
+    BETA  = 0.0;
+    GAMMA = 0.0;
 
-  // Purely Explicit (firstorder & conditionally stable rho=0)
-  BETA  = 0.0;
-  GAMMA = 0.0;
-  */
+  } else if (mytype == NBG2) {
+
+    // Average constant acceleration
+    //    BETA = 1.0/4.0;
+    //    GAMMA = 0.50;
+
+    // Linear Acceleration (second order & conditionally stable rho=3.46)
+    BETA  = 1.0/6.0;
+    GAMMA = 0.50;
+
+    //    BETA  = 1.0/8.0;
+    //    GAMMA = 0.50;
+
+    // Central Difference (second order & conditionally stable rho=2)
+    //    BETA  = 1.0/12.0;
+    //    GAMMA = 0.50;
+
+  } else if (mytype == NBG3) {
+
+    // Fox & Goodwin  (third order & conditionally stable rho=2.45)
+    BETA  = 1.0/12.0;
+    GAMMA = 0.50;
+
+  }
+
 }
 
 /*

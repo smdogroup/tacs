@@ -1434,10 +1434,11 @@ cdef class NBGIntegrator(Integrator):
    '''    
    def __cinit__(self, Assembler tacs,
                  double tinit, double tfinal,
-                 int num_steps_per_sec):
+                 int num_steps_per_sec,
+                 int order):
       '''
       Constructor for Newmark-Beta-Gamma method of integration
       '''
-      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec)
+      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, order)
       self.ptr.incref()
       return
