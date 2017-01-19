@@ -166,8 +166,8 @@ int main( int argc, char **argv ){
 
   // Set properties for dynamics
   TacsScalar g[]          = {0.0, 0.0, -9.81};
-  TacsScalar v_init[]     = {0.0, 0.0, 1.e-2}; // not being used currently
-  TacsScalar omega_init[] = {0.0, 0.0, 0.0};   // not being used currently
+  TacsScalar v_init[]     = {0.0, 0.0, 0.0}; 
+  TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
@@ -195,7 +195,7 @@ int main( int argc, char **argv ){
     // the descriptor
     if (strcmp(descriptor, "CQUAD9") == 0 ||
         strcmp(descriptor, "CQUAD") == 0 ) {
-      element = new MITC9(stiff, gravity);
+      element = new MITC9(stiff, gravity, v0, omega0);
       element->incref();
 
       // Set the number of displacements
@@ -260,7 +260,13 @@ int main( int argc, char **argv ){
   }
   else if (num_funcs == 2){
     func[0] = new TACSKSFailure(tacs, 100.0);
-    func[1] = new TACSCompliance(tacs);
+
+    // Set the induced norm failure types
+    TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
+    func[1] = ifunc;
+
+    // func[1] = new TACSCompliance(tacs);
   } 
   else if (num_funcs == 3){
     func[0] = new TACSKSFailure(tacs, 100.0);
@@ -333,7 +339,11 @@ int main( int argc, char **argv ){
   // Set paramters for time marching
   double tinit             = 0.0;
   double tfinal            = 1.0;
-  int    num_steps_per_sec = 1000;
+  for ( int k = 0; k < argc; k++ ){
+    if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
+    }
+  }
+  int    num_steps_per_sec = 250;
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
@@ -342,6 +352,7 @@ int main( int argc, char **argv ){
   
   // Set options
   obj->setJacAssemblyFreq(1);
+  obj->setOrderingType(NATURAL);
   obj->setAbsTol(1.0e-10);
   obj->setRelTol(1.0e-8);
   obj->setPrintLevel(print_level);
@@ -385,7 +396,7 @@ int main( int argc, char **argv ){
     }
 
     if (rank == 0){
-      printf("Structural sensitivities\n");
+      printf("Structural sensitivities");
       for ( int j = 0; j < num_funcs; j++ ){
         printf("Sensitivities for function %s\n",
                func[j]->functionName());

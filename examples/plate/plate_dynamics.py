@@ -84,6 +84,7 @@ thickness     = 0.05    # currrent thickness of elements in m
 #---------------------------------------------------------------------!
 
 mesh = TACS.MeshLoader(comm)
+mesh.setConvertToCoordinate(1)
 mesh.scanBDFFile(bdfFileName)
 
 num_components = mesh.getNumComponents()
@@ -98,12 +99,30 @@ for i in xrange(num_components):
 
 tacs = mesh.createTACS(8)
 
-# Create an FH5 object for tecplot output
-f5 = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
+######################################################################
+# Time integration                                                   #
+######################################################################
 
-# Use Newmark-Beta-Gamma integrator for time integration
-solver = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 3)
-solver.setJacAssemblyFreq(1)
+# Configure F5 output if tecplot output is required
+f5_format = "output/rotor_%04d.f5"
+flag      = (TACS.ToFH5.NODES | TACS.ToFH5.DISPLACEMENTS |
+             TACS.ToFH5.STRAINS | TACS.ToFH5.STRESSES |
+             TACS.ToFH5.EXTRAS)
+f5        = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
+
+# Create the BDF integrator solver
+tfinal = 0.1
+num_steps_per_second = 250
+order = 1
+
+# Set the file output format
+solver = TACS.BDFIntegrator(tacs, 0.0, tfinal,
+                            num_steps_per_second, order)
+
+solver.setRelTol(1e-8)
 solver.setPrintLevel(2)
-solver.configureOutput(f5, write_freq, f5_format)
+#solver.setOrderingType(TACS.PY_NATURAL_ORDER)
+# solver.setUseLapack(1)
+solver.setMaxNewtonIters(20)
+solver.configureOutput(f5, 1, f5_format)
 solver.integrate()

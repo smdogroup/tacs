@@ -2625,7 +2625,7 @@ void TACSABMIntegrator::marchBackwards( ){
     current_time_step = k;
 
     int idx = getCoeffIndex(k);
-    printf("The coefficient index for time-step %d is A[%d] \n", k, idx);
+    //    printf("The coefficient index for time-step %d is A[%d] \n", k, idx);
 
     // Determine the coefficients for Jacobian assembly
     double alpha, beta, gamma;
@@ -2636,8 +2636,7 @@ void TACSABMIntegrator::marchBackwards( ){
     
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
-    printf("The adjoint index for time-step %d is %d \n", k, adj_index);
-    
+   
     //---------------------------------------------------------------//
     // Setup the adjoint RHS
     //---------------------------------------------------------------//
@@ -2704,26 +2703,21 @@ void TACSABMIntegrator::marchBackwards( ){
       // to be added
       int rhs_index = (k - ii) % num_adjoint_rhs;
 
-      printf("Step %d adding contributions from %d adjoint index into rhs index %d \n", k, adj_index, rhs_index);
-
       double alphatmp, betatmp, gammatmp;
       gammatmp = 0.0;
       alphatmp = h*A[idx]*h*A[idx+1];
       betatmp  = h*A[idx+1];
 
-      printf("Adding contributions to PSI\n");
       // Add the contributions from PSI
       for ( int n = 0; n < num_funcs; n++ ){
         rhs[rhs_index*num_funcs+n]->axpy(betatmp/tweight, psi[n]);
       }
 
-      printf("Adding contributions to PHI\n");    
       // Add the contributions for PHI 
       for ( int n = 0; n < num_funcs; n++ ){
         rhs[rhs_index*num_funcs+n]->axpy(alphatmp/tweight, phi[n]);
       }   
 
-      printf("Adding contributions from other residuals and functions\n");    
       // Add the function and residual adjoint contributions into the
       // other rhs
       addVectorTransProducts(&rhs[rhs_index*num_funcs], alphatmp, betatmp, gammatmp, 
