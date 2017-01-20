@@ -244,12 +244,22 @@ class MITC9 : public TACSElement {
 		 const TacsScalar Xdinv[], const TacsScalar zXdinv[],
 		 const TacsScalar T[], const TacsScalar dirdq[] );
 
+  // Evaluate the derivative of the eSens^{T}*Bmat*psi w.r.t. node locations
+  void evalBmatSens( TacsScalar Urd[], TacsScalar drd[],
+                     TacsScalar Xdinvd[], TacsScalar zXdinvd[],
+                     TacsScalar Td[], TacsScalar dirdqd[],
+                     const TacsScalar eSens[], const TacsScalar psi[],
+                     const double N[], 
+                     const double Na[], const double Nb[],
+                     const TacsScalar Ur[], const TacsScalar dr[],
+                     const TacsScalar Xdinv[], const TacsScalar zXdinv[],
+                     const TacsScalar T[], const TacsScalar dirdq[] );
+
   // Add the interpolated strain to the strain vector
   void addTyingStrain( TacsScalar e[],
 		       const double N13[], const double N23[],
 		       const TacsScalar g13[], const TacsScalar g23[],
 		       const TacsScalar Xdinv[], const TacsScalar T[] );
- 
 
   // Add the derivative of the strain w.r.t. the outputs
   void addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
