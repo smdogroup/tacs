@@ -131,8 +131,11 @@ class MITC9 : public TACSElement {
   
   // Return the determinant of the Jacobian of the transformation
   // ------------------------------------------------------------
-  TacsScalar getDetJacobian( const double * pt, 
-                             const TacsScalar Xpts[] );
+  TacsScalar getDetJacobian( const double pt[], 
+                             const TacsScalar X[] );
+  TacsScalar getDetJacobianXptSens( TacsScalar hXptSens[], 
+                                    const double pt[], 
+                                    const TacsScalar X[] );
 
   // Get the strain and the parametric location from the element
   // -----------------------------------------------------------
@@ -241,12 +244,22 @@ class MITC9 : public TACSElement {
 		 const TacsScalar Xdinv[], const TacsScalar zXdinv[],
 		 const TacsScalar T[], const TacsScalar dirdq[] );
 
+  // Evaluate the derivative of the eSens^{T}*Bmat*psi w.r.t. node locations
+  void evalBmatSens( TacsScalar Urd[], TacsScalar drd[],
+                     TacsScalar Xdinvd[], TacsScalar zXdinvd[],
+                     TacsScalar Td[], TacsScalar dirdqd[],
+                     const TacsScalar eSens[], const TacsScalar psi[],
+                     const double N[], 
+                     const double Na[], const double Nb[],
+                     const TacsScalar Ur[], const TacsScalar dr[],
+                     const TacsScalar Xdinv[], const TacsScalar zXdinv[],
+                     const TacsScalar T[], const TacsScalar dirdq[] );
+
   // Add the interpolated strain to the strain vector
   void addTyingStrain( TacsScalar e[],
 		       const double N13[], const double N23[],
 		       const TacsScalar g13[], const TacsScalar g23[],
 		       const TacsScalar Xdinv[], const TacsScalar T[] );
- 
 
   // Add the derivative of the strain w.r.t. the outputs
   void addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
@@ -333,6 +346,7 @@ class MITC9 : public TACSElement {
   void testStrainSens( double dh );
   void testTransformSens( double dh );
   void testNormalRateSens( double dh );
+  void testBmatSens( double dh );
 
   // Compute the product of the stress and the strain
   inline TacsScalar strainProduct( const TacsScalar s[], 

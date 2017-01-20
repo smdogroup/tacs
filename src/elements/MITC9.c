@@ -1786,18 +1786,18 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
   // Compute the angular velocity and acceleration at the nodes
   TacsScalar omega[3*NUM_NODES], domega[3*NUM_NODES];
-  computeAngularVelocity(omega, vars, dvars);
-  computeAngularAccel(domega, vars, dvars, ddvars);
+  computeAngularVelocity(omega, vars, dvars); //************
+  computeAngularAccel(domega, vars, dvars, ddvars); //************
 
   // Compute the derivatives of the directors
   TacsScalar dir[3*NUM_NODES], dirdq[12*NUM_NODES];
   computeDirectors(dir, vars, Xr);
-  computeDirectorDeriv(dirdq, vars, Xr);
+  computeDirectorDeriv(dirdq, vars, Xr);  //************
 
   // Compute the derivative of the tying strain
   TacsScalar g13[6], g23[6];
   TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
-  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
+  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);  //************
 
   // Compute the area for this element: this is used to scale the
   // constraint equations within the code
@@ -1837,12 +1837,13 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
       // Compute the derivatives of the shape functions
       TacsScalar Xdinv[9];
-      TacsScalar h = inv3x3(Xd, Xdinv);
+      TacsScalar h = inv3x3(Xd, Xdinv);  //************
       h *= gaussWts[i]*gaussWts[j];
 
       // Compute the area
       area += h;
 
+      /*
       // Evaluate the areal mass properties
       TacsScalar rho[2];
       stiff->getPointwiseMass(pt, rho);
@@ -1873,7 +1874,7 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
       // Add the contribution to the residual
       // TacsScalar *r = res;
-      /*
+      
       const TacsScalar *q = vars, *dq = dvars;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
 	// Add the contributions from the rectilinear velocity
@@ -2697,7 +2698,23 @@ void MITC9::evalStrainSens( TacsScalar Urd[],
 
 /*
   Evaluate the strain and the derivative of the strain w.r.t. the
-  element variables. 
+  element variables.
+
+  This function is used in the evaluation of the residuals and in the
+  computation of the Jacobian matrix.
+
+  input:
+  N, Na, Nb:   shape functions and their derivatives
+  Ur:          derivatives of displacements in the parametric direction
+  dr:          derivative of the director field
+  Xdinv:       Jacobian transformation
+  zXdinv:      through-thickness derivative of the Jacobian transformation
+  T:           transformation to the local strain axis
+  dirdq:       derivative of the director field with respect to states
+
+  output:
+  e:           the strain
+  B;           the derivative of the strain w.r.t. the variables
 */
 void MITC9::evalBmat( TacsScalar e[],
 		      TacsScalar B[],
@@ -2871,6 +2888,428 @@ void MITC9::evalBmat( TacsScalar e[],
     // Zero the contribution from the multiplier
     b[0] = b[1] = b[2] = b[3] = b[4] = b[5] = b[6] = b[7] = 0.0;
   }
+}
+
+/*
+  Evaluate the derivative of the quantity eSens^{T}*B*psi with respect
+  to the finite-element node locations.
+
+  input:
+  eSens:   input sensitivity vector
+  psi:     input adjoint variables
+  N:       shape functions
+  Na, Nb:  derivative of the shape functions
+  Ur:      derivative of displacements w.r.t. shell coordinates
+  dr:      derivative of the direction w.r.t. shell coordinates
+  Xdinv:   the inverse of the Jacobian matrix
+  zXdinv:  the derivative of the inverse of the Jacobian w.r.t. z
+  dirdq:   the derivative of the director field w.r.t. states
+
+  output:
+  Urd:     derivative of the function w.r.t. Ur
+  drd:     derivative of the function w.r.t. dr
+  Xdinvd:  derivative of the function w.r.t. Xdinv
+  zXdinvd: derivative of the function w.r.t. Xdinvd
+  dirdqd:  derivative of the function w.r.t. dirdq
+*/
+void MITC9::evalBmatSens( TacsScalar Urd[], TacsScalar drd[],
+                          TacsScalar Xdinvd[], TacsScalar zXdinvd[],
+                          TacsScalar Td[], TacsScalar dirdqd[],
+                          const TacsScalar eSens[], const TacsScalar psi[],
+                          const double N[], 
+                          const double Na[], const double Nb[],
+                          const TacsScalar Ur[], const TacsScalar dr[],
+                          const TacsScalar Xdinv[], const TacsScalar zXdinv[],
+                          const TacsScalar T[], const TacsScalar dirdq[] ){
+  // Compute U0 = T^{T}*Ur*Xdinv*T
+  TacsScalar UrXdinv[9], UrXdinvT[9];
+  matMatMult(Ur, Xdinv, UrXdinv);
+  matMatMult(UrXdinv, T, UrXdinvT);
+
+  TacsScalar U0[9];
+  matTransMatMult(T, UrXdinvT, U0);
+
+  // Compute U1 = T^{T}*(dr*Xdinv + Ur*zXdinv)*T
+  TacsScalar tsum[9];
+  matMatMult(Ur, zXdinv, tsum);
+  matMatMultAdd(dr, Xdinv, tsum);
+
+  TacsScalar U1[9], drXdinvT[9];
+  matMatMult(tsum, T, drXdinvT);
+  matTransMatMult(T, drXdinvT, U1);
+
+  // Zero internal terms that will be accumulated
+  TacsScalar U0d[9], U1d[9];
+  memset(U0d, 0, 9*sizeof(TacsScalar));
+  memset(U1d, 0, 9*sizeof(TacsScalar));
+
+  // Zero outputs that will be accumulated during the computation
+  memset(Td, 0, 9*sizeof(TacsScalar));
+  memset(Xdinvd, 0, 9*sizeof(TacsScalar));
+  memset(zXdinvd, 0, 9*sizeof(TacsScalar));
+  memset(dirdqd, 0, 12*NUM_NODES*sizeof(TacsScalar));
+
+  // Compute the derivatives of the strain w.r.t. the displacement
+  // variables. This code takes advantage of the sparsity of the
+  // derivatives to simplify the computations
+  for ( int i = 0; i < NUM_NODES; i++ ){
+    // Pull out the psi vector
+    const TacsScalar *p = &psi[8*i];
+
+    // Compute dU0 = d(Ur)/dq_{k} * Xdinv
+    // [  0,  0, 0 ][ 0  1  2 ][ T0  T1  T2 ]
+    // [ Na, Nb, 0 ][ 3  4  5 ][ T3  T4  T5 ]
+    // [  0,  0, 0 ][ 6  7  8 ][ T6  T7  T8 ]
+    TacsScalar t0[3], tmp[3], tmpd[3]; 
+    t0[0] = Na[i]*Xdinv[0] + Nb[i]*Xdinv[3];
+    t0[1] = Na[i]*Xdinv[1] + Nb[i]*Xdinv[4];
+    t0[2] = Na[i]*Xdinv[2] + Nb[i]*Xdinv[5];
+    matMultTrans(T, t0, tmp);
+
+    TacsScalar t1[3], ztmp[3], ztmpd[3];
+    t1[0] = Na[i]*zXdinv[0] + Nb[i]*zXdinv[3];
+    t1[1] = Na[i]*zXdinv[1] + Nb[i]*zXdinv[4];
+    t1[2] = Na[i]*zXdinv[2] + Nb[i]*zXdinv[5];
+    matMultTrans(T, t1, ztmp);
+
+    // Zero the seeds
+    tmpd[0] = tmpd[1] = tmpd[2] = 0.0;
+    ztmpd[0] = ztmpd[1] = ztmpd[2] = 0.0;
+    
+    for ( int k = 0; k < 3; k++ ){
+      // dU0[3*i+j] = T[3*k+i]*tmp[j];
+      TacsScalar dU0[9];
+      dU0[0] = T[3*k]*tmp[0];
+      dU0[1] = T[3*k]*tmp[1];
+      dU0[2] = T[3*k]*tmp[2];
+      dU0[3] = T[3*k+1]*tmp[0];
+      dU0[4] = T[3*k+1]*tmp[1];
+      dU0[5] = T[3*k+1]*tmp[2];
+      dU0[6] = T[3*k+2]*tmp[0];
+      dU0[7] = T[3*k+2]*tmp[1];
+      dU0[8] = T[3*k+2]*tmp[2];
+
+      // dU1[3*i+j] = T[3*k+i]*ztmp[j];
+      TacsScalar dU1[9];
+      dU1[0] = T[3*k]*ztmp[0];
+      dU1[1] = T[3*k]*ztmp[1];
+      dU1[2] = T[3*k]*ztmp[2];
+      dU1[3] = T[3*k+1]*ztmp[0];
+      dU1[4] = T[3*k+1]*ztmp[1];
+      dU1[5] = T[3*k+1]*ztmp[2];
+      dU1[6] = T[3*k+2]*ztmp[0];
+      dU1[7] = T[3*k+2]*ztmp[1];
+      dU1[8] = T[3*k+2]*ztmp[2];
+      
+      // Compute the derivative of the function w.r.t. dU0
+      TacsScalar dU0d[9];
+      dU0d[0] = p[0]*(eSens[0]*(1.0 + U0[0]) + eSens[2]*U0[1] + 
+                      eSens[3]*U1[0] + eSens[5]*U1[1]);
+      dU0d[1] = p[0]*(eSens[2]*(1.0 + U0[0]) + eSens[1]*U0[1] + 
+                      eSens[4]*U1[1] + eSens[5]*U1[0]);
+      dU0d[2] = 0.0;
+      dU0d[3] = p[0]*(eSens[2]*(1.0 + U0[4]) + eSens[0]*U0[3] +
+                      eSens[3]*U1[3] + eSens[5]*U1[4]);
+      dU0d[4] = p[0]*(eSens[1]*(1.0 + U0[4]) + eSens[2]*U0[3] +
+                      eSens[4]*U1[4] + eSens[5]*U1[3]);
+      dU0d[5] = 0.0;
+      dU0d[6] = p[0]*(eSens[0]*U0[6] + eSens[2]*U0[7] +
+                      eSens[3]*U1[6] + eSens[5]*U1[7]);
+      dU0d[7] = p[0]*(eSens[1]*U0[7] + eSens[2]*U0[6] +
+                      eSens[4]*U1[7] + eSens[5]*U1[6]);
+      dU0d[8] = 0.0;
+
+      // Compute the derivative with respect to dU1
+      TacsScalar dU1d[9];
+      dU1d[0] = p[0]*(eSens[3]*(1.0 + U0[0]) + eSens[5]*U0[1]);
+      dU1d[1] = p[0]*(eSens[5]*(1.0 + U0[0]) + eSens[4]*U0[1]);
+      dU1d[2] = 0.0;
+
+      dU1d[3] = p[0]*(eSens[5]*(1.0 + U0[4]) + eSens[3]*U0[3]);
+      dU1d[4] = p[0]*(eSens[4]*(1.0 + U0[4]) + eSens[5]*U0[3]);
+      dU1d[5] = 0.0;
+      
+      dU1d[6] = p[0]*(eSens[3]*U0[6] + eSens[5]*U0[7]);
+      dU1d[7] = p[0]*(eSens[4]*U0[7] + eSens[5]*U0[6]);
+      dU1d[8] = 0.0;
+
+      // Add the contributions to U0d
+      U0d[0] += p[0]*(eSens[0]*dU0[0] + eSens[2]*dU0[1] + 
+                      eSens[3]*dU1[0] + eSens[5]*dU1[1]);
+      U0d[1] += p[0]*(eSens[2]*dU0[0] + eSens[1]*dU0[1] + 
+                      eSens[4]*dU1[1] + eSens[5]*dU1[0]);
+      U0d[3] += p[0]*(eSens[2]*dU0[4] + eSens[0]*dU0[3] +
+                      eSens[3]*dU1[3] + eSens[5]*dU1[4]);
+      U0d[4] += p[0]*(eSens[1]*dU0[4] + eSens[2]*dU0[3] +
+                      eSens[4]*dU1[4] + eSens[5]*dU1[3]);
+      U0d[6] += p[0]*(eSens[0]*dU0[6] + eSens[2]*dU0[7] +
+                      eSens[3]*dU1[6] + eSens[5]*dU1[7]);
+      U0d[7] += p[0]*(eSens[1]*dU0[7] + eSens[2]*dU0[6] +
+                      eSens[4]*dU1[7] + eSens[5]*dU1[6]);
+
+      // Add the contributions to U1d
+      U1d[0] += p[0]*(eSens[3]*dU0[0] + eSens[5]*dU0[1]);
+      U1d[1] += p[0]*(eSens[5]*dU0[0] + eSens[4]*dU0[1]);
+      U1d[3] += p[0]*(eSens[5]*dU0[4] + eSens[3]*dU0[3]);
+      U1d[4] += p[0]*(eSens[4]*dU0[4] + eSens[5]*dU0[3]);
+      U1d[6] += p[0]*(eSens[3]*dU0[6] + eSens[5]*dU0[7]);
+      U1d[7] += p[0]*(eSens[4]*dU0[7] + eSens[5]*dU0[6]);
+
+      // dU0[3*i+j] = T[3*k+i]*tmp[j];
+      // dU1[3*i+j] = T[3*k+i]*ztmp[j];
+      Td[3*k] += (dU0d[0]*tmp[0] + dU1d[0]*ztmp[0] +
+                  dU0d[1]*tmp[1] + dU1d[1]*ztmp[1] +
+                  dU0d[2]*tmp[2] + dU1d[2]*ztmp[2]);
+      Td[3*k+1] += (dU0d[3]*tmp[0] + dU1d[3]*ztmp[0] +
+                    dU0d[4]*tmp[1] + dU1d[4]*ztmp[1] +
+                    dU0d[5]*tmp[2] + dU1d[5]*ztmp[2]);
+      Td[3*k+2] += (dU0d[6]*tmp[0] + dU1d[6]*ztmp[0] +
+                    dU0d[7]*tmp[1] + dU1d[7]*ztmp[1] +
+                    dU0d[8]*tmp[2] + dU1d[8]*ztmp[2]);
+      
+      tmpd[0] += (dU0d[0]*T[3*k] + dU0d[3]*T[3*k+1] + dU0d[6]*T[3*k+2]);
+      tmpd[1] += (dU0d[1]*T[3*k] + dU0d[4]*T[3*k+1] + dU0d[7]*T[3*k+2]);
+      tmpd[2] += (dU0d[2]*T[3*k] + dU0d[5]*T[3*k+1] + dU0d[8]*T[3*k+2]);
+
+      ztmpd[0] += (dU1d[0]*T[3*k] + dU1d[3]*T[3*k+1] + dU1d[6]*T[3*k+2]);
+      ztmpd[1] += (dU1d[1]*T[3*k] + dU1d[4]*T[3*k+1] + dU1d[7]*T[3*k+2]);
+      ztmpd[2] += (dU1d[2]*T[3*k] + dU1d[5]*T[3*k+1] + dU1d[8]*T[3*k+2]);
+
+      // Increment the pointer to the input vector
+      p++;
+    }
+
+    TacsScalar t0d[3];
+    // tmp_{i} = T_{ji}*t0_{j}
+    matMult(T, tmpd, t0d);
+    Xdinvd[0] += t0d[0]*Na[i];
+    Xdinvd[1] += t0d[1]*Na[i];
+    Xdinvd[2] += t0d[2]*Na[i];
+
+    Xdinvd[3] += t0d[0]*Nb[i];
+    Xdinvd[4] += t0d[1]*Nb[i];
+    Xdinvd[5] += t0d[2]*Nb[i];
+
+    TacsScalar t1d[3];
+    matMult(T, ztmpd, t1d);
+    zXdinvd[0] += t1d[0]*Na[i];
+    zXdinvd[1] += t1d[1]*Na[i];
+    zXdinvd[2] += t1d[2]*Na[i];
+
+    zXdinvd[3] += t1d[0]*Nb[i];
+    zXdinvd[4] += t1d[1]*Nb[i];
+    zXdinvd[5] += t1d[2]*Nb[i];
+    
+    // Add the contribution to the Td matrix
+    Td[0] += t0[0]*tmpd[0] + t1[0]*ztmpd[0];
+    Td[1] += t0[0]*tmpd[1] + t1[0]*ztmpd[1];
+    Td[2] += t0[0]*tmpd[2] + t1[0]*ztmpd[2];
+
+    Td[3] += t0[1]*tmpd[0] + t1[1]*ztmpd[0];
+    Td[4] += t0[1]*tmpd[1] + t1[1]*ztmpd[1];
+    Td[5] += t0[1]*tmpd[2] + t1[1]*ztmpd[2];
+
+    Td[6] += t0[2]*tmpd[0] + t1[2]*ztmpd[0];
+    Td[7] += t0[2]*tmpd[1] + t1[2]*ztmpd[1];
+    Td[8] += t0[2]*tmpd[2] + t1[2]*ztmpd[2];
+  }
+
+  // Add the contributions from the derivative of the strain w.r.t. the
+  // rotation variables. These derivatives only make contributions to the
+  // bending strains, not the in-plane strains.
+  for ( int i = 0; i < NUM_NODES; i++ ){
+    const TacsScalar *p = &psi[8*i+3];
+
+    for ( int k = 0; k < 4; k++ ){
+      // Compute dU0 = T^{T}*dUr*Xdinv*T
+      // T^{T}*[ 0 | 0 | N*dirdq[0] ]*Xdinv*T
+      // .     [ 0 | 0 | N*dirdq[1] ]*Xdinv*T
+      //       [ 0 | 0 | N*dirdq[2] ]*Xdinv*T
+      TacsScalar dU0[9], tu0[9], tu0T[9];
+      tu0[0] = N[i]*dirdq[0]*Xdinv[6];
+      tu0[1] = N[i]*dirdq[0]*Xdinv[7];
+      tu0[2] = N[i]*dirdq[0]*Xdinv[8];
+      tu0[3] = N[i]*dirdq[1]*Xdinv[6];
+      tu0[4] = N[i]*dirdq[1]*Xdinv[7];
+      tu0[5] = N[i]*dirdq[1]*Xdinv[8];
+      tu0[6] = N[i]*dirdq[2]*Xdinv[6];
+      tu0[7] = N[i]*dirdq[2]*Xdinv[7];
+      tu0[8] = N[i]*dirdq[2]*Xdinv[8];
+      matMatMult(tu0, T, tu0T);
+      matTransMatMult(T, tu0T, dU0);
+
+      // Compute the derivative for d
+      TacsScalar drdq[9];
+      drdq[0] = Na[i]*dirdq[0];
+      drdq[3] = Na[i]*dirdq[1];
+      drdq[6] = Na[i]*dirdq[2];
+      drdq[1] = Nb[i]*dirdq[0];
+      drdq[4] = Nb[i]*dirdq[1];
+      drdq[7] = Nb[i]*dirdq[2];
+      drdq[2] = drdq[5] = drdq[8] = 0.0;
+
+      // Compute dU1
+      TacsScalar dU1[9], tu1[9], tu1T[9];
+      matMatMult(drdq, Xdinv, tu1);
+      tu1[0] += N[i]*dirdq[0]*zXdinv[6];
+      tu1[1] += N[i]*dirdq[0]*zXdinv[7];
+      tu1[2] += N[i]*dirdq[0]*zXdinv[8];
+      tu1[3] += N[i]*dirdq[1]*zXdinv[6];
+      tu1[4] += N[i]*dirdq[1]*zXdinv[7];
+      tu1[5] += N[i]*dirdq[1]*zXdinv[8];
+      tu1[6] += N[i]*dirdq[2]*zXdinv[6];
+      tu1[7] += N[i]*dirdq[2]*zXdinv[7];
+      tu1[8] += N[i]*dirdq[2]*zXdinv[8];
+      matMatMult(tu1, T, tu1T);
+      matTransMatMult(T, tu1T, dU1);
+
+      // Compute the derivative of the function w.r.t. dU0
+      TacsScalar dU0d[9];
+      dU0d[0] = p[0]*(eSens[0]*(1.0 + U0[0]) + eSens[2]*U0[1] + 
+                      eSens[3]*U1[0] + eSens[5]*U1[1]);
+      dU0d[1] = p[0]*(eSens[2]*(1.0 + U0[0]) + eSens[1]*U0[1] + 
+                      eSens[4]*U1[1] + eSens[5]*U1[0]);
+      dU0d[2] = 0.0;
+      dU0d[3] = p[0]*(eSens[2]*(1.0 + U0[4]) + eSens[0]*U0[3] +
+                      eSens[3]*U1[3] + eSens[5]*U1[4]);
+      dU0d[4] = p[0]*(eSens[1]*(1.0 + U0[4]) + eSens[2]*U0[3] +
+                      eSens[4]*U1[4] + eSens[5]*U1[3]);
+      dU0d[5] = 0.0;
+      dU0d[6] = p[0]*(eSens[0]*U0[6] + eSens[2]*U0[7] +
+                      eSens[3]*U1[6] + eSens[5]*U1[7]);
+      dU0d[7] = p[0]*(eSens[1]*U0[7] + eSens[2]*U0[6] +
+                      eSens[4]*U1[7] + eSens[5]*U1[6]);
+      dU0d[8] = 0.0;
+
+      // Compute the derivative with respect to dU1
+      TacsScalar dU1d[9];
+      dU1d[0] = p[0]*(eSens[3]*(1.0 + U0[0]) + eSens[5]*U0[1]);
+      dU1d[1] = p[0]*(eSens[5]*(1.0 + U0[0]) + eSens[4]*U0[1]);
+      dU1d[2] = 0.0;
+
+      dU1d[3] = p[0]*(eSens[5]*(1.0 + U0[4]) + eSens[3]*U0[3]);
+      dU1d[4] = p[0]*(eSens[4]*(1.0 + U0[4]) + eSens[5]*U0[3]);
+      dU1d[5] = 0.0;
+      
+      dU1d[6] = p[0]*(eSens[3]*U0[6] + eSens[5]*U0[7]);
+      dU1d[7] = p[0]*(eSens[4]*U0[7] + eSens[5]*U0[6]);
+      dU1d[8] = 0.0;
+
+      // Add the contributions to U0d
+      U0d[0] += p[0]*(eSens[0]*dU0[0] + eSens[2]*dU0[1] + 
+                      eSens[3]*dU1[0] + eSens[5]*dU1[1]);
+      U0d[1] += p[0]*(eSens[2]*dU0[0] + eSens[1]*dU0[1] + 
+                      eSens[4]*dU1[1] + eSens[5]*dU1[0]);
+      U0d[3] += p[0]*(eSens[2]*dU0[4] + eSens[0]*dU0[3] +
+                      eSens[3]*dU1[3] + eSens[5]*dU1[4]);
+      U0d[4] += p[0]*(eSens[1]*dU0[4] + eSens[2]*dU0[3] +
+                      eSens[4]*dU1[4] + eSens[5]*dU1[3]);
+      U0d[6] += p[0]*(eSens[0]*dU0[6] + eSens[2]*dU0[7] +
+                      eSens[3]*dU1[6] + eSens[5]*dU1[7]);
+      U0d[7] += p[0]*(eSens[1]*dU0[7] + eSens[2]*dU0[6] +
+                      eSens[4]*dU1[7] + eSens[5]*dU1[6]);
+
+      // Add the contributions to U1d
+      U1d[0] += p[0]*(eSens[3]*dU0[0] + eSens[5]*dU0[1]);
+      U1d[1] += p[0]*(eSens[5]*dU0[0] + eSens[4]*dU0[1]);
+      U1d[3] += p[0]*(eSens[5]*dU0[4] + eSens[3]*dU0[3]);
+      U1d[4] += p[0]*(eSens[4]*dU0[4] + eSens[5]*dU0[3]);
+      U1d[6] += p[0]*(eSens[3]*dU0[6] + eSens[5]*dU0[7]);
+      U1d[7] += p[0]*(eSens[4]*dU0[7] + eSens[5]*dU0[6]);
+
+      // dU0 = T^{T}*tu*T
+      // dU0_{kl} = T_{nk}*tu0_{nm}*T_{ml}
+      // Add the contribution from the term: dU0 = T^{T}*tu0*T
+      TacsScalar t[9];
+      matMatTransMultAdd(tu0T, dU0d, Td);
+      matTransMatMult(tu0, T, t);
+      matMatMultAdd(t, dU0d, Td);
+
+      // Add the contribution from the term: dU1 = T^{T}*tu1*T
+      matMatTransMultAdd(tu1T, dU1d, Td);
+      matTransMatMult(tu1, T, t);
+      matMatMultAdd(t, dU1d, Td);
+
+      // Add the contribution to zXdinvd
+      TacsScalar tu1d[9];
+      matMatTransMult(dU1d, T, t);
+      matMatMult(T, t, tu1d);
+      zXdinvd[6] += N[i]*(dirdq[0]*tu1d[0] + dirdq[1]*tu1d[3] + dirdq[2]*tu1d[6]);
+      zXdinvd[7] += N[i]*(dirdq[0]*tu1d[1] + dirdq[1]*tu1d[4] + dirdq[2]*tu1d[7]);
+      zXdinvd[8] += N[i]*(dirdq[0]*tu1d[2] + dirdq[1]*tu1d[5] + dirdq[2]*tu1d[8]);
+
+      // Add the contribution to Xdinvd
+      TacsScalar tu0d[9];
+      matMatTransMult(dU0d, T, t);
+      matMatMult(T, t, tu0d);
+      Xdinvd[6] += N[i]*(dirdq[0]*tu0d[0] + dirdq[1]*tu0d[3] + dirdq[2]*tu0d[6]);
+      Xdinvd[7] += N[i]*(dirdq[0]*tu0d[1] + dirdq[1]*tu0d[4] + dirdq[2]*tu0d[7]);
+      Xdinvd[8] += N[i]*(dirdq[0]*tu0d[2] + dirdq[1]*tu0d[5] + dirdq[2]*tu0d[8]);
+
+      // Add the sensitivity from the the multiplication
+      // Given that: tu1_{kl} = drdq_{kn}*Xdinv_{nl}
+      // Then the derivative is
+      // d(tu1_{kl})/d{Xdvin_{ij}} = drdq_{ki}*delta_{lj} 
+      // Xdinvd_{ij} 
+      // = df/d{tu1_{kl}}x{drdq_{ki}*delta_{lj}} 
+      // = tu1d_{kj}*drdq_{ki}
+      matTransMatMultAdd(drdq, tu1d, Xdinvd);
+
+      // Add the contributions to dirdqd
+      dirdqd[0] = N[i]*(Xdinv[6]*tu0d[0] + Xdinv[7]*tu0d[1] + Xdinv[8]*tu0d[2]);
+      dirdqd[1] = N[i]*(Xdinv[6]*tu0d[3] + Xdinv[7]*tu0d[4] + Xdinv[8]*tu0d[5]);
+      dirdqd[2] = N[i]*(Xdinv[6]*tu0d[6] + Xdinv[7]*tu0d[7] + Xdinv[8]*tu0d[8]);
+
+      dirdqd[0] += N[i]*(zXdinv[6]*tu1d[0] + zXdinv[7]*tu1d[1] + zXdinv[8]*tu1d[2]);
+      dirdqd[1] += N[i]*(zXdinv[6]*tu1d[3] + zXdinv[7]*tu1d[4] + zXdinv[8]*tu1d[5]);
+      dirdqd[2] += N[i]*(zXdinv[6]*tu1d[6] + zXdinv[7]*tu1d[7] + zXdinv[8]*tu1d[8]);
+      // Add the derivative contribution from drdq
+      // tu1_{kl} = drdq_{kn}*Xdinv_{nl}
+      // tu1_{kl}/d(drdq_{ij}) = delta_{ik}*Xdinv{jl}
+      // dtu1_{kl}*delta_{ik}*Xdinv{jl} = dtu1_{il}*Xdinv_{jl}
+      TacsScalar drdqd[9];
+      matMatTransMult(tu1d, Xdinv, drdqd);
+      dirdqd[0] += Na[i]*drdqd[0] + Nb[i]*drdqd[1];
+      dirdqd[1] += Na[i]*drdqd[3] + Nb[i]*drdqd[4];
+      dirdqd[2] += Na[i]*drdqd[6] + Nb[i]*drdqd[7];
+
+      // Increment the pointers to the data
+      dirdqd += 3;
+      dirdq += 3;
+      p++;
+    }
+  }
+
+  // Compute the derivative w.r.t. Ur
+  TacsScalar t[9]; // Temporary matrix
+  TacsScalar t0d[9]; // = T*U0d*T^{T}
+  matMatTransMult(U0d, T, Urd);
+  matMatMult(T, Urd, t0d);
+  matMatTransMult(t0d, Xdinv, Urd);
+
+  TacsScalar t1d[9]; // = T*U1d*T^{T}
+  matMatTransMult(U1d, T, t);
+  matMatMult(T, t, t1d);
+  matMatTransMultAdd(t1d, zXdinv, Urd);
+
+  // Compute the contribution to the derivative w.r.t. dr
+  matMatTransMult(t1d, Xdinv, drd);
+
+  // Compute the contribution to the derivative w.r.t. Xdinv
+  matTransMatMultAdd(dr, t1d, Xdinvd);
+  matTransMatMultAdd(Ur, t0d, Xdinvd);
+
+  // Compute the contribution to the derivative w.r.t. zXdinv
+  matTransMatMultAdd(Ur, t1d, zXdinvd);
+
+  // Compute the contribution to the derivative w.r.t. T
+  matMatTransMultAdd(UrXdinvT, U0d, Td); // Td = Ur*Xdinv*T*U0d^{T}
+  matTransMatMult(UrXdinv, T, t);
+  matMatMultAdd(t, U0d, Td); // Td += (UrXdinv)^{T}*T*Ud0
+
+  matMatTransMultAdd(drXdinvT, U1d, Td); // Td = Ur*Xdinv*T*U0d^{T}
+  matTransMatMult(tsum, T, t);
+  matMatMultAdd(t, U1d, Td); // Td += (UrXdinv)^{T}*T*Ud0
 }
 
 /*
@@ -4329,11 +4768,79 @@ TacsScalar MITC9::getDetJacobian( const double pt[],
   computeFrameNormal(N, Xr, fn);
   
   // Evaluate the derivatives in the locally-aligned frame
-  TacsScalar Xd[9], Xdinv[9];
+  TacsScalar Xd[9];
   assembleFrame(Xa, Xb, fn, Xd);
 
-  // Compute the derivatives of the shape functions
-  TacsScalar h = inv3x3(Xd, Xdinv);
+  // Compute the determinant of the Jacobian transformation
+  return det3x3(Xd);
+}
+
+/*
+  Evaluate the determinant of the Jacobian transformation w.r.t.
+  the node locations
+*/
+TacsScalar MITC9::getDetJacobianXptSens( TacsScalar *hXptSens, 
+                                         const double pt[], 
+                                         const TacsScalar X[] ){
+  // Set the u/v locations
+  const double u = pt[0];
+  const double v = pt[1];
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES];
+  computeShapeFunc(u, v, N);
+
+  // Evaluate the derivatives of the shape functions
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  computeShapeFunc(u, v, Na, Nb);
+
+  // Compute the derivative along the shape function
+  // directions
+  TacsScalar Xa[3], Xb[3];
+  innerProduct(Na, X, Xa);
+  innerProduct(Nb, X, Xb);
+
+  // Compute the frame normal
+  TacsScalar fn[3];
+  computeFrameNormal(N, Xr, fn);
+  
+  // Evaluate the derivatives in the locally-aligned frame
+  TacsScalar Xd[9];
+  assembleFrame(Xa, Xb, fn, Xd);
+
+  // Compute the determinant of the Jacobian transformation
+  TacsScalar h = det3x3(Xd);
+
+  // Compute the derivative of the determinant
+  TacsScalar Xdd[9];
+  det3x3Sens(Xd, Xdd);
+
+  // Extract/add the sensitivities from the frame
+  TacsScalar fnd[3];
+  fnd[0] = Xdd[2];  fnd[1] = Xdd[5];  fnd[2] = Xdd[8];
+  
+  // Add the contributions to Xad and Xbd
+  TacsScalar Xad[3], Xbd[3];
+  Xad[0] = Xdd[0];  Xad[1] = Xdd[3];  Xad[2] = Xdd[6];
+  Xbd[0] = Xdd[1];  Xbd[1] = Xdd[4];  Xbd[2] = Xdd[7];
+  
+  // // Compute the frame normal
+  TacsScalar Xrd[9*NUM_NODES];
+  memset(Xrd, 0, 9*NUM_NODES*sizeof(TacsScalar));
+  addFrameNormalSens(fnd, N, Xrd);
+
+  // Add the derivatives the shape function directions
+  for ( int k = 0; k < NUM_NODES; k++ ){
+    hXptSens[3*k] = Na[k]*Xad[0] + Nb[k]*Xbd[0];
+    hXptSens[3*k+1] = Na[k]*Xad[1] + Nb[k]*Xbd[1];
+    hXptSens[3*k+2] = Na[k]*Xad[2] + Nb[k]*Xbd[2];
+  }
+  
+  addFramesSens(hXptSens, Xrd, X);
 
   return h;
 }
@@ -4899,23 +5406,8 @@ void MITC9::testStrain( const TacsScalar X[] ){
 
   // Compute the transformation to the locally-aligned frame
   TacsScalar T[9]; 
+  computeTransform(T, Xa, Xb);
   
-  // Take the cross product to find the normal direction
-  TacsScalar normal[3];
-  crossProduct(1.0, Xa, Xb, normal);
-  TacsScalar nrm = sqrt(vecDot(normal, normal));
-  vecScale(1.0/nrm, normal);
-
-  // Scale the Xa direction so that it is a unit vector
-  nrm = sqrt(vecDot(Xa, Xa));
-  vecScale(1.0/nrm, Xa);
-  
-  // Compute the second perpendicular direction 
-  crossProduct(1.0, normal, Xa, Xb);
-  
-  // Assemble the transformation matrix
-  assembleFrame(Xa, Xb, normal, T);
-
   // Compute the displacement-based strain
   TacsScalar e[8];
   evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
@@ -4991,6 +5483,7 @@ void MITC9::testXptSens( double dh ){
   testStrainSens(dh);
   testTransformSens(dh);
   testNormalRateSens(dh);
+  testBmatSens(dh);
 }
 
 /*
@@ -5306,7 +5799,6 @@ void MITC9::testNormalRateSens( double dh ){
   for ( int i = 0; i < 9*NUM_NODES; i++ ){
     TacsScalar tmp = Xr[i];
     Xr[i] = tmp + dh;
-    TacsScalar zXdinv2[9];
     computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
     fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
@@ -5320,7 +5812,6 @@ void MITC9::testNormalRateSens( double dh ){
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Xdinv[i];
     Xdinv[i] = tmp + dh;
-    TacsScalar zXdinv2[9];
     computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
     fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
@@ -5329,5 +5820,166 @@ void MITC9::testNormalRateSens( double dh ){
     fd[i] = (fd[i] - fval)/dh;
     Xdinv[i] = tmp;
   }
-  writeErrorComponents(stdout, "Xrd", Xdinvd, fd, 9);
+  writeErrorComponents(stdout, "Xdinv", Xdinvd, fd, 9);
+}
+
+/*
+  Test the derivative of the Bmat computation with respect to the
+  input parameters 
+*/
+void MITC9::testBmatSens( double dh ){
+  // Select a random point
+  double pt[2] = {0.234, -0.783};
+
+  // Evaluate the shape functions
+  double N[NUM_NODES];
+  computeShapeFunc(pt[0], pt[1], N);
+
+  // Evaluate the derivatives of the shape functions
+  double Na[NUM_NODES], Nb[NUM_NODES];
+  computeShapeFunc(pt[0], pt[1], Na, Nb);
+
+  // Inputs required for the bmatrix
+  TacsScalar Ur[9], dr[9];
+  TacsScalar Xdinv[9], zXdinv[9];
+  TacsScalar T[9];
+
+  // Assign random inputs
+  for ( int i = 0; i < 9; i++ ){
+    Ur[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    dr[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    Xdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    zXdinv[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    T[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  
+  // Compute random values for the derivatives of the director
+  TacsScalar dirdq[12*NUM_NODES];
+  for ( int i = 0; i < 12*NUM_NODES; i++ ){
+    dirdq[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // Allocate random input vectors
+  TacsScalar eSens[8], psi[8*NUM_NODES];
+  for ( int i = 0; i < 8; i++ ){
+    eSens[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    psi[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  
+  // Evaluate the bmat/strain
+  TacsScalar e[8], B[64*NUM_NODES];
+  evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+ 
+  TacsScalar fval = 0.0;
+  for ( int k = 0; k < 8*NUM_NODES; k++ ){
+    for ( int j = 0; j < 8; j++ ){
+      fval += eSens[j]*B[j + 8*k]*psi[k];
+    }
+  }
+
+  // Compute the derivative of the strain w.r.t. each 
+  // input component of the strain expression
+  TacsScalar Urd[9], drd[9], Xdinvd[9], zXdinvd[9], Td[9];
+  TacsScalar dirdqd[12*NUM_NODES];
+  evalBmatSens(Urd, drd, Xdinvd, zXdinvd, Td, dirdqd,
+               eSens, psi, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+
+  // Compute the derivative w.r.t. Ur
+  TacsScalar fd[12*NUM_NODES];
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = Ur[i];
+    Ur[i] = Ur[i] + dh;
+    evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    fd[i] = 0.0;
+    for ( int k = 0; k < 8*NUM_NODES; k++ ){
+      for ( int j = 0; j < 8; j++ ){
+        fd[i] += eSens[j]*B[j + 8*k]*psi[k];
+      }
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    Ur[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Urd", Urd, fd, 9);
+
+  // Compute the derivative w.r.t. drd
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = dr[i];
+    dr[i] = dr[i] + dh;
+    evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    fd[i] = 0.0;
+    for ( int k = 0; k < 8*NUM_NODES; k++ ){
+      for ( int j = 0; j < 8; j++ ){
+        fd[i] += eSens[j]*B[j + 8*k]*psi[k];
+      }
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    dr[i] = tmp;
+  }
+  writeErrorComponents(stdout, "drd", drd, fd, 9);
+
+  // Compute the derivative w.r.t. Xdinv
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = Xdinv[i];
+    Xdinv[i] = Xdinv[i] + dh;
+    evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    fd[i] = 0.0;
+    for ( int k = 0; k < 8*NUM_NODES; k++ ){
+      for ( int j = 0; j < 8; j++ ){
+        fd[i] += eSens[j]*B[j + 8*k]*psi[k];
+      }
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    Xdinv[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xdinvd", Xdinvd, fd, 9);
+
+  // Compute the derivative w.r.t. zXdinvd
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = zXdinv[i];
+    zXdinv[i] = zXdinv[i] + dh;
+    evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    fd[i] = 0.0;
+    for ( int k = 0; k < 8*NUM_NODES; k++ ){
+      for ( int j = 0; j < 8; j++ ){
+        fd[i] += eSens[j]*B[j + 8*k]*psi[k];
+      }
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    zXdinv[i] = tmp;
+  }
+  writeErrorComponents(stdout, "zXdinvd", zXdinvd, fd, 9);
+
+  // Compute the derivative w.r.t. Td
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar tmp = T[i];
+    T[i] = T[i] + dh;
+    evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    fd[i] = 0.0;
+    for ( int k = 0; k < 8*NUM_NODES; k++ ){
+      for ( int j = 0; j < 8; j++ ){
+        fd[i] += eSens[j]*B[j + 8*k]*psi[k];
+      }
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    T[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Td", Td, fd, 9);
+
+  // Compute the derivative w.r.t. dirdq
+  for ( int i = 0; i < 12*NUM_NODES; i++ ){
+    TacsScalar tmp = dirdq[i];
+    dirdq[i] = dirdq[i] + dh;
+    evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    fd[i] = 0.0;
+    for ( int k = 0; k < 8*NUM_NODES; k++ ){
+      for ( int j = 0; j < 8; j++ ){
+        fd[i] += eSens[j]*B[j + 8*k]*psi[k];
+      }
+    }
+    fd[i] = (fd[i] - fval)/dh;
+    dirdq[i] = tmp;
+  }
+  writeErrorComponents(stdout, "dirdq", dirdqd, fd, 12*NUM_NODES);
 }

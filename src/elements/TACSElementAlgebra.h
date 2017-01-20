@@ -784,6 +784,25 @@ static inline TacsScalar det3x3( const TacsScalar A[] ){
 }
 
 /*
+  Compute the derivative of the determinant with respect to the
+  components of A
+*/
+static inline void det3x3Sens( const TacsScalar A[],
+                               TacsScalar Ad[] ){
+  Ad[0] = A[8]*A[4] - A[7]*A[5];
+  Ad[1] = A[6]*A[5] - A[8]*A[3];
+  Ad[2] = A[7]*A[3] - A[6]*A[4];
+
+  Ad[3] = A[7]*A[2] - A[8]*A[1];
+  Ad[4] = A[8]*A[0] - A[6]*A[2];
+  Ad[5] = A[6]*A[1] - A[7]*A[0];
+
+  Ad[6] = A[1]*A[5] - A[2]*A[4];
+  Ad[7] = A[3]*A[2] - A[0]*A[5];
+  Ad[8] = A[0]*A[4] - A[3]*A[1];
+}
+
+/*
   Compute the inverse of a 3x3 matrix
 
   input:
