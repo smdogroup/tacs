@@ -47,7 +47,7 @@ int main( int argc, char **argv ){
   for ( int i = 0; i < argc; i++ ){
 
     // Determine whether or not to test gradients with complex step
-    if (strcmp("help", argv[i]) == 0){
+    if (strcmp("--help", argv[i]) == 0){
       if (rank ==0){ 
         printf("TACS time-dependent analysis of a plate located in the folder as plate.bdf\n\n");
         printf("BDF1-3, DIRK2-4, ABM1-6, NBG : Selects the integrator to use\n");
@@ -93,8 +93,12 @@ int main( int argc, char **argv ){
       type = DIRK4;
 
       // Newmark-Beta-Gamma method
-    } else if (strcmp("NBG", argv[i]) == 0){
-      type = NBG;
+    } else if (strcmp("NBGE", argv[i]) == 0){
+      type = NBGE;
+    } else if (strcmp("NBG2", argv[i]) == 0){
+      type = NBG2;
+    } else if (strcmp("NBG3", argv[i]) == 0){
+      type = NBG3;
     }
 
     // Determine the number of functions for adjoint
@@ -343,7 +347,7 @@ int main( int argc, char **argv ){
     if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
     }
   }
-  int    num_steps_per_sec = 250;
+  int    num_steps_per_sec = 100;
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
@@ -352,9 +356,9 @@ int main( int argc, char **argv ){
   
   // Set options
   obj->setJacAssemblyFreq(1);
-  obj->setOrderingType(NATURAL);
-  obj->setAbsTol(1.0e-10);
-  obj->setRelTol(1.0e-8);
+  obj->setOrderingType(TACSAssembler::NATURAL_ORDER);
+  obj->setAbsTol(1.0e-14);
+  obj->setRelTol(1.0e-11);
   obj->setPrintLevel(print_level);
   obj->configureOutput(f5, write_solution, "output/plate_%04d.f5");
   
@@ -377,7 +381,11 @@ int main( int argc, char **argv ){
     // using finite-difference/complex-step
 
     // Scan any remaining arguments that may be required
-    double dh = 1e-8;
+#ifdef TACS_USE_COMPLEX
+    double dh = 1.0e-30;
+#else
+    double dh = 1.0e-8;
+#endif
     for ( int k = 0; k < argc; k++ ){
       if (sscanf(argv[k], "dh=%lf", &dh) == 1){
       }
@@ -396,7 +404,7 @@ int main( int argc, char **argv ){
     }
 
     if (rank == 0){
-      printf("Structural sensitivities");
+      printf("Structural sensitivities\n");
       for ( int j = 0; j < num_funcs; j++ ){
         printf("Sensitivities for function %s\n",
                func[j]->functionName());
