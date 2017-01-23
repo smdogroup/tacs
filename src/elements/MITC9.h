@@ -274,6 +274,12 @@ class MITC9 : public TACSElement {
 		     const double N13[], const double N23[],
 		     const TacsScalar b13[], const TacsScalar b23[],
 		     const TacsScalar Xdinv[], const TacsScalar T[] );
+  void addTyingBmatSens( TacsScalar B13d[], TacsScalar B23d[],
+                         TacsScalar Xdinvd[], TacsScalar Td[],
+                         const TacsScalar eSens[], const TacsScalar psi[],
+                         const double N13[], const double N23[],
+                         const TacsScalar B13[], const TacsScalar B23[],
+                         const TacsScalar Xdinv[], const TacsScalar T[] );
 
   // Compute the shear strain at the tying points
   void computeTyingStrain( TacsScalar g13[], TacsScalar g23[],
@@ -292,6 +298,13 @@ class MITC9 : public TACSElement {
 			 const TacsScalar X[], const TacsScalar Xr[],
 			 const TacsScalar vars[], const TacsScalar dir[],
 			 const TacsScalar dirdq[] );
+  void addComputeTyingBmat( TacsScalar Xd[], TacsScalar Xrd[],
+                            TacsScalar dird[], TacsScalar dirdqd[],
+                            const TacsScalar g13d[], const TacsScalar g23d[],
+                            const TacsScalar B13d[], const TacsScalar B23d[],
+                            const TacsScalar X[], const TacsScalar Xr[],
+                            const TacsScalar vars[], const TacsScalar dir[],
+                            const TacsScalar dirdq[] );
 
   // Add the terms from the geometric stiffness matrix
   void addGmat( TacsScalar J[], 

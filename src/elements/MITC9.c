@@ -1792,12 +1792,16 @@ void MITC9::addAdjResXptProduct( double time, double scale,
   // Compute the derivatives of the directors
   TacsScalar dir[3*NUM_NODES], dirdq[12*NUM_NODES];
   computeDirectors(dir, vars, Xr);
-  computeDirectorDeriv(dirdq, vars, Xr);  //************
+  // -------------------------------------------
+  computeDirectorDeriv(dirdq, vars, Xr);
+  // -------------------------------------------
 
   // Compute the derivative of the tying strain
   TacsScalar g13[6], g23[6];
   TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
-  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);  //************
+  // -------------------------------------------
+  computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
+  // -------------------------------------------
 
   // Compute the area for this element: this is used to scale the
   // constraint equations within the code
@@ -1837,7 +1841,7 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
       // Compute the derivatives of the shape functions
       TacsScalar Xdinv[9];
-      TacsScalar h = inv3x3(Xd, Xdinv);  //************
+      TacsScalar h = inv3x3(Xd, Xdinv); 
       h *= gaussWts[i]*gaussWts[j];
 
       // Compute the area
@@ -1932,8 +1936,10 @@ void MITC9::addAdjResXptProduct( double time, double scale,
 
       // Add the term due to the potential energy
       TacsScalar Brot[8*NUM_NODES];
+      // -------------------------------------------
       TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
 					  Xa, Xb, Ua, Ub, vars);
+      // -------------------------------------------
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
@@ -3476,7 +3482,8 @@ void MITC9::addGmat( TacsScalar J[],
     }
   }
 
-  // Add the contributions from the second derivatives of the quaternions
+  // Add the contributions from the second derivatives of the
+  // quaternions
   for ( int i = 0; i < NUM_NODES; i++ ){
     // d = N[i]*C(q_{i})^{T}*n - these terms only get added along
     // each diagonal in the matrix
@@ -3964,6 +3971,241 @@ void MITC9::computeTyingBmat( TacsScalar g13[],
 }
 
 /*
+  Add the contributions from the derivative of the tying strain
+  derivative matrix to the output vectors.
+*/
+void MITC9::addComputeTyingBmat( TacsScalar Xd[],
+                                 TacsScalar Xrd[],
+                                 TacsScalar dird[],
+                                 TacsScalar dirdqd[],
+                                 const TacsScalar g13d[], 
+                                 const TacsScalar g23d[],
+                                 const TacsScalar B13d[],
+                                 const TacsScalar B23d[],
+                                 const TacsScalar X[],
+                                 const TacsScalar Xr[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dir[],
+                                 const TacsScalar dirdq[] ){
+  const double s = 0.774596669241483;
+  const double t = 0.577350269189626;
+
+  // The tying points where the strain will be evaluated
+  const double g13_upts[] = {-t,  t,  -t,   t, -t, t};
+  const double g13_vpts[] = {-s, -s, 0.0, 0.0,  s, s};
+
+  for ( int k = 0; k < 6; k++ ){
+    // Evaluate the element shape functions 
+    double N[9], Na[9], Nb[9];
+    computeShapeFunc(g13_upts[k], g13_vpts[k], N);
+    computeShapeFunc(g13_upts[k], g13_vpts[k], Na, Nb);
+
+    // The derivative of the shell surface coordinates w.r.t. u and v
+    // directions
+    TacsScalar Xa[3];
+    innerProduct(Na, X, Xa);
+
+    // Compute the frame normal at the current point
+    TacsScalar fn[3];
+    computeFrameNormal(N, Xr, fn);
+
+    // Interpolate to compute the director at the current point
+    TacsScalar d[3];
+    innerProduct(N, dir, d);
+
+    // The derivatives of the displacements w.r.t. the u and v
+    // directions
+    TacsScalar Ua[3];
+    innerProduct8(Na, vars, Ua);
+
+    // Extract the partials of g13
+    TacsScalar Xad[3], fnd[3];
+    TacsScalar scale = 0.5*g13d[k];
+    Xad[0] = scale*d[0];  
+    Xad[1] = scale*d[1];  
+    Xad[2] = scale*d[2];
+    
+    fnd[0] = scale*Ua[0]; 
+    fnd[1] = scale*Ua[1]; 
+    fnd[2] = scale*Ua[2];
+    
+    TacsScalar dd[3];
+    dd[0] = scale*(Xa[0] + Ua[0]);
+    dd[1] = scale*(Xa[1] + Ua[1]);
+    dd[2] = scale*(Xa[2] + Ua[2]);
+    
+    // Temp vector for computing the derivative
+    TacsScalar t[3];
+    t[0] = Xa[0] + Ua[0];
+    t[1] = Xa[1] + Ua[1];
+    t[2] = Xa[2] + Ua[2];
+
+    const TacsScalar *b13d = &B13d[8*NUM_NODES*k];
+    const TacsScalar *dq = dirdq;
+    TacsScalar *dqd = dirdqd;
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      // Add contributions from the derivatives w.r.t. U
+      fnd[0] += 0.5*Na[i]*b13d[0];
+      fnd[1] += 0.5*Na[i]*b13d[1];
+      fnd[2] += 0.5*Na[i]*b13d[2];
+      
+      dd[0] += 0.5*Na[i]*b13d[0];
+      dd[1] += 0.5*Na[i]*b13d[1];
+      dd[2] += 0.5*Na[i]*b13d[2];
+      
+      // Add the contributions from the derivatives w.r.t. q
+      Xad[0] += 0.5*N[i]*(dq[0]*b13d[3] + dq[3]*b13d[4] + 
+                          dq[6]*b13d[5] + dq[9]*b13d[6]);
+      Xad[1] += 0.5*N[i]*(dq[1]*b13d[3] + dq[4]*b13d[4] + 
+                          dq[7]*b13d[5] + dq[10]*b13d[6]);
+      Xad[2] += 0.5*N[i]*(dq[2]*b13d[3] + dq[5]*b13d[4] + 
+                          dq[8]*b13d[5] + dq[11]*b13d[6]);
+      
+      dqd[0] += 0.5*N[i]*t[0]*b13d[3];
+      dqd[1] += 0.5*N[i]*t[1]*b13d[3];
+      dqd[2] += 0.5*N[i]*t[2]*b13d[3];
+
+      dqd[3] += 0.5*N[i]*t[0]*b13d[4];
+      dqd[4] += 0.5*N[i]*t[1]*b13d[4];
+      dqd[5] += 0.5*N[i]*t[2]*b13d[4];
+
+      dqd[6] += 0.5*N[i]*t[0]*b13d[5];
+      dqd[7] += 0.5*N[i]*t[1]*b13d[5];
+      dqd[8] += 0.5*N[i]*t[2]*b13d[5];
+
+      dqd[9] += 0.5*N[i]*t[0]*b13d[6];
+      dqd[10] += 0.5*N[i]*t[1]*b13d[6];
+      dqd[11] += 0.5*N[i]*t[2]*b13d[6];
+
+      b13d += 8;
+      dq += 12;
+      dqd += 12;
+    }
+
+    // Add the normal frame component
+    addFrameNormalSens(fnd, N, Xrd);
+
+    // Add the contributions to dird and Xa
+    for ( int j = 0; j < NUM_NODES; j++ ){
+      Xd[3*j] += Na[j]*Xad[0];
+      Xd[1+3*j] += Na[j]*Xad[1];
+      Xd[2+3*j] += Na[j]*Xad[2];
+      
+      dird[3*j] += N[j]*dd[0];
+      dird[1+3*j] += N[j]*dd[1];
+      dird[2+3*j] += N[j]*dd[2];
+    }
+  }
+
+  // The tying points where the strain will be evaluated
+  const double g23_upts[] = {-s, 0.0,  s, -s, 0.0, s};
+  const double g23_vpts[] = {-t,  -t, -t,  t,   t, t};
+
+  for ( int k = 0; k < 6; k++ ){
+    // Evaluate the element shape functions 
+    double N[9], Na[9], Nb[9];
+    computeShapeFunc(g23_upts[k], g23_vpts[k], N);
+    computeShapeFunc(g23_upts[k], g23_vpts[k], Na, Nb);
+
+    // The derivative of the shell surface coordinates w.r.t. u and v
+    // directions
+    TacsScalar Xb[3];
+    innerProduct(Nb, X, Xb);
+
+    // Compute the frame normal at the current point
+    TacsScalar fn[3];
+    computeFrameNormal(N, Xr, fn);
+
+    // Interpolate to compute the director at the current point
+    TacsScalar d[3];
+    innerProduct(N, dir, d);
+
+    // The derivatives of the displacements w.r.t. the u and v
+    // directions
+    TacsScalar Ub[3];
+    innerProduct8(Nb, vars, Ub);
+
+    // Extract the partials of g13
+    TacsScalar Xbd[3], fnd[3];
+    TacsScalar scale = 0.5*g23d[k];
+    Xbd[0] = scale*d[0];  
+    Xbd[1] = scale*d[1];  
+    Xbd[2] = scale*d[2];
+    
+    fnd[0] = scale*Ub[0]; 
+    fnd[1] = scale*Ub[1]; 
+    fnd[2] = scale*Ub[2];
+    
+    TacsScalar dd[3];
+    dd[0] = scale*(Xb[0] + Ub[0]);
+    dd[1] = scale*(Xb[1] + Ub[1]);
+    dd[2] = scale*(Xb[2] + Ub[2]);
+
+    // Temp vector for computing the derivative
+    TacsScalar t[3];
+    t[0] = Xb[0] + Ub[0];
+    t[1] = Xb[1] + Ub[1];
+    t[2] = Xb[2] + Ub[2];
+
+    const TacsScalar *b23d = &B23d[8*NUM_NODES*k];
+    const TacsScalar *dq = dirdq;
+    TacsScalar *dqd = dirdqd;
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      // Add contributions from the derivatives w.r.t. U
+      fnd[0] += 0.5*Nb[i]*b23d[0];
+      fnd[1] += 0.5*Nb[i]*b23d[1];
+      fnd[2] += 0.5*Nb[i]*b23d[2];
+      
+      dd[0] += 0.5*Nb[i]*b23d[0];
+      dd[1] += 0.5*Nb[i]*b23d[1];
+      dd[2] += 0.5*Nb[i]*b23d[2];
+      
+      // Add the contributions from the derivatives w.r.t. q
+      Xbd[0] += 0.5*N[i]*(dq[0]*b23d[3] + dq[3]*b23d[4] + 
+                          dq[6]*b23d[5] + dq[9]*b23d[6]);
+      Xbd[1] += 0.5*N[i]*(dq[1]*b23d[3] + dq[4]*b23d[4] + 
+                          dq[7]*b23d[5] + dq[10]*b23d[6]);
+      Xbd[2] += 0.5*N[i]*(dq[2]*b23d[3] + dq[5]*b23d[4] + 
+                          dq[8]*b23d[5] + dq[11]*b23d[6]);
+      
+      dqd[0] += 0.5*N[i]*t[0]*b23d[3];
+      dqd[1] += 0.5*N[i]*t[1]*b23d[3];
+      dqd[2] += 0.5*N[i]*t[2]*b23d[3];
+
+      dqd[3] += 0.5*N[i]*t[0]*b23d[4];
+      dqd[4] += 0.5*N[i]*t[1]*b23d[4];
+      dqd[5] += 0.5*N[i]*t[2]*b23d[4];
+
+      dqd[6] += 0.5*N[i]*t[0]*b23d[5];
+      dqd[7] += 0.5*N[i]*t[1]*b23d[5];
+      dqd[8] += 0.5*N[i]*t[2]*b23d[5];
+
+      dqd[9] += 0.5*N[i]*t[0]*b23d[6];
+      dqd[10] += 0.5*N[i]*t[1]*b23d[6];
+      dqd[11] += 0.5*N[i]*t[2]*b23d[6];
+
+      b23d += 8;
+      dq += 12;
+      dqd += 12;
+    }
+
+    // Add the normal frame component
+    addFrameNormalSens(fnd, N, Xrd);
+
+    // Add the contributions to dird and Xa
+    for ( int j = 0; j < NUM_NODES; j++ ){
+      Xd[3*j] += Nb[j]*Xbd[0];
+      Xd[1+3*j] += Nb[j]*Xbd[1];
+      Xd[2+3*j] += Nb[j]*Xbd[2];
+      
+      dird[3*j] += N[j]*dd[0];
+      dird[1+3*j] += N[j]*dd[1];
+      dird[2+3*j] += N[j]*dd[2];
+    }
+  }
+}
+
+/*
   Compute the value of the tensorial strain and the derivative of the
   tensorial strain w.r.t. the state variables at the tying points in
   the element.
@@ -4221,7 +4463,6 @@ void MITC9::addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
   // e = 2*A^{T}*G
   // e[6] = 2.0*(A12*G13 + A22*G23);
   // e[7] = 2.0*(A11*G13 + A21*G23);
-
   TacsScalar G13d = 2.0*scale*(A12*eSens[6] + A11*eSens[7]);
   TacsScalar G23d = 2.0*scale*(A22*eSens[6] + A21*eSens[7]);
   
@@ -4343,6 +4584,84 @@ void MITC9::addTyingBmat( TacsScalar B[],
     B13 += 1;
     B23 += 1;
   }
+}
+
+/*
+  Add the sensitivities from the tying strain components
+*/
+void MITC9::addTyingBmatSens( TacsScalar B13d[], TacsScalar B23d[],
+                              TacsScalar Xdinvd[], TacsScalar Td[],
+                              const TacsScalar eSens[],
+                              const TacsScalar psi[],
+                              const double N13[],
+                              const double N23[],
+                              const TacsScalar B13[],
+                              const TacsScalar B23[],
+                              const TacsScalar Xdinv[],
+                              const TacsScalar T[] ){
+  // Compute the coefficients for the strain transformation. Note
+  // that the remaining values in the matrix A = Xdinv*T are either
+  // zero or unity.
+  TacsScalar A11, A12, A21, A22;
+
+  // A = Xdinv*T
+  A11 = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
+  A12 = Xdinv[0]*T[1] + Xdinv[1]*T[4] + Xdinv[2]*T[7];
+
+  A21 = Xdinv[3]*T[0] + Xdinv[4]*T[3] + Xdinv[5]*T[6];
+  A22 = Xdinv[3]*T[1] + Xdinv[4]*T[4] + Xdinv[5]*T[7];
+
+  TacsScalar A11d = 0.0, A12d = 0.0;
+  TacsScalar A21d = 0.0, A22d = 0.0;
+
+  const int offset = 8*NUM_NODES;
+  for ( int k = 0; k < offset; k++ ){
+    // Compute the strain using the assumed strain distribution
+    // and the strain evaluated at the tying points
+    TacsScalar G13, G23;
+    G13 = (B13[0]*N13[0] + B13[offset]*N13[1] +
+	   B13[2*offset]*N13[2] + B13[3*offset]*N13[3] + 
+	   B13[4*offset]*N13[4] + B13[5*offset]*N13[5]);
+    G23 = (B23[0]*N23[0] + B23[offset]*N23[1] +
+	   B23[2*offset]*N23[2] + B23[3*offset]*N23[3] + 
+	   B23[4*offset]*N23[4] + B23[5*offset]*N23[5]);
+
+    // Compute and set the final strain values
+    // e = 2*A^{T}*G
+    TacsScalar G13d = 2.0*psi[0]*(A12*eSens[6] + A11*eSens[7]);
+    TacsScalar G23d = 2.0*psi[0]*(A22*eSens[6] + A21*eSens[7]);
+  
+    A11d += 2.0*psi[0]*G13*eSens[7];
+    A12d += 2.0*psi[0]*G13*eSens[6];
+    A21d += 2.0*psi[0]*G23*eSens[7];
+    A22d += 2.0*psi[0]*G23*eSens[6];
+
+    for ( int i = 0; i < 6; i++ ){
+      B13d[offset*i] = G13d*N13[i];
+      B23d[offset*i] = G23d*N23[i];
+    }
+
+    B13++;   B23++;
+    B13d++;  B23d++;
+    psi++;
+  }
+
+  // Add the derivative to the transformation terms
+  Td[0] += Xdinv[0]*A11d + Xdinv[3]*A21d;
+  Td[1] += Xdinv[0]*A12d + Xdinv[3]*A22d;
+  Td[3] += Xdinv[1]*A11d + Xdinv[4]*A21d;
+  Td[4] += Xdinv[1]*A12d + Xdinv[4]*A22d;
+  Td[6] += Xdinv[2]*A11d + Xdinv[5]*A21d;
+  Td[7] += Xdinv[2]*A12d + Xdinv[5]*A22d;
+
+  // Add the terms to the Xdinv
+  Xdinvd[0] += T[0]*A11d + T[1]*A12d;
+  Xdinvd[1] += T[3]*A11d + T[4]*A12d;
+  Xdinvd[2] += T[6]*A11d + T[7]*A12d;
+
+  Xdinvd[3] += T[0]*A21d + T[1]*A22d;
+  Xdinvd[4] += T[3]*A21d + T[4]*A22d;
+  Xdinvd[5] += T[6]*A21d + T[7]*A22d;
 }
 
 /*
@@ -5839,6 +6158,10 @@ void MITC9::testBmatSens( double dh ){
   double Na[NUM_NODES], Nb[NUM_NODES];
   computeShapeFunc(pt[0], pt[1], Na, Nb);
 
+  // Evaluate the tying strain interpolation
+  double N13[6], N23[6];
+  computeTyingFunc(pt[0], pt[1], N13, N23);
+
   // Inputs required for the bmatrix
   TacsScalar Ur[9], dr[9];
   TacsScalar Xdinv[9], zXdinv[9];
@@ -5859,6 +6182,13 @@ void MITC9::testBmatSens( double dh ){
     dirdq[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
 
+  // Set random tying strain values
+  TacsScalar B13[6*8*NUM_NODES], B23[6*8*NUM_NODES];
+  for ( int i = 0; i < 48*NUM_NODES; i++ ){
+    B13[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    B23[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
   // Allocate random input vectors
   TacsScalar eSens[8], psi[8*NUM_NODES];
   for ( int i = 0; i < 8; i++ ){
@@ -5871,7 +6201,8 @@ void MITC9::testBmatSens( double dh ){
   // Evaluate the bmat/strain
   TacsScalar e[8], B[64*NUM_NODES];
   evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
- 
+  addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
+
   TacsScalar fval = 0.0;
   for ( int k = 0; k < 8*NUM_NODES; k++ ){
     for ( int j = 0; j < 8; j++ ){
@@ -5885,6 +6216,9 @@ void MITC9::testBmatSens( double dh ){
   TacsScalar dirdqd[12*NUM_NODES];
   evalBmatSens(Urd, drd, Xdinvd, zXdinvd, Td, dirdqd,
                eSens, psi, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+  TacsScalar B13d[6*8*NUM_NODES], B23d[6*8*NUM_NODES];
+  addTyingBmatSens(B13d, B23d, Xdinvd, Td,
+                   eSens, psi, N13, N23, B13, B23, Xdinv, T);
 
   // Compute the derivative w.r.t. Ur
   TacsScalar fd[12*NUM_NODES];
@@ -5892,6 +6226,7 @@ void MITC9::testBmatSens( double dh ){
     TacsScalar tmp = Ur[i];
     Ur[i] = Ur[i] + dh;
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       for ( int j = 0; j < 8; j++ ){
@@ -5908,6 +6243,7 @@ void MITC9::testBmatSens( double dh ){
     TacsScalar tmp = dr[i];
     dr[i] = dr[i] + dh;
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       for ( int j = 0; j < 8; j++ ){
@@ -5924,6 +6260,7 @@ void MITC9::testBmatSens( double dh ){
     TacsScalar tmp = Xdinv[i];
     Xdinv[i] = Xdinv[i] + dh;
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       for ( int j = 0; j < 8; j++ ){
@@ -5940,6 +6277,7 @@ void MITC9::testBmatSens( double dh ){
     TacsScalar tmp = zXdinv[i];
     zXdinv[i] = zXdinv[i] + dh;
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       for ( int j = 0; j < 8; j++ ){
@@ -5956,6 +6294,7 @@ void MITC9::testBmatSens( double dh ){
     TacsScalar tmp = T[i];
     T[i] = T[i] + dh;
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       for ( int j = 0; j < 8; j++ ){
@@ -5972,6 +6311,7 @@ void MITC9::testBmatSens( double dh ){
     TacsScalar tmp = dirdq[i];
     dirdq[i] = dirdq[i] + dh;
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+    addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       for ( int j = 0; j < 8; j++ ){
