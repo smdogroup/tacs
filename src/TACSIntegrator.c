@@ -387,7 +387,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   // Initialize the residual norms
   init_res_norm = 0.0;
   res_norm = 0.0;
-  int exit_flag = 0;
+  int newton_exit_flag = 0;
 
   if (logfp && print_level >= 2){
     fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
@@ -442,23 +442,26 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       if (logfp) {
         fprintf(stderr,"[%d] Newton iteration %d, failed with NaN residual norm\n", mpiRank, niter);
       }
-      exit_flag = -2;
+      newton_exit_flag = -2;
       break;
     }
     
     // Check whether the update is sufficiently small
     if (RealPart(update_norm) < atol){
-      exit_flag = 2;
+      newton_exit_flag = 2;
       break;
     }
 
     // Check if the Newton convergence tolerance is satisfied
     if (RealPart(res_norm) < atol){
-      exit_flag = 1;
+      newton_exit_flag = 1;
       break;
     }
-    if (RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
-      exit_flag = 3;
+
+    // Check for relative reduction in residual magnitude
+    if (niter == max_newton_iters && 
+        RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
+      newton_exit_flag = 3;
       break;
     }
 
@@ -484,7 +487,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Find the norm of the update
-    update_norm = update->norm();// *alpha
+    update_norm = update->norm()*alpha;
 
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);
@@ -494,14 +497,14 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
   // Failed nonlinear solution
   if (niter == max_newton_iters) {
-    exit_flag = -1;
+    newton_exit_flag = -1;
   }
 
   // Record the time taken for nonlinear solution
   time_newton = MPI_Wtime() - tnewton;
 
-  // Return the exit_flagination flag
-  return exit_flag;
+  // Return the exit flag
+  return newton_exit_flag;
 }
 
 /*
@@ -2841,7 +2844,7 @@ TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
   } else if ( order == 2) {
     mytype = NBG2;
   } else if ( order == 3) {
-    mytype = NBG2;
+    mytype = NBG3;
   }
 
   // Setup the NBG coefficients
