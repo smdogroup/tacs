@@ -1654,10 +1654,10 @@ void TACSBDFIntegrator::marchBackwards( ) {
     
   current_time_step = num_time_steps;
 
-  time_rev_assembly = 0.0;
-  time_rev_factor = 0.0;
+  time_rev_assembly     = 0.0;
+  time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
-  time_reverse = 0.0;
+  time_reverse          = 0.0;
   double t0 = MPI_Wtime();
   
   // Adjoint variables for each function of interest
@@ -1733,6 +1733,10 @@ void TACSBDFIntegrator::marchBackwards( ) {
     // functions
     addToTotalDerivative(h, psi);
     
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
+
+    double tassembly2 = MPI_Wtime();
+
     // Drop the contributions from this step to other right hand sides
     for ( int ii = 1; (ii < nbdf || ii < nbddf); ii++ ){
       int rhs_index = (k - ii) % num_adjoint_rhs;
@@ -1748,7 +1752,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
 				    psi[n], rhs[rhs_index*num_funcs+n], TRANSPOSE);
       }
     }
-    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
+    time_rev_assembly += MPI_Wtime() - tassembly2;
   }
 
   // Freeup objects
@@ -2178,6 +2182,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
   time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
   time_reverse          = 0.0;
+
   double t0 = MPI_Wtime();
 
   // Inter-step adjoint variables for each function of interest
@@ -2254,6 +2259,8 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       // Assemble the right hand side
       //--------------------------------------------------------------//
 
+      double tassembly = MPI_Wtime();
+
       // Add the contribution to function value from this stage
       this->addFunctions(h*B[i], funcs, num_funcs, fvals);
       
@@ -2282,25 +2289,35 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       // Setup the Jacobian
       tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
+      time_rev_assembly += MPI_Wtime() - tassembly;
+
       // LU factorization of the Jacobian
+      double tfactor = MPI_Wtime();
       pc->factor();
-    
+      time_rev_factor += MPI_Wtime() - tfactor;
+
       // Apply the factorization for all right hand sides and solve for
       // the adjoint variables
+      double tapply = MPI_Wtime();
       for ( int n = 0; n < num_funcs; n++ ){
 	ksm->solve(rhs[i*num_funcs+n], lambda[i*num_funcs+n]);
 	rhs[i*num_funcs+n]->zeroEntries();
       }
+      time_rev_apply_factor += MPI_Wtime() - tapply;
 
       // Add total derivative contributions from this step to all
       // functions
+      double jacpdt = MPI_Wtime();        
       addToTotalDerivative(h*B[i], &lambda[i*num_funcs]);
+      time_rev_jac_pdt += MPI_Wtime() - jacpdt;
       
       //--------------------------------------------------------------//
       // Put the contributions from this stage to the right hand sides
       // of upcoming stages
       //--------------------------------------------------------------//
-      
+
+      double tassembly2 = MPI_Wtime();
+
       for ( int j = i-1; j >= 0; j-- ){
 	// Determine the corresponding coefficients
 	getCoeffsInterStage(i, j, &alpha, &beta, &gamma);
@@ -2350,8 +2367,11 @@ void TACSDIRKIntegrator::marchBackwards( ) {
                                     lambda[i*num_funcs+n], psiTmp[n], TRANSPOSE);
         
       }
+      time_rev_assembly += MPI_Wtime() - tassembly2;
     } // stage
 
+    double tassembly3 = MPI_Wtime();
+    
     // Add up the remaining PHI contributions
     for ( int n = 0; n < num_funcs; n++ ){
       phi[n]->axpy(h, psi[n]);       // phi = phi + h * psi
@@ -2364,8 +2384,9 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       psi[n]->axpy(1.0, psiTmp[n]);  // psi = psi + psiTmp
       psiTmp[n]->zeroEntries();       // Reset the stage contributions now
     }
- 
+    time_rev_assembly += MPI_Wtime() - tassembly3;
   } // time
+
   // Freeup objects
   for ( int n = 0; n < num_funcs; n++ ){
     psi[n]->decref();
@@ -2603,10 +2624,6 @@ void TACSABMIntegrator::marchBackwards( ){
   // Set the current step as the last step
   current_time_step = num_time_steps;
 
-  // Weight for the approximation of time integrals in function and
-  // residuals
-  double tweight = h;
-
   time_rev_assembly     = 0.0;
   time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
@@ -2699,8 +2716,10 @@ void TACSABMIntegrator::marchBackwards( ){
     // 3. Setup the adjoint RHS (involves linear solve)
     //---------------------------------------------------------------//
    
+    double tassembly = MPI_Wtime();
+
     // Evaluate all functions (should be done before all sens calls)
-    this->addFunctions(tweight, funcs, num_funcs, fvals);
+    this->addFunctions(h, funcs, num_funcs, fvals);
 
     // Add the contribution from dfdq to RHS of the corresponding
     // adjoint index
@@ -2726,14 +2745,20 @@ void TACSABMIntegrator::marchBackwards( ){
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
     
+    time_rev_assembly += MPI_Wtime() - tassembly;
+
     // LU factorization of the Jacobian
+    double tfactor = MPI_Wtime();
     pc->factor();
+    time_rev_factor += MPI_Wtime() - tfactor;
     
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
+    double tapply = MPI_Wtime();
     for ( int n = 0; n < num_funcs; n++ ){
       ksm->solve(rhsbin[adj_index*num_funcs+n], lambda[n]);
     }
+    time_rev_apply_factor += MPI_Wtime() - tapply;
 
     // Zero the current rhs at adjoint index for further use next time
     for ( int n = 0; n < num_funcs; n++ ){
@@ -2741,12 +2766,14 @@ void TACSABMIntegrator::marchBackwards( ){
     }
 
     // Add total derivative contributions from this step using adjoint
+    double jacpdt = MPI_Wtime();
     addToTotalDerivative(h, lambda);
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
     
     //----------------------------------------------------------------//
     // A. Put the contribution from this step to rhsbin               //
     //----------------------------------------------------------------//
-
+    double tassembly2 = MPI_Wtime();
     for ( int ii = 1; ii < p ; ii++ ){
 
       // Find the adjoint index to which the current contributions are
@@ -2854,6 +2881,7 @@ void TACSABMIntegrator::marchBackwards( ){
                              num_funcs, funcs,
                              lambda);
     }
+    time_rev_assembly += MPI_Wtime() - tassembly2;
 
   } // end time loop backwards
 
@@ -3057,15 +3085,17 @@ void TACSNBGIntegrator::marchBackwards( ){
 
   current_time_step = num_time_steps;
   
-  time_rev_assembly = 0.0;
-  time_rev_factor = 0.0;
+  time_rev_assembly     = 0.0;
+  time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
-  time_reverse = 0.0;
+  time_reverse          = 0.0;
+
   double t0 = MPI_Wtime();
 
   int num_adjoint_rhs = 2; // NBG is a one step method (uses
                            // information from previous and current
                            // steps)
+
   TACSBVec **psi    = new TACSBVec*[ num_funcs ];
   TACSBVec **phi    = new TACSBVec*[ num_funcs ];
   TACSBVec **lambda = new TACSBVec*[ num_funcs ];
@@ -3109,6 +3139,8 @@ void TACSNBGIntegrator::marchBackwards( ){
     // Setup the adjoint RHS
     //---------------------------------------------------------------//
 
+    double tassembly = MPI_Wtime();
+
     // Evaluate the function
     this->addFunctions(h, funcs, num_funcs, fvals);
     
@@ -3125,23 +3157,33 @@ void TACSNBGIntegrator::marchBackwards( ){
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
+    time_rev_assembly += MPI_Wtime() - tassembly;
+
     // LU factorization of the Jacobian
+    double tfactor = MPI_Wtime();
     pc->factor();
+    time_rev_factor += MPI_Wtime() - tfactor;
     
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
+    double tapply = MPI_Wtime();
     for ( int n = 0; n < num_funcs; n++ ){
       ksm->solve(rhs[adj_index*num_funcs+n], lambda[n]);
       rhs[adj_index*num_funcs+n]->zeroEntries();
     }
+    time_rev_apply_factor += MPI_Wtime() - tapply;
 
     // Add total derivative contributions from this step for all
     // functions
+    double jacpdt = MPI_Wtime();    
     addToTotalDerivative(h, lambda);
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
 
     //-------------------------------------------------------------//
     // Put the contribution from this step to the next adjoint RHS //
     //-------------------------------------------------------------//
+
+    double tassembly2 = MPI_Wtime();
 
     for ( int ii = 1; ii < num_adjoint_rhs ; ii++ ){
       int rhs_index = (k - ii) % num_adjoint_rhs;
@@ -3180,7 +3222,8 @@ void TACSNBGIntegrator::marchBackwards( ){
                                     TRANSPOSE);
 
       }
-    }
+    }    
+    time_rev_assembly += MPI_Wtime() - tassembly2;
   }
 
   // Freeup objects
