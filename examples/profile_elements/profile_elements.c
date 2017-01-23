@@ -95,6 +95,9 @@ int main( int argc, char *argv[] ){
   generate_random_array(dvars, MAX_VARS);
   generate_random_array(ddvars, MAX_VARS);
 
+  memset(dvars, 0, MAX_VARS*sizeof(TacsScalar));
+  memset(ddvars, 0, MAX_VARS*sizeof(TacsScalar));
+
   // Set the tolerances depending on whether we're using complex step
   // or not...
 #ifdef TACS_USE_COMPLEX
@@ -170,7 +173,7 @@ int main( int argc, char *argv[] ){
   shell->incref();
   if (!ename || strcmp(ename, shell->elementName()) == 0){
     test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-    mitc9->testXptSens();
+    // mitc9->testXptSens();
   }
   shell->decref();
 
