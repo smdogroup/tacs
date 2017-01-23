@@ -13,7 +13,7 @@
    tinit             : start time of simulation
    tfinal            : end time of simulation
    num_steps_per_sec : the number of steps to take per second
-   type              : type of integrator (BDF1-3, DIRK2-4, ABM1-6, NBG)
+   type              : type of integrator (BDF1-3, DIRK2-4, ABM1-6, NBG[E,2-3])
 */
 TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
                                              double _tinit, double _tfinal, 
@@ -47,12 +47,16 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
     return new TACSABMIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 6);
 
     // Newmark Beta Gamma Method
-  } else if ( type == NBG ) {
-    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec);
+  } else if ( type == NBGE ) {
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
+  } else if ( type == NBG2 ) {
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
+  } else if ( type == NBG3 ) {
+    return new TACSNBGIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 3);
     
   } else { 
-    // Default BDF1 integrator
-    return new TACSBDFIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
+    // Default BDF2 integrator
+    return new TACSBDFIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
   }  
 }
 
@@ -76,7 +80,9 @@ inline const char* getIntegratorType( enum IntegratorType type ) {
   case ABM5:   return "ABM5";
   case ABM6:   return "ABM6";
 
-  case NBG:    return "NBG";
+  case NBGE:    return "NBGE";
+  case NBG2:    return "NBG2";
+  case NBG3:    return "NBG3";
 
   default:      return "UNKNOWN";
   }
@@ -96,7 +102,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
                                 int _num_steps_per_sec ){
   // Mark that this is the global instance of integrator
   adaptive_instance    = 0;
-  num_adaptive_retry   = 1;
+  num_adaptive_retry   = 0;
   adaptive_step_factor = 10;
 
   // Copy over the input parameters
@@ -164,7 +170,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   is_flexible  = 0;
     
   // Default parameters for Newton solve
-  max_newton_iters = 10;
+  max_newton_iters = 25;
   init_newton_delta = 0.0;
   atol = 1.0e-12;
   rtol = 1.0e-8;
@@ -2583,7 +2589,8 @@ void TACSABMIntegrator::marchBackwards( ){
   // Set the current step as the last step
   current_time_step = num_time_steps;
 
-  // Weight for the approximation of time integrals in function and residuals
+  // Weight for the approximation of time integrals in function and
+  // residuals
   double tweight = h;
 
   time_rev_assembly     = 0.0;
@@ -2593,85 +2600,117 @@ void TACSABMIntegrator::marchBackwards( ){
 
   double t0 = MPI_Wtime();
 
-  // Adjoint variables
-  TACSBVec **psi    = new TACSBVec*[ num_funcs ]; // tracks contributions from S
-  TACSBVec **phi    = new TACSBVec*[ num_funcs ]; // tracks contributions from T
-  TACSBVec **lambda = new TACSBVec*[ num_funcs ]; // tracks contributions from R
+  // Temporary vectors for adjoint 
+  TACSBVec **psibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ];  
+  TACSBVec **phibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ]; 
+  TACSBVec **rhsbin = new TACSBVec*[ num_funcs*num_adjoint_rhs ]; 
 
-  TACSBVec **dfdq   = new TACSBVec*[ num_funcs ];
-  TACSBVec **rhs    = new TACSBVec*[ num_funcs*num_adjoint_rhs ];
+  // Adjoint vectors
+  TACSBVec **psi    = new TACSBVec*[ num_funcs ];
+  TACSBVec **phi    = new TACSBVec*[ num_funcs ];
+  TACSBVec **lambda = new TACSBVec*[ num_funcs ];
 
   // Allocate vectors
   for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
-    if (n < num_funcs) {    
+    if (n < num_funcs){
       phi[n] = tacs->createVec();
       phi[n]->incref();
-
+      
       psi[n] = tacs->createVec();
-      psi[n]->incref();
+      psi[n]->incref();    
       
       lambda[n] = tacs->createVec();
-      lambda[n]->incref();
-      
-      dfdq[n] = tacs->createVec();
-      dfdq[n]->incref();
+      lambda[n]->incref();      
     }
-    rhs[n] = tacs->createVec();
-    rhs[n]->incref();
+
+    phibin[n] = tacs->createVec();
+    phibin[n]->incref();
+
+    psibin[n] = tacs->createVec();
+    psibin[n]->incref();     
+
+    rhsbin[n] = tacs->createVec();
+    rhsbin[n]->incref();
   }
 
   // March backwards in time (initial condition not evaluated)
-  for ( int k = num_time_steps-1; k >=1 ; k-- ){
+  for ( int k = num_time_steps-1; k > 0; k-- ){
+
+    // Set the current step as k
     current_time_step = k;
 
+    // Integration order for this time step
+    int p   = getOrder(k);
+
+    // Pointer index into the coefficient matrix
     int idx = getCoeffIndex(k);
-    //    printf("The coefficient index for time-step %d is A[%d] \n", k, idx);
 
     // Determine the coefficients for Jacobian assembly
     double alpha, beta, gamma;
     getLinearizationCoeffs(&alpha, &beta, &gamma);
 
-    // Set the stages
+    // Set the states into the tacs instance
     setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
-    // Find the adjoint index
+    // Find the adjoint index pointer
     int adj_index = k % num_adjoint_rhs;
+
+    //---------------------------------------------------------------//
+    // 1. Solve for PHI (no linear solves here)
+    //---------------------------------------------------------------//
+
+    for ( int n = 0; n < num_funcs; n++ ){
+      phi[n]->copyValues(phibin[adj_index*num_funcs+n]);
+    }
+ 
+    // Zero the current phibin at adjoint index for further use next time
+    for ( int n = 0; n < num_funcs; n++ ){
+      phibin[adj_index*num_funcs+n]->zeroEntries();
+    }
+
+    //---------------------------------------------------------------//
+    // 2. Solve for PSI (no linear solves here)
+    //---------------------------------------------------------------//
+
+    for ( int n = 0; n < num_funcs; n++ ){
+      psi[n]->copyValues(psibin[adj_index*num_funcs+n]);
+    }
+ 
+    // Zero the current psibin at adjoint index for further use next time
+    for ( int n = 0; n < num_funcs; n++ ){
+      psibin[adj_index*num_funcs+n]->zeroEntries();
+    }
+
+    //---------------------------------------------------------------//
+    // 3. Setup the adjoint RHS (involves linear solve)
+    //---------------------------------------------------------------//
    
-    //---------------------------------------------------------------//
-    // Setup the adjoint RHS
-    //---------------------------------------------------------------//
-
-    /*****************************************************************/
-
-    // Evaluate all the functions
+    // Evaluate all functions (should be done before all sens calls)
     this->addFunctions(tweight, funcs, num_funcs, fvals);
 
     // Add the contribution from dfdq to RHS of the corresponding
     // adjoint index
-    tacs->addSVSens(alpha, beta, gamma, funcs, num_funcs, 
-                    &rhs[adj_index*num_funcs]);
+    tacs->addSVSens(alpha, beta, gamma, 
+                    funcs, num_funcs, 
+                    &rhsbin[adj_index*num_funcs]);
   
     // Add the contributions from PSI
     for ( int n = 0; n < num_funcs; n++ ){
-      rhs[adj_index*num_funcs+n]->axpy(beta/tweight, psi[n]);
+      rhsbin[adj_index*num_funcs+n]->axpy(beta/h, psi[n]);
     }
     
     // Add the contributions for PHI 
     for ( int n = 0; n < num_funcs; n++ ){
-      rhs[adj_index*num_funcs+n]->axpy(alpha/tweight, phi[n]);
-    }    
+      rhsbin[adj_index*num_funcs+n]->axpy(alpha/h, phi[n]);
+    }
     
     // Negate the right hand side of the adjoint index
     for ( int n = 0; n < num_funcs; n++ ){
-      rhs[adj_index*num_funcs+n]->scale(-1.0);
+      rhsbin[adj_index*num_funcs+n]->scale(-1.0);
     }
     
-    /*****************************************************************/
-
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
-
-    /*****************************************************************/
     
     // LU factorization of the Jacobian
     pc->factor();
@@ -2679,25 +2718,22 @@ void TACSABMIntegrator::marchBackwards( ){
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
     for ( int n = 0; n < num_funcs; n++ ){
-      ksm->solve(rhs[adj_index*num_funcs+n], lambda[n]);
+      ksm->solve(rhsbin[adj_index*num_funcs+n], lambda[n]);
     }
 
     // Zero the current rhs at adjoint index for further use next time
     for ( int n = 0; n < num_funcs; n++ ){
-      rhs[adj_index*num_funcs+n]->zeroEntries();
+      rhsbin[adj_index*num_funcs+n]->zeroEntries();
     }
 
-    /*****************************************************************/
-   
-    // Add total derivative contributions from this step
-    addToTotalDerivative(tweight, lambda);
-
-    /*****************************************************************/
+    // Add total derivative contributions from this step using adjoint
+    addToTotalDerivative(h, lambda);
     
-    //-------------------------------------------------------------//
-    // Put the contribution from this step to the other adjoint RHS//
-    //-------------------------------------------------------------//
-    for ( int ii = 1; ii < num_adjoint_rhs ; ii++ ){
+    //----------------------------------------------------------------//
+    // A. Put the contribution from this step to rhsbin               //
+    //----------------------------------------------------------------//
+
+    for ( int ii = 1; ii < p ; ii++ ){
 
       // Find the adjoint index to which the current contributions are
       // to be added
@@ -2705,71 +2741,126 @@ void TACSABMIntegrator::marchBackwards( ){
 
       double alphatmp, betatmp, gammatmp;
       gammatmp = 0.0;
-      alphatmp = h*A[idx]*h*A[idx+1];
-      betatmp  = h*A[idx+1];
+      betatmp  = h*A[idx+ii];
+      alphatmp = h*A[idx]*h*A[idx+ii];
 
-      // Add the contributions from PSI
+      // Add the contributions from PSI into RHS
       for ( int n = 0; n < num_funcs; n++ ){
-        rhs[rhs_index*num_funcs+n]->axpy(betatmp/tweight, psi[n]);
+        rhsbin[rhs_index*num_funcs+n]->axpy(betatmp/h, psi[n]);
       }
 
-      // Add the contributions for PHI 
+      // Add the contributions for PHI into RHS
       for ( int n = 0; n < num_funcs; n++ ){
-        rhs[rhs_index*num_funcs+n]->axpy(alphatmp/tweight, phi[n]);
-      }   
+        rhsbin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }
 
       // Add the function and residual adjoint contributions into the
       // other rhs
-      addVectorTransProducts(&rhs[rhs_index*num_funcs], alphatmp, betatmp, gammatmp, 
-                             num_funcs, funcs, lambda);
-      
-    } // end loop adding contributions to all other RHS
-
-
-    //-----------------------------------------------------------//
-    // Find the new PSI
-    //-----------------------------------------------------------//
-
-    // Add contributions from PHI
-    double scale = 0.0;
-    scale = h*(A[idx]+A[idx+1]);      
-    for ( int n = 0; n < num_funcs; n++ ){   
-      psi[n]->axpy(scale, phi[n]); // what about zero here // adds up to 1
+      addVectorTransProducts(&rhsbin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp, 
+                             num_funcs, funcs, 
+                             lambda);          
     }
 
-    gamma = 0.0; 
-    beta  = tweight; 
-    alpha = tweight*scale;        
-    addVectorTransProducts(psi, alpha, beta, gamma,
-                           num_funcs, funcs, lambda);
+    //----------------------------------------------------------------//
+    // B. Put the contributions from this step to PSI bins            //
+    //----------------------------------------------------------------//
 
-    //-----------------------------------------------------------//        
-    // Find the new PHI
-    //-----------------------------------------------------------//
+    if ( max_abm_order > 0) {
 
-    gamma = 0.0; 
-    beta  = 0.0; 
-    alpha = tweight;        
-    addVectorTransProducts(phi, alpha, beta, gamma, 
-                           num_funcs, funcs, lambda);
+      int rhs_index = (k-1) % num_adjoint_rhs;
 
-  } // end time loop
+      double alphatmp, betatmp, gammatmp;
+      gammatmp = 0.0;
+      betatmp  = h;
+      alphatmp = h*h*A[idx];
+
+      // Add the contributions for PHI into psibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        psibin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }
+
+      // Add the contributions for PSI into psibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        psibin[rhs_index*num_funcs+n]->axpy(betatmp/h, psi[n]);
+      }      
+
+      // Add the function and residual adjoint contributions into the
+      // other psibin
+      addVectorTransProducts(&psibin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp,
+                             num_funcs, funcs,
+                             lambda);
+    }
+
+    for ( int ii = 1; ii < p ; ii++ ){
+
+      int rhs_index = (k - ii) % num_adjoint_rhs;
+
+      double alphatmp, betatmp, gammatmp;
+      gammatmp = 0.0;
+      betatmp  = 0.0;
+      alphatmp = h*h*A[idx+ii];
+
+      // Add the contributions for PHI into psibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        psibin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }
+
+      // Add the function and residual adjoint contributions into the
+      // other psibin
+      addVectorTransProducts(&psibin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp,
+                             num_funcs, funcs,
+                             lambda);               
+    }
+
+    //----------------------------------------------------------------//
+    // C. Put the contributions from this step to PHI bins            //
+    //----------------------------------------------------------------//
+
+    if ( max_abm_order > 0) {
+
+      int rhs_index = (k-1) % num_adjoint_rhs;
+
+      double alphatmp, betatmp, gammatmp;
+      gammatmp = 0.0;
+      betatmp  = 0.0;
+      alphatmp = h;
+
+      // Add the contributions for PHI into phibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        phibin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }  
+
+      // Add the function and residual adjoint contributions into the
+      // other psibin
+      addVectorTransProducts(&phibin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp,
+                             num_funcs, funcs,
+                             lambda);
+    }
+
+  } // end time loop backwards
 
   // Freeup objects
   for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
-    if (n < num_funcs) {    
-      psi[n]->decref();
-      phi[n]->decref();     
+    if (n < num_funcs) {  
+      phi[n]->decref();
+      psi[n]->decref();  
       lambda[n]->decref();
-      dfdq[n]->decref();
     }
-    rhs[n]->decref();
+    phibin[n]->decref();
+    psibin[n]->decref();
+    rhsbin[n]->decref();
   }
   delete [] psi;
   delete [] phi;
   delete [] lambda;
-  delete [] rhs;
-  delete [] dfdq;
+
+  delete [] phibin;
+  delete [] psibin;
+  delete [] rhsbin;
 
   // Print adjoint mode summary before maching backwards
   printAdjointOptionSummary(logfp);
@@ -2828,10 +2919,21 @@ order %d max order %d sum %f\n", order, max_abm_order, sum);
 TACSNBGIntegrator::TACSNBGIntegrator( TACSAssembler * _tacs, 
                                       double _tinit,
                                       double _tfinal, 
-                                      int _num_steps_per_sec ):
+                                      int _num_steps_per_sec,
+                                      int _order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
-  // Set the integrator type
-  mytype = NBG;
+
+  // Set the integration order
+  order = _order;
+  
+  // Set the type of integrator
+  if ( order == 1) {
+    mytype = NBGE;
+  } else if ( order == 2) {
+    mytype = NBG2;
+  } else if ( order == 3) {
+    mytype = NBG2;
+  }
 
   // Setup the NBG coefficients
   setupCoeffs();
@@ -2846,27 +2948,37 @@ TACSNBGIntegrator::~TACSNBGIntegrator(){}
   Setup the coefficients for the the integration scheme
 */
 void TACSNBGIntegrator::setupCoeffs(){
-  BETA  = 0.25;
-  GAMMA = 0.50;
-  
-  //Other popular sets of values in Newmark family of integrators
-  /*
-  // Fox & Goodwin  (third order & conditionally stable rho=2.45)
-  BETA  = 1.0/12.0;
-  GAMMA = 0.50;
 
-  // Linear Acceleration (second order & conditionally stable rho=3.46)
-  BETA  = 1.0/6.0;
-  GAMMA = 0.50;
+  if (mytype == NBGE) {
 
-  // Central Difference (second order & conditionally stable rho=2)
-  BETA  = 1.0/2.0;
-  GAMMA = 0.50;
+    // Purely Explicit (firstorder & conditionally stable rho=0)
+    BETA  = 0.0;
+    GAMMA = 0.0;
 
-  // Purely Explicit (firstorder & conditionally stable rho=0)
-  BETA  = 0.0;
-  GAMMA = 0.0;
-  */
+  } else if (mytype == NBG2) {
+
+    // Average constant acceleration
+    //    BETA = 1.0/4.0;
+    //    GAMMA = 0.50;
+
+    BETA  = 1.0/2.0;
+    GAMMA = 0.50;
+
+    //    BETA  = 1.0/8.0;
+    //    GAMMA = 0.50;
+
+    // Central Difference (second order & conditionally stable rho=2)
+    //    BETA  = 1.0/12.0;
+    //    GAMMA = 0.50;
+
+  } else if (mytype == NBG3) {
+
+    // Fox & Goodwin  (third order & conditionally stable rho=2.45)
+    BETA  = 1.0/12.0;
+    GAMMA = 0.50;
+
+  }
+
 }
 
 /*
@@ -2877,7 +2989,7 @@ void TACSNBGIntegrator::setupCoeffs(){
   
   Use the appropriate class variables to prepare the states (q[k],
   qdot[k], qddot[k]) at the k-th timestep for nonlinear solution. Make
-  sure to setup the coefficients, zero the states.
+  sure to setup the coefficients before calling this function.
 */
 void TACSNBGIntegrator::approxStates(){
   int k = current_time_step;
@@ -2888,9 +3000,6 @@ void TACSNBGIntegrator::approxStates(){
   q[k]->zeroEntries();
   qdot[k]->zeroEntries();
   qddot[k]->zeroEntries();
-  
-  // Initial guess for qddot -- copy over previous acceleration states
-  qddot[k]->copyValues(qddot[k-1]);
 
   // Approximate qdot using qdot and qddot:
   // qdot[k] = qdot[k-1] + (1-GAMMA) h qddot[k-1]) + GAMMA h qddot[k]
@@ -3091,6 +3200,7 @@ void TACSIntegrator::addVectorTransProducts( TACSBVec **ans,
                                              double alpha, double beta, double gamma,
                                              int num_funcs, TACSFunction **funcs,
                                              TACSBVec **input ){
+
   // Add the Residual-Adj vec product for each adjoint vector
   for ( int n = 0; n < num_funcs; n++ ){     
     tacs->addJacobianVecProduct(1.0, 
@@ -3098,7 +3208,7 @@ void TACSIntegrator::addVectorTransProducts( TACSBVec **ans,
                                 input[n], ans[n], 
                                 TRANSPOSE);     
   }
-
+  
   // Add the function SV sensitivities
   tacs->addSVSens(alpha, beta, gamma, 
                   funcs, num_funcs, 

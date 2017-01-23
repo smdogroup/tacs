@@ -352,7 +352,7 @@ static inline void computeFrameNormal( const double N[],
   Compute the derivative of the frame normal
 
 */
-static inline void addFrameNormalSens( const double fnd[],
+static inline void addFrameNormalSens( const TacsScalar fnd[],
                                        const double N[],
                                        TacsScalar Xrd[] ){
   Xrd[2] += N[0]*fnd[0];

@@ -399,4 +399,5 @@ cdef extern from "TACSIntegrator.h":
    cdef cppclass TACSNBGIntegrator(TACSIntegrator):
       TACSNBGIntegrator(TACSAssembler *tacs,
                         double tinit, double tfinal,
-                        int num_steps_per_sec)
+                        int num_steps_per_sec,
+                        int order)
