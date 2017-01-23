@@ -65,26 +65,40 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
 */
 inline const char* getIntegratorType( enum IntegratorType type ) {
   switch (type) {
-  case DIRK2:   return "DIRK2";
-  case DIRK3:   return "DIRK3";
-  case DIRK4:   return "DIRK4";
+  case DIRK2: return "DIRK2";
+  case DIRK3: return "DIRK3";
+  case DIRK4: return "DIRK4";
 
-  case BDF1:   return "BDF1";
-  case BDF2:   return "BDF2";
-  case BDF3:   return "BDF3";
+  case BDF1:  return "BDF1";
+  case BDF2:  return "BDF2";
+  case BDF3:  return "BDF3";
 
-  case ABM1:   return "ABM1";
-  case ABM2:   return "ABM2";
-  case ABM3:   return "ABM3";
-  case ABM4:   return "ABM4";
-  case ABM5:   return "ABM5";
-  case ABM6:   return "ABM6";
+  case ABM1:  return "ABM1";
+  case ABM2:  return "ABM2";
+  case ABM3:  return "ABM3";
+  case ABM4:  return "ABM4";
+  case ABM5:  return "ABM5";
+  case ABM6:  return "ABM6";
 
-  case NBGE:    return "NBGE";
-  case NBG2:    return "NBG2";
-  case NBG3:    return "NBG3";
+  case NBGE:  return "NBGE";
+  case NBG2:  return "NBG2";
+  case NBG3:  return "NBG3";
 
-  default:      return "UNKNOWN";
+  default:    return "UNKNOWN";
+  }
+}
+
+/*
+  String for enum types of ordering type
+*/
+inline const char* getOrderingType( enum TACSAssembler::OrderingType otype ) {
+  switch (otype) {
+  case TACSAssembler::NATURAL_ORDER:  return "NATURAL_ORDER";
+  case TACSAssembler::RCM_ORDER:      return "RCM_ORDER";
+  case TACSAssembler::AMD_ORDER:      return "AMD_ORDER";
+  case TACSAssembler::ND_ORDER:       return "ND_ORDER";
+  case TACSAssembler::TACS_AMD_ORDER: return "TACS_AMD_ORDER";
+  default:                            return "UNKNOWN";
   }
 }
 
@@ -1296,7 +1310,7 @@ void TACSIntegrator::printOptionSummary( FILE *fp ) {
     fprintf(fp, "===============================================\n");
     fprintf(fp, "%-30s %15d\n", "use_lapack", use_lapack);
     fprintf(fp, "%-30s %15d\n", "use_femat", use_femat);
-    fprintf(fp, "%-30s %15s\n", "ordering_type", "ordering_type");
+    fprintf(fp, "%-30s %15s\n", "ordering_type", getOrderingType(ordering_type));
     fprintf(fp, "%-30s %15d\n", "lev", lev);
     fprintf(fp, "%-30s %15d\n", "fill", fill);
     fprintf(fp, "%-30s %15d\n", "reorder_schur", reorder_schur);    
