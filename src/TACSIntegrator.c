@@ -186,8 +186,8 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   // Default parameters for Newton solve
   max_newton_iters = 25;
   init_newton_delta = 0.0;
-  atol = 1.0e-12;
-  rtol = 1.0e-8;
+  atol = 1.0e-13;
+  rtol = 1.0e-13;
 
   // Create vector for storing the residual at each Newton iteration
   res = tacs->createVec();
@@ -382,7 +382,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   ksm->setTolerances(rtol, atol);
 
   // Initialize the update norms
-  update_norm = 1000.0; 
+  update_norm = 1.0e99; 
 
   // Initialize the residual norms
   init_res_norm = 0.0;
@@ -459,8 +459,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Check for relative reduction in residual magnitude
-    if (niter == max_newton_iters && 
-        RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
+    if (RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
       newton_exit_flag = 3;
       break;
     }
@@ -1375,12 +1374,6 @@ TACSBDFIntegrator::~TACSBDFIntegrator(){
 void TACSBDFIntegrator::approxStates(){
   int k = current_time_step;
 
-  // Zero the current states (these may not be zero when integrate()
-  // is called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
-  
   // get the BDF coefficients
   get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
   
@@ -1391,12 +1384,14 @@ void TACSBDFIntegrator::approxStates(){
   q[k]->axpy(0.5*h*h, qddot[k-1]);
 
   // approximate qdot using BDF formula
+  qdot[k]->zeroEntries();
   for ( int i = 0; i < nbdf; i++ ){
     double scale = bdf_coeff[i]/h;
     qdot[k]->axpy(scale, q[k-i]);
   }
 
   // approximate qddot using BDF formula
+  qddot[k]->zeroEntries();
   for ( int i = 0; i < nbddf; i++ ){
     double scale = bddf_coeff[i]/(h*h);
     qddot[k]->axpy(scale, q[k-i]);
@@ -1846,12 +1841,6 @@ void TACSDIRKIntegrator::approxStates(){
   // Pointer to current stage
   int toffset = k*num_stages;
 
-  // Zero the states (these may not be zero when integrate() is
-  // called for the second time)
-  qS[toffset+i]->zeroEntries();
-  qdotS[toffset+i]->zeroEntries();
-  qddotS[toffset+i]->zeroEntries();
-
   // Initial guess for qddotS
   if (i == 0){
     qddotS[toffset+i]->copyValues(qddot[k-1]);
@@ -1942,12 +1931,6 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step,
   int k       = current_step;
   int toffset = num_stages*k;
 
-  // Zero the states (these may not be zero when integrete() is called
-  // for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
-
   // advance the position state
   q[k]->copyValues(q[k-1]);
   for ( int j = 0; j < num_stages; j++ ){
@@ -1961,6 +1944,7 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step,
   }
   
   // advance the acceleration state
+  qddot[k]->zeroEntries();
   for ( int j = 0; j < num_stages; j++ ){
     qddot[k]->axpy(B[j], qddotS[toffset+j]);
   }
@@ -2423,13 +2407,7 @@ void TACSABMIntegrator::approxStates(){
   int k    = current_time_step;
   int m    = getOrder(k);
   int ridx = getRowIdx(m-1);
-
-  // Zero the current states (these may not be zero when integrate() is
-  // called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
-  
+ 
   // Initial guess for qddot -- copy over previous accelearation states
   qddot[k]->copyValues(qddot[k-1]);
 
@@ -2523,7 +2501,6 @@ void TACSABMIntegrator::marchBackwards( ){
       lambda[n] = tacs->createVec();
       lambda[n]->incref();      
     }
-
     phibin[n] = tacs->createVec();
     phibin[n]->incref();
 
@@ -2906,33 +2883,21 @@ void TACSNBGIntegrator::setupCoeffs(){
 void TACSNBGIntegrator::approxStates(){
   int k = current_time_step;
 
-  double scale;
-  // Zero the current states (these may not be zero when integrate() is
-  // called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
+  // Initial guess for qddot -- copy over previous accelearation states
+  qddot[k]->copyValues(qddot[k-1]);
 
   // Approximate qdot using qdot and qddot:
   // qdot[k] = qdot[k-1] + (1-GAMMA) h qddot[k-1]) + GAMMA h qddot[k]
   qdot[k]->copyValues(qdot[k-1]);
-
-  scale = (1.0-GAMMA)*h;
-  qdot[k]->axpy(scale, qddot[k-1]);
-
-  scale = GAMMA*h;
-  qdot[k]->axpy(scale, qddot[k]);
+  qdot[k]->axpy((1.0-GAMMA)*h, qddot[k-1]);
+  qdot[k]->axpy(GAMMA*h, qddot[k]);
 
   // Approximate q using q, qdot and qddot:
   // q[k] = q[k-1] + h qdot[k-1] + h^2(1-2*BETA)/2 qddot[k-1] + h^2 BETA qddot[k])
   q[k]->copyValues(q[k-1]);
   q[k]->axpy(h, qdot[k-1]);
-
-  scale = h*h*(1.0-2.0*BETA)/2.0;
-  q[k]->axpy(scale, qddot[k-1]);
-
-  scale = h*h*BETA;
-  q[k]->axpy(scale, qddot[k]);
+  q[k]->axpy(h*h*(1.0-2.0*BETA)/2.0, qddot[k-1]);
+  q[k]->axpy(h*h*BETA, qddot[k]);
 }
 
 /*
