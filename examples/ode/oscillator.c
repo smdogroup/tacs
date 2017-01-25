@@ -149,7 +149,7 @@ int main( int argc, char *argv[] ){
   //                    Test NBG Scheme                             //
   //-----------------------------------------------------------------//
   
-  TACSNBGIntegrator *nbg = new TACSNBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec);
+  TACSNBGIntegrator *nbg = new TACSNBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 2);
   nbg->incref();
 
   // Set optional parameters

@@ -86,8 +86,8 @@ int main( int argc, char *argv[] ){
       type = DIRK4;
 
       // Newmark-Beta-Gamma method
-    } else if (strcmp("NBG", argv[i]) == 0){
-      type = NBG;
+    } else if (strcmp("NBG2", argv[i]) == 0){
+      type = NBG2;
     }
   }
 
