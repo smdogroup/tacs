@@ -136,7 +136,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   num_time_steps = int(num_steps_per_sec*(tfinal-tinit)) + 1;
 
   // Default print level and logging control
-  print_level = 1;
+  print_level = 2;
   logfp = NULL;
   if (mpiRank == 0){ 
     logfp = stdout; 
@@ -509,23 +509,64 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 /*
   Function that writes time, q, qdot, qddot to file
 */
-void TACSIntegrator::writeSolution( const char *filename ) {
+void TACSIntegrator::writeSolution( const char *filename, int format ) {
   FILE *fp = fopen(filename, "w");
   TacsScalar *qvals, *qdotvals, *qddotvals;
-  for ( int k = 0; k < num_time_steps; k++ ){    
-    // Copy over the state values from TACSBVec
-    q[k]->getArray(&qvals);
-    qdot[k]->getArray(&qdotvals);
-    qddot[k]->getArray(&qddotvals);
+
+  if (format == 1){
+
+    // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
+    for ( int k = 0; k < num_time_steps; k++ ){    
+      // Copy over the state values from TACSBVec
+      q[k]->getArray(&qvals);
+      qdot[k]->getArray(&qdotvals);
+      qddot[k]->getArray(&qddotvals);
   
-    // Write the time and states to file
-    fprintf(fp, "%e ", time[k]);
-    for ( int j = 0; j < num_state_vars; j++ ){
-      fprintf(fp, "%e %e %e ", RealPart(qvals[j]), 
-              RealPart(qdotvals[j]), RealPart(qddotvals[j]));
+      // Write the time and states to file
+      fprintf(fp, "%12.5e ", time[k]);  
+      for ( int j = 0; j < num_state_vars; j++ ){
+        fprintf(fp, "%12.5e %12.5e %12.5e ", RealPart(qvals[j]), 
+                RealPart(qdotvals[j]), RealPart(qddotvals[j]));
+      }
+      fprintf(fp, "\n");
     }
-    fprintf(fp, "\n");
+
+  } else {
+
+    /*
+      A little more easily readable formatting
+       . time
+       . DOF number
+       . DOF of element
+       . Element number
+       . q
+       . qdot
+       . qddot
+    */
+    for ( int k = 0; k < num_time_steps; k++ ){       
+      // Copy over the state values from TACSBVec
+      q[k]->getArray(&qvals);
+      qdot[k]->getArray(&qdotvals);
+      qddot[k]->getArray(&qddotvals);
+
+      fprintf(fp, "time=%e \n", time[k]);
+    
+      // Write the time and states to file
+      int elem_ctr = 0;     
+      for ( int j = 0; j < num_state_vars; j++ ){
+        fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
+                j, // global DOF number
+                j % 8, // DOF number of each element
+                (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number
+                RealPart(qvals[j]), // q
+                RealPart(qdotvals[j]), // qdots
+                RealPart(qddotvals[j])); // qddots
+      }
+      fprintf(fp, "\n");
+    }
+
   }
+  // Close the output file safely
   fclose(fp);
 }
 
