@@ -21,34 +21,34 @@ class FH5File : public TACSObject {
 
   // Create a file for output
   // ------------------------
-  int createFile( const char * file_name,
-                  char ** component_names, 
+  int createFile( const char *file_name,
+                  char **component_names, 
                   int num_components );
-  int writeZoneData( char * zone_name, 
+  int writeZoneData( char *zone_name, 
                      enum FH5DataNames data_name, 
-                     char * var_names,
-                     void * data, int dim1, int dim2 );
+                     char *var_names,
+                     void *data, int dim1, int dim2 );
   void close();
 
   // Open a file for reading input
   // -----------------------------
-  int openFile( const char * file_name );
+  int openFile( const char *file_name );
 
   // Retrieve the component names
   // ----------------------------
   int getNumComponents();
-  char * getComponentName( int comp );
+  char *getComponentName( int comp );
 
   // Retrieve zone data
   // ------------------
   void firstZone();
   int nextZone(); 
-  int getZoneInfo( const char ** zone_name,
-                   const char ** var_names,
-                   int * dim1, int * dim2 );
-  int getZoneData( const char ** zone_name,
-                   const char ** var_names,
-                   void ** data, int * dim1, int * dim2 );
+  int getZoneInfo( const char **zone_name,
+                   const char **var_names,
+                   int *dim1, int *dim2 );
+  int getZoneData( const char **zone_name,
+                   const char **var_names,
+                   void **data, int *dim1, int *dim2 );
  private:
   // Store information about the location of the data within the file
   class FH5FileInfo {
@@ -66,11 +66,11 @@ class FH5File : public TACSObject {
       if (var_names){ delete [] var_names; }
     }
     int dtype;
-    char * zone_name;
-    char * var_names;
+    char *zone_name;
+    char *var_names;
     int dim1, dim2;
     int data_offset;
-    FH5FileInfo * next;
+    FH5FileInfo *next;
   } *root, *tip, *current;
 
   // Scan the file and record the header information
@@ -78,7 +78,7 @@ class FH5File : public TACSObject {
   void deleteFH5FileInfo();
   
   int num_comp; // The number of components
-  char ** comp_names; // The component names
+  char **comp_names; // The component names
 
   int file_for_writing; // Is this file for writing?
   MPI_Comm comm; // The communicator over which the 
@@ -87,7 +87,7 @@ class FH5File : public TACSObject {
   MPI_Offset file_end; // The offset at the end of the file
 
   // Serial file containing the FE solution
-  FILE * rfp;
+  FILE *rfp;
 };
 
 #endif // FH5_INCLUDE_H

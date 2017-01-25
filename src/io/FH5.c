@@ -49,8 +49,8 @@ FH5File::~FH5File(){
 
   Test if the 
 */
-int FH5File::createFile( const char * file_name,
-                         char ** component_names, 
+int FH5File::createFile( const char *file_name,
+                         char **component_names, 
                          int num_components ){
   if (fp){ 
     int rank;
@@ -63,7 +63,7 @@ int FH5File::createFile( const char * file_name,
     // Open the file and make sure it opened properly
     fp = NULL;
     int slen = strlen(file_name)+1;
-    char * fname = new char[ slen ];
+    char *fname = new char[ slen ];
     strcpy(fname, file_name);
 
     // Open the file for writing
@@ -97,7 +97,7 @@ int FH5File::createFile( const char * file_name,
       }
 
       if (rank == 0){
-        char * header = new char[ header_len ];
+        char *header = new char[ header_len ];
         // Record the number of components
         memcpy(header, &num_components, sizeof(int));
         header_len = sizeof(int);
@@ -166,10 +166,10 @@ int FH5File::createFile( const char * file_name,
   
   dim1*dim2*sizeof(double)/sizeof(int)
 */
-int FH5File::writeZoneData( char * zone_name, 
+int FH5File::writeZoneData( char *zone_name, 
                             enum FH5DataNames data_name, 
-                            char * var_names,
-                            void * data, int dim1, int dim2 ){
+                            char *var_names,
+                            void *data, int dim1, int dim2 ){
   // Check the file status to ensure that it's open
   if (fp && file_for_writing){
     int rank, size;
@@ -196,7 +196,7 @@ int FH5File::writeZoneData( char * zone_name,
     // Write the header for this zone just on the root processor
     if (rank == 0){
       // Allocate the pre-header to use
-      char * pre_header = new char[ header_len ];
+      char *pre_header = new char[ header_len ];
       int pre_int[5];
       pre_int[0] = data_name;
       pre_int[1] = total_dim;
@@ -258,7 +258,7 @@ void FH5File::close(){
 /*
   Open a file for reading 
 */
-int FH5File::openFile( const char * file_name ){
+int FH5File::openFile( const char *file_name ){
   int rank, size = 0;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
@@ -295,7 +295,7 @@ int FH5File::getNumComponents(){
 /*
   Return the component name, if defined
 */
-char * FH5File::getComponentName( int comp ){ 
+char *FH5File::getComponentName( int comp ){ 
   if (comp >= 0 && comp < num_comp){
     return comp_names[comp];
   }
@@ -449,9 +449,9 @@ int FH5File::nextZone(){
 /*
   Just get the variable names - if any
 */
-int FH5File::getZoneInfo( const char ** zone_name,
-                          const char ** var_names,
-                          int * dim1, int * dim2 ){
+int FH5File::getZoneInfo( const char **zone_name,
+                          const char **var_names,
+                          int *dim1, int *dim2 ){
   if (!current){
     return 0;
   }
@@ -467,9 +467,9 @@ int FH5File::getZoneInfo( const char ** zone_name,
 /*
   Read the current group of data - both header info and actual data
 */
-int FH5File::getZoneData( const char ** zone_name,
-                          const char ** var_names,
-                          void ** data, int * dim1, int * dim2 ){
+int FH5File::getZoneData( const char **zone_name,
+                          const char **var_names,
+                          void **data, int *dim1, int *dim2 ){
   // No pointer or no file
   if (!current || !rfp){
     fprintf(stderr, "FH5File: Error, no file opened yet\n");

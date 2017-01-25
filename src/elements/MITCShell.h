@@ -47,7 +47,7 @@ using namespace largerot;
 template <int order>
 class MITCShell : public TACSShell {
  public:
-  MITCShell( FSDTStiffness * _stiff,
+  MITCShell( FSDTStiffness *_stiff,
 	     ElementBehaviorType type=LINEAR, 
 	     int _componentNum=0,
              int _use_lobatto_quadrature=0 );
