@@ -661,8 +661,12 @@ void TACSAssembler::setAuxElements( TACSAuxElements *_aux_elems ){
     naux = auxElements->getAuxElements(&aux);
     for ( int k = 0; k < naux; k++ ){
       int elem = aux[k].num;
-      if (elements[elem]->numVariables() != 
-          aux[k].elem->numVariables()){
+      if (elem < 0 || elem >= numElements){
+        fprintf(stderr, "[%d] Element number %d out of range [0,%d)\n",
+                mpiRank, elem, numElements);
+      }
+      else if (elements[elem]->numVariables() != 
+               aux[k].elem->numVariables()){
         fprintf(stderr, "[%d] Auxiliary element sizes do not match\n",
                 mpiRank);
       }
@@ -4193,7 +4197,7 @@ int TACSAssembler::getNumComponents(){
   range of node numbers need to be determined by this process.  
 */
 void TACSAssembler::getOutputNodeRange( ElementType elem_type,
-					int ** _node_range ){
+					int **_node_range ){
   int nelems = 0, nodes = 0, ncsr = 0;
   for ( int i = 0; i < numElements; i++ ){
     if (elements[i]->getElementType() == elem_type){
@@ -4201,7 +4205,7 @@ void TACSAssembler::getOutputNodeRange( ElementType elem_type,
     }
   }
 
-  int * node_range = new int[ mpiSize+1 ];
+  int *node_range = new int[ mpiSize+1 ];
   node_range[0] = 0;
   MPI_Allgather(&nodes, 1, MPI_INT, &node_range[1], 1, MPI_INT, tacs_comm);
 
@@ -4227,9 +4231,9 @@ void TACSAssembler::getOutputNodeRange( ElementType elem_type,
   node_range:     the range of nodal values on this processor
 */
 void TACSAssembler::getOutputConnectivity( ElementType elem_type,
-                                           int ** component_nums,
-                                           int ** _csr, int ** _csr_range, 
-					   int ** _node_range ){
+                                           int **component_nums,
+                                           int **_csr, int **_csr_range, 
+					   int **_node_range ){
   // First go through and count up the number of elements and the 
   // size of the connectivity array required
   int nelems = 0, nodes = 0, ncsr = 0;
@@ -4291,7 +4295,7 @@ void TACSAssembler::getOutputConnectivity( ElementType elem_type,
 */
 void TACSAssembler::getOutputData( ElementType elem_type,
 				   unsigned int out_type,
-				   double * data, int nvals ){
+				   double *data, int nvals ){
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemXpts;
   getDataPointers(elementData, &elemVars, NULL, NULL, NULL,
