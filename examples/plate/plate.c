@@ -357,8 +357,8 @@ int main( int argc, char **argv ){
   // Set options
   obj->setJacAssemblyFreq(1);
   obj->setOrderingType(TACSAssembler::NATURAL_ORDER);
-  obj->setAbsTol(1.0e-14);
-  obj->setRelTol(1.0e-11);
+  //  obj->setAbsTol(1.0e-14);
+  //  obj->setRelTol(1.0e-11);
   obj->setPrintLevel(print_level);
   obj->configureOutput(f5, write_solution, "output/plate_%04d.f5");
   

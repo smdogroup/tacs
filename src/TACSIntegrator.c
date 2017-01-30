@@ -65,26 +65,40 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
 */
 inline const char* getIntegratorType( enum IntegratorType type ) {
   switch (type) {
-  case DIRK2:   return "DIRK2";
-  case DIRK3:   return "DIRK3";
-  case DIRK4:   return "DIRK4";
+  case DIRK2: return "DIRK2";
+  case DIRK3: return "DIRK3";
+  case DIRK4: return "DIRK4";
 
-  case BDF1:   return "BDF1";
-  case BDF2:   return "BDF2";
-  case BDF3:   return "BDF3";
+  case BDF1:  return "BDF1";
+  case BDF2:  return "BDF2";
+  case BDF3:  return "BDF3";
 
-  case ABM1:   return "ABM1";
-  case ABM2:   return "ABM2";
-  case ABM3:   return "ABM3";
-  case ABM4:   return "ABM4";
-  case ABM5:   return "ABM5";
-  case ABM6:   return "ABM6";
+  case ABM1:  return "ABM1";
+  case ABM2:  return "ABM2";
+  case ABM3:  return "ABM3";
+  case ABM4:  return "ABM4";
+  case ABM5:  return "ABM5";
+  case ABM6:  return "ABM6";
 
-  case NBGE:    return "NBGE";
-  case NBG2:    return "NBG2";
-  case NBG3:    return "NBG3";
+  case NBGE:  return "NBGE";
+  case NBG2:  return "NBG2";
+  case NBG3:  return "NBG3";
 
-  default:      return "UNKNOWN";
+  default:    return "UNKNOWN";
+  }
+}
+
+/*
+  String for enum types of ordering type
+*/
+inline const char* getOrderingType( enum TACSAssembler::OrderingType otype ) {
+  switch (otype) {
+  case TACSAssembler::NATURAL_ORDER:  return "NATURAL_ORDER";
+  case TACSAssembler::RCM_ORDER:      return "RCM_ORDER";
+  case TACSAssembler::AMD_ORDER:      return "AMD_ORDER";
+  case TACSAssembler::ND_ORDER:       return "ND_ORDER";
+  case TACSAssembler::TACS_AMD_ORDER: return "TACS_AMD_ORDER";
+  default:                            return "UNKNOWN";
   }
 }
 
@@ -116,13 +130,13 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   MPI_Comm_size(tacs->getMPIComm(), &mpiSize);
   
   // Compute the step size
-  h = 1.0/num_steps_per_sec;
+  h = 1.0/double(num_steps_per_sec);
 
   // compute the total number of time steps
   num_time_steps = int(num_steps_per_sec*(tfinal-tinit)) + 1;
 
   // Default print level and logging control
-  print_level = 1;
+  print_level = 2;
   logfp = NULL;
   if (mpiRank == 0){ 
     logfp = stdout; 
@@ -143,7 +157,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   // Get the number of state variables and store into the class variable
   q[0]->getSize(&num_state_vars);
   
-  // Store time
+  // Store physical time of simulation
   time = new double[num_time_steps];
   memset(time, 0, num_time_steps*sizeof(double));
 
@@ -172,8 +186,8 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   // Default parameters for Newton solve
   max_newton_iters = 25;
   init_newton_delta = 0.0;
-  atol = 1.0e-12;
-  rtol = 1.0e-8;
+  atol = 1.0e-13;
+  rtol = 1.0e-13;
 
   // Create vector for storing the residual at each Newton iteration
   res = tacs->createVec();
@@ -188,7 +202,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Variables used in adjoint solve (use setFunction(...) to set these 
   num_funcs = 0;
-  funcs     = NULL;
+  funcs = NULL;
 
   // NULL the different KSM/solver objects
   D = NULL;
@@ -368,12 +382,12 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   ksm->setTolerances(rtol, atol);
 
   // Initialize the update norms
-  update_norm = 1000.0; 
+  update_norm = 1.0e99; 
 
   // Initialize the residual norms
   init_res_norm = 0.0;
   res_norm = 0.0;
-  int exit_flag = 0;
+  int newton_exit_flag = 0;
 
   if (logfp && print_level >= 2){
     fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
@@ -428,23 +442,25 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       if (logfp) {
         fprintf(stderr,"[%d] Newton iteration %d, failed with NaN residual norm\n", mpiRank, niter);
       }
-      exit_flag = -2;
+      newton_exit_flag = -2;
       break;
     }
     
     // Check whether the update is sufficiently small
     if (RealPart(update_norm) < atol){
-      exit_flag = 2;
+      newton_exit_flag = 2;
       break;
     }
 
     // Check if the Newton convergence tolerance is satisfied
     if (RealPart(res_norm) < atol){
-      exit_flag = 1;
+      newton_exit_flag = 1;
       break;
     }
+
+    // Check for relative reduction in residual magnitude
     if (RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
-      exit_flag = 3;
+      newton_exit_flag = 3;
       break;
     }
 
@@ -470,13 +486,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Find the norm of the update
-    update_norm = update->norm();// *alpha
-
-    // Check if "update" is indeed a descent direction (J.update > 0)
-    if (use_line_search) {      
-      // Perform line search to ensure sufficient decrease
-      lineSearch(&alpha, &beta, &gamma, res_norm, update);
-    }
+    update_norm = update->norm()*alpha;
 
     // Update the state variables using the solution
     uddot->axpy(-gamma, update);
@@ -486,36 +496,77 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
   // Failed nonlinear solution
   if (niter == max_newton_iters) {
-    exit_flag = -1;
+    newton_exit_flag = -1;
   }
 
   // Record the time taken for nonlinear solution
   time_newton = MPI_Wtime() - tnewton;
 
-  // Return the exit_flagination flag
-  return exit_flag;
+  // Return the exit flag
+  return newton_exit_flag;
 }
 
 /*
   Function that writes time, q, qdot, qddot to file
 */
-void TACSIntegrator::writeSolution( const char *filename ) {
+void TACSIntegrator::writeSolution( const char *filename, int format ) {
   FILE *fp = fopen(filename, "w");
   TacsScalar *qvals, *qdotvals, *qddotvals;
-  for ( int k = 0; k < num_time_steps; k++ ){    
-    // Copy over the state values from TACSBVec
-    q[k]->getArray(&qvals);
-    qdot[k]->getArray(&qdotvals);
-    qddot[k]->getArray(&qddotvals);
+
+  if (format == 1){
+
+    // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
+    for ( int k = 0; k < num_time_steps; k++ ){    
+      // Copy over the state values from TACSBVec
+      q[k]->getArray(&qvals);
+      qdot[k]->getArray(&qdotvals);
+      qddot[k]->getArray(&qddotvals);
   
-    // Write the time and states to file
-    fprintf(fp, "%e ", time[k]);
-    for ( int j = 0; j < num_state_vars; j++ ){
-      fprintf(fp, "%e %e %e ", RealPart(qvals[j]), 
-              RealPart(qdotvals[j]), RealPart(qddotvals[j]));
+      // Write the time and states to file
+      fprintf(fp, "%12.5e ", time[k]);  
+      for ( int j = 0; j < num_state_vars; j++ ){
+        fprintf(fp, "%12.5e %12.5e %12.5e ", RealPart(qvals[j]), 
+                RealPart(qdotvals[j]), RealPart(qddotvals[j]));
+      }
+      fprintf(fp, "\n");
     }
-    fprintf(fp, "\n");
+
+  } else {
+
+    /*
+      A little more easily readable formatting
+       . time
+       . DOF number
+       . DOF of element
+       . Element number
+       . q
+       . qdot
+       . qddot
+    */
+    for ( int k = 0; k < num_time_steps; k++ ){       
+      // Copy over the state values from TACSBVec
+      q[k]->getArray(&qvals);
+      qdot[k]->getArray(&qdotvals);
+      qddot[k]->getArray(&qddotvals);
+
+      fprintf(fp, "time=%e \n", time[k]);
+    
+      // Write the time and states to file
+      int elem_ctr = 0;     
+      for ( int j = 0; j < num_state_vars; j++ ){
+        fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
+                j, // global DOF number
+                j % 8, // DOF number of each element
+                (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number
+                RealPart(qvals[j]), // q
+                RealPart(qdotvals[j]), // qdots
+                RealPart(qddotvals[j])); // qddots
+      }
+      fprintf(fp, "\n");
+    }
+
   }
+  // Close the output file safely
   fclose(fp);
 }
 
@@ -552,7 +603,6 @@ void TACSIntegrator::printWallTime( double t0, int level ){
     fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", mpiRank, time_rev_apply_factor, time_rev_apply_factor/t0);
     fprintf(logfp, "..[%d] JacVecPdt      :   %8.2f %6.2f\n", mpiRank, time_rev_jac_pdt, time_rev_jac_pdt/t0);
   }
-
 }
 
 /*
@@ -585,11 +635,13 @@ int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
 */
 void TACSIntegrator::writeStepToF5( int k ){
   //  if (mpiRank != 0) { 
-  if(f5 && f5_file_fmt && getWriteFlag(k, f5_write_freq)) {
+  if(f5 && f5_file_fmt && getWriteFlag(k, f5_write_freq)){
     // Create a buffer for filename 
     char buffer[128];
+
     // Format the buffer based on the time step
-    getString(buffer, f5_file_fmt, k);      
+    getString(buffer, f5_file_fmt, k);
+
     // Write the f5 file for this time step
     f5->writeToFile(buffer);
   }
@@ -686,7 +738,8 @@ void TACSIntegrator::integrate( ){
     getLinearizationCoeffs(&alpha, &beta, &gamma);
 
     // Solve the nonlinear system of stage equations starting with the approximated states
-    newton_term = newtonSolve(alpha, beta, gamma, time[k], q[k], qdot[k], qddot[k]);
+    newton_term = newtonSolve(alpha, beta, gamma, 
+                              time[k], q[k], qdot[k], qddot[k]);
 
     if (!isAdaptiveInstance()){
 
@@ -768,7 +821,8 @@ void TACSIntegrator::getFuncGrad( int _num_dv,
   }
   
   // Point the class variable to the memory allocated by the optimizer
-  fvals = _fvals; dfdx = _dfdx;
+  fvals = _fvals; 
+  dfdx = _dfdx;
   memset(fvals, 0, num_funcs*sizeof(TacsScalar));
   memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
 
@@ -805,7 +859,8 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
   }
   
   // Point the class variable to the memory allocated by the optimizer
-  fvals = _fvals; dfdx = _dfdx;
+  fvals = _fvals; 
+  dfdx = _dfdx;
   memset(fvals, 0, num_funcs*sizeof(TacsScalar));
   memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
 
@@ -904,21 +959,11 @@ void TACSIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
   Add up the contributions to the total derivative from this stage/stage
 */
 void TACSIntegrator::addToTotalDerivative( double scale, TACSBVec **adjoint ) {
-  TacsScalar *tmp = new TacsScalar[ num_design_vars*num_funcs ];
-  // Add the partial derivative w.r.t. the design variables
-  memset(tmp, 0, num_design_vars*num_funcs*sizeof(TacsScalar));
-  tacs->addDVSens(1.0, funcs, num_funcs, tmp, num_design_vars);
-  for ( int m = 0; m < num_design_vars*num_funcs; m++ ){
-    dfdx[m] += scale*tmp[m];
-  }
+  // Add df/dx
+  tacs->addDVSens(scale, funcs, num_funcs, dfdx, num_design_vars);
 
-  // Add the Adjoint-Residual partial derivative contributions
-  memset(tmp, 0, num_design_vars*num_funcs*sizeof(TacsScalar));
-  tacs->addAdjointResProducts(1.0, adjoint, num_funcs, tmp, num_design_vars);
-  for ( int m = 0; m < num_design_vars*num_funcs; m++ ){
-    dfdx[m] += scale*tmp[m];
-  }
-  delete [] tmp;
+  // Add lam.dR/dx
+  tacs->addAdjointResProducts(scale, adjoint, num_funcs, dfdx, num_design_vars);
 }
 
 
@@ -1028,129 +1073,6 @@ if it is used to solve a system of equations\n", info, info);
   delete [] dpiv;
 
   if (J) { delete [] J; }
-}
-
-/*
-  Perform line search and return the alpha, beta, gamma that will
-  ensure a reduction in residual. The vector d is an ascent direction
-  currently as we solved d = J^{-1} R instead of d = -J^{-1} R.
-*/
-void TACSIntegrator::lineSearch( double *alpha, double *beta, double *gamma,
-                                 TacsScalar f0, TACSBVec *d0 ){  
-  /*
-  // Serial only usage for debugging
-  // Get the right hand side as an array
-  //TacsScalar *R;
-  //  res->getArray(&R);
-
-  // Set the lapack solution into the distributed vector
-  TacsScalar *ans;
-  update->getArray(&ans);
-  memcpy(ans, R, num_state_vars*sizeof(TacsScalar));
-      
-  // The following code retrieves a dense column-major 
-  // matrix from the FEMat matrix
-  TacsScalar *J;
-  FEMat *femat = dynamic_cast<FEMat*>(mat);
-  if (femat){
-  int bsize, nrows;
-  BCSRMat *B;
-  femat->getBCSRMat(&B, NULL, NULL, NULL);
-  B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
-	
-  J = new TacsScalar[ bsize*bsize*nrows*nrows ];
-
-  // Get the matrix in LAPACK column major order
-  B->getDenseColumnMajor(J);
-  }
-  else {
-  fprintf(stderr,"Casting to FEMat failed\n");
-  exit(-1);
-  }
-
-    // Restore the original values. These may have been changed as a
-    // result of line search. We attempt to use the theoretical values
-    // as much as possible
-    alpha = atmp;
-    beta  = btmp;
-    gamma = gtmp;
-
-  // Check the sufficient decrease condition
-  // fnew  < f0 - C1*alpha*np.dot(J, d0)
-  // Compute the norm of the objective function
-
-  */
-
-  // Store the alphas
-  double atmp, btmp, gtmp;
-  atmp = *alpha;
-  btmp = *beta;
-  gtmp = *gamma;
-
-  TACSBVec *f     = tacs->createVec(); f->incref();
-  TACSBVec *u     = tacs->createVec(); u->incref();
-  TACSBVec *udot  = tacs->createVec(); udot->incref();
-  TACSBVec *uddot = tacs->createVec(); uddot->incref();
- 
-  // Get the initial state variables from TACS
-  tacs->getVariables(u, udot, uddot);
-
-  // Apply the update
-  uddot->axpy(-(*gamma), d0);
-  udot->axpy(-(*beta), d0);
-  u->axpy(-(*alpha), d0);
-
-  // Set the trail states into TACS
-  tacs->setVariables(u, udot, uddot);
-
-  // Evaluate the function and compute the norm
-  tacs->assembleRes(f);
-  double fnew = RealPart(f->norm());
-
-  // We can accept the alpha, beta, gamma as is
-  if (RealPart(fnew) < RealPart(f0)) {
-    return;
-  }
-
-  int iter = 0;
-  double rho = 0.75;
-  while  (RealPart(fnew) > RealPart(f0) && iter < 10 ) {
-    iter += 1;
-
-    if (logfp && print_level >= 3 && iter == 1){
-      fprintf(logfp, "%12s %12s %12s %12s %12s %12s\n",
-              "LSIter", "|R0|", "|R1|",
-              "alpha", "beta", "gamma");
-    }
-
-    if (logfp && print_level >= 3){
-      fprintf(logfp, "%12d %12.5e %12.5e %12.5e %12.5e %12.5e \n", 
-              iter, RealPart(f0), RealPart(fnew), 
-              *alpha, *beta, *gamma);
-    }
-    
-    // Reduce the step size by rho fraction
-    *alpha = rho*(*alpha);
-    *beta = rho*(*beta);
-    *gamma = rho*(*gamma);
-
-    // Apply the update
-    uddot->axpy(-(*gamma), d0);
-    udot->axpy(-(*beta), d0);
-    u->axpy(-(*alpha), d0);
-
-    // Set the trail states into TACS
-    tacs->setVariables(u, udot, uddot);
-
-    // Evaluate the function and compute the norm
-    tacs->assembleRes(f);
-    fnew = RealPart(f->norm());
-  }
-
-  f->decref();
-  u->decref();
-  udot->decref();
-  uddot->decref();
 }
 
 /*
@@ -1296,15 +1218,13 @@ void TACSIntegrator::printOptionSummary( FILE *fp ) {
     fprintf(fp, "===============================================\n");
     fprintf(fp, "%-30s %15d\n", "use_lapack", use_lapack);
     fprintf(fp, "%-30s %15d\n", "use_femat", use_femat);
-    fprintf(fp, "%-30s %15s\n", "ordering_type", "ordering_type");
+    fprintf(fp, "%-30s %15s\n", "ordering_type", getOrderingType(ordering_type));
     fprintf(fp, "%-30s %15d\n", "lev", lev);
     fprintf(fp, "%-30s %15d\n", "fill", fill);
     fprintf(fp, "%-30s %15d\n", "reorder_schur", reorder_schur);    
     fprintf(fp, "%-30s %15d\n", "gmres_iters", gmres_iters);
     fprintf(fp, "%-30s %15d\n", "num_gmres_restarts", num_restarts);
     fprintf(fp, "%-30s %15d\n", "is_flexible", is_flexible);
-    //    fprintf(fp, "%-30s %15g\n", "", );
-    //    fprintf(fp, "%-30s %15g\n", "", );
     fprintf(fp, "===============================================\n");
   }
 }
@@ -1495,12 +1415,6 @@ TACSBDFIntegrator::~TACSBDFIntegrator(){
 void TACSBDFIntegrator::approxStates(){
   int k = current_time_step;
 
-  // Zero the current states (these may not be zero when integrate()
-  // is called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
-  
   // get the BDF coefficients
   get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, &nbddf, max_bdf_order);
   
@@ -1511,12 +1425,14 @@ void TACSBDFIntegrator::approxStates(){
   q[k]->axpy(0.5*h*h, qddot[k-1]);
 
   // approximate qdot using BDF formula
+  qdot[k]->zeroEntries();
   for ( int i = 0; i < nbdf; i++ ){
     double scale = bdf_coeff[i]/h;
     qdot[k]->axpy(scale, q[k-i]);
   }
 
   // approximate qddot using BDF formula
+  qddot[k]->zeroEntries();
   for ( int i = 0; i < nbddf; i++ ){
     double scale = bddf_coeff[i]/(h*h);
     qddot[k]->axpy(scale, q[k-i]);
@@ -1586,8 +1502,7 @@ void TACSBDFIntegrator::get2ndBDFCoeff( const int k,
 /*
   Setup the BDF coefficients
 */
-void TACSBDFIntegrator::setupCoeffs(){
-  
+void TACSBDFIntegrator::setupCoeffs(){  
 }
 
 /*
@@ -1640,10 +1555,11 @@ void TACSBDFIntegrator::marchBackwards( ) {
     
   current_time_step = num_time_steps;
 
-  time_rev_assembly = 0.0;
-  time_rev_factor = 0.0;
+  time_rev_assembly     = 0.0;
+  time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
-  time_reverse = 0.0;
+  time_reverse          = 0.0;
+
   double t0 = MPI_Wtime();
   
   // Adjoint variables for each function of interest
@@ -1661,7 +1577,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
   }
  
   // March backwards in time (initial condition not evaluated)
-  for ( int k = num_time_steps-1; k >=1 ; k--){
+  for ( int k = num_time_steps-1; k >= 1 ; k--){
     current_time_step = k;
     
     // Get the BDF coefficients at this time step
@@ -1699,27 +1615,28 @@ void TACSBDFIntegrator::marchBackwards( ) {
 
     time_rev_assembly += MPI_Wtime() - tassembly;
      
-    double tfactor = MPI_Wtime();
     // LU factorization of the Jacobian
+    double tfactor = MPI_Wtime();
     pc->factor();
     time_rev_factor += MPI_Wtime() - tfactor;
 
-    double tapply = MPI_Wtime();
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
+    double tapply = MPI_Wtime();
     for ( int n = 0; n < num_funcs; n++ ){
       ksm->solve(rhs[adj_index*num_funcs + n], psi[n]);
       rhs[adj_index*num_funcs+n]->zeroEntries();
     }
     time_rev_apply_factor += MPI_Wtime() - tapply;
 
-    double jacpdt = MPI_Wtime();
-
     // Add total derivative contributions from this step to all
     // functions
-    addToTotalDerivative(h, psi);
-    
+    double jacpdt = MPI_Wtime();
+    addToTotalDerivative(h, psi);    
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
+
     // Drop the contributions from this step to other right hand sides
+    double tassembly2 = MPI_Wtime();
     for ( int ii = 1; (ii < nbdf || ii < nbddf); ii++ ){
       int rhs_index = (k - ii) % num_adjoint_rhs;
       double beta = 0.0, gamma = 0.0;
@@ -1734,10 +1651,11 @@ void TACSBDFIntegrator::marchBackwards( ) {
 				    psi[n], rhs[rhs_index*num_funcs+n], TRANSPOSE);
       }
     }
-    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
+    time_rev_assembly += MPI_Wtime() - tassembly2;
   }
 
   // Freeup objects
+
   // Adjoint variables for each function of interest
   for ( int n = 0; n < num_funcs; n++ ){
     psi[n]->decref();
@@ -1856,6 +1774,7 @@ void TACSDIRKIntegrator::setupCoeffs(){
     A[0] = 0.5;
     B[0] = 1.0;
     C[0] = 0.5;
+
     order = 2;
   } 
   else if (num_stages == 2){
@@ -1963,12 +1882,6 @@ void TACSDIRKIntegrator::approxStates(){
   // Pointer to current stage
   int toffset = k*num_stages;
 
-  // Zero the states (these may not be zero when integrate() is
-  // called for the second time)
-  qS[toffset+i]->zeroEntries();
-  qdotS[toffset+i]->zeroEntries();
-  qddotS[toffset+i]->zeroEntries();
-
   // Initial guess for qddotS
   if (i == 0){
     qddotS[toffset+i]->copyValues(qddot[k-1]);
@@ -2013,7 +1926,8 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
   
   double h2 = h*h;
 
-  if ( i == 2 &&  j == 0) { // contribution from third stage to first rhs
+  if ( i == 2 &&  j == 0) { 
+    // contribution from third stage to first rhs
 
     *beta = B[2]*h*A[3];
 
@@ -2021,14 +1935,16 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
     *alpha += h2*B[2]*(A[1]*A[4]);
     *alpha += h2*B[2]*(A[3]*A[5]);
 
-  } else if ( i == 1 &&  j == 0) { // contribution from second stage to first rhs
+  } else if ( i == 1 &&  j == 0) { 
+    // contribution from second stage to first rhs
 
     *beta = B[1]*h*A[1];
 
     *alpha  = h2*B[1]*(A[0]*A[1]);
     *alpha += h2*B[1]*(A[1]*A[2]);
       
-  } else if ( i == 2 &&  j == 1) {  // contribution from third stage to second rhs
+  } else if ( i == 2 &&  j == 1) {  
+    // contribution from third stage to second rhs
 
     *beta = B[2]*h*A[4];
 
@@ -2036,7 +1952,7 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
     *alpha += h2*B[2]*(A[4]*A[5]);
         
   } else {
-    printf("TACSIntegrator::Incorrect access to inter-stage coefficients...\n");
+    fprintf(stderr, "TACSIntegrator::Incorrect access to inter-stage coefficients...\n");
     exit(-1);
   }
 }
@@ -2051,15 +1967,10 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
   Output:
   Updated global state variables q, qdot, qddot at the time step
 */
-void TACSDIRKIntegrator::computeTimeStepStates( int current_step, TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot ){
+void TACSDIRKIntegrator::computeTimeStepStates( int current_step, 
+                                                TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot ){
   int k       = current_step;
   int toffset = num_stages*k;
-
-  // Zero the states (these may not be zero when integrete() is
-  // called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
 
   // advance the position state
   q[k]->copyValues(q[k-1]);
@@ -2074,6 +1985,7 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step, TACSBVec **q, 
   }
   
   // advance the acceleration state
+  qddot[k]->zeroEntries();
   for ( int j = 0; j < num_stages; j++ ){
     qddot[k]->axpy(B[j], qddotS[toffset+j]);
   }
@@ -2093,10 +2005,11 @@ void TACSDIRKIntegrator::integrate( ) {
   current_time_step = 0;
 
   // Keep track of the time taken for foward mode
-  time_forward = 0.0;
-  time_fwd_assembly = 0.0;
-  time_fwd_factor = 0.0;
+  time_forward          = 0.0;
+  time_fwd_assembly     = 0.0;
+  time_fwd_factor       = 0.0;
   time_fwd_apply_factor = 0.0;
+
   double t0 = MPI_Wtime();
   
   // Get the initial condition
@@ -2164,6 +2077,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
   time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
   time_reverse          = 0.0;
+
   double t0 = MPI_Wtime();
 
   // Inter-step adjoint variables for each function of interest
@@ -2240,6 +2154,8 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       // Assemble the right hand side
       //--------------------------------------------------------------//
 
+      double tassembly = MPI_Wtime();
+
       // Add the contribution to function value from this stage
       this->addFunctions(h*B[i], funcs, num_funcs, fvals);
       
@@ -2268,25 +2184,35 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       // Setup the Jacobian
       tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
 
+      time_rev_assembly += MPI_Wtime() - tassembly;
+
       // LU factorization of the Jacobian
+      double tfactor = MPI_Wtime();
       pc->factor();
-    
+      time_rev_factor += MPI_Wtime() - tfactor;
+
       // Apply the factorization for all right hand sides and solve for
       // the adjoint variables
+      double tapply = MPI_Wtime();
       for ( int n = 0; n < num_funcs; n++ ){
 	ksm->solve(rhs[i*num_funcs+n], lambda[i*num_funcs+n]);
 	rhs[i*num_funcs+n]->zeroEntries();
       }
+      time_rev_apply_factor += MPI_Wtime() - tapply;
 
       // Add total derivative contributions from this step to all
       // functions
+      double jacpdt = MPI_Wtime();        
       addToTotalDerivative(h*B[i], &lambda[i*num_funcs]);
+      time_rev_jac_pdt += MPI_Wtime() - jacpdt;
       
       //--------------------------------------------------------------//
       // Put the contributions from this stage to the right hand sides
       // of upcoming stages
       //--------------------------------------------------------------//
-      
+
+      double tassembly2 = MPI_Wtime();
+
       for ( int j = i-1; j >= 0; j-- ){
 	// Determine the corresponding coefficients
 	getCoeffsInterStage(i, j, &alpha, &beta, &gamma);
@@ -2336,8 +2262,11 @@ void TACSDIRKIntegrator::marchBackwards( ) {
                                     lambda[i*num_funcs+n], psiTmp[n], TRANSPOSE);
         
       }
+      time_rev_assembly += MPI_Wtime() - tassembly2;
     } // stage
 
+    double tassembly3 = MPI_Wtime();
+    
     // Add up the remaining PHI contributions
     for ( int n = 0; n < num_funcs; n++ ){
       phi[n]->axpy(h, psi[n]);       // phi = phi + h * psi
@@ -2350,8 +2279,9 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       psi[n]->axpy(1.0, psiTmp[n]);  // psi = psi + psiTmp
       psiTmp[n]->zeroEntries();       // Reset the stage contributions now
     }
- 
+    time_rev_assembly += MPI_Wtime() - tassembly3;
   } // time
+
   // Freeup objects
   for ( int n = 0; n < num_funcs; n++ ){
     psi[n]->decref();
@@ -2518,13 +2448,7 @@ void TACSABMIntegrator::approxStates(){
   int k    = current_time_step;
   int m    = getOrder(k);
   int ridx = getRowIdx(m-1);
-
-  // Zero the current states (these may not be zero when integrate() is
-  // called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
-  
+ 
   // Initial guess for qddot -- copy over previous accelearation states
   qddot[k]->copyValues(qddot[k-1]);
 
@@ -2589,10 +2513,6 @@ void TACSABMIntegrator::marchBackwards( ){
   // Set the current step as the last step
   current_time_step = num_time_steps;
 
-  // Weight for the approximation of time integrals in function and
-  // residuals
-  double tweight = h;
-
   time_rev_assembly     = 0.0;
   time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
@@ -2622,7 +2542,6 @@ void TACSABMIntegrator::marchBackwards( ){
       lambda[n] = tacs->createVec();
       lambda[n]->incref();      
     }
-
     phibin[n] = tacs->createVec();
     phibin[n]->incref();
 
@@ -2685,8 +2604,10 @@ void TACSABMIntegrator::marchBackwards( ){
     // 3. Setup the adjoint RHS (involves linear solve)
     //---------------------------------------------------------------//
    
+    double tassembly = MPI_Wtime();
+
     // Evaluate all functions (should be done before all sens calls)
-    this->addFunctions(tweight, funcs, num_funcs, fvals);
+    this->addFunctions(h, funcs, num_funcs, fvals);
 
     // Add the contribution from dfdq to RHS of the corresponding
     // adjoint index
@@ -2712,14 +2633,20 @@ void TACSABMIntegrator::marchBackwards( ){
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
     
+    time_rev_assembly += MPI_Wtime() - tassembly;
+
     // LU factorization of the Jacobian
+    double tfactor = MPI_Wtime();
     pc->factor();
+    time_rev_factor += MPI_Wtime() - tfactor;
     
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
+    double tapply = MPI_Wtime();
     for ( int n = 0; n < num_funcs; n++ ){
       ksm->solve(rhsbin[adj_index*num_funcs+n], lambda[n]);
     }
+    time_rev_apply_factor += MPI_Wtime() - tapply;
 
     // Zero the current rhs at adjoint index for further use next time
     for ( int n = 0; n < num_funcs; n++ ){
@@ -2727,12 +2654,14 @@ void TACSABMIntegrator::marchBackwards( ){
     }
 
     // Add total derivative contributions from this step using adjoint
+    double jacpdt = MPI_Wtime();
     addToTotalDerivative(h, lambda);
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
     
     //----------------------------------------------------------------//
     // A. Put the contribution from this step to rhsbin               //
     //----------------------------------------------------------------//
-
+    double tassembly2 = MPI_Wtime();
     for ( int ii = 1; ii < p ; ii++ ){
 
       // Find the adjoint index to which the current contributions are
@@ -2840,6 +2769,7 @@ void TACSABMIntegrator::marchBackwards( ){
                              num_funcs, funcs,
                              lambda);
     }
+    time_rev_assembly += MPI_Wtime() - tassembly2;
 
   } // end time loop backwards
 
@@ -2932,7 +2862,7 @@ TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
   } else if ( order == 2) {
     mytype = NBG2;
   } else if ( order == 3) {
-    mytype = NBG2;
+    mytype = NBG3;
   }
 
   // Setup the NBG coefficients
@@ -2994,33 +2924,21 @@ void TACSNBGIntegrator::setupCoeffs(){
 void TACSNBGIntegrator::approxStates(){
   int k = current_time_step;
 
-  double scale;
-  // Zero the current states (these may not be zero when integrate() is
-  // called for the second time)
-  q[k]->zeroEntries();
-  qdot[k]->zeroEntries();
-  qddot[k]->zeroEntries();
+  // Initial guess for qddot -- copy over previous accelearation states
+  qddot[k]->copyValues(qddot[k-1]);
 
   // Approximate qdot using qdot and qddot:
   // qdot[k] = qdot[k-1] + (1-GAMMA) h qddot[k-1]) + GAMMA h qddot[k]
   qdot[k]->copyValues(qdot[k-1]);
-
-  scale = (1.0-GAMMA)*h;
-  qdot[k]->axpy(scale, qddot[k-1]);
-
-  scale = GAMMA*h;
-  qdot[k]->axpy(scale, qddot[k]);
+  qdot[k]->axpy((1.0-GAMMA)*h, qddot[k-1]);
+  qdot[k]->axpy(GAMMA*h, qddot[k]);
 
   // Approximate q using q, qdot and qddot:
   // q[k] = q[k-1] + h qdot[k-1] + h^2(1-2*BETA)/2 qddot[k-1] + h^2 BETA qddot[k])
   q[k]->copyValues(q[k-1]);
   q[k]->axpy(h, qdot[k-1]);
-
-  scale = h*h*(1.0-2.0*BETA)/2.0;
-  q[k]->axpy(scale, qddot[k-1]);
-
-  scale = h*h*BETA;
-  q[k]->axpy(scale, qddot[k]);
+  q[k]->axpy(h*h*(1.0-2.0*BETA)/2.0, qddot[k-1]);
+  q[k]->axpy(h*h*BETA, qddot[k]);
 }
 
 /*
@@ -3043,147 +2961,262 @@ void TACSNBGIntegrator::marchBackwards( ){
 
   current_time_step = num_time_steps;
   
-  time_rev_assembly = 0.0;
-  time_rev_factor = 0.0;
+  time_rev_assembly     = 0.0;
+  time_rev_factor       = 0.0;
   time_rev_apply_factor = 0.0;
-  time_reverse = 0.0;
-  double t0 = MPI_Wtime();
+  time_reverse          = 0.0;
 
-  int num_adjoint_rhs = 2; // NBG is a one step method (uses
+  int num_adjoint_rhs = 1; // NBG is a one step method (uses
                            // information from previous and current
                            // steps)
+  double t0 = MPI_Wtime();
+  
+  // Temporary vectors for adjoint 
+  TACSBVec **psibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ];  
+  TACSBVec **phibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ]; 
+  TACSBVec **rhsbin = new TACSBVec*[ num_funcs*num_adjoint_rhs ]; 
+
+  // Adjoint vectors
   TACSBVec **psi    = new TACSBVec*[ num_funcs ];
   TACSBVec **phi    = new TACSBVec*[ num_funcs ];
   TACSBVec **lambda = new TACSBVec*[ num_funcs ];
-  TACSBVec **dfdq   = new TACSBVec*[ num_funcs ];
-  TACSBVec **rhs    = new TACSBVec*[ num_funcs*num_adjoint_rhs ];
 
+  // Allocate vectors
   for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
-    if (n < num_funcs) {    
-      psi[n] = tacs->createVec();
-      psi[n]->incref();
-
+    if (n < num_funcs){
       phi[n] = tacs->createVec();
       phi[n]->incref();
       
-      lambda[n] = tacs->createVec();
-      lambda[n]->incref();
+      psi[n] = tacs->createVec();
+      psi[n]->incref();    
       
-      dfdq[n] = tacs->createVec();
-      dfdq[n]->incref();
+      lambda[n] = tacs->createVec();
+      lambda[n]->incref();      
     }
-    rhs[n] = tacs->createVec();
-    rhs[n]->incref();
+
+    phibin[n] = tacs->createVec();
+    phibin[n]->incref();
+
+    psibin[n] = tacs->createVec();
+    psibin[n]->incref();     
+
+    rhsbin[n] = tacs->createVec();
+    rhsbin[n]->incref();
   }
 
   // March backwards in time (initial condition not evaluated)
-  for ( int k = num_time_steps-1; k >=1 ; k-- ){
-    current_time_step = k;
-    
-    // Determine the coefficients for Jacobian assembly
-    double gamma = 1.0/(h*h);
-    double beta  = GAMMA/h; 
-    double alpha = BETA;
+  for ( int k = num_time_steps-1; k > 0; k-- ){
 
-    // Set the stages
+    // Set the current step as k
+    current_time_step = k;
+
+    // Determine the coefficients for Jacobian assembly
+    double alpha, beta, gamma;
+    getLinearizationCoeffs(&alpha, &beta, &gamma);
+
+    // Set the states into the tacs instance
     setTACSStates(time[k], q[k], qdot[k], qddot[k]);
     
-    // Find the adjoint index
+    // Find the adjoint index pointer
     int adj_index = k % num_adjoint_rhs;
 
     //---------------------------------------------------------------//
-    // Setup the adjoint RHS
+    // 1. Solve for PHI (no linear solves here)
     //---------------------------------------------------------------//
 
-    // Evaluate the function
-    this->addFunctions(h, funcs, num_funcs, fvals);
-    
     for ( int n = 0; n < num_funcs; n++ ){
-      // Add up the contribution from function state derivative to RHS
-      dfdq[n]->zeroEntries();
-      tacs->addSVSens(1.0, 0.0, 0.0, &funcs[n], 1, &dfdq[n]);
-
-      // Add the contributions to the current adjoint RHS
-      rhs[adj_index*num_funcs+n]->axpy(alpha, dfdq[n]);
-      rhs[adj_index*num_funcs+n]->scale(-1.0);
+      phi[n]->copyValues(phibin[adj_index*num_funcs+n]);
+    }
+ 
+    // Zero the current phibin at adjoint index for further use next time
+    for ( int n = 0; n < num_funcs; n++ ){
+      phibin[adj_index*num_funcs+n]->zeroEntries();
     }
 
+    //---------------------------------------------------------------//
+    // 2. Solve for PSI (no linear solves here)
+    //---------------------------------------------------------------//
+
+    for ( int n = 0; n < num_funcs; n++ ){
+      psi[n]->copyValues(psibin[adj_index*num_funcs+n]);
+    }
+ 
+    // Zero the current psibin at adjoint index for further use next time
+    for ( int n = 0; n < num_funcs; n++ ){
+      psibin[adj_index*num_funcs+n]->zeroEntries();
+    }
+
+    //---------------------------------------------------------------//
+    // 3. Setup the adjoint RHS (involves linear solve)
+    //---------------------------------------------------------------//
+   
+    double tassembly = MPI_Wtime();
+
+    // Evaluate all functions (should be done before all sens calls)
+    this->addFunctions(h, funcs, num_funcs, fvals);
+
+    // Add the contribution from dfdq to RHS of the corresponding
+    // adjoint index
+    tacs->addSVSens(alpha, beta, gamma, 
+                    funcs, num_funcs, 
+                    &rhsbin[adj_index*num_funcs]);
+    
+    // Add the contributions from PSI
+    for ( int n = 0; n < num_funcs; n++ ){
+      rhsbin[adj_index*num_funcs+n]->axpy(beta/h, psi[n]);
+    }
+    
+    // Add the contributions for PHI 
+    for ( int n = 0; n < num_funcs; n++ ){
+      rhsbin[adj_index*num_funcs+n]->axpy(alpha/h, phi[n]);
+    }
+    
+    // Negate the right hand side of the adjoint index
+    for ( int n = 0; n < num_funcs; n++ ){
+      rhsbin[adj_index*num_funcs+n]->scale(-1.0);
+    }
+    
     // Setup the Jacobian
     tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+    
+    time_rev_assembly += MPI_Wtime() - tassembly;
 
     // LU factorization of the Jacobian
+    double tfactor = MPI_Wtime();
     pc->factor();
+    time_rev_factor += MPI_Wtime() - tfactor;
     
     // Apply the factorization for all right hand sides and solve for
     // the adjoint variables
+    double tapply = MPI_Wtime();
     for ( int n = 0; n < num_funcs; n++ ){
-      ksm->solve(rhs[adj_index*num_funcs+n], lambda[n]);
-      rhs[adj_index*num_funcs+n]->zeroEntries();
+      ksm->solve(rhsbin[adj_index*num_funcs+n], lambda[n]);
+    }
+    time_rev_apply_factor += MPI_Wtime() - tapply;
+
+    // Zero the current rhs at adjoint index for further use next time
+    for ( int n = 0; n < num_funcs; n++ ){
+      rhsbin[adj_index*num_funcs+n]->zeroEntries();
     }
 
-    // Add total derivative contributions from this step for all
-    // functions
+    // Add total derivative contributions from this step using adjoint
+    double jacpdt = MPI_Wtime();
     addToTotalDerivative(h, lambda);
+    time_rev_jac_pdt += MPI_Wtime() - jacpdt;
+        
+    //----------------------------------------------------------------//
+    // A. Put the contribution from this step to rhsbin               //
+    //----------------------------------------------------------------//
 
-    //-------------------------------------------------------------//
-    // Put the contribution from this step to the next adjoint RHS //
-    //-------------------------------------------------------------//
+    double tassembly2 = MPI_Wtime();
 
-    for ( int ii = 1; ii < num_adjoint_rhs ; ii++ ){
-      int rhs_index = (k - ii) % num_adjoint_rhs;
+    if (1) {
+
+      // Find the adjoint index to which the current contributions are
+      // to be added
+      int rhs_index = k % num_adjoint_rhs;
+
+      double alphatmp, betatmp, gammatmp;
+      gammatmp = 0.0;
+      betatmp  = (1.0-GAMMA)*h;
+      alphatmp = 0.5*(1.0-2.0*BETA)*h*h;
+
+      // Add the contributions from PSI into RHS
       for ( int n = 0; n < num_funcs; n++ ){
-        gamma = 0.0;
-        beta  = 1.0/h;
-        alpha = (0.5 + GAMMA);
-
-        // Add function contribution
-        rhs[rhs_index*num_funcs+n]->axpy(alpha, dfdq[n]);
-
-        // Add Residual-Adjoint Product
-        tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
-                                    lambda[n], rhs[rhs_index*num_funcs+n], 
-                                    TRANSPOSE);
-
-        // Add the cumulative contributions
-        rhs[rhs_index*num_funcs+n]->axpy(beta/h, psi[n]);
-        rhs[rhs_index*num_funcs+n]->axpy(alpha/h, phi[n]);
-        
-        // Find the new PSI
-        gamma = 0.0; beta  = h;  alpha = h*h;
-
-        psi[n]->axpy(h, phi[n]);
-        psi[n]->axpy(alpha, dfdq[n]);
-        tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
-                                    lambda[n], psi[n], 
-                                    TRANSPOSE);
-        
-        // Find the new PHI
-        gamma = 0.0; beta  = 0.0; alpha = h;
-
-        phi[n]->axpy(alpha, dfdq[n]);
-        tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
-                                    lambda[n], phi[n], 
-                                    TRANSPOSE);
-
+        rhsbin[rhs_index*num_funcs+n]->axpy(betatmp/h, psi[n]);
       }
+
+      // Add the contributions for PHI into RHS
+      for ( int n = 0; n < num_funcs; n++ ){
+        rhsbin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }
+
+      // Add the function and residual adjoint contributions into the
+      // other rhs
+      addVectorTransProducts(&rhsbin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp, 
+                             num_funcs, funcs, 
+                             lambda);          
     }
+
+    //----------------------------------------------------------------//
+    // B. Put the contributions from this step to PSI bins            //
+    //----------------------------------------------------------------//
+
+    if (1) {
+
+      int rhs_index = k % num_adjoint_rhs;
+
+      double alphatmp, betatmp, gammatmp;
+      gammatmp = 0.0;
+      betatmp  = h;
+      alphatmp = h*h;
+
+      // Add the contributions for PHI into psibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        psibin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }
+
+      // Add the contributions for PSI into psibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        psibin[rhs_index*num_funcs+n]->axpy(betatmp/h, psi[n]);
+      }      
+
+      // Add the function and residual adjoint contributions into the
+      // other psibin
+      addVectorTransProducts(&psibin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp,
+                             num_funcs, funcs,
+                             lambda);
+    }
+
+    //----------------------------------------------------------------//
+    // C. Put the contributions from this step to PHI bins            //
+    //----------------------------------------------------------------//
+
+    if (1) {
+
+      int rhs_index = k % num_adjoint_rhs;
+
+      double alphatmp, betatmp, gammatmp;
+      gammatmp = 0.0;
+      betatmp  = 0.0;
+      alphatmp = h;
+
+      // Add the contributions for PHI into phibin
+      for ( int n = 0; n < num_funcs; n++ ){
+        phibin[rhs_index*num_funcs+n]->axpy(alphatmp/h, phi[n]);
+      }  
+
+      // Add the function and residual adjoint contributions into the
+      // other psibin
+      addVectorTransProducts(&phibin[rhs_index*num_funcs], 
+                             alphatmp, betatmp, gammatmp,
+                             num_funcs, funcs,
+                             lambda);
+    }
+
+    time_rev_assembly += MPI_Wtime() - tassembly2;
   }
 
   // Freeup objects
   for ( int n = 0; n < num_funcs*num_adjoint_rhs; n++ ){
-    if (n < num_funcs) {    
-      psi[n]->decref();
-      phi[n]->decref();     
+    if (n < num_funcs) {  
+      phi[n]->decref();
+      psi[n]->decref();  
       lambda[n]->decref();
-      dfdq[n]->decref();
     }
-    rhs[n]->decref();
+    phibin[n]->decref();
+    psibin[n]->decref();
+    rhsbin[n]->decref();
   }
   delete [] psi;
   delete [] phi;
   delete [] lambda;
-  delete [] rhs;
-  delete [] dfdq;
+
+  delete [] phibin;
+  delete [] psibin;
+  delete [] rhsbin;
 
   // Print adjoint mode summary before maching backwards
   printAdjointOptionSummary(logfp);

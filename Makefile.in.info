@@ -22,9 +22,9 @@ EXTRA_CC_FLAGS = -fPIC -O3
 # Use this if you have problems with mpich
 # TACS_DEF = -DMPICH_IGNORE_CXX_SEEK
 
-# Set this flag to true if you want to use the complex version of TACS
-# TACS_IS_COMPLEX=true
-TACS_IS_COMPLEX=false
+# Defines whether to use static or dynamic linking
+# TACS_LD_CMD=-L${TACS_DIR}/lib/ -Wl,-rpath,${TACS_DIR}/lib -ltacs
+TACS_LD_CMD=${TACS_DIR}/lib/libtacs.a
 
 # For linux systems, use the following settings:
 SO_EXT=so
@@ -42,6 +42,9 @@ CYTHON=cython
 # You may also have to include -lblas as well.
 
 LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread
+
+# For MAC OSX use the accelerate framework
+# LAPACK_LIBS=-framework accelerate
 
 # METIS is handy for partitioning graphs, but can be problematic for
 # compilation.  If you compile METIS using a C++ compiler you must add

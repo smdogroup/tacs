@@ -374,6 +374,9 @@ cdef extern from "TACSIntegrator.h":
                            const_char *f5_file_fmt)
       void configureAdaptiveMarch( int factor, int num_retry )
 
+      # Configure writing ASCII output data
+      void writeSolution(const_char * filename, int format)
+
    # BDF Implementation of the integrator
    cdef cppclass TACSBDFIntegrator(TACSIntegrator):
       TACSBDFIntegrator(TACSAssembler *tacs,
