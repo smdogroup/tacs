@@ -41,7 +41,7 @@ CYTHON=cython
 # Use an optimized version of LAPACK if available.
 # You may also have to include -lblas as well.
 
-LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread
+LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread -lblas
 
 # For MAC OSX use the accelerate framework
 # LAPACK_LIBS=-framework accelerate
