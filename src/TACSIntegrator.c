@@ -340,12 +340,6 @@ int TACSIntegrator::doAdaptiveMarching( ) {
 int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                  double t, TACSBVec *u, TACSBVec *udot, 
                                  TACSBVec *uddot ){
-  // Store the alphas
-  double atmp, btmp, gtmp;
-  atmp = alpha;
-  btmp = beta;
-  gtmp = gamma;
-
   if (!mat || !ksm){
     // Set the D matrix to NULL
     if (use_femat){
@@ -404,7 +398,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
 
-    // Assemble the Jacobian matrix once in n newton iterations
+    // Assemble the Jacobian matrix once in Newton iterations
     double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       delta = init_newton_delta*gamma;
@@ -690,6 +684,40 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
 }
 
 /*
+  March one step and exit the integration. This is primarily for use 
+  with FUNtoFEM. 
+*/
+void TACSIntegrator::marchOneStep( int step_num ){
+  // Retrieve the initial conditions and set into TACS
+  if (step_num == 1){
+    tacs->getInitConditions(q[0], qdot[0]);
+    tacs->setVariables(q[0], qdot[0]);
+    tacs->zeroDDotVariables();
+  }
+  
+  // Set the class variable
+  current_time_step = step_num;
+  int k = current_time_step;
+  
+  // Advance time
+  time[k] = time[k-1] + h;
+  
+  // Approximate states and their derivatives using state approximations
+  approxStates();
+  
+  // Determine the coefficients for linearizing the Residual
+  double alpha, beta, gamma;   
+  getLinearizationCoeffs(&alpha, &beta, &gamma);
+  
+  // Solve the nonlinear system of stage equations starting with the approximated states
+  newton_term = newtonSolve(alpha, beta, gamma, 
+                            time[k], q[k], qdot[k], qddot[k]);
+  
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(current_time_step);  
+}
+
+/*
   Integate forward in time using the initial conditions retrieved from
   TACS
 */
@@ -721,7 +749,7 @@ void TACSIntegrator::integrate( ){
   }
   
   // Perform logging, tecplot export, etc.
-  doEachTimeStep(0);
+  doEachTimeStep(current_time_step);
 
   for (int k = 1; k < num_time_steps; k++){
     // Set the class variable
@@ -2017,7 +2045,7 @@ void TACSDIRKIntegrator::integrate( ) {
   tacs->setVariables(q[0], qdot[0]);
 
   // Perform logging, tecplot export, etc.
-  doEachTimeStep(0);   
+  doEachTimeStep(current_time_step);   
 
   for ( int k = 1; k < num_time_steps; k++ ){
     current_time_step = k;
