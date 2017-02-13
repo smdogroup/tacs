@@ -1985,6 +1985,8 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
   }
 }
 
+void TACSDIRKIntegrator::marchOneStep( int step_num ){ }
+
 /*
   Function that advances the global states q, qdot, qddot and time to
   next time step
