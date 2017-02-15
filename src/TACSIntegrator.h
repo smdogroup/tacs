@@ -267,7 +267,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
                       double _tinit,
                       double _tfinal,
                       int _num_steps_per_sec, 
-                      int num_stages );
+                      int _order );
   ~TACSDIRKIntegrator();
 
   // Overriding the default integration logic

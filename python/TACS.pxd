@@ -389,7 +389,7 @@ cdef extern from "TACSIntegrator.h":
       TACSDIRKIntegrator(TACSAssembler *tacs,
                         double tinit, double tfinal,
                         int num_steps_per_sec,
-                        int num_stages)
+                        int order)
       
    # ABM Implementation of the integrator
    cdef cppclass TACSABMIntegrator(TACSIntegrator):

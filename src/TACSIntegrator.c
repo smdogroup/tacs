@@ -20,11 +20,11 @@ TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
                                              int _num_steps_per_sec, 
                                              enum IntegratorType type ){
   if ( type == DIRK2 ) {
-    return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
-  } else if ( type == DIRK3 ) {
     return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
-  } else if ( type == DIRK4 ) {
+  } else if ( type == DIRK3 ) {
     return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 3);
+  } else if ( type == DIRK4 ) {
+    return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 4);
 
   } else if ( type == BDF1 ) {
     return new TACSBDFIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 1);
@@ -1712,15 +1712,15 @@ void TACSBDFIntegrator::marchBackwards( ) {
   tinit:             the initial time
   tfinal:            the final time
   num_steps_per_sec: the number of steps to take for each second
-  num_stages:        the number of stages in DIRK
+  order:             order of the truncation error
 */
 TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs, 
                                         double _tinit, double _tfinal, 
                                         int _num_steps_per_sec,
-                                        int _num_stages ): 
+                                        int _order ): 
 TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){   
   // copy over the variables
-  num_stages = _num_stages;
+  num_stages = _order + 1;
 
   // Set the type of integrator
   if ( num_stages == 3){
