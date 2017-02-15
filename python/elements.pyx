@@ -119,11 +119,14 @@ cdef class SphericalConstraint(Element):
       return
    
 cdef class RevoluteConstraint(Element):
-   def __cinit__(self,
-                 RigidBody bodyA, RigidBody bodyB,
-                 GibbsVector point, GibbsVector eA):
-      self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
-                                            point.ptr, eA.ptr)
+   def __cinit__(self, GibbsVector point, GibbsVector eA,
+                 RigidBody bodyA, RigidBody bodyB=None):
+      if bodyB is None:
+         self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
+                                               point.ptr, eA.ptr)
+      else:
+         self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
+                                               point.ptr, eA.ptr)
       self.ptr.incref()
       return
    
