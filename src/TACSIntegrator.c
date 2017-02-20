@@ -1720,7 +1720,7 @@ TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs,
                                         int _order ): 
 TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){   
   // copy over the variables
-  num_stages = _order + 1;
+  num_stages = _order - 1;
 
   // Set the type of integrator
   if ( num_stages == 3){
@@ -1729,6 +1729,8 @@ TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){
     mytype = DIRK3;
   } else if ( num_stages == 1){
     mytype = DIRK2;
+  } else {
+    fprintf(stderr, "ERROR: Invalid number of stages %d\n", num_stages);
   }
   
   // allocate space for stage state variables
