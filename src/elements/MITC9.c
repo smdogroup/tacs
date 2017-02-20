@@ -740,7 +740,6 @@ void MITC9::getInitCondition( TacsScalar vars[],
   // The initial quaternions are eta = 1.0, eps = 0
   for ( int i = 0; i < NUM_NODES; i++ ){
     vars[8*i + 3] = 1.0;
-    vars[8*i + 7] = 1.0;
   }
 
   // If the initial velocity is defined
@@ -768,6 +767,13 @@ void MITC9::getInitCondition( TacsScalar vars[],
       dvars[8*i+5] = 0.5*omega[1];
       dvars[8*i+6] = 0.5*omega[2];
     }
+  }
+
+  // Check if the quaternion contraint is satisfied at initial condition
+  double con_viol = RealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
+                                  vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
+  if (con_viol > 1.0e-12){
+    fprintf(stderr, "Warning: MITC9 quarternion constraint violated by %f\n", con_viol);
   }
 }
 
@@ -1092,7 +1098,7 @@ void MITC9::addResidual( double time,
 	const TacsScalar *eps = &q[4];
 	TacsScalar deta = dq[3];
 	const TacsScalar *deps = &dq[4];
-
+        
 	// Add S^{T}*dw
 	r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
 	crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
@@ -1179,6 +1185,7 @@ void MITC9::addResidual( double time,
     }
   }
 
+  
   // Set the scaling for the constraints
   TacsScalar scale = area;
 
@@ -1187,14 +1194,14 @@ void MITC9::addResidual( double time,
     const TacsScalar *q = &vars[8*i+3];
     TacsScalar lamb = vars[8*i+7];
 
-    // Enforce the quaternion constraint
-    res[8*i+7] += scale*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0);
-
     // Add the result to the governing equations
     res[8*i+3] += 2.0*scale*q[0]*lamb;
     res[8*i+4] += 2.0*scale*q[1]*lamb;
     res[8*i+5] += 2.0*scale*q[2]*lamb;
     res[8*i+6] += 2.0*scale*q[3]*lamb;
+    
+    // Enforce the quaternion constraint
+    res[8*i+7] += scale*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0);   
   }
 }
 
@@ -1504,7 +1511,7 @@ void MITC9::addJacobian( double time, TacsScalar J[],
 
     TacsScalar *Jp = &J[(8*NUM_NODES+1)*(8*i + 3)];
     TacsScalar lamb = vars[8*i+7];
-
+    
     // Add the constraint terms
     Jp[4] += 2.0*scale*q[0];
     Jp[4+ldj] += 2.0*scale*q[1];
@@ -1521,7 +1528,8 @@ void MITC9::addJacobian( double time, TacsScalar J[],
     Jp[0] += 2.0*scale*lamb;
     Jp[ldj+1] += 2.0*scale*lamb;
     Jp[2*(ldj+1)] += 2.0*scale*lamb;
-    Jp[3*(ldj+1)] += 2.0*scale*lamb;
+    Jp[3*(ldj+1)] += 2.0*scale*lamb;       
+
   }
 }
 

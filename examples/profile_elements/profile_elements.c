@@ -43,11 +43,10 @@ void test_element( TACSElement *element,
 
   // Test the element
   TACSElement::setStepSize(1e-5);
-  element->testResidual(time, Xpts, vars, dvars, ddvars);
-
 #ifdef TACS_USE_COMPLEX
   TACSElement::setStepSize(1e-30);
 #endif
+  element->testResidual(time, Xpts, vars, dvars, ddvars);
   element->testJacobian(time, Xpts, vars, dvars, ddvars);
   element->testAdjResProduct(x, dvLen, time, Xpts, vars, dvars, ddvars);
   element->testAdjResXptProduct(time, Xpts, vars, dvars, ddvars);
@@ -60,9 +59,9 @@ void test_element( TACSElement *element,
 
 /*
   The following code tests the element implementation to see if the
-  computation of the residual is consistent with the energy formulat,
-  to check if the Jacobian matrix is consistent with the residual and
-  to test certain design-dependent code. 
+  computation of the residual is consistent with the energy
+  formulation, to check if the Jacobian matrix is consistent with the
+  residual and to test certain design-dependent code.
 
   Useage:
   ./profile_elements [fd=value]
@@ -287,12 +286,13 @@ int main( int argc, char *argv[] ){
                               1.0/3.0};
   
     // Define dynamics properties
-    TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0); 
+    TACSGibbsVector *rAInitVec = new TACSGibbsVector(1.2, 2.2, 3.3); 
 
     // Construct a rigid body
     TACSRigidBody *bodyA = new TACSRigidBody(refFrameA,
                                              mA, cA, JA,
-                                             rAInitVec, zero, zero, gravVec);
+                                             rAInitVec, zero, zero,
+                                             gravVec);
     bodyA->incref();
 
     // Test the rigid body
