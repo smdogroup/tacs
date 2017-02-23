@@ -31,66 +31,66 @@ class TACS2DElement : public TACSElement {
   static const int NUM_VARIABLES = 2*NUM_NODES;
 
   TACS2DElement( PlaneStressStiffness * _stiff,
-		 ElementBehaviorType type, 
+                 ElementBehaviorType type, 
                  int _component );
   ~TACS2DElement();
 
   // Retrieve the shape functions
   // ----------------------------
   virtual void getShapeFunctions( const double pt[], double N[],
-				  double Na[], double Nb[] ) = 0;
+                                  double Na[], double Nb[] ) = 0;
 
   // Compute the position vector and its derivative
   // ----------------------------------------------
   void planeJacobian( TacsScalar X[], TacsScalar Xa[],
-		      const double N[], const double Na[], const double Nb[], 
-		      const TacsScalar Xpts[] );
+                      const double N[], const double Na[], const double Nb[], 
+                      const TacsScalar Xpts[] );
   
   // Compute the displacement gradient
   // ---------------------------------
   void getDisplacement( TacsScalar U[], const double N[], 
-			const TacsScalar vars[] );
+                        const TacsScalar vars[] );
   void getDisplGradient( TacsScalar Ud[], const TacsScalar J[],
-			 const double Na[], const double Nb[],
-			 const TacsScalar vars[] );
+                         const double Na[], const double Nb[],
+                         const TacsScalar vars[] );
   void getDisplGradientSens( TacsScalar Ud[], TacsScalar UdSens[],
-			     const TacsScalar J[], const TacsScalar JSens[],
-			     const double Na[], const double Nb[],
-			     const TacsScalar vars[] );
+                             const TacsScalar J[], const TacsScalar JSens[],
+                             const double Na[], const double Nb[],
+                             const TacsScalar vars[] );
   
   // Evaluate the strain in the element
   // ---------------------------------
   void evalStrain( TacsScalar strain[], const TacsScalar J[],
-		   const double Na[], const double Nb[],
-		   const TacsScalar vars[] );
+                   const double Na[], const double Nb[],
+                   const TacsScalar vars[] );
  
   // Compute the derivative of the strain with respect to vars
   // ---------------------------------------------------------
   void getBmat( TacsScalar B[], const TacsScalar J[],
-		const double Na[], const double Nb[],
-		const TacsScalar vars[] ); 
+                const double Na[], const double Nb[],
+                const TacsScalar vars[] ); 
 
   // Add the second derivatives of the strain times the stress to the
   // upper portion of the matrix
   // ----------------------------------------------------------------
   void addGeoStiffness( TacsScalar kmat[], TacsScalar h, const TacsScalar stress[],
-			const TacsScalar J[], const double Na[], 
-			const double Nb[] );
+                        const TacsScalar J[], const double Na[], 
+                        const double Nb[] );
   
   // Compute the derivative of the strain with respect to the nodal coordinates
   // --------------------------------------------------------------------------
   void addStrainXptSens( TacsScalar sens[], TacsScalar scale,
                          const TacsScalar strainSens[],
                          const TacsScalar J[], const TacsScalar Xa[], 
-			 const double Na[],  const double Nb[],
-			 const TacsScalar vars[] );
+                         const double Na[],  const double Nb[],
+                         const TacsScalar vars[] );
 
   // The design variable query functions
   // -----------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
   void getDesignVarRange( TacsScalar lowerBound[], 
-			  TacsScalar upperBound[], int numDVs );
+                          TacsScalar upperBound[], int numDVs );
   
   // Get the variable information
   // ----------------------------
@@ -108,46 +108,46 @@ class TACS2DElement : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time, TacsScalar *_Te, TacsScalar *_Pe,
-			const TacsScalar Xpts[], const TacsScalar vars[],
-			const TacsScalar dvars[] );
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[] );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
   void addResidual( double time, TacsScalar res[], const TacsScalar Xpts[],
-		    const TacsScalar vars[], const TacsScalar dvars[],
-		    const TacsScalar ddvars[] );
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
   void addJacobian( double time, TacsScalar J[],
-		    double alpha, double beta, double gamma,
-		    const TacsScalar Xpts[], const TacsScalar vars[],
-		    const TacsScalar dvars[], const TacsScalar ddvars[] );
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[] );
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
   void addAdjResProduct( double time, double scale,
-			 TacsScalar dvSens[], int dvLen,
-			 const TacsScalar psi[], const TacsScalar Xpts[],
-			 const TacsScalar vars[], const TacsScalar dvars[],
-			 const TacsScalar ddvars[] );
+                         TacsScalar dvSens[], int dvLen,
+                         const TacsScalar psi[], const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[] );
 
   // Add the product of the adjoint with the derivative of the design variables
   // -------------------------------------------------------------------------- 
   void addAdjResXptProduct( double time, double scale, 
                             TacsScalar fXptSens[],
-			    const TacsScalar psi[],
-			    const TacsScalar Xpts[],
-			    const TacsScalar vars[],
-			    const TacsScalar dvars[],
-			    const TacsScalar ddvars[] );
+                            const TacsScalar psi[],
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[] );
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
   void getMatType( ElementMatrixType matType, 
-		   TacsScalar mat[], 
-		   const TacsScalar Xpts[],
-		   const TacsScalar vars[] );
+                   TacsScalar mat[], 
+                   const TacsScalar Xpts[],
+                   const TacsScalar vars[] );
 
   // Functions for evaluating global functionals of interest
   // -------------------------------------------------------
@@ -162,20 +162,20 @@ class TACS2DElement : public TACSElement {
   // Compute the point-wise strain and its derivative
   // ------------------------------------------------
   void getStrain( TacsScalar strain[], const double pt[], 
-		  const TacsScalar Xpts[], const TacsScalar vars[] );
+                  const TacsScalar Xpts[], const TacsScalar vars[] );
   void addStrainXptSens( TacsScalar strainXptSens[],
-			 const double pt[], 
-			 const TacsScalar scale,
-			 const TacsScalar strainSens[], 
-			 const TacsScalar Xpts[],
-			 const TacsScalar vars[] );
+                         const double pt[], 
+                         const TacsScalar scale,
+                         const TacsScalar strainSens[], 
+                         const TacsScalar Xpts[],
+                         const TacsScalar vars[] );
 
   void addStrainSVSens( TacsScalar strainSVSens[], 
-			const double pt[], 
-			const TacsScalar scale,
-			const TacsScalar strainSens[], 
-			const TacsScalar Xpts[],
-			const TacsScalar vars[] );
+                        const double pt[], 
+                        const TacsScalar scale,
+                        const TacsScalar strainSens[], 
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[] );
 
  protected:
   ElementBehaviorType strain_type;
@@ -193,8 +193,8 @@ class TACS2DElement : public TACSElement {
 */
 template <int NUM_NODES>
 TACS2DElement<NUM_NODES>::TACS2DElement( PlaneStressStiffness * _stiff,
-					 ElementBehaviorType type,
-					 int component ) :
+                                         ElementBehaviorType type,
+                                         int component ) :
 TACSElement(component){
   strain_type = type;
   stiff = _stiff;
@@ -221,7 +221,7 @@ const char * TACS2DElement<NUM_NODES>::strainNames[] = { "exx", "eyy", "exy" };
 
 template <int NUM_NODES>
 const char * TACS2DElement<NUM_NODES>::extraNames[] = { "lambda", "buckling",
-							"dv1", "dv2" };
+                                                        "dv1", "dv2" };
 
 /*
   Get the names of the displacements/stress etc.
@@ -296,7 +296,7 @@ ElementType TACS2DElement<NUM_NODES>::getElementType(){
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::setDesignVars( const TacsScalar dvs[],
-					      int numDVs ){ 
+                                              int numDVs ){ 
   stiff->setDesignVars(dvs, numDVs);
 }
 
@@ -305,7 +305,7 @@ void TACS2DElement<NUM_NODES>::setDesignVars( const TacsScalar dvs[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getDesignVars( TacsScalar dvs[], 
-					      int numDVs ){
+                                              int numDVs ){
   stiff->getDesignVars(dvs, numDVs);
 }
 
@@ -314,8 +314,8 @@ void TACS2DElement<NUM_NODES>::getDesignVars( TacsScalar dvs[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getDesignVarRange( TacsScalar lowerBound[], 
-						  TacsScalar upperBound[], 
-						  int numDVs ){
+                                                  TacsScalar upperBound[], 
+                                                  int numDVs ){
   stiff->getDesignVarRange(lowerBound, upperBound, numDVs);
 }
 
@@ -334,11 +334,11 @@ void TACS2DElement<NUM_NODES>::getDesignVarRange( TacsScalar lowerBound[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::planeJacobian( TacsScalar X[], 
-					      TacsScalar Xa[],
-					      const double N[], 
-					      const double Na[], 
-					      const double Nb[], 
-					      const TacsScalar Xpts[] ){
+                                              TacsScalar Xa[],
+                                              const double N[], 
+                                              const double Na[], 
+                                              const double Nb[], 
+                                              const TacsScalar Xpts[] ){
   X[0] = X[1] = 0.0;
   Xa[0] = Xa[1] = Xa[2] = Xa[3] = 0.0;
 
@@ -364,8 +364,8 @@ void TACS2DElement<NUM_NODES>::planeJacobian( TacsScalar X[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getDisplacement( TacsScalar U[], 
-						const double N[], 
-						const TacsScalar vars[] ){
+                                                const double N[], 
+                                                const TacsScalar vars[] ){
   // zero the displacement values
   U[0] = U[1] = 0.0;
   
@@ -396,10 +396,10 @@ void TACS2DElement<NUM_NODES>::getDisplacement( TacsScalar U[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getDisplGradient( TacsScalar Ud[],
-						 const TacsScalar J[],
-						 const double Na[],
-						 const double Nb[], 
-						 const TacsScalar vars[] ){
+                                                 const TacsScalar J[],
+                                                 const double Na[],
+                                                 const double Nb[], 
+                                                 const TacsScalar vars[] ){
   TacsScalar Ua[4];
   Ua[0] = Ua[1] = Ua[2] = Ua[3] = 0.0;
 
@@ -445,12 +445,12 @@ void TACS2DElement<NUM_NODES>::getDisplGradient( TacsScalar Ud[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getDisplGradientSens( TacsScalar Ud[], 
-						     TacsScalar UdSens[],
-						     const TacsScalar J[],
-						     const TacsScalar JSens[],
-						     const double Na[],
-						     const double Nb[], 
-						     const TacsScalar vars[] ){
+                                                     TacsScalar UdSens[],
+                                                     const TacsScalar J[],
+                                                     const TacsScalar JSens[],
+                                                     const double Na[],
+                                                     const double Nb[], 
+                                                     const TacsScalar vars[] ){
   TacsScalar Ua[4];
   Ua[0] = Ua[1] = Ua[2] = Ua[3] = 0.0;
 
@@ -496,10 +496,10 @@ void TACS2DElement<NUM_NODES>::getDisplGradientSens( TacsScalar Ud[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::evalStrain( TacsScalar strain[], 
-					   const TacsScalar J[],
-					   const double Na[], 
-					   const double Nb[], 
-					   const TacsScalar vars[] ){
+                                           const TacsScalar J[],
+                                           const double Na[], 
+                                           const double Nb[], 
+                                           const TacsScalar vars[] ){
   // Compute the displacement gradient
   TacsScalar Ud[4];
   getDisplGradient(Ud, J, Na, Nb, vars);
@@ -522,10 +522,10 @@ void TACS2DElement<NUM_NODES>::evalStrain( TacsScalar strain[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getBmat( TacsScalar B[], 
-					const TacsScalar J[],
-					const double Na[], 
-					const double Nb[], 
-					const TacsScalar vars[] ){
+                                        const TacsScalar J[],
+                                        const double Na[], 
+                                        const double Nb[], 
+                                        const TacsScalar vars[] ){
   if (strain_type == LINEAR){
     // If this is a linear element, then things are relative easy to
     // deal with - we just compute B alternatively by row
@@ -578,26 +578,26 @@ void TACS2DElement<NUM_NODES>::getBmat( TacsScalar B[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addGeoStiffness( TacsScalar mat[],
-						TacsScalar h,
-						const TacsScalar stress[],
-						const TacsScalar J[], 
-						const double Na[], 
-						const double Nb[] ){
+                                                TacsScalar h,
+                                                const TacsScalar stress[],
+                                                const TacsScalar J[], 
+                                                const double Na[], 
+                                                const double Nb[] ){
   if (!(strain_type == LINEAR)){
     for ( int j = 0; j < NUM_NODES; j++ ){
       TacsScalar Dxj = Na[j]*J[0] + Nb[j]*J[2];
       TacsScalar Dyj = Na[j]*J[1] + Nb[j]*J[3];
 
       for ( int i = 0; i <= j; i++ ){
-	TacsScalar Dxi = Na[i]*J[0] + Nb[i]*J[2];
-	TacsScalar Dyi = Na[i]*J[1] + Nb[i]*J[3];
+        TacsScalar Dxi = Na[i]*J[0] + Nb[i]*J[2];
+        TacsScalar Dyi = Na[i]*J[1] + Nb[i]*J[3];
 
-	// Add the contributions to the stiffness matrix
+        // Add the contributions to the stiffness matrix
         TacsScalar scale = h*(stress[0]*Dxi*Dxj + 
                               stress[1]*Dyi*Dyj +
                               stress[2]*(Dxi*Dyj + Dxj*Dyi));
-	mat[2*i + 2*j*NUM_VARIABLES] += scale;
-	mat[2*i+1 + (2*j+1)*NUM_VARIABLES] += scale;
+        mat[2*i + 2*j*NUM_VARIABLES] += scale;
+        mat[2*i+1 + (2*j+1)*NUM_VARIABLES] += scale;
       }
     }
   }
@@ -639,11 +639,11 @@ template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar sens[],
                                                  TacsScalar scale,
                                                  const TacsScalar strainSens[],
-						 const TacsScalar J[], 
-						 const TacsScalar Xa[],
-						 const double Na[], 
-						 const double Nb[],
-						 const TacsScalar vars[] ){
+                                                 const TacsScalar J[], 
+                                                 const TacsScalar Xa[],
+                                                 const double Na[], 
+                                                 const double Nb[],
+                                                 const TacsScalar vars[] ){
   // Compute the derivative of the u,v,w displacements with
   // respect to the parametric locations within the element
   TacsScalar Ua[4];
@@ -783,10 +783,10 @@ void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar sens[],
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::computeEnergies( double time, 
                                                 TacsScalar *_Te, 
-						TacsScalar *_Pe,
-						const TacsScalar Xpts[],
-						const TacsScalar vars[],
-						const TacsScalar dvars[] ){
+                                                TacsScalar *_Pe,
+                                                const TacsScalar Xpts[],
+                                                const TacsScalar vars[],
+                                                const TacsScalar dvars[] ){
   // Compute the kinetic and potential energy
   TacsScalar Te = 0.0, Pe = 0.0;
 
@@ -794,9 +794,6 @@ void TACS2DElement<NUM_NODES>::computeEnergies( double time,
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
   
-  // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
   // Get the number of quadrature points
   int numGauss = getNumGaussPts();
 
@@ -858,10 +855,10 @@ void TACS2DElement<NUM_NODES>::computeEnergies( double time,
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addResidual( double time, 
                                             TacsScalar * res, 
-					    const TacsScalar Xpts[],
-					    const TacsScalar vars[],
-					    const TacsScalar dvars[],
-					    const TacsScalar ddvars[] ){
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -941,13 +938,13 @@ void TACS2DElement<NUM_NODES>::addResidual( double time,
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addJacobian( double time,
                                             TacsScalar mat[],
-					    double alpha, 
-					    double beta, 
-					    double gamma,
-					    const TacsScalar Xpts[], 
-					    const TacsScalar vars[],
-					    const TacsScalar dvars[], 
-					    const TacsScalar ddvars[] ){
+                                            double alpha, 
+                                            double beta, 
+                                            double gamma,
+                                            const TacsScalar Xpts[], 
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[], 
+                                            const TacsScalar ddvars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1004,7 +1001,7 @@ void TACS2DElement<NUM_NODES>::addJacobian( double time,
           mat[i + j*NUM_VARIABLES] += 
             alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2]);
           bi += NUM_STRESSES;
-        }	
+        }       
         bj += NUM_STRESSES;
       }
     }
@@ -1048,12 +1045,12 @@ void TACS2DElement<NUM_NODES>::addJacobian( double time,
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addAdjResProduct( double time, double scale,
-						 TacsScalar dvSens[], int dvLen,
-						 const TacsScalar psi[], 
-						 const TacsScalar Xpts[],
-						 const TacsScalar vars[], 
-						 const TacsScalar dvars[],
-						 const TacsScalar ddvars[] ){
+                                                 TacsScalar dvSens[], int dvLen,
+                                                 const TacsScalar psi[], 
+                                                 const TacsScalar Xpts[],
+                                                 const TacsScalar vars[], 
+                                                 const TacsScalar dvars[],
+                                                 const TacsScalar ddvars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1195,9 +1192,9 @@ void TACS2DElement<NUM_NODES>::addAdjResXptProduct( double time, double scale,
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType, 
-					   TacsScalar mat[], 
-					   const TacsScalar Xpts[],
-					   const TacsScalar vars[] ){
+                                           TacsScalar mat[], 
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[] ){
   memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
 
   // The mass matrix
@@ -1233,18 +1230,18 @@ void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
 
       // Fill-in the upper-portion of the matrix
       for ( int j = 0; j < NUM_NODES; j++ ){
-	for ( int i = 0; i <= j; i++ ){
-	  TacsScalar d = h*ptmass[0]*N[i]*N[j];
-	  mat[2*i + 2*j*NUM_VARIABLES] += d;
-	  mat[2*i+1 + (2*j+1)*NUM_VARIABLES] += d;
-	}
+        for ( int i = 0; i <= j; i++ ){
+          TacsScalar d = h*ptmass[0]*N[i]*N[j];
+          mat[2*i + 2*j*NUM_VARIABLES] += d;
+          mat[2*i+1 + (2*j+1)*NUM_VARIABLES] += d;
+        }
       }
     }
 
     // Apply symmetry to the matrix
     for ( int j = 0; j < NUM_VARIABLES; j++ ){
       for ( int i = 0; i < j; i++ ){
-	mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
+        mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
       }
     }
   }
@@ -1338,9 +1335,9 @@ TacsScalar TACS2DElement<NUM_NODES>::getDetJacobianXptSens( TacsScalar * hXptSen
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getStrain( TacsScalar strain[], 
-					  const double pt[],
-					  const TacsScalar Xpts[],
-					  const TacsScalar vars[] ){
+                                          const double pt[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1378,11 +1375,11 @@ void TACS2DElement<NUM_NODES>::getStrain( TacsScalar strain[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[], 
-						const double pt[], 
-						const TacsScalar scale,
-						const TacsScalar strainSens[], 
-						const TacsScalar Xpts[],
-						const TacsScalar vars[]){
+                                                const double pt[], 
+                                                const TacsScalar scale,
+                                                const TacsScalar strainSens[], 
+                                                const TacsScalar Xpts[],
+                                                const TacsScalar vars[]){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1409,8 +1406,8 @@ void TACS2DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[],
   TacsScalar *b = B;
   for ( int i = 0; i < NUM_VARIABLES; i++ ){
     strainSVSens[i] += scale*(strainSens[0]*b[0] + 
-			      strainSens[1]*b[1] + 
-			      strainSens[2]*b[2]);
+                              strainSens[1]*b[1] + 
+                              strainSens[2]*b[2]);
     b += NUM_STRESSES;
   }
 }
@@ -1430,11 +1427,11 @@ void TACS2DElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[],
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
-						 const double pt[], 
-						 const TacsScalar scale,
-						 const TacsScalar strainSens[], 
-						 const TacsScalar Xpts[],
-						 const TacsScalar vars[] ){
+                                                 const double pt[], 
+                                                 const TacsScalar scale,
+                                                 const TacsScalar strainSens[], 
+                                                 const TacsScalar Xpts[],
+                                                 const TacsScalar vars[] ){
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];

@@ -16,7 +16,8 @@ TACS_DEBUG_CC_FLAGS = ${TACS_DEF} ${EXTRA_DEBUG_CC_FLAGS} ${METIS_INCLUDE} ${AMD
 TACS_CC_FLAGS = ${TACS_OPT_CC_FLAGS}
 
 # Set the linking flags to use
-TACS_LD_FLAGS = ${EXTRA_LD_FLAGS} ${TACS_LD_CMD} ${AMD_LIBS} ${METIS_LIB} ${LAPACK_LIBS}
+TACS_EXTERN_LIBS = ${AMD_LIBS} ${METIS_LIB} ${LAPACK_LIBS}
+TACS_LD_FLAGS = ${EXTRA_LD_FLAGS} ${TACS_LD_CMD} ${TACS_EXTERN_LIBS}
 
 # This is the one rule that is used to compile all the
 # source code in TACS

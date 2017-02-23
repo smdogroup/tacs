@@ -186,7 +186,7 @@ cdef class Vec:
       self.ptr.setRand(lower, upper)
       return
       
-   def writeToFile(self, char*filename=''):
+   def writeToFile(self, char* filename=''):
       '''
       Write the values to a file.
       
@@ -199,7 +199,7 @@ cdef class Vec:
       '''
       return self.ptr.writeToFile(&filename[0])
    
-   def readFromFile(self, char*filename=''):
+   def readFromFile(self, char* filename=''):
       '''
       Read values from a binary data file.
       

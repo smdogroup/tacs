@@ -30,13 +30,16 @@ default:
 	      echo; (cd $$subdir && $(MAKE) TACS_DIR=${TACS_DIR}) || exit 1; \
             done \
 	fi
-	${CXX} ${SO_LINK_FLAGS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT} ${TACS_OBJS}
-	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
-           echo; (cd python && $(MAKE) complex TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
+	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
+	@if [ "${TACS_IS_COMPLEX}" == "true" ]; then \
+		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
+		echo "dtype = np.complex" >> tacs/TacsDefs.pxi; \
 	else \
-	   echo; (cd python && $(MAKE) TACS_DIR=${TACS_DIR}) || exit 1; \
+		echo "ctypedef double TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
+		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
-	@echo; python -c "from tacs import TACS, elements, constitutive, functions"
 
 debug:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
@@ -52,13 +55,16 @@ debug:
 	      echo; (cd $$subdir && $(MAKE) debug TACS_DIR=${TACS_DIR}) || exit 1; \
             done \
 	fi
-	${CXX} ${SO_LINK_FLAGS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT} ${TACS_OBJS}
-	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
-	   echo; (cd python && $(MAKE) complex_debug TACS_DIR=${TACS_DIR} TACS_DEF="${TACS_DEF} -DTACS_USE_COMPLEX") || exit 1; \
+	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
+	@if [ "${TACS_IS_COMPLEX}" == "true" ]; then \
+		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
+		echo "dtype = np.complex" >> tacs/TacsDefs.pxi; \
 	else \
-	   echo; (cd python && $(MAKE) debug TACS_DIR=${TACS_DIR}) || exit 1; \
+		echo "ctypedef double TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
+		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
-	@echo; python -c "from tacs import TACS, elements, constitutive, functions"
 
 complex: TACS_IS_COMPLEX=true
 complex: default

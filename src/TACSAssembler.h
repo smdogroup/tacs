@@ -51,7 +51,7 @@ class TACSAssembler : public TACSObject {
   enum OrderingType { NATURAL_ORDER, // Natural ordering
                       RCM_ORDER, // Reverse Cuthill Mackee ordering
                       AMD_ORDER, // Approximate minimum degree
-		      ND_ORDER, // Nested disection
+                      ND_ORDER, // Nested disection
                       TACS_AMD_ORDER }; // Interface variables ordered last
   enum MatrixOrderingType { ADDITIVE_SCHWARZ, 
                             APPROXIMATE_SCHUR,
@@ -60,8 +60,8 @@ class TACSAssembler : public TACSObject {
   // Create the TACSAssembler object in parallel
   // -------------------------------------------
   TACSAssembler( MPI_Comm _tacs_comm, int _varsPerNode,
-		 int _numOwnedNodes, int _numElements, 
-		 int _numDependentNodes=0 );
+		             int _numOwnedNodes, int _numElements, 
+		             int _numDependentNodes=0 );
   ~TACSAssembler();
 
   // Set the connectivity in TACS
@@ -161,10 +161,10 @@ class TACSAssembler : public TACSObject {
   // ------------------------------
   void assembleRes( TACSBVec *residual );
   void assembleJacobian( double alpha, double beta, double gamma,
-			 TACSBVec *residual, TACSMat *A,
-			 MatrixOrientation matOr=NORMAL );
+                         TACSBVec *residual, TACSMat *A,
+			                   MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType,
-			TACSMat *A, MatrixOrientation matOr=NORMAL );
+			                  TACSMat *A, MatrixOrientation matOr=NORMAL );
   void addJacobianVecProduct( TacsScalar scale, 
                               double alpha, double beta, double gamma,
                               TACSBVec *x, TACSBVec *y,
@@ -210,7 +210,7 @@ class TACSAssembler : public TACSObject {
                                  TACSBVec *psi, TACSBVec *phi,
                                  TacsScalar *dvSens, int numDVs );
   void evalMatSVSensInnerProduct( ElementMatrixType matType, 
-				  TACSBVec *psi, TACSBVec *phi, 
+                                  TACSBVec *psi, TACSBVec *phi, 
                                   TACSBVec *res );
 
   // Return elements and node numbers
@@ -226,7 +226,7 @@ class TACSAssembler : public TACSObject {
   void testElement( int elemNum, int print_level, double dh=1e-6,
                     double rtol=1e-8, double atol=1e-1 );
   void testConstitutive( int elemNum, int print_level );
-  void testFunction( TACSFunction * func, 
+  void testFunction( TACSFunction *func, 
                      int num_design_vars, double dh );
   
   // Set the number of threads to work with
@@ -240,8 +240,8 @@ class TACSAssembler : public TACSObject {
 			   int **_node_range );
   void getOutputConnectivity( ElementType elem_type,
                               int **_component_nums,
-			      int **_csr, int **_csr_range, 
-			      int **_node_range );
+                              int **_csr, int **_csr_range, 
+                              int **_node_range );
   void getOutputData( ElementType elem_type,
 		      unsigned int out_type,
 		      double *data, int nvals );
@@ -271,8 +271,8 @@ class TACSAssembler : public TACSObject {
   // ------------------------------------
   void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex );
   void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, 
-				  int nrnodes, const int *rnodes,
-				  int nodiag );
+                                  int nrnodes, const int *rnodes,
+                                  int nodiag );
 
   // Compute the reordering for a local matrix
   // -----------------------------------------
@@ -285,8 +285,8 @@ class TACSAssembler : public TACSObject {
 
   // Add values into the matrix
   inline void addMatValues( TACSMat *A, const int elemNum, 
-			    const TacsScalar *mat,
-			    int *item, TacsScalar *temp,
+                            const TacsScalar *mat,
+                            int *item, TacsScalar *temp,
                             MatrixOrientation matOr );
 
   TACSVarMap *varMap; // Variable ownership map
@@ -467,8 +467,8 @@ inline void TACSAssembler::addMatValues( TACSMat *A,
   if (matOr == NORMAL && numDependentNodes == 0){
     // If we have no dependent nodes, then we don't need to do
     // anything extra here
-    A->addValues(nnodes, nodeNums, nnodes, nodeNums, 
-		 nvars, nvars, mat);
+    A->addValues(nnodes, nodeNums, nnodes, nodeNums,
+                 nvars, nvars, mat);
   }
   else {
     // If we have dependent nodes, then we have to figure out what
@@ -489,19 +489,19 @@ inline void TACSAssembler::addMatValues( TACSMat *A,
     varp[0] = 0;
     for ( int i = 0, k = 0; i < nnodes; i++ ){
       if (nodeNums[i] >= 0){
-	// This is just a regular node
-	weights[k] = 1.0;
-	vars[k] = nodeNums[i];
-	k++;
+        // This is just a regular node
+        weights[k] = 1.0;
+        vars[k] = nodeNums[i];
+        k++;
       }
       else {
-	// This is a dependent node. Determine the corresponding
-	// dependent node number and add the variables
-	int dep = -nodeNums[i]-1;
-	for ( int j = depNodePtr[dep]; j < depNodePtr[dep+1]; j++, k++ ){
-	  weights[k] = depNodeWeights[j];
-	  vars[k] = depNodeConn[j];
-	}
+        // This is a dependent node. Determine the corresponding
+        // dependent node number and add the variables
+        int dep = -nodeNums[i]-1;
+        for ( int j = depNodePtr[dep]; j < depNodePtr[dep+1]; j++, k++ ){
+          weights[k] = depNodeWeights[j];
+          vars[k] = depNodeConn[j];
+        }
       }
 
       varp[i+1] = k;
@@ -509,7 +509,7 @@ inline void TACSAssembler::addMatValues( TACSMat *A,
 
     // Add the values to the matrix
     A->addWeightValues(nnodes, varp, vars, weights,
-		       nvars, nvars, mat, matOr);
+                       nvars, nvars, mat, matOr);
   }
 }
 
