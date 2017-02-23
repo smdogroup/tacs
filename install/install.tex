@@ -1,10 +1,12 @@
 \documentclass{article}
-\usepackage[linkcolor=black,colorlinks]{hyperref}
+\usepackage{mathptmx}
+\usepackage[linkcolor=black, colorlinks]{hyperref}
 \usepackage{amsmath}
 \usepackage{setspace}
-\usepackage[margin=1.25in]{geometry}
+\usepackage[margin=1in]{geometry}
 
-\title{An installation guide for TACS}
+\title{Installation Guide for the Toolkit for the Analysis of Composite Structures (TACS)}
+\date{}
 \author{Graeme Kennedy}
 
 \begin{document}
@@ -15,9 +17,9 @@
 
 The Toolbox for the Analysis of Composite Structures (TACS) is a
 parallel finite-element code written in C++, with an optional python
-interface. The architecture of TACS is designed with gradient-based
+interface. TACS has been implemented from the start with gradient-based
 optimization in mind. There are built-in routines for evaluating
-functions of interest and their sensitivities. TACS is object oriented
+functions of interest and their derivatives. TACS is object oriented
 and can be extended to include new elements, constitutive properties
 or functions of interest.
 
@@ -30,21 +32,25 @@ TACS. The dependencies are divided into the following categories:
 
 \section{Checking out the code}
 
-The TACS source is located at:
-\url{https://bitbucket.org/mdolab/tacs}. Using mercurial, checkout the
+The development version of the TACS source is located at:
+\url{https://bitbucket.org/gkennedy/tacs-dev}. Using mercurial, checkout the
 source by typing \texttt{hg clone
-  https://user@bitbucket.org/mdolab/tacs}
+  https://user@bitbucket.org/gkennedy/tacs-dev}
 
 Also, download the file: \texttt{TACS\_extern.tar.gz} and place it in
-the directory \texttt{TACS/extern}. Extract it and follow the
-instructions in the README file in this directory. Note also that
-\texttt{f5totec} is located in this directory as well.
+the directory \texttt{extern}. Follow the
+instructions in the \texttt{extern/README} file in this directory. Note also that
+\texttt{f5totec} and \texttt{f5tovtk} are located in this directory as well.
 
 The first step after checking out TACS is to copy
 \texttt{Makefile.in.info} to \texttt{Makefile.in} in the TACS root
 directory. \texttt{Makefile.in} contains the installation paths of the
 libraries used by TACS. In particular, set \texttt{TACS\_DIR} to the
-root directory of the TACS installation.
+root directory of the TACS installation. I also recommend that you copy
+the configuration script \texttt{setup.cfg.info} to \texttt{setup.cfg} 
+for the python version of the code. The settings in \texttt{setup.cfg.info} 
+are intended for development, if you are just going to use the code as-is,
+you may wish to modify these settings.
 
 \section{Installing the C++ interface}
 
@@ -57,11 +63,8 @@ The requirements for the installation are:
 \item An MPI installation implementing the MPI 2.0 Standard
   \url{http://www.mcs.anl.gov/research/projects/mpi/}
 \item \texttt{LAPACK}: The standard linear algebra package
-\item \texttt{METIS 4.0}: Serial graph-partitioner
-  \url{http://glaros.dtc.umn.edu/gkhome/views/metis}
-\item \texttt{f5totec}: A utility for converting .f5 files generated
-  by TACS to a tecplot compatible format
-\item \texttt{TecIO}: Tecplot binary format conversion code
+\item \texttt{METIS 5.0}: Serial graph-partitioner
+  \url{http://glaros.dtc.umn.edu/gkhome/metis/metis/overview}
 \item \texttt{AMD}: A package for computing the minimum degree
   ordering \url{http://www.cise.ufl.edu/research/sparse/amd/}
   \begin{itemize}
@@ -80,27 +83,38 @@ directory. This makes all the TACS-only source.
 
 \subsection{f5totec}
 
-\texttt{f5totec} is a conversion utility created by Graeme Kennedy for
-the conversion of .f5 files output from TACS to a tecplot compatible
-format. I recommend putting \texttt{f5totec} on your path. One way is
+\texttt{f5totec} is an executable that converts the .f5 files output 
+from TACS to a tecplot compatible format. Compiling \texttt{f5totec}
+requires Tecplot's external library for generating binary files
+directly
+
+\begin{enumerate}
+\item \texttt{TecIO}: Tecplot binary format conversion code
+\end{enumerate}
+
+I recommend putting \texttt{f5totec} on your path. One way is
 to create a symbolic link in your local \texttt{bin} directory to
 f5totec. Note that this utility converts one .f5 file at a time. The
 usage is \texttt{f5totec input [output]}, if no output file is
 specified, the output name is taken as the input name with the
 extension .plt.
 
+\subsection{f5tovtk}
+
+\texttt{f5tovtk} is an executable that converts .f5 files to 
+VTK format compatible with Paraview. It is also useful to put this
+utility on your path if possible.
+
 \subsection{Tutorial example}
 
-There is a simple tutorial example in \texttt{TACS/tutorial}. Once the
-C++ interface has been compiled, try making and running
-\texttt{plate\_example.c}.
+There is a simple tutorial example in the \texttt{examples}
+directory. Once the C++ interface has been compiled, try making
+and running \texttt{plate\_example.c}.
 
 \section{Installing the python interface}
 
-The python interface is generated in the \texttt{TACS/python}
-directory.  The interface is generated using program \texttt{SWIG}
-which can be obtained here: \url{http://www.swig.org/}. Make sure you
-use version \texttt{SWIG 1.3.40} or greater.
+The python interface is generated in the \texttt{tacs} sub-directory.
+The interface is generated using Cython.
 
 The python interface requires the following packages:
 %
@@ -113,49 +127,56 @@ You will need a recent version of python - at least python2.5 or
 greater (I have not tested with python 3.0). It is possible to install
 a local version of python if an old version is installed.
 
-Specify the location of the python include files using
-\texttt{PYTHON\_DIR}.  If you're using the native version then the
-director is usually: \texttt{PYTHON\_DIR=/usr/include/python2.x}. If
-you're using a locally installed version, point this path to the local
-header files.
-
-Once the packages have been installed, and you have a recent version
-of SWIG, the python interface can be installed by entering
-\texttt{TACS/python} and typing make.
-
 \subsection{NumPy}
 
-NumPy is available from here \url{http://numpy.scipy.org/}. Make sure
-to specify the location of the numpy include files in
-\texttt{Makefile.in}. This can be found by starting python at the command line
-then typing: \texttt{import numpy; numpy.get\_include()}.
+\texttt{numpy} is available from here \url{http://numpy.scipy.org/}. By default,
+the Makefile.in determines the \texttt{numpy} installation directory 
+from the python installation.
 
 \subsection{mpi4py}
  
 \texttt{mpi4py} can be downloaded from here:
-\url{http://code.google.com/p/mpi4py/}.  Install the package using:
+\url{http://pythonhosted.org/mpi4py/}.  Install the package using:
 \texttt{python setup.py build} then \texttt{python setup.py
   install}. If you don't have root access use either the
 \texttt{prefix} or the \texttt{home} options to specify the local
-installation location. The line in the \texttt{Makefile.in} can be
-found by starting python at the command line and typing \texttt{import
-  mpi4py; mpi4py.get\_include()}.
+installation location. By default, Makefile.in determines the 
+\texttt{mpi4py} installation directory from the python
+installation.
 
-\section{Installing TriPan and its python interface}
+\subsection{Installing the \texttt{tacs} package}
 
-TriPan is a full three-dimensional panel code that is tightly
-integrated with TACS. Running TriPan requires the installation of
-PETSc: \url{http://www.mcs.anl.gov/petsc/petsc-as/}.
-TriPan works with PETSc 3.2. Earlier versions of PETSc are incompatible
-with TriPan due to various modifications that have been made to the
-PETSc API.
+To build the python interface to \texttt{tacs}, you can use the Makefile
+or you can type the following command in the root directory:
 
-I recommend installing PETSc with the options:
+\begin{verbatim}
+python setup.py build_ext --inplace
+\end{verbatim}
 
-\texttt{./configure --with-pic --with-cc=mpicc --with-fc=mpif90
-  --with-cxx=mpicxx --with -debugging=0 --with-shared-libraries}
+The \texttt{--inplace} option places the shared objects direclty in the source
+directories.  This should build and place the files \texttt{TACS.so}, 
+\texttt{elements.so}, \texttt{functions.so} and \texttt{constitutive.so} under the 
+\texttt{tacs} sub-directory.
 
-After installing PETSc, you should be able to compile TriPan and the
-python interface to TriPan in \texttt{tripan/python}.
+There are several options to make the python \texttt{tacs} package
+available in python. These options consist of the following:
+
+\begin{enumerate}
+\item The way is to simply place the TACS root directory
+on your \texttt{PYTHONPATH}. However, some python installations create their 
+own environments, and do not use the \texttt{PYTHONPATH} environment variable.
+
+\item An alternative is to use the development installation which
+places the shared objects within the TACS directory with the source.
+I recommend using the \texttt{--user} option which installs it locally
+within your home directory, with a symbolic link to the share objects.
+This can be performed by typing:
+
+\begin{verbatim}
+python setup.py develop --user
+\end{verbatim}
+
+\end{enumerate}
+
 
 \end{document}

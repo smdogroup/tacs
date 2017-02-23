@@ -40,6 +40,7 @@ default:
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
+	python setup.py build_ext --inplace
 
 debug:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
@@ -65,6 +66,7 @@ debug:
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
+	python setup.py build_ext --inplace
 
 complex: TACS_IS_COMPLEX=true
 complex: default
@@ -74,6 +76,7 @@ complex_debug: debug
 
 clean:
 	${RM} lib/libtacs.a lib/*.so
+	${RM} tacs/*.so tacs/*.cpp
 	@for subdir in $(TACS_SUBDIRS) ; do \
 	  echo "making $@ in $$subdir"; \
 	  echo; \
