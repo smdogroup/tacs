@@ -61,8 +61,8 @@ int main( int argc, char *argv[] ){
   /*-----------------------------------------------------------------*/
 
   TACSDIRKIntegrator *dirk = NULL;
-  int max_num_stages = 3;
-  for ( int k = 1; k <= max_num_stages; k++ ) {
+  int dirk_order = 4;
+  for ( int k = 2; k <= dirk_order; k++ ) {
 
     dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, k);
     dirk->incref();

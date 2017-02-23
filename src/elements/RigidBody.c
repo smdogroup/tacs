@@ -740,10 +740,7 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   
   // Set eta = 1.0
   vars[3] = 1.0;
-
-  // Set lambda = 1.0
-  vars[7] = 1.0;
-
+  
   // Get the initial position
   const TacsScalar *r;
   rInit->getVector(&r);
@@ -767,6 +764,13 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   dvars[4] = 0.5*w[0];
   dvars[5] = 0.5*w[1];
   dvars[6] = 0.5*w[2];
+
+  // Check if the quaternion contraint is satisfied at initial condition
+  double con_viol = RealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
+                                  vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
+  if (con_viol > 1.0e-12){
+    fprintf(stderr, "Warning: RigidBody quarternion constraint violated by %f\n", con_viol);
+  }
 }
 
 /*
@@ -909,7 +913,7 @@ void TACSRigidBody::addResidual( double time,
   const TacsScalar *deps = &dvars[4];
   TacsScalar ddeta = ddvars[3];
   const TacsScalar *ddeps = &ddvars[4];
-
+   
   // Compute the rotation matrix
   TacsScalar C[9];
   computeRotationMat(eta, eps, C);
@@ -932,9 +936,9 @@ void TACSRigidBody::addResidual( double time,
 
   // Complete the governing equations for the translational
   // degrees of freedom
-  res[0] = mass*(a0[0] - g[0]) - t1[0];
-  res[1] = mass*(a0[1] - g[1]) - t1[1];
-  res[2] = mass*(a0[2] - g[2]) - t1[2];
+  res[0] += mass*(a0[0] - g[0]) - t1[0];
+  res[1] += mass*(a0[1] - g[1]) - t1[1];
+  res[2] += mass*(a0[2] - g[2]) - t1[2];
 
   // Compute the residual of the governing equations for
   // the rotational terms
@@ -972,14 +976,18 @@ void TACSRigidBody::addResidual( double time,
   addDMatTransProduct(-1.0, g, c, eta, eps,
                       &res[3], &res[4]);
   
+    
   // Add the Lagrange multiplier term
-  res[3] -= 2.0*eta*vars[7];
-  res[4] -= 2.0*eps[0]*vars[7];
-  res[5] -= 2.0*eps[1]*vars[7];
-  res[6] -= 2.0*eps[2]*vars[7];
+  res[3] += 2.0*eta*vars[7];
+  res[4] += 2.0*eps[0]*vars[7];
+  res[5] += 2.0*eps[1]*vars[7];
+  res[6] += 2.0*eps[2]*vars[7];
+
+  
   
   // Compute the quaternion constraint
-  res[7] = 1.0 - eta*eta - vecDot(eps, eps);
+  res[7] += eta*eta + vecDot(eps, eps) -1.0;
+
 }
 
 /*
@@ -1163,21 +1171,23 @@ void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
   // Add the derivative: -d(D(g)^{T}*c)/dq
   addBlockDMatTransDeriv(-alpha, g, c, &mat[27], 8);
 
-  // Add the terms from the Lagrange multipliers
-  mat[31] -= 2.0*alpha*eta;
-  mat[39] -= 2.0*alpha*eps[0];
-  mat[47] -= 2.0*alpha*eps[1];
-  mat[55] -= 2.0*alpha*eps[2];
   
-  mat[59] -= 2.0*alpha*eta;
-  mat[60] -= 2.0*alpha*eps[0];
-  mat[61] -= 2.0*alpha*eps[1];
-  mat[62] -= 2.0*alpha*eps[2];
+  // Add the terms from the Lagrange multipliers
+  mat[31] += 2.0*alpha*eta;
+  mat[39] += 2.0*alpha*eps[0];
+  mat[47] += 2.0*alpha*eps[1];
+  mat[55] += 2.0*alpha*eps[2];
+  
+  mat[59] += 2.0*alpha*eta;
+  mat[60] += 2.0*alpha*eps[0];
+  mat[61] += 2.0*alpha*eps[1];
+  mat[62] += 2.0*alpha*eps[2];
 
-  mat[27] -= 2.0*alpha*vars[7];
-  mat[36] -= 2.0*alpha*vars[7];
-  mat[45] -= 2.0*alpha*vars[7];
-  mat[54] -= 2.0*alpha*vars[7];
+  mat[27] += 2.0*alpha*vars[7];
+  mat[36] += 2.0*alpha*vars[7];
+  mat[45] += 2.0*alpha*vars[7];
+  mat[54] += 2.0*alpha*vars[7];
+
 }
 
 /*
@@ -1204,7 +1214,7 @@ void TACSRigidBody::testResidual( double dh ){
   double time = 0.0;
 
   // Set the position vector
-  TacsScalar X[3] = {0.0, 0.0, 0.0};
+  TacsScalar X[3] = {1.1, 2.2, 3.3};
 
   // Set the variable values
   TacsScalar vars[8], dvars[8], ddvars[8];

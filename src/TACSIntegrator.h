@@ -47,6 +47,7 @@ class TACSIntegrator : public TACSObject {
   // Function to solve for the states in time
   //-----------------------------------------
   virtual void integrate();
+  virtual void marchOneStep( int step_num );
 
   // Function for returning the derivatives for the functions
   //----------------------------------------------------------
@@ -266,11 +267,12 @@ class TACSDIRKIntegrator : public TACSIntegrator {
                       double _tinit,
                       double _tfinal,
                       int _num_steps_per_sec, 
-                      int num_stages );
+                      int _order );
   ~TACSDIRKIntegrator();
 
   // Overriding the default integration logic
   void integrate();
+  void marchOneStep( int step_num );
   
  protected:
   void setupCoeffs();
