@@ -50,7 +50,7 @@ lib_dirs.extend(get_global_dir(rel_lib_dirs))
 # alternate locations for the installation of AMD/METIS
 default_ext_inc = ['extern/AMD/Include', 
                    'extern/UFconfig', 
-                   'extern/metis/include/']
+                   'extern/metis/include']
 inc_dirs.extend(get_global_dir(default_ext_inc))
 
 # Add the numpy/mpi4py directories
