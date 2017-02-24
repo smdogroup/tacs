@@ -6828,7 +6828,7 @@ void MITC9::testTyingBmatSens( double dh ){
   for ( int i = 0; i < 8*NUM_NODES; i++ ){
     vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
-  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
     X[i] = -1.0 + 2.0*rand()/RAND_MAX;
     dir[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
@@ -6925,7 +6925,7 @@ void MITC9::testTyingBmatSens( double dh ){
   }
   writeErrorComponents(stdout, "dird", dird, fd, 3*NUM_NODES);
 
-  for ( int i = 0; i < 6*8*NUM_NODES; i++ ){
+  for ( int i = 0; i < 12*NUM_NODES; i++ ){
     TacsScalar tmp = dirdq[i];
     dirdq[i] = dirdq[i] + dh;
     computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);

@@ -31,7 +31,7 @@ default:
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
-	@if [ "${TACS_IS_COMPLEX}" == "true" ]; then \
+	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
 		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.complex" >> tacs/TacsDefs.pxi; \
@@ -57,7 +57,7 @@ debug:
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
-	@if [ "${TACS_IS_COMPLEX}" == "true" ]; then \
+	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
 		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.complex" >> tacs/TacsDefs.pxi; \
@@ -82,4 +82,3 @@ clean:
 	  echo; \
 	     (cd $$subdir && $(MAKE) $@ TACS_DIR=${TACS_DIR}) || exit 1; \
 	done
-	@echo; (cd python && $(MAKE) $@ TACS_DIR=${TACS_DIR}) || exit 1; \
