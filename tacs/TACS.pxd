@@ -102,15 +102,24 @@ cdef extern from "BVec.h":
       BCMap(int num_bcs)
         
    cdef cppclass TACSBVec(TACSVec):
-      TACSBVec(VarMap*rmap, BCMap*bcs)
-      int getSize(int *size) 
-      int getArray(TacsScalar **array)
-      int readFromFile(const_char *filename)
-      int writeToFile(const_char *filename)
-      void beginSetValues(TACSBVecOperation op)
-      void endSetValues(TACSBVecOperation op)
+      TACSBVec(VarMap*, BCMap*)
+      int getSize(int*) 
+      int getArray(TacsScalar**)
+      int readFromFile(const_char*)
+      int writeToFile(const_char*)
+      void beginSetValues(TACSBVecOperation)
+      void endSetValues(TACSBVecOperation)
       void beginDistributeValues()
       void endDistributeValues()
+
+cdef extern from "BVecInterp.h":
+   cdef cppclass TACSBVecInterp(TACSObject):
+      TACSBVecInterp(VarMap*, VarMap*, int)
+      void mult(TACSBVec*, TACSBVec*)
+      void multAdd(TACSBVec*, TACSBVec*, TACSBVec*)
+      void multTranspose(TACSBVec*, TACSBVec*)
+      void multTransposeAdd(TACSBVec*, TACSBVec*, TACSBVec*)
+      void multWeightTranspose(TACSBVec*, TACSBVec*)
         
 cdef extern from "PMat.h":
    cdef cppclass PMat(TACSMat):
