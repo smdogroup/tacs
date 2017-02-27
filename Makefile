@@ -40,7 +40,6 @@ default:
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
-	python setup.py build_ext --inplace
 
 debug:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
@@ -66,6 +65,8 @@ debug:
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
+
+interface:
 	python setup.py build_ext --inplace
 
 complex: TACS_IS_COMPLEX=true
