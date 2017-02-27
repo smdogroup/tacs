@@ -6,12 +6,12 @@ The Toolkit for the Analysis of Composite Structures is a parallel finite-elemen
 
 In addition to a working implementation of MPI, BLAS and LAPACK, TACS has two external dependencies that must be installed before TACS can be compiled:
 
-1. Metis 4.1: For parallel mesh partitioning
+1. Metis 5.0: For parallel mesh partitioning
 2. AMD/UFconfig: For approximate minimum degree (AMD) matrix reordering
 3. numpy: numerical python package
 4. mpi4py: python package for interfacing with MPI
 
-Metis and AMD/UFconfig are installed under tacs/extern. There is a README file in this directory with instructions on how to setup and install these packages correctly. In addition, to convert TACS FH5 output files to tecplot-compatible files, you must (unfortunately) install TecIO. This can be placed in the tacs/extern directory. 
+Metis and AMD/UFconfig are installed under tacs/extern. There is a README file in this directory with instructions on how to set up and install these packages correctly. In addition, to convert TACS FH5 output files to tecplot-compatible files, you must (unfortunately) install TecIO. This can be placed in the tacs/extern directory. There is also a FH5 to VTK convert as well.
 
 Once the external dependencies are installed, copy Makefile.in.info to Makefile.in. Open Makefile.in and follow the directions within to set the variables. In particular, set the following:
 

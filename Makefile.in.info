@@ -23,8 +23,8 @@ EXTRA_CC_FLAGS = -fPIC -O3
 # TACS_DEF = -DMPICH_IGNORE_CXX_SEEK
 
 # Defines whether to use static or dynamic linking
-# TACS_LD_CMD=-L${TACS_DIR}/lib/ -Wl,-rpath,${TACS_DIR}/lib -ltacs
-TACS_LD_CMD=${TACS_DIR}/lib/libtacs.a
+# TACS_LD_CMD=${TACS_DIR}/lib/libtacs.a
+TACS_LD_CMD=-L${TACS_DIR}/lib/ -Wl,-rpath,${TACS_DIR}/lib -ltacs
 
 # For linux systems, use the following settings:
 SO_EXT=so
@@ -32,10 +32,7 @@ SO_LINK_FLAGS=-fPIC -shared
 
 # For MAC OS X, use the following settings:
 # SO_EXT=so
-# SO_LINK_FLAGS=-fPIC -dynamiclib -single_module -undefined dynamic_lookup -multiply_defined suppress
-
-# Cython command
-CYTHON=cython
+# SO_LINK_FLAGS=-fPIC -dynamiclib
 
 # This uses the default installation of LAPACK. 
 # Use an optimized version of LAPACK if available.
