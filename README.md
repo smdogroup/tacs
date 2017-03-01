@@ -6,7 +6,7 @@ The Toolkit for the Analysis of Composite Structures is a parallel finite-elemen
 
 In addition to a working implementation of MPI, BLAS and LAPACK, TACS has two external dependencies that must be installed before TACS can be compiled:
 
-1. Metis 5.0: For parallel mesh partitioning
+1. Metis 5.1: For parallel mesh partitioning
 2. AMD/UFconfig: For approximate minimum degree (AMD) matrix reordering
 3. numpy: numerical python package
 4. mpi4py: python package for interfacing with MPI

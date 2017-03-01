@@ -109,7 +109,7 @@ int main( int argc, char **argv ){
 #ifdef TACS_USE_COMPLEX
     printf("||ans||: %e + j%e\n", RealPart(norm), ImagPart(norm));
 #else
-    printf("||ans||: %e\n", ans->norm());
+    printf("||ans||: %e\n", norm);
 #endif
   }
 
