@@ -358,6 +358,9 @@ cdef extern from "TACSIntegrator.h":
       # Integrate forward in time
       void integrate()
 
+      # Integrate forward in time for one step
+      void marchOneStep(int step_num, TACSBVec *forces)
+
       # Returns the adjoint gradient for all functions that are set into TACS
       void getFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
                        TacsScalar *dfdx)

@@ -1271,6 +1271,13 @@ cdef class Integrator:
       self.ptr.integrate()
       return
 
+   def solve(self, int step_num, Vec forces):
+      '''
+      Solve the nonlinear system at current time step
+      '''
+      self.ptr.marchOneStep(step_num, forces.ptr)
+      return
+
    def getFuncGrad(self,
                    int num_dv,
                    np.ndarray[TacsScalar, ndim=1, mode='c'] x,
