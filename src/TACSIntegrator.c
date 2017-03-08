@@ -336,10 +336,12 @@ int TACSIntegrator::doAdaptiveMarching( ) {
   alpha: multiplier for derivative of Residual wrt to q
   beta : multiplier for derivative of Residual wrt to qdot
   gamma: multiplier for derivative of Residual wrt to qddot
+
+  forces: contains the additional contributions to the RHS
 */
 int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                  double t, TACSBVec *u, TACSBVec *udot, 
-                                 TACSBVec *uddot ){
+                                 TACSBVec *uddot, TACSBVec *forces ){
   if (!mat || !ksm){
     // Set the D matrix to NULL
     if (use_femat){
@@ -412,6 +414,10 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     else {
       tacs->assembleRes(res);
     }
+
+    // Add the forces into the residual
+    res->axpy(1.0, forces);
+
     time_fwd_assembly += MPI_Wtime() - t0;
    
     // Compute the L2-norm of the residual
@@ -479,7 +485,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       time_fwd_apply_factor += MPI_Wtime() - t2;
     }
 
-    // Find the norm of the update
+    // Find the norm of the displacement update
     update_norm = update->norm()*alpha;
 
     // Update the state variables using the solution
@@ -687,7 +693,7 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
   March one step and exit the integration. This is primarily for use 
   with FUNtoFEM. 
 */
-void TACSIntegrator::marchOneStep( int step_num ){
+void TACSIntegrator::marchOneStep( int step_num, TACSBVec *forces ){
   // Retrieve the initial conditions and set into TACS
   if (step_num == 1){
     tacs->getInitConditions(q[0], qdot[0]);
@@ -711,7 +717,7 @@ void TACSIntegrator::marchOneStep( int step_num ){
   
   // Solve the nonlinear system of stage equations starting with the approximated states
   newton_term = newtonSolve(alpha, beta, gamma, 
-                            time[k], q[k], qdot[k], qddot[k]);
+                            time[k], q[k], qdot[k], qddot[k], forces);
   
   // Perform logging, tecplot export, etc.
   doEachTimeStep(current_time_step);  
@@ -767,7 +773,7 @@ void TACSIntegrator::integrate( ){
 
     // Solve the nonlinear system of stage equations starting with the approximated states
     newton_term = newtonSolve(alpha, beta, gamma, 
-                              time[k], q[k], qdot[k], qddot[k]);
+                              time[k], q[k], qdot[k], qddot[k], NULL);
 
     if (!isAdaptiveInstance()){
 
@@ -1987,7 +1993,9 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
   }
 }
 
-void TACSDIRKIntegrator::marchOneStep( int step_num ){ }
+void TACSDIRKIntegrator::marchOneStep( int step_num, TACSBVec *forces){ 
+  printf("DIRK marchOneStep unimplemented");
+}
 
 /*
   Function that advances the global states q, qdot, qddot and time to
@@ -2074,7 +2082,7 @@ void TACSDIRKIntegrator::integrate( ) {
       // Solve the nonlinear system of stage equations starting with
       // the approximated states
       int flag = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
-                             qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i]);
+                             qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
     }
     
     // Advance the time

@@ -47,7 +47,7 @@ class TACSIntegrator : public TACSObject {
   // Function to solve for the states in time
   //-----------------------------------------
   virtual void integrate();
-  virtual void marchOneStep( int step_num );
+  virtual void marchOneStep( int step_num, TACSBVec *forces );
 
   // Function for returning the derivatives for the functions
   //----------------------------------------------------------
@@ -115,8 +115,8 @@ class TACSIntegrator : public TACSObject {
   // Functions for solutions to linear and nonlinear problems
   // --------------------------------------------------------
   int newtonSolve( double alpha, double beta, double gamma,
-                    double t, TACSBVec *q, TACSBVec *qdot, 
-                    TACSBVec *qddot );
+                   double t, TACSBVec *q, TACSBVec *qdot, 
+                   TACSBVec *qddot, TACSBVec *forces );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
   void lineSearch( double *alpha, double *beta, double *gamma, TacsScalar f0, TACSBVec *d0 );
 
@@ -272,7 +272,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 
   // Overriding the default integration logic
   void integrate();
-  void marchOneStep( int step_num );
+  void marchOneStep( int step_num, TACSBVec *forces );
   
  protected:
   void setupCoeffs();
