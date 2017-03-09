@@ -177,7 +177,7 @@ class TACSIntegrator : public TACSObject {
   TACSBVec      **q, **qdot, **qddot; // Store the history of states over time
   
   double         *time;               // Stores the time values
-  int             num_time_steps;     // Total number of time steps to take to go from initial time to final time
+  double          num_time_steps;     // Total number of time steps to take to go from initial time to final time
   int             num_steps_per_sec;  // Number of time steps to take to advance one second
   int             current_time_step;  // Tracks the current time step
   double          h, tinit, tfinal;   // Time step size, initial and final times

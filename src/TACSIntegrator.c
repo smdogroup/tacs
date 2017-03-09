@@ -113,7 +113,7 @@ inline const char* getOrderingType( enum TACSAssembler::OrderingType otype ) {
 */
 TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
                                 double _tinit, double _tfinal, 
-                                int _num_steps_per_sec ){
+                                double _num_steps_per_sec ){
   // Mark that this is the global instance of integrator
   adaptive_instance    = 0;
   num_adaptive_retry   = 0;
@@ -416,7 +416,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Add the forces into the residual
-    res->axpy(1.0, forces);
+    if (forces){
+      res->axpy(gamma, forces);
+    }
 
     time_fwd_assembly += MPI_Wtime() - t0;
    

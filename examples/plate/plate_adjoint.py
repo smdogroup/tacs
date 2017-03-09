@@ -197,7 +197,7 @@ for abm_order in [1, 2, 3, 4, 5, 6]:
 # NBG Integrator
 #---------------------------------------------------------------------#
 
-nbg = TACS.NBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec)
+nbg = TACS.NBGIntegrator(tacs, tinit, tfinal, num_steps_per_sec, 2)
 nbg.setPrintLevel(0)
 nbg.setJacAssemblyFreq(1)
 nbg.setFunction(funcs)
@@ -213,8 +213,8 @@ for func in funcs:
 # DIRK Integrator
 #---------------------------------------------------------------------#
 
-for num_stages in [1,2,3]:
-    dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, num_stages)
+for order in [2,3,4]:
+    dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, order)
     dirk.setPrintLevel(0)
     dirk.setJacAssemblyFreq(1)
     dirk.setFunction(funcs)
@@ -222,7 +222,7 @@ for num_stages in [1,2,3]:
     dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
     fnum = 0
     for func in funcs:        
-        print_details("DIRK"+str(num_stages), func.__class__.__name__, fnum,
+        print_details("DIRK"+str(order), func.__class__.__name__, fnum,
                       dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
         fnum += 1
 

@@ -54,7 +54,7 @@ int main( int argc, char *argv[] ){
   tacs->incref();
  
   double tinit = 0.0; double tfinal = 10.0;
-  int num_steps_per_sec = 100;
+  double num_steps_per_sec = 100.0;
 
   /*-----------------------------------------------------------------*/
   /*                    Test DIRK Scheme                             */
