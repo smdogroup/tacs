@@ -311,7 +311,7 @@ int main( int argc, char *argv[] ){
 
   double tinit            = 0.0;
   double tfinal           = 10.0;
-  int    steps_per_second = 100; 
+  double steps_per_second = 100; 
   int    num_stages       = 2;
   int    max_bdf_order    = 1;
   TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal,

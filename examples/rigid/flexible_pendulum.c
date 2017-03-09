@@ -266,7 +266,7 @@ int main( int argc, char *argv[] ){
   // Set up the parameters for the TACSIntegrator
   double tinit = 0.0;
   double tfinal = 0.1;
-  int steps_per_second = 100; 
+  double steps_per_second = 100.0;
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     steps_per_second, 
                                                     type);

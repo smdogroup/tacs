@@ -84,7 +84,7 @@ thickness     = 0.05    # currrent thickness of elements in m
 #---------------------------------------------------------------------!
 
 mesh = TACS.MeshLoader(comm)
-mesh.setConvertToCoordinate(1)
+mesh.setConvertToCoordinate(0)
 mesh.scanBDFFile(bdfFileName)
 
 num_components = mesh.getNumComponents()
@@ -104,25 +104,25 @@ tacs = mesh.createTACS(8)
 ######################################################################
 
 # Configure F5 output if tecplot output is required
-f5_format = "output/rotor_%04d.f5"
+f5_format = "output/plate_%04d.f5"
 flag      = (TACS.ToFH5.NODES | TACS.ToFH5.DISPLACEMENTS |
              TACS.ToFH5.STRAINS | TACS.ToFH5.STRESSES |
              TACS.ToFH5.EXTRAS)
 f5        = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
 
 # Create the BDF integrator solver
-tfinal = 0.1
-num_steps_per_second = 250
-order = 1
+tfinal               = 0.5
+num_steps_per_second = 250.0
+order                = 2
 
 # Set the file output format
 solver = TACS.BDFIntegrator(tacs, 0.0, tfinal,
                             num_steps_per_second, order)
 
 solver.setRelTol(1e-8)
-solver.setPrintLevel(2)
+#solver.setPrintLevel(2)
 #solver.setOrderingType(TACS.PY_NATURAL_ORDER)
-# solver.setUseLapack(1)
+#solver.setUseLapack(1)
 solver.setMaxNewtonIters(20)
-solver.configureOutput(f5, 1, f5_format)
+solver.configureF5Output(f5, 1, f5_format)
 solver.integrate()

@@ -33,7 +33,7 @@ class TACSIntegrator : public TACSObject {
   TACSIntegrator( TACSAssembler *tacs,
                   double tinit,
                   double tfinal, 
-                  int num_steps_per_sec ); 
+                  double num_steps_per_sec ); 
   ~TACSIntegrator();
 
   // Factory method for intantiating integrators of supplied type
@@ -41,7 +41,7 @@ class TACSIntegrator : public TACSObject {
   static TACSIntegrator *getInstance( TACSAssembler *_tacs, 
                                       double _tinit,
                                       double _tfinal, 
-                                      int _num_steps_per_sec, 
+                                      double _num_steps_per_sec, 
                                       enum IntegratorType type );
   
   // Function to solve for the states in time
@@ -177,8 +177,8 @@ class TACSIntegrator : public TACSObject {
   TACSBVec      **q, **qdot, **qddot; // Store the history of states over time
   
   double         *time;               // Stores the time values
-  double          num_time_steps;     // Total number of time steps to take to go from initial time to final time
-  int             num_steps_per_sec;  // Number of time steps to take to advance one second
+  int             num_time_steps;     // Total number of time steps to take to go from initial time to final time
+  double          num_steps_per_sec;  // Number of time steps to take to advance one second
   int             current_time_step;  // Tracks the current time step
   double          h, tinit, tfinal;   // Time step size, initial and final times
   
@@ -266,7 +266,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   TACSDIRKIntegrator( TACSAssembler * _tacs, 
                       double _tinit,
                       double _tfinal,
-                      int _num_steps_per_sec, 
+                      double _num_steps_per_sec, 
                       int _order );
   ~TACSDIRKIntegrator();
 
@@ -305,7 +305,7 @@ class TACSBDFIntegrator : public TACSIntegrator {
   TACSBDFIntegrator( TACSAssembler * _tacs, 
 		     double _tinit,
                      double _tfinal,
-                     int _num_steps_per_sec, 
+                     double _num_steps_per_sec, 
 		     int max_bdf_order );
   ~TACSBDFIntegrator();
  protected:
@@ -333,7 +333,7 @@ class TACSABMIntegrator : public TACSIntegrator {
   TACSABMIntegrator( TACSAssembler *tacs, 
 		     double tinit,
                      double tfinal,
-                     int num_steps_per_sec, 
+                     double num_steps_per_sec, 
 		     int max_abm_order );
   ~TACSABMIntegrator();
  protected:
@@ -359,7 +359,7 @@ class TACSNBGIntegrator : public TACSIntegrator {
   TACSNBGIntegrator( TACSAssembler *tacs, 
 		     double tinit,
                      double tfinal, 
-                     int num_steps_per_sec,
+                     double num_steps_per_sec,
                      int order );
   ~TACSNBGIntegrator();
   

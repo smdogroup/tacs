@@ -17,7 +17,7 @@
 */
 TACSIntegrator* TACSIntegrator::getInstance( TACSAssembler * _tacs,
                                              double _tinit, double _tfinal, 
-                                             int _num_steps_per_sec, 
+                                             double _num_steps_per_sec, 
                                              enum IntegratorType type ){
   if ( type == DIRK2 ) {
     return new TACSDIRKIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec, 2);
@@ -130,7 +130,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   MPI_Comm_size(tacs->getMPIComm(), &mpiSize);
   
   // Compute the step size
-  h = 1.0/double(num_steps_per_sec);
+  h = 1.0/num_steps_per_sec;
 
   // compute the total number of time steps
   num_time_steps = int(num_steps_per_sec*(tfinal-tinit)) + 1;
@@ -786,7 +786,7 @@ void TACSIntegrator::integrate( ){
         for ( int trial = 0; trial < num_adaptive_retry; trial++ ){
           if (logfp){
             printf("[%d] Retry %d with step-size %e for [%e, %e] and \
-taking %d steps per second\n",
+taking %g steps per second\n",
                    mpiRank, trial+1, h/double(adaptive_step_factor),
                    time[k-1], time[k-1] + h,
                    num_steps_per_sec*adaptive_step_factor);
@@ -1231,7 +1231,7 @@ void TACSIntegrator::printOptionSummary( FILE *fp ) {
     fprintf(fp, "%-30s %15s\n", "integrator type", getIntegratorType(mytype));
     fprintf(fp, "%-30s %15g\n", "tinit", tinit );
     fprintf(fp, "%-30s %15g\n", "tfinal", tfinal );
-    fprintf(fp, "%-30s %15d\n", "num_steps_per_sec", num_steps_per_sec );
+    fprintf(fp, "%-30s %15g\n", "num_steps_per_sec", num_steps_per_sec );
     fprintf(fp, "%-30s %15g\n", "step size", h);
     fprintf(fp, "%-30s %15d\n", "num_time_steps", num_time_steps );
     fprintf(fp, "%-30s %15d\n", "num_state_vars", num_state_vars);
@@ -1407,7 +1407,7 @@ int TACSIntegrator::isAdaptiveInstance(){
 */
 TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs, 
                                       double _tinit, double _tfinal, 
-                                      int _num_steps_per_sec, 
+                                      double _num_steps_per_sec, 
                                       int _max_bdf_order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
   // copy over the variables
@@ -1724,7 +1724,7 @@ void TACSBDFIntegrator::marchBackwards( ) {
 */
 TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs, 
                                         double _tinit, double _tfinal, 
-                                        int _num_steps_per_sec,
+                                        double _num_steps_per_sec,
                                         int _order ): 
 TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){   
   // copy over the variables
@@ -2392,7 +2392,7 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
 */
 TACSABMIntegrator::TACSABMIntegrator( TACSAssembler * _tacs, 
                                       double _tinit, double _tfinal, 
-                                      int _num_steps_per_sec, 
+                                      double _num_steps_per_sec, 
                                       int _max_abm_order ):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){		
   // copy over the variables
@@ -2891,7 +2891,7 @@ order %d max order %d sum %f\n", order, max_abm_order, sum);
 TACSNBGIntegrator::TACSNBGIntegrator( TACSAssembler * _tacs, 
                                       double _tinit,
                                       double _tfinal, 
-                                      int _num_steps_per_sec,
+                                      double _num_steps_per_sec,
                                       int _order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
 
