@@ -415,11 +415,11 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       tacs->assembleRes(res);
     }
 
-    // Add the forces into the residual
+    // Add the forces into the residual    
     if (forces){
-      res->axpy(gamma, forces);
+      res->axpy(1.0, forces);
     }
-
+    
     time_fwd_assembly += MPI_Wtime() - t0;
    
     // Compute the L2-norm of the residual
@@ -730,12 +730,6 @@ void TACSIntegrator::marchOneStep( int step_num, TACSBVec *forces ){
   TACS
 */
 void TACSIntegrator::integrate( ){
-  // Print a summary of the object
-  if (!isAdaptiveInstance()){
-    printOptionSummary(logfp);
-  }
-
-  current_time_step = 0;
 
   // Keep track of the time taken for foward mode
   time_forward = 0.0;
@@ -745,91 +739,18 @@ void TACSIntegrator::integrate( ){
   time_newton = 0.0;
   double t0 = MPI_Wtime();
 
-  if (!isAdaptiveInstance()){
-    // Retrieve the initial conditions and set into TACS
-    tacs->getInitConditions(q[0], qdot[0]);
-    tacs->setVariables(q[0], qdot[0]);
-    tacs->zeroDDotVariables();
-  } else {
-    // Retrieve the initial conditions from the TACS instance and set
-    // into the instance state variables
-    time[0] = this->getTACSStates(q[0], qdot[0], qddot[0]);
-  }
-  
-  // Perform logging, tecplot export, etc.
+  // Perform logging, tecplot export, etc
+  current_time_step = 0;  
   doEachTimeStep(current_time_step);
 
   for (int k = 1; k < num_time_steps; k++){
-    // Set the class variable
-    current_time_step = k;
 
-    // Advance time
-    time[k] = time[k-1] + h;
+    marchOneStep(k, NULL);
+
+  }
+
+  printOptionSummary(logfp);
     
-    // Approximate states and their derivatives using ABM formula
-    approxStates();
-
-    // Determine the coefficients for linearizing the Residual
-    double alpha, beta, gamma;   
-    getLinearizationCoeffs(&alpha, &beta, &gamma);
-
-    // Solve the nonlinear system of stage equations starting with the approximated states
-    newton_term = newtonSolve(alpha, beta, gamma, 
-                              time[k], q[k], qdot[k], qddot[k], NULL);
-
-    if (!isAdaptiveInstance()){
-
-      // Original solve failed
-      if (newton_term < 0) {
-
-        // Retry until success code or max trials
-        for ( int trial = 0; trial < num_adaptive_retry; trial++ ){
-          if (logfp){
-            printf("[%d] Retry %d with step-size %e for [%e, %e] and \
-taking %g steps per second\n",
-                   mpiRank, trial+1, h/double(adaptive_step_factor),
-                   time[k-1], time[k-1] + h,
-                   num_steps_per_sec*adaptive_step_factor);
-          }
-          // Perform the retry logic
-          newton_term = doAdaptiveMarching();
-
-          // Exit if a positive termination flag is received
-          if (newton_term >= 0) {
-            break;
-          }
-        }
-      } 
-  
-    } else {
-      
-      // Adaptive solve failed
-      if (newton_term < 0){
-        if (logfp) {
-          fprintf(stderr, "TACSIntegrator: adaptive stepping failed\n");
-          MPI_Finalize();
-          exit(-1);
-        }
-      }
-
-    } // type of instance
-
-    // Perform logging, tecplot export, etc.
-    doEachTimeStep(k);
-
-  } // end time march
-
-  // Retrieve the final state and set into TACS if this is an adaptive instance
-  int k = current_time_step;
-  if (isAdaptiveInstance()){
-    tacs->setVariables(q[k], qdot[k], qddot[k]);
-  }
-
-  // Print a summary of the object
-  if (!isAdaptiveInstance()){
-    printOptionSummary(logfp);
-  }
-
   // Keep track of the time taken for foward mode
   time_forward += MPI_Wtime() - t0;
 }
