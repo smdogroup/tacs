@@ -1,3 +1,4 @@
+
 #include "TACSIntegrator.h"
 #include <math.h>
 #include "tacslapack.h"
@@ -417,7 +418,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
     // Add the forces into the residual    
     if (forces){
-      res->axpy(1.0, forces);
+      res->axpy(-1.0, forces);
     }
     
     time_fwd_assembly += MPI_Wtime() - t0;
@@ -695,18 +696,17 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
   March one step and exit the integration. This is primarily for use 
   with FUNtoFEM. 
 */
-void TACSIntegrator::marchOneStep( int step_num, TACSBVec *forces ){
+void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   // Retrieve the initial conditions and set into TACS
-  if (step_num == 1){
+  if (k == 1){
     tacs->getInitConditions(q[0], qdot[0]);
     tacs->setVariables(q[0], qdot[0]);
     tacs->zeroDDotVariables();
   }
   
   // Set the class variable
-  current_time_step = step_num;
-  int k = current_time_step;
-  
+  current_time_step = k;  
+
   // Advance time
   time[k] = time[k-1] + h;
   
@@ -719,10 +719,9 @@ void TACSIntegrator::marchOneStep( int step_num, TACSBVec *forces ){
   
   // Solve the nonlinear system of stage equations starting with the approximated states
   newton_term = newtonSolve(alpha, beta, gamma, 
-                            time[k], q[k], qdot[k], qddot[k], forces);
-  
-  // Perform logging, tecplot export, etc.
-  doEachTimeStep(current_time_step);  
+                            time[k], q[k], qdot[k], qddot[k], forces);  
+
+  doEachTimeStep(k);  
 }
 
 /*
@@ -730,7 +729,6 @@ void TACSIntegrator::marchOneStep( int step_num, TACSBVec *forces ){
   TACS
 */
 void TACSIntegrator::integrate( ){
-
   // Keep track of the time taken for foward mode
   time_forward = 0.0;
   time_fwd_assembly = 0.0;
@@ -740,14 +738,16 @@ void TACSIntegrator::integrate( ){
   double t0 = MPI_Wtime();
 
   // Perform logging, tecplot export, etc
-  current_time_step = 0;  
-  doEachTimeStep(current_time_step);
+  current_time_step = 0;
+  doEachTimeStep(current_time_step);  
 
+  // March forward in time
   for (int k = 1; k < num_time_steps; k++){
-
     marchOneStep(k, NULL);
-
   }
+
+  // Perform logging, tecplot export, etc.
+  doEachTimeStep(current_time_step);  
 
   printOptionSummary(logfp);
     

@@ -553,7 +553,7 @@ const char *TACSRigidBody::elem_name = "TACSRigidBody";
 
 // Set the displacement names
 const char *TACSRigidBody::disp_names[] = {
-  "u", "v", "w", "eta", "eps1", "eps2", "eps3", "lambda" };
+  "u0", "v0", "w0", "eta", "rotx", "roty", "rotz", "lambda" };
 
 /*
   Returns the displacement names
