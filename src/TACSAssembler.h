@@ -60,8 +60,8 @@ class TACSAssembler : public TACSObject {
   // Create the TACSAssembler object in parallel
   // -------------------------------------------
   TACSAssembler( MPI_Comm _tacs_comm, int _varsPerNode,
-		             int _numOwnedNodes, int _numElements, 
-		             int _numDependentNodes=0 );
+                             int _numOwnedNodes, int _numElements, 
+                             int _numDependentNodes=0 );
   ~TACSAssembler();
 
   // Set the connectivity in TACS
@@ -165,9 +165,9 @@ class TACSAssembler : public TACSObject {
   void assembleRes( TACSBVec *residual );
   void assembleJacobian( double alpha, double beta, double gamma,
                          TACSBVec *residual, TACSMat *A,
-			                   MatrixOrientation matOr=NORMAL );
+                         MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType,
-			                  TACSMat *A, MatrixOrientation matOr=NORMAL );
+                        TACSMat *A, MatrixOrientation matOr=NORMAL );
   void addJacobianVecProduct( TacsScalar scale, 
                               double alpha, double beta, double gamma,
                               TACSBVec *x, TACSBVec *y,
@@ -240,23 +240,23 @@ class TACSAssembler : public TACSObject {
   // ------------------------------------------------------------
   int getNumComponents();
   void getOutputNodeRange( ElementType elem_type, 
-			   int **_node_range );
+                           int **_node_range );
   void getOutputConnectivity( ElementType elem_type,
                               int **_component_nums,
                               int **_csr, int **_csr_range, 
                               int **_node_range );
   void getOutputData( ElementType elem_type,
-		      unsigned int out_type,
-		      double *data, int nvals );
+                      unsigned int out_type,
+                      double *data, int nvals );
 
  private:
   // Get pointers to the start-locations within the data array
   // ---------------------------------------------------------
   void getDataPointers( TacsScalar *data, 
-			TacsScalar **v1, TacsScalar **v2, 
-			TacsScalar **v3, TacsScalar **v4,
-			TacsScalar **x1, TacsScalar **x2,
-			TacsScalar **weights, TacsScalar **mat );
+                        TacsScalar **v1, TacsScalar **v2, 
+                        TacsScalar **v3, TacsScalar **v4,
+                        TacsScalar **x1, TacsScalar **x2,
+                        TacsScalar **weights, TacsScalar **mat );
 
   // Functions that are used to perform reordering
   // ---------------------------------------------
@@ -456,9 +456,9 @@ class TACSAssembler : public TACSObject {
   A:          the matrix to which the element-matrix is added
 */
 inline void TACSAssembler::addMatValues( TACSMat *A, 
-					 const int elemNum, 
-					 const TacsScalar *mat,
-					 int *itemp, TacsScalar *temp,
+                                         const int elemNum, 
+                                         const TacsScalar *mat,
+                                         int *itemp, TacsScalar *temp,
                                          MatrixOrientation matOr ){
   int start = elementNodeIndex[elemNum];
   int end = elementNodeIndex[elemNum+1];

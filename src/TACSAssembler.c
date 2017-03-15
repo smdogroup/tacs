@@ -2693,9 +2693,9 @@ SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
 void TACSAssembler::getInitConditions( TACSBVec *vars, 
                                        TACSBVec *dvars,
                                        TACSBVec *ddvars ){
-  vars->zeroEntries();
-  dvars->zeroEntries();
-  ddvars->zeroEntries();
+  if (vars){ vars->zeroEntries(); }
+  if (dvars){ dvars->zeroEntries(); }
+  if (ddvars){ ddvars->zeroEntries(); }
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemDVars, *elemDDVars, *elemXpts;
@@ -2718,17 +2718,17 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
                                    elemXpts);
 
     // Set the values into the vectors
-    vars->setValues(len, nodes, elemVars, INSERT_NONZERO_VALUES);
-    dvars->setValues(len, nodes, elemDVars, INSERT_NONZERO_VALUES);
-    ddvars->setValues(len, nodes, elemDDVars, INSERT_NONZERO_VALUES);
+    if (vars){ vars->setValues(len, nodes, elemVars, INSERT_NONZERO_VALUES); }
+    if (dvars){ dvars->setValues(len, nodes, elemDVars, INSERT_NONZERO_VALUES); }
+    if (ddvars){ ddvars->setValues(len, nodes, elemDDVars, INSERT_NONZERO_VALUES); }
   }
 
-  vars->beginSetValues(INSERT_NONZERO_VALUES);
-  dvars->beginSetValues(INSERT_NONZERO_VALUES);
-  ddvars->beginSetValues(INSERT_NONZERO_VALUES);
-  vars->endSetValues(INSERT_NONZERO_VALUES);
-  dvars->endSetValues(INSERT_NONZERO_VALUES);
-  ddvars->beginSetValues(INSERT_NONZERO_VALUES);
+  if (vars){ vars->beginSetValues(INSERT_NONZERO_VALUES); }
+  if (dvars){ dvars->beginSetValues(INSERT_NONZERO_VALUES); }
+  if (ddvars){ ddvars->beginSetValues(INSERT_NONZERO_VALUES); }
+  if (vars){ vars->endSetValues(INSERT_NONZERO_VALUES); }
+  if (dvars){ dvars->endSetValues(INSERT_NONZERO_VALUES); }
+  if (ddvars){ ddvars->beginSetValues(INSERT_NONZERO_VALUES); }
 }
 
 /*

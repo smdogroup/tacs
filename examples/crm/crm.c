@@ -72,7 +72,7 @@ int main( int argc, char **argv ){
   // Create matrix and vectors 
   TACSBVec *ans = tacs->createVec(); // displacements and rotations
   TACSBVec *f = tacs->createVec(); // loads
-  FEMat *mat = tacs->createFEMat(); // preconditioner
+  FEMat *mat = tacs->createFEMat(); // stiffness matrix
 
   // Increment reference count to the matrix/vectors
   ans->incref();
@@ -89,7 +89,6 @@ int main( int argc, char **argv ){
   // Assemble and factor the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   tacs->assembleJacobian(alpha, beta, gamma, NULL, mat);
-  mat->applyBCs();
   pc->factor(); // LU factorization of stiffness matrix
 
   // Set all the entries in load vector to specified value

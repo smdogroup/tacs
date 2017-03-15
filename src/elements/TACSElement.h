@@ -24,7 +24,7 @@
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
   void getDesignVarRange( TacsScalar lowerBound[], 
-			  TacsScalar upperBound[], int numDVs );
+                          TacsScalar upperBound[], int numDVs );
 
   These functions are used to set and retrieve variable information 
   and set up internal data for sensitivity calculations. Further details
@@ -166,19 +166,19 @@
 // The element types used for visualization
 enum ElementType { ELEMENT_NONE,
                    POINT_ELEMENT,
-		   EULER_BEAM,
-		   TIMOSHENKO_BEAM,
-		   PLANE_STRESS,
-		   SHELL, 
-		   SOLID,
-		   Q3D_ELEMENT,
+                   EULER_BEAM,
+                   TIMOSHENKO_BEAM,
+                   PLANE_STRESS,
+                   SHELL, 
+                   SOLID,
+                   Q3D_ELEMENT,
                    RIGID };
 
 // The different element matrix types
 enum ElementMatrixType { STIFFNESS_MATRIX, 
-			 MASS_MATRIX, 
-			 GEOMETRIC_STIFFNESS_MATRIX, 
-			 STIFFNESS_PRODUCT_DERIVATIVE };
+                         MASS_MATRIX, 
+                         GEOMETRIC_STIFFNESS_MATRIX, 
+                         STIFFNESS_PRODUCT_DERIVATIVE };
 
 // Element behavior types
 enum ElementBehaviorType{ LINEAR, 
@@ -241,10 +241,10 @@ class TACSElement : public TACSOptObject {
   // -----------------------------------------------------------
   virtual void computeEnergies( double time,
                                 TacsScalar *_Te, 
-				TacsScalar *_Pe,
-				const TacsScalar Xpts[],
-				const TacsScalar vars[],
-				const TacsScalar dvars[] ){
+                                TacsScalar *_Pe,
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[],
+                                const TacsScalar dvars[] ){
     *_Te = 0.0;  
     *_Pe = 0.0;
   }
@@ -252,43 +252,43 @@ class TACSElement : public TACSOptObject {
   // Compute the residual of the governing equations
   // -----------------------------------------------
   virtual void addResidual( double time, TacsScalar res[],
-			    const TacsScalar Xpts[],
-			    const TacsScalar vars[],
-			    const TacsScalar dvars[],
-			    const TacsScalar ddvars[] ) = 0;
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[] ) = 0;
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
   virtual void addJacobian( double time, TacsScalar J[],
-			    double alpha, double beta, double gamma,
-			    const TacsScalar Xpts[],
-			    const TacsScalar vars[],
-			    const TacsScalar dvars[],
-			    const TacsScalar ddvars[] ){}
+                            double alpha, double beta, double gamma,
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[] ){}
 
   // Add the product of the adjoint variables with the derivative of the residual
   // ----------------------------------------------------------------------------
   virtual void addAdjResProduct( double time, double scale,
-				 TacsScalar dvSens[], int dvLen,
-				 const TacsScalar psi[],
-				 const TacsScalar Xpts[],
-				 const TacsScalar vars[],
-				 const TacsScalar dvars[],
-				 const TacsScalar ddvars[] ){}
+                                 TacsScalar dvSens[], int dvLen,
+                                 const TacsScalar psi[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[] ){}
   virtual void addAdjResXptProduct( double time, double scale,
                                     TacsScalar fXptSens[],
-				    const TacsScalar psi[],
-				    const TacsScalar Xpts[],
-				    const TacsScalar vars[],
-				    const TacsScalar dvars[],
-				    const TacsScalar ddvars[] ){}
+                                    const TacsScalar psi[],
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[] ){}
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
   virtual void getMatType( ElementMatrixType matType, 
-			   TacsScalar mat[], 
-			   const TacsScalar Xpts[],
-			   const TacsScalar vars[] ){
+                           TacsScalar mat[], 
+                           const TacsScalar Xpts[],
+                           const TacsScalar vars[] ){
     int size = numVariables()*numVariables();
     memset(mat, 0, size*sizeof(TacsScalar));
   }
@@ -296,21 +296,21 @@ class TACSElement : public TACSOptObject {
   // Compute the derivative of the inner product w.r.t. design variables
   // -------------------------------------------------------------------
   virtual void addMatDVSensInnerProduct( ElementMatrixType matType, 
-					 double scale,
-					 TacsScalar dvSens[], int dvLen,
-					 const TacsScalar psi[], 
-					 const TacsScalar phi[],
-					 const TacsScalar Xpts[],
-					 const TacsScalar vars[] ){}
+                                         double scale,
+                                         TacsScalar dvSens[], int dvLen,
+                                         const TacsScalar psi[], 
+                                         const TacsScalar phi[],
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[] ){}
 
   // Compute the derivative of the inner product w.r.t. vars[]
   // ---------------------------------------------------------
   virtual void getMatSVSensInnerProduct( ElementMatrixType matType, 
-					 TacsScalar res[],
-					 const TacsScalar psi[], 
-					 const TacsScalar phi[],
-					 const TacsScalar Xpts[],
-					 const TacsScalar vars[] ){
+                                         TacsScalar res[],
+                                         const TacsScalar psi[], 
+                                         const TacsScalar phi[],
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[] ){
     memset(res, 0, numVariables()*sizeof(TacsScalar));
   }
 
@@ -351,27 +351,27 @@ class TACSElement : public TACSOptObject {
   // This function returns the strain evaluated at pt
   // ------------------------------------------------
   virtual void getStrain( TacsScalar strain[], 
-			  const double pt[], 
-			  const TacsScalar Xpts[],
-			  const TacsScalar vars[] ){}
+                          const double pt[], 
+                          const TacsScalar Xpts[],
+                          const TacsScalar vars[] ){}
 
   // This function adds the sensitivity of the strain w.r.t. Xpts
   // ------------------------------------------------------------
   virtual void addStrainXptSens( TacsScalar strainXptSens[],
-				 const double pt[], 
-				 const TacsScalar scale,
-				 const TacsScalar strainSens[], 
-				 const TacsScalar Xpts[],
-				 const TacsScalar vars[] ){}
+                                 const double pt[], 
+                                 const TacsScalar scale,
+                                 const TacsScalar strainSens[], 
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[] ){}
   
   // This function adds the sensitivity of the strain to the state variables
   // -----------------------------------------------------------------------
   virtual void addStrainSVSens( TacsScalar strainSVSens[], 
-				const double pt[], 
-				const TacsScalar scale,
-				const TacsScalar strainSens[], 
-				const TacsScalar Xpts[],
-				const TacsScalar vars[] ){}
+                                const double pt[], 
+                                const TacsScalar scale,
+                                const TacsScalar strainSens[], 
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[] ){}
 
   // These constants are used to denote which output to obtain
   // ---------------------------------------------------------
@@ -405,9 +405,9 @@ class TACSElement : public TACSOptObject {
   int getComponentNum(){ return componentNum; }
   virtual void addOutputCount( int *nelems, int *nnodes, int *ncsr ){}
   virtual void getOutputData( unsigned int out_type,
-			      double * data, int ld_data,
-			      const TacsScalar Xpts[],
-			      const TacsScalar vars[] ){}
+                              double * data, int ld_data,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[] ){}
   virtual void getOutputConnectivity( int * con, int start_node ){}
 
   // Test functions used to test the derivative evaluation code
