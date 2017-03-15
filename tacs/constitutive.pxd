@@ -16,6 +16,8 @@ from TACS cimport *
 cdef extern from "FSDTStiffness.h":
     cdef cppclass FSDTStiffness(TACSConstitutive):
         FSDTStiffness()
+        void setRefAxis(TacsScalar*)
+        void printStiffness()
 
 cdef extern from "isoFSDTStiffness.h":
     cdef cppclass isoFSDTStiffness(FSDTStiffness):

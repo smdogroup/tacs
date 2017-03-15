@@ -38,15 +38,13 @@ class PMat : public TACSMat {
  public:
   PMat( TACSVarMap *rmap,
         BCSRMat *_Aloc, BCSRMat *_Bext,
-        TACSBVecDistribute *_col_map,
-        TACSBcMap *_bcs=NULL );
+        TACSBVecDistribute *_col_map );
   ~PMat();
 
   // Functions for setting values in the matrix
   // ------------------------------------------
-  void zeroEntries();  // Zero the matrix values 
-  void applyBCs();     // Apply the boundary conditions to the matrix
-  void applyBCs( TACSBcMap *bcmap );
+  void zeroEntries();                // Zero the matrix values 
+  void applyBCs( TACSBcMap *bcmap ); // Apply the boundary conditions
 
   // Functions required for solving linear systems
   // ---------------------------------------------
@@ -79,8 +77,7 @@ class PMat : public TACSMat {
   // Common initialization routine
   void init( TACSVarMap *_rmap, 
              BCSRMat *_Aloc, BCSRMat *_Bext,
-             TACSBVecDistribute *_col_map,
-             TACSBcMap *_bcs=NULL );
+             TACSBVecDistribute *_col_map );
 
   // Local entries for the matrix
   BCSRMat *Aloc, *Bext;
@@ -97,9 +94,6 @@ class PMat : public TACSMat {
   int Np; // The number of local-only equations Np + Nc = N
 
  private: 
-  // Boundary condition information
-  TACSBcMap *bcs;
-    
   // External values - used for matrix-vector products
   TacsScalar *x_ext; 
   int ext_offset;
@@ -179,15 +173,6 @@ class GlobalSchurMat : public TACSMat {
  public:
   GlobalSchurMat( PMat *mat, BCSRMat *Apc );
   ~GlobalSchurMat();
-
-  // These functions have no effect for this matrix
-  // ----------------------------------------------
-  void zeroEntries(){}
-  void addValues( int nrow, const int *row, int ncol, const int *col,
-                  int nv, int mv, const TacsScalar *values ){} 
-  void applyBCs(){}
-  void beginAssembly(){}
-  void endAssembly(){}
 
   // Functions used to solve the linear system
   // -----------------------------------------

@@ -79,7 +79,7 @@ auxiliary matrix\n");
   ep_op->incref();
   
   // Allocate the eigenvalue solver
-  sep = new SEP(ep_op, max_lanczos_vecs, SEP::FULL);
+  sep = new SEP(ep_op, max_lanczos_vecs, SEP::FULL, tacs->getBcMap());
   sep->incref();
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE, 
 		     num_eigvals);
@@ -178,7 +178,7 @@ void TACSLinearBuckling::solve( KSMPrint *ksm_print ){
 
   // Set up the eigenvalue problem
   aux_mat->axpy(sigma, gmat);
-  aux_mat->applyBCs();
+  aux_mat->applyBCs(tacs->getBcMap());
   pc->factor();
     
   // Solve the symmetric eigenvalue problem
@@ -402,7 +402,7 @@ stiffness matrix\n");
   ep_op->incref();
 
   // Allocate the symmetric eigenproblem solver
-  sep = new SEP(ep_op, max_lanczos, SEP::FULL);
+  sep = new SEP(ep_op, max_lanczos, SEP::FULL, tacs->getBcMap());
   sep->incref();
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE, 
 		     num_eigvals);
@@ -445,7 +445,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
 
   // Form the shifted operator and factor it
   kmat->axpy(-sigma, mmat);
-  kmat->applyBCs();
+  kmat->applyBCs(tacs->getBcMap());
   pc->factor();
 
   // Solve the symmetric eigenvalue problem

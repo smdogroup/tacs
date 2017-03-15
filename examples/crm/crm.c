@@ -93,7 +93,7 @@ int main( int argc, char **argv ){
 
   // Set all the entries in load vector to specified value
   f->set(1.0);
-  f->applyBCs();
+  tacs->applyBCs(f);
 
   // Get solution and store in ans
   pc->applyFactor(f, ans);

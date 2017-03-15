@@ -39,8 +39,7 @@ class FEMat : public ScMat {
          int bsize, int nlocal_vars, 
          const int *rowp, const int *cols, 
          TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
-         TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map,
-         TACSBcMap *_bcs=NULL );
+         TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map );
   ~FEMat();
     
   // Functions for setting values in the matrix
@@ -51,7 +50,6 @@ class FEMat : public ScMat {
                         const TacsScalar *weights,
                         int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=NORMAL );
-  void applyBCs();
   void applyBCs( TACSBcMap *bcmap );
   TACSVec *createVec();  
  

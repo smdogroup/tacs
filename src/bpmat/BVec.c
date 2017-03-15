@@ -17,7 +17,6 @@
   bcs:    the boundary conditions associated with this vector
 */
 TACSBVec::TACSBVec( TACSVarMap *map, int _bsize, 
-                    TACSBcMap *_bcs, 
                     TACSBVecDistribute *_ext_dist,
                     TACSBVecDepNodes *_dep_nodes ){
   var_map = map;
@@ -25,10 +24,6 @@ TACSBVec::TACSBVec( TACSVarMap *map, int _bsize,
 
   // Get the MPI communicator
   comm = var_map->getMPIComm();
-
-  // Copy the boundary conditions
-  bcs = _bcs;
-  if (bcs){ bcs->incref(); }
 
   // Set the block size
   bsize = _bsize;
@@ -87,7 +82,6 @@ TACSBVec::TACSBVec( MPI_Comm _comm, int _size, int _bsize ){
   size = _size;
   comm = _comm;
   var_map = NULL;
-  bcs = NULL;
 
   x = new TacsScalar[ size ];
   memset(x, 0, size*sizeof(TacsScalar));
@@ -106,7 +100,6 @@ TACSBVec::TACSBVec( MPI_Comm _comm, int _size, int _bsize ){
 
 TACSBVec::~TACSBVec(){
   if (var_map){ var_map->decref(); }
-  if (bcs){  bcs->decref();  }
   if (x){ delete [] x; }
   if (x_ext){ delete [] x_ext; }
   if (ext_dist){ ext_dist->decref(); }
@@ -435,13 +428,6 @@ int TACSBVec::getExtArray( TacsScalar **array ){
 }
 
 /*
-  Retrieve the boundary conditions associated with the vector
-*/
-TACSBcMap *TACSBVec::getBcMap(){ 
-  return bcs; 
-}
-
-/*
   Retrieve the external index values
 */
 TACSBVecIndices *TACSBVec::getBVecIndices(){
@@ -458,7 +444,7 @@ TACSBVecDistribute *TACSBVec::getBVecDistribute(){
 /*
   Apply the Dirichlet boundary conditions to the vector
 */
-void TACSBVec::applyBCs( TACSVec *tvec ){
+void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
   TacsScalar *uvals = NULL;
   if (tvec){
     TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
@@ -466,7 +452,7 @@ void TACSBVec::applyBCs( TACSVec *tvec ){
   }
 
   // apply the boundary conditions
-  if (bcs && x){
+  if (x){
     int mpi_rank;
     MPI_Comm_rank(comm, &mpi_rank);
     
@@ -477,7 +463,7 @@ void TACSBVec::applyBCs( TACSVec *tvec ){
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
     const TacsScalar *values;
-    int nbcs = bcs->getBCs(&nodes, &vars, &values);
+    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
     if (uvals){
       for ( int i = 0; i < nbcs; i++ ){
@@ -487,7 +473,7 @@ void TACSBVec::applyBCs( TACSVec *tvec ){
           for ( int k = 0; k < bsize; k++ ){
             if (vars[i] & (1 << k)){
               // Scan through the rows to be zeroed
-              x[var + k] = uvals[var + k] - values[bsize*i + k];      
+              x[var + k] = uvals[var + k] - values[var + k];      
             }
           }
         }
@@ -511,38 +497,8 @@ void TACSBVec::applyBCs( TACSVec *tvec ){
 }
 
 /*
-  Apply boundary conditions directly from an input
+  Return the object name
 */
-void TACSBVec::applyBCs( TACSBcMap *bcmap ){
-  // apply the boundary conditions
-  if (x){
-    int mpi_rank;
-    MPI_Comm_rank(comm, &mpi_rank);
-    
-    // Get ownership range
-    const int *owner_range;
-    var_map->getOwnerRange(&owner_range);
-
-    // Get the values from the boundary condition arrays
-    const int *nodes, *vars;
-    const TacsScalar *values;
-    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
-
-    for ( int i = 0; i < nbcs; i++ ){
-      if (nodes[i] >= owner_range[mpi_rank] &&
-          nodes[i] < owner_range[mpi_rank+1]){
-        int var = bsize*(nodes[i] - owner_range[mpi_rank]);
-        for ( int k = 0; k < bsize; k++ ){
-          if (vars[i] & (1 << k)){
-            // Scan through the rows to be zeroed
-            x[var + k] = 0.0;
-          }
-        }
-      }
-    }
-  }
-}
-
 const char *TACSBVec::TACSObjectName(){
   return vecName;
 }

@@ -12,8 +12,7 @@ class SerialBCSCMat : public TACSMat {
  public:
   SerialBCSCMat( TACSVarMap *_rmap, int bsize, 
                  int num_block_rows, int num_block_cols,
-                 const int *block_rowp, const int *block_cols,
-                 TACSBcMap *_bcs );
+                 const int *block_rowp, const int *block_cols );
   ~SerialBCSCMat();
 
   // Set entries into the matrix
@@ -21,7 +20,6 @@ class SerialBCSCMat : public TACSMat {
   void addValues( int nrow, const int *row, 
                   int ncol, const int *col,
                   int nv, int mv, const TacsScalar *values );
-  void applyBCs();
   void applyBCs( TACSBcMap *bcmap );
 
   // Create vectors
@@ -43,7 +41,6 @@ class SerialBCSCMat : public TACSMat {
 
   // The variable
   TACSVarMap *rmap;
-  TACSBcMap *bcs;
 
   // The serial CSC matrix itself
   BCSCMat *mat;

@@ -116,7 +116,8 @@ class TACSIntegrator : public TACSObject {
   // --------------------------------------------------------
   int newtonSolve( double alpha, double beta, double gamma,
                    double t, TACSBVec *q, TACSBVec *qdot, 
-                   TACSBVec *qddot, TACSBVec *forces );
+                   TACSBVec *qddot, TACSBVec *forces,
+                   TACSBcMap *addBcs=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
   void lineSearch( double *alpha, double *beta, double *gamma, TacsScalar f0, TACSBVec *d0 );
 

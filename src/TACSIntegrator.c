@@ -343,7 +343,8 @@ int TACSIntegrator::doAdaptiveMarching( ) {
 */
 int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                  double t, TACSBVec *u, TACSBVec *udot, 
-                                 TACSBVec *uddot, TACSBVec *forces ){
+                                 TACSBVec *uddot, TACSBVec *forces,
+                                 TACSBcMap *addBcs ){
   if (!mat || !ksm){
     // Set the D matrix to NULL
     if (use_femat){
@@ -412,20 +413,31 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
       tacs->assembleJacobian(alpha, beta, gamma + delta,
                              res, mat, NORMAL);
+      if (addBcs){
+        res->applyBCs(addBcs);
+        mat->applyBCs(addBcs);
+      }
     }
     else {
       tacs->assembleRes(res);
+      if (addBcs){
+        res->applyBCs(addBcs);
+      }
     }
 
     // Add the forces into the residual    
     if (forces){
       res->axpy(-1.0, forces);
+      tacs->applyBCs(res);
+      if (addBcs){
+        res->applyBCs(addBcs);
+      }
     }
     
     time_fwd_assembly += MPI_Wtime() - t0;
-   
+  
     // Compute the L2-norm of the residual
-    res_norm = res->norm(); // *alpha
+    res_norm = res->norm();
     
     // Record the residual norm at the first Newton iteration
     if (niter == 0){
@@ -434,11 +446,19 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
     // Write a summary    
     if(logfp && print_level >= 2){
-      fprintf(logfp, "%12.5e %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-              t, niter, RealPart(res_norm),  
-              (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
-              RealPart(update_norm),  
-              alpha, beta, gamma, delta);
+      if (niter == 0){
+        fprintf(logfp, "%12.5e %12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
+                t, niter, RealPart(res_norm),  
+                (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
+                " ", alpha, beta, gamma, delta);
+      }
+      else {
+        fprintf(logfp, "%12.5e %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                t, niter, RealPart(res_norm),  
+                (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
+                RealPart(update_norm),  
+                alpha, beta, gamma, delta);
+      }
     }
 
     // Check if the norm of the residuals is a NaN
@@ -702,8 +722,16 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
 void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   // Retrieve the initial conditions and set into TACS
   if (k == 1){
+    current_time_step = 0;
+
     tacs->getInitConditions(q[0], qdot[0], qddot[0]);
     tacs->setVariables(q[0], qdot[0], qddot[0]);
+
+    // Perform an initial solve to get initial conditions compatible
+    // with the initial accelerations/velocities
+    double alpha = 1.0, beta = 0.0, gamma = 0.0;
+    newtonSolve(alpha, beta, gamma, 0.0, q[0], qdot[0], qddot[0], 
+                NULL, tacs->getInitBcMap());
   }
   
   // Set the class variable
@@ -730,7 +758,7 @@ void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   Integate forward in time using the initial conditions retrieved from
   TACS
 */
-void TACSIntegrator::integrate( ){
+void TACSIntegrator::integrate(){
   // Keep track of the time taken for foward mode
   time_forward = 0.0;
   time_fwd_assembly = 0.0;
@@ -2471,7 +2499,7 @@ int TACSABMIntegrator::getCoeffIndex( int time_step ){
   March backwards in time to solve for adjoint variables and computing
   total derivatives
 */
-void TACSABMIntegrator::marchBackwards( ){
+void TACSABMIntegrator::marchBackwards(){
   // Print adjoint mode summary before maching backwards
   printAdjointOptionSummary(logfp);
 
@@ -2920,7 +2948,7 @@ void TACSNBGIntegrator::getLinearizationCoeffs( double *alpha, double *beta, dou
   March backwards in time to solve for adjoint variables and computing
   total derivatives
 */
-void TACSNBGIntegrator::marchBackwards( ){
+void TACSNBGIntegrator::marchBackwards(){
   // Print adjoint mode summary before maching backwards
   printAdjointOptionSummary(logfp);
 

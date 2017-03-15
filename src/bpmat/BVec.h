@@ -71,8 +71,8 @@ class TACSBVecDepNodes : public TACSObject {
 */
 class TACSBVec : public TACSVec {
  public: 
-  TACSBVec( TACSVarMap *map, int bsize, 
-            TACSBcMap *bcs=NULL, TACSBVecDistribute *ext_dist=NULL,
+  TACSBVec( TACSVarMap *map, int bsize,
+            TACSBVecDistribute *ext_dist=NULL,
             TACSBVecDepNodes *dep_nodes=NULL );
   TACSBVec( MPI_Comm _comm, int size, int bsize );
   ~TACSBVec();  
@@ -91,6 +91,7 @@ class TACSBVec : public TACSVec {
   void copyValues( TACSVec *x );             // Copy values from x to this
   void axpby( TacsScalar alpha, 
               TacsScalar beta, TACSVec *x ); // y <- alpha*x + beta*y 
+  void applyBCs( TACSBcMap *map, TACSVec *vec=NULL );
 
   // Get/set the vector elements
   // ---------------------------
@@ -98,8 +99,6 @@ class TACSBVec : public TACSVec {
   void zeroEntries();                   // Zero all the entries
   int getArray( TacsScalar **vals );    // Get the local values
   int getExtArray( TacsScalar **vals ); // Get the external values
-  void applyBCs( TACSVec *vec=NULL );   // Zero rows corresponding to BCs
-  void applyBCs( TACSBcMap *map );      // Zero rows corresponding to BCs
   void initRand();                      // Init random number generator
   void setRand( double lower, double upper ); // Set random values
 
@@ -137,9 +136,6 @@ class TACSBVec : public TACSVec {
 
   // The variable map that defines the global distribution of nodes
   TACSVarMap *var_map;
-
-  // The boundary conditions which may or may not be set.
-  TACSBcMap *bcs;
 
   // The vector block size
   int bsize;

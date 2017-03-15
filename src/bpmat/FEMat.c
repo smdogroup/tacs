@@ -51,9 +51,7 @@
 
   c_local_indices: The local indices of the C-matrix
   c_map: The map from the global 
-  
-  bcs: The boundary conditions
-  
+    
   Note that b_local_indices/c_local_indices are not required after
   initialization of the FEMat class.  
 
@@ -82,11 +80,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
               int bsize, int nlocal_vars, 
               const int *rowp, const int *cols, 
               TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
-              TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map,
-              TACSBcMap *_bcs ){
-  bcs = _bcs;
-  if (bcs){ bcs->incref(); }
-
+              TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map ){
   // Get the block size 
   int rank;
   MPI_Comm_rank(_rmap->getMPIComm(), &rank);
@@ -293,9 +287,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
   init(_rmap, _B, _E, _F, _C, _b_map, _c_map);
 }
 
-FEMat::~FEMat(){
-  if (bcs){ bcs->decref(); }
-}
+FEMat::~FEMat(){}
 
 /*!
   Add the values into the appropriate block matrix.
@@ -523,16 +515,7 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
   Create a vector that is compatible with this matrix
 */
 TACSVec *FEMat::createVec(){
-  return new TACSBVec(rmap, B->getBlockSize(), bcs);
-}
-
-/*
-  Apply the Dirichlet boundary conditions.
-*/
-void FEMat::applyBCs(){
-  if (bcs){
-    applyBCs(bcs);
-  }
+  return new TACSBVec(rmap, B->getBlockSize());
 }
 
 /*

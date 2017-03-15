@@ -373,10 +373,15 @@ static void ComputeEigsTriDiag( int n,
   max_iters:   the maximum number of iterations before giving up
   ortho_type:  the type of orthogonalization to use FULL or LOCAL
 */
-SEP::SEP( EPOperator *_Op, int _max_iters, enum OrthoType _ortho_type ){
+SEP::SEP( EPOperator *_Op, int _max_iters, OrthoType _ortho_type,
+          TACSBcMap *_bcs ){
   // Store the pointer to the eigenproblem operator
   Op = _Op; 
   Op->incref();
+
+  // Set the boundary conditions
+  bcs = _bcs;
+  if (bcs){ bcs->incref(); }
   
   // Store the information about the subspace vectors
   max_iters = _max_iters;
@@ -416,6 +421,8 @@ SEP::~SEP(){
     Q[i]->decref();
   }
   delete [] Q;
+
+  if (bcs){ bcs->decref(); }
   
   delete [] Alpha;
   delete [] Beta;
@@ -462,7 +469,9 @@ void SEP::setOperator( EPOperator *_Op ){
 void SEP::solve( KSMPrint *ksm_print ){
   // Select the initial vector randomly
   Q[0]->setRand();
-  Q[0]->applyBCs();
+  if (bcs){
+    Q[0]->applyBCs(bcs);
+  }
   
   // Normalize the first vector
   TacsScalar norm = sqrt(Op->dot(Q[0], Q[0]));
@@ -475,7 +484,9 @@ void SEP::solve( KSMPrint *ksm_print ){
     for ( ; i < max_iters; i++ ){
       // First compute U = A*Q[i] - Q[i-1]*Beta[i] 
       Op->mult(Q[i], Q[i+1]);      
-      Q[i+1]->applyBCs();
+      if (bcs){
+        Q[i+1]->applyBCs(bcs);
+      }
       
       if (i > 0){
 	Q[i+1]->axpy(-Beta[i-1], Q[i-1]);	  	
@@ -507,7 +518,9 @@ void SEP::solve( KSMPrint *ksm_print ){
     for ( ; i < max_iters; i++ ){
       // Compute the new vector using the provided operator
       Op->mult(Q[i], Q[i+1]);
-      Q[i+1]->applyBCs();
+      if (bcs){
+        Q[i+1]->applyBCs(bcs);
+      }
 
       for ( int j = i; j >= 0; j-- ){
 	TacsScalar h = Op->dot(Q[i+1], Q[j]);

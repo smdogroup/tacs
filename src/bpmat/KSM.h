@@ -32,9 +32,11 @@ class TACSBcMap : public TACSObject {
   // Add/get the boundary conditions stored in this object
   // -----------------------------------------------------
   void addBC( int node, int nvals, 
-              const int *bc_nums=NULL, const TacsScalar *bc_vals=NULL );
+              const int *bc_nums=NULL, 
+              const TacsScalar *bc_vals=NULL );
   int getBCs( const int **_nodes,
-              const int **_vars, const TacsScalar **_values );
+              const int **_vars, 
+              const TacsScalar **_values );
 
   // Get the node numbers associated with the BCs for reordering
   // -----------------------------------------------------------
@@ -93,8 +95,7 @@ class TACSVec : public TACSObject {
   // Additional useful member functions
   // ----------------------------------
   virtual void setRand( double lower = -1.0, double upper = 1.0 ){}
-  virtual void applyBCs( TACSVec *vec=NULL ){}
-  virtual void applyBCs( TACSBcMap *map ){}
+  virtual void applyBCs( TACSBcMap *map, TACSVec *vec=NULL ){}
 };
 
 /*!  
@@ -141,7 +142,6 @@ class TACSMat : public TACSObject {
                                 const TacsScalar *weights,
                                 int nv, int mv, const TacsScalar *values,
                                 MatrixOrientation matOr=NORMAL ){}
-  virtual void applyBCs(){}
   virtual void applyBCs( TACSBcMap *bcmap ){}
   virtual void beginAssembly(){}
   virtual void endAssembly(){}

@@ -193,7 +193,7 @@ void TACSMg::setVariables( TACSBVec *vec ){
     else {
       interp[i]->multWeightTranspose(x[i], x[i+1]);
     }
-    x[i+1]->applyBCs();
+    x[i+1]->applyBCs(tacs[i+1]->getBcMap());
     tacs[i+1]->setVariables(x[i+1]);
   }
 }
@@ -374,7 +374,7 @@ void TACSMg::applyMg( int level ){
   // Restrict the residual to the next lowest level 
   // to form the RHS at that level
   interp[level]->multTranspose(r[level], b[level+1]);
-  b[level+1]->applyBCs();
+  b[level+1]->applyBCs(tacs[level+1]->getBcMap());
 
   // If we've made it to the lowest level, apply the direct solver
   // otherwise, perform multigrid on the next-lowest level
@@ -393,7 +393,7 @@ void TACSMg::applyMg( int level ){
 
   // Interpolate back from the next lowest level
   interp[level]->multAdd(x[level+1], x[level], x[level]);
-  x[level]->applyBCs();
+  x[level]->applyBCs(tacs[level]->getBcMap());
 
   // Post-Smooth the residual
   pc[level]->applyFactor(b[level], x[level]);  

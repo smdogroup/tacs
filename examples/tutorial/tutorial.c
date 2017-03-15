@@ -204,8 +204,8 @@ int main( int argc, char * argv[] ){
   // Reorder the nodal variables
   int use_fe_mat = 1;
   int reorder = 0;
-  enum TACSAssembler::OrderingType order_type = TACSAssembler::ND_ORDER;
-  enum TACSAssembler::MatrixOrderingType mat_type = 
+  TACSAssembler::OrderingType order_type = TACSAssembler::ND_ORDER;
+  TACSAssembler::MatrixOrderingType mat_type = 
     TACSAssembler::APPROXIMATE_SCHUR;
 
   for ( int k = 0; k < argc; k++ ){
@@ -429,6 +429,7 @@ int main( int argc, char * argv[] ){
 
   // Allocate an array for the design variable values
   TacsScalar *x = new TacsScalar[ numDesignVars ];
+  memset(x, 0, numDesignVars*sizeof(TacsScalar));
   tacs->getDesignVars(x, numDesignVars);
 
   /*
@@ -439,7 +440,7 @@ int main( int argc, char * argv[] ){
   */
   MPI_Allreduce(MPI_IN_PLACE, x, numDesignVars, TACS_MPI_TYPE,
                 TACS_MPI_MAX, tacs_comm);
-
+  
   // Now, set the design variables values to ensure that they are
   // locally consistent
   tacs->setDesignVars(x, numDesignVars); 

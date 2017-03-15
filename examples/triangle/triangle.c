@@ -268,7 +268,6 @@ int main( int argc, char *argv[] ){
   // Assemble and factor the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   tacs->assembleJacobian(alpha, beta, gamma, res, mat);
-  mat->applyBCs();
   pc->factor();
 
   int gmres_iters = 10; // Number of GMRES iterations 
@@ -278,7 +277,7 @@ int main( int argc, char *argv[] ){
                            nrestart, is_flexible);
 
   res->set(1.0);
-  res->applyBCs();
+  tacs->applyBCs(res);
   gmres->solve(res, ans);
   tacs->setVariables(ans);
 

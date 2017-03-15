@@ -19,10 +19,18 @@ int main( int argc, char * argv[] ){
   char *infile;
   char *outfile;
 
-  // Convert hdf5 file argv[1] to tecplot file argv[2]
+  int plot_displaced_shape = 0;
+
+  // Convert hdf5 file argv[1] to 
   if (argc == 1){
     fprintf(stderr, "Error, no input files\n");
     return (1);
+  }
+
+  for ( int k = 0; k < argc; k++ ){
+    if (strcmp(argv[k], "--displaced") == 0){
+      plot_displaced_shape = 1;
+    }
   }
   
   infile = new char[ strlen(argv[1])+1 ];
@@ -132,11 +140,20 @@ int main( int argc, char * argv[] ){
   // Write out the points
   fprintf(fp, "POINTS %d float\n", num_points);
   const double *d = data;
-  for ( int k = 0; k < num_points; k++ ){
-    fprintf(fp, "%e %e %e\n", d[0]+d[3], d[1]+d[4], d[2]+d[5]);
-    d += num_variables;
+
+  if (plot_displaced_shape){
+    for ( int k = 0; k < num_points; k++ ){
+      fprintf(fp, "%e %e %e\n", d[0]+d[3], d[1]+d[4], d[2]+d[5]);
+      d += num_variables;
+    }
   }
-  
+  else {
+    for ( int k = 0; k < num_points; k++ ){
+      fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
+      d += num_variables;
+    }
+  }
+
   // Write out the cell values
   fprintf(fp, "\nCELLS %d %d\n", 
           num_elements, (conn_dim+1)*num_elements);

@@ -101,7 +101,7 @@ class EPShiftInvert : public EPOperator {
 class EPGeneralizedShiftInvert : public EPOperator {
  public:
   EPGeneralizedShiftInvert( TacsScalar _sigma, TACSKsm *_ksm, 
-			    TACSMat *_inner );
+                            TACSMat *_inner );
   ~EPGeneralizedShiftInvert();
   
   void setSigma( TacsScalar _sigma );
@@ -133,7 +133,7 @@ class EPGeneralizedShiftInvert : public EPOperator {
 class EPBucklingShiftInvert : public EPOperator {
  public:
   EPBucklingShiftInvert( TacsScalar _sigma, TACSKsm *_ksm, 
-			 TACSMat *_inner );
+                         TACSMat *_inner );
   ~EPBucklingShiftInvert();
   
   void setSigma( TacsScalar _sigma );
@@ -151,35 +151,55 @@ class EPBucklingShiftInvert : public EPOperator {
 };
 
 /*
-  The symmetric eigenvalue solver
+  The symmetric eigenvalue solver.
+
+  This eigensolver can be used to solve either simple or generalized
+  eigenvalue problems depending on the definition of the operator.
+  The operator may also use a shift and invert strategy to accelerate
+  convergence of the Lanczos method.
+
+  Note that the full orthogonalization is suggested (and is the
+  default) since this has better numerical properties. The Lanczos
+  vectors lose orthogonality as the eigenvalues converge.
 */
 class SEP : public TACSObject {
  public:
   // Set the type of orthogonalization to use
   enum OrthoType { FULL, LOCAL };
   enum EigenSpectrum { SMALLEST, LARGEST, 
-		       SMALLEST_MAGNITUDE, LARGEST_MAGNITUDE };
+                       SMALLEST_MAGNITUDE, LARGEST_MAGNITUDE };
 
   SEP( EPOperator *_Op, int _max_iters, 
-       enum OrthoType _ortho_type=FULL );
+       OrthoType _ortho_type=FULL, TACSBcMap *_bcs=NULL );
   ~SEP();
 
-  void setOrthoType( enum OrthoType _ortho_type );
+  // Set the orthogonalization strategy
+  void setOrthoType( OrthoType _ortho_type );
+
+  // Set the solution tolerances, type of spectrum and number of eigenvalues
   void setTolerances( double _tol, 
-		      enum EigenSpectrum _spectrum, int _neigvals );
+                      EigenSpectrum _spectrum, int _neigvals );
+
+  // Reset the eigenproblem operator
   void setOperator( EPOperator *_Op );
+
+  // Solve the eigenproblem
   void solve( KSMPrint *ksm_print = NULL );
+
+  // Extract the eigenvalues and eigenvectors from the solver
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
   TacsScalar extractEigenvector( int n, TACSVec *ans, TacsScalar *error );
 
+  // Check the orthogonality of the Lanczos subspace (expensive)
   TacsScalar checkOrthogonality();
   void printOrthogonality();
 
  private:
+  // Sort the eigenvalues by the desired spectrum
   void sortEigenvalues( TacsScalar *values, int neigs, int *permutation );
 
   // Check whether the right eigenvalues have converged
-  int checkConverged( TacsScalar *A, TacsScalar *B, int n );			
+  int checkConverged( TacsScalar *A, TacsScalar *B, int n );                    
   
   // Data used to determine which spectrum to use and when
   // enough eigenvalues are converged
@@ -203,10 +223,14 @@ class SEP : public TACSObject {
   // the shift has been applied
   int *perm; 
 
-  enum OrthoType ortho_type;
+  // The type of orthogonalization to use
+  OrthoType ortho_type;
 
   int max_iters;
   TACSVec **Q; // The Vectors for the eigenvalue problem...
+
+  // Boundary conditions that are applied
+  TACSBcMap *bcs;
 };
 
 #endif

@@ -637,7 +637,7 @@ void testDVSensThreads( TACSAssembler *tacs, int numDVs ){
     adjoints[k] = tacs->createVec();
     adjoints[k]->incref();
     adjoints[k]->setRand(-1.0, 1.0);
-    adjoints[k]->applyBCs();
+    tacs->applyBCs(adjoints[k]);
   }
 
   // Time the evaluation of the partial derivatives

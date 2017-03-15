@@ -132,13 +132,6 @@ cdef class Vec:
       Py_INCREF(self)
       return arry
 
-   def applyBCs(self):
-      '''
-      Apply the Dirichlet boundary conditions to the matrix
-      '''
-      self.ptr.applyBCs()
-      return
-
    def norm(self):
       '''
       Vector norm
@@ -253,12 +246,6 @@ cdef class Mat:
       Zero the entries in the matrix
       '''
       self.ptr.zeroEntries()
-
-   def applyBCs(self):
-      '''
-      Apply the Dirichlet boundary conditions to the matrix
-      '''
-      self.ptr.applyBCs()
 
    def mult(self, Vec x, Vec y):
       '''
@@ -456,6 +443,17 @@ cdef class Assembler:
       cdef int *node_nums = <int*>nodes.data
       self.ptr.addBCs(nnodes, node_nums, -1, NULL, NULL)
       return
+   
+   def addInitBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes):
+      cdef int nnodes = nodes.shape[0]
+      cdef int *node_nums = <int*>nodes.data
+      self.ptr.addInitBCs(nnodes, node_nums, -1, NULL, NULL)
+      return
+
+   def computeReordering(self, OrderingType order_type, MatrixOrderingType mat_type):
+      '''Compute a reordering of the unknowns before initialize()'''
+      self.ptr.computeReordering(order_type, mat_type)
+      return
 
    def initialize(self):
       '''
@@ -599,6 +597,21 @@ cdef class Assembler:
       Create a distributed matrix
       '''
       return _init_Mat(self.ptr.createMat())
+
+   def reorderVec(self, Vec vec):
+      '''Reorder the vector based on the TACSAssembler reordering'''
+      self.ptr.reorderVec(vec.ptr)
+      return
+
+   def applyBCs(self, Vec vec):
+      '''Apply boundary conditions to the vector'''
+      self.ptr.applyBCs(vec.ptr)
+      return
+
+   def applyMatBCs(self, Mat mat):
+      '''Apply boundary conditions to the matrix'''
+      self.ptr.applyBCs(mat.ptr)
+      return      
    
    def createFEMat(self, OrderingType order_type=TACS_AMD_ORDER):
       '''

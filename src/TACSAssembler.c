@@ -260,6 +260,14 @@ TACSBcMap *TACSAssembler::getBcMap(){
 }
 
 /*
+  Get the additional boundary conditions associated with the initial
+  conditions.
+*/
+TACSBcMap *TACSAssembler::getInitBcMap(){
+  return bcInitMap;
+}
+
+/*
   Get the external indices
 */
 TACSBVecDistribute *TACSAssembler::getBVecDistribute(){ 
@@ -645,7 +653,7 @@ void TACSAssembler::addInitBCs( int nnodes, const int *nodes,
   Create a global vector of node locations
 */
 TACSBVec *TACSAssembler::createNodeVec(){
-  return new TACSBVec(varMap, TACS_SPATIAL_DIM, NULL, 
+  return new TACSBVec(varMap, TACS_SPATIAL_DIM,
                       extDist, depNodes);
 }
 
@@ -1076,6 +1084,14 @@ void TACSAssembler::computeReordering( OrderingType order_type,
   if (bcMap){
     int *nodeNums;
     int nbcs = bcMap->getBCNodeNums(&nodeNums);
+    for ( int i = 0; i < nbcs; i++ ){
+      int node = getLocalNodeNum(nodeNums[i]);
+      nodeNums[i] = newNodeNums[node];
+    }
+  }
+  if (bcInitMap){
+    int *nodeNums;
+    int nbcs = bcInitMap->getBCNodeNums(&nodeNums);
     for ( int i = 0; i < nbcs; i++ ){
       int node = getLocalNodeNum(nodeNums[i]);
       nodeNums[i] = newNodeNums[node];
@@ -2386,7 +2402,22 @@ TACSBVec *TACSAssembler::createVec(){
 
   // Create the vector with all the bells and whistles 
   return new TACSBVec(varMap, varsPerNode, 
-                      bcMap, extDist, depNodes);
+                      extDist, depNodes);
+}
+
+/*
+  Apply the boundary conditions associated with the regular boundary
+  conditions
+*/
+void TACSAssembler::applyBCs( TACSVec *vec ){
+  vec->applyBCs(bcMap);
+}
+
+/*
+  Apply the boundary conditions to the matrix
+*/
+void TACSAssembler::applyBCs( TACSMat *mat ){
+  mat->applyBCs(bcMap);
 }
 
 /*!
@@ -2428,7 +2459,7 @@ DistMat *TACSAssembler::createMat(){
   // Create the distributed matrix class
   DistMat *dmat = new DistMat(thread_info, varMap, varsPerNode,
                               numNodes, rowp, cols,
-                              distMatIndices, bcMap);
+                              distMatIndices);
 
   // Free the local connectivity
   delete [] rowp;
@@ -2647,7 +2678,7 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
   FEMat *fmat = new FEMat(thread_info, varMap, 
                           varsPerNode, numNodes, rowp, cols,
                           feMatBIndices, feMatBMap,
-                          feMatCIndices, feMatCMap, bcMap);
+                          feMatCIndices, feMatCMap);
   delete [] rowp;
   delete [] cols;
 
@@ -2680,7 +2711,7 @@ SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
   // Allocate the matrix
   SerialBCSCMat *mat = new SerialBCSCMat(varMap, varsPerNode,
                                          numNodes, numNodes,
-                                         rowp, cols, bcMap);
+                                         rowp, cols);
   delete [] rowp;
   delete [] cols;
 
@@ -2941,7 +2972,7 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   residual->endSetValues(ADD_VALUES);
 
   // Apply the boundary conditions for the residual
-  residual->applyBCs(varsVec);
+  residual->applyBCs(bcMap, varsVec);
 }
   
 /*!
@@ -3082,9 +3113,9 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
 
   // Apply the boundary conditions
   if (residual){ 
-    residual->applyBCs(varsVec); 
+    residual->applyBCs(bcMap, varsVec); 
   }
-  A->applyBCs();
+  A->applyBCs(bcMap);
 }
 
 /*!  
@@ -3153,7 +3184,7 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
 
   A->beginAssembly();
   A->endAssembly();
-  A->applyBCs();
+  A->applyBCs(bcMap);
 }
 
 /*
@@ -3559,7 +3590,7 @@ void TACSAssembler::addSVSens( double alpha, double beta, double gamma,
   // Finish adding the values
   for ( int k = 0; k < numFuncs; k++ ){
     vec[k]->endSetValues(ADD_VALUES);
-    vec[k]->applyBCs();
+    vec[k]->applyBCs(bcMap);
   }
 }
 
@@ -3831,7 +3862,7 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
   res->endSetValues(ADD_VALUES);
 
   // Apply the boundary conditions to the fully assembled vector
-  res->applyBCs();
+  res->applyBCs(bcMap);
 }
 
 /*
@@ -3933,7 +3964,7 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
   y->endSetValues(ADD_VALUES);
 
   // Set the boundary conditions
-  y->applyBCs();
+  y->applyBCs(bcMap);
 }
 
 /*
@@ -3962,9 +3993,10 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   }
 
   // Retrieve pointers to temporary storage
+  TacsScalar *res;
   TacsScalar *vars, *dvars, *ddvars, *elemXpts;
   getDataPointers(elementData, 
-                  &vars, &dvars, &ddvars, NULL,
+                  &vars, &dvars, &ddvars, &res,
                   &elemXpts, NULL, NULL, NULL);
 
   int ptr = elementNodeIndex[elemNum];
@@ -3978,19 +4010,25 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TACSElement::setFailTolerances(rtol, atol);
   TACSElement::setStepSize(dh);
   TACSElement::setPrintLevel(print_level);
-  
-  // Test the different element implementations
-  elements[elemNum]->testResidual(time, elemXpts, 
-                                  vars, dvars, ddvars);
+
   for ( int col = 0; col < elements[elemNum]->numVariables(); col++ ){
-    elements[elemNum]->testJacobian(time, elemXpts, 
+    elements[elemNum]->testJacobian(time, elemXpts,
                                     vars, dvars, ddvars, col);
   }
   elements[elemNum]->testJacobianXptSens(elemXpts);
-  elements[elemNum]->testAdjResXptProduct(time, elemXpts, 
+  elements[elemNum]->testAdjResXptProduct(time, elemXpts,
                                           vars, dvars, ddvars);
   elements[elemNum]->testStrainSVSens(elemXpts, vars);
   elements[elemNum]->testStrainXptSens(elemXpts, vars);
+
+  // Test the residual computation last - with the Lagrange multipliers zeroed
+  if (elements[elemNum]->numDisplacements() == 8){
+    for ( int i = 7; i < elements[elemNum]->numVariables(); i++ ){
+      vars[i] = 0.0;
+    }
+  }
+  elements[elemNum]->testResidual(time, elemXpts, 
+                                  vars, dvars, ddvars);
 }
 
 /*
@@ -4157,7 +4195,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
 
   // Set up a random perturbation 
   pert->setRand(-1.0, 1.0);
-  pert->applyBCs();
+  pert->applyBCs(bcMap);
   pert->scale(vars->norm()/pert->norm());
 
 #ifdef TACS_USE_COMPLEX

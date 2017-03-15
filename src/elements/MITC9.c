@@ -1195,7 +1195,6 @@ void MITC9::addResidual( double time,
       }
     }
   }
-
   
   // Set the scaling for the constraints
   TacsScalar scale = area;

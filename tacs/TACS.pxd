@@ -61,12 +61,10 @@ cdef extern from "KSM.h":
       void axpby(TacsScalar alpha, TacsScalar beta, TACSVec *x)
       void zeroEntries()
       void setRand(double lower, double upper)
-      void applyBCs()
       
    cdef cppclass TACSMat(TACSObject):
       TACSVec *createVec()
       void zeroEntries()
-      void applyBCs()
       void mult(TACSVec *x, TACSVec *y)
       void copyValues(TACSMat *mat)
       void scale(TacsScalar alpha)
@@ -209,7 +207,11 @@ cdef extern from "TACSAssembler.h":
       # Add boundary conditions
       void addBCs(int nnodes, int *nodes, 
                   int nbcs, int *vars, TacsScalar *vals)
+      void addInitBCs(int nnodes, int *nodes, 
+                      int nbcs, int *vars, TacsScalar *vals)
 
+      void computeReordering(OrderingType, MatrixOrderingType)
+      
       # Finalize the mesh - no further elements or nodes may be added
       # following this call
       void initialize()
@@ -227,21 +229,26 @@ cdef extern from "TACSAssembler.h":
       TACSAuxElements *getAuxElements()
 
       TACSBVec *createNodeVec()
-      void setNodes(TACSBVec *x)
-      void getNodes(TACSBVec *x)
-      void getDesignVars(TacsScalar *dvs, int ndvs)
-      void setDesignVars(TacsScalar *dvs, int ndvs)
-      void getDesignVarRange(TacsScalar *lb, TacsScalar *ub,
-                             int ndvs)
-
+      void setNodes(TACSBVec*)
+      void getNodes(TACSBVec*)
+      void getDesignVars(TacsScalar*, int)
+      void setDesignVars(TacsScalar*, int)
+      void getDesignVarRange(TacsScalar*, TacsScalar *, int)
+      
       # Create vectors/matrices
       TACSBVec *createVec()
       DistMat *createMat()
-      FEMat *createFEMat(OrderingType order_type)
+      FEMat *createFEMat(OrderingType)
+
+      # Reorder the vector based on the selected reordering
+      void reorderVec(TACSBVec*)
 
       # Set/get the simulation time
       void setSimulationTime(double)
-      double getSimulationTime()      
+      double getSimulationTime()
+
+      void applyBCs(TACSVec*)
+      void applyBCs(TACSMat*)
       
       # Zero the variables
       void zeroVariables()

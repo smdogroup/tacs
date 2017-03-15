@@ -55,6 +55,11 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
   ksType = DISCRETE;
   loadFactor = 1.0;
 
+  // Initialize the maximum failure value and KS sum to default values
+  // that will be overwritten later.
+  maxFail = -1e20;
+  ksFailSum = 0.0;
+
   // Get the max number of nodes/stresses 
   maxNumNodes = _tacs->getMaxElementNodes();
   maxNumStrains = _tacs->getMaxElementStrains();
@@ -146,7 +151,7 @@ void TACSKSFailure::finalEvaluation( EvaluationType ftype ){
     // Find the sum of the ks contributions from all processes
     TacsScalar temp = ksFailSum;
     MPI_Allreduce(&temp, &ksFailSum, 1, TACS_MPI_TYPE, 
-		  MPI_SUM, tacs->getMPIComm());
+                  MPI_SUM, tacs->getMPIComm());
   }
 }
 
@@ -186,7 +191,7 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
     
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
-    
+
     if (constitutive){
       // Set the strain buffer
       TacsScalar *strain = ctx->strain;
@@ -204,7 +209,7 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
           // Scale the strain by the load factor
           for ( int k = 0; k < numStresses; k++ ){
             strain[k] *= loadFactor;
-          }      
+          }
           
           // Determine the failure criteria
           TacsScalar fail;

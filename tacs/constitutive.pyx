@@ -55,6 +55,20 @@ cdef class FSDT(Constitutive):
       self.ptr = NULL
       return
 
+   def setRefAxis(self, np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
+      cdef FSDTStiffness *stiff = NULL
+      stiff = _dynamicFSDT(self.ptr)
+      if stiff:
+         stiff.setRefAxis(<TacsScalar*>axis.data)
+      return
+
+   def printStiffness(self):
+      stiff = _dynamicFSDT(self.ptr)
+      if stiff:
+         stiff.printStiffness()
+      return
+      
+
 cdef class isoFSDT(FSDT):
    def __cinit__(self, rho, E, nu, kcorr, ys, t, tNum, minT, maxT):
       '''

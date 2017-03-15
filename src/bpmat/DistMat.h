@@ -18,20 +18,19 @@ class DistMat : public PMat {
  public:
   DistMat( TACSThreadInfo *thread_info, 
            TACSVarMap *_rmap, int bsize,
-	   int next_vars, const int *rowp, const int *cols, 
-	   TACSBVecIndices *bindex,
-	   TACSBcMap *_bcs = NULL );
+           int next_vars, const int *rowp, const int *cols, 
+           TACSBVecIndices *bindex );
   ~DistMat();
     
   // Functions for setting values in the matrix
   // ------------------------------------------
   void zeroEntries();
   void addValues( int nrow, const int *row, 
-		  int ncol, const int *col,  
-		  int nv, int mv, const TacsScalar *values ); 
+                  int ncol, const int *col,  
+                  int nv, int mv, const TacsScalar *values ); 
   void addWeightValues( int nvars, const int *varp, const int *vars,
-			const TacsScalar *weights,
-			int nv, int mv, const TacsScalar *values,
+                        const TacsScalar *weights,
+                        int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=NORMAL );
   void beginAssembly();
   void endAssembly();
@@ -39,16 +38,16 @@ class DistMat : public PMat {
   // Set values into the matrix from the local BCSRMat
   // -------------------------------------------------
   void setValues( int nvars, const int *ext_vars,
-		  const int *rowp, const int *cols, TacsScalar *avals );
+                  const int *rowp, const int *cols, TacsScalar *avals );
 
  private:
   // Set up the local/external CSR data structure
   void setUpLocalExtCSR( int next_vars, const int *ext_vars, 
-			 const int *rowp, const int *cols,
-			 int lower, int upper,
-			 int nz_per_row,
-			 int ** _Arowp, int ** _Acols,
-			 int *_Np, int ** _Browp, int ** _Bcols );
+                         const int *rowp, const int *cols,
+                         int lower, int upper,
+                         int nz_per_row,
+                         int ** _Arowp, int ** _Acols,
+                         int *_Np, int ** _Browp, int ** _Bcols );
 
   // Initialize the persistent communication requests 
   void initPersistent();

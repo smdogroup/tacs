@@ -33,16 +33,13 @@ SerialBCSCMat::SerialBCSCMat( TACSVarMap *_rmap, int _bsize,
                               int num_block_rows, 
                               int num_block_cols,
                               const int *block_rowp,
-                              const int *block_cols,
-                              TACSBcMap *_bcs ){
+                              const int *block_cols ){
   rmap = _rmap;
   rmap->incref();
   mat = new BCSCMat(rmap->getMPIComm(), _bsize,
                     num_block_rows, num_block_cols,
                     block_rowp, block_cols);
   mat->incref();
-  bcs = _bcs;
-  if (bcs){ bcs->incref(); }
 
   // Keep a copy of the CSR data to make applying boundary conditions
   // more efficient
@@ -66,7 +63,6 @@ SerialBCSCMat::~SerialBCSCMat(){
   // Decrease ref counts to the underlying data
   rmap->decref();
   mat->decref();
-  bcs->decref();
 }
 
 /*
@@ -92,13 +88,6 @@ void SerialBCSCMat::addValues( int nrow, const int *row,
                                int ncol, const int *col,
                                int nv, int mv, const TacsScalar *values ){
   mat->addMatBlockValues(nrow, row, ncol, col, values, nv);
-}
-
-/*
-  Apply the Dirichlet boundary conditions
-*/
-void SerialBCSCMat::applyBCs(){
-  applyBCs(bcs);
 }
 
 /*
@@ -162,7 +151,7 @@ void SerialBCSCMat::applyBCs( TACSBcMap *bcmap ){
   Create the TACSBVec object that matches with this matrix
 */
 TACSVec *SerialBCSCMat::createVec(){
-  return new TACSBVec(rmap, mat->getMaxBlockSize(), bcs);
+  return new TACSBVec(rmap, mat->getMaxBlockSize());
 }
 
 /*

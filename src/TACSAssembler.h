@@ -104,6 +104,7 @@ class TACSAssembler : public TACSObject {
   int getNumElements();
   TACSVarMap *getVarMap();
   TACSBcMap *getBcMap();
+  TACSBcMap *getInitBcMap();
   TACSBVecDistribute *getBVecDistribute();
   TACSBVecDepNodes *getBVecDepNodes();
 
@@ -132,6 +133,10 @@ class TACSAssembler : public TACSObject {
   // Create vectors
   // --------------
   TACSBVec *createVec();
+
+  // Shortcut to apply boundary conditions
+  void applyBCs( TACSVec *vec );
+  void applyBCs( TACSMat *mat );
 
   // Methods for manipulating internal variable values
   // -------------------------------------------------

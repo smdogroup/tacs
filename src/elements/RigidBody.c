@@ -2638,7 +2638,7 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
   // Derivatives of the quaternion constraint
   addBlockIdent(alpha, &J[20*nvars + 12], nvars);
   addBlockIdent(-alpha, &J[20*nvars + 4], nvars);
-  
+
   // Add the Jacobian contribution from the dummy constraint
   J[nvars*nvars-1] += alpha; 
 
@@ -2650,7 +2650,7 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
 
   // Add the derivatives of the quaternion constraint w.r.t. lam[3]
   J[19*nvars + 19] += alpha;
-
+  
   // Add the remaining quaternion constraint derivatives w.r.t. lam[4:]
   addBlockIdent(-alpha, &J[4*nvars + 20], nvars);
   addBlockIdent(alpha, &J[12*nvars + 20], nvars);

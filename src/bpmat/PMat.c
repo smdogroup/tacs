@@ -39,16 +39,14 @@
 */
 PMat::PMat( TACSVarMap *_rmap,
             BCSRMat *_Aloc, BCSRMat *_Bext,
-            TACSBVecDistribute *_ext_dist,
-            TACSBcMap *_bcs ){
-  init(_rmap, _Aloc, _Bext, _ext_dist, _bcs);
+            TACSBVecDistribute *_ext_dist ){
+  init(_rmap, _Aloc, _Bext, _ext_dist);
 }
 
 PMat::PMat(){
   rmap = NULL;
   Aloc = NULL;
   Bext = NULL;
-  bcs = NULL;
   ext_dist = NULL;
   ctx = NULL;
   x_ext = NULL;
@@ -60,8 +58,7 @@ PMat::PMat(){
 */
 void PMat::init( TACSVarMap *_rmap,
                  BCSRMat *_Aloc, BCSRMat *_Bext,
-                 TACSBVecDistribute *_ext_dist,
-                 TACSBcMap *_bcs ){
+                 TACSBVecDistribute *_ext_dist ){
   // Set the variable map and the local matrix components
   rmap = _rmap;
   Aloc = _Aloc;
@@ -70,9 +67,6 @@ void PMat::init( TACSVarMap *_rmap,
   Aloc->incref();
   Bext->incref();
   
-  bcs = _bcs;   
-  if (bcs){ bcs->incref(); }
-
   // No external column map
   ext_dist = NULL;
   x_ext = NULL;
@@ -124,7 +118,6 @@ PMat::~PMat(){
   if (rmap){ rmap->decref(); }
   if (Aloc){ Aloc->decref(); }
   if (Bext){ Bext->decref(); }
-  if (bcs){ bcs->decref(); }
   if (ext_dist){ ext_dist->decref(); }
   if (ctx){ ctx->decref(); }
   if (x_ext){ delete [] x_ext; }
@@ -255,16 +248,7 @@ void PMat::getExtColMap( TACSBVecDistribute ** ext_map ){
 /*!
   Apply the boundary conditions
 
-  For the serial case, this simply involves zeroing the appropriate rows. 
-*/
-void PMat::applyBCs(){
-  if (bcs){
-    applyBCs(bcs);
-  }
-}
-
-/*!
-  Apply the specified boundary conditions
+  This code applies the boundary conditions supplied to the matrix
 */
 void PMat::applyBCs( TACSBcMap *bcmap ){
   // Get the MPI rank and ownership range
@@ -298,8 +282,11 @@ void PMat::applyBCs( TACSBcMap *bcmap ){
   }      
 }
 
+/*
+  Create a vector for the matrix
+*/
 TACSVec *PMat::createVec(){
-  return new TACSBVec(rmap, Aloc->getBlockSize(), bcs);
+  return new TACSBVec(rmap, Aloc->getBlockSize());
 }
 
 /*!
