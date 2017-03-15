@@ -65,49 +65,50 @@ class MITC9 : public TACSElement {
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
   void getDesignVarRange( TacsScalar lowerBound[], 
-			  TacsScalar upperBound[], int numDVs );
+                          TacsScalar upperBound[], int numDVs );
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
-  void getInitCondition( TacsScalar vars[],
-			 TacsScalar dvars[],
-			 const TacsScalar X[] );
+  void getInitConditions( TacsScalar vars[],
+                          TacsScalar dvars[],
+                          TacsScalar ddvars[],
+                          const TacsScalar X[] );
 
   // Compute the kinetic and potential energies
   // ------------------------------------------
   void computeEnergies( double time,
                         TacsScalar *_Te, TacsScalar *_Pe,
-			const TacsScalar X[],
-			const TacsScalar vars[],
-			const TacsScalar dvars[] );
+                        const TacsScalar X[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
   void addResidual( double time, 
                     TacsScalar res[],
-		    const TacsScalar X[],
-		    const TacsScalar vars[],
-		    const TacsScalar dvars[],
-		    const TacsScalar ddvars[] );
+                    const TacsScalar X[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
   void addJacobian( double time, TacsScalar J[],
-		    double alpha, double beta, double gamma,
-		    const TacsScalar X[],
-		    const TacsScalar vars[],
-		    const TacsScalar dvars[],
-		    const TacsScalar ddvars[] );
+                    double alpha, double beta, double gamma,
+                    const TacsScalar X[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
   void addAdjResProduct( double time, double scale,
-			 TacsScalar dvSens[], int dvLen,
-			 const TacsScalar psi[],
-			 const TacsScalar X[],
-			 const TacsScalar vars[],
-			 const TacsScalar dvars[],
-			 const TacsScalar ddvars[] );
+                         TacsScalar dvSens[], int dvLen,
+                         const TacsScalar psi[],
+                         const TacsScalar X[],
+                         const TacsScalar vars[],
+                         const TacsScalar dvars[],
+                         const TacsScalar ddvars[] );
   void addAdjResXptProduct( double time, double scale,
                             TacsScalar fXptSens[],
                             const TacsScalar psi[],
@@ -147,11 +148,11 @@ class MITC9 : public TACSElement {
   // This function adds the sensitivity of the strain to the state variables
   // -----------------------------------------------------------------------
   void addStrainSVSens( TacsScalar sens[],
-			const double pt[], 
-			const TacsScalar scale,
-			const TacsScalar esens[], 
-			const TacsScalar Xpts[],
-			const TacsScalar vars[] );
+                        const double pt[], 
+                        const TacsScalar scale,
+                        const TacsScalar esens[], 
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[] );
 
   // This function adds the sensitivity of the strain w.r.t. Xpts
   // ------------------------------------------------------------
@@ -166,9 +167,9 @@ class MITC9 : public TACSElement {
   // -----------------------------
   void addOutputCount( int * nelems, int * nnodes, int * ncsr );
   void getOutputData( unsigned int out_type, 
-		      double * data, int ld_data,
-		      const TacsScalar Xpts[],
-		      const TacsScalar vars[] );
+                      double * data, int ld_data,
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
 
   // Test the strain implementation
@@ -182,14 +183,14 @@ class MITC9 : public TACSElement {
  private:
   // Helper functions required for analysis
   void computeAngularVelocity( TacsScalar omega[],
-			       const TacsScalar vars[],
-			       const TacsScalar dvars[] );
+                               const TacsScalar vars[],
+                               const TacsScalar dvars[] );
 
   // Compute the angular acceleration at the nodes
   void computeAngularAccel( TacsScalar domega[],
-			    const TacsScalar vars[],
-			    const TacsScalar dvars[],
-			    const TacsScalar ddvars[] );
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[] );
 
   // Compute the reference frames at each node of the element
   void computeFrames( TacsScalar Xr[], const TacsScalar X[] );
@@ -207,27 +208,27 @@ class MITC9 : public TACSElement {
 
   // Compute the directors for each node
   void computeDirectors( TacsScalar d[],
-			 const TacsScalar vars[],
-			 const TacsScalar Xr[] );
+                         const TacsScalar vars[],
+                         const TacsScalar Xr[] );
   void addDirectorsSens( TacsScalar Xrd[],
                          const TacsScalar dd[],
                          const TacsScalar vars[] );
 
   // Compute the derivative of the directors w.r.t. the variables
   void computeDirectorDeriv( TacsScalar dirdq[],
-			     const TacsScalar vars[],
-			     const TacsScalar Xr[] );
+                             const TacsScalar vars[],
+                             const TacsScalar Xr[] );
   void addDirectorDerivSens( TacsScalar Xrd[],
                              const TacsScalar ddqd[],
                              const TacsScalar vars[] );
 
   // Evaluate the strain
   void evalStrain( TacsScalar e[],
-		   const TacsScalar Ur[], 
-		   const TacsScalar dr[],
-		   const TacsScalar Xdinv[],
-		   const TacsScalar zXdinv[],
-		   const TacsScalar T[] );
+                   const TacsScalar Ur[], 
+                   const TacsScalar dr[],
+                   const TacsScalar Xdinv[],
+                   const TacsScalar zXdinv[],
+                   const TacsScalar T[] );
 
   // Evaluate the derivative of the strain w.r.t. inputs
   void evalStrainSens( TacsScalar Urd[], TacsScalar drd[],
@@ -242,10 +243,10 @@ class MITC9 : public TACSElement {
 
   // Evaluate the derivative of the strain w.r.t. the element variables 
   void evalBmat( TacsScalar e[], TacsScalar B[],
-		 const double N[], const double Na[], const double Nb[],
-		 const TacsScalar Ur[], const TacsScalar dr[],
-		 const TacsScalar Xdinv[], const TacsScalar zXdinv[],
-		 const TacsScalar T[], const TacsScalar dirdq[] );
+                 const double N[], const double Na[], const double Nb[],
+                 const TacsScalar Ur[], const TacsScalar dr[],
+                 const TacsScalar Xdinv[], const TacsScalar zXdinv[],
+                 const TacsScalar T[], const TacsScalar dirdq[] );
 
   // Evaluate the derivative of the eSens^{T}*Bmat*psi w.r.t. node locations
   void addBmatSens( TacsScalar Urd[], TacsScalar drd[],
@@ -260,9 +261,9 @@ class MITC9 : public TACSElement {
 
   // Add the interpolated strain to the strain vector
   void addTyingStrain( TacsScalar e[],
-		       const double N13[], const double N23[],
-		       const TacsScalar g13[], const TacsScalar g23[],
-		       const TacsScalar Xdinv[], const TacsScalar T[] );
+                       const double N13[], const double N23[],
+                       const TacsScalar g13[], const TacsScalar g23[],
+                       const TacsScalar Xdinv[], const TacsScalar T[] );
 
   // Add the derivative of the strain w.r.t. the outputs
   void addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
@@ -274,9 +275,9 @@ class MITC9 : public TACSElement {
 
   // Add the contribution from the tying strain to the b-matrix
   void addTyingBmat( TacsScalar B[],
-		     const double N13[], const double N23[],
-		     const TacsScalar b13[], const TacsScalar b23[],
-		     const TacsScalar Xdinv[], const TacsScalar T[] );
+                     const double N13[], const double N23[],
+                     const TacsScalar b13[], const TacsScalar b23[],
+                     const TacsScalar Xdinv[], const TacsScalar T[] );
   void addTyingBmatSens( TacsScalar B13d[], TacsScalar B23d[],
                          TacsScalar Xdinvd[], TacsScalar Td[],
                          const TacsScalar eSens[], const TacsScalar psi[],
@@ -286,9 +287,9 @@ class MITC9 : public TACSElement {
 
   // Compute the shear strain at the tying points
   void computeTyingStrain( TacsScalar g13[], TacsScalar g23[],
-			   const TacsScalar X[], const TacsScalar Xr[],
-			   const TacsScalar vars[], 
-			   const TacsScalar dir[] );
+                           const TacsScalar X[], const TacsScalar Xr[],
+                           const TacsScalar vars[], 
+                           const TacsScalar dir[] );
   void addComputeTyingStrainSens( TacsScalar Xd[], TacsScalar Xrd[],
                                   TacsScalar dird[],
                                   const TacsScalar g13d[], const TacsScalar g23d[],
@@ -297,10 +298,10 @@ class MITC9 : public TACSElement {
 
   // Compute the derivative of the strain at the tying points
   void computeTyingBmat( TacsScalar g13[], TacsScalar g23[],
-			 TacsScalar b13[], TacsScalar b23[],
-			 const TacsScalar X[], const TacsScalar Xr[],
-			 const TacsScalar vars[], const TacsScalar dir[],
-			 const TacsScalar dirdq[] );
+                         TacsScalar b13[], TacsScalar b23[],
+                         const TacsScalar X[], const TacsScalar Xr[],
+                         const TacsScalar vars[], const TacsScalar dir[],
+                         const TacsScalar dirdq[] );
   void addComputeTyingBmatSens( TacsScalar Xd[], TacsScalar Xrd[],
                                 TacsScalar dird[], TacsScalar dirdqd[],
                                 const TacsScalar g13d[], const TacsScalar g23d[],
@@ -311,29 +312,29 @@ class MITC9 : public TACSElement {
 
   // Add the terms from the geometric stiffness matrix
   void addGmat( TacsScalar J[], 
-		const TacsScalar scale, const TacsScalar s[],
-		const double N[], const double Na[], const double Nb[],
-		const TacsScalar Ur[], const TacsScalar dr[],
-		const TacsScalar Xdinv[], const TacsScalar zXdinv[],
-		const TacsScalar T[], const TacsScalar Xr[],
-		const TacsScalar dirdq[] );
+                const TacsScalar scale, const TacsScalar s[],
+                const double N[], const double Na[], const double Nb[],
+                const TacsScalar Ur[], const TacsScalar dr[],
+                const TacsScalar Xdinv[], const TacsScalar zXdinv[],
+                const TacsScalar T[], const TacsScalar Xr[],
+                const TacsScalar dirdq[] );
 
   // Add the term from the drilling rotation
   TacsScalar computeRotPenalty( const double N[],
-				const TacsScalar Xa[],
-				const TacsScalar Xb[],
-				const TacsScalar Ua[],
-				const TacsScalar Ub[],
-				const TacsScalar vars[] );
+                                const TacsScalar Xa[],
+                                const TacsScalar Xb[],
+                                const TacsScalar Ua[],
+                                const TacsScalar Ub[],
+                                const TacsScalar vars[] );
 
   // Compute the derivative of the rotation term 
   TacsScalar computeBRotPenalty( TacsScalar brot[], const double N[], 
-				 const double Na[], const double Nb[],
-				 const TacsScalar Xa[], 
-				 const TacsScalar Xb[],
-				 const TacsScalar Ua[], 
-				 const TacsScalar Ub[],
-				 const TacsScalar vars[] );
+                                 const double Na[], const double Nb[],
+                                 const TacsScalar Xa[], 
+                                 const TacsScalar Xb[],
+                                 const TacsScalar Ua[], 
+                                 const TacsScalar Ub[],
+                                 const TacsScalar vars[] );
 
   // Add the derivative of the penalty term
   void addBRotPenaltySens( TacsScalar Xad[], TacsScalar Xbd[],
@@ -346,25 +347,25 @@ class MITC9 : public TACSElement {
 
   // Add the geometric stiffness term from the rotation
   void addGRotMat( TacsScalar J[], const TacsScalar scale, 
-		   const double N[], const double Na[], const double Nb[],
-		   const TacsScalar Xa[], const TacsScalar Xb[],
-		   const TacsScalar Ua[], const TacsScalar Ub[],
-		   const TacsScalar vars[] );
+                   const double N[], const double Na[], const double Nb[],
+                   const TacsScalar Xa[], const TacsScalar Xb[],
+                   const TacsScalar Ua[], const TacsScalar Ub[],
+                   const TacsScalar vars[] );
 
   // Add the geometric stiffness matrix from the tying strain
   void addTyingGmat( TacsScalar J[],
-		     const TacsScalar w13[], const TacsScalar w23[],
-		     const TacsScalar X[], const TacsScalar Xr[],
-		     const TacsScalar vars[], const TacsScalar dir[],
-		     const TacsScalar dirdq[] );
+                     const TacsScalar w13[], const TacsScalar w23[],
+                     const TacsScalar X[], const TacsScalar Xr[],
+                     const TacsScalar vars[], const TacsScalar dir[],
+                     const TacsScalar dirdq[] );
 
   // Add to the weights required to compute the geometric stiffness
   void addTyingGmatWeights( TacsScalar w13[], TacsScalar w23[],
-			    const TacsScalar scalar,
-			    const TacsScalar s[],
-			    const double N13[], const double N23[],
-			    const TacsScalar Xdinv[],
-			    const TacsScalar T[] );
+                            const TacsScalar scalar,
+                            const TacsScalar s[],
+                            const double N13[], const double N23[],
+                            const TacsScalar Xdinv[],
+                            const TacsScalar T[] );
 
   // Perform tests of the underlying implementation for the Xpt derivatives
   void testInv3x3Sens( double dh );
@@ -377,10 +378,10 @@ class MITC9 : public TACSElement {
 
   // Compute the product of the stress and the strain
   inline TacsScalar strainProduct( const TacsScalar s[], 
-				   const TacsScalar e[] ){
+                                   const TacsScalar e[] ){
     return (e[0]*s[0] + e[1]*s[1] + e[2]*s[2] +
-	    e[3]*s[3] + e[4]*s[4] + e[5]*s[5] + 
-	    e[6]*s[6] + e[7]*s[7]);
+            e[3]*s[3] + e[4]*s[4] + e[5]*s[5] + 
+            e[6]*s[6] + e[7]*s[7]);
   }
 
   // Set the pointers to quadrature points/weights

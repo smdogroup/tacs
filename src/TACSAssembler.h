@@ -77,7 +77,10 @@ class TACSAssembler : public TACSObject {
   void addBCs( int nnodes, const int *nodes, 
                int nbcs=-1, const int *vars=NULL, 
                const TacsScalar *vals=NULL );
-  
+  void addInitBCs( int nnodes, const int *nodes, 
+                   int nbcs=-1, const int *vars=NULL, 
+                   const TacsScalar *vals=NULL );
+
   // Reorder the unknowns according to the specified reordering
   // ----------------------------------------------------------
   void computeReordering( OrderingType order_type, 
@@ -146,12 +149,12 @@ class TACSAssembler : public TACSObject {
   // Create the matrices that can be used for analysis
   // -------------------------------------------------
   DistMat *createMat();
-  FEMat *createFEMat( enum OrderingType order_type=TACS_AMD_ORDER );
+  FEMat *createFEMat( OrderingType order_type=TACS_AMD_ORDER );
   SerialBCSCMat *createSerialBCSCMat();
 
   // Retrieve the initial conditions for the simulation
   // --------------------------------------------------
-  void getInitConditions( TACSBVec *vars, TACSBVec *dvars );
+  void getInitConditions( TACSBVec *vars, TACSBVec *dvars, TACSBVec *ddvars );
 
   // Evaluate the kinetic and potential energy
   // -----------------------------------------
@@ -281,7 +284,7 @@ class TACSAssembler : public TACSObject {
                              int *perm, int *new_vars );
 
   // Scatter the boundary conditions on external nodes
-  void scatterExternalBCs();
+  void scatterExternalBCs( TACSBcMap *bcs );
 
   // Add values into the matrix
   inline void addMatValues( TACSMat *A, const int elemNum, 
@@ -291,6 +294,7 @@ class TACSAssembler : public TACSObject {
 
   TACSVarMap *varMap; // Variable ownership map
   TACSBcMap *bcMap; // Boundary condition data
+  TACSBcMap *bcInitMap; // Initial boundary condition data
   TACSBVecDistribute *extDist; // Distribute the vector
   TACSBVecIndices *extDistIndices; // The tacsVarNum indices
 

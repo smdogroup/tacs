@@ -35,19 +35,19 @@ static void writeErrorComponents( FILE *fp, const char *descript,
 
     if (rel > rel_err || a[i] != a[i] || fd[i] != fd[i]){
       if (print_flag){
-	fprintf(fp, "%*s[   ] %15s %15s %15s\n",
-		(int)strlen(descript), "Val", "Analytic", 
-		"Approximate", "Rel. Error");
-	print_flag = 0;
+        fprintf(fp, "%*s[   ] %15s %15s %15s\n",
+                (int)strlen(descript), "Val", "Analytic", 
+                "Approximate", "Rel. Error");
+        print_flag = 0;
       }
       if (a[i] != 0.0){
-	fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-		descript, i, RealPart(a[i]), RealPart(fd[i]), 
-		fabs(RealPart((a[i] - fd[i])/a[i])));
+        fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", 
+                descript, i, RealPart(a[i]), RealPart(fd[i]), 
+                fabs(RealPart((a[i] - fd[i])/a[i])));
       }
       else {
-	fprintf(fp, "%s[%3d] %15.6e %15.6e\n", 
-		descript, i, RealPart(a[i]), RealPart(fd[i]));
+        fprintf(fp, "%s[%3d] %15.6e %15.6e\n", 
+                descript, i, RealPart(a[i]), RealPart(fd[i]));
       }
     }
   }  
@@ -85,18 +85,18 @@ ElementType MITC9::getElementType(){ return SHELL; }
 const char * MITC9::elemName = "MITC9";
   
 const char * MITC9::dispNames[] = { "u0", "v0", "w0", 
-				    "eta", "rotx", "roty", "rotz", "lam" };
+                                    "eta", "epsx", "epsy", "epsz", "lam" };
   
 const char * MITC9::stressNames[] = { "sx0", "sy0", "sxy0", 
-				      "sx1", "sy1", "sxy1", 
-				      "syz0", "sxz0" };
+                                      "sx1", "sy1", "sxy1", 
+                                      "syz0", "sxz0" };
   
 const char * MITC9::strainNames[] = { "ex0", "ey0", "exy0", 
-				      "ex1", "ey1", "exy1", 
-				      "eyz0", "exz0" };
+                                      "ex1", "ey1", "exy1", 
+                                      "eyz0", "exz0" };
   
 const char * MITC9::extraNames[] = { "lambda", "buckling",
-				     "dv1", "dv2" };
+                                     "dv1", "dv2" };
 
 /*
   Returns the elementName
@@ -179,8 +179,8 @@ void MITC9::getDesignVarRange( TacsScalar lb[],
   N:   the shape functions
 */
 static inline void computeShapeFunc( const double u,
-				     const double v,
-				     double N[] ){
+                                     const double v,
+                                     double N[] ){
   // Compute the shape functions
   double nu[3];
   nu[0] = -0.5*u*(1.0 - u);
@@ -219,9 +219,9 @@ static inline void computeShapeFunc( const double u,
   Nb:   the derivative of the shape functions w.r.t. v
 */
 static inline void computeShapeFunc( const double u,
-				     const double v,
-				     double Na[],
-				     double Nb[] ){
+                                     const double v,
+                                     double Na[],
+                                     double Nb[] ){
   // Compute the shape functions and their derivatives
   double nu[3], dnu[3];
   nu[0] = -0.5*u*(1.0 - u);
@@ -281,17 +281,17 @@ static inline void computeShapeFunc( const double u,
   Xa:   the inner product = Na^{T}*X
 */
 static inline void innerProduct( const double Na[],
-				 const TacsScalar X[],
-				 TacsScalar Xa[] ){
+                                 const TacsScalar X[],
+                                 TacsScalar Xa[] ){
   Xa[0] = (Na[0]*X[0] + Na[1]*X[3] + Na[2]*X[6] + 
-	   Na[3]*X[9] + Na[4]*X[12] + Na[5]*X[15] +
-	   Na[6]*X[18] + Na[7]*X[21] + Na[8]*X[24]);
+           Na[3]*X[9] + Na[4]*X[12] + Na[5]*X[15] +
+           Na[6]*X[18] + Na[7]*X[21] + Na[8]*X[24]);
   Xa[1] = (Na[0]*X[1] + Na[1]*X[4] + Na[2]*X[7] + 
-	   Na[3]*X[10] + Na[4]*X[13] + Na[5]*X[16] +
-	   Na[6]*X[19] + Na[7]*X[22] + Na[8]*X[25]);
+           Na[3]*X[10] + Na[4]*X[13] + Na[5]*X[16] +
+           Na[6]*X[19] + Na[7]*X[22] + Na[8]*X[25]);
   Xa[2] = (Na[0]*X[2] + Na[1]*X[5] + Na[2]*X[8] + 
-	   Na[3]*X[11] + Na[4]*X[14] + Na[5]*X[17] +
-	   Na[6]*X[20] + Na[7]*X[23] + Na[8]*X[26]);
+           Na[3]*X[11] + Na[4]*X[14] + Na[5]*X[17] +
+           Na[6]*X[20] + Na[7]*X[23] + Na[8]*X[26]);
 }
 
 /*
@@ -307,17 +307,17 @@ static inline void innerProduct( const double Na[],
   Xa:   the inner product = Na^{T}*X
 */
 static inline void innerProduct8( const double Na[],
-				  const TacsScalar X[],
-				  TacsScalar Xa[] ){
+                                  const TacsScalar X[],
+                                  TacsScalar Xa[] ){
   Xa[0] = (Na[0]*X[0] + Na[1]*X[8] + Na[2]*X[16] + 
-	   Na[3]*X[24] + Na[4]*X[32] + Na[5]*X[40] +
-	   Na[6]*X[48] + Na[7]*X[56] + Na[8]*X[64]);
+           Na[3]*X[24] + Na[4]*X[32] + Na[5]*X[40] +
+           Na[6]*X[48] + Na[7]*X[56] + Na[8]*X[64]);
   Xa[1] = (Na[0]*X[1] + Na[1]*X[9] + Na[2]*X[17] + 
-	   Na[3]*X[25] + Na[4]*X[33] + Na[5]*X[41] +
-	   Na[6]*X[49] + Na[7]*X[57] + Na[8]*X[65]);
+           Na[3]*X[25] + Na[4]*X[33] + Na[5]*X[41] +
+           Na[6]*X[49] + Na[7]*X[57] + Na[8]*X[65]);
   Xa[2] = (Na[0]*X[2] + Na[1]*X[10] + Na[2]*X[18] + 
-	   Na[3]*X[26] + Na[4]*X[34] + Na[5]*X[42] +
-	   Na[6]*X[50] + Na[7]*X[58] + Na[8]*X[66]);
+           Na[3]*X[26] + Na[4]*X[34] + Na[5]*X[42] +
+           Na[6]*X[50] + Na[7]*X[58] + Na[8]*X[66]);
 }
 
 /*
@@ -335,17 +335,17 @@ static inline void innerProduct8( const double Na[],
   .          normal at each node
 */
 static inline void computeFrameNormal( const double N[],
-				       const TacsScalar Xr[],
-				       TacsScalar fnormal[] ){
+                                       const TacsScalar Xr[],
+                                       TacsScalar fnormal[] ){
   fnormal[0] = (N[0]*Xr[2] + N[1]*Xr[11] + N[2]*Xr[20] +
-		N[3]*Xr[29] + N[4]*Xr[38] + N[5]*Xr[47] +
-		N[6]*Xr[56] + N[7]*Xr[65] + N[8]*Xr[74]);
+                N[3]*Xr[29] + N[4]*Xr[38] + N[5]*Xr[47] +
+                N[6]*Xr[56] + N[7]*Xr[65] + N[8]*Xr[74]);
   fnormal[1] = (N[0]*Xr[5] + N[1]*Xr[14] + N[2]*Xr[23] +
-		N[3]*Xr[32] + N[4]*Xr[41] + N[5]*Xr[50] +
-		N[6]*Xr[59] + N[7]*Xr[68] + N[8]*Xr[77]);
+                N[3]*Xr[32] + N[4]*Xr[41] + N[5]*Xr[50] +
+                N[6]*Xr[59] + N[7]*Xr[68] + N[8]*Xr[77]);
   fnormal[2] = (N[0]*Xr[8] + N[1]*Xr[17] + N[2]*Xr[26] +
-		N[3]*Xr[35] + N[4]*Xr[44] + N[5]*Xr[53] +
-		N[6]*Xr[62] + N[7]*Xr[71] + N[8]*Xr[80]);
+                N[3]*Xr[35] + N[4]*Xr[44] + N[5]*Xr[53] +
+                N[6]*Xr[62] + N[7]*Xr[71] + N[8]*Xr[80]);
 }
 
 /*
@@ -402,33 +402,33 @@ static inline void addFrameNormalSens( const TacsScalar fnd[],
   Nb:   the derivative of the shape functions
 */
 static inline void computeNormalRateMat( const double Na[],
-					 const double Nb[],
-					 const TacsScalar Xr[], 
-					 const TacsScalar Xdinv[],
-					 TacsScalar zXdinv[] ){
+                                         const double Nb[],
+                                         const TacsScalar Xr[], 
+                                         const TacsScalar Xdinv[],
+                                         TacsScalar zXdinv[] ){
   // Compute the derivatives of the normal direction along the
   // parametric directions
   TacsScalar dn[9];
   dn[2] = dn[5] = dn[8] = 0.0;
   dn[0] = (Na[0]*Xr[2] + Na[1]*Xr[11] + Na[2]*Xr[20] +
-	   Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
-	   Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
+           Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
+           Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
   dn[3] = (Na[0]*Xr[5] + Na[1]*Xr[14] + Na[2]*Xr[23] +
-	   Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
-	   Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
+           Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
+           Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
   dn[6] = (Na[0]*Xr[8] + Na[1]*Xr[17] + Na[2]*Xr[26] +
-	   Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
-	   Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
+           Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
+           Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
   
   dn[1] = (Nb[0]*Xr[2] + Nb[1]*Xr[11] + Nb[2]*Xr[20] +
-	   Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
-	   Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
+           Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
+           Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
   dn[4] = (Nb[0]*Xr[5] + Nb[1]*Xr[14] + Nb[2]*Xr[23] +
-	   Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
-	   Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
+           Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
+           Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
   dn[7] = (Nb[0]*Xr[8] + Nb[1]*Xr[17] + Nb[2]*Xr[26] +
-	   Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
-	   Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
+           Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
+           Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
 
   // Compute zXdinv = -Xdinv*dn*Xdinv
   TacsScalar tmp[9];
@@ -493,24 +493,24 @@ static inline void addNormalRateMatSens( TacsScalar Xrd[],
   TacsScalar dn[9];
   dn[2] = dn[5] = dn[8] = 0.0;
   dn[0] = (Na[0]*Xr[2] + Na[1]*Xr[11] + Na[2]*Xr[20] +
-	   Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
-	   Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
+           Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
+           Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
   dn[3] = (Na[0]*Xr[5] + Na[1]*Xr[14] + Na[2]*Xr[23] +
-	   Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
-	   Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
+           Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
+           Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
   dn[6] = (Na[0]*Xr[8] + Na[1]*Xr[17] + Na[2]*Xr[26] +
-	   Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
-	   Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
+           Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
+           Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
   
   dn[1] = (Nb[0]*Xr[2] + Nb[1]*Xr[11] + Nb[2]*Xr[20] +
-	   Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
-	   Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
+           Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
+           Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
   dn[4] = (Nb[0]*Xr[5] + Nb[1]*Xr[14] + Nb[2]*Xr[23] +
-	   Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
-	   Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
+           Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
+           Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
   dn[7] = (Nb[0]*Xr[8] + Nb[1]*Xr[17] + Nb[2]*Xr[26] +
-	   Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
-	   Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
+           Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
+           Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
   
   // Compute the contribution
   // -dnd = Xdinv^{T}*zXdinvd*Xdinv^{T}
@@ -564,9 +564,9 @@ static inline void addNormalRateMatSens( TacsScalar Xrd[],
   N23:  the shape functions associated with the g23 shear strain
 */
 static inline void computeTyingFunc( const double u,
-				     const double v,
-				     double N13[], 
-				     double N23[] ){
+                                     const double v,
+                                     double N13[], 
+                                     double N23[] ){
   // The tying point offset
   const double s = 0.774596669241483;
   const double t = 0.577350269189626;
@@ -623,9 +623,9 @@ static inline void computeTyingFunc( const double u,
   Xr:      the reference frame associated with the given point
 */
 static inline void assembleFrame( const TacsScalar Xa[],
-				  const TacsScalar Xb[],
-				  const TacsScalar normal[],
-				  TacsScalar Xr[] ){
+                                  const TacsScalar Xb[],
+                                  const TacsScalar normal[],
+                                  TacsScalar Xr[] ){
   // Fill in the values of Xr
   Xr[0] = Xa[0];
   Xr[3] = Xa[1];
@@ -658,9 +658,9 @@ static inline void assembleFrame( const TacsScalar Xa[],
   A:     the product of the matrix (I - n*n^{T}) with S
 */
 static inline void computeNormalRateProduct( const TacsScalar n[], 
-					     const TacsScalar eta,
-					     const TacsScalar eps[],
-					     TacsScalar A[] ){
+                                             const TacsScalar eta,
+                                             const TacsScalar eps[],
+                                             TacsScalar A[] ){
   // Compute the rate matrix
   TacsScalar S[12];
   computeSRateMat(eta, eps, S);
@@ -731,11 +731,13 @@ MITC9::~MITC9(){
 /*
   Retrieve the initial values of the design variables
 */
-void MITC9::getInitCondition( TacsScalar vars[], 
-			      TacsScalar dvars[],
-			      const TacsScalar X[] ){
+void MITC9::getInitConditions( TacsScalar vars[], 
+                               TacsScalar dvars[],
+                               TacsScalar ddvars[],
+                               const TacsScalar X[] ){
   memset(vars, 0, 8*NUM_NODES*sizeof(TacsScalar));
   memset(dvars, 0, 8*NUM_NODES*sizeof(TacsScalar));
+  memset(ddvars, 0, 8*NUM_NODES*sizeof(TacsScalar));
 
   // The initial quaternions are eta = 1.0, eps = 0
   for ( int i = 0; i < NUM_NODES; i++ ){
@@ -766,14 +768,23 @@ void MITC9::getInitCondition( TacsScalar vars[],
       dvars[8*i+4] = 0.5*omega[0];
       dvars[8*i+5] = 0.5*omega[1];
       dvars[8*i+6] = 0.5*omega[2];
+
+      // ddot{u} = omega^{x}*omega^{x}*r
+      // Note that the second derivative of the quaternions is zero since
+      // there is no angular acceleration
+      TacsScalar omegar[3];
+      crossProduct(1.0, omega, &X[3*i], omegar);
+      crossProduct(1.0, omega, omegar, &ddvars[8*i]);
     }
   }
 
   // Check if the quaternion contraint is satisfied at initial condition
   double con_viol = RealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
-                                  vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
+                             vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
   if (con_viol > 1.0e-12){
-    fprintf(stderr, "Warning: MITC9 quarternion constraint violated by %f\n", con_viol);
+    fprintf(stderr, 
+            "Warning: MITC9 quarternion constraint violated by %f\n", 
+            con_viol);
   }
 }
 
@@ -796,10 +807,10 @@ void MITC9::getInitCondition( TacsScalar vars[],
 */
 void MITC9::computeEnergies( double time,
                              TacsScalar *_Te, 
-			     TacsScalar *_Pe,
-			     const TacsScalar X[],
-			     const TacsScalar vars[],
-			     const TacsScalar dvars[] ){
+                             TacsScalar *_Pe,
+                             const TacsScalar X[],
+                             const TacsScalar vars[],
+                             const TacsScalar dvars[] ){
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -883,7 +894,7 @@ void MITC9::computeEnergies( double time,
 
       // Add the contributions to the kinetic energy
       Te += 0.5*h*(rho[0]*vecDot(v0, v0) + 
-		   rho[1]*(vecDot(omeg, omeg) - omegn*omegn));
+                   rho[1]*(vecDot(omeg, omeg) - omegn*omegn));
 
       // The following code is used to evaluate the potential energy
       // -----------------------------------------------------------
@@ -936,8 +947,8 @@ void MITC9::computeEnergies( double time,
       // Add the product of the stress times strain to the
       // potential energy computation
       Pe += 0.5*h*(strainProduct(s, e) + 
-		   kpenalty*rot*rot - 
-		   2.0*rho[0]*vecDot(g, U));
+                   kpenalty*rot*rot - 
+                   2.0*rho[0]*vecDot(g, U));
     }
   }
 
@@ -980,10 +991,10 @@ void MITC9::computeEnergies( double time,
 */
 void MITC9::addResidual( double time,
                          TacsScalar res[],
-			 const TacsScalar X[],
-			 const TacsScalar vars[],
-			 const TacsScalar dvars[],
-			 const TacsScalar ddvars[] ){
+                         const TacsScalar X[],
+                         const TacsScalar vars[],
+                         const TacsScalar dvars[],
+                         const TacsScalar ddvars[] ){
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -1087,31 +1098,31 @@ void MITC9::addResidual( double time,
       TacsScalar *r = res;
       const TacsScalar *q = vars, *dq = dvars;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	// Add the contributions from the rectilinear velocity
-	r[0] += h*N[ii]*rho[0]*a0[0];
-	r[1] += h*N[ii]*rho[0]*a0[1];
-	r[2] += h*N[ii]*rho[0]*a0[2];
+        // Add the contributions from the rectilinear velocity
+        r[0] += h*N[ii]*rho[0]*a0[0];
+        r[1] += h*N[ii]*rho[0]*a0[1];
+        r[2] += h*N[ii]*rho[0]*a0[2];
 
-	// Add the contributions from the angular velocity
-	// S^{T}*dw + 2*dot{S}^{T}*w
-	TacsScalar eta = q[3];
-	const TacsScalar *eps = &q[4];
-	TacsScalar deta = dq[3];
-	const TacsScalar *deps = &dq[4];
+        // Add the contributions from the angular velocity
+        // S^{T}*dw + 2*dot{S}^{T}*w
+        TacsScalar eta = q[3];
+        const TacsScalar *eps = &q[4];
+        TacsScalar deta = dq[3];
+        const TacsScalar *deps = &dq[4];
         
-	// Add S^{T}*dw
-	r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
-	crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
-	vecAxpy(2.0*h*N[ii]*eta*rho[1], dw, &r[4]);
+        // Add S^{T}*dw
+        r[3] -= 2.0*h*N[ii]*rho[1]*vecDot(eps, dw);
+        crossProductAdd(2.0*h*N[ii]*rho[1], eps, dw, &r[4]);
+        vecAxpy(2.0*h*N[ii]*eta*rho[1], dw, &r[4]);
 
-	// Add 2*dot{S}^{T}*w
-	r[3] -= 4.0*h*N[ii]*rho[1]*vecDot(deps, w);
-	crossProductAdd(4.0*h*N[ii]*rho[1], deps, w, &r[4]);
-	vecAxpy(4.0*h*N[ii]*deta*rho[1], w, &r[4]);
+        // Add 2*dot{S}^{T}*w
+        r[3] -= 4.0*h*N[ii]*rho[1]*vecDot(deps, w);
+        crossProductAdd(4.0*h*N[ii]*rho[1], deps, w, &r[4]);
+        vecAxpy(4.0*h*N[ii]*deta*rho[1], w, &r[4]);
 
-	r += 8;
-	q += 8;
-	dq += 8;
+        r += 8;
+        q += 8;
+        dq += 8;
       }
 
       // The following code is used to evaluate the potential energy
@@ -1142,7 +1153,7 @@ void MITC9::addResidual( double time,
       // Add the term due to the potential energy
       TacsScalar Brot[8*NUM_NODES];
       TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
-					  Xa, Xb, Ua, Ub, vars);
+                                          Xa, Xb, Ua, Ub, vars);
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
@@ -1169,18 +1180,18 @@ void MITC9::addResidual( double time,
       r = res;
       const TacsScalar *b = B, *br = Brot;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	r[0] += h*(strainProduct(s, &b[0]) + rot*br[0] - rho[0]*N[ii]*g[0]);
-	r[1] += h*(strainProduct(s, &b[8]) + rot*br[1] - rho[0]*N[ii]*g[1]);
-	r[2] += h*(strainProduct(s, &b[16]) + rot*br[2] - rho[0]*N[ii]*g[2]);
-	r[3] += h*(strainProduct(s, &b[24]) + rot*br[3]);
-	r[4] += h*(strainProduct(s, &b[32]) + rot*br[4]);
-	r[5] += h*(strainProduct(s, &b[40]) + rot*br[5]);
-	r[6] += h*(strainProduct(s, &b[48]) + rot*br[6]);
-	r[7] += h*(strainProduct(s, &b[56]) + rot*br[7]);
+        r[0] += h*(strainProduct(s, &b[0]) + rot*br[0] - rho[0]*N[ii]*g[0]);
+        r[1] += h*(strainProduct(s, &b[8]) + rot*br[1] - rho[0]*N[ii]*g[1]);
+        r[2] += h*(strainProduct(s, &b[16]) + rot*br[2] - rho[0]*N[ii]*g[2]);
+        r[3] += h*(strainProduct(s, &b[24]) + rot*br[3]);
+        r[4] += h*(strainProduct(s, &b[32]) + rot*br[4]);
+        r[5] += h*(strainProduct(s, &b[40]) + rot*br[5]);
+        r[6] += h*(strainProduct(s, &b[48]) + rot*br[6]);
+        r[7] += h*(strainProduct(s, &b[56]) + rot*br[7]);
 
-	r += 8;
-	b += 64;
-	br += 8;
+        r += 8;
+        b += 64;
+        br += 8;
       }
     }
   }
@@ -1232,11 +1243,11 @@ void MITC9::addResidual( double time,
   J:       the Jacobian matrix
 */
 void MITC9::addJacobian( double time, TacsScalar J[],
-			 double alpha, double beta, double gamma,
-			 const TacsScalar X[],
-			 const TacsScalar vars[],
-			 const TacsScalar dvars[],
-			 const TacsScalar ddvars[] ){
+                         double alpha, double beta, double gamma,
+                         const TacsScalar X[],
+                         const TacsScalar vars[],
+                         const TacsScalar dvars[],
+                         const TacsScalar ddvars[] ){
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
   computeFrames(Xr, X);
@@ -1311,13 +1322,13 @@ void MITC9::addJacobian( double time, TacsScalar J[],
 
       // Add the contributions from the linear motion
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	for ( int jj = 0; jj < NUM_NODES; jj++ ){
-	  const TacsScalar scale = gamma*h*N[ii]*N[jj]*rho[0];
-	  // Add the contributions from the rectilinear velocity
-	  J[8*NUM_NODES*(8*ii) + 8*jj] += scale;
-	  J[8*NUM_NODES*(8*ii+1) + 8*jj+1] += scale;
-	  J[8*NUM_NODES*(8*ii+2) + 8*jj+2] += scale;
-	}
+        for ( int jj = 0; jj < NUM_NODES; jj++ ){
+          const TacsScalar scale = gamma*h*N[ii]*N[jj]*rho[0];
+          // Add the contributions from the rectilinear velocity
+          J[8*NUM_NODES*(8*ii) + 8*jj] += scale;
+          J[8*NUM_NODES*(8*ii+1) + 8*jj+1] += scale;
+          J[8*NUM_NODES*(8*ii+2) + 8*jj+2] += scale;
+        }
       }
 
       // Compute the value of omega at the current point
@@ -1340,160 +1351,160 @@ void MITC9::addJacobian( double time, TacsScalar J[],
 
       // Add the contributions from the rotational DOF
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	// Compute and store the product of (I - n*n^{T}) with the
-	// angular rate matrices
-	TacsScalar JSii[12], JdSii[12];
-	computeNormalRateProduct(fn, vars[8*ii+3], 
-				 &vars[8*ii+4], JSii);
-	computeNormalRateProduct(fn, dvars[8*ii+3], 
-				 &dvars[8*ii+4], JdSii);
+        // Compute and store the product of (I - n*n^{T}) with the
+        // angular rate matrices
+        TacsScalar JSii[12], JdSii[12];
+        computeNormalRateProduct(fn, vars[8*ii+3], 
+                                 &vars[8*ii+4], JSii);
+        computeNormalRateProduct(fn, dvars[8*ii+3], 
+                                 &dvars[8*ii+4], JdSii);
 
-	// Set the pointer to the Jacobian entries that will
-	// be added
-	TacsScalar *Jp = &J[(8*NUM_NODES+1)*(8*ii+3)];
-	const int ldj = 8*NUM_NODES;
+        // Set the pointer to the Jacobian entries that will
+        // be added
+        TacsScalar *Jp = &J[(8*NUM_NODES+1)*(8*ii+3)];
+        const int ldj = 8*NUM_NODES;
 
-	// Add the diagonal terms
-	const TacsScalar dscale = h*N[ii]*rho[1];
-	addSRateMatTransDeriv(alpha*dscale, dw, Jp, ldj);
-	addSRateMatTransDeriv(2.0*beta*dscale, w, Jp, ldj);
+        // Add the diagonal terms
+        const TacsScalar dscale = h*N[ii]*rho[1];
+        addSRateMatTransDeriv(alpha*dscale, dw, Jp, ldj);
+        addSRateMatTransDeriv(2.0*beta*dscale, w, Jp, ldj);
 
-	// Add the result to the Jacobian matrix
-	const TacsScalar *q = vars, *dq = dvars, *ddq = ddvars;
-	for ( int jj = 0; jj < NUM_NODES; jj++ ){
-	  // Set the common scaling factor for all terms
-	  const TacsScalar scale = h*N[ii]*N[jj]*rho[1];
+        // Add the result to the Jacobian matrix
+        const TacsScalar *q = vars, *dq = dvars, *ddq = ddvars;
+        for ( int jj = 0; jj < NUM_NODES; jj++ ){
+          // Set the common scaling factor for all terms
+          const TacsScalar scale = h*N[ii]*N[jj]*rho[1];
 
-	  // Set the pointer to the Jacobian entries that will
-	  // be added
-	  TacsScalar *Jp = &J[8*NUM_NODES*(8*ii+3) + 8*jj+3];
-	  
-	  // Compute S = S(q)
-	  TacsScalar Sjj[12];
-	  computeSRateMat(q[3], &q[4], Sjj);
+          // Set the pointer to the Jacobian entries that will
+          // be added
+          TacsScalar *Jp = &J[8*NUM_NODES*(8*ii+3) + 8*jj+3];
+          
+          // Compute S = S(q)
+          TacsScalar Sjj[12];
+          computeSRateMat(q[3], &q[4], Sjj);
 
-	  // Compute dot{S} = S(dot{q})
-	  TacsScalar dSjj[12];
-	  computeSRateMat(dq[3], &dq[4], dSjj);
+          // Compute dot{S} = S(dot{q})
+          TacsScalar dSjj[12];
+          computeSRateMat(dq[3], &dq[4], dSjj);
 
-	  // Compute ddot{S} = S(ddot{q})
-	  TacsScalar ddSjj[12];
-	  computeSRateMat(ddq[3], &ddq[4], ddSjj);
+          // Compute ddot{S} = S(ddot{q})
+          TacsScalar ddSjj[12];
+          computeSRateMat(ddq[3], &ddq[4], ddSjj);
 
-	  // Add the Jacobian terms from the DOF:
-	  // T(dw) - S^{T}*J*S(ddot{q}) - 2*dot{S}^{T}*J*dot{S}
-	  addBlock3x4Product(-alpha*scale, JSii, ddSjj, Jp, ldj);
-	  addBlock3x4Product(-2.0*alpha*scale, JdSii, dSjj, Jp, ldj);
+          // Add the Jacobian terms from the DOF:
+          // T(dw) - S^{T}*J*S(ddot{q}) - 2*dot{S}^{T}*J*dot{S}
+          addBlock3x4Product(-alpha*scale, JSii, ddSjj, Jp, ldj);
+          addBlock3x4Product(-2.0*alpha*scale, JdSii, dSjj, Jp, ldj);
 
-	  // Add the Jacobian terms from the first time derivatives:
-	  // 2*dot{S}^{T}*J*S
-	  addBlock3x4Product(2.0*beta*scale, JdSii, Sjj, Jp, ldj);
+          // Add the Jacobian terms from the first time derivatives:
+          // 2*dot{S}^{T}*J*S
+          addBlock3x4Product(2.0*beta*scale, JdSii, Sjj, Jp, ldj);
 
-	  // Add the Jacobian terms from the second time derivatives:
-	  // S^{T}*J*S
-	  addBlock3x4Product(gamma*scale, JSii, Sjj, Jp, ldj);
+          // Add the Jacobian terms from the second time derivatives:
+          // S^{T}*J*S
+          addBlock3x4Product(gamma*scale, JSii, Sjj, Jp, ldj);
 
-	  q += 8;
-	  dq += 8;
-	  ddq += 8;
-	}
+          q += 8;
+          dq += 8;
+          ddq += 8;
+        }
       }
 
       // This code is expensive, and is only required when alpha 
       // is non-zero
       if (alpha != 0.0){
-	// Everything left in this function is proportional to
-	// h*alpha, so we scale h by alpha
-	h *= alpha;
+        // Everything left in this function is proportional to
+        // h*alpha, so we scale h by alpha
+        h *= alpha;
 
         // Evaluate the stiffness terms at the parametric point
         TacsScalar A[6], Bc[6], D[6], As[3];
         TacsScalar kpenalty = stiff->getStiffness(pt, A, Bc, D, As);
 
-	// Evaluate the tying strain interpolation
-	double N13[6], N23[6];
-	computeTyingFunc(u, v, N13, N23);
+        // Evaluate the tying strain interpolation
+        double N13[6], N23[6];
+        computeTyingFunc(u, v, N13, N23);
 
-	// Compute the through-thickness derivative of [X,r]^{-1}
-	TacsScalar zXdinv[9];
-	computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
+        // Compute the through-thickness derivative of [X,r]^{-1}
+        TacsScalar zXdinv[9];
+        computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
 
-	// Compute the derivatives of Ua/Ub along the given directions
-	TacsScalar Ur[9], Ua[3], Ub[3], d[3];
-	innerProduct8(Na, vars, Ua);
-	innerProduct8(Nb, vars, Ub);
-	innerProduct(N, dir, d);
-	assembleFrame(Ua, Ub, d, Ur);
-	
-	// Now compute the derivatives of the director along each
-	// coordinate direction
-	TacsScalar dr[9], da[3], db[3], zero[3];
-	innerProduct(Na, dir, da);
-	innerProduct(Nb, dir, db);
-	zero[0] = zero[1] = zero[2] = 0.0;
-	assembleFrame(da, db, zero, dr);
+        // Compute the derivatives of Ua/Ub along the given directions
+        TacsScalar Ur[9], Ua[3], Ub[3], d[3];
+        innerProduct8(Na, vars, Ua);
+        innerProduct8(Nb, vars, Ub);
+        innerProduct(N, dir, d);
+        assembleFrame(Ua, Ub, d, Ur);
+        
+        // Now compute the derivatives of the director along each
+        // coordinate direction
+        TacsScalar dr[9], da[3], db[3], zero[3];
+        innerProduct(Na, dir, da);
+        innerProduct(Nb, dir, db);
+        zero[0] = zero[1] = zero[2] = 0.0;
+        assembleFrame(da, db, zero, dr);
 
-	// Add the in-plane penalty terms
-	TacsScalar Brot[8*NUM_NODES];
-	TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
-					    Xa, Xb, Ua, Ub, vars);
+        // Add the in-plane penalty terms
+        TacsScalar Brot[8*NUM_NODES];
+        TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
+                                            Xa, Xb, Ua, Ub, vars);
 
-	// Add the contribution from the penalty
-	addGRotMat(J, h*kpenalty*rot, N, Na, Nb, 
-		   Xa, Xb, Ua, Ub, vars);
-	
-	// Compute the transformation to the locally-aligned frame
-	TacsScalar T[9]; 
+        // Add the contribution from the penalty
+        addGRotMat(J, h*kpenalty*rot, N, Na, Nb, 
+                   Xa, Xb, Ua, Ub, vars);
+        
+        // Compute the transformation to the locally-aligned frame
+        TacsScalar T[9]; 
         computeTransform(T, Xa, Xb);
-	
-	// Compute the displacement-based strain
-	TacsScalar e[8], B[64*NUM_NODES];
-	evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
+        
+        // Compute the displacement-based strain
+        TacsScalar e[8], B[64*NUM_NODES];
+        evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
 
-	// Add the contribution from the tying straint
-	addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
-	addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
+        // Add the contribution from the tying straint
+        addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
+        addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
 
         // Compute the stress based on the strain values
         TacsScalar s[8]; // The stress components
         stiff->calculateStress(A, Bc, D, As, e, s);
 
-	// Add to the weights
-	addTyingGmatWeights(w13, w23, h, s,
-			    N13, N23, Xdinv, T);
+        // Add to the weights
+        addTyingGmatWeights(w13, w23, h, s,
+                            N13, N23, Xdinv, T);
 
-	// Add the geometric stiffness terms
-	addGmat(J, h, s, N, Na, Nb,
-		Ur, dr, Xdinv, zXdinv, T, Xr, dirdq);
-	
-	// Add the contribution to the residual
-	for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	  for ( int ik = 0; ik < 7; ik++ ){
-	    // Compute the stress from the 8*i + ik component
-	    TacsScalar sbii[8];
+        // Add the geometric stiffness terms
+        addGmat(J, h, s, N, Na, Nb,
+                Ur, dr, Xdinv, zXdinv, T, Xr, dirdq);
+        
+        // Add the contribution to the residual
+        for ( int ii = 0; ii < NUM_NODES; ii++ ){
+          for ( int ik = 0; ik < 7; ik++ ){
+            // Compute the stress from the 8*i + ik component
+            TacsScalar sbii[8];
             stiff->calculateStress(A, Bc, D, As, 
                                    &B[8*(8*ii + ik)], sbii);
 
-	    // Compute the 
-	    TacsScalar pr = kpenalty*Brot[8*ii + ik];
+            // Compute the 
+            TacsScalar pr = kpenalty*Brot[8*ii + ik];
 
-	    const TacsScalar *b = B, *br = Brot;
-	    TacsScalar *Jp = &J[8*NUM_NODES*(8*ii + ik)];
-	    for ( int jj = 0; jj < NUM_NODES; jj++ ){
-	      Jp[0] += h*(strainProduct(sbii, &b[0]) + pr*br[0]);
-	      Jp[1] += h*(strainProduct(sbii, &b[8]) + pr*br[1]);
-	      Jp[2] += h*(strainProduct(sbii, &b[16]) + pr*br[2]);
-	      Jp[3] += h*(strainProduct(sbii, &b[24]) + pr*br[3]);
-	      Jp[4] += h*(strainProduct(sbii, &b[32]) + pr*br[4]);
-	      Jp[5] += h*(strainProduct(sbii, &b[40]) + pr*br[5]);
-	      Jp[6] += h*(strainProduct(sbii, &b[48]) + pr*br[6]);
-	  
-	      Jp += 8;
-	      b += 64;
-	      br += 8;
-	    }
-	  }
-	}
+            const TacsScalar *b = B, *br = Brot;
+            TacsScalar *Jp = &J[8*NUM_NODES*(8*ii + ik)];
+            for ( int jj = 0; jj < NUM_NODES; jj++ ){
+              Jp[0] += h*(strainProduct(sbii, &b[0]) + pr*br[0]);
+              Jp[1] += h*(strainProduct(sbii, &b[8]) + pr*br[1]);
+              Jp[2] += h*(strainProduct(sbii, &b[16]) + pr*br[2]);
+              Jp[3] += h*(strainProduct(sbii, &b[24]) + pr*br[3]);
+              Jp[4] += h*(strainProduct(sbii, &b[32]) + pr*br[4]);
+              Jp[5] += h*(strainProduct(sbii, &b[40]) + pr*br[5]);
+              Jp[6] += h*(strainProduct(sbii, &b[48]) + pr*br[6]);
+          
+              Jp += 8;
+              b += 64;
+              br += 8;
+            }
+          }
+        }
       }
     }
   }
@@ -1652,30 +1663,30 @@ void MITC9::addAdjResProduct( double time, double scale,
       const TacsScalar *p = psi;
       const TacsScalar *q = vars, *dq = dvars;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	// Add the contributions from the rectilinear velocity
+        // Add the contributions from the rectilinear velocity
         mscale[0] += h*N[ii]*(a0[0]*p[0] + a0[1]*p[1] + a0[2]*p[2]);
 
-	// Add the contributions from the angular velocity
-	// S^{T}*dw + 2*dot{S}^{T}*w
-	TacsScalar eta = q[3];
-	const TacsScalar *eps = &q[4];
-	TacsScalar deta = dq[3];
-	const TacsScalar *deps = &dq[4];
+        // Add the contributions from the angular velocity
+        // S^{T}*dw + 2*dot{S}^{T}*w
+        TacsScalar eta = q[3];
+        const TacsScalar *eps = &q[4];
+        TacsScalar deta = dq[3];
+        const TacsScalar *deps = &dq[4];
 
-	// Add p^{T}*S^{T}*dw
+        // Add p^{T}*S^{T}*dw
         TacsScalar t[3];
         crossProduct(1.0, eps, dw, t);
-	mscale[1] -= 2.0*p[3]*h*N[ii]*vecDot(eps, dw);
+        mscale[1] -= 2.0*p[3]*h*N[ii]*vecDot(eps, dw);
         mscale[1] += 2.0*h*N[ii]*(eta*vecDot(dw, &p[4]) + vecDot(t, &p[4]));
 
-	// Add p^{T}*2*dot{S}^{T}*w
+        // Add p^{T}*2*dot{S}^{T}*w
         crossProduct(1.0, deps, w, t);
-	mscale[1] -= 4.0*p[3]*h*N[ii]*vecDot(deps, w);
+        mscale[1] -= 4.0*p[3]*h*N[ii]*vecDot(deps, w);
         mscale[1] += 4.0*h*N[ii]*(deta*vecDot(w, &p[4]) + vecDot(t, &p[4]));
 
         // Increment the pointers to the variables/multipliers
-	q += 8;
-	dq += 8;
+        q += 8;
+        dq += 8;
         p += 8;
       }
 
@@ -1707,7 +1718,7 @@ void MITC9::addAdjResProduct( double time, double scale,
       // Add the term due to the potential energy
       TacsScalar Brot[8*NUM_NODES];
       TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
-					  Xa, Xb, Ua, Ub, vars);
+                                          Xa, Xb, Ua, Ub, vars);
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
@@ -1925,17 +1936,17 @@ void MITC9::addAdjResXptProduct( double time, double scale,
       const TacsScalar *p = psi;
       const TacsScalar *q = vars, *dq = dvars;
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
-	// Add the contributions from the rectilinear velocity
+        // Add the contributions from the rectilinear velocity
         hd += N[ii]*rho[0]*(p[0]*a0[0] + p[1]*a0[1] + p[2]*a0[2]);
 
-	// Add the contributions from the angular velocity
-	// S^{T}*dw + 2*dot{S}^{T}*w
-	TacsScalar eta = q[3];
-	const TacsScalar *eps = &q[4];
-	TacsScalar deta = dq[3];
-	const TacsScalar *deps = &dq[4];
+        // Add the contributions from the angular velocity
+        // S^{T}*dw + 2*dot{S}^{T}*w
+        TacsScalar eta = q[3];
+        const TacsScalar *eps = &q[4];
+        TacsScalar deta = dq[3];
+        const TacsScalar *deps = &dq[4];
 
-	// Add S^{T}*dw
+        // Add S^{T}*dw
         TacsScalar scl = 2.0*N[ii]*rho[1];
         TacsScalar t[3];
         crossProduct(1.0, eps, dw, t);
@@ -1943,11 +1954,11 @@ void MITC9::addAdjResXptProduct( double time, double scale,
         hd += scl*vecDot(t, &p[4]);
         hd += scl*eta*vecDot(dw, &p[4]);
 
-	// Add 2*dot{S}^{T}*w
+        // Add 2*dot{S}^{T}*w
         crossProduct(1.0, deps, w, t);
-	hd -= 2.0*scl*p[3]*vecDot(deps, w);
-	hd += 2.0*scl*vecDot(t, &p[4]); 
-	hd += 2.0*scl*deta*vecDot(w, &p[4]);
+        hd -= 2.0*scl*p[3]*vecDot(deps, w);
+        hd += 2.0*scl*vecDot(t, &p[4]); 
+        hd += 2.0*scl*deta*vecDot(w, &p[4]);
 
         // Add the contributions to wd and dwd
         scl *= h;
@@ -1960,8 +1971,8 @@ void MITC9::addAdjResXptProduct( double time, double scale,
         vecAxpy(2.0*scl*eta, &p[4], wd);
 
         p += 8;
-	q += 8;
-	dq += 8;
+        q += 8;
+        dq += 8;
       }
 
       TacsScalar fnd[3];
@@ -1999,7 +2010,7 @@ void MITC9::addAdjResXptProduct( double time, double scale,
       // Add the terms from the potential energy
       TacsScalar Brot[8*NUM_NODES];
       TacsScalar rot = computeBRotPenalty(Brot, N, Na, Nb,
-					  Xa, Xb, Ua, Ub, vars);
+                                          Xa, Xb, Ua, Ub, vars);
 
       // Compute the transformation to the locally-aligned frame
       TacsScalar T[9]; 
@@ -2148,8 +2159,8 @@ void MITC9::addAdjResXptProduct( double time, double scale,
   compute the angular velocity at each node
 */
 void MITC9::computeAngularVelocity( TacsScalar omega[],
-				    const TacsScalar vars[],
-				    const TacsScalar dvars[] ){
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[] ){
   for ( int i = 0; i < NUM_NODES; i++ ){
     TacsScalar eta = vars[3];
     const TacsScalar *eps = &vars[4];
@@ -2172,9 +2183,9 @@ void MITC9::computeAngularVelocity( TacsScalar omega[],
   time-derivatives, compute the angular acceleration at the nodes.
 */
 void MITC9::computeAngularAccel( TacsScalar domega[],
-				 const TacsScalar vars[],
-				 const TacsScalar dvars[],
-				 const TacsScalar ddvars[] ){
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[] ){
   for ( int i = 0; i < NUM_NODES; i++ ){
     // Set pointers to the values 
     TacsScalar eta = vars[3];
@@ -2216,7 +2227,7 @@ void MITC9::computeAngularAccel( TacsScalar domega[],
   Xr:   the locally-aligned frames
 */
 void MITC9::computeFrames( TacsScalar Xr[],
-			   const TacsScalar X[] ){
+                           const TacsScalar X[] ){
   for ( int j = 0; j < ORDER; j++ ){
     for ( int i = 0; i < ORDER; i++ ){
       // Find the u/v values at the node locations
@@ -2502,8 +2513,8 @@ void MITC9::computeTransformSens( TacsScalar Xad[],
   d:      the director at each node in the finite-element
 */
 void MITC9::computeDirectors( TacsScalar d[],
-			      const TacsScalar vars[],
-			      const TacsScalar Xr[] ){
+                              const TacsScalar vars[],
+                              const TacsScalar Xr[] ){
   for ( int i = 0; i < NUM_NODES; i++ ){
     // Set the pointer to the
     const TacsScalar *q = &vars[3];
@@ -2538,7 +2549,7 @@ void MITC9::computeDirectors( TacsScalar d[],
 */
 void MITC9::addDirectorsSens( TacsScalar Xrd[],
                               const TacsScalar dd[],
-			      const TacsScalar vars[] ){
+                              const TacsScalar vars[] ){
   for ( int i = 0; i < NUM_NODES; i++ ){
     // Set the pointer to the
     const TacsScalar *q = &vars[3];
@@ -2583,8 +2594,8 @@ void MITC9::addDirectorsSens( TacsScalar Xrd[],
   ddq:   the derivative of the directors w.r.t. the quaterions
 */
 void MITC9::computeDirectorDeriv( TacsScalar ddq[],
-				  const TacsScalar vars[],
-				  const TacsScalar Xr[] ){
+                                  const TacsScalar vars[],
+                                  const TacsScalar Xr[] ){
   for ( int i = 0; i < NUM_NODES; i++ ){
     // Set the pointer to the
     const TacsScalar *q = &vars[3];
@@ -2679,7 +2690,7 @@ void MITC9::computeDirectorDeriv( TacsScalar ddq[],
 */
 void MITC9::addDirectorDerivSens( TacsScalar Xrd[],
                                   const TacsScalar ddqd[],
-				  const TacsScalar vars[] ){
+                                  const TacsScalar vars[] ){
   for ( int i = 0; i < NUM_NODES; i++ ){
     // Set the pointer to the
     const TacsScalar *q = &vars[3];
@@ -2791,11 +2802,11 @@ void MITC9::addDirectorDerivSens( TacsScalar Xrd[],
   e:      the displacement-based components of the strain 
 */
 void MITC9::evalStrain( TacsScalar e[], 
-			const TacsScalar Ur[], 
-			const TacsScalar dr[],
-			const TacsScalar Xdinv[],
-			const TacsScalar zXdinv[],
-			const TacsScalar T[] ){
+                        const TacsScalar Ur[], 
+                        const TacsScalar dr[],
+                        const TacsScalar Xdinv[],
+                        const TacsScalar zXdinv[],
+                        const TacsScalar T[] ){
   TacsScalar U0[9], U1[9], tmp[9];
 
   // Compute U0 = T^{T}*Ur*Xdinv*T
@@ -2818,7 +2829,7 @@ void MITC9::evalStrain( TacsScalar e[],
   e[3] = U1[0] + (U0[0]*U1[0] + U0[3]*U1[3] + U0[6]*U1[6]);
   e[4] = U1[4] + (U0[1]*U1[1] + U0[4]*U1[4] + U0[7]*U1[7]);
   e[5] = U1[1] + U1[3] + (U0[0]*U1[1] + U0[3]*U1[4] + U0[6]*U1[7] +
-			  U1[0]*U0[1] + U1[3]*U0[4] + U1[6]*U0[7]);
+                          U1[0]*U0[1] + U1[3]*U0[4] + U1[6]*U0[7]);
 }
 
 /*
@@ -2952,16 +2963,16 @@ void MITC9::evalStrainSens( TacsScalar Urd[],
   B;           the derivative of the strain w.r.t. the variables
 */
 void MITC9::evalBmat( TacsScalar e[],
-		      TacsScalar B[],
-		      const double N[],
-		      const double Na[],
-		      const double Nb[],
-		      const TacsScalar Ur[],
-		      const TacsScalar dr[],
-		      const TacsScalar Xdinv[],
-		      const TacsScalar zXdinv[],
-		      const TacsScalar T[],
-		      const TacsScalar dirdq[] ){
+                      TacsScalar B[],
+                      const double N[],
+                      const double Na[],
+                      const double Nb[],
+                      const TacsScalar Ur[],
+                      const TacsScalar dr[],
+                      const TacsScalar Xdinv[],
+                      const TacsScalar zXdinv[],
+                      const TacsScalar T[],
+                      const TacsScalar dirdq[] ){
   TacsScalar U0[9], U1[9], tmp[9];
 
   // Compute U0 = T^{T}*Ur*Xdinv*T
@@ -2984,7 +2995,7 @@ void MITC9::evalBmat( TacsScalar e[],
   e[3] = U1[0] + (U0[0]*U1[0] + U0[3]*U1[3] + U0[6]*U1[6]);
   e[4] = U1[4] + (U0[1]*U1[1] + U0[4]*U1[4] + U0[7]*U1[7]);
   e[5] = U1[1] + U1[3] + (U0[0]*U1[1] + U0[3]*U1[4] + U0[6]*U1[7] +
-			  U1[0]*U0[1] + U1[3]*U0[4] + U1[6]*U0[7]);
+                          U1[0]*U0[1] + U1[3]*U0[4] + U1[6]*U0[7]);
 
   // Compute the derivatives of the strain w.r.t. the displacement
   // variables. This code takes advantage of the sparsity of the
@@ -3036,17 +3047,17 @@ void MITC9::evalBmat( TacsScalar e[],
       b[0] = dU0[0] + (U0[0]*dU0[0] + U0[3]*dU0[3] + U0[6]*dU0[6]);
       b[1] = dU0[4] + (U0[1]*dU0[1] + U0[4]*dU0[4] + U0[7]*dU0[7]);
       b[2] = dU0[1] + dU0[3] + (U0[0]*dU0[1] + U0[3]*dU0[4] + U0[6]*dU0[7] +
-				dU0[0]*U0[1] + dU0[3]*U0[4] + dU0[6]*U0[7]);
+                                dU0[0]*U0[1] + dU0[3]*U0[4] + dU0[6]*U0[7]);
 
       // Compute the derivative of the bending strain
       b[3] = dU1[0] + (U0[0]*dU1[0] + U0[3]*dU1[3] + U0[6]*dU1[6] + 
-		       dU0[0]*U1[0] + dU0[3]*U1[3] + dU0[6]*U1[6]);
+                       dU0[0]*U1[0] + dU0[3]*U1[3] + dU0[6]*U1[6]);
       b[4] = dU1[4] + (U0[1]*dU1[1] + U0[4]*dU1[4] + U0[7]*dU1[7] +
-		       dU0[1]*U1[1] + dU0[4]*U1[4] + dU0[7]*U1[7]);
+                       dU0[1]*U1[1] + dU0[4]*U1[4] + dU0[7]*U1[7]);
       b[5] = dU1[1] + dU1[3] + (U0[0]*dU1[1] + U0[3]*dU1[4] + U0[6]*dU1[7] +
-				U1[0]*dU0[1] + U1[3]*dU0[4] + U1[6]*dU0[7] +
-				dU0[0]*U1[1] + dU0[3]*U1[4] + dU0[6]*U1[7] +
-				dU1[0]*U0[1] + dU1[3]*U0[4] + dU1[6]*U0[7]);
+                                U1[0]*dU0[1] + U1[3]*dU0[4] + U1[6]*dU0[7] +
+                                dU0[0]*U1[1] + dU0[3]*U1[4] + dU0[6]*U1[7] +
+                                dU1[0]*U0[1] + dU1[3]*U0[4] + dU1[6]*U0[7]);
       b[6] = b[7] = 0.0;
       b += 8;
     }
@@ -3104,17 +3115,17 @@ void MITC9::evalBmat( TacsScalar e[],
       b[0] = dU0[0] + (U0[0]*dU0[0] + U0[3]*dU0[3] + U0[6]*dU0[6]);
       b[1] = dU0[4] + (U0[1]*dU0[1] + U0[4]*dU0[4] + U0[7]*dU0[7]);
       b[2] = dU0[1] + dU0[3] + (U0[0]*dU0[1] + U0[3]*dU0[4] + U0[6]*dU0[7] +
-				dU0[0]*U0[1] + dU0[3]*U0[4] + dU0[6]*U0[7]);
+                                dU0[0]*U0[1] + dU0[3]*U0[4] + dU0[6]*U0[7]);
 
       // Compute the derivative of the bending strain
       b[3] = dU1[0] + (U0[0]*dU1[0] + U0[3]*dU1[3] + U0[6]*dU1[6] + 
-		       dU0[0]*U1[0] + dU0[3]*U1[3] + dU0[6]*U1[6]);
+                       dU0[0]*U1[0] + dU0[3]*U1[3] + dU0[6]*U1[6]);
       b[4] = dU1[4] + (U0[1]*dU1[1] + U0[4]*dU1[4] + U0[7]*dU1[7] +
-		       dU0[1]*U1[1] + dU0[4]*U1[4] + dU0[7]*U1[7]);
+                       dU0[1]*U1[1] + dU0[4]*U1[4] + dU0[7]*U1[7]);
       b[5] = dU1[1] + dU1[3] + (U0[0]*dU1[1] + U0[3]*dU1[4] + U0[6]*dU1[7] +
-				U1[0]*dU0[1] + U1[3]*dU0[4] + U1[6]*dU0[7] +
-				dU0[0]*U1[1] + dU0[3]*U1[4] + dU0[6]*U1[7] +
-				dU1[0]*U0[1] + dU1[3]*U0[4] + dU1[6]*U0[7]);
+                                U1[0]*dU0[1] + U1[3]*dU0[4] + U1[6]*dU0[7] +
+                                dU0[0]*U1[1] + dU0[3]*U1[4] + dU0[6]*U1[7] +
+                                dU1[0]*U0[1] + dU1[3]*U0[4] + dU1[6]*U0[7]);
       b[6] = b[7] = 0.0;
       b += 8;
       dirdq += 3;
@@ -3545,18 +3556,18 @@ void MITC9::addBmatSens( TacsScalar Urd[], TacsScalar drd[],
   Add the contribution from the geometric stiffness 
 */
 void MITC9::addGmat( TacsScalar J[],
-		     const TacsScalar scale,
-		     const TacsScalar s[],
-		     const double N[],
-		     const double Na[],
-		     const double Nb[],
-		     const TacsScalar Ur[],
-		     const TacsScalar dr[],
-		     const TacsScalar Xdinv[],
-		     const TacsScalar zXdinv[],
-		     const TacsScalar T[],
-		     const TacsScalar Xr[],
-		     const TacsScalar dirdq[] ){
+                     const TacsScalar scale,
+                     const TacsScalar s[],
+                     const double N[],
+                     const double Na[],
+                     const double Nb[],
+                     const TacsScalar Ur[],
+                     const TacsScalar dr[],
+                     const TacsScalar Xdinv[],
+                     const TacsScalar zXdinv[],
+                     const TacsScalar T[],
+                     const TacsScalar Xr[],
+                     const TacsScalar dirdq[] ){
   // The gradient of the displacement field
   TacsScalar U0[9], U1[9], tmp[9];
 
@@ -3682,25 +3693,25 @@ void MITC9::addGmat( TacsScalar J[],
       b[0] = dU0i[0]*dU0j[0] + dU0i[3]*dU0j[3] + dU0i[6]*dU0j[6];
       b[1] = dU0i[1]*dU0j[1] + dU0i[4]*dU0j[4] + dU0i[7]*dU0j[7];
       b[2] = (dU0i[0]*dU0j[1] + dU0i[3]*dU0j[4] + dU0i[6]*dU0j[7] +
-	      dU0j[0]*dU0i[1] + dU0j[3]*dU0i[4] + dU0j[6]*dU0i[7]);
+              dU0j[0]*dU0i[1] + dU0j[3]*dU0i[4] + dU0j[6]*dU0i[7]);
       
       b[3] = (dU0i[0]*dU1j[0] + dU0i[3]*dU1j[3] + dU0i[6]*dU1j[6] + 
-	      dU0j[0]*dU1i[0] + dU0j[3]*dU1i[3] + dU0j[6]*dU1i[6]);
+              dU0j[0]*dU1i[0] + dU0j[3]*dU1i[3] + dU0j[6]*dU1i[6]);
       b[4] = (dU0i[1]*dU1j[1] + dU0i[4]*dU1j[4] + dU0i[7]*dU1j[7] +
-	      dU0j[1]*dU1i[1] + dU0j[4]*dU1i[4] + dU0j[7]*dU1i[7]);
+              dU0j[1]*dU1i[1] + dU0j[4]*dU1i[4] + dU0j[7]*dU1i[7]);
       b[5] = (dU0i[0]*dU1j[1] + dU0i[3]*dU1j[4] + dU0i[6]*dU1j[7] +
-	      dU1i[0]*dU0j[1] + dU1i[3]*dU0j[4] + dU1i[6]*dU0j[7] +
-	      dU0j[0]*dU1i[1] + dU0j[3]*dU1i[4] + dU0j[6]*dU1i[7] +
-	      dU1j[0]*dU0i[1] + dU1j[3]*dU0i[4] + dU1j[6]*dU0i[7]);
+              dU1i[0]*dU0j[1] + dU1i[3]*dU0j[4] + dU1i[6]*dU0j[7] +
+              dU0j[0]*dU1i[1] + dU0j[3]*dU1i[4] + dU0j[6]*dU1i[7] +
+              dU1j[0]*dU0i[1] + dU1j[3]*dU0i[4] + dU1j[6]*dU0i[7]);
       
       TacsScalar Jadd = 
-	scale*(b[0]*s[0] + b[1]*s[1] + b[2]*s[2] +
-	       b[3]*s[3] + b[4]*s[4] + b[5]*s[5]);
+        scale*(b[0]*s[0] + b[1]*s[1] + b[2]*s[2] +
+               b[3]*s[3] + b[4]*s[4] + b[5]*s[5]);
       
       // Add the values symmetrically
       J[idx] += Jadd;
       if (ii != jj){
-	J[sym] += Jadd;
+        J[sym] += Jadd;
       }
     }
   }
@@ -3768,56 +3779,56 @@ void MITC9::addGmat( TacsScalar J[],
       b[0] = dU0[0] + (U0[0]*dU0[0] + U0[3]*dU0[3] + U0[6]*dU0[6]);
       b[1] = dU0[4] + (U0[1]*dU0[1] + U0[4]*dU0[4] + U0[7]*dU0[7]);
       b[2] = dU0[1] + dU0[3] + (U0[0]*dU0[1] + U0[3]*dU0[4] + U0[6]*dU0[7] +
-				dU0[0]*U0[1] + dU0[3]*U0[4] + dU0[6]*U0[7]);
+                                dU0[0]*U0[1] + dU0[3]*U0[4] + dU0[6]*U0[7]);
 
       // Compute the derivative of the bending strain
       b[3] = dU1[0] + (U0[0]*dU1[0] + U0[3]*dU1[3] + U0[6]*dU1[6] + 
-		       dU0[0]*U1[0] + dU0[3]*U1[3] + dU0[6]*U1[6]);
+                       dU0[0]*U1[0] + dU0[3]*U1[3] + dU0[6]*U1[6]);
       b[4] = dU1[4] + (U0[1]*dU1[1] + U0[4]*dU1[4] + U0[7]*dU1[7] +
-		       dU0[1]*U1[1] + dU0[4]*U1[4] + dU0[7]*U1[7]);
+                       dU0[1]*U1[1] + dU0[4]*U1[4] + dU0[7]*U1[7]);
       b[5] = dU1[1] + dU1[3] + (U0[0]*dU1[1] + U0[3]*dU1[4] + U0[6]*dU1[7] +
-				U1[0]*dU0[1] + U1[3]*dU0[4] + U1[6]*dU0[7] +
-				dU0[0]*U1[1] + dU0[3]*U1[4] + dU0[6]*U1[7] +
-				dU1[0]*U0[1] + dU1[3]*U0[4] + dU1[6]*U0[7]);
+                                U1[0]*dU0[1] + U1[3]*dU0[4] + U1[6]*dU0[7] +
+                                dU0[0]*U1[1] + dU0[3]*U1[4] + dU0[6]*U1[7] +
+                                dU1[0]*U0[1] + dU1[3]*U0[4] + dU1[6]*U0[7]);
 
       TacsScalar Jadd = 
-	scale*(b[0]*s[0] + b[1]*s[1] + b[2]*s[2] +
-	       b[3]*s[3] + b[4]*s[4] + b[5]*s[5]);
+        scale*(b[0]*s[0] + b[1]*s[1] + b[2]*s[2] +
+               b[3]*s[3] + b[4]*s[4] + b[5]*s[5]);
 
       if (ii < 3){
-	int iv = 8*i + 3;
-	int jv = 8*i + 4 + ii;
-	J[(8*NUM_NODES)*iv + jv] += Jadd;
-	J[(8*NUM_NODES)*jv + iv] += Jadd;
+        int iv = 8*i + 3;
+        int jv = 8*i + 4 + ii;
+        J[(8*NUM_NODES)*iv + jv] += Jadd;
+        J[(8*NUM_NODES)*jv + iv] += Jadd;
       }
       else {
-	if (ii == 3){
-	  int iv = 8*i + 4;
-	  J[(8*NUM_NODES+1)*iv] += Jadd;
-	}
-	else if (ii == 4){
-	  int iv = 8*i + 4, jv = 8*i + 5;
-	  J[(8*NUM_NODES)*iv + jv] += Jadd;
-	  J[(8*NUM_NODES)*jv + iv] += Jadd;
-	}
-	else if (ii == 5){
-	  int iv = 8*i + 4, jv = 8*i + 6;
-	  J[(8*NUM_NODES)*iv + jv] += Jadd;
-	  J[(8*NUM_NODES)*jv + iv] += Jadd;
-	}
-	else if (ii == 6){
-	  int iv = 8*i + 5;
-	  J[(8*NUM_NODES+1)*iv] += Jadd;
-	}
-	else if (ii == 7){
-	  int iv = 8*i + 5, jv = 8*i + 6;
-	  J[(8*NUM_NODES)*iv + jv] += Jadd;
-	  J[(8*NUM_NODES)*jv + iv] += Jadd;
-	}
-	else if (ii == 8){
-	  int iv = 8*i + 6;
-	  J[(8*NUM_NODES+1)*iv] += Jadd;
-	}
+        if (ii == 3){
+          int iv = 8*i + 4;
+          J[(8*NUM_NODES+1)*iv] += Jadd;
+        }
+        else if (ii == 4){
+          int iv = 8*i + 4, jv = 8*i + 5;
+          J[(8*NUM_NODES)*iv + jv] += Jadd;
+          J[(8*NUM_NODES)*jv + iv] += Jadd;
+        }
+        else if (ii == 5){
+          int iv = 8*i + 4, jv = 8*i + 6;
+          J[(8*NUM_NODES)*iv + jv] += Jadd;
+          J[(8*NUM_NODES)*jv + iv] += Jadd;
+        }
+        else if (ii == 6){
+          int iv = 8*i + 5;
+          J[(8*NUM_NODES+1)*iv] += Jadd;
+        }
+        else if (ii == 7){
+          int iv = 8*i + 5, jv = 8*i + 6;
+          J[(8*NUM_NODES)*iv + jv] += Jadd;
+          J[(8*NUM_NODES)*jv + iv] += Jadd;
+        }
+        else if (ii == 8){
+          int iv = 8*i + 6;
+          J[(8*NUM_NODES+1)*iv] += Jadd;
+        }
       }
 
       dC += 3;
@@ -3844,11 +3855,11 @@ void MITC9::addGmat( TacsScalar J[],
   g23:   the values of the tensorial strain at the tying points
 */
 void MITC9::computeTyingStrain( TacsScalar g13[], 
-				TacsScalar g23[],
-				const TacsScalar X[],
-				const TacsScalar Xr[],
-				const TacsScalar vars[],
-				const TacsScalar dir[] ){
+                                TacsScalar g23[],
+                                const TacsScalar X[],
+                                const TacsScalar Xr[],
+                                const TacsScalar vars[],
+                                const TacsScalar dir[] ){
   const double s = 0.774596669241483;
   const double t = 0.577350269189626;
 
@@ -4070,14 +4081,14 @@ void MITC9::addComputeTyingStrainSens( TacsScalar Xd[],
   g23:   the values of the tensorial strain at the tying points
 */
 void MITC9::computeTyingBmat( TacsScalar g13[], 
-			      TacsScalar g23[],
-			      TacsScalar B13[],
-			      TacsScalar B23[],
-			      const TacsScalar X[],
-			      const TacsScalar Xr[],
-			      const TacsScalar vars[],
-			      const TacsScalar dir[],
-			      const TacsScalar dirdq[] ){
+                              TacsScalar g23[],
+                              TacsScalar B13[],
+                              TacsScalar B23[],
+                              const TacsScalar X[],
+                              const TacsScalar Xr[],
+                              const TacsScalar vars[],
+                              const TacsScalar dir[],
+                              const TacsScalar dirdq[] ){
   const double s = 0.774596669241483;
   const double t = 0.577350269189626;
 
@@ -4447,13 +4458,13 @@ void MITC9::addComputeTyingBmatSens( TacsScalar Xd[],
   g23:   the values of the tensorial strain at the tying points
 */
 void MITC9::addTyingGmat( TacsScalar J[],
-			  const TacsScalar w13[], 
-			  const TacsScalar w23[],
-			  const TacsScalar X[],
-			  const TacsScalar Xr[],
-			  const TacsScalar vars[],
-			  const TacsScalar dir[],
-			  const TacsScalar dirdq[] ){
+                          const TacsScalar w13[], 
+                          const TacsScalar w23[],
+                          const TacsScalar X[],
+                          const TacsScalar Xr[],
+                          const TacsScalar vars[],
+                          const TacsScalar dir[],
+                          const TacsScalar dirdq[] ){
   const double s = 0.774596669241483;
   const double t = 0.577350269189626;
 
@@ -4502,25 +4513,25 @@ void MITC9::addTyingGmat( TacsScalar J[],
       // Compute the second derivatives from the quaternions alone
       const TacsScalar *dC = dCtndq;
       for ( int ii = 0; ii < 9; ii++ ){
-	TacsScalar Jadd = 0.5*w13[k]*N[i]*vecDot(t, dC);
-	J[(8*NUM_NODES)*(8*i + iv[ii]) + (8*i + jv[ii])] += Jadd;
-	if (iv[ii] != jv[ii]){
-	  J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
-	}
-	dC += 3;
+        TacsScalar Jadd = 0.5*w13[k]*N[i]*vecDot(t, dC);
+        J[(8*NUM_NODES)*(8*i + iv[ii]) + (8*i + jv[ii])] += Jadd;
+        if (iv[ii] != jv[ii]){
+          J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
+        }
+        dC += 3;
       }
       
       // Set the derivative of the director w.r.t. q
       const TacsScalar *dq = dirdq;
       for ( int j = 0; j < NUM_NODES; j++ ){
-	for ( int ii = 0; ii < 4; ii++ ){ // Loop over quaternions
-	  for ( int jj = 0; jj < 3; jj++ ){ // Loop over displacements
-	    TacsScalar Jadd = 0.5*w13[k]*N[j]*Na[i]*dq[3*ii + jj]; 
-	    J[8*NUM_NODES*(8*i + jj) + 8*j + 3+ii] += Jadd;
-	    J[8*NUM_NODES*(8*j + 3+ii) + 8*i + jj] += Jadd;
-	  }
-	}
-	dq += 12;
+        for ( int ii = 0; ii < 4; ii++ ){ // Loop over quaternions
+          for ( int jj = 0; jj < 3; jj++ ){ // Loop over displacements
+            TacsScalar Jadd = 0.5*w13[k]*N[j]*Na[i]*dq[3*ii + jj]; 
+            J[8*NUM_NODES*(8*i + jj) + 8*j + 3+ii] += Jadd;
+            J[8*NUM_NODES*(8*j + 3+ii) + 8*i + jj] += Jadd;
+          }
+        }
+        dq += 12;
       }
     }
   }
@@ -4566,25 +4577,25 @@ void MITC9::addTyingGmat( TacsScalar J[],
       // Compute the second derivatives from the quaternions alone
       const TacsScalar *dC = dCtndq;
       for ( int ii = 0; ii < 9; ii++ ){
-	TacsScalar Jadd = 0.5*w23[k]*N[i]*vecDot(t, dC);
-	J[(8*NUM_NODES)*(8*i + iv[ii]) + (8*i + jv[ii])] += Jadd;
-	if (iv[ii] != jv[ii]){
-	  J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
-	}
-	dC += 3;
+        TacsScalar Jadd = 0.5*w23[k]*N[i]*vecDot(t, dC);
+        J[(8*NUM_NODES)*(8*i + iv[ii]) + (8*i + jv[ii])] += Jadd;
+        if (iv[ii] != jv[ii]){
+          J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
+        }
+        dC += 3;
       }
       
       // Set the derivative of the director w.r.t. q
       const TacsScalar *dq = dirdq;
       for ( int j = 0; j < NUM_NODES; j++ ){
-	for ( int ii = 0; ii < 4; ii++ ){ // Loop over quaternions
-	  for ( int jj = 0; jj < 3; jj++ ){ // Loop over displacements
-	    TacsScalar Jadd = 0.5*w23[k]*N[j]*Nb[i]*dq[3*ii + jj];
-	    J[8*NUM_NODES*(8*i + jj) + 8*j + 3+ii] += Jadd;
-	    J[8*NUM_NODES*(8*j + 3+ii) + 8*i + jj] += Jadd;
-	  }
-	}
-	dq += 12;
+        for ( int ii = 0; ii < 4; ii++ ){ // Loop over quaternions
+          for ( int jj = 0; jj < 3; jj++ ){ // Loop over displacements
+            TacsScalar Jadd = 0.5*w23[k]*N[j]*Nb[i]*dq[3*ii + jj];
+            J[8*NUM_NODES*(8*i + jj) + 8*j + 3+ii] += Jadd;
+            J[8*NUM_NODES*(8*j + 3+ii) + 8*i + jj] += Jadd;
+          }
+        }
+        dq += 12;
       }
     }
   }
@@ -4616,19 +4627,19 @@ void MITC9::addTyingGmat( TacsScalar J[],
   e:    the shear strain components are over-written
 */
 void MITC9::addTyingStrain( TacsScalar e[],
-			    const double N13[],
-			    const double N23[],
-			    const TacsScalar g13[],
-			    const TacsScalar g23[],
-			    const TacsScalar Xdinv[],
-			    const TacsScalar T[] ){
+                            const double N13[],
+                            const double N23[],
+                            const TacsScalar g13[],
+                            const TacsScalar g23[],
+                            const TacsScalar Xdinv[],
+                            const TacsScalar T[] ){
   // Compute the strain using the assumed strain distribution
   // and the strain evaluated at the tying points
   TacsScalar G13, G23;
   G13 = (g13[0]*N13[0] + g13[1]*N13[1] + g13[2]*N13[2] +
-	 g13[3]*N13[3] + g13[4]*N13[4] + g13[5]*N13[5]);
+         g13[3]*N13[3] + g13[4]*N13[4] + g13[5]*N13[5]);
   G23 = (g23[0]*N23[0] + g23[1]*N23[1] + g23[2]*N23[2] +
-	 g23[3]*N23[3] + g23[4]*N23[4] + g23[5]*N23[5]);
+         g23[3]*N23[3] + g23[4]*N23[4] + g23[5]*N23[5]);
 
   // Compute the coefficients for the strain transformation. Note
   // that the remaining values in the matrix A = Xdinv*T are either
@@ -4666,9 +4677,9 @@ void MITC9::addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
   // and the strain evaluated at the tying points
   TacsScalar G13, G23;
   G13 = (g13[0]*N13[0] + g13[1]*N13[1] + g13[2]*N13[2] +
-	 g13[3]*N13[3] + g13[4]*N13[4] + g13[5]*N13[5]);
+         g13[3]*N13[3] + g13[4]*N13[4] + g13[5]*N13[5]);
   G23 = (g23[0]*N23[0] + g23[1]*N23[1] + g23[2]*N23[2] +
-	 g23[3]*N23[3] + g23[4]*N23[4] + g23[5]*N23[5]);
+         g23[3]*N23[3] + g23[4]*N23[4] + g23[5]*N23[5]);
 
   // Compute the coefficients for the strain transformation. Note
   // that the remaining values in the matrix A = Xdinv*T are either
@@ -4723,13 +4734,13 @@ void MITC9::addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
   stiffness matrix term
 */
 void MITC9::addTyingGmatWeights( TacsScalar w13[],
-				 TacsScalar w23[],
-				 const TacsScalar scalar,
-				 const TacsScalar s[],
-				 const double N13[],
-				 const double N23[],
-				 const TacsScalar Xdinv[],
-				 const TacsScalar T[] ){
+                                 TacsScalar w23[],
+                                 const TacsScalar scalar,
+                                 const TacsScalar s[],
+                                 const double N13[],
+                                 const double N23[],
+                                 const TacsScalar Xdinv[],
+                                 const TacsScalar T[] ){
   // Compute the coefficients for the strain transformation. Note
   // that the remaining values in the matrix A = Xdinv*T are either
   // zero or unity.
@@ -4768,12 +4779,12 @@ void MITC9::addTyingGmatWeights( TacsScalar w13[],
   B:    the derivative of the strain
 */
 void MITC9::addTyingBmat( TacsScalar B[],
-			  const double N13[],
-			  const double N23[],
-			  const TacsScalar B13[],
-			  const TacsScalar B23[],
-			  const TacsScalar Xdinv[],
-			  const TacsScalar T[] ){
+                          const double N13[],
+                          const double N23[],
+                          const TacsScalar B13[],
+                          const TacsScalar B23[],
+                          const TacsScalar Xdinv[],
+                          const TacsScalar T[] ){
   // Compute the coefficients for the strain transformation. Note
   // that the remaining values in the matrix A = Xdinv*T are either
   // zero or unity.
@@ -4792,11 +4803,11 @@ void MITC9::addTyingBmat( TacsScalar B[],
     // and the strain evaluated at the tying points
     TacsScalar G13, G23;
     G13 = (B13[0]*N13[0] + B13[offset]*N13[1] +
-	   B13[2*offset]*N13[2] + B13[3*offset]*N13[3] + 
-	   B13[4*offset]*N13[4] + B13[5*offset]*N13[5]);
+           B13[2*offset]*N13[2] + B13[3*offset]*N13[3] + 
+           B13[4*offset]*N13[4] + B13[5*offset]*N13[5]);
     G23 = (B23[0]*N23[0] + B23[offset]*N23[1] +
-	   B23[2*offset]*N23[2] + B23[3*offset]*N23[3] + 
-	   B23[4*offset]*N23[4] + B23[5*offset]*N23[5]);
+           B23[2*offset]*N23[2] + B23[3*offset]*N23[3] + 
+           B23[4*offset]*N23[4] + B23[5*offset]*N23[5]);
 
     // Compute and set the final strain values
     // e = 2*A^{T}*G
@@ -4843,11 +4854,11 @@ void MITC9::addTyingBmatSens( TacsScalar B13d[], TacsScalar B23d[],
     // and the strain evaluated at the tying points
     TacsScalar G13, G23;
     G13 = (B13[0]*N13[0] + B13[offset]*N13[1] +
-	   B13[2*offset]*N13[2] + B13[3*offset]*N13[3] + 
-	   B13[4*offset]*N13[4] + B13[5*offset]*N13[5]);
+           B13[2*offset]*N13[2] + B13[3*offset]*N13[3] + 
+           B13[4*offset]*N13[4] + B13[5*offset]*N13[5]);
     G23 = (B23[0]*N23[0] + B23[offset]*N23[1] +
-	   B23[2*offset]*N23[2] + B23[3*offset]*N23[3] + 
-	   B23[4*offset]*N23[4] + B23[5*offset]*N23[5]);
+           B23[2*offset]*N23[2] + B23[3*offset]*N23[3] + 
+           B23[4*offset]*N23[4] + B23[5*offset]*N23[5]);
 
     // Compute and set the final strain values
     // e = 2*A^{T}*G
@@ -4901,11 +4912,11 @@ void MITC9::addTyingBmatSens( TacsScalar B13d[], TacsScalar B23d[],
   the nodes of the mesh and is computed directly from the directors
 */
 TacsScalar MITC9::computeRotPenalty( const double N[],
-				     const TacsScalar Xa[],
-				     const TacsScalar Xb[],
-				     const TacsScalar Ua[],
-				     const TacsScalar Ub[],
-				     const TacsScalar vars[] ){
+                                     const TacsScalar Xa[],
+                                     const TacsScalar Xb[],
+                                     const TacsScalar Ua[],
+                                     const TacsScalar Ub[],
+                                     const TacsScalar vars[] ){
   TacsScalar Ci[9];
   Ci[0] = Ci[1] = Ci[2] = 0.0;
   Ci[3] = Ci[4] = Ci[5] = 0.0;
@@ -4969,14 +4980,14 @@ TacsScalar MITC9::computeRotPenalty( const double N[],
   the nodes of the mesh and is computed directly from the directors
 */
 TacsScalar MITC9::computeBRotPenalty( TacsScalar brot[],
-				      const double N[],
-				      const double Na[],
-				      const double Nb[],
-				      const TacsScalar Xa[],
-				      const TacsScalar Xb[],
-				      const TacsScalar Ua[],
-				      const TacsScalar Ub[],
-				      const TacsScalar vars[] ){
+                                      const double N[],
+                                      const double Na[],
+                                      const double Nb[],
+                                      const TacsScalar Xa[],
+                                      const TacsScalar Xb[],
+                                      const TacsScalar Ua[],
+                                      const TacsScalar Ub[],
+                                      const TacsScalar vars[] ){
   TacsScalar Ci[9];
   Ci[0] = Ci[1] = Ci[2] = 0.0;
   Ci[3] = Ci[4] = Ci[5] = 0.0;
@@ -5331,15 +5342,15 @@ void MITC9::addBRotPenaltySens( TacsScalar _Xad[],
   stiffness matrix.
 */
 void MITC9::addGRotMat( TacsScalar J[],
-			const TacsScalar scale, 
-			const double N[],
-			const double Na[],
-			const double Nb[],
-			const TacsScalar Xa[],
-			const TacsScalar Xb[],
-			const TacsScalar Ua[],
-			const TacsScalar Ub[],
-			const TacsScalar vars[] ){
+                        const TacsScalar scale, 
+                        const double N[],
+                        const double Na[],
+                        const double Nb[],
+                        const TacsScalar Xa[],
+                        const TacsScalar Xb[],
+                        const TacsScalar Ua[],
+                        const TacsScalar Ub[],
+                        const TacsScalar vars[] ){
   // Compute va = Ci*(Xa + Ua)
   TacsScalar ta[3];
   ta[0] = Xa[0] + Ua[0];
@@ -5437,13 +5448,13 @@ void MITC9::addGRotMat( TacsScalar J[],
     wa = Wa;  wb = Wb;
     for ( int j = 0; j < NUM_NODES; j++ ){
       for ( int ii = 0; ii < 4; ii++ ){ // Loop over the quaternions
-	for ( int jj = 0; jj < 3; jj++ ){ // Loop over the displacements
-	  J[8*NUM_NODES*(8*i + jj) + 8*j + 3+ii] += 
-	    scale*N[j]*(Nb[i]*wa[3*ii+jj] - Na[i]*wb[3*ii+jj]);
+        for ( int jj = 0; jj < 3; jj++ ){ // Loop over the displacements
+          J[8*NUM_NODES*(8*i + jj) + 8*j + 3+ii] += 
+            scale*N[j]*(Nb[i]*wa[3*ii+jj] - Na[i]*wb[3*ii+jj]);
 
-	  J[8*NUM_NODES*(8*j + 3+ii) + 8*i + jj] +=
-	    scale*N[j]*(Nb[i]*wa[3*ii+jj] - Na[i]*wb[3*ii+jj]);
-	}
+          J[8*NUM_NODES*(8*j + 3+ii) + 8*i + jj] +=
+            scale*N[j]*(Nb[i]*wa[3*ii+jj] - Na[i]*wb[3*ii+jj]);
+        }
       }
       wa += 12;  wb += 12;
     }
@@ -5456,7 +5467,7 @@ void MITC9::addGRotMat( TacsScalar J[],
       TacsScalar Jadd = scale*N[i]*(vecDot(tb, dCa) - vecDot(ta, dCb)); 
       J[(8*NUM_NODES)*(8*i + iv[ii]) + (8*i + jv[ii])] += Jadd;
       if (iv[ii] != jv[ii]){
-	J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
+        J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
       }
       dCa += 3;  dCb += 3;
     }
@@ -5975,15 +5986,15 @@ void MITC9::getOutputData( unsigned int out_type,
 
       int index = 0;
       if (out_type & TACSElement::OUTPUT_NODES){
-	for ( int k = 0; k < 3; k++ ){
-	  data[index+k] = RealPart(Xpts[3*p+k]);
-	}
+        for ( int k = 0; k < 3; k++ ){
+          data[index+k] = RealPart(Xpts[3*p+k]);
+        }
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-	for ( int k = 0; k < NUM_DISPS; k++ ){
-	  data[index+k] = RealPart(vars[NUM_DISPS*p+k]);
-	}
+        for ( int k = 0; k < NUM_DISPS; k++ ){
+          data[index+k] = RealPart(vars[NUM_DISPS*p+k]);
+        }
         index += NUM_DISPS;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
@@ -5999,22 +6010,22 @@ void MITC9::getOutputData( unsigned int out_type,
         
         for ( int k = 0; k < NUM_STRESSES; k++ ){
           data[index+k] = RealPart(stress[k]);
-	}
+        }
         index += NUM_STRESSES;
       }
       if (out_type & TACSElement::OUTPUT_EXTRAS){
-	// Compute the failure value
-	TacsScalar lambda;
-	stiff->failure(pt, strain, &lambda);
-	data[index] = RealPart(lambda);
+        // Compute the failure value
+        TacsScalar lambda;
+        stiff->failure(pt, strain, &lambda);
+        data[index] = RealPart(lambda);
 
-	// Compute the buckling constraint value
-	TacsScalar bval;
-	stiff->buckling(strain, &bval);
-	data[index+1] = RealPart(bval);
+        // Compute the buckling constraint value
+        TacsScalar bval;
+        stiff->buckling(strain, &bval);
+        data[index+1] = RealPart(bval);
 
-	data[index+2] = RealPart(stiff->getDVOutputValue(0, pt));
-	data[index+3] = RealPart(stiff->getDVOutputValue(1, pt));
+        data[index+2] = RealPart(stiff->getDVOutputValue(0, pt));
+        data[index+3] = RealPart(stiff->getDVOutputValue(1, pt));
 
         index += NUM_EXTRAS;
       }

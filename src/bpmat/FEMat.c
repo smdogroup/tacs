@@ -83,7 +83,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
               const int *rowp, const int *cols, 
               TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
               TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map,
-	      TACSBcMap *_bcs ){
+              TACSBcMap *_bcs ){
   bcs = _bcs;
   if (bcs){ bcs->incref(); }
 
@@ -310,8 +310,8 @@ FEMat::~FEMat(){
   arrays to store the indices.  
 */
 void FEMat::addValues( int nrow, const int *row,
-		       int ncol, const int *col,  
-		       int nv, int mv, const TacsScalar *values ){ 
+                       int ncol, const int *col,  
+                       int nv, int mv, const TacsScalar *values ){ 
   int bsize = B->getBlockSize();
   TACSBVecIndices *bindx = b_map->getIndices();
   TACSBVecIndices *cindx = c_map->getIndices();
@@ -346,17 +346,17 @@ void FEMat::addValues( int nrow, const int *row,
 
       // If it wasn't there, search in the b-index set
       if (bcols[i] < 0){
-	cflag = 1;
-	ccols[i] = cindx->findIndex(c);
+        cflag = 1;
+        ccols[i] = cindx->findIndex(c);
       }
     
       // If neither turned up anything, print an error
       if ((ccols[i] < 0) &&
-	  (bcols[i] < 0)){
-	int rank;
-	MPI_Comm_rank(b_map->getMPIComm(), &rank);
-	fprintf(stderr, "[%d] Global column variable %d not found\n",
-		rank, c);
+          (bcols[i] < 0)){
+        int rank;
+        MPI_Comm_rank(b_map->getMPIComm(), &rank);
+        fprintf(stderr, "[%d] Global column variable %d not found\n",
+                rank, c);
       }
     }
   }
@@ -370,22 +370,22 @@ void FEMat::addValues( int nrow, const int *row,
     if (r >= 0){
       int br = 0, cr = 0;
       if ((br = bindx->findIndex(r)) >= 0){
-	B->addRowValues(br, ncol, bcols, mv, &values[mv*i*bsize]);      
-	if (cflag){
-	  E->addRowValues(br, ncol, ccols, mv, &values[mv*i*bsize]);
-	}
+        B->addRowValues(br, ncol, bcols, mv, &values[mv*i*bsize]);      
+        if (cflag){
+          E->addRowValues(br, ncol, ccols, mv, &values[mv*i*bsize]);
+        }
       }
       else if ((cr = cindx->findIndex(r)) >= 0){
-	F->addRowValues(cr, ncol, bcols, mv, &values[mv*i*bsize]);
-	if (cflag){
-	  C->addRowValues(cr, ncol, ccols, mv, &values[mv*i*bsize]);      
-	}
+        F->addRowValues(cr, ncol, bcols, mv, &values[mv*i*bsize]);
+        if (cflag){
+          C->addRowValues(cr, ncol, ccols, mv, &values[mv*i*bsize]);      
+        }
       }
       else {
-	int rank;
-	MPI_Comm_rank(b_map->getMPIComm(), &rank);
-	fprintf(stderr, "[%d] Global row variable %d not found\n",
-		rank, r);
+        int rank;
+        MPI_Comm_rank(b_map->getMPIComm(), &rank);
+        fprintf(stderr, "[%d] Global row variable %d not found\n",
+                rank, r);
       }
     }
   }
@@ -415,8 +415,8 @@ void FEMat::addValues( int nrow, const int *row,
   values:   the dense input matrix
 */
 void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
-			     const TacsScalar *weights,
-			     int nv, int mv, const TacsScalar *values,
+                             const TacsScalar *weights,
+                             int nv, int mv, const TacsScalar *values,
                              MatrixOrientation matOr ){
   // The block size for the matrix
   int bsize = B->getBlockSize();
@@ -459,17 +459,17 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
 
       // If it wasn't there, search in the b-index set
       if (bvars[i] < 0){
-	cflag = 1;
-	cvars[i] = cindx->findIndex(c);
+        cflag = 1;
+        cvars[i] = cindx->findIndex(c);
       }
     
       // If neither turned up anything, print an error
       if ((cvars[i] < 0) &&
-	  (bvars[i] < 0)){
-	int rank;
-	MPI_Comm_rank(b_map->getMPIComm(), &rank);
-	fprintf(stderr, "[%d] Global column variable %d not found\n",
-		rank, c);
+          (bvars[i] < 0)){
+        int rank;
+        MPI_Comm_rank(b_map->getMPIComm(), &rank);
+        fprintf(stderr, "[%d] Global column variable %d not found\n",
+                rank, c);
       }
     }
   }
@@ -527,12 +527,21 @@ TACSVec *FEMat::createVec(){
 }
 
 /*
+  Apply the Dirichlet boundary conditions.
+*/
+void FEMat::applyBCs(){
+  if (bcs){
+    applyBCs(bcs);
+  }
+}
+
+/*
   Apply the Dirichlet boundary conditions by zeroing the rows
   associated with the boundary conditions and setting corresponding
   the diagonal entries to 1.  
 */
-void FEMat::applyBCs(){
-  if (bcs){
+void FEMat::applyBCs( TACSBcMap *bcmap ){
+  if (bcmap){
     TACSBVecIndices *bindx = b_map->getIndices();
     TACSBVecIndices *cindx = c_map->getIndices();
     
@@ -545,17 +554,17 @@ void FEMat::applyBCs(){
     // apply the boundary conditions
     const int *nodes, *vars;
     const TacsScalar *values;
-    int nbcs = bcs->getBCs(&nodes, &vars, &values);
+    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
     // Get the matrix values
     for ( int i = 0; i < nbcs; i++ ){
       // Find block i and zero out the variables associated with it
       int br = bindx->findIndex(nodes[i]), cr = 0;
       if (br >= 0){
-	int ident = 1; // Replace the diagonal with the identity matrix
-	B->zeroRow(br, vars[i], ident);
-	ident = 0;
-	E->zeroRow(br, vars[i], ident);	
+        int ident = 1; // Replace the diagonal with the identity matrix
+        B->zeroRow(br, vars[i], ident);
+        ident = 0;
+        E->zeroRow(br, vars[i], ident); 
       }
       else if ((cr = cindx->findIndex(nodes[i])) >= 0){
         int cident = 0;

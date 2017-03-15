@@ -30,10 +30,10 @@
   b_map: the global variables corresponding to the B-variables
   c_map: the global variables corresponding to the C-variables
 */
-ScMat::ScMat( TACSVarMap * _rmap,
-	      BCSRMat * _B, BCSRMat * _E, BCSRMat * _F, BCSRMat * _C,
-	      TACSBVecDistribute * _b_map, 
-	      TACSBVecDistribute * _c_map ){
+ScMat::ScMat( TACSVarMap *_rmap,
+              BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
+              TACSBVecDistribute *_b_map, 
+              TACSBVecDistribute *_c_map ){
   init(_rmap, _B, _E, _F, _C, _b_map, _c_map);
 }
 
@@ -65,7 +65,7 @@ ScMat::ScMat(){
   c_map: the global variables corresponding to the C-variables
 */
 void ScMat::init( TACSVarMap *_rmap,
-		  BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
+                  BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
                   TACSBVecDistribute *_b_map, 
                   TACSBVecDistribute *_c_map ){
   rmap = _rmap;
@@ -321,7 +321,7 @@ void ScMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   B, E, F, C: the matrices in the ScMat class
 */
 void ScMat::getBCSRMat( BCSRMat ** _B, BCSRMat ** _E,
-			BCSRMat ** _F, BCSRMat ** _C ){
+                        BCSRMat ** _F, BCSRMat ** _C ){
   if (_B){ *_B = B; }
   if (_E){ *_E = E; }
   if (_F){ *_F = F; }
@@ -380,7 +380,7 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   TACSVarMap *rmap = smat->getVarMap();
   MPI_Comm comm = rmap->getMPIComm();
   Bpc = new BCSRMat(comm, B, E, F, C, levFill, fill,
-		    &Epc, &Fpc, &Sc, use_full_schur);
+                    &Epc, &Fpc, &Sc, use_full_schur);
   Bpc->incref();  
   Epc->incref();  
   Fpc->incref();
@@ -775,7 +775,7 @@ void PcScMat::factor(){
   const int *rowp, *cols;
   TacsScalar *scvals;
   Sc->getArrays(&bsize, &mlocal, &nlocal,
-		&rowp, &cols, &scvals);
+                &rowp, &cols, &scvals);
 
   // Retrieve the indices for the local Schur complement
   TACSBVecIndices *schur_index = schur_dist->getIndices();
@@ -787,11 +787,11 @@ void PcScMat::factor(){
   // approach that uses less memory
   if (use_pdmat_alltoall){
     pdmat->addAlltoallValues(bsize, mlocal, sc_vars,
-			     rowp, cols, scvals);
+                             rowp, cols, scvals);
   }
   else {
     pdmat->addAllValues(bsize, mlocal, sc_vars,
-			rowp, cols, scvals);
+                        rowp, cols, scvals);
   }
 
   if (monitor_factor){

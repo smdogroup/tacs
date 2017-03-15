@@ -707,19 +707,23 @@ cdef class Assembler:
       self.ptr.getVariables(cvec, cdvec, cddvec)
       return
 
-   def getInitConditions(self, Vec vec=None, Vec dvec=None):
+   def getInitConditions(self, Vec vec=None, 
+                         Vec dvec=None, Vec ddvec=None):
       '''
       Retrieve the initial conditions
       '''
       cdef TACSBVec *cvec = NULL
       cdef TACSBVec *cdvec = NULL
+      cdef TACSBVec *cddvec = NULL
 
       if vec is not None:
          cvec = vec.ptr
       if dvec is not None:
          cdvec = dvec.ptr
+      if ddvec is not None:
+         cddvec = ddvec.ptr
 
-      self.ptr.getInitConditions(cvec, cdvec)
+      self.ptr.getInitConditions(cvec, cdvec, cddvec)
       return
     
    def assembleRes(self, Vec residual):

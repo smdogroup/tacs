@@ -37,15 +37,16 @@
 class PMat : public TACSMat {
  public:
   PMat( TACSVarMap *rmap,
-	BCSRMat *_Aloc, BCSRMat *_Bext,
-	TACSBVecDistribute *_col_map,
-	TACSBcMap *_bcs=NULL );
+        BCSRMat *_Aloc, BCSRMat *_Bext,
+        TACSBVecDistribute *_col_map,
+        TACSBcMap *_bcs=NULL );
   ~PMat();
 
   // Functions for setting values in the matrix
   // ------------------------------------------
   void zeroEntries();  // Zero the matrix values 
   void applyBCs();     // Apply the boundary conditions to the matrix
+  void applyBCs( TACSBcMap *bcmap );
 
   // Functions required for solving linear systems
   // ---------------------------------------------
@@ -56,7 +57,7 @@ class PMat : public TACSMat {
   void scale( TacsScalar alpha );              // Scale the matrix
   void axpy( TacsScalar alpha, TACSMat *mat ); // Compute y <- y + alpha*x
   void axpby( TacsScalar alpha, 
-	      TacsScalar beta, TACSMat *mat ); // Compute y <- alpha*x + beta*y
+              TacsScalar beta, TACSMat *mat ); // Compute y <- alpha*x + beta*y
 
   void addDiag( TacsScalar alpha );
 
@@ -77,9 +78,9 @@ class PMat : public TACSMat {
 
   // Common initialization routine
   void init( TACSVarMap *_rmap, 
-	     BCSRMat *_Aloc, BCSRMat *_Bext,
-	     TACSBVecDistribute *_col_map,
-	     TACSBcMap *_bcs=NULL );
+             BCSRMat *_Aloc, BCSRMat *_Bext,
+             TACSBVecDistribute *_col_map,
+             TACSBcMap *_bcs=NULL );
 
   // Local entries for the matrix
   BCSRMat *Aloc, *Bext;
@@ -115,7 +116,7 @@ class PMat : public TACSMat {
 class PSOR : public TACSPc {
  public:
   PSOR( PMat *mat, int _zero_guess, 
-	TacsScalar _omega, int _iters, int _isSymmetric );
+        TacsScalar _omega, int _iters, int _isSymmetric );
   ~PSOR();
 
   void factor();
@@ -183,7 +184,7 @@ class GlobalSchurMat : public TACSMat {
   // ----------------------------------------------
   void zeroEntries(){}
   void addValues( int nrow, const int *row, int ncol, const int *col,
-		  int nv, int mv, const TacsScalar *values ){} 
+                  int nv, int mv, const TacsScalar *values ){} 
   void applyBCs(){}
   void beginAssembly(){}
   void endAssembly(){}
@@ -214,8 +215,8 @@ class GlobalSchurMat : public TACSMat {
 class ApproximateSchur : public TACSPc {
  public:
   ApproximateSchur( PMat *mat, int levFill, double fill, 
-		    int inner_gmres_iters, double inner_rtol=1e-3, 
-		    double inner_atol=1e-30 );
+                    int inner_gmres_iters, double inner_rtol=1e-3, 
+                    double inner_atol=1e-30 );
   ~ApproximateSchur();
 
   void setDiagShift( TacsScalar _alpha );

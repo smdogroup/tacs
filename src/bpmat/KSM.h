@@ -17,6 +17,52 @@
 */
 enum MatrixOrientation { NORMAL, TRANSPOSE };
 
+/*
+  Define boundary conditions that are applied after all the
+  matrix/vector values have been set.  
+
+  BCMap should only be instantiated once for a given analysis.  All
+  other classes in this file should point that instance.
+*/
+class TACSBcMap : public TACSObject {
+ public:
+  TACSBcMap( int bsize, int num_bcs );
+  ~TACSBcMap();
+
+  // Add/get the boundary conditions stored in this object
+  // -----------------------------------------------------
+  void addBC( int node, int nvals, 
+              const int *bc_nums=NULL, const TacsScalar *bc_vals=NULL );
+  int getBCs( const int **_nodes,
+              const int **_vars, const TacsScalar **_values );
+
+  // Get the node numbers associated with the BCs for reordering
+  // -----------------------------------------------------------
+  int getBCNodeNums( int **_nodes );
+
+  // Add the boundary condition using the binary flags directly
+  // ----------------------------------------------------------
+  void addBinaryFlagBC( int node, int _vars );
+
+ private:
+  // Set the block size
+  int bsize;
+
+  // Information used to apply boundary conditions
+  int *nodes;
+
+  // The total number of boundary conditions
+  int nbcs;
+
+  // The local index of the unknowns and the values
+  int *vars;
+  TacsScalar *values;
+
+  // Set the boundary condition sizes
+  int max_size;
+  int bc_increment;
+};
+
 /*!
   The abstract vector class. 
 
@@ -48,6 +94,7 @@ class TACSVec : public TACSObject {
   // ----------------------------------
   virtual void setRand( double lower = -1.0, double upper = 1.0 ){}
   virtual void applyBCs( TACSVec *vec=NULL ){}
+  virtual void applyBCs( TACSBcMap *map ){}
 };
 
 /*!  
@@ -88,13 +135,14 @@ class TACSMat : public TACSObject {
   // --------------------------------------  
   virtual void zeroEntries(){}
   virtual void addValues( int nrow, const int *row, 
-			  int ncol, const int *col,
-			  int nv, int mv, const TacsScalar *values ){}
+                          int ncol, const int *col,
+                          int nv, int mv, const TacsScalar *values ){}
   virtual void addWeightValues( int nvars, const int *varp, const int *vars,
-				const TacsScalar *weights,
-				int nv, int mv, const TacsScalar *values,
+                                const TacsScalar *weights,
+                                int nv, int mv, const TacsScalar *values,
                                 MatrixOrientation matOr=NORMAL ){}
   virtual void applyBCs(){}
+  virtual void applyBCs( TACSBcMap *bcmap ){}
   virtual void beginAssembly(){}
   virtual void endAssembly(){}
 
@@ -221,7 +269,7 @@ class KSMPrintStdout : public KSMPrint {
 
 class KSMPrintFile : public KSMPrint {
   KSMPrintFile( const char *filename, const char *_descript, 
-		int _rank, int _freq );
+                int _rank, int _freq );
   ~KSMPrintFile();
   
   void printResidual( int iter, TacsScalar res );
@@ -319,7 +367,7 @@ class GMRES : public TACSKsm {
  private:
   // Initialize the class
   void init( TACSMat *_mat, TACSPc *_pc, int _m, 
-	     int _nrestart, int _isFlexible );
+             int _nrestart, int _isFlexible );
 
   // Orthogonalize a vector against a set of vectors
   void (*orthogonalize)(TacsScalar *, TACSVec *, TACSVec **, int);
@@ -368,7 +416,7 @@ class GMRES : public TACSKsm {
 class GCROT : public TACSKsm {
  public:
   GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, 
-	 int _msub, int _isFlexible );
+         int _msub, int _isFlexible );
   GCROT( TACSMat *_mat, int _outer, int _max_outer, int _msub );
   ~GCROT();
 
@@ -384,7 +432,7 @@ class GCROT : public TACSKsm {
  private:
 
   void init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, 
-	     int _msub, int _isFlexible );
+             int _msub, int _isFlexible );
 
   TACSMat *mat; 
   TACSPc *pc; 
@@ -441,7 +489,7 @@ class ConGMRES : public TACSKsm {
  private:
   // Initialize the class
   void init( TACSMat *_mat, TACSPc *_pc, int _m, 
-	     int _nrestart, int _isFlexible );
+             int _nrestart, int _isFlexible );
 
   // Orthogonalize a vector against a set of vectors
   void (*orthogonalize)(TacsScalar *, TACSVec *, TACSVec **, int);
@@ -458,13 +506,13 @@ class ConGMRES : public TACSKsm {
   TacsScalar *lambda;
 
   void con_mat_mult( TACSVec *x, TacsScalar *y, 
-		     TACSVec *out, TacsScalar *out_lambda );
+                     TACSVec *out, TacsScalar *out_lambda );
   TacsScalar con_norm( TACSVec *x, TacsScalar *y );
   TacsScalar con_dot( TACSVec *x, TacsScalar *y,
-		      TACSVec *X, TacsScalar *Y );
+                      TACSVec *X, TacsScalar *Y );
   void con_axpy( TACSVec *x, TacsScalar *X, 
-		 TacsScalar alpha,
-		 TACSVec *y, TacsScalar *Y );
+                 TacsScalar alpha,
+                 TACSVec *y, TacsScalar *Y );
   void con_scale( TACSVec *x, TacsScalar *y, TacsScalar alpha );
 
   TACSVec **W;   // The Arnoldi vectors that span the Krylov subspace

@@ -252,7 +252,8 @@ TACSIntegrator::~TACSIntegrator(){
   if (qdot)     { delete [] qdot; }
   if (qddot)    { delete [] qddot; }
   if (f5_file_fmt){ delete [] f5_file_fmt; }
-  
+  if (f5){ f5->decref(); }
+
   // Dereference TACS
   tacs->decref();
 }
@@ -625,7 +626,8 @@ int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
   if (f5_write_freq > 0) {
     if ( k == 0 || k == num_time_steps-1 ){
       write_now = 1;
-    } else {
+    } 
+    else {
       write_now = (k % f5_write_freq == 0);
     }
   }
@@ -640,11 +642,11 @@ void TACSIntegrator::writeStepToF5( int k ){
   //  if (mpiRank != 0) { 
   if(f5 && f5_file_fmt && getWriteFlag(k, f5_write_freq)){
     // Create a buffer for filename 
-    char buffer[128];
+    char buffer[256];
 
     // Format the buffer based on the time step
     getString(buffer, f5_file_fmt, k);
-
+    
     // Write the f5 file for this time step
     f5->writeToFile(buffer);
   }
@@ -687,6 +689,7 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
                                       int _write_freq, 
                                       const char *_f5_file_fmt ){
   f5 = _viewer;
+  f5->incref();
   f5_write_freq = _write_freq;
   f5_file_fmt = new char[ strlen(_f5_file_fmt)+1 ];
   strcpy(f5_file_fmt, _f5_file_fmt);
@@ -699,9 +702,8 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
 void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   // Retrieve the initial conditions and set into TACS
   if (k == 1){
-    tacs->getInitConditions(q[0], qdot[0]);
-    tacs->setVariables(q[0], qdot[0]);
-    tacs->zeroDDotVariables();
+    tacs->getInitConditions(q[0], qdot[0], qddot[0]);
+    tacs->setVariables(q[0], qdot[0], qddot[0]);
   }
   
   // Set the class variable
@@ -1959,7 +1961,7 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step,
   solution over time is set into the class variables q, qdot and qddot
   and time.
 */
-void TACSDIRKIntegrator::integrate( ) {
+void TACSDIRKIntegrator::integrate(){
   // Print a summary of the object
   if (!isAdaptiveInstance()){
     printOptionSummary(logfp);
@@ -1976,8 +1978,8 @@ void TACSDIRKIntegrator::integrate( ) {
   double t0 = MPI_Wtime();
   
   // Get the initial condition
-  tacs->getInitConditions(q[0], qdot[0]);
-  tacs->setVariables(q[0], qdot[0]);
+  tacs->getInitConditions(q[0], qdot[0], qddot[0]);
+  tacs->setVariables(q[0], qdot[0], qddot[0]);
 
   // Perform logging, tecplot export, etc.
   doEachTimeStep(current_time_step);   

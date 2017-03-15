@@ -36,11 +36,11 @@
 class FEMat : public ScMat {
  public:
   FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap, 
-	 int bsize, int nlocal_vars, 
+         int bsize, int nlocal_vars, 
          const int *rowp, const int *cols, 
-	 TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
+         TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
          TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map,
-	 TACSBcMap *_bcs=NULL );
+         TACSBcMap *_bcs=NULL );
   ~FEMat();
     
   // Functions for setting values in the matrix
@@ -48,10 +48,11 @@ class FEMat : public ScMat {
   void addValues( int nrow, const int *row, int ncol, const int *col,
                   int nv, int mv, const TacsScalar *values );  
   void addWeightValues( int nvars, const int *varp, const int *vars,
-			const TacsScalar *weights,
-			int nv, int mv, const TacsScalar *values,
+                        const TacsScalar *weights,
+                        int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=NORMAL );
   void applyBCs();
+  void applyBCs( TACSBcMap *bcmap );
   TACSVec *createVec();  
  
  private:

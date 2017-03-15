@@ -95,6 +95,13 @@ void SerialBCSCMat::addValues( int nrow, const int *row,
 }
 
 /*
+  Apply the Dirichlet boundary conditions
+*/
+void SerialBCSCMat::applyBCs(){
+  applyBCs(bcs);
+}
+
+/*
   Apply the Dirichlet boundary conditions to the matrix
 
   This code zeros the rows corresponding to the Dirichlet boundary
@@ -102,7 +109,7 @@ void SerialBCSCMat::addValues( int nrow, const int *row,
   matrix data to simplify searching for the columns with the rows
   corresponding to each boundary condition.
 */
-void SerialBCSCMat::applyBCs(){
+void SerialBCSCMat::applyBCs( TACSBcMap *bcmap ){
   // Set up data so that we can quickly zero rows associated with the
   // boundary conditions in the column-oriented storage format. This
   // relies on the boundary conditions remaining fixed after they are
@@ -114,7 +121,7 @@ void SerialBCSCMat::applyBCs(){
                  &bptr, &aptr, &colp, &rows, &A);
 
   const int *nodes, *vars;
-  int nbcs = bcs->getBCs(&nodes, &vars, NULL);
+  int nbcs = bcmap->getBCs(&nodes, &vars, NULL);
   for ( int i = 0; i < nbcs; i++ ){
     int node = nodes[i];
 

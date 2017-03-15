@@ -215,11 +215,13 @@ class TACSElement : public TACSOptObject {
 
   // Retrieve the initial conditions and add the derivative
   // ------------------------------------------------------
-  virtual void getInitCondition( TacsScalar vars[],
-                                 TacsScalar dvars[],
-                                 const TacsScalar Xpts[] ){
+  virtual void getInitConditions( TacsScalar vars[],
+                                  TacsScalar dvars[],
+                                  TacsScalar ddvars[],
+                                  const TacsScalar Xpts[] ){
     memset(vars, 0, numVariables()*sizeof(TacsScalar));
     memset(dvars, 0, numVariables()*sizeof(TacsScalar));
+    memset(ddvars, 0, numVariables()*sizeof(TacsScalar));
   }
 
   // Add the product of the initial condition with the adjoint variables

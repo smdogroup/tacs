@@ -10,169 +10,6 @@
 */
 
 /*!
-  TACSBcMap class 
-
-  Defines the Dirichlet boundary conditions for the vector and matrix
-  classes.
-
-  input:
-  bsize:    the block size
-  num_bcs:  an estimate of the number of boundary conditions
-*/
-TACSBcMap::TACSBcMap( int _bsize, int num_bcs ){
-  // Set the block size
-  bsize = _bsize;
-
-  // Set the number of boundary conditions
-  num_bcs = (num_bcs >= 100 ? num_bcs : 100);
-  max_size = num_bcs;
-
-  // Set the increment to be equal to the number of bcs set
-  bc_increment = max_size+1;
-
-  nbcs = 0;
-  nodes = new int[ max_size ];
-  vars = new int[ max_size ];
-  values = new TacsScalar[ bsize*max_size ];
-}
-
-/*
-  Delete all boundary condition information that this
-  object allocated
-*/
-TACSBcMap::~TACSBcMap(){
-  delete [] nodes;
-  delete [] vars;  
-  delete [] values;
-}
-
-/*
-  Add a Dirichlet boundary condition for the specified global variable
-  number and the local Dirichlet BC number/value pair. Note, if no
-  values are specified, they are assumed to be zero for each variable.
-
-  input:
-  node:       the global node number
-  bc_vars:    the nodal variable number to apply the BC
-  bc_vals:    the value to apply
-  nvals:      the number of values to apply at this node
-*/
-void TACSBcMap::addBC( int node, int nvals,
-                       const int *bc_vars, const TacsScalar *bc_vals ){
-  // If the number of boundary conditions exceeds the available
-  // space, allocate more space and copy over the arrays
-  if (nbcs >= max_size){
-    max_size = max_size + bc_increment;
-    int *temp_nodes = new int[ max_size ];
-    int *temp_vars = new int[ max_size ];
-    TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
-    memcpy(temp_nodes, nodes, nbcs*sizeof(int));
-    memcpy(temp_vars, vars, nbcs*sizeof(int));
-    memcpy(temp_values, values, bsize*nbcs*sizeof(TacsScalar));
-
-    // Free the old arrays
-    delete [] nodes;
-    delete [] vars;
-    delete [] values;
-    
-    // Copy over the new arrays
-    nodes = temp_nodes;
-    vars = temp_vars;
-    values = temp_values;
-  }
-
-  // Set the new variable information
-  nodes[nbcs] = node;
-  memset(&values[bsize*nbcs], 0, bsize*sizeof(TacsScalar));
-  vars[nbcs] = 0;
-
-  if (bc_vars && bc_vals){
-    for ( int i = 0; i < nvals; i++ ){
-      vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
-      values[bsize*nbcs + bc_vars[i]] = bc_vals[i];
-    }
-  }
-  else if (bc_vars){
-    for ( int i = 0; i < nvals; i++ ){
-      vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
-    }
-  }
-  else {
-    for ( int i = 0; i < nvals; i++ ){
-      vars[nbcs] = vars[nbcs] | (1 << i);
-    }
-  }
-  
-  // Increment the boundary conditions
-  nbcs++;
-}
-
-/*
-  Add a Dirichlet boundary condition using the specified global
-  variable and a binary flag where each bit indicates which local
-  variables should be constrained. This is the format used to store
-  this information internally.
-
-  input:
-  node:   the global node number
-  vars:   value of the binary flags indicating which unknowns to zero
-*/
-void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
-  // If the number of boundary conditions exceeds the available
-  // space, allocate more space and copy over the arrays
-  if (nbcs+1 >= max_size){
-    max_size = max_size + bc_increment;
-    int *temp_nodes = new int[ max_size ];
-    int *temp_vars = new int[ max_size ];
-    TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
-    memcpy(temp_nodes, nodes, nbcs*sizeof(int));
-    memcpy(temp_vars, vars, nbcs*sizeof(int));
-    memcpy(temp_values, values, bsize*nbcs*sizeof(int));
-
-    // Free the old arrays
-    delete [] nodes;
-    delete [] vars;
-    delete [] values;
-    
-    // Copy over the new arrays
-    nodes = temp_nodes;
-    vars = temp_vars;
-    values = temp_values;
-  }
-
-  // Set the new variable information
-  nodes[nbcs] = node;
-  memset(&values[bsize*nbcs], 0, bsize*sizeof(TacsScalar));
-  vars[nbcs] = _vars;
-  nbcs++;
-}
-
-/*
-  Retrieve the boundary conditions that have been set locally within
-  this object
-
-  output:
-  nodes:       the global node numbers
-  vars:        node unknown numbers to apply boundary conditions
-  values:      the values of the boundary conditions to apply
-*/
-int TACSBcMap::getBCs( const int **_nodes,
-                       const int **_vars, const TacsScalar **_values ){
-  if (_nodes){ *_nodes = nodes; }
-  if (_vars){ *_vars = vars; }
-  if (_values){ *_values = values; }
-  return nbcs;
-}
-
-/*
-  Retrieve the boundary condition node numbers
-*/
-int TACSBcMap::getBCNodeNums( int **_nodes ){
-  if (_nodes){ *_nodes = nodes; }
-  return nbcs;
-}
-
-/*!
   Create a block-based parallel vector
 
   input:
@@ -567,15 +404,15 @@ void TACSBVec::setRand( double lower, double upper ){
     // processors.
     for ( int k = 0; k < mpi_size; k++ ){
       if (k != mpi_rank){
-	int end = bsize*owner_range[k+1];
-	for ( int i = bsize*owner_range[k]; i < end; i++ ){
-	  rand(); 
-	}
+        int end = bsize*owner_range[k+1];
+        for ( int i = bsize*owner_range[k]; i < end; i++ ){
+          rand(); 
+        }
       }
       else {
-	for ( int i = 0; i < size; i++ ){
-	  x[i] = lower + ((upper - lower)*rand())/(1.0*RAND_MAX);
-	}
+        for ( int i = 0; i < size; i++ ){
+          x[i] = lower + ((upper - lower)*rand())/(1.0*RAND_MAX);
+        }
       }    
     }
   }
@@ -666,6 +503,39 @@ void TACSBVec::applyBCs( TACSVec *tvec ){
               // Scan through the rows to be zeroed
               x[var + k] = 0.0;
             }
+          }
+        }
+      }
+    }
+  }
+}
+
+/*
+  Apply boundary conditions directly from an input
+*/
+void TACSBVec::applyBCs( TACSBcMap *bcmap ){
+  // apply the boundary conditions
+  if (x){
+    int mpi_rank;
+    MPI_Comm_rank(comm, &mpi_rank);
+    
+    // Get ownership range
+    const int *owner_range;
+    var_map->getOwnerRange(&owner_range);
+
+    // Get the values from the boundary condition arrays
+    const int *nodes, *vars;
+    const TacsScalar *values;
+    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+
+    for ( int i = 0; i < nbcs; i++ ){
+      if (nodes[i] >= owner_range[mpi_rank] &&
+          nodes[i] < owner_range[mpi_rank+1]){
+        int var = bsize*(nodes[i] - owner_range[mpi_rank]);
+        for ( int k = 0; k < bsize; k++ ){
+          if (vars[i] & (1 << k)){
+            // Scan through the rows to be zeroed
+            x[var + k] = 0.0;
           }
         }
       }
@@ -1002,7 +872,7 @@ void TACSBVec::endDistributeValues(){
     for ( int i = 0; i < ndep; i++, z += bsize ){
       // Zero the variables
       for ( int k = 0; k < bsize; k++ ){
-	z[k] = 0.0;
+        z[k] = 0.0;
       }
       
       // Compute the weighted value of the dependent node

@@ -38,9 +38,9 @@
   efficient and effective parallel preconditioning.
 */
 PMat::PMat( TACSVarMap *_rmap,
-	    BCSRMat *_Aloc, BCSRMat *_Bext,
-	    TACSBVecDistribute *_ext_dist,
-	    TACSBcMap *_bcs ){
+            BCSRMat *_Aloc, BCSRMat *_Bext,
+            TACSBVecDistribute *_ext_dist,
+            TACSBcMap *_bcs ){
   init(_rmap, _Aloc, _Bext, _ext_dist, _bcs);
 }
 
@@ -59,9 +59,9 @@ PMat::PMat(){
   Initialize the PMat object
 */
 void PMat::init( TACSVarMap *_rmap,
-		 BCSRMat *_Aloc, BCSRMat *_Bext,
-		 TACSBVecDistribute *_ext_dist,
-		 TACSBcMap *_bcs ){
+                 BCSRMat *_Aloc, BCSRMat *_Bext,
+                 TACSBVecDistribute *_ext_dist,
+                 TACSBcMap *_bcs ){
   // Set the variable map and the local matrix components
   rmap = _rmap;
   Aloc = _Aloc;
@@ -259,36 +259,43 @@ void PMat::getExtColMap( TACSBVecDistribute ** ext_map ){
 */
 void PMat::applyBCs(){
   if (bcs){
-    // Get the MPI rank and ownership range
-    int mpi_rank;
-    const int *ownerRange;
-    MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
-    rmap->getOwnerRange(&ownerRange);
-
-    // apply the boundary conditions
-    const int *nodes, *vars;
-    const TacsScalar *values;
-    int nbcs = bcs->getBCs(&nodes, &vars, &values);
-
-    // Get the matrix values
-    for ( int i = 0; i < nbcs; i++){
-      // Find block i and zero out the variables associated with it
-      if (nodes[i] >= ownerRange[mpi_rank] &&
-          nodes[i] < ownerRange[mpi_rank+1]){
-	int bvar  = nodes[i] - ownerRange[mpi_rank];
-	int ident = 1; // Replace the diagonal with the identity matrix
-	Aloc->zeroRow(bvar, vars[i], ident);
-
-	// Now, check if the variable will be
-	// in the off diagonal block (potentially)
-	bvar = bvar - (N-Nc);
-	if (bvar >= 0){
-	  ident = 0;
-	  Bext->zeroRow(bvar, vars[i], ident);
-	}
-      }
-    }      
+    applyBCs(bcs);
   }
+}
+
+/*!
+  Apply the specified boundary conditions
+*/
+void PMat::applyBCs( TACSBcMap *bcmap ){
+  // Get the MPI rank and ownership range
+  int mpi_rank;
+  const int *ownerRange;
+  MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
+  rmap->getOwnerRange(&ownerRange);
+
+  // apply the boundary conditions
+  const int *nodes, *vars;
+  const TacsScalar *values;
+  int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+
+  // Get the matrix values
+  for ( int i = 0; i < nbcs; i++){
+    // Find block i and zero out the variables associated with it
+    if (nodes[i] >= ownerRange[mpi_rank] &&
+        nodes[i] < ownerRange[mpi_rank+1]){
+      int bvar  = nodes[i] - ownerRange[mpi_rank];
+      int ident = 1; // Replace the diagonal with the identity matrix
+      Aloc->zeroRow(bvar, vars[i], ident);
+
+      // Now, check if the variable will be
+      // in the off diagonal block (potentially)
+      bvar = bvar - (N-Nc);
+      if (bvar >= 0){
+        ident = 0;
+        Bext->zeroRow(bvar, vars[i], ident);
+      }
+    }
+  }      
 }
 
 TACSVec *PMat::createVec(){
@@ -360,7 +367,7 @@ const char *PMat::matName = "PMat";
 */
 PSOR::PSOR( PMat *mat, int _zero_guess, 
             TacsScalar _omega, int _iters, 
-	    int _isSymmetric ){
+            int _isSymmetric ){
   // Get the on- and off-diagonal components of the matrix
   mat->getBCSRMat(&Aloc, &Bext);
   Aloc->incref();
@@ -569,8 +576,8 @@ void AdditiveSchwarz::applyFactor( TACSVec *txvec ){
   The approximate Schur preconditioner class.
 */
 ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill, 
-				    int inner_gmres_iters, double inner_rtol, 
-				    double inner_atol ){
+                                    int inner_gmres_iters, double inner_rtol, 
+                                    double inner_atol ){
   mat = _mat;
   mat->incref();
 
@@ -643,7 +650,7 @@ void ApproximateSchur::setMonitor( KSMPrint *ksm_print ){
   if (inner_ksm){
     inner_ksm->setMonitor(ksm_print);
   }
-} 	
+}       
 
 /*
   Factor preconditioner based on the values in the matrix.
@@ -706,7 +713,7 @@ void ApproximateSchur::printNzPattern( const char *fileName ){
     // Print out the off-diagonal components
     for ( int i = 0; i < Nb; i++ ){
       for ( int j = browp[i]; j < browp[i+1]; j++ ){
-	fprintf(fp, "%d %d\n", i + var_offset + ownerRange[mpi_rank], 
+        fprintf(fp, "%d %d\n", i + var_offset + ownerRange[mpi_rank], 
                 col_vars[bcols[j]]);
       }
     }

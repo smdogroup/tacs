@@ -77,7 +77,6 @@ void SortAndUniquifyCSR( int nvars, int *rowp,
   rowp[nvars] = new_start;
 }
 
-
 /*!
   Perform Reverse Cuthill-McKee ordering.
 

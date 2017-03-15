@@ -253,7 +253,7 @@ cdef extern from "TACSAssembler.h":
       void getVariables(TACSBVec*, TACSBVec*, TACSBVec*)
 
       # Get the initial conditions
-      void getInitConditions(TACSBVec*, TACSBVec*)
+      void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
       
       # Assembly routines
       void assembleRes(TACSBVec *residual)

@@ -133,7 +133,7 @@ int main( int argc, char * argv[] ){
   fprintf(fp, "POINTS %d float\n", num_points);
   const double *d = data;
   for ( int k = 0; k < num_points; k++ ){
-    fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
+    fprintf(fp, "%e %e %e\n", d[0]+d[3], d[1]+d[4], d[2]+d[5]);
     d += num_variables;
   }
   

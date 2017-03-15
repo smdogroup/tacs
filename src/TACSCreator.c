@@ -6,7 +6,7 @@
   Extend an integer array 
 */
 static void extend_int_array( int ** array, int old_len, 
-			      int new_len ){
+                              int new_len ){
   int * temp = new int[ new_len ];
   memcpy(temp, *array, sizeof(int)*old_len);
   delete [] *array;
@@ -36,7 +36,7 @@ static int compare_arg_sort( const void * a, const void * b ){
   Allocate the TACSCreator object
 */
 TACSCreator::TACSCreator( MPI_Comm _comm, 
-			  int _vars_per_node ){
+                          int _vars_per_node ){
   // Set the communicator
   comm = _comm;
   root_rank = 0;
@@ -126,9 +126,9 @@ TACSCreator::~TACSCreator(){
   Set the global element connectivity arrays into the class
 */
 void TACSCreator::setGlobalConnectivity( int _num_nodes, int _num_elements,
-					 const int *_elem_node_ptr, 
-					 const int *_elem_node_conn,
-					 const int *_elem_id_nums ){
+                                         const int *_elem_node_ptr, 
+                                         const int *_elem_node_conn,
+                                         const int *_elem_id_nums ){
   num_elements = _num_elements;
   num_nodes = _num_nodes;
 
@@ -139,7 +139,7 @@ void TACSCreator::setGlobalConnectivity( int _num_nodes, int _num_elements,
   // Copy over the element node connectivity
   elem_node_conn = new int[ elem_node_ptr[num_elements] ];
   memcpy(elem_node_conn, _elem_node_conn, 
-	 elem_node_ptr[num_elements]*sizeof(int));
+         elem_node_ptr[num_elements]*sizeof(int));
 
   // Copy over the element ids
   elem_id_nums = new int[ num_elements ];
@@ -150,9 +150,9 @@ void TACSCreator::setGlobalConnectivity( int _num_nodes, int _num_elements,
   Set the dependent node information
 */
 void TACSCreator::setDependentNodes( int num_dep_nodes,
-				     const int *_dep_node_ptr,
-				     const int *_dep_node_conn,
-				     const double *_dep_node_weights ){
+                                     const int *_dep_node_ptr,
+                                     const int *_dep_node_conn,
+                                     const double *_dep_node_weights ){
   // Set the number of dependent nodes 
   num_dependent_nodes = num_dep_nodes;
   
@@ -172,8 +172,8 @@ void TACSCreator::setDependentNodes( int num_dep_nodes,
   Set the boundary condition data
 */
 void TACSCreator::setBoundaryConditions( int _num_bcs, 
-					 const int *_bc_nodes, 
-					 const int *_bc_ptr,
+                                         const int *_bc_nodes, 
+                                         const int *_bc_ptr,
                                          const int *_bc_vars,
                                          const TacsScalar *_bc_vals ){
   // Set the number of boundary conditions and the node numbers
@@ -212,7 +212,7 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
 
       // Restrain all the variables at the given node
       for ( int j = 0; j < vars_per_node; j++ ){
-	bc_vars[bc_ptr[i]+j] = j;
+        bc_vars[bc_ptr[i]+j] = j;
       }
     }
 
@@ -369,7 +369,7 @@ TACSAssembler* TACSCreator::createTACS(){
     if (num_dependent_nodes > 0){
       dep_nodes_part = new int[ num_dependent_nodes ];
       for ( int k = 0; k < num_dependent_nodes; k++ ){
-	dep_nodes_part[k] = k;
+        dep_nodes_part[k] = k;
       }
     }
 
@@ -430,23 +430,23 @@ TACSAssembler* TACSCreator::createTACS(){
       for ( int j = start; j < end; j++, n++ ){
         int elem = elem_part[j];
 
-	// Add the connectivity from the element 'elem'
-	// that belongs to partition k
-	int iend = elem_node_ptr[elem+1];
+        // Add the connectivity from the element 'elem'
+        // that belongs to partition k
+        int iend = elem_node_ptr[elem+1];
         for ( int i = elem_node_ptr[elem]; i < iend; i++ ){
-	  // Get add the node indices associated with the element
+          // Get add the node indices associated with the element
           int node = elem_node_conn[i];
-	  if (node >= 0){
-	    // Add the global connectivity index - this will
-	    // be converted to a local index later.
-	    elem_conn[local_conn_size] = new_nodes[node];
-	    local_conn_size++;
-	  }
-	  else {
-	    // Convert to the dependent node index
-	    node = -node-1;
+          if (node >= 0){
+            // Add the global connectivity index - this will
+            // be converted to a local index later.
+            elem_conn[local_conn_size] = new_nodes[node];
+            local_conn_size++;
+          }
+          else {
+            // Convert to the dependent node index
+            node = -node-1;
 
-	    // If this dependent node has not been assigned, 
+            // If this dependent node has not been assigned, 
             // create a new number for it
             if (dep_node_flags[node] != k){
               dep_node_flags[node] = k;
@@ -456,91 +456,91 @@ TACSAssembler* TACSCreator::createTACS(){
             }
 
             // Assign the dependent node number
-	    elem_conn[local_conn_size] = -dep_nodes[node]-1;
-	    local_conn_size++;
-	  }
-	}
+            elem_conn[local_conn_size] = -dep_nodes[node]-1;
+            local_conn_size++;
+          }
+        }
 
-	// Set the element 
-	elem_ids[n] = elem_id_nums[elem];
-	elem_ptr[n+1] = local_conn_size;
+        // Set the element 
+        elem_ids[n] = elem_id_nums[elem];
+        elem_ptr[n+1] = local_conn_size;
       }
 
       // Loop over all of the local dependent nodes and find their
       // corresponding independent nodes and copy over the weight
       // data.
       if (local_dep_node_size > 0){
-	// Keep track of the offset into the pointer array
-	int dep_conn_len = 0;
-	dep_ptr[0] = 0;
+        // Keep track of the offset into the pointer array
+        int dep_conn_len = 0;
+        dep_ptr[0] = 0;
 
-	for ( int j = 0; j < local_dep_node_size; j++ ){
-	  int dep_node = inv_dep_nodes[j];
-	  
-	  // Loop over the dependent nodes within this list
-	  for ( int i = dep_node_ptr[dep_node];
-		i < dep_node_ptr[dep_node+1]; i++ ){
+        for ( int j = 0; j < local_dep_node_size; j++ ){
+          int dep_node = inv_dep_nodes[j];
+          
+          // Loop over the dependent nodes within this list
+          for ( int i = dep_node_ptr[dep_node];
+                i < dep_node_ptr[dep_node+1]; i++ ){
             dep_conn[dep_conn_len] = new_nodes[dep_node_conn[i]];
             dep_weights[dep_conn_len] = dep_node_weights[i];
             dep_conn_len++;
           }
 
-	  // Set the depdendent node pointer data 
-	  dep_ptr[j+1] = dep_conn_len;
-	}
+          // Set the depdendent node pointer data 
+          dep_ptr[j+1] = dep_conn_len;
+        }
       }
 
       // Copy over the node data from the old indices
       for ( int i = 0, j = start_node; j < end_node; i++, j++ ){
         int node = inv_new_nodes[j];
-	xpts[3*i] = Xpts[3*node];
-	xpts[3*i+1] = Xpts[3*node+1];
-	xpts[3*i+2] = Xpts[3*node+2];
+        xpts[3*i] = Xpts[3*node];
+        xpts[3*i+1] = Xpts[3*node+1];
+        xpts[3*i+2] = Xpts[3*node+2];
       }
     
       // Create the CSR data structure required
       if (k == root_rank){
-	// Copy the values over from the nodes
-        num_local_dep_nodes = local_dep_node_size;	
+        // Copy the values over from the nodes
+        num_local_dep_nodes = local_dep_node_size;      
         Xpts_local = new TacsScalar[ 3*num_owned_nodes ];
-	memcpy(Xpts_local, xpts, 3*num_owned_nodes*sizeof(TacsScalar));
+        memcpy(Xpts_local, xpts, 3*num_owned_nodes*sizeof(TacsScalar));
 
-	if (num_local_dep_nodes > 0){
-	  // Copy over the data for the dependent nodes
+        if (num_local_dep_nodes > 0){
+          // Copy over the data for the dependent nodes
           local_dep_node_ptr = new int[ num_local_dep_nodes+1 ];
-	  memcpy(local_dep_node_ptr, dep_ptr, 
-		 (num_local_dep_nodes+1)*sizeof(int));
-	  
-	  // Allocate the local dependent node connectivity and weights
-	  int conn_len = local_dep_node_ptr[num_local_dep_nodes];
-	  local_dep_node_conn = new int[ conn_len ];
-	  local_dep_node_weights = new double[ conn_len ];
-	  memcpy(local_dep_node_conn, dep_conn, conn_len*sizeof(int));
-	  memcpy(local_dep_node_weights, dep_weights, conn_len*sizeof(double));
-	}
+          memcpy(local_dep_node_ptr, dep_ptr, 
+                 (num_local_dep_nodes+1)*sizeof(int));
+          
+          // Allocate the local dependent node connectivity and weights
+          int conn_len = local_dep_node_ptr[num_local_dep_nodes];
+          local_dep_node_conn = new int[ conn_len ];
+          local_dep_node_weights = new double[ conn_len ];
+          memcpy(local_dep_node_conn, dep_conn, conn_len*sizeof(int));
+          memcpy(local_dep_node_weights, dep_weights, conn_len*sizeof(double));
+        }
 
-	// Copy over values for the elements
-	memcpy(local_elem_id_nums, elem_ids, 
-	       num_owned_elements*sizeof(int));
-	memcpy(local_elem_node_ptr, elem_ptr, 
-	       (num_owned_elements+1)*sizeof(int));
-	local_elem_node_conn = new int[local_elem_node_ptr[num_owned_elements]];
-	memcpy(local_elem_node_conn, elem_conn,
-	       local_elem_node_ptr[num_owned_elements]*sizeof(int));
+        // Copy over values for the elements
+        memcpy(local_elem_id_nums, elem_ids, 
+               num_owned_elements*sizeof(int));
+        memcpy(local_elem_node_ptr, elem_ptr, 
+               (num_owned_elements+1)*sizeof(int));
+        local_elem_node_conn = new int[local_elem_node_ptr[num_owned_elements]];
+        memcpy(local_elem_node_conn, elem_conn,
+               local_elem_node_ptr[num_owned_elements]*sizeof(int));
       }
       else {
         // Send the data to the other process
         MPI_Send(&local_dep_node_size, 1, MPI_INT, k, 2, comm);
-	MPI_Send(xpts, 3*owned_nodes[k], TACS_MPI_TYPE, k, 4, comm);
+        MPI_Send(xpts, 3*owned_nodes[k], TACS_MPI_TYPE, k, 4, comm);
 
-	// Send the dependent node data to processor k
-	if (local_dep_node_size > 0){
-	  MPI_Send(dep_ptr, local_dep_node_size+1, MPI_INT, k, 5, comm);
-	  MPI_Send(dep_conn, dep_ptr[local_dep_node_size], MPI_INT, k, 6, comm);
-	  MPI_Send(dep_weights, dep_ptr[local_dep_node_size], MPI_DOUBLE, k, 7, comm);
-	}
+        // Send the dependent node data to processor k
+        if (local_dep_node_size > 0){
+          MPI_Send(dep_ptr, local_dep_node_size+1, MPI_INT, k, 5, comm);
+          MPI_Send(dep_conn, dep_ptr[local_dep_node_size], MPI_INT, k, 6, comm);
+          MPI_Send(dep_weights, dep_ptr[local_dep_node_size], MPI_DOUBLE, k, 7, comm);
+        }
 
-	// Send the element data
+        // Send the element data
         MPI_Send(elem_ids, owned_elements[k], MPI_INT, k, 8, comm);
         MPI_Send(elem_ptr, owned_elements[k]+1, MPI_INT, k, 9, comm);
         MPI_Send(elem_conn, elem_ptr[owned_elements[k]], MPI_INT, k, 10, comm);
@@ -573,35 +573,35 @@ TACSAssembler* TACSCreator::createTACS(){
     // Allocate space for the incoming data
     Xpts_local = new TacsScalar[ 3*num_owned_nodes ];
     MPI_Recv(Xpts_local, 3*num_owned_nodes, TACS_MPI_TYPE,
-	     root_rank, 4, comm, &status);
+             root_rank, 4, comm, &status);
 
     // Receive the dependent node data if there are any dependent
     // nodes on this processor
     if (num_local_dep_nodes > 0){
       local_dep_node_ptr = new int[ num_local_dep_nodes+1 ];
       MPI_Recv(local_dep_node_ptr, num_local_dep_nodes+1, MPI_INT,
-	       root_rank, 5, comm, &status);
+               root_rank, 5, comm, &status);
       
       // Allocate the local connectivity and weight arrays
       int conn_len = local_dep_node_ptr[num_local_dep_nodes];
       local_dep_node_conn = new int[ conn_len ];
       local_dep_node_weights = new double[ conn_len ];
       MPI_Recv(local_dep_node_conn, conn_len, MPI_INT,
-	       root_rank, 6, comm, &status);
+               root_rank, 6, comm, &status);
       MPI_Recv(local_dep_node_weights, conn_len, MPI_DOUBLE,
-	       root_rank, 7, comm, &status);
+               root_rank, 7, comm, &status);
     }
 
     // Receive the element data
     MPI_Recv(local_elem_id_nums, num_owned_elements, MPI_INT, 
-	     root_rank, 8, comm, &status);
+             root_rank, 8, comm, &status);
     MPI_Recv(local_elem_node_ptr, num_owned_elements+1, MPI_INT, 
-	     root_rank, 9, comm, &status);
+             root_rank, 9, comm, &status);
 
     int con_size = local_elem_node_ptr[num_owned_elements];
     local_elem_node_conn = new int[con_size];
     MPI_Recv(local_elem_node_conn, con_size, MPI_INT, 
-	     root_rank, 10, comm, &status);
+             root_rank, 10, comm, &status);
   }
 
   // Broadcast the boundary condition information
@@ -643,8 +643,8 @@ TACSAssembler* TACSCreator::createTACS(){
   // Set the dependent node data
   if (num_local_dep_nodes > 0){
     tacs->setDependentNodes(local_dep_node_ptr,
-			    local_dep_node_conn,
-			    local_dep_node_weights);
+                            local_dep_node_conn,
+                            local_dep_node_weights);
   }
 
   // Set the connectivity
@@ -657,11 +657,11 @@ TACSAssembler* TACSCreator::createTACS(){
     for ( int k = 0; k < num_owned_elements; k++ ){
       elems[k] = elements[local_elem_id_nums[k]];
       if (!elems[k]){
-	fprintf(stderr, 
-		"[%d] TACSCreator: Element undefined for element ID %d\n",
-		rank, local_elem_id_nums[k]);
-	MPI_Abort(comm, 1);
-	return NULL;
+        fprintf(stderr, 
+                "[%d] TACSCreator: Element undefined for element ID %d\n",
+                rank, local_elem_id_nums[k]);
+        MPI_Abort(comm, 1);
+        return NULL;
       }
     }
     
@@ -674,11 +674,11 @@ TACSAssembler* TACSCreator::createTACS(){
     for ( int k = 0; k < num_owned_elements; k++ ){
       elems[k] = element_creator(k, local_elem_id_nums[k]);
       if (!elems[k]){
-	fprintf(stderr, 
-		"[%d] TACSCreator: Callback failed for element ID %d\n",
-		rank, local_elem_id_nums[k]);
-	MPI_Abort(comm, 1);
-	return NULL;
+        fprintf(stderr, 
+                "[%d] TACSCreator: Callback failed for element ID %d\n",
+                rank, local_elem_id_nums[k]);
+        MPI_Abort(comm, 1);
+        return NULL;
       }
     }
 
@@ -688,8 +688,8 @@ TACSAssembler* TACSCreator::createTACS(){
   }
   else {
     fprintf(stderr, 
-	    "[%d] TACSCreator: Elements and callback not defined\n",
-	    rank);
+            "[%d] TACSCreator: Elements and callback not defined\n",
+            rank);
     MPI_Abort(comm, 1);
     return NULL;
   }
@@ -1016,10 +1016,10 @@ void TACSCreator::partitionMesh( int split_size,
     for ( int i = elem_node_ptr[j]; i < elem_node_ptr[j+1]; i++ ){
       int node = elem_node_conn[i];
       if (node >= 0){
-	if (!new_nodes[node]){
-	  new_nodes[node] = 1;
-	  owned_nodes[owner]++;
-	}
+        if (!new_nodes[node]){
+          new_nodes[node] = 1;
+          owned_nodes[owner]++;
+        }
       }
     }
   }
@@ -1047,10 +1047,10 @@ void TACSCreator::partitionMesh( int split_size,
     for ( int i = elem_node_ptr[j]; i < elem_node_ptr[j+1]; i++ ){
       int node = elem_node_conn[i];
       if (node >= 0){
-	if (new_nodes[node] < 0){
-	  new_nodes[node] = split_offset[owner];
-	  split_offset[owner]++;
-	}
+        if (new_nodes[node] < 0){
+          new_nodes[node] = split_offset[owner];
+          split_offset[owner]++;
+        }
       }
     }
   }

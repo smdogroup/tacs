@@ -12,52 +12,6 @@
 #include "BVecDist.h"
 
 /*
-  Define boundary conditions that are applied after all the
-  matrix/vector values have been set.  
-
-  BCMap should only be instantiated once for a given analysis.  All
-  other classes in this file should point that instance.
-*/
-class TACSBcMap : public TACSObject {
- public:
-  TACSBcMap( int bsize, int num_bcs );
-  ~TACSBcMap();
-
-  // Add/get the boundary conditions stored in this object
-  // -----------------------------------------------------
-  void addBC( int node, int nvals, 
-	      const int *bc_nums=NULL, const TacsScalar *bc_vals=NULL );
-  int getBCs( const int **_nodes,
-	      const int **_vars, const TacsScalar **_values );
-
-  // Get the node numbers associated with the BCs for reordering
-  // -----------------------------------------------------------
-  int getBCNodeNums( int **_nodes );
-
-  // Add the boundary condition using the binary flags directly
-  // ----------------------------------------------------------
-  void addBinaryFlagBC( int node, int _vars );
-
- private:
-  // Set the block size
-  int bsize;
-
-  // Information used to apply boundary conditions
-  int *nodes;
-
-  // The total number of boundary conditions
-  int nbcs;
-
-  // The local index of the unknowns and the values
-  int *vars;
-  TacsScalar *values;
-
-  // Set the boundary condition sizes
-  int max_size;
-  int bc_increment;
-};
-
-/*
   The following class defines the dependent node information.
 
   Note that this class steals the ownership of the data. 
@@ -136,7 +90,7 @@ class TACSBVec : public TACSVec {
   void axpy( TacsScalar alpha, TACSVec *x ); // y <- y + alpha*x
   void copyValues( TACSVec *x );             // Copy values from x to this
   void axpby( TacsScalar alpha, 
-	      TacsScalar beta, TACSVec *x ); // y <- alpha*x + beta*y 
+              TacsScalar beta, TACSVec *x ); // y <- alpha*x + beta*y 
 
   // Get/set the vector elements
   // ---------------------------
@@ -145,6 +99,7 @@ class TACSBVec : public TACSVec {
   int getArray( TacsScalar **vals );    // Get the local values
   int getExtArray( TacsScalar **vals ); // Get the external values
   void applyBCs( TACSVec *vec=NULL );   // Zero rows corresponding to BCs
+  void applyBCs( TACSBcMap *map );      // Zero rows corresponding to BCs
   void initRand();                      // Init random number generator
   void setRand( double lower, double upper ); // Set random values
 

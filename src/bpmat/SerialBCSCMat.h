@@ -22,6 +22,7 @@ class SerialBCSCMat : public TACSMat {
                   int ncol, const int *col,
                   int nv, int mv, const TacsScalar *values );
   void applyBCs();
+  void applyBCs( TACSBcMap *bcmap );
 
   // Create vectors
   // --------------

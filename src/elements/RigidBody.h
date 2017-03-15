@@ -50,8 +50,8 @@ class TACSRigidBodyViz : public TACSObject {
 class TACSRefFrame : public TACSObject {
  public:
   TACSRefFrame( TACSGibbsVector *_r0, 
-		TACSGibbsVector *_r1,
-		TACSGibbsVector *_r2 );
+                TACSGibbsVector *_r1,
+                TACSGibbsVector *_r2 );
   ~TACSRefFrame();
 
   // Returns the rotation matrix associated with the frame of ref.
@@ -66,8 +66,8 @@ class TACSRefFrame : public TACSObject {
   // Product of adjoint variables with rotation parametrization
   //-----------------------------------------------------------
   void addRotationAdjResProduct( TacsScalar fdvSens[], int numDVs,
-				 const TacsScalar psi[],
-				 const TacsScalar phi[] );
+                                 const TacsScalar psi[],
+                                 const TacsScalar phi[] );
 
   // Routine to perform sanity checks on the implementations of the
   // frame of reference
@@ -146,9 +146,10 @@ class TACSRigidBody : public TACSElement {
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
-  void getInitCondition( TacsScalar vars[],
-			 TacsScalar dvars[],
-			 const TacsScalar X[] );
+  void getInitConditions( TacsScalar vars[],
+                          TacsScalar dvars[],
+                          TacsScalar ddvars[],
+                          const TacsScalar X[] );
 
   // Retrieve the position of the rigid body
   // ---------------------------------------
@@ -190,9 +191,9 @@ class TACSRigidBody : public TACSElement {
   // -----------------------------
   void addOutputCount( int *nelems, int *nnodes, int *ncsr );
   void getOutputData( unsigned int out_type, 
-		      double *data, int ld_data, 
-		      const TacsScalar Xpts[],
-		      const TacsScalar vars[] );
+                      double *data, int ld_data, 
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
 
   // Rigid body visualization
@@ -255,12 +256,6 @@ class TACSSphericalConstraint : public TACSElement {
   int numNodes();
   const char* elementName(){ return elem_name; }
 
-  // Retrieve the initial values for the state variables
-  // ---------------------------------------------------
-  void getInitCondition( TacsScalar vars[],
-                         TacsScalar dvars[],
-                         const TacsScalar X[] );
-
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
@@ -320,12 +315,6 @@ class TACSRevoluteConstraint : public TACSElement {
   int numNodes();
   const char* elementName(){ return elem_name; }
 
-  // Retrieve the initial values for the state variables
-  // ---------------------------------------------------
-  void getInitCondition( TacsScalar vars[],
-                         TacsScalar dvars[],
-                         const TacsScalar X[] );
-
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
@@ -375,12 +364,6 @@ class TACSRigidLink : public TACSElement {
   int numDisplacements();
   int numNodes();
   const char* elementName();
-
-  // Retrieve the initial values for the state variables
-  // ---------------------------------------------------
-  void getInitCondition( TacsScalar vars[],
-                         TacsScalar dvars[],
-                         const TacsScalar X[] );
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------

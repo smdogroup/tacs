@@ -731,9 +731,10 @@ void TACSRigidBody::updateInertialProperties(){
   qkin:  the kinematic variables
   qdyn:  the dynamic variable values
 */
-void TACSRigidBody::getInitCondition( TacsScalar vars[],
-                                      TacsScalar dvars[],
-                                      const TacsScalar X[] ){
+void TACSRigidBody::getInitConditions( TacsScalar vars[],
+                                       TacsScalar dvars[],
+                                       TacsScalar ddvars[],
+                                       const TacsScalar X[] ){
   // Set everything to zero first
   memset(vars, 0, 8*sizeof(TacsScalar));
   memset(dvars, 0, 8*sizeof(TacsScalar));
@@ -760,14 +761,17 @@ void TACSRigidBody::getInitCondition( TacsScalar vars[],
   dvars[1] = v[1] + t[1];
   dvars[2] = v[2] + t[2];
 
-  // Set the angular velocity
+  // Set the time-derivative of the quaternions
   dvars[4] = 0.5*w[0];
   dvars[5] = 0.5*w[1];
   dvars[6] = 0.5*w[2];
 
+  // Set the accelerations omega^{x}*omega^{x}*r
+  crossProduct(1.0, w, t, &ddvars[0]);
+
   // Check if the quaternion contraint is satisfied at initial condition
   double con_viol = RealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
-                                  vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
+                             vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
   if (con_viol > 1.0e-12){
     fprintf(stderr, "Warning: RigidBody quarternion constraint violated by %f\n", con_viol);
   }
@@ -1697,13 +1701,6 @@ void TACSSphericalConstraint::updatePoints(){
 }
 
 /*
-  Retrieve the initial conditions for the state variables
-*/
-void TACSSphericalConstraint::getInitCondition( TacsScalar vars[],
-                                                TacsScalar dvars[],
-                                                const TacsScalar X[] ){}
-
-/*
   Compute the kinetic and potential energy within the element
 */
 void TACSSphericalConstraint::computeEnergies( double time,
@@ -2100,13 +2097,6 @@ void TACSRevoluteConstraint::updatePoints( int init_e ){
   eB1Vec = new TACSGibbsVector(eB1);
   eB1Vec->incref();
 }
-
-/*
-  Retrieve the initial conditions for the state variables
-*/
-void TACSRevoluteConstraint::getInitCondition( TacsScalar vars[],
-                                               TacsScalar dvars[],
-                                               const TacsScalar X[] ){}
 
 /*
   Compute the kinetic and potential energy within the element
@@ -2512,17 +2502,6 @@ int TACSRigidLink::numNodes(){
 */
 const char* TACSRigidLink::elementName(){ 
   return elem_name;
-}
-
-/*
-  Retrieve the initial values for the state variables
-*/
-void TACSRigidLink::getInitCondition( TacsScalar vars[],
-                                      TacsScalar dvars[],
-                                      const TacsScalar X[] ){
-  for ( int k = 0; k < 8; k++ ){
-    vars[16+k] = 1.0;
-  }
 }
 
 /*
