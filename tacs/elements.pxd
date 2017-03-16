@@ -48,8 +48,11 @@ cdef extern from "RigidBody.h":
                              TACSGibbsVector *point, TACSGibbsVector *eA)
 
    cdef cppclass TACSRigidLink(TACSElement):
-      TACSRigidLink(TACSRigidBody *bodyA)
-      
+      TACSRigidLink(TACSRigidBody*)
+
+   cdef cppclass TACSRevoluteDriver(TACSElement):
+      TACSRevoluteDriver(TACSGibbsVector*, TACSGibbsVector*, TacsScalar)
+            
 # Template
 cdef extern from "TACSElementTemplates.h":
    # Declare the PlaneStressQuad elements

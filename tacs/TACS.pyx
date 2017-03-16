@@ -438,16 +438,40 @@ cdef class Assembler:
 
       return
 
-   def addBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes):
+   def addBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes,
+              np.ndarray[int, ndim=1, mode='c'] _vars=None,
+              np.ndarray[int, ndim=1, mode='c'] values=None):   
       cdef int nnodes = nodes.shape[0]
       cdef int *node_nums = <int*>nodes.data
-      self.ptr.addBCs(nnodes, node_nums, -1, NULL, NULL)
+      cdef int vars_dim = -1
+      cdef int *vars_data = NULL
+      cdef TacsScalar *values_data = NULL
+
+      # Unwrap the boundary condition information
+      if _vars is not None:
+         vars_dim = _vars.shape[0]
+         vars_data = <int*>_vars.data
+      if values is not None:
+         values_data = <TacsScalar*>values.data
+      self.ptr.addBCs(nnodes, node_nums, vars_dim, vars_data, values_data)
       return
-   
-   def addInitBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes):
+
+   def addInitBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes,
+              np.ndarray[int, ndim=1, mode='c'] _vars=None,
+              np.ndarray[int, ndim=1, mode='c'] values=None):   
       cdef int nnodes = nodes.shape[0]
       cdef int *node_nums = <int*>nodes.data
-      self.ptr.addInitBCs(nnodes, node_nums, -1, NULL, NULL)
+      cdef int vars_dim = -1
+      cdef int *vars_data = NULL
+      cdef TacsScalar *values_data = NULL
+
+      # Unwrap the boundary condition information
+      if _vars is not None:
+         vars_dim = _vars.shape[0]
+         vars_data = <int*>_vars.data
+      if values is not None:
+         values_data = <TacsScalar*>values.data
+      self.ptr.addInitBCs(nnodes, node_nums, vars_dim, vars_data, values_data)
       return
 
    def computeReordering(self, OrderingType order_type, MatrixOrderingType mat_type):

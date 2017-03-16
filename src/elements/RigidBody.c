@@ -29,7 +29,7 @@ TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems,
   Vizualization object for cube rigid body
 */
 TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
-   // Set values for class variables
+  // Set values for class variables
   npts   = 8;
   nelems = 1;
   Xpts   = new TacsScalar[ 3*npts ];
@@ -2654,4 +2654,128 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
   // Add the remaining quaternion constraint derivatives w.r.t. lam[4:]
   addBlockIdent(-alpha, &J[4*nvars + 20], nvars);
   addBlockIdent(alpha, &J[12*nvars + 20], nvars);
+}
+
+TACSRevoluteDriver::TACSRevoluteDriver( TACSGibbsVector *orig, 
+                                        TACSGibbsVector *rev,
+                                        TacsScalar _omega ){
+  origVec = orig;
+  revVec = rev;
+  origVec->incref();
+  revVec->incref();
+  omega = _omega;
+}
+
+TACSRevoluteDriver::~TACSRevoluteDriver(){
+  origVec->decref();
+  revVec->decref();
+}
+
+int TACSRevoluteDriver::numDisplacements(){ 
+  return 8; 
+}
+  
+int TACSRevoluteDriver::numNodes(){ 
+  return 2; 
+}
+
+const char* TACSRevoluteDriver::elementName(){ 
+  return "TACSRevoluteDriver"; 
+}
+
+void TACSRevoluteDriver::computeEnergies( double time,
+                                          TacsScalar *_Te, 
+                                          TacsScalar *_Pe,
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[] ){
+  *_Te = 0.0;
+  *_Pe = 0.0;
+}
+
+void TACSRevoluteDriver::addResidual( double time, TacsScalar res[],
+                                      const TacsScalar Xpts[],
+                                      const TacsScalar vars[],
+                                      const TacsScalar dvars[],
+                                      const TacsScalar ddvars[] ){
+  // The displacements at the final time are given
+  TacsScalar theta = omega*time;
+  TacsScalar s = sin(theta);
+  TacsScalar c = cos(theta);
+
+  // Extract the components of the vector
+  const TacsScalar *rev, *orig;
+  revVec->getVector(&rev);
+  origVec->getVector(&orig);
+
+  // Compute the initial position between the 
+  TacsScalar d1[3];
+  d1[0] = Xpts[0] - orig[0];
+  d1[1] = Xpts[1] - orig[1];
+  d1[2] = Xpts[2] - orig[2];
+
+  // Compute the component of the vector d1 perpendicular to the
+  // revolute direction
+  TacsScalar p[3];
+  TacsScalar a = vecDot(rev, d1);
+  p[0] = d1[0] - a*rev[0];
+  p[1] = d1[1] - a*rev[1];
+  p[2] = d1[2] - a*rev[2];
+    
+  // Find the cross product e = rev x d1
+  TacsScalar e[3];
+  crossProduct(1.0, rev, d1, e);
+
+  // Combine the perpendicular components of the vector
+  TacsScalar d2[3];
+  d2[0] = a*rev[0] + c*p[0] + s*e[0];
+  d2[1] = a*rev[1] + c*p[1] + s*e[1];
+  d2[2] = a*rev[2] + c*p[2] + s*e[2];
+
+  // Compute the displacement from the initial point
+  TacsScalar u[3];
+  u[0] = d2[0] - d1[0];
+  u[1] = d2[1] - d1[1];
+  u[2] = d2[2] - d1[2];
+    
+  // Set the pointers to the Lagrange multipliers
+  const TacsScalar *lam = &vars[8];
+
+  // Add the multipliers (forces) to the equations of motion
+  res[0] += lam[0];
+  res[1] += lam[1];
+  res[2] += lam[2];
+
+  // Add the kinematic constraint equations
+  res[8] += vars[0] - u[0];
+  res[9] += vars[1] - u[1];
+  res[10] += vars[2] - u[2];
+
+  // Add dummy constraints for the remaining multipliers
+  res[11] += lam[3];
+  res[12] += lam[4];
+  res[13] += lam[5];
+  res[14] += lam[6];
+  res[15] += lam[7];
+}
+  
+void TACSRevoluteDriver::addJacobian( double time, TacsScalar J[],
+                                      double alpha, double beta, double gamma,
+                                      const TacsScalar Xpts[],
+                                      const TacsScalar vars[],
+                                      const TacsScalar dvars[],
+                                      const TacsScalar ddvars[] ){
+  // The number of variables in the Jacobian matrix
+  const int nvars = 2*8;
+
+  // Add the block from the multipliers
+  addBlockIdent(alpha, &J[8], nvars);
+
+  // Add the block from the constraint equations
+  addBlockIdent(alpha, &J[8*nvars], nvars);
+
+  // Add the diagonal block from the dummy equations
+  for ( int i = 11; i < nvars; i++ ){
+    J[(nvars+1)*i] += alpha;
+  }
 }

@@ -283,11 +283,11 @@ class TACSSphericalConstraint : public TACSElement {
                     const TacsScalar ddvars[] );
 
  private:
-  void updatePoints();              // Update the local data
-  TACSRigidBody     *bodyA, *bodyB; // The rigid bodies involved in the joint
-  TACSGibbsVector   *point;         // The point where the joint is located in global frame
-  TACSGibbsVector   *xAVec, *xBVec; // The positions of joint from each body in global frame
-  static const char *elem_name;     // The name of the element
+  void updatePoints();            // Update the local data
+  TACSRigidBody *bodyA, *bodyB;   // The rigid bodies involved in the joint
+  TACSGibbsVector *point;         // The point where the joint is located in global frame
+  TACSGibbsVector *xAVec, *xBVec; // The positions of joint from each body in global frame
+  static const char *elem_name;   // The name of the element
 };
 
 /*
@@ -342,12 +342,12 @@ class TACSRevoluteConstraint : public TACSElement {
                     const TacsScalar ddvars[] );
  private:
   void updatePoints( int init_e=0 );  // Update the local data
-  TACSRigidBody     *bodyA, *bodyB;   // The rigid bodies involved in the joint
-  TACSGibbsVector   *point;           // The point where the joint is located in global frame
-  TACSGibbsVector   *eAVec;           // The revolute direction in global frame
-  TACSGibbsVector   *xAVec, *xBVec;   // The positions of joint from each body in global frame
-  TACSGibbsVector   *eB1Vec, *eB2Vec; // The positions of joint from each body in global fram
-  TACSGibbsVector   *eVec;            // The coordinate direction in global frame with minimal dot product with eAVec
+  TACSRigidBody *bodyA, *bodyB;   // The rigid bodies involved in the joint
+  TACSGibbsVector *point;           // The point where the joint is located in global frame
+  TACSGibbsVector *eAVec;           // The revolute direction in global frame
+  TACSGibbsVector *xAVec, *xBVec;   // The positions of joint from each body in global frame
+  TACSGibbsVector *eB1Vec, *eB2Vec; // The positions of joint from each body in global fram
+  TACSGibbsVector *eVec;            // The coordinate direction in global frame with minimal dot product with eAVec
   static const char *elem_name;       // The name of the element
 };
 
@@ -394,6 +394,44 @@ class TACSRigidLink : public TACSElement {
  private:
   TACSRigidBody *bodyA; // The rigid body
   static const char *elem_name; // The name of the element
+};
+
+/*
+  Drives the connected points at a specified angular rate about
+  the specified revolute direction fixed at the given origin.
+*/
+class TACSRevoluteDriver : public TACSElement {
+ public:
+  TACSRevoluteDriver( TACSGibbsVector *orig, 
+                      TACSGibbsVector *rev,
+                      TacsScalar _omega );
+  ~TACSRevoluteDriver();
+
+  int numDisplacements();
+  int numNodes();
+  const char* elementName();
+
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+  void addJacobian( double time, TacsScalar J[],
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+
+ private:
+  TacsScalar omega;
+  TACSGibbsVector *origVec, *revVec;
 };
 
 #endif // TACS_RIGID_BODY_DYNAMICS_H

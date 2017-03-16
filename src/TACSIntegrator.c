@@ -333,7 +333,7 @@ int TACSIntegrator::doAdaptiveMarching( ) {
   supplied
   
   Output: q, qdot, qddot updated iteratively until the corresponding
-  residual R <= tolerance
+  residual ||R|| <= tolerance
   
   alpha: multiplier for derivative of Residual wrt to q
   beta : multiplier for derivative of Residual wrt to qdot
@@ -368,7 +368,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       mat = A;
       mat->incref();
       if (mpiSize > 1) {
-        fprintf(stderr, "TACSIntegrator:: Using SerialBCSCMat in parallel?\n");
+        fprintf(stderr, "TACSIntegrator error: Using SerialBCSCMat in parallel\n");
       }
     }
   
@@ -390,7 +390,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
   if (logfp && print_level >= 2){
     fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
-            "time", "#iters", "|R|", "|R|/|R0|", "|dq|", 
+            "time step", "#iters", "|R|", "|R|/|R0|", "|dq|", 
             "alpha", "beta", "gamma","delta");
   }
 
@@ -435,7 +435,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
     
     time_fwd_assembly += MPI_Wtime() - t0;
-  
+
     // Compute the L2-norm of the residual
     res_norm = res->norm();
     
@@ -447,14 +447,14 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Write a summary    
     if(logfp && print_level >= 2){
       if (niter == 0){
-        fprintf(logfp, "%12.5e %12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
-                t, niter, RealPart(res_norm),  
+        fprintf(logfp, "%12d %12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
+                current_time_step, niter, RealPart(res_norm),  
                 (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
                 " ", alpha, beta, gamma, delta);
       }
       else {
-        fprintf(logfp, "%12.5e %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-                t, niter, RealPart(res_norm),  
+        fprintf(logfp, "%12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                current_time_step, niter, RealPart(res_norm),  
                 (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
                 RealPart(update_norm),  
                 alpha, beta, gamma, delta);
@@ -722,16 +722,16 @@ void TACSIntegrator::configureOutput( TACSToFH5 *_viewer,
 void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   // Retrieve the initial conditions and set into TACS
   if (k == 1){
-    current_time_step = 0;
-
     tacs->getInitConditions(q[0], qdot[0], qddot[0]);
     tacs->setVariables(q[0], qdot[0], qddot[0]);
 
+    /*
     // Perform an initial solve to get initial conditions compatible
     // with the initial accelerations/velocities
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
     newtonSolve(alpha, beta, gamma, 0.0, q[0], qdot[0], qddot[0], 
                 NULL, tacs->getInitBcMap());
+    */
   }
   
   // Set the class variable
