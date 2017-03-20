@@ -473,7 +473,7 @@ void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
           for ( int k = 0; k < bsize; k++ ){
             if (vars[i] & (1 << k)){
               // Scan through the rows to be zeroed
-              x[var + k] = uvals[var + k] - values[var + k];      
+              x[var + k] = uvals[var + k] - values[bsize*i + k]; 
             }
           }
         }

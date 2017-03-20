@@ -897,9 +897,9 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     delete [] cols;
   }
   else {
-    // First, find the reduced nodes - the set of nodes 
-    // that are only referenced by this processor. These 
-    // can be reordered without affecting other processors.
+    // First, find the reduced nodes - the set of nodes that are only
+    // referenced by this processor. These can be reordered without
+    // affecting other processors.
     int *reducedNodes = new int[ numNodes ];
     memset(reducedNodes, 0, numNodes*sizeof(int));
 
@@ -920,9 +920,9 @@ void TACSAssembler::computeReordering( OrderingType order_type,
       }
     }
     else if (mat_type == APPROXIMATE_SCHUR){
-      // If we want an approximate schur ordering, where the
-      // nodes that couple to other processors are ordered last,
-      // we also add these nodes to the reduced set.
+      // If we want an approximate schur ordering, where the nodes
+      // that couple to other processors are ordered last, we also add
+      // these nodes to the reduced set.
       int *rowp, *cols;
       computeLocalNodeToNodeCSR(&rowp, &cols);
 

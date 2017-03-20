@@ -360,7 +360,6 @@ void TACS2DElement<NUM_NODES>::planeJacobian( TacsScalar X[],
 
 /*
   Compute the displacement given the provided values of the shape functions
-
 */
 template <int NUM_NODES>
 void TACS2DElement<NUM_NODES>::getDisplacement( TacsScalar U[], 
