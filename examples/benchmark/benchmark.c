@@ -294,7 +294,7 @@ void testEigenSolver( TACSAssembler *tacs,
   sep->solve();
 
   printf("||I - Q^{T}*Q||_F :   %25.10e \n", 
-         RealPart(sep->checkOrthogonality()));
+         TacsRealPart(sep->checkOrthogonality()));
 
   for ( int k = 0; k < 10; k++ ){
     TacsScalar error;
@@ -308,10 +308,10 @@ void testEigenSolver( TACSAssembler *tacs,
     TacsScalar rhs_norm = rhs->norm();
 
     if (rank == 0){
-      printf("lambda:                 %25.10e \n", RealPart(lambda));
-      printf("||x||:                  %25.10e \n", RealPart(ans_norm));
-      printf("||A*x - lambda*B*x||:   %25.10e \n", RealPart(rhs_norm));
-      printf("error:                  %25.10e \n", RealPart(error));
+      printf("lambda:                 %25.10e \n", TacsRealPart(lambda));
+      printf("||x||:                  %25.10e \n", TacsRealPart(ans_norm));
+      printf("||A*x - lambda*B*x||:   %25.10e \n", TacsRealPart(rhs_norm));
+      printf("error:                  %25.10e \n", TacsRealPart(error));
       printf("\n");
     }
   }
@@ -447,7 +447,7 @@ void testSolve( TACSAssembler *tacs,
   tacs->assembleRes(rhs);
   TacsScalar rhs_norm = rhs->norm();
   if (rank == 0){ 
-    printf("Residual norm: %10.4e\n", RealPart(rhs_norm)); 
+    printf("Residual norm: %10.4e\n", TacsRealPart(rhs_norm)); 
   }
 
   // Evaluate the compliance
@@ -456,7 +456,7 @@ void testSolve( TACSAssembler *tacs,
   TacsScalar compVal = 0.0; 
   tacs->evalFunctions(&comp, 1, &compVal);
   if (rank == 0){ 
-    printf("Compliance: %25.12f\n", RealPart(compVal)); 
+    printf("Compliance: %25.12f\n", TacsRealPart(compVal)); 
   }
   comp->decref();
       
@@ -569,12 +569,12 @@ void testBCSRMat( TACSAssembler *tacs ){
       }
 
       for ( int i = 0; i < size; i++ ){
-        if (fabs(RealPart(x[i]) - 1.0) > 1e-8){
-          printf("x[%d] = %15.8e\n", i, RealPart(x[i]));
+        if (fabs(TacsRealPart(x[i]) - 1.0) > 1e-8){
+          printf("x[%d] = %15.8e\n", i, TacsRealPart(x[i]));
         }
       }
 
-      printf("||x - e||_2: %15.4e\n", RealPart(sqrt(err)));
+      printf("||x - e||_2: %15.4e\n", TacsRealPart(sqrt(err)));
     }
 
     delete [] x;

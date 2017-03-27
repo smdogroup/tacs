@@ -4129,7 +4129,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   }
   setDesignVars(xtemp, num_design_vars);
   evalFunctions(&func, 1, &fd);
-  fd = ImagPart(fd)/dh;
+  fd = TacsImagPart(fd)/dh;
 #else
   // Compute the function at the point x + dh*xpert
   for ( int k = 0; k < num_design_vars; k++ ){
@@ -4171,12 +4171,12 @@ void TACSAssembler::testFunction( TACSFunction *func,
             "Approximate", "Rel. Error");
     if (pdf != 0.0){
       fprintf(stderr, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd), 
-              fabs(RealPart((pdf - fd)/pdf)));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd), 
+              fabs(TacsRealPart((pdf - fd)/pdf)));
     }
     else {
       fprintf(stderr, "%s[%3d] %15.6e %15.6e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd));
     }
   }
 
@@ -4205,7 +4205,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   setVariables(temp);
 
   evalFunctions(&func, 1, &fd);
-  fd = ImagPart(fd)/dh;
+  fd = TacsImagPart(fd)/dh;
 #else
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
@@ -4238,12 +4238,12 @@ void TACSAssembler::testFunction( TACSFunction *func,
             "Approximate", "Rel. Error");
     if (pdf != 0.0){
       fprintf(stderr, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd), 
-              fabs(RealPart((pdf - fd)/pdf)));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd), 
+              fabs(TacsRealPart((pdf - fd)/pdf)));
     }
     else {
       fprintf(stderr, "%s[%3d] %15.6e %15.6e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd));
     }
   }
 

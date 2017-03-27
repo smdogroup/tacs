@@ -307,7 +307,7 @@ int main( int argc, char *argv[] ){
     }
     if (rank == 0){
       printf("TACS eigs[%2d]: %15.6f k_crit = %15.6f\n", 
-	     k, RealPart(N_crit), RealPart((N_crit*a*a)/(M_PI*M_PI*Dt)));
+	     k, TacsRealPart(N_crit), TacsRealPart((N_crit*a*a)/(M_PI*M_PI*Dt)));
     }
     
     // Set the local variables
@@ -339,8 +339,8 @@ int main( int argc, char *argv[] ){
       
     if (rank == 0){
       printf("TACS eigs[%2d]: %15.6f Omega = %15.6f\n", 
-	     k, RealPart(eigvalue), 
-	     RealPart(eigvalue*a*a*sqrt(rho*t/Dt)));
+	     k, TacsRealPart(eigvalue), 
+	     TacsRealPart(eigvalue*a*a*sqrt(rho*t/Dt)));
     }
   }
     

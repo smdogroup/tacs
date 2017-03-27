@@ -28,7 +28,7 @@ yield-stress calculations\n");
 
     TacsScalar fd = 0.5*(pf - pb)/dh;
     printf("VonMises [%d] Value: %15.5f FD %15.5f Rel error: %10.3e \n", i, 
-           RealPart(sens[i]), RealPart(fd), RealPart((sens[i] - fd)/fd));
+           TacsRealPart(sens[i]), TacsRealPart(fd), TacsRealPart((sens[i] - fd)/fd));
   }
 } 
 
@@ -53,7 +53,7 @@ vonMises yield-stress calculations\n");
     TacsScalar fd = 0.5*(pf - pb)/dh;
 
     printf("VonMises [%d] Value: %15.5f FD %15.5f Rel error: %10.3e \n", i, 
-           RealPart(sens[i]), RealPart(fd), RealPart((sens[i] - fd)/fd));
+           TacsRealPart(sens[i]), TacsRealPart(fd), TacsRealPart((sens[i] - fd)/fd));
   }
 } 
 

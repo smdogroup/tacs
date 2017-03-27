@@ -340,7 +340,7 @@ int main( int argc, char *argv[] ){
   tacs[0]->assembleRes(res);
   TacsScalar res_norm = res->norm();
   if (rank == 0){
-    printf("||R||: %15.5e\n", RealPart(res_norm));
+    printf("||R||: %15.5e\n", TacsRealPart(res_norm));
     printf("Solution time: %e\n", t0);
   }
 

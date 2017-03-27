@@ -320,8 +320,8 @@ void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
       rhs_norm = norm; 
     }
 
-    if (RealPart(norm) < atol || 
-        RealPart(norm) < rtol*RealPart(rhs_norm)){
+    if (TacsRealPart(norm) < atol || 
+        TacsRealPart(norm) < rtol*TacsRealPart(rhs_norm)){
       break;
     }
   } 

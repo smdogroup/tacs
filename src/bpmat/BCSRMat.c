@@ -2576,13 +2576,13 @@ int BCSRMat::isEqual( BCSRMat *mat, double tol ){
   delete [] x;
 
   norm = sqrt(norm);
-  if (RealPart(norm) < tol){
+  if (TacsRealPart(norm) < tol){
     printf("Matrices are essentially equal |A x - B x| = %15.5e \n", 
-           RealPart(norm));
+           TacsRealPart(norm));
     return 1;
   }  
 
-  printf("Matrices do not match |A x - B x| = %15.5e \n", RealPart(norm));
+  printf("Matrices do not match |A x - B x| = %15.5e \n", TacsRealPart(norm));
 
   return 0;  
 }
@@ -2702,7 +2702,7 @@ void BCSRMat::printMat( const char *fname ){
     for ( int jp = 0; jp < rowp[nrows]; jp++ ){
       for ( int ii = 0; ii < b2; ii += bsize ){
 	for ( int jj = 0; jj < bsize; jj++ ){
-	  fprintf(fp, "%.16e ", RealPart(data->A[b2*jp + jj + ii]));
+	  fprintf(fp, "%.16e ", TacsRealPart(data->A[b2*jp + jj + ii]));
 	}
 	fprintf(fp, "\n");
       }

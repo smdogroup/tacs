@@ -2078,7 +2078,7 @@ void PDMatPivot::factor_panel( int col,
       d++;
 
       for ( int k = i+1; k < bi; k++ ){
-        if (fabs(RealPart(d[0])) > fabs(RealPart(max_index.entry))){
+        if (fabs(TacsRealPart(d[0])) > fabs(TacsRealPart(max_index.entry))){
           max_index.entry = d[0];
           max_index.index = k;
         }
@@ -2100,7 +2100,7 @@ void PDMatPivot::factor_panel( int col,
         
         TacsScalar * a = &A[bj*i];
         for ( int k = 0; k < bj; k++ ){
-          if (fabs(RealPart(a[0])) > fabs(RealPart(max_index.entry))){
+          if (fabs(TacsRealPart(a[0])) > fabs(TacsRealPart(max_index.entry))){
             A_max = A;
             max_index.entry = a[0];
             max_index.block_index = j;
@@ -2123,8 +2123,8 @@ void PDMatPivot::factor_panel( int col,
                    comm, MPI_STATUS_IGNORE);
 
           // Check if which is the larger entry
-          if (fabs(RealPart(temp.entry)) > 
-              fabs(RealPart(max_index.entry))){
+          if (fabs(TacsRealPart(temp.entry)) > 
+              fabs(TacsRealPart(max_index.entry))){
             max_index.entry = temp.entry;
             max_index.block_index = temp.block_index;
             max_index.index = temp.index;

@@ -471,7 +471,7 @@ void test_rate_matrix( TacsScalar U[], double dh ){
   for ( int i = 0; i < 3; i++ ){
     for ( int j = 0; j < 3; j++ ){
       fprintf(stderr, "Q[%d]^{T}Q[%d] = %10.3e\n", i, j,
-              RealPart(Q[3*i]*Q[3*j] + Q[3*i+1]*Q[3*j+1] + Q[3*i+2]*Q[3*j+2]));
+              TacsRealPart(Q[3*i]*Q[3*j] + Q[3*i+1]*Q[3*j+1] + Q[3*i+2]*Q[3*j+2]));
     }
   }
   
@@ -505,12 +505,12 @@ void test_rate_matrix( TacsScalar U[], double dh ){
     for ( int j = 0; j < 9; j++ ){
       if (Cd[j] != 0.0){
         fprintf(stderr, "Ct%d[%3d] %15.6e %15.6e %15.4e\n", 
-                k+1, j, RealPart(Ct[9*k + j]), RealPart(Cd[j]), 
-                fabs(RealPart((Ct[9*k + j] - Cd[j])/Cd[j])));
+                k+1, j, TacsRealPart(Ct[9*k + j]), TacsRealPart(Cd[j]), 
+                fabs(TacsRealPart((Ct[9*k + j] - Cd[j])/Cd[j])));
       }
       else {
         fprintf(stderr, "Ct%d[%3d] %15.6e %15.6e\n", 
-                k+1, j, RealPart(Ct[9*k + j]), RealPart(Cd[j]));
+                k+1, j, TacsRealPart(Ct[9*k + j]), TacsRealPart(Cd[j]));
       }
     }
 
@@ -540,12 +540,12 @@ void test_rate_matrix( TacsScalar U[], double dh ){
       for ( int j = 0; j < 9; j++ ){
         if (Ctd[t + j] != 0.0){
           fprintf(stderr, "Ctt%d[%3d] %15.6e %15.6e %15.4e\n", 
-                  k+1, j, RealPart(Ctt[tt + j]), RealPart(Ctd[t + j]), 
-                  fabs(RealPart((Ctt[tt + j] - Ctd[t + j])/Ctd[t + j])));
+                  k+1, j, TacsRealPart(Ctt[tt + j]), TacsRealPart(Ctd[t + j]), 
+                  fabs(TacsRealPart((Ctt[tt + j] - Ctd[t + j])/Ctd[t + j])));
         }
         else {
           fprintf(stderr, "Ctt%d[%3d] %15.6e %15.6e\n", 
-                  k+1, j, RealPart(Ctt[tt + j]), RealPart(Ctd[t + j]));
+                  k+1, j, TacsRealPart(Ctt[tt + j]), TacsRealPart(Ctd[t + j]));
         }
       }
     }
@@ -578,12 +578,12 @@ void test_rate_matrix( TacsScalar U[], double dh ){
 	for ( int j = 0; j < 9; j++ ){
 	  if (Cttd[tt + j] != 0.0){
 	    fprintf(stderr, "Cttt%d[%3d] %15.6e %15.6e %15.4e\n", 
-		    k+1, j, RealPart(Cttt[ttt + j]), RealPart(Cttd[tt + j]), 
-		    fabs(RealPart((Cttt[ttt + j] - Cttd[tt + j])/Cttd[tt + j])));
+		    k+1, j, TacsRealPart(Cttt[ttt + j]), TacsRealPart(Cttd[tt + j]), 
+		    fabs(TacsRealPart((Cttt[ttt + j] - Cttd[tt + j])/Cttd[tt + j])));
 	  }
 	  else {
 	    fprintf(stderr, "Cttt%d[%3d] %15.6e %15.6e\n", 
-		    k+1, j, RealPart(Cttt[ttt + j]), RealPart(Cttd[tt + j]));
+		    k+1, j, TacsRealPart(Cttt[ttt + j]), TacsRealPart(Cttd[tt + j]));
 	  }
 	}
       }

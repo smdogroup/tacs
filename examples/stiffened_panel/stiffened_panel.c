@@ -367,7 +367,7 @@ int main( int argc, char *argv[] ){
 #ifdef TACS_USE_COMPLEX
   // Use a complex-step perturbation
   for ( int i = 0; i < ndvs; i++ ){
-    if (RealPart(fdvSens[i]) > 0.0){
+    if (TacsRealPart(fdvSens[i]) > 0.0){
       x[i] = x[i] + TacsScalar(0.0, dh);
     }
     else {
@@ -396,7 +396,7 @@ int main( int argc, char *argv[] ){
 
   // Evaluate the finite-difference or complex-step approximation
 #ifdef TACS_USE_COMPLEX
-  TacsScalar pfd = ImagPart(eigvalue1)/dh;
+  TacsScalar pfd = TacsImagPart(eigvalue1)/dh;
 #else
   TacsScalar pfd = (eigvalue1 - eigvalue)/dh;
 #endif // TACS_USE_COMPLEX
@@ -406,8 +406,8 @@ int main( int argc, char *argv[] ){
     printf("%15s %15s %15s %15s\n",
 	   "<p, df/dx>", "FD", "Err", "Rel err");
     printf("%15.8e %15.8e %15.8e %15.8e\n", 
-	   RealPart(proj), RealPart(pfd), RealPart(proj - pfd), 
-	   RealPart((proj - pfd)/proj));
+	   TacsRealPart(proj), TacsRealPart(pfd), TacsRealPart(proj - pfd), 
+	   TacsRealPart((proj - pfd)/proj));
   }
 
   delete [] fdvSens;
@@ -432,7 +432,7 @@ int main( int argc, char *argv[] ){
 				tbase*wb)/b)*(eigvalue/Lx);
       
       if (rank == 0){
-	printf("TACS eigs[%2d]: %15.6f\n", k, RealPart(Nxy_crit));
+	printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nxy_crit));
       }
     }
     else {
@@ -440,7 +440,7 @@ int main( int argc, char *argv[] ){
 			       tbase*wb + tstiff*hs)/b)*(eigvalue/Lx);
       
       if (rank == 0){
-	printf("TACS eigs[%2d]: %15.6f\n", k, RealPart(Nx_crit));
+	printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nx_crit));
       }
     }
 

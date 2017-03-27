@@ -157,13 +157,13 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       int index = 0;
       if (out_type & TACSElement::OUTPUT_NODES){
 	for ( int k = 0; k < 3; k++ ){
-	  data[index+k] = RealPart(Xpts[3*p+k]);
+	  data[index+k] = TacsRealPart(Xpts[3*p+k]);
 	}
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
 	for ( int k = 0; k < 2; k++ ){
-	  data[index+k] = RealPart(vars[2*p+k]);
+	  data[index+k] = TacsRealPart(vars[2*p+k]);
 	}
         index += 2;
       }
@@ -193,7 +193,7 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
 	
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < 3; k++ ){
-          data[index+k] = RealPart(strain[k]);
+          data[index+k] = TacsRealPart(strain[k]);
         }
         index += 3;
       }
@@ -203,7 +203,7 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
 	this->stiff->calculateStress(pt, strain, stress);
         
         for ( int k = 0; k < 3; k++ ){
-          data[index+k] = RealPart(stress[k]);
+          data[index+k] = TacsRealPart(stress[k]);
         }
         index += 3;
       }
@@ -211,13 +211,13 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
 	// Compute the failure value
 	TacsScalar lambda;
 	this->stiff->failure(pt, strain, &lambda);
-	data[index] = RealPart(lambda);
+	data[index] = TacsRealPart(lambda);
 
 	this->stiff->buckling(strain, &lambda);
-	data[index+1] = RealPart(lambda);
+	data[index+1] = TacsRealPart(lambda);
 
-	data[index+2] = RealPart(this->stiff->getDVOutputValue(0, pt));
-	data[index+3] = RealPart(this->stiff->getDVOutputValue(1, pt));
+	data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+	data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
 
         index += this->NUM_EXTRAS;
       }

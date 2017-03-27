@@ -298,9 +298,9 @@ int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
 
     // Find the maximum value and use it as the pivot
     int r = k;
-    double maxv = fabs(RealPart(A[nk + k]));
+    double maxv = fabs(TacsRealPart(A[nk + k]));
     for ( int j = k+1; j < n; j++ ){
-      double t = fabs(RealPart(A[n*j + k]));
+      double t = fabs(TacsRealPart(A[n*j + k]));
       if (t > maxv){
 	maxv = t;
 	r = j;

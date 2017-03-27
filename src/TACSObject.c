@@ -35,7 +35,7 @@ void TacsMPIComplexMax( void *_in, void *_out, int *count,
 
     // Compare the real parts of the array
     for ( int i = 0; i < *count; i++ ){
-      if (RealPart(in[i]) >= RealPart(out[i])){
+      if (TacsRealPart(in[i]) >= TacsRealPart(out[i])){
 	out[i] = in[i];
       }
     }
@@ -50,7 +50,7 @@ void TacsMPIComplexMin( void *_in, void *_out, int *count,
 
     // Compare the real parts of the array
     for ( int i = 0; i < *count; i++ ){
-      if (RealPart(in[i]) < RealPart(out[i])){
+      if (TacsRealPart(in[i]) < TacsRealPart(out[i])){
 	out[i] = in[i];
       }
     }

@@ -412,13 +412,13 @@ int main( int argc, char **argv ){
                "Adjoint", "FD/CS", "Abs. error", "Rel. error");
         for ( int k = 0; k < num_dvs; k++ ){
           printf("%25.15e %25.15e %25.15e %25.15e\n", 
-                 RealPart(dfdx[k + j*num_dvs]),
-                 RealPart(dfdxTmp[k + j*num_dvs]),
-                 RealPart(dfdx[k + j*num_dvs]) -
-                 RealPart(dfdxTmp[k + j*num_dvs]), 
-                 (RealPart(dfdx[k + j*num_dvs]) -
-                  RealPart(dfdxTmp[k + j*num_dvs]))/
-                 RealPart(dfdxTmp[k + j*num_dvs]));
+                 TacsRealPart(dfdx[k + j*num_dvs]),
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]),
+                 TacsRealPart(dfdx[k + j*num_dvs]) -
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]), 
+                 (TacsRealPart(dfdx[k + j*num_dvs]) -
+                  TacsRealPart(dfdxTmp[k + j*num_dvs]))/
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]));
         }
       }
     }

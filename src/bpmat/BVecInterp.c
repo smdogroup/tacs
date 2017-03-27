@@ -1096,7 +1096,7 @@ void TACSBVecInterp::printInterp( const char *filename ){
       fprintf(fp, "Row: %d\n", i);
       
       for ( int j = rowp[i]; j < rowp[i+1]; j++ ){
-        fprintf(fp, "(%d,%f) ", cols[j], RealPart(weights[j]));
+        fprintf(fp, "(%d,%f) ", cols[j], TacsRealPart(weights[j]));
       }
       fprintf(fp, "\n");
     }

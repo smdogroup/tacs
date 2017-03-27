@@ -36,7 +36,7 @@ static double get_max_error( TacsScalar *a, TacsScalar *b, int size,
   *max_index = -1;
   
   for ( int i = 0; i < size; i++ ){
-    double er = fabs(RealPart(a[i] - b[i]));
+    double er = fabs(TacsRealPart(a[i] - b[i]));
     if (i == 0 || er > max_error){
       max_error = er;
       *max_index = i;
@@ -56,7 +56,7 @@ static double get_max_rel_error( TacsScalar *a, TacsScalar *b, int size,
   for ( int i = 0; i < size; i++ ){
     double er = 0.0;
     if (a[i] != 0.0){
-      er = fabs(RealPart((a[i] - b[i])/a[i]));
+      er = fabs(TacsRealPart((a[i] - b[i])/a[i]));
     }
     if (i == 0 || er > max_error){
       max_error = er;
@@ -77,12 +77,12 @@ static void print_error_components( FILE *fp, const char *descript,
   for ( int i = 0; i < size; i++ ){
     if (a[i] != 0.0){
       fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-              descript, i, RealPart(a[i]), RealPart(b[i]), 
-              fabs(RealPart((a[i] - b[i])/a[i])));
+              descript, i, TacsRealPart(a[i]), TacsRealPart(b[i]), 
+              fabs(TacsRealPart((a[i] - b[i])/a[i])));
     }
     else {
       fprintf(fp, "%s[%3d] %15.6e %15.6e\n", 
-              descript, i, RealPart(a[i]), RealPart(b[i]));
+              descript, i, TacsRealPart(a[i]), TacsRealPart(b[i]));
     }
   }  
 }
@@ -132,7 +132,7 @@ static void form_approximate( TacsScalar *forward,
                               TacsScalar dh ){
 #ifdef TACS_USE_COMPLEX
   for ( int k = 0; k < size; k++ ){
-    forward[k] = ImagPart(forward[k])/dh;
+    forward[k] = TacsImagPart(forward[k])/dh;
   }
 #else
   for ( int k = 0; k < size; k++ ){
@@ -215,7 +215,7 @@ int TACSElement::testResidual( double time,
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
-    res1[i] = ImagPart((T1 - P1))/dh;
+    res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     dq[i] = dqtmp + dh;
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
@@ -241,7 +241,7 @@ int TACSElement::testResidual( double time,
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
-    res1[i] = ImagPart((T1 - P1))/dh;
+    res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     dq[i] = dqtmp + dh;
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
@@ -275,7 +275,7 @@ int TACSElement::testResidual( double time,
 #ifdef TACS_USE_COMPLEX
     q[i] = qtmp + TacsScalar(0.0, dh);
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
-    res1[i] = ImagPart((T1 - P1))/dh;
+    res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     q[i] = qtmp + dh;
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
@@ -493,7 +493,7 @@ int TACSElement::testStrainSVSens( const TacsScalar Xpts[],
     getStrain(strain, pt, Xpts, vars_copy);
 
     for ( int j = 0; j < nstress; j++ ){
-      elementSensApprox[k] += strainSens[j]*ImagPart(strain[j])/dh;
+      elementSensApprox[k] += strainSens[j]*TacsImagPart(strain[j])/dh;
     }
 #else 
     memcpy(vars_copy, vars, nvars*sizeof(TacsScalar));
@@ -704,7 +704,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 #ifdef TACS_USE_COMPLEX
   // Perturb the design variables: xpert = x + dh*sign(result[k])
   for ( int k = 0; k < dvLen; k++ ){
-    if (RealPart(result[k]) >= 0.0){
+    if (TacsRealPart(result[k]) >= 0.0){
       xpert[k] = x[k] + TacsScalar(0.0, dh);
     }
     else {
@@ -720,7 +720,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
     p1 += res[k]*adjoint[k];
   }
 
-  fd_dpdx = ImagPart(p1)/dh;
+  fd_dpdx = TacsImagPart(p1)/dh;
 #else
   // Perturb the design variables: xpert = x + dh*sign(result[k])
   for ( int k = 0; k < dvLen; k++ ){

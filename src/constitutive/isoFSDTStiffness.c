@@ -178,7 +178,7 @@ void isoFSDTStiffness::failure( const double gpt[],
   calculatePlaneStress(stress, -ht, strain);
   TacsScalar failBot = VonMisesFailurePlaneStress(stress, yieldStress);
 
-  *fail = (RealPart(failTop) > RealPart(failBot) ? 
+  *fail = (TacsRealPart(failTop) > TacsRealPart(failBot) ? 
            failTop : failBot);
 }
 
@@ -201,7 +201,7 @@ void isoFSDTStiffness::failureStrainSens( const double gpt[],
   calculatePlaneStress(stress, -ht, strain);
   TacsScalar failBot = VonMisesFailurePlaneStress(stress, yieldStress);
 
-  if (RealPart(failTop) > RealPart(failBot)){
+  if (TacsRealPart(failTop) > TacsRealPart(failBot)){
     // Test the top of the plate 
     TacsScalar stressSens[3];
     calculatePlaneStress(stress, ht, strain);
@@ -242,7 +242,7 @@ void isoFSDTStiffness::addFailureDVSens( const double pt[],
     calculatePlaneStress(stress, -ht, strain);
     TacsScalar failBot = VonMisesFailurePlaneStress(stress, yieldStress);
     
-    if (RealPart(failTop) > RealPart(failBot)){
+    if (TacsRealPart(failTop) > TacsRealPart(failBot)){
       // Test the top of the plate 
       TacsScalar stressSens[3];
       calculatePlaneStress(stress, ht, strain);

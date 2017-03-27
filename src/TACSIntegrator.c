@@ -407,8 +407,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       delta = init_newton_delta*gamma;
-      if (niter > 0 && (RealPart(res_norm) < RealPart(init_res_norm))){
-        delta *= RealPart(res_norm/init_res_norm);
+      if (niter > 0 && (TacsRealPart(res_norm) < TacsRealPart(init_res_norm))){
+        delta *= TacsRealPart(res_norm/init_res_norm);
       }
 
       tacs->assembleJacobian(alpha, beta, gamma + delta,
@@ -448,15 +448,15 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if(logfp && print_level >= 2){
       if (niter == 0){
         fprintf(logfp, "%12d %12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
-                current_time_step, niter, RealPart(res_norm),  
-                (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
+                current_time_step, niter, TacsRealPart(res_norm),  
+                (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 " ", alpha, beta, gamma, delta);
       }
       else {
         fprintf(logfp, "%12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-                current_time_step, niter, RealPart(res_norm),  
-                (niter == 0) ? 1.0 : RealPart(res_norm/init_res_norm), 
-                RealPart(update_norm),  
+                current_time_step, niter, TacsRealPart(res_norm),  
+                (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
+                TacsRealPart(update_norm),  
                 alpha, beta, gamma, delta);
       }
     }
@@ -471,19 +471,19 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
     
     // Check whether the update is sufficiently small
-    if (RealPart(update_norm) < atol){
+    if (TacsRealPart(update_norm) < atol){
       newton_exit_flag = 2;
       break;
     }
 
     // Check if the Newton convergence tolerance is satisfied
-    if (RealPart(res_norm) < atol){
+    if (TacsRealPart(res_norm) < atol){
       newton_exit_flag = 1;
       break;
     }
 
     // Check for relative reduction in residual magnitude
-    if (RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
+    if (TacsRealPart(res_norm) < rtol*TacsRealPart(rtol + init_res_norm)){
       newton_exit_flag = 3;
       break;
     }
@@ -549,8 +549,8 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
       // Write the time and states to file
       fprintf(fp, "%12.5e ", time[k]);  
       for ( int j = 0; j < num_state_vars; j++ ){
-        fprintf(fp, "%12.5e %12.5e %12.5e ", RealPart(qvals[j]), 
-                RealPart(qdotvals[j]), RealPart(qddotvals[j]));
+        fprintf(fp, "%12.5e %12.5e %12.5e ", TacsRealPart(qvals[j]), 
+                TacsRealPart(qdotvals[j]), TacsRealPart(qddotvals[j]));
       }
       fprintf(fp, "\n");
     }
@@ -582,9 +582,9 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
                 j, // global DOF number
                 j % 8, // DOF number of each element
                 (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number
-                RealPart(qvals[j]), // q
-                RealPart(qdotvals[j]), // qdots
-                RealPart(qddotvals[j])); // qddots
+                TacsRealPart(qvals[j]), // q
+                TacsRealPart(qdotvals[j]), // qdots
+                TacsRealPart(qddotvals[j])); // qddots
       }
       fprintf(fp, "\n");
     }
@@ -888,7 +888,7 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
 
     // Evaluate the CS derivative
     for ( int j = 0; j < num_funcs; j++ ){
-      dfdx[k+j*num_design_vars] = ImagPart(fvals[j])/dh;
+      dfdx[k+j*num_design_vars] = TacsImagPart(fvals[j])/dh;
     }
 
 #else
@@ -1098,7 +1098,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       // Log the details
       fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
               time[0], time_newton, 0, 0, 0.0, 0.0, 0.0,
-              RealPart(energies[0]), RealPart(energies[1]),  0.0);
+              TacsRealPart(energies[0]), TacsRealPart(energies[1]),  0.0);
     }
   } 
   else {
@@ -1116,11 +1116,11 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
 	      time[current_step], time_newton,
               niter, newton_term,
-              RealPart(res_norm), 
-              RealPart(res_norm/(rtol + init_res_norm)),
-              RealPart(update_norm),
-	      RealPart(energies[0]), RealPart(energies[1]), 
-	      RealPart((init_energy - (energies[0] + energies[1]))));
+              TacsRealPart(res_norm), 
+              TacsRealPart(res_norm/(rtol + init_res_norm)),
+              TacsRealPart(update_norm),
+	      TacsRealPart(energies[0]), TacsRealPart(energies[1]), 
+	      TacsRealPart((init_energy - (energies[0] + energies[1]))));
     }
   }
 }

@@ -2672,19 +2672,19 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
       int p = n + m*order;
       if (out_type & TACSElement::OUTPUT_NODES){
 	for ( int k = 0; k < 3; k++ ){
-	  data[index+k] = RealPart(Xpts[3*p+k]);
+	  data[index+k] = TacsRealPart(Xpts[3*p+k]);
 	}
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
 	for ( int k = 0; k < NUM_DISPS; k++ ){
-	  data[index+k] = RealPart(vars[NUM_DISPS*p+k]);
+	  data[index+k] = TacsRealPart(vars[NUM_DISPS*p+k]);
 	}
         index += NUM_DISPS;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < NUM_STRESSES; k++ ){
-          data[index+k] = RealPart(strain[k]);
+          data[index+k] = TacsRealPart(strain[k]);
         }
         index += NUM_STRESSES;
       }
@@ -2694,7 +2694,7 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
         stiff->calculateStress(pt, strain, stress);
         
         for ( int k = 0; k < NUM_STRESSES; k++ ){
-          data[index+k] = RealPart(stress[k]);
+          data[index+k] = TacsRealPart(stress[k]);
 	}
         index += NUM_STRESSES;
       }
@@ -2702,15 +2702,15 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
 	// Compute the failure value
 	TacsScalar lambda;
 	stiff->failure(pt, strain, &lambda);
-	data[index] = RealPart(lambda);
+	data[index] = TacsRealPart(lambda);
 
 	// Compute the buckling constraint value
 	TacsScalar bval;
 	stiff->buckling(strain, &bval);
-	data[index+1] = RealPart(bval);
+	data[index+1] = TacsRealPart(bval);
 
-	data[index+2] = RealPart(stiff->getDVOutputValue(0, pt));
-	data[index+3] = RealPart(stiff->getDVOutputValue(1, pt));
+	data[index+2] = TacsRealPart(stiff->getDVOutputValue(0, pt));
+	data[index+3] = TacsRealPart(stiff->getDVOutputValue(1, pt));
 
         index += NUM_EXTRAS;
       }
@@ -2719,7 +2719,7 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
         // local coordinates.
         for ( int i = 0; i < 3; i++ ){
           for ( int j = 0; j < 3; j++ ){
-            data[index + 3*i + j] = RealPart(t[3*i + j]);
+            data[index + 3*i + j] = TacsRealPart(t[3*i + j]);
           }
         }
         index += 9;

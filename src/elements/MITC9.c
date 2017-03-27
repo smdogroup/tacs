@@ -27,10 +27,10 @@ static void writeErrorComponents( FILE *fp, const char *descript,
   for ( int i = 0; i < size; i++ ){
     double rel = 0.0;
     if (a[i] != 0.0){
-      rel = fabs(RealPart((a[i] - fd[i])/a[i]));
+      rel = fabs(TacsRealPart((a[i] - fd[i])/a[i]));
     }
     else {
-      rel = fabs(RealPart((a[i] - fd[i])));
+      rel = fabs(TacsRealPart((a[i] - fd[i])));
     }
 
     if (rel > rel_err || a[i] != a[i] || fd[i] != fd[i]){
@@ -42,12 +42,12 @@ static void writeErrorComponents( FILE *fp, const char *descript,
       }
       if (a[i] != 0.0){
         fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-                descript, i, RealPart(a[i]), RealPart(fd[i]), 
-                fabs(RealPart((a[i] - fd[i])/a[i])));
+                descript, i, TacsRealPart(a[i]), TacsRealPart(fd[i]), 
+                fabs(TacsRealPart((a[i] - fd[i])/a[i])));
       }
       else {
         fprintf(fp, "%s[%3d] %15.6e %15.6e\n", 
-                descript, i, RealPart(a[i]), RealPart(fd[i]));
+                descript, i, TacsRealPart(a[i]), TacsRealPart(fd[i]));
       }
     }
   }  
@@ -779,7 +779,7 @@ void MITC9::getInitConditions( TacsScalar vars[],
   }
 
   // Check if the quaternion contraint is satisfied at initial condition
-  double con_viol = RealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
+  double con_viol = TacsRealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
                              vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
   if (con_viol > 1.0e-12){
     fprintf(stderr, 
@@ -5986,19 +5986,19 @@ void MITC9::getOutputData( unsigned int out_type,
       int index = 0;
       if (out_type & TACSElement::OUTPUT_NODES){
         for ( int k = 0; k < 3; k++ ){
-          data[index+k] = RealPart(Xpts[3*p+k]);
+          data[index+k] = TacsRealPart(Xpts[3*p+k]);
         }
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
         for ( int k = 0; k < NUM_DISPS; k++ ){
-          data[index+k] = RealPart(vars[NUM_DISPS*p+k]);
+          data[index+k] = TacsRealPart(vars[NUM_DISPS*p+k]);
         }
         index += NUM_DISPS;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < NUM_STRESSES; k++ ){
-          data[index+k] = RealPart(strain[k]);
+          data[index+k] = TacsRealPart(strain[k]);
         }
         index += NUM_STRESSES;
       }
@@ -6008,7 +6008,7 @@ void MITC9::getOutputData( unsigned int out_type,
         stiff->calculateStress(pt, strain, stress);
         
         for ( int k = 0; k < NUM_STRESSES; k++ ){
-          data[index+k] = RealPart(stress[k]);
+          data[index+k] = TacsRealPart(stress[k]);
         }
         index += NUM_STRESSES;
       }
@@ -6016,15 +6016,15 @@ void MITC9::getOutputData( unsigned int out_type,
         // Compute the failure value
         TacsScalar lambda;
         stiff->failure(pt, strain, &lambda);
-        data[index] = RealPart(lambda);
+        data[index] = TacsRealPart(lambda);
 
         // Compute the buckling constraint value
         TacsScalar bval;
         stiff->buckling(strain, &bval);
-        data[index+1] = RealPart(bval);
+        data[index+1] = TacsRealPart(bval);
 
-        data[index+2] = RealPart(stiff->getDVOutputValue(0, pt));
-        data[index+3] = RealPart(stiff->getDVOutputValue(1, pt));
+        data[index+2] = TacsRealPart(stiff->getDVOutputValue(0, pt));
+        data[index+3] = TacsRealPart(stiff->getDVOutputValue(1, pt));
 
         index += NUM_EXTRAS;
       }

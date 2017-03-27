@@ -662,9 +662,9 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
     
     if (rank == 0){
       printf("Schur complement consistency test: \n");
-      printf("|Full matrix|     = %25.15e \n", RealPart(outnorm));
-      printf("|Local to Schur|  = %25.15e \n", RealPart(gnorm));
-      printf("|Global to Schur| = %25.15e \n", RealPart(gnorm2));
+      printf("|Full matrix|     = %25.15e \n", TacsRealPart(outnorm));
+      printf("|Local to Schur|  = %25.15e \n", TacsRealPart(gnorm));
+      printf("|Global to Schur| = %25.15e \n", TacsRealPart(gnorm2));
     }
   }
   else {

@@ -92,13 +92,13 @@ template <class ScalarType>
 void solveQERoots( ScalarType * r1, ScalarType * r2,
                    ScalarType a, ScalarType b, ScalarType c ){
   ScalarType discrim = b*b - 4.0*a*c;
-  if (RealPart(discrim) < 0.0){
+  if (TacsRealPart(discrim) < 0.0){
     *r1 = *r2 = 0.0;
     return;
   }
 
-  if (RealPart(a) == 0.0){
-    if (RealPart(b) == 0.0){
+  if (TacsRealPart(a) == 0.0){
+    if (TacsRealPart(b) == 0.0){
       *r1 = *r2 = 0.0;
       return;
     }
@@ -113,7 +113,7 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
   // avoid truncation error
   discrim = sqrt(discrim);
 
-  if (RealPart(b) > 0.0){
+  if (TacsRealPart(b) > 0.0){
     *r1 = -(b + discrim)/(2.0*a);
     *r2 = c/((*r1)*a);
   }

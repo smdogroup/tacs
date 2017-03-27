@@ -234,7 +234,7 @@ KSMPrintStdout::~KSMPrintStdout(){
 */
 void KSMPrintStdout::printResidual( int iter, TacsScalar res ){
   if ((iter == 0 || iter % freq == 0) && rank == 0){
-    printf("%s[%3d]: %15.8e\n", descript, iter, RealPart(res));
+    printf("%s[%3d]: %15.8e\n", descript, iter, TacsRealPart(res));
   }
 }
 
@@ -286,7 +286,7 @@ KSMPrintFile::~KSMPrintFile(){
 */
 void KSMPrintFile::printResidual( int iter, TacsScalar res ){
   if ((iter == 0 || iter % freq == 0) && rank == 0){
-    if (fp){ fprintf(fp, "%s[%d]: %15.8e\n", descript, iter, RealPart(res)); }
+    if (fp){ fprintf(fp, "%s[%d]: %15.8e\n", descript, iter, TacsRealPart(res)); }
   }
 }
 
@@ -417,7 +417,7 @@ void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       monitor->printResidual(0, rhs_norm);
     }
 
-    if (RealPart(rhs_norm) > atol){
+    if (TacsRealPart(rhs_norm) > atol){
       // Apply the preconditioner
       pc->applyFactor(R, Z);
       
@@ -440,8 +440,8 @@ void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
           monitor->printResidual(i+1, norm);
         }
         
-        if (RealPart(norm) < atol || 
-            RealPart(norm) < rtol*RealPart(rhs_norm)){
+        if (TacsRealPart(norm) < atol || 
+            TacsRealPart(norm) < rtol*TacsRealPart(rhs_norm)){
           solve_flag = 1;
           break;
         }
@@ -755,7 +755,7 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     }
 
     if (monitor){
-      monitor->printResidual(0, fabs(RealPart(res[0])));
+      monitor->printResidual(0, fabs(TacsRealPart(res[0])));
     }
 
     if (count == 0){
@@ -764,7 +764,7 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
     int niters = 0; // Keep track of the size of the Hessenberg matrix  
 
-    if (RealPart(res[0]) < atol){
+    if (TacsRealPart(res[0]) < atol){
       break;
     }
 
@@ -824,13 +824,13 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       res[i+1] = - h1*Qsin[i];
 
       if (monitor){
-        monitor->printResidual(i+1, fabs(RealPart(res[i+1])));
+        monitor->printResidual(i+1, fabs(TacsRealPart(res[i+1])));
       }
       
       niters++;
       
-      if (fabs(RealPart(res[i+1])) < atol ||
-          fabs(RealPart(res[i+1])) < rtol*RealPart(rhs_norm)){
+      if (fabs(TacsRealPart(res[i+1])) < atol ||
+          fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
         // Set the solve flag 
         solve_flag = 1;
         
@@ -1131,7 +1131,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
   rhs_norm = R->norm(); // The initial residual 
 
-  if (RealPart(rhs_norm) < atol){
+  if (TacsRealPart(rhs_norm) < atol){
     return;
   }
 
@@ -1145,7 +1145,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     W[0]->scale(1.0/res[0]); // W[0] = b/|| b ||
 
     if (monitor){
-      monitor->printResidual(mat_iters, fabs(RealPart(res[0])));
+      monitor->printResidual(mat_iters, fabs(TacsRealPart(res[0])));
     }
 
     // The inner F/GMRES loop
@@ -1211,13 +1211,13 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       res[i+1] = - h1*Qsin[i];
 
       if (monitor){
-        monitor->printResidual(mat_iters, fabs(RealPart(res[i+1])));
+        monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i+1])));
       }
       
       niters++;
       
-      if (fabs(RealPart(res[i+1])) < atol ||
-          fabs(RealPart(res[i+1])) < rtol*RealPart(rhs_norm)){
+      if (fabs(TacsRealPart(res[i+1])) < atol ||
+          fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
         // Set the solve flag 
         solve_flag = 1;
         
@@ -1687,7 +1687,7 @@ void ConGMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     }
 
     if (monitor){
-      monitor->printResidual(0, fabs(RealPart(res[0])));
+      monitor->printResidual(0, fabs(TacsRealPart(res[0])));
     }
 
     if (count == 0){
@@ -1696,7 +1696,7 @@ void ConGMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
     int niters = 0; // Keep track of the size of the Hessenberg matrix  
 
-    if (RealPart(res[0]) < atol){
+    if (TacsRealPart(res[0]) < atol){
       break;
     }
 
@@ -1767,13 +1767,13 @@ void ConGMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       res[i+1] = - h1*Qsin[i];
 
       if (monitor){
-        monitor->printResidual(i+1, fabs(RealPart(res[i+1])));
+        monitor->printResidual(i+1, fabs(TacsRealPart(res[i+1])));
       }
       
       niters++;
       
-      if (fabs(RealPart(res[i+1])) < atol ||
-          fabs(RealPart(res[i+1])) < rtol*RealPart(rhs_norm)){
+      if (fabs(TacsRealPart(res[i+1])) < atol ||
+          fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
         // Set the solve flag 
         solve_flag = 1;
         
@@ -1828,7 +1828,7 @@ void ConGMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     W[0]->axpy(-1.0, b); // W[0] = A*x + C*y - b
     TacsScalar norm = con_norm(W[0], &Wl[0]);
     char str_norm[80];
-    sprintf(str_norm, "|A*x + C*y - b|: %15.8e\n", RealPart(norm));
+    sprintf(str_norm, "|A*x + C*y - b|: %15.8e\n", TacsRealPart(norm));
     monitor->print(str_norm);
   }
   

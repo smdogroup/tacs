@@ -869,7 +869,7 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
-        if (RealPart(x[v+k]) != 0.0){
+        if (TacsRealPart(x[v+k]) != 0.0){
           y[k] = x[v + k];
         }
       }
@@ -909,7 +909,7 @@ void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
-        if (RealPart(x[k]) != 0.0){
+        if (TacsRealPart(x[k]) != 0.0){
           y[v + k] = x[k];
         }
       }
@@ -941,7 +941,7 @@ void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
-      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (TacsRealPart(x[v]) != 0.0){ y[0] = x[v]; }
       y++;
     }
   }
@@ -967,7 +967,7 @@ void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
-      if (RealPart(x[0]) != 0.0){ y[v] = x[0]; }
+      if (TacsRealPart(x[0]) != 0.0){ y[v] = x[0]; }
       x++;
     }
   }
@@ -998,8 +998,8 @@ void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
-      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
-      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (TacsRealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (TacsRealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
       y += 2;
     }
   }
@@ -1027,8 +1027,8 @@ void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
-      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
-      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (TacsRealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (TacsRealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
       x += 2;
     }
   }
@@ -1061,9 +1061,9 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
-      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
-      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
-      if (RealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      if (TacsRealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (TacsRealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (TacsRealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
       y += 3;
     }
   }
@@ -1093,9 +1093,9 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
-      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
-      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
-      if (RealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      if (TacsRealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (TacsRealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (TacsRealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
       x += 3;
     }
   }
@@ -1132,11 +1132,11 @@ void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
-      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
-      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
-      if (RealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
-      if (RealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
-      if (RealPart(x[v+4]) != 0.0){ y[4] = x[v+4]; }
+      if (TacsRealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (TacsRealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (TacsRealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      if (TacsRealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
+      if (TacsRealPart(x[v+4]) != 0.0){ y[4] = x[v+4]; }
       y += 5;
     }
   }
@@ -1170,11 +1170,11 @@ void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
-      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
-      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
-      if (RealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
-      if (RealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
-      if (RealPart(x[4]) != 0.0){ y[v+4] = x[4]; }
+      if (TacsRealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (TacsRealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (TacsRealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      if (TacsRealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
+      if (TacsRealPart(x[4]) != 0.0){ y[v+4] = x[4]; }
       x += 5;
     }
   }
@@ -1213,12 +1213,12 @@ void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
-      if (RealPart(x[v]) != 0.0){ y[0] = x[v]; }
-      if (RealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
-      if (RealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
-      if (RealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
-      if (RealPart(x[v+4]) != 0.0){ y[4] = x[v+4]; }
-      if (RealPart(x[v+5]) != 0.0){ y[5] = x[v+5]; }
+      if (TacsRealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (TacsRealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (TacsRealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      if (TacsRealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
+      if (TacsRealPart(x[v+4]) != 0.0){ y[4] = x[v+4]; }
+      if (TacsRealPart(x[v+5]) != 0.0){ y[5] = x[v+5]; }
       y += 6;
     }
   }
@@ -1254,12 +1254,12 @@ void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
   else {
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
-      if (RealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
-      if (RealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
-      if (RealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
-      if (RealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
-      if (RealPart(x[4]) != 0.0){ y[v+4] = x[4]; }
-      if (RealPart(x[5]) != 0.0){ y[v+5] = x[5]; }
+      if (TacsRealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (TacsRealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (TacsRealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      if (TacsRealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
+      if (TacsRealPart(x[4]) != 0.0){ y[v+4] = x[4]; }
+      if (TacsRealPart(x[5]) != 0.0){ y[v+5] = x[5]; }
       x += 6;
     }
   }

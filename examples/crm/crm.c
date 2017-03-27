@@ -106,7 +106,7 @@ int main( int argc, char **argv ){
 
   if (rank == 0){
 #ifdef TACS_USE_COMPLEX
-    printf("||ans||: %e + j%e\n", RealPart(norm), ImagPart(norm));
+    printf("||ans||: %e + j%e\n", TacsRealPart(norm), TacsImagPart(norm));
 #else
     printf("||ans||: %e\n", norm);
 #endif

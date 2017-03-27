@@ -297,9 +297,9 @@ int main( int argc, char *argv[] ){
 
     // Print the adjoint derivative values
     for( int j = 0; j < num_funcs; j++) {
-      printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", rank, j, RealPart(funcVals[j]));
+      printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", rank, j, TacsRealPart(funcVals[j]));
       for ( int n = 0; n < num_dvs; n++) {
-        printf(" %15.8e ",  RealPart(dfdx[n+j*num_dvs]));
+        printf(" %15.8e ",  TacsRealPart(dfdx[n+j*num_dvs]));
       }
       printf("\n");
     }
@@ -317,9 +317,9 @@ int main( int argc, char *argv[] ){
     if ( rank == 0) { 
       // Print complex step derivative values
       for( int j = 0; j < num_funcs; j++) {
-        printf("[%d] CSD      func: %d fval: %15.8e dfdx:", rank, j, RealPart(funcValsTmp[j]));
+        printf("[%d] CSD      func: %d fval: %15.8e dfdx:", rank, j, TacsRealPart(funcValsTmp[j]));
         for ( int n = 0; n < num_dvs; n++) {
-          printf(" %15.8e ",  RealPart(dfdxTmp[n+j*num_dvs]));
+          printf(" %15.8e ",  TacsRealPart(dfdxTmp[n+j*num_dvs]));
         }
         printf("\n");
       }
@@ -327,9 +327,9 @@ int main( int argc, char *argv[] ){
 
       // Print the differences between complex step and adjoint derivtives
       for ( int j = 0; j < num_funcs; j++ ) {
-        printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", rank, j, RealPart(funcValsTmp[j])-RealPart(funcVals[j]) );
+        printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", rank, j, TacsRealPart(funcValsTmp[j])-TacsRealPart(funcVals[j]) );
         for ( int n = 0; n < num_dvs; n++ ) {
-          printf(" %15.8e ",  RealPart(dfdxTmp[j*num_dvs+n]) -  RealPart(dfdx[j*num_dvs+n]) );
+          printf(" %15.8e ",  TacsRealPart(dfdxTmp[j*num_dvs+n]) -  TacsRealPart(dfdx[j*num_dvs+n]) );
         }
         printf("\n");
       }
