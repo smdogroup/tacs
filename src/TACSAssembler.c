@@ -563,22 +563,24 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
     }
   }
 
-  // Allocate the new memory and copy over the data
-  int *depNodePtr = new int[ numDependentNodes+1 ];
-  memcpy(depNodePtr, _depNodePtr, (numDependentNodes+1)*sizeof(int));
+  if (numDependentNodes > 0){
+    // Allocate the new memory and copy over the data
+    int *depNodePtr = new int[ numDependentNodes+1 ];
+    memcpy(depNodePtr, _depNodePtr, (numDependentNodes+1)*sizeof(int));
 
-  int size = depNodePtr[numDependentNodes];
-  int *depNodeToTacs = new int[ size ];
-  memcpy(depNodeToTacs, _depNodeToTacs, size*sizeof(int));
+    int size = depNodePtr[numDependentNodes];
+    int *depNodeToTacs = new int[ size ];
+    memcpy(depNodeToTacs, _depNodeToTacs, size*sizeof(int));
 
-  double *depNodeWeights = new double[ size ];
-  memcpy(depNodeWeights, _depNodeWeights, size*sizeof(double));
+    double *depNodeWeights = new double[ size ];
+    memcpy(depNodeWeights, _depNodeWeights, size*sizeof(double));
 
-  // Allocate the dependent node data structure
-  depNodes = new TACSBVecDepNodes(numDependentNodes,
-                                  &depNodePtr, &depNodeToTacs,
-                                  &depNodeWeights);
-  depNodes->incref();
+    // Allocate the dependent node data structure
+    depNodes = new TACSBVecDepNodes(numDependentNodes,
+                                    &depNodePtr, &depNodeToTacs,
+                                    &depNodeWeights);
+    depNodes->incref();
+  }
 
   return 0;
 }

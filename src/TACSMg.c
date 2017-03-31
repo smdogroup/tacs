@@ -224,7 +224,6 @@ void TACSMg::factor(){
   for ( int i = 0; i < nlevels-1; i++ ){
     if (pc[i]){ pc[i]->factor(); }
   }
-
   if (root_pc){ root_pc->factor(); }
 }
 
