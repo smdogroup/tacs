@@ -120,14 +120,14 @@ void TACSBcMap::addBC( int node, int nvals,
 void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
   // If the number of boundary conditions exceeds the available
   // space, allocate more space and copy over the arrays
-  if (nbcs+1 >= max_size){
+  if (nbcs > max_size){
     max_size = max_size + bc_increment;
     int *temp_nodes = new int[ max_size ];
     int *temp_vars = new int[ max_size ];
     TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
     memcpy(temp_nodes, nodes, nbcs*sizeof(int));
     memcpy(temp_vars, vars, nbcs*sizeof(int));
-    memcpy(temp_values, values, bsize*nbcs*sizeof(int));
+    memcpy(temp_values, values, bsize*nbcs*sizeof(TacsScalar));
 
     // Free the old arrays
     delete [] nodes;
