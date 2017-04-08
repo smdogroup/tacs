@@ -142,7 +142,7 @@ class TACSRigidBody : public TACSElement {
   // --------------------------------------------------------
   const char* displacementName( int i );
   const char* extraName( int i );  
-  ElementType getElementType(){ return RIGID; }
+  ElementType getElementType(){ return TACS_RIGID; }
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------

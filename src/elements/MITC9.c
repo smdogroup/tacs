@@ -76,7 +76,7 @@ int MITC9::numNodes(){ return NUM_NODES; }
 /*
   Return the ElementType
 */
-ElementType MITC9::getElementType(){ return SHELL; }
+ElementType MITC9::getElementType(){ return TACS_SHELL; }
 
 /* 
    Set up the internal static data for the names of the element,

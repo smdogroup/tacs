@@ -162,12 +162,12 @@ void TACSToFH5::writeToFile( const char *filename ){
                               &csr, &csr_range, &node_range);
 
   int con_size = 4;
-  if (elem_type == EULER_BEAM || 
-      elem_type == TIMOSHENKO_BEAM){
+  if (elem_type == TACS_EULER_BEAM || 
+      elem_type == TACS_TIMOSHENKO_BEAM){
     con_size = 2;
   }
-  else if (elem_type == SOLID || 
-           elem_type == RIGID){
+  else if (elem_type == TACS_SOLID || 
+           elem_type == TACS_RIGID){
     con_size = 8;
   }
 

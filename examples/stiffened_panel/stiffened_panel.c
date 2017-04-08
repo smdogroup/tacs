@@ -292,7 +292,7 @@ int main( int argc, char *argv[] ){
 		    TACSElement::OUTPUT_EXTRAS);
   
   // Create a TACSToFH5 object
-  TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
     
   int lev_fill = 5000; // ILU(k) fill in

@@ -82,7 +82,7 @@ int TACSShell::numStresses(){ return NUM_STRESSES; }
 
 int TACSShell::numExtras(){ return NUM_EXTRAS; }
 
-ElementType TACSShell::getElementType(){ return SHELL; }
+ElementType TACSShell::getElementType(){ return TACS_SHELL; }
 
 /*
   Set the values of the design variables

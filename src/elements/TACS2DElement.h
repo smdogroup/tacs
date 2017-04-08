@@ -288,7 +288,7 @@ int TACS2DElement<NUM_NODES>::numExtras(){
 
 template <int NUM_NODES>
 ElementType TACS2DElement<NUM_NODES>::getElementType(){ 
-  return PLANE_STRESS; 
+  return TACS_PLANE_STRESS; 
 }
 
 /*

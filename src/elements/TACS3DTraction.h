@@ -76,7 +76,7 @@ class TACS3DTraction : public TACSElement {
         pt[1] = gaussPts[m];
 
         // Compute X, Xd, N, Na and Nb
-	double N[order*order];
+        double N[order*order];
         double Na[order*order], Nb[order*order];
         FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
 
@@ -135,21 +135,21 @@ class TACS3DTraction : public TACSElement {
 
         // Determine the normal direction
         TacsScalar normal[3];
-	Tensor::crossProduct3D(normal, Xa, Xb);
+        Tensor::crossProduct3D(normal, Xa, Xb);
         TacsScalar h = sqrt(normal[0]*normal[0] +
                             normal[1]*normal[1] +
                             normal[2]*normal[2]);
         h *= gaussWts[n]*gaussWts[m];
 
-	// Evaluate the traction force evaluated at the
+        // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
-	for ( int i = 0; i < order*order; i++ ){
-	  Tx += tx[i]*N[i];
-	  Ty += ty[i]*N[i];
-	  Tz += tz[i]*N[i];
-	}
-	
+        for ( int i = 0; i < order*order; i++ ){
+          Tx += tx[i]*N[i];
+          Ty += ty[i]*N[i];
+          Tz += tz[i]*N[i];
+        }
+        
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         TacsScalar *r = res;

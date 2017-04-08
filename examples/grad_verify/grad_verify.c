@@ -131,7 +131,7 @@ int main( int argc, char * argv[] ){
                              TACSElement::OUTPUT_STRAINS |
                              TACSElement::OUTPUT_STRESSES |
                              TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   // Set a gravity load

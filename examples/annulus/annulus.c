@@ -116,7 +116,7 @@ int main( int argc, char *argv[] ){
 			       TACSElement::OUTPUT_STRAINS |
 			       TACSElement::OUTPUT_STRESSES |
 			       TACSElement::OUTPUT_EXTRAS);
-    TACSToFH5 * f5 = new TACSToFH5(tacs, PLANE_STRESS, write_flag);
+    TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_PLANE_STRESS, write_flag);
     f5->incref();
     f5->writeToFile("output.f5");
     
