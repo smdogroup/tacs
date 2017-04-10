@@ -124,6 +124,8 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *mat,
   thread_info->incref();
   tdata = NULL;
   Adiag = NULL;
+  pairs = NULL;
+  npairs = 0;
 
   if (fill < 1.0){
     fprintf(stderr, "BCSRMat(): fill must be greater than 1.0\n");
@@ -197,6 +199,8 @@ BCSRMat::BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
   thread_info->incref();
   tdata = NULL;
   Adiag = NULL;
+  pairs = NULL;
+  npairs = 0;
 
   data = new BCSRMatData(bsize, nrows, ncols);
   data->incref();
@@ -302,6 +306,8 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *smat,
   thread_info->incref();
   tdata = NULL;
   Adiag = NULL;
+  pairs = NULL;
+  npairs = 0;
 
   // Check that the block sizes are the same
   if (amat->data->bsize != bmat->data->bsize){
@@ -470,6 +476,8 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *B, double fill ){
   thread_info->incref();
   tdata = NULL;
   Adiag = NULL;
+  pairs = NULL;
+  npairs = 0;
 
   data = new BCSRMatData(B->data->bsize, 
                          B->data->ncols, B->data->ncols);
@@ -961,6 +969,8 @@ void BCSRMat::initGenericImpl(){
   applyschur = BCSRMatApplyFactorSchur;
   applysor = BCSRMatApplySOR;
   applyssor = BCSRMatApplySSOR;
+  applysorpairs = BCSRMatApplySOR;
+  applyssorpairs = BCSRMatApplySSOR;
 
   // No default threaded versions
   bmultadd_thread = NULL;
@@ -1021,6 +1031,8 @@ void BCSRMat::initBlockImpl(){
     applyschur        = BCSRMatApplyFactorSchur3;
     applysor  = BCSRMatApplySOR3;
     applyssor = BCSRMatApplySSOR3;
+    applysorpairs = BCSRMatApplySOR3;
+    applyssorpairs = BCSRMatApplySSOR3;
     break;
   case 5:
     bfactor    = BCSRMatFactor5;
@@ -1445,9 +1457,26 @@ void BCSRMat::applyFactorSchur( TacsScalar *x, int var_offset ){
   }
 }
 
-/*!
-  Copy the diagonal entries to a set of diagonal matrices.
-  Factor these matrices and store the result.
+/*
+  Set the array of pairs of matrix
+*/
+void BCSRMat::setDiagPairs( const int *_pairs, int _npairs ){
+  if (pairs){
+    delete [] pairs;
+    delete [] Adiag;
+    Adiag = NULL;
+  }
+
+  // Set up the pairs array
+  npairs = _npairs;
+  pairs = new int[ npairs ];
+  memcpy(pairs, _pairs, npairs*sizeof(int));
+  npairs = FElibrary::uniqueSort(pairs, npairs);
+}
+
+/*!  
+  Copy the diagonal entries to a set of diagonal matrices.  Factor
+  these matrices and store the result.
 */
 void BCSRMat::factorDiag(){
   if (!data->diag){
@@ -1458,17 +1487,75 @@ void BCSRMat::factorDiag(){
   const int b2 = bsize*bsize;
   const int nrows = data->nrows;
 
-  int *ipiv = new int[ bsize ];
-  TacsScalar *D = new TacsScalar[ b2 ];
+  int *ipiv = new int[ 2*bsize ];
+  TacsScalar *D = new TacsScalar[ 4*b2 ];
 
   if (!Adiag){
-    Adiag = new TacsScalar[ nrows*b2 ];
+    Adiag = new TacsScalar[ (nrows + 2*npairs)*b2 ];
   }
 
-  for ( int i = 0; i < nrows; i++ ){
-    int d = b2*data->diag[i];
-    memcpy(D, &(data->A[d]), b2*sizeof(TacsScalar));
-    BMatComputeInverse(&Adiag[b2*i], D, ipiv, bsize);
+  if (pairs){
+    TacsScalar *Ad = Adiag;
+    for ( int i = 0, p = 0; i < nrows; i++ ){
+      if (p < npairs && i == pairs[p]){
+        memset(D, 0, 4*b2*sizeof(TacsScalar));
+
+        // Copy over the block matrices from the first row in the pair
+        int d = data->diag[i];
+        for ( int ii = 0; ii < bsize; ii++ ){
+          for ( int jj = 0; jj < bsize; jj++ ){
+            D[jj + 2*bsize*ii] = data->A[b2*d + jj + bsize*ii];
+          }
+        }
+
+        // Check if the next entry is the (i,i+1) block
+        if (d+1 < data->rowp[i+1] && data->cols[d+1] == i+1){
+          d++;
+          for ( int ii = 0; ii < bsize; ii++ ){
+            for ( int jj = 0; jj < bsize; jj++ ){
+              D[jj + bsize + 2*bsize*ii] = data->A[b2*d + jj + bsize*ii];
+            }
+          }
+        }
+        
+        // Copy the block matrices from the second row in the pair
+        d = data->diag[i+1];
+        for ( int ii = 0; ii < bsize; ii++ ){
+          for ( int jj = 0; jj < bsize; jj++ ){
+            D[jj+bsize + 2*bsize*(ii+bsize)] = data->A[b2*d + jj + bsize*ii];
+          }
+        }
+
+        // Check if the previous entry is the (i+1,i) block
+        if (d-1 >= data->rowp[i+1] && data->cols[d-1] == i){
+          d--;
+          for ( int ii = 0; ii < bsize; ii++ ){
+            for ( int jj = 0; jj < bsize; jj++ ){
+              D[jj + 2*bsize*(ii+bsize)] = data->A[b2*d + jj + bsize*ii];
+            }
+          }
+        }
+
+        // Compute the inverse and update the indices
+        BMatComputeInverse(Ad, D, ipiv, 2*bsize);
+        Ad += 4*b2;
+        i++;
+        p++;
+      }
+      else {
+        int d = b2*data->diag[i];
+        memcpy(D, &(data->A[d]), b2*sizeof(TacsScalar));
+        BMatComputeInverse(Ad, D, ipiv, bsize);
+        Ad += b2;
+      }
+    }
+  }
+  else {
+    for ( int i = 0; i < nrows; i++ ){
+      int d = b2*data->diag[i];
+      memcpy(D, &(data->A[d]), b2*sizeof(TacsScalar));
+      BMatComputeInverse(&Adiag[b2*i], D, ipiv, bsize);
+    }
   }
 
   delete [] D;
@@ -1481,7 +1568,12 @@ void BCSRMat::factorDiag(){
 void BCSRMat::applySOR( TacsScalar *b, TacsScalar *x, 
 			TacsScalar omega, int iters ){
   if (Adiag){
-    applysor(data, Adiag, omega, iters, b, x);
+    if (pairs){
+      applysorpairs(data, Adiag, pairs, npairs, omega, iters, b, x);
+    }
+    else {
+      applysor(data, Adiag, omega, iters, b, x);
+    }
   }
   else {
     fprintf(stderr, "Cannot apply SOR: diagonal has not been factored\n");
@@ -1494,7 +1586,12 @@ void BCSRMat::applySOR( TacsScalar *b, TacsScalar *x,
 void BCSRMat::applySSOR( TacsScalar *b, TacsScalar *x, 
 			 TacsScalar omega, int iters ){
   if (Adiag){
-    applyssor(data, Adiag, omega, iters, b, x);
+    if (pairs){
+      applyssorpairs(data, Adiag, pairs, npairs, omega, iters, b, x);
+    }
+    else {
+      applyssor(data, Adiag, omega, iters, b, x);
+    }
   }
   else {
     fprintf(stderr, "Cannot apply SSOR: diagonal has not been factored\n");

@@ -40,15 +40,16 @@
 */
 class TACSMg : public TACSPc {
  public:
-  TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega, 
-	  int _sor_iters, int _sor_symmetric );
+  TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega=1.0, 
+	  int _sor_iters=1, int _sor_symmetric=0 );
   ~TACSMg();
 
   // Set the data for the multi-grid level
   // -------------------------------------
   void setLevel( int level, TACSAssembler *_tacs,
-                 TACSBVecInterp *interp,
-		 int _iters=1 );
+                 TACSBVecInterp *interp=NULL,
+		 int _iters=1, TACSMat *_mat=NULL, 
+                 TACSPc *_smoother=NULL );
     
   // Set the state/design variables of all lower finite-element models
   // -----------------------------------------------------------------
@@ -76,6 +77,8 @@ class TACSMg : public TACSPc {
   // Retrieve the matrix from the specified level
   // --------------------------------------------
   TACSMat *getMat( int level );  
+  TACSAssembler *getTACS( int level );
+  TACSBVecInterp *getInterpolation( int level );
 
   // Set the solution monitor context
   // --------------------------------

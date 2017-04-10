@@ -351,7 +351,7 @@ void TACSBVec::zeroEntries(){
 */
 void TACSBVec::set( TacsScalar val ){
   int i = 0;
-  int rem = size%4;
+  int rem = size % 4;
   TacsScalar *y = x;
 
   for ( ; i < rem; i++ ){

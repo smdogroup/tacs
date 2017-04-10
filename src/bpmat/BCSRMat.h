@@ -83,6 +83,7 @@ class BCSRMat : public TACSObject {
   void applyPartialLower( TacsScalar *xvec, int var_offset );
   void applyPartialUpper( TacsScalar *xvec, int var_offset );
   void applyFactorSchur( TacsScalar *x, int var_offset );
+  void setDiagPairs( const int *_pairs, int _npairs );
   void factorDiag();
   void applySOR( TacsScalar *x, TacsScalar *y, 
                  TacsScalar omega, int iters );
@@ -149,6 +150,12 @@ class BCSRMat : public TACSObject {
 		    int iters, TacsScalar *b, TacsScalar *x );
   void (*applyssor)( BCSRMatData *A, TacsScalar *Adiag, TacsScalar omega, 
 		     int iters, TacsScalar *b, TacsScalar *x );
+  void (*applysorpairs)( BCSRMatData *A, TacsScalar *Adiag, 
+                         const int *pairs, int npairs, TacsScalar omega, 
+                         int iters, TacsScalar *b, TacsScalar *x );
+  void (*applyssorpairs)( BCSRMatData *A, TacsScalar *Adiag, 
+                          const int *pairs, int npairs, TacsScalar omega, 
+                          int iters, TacsScalar *b, TacsScalar *x );
   
   void (*bmatmult)( double alpha, BCSRMatData *A, 
                     BCSRMatData *B, BCSRMatData *C ); 
@@ -179,6 +186,8 @@ class BCSRMat : public TACSObject {
 
   // Storage space for the factored diagonal entries
   TacsScalar *Adiag; 
+  int npairs;
+  int *pairs;
 };
 
 #endif

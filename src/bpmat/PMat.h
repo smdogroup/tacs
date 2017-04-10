@@ -109,8 +109,8 @@ class PMat : public TACSMat {
 */
 class PSOR : public TACSPc {
  public:
-  PSOR( PMat *mat, int _zero_guess, 
-        TacsScalar _omega, int _iters, int _isSymmetric );
+  PSOR( PMat *mat, int _zero_guess, TacsScalar _omega, int _iters, 
+        int _isSymmetric, int *pairs=NULL, int npairs=0 );
   ~PSOR();
 
   void factor();

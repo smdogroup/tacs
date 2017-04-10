@@ -824,12 +824,12 @@ void BCSRMatApplySSOR3( BCSRMatData *data, TacsScalar *Adiag,
         // Compute the first term in the update:
         // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
         D -= 36;
-        x[3*i]   = (1.0 - omega)*x[3*i]   + omega*(D[0]*t1 + D[1]*t2 + D[2]*t3 + D[3]*t4 + D[4]*t5 + D[5]*t6);
-        x[3*i+1] = (1.0 - omega)*x[3*i+1] + omega*(D[6]*t1 + D[7]*t2 + D[8]*t3 + D[9]*t4 + D[10]*t5 + D[11]*t6);
-        x[3*i+2] = (1.0 - omega)*x[3*i+2] + omega*(D[12]*t1 + D[13]*t2 + D[14]*t3 + D[15]*t4 + D[16]*t5 + D[17]*t6);
-        x[3*i+3] = (1.0 - omega)*x[3*i+3] + omega*(D[18]*t1 + D[19]*t2 + D[20]*t3 + D[21]*t4 + D[22]*t5 + D[23]*t6);
-        x[3*i+4] = (1.0 - omega)*x[3*i+4] + omega*(D[24]*t1 + D[25]*t2 + D[26]*t3 + D[27]*t4 + D[28]*t5 + D[29]*t6);
-        x[3*i+5] = (1.0 - omega)*x[3*i+5] + omega*(D[30]*t1 + D[31]*t2 + D[32]*t3 + D[33]*t4 + D[34]*t5 + D[35]*t6);
+        x[3*i-3] = (1.0 - omega)*x[3*i-3] + omega*(D[0]*t1 + D[1]*t2 + D[2]*t3 + D[3]*t4 + D[4]*t5 + D[5]*t6);
+        x[3*i-2] = (1.0 - omega)*x[3*i-2] + omega*(D[6]*t1 + D[7]*t2 + D[8]*t3 + D[9]*t4 + D[10]*t5 + D[11]*t6);
+        x[3*i-1] = (1.0 - omega)*x[3*i-1] + omega*(D[12]*t1 + D[13]*t2 + D[14]*t3 + D[15]*t4 + D[16]*t5 + D[17]*t6);
+        x[3*i]   = (1.0 - omega)*x[3*i]   + omega*(D[18]*t1 + D[19]*t2 + D[20]*t3 + D[21]*t4 + D[22]*t5 + D[23]*t6);
+        x[3*i+1] = (1.0 - omega)*x[3*i+1] + omega*(D[24]*t1 + D[25]*t2 + D[26]*t3 + D[27]*t4 + D[28]*t5 + D[29]*t6);
+        x[3*i+2] = (1.0 - omega)*x[3*i+2] + omega*(D[30]*t1 + D[31]*t2 + D[32]*t3 + D[33]*t4 + D[34]*t5 + D[35]*t6);
 
         // Increment the rows/pair number and the pointer to the
         // diagonal block
