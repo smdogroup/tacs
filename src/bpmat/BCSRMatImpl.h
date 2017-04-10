@@ -121,6 +121,15 @@ void BCSRMatApplySOR( BCSRMatData *A, TacsScalar *Adiag,
 void BCSRMatApplySSOR( BCSRMatData *A, TacsScalar *Adiag,
 		       TacsScalar omega, int iters, 
                        TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySOR( BCSRMatData *A, TacsScalar *Adiag,
+                      const int *pairs, int npairs,
+		      TacsScalar omega, int iters, 
+                      TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySSOR( BCSRMatData *A, TacsScalar *Adiag,
+                       const int *pairs, int npairs,
+		       TacsScalar omega, int iters, 
+                       TacsScalar *b, TacsScalar *x );
+
 /*
   These are the definitions for the block-specific code.
   These should provide better performance.
@@ -199,6 +208,14 @@ void BCSRMatApplySOR3( BCSRMatData *A, TacsScalar *Adiag,
 void BCSRMatApplySSOR3( BCSRMatData *A, TacsScalar *Adiag,
 			TacsScalar omega, int iters, 
 			TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySOR3( BCSRMatData *A, TacsScalar *Adiag,
+                       const int *pairs, int npairs,
+                       TacsScalar omega, int iters, 
+                       TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySSOR3( BCSRMatData *A, TacsScalar *Adiag,
+                        const int *pairs, int npairs,
+                        TacsScalar omega, int iters, 
+                        TacsScalar *b, TacsScalar *x );
 
 // The bsize == 5 code
 void BCSRMatVecMult5( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
