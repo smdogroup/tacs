@@ -242,6 +242,8 @@ BCSRMat::BCSRMat( MPI_Comm _comm,
   thread_info->incref();
   tdata = NULL;
   Adiag = NULL;
+  pairs = NULL;
+  npairs = 0;
   
   // Check that the dimensions of the matrices match
   if (Bmat->data->nrows != Emat->data->nrows ||
@@ -578,6 +580,7 @@ BCSRMat::~BCSRMat(){
   thread_info->decref();
   if (tdata){ tdata->decref(); }
   if (Adiag){ delete [] Adiag; }
+  if (pairs){ delete [] pairs; }
 }
 
 /*!
