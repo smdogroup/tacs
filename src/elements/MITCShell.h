@@ -1301,7 +1301,7 @@ void MITCShell<order>::addAdjResProduct( double time,
   TacsScalar b12[3*NUM_NODES*NUM_G12];
   TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
 
-  TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
+  TacsScalar strain[NUM_STRESSES];
   TacsScalar drot[NUM_VARIABLES];
   TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
 
@@ -1599,25 +1599,23 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
         }
       }
 
-      /*
       if (type == LINEAR){
-        add_linear_bend_bmat_sens(res, NUM_NODES, h, h*k_penalty*rot,
+        add_linear_bend_bmat_sens(fXptSens, psi, NUM_NODES, h, h*k_penalty*rot,
                                   stress, N, Na, Nb, 
                                   t, dt, tx, dtx, ztx, dztx,
                                   normal, dnormal, normal_xi, dnormal_xi,
                                   normal_eta, dnormal_eta, 3*NUM_NODES);
       }
       else if (type == NONLINEAR){
-        add_nonlinear_bend_bmat_sens(res, NUM_NODES, h, h*k_penalty*rot,
+        add_nonlinear_bend_bmat_sens(fXptSens, psi, NUM_NODES, h, h*k_penalty*rot,
                                      stress, N, Na, Nb, U, Ud,
                                      t, dt, tx, dtx, ztx, dztx,
                                      normal, dnormal, normal_xi, dnormal_xi,
                                      normal_eta, dnormal_eta, 3*NUM_NODES);
       }
 
-      add_tying_bmat_sens<order>((type == LINEAR), res, h, stress, tx, dtx,
+      add_tying_bmat_sens<order>((type == LINEAR), fXptSens, psi, h, stress, tx, dtx,
                                  knots, pknots, vars, Xpts, N11, N22, N12);
-      */
     }
   }
 }
@@ -1672,7 +1670,7 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
     TacsScalar b12[3*NUM_NODES*NUM_G12];
     TacsScalar b13[NUM_VARIABLES*NUM_G13], b23[NUM_VARIABLES*NUM_G23];
     
-    TacsScalar strain[NUM_STRESSES], stress[NUM_STRESSES];
+    TacsScalar strain[NUM_STRESSES];
     TacsScalar drot[NUM_VARIABLES];
     TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
 

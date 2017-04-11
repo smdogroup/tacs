@@ -76,7 +76,7 @@ if tacs_comm.rank == 0:
 # Get numpy array from distributed vector object and write in loads
 force_array = forces.getArray() 
 force_array[2::6] += 100.0 # uniform load in z direction
-forces.applyBCs()
+tacs.applyBCs(forces)
 
 # Solve the linear system
 tic = time.clock()

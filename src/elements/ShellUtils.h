@@ -483,7 +483,9 @@ void linear_bend_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
 /*
   Compute the bending moment strain 
 */
-void add_linear_bend_bmat_sens( TacsScalar res[], int num_points, 
+void add_linear_bend_bmat_sens( TacsScalar fXptSens[], 
+                                const TacsScalar psi[],
+                                int num_points,
 				const TacsScalar stress_scale,
 				const TacsScalar rot_scale,
 				const TacsScalar stress[], 
@@ -587,7 +589,9 @@ void nonlinear_bend_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
 /*
   Compute the sensitivity of the nonlinear bmat
 */  
-void add_nonlinear_bend_bmat_sens( TacsScalar res[], int num_points, 
+void add_nonlinear_bend_bmat_sens( TacsScalar fXptSens[], 
+                                   const TacsScalar psi[],
+                                   int num_points,
 				   const TacsScalar stress_scale,
 				   const TacsScalar rot_scale,
 				   const TacsScalar stress[],
@@ -1403,7 +1407,8 @@ void compute_tying_strain_sens( const int is_linear,
 */
 template <int order>
 void add_tying_bmat_sens( const int is_linear,
-                          TacsScalar res[],
+                          TacsScalar fXptSens[],
+                          const TacsScalar psi[],
                           const TacsScalar scale,
                           const TacsScalar stress[], 
                           const TacsScalar tx[],
@@ -1787,9 +1792,8 @@ void add_tying_bmat_sens( const int is_linear,
 		    tx[3]*dg[4] + tx[4]*dg[3] + tx[5]*dg[2]);
 	  das[8] = (dtx[6]*g[4] + dtx[7]*g[3] + dtx[8]*g[2] +
 		    tx[6]*dg[4] + tx[7]*dg[3] + tx[8]*dg[2]);
-	  
-	  // Add this 
-	  res[6*order*order*k + row] += scale*
+          
+	  fXptSens[k] += scale*psi[row]*
 	    (stress[0]*(as[0]*dtx[0] + as[1]*dtx[1] + as[2]*dtx[2] +
 			das[0]*tx[0] + das[1]*tx[1] + das[2]*tx[2]) + 
 	     stress[1]*(as[3]*dtx[3] + as[4]*dtx[4] + as[5]*dtx[5] +
@@ -1855,7 +1859,7 @@ void add_tying_bmat_sens( const int is_linear,
 		    tx[6]*dg[4] + tx[7]*dg[3]);
 	  
 	  // Add the deterivative of tx * G * tx^{T} * stress to res 
-	  res[6*order*order*k + row] += scale*
+	  fXptSens[k] += scale*psi[row]*
 	    (stress[0]*(as[0]*dtx[0] + as[1]*dtx[1] + as[2]*dtx[2] +
 			das[0]*tx[0] + das[1]*tx[1] + das[2]*tx[2]) + 
 	     stress[1]*(as[3]*dtx[3] + as[4]*dtx[4] + as[5]*dtx[5] +

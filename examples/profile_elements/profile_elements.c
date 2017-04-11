@@ -126,7 +126,7 @@ int main( int argc, char *argv[] ){
     test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
   }
   shell->decref();
-
+  /*
   shell = new MITCShell<3>(fsdt, LINEAR);  shell->incref();
   if (!ename || strcmp(ename, shell->elementName()) == 0){
     test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
@@ -319,7 +319,7 @@ int main( int argc, char *argv[] ){
     bodyA->decref();
     rlink->decref();
   }
-
+  */
   MPI_Finalize();
   return (0);
 }

@@ -1047,9 +1047,6 @@ void TACS3DElement<NUM_NODES>::computeEnergies( double time,
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
 
-  // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
-
   // Get the number of quadrature points
   int numGauss = getNumGaussPts();
 
