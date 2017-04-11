@@ -5,7 +5,6 @@
 import numpy as np
 from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
-import time
 
 # Load structural mesh from BDF file
 tacs_comm = MPI.COMM_WORLD
@@ -37,16 +36,13 @@ for i in xrange(num_components):
 tacs = struct_mesh.createTACS(6)
 
 # Create distributed vector for node locations and fill it
-struct_X_vec = tacs.createNodeVec()
-tacs.getNodes(struct_X_vec)
-struct_X = struct_X_vec.getArray()
-struct_nnodes = len(struct_X)/3
+X = tacs.createNodeVec()
+tacs.getNodes(X)
 
 # Set up functions to evaluate
 mass = functions.StructuralMass(tacs)
 ksWeight = 50.0
 ksfailure = functions.KSFailure(tacs, ksWeight)
-# funcs = [mass]
 funcs = [ksfailure]
 
 # Create matrix and distributed vectors
@@ -63,10 +59,10 @@ alpha = 1.0
 beta = 0.0
 gamma = 0.0
 tacs.zeroVariables()
-tic = time.clock()
+tic = MPI.Wtime()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
-toc = time.clock()
+toc = MPI.Wtime()
 
 if tacs_comm.rank == 0:
     print "Assembled and factored linear system..."
@@ -79,9 +75,9 @@ force_array[2::6] += 100.0 # uniform load in z direction
 tacs.applyBCs(forces)
 
 # Solve the linear system
-tic = time.clock()
+tic = MPI.Wtime()
 pc.applyFactor(forces, ans)
-toc = time.clock()
+toc = MPI.Wtime()
 tacs.setVariables(ans)
 
 if tacs_comm.rank == 0:
@@ -97,68 +93,47 @@ if tacs_comm.rank == 0:
     print
 
 # Evaluate the derivative w.r.t. node locations
-dvsens_vec = tacs.createNodeVec()
-tacs.evalXptSens(funcs[0], dvsens_vec)
-dvsens = dvsens_vec.getArray()
+fXptSens = tacs.createNodeVec()
+tacs.evalXptSens(funcs[0], fXptSens)
 
-svsens_vec = tacs.createVec()
-tacs.evalSVSens(funcs[0], svsens_vec)
-svsens_vec.scale(-1.0)
+svSens = tacs.createVec()
+tacs.evalSVSens(funcs[0], svSens)
+svSens.scale(-1.0)
 
-adj_vars_vec = tacs.createVec()
-tic = time.clock()
-pc.applyFactor(svsens_vec, adj_vars_vec)
-toc = time.clock()
+adjoint = tacs.createVec()
+pc.applyFactor(svSens, adjoint)
 
-if tacs_comm.rank == 0:
-    print "Solved for adjoint variables..."
-    print "Time to solve: ", toc - tic
-    print
-
-product_vec = tacs.createNodeVec()
-tacs.evalAdjointResXptSensProduct(adj_vars_vec, product_vec)
-product = product_vec.getArray()
-print dvsens
-print product
-deriv = dvsens + product
+product = tacs.createNodeVec()
+tacs.evalAdjointResXptSensProduct(adjoint, product)
+fXptSens.axpy(1.0, product)
 
 # Perturb and set the node locations
-pert_vec = tacs.createNodeVec()
-pert_vec.setRand()
+pert = tacs.createNodeVec()
+pert.setRand()
 
 if TACS.dtype is np.complex:
     dh = 1.0e-30
-    struct_X_vec.axpy(dh*1j, pert_vec)
+    X.axpy(dh*1j, pert)
 else:
-    dh = 1.0e-9
-    struct_X_vec.axpy(dh, pert_vec)
+    dh = 1.0e-6
+    X.axpy(dh, pert)
 
-tacs.testElement(0, 2)
-
-pert = pert_vec.getArray().astype(TACS.dtype)
-tacs.setNodes(struct_X_vec)
+tacs.setNodes(X)
 
 # Compute the perturbed solution
 tacs.zeroVariables()
-tic = time.clock()
+tic = MPI.Wtime()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
-toc = time.clock()
+toc = MPI.Wtime()
 
 if tacs_comm.rank == 0:
     print "Assembled and factored perturbed linear system..."
     print "Time to assemble and factor: ", toc - tic
     print
 
-tic = time.clock()
 pc.applyFactor(forces, ans)
-toc = time.clock()
 tacs.setVariables(ans)
-
-if tacs_comm.rank == 0:
-    print "Solved perturbed linear system..."
-    print "Time to solve: ", toc - tic
-    print
 
 # Evaluate the function for perturbed solution
 fvals2 = tacs.evalFunctions(funcs)
@@ -173,13 +148,15 @@ else:
     fd = (fvals2 - fvals1)/dh
 
 # Print comparison of derivative evaluations
+result = fXptSens.dot(pert).real
 if tacs_comm.rank == 0:
-    print 'FD:     ', fd[0]
-    print 'Result: ', np.dot(deriv, pert).real
+    print 'FD:      ', fd[0]
+    print 'Result:  ', result
+    print 'Rel err: ', (result - fd[0])/fd[0]
 
-# Output for visualization 
-flag = (TACS.ToFH5.NODES |
-        TACS.ToFH5.DISPLACEMENTS |
-        TACS.ToFH5.STRAINS)
-f5 = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
-f5.writeToFile('ucrm.f5')
+# # Output for visualization 
+# flag = (TACS.ToFH5.NODES |
+#         TACS.ToFH5.DISPLACEMENTS |
+#         TACS.ToFH5.STRAINS)
+# f5 = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
+# f5.writeToFile('ucrm.f5')

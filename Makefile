@@ -69,6 +69,9 @@ debug:
 interface:
 	python setup.py build_ext --inplace
 
+complex_interface:
+	python setup.py build_ext --inplace --define TACS_USE_COMPLEX
+
 complex: TACS_IS_COMPLEX=true
 complex: default
 

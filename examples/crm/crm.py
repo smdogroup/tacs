@@ -68,7 +68,6 @@ pc.factor()
 # Get numpy array from distributed vector object and write in loads
 force_array = forces.getArray() 
 force_array[2::6] += 100.0 # uniform load in z direction
-#forces.applyBCs()
 tacs.applyBCs(forces)
 
 # Solve the linear system
@@ -88,6 +87,8 @@ pc.applyFactor(res, ans)
 tacs.evalDVSens(funcs[0], fdvSens)
 tacs.evalAdjointResProduct(ans, product)
 fdvSens = fdvSens - product
+
+fdvSens = tacs_comm.allreduce(fdvSens, op=MPI.SUM)
 
 # Evaluate the result
 result = np.sum(fdvSens).real
@@ -119,8 +120,9 @@ else:
     fd = (fvals2 - fvals1)/dh
 
 if tacs_comm.rank == 0:
-    print 'FD:     ', fd[0]
-    print 'Result: ', result
+    print 'FD:      ', fd[0]
+    print 'Result:  ', result
+    print 'Rel err: ', (result - fd[0])/result
 
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |

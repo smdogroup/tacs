@@ -3693,7 +3693,6 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
                                                   TACSBVec **adjoint, 
                                                   int numAdjoints,
                                                   TACSBVec **adjXptSens ){
-
   for ( int k = 0; k < numAdjoints; k++ ){
     adjoint[k]->beginDistributeValues();
   }
@@ -3748,7 +3747,7 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
 
       adjXptSens[k]->setValues(len, nodes, xptSens, ADD_VALUES);
     }
-  }   
+  }
 }
 
 /*

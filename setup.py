@@ -1,5 +1,6 @@
 import os
 from subprocess import check_output
+import sys
 
 # Numpy/mpi4py must be installed prior to installing TACS
 import numpy

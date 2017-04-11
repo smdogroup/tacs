@@ -1028,13 +1028,6 @@ cdef class Assembler:
       '''
       self.ptr.testFunction(func.ptr, num_dvs, dh)
       return
-
-   def getMPIComm(self):
-      '''
-      Retrieve the MPI Communicator
-      '''
-      cdef MPI_Comm c_comm = self.ptr.getMPIComm()
-      return MPI.COMM_WORLD
    
 # Wrap the TACStoFH5 class
 cdef class ToFH5:
