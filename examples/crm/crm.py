@@ -104,6 +104,7 @@ fXptSens.axpy(-1.0, product)
 
 # Set the complex step
 xpert = np.random.uniform(size=x.shape)
+xpert = tacs_comm.bcast(xpert, root=0)
 if TACS.dtype is np.complex:
     dh = 1e-30
     xnew = x + 1j*dh*xpert
