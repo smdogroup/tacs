@@ -865,11 +865,22 @@ cdef class Assembler:
       cdef TACSFunction **funcs = &((<Function>func).ptr)
       cdef int num_design_vars = A.shape[0]
       cdef TacsScalar *Avals = <TacsScalar*>A.data
+      cdef MPI_Comm comm
+      cdef int size = 0
+
+      # The the communicator
+      comm = self.ptr.getMPIComm()
 
       # Evaluate the derivative of the functions
       A[:] = 0.0
       self.ptr.addDVSens(1.0, funcs, num_funcs, Avals, num_design_vars)
 
+      # The total size
+      size = num_design_vars*num_funcs
+
+      # Allreduce the contributions in-place across all processors
+      MPI_Allreduce(MPI_IN_PLACE, Avals, size,
+                    TACS_MPI_TYPE, MPI_SUM, comm)
       return
 
    def evalSVSens(self, Function func, Vec vec):
@@ -910,11 +921,19 @@ cdef class Assembler:
       cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
       cdef TacsScalar *Avals = <TacsScalar*>A.data
       cdef int num_design_vars = A.shape[0]
+      cdef MPI_Comm comm
+      
+      # Get the communicator
+      comm = self.ptr.getMPIComm()
 
       # Add the derivative of the product of the adjoint and residual 
       A[:] = 0.0
       self.ptr.addAdjointResProducts(1.0, adj, num_adj,
                                      Avals, num_design_vars)
+
+      # Allreduce the contributions in-place across all processors
+      MPI_Allreduce(MPI_IN_PLACE, Avals, num_design_vars*num_adj,
+                    TACS_MPI_TYPE, MPI_SUM, comm)
       return
 
    def evalXptSens(self, Function func, Vec vec):
@@ -948,8 +967,16 @@ cdef class Assembler:
       cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
       cdef TACSBVec **prods = &((<Vec>prod).ptr)
 
+      # Zero the entries in the product
+      prod.zeroEntries()
+
       # Add the derivative of the product of the adjoint and residual 
       self.ptr.addAdjointResXptSensProducts(1.0, adj, num_adj, prods)
+      
+      # Add the contributions across all processors
+      prod.ptr.beginSetValues(ADD_VALUES)
+      prod.ptr.endSetValues(ADD_VALUES)
+
       return
 
    def addMatDVSensInnerProduct(self, double scale,

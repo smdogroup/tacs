@@ -316,7 +316,6 @@ TACSAssembler* TACSCreator::createTACS(){
               &num_owned_elements, 1, MPI_INT, root_rank, comm);
 
   // The number of local nodes
-  int num_local_nodes = 0;
   int num_local_dep_nodes = 0;
 
   // Allocate space for the portion of the element connectivity on 
@@ -417,7 +416,6 @@ TACSAssembler* TACSCreator::createTACS(){
       // Keep track of the number of local nodes and local depdendent
       // nodes that are indexed by processor k. This will be larger
       // than owned_nodes[k].
-      int local_node_size = 0;
       int local_dep_node_size = 0;
 
       // Set the first index within the element pointer to zero
@@ -635,7 +633,6 @@ TACSAssembler* TACSCreator::createTACS(){
     MPI_Bcast(bc_vals, bc_ptr[num_bcs], TACS_MPI_TYPE, root_rank, comm);
   }
 
-  int node_max_csr_size = local_elem_node_ptr[num_owned_elements];  
   TACSAssembler * tacs = 
     new TACSAssembler(comm, vars_per_node, num_owned_nodes,
                       num_owned_elements, num_local_dep_nodes);

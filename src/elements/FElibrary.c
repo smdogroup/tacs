@@ -165,7 +165,7 @@ int findInterval( int index, const int intv[], int len ){
   Match the intervals in a list of sorted variables.
 */
 void matchIntervals( int mpiSize, const int ownerRange[], 
-                     int nvars, const int vars[], int ext_ptr[] ){			    
+                     int nvars, const int vars[], int ext_ptr[] ){                          
     
   // ext_ptr[n] should be the greatest integer such that
   // vars[ext_ptr[n]] <= ownerRange[n]
@@ -193,24 +193,24 @@ void matchIntervals( int mpiSize, const int ownerRange[],
       int low = 0;
       int high = nvars-1;
       int mid = low + (int)((high - low)/2);
-	
+        
       // maintain that the variable is in the interval (vars[low],vars[high])
       // note that if high-low=1, then mid = high
       while (high != mid){
         if (vars[mid] == ownerRange[n]){
           break;
         }
-	  
+          
         if (ownerRange[n] < vars[mid]){
           high = mid;
         } 
         else {
           low = mid;
         }
-	  
+          
         mid = high - (int)((high - low)/2);
       }           
-	
+        
       ext_ptr[n] = mid;
     }
   }    
@@ -229,10 +229,10 @@ void matchIntervals( int mpiSize, const int ownerRange[],
   gaussWts: the Gauss quadrature weights
 */
 int getGaussPtsWts( int _numGauss, 
-		    const double **gaussPts, 
+                    const double **gaussPts, 
                     const double **gaussWts ){
   return getGaussPtsWts(GAUSS_QUADRATURE,
-			_numGauss, gaussPts, gaussWts);
+                        _numGauss, gaussPts, gaussWts);
 }
 
 /*
@@ -250,8 +250,8 @@ int getGaussPtsWts( int _numGauss,
   gaussWts: the Gauss quadrature weights
 */
 int getGaussPtsWts( enum QuadratureType quad,
-		    int _numGauss, 
-		    const double **gaussPts, 
+                    int _numGauss, 
+                    const double **gaussPts, 
                     const double **gaussWts ){
   int numGauss = 1;
 
@@ -346,7 +346,7 @@ int getGaussPtsWts( enum QuadratureType quad,
   pt:    the parametric point within the domain 
 */
 double getGaussPtWt( const int dim, const int scheme, 
-		     const int num, double pt[] ){
+                     const int num, double pt[] ){
   return getGaussPtWt(GAUSS_QUADRATURE, dim, scheme, num, pt);
 }
 
@@ -363,8 +363,8 @@ double getGaussPtWt( const int dim, const int scheme,
   pt:    the parametric point within the domain 
 */
 double getGaussPtWt( enum QuadratureType quad,
-		     const int dim, const int scheme, 
-		     const int num, double pt[] ){
+                     const int dim, const int scheme, 
+                     const int num, double pt[] ){
   const double *gaussPts, *gaussWts;
 
   // Get the integration scheme
@@ -396,6 +396,8 @@ double getGaussPtWt( enum QuadratureType quad,
 
     return gaussWts[n]*gaussWts[m]*gaussWts[p];
   }
+
+  return 0.0;
 }
 
 /*

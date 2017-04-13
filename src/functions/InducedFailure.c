@@ -487,7 +487,6 @@ void TACSInducedFailure::getElementXptSens( const double tcoef,
     // Get the number of stress components, the total number of
     // variables, and the total number of nodes
     int numStresses = element->numStresses();
-    int numVars = element->numVariables();
 
     // Get the quadrature scheme information
     int numGauss = element->getNumGaussPts();

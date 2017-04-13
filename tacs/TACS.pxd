@@ -50,6 +50,7 @@ cdef extern from "TACSObject.h":
    cdef cppclass TACSObject:
       void incref()
       void decref()
+   cdef MPI_Datatype TACS_MPI_TYPE
 
 cdef extern from "KSM.h":
    cdef cppclass TACSVec(TACSObject):

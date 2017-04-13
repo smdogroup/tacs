@@ -35,26 +35,29 @@ for i in xrange(num_components):
 # Create tacs assembler object from mesh loader
 tacs = struct_mesh.createTACS(6)
 
-# Set up functions to evaluate (just computing mass of structure as example)
-mass = functions.StructuralMass(tacs)
-funclist = [mass]
+# Create the KS Function
+ksWeight = 100.0
+funcs = [functions.KSFailure(tacs, ksWeight)]
 
-# Evaluate functions
-fvals = tacs.evalFunctions(funclist)
-massval = fvals[0]
-if tacs_comm.rank == 0:
-    print "Mass: ", massval
-
+# Get the design variable values
 x = np.zeros(num_components, TACS.dtype)
 tacs.getDesignVars(x)
 
-# Create matrix and distributed vectors
-res = tacs.createVec()
+# Get the node locations
+X = tacs.createNodeVec()
+tacs.getNodes(X)
+tacs.setNodes(X)
+
+# Create the forces
 forces = tacs.createVec()
+force_array = forces.getArray() 
+force_array[2::6] += 100.0 # uniform load in z direction
+tacs.applyBCs(forces)
+
+# Set up and solve the analysis problem
+res = tacs.createVec()
 ans = tacs.createVec()
 mat = tacs.createFEMat()
-
-# Create preconditioner
 pc = TACS.Pc(mat)
 
 # Assemble the Jacobian and factor
@@ -65,44 +68,51 @@ tacs.zeroVariables()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
-# Get numpy array from distributed vector object and write in loads
-force_array = forces.getArray() 
-force_array[2::6] += 100.0 # uniform load in z direction
-tacs.applyBCs(forces)
-
 # Solve the linear system
 pc.applyFactor(forces, ans)
 tacs.setVariables(ans)
 
 # Evaluate the function
-ksWeight = 100.0
-funcs = [functions.KSFailure(tacs, ksWeight)]
 fvals1 = tacs.evalFunctions(funcs)
+# if TACS.dtype is np.complex:
+#     tacs.testFunction(funcs[0], x.shape[0], 1e-30)
+# else:
+#     tacs.testFunction(funcs[0], x.shape[0], 1e-6)
 
-# Evaluate the derivative
+# Solve for the adjoint variables
+adjoint = tacs.createVec()
+tacs.evalSVSens(funcs[0], res)
+pc.applyFactor(res, adjoint)
+
+# Compute the total derivative w.r.t. material design variables
 fdvSens = np.zeros(x.shape, TACS.dtype)
 product = np.zeros(x.shape, TACS.dtype)
-tacs.evalSVSens(funcs[0], res)
-pc.applyFactor(res, ans)
 tacs.evalDVSens(funcs[0], fdvSens)
-tacs.evalAdjointResProduct(ans, product)
+tacs.evalAdjointResProduct(adjoint, product)
 fdvSens = fdvSens - product
 
-fdvSens = tacs_comm.allreduce(fdvSens, op=MPI.SUM)
+# Create a random direction along which to perturb the nodes
+pert = tacs.createNodeVec()
+pert.setRand()
 
-# Evaluate the result
-result = np.sum(fdvSens).real
+# Compute the total derivative w.r.t. nodal locations
+fXptSens = tacs.createNodeVec()
+product = tacs.createNodeVec()
+tacs.evalXptSens(funcs[0], fXptSens)
+tacs.evalAdjointResXptSensProduct(adjoint, product)
+fXptSens.axpy(-1.0, product)
 
 # Set the complex step
-dh = 1e-6
+xpert = np.random.uniform(size=x.shape)
 if TACS.dtype is np.complex:
     dh = 1e-30
-    x = x + 1j*dh
+    xnew = x + 1j*dh*xpert
 else:
-    x = x + dh
+    dh = 1e-6
+    xnew = x + dh*xpert
 
 # Set the design variables
-tacs.setDesignVars(x)
+tacs.setDesignVars(xnew)
 
 # Compute the perturbed solution
 tacs.zeroVariables()
@@ -118,6 +128,43 @@ if TACS.dtype is np.complex:
     fd = fvals2.imag/dh
 else:
     fd = (fvals2 - fvals1)/dh
+
+result = np.dot(xpert, fdvSens)
+if tacs_comm.rank == 0:
+    print 'FD:      ', fd[0]
+    print 'Result:  ', result
+    print 'Rel err: ', (result - fd[0])/result
+
+# Reset the old variable values
+tacs.setDesignVars(x)
+
+if TACS.dtype is np.complex:
+    dh = 1e-30
+    X.axpy(dh*1j, pert)
+else:
+    dh = 1e-6
+    X.axpy(dh, pert)
+
+# Set the perturbed node locations
+tacs.setNodes(X)
+
+# Compute the perturbed solution
+tacs.zeroVariables()
+tacs.assembleJacobian(alpha, beta, gamma, res, mat)
+pc.factor()
+pc.applyFactor(forces, ans)
+tacs.setVariables(ans)
+
+# Evaluate the function again
+fvals2 = tacs.evalFunctions(funcs)
+
+if TACS.dtype is np.complex:
+    fd = fvals2.imag/dh
+else:
+    fd = (fvals2 - fvals1)/dh
+
+# Compute the projected derivative
+result = pert.dot(fXptSens)
 
 if tacs_comm.rank == 0:
     print 'FD:      ', fd[0]

@@ -2189,8 +2189,6 @@ void MITC9::computeAngularAccel( TacsScalar domega[],
     // Set pointers to the values 
     TacsScalar eta = vars[3];
     const TacsScalar *eps = &vars[4];
-    TacsScalar deta = dvars[3];
-    const TacsScalar *deps = &dvars[4];
     TacsScalar ddeta = ddvars[3];
     const TacsScalar *ddeps = &ddvars[4];
 
@@ -5661,7 +5659,7 @@ void MITC9::getStrain( TacsScalar e[],
   assembleFrame(Xa, Xb, fn, Xd);
 
   // Compute the derivatives of the shape functions
-  TacsScalar h = inv3x3(Xd, Xdinv);
+  inv3x3(Xd, Xdinv);
 
   // Evaluate the tying strain interpolation
   double N13[6], N23[6];
@@ -6149,7 +6147,7 @@ void MITC9::testStrain( const TacsScalar X[] ){
   assembleFrame(Xa, Xb, fn, Xd);
 
   // Compute the derivatives of the shape functions
-  TacsScalar h = inv3x3(Xd, Xdinv);
+  inv3x3(Xd, Xdinv);
 
   // Evaluate the tying strain interpolation
   double N13[6], N23[6];
@@ -6175,7 +6173,7 @@ void MITC9::testStrain( const TacsScalar X[] ){
   assembleFrame(da, db, zero, dr);
   
   // Compute the rotation penalty
-  TacsScalar rot = computeRotPenalty(N, Xa, Xb, Ua, Ub, vars);
+  computeRotPenalty(N, Xa, Xb, Ua, Ub, vars);
 
   // Compute the transformation to the locally-aligned frame
   TacsScalar T[9]; 

@@ -26,7 +26,7 @@
   interval.
 */
 enum QuadratureType { GAUSS_QUADRATURE, 
-		      LOBATTO_QUADRATURE };
+                      LOBATTO_QUADRATURE };
 
 TACS_BEGIN_NAMESPACE(FElibrary)
 
@@ -160,13 +160,13 @@ inline void lagrangeSF( double sf[],
     for ( int i = 0; i < porder; i++ ){
       double ki = -1.0 + 2.0*i/(porder - 1.0);
       sf[i] = 1.0;
-	
+        
       // Loop over each point again, except for the current control point, 
       // adding the contribution to the shape function
       for ( int j = 0; j < porder; j++ ){
         if (i != j){
           double kj = -1.0 + 2.0*j/(porder - 1.0);
-	    
+            
           sf[i] = sf[i]*(a - kj)/(ki - kj);
         }
       }      
@@ -336,18 +336,18 @@ inline void lagrangeSF( double sf[], double dsf[], double ddsf[],
         if ( i != j ){
           double kj = -1.0 + 2.0*j/(porder - 1.0);
           sf[i] = sf[i]*(a - kj)/(ki - kj);
-	  
+          
           // Loop over the whole thing again to determine the contribution to
           // the derivative of the shape function
           dn = 1.0/(ki - kj);
-	  
+          
           for ( int k = 0; k < porder; k++ ){
             if ( k != i && k != j ){
               double kk = -1.0 + 2.0*k/(porder - 1.0);
               
-              dn = dn*(a - kk)/(ki - kk);	      
+              dn = dn*(a - kk)/(ki - kk);             
               ddn = 1.0/((ki - kk)*(ki - kj));
-	      
+              
               for ( int m = 0; m < porder; m++ ){
                 if (((m != i) && (m != j)) && (m != k)){
                   double km = -1.0 + 2.0*m/(porder - 1.0);
@@ -357,7 +357,7 @@ inline void lagrangeSF( double sf[], double dsf[], double ddsf[],
               }
               ddsf[i] += ddn;
             }
-          }	
+          }     
           dsf[i] += dn;
         }
       }
@@ -397,7 +397,7 @@ inline void lagrangeSFKnots( double sf[],
     for ( int i = 0; i < porder; i++ ){
       double ki = knots[i];
       sf[i] = 1.0;
-	
+        
       // Loop over each point again, except for the current control point, 
       // adding the contribution to the shape function
       for ( int j = 0; j < porder; j++ ){
@@ -465,7 +465,7 @@ inline void lagrangeSFKnots( double sf[], double dsf[],
           sf[i] = sf[i]*(a - kj)/(ki - kj);
           
           // Loop over the whole thing again to determine the
-	  // contribution to the derivative of the shape function
+          // contribution to the derivative of the shape function
           dn = 1.0/(ki - kj);
           
           for ( int k = 0; k < porder; k++ ){
@@ -496,7 +496,7 @@ inline void lagrangeSFKnots( double sf[], double dsf[],
 */
 inline void lagrangeSFKnots( double sf[], double dsf[], double ddsf[], 
                              const double a, const double knots[], 
-			     int porder ){
+                             int porder ){
   if (porder <= 1){
     sf[0] = 1.0;
     dsf[0] = 0.0;
@@ -545,18 +545,18 @@ inline void lagrangeSFKnots( double sf[], double dsf[], double ddsf[],
         if (i != j){
           double kj = knots[j];
           sf[i] = sf[i]*(a - kj)/(ki - kj);
-	  
+          
           // Loop over the whole thing again to determine the
-	  // contribution to the derivative of the shape function
+          // contribution to the derivative of the shape function
           dn = 1.0/(ki - kj);
-	  
+          
           for ( int k = 0; k < porder; k++ ){
             if (k != i && k != j){
               double kk = knots[k];
               
-              dn = dn*(a - kk)/(ki - kk);	      
+              dn = dn*(a - kk)/(ki - kk);             
               ddn = 1.0/((ki - kk)*(ki - kj));
-	      
+              
               for ( int m = 0; m < porder; m++ ){
                 if (((m != i) && (m != j)) && (m != k)){
                   ddn = ddn*(a - knots[m])/(ki - knots[m]);
@@ -564,7 +564,7 @@ inline void lagrangeSFKnots( double sf[], double dsf[], double ddsf[],
               }
               ddsf[i] += ddn;
             }
-          }	
+          }     
           dsf[i] += dn;
         }
       }
@@ -1156,24 +1156,24 @@ const double lobattoPts3[] = { -1.0, 0.0, 1.0 };
 const double lobattoWts3[] = { 1.0/3.0, 4.0/3.0, 1.0/3.0 };
 
 const double lobattoPts4[] = { -1.0, -0.44721359549995793,
-			       0.44721359549995793, 1.0 };
+                               0.44721359549995793, 1.0 };
 const double lobattoWts4[] = { 1.0/6.0, 5.0/6.0, 5.0/6.0, 1.0/6.0 };
 
 const double lobattoPts5[] = { -1.0, -0.65465367070797709, 0.0,
-			       0.65465367070797709, 1.0 };
+                               0.65465367070797709, 1.0 };
 const double lobattoWts5[] = { 1.0/10.0, 49.0/90.0, 32.0/45.0,
-			       49.0/90.0, 1.0/10.0 };
+                               49.0/90.0, 1.0/10.0 };
 
 const double lobattoPts6[] = { -1.0, -0.76505532392946474,
-			       -0.2852315164806451, 
-			       0.2852315164806451,
-			       0.76505532392946474, 1.0 };
+                               -0.2852315164806451, 
+                               0.2852315164806451,
+                               0.76505532392946474, 1.0 };
 const double lobattoWts6[] = { 1.0/15.0, 
-			       0.378474956297847,
-			       0.55485837703548635,
-			       0.55485837703548635,
-			       0.378474956297847,
-			       1.0/15.0 };
+                               0.378474956297847,
+                               0.55485837703548635,
+                               0.55485837703548635,
+                               0.378474956297847,
+                               1.0/15.0 };
 
 /*
   Retrieve the pointer to the specified Gauss quadrature weight and
@@ -1188,7 +1188,7 @@ const double lobattoWts6[] = { 1.0/15.0,
 */
 int getGaussPtsWts( int _numGauss, 
                     const double ** gaussPts, 
-		    const double ** gaussWts );
+                    const double ** gaussWts );
 
 /*
   Retrieve a given Gauss-quadrature weight-point pair for
@@ -1203,7 +1203,7 @@ int getGaussPtsWts( int _numGauss,
   pt:    the parametric point within the domain 
 */
 double getGaussPtWt( const int dim, const int npts,
-		     const int num, double pt[] );
+                     const int num, double pt[] );
 
 /*
   Retrieve the pointer to the specified Gauss quadrature weight and
@@ -1218,9 +1218,9 @@ double getGaussPtWt( const int dim, const int npts,
   gaussWts: the Gauss quadrature weights
 */
 int getGaussPtsWts( enum QuadratureType quad, 
-		    int _numGauss, 
+                    int _numGauss, 
                     const double ** gaussPts, 
-		    const double ** gaussWts );
+                    const double ** gaussWts );
 
 /*
   Retrieve a given Gauss-quadrature weight-point pair for
@@ -1236,8 +1236,8 @@ int getGaussPtsWts( enum QuadratureType quad,
   pt:    the parametric point within the domain 
 */
 double getGaussPtWt( enum QuadratureType quad, 
-		     const int dim, const int npts,
-		     const int num, double pt[] );
+                     const int dim, const int npts,
+                     const int num, double pt[] );
 
 
 /*! 
@@ -1245,7 +1245,7 @@ double getGaussPtWt( enum QuadratureType quad,
 */
 template <class ScalarType> 
 inline ScalarType jacobian2d( const ScalarType Xd[], 
-			      ScalarType Jinv[] ){
+                              ScalarType Jinv[] ){
   ScalarType h = Xd[0]*Xd[3] - Xd[1]*Xd[2];
   ScalarType hinv = 1.0/h;
 
@@ -1305,7 +1305,7 @@ inline ScalarType jacobian2dSens( const ScalarType Xd[],
   ScalarType h = Xd[0]*Xd[3] - Xd[1]*Xd[2];
 
   *sh = (Xd[0]*sXd[3] + sXd[0]*Xd[3] -
-	 Xd[1]*sXd[2] - sXd[1]*Xd[2]);
+         Xd[1]*sXd[2] - sXd[1]*Xd[2]);
 
   return h;
 }
@@ -1323,7 +1323,7 @@ inline ScalarType jacobian2dSens( const ScalarType Xd[],
 */
 template <class ScalarType> 
 inline ScalarType jacobian3d( const ScalarType Xd[], 
-			      ScalarType Jinv[] ){
+                              ScalarType Jinv[] ){
   ScalarType h = (Xd[8]*(Xd[0]*Xd[4] - Xd[3]*Xd[1]) 
                   - Xd[7]*(Xd[0]*Xd[5] - Xd[3]*Xd[2]) 
                   + Xd[6]*(Xd[1]*Xd[5] - Xd[2]*Xd[4]));
@@ -1377,7 +1377,7 @@ inline ScalarType jacobian3d( const ScalarType Xd[] ){
 template <class ScalarType> 
 inline ScalarType jacobian3dSens( const ScalarType Xd[], 
                                   const ScalarType sXd[],
-				  ScalarType * s ){
+                                  ScalarType * s ){
   ScalarType h = (Xd[8]*(Xd[0]*Xd[4] - Xd[3]*Xd[1]) 
                   - Xd[7]*(Xd[0]*Xd[5] - Xd[3]*Xd[2]) 
                   + Xd[6]*(Xd[1]*Xd[5] - Xd[2]*Xd[4]));

@@ -19,8 +19,8 @@
   y:   the resulting vector 
 */
 static inline void matMult( const TacsScalar A[],
-			    const TacsScalar x[],
-			    TacsScalar y[] ){
+                            const TacsScalar x[],
+                            TacsScalar y[] ){
   y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
   y[1] = A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
   y[2] = A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
@@ -37,8 +37,8 @@ static inline void matMult( const TacsScalar A[],
   C:   the resulting matrix 
 */
 static inline void matMatMult( const TacsScalar A[],
-			       const TacsScalar B[],
-			       TacsScalar C[] ){
+                               const TacsScalar B[],
+                               TacsScalar C[] ){
   C[0] = A[0]*B[0] + A[1]*B[3] + A[2]*B[6];
   C[3] = A[3]*B[0] + A[4]*B[3] + A[5]*B[6];
   C[6] = A[6]*B[0] + A[7]*B[3] + A[8]*B[6];
@@ -63,8 +63,8 @@ static inline void matMatMult( const TacsScalar A[],
   C:   the resulting matrix 
 */
 static inline void matMatTransMult( const TacsScalar A[],
-				    const TacsScalar B[],
-				    TacsScalar C[] ){
+                                    const TacsScalar B[],
+                                    TacsScalar C[] ){
   C[0] = A[0]*B[0] + A[1]*B[1] + A[2]*B[2];
   C[3] = A[3]*B[0] + A[4]*B[1] + A[5]*B[2];
   C[6] = A[6]*B[0] + A[7]*B[1] + A[8]*B[2];
@@ -89,8 +89,8 @@ static inline void matMatTransMult( const TacsScalar A[],
   C:   the resulting matrix 
 */
 static inline void matTransMatMult( const TacsScalar A[],
-				    const TacsScalar B[],
-				    TacsScalar C[] ){
+                                    const TacsScalar B[],
+                                    TacsScalar C[] ){
   C[0] = A[0]*B[0] + A[3]*B[3] + A[6]*B[6];
   C[1] = A[0]*B[1] + A[3]*B[4] + A[6]*B[7];
   C[2] = A[0]*B[2] + A[3]*B[5] + A[6]*B[8];
@@ -141,8 +141,8 @@ static inline void matTransMatMultAdd( const TacsScalar A[],
   C:   the resulting matrix 
 */
 static inline void matMatMultAdd( const TacsScalar A[],
-				  const TacsScalar B[],
-				  TacsScalar C[] ){
+                                  const TacsScalar B[],
+                                  TacsScalar C[] ){
   C[0] += A[0]*B[0] + A[1]*B[3] + A[2]*B[6];
   C[3] += A[3]*B[0] + A[4]*B[3] + A[5]*B[6];
   C[6] += A[6]*B[0] + A[7]*B[3] + A[8]*B[6];
@@ -167,8 +167,8 @@ static inline void matMatMultAdd( const TacsScalar A[],
   C:   the resulting matrix 
 */
 static inline void matMatTransMultAdd( const TacsScalar A[],
-				       const TacsScalar B[],
-				       TacsScalar C[] ){
+                                       const TacsScalar B[],
+                                       TacsScalar C[] ){
   C[0] += A[0]*B[0] + A[1]*B[1] + A[2]*B[2];
   C[3] += A[3]*B[0] + A[4]*B[1] + A[5]*B[2];
   C[6] += A[6]*B[0] + A[7]*B[1] + A[8]*B[2];
@@ -259,8 +259,8 @@ static inline void matSymmMat3x4Mult( const TacsScalar A[],
   y:   the resulting vector 
 */
 static inline void matMultTrans( const TacsScalar A[],
-				 const TacsScalar x[],
-				 TacsScalar y[] ){
+                                 const TacsScalar x[],
+                                 TacsScalar y[] ){
   y[0] = A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
   y[1] = A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
   y[2] = A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
@@ -277,8 +277,8 @@ static inline void matMultTrans( const TacsScalar A[],
   y:   the resulting vector 
 */
 static inline void matMultAdd( const TacsScalar A[],
-			       const TacsScalar x[],
-			       TacsScalar y[] ){
+                               const TacsScalar x[],
+                               TacsScalar y[] ){
   y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
   y[1] += A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
   y[2] += A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
@@ -295,8 +295,8 @@ static inline void matMultAdd( const TacsScalar A[],
   y:   the resulting vector 
 */
 static inline void matMultTransAdd( const TacsScalar A[],
-				    const TacsScalar x[],
-				    TacsScalar y[] ){
+                                    const TacsScalar x[],
+                                    TacsScalar y[] ){
   y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
   y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
   y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
@@ -313,8 +313,8 @@ static inline void matMultTransAdd( const TacsScalar A[],
   y:   the resulting vector 
 */
 static inline void matSymmMult( const TacsScalar A[],
-				const TacsScalar x[],
-				TacsScalar y[] ){
+                                const TacsScalar x[],
+                                TacsScalar y[] ){
   y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
   y[1] = A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
   y[2] = A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
@@ -331,8 +331,8 @@ static inline void matSymmMult( const TacsScalar A[],
   y:   the resulting vector 
 */
 static inline void matSymmMultAdd( const TacsScalar A[],
-				   const TacsScalar x[],
-				   TacsScalar y[] ){
+                                   const TacsScalar x[],
+                                   TacsScalar y[] ){
   y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
   y[1] += A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
   y[2] += A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
@@ -352,9 +352,9 @@ static inline void matSymmMultAdd( const TacsScalar A[],
   out:  the resulting vector
 */
 static inline void crossProduct( const TacsScalar a,
-				 const TacsScalar x[],
-				 const TacsScalar y[],
-				 TacsScalar out[] ){
+                                 const TacsScalar x[],
+                                 const TacsScalar y[],
+                                 TacsScalar out[] ){
   out[0] = a*(x[1]*y[2] - x[2]*y[1]);
   out[1] = a*(x[2]*y[0] - x[0]*y[2]);
   out[2] = a*(x[0]*y[1] - x[1]*y[0]);
@@ -374,9 +374,9 @@ static inline void crossProduct( const TacsScalar a,
   out:  the resulting vector
 */
 static inline void crossProductAdd( const TacsScalar a,
-				    const TacsScalar x[],
-				    const TacsScalar y[],
-				    TacsScalar out[] ){
+                                    const TacsScalar x[],
+                                    const TacsScalar y[],
+                                    TacsScalar out[] ){
   out[0] += a*(x[1]*y[2] - x[2]*y[1]);
   out[1] += a*(x[2]*y[0] - x[0]*y[2]);
   out[2] += a*(x[0]*y[1] - x[1]*y[0]);
@@ -390,7 +390,7 @@ static inline void crossProductAdd( const TacsScalar a,
   x:   the vector
 */
 static inline void vecScale( const TacsScalar a,
-			     TacsScalar x[] ){
+                             TacsScalar x[] ){
   x[0] *= a;
   x[1] *= a;
   x[2] *= a;
@@ -408,7 +408,7 @@ static inline void vecScale( const TacsScalar a,
   returns: the dot product
 */
 static inline TacsScalar vecDot( const TacsScalar x[],
-				 const TacsScalar y[] ){
+                                 const TacsScalar y[] ){
   return (x[0]*y[0] + x[1]*y[1] + x[2]*y[2]);
 }
 
@@ -425,8 +425,8 @@ static inline TacsScalar vecDot( const TacsScalar x[],
   y:    the result
 */
 static inline void vecAxpy( const TacsScalar a,
-			    const TacsScalar x[],
-			    TacsScalar y[] ){
+                            const TacsScalar x[],
+                            TacsScalar y[] ){
   y[0] += a*x[0];
   y[1] += a*x[1];
   y[2] += a*x[2];
@@ -441,8 +441,8 @@ static inline void vecAxpy( const TacsScalar a,
   d(x/||x||_{2})/dx = (I*||x||^2 + x*x^{T})/||x||^3
 */
 static inline void vecNormDeriv( TacsScalar nrm,
-				 const TacsScalar x[],
-				 TacsScalar D[] ){
+                                 const TacsScalar x[],
+                                 TacsScalar D[] ){
   TacsScalar s = 1.0/(nrm*nrm*nrm);
   TacsScalar t = nrm*nrm;
  
@@ -588,8 +588,8 @@ static inline void addMatSkewSkew( const TacsScalar a,
   D: the block matrix with in row-major order
 */
 static inline void addBlockMat( const TacsScalar a,
-				const TacsScalar A[],
-				TacsScalar D[], const int ldd ){
+                                const TacsScalar A[],
+                                TacsScalar D[], const int ldd ){
   D[0] += a*A[0];
   D[1] += a*A[1];
   D[2] += a*A[2];
@@ -619,8 +619,8 @@ static inline void addBlockMat( const TacsScalar a,
   D:    the block matrix with in row-major order
 */
 static inline void addBlockMatTrans( const TacsScalar a,
-				     const TacsScalar A[],
-				     TacsScalar D[], const int ldd ){
+                                     const TacsScalar A[],
+                                     TacsScalar D[], const int ldd ){
   D[0] += a*A[0];
   D[1] += a*A[3];
   D[2] += a*A[6];
@@ -650,8 +650,8 @@ static inline void addBlockMatTrans( const TacsScalar a,
   D:    the block matrix with in row-major order
 */
 static inline void addVecMat( const TacsScalar a,
-			      const TacsScalar A[],
-			      TacsScalar D[],
+                              const TacsScalar A[],
+                              TacsScalar D[],
                               const int ldd ){
   D[0] += a*A[0]; D += ldd;
   D[0] += a*A[1]; D += ldd;
@@ -672,8 +672,8 @@ static inline void addVecMat( const TacsScalar a,
   D: the block matrix with in row-major order
 */
 static inline void addBlockSymmMat( const TacsScalar a,
-				    const TacsScalar A[],
-				    TacsScalar D[], const int ldd ){
+                                    const TacsScalar A[],
+                                    TacsScalar D[], const int ldd ){
   D[0] += a*A[0];
   D[1] += a*A[1];
   D[2] += a*A[2];
@@ -700,7 +700,7 @@ static inline void addBlockSymmMat( const TacsScalar a,
   D:    the block matrix in row-major order
 */
 static inline void addBlockIdent( const TacsScalar a,
-				  TacsScalar D[], const int ldd ){
+                                  TacsScalar D[], const int ldd ){
   D[0] += a;
 
   D += ldd;
@@ -722,8 +722,8 @@ static inline void addBlockIdent( const TacsScalar a,
   D:    the block matrix in row-major order
 */
 static inline void addBlockSkew( const TacsScalar a,
-				 const TacsScalar x[],
-				 TacsScalar D[], const int ldd ){
+                                 const TacsScalar x[],
+                                 TacsScalar D[], const int ldd ){
   D[1] -= a*x[2];
   D[2] += a*x[1];
 
@@ -751,8 +751,8 @@ static inline void addBlockSkew( const TacsScalar a,
   D:    the block matrix in row-major order
 */
 static inline void addBlockSkewSkew( const TacsScalar a,
-				     const TacsScalar x[],
-				     const TacsScalar y[],
+                                     const TacsScalar x[],
+                                     const TacsScalar y[],
                                      TacsScalar D[], const int ldd ){
   D[0] -= a*(x[1]*y[1] + x[2]*y[2]);
   D[1] += a*y[0]*x[1];
@@ -779,8 +779,8 @@ static inline void addBlockSkewSkew( const TacsScalar a,
 */
 static inline TacsScalar det3x3( const TacsScalar A[] ){
   return (A[8]*(A[0]*A[4] - A[3]*A[1]) - 
-	  A[7]*(A[0]*A[5] - A[3]*A[2]) + 
-	  A[6]*(A[1]*A[5] - A[2]*A[4]));
+          A[7]*(A[0]*A[5] - A[3]*A[2]) + 
+          A[6]*(A[1]*A[5] - A[2]*A[4]));
 }
 
 /*
@@ -814,10 +814,10 @@ static inline void det3x3Sens( const TacsScalar A[],
   returns:    the determinant of A
 */
 static inline TacsScalar inv3x3( const TacsScalar A[],
-				 TacsScalar Ainv[] ){
+                                 TacsScalar Ainv[] ){
   TacsScalar det = (A[8]*(A[0]*A[4] - A[3]*A[1]) - 
-		    A[7]*(A[0]*A[5] - A[3]*A[2]) + 
-		    A[6]*(A[1]*A[5] - A[2]*A[4]));
+                    A[7]*(A[0]*A[5] - A[3]*A[2]) + 
+                    A[6]*(A[1]*A[5] - A[2]*A[4]));
   TacsScalar detinv = 1.0/det;
 
   Ainv[0] = (A[4]*A[8] - A[5]*A[7])*detinv;
@@ -844,12 +844,10 @@ static inline TacsScalar inv3x3( const TacsScalar A[],
 
   output:
   Ainvd:      derivative of the inverse of the 3x3 matrix
-  
-  returns:    the determinant of A
 */
-static inline TacsScalar inv3x3Sens( TacsScalar Ad[],
-                                     const TacsScalar Ainvd[],
-                                     const TacsScalar Ainv[] ){
+static inline void inv3x3Sens( TacsScalar Ad[],
+                               const TacsScalar Ainvd[],
+                               const TacsScalar Ainv[] ){
   // d(Ainv_{kl})/d(A_{ij}) 
   //  = -Ainv_{kn}*delta_{ni}*delta{mj}*Ainv_{ml}
   //  = -Ainv_{ki}*Ainv_{jl}
@@ -886,11 +884,11 @@ static inline TacsScalar inv3x3Sens( TacsScalar Ad[],
   y:   a 3-vector
 */
 static inline TacsScalar mat3x3Inner( const TacsScalar A[],
-				      const TacsScalar x[],
-				      const TacsScalar y[] ){
+                                      const TacsScalar x[],
+                                      const TacsScalar y[] ){
   return (x[0]*(A[0]*y[0] + A[1]*y[1] + A[2]*y[2]) +
-	  x[1]*(A[3]*y[0] + A[4]*y[1] + A[5]*y[2]) +
-	  x[2]*(A[6]*y[0] + A[7]*y[1] + A[8]*y[2]));
+          x[1]*(A[3]*y[0] + A[4]*y[1] + A[5]*y[2]) +
+          x[2]*(A[6]*y[0] + A[7]*y[1] + A[8]*y[2]));
 }
 
 /*
@@ -1500,7 +1498,7 @@ static inline void addBlock3x4Product( const TacsScalar a,
   dv    the second derivatives of C^{T}*v w.r.t q
 */
 static inline void computeQtr2ndDeriv( const TacsScalar v[],
-				       TacsScalar dv[] ){
+                                       TacsScalar dv[] ){
   // Derivatives of eta and eps
   dv[0] = 0.0;
   dv[1] = -2.0*v[2];

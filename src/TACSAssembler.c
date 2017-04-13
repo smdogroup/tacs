@@ -423,6 +423,7 @@ int TACSAssembler::setElementConnectivity( const int *conn,
       }
     }
   }
+  return 0;
 }
 
 /*!
@@ -2114,6 +2115,8 @@ int TACSAssembler::initialize(){
 
   int idataSize = maxElementIndepNodes + maxElementNodes+1;
   elementIData = new int[ idataSize ];
+
+  return 0;
 }
 
 /*
@@ -2130,9 +2133,8 @@ void TACSAssembler::scatterExternalBCs( TACSBcMap *bcs ){
   // Get the coupling nodes shared between processors
   int *extPtr, *extCount;
   int *recvPtr, *recvCount, *recvNodes;
-  int numCoupling = 
-    computeCouplingNodes(NULL, &extPtr, &extCount,
-                         &recvPtr, &recvCount, &recvNodes);
+  computeCouplingNodes(NULL, &extPtr, &extCount,
+                       &recvPtr, &recvCount, &recvNodes);
   
   // Get the nodes/variables
   const int *nodes, *vars;
@@ -2842,9 +2844,6 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   *Te = 0.0;
   *Pe = 0.0;
 
-  // Array for storing local kinetic and potential energies
-  TacsScalar elem_energies[2] = {0.0, 0.0};
- 
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *elemXpts;
   getDataPointers(elementData, &vars, &dvars, 
@@ -4229,6 +4228,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   // Evaluate the state variable sensitivity
   evalFunctions(&func, 1, &ftmp);
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
+  temp->zeroEntries();
   addSVSens(alpha, beta, gamma, &func, 1, &temp);
   pdf = temp->dot(pert);
 
