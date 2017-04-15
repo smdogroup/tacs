@@ -240,15 +240,14 @@ void *TACSAssembler::assembleMatType_thread( void *t ){
   int s = tacs->maxElementSize;
   int sx = 3*tacs->maxElementNodes;
   int sw = tacs->maxElementIndepNodes;
-  int dataSize = 3*s + sx + s*s + sw;
+  int dataSize = s + sx + s*s + sw;
   TacsScalar *data = new TacsScalar[ dataSize ];
   int *idata = new int[ sw + tacs->maxElementNodes + 1 ];
   
   TacsScalar *vars = &data[0];
-  TacsScalar *elemRes = &data[s];
-  TacsScalar *elemXpts = &data[2*s];
-  TacsScalar *elemWeights = &data[2*s + sx];
-  TacsScalar *elemMat = &data[2*s + sx + sw];
+  TacsScalar *elemXpts = &data[s];
+  TacsScalar *elemWeights = &data[s + sx];
+  TacsScalar *elemMat = &data[s + sx + sw];
   
   while (tacs->numCompletedElements < tacs->numElements){
     int elemIndex = -1;

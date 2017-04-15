@@ -38,6 +38,8 @@ tacs = struct_mesh.createTACS(6)
 # Create the KS Function
 ksWeight = 100.0
 funcs = [functions.KSFailure(tacs, ksWeight)]
+# funcs = [functions.StructuralMass(tacs)]
+# funcs = [functions.Compliance(tacs)]
 
 # Get the design variable values
 x = np.zeros(num_components, TACS.dtype)
@@ -57,8 +59,12 @@ tacs.applyBCs(forces)
 # Set up and solve the analysis problem
 res = tacs.createVec()
 ans = tacs.createVec()
+u = tacs.createVec()
 mat = tacs.createFEMat()
 pc = TACS.Pc(mat)
+subspace = 100
+restarts = 2
+gmres = TACS.KSM(mat, pc, subspace, restarts)
 
 # Assemble the Jacobian and factor
 alpha = 1.0
@@ -69,20 +75,16 @@ tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
 # Solve the linear system
-pc.applyFactor(forces, ans)
+gmres.solve(forces, ans)
 tacs.setVariables(ans)
 
 # Evaluate the function
 fvals1 = tacs.evalFunctions(funcs)
-# if TACS.dtype is np.complex:
-#     tacs.testFunction(funcs[0], x.shape[0], 1e-30)
-# else:
-#     tacs.testFunction(funcs[0], x.shape[0], 1e-6)
 
 # Solve for the adjoint variables
 adjoint = tacs.createVec()
 tacs.evalSVSens(funcs[0], res)
-pc.applyFactor(res, adjoint)
+gmres.solve(res, adjoint)
 
 # Compute the total derivative w.r.t. material design variables
 fdvSens = np.zeros(x.shape, TACS.dtype)
@@ -93,7 +95,11 @@ fdvSens = fdvSens - product
 
 # Create a random direction along which to perturb the nodes
 pert = tacs.createNodeVec()
-pert.setRand()
+X_array = X.getArray()
+pert_array = pert.getArray()
+pert_array[0::3] = X_array[1::3]
+pert_array[1::3] = X_array[0::3]
+pert_array[2::3] = X_array[2::3]
 
 # Compute the total derivative w.r.t. nodal locations
 fXptSens = tacs.createNodeVec()
@@ -119,8 +125,8 @@ tacs.setDesignVars(xnew)
 tacs.zeroVariables()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
-pc.applyFactor(forces, ans)
-tacs.setVariables(ans)
+gmres.solve(forces, u)
+tacs.setVariables(u)
 
 # Evaluate the function for perturbed solution
 fvals2 = tacs.evalFunctions(funcs)
@@ -153,8 +159,8 @@ tacs.setNodes(X)
 tacs.zeroVariables()
 tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
-pc.applyFactor(forces, ans)
-tacs.setVariables(ans)
+gmres.solve(forces, u)
+tacs.setVariables(u)
 
 # Evaluate the function again
 fvals2 = tacs.evalFunctions(funcs)
