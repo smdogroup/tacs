@@ -414,7 +414,7 @@ int main( int argc, char *argv[] ){
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
                              TACSElement::OUTPUT_DISPLACEMENTS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, RIGID, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_RIGID, write_flag);
   f5->incref();
 
   double tinit            = 0.0;

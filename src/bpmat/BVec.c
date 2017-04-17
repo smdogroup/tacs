@@ -351,7 +351,7 @@ void TACSBVec::zeroEntries(){
 */
 void TACSBVec::set( TacsScalar val ){
   int i = 0;
-  int rem = size%4;
+  int rem = size % 4;
   TacsScalar *y = x;
 
   for ( ; i < rem; i++ ){
@@ -473,7 +473,7 @@ void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
           for ( int k = 0; k < bsize; k++ ){
             if (vars[i] & (1 << k)){
               // Scan through the rows to be zeroed
-              x[var + k] = uvals[var + k] - values[var + k];      
+              x[var + k] = uvals[var + k] - values[bsize*i + k]; 
             }
           }
         }
@@ -657,7 +657,7 @@ void TACSBVec::setValues( int n, const int *index,
       else {
         // Insert only the non-zero values
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
-          if (RealPart(vals[0]) != 0.0){
+          if (TacsRealPart(vals[0]) != 0.0){
             y[0] = vals[0];
           }
         }
@@ -683,7 +683,7 @@ void TACSBVec::setValues( int n, const int *index,
       else {
         // Insert only the non-zero values
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
-          if (RealPart(vals[0]) != 0.0){
+          if (TacsRealPart(vals[0]) != 0.0){
             y[0] = vals[0];
           }
         }
@@ -708,7 +708,7 @@ void TACSBVec::setValues( int n, const int *index,
       else {
         // Insert only the non-zero values
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
-          if (RealPart(vals[0]) != 0.0){
+          if (TacsRealPart(vals[0]) != 0.0){
             y[0] = vals[0];
           }
         }
@@ -863,7 +863,7 @@ void TACSBVec::endDistributeValues(){
 /*
   Get the values from the vector 
 */
-void TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
+int TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -871,6 +871,9 @@ void TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
   // Get the ownership range
   const int *owner_range;
   var_map->getOwnerRange(&owner_range);
+
+  // Fail flag
+  int fail = 0;
 
   // Loop over the values
   for ( int i = 0; i < n; i++ ){
@@ -894,20 +897,32 @@ void TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
       TacsScalar *y = &x_dep[dep_index];
 
       // Add the values to the array
-      for ( int k = 0; k < bsize; k++, vals++, y++ ){
-        vals[0] = y[0];
+      if (dep_index < dep_size){
+        for ( int k = 0; k < bsize; k++, vals++, y++ ){
+          vals[0] = y[0];
+        }
+      }
+      else {
+        fail = 1;
       }
     }
     else {
       int ext_index = bsize*ext_indices->findIndex(index[i]);
       TacsScalar *y = &x_ext[ext_index];
 
-      // Add the values to the array
-      for ( int k = 0; k < bsize; k++, vals++, y++ ){
-        vals[0] = y[0];
+      if (ext_index >= 0){
+        // Add the values to the array
+        for ( int k = 0; k < bsize; k++, vals++, y++ ){
+          vals[0] = y[0];
+        }
+      }
+      else {
+        fail = 1;
       }
     }
   }
+
+  return fail;
 }
 
 const char *TACSBVec::vecName = "TACSBVec";

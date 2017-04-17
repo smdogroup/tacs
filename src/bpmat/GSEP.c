@@ -260,10 +260,10 @@ static void ComputeEigsTriDiag( int n,
   double *diag = new double[ n ];
   double *upper = new double[ n-1 ];
   for ( int i = 0; i < n-1; i++ ){
-    diag[i] = RealPart(_diag[i]);
-    upper[i] = RealPart(_upper[i]);
+    diag[i] = TacsRealPart(_diag[i]);
+    upper[i] = TacsRealPart(_upper[i]);
   }
-  diag[n-1] = RealPart(_diag[n-1]);
+  diag[n-1] = TacsRealPart(_diag[n-1]);
   
   // The total number of eigenvalues found on output
   int m = 0;
@@ -312,12 +312,12 @@ static void ComputeEigsTriDiag( int n,
   for ( int i = 0; i < n; i++ ){ 
     double sens = 0.0, dot = 0.0;
     for ( int j = 0; j < n; j++ ){ // Cycle over matrix entries
-      double ans = ImagPart(_diag[j])*eigvecs[n*i + j];
+      double ans = TacsImagPart(_diag[j])*eigvecs[n*i + j];
       if (j > 0){    
-	ans += ImagPart(_upper[j-1])*eigvecs[n*i + j-1]; 
+	ans += TacsImagPart(_upper[j-1])*eigvecs[n*i + j-1]; 
       }
       if (j < n-1){  
-	ans += ImagPart(_upper[j])*eigvecs[n*i + j+1]; 
+	ans += TacsImagPart(_upper[j])*eigvecs[n*i + j+1]; 
       }
 
       dot += eigvecs[n*i + j]*eigvecs[n*i + j];
@@ -565,9 +565,9 @@ void SEP::solve( KSMPrint *ksm_print ){
       int index = perm[i];
       char line[256];
       sprintf(line, "%3d %18.10e %18.10e %10.3e\n",
-	      i, RealPart(Op->convertEigenvalue(eigs[index])),
-	      RealPart(eigs[index]),
-	      fabs(RealPart(Beta[niters-1]*
+	      i, TacsRealPart(Op->convertEigenvalue(eigs[index])),
+	      TacsRealPart(eigs[index]),
+	      fabs(TacsRealPart(Beta[niters-1]*
                             eigvecs[index*niters + (niters-1)]*er)));
       ksm_print->print(line);
     }
@@ -587,7 +587,7 @@ TacsScalar SEP::extractEigenvalue( int n, TacsScalar *error ){
   n = perm[n];
   
   TacsScalar er = Op->errorNorm(Q[niters]);
-  *error = fabs(RealPart(Beta[niters-1]*eigvecs[n*niters + (niters-1)]*er));
+  *error = fabs(TacsRealPart(Beta[niters-1]*eigvecs[n*niters + (niters-1)]*er));
   
   return Op->convertEigenvalue(eigs[n]);
 }
@@ -652,11 +652,11 @@ void SEP::printOrthogonality(){
   for ( int i = 0; i < niters; i++ ){
     for ( int j = 0; j < i; j++ ){
       TacsScalar aij = Op->dot(Q[i], Q[j]);
-      printf("%8.1e ", RealPart(aij));
+      printf("%8.1e ", TacsRealPart(aij));
     }
     
     TacsScalar aii = Op->dot(Q[i], Q[i]);
-    printf("%8.1e \n", RealPart(aii));
+    printf("%8.1e \n", TacsRealPart(aii));
   }
 }
 
@@ -691,7 +691,7 @@ void SEP::sortEigenvalues( TacsScalar *values, int neigs, int *p ){
     
     // Take the absolute value of the eigenvalue
     if (use_abs){
-      if (RealPart(eig_new) < 0.0){
+      if (TacsRealPart(eig_new) < 0.0){
         eig_new *= -1.0;
       }
     }
@@ -703,18 +703,18 @@ void SEP::sortEigenvalues( TacsScalar *values, int neigs, int *p ){
       // Convert the j-th eigenvalue
       TacsScalar eig_j = Op->convertEigenvalue(values[p[j]]);
       if (use_abs){ 
-        if (RealPart(eig_j) < 0.0){
+        if (TacsRealPart(eig_j) < 0.0){
           eig_j *= -1.0;
         }
       }
 	
       // If this is the right place, place the new index here
       if (sort_ascending && 
-          RealPart(eig_new) > RealPart(eig_j)){
+          TacsRealPart(eig_new) > TacsRealPart(eig_j)){
 	break; 
       }
       else if (!sort_ascending && 
-               RealPart(eig_new) < RealPart(eig_j)){
+               TacsRealPart(eig_new) < TacsRealPart(eig_j)){
 	break; 
       }
       else {
@@ -759,7 +759,7 @@ int SEP::checkConverged( TacsScalar *A, TacsScalar *B, int n ){
 
     // Read out the predicted error for the eigenvector
     TacsScalar eig_err = fabs(beta*eigvecs[index*n + (n-1)]*er);
-    if (RealPart(eig_err) > tol){
+    if (TacsRealPart(eig_err) > tol){
       is_converged = 0;
       break;
     }

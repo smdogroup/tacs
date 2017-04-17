@@ -133,31 +133,31 @@ void FSDTStiffness::printStiffness( const double pt[] ){
   // Print out the stiffness matrices
   printf("\nThe A matrix: \n");
   printf("%20.4f %20.4f %20.4f \n", 
-         RealPart(A[0]), RealPart(A[1]), RealPart(A[2]));
+         TacsRealPart(A[0]), TacsRealPart(A[1]), TacsRealPart(A[2]));
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(A[1]), RealPart(A[3]), RealPart(A[4]));
+	 TacsRealPart(A[1]), TacsRealPart(A[3]), TacsRealPart(A[4]));
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(A[2]), RealPart(A[4]), RealPart(A[5]));
+	 TacsRealPart(A[2]), TacsRealPart(A[4]), TacsRealPart(A[5]));
 
   printf("\nThe B matrix: \n");
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(B[0]), RealPart(B[1]), RealPart(B[2]));
+	 TacsRealPart(B[0]), TacsRealPart(B[1]), TacsRealPart(B[2]));
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(B[1]), RealPart(B[3]), RealPart(B[4]));
+	 TacsRealPart(B[1]), TacsRealPart(B[3]), TacsRealPart(B[4]));
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(B[2]), RealPart(B[4]), RealPart(B[5]));
+	 TacsRealPart(B[2]), TacsRealPart(B[4]), TacsRealPart(B[5]));
 
   printf("\nThe D matrix: \n");
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(D[0]), RealPart(D[1]), RealPart(D[2]));
+	 TacsRealPart(D[0]), TacsRealPart(D[1]), TacsRealPart(D[2]));
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(D[1]), RealPart(D[3]), RealPart(D[4]));
+	 TacsRealPart(D[1]), TacsRealPart(D[3]), TacsRealPart(D[4]));
   printf("%20.4f %20.4f %20.4f \n", 
-	 RealPart(D[2]), RealPart(D[4]), RealPart(D[5]));
+	 TacsRealPart(D[2]), TacsRealPart(D[4]), TacsRealPart(D[5]));
 
   printf("\nThe Ashear matrix: \n");
   printf("%20.4f %20.4f \n", 
-	 RealPart(As[0]), RealPart(As[1]));
+	 TacsRealPart(As[0]), TacsRealPart(As[1]));
   printf( "%20.4f %20.4f \n", 
-	 RealPart(As[1]), RealPart(As[2]));
+	 TacsRealPart(As[1]), TacsRealPart(As[2]));
 }

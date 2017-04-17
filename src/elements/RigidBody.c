@@ -121,10 +121,10 @@ static void writeErrorComponents( FILE *fp, const char *descript,
   for ( int i = 0; i < size; i++ ){
     double rel = 0.0;
     if (a[i] != 0.0){
-      rel = fabs(RealPart((a[i] - fd[i])/a[i]));
+      rel = fabs(TacsRealPart((a[i] - fd[i])/a[i]));
     }
     else {
-      rel = fabs(RealPart((a[i] - fd[i])));
+      rel = fabs(TacsRealPart((a[i] - fd[i])));
     }
 
     if (rel > rel_err || a[i] != a[i] || fd[i] != fd[i]){
@@ -136,12 +136,12 @@ static void writeErrorComponents( FILE *fp, const char *descript,
       }
       if (a[i] != 0.0){
 	fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-		descript, i, RealPart(a[i]), RealPart(fd[i]), 
-		fabs(RealPart((a[i] - fd[i])/a[i])));
+		descript, i, TacsRealPart(a[i]), TacsRealPart(fd[i]), 
+		fabs(TacsRealPart((a[i] - fd[i])/a[i])));
       }
       else {
 	fprintf(fp, "%s[%3d] %15.6e %15.6e\n", 
-		descript, i, RealPart(a[i]), RealPart(fd[i]));
+		descript, i, TacsRealPart(a[i]), TacsRealPart(fd[i]));
       }
     }
   }  
@@ -445,7 +445,7 @@ void TACSRefFrame::testRotation( int numDVs, double dh ){
 	x[dvs[i]] = xtmp + TacsScalar(0.0, dh);
 	setDesignVars(x, numDVs);
 	matMult(C, phi, t);
-	fd[3*k+i] = ImagPart(vecDot(psi, t))/dh;
+	fd[3*k+i] = TacsImagPart(vecDot(psi, t))/dh;
 #else
 	// Evaluate C at (x + dh)
 	x[dvs[i]] = xtmp + dh;
@@ -770,7 +770,7 @@ void TACSRigidBody::getInitConditions( TacsScalar vars[],
   crossProduct(1.0, w, t, &ddvars[0]);
 
   // Check if the quaternion contraint is satisfied at initial condition
-  double con_viol = RealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
+  double con_viol = TacsRealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
                              vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
   if (con_viol > 1.0e-12){
     fprintf(stderr, "Warning: RigidBody quarternion constraint violated by %f\n", con_viol);
@@ -1403,7 +1403,7 @@ void TACSRigidBody::testJacobian( double dh,
 
     // Form the finite-difference matrix-vector approximation
     for ( int i = 0; i < 8; i++ ){
-      fd[i] = ImagPart(fd[i])/dh;
+      fd[i] = TacsImagPart(fd[i])/dh;
     }
 #else
     // Set the values for the first evaluation
@@ -1521,7 +1521,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
       
       // Write out the nodal locations
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = RealPart(rinit[k] + xpt[k]);
+        data[index+k] = TacsRealPart(rinit[k] + xpt[k]);
       }
       index += 3;
     }
@@ -1532,22 +1532,22 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
       matMultTrans(C, xr, xpt);
 
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = RealPart(r0[k]);
+        data[index+k] = TacsRealPart(r0[k]);
       }
       index += 3;
 
       // Add the eta variable
-      data[index] = RealPart(eta);
+      data[index] = TacsRealPart(eta);
       index++;
 
       // Add the epsilon quaternion components
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = RealPart(eps[k]);
+        data[index+k] = TacsRealPart(eps[k]);
       }
       index += 3;
       
       // Add the Lagrange multiplier
-      data[index] = RealPart(vars[7]);
+      data[index] = TacsRealPart(vars[7]);
     }
     data += ld_data;
   }
@@ -2061,12 +2061,12 @@ void TACSRevoluteConstraint::updatePoints( int init_e ){
   TacsScalar e[3];
   if (init_e){
     e[0] = e[1] = e[2] = 0.0;
-    if ((fabs(RealPart(rev[0])) <= fabs(RealPart(rev[1]))) && 
-        (fabs(RealPart(rev[0])) <= fabs(RealPart(rev[2])))){
+    if ((fabs(TacsRealPart(rev[0])) <= fabs(TacsRealPart(rev[1]))) && 
+        (fabs(TacsRealPart(rev[0])) <= fabs(TacsRealPart(rev[2])))){
       e[0] = 1.0;
     }
-    else if ((fabs(RealPart(rev[1])) <= fabs(RealPart(rev[0]))) && 
-             (fabs(RealPart(rev[1])) <= fabs(RealPart(rev[2])))){
+    else if ((fabs(TacsRealPart(rev[1])) <= fabs(TacsRealPart(rev[0]))) && 
+             (fabs(TacsRealPart(rev[1])) <= fabs(TacsRealPart(rev[2])))){
       e[1] = 1.0;
     }
     else {

@@ -124,7 +124,7 @@ class TACSBVec : public TACSVec {
   // --------------------------------------
   void beginDistributeValues();
   void endDistributeValues();
-  void getValues( int n, const int *index, TacsScalar *vals );
+  int getValues( int n, const int *index, TacsScalar *vals );
 
   // Get the name of this object
   // ---------------------------

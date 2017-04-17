@@ -93,7 +93,7 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
 	TacsScalar fail, failSens;
 	failure(gpt, e, &fail);
 	
-	if (fabs(RealPart(fail) - 1.0) < tol){
+	if (fabs(TacsRealPart(fail) - 1.0) < tol){
 	  break;
 	}
 
@@ -118,7 +118,7 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
 
       // Print out the result to the file
       for ( int j = 0; j < nstress; j++ ){
-	fprintf(fp, "%15.8f ", RealPart(f_sens[j]));
+	fprintf(fp, "%15.8f ", TacsRealPart(f_sens[j]));
       }
       fprintf(fp, "\n");
     }
@@ -227,16 +227,16 @@ void TACSConstitutive::writeBucklingEnvelope( const char * file_name, int npts,
     FElibrary::solveQERoots(&P1, &P2, qa, qb, qc);
 
     // Assign the minimum positive root (if any) to P
-    if (RealPart(P1) > 0.0 && RealPart(P2) > 0.0){
+    if (TacsRealPart(P1) > 0.0 && TacsRealPart(P2) > 0.0){
       P = P1;
-      if (RealPart(P2) < RealPart(P1)){
+      if (TacsRealPart(P2) < TacsRealPart(P1)){
 	P = P2;
       }
     }
-    else if (RealPart(P1) > 0.0){
+    else if (TacsRealPart(P1) > 0.0){
       P = P1;
     }
-    else if (RealPart(P2) > 0.0){
+    else if (TacsRealPart(P2) > 0.0){
       P = P2;
     }
     
@@ -257,7 +257,7 @@ void TACSConstitutive::writeBucklingEnvelope( const char * file_name, int npts,
 	TacsScalar bval, bvalSens;
 	buckling(e, &bval);
 	
-	if (fabs(RealPart(bval) - 1.0) < tol){
+	if (fabs(TacsRealPart(bval) - 1.0) < tol){
 	  break;
 	}
 
@@ -282,7 +282,7 @@ void TACSConstitutive::writeBucklingEnvelope( const char * file_name, int npts,
 
       // Print out the result to the file
       for ( int j = 0; j < nstress; j++ ){
-	fprintf(fp, "%15.8f ", RealPart(f_sens[j]));
+	fprintf(fp, "%15.8f ", TacsRealPart(f_sens[j]));
       }
       fprintf(fp, "\n");
     }
@@ -365,7 +365,7 @@ int TestConstitutive::testFailStrainSens( const double pt[] ){
     strainCopy[k] += TacsScalar(0.0, dh);
     TacsScalar forward;
     con->failure(pt, strainCopy, &forward);    
-    sensApprox[k] = ImagPart(forward)/dh;
+    sensApprox[k] = TacsImagPart(forward)/dh;
 #else  
     TacsScalar e = strainCopy[k];
     strainCopy[k] = e + dh;
@@ -471,7 +471,7 @@ design variables for constitutive class %s.\n",
     TacsScalar forward;
     con->failure(pt, strain, &forward);
 
-    TacsScalar failSensApprox = ImagPart(forward)/dh;
+    TacsScalar failSensApprox = TacsImagPart(forward)/dh;
 #else
     // Compute the finite-difference derivative
     dvs[dv_nums[k]] = x + dh;
@@ -568,7 +568,7 @@ for constitutive class %s.\n",
     con->setDesignVars(dvs, max_dv);
     TacsScalar forward[6];
     con->pointwiseMass(pt, forward);    
-    TacsScalar massSensApprox = ImagPart(forward[0])/dh;
+    TacsScalar massSensApprox = TacsImagPart(forward[0])/dh;
 #else
     dvs[dv_nums[k]] = x + dh;
     TacsScalar forward[6];

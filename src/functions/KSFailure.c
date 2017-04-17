@@ -97,7 +97,7 @@ void TACSKSFailure::setParameter( double _ksWeight ){
   Set the load factor to some value greater than or equal to 1.0
 */
 void TACSKSFailure::setLoadFactor( TacsScalar _loadFactor ){
-  if (RealPart(_loadFactor) >= 1.0){ 
+  if (TacsRealPart(_loadFactor) >= 1.0){ 
     loadFactor = _loadFactor;
   }
 }
@@ -221,7 +221,7 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
           }
 
           // Set the maximum failure load
-          if (RealPart(fail) > RealPart(ctx->maxFail)){
+          if (TacsRealPart(fail) > TacsRealPart(ctx->maxFail)){
             ctx->maxFail = fail;
           }
         }
@@ -277,7 +277,7 @@ void TACSKSFailure::finalThread( const double tcoef,
   
   if (ctx){
     if (ftype == TACSFunction::INITIALIZE){
-      if (RealPart(ctx->maxFail) > RealPart(maxFail)){
+      if (TacsRealPart(ctx->maxFail) > TacsRealPart(maxFail)){
         maxFail = ctx->maxFail;
       }
     }
@@ -387,7 +387,6 @@ void TACSKSFailure::getElementXptSens( const double tcoef,
     // Get the number of stress components, the total number of
     // variables, and the total number of nodes
     int numStresses = element->numStresses();
-    int numVars = element->numVariables();
 
     // Get the quadrature scheme information
     int numGauss = element->getNumGaussPts();

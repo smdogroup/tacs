@@ -14,15 +14,15 @@ include "TacsTypedefs.pxi"
 
 cdef extern from "TACSElement.h":
    enum ElementType:
-       ELEMENT_NONE
-       POINT_ELEMENT
-       EULER_BEAM
-       TIMOSHENKO_BEAM
-       PLANE_STRESS
-       SHELL
-       SOLID
-       Q3D_ELEMENT
-       RIGID
+       TACS_ELEMENT_NONE
+       TACS_POINT_ELEMENT
+       TACS_EULER_BEAM
+       TACS_TIMOSHENKO_BEAM
+       TACS_PLANE_STRESS
+       TACS_SHELL
+       TACS_SOLID
+       TACS_Q3D_ELEMENT
+       TACS_RIGID
 
    enum ElementMatrixType:
        STIFFNESS_MATRIX
@@ -50,6 +50,7 @@ cdef extern from "TACSObject.h":
    cdef cppclass TACSObject:
       void incref()
       void decref()
+   cdef MPI_Datatype TACS_MPI_TYPE
 
 cdef extern from "KSM.h":
    cdef cppclass TACSVec(TACSObject):

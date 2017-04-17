@@ -298,9 +298,9 @@ int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
 
     // Find the maximum value and use it as the pivot
     int r = k;
-    double maxv = fabs(RealPart(A[nk + k]));
+    double maxv = fabs(TacsRealPart(A[nk + k]));
     for ( int j = k+1; j < n; j++ ){
-      double t = fabs(RealPart(A[n*j + k]));
+      double t = fabs(TacsRealPart(A[n*j + k]));
       if (t > maxv){
 	maxv = t;
 	r = j;
@@ -773,7 +773,6 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
 void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
 		       TacsScalar omega, int iters, TacsScalar *b, 
 		       TacsScalar *x ){
-
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
@@ -861,6 +860,373 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
 	for ( int n = 0; n < bsize; n++ ){
 	  x[bi + m] += omega*adiag[bm + n]*tx[n];
 	}
+      }
+    }
+  }  
+
+  delete [] tx;
+}
+
+/*!
+  Apply a given number of steps of SOR to the system A*x = b.
+*/
+void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
+                      const int *pairs, int npairs,
+		      TacsScalar omega, int iters, TacsScalar *b, 
+		      TacsScalar *x ){
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  int bsize = data->bsize;
+  const int b2 = bsize*bsize;
+
+  TacsScalar *tx = new TacsScalar[ 2*bsize ];
+
+  for ( int iter = 0; iter < iters; iter++ ){
+    const TacsScalar *D = Adiag;
+
+    for ( int i = 0, p = 0; i < nrows; i++ ){
+      if (p < npairs && i == pairs[p]){
+        int bi = bsize*i;
+
+        // Copy the right-hand-side to the temporary vector
+        // for this row
+        for ( int n = 0; n < 2*bsize; n++ ){
+          tx[n] = b[bi + n];
+        }
+        
+        // Set the pointer to the beginning of the current
+        // row
+        const TacsScalar *a = &data->A[b2*rowp[i]];
+
+        // Scan through the row and compute the result:
+        // tx <- b_i - A_{ij}*x_{j} for j != i
+        int end = rowp[i+1];
+        for ( int k = rowp[i]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i && j != i+1){
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+	
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
+
+        end = rowp[i+2];
+        for ( int k = rowp[i+1]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i && j != i+1){
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m + bsize] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+	
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
+
+        // Compute the first term in the update:
+        // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+        for ( int n = 0; n < 2*bsize; n++ ){
+          x[bi + n] = (1.0 - omega)*x[bi + n];
+        }
+
+        // Apply the diagonal inverse and add the result to
+        // the matrix
+        TacsScalar *adiag = &Adiag[b2*i];
+        for ( int m = 0; m < 2*bsize; m++ ){
+          int bm = 2*bsize*m;
+          for ( int n = 0; n < 2*bsize; n++ ){
+            x[bi + m] += omega*D[bm + n]*tx[n];
+          }
+        }
+
+        D += 4*b2;
+        i++;
+        p++;
+      }
+      else {
+        int bi = bsize*i;
+
+        // Copy the right-hand-side to the temporary vector
+        // for this row
+        for ( int n = 0; n < bsize; n++ ){
+          tx[n] = b[bi + n];
+        }
+        
+        // Set the pointer to the beginning of the current
+        // row
+        TacsScalar *a = &data->A[b2*rowp[i]];
+
+        // Scan through the row and compute the result:
+        // tx <- b_i - A_{ij}*x_{j} for j != i
+        int end = rowp[i+1];
+        for ( int k = rowp[i]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (i != j){
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+	
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
+
+        // Compute the first term in the update:
+        // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+        for ( int n = 0; n < bsize; n++ ){
+          x[bi + n] = (1.0 - omega)*x[bi + n];
+        }
+
+        // Apply the diagonal inverse and add the result to
+        // the matrix
+        for ( int m = 0; m < bsize; m++ ){
+          int bm = bsize*m;
+          for ( int n = 0; n < bsize; n++ ){
+            x[bi + m] += omega*D[bm + n]*tx[n];
+          }
+        }
+
+        D += b2;
+      }
+    }
+  }
+  
+  delete [] tx;
+}
+
+/*!
+  Apply a given number of steps of Symmetric-SOR to the system A*x = b.
+*/
+void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
+                       const int *pairs, int npairs,
+                       TacsScalar omega, int iters, TacsScalar *b, 
+		       TacsScalar *x ){
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  int bsize = data->bsize;
+  const int b2 = bsize*bsize;
+
+  TacsScalar *tx = new TacsScalar[ 2*bsize ];
+
+  for ( int iter = 0; iter < iters; iter++ ){
+    const TacsScalar *D = Adiag;
+
+    // Apply a forward sweep
+    for ( int i = 0, p = 0; i < nrows; i++ ){
+      if (p < npairs && i == pairs[p]){
+        int bi = bsize*i;
+
+        // Copy over the right-hand-side to the temporary vector tx
+        for ( int n = 0; n < 2*bsize; n++ ){
+          tx[n] = b[bi + n];
+        }
+      
+        // Scan through the row and compute the result:
+        // tx <- b_i - A_{ij}*x_{j} for j != i
+        int end = rowp[i+1];
+        for ( int k = rowp[i]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i && j != i+1){
+            TacsScalar *a = &data->A[b2*k];
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+        }
+
+        end = rowp[i+2];
+        for ( int k = rowp[i+1]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i && j != i+1){
+            TacsScalar *a = &data->A[b2*k];
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[bsize + m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+        }
+
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+        for ( int n = 0; n < 2*bsize; n++ ){
+          x[bi + n] = (1.0 - omega) *x[bi + n];
+        }
+
+        // Apply the inverse on the diagonal
+        for ( int m = 0; m < 2*bsize; m++ ){
+          int bm = 2*bsize*m;
+          for ( int n = 0; n < 2*bsize; n++ ){
+            x[bi + m] += omega*D[bm + n]*tx[n];
+          }
+        }
+
+        D += 4*b2;
+        i++;
+        p++;
+      }
+      else {
+        int bi = bsize*i;
+
+        // Copy over the right-hand-side to the temporary vector tx
+        for ( int n = 0; n < bsize; n++ ){
+          tx[n] = b[bi + n];
+        }
+      
+        // Scan through the row and compute the result:
+        // tx <- b_i - A_{ij}*x_{j} for j != i
+        int end = rowp[i+1];
+        for ( int k = rowp[i]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i && j != i+1){
+            TacsScalar *a = &data->A[b2*k];
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+        }
+
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+        for ( int n = 0; n < bsize; n++ ){
+          x[bi + n] = (1.0 - omega) *x[bi + n];
+        }
+
+        // Apply the inverse on the diagonal
+        for ( int m = 0; m < bsize; m++ ){
+          int bm = bsize*m;
+          for ( int n = 0; n < bsize; n++ ){
+            x[bi + m] += omega*D[bm + n]*tx[n];
+          }
+        }
+      }
+    }
+    
+    // Apply the backward sweep
+    for ( int i = nrows-1, p = npairs-1; i >= 0; i-- ){
+      if (p >= 0 && i-1 == pairs[p]){
+        int bi = bsize*(i-1);
+
+        for ( int n = 0; n < 2*bsize; n++ ){
+          tx[n] = b[bi + n];
+        }
+
+        int end = rowp[i];
+        for ( int k = rowp[i-1]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i-1 && j != i){
+            TacsScalar *a = &data->A[b2*k];
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+        }
+
+        end = rowp[i+1];
+        for ( int k = rowp[i]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+
+          if (j != i && j != i+1){
+            TacsScalar *a = &data->A[b2*k];
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[bsize + m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+        }
+        
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+        for ( int n = 0; n < 2*bsize; n++ ){
+          x[bi + n] = (1.0 - omega)*x[bi + n];
+        }
+
+        // Apply the inverse on the diagonal
+        D -= 4*b2;
+        for ( int m = 0; m < 2*bsize; m++ ){
+          int bm = 2*bsize*m;
+          for ( int n = 0; n < 2*bsize; n++ ){
+            x[bi + m] += omega*D[bm + n]*tx[n];
+          }
+        }
+
+        i--;
+        p--;
+      }
+      else {
+        int bi = bsize*i;
+
+        for ( int n = 0; n < bsize; n++ ){
+          tx[n] = b[bi + n];
+        }
+      
+        int end = rowp[i+1];
+        for ( int k = rowp[i]; k < end; k++ ){
+          int j = cols[k];
+          int bj = bsize*j;
+          
+          if (i != j){
+            TacsScalar *a = &data->A[b2*k];
+            for ( int m = 0; m < bsize; m++ ){
+              int bm = bsize*m;
+              for ( int n = 0; n < bsize; n++ ){
+                tx[m] -= a[bm + n]*x[bj + n];
+              }
+            }
+          }
+        }
+        
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+        for ( int n = 0; n < bsize; n++ ){
+          x[bi + n] = (1.0 - omega)*x[bi + n];
+        }
+
+        // Apply the inverse on the diagonal
+        D -= b2;
+        for ( int m = 0; m < bsize; m++ ){
+          int bm = bsize*m;
+          for ( int n = 0; n < bsize; n++ ){
+            x[bi + m] += omega*D[bm + n]*tx[n];
+          }
+        }
       }
     }
   }  

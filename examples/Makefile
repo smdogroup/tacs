@@ -18,6 +18,7 @@ EXAMPLE_SUBDIRS = \
 	grad_verify \
 	profile_elements \
 	rigid \
+	plate \
 	benchmark
 
 default:

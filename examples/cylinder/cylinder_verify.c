@@ -225,7 +225,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
     for ( int k = 0; k < 5; k++ ){
       printf("Equation %d\n", k);
       for ( int j = 0; j < 5; j++ ){
-        printf(" %15.5f %s", RealPart(A[k + 5*j] - A2[k + 5*j]), 
+        printf(" %15.5f %s", TacsRealPart(A[k + 5*j] - A2[k + 5*j]), 
                variables[j]);
       }
       printf("\n");
@@ -376,9 +376,9 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
           }
           
           // Compute the pressure at this point in the shell
-          double x = RealPart(Xpts[3*node]);
-          double y =-R*atan2(RealPart(Xpts[3*node+2]), 
-                             RealPart(Xpts[3*node+1]));
+          double x = TacsRealPart(Xpts[3*node]);
+          double y =-R*atan2(TacsRealPart(Xpts[3*node+2]), 
+                             TacsRealPart(Xpts[3*node+1]));
           pval[ii + order*jj] = load*sin(beta*x)*sin(alpha*y);
         }
       }
@@ -440,8 +440,8 @@ TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
 
         // Determine the coordinates on the shell 
         TacsScalar x = Xp[0];
-        TacsScalar y =-R*atan2(RealPart(Xp[2]), 
-                               RealPart(Xp[1]));
+        TacsScalar y =-R*atan2(TacsRealPart(Xp[2]), 
+                               TacsRealPart(Xp[1]));
         
         // Evaluate the radial displacement at this point from
         // the exact solution
@@ -514,15 +514,15 @@ TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
   TacsScalar vm_max2 = sqrt(x);
   TacsScalar vm_max3 = sqrt(y);
   
-  printf("Max 1: %25.10f\n", RealPart(vm_max1));
-  printf("Max 2: %25.10f\n", RealPart(vm_max2));
-  printf("Max 3: %25.10f\n", RealPart(vm_max3));
+  printf("Max 1: %25.10f\n", TacsRealPart(vm_max1));
+  printf("Max 2: %25.10f\n", TacsRealPart(vm_max2));
+  printf("Max 3: %25.10f\n", TacsRealPart(vm_max3));
 
   TacsScalar vm_max = vm_max1; 
-  if (RealPart(vm_max2) >= RealPart(vm_max)){ 
+  if (TacsRealPart(vm_max2) >= TacsRealPart(vm_max)){ 
     vm_max = vm_max2; 
   }
-  if (RealPart(vm_max3) >= RealPart(vm_max)){ 
+  if (TacsRealPart(vm_max3) >= TacsRealPart(vm_max)){ 
     vm_max = vm_max3; 
   }
   *_vm_max = vm_max;
@@ -615,10 +615,10 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
   TacsScalar tw_max3 = coef[2];
   TacsScalar tw_max4 = (4.0*coef[2]*(coef[1] + coef[2]) - coef[0]*coef[0])/(4.0*(coef[1] + coef[2]));
 
-  printf("Max 1: %25.8f\n", RealPart(tw_max1));
-  printf("Max 2: %25.8f\n", RealPart(tw_max2));
-  printf("Max 3: %25.8f\n", RealPart(tw_max3));
-  printf("Max 4: %25.8f\n", RealPart(tw_max4));
+  printf("Max 1: %25.8f\n", TacsRealPart(tw_max1));
+  printf("Max 2: %25.8f\n", TacsRealPart(tw_max2));
+  printf("Max 3: %25.8f\n", TacsRealPart(tw_max3));
+  printf("Max 4: %25.8f\n", TacsRealPart(tw_max4));
   
   *tw_max = tw_max1;
 
@@ -626,26 +626,26 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
   TacsScalar r1, r2;
   TacsScalar one = 1.0;
   FElibrary::solveQERoots(&r1, &r2, coef[1], coef[0], -one);
-  if (RealPart(r1) > RealPart(r2)){ 
+  if (TacsRealPart(r1) > TacsRealPart(r2)){ 
     *unit_load = r1; 
   }
   else { *unit_load = r2; }
 
-  if (RealPart(tw_max2) > RealPart(*tw_max)){ 
+  if (TacsRealPart(tw_max2) > TacsRealPart(*tw_max)){ 
     *tw_max = tw_max2; 
 
     // Solve the quadratic equation: alpha*coef[0] - alpha**2*coef[1] - 1.0 = 0
     FElibrary::solveQERoots(&r1, &r2, coef[1], -coef[0], one);
-    if (RealPart(r1) > RealPart(r2)){ 
+    if (TacsRealPart(r1) > TacsRealPart(r2)){ 
       *unit_load = r1; 
     }
     else { *unit_load = r2; }
   }
-  if (RealPart(tw_max3) > RealPart(*tw_max)){ 
+  if (TacsRealPart(tw_max3) > TacsRealPart(*tw_max)){ 
     *tw_max = tw_max3; 
     *unit_load = 1.0/sqrt(tw_max3);
   }
-  if (RealPart(tw_max4) > RealPart(*tw_max)){ 
+  if (TacsRealPart(tw_max4) > TacsRealPart(*tw_max)){ 
     *tw_max = tw_max4; 
   }
 
@@ -762,8 +762,8 @@ void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans,
     // Compute the u, v, w, theta, phi solution at this point within
     // the shell
     TacsScalar x = Xpts[3*node];
-    TacsScalar y =-R*atan2(RealPart(Xpts[3*node+2]), 
-                           RealPart(Xpts[3*node+1]));
+    TacsScalar y =-R*atan2(TacsRealPart(Xpts[3*node+2]), 
+                           TacsRealPart(Xpts[3*node+1]));
 
     TacsScalar u = U*sin(alpha*y)*cos(beta*x);
     TacsScalar v = V*cos(alpha*y)*sin(beta*x);
@@ -828,8 +828,8 @@ void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans,
     // Compute the u, v, w, theta, phi solution at this point within
     // the shell
     TacsScalar x = Xpts[3*node];
-    TacsScalar y =-R*atan2(RealPart(Xpts[3*node+2]), 
-                           RealPart(Xpts[3*node+1]));
+    TacsScalar y =-R*atan2(TacsRealPart(Xpts[3*node+2]), 
+                           TacsRealPart(Xpts[3*node+1]));
     
     TacsScalar n[2], t[2];
     n[0] =  cos(y/R);
@@ -1046,20 +1046,20 @@ void grid_study( const char *file_name,
     // Print all the variables to the file
     // P, elev, KS, DKS, IE, DE,
     fprintf(fp, "%d %e %e %e %e ", nx,
-            RealPart(ks_tacs), RealPart(dks_tacs), 
-            RealPart(ind_exp_tacs), RealPart(ind_dexp_tacs));
+            TacsRealPart(ks_tacs), TacsRealPart(dks_tacs), 
+            TacsRealPart(ind_exp_tacs), TacsRealPart(ind_dexp_tacs));
       
     double SOC = 
-      RealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs - 
+      TacsRealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs - 
                                      ind_exp_tacs*ind_exp_tacs));
     
     // IE2, DE2, IP, DP, IP2, DP2, SOC\n");
     fprintf(fp, "%e %e %e %e %e %e %e \n", 
-            RealPart(sqrt(ind_exp2_tacs)), 
-            RealPart(sqrt(ind_dexp2_tacs)),
-            RealPart(ind_pow_tacs), RealPart(ind_dpow_tacs),
-            RealPart(sqrt(ind_pow2_tacs)),
-            RealPart(sqrt(ind_dpow2_tacs)), SOC);
+            TacsRealPart(sqrt(ind_exp2_tacs)), 
+            TacsRealPart(sqrt(ind_dexp2_tacs)),
+            TacsRealPart(ind_pow_tacs), TacsRealPart(ind_dpow_tacs),
+            TacsRealPart(sqrt(ind_pow2_tacs)),
+            TacsRealPart(sqrt(ind_dpow2_tacs)), SOC);
 
     tacs->decref();
     ans->decref();
@@ -1248,7 +1248,7 @@ int main( int argc, char * argv[] ){
                              TACSElement::OUTPUT_STRESSES |
                              TACSElement::OUTPUT_EXTRAS |
                              TACSElement::OUTPUT_COORDINATES);
-  TACSToFH5 * f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   // Create the structural matrix/preconditioner/KSM to use in conjunction
@@ -1289,7 +1289,7 @@ int main( int argc, char * argv[] ){
   TacsScalar err = compute_tacs_error(order, tacs,
                                       R, alpha, beta, 
                                       U, V, W, theta, phi);
-  printf("The error in the L2 norm is:   %15.8e\n", RealPart(err));
+  printf("The error in the L2 norm is:   %15.8e\n", TacsRealPart(err));
 
   char file_name[128];
   if (orthotropic_flag){
@@ -1353,28 +1353,28 @@ int main( int argc, char * argv[] ){
   tacs->evalFunctions(&ind, 1, &ind_dpow2_tacs);
     
   printf("TACS discrete KS function with P = %d: %15.8e\n", 
-         P, fabs(RealPart(dks_tacs-1.0)));
+         P, fabs(TacsRealPart(dks_tacs-1.0)));
   printf("TACS KS-functional with P = %d:        %15.8e\n", 
-         P, fabs(RealPart(ks_tacs-1.0)));    
+         P, fabs(TacsRealPart(ks_tacs-1.0)));    
   printf("TACS exponential with P = %d:          %15.8e\n", 
-         P, fabs(RealPart(ind_exp_tacs-1.0)));
+         P, fabs(TacsRealPart(ind_exp_tacs-1.0)));
   printf("TACS discrete exp with P = %d:         %15.8e\n", 
-         P, fabs(RealPart(ind_dexp_tacs-1.0)));
+         P, fabs(TacsRealPart(ind_dexp_tacs-1.0)));
   printf("TACS exponential2 with P = %d:         %15.8e\n", 
-         P, fabs(RealPart(sqrt(ind_exp2_tacs)-1.0)));
+         P, fabs(TacsRealPart(sqrt(ind_exp2_tacs)-1.0)));
   printf("TACS discrete exp2 with P = %d:        %15.8e\n", 
-         P, fabs(RealPart(sqrt(ind_dexp2_tacs)-1.0)));
+         P, fabs(TacsRealPart(sqrt(ind_dexp2_tacs)-1.0)));
   printf("TACS pow with P = %d:                  %15.8e\n", 
-         P, fabs(RealPart(ind_pow_tacs-1.0)));
+         P, fabs(TacsRealPart(ind_pow_tacs-1.0)));
   printf("TACS discrete pow with P = %d:         %15.8e\n", 
-         P, fabs(RealPart(ind_dpow_tacs-1.0))); 
+         P, fabs(TacsRealPart(ind_dpow_tacs-1.0))); 
   printf("TACS pow2 with P = %d:                 %15.8e\n", 
-         P, fabs(RealPart(sqrt(ind_pow2_tacs)-1.0)));
+         P, fabs(TacsRealPart(sqrt(ind_pow2_tacs)-1.0)));
   printf("TACS discrete pow2 with P = %d:        %15.8e\n", 
-         P, fabs(RealPart(sqrt(ind_dpow2_tacs)-1.0)));
+         P, fabs(TacsRealPart(sqrt(ind_dpow2_tacs)-1.0)));
     
   printf("Second-order correction P = %d:        %15.8e\n", P, 
-	 fabs(RealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs - 
+	 fabs(TacsRealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs - 
                                              ind_exp_tacs*ind_exp_tacs)-1.0)));
 
   if (!orthotropic_flag){
@@ -1383,9 +1383,9 @@ int main( int argc, char * argv[] ){
 					 alpha, beta, ainv, R, L, 
 					 U, V, W, theta, phi, &vm_max);
     printf("The maximum von Mises stress:  %15.8e\n", 
-           RealPart(vm_max));
+           TacsRealPart(vm_max));
     printf("Analytic top p-norm P = %d:    %15.8e\n",
-           P, RealPart(pnorm));
+           P, TacsRealPart(pnorm));
   }
   else {
     TacsScalar tw_max, unit_load;
@@ -1395,9 +1395,9 @@ int main( int argc, char * argv[] ){
 			     alpha, beta, ainv, R, L, U, V, W, theta, phi, 
 			     &tw_max, &unit_load);
     printf("The maximum value of Tsai-Wu:  %15.8e\n", 
-           RealPart(tw_max));
+           TacsRealPart(tw_max));
     printf("Analytic top p-norm P = %d:    %15.8e\n", 
-           P, RealPart(pnorm));
+           P, TacsRealPart(pnorm));
   }
 
   // Decrement the functions

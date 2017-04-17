@@ -373,7 +373,7 @@ int main( int argc, char * argv[] ){
   tmp->axpy(-1.0, res);
   TacsScalar norm = tmp->norm();
   if (rank == 0){
-    printf("|Ax - b|: %15.5e\n", RealPart(norm));
+    printf("|Ax - b|: %15.5e\n", TacsRealPart(norm));
   }
 
   // Assemble the residual and print the result
@@ -382,7 +382,7 @@ int main( int argc, char * argv[] ){
   tacs->assembleRes(res);
   norm = res->norm();  
   if (rank == 0){
-    printf("|R|: %15.5e\n", RealPart(norm));
+    printf("|R|: %15.5e\n", TacsRealPart(norm));
   }
 
   // Output for visualization
@@ -391,7 +391,7 @@ int main( int argc, char * argv[] ){
                              TACSElement::OUTPUT_STRAINS |
                              TACSElement::OUTPUT_STRESSES |
                              TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
   f5->writeToFile("tutorial_output.f5");
   f5->decref();
@@ -482,7 +482,7 @@ int main( int argc, char * argv[] ){
   for ( int k = 0; k < numDesignVars; k++ ){
     proj_deriv += fabs(dfdx[k]);
 #ifdef TACS_USE_COMPLEX
-    if (RealPart(dfdx[k]) > 0){
+    if (TacsRealPart(dfdx[k]) > 0){
       x[k] = x[k] + TacsScalar(0.0, dh);
     }
     else {
@@ -521,18 +521,18 @@ int main( int argc, char * argv[] ){
   if (rank == 0){
     TacsScalar fd = 0.0;
 #ifdef TACS_USE_COMPLEX
-    fd = ImagPart(ksFuncVal1)/dh;
+    fd = TacsImagPart(ksFuncVal1)/dh;
 #else
     fd = (ksFuncVal1 - ksFuncVal)/dh;
 #endif
     printf("The %s is %15.8f \n", func->functionName(), 
-           RealPart(ksFuncVal));
+           TacsRealPart(ksFuncVal));
     printf("The projected derivative is             %20.8e \n", 
-           RealPart(proj_deriv));
+           TacsRealPart(proj_deriv));
     printf("The finite-difference approximation is  %20.8e \n", 
-           RealPart(fd));
+           TacsRealPart(fd));
     printf("The relative error is                   %20.5e \n", 
-	   fabs(RealPart((fd - proj_deriv)/fd)));
+	   fabs(TacsRealPart((fd - proj_deriv)/fd)));
   } 
 
   // Clean up data required by the adjoint

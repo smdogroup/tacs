@@ -67,7 +67,7 @@
   Extend an integer array 
 */
 static void extend_int_array( int ** array, int old_len, 
-			      int new_len ){
+                              int new_len ){
   int * temp = new int[ new_len ];
   memcpy(temp, *array, sizeof(int)*old_len);
   delete [] *array;
@@ -94,7 +94,8 @@ static int compare_arg_sort( const void * a, const void * b ){
   Given the line buffer 'line', and the size of the line buffer line_len
 */
 static int read_buffer_line( char *line, size_t line_len, 
-                             size_t *loc, char *buffer, size_t buffer_len ){
+                             size_t *loc, char *buffer, 
+                             size_t buffer_len ){
   size_t i = 0;
   for ( ; (i < line_len) && (*loc < buffer_len); i++, (*loc)++ ){
     if (buffer[*loc] == '\n'){
@@ -124,7 +125,8 @@ static int read_buffer_line( char *line, size_t line_len,
   list[arg[k]] = var
 */
 static int find_index_arg_sorted( int var, int size, 
-				  const int * list, const int * args ){
+				                          const int * list, 
+                                  const int * args ){
   // Binary search an array to find k such that list[k] = var,
   // where the array list[args[k]] is sorted in ascending
   // order

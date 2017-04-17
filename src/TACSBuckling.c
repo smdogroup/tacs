@@ -244,14 +244,14 @@ void TACSLinearBuckling::checkEigenvector( int n ){
   // Print out the norms of the products K*eigvec and G*eigvec
   if (rank == 0){
     printf("|K*e| = %15.5e  \n|G*e| = %15.5e \n", 
-	   RealPart(t1n), RealPart(t2n));
+	   TacsRealPart(t1n), TacsRealPart(t2n));
   }
 
   // Add the two vectors together and print out the error
   t1->axpy(eig, t2);
   t1n = t1->norm();
   if (rank == 0){
-    printf("||K*e + lambda*G*e|| = %15.5e \n", RealPart(t1n));
+    printf("||K*e + lambda*G*e|| = %15.5e \n", TacsRealPart(t1n));
   }
 
   // Decref the vectors to free the memory
@@ -308,7 +308,7 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->addMatDVSensInnerProduct(RealPart(eig), GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->addMatDVSensInnerProduct(TacsRealPart(eig), GEOMETRIC_STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate derivative of the inner product with respect to 
@@ -319,7 +319,7 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  tacs->addAdjointResProducts(-RealPart(eig), &update, 1, 
+  tacs->addAdjointResProducts(-TacsRealPart(eig), &update, 1, 
                               fdvSens, numDVs);
 
   // Now compute the inner product: u^{T}*G*u
@@ -507,7 +507,7 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->addMatDVSensInnerProduct(-RealPart(eig), MASS_MATRIX,
+  tacs->addMatDVSensInnerProduct(-TacsRealPart(eig), MASS_MATRIX,
                                  eigvec, eigvec, temp, numDVs);
   
   // Finish computing the derivative
@@ -551,11 +551,11 @@ void TACSFrequencyAnalysis::checkEigenvector( int n ){
 
   // Print out the norms of the products K*eigvec and G*eigvec
   printf("|K*e| = %15.5e  \n|M*e| = %15.5e \n", 
-         RealPart(t1->norm()), RealPart(t2->norm()));
+         TacsRealPart(t1->norm()), TacsRealPart(t2->norm()));
 
   // Add the two vectors together and print out the error
   t1->axpy(-eig, t2);
-  printf("||K*e - lambda*M*e|| = %15.5e \n", RealPart(t1->norm()));
+  printf("||K*e - lambda*M*e|| = %15.5e \n", TacsRealPart(t1->norm()));
 
   // Decref the vectors to free the memory
   t1->decref();

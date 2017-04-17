@@ -122,9 +122,16 @@ TACSMg::~TACSMg(){
 */
 void TACSMg::setLevel( int level, TACSAssembler *_tacs,
 		       TACSBVecInterp *_interp, 
-		       int _iters ){
+		       int _iters, TACSMat *_mat,
+                       TACSPc *_smoother ){
   tacs[level] = _tacs;
   tacs[level]->incref();
+
+  if ((!_mat && _smoother) || (!_smoother && _mat)){
+    fprintf(stderr, "TACSMg: You must define both the matrix and preconditioner\n");
+    _mat = NULL;
+    _smoother = NULL;      
+  }
 
   iters[level] = 1;
   if (_iters > 0){
@@ -140,29 +147,59 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
     }
     interp[level] = _interp;
     interp[level]->incref();
-    
-    PMat *pmat = tacs[level]->createMat();
-    mat[level] = pmat;
-    mat[level]->incref();
 
-    // Do not zero the initial guess for the PSOR object
-    int zero_guess = 0; 
-    pc[level] = new PSOR(pmat, zero_guess, sor_omega, 
-			 sor_iters, sor_symmetric);
-    pc[level]->incref();
+    if (_mat){
+      _mat->incref();
+      if (mat[level]){
+        mat[level]->decref();
+      }
+      mat[level] = _mat;
+
+      _smoother->incref();
+      if (pc[level]){
+        pc[level]->decref();
+      }
+      pc[level] = _smoother;
+    }
+    else {
+      PMat *pmat = tacs[level]->createMat();
+      mat[level] = pmat;
+      mat[level]->incref();
+      
+      // Do not zero the initial guess for the PSOR object
+      int zero_guess = 0; 
+      pc[level] = new PSOR(pmat, zero_guess, sor_omega, 
+                           sor_iters, sor_symmetric);
+      pc[level]->incref();
+    }
   }
   else {
-    // Set up the root matrix
-    FEMat *femat = tacs[level]->createFEMat();
-    root_mat = femat;
-    root_mat->incref();
+    if (_mat){
+      _mat->incref();
+      if (root_mat){
+        root_mat->decref();
+      }
+      root_mat = _mat;
 
-    // Set up the root preconditioner/solver
-    int lev = 10000;
-    double fill = 15.0;
-    int reorder_schur = 1; 
-    root_pc = new PcScMat(femat, lev, fill, reorder_schur);
-    root_pc->incref();
+      _smoother->incref();
+      if (root_pc){
+        root_pc->decref();
+      }
+      root_pc = _smoother;
+    }
+    else {
+      // Set up the root matrix
+      FEMat *femat = tacs[level]->createFEMat();
+      root_mat = femat;
+      root_mat->incref();
+      
+      // Set up the root preconditioner/solver
+      int lev = 10000;
+      double fill = 15.0;
+      int reorder_schur = 1; 
+      root_pc = new PcScMat(femat, lev, fill, reorder_schur);
+      root_pc->incref();
+    }
   }
   
   if (level > 0){
@@ -224,7 +261,6 @@ void TACSMg::factor(){
   for ( int i = 0; i < nlevels-1; i++ ){
     if (pc[i]){ pc[i]->factor(); }
   }
-
   if (root_pc){ root_pc->factor(); }
 }
 
@@ -290,6 +326,26 @@ TACSMat *TACSMg::getMat( int level ){
 }
 
 /*
+  Retrieve the TACSAssembler model
+*/
+TACSAssembler *TACSMg::getTACS( int level ){
+  if (level >= 0 && level < nlevels-1){
+    return tacs[level];
+  }
+  return NULL;
+}
+
+/*
+  Retrieve the TACSBVecInterp object for the given level
+*/
+TACSBVecInterp *TACSMg::getInterpolation( int level ){
+  if (level >= 0 && level < nlevels-1){
+    return interp[level];
+  }
+  return NULL;
+}
+
+/*
   Set the monitor to use internally for printing out convergence data.
 */
 void TACSMg::setMonitor( KSMPrint *_monitor ){
@@ -320,8 +376,8 @@ void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
       rhs_norm = norm; 
     }
 
-    if (RealPart(norm) < atol || 
-        RealPart(norm) < rtol*RealPart(rhs_norm)){
+    if (TacsRealPart(norm) < atol || 
+        TacsRealPart(norm) < rtol*TacsRealPart(rhs_norm)){
       break;
     }
   } 

@@ -279,7 +279,6 @@ void TACSCompliance::addElementDVSens( const double tcoef,
   // return without adding any contribution to the function
   if (ctx && constitutive){
     int numGauss = element->getNumGaussPts();
-    int numStresses = element->numStresses();
 
     // Set the stress/strain arrays
     TacsScalar *strain = ctx->strain;

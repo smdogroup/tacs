@@ -3157,7 +3157,9 @@ void linear_bend_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
   the xi and eta directions
   dn, dn_xi, dn_eta: the sensitivity of the normal (and its derivatives)
 */
-void add_linear_bend_bmat_sens( TacsScalar res[], int num_points, 
+void add_linear_bend_bmat_sens( TacsScalar fXptSens[], 
+                                const TacsScalar psi[],
+                                int num_points,
 				const TacsScalar stress_scale,
 				const TacsScalar rot_scale,
 				const TacsScalar stress[], 
@@ -3173,7 +3175,6 @@ void add_linear_bend_bmat_sens( TacsScalar res[], int num_points,
 
   // For each component in the derivative
   for ( int k = 0; k < num_components; k++ ){
-
     // For each point
     for ( int i = 0; i < num_points; i++ ){
       // For each displacement component
@@ -3226,18 +3227,16 @@ void add_linear_bend_bmat_sens( TacsScalar res[], int num_points,
 			   Ud[2]*dztx[3] + Ud[3]*dztx[4] + r[1]*dztx[5]);
 
         // Add the contributions from the stress sensitivities
-	res[0] += stress_scale*(stress[3]*sux1 + 
-				stress[4]*svy1 + 
-                                stress[5]*(suy1 + svx1));
+        fXptSens[k] += stress_scale*psi[6*i+ii]*(stress[3]*sux1 + 
+                                                 stress[4]*svy1 + 
+                                                 stress[5]*(suy1 + svx1));
 
         // Add the contribution from the rotational sensitivities
-        res[0] += rot_scale*0.5*(svx - suy);
+        fXptSens[k] += 0.5*rot_scale*psi[6*i+ii]*(svx - suy);
 
         if (ii >= 3){
-          res[0] -= rot_scale*N[i]*dn[ii-3];
+          fXptSens[k] -= rot_scale*psi[6*i+ii]*N[i]*dn[ii-3];
         }
-
-        res++;
       }
     }
 
@@ -3906,7 +3905,9 @@ void nonlinear_bend_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
   the xi and eta directions
   dn, dn_xi, dn_eta: the sensitivity of the normal (and its derivatives)
 */
-void add_nonlinear_bend_bmat_sens( TacsScalar res[], int num_points, 
+void add_nonlinear_bend_bmat_sens( TacsScalar fXptSens[], 
+                                   const TacsScalar psi[],
+                                   int num_points, 
 				   const TacsScalar stress_scale,
 				   const TacsScalar rot_scale,
 				   const TacsScalar stress[], 
@@ -4136,17 +4137,17 @@ void add_nonlinear_bend_bmat_sens( TacsScalar res[], int num_points,
 				 ux*sduy1 + vx*sdvy1 + wx*sdwy1);	
 	
 	// Add the contributions from the stress sensitivities
-	res[0] += 
-	  stress_scale*(stress[3]*dB[0] + stress[4]*dB[1] + stress[5]*dB[2]);
+	fXptSens[k] +=
+	  stress_scale*psi[6*i+ii]*(stress[3]*dB[0] + 
+                                    stress[4]*dB[1] + 
+                                    stress[5]*dB[2]);
 
         // Add the contribution from the rotational sensitivities
-        res[0] += rot_scale*0.5*(sdvx - sduy);
+        fXptSens[k] += 0.5*rot_scale*psi[6*i+ii]*(sdvx - sduy);
 
         if (ii >= 3){
-          res[0] -= rot_scale*N[i]*dn[ii-3];
+          fXptSens[k] -= rot_scale*psi[6*i+ii]*N[i]*dn[ii-3];
         }
-
-        res++;
       }
     }
 

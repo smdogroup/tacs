@@ -60,13 +60,13 @@ OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
   // are negative, make them positive
   Xt = _Xt;
   Xc = _Xc;
-  if (RealPart(Xc) < 0.0){ 
+  if (TacsRealPart(Xc) < 0.0){ 
     Xc *= -1.0; 
   }
 
   Yt = _Yt;
   Yc = _Yc;
-  if (RealPart(Yc) < 0.0){ 
+  if (TacsRealPart(Yc) < 0.0){ 
     Yc *= -1.0; 
   }
 
@@ -94,7 +94,7 @@ OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
   F22 = 1.0/(Yt*Yc);
 
   F66 = 1.0/(S12*S12);
-  if (RealPart(C) != 0.0){
+  if (TacsRealPart(C) != 0.0){
     F12 = 0.5*(1.0 - (F1 + F2)*C - (F11 + F22)*C*C)/(C*C);
   }
   else {
@@ -102,12 +102,12 @@ OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
   }
 
   // Check the stability criterion
-  if (RealPart(F12*F12) >= RealPart(F11*F22)){
+  if (TacsRealPart(F12*F12) >= TacsRealPart(F11*F22)){
     fprintf(stderr, "OrthoPly: Value of C = %e results in non-physical \
-F12 = %e. Setting F12 = 0.\n", RealPart(C), RealPart(F12));
+F12 = %e. Setting F12 = 0.\n", TacsRealPart(C), TacsRealPart(F12));
     fprintf(stderr, "OrthoPly: Tsai-Wu coefficients: F11: %e, F22: %e, \
-F66: %e, F1: %e, F2: %e\n", RealPart(F11), RealPart(F22), 
-            RealPart(F66), RealPart(F1), RealPart(F2));
+F66: %e, F1: %e, F2: %e\n", TacsRealPart(F11), TacsRealPart(F22), 
+            TacsRealPart(F66), TacsRealPart(F1), TacsRealPart(F2));
     F12 = 0.0;	    
   }
 
@@ -441,7 +441,7 @@ TacsScalar OrthoPly::failure( TacsScalar angle,
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (RealPart(f[k]) > RealPart(max)){ 
+      if (TacsRealPart(f[k]) > TacsRealPart(max)){ 
         max = f[k]; 
       }
     }
@@ -488,7 +488,7 @@ TacsScalar OrthoPly::failureStrainSens( TacsScalar sens[],
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (RealPart(f[k]) > RealPart(max)){
+      if (TacsRealPart(f[k]) > TacsRealPart(max)){
         max = f[k]; 
       }
     }
@@ -554,7 +554,7 @@ TacsScalar OrthoPly::failureAngleSens( TacsScalar * failSens,
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (RealPart(f[k]) > RealPart(max)){
+      if (TacsRealPart(f[k]) > TacsRealPart(max)){
         max = f[k]; 
       }
     }
@@ -620,21 +620,21 @@ TacsScalar OrthoPly::calculateFailLoad( TacsScalar angle,
                   F66*lstr[2]*lstr[2]);
   TacsScalar pos = 0.0;
 
-  if (fabs(RealPart(a)) < LINEAR_STRESS_CUTOFF*RealPart(F11 + F22)){
+  if (fabs(TacsRealPart(a)) < LINEAR_STRESS_CUTOFF*TacsRealPart(F11 + F22)){
     pos = HUGE_FAILURE_LOAD;
   }
-  else if (RealPart(c) >= 0.0){
+  else if (TacsRealPart(c) >= 0.0){
     pos = 0.0;
   }
   else {
     TacsScalar discrim = b*b - 4.0*a*c;
-    if (RealPart(discrim) < 0.0){
+    if (TacsRealPart(discrim) < 0.0){
       pos = 0.0;
     }
     else {
       discrim = sqrt(discrim);
       
-      if (RealPart(b) >= 0.0){
+      if (TacsRealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
       else { // b < 0.0
@@ -684,21 +684,21 @@ TacsScalar OrthoPly::calculateFailLoadStrainSens( TacsScalar cSens[],
   TacsScalar pos = 0.0;
   TacsScalar pa = 0.0, pb = 0.0, pc = 0.0;
 
-  if (fabs(RealPart(a)) < LINEAR_STRESS_CUTOFF*RealPart(F11 + F22)){
+  if (fabs(TacsRealPart(a)) < LINEAR_STRESS_CUTOFF*TacsRealPart(F11 + F22)){
     pos = HUGE_FAILURE_LOAD;
   }
-  else if (RealPart(c) >= 0.0){
+  else if (TacsRealPart(c) >= 0.0){
     pos = 0.0;
   }
   else {
     TacsScalar discrim = b*b - 4.0*a*c;
-    if (RealPart(discrim) < 0.0){
+    if (TacsRealPart(discrim) < 0.0){
       pos = 0.0;
     }
     else {
       discrim = sqrt(discrim);      
 
-      if (RealPart(b) >= 0.0){
+      if (TacsRealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
       else {
@@ -783,21 +783,21 @@ TacsScalar OrthoPly::calculateFailLoadAngleSens( TacsScalar * posSens,
   TacsScalar pos = 0.0;
   TacsScalar pa = 0.0, pb = 0.0, pc = 0.0;
 
-  if (fabs(RealPart(a)) < LINEAR_STRESS_CUTOFF*RealPart(F11 + F22)){
+  if (fabs(TacsRealPart(a)) < LINEAR_STRESS_CUTOFF*TacsRealPart(F11 + F22)){
     pos = HUGE_FAILURE_LOAD;
   }
-  else if (RealPart(c) >= 0.0){
+  else if (TacsRealPart(c) >= 0.0){
     pos = 0.0;
   }
   else {
     TacsScalar discrim = b*b - 4.0*a*c;
-    if (RealPart(discrim) < 0.0){
+    if (TacsRealPart(discrim) < 0.0){
       pos = 0.0;
     }
     else {
       discrim = sqrt(discrim);
 
-      if (RealPart(b) >= 0.0){
+      if (TacsRealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
       else {
@@ -838,14 +838,14 @@ void OrthoPly::testFailSens( double dh, TacsScalar angle ){
   TacsScalar strain[3];
 
   printf("\nTesting failure sensitivity for angle = %5.2f \n", 
-         RealPart(angle));
+         TacsRealPart(angle));
 
   for ( int k = 0; k < 3; k++ ){
     strain[k] = -1.0;
 
     // Calculate the failure load
     TacsScalar p = failure(angle,strain);
-    printf("Failure criteria = %15.8e \n", RealPart(p));
+    printf("Failure criteria = %15.8e \n", TacsRealPart(p));
 
     // Calculate the sensitivity of the failure load
     TacsScalar sens[3];
@@ -864,8 +864,8 @@ void OrthoPly::testFailSens( double dh, TacsScalar angle ){
 
       TacsScalar fd = 0.5*(p1 - p2)/dh;
       printf("sens[%d] FD: %15.8e An: %15.8e Error: %10.3e \n", 
-             j, RealPart(fd), RealPart(sens[j]), 
-             RealPart((fd - sens[j])/sens[j]));
+             j, TacsRealPart(fd), TacsRealPart(sens[j]), 
+             TacsRealPart((fd - sens[j])/sens[j]));
     }
     
     // Calculate the sensitivity w.r.t. the angle
@@ -876,7 +876,7 @@ void OrthoPly::testFailSens( double dh, TacsScalar angle ){
     TacsScalar fd = 0.5*(p1 - p2)/dh;
 
     printf("Angle sensitivity FD: %15.8e An: %15.8e Error: %10.3e \n", 
-           RealPart(fd), RealPart(paSens), RealPart((fd - paSens)/paSens));
+           TacsRealPart(fd), TacsRealPart(paSens), TacsRealPart((fd - paSens)/paSens));
   }
 }
 
@@ -885,36 +885,36 @@ void OrthoPly::testFailSens( double dh, TacsScalar angle ){
 */
 void OrthoPly::printProperties(){
   printf("\nStiffness properties \n");
-  printf("E1   = %15.5e \n", RealPart(E1));
-  printf("E2   = %15.5e \n", RealPart(E2));
-  printf("nu12 = %15.5e \n", RealPart(nu12));
-  printf("nu21 = %15.5e \n", RealPart(nu21));
-  printf("G12  = %15.5e \n", RealPart(G12));
-  printf("G23  = %15.5e \n", RealPart(G23));
-  printf("G13  = %15.5e \n", RealPart(G13));
+  printf("E1   = %15.5e \n", TacsRealPart(E1));
+  printf("E2   = %15.5e \n", TacsRealPart(E2));
+  printf("nu12 = %15.5e \n", TacsRealPart(nu12));
+  printf("nu21 = %15.5e \n", TacsRealPart(nu21));
+  printf("G12  = %15.5e \n", TacsRealPart(G12));
+  printf("G23  = %15.5e \n", TacsRealPart(G23));
+  printf("G13  = %15.5e \n", TacsRealPart(G13));
 
   printf("\nFailure Properties \n");
-  printf("Xt   = %15.5e \n", RealPart(Xt));
-  printf("Xc   = %15.5e \n", RealPart(Xc));
-  printf("Yt   = %15.5e \n", RealPart(Yt));
-  printf("Yc   = %15.5e \n", RealPart(Yc));
-  printf("S12  = %15.5e \n", RealPart(S12));
-  printf("C    = %15.5e \n", RealPart(C));
+  printf("Xt   = %15.5e \n", TacsRealPart(Xt));
+  printf("Xc   = %15.5e \n", TacsRealPart(Xc));
+  printf("Yt   = %15.5e \n", TacsRealPart(Yt));
+  printf("Yc   = %15.5e \n", TacsRealPart(Yc));
+  printf("S12  = %15.5e \n", TacsRealPart(S12));
+  printf("C    = %15.5e \n", TacsRealPart(C));
 
   printf("\nStrain Failure Properties \n");
-  printf("eXt  = %15.5e \n", RealPart(eXt));
-  printf("eXc  = %15.5e \n", RealPart(eXc));
-  printf("eYt  = %15.5e \n", RealPart(eYt));
-  printf("eYc  = %15.5e \n", RealPart(eYc));
-  printf("eS12 = %15.5e \n", RealPart(eS12));
+  printf("eXt  = %15.5e \n", TacsRealPart(eXt));
+  printf("eXc  = %15.5e \n", TacsRealPart(eXc));
+  printf("eYt  = %15.5e \n", TacsRealPart(eYt));
+  printf("eYc  = %15.5e \n", TacsRealPart(eYc));
+  printf("eS12 = %15.5e \n", TacsRealPart(eS12));
 
   printf("\nTsai-Wu tensor coefficients\n");
-  printf("F1   = %15.5e \n", RealPart(F1));
-  printf("F2   = %15.5e \n", RealPart(F2));
-  printf("F11  = %15.5e \n", RealPart(F11));
-  printf("F12  = %15.5e \n", RealPart(F12));
-  printf("F22  = %15.5e \n", RealPart(F22));
-  printf("F66  = %15.5e \n", RealPart(F66));
+  printf("F1   = %15.5e \n", TacsRealPart(F1));
+  printf("F2   = %15.5e \n", TacsRealPart(F2));
+  printf("F11  = %15.5e \n", TacsRealPart(F11));
+  printf("F12  = %15.5e \n", TacsRealPart(F12));
+  printf("F22  = %15.5e \n", TacsRealPart(F22));
+  printf("F66  = %15.5e \n", TacsRealPart(F66));
 }
 
 // First, the stress transformations

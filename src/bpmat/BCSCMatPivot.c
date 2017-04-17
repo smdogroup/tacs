@@ -1852,8 +1852,8 @@ void BCSCMatPivot::factorNode( int node,
     c += node_dim;
 
     for ( int i = diag_index+1; i < num_rows; i++ ){
-      double abs_val = fabs(RealPart(c[0]));
-      if (abs_val > fabs(RealPart(max_entry))){
+      double abs_val = fabs(TacsRealPart(c[0]));
+      if (abs_val > fabs(TacsRealPart(max_entry))){
 	max_row_index = i;
 	max_entry = c[0];
       }
@@ -1876,7 +1876,7 @@ void BCSCMatPivot::factorNode( int node,
     TacsScalar entry = diag_entry;
 
     // Pivot only if required by the pivot tolerance
-    if (fabs(RealPart(max_entry)) > fabs(RealPart(diag_entry))){
+    if (fabs(TacsRealPart(max_entry)) > fabs(TacsRealPart(diag_entry))){
       // Set the pivot and entry values
       pivot = rows[max_row_index];
       entry = max_entry;

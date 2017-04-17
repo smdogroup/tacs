@@ -159,7 +159,7 @@ public:
         if (out_type & TACSElement::OUTPUT_NODES){
           getXpts(Xpts_new, N, Xpts);
           for (int k = 0; k < 3; k++){
-            data[index+k] = RealPart(Xpts_new[k]);
+            data[index+k] = TacsRealPart(Xpts_new[k]);
             
           }
           index += 3;
@@ -169,7 +169,7 @@ public:
           this->getDisplacement(vars_new, N, vars);
 
           for (int k = 0; k < 2; k++){
-            data[index+k] = RealPart(vars_new[k]);
+            data[index+k] = TacsRealPart(vars_new[k]);
           }
           index += 2;
         }
@@ -187,7 +187,7 @@ public:
         
         if (out_type & TACSElement::OUTPUT_STRAINS){
           for (int k = 0; k < 3; k++){
-            data[index+k] = RealPart(strain[k]);
+            data[index+k] = TacsRealPart(strain[k]);
           }
           index += 3;
         }
@@ -196,7 +196,7 @@ public:
           TacsScalar stress[3];
           this->stiff->calculateStress(pt, strain, stress);
           for (int k = 0; k < 3; k++){
-            data[index+k] = RealPart(stress[k]);
+            data[index+k] = TacsRealPart(stress[k]);
           }
           index += 3;
         }
@@ -204,13 +204,13 @@ public:
         if (out_type & TACSElement::OUTPUT_EXTRAS){
           TacsScalar lambda;
           this->stiff->failure(pt, strain, &lambda);
-          data[index] = RealPart(lambda);
+          data[index] = TacsRealPart(lambda);
           
           this->stiff->buckling(strain, &lambda);
-          data[index+1] = RealPart(lambda);
+          data[index+1] = TacsRealPart(lambda);
 
-          data[index+2] = RealPart(this->stiff->getDVOutputValue(0, pt));
-          data[index+3] = RealPart(this->stiff->getDVOutputValue(1, pt));
+          data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+          data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
           
           index += this->NUM_EXTRAS;
         }

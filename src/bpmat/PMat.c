@@ -352,9 +352,8 @@ const char *PMat::matName = "PMat";
 /*
   Build a simple SOR or Symmetric-SOR preconditioner for the matrix
 */
-PSOR::PSOR( PMat *mat, int _zero_guess, 
-            TacsScalar _omega, int _iters, 
-            int _isSymmetric ){
+PSOR::PSOR( PMat *mat, int _zero_guess, TacsScalar _omega, int _iters, 
+            int _isSymmetric, int *pairs, int npairs ){
   // Get the on- and off-diagonal components of the matrix
   mat->getBCSRMat(&Aloc, &Bext);
   Aloc->incref();
@@ -392,8 +391,32 @@ PSOR::PSOR( PMat *mat, int _zero_guess,
   omega = _omega;
   iters = _iters;
   isSymmetric = _isSymmetric;
-}
 
+  if (pairs){
+    // Readjust the pair indices so that they are within the supplied
+    // range of the pairs.
+    int mpi_rank;
+    const int *range;
+    TACSVarMap *vmap = mat->getRowMap();
+    vmap->getOwnerRange(&range);
+    MPI_Comm_rank(vmap->getMPIComm(), &mpi_rank);
+
+    // Readjust the range of the pairs
+    for ( int i = 0; i < npairs; i++ ){
+      if (pairs[i] >= range[mpi_rank] &&
+          pairs[i] < range[mpi_rank+1]){
+        pairs[i] = pairs[i] - range[mpi_rank];
+      }
+      else {
+        pairs[i] = -1;
+      }
+    }
+
+    // Set the diagonal pairs
+    Aloc->setDiagPairs(pairs, npairs);
+  }
+}
+  
 /*
   Free the SOR preconditioner
 */

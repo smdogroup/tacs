@@ -104,7 +104,7 @@ void TACSInducedFailure::setInducedType( enum InducedNormType type ){
   failure criterion 
 */
 void TACSInducedFailure::setLoadFactor( TacsScalar _load_factor ){
-  if (RealPart(_load_factor) >= 1.0){ 
+  if (TacsRealPart(_load_factor) >= 1.0){ 
     load_factor = _load_factor;
   }
 }
@@ -239,7 +239,7 @@ void TACSInducedFailure::elementWiseEval( EvaluationType ftype,
           }
 
           // Set the maximum failure load
-          if (RealPart(fail) > RealPart(ctx->max_fail)){
+          if (TacsRealPart(fail) > TacsRealPart(ctx->max_fail)){
             ctx->max_fail = fail;
           }
         }
@@ -326,7 +326,7 @@ void TACSInducedFailure::finalThread( const double tcoef,
 
   if (ctx){
     if (ftype == TACSFunction::INITIALIZE){
-      if (RealPart(ctx->max_fail) > RealPart(max_fail)){
+      if (TacsRealPart(ctx->max_fail) > TacsRealPart(max_fail)){
         max_fail = ctx->max_fail;
       }
     }
@@ -487,7 +487,6 @@ void TACSInducedFailure::getElementXptSens( const double tcoef,
     // Get the number of stress components, the total number of
     // variables, and the total number of nodes
     int numStresses = element->numStresses();
-    int numVars = element->numVariables();
 
     // Get the quadrature scheme information
     int numGauss = element->getNumGaussPts();

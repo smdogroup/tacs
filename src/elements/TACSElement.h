@@ -164,15 +164,15 @@
 */
 
 // The element types used for visualization
-enum ElementType { ELEMENT_NONE,
-                   POINT_ELEMENT,
-                   EULER_BEAM,
-                   TIMOSHENKO_BEAM,
-                   PLANE_STRESS,
-                   SHELL, 
-                   SOLID,
-                   Q3D_ELEMENT,
-                   RIGID };
+enum ElementType { TACS_ELEMENT_NONE,
+                   TACS_POINT_ELEMENT,
+                   TACS_EULER_BEAM,
+                   TACS_TIMOSHENKO_BEAM,
+                   TACS_PLANE_STRESS,
+                   TACS_SHELL, 
+                   TACS_SOLID,
+                   TACS_Q3D_ELEMENT,
+                   TACS_RIGID };
 
 // The different element matrix types
 enum ElementMatrixType { STIFFNESS_MATRIX, 
@@ -397,7 +397,7 @@ class TACSElement : public TACSOptObject {
   // Get the number of extras and element type information
   // -----------------------------------------------------
   virtual int numExtras(){ return 0; }
-  virtual enum ElementType getElementType(){ return ELEMENT_NONE; }
+  virtual enum ElementType getElementType(){ return TACS_ELEMENT_NONE; }
 
   // Functions for retrieving data from the element for visualization
   // ----------------------------------------------------------------

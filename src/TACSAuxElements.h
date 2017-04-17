@@ -36,7 +36,7 @@ class TACSAuxElem {
 */
 class TACSAuxElements : public TACSOptObject {
  public:
-  TACSAuxElements( int _num_elems );
+  TACSAuxElements( int _num_elems=100 );
   ~TACSAuxElements();
 
   // Sort the list of elements

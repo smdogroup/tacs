@@ -17,8 +17,8 @@ template <int order>
 class Solid : public TACS3DElement<order*order*order> {
  public:
   Solid( SolidStiffness * _stiff, 
-	 ElementBehaviorType type=LINEAR, 
-	 int _componentNum = 0 ); 
+         ElementBehaviorType type=LINEAR, 
+         int _componentNum = 0 ); 
   ~Solid();
 
   // Return the name of this element
@@ -29,7 +29,7 @@ class Solid : public TACS3DElement<order*order*order> {
   // ----------------------------
   void getShapeFunctions( const double pt[], double N[] );
   void getShapeFunctions( const double pt[], double N[],
-			  double Na[], double Nb[], double Nc[] );
+                          double Na[], double Nb[], double Nc[] );
 
   // Retrieve the Gauss points/weights
   // ---------------------------------
@@ -40,9 +40,9 @@ class Solid : public TACS3DElement<order*order*order> {
   // -----------------------------
   void addOutputCount( int * nelems, int * nnodes, int * ncsr );
   void getOutputData( unsigned int out_type, 
-		      double * data, int ld_data, 
-		      const TacsScalar Xpts[],
-		      const TacsScalar vars[] );
+                      double * data, int ld_data, 
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
 
  private:
@@ -59,8 +59,8 @@ class Solid : public TACS3DElement<order*order*order> {
 
 template <int order>
 Solid<order>::Solid( SolidStiffness * _stiff, 
-		     ElementBehaviorType type, 
-		     int _componentNum ):
+                     ElementBehaviorType type, 
+                     int _componentNum ):
 TACS3DElement<order*order*order>(_stiff, type, _componentNum){
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 } 
@@ -101,7 +101,7 @@ double Solid<order>::getGaussWtsPts( int npoint, double pt[] ){
 */
 template <int order>
 void Solid<order>::getShapeFunctions( const double pt[],
-				      double N[] ){
+                                      double N[] ){
   FElibrary::triLagrangeSF(N, pt, order);
 }
 
@@ -111,8 +111,8 @@ void Solid<order>::getShapeFunctions( const double pt[],
 */
 template <int order>
 void Solid<order>::getShapeFunctions( const double pt[], double N[],
-				      double Na[], double Nb[],
-				      double Nc[] ){
+                                      double Na[], double Nb[],
+                                      double Nc[] ){
   FElibrary::triLagrangeSF(N, Na, Nb, Nc, pt, order);
 }
 
@@ -122,7 +122,7 @@ void Solid<order>::getShapeFunctions( const double pt[], double N[],
 */
 template <int order>
 void Solid<order>::addOutputCount( int *nelems, 
-				   int *nnodes, int *ncsr ){
+                                   int *nnodes, int *ncsr ){
   *nelems += (order-1)*(order-1)*(order-1);
   *nnodes += order*order*order;
   *ncsr += 8*(order-1)*(order-1)*(order-1);
@@ -151,83 +151,83 @@ void Solid<order>::addOutputCount( int *nelems,
 */
 template <int order>
 void Solid<order>::getOutputData( unsigned int out_type, 
-				  double *data, int ld_data,
-				  const TacsScalar Xpts[],
-				  const TacsScalar vars[] ){
+                                  double *data, int ld_data,
+                                  const TacsScalar Xpts[],
+                                  const TacsScalar vars[] ){
   for ( int p = 0; p < order; p++ ){
     for ( int m = 0; m < order; m++ ){
       for ( int n = 0; n < order; n++ ){
-	int node = n + m*order + p*order*order;
-	int index = 0;
-	if (out_type & TACSElement::OUTPUT_NODES){
-	  for ( int k = 0; k < 3; k++ ){
-	    data[index+k] = RealPart(Xpts[3*node+k]);
-	  }
+        int node = n + m*order + p*order*order;
+        int index = 0;
+        if (out_type & TACSElement::OUTPUT_NODES){
+          for ( int k = 0; k < 3; k++ ){
+            data[index+k] = TacsRealPart(Xpts[3*node+k]);
+          }
           index += 3;
-	}
-	if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-	  for ( int k = 0; k < 3; k++ ){
-	    data[index+k] = RealPart(vars[3*node+k]);
-	  }
-	  index += 3;
-	}
+        }
+        if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
+          for ( int k = 0; k < 3; k++ ){
+            data[index+k] = TacsRealPart(vars[3*node+k]);
+          }
+          index += 3;
+        }
 
-	// Set the parametric point where to evaluate the 
-	// stresses/strains
+        // Set the parametric point where to evaluate the 
+        // stresses/strains
         double pt[3];
         pt[0] = -1.0 + 2.0/(order-1.0)*n;
         pt[1] = -1.0 + 2.0/(order-1.0)*m;
         pt[2] = -1.0 + 2.0/(order-1.0)*p;
         
-	// Compute the shape functions
-	double N[NUM_NODES];
-	double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
-	getShapeFunctions(pt, N, Na, Nb, Nc);
+        // Compute the shape functions
+        double N[NUM_NODES];
+        double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
+        getShapeFunctions(pt, N, Na, Nb, Nc);
 
-	// Compute the derivative of X with respect to the
-	// coordinate directions
-	TacsScalar X[3], Xa[9];
-	this->solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
+        // Compute the derivative of X with respect to the
+        // coordinate directions
+        TacsScalar X[3], Xa[9];
+        this->solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
 
-	// Compute the determinant of Xa and the transformation
-	TacsScalar J[9];
-	FElibrary::jacobian3d(Xa, J);
+        // Compute the determinant of Xa and the transformation
+        TacsScalar J[9];
+        FElibrary::jacobian3d(Xa, J);
 
-	// Compute the strain
-	TacsScalar strain[6];
-	this->evalStrain(strain, J, Na, Nb, Nc, vars);
-	
+        // Compute the strain
+        TacsScalar strain[6];
+        this->evalStrain(strain, J, Na, Nb, Nc, vars);
+        
         if (out_type & TACSElement::OUTPUT_STRAINS){
           for ( int k = 0; k < 6; k++ ){
-            data[index+k] = RealPart(strain[k]);
+            data[index+k] = TacsRealPart(strain[k]);
           }
           index += 6;
         }
         if (out_type & TACSElement::OUTPUT_STRESSES){
-	  TacsScalar stress[6];
-	  this->stiff->calculateStress(pt, strain, stress);
+          TacsScalar stress[6];
+          this->stiff->calculateStress(pt, strain, stress);
           
           for ( int k = 0; k < 6; k++ ){
-            data[index+k] = RealPart(stress[k]);
+            data[index+k] = TacsRealPart(stress[k]);
           }
           index += 6;
         }
         if (out_type & TACSElement::OUTPUT_EXTRAS){
-	  // Compute the failure value
-	  TacsScalar lambda;
-	  this->stiff->failure(pt, strain, &lambda);
-	  data[index] = RealPart(lambda);
+          // Compute the failure value
+          TacsScalar lambda;
+          this->stiff->failure(pt, strain, &lambda);
+          data[index] = TacsRealPart(lambda);
 
-	  this->stiff->buckling(strain, &lambda);
-	  data[index+1] = RealPart(lambda);
+          this->stiff->buckling(strain, &lambda);
+          data[index+1] = TacsRealPart(lambda);
 
-	  data[index+2] = RealPart(this->stiff->getDVOutputValue(0, pt));
-	  data[index+3] = RealPart(this->stiff->getDVOutputValue(1, pt));
-	  
-	  index += this->NUM_EXTRAS;
+          data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+          data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
+          
+          index += this->NUM_EXTRAS;
         }
 
-	data += ld_data;
+        data += ld_data;
       }
     }
   }
@@ -252,15 +252,15 @@ void Solid<order>::getOutputConnectivity( int *con, int node ){
   for ( int p = 0; p < order-1; p++ ){
     for ( int m = 0; m < order-1; m++ ){
       for ( int n = 0; n < order-1; n++ ){
-	con[8*j]   = node + n   +     m*order +     p*order*order;
-	con[8*j+1] = node + n+1 +     m*order +     p*order*order;
-	con[8*j+2] = node + n+1 + (m+1)*order +     p*order*order;
-	con[8*j+3] = node + n   + (m+1)*order +     p*order*order;
-	con[8*j+4] = node + n   +     m*order + (p+1)*order*order;
-	con[8*j+5] = node + n+1 +     m*order + (p+1)*order*order;
-	con[8*j+6] = node + n+1 + (m+1)*order + (p+1)*order*order;
-	con[8*j+7] = node + n   + (m+1)*order + (p+1)*order*order;
-	j++;
+        con[8*j]   = node + n   +     m*order +     p*order*order;
+        con[8*j+1] = node + n+1 +     m*order +     p*order*order;
+        con[8*j+2] = node + n+1 + (m+1)*order +     p*order*order;
+        con[8*j+3] = node + n   + (m+1)*order +     p*order*order;
+        con[8*j+4] = node + n   +     m*order + (p+1)*order*order;
+        con[8*j+5] = node + n+1 +     m*order + (p+1)*order*order;
+        con[8*j+6] = node + n+1 + (m+1)*order + (p+1)*order*order;
+        con[8*j+7] = node + n   + (m+1)*order + (p+1)*order*order;
+        j++;
       }
     }
   }

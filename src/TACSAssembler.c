@@ -423,6 +423,7 @@ int TACSAssembler::setElementConnectivity( const int *conn,
       }
     }
   }
+  return 0;
 }
 
 /*!
@@ -563,22 +564,24 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
     }
   }
 
-  // Allocate the new memory and copy over the data
-  int *depNodePtr = new int[ numDependentNodes+1 ];
-  memcpy(depNodePtr, _depNodePtr, (numDependentNodes+1)*sizeof(int));
+  if (numDependentNodes > 0){
+    // Allocate the new memory and copy over the data
+    int *depNodePtr = new int[ numDependentNodes+1 ];
+    memcpy(depNodePtr, _depNodePtr, (numDependentNodes+1)*sizeof(int));
 
-  int size = depNodePtr[numDependentNodes];
-  int *depNodeToTacs = new int[ size ];
-  memcpy(depNodeToTacs, _depNodeToTacs, size*sizeof(int));
+    int size = depNodePtr[numDependentNodes];
+    int *depNodeToTacs = new int[ size ];
+    memcpy(depNodeToTacs, _depNodeToTacs, size*sizeof(int));
 
-  double *depNodeWeights = new double[ size ];
-  memcpy(depNodeWeights, _depNodeWeights, size*sizeof(double));
+    double *depNodeWeights = new double[ size ];
+    memcpy(depNodeWeights, _depNodeWeights, size*sizeof(double));
 
-  // Allocate the dependent node data structure
-  depNodes = new TACSBVecDepNodes(numDependentNodes,
-                                  &depNodePtr, &depNodeToTacs,
-                                  &depNodeWeights);
-  depNodes->incref();
+    // Allocate the dependent node data structure
+    depNodes = new TACSBVecDepNodes(numDependentNodes,
+                                    &depNodePtr, &depNodeToTacs,
+                                    &depNodeWeights);
+    depNodes->incref();
+  }
 
   return 0;
 }
@@ -897,9 +900,9 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     delete [] cols;
   }
   else {
-    // First, find the reduced nodes - the set of nodes 
-    // that are only referenced by this processor. These 
-    // can be reordered without affecting other processors.
+    // First, find the reduced nodes - the set of nodes that are only
+    // referenced by this processor. These can be reordered without
+    // affecting other processors.
     int *reducedNodes = new int[ numNodes ];
     memset(reducedNodes, 0, numNodes*sizeof(int));
 
@@ -920,9 +923,9 @@ void TACSAssembler::computeReordering( OrderingType order_type,
       }
     }
     else if (mat_type == APPROXIMATE_SCHUR){
-      // If we want an approximate schur ordering, where the
-      // nodes that couple to other processors are ordered last,
-      // we also add these nodes to the reduced set.
+      // If we want an approximate schur ordering, where the nodes
+      // that couple to other processors are ordered last, we also add
+      // these nodes to the reduced set.
       int *rowp, *cols;
       computeLocalNodeToNodeCSR(&rowp, &cols);
 
@@ -2112,6 +2115,8 @@ int TACSAssembler::initialize(){
 
   int idataSize = maxElementIndepNodes + maxElementNodes+1;
   elementIData = new int[ idataSize ];
+
+  return 0;
 }
 
 /*
@@ -2128,9 +2133,8 @@ void TACSAssembler::scatterExternalBCs( TACSBcMap *bcs ){
   // Get the coupling nodes shared between processors
   int *extPtr, *extCount;
   int *recvPtr, *recvCount, *recvNodes;
-  int numCoupling = 
-    computeCouplingNodes(NULL, &extPtr, &extCount,
-                         &recvPtr, &recvCount, &recvNodes);
+  computeCouplingNodes(NULL, &extPtr, &extCount,
+                       &recvPtr, &recvCount, &recvNodes);
   
   // Get the nodes/variables
   const int *nodes, *vars;
@@ -2840,9 +2844,6 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   *Te = 0.0;
   *Pe = 0.0;
 
-  // Array for storing local kinetic and potential energies
-  TacsScalar elem_energies[2] = {0.0, 0.0};
- 
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *elemXpts;
   getDataPointers(elementData, &vars, &dvars, 
@@ -3691,7 +3692,6 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
                                                   TACSBVec **adjoint, 
                                                   int numAdjoints,
                                                   TACSBVec **adjXptSens ){
-
   for ( int k = 0; k < numAdjoints; k++ ){
     adjoint[k]->beginDistributeValues();
   }
@@ -3746,7 +3746,7 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
 
       adjXptSens[k]->setValues(len, nodes, xptSens, ADD_VALUES);
     }
-  }   
+  }
 }
 
 /*
@@ -4129,7 +4129,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   }
   setDesignVars(xtemp, num_design_vars);
   evalFunctions(&func, 1, &fd);
-  fd = ImagPart(fd)/dh;
+  fd = TacsImagPart(fd)/dh;
 #else
   // Compute the function at the point x + dh*xpert
   for ( int k = 0; k < num_design_vars; k++ ){
@@ -4171,12 +4171,12 @@ void TACSAssembler::testFunction( TACSFunction *func,
             "Approximate", "Rel. Error");
     if (pdf != 0.0){
       fprintf(stderr, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd), 
-              fabs(RealPart((pdf - fd)/pdf)));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd), 
+              fabs(TacsRealPart((pdf - fd)/pdf)));
     }
     else {
       fprintf(stderr, "%s[%3d] %15.6e %15.6e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd));
     }
   }
 
@@ -4205,7 +4205,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   setVariables(temp);
 
   evalFunctions(&func, 1, &fd);
-  fd = ImagPart(fd)/dh;
+  fd = TacsImagPart(fd)/dh;
 #else
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
@@ -4228,6 +4228,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   // Evaluate the state variable sensitivity
   evalFunctions(&func, 1, &ftmp);
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
+  temp->zeroEntries();
   addSVSens(alpha, beta, gamma, &func, 1, &temp);
   pdf = temp->dot(pert);
 
@@ -4238,12 +4239,12 @@ void TACSAssembler::testFunction( TACSFunction *func,
             "Approximate", "Rel. Error");
     if (pdf != 0.0){
       fprintf(stderr, "%s[%3d] %15.6e %15.6e %15.4e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd), 
-              fabs(RealPart((pdf - fd)/pdf)));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd), 
+              fabs(TacsRealPart((pdf - fd)/pdf)));
     }
     else {
       fprintf(stderr, "%s[%3d] %15.6e %15.6e\n", 
-              descript, 0, RealPart(pdf), RealPart(fd));
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd));
     }
   }
 

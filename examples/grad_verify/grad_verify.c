@@ -131,7 +131,7 @@ int main( int argc, char * argv[] ){
                              TACSElement::OUTPUT_STRAINS |
                              TACSElement::OUTPUT_STRESSES |
                              TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, SHELL, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   // Set a gravity load
@@ -411,7 +411,7 @@ int main( int argc, char * argv[] ){
     // Compute their derivative based on the complex component
     // of the function value
     for ( int j = 0; j < NUM_FUNCS; j++ ){
-      fd[k + j*num_design_vars] = ImagPart(fvals[j])/dh;
+      fd[k + j*num_design_vars] = TacsImagPart(fvals[j])/dh;
     }
   }
 
@@ -474,9 +474,9 @@ int main( int argc, char * argv[] ){
              "Adjoint", "FD/CS", "Abs. error");
       for ( int k = 0; k < num_grad_comp; k++ ){
         printf("%25.15e %25.15e %25.15e\n", 
-               RealPart(dfdx[k + j*num_design_vars]),
+               TacsRealPart(dfdx[k + j*num_design_vars]),
                fd[k + j*num_design_vars],
-               RealPart(dfdx[k + j*num_design_vars]) -
+               TacsRealPart(dfdx[k + j*num_design_vars]) -
                fd[k + j*num_design_vars]);
       }
     }
