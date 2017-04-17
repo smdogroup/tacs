@@ -642,7 +642,7 @@ int TACSIntegrator::getNewtonTermFlag(){
   as they are the most important outputs that an user would need
 */
 int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
-  int write_now;
+  int write_now = 0;
   if (f5_write_freq > 0) {
     if ( k == 0 || k == num_time_steps-1 ){
       write_now = 1;
@@ -1107,7 +1107,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
 
       // Need a title for total summary as details of Newton iteration
       // will overshadow this one line summary
-      if (print_level = 2){
+      if (print_level == 2){
         fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", 
                 "time", "tnewton", "#iters", "NwtnFlg", "|R|", "|R|/|R0|", "|dq|",
                 "KE", "PE", "E0-E");
@@ -1849,7 +1849,6 @@ void TACSDIRKIntegrator::checkButcherTableau(){
   Return the coefficients for linearizing the Residual using NBG method
 */
 void TACSDIRKIntegrator::getLinearizationCoeffs( double *alpha, double *beta, double *gamma ) {
-  int k   = current_time_step; // Retrieve the current time step
   int i   = current_stage;     // Retrieve the current stage
   int idx = getRowIdx(i);      // Starting entry of Butcher Tableau for this stage
   
@@ -2034,8 +2033,8 @@ void TACSDIRKIntegrator::integrate(){
       
       // Solve the nonlinear system of stage equations starting with
       // the approximated states
-      int flag = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
-                             qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
+      newtonSolve(alpha, beta, gamma, tS[toffset+i], 
+                  qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
     }
     
     // Advance the time
@@ -2128,9 +2127,6 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       //-------------------------------------------------------------//
       // Solve for the adjoint variables 
       //-------------------------------------------------------------//
-
-      // Compute the time
-      double t = time[k-1] + C[i]*h;
 
       // Get the starting index for the corresponding Butcher's tableau row
       int idx = getRowIdx(i);
