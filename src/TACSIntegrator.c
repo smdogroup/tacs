@@ -557,38 +557,72 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
 
   } else {
 
-    /*
-      A little more easily readable formatting
-       . time
-       . DOF number
-       . DOF of element
-       . Element number
-       . q
-       . qdot
-       . qddot
-    */
-    for ( int k = 0; k < num_time_steps; k++ ){       
-      // Copy over the state values from TACSBVec
-      q[k]->getArray(&qvals);
-      qdot[k]->getArray(&qdotvals);
-      qddot[k]->getArray(&qddotvals);
+    if (format > 0) {
 
-      fprintf(fp, "time=%e \n", time[k]);
+      /*
+        A little more easily readable formatting
+        . time
+        . DOF number
+        . DOF of element
+        . Element number
+        . q
+        . qdot
+        . qddot
+      */
+      for ( int k = 0; k < num_time_steps; k++ ){       
+        // Copy over the state values from TACSBVec
+        q[k]->getArray(&qvals);
+        qdot[k]->getArray(&qdotvals);
+        qddot[k]->getArray(&qddotvals);
+
+        fprintf(fp, "time=%e \n", time[k]);
     
-      // Write the time and states to file
-      int elem_ctr = 0;     
-      for ( int j = 0; j < num_state_vars; j++ ){
-        fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
-                j, // global DOF number
-                j % 8, // DOF number of each element
-                (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number
-                RealPart(qvals[j]), // q
-                RealPart(qdotvals[j]), // qdots
-                RealPart(qddotvals[j])); // qddots
+        // Write the time and states to file
+        int elem_ctr = 0;     
+        for ( int j = 0; j < num_state_vars; j++ ){
+          fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
+                  j, // global DOF number
+                  j % 8, // DOF number of each element
+                  (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number (each 7 belongs to a node)
+                  RealPart(qvals[j]), // q
+                  RealPart(qdotvals[j]), // qdots
+                  RealPart(qddotvals[j])); // qddots
+        }
+        fprintf(fp, "\n");
       }
-      fprintf(fp, "\n");
-    }
 
+    } else {
+
+      // Write the DOFS on user specified element number in final ordering
+
+      
+      // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
+      for ( int k = 0; k < num_time_steps; k++ ){    
+        // Copy over the state values from TACSBVec
+        q[k]->getArray(&qvals);
+        qdot[k]->getArray(&qdotvals);
+        qddot[k]->getArray(&qddotvals);
+  
+        // Write the time and states to file
+        fprintf(fp, "%12.5e ", time[k]);  
+        int elem_ctr = 0;
+        for ( int j = 0; j < num_state_vars; j++ ){
+          // Write if we have found the sought element
+          if (elem_ctr == -format ) {
+            fprintf(fp, " %12.5e %12.5e %12.5e ", elem_ctr,
+                    RealPart(qvals[j]), 
+                    RealPart(qdotvals[j]), 
+                    RealPart(qddotvals[j]));
+          }
+          if (j % 8 == 7) {
+            elem_ctr++;
+          }
+        }
+        fprintf(fp, "\n");
+      }
+
+    }
+    
   }
   // Close the output file safely
   fclose(fp);
