@@ -483,7 +483,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     }
 
     // Check for relative reduction in residual magnitude
-    if (RealPart(res_norm) < rtol*RealPart(rtol + init_res_norm)){
+    if (TacsRealPart(res_norm) < rtol*TacsRealPart(rtol + init_res_norm)){
       newton_exit_flag = 3;
       break;
     }
@@ -1119,8 +1119,8 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
               TacsRealPart(res_norm), 
               TacsRealPart(res_norm/(rtol + init_res_norm)),
               TacsRealPart(update_norm),
-		      TacsRealPart(energies[0]), RealPart(energies[1]), 
-		      TacsRealPart((init_energy - (energies[0] + energies[1]))));
+              TacsRealPart(energies[0]), TacsRealPart(energies[1]), 
+              TacsRealPart((init_energy - (energies[0] + energies[1]))));
     }
   }
 }
