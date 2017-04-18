@@ -1124,12 +1124,12 @@ cdef class Creator:
       return
 
    def setBoundaryConditions(self, np.ndarray[int, ndim=1, mode='c'] nodes,
-                             np.ndarray[int, ndim=1, mode='c'] bcvars,
-                             np.ndarray[int, ndim=1, mode='c'] ptr):
+                             np.ndarray[int, ndim=1, mode='c'] ptr,
+                             np.ndarray[int, ndim=1, mode='c'] bcvars):
       '''Set the boundary conditions'''
       cdef int num_bcs = nodes.shape[0]
       self.ptr.setBoundaryConditions(num_bcs, <int*>nodes.data,
-                                     <int*>bcvars.data, <int*>ptr.data)
+                                     <int*>ptr.data, <int*>bcvars.data)
       return
 
    def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
