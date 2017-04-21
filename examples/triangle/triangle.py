@@ -139,11 +139,11 @@ pc = TACS.Pc(mat)
 alpha = 1.0
 beta = 0.0
 gamma = 0.0
-tacs.assembleJacobian(res, mat, alpha, beta, gamma)
+tacs.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
 res.setRand(1.0, 1.0)
-res.applyBCs()
+tacs.applyBCs(res)
 pc.applyFactor(res, ans)
 ans.scale(-1.0)
 
