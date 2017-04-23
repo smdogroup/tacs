@@ -190,7 +190,12 @@ class TACSIntegrator : public TACSObject {
 
   int             num_state_vars;     // Number of state variables
   int             num_design_vars;    // Number of design variables
-  
+
+  int newton_term;        // Termination of nonlinear solver 
+                          // 1: |R| < atol; 2: |dq| < atol
+                          // 3: |R|/|R0| < rtol
+                          // -1: max_newton_iters // -2: Nan
+
   TACSMat        *mat;                // Jacobian matrix
   TACSPc         *pc;                 // Preconditioner
   TACSBVec       *res, *update;       // Residual and Newton update
@@ -244,10 +249,6 @@ class TACSIntegrator : public TACSObject {
   int niter;            // Newton iteration number
   TacsScalar res_norm, init_res_norm; // Norm of the residual
   TacsScalar update_norm; // Norm of the update
-  int newton_term;        // Termination of nonlinear solver 
-                          // 1: |R| < atol; 2: |dq| < atol
-                          // 3: |R|/|R0| < rtol
-                          // -1: max_newton_iters // -2: Nan
 
   // Initial value of delta used in the globalization strategy
   double init_newton_delta; 

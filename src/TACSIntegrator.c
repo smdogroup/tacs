@@ -221,6 +221,8 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   energies[1] = 0.0;
 
   init_energy = 0.0;
+
+  newton_term = 0;
 }
 
 /*
@@ -557,38 +559,72 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
 
   } else {
 
-    /*
-      A little more easily readable formatting
-       . time
-       . DOF number
-       . DOF of element
-       . Element number
-       . q
-       . qdot
-       . qddot
-    */
-    for ( int k = 0; k < num_time_steps; k++ ){       
-      // Copy over the state values from TACSBVec
-      q[k]->getArray(&qvals);
-      qdot[k]->getArray(&qdotvals);
-      qddot[k]->getArray(&qddotvals);
+    if (format > 0) {
 
-      fprintf(fp, "time=%e \n", time[k]);
+      /*
+        A little more easily readable formatting
+        . time
+        . DOF number
+        . DOF of element
+        . Element number
+        . q
+        . qdot
+        . qddot
+      */
+      for ( int k = 0; k < num_time_steps; k++ ){       
+        // Copy over the state values from TACSBVec
+        q[k]->getArray(&qvals);
+        qdot[k]->getArray(&qdotvals);
+        qddot[k]->getArray(&qddotvals);
+
+        fprintf(fp, "time=%e \n", time[k]);
     
-      // Write the time and states to file
-      int elem_ctr = 0;     
-      for ( int j = 0; j < num_state_vars; j++ ){
-        fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
-                j, // global DOF number
-                j % 8, // DOF number of each element
-                (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number
-                TacsRealPart(qvals[j]), // q
-                TacsRealPart(qdotvals[j]), // qdots
-                TacsRealPart(qddotvals[j])); // qddots
+        // Write the time and states to file
+        int elem_ctr = 0;     
+        for ( int j = 0; j < num_state_vars; j++ ){
+          fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
+                  j, // global DOF number
+                  j % 8, // DOF number of each element
+                  (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number (each 7 belongs to a node)
+                  TacsRealPart(qvals[j]), // q
+                  TacsRealPart(qdotvals[j]), // qdots
+                  TacsRealPart(qddotvals[j])); // qddots
+        }
+        fprintf(fp, "\n");
       }
-      fprintf(fp, "\n");
-    }
 
+    } else {
+
+      // Write the DOFS on user specified element number in final ordering
+
+      
+      // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
+      for ( int k = 0; k < num_time_steps; k++ ){    
+        // Copy over the state values from TACSBVec
+        q[k]->getArray(&qvals);
+        qdot[k]->getArray(&qdotvals);
+        qddot[k]->getArray(&qddotvals);
+  
+        // Write the time and states to file
+        fprintf(fp, "%12.5e ", time[k]);  
+        int elem_ctr = 0;
+        for ( int j = 0; j < num_state_vars; j++ ){
+          // Write if we have found the sought element
+          if (elem_ctr == -format ) {
+            fprintf(fp, " %12.5e %12.5e %12.5e ", elem_ctr,
+                    TacsRealPart(qvals[j]), 
+                    TacsRealPart(qdotvals[j]), 
+                    TacsRealPart(qddotvals[j]));
+          }
+          if (j % 8 == 7) {
+            elem_ctr++;
+          }
+        }
+        fprintf(fp, "\n");
+      }
+
+    }
+    
   }
   // Close the output file safely
   fclose(fp);
@@ -1265,6 +1301,8 @@ void TACSIntegrator::setUseLapack( int _use_lapack ) {
   use_lapack = _use_lapack;
   // LAPACK works with natural ordering only
   this->setOrderingType(TACSAssembler::NATURAL_ORDER);
+  // LAPACK needs FEMat
+  this->setUseFEMat(1);
 }
 
 /*
@@ -1872,10 +1910,10 @@ void TACSDIRKIntegrator::approxStates(){
 
   // Initial guess for qddotS
   if (i == 0){
-    qddotS[toffset+i]->copyValues(qddot[k-1]);
+    qddotS[toffset+i]->zeroEntries(); //copyValues(qddot[k-1]);
   }
   else {
-    qddotS[toffset+i]->copyValues(qddotS[toffset+i-1]);
+    qddotS[toffset+i]->zeroEntries(); //copyValues(qddotS[toffset+i-1]);
   }
 
   // Compute qdotS
@@ -2033,8 +2071,8 @@ void TACSDIRKIntegrator::integrate(){
       
       // Solve the nonlinear system of stage equations starting with
       // the approximated states
-      newtonSolve(alpha, beta, gamma, tS[toffset+i], 
-                  qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
+      newton_term = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
+                                    qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
     }
     
     // Advance the time
@@ -2439,7 +2477,7 @@ void TACSABMIntegrator::approxStates(){
   int ridx = getRowIdx(m-1);
  
   // Initial guess for qddot -- copy over previous accelearation states
-  qddot[k]->copyValues(qddot[k-1]);
+  qddot[k]->zeroEntries(); //copyValues(qddot[k-1]);
 
   // Approximate qdot using qdot and qddot:
   // qdot[k] = qdot[k-1] + \sum _{i=0}^{m-1} h A_i qddot[k-i]
@@ -2914,7 +2952,7 @@ void TACSNBGIntegrator::approxStates(){
   int k = current_time_step;
 
   // Initial guess for qddot -- copy over previous accelearation states
-  qddot[k]->copyValues(qddot[k-1]);
+  qddot[k]->zeroEntries(); //copyValues(qddot[k-1]);
 
   // Approximate qdot using qdot and qddot:
   // qdot[k] = qdot[k-1] + (1-GAMMA) h qddot[k-1]) + GAMMA h qddot[k]
