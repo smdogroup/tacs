@@ -60,8 +60,8 @@ class TACSAssembler : public TACSObject {
   // Create the TACSAssembler object in parallel
   // -------------------------------------------
   TACSAssembler( MPI_Comm _tacs_comm, int _varsPerNode,
-                             int _numOwnedNodes, int _numElements, 
-                             int _numDependentNodes=0 );
+                 int _numOwnedNodes, int _numElements, 
+                 int _numDependentNodes=0 );
   ~TACSAssembler();
 
   // Set the connectivity in TACS

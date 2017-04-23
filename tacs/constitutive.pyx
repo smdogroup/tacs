@@ -80,6 +80,11 @@ cdef class isoFSDT(FSDT):
 
 cdef class PlaneStress(Constitutive):
    def __cinit__(self, *args, **kwargs):
+      self.ptr = NULL
+      return
+
+cdef class SimplePlaneStress(PlaneStress):
+   def __cinit__(self, *args, **kwargs):
       '''
       Wraps the PlaneStressStiffness class that is used with 2D elements
       '''
