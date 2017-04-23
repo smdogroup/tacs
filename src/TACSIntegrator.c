@@ -596,7 +596,6 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
     } else {
 
       // Write the DOFS on user specified element number in final ordering
-
       
       // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
       for ( int k = 0; k < num_time_steps; k++ ){    
@@ -611,7 +610,7 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
         for ( int j = 0; j < num_state_vars; j++ ){
           // Write if we have found the sought element
           if (elem_ctr == -format ) {
-            fprintf(fp, " %12.5e %12.5e %12.5e ", elem_ctr,
+            fprintf(fp, " %12.5e %12.5e %12.5e ",
                     TacsRealPart(qvals[j]), 
                     TacsRealPart(qdotvals[j]), 
                     TacsRealPart(qddotvals[j]));
