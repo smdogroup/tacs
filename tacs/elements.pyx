@@ -55,10 +55,19 @@ cdef class RefFrame:
 
 cdef class RigidBodyViz:
    cdef TACSRigidBodyViz *ptr
-   def __cinit__(self, TacsScalar L):
-      self.ptr = new TACSRigidBodyViz(L)
-      self.ptr.incref()
+   def __cinit__(self,
+                 TacsScalar L,
+                 int npts=0, int nelems=0,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] xpts=None,
+                 np.ndarray[int, ndim=1, mode='c'] conn=None):
+      if npts == 0:
+         self.ptr = new TACSRigidBodyViz(L)
+         self.ptr.incref()
+      else:
+         self.ptr = new TACSRigidBodyViz(npts, nelems, <TacsScalar*>xpts.data, <int*>conn.data)
+         self.ptr.incref()
       return
+   
    def __dealloc__(self):
       self.ptr.decref()
       return
