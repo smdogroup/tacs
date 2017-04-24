@@ -150,7 +150,7 @@ cdef extern from "FEMat.h":
        
 cdef extern from "TACSElement.h":
    cdef cppclass TACSElement(TACSObject):
-      pass
+      int numNodes()
 
 cdef extern from "TACSFunction.h":
    cdef cppclass TACSFunction(TACSObject):

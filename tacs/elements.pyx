@@ -33,6 +33,8 @@ cdef class Element:
    def __cinit__(self):
       self.ptr = NULL
       return
+   def numNodes(self):
+      return self.ptr.numNodes()
    
 cdef class GibbsVector:
    cdef TACSGibbsVector *ptr
@@ -110,6 +112,9 @@ cdef class RigidBody(Element):
       self.ptr.decref()
       return
 
+   def numNodes(self):
+      return self.ptr.numNodes()
+
 cdef class SphericalConstraint(Element):
    def __cinit__(self,
                  GibbsVector point,
@@ -126,7 +131,10 @@ cdef class SphericalConstraint(Element):
    def __dealloc__(self):
       self.ptr.decref()
       return
-   
+
+   def numNodes(self):
+      return self.ptr.numNodes()
+
 cdef class RevoluteConstraint(Element):
    def __cinit__(self, GibbsVector point, GibbsVector eA,
                  RigidBody bodyA, RigidBody bodyB=None):
@@ -143,6 +151,12 @@ cdef class RevoluteConstraint(Element):
       self.ptr.decref()
       return
 
+   def numNodes(self):      
+      return self.ptr.numNodes()
+
+   def numNodes(self):
+      return self.ptr.numNodes()
+
 cdef class RigidLink(Element):
    def __cinit__(self, RigidBody bodyA):
       self.ptr = new TACSRigidLink(bodyA.rbptr)
@@ -152,6 +166,9 @@ cdef class RigidLink(Element):
    def __dealloc__(self):
       self.ptr.decref()
       return
+
+   def numNodes(self):
+      return self.ptr.numNodes()
 
 cdef class RevoluteDriver(Element):
    def __cinit__(self, GibbsVector orig, GibbsVector rev, TacsScalar omega):
@@ -163,6 +180,9 @@ cdef class RevoluteDriver(Element):
       self.ptr.decref()
       return
    
+   def numNodes(self):
+      return self.ptr.numNodes()
+
 cdef class PlaneQuad(Element):
    def __cinit__(self, int order, PlaneStress stiff,
                  ElementBehaviorType elem_type=LINEAR,
