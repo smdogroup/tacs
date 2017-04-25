@@ -59,7 +59,7 @@ cdef class RigidBodyViz:
    cdef TACSRigidBodyViz *ptr
    def __cinit__(self,
                  TacsScalar L,
-                 ElementType elem_type,
+                 ElementType elem_type=TACS_RIGID,
                  int npts=0, int nelems=0,
                  np.ndarray[TacsScalar, ndim=1, mode='c'] xpts=None,
                  np.ndarray[int, ndim=1, mode='c'] conn=None):
