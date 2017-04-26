@@ -12,27 +12,16 @@
   A generic constructor for the rigid body where the user can directly
   supply the information about the geometry
 */
-TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[],
-                                    enum ElementType _elem_type ){
+TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[] ){
   // Copy over the inputs
   npts   = _npts;
   nelems = _nelems;
 
-  elem_type = _elem_type;
-
   Xpts = new TacsScalar[npts*3];
   memcpy(Xpts, _Xpt, npts*3*sizeof(TacsScalar));
 
-  if (elem_type == TACS_RIGID){
-    conn = new int[8*nelems];
-    memcpy(conn, _conn, 8*nelems*sizeof(int));
-  } else if (elem_type == TACS_SHELL){
-    conn = new int[9*nelems];
-    memcpy(conn, _conn, 9*nelems*sizeof(int));
-  } else {
-    printf("RigidBodyViz: Unsupported ElementType for rigid body visualization\n");
-  }
-
+  conn = new int[9*nelems];
+  memcpy(conn, _conn, 9*nelems*sizeof(int));  
 }
 
 /*
@@ -61,7 +50,6 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
       }
     }
   }
-  elem_type = TACS_RIGID;
 }
 
 /*
@@ -91,7 +79,6 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
       }
     }
   }
-  elem_type = TACS_RIGID;
 }
 
 /*
@@ -100,13 +87,6 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
 TACSRigidBodyViz::~TACSRigidBodyViz(){
   if (Xpts) { delete [] Xpts; }
   if (conn) { delete [] conn; }
-}
-
-/*
-  Get the element type of the visualization body
-*/
-ElementType TACSRigidBodyViz::getElementType( ){
-  return elem_type;
 }
 
 /*
@@ -1480,21 +1460,11 @@ void TACSRigidBody::testJacobian( double dh,
 */
 void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
   if (!viz){ return; }
-
-  const enum ElementType elem_type = viz->getElementType();
   int np = 0, ne = 0;
   viz->getMesh(&np, &ne, NULL, NULL);
-  
-  // Add up the connectivity counts from the visualization object
-  if (elem_type == TACS_RIGID){
-    *nelems += ne;
-    *nnodes += np;
-    *ncsr += 8*ne;  
-  } else if (elem_type == TACS_SHELL){
-    *nelems += ne;
-    *nnodes += np;
-    *ncsr += 9*ne;  
-  }
+  *nelems += ne;
+  *nnodes += np;
+  *ncsr += 4*ne;  
 }
 
 /*
@@ -1533,7 +1503,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 
   // Set the locations/variables for all the points from the
   // body-fixed reference frame
-  for ( int i = 0; i < npts*nelems; i++ ){
+  for ( int i = 0; i < npts; i++ ){
     int index = 0;
     
     // Compute the initial base-points for each node
@@ -1584,40 +1554,16 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 */
 void TACSRigidBody::getOutputConnectivity( int *out_conn, int node ){
   if (!viz){ return; }
-
   int nelems = 0;
   const int *conn;
   viz->getMesh(NULL, &nelems, NULL, &conn);
-  const enum ElementType elem_type = viz->getElementType();
-  
-  if (elem_type == TACS_RIGID){
-    // Using a 8 noded solid to visualize
-    for ( int i = 0; i < nelems; i++ ){
-      out_conn[0] = node + conn[0];
-      out_conn[1] = node + conn[1];
-      out_conn[2] = node + conn[3];
-      out_conn[3] = node + conn[2];
-      out_conn[4] = node + conn[4];
-      out_conn[5] = node + conn[5];
-      out_conn[6] = node + conn[7];
-      out_conn[7] = node + conn[6];
-      out_conn += 8;
-      conn += 8;
-    }
-  } else if (elem_type == TACS_SHELL){
-    // Using MITC9 element type
-    int p = 0;
-    for ( int e = 0; e < nelems; e++ ){
-      for ( int m = 0; m < 2; m++ ){
-        for ( int n = 0; n < 2; n++ ){
-          out_conn[4*p]   = node + n   + 3*m;
-          out_conn[4*p+1] = node + n+1 + 3*m;
-          out_conn[4*p+2] = node + n+1 + 3*(m+1);
-          out_conn[4*p+3] = node + n   + 3*(m+1);
-          p++;
-        }
-      }
-    }
+  for ( int i = 0; i < nelems; i++ ){
+    out_conn[0] = node + conn[0];
+    out_conn[1] = node + conn[3];
+    out_conn[2] = node + conn[4];
+    out_conn[3] = node + conn[1];
+    out_conn += 4;
+    conn += 4;
   }
 }
 

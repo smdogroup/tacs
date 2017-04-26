@@ -20,21 +20,18 @@
 */
 class TACSRigidBodyViz : public TACSObject {
  public:
-  TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[], 
-                    enum ElementType _elem_type=TACS_RIGID );
+  TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[] );
   TACSRigidBodyViz( TacsScalar L );
   TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
                     TacsScalar cx=0.0, TacsScalar cy=0.0, TacsScalar cz=0.0 );
   ~TACSRigidBodyViz();
   void getMesh( int *_npts, int *_nelems,
                 const TacsScalar **_Xpts, const int **_conn);
-  ElementType getElementType();
 
  private:
   TacsScalar *Xpts;
   int npts, nelems;
   int *conn;
-  enum ElementType elem_type;
 };
 
 /*

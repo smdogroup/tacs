@@ -166,10 +166,9 @@ void TACSToFH5::writeToFile( const char *filename ){
       elem_type == TACS_TIMOSHENKO_BEAM){
     con_size = 2;
   }
-  else if (elem_type == TACS_SOLID || 
-           elem_type == TACS_RIGID){
+  else if (elem_type == TACS_SOLID){
     con_size = 8;
-  }
+  } 
 
   // Write the component numbers to a zone
   int dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;

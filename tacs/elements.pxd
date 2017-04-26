@@ -27,7 +27,7 @@ cdef extern from "RigidBody.h":
 
    cdef cppclass TACSRigidBodyViz(TACSObject):
       TACSRigidBodyViz(TacsScalar L)
-      TACSRigidBodyViz(int, int, TacsScalar*, int*,ElementType)
+      TACSRigidBodyViz(int, int, TacsScalar*, int*)
       
    cdef cppclass TACSRigidBody(TACSElement):
       TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
