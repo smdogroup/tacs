@@ -1281,6 +1281,10 @@ void TACSIntegrator::setPrintLevel( int _print_level,
     // Open a new file for logstream
     if (mpiRank == 0){
       logfp = fopen(logfilename, "w");
+      // Use stdout as output stream if the filename is empty
+      if (!logfp){
+        logfp = stdout;
+      }
     }
   }
 }
