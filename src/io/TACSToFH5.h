@@ -42,7 +42,6 @@ class TACSToFH5 : public TACSObject {
   int num_components; // The number of components in the model
   char **component_names; // The names of each of the components
   char *variable_names; // The names of all the variables
-  int element_not_found; // Indicates whether the element is present
 };
 
 #endif // TACS_TO_FH5
