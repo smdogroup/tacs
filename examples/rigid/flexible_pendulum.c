@@ -281,7 +281,7 @@ int main( int argc, char *argv[] ){
   obj->setUseLapack(0);
   obj->setUseLineSearch(0);
 
-  //obj->configureOutput(f5, 10, "output/flex_pendulum_%04d.f5");
+  obj->setOutputFrequency(1);
 
   // Set functions of interest
   obj->setFunction(func, num_funcs);

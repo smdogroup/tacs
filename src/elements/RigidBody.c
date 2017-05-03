@@ -1462,9 +1462,17 @@ void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
   if (!viz){ return; }
   int np = 0, ne = 0;
   viz->getMesh(&np, &ne, NULL, NULL);
-  *nelems += ne;
-  *nnodes += np;
-  *ncsr += 4*ne;  
+  if (np == 8){
+    // Use block
+    *nelems += ne;
+    *nnodes += np;
+    *ncsr += 8*ne;
+  } else {
+    // Use shell
+    *nelems += ne;
+    *nnodes += np;
+    *ncsr += 4*ne;  
+  }
 }
 
 /*
@@ -1554,20 +1562,35 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 */
 void TACSRigidBody::getOutputConnectivity( int *out_conn, int node ){
   if (!viz){ return; }
-
   int nelems = 0;
+  int npts = 0;
   const int *conn;
-  viz->getMesh(NULL, &nelems, NULL, &conn);
-
-  for ( int i = 0; i < nelems; i++ ){
-    out_conn[0] = node + conn[0];
-    out_conn[1] = node + conn[6];
-    out_conn[2] = node + conn[8];
-    out_conn[3] = node + conn[2];
-    out_conn += 4;
-    conn +=9; 
+  viz->getMesh(&npts, &nelems, NULL, &conn);
+  if (npts==8){
+    // Use block
+    for ( int i = 0; i < nelems; i++ ){
+      out_conn[0] = node + conn[0];
+      out_conn[1] = node + conn[1];
+      out_conn[2] = node + conn[3];
+      out_conn[3] = node + conn[2];
+      out_conn[4] = node + conn[4];
+      out_conn[5] = node + conn[5];
+      out_conn[6] = node + conn[7];
+      out_conn[7] = node + conn[6];
+      out_conn += 8;
+      conn += 8;
+    }
+  } else {
+    // Use block
+    for ( int i = 0; i < nelems; i++ ){
+      out_conn[0] = node + conn[0];
+      out_conn[1] = node + conn[6];
+      out_conn[2] = node + conn[8];
+      out_conn[3] = node + conn[2];
+      out_conn += 4;
+      conn +=9; 
+    }
   }
-
 }
 
 /*

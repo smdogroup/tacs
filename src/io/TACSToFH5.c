@@ -27,6 +27,7 @@
 TACSToFH5::TACSToFH5( TACSAssembler *_tacs,
                       enum ElementType _elem_type,
                       unsigned int _write_flag ){
+
   tacs = _tacs;
   tacs->incref();
   elem_type = _elem_type;
@@ -132,6 +133,11 @@ void TACSToFH5::setComponentName( int comp_num, const char *group_name ){
   filename:  the name of the file to create
 */
 void TACSToFH5::writeToFile( const char *filename ){
+  // Do not write if the current element match does not exist
+  if(element_not_found){
+    return;
+  }
+
   int rank, size;
   MPI_Comm_rank(tacs->getMPIComm(), &rank);
   MPI_Comm_size(tacs->getMPIComm(), &size);
@@ -233,6 +239,7 @@ char *TACSToFH5::getElementVarNames(){
     MPI_Comm_rank(tacs->getMPIComm(), &rank);
     fprintf(stderr, "[%d] TACSToFH5: Could not find an element match\n",
             rank);
+    element_not_found = 1;
     return elem_vars;
   }
 

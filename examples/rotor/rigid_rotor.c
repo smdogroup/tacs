@@ -438,7 +438,7 @@ int main( int argc, char *argv[] ){
   bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(1);
-  bdf->configureOutput(f5, 10, "output/rotor_%04d.f5");
+  bdf->setOutputFrequency(10);
 
   // Integrate and write solution to file
   bdf->integrate();

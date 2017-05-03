@@ -1441,9 +1441,8 @@ cdef class Integrator:
       self.ptr.setInitNewtonDeltaFraction(frac)
       return
   
-   def configureF5Output(self, ToFH5 f5, int write_freq=0,
-                       char *file_format='solution_%4d.f5'):
-      self.ptr.configureOutput(f5.ptr, write_freq, &file_format[0])
+   def setOutputFrequency(self, int write_freq=0):
+      self.ptr.setOutputFrequency(write_freq)
       return
 
    def configureAdaptiveMarch(self, int factor, int num_retry):

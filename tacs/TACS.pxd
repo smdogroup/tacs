@@ -390,8 +390,7 @@ cdef extern from "TACSIntegrator.h":
       void setInitNewtonDeltaFraction(double)
       
       # Configure writing F5 files
-      void configureOutput(TACSToFH5 *viewer, int write_freq,
-                           const_char *f5_file_fmt)
+      void setOutputFrequency(int write_freq)
       void configureAdaptiveMarch( int factor, int num_retry )
 
       # Configure writing ASCII output data

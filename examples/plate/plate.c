@@ -360,7 +360,7 @@ int main( int argc, char **argv ){
   //  obj->setAbsTol(1.0e-14);
   //  obj->setRelTol(1.0e-11);
   obj->setPrintLevel(print_level);
-  obj->configureOutput(f5, write_solution, "output/plate_%04d.f5");
+  obj->setOutputFrequency(write_solution);
   
   // Set functions of interest for adjoint solve
   obj->setFunction(func, num_funcs);

@@ -1,8 +1,6 @@
-
 #include "TACSIntegrator.h"
 #include <math.h>
 #include "tacslapack.h"
-
 /* 
    Static factory method that returns an instance of the concrete
    child class. Note that the base class is abstract (contains
@@ -213,13 +211,25 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Tecplot solution export (use configureOutput(...) to set these
   f5_write_freq = 0;
-  f5_file_fmt = NULL;
-  f5 = NULL;
+
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int rigid_write_flag = (TACSElement::OUTPUT_NODES |  
+                                   TACSElement::OUTPUT_DISPLACEMENTS);
+  rigidf5 = new TACSToFH5(tacs, TACS_RIGID, rigid_write_flag);
+  rigidf5->incref();
+  
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int shell_write_flag = (TACSElement::OUTPUT_NODES |
+                                   TACSElement::OUTPUT_DISPLACEMENTS |
+                                   TACSElement::OUTPUT_STRAINS |
+                                   TACSElement::OUTPUT_STRESSES |
+                                   TACSElement::OUTPUT_EXTRAS);
+  shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
+  shellf5->incref();
 
   // Set kinetic and potential energies
   energies[0] = 0.0;
   energies[1] = 0.0;
-
   init_energy = 0.0;
 
   newton_term = 0;
@@ -253,11 +263,12 @@ TACSIntegrator::~TACSIntegrator(){
   if (q)        { delete [] q; }
   if (qdot)     { delete [] qdot; }
   if (qddot)    { delete [] qddot; }
-  if (f5_file_fmt){ delete [] f5_file_fmt; }
-  if (f5){ f5->decref(); }
 
   // Dereference TACS
   tacs->decref();
+
+  rigidf5->incref();
+  shellf5->incref();
 }
 
 /*
@@ -694,25 +705,31 @@ int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
   set appropriately before calling this function.
 */
 void TACSIntegrator::writeStepToF5( int k ){
-  //  if (mpiRank != 0) { 
-  if(f5 && f5_file_fmt && getWriteFlag(k, f5_write_freq)){
+  if(getWriteFlag(k, f5_write_freq)){
     // Create a buffer for filename 
-    char buffer[256];
+    char rbuffer[256];
 
     // Format the buffer based on the time step
-    getString(buffer, f5_file_fmt, k);
+    getString(rbuffer, "results/rigid_%06d.f5", k);
     
     // Write the f5 file for this time step
-    f5->writeToFile(buffer);
+    rigidf5->writeToFile(rbuffer);
+
+    // Create a buffer for shell filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/shell_%06d.f5", k);
+    
+    // Write the f5 file for this time step
+    shellf5->writeToFile(sbuffer);
   }
 }
 
 /*
   Creates an f5 file for each time step and writes the data.
 */
-void TACSIntegrator::writeSolutionToF5( TACSToFH5 *_f5, 
-                                        int _f5_write_freq, 
-                                        const char *_f5_file_fmt ){
+void TACSIntegrator::writeSolutionToF5( int _f5_write_freq ){
   /* Determine parallelism
      int is, ie, idec;
      idec = num_time_steps/mpiSize;
@@ -723,31 +740,26 @@ void TACSIntegrator::writeSolutionToF5( TACSToFH5 *_f5,
   // Loop through all timesteps
   for ( int k = 0; k < num_time_steps; k++ ){
     // Determine if we should write output at this k
-    if(_f5 && _f5_file_fmt && getWriteFlag(k, _f5_write_freq)) {
+    if(getWriteFlag(k, _f5_write_freq)) {
       // Set the current states into TACS
       setTACSStates(time[k], q[k], qdot[k], qddot[k]);
       
-      // Create a filename and format based on the timestep
       char fname[128];
-      getString(fname, _f5_file_fmt, k);
+      getString(fname, "results/rigid_%06d.f5", k);
+      rigidf5->writeToFile(fname);
 
-      // Write the solution
-      _f5->writeToFile(fname);
+      char fname2[128];
+      getString(fname2, "results/shell_%06d.f5", k);
+      shellf5->writeToFile(fname2);
     }
   }
 }
 
 /*
   Configure the F5 output 
- */
-void TACSIntegrator::configureOutput( TACSToFH5 *_viewer, 
-                                      int _write_freq, 
-                                      const char *_f5_file_fmt ){
-  f5 = _viewer;
-  f5->incref();
+*/
+void TACSIntegrator::setOutputFrequency( int _write_freq ){
   f5_write_freq = _write_freq;
-  f5_file_fmt = new char[ strlen(_f5_file_fmt)+1 ];
-  strcpy(f5_file_fmt, _f5_file_fmt);
 }
 
 /*

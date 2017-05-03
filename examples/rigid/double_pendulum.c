@@ -146,7 +146,7 @@ int main( int argc, char *argv[] ){
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
   bdf->setOrderingType(TACSAssembler::NATURAL_ORDER);
-  bdf->configureOutput(f5, 1, "double-pendulum-output/pendulum_%04d.f5");
+  bdf->setOutputFrequency(1);
 
   // Integrate and write solution to file
   bdf->integrate();
