@@ -16,7 +16,7 @@ cdef extern from "TACSElement.h":
       LINEAR
       NONLINEAR
       LARGE_ROTATION
-      
+   
 cdef extern from "TACSGibbsVector.h":
    cdef cppclass TACSGibbsVector(TACSObject):
       TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)

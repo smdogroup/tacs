@@ -33,6 +33,9 @@ cdef class Element:
    def __cinit__(self):
       self.ptr = NULL
       return
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
    def numNodes(self):
       return self.ptr.numNodes()
    
@@ -70,8 +73,7 @@ cdef class RigidBodyViz:
                                          <TacsScalar*>xpts.data,
                                          <int*>conn.data)
          self.ptr.incref()
-      return
-   
+      return   
    def __dealloc__(self):
       self.ptr.decref()
       return
@@ -106,16 +108,16 @@ cdef class RigidBody(Element):
       self.ptr = self.rbptr 
       self.ptr.incref()
       return
-
    def setVisualization(self, RigidBodyViz viz):
       self.rbptr.setVisualization(viz.ptr)
-
    def __dealloc__(self):
       self.ptr.decref()
       return
-
    def numNodes(self):
       return self.ptr.numNodes()
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
 
 cdef class SphericalConstraint(Element):
    def __cinit__(self,
@@ -128,14 +130,15 @@ cdef class SphericalConstraint(Element):
          self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
                                                 point.ptr)
       self.ptr.incref()
-      return
-   
+      return   
    def __dealloc__(self):
       self.ptr.decref()
       return
-
    def numNodes(self):
       return self.ptr.numNodes()
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
 
 cdef class RevoluteConstraint(Element):
    def __cinit__(self, GibbsVector point, GibbsVector eA,
@@ -148,42 +151,42 @@ cdef class RevoluteConstraint(Element):
                                                point.ptr, eA.ptr)
       self.ptr.incref()
       return
-   
    def __dealloc__(self):
       self.ptr.decref()
-      return
-
-   def numNodes(self):      
-      return self.ptr.numNodes()
-
+      return   
    def numNodes(self):
       return self.ptr.numNodes()
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
 
 cdef class RigidLink(Element):
    def __cinit__(self, RigidBody bodyA):
       self.ptr = new TACSRigidLink(bodyA.rbptr)
       self.ptr.incref()
       return
-
    def __dealloc__(self):
       self.ptr.decref()
       return
-
    def numNodes(self):
       return self.ptr.numNodes()
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
 
 cdef class RevoluteDriver(Element):
    def __cinit__(self, GibbsVector orig, GibbsVector rev, TacsScalar omega):
       self.ptr = new TACSRevoluteDriver(orig.ptr, rev.ptr, omega)
       self.ptr.incref()
       return
-
    def __dealloc__(self):
       self.ptr.decref()
-      return
-   
+      return   
    def numNodes(self):
       return self.ptr.numNodes()
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
 
 cdef class PlaneQuad(Element):
    def __cinit__(self, int order, PlaneStress stiff,
@@ -203,7 +206,6 @@ cdef class PlaneQuad(Element):
          self.ptr = new PlaneStressQuad4(con, elem_type, component_num)
          self.ptr.incref()
       return
-
    def __dealloc__(self):
       self.ptr.decref()
       return
