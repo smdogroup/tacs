@@ -962,13 +962,15 @@ void TACSCreator::partitionMesh( int split_size,
         METIS_PartGraphRecursive(&num_elements, &ncon, 
                                  elem_ptr, elem_conn,
                                  NULL, NULL, NULL, &split_size, 
-                                 NULL, NULL, options, &objval, partition);
+                                 NULL, NULL, options, &objval, 
+                                 partition);
       }
       else {
         METIS_PartGraphKway(&num_elements, &ncon, 
                             elem_ptr, elem_conn,
                             NULL, NULL, NULL, &split_size, 
-                            NULL, NULL, options, &objval, partition);
+                            NULL, NULL, options, &objval, 
+                            partition);
       }
     }
     else {

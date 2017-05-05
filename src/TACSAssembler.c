@@ -32,8 +32,10 @@
   numDependentNodes:   the number of dependent nodes in the mesh
 */
 TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
-                              int _varsPerNode, int _numOwnedNodes, 
-                              int _numElements, int _numDependentNodes ){
+                              int _varsPerNode, 
+                              int _numOwnedNodes, 
+                              int _numElements, 
+                              int _numDependentNodes ){
   TacsInitialize();
   
   // Copy the communicator for MPI communication
@@ -312,7 +314,8 @@ TACSElement **TACSAssembler::getElements(){
 /*
   Get the element object and the corresponding element variables
 */
-TACSElement *TACSAssembler::getElement( int elem, TacsScalar *Xpts, 
+TACSElement *TACSAssembler::getElement( int elem, 
+                                        TacsScalar *Xpts, 
                                         TacsScalar *vars, 
                                         TacsScalar *dvars, 
                                         TacsScalar *ddvars ){
@@ -1349,20 +1352,20 @@ int TACSAssembler::getGlobalNodeNum( int node ){
 }
 
 /*!
-  The following function creates a data structure that links nodes to
-  elements - this reverses the existing data structure that links
-  elements to nodes but keeps the original in tact.
+  The following function creates a data structure that links nodes
+  to elements - this reverses the existing data structure that 
+  links elements to nodes but keeps the original in tact.
 
   The algorithm proceeds as follows:
 
-  1. The size of the arrays are determined by finding how many nodes
-  point to each element
+  1. The size of the arrays are determined by finding how many 
+  nodes point to each element
 
-  2. The index into the nodeElem array is determined by adding up the
-  contributions from all previous entries.
+  2. The index into the nodeElem array is determined by adding up 
+  the contributions from all previous entries.
 
-  3. The original data structure is again traversed and this time an
-  element number is associated with each element.
+  3. The original data structure is again traversed and this time 
+  an element number is associated with each element.
 */
 void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
                                              int **_nodeToElements ){

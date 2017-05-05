@@ -18,9 +18,11 @@ void BVecInterpMultAddGen( int bsize, int nrows,
 			   const TacsScalar *weights,
 			   const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAddGen( int bsize, int nrows, 
-				    const int *rowp, const int *cols,
+				    const int *rowp, 
+                                    const int *cols,
 				    const TacsScalar *weights,
-				    const TacsScalar *x, TacsScalar *y );
+				    const TacsScalar *x, 
+                                    TacsScalar *y );
 
 void BVecInterpMultAdd1( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -29,7 +31,8 @@ void BVecInterpMultAdd1( int bsize, int nrows,
 void BVecInterpMultTransposeAdd1( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd2( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -38,7 +41,8 @@ void BVecInterpMultAdd2( int bsize, int nrows,
 void BVecInterpMultTransposeAdd2( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd3( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -47,7 +51,8 @@ void BVecInterpMultAdd3( int bsize, int nrows,
 void BVecInterpMultTransposeAdd3( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd5( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -56,7 +61,8 @@ void BVecInterpMultAdd5( int bsize, int nrows,
 void BVecInterpMultTransposeAdd5( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd6( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -65,7 +71,8 @@ void BVecInterpMultAdd6( int bsize, int nrows,
 void BVecInterpMultTransposeAdd6( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 /*
   This object represents a matrix that interpolates between

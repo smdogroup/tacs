@@ -135,10 +135,12 @@ class TACSBVecDistribute : public TACSObject {
   // Block-specific implementation pointers
   // --------------------------------------
   void initImpl( int bsize );
-  void (*bgetvars)( int bsize, int nvars, const int *vars, int lower,
+  void (*bgetvars)( int bsize, int nvars, const int *vars, 
+                    int lower,
 		    TacsScalar *x, TacsScalar *y, 
 		    TACSBVecOperation op );
-  void (*bsetvars)( int bsize, int nvars, const int *vars, int lower,
+  void (*bsetvars)( int bsize, int nvars, const int *vars, 
+                    int lower,
 		    TacsScalar *x, TacsScalar *y, 
 		    TACSBVecOperation op );
 

@@ -884,7 +884,8 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
   
   y[var[i]] op x[i]
 */
-void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
+void VecDistSetVars( int bsize, int nvars, const int *vars, 
+                     int lower,
 		     TacsScalar *x, TacsScalar *y, 
 		     TACSBVecOperation op ){
   if (op == TACS_INSERT_VALUES){
@@ -921,7 +922,8 @@ void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 1
 // ---------------
-void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
+void VecDistGetVars1( int bsize, int nvars, const int *vars, 
+                      int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
   if (op == TACS_INSERT_VALUES){

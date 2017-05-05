@@ -318,6 +318,7 @@ void TACSBVec::copyValues( TACSVec *tvec ){
   TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
+      printf("size: %d %d\n",vec->size, size);
       fprintf(stderr, 
               "TACSBVec::copyValues error, sizes must be the same\n");
       return;
@@ -622,7 +623,8 @@ int TACSBVec::readFromFile( const char *filename ){
   Add values to the local entries of the array
 */
 void TACSBVec::setValues( int n, const int *index, 
-                          const TacsScalar *vals, TACSBVecOperation op ){
+                          const TacsScalar *vals, 
+                          TACSBVecOperation op ){
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -863,7 +865,8 @@ void TACSBVec::endDistributeValues(){
 /*
   Get the values from the vector 
 */
-int TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
+int TACSBVec::getValues( int n, const int *index, 
+                         TacsScalar *vals ){
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);

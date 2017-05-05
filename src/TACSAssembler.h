@@ -225,7 +225,8 @@ class TACSAssembler : public TACSObject {
   // --------------------------------
   TACSElement **getElements();
   TACSElement *getElement( int elem, TacsScalar *Xpts=NULL, 
-                           TacsScalar *vars=NULL, TacsScalar *dvars=NULL, 
+                           TacsScalar *vars=NULL, 
+                           TacsScalar *dvars=NULL, 
                            TacsScalar *ddvars=NULL );
   TACSElement *getElement( int elem, const int **nodes, int *len );
 
@@ -253,6 +254,9 @@ class TACSAssembler : public TACSObject {
   void getOutputData( ElementType elem_type,
                       unsigned int out_type,
                       double *data, int nvals );
+  // Functions for ordering the variables
+  // ------------------------------------
+  void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex );
 
  private:
   // Get pointers to the start-locations within the data array
@@ -275,9 +279,9 @@ class TACSAssembler : public TACSObject {
                             int **_recvNodes=NULL );
   int computeCouplingElements( int **_celems );
 
-  // Functions for ordering the variables
-  // ------------------------------------
-  void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex );
+  /* // Functions for ordering the variables */
+  /* // ------------------------------------ */
+  /* void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex ); */
   void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, 
                                   int nrnodes, const int *rnodes,
                                   int nodiag );
