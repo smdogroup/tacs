@@ -37,9 +37,9 @@ cdef extern from "KSM.h":
 
 cdef extern from "BVecDist.h":
     enum TACSBVecOperation:
-       INSERT_VALUES
-       ADD_VALUES
-       INSERT_NONZERO_VALUES
+       TACS_INSERT_VALUES
+       TACS_ADD_VALUES
+       TACS_INSERT_NONZERO_VALUES
 
 # Special functions required for converting pointers
 cdef extern from "":

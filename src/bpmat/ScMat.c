@@ -301,13 +301,13 @@ void ScMat::mult( TACSVec *txvec, TACSVec *tyvec ){
                &ylocal[local_offset], &ylocal[local_offset]);
     
     // Start sending the values back to y
-    c_map->beginReverse(c_ctx, &ylocal[local_offset], y, ADD_VALUES);
+    c_map->beginReverse(c_ctx, &ylocal[local_offset], y, TACS_ADD_VALUES);
     E->multAdd(&xlocal[local_offset], ylocal, ylocal);
 
     // Finish transmitting the values back to y
-    b_map->beginReverse(b_ctx, ylocal, y, INSERT_VALUES);
-    c_map->endReverse(c_ctx, &ylocal[local_offset], y, ADD_VALUES);
-    b_map->endReverse(b_ctx, ylocal, y, INSERT_VALUES);
+    b_map->beginReverse(b_ctx, ylocal, y, TACS_INSERT_VALUES);
+    c_map->endReverse(c_ctx, &ylocal[local_offset], y, TACS_ADD_VALUES);
+    b_map->endReverse(b_ctx, ylocal, y, TACS_INSERT_VALUES);
   }
   else {
     fprintf(stderr, "ScMat type error: Input/output must be TACSBVec\n");
@@ -630,8 +630,8 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
     c_map->beginForward(c_ctx, in, yinterface);
     c_map->endForward(c_ctx, in, yinterface);
     Sc->mult(yinterface, temp);    
-    c_map->beginReverse(c_ctx, temp, out, ADD_VALUES);
-    c_map->endReverse(c_ctx, temp, out, ADD_VALUES);
+    c_map->beginReverse(c_ctx, temp, out, TACS_ADD_VALUES);
+    c_map->endReverse(c_ctx, temp, out, TACS_ADD_VALUES);
     
     delete [] temp;
     
@@ -639,9 +639,9 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
     TacsScalar *y;
     int y_size =  yschur->getArray(&y);
     schur_dist->beginReverse(schur_ctx, yinterface, 
-                             y, INSERT_VALUES);
+                             y, TACS_INSERT_VALUES);
     schur_dist->endReverse(schur_ctx, yinterface, 
-                           y, INSERT_VALUES);
+                           y, TACS_INSERT_VALUES);
     
     TacsScalar *g;
     yschur->getArray(&y);
@@ -891,11 +891,11 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     yschur->zeroEntries();
     TacsScalar *y;
     yschur->getArray(&y);
-    schur_dist->beginReverse(schur_ctx, yinterface, y, ADD_VALUES);
+    schur_dist->beginReverse(schur_ctx, yinterface, y, TACS_ADD_VALUES);
 
     // Finish accepting g from the global input vector
     tacs_schur_dist->endForward(tacs_schur_ctx, in, g);
-    schur_dist->endReverse(schur_ctx, yinterface, y, ADD_VALUES);
+    schur_dist->endReverse(schur_ctx, yinterface, y, TACS_ADD_VALUES);
     
     // Compute the right hand side: g - F U^{-1} L^{-1} f
     gschur->axpy(-1.0, yschur);
@@ -921,7 +921,7 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     
     // Pass yschur also to the global variables
     tacs_schur_dist->beginReverse(tacs_schur_ctx, y, out, 
-                                  INSERT_VALUES);
+                                  TACS_INSERT_VALUES);
     
     // Compute yinterface = yinterface - L^{-1} E y
     // Note: scale y, by -1 first 
@@ -937,10 +937,10 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     // Compute xlocal = U^{-1} xlocal
     Bpc->applyUpper(xlocal, xlocal);
 
-    b_map->beginReverse(b_ctx, xlocal, out, INSERT_VALUES);
+    b_map->beginReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
     tacs_schur_dist->endReverse(tacs_schur_ctx, y, out, 
-                                INSERT_VALUES);
-    b_map->endReverse(b_ctx, xlocal, out, INSERT_VALUES);
+                                TACS_INSERT_VALUES);
+    b_map->endReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
     
     if (monitor_back_solve){
       local_time += MPI_Wtime();

@@ -621,7 +621,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
 
   // Copy the global values to their requesters
   bgetvars(bsize, req_ptr[n_req_proc], req_vars, lower,
-           global, reqvals, INSERT_VALUES);
+           global, reqvals, TACS_INSERT_VALUES);
 
   for ( int i = 0; i < n_req_proc; i++ ){
     // Initiate the sends and receives
@@ -635,7 +635,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
   if (sorted_flag){
     // Copy over the local values
     bgetvars(bsize, ext_self_count, &ext_vars[ext_self_ptr], lower,
-             global, &local[bsize*ext_self_ptr], INSERT_VALUES);
+             global, &local[bsize*ext_self_ptr], TACS_INSERT_VALUES);
 
     // If the receiving array is sorted, it can be placed directly
     // into local array
@@ -651,7 +651,7 @@ void TACSBVecDistribute::beginForward( TACSBVecDistCtx *ctx,
   else {
     // Copy the local values first
     bgetvars(bsize, ext_self_count, &ext_vars[ext_self_ptr], lower,
-             global, &ext_sorted_vals[bsize*ext_self_ptr], INSERT_VALUES);
+             global, &ext_sorted_vals[bsize*ext_self_ptr], TACS_INSERT_VALUES);
 
     // If the receiving array is not sorted, the data must 
     // first be placed in a receiving array
@@ -688,7 +688,7 @@ void TACSBVecDistribute::endForward( TACSBVecDistCtx *ctx,
 
     // Copy over the values from the sorted to the unsorted array
     bgetvars(ctx->bsize, nvars_unsorted, ext_unsorted_index, 0,
-             ctx->ext_sorted_vals, local, INSERT_VALUES);
+             ctx->ext_sorted_vals, local, TACS_INSERT_VALUES);
   }
 }
 
@@ -847,7 +847,7 @@ void TACSBVecDistribute::initImpl( int bsize ){
 void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
 		     TacsScalar *x, TacsScalar *y, 
 		     TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
@@ -856,7 +856,7 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
       y += bsize;
     }
   }
-  else if (op == ADD_VALUES){ // Add
+  else if (op == TACS_ADD_VALUES){ // Add
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
@@ -887,7 +887,7 @@ void VecDistGetVars( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
 		     TacsScalar *x, TacsScalar *y, 
 		     TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
@@ -896,7 +896,7 @@ void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
       x += bsize;
     }
   }
-  else if (op == ADD_VALUES){ // Add
+  else if (op == TACS_ADD_VALUES){ // Add
     for ( int i = 0; i < nvars; i++ ){
       int v = bsize*vars[i] - lower;
       for ( int k = 0; k < bsize; k++ ){
@@ -924,14 +924,14 @@ void VecDistSetVars( int bsize, int nvars, const int *vars, int lower,
 void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       *y = x[v];
       y++;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       *y += x[v];                
@@ -950,14 +950,14 @@ void VecDistGetVars1( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       y[v] = *x;
       x++;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = vars[i] - lower;
       y[v] += *x;
@@ -979,7 +979,7 @@ void VecDistSetVars1( int bsize, int nvars, const int *vars, int lower,
 void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[0] = x[v];
@@ -987,7 +987,7 @@ void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
       y += 2;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[0] += x[v];      
@@ -1008,7 +1008,7 @@ void VecDistGetVars2( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[v  ] = x[0];
@@ -1016,7 +1016,7 @@ void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
       x += 2;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 2*vars[i] - lower;
       y[v  ] += x[0];
@@ -1040,7 +1040,7 @@ void VecDistSetVars2( int bsize, int nvars, const int *vars, int lower,
 void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[0] = x[v];
@@ -1049,7 +1049,7 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
       y += 3;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[0] += x[v];      
@@ -1072,7 +1072,7 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[v  ] = x[0];
@@ -1081,7 +1081,7 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
       x += 3;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 3*vars[i] - lower;
       y[v  ] += x[0];
@@ -1107,7 +1107,7 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
 void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[0] = x[v];
@@ -1118,7 +1118,7 @@ void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
       y += 5;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[0] += x[v];      
@@ -1145,7 +1145,7 @@ void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[v  ] = x[0];
@@ -1156,7 +1156,7 @@ void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
       x += 5;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 5*vars[i] - lower;
       y[v  ] += x[0];
@@ -1186,7 +1186,7 @@ void VecDistSetVars5( int bsize, int nvars, const int *vars, int lower,
 void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[0] = x[v];
@@ -1198,7 +1198,7 @@ void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
       y += 6;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[0] += x[v];      
@@ -1227,7 +1227,7 @@ void VecDistGetVars6( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
 		      TACSBVecOperation op ){
-  if (op == INSERT_VALUES){
+  if (op == TACS_INSERT_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[v  ] = x[0];
@@ -1239,7 +1239,7 @@ void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
       x += 6;
     }
   }
-  else if (op == ADD_VALUES){
+  else if (op == TACS_ADD_VALUES){
     for ( int i = 0; i < nvars; i++ ){
       int v = 6*vars[i] - lower;
       y[v  ] += x[0];
