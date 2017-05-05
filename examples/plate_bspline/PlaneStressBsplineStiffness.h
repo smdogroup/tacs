@@ -55,6 +55,9 @@ class PlaneStressBsplineStiffness : public PlaneStressStiffness {
                          const TacsScalar strain[],
                          TacsScalar alpha,
                          TacsScalar dvSens[], int dvLen );
+  void failureStrainSens(const double pt[],
+                         const TacsScalar strain[],
+                         TacsScalar sens[]);
   TacsScalar getDVOutputValue( int dv_index,
                                const double pt[] );
   // Extra info about the constitutive class
