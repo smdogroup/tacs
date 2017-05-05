@@ -32,8 +32,10 @@
   numDependentNodes:   the number of dependent nodes in the mesh
 */
 TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
-                              int _varsPerNode, int _numOwnedNodes, 
-                              int _numElements, int _numDependentNodes ){
+                              int _varsPerNode, 
+                              int _numOwnedNodes, 
+                              int _numElements, 
+                              int _numDependentNodes ){
   TacsInitialize();
   
   // Copy the communicator for MPI communication
@@ -312,7 +314,8 @@ TACSElement **TACSAssembler::getElements(){
 /*
   Get the element object and the corresponding element variables
 */
-TACSElement *TACSAssembler::getElement( int elem, TacsScalar *Xpts, 
+TACSElement *TACSAssembler::getElement( int elem, 
+                                        TacsScalar *Xpts, 
                                         TacsScalar *vars, 
                                         TacsScalar *dvars, 
                                         TacsScalar *ddvars ){
@@ -1349,20 +1352,20 @@ int TACSAssembler::getGlobalNodeNum( int node ){
 }
 
 /*!
-  The following function creates a data structure that links nodes to
-  elements - this reverses the existing data structure that links
-  elements to nodes but keeps the original in tact.
+  The following function creates a data structure that links nodes
+  to elements - this reverses the existing data structure that 
+  links elements to nodes but keeps the original in tact.
 
   The algorithm proceeds as follows:
 
-  1. The size of the arrays are determined by finding how many nodes
-  point to each element
+  1. The size of the arrays are determined by finding how many 
+  nodes point to each element
 
-  2. The index into the nodeElem array is determined by adding up the
-  contributions from all previous entries.
+  2. The index into the nodeElem array is determined by adding up 
+  the contributions from all previous entries.
 
-  3. The original data structure is again traversed and this time an
-  element number is associated with each element.
+  3. The original data structure is again traversed and this time 
+  an element number is associated with each element.
 */
 void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
                                              int **_nodeToElements ){
@@ -2753,17 +2756,17 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
                                    elemXpts);
 
     // Set the values into the vectors
-    if (vars){ vars->setValues(len, nodes, elemVars, INSERT_NONZERO_VALUES); }
-    if (dvars){ dvars->setValues(len, nodes, elemDVars, INSERT_NONZERO_VALUES); }
-    if (ddvars){ ddvars->setValues(len, nodes, elemDDVars, INSERT_NONZERO_VALUES); }
+    if (vars){ vars->setValues(len, nodes, elemVars, TACS_INSERT_NONZERO_VALUES); }
+    if (dvars){ dvars->setValues(len, nodes, elemDVars, TACS_INSERT_NONZERO_VALUES); }
+    if (ddvars){ ddvars->setValues(len, nodes, elemDDVars, TACS_INSERT_NONZERO_VALUES); }
   }
 
-  if (vars){ vars->beginSetValues(INSERT_NONZERO_VALUES); }
-  if (dvars){ dvars->beginSetValues(INSERT_NONZERO_VALUES); }
-  if (ddvars){ ddvars->beginSetValues(INSERT_NONZERO_VALUES); }
-  if (vars){ vars->endSetValues(INSERT_NONZERO_VALUES); }
-  if (dvars){ dvars->endSetValues(INSERT_NONZERO_VALUES); }
-  if (ddvars){ ddvars->beginSetValues(INSERT_NONZERO_VALUES); }
+  if (vars){ vars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (dvars){ dvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (ddvars){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (vars){ vars->endSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (dvars){ dvars->endSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (ddvars){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
 }
 
 /*
@@ -2964,13 +2967,13 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
       }
 
       // Add the residual values
-      residual->setValues(len, nodes, elemRes, ADD_VALUES);
+      residual->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
     }
   }
 
   // Finish transmitting the residual
-  residual->beginSetValues(ADD_VALUES);
-  residual->endSetValues(ADD_VALUES);
+  residual->beginSetValues(TACS_ADD_VALUES);
+  residual->endSetValues(TACS_ADD_VALUES);
 
   // Apply the boundary conditions for the residual
   residual->applyBCs(bcMap, varsVec);
@@ -3095,7 +3098,7 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
       }
 
       if (residual){
-        residual->setValues(len, nodes, elemRes, ADD_VALUES);
+        residual->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
       }
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
@@ -3104,12 +3107,12 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
   // Do any matrix and residual assembly if required
   A->beginAssembly();
   if (residual){
-    residual->beginSetValues(ADD_VALUES);
+    residual->beginSetValues(TACS_ADD_VALUES);
   }
 
   A->endAssembly();
   if (residual){
-    residual->endSetValues(ADD_VALUES);
+    residual->endSetValues(TACS_ADD_VALUES);
   }
 
   // Apply the boundary conditions
@@ -3476,7 +3479,7 @@ void TACSAssembler::addXptSens( double coef,
         funcs[k]->getElementXptSens(coef, elemXptSens, 
                                     elements[elemNum], elemNum, 
                                     elemXpts, vars, dvars, ddvars, ctx);
-        fXptSens[k]->setValues(len, nodes, elemXptSens, ADD_VALUES);
+        fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
       }
     }
     else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
@@ -3494,7 +3497,7 @@ void TACSAssembler::addXptSens( double coef,
         funcs[k]->getElementXptSens(coef, elemXptSens, 
                                     elements[elemNum], elemNum, 
                                     elemXpts, vars, dvars, ddvars, ctx);
-        fXptSens[k]->setValues(len, nodes, elemXptSens, ADD_VALUES);
+        fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
       }
     }
   
@@ -3552,7 +3555,7 @@ void TACSAssembler::addSVSens( double alpha, double beta, double gamma,
         funcs[k]->getElementSVSens(alpha, beta, gamma,
                                    elemRes, elements[i], i, 
                                    elemXpts, vars, dvars, ddvars, ctx);
-        vec[k]->setValues(len, nodes, elemRes, ADD_VALUES);
+        vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
       }
     }
     else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
@@ -3576,7 +3579,7 @@ void TACSAssembler::addSVSens( double alpha, double beta, double gamma,
           funcs[k]->getElementSVSens(alpha, beta, gamma,
                                      elemRes, elements[elemNum], elemNum, 
                                      elemXpts, vars, dvars, ddvars, ctx);
-          vec[k]->setValues(len, nodes, elemRes, ADD_VALUES);
+          vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
         }
       }
     }
@@ -3585,12 +3588,12 @@ void TACSAssembler::addSVSens( double alpha, double beta, double gamma,
     if (ctx){ delete ctx; }
 
     // Add the values into the array
-    vec[k]->beginSetValues(ADD_VALUES);
+    vec[k]->beginSetValues(TACS_ADD_VALUES);
   }
 
   // Finish adding the values
   for ( int k = 0; k < numFuncs; k++ ){
-    vec[k]->endSetValues(ADD_VALUES);
+    vec[k]->endSetValues(TACS_ADD_VALUES);
     vec[k]->applyBCs(bcMap);
   }
 }
@@ -3744,7 +3747,7 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
         aux_count++;
       }
 
-      adjXptSens[k]->setValues(len, nodes, xptSens, ADD_VALUES);
+      adjXptSens[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
     }
   }
 }
@@ -3855,11 +3858,11 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
                                           elemVars);
 
     // Add the residual values to the local residual array
-    res->setValues(len, nodes, elemRes, ADD_VALUES);
+    res->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
   }
 
-  res->beginSetValues(ADD_VALUES);
-  res->endSetValues(ADD_VALUES);
+  res->beginSetValues(TACS_ADD_VALUES);
+  res->endSetValues(TACS_ADD_VALUES);
 
   // Apply the boundary conditions to the fully assembled vector
   res->applyBCs(bcMap);
@@ -3956,12 +3959,12 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
     }
 
     // Add the residual values
-    y->setValues(len, nodes, yvars, ADD_VALUES);
+    y->setValues(len, nodes, yvars, TACS_ADD_VALUES);
   }
 
   // Add the dependent-variable residual from the dependent nodes
-  y->beginSetValues(ADD_VALUES);
-  y->endSetValues(ADD_VALUES);
+  y->beginSetValues(TACS_ADD_VALUES);
+  y->endSetValues(TACS_ADD_VALUES);
 
   // Set the boundary conditions
   y->applyBCs(bcMap);

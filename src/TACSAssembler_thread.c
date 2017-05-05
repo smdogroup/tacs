@@ -93,7 +93,7 @@ void *TACSAssembler::assembleRes_thread( void *t ){
 
       // Add the values to the residual when the memory unlocks
       pthread_mutex_lock(&tacs->tacs_mutex);
-      res->setValues(len, nodes, elemRes, ADD_VALUES);
+      res->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
       pthread_mutex_unlock(&tacs->tacs_mutex);
     }
   }
@@ -201,7 +201,7 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
       
       pthread_mutex_lock(&tacs->tacs_mutex);
       // Add values to the residual
-      if (res){ res->setValues(len, nodes, elemRes, ADD_VALUES); }
+      if (res){ res->setValues(len, nodes, elemRes, TACS_ADD_VALUES); }
 
       // Add values to the matrix
       tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);

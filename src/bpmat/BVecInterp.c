@@ -18,9 +18,11 @@ void BVecInterpMultAddGen( int bsize, int nrows,
 			   const TacsScalar *weights,
 			   const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAddGen( int bsize, int nrows, 
-				    const int *rowp, const int *cols,
+				    const int *rowp, 
+                                    const int *cols,
 				    const TacsScalar *weights,
-				    const TacsScalar *x, TacsScalar *y );
+				    const TacsScalar *x, 
+                                    TacsScalar *y );
 
 void BVecInterpMultAdd1( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -29,7 +31,8 @@ void BVecInterpMultAdd1( int bsize, int nrows,
 void BVecInterpMultTransposeAdd1( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd2( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -38,7 +41,8 @@ void BVecInterpMultAdd2( int bsize, int nrows,
 void BVecInterpMultTransposeAdd2( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd3( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -47,7 +51,8 @@ void BVecInterpMultAdd3( int bsize, int nrows,
 void BVecInterpMultTransposeAdd3( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd5( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -56,7 +61,8 @@ void BVecInterpMultAdd5( int bsize, int nrows,
 void BVecInterpMultTransposeAdd5( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 void BVecInterpMultAdd6( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
@@ -65,7 +71,8 @@ void BVecInterpMultAdd6( int bsize, int nrows,
 void BVecInterpMultTransposeAdd6( int bsize, int nrows, 
 				  const int *rowp, const int *cols,
 				  const TacsScalar *weights,
-				  const TacsScalar *x, TacsScalar *y );
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 
 /*
   This object represents a matrix that interpolates between
@@ -860,7 +867,7 @@ void TACSBVecInterp::initialize(){
   ctx_weights->incref();
   
   // Begin transfering the column sums 
-  vecDist->beginReverse(ctx_weights, x_ext, transpose_weights, ADD_VALUES);
+  vecDist->beginReverse(ctx_weights, x_ext, transpose_weights, TACS_ADD_VALUES);
   
   for ( int i = 0; i < N; i++ ){
     for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
@@ -869,7 +876,7 @@ void TACSBVecInterp::initialize(){
   }
 
   // End transfering the weights
-  vecDist->endReverse(ctx_weights, x_ext, transpose_weights, ADD_VALUES);
+  vecDist->endReverse(ctx_weights, x_ext, transpose_weights, TACS_ADD_VALUES);
   ctx_weights->decref();
 
   // Compute the inverse of the weights
@@ -1001,13 +1008,13 @@ void TACSBVecInterp::multTranspose( TACSBVec *inVec, TACSBVec *outVec ){
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);
 
   // Initialize communication to the off-processor part
-  vecDist->beginReverse(ctx, x_ext, out, ADD_VALUES);
+  vecDist->beginReverse(ctx, x_ext, out, TACS_ADD_VALUES);
 
   // Multiply the on-processor part
   multtransadd(bsize, N, rowp, cols, weights, in, out);
   
   // Finalize the communication to the off-processor part
-  vecDist->endReverse(ctx, x_ext, out, ADD_VALUES);
+  vecDist->endReverse(ctx, x_ext, out, TACS_ADD_VALUES);
 }
 
 /*
@@ -1048,13 +1055,13 @@ void TACSBVecInterp::multTransposeAdd( TACSBVec *inVec, TACSBVec *addVec,
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);
 
   // Initialize communication to the off-processor part
-  vecDist->beginReverse(ctx, x_ext, out, ADD_VALUES);
+  vecDist->beginReverse(ctx, x_ext, out, TACS_ADD_VALUES);
 
   // Multiply the on-processor part
   multtransadd(bsize, N, rowp, cols, weights, in, out);
   
   // Finalize the communication to the off-processor part
-  vecDist->endReverse(ctx, x_ext, out, ADD_VALUES);
+  vecDist->endReverse(ctx, x_ext, out, TACS_ADD_VALUES);
 }
 
 /*
