@@ -150,8 +150,8 @@ int main( int argc, char **argv ){
   tacs->addAdjointResXptSensProducts(-1.0, &adjoint, 1, &dfdXpts);
 
   // Finish adding everything up the geometry derivatives in parallel
-  dfdXpts->beginSetValues(ADD_VALUES);
-  dfdXpts->endSetValues(ADD_VALUES);
+  dfdXpts->beginSetValues(TACS_ADD_VALUES);
+  dfdXpts->endSetValues(TACS_ADD_VALUES);
 
   // Compute the projected derivative
   TacsScalar dfdp = 0.0;

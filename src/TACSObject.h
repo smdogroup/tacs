@@ -136,7 +136,8 @@ class TACSOptObject : public TACSObject {
     dvs:    An array of the design variable values 
     numDVs: The size of the array dvs
   */
-  virtual void setDesignVars( const TacsScalar dvs[], int numDVs ){}
+  virtual void setDesignVars( const TacsScalar dvs[], 
+                              int numDVs ){}
 
   /*!
     Get the current values of the design variables

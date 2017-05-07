@@ -656,7 +656,8 @@ void compute_shell_Ud( const int num_nodes,
   N: the shape functions
   Na, Nb: the first derivatives of the shape functions  
 */
-void shell_jacobian( const int order, TacsScalar X[], TacsScalar Xd[],
+void shell_jacobian( const int order, TacsScalar X[], 
+                     TacsScalar Xd[],
                      double N[], double Na[], double Nb[], 
                      const double gpt[], 
                      const TacsScalar Xpts[] );

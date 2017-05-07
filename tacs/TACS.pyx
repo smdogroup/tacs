@@ -951,8 +951,8 @@ cdef class Assembler:
       self.ptr.addXptSens(1.0, funcs, num_funcs, vecs)
 
       # Complete the parallel assembly of the sensitivity
-      vec.ptr.beginSetValues(ADD_VALUES)
-      vec.ptr.endSetValues(ADD_VALUES)
+      vec.ptr.beginSetValues(TACS_ADD_VALUES)
+      vec.ptr.endSetValues(TACS_ADD_VALUES)
 
       return
 
@@ -974,8 +974,8 @@ cdef class Assembler:
       self.ptr.addAdjointResXptSensProducts(1.0, adj, num_adj, prods)
       
       # Add the contributions across all processors
-      prod.ptr.beginSetValues(ADD_VALUES)
-      prod.ptr.endSetValues(ADD_VALUES)
+      prod.ptr.beginSetValues(TACS_ADD_VALUES)
+      prod.ptr.endSetValues(TACS_ADD_VALUES)
 
       return
 

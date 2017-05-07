@@ -10,8 +10,8 @@
 
 #include "TACSObject.h"
 
-enum TACSBVecOperation { INSERT_VALUES, ADD_VALUES,
-                         INSERT_NONZERO_VALUES };
+enum TACSBVecOperation { TACS_INSERT_VALUES, TACS_ADD_VALUES,
+                         TACS_INSERT_NONZERO_VALUES };
 
 /*
   Declare the TACSBVecDistCtx class
@@ -123,10 +123,10 @@ class TACSBVecDistribute : public TACSObject {
   // ---------------------------------------
   void beginReverse( TACSBVecDistCtx *ctx,
                      TacsScalar *local, TacsScalar *global, 
-                     TACSBVecOperation op=ADD_VALUES );
+                     TACSBVecOperation op=TACS_ADD_VALUES );
   void endReverse( TACSBVecDistCtx *ctx,
                    TacsScalar *local, TacsScalar *global,
-                   TACSBVecOperation op=ADD_VALUES );
+                   TACSBVecOperation op=TACS_ADD_VALUES );
 
   MPI_Comm getMPIComm();
   const char *TACSObjectName();
@@ -135,10 +135,12 @@ class TACSBVecDistribute : public TACSObject {
   // Block-specific implementation pointers
   // --------------------------------------
   void initImpl( int bsize );
-  void (*bgetvars)( int bsize, int nvars, const int *vars, int lower,
+  void (*bgetvars)( int bsize, int nvars, const int *vars, 
+                    int lower,
 		    TacsScalar *x, TacsScalar *y, 
 		    TACSBVecOperation op );
-  void (*bsetvars)( int bsize, int nvars, const int *vars, int lower,
+  void (*bsetvars)( int bsize, int nvars, const int *vars, 
+                    int lower,
 		    TacsScalar *x, TacsScalar *y, 
 		    TACSBVecOperation op );
 

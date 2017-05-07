@@ -318,6 +318,7 @@ void TACSBVec::copyValues( TACSVec *tvec ){
   TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
+      printf("size: %d %d\n",vec->size, size);
       fprintf(stderr, 
               "TACSBVec::copyValues error, sizes must be the same\n");
       return;
@@ -622,7 +623,8 @@ int TACSBVec::readFromFile( const char *filename ){
   Add values to the local entries of the array
 */
 void TACSBVec::setValues( int n, const int *index, 
-                          const TacsScalar *vals, TACSBVecOperation op ){
+                          const TacsScalar *vals, 
+                          TACSBVecOperation op ){
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -642,13 +644,13 @@ void TACSBVec::setValues( int n, const int *index,
       int x_index = bsize*(index[i] - owner_range[rank]);
       TacsScalar *y = &x[x_index];
       
-      if (op == INSERT_VALUES){
+      if (op == TACS_INSERT_VALUES){
         // Set the values into the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] = vals[0];
         }
       }
-      else if (op == ADD_VALUES){
+      else if (op == TACS_ADD_VALUES){
         // Add the values to the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
@@ -668,13 +670,13 @@ void TACSBVec::setValues( int n, const int *index,
       int dep_index = -bsize*(index[i]+1);
       TacsScalar *y = &x_dep[dep_index];
 
-      if (op == INSERT_VALUES){
+      if (op == TACS_INSERT_VALUES){
         // Insert the values
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] = vals[0];
         }
       }
-      else if (op == ADD_VALUES){
+      else if (op == TACS_ADD_VALUES){
         // Add the values to the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
@@ -693,13 +695,13 @@ void TACSBVec::setValues( int n, const int *index,
       int ext_index = bsize*ext_indices->findIndex(index[i]);
       TacsScalar *y = &x_ext[ext_index];
 
-      if (op == INSERT_VALUES){
+      if (op == TACS_INSERT_VALUES){
         // Insert the values into the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
         }
       }
-      else if (op == ADD_VALUES){
+      else if (op == TACS_ADD_VALUES){
         // Add the values into the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
           y[0] += vals[0];
@@ -731,7 +733,7 @@ void TACSBVec::beginSetValues( TACSBVecOperation op ){
   const int *owner_range;
   var_map->getOwnerRange(&owner_range);
 
-  if (dep_nodes && (op == ADD_VALUES)){
+  if (dep_nodes && (op == TACS_ADD_VALUES)){
     const int *dep_ptr, *dep_conn;
     const double *dep_weights;
     int ndep = dep_nodes->getDepNodes(&dep_ptr, &dep_conn,
@@ -863,7 +865,8 @@ void TACSBVec::endDistributeValues(){
 /*
   Get the values from the vector 
 */
-int TACSBVec::getValues( int n, const int *index, TacsScalar *vals ){
+int TACSBVec::getValues( int n, const int *index, 
+                         TacsScalar *vals ){
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);
