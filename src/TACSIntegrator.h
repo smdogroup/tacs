@@ -83,6 +83,8 @@ class TACSIntegrator : public TACSObject {
   void writeSolutionToF5( int _write_freq );
   void writeStepToF5( int step = 0 );          
   void setOutputFrequency( int _write_freq );
+  void setRigidOutput( int flag );    
+  void setShellOutput( int flag );
   void configureAdaptiveMarch( int factor, int num_retry );
   void printWallTime( double t0, int level=1 );
   void printOptionSummary( FILE *fp );

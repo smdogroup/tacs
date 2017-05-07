@@ -304,11 +304,15 @@ int main( int argc, char *argv[] ){
   bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(1);
+  bdf->setOutputFrequency(1); 
+  bdf->setRigidOutput(1);
   bdf->setOutputFrequency(1);
 
   // Integrate and write solution to file
   bdf->integrate();
   bdf->writeSolution("solutionDIRK.dat");
+
+  //  bdf->writeSolutionToF5(1);
 
   // Decref objects
   gravVec->decref();

@@ -392,6 +392,8 @@ cdef extern from "TACSIntegrator.h":
       
       # Configure writing F5 files
       void setOutputFrequency(int write_freq)
+      void setRigidOutput(int flag)
+      void setShellOutput(int flag)
       void configureAdaptiveMarch( int factor, int num_retry )
 
       # Configure writing ASCII output data

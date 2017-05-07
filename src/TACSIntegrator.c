@@ -210,23 +210,10 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   ksm = NULL;
 
   // Tecplot solution export (use configureOutput(...) to set these
-  f5_write_freq = 0;
-
-  // Create an TACSToFH5 object for writing output to files
-  unsigned int rigid_write_flag = (TACSElement::OUTPUT_NODES |  
-                                   TACSElement::OUTPUT_DISPLACEMENTS);
-  rigidf5 = new TACSToFH5(tacs, TACS_RIGID, rigid_write_flag);
-  rigidf5->incref();
+  f5_write_freq = 0; 
+  rigidf5 = NULL;
+  shellf5 = NULL;
   
-  // Create an TACSToFH5 object for writing output to files
-  unsigned int shell_write_flag = (TACSElement::OUTPUT_NODES |
-                                   TACSElement::OUTPUT_DISPLACEMENTS |
-                                   TACSElement::OUTPUT_STRAINS |
-                                   TACSElement::OUTPUT_STRESSES |
-                                   TACSElement::OUTPUT_EXTRAS);
-  shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
-  shellf5->incref();
-
   // Set kinetic and potential energies
   energies[0] = 0.0;
   energies[1] = 0.0;
@@ -265,10 +252,10 @@ TACSIntegrator::~TACSIntegrator(){
   if (qddot)    { delete [] qddot; }
 
   // Dereference TACS
-  tacs->decref();
-
-  rigidf5->incref();
-  shellf5->incref();
+  if (tacs){ tacs->decref(); }
+  
+  if (rigidf5){ rigidf5->incref();}
+  if (shellf5){ shellf5->incref();}
 }
 
 /*
@@ -705,7 +692,7 @@ int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
   set appropriately before calling this function.
 */
 void TACSIntegrator::writeStepToF5( int k ){
-  if(getWriteFlag(k, f5_write_freq)){
+  if(rigidf5 && getWriteFlag(k, f5_write_freq)){
     // Create a buffer for filename 
     char rbuffer[256];
 
@@ -714,6 +701,10 @@ void TACSIntegrator::writeStepToF5( int k ){
     
     // Write the f5 file for this time step
     rigidf5->writeToFile(rbuffer);
+
+  }
+
+  if(shellf5 && getWriteFlag(k, f5_write_freq)){
 
     // Create a buffer for shell filename 
     char sbuffer[256];
@@ -739,15 +730,18 @@ void TACSIntegrator::writeSolutionToF5( int _f5_write_freq ){
   */
   // Loop through all timesteps
   for ( int k = 0; k < num_time_steps; k++ ){
-    // Determine if we should write output at this k
-    if(getWriteFlag(k, _f5_write_freq)) {
-      // Set the current states into TACS
-      setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+    // Set the current states into TACS
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
       
+    // Write RIGID body if set
+    if(rigidf5 && getWriteFlag(k, _f5_write_freq)){
       char fname[128];
       getString(fname, "results/rigid_%06d.f5", k);
       rigidf5->writeToFile(fname);
+    }
 
+    // Write SHELL body if set
+    if(shellf5 && getWriteFlag(k, _f5_write_freq)){
       char fname2[128];
       getString(fname2, "results/shell_%06d.f5", k);
       shellf5->writeToFile(fname2);
@@ -760,6 +754,40 @@ void TACSIntegrator::writeSolutionToF5( int _f5_write_freq ){
 */
 void TACSIntegrator::setOutputFrequency( int _write_freq ){
   f5_write_freq = _write_freq;
+}
+
+/*
+  Set whether RIGID body components are a part of the output
+*/
+void TACSIntegrator::setRigidOutput( int flag ){
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int rigid_write_flag = (TACSElement::OUTPUT_NODES |  
+                                   TACSElement::OUTPUT_DISPLACEMENTS);
+  // Create a new instance if it does not exist and the flag is
+  // greater than zero
+  if (!rigidf5 && flag>0){
+    // Create an instance of f5 and store to the class variable
+    rigidf5 = new TACSToFH5(tacs, TACS_RIGID, rigid_write_flag);
+    rigidf5->incref();
+  }
+}
+
+/*
+  Set whether SHELL body components are a part of the output
+*/
+void TACSIntegrator::setShellOutput( int flag ){
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int shell_write_flag = (TACSElement::OUTPUT_NODES |
+                                   TACSElement::OUTPUT_DISPLACEMENTS |
+                                   TACSElement::OUTPUT_STRAINS |
+                                   TACSElement::OUTPUT_STRESSES |
+                                   TACSElement::OUTPUT_EXTRAS);
+  // Create a new instance if it does not exist and the flag is
+  // greater than zero
+  if (!shellf5 && flag>0){
+    shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
+    shellf5->incref();
+  }
 }
 
 /*

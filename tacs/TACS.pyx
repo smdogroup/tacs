@@ -1449,6 +1449,14 @@ cdef class Integrator:
       self.ptr.configureAdaptiveMarch(factor, num_retry)
       return
    
+   def setRigidOutput(self, int flag):
+      self.ptr.setRigidOutput(flag)
+      return
+
+   def setShellOutput(self, int flag):
+      self.ptr.setShellOutput(flag)
+      return
+   
    def writeASCIISolution(self, char *filename='solution.dat', int format=2):
       self.ptr.writeSolution(&filename[0], format)
       return
