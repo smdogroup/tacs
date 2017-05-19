@@ -3000,7 +3000,7 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
 void TACSAssembler::assembleJacobian( double alpha, double beta, 
                                       double gamma,
                                       TACSBVec *residual, 
-                                      TACSMat * A,
+                                      TACSMat *A,
                                       MatrixOrientation matOr ){
   // Zero the residual and the matrix
   if (residual){ 
@@ -3208,7 +3208,8 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
   output:
   funcVals: the values of the functions 
 */
-void TACSAssembler::evalFunctions( TACSFunction **funcs, int numFuncs,
+void TACSAssembler::evalFunctions( TACSFunction **funcs, 
+                                   int numFuncs,
                                    TacsScalar *funcVals ){
   // Here we will use time-independent formulation
   double tcoef = 1.0;
@@ -3507,20 +3508,23 @@ void TACSAssembler::addXptSens( double coef,
 }
 
 /*
-  Evaluate the derivative of the function w.r.t. the state variables.
+  Evaluate the derivative of the function w.r.t. the state 
+  variables.
 
   This code evaluates the sensitivity of the function w.r.t. the 
-  state variables for all elements in the function domain. This code
-  is usually much faster than the code for computing the derivative of 
-  the function w.r.t. the design variables. 
+  state variables for all elements in the function domain. This 
+  code is usually much faster than the code for computing the 
+  derivative of the function w.r.t. the design variables. 
 
-  Note that the sensitivity vector 'vec' is assembled, and appropriate
-  boundary conditions are imposed before the function is returned.
+  Note that the sensitivity vector 'vec' is assembled, and 
+  appropriate boundary conditions are imposed before the function 
+  is returned.
 
   function: the function pointer
   vec:      the derivative of the function w.r.t. the state variables
 */
-void TACSAssembler::addSVSens( double alpha, double beta, double gamma,
+void TACSAssembler::addSVSens( double alpha, double beta, 
+                               double gamma,
                                TACSFunction **funcs, int numFuncs, 
                                TACSBVec **vec ){
   // First check if this is the right assembly object
@@ -3636,7 +3640,8 @@ void TACSAssembler::addAdjointResProducts( double scale,
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars;
   TacsScalar *elemXpts, *elemAdjoint;
-  getDataPointers(elementData, &vars, &dvars, &ddvars, &elemAdjoint,
+  getDataPointers(elementData, &vars, &dvars, &ddvars, 
+                  &elemAdjoint,
                   &elemXpts, NULL, NULL, NULL);
 
   // Set the data for the auxiliary elements - if there are any
