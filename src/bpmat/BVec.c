@@ -698,7 +698,7 @@ void TACSBVec::setValues( int n, const int *index,
       if (op == TACS_INSERT_VALUES){
         // Insert the values into the array
         for ( int k = 0; k < bsize; k++, vals++, y++ ){
-          y[0] += vals[0];
+          y[0] = vals[0];
         }
       }
       else if (op == TACS_ADD_VALUES){
