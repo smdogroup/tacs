@@ -718,7 +718,7 @@ void TACSRigidBody::updateInertialProperties(){
   J[2] = Jtmp[2];
 
   J[3] = Jtmp[4];
-  J[4] = Jtmp[6];
+  J[4] = Jtmp[5];
 
   J[5] = Jtmp[8];
 }
