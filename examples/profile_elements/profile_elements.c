@@ -273,25 +273,21 @@ int main( int argc, char *argv[] ){
     TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
 
     // Construct the frame of reference
-    TACSGibbsVector *rA0Vec = new TACSGibbsVector(0.0, 0.0, 0.0); // The base point
-    TACSGibbsVector *rA1Vec = new TACSGibbsVector(1.0, 0.0, 0.0); // The first coordinate
-    TACSGibbsVector *rA2Vec = new TACSGibbsVector(0.0, 1.0, 0.0); // The second coordinate
-    TACSRefFrame *refFrameA = new TACSRefFrame(rA0Vec, rA1Vec, rA2Vec);
+    TACSGibbsVector *rAInitVec = new TACSGibbsVector(5.2, 5.3, 5.4); 
+    TACSGibbsVector *rA1Vec = new TACSGibbsVector(5.2+1.0, 5.3, 5.4); // The first coordinate
+    TACSGibbsVector *rA2Vec = new TACSGibbsVector(5.2, 5.3+1.0, 5.4); // The second coordinate
+    TACSRefFrame *refFrameA = new TACSRefFrame(rAInitVec, rA1Vec, rA2Vec);
 
     // Define the inertial properties
     const TacsScalar mA    = 1.0;
-    const TacsScalar cA[3] = {0.0, 0.0, 0.0};
-    const TacsScalar JA[6] = {1.0/3.0, 0.0, 0.0,
-                              1.0/3.0, 0.0,
-                              1.0/3.0};
-  
-    // Define dynamics properties
-    TACSGibbsVector *rAInitVec = new TACSGibbsVector(1.2, 2.2, 3.3); 
-
+    const TacsScalar cA[3] = {5.1, 5.2, 5.3};
+    const TacsScalar JA[6] = {1.0, 0.30, 0.6,
+                              2.0, 0.9,
+                              3.0};
     // Construct a rigid body
     TACSRigidBody *bodyA = new TACSRigidBody(refFrameA,
                                              mA, cA, JA,
-                                             rAInitVec, zero, zero,
+                                             rAInitVec, rAInitVec, rAInitVec,
                                              gravVec);
     bodyA->incref();
 
@@ -303,9 +299,12 @@ int main( int argc, char *argv[] ){
     TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
     TACSRevoluteConstraint *rev = new TACSRevoluteConstraint(bodyA, point, eRev);
     rev->incref();
-
-    // Test the revolute constraint
     test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Test the spherical constraint
+    TACSSphericalConstraint *ball = new TACSSphericalConstraint(bodyA, point);
+    ball->incref();
+    test_element(ball, time, Xpts, vars, dvars, ddvars, num_design_vars);
   
     // Test the rigid link code
     TACSRigidLink *rlink = new TACSRigidLink(bodyA);
@@ -314,9 +313,45 @@ int main( int argc, char *argv[] ){
     // Test the rigid link
     test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
+    /////////////////////////////////////////////////////////////////////
+
+    // Define the inertial properties
+    const TacsScalar mB    = 2.0;
+    const TacsScalar cB[3] = {2.0, 3.0, 4.0};
+    const TacsScalar JB[6] = {2.0, 0.60, 0.7,
+                              3.0, 0.80,
+                              4.0};
+  
+    // Define dynamics properties
+    TACSGibbsVector *rBInitVec = new TACSGibbsVector(3.2, 3.2, 4.3); 
+    TACSGibbsVector *rB1Vec = new TACSGibbsVector(3.2+1.0, 3.2, 4.3); // The first coordinate
+    TACSGibbsVector *rB2Vec = new TACSGibbsVector(3.2, 3.2+1.0, 4.3); // The second coordinate
+    TACSRefFrame *refFrameB = new TACSRefFrame(rBInitVec, rB1Vec, rB2Vec);
+
+    // Construct a rigid body
+    TACSRigidBody *bodyB = new TACSRigidBody(refFrameB,
+                                             mB, cB, JB,
+                                             rBInitVec, rBInitVec, rBInitVec,
+                                             gravVec);
+    bodyB->incref();
+
+    // Test the revolute constraint
+    TACSRevoluteConstraint *rev2 = new TACSRevoluteConstraint(bodyA, bodyB, point, eRev);
+    rev2->incref();
+    test_element(rev2, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Test the spherical constraint
+    TACSSphericalConstraint *ball2 = new TACSSphericalConstraint(bodyA, bodyB, point);
+    ball2->incref();
+    test_element(ball2, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  
     // Decref everything
     rev->decref();
+    ball->decref();
     bodyA->decref();
+    rev2->decref();
+    ball2->decref();
+    bodyB->decref();
     rlink->decref();
   }
 
