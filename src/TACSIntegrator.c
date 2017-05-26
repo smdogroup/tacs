@@ -1250,7 +1250,7 @@ void TACSIntegrator::configureAdaptiveMarch( int factor, int num_retry ) {
   Write out all of the options that have been set to a output stream.
 */
 void TACSIntegrator::printOptionSummary( FILE *fp ) {
-  if (fp){
+  if (fp && print_level>0){
     fprintf(fp, "===============================================\n");
     fprintf(fp, "TACSIntegrator: Parameter values\n");
     fprintf(fp, "===============================================\n");
@@ -1295,7 +1295,7 @@ void TACSIntegrator::printOptionSummary( FILE *fp ) {
   Print the adjoint options before marching backwards in time
 */
 void TACSIntegrator::printAdjointOptionSummary( FILE *fp ) {
-  if (fp){
+  if (fp && print_level>0){
     fprintf(fp, "===============================================\n");
     fprintf(fp, "Adjoint Mode : Parameter values\n");
     fprintf(fp, "===============================================\n");
