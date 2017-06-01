@@ -157,6 +157,109 @@ void TACSElement::setStepSize( double dh ){
   test_step_size = dh;
 }
 
+double TACSElement::getStepSize( ){
+  return test_step_size;
+}
+
+/*
+  Finds the finite-difference based Jacobian of the element. This is
+  the default Jacobian implementation for any TACSElement. The user
+  can override this function and provide an analytic Jacobian
+  implemention in descendant classes.
+*/
+void TACSElement::addJacobian( double time, TacsScalar J[],
+                               double alpha, 
+                               double beta, 
+                               double gamma,
+                               const TacsScalar Xpts[],
+                               const TacsScalar vars[],
+                               const TacsScalar dvars[],
+                               const TacsScalar ddvars[] ){
+  // Get the number of variables
+  int nvars = numVariables();
+
+  // The step length
+  const double dh = getStepSize();
+
+  // Original and perturbed residual vectors
+  TacsScalar *R = new TacsScalar[nvars];
+  TacsScalar *Rtmp = new TacsScalar[nvars];
+
+  // Perturbed state vector
+  TacsScalar *pstate = new TacsScalar[nvars];
+
+  // Assemble the unperturbed residual
+  memset(R, 0, nvars*sizeof(TacsScalar));
+  addResidual(time, R, Xpts, vars, dvars, ddvars);
+
+  // Copy the state variables into pstate
+  memcpy(pstate, vars, nvars*sizeof(TacsScalar));
+
+  // Perturb each state variable and find the residual
+  for ( int i = 0; i < nvars; i++ ){
+    // Perturb the i-th variable
+    pstate[i] += dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp, Xpts, pstate, dvars, ddvars);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += alpha*(Rtmp[j] - R[j])/dh;
+    }
+
+    // Restore the i-th variable   
+    pstate[i] = vars[i];
+  }
+
+  // Copy the vel state variables into pstate
+  memcpy(pstate, dvars, nvars*sizeof(TacsScalar));
+
+  // Perturb each state variable and find the residual
+  for ( int i = 0; i < nvars; i++ ){
+    // Perturb the i-th variable
+    pstate[i] += dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp, Xpts, vars, pstate, ddvars);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += beta*(Rtmp[j] - R[j])/dh;
+    }
+
+    // Restore the i-th variable   
+    pstate[i] = dvars[i];
+  }
+
+  // Copy the vel state variables into pstate
+  memcpy(pstate, ddvars, nvars*sizeof(TacsScalar));
+
+  // Perturb each state variable and find the residual
+  for ( int i = 0; i < nvars; i++ ){
+    // Perturb the i-th variable
+    pstate[i] += dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp, Xpts, vars, dvars, pstate);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += gamma*(Rtmp[j] - R[j])/dh;
+    }
+
+    // Restore the i-th variable   
+    pstate[i] = ddvars[i];
+  }
+  
+  delete [] R;
+  delete [] Rtmp;
+  delete [] pstate;
+}
+
 /*
   The following function tests the consistency of the implementation
   of the residuals and the energy expressions, relying on Lagrange's

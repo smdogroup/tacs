@@ -264,7 +264,7 @@ class TACSElement : public TACSOptObject {
                             const TacsScalar Xpts[],
                             const TacsScalar vars[],
                             const TacsScalar dvars[],
-                            const TacsScalar ddvars[] ){}
+                            const TacsScalar ddvars[] );
 
   // Add the product of the adjoint variables with the derivative of the residual
   // ----------------------------------------------------------------------------
@@ -415,6 +415,7 @@ class TACSElement : public TACSOptObject {
   static void setFailTolerances( double fail_rtol, double fail_atol );
   static void setPrintLevel( int flag );
   static void setStepSize( double dh );
+  double getStepSize();
 
   int testResidual( double time, const TacsScalar Xpts[],
                     const TacsScalar vars[], 
