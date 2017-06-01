@@ -160,6 +160,26 @@ cdef class RevoluteConstraint(Element):
       self.ptr.setComponentNum(comp_num)
       return
 
+cdef class CylindricalConstraint(Element):
+   def __cinit__(self, GibbsVector point, GibbsVector eA,
+                 RigidBody bodyA, RigidBody bodyB=None):
+      if bodyB is None:
+         self.ptr = new TACSCylindricalConstraint(bodyA.rbptr,
+                                               point.ptr, eA.ptr)
+      else:
+         self.ptr = new TACSCylindricalConstraint(bodyA.rbptr, bodyB.rbptr,
+                                               point.ptr, eA.ptr)
+      self.ptr.incref()
+      return
+   def __dealloc__(self):
+      self.ptr.decref()
+      return   
+   def numNodes(self):
+      return self.ptr.numNodes()
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
+
 cdef class RigidLink(Element):
    def __cinit__(self, RigidBody bodyA):
       self.ptr = new TACSRigidLink(bodyA.rbptr)

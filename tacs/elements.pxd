@@ -53,7 +53,14 @@ cdef extern from "RigidBody.h":
 
    cdef cppclass TACSRevoluteDriver(TACSElement):
       TACSRevoluteDriver(TACSGibbsVector*, TACSGibbsVector*, TacsScalar)
-            
+
+cdef extern from "Constraint.h":
+   cdef cppclass TACSCylindricalConstraint(TACSElement):
+      TACSCylindricalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                             TACSGibbsVector *point, TACSGibbsVector *eA)
+      TACSCylindricalConstraint(TACSRigidBody *bodyA,
+                             TACSGibbsVector *point, TACSGibbsVector *eA)
+
 # Template
 cdef extern from "TACSElementTemplates.h":
    # Declare the PlaneStressQuad elements
