@@ -14,6 +14,7 @@
 
 // Include the multibody dynamics code
 #include "RigidBody.h"
+#include "Constraint.h"
 
 /*
   Generate a random array of values
@@ -76,6 +77,12 @@ int main( int argc, char *argv[] ){
   if (argc > 1){
     ename = argv[1];
   }
+
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1.0e-30;
+#else
+  const double dh = 1.0e-8;
+#endif
 
   const int MAX_NODES = 27;
   const int MAX_VARS_PER_NODE = 8;
@@ -292,6 +299,10 @@ int main( int argc, char *argv[] ){
     bodyA->incref();
 
     // Test the rigid body
+    /*
+    bodyA->testResidual(dh);
+    bodyA->testJacobian(dh, 2.0, 3.0, 4.0);
+	*/
     test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the revolute constraint
@@ -300,6 +311,11 @@ int main( int argc, char *argv[] ){
     TACSRevoluteConstraint *rev = new TACSRevoluteConstraint(bodyA, point, eRev);
     rev->incref();
     test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Test the cylindrical constraint
+    TACSCylindricalConstraint *cyl = new TACSCylindricalConstraint(bodyA, point, eRev);
+    cyl->incref();
+    test_element(cyl, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the spherical constraint
     TACSSphericalConstraint *ball = new TACSSphericalConstraint(bodyA, point);
@@ -339,6 +355,11 @@ int main( int argc, char *argv[] ){
     TACSRevoluteConstraint *rev2 = new TACSRevoluteConstraint(bodyA, bodyB, point, eRev);
     rev2->incref();
     test_element(rev2, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Test the revolute constraint
+    TACSCylindricalConstraint *cyl2 = new TACSCylindricalConstraint(bodyA, bodyB, point, eRev);
+    cyl2->incref();
+    test_element(cyl2, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the spherical constraint
     TACSSphericalConstraint *ball2 = new TACSSphericalConstraint(bodyA, bodyB, point);
