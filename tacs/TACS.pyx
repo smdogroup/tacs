@@ -1441,8 +1441,8 @@ cdef class Integrator:
       self.ptr.setInitNewtonDeltaFraction(frac)
       return
   
-   def setOutputFrequency(self, int write_freq=0):
-      self.ptr.setOutputFrequency(write_freq)
+   def setOutputFrequency(self, int write_freq=0, int newton_freq=0):
+      self.ptr.setOutputFrequency(write_freq, newton_freq)
       return
 
    def configureAdaptiveMarch(self, int factor, int num_retry):
@@ -1460,7 +1460,7 @@ cdef class Integrator:
    def writeASCIISolution(self, char *filename='solution.dat', int format=2):
       self.ptr.writeSolution(&filename[0], format)
       return
-
+   
 cdef class BDFIntegrator(Integrator):
    '''
    Backward-Difference method for integration. This currently
