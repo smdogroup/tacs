@@ -80,9 +80,10 @@ class TACSIntegrator : public TACSObject {
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
   void writeSolution( const char *filename, int format=2 );
-  void writeSolutionToF5( int _write_freq );
-  void writeStepToF5( int step = 0 );          
-  void setOutputFrequency( int _write_freq );
+  void writeSolutionToF5( int _write_step );
+  void writeStepToF5( int step );
+  void writeNewtonIterToF5( int step, int newton );
+  void setOutputFrequency( int _write_step, int _write_newton = 0);
   void setRigidOutput( int flag );    
   void setShellOutput( int flag );
   void configureAdaptiveMarch( int factor, int num_retry );
@@ -214,7 +215,7 @@ class TACSIntegrator : public TACSObject {
   //-----------------------------------------------------------------//
   
   static void getString( char *buffer, const char * format, ... );
-  int getWriteFlag( int step, int f5_write_freq );
+  int getWriteFlag( int step, int freq );
 
   //-----------------------------------------------------------------//
   //                   Private variables
@@ -232,7 +233,8 @@ class TACSIntegrator : public TACSObject {
 
   TACSToFH5 *rigidf5;   // F5 file for rigid body visualization
   TACSToFH5 *shellf5;   // F5 file for shell visualization
-  int f5_write_freq;    // How frequent to write the output
+  int f5_write_freq;    // How frequent to write the output during time marching
+  int f5_newton_freq;   // How frequent to write the output during nonlinear solve
   
   int max_newton_iters; // The max number of nonlinear iterations
   double atol, rtol;

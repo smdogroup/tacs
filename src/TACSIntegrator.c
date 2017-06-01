@@ -211,6 +211,9 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Tecplot solution export (use configureOutput(...) to set these
   f5_write_freq = 0; 
+  f5_newton_freq = 0; 
+
+  // Set the rigid and shell visualization objects to NULL
   rigidf5 = NULL;
   shellf5 = NULL;
   
@@ -219,6 +222,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   energies[1] = 0.0;
   init_energy = 0.0;
 
+  // Termination flag for newton solve
   newton_term = 0;
 }
 
@@ -402,6 +406,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   for ( niter = 0; niter < max_newton_iters; niter++ ){    
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
+
+    // Write the tecplot output to disk if sought
+    writeNewtonIterToF5(current_time_step, niter);
 
     // Assemble the Jacobian matrix once in Newton iterations
     double t0 = MPI_Wtime();
@@ -691,6 +698,36 @@ int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
   Writes the output as an f5 file. Note the states and time must be
   set appropriately before calling this function.
 */
+void TACSIntegrator::writeNewtonIterToF5( int k, int n ){
+  if(rigidf5 && getWriteFlag(k, f5_newton_freq)){
+    // Create a buffer for filename 
+    char rbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(rbuffer, "results/rigid_%06d_%03d.f5", k, n);
+    
+    // Write the f5 file for this time step
+    rigidf5->writeToFile(rbuffer);
+
+  }
+
+  if(shellf5 && getWriteFlag(k, f5_newton_freq)){
+
+    // Create a buffer for shell filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/shell_%06d_%03d.f5", k, n);
+    
+    // Write the f5 file for this time step
+    shellf5->writeToFile(sbuffer);
+  }
+}
+
+/*
+  Writes the output as an f5 file. Note the states and time must be
+  set appropriately before calling this function.
+*/
 void TACSIntegrator::writeStepToF5( int k ){
   if(rigidf5 && getWriteFlag(k, f5_write_freq)){
     // Create a buffer for filename 
@@ -752,8 +789,9 @@ void TACSIntegrator::writeSolutionToF5( int _f5_write_freq ){
 /*
   Configure the F5 output 
 */
-void TACSIntegrator::setOutputFrequency( int _write_freq ){
+void TACSIntegrator::setOutputFrequency( int _write_freq, int _newton_freq ){
   f5_write_freq = _write_freq;
+  f5_newton_freq = _newton_freq;
 }
 
 /*
@@ -825,6 +863,9 @@ void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   // Solve the nonlinear system of stage equations starting with the approximated states
   newton_term = newtonSolve(alpha, beta, gamma, 
                             time[k], q[k], qdot[k], qddot[k], forces);  
+  if (newton_term < 0){
+    exit(-1);
+  }
 
   doEachTimeStep(k);  
 }
@@ -2116,6 +2157,9 @@ void TACSDIRKIntegrator::integrate(){
       // the approximated states
       newton_term = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
                                     qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
+      if (newton_term < 0){
+        exit(-1);
+      }
     }
     
     // Advance the time
