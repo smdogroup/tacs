@@ -1425,8 +1425,8 @@ cdef class Integrator:
       self.ptr.setJacAssemblyFreq(freq)
       return
    
-   def setUseLapack(self, int use_lapack):
-      self.ptr.setUseLapack(use_lapack)
+   def setUseLapack(self, int use_lapack, int eigensolve=0):
+      self.ptr.setUseLapack(use_lapack, eigensolve)
       return
    
    def setUseFEMat(self, int use_femat):

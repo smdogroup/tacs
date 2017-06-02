@@ -169,6 +169,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Set the default LINEAR solver
   use_lapack      = 0;
+  eigensolve      = 0;
   use_line_search = 0;
   use_femat       = 1;
 
@@ -514,6 +515,11 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       double t2 = MPI_Wtime();
       ksm->solve(res, update);
       time_fwd_apply_factor += MPI_Wtime() - t2;
+    }
+
+    // Solve for the eigenvalues      
+    if (eigensolve){
+      lapackEigenSolve(mat);
     }
 
     // Find the norm of the displacement update
@@ -1101,7 +1107,7 @@ void TACSIntegrator::addFunctions( double tcoeff, TACSFunction **funcs,
     funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
   }
   tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
-                     funcs, numFuncs);
+                           funcs, numFuncs);
   for ( int n = 0; n < numFuncs; n++ ){
     funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
   }
@@ -1110,6 +1116,85 @@ void TACSIntegrator::addFunctions( double tcoeff, TACSFunction **funcs,
   for ( int n = 0; n < numFuncs; n++ ){
     funcVals[n] += funcs[n]->getFunctionValue();
   }
+}
+
+/*
+  Performs an eigen solve of the Jacobian matrix
+ */
+void TACSIntegrator::lapackEigenSolve( TACSMat *mat ) {    
+  // The following code retrieves a dense column-major 
+  // matrix from the FEMat matrix
+  TacsScalar *J;
+  FEMat *femat = dynamic_cast<FEMat*>(mat);
+  if (femat){
+    int bsize, nrows;
+    BCSRMat *B;
+    femat->getBCSRMat(&B, NULL, NULL, NULL);
+    B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+	
+    J = new TacsScalar[ bsize*bsize*nrows*nrows ];
+
+    // Get the matrix in LAPACK column major order
+    B->getDenseColumnMajor(J);
+  }
+  else {
+    fprintf(stderr,"Casting to FEMat failed\n");
+    exit(-1);
+  }
+
+  // Set up LAPACK call
+  int size = num_state_vars;
+  TacsScalar *wr = new TacsScalar[size];
+  TacsScalar *wi = new TacsScalar[size];
+  int lwork = 8*size;
+  TacsScalar *work = new TacsScalar[lwork];
+  TacsScalar *vl = new TacsScalar[size*size];
+  TacsScalar *vr = new TacsScalar[size*size];
+  int info = 0; 
+  
+  // Call lapack to solve the eigenvalue problem
+  LAPACKdgeev("N", "V", &size, J, &size,
+              wr, wi,
+              vl, &size, vr, &size, 
+              work, &lwork,
+              &info);
+
+  // Print the eigenvalues
+  for (int i = 0; i < size; i++){
+    printf("%d %12.5e %12.5e\n", i, wr[i], wi[i]);
+  }
+
+  // Print the eigenvector
+  for (int i = 0; i < size; i++){
+    printf("\n%d Eigenvector for %12.5e\n", i, wr[i]);
+    for (int j = 0; j < size; j++){
+      if (wr[i] > 0.0){
+        printf("[%12.5e, %12.5e] ", vr[i*size+j], vr[i*size+j+1]);
+      } else if (wr[i] < 0.0){
+        printf("[%12.5e, %12.5e] ", vr[i*size+j-1], vr[i*size+j]);
+      } else {
+        printf("%12.5e ", vr[i*size+j]);
+      }
+    }
+  }
+
+  if (info){
+    fprintf(stderr,"LAPACK DGEEV output error %d\n", info);
+    if (info < 0){
+      fprintf(stderr,"LAPACK : %d-th argument had an illegal value\n", info);
+    } else {
+      fprintf(stderr,"LAPACK DGEEV: The QR algorithm failed to compute \
+all the eigenvalues, and no eigenvectors have been computed");
+    }
+    exit(-1);
+  }
+  
+  delete [] wr;
+  delete [] wi;
+  delete [] work;
+  delete [] vl;
+  delete [] vr;
+  if (J) { delete [] J; }
 }
 
 /*
@@ -1381,12 +1466,15 @@ void TACSIntegrator::setJacAssemblyFreq( int _jac_comp_freq ){
 /*
   Set whether or not to use LAPACK for linear solve
 */
-void TACSIntegrator::setUseLapack( int _use_lapack ) {
+void TACSIntegrator::setUseLapack( int _use_lapack, int _eigensolve ) {
   use_lapack = _use_lapack;
-  // LAPACK works with natural ordering only
-  this->setOrderingType(TACSAssembler::NATURAL_ORDER);
-  // LAPACK needs FEMat
-  this->setUseFEMat(1);
+  eigensolve = _eigensolve;
+  if (use_lapack == 1 || eigensolve == 1){
+    // LAPACK works with natural ordering only
+    this->setOrderingType(TACSAssembler::NATURAL_ORDER);
+    // LAPACK needs FEMat
+    this->setUseFEMat(1);
+  }
 }
 
 /*

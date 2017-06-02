@@ -385,7 +385,7 @@ cdef extern from "TACSIntegrator.h":
       void setAbsTol(double atol)
       void setMaxNewtonIters(int max_newton_iters)
       void setJacAssemblyFreq(int jac_comp_freq)
-      void setUseLapack(int use_lapack)
+      void setUseLapack(int use_lapack, int eigensolve)
       void setUseFEMat(int _use_femat)
       void setOrderingType(OrderingType)
       void setInitNewtonDeltaFraction(double)

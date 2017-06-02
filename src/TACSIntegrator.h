@@ -68,7 +68,7 @@ class TACSIntegrator : public TACSObject {
   void setMaxNewtonIters( int _max_newton_iters );
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
-  void setUseLapack( int _use_lapack );
+  void setUseLapack( int _use_lapack, int _eigensolve=0 );
   void setUseLineSearch( int _use_line_search );
   void setUseFEMat( int _use_femat );
   void setFunction( TACSFunction **_func, int _num_funcs );
@@ -120,8 +120,10 @@ class TACSIntegrator : public TACSObject {
                    TACSBVec *qddot, TACSBVec *forces,
                    TACSBcMap *addBcs=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
-  void lineSearch( double *alpha, double *beta, double *gamma, TacsScalar f0, TACSBVec *d0 );
-
+  void lapackEigenSolve( TACSMat *mat );
+  void lineSearch( double *alpha, double *beta, double *gamma, 
+                   TacsScalar f0, TACSBVec *d0 );
+  
   // Functions to aid adjoint solve
   // -------------------------------
   void addVectorTransProducts( TACSBVec **ans, 
@@ -242,7 +244,8 @@ class TACSIntegrator : public TACSObject {
   int use_line_search;  // Flag to make use of line search for nonlinear root finding
 
   int use_lapack;       // Flag to switch to LAPACK for linear solve
-  int use_femat;         
+  int use_femat;
+  int eigensolve;       // Solve for eigenvalues
   int lev, fill, reorder_schur;
   int gmres_iters, num_restarts, is_flexible;
 
