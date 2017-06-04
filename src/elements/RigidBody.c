@@ -12,7 +12,9 @@
   A generic constructor for the rigid body where the user can directly
   supply the information about the geometry
 */
-TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, int _conn[] ){
+TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, 
+                                    TacsScalar *_Xpt, int _conn[], 
+                                    TACSGibbsVector *_vizorigin ){
   // Copy over the inputs
   npts   = _npts;
   nelems = _nelems;
@@ -22,63 +24,10 @@ TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, TacsScalar *_Xpt, in
 
   conn = new int[9*nelems];
   memcpy(conn, _conn, 9*nelems*sizeof(int));  
-}
 
-/*
-  Vizualization object for cube rigid body
-*/
-TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar L ){
-  // Set values for class variables
-  npts   = 8;
-  nelems = 1;
-  Xpts   = new TacsScalar[ 3*npts ];
-  conn   = new int[ 8*nelems ];
-
-  // Loop through all the nodes
-  TacsScalar *x = Xpts;
-  for ( int iz = 0; iz < 2; iz++ ){
-    for ( int iy = 0; iy < 2; iy++ ){
-      for ( int ix = 0; ix < 2; ix++ ){
-        // Compute the [x,y and z] coordinates of the current node
-        x[0] = (ix - 0.5)*L;
-        x[1] = (iy - 0.5)*L;
-        x[2] = (iz - 0.5)*L;
-        x += 3;
-
-        // Set the connectivity
-        conn[ix + 2*iy + 4*iz] = ix + 2*iy + 4*iz;
-      }
-    }
-  }
-}
-
-/*
-  Vizualization object for cuboid rigid body
-*/
-TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
-                                    TacsScalar cx, TacsScalar cy, TacsScalar cz ){
-   // Set values for class variables
-  npts   = 8;
-  nelems = 1;
-  Xpts   = new TacsScalar[ 3*npts ];
-  conn   = new int[ 8*nelems ];
-
-  // Loop through all the nodes
-  TacsScalar *x = Xpts;
-  for ( int iz = 0; iz < 2; iz++ ){
-    for ( int iy = 0; iy < 2; iy++ ){
-      for ( int ix = 0; ix < 2; ix++ ){
-        // Compute the [x,y and z] coordinates of the current node
-        x[0] = cx + (ix - 0.5)*Lx;
-        x[1] = cy + (iy - 0.5)*Ly;
-        x[2] = cz + (iz - 0.5)*Lz;
-        x += 3;
-
-        // Set the connectivity
-        conn[ix + 2*iy + 4*iz] = ix + 2*iy + 4*iz;
-      }
-    }
-  }
+  // Copy the origin about which the visualization mesh is provided
+  vizorigin = _vizorigin; 
+  vizorigin->incref();
 }
 
 /*
@@ -87,6 +36,7 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz,
 TACSRigidBodyViz::~TACSRigidBodyViz(){
   if (Xpts) { delete [] Xpts; }
   if (conn) { delete [] conn; }
+  if (vizorigin) { vizorigin->decref(); }
 }
 
 /*
@@ -94,11 +44,13 @@ TACSRigidBodyViz::~TACSRigidBodyViz(){
 */
 void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems, 
                                 const TacsScalar **_Xpts, 
-                                const int **_conn ){
+                                const int **_conn,
+                                const TacsScalar **_vorig ){
   if(_npts){ *_npts = npts; }
   if(_nelems){ *_nelems = nelems; }
   if(_Xpts){ *_Xpts = Xpts; }
   if(_conn){ *_conn = conn; }
+  if(_vorig){ vizorigin->getVector(_vorig); }
 }
 
 /*
@@ -1461,18 +1413,10 @@ void TACSRigidBody::testJacobian( double dh,
 void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
   if (!viz){ return; }
   int np = 0, ne = 0;
-  viz->getMesh(&np, &ne, NULL, NULL);
-  if (np == 8){
-    // Use block
-    *nelems += ne;
-    *nnodes += np;
-    *ncsr += 8*ne;
-  } else {
-    // Use shell
-    *nelems += ne;
-    *nnodes += np;
-    *ncsr += 4*ne;  
-  }
+  viz->getMesh(&np, &ne, NULL, NULL, NULL);
+  *nelems += ne;
+  *nnodes += np;
+  *ncsr += 4*ne;  
 }
 
 /*
@@ -1507,8 +1451,9 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   // Get the nodal locations for the body
   int npts, nelems;
   const TacsScalar *X;
-  viz->getMesh(&npts, &nelems, &X, NULL);
-
+  const TacsScalar *vorig;
+  viz->getMesh(&npts, &nelems, &X, NULL, &vorig);
+  
   // Set the locations/variables for all the points from the
   // body-fixed reference frame
   for ( int i = 0; i < npts; i++ ){
@@ -1519,8 +1464,14 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 
     if (out_type & TACSElement::OUTPUT_NODES){
       // Compute the new point location
-      TacsScalar xr[3], xpt[3];
-      matMultTrans(Cr, x, xr);
+      TacsScalar xr[3], xpt[3], xn[3];
+
+      // Offset the visualization
+      xn[0] = x[0]; //- vorig[0];
+      xn[1] = x[1]; //- vorig[1];
+      xn[2] = x[2]; //- vorig[2];
+        
+      matMultTrans(Cr, xn, xr);
       matMultTrans(C, xr, xpt);
       
       // Write out the nodal locations
@@ -1530,10 +1481,6 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
       index += 3;
     }
     if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-      // Compute the new point location
-      TacsScalar xr[3], xpt[3];
-      matMultTrans(Cr, x, xr);
-      matMultTrans(C, xr, xpt);
 
       for ( int k = 0; k < 3; k++ ){
         data[index+k] = TacsRealPart(r0[k]);
@@ -1565,31 +1512,14 @@ void TACSRigidBody::getOutputConnectivity( int *out_conn, int node ){
   int nelems = 0;
   int npts = 0;
   const int *conn;
-  viz->getMesh(&npts, &nelems, NULL, &conn);
-  if (npts==8){
-    // Use block
-    for ( int i = 0; i < nelems; i++ ){
-      out_conn[0] = node + conn[0];
-      out_conn[1] = node + conn[1];
-      out_conn[2] = node + conn[3];
-      out_conn[3] = node + conn[2];
-      out_conn[4] = node + conn[4];
-      out_conn[5] = node + conn[5];
-      out_conn[6] = node + conn[7];
-      out_conn[7] = node + conn[6];
-      out_conn += 8;
-      conn += 8;
-    }
-  } else {
-    // Use block
-    for ( int i = 0; i < nelems; i++ ){
-      out_conn[0] = node + conn[0];
-      out_conn[1] = node + conn[6];
-      out_conn[2] = node + conn[8];
-      out_conn[3] = node + conn[2];
-      out_conn += 4;
-      conn +=9; 
-    }
+  viz->getMesh(&npts, &nelems, NULL, &conn, NULL);
+  for ( int i = 0; i < nelems; i++ ){
+    out_conn[0] = node + conn[0];
+    out_conn[1] = node + conn[6];
+    out_conn[2] = node + conn[8];
+    out_conn[3] = node + conn[2];
+    out_conn += 4;
+    conn +=9; 
   }
 }
 
