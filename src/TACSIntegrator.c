@@ -1122,6 +1122,7 @@ void TACSIntegrator::addFunctions( double tcoeff, TACSFunction **funcs,
   Performs an eigen solve of the Jacobian matrix
  */
 void TACSIntegrator::lapackEigenSolve( TACSMat *mat ) {    
+  /*
   // The following code retrieves a dense column-major 
   // matrix from the FEMat matrix
   TacsScalar *J;
@@ -1195,6 +1196,7 @@ all the eigenvalues, and no eigenvectors have been computed");
   delete [] vl;
   delete [] vr;
   if (J) { delete [] J; }
+  */
 }
 
 /*
