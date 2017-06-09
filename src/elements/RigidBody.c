@@ -721,8 +721,8 @@ void TACSRigidBody::getInitConditions( TacsScalar vars[],
   crossProduct(1.0, w, t, &ddvars[0]);
 
   // Check if the quaternion contraint is satisfied at initial condition
-  double con_viol = TacsRealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
-                             vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
+  double con_viol = TacsRealPart(vars[3]*vars[3] + vars[4]*vars[4] + 
+                                 vars[5]*vars[5] + vars[6]*vars[6] - 1.0);
   if (con_viol > 1.0e-12){
     fprintf(stderr, "Warning: RigidBody quarternion constraint violated by %f\n", con_viol);
   }
@@ -937,9 +937,7 @@ void TACSRigidBody::addResidual( double time,
   res[4] += 2.0*eps[0]*vars[7];
   res[5] += 2.0*eps[1]*vars[7];
   res[6] += 2.0*eps[2]*vars[7];
-
-  
-  
+ 
   // Compute the quaternion constraint
   res[7] += eta*eta + vecDot(eps, eps) -1.0;
 

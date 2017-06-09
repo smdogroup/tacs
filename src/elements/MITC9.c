@@ -779,12 +779,11 @@ void MITC9::getInitConditions( TacsScalar vars[],
   }
 
   // Check if the quaternion contraint is satisfied at initial condition
-  double con_viol = TacsRealPart(vars[0]*vars[0] + vars[1]*vars[1] + 
-                             vars[2]*vars[2] + vars[3]*vars[3] - 1.0);
-  if (con_viol > 1.0e-12){
-    fprintf(stderr, 
-            "Warning: MITC9 quarternion constraint violated by %f\n", 
-            con_viol);
+  double con_viol = TacsRealPart(vars[3]*vars[3] + vars[4]*vars[4] + 
+                                 vars[5]*vars[5] + vars[6]*vars[6] - 1.0);
+  if (abs(con_viol) > 1.0e-12){
+    fprintf(stderr, "Warning: MITC9 quarternion constraint violated by %f\n", con_viol);
+    exit(-1);
   }
 }
 
