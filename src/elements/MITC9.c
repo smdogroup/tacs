@@ -1201,7 +1201,7 @@ void MITC9::addResidual( double time,
   // Add the constraints from the quaternion parametrization
   for ( int i = 0; i < NUM_NODES; i++ ){
     const TacsScalar *q = &vars[8*i+3];
-    TacsScalar lamb = vars[8*i+7];
+    TacsScalar lamb = ddvars[8*i+7];
 
     // Add the result to the governing equations
     res[8*i+3] += 2.0*scale*q[0]*lamb;
@@ -1519,13 +1519,13 @@ void MITC9::addJacobian( double time, TacsScalar J[],
     const int ldj = 8*NUM_NODES;
 
     TacsScalar *Jp = &J[(8*NUM_NODES+1)*(8*i + 3)];
-    TacsScalar lamb = vars[8*i+7];
+    TacsScalar lamb = ddvars[8*i+7];
     
     // Add the constraint terms
-    Jp[4] += 2.0*scale*q[0];
-    Jp[4+ldj] += 2.0*scale*q[1];
-    Jp[4+2*ldj] += 2.0*scale*q[2];
-    Jp[4+3*ldj] += 2.0*scale*q[3];
+    Jp[4] += 2.0*area*gamma*q[0];
+    Jp[4+ldj] += 2.0*area*gamma*q[1];
+    Jp[4+2*ldj] += 2.0*area*gamma*q[2];
+    Jp[4+3*ldj] += 2.0*area*gamma*q[3];
 
     // Enforce the quaternion constraint
     Jp[4*ldj] += 2.0*scale*q[0];
@@ -5992,6 +5992,10 @@ void MITC9::getOutputData( unsigned int out_type,
           data[index+k] = TacsRealPart(vars[NUM_DISPS*p+k]);
         }
         index += NUM_DISPS;
+
+        // Add the Lagrange multiplier
+        data[index] = TacsRealPart(vars[p+7]);
+        index++;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < NUM_STRESSES; k++ ){

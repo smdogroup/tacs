@@ -933,10 +933,10 @@ void TACSRigidBody::addResidual( double time,
   
     
   // Add the Lagrange multiplier term
-  res[3] += 2.0*eta*vars[7];
-  res[4] += 2.0*eps[0]*vars[7];
-  res[5] += 2.0*eps[1]*vars[7];
-  res[6] += 2.0*eps[2]*vars[7];
+  res[3] += 2.0*eta*ddvars[7];
+  res[4] += 2.0*eps[0]*ddvars[7];
+  res[5] += 2.0*eps[1]*ddvars[7];
+  res[6] += 2.0*eps[2]*ddvars[7];
  
   // Compute the quaternion constraint
   res[7] += eta*eta + vecDot(eps, eps) -1.0;
@@ -1123,23 +1123,22 @@ void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
 
   // Add the derivative: -d(D(g)^{T}*c)/dq
   addBlockDMatTransDeriv(-alpha, g, c, &mat[27], 8);
-
   
   // Add the terms from the Lagrange multipliers
-  mat[31] += 2.0*alpha*eta;
-  mat[39] += 2.0*alpha*eps[0];
-  mat[47] += 2.0*alpha*eps[1];
-  mat[55] += 2.0*alpha*eps[2];
-  
+  mat[31] += 2.0*gamma*eta;
+  mat[39] += 2.0*gamma*eps[0];
+  mat[47] += 2.0*gamma*eps[1];
+  mat[55] += 2.0*gamma*eps[2];
+
   mat[59] += 2.0*alpha*eta;
   mat[60] += 2.0*alpha*eps[0];
   mat[61] += 2.0*alpha*eps[1];
   mat[62] += 2.0*alpha*eps[2];
 
-  mat[27] += 2.0*alpha*vars[7];
-  mat[36] += 2.0*alpha*vars[7];
-  mat[45] += 2.0*alpha*vars[7];
-  mat[54] += 2.0*alpha*vars[7];
+  mat[27] += 2.0*alpha*ddvars[7];
+  mat[36] += 2.0*alpha*ddvars[7];
+  mat[45] += 2.0*alpha*ddvars[7];
+  mat[54] += 2.0*alpha*ddvars[7];
 
 }
 
@@ -1465,9 +1464,9 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
       TacsScalar xr[3], xpt[3], xn[3];
 
       // Offset the visualization
-      xn[0] = x[0]; //- vorig[0];
-      xn[1] = x[1]; //- vorig[1];
-      xn[2] = x[2]; //- vorig[2];
+      xn[0] = x[0]; // - vorig[0];
+      xn[1] = x[1]; // - vorig[1];
+      xn[2] = x[2]; // - vorig[2];
         
       matMultTrans(Cr, xn, xr);
       matMultTrans(C, xr, xpt);
