@@ -274,7 +274,7 @@ int main( int argc, char *argv[] ){
     }
 
     // The acceleration due to gravity in global frame of reference
-    TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.8);
+    TACSGibbsVector *gravVec = new TACSGibbsVector(19.0, 10.0, -9.8);
 
     // Define the zero vector
     TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
@@ -286,10 +286,10 @@ int main( int argc, char *argv[] ){
     TACSRefFrame *refFrameA = new TACSRefFrame(rAInitVec, rA1Vec, rA2Vec);
 
     // Define the inertial properties
-    const TacsScalar mA    = 1.0;
-    const TacsScalar cA[3] = {5.1, 5.2, 5.3};
-    const TacsScalar JA[6] = {1.0, 0.30, 0.6,
-                              2.0, 0.9,
+    const TacsScalar mA    = 6.0;
+    const TacsScalar cA[3] = {20.0, 14.0, 42.0};
+    const TacsScalar JA[6] = {1.0, 1.1, 2.2,
+                              2.0, 1.4,
                               3.0};
     // Construct a rigid body
     TACSRigidBody *bodyA = new TACSRigidBody(refFrameA,
@@ -300,9 +300,9 @@ int main( int argc, char *argv[] ){
 
     // Test the rigid body
     /*
-    bodyA->testResidual(dh);
-    bodyA->testJacobian(dh, 2.0, 3.0, 4.0);
-	*/
+      bodyA->testResidual(dh);
+      bodyA->testJacobian(dh, 2.0, 3.0, 4.0);
+    */
     test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the revolute constraint
