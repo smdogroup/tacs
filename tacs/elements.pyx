@@ -64,11 +64,17 @@ cdef class RigidBodyViz:
                  int npts, int nelems,
                  np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
                  np.ndarray[int, ndim=1, mode='c'] conn,
-                 GibbsVector origin):
-      self.ptr = new TACSRigidBodyViz(npts, nelems,
-                                      <TacsScalar*>xpts.data,
-                                      <int*>conn.data,
-                                      origin.ptr)
+                 GibbsVector vref=None):
+      if vref is None:
+         self.ptr = new TACSRigidBodyViz(npts, nelems,
+                                         <TacsScalar*>xpts.data,
+                                         <int*>conn.data,
+                                         NULL)
+      else:
+         self.ptr = new TACSRigidBodyViz(npts, nelems,
+                                         <TacsScalar*>xpts.data,
+                                         <int*>conn.data,
+                                         vref.ptr)
       self.ptr.incref()
       return
    def __dealloc__(self):

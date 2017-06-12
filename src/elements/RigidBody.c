@@ -14,20 +14,27 @@
 */
 TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, 
                                     TacsScalar *_Xpt, int _conn[], 
-                                    TACSGibbsVector *_vizorigin ){
+                                    TACSGibbsVector *vref ){
   // Copy over the inputs
   npts   = _npts;
   nelems = _nelems;
 
-  Xpts = new TacsScalar[npts*3];
-  memcpy(Xpts, _Xpt, npts*3*sizeof(TacsScalar));
-
   conn = new int[9*nelems];
   memcpy(conn, _conn, 9*nelems*sizeof(int));  
 
-  // Copy the origin about which the visualization mesh is provided
-  vizorigin = _vizorigin; 
-  vizorigin->incref();
+  Xpts = new TacsScalar[npts*3];
+  if (vref){
+    const TacsScalar *vorig;
+    vref->getVector(&vorig);    
+    for ( int i = 0; i < npts; i++ ){
+      Xpts[i*3+0] = _Xpt[i*3+0] - vorig[0];
+      Xpts[i*3+1] = _Xpt[i*3+1] - vorig[1];
+      Xpts[i*3+2] = _Xpt[i*3+2] - vorig[2];
+    }    
+  } 
+  else {
+    memcpy(Xpts, _Xpt, 3*npts*sizeof(TacsScalar));      
+  }
 }
 
 /*
@@ -36,7 +43,6 @@ TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems,
 TACSRigidBodyViz::~TACSRigidBodyViz(){
   if (Xpts) { delete [] Xpts; }
   if (conn) { delete [] conn; }
-  if (vizorigin) { vizorigin->decref(); }
 }
 
 /*
@@ -44,13 +50,11 @@ TACSRigidBodyViz::~TACSRigidBodyViz(){
 */
 void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems, 
                                 const TacsScalar **_Xpts, 
-                                const int **_conn,
-                                const TacsScalar **_vorig ){
+                                const int **_conn ){
   if(_npts){ *_npts = npts; }
   if(_nelems){ *_nelems = nelems; }
   if(_Xpts){ *_Xpts = Xpts; }
   if(_conn){ *_conn = conn; }
-  if(_vorig){ vizorigin->getVector(_vorig); }
 }
 
 /*
@@ -933,10 +937,10 @@ void TACSRigidBody::addResidual( double time,
   
     
   // Add the Lagrange multiplier term
-  res[3] += 2.0*eta*ddvars[7];
-  res[4] += 2.0*eps[0]*ddvars[7];
-  res[5] += 2.0*eps[1]*ddvars[7];
-  res[6] += 2.0*eps[2]*ddvars[7];
+  res[3] += 2.0*eta*vars[7];
+  res[4] += 2.0*eps[0]*vars[7];
+  res[5] += 2.0*eps[1]*vars[7];
+  res[6] += 2.0*eps[2]*vars[7];
  
   // Compute the quaternion constraint
   res[7] += eta*eta + vecDot(eps, eps) -1.0;
@@ -1125,20 +1129,20 @@ void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
   addBlockDMatTransDeriv(-alpha, g, c, &mat[27], 8);
   
   // Add the terms from the Lagrange multipliers
-  mat[31] += 2.0*gamma*eta;
-  mat[39] += 2.0*gamma*eps[0];
-  mat[47] += 2.0*gamma*eps[1];
-  mat[55] += 2.0*gamma*eps[2];
+  mat[31] += 2.0*alpha*eta;
+  mat[39] += 2.0*alpha*eps[0];
+  mat[47] += 2.0*alpha*eps[1];
+  mat[55] += 2.0*alpha*eps[2];
 
   mat[59] += 2.0*alpha*eta;
   mat[60] += 2.0*alpha*eps[0];
   mat[61] += 2.0*alpha*eps[1];
   mat[62] += 2.0*alpha*eps[2];
 
-  mat[27] += 2.0*alpha*ddvars[7];
-  mat[36] += 2.0*alpha*ddvars[7];
-  mat[45] += 2.0*alpha*ddvars[7];
-  mat[54] += 2.0*alpha*ddvars[7];
+  mat[27] += 2.0*alpha*vars[7];
+  mat[36] += 2.0*alpha*vars[7];
+  mat[45] += 2.0*alpha*vars[7];
+  mat[54] += 2.0*alpha*vars[7];
 
 }
 
@@ -1410,7 +1414,7 @@ void TACSRigidBody::testJacobian( double dh,
 void TACSRigidBody::addOutputCount( int *nelems, int *nnodes, int *ncsr ){
   if (!viz){ return; }
   int np = 0, ne = 0;
-  viz->getMesh(&np, &ne, NULL, NULL, NULL);
+  viz->getMesh(&np, &ne, NULL, NULL);
   *nelems += ne;
   *nnodes += np;
   *ncsr += 4*ne;  
@@ -1448,8 +1452,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   // Get the nodal locations for the body
   int npts, nelems;
   const TacsScalar *X;
-  const TacsScalar *vorig;
-  viz->getMesh(&npts, &nelems, &X, NULL, &vorig);
+  viz->getMesh(&npts, &nelems, &X, NULL);
   
   // Set the locations/variables for all the points from the
   // body-fixed reference frame
@@ -1461,14 +1464,8 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
 
     if (out_type & TACSElement::OUTPUT_NODES){
       // Compute the new point location
-      TacsScalar xr[3], xpt[3], xn[3];
-
-      // Offset the visualization
-      xn[0] = x[0]; // - vorig[0];
-      xn[1] = x[1]; // - vorig[1];
-      xn[2] = x[2]; // - vorig[2];
-        
-      matMultTrans(Cr, xn, xr);
+      TacsScalar xr[3], xpt[3];
+      matMultTrans(Cr, x, xr);
       matMultTrans(C, xr, xpt);
       
       // Write out the nodal locations
@@ -1509,7 +1506,7 @@ void TACSRigidBody::getOutputConnectivity( int *out_conn, int node ){
   int nelems = 0;
   int npts = 0;
   const int *conn;
-  viz->getMesh(&npts, &nelems, NULL, &conn, NULL);
+  viz->getMesh(&npts, &nelems, NULL, &conn);
   for ( int i = 0; i < nelems; i++ ){
     out_conn[0] = node + conn[0];
     out_conn[1] = node + conn[6];
