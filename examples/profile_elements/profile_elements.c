@@ -48,6 +48,9 @@ void test_element( TACSElement *element,
   TACSElement::setStepSize(1e-30);
 #endif
   element->testResidual(time, Xpts, vars, dvars, ddvars);
+  for ( int k = 0; k < element->numVariables(); k++ ){
+    element->testJacobian(time, Xpts, vars, dvars, ddvars, k);
+  }
   element->testJacobian(time, Xpts, vars, dvars, ddvars);
   element->testAdjResProduct(x, dvLen, time, Xpts, vars, dvars, ddvars);
   element->testAdjResXptProduct(time, Xpts, vars, dvars, ddvars);
@@ -266,15 +269,22 @@ int main( int argc, char *argv[] ){
     // Generate a random arrary of variables conforming to the
     // quaternion constraint
     generate_random_array(vars, MAX_VARS);
+    generate_random_array(dvars, MAX_VARS);
+    generate_random_array(ddvars, MAX_VARS);
     for ( int i = 0; i < MAX_NODES; i++ ){
       vars[8*i+7] = 0.0;
       TacsScalar *v = &vars[8*i+3];
+
+      // Normalize the quaternion constraints
       TacsScalar fact = 
         1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+      for ( int j = 0; j < 4; j++ ){
+        v[j] *= fact;
+      }
     }
 
     // The acceleration due to gravity in global frame of reference
-    TACSGibbsVector *gravVec = new TACSGibbsVector(19.0, 10.0, -9.8);
+    TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, 0.0); //(19.0, 10.0, -9.8);
 
     // Define the zero vector
     TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
@@ -288,7 +298,7 @@ int main( int argc, char *argv[] ){
     // Define the inertial properties
     const TacsScalar mA    = 6.0;
     const TacsScalar cA[3] = {20.0, 14.0, 42.0};
-    const TacsScalar JA[6] = {1.0, 1.1, 2.2,
+    const TacsScalar JA[6] = {1.0, 0.8, -0.7,
                               2.0, 1.4,
                               3.0};
     // Construct a rigid body

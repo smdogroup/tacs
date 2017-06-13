@@ -918,6 +918,37 @@ static inline void computeRotationMat( const TacsScalar eta,
 }
 
 /*
+  Given the quaternion parameters, and their time-derivatives,
+  compute the time derivative of the rotation matrix
+
+  input:
+  eta:    the quaternion scalar
+  eps:    the quaternion 3-vector
+  deta:   the time derivative of the quaternion scalar
+  deps:   the time derivative of the quaternion 3-vector
+
+  output:
+  C:      the rotation matrix
+*/
+static inline void computeRotationMatDeriv( const TacsScalar eta,
+                                            const TacsScalar eps[],
+                                            const TacsScalar deta,
+                                            const TacsScalar deps[],
+                                            TacsScalar C[] ){
+  C[0] =-4.0*(eps[1]*deps[1] + eps[2]*deps[2]);
+  C[1] = 2.0*(eps[0]*deps[1] + deps[0]*eps[1] + eta*deps[2] + deta*eps[2]);
+  C[2] = 2.0*(eps[0]*deps[2] + deps[0]*eps[2] - eta*deps[1] - deta*eps[1]);
+
+  C[3] = 2.0*(eps[1]*deps[0] + deps[1]*eps[0] - eta*deps[2] - deta*eps[2]);
+  C[4] =-4.0*(eps[0]*deps[0] + eps[2]*deps[2]);
+  C[5] = 2.0*(eps[1]*deps[2] + deps[1]*eps[2] + eta*deps[0] + deta*eps[0]);
+
+  C[6] = 2.0*(eps[2]*deps[0] + deps[2]*eps[0] + eta*deps[1] + deta*eps[1]);
+  C[7] = 2.0*(eps[2]*deps[1] + deps[2]*eps[1] - eta*deps[0] - deta*eps[0]);
+  C[8] =-4.0*(eps[0]*deps[0] + eps[1]*deps[1]);
+}
+
+/*
   Compute the product of the 3x4 rotation rate matrix with the
   given components of the quaternion vector. 
 
