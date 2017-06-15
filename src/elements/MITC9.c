@@ -1186,7 +1186,6 @@ void MITC9::addResidual( double time,
         r[4] += h*(strainProduct(s, &b[32]) + rot*br[4]);
         r[5] += h*(strainProduct(s, &b[40]) + rot*br[5]);
         r[6] += h*(strainProduct(s, &b[48]) + rot*br[6]);
-        r[7] += h*(strainProduct(s, &b[56]) + rot*br[7]);
 
         r += 8;
         b += 64;
@@ -1210,7 +1209,7 @@ void MITC9::addResidual( double time,
     res[8*i+6] += 2.0*scale*q[3]*lamb;
     
     // Enforce the quaternion constraint
-    res[8*i+7] += scale*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0);   
+    res[8*i+7] += scale*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0);
   }
 }
 
@@ -1511,7 +1510,7 @@ void MITC9::addJacobian( double time, TacsScalar J[],
   addTyingGmat(J, w13, w23, X, Xr, vars, dir, dirdq);
 
   // Set the scaling for the constraints
-  TacsScalar scale = area*alpha;
+  TacsScalar scale = 2.0*alpha*area;
 
   // Add the constraints from the quaternions
   for ( int i = 0; i < NUM_NODES; i++ ){
@@ -1522,23 +1521,22 @@ void MITC9::addJacobian( double time, TacsScalar J[],
     TacsScalar lamb = vars[8*i+7];
     
     // Add the constraint terms
-    Jp[4] += 2.0*scale*q[0];
-    Jp[4+ldj] += 2.0*scale*q[1];
-    Jp[4+2*ldj] += 2.0*scale*q[2];
-    Jp[4+3*ldj] += 2.0*scale*q[3];
+    Jp[4] += scale*q[0];
+    Jp[4+ldj] += scale*q[1];
+    Jp[4+2*ldj] += scale*q[2];
+    Jp[4+3*ldj] += scale*q[3];
 
     // Enforce the quaternion constraint
-    Jp[4*ldj] += 2.0*scale*q[0];
-    Jp[4*ldj+1] += 2.0*scale*q[1];
-    Jp[4*ldj+2] += 2.0*scale*q[2];
-    Jp[4*ldj+3] += 2.0*scale*q[3];
+    Jp[4*ldj] += scale*q[0];
+    Jp[4*ldj+1] += scale*q[1];
+    Jp[4*ldj+2] += scale*q[2];
+    Jp[4*ldj+3] += scale*q[3];
 
     // Add the terms to the diagonal
-    Jp[0] += 2.0*scale*lamb;
-    Jp[ldj+1] += 2.0*scale*lamb;
-    Jp[2*(ldj+1)] += 2.0*scale*lamb;
-    Jp[3*(ldj+1)] += 2.0*scale*lamb;       
-
+    Jp[0] += scale*lamb;
+    Jp[ldj+1] += scale*lamb;
+    Jp[2*(ldj+1)] += scale*lamb;
+    Jp[3*(ldj+1)] += scale*lamb;
   }
 }
 

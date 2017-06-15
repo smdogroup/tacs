@@ -389,7 +389,7 @@ class TACSRigidLink : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
-
+ 
  private:
   TACSRigidBody *bodyA; // The rigid body
   static const char *elem_name; // The name of the element

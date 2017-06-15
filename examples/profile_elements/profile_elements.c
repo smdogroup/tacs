@@ -48,9 +48,6 @@ void test_element( TACSElement *element,
   TACSElement::setStepSize(1e-30);
 #endif
   element->testResidual(time, Xpts, vars, dvars, ddvars);
-  for ( int k = 0; k < element->numVariables(); k++ ){
-    element->testJacobian(time, Xpts, vars, dvars, ddvars, k);
-  }
   element->testJacobian(time, Xpts, vars, dvars, ddvars);
   element->testAdjResProduct(x, dvLen, time, Xpts, vars, dvars, ddvars);
   element->testAdjResXptProduct(time, Xpts, vars, dvars, ddvars);
@@ -284,7 +281,7 @@ int main( int argc, char *argv[] ){
     }
 
     // The acceleration due to gravity in global frame of reference
-    TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, 0.0); //(19.0, 10.0, -9.8);
+    TACSGibbsVector *gravVec = new TACSGibbsVector(19.0, 10.0, -9.8);
 
     // Define the zero vector
     TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
