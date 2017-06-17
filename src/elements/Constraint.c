@@ -213,6 +213,10 @@ void TACSCylindricalConstraint::addResidual( double time, TacsScalar res[],
                                              const TacsScalar vars[],
                                              const TacsScalar dvars[],
                                              const TacsScalar ddvars[] ){
+  // Retrieve the joint location from  global origin
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
   // Set the bodyA pointers
   TacsScalar *resA       = &res[0];
   const TacsScalar *uA   = &vars[0];
@@ -253,7 +257,10 @@ void TACSCylindricalConstraint::addResidual( double time, TacsScalar res[],
   const TacsScalar *xA;
   xAVec->getVector(&xA);
 
-  // Evaluate the constraint that enforces the position rA + CA^{T}*xA + uA
+  // Evaluate the constraint 
+  // resC = rA + uA + CA^{T}*xA - pt = 0 or 
+  // resC = rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB = 0
+
   TacsScalar dA[3];
   matMultTransAdd(CA, xA, dA);
   vecAxpy(1.0, uA, dA);
@@ -330,6 +337,9 @@ void TACSCylindricalConstraint::addResidual( double time, TacsScalar res[],
                         &resB[3], &resB[4]);
   }
   else {
+    // This term should take us back to the origin if bodyB is not present
+    vecAxpy(-1.0, pt, dA);
+
     // Complete the evaluation of the constraint 1
     resC[0] += vecDot(eB1, dA);
     resC[1] += vecDot(eB2, dA);
