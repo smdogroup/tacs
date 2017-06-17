@@ -762,7 +762,13 @@ cdef class Assembler:
 
       self.ptr.getInitConditions(cvec, cdvec, cddvec)
       return
-    
+
+   def evalEnergies(self):
+      '''Evaluate the kinetic and potential energies'''
+      cdef TacsScalar Te, Pe
+      self.ptr.evalEnergies(&Te, &Pe)
+      return Te, Pe
+   
    def assembleRes(self, Vec residual):
       '''
       Assemble the residual associated with the input load case.  

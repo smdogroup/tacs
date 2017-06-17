@@ -744,11 +744,9 @@ void TACSIntegrator::writeStepToF5( int k ){
     
     // Write the f5 file for this time step
     rigidf5->writeToFile(rbuffer);
-
   }
 
   if(shellf5 && getWriteFlag(k, f5_write_freq)){
-
     // Create a buffer for shell filename 
     char sbuffer[256];
 
@@ -891,6 +889,12 @@ void TACSIntegrator::integrate(){
 
   // Perform logging, tecplot export, etc
   current_time_step = 0;
+  
+  // Set the initial conditions
+  tacs->getInitConditions(q[0], qdot[0], qddot[0]);
+  tacs->setVariables(q[0], qdot[0], qddot[0]);
+
+  // Output the results at the initial condition
   doEachTimeStep(current_time_step);  
 
   // March forward in time

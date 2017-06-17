@@ -263,7 +263,10 @@ cdef extern from "TACSAssembler.h":
 
       # Get the initial conditions
       void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
-      
+
+      # Evaluate the kinetic/potential energy
+      void evalEnergies(TacsScalar*, TacsScalar*)
+
       # Assembly routines
       void assembleRes(TACSBVec *residual)
       void assembleJacobian(double alpha, double beta, double gamma,

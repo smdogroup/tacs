@@ -5990,10 +5990,6 @@ void MITC9::getOutputData( unsigned int out_type,
           data[index+k] = TacsRealPart(vars[NUM_DISPS*p+k]);
         }
         index += NUM_DISPS;
-
-        // Add the Lagrange multiplier
-        data[index] = TacsRealPart(vars[p+7]);
-        index++;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < NUM_STRESSES; k++ ){
@@ -6061,7 +6057,6 @@ void MITC9::getOutputConnectivity( int * con, int node ){
     }
   }
 }
-
 
 /*
   Test the implementation of the strain by comparing against a
