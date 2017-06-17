@@ -1664,6 +1664,15 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
+  // Retrieve the joint location from  global origin
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Get the initial position for bodyA  from global origin
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  const TacsScalar *rA;
+  rAVec->getVector(&rA);
+
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
 
@@ -1702,17 +1711,13 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
   addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
                       &resA[3], &resA[4]);
 
-  // Evaluate the constraint
-  // Set resC = rA + CA^{T}*xA
-  matMultTransAdd(CA, xA, resC);
+  // Evaluate the constraint 
+  // resC = rA + uA + CA^{T}*xA - pt = 0 or 
+  // resC = rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB = 0
+  matMultTrans(CA, xA, resC);
   vecAxpy(1.0, uA, resC);
-
-  // Get the initial position for bodyA
-  TACSGibbsVector *rAVec = bodyA->getInitPosition();
-  const TacsScalar *rA;
-  rAVec->getVector(&rA);
   vecAxpy(1.0, rA, resC);
-
+ 
   if (bodyB){
     // Set the residual for bodyB
     TacsScalar *resB = &res[8];
@@ -1747,7 +1752,12 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
     const TacsScalar *rB;
     rBVec->getVector(&rB);
     vecAxpy(-1.0, rB, resC);
+
+  } else {
+    // subtract the joint location if bodyB is not present
+    vecAxpy(-1.0, pt, resC);      
   }
+  
 
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables
@@ -2062,6 +2072,10 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[] ){
+  // Retrieve the coordinates of the joint point in the global frame
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
 
@@ -2100,15 +2114,16 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
   addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
                       &resA[3], &resA[4]);
 
-  // Evaluate the constraint
-  // Set resC = rA + CA^{T}*xA
-  matMultTransAdd(CA, xA, resC);
-  vecAxpy(1.0, uA, resC);
-
   // Get the initial position for bodyA
   TACSGibbsVector *rAVec = bodyA->getInitPosition();
   const TacsScalar *rA;
   rAVec->getVector(&rA);
+
+  // Evaluate the constraint 
+  // resC = rA + uA + CA^{T}*xA - pt = 0 or 
+  // resC = rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB = 0
+  matMultTransAdd(CA, xA, resC);
+  vecAxpy(1.0, uA, resC);
   vecAxpy(1.0, rA, resC);
 
   // Retrieve the pointers to eA, eB1, eB2
@@ -2179,6 +2194,9 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
                         &resB[3], &resB[4]);
   }
   else {
+    // Subtract pt vec if bodyB is not present
+    vecAxpy(-1.0, pt, resC);
+  
     // Add the revolute direction constraint
     TacsScalar tA[3];
     matMultTrans(CA, eA, tA);
