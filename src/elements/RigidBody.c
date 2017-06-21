@@ -15,11 +15,85 @@
 TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems, 
                                     TacsScalar *_Xpt, int _conn[], 
                                     TACSGibbsVector *vref ){
+  init(_npts, _nelems, _Xpt, _conn, vref);
+}
+
+/*
+  Create a cube for visualization
+*/
+TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx, 
+                                    TacsScalar Ly, 
+                                    TacsScalar Lz ){
+  // Create an array with the cube
+  int index[27];
+  int elem_conn[9*6];
+  TacsScalar X[3*26];
+
+  // Set the point locations
+  int count = 0;
+  for ( int kk = 0; kk < 3; kk++ ){
+    for ( int jj = 0; jj < 3; jj++ ){
+      for ( int ii = 0; ii < 3; ii++ ){
+        if (ii == 1 && jj == 1 && kk == 1){
+          index[ii + 3*jj + 9*kk] = -1;
+        }
+        else {
+          X[3*count] = (0.5*ii - 0.5)*Lx;
+          X[3*count+1] = (0.5*jj - 0.5)*Ly;
+          X[3*count+2] = (0.5*kk - 0.5)*Lz;
+          index[ii + 3*jj + 9*kk] = count;
+          count++;
+        }
+      }
+    }
+  }
+
+  // Create the ii-surfaces
+  int elem = 0;
+  for ( int ii = 0; ii < 3; ii += 2 ){
+    for ( int kk = 0; kk < 3; kk++ ){
+      for ( int jj = 0; jj < 3; jj++ ){
+        elem_conn[9*elem + jj + 3*kk] = index[ii + 3*jj + 9*kk];
+      }
+    }
+    elem++;
+  }
+
+  // Create the jj-surfaces
+  for ( int jj = 0; jj < 3; jj += 2 ){
+    for ( int kk = 0; kk < 3; kk++ ){
+      for ( int ii = 0; ii < 3; ii++ ){
+        elem_conn[9*elem + ii + 3*kk] = index[ii + 3*jj + 9*kk];
+      }
+    }
+    elem++;
+  }
+
+  // Create the kk-surfaces
+  for ( int kk = 0; kk < 3; kk += 2 ){
+    for ( int jj = 0; jj < 3; jj++ ){
+      for ( int ii = 0; ii < 3; ii++ ){
+        elem_conn[9*elem + ii + 3*jj] = index[ii + 3*jj + 9*kk];
+      }
+    }
+    elem++;
+  }
+
+  // Initialize the mesh
+  init(26, 6, X, elem_conn, NULL);
+}
+
+/*
+  Initialize the rigid body mesh
+*/
+void TACSRigidBodyViz::init( int _npts, int _nelems, 
+                             TacsScalar *_Xpt, int _conn[], 
+                             TACSGibbsVector *vref ){
   // Copy over the inputs
   npts   = _npts;
   nelems = _nelems;
 
-  conn = new int[9*nelems];
+  conn = new int[ 9*nelems ];
   memcpy(conn, _conn, 9*nelems*sizeof(int));  
 
   Xpts = new TacsScalar[npts*3];
@@ -860,7 +934,6 @@ void TACSRigidBody::addResidual( double time,
   gvec->getVector(&g);
 
   // Set the location and its time derivatives
-  const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
   const TacsScalar *a0 = &ddvars[0];
 
@@ -958,7 +1031,6 @@ void TACSRigidBody::addJacobian( double time, TacsScalar mat[],
   gvec->getVector(&g);
 
   // Set the location and its time derivatives
-  const TacsScalar *r0 = &vars[0];
   const TacsScalar *v0 = &dvars[0]; 
   const TacsScalar *a0 = &ddvars[0];
 
@@ -1441,7 +1513,7 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
   rInit->getVector(&rinit);
 
   // Write out the displacements at each node
-  const TacsScalar *r0 = &vars[0];
+  const TacsScalar *u0 = &vars[0];
   TacsScalar eta = vars[3];
   const TacsScalar *eps = &vars[4];
   
@@ -1467,21 +1539,22 @@ void TACSRigidBody::getOutputData( unsigned int out_type,
     const TacsScalar *x = &X[3*i];
 
     if (out_type & TACSElement::OUTPUT_NODES){
+      // Write out the nodal locations
+      for ( int k = 0; k < 3; k++ ){
+        data[index+k] = TacsRealPart(rinit[k] + x[k]);
+      }
+      index += 3;
+    }
+    if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
       // Compute the new point location
       TacsScalar xr[3], xpt[3];
       matMultTrans(Cr, x, xr);
       matMultTrans(C, xr, xpt);
       
-      // Write out the nodal locations
+      // xinit = xinit + Cr^{T}*x
+      // xfinal = xinit + x + u0 + C^{T}*x
       for ( int k = 0; k < 3; k++ ){
-        data[index+k] = TacsRealPart(rinit[k] + xpt[k]);
-      }
-      index += 3;
-    }
-    if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-
-      for ( int k = 0; k < 3; k++ ){
-        data[index+k] = TacsRealPart(r0[k]);
+        data[index+k] = TacsRealPart(u0[k] + xpt[k] - x[k]);
       }
       index += 3;
 
@@ -1517,7 +1590,7 @@ void TACSRigidBody::getOutputConnectivity( int *out_conn, int node ){
     out_conn[2] = node + conn[8];
     out_conn[3] = node + conn[2];
     out_conn += 4;
-    conn +=9; 
+    conn += 9; 
   }
 }
 
@@ -2498,7 +2571,6 @@ void TACSRigidLink::addResidual( double time, TacsScalar res[],
 
   // Set the variables for point B
   const TacsScalar *uB = &vars[8];
-  const TacsScalar etaB = vars[11];
   const TacsScalar *epsB = &vars[12];
 
   // Set the pointer to the multipliers
@@ -2563,7 +2635,6 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[] ){
   // Set the variables for body A
-  const TacsScalar *rA = &vars[0];
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
 

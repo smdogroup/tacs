@@ -67,7 +67,13 @@ cdef class FSDT(Constitutive):
       if stiff:
          stiff.printStiffness()
       return
-      
+
+   def setDrillingRegularization(self, double krel):
+      cdef FSDTStiffness *stiff = NULL
+      stiff = _dynamicFSDT(self.ptr)
+      if stiff:
+         stiff.setDrillingRegularization(krel)
+      return
 
 cdef class isoFSDT(FSDT):
    def __cinit__(self, rho, E, nu, kcorr, ys, t, tNum, minT, maxT):

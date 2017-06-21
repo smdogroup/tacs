@@ -1479,7 +1479,8 @@ cdef class BDFIntegrator(Integrator):
       '''
       Constructor for BDF Integrators of order 1, 2 and 3
       '''
-      self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_bdf_order)
+      self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, max_bdf_order)
       self.ptr.incref()
       return
 
@@ -1493,7 +1494,8 @@ cdef class DIRKIntegrator(Integrator):
                  double tinit, double tfinal,
                  int num_steps_per_sec,
                  int order):
-      self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, order)
+      self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, order)
       self.ptr.incref()
       return
 
@@ -1509,7 +1511,8 @@ cdef class ABMIntegrator(Integrator):
       '''
       Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
       '''
-      self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_abm_order)
+      self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, max_abm_order)
       self.ptr.incref()
       return
 
@@ -1524,6 +1527,7 @@ cdef class NBGIntegrator(Integrator):
       '''
       Constructor for Newmark-Beta-Gamma method of integration
       '''
-      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, order)
+      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, order)
       self.ptr.incref()
       return

@@ -18,6 +18,7 @@ cdef extern from "FSDTStiffness.h":
         FSDTStiffness()
         void setRefAxis(TacsScalar*)
         void printStiffness()
+        void setDrillingRegularization(double)
 
 cdef extern from "isoFSDTStiffness.h":
     cdef cppclass isoFSDTStiffness(FSDTStiffness):

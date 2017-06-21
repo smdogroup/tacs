@@ -61,20 +61,21 @@ cdef class RefFrame:
 cdef class RigidBodyViz:
    cdef TACSRigidBodyViz *ptr
    def __cinit__(self,
-                 int npts, int nelems,
-                 np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
-                 np.ndarray[int, ndim=1, mode='c'] conn,
-                 GibbsVector vref=None):
-      if vref is None:
+                 int npts=0, int nelems=0,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] xpts=None,
+                 np.ndarray[int, ndim=1, mode='c'] conn=None,
+                 GibbsVector vref=None, 
+                 TacsScalar Lx=1.0, TacsScalar Ly=1.0, TacsScalar Lz=1.0):
+      cdef TACSGibbsVector *vptr = NULL
+      if vref is not None:
+         vptr = vref.ptr
+      if xpts is not None and conn is not None:
          self.ptr = new TACSRigidBodyViz(npts, nelems,
                                          <TacsScalar*>xpts.data,
-                                         <int*>conn.data,
-                                         NULL)
+                                         <int*>conn.data, vref.ptr)
       else:
-         self.ptr = new TACSRigidBodyViz(npts, nelems,
-                                         <TacsScalar*>xpts.data,
-                                         <int*>conn.data,
-                                         vref.ptr)
+         self.ptr = new TACSRigidBodyViz(Lx, Ly, Lz)
+
       self.ptr.incref()
       return
    def __dealloc__(self):
@@ -274,7 +275,8 @@ cdef class PlaneTri6(Element):
       return
 
 cdef class MITCShell(Element):
-   def __cinit__(self, int order, FSDT stiff, ElementBehaviorType elem_type=LINEAR,
+   def __cinit__(self, int order, FSDT stiff, 
+                 ElementBehaviorType elem_type=LINEAR,
                  int component_num=0):
       '''
       Wrap the MITCShell element class for order 2,3,4
@@ -295,7 +297,8 @@ cdef class MITCShell(Element):
       return
 
 cdef class Solid(Element):
-   def __cinit__(self, int order, solid stiff, ElementBehaviorType elem_type=LINEAR,
+   def __cinit__(self, int order, solid stiff, 
+                 ElementBehaviorType elem_type=LINEAR,
                  int component_num=0):
       '''
       Wrap the Solid element class for order 2,3,4

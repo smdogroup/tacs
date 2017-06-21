@@ -22,12 +22,17 @@ class TACSRigidBodyViz : public TACSObject {
  public:
   TACSRigidBodyViz( int _npts, int _nelems, 
                     TacsScalar *_Xpt, int _conn[], 
-                    TACSGibbsVector *_vref=NULL);
+                    TACSGibbsVector *_vref=NULL );
+  TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz );
   ~TACSRigidBodyViz();
   void getMesh( int *_npts, int *_nelems,
                 const TacsScalar **_Xpts, const int **_conn );
 
  private:
+  void init( int _npts, int _nelems, 
+             TacsScalar *_Xpt, int _conn[], 
+             TACSGibbsVector *_vref=NULL );
+  
   TacsScalar *Xpts;
   int npts, nelems;
   int *conn;
