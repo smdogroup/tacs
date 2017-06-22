@@ -254,6 +254,7 @@ class TACSAssembler : public TACSObject {
   void getOutputData( ElementType elem_type,
                       unsigned int out_type,
                       double *data, int nvals );
+
   // Functions for ordering the variables
   // ------------------------------------
   void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex );
@@ -279,9 +280,8 @@ class TACSAssembler : public TACSObject {
                             int **_recvNodes=NULL );
   int computeCouplingElements( int **_celems );
 
-  /* // Functions for ordering the variables */
-  /* // ------------------------------------ */
-  /* void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex ); */
+  // Functions for ordering the variables
+  // ------------------------------------
   void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, 
                                   int nrnodes, const int *rnodes,
                                   int nodiag );

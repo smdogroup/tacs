@@ -354,7 +354,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Set the D matrix to NULL
     if (use_femat){
       // Create a matrix for storing the Jacobian
-      D = tacs->createFEMat(ordering_type);
+      D = tacs->createFEMat(TACSAssembler::TACS_AMD_ORDER);
       D->incref();
       
       // Allocate the factorization

@@ -2284,11 +2284,6 @@ void MITC9::addFramesSens( TacsScalar Xd[],
       TacsScalar invNrm = 1.0/sqrt(vecDot(n, n));
       
       // Compute the normal
-      TacsScalar nhat[3];
-      nhat[0] = invNrm*n[0];
-      nhat[1] = invNrm*n[1];
-      nhat[2] = invNrm*n[2];
-
       TacsScalar Xad[3], Xbd[3], nhatd[3];
       Xad[0] = Xrd[0];   Xad[1] = Xrd[3];   Xad[2] = Xrd[6];
       Xbd[0] = Xrd[1];   Xbd[1] = Xrd[4];   Xbd[2] = Xrd[7];
@@ -5992,9 +5987,28 @@ void MITC9::getOutputData( unsigned int out_type,
         index += NUM_DISPS;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
+        // Evaluate the derivatives of the shape functions
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+        computeShapeFunc(pt[0], pt[1], N);
+        computeShapeFunc(pt[0], pt[1], Na, Nb);
+
+        // Compute the derivative along the shape function
+        // directions
+        TacsScalar Xa[3], Xb[3];
+        innerProduct(Na, Xpts, Xa);
+        innerProduct(Nb, Xpts, Xb);
+
+        // Compute the derivatives of Ua/Ub along the given directions
+        TacsScalar Ua[3], Ub[3];
+        innerProduct8(Na, vars, Ua);
+        innerProduct8(Nb, vars, Ub);
+
+        // Add the term due to the potential energy
+        TacsScalar rot = computeRotPenalty(N, Xa, Xb, Ua, Ub, vars);
         for ( int k = 0; k < NUM_STRESSES; k++ ){
           data[index+k] = TacsRealPart(strain[k]);
         }
+        data[index+NUM_STRESSES-1] = rot;
         index += NUM_STRESSES;
       }
       if (out_type & TACSElement::OUTPUT_STRESSES){

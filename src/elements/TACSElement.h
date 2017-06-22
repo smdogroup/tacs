@@ -209,8 +209,8 @@ class TACSElement : public TACSOptObject {
   }
 
   // Identifies whether the nodes are associated with the multipliers
-  virtual void getMultiplierNodeIds( int *ids ){
-    memset(ids, 0, numNodes()*sizeof(int));
+  virtual void getMultiplierIndex( int *multiplier ){
+    *multiplier = -1;
   }
 
   // Retrieve the initial conditions and add the derivative

@@ -95,7 +95,7 @@ void BCSRMatFactor( BCSRMatData * data ){
     }
 
     int fail = BMatComputeInverse(a, D, ipiv, bsize);
-    if ( fail != 0 ){
+    if (fail != 0){
       fprintf(stderr, "Failure in factorization of row %d, block row %d\n", 
               i, fail);
     }
