@@ -1273,16 +1273,19 @@ cdef class MeshLoader:
                                &elem_ptr, &elem_conn, &Xpts)
 
       cdef np.ndarray ptr = np.zeros(num_elements+1, dtype=np.int)
-      for i in xrange(num_elements+1):
-         ptr[i] = elem_ptr[i]
+      if elem_ptr is not NULL:
+         for i in xrange(num_elements+1):
+            ptr[i] = elem_ptr[i]
 
       cdef np.ndarray conn = np.zeros(ptr[-1], dtype=np.int)
-      for i in xrange(ptr[-1]):
-         conn[i] = elem_conn[i]
+      if elem_conn is not NULL:
+         for i in xrange(ptr[-1]):
+            conn[i] = elem_conn[i]
 
       cdef np.ndarray X = np.zeros(3*num_nodes)
-      for i in xrange(3*num_nodes):
-         X[i] = Xpts[i]
+      if Xpts is not NULL:
+         for i in xrange(3*num_nodes):
+            X[i] = Xpts[i]
 
       return ptr, conn, X
 
@@ -1299,18 +1302,21 @@ cdef class MeshLoader:
       self.ptr.getBCs(&num_bcs, &bc_nodes, &bc_vars, &bc_ptr, &bc_vals)
 
       cdef np.ndarray nodes = np.zeros(num_bcs, dtype=np.int)
-      for i in xrange(num_bcs):
-         nodes[i] = bc_nodes[i]
+      if bc_nodes is not NULL:
+         for i in xrange(num_bcs):
+            nodes[i] = bc_nodes[i]
 
       cdef np.ndarray ptr = np.zeros(num_bcs+1, dtype=np.int)
-      for i in xrange(num_bcs+1):
-         ptr[i] = bc_ptr[i]
+      if bc_ptr is not NULL:
+         for i in xrange(num_bcs+1):
+            ptr[i] = bc_ptr[i]
 
       cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.int)
       cdef np.ndarray vals = np.zeros(ptr[-1])
-      for i in xrange(ptr[-1]):
-         bvars[i] = bc_vars[i]
-         vals[i] = bc_vals[i]
+      if bc_vars is not NULL and bc_vals is not NULL:
+         for i in xrange(ptr[-1]):
+            bvars[i] = bc_vars[i]
+            vals[i] = bc_vals[i]
 
       return nodes, ptr, bvars, vals
 
