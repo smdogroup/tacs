@@ -387,6 +387,9 @@ class MITC9 : public TACSElement {
   // Set the pointers to quadrature points/weights
   const double *gaussPts, *gaussWts;
 
+  // Set the drill rotation omega factor
+  double drill_inertia_factor;
+  
   // The stiffness object
   FSDTStiffness *stiff;
 
