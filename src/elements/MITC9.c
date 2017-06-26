@@ -702,7 +702,8 @@ static inline void computeNormalRateProduct( const TacsScalar n[],
   vInit:      the initial velocity
   omegaInit:  the initial angular velocity
 */
-MITC9::MITC9( FSDTStiffness *_stiff, TACSGibbsVector *_gravity,
+MITC9::MITC9( FSDTStiffness *_stiff,
+              TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit,
               TACSGibbsVector *_omegaInit ){
   // Set the stiffness 
@@ -776,14 +777,6 @@ void MITC9::getInitConditions( TacsScalar vars[],
       crossProduct(1.0, omega, &X[3*i], omegar);
       crossProduct(1.0, omega, omegar, &ddvars[8*i]);
     }
-  }
-
-  // Check if the quaternion contraint is satisfied at initial condition
-  double con_viol = TacsRealPart(vars[3]*vars[3] + vars[4]*vars[4] + 
-                                 vars[5]*vars[5] + vars[6]*vars[6] - 1.0);
-  if (abs(con_viol) > 1.0e-12){
-    fprintf(stderr, "Warning: MITC9 quarternion constraint violated by %f\n", con_viol);
-    exit(-1);
   }
 }
 
@@ -2292,9 +2285,12 @@ void MITC9::addFramesSens( TacsScalar Xd[],
       // Compute the sensitivity contribution from n = nhat/||nhat||
       TacsScalar nd[3];
       TacsScalar tmp = invNrm*invNrm*invNrm;
-      nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
-      nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
-      nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
+      nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - 
+                    n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
+      nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - 
+                    n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
+      nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - 
+                    n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
 
       // Add the derivative contribution to nd and Xbd
       crossProductAdd(1.0, Xb, nd, Xad);
@@ -2412,16 +2408,22 @@ void MITC9::computeTransformSens( TacsScalar Xad[],
     
     // Compute df/dT*dT/d(d1)*d(d1/d(Xa))
     TacsScalar tmp = invXa*invXa*invXa;
-    Xad[0] = tmp*((Xa[1]*Xa[1] + Xa[2]*Xa[2])*d1d[0] - Xa[0]*(Xa[1]*d1d[1] + Xa[2]*d1d[2]));
-    Xad[1] = tmp*((Xa[0]*Xa[0] + Xa[2]*Xa[2])*d1d[1] - Xa[1]*(Xa[0]*d1d[0] + Xa[2]*d1d[2]));
-    Xad[2] = tmp*((Xa[0]*Xa[0] + Xa[1]*Xa[1])*d1d[2] - Xa[2]*(Xa[0]*d1d[0] + Xa[1]*d1d[1]));
+    Xad[0] = tmp*((Xa[1]*Xa[1] + Xa[2]*Xa[2])*d1d[0] - 
+                   Xa[0]*(Xa[1]*d1d[1] + Xa[2]*d1d[2]));
+    Xad[1] = tmp*((Xa[0]*Xa[0] + Xa[2]*Xa[2])*d1d[1] - 
+                   Xa[1]*(Xa[0]*d1d[0] + Xa[2]*d1d[2]));
+    Xad[2] = tmp*((Xa[0]*Xa[0] + Xa[1]*Xa[1])*d1d[2] - 
+                   Xa[2]*(Xa[0]*d1d[0] + Xa[1]*d1d[1]));
     
     // Compute n = nhat/||nhat||
     TacsScalar nd[3];
     tmp = invNrm*invNrm*invNrm;
-    nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
-    nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
-    nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
+    nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - 
+                  n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
+    nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - 
+                  n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
+    nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - 
+                  n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
 
     // Add the derivative contribution to nd and Xbd
     crossProductAdd(1.0, Xb, nd, Xad);
@@ -2461,9 +2463,12 @@ void MITC9::computeTransformSens( TacsScalar Xad[],
     // Compute df/dT*dT/d(d1)*d(d1/d(Xa))
     TacsScalar tmp = inv*inv*inv;
     TacsScalar td[3];
-    td[0] = tmp*((t[1]*t[1] + t[2]*t[2])*d1d[0] - t[0]*(t[1]*d1d[1] + t[2]*d1d[2]));
-    td[1] = tmp*((t[0]*t[0] + t[2]*t[2])*d1d[1] - t[1]*(t[0]*d1d[0] + t[2]*d1d[2]));
-    td[2] = tmp*((t[0]*t[0] + t[1]*t[1])*d1d[2] - t[2]*(t[0]*d1d[0] + t[1]*d1d[1]));
+    td[0] = tmp*((t[1]*t[1] + t[2]*t[2])*d1d[0] - 
+                  t[0]*(t[1]*d1d[1] + t[2]*d1d[2]));
+    td[1] = tmp*((t[0]*t[0] + t[2]*t[2])*d1d[1] - 
+                  t[1]*(t[0]*d1d[0] + t[2]*d1d[2]));
+    td[2] = tmp*((t[0]*t[0] + t[1]*t[1])*d1d[2] - 
+                  t[2]*(t[0]*d1d[0] + t[1]*d1d[1]));
 
     TacsScalar ta = vecDot(td, nhat);
     nhatd[0] -= ta*axis[0] + an*td[0];
@@ -2473,9 +2478,12 @@ void MITC9::computeTransformSens( TacsScalar Xad[],
     // Compute n = nhat/||nhat||
     TacsScalar nd[3];
     tmp = invNrm*invNrm*invNrm;
-    nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
-    nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
-    nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
+    nd[0] = tmp*((n[1]*n[1] + n[2]*n[2])*nhatd[0] - 
+                  n[0]*(n[1]*nhatd[1] + n[2]*nhatd[2]));
+    nd[1] = tmp*((n[0]*n[0] + n[2]*n[2])*nhatd[1] - 
+                  n[1]*(n[0]*nhatd[0] + n[2]*nhatd[2]));
+    nd[2] = tmp*((n[0]*n[0] + n[1]*n[1])*nhatd[2] - 
+                  n[2]*(n[0]*nhatd[0] + n[1]*nhatd[1]));
 
     // Add the derivative contribution to nd and Xbd
     crossProduct(1.0, Xb, nd, Xad);
@@ -3463,17 +3471,23 @@ void MITC9::addBmatSens( TacsScalar Urd[], TacsScalar drd[],
       TacsScalar tu1d[9];
       matMatTransMult(dU1d, T, t);
       matMatMult(T, t, tu1d);
-      zXdinvd[6] += N[i]*(dirdq[0]*tu1d[0] + dirdq[1]*tu1d[3] + dirdq[2]*tu1d[6]);
-      zXdinvd[7] += N[i]*(dirdq[0]*tu1d[1] + dirdq[1]*tu1d[4] + dirdq[2]*tu1d[7]);
-      zXdinvd[8] += N[i]*(dirdq[0]*tu1d[2] + dirdq[1]*tu1d[5] + dirdq[2]*tu1d[8]);
+      zXdinvd[6] += 
+        N[i]*(dirdq[0]*tu1d[0] + dirdq[1]*tu1d[3] + dirdq[2]*tu1d[6]);
+      zXdinvd[7] += 
+        N[i]*(dirdq[0]*tu1d[1] + dirdq[1]*tu1d[4] + dirdq[2]*tu1d[7]);
+      zXdinvd[8] += 
+        N[i]*(dirdq[0]*tu1d[2] + dirdq[1]*tu1d[5] + dirdq[2]*tu1d[8]);
 
       // Add the contribution to Xdinvd
       TacsScalar tu0d[9];
       matMatTransMult(dU0d, T, t);
       matMatMult(T, t, tu0d);
-      Xdinvd[6] += N[i]*(dirdq[0]*tu0d[0] + dirdq[1]*tu0d[3] + dirdq[2]*tu0d[6]);
-      Xdinvd[7] += N[i]*(dirdq[0]*tu0d[1] + dirdq[1]*tu0d[4] + dirdq[2]*tu0d[7]);
-      Xdinvd[8] += N[i]*(dirdq[0]*tu0d[2] + dirdq[1]*tu0d[5] + dirdq[2]*tu0d[8]);
+      Xdinvd[6] += 
+        N[i]*(dirdq[0]*tu0d[0] + dirdq[1]*tu0d[3] + dirdq[2]*tu0d[6]);
+      Xdinvd[7] += 
+        N[i]*(dirdq[0]*tu0d[1] + dirdq[1]*tu0d[4] + dirdq[2]*tu0d[7]);
+      Xdinvd[8] += 
+        N[i]*(dirdq[0]*tu0d[2] + dirdq[1]*tu0d[5] + dirdq[2]*tu0d[8]);
 
       // Add the sensitivity from the the multiplication
       // Given that: tu1_{kl} = drdq_{kn}*Xdinv_{nl}
@@ -3485,13 +3499,20 @@ void MITC9::addBmatSens( TacsScalar Urd[], TacsScalar drd[],
       matTransMatMultAdd(drdq, tu1d, Xdinvd);
 
       // Add the contributions to dirdqd
-      dirdqd[0] += N[i]*(Xdinv[6]*tu0d[0] + Xdinv[7]*tu0d[1] + Xdinv[8]*tu0d[2]);
-      dirdqd[1] += N[i]*(Xdinv[6]*tu0d[3] + Xdinv[7]*tu0d[4] + Xdinv[8]*tu0d[5]);
-      dirdqd[2] += N[i]*(Xdinv[6]*tu0d[6] + Xdinv[7]*tu0d[7] + Xdinv[8]*tu0d[8]);
+      dirdqd[0] += 
+        N[i]*(Xdinv[6]*tu0d[0] + Xdinv[7]*tu0d[1] + Xdinv[8]*tu0d[2]);
+      dirdqd[1] += 
+        N[i]*(Xdinv[6]*tu0d[3] + Xdinv[7]*tu0d[4] + Xdinv[8]*tu0d[5]);
+      dirdqd[2] += 
+        N[i]*(Xdinv[6]*tu0d[6] + Xdinv[7]*tu0d[7] + Xdinv[8]*tu0d[8]);
 
-      dirdqd[0] += N[i]*(zXdinv[6]*tu1d[0] + zXdinv[7]*tu1d[1] + zXdinv[8]*tu1d[2]);
-      dirdqd[1] += N[i]*(zXdinv[6]*tu1d[3] + zXdinv[7]*tu1d[4] + zXdinv[8]*tu1d[5]);
-      dirdqd[2] += N[i]*(zXdinv[6]*tu1d[6] + zXdinv[7]*tu1d[7] + zXdinv[8]*tu1d[8]);
+      dirdqd[0] += 
+        N[i]*(zXdinv[6]*tu1d[0] + zXdinv[7]*tu1d[1] + zXdinv[8]*tu1d[2]);
+      dirdqd[1] += 
+        N[i]*(zXdinv[6]*tu1d[3] + zXdinv[7]*tu1d[4] + zXdinv[8]*tu1d[5]);
+      dirdqd[2] += 
+        N[i]*(zXdinv[6]*tu1d[6] + zXdinv[7]*tu1d[7] + zXdinv[8]*tu1d[8]);
+        
       // Add the derivative contribution from drdq
       // tu1_{kl} = drdq_{kn}*Xdinv_{nl}
       // tu1_{kl}/d(drdq_{ij}) = delta_{ik}*Xdinv{jl}
@@ -5987,28 +6008,10 @@ void MITC9::getOutputData( unsigned int out_type,
         index += NUM_DISPS;
       }
       if (out_type & TACSElement::OUTPUT_STRAINS){
-        // Evaluate the derivatives of the shape functions
-        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
-        computeShapeFunc(pt[0], pt[1], N);
-        computeShapeFunc(pt[0], pt[1], Na, Nb);
-
-        // Compute the derivative along the shape function
-        // directions
-        TacsScalar Xa[3], Xb[3];
-        innerProduct(Na, Xpts, Xa);
-        innerProduct(Nb, Xpts, Xb);
-
-        // Compute the derivatives of Ua/Ub along the given directions
-        TacsScalar Ua[3], Ub[3];
-        innerProduct8(Na, vars, Ua);
-        innerProduct8(Nb, vars, Ub);
-
         // Add the term due to the potential energy
-        TacsScalar rot = computeRotPenalty(N, Xa, Xb, Ua, Ub, vars);
         for ( int k = 0; k < NUM_STRESSES; k++ ){
           data[index+k] = TacsRealPart(strain[k]);
         }
-        data[index+NUM_STRESSES-1] = rot;
         index += NUM_STRESSES;
       }
       if (out_type & TACSElement::OUTPUT_STRESSES){

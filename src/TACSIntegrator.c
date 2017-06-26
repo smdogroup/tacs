@@ -1,6 +1,7 @@
 #include "TACSIntegrator.h"
 #include <math.h>
 #include "tacslapack.h"
+
 /* 
    Static factory method that returns an instance of the concrete
    child class. Note that the base class is abstract (contains
@@ -2250,7 +2251,8 @@ void TACSDIRKIntegrator::integrate(){
       // Solve the nonlinear system of stage equations starting with
       // the approximated states
       newton_term = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
-                                    qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
+                                qS[toffset+i], qdotS[toffset+i],
+                                qddotS[toffset+i], NULL);
       if (newton_term < 0){
         exit(-1);
       }
