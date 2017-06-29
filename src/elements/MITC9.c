@@ -1844,7 +1844,8 @@ void MITC9::addAdjResXptProduct( double time, double scale,
     
     // Enforce the quaternion constraint
     aread += (p[7]*(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0) +
-              2.0*lamb*(psi[0]*q[0] + psi[1]*q[1] + psi[2]*q[2] + psi[3]*q[3]));
+              2.0*lamb*(psi[0]*q[0] + psi[1]*q[1] + 
+                        psi[2]*q[2] + psi[3]*q[3]));
   }
 
   for ( int j = 0; j < ORDER; j++ ){

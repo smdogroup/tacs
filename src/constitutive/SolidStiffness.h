@@ -21,11 +21,9 @@ class SolidStiffness : public TACSConstitutive {
   // Calculate the stress
   // --------------------
   int getNumStresses();
-  void calculateStress( const double gpt[], const TacsScalar strain[],
+  void calculateStress( const double pt[], 
+                        const TacsScalar strain[],
 			TacsScalar stress[] );
-  void calculateStressDVSens( int dvNum, 
-                              const double gpt[], const TacsScalar strain[],
-			      TacsScalar stress[] );
   
   // Return the mass moments
   // -----------------------
@@ -36,7 +34,7 @@ class SolidStiffness : public TACSConstitutive {
 
   // Extra info about the constitutive class
   // ---------------------------------------
-  const char * constitutiveName();
+  const char *constitutiveName();
   
  protected:
   SolidStiffness();

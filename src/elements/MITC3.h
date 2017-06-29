@@ -37,7 +37,7 @@ class MITC3 : public TACSElement {
   static const int NUM_STRESSES = 6;
   static const int NUM_EXTRAS = 4;
   
-  MITC3( FSDTStiffness *_stiff, 
+  MITC3( TimoshenkoStiffness *_stiff, 
          TACSGibbsVector *_gravity=NULL,
          TACSGibbsVector *_vInit=NULL, 
          TACSGibbsVector *_omegaInit=NULL );
@@ -172,14 +172,6 @@ class MITC3 : public TACSElement {
                       const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
 
-  // Test the strain implementation
-  // ------------------------------
-  void testStrain( const TacsScalar X[] );
-
-  // Test member helper functions for geometric derivatives
-  // ------------------------------------------------------
-  void testXptSens( double dh=1e-6 );
-
  private:
   // Helper functions required for analysis
   void computeAngularVelocity( TacsScalar omega[],
@@ -192,14 +184,12 @@ class MITC3 : public TACSElement {
                             const TacsScalar dvars[],
                             const TacsScalar ddvars[] );
 
+  // Compute the local frame for strain computations
+  TacsScalar computeTransform( TacsScalar T[],
+                               const TacsScalar Xa[] );
+
   // Compute the reference frames at each node of the element
   void computeFrames( TacsScalar Xr[], const TacsScalar X[] );
-  void addFramesSens( TacsScalar Xd[],
-                      const TacsScalar Xrd[], const TacsScalar X[] );
-
-  // Compute the local frame for strain computations
-  void computeTransform( TacsScalar T[],
-                         const TacsScalar Xa[], const TacsScalar Xb[] );
 
   // Compute the derivative of the transformation
   void computeTransformSens( TacsScalar Xad[], TacsScalar Xbd[],
@@ -207,11 +197,10 @@ class MITC3 : public TACSElement {
                              const TacsScalar Xa[], const TacsScalar Xb[] );
 
   // Compute the directors for each node
-  void computeDirectors( TacsScalar d[],
-                         const TacsScalar vars[],
-                         const TacsScalar Xr[] );
+  void computeDirectors( TacsScalar d1[], TacsScalar d2[],
+                         const TacsScalar vars[], const TacsScalar Xr[] );
   void addDirectorsSens( TacsScalar Xrd[],
-                         const TacsScalar dd[],
+                         const TacsScalar d1d[], const TacsScalar d2d[],
                          const TacsScalar vars[] );
 
   // Compute the derivative of the directors w.r.t. the variables
@@ -248,133 +237,11 @@ class MITC3 : public TACSElement {
                  const TacsScalar Xdinv[], const TacsScalar zXdinv[],
                  const TacsScalar T[], const TacsScalar dirdq[] );
 
-  // Evaluate the derivative of the eSens^{T}*Bmat*psi w.r.t. node locations
-  void addBmatSens( TacsScalar Urd[], TacsScalar drd[],
-                    TacsScalar Xdinvd[], TacsScalar zXdinvd[],
-                    TacsScalar Td[], TacsScalar dirdqd[],
-                    const TacsScalar eSens[], const TacsScalar psi[],
-                    const double N[], 
-                    const double Na[], const double Nb[],
-                    const TacsScalar Ur[], const TacsScalar dr[],
-                    const TacsScalar Xdinv[], const TacsScalar zXdinv[],
-                    const TacsScalar T[], const TacsScalar dirdq[] );
-
-  // Add the interpolated strain to the strain vector
-  void addTyingStrain( TacsScalar e[],
-                       const double N13[], const double N23[],
-                       const TacsScalar g13[], const TacsScalar g23[],
-                       const TacsScalar Xdinv[], const TacsScalar T[] );
-
-  // Add the derivative of the strain w.r.t. the outputs
-  void addTyingStrainSens( TacsScalar g13d[], TacsScalar g23d[],
-                           TacsScalar Xdinvd[], TacsScalar Td[],
-                           TacsScalar scale, const TacsScalar e[],
-                           const double N13[], const double N23[],
-                           const TacsScalar g13[], const TacsScalar g23[],
-                           const TacsScalar Xdinv[], const TacsScalar T[] );
-
-  // Add the contribution from the tying strain to the b-matrix
-  void addTyingBmat( TacsScalar B[],
-                     const double N13[], const double N23[],
-                     const TacsScalar b13[], const TacsScalar b23[],
-                     const TacsScalar Xdinv[], const TacsScalar T[] );
-  void addTyingBmatSens( TacsScalar B13d[], TacsScalar B23d[],
-                         TacsScalar Xdinvd[], TacsScalar Td[],
-                         const TacsScalar eSens[], const TacsScalar psi[],
-                         const double N13[], const double N23[],
-                         const TacsScalar B13[], const TacsScalar B23[],
-                         const TacsScalar Xdinv[], const TacsScalar T[] );
-
   // Compute the shear strain at the tying points
   void computeTyingStrain( TacsScalar g13[], TacsScalar g23[],
                            const TacsScalar X[], const TacsScalar Xr[],
                            const TacsScalar vars[], 
                            const TacsScalar dir[] );
-  void addComputeTyingStrainSens( TacsScalar Xd[], TacsScalar Xrd[],
-                                  TacsScalar dird[],
-                                  const TacsScalar g13d[], const TacsScalar g23d[],
-                                  const TacsScalar X[], const TacsScalar Xr[],
-                                  const TacsScalar vars[], const TacsScalar dir[] );
-
-  // Compute the derivative of the strain at the tying points
-  void computeTyingBmat( TacsScalar g13[], TacsScalar g23[],
-                         TacsScalar b13[], TacsScalar b23[],
-                         const TacsScalar X[], const TacsScalar Xr[],
-                         const TacsScalar vars[], const TacsScalar dir[],
-                         const TacsScalar dirdq[] );
-  void addComputeTyingBmatSens( TacsScalar Xd[], TacsScalar Xrd[],
-                                TacsScalar dird[], TacsScalar dirdqd[],
-                                const TacsScalar g13d[], const TacsScalar g23d[],
-                                const TacsScalar B13d[], const TacsScalar B23d[],
-                                const TacsScalar X[], const TacsScalar Xr[],
-                                const TacsScalar vars[], const TacsScalar dir[],
-                                const TacsScalar dirdq[] );
-
-  // Add the terms from the geometric stiffness matrix
-  void addGmat( TacsScalar J[], 
-                const TacsScalar scale, const TacsScalar s[],
-                const double N[], const double Na[], const double Nb[],
-                const TacsScalar Ur[], const TacsScalar dr[],
-                const TacsScalar Xdinv[], const TacsScalar zXdinv[],
-                const TacsScalar T[], const TacsScalar Xr[],
-                const TacsScalar dirdq[] );
-
-  // Add the term from the drilling rotation
-  TacsScalar computeRotPenalty( const double N[],
-                                const TacsScalar Xa[],
-                                const TacsScalar Xb[],
-                                const TacsScalar Ua[],
-                                const TacsScalar Ub[],
-                                const TacsScalar vars[] );
-
-  // Compute the derivative of the rotation term 
-  TacsScalar computeBRotPenalty( TacsScalar brot[], const double N[], 
-                                 const double Na[], const double Nb[],
-                                 const TacsScalar Xa[], 
-                                 const TacsScalar Xb[],
-                                 const TacsScalar Ua[], 
-                                 const TacsScalar Ub[],
-                                 const TacsScalar vars[] );
-
-  // Add the derivative of the penalty term
-  void addBRotPenaltySens( TacsScalar Xad[], TacsScalar Xbd[],
-                           const TacsScalar rotd, 
-                           const TacsScalar scale, const TacsScalar psi[],
-                           const double N[], const double Na[], const double Nb[],
-                           const TacsScalar Xa[], const TacsScalar Xb[],
-                           const TacsScalar Ua[], const TacsScalar Ub[],
-                           const TacsScalar vars[] );
-
-  // Add the geometric stiffness term from the rotation
-  void addGRotMat( TacsScalar J[], const TacsScalar scale, 
-                   const double N[], const double Na[], const double Nb[],
-                   const TacsScalar Xa[], const TacsScalar Xb[],
-                   const TacsScalar Ua[], const TacsScalar Ub[],
-                   const TacsScalar vars[] );
-
-  // Add the geometric stiffness matrix from the tying strain
-  void addTyingGmat( TacsScalar J[],
-                     const TacsScalar w13[], const TacsScalar w23[],
-                     const TacsScalar X[], const TacsScalar Xr[],
-                     const TacsScalar vars[], const TacsScalar dir[],
-                     const TacsScalar dirdq[] );
-
-  // Add to the weights required to compute the geometric stiffness
-  void addTyingGmatWeights( TacsScalar w13[], TacsScalar w23[],
-                            const TacsScalar scalar,
-                            const TacsScalar s[],
-                            const double N13[], const double N23[],
-                            const TacsScalar Xdinv[],
-                            const TacsScalar T[] );
-
-  // Perform tests of the underlying implementation for the Xpt derivatives
-  void testInv3x3Sens( double dh );
-  void testStrainSens( double dh );
-  void testTransformSens( double dh );
-  void testNormalRateSens( double dh );
-  void testBmatSens( double dh );
-  void testTyingBmatSens( double dh );
-  void testBrotSens( double dh );
 
   // Compute the product of the stress and the strain
   inline TacsScalar strainProduct( const TacsScalar s[], 
@@ -387,7 +254,7 @@ class MITC3 : public TACSElement {
   const double *gaussPts, *gaussWts;
 
   // The stiffness object
-  FSDTStiffness *stiff;
+  TimoshenkoStiffness *stiff;
 
   // The gravity vector (if any)
   TACSGibbsVector *gravity;

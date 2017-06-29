@@ -7,10 +7,12 @@ const char * SolidStiffness::constitutiveName(){
 }
   
 /*
-  SolidStiffness member function definitions: Definitions for a simple beam element
+  SolidStiffness member function definitions: Definitions for a simple
+  beam element
 */
 
-SolidStiffness::SolidStiffness( TacsScalar _rho, TacsScalar E, TacsScalar nu ){
+SolidStiffness::SolidStiffness( TacsScalar _rho, TacsScalar E, 
+                                TacsScalar nu ){
   rho = _rho;
 
   TacsScalar D = E/((1.0 + nu)*(1.0 - 2.0*nu));
@@ -111,9 +113,9 @@ SolidStiffness::SolidStiffness( TacsScalar _rho,
 				TacsScalar _G13, TacsScalar _G12 ){
   rho = _rho;
 
-  TacsScalar nu_21 = (E2 * nu_12)/E1;
-  TacsScalar nu_31 = (E3 * nu_13)/E1;
-  TacsScalar nu_32 = (E3 * nu_23)/E2;
+  TacsScalar nu_21 = (E2*nu_12)/E1;
+  TacsScalar nu_31 = (E3*nu_13)/E1;
+  TacsScalar nu_32 = (E3*nu_23)/E2;
 
   TacsScalar D = (1.0 - nu_32*nu_23 - nu_21*nu_12 - nu_31*nu_13 
                   - 2.0*nu_21*nu_32*nu_13)/(E1*E2*E3);
@@ -143,11 +145,4 @@ void SolidStiffness::calculateStress( const double gpt[],
 				      const TacsScalar strain[],
 				      TacsScalar stress[] ){
   calcStress(strain, stress);
-}
-
-void SolidStiffness::calculateStressDVSens( int dvNum, const double gpt[], 
-					    const TacsScalar strain[],
-					    TacsScalar stress[] ){
-  stress[0] = stress[1] = stress[2] = 0.0;
-  stress[3] = stress[4] = stress[5] = 0.0;
 }
