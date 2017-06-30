@@ -9,11 +9,11 @@
 
 class TimoshenkoStiffness : public TACSConstitutive {
  public:
-  TimoshenkoStiffness( TacsScalar rhoA, TacsScalar rhoIz,
-                       TacsScalar rhoIy, TacsScalar rhoIyz,
+  TimoshenkoStiffness( TacsScalar rhoA, TacsScalar rhoIy,
+                       TacsScalar rhoIz, TacsScalar rhoIyz,
                        TacsScalar EA, TacsScalar GJ,
-                       TacsScalar EIz, TacsScalar EIy,
-                       TacsScalar kGAz, TacsScalar kGAy,
+                       TacsScalar EIy, TacsScalar EIz,
+                       TacsScalar kGAy, TacsScalar kGAz,
                        const TacsScalar axis[] );
   TimoshenkoStiffness( const TacsScalar rho[], 
                        const TacsScalar C[],

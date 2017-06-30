@@ -27,6 +27,96 @@ static inline void matMult( const TacsScalar A[],
 }
 
 /*
+  Compute y <- A^{T}*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  output:
+  y:   the resulting vector 
+*/
+static inline void matMultTrans( const TacsScalar A[],
+                                 const TacsScalar x[],
+                                 TacsScalar y[] ){
+  y[0] = A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+  y[1] = A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+  y[2] = A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matMultAdd( const TacsScalar A[],
+                               const TacsScalar x[],
+                               TacsScalar y[] ){
+  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] += A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
+  y[2] += A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matMultTransAdd( const TacsScalar A[],
+                                    const TacsScalar x[],
+                                    TacsScalar y[] ){
+  y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+  y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+  y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matSymmMult( const TacsScalar A[],
+                                const TacsScalar x[],
+                                TacsScalar y[] ){
+  y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] = A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
+  y[2] = A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matSymmMultAdd( const TacsScalar A[],
+                                   const TacsScalar x[],
+                                   TacsScalar y[] ){
+  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] += A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
+  y[2] += A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
+}
+
+/*
   Compute C = A*B
 
   input:
@@ -246,96 +336,6 @@ static inline void matSymmMat3x4Mult( const TacsScalar A[],
   C[9] = A[2]*B[1] + A[4]*B[5] + A[5]*B[9];
   C[10]= A[2]*B[2] + A[4]*B[6] + A[5]*B[10];
   C[11]= A[2]*B[3] + A[4]*B[7] + A[5]*B[11];
-}
-
-/*
-  Compute y <- A^{T}*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  output:
-  y:   the resulting vector 
-*/
-static inline void matMultTrans( const TacsScalar A[],
-                                 const TacsScalar x[],
-                                 TacsScalar y[] ){
-  y[0] = A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
-  y[1] = A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
-  y[2] = A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matMultAdd( const TacsScalar A[],
-                               const TacsScalar x[],
-                               TacsScalar y[] ){
-  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
-  y[1] += A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
-  y[2] += A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matMultTransAdd( const TacsScalar A[],
-                                    const TacsScalar x[],
-                                    TacsScalar y[] ){
-  y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
-  y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
-  y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matSymmMult( const TacsScalar A[],
-                                const TacsScalar x[],
-                                TacsScalar y[] ){
-  y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
-  y[1] = A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
-  y[2] = A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matSymmMultAdd( const TacsScalar A[],
-                                   const TacsScalar x[],
-                                   TacsScalar y[] ){
-  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
-  y[1] += A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
-  y[2] += A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
 }
 
 /*

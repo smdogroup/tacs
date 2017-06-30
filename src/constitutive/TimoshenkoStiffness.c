@@ -36,15 +36,15 @@ TimoshenkoStiffness::TimoshenkoStiffness( TacsScalar rhoA,
   memset(C, 0, 36*sizeof(TacsScalar));
   C[0] = EA;
   C[7] = GJ;
-  C[14] = EIz;
-  C[21] = EIy;
-  C[28] = kGAz;
-  C[35] = kGAy;
+  C[14] = EIy;
+  C[21] = EIz;
+  C[28] = kGAy;
+  C[35] = kGAz;
 
   // Set the entries of the density matrix
   rho[0] = rhoA;
-  rho[1] = rhoIz;
-  rho[2] = rhoIy;
+  rho[1] = rhoIy;
+  rho[2] = rhoIz;
   rho[3] = rhoIyz;
 }
 

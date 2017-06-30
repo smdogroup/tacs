@@ -13,6 +13,7 @@ CXX_OBJS = TACSElement.o \
 	ShellUtils.o \
 	LargeRotUtils.o \
 	PlaneStressTri6.o \
+	MITC3.o \
 	MITC9.o \
 	RigidBody.o \
 	Constraint.o	
