@@ -177,7 +177,6 @@ class MITC3 : public TACSElement {
 
   // Compute the local frame for strain computations
   TacsScalar computeTransform( TacsScalar T[],
-                               TacsScalar n1[], TacsScalar n2[],
                                const TacsScalar Xa[] );
 
   // Compute the reference frames at each node of the element
@@ -203,32 +202,29 @@ class MITC3 : public TACSElement {
   // Evaluate the strain
   void evalStrain( TacsScalar e[], const TacsScalar Ur[],
                    const TacsScalar d1a[], const TacsScalar d2a[],
-                   const TacsScalar T[] );
+                   const TacsScalar Xdinv[], const TacsScalar z1Xdinv[],
+                   const TacsScalar z2Xdinv[], const TacsScalar T[] );
 
   // Evaluate the bmat matrix
   void evalBmat( TacsScalar e[], TacsScalar B[],
                  const double N[], const double Na[],
                  const TacsScalar Ur[],
                  const TacsScalar d1a[], const TacsScalar d2a[],
-                 const TacsScalar T[], const TacsScalar detinv,
+                 const TacsScalar Xdinv[], const TacsScalar z1Xdinv[],
+                 const TacsScalar z2Xdinv[], const TacsScalar T[],
                  const TacsScalar d1dq[], const TacsScalar d2dq[] );
-
-  // Evaluate the derivative of the strain w.r.t. the element variables 
-  void evalBmat( TacsScalar e[], TacsScalar B[],
-                 const double N[], const double Na[], const double Nb[],
-                 const TacsScalar Ur[], const TacsScalar dr[],
-                 const TacsScalar Xdinv[], const TacsScalar zXdinv[],
-                 const TacsScalar T[], const TacsScalar dirdq[] );
 
   // Compute the tying strain
   void computeTyingStrain( TacsScalar g12[], TacsScalar g13[],
-                           const TacsScalar X[], const TacsScalar vars[],
+                           const TacsScalar X[], const TacsScalar Xr[],
+                           const TacsScalar vars[],
                            const TacsScalar d1[], const TacsScalar d2[] );
 
   // Compute the tying bmat matrices
   void computeTyingBmat( TacsScalar g12[], TacsScalar g13[],
                          TacsScalar B12[], TacsScalar B13[],
-                         const TacsScalar X[], const TacsScalar vars[],
+                         const TacsScalar X[], const TacsScalar Xr[],
+                         const TacsScalar vars[],
                          const TacsScalar d1[], const TacsScalar d2[],
                          const TacsScalar dir1dq[], const TacsScalar dir2dq[] );
 

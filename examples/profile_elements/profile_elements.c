@@ -78,12 +78,6 @@ int main( int argc, char *argv[] ){
     ename = argv[1];
   }
 
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1.0e-30;
-#else
-  const double dh = 1.0e-8;
-#endif
-
   const int MAX_NODES = 27;
   const int MAX_VARS_PER_NODE = 8;
   const int MAX_VARS = MAX_NODES*MAX_VARS_PER_NODE;
@@ -172,6 +166,9 @@ int main( int argc, char *argv[] ){
     TacsScalar *v = &vars[8*i+3];
     TacsScalar fact = 
       1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+    for ( int j = 0; j < 4; j++ ){
+      v[j] *= fact;
+    }
   }
   
   MITC9 *mitc9 = new MITC9(fsdt);
@@ -179,7 +176,7 @@ int main( int argc, char *argv[] ){
   shell->incref();
   if (!ename || strcmp(ename, shell->elementName()) == 0){
     test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-    // mitc9->testXptSens();
+    mitc9->testStrain(Xpts);
   }
   shell->decref();
 
@@ -283,13 +280,10 @@ int main( int argc, char *argv[] ){
     // The acceleration due to gravity in global frame of reference
     TACSGibbsVector *gravVec = new TACSGibbsVector(19.0, 10.0, -9.8);
 
-    // Define the zero vector
-    TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
-
     // Construct the frame of reference
     TACSGibbsVector *rAInitVec = new TACSGibbsVector(5.2, 5.3, 5.4); 
-    TACSGibbsVector *rA1Vec = new TACSGibbsVector(5.2+1.0, 5.3, 5.4); // The first coordinate
-    TACSGibbsVector *rA2Vec = new TACSGibbsVector(5.2, 5.3+1.0, 5.4); // The second coordinate
+    TACSGibbsVector *rA1Vec = new TACSGibbsVector(5.2+1.0, 5.3, 5.4);
+    TACSGibbsVector *rA2Vec = new TACSGibbsVector(5.2, 5.3+1.0, 5.4);
     TACSRefFrame *refFrameA = new TACSRefFrame(rAInitVec, rA1Vec, rA2Vec);
 
     // Define the inertial properties
@@ -304,23 +298,19 @@ int main( int argc, char *argv[] ){
                                              rAInitVec, rAInitVec, rAInitVec,
                                              gravVec);
     bodyA->incref();
-
-    // Test the rigid body
-    /*
-      bodyA->testResidual(dh);
-      bodyA->testJacobian(dh, 2.0, 3.0, 4.0);
-    */
     test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the revolute constraint
     TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
     TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
-    TACSRevoluteConstraint *rev = new TACSRevoluteConstraint(bodyA, point, eRev);
+    TACSRevoluteConstraint *rev = 
+      new TACSRevoluteConstraint(bodyA, point, eRev);
     rev->incref();
     test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the cylindrical constraint
-    TACSCylindricalConstraint *cyl = new TACSCylindricalConstraint(bodyA, point, eRev);
+    TACSCylindricalConstraint *cyl = 
+      new TACSCylindricalConstraint(bodyA, point, eRev);
     cyl->incref();
     test_element(cyl, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
@@ -347,8 +337,8 @@ int main( int argc, char *argv[] ){
   
     // Define dynamics properties
     TACSGibbsVector *rBInitVec = new TACSGibbsVector(3.2, 3.2, 4.3); 
-    TACSGibbsVector *rB1Vec = new TACSGibbsVector(3.2+1.0, 3.2, 4.3); // The first coordinate
-    TACSGibbsVector *rB2Vec = new TACSGibbsVector(3.2, 3.2+1.0, 4.3); // The second coordinate
+    TACSGibbsVector *rB1Vec = new TACSGibbsVector(3.2+1.0, 3.2, 4.3);
+    TACSGibbsVector *rB2Vec = new TACSGibbsVector(3.2, 3.2+1.0, 4.3);
     TACSRefFrame *refFrameB = new TACSRefFrame(rBInitVec, rB1Vec, rB2Vec);
 
     // Construct a rigid body
@@ -359,17 +349,20 @@ int main( int argc, char *argv[] ){
     bodyB->incref();
 
     // Test the revolute constraint
-    TACSRevoluteConstraint *rev2 = new TACSRevoluteConstraint(bodyA, bodyB, point, eRev);
+    TACSRevoluteConstraint *rev2 = 
+      new TACSRevoluteConstraint(bodyA, bodyB, point, eRev);
     rev2->incref();
     test_element(rev2, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the revolute constraint
-    TACSCylindricalConstraint *cyl2 = new TACSCylindricalConstraint(bodyA, bodyB, point, eRev);
+    TACSCylindricalConstraint *cyl2 =
+      new TACSCylindricalConstraint(bodyA, bodyB, point, eRev);
     cyl2->incref();
     test_element(cyl2, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the spherical constraint
-    TACSSphericalConstraint *ball2 = new TACSSphericalConstraint(bodyA, bodyB, point);
+    TACSSphericalConstraint *ball2 = 
+      new TACSSphericalConstraint(bodyA, bodyB, point);
     ball2->incref();
     test_element(ball2, time, Xpts, vars, dvars, ddvars, num_design_vars);
   

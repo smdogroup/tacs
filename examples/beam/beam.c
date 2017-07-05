@@ -33,7 +33,7 @@ int main( int argc, char *argv[] ){
   beam->incref();
 
   TacsScalar X[] = {0.0, 0.0, 0.0,
-                    0.5, 0.5, 0.1,
+                    0.375, 0.375, 0.1,
                     1.0, 1.0, 0.2};
   beam->testStrain(X);
 

@@ -257,6 +257,55 @@ static inline void computeFrameNormals( const double N[],
 }
 
 /*
+  Compute the derivative of the frame normal through-thickness
+  to account for the variation of the frame
+*/
+static inline void computeFrameRateNormals( const double Na[],
+                                            const TacsScalar Xr[],
+                                            const TacsScalar Xdinv[],
+                                            TacsScalar z1Xdinv[],
+                                            TacsScalar z2Xdinv[] ){
+  TacsScalar dn1[3];
+  dn1[0] = -(Na[0]*Xr[1] + Na[1]*Xr[10] + Na[2]*Xr[19]);
+  dn1[1] = -(Na[0]*Xr[4] + Na[1]*Xr[13] + Na[2]*Xr[22]);
+  dn1[2] = -(Na[0]*Xr[7] + Na[1]*Xr[16] + Na[2]*Xr[25]);
+
+  TacsScalar dn2[3];
+  dn2[0] = -(Na[0]*Xr[2] + Na[1]*Xr[11] + Na[2]*Xr[20]);
+  dn2[1] = -(Na[0]*Xr[5] + Na[1]*Xr[14] + Na[2]*Xr[23]);
+  dn2[2] = -(Na[0]*Xr[8] + Na[1]*Xr[17] + Na[2]*Xr[26]);
+
+  // Compute -Xdinv*dn1*e1^{T}*Xdinv
+  TacsScalar tmp[3];
+  matMult(Xdinv, dn1, tmp);
+  z1Xdinv[0] = tmp[0]*Xdinv[0];
+  z1Xdinv[1] = tmp[0]*Xdinv[1];
+  z1Xdinv[2] = tmp[0]*Xdinv[2];
+  
+  z1Xdinv[3] = tmp[1]*Xdinv[0];
+  z1Xdinv[4] = tmp[1]*Xdinv[1];
+  z1Xdinv[5] = tmp[1]*Xdinv[2];
+
+  z1Xdinv[6] = tmp[2]*Xdinv[0];
+  z1Xdinv[7] = tmp[2]*Xdinv[1];
+  z1Xdinv[8] = tmp[2]*Xdinv[2];
+
+  // Compute -Xdinv*dn2*e3^{T}*Xdinv
+  matMult(Xdinv, dn2, tmp);
+  z2Xdinv[0] = tmp[0]*Xdinv[0];
+  z2Xdinv[1] = tmp[0]*Xdinv[1];
+  z2Xdinv[2] = tmp[0]*Xdinv[2];
+
+  z2Xdinv[3] = tmp[1]*Xdinv[0];
+  z2Xdinv[4] = tmp[1]*Xdinv[1];
+  z2Xdinv[5] = tmp[1]*Xdinv[2];
+
+  z2Xdinv[6] = tmp[2]*Xdinv[0];
+  z2Xdinv[7] = tmp[2]*Xdinv[1];
+  z2Xdinv[8] = tmp[2]*Xdinv[2];
+}
+
+/*
   Compute the derivative of the frame normal
 */
 static inline void addFrameNormalSens( const TacsScalar n1d[],
@@ -522,6 +571,7 @@ void MITC3::computeEnergies( double time,
                              const TacsScalar X[],
                              const TacsScalar vars[],
                              const TacsScalar dvars[] ){
+  /*
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -645,6 +695,7 @@ void MITC3::computeEnergies( double time,
 
   *_Te = Te;
   *_Pe = Pe;
+  */
 }
 
 /*
@@ -1348,7 +1399,6 @@ void MITC3::computeAngularAccel( TacsScalar domega[],
   returns:  the norm of the tangent vector
 */
 TacsScalar MITC3::computeTransform( TacsScalar T[],
-                                    TacsScalar n1[], TacsScalar n2[],
                                     const TacsScalar Xa[] ){
   // Get the reference axis
   const TacsScalar *axis = stiff->getRefAxis();
@@ -1362,10 +1412,11 @@ TacsScalar MITC3::computeTransform( TacsScalar T[],
   t[2] = tinv*Xa[2];
 
   // Compute the first direction in the plane
+  TacsScalar n1[3];
   TacsScalar tdot = vecDot(t, axis);
-  n1[0] = axis[0] - tdot*axis[0];
-  n1[1] = axis[1] - tdot*axis[1];
-  n1[2] = axis[2] - tdot*axis[2];
+  n1[0] = axis[0] - tdot*t[0];
+  n1[1] = axis[1] - tdot*t[1];
+  n1[2] = axis[2] - tdot*t[2];
 
   // Compute the norm
   TacsScalar n1inv = 1.0/sqrt(n1[0]*n1[0] + n1[1]*n1[1] + n1[2]*n1[2]);
@@ -1374,6 +1425,7 @@ TacsScalar MITC3::computeTransform( TacsScalar T[],
   n1[2] *= n1inv;
 
   // Compute the cross product
+  TacsScalar n2[3];
   crossProduct(1.0, t, n1, n2);
   
   // Assemble the frame
@@ -1402,9 +1454,6 @@ TacsScalar MITC3::computeTransform( TacsScalar T[],
 */
 void MITC3::computeFrames( TacsScalar Xr[],
                            const TacsScalar X[] ){
-  // Get the reference axis associated with the beam
-  const TacsScalar *axis = stiff->getRefAxis();
-
   for ( int i = 0; i < ORDER; i++ ){
     // Find the u/v values at the node locations
     double u = -1.0 + 2.0*i/(ORDER-1.0);
@@ -1418,8 +1467,7 @@ void MITC3::computeFrames( TacsScalar Xr[],
     innerProduct(Na, X, Xa);
 
     // Compute the transformation matrix
-    TacsScalar n1[3], n2[3];
-    computeTransform(Xr, n1, n2, Xa);
+    computeTransform(Xr, Xa);
     
     // Increment the pointer to the frames
     Xr += 9;  
@@ -1679,15 +1727,37 @@ void MITC3::evalStrain( TacsScalar e[],
                         const TacsScalar Ur[],
                         const TacsScalar d1a[],
                         const TacsScalar d2a[],
+                        const TacsScalar Xdinv[],
+                        const TacsScalar z1Xdinv[],
+                        const TacsScalar z2Xdinv[],
                         const TacsScalar T[] ){
-  // T^{T}*dU/dr = U0
-  TacsScalar U0[9];
-  matTransMatMult(T, Ur, U0);
+  // Compute U0 = T^{T}*Ur*Xdinv*T
+  TacsScalar U0[9], tmp[9];
+  matMatMult(Ur, Xdinv, U0);
+  matMatMult(U0, T, tmp);
+  matTransMatMult(T, tmp, U0);
   
   // Compute the derivative of the directors along the axial direction
-  TacsScalar Td1a[3], Td2a[3];
-  matMultTrans(T, d1a, Td1a);
-  matMultTrans(T, d2a, Td2a);  
+  // Td1a = T^{T}*(d1a*e1^{T}*Xdinv + Ur*z1Xdinv)*T*e1
+  TacsScalar scale = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
+  TacsScalar Td1a[3];
+  tmp[0] = T[0];
+  tmp[1] = T[3];
+  tmp[2] = T[6];
+  matMult(z1Xdinv, tmp, Td1a); // tmp = z1Xdinv*T*e1
+  matMult(Ur, Td1a, tmp); // tmp = Ur*z1Xdinv*T*e1
+  vecAxpy(scale, d1a, tmp);
+  matMultTrans(T, tmp, Td1a);
+
+  // Td2a = T^{T}*d2a*e1^{T}*Xdinv*T*e1
+  TacsScalar Td2a[3];
+  tmp[0] = T[0];
+  tmp[1] = T[3];
+  tmp[2] = T[6];
+  matMult(z2Xdinv, tmp, Td2a); // tmp = z1Xdinv*T*e1
+  matMult(Ur, Td2a, tmp); // tmp = Ur*z1Xdinv*T*e1
+  vecAxpy(scale, d2a, tmp);
+  matMultTrans(T, tmp, Td2a);
 
   // Compute the axial strain
   e[0] = U0[0] + 0.5*(U0[0]*U0[0] + U0[3]*U0[3] + U0[6]*U0[6]);
@@ -1714,18 +1784,39 @@ void MITC3::evalBmat( TacsScalar e[],
                       const TacsScalar Ur[],
                       const TacsScalar d1a[],
                       const TacsScalar d2a[],
+                      const TacsScalar Xdinv[],
+                      const TacsScalar z1Xdinv[],
+                      const TacsScalar z2Xdinv[],
                       const TacsScalar T[],
-                      const TacsScalar detinv,
                       const TacsScalar d1dq[],
                       const TacsScalar d2dq[] ){
-  // T^{T}*dU/dr = U0
-  TacsScalar U0[9];
-  matTransMatMult(T, Ur, U0);
+  // Compute U0 = T^{T}*Ur*Xdinv*T
+  TacsScalar U0[9], tmp[9];
+  matMatMult(Ur, Xdinv, U0);
+  matMatMult(U0, T, tmp);
+  matTransMatMult(T, tmp, U0);
   
   // Compute the derivative of the directors along the axial direction
-  TacsScalar Td1a[3], Td2a[3];
-  matMultTrans(T, d1a, Td1a);
-  matMultTrans(T, d2a, Td2a);  
+  // Td1a = T^{T}*(d1a*e1^{T}*Xdinv + Ur*z1Xdinv)*T*e1
+  TacsScalar scale = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
+  TacsScalar Td1a[3];
+  tmp[0] = T[0];
+  tmp[1] = T[3];
+  tmp[2] = T[6];
+  matMult(z1Xdinv, tmp, Td1a); // tmp = z1Xdinv*T*e1
+  matMult(Ur, Td1a, tmp); // tmp = Ur*z1Xdinv*T*e1
+  vecAxpy(scale, d1a, tmp);
+  matMultTrans(T, tmp, Td1a);
+
+  // Td2a = T^{T}*d2a*e1^{T}*Xdinv*T*e1
+  TacsScalar Td2a[3];
+  tmp[0] = T[0];
+  tmp[1] = T[3];
+  tmp[2] = T[6];
+  matMult(z2Xdinv, tmp, Td2a); // tmp = z1Xdinv*T*e1
+  matMult(Ur, Td2a, tmp); // tmp = Ur*z1Xdinv*T*e1
+  vecAxpy(scale, d2a, tmp);
+  matMultTrans(T, tmp, Td2a);
 
   // Compute the axial strain
   e[0] = U0[0] + 0.5*(U0[0]*U0[0] + U0[3]*U0[3] + U0[6]*U0[6]);
@@ -1746,9 +1837,9 @@ void MITC3::evalBmat( TacsScalar e[],
     for ( int k = 0; k < 3; k++ ){
       // Note that dU = [d(U0[0])/dui | d(U0[3])/dui | d(U0[6])/dui ]
       TacsScalar dU[3];
-      dU[0] = detinv*T[3*k]*Na[i];
-      dU[1] = detinv*T[3*k+1]*Na[i];
-      dU[2] = detinv*T[3*k+2]*Na[i];
+      dU[0] = scale*T[3*k]*Na[i];
+      dU[1] = scale*T[3*k+1]*Na[i];
+      dU[2] = scale*T[3*k+2]*Na[i];
 
       // Compute the derivative
       b[0] = dU[0] + U0[0]*dU[0] + U0[3]*dU[1] + U0[6]*dU[2];
@@ -1765,8 +1856,8 @@ void MITC3::evalBmat( TacsScalar e[],
       TacsScalar dTd1[3], dTd2[3];
       matMultTrans(T, &d1dq[0], dTd1);
       matMultTrans(T, &d2dq[0], dTd2);
-      vecScale(detinv, dTd1);
-      vecScale(detinv, dTd2);
+      vecScale(scale, dTd1);
+      vecScale(scale, dTd2);
       d1dq += 3;
       d2dq += 3;
 
@@ -1784,6 +1875,7 @@ void MITC3::evalBmat( TacsScalar e[],
       // Compute the bending components of the strain
       b[2] = Na[i]*(dTd1[0] + U0[0]*dTd1[0] + U0[3]*dTd1[1] + U0[6]*dTd1[2]);
       b[3] = Na[i]*(dTd2[0] + U0[0]*dTd2[0] + U0[3]*dTd2[1] + U0[6]*dTd2[2]);
+      b[4] = b[5] = 0.0;
       b += NUM_STRESSES;
     }
 
@@ -1808,6 +1900,7 @@ void MITC3::evalBmat( TacsScalar e[],
 void MITC3::computeTyingStrain( TacsScalar g12[],
                                 TacsScalar g13[],
                                 const TacsScalar X[],
+                                const TacsScalar Xr[],
                                 const TacsScalar vars[],
                                 const TacsScalar d1[],
                                 const TacsScalar d2[] ){
@@ -1819,23 +1912,24 @@ void MITC3::computeTyingStrain( TacsScalar g12[],
     double N[NUM_NODES], Na[NUM_NODES];
     computeShapeFunc(upts[pt], N, Na);
 
-    // Compute the derivative along the shape function direction
-    TacsScalar Xa[3];
+    // Use the local frame to compute the 
+    TacsScalar n1[3], n2[3];
+    computeFrameNormals(N, Xr, n1, n2);
+
+    // Assemble the frame at the current point
+    TacsScalar Xa[3], Xd[9], Xdinv[9];
     innerProduct(Na, X, Xa);
-      
+    assembleFrame(Xa, n1, n2, Xd);
+    inv3x3(Xd, Xdinv);
+
     // Compute the frame normals
-    TacsScalar T[9], n1[3], n2[3];
-    TacsScalar det = computeTransform(T, n1, n2, Xa);
+    TacsScalar T[9];
+    computeTransform(T, Xa);
 
     // Compute the derivative of U along the axial direction and
     // evaluate the director at the current point
     TacsScalar Ua[3];
     innerProduct8(Na, vars, Ua);
-
-    // Compute the transformation to normalize the derivative along
-    // the axis of the beam
-    TacsScalar detinv = 1.0/det;
-    vecScale(detinv, Ua);
 
     // Compute the directors at the current location
     TacsScalar d1u[3], d2u[3];
@@ -1847,9 +1941,15 @@ void MITC3::computeTyingStrain( TacsScalar g12[],
     TacsScalar Ur[9];
     assembleFrame(Ua, d1u, d2u, Ur);
 
+    // Compute U0 = T^{T}*Ur*Xdinv*T
+    TacsScalar U0[9], tmp[9];
+    matMatMult(Ur, Xdinv, U0);
+    matMatMult(U0, T, tmp);
+    matTransMatMult(T, tmp, U0);
+  
     // Evaluate the strain at the tying point
-    g12[pt] = Ur[1] + Ur[3] + Ur[0]*Ur[1] + Ur[3]*Ur[4] + Ur[6]*Ur[7];
-    g13[pt] = Ur[2] + Ur[6] + Ur[0]*Ur[2] + Ur[3]*Ur[5] + Ur[6]*Ur[8];
+    g12[pt] = U0[1] + U0[3] + U0[0]*U0[1] + U0[3]*U0[4] + U0[6]*U0[7];
+    g13[pt] = U0[2] + U0[6] + U0[0]*U0[2] + U0[3]*U0[5] + U0[6]*U0[8];
   }
 }
 
@@ -1862,6 +1962,7 @@ void MITC3::computeTyingBmat( TacsScalar g12[],
                               TacsScalar B12[],
                               TacsScalar B13[],
                               const TacsScalar X[],
+                              const TacsScalar Xr[],
                               const TacsScalar vars[],
                               const TacsScalar d1[],
                               const TacsScalar d2[],
@@ -1875,23 +1976,24 @@ void MITC3::computeTyingBmat( TacsScalar g12[],
     double N[NUM_NODES], Na[NUM_NODES];
     computeShapeFunc(upts[pt], N, Na);
 
-    // Compute the derivative along the shape function direction
-    TacsScalar Xa[3];
+    // Use the local frame to compute the 
+    TacsScalar n1[3], n2[3];
+    computeFrameNormals(N, Xr, n1, n2);
+
+    // Assemble the frame at the current point
+    TacsScalar Xa[3], Xd[9], Xdinv[9];
     innerProduct(Na, X, Xa);
-      
+    assembleFrame(Xa, n1, n2, Xd);
+    inv3x3(Xd, Xdinv);
+
     // Compute the frame normals
-    TacsScalar T[9], n1[3], n2[3];
-    TacsScalar det = computeTransform(T, n1, n2, Xa);
+    TacsScalar T[9];
+    computeTransform(T, Xa);
 
     // Compute the derivative of U along the axial direction and
     // evaluate the director at the current point
     TacsScalar Ua[3];
     innerProduct8(Na, vars, Ua);
-
-    // Compute the transformation to normalize the derivative along
-    // the axis of the beam
-    TacsScalar detinv = 1.0/det;
-    vecScale(detinv, Ua);
 
     // Compute the directors at the current location
     TacsScalar d1u[3], d2u[3];
@@ -1903,10 +2005,19 @@ void MITC3::computeTyingBmat( TacsScalar g12[],
     TacsScalar Ur[9];
     assembleFrame(Ua, d1u, d2u, Ur);
 
-    // Evaluate the strain at the tying point
-    g12[pt] = Ur[1] + Ur[3] + Ur[0]*Ur[1] + Ur[3]*Ur[4] + Ur[6]*Ur[7];
-    g13[pt] = Ur[2] + Ur[6] + Ur[0]*Ur[2] + Ur[3]*Ur[5] + Ur[6]*Ur[8];
+    // Compute U0 = T^{T}*Ur*Xdinv*T
+    TacsScalar U0[9], tmp[9];
+    matMatMult(Ur, Xdinv, U0);
+    matMatMult(U0, T, tmp);
+    matTransMatMult(T, tmp, U0);
 
+    // Evaluate the strain at the tying point
+    g12[pt] = U0[1] + U0[3] + U0[0]*U0[1] + U0[3]*U0[4] + U0[6]*U0[7];
+    g13[pt] = U0[2] + U0[6] + U0[0]*U0[2] + U0[3]*U0[5] + U0[6]*U0[8];
+
+    // Set the scale factor
+    TacsScalar scale = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
+    
     TacsScalar *b12 = &B12[8*NUM_NODES*pt];
     TacsScalar *b13 = &B13[8*NUM_NODES*pt];
     const TacsScalar *d1dq = dir1dq;
@@ -1914,31 +2025,32 @@ void MITC3::computeTyingBmat( TacsScalar g12[],
     for ( int i = 0; i < NUM_NODES; i++ ){
       for ( int k = 0; k < 3; k++ ){
         TacsScalar dU[3];
-        dU[0] = detinv*T[3*k]*Na[i];
-        dU[1] = detinv*T[3*k+1]*Na[i];
-        dU[2] = detinv*T[3*k+2]*Na[i];
+        dU[0] = scale*T[3*k]*Na[i];
+        dU[1] = scale*T[3*k+1]*Na[i];
+        dU[2] = scale*T[3*k+2]*Na[i];
       
-        b12[0] = dU[1] + dU[0]*Ur[1] + dU[1]*Ur[4] + dU[2]*Ur[7];
-        b13[0] = dU[2] + dU[0]*Ur[2] + dU[1]*Ur[5] + dU[2]*Ur[8];
+        b12[0] = dU[1] + dU[0]*U0[1] + dU[1]*U0[4] + dU[2]*U0[7];
+        b13[0] = dU[2] + dU[0]*U0[2] + dU[1]*U0[5] + dU[2]*U0[8];
         b12++;  b13++;
       }
 
       for ( int k = 0; k < 4; k++ ){
-        // Add the
-        TacsScalar dd1[3];
-        dd1[0] = N[i]*d1dq[0];
-        dd1[1] = N[i]*d1dq[1];
-        dd1[2] = N[i]*d1dq[2];
+        TacsScalar temp[3], dd1[3];
+        temp[0] = N[i]*d1dq[0];
+        temp[1] = N[i]*d1dq[1];
+        temp[2] = N[i]*d1dq[2];
+        matMultTrans(T, temp, dd1);
         d1dq += 3;
 
         TacsScalar dd2[3];
-        dd2[0] = N[i]*d2dq[0];
-        dd2[1] = N[i]*d2dq[1];
-        dd2[2] = N[i]*d2dq[2];
+        temp[0] = N[i]*d2dq[0];
+        temp[1] = N[i]*d2dq[1];
+        temp[2] = N[i]*d2dq[2];
+        matMultTrans(T, temp, dd2);
         d2dq += 3;
         
-        b12[0] = dd1[0] + Ur[0]*dd1[0] + Ur[3]*dd1[1] + Ur[6]*dd1[2];
-        b13[0] = dd2[0] + Ur[0]*dd2[0] + Ur[3]*dd2[1] + Ur[6]*dd2[2];
+        b12[0] = dd1[0] + U0[0]*dd1[0] + U0[3]*dd1[1] + U0[6]*dd1[2];
+        b13[0] = dd2[0] + U0[0]*dd2[0] + U0[3]*dd2[1] + U0[6]*dd2[2];
         b12++;  b13++;
       }
 
@@ -2171,19 +2283,9 @@ void MITC3::testStrain( const TacsScalar X[] ){
   q[3] = 0.125;
   q[0] = sqrt(1.0 - vecDot(&q[1], &q[1]));
 
-  // Compute the rotation matrix C = rot - I
+  // Compute the rotation matrix C
   TacsScalar C[9];
-  C[0] =-2.0*(q[2]*q[2] + q[3]*q[3]);
-  C[1] = 2.0*(q[1]*q[2] + q[3]*q[0]);
-  C[2] = 2.0*(q[1]*q[3] - q[2]*q[0]);
-  
-  C[3] = 2.0*(q[2]*q[1] - q[3]*q[0]);
-  C[4] =-2.0*(q[1]*q[1] + q[3]*q[3]);
-  C[5] = 2.0*(q[2]*q[3] + q[1]*q[0]);
-  
-  C[6] = 2.0*(q[3]*q[1] + q[2]*q[0]);
-  C[7] = 2.0*(q[3]*q[2] - q[1]*q[0]);
-  C[8] =-2.0*(q[1]*q[1] + q[2]*q[2]);
+  computeRotationMat(q[0], &q[1], C);
 
   // Set the rigid displacement
   TacsScalar u0[3] = {1.25, -2.5, -4.0};
@@ -2193,7 +2295,7 @@ void MITC3::testStrain( const TacsScalar X[] ){
     // Compute the displacements
     matMultTrans(C, &X[3*k], &vars[8*k]);
     for ( int i = 0; i < 3; i++ ){
-      vars[8*k+i] += u0[i];
+      vars[8*k+i] += u0[i] - X[3*k+i];
     }
     
     // Copy the values of the quaternions
@@ -2201,7 +2303,7 @@ void MITC3::testStrain( const TacsScalar X[] ){
   }
 
   // Now compute the strain for the rigid rotation
-  const double u = -0.134;
+  const double u = -0.139;
 
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
@@ -2216,33 +2318,35 @@ void MITC3::testStrain( const TacsScalar X[] ){
   // Compute the strain at the tying points
   TacsScalar g12[2], g13[2];
   TacsScalar B12[2*8*NUM_NODES], B13[2*8*NUM_NODES];
-  computeTyingBmat(g12, g13, B12, B13, 
-                   X, vars, d1, d2, d1dq, d2dq);
+  computeTyingBmat(g12, g13, B12, B13,
+                   X, Xr, vars, d1, d2, d1dq, d2dq);
 
   // Evaluate the shape functions
   double N[NUM_NODES], Na[NUM_NODES];
   computeShapeFunc(u, N, Na);
 
-  // Compute the derivative along the shape function direction
-  TacsScalar Xa[3];
+  // Use the local frame to compute the 
+  TacsScalar n1[3], n2[3];
+  computeFrameNormals(N, Xr, n1, n2);
+
+  // Assemble the frame at the current point
+  TacsScalar Xa[3], Xd[9], Xdinv[9];
   innerProduct(Na, X, Xa);
-      
+  assembleFrame(Xa, n1, n2, Xd);
+  inv3x3(Xd, Xdinv);
+
+  // COmpute d(Xdinv)/dz1 and d(Xdinv)/dz2
+  TacsScalar z1Xdinv[9], z2Xdinv[9];
+  computeFrameRateNormals(Na, Xr, Xdinv, z1Xdinv, z2Xdinv);
+
   // Compute the frame normals
-  TacsScalar T[9], n1[3], n2[3];
-  TacsScalar det = computeTransform(T, n1, n2, Xa);
+  TacsScalar T[9];
+  computeTransform(T, Xa);
 
   // Compute the derivative of U along the axial direction and
   // evaluate the director at the current point
-  TacsScalar Ua[3];
+  TacsScalar Ua[3], d1u[3], d2u[3];
   innerProduct8(Na, vars, Ua);
-  
-  // Compute the transformation to normalize the derivative along
-  // the axis of the beam
-  TacsScalar detinv = 1.0/det;
-  vecScale(detinv, Ua);
-  
-  // Compute the directors at the current point
-  TacsScalar d1u[3], d2u[3];
   innerProduct(N, d1, d1u);
   innerProduct(N, d2, d2u);
   
@@ -2254,15 +2358,13 @@ void MITC3::testStrain( const TacsScalar X[] ){
   TacsScalar d1a[3], d2a[3];
   innerProduct(Na, d1, d1a);
   innerProduct(Na, d2, d2a);
-  vecScale(detinv, d1a);
-  vecScale(detinv, d2a);
-  
+
   // Compute the displacement-based strain
   TacsScalar e[6];
-  evalStrain(e, Ur, d1a, d2a, T);
+  evalStrain(e, Ur, d1a, d2a, Xdinv, z1Xdinv, z2Xdinv, T);
   
   // Add the contribution from the tying strain
-  double N12[3];
+  double N12[2];
   computeTyingFunc(u, N12);
   addTyingStrain(e, N12, g12, g13);
 
@@ -2275,10 +2377,11 @@ void MITC3::testStrain( const TacsScalar X[] ){
   sprintf(descript, "strain after rigid rotation");
   writeErrorComponents(stdout, descript,
                        e, fd, 6);
- 
+
   // Compute the bmatrix 
   TacsScalar B[6*8*NUM_NODES];
-  evalBmat(e, B, N, Na, Ur, d1a, d2a, T, detinv, d1dq, d2dq);
+  evalBmat(e, B, N, Na, Ur, d1a, d2a,
+           Xdinv, z1Xdinv, z2Xdinv, T, d1dq, d2dq);
   addTyingBmat(B, N12, B12, B13);
 
   // Compute the derivative of the strain w.r.t. to test the
@@ -2293,22 +2396,18 @@ void MITC3::testStrain( const TacsScalar X[] ){
     computeDirectors(d1, d2, vars, Xr);
 
     // Compute the shear strain at the tying points
-    computeTyingStrain(g12, g13, X, vars, d1, d2);
+    computeTyingStrain(g12, g13, X, Xr, vars, d1, d2);
 
     // Compute the derivative of U along the axial direction and
     // evaluate the director at the current point
     innerProduct8(Na, vars, Ua);
-    vecScale(detinv, Ua);
     innerProduct(N, d1, d1u);
     innerProduct(N, d2, d2u);
     assembleFrame(Ua, d1u, d2u, Ur);
 
     innerProduct(Na, d1, d1a);
     innerProduct(Na, d2, d2a);
-    vecScale(detinv, d1a);
-    vecScale(detinv, d2a);
-    
-    evalStrain(fd, Ur, d1a, d2a, T);
+    evalStrain(fd, Ur, d1a, d2a, Xdinv, z1Xdinv, z2Xdinv, T);
   
     // Add the contribution from the tying strain
     addTyingStrain(fd, N12, g12, g13);

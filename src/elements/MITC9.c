@@ -410,41 +410,30 @@ static inline void computeNormalRateMat( const double Na[],
   // parametric directions
   TacsScalar dn[9];
   dn[2] = dn[5] = dn[8] = 0.0;
-  dn[0] = (Na[0]*Xr[2] + Na[1]*Xr[11] + Na[2]*Xr[20] +
-           Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
-           Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
-  dn[3] = (Na[0]*Xr[5] + Na[1]*Xr[14] + Na[2]*Xr[23] +
-           Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
-           Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
-  dn[6] = (Na[0]*Xr[8] + Na[1]*Xr[17] + Na[2]*Xr[26] +
-           Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
-           Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
+  dn[0] = -(Na[0]*Xr[2] + Na[1]*Xr[11] + Na[2]*Xr[20] +
+            Na[3]*Xr[29] + Na[4]*Xr[38] + Na[5]*Xr[47] +
+            Na[6]*Xr[56] + Na[7]*Xr[65] + Na[8]*Xr[74]);
+  dn[3] = -(Na[0]*Xr[5] + Na[1]*Xr[14] + Na[2]*Xr[23] +
+            Na[3]*Xr[32] + Na[4]*Xr[41] + Na[5]*Xr[50] +
+            Na[6]*Xr[59] + Na[7]*Xr[68] + Na[8]*Xr[77]);
+  dn[6] = -(Na[0]*Xr[8] + Na[1]*Xr[17] + Na[2]*Xr[26] +
+            Na[3]*Xr[35] + Na[4]*Xr[44] + Na[5]*Xr[53] +
+            Na[6]*Xr[62] + Na[7]*Xr[71] + Na[8]*Xr[80]);
   
-  dn[1] = (Nb[0]*Xr[2] + Nb[1]*Xr[11] + Nb[2]*Xr[20] +
-           Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
-           Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
-  dn[4] = (Nb[0]*Xr[5] + Nb[1]*Xr[14] + Nb[2]*Xr[23] +
-           Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
-           Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
-  dn[7] = (Nb[0]*Xr[8] + Nb[1]*Xr[17] + Nb[2]*Xr[26] +
-           Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
-           Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
+  dn[1] = -(Nb[0]*Xr[2] + Nb[1]*Xr[11] + Nb[2]*Xr[20] +
+            Nb[3]*Xr[29] + Nb[4]*Xr[38] + Nb[5]*Xr[47] +
+            Nb[6]*Xr[56] + Nb[7]*Xr[65] + Nb[8]*Xr[74]);
+  dn[4] = -(Nb[0]*Xr[5] + Nb[1]*Xr[14] + Nb[2]*Xr[23] +
+            Nb[3]*Xr[32] + Nb[4]*Xr[41] + Nb[5]*Xr[50] +
+            Nb[6]*Xr[59] + Nb[7]*Xr[68] + Nb[8]*Xr[77]);
+  dn[7] = -(Nb[0]*Xr[8] + Nb[1]*Xr[17] + Nb[2]*Xr[26] +
+            Nb[3]*Xr[35] + Nb[4]*Xr[44] + Nb[5]*Xr[53] +
+            Nb[6]*Xr[62] + Nb[7]*Xr[71] + Nb[8]*Xr[80]);
 
   // Compute zXdinv = -Xdinv*dn*Xdinv
   TacsScalar tmp[9];
   matMatMult(dn, Xdinv, tmp);
   matMatMult(Xdinv, tmp, zXdinv);
-
-  // Scale all the entries in zXdinv by -1
-  zXdinv[0] = -zXdinv[0];
-  zXdinv[1] = -zXdinv[1];
-  zXdinv[2] = -zXdinv[2];
-  zXdinv[3] = -zXdinv[3];
-  zXdinv[4] = -zXdinv[4];
-  zXdinv[5] = -zXdinv[5];
-  zXdinv[6] = -zXdinv[6];
-  zXdinv[7] = -zXdinv[7];
-  zXdinv[8] = -zXdinv[8];
 }
 
 /*
@@ -6160,7 +6149,7 @@ void MITC9::testStrain( const TacsScalar X[] ){
   TacsScalar Xd[9], Xdinv[9];
   assembleFrame(Xa, Xb, fn, Xd);
 
-  // Compute the derivatives of the shape functions
+  // Compute the Jacobian transformation
   inv3x3(Xd, Xdinv);
 
   // Evaluate the tying strain interpolation
@@ -6200,6 +6189,12 @@ void MITC9::testStrain( const TacsScalar X[] ){
   // Add the contribution from the tying strain
   addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
  
+  // Write out the error components
+  TacsScalar fd[8] = {0.0, 0.0, 0.0, 0.0,
+                      0.0, 0.0, 0.0, 0.0};
+  writeErrorComponents(stdout, "strain after rigid rotation",
+                       e, fd, 8);
+
   // Compute the derivatives of the directors
   TacsScalar dirdq[12*NUM_NODES];
   computeDirectorDeriv(dirdq, vars, Xr);
@@ -6215,7 +6210,6 @@ void MITC9::testStrain( const TacsScalar X[] ){
 
   // Compute the derivative of the strain w.r.t.
   double dh = 1e-6;
-  TacsScalar fd[8];
 
   for ( int k = 0; k < 8*NUM_NODES; k++ ){
     TacsScalar vtmp = vars[k];
