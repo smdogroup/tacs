@@ -214,6 +214,15 @@ class MITC3 : public TACSElement {
                  const TacsScalar z2Xdinv[], const TacsScalar T[],
                  const TacsScalar d1dq[], const TacsScalar d2dq[] );
 
+  // Add the terms from the geometric stiffness matrix
+  void addGmat( TacsScalar J[], const TacsScalar scale, const TacsScalar s[],
+                const double N[], const double Na[], const TacsScalar Ur[],
+                const TacsScalar d1a[], const TacsScalar d2a[],
+                const TacsScalar Xdinv[], const TacsScalar z1Xdinv[],
+                const TacsScalar z2Xdinv[], const TacsScalar T[],
+                const TacsScalar Xr[],
+                const TacsScalar d1dq[], const TacsScalar d2dq[] );
+
   // Compute the tying strain
   void computeTyingStrain( TacsScalar g12[], TacsScalar g13[],
                            const TacsScalar X[], const TacsScalar Xr[],

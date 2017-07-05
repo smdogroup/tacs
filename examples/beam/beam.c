@@ -18,8 +18,8 @@ int main( int argc, char *argv[] ){
   TacsScalar GJ = 1.50e4;
   TacsScalar EIy = 2.4e4;
   TacsScalar EIz = 3.24e4;
-  TacsScalar kGAy = 2.5e3;
-  TacsScalar kGAz = 5.2e3;
+  TacsScalar kGAy = 0.0;// 2.5e3;
+  TacsScalar kGAz = 0.0; // 5.2e3;
   
   // Create the Timoshenko stiffness object
   TimoshenkoStiffness *stiff =
@@ -37,6 +37,18 @@ int main( int argc, char *argv[] ){
                     1.0, 1.0, 0.2};
   beam->testStrain(X);
 
+  TacsScalar vars[24], dvars[24], ddvars[24];
+  for ( int i = 0; i < 24; i++ ){
+    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  vars[7] = vars[15] = vars[23] = 0.0;
+
+  beam->setPrintLevel(2);
+  beam->testResidual(0.0, X, vars, dvars, ddvars);
+  beam->testJacobian(0.0, X, vars, dvars, ddvars);
 
   beam->decref();
   stiff->decref();
