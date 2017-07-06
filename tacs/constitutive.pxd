@@ -28,6 +28,12 @@ cdef extern from "isoFSDTStiffness.h":
                          TacsScalar minThickness, 
                          TacsScalar maxThickness)
 
+cdef extern from "TimoshenkoStiffness.h":
+    cdef cppclass TimoshenkoStiffness(TACSConstitutive):
+        TimoshenkoStiffness(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                            TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                            TacsScalar, TacsScalar, const TacsScalar*)
+
 cdef extern from "PlaneStressStiffness.h":
     cdef cppclass PlaneStressStiffness(TACSConstitutive):
         PlaneStressStiffness()
@@ -81,6 +87,9 @@ cdef extern from "TACSConstitutiveWrapper.h":
         void (*addfaildvsens)(void*, const double*, const TacsScalar*, 
                               TacsScalar, TacsScalar*, int)
 
+cdef class Timoshenko(Constitutive):
+    pass
+
 cdef class FSDT(Constitutive):
     pass
 
@@ -95,3 +104,4 @@ cdef extern from "":
     PlaneStressStiffness* _dynamicPlaneStress"dynamic_cast<PlaneStressStiffness*>"(TACSConstitutive*)
     FSDTStiffness* _dynamicFSDT"dynamic_cast<FSDTStiffness*>"(TACSConstitutive*)
     SolidStiffness* _dynamicSolid"dynamic_cast<SolidStiffness*>"(TACSConstitutive*)
+    TimoshenkoStiffness* _dynamicTimoshenko"dynamic_cast<TimoshenkoStiffness*>"(TACSConstitutive*)

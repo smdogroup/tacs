@@ -118,3 +118,8 @@ cdef extern from  "MITC9.h":
    cdef cppclass MITC9(TACSElement):
       MITC9(FSDTStiffness *_stiff, TACSGibbsVector *_gravity,
             TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit)
+
+cdef extern from  "MITC3.h":
+   cdef cppclass MITC3(TACSElement):
+      MITC3(TimoshenkoStiffness *_stiff, TACSGibbsVector *_gravity,
+            TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit)

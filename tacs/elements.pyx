@@ -324,13 +324,33 @@ cdef class MITC(Element):
       cdef FSDTStiffness *con = _dynamicFSDT(stiff.ptr)
       if omegaInit is not None:
          self.ptr = new MITC9(con, gravity.ptr,
-                         vInit.ptr, omegaInit.ptr)
+                              vInit.ptr, omegaInit.ptr)
       elif vInit is not None:
          self.ptr = new MITC9(con, gravity.ptr, vInit.ptr, NULL)
       elif gravity is not None:
          self.ptr = new MITC9(con, gravity.ptr, NULL, NULL)
       else:
          self.ptr = new MITC9(con, NULL, NULL, NULL)
+      self.ptr.incref()
+      return
+   
+   def __dealloc__(self):
+      self.ptr.decref()
+      return
+
+cdef class MITCBeam(Element):
+   def __cinit__(self, Timoshenko stiff, GibbsVector gravity=None,
+                 GibbsVector vInit=None, GibbsVector omegaInit=None):
+      cdef TimoshenkoStiffness *con = _dynamicTimoshenko(stiff.ptr)
+      if omegaInit is not None:
+         self.ptr = new MITC3(con, gravity.ptr,
+                              vInit.ptr, omegaInit.ptr)
+      elif vInit is not None:
+         self.ptr = new MITC3(con, gravity.ptr, vInit.ptr, NULL)
+      elif gravity is not None:
+         self.ptr = new MITC3(con, gravity.ptr, NULL, NULL)
+      else:
+         self.ptr = new MITC3(con, NULL, NULL, NULL)
       self.ptr.incref()
       return
    

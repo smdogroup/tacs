@@ -76,7 +76,7 @@ int MITC3::numNodes(){ return NUM_NODES; }
 /*
   Return the ElementType
 */
-ElementType MITC3::getElementType(){ return TACS_SHELL; }
+ElementType MITC3::getElementType(){ return TACS_TIMOSHENKO_BEAM; }
 
 /* 
    Set up the internal static data for the names of the element,
@@ -85,7 +85,8 @@ ElementType MITC3::getElementType(){ return TACS_SHELL; }
 const char * MITC3::elemName = "MITC3";
   
 const char * MITC3::dispNames[] = { "u0", "v0", "w0", 
-                                    "eta", "epsx", "epsy", "epsz", "lam" };
+                                    "eta", "epsx", "epsy", 
+                                    "epsz", "lam" };
   
 const char * MITC3::stressNames[] = { "sx0", "sx1", "sy1", 
                                       "st0", "sxy0", "sxz0" };
