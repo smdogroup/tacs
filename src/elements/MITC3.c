@@ -397,53 +397,38 @@ static inline void assembleFrame( const TacsScalar Xa[],
 /*
   Compute the 3x4 matrix from the following matrix-matrix product:
 
-  A = J*S = 2(I - n*n^{T})*[ -eps | (eta*I - eps^{x}) ] 
+  A = J*S
 
   Note that this is the product of the inertia contribution from the
   director and the angular rate kinematic S matrix.
 
   input:
-  n:     the surface normal vector
+  Jr:    the inertia matrix
   eta:   the quaternion scalar
   eps:   the quaternion vector
   
   output:
-  A:     the product of the matrix (I - n*n^{T}) with S
+  A:     the product J*S
 */
-static inline void computeNormalRateProduct( const TacsScalar n[], 
-                                             const TacsScalar eta,
-                                             const TacsScalar eps[],
-                                             TacsScalar A[] ){
+static inline void computeInertiaRateProduct( const TacsScalar Jr[], 
+                                              const TacsScalar eta,
+                                              const TacsScalar eps[],
+                                              TacsScalar A[] ){
   // Compute the rate matrix
   TacsScalar S[12];
   computeSRateMat(eta, eps, S);
   
-  // Pre-multiply the S matrix by (I - n*n^{T})
-  TacsScalar ns = 0.0;
-
   // Compute the first column of A
-  ns = n[0]*S[0] + n[1]*S[4] + n[2]*S[8];
-  A[0] = S[0] - n[0]*ns;
-  A[4] = S[4] - n[1]*ns;
-  A[8] = S[8] - n[2]*ns;
-
-  // Compute the second column of A
-  ns = n[0]*S[1] + n[1]*S[5] + n[2]*S[9];
-  A[1] = S[1] - n[0]*ns;
-  A[5] = S[5] - n[1]*ns;
-  A[9] = S[9] - n[2]*ns;
-
-  // Compute the third column of A
-  ns = n[0]*S[2] + n[1]*S[6] + n[2]*S[10];
-  A[2] = S[2] - n[0]*ns;
-  A[6] = S[6] - n[1]*ns;
-  A[10] = S[10] - n[2]*ns;
-
-  // Compute the third column of A
-  ns = n[0]*S[3] + n[1]*S[7] + n[2]*S[11];
-  A[3] = S[3] - n[0]*ns;
-  A[7] = S[7] - n[1]*ns;
-  A[11] = S[11] - n[2]*ns;
+  TacsScalar n[3], t[3];
+  for ( int k = 0; k < 4; k++ ){
+    n[0] = S[k];
+    n[1] = S[4+k];
+    n[2] = S[8+k];
+    matSymmMult(Jr, n, t);
+    A[k] = t[0];
+    A[4+k] = t[1];
+    A[8+k] = t[2];
+  }
 }
 
 /*
@@ -537,24 +522,63 @@ void MITC3::getInitConditions( TacsScalar vars[],
 }
 
 /*
+  Compute the inertia tensor based on the values of the integrals of
+  the mass through thickness and the "normals" (which are interpolated
+  and are therefore not always unit normals and will not necessarily
+  be perpendicular).
+
+  Jr = - rho[1]*n1^{x}*n1^{x} - rho[2]*n2^{x}*n2^{x}
+  .    - rho[3]*(n1^{x}*n2^{x} + n2^{x}*n1^{x})
+
+  input:
+  rho:   the array of the integrals of the density through-thickness
+  n1:    the first interpolated normal direction
+  n2:    the second interpolated normal direction
+
+  output:
+  Jr:    the local value of the inertial matrix
+*/
+void MITC3::computeInertiaTensor( const TacsScalar rho[],
+                                  const TacsScalar n1[],
+                                  const TacsScalar n2[],
+                                  TacsScalar Jr[] ){
+  // Compute the inertia tensor components for this point
+  // in the beam
+  TacsScalar d11 = 
+    rho[1]*vecDot(n1, n1) + rho[2]*vecDot(n2, n2) + 
+    2.0*rho[3]*vecDot(n1, n2);
+
+  Jr[0] = d11 - rho[1]*n1[0]*n1[0] - 
+    rho[2]*n2[0]*n2[0] - 2.0*rho[3]*n1[0]*n2[0];
+  Jr[1] = - rho[1]*n1[0]*n1[1] - 
+    rho[2]*n2[0]*n2[1] - rho[3]*(n1[0]*n2[1] + n2[0]*n1[1]);
+  Jr[2] = - rho[1]*n1[0]*n1[2] - 
+    rho[2]*n2[0]*n2[2] - rho[3]*(n1[0]*n2[2] + n2[0]*n1[2]);
+  
+  Jr[3] = d11 - rho[1]*n1[1]*n1[1] - 
+    rho[2]*n2[1]*n2[1] - 2.0*rho[3]*n1[1]*n2[1];
+  Jr[4] = - rho[1]*n1[1]*n1[2] - 
+    rho[2]*n2[1]*n2[2] - rho[3]*(n1[1]*n2[2] + n2[1]*n1[2]);
+
+  Jr[5] = d11 - rho[1]*n1[2]*n1[2] - 
+    rho[2]*n2[2]*n2[2] - 2.0*rho[3]*n1[2]*n2[2];
+}
+
+/*
   The following function evaluates the kinetic energy and potential
   and elastic energies of the element.
 
   These can be used to verify that the equations of motion are
   implemented correctly, since the element implements a method based
-  on Lagrange's equations of motion.
+  on Lagrange's equations of motion. The kinetic energy is given by
+  the following integral:
 
-  Te = int_{A}(rho0*dot{U}^{T}*dot{U} + 
-  .            rho1*(n1^{T}*(omega^{T}*omega - omega*omega^{T})*n1) +
-  .            rho2*(n2^{T}*(omega^{T}*omega - omega*omega^{T})*n2) +
-  .            2*rho3*(n1^{T}*(omega^{T}*omega - omega*omega^{T})*n2)) dA
+  Te = int_{A}(rho0*dot{U}^{T}*dot{U} + omega^{T}*Jr*omega) dA
+
+  where Jr is a symmetric matrix given by:
   
-  n1^{T}n1 = 1, n2^{T}n2 = 1, and n1^{T}*n2 = 0 so this simplifies to:
-
-  Te = int_{A}(rho0*dot{U}^{T}*dot{U} + 
-  .            rho1*(omega^{T}*omega - n1^{T}*omega*omega^{T}*n1) +
-  .            rho2*(omega^{T}*omega - n2^{T}*omega*omega^{T}*n2) -
-  .            2*rho3*(n1^{T}*omega*omega^{T}*n2)) dA
+  Jr = - rho[1]*n1^{x}*n1^{x} - rho[2]*n2^{x}*n2^{x}
+  .    - rho[3]*(n1^{x}*n2^{x} + n2^{x}*n1^{x})
   
   input:
   time:   the simulation time
@@ -622,6 +646,10 @@ void MITC3::computeEnergies( double time,
     TacsScalar rho[4];
     stiff->getPointwiseMass(&u, rho);
 
+    // Compute the inertia tensor
+    TacsScalar Jr[6];
+    computeInertiaTensor(rho, n1, n2, Jr);
+
     // The following is used to evaluate the kinetic energy
     // ---------------------------------------------------
     // Evaluate the velocity at the quadrature point
@@ -632,16 +660,9 @@ void MITC3::computeEnergies( double time,
     TacsScalar omeg[3];
     innerProduct(N, omega, omeg);
     
-    // Compute the dot product with the normal
-    TacsScalar omegn1 = vecDot(omeg, n1);
-    TacsScalar omegn2 = vecDot(omeg, n2);
-    
     // Add the contributions to the kinetic energy
-    Te += 0.5*det*(rho[0]*vecDot(v0, v0) + 
-                   (rho[1] + rho[2])*vecDot(omeg, omeg) - 
-                   (rho[1]*omegn1*omegn1 + 
-                    rho[2]*omegn2*omegn2 +
-                    2.0*rho[3]*omegn1*omegn2));
+    Te += 0.5*det*(rho[0]*vecDot(v0, v0) +
+                   matSymmInner(Jr, omeg, omeg));
     
     // The following code is used to evaluate the potential energy
     // -----------------------------------------------------------
@@ -693,7 +714,7 @@ void MITC3::computeEnergies( double time,
                    2.0*rho[0]*vecDot(g, U));
   }
 
-  *_Te = 0.0; // Te;
+  *_Te = Te;
   *_Pe = Pe;
 }
 
@@ -789,8 +810,56 @@ void MITC3::addResidual( double time,
     TacsScalar rho[4];
     stiff->getPointwiseMass(&u, rho);
 
+    // The following is used to evaluate the contributions from the
+    // kinetic energy terms
+    // ---------------------------------------------------
+    // Evaluate the acceleration at the quadrature point
+    TacsScalar a0[3];
+    innerProduct8(N, ddvars, a0);
+    
+    // Compute the value of omega at the current point
+    TacsScalar omeg[3], domeg[3];
+    innerProduct(N, omega, omeg);
+    innerProduct(N, domega, domeg);
+    
+    // Compute the inertia tensor
+    TacsScalar Jr[6];
+    computeInertiaTensor(rho, n1, n2, Jr);
 
+    // Remove the normal component from angular velocity/accel.
+    // w = Jr*omega, dw = Jr*dot{omega}
+    TacsScalar w[3], dw[3];
+    matSymmMult(Jr, omeg, w);
+    matSymmMult(Jr, domeg, dw);
 
+    // Add the contribution to the residual
+    TacsScalar *r = res;
+    const TacsScalar *q = vars, *dq = dvars;
+    for ( int ii = 0; ii < NUM_NODES; ii++ ){
+      // Add the contributions from the rectilinear velocity
+      r[0] += det*N[ii]*rho[0]*a0[0];
+      r[1] += det*N[ii]*rho[0]*a0[1];
+      r[2] += det*N[ii]*rho[0]*a0[2];
+      
+      // Add the contributions from the angular velocity
+      // S^{T}*dw + 2*dot{S}^{T}*w
+      TacsScalar eta = q[3];
+      const TacsScalar *eps = &q[4];
+      TacsScalar deta = dq[3];
+      const TacsScalar *deps = &dq[4];
+        
+      // Add S^{T}*dw
+      addSRateTransProduct(det*N[ii], eta, eps, dw,
+                           &r[3], &r[4]);
+
+      // Add 2*dot{S}^{T}*w
+      addSRateTransProduct(2.0*det*N[ii], deta, deps, w,
+                           &r[3], &r[4]);
+      
+      r += 8;
+      q += 8;
+      dq += 8;
+    }
 
     // Compute d(Xdinv)/dz1 and d(Xdinv)/dz2
     TacsScalar z1Xdinv[9], z2Xdinv[9];
@@ -832,7 +901,7 @@ void MITC3::addResidual( double time,
     stiff->calculateStress(&u, e, s);
 
     // Add the contribution to the residual
-    TacsScalar *r = res;
+    r = res;
     const TacsScalar *b = B;;
     for ( int ii = 0; ii < NUM_NODES; ii++ ){
       r[0] += det*(strainProduct(s, &b[0]) - rho[0]*N[ii]*g[0]);
@@ -950,104 +1019,95 @@ void MITC3::addJacobian( double time, TacsScalar J[],
     TacsScalar rho[4];
     stiff->getPointwiseMass(&u, rho);
 
-    /*
-    // Add the contributions from the linear motion
-    for ( int ii = 0; ii < NUM_NODES; ii++ ){
-      const TacsScalar scale = gamma*h*N[ii]*N[jj]*rho[0];
-      // Add the contributions from the rectilinear velocity
-      J[8*NUM_NODES*(8*ii) + 8*jj] += scale;
-      J[8*NUM_NODES*(8*ii+1) + 8*jj+1] += scale;
-      J[8*NUM_NODES*(8*ii+2) + 8*jj+2] += scale;
-    }
+    // Compute the inertia tensor
+    TacsScalar Jr[6];
+    computeInertiaTensor(rho, n1, n2, Jr);
   
-      // Compute the value of omega at the current point
-      TacsScalar omeg[3], domeg[3];
-      innerProduct(N, omega, omeg);
-      innerProduct(N, domega, domeg);
+    // Compute the value of omega at the current point
+    TacsScalar omeg[3], domeg[3];
+    innerProduct(N, omega, omeg);
+    innerProduct(N, domega, domeg);
 
-      // Remove the normal component from angular velocity/accel.
-      // w = (I - fn*fn^{T})*omega
-      TacsScalar tmp, w[3], dw[3];
-      tmp = vecDot(omeg, fn);
-      w[0] = omeg[0] - tmp*fn[0];
-      w[1] = omeg[1] - tmp*fn[1];
-      w[2] = omeg[2] - tmp*fn[2];
+    // Remove the normal component from angular velocity/accel.
+    TacsScalar w[3], dw[3];
+    matSymmMult(Jr, omeg, w);
+    matSymmMult(Jr, domeg, dw);
 
-      tmp = vecDot(domeg, fn);
-      dw[0] = domeg[0] - tmp*fn[0];
-      dw[1] = domeg[1] - tmp*fn[1];
-      dw[2] = domeg[2] - tmp*fn[2];
+    // Add the contributions from the rotational DOF
+    for ( int ii = 0; ii < NUM_NODES; ii++ ){
+      // Add the contributions from the linear motion
+      for ( int jj = 0; jj < NUM_NODES; jj++ ){
+        const TacsScalar scale = gamma*det*N[ii]*N[jj]*rho[0];
+        // Add the contributions from the rectilinear velocity
+        J[8*NUM_NODES*(8*ii) + 8*jj] += scale;
+        J[8*NUM_NODES*(8*ii+1) + 8*jj+1] += scale;
+        J[8*NUM_NODES*(8*ii+2) + 8*jj+2] += scale;
+      }
 
-      // Add the contributions from the rotational DOF
-      for ( int ii = 0; ii < NUM_NODES; ii++ ){
-        // Compute and store the product of (I - n*n^{T}) with the
-        // angular rate matrices
-        TacsScalar JSii[12], JdSii[12];
-        computeNormalRateProduct(fn, vars[8*ii+3], 
-                                 &vars[8*ii+4], JSii);
-        computeNormalRateProduct(fn, dvars[8*ii+3], 
-                                 &dvars[8*ii+4], JdSii);
+      // Compute and store the product of (I - n*n^{T}) with the
+      // angular rate matrices
+      TacsScalar JSii[12], JdSii[12];
+      computeInertiaRateProduct(Jr, vars[8*ii+3], 
+                                &vars[8*ii+4], JSii);
+      computeInertiaRateProduct(Jr, dvars[8*ii+3], 
+                                &dvars[8*ii+4], JdSii);
 
+      // Set the pointer to the Jacobian entries that will be added
+      TacsScalar *Jp = &J[(8*NUM_NODES+1)*(8*ii+3)];
+      const int ldj = 8*NUM_NODES;
+
+      // Add the diagonal terms
+      const TacsScalar dscale = det*N[ii];
+      addSRateMatTransDeriv(alpha*dscale, dw, Jp, ldj);
+      addSRateMatTransDeriv(2.0*beta*dscale, w, Jp, ldj);
+      
+      // Add the result to the Jacobian matrix
+      const TacsScalar *q = vars, *dq = dvars, *ddq = ddvars;
+      for ( int jj = 0; jj < NUM_NODES; jj++ ){
+        // Set the common scaling factor for all terms
+        const TacsScalar scale = det*N[ii]*N[jj];
+        
         // Set the pointer to the Jacobian entries that will
         // be added
-        TacsScalar *Jp = &J[(8*NUM_NODES+1)*(8*ii+3)];
-        const int ldj = 8*NUM_NODES;
-
-        // Add the diagonal terms
-        const TacsScalar dscale = h*N[ii]*rho[1];
-        addSRateMatTransDeriv(alpha*dscale, dw, Jp, ldj);
-        addSRateMatTransDeriv(2.0*beta*dscale, w, Jp, ldj);
-
-        // Add the result to the Jacobian matrix
-        const TacsScalar *q = vars, *dq = dvars, *ddq = ddvars;
-        for ( int jj = 0; jj < NUM_NODES; jj++ ){
-          // Set the common scaling factor for all terms
-          const TacsScalar scale = h*N[ii]*N[jj]*rho[1];
-
-          // Set the pointer to the Jacobian entries that will
-          // be added
-          TacsScalar *Jp = &J[8*NUM_NODES*(8*ii+3) + 8*jj+3];
-          
-          // Compute S = S(q)
-          TacsScalar Sjj[12];
-          computeSRateMat(q[3], &q[4], Sjj);
-
-          // Compute dot{S} = S(dot{q})
-          TacsScalar dSjj[12];
-          computeSRateMat(dq[3], &dq[4], dSjj);
-
-          // Compute ddot{S} = S(ddot{q})
-          TacsScalar ddSjj[12];
-          computeSRateMat(ddq[3], &ddq[4], ddSjj);
-
-          // Add the Jacobian terms from the DOF:
-          // T(dw) - S^{T}*J*S(ddot{q}) - 2*dot{S}^{T}*J*dot{S}
-          addBlock3x4Product(-alpha*scale, JSii, ddSjj, Jp, ldj);
-          addBlock3x4Product(-2.0*alpha*scale, JdSii, dSjj, Jp, ldj);
-
-          // Add the Jacobian terms from the first time derivatives:
-          // 2*dot{S}^{T}*J*S
-          addBlock3x4Product(2.0*beta*scale, JdSii, Sjj, Jp, ldj);
-
-          // Add the Jacobian terms from the second time derivatives:
-          // S^{T}*J*S
-          addBlock3x4Product(gamma*scale, JSii, Sjj, Jp, ldj);
-
-          q += 8;
-          dq += 8;
-          ddq += 8;
-        }
+        TacsScalar *Jp = &J[8*NUM_NODES*(8*ii+3) + 8*jj+3];
+        
+        // Compute S = S(q)
+        TacsScalar Sjj[12];
+        computeSRateMat(q[3], &q[4], Sjj);
+        
+        // Compute dot{S} = S(dot{q})
+        TacsScalar dSjj[12];
+        computeSRateMat(dq[3], &dq[4], dSjj);
+        
+        // Compute ddot{S} = S(ddot{q})
+        TacsScalar ddSjj[12];
+        computeSRateMat(ddq[3], &ddq[4], ddSjj);
+        
+        // Add the Jacobian terms from the DOF:
+        // T(dw) - S^{T}*J*S(ddot{q}) - 2*dot{S}^{T}*J*dot{S}
+        addBlock3x4Product(-alpha*scale, JSii, ddSjj, Jp, ldj);
+        addBlock3x4Product(-2.0*alpha*scale, JdSii, dSjj, Jp, ldj);
+        
+        // Add the Jacobian terms from the first time derivatives:
+        // 2*dot{S}^{T}*J*S
+        addBlock3x4Product(2.0*beta*scale, JdSii, Sjj, Jp, ldj);
+        
+        // Add the Jacobian terms from the second time derivatives:
+        // S^{T}*J*S
+        addBlock3x4Product(gamma*scale, JSii, Sjj, Jp, ldj);
+        
+        q += 8;
+        dq += 8;
+        ddq += 8;
       }
-    */
-
+    }
+    
     // This code is expensive, and is only required when alpha 
     // is non-zero
     if (alpha != 0.0){
       // Everything left in this function is proportional to
       // h*alpha, so we scale h by alpha
       det *= alpha;
-
-
 
       // Compute d(Xdinv)/dz1 and d(Xdinv)/dz2
       TacsScalar z1Xdinv[9], z2Xdinv[9];

@@ -46,9 +46,10 @@ int main( int argc, char *argv[] ){
 
   vars[7] = vars[15] = vars[23] = 0.0;
 
+  beam->setStepSize(1e-5);
   beam->setPrintLevel(2);
   beam->testResidual(0.0, X, vars, dvars, ddvars);
-  beam->testJacobian(0.0, X, vars, dvars, ddvars, k);
+  beam->testJacobian(0.0, X, vars, dvars, ddvars);
 
   beam->decref();
   stiff->decref();

@@ -81,6 +81,24 @@ static inline void matMultTransAdd( const TacsScalar A[],
 }
 
 /*
+  Compute y^{T}*A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+  y:   the resulting vector 
+
+  returns:  the inner product
+*/
+static inline TacsScalar matSymmInner( const TacsScalar A[],
+                                       const TacsScalar x[],
+                                       const TacsScalar y[] ){
+  return (y[0]*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2]) + 
+          y[1]*(A[1]*x[0] + A[3]*x[1] + A[4]*x[2]) +
+          y[2]*(A[2]*x[0] + A[4]*x[1] + A[5]*x[2]));  
+}
+
+/*
   Compute y <- y + A*x
 
   input:

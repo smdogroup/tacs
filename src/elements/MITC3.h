@@ -253,6 +253,12 @@ class MITC3 : public TACSElement {
                      const TacsScalar d1[], const TacsScalar d2[],
                      const TacsScalar d1dq[], const TacsScalar d2dq[] );
 
+  // Compute the inertia tensor
+  void computeInertiaTensor( const TacsScalar rho[],
+                             const TacsScalar n1[],
+                             const TacsScalar n2[],
+                             TacsScalar Jr[] );
+
   // Compute the product of the stress and the strain
   inline TacsScalar strainProduct( const TacsScalar s[], 
                                    const TacsScalar e[] ){
