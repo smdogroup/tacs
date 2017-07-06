@@ -245,6 +245,14 @@ class MITC3 : public TACSElement {
   void addTyingBmat( TacsScalar B[], const double N12[],
                      const TacsScalar b12[], const TacsScalar b13[] );
 
+  // Add the second derivative of the strain at the tying points
+  void addTyingGmat( TacsScalar J[],
+                     const TacsScalar w12[], const TacsScalar w13[],
+                     const TacsScalar X[],  const TacsScalar Xr[],
+                     const TacsScalar vars[],
+                     const TacsScalar d1[], const TacsScalar d2[],
+                     const TacsScalar d1dq[], const TacsScalar d2dq[] );
+
   // Compute the product of the stress and the strain
   inline TacsScalar strainProduct( const TacsScalar s[], 
                                    const TacsScalar e[] ){

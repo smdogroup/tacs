@@ -1087,12 +1087,12 @@ void MITC3::addJacobian( double time, TacsScalar J[],
       // Compute the stress based on the strain values
       TacsScalar s[6];
       stiff->calculateStress(&u, e, s);
-
-      /*
+ 
       // Add to the weights
-      addTyingGmatWeights(w13, w23, h, s,
-                          N13, N23, Xdinv, T);
-      */
+      w12[0] += det*N12[0]*s[4];
+      w12[1] += det*N12[1]*s[4];
+      w13[0] += det*N12[0]*s[5];
+      w13[1] += det*N12[1]*s[5];
 
       // Add the geometric stiffness terms
       addGmat(J, det, s, N, Na, Ur, d1a, d2a, 
@@ -1124,10 +1124,8 @@ void MITC3::addJacobian( double time, TacsScalar J[],
     }
   }
 
-  /*
   // Add the geometric stiffness terms from the tying strain
-  addTyingGmat(J, w13, w23, X, Xr, vars, dir, dirdq);
-  */
+  addTyingGmat(J, w12, w13, X, Xr, vars, d1, d2, d1dq, d2dq);
 
   // Set the scaling for the constraints
   TacsScalar scale = 2.0*alpha;
@@ -2292,6 +2290,68 @@ void MITC3::addTyingBmat( TacsScalar B[],
     B += 6;
     B12++;
     B13++;
+  }
+}
+
+/*
+  Add the second derivative of the tying strain to the bmatrix
+*/
+void MITC3::addTyingGmat( TacsScalar J[],
+                          const TacsScalar w12[], 
+                          const TacsScalar w13[],
+                          const TacsScalar X[],
+                          const TacsScalar Xr[],
+                          const TacsScalar vars[],
+                          const TacsScalar d1[],
+                          const TacsScalar d2[],
+                          const TacsScalar d1dq[],
+                          const TacsScalar d2dq[] ){
+
+  const double t = 0.577350269189626;
+  const double upts[] = {-t,  t};
+
+  for ( int pt = 0; pt < 2; pt++ ){
+    // Evaluate the shape functions
+    double N[NUM_NODES], Na[NUM_NODES];
+    computeShapeFunc(upts[pt], N, Na);
+
+    // Use the local frame to compute the 
+    TacsScalar n1[3], n2[3];
+    computeFrameNormals(N, Xr, n1, n2);
+
+    // Assemble the frame at the current point
+    TacsScalar Xa[3], Xd[9], Xdinv[9];
+    innerProduct(Na, X, Xa);
+    assembleFrame(Xa, n1, n2, Xd);
+    inv3x3(Xd, Xdinv);
+
+    // Compute the frame normals
+    TacsScalar T[9];
+    computeTransform(T, Xa);
+
+    // Compute the derivative of U along the axial direction and
+    // evaluate the director at the current point
+    TacsScalar Ua[3];
+    innerProduct8(Na, vars, Ua);
+
+    // Compute the directors at the current location
+    TacsScalar d1u[3], d2u[3];
+    innerProduct(N, d1, d1u);
+    innerProduct(N, d2, d2u);
+
+    // Assemble the derivatives of the displacement w.r.t. the beam
+    // parameters
+    TacsScalar Ur[9];
+    assembleFrame(Ua, d1u, d2u, Ur);
+
+    // Compute U0 = T^{T}*Ur*Xdinv*T
+    TacsScalar U0[9], tmp[9];
+    matMatMult(Ur, Xdinv, U0);
+    matMatMult(U0, T, tmp);
+    matTransMatMult(T, tmp, U0);
+  
+
+
   }
 }
 
