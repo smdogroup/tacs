@@ -4,6 +4,57 @@
 #include "RigidBody.h"
 #include "TACSIntegrator.h"
 
+
+/*
+  Create and return the TACSAssembler object for the four bar
+  mechanism as described by Bachau
+
+  B ------------------- C
+  |                     |
+  |                     |
+  |                     |
+  A                     D
+
+  Length between A and B = 0.12 m
+  Length between B and C = 0.24 m
+  Length between C and D = 0.12 m
+
+  A, B and D are revolute joints in the plane perpendicular to the
+  plane of the mechanism
+  
+  C is a revolute joint in a plane +5 degrees along the DC axis of the
+  beam
+
+  Beam properties:
+  
+  Young's modulus 207 GPa, nu = 0.3
+
+  Bars 1 and 2 are square and of dimension 16 x 16 mm
+  Bar 3 is square and of dimension 8 x 8 mm
+*/
+TACSAssembler *four_bar_mechanism(){
+  /*
+  // Set the gravity vector
+  TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, -9.81);
+
+  // Create the revolute direction for A, B and D
+  TACSGibbsVector *revA = new TACSGibbsVector(0.0, 0.0, 1.0);
+
+  // Create the revolute direction for C
+  TacsScalar theta = (5.0/180.0)*M_PI;
+  TACSGibbsVector *revC = new TACSGibbsVector(sin(theta), 0.0, cos(theta));
+  
+  
+  
+  
+
+  */
+
+}
+
+
+
+
 int main( int argc, char *argv[] ){
   // Initialize MPI
   MPI_Init(&argc, &argv);
@@ -17,8 +68,8 @@ int main( int argc, char *argv[] ){
   // Set the element properties  
   TacsScalar rhoA = 1.5;
   TacsScalar rhoIy = 0.15;
-  TacsScalar rhoIz = 0.34;
-  TacsScalar rhoIyz = -0.02;
+  TacsScalar rhoIz = 0.15;
+  TacsScalar rhoIyz = 0.0;
 
   TacsScalar EA = 1e4;
   TacsScalar GJ = 1.50e4;

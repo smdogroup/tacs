@@ -1992,8 +1992,8 @@ TACSRevoluteConstraint::TACSRevoluteConstraint( TACSRigidBody *_bodyA,
   Destuctor for the revolute constraint
 */
 TACSRevoluteConstraint::~TACSRevoluteConstraint(){
-  bodyA->decref();
-  if(bodyB){ bodyB->decref(); }
+  if (bodyA){ bodyA->decref(); }
+  if (bodyB){ bodyB->decref(); }
   point->decref();
 
   eAVec->decref();
