@@ -1088,7 +1088,7 @@ void MITC3::addJacobian( double time, TacsScalar J[],
       TacsScalar s[6];
       stiff->calculateStress(&u, e, s);
  
-      // Add to the weights
+      // Add the contributions to the tying strain weights
       w12[0] += det*N12[0]*s[4];
       w12[1] += det*N12[1]*s[4];
       w13[0] += det*N12[0]*s[5];
@@ -1648,9 +1648,24 @@ void MITC3::evalStrain( TacsScalar e[],
 }
 
 /*
-  Given the derivative of the displacements and directors along
-  the locate coordinates, compute the derivative of the strain
-  with respect to the displacement/rotation variables
+  Compute the strain and the derivative of the strain with respect to
+  the displacement and quaternion variables.
+
+  input:
+  N, Na:   the shape functions and derivatives
+  Ur:      the derivative of the displacements 
+  d1a:     the derivative of the director
+  d2a:     the derivative of the second director
+  Xdinv:   the Jacobian transformation
+  z1Xdinv: the derivative of the transformation w.r.t. z1
+  z2Xdinv: the derivative of the transformation w.r.t. z2
+  T:       the transformation to the beam-aligned coordinates
+  d1dq:    the derivative of the first directior w.r.t. the quaternions
+  d2dq:    the derivative of the second directior w.r.t. the quaternions
+
+  output:
+  e:      the displacement-based components of the strain 
+  B:      the derivative of the strain w.r.t. the variables
 */
 void MITC3::evalBmat( TacsScalar e[],
                       TacsScalar B[],
@@ -1806,6 +1821,33 @@ void MITC3::evalBmat( TacsScalar e[],
   }
 }
 
+/*
+  Add the contributions to the geometric stiffness matrix to the
+  Jacobian.
+
+  This computes the product of the stress with the second derivative
+  of the strain and adds the scaled result to the Jacobian matrix.
+  This contribution is the geometric stiffness matrix. Note that the
+  matrix includes contributions from the second derivative of the
+  quaternions.
+
+  input:
+  scale:   scale factor
+  s:       the stress evaluated at the quadrature point
+  N, Na:   the shape functions and derivatives
+  Ur:      the derivative of the displacements 
+  d1a:     the derivative of the director
+  d2a:     the derivative of the second director
+  Xdinv:   the Jacobian transformation
+  z1Xdinv: the derivative of the transformation w.r.t. z1
+  z2Xdinv: the derivative of the transformation w.r.t. z2
+  T:       the transformation to the beam-aligned coordinates
+  d1dq:    the derivative of the first directior w.r.t. the quaternions
+  d2dq:    the derivative of the second directior w.r.t. the quaternions
+
+  in/out:
+  J:       the Jacobian (stiffness) matrix 
+*/
 void MITC3::addGmat( TacsScalar J[],
                      const TacsScalar scale,
                      const TacsScalar s[],
@@ -2304,8 +2346,12 @@ void MITC3::addTyingGmat( TacsScalar J[],
                           const TacsScalar vars[],
                           const TacsScalar d1[],
                           const TacsScalar d2[],
-                          const TacsScalar d1dq[],
-                          const TacsScalar d2dq[] ){
+                          const TacsScalar _d1dq[],
+                          const TacsScalar _d2dq[] ){
+  // Indices where the second derivatives of the quaternions will be
+  // added to the matrix
+  const int iv[] = {3, 3, 3, 4, 4, 4, 5, 5, 6};
+  const int jv[] = {4, 5, 6, 4, 5, 6, 5, 6, 6};
 
   const double t = 0.577350269189626;
   const double upts[] = {-t,  t};
@@ -2329,6 +2375,10 @@ void MITC3::addTyingGmat( TacsScalar J[],
     TacsScalar T[9];
     computeTransform(T, Xa);
 
+    // Compute the product S = Xdinv*T
+    TacsScalar S[9];
+    matMatMult(Xdinv, T, S);
+
     // Compute the derivative of U along the axial direction and
     // evaluate the director at the current point
     TacsScalar Ua[3];
@@ -2349,9 +2399,132 @@ void MITC3::addTyingGmat( TacsScalar J[],
     matMatMult(Ur, Xdinv, U0);
     matMatMult(U0, T, tmp);
     matTransMatMult(T, tmp, U0);
-  
 
+    // Create the arrays to store the derivatives
+    TacsScalar DU[9*7*NUM_NODES];
 
+    // Set the pointers 
+    TacsScalar *dU0 = DU;
+    const TacsScalar *d1dq = _d1dq;
+    const TacsScalar *d2dq = _d2dq;
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      for ( int k = 0; k < 3; k++ ){
+        // Compute the derivative w.r.t. u
+        dU0[0] = S[0]*T[3*k]*Na[i];
+        dU0[1] = S[1]*T[3*k]*Na[i];
+        dU0[2] = S[2]*T[3*k]*Na[i];
+        dU0[3] = S[0]*T[3*k+1]*Na[i];
+        dU0[4] = S[1]*T[3*k+1]*Na[i];
+        dU0[5] = S[2]*T[3*k+1]*Na[i];
+        dU0[6] = S[0]*T[3*k+2]*Na[i];
+        dU0[7] = S[1]*T[3*k+2]*Na[i];
+        dU0[8] = S[2]*T[3*k+2]*Na[i];
+        dU0 += 9;
+      }
+
+      // Compute the derivatives w.r.t. the quaternion parameters
+      for ( int k = 0; k < 4; k++ ){
+        tmp[0] = N[i]*(S[3]*d1dq[0] + S[6]*d2dq[0]);
+        tmp[1] = N[i]*(S[4]*d1dq[0] + S[7]*d2dq[0]);
+        tmp[2] = N[i]*(S[5]*d1dq[0] + S[8]*d2dq[0]);
+      
+        tmp[3] = N[i]*(S[3]*d1dq[1] + S[6]*d2dq[1]);
+        tmp[4] = N[i]*(S[4]*d1dq[1] + S[7]*d2dq[1]);
+        tmp[5] = N[i]*(S[5]*d1dq[1] + S[8]*d2dq[1]);
+      
+        tmp[6] = N[i]*(S[3]*d1dq[2] + S[6]*d2dq[2]);
+        tmp[7] = N[i]*(S[4]*d1dq[2] + S[7]*d2dq[2]);
+        tmp[8] = N[i]*(S[5]*d1dq[2] + S[8]*d2dq[2]);
+        matTransMatMult(T, tmp, dU0);     
+        dU0 += 9;
+        d1dq += 3;
+        d2dq += 3;
+      }
+    }
+
+    // Compute the derivatives of the strain w.r.t. the displacement
+    // variables. This code takes advantage of the sparsity of the
+    // derivatives to simplify the computations
+    for ( int i = 0; i < 7*NUM_NODES; i++ ){
+      const TacsScalar *dUi = &DU[9*i];
+
+      for ( int j = i; j < 7*NUM_NODES; j++ ){
+        const TacsScalar *dUj = &DU[9*j];
+
+        // Compute the real indices
+        int ii = 8*(i/7) + (i%7);
+        int jj = 8*(j/7) + (j%7);
+        int idx = 8*NUM_NODES*ii + jj;
+        int sym = 8*NUM_NODES*jj + ii;
+        
+        TacsScalar Jadd =
+          w12[pt]*(dUi[0]*dUj[1] + dUi[3]*dUj[4] + dUi[6]*dUj[7] +
+                   dUj[0]*dUi[1] + dUj[3]*dUi[4] + dUj[6]*dUi[7]) +
+          w13[pt]*(dUi[0]*dUj[2] + dUi[3]*dUj[5] + dUi[6]*dUj[8] +
+                   dUj[0]*dUi[2] + dUj[3]*dUi[5] + dUj[6]*dUi[8]);
+        
+        // Add the values symmetrically
+        J[idx] += Jadd;
+        if (ii != jj){
+          J[sym] += Jadd;
+        }
+      }
+    }
+
+    // Add the contribution from the derivative of the quaternions
+    const TacsScalar *xr = Xr;
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      // Extract the normals from the frame
+      TacsScalar n1[3];
+      n1[0] = xr[1];
+      n1[1] = xr[4];
+      n1[2] = xr[7];
+      
+      TacsScalar n2[3];
+      n2[0] = xr[2];
+      n2[1] = xr[5];
+      n2[2] = xr[8];
+      xr += 9;
+      
+      // Compute the second derivative w.r.t. the quaternion
+      TacsScalar dC1dq[3*9], dC2dq[3*9];
+      computeQtr2ndDeriv(n1, dC1dq);
+      computeQtr2ndDeriv(n2, dC2dq);
+      const TacsScalar *dC1 = dC1dq, *dC2 = dC2dq;
+      
+      // Compute the partials derivatives w.r.t. eta,eps 
+      for ( int ii = 0; ii < 9; ii++ ){
+        tmp[0] = N[i]*(S[3]*dC1[0] + S[6]*dC2[0]);
+        tmp[1] = N[i]*(S[4]*dC1[0] + S[7]*dC2[0]);
+        tmp[2] = N[i]*(S[5]*dC1[0] + S[8]*dC2[0]);
+        
+        tmp[3] = N[i]*(S[3]*dC1[1] + S[6]*dC2[1]);
+        tmp[4] = N[i]*(S[4]*dC1[1] + S[7]*dC2[1]);
+        tmp[5] = N[i]*(S[5]*dC1[1] + S[8]*dC2[1]);
+        
+        tmp[6] = N[i]*(S[3]*dC1[2] + S[6]*dC2[2]);
+        tmp[7] = N[i]*(S[4]*dC1[2] + S[7]*dC2[2]);
+        tmp[8] = N[i]*(S[5]*dC1[2] + S[8]*dC2[2]);
+        TacsScalar dU[9];
+        matTransMatMult(T, tmp, dU);
+
+        // Compute the second derivatives from the quaternions alone
+        TacsScalar Jadd = 
+          w12[pt]*(dU[1] + dU[3] + 
+                   U0[0]*dU[1] + U0[3]*dU[4] + U0[6]*dU[7] + 
+                   dU[0]*U0[1] + dU[3]*U0[4] + dU[6]*U0[7]) +
+          w13[pt]*(dU[2] + dU[6] + 
+                   U0[0]*dU[2] + U0[3]*dU[5] + U0[6]*dU[8] +
+                   dU[0]*U0[2] + dU[3]*U0[5] + dU[6]*U0[8]);
+
+        J[(8*NUM_NODES)*(8*i + iv[ii]) + (8*i + jv[ii])] += Jadd;
+        if (iv[ii] != jv[ii]){
+          J[(8*NUM_NODES)*(8*i + jv[ii]) + (8*i + iv[ii])] += Jadd;
+        }
+        dC1 += 3;
+        dC2 += 3;
+      }
+    }
   }
 }
 
