@@ -91,8 +91,8 @@ const char * MITC3::dispNames[] = { "u0", "v0", "w0",
 const char * MITC3::stressNames[] = { "sx0", "sx1", "sy1", 
                                       "st0", "sxy0", "sxz0" };
 
-const char * MITC3::strainNames[] = { "sx0", "sx1", "sy1", 
-                                      "st0", "sxy0", "sxz0" };
+const char * MITC3::strainNames[] = { "ex0", "ex1", "ey1", 
+                                      "et0", "exy0", "exz0" };
   
 const char * MITC3::extraNames[] = { "lambda", "buckling",
                                      "dv1", "dv2" };
@@ -2632,7 +2632,67 @@ TacsScalar MITC3::getDetJacobian( const double pt[],
 void MITC3::getStrain( TacsScalar e[],
                        const double pt[],
                        const TacsScalar X[],
-                       const TacsScalar vars[] ){}
+                       const TacsScalar vars[] ){
+  const double u = pt[0];
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the directors at the nodes
+  TacsScalar d1[3*NUM_NODES], d2[3*NUM_NODES];
+  computeDirectors(d1, d2, vars, Xr);
+
+  // Compute the strain at the tying points
+  TacsScalar g12[2], g13[2];
+  computeTyingStrain(g12, g13, X, Xr, vars, d1, d2);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES], Na[NUM_NODES];
+  computeShapeFunc(u, N, Na);
+
+  // Use the local frame to compute the 
+  TacsScalar n1[3], n2[3];
+  computeFrameNormals(N, Xr, n1, n2);
+
+  // Assemble the frame at the current point
+  TacsScalar Xa[3], Xd[9], Xdinv[9];
+  innerProduct(Na, X, Xa);
+  assembleFrame(Xa, n1, n2, Xd);
+  inv3x3(Xd, Xdinv);
+
+  // Compute d(Xdinv)/dz1 and d(Xdinv)/dz2
+  TacsScalar z1Xdinv[9], z2Xdinv[9];
+  computeFrameRateNormals(Na, Xr, Xdinv, z1Xdinv, z2Xdinv);
+
+  // Compute the frame normals
+  TacsScalar T[9];
+  computeTransform(T, Xa);
+
+  // Compute the derivative of U along the axial direction and
+  // evaluate the director at the current point
+  TacsScalar Ua[3], d1u[3], d2u[3];
+  innerProduct8(Na, vars, Ua);
+  innerProduct(N, d1, d1u);
+  innerProduct(N, d2, d2u);
+  
+  // Derivatives of the displacement w.r.t. the beam parameters
+  TacsScalar Ur[9];
+  assembleFrame(Ua, d1u, d2u, Ur);
+  
+  // Derivative of the directors d1 and d2 along the axial direction
+  TacsScalar d1a[3], d2a[3];
+  innerProduct(Na, d1, d1a);
+  innerProduct(Na, d2, d2a);
+
+  // Compute the displacement-based strain
+  evalStrain(e, Ur, d1a, d2a, Xdinv, z1Xdinv, z2Xdinv, T);
+  
+  // Add the contribution from the tying strain
+  double N12[2];
+  computeTyingFunc(u, N12);
+  addTyingStrain(e, N12, g12, g13);
+}
 
 /*
   Add the derivative of the product of the array esens with the strain

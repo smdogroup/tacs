@@ -252,7 +252,12 @@ class TACSSphericalConstraint : public TACSElement {
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   void getMultiplierIndex( int *multiplier ){
-    *multiplier = 2;
+    if (bodyA && bodyB){
+      *multiplier = 2;
+    }
+    else {
+      *multiplier = 1;
+    }    
   }
 
   // Set and retrieve design variable values

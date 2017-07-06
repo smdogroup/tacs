@@ -828,7 +828,8 @@ void TACSIntegrator::setShellOutput( int flag ){
   // Create a new instance if it does not exist and the flag is
   // greater than zero
   if (!shellf5 && flag>0){
-    shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
+    // shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
+    shellf5 = new TACSToFH5(tacs, TACS_TIMOSHENKO_BEAM, shell_write_flag);
     shellf5->incref();
   }
 }
