@@ -3,7 +3,7 @@
 #include "TACSAssembler.h"
 #include "RigidBody.h"
 #include "TACSIntegrator.h"
-
+#include "KinematicConstraints.h"
 
 /*
   Create and return the TACSAssembler object for the four bar
@@ -95,20 +95,71 @@ int main( int argc, char *argv[] ){
                       0.375, 0.375, 0.1,
                       1.0, 1.0, 0.2};
     beam->testStrain(X);
-    
+   
+    int multipliers[3] = {7, 15, 23};
     TacsScalar vars[24], dvars[24], ddvars[24];
     for ( int i = 0; i < 24; i++ ){
       vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
       dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
       ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
     }
-    vars[7] = vars[15] = vars[23] = 0.0;
     
-    beam->setStepSize(1e-5);
+    beam->setStepSize(5e-6);
     beam->setPrintLevel(2);
-    beam->testResidual(0.0, X, vars, dvars, ddvars);
+    beam->testResidual(0.0, X, vars, dvars, ddvars, multipliers, 3);
     beam->testJacobian(0.0, X, vars, dvars, ddvars);
   }
+
+  int test_average = 1;
+  if (test_average){
+    TacsScalar X[] = {0.0, 0.0, 0.0,
+                      0.0, 3.0, 0.1,
+                      1.0, 3.0, 0.2,
+                      2.0, 4.0, 0.3,
+                      3.0, 3.0, 1.0};
+    
+    int nmultipliers = 6;
+    int multipliers[] = {32, 33, 34, 35, 36, 37};
+    TacsScalar vars[40], dvars[40], ddvars[40];
+    for ( int i = 0; i < 40; i++ ){
+      vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+      dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+      ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    }
+        
+    // Construct the frame of reference
+    TACSGibbsVector *rAInitVec = new TACSGibbsVector(5.2, 5.3, 5.4); 
+    TACSGibbsVector *rA1Vec = new TACSGibbsVector(5.2+1.0, 5.3, 5.4);
+    TACSGibbsVector *rA2Vec = new TACSGibbsVector(5.2, 5.3+1.0, 5.4);
+    TACSRefFrame *refFrame = new TACSRefFrame(rAInitVec, rA1Vec, rA2Vec);
+
+    // Define the inertial properties
+    const TacsScalar mA    = 6.0;
+    const TacsScalar cA[3] = {20.0, 14.0, 42.0};
+    const TacsScalar JA[6] = {1.0, 0.8, -0.7,
+                              2.0, 1.4,
+                              3.0};
+    // Construct a rigid body
+    TACSRigidBody *bodyA = new TACSRigidBody(refFrame,
+                                             mA, cA, JA,
+                                             rAInitVec, rAInitVec, rAInitVec,
+                                             gravity);
+
+    // Test the revolute constraint
+    TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
+
+    TACSAverageConstraint *avg = 
+      new TACSAverageConstraint(bodyA, point, refFrame, 1);
+
+
+    avg->setStepSize(5e-6);
+    avg->setPrintLevel(2);
+    avg->testResidual(0.0, X, vars, dvars, ddvars, 
+                      multipliers, nmultipliers);
+    // avg->testJacobian(0.0, X, vars, dvars, ddvars);
+  }
+
+  /*
 
   // Set the number of elements and nodes
   int nelems = 10;
@@ -177,7 +228,7 @@ int main( int argc, char *argv[] ){
   tacs->decref();
   beam->decref();
   stiff->decref();
-
+  */
   MPI_Finalize();
   return 0;
 }

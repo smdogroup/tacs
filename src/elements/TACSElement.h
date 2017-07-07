@@ -421,6 +421,12 @@ class TACSElement : public TACSOptObject {
                     const TacsScalar vars[], 
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] ); 
+  int testResidual( double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[], 
+                    const int multipliers[],
+                    int nmultipliers );
   int testJacobian( double time, const TacsScalar Xpts[],
                     const TacsScalar vars[], 
                     const TacsScalar dvars[],

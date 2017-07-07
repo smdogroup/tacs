@@ -711,7 +711,7 @@ void MITC3::computeEnergies( double time,
 
     // Add the product of the stress times strain to the
     // potential energy computation
-    Pe += 0.5*det*(strainProduct(s, e) +
+    Pe += 0.5*det*(strainProduct(s, e) -
                    2.0*rho[0]*vecDot(g, U));
   }
 

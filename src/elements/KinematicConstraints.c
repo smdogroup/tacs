@@ -1,6 +1,7 @@
 #include "RigidBody.h"
 #include "KinematicConstraints.h"
 #include "TACSElementAlgebra.h"
+#include "FElibrary.h"
 
 /*
   Construct a spherical constraint with the two bodies involved and a
@@ -1603,3 +1604,261 @@ void TACSCylindricalConstraint::setDesignVars( const TacsScalar dvs[],
 void TACSCylindricalConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
   point->getDesignVars(dvs, numDVs);
 }
+
+
+/*
+  Copy the data and increment the reference counts
+*/
+TACSAverageConstraint::TACSAverageConstraint( TACSRigidBody *_bodyA,
+                                              TACSGibbsVector *_point,
+                                              TACSRefFrame *_refFrame,
+                                              int _use_moments ){
+  use_moments = _use_moments;                                              
+  bodyA = _bodyA;
+  bodyA->incref();
+  point = _point;
+  point->incref();
+  refFrame = _refFrame;
+  refFrame->incref();
+}
+
+/*
+  Free the data
+*/
+TACSAverageConstraint::~TACSAverageConstraint(){
+  bodyA->decref();
+  point->decref();
+  refFrame->decref();
+}
+
+const char *TACSAverageConstraint::elem_name = "TACSAverageConstraint";
+
+/*
+  The number of DOF per node
+*/
+int TACSAverageConstraint::numDisplacements(){
+  return 8;
+}
+
+/*
+  The number of nodes for the element
+*/
+int TACSAverageConstraint::numNodes(){
+  return 5;
+}
+
+/*
+  The element name
+*/
+const char* TACSAverageConstraint::elementName(){
+  return elem_name;
+}
+
+/*
+  Compute the kinetic and potential energies
+*/
+void TACSAverageConstraint::computeEnergies( double time,
+                                             TacsScalar *_Te, 
+                                             TacsScalar *_Pe,
+                                             const TacsScalar Xpts[],
+                                             const TacsScalar vars[],
+                                             const TacsScalar dvars[] ){
+  *_Te = 0.0;
+  *_Pe = 0.0;
+}
+
+/*
+  Compute the residual of the governing equations
+*/
+void TACSAverageConstraint::addResidual( double time, 
+                                         TacsScalar res[],
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[],
+                                         const TacsScalar dvars[],
+                                         const TacsScalar ddvars[] ){
+  // Get the initial position for bodyA  from global origin
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  const TacsScalar *rA;
+  rAVec->getVector(&rA);
+
+  // Retrieve the reference point location
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Compute the reference point location relative to the intial body
+  // point location
+  TacsScalar bref[3];
+  bref[0] = pt[0] - rA[0];
+  bref[1] = pt[1] - rA[1];
+  bref[2] = pt[2] - rA[2];
+
+  // Set pointers to the residual of the body frame
+  TacsScalar *resA = &res[0];
+
+  // Set the variables for body A
+  const TacsScalar *uA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+  
+  // Compute the rotation matrix for the body
+  TacsScalar CA[9];
+  computeRotationMat(etaA, epsA, CA);
+
+  // The Lagrange multipliers and constraint pointers
+  TacsScalar *con = &res[8*4];
+  const TacsScalar *lam = &vars[8*4];
+
+  // Get the quadrature points and weights
+  const double *gaussPts, *gaussWts;
+  int numGauss = FElibrary::getGaussPtsWts(3, &gaussPts, &gaussWts);
+
+  // Perform the numerical quadrature
+  for ( int i = 0; i < numGauss; i++ ){
+    // Get the quadrature point
+    const double xi = gaussPts[i];
+    
+    // Compute the shape functions
+    double N[3];
+    N[0] = -0.5*xi*(1.0 - xi);
+    N[1] = (1.0 - xi)*(1.0 + xi);
+    N[2] = 0.5*(1.0 + xi)*xi;
+
+    double Na[3];
+    Na[0] = -0.5 + xi;
+    Na[1] = -2.0*xi;
+    Na[2] = 0.5 + xi;
+
+    // Compute the position and displacement vector
+    TacsScalar Xp[3];
+    Xp[0] = N[0]*Xpts[3] + N[1]*Xpts[6] + N[2]*Xpts[9];
+    Xp[1] = N[0]*Xpts[4] + N[1]*Xpts[7] + N[2]*Xpts[10];
+    Xp[2] = N[0]*Xpts[5] + N[1]*Xpts[8] + N[2]*Xpts[11];
+
+    TacsScalar up[3];
+    up[0] = N[0]*vars[8]  + N[1]*vars[16] + N[2]*vars[24];
+    up[1] = N[0]*vars[9]  + N[1]*vars[17] + N[2]*vars[25];
+    up[2] = N[0]*vars[10] + N[1]*vars[18] + N[2]*vars[26];
+
+    // Compute the derivative of the position vector along the length
+    // of the edge
+    TacsScalar Xa[3];
+    Xa[0] = Na[0]*Xpts[3] + Na[1]*Xpts[6] + Na[2]*Xpts[9];
+    Xa[1] = Na[0]*Xpts[4] + Na[1]*Xpts[7] + Na[2]*Xpts[10];
+    Xa[2] = Na[0]*Xpts[5] + Na[1]*Xpts[8] + Na[2]*Xpts[11];
+
+    // Compute the position vector on the element surface relative to
+    // the initial reference point
+    TacsScalar Xref[3];
+    Xref[0] = Xp[0] - rA[0] - bref[0];
+    Xref[1] = Xp[1] - rA[1] - bref[1];
+    Xref[2] = Xp[2] - rA[2] - bref[2];
+
+    // Evaluate the displacement in the body-fixed coordinate frame:
+    TacsScalar utmp[3];
+    utmp[0] = up[0] - uA[0] + bref[0];
+    utmp[1] = up[1] - uA[1] + bref[1];
+    utmp[2] = up[2] - uA[2] + bref[2];
+
+    // uref = CA*(up - uA + bref) - bref
+    TacsScalar uref[3];
+    matMult(CA, utmp, uref);
+    uref[0] = uref[0] - bref[0];
+    uref[1] = uref[1] - bref[1];
+    uref[2] = uref[2] - bref[2];
+
+    // Compute the quadrature weight for this point
+    TacsScalar h = sqrt(vecDot(Xa, Xa))*gaussWts[i];
+
+    // Get the reference axis associated with 
+    const TacsScalar *Cref;
+    refFrame->getRotation(&Cref);
+
+    // Compute the displacements in the local frame
+    TacsScalar x[3], u[3];
+    matMult(Cref, uref, u);
+    
+    // Add the integration along the coordinate directions
+    con[0] += h*u[0];
+    con[1] += h*u[1];
+    con[2] += h*u[2];
+
+    // Add the multipliers times the derivative of the constraints
+    // w.r.t. the state variables
+    for ( int j = 0; j < 3; j++ ){
+      // Iterate over each displacement component and add the
+      // contributions from the displacement degrees of freedom.
+      for ( int k = 0; k < 3; k++ ){
+        TacsScalar d[3], t[3];
+        d[0] = N[j]*CA[k];
+        d[1] = N[j]*CA[3+k];
+        d[2] = N[j]*CA[6+k];
+        matMult(Cref, d, t);
+    
+        // Add the derivative from the elastic degrees of freedom
+        res[8*(j+1)+k] += h*(t[0]*lam[0] + t[1]*lam[1] + t[2]*lam[2]);
+
+        // Add the contribution from the rigid degrees of freedom
+        res[k] -= h*(t[0]*lam[0] + t[1]*lam[1] + t[2]*lam[2]);
+      }
+    }
+
+    // Add the contributions to the derivative w.r.t. the quaternion
+    // parameterization. Compute the transpose of the derivative of
+    // (h*lam^{T}*Cref*Cbi*uref)
+    TacsScalar s[3];
+    matMultTrans(Cref, &lam[0], s);
+    addDMatTransProduct(h, utmp, s, etaA, epsA, &res[3], &res[4]);
+
+    if (use_moments){
+      // Evaluate the position along the first and second directions
+      // in the body-fixed coordinate system
+      matMult(Cref, Xref, x);
+
+      con[3] += h*x[1]*u[0];
+      con[4] += h*x[2]*u[0];
+      con[5] += h*(x[1]*u[2] - x[2]*u[1]);
+
+      // Add the multipliers times the derivative of the constraints
+      // w.r.t. the state variables
+      for ( int j = 0; j < 3; j++ ){
+        // Iterate over each displacement component and add the
+        // contributions from the displacement degrees of freedom.
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar d[3], t[3];
+          d[0] = N[j]*CA[k];
+          d[1] = N[j]*CA[3+k];
+          d[2] = N[j]*CA[6+k];
+          matMult(Cref, d, t);
+    
+          // Add the derivative from the elastic degrees of freedom
+          res[8*(j+1)+k] += h*(x[1]*t[0]*lam[3] + x[2]*t[0]*lam[4] + 
+                               (x[1]*t[2] - x[2]*t[1])*lam[5]);
+
+          // Add the contribution from the rigid degrees of freedom
+          res[k] -= h*(x[1]*t[0]*lam[3] + x[2]*t[0]*lam[4] + 
+                       (x[1]*t[2] - x[2]*t[1])*lam[5]);
+        }
+      }
+
+      // Set dummy constraints
+      con[6] += lam[6];
+      con[7] += lam[7];
+    }
+    else {
+      con[3] += lam[3];
+      con[4] += lam[4];
+      con[5] += lam[5];
+      con[6] += lam[6];
+      con[7] += lam[7];
+    }
+  }
+}
+
+
+void TACSAverageConstraint::addJacobian( double time, 
+                                         TacsScalar J[],
+                                         double alpha, double beta, double gamma,
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[],
+                                         const TacsScalar dvars[],
+                                         const TacsScalar ddvars[] ){}
