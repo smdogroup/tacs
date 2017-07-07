@@ -16,7 +16,7 @@ CXX_OBJS = TACSElement.o \
 	MITC3.o \
 	MITC9.o \
 	RigidBody.o \
-	Constraint.o	
+	KinematicConstraints.o	
 
 DIR=${TACS_DIR}/src/elements
 

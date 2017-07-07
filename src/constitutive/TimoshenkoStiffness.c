@@ -11,15 +11,15 @@ const char *TimoshenkoStiffness::constitutiveName(){
   moments of the cross-section.
 */
 TimoshenkoStiffness::TimoshenkoStiffness( TacsScalar rhoA, 
-                                          TacsScalar rhoIz,
-                                          TacsScalar rhoIy, 
+                                          TacsScalar rhoIy,
+                                          TacsScalar rhoIz, 
                                           TacsScalar rhoIyz,
                                           TacsScalar EA, 
                                           TacsScalar GJ,
-                                          TacsScalar EIz, 
-                                          TacsScalar EIy,
-                                          TacsScalar kGAz, 
-                                          TacsScalar kGAy,
+                                          TacsScalar EIy, 
+                                          TacsScalar EIz,
+                                          TacsScalar kGAy, 
+                                          TacsScalar kGAz,
                                           const TacsScalar _axis[] ){
   // Set the reference axis and normalize it
   axis[0] = _axis[0];
