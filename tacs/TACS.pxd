@@ -164,7 +164,7 @@ cdef extern from "TACSConstitutive.h":
 # A generic wrapper class for the TACSElement object
 cdef class Element:
    cdef TACSElement *ptr
-   
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
    cdef TACSFunction *ptr
@@ -377,7 +377,8 @@ cdef extern from "TACSIntegrator.h":
       void getFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
                        TacsScalar *dfdx)
 
-      # Returns the finite-difference gradient for all the functions that are set into TACS
+      # Returns the finite-difference gradient for all
+      # the functions that are set into TACS
       void getFDFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
                          TacsScalar *dfdx, double dh)
 

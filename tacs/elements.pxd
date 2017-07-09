@@ -61,6 +61,10 @@ cdef extern from "KinematicConstraints.h":
       TACSCylindricalConstraint(TACSRigidBody *bodyA,
                              TACSGibbsVector *point, TACSGibbsVector *eA)
 
+   cdef cppclass TACSAverageConstraint(TACSElement):
+      TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
+                            TACSRefFrame*, int)
+
 # Template
 cdef extern from "TACSElementTemplates.h":
    # Declare the PlaneStressQuad elements

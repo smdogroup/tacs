@@ -169,10 +169,10 @@ cdef class CylindricalConstraint(Element):
                  RigidBody bodyA, RigidBody bodyB=None):
       if bodyB is None:
          self.ptr = new TACSCylindricalConstraint(bodyA.rbptr,
-                                               point.ptr, eA.ptr)
+                                                  point.ptr, eA.ptr)
       else:
          self.ptr = new TACSCylindricalConstraint(bodyA.rbptr, bodyB.rbptr,
-                                               point.ptr, eA.ptr)
+                                                  point.ptr, eA.ptr)
       self.ptr.incref()
       return
    def __dealloc__(self):
@@ -210,6 +210,17 @@ cdef class RevoluteDriver(Element):
       return self.ptr.numNodes()
    def setComponentNum(self, int comp_num):
       self.ptr.setComponentNum(comp_num)
+      return
+
+cdef class AverageConstraint(Element):
+   def __cinit__(self, RigidBody body, GibbsVector point,
+                 RefFrame frame, int use_moments=0):
+      self.ptr = new TACSAverageConstraint(body.rbptr, point.ptr,
+                                           frame.ptr, use_moments)
+      self.ptr.incref()
+      return
+   def __dealloc__(self):
+      self.ptr.decref()
       return
 
 cdef class PlaneQuad(Element):
