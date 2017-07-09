@@ -797,13 +797,6 @@ void TACSRigidBody::getInitConditions( TacsScalar vars[],
 
   // Set the accelerations omega^{x}*omega^{x}*r
   crossProduct(1.0, w, t, &ddvars[0]);
-
-  // Check if the quaternion contraint is satisfied at initial condition
-  double con_viol = TacsRealPart(vars[3]*vars[3] + vars[4]*vars[4] + 
-                                 vars[5]*vars[5] + vars[6]*vars[6] - 1.0);
-  if (con_viol > 1.0e-12){
-    fprintf(stderr, "Warning: RigidBody quarternion constraint violated by %f\n", con_viol);
-  }
 }
 
 /*

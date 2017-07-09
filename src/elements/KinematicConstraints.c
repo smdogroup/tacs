@@ -1668,7 +1668,7 @@ void TACSAverageConstraint::computeEnergies( double time,
 }
 
 /*
-  Compute the residual of the governing equations
+  Add the residual of the governing equations
 */
 void TACSAverageConstraint::addResidual( double time, 
                                          TacsScalar res[],
@@ -1691,9 +1691,6 @@ void TACSAverageConstraint::addResidual( double time,
   bref[0] = pt[0] - rA[0];
   bref[1] = pt[1] - rA[1];
   bref[2] = pt[2] - rA[2];
-
-  // Set pointers to the residual of the body frame
-  TacsScalar *resA = &res[0];
 
   // Set the variables for body A
   const TacsScalar *uA = &vars[0];
@@ -1840,6 +1837,14 @@ void TACSAverageConstraint::addResidual( double time,
         }
       }
 
+      // Compute t = B^{T}*lam
+      TacsScalar t[3];
+      t[0] = (x[1]*lam[3] + x[2]*lam[4]);
+      t[1] =-x[2]*lam[5];
+      t[2] = x[1]*lam[5];
+      matMultTrans(Cref, t, s);
+      addDMatTransProduct(h, utmp, s, etaA, epsA, &res[3], &res[4]);
+
       // Set dummy constraints
       con[6] += lam[6];
       con[7] += lam[7];
@@ -1854,11 +1859,260 @@ void TACSAverageConstraint::addResidual( double time,
   }
 }
 
-
 void TACSAverageConstraint::addJacobian( double time, 
                                          TacsScalar J[],
-                                         double alpha, double beta, double gamma,
+                                         double alpha, 
+                                         double beta, 
+                                         double gamma,
                                          const TacsScalar Xpts[],
                                          const TacsScalar vars[],
                                          const TacsScalar dvars[],
-                                         const TacsScalar ddvars[] ){}
+                                         const TacsScalar ddvars[] ){
+  const int nvars = 5*8;
+
+  // Get the initial position for bodyA  from global origin
+  TACSGibbsVector *rAVec = bodyA->getInitPosition();
+  const TacsScalar *rA;
+  rAVec->getVector(&rA);
+
+  // Retrieve the reference point location
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Compute the reference point location relative to the intial body
+  // point location
+  TacsScalar bref[3];
+  bref[0] = pt[0] - rA[0];
+  bref[1] = pt[1] - rA[1];
+  bref[2] = pt[2] - rA[2];
+
+  // Set the variables for body A
+  const TacsScalar *uA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+  
+  // Compute the rotation matrix for the body
+  TacsScalar CA[9];
+  computeRotationMat(etaA, epsA, CA);
+
+  // The Lagrange multipliers and constraint pointers
+  const TacsScalar *lam = &vars[8*4];
+
+  // Get the quadrature points and weights
+  const double *gaussPts, *gaussWts;
+  int numGauss = FElibrary::getGaussPtsWts(3, &gaussPts, &gaussWts);
+
+  // Perform the numerical quadrature
+  for ( int i = 0; i < numGauss; i++ ){
+    // Get the quadrature point
+    const double xi = gaussPts[i];
+    
+    // Compute the shape functions
+    double N[3];
+    N[0] = -0.5*xi*(1.0 - xi);
+    N[1] = (1.0 - xi)*(1.0 + xi);
+    N[2] = 0.5*(1.0 + xi)*xi;
+
+    double Na[3];
+    Na[0] = -0.5 + xi;
+    Na[1] = -2.0*xi;
+    Na[2] = 0.5 + xi;
+
+    // Compute the position and displacement vector
+    TacsScalar Xp[3];
+    Xp[0] = N[0]*Xpts[3] + N[1]*Xpts[6] + N[2]*Xpts[9];
+    Xp[1] = N[0]*Xpts[4] + N[1]*Xpts[7] + N[2]*Xpts[10];
+    Xp[2] = N[0]*Xpts[5] + N[1]*Xpts[8] + N[2]*Xpts[11];
+
+    TacsScalar up[3];
+    up[0] = N[0]*vars[8]  + N[1]*vars[16] + N[2]*vars[24];
+    up[1] = N[0]*vars[9]  + N[1]*vars[17] + N[2]*vars[25];
+    up[2] = N[0]*vars[10] + N[1]*vars[18] + N[2]*vars[26];
+
+    // Compute the derivative of the position vector along the length
+    // of the edge
+    TacsScalar Xa[3];
+    Xa[0] = Na[0]*Xpts[3] + Na[1]*Xpts[6] + Na[2]*Xpts[9];
+    Xa[1] = Na[0]*Xpts[4] + Na[1]*Xpts[7] + Na[2]*Xpts[10];
+    Xa[2] = Na[0]*Xpts[5] + Na[1]*Xpts[8] + Na[2]*Xpts[11];
+
+    // Compute the position vector on the element surface relative to
+    // the initial reference point
+    TacsScalar Xref[3];
+    Xref[0] = Xp[0] - rA[0] - bref[0];
+    Xref[1] = Xp[1] - rA[1] - bref[1];
+    Xref[2] = Xp[2] - rA[2] - bref[2];
+
+    // Evaluate the displacement in the body-fixed coordinate frame:
+    TacsScalar utmp[3];
+    utmp[0] = up[0] - uA[0] + bref[0];
+    utmp[1] = up[1] - uA[1] + bref[1];
+    utmp[2] = up[2] - uA[2] + bref[2];
+
+    // uref = CA*(up - uA + bref) - bref
+    TacsScalar uref[3];
+    matMult(CA, utmp, uref);
+    uref[0] = uref[0] - bref[0];
+    uref[1] = uref[1] - bref[1];
+    uref[2] = uref[2] - bref[2];
+
+    // Compute the quadrature weight for this point
+    TacsScalar h = alpha*sqrt(vecDot(Xa, Xa))*gaussWts[i];
+
+    // Get the reference axis associated with 
+    const TacsScalar *Cref;
+    refFrame->getRotation(&Cref);
+
+    // Compute the displacements in the local frame
+    TacsScalar u[3];
+    matMult(Cref, uref, u);
+
+    // Evaluate the position along the first and second directions
+    // in the body-fixed coordinate system
+    TacsScalar x[3];
+    matMult(Cref, Xref, x);
+
+    // Compute s = Cref*lambda
+    TacsScalar s0[3], s1[3];
+    s0[0] = (x[1]*lam[3] + x[2]*lam[4]);
+    s0[1] =-x[2]*lam[5];
+    s0[2] = x[1]*lam[5];
+    matMultTrans(Cref, s0, s1);
+    matMultTrans(Cref, &lam[0], s0);
+
+    // Add the multipliers times the derivative of the constraints
+    // w.r.t. the state variables
+    for ( int j = 0; j < 3; j++ ){
+      // Iterate over each displacement component and add the
+      // contributions from the displacement degrees of freedom.
+      for ( int k = 0; k < 3; k++ ){
+        TacsScalar d[3], t[3];
+        d[0] = N[j]*CA[k];
+        d[1] = N[j]*CA[3+k];
+        d[2] = N[j]*CA[6+k];
+        matMult(Cref, d, t);
+    
+        // Add the derivative from the elastic degrees of freedom
+        J[(8*(j+1)+k)*nvars + 32] += h*t[0];
+        J[(8*(j+1)+k)*nvars + 33] += h*t[1];
+        J[(8*(j+1)+k)*nvars + 34] += h*t[2];
+
+        J[32*nvars + (8*(j+1)+k)] += h*t[0];
+        J[33*nvars + (8*(j+1)+k)] += h*t[1];
+        J[34*nvars + (8*(j+1)+k)] += h*t[2];
+
+        // Add the contribution from the rigid degrees of freedom
+        J[k*nvars + 32] -= h*t[0];
+        J[k*nvars + 33] -= h*t[1];
+        J[k*nvars + 34] -= h*t[2];
+
+        J[32*nvars + k] -= h*t[0];
+        J[33*nvars + k] -= h*t[1];
+        J[34*nvars + k] -= h*t[2];
+      }
+      
+      // Add the term from the transpose of the derivative 
+      // of the constraints times the multipliers
+      addBlockEMat(h*N[j], etaA, epsA, s0, 
+                   &J[(8*(j+1))*nvars + 3], nvars);
+      addBlockEMatTrans(h*N[j], etaA, epsA, s0, 
+                        &J[3*nvars + 8*(j+1)], nvars);
+    }
+
+    // Add the contributions to the derivative w.r.t. the quaternion
+    // parameterization. Compute the transpose of the derivative of
+    // (h*lam^{T}*Cref*Cbi*uref)
+
+    // Add the derivative w.r.t. the multipliers
+    addBlockDMatTrans(h, etaA, epsA, utmp,
+                      &J[3*nvars + 4*8], nvars);
+
+    // Add the derivative w.r.t. the
+    addBlockEMat(-h, etaA, epsA, s0,
+                 &J[3], nvars);
+
+    // Add the derivative of D(utmp)^{T}*s w.r.t. qA
+    addBlockDMatTransDeriv(h, utmp, s0, &J[3*nvars + 3], nvars);
+
+    // Add the derivative of D(utmp)^{T}*s w.r.t. uA
+    addBlockEMatTrans(-h, etaA, epsA, s0, &J[3*nvars], nvars);
+
+    // Add the derivative of the constraint w.r.t. the quaternions
+    addBlockDMat(h, etaA, epsA, utmp, &J[32*nvars + 3], nvars);
+
+    if (use_moments){
+      // Add the multipliers times the derivative of the constraints
+      // w.r.t. the state variables
+      for ( int j = 0; j < 3; j++ ){
+        // Iterate over each displacement component and add the
+        // contributions from the displacement degrees of freedom.
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar d[3], t[3];
+          d[0] = N[j]*CA[k];
+          d[1] = N[j]*CA[3+k];
+          d[2] = N[j]*CA[6+k];
+          matMult(Cref, d, t);
+    
+          // Add the derivative from the elastic degrees of freedom
+          J[(8*(j+1)+k)*nvars + 35] += h*x[1]*t[0];
+          J[(8*(j+1)+k)*nvars + 36] += h*x[2]*t[0];
+          J[(8*(j+1)+k)*nvars + 37] += h*(x[1]*t[2] - x[2]*t[1]);
+
+          J[35*nvars + (8*(j+1)+k)] += h*x[1]*t[0];
+          J[36*nvars + (8*(j+1)+k)] += h*x[2]*t[0];
+          J[37*nvars + (8*(j+1)+k)] += h*(x[1]*t[2] - x[2]*t[1]);
+
+          // Add the contribution from the rigid degrees of freedom
+          J[k*nvars + 35] -= h*x[1]*t[0];
+          J[k*nvars + 36] -= h*x[2]*t[0];
+          J[k*nvars + 37] -= h*(x[1]*t[2] - x[2]*t[1]);
+
+          J[35*nvars + k] -= h*x[1]*t[0];
+          J[36*nvars + k] -= h*x[2]*t[0];
+          J[37*nvars + k] -= h*(x[1]*t[2] - x[2]*t[1]);
+        }
+
+        // Add the term from the transpose of the derivative 
+        // of the constraints times the multipliers
+        addBlockEMat(h*N[j], etaA, epsA, s1, 
+                     &J[(8*(j+1))*nvars + 3], nvars);
+        addBlockEMatTrans(h*N[j], etaA, epsA, s1, 
+                          &J[3*nvars + 8*(j+1)], nvars);
+      }
+
+      // Add the derivative w.r.t. uA
+      addBlockEMatTrans(-h, etaA, epsA, s1, &J[3*nvars], nvars);
+
+      // Add the derivative contribution to uA
+      addBlockDMatTransDeriv(h, utmp, s1, &J[3*nvars + 3], nvars);
+
+      // Add the derivative w.r.t. the displacement variables
+      addBlockEMat(-h, etaA, epsA, s1,
+                  &J[3], nvars);
+
+      // Add the derivative w.r.t. the multipliers
+      TacsScalar D[12];
+      computeDMat(etaA, epsA, utmp, D);
+      for ( int k = 0; k < 4; k++ ){
+        J[(3+k)*nvars + 4*8+3] += h*x[1]*D[k];
+        J[(3+k)*nvars + 4*8+4] += h*x[2]*D[k];
+        J[(3+k)*nvars + 4*8+5] += h*(x[1]*D[8+k] - x[2]*D[4+k]);
+      }
+
+      // Add the derivative of the constraint w.r.t. the quaternions
+      for ( int k = 0; k < 4; k++ ){
+        J[35*nvars + 3+k] += h*x[1]*D[k];
+        J[36*nvars + 3+k] += h*x[2]*D[k];
+        J[37*nvars + 3+k] += h*(x[1]*D[8+k] - x[2]*D[4+k]);
+      }
+
+      J[(nvars-2)*(nvars+1)] += alpha;
+      J[(nvars-1)*(nvars+1)] += alpha;
+    }
+    else {
+      for ( int k = 3; k < 8; k++ ){
+        J[(8*4 + k)*(nvars+1)] += alpha;
+      }
+    }
+  }
+}

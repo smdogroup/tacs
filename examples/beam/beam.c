@@ -50,10 +50,8 @@ TACSAssembler *four_bar_mechanism(){
 
   */
 
+  return NULL;
 }
-
-
-
 
 int main( int argc, char *argv[] ){
   // Initialize MPI
@@ -148,18 +146,19 @@ int main( int argc, char *argv[] ){
     // Test the revolute constraint
     TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
 
+    int use_moments = 1;
     TACSAverageConstraint *avg = 
-      new TACSAverageConstraint(bodyA, point, refFrame, 1);
-
+      new TACSAverageConstraint(bodyA, point, refFrame, use_moments);
 
     avg->setStepSize(5e-6);
     avg->setPrintLevel(2);
     avg->testResidual(0.0, X, vars, dvars, ddvars, 
                       multipliers, nmultipliers);
-    // avg->testJacobian(0.0, X, vars, dvars, ddvars);
+    for ( int k = 0; k < 40; k++ ){
+      avg->testJacobian(0.0, X, vars, dvars, ddvars, k);
+    }
+    avg->testJacobian(0.0, X, vars, dvars, ddvars);
   }
-
-  /*
 
   // Set the number of elements and nodes
   int nelems = 10;
@@ -228,7 +227,7 @@ int main( int argc, char *argv[] ){
   tacs->decref();
   beam->decref();
   stiff->decref();
-  */
+  
   MPI_Finalize();
   return 0;
 }

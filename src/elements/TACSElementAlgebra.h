@@ -1203,6 +1203,86 @@ static inline void computeDMat( const TacsScalar eta,
 }
 
 /*
+  Add the elements of the D(v) matrix
+
+  D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+  input:
+  eta:   the quaternion scalar
+  eps:   the quaternion 3-vector
+  v:     the input vector
+
+  output:
+  D:     the 3x4 derivative matrix
+*/
+static inline void addBlockDMat( const TacsScalar a,
+                                 const TacsScalar eta,
+                                 const TacsScalar eps[],
+                                 const TacsScalar v[],
+                                 TacsScalar D[],
+                                 const int ldd ){
+  const TacsScalar d = 2.0*a;
+  D[0] += d*(v[1]*eps[2] - v[2]*eps[1]);
+  D[1] += d*(v[1]*eps[1] + v[2]*eps[2]);
+  D[2] += d*(eps[0]*v[1] - 2.0*v[0]*eps[1] - eta*v[2]);
+  D[3] += d*(eps[0]*v[2] - 2.0*v[0]*eps[2] + eta*v[1]);
+  D += ldd;
+
+  D[0] += d*(v[2]*eps[0] - v[0]*eps[2]);
+  D[1] += d*(eps[1]*v[0] - 2.0*v[1]*eps[0] + eta*v[2]);
+  D[2] += d*(v[0]*eps[0] + v[2]*eps[2]);
+  D[3] += d*(eps[1]*v[2] - 2.0*v[1]*eps[2] - eta*v[0]);
+  D += ldd;
+
+  D[0] += d*(v[0]*eps[1] - v[1]*eps[0]);
+  D[1] += d*(eps[2]*v[0] - 2.0*v[2]*eps[0] - eta*v[1]);
+  D[2] += d*(eps[2]*v[1] - 2.0*v[2]*eps[1] + eta*v[0]);
+  D[3] += d*(v[0]*eps[0] + v[1]*eps[1]);
+  D += ldd;
+}
+
+/*
+  Compute the elements of the D(v) matrix
+
+  D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+  input:
+  eta:   the quaternion scalar
+  eps:   the quaternion 3-vector
+  v:     the input vector
+
+  output:
+  D:     the 3x4 derivative matrix
+*/
+static inline void addBlockDMatTrans( const TacsScalar a,
+                                      const TacsScalar eta,
+                                      const TacsScalar eps[],
+                                      const TacsScalar v[],
+                                      TacsScalar D[],
+                                      const int ldd ){
+  const TacsScalar d = 2.0*a;
+  D[0] += d*(v[1]*eps[2] - v[2]*eps[1]);
+  D[1] += d*(v[2]*eps[0] - v[0]*eps[2]);
+  D[2] += d*(v[0]*eps[1] - v[1]*eps[0]);
+  D += ldd;
+
+  D[0] += d*(v[1]*eps[1] + v[2]*eps[2]);
+  D[1] += d*(eps[1]*v[0] - 2.0*v[1]*eps[0] + eta*v[2]);
+  D[2] += d*(eps[2]*v[0] - 2.0*v[2]*eps[0] - eta*v[1]);
+  D += ldd;
+
+  D[0] += d*(eps[0]*v[1] - 2.0*v[0]*eps[1] - eta*v[2]);
+  D[1] += d*(v[0]*eps[0] + v[2]*eps[2]);
+  D[2] += d*(eps[2]*v[1] - 2.0*v[2]*eps[1] + eta*v[0]);
+  D += ldd;
+
+  D[0] += d*(eps[0]*v[2] - 2.0*v[0]*eps[2] + eta*v[1]);
+  D[1] += d*(eps[1]*v[2] - 2.0*v[1]*eps[2] - eta*v[0]);
+  D[2] += d*(v[0]*eps[0] + v[1]*eps[1]);
+  D += ldd;
+}
+
+/*
   Compute the elements of the E(v) matrix
 
   E(v) = 2*[ -v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} + 2*eps^{x}*v^{x}) ]
