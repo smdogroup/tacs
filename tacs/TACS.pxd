@@ -398,6 +398,7 @@ cdef extern from "TACSIntegrator.h":
       void setOutputFrequency(int write_freq, int newton_freq)
       void setRigidOutput(int flag)
       void setShellOutput(int flag)
+      void setBeamOutput(int flag)
       void configureAdaptiveMarch( int factor, int num_retry )
 
       # Configure writing ASCII output data

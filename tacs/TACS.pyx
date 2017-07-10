@@ -1469,6 +1469,10 @@ cdef class Integrator:
       self.ptr.setShellOutput(flag)
       return
    
+   def setBeamOutput(self, int flag):
+      self.ptr.setBeamOutput(flag)
+      return
+   
    def writeASCIISolution(self, char *filename='solution.dat', int format=2):
       self.ptr.writeSolution(&filename[0], format)
       return

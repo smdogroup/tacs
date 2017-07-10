@@ -218,6 +218,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
   // Set the rigid and shell visualization objects to NULL
   rigidf5 = NULL;
   shellf5 = NULL;
+  beamf5 = NULL;
   
   // Set kinetic and potential energies
   energies[0] = 0.0;
@@ -262,6 +263,7 @@ TACSIntegrator::~TACSIntegrator(){
   
   if (rigidf5){ rigidf5->incref();}
   if (shellf5){ shellf5->incref();}
+  if (beamf5){ beamf5->incref();}
 }
 
 /*
@@ -729,6 +731,18 @@ void TACSIntegrator::writeNewtonIterToF5( int k, int n ){
     // Write the f5 file for this time step
     shellf5->writeToFile(sbuffer);
   }
+
+  if(beamf5 && getWriteFlag(k, f5_newton_freq)){
+
+    // Create a buffer for beam filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/beam_%06d_%03d.f5", k, n);
+    
+    // Write the f5 file for this time step
+    beamf5->writeToFile(sbuffer);
+  }
 }
 
 /*
@@ -756,6 +770,17 @@ void TACSIntegrator::writeStepToF5( int k ){
     
     // Write the f5 file for this time step
     shellf5->writeToFile(sbuffer);
+  }
+
+  if(beamf5 && getWriteFlag(k, f5_write_freq)){
+    // Create a buffer for beam filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/beam_%06d.f5", k);
+    
+    // Write the f5 file for this time step
+    beamf5->writeToFile(sbuffer);
   }
 }
 
@@ -787,6 +812,13 @@ void TACSIntegrator::writeSolutionToF5( int _f5_write_freq ){
       char fname2[128];
       getString(fname2, "results/shell_%06d.f5", k);
       shellf5->writeToFile(fname2);
+    }
+
+    // Write BEAM body if set
+    if(beamf5 && getWriteFlag(k, _f5_write_freq)){
+      char fname2[128];
+      getString(fname2, "results/beam_%06d.f5", k);
+      beamf5->writeToFile(fname2);
     }
   }
 }
@@ -828,9 +860,26 @@ void TACSIntegrator::setShellOutput( int flag ){
   // Create a new instance if it does not exist and the flag is
   // greater than zero
   if (!shellf5 && flag>0){
-    // shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
-    shellf5 = new TACSToFH5(tacs, TACS_TIMOSHENKO_BEAM, shell_write_flag);
+    shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
     shellf5->incref();
+  }
+}
+
+/*
+  Set whether BEAM components are a part of the output
+*/
+void TACSIntegrator::setBeamOutput( int flag ){
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int beam_write_flag = (TACSElement::OUTPUT_NODES |
+                                  TACSElement::OUTPUT_DISPLACEMENTS |
+                                  TACSElement::OUTPUT_STRAINS |
+                                  TACSElement::OUTPUT_STRESSES |
+                                  TACSElement::OUTPUT_EXTRAS);
+  // Create a new instance if it does not exist and the flag is
+  // greater than zero
+  if (!beamf5 && flag>0){
+    beamf5 = new TACSToFH5(tacs, TACS_TIMOSHENKO_BEAM, beam_write_flag);
+    beamf5->incref();
   }
 }
 

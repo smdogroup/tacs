@@ -86,6 +86,7 @@ class TACSIntegrator : public TACSObject {
   void setOutputFrequency( int _write_step, int _write_newton = 0);
   void setRigidOutput( int flag );    
   void setShellOutput( int flag );
+  void setBeamOutput( int flag );
   void configureAdaptiveMarch( int factor, int num_retry );
   void printWallTime( double t0, int level=1 );
   void printOptionSummary( FILE *fp );
@@ -246,6 +247,8 @@ class TACSIntegrator : public TACSObject {
 
   TACSToFH5 *rigidf5;   // F5 file for rigid body visualization
   TACSToFH5 *shellf5;   // F5 file for shell visualization
+  TACSToFH5 *beamf5;    // F5 file for beam visualization
+
   int f5_write_freq;    // How frequent to write the output during time marching
   int f5_newton_freq;   // How frequent to write the output during nonlinear solve
   
