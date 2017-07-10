@@ -100,13 +100,14 @@ class TACSRevoluteConstraint : public TACSElement {
   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                           TACSGibbsVector *_point,
                           TACSGibbsVector *_eAVec );
+  TACSRevoluteConstraint( int _fixed_ref_point,
+                          TACSGibbsVector *_point,
+                          TACSGibbsVector *_eAVec );
   ~TACSRevoluteConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  void getMultiplierIndex( int *multiplier ){
-    *multiplier = 2;
-  }
+  void getMultiplierIndex( int *multiplier );
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -148,6 +149,9 @@ class TACSRevoluteConstraint : public TACSElement {
   // Update the local data
   void updatePoints( int init_e=0 );
 
+  // Is the reference point fixed or not?
+  int fixed_ref_point;
+
   // The rigid bodies involved in the joint
   TACSRigidBody *bodyA, *bodyB; 
 
@@ -156,9 +160,6 @@ class TACSRevoluteConstraint : public TACSElement {
 
   // Revolute direction in global frame
   TACSGibbsVector *eAVec; 
-  
-  // Joint positions from body in global frame
-  TACSGibbsVector *xAVec, *xBVec; 
   
   // Local axis in the B-frame
   TACSGibbsVector *eB1Vec, *eB2Vec; 
@@ -354,7 +355,6 @@ class TACSCylindricalConstraint : public TACSElement {
 
   where xi is a coordinate that runs along the edge of the connecting
   element.
-
 
   Initial position vector from the reference point (in the inertial
   frame):

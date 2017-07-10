@@ -91,6 +91,17 @@ class TACSIntegrator : public TACSObject {
   void printOptionSummary( FILE *fp );
   void printAdjointOptionSummary( FILE *fp );
 
+  // Get the states 
+  double getStates( int iter, TACSBVec **_q=NULL, 
+                    TACSBVec **_qdot=NULL, TACSBVec **_qddot=NULL ){
+    if (iter >= 0 && iter < num_time_steps){
+      if (_q){ *_q = q[iter]; }
+      if (_qdot){ *_qdot = qdot[iter]; }
+      if (_qddot){ *_qddot = qddot[iter]; }
+    }
+    return h*iter;
+  }
+
   // Variables that keep track of time
   double time_fwd_assembly;
   double time_fwd_factor;

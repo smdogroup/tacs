@@ -6,6 +6,64 @@
 #include "KinematicConstraints.h"
 
 /*
+  Create the driver constraint
+*/
+class TACSRotationDriver : public TACSElement {
+ public:
+  TACSRotationDriver( double _omega ){
+    omega = _omega;
+  }
+  int numDisplacements(){ return 8; }
+  int numNodes(){ return 2; }
+  const char* elementName(){ return "TACSRotationDriver"; }
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] ){
+    *_Te = 0.0;
+    *_Pe = 0.0;
+  }
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] ){
+    TacsScalar *con = &res[8];
+
+    res[0] += vars[8];
+    res[1] += vars[9];
+    res[2] += vars[10];
+
+    res[4] += vars[11];
+    res[5] += vars[12];
+    res[6] += vars[13];
+
+    con[0] += vars[0];
+    con[1] += vars[1];
+    con[2] += vars[2];
+
+    con[3] += vars[4];
+    con[4] += vars[5];
+    con[5] += vars[6] - sin(0.5*omega*time);
+
+    // Add the dummy constraints
+    con[6] += vars[14];
+    con[7] += vars[15];
+  }
+
+ private:
+  TacsScalar omega;
+};
+
+/*
   Create and return the TACSAssembler object for the four bar
   mechanism as described by Bachau
 
@@ -32,32 +90,210 @@
   Bars 1 and 2 are square and of dimension 16 x 16 mm
   Bar 3 is square and of dimension 8 x 8 mm
 */
-TACSAssembler *four_bar_mechanism(){
-  /*
+TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   // Set the gravity vector
   TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, -9.81);
 
+  // Set the points a, b, c and d
+  TACSGibbsVector *ptA = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSGibbsVector *ptB = new TACSGibbsVector(0.0, 0.12, 0.0);
+  TACSGibbsVector *ptC = new TACSGibbsVector(0.24, 0.12, 0.0);
+  TACSGibbsVector *ptD = new TACSGibbsVector(0.24, 0.0, 0.0);
+
   // Create the revolute direction for A, B and D
-  TACSGibbsVector *revA = new TACSGibbsVector(0.0, 0.0, 1.0);
+  TACSGibbsVector *revDirA = new TACSGibbsVector(0.0, 0.0, 1.0);
+  TACSGibbsVector *revDirB = new TACSGibbsVector(0.0, 0.0, 1.0);
+  TACSGibbsVector *revDirD = new TACSGibbsVector(0.0, 0.0, 1.0);
 
   // Create the revolute direction for C
   TacsScalar theta = (5.0/180.0)*M_PI;
-  TACSGibbsVector *revC = new TACSGibbsVector(sin(theta), 0.0, cos(theta));
-  
-  
-  
-  
+  TACSGibbsVector *revDirC = new TACSGibbsVector(sin(theta), 0.0, cos(theta));
 
-  */
+  // Create the revolute constraints
+  TacsScalar omega = -0.6; // rad/seconds
+  int fixed_point = 1;
+  int not_fixed = 0;
+  // TACSRevoluteDriver *revDriverA = 
+  //   new TACSRevoluteDriver(ptA, revDirA, omega);
+  
+  TACSRotationDriver *revDriverA =
+    new TACSRotationDriver(omega);
+  TACSRevoluteConstraint *revB = 
+    new TACSRevoluteConstraint(not_fixed, ptB, revDirB);
+  TACSRevoluteConstraint *revC = 
+    new TACSRevoluteConstraint(not_fixed, ptC, revDirC);
+  TACSRevoluteConstraint *revD = 
+    new TACSRevoluteConstraint(fixed_point, ptD, revDirD);
 
-  return NULL;
+  // Create the stiffness objects for each element
+  TacsScalar mA = 1.997; // kg/m
+  TacsScalar IA = 42.60e-6; // kg/m
+
+  TacsScalar EA_A = 52.99e6;
+  TacsScalar GJ_A = 733.5;
+  TacsScalar kGAz_A = 16.88e6; 
+  TacsScalar EIz_A = 1131.0;
+
+  // The properties of the second beam
+  TacsScalar mB = 0.4992; // kg*m^2/m
+  TacsScalar IB = 2.662e-6; // kg*m^2/m
+
+  TacsScalar EA_B = 13.25e6;
+  TacsScalar GJ_B = 45.84;
+  TacsScalar kGAz_B = 4.220e6;
+  TacsScalar EIz_B = 70.66;
+
+  // Set the reference axes for each beam
+  TacsScalar axis_A[] = {-1.0, 0.0, 0.0};
+  TacsScalar axis_B[] = {0.0, 1.0, 0.0};
+  TacsScalar axis_C[] = {1.0, 0.0, 0.0};
+  
+  // Create the Timoshenko stiffness object
+  TimoshenkoStiffness *stiffA =
+    new TimoshenkoStiffness(mA, IA, IA, 0.0,
+                            EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+                            axis_A);
+
+  TimoshenkoStiffness *stiffB =
+    new TimoshenkoStiffness(mB, IB, IB, 0.0,
+                            EA_B, GJ_B, EIz_B, EIz_B, kGAz_B, kGAz_B,
+                            axis_B);
+
+  TimoshenkoStiffness *stiffC =
+    new TimoshenkoStiffness(mA, IA, IA, 0.0,
+                            EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+                            axis_C);
+
+  // Set up the connectivity
+  MITC3 *beamA = new MITC3(stiffA, gravity);
+  MITC3 *beamB = new MITC3(stiffB, gravity);
+  MITC3 *beamC = new MITC3(stiffC, gravity);
+
+  // Set the number of nodes in the mesh
+  int nnodes = (2*nA+1) + (2*nB+1) + (2*nC+1) + 4;
+
+  // Set the number of elements
+  int nelems = nA + nB + nC + 4;
+
+  // Create the connectivities
+  TacsScalar *X = new TacsScalar[ 3*nnodes ];
+  memset(X, 0, 3*nnodes*sizeof(TacsScalar));
+
+  int *ptr = new int[ nelems+1 ];
+  int *conn = new int[ 3*nelems ];
+  TACSElement **elems = new TACSElement*[ nelems ];
+
+  // Set the nodes numbers and locations
+  int *nodesA = new int[ 2*nA+1 ];
+  int *nodesB = new int[ 2*nB+1 ];
+  int *nodesC = new int[ 2*nC+1 ];
+  int n = 0;
+  for ( int i = 0; i < 2*nA+1; i++, n++ ){
+    nodesA[i] = n;
+    X[3*n+1] = 0.12*i/(2*nA); 
+  }
+  for ( int i = 0; i < 2*nB+1; i++, n++ ){
+    nodesB[i] = n;
+    X[3*n] = 0.24*i/(2*nB);
+    X[3*n+1] = 0.12; 
+  }
+  for ( int i = 0; i < 2*nC+1; i++, n++ ){
+    nodesC[i] = n;
+    X[3*n] = 0.24;
+    X[3*n+1] = 0.12*(1.0 - 1.0*i/(2*nC));
+  }
+
+  // Set the connectivity for the beams
+  int elem = 0;
+  ptr[0] = 0;
+  for ( int i = 0; i < nA; i++ ){
+    conn[ptr[elem]] = nodesA[2*i];
+    conn[ptr[elem]+1] = nodesA[2*i+1];
+    conn[ptr[elem]+2] = nodesA[2*i+2];
+    elems[elem] = beamA;
+    ptr[elem+1] = ptr[elem] + 3;
+    elem++;
+  }
+
+  for ( int i = 0; i < nB; i++ ){
+    conn[ptr[elem]] = nodesB[2*i];
+    conn[ptr[elem]+1] = nodesB[2*i+1];
+    conn[ptr[elem]+2] = nodesB[2*i+2];
+    elems[elem] = beamB;
+    ptr[elem+1] = ptr[elem] + 3;
+    elem++;
+  }
+
+  for ( int i = 0; i < nC; i++ ){
+    conn[ptr[elem]] = nodesC[2*i];
+    conn[ptr[elem]+1] = nodesC[2*i+1];
+    conn[ptr[elem]+2] = nodesC[2*i+2];
+    elems[elem] = beamC;
+    ptr[elem+1] = ptr[elem] + 3;
+    elem++;
+  }
+
+  // Add the connectivities for the constraints
+  conn[ptr[elem]] = nodesA[0];
+  conn[ptr[elem]+1] = nnodes-4;
+  elems[elem] = revDriverA;
+  ptr[elem+1] = ptr[elem] + 2;
+  elem++;
+
+  conn[ptr[elem]] = nodesA[2*nA];
+  conn[ptr[elem]+1] = nodesB[0];
+  conn[ptr[elem]+2] = nnodes-3;
+  elems[elem] = revB;
+  ptr[elem+1] = ptr[elem] + 3;
+  elem++;
+
+  conn[ptr[elem]] = nodesB[2*nB];
+  conn[ptr[elem]+1] = nodesC[0];
+  conn[ptr[elem]+2] = nnodes-2;
+  elems[elem] = revC;
+  ptr[elem+1] = ptr[elem] + 3;
+  elem++;
+
+  conn[ptr[elem]] = nodesC[2*nC];
+  conn[ptr[elem]+1] = nnodes-1;
+  elems[elem] = revD;
+  ptr[elem+1] = ptr[elem] + 2;
+  elem++;
+
+  delete [] nodesA;
+  delete [] nodesB;
+  delete [] nodesC;
+
+  // Create the TACSAssembler object
+  TACSAssembler *tacs = new TACSAssembler(MPI_COMM_WORLD, 8, nnodes, nelems);
+
+  tacs->setElementConnectivity(conn, ptr);
+  delete [] conn;
+  delete [] ptr;
+
+  tacs->setElements(elems);
+  delete [] elems;
+
+  tacs->initialize();
+
+  // Set the node locations
+  TACSBVec *Xvec = tacs->createNodeVec();
+  Xvec->incref();
+  TacsScalar *Xarray;
+  Xvec->getArray(&Xarray);
+  memcpy(Xarray, X, 3*nnodes*sizeof(TacsScalar));
+  tacs->setNodes(Xvec);
+  Xvec->decref();
+  delete [] X;
+
+  return tacs;
 }
 
-int main( int argc, char *argv[] ){
-  // Initialize MPI
-  MPI_Init(&argc, &argv);
-
-  // Set the reference axis
+/*
+  Test the element implementation
+*/
+void test_beam_element(){
+    // Set the reference axis
   TacsScalar axis[] = {0.0, 1.0, 0.0};
 
   // Set the gravity vector
@@ -159,75 +395,68 @@ int main( int argc, char *argv[] ){
     }
     avg->testJacobian(0.0, X, vars, dvars, ddvars);
   }
+}
 
-  // Set the number of elements and nodes
-  int nelems = 10;
-  int nnodes = 2*nelems+1;
+int main( int argc, char *argv[] ){
+  // Initialize MPI
+  MPI_Init(&argc, &argv);
 
-  // Set the locations for the beam
-  MPI_Comm comm = MPI_COMM_WORLD;
-  TACSAssembler *tacs = new TACSAssembler(comm, 8, 
-                                          nnodes, nelems);
+  int nA = 5, nB = 11, nC = 5;
+  TACSAssembler *tacs = four_bar_mechanism(nA, nB, nC);
   tacs->incref();
 
-  // Create the mesh
-  TACSElement **elems = new TACSElement*[ nelems ];
-  int *conn = new int[ 3*nelems ];
-  int *ptr = new int[ nelems+1 ];
-
-  // Create the connectivity and set the elements
-  ptr[0] = 0;
-  for ( int i = 0; i < nelems; i++ ){
-    elems[i] = beam;
-    conn[ptr[i]] = 2*i;
-    conn[ptr[i]+1] = 2*i+1;
-    conn[ptr[i]+2] = 2*i+2;
-    ptr[i+1] = ptr[i] + 3;
-  }
-
-  tacs->setElementConnectivity(conn, ptr);
-  delete [] conn;
-  delete [] ptr;
-
-  tacs->setElements(elems);
-  delete [] elems;
-
-  // Add boundary conditions
-  int nodes = 0;
-  int nbcs = 3;
-  int vars[] = {0, 1, 2};
-  tacs->addBCs(1, &nodes, nbcs, vars);
-
-  tacs->initialize();
-
-  // Set the node locations
-  TACSBVec *Xvec = tacs->createNodeVec();
-  Xvec->incref();
-  TacsScalar *Xarray;
-  Xvec->getArray(&Xarray);
-  for ( int k = 0; k < 2*nelems+1; k++ ){
-    Xarray[3*k] = 1.0*k/(2*nelems+1);
-  }
-  tacs->setNodes(Xvec);
-  Xvec->decref();
-
-  // Now... we're ready to simulate a falling beam
-  int num_steps = 250;
+  // Now... we're ready
+  double omega = 0.6;
+  int num_steps = 200;
+  double tf = 2*M_PI/omega;
   TACSIntegrator *integrator = 
-    new TACSBDFIntegrator(tacs, 0.0, 2.0, num_steps, 2);
+    new TACSBDFIntegrator(tacs, 0.0, tf, num_steps, 2);
   integrator->incref();
-  
-  integrator->setAbsTol(1e-8);
 
-  integrator->setOutputFrequency(1);
+  // The number of iterations
+  int niters = int(num_steps*tf) + 1;
+
+  integrator->setUseFEMat(0);
+  integrator->setAbsTol(1e-8);
+  integrator->setOutputFrequency(10);
   integrator->setShellOutput(1);
   integrator->integrate();
 
+  int elem[3];
+  elem[0] = nA/2;
+  elem[1] = nA + nB/2;
+  elem[2] = nA + nB + nC/2;
+  double param[][1] = {{0.5}, {0.5}, {0.5}}; 
+
+  for ( int pt = 0; pt < 3; pt++ ){
+    char filename[128];
+    sprintf(filename, "mid_beam_%d.dat", pt+1);
+    FILE *fp = fopen(filename, "w");
+
+    fprintf(fp, "Variables = t, sx0, st0, sy1, sz1, sxy0, sxz0\n");
+
+    // Write out data from the beams
+    for ( int k = 0; k < niters; k++ ){
+      TacsScalar X[3*3], vars[8*3];
+      TACSBVec *q;
+      double time = integrator->getStates(k, &q);
+      tacs->setVariables(q);
+      TACSElement *element = tacs->getElement(elem[pt], X, vars);
+
+      TacsScalar e[6], s[6];
+      element->getStrain(e, param[pt], X, vars);
+      TACSConstitutive *con = element->getConstitutive();
+      con->calculateStress(param[pt], e, s);
+
+      fprintf(fp, "%e  %e %e %e  %e %e %e\n",
+              time, s[0], s[1], s[2], s[3], s[4], s[5]);
+    }
+    fclose(fp);
+  }
+
   integrator->decref();
   tacs->decref();
-  beam->decref();
-  stiff->decref();
-  
+
   MPI_Finalize();
   return 0;
 }
