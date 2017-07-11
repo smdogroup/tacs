@@ -91,6 +91,53 @@ void SerialBCSCMat::addValues( int nrow, const int *row,
 }
 
 /*
+  Add the weighted values to the matrix
+
+  input:
+  nvars:    the number of block variables in the dense input matrix
+  varp:     pointer to the start of each weight row; len(varp) = nvars+1
+  vars:     variable numbers in the matrix; len(vars) = varp[nvars]
+  weights:  weighting values for each variable; len(weights) = len(vars)
+  nv, nw:   the number of rows and number of columns in the values matrix
+  values:   the dense input matrix
+*/
+void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
+                                     const int *vars, 
+                                     const TacsScalar *weights,
+                                     int nv, int mv,
+                                     const TacsScalar *values,
+                                     MatrixOrientation matOr ){
+  // Allocate space for the matrix
+  int n = varp[nvars];
+  TacsScalar *Aw = new TacsScalar[ bsize*bsize*n*n ];
+  
+  // Compute the weighted matrix - this loop is a bit horrendous 
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      for ( int ip = varp[i]; ip < varp[i+1]; ip++ ){
+        for ( int jp = varp[j]; jp < varp[j+1]; jp++ ){
+          TacsScalar w = weights[ip]*weights[jp];
+          for ( int ii = 0; ii < bsize; ii++ ){
+            for ( int jj = 0; jj < bsize; jj++ ){              
+              Aw[(bsize*ip + ii)*n + bsize*jp + jj] = 
+                w*values[(bsize*i + ii)*mv + bsize*j + jj];
+            }
+          }
+        }
+      }                                                    
+    }  
+  }
+
+  // Check whether the weighted matrix should be transposed or not
+  int is_transpose = 0;
+  if (matOr == TRANSPOSE){
+    is_transpose = 1;
+  }
+  mat->addMatBlockValues(n, vars, n, vars, Aw, n, is_transpose);
+  delete [] Aw;
+}
+
+/*
   Apply the Dirichlet boundary conditions to the matrix
 
   This code zeros the rows corresponding to the Dirichlet boundary

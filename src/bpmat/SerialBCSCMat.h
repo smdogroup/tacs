@@ -20,6 +20,10 @@ class SerialBCSCMat : public TACSMat {
   void addValues( int nrow, const int *row, 
                   int ncol, const int *col,
                   int nv, int mv, const TacsScalar *values );
+  void addWeightValues( int nvars, const int *varp, const int *vars,
+                        const TacsScalar *weights,
+                        int nv, int mv, const TacsScalar *values,
+                        MatrixOrientation matOr=NORMAL );
   void applyBCs( TACSBcMap *bcmap );
 
   // Create vectors
