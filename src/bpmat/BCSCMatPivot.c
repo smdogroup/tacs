@@ -965,7 +965,7 @@ void BCSCMat::addMatBlockValues( int num_rows, const int brows[],
 	      
 	      // Add the values into the matrix
 	      for ( int jj = 0; jj < cdim; jj++ ){
-		a[jj] += mat[ldmat*(joffset + jj) + (ioffset + ii)];
+		a[jj] += mat[ldmat*(ioffset + jj) + (joffset + ii)];
 	      }
 	    }
 	    else {
@@ -1026,7 +1026,7 @@ void BCSCMat::addMatBlockValues( int num_rows, const int brows[],
 	      
 	      // Add the values into the matrix
 	      for ( int jj = 0; jj < cdim; jj++ ){
-		a[jj] += mat[ldmat*(joffset + jj) + (ioffset + ii)];
+		a[jj] += mat[ldmat*(ioffset + jj) + (joffset + ii)];
 	      }
 	    }
 	    else {

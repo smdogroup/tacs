@@ -87,7 +87,7 @@ void SerialBCSCMat::zeroEntries(){
 void SerialBCSCMat::addValues( int nrow, const int *row, 
                                int ncol, const int *col,
                                int nv, int mv, const TacsScalar *values ){
-  mat->addMatBlockValues(nrow, row, ncol, col, values, nv);
+  mat->addMatBlockValues(nrow, row, ncol, col, values, mv);
 }
 
 /*
@@ -114,7 +114,7 @@ void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
       is_transpose = 1;
     }
     mat->addMatBlockValues(nvars, vars, nvars, vars, 
-                           values, nvars, is_transpose);
+                           values, mv, is_transpose);
   }
   else {
     // Allocate space for the matrix
@@ -143,7 +143,7 @@ void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
     if (matOr == TRANSPOSE){
       is_transpose = 1;
     }
-    mat->addMatBlockValues(n, vars, n, vars, Aw, n, is_transpose);
+    mat->addMatBlockValues(n, vars, n, vars, Aw, n*bsize, is_transpose);
     delete [] Aw;
   }
 }
