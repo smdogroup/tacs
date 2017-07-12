@@ -1778,17 +1778,17 @@ void TACSAverageConstraint::addResidual( double time,
     Xref[2] = Xp[2] - rA[2] - bref[2];
 
     // Evaluate the displacement in the body-fixed coordinate frame:
-    TacsScalar utmp[3];
-    utmp[0] = up[0] - uA[0] + bref[0];
-    utmp[1] = up[1] - uA[1] + bref[1];
-    utmp[2] = up[2] - uA[2] + bref[2];
+    TacsScalar atmp[3];
+    atmp[0] = Xp[0] + up[0] - uA[0] - rA[0];
+    atmp[1] = Xp[1] + up[1] - uA[1] - rA[1];
+    atmp[2] = Xp[2] + up[2] - uA[2] - rA[2];
 
-    // uref = CA*(up - uA + bref) - bref
+    // uref = CA*(xp + up - uA - rA) - bref - Xref
     TacsScalar uref[3];
-    matMult(CA, utmp, uref);
-    uref[0] = uref[0] - bref[0];
-    uref[1] = uref[1] - bref[1];
-    uref[2] = uref[2] - bref[2];
+    matMult(CA, atmp, uref);
+    uref[0] = uref[0] - bref[0] - Xref[0];
+    uref[1] = uref[1] - bref[1] - Xref[1];
+    uref[2] = uref[2] - bref[2] - Xref[2];
 
     // Compute the quadrature weight for this point
     TacsScalar h = sqrt(vecDot(Xa, Xa))*gaussWts[i];
@@ -1831,7 +1831,7 @@ void TACSAverageConstraint::addResidual( double time,
     // (h*lam^{T}*Cref*Cbi*uref)
     TacsScalar s[3];
     matMultTrans(Cref, &lam[0], s);
-    addDMatTransProduct(h, utmp, s, etaA, epsA, &res[3], &res[4]);
+    addDMatTransProduct(h, atmp, s, etaA, epsA, &res[3], &res[4]);
 
     if (use_moments){
       // Evaluate the position along the first and second directions
@@ -1870,7 +1870,7 @@ void TACSAverageConstraint::addResidual( double time,
       t[1] =-x[2]*lam[5];
       t[2] = x[1]*lam[5];
       matMultTrans(Cref, t, s);
-      addDMatTransProduct(h, utmp, s, etaA, epsA, &res[3], &res[4]);
+      addDMatTransProduct(h, atmp, s, etaA, epsA, &res[3], &res[4]);
 
       // Set dummy constraints
       con[6] += lam[6];
@@ -1971,17 +1971,17 @@ void TACSAverageConstraint::addJacobian( double time,
     Xref[2] = Xp[2] - rA[2] - bref[2];
 
     // Evaluate the displacement in the body-fixed coordinate frame:
-    TacsScalar utmp[3];
-    utmp[0] = up[0] - uA[0] + bref[0];
-    utmp[1] = up[1] - uA[1] + bref[1];
-    utmp[2] = up[2] - uA[2] + bref[2];
+    TacsScalar atmp[3];
+    atmp[0] = Xp[0] + up[0] - uA[0] - rA[0];
+    atmp[1] = Xp[1] + up[1] - uA[1] - rA[1];
+    atmp[2] = Xp[2] + up[2] - uA[2] - rA[2];
 
-    // uref = CA*(up - uA + bref) - bref
+    // uref = CA*(xp + up - uA - rA) - bref - Xref
     TacsScalar uref[3];
-    matMult(CA, utmp, uref);
-    uref[0] = uref[0] - bref[0];
-    uref[1] = uref[1] - bref[1];
-    uref[2] = uref[2] - bref[2];
+    matMult(CA, atmp, uref);
+    uref[0] = uref[0] - bref[0] - Xref[0];
+    uref[1] = uref[1] - bref[1] - Xref[1];
+    uref[2] = uref[2] - bref[2] - Xref[2];
 
     // Compute the quadrature weight for this point
     TacsScalar h = alpha*sqrt(vecDot(Xa, Xa))*gaussWts[i];
@@ -2051,21 +2051,21 @@ void TACSAverageConstraint::addJacobian( double time,
     // (h*lam^{T}*Cref*Cbi*uref)
 
     // Add the derivative w.r.t. the multipliers
-    addBlockDMatTrans(h, etaA, epsA, utmp,
+    addBlockDMatTrans(h, etaA, epsA, atmp,
                       &J[3*nvars + 4*8], nvars);
 
     // Add the derivative w.r.t. the
     addBlockEMat(-h, etaA, epsA, s0,
                  &J[3], nvars);
 
-    // Add the derivative of D(utmp)^{T}*s w.r.t. qA
-    addBlockDMatTransDeriv(h, utmp, s0, &J[3*nvars + 3], nvars);
+    // Add the derivative of D(atmp)^{T}*s w.r.t. qA
+    addBlockDMatTransDeriv(h, atmp, s0, &J[3*nvars + 3], nvars);
 
-    // Add the derivative of D(utmp)^{T}*s w.r.t. uA
+    // Add the derivative of D(atmp)^{T}*s w.r.t. uA
     addBlockEMatTrans(-h, etaA, epsA, s0, &J[3*nvars], nvars);
 
     // Add the derivative of the constraint w.r.t. the quaternions
-    addBlockDMat(h, etaA, epsA, utmp, &J[32*nvars + 3], nvars);
+    addBlockDMat(h, etaA, epsA, atmp, &J[32*nvars + 3], nvars);
 
     if (use_moments){
       // Add the multipliers times the derivative of the constraints
@@ -2111,7 +2111,7 @@ void TACSAverageConstraint::addJacobian( double time,
       addBlockEMatTrans(-h, etaA, epsA, s1, &J[3*nvars], nvars);
 
       // Add the derivative contribution to uA
-      addBlockDMatTransDeriv(h, utmp, s1, &J[3*nvars + 3], nvars);
+      addBlockDMatTransDeriv(h, atmp, s1, &J[3*nvars + 3], nvars);
 
       // Add the derivative w.r.t. the displacement variables
       addBlockEMat(-h, etaA, epsA, s1,
@@ -2119,7 +2119,7 @@ void TACSAverageConstraint::addJacobian( double time,
 
       // Add the derivative w.r.t. the multipliers
       TacsScalar D[12];
-      computeDMat(etaA, epsA, utmp, D);
+      computeDMat(etaA, epsA, atmp, D);
       for ( int k = 0; k < 4; k++ ){
         J[(3+k)*nvars + 4*8+3] += h*x[1]*D[k];
         J[(3+k)*nvars + 4*8+4] += h*x[2]*D[k];
