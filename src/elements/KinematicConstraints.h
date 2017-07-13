@@ -337,58 +337,56 @@ class TACSCylindricalConstraint : public TACSElement {
   issues of non-physical, perfectly rigid connections between rigid
   and flexible components.
 
-  The absolute position of the reference point in the inertial frame
-  is computed as a function of the displacement and rotation of the
-  rigid body as follows:
+  The absolute position of a point along the flexible connection is
+  given by
 
-  ref(t = 0) = r0 + bref
-  ref(t) = r0 + u0 + Cbi^{T}*bref
+  X(xi) + U(xi)
 
-  where bref is the vector from the origin of the initial body
-  position to the reference pooint.
+  This point on the flexible body is also observed from a frame fixed
+  relative to the rigid body, called C. The average displacements and
+  displacement moments observed in the C frame are set to zero. The
+  position of the C frame within the rigid body frame is given by the
+  vector bref, and is fixed in the body frame. At the initial point
+  the body-frame and inertial frame are aligned so that bref at the
+  initial point is also in the body frame.
+
+  At t=0 the relative position of the point X(xi) on the flexible
+  body relative to frame is given as
+
+  Xref = X(xi) - r0 - bref
+
+  Note that r0 is the inital body location. At time t, the flexible
+  and rigid body have moved to point X(xi) + U(xi) and r0 + u0,
+  respectively. But Xref has also been convected in frame C.  The new
+  position of Xref in the inertial frame is given as:
+
+  X' = r0 + u0 + CB^{T}(bref + Xref)
   
-  The position of the flexible point, anywhere along the surface, is
-  given as
-
-  pos(t = 0) = X(xi)
-  pos(t) = X(xi) + u(xi)
-
-  where xi is a coordinate that runs along the edge of the connecting
-  element.
-
-  Initial position vector from the reference point (in the inertial
-  frame):
+  The difference between X(xi) + U(xi) and X' is the displacement
+  observed in frame C. This is then
   
-  Xref(t = 0) = X(xi) - r0 - bref
-  
-  Position vector at t is:
-  
-  Xref(t) = X(xi) + u(xi) - (r0 + u0 + Cbi^{T}*bref)
+  U' = X(xi) + U(xi) - X'
+  .  = X(xi) + U(xi) - r0 - u0 - CB^{T}(bref + Xref)
 
-  The relative displacement of the position in the flexible body is
-  given as:
+  The position vector in the local frame C is then:
 
-  uref = u(xi) - u0 - (Cbi^{T} - I)*bref
+  u = Cref*CB*U'
+  . = Cref*(CB*(X(xi) + U(xi) - r0 - u0) - bref + Xref)
 
-  In the body-fixed coordinate frame, the displacements are:
+  The integration is performed using the local Xref location:
 
-  u = Cbi*uref 
-  . = Cbi*(u(xi) - u0) + (Cbi - I)*bref
-  . = Cbi*(u(xi) - u0 + bref) - bref
-
-  We then form a reference frame Cref (from global to local) and
-  compute
-
-  ulocal = Cref*u, and xlocal = Cref*Xref
-
-  and perform the integration in the local coordinate axes.
+  x = Cref*Xref.
 */
 class TACSAverageConstraint : public TACSElement {
  public:
+  static const int X_MOMENT = 1;
+  static const int Y_MOMENT = 2;
+  static const int Z_MOMENT = 4; 
+
   TACSAverageConstraint( TACSRigidBody *_bodyA,
                          TACSGibbsVector *_point,
                          TACSRefFrame *_refFrame,
-                         int _use_moments );
+                         int _moment_flag );
   ~TACSAverageConstraint();
 
   // Get the number of displacements/nodes and the element name
@@ -422,7 +420,7 @@ class TACSAverageConstraint : public TACSElement {
  private:
   // Flag to indicate whether to constraint the displacements or the
   // displacements and the moments of the displacement
-  int use_moments;
+  int moment_flag;
 
   // The rigid body 
   TACSRigidBody *bodyA;

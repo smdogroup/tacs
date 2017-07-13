@@ -1639,8 +1639,8 @@ void TACSCylindricalConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
 TACSAverageConstraint::TACSAverageConstraint( TACSRigidBody *_bodyA,
                                               TACSGibbsVector *_point,
                                               TACSRefFrame *_refFrame,
-                                              int _use_moments ){
-  use_moments = _use_moments;                                              
+                                              int _moment_flag ){
+  moment_flag = _moment_flag;
   bodyA = _bodyA;
   bodyA->incref();
   point = _point;
@@ -1833,14 +1833,20 @@ void TACSAverageConstraint::addResidual( double time,
     matMultTrans(Cref, &lam[0], s);
     addDMatTransProduct(h, atmp, s, etaA, epsA, &res[3], &res[4]);
 
-    if (use_moments){
+    if (moment_flag){
       // Evaluate the position along the first and second directions
       // in the body-fixed coordinate system
       matMult(Cref, Xref, x);
 
-      con[3] += h*x[1]*u[0];
-      con[4] += h*x[2]*u[0];
-      con[5] += h*(x[1]*u[2] - x[2]*u[1]);
+      if (moment_flag & X_MOMENT){
+        con[3] += h*(x[1]*u[2] - x[2]*u[1]);
+      }
+      if (moment_flag & Y_MOMENT){
+        con[4] += h*x[1]*u[0];
+      }
+      if (moment_flag & Z_MOMENT){
+        con[5] += h*x[2]*u[0];
+      }
 
       // Add the multipliers times the derivative of the constraints
       // w.r.t. the state variables
@@ -1853,26 +1859,51 @@ void TACSAverageConstraint::addResidual( double time,
           d[1] = N[j]*CA[3+k];
           d[2] = N[j]*CA[6+k];
           matMult(Cref, d, t);
-    
-          // Add the derivative from the elastic degrees of freedom
-          res[8*(j+1)+k] += h*(x[1]*t[0]*lam[3] + x[2]*t[0]*lam[4] + 
-                               (x[1]*t[2] - x[2]*t[1])*lam[5]);
 
-          // Add the contribution from the rigid degrees of freedom
-          res[k] -= h*(x[1]*t[0]*lam[3] + x[2]*t[0]*lam[4] + 
-                       (x[1]*t[2] - x[2]*t[1])*lam[5]);
+          // Add the derivative from the elastic degrees of freedom
+          TacsScalar r = 0.0;
+          if (moment_flag & X_MOMENT){
+            r += (x[1]*t[2] - x[2]*t[1])*lam[3];
+          }
+          if (moment_flag & Y_MOMENT){
+            r += x[1]*t[0]*lam[4];
+          }
+          if (moment_flag & Z_MOMENT){
+            r += x[2]*t[0]*lam[5];
+          }
+    
+          // Add the terms to the matrix
+          res[8*(j+1)+k] += h*r;
+          res[k] -= h*r;
         }
       }
 
       // Compute t = B^{T}*lam
       TacsScalar t[3];
-      t[0] = (x[1]*lam[3] + x[2]*lam[4]);
-      t[1] =-x[2]*lam[5];
-      t[2] = x[1]*lam[5];
+      t[0] = t[1] = t[2] = 0.0;
+      if (moment_flag & X_MOMENT){
+        t[1] =-x[2]*lam[3];
+        t[2] = x[1]*lam[3];
+      }
+      if (moment_flag & Y_MOMENT){
+        t[0] = x[1]*lam[4];
+      }
+      if (moment_flag & Z_MOMENT){
+        t[0] += x[2]*lam[5];
+      }
       matMultTrans(Cref, t, s);
       addDMatTransProduct(h, atmp, s, etaA, epsA, &res[3], &res[4]);
 
       // Set dummy constraints
+      if (!(moment_flag & X_MOMENT)){
+        con[3] += lam[3];
+      }
+      if (!(moment_flag & Y_MOMENT)){
+        con[4] += lam[4];
+      }
+      if (!(moment_flag & Z_MOMENT)){
+        con[5] += lam[5];
+      }
       con[6] += lam[6];
       con[7] += lam[7];
     }
@@ -2001,9 +2032,17 @@ void TACSAverageConstraint::addJacobian( double time,
 
     // Compute s = Cref*lambda
     TacsScalar s0[3], s1[3];
-    s0[0] = (x[1]*lam[3] + x[2]*lam[4]);
-    s0[1] =-x[2]*lam[5];
-    s0[2] = x[1]*lam[5];
+    s0[0] = s0[1] = s0[2] = 0.0;
+    if (moment_flag & X_MOMENT){
+      s0[1] =-x[2]*lam[3];
+      s0[2] = x[1]*lam[3];      
+    }
+    if (moment_flag & Y_MOMENT){
+      s0[0] = x[1]*lam[4];
+    }
+    if (moment_flag & Z_MOMENT){
+      s0[0] += x[2]*lam[5];
+    }
     matMultTrans(Cref, s0, s1);
     matMultTrans(Cref, &lam[0], s0);
 
@@ -2055,8 +2094,7 @@ void TACSAverageConstraint::addJacobian( double time,
                       &J[3*nvars + 4*8], nvars);
 
     // Add the derivative w.r.t. the
-    addBlockEMat(-h, etaA, epsA, s0,
-                 &J[3], nvars);
+    addBlockEMat(-h, etaA, epsA, s0, &J[3], nvars);
 
     // Add the derivative of D(atmp)^{T}*s w.r.t. qA
     addBlockDMatTransDeriv(h, atmp, s0, &J[3*nvars + 3], nvars);
@@ -2067,7 +2105,7 @@ void TACSAverageConstraint::addJacobian( double time,
     // Add the derivative of the constraint w.r.t. the quaternions
     addBlockDMat(h, etaA, epsA, atmp, &J[32*nvars + 3], nvars);
 
-    if (use_moments){
+    if (moment_flag){
       // Add the multipliers times the derivative of the constraints
       // w.r.t. the state variables
       for ( int j = 0; j < 3; j++ ){
@@ -2081,22 +2119,24 @@ void TACSAverageConstraint::addJacobian( double time,
           matMult(Cref, d, t);
     
           // Add the derivative from the elastic degrees of freedom
-          J[(8*(j+1)+k)*nvars + 35] += h*x[1]*t[0];
-          J[(8*(j+1)+k)*nvars + 36] += h*x[2]*t[0];
-          J[(8*(j+1)+k)*nvars + 37] += h*(x[1]*t[2] - x[2]*t[1]);
-
-          J[35*nvars + (8*(j+1)+k)] += h*x[1]*t[0];
-          J[36*nvars + (8*(j+1)+k)] += h*x[2]*t[0];
-          J[37*nvars + (8*(j+1)+k)] += h*(x[1]*t[2] - x[2]*t[1]);
-
-          // Add the contribution from the rigid degrees of freedom
-          J[k*nvars + 35] -= h*x[1]*t[0];
-          J[k*nvars + 36] -= h*x[2]*t[0];
-          J[k*nvars + 37] -= h*(x[1]*t[2] - x[2]*t[1]);
-
-          J[35*nvars + k] -= h*x[1]*t[0];
-          J[36*nvars + k] -= h*x[2]*t[0];
-          J[37*nvars + k] -= h*(x[1]*t[2] - x[2]*t[1]);
+          if (moment_flag & X_MOMENT){
+            J[(8*(j+1)+k)*nvars + 35] += h*(x[1]*t[2] - x[2]*t[1]);
+            J[35*nvars + (8*(j+1)+k)] += h*(x[1]*t[2] - x[2]*t[1]);
+            J[k*nvars + 35] -= h*(x[1]*t[2] - x[2]*t[1]);
+            J[35*nvars + k] -= h*(x[1]*t[2] - x[2]*t[1]);
+          }
+          if (moment_flag & Y_MOMENT){
+            J[(8*(j+1)+k)*nvars + 36] += h*x[1]*t[0];
+            J[36*nvars + (8*(j+1)+k)] += h*x[1]*t[0];
+            J[k*nvars + 36] -= h*x[1]*t[0];
+            J[36*nvars + k] -= h*x[1]*t[0];
+          }
+          if (moment_flag & Z_MOMENT){
+            J[(8*(j+1)+k)*nvars + 37] += h*x[2]*t[0];
+            J[37*nvars + (8*(j+1)+k)] += h*x[2]*t[0];
+            J[k*nvars + 37] -= h*x[2]*t[0];
+            J[37*nvars + k] -= h*x[2]*t[0];
+          }
         }
 
         // Add the term from the transpose of the derivative 
@@ -2114,25 +2154,35 @@ void TACSAverageConstraint::addJacobian( double time,
       addBlockDMatTransDeriv(h, atmp, s1, &J[3*nvars + 3], nvars);
 
       // Add the derivative w.r.t. the displacement variables
-      addBlockEMat(-h, etaA, epsA, s1,
-                  &J[3], nvars);
+      addBlockEMat(-h, etaA, epsA, s1, &J[3], nvars);
 
       // Add the derivative w.r.t. the multipliers
       TacsScalar D[12];
       computeDMat(etaA, epsA, atmp, D);
       for ( int k = 0; k < 4; k++ ){
-        J[(3+k)*nvars + 4*8+3] += h*x[1]*D[k];
-        J[(3+k)*nvars + 4*8+4] += h*x[2]*D[k];
-        J[(3+k)*nvars + 4*8+5] += h*(x[1]*D[8+k] - x[2]*D[4+k]);
+        if (moment_flag & X_MOMENT){
+          J[(3+k)*nvars + 35] += h*(x[1]*D[8+k] - x[2]*D[4+k]);
+          J[35*nvars + 3+k] += h*(x[1]*D[8+k] - x[2]*D[4+k]);
+        }
+        if (moment_flag & Y_MOMENT){
+          J[(3+k)*nvars + 36] += h*x[1]*D[k];
+          J[36*nvars + 3+k] += h*x[1]*D[k];
+        }
+        if (moment_flag & Z_MOMENT){
+          J[(3+k)*nvars + 37] += h*x[2]*D[k];
+          J[37*nvars + 3+k] += h*x[2]*D[k];
+        }
       }
 
-      // Add the derivative of the constraint w.r.t. the quaternions
-      for ( int k = 0; k < 4; k++ ){
-        J[35*nvars + 3+k] += h*x[1]*D[k];
-        J[36*nvars + 3+k] += h*x[2]*D[k];
-        J[37*nvars + 3+k] += h*(x[1]*D[8+k] - x[2]*D[4+k]);
+      if (!(moment_flag & X_MOMENT)){
+        J[(nvars-5)*(nvars+1)] += alpha;
       }
-
+      if (!(moment_flag & Y_MOMENT)){
+        J[(nvars-4)*(nvars+1)] += alpha;
+      }
+      if (!(moment_flag & Z_MOMENT)){
+        J[(nvars-3)*(nvars+1)] += alpha;
+      }
       J[(nvars-2)*(nvars+1)] += alpha;
       J[(nvars-1)*(nvars+1)] += alpha;
     }

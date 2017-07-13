@@ -214,9 +214,9 @@ cdef class RevoluteDriver(Element):
 
 cdef class AverageConstraint(Element):
    def __cinit__(self, RigidBody body, GibbsVector point,
-                 RefFrame frame, int use_moments=0):
+                 RefFrame frame, int moment_flag=0):
       self.ptr = new TACSAverageConstraint(body.rbptr, point.ptr,
-                                           frame.ptr, use_moments)
+                                           frame.ptr, moment_flag)
       self.ptr.incref()
       return
    def __dealloc__(self):

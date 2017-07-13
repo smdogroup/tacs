@@ -382,17 +382,17 @@ void test_beam_element(){
     // Test the revolute constraint
     TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
 
-    int use_moments = 1;
+    int moment_flag = 7;
     TACSAverageConstraint *avg = 
-      new TACSAverageConstraint(bodyA, point, refFrame, use_moments);
+      new TACSAverageConstraint(bodyA, point, refFrame, moment_flag);
 
     avg->setStepSize(5e-6);
     avg->setPrintLevel(2);
     avg->testResidual(0.0, X, vars, dvars, ddvars, 
                       multipliers, nmultipliers);
-    for ( int k = 0; k < 40; k++ ){
-      avg->testJacobian(0.0, X, vars, dvars, ddvars, k);
-    }
+    /* for ( int k = 0; k < 40; k++ ){ */
+    /*   avg->testJacobian(0.0, X, vars, dvars, ddvars, k); */
+    /* } */
     avg->testJacobian(0.0, X, vars, dvars, ddvars);
   }
 }
@@ -401,6 +401,8 @@ int main( int argc, char *argv[] ){
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
+  test_beam_element();
+  /*
   int nA = 5, nB = 11, nC = 5;
   TACSAssembler *tacs = four_bar_mechanism(nA, nB, nC);
   tacs->incref();
@@ -456,7 +458,7 @@ int main( int argc, char *argv[] ){
 
   integrator->decref();
   tacs->decref();
-
+  */
   MPI_Finalize();
   return 0;
 }
