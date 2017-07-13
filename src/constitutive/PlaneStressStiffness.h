@@ -43,7 +43,6 @@ class PlaneStressStiffness : public TACSConstitutive {
  protected:
   // The stiffness matrix
   TacsScalar Cmat[6]; 
-
   TacsScalar rho;
  private:
   static const char *constName;
