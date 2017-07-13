@@ -68,7 +68,7 @@ class TACSIntegrator : public TACSObject {
   void setMaxNewtonIters( int _max_newton_iters );
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
-  void setUseLapack( int _use_lapack );
+  void setUseLapack( int _use_lapack, int _eigensolve=0 );
   void setUseLineSearch( int _use_line_search );
   void setUseFEMat( int _use_femat );
   void setFunction( TACSFunction **_func, int _num_funcs );
@@ -80,15 +80,28 @@ class TACSIntegrator : public TACSObject {
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
   void writeSolution( const char *filename, int format=2 );
-  void writeSolutionToF5( int _write_freq );
-  void writeStepToF5( int step = 0 );          
-  void setOutputFrequency( int _write_freq );
+  void writeSolutionToF5( int _write_step );
+  void writeStepToF5( int step );
+  void writeNewtonIterToF5( int step, int newton );
+  void setOutputFrequency( int _write_step, int _write_newton = 0);
   void setRigidOutput( int flag );    
   void setShellOutput( int flag );
+  void setBeamOutput( int flag );
   void configureAdaptiveMarch( int factor, int num_retry );
   void printWallTime( double t0, int level=1 );
   void printOptionSummary( FILE *fp );
   void printAdjointOptionSummary( FILE *fp );
+
+  // Get the states 
+  double getStates( int iter, TACSBVec **_q=NULL, 
+                    TACSBVec **_qdot=NULL, TACSBVec **_qddot=NULL ){
+    if (iter >= 0 && iter < num_time_steps){
+      if (_q){ *_q = q[iter]; }
+      if (_qdot){ *_qdot = qdot[iter]; }
+      if (_qddot){ *_qddot = qddot[iter]; }
+    }
+    return h*iter;
+  }
 
   // Variables that keep track of time
   double time_fwd_assembly;
@@ -119,8 +132,10 @@ class TACSIntegrator : public TACSObject {
                    TACSBVec *qddot, TACSBVec *forces,
                    TACSBcMap *addBcs=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
-  void lineSearch( double *alpha, double *beta, double *gamma, TacsScalar f0, TACSBVec *d0 );
-
+  void lapackEigenSolve( TACSMat *mat );
+  void lineSearch( double *alpha, double *beta, double *gamma, 
+                   TacsScalar f0, TACSBVec *d0 );
+  
   // Functions to aid adjoint solve
   // -------------------------------
   void addVectorTransProducts( TACSBVec **ans, 
@@ -214,7 +229,7 @@ class TACSIntegrator : public TACSObject {
   //-----------------------------------------------------------------//
   
   static void getString( char *buffer, const char * format, ... );
-  int getWriteFlag( int step, int f5_write_freq );
+  int getWriteFlag( int step, int freq );
 
   //-----------------------------------------------------------------//
   //                   Private variables
@@ -232,7 +247,10 @@ class TACSIntegrator : public TACSObject {
 
   TACSToFH5 *rigidf5;   // F5 file for rigid body visualization
   TACSToFH5 *shellf5;   // F5 file for shell visualization
-  int f5_write_freq;    // How frequent to write the output
+  TACSToFH5 *beamf5;    // F5 file for beam visualization
+
+  int f5_write_freq;    // How frequent to write the output during time marching
+  int f5_newton_freq;   // How frequent to write the output during nonlinear solve
   
   int max_newton_iters; // The max number of nonlinear iterations
   double atol, rtol;
@@ -240,7 +258,8 @@ class TACSIntegrator : public TACSObject {
   int use_line_search;  // Flag to make use of line search for nonlinear root finding
 
   int use_lapack;       // Flag to switch to LAPACK for linear solve
-  int use_femat;         
+  int use_femat;
+  int eigensolve;       // Solve for eigenvalues
   int lev, fill, reorder_schur;
   int gmres_iters, num_restarts, is_flexible;
 

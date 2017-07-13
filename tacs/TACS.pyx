@@ -762,7 +762,13 @@ cdef class Assembler:
 
       self.ptr.getInitConditions(cvec, cdvec, cddvec)
       return
-    
+
+   def evalEnergies(self):
+      '''Evaluate the kinetic and potential energies'''
+      cdef TacsScalar Te, Pe
+      self.ptr.evalEnergies(&Te, &Pe)
+      return Te, Pe
+   
    def assembleRes(self, Vec residual):
       '''
       Assemble the residual associated with the input load case.  
@@ -1267,16 +1273,19 @@ cdef class MeshLoader:
                                &elem_ptr, &elem_conn, &Xpts)
 
       cdef np.ndarray ptr = np.zeros(num_elements+1, dtype=np.int)
-      for i in xrange(num_elements+1):
-         ptr[i] = elem_ptr[i]
+      if elem_ptr is not NULL:
+         for i in xrange(num_elements+1):
+            ptr[i] = elem_ptr[i]
 
       cdef np.ndarray conn = np.zeros(ptr[-1], dtype=np.int)
-      for i in xrange(ptr[-1]):
-         conn[i] = elem_conn[i]
+      if elem_conn is not NULL:
+         for i in xrange(ptr[-1]):
+            conn[i] = elem_conn[i]
 
       cdef np.ndarray X = np.zeros(3*num_nodes)
-      for i in xrange(3*num_nodes):
-         X[i] = Xpts[i]
+      if Xpts is not NULL:
+         for i in xrange(3*num_nodes):
+            X[i] = Xpts[i]
 
       return ptr, conn, X
 
@@ -1293,18 +1302,21 @@ cdef class MeshLoader:
       self.ptr.getBCs(&num_bcs, &bc_nodes, &bc_vars, &bc_ptr, &bc_vals)
 
       cdef np.ndarray nodes = np.zeros(num_bcs, dtype=np.int)
-      for i in xrange(num_bcs):
-         nodes[i] = bc_nodes[i]
+      if bc_nodes is not NULL:
+         for i in xrange(num_bcs):
+            nodes[i] = bc_nodes[i]
 
       cdef np.ndarray ptr = np.zeros(num_bcs+1, dtype=np.int)
-      for i in xrange(num_bcs+1):
-         ptr[i] = bc_ptr[i]
+      if bc_ptr is not NULL:
+         for i in xrange(num_bcs+1):
+            ptr[i] = bc_ptr[i]
 
       cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.int)
       cdef np.ndarray vals = np.zeros(ptr[-1])
-      for i in xrange(ptr[-1]):
-         bvars[i] = bc_vars[i]
-         vals[i] = bc_vals[i]
+      if bc_vars is not NULL and bc_vals is not NULL:
+         for i in xrange(ptr[-1]):
+            bvars[i] = bc_vars[i]
+            vals[i] = bc_vals[i]
 
       return nodes, ptr, bvars, vals
 
@@ -1425,8 +1437,8 @@ cdef class Integrator:
       self.ptr.setJacAssemblyFreq(freq)
       return
    
-   def setUseLapack(self, int use_lapack):
-      self.ptr.setUseLapack(use_lapack)
+   def setUseLapack(self, int use_lapack, int eigensolve=0):
+      self.ptr.setUseLapack(use_lapack, eigensolve)
       return
    
    def setUseFEMat(self, int use_femat):
@@ -1441,8 +1453,8 @@ cdef class Integrator:
       self.ptr.setInitNewtonDeltaFraction(frac)
       return
   
-   def setOutputFrequency(self, int write_freq=0):
-      self.ptr.setOutputFrequency(write_freq)
+   def setOutputFrequency(self, int write_freq=0, int newton_freq=0):
+      self.ptr.setOutputFrequency(write_freq, newton_freq)
       return
 
    def configureAdaptiveMarch(self, int factor, int num_retry):
@@ -1457,10 +1469,14 @@ cdef class Integrator:
       self.ptr.setShellOutput(flag)
       return
    
+   def setBeamOutput(self, int flag):
+      self.ptr.setBeamOutput(flag)
+      return
+   
    def writeASCIISolution(self, char *filename='solution.dat', int format=2):
       self.ptr.writeSolution(&filename[0], format)
       return
-
+   
 cdef class BDFIntegrator(Integrator):
    '''
    Backward-Difference method for integration. This currently
@@ -1473,7 +1489,8 @@ cdef class BDFIntegrator(Integrator):
       '''
       Constructor for BDF Integrators of order 1, 2 and 3
       '''
-      self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_bdf_order)
+      self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, max_bdf_order)
       self.ptr.incref()
       return
 
@@ -1487,7 +1504,8 @@ cdef class DIRKIntegrator(Integrator):
                  double tinit, double tfinal,
                  int num_steps_per_sec,
                  int order):
-      self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, order)
+      self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, order)
       self.ptr.incref()
       return
 
@@ -1503,7 +1521,8 @@ cdef class ABMIntegrator(Integrator):
       '''
       Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
       '''
-      self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, max_abm_order)
+      self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, max_abm_order)
       self.ptr.incref()
       return
 
@@ -1518,6 +1537,7 @@ cdef class NBGIntegrator(Integrator):
       '''
       Constructor for Newmark-Beta-Gamma method of integration
       '''
-      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, num_steps_per_sec, order)
+      self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, 
+         num_steps_per_sec, order)
       self.ptr.incref()
       return

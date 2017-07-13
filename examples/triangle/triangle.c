@@ -28,7 +28,7 @@ int main( int argc, char *argv[] ){
     int nx = 10, ny = 10;
     int num_elements = 10*nx*ny;
 
-    // Allocate the 
+    // Allocate the two halfs of the mesh
     int lena = (4*nx+1)*(4*ny+1);
     int lenb = (2*nx+1)*(2*ny+1);
     int *anodes = new int[ lena ];

@@ -2563,18 +2563,75 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
       // Free the rowp/cols array (which are modified by the
       // reordering anyway)
       delete [] rowp;
-      delete [] cols; 
+      delete [] cols;
 
-      // Compute the local node permutation and the new
-      perm_local_nodes = new int[ nlocal_nodes ];
+      // Create the inverse of the permutation array
+      int *iperm = new int[ numNodes ];
+      for ( int i = 0; i < numNodes; i++ ){
+        iperm[perm[i]] = i;
+      }
+
+      // Get the ownership range and match the intervals of ownership
+      const int *ownerRange;
+      varMap->getOwnerRange(&ownerRange);
+
+      // Modify the permutation to reflect the need for precidence 
+      // in the multiplier nodes. 
+      for ( int i = 0; i < numElements; i++ ){
+        int multiplier;
+        elements[i]->getMultiplierIndex(&multiplier);
+
+        if (multiplier >= 0){
+          // Get the local multiplier number
+          int ptr = elementNodeIndex[i];
+          int size = elementNodeIndex[i+1] - ptr;
+          
+          // Get the new local index for the multiplier
+          int mult_node =
+            getLocalNodeNum(elementTacsNodes[ptr + multiplier]);
+          int mult_index = iperm[mult_node];
+
+          // Find the maximum index
+          int max_node = mult_node;
+          int max_index = mult_index;
+          for ( int j = 0; j < size; j++ ){
+            if (j != multiplier){
+              int global = elementTacsNodes[ptr + j];
+              if (global >= ownerRange[mpiRank] &&
+                  global < ownerRange[mpiRank+1]){
+                int node = getLocalNodeNum(global);
+                if (iperm[node] > max_index){
+                  max_node = node;
+                  max_index = iperm[node];
+                }
+              }
+            }
+          }
+
+          // Flip the index for the multiplier
+          if (mult_index < max_index){
+            int temp = perm[iperm[mult_node]];
+            perm[iperm[mult_node]] = perm[iperm[max_node]];
+            perm[iperm[max_node]] = temp;
+
+            temp = iperm[mult_node];
+            iperm[mult_node] = iperm[max_node];
+            iperm[max_node] = temp;
+          }
+        }
+      }
+
+      delete [] iperm;
+
+      // Compute the coupling nodes based on their permutation
       tacs_local_nodes = new int[ nlocal_nodes ];
+      tacs_coupling_nodes = new int[ ncoupling_nodes ];
+      perm_local_nodes = new int[ nlocal_nodes ];
+      perm_coupling_nodes = new int[ ncoupling_nodes ];
       for ( int i = 0; i < nlocal_nodes; i++ ){
         perm_local_nodes[i] = perm[i];
         tacs_local_nodes[i] = getGlobalNodeNum(perm_local_nodes[i]);
       }
-
-      perm_coupling_nodes = new int[ ncoupling_nodes ];
-      tacs_coupling_nodes = new int[ ncoupling_nodes ];
       for ( int i = 0; i < ncoupling_nodes; i++ ){
         perm_coupling_nodes[i] = perm[i + nlocal_nodes];
         tacs_coupling_nodes[i] = getGlobalNodeNum(perm_coupling_nodes[i]);
@@ -2594,12 +2651,12 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
 
       // Find the local node numbers of the coupling nodes.
       // Note that this is a sorted list
-      int * coupling_nodes;
+      int *coupling_nodes;
       ncoupling_nodes = computeCouplingNodes(&coupling_nodes);
       nlocal_nodes = numNodes - ncoupling_nodes;
       
       // Set the coupling nodes for ordering
-      int * all_nodes = new int[ numNodes ];
+      int *all_nodes = new int[ numNodes ];
       for ( int k = 0; k < numNodes; k++ ){
         all_nodes[k] = -1;
       }
@@ -4025,11 +4082,16 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TACSElement::setStepSize(dh);
   TACSElement::setPrintLevel(print_level);
 
+<<<<<<< local
   for ( int col = 0; col < elements[elemNum]->numVariables(); col++ ){
     elements[elemNum]->testJacobian(time, elemXpts,
                                     vars, dvars, ddvars, col);
   }
   
+=======
+  elements[elemNum]->testJacobian(time, elemXpts,
+                                  vars, dvars, ddvars);
+>>>>>>> other
   elements[elemNum]->testJacobianXptSens(elemXpts);
   elements[elemNum]->testAdjResXptProduct(time, elemXpts,
                                           vars, dvars, ddvars);

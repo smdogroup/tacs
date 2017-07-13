@@ -157,6 +157,109 @@ void TACSElement::setStepSize( double dh ){
   test_step_size = dh;
 }
 
+double TACSElement::getStepSize( ){
+  return test_step_size;
+}
+
+/*
+  Finds the finite-difference based Jacobian of the element. This is
+  the default Jacobian implementation for any TACSElement. The user
+  can override this function and provide an analytic Jacobian
+  implemention in descendant classes.
+*/
+void TACSElement::addJacobian( double time, TacsScalar J[],
+                               double alpha, 
+                               double beta, 
+                               double gamma,
+                               const TacsScalar Xpts[],
+                               const TacsScalar vars[],
+                               const TacsScalar dvars[],
+                               const TacsScalar ddvars[] ){
+  // Get the number of variables
+  int nvars = numVariables();
+
+  // The step length
+  const double dh = getStepSize();
+
+  // Original and perturbed residual vectors
+  TacsScalar *R = new TacsScalar[nvars];
+  TacsScalar *Rtmp = new TacsScalar[nvars];
+
+  // Perturbed state vector
+  TacsScalar *pstate = new TacsScalar[nvars];
+
+  // Assemble the unperturbed residual
+  memset(R, 0, nvars*sizeof(TacsScalar));
+  addResidual(time, R, Xpts, vars, dvars, ddvars);
+
+  // Copy the state variables into pstate
+  memcpy(pstate, vars, nvars*sizeof(TacsScalar));
+
+  // Perturb each state variable and find the residual
+  for ( int i = 0; i < nvars; i++ ){
+    // Perturb the i-th variable
+    pstate[i] += dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp, Xpts, pstate, dvars, ddvars);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += alpha*(Rtmp[j] - R[j])/dh;
+    }
+
+    // Restore the i-th variable   
+    pstate[i] = vars[i];
+  }
+
+  // Copy the vel state variables into pstate
+  memcpy(pstate, dvars, nvars*sizeof(TacsScalar));
+
+  // Perturb each state variable and find the residual
+  for ( int i = 0; i < nvars; i++ ){
+    // Perturb the i-th variable
+    pstate[i] += dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp, Xpts, vars, pstate, ddvars);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += beta*(Rtmp[j] - R[j])/dh;
+    }
+
+    // Restore the i-th variable   
+    pstate[i] = dvars[i];
+  }
+
+  // Copy the vel state variables into pstate
+  memcpy(pstate, ddvars, nvars*sizeof(TacsScalar));
+
+  // Perturb each state variable and find the residual
+  for ( int i = 0; i < nvars; i++ ){
+    // Perturb the i-th variable
+    pstate[i] += dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp, Xpts, vars, dvars, pstate);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += gamma*(Rtmp[j] - R[j])/dh;
+    }
+
+    // Restore the i-th variable   
+    pstate[i] = ddvars[i];
+  }
+  
+  delete [] R;
+  delete [] Rtmp;
+  delete [] pstate;
+}
+
 /*
   The following function tests the consistency of the implementation
   of the residuals and the energy expressions, relying on Lagrange's
@@ -299,6 +402,229 @@ int TACSElement::testResidual( double time,
   memset(res1, 0, nvars*sizeof(TacsScalar));
   addResidual(time, res1, Xpts, vars, dvars, ddvars);
   
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(res1, fd, nvars, &max_err_index);
+  double max_rel = get_max_rel_error(res1, fd, nvars, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, 
+            "Testing the residual implementation for element %s.\n",
+            elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+
+  // Print the error if required
+  if (test_print_level > 1){
+    fprintf(stderr, 
+            "The difference between the FD and true residual is:\n");
+    print_error_components(stderr, "Res error",
+                           res1, fd, nvars);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] q;
+  delete [] dq;
+  delete [] res1;
+  delete [] res2;
+  delete [] fd;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+/*
+  Test the Lagrange multiplier implementation using only the specified
+  constraint set
+*/
+int TACSElement::testResidual( double time,
+                               const TacsScalar Xpts[],
+                               const TacsScalar vars[],
+                               const TacsScalar dvars[],
+                               const TacsScalar ddvars[], 
+                               const int multipliers[],
+                               int nmultipliers ){
+  // Retrieve the number of variables
+  int nvars = numVariables();
+
+  // Allocate temporary arrays for the computation
+  TacsScalar *q = new TacsScalar[ nvars ];
+  TacsScalar *dq = new TacsScalar[ nvars ];
+
+  // Temporary storage for the residuals
+  TacsScalar *res1 = new TacsScalar[ nvars ];
+  TacsScalar *res2 = new TacsScalar[ nvars ];
+  TacsScalar *fd = new TacsScalar[ nvars ];
+
+  // The step length
+  double dh = test_step_size;
+
+  // Compute the values of the variables at (t + dt)
+  for ( int i = 0; i < nvars; i++ ){
+    q[i] = vars[i] + dh*dvars[i];
+    dq[i] = dvars[i] + dh*ddvars[i];
+  }
+
+  // Evaluate the derivative w.r.t. dot{q}
+  for ( int i = 0; i < nvars; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar T1, P1, T2, P2;
+    TacsScalar dqtmp = dq[i];
+#ifdef TACS_USE_COMPLEX
+    dq[i] = dqtmp + TacsScalar(0.0, dh);
+    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    res1[i] = TacsImagPart((T1 - P1))/dh;
+#else
+    dq[i] = dqtmp + dh;
+    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+
+    dq[i] = dqtmp - dh;
+    computeEnergies(time, &T2, &P2, Xpts, q, dq);
+    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+#endif
+    dq[i] = dqtmp;
+  }
+
+  // Compute the values of the variables at (t - dt)
+  for ( int i = 0; i < nvars; i++ ){
+    q[i] = vars[i] - dh*dvars[i];
+    dq[i] = dvars[i] - dh*ddvars[i];
+  }
+
+  // Evaluate the derivative w.r.t. dot{q}
+  for ( int i = 0; i < nvars; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar T1, P1, T2, P2;
+    TacsScalar dqtmp = dq[i];
+#ifdef TACS_USE_COMPLEX
+    dq[i] = dqtmp + TacsScalar(0.0, dh);
+    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    res1[i] = TacsImagPart((T1 - P1))/dh;
+#else
+    dq[i] = dqtmp + dh;
+    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+
+    dq[i] = dqtmp - dh;
+    computeEnergies(time, &T2, &P2, Xpts, q, dq);
+
+    // Compute and store the approximation
+    res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+#endif
+    dq[i] = dqtmp;
+  }
+
+  // Evaluate the finite-difference for the first term in Largrange's
+  // equations of motion
+  for ( int i = 0; i < nvars; i++ ){
+    fd[i] = 0.5*(res1[i] - res2[i])/dh;
+  }
+
+  // Reset the values of q and dq at time t
+  for ( int i = 0; i < nvars; i++ ){
+    q[i] = vars[i];
+    dq[i] = dvars[i];
+  }
+
+  // Compute the contribution from dL/dq^{T}
+  for ( int i = 0; i < nvars; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar T1, P1, T2, P2;
+    TacsScalar qtmp = q[i];
+#ifdef TACS_USE_COMPLEX
+    q[i] = qtmp + TacsScalar(0.0, dh);
+    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    res1[i] = TacsImagPart((T1 - P1))/dh;
+#else
+    q[i] = qtmp + dh;
+    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+
+    q[i] = qtmp - dh;
+    computeEnergies(time, &T2, &P2, Xpts, q, dq);
+
+    // Compute and store the approximation
+    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+#endif
+    q[i] = qtmp;
+  }
+
+  // Add the result to the finite-difference result
+  for ( int i = 0; i < nvars; i++ ){
+    fd[i] -= res1[i];
+  }
+
+  // Reset the values of q
+  for ( int i = 0; i < nvars; i++ ){
+    q[i] = vars[i];
+  }
+
+  // Compute the contribution from A^{T}*lambda
+  for ( int i = 0; i < nvars; i++ ){
+    // Check whether this variable is actually a multiplier
+    // in which case we skip the loop
+    int flag = 0;
+    for ( int j = 0; j < nmultipliers; j++ ){
+      if (multipliers[j] == i){
+        flag = 1;
+        break;
+      }
+    }
+    if (flag){
+      continue;
+    }
+
+    TacsScalar qtmp = q[i];
+#ifdef TACS_USE_COMPLEX
+    q[i] = qtmp + TacsScalar(0.0, dh);
+    memset(res1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, res1, Xpts, q, dvars, ddvars);
+  
+    // Add the product of the multipliers and the constraints
+    TacsScalar val = 0.0;
+    for ( int j = 0; j < nmultipliers; j++ ){
+      int m = multipliers[j];
+      val += vars[m]*res1[m];
+    }
+    fd[i] += TacsImagPart(val)/dh;
+#else
+    q[i] = qtmp + dh;
+    memset(res1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, res1, Xpts, q, dvars, ddvars);
+    TacsScalar val1 = 0.0;
+    for ( int j = 0; j < nmultipliers; j++ ){
+      int m = multipliers[j];
+      val1 += vars[m]*res1[m];
+    }
+
+    q[i] = qtmp - dh;
+    memset(res1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, res1, Xpts, q, dvars, ddvars);
+    TacsScalar val2 = 0.0;
+    for ( int j = 0; j < nmultipliers; j++ ){
+      int m = multipliers[j];
+      val2 += vars[m]*res1[m];
+    }
+
+    // Compute and store the approximation
+    fd[i] += 0.5*(val1 - val2)/dh;
+#endif
+    q[i] = qtmp;
+  }
+
+  // Now, zero the multiplier entries
+  for ( int i = 0; i < nmultipliers; i++ ){
+    fd[multipliers[i]] = 0.0;
+  }
+
+  // Evaluate the residual using the code
+  memset(res1, 0, nvars*sizeof(TacsScalar));
+  addResidual(time, res1, Xpts, vars, dvars, ddvars);
+
+  for ( int i = 0; i < nmultipliers; i++ ){
+    res1[multipliers[i]] = 0.0;
+  }
+
   // Compute the error
   int max_err_index, max_rel_index;
   double max_err = get_max_error(res1, fd, nvars, &max_err_index);

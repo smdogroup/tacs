@@ -164,7 +164,7 @@ cdef extern from "TACSConstitutive.h":
 # A generic wrapper class for the TACSElement object
 cdef class Element:
    cdef TACSElement *ptr
-   
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
    cdef TACSFunction *ptr
@@ -263,7 +263,10 @@ cdef extern from "TACSAssembler.h":
 
       # Get the initial conditions
       void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
-      
+
+      # Evaluate the kinetic/potential energy
+      void evalEnergies(TacsScalar*, TacsScalar*)
+
       # Assembly routines
       void assembleRes(TACSBVec *residual)
       void assembleJacobian(double alpha, double beta, double gamma,
@@ -374,7 +377,8 @@ cdef extern from "TACSIntegrator.h":
       void getFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
                        TacsScalar *dfdx)
 
-      # Returns the finite-difference gradient for all the functions that are set into TACS
+      # Returns the finite-difference gradient for all
+      # the functions that are set into TACS
       void getFDFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
                          TacsScalar *dfdx, double dh)
 
@@ -385,15 +389,16 @@ cdef extern from "TACSIntegrator.h":
       void setAbsTol(double atol)
       void setMaxNewtonIters(int max_newton_iters)
       void setJacAssemblyFreq(int jac_comp_freq)
-      void setUseLapack(int use_lapack)
+      void setUseLapack(int use_lapack, int eigensolve)
       void setUseFEMat(int _use_femat)
       void setOrderingType(OrderingType)
       void setInitNewtonDeltaFraction(double)
       
       # Configure writing F5 files
-      void setOutputFrequency(int write_freq)
+      void setOutputFrequency(int write_freq, int newton_freq)
       void setRigidOutput(int flag)
       void setShellOutput(int flag)
+      void setBeamOutput(int flag)
       void configureAdaptiveMarch( int factor, int num_retry )
 
       # Configure writing ASCII output data

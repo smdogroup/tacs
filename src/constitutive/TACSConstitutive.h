@@ -40,15 +40,15 @@ class TACSConstitutive : public TACSSparseConObject {
   
   // Return the stress as a function of the strain at the Gauss point
   // ----------------------------------------------------------------
-  virtual void calculateStress( const double pt[], 
-				const TacsScalar strain[], 
-				TacsScalar stress[] ) = 0;
+  virtual void calculateStress( const double pt[],
+                                const TacsScalar strain[],
+                                TacsScalar stress[] ) = 0;
 
   // Add the derivative of the stress times an input vector to dvSens
   // ----------------------------------------------------------------
-  virtual void addStressDVSens( const double pt[], const TacsScalar strain[], 
-				TacsScalar alpha, const TacsScalar psi[], 
-				TacsScalar dvSens[], int dvLen ){}
+  virtual void addStressDVSens( const double pt[], const TacsScalar strain[],
+                                TacsScalar alpha, const TacsScalar psi[],
+                                TacsScalar dvSens[], int dvLen ){}
 
   // Return the number of mass moments
   // ---------------------------------

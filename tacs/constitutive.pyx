@@ -50,6 +50,15 @@ cdef class Constitutive:
       self.ptr = NULL
       return
 
+cdef class Timoshenko(Constitutive):
+   def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
+                 EA, GJ, EIy, EIz, kGAy, kGAz,
+                 np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
+      self.ptr = new TimoshenkoStiffness(rhoA, rhoIy, rhoIz, rhoIyz,
+                                         EA, GJ, EIy, EIz, kGAy, kGAz,
+                                         <TacsScalar*>axis.data)
+      return
+
 cdef class FSDT(Constitutive):
    def __cinit__(self, *args, **kwargs):
       self.ptr = NULL
@@ -67,7 +76,13 @@ cdef class FSDT(Constitutive):
       if stiff:
          stiff.printStiffness()
       return
-      
+
+   def setDrillingRegularization(self, double krel):
+      cdef FSDTStiffness *stiff = NULL
+      stiff = _dynamicFSDT(self.ptr)
+      if stiff:
+         stiff.setDrillingRegularization(krel)
+      return
 
 cdef class isoFSDT(FSDT):
    def __cinit__(self, rho, E, nu, kcorr, ys, t, tNum, minT, maxT):

@@ -26,8 +26,8 @@ cdef extern from "RigidBody.h":
       TACSRefFrame(TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
 
    cdef cppclass TACSRigidBodyViz(TACSObject):
-      TACSRigidBodyViz(TacsScalar L)
-      TACSRigidBodyViz(int, int, TacsScalar*, int*)
+      TACSRigidBodyViz(int, int, TacsScalar*, int*, TACSGibbsVector*)
+      TACSRigidBodyViz(TacsScalar, TacsScalar, TacsScalar)
       
    cdef cppclass TACSRigidBody(TACSElement):
       TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
@@ -36,6 +36,7 @@ cdef extern from "RigidBody.h":
       void setDesignVarNums(int, const int*, const int*)
       void setVisualization(TACSRigidBodyViz*)
 
+cdef extern from "KinematicConstraints.h":
    cdef cppclass TACSSphericalConstraint(TACSElement):
       TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
                               TACSGibbsVector *point)
@@ -53,7 +54,17 @@ cdef extern from "RigidBody.h":
 
    cdef cppclass TACSRevoluteDriver(TACSElement):
       TACSRevoluteDriver(TACSGibbsVector*, TACSGibbsVector*, TacsScalar)
-            
+
+   cdef cppclass TACSCylindricalConstraint(TACSElement):
+      TACSCylindricalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                             TACSGibbsVector *point, TACSGibbsVector *eA)
+      TACSCylindricalConstraint(TACSRigidBody *bodyA,
+                             TACSGibbsVector *point, TACSGibbsVector *eA)
+
+   cdef cppclass TACSAverageConstraint(TACSElement):
+      TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
+                            TACSRefFrame*, int)
+
 # Template
 cdef extern from "TACSElementTemplates.h":
    # Declare the PlaneStressQuad elements
@@ -110,4 +121,9 @@ cdef extern from "PlaneStressTri6.h":
 cdef extern from  "MITC9.h":
    cdef cppclass MITC9(TACSElement):
       MITC9(FSDTStiffness *_stiff, TACSGibbsVector *_gravity,
+            TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit)
+
+cdef extern from  "MITC3.h":
+   cdef cppclass MITC3(TACSElement):
+      MITC3(TimoshenkoStiffness *_stiff, TACSGibbsVector *_gravity,
             TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit)

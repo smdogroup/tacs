@@ -27,6 +27,114 @@ static inline void matMult( const TacsScalar A[],
 }
 
 /*
+  Compute y <- A^{T}*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  output:
+  y:   the resulting vector 
+*/
+static inline void matMultTrans( const TacsScalar A[],
+                                 const TacsScalar x[],
+                                 TacsScalar y[] ){
+  y[0] = A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+  y[1] = A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+  y[2] = A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matMultAdd( const TacsScalar A[],
+                               const TacsScalar x[],
+                               TacsScalar y[] ){
+  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] += A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
+  y[2] += A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matMultTransAdd( const TacsScalar A[],
+                                    const TacsScalar x[],
+                                    TacsScalar y[] ){
+  y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+  y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+  y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y^{T}*A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+  y:   the resulting vector 
+
+  returns:  the inner product
+*/
+static inline TacsScalar matSymmInner( const TacsScalar A[],
+                                       const TacsScalar x[],
+                                       const TacsScalar y[] ){
+  return (y[0]*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2]) + 
+          y[1]*(A[1]*x[0] + A[3]*x[1] + A[4]*x[2]) +
+          y[2]*(A[2]*x[0] + A[4]*x[1] + A[5]*x[2]));  
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matSymmMult( const TacsScalar A[],
+                                const TacsScalar x[],
+                                TacsScalar y[] ){
+  y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] = A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
+  y[2] = A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
+}
+
+/*
+  Compute y <- y + A*x
+
+  input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  in/out:
+  y:   the resulting vector 
+*/
+static inline void matSymmMultAdd( const TacsScalar A[],
+                                   const TacsScalar x[],
+                                   TacsScalar y[] ){
+  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] += A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
+  y[2] += A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
+}
+
+/*
   Compute C = A*B
 
   input:
@@ -246,96 +354,6 @@ static inline void matSymmMat3x4Mult( const TacsScalar A[],
   C[9] = A[2]*B[1] + A[4]*B[5] + A[5]*B[9];
   C[10]= A[2]*B[2] + A[4]*B[6] + A[5]*B[10];
   C[11]= A[2]*B[3] + A[4]*B[7] + A[5]*B[11];
-}
-
-/*
-  Compute y <- A^{T}*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  output:
-  y:   the resulting vector 
-*/
-static inline void matMultTrans( const TacsScalar A[],
-                                 const TacsScalar x[],
-                                 TacsScalar y[] ){
-  y[0] = A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
-  y[1] = A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
-  y[2] = A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matMultAdd( const TacsScalar A[],
-                               const TacsScalar x[],
-                               TacsScalar y[] ){
-  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
-  y[1] += A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
-  y[2] += A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matMultTransAdd( const TacsScalar A[],
-                                    const TacsScalar x[],
-                                    TacsScalar y[] ){
-  y[0] += A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
-  y[1] += A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
-  y[2] += A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matSymmMult( const TacsScalar A[],
-                                const TacsScalar x[],
-                                TacsScalar y[] ){
-  y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
-  y[1] = A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
-  y[2] = A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
-}
-
-/*
-  Compute y <- y + A*x
-
-  input:
-  A:   the 3x3 input matrix in row-major order
-  x:   the input 3-vector
-
-  in/out:
-  y:   the resulting vector 
-*/
-static inline void matSymmMultAdd( const TacsScalar A[],
-                                   const TacsScalar x[],
-                                   TacsScalar y[] ){
-  y[0] += A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
-  y[1] += A[1]*x[0] + A[3]*x[1] + A[4]*x[2];
-  y[2] += A[2]*x[0] + A[4]*x[1] + A[5]*x[2];
 }
 
 /*
@@ -918,6 +936,37 @@ static inline void computeRotationMat( const TacsScalar eta,
 }
 
 /*
+  Given the quaternion parameters, and their time-derivatives,
+  compute the time derivative of the rotation matrix
+
+  input:
+  eta:    the quaternion scalar
+  eps:    the quaternion 3-vector
+  deta:   the time derivative of the quaternion scalar
+  deps:   the time derivative of the quaternion 3-vector
+
+  output:
+  C:      the rotation matrix
+*/
+static inline void computeRotationMatDeriv( const TacsScalar eta,
+                                            const TacsScalar eps[],
+                                            const TacsScalar deta,
+                                            const TacsScalar deps[],
+                                            TacsScalar C[] ){
+  C[0] =-4.0*(eps[1]*deps[1] + eps[2]*deps[2]);
+  C[1] = 2.0*(eps[0]*deps[1] + deps[0]*eps[1] + eta*deps[2] + deta*eps[2]);
+  C[2] = 2.0*(eps[0]*deps[2] + deps[0]*eps[2] - eta*deps[1] - deta*eps[1]);
+
+  C[3] = 2.0*(eps[1]*deps[0] + deps[1]*eps[0] - eta*deps[2] - deta*eps[2]);
+  C[4] =-4.0*(eps[0]*deps[0] + eps[2]*deps[2]);
+  C[5] = 2.0*(eps[1]*deps[2] + deps[1]*eps[2] + eta*deps[0] + deta*eps[0]);
+
+  C[6] = 2.0*(eps[2]*deps[0] + deps[2]*eps[0] + eta*deps[1] + deta*eps[1]);
+  C[7] = 2.0*(eps[2]*deps[1] + deps[2]*eps[1] - eta*deps[0] - deta*eps[0]);
+  C[8] =-4.0*(eps[0]*deps[0] + eps[1]*deps[1]);
+}
+
+/*
   Compute the product of the 3x4 rotation rate matrix with the
   given components of the quaternion vector. 
 
@@ -1151,6 +1200,86 @@ static inline void computeDMat( const TacsScalar eta,
   D[9] = 2.0*(eps[2]*v[0] - 2.0*v[2]*eps[0] - eta*v[1]);
   D[10]= 2.0*(eps[2]*v[1] - 2.0*v[2]*eps[1] + eta*v[0]);
   D[11]= 2.0*(v[0]*eps[0] + v[1]*eps[1]);
+}
+
+/*
+  Add the elements of the D(v) matrix
+
+  D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+  input:
+  eta:   the quaternion scalar
+  eps:   the quaternion 3-vector
+  v:     the input vector
+
+  output:
+  D:     the 3x4 derivative matrix
+*/
+static inline void addBlockDMat( const TacsScalar a,
+                                 const TacsScalar eta,
+                                 const TacsScalar eps[],
+                                 const TacsScalar v[],
+                                 TacsScalar D[],
+                                 const int ldd ){
+  const TacsScalar d = 2.0*a;
+  D[0] += d*(v[1]*eps[2] - v[2]*eps[1]);
+  D[1] += d*(v[1]*eps[1] + v[2]*eps[2]);
+  D[2] += d*(eps[0]*v[1] - 2.0*v[0]*eps[1] - eta*v[2]);
+  D[3] += d*(eps[0]*v[2] - 2.0*v[0]*eps[2] + eta*v[1]);
+  D += ldd;
+
+  D[0] += d*(v[2]*eps[0] - v[0]*eps[2]);
+  D[1] += d*(eps[1]*v[0] - 2.0*v[1]*eps[0] + eta*v[2]);
+  D[2] += d*(v[0]*eps[0] + v[2]*eps[2]);
+  D[3] += d*(eps[1]*v[2] - 2.0*v[1]*eps[2] - eta*v[0]);
+  D += ldd;
+
+  D[0] += d*(v[0]*eps[1] - v[1]*eps[0]);
+  D[1] += d*(eps[2]*v[0] - 2.0*v[2]*eps[0] - eta*v[1]);
+  D[2] += d*(eps[2]*v[1] - 2.0*v[2]*eps[1] + eta*v[0]);
+  D[3] += d*(v[0]*eps[0] + v[1]*eps[1]);
+  D += ldd;
+}
+
+/*
+  Compute the elements of the D(v) matrix
+
+  D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
+
+  input:
+  eta:   the quaternion scalar
+  eps:   the quaternion 3-vector
+  v:     the input vector
+
+  output:
+  D:     the 3x4 derivative matrix
+*/
+static inline void addBlockDMatTrans( const TacsScalar a,
+                                      const TacsScalar eta,
+                                      const TacsScalar eps[],
+                                      const TacsScalar v[],
+                                      TacsScalar D[],
+                                      const int ldd ){
+  const TacsScalar d = 2.0*a;
+  D[0] += d*(v[1]*eps[2] - v[2]*eps[1]);
+  D[1] += d*(v[2]*eps[0] - v[0]*eps[2]);
+  D[2] += d*(v[0]*eps[1] - v[1]*eps[0]);
+  D += ldd;
+
+  D[0] += d*(v[1]*eps[1] + v[2]*eps[2]);
+  D[1] += d*(eps[1]*v[0] - 2.0*v[1]*eps[0] + eta*v[2]);
+  D[2] += d*(eps[2]*v[0] - 2.0*v[2]*eps[0] - eta*v[1]);
+  D += ldd;
+
+  D[0] += d*(eps[0]*v[1] - 2.0*v[0]*eps[1] - eta*v[2]);
+  D[1] += d*(v[0]*eps[0] + v[2]*eps[2]);
+  D[2] += d*(eps[2]*v[1] - 2.0*v[2]*eps[1] + eta*v[0]);
+  D += ldd;
+
+  D[0] += d*(eps[0]*v[2] - 2.0*v[0]*eps[2] + eta*v[1]);
+  D[1] += d*(eps[1]*v[2] - 2.0*v[1]*eps[2] - eta*v[0]);
+  D[2] += d*(v[0]*eps[0] + v[1]*eps[1]);
+  D += ldd;
 }
 
 /*

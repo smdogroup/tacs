@@ -1,6 +1,7 @@
 #include "TACSIntegrator.h"
 #include <math.h>
 #include "tacslapack.h"
+
 /* 
    Static factory method that returns an instance of the concrete
    child class. Note that the base class is abstract (contains
@@ -169,6 +170,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Set the default LINEAR solver
   use_lapack      = 0;
+  eigensolve      = 0;
   use_line_search = 0;
   use_femat       = 1;
 
@@ -211,14 +213,19 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Tecplot solution export (use configureOutput(...) to set these
   f5_write_freq = 0; 
+  f5_newton_freq = 0; 
+
+  // Set the rigid and shell visualization objects to NULL
   rigidf5 = NULL;
   shellf5 = NULL;
+  beamf5 = NULL;
   
   // Set kinetic and potential energies
   energies[0] = 0.0;
   energies[1] = 0.0;
   init_energy = 0.0;
 
+  // Termination flag for newton solve
   newton_term = 0;
 }
 
@@ -256,6 +263,7 @@ TACSIntegrator::~TACSIntegrator(){
   
   if (rigidf5){ rigidf5->incref();}
   if (shellf5){ shellf5->incref();}
+  if (beamf5){ beamf5->incref();}
 }
 
 /*
@@ -349,7 +357,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Set the D matrix to NULL
     if (use_femat){
       // Create a matrix for storing the Jacobian
-      D = tacs->createFEMat(ordering_type);
+      D = tacs->createFEMat(TACSAssembler::TACS_AMD_ORDER);
       D->incref();
       
       // Allocate the factorization
@@ -402,6 +410,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   for ( niter = 0; niter < max_newton_iters; niter++ ){    
     // Set the supplied initial input states into TACS
     setTACSStates(t, u, udot, uddot);
+
+    // Write the tecplot output to disk if sought
+    writeNewtonIterToF5(current_time_step, niter);
 
     // Assemble the Jacobian matrix once in Newton iterations
     double t0 = MPI_Wtime();
@@ -507,6 +518,11 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       double t2 = MPI_Wtime();
       ksm->solve(res, update);
       time_fwd_apply_factor += MPI_Wtime() - t2;
+    }
+
+    // Solve for the eigenvalues      
+    if (eigensolve){
+      lapackEigenSolve(mat);
     }
 
     // Find the norm of the displacement update
@@ -691,6 +707,48 @@ int TACSIntegrator::getWriteFlag( int k, int f5_write_freq ){
   Writes the output as an f5 file. Note the states and time must be
   set appropriately before calling this function.
 */
+void TACSIntegrator::writeNewtonIterToF5( int k, int n ){
+  if(rigidf5 && getWriteFlag(k, f5_newton_freq)){
+    // Create a buffer for filename 
+    char rbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(rbuffer, "results/rigid_%06d_%03d.f5", k, n);
+    
+    // Write the f5 file for this time step
+    rigidf5->writeToFile(rbuffer);
+
+  }
+
+  if(shellf5 && getWriteFlag(k, f5_newton_freq)){
+
+    // Create a buffer for shell filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/shell_%06d_%03d.f5", k, n);
+    
+    // Write the f5 file for this time step
+    shellf5->writeToFile(sbuffer);
+  }
+
+  if(beamf5 && getWriteFlag(k, f5_newton_freq)){
+
+    // Create a buffer for beam filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/beam_%06d_%03d.f5", k, n);
+    
+    // Write the f5 file for this time step
+    beamf5->writeToFile(sbuffer);
+  }
+}
+
+/*
+  Writes the output as an f5 file. Note the states and time must be
+  set appropriately before calling this function.
+*/
 void TACSIntegrator::writeStepToF5( int k ){
   if(rigidf5 && getWriteFlag(k, f5_write_freq)){
     // Create a buffer for filename 
@@ -701,11 +759,9 @@ void TACSIntegrator::writeStepToF5( int k ){
     
     // Write the f5 file for this time step
     rigidf5->writeToFile(rbuffer);
-
   }
 
   if(shellf5 && getWriteFlag(k, f5_write_freq)){
-
     // Create a buffer for shell filename 
     char sbuffer[256];
 
@@ -714,6 +770,17 @@ void TACSIntegrator::writeStepToF5( int k ){
     
     // Write the f5 file for this time step
     shellf5->writeToFile(sbuffer);
+  }
+
+  if(beamf5 && getWriteFlag(k, f5_write_freq)){
+    // Create a buffer for beam filename 
+    char sbuffer[256];
+
+    // Format the buffer based on the time step
+    getString(sbuffer, "results/beam_%06d.f5", k);
+    
+    // Write the f5 file for this time step
+    beamf5->writeToFile(sbuffer);
   }
 }
 
@@ -746,14 +813,22 @@ void TACSIntegrator::writeSolutionToF5( int _f5_write_freq ){
       getString(fname2, "results/shell_%06d.f5", k);
       shellf5->writeToFile(fname2);
     }
+
+    // Write BEAM body if set
+    if(beamf5 && getWriteFlag(k, _f5_write_freq)){
+      char fname2[128];
+      getString(fname2, "results/beam_%06d.f5", k);
+      beamf5->writeToFile(fname2);
+    }
   }
 }
 
 /*
   Configure the F5 output 
 */
-void TACSIntegrator::setOutputFrequency( int _write_freq ){
+void TACSIntegrator::setOutputFrequency( int _write_freq, int _newton_freq ){
   f5_write_freq = _write_freq;
+  f5_newton_freq = _newton_freq;
 }
 
 /*
@@ -787,6 +862,24 @@ void TACSIntegrator::setShellOutput( int flag ){
   if (!shellf5 && flag>0){
     shellf5 = new TACSToFH5(tacs, TACS_SHELL, shell_write_flag);
     shellf5->incref();
+  }
+}
+
+/*
+  Set whether BEAM components are a part of the output
+*/
+void TACSIntegrator::setBeamOutput( int flag ){
+  // Create an TACSToFH5 object for writing output to files
+  unsigned int beam_write_flag = (TACSElement::OUTPUT_NODES |
+                                  TACSElement::OUTPUT_DISPLACEMENTS |
+                                  TACSElement::OUTPUT_STRAINS |
+                                  TACSElement::OUTPUT_STRESSES |
+                                  TACSElement::OUTPUT_EXTRAS);
+  // Create a new instance if it does not exist and the flag is
+  // greater than zero
+  if (!beamf5 && flag>0){
+    beamf5 = new TACSToFH5(tacs, TACS_TIMOSHENKO_BEAM, beam_write_flag);
+    beamf5->incref();
   }
 }
 
@@ -825,6 +918,9 @@ void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   // Solve the nonlinear system of stage equations starting with the approximated states
   newton_term = newtonSolve(alpha, beta, gamma, 
                             time[k], q[k], qdot[k], qddot[k], forces);  
+  if (newton_term < 0){
+    exit(-1);
+  }
 
   doEachTimeStep(k);  
 }
@@ -844,6 +940,12 @@ void TACSIntegrator::integrate(){
 
   // Perform logging, tecplot export, etc
   current_time_step = 0;
+  
+  // Set the initial conditions
+  tacs->getInitConditions(q[0], qdot[0], qddot[0]);
+  tacs->setVariables(q[0], qdot[0], qddot[0]);
+
+  // Output the results at the initial condition
   doEachTimeStep(current_time_step);  
 
   // March forward in time
@@ -1060,7 +1162,7 @@ void TACSIntegrator::addFunctions( double tcoeff, TACSFunction **funcs,
     funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
   }
   tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
-                     funcs, numFuncs);
+                           funcs, numFuncs);
   for ( int n = 0; n < numFuncs; n++ ){
     funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
   }
@@ -1069,6 +1171,87 @@ void TACSIntegrator::addFunctions( double tcoeff, TACSFunction **funcs,
   for ( int n = 0; n < numFuncs; n++ ){
     funcVals[n] += funcs[n]->getFunctionValue();
   }
+}
+
+/*
+  Performs an eigen solve of the Jacobian matrix
+ */
+void TACSIntegrator::lapackEigenSolve( TACSMat *mat ) {    
+  /*
+  // The following code retrieves a dense column-major 
+  // matrix from the FEMat matrix
+  TacsScalar *J;
+  FEMat *femat = dynamic_cast<FEMat*>(mat);
+  if (femat){
+    int bsize, nrows;
+    BCSRMat *B;
+    femat->getBCSRMat(&B, NULL, NULL, NULL);
+    B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+	
+    J = new TacsScalar[ bsize*bsize*nrows*nrows ];
+
+    // Get the matrix in LAPACK column major order
+    B->getDenseColumnMajor(J);
+  }
+  else {
+    fprintf(stderr,"Casting to FEMat failed\n");
+    exit(-1);
+  }
+
+  // Set up LAPACK call
+  int size = num_state_vars;
+  TacsScalar *wr = new TacsScalar[size];
+  TacsScalar *wi = new TacsScalar[size];
+  int lwork = 8*size;
+  TacsScalar *work = new TacsScalar[lwork];
+  TacsScalar *vl = new TacsScalar[size*size];
+  TacsScalar *vr = new TacsScalar[size*size];
+  int info = 0; 
+  
+  // Call lapack to solve the eigenvalue problem
+  LAPACKdgeev("N", "V", &size, J, &size,
+              wr, wi,
+              vl, &size, vr, &size, 
+              work, &lwork,
+              &info);
+
+  // Print the eigenvalues
+  for (int i = 0; i < size; i++){
+    printf("%d %12.5e %12.5e\n", i, wr[i], wi[i]);
+  }
+
+  // Print the eigenvector
+  for (int i = 0; i < size; i++){
+    printf("\n%d Eigenvector for %12.5e\n", i, wr[i]);
+    for (int j = 0; j < size; j++){
+      if (wr[i] > 0.0){
+        printf("[%12.5e, %12.5e] ", vr[i*size+j], vr[i*size+j+1]);
+      } else if (wr[i] < 0.0){
+        printf("[%12.5e, %12.5e] ", vr[i*size+j-1], vr[i*size+j]);
+      } else {
+        printf("%12.5e ", vr[i*size+j]);
+      }
+    }
+  }
+
+  if (info){
+    fprintf(stderr,"LAPACK DGEEV output error %d\n", info);
+    if (info < 0){
+      fprintf(stderr,"LAPACK : %d-th argument had an illegal value\n", info);
+    } else {
+      fprintf(stderr,"LAPACK DGEEV: The QR algorithm failed to compute \
+all the eigenvalues, and no eigenvectors have been computed");
+    }
+    exit(-1);
+  }
+  
+  delete [] wr;
+  delete [] wi;
+  delete [] work;
+  delete [] vl;
+  delete [] vr;
+  if (J) { delete [] J; }
+  */
 }
 
 /*
@@ -1250,7 +1433,7 @@ void TACSIntegrator::configureAdaptiveMarch( int factor, int num_retry ) {
   Write out all of the options that have been set to a output stream.
 */
 void TACSIntegrator::printOptionSummary( FILE *fp ) {
-  if (fp){
+  if (fp && print_level>0){
     fprintf(fp, "===============================================\n");
     fprintf(fp, "TACSIntegrator: Parameter values\n");
     fprintf(fp, "===============================================\n");
@@ -1295,7 +1478,7 @@ void TACSIntegrator::printOptionSummary( FILE *fp ) {
   Print the adjoint options before marching backwards in time
 */
 void TACSIntegrator::printAdjointOptionSummary( FILE *fp ) {
-  if (fp){
+  if (fp && print_level>0){
     fprintf(fp, "===============================================\n");
     fprintf(fp, "Adjoint Mode : Parameter values\n");
     fprintf(fp, "===============================================\n");
@@ -1340,12 +1523,15 @@ void TACSIntegrator::setJacAssemblyFreq( int _jac_comp_freq ){
 /*
   Set whether or not to use LAPACK for linear solve
 */
-void TACSIntegrator::setUseLapack( int _use_lapack ) {
+void TACSIntegrator::setUseLapack( int _use_lapack, int _eigensolve ) {
   use_lapack = _use_lapack;
-  // LAPACK works with natural ordering only
-  this->setOrderingType(TACSAssembler::NATURAL_ORDER);
-  // LAPACK needs FEMat
-  this->setUseFEMat(1);
+  eigensolve = _eigensolve;
+  if (use_lapack == 1 || eigensolve == 1){
+    // LAPACK works with natural ordering only
+    this->setOrderingType(TACSAssembler::NATURAL_ORDER);
+    // LAPACK needs FEMat
+    this->setUseFEMat(1);
+  }
 }
 
 /*
@@ -2115,7 +2301,11 @@ void TACSDIRKIntegrator::integrate(){
       // Solve the nonlinear system of stage equations starting with
       // the approximated states
       newton_term = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
-                                    qS[toffset+i], qdotS[toffset+i], qddotS[toffset+i], NULL);
+                                qS[toffset+i], qdotS[toffset+i],
+                                qddotS[toffset+i], NULL);
+      if (newton_term < 0){
+        exit(-1);
+      }
     }
     
     // Advance the time
