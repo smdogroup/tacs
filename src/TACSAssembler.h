@@ -138,6 +138,9 @@ class TACSAssembler : public TACSObject {
   void applyBCs( TACSVec *vec );
   void applyBCs( TACSMat *mat );
 
+  // Set the Dirichlet boundary conditions to the state vector
+  void setBCs( TACSVec *vec );
+
   // Methods for manipulating internal variable values
   // -------------------------------------------------
   void zeroVariables();

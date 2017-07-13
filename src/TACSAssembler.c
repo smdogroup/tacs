@@ -2427,6 +2427,13 @@ void TACSAssembler::applyBCs( TACSMat *mat ){
   mat->applyBCs(bcMap);
 }
 
+/*
+  Set the Dirichlet boundary conditions into the vector
+*/
+void TACSAssembler::setBCs( TACSVec *vec ){
+  vec->applyBCs(bcMap, varsVec); 
+}
+
 /*!
   Create a distributed matrix
 
@@ -3391,7 +3398,6 @@ void TACSAssembler::addDVSens( double coef,
         varsVec->getValues(len, nodes, vars);
         dvarsVec->getValues(len, nodes, dvars);
         ddvarsVec->getValues(len, nodes, ddvars);
-        
         // Evaluate the element-wise sensitivity of the function
         funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
                                    elements[elemNum], elemNum, 
@@ -4023,9 +4029,11 @@ void TACSAssembler::testElement( int elemNum, int print_level,
     elements[elemNum]->testJacobian(time, elemXpts,
                                     vars, dvars, ddvars, col);
   }
+  
   elements[elemNum]->testJacobianXptSens(elemXpts);
   elements[elemNum]->testAdjResXptProduct(time, elemXpts,
                                           vars, dvars, ddvars);
+
   elements[elemNum]->testStrainSVSens(elemXpts, vars);
   elements[elemNum]->testStrainXptSens(elemXpts, vars);
 
