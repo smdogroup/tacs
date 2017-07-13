@@ -795,7 +795,6 @@ void DistMat::addValues( int nrow, const int *row,
       }
     }
   }
-
   if (temp){ delete [] temp; }
 }
 
@@ -901,14 +900,14 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
         // Add values to the diagonal
         Aloc->addRowWeightValues(weights[ip], avars[ip], 
                                  nvars, varp, avars, weights, 
-                                 mv, &values[incr*i*bsize]);
+                                 mv, &values[incr*i*bsize], matOr);
         
         // Add values to the off-diagonal
         int r = avars[ip] - Np;
         if (r >= 0 && r < Nc){
           Bext->addRowWeightValues(weights[ip], r, 
                                    nvars, varp, bvars, weights, 
-                                   mv, &values[incr*i*bsize]);
+                                   mv, &values[incr*i*bsize], matOr);
         }
         else if (nb > 0){
           fprintf(stderr, "[%d] DistMat error, some values were not added\n",

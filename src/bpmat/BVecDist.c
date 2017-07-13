@@ -821,6 +821,10 @@ void TACSBVecDistribute::initImpl( int bsize ){
     bgetvars = VecDistGetVars3;
     bsetvars = VecDistSetVars3;
     break;
+  case 4:
+    bgetvars = VecDistGetVars4;
+    bsetvars = VecDistSetVars4;
+    break;  
   case 5:
     bgetvars = VecDistGetVars5;
     bsetvars = VecDistSetVars5;
@@ -1102,6 +1106,78 @@ void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
     }
   }
 }  
+// ---------------
+// Block size == 4
+// --------------
+void VecDistGetVars4( int bsize, int nvars, const int *vars, int lower,
+		      TacsScalar *x, TacsScalar *y, 
+		      TACSBVecOperation op ){
+  if (op == TACS_INSERT_VALUES){
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 4*vars[i] - lower;
+      y[0] = x[v];
+      y[1] = x[v+1];
+      y[2] = x[v+2];
+      y[3] = x[v+3];
+      y += 4;
+    }
+  }
+  else if (op == TACS_ADD_VALUES){
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 4*vars[i] - lower;
+      y[0] += x[v];      
+      y[1] += x[v+1];      
+      y[2] += x[v+2];      
+      y[3] += x[v+3];
+      y += 4;
+    }    
+  }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 4*vars[i] - lower;
+      if (TacsRealPart(x[v]) != 0.0){ y[0] = x[v]; }
+      if (TacsRealPart(x[v+1]) != 0.0){ y[1] = x[v+1]; }
+      if (TacsRealPart(x[v+2]) != 0.0){ y[2] = x[v+2]; }
+      if (TacsRealPart(x[v+3]) != 0.0){ y[3] = x[v+3]; }
+      y += 4;
+    }
+  }
+}-
+
+void VecDistSetVars4( int bsize, int nvars, const int *vars, int lower,
+		      TacsScalar *x, TacsScalar *y, 
+		      TACSBVecOperation op ){
+  if (op == TACS_INSERT_VALUES){
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 4*vars[i] - lower;
+      y[v  ] = x[0];
+      y[v+1] = x[1];
+      y[v+2] = x[2];
+      y[v+3] = x[3];
+      x += 4;
+    }
+  }
+  else if (op == TACS_ADD_VALUES){
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 4*vars[i] - lower;
+      y[v  ] += x[0];
+      y[v+1] += x[1];
+      y[v+2] += x[2];
+      y[v+3] += x[3];
+      x += 4;
+    }    
+  }
+  else {
+    for ( int i = 0; i < nvars; i++ ){
+      int v = 4*vars[i] - lower;
+      if (TacsRealPart(x[0]) != 0.0){ y[v  ] = x[0]; }
+      if (TacsRealPart(x[1]) != 0.0){ y[v+1] = x[1]; }
+      if (TacsRealPart(x[2]) != 0.0){ y[v+2] = x[2]; }
+      if (TacsRealPart(x[3]) != 0.0){ y[v+3] = x[3]; }
+      x += 4;
+    }
+  }
+}
 
 // ---------------
 // Block size == 5

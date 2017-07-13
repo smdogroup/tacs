@@ -217,6 +217,43 @@ void BCSRMatApplySSOR3( BCSRMatData *A, TacsScalar *Adiag,
                         TacsScalar omega, int iters, 
                         TacsScalar *b, TacsScalar *x );
 
+// The bsize == 4 code
+void BCSRMatVecMult4( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
+void BCSRMatVecMultAdd4( BCSRMatData *A, TacsScalar *x, 
+                         TacsScalar *y, TacsScalar *z );
+void BCSRMatVecMultTranspose4( BCSRMatData *A,
+                               TacsScalar *x, TacsScalar *y );
+void BCSRMatFactor4( BCSRMatData *A );
+void BCSRMatApplyLower4( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
+void BCSRMatApplyUpper4( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
+
+void BCSRMatApplyPartialLower4( BCSRMatData *A, TacsScalar *x, 
+                                int var_offset );
+void BCSRMatApplyPartialUpper4( BCSRMatData *A, TacsScalar *x, 
+                                int var_offset );
+void BCSRMatApplyFactorSchur4( BCSRMatData *A, TacsScalar *x, 
+                               int var_offset );
+
+void BCSRMatMatMultAdd4( double alpha, BCSRMatData *A, 
+                         BCSRMatData *B, BCSRMatData *C );
+void BCSRMatFactorLower4( BCSRMatData *A, BCSRMatData *E );
+void BCSRMatFactorUpper4( BCSRMatData *A, BCSRMatData *F );
+
+void BCSRMatApplySOR4( BCSRMatData *A, TacsScalar *Adiag,
+		       TacsScalar omega, int iters, 
+		       TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySSOR4( BCSRMatData *A, TacsScalar *Adiag,
+			TacsScalar omega, int iters, 
+			TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySOR4( BCSRMatData *A, TacsScalar *Adiag,
+                       const int *pairs, int npairs,
+                       TacsScalar omega, int iters, 
+                       TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySSOR4( BCSRMatData *A, TacsScalar *Adiag,
+                        const int *pairs, int npairs,
+                        TacsScalar omega, int iters, 
+                        TacsScalar *b, TacsScalar *x );
+
 // The bsize == 5 code
 void BCSRMatVecMult5( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
 void BCSRMatVecMultAdd5( BCSRMatData *A, TacsScalar *x, 
