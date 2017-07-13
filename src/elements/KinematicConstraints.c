@@ -429,18 +429,6 @@ TACSRevoluteConstraint::~TACSRevoluteConstraint(){
 const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
 
 /*
-  Get the multiplier node index
-*/
-void TACSRevoluteConstraint::getMultiplierIndex( int *multiplier ){
-  if (fixed_ref_point){
-    *multiplier = 2;
-  }
-  else {
-    *multiplier = 3;
-  }
-}
-
-/*
   Returns the number of nodes based on the constraint nature
 */
 int TACSRevoluteConstraint::numNodes(){
