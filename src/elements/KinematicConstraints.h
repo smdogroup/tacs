@@ -107,7 +107,14 @@ class TACSRevoluteConstraint : public TACSElement {
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  void getMultiplierIndex( int *multiplier );
+  void getMultiplierIndex( int *multiplier ){
+    if (bodyA && bodyB){
+      *multiplier = 2;
+    }
+    else {
+      *multiplier = 1;
+    }    
+  }
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -232,6 +239,12 @@ class TACSRevoluteDriver : public TACSElement {
                       TacsScalar _omega );
   ~TACSRevoluteDriver();
 
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+    *multiplier = 1;
+  }
+
   int numDisplacements();
   int numNodes();
   const char* elementName();
@@ -272,6 +285,17 @@ class TACSCylindricalConstraint : public TACSElement {
                              TACSGibbsVector *_point,
                              TACSGibbsVector *_eAVec );
   ~TACSCylindricalConstraint();
+
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+    if (bodyA && bodyB){
+      *multiplier = 2;
+    }
+    else {
+      *multiplier = 1;
+    }    
+  }
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -388,6 +412,12 @@ class TACSAverageConstraint : public TACSElement {
                          TACSRefFrame *_refFrame,
                          int _moment_flag );
   ~TACSAverageConstraint();
+
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+    *multiplier = 4;
+  }
 
   // Get the number of displacements/nodes and the element name
   // ----------------------------------------------------------
