@@ -52,7 +52,7 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
   ksWeight = _ksWeight;
   alpha = _alpha;
   conType = func;
-  ksType = DISCRETE;
+  ksType = CONTINUOUS;
   loadFactor = 1.0;
 
   // Initialize the maximum failure value and KS sum to default values
