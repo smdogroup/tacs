@@ -1473,9 +1473,23 @@ cdef class Integrator:
       self.ptr.setBeamOutput(flag)
       return
    
-   def writeASCIISolution(self, char *filename='solution.dat', int format=2):
+   def writeASCIISolution(self, char *filename='solution.dat',
+                          int format=2):
       self.ptr.writeSolution(&filename[0], format)
       return
+
+   def getStates(self, int time_step,
+                 Vec q=None, Vec qdot=None, Vec qddot=None):
+      cdef TACSBVec *cq = NULL
+      cdef TACSBVec *cqdot = NULL
+      cdef TACSBVec *cqddot = NULL
+      if q is not None:
+         cq = q.ptr
+      if qdot is not None:
+         cqdot = qdot.ptr
+      if qddot is not None:
+         cqddot = qddot.ptr      
+      return self.ptr.getStates(time_step,cq,cqdot,cqddot)
    
 cdef class BDFIntegrator(Integrator):
    '''

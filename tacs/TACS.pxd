@@ -404,6 +404,9 @@ cdef extern from "TACSIntegrator.h":
       # Configure writing ASCII output data
       void writeSolution(const_char * filename, int format)
 
+      # return the TACS states at the given time step
+      double getStates(int,TACSBVec*,TACSBVec*,TACSBVec*)
+
    # BDF Implementation of the integrator
    cdef cppclass TACSBDFIntegrator(TACSIntegrator):
       TACSBDFIntegrator(TACSAssembler *tacs,
