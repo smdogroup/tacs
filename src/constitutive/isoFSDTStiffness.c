@@ -267,6 +267,11 @@ void isoFSDTStiffness::addFailureDVSens( const double pt[],
 */
 TacsScalar isoFSDTStiffness::getDVOutputValue( int dv_index, 
                                                const double pt[] ){
-  if (dv_index == 0){ return t; }
+  if (dv_index == 0){ 
+    return t; 
+  }
+  if (dv_index == 1){ 
+    return tNum; 
+  }
   return 0.0;
 }
