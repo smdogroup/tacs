@@ -8,7 +8,7 @@
 */
 
 /*!
-  Perform an ILU factorization in place for the block size = 3.
+  Perform an ILU factorization in place for the block size = 4.
   The entries are over-written, all operations are performed in place. 
 */
 
