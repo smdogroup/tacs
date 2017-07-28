@@ -4082,16 +4082,8 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TACSElement::setStepSize(dh);
   TACSElement::setPrintLevel(print_level);
 
-<<<<<<< local
-  for ( int col = 0; col < elements[elemNum]->numVariables(); col++ ){
-    elements[elemNum]->testJacobian(time, elemXpts,
-                                    vars, dvars, ddvars, col);
-  }
-  
-=======
   elements[elemNum]->testJacobian(time, elemXpts,
                                   vars, dvars, ddvars);
->>>>>>> other
   elements[elemNum]->testJacobianXptSens(elemXpts);
   elements[elemNum]->testAdjResXptProduct(time, elemXpts,
                                           vars, dvars, ddvars);

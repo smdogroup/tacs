@@ -475,7 +475,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Check if the norm of the residuals is a NaN
     if (res_norm != res_norm || update_norm != update_norm ){ 
       if (logfp) {
-        fprintf(stderr,"[%d] Newton iteration %d, failed with NaN residual norm\n", mpiRank, niter);
+        fprintf(stderr,"[%d] Newton iteration %d, failed with NaN residual norm\n", 
+          mpiRank, niter);
       }
       newton_exit_flag = -2;
       break;
@@ -599,7 +600,7 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
           fprintf(fp, "%12d %3d %5d %12.5e %12.5e %12.5e \n", 
                   j, // global DOF number
                   j % 8, // DOF number of each element
-                  (j % 8 == 7) ? (elem_ctr++) : elem_ctr, // body number (each 7 belongs to a node)
+                  (j % 8 == 7) ? (elem_ctr++) : elem_ctr, 
                   TacsRealPart(qvals[j]), // q
                   TacsRealPart(qdotvals[j]), // qdots
                   TacsRealPart(qddotvals[j])); // qddots
@@ -652,29 +653,40 @@ void TACSIntegrator::writeSolution( const char *filename, int format ) {
 */
 void TACSIntegrator::printWallTime( double t0, int level ){
   if(level >= 0) { 
-    fprintf(logfp, "[%d] Total            : %8.2f %6.2f\n", mpiRank, t0, t0/t0); 
-    fprintf(logfp, "[%d] Integrator       : %8.2f %6.2f\n", mpiRank, time_forward + time_reverse, (time_forward +time_reverse)/t0); 
+    fprintf(logfp, "[%d] Total            : %8.2f %6.2f\n", 
+      mpiRank, t0, t0/t0); 
+    fprintf(logfp, "[%d] Integrator       : %8.2f %6.2f\n", 
+      mpiRank, time_forward + time_reverse, (time_forward +time_reverse)/t0); 
   }
 
   if (level >= 1) { 
-    fprintf(logfp, ".[%d] Forward         :  %8.2f %6.2f\n", mpiRank, time_forward, time_forward/t0); 
+    fprintf(logfp, ".[%d] Forward         :  %8.2f %6.2f\n", 
+      mpiRank, time_forward, time_forward/t0); 
   }
 
   if (level >= 2) {
-    fprintf(logfp, "..[%d] Assembly       :   %8.2f %6.2f\n", mpiRank, time_fwd_assembly, time_fwd_assembly/t0);
-    fprintf(logfp, "..[%d] Factor         :   %8.2f %6.2f\n", mpiRank, time_fwd_factor, time_fwd_factor/t0);
-    fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", mpiRank, time_fwd_apply_factor, time_fwd_apply_factor/t0);
+    fprintf(logfp, "..[%d] Assembly       :   %8.2f %6.2f\n", 
+      mpiRank, time_fwd_assembly, time_fwd_assembly/t0);
+    fprintf(logfp, "..[%d] Factor         :   %8.2f %6.2f\n", 
+      mpiRank, time_fwd_factor, time_fwd_factor/t0);
+    fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", 
+      mpiRank, time_fwd_apply_factor, time_fwd_apply_factor/t0);
   }
 
   if (level >= 1) { 
-    fprintf(logfp, ".[%d] Reverse         :  %8.2f %6.2f\n", mpiRank, time_reverse, time_reverse/t0); 
+    fprintf(logfp, ".[%d] Reverse         :  %8.2f %6.2f\n", 
+      mpiRank, time_reverse, time_reverse/t0); 
   }
 
   if (level >= 2) {
-    fprintf(logfp, "..[%d] Assembly       :   %8.2f %6.2f\n", mpiRank, time_rev_assembly, time_rev_assembly/t0);
-    fprintf(logfp, "..[%d] Factor         :   %8.2f %6.2f\n", mpiRank, time_rev_factor, time_rev_factor/t0);
-    fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", mpiRank, time_rev_apply_factor, time_rev_apply_factor/t0);
-    fprintf(logfp, "..[%d] JacVecPdt      :   %8.2f %6.2f\n", mpiRank, time_rev_jac_pdt, time_rev_jac_pdt/t0);
+    fprintf(logfp, "..[%d] Assembly       :   %8.2f %6.2f\n", 
+      mpiRank, time_rev_assembly, time_rev_assembly/t0);
+    fprintf(logfp, "..[%d] Factor         :   %8.2f %6.2f\n", 
+      mpiRank, time_rev_factor, time_rev_factor/t0);
+    fprintf(logfp, "..[%d] ApplyFac       :   %8.2f %6.2f\n", 
+      mpiRank, time_rev_apply_factor, time_rev_apply_factor/t0);
+    fprintf(logfp, "..[%d] JacVecPdt      :   %8.2f %6.2f\n", 
+      mpiRank, time_rev_jac_pdt, time_rev_jac_pdt/t0);
   }
 }
 
@@ -1187,7 +1199,7 @@ void TACSIntegrator::lapackEigenSolve( TACSMat *mat ) {
     BCSRMat *B;
     femat->getBCSRMat(&B, NULL, NULL, NULL);
     B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
-	
+        
     J = new TacsScalar[ bsize*bsize*nrows*nrows ];
 
     // Get the matrix in LAPACK column major order
@@ -1278,7 +1290,7 @@ void TACSIntegrator::lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *u
     BCSRMat *B;
     femat->getBCSRMat(&B, NULL, NULL, NULL);
     B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
-	
+        
     J = new TacsScalar[ bsize*bsize*nrows*nrows ];
 
     // Get the matrix in LAPACK column major order
@@ -1372,7 +1384,7 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       }
       
       fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-	      time[current_step], time_newton,
+              time[current_step], time_newton,
               niter, newton_term,
               TacsRealPart(res_norm), 
               TacsRealPart(res_norm/(rtol + init_res_norm)),
@@ -1633,7 +1645,7 @@ TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
 
   // Truncate the maximum order to 3rd order
   max_bdf_order = (max_bdf_order <= 3 ? 
-		   max_bdf_order : 3);
+                   max_bdf_order : 3);
 
   // Set the type of integrator
   if ( max_bdf_order == 3) {
@@ -1715,9 +1727,9 @@ void TACSBDFIntegrator::approxStates(){
   nbddf:  the number second derivative of coefficients
 */
 void TACSBDFIntegrator::get2ndBDFCoeff( const int k, 
-					double bdf[], int *nbdf,
-					double bddf[], int *nbddf,
-					const int max_order ){
+                                        double bdf[], int *nbdf,
+                                        double bddf[], int *nbddf,
+                                        const int max_order ){
   // Construct the second-order BDF scheme
   memset(bddf, 0, (2*max_order+1)*sizeof(double));
   memset(bdf, 0, (max_order+1)*sizeof(double));
@@ -1793,7 +1805,9 @@ int TACSBDFIntegrator::getBDFCoeff( double bdf[], int order ){
 /*
   Return the coefficients for linearizing the Residual using BDF method
 */
-void TACSBDFIntegrator::getLinearizationCoeffs( double *alpha, double *beta, double *gamma ) {
+void TACSBDFIntegrator::getLinearizationCoeffs( double *alpha, 
+                                                double *beta, 
+                                                double *gamma ) {
   *gamma = bddf_coeff[0]/(h*h);
   *beta  = bdf_coeff[0]/h;
   *alpha = 1.0;
@@ -1901,8 +1915,8 @@ void TACSBDFIntegrator::marchBackwards( ) {
         gamma = bddf_coeff[ii]/(h*h);
       }
       for ( int n = 0; n < num_funcs; n++ ){      
-	tacs->addJacobianVecProduct(1.0, 0.0, beta, gamma,
-				    psi[n], rhs[rhs_index*num_funcs+n], TRANSPOSE);
+        tacs->addJacobianVecProduct(1.0, 0.0, beta, gamma,
+                                    psi[n], rhs[rhs_index*num_funcs+n], TRANSPOSE);
       }
     }
     time_rev_assembly += MPI_Wtime() - tassembly2;
@@ -2115,7 +2129,9 @@ void TACSDIRKIntegrator::checkButcherTableau(){
 /*
   Return the coefficients for linearizing the Residual using NBG method
 */
-void TACSDIRKIntegrator::getLinearizationCoeffs( double *alpha, double *beta, double *gamma ) {
+void TACSDIRKIntegrator::getLinearizationCoeffs( double *alpha, 
+                                                 double *beta, 
+                                                 double *gamma ) {
   int i   = current_stage;     // Retrieve the current stage
   int idx = getRowIdx(i);      // Starting entry of Butcher Tableau for this stage
   
@@ -2172,8 +2188,11 @@ int TACSDIRKIntegrator::getRowIdx( int stageNum ){
   adjoint variables. Note that there is no inter stage contributions
   for one-stage DIRK.
 */
-void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stage, 
-					      double *alpha, double *beta, double *gamma ){
+void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, 
+                                              int target_stage, 
+                                              double *alpha, 
+                                              double *beta, 
+                                              double *gamma ){
   int i = current_stage;
   int j = target_stage;
   
@@ -2207,7 +2226,8 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage, int target_stag
     *alpha += h2*B[2]*(A[4]*A[5]);
         
   } else {
-    fprintf(stderr, "TACSIntegrator::Incorrect access to inter-stage coefficients...\n");
+    fprintf(stderr, 
+      "TACSIntegrator::Incorrect access to inter-stage coefficients...\n");
     exit(-1);
   }
 }
@@ -2227,7 +2247,9 @@ void TACSDIRKIntegrator::marchOneStep( int step_num, TACSBVec *forces){
   Updated global state variables q, qdot, qddot at the time step
 */
 void TACSDIRKIntegrator::computeTimeStepStates( int current_step, 
-                                                TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot ){
+                                                TACSBVec **q, 
+                                                TACSBVec **qdot, 
+                                                TACSBVec **qddot ){
   int k       = current_step;
   int toffset = num_stages*k;
 
@@ -2327,6 +2349,99 @@ void TACSDIRKIntegrator::integrate(){
   // Keep track of the time taken for foward mode
   time_reverse += MPI_Wtime() - t0;
 }
+
+/*
+  Evaluate the functions of interest
+*/
+void TACSDIRKIntegrator::evalFunctions( TACSFunction **funcs, 
+                                        TacsScalar *funcVals,
+                                        int numFuncs ){
+
+// Check whether these are two-stage or single-stage functions
+  int twoStage = 0;
+  for ( int n = 0; n < numFuncs; n++ ){
+    if (funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
+      twoStage = 1;
+      break;
+    }
+  }
+
+  // Initialize the function if had already not been initialized
+  if (twoStage){
+    for ( int n = 0; n < numFuncs; n++ ){
+      funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+    }
+
+    for ( int k = 1; k < num_time_steps; k++ ){
+      current_time_step = k;
+      int toffset = k*num_stages;
+
+      // Set the pointer to the stage values
+      double *ts = &tS[toffset];
+      TACSBVec **qs = &qS[toffset];
+      TACSBVec **qdots = &qdotS[toffset];
+      TACSBVec **qddots = &qddotS[toffset];
+
+      for ( int i = 0; i < num_stages; i++ ){
+        current_stage = i;
+
+        // Determine the coefficients for linearizing the Residual
+        double gamma = B[i];
+
+        // Set the stages
+        setTACSStates(ts[i], qs[i], qdots[i], qddots[i]);
+
+        double tcoeff = B[i]*h;
+        tacs->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
+                                 funcs, numFuncs);
+      }
+    }
+
+    for ( int n = 0; n < numFuncs; n++ ){
+      funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);
+    }
+  }
+  
+  // Perform the integration required to evaluate the function
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+  }
+  
+  for ( int k = 1; k < num_time_steps; k++ ){
+    current_time_step = k;
+    int toffset = k*num_stages;
+
+    // Set the pointer to the stage values
+    double *ts = &tS[toffset];
+    TACSBVec **qs = &qS[toffset];
+    TACSBVec **qdots = &qdotS[toffset];
+    TACSBVec **qddots = &qddotS[toffset];
+
+    for ( int i = 0; i < num_stages; i++ ){
+      current_stage = i;
+
+      // Determine the coefficients for linearizing the Residual
+      double gamma = B[i];
+
+      // Set the stages
+      setTACSStates(ts[i], qs[i], qdots[i], qddots[i]);
+
+      double tcoeff = B[i]*h;
+      tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
+                               funcs, numFuncs);
+    }
+  }
+
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+  }
+  
+  // Retrieve the function values
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcVals[n] += funcs[n]->getFunctionValue();
+  }
+}
+
 /*
   March backward in time and solve for the adjoint variables
 */
@@ -2415,9 +2530,6 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       //--------------------------------------------------------------//
 
       double tassembly = MPI_Wtime();
-
-      // Add the contribution to function value from this stage
-      this->addFunctions(h*B[i], funcs, num_funcs, fvals);
       
       // Add function contributions
       for ( int n = 0; n < num_funcs; n++ ){
@@ -2438,7 +2550,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
         rhs[i*num_funcs+n]->axpy(scale, psi[n]);
       
         // Negate the RHS
-	rhs[i*num_funcs+n]->scale(-1.0);
+        rhs[i*num_funcs+n]->scale(-1.0);
       }
      
       // Setup the Jacobian
@@ -2455,8 +2567,8 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       // the adjoint variables
       double tapply = MPI_Wtime();
       for ( int n = 0; n < num_funcs; n++ ){
-	ksm->solve(rhs[i*num_funcs+n], lambda[i*num_funcs+n]);
-	rhs[i*num_funcs+n]->zeroEntries();
+        ksm->solve(rhs[i*num_funcs+n], lambda[i*num_funcs+n]);
+        rhs[i*num_funcs+n]->zeroEntries();
       }
       time_rev_apply_factor += MPI_Wtime() - tapply;
 
@@ -2474,19 +2586,19 @@ void TACSDIRKIntegrator::marchBackwards( ) {
       double tassembly2 = MPI_Wtime();
 
       for ( int j = i-1; j >= 0; j-- ){
-	// Determine the corresponding coefficients
-	getCoeffsInterStage(i, j, &alpha, &beta, &gamma);
-	for ( int n = 0; n < num_funcs; n++ ){
-	  // Put the contributions to the rhs from the function state
-	  // variable sensitivity
-	  rhs[j*num_funcs+n]->axpy(alpha, dfdq[i*num_funcs+n]);
-	
-	  // Put the contributions from Adjoint-Residual state variable
-	  // sensitivity
-	  tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
-				      lambda[i*num_funcs+n], rhs[j*num_funcs+n], 
-				      TRANSPOSE);
-	}
+        // Determine the corresponding coefficients
+        getCoeffsInterStage(i, j, &alpha, &beta, &gamma);
+        for ( int n = 0; n < num_funcs; n++ ){
+          // Put the contributions to the rhs from the function state
+          // variable sensitivity
+          rhs[j*num_funcs+n]->axpy(alpha, dfdq[i*num_funcs+n]);
+        
+          // Put the contributions from Adjoint-Residual state variable
+          // sensitivity
+          tacs->addJacobianVecProduct(1.0, alpha, beta, gamma, 
+                                      lambda[i*num_funcs+n], rhs[j*num_funcs+n], 
+                                      TRANSPOSE);
+        }
       }
 
       for ( int n = 0; n < num_funcs; n++ ){
@@ -2501,7 +2613,7 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 
         // Add function SV sens contributions
         phiTmp[n]->axpy(alpha, dfdq[i*num_funcs+n]);
-	  
+          
         // Add the contributions from Adjoint-Residual state variable
         // sensitivity
         tacs->addJacobianVecProduct(1.0, alpha, beta, gamma,
@@ -2572,11 +2684,12 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 }
 
 /*
-  Evaluate the time average of functions: F = \sum_{k=0}^N h_k \sum_{j=0}^s b_j f(q_{k,j},t)
+  Evaluate the time average of functions:
+  F = \sum_{k=0}^N h_k \sum_{j=0}^s b_j f(q_{k,j},t)
 */
 void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
-					       int numFuncs, 
-					       TacsScalar *funcVals) {
+                                               int numFuncs, 
+                                               TacsScalar *funcVals) {
   memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
 
   TacsScalar *ftmp = new TacsScalar[numFuncs];  
@@ -2590,7 +2703,8 @@ void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs,
     for ( int j = 0; j < num_stages; j++ ){
 
       // Set the states into TACS
-      setTACSStates(tS[toffset+j], qS[toffset+j], qdotS[toffset+j], qddotS[toffset+j]);
+      setTACSStates(tS[toffset+j], qS[toffset+j], 
+                    qdotS[toffset+j], qddotS[toffset+j]);
       
       // Evaluate the functions
       this->addFunctions(h*B[j], funcs, numFuncs, funcVals);
@@ -2612,7 +2726,7 @@ TACSABMIntegrator::TACSABMIntegrator( TACSAssembler * _tacs,
                                       double _tinit, double _tfinal, 
                                       double _num_steps_per_sec, 
                                       int _max_abm_order ):
-TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){		
+TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){           
   // copy over the variables
   max_abm_order = _max_abm_order;
 
@@ -2633,11 +2747,11 @@ TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
 
   // Sanity check on the input order
   max_abm_order = ((max_abm_order <= 6 && max_abm_order >= 1) ?
-		   max_abm_order : 2);
+                   max_abm_order : 2);
   
   // Setup ABM Coefficents
   A = new double[max_abm_order*(max_abm_order+1)/2];
-  memset(A, 0, max_abm_order*(max_abm_order+1)/2*sizeof(double)); // Lower triangular matrix
+  memset(A, 0, max_abm_order*(max_abm_order+1)/2*sizeof(double));
   setupCoeffs();
   checkABMCoeffs();
 
@@ -2687,7 +2801,8 @@ void TACSABMIntegrator::setupCoeffs( ) {
       A[19] = -173.0/1440.0;
       A[20] =   27.0/1440.0;
     } else {
-      fprintf(stderr, "WARNING: Wrong ABM order %d out of %d\n", order, max_abm_order);
+      fprintf(stderr, "WARNING: Wrong ABM order %d out of %d\n", 
+              order, max_abm_order);
     }
   }
 }
@@ -2730,7 +2845,9 @@ void TACSABMIntegrator::approxStates(){
 /*
   Return the  coefficients for linearizing the Residual using ABM method.
 */
-void TACSABMIntegrator::getLinearizationCoeffs( double *alpha, double *beta, double *gamma ) {
+void TACSABMIntegrator::getLinearizationCoeffs( double *alpha, 
+                                                double *beta, 
+                                                double *gamma ) {
   int k   = current_time_step; // Retrieve the current time step
   int m   = getOrder(k);       // Determine the order of approximation
   int idx = getRowIdx(m-1);    // Order starts with 1 but the table starts at 0
@@ -3204,12 +3321,13 @@ void TACSNBGIntegrator::approxStates(){
 /*
   Return the coefficients for linearizing the Residual using NBG method
 */
-void TACSNBGIntegrator::getLinearizationCoeffs( double *alpha, double *beta, double *gamma ) {
+void TACSNBGIntegrator::getLinearizationCoeffs( double *alpha, 
+                                                double *beta, 
+                                                double *gamma ){
   *gamma = 1.0;
   *beta  = GAMMA*h; 
   *alpha = BETA*h*h;
 }
-
 
 /*
   March backwards in time to solve for adjoint variables and computing

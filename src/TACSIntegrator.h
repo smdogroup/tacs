@@ -301,6 +301,8 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   void integrate();
   void marchOneStep( int step_num, TACSBVec *forces );
   
+  void evalFunctions( TACSFunction **funcs, TacsScalar *funcVals,
+                      int numFuncs );
  protected:
   void setupCoeffs();
   void approxStates();
@@ -335,6 +337,7 @@ class TACSBDFIntegrator : public TACSIntegrator {
                      double _num_steps_per_sec, 
 		     int max_bdf_order );
   ~TACSBDFIntegrator();
+  
  protected:
   void setupCoeffs();
   void approxStates();
