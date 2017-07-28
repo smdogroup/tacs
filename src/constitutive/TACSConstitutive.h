@@ -56,14 +56,14 @@ class TACSConstitutive : public TACSSparseConObject {
 
   // Return the mass moments
   // -----------------------
-  virtual void getPointwiseMass( const double pt[], 
-				 TacsScalar mass[] ) = 0;
+  virtual void getPointwiseMass( const double pt[],
+                                 TacsScalar mass[] ) = 0;
 
   // Add the derivative of the pointwise mass times the given scalar
   // ---------------------------------------------------------------
-  virtual void addPointwiseMassDVSens( const double pt[], 
-				       const TacsScalar alpha[],
-				       TacsScalar dvSens[], int dvLen ){}
+  virtual void addPointwiseMassDVSens( const double pt[],
+                                       const TacsScalar alpha[],
+                                       TacsScalar dvSens[], int dvLen ){}
 
   // Evaluate the failure function at a quadrature point
   // ---------------------------------------------------
@@ -74,17 +74,17 @@ class TACSConstitutive : public TACSSparseConObject {
   // Evaluate the derivative of the failure point w.r.t. the strain
   // --------------------------------------------------------------
   virtual void failureStrainSens( const double pt[], 
-				  const TacsScalar strain[],
+                                  const TacsScalar strain[],
                                   TacsScalar sens[] ){
     memset(sens, 0, getNumStresses()*sizeof(TacsScalar));
   }
 
   // Add the derivative of the failure w.r.t. design variables
   // ---------------------------------------------------------
-  virtual void addFailureDVSens( const double pt[], 
-				 const TacsScalar strain[],
-				 TacsScalar alpha,
-				 TacsScalar dvSens[], int dvLen ){}
+  virtual void addFailureDVSens( const double pt[],
+                                 const TacsScalar strain[],
+                                 TacsScalar alpha,
+                                 TacsScalar dvSens[], int dvLen ){}
   
   // Apply a buckling criterion
   // --------------------------
@@ -101,8 +101,8 @@ class TACSConstitutive : public TACSSparseConObject {
   // Add the derivative of the failure w.r.t. design variables
   // ---------------------------------------------------------
   virtual void addBucklingDVSens( const TacsScalar strain[],
-				  TacsScalar alpha,
-				  TacsScalar dvSens[], int dvLen ){}
+                                  TacsScalar alpha,
+                                  TacsScalar dvSens[], int dvLen ){}
 
   // Return a design variable value for visualization
   // ------------------------------------------------
@@ -113,17 +113,17 @@ class TACSConstitutive : public TACSSparseConObject {
   // Write out a two-dimensional representation of the failure envelope
   // ------------------------------------------------------------------
   void writeFailureEnvelope( const char *file_name, int npts,
-			     const double pt[], 
-			     const TacsScalar x_stress[],
-			     const TacsScalar y_stress[] );
+                             const double pt[],
+                             const TacsScalar x_stress[],
+                             const TacsScalar y_stress[] );
 
   // Write out a two-dimensional buckling envelope to a file
   // -------------------------------------------------------
   void writeBucklingEnvelope( const char *file_name, int npts,
-			      const double pt[], 
-			      const TacsScalar x_stress[],
-			      const TacsScalar y_stress[],
-			      double theta_min, double theta_max );
+                              const double pt[],
+                              const TacsScalar x_stress[],
+                              const TacsScalar y_stress[],
+                              double theta_min, double theta_max );
 };
 
-# endif
+# endif // TACS_CONSTITUTIVE_H

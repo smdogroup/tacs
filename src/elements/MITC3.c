@@ -1685,7 +1685,7 @@ void MITC3::evalStrain( TacsScalar e[],
   vecAxpy(scale, d1a, tmp);
   matMultTrans(T, tmp, Td1a);
 
-  // Td2a = T^{T}*d2a*e1^{T}*Xdinv*T*e1
+  // Td2a = T^{T}*(d2a*e1^{T}*Xdinv + Ur*z2Xdinv)*T*e1
   TacsScalar Td2a[3];
   tmp[0] = T[0];
   tmp[1] = T[3];
@@ -1699,9 +1699,9 @@ void MITC3::evalStrain( TacsScalar e[],
   e[0] = U0[0] + 0.5*(U0[0]*U0[0] + U0[3]*U0[3] + U0[6]*U0[6]);
 
   // Compute the torsional component of the strain
-  e[1] = Td1a[2] - Td2a[1] + 
+  e[1] = 0.5*(Td1a[2] - Td2a[1] + 
     (Td1a[0]*U0[2] + Td1a[1]*U0[5] + Td1a[2]*U0[8]) -
-    (Td2a[0]*U0[1] + Td2a[1]*U0[4] + Td2a[2]*U0[7]);
+    (Td2a[0]*U0[1] + Td2a[1]*U0[4] + Td2a[2]*U0[7]));
 
   // Compute the bending components of the strain
   e[2] = Td1a[0] + (U0[0]*Td1a[0] + U0[3]*Td1a[1] + U0[6]*Td1a[2]);
@@ -1776,9 +1776,9 @@ void MITC3::evalBmat( TacsScalar e[],
   e[0] = U0[0] + 0.5*(U0[0]*U0[0] + U0[3]*U0[3] + U0[6]*U0[6]);
 
   // Compute the torsional component of the strain
-  e[1] = Td1a[2] - Td2a[1] + 
+  e[1] = 0.5*(Td1a[2] - Td2a[1] + 
     (Td1a[0]*U0[2] + Td1a[1]*U0[5] + Td1a[2]*U0[8]) -
-    (Td2a[0]*U0[1] + Td2a[1]*U0[4] + Td2a[2]*U0[7]);
+    (Td2a[0]*U0[1] + Td2a[1]*U0[4] + Td2a[2]*U0[7]));
 
   // Compute the bending components of the strain
   e[2] = Td1a[0] + (U0[0]*Td1a[0] + U0[3]*Td1a[1] + U0[6]*Td1a[2]);
@@ -1815,11 +1815,11 @@ void MITC3::evalBmat( TacsScalar e[],
 
       // Compute the derivative
       b[0] = dU[0] + U0[0]*dU[0] + U0[3]*dU[3] + U0[6]*dU[6];
-      b[1] =  dTd1a[2] - dTd2a[1] + 
+      b[1] = 0.5*(dTd1a[2] - dTd2a[1] + 
         (Td1a[0]*dU[2] + Td1a[1]*dU[5] + Td1a[2]*dU[8]) -
         (Td2a[0]*dU[1] + Td2a[1]*dU[4] + Td2a[2]*dU[7]) +
         (dTd1a[0]*U0[2] + dTd1a[1]*U0[5] + dTd1a[2]*U0[8]) -
-        (dTd2a[0]*U0[1] + dTd2a[1]*U0[4] + dTd2a[2]*U0[7]);
+        (dTd2a[0]*U0[1] + dTd2a[1]*U0[4] + dTd2a[2]*U0[7]));
       b[2] = dTd1a[0] + (dU[0]*Td1a[0] + dU[3]*Td1a[1] + dU[6]*Td1a[2] +
                          U0[0]*dTd1a[0] + U0[3]*dTd1a[1] + U0[6]*dTd1a[2]);
       b[3] = dTd2a[0] + (dU[0]*Td2a[0] + dU[3]*Td2a[1] + dU[6]*Td2a[2] +
@@ -1860,11 +1860,11 @@ void MITC3::evalBmat( TacsScalar e[],
 
       // Compute the derivative
       b[0] = dU[0] + U0[0]*dU[0] + U0[3]*dU[3] + U0[6]*dU[6];
-      b[1] = dTd1a[2] - dTd2a[1] + 
+      b[1] = 0.5*(dTd1a[2] - dTd2a[1] + 
         (Td1a[0]*dU[2] + Td1a[1]*dU[5] + Td1a[2]*dU[8]) -
         (Td2a[0]*dU[1] + Td2a[1]*dU[4] + Td2a[2]*dU[7]) +
         (dTd1a[0]*U0[2] + dTd1a[1]*U0[5] + dTd1a[2]*U0[8]) -
-        (dTd2a[0]*U0[1] + dTd2a[1]*U0[4] + dTd2a[2]*U0[7]);
+        (dTd2a[0]*U0[1] + dTd2a[1]*U0[4] + dTd2a[2]*U0[7]));
       b[2] = dTd1a[0] + (dU[0]*Td1a[0] + dU[3]*Td1a[1] + dU[6]*Td1a[2] +
                          U0[0]*dTd1a[0] + U0[3]*dTd1a[1] + U0[6]*dTd1a[2]);
       b[3] = dTd2a[0] + (dU[0]*Td2a[0] + dU[3]*Td2a[1] + dU[6]*Td2a[2] +
@@ -2045,10 +2045,10 @@ void MITC3::addGmat( TacsScalar J[],
       TacsScalar b[4];
       b[0] = dUi[0]*dUj[0] + dUi[3]*dUj[3] + dUi[6]*dUj[6];
       b[1] =
-        (dT1i[0]*dUj[2] + dT1i[1]*dUj[5] + dT1i[2]*dUj[8]) -
-        (dT2i[0]*dUj[1] + dT2i[1]*dUj[4] + dT2i[2]*dUj[7]) +
-        (dT1j[0]*dUi[2] + dT1j[1]*dUi[5] + dT1j[2]*dUi[8]) -
-        (dT2j[0]*dUi[1] + dT2j[1]*dUi[4] + dT2j[2]*dUi[7]);
+        0.5*((dT1i[0]*dUj[2] + dT1i[1]*dUj[5] + dT1i[2]*dUj[8]) -
+             (dT2i[0]*dUj[1] + dT2i[1]*dUj[4] + dT2i[2]*dUj[7]) +
+             (dT1j[0]*dUi[2] + dT1j[1]*dUi[5] + dT1j[2]*dUi[8]) -
+             (dT2j[0]*dUi[1] + dT2j[1]*dUi[4] + dT2j[2]*dUi[7]));
       b[2] = (dUi[0]*dT1j[0] + dUi[3]*dT1j[1] + dUi[6]*dT1j[2] +
               dUj[0]*dT1i[0] + dUj[3]*dT1i[1] + dUj[6]*dT1i[2]);
       b[3] = (dUi[0]*dT2j[0] + dUi[3]*dT2j[1] + dUi[6]*dT2j[2] +
@@ -2118,11 +2118,11 @@ void MITC3::addGmat( TacsScalar J[],
 
       TacsScalar b[4];
       b[0] = dU[0] + U0[0]*dU[0] + U0[3]*dU[3] + U0[6]*dU[6];
-      b[1] = dTd1a[2] - dTd2a[1] + 
+      b[1] = 0.5*(dTd1a[2] - dTd2a[1] + 
         (Td1a[0]*dU[2] + Td1a[1]*dU[5] + Td1a[2]*dU[8]) -
         (Td2a[0]*dU[1] + Td2a[1]*dU[4] + Td2a[2]*dU[7]) +
         (dTd1a[0]*U0[2] + dTd1a[1]*U0[5] + dTd1a[2]*U0[8]) -
-        (dTd2a[0]*U0[1] + dTd2a[1]*U0[4] + dTd2a[2]*U0[7]);
+        (dTd2a[0]*U0[1] + dTd2a[1]*U0[4] + dTd2a[2]*U0[7]));
       b[2] = dTd1a[0] + (dU[0]*Td1a[0] + dU[3]*Td1a[1] + dU[6]*Td1a[2] +
                          U0[0]*dTd1a[0] + U0[3]*dTd1a[1] + U0[6]*dTd1a[2]);
       b[3] = dTd2a[0] + (dU[0]*Td2a[0] + dU[3]*Td2a[1] + dU[6]*Td2a[2] +
@@ -2975,7 +2975,6 @@ void MITC3::testStrain( const TacsScalar X[] ){
     for ( int i = 0; i < 6; i++ ){
       fd[i] = (fd[i] - e[i])/dh;
     }
-
     vars[k] = vtmp;
     
     // Write out the error components
@@ -2984,4 +2983,41 @@ void MITC3::testStrain( const TacsScalar X[] ){
     writeErrorComponents(stdout, descript,
                          &B[6*k], fd, 6);
   }
+
+  // Set random variable values and compute the initial strain
+  for ( int k = 0; k < NUM_NODES; k++ ){
+    for ( int i = 0; i < 3; i++ ){
+      vars[8*k+i] = 1.0*rand()/RAND_MAX;
+    }
+    vars[8*k+3] = 1.0;
+    vars[8*k+4] = vars[8*k+5] = vars[8*k+6] = vars[8*k+7] = 0.0;
+  }
+  getStrain(e, &u, X, vars);
+
+  // Compute the rotation matrix C
+  q[0] = 0.5;
+  q[1] = 0.5;
+  q[2] = 0.5;
+  q[3] = 0.5;
+  computeRotationMat(q[0], &q[1], C);
+
+  // Compute the variables and set the quaternion values
+  for ( int k = 0; k < NUM_NODES; k++ ){
+    // Compute the displacements
+    TacsScalar t[3];
+    matMultTrans(C, &X[3*k], t);
+    matMultTransAdd(C, &vars[8*k], t);
+    for ( int i = 0; i < 3; i++ ){
+      vars[8*k+i] = t[i] - X[3*k+i];
+    }
+    
+    // Copy the values of the quaternions
+    memcpy(&vars[8*k+3], q, 4*sizeof(TacsScalar));
+  }
+  getStrain(fd, &u, X, vars);
+
+  // Write out the error components of the strain
+  sprintf(descript, "strain before/after rigid rotation");
+  writeErrorComponents(stdout, descript,
+                       e, fd, 6);
 }

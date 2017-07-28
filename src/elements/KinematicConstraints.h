@@ -90,31 +90,44 @@ class TACSSphericalConstraint : public TACSElement {
 
 /*
   Revolute constraint
+
+  This constraint forces the relative rotation between two bodies 
+  (body A and body B) at a point to lie on a single axis. There are 
+  several different ways that this constraint can be formualted. Body A
+  is treated as the primary body, while body B is treated as a secondary
+  body. When TACSRigidBody objects are passed in, the reference point
+  location is retrieved from the body object, whereas if no body is 
+  passed in, the point is taken from the node location.
+
+  First, the revolute axis may be either fixed to the inertial reference
+  frame or fixed/convected with body B's body-aligned frame. In the 
+  latter case, the revolute axis changes continuously as a function of 
+  the orientation of body B.
+
+  Second, the reference point may be constrained such that it is:
+  1. Fixed such that the point is fixed inertially
+  2. Constrained so that the two components in frames A and B coincide
+  3. Free - unconstrained
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                           TACSRigidBody *_bodyB,
                           TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec );
+                          TACSGibbsVector *_eAVec,
+                          int _inertial_rev_axis=0 );
   TACSRevoluteConstraint( TACSRigidBody *_bodyA,
                           TACSGibbsVector *_point,
                           TACSGibbsVector *_eAVec );
   TACSRevoluteConstraint( int _fixed_ref_point,
                           TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec );
+                          TACSGibbsVector *_eAVec,
+                          int _inertial_rev_axis=0 );
   ~TACSRevoluteConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  void getMultiplierIndex( int *multiplier ){
-    if (bodyA && bodyB){
-      *multiplier = 2;
-    }
-    else {
-      *multiplier = 1;
-    }    
-  }
+  void getMultiplierIndex( int *multiplier );
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -156,8 +169,12 @@ class TACSRevoluteConstraint : public TACSElement {
   // Update the local data
   void updatePoints( int init_e=0 );
 
-  // Is the reference point fixed or not?
-  int fixed_ref_point;
+  // Is the reference axis fixed in body B's body-fixed frame
+  // or is it fixed in the inertial refernece frame
+  int inertial_rev_axis;
+
+  // Are there two bodies or just one?
+  int inertial_fixed_point;
 
   // The rigid bodies involved in the joint
   TACSRigidBody *bodyA, *bodyB; 
