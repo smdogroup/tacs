@@ -291,7 +291,7 @@ void TACSCompliance::addElementDVSens( const double tcoef,
 
       // Get the strain at the current point
       element->getStrain(strain, pt, Xpts, vars);
-      constitutive->addStressDVSens(pt, strain, h, strain, 
+      constitutive->addStressDVSens(pt, strain, tcoef*h, strain, 
                                     fdvSens, numDVs);
     }
   }

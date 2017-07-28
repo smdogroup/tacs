@@ -114,7 +114,9 @@ void TACSStructuralMass::elementWiseEval(  EvaluationType ftype,
       double gauss_weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = element->getDetJacobian(pt, Xpts);
       constitutive->getPointwiseMass(pt, ptmass);
-      
+      /* if (elemNum == 0){ */
+      /*   printf("h is %f %f\n", h, gauss_weight); */
+      /* } */
       ctx->mass += gauss_weight*h*ptmass[0];
     }
   }
@@ -205,6 +207,9 @@ void TACSStructuralMass::addElementDVSens( double tcoef,
       TacsScalar h = element->getDetJacobian(pt, Xpts);
     
       alpha[0] = tcoef*gauss_weight*h;
+      /* if (elemNum == 0){ */
+      /*   printf("alpha: %f %f %f\n", tcoef, gauss_weight, h); */
+      /* } */
       constitutive->addPointwiseMassDVSens(pt, alpha, fdvSens, numDVs);
     }
   }

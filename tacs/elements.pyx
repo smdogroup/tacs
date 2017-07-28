@@ -349,6 +349,10 @@ cdef class MITC(Element):
       self.ptr.decref()
       return
 
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
+      return
+
 cdef class MITCBeam(Element):
    def __cinit__(self, Timoshenko stiff, GibbsVector gravity=None,
                  GibbsVector vInit=None, GibbsVector omegaInit=None):
@@ -367,4 +371,8 @@ cdef class MITCBeam(Element):
    
    def __dealloc__(self):
       self.ptr.decref()
+      return
+   
+   def setComponentNum(self, int comp_num):
+      self.ptr.setComponentNum(comp_num)
       return

@@ -53,7 +53,15 @@ void BVecInterpMultTransposeAdd3( int bsize, int nrows,
 				  const TacsScalar *weights,
 				  const TacsScalar *x, 
                                   TacsScalar *y );
-
+void BVecInterpMultAdd4( int bsize, int nrows, 
+			 const int *rowp, const int *cols,
+			 const TacsScalar *weights,
+			 const TacsScalar *x, TacsScalar *y );
+void BVecInterpMultTransposeAdd4( int bsize, int nrows, 
+				  const int *rowp, const int *cols,
+				  const TacsScalar *weights,
+				  const TacsScalar *x, 
+                                  TacsScalar *y );
 void BVecInterpMultAdd5( int bsize, int nrows, 
 			 const int *rowp, const int *cols,
 			 const TacsScalar *weights,
@@ -172,6 +180,10 @@ or congruent. Cannot form interpolant.\n");
   case 3:
     multadd = BVecInterpMultAdd3;
     multtransadd = BVecInterpMultTransposeAdd3;
+    break;
+  case 4:
+    multadd = BVecInterpMultAdd4;
+    multtransadd = BVecInterpMultTransposeAdd4;
     break;
   case 5:
     multadd = BVecInterpMultAdd5;
@@ -1273,7 +1285,47 @@ void BVecInterpMultTransposeAdd3( int bsize, int nrows,
     }
   }
 }
+/*
+  Compute a matrix-vector product for bsize = 4
+*/
+void BVecInterpMultAdd4( int bsize, int nrows, 
+			 const int *rowp, const int *cols,
+			 const TacsScalar *w,
+			 const TacsScalar *x, TacsScalar *y ){
+  for ( int i = 0; i < nrows; i++ ){
+    int j = rowp[i];
+    int end = rowp[i+1];
+    
+    for (; j < end; j++ ){
+      y[4*i]   += w[0]*x[4*cols[j]];
+      y[4*i+1] += w[0]*x[4*cols[j]+1];
+      y[4*i+2] += w[0]*x[4*cols[j]+2];
+      y[4*i+3] += w[0]*x[4*cols[j]+3];
+      w++;
+    }
+  }
+}
 
+/*
+  Compute the matrix-vector transpose product for bsize = 4
+*/
+void BVecInterpMultTransposeAdd4( int bsize, int nrows, 
+				  const int *rowp, const int *cols,
+				  const TacsScalar *w,
+				  const TacsScalar *x, TacsScalar *y ){
+  for ( int i = 0; i < nrows; i++ ){
+    int j = rowp[i];
+    int end = rowp[i+1];
+
+    for (; j < end; j++ ){
+      y[4*cols[j]]   += w[0]*x[4*i];
+      y[4*cols[j]+1] += w[0]*x[4*i+1];
+      y[4*cols[j]+2] += w[0]*x[4*i+2];
+      y[4*cols[j]+3] += w[0]*x[4*i+3];
+      w++;
+    }
+  }
+}
 /*
   Compute a matrix-vector product for bsize = 5
 */

@@ -16,6 +16,8 @@ CXX_OBJS = BCSRMat.o \
 	BCSRMatMult2.o \
 	BCSRMatFact3.o \
 	BCSRMatMult3.o \
+	BCSRMatFact4.o \
+	BCSRMatMult4.o \
 	BCSRMatFact5.o \
 	BCSRMatMult5.o \
 	BCSRMatFact6.o \

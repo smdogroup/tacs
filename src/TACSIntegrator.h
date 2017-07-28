@@ -93,14 +93,17 @@ class TACSIntegrator : public TACSObject {
   void printAdjointOptionSummary( FILE *fp );
 
   // Get the states 
-  double getStates( int iter, TACSBVec **_q=NULL, 
-                    TACSBVec **_qdot=NULL, TACSBVec **_qddot=NULL ){
+  double getStates( int iter, TACSBVec *_q=NULL, 
+                    TACSBVec *_qdot=NULL, TACSBVec *_qddot=NULL ){
     if (iter >= 0 && iter < num_time_steps){
-      if (_q){ *_q = q[iter]; }
-      if (_qdot){ *_qdot = qdot[iter]; }
-      if (_qddot){ *_qddot = qddot[iter]; }
+      if (_q){ _q->copyValues(q[iter]); }
+      if (_qdot){ _qdot->copyValues(qdot[iter]); }
+      if (_qddot){ _qddot->copyValues(qddot[iter]); }
+      return h*iter;
+    } else {
+      // Invalid input
+      return -1.0;
     }
-    return h*iter;
   }
 
   // Variables that keep track of time
@@ -222,6 +225,9 @@ class TACSIntegrator : public TACSObject {
   TACSBVec      **phi;                // adjoint variable accumulating q dependance
   TACSBVec      **lambda;             // adjoint variable qddot
   TACSBVec      **dfdq;               // storage vector for statevariable sensitivities
+
+  double avg_scale;
+
  private:
 
   //-----------------------------------------------------------------//

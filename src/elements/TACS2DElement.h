@@ -414,7 +414,6 @@ void TACS2DElement<NUM_NODES>::getDisplGradient( TacsScalar Ud[],
     Na++; Nb++;
     vars += 2;
   }
-  /* printf("%e %e %e %e \n", J[0], J[1], J[2], J[3]); */
   // Compute the displacement gradient: Ud = Ua*J
   Ud[0] = Ua[0]*J[0] + Ua[1]*J[2];
   Ud[2] = Ua[2]*J[0] + Ua[3]*J[2];
