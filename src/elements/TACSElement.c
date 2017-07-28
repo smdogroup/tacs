@@ -363,7 +363,7 @@ int TACSElement::testResidual( double time,
   for ( int i = 0; i < nvars; i++ ){
     fd[i] = 0.5*(res1[i] - res2[i])/dh;
   }
-
+  
   // Reset the values of q and dq at time t
   for ( int i = 0; i < nvars; i++ ){
     q[i] = vars[i];
@@ -375,6 +375,7 @@ int TACSElement::testResidual( double time,
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar qtmp = q[i];
+    
 #ifdef TACS_USE_COMPLEX
     q[i] = qtmp + TacsScalar(0.0, dh);
     computeEnergies(time, &T1, &P1, Xpts, q, dq);
@@ -400,7 +401,7 @@ int TACSElement::testResidual( double time,
   // Evaluate the residual using the code
   memset(res1, 0, nvars*sizeof(TacsScalar));
   addResidual(time, res1, Xpts, vars, dvars, ddvars);
-
+  
   // Compute the error
   int max_err_index, max_rel_index;
   double max_err = get_max_error(res1, fd, nvars, &max_err_index);
@@ -695,16 +696,17 @@ int TACSElement::testJacobian( double time,
   double alpha = (1.0*rand())/RAND_MAX;
   double beta = (1.0*rand())/RAND_MAX;
   double gamma = (1.0*rand())/RAND_MAX;
+  
   memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
   addJacobian(time, mat, alpha, beta, gamma,
               Xpts, vars, dvars, ddvars);
-
+  
   // Evaluate the Jacobian
   int one = 1;
   TacsScalar a = 1.0, b = 0.0;
   BLASgemv("T", &nvars, &nvars, &a, mat, &nvars,
            pert, &one, &b, result, &one);
-
+  
   // The step length
   double dh = test_step_size;
 
@@ -724,7 +726,9 @@ int TACSElement::testJacobian( double time,
 
   // Form the FD/CS approximate
   form_approximate(res, temp, nvars, dh);
-
+  /* for (int i = 0; i < nvars; i++){ */
+  /*   printf("res[%d]: %f\n", i,res[i]); */
+  /* } */
   // Compute the error
   int max_err_index, max_rel_index;
   double max_err = get_max_error(result, res, nvars, &max_err_index);
@@ -804,7 +808,7 @@ int TACSElement::testStrainSVSens( const TacsScalar Xpts[],
   TacsScalar scale = 1.0;
   memset(elementSens, 0, nvars*sizeof(TacsScalar));
   addStrainSVSens(elementSens, pt, scale,
-			   strainSens, Xpts, vars);
+                  strainSens, Xpts, vars);
 
   memset(elementSensApprox, 0, nvars*sizeof(TacsScalar));
   memset(temp, 0, nvars*sizeof(TacsScalar));
@@ -991,9 +995,9 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
                                     const TacsScalar vars[], 
                                     const TacsScalar dvars[],
                                     const TacsScalar ddvars[] ){
+
   int nvars = numVariables();
   setDesignVars(x, dvLen);
-
   // Create an array to store the values of the adjoint-residual
   // product
   TacsScalar *result = new TacsScalar[ dvLen ];
@@ -1002,9 +1006,10 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[ nvars ];
   generate_random_array(adjoint, nvars);
-
+  
   // Evaluate the derivative of the adjoint-residual product
   double scale = 1.0;
+  
   addAdjResProduct(time, scale,
                    result, dvLen, adjoint,
                    Xpts, vars, dvars, ddvars);
@@ -1026,7 +1031,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 
   // Zero the residual
   TacsScalar *res = new TacsScalar[ nvars ];
-
+  
 #ifdef TACS_USE_COMPLEX
   // Perturb the design variables: xpert = x + dh*sign(result[k])
   for ( int k = 0; k < dvLen; k++ ){
@@ -1061,6 +1066,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 
   memset(res, 0, nvars*sizeof(TacsScalar));
   addResidual(time, res, Xpts, vars, dvars, ddvars);
+
   TacsScalar p1 = 0.0;
   for ( int k = 0; k < nvars; k++ ){
     p1 += res[k]*adjoint[k];
@@ -1095,8 +1101,10 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   // Compute the error
   int max_err_index, max_rel_index;
   double max_err = get_max_error(&dpdx, &fd_dpdx, 1, &max_err_index);
-  double max_rel = get_max_rel_error(&dpdx, &fd_dpdx, 1, &max_rel_index);
-
+  double max_rel = get_max_rel_error(&dpdx, &fd_dpdx, 1,
+                                     &max_rel_index);
+ 
+  test_print_level = 2;
   if (test_print_level > 0){
     fprintf(stderr, 
             "Testing the derivative of the adjoint-residual product for %s\n",

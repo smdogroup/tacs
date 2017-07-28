@@ -1036,6 +1036,21 @@ void BCSRMat::initBlockImpl(){
     applyssor = BCSRMatApplySSOR3;
     applysorpairs = BCSRMatApplySOR3;
     applyssorpairs = BCSRMatApplySSOR3;
+    break;    
+  case 4:
+    bfactor    = BCSRMatFactor4;
+    applylower = BCSRMatApplyLower4;
+    applyupper = BCSRMatApplyUpper4;
+    bmult      = BCSRMatVecMult4;
+    bmultadd   = BCSRMatVecMultAdd4;
+    bmatmult   = BCSRMatMatMultAdd4;
+    bfactorlower = BCSRMatFactorLower4;
+    bfactorupper = BCSRMatFactorUpper4;
+    applypartiallower = BCSRMatApplyPartialLower4;
+    applypartialupper = BCSRMatApplyPartialUpper4;
+    applyschur        = BCSRMatApplyFactorSchur4;
+    applysor  = BCSRMatApplySOR4;
+    applyssor = BCSRMatApplySSOR4;
     break;
   case 5:
     bfactor    = BCSRMatFactor5;

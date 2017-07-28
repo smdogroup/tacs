@@ -795,7 +795,6 @@ void DistMat::addValues( int nrow, const int *row,
       }
     }
   }
-
   if (temp){ delete [] temp; }
 }
 

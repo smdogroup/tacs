@@ -173,7 +173,7 @@ void BCSRMatApplyPartialLower5( BCSRMatData * data, TacsScalar * x,
   const int * diag = data->diag;
   const TacsScalar * A = data->A;
 
-  TacsScalar * xx = &x[6];
+  TacsScalar * xx = &x[5];
   int off = 5*var_offset;
 
   for ( int i = var_offset+1; i < nrows; i++ ){
