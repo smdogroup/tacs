@@ -275,7 +275,12 @@ void VecDistGetVars3( int bsize, int nvars, const int *vars, int lower,
 void VecDistSetVars3( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
 		      TACSBVecOperation op );
-
+void VecDistGetVars4( int bsize, int nvars, const int *vars, int lower,
+		      TacsScalar * x, TacsScalar * y,
+		      TACSBVecOperation op );
+void VecDistSetVars4( int bsize, int nvars, const int *vars, int lower,
+		      TacsScalar * x, TacsScalar * y,
+		      TACSBVecOperation op );
 void VecDistGetVars5( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar * x, TacsScalar * y, 
 		      TACSBVecOperation op );
@@ -824,7 +829,7 @@ void TACSBVecDistribute::initImpl( int bsize ){
   case 4:
     bgetvars = VecDistGetVars4;
     bsetvars = VecDistSetVars4;
-    break;  
+    break;
   case 5:
     bgetvars = VecDistGetVars5;
     bsetvars = VecDistSetVars5;
@@ -1142,7 +1147,7 @@ void VecDistGetVars4( int bsize, int nvars, const int *vars, int lower,
       y += 4;
     }
   }
-}-
+}
 
 void VecDistSetVars4( int bsize, int nvars, const int *vars, int lower,
 		      TacsScalar *x, TacsScalar *y, 
