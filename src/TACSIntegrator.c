@@ -2438,7 +2438,7 @@ void TACSDIRKIntegrator::evalFunctions( TACSFunction **funcs,
   
   // Retrieve the function values
   for ( int n = 0; n < numFuncs; n++ ){
-    funcVals[n] += funcs[n]->getFunctionValue();
+    funcVals[n] = funcs[n]->getFunctionValue();
   }
 }
 
