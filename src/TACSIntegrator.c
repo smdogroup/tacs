@@ -1052,7 +1052,7 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
   integrate();
 
   // Evaluate the functions
-  evalTimeAvgFunctions(funcs, num_funcs, fvals); 
+  this->evalFunctions(funcs, fvals, num_funcs);
 
 #endif
 
@@ -1073,7 +1073,7 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
     integrate();
    
     // Evaluate the functions
-    evalTimeAvgFunctions(funcs, num_funcs, fvals); 
+    this->evalFunctions(funcs, fvals, num_funcs);
 
     // Evaluate the CS derivative
     for ( int j = 0; j < num_funcs; j++ ){
@@ -1091,8 +1091,8 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
     // Integrate with perturbed x
     integrate();
 
-    // Evaluate the functions at the current time 
-    evalTimeAvgFunctions(funcs, num_funcs, ftmp); 
+    // Evaluate the functions at the current time
+    this->evalFunctions(funcs, ftmp, num_funcs); 
 
     // Evaluate the FD derivative
     for ( int j = 0; j < num_funcs; j++ ){
@@ -1112,26 +1112,6 @@ void TACSIntegrator::getFDFuncGrad( int _num_dv, TacsScalar *_x,
 }
 
 /*
-  Evaluate time average of the function value using discretization
-  from the integration scheme (default implementation)
-*/
-void TACSIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
-                                           int numFuncs, 
-                                           TacsScalar *funcVals) {
-  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
-
-  // Loop over time steps
-  for ( int k = 1; k < num_time_steps; k++ ) {
-    // Set the states into TACS
-    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
-    
-    // Evaluate and add the function values from this step
-    this->addFunctions(h, funcs, numFuncs, funcVals); 
-  }
-}
-
-
-/*
   Add up the contributions to the total derivative from this stage/stage
 */
 void TACSIntegrator::addToTotalDerivative( double scale, TACSBVec **adjoint ) {
@@ -1140,49 +1120,6 @@ void TACSIntegrator::addToTotalDerivative( double scale, TACSBVec **adjoint ) {
 
   // Add lam.dR/dx
   tacs->addAdjointResProducts(scale, adjoint, num_funcs, dfdx, num_design_vars);
-}
-
-
-/*
-  Evalute the functions using the integration coefficient
-*/
-void TACSIntegrator::addFunctions( double tcoeff, TACSFunction **funcs,
-                                   int numFuncs, TacsScalar *funcVals ){
-  // Check whether these are two-stage or single-stage functions
-  int twoStage = 0;
-  for ( int n = 0; n < numFuncs; n++ ){
-    if (funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
-      twoStage = 1;
-      break;
-    }
-  }
-
-  // Initialize the function if had already not been initialized
-  if (twoStage){
-    for ( int n = 0; n < numFuncs; n++ ){
-      funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
-    }
-    tacs->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
-                             funcs, numFuncs);
-    for ( int n = 0; n < numFuncs; n++ ){
-      funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);
-    }
-  }
-  
-  // Perform the integration required to evaluate the function
-  for ( int n = 0; n < numFuncs; n++ ){
-    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
-  }
-  tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
-                           funcs, numFuncs);
-  for ( int n = 0; n < numFuncs; n++ ){
-    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
-  }
-  
-  // Retrieve the function values
-  for ( int n = 0; n < numFuncs; n++ ){
-    funcVals[n] += funcs[n]->getFunctionValue();
-  }
 }
 
 /*
@@ -1829,7 +1766,10 @@ void TACSBDFIntegrator::marchBackwards( ) {
   time_reverse          = 0.0;
 
   double t0 = MPI_Wtime();
-  
+
+  // Evaluate the function values
+  this->evalFunctions(funcs, fvals, num_funcs);
+
   // Adjoint variables for each function of interest
   TACSBVec **psi = new TACSBVec*[ num_funcs ];
   for ( int n = 0; n < num_funcs; n++ ){
@@ -1863,9 +1803,6 @@ void TACSBDFIntegrator::marchBackwards( ) {
     int adj_index = k % num_adjoint_rhs;
 
     double tassembly = MPI_Wtime();
-
-    // Evalute the function
-    this->addFunctions(h, funcs, num_funcs, fvals);
 
     // Setup the adjoint RHS
     for ( int n = 0; n < num_funcs; n++ ){
@@ -2353,11 +2290,77 @@ void TACSDIRKIntegrator::integrate(){
 /*
   Evaluate the functions of interest
 */
+void TACSIntegrator::evalFunctions( TACSFunction **funcs, 
+                                    TacsScalar *funcVals,
+                                    int numFuncs ){
+  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
+  // Check whether these are two-stage or single-stage functions
+  int twoStage = 0;
+  for ( int n = 0; n < numFuncs; n++ ){
+    if (funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
+      twoStage = 1;
+      break;
+    }
+  }
+
+  // Initialize the function if had already not been initialized
+  if (twoStage){
+    // First stage
+    for ( int n = 0; n < numFuncs; n++ ){
+      funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+    }
+    
+    for ( int k = 1; k < num_time_steps; k++ ){
+      current_time_step = k;
+      
+      // Set the stages
+      setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+
+      double tcoeff = h;
+      tacs->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
+                               funcs, numFuncs);
+        
+      for ( int n = 0; n < numFuncs; n++ ){
+        funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);
+      }
+    }
+  }
+
+  // Second stage
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+  }
+    
+  for ( int k = 1; k < num_time_steps; k++ ){
+    current_time_step = k;
+      
+    // Set the stages
+    setTACSStates(time[k], q[k], qdot[k], qddot[k]);
+
+    double tcoeff = h;
+    tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
+                             funcs, numFuncs);
+        
+    for ( int n = 0; n < numFuncs; n++ ){
+      funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+    }
+  }
+
+  // Retrieve the function values
+  for ( int n = 0; n < numFuncs; n++ ){
+    funcVals[n] = funcs[n]->getFunctionValue();
+  }
+}
+
+/*
+  Evaluate the functions of interest
+*/
 void TACSDIRKIntegrator::evalFunctions( TACSFunction **funcs, 
                                         TacsScalar *funcVals,
                                         int numFuncs ){
+  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
 
-// Check whether these are two-stage or single-stage functions
+  // Check whether these are two-stage or single-stage functions
   int twoStage = 0;
   for ( int n = 0; n < numFuncs; n++ ){
     if (funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
@@ -2458,6 +2461,9 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 
   double t0 = MPI_Wtime();
 
+  // Evaluate the function value
+  this->evalFunctions(funcs, fvals, num_funcs);
+  
   // Inter-step adjoint variables for each function of interest
   TACSBVec **psi = new TACSBVec*[ num_funcs ];
   TACSBVec **phi = new TACSBVec*[ num_funcs ];
@@ -2684,36 +2690,6 @@ void TACSDIRKIntegrator::marchBackwards( ) {
 }
 
 /*
-  Evaluate the time average of functions:
-  F = \sum_{k=0}^N h_k \sum_{j=0}^s b_j f(q_{k,j},t)
-*/
-void TACSDIRKIntegrator::evalTimeAvgFunctions( TACSFunction **funcs, 
-                                               int numFuncs, 
-                                               TacsScalar *funcVals) {
-  memset(funcVals, 0, numFuncs*sizeof(TacsScalar));
-
-  TacsScalar *ftmp = new TacsScalar[numFuncs];  
-  memset(ftmp, 0, numFuncs*sizeof(TacsScalar));
-  
-  // Loop over time steps
-  for ( int k = 1; k < num_time_steps; k++ ) {
-    int toffset = k*num_stages;
-
-    // Loop over all stages
-    for ( int j = 0; j < num_stages; j++ ){
-
-      // Set the states into TACS
-      setTACSStates(tS[toffset+j], qS[toffset+j], 
-                    qdotS[toffset+j], qddotS[toffset+j]);
-      
-      // Evaluate the functions
-      this->addFunctions(h*B[j], funcs, numFuncs, funcVals);
-    }
-  }
-  delete [] ftmp;
-}
-
-/*
   Constructor for ABM Integration scheme
 
   Input:
@@ -2897,6 +2873,9 @@ void TACSABMIntegrator::marchBackwards(){
 
   double t0 = MPI_Wtime();
 
+  // Evaluate the function values
+  this->evalFunctions(funcs, fvals, num_funcs);
+
   // Temporary vectors for adjoint 
   TACSBVec **psibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ];  
   TACSBVec **phibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ]; 
@@ -2982,9 +2961,6 @@ void TACSABMIntegrator::marchBackwards(){
     //---------------------------------------------------------------//
    
     double tassembly = MPI_Wtime();
-
-    // Evaluate all functions (should be done before all sens calls)
-    this->addFunctions(h, funcs, num_funcs, fvals);
 
     // Add the contribution from dfdq to RHS of the corresponding
     // adjoint index
@@ -3349,6 +3325,9 @@ void TACSNBGIntegrator::marchBackwards(){
                            // steps)
   double t0 = MPI_Wtime();
   
+  // Evaluate the function values
+  this->evalFunctions(funcs, fvals, num_funcs);
+
   // Temporary vectors for adjoint 
   TACSBVec **psibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ];  
   TACSBVec **phibin = new TACSBVec*[ num_funcs*num_adjoint_rhs ]; 
@@ -3429,9 +3408,6 @@ void TACSNBGIntegrator::marchBackwards(){
     //---------------------------------------------------------------//
    
     double tassembly = MPI_Wtime();
-
-    // Evaluate all functions (should be done before all sens calls)
-    this->addFunctions(h, funcs, num_funcs, fvals);
 
     // Add the contribution from dfdq to RHS of the corresponding
     // adjoint index

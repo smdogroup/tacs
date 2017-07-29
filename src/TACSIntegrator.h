@@ -156,9 +156,9 @@ class TACSIntegrator : public TACSObject {
   // Virtual functions for reverse mode
   // ----------------------------------
   virtual void marchBackwards() = 0;
-  virtual void evalTimeAvgFunctions( TACSFunction **funcs, 
-                                     int numFuncs, TacsScalar *funcVals);
-  
+  virtual void evalFunctions( TACSFunction **funcs, TacsScalar *funcVals,
+                              int numFuncs );  
+
   // These functions are to be used during adjoint solve and total
   // derivative computations. Once the state variables are set, the
   // current state can not only beq used to find the adjoint variables
@@ -175,8 +175,6 @@ class TACSIntegrator : public TACSObject {
   void adjointSolve( int adj_index, TACSBVec **adjoint );
   */
   void addToTotalDerivative( double scale, TACSBVec **adjoint );
-  void addFunctions( double tcoeff, TACSFunction **funcs, 
-                     int numFuncs, TacsScalar *funcVals);
     
   // Functions to pack common logics (file io, output) in one place
   // and use them in appropriate places
@@ -309,9 +307,6 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   void getLinearizationCoeffs( double *alpha, double *beta, double *gamma );
   
   void marchBackwards();
-
-  // Overridden procedure
-  void evalTimeAvgFunctions( TACSFunction **funcs, int numFuncs, TacsScalar *funcVals);
 
  private:
   void checkButcherTableau();
