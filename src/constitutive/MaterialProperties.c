@@ -26,11 +26,11 @@ const static double HUGE_FAILURE_LOAD = 1e20;
   C = Interaction strength such that sigma_1 = sigma_2 = C
 */
 OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho, 
-		    TacsScalar _E1, TacsScalar _E2, TacsScalar _nu12, 
-		    TacsScalar _G12, TacsScalar _G23, TacsScalar _G13,
-		    TacsScalar _Xt, TacsScalar _Xc, 
-		    TacsScalar _Yt, TacsScalar _Yc, 
-		    TacsScalar _S12, TacsScalar _C ){
+                    TacsScalar _E1, TacsScalar _E2, TacsScalar _nu12, 
+                    TacsScalar _G12, TacsScalar _G23, TacsScalar _G13,
+                    TacsScalar _Xt, TacsScalar _Xc, 
+                    TacsScalar _Yt, TacsScalar _Yc, 
+                    TacsScalar _S12, TacsScalar _C ){
   plyThickness = _plyThickness;
   rho = _rho;
   E1 = _E1;
@@ -108,7 +108,7 @@ F12 = %e. Setting F12 = 0.\n", TacsRealPart(C), TacsRealPart(F12));
     fprintf(stderr, "OrthoPly: Tsai-Wu coefficients: F11: %e, F22: %e, \
 F66: %e, F1: %e, F2: %e\n", TacsRealPart(F11), TacsRealPart(F22), 
             TacsRealPart(F66), TacsRealPart(F1), TacsRealPart(F2));
-    F12 = 0.0;	    
+    F12 = 0.0;      
   }
 
   // Set the default value of the KS penalty
@@ -120,7 +120,7 @@ F66: %e, F1: %e, F2: %e\n", TacsRealPart(F11), TacsRealPart(F22),
   material and
 */
 OrthoPly::OrthoPly( TacsScalar _plyThickness, TacsScalar _rho, 
-		    TacsScalar E, TacsScalar nu, TacsScalar ys ){
+                    TacsScalar E, TacsScalar nu, TacsScalar ys ){
   plyThickness = _plyThickness;
   rho = _rho;
   E1 = E;
@@ -280,8 +280,8 @@ void OrthoPly::getTsaiWu( TacsScalar *_F1, TacsScalar *_F2,
   Retrieve the stiffness invariants for the laminate
 */
 void OrthoPly::getLaminateInvariants( TacsScalar *U1, TacsScalar *U2, 
-				      TacsScalar *U3, TacsScalar *U4,
-				      TacsScalar *U5, TacsScalar *U6 ){
+                                      TacsScalar *U3, TacsScalar *U4,
+                                      TacsScalar *U5, TacsScalar *U6 ){
   *U1 = 0.125*(3.0*Q11 + 3.0*Q22 + 2.0*Q12 + 4.0*Q66);
   *U2 = 0.5*(Q11 - Q22);
   *U3 = 0.125*(Q11 + Q22 - 2.0*Q12 - 4.0*Q66);
@@ -387,7 +387,7 @@ void OrthoPly::calculateQbarAngleSens( TacsScalar Qbar[], TacsScalar angle ){
 } 
 
 void OrthoPly::calculateStress( TacsScalar stress[], const TacsScalar strain[], 
-				TacsScalar angle ){
+                                TacsScalar angle ){
   TacsScalar strn[3], strs[3];
   transformStrainGlobal2Ply(strn, strain, angle);
   getPlyStress(strs, strn);
@@ -920,8 +920,8 @@ void OrthoPly::printProperties(){
 // First, the stress transformations
 // Transform stress from the global to the local frame  
 void OrthoPly::transformStressGlobal2Ply( TacsScalar plyStress[], 
-					  const TacsScalar global[], 
-					  TacsScalar angle ){
+                                          const TacsScalar global[], 
+                                          TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
@@ -936,8 +936,8 @@ void OrthoPly::transformStressGlobal2Ply( TacsScalar plyStress[],
 
 // Transform stress from the ply frame to the global frame
 void OrthoPly::transformStressPly2Global( TacsScalar global[], 
-					  const TacsScalar plyStress[], 
-					  TacsScalar angle ){
+                                          const TacsScalar plyStress[], 
+                                          TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
@@ -951,8 +951,8 @@ void OrthoPly::transformStressPly2Global( TacsScalar global[],
 
 // The sensitivity of the transformation of 
 void OrthoPly::transformStressGlobal2PlyAngleSens( TacsScalar plyStress[], 
-						   const TacsScalar global[], 
-						   TacsScalar angle ){
+                                                   const TacsScalar global[], 
+                                                   TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
@@ -967,8 +967,8 @@ void OrthoPly::transformStressGlobal2PlyAngleSens( TacsScalar plyStress[],
 
   // Transform stress from the ply frame to the global frame
 void OrthoPly::transformStressPly2GlobalAngleSens( TacsScalar global[], 
-						   const TacsScalar plyStress[], 
-						   TacsScalar angle ){
+                                                   const TacsScalar plyStress[], 
+                                                   TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
@@ -986,8 +986,8 @@ void OrthoPly::transformStressPly2GlobalAngleSens( TacsScalar global[],
 // Next, the strain transformations
 // Transform strain from the global to the local frame
 void OrthoPly::transformStrainGlobal2Ply( TacsScalar plyStrain[], 
-					  const TacsScalar global[], 
-					  TacsScalar angle ){
+                                          const TacsScalar global[], 
+                                          TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
   
@@ -1001,8 +1001,8 @@ void OrthoPly::transformStrainGlobal2Ply( TacsScalar plyStrain[],
 
 // Transform stress from the ply frame to the global frame
 void OrthoPly::transformStrainPly2Global( TacsScalar global[], 
-					  const TacsScalar plyStrain[], 
-					  TacsScalar angle ){
+                                          const TacsScalar plyStrain[], 
+                                          TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
@@ -1017,8 +1017,8 @@ void OrthoPly::transformStrainPly2Global( TacsScalar global[],
 
 // The sensitivity of the transformation to the 
 void OrthoPly::transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[], 
-						   const TacsScalar global[], 
-						   TacsScalar angle ){
+                                                   const TacsScalar global[], 
+                                                   TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
@@ -1034,8 +1034,8 @@ void OrthoPly::transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[],
 
 // Transform stress from the ply frame to the global frame
 void OrthoPly::transformStrainPly2GlobalAngleSens( TacsScalar global[], 
-						   const TacsScalar plyStrain[],
-						   TacsScalar angle ){
+                                                   const TacsScalar plyStrain[],
+                                                   TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
