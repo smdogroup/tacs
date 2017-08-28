@@ -228,7 +228,6 @@ cdef _init_Mat(TACSMat *ptr):
    return mat
 
 cdef class Mat:
-   cdef TACSMat *ptr
    def __cinit__(self):
       '''
       A generic wrapper for any of the TACS matrix types
@@ -273,7 +272,6 @@ cdef class Mat:
 
 # Create a generic preconditioner class
 cdef class Pc:
-   cdef TACSPc *ptr
    def __cinit__(self, Mat mat):
       '''
       This creates a default preconditioner depending on the matrix
@@ -309,7 +307,6 @@ cdef class Pc:
       self.ptr.applyFactor(x.ptr, y.ptr)
 
 cdef class KSM:
-   cdef TACSKsm *ptr
    def __cinit__(self, Mat mat, Pc pc, int m, int nrestart, int isFlexible=0):
       '''
       Create a GMRES object for solving a linear system with or without a preconditioner.
