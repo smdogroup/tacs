@@ -298,7 +298,6 @@ cdef class Pc:
         self.ptr.applyFactor(x.ptr, y.ptr)
 
 cdef class KSM:
-    cdef TACSKsm *ptr
     def __cinit__(self, Mat mat, Pc pc, int m, int nrestart, int isFlexible=0):
         '''
         Create a GMRES object for solving a linear system with or
