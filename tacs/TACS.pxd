@@ -434,3 +434,12 @@ cdef extern from "TACSIntegrator.h":
                         double tinit, double tfinal,
                         int num_steps_per_sec,
                         int order)
+
+cdef class Pc:
+   cdef TACSPc *ptr
+
+cdef class KSM:
+   cdef TACSKsm *ptr
+
+cdef class Mat:
+   cdef TACSMat *ptr
