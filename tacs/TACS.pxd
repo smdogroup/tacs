@@ -201,7 +201,10 @@ cdef inline _init_Pc(TACSPc *ptr):
     pc.ptr = ptr
     pc.ptr.incref()
     return pc
-   
+
+cdef class KSM:
+    cdef TACSKsm *ptr
+    
 cdef extern from "TACSAuxElements.h":
     cdef cppclass TACSAuxElements(TACSObject):
         TACSAuxElements(int)
