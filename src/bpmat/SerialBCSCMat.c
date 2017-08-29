@@ -245,7 +245,9 @@ BCSCMat *SerialBCSCMat::getBCSCMat(){
   This code uses a direct factorization and applyFactor can be used to
   solve the problem.
 */
-SerialBCSCPc::SerialBCSCPc( SerialBCSCMat *mat ){
+SerialBCSCPc::SerialBCSCPc( SerialBCSCMat *_mat ){
+  mat = _mat;
+  mat->incref();
   fill = 10.0;
   pivot = new BCSCMatPivot(mat->getBCSCMat());
   pivot->incref();
@@ -255,6 +257,7 @@ SerialBCSCPc::SerialBCSCPc( SerialBCSCMat *mat ){
   Free the data associated with the preconditioner
 */
 SerialBCSCPc::~SerialBCSCPc(){
+  mat->decref();
   pivot->decref();
 }
 
@@ -297,4 +300,11 @@ void SerialBCSCPc::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
     // Apply the factor
     pivot->applyFactor(y, 1);
   }
+}
+
+/*
+  Retrieve the underlying matrix
+*/
+void SerialBCSCPc::getMat( TACSMat **_mat ){
+  *_mat = mat;
 }

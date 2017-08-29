@@ -352,8 +352,11 @@ const char *PMat::matName = "PMat";
 /*
   Build a simple SOR or Symmetric-SOR preconditioner for the matrix
 */
-PSOR::PSOR( PMat *mat, int _zero_guess, TacsScalar _omega, int _iters, 
+PSOR::PSOR( PMat *_mat, int _zero_guess, TacsScalar _omega, int _iters, 
             int _isSymmetric, int *pairs, int npairs ){
+  mat = _mat;
+  mat->incref();
+
   // Get the on- and off-diagonal components of the matrix
   mat->getBCSRMat(&Aloc, &Bext);
   Aloc->incref();
@@ -421,6 +424,7 @@ PSOR::PSOR( PMat *mat, int _zero_guess, TacsScalar _omega, int _iters,
   Free the SOR preconditioner
 */
 PSOR::~PSOR(){
+  mat->decref();
   Aloc->decref();
   Bext->decref();
   ext_dist->decref();
@@ -500,29 +504,54 @@ void PSOR::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
   }
 }
 
+/*
+  Retrieve the underlying matrix
+*/
+void PSOR::getMat( TACSMat **_mat ){
+  *_mat = mat;
+}
+
 /*!
   Build the additive Schwarz preconditioner 
 */
-AdditiveSchwarz::AdditiveSchwarz( PMat *mat, int levFill, double fill ){
+AdditiveSchwarz::AdditiveSchwarz( PMat *_mat, int levFill, double fill ){
+  mat = _mat;
+  mat->incref();
+
+  // Get the underlying matrices in the distributed matrix class
   BCSRMat *B;
   mat->getBCSRMat(&Aloc, &B);
   Aloc->incref();
 
+  // Form the preconditioner matrix for the on-processor (block-diagonal)
+  // components of the matrix. Incref the pointer to the matrix
   Apc = new BCSRMat(mat->getMPIComm(), Aloc, levFill, fill);
   Apc->incref();
 
   alpha = 0.0; // Diagonal scalar to be added to the preconditioner
 }
 
+/*
+  Free the memory from the additive Schwarz preconditioner
+*/
 AdditiveSchwarz::~AdditiveSchwarz(){
+  mat->decref();
   Aloc->decref();
   Apc->decref();
 }
 
+/*
+  Add the diagonal shift factor to the preconditioner. The shift
+  defaults to zero
+*/
 void AdditiveSchwarz::setDiagShift( TacsScalar _alpha ){
   alpha = _alpha;
 }
 
+/*
+  Factor the preconditioner by copying the values from the 
+  block-diagonal matrix and then factoring the copy.
+*/
 void AdditiveSchwarz::factor(){
   Apc->copyValues(Aloc);
   if (alpha != 0.0){ 
@@ -553,7 +582,8 @@ void AdditiveSchwarz::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
     Apc->applyFactor(x, y);
   }
   else {
-    fprintf(stderr, "AdditiveSchwarz type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "AdditiveSchwarz type error: Input/output must be TACSBVec\n");
   }
 }
 
@@ -578,8 +608,16 @@ void AdditiveSchwarz::applyFactor( TACSVec *txvec ){
     Apc->applyFactor(x);
   }
   else {
-    fprintf(stderr, "AdditiveSchwarz type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "AdditiveSchwarz type error: Input/output must be TACSBVec\n");
   }
+}
+
+/*!
+  Retrieve the underlying matrix
+*/
+void AdditiveSchwarz::getMat( TACSMat **_mat ){
+  *_mat = mat;
 }
 
 /*!
@@ -591,6 +629,7 @@ ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill,
   mat = _mat;
   mat->incref();
 
+  // Copy the diagonal matrix
   BCSRMat *Bext;
   mat->getBCSRMat(&Aloc, &Bext);
   Aloc->incref();
@@ -623,12 +662,12 @@ ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill,
       wvec->incref();
     }
     else {
-      fprintf(stderr, "ApproximateSchur type error: Input/output must be TACSBVec\n");
+      fprintf(stderr, 
+              "ApproximateSchur type error: Input/output must be TACSBVec\n");
     }
     
     int nrestart = 0;
     inner_ksm = new GMRES(gsmat, inner_gmres_iters, nrestart);
-
     inner_ksm->incref();
     inner_ksm->setTolerances(inner_rtol, inner_atol);
 
@@ -641,11 +680,13 @@ ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill,
   }
 }
 
+/*
+  Free the data associated with the approximate Schur preconditioner
+*/
 ApproximateSchur::~ApproximateSchur(){
   Aloc->decref();
   Apc->decref();
   mat->decref();
-
   if (gsmat){ gsmat->decref(); }
   if (rvec){ rvec->decref(); }
   if (wvec){ wvec->decref(); }
@@ -673,6 +714,9 @@ void ApproximateSchur::factor(){
   Apc->factor();
 }
 
+/*
+  Print the non-zero pattern to a file
+*/
 void ApproximateSchur::printNzPattern( const char *fileName ){
   // Get the sizes of the Aloc and Bext matrices
   int b, Na, Ma;
@@ -824,6 +868,13 @@ void ApproximateSchur::applyFactor( TACSVec * txvec, TACSVec * tyvec ){
   }
 }
 
+/*
+  Retrieve the underlying matrix
+*/
+void ApproximateSchur::getMat( TACSMat **_mat ){
+  *_mat = mat;
+}
+
 /*!
   The block-Jacobi-preconditioned approximate global Schur matrix. 
 
@@ -867,7 +918,9 @@ void GlobalSchurMat::getSize( int *_nr, int *_nc ){
   *_nc = nvars;
 }
 
-// Compute y <- A * x 
+/*
+  Compute y <- A * x 
+*/
 void GlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
@@ -895,11 +948,14 @@ void GlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
     yvec->axpy(1.0, xvec);
   }
   else {
-    fprintf(stderr, "GlobalSchurMat type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "GlobalSchurMat type error: Input/output must be TACSBVec\n");
   }
 }
 
-// Compute y <- Bext * xext 
+/*
+  Compute y <- Bext * xext
+*/
 void GlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){  
   TacsScalar *x, *y;
   xvec->getArray(&x);

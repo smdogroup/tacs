@@ -74,6 +74,7 @@ cdef extern from "KSM.h":
     cdef cppclass TACSPc(TACSObject):
         void factor()
         void applyFactor(TACSVec *x, TACSVec *y)
+        void getMat(TACSMat**)
         
     cdef cppclass KSMPrint(TACSObject):
         pass
@@ -340,6 +341,12 @@ cdef extern from "TACSAssembler.h":
 
 cdef class Assembler:
     cdef TACSAssembler *ptr
+
+cdef inline _init_Assembler(TACSAssembler *ptr):
+    tacs = Assembler()
+    tacs.ptr = ptr
+    tacs.ptr.incref()
+    return tacs
       
 cdef extern from "TACSMeshLoader.h":
     cdef cppclass TACSMeshLoader(TACSObject):

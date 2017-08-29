@@ -345,9 +345,12 @@ void ScMat::getBCSRMat( BCSRMat ** _B, BCSRMat ** _E,
   fill:    the expected/best estimate of the fill-in factor
   reorder: flag to indicate whether to re-order the global Schur complement
 */
-PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
+PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
                   int reorder_schur_complement ){
-  smat->getBCSRMat(&B, &E, &F, &C);
+  mat = _mat;
+  mat->incref();
+
+  mat->getBCSRMat(&B, &E, &F, &C);
   B->incref(); 
   E->incref();
   F->incref(); 
@@ -365,8 +368,8 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   // Get the block size
   int bsize = B->getBlockSize();
 
-  b_map = smat->getLocalMap();
-  c_map = smat->getSchurMap();
+  b_map = mat->getLocalMap();
+  c_map = mat->getSchurMap();
   b_map->incref();
   c_map->incref();
 
@@ -377,7 +380,7 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
   b_ctx->incref();
 
   // Symbolically calculate Sc = C - F * B^{-1} * E
-  TACSVarMap *rmap = smat->getVarMap();
+  TACSVarMap *rmap = mat->getVarMap();
   MPI_Comm comm = rmap->getMPIComm();
   Bpc = new BCSRMat(comm, B, E, F, C, levFill, fill,
                     &Epc, &Fpc, &Sc, use_full_schur);
@@ -513,7 +516,7 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
     new TACSBVecIndices(&tacs_schur_vars, nlocal_schur);
 
   // Create the index set for the global Schur complement variables
-  tacs_schur_dist = new TACSBVecDistribute(smat->getVarMap(), 
+  tacs_schur_dist = new TACSBVecDistribute(mat->getVarMap(), 
                                            tacs_schur_index);
   tacs_schur_dist->incref();
 
@@ -563,6 +566,7 @@ PcScMat::PcScMat( ScMat *smat, int levFill, double fill,
 */
 PcScMat::~PcScMat(){
   // Decrease reference counts to the matrices
+  mat->decref();
   B->decref();
   E->decref();
   F->decref();
@@ -954,4 +958,11 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
   else {
     fprintf(stderr, "PcScMat type error: Input/output must be TACSBVec\n");
   }
+}
+
+/*
+  Retrieve the underlying matrix
+*/
+void PcScMat::getMat( TACSMat **_mat ){
+  *_mat = mat;
 }

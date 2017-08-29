@@ -116,7 +116,7 @@ class ScMat : public TACSMat {
 */
 class PcScMat : public TACSPc {
  public:
-  PcScMat( ScMat *smat, int levFill, double fill, 
+  PcScMat( ScMat *_mat, int levFill, double fill, 
            int reorder_schur_complement );
   ~PcScMat();
 
@@ -124,6 +124,7 @@ class PcScMat : public TACSPc {
   // -------------------------------------------
   void factor();
   void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void getMat( TACSMat **_mat );
   void testSchurComplement( TACSVec *in, TACSVec *out );
 
   // Monitor the factorization time on each process
@@ -136,6 +137,7 @@ class PcScMat : public TACSPc {
   void setAlltoallAssemblyFlag( int flag );
 
  private:
+  ScMat *mat;
   BCSRMat *B, *E, *F, *C; // The block matrices
   BCSRMat *Bpc, *Epc, *Fpc; // The diagonal contributions
   BCSRMat *Sc; // Schur complement from this proc.

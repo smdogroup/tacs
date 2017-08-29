@@ -35,24 +35,24 @@ class TACSCreator : public TACSObject {
   // Set the connectivity for the global mesh
   // ----------------------------------------
   void setGlobalConnectivity( int _num_nodes, int _num_elements,
-			      const int *_elem_node_ptr, 
+                              const int *_elem_node_ptr, 
                               const int *_elem_node_conn,
-			      const int *_elem_id_nums );
+                              const int *_elem_id_nums );
 
   // Set the boundary conditions
   // ---------------------------
   void setBoundaryConditions( int _num_bcs, 
                               const int *_bc_nodes, 
                               const int *_bc_ptr=NULL,
-			      const int *_bc_vars=NULL,
+                              const int *_bc_vars=NULL,
                               const TacsScalar *_bc_vals=NULL );
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
   void setDependentNodes( int num_dep_nodes, 
                           const int *_dep_node_ptr,
-			  const int *_dep_node_conn, 
-			  const double *_dep_node_weights );
+                          const int *_dep_node_conn, 
+                          const double *_dep_node_weights );
 
   // Set the nodal locations
   // -----------------------

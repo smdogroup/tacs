@@ -59,8 +59,10 @@ class SerialBCSCPc : public TACSPc {
   // ---------------------------------------------
   void factor();
   void applyFactor( TACSVec *txvec, TACSVec *tyvec );
+  void getMat( TACSMat **_mat );
 
  private:
+  SerialBCSCMat *mat;
   double fill;
   BCSCMatPivot *pivot;
 };

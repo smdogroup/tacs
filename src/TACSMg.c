@@ -24,8 +24,8 @@
   sor_symmetric: symmetric SOR flag
 */
 TACSMg::TACSMg( MPI_Comm _comm, int _nlevels, 
-		double _sor_omega, int _sor_iters, 
-		int _sor_symmetric ){
+                double _sor_omega, int _sor_iters, 
+                int _sor_symmetric ){
   // Copy over the data 
   comm = _comm;
   nlevels = _nlevels;
@@ -121,8 +121,8 @@ TACSMg::~TACSMg(){
   iters:     the number of iterations to take at this level
 */
 void TACSMg::setLevel( int level, TACSAssembler *_tacs,
-		       TACSBVecInterp *_interp, 
-		       int _iters, TACSMat *_mat,
+                       TACSBVecInterp *_interp, 
+                       int _iters, TACSMat *_mat,
                        TACSPc *_smoother ){
   tacs[level] = _tacs;
   tacs[level]->incref();
@@ -297,7 +297,7 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
   multi-grid level within the problem. 
 */
 void TACSMg::assembleMatType( ElementMatrixType matType, 
-			      MatrixOrientation matOr ){
+                              MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
   for ( int i = 0; i < nlevels-1; i++ ){
@@ -310,6 +310,13 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
   if (tacs[nlevels-1]){
     tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
   }
+}
+
+/*
+  Get the matrix operator associated with the highest 
+*/
+void TACSMg::getMat( TACSMat **_mat ){
+  *_mat = mat[0];
 }
 
 /*
@@ -362,7 +369,7 @@ void TACSMg::setMonitor( KSMPrint *_monitor ){
   Repeatedly apply the multi-grid method until the problem is solved
 */
 void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
-		    double rtol, double atol ){
+                    double rtol, double atol ){
   b[0] = bvec; // Set the RHS at the finest level
   x[0] = xvec; // Set the solution at the finest level
   

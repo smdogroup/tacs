@@ -86,7 +86,7 @@ class TACSVec : public TACSObject {
   virtual TacsScalar dot( TACSVec *x ) = 0;  // Compute x^{T} * y
   virtual void mdot( TACSVec **x, 
                      TacsScalar *ans, int m ); // Multiple dot product
-  virtual void axpy( TacsScalar alpha, TACSVec *x ) = 0; // Compute y <- y + alpha * x
+  virtual void axpy( TacsScalar alpha, TACSVec *x ) = 0; // y <- y + alpha * x
   virtual void copyValues( TACSVec *x ) = 0; // Copy values from x to this
   virtual void axpby( TacsScalar alpha, TacsScalar beta, 
                       TACSVec *x ) = 0; // Compute y <- alpha * x + beta * y 
@@ -178,6 +178,7 @@ class TACSMat : public TACSObject {
 class TACSPc : public TACSObject {
  public:
   virtual ~TACSPc(){}
+
   // Apply the preconditioner to x, to produce y
   // -------------------------------------------
   virtual void applyFactor( TACSVec *x, TACSVec *y ) = 0;
@@ -185,6 +186,11 @@ class TACSPc : public TACSObject {
   // Factor (or set up) the preconditioner 
   // -------------------------------------
   virtual void factor() = 0;
+
+  // Get the matrix associated with the preconditioner itself
+  virtual void getMat( TACSMat **_mat ){
+    *_mat = NULL;
+  }
 
   // Retrieve the object name
   // ------------------------
@@ -267,6 +273,9 @@ class KSMPrintStdout : public KSMPrint {
   int freq;
 };
 
+/*
+  Write out the print statements to a file
+*/
 class KSMPrintFile : public KSMPrint {
   KSMPrintFile( const char *filename, const char *_descript, 
                 int _rank, int _freq );
@@ -298,15 +307,17 @@ class PCG : public TACSKsm {
   void setMonitor( KSMPrint *_print );
 
  private:
+  // Operators in the KSM method
   TACSMat *mat;
   TACSPc *pc;
 
-  double rtol;
-  double atol;
+  // The relative/absolute tolerances
+  double rtol, atol;
   
-  int nouter;
-  int reset;
+  // Reset parameters
+  int nouter, reset;
   
+  // Vectors required for the solution method
   TACSVec *work;
   TACSVec *R;
   TACSVec *P;
@@ -379,10 +390,10 @@ class GMRES : public TACSKsm {
   int isFlexible;
 
   TACSVec **W;   // The Arnoldi vectors that span the Krylov subspace
-  TACSVec **Z;   // An additional subspace of vectors -- for the flexible variant
+  TACSVec **Z;   // An additional flexible subspace of vectors
   TACSVec *work; // A work vector
 
-  int *Hptr;   // A vector to make accessing the elements of the matrix easier!
+  int *Hptr;   // Array to make accessing the elements of the matrix easier!
   TacsScalar *H; // The Hessenberg matrix
 
   double rtol;
@@ -440,12 +451,12 @@ class GCROT : public TACSKsm {
   int outer, max_outer; // Number of outer vectors
   int isFlexible;
 
-  TACSVec **W;     // The Arnoldi vectors that span the Krylov subspace
-  TACSVec **Z;     // An additional subspace of vectors - for the flexible variant
+  TACSVec **W; // The Arnoldi vectors that span the Krylov subspace
+  TACSVec **Z; // Additional subspace of vectors - for the flexible variant
   TACSVec **U, **C; // The subspaces for the outer GCR iterations
   TACSVec *u_hat, *c_hat, *R;
 
-  int *Hptr;   // A vector to make accessing the elements of the matrix easier!
+  int *Hptr; // Array to make accessing the elements of the matrix easier!
   TacsScalar *H; // The Hessenberg matrix
   TacsScalar *B; // The matrix that stores C^{T}*A*W
 
@@ -501,8 +512,8 @@ class ConGMRES : public TACSKsm {
   int isFlexible;
 
   // Constraint information
-  int nconstr;     // The number of constraints
-  TACSVec **C;       // The set of constraints (that are orthonormalized on input)
+  int nconstr; // The number of constraints
+  TACSVec **C; // The set of constraints (that are orthonormalized on input)
   TacsScalar *lambda;
 
   void con_mat_mult( TACSVec *x, TacsScalar *y, 
@@ -517,10 +528,10 @@ class ConGMRES : public TACSKsm {
 
   TACSVec **W;   // The Arnoldi vectors that span the Krylov subspace
   TacsScalar *Wl; // The portion of the Arnoldi vector for lambda
-  TACSVec **Z;   // An additional subspace of vectors -- for the flexible variant
+  TACSVec **Z;   // Additional subspace of vectors -- for the flexible variant
   TACSVec *work; // A work vector
 
-  int *Hptr;   // A vector to make accessing the elements of the matrix easier!
+  int *Hptr;   // Array to make accessing the elements of the matrix easier!
   TacsScalar *H; // The Hessenberg matrix
 
   double rtol;

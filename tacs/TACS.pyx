@@ -297,6 +297,14 @@ cdef class Pc:
         '''Apply the preconditioner'''
         self.ptr.applyFactor(x.ptr, y.ptr)
 
+    def getMat(self):
+        '''Retrieve the associated matrix'''
+        cdef TACSMat *mat = NULL
+        self.ptr.getMat(&mat)
+        if mat:
+            return _init_Mat(mat)
+        return None
+
 cdef class KSM:
     cdef TACSKsm *ptr
     def __cinit__(self, Mat mat, Pc pc, int m, int nrestart, int isFlexible=0):
@@ -334,7 +342,7 @@ cdef class KSM:
         input:
         b:          the right-hand-side
         x:          the solution vector (with possibly significant entries)
-        zero_guess: flag to indicate whether to zero entries of x before solution
+        zero_guess:  indicate whether to zero entries of x before solution
         '''
         self.ptr.solve(b.ptr, x.ptr, zero_guess)
 
@@ -358,13 +366,6 @@ cdef class KSM:
         monitor: the KSMPrint monitor object
         '''
         self.ptr.setMonitor(new KSMPrintStdout(&descript[0], comm.rank, freq))
-          
-# Python class for corresponding instance TACSAssembler
-cdef _init_Assembler(TACSAssembler *ptr):
-    tacs = Assembler()
-    tacs.ptr = ptr
-    tacs.ptr.incref()
-    return tacs
 
 cdef class Assembler:    
     def __cinit__(self):
@@ -401,7 +402,8 @@ cdef class Assembler:
                                np.ndarray[int, ndim=1, mode='c'] ptr):
         '''Set the connectivity'''
         cdef int num_elements = ptr.shape[0]-1
-        assert(num_elements == self.getNumElements())
+        if num_elements != self.getNumElements():
+            raise ValueError('Connectivity must match number of elements')
 
         # Set the connectivity into TACSAssembler
         self.ptr.setElementConnectivity(<int*>conn.data, <int*>ptr.data)
@@ -419,7 +421,8 @@ cdef class Assembler:
     
     def setElements(self, elements):
         '''Set the elements in to TACSAssembler'''
-        assert(len(elements) == self.getNumElements())
+        if len(elements) != self.getNumElements():
+            raise ValueError('Element list must match number of elements')
 
         # Allocate an array for the element pointers
         cdef TACSElement **elems
@@ -907,7 +910,8 @@ cdef class Assembler:
         self.ptr.addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, vecs)
         return
 
-    def evalAdjointResProduct(self, adjoint, np.ndarray[TacsScalar, mode='c'] A):
+    def evalAdjointResProduct(self, adjoint, 
+                              np.ndarray[TacsScalar, mode='c'] A):
         '''
         This function is collective on all TACSAssembler processes. This
         computes the product of the derivative of the residual
@@ -944,7 +948,8 @@ cdef class Assembler:
 
     def evalXptSens(self, Function func, Vec vec):
         '''
-        Evaluate the derivative of a list of functions w.r.t. the node locations
+        Evaluate the derivative of a list of functions w.r.t. 
+        the node locations
         '''
         cdef int num_funcs = 1
         cdef TACSFunction **funcs = &((<Function>func).ptr)
@@ -1116,16 +1121,17 @@ cdef class Creator:
         return
 
     def setGlobalConnectivity(self, int num_nodes,
-                              np.ndarray[int, ndim=1, mode='c'] elem_node_ptr, 
-                              np.ndarray[int, ndim=1, mode='c'] elem_node_conn,
-                              np.ndarray[int, ndim=1, mode='c'] elem_id_nums):
+                              np.ndarray[int, ndim=1, mode='c'] node_ptr, 
+                              np.ndarray[int, ndim=1, mode='c'] node_conn,
+                              np.ndarray[int, ndim=1, mode='c'] id_nums):
         '''Set the connectivity and the element id numbers'''
-        cdef int num_elements = elem_node_ptr.shape[0]-1
-        assert(num_elements == elem_id_nums.shape[0])
+        cdef int num_elements = node_ptr.shape[0]-1
+        if num_elements != id_nums.shape[0]:
+            raise ValueError('Connectivity must match number of element ids')
         self.ptr.setGlobalConnectivity(num_nodes, num_elements,
-                                       <int*>elem_node_ptr.data,
-                                       <int*>elem_node_conn.data,
-                                       <int*>elem_id_nums.data)
+                                       <int*>node_ptr.data,
+                                       <int*>node_conn.data,
+                                       <int*>id_nums.data)
         return
 
     def setBoundaryConditions(self, np.ndarray[int, ndim=1, mode='c'] nodes,
@@ -1227,7 +1233,8 @@ cdef class MeshLoader:
     
     def getElementDescript(self, int comp_num):
         '''
-        Retrieve the element description corresponding to the component number
+        Retrieve the element description corresponding to 
+        the component number
         '''
         cdef bytes py_string
         py_string = self.ptr.getElementDescript(comp_num)

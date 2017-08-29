@@ -66,7 +66,7 @@ class PMat : public TACSMat {
   void getColMap( int *bs, int *_M );
   TACSVarMap *getRowMap(){ return rmap; }
   void getExtColMap( TACSBVecDistribute **ext_map ); // Access the column map  
-  void printNzPattern( const char *fileName );      // Print the non-zero pattern
+  void printNzPattern( const char *fileName ); // Print the non-zero pattern
 
   const char *TACSObjectName();
   MPI_Comm getMPIComm(){ return rmap->getMPIComm(); }
@@ -109,14 +109,18 @@ class PMat : public TACSMat {
 */
 class PSOR : public TACSPc {
  public:
-  PSOR( PMat *mat, int _zero_guess, TacsScalar _omega, int _iters, 
+  PSOR( PMat *_mat, int _zero_guess, TacsScalar _omega, int _iters, 
         int _isSymmetric, int *pairs=NULL, int npairs=0 );
   ~PSOR();
 
   void factor();
   void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void getMat( TACSMat **_mat );
 
  private:
+  // Parallel matrix pointer
+  PMat *mat;
+
   // Information about how to handle the smoother
   int iters;
   TacsScalar omega;
@@ -126,6 +130,7 @@ class PSOR : public TACSPc {
   BCSRMat *Aloc, *Bext;
   TACSBVec *bvec;
 
+  // Parallel data for the PSOR object
   TACSBVecDistribute *ext_dist;
   TACSBVecDistCtx *ctx;
   int ext_offset;
@@ -150,8 +155,10 @@ class AdditiveSchwarz : public TACSPc {
   void factor();
   void applyFactor( TACSVec *xvec, TACSVec *yvec );
   void applyFactor( TACSVec *yvec );
+  void getMat( TACSMat **_mat );
 
  private:
+  PMat *mat;
   BCSRMat *Aloc;
   TacsScalar alpha;
   BCSRMat *Apc;
@@ -208,6 +215,7 @@ class ApproximateSchur : public TACSPc {
   void setMonitor( KSMPrint *ksm_print );
   void factor();
   void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void getMat( TACSMat **_mat );
   void printNzPattern( const char *fileName );
 
  private:
