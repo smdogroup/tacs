@@ -95,15 +95,9 @@ cdef extern from "KSM.h":
         GMRES(TACSMat *_mat, TACSPc *_pc, int _m,
               int _nrestart, int _isFlexible )
       
-cdef extern from "BVec.h":
-    cdef cppclass VarMap(TACSObject):
-        VarMap(MPI_Comm comm, int N, int bsize)
-        
-    cdef cppclass BCMap(TACSObject):
-        BCMap(int num_bcs)
-        
+cdef extern from "BVec.h":   
     cdef cppclass TACSBVec(TACSVec):
-        TACSBVec(VarMap*, BCMap*)
+        TACSBVec(TACSVarMap*, int)
         int getSize(int*) 
         int getArray(TacsScalar**)
         int readFromFile(const_char*)
@@ -113,9 +107,13 @@ cdef extern from "BVec.h":
         void beginDistributeValues()
         void endDistributeValues()
 
+cdef extern from "BVecDist.h":
+     cdef cppclass TACSVarMap(TACSObject):
+        TACSVarMap(MPI_Comm, int)
+
 cdef extern from "BVecInterp.h":
     cdef cppclass TACSBVecInterp(TACSObject):
-        TACSBVecInterp(VarMap*, VarMap*, int)
+        TACSBVecInterp(TACSVarMap*, TACSVarMap*, int)
         void mult(TACSBVec*, TACSBVec*)
         void multAdd(TACSBVec*, TACSBVec*, TACSBVec*)
         void multTranspose(TACSBVec*, TACSBVec*)
