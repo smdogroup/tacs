@@ -1629,7 +1629,8 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
     rowp[0] = 0;
   }
 
-  // Go through and sort/uniquify each row and remove the diagonal if requested
+  // Go through and sort/uniquify each row and remove
+  // the diagonal if requested
   matutils::SortAndUniquifyCSR(numNodes, rowp, cols, nodiag);
 
   delete [] nodeElementPtr;
@@ -1787,7 +1788,8 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
           int elem = nodeToElements[j];
           // Count up the number of reduced nodes that are required here.
           int count = 0;
-          for ( int k = elementNodeIndex[elem]; k < elementNodeIndex[elem+1]; k++ ){
+          for ( int k = elementNodeIndex[elem]; 
+              k < elementNodeIndex[elem+1]; k++ ){
             int local = elementTacsNodes[k];
             local = getLocalNodeNum(local);
             if (rnodes[local] >= 0){
@@ -1816,7 +1818,8 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
         for ( int j = nodeElementPtr[i]; j < nodeElementPtr[i+1]; j++ ){
           int elem = nodeToElements[j];     
           int row = rowp[node];
-          for ( int k = elementNodeIndex[elem]; k < elementNodeIndex[elem+1]; k++ ){
+          for ( int k = elementNodeIndex[elem]; 
+              k < elementNodeIndex[elem+1]; k++ ){
             int local = elementTacsNodes[k];
             local = getLocalNodeNum(local);
             int rn = rnodes[local];
@@ -1837,7 +1840,8 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
     rowp[0] = 0;
   }
 
-  // Go through and sort/uniquify each row and remove the diagonal if requested
+  // Go through and sort/uniquify each row and remove 
+  // the diagonal if requested
   matutils::SortAndUniquifyCSR(nrnodes, rowp, cols, nodiag);
 
   // Free the node -> element data structure
@@ -2770,7 +2774,7 @@ SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
   }
   if (mpiSize > 1){
     fprintf(stderr, 
-            "[%d] Cannot call createSerialCSCMat() with more than one processor\n",
+            "[%d] Cannot call createSerialCSCMat() with multiple processors\n",
             mpiRank);
     return NULL;
   }
@@ -2820,9 +2824,15 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
                                    elemXpts);
 
     // Set the values into the vectors
-    if (vars){ vars->setValues(len, nodes, elemVars, TACS_INSERT_NONZERO_VALUES); }
-    if (dvars){ dvars->setValues(len, nodes, elemDVars, TACS_INSERT_NONZERO_VALUES); }
-    if (ddvars){ ddvars->setValues(len, nodes, elemDDVars, TACS_INSERT_NONZERO_VALUES); }
+    if (vars){ 
+      vars->setValues(len, nodes, elemVars, TACS_INSERT_NONZERO_VALUES); 
+    }
+    if (dvars){ 
+      dvars->setValues(len, nodes, elemDVars, TACS_INSERT_NONZERO_VALUES); 
+    }
+    if (ddvars){ 
+      ddvars->setValues(len, nodes, elemDDVars, TACS_INSERT_NONZERO_VALUES); 
+    }
   }
 
   if (vars){ vars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
@@ -3960,7 +3970,9 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
   y:         the output vector y <- y + scale*J^{Op}*x
 */
 void TACSAssembler::addJacobianVecProduct( TacsScalar scale, 
-                                           double alpha, double beta, double gamma,
+                                           double alpha, 
+                                           double beta, 
+                                           double gamma,
                                            TACSBVec *x, TACSBVec *y,
                                            MatrixOrientation matOr ){
   x->beginDistributeValues();
@@ -4134,8 +4146,6 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
     printf("Testing constitutive class %s\n", stiffness->constitutiveName());
     if (test->testFailStrainSens(pt)){ printf("Fail StrainSens failed\n"); }
     else { printf("Fail StrainSens passed\n"); }
-    if (test->testBucklingStrainSens()){ printf("Buckling StrainSens failed\n"); }
-    else { printf("Buckling StrainSens passed\n"); }
     if (test->testMassDVSens(pt)){ printf("Mass DVSens failed\n"); }
     else { printf("Mass DVSens passed\n"); }
     if (test->testFailDVSens(pt)){ printf("Fail DVSens failed\n"); }

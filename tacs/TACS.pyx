@@ -297,6 +297,19 @@ cdef class Pc:
         '''Apply the preconditioner'''
         self.ptr.applyFactor(x.ptr, y.ptr)
 
+    def assembleJacobian(self, double alpha, double beta, double gamma,
+                         Vec residual,
+                         MatrixOrientation matOr=NORMAL):
+        '''Assemble the Jacobian for all levels'''
+        cdef TACSBVec *res = NULL
+        cdef TACSMg *mg = NULL
+        mg = _dynamicTACSMg(self.ptr)
+        if mg:
+            if residual is not None:
+                res = residual.ptr
+            mg.assembleJacobian(alpha, beta, gamma, res, matOr)
+        return
+
     def getMat(self):
         '''Retrieve the associated matrix'''
         cdef TACSMat *mat = NULL
@@ -306,7 +319,8 @@ cdef class Pc:
         return None
 
 cdef class KSM:
-    def __cinit__(self, Mat mat, Pc pc, int m, int nrestart, int isFlexible=0):
+    def __cinit__(self, Mat mat, Pc pc, int m, 
+                  int nrestart=1, int isFlexible=0):
         '''
         Create a GMRES object for solving a linear system with or
         without a preconditioner.

@@ -45,6 +45,7 @@ cdef extern from "BVecDist.h":
 cdef extern from "":
     ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
     PMat* _dynamicPMat "dynamic_cast<PMat*>"(TACSMat*)
+    TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
 
 cdef extern from "TACSObject.h":
     cdef cppclass TACSObject:
@@ -151,7 +152,11 @@ cdef extern from "FEMat.h":
 
 cdef extern from "TACSMg.h":
     cdef cppclass TACSMg(TACSPc):
-        pass
+        void setVariables(TACSBVec*)
+        void assembleJacobian(double, double, double, TACSBVec*,
+                              MatrixOrientation)
+        void assembleMatType(ElementMatrixType,
+                             MatrixOrientation)
        
 cdef extern from "TACSElement.h":
     cdef cppclass TACSElement(TACSObject):
