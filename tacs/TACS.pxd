@@ -111,6 +111,15 @@ cdef extern from "BVecDist.h":
      cdef cppclass TACSVarMap(TACSObject):
         TACSVarMap(MPI_Comm, int)
 
+     cdef cppclass TACSBVecIndices(TACSObject):
+         TACSBVecIndices(int**, int)
+         
+cdef class VarMap:
+    cdef TACSVarMap *ptr
+
+cdef class VecIndices:
+    cdef TACSBVecIndices *ptr
+
 cdef extern from "BVecInterp.h":
     cdef cppclass TACSBVecInterp(TACSObject):
         TACSBVecInterp(TACSVarMap*, TACSVarMap*, int)
