@@ -89,7 +89,8 @@ cdef class isoFSDT(FSDT):
         '''
         Wraps the isoFSDTStiffness class that is used with shell elements
         '''
-        self.ptr = new isoFSDTStiffness(rho, E, nu, kcorr, ys, t, tNum, minT, maxT)
+        self.ptr = new isoFSDTStiffness(rho, E, nu, kcorr, ys, 
+                                        t, tNum, minT, maxT)
         self.ptr.incref()
         return
 
@@ -114,7 +115,7 @@ cdef class SimplePlaneStress(PlaneStress):
         self.ptr.incref()
         return
     
-cdef class solid(Constitutive):
+cdef class SolidStiff(Constitutive):
     def __cinit__(self, rho, E, nu, *args, **kwargs):
         '''
         Wraps the SolidStiffness class that is used with 3D elements

@@ -117,8 +117,20 @@ cdef extern from "BVecDist.h":
 cdef class VarMap:
     cdef TACSVarMap *ptr
 
+cdef inline _init_VarMap(TACSVarMap *ptr):
+    vmap = VarMap()
+    vmap.ptr = ptr
+    vmap.ptr.incref()
+    return vmap
+
 cdef class VecIndices:
     cdef TACSBVecIndices *ptr
+
+cdef inline _init_VecIndices(TACSBVecIndices *ptr):
+    indices = VecIndices()
+    indices.ptr = ptr
+    indices.ptr.incref()
+    return indices
 
 cdef extern from "BVecInterp.h":
     cdef cppclass TACSBVecInterp(TACSObject):

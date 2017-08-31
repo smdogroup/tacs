@@ -96,7 +96,7 @@ cdef class FSDT(Constitutive):
 cdef class PlaneStress(Constitutive):
     pass
    
-cdef class solid(Constitutive):
+cdef class SolidStiff(Constitutive):
     pass
 
 # Special functions required for converting pointers

@@ -308,7 +308,7 @@ cdef class MITCShell(Element):
         return
 
 cdef class Solid(Element):
-    def __cinit__(self, int order, solid stiff, 
+    def __cinit__(self, int order, SolidStiff stiff, 
                   ElementBehaviorType elem_type=LINEAR,
                   int component_num=0):
         '''
