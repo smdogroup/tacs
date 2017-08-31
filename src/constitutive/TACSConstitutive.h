@@ -24,7 +24,7 @@
   coordinate axes are defined and these are used to compute a 2D
   representation of the failure or buckling envelope.
 */
-class TACSConstitutive : public TACSSparseConObject {
+class TACSConstitutive : public TACSOptObject {
  public:
   TACSConstitutive(){}
   virtual ~TACSConstitutive(){}
