@@ -178,40 +178,4 @@ class TACSThreadInfo : public TACSObject {
   int num_threads;  
 };
 
-/*!
-  The TACSSparseConObject object. 
-
-  Evaluate sparse constraint information.
-*/
-class TACSSparseConObject : public TACSOptObject {
- public:
-  virtual ~TACSSparseConObject(){}
-
-  // Is this constraint linear?
-  virtual int isLinear(){ return 0; }
-
-  // Get the number of constraints to be added by this object
-  virtual int getNumCon(){ return 0; }
-
-  // Get the size of the CSR for this constraint
-  virtual int getConCSRSize(){ return 0; }
-
-  // Retreive the allowable range of values for this constraint
-  virtual int getConRange( int offset, TacsScalar lb[], TacsScalar ub[] ){ 
-    return 0; 
-  }
-
-  // Retrieve the CSR representation of the constraint
-  virtual int addConCSR( int offset, int rowp[], int cols[] ){ return 0; }
-
-  // Evaluate the constraints
-  virtual int evalCon( int offset, TacsScalar con[] ){ return 0; }
-
-  // Evaluate the gradient of the constraints
-  virtual int evalConDVSens( int offset, TacsScalar Acol[], 
-                             const int rowp[], const int cols[] ){
-    return 0;
-  }
-};
-
 #endif
