@@ -152,7 +152,6 @@ class TACS3DTraction : public TACSElement {
         
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
-        TacsScalar *r = res;
         if (surface < 2){
           const int i = (order-1)*(surface % 2);
           for ( int k = 0; k < order; k++ ){

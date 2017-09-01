@@ -241,6 +241,7 @@ cdef class PlaneQuad(Element):
             self.ptr = new PlaneStressQuad4(con, elem_type, component_num)
             self.ptr.incref()
         return
+        
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -249,8 +250,13 @@ cdef class PSQuadTraction(Element):
     def __cinit__(self, int surf,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ty):
-        assert(len(tx) == len(ty))
+        if len(tx) != len(ty):
+            errmsg = 'Traction lengths must be equal'
+            raise ValueError(errmsg)
+        if len(tx) < 2 or len(tx) > 4:
+            errmsg = 'Traction lengths must be between 2 and 4'
         cdef int order = len(tx)
+        self.ptr = NULL
         if order == 2:
             self.ptr = new PSQuadTraction2(surf, <TacsScalar*>tx.data,
                                            <TacsScalar*>ty.data)
@@ -266,7 +272,34 @@ cdef class PSQuadTraction(Element):
         return
 
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+cdef class Traction3D(Element):
+    def __cinit__(self, int order, int surf, 
+                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+        if order < 2 or order > 4:
+            errmsg = 'Traction3D order must be between 2 and 4'
+            raise ValueError(errmsg)
+        if surf < 0 or surf >= 6:
+            errmsg = 'Traction3D surf must be between 0 and 5'
+            raise ValueError(errmsg)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new TACS3DTraction2(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new TACS3DTraction3(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new TACS3DTraction4(surf, tx, ty, tz)
+            self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
         return
 
 cdef class PlaneTri6(Element):

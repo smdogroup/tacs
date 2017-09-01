@@ -93,6 +93,19 @@ cdef extern from "TACSElementTemplates.h":
         PSQuadTraction4(int, TacsScalar, TacsScalar)
         PSQuadTraction4(int, TacsScalar*, TacsScalar*)
 
+    # Declare the 3D traction classes
+    cdef cppclass TACS3DTraction2(TACSElement):
+        TACS3DTraction2(int, TacsScalar, TacsScalar, TacsScalar)
+        TACS3DTraction2(int, TacsScalar[], TacsScalar[], TacsScalar[])
+
+    cdef cppclass TACS3DTraction3(TACSElement):
+        TACS3DTraction3(int, TacsScalar, TacsScalar, TacsScalar)
+        TACS3DTraction3(int, TacsScalar[], TacsScalar[], TacsScalar[])
+
+    cdef cppclass TACS3DTraction4(TACSElement):
+        TACS3DTraction4(int, TacsScalar, TacsScalar, TacsScalar)
+        TACS3DTraction4(int, TacsScalar[], TacsScalar[], TacsScalar[])
+
     # Declare the MITCShell elements
     cdef cppclass MITCShell2(TACSElement):
         MITCShell2(FSDTStiffness *stiff, ElementBehaviorType type, int)
@@ -127,3 +140,4 @@ cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):
         MITC3(TimoshenkoStiffness *_stiff, TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit)
+
