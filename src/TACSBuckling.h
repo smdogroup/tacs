@@ -40,7 +40,7 @@ class TACSLinearBuckling : public TACSObject {
 
   // Solve the eigenvalue problem
   // ----------------------------
-  void solve( KSMPrint *ksm_print = NULL );
+  void solve( TACSVec *rhs=NULL, KSMPrint *ksm_print=NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
   // Extract the eigenvalue or check the solution 

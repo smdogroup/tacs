@@ -158,7 +158,7 @@ void TACSLinearBuckling::setSigma( TacsScalar _sigma ){
 
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x 
 */
-void TACSLinearBuckling::solve( KSMPrint *ksm_print ){
+void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
   tacs->zeroVariables();
   tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
 
@@ -169,6 +169,11 @@ void TACSLinearBuckling::solve( KSMPrint *ksm_print ){
   // Determine the tangent to the solution path at the origin
   pc->factor();
   tacs->assembleRes(res);
+  // If need to add rhs
+  if (rhs){
+    res->axpy(-1.0, rhs);
+    tacs->applyBCs(res);
+  }
   solver->solve(res, path);
   path->scale(-1.0);
 
