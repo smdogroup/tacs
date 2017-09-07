@@ -199,7 +199,6 @@ cdef class Vec:
         '''
         return self.ptr.readFromFile(&filename[0])
 
-
 cdef class VecInterp:
     def __cinit__(self):
         self.ptr = NULL
@@ -216,6 +215,22 @@ cdef class VecInterp:
         
     def mult(self, Vec input_vec, Vec output_vec):
         self.ptr.mult(input_vec.ptr, output_vec.ptr)
+        return
+
+    def multAdd(self, Vec input_vec, Vec add_vec, Vec output_vec):
+        self.ptr.multAdd(input_vec.ptr, add_vec.ptr, output_vec.ptr)
+        return
+
+    def multTranspose(self, Vec input_vec, Vec output_vec):
+        self.ptr.multTranspose(input_vec.ptr, output_vec.ptr)
+        return
+
+    def multTransposeAdd(self, Vec input_vec, Vec add_vec, Vec output_vec):
+        self.ptr.multTransposeAdd(input_vec.ptr, add_vec.ptr, output_vec.ptr)
+        return
+
+    def multWeightTranspose(self, Vec input_vec, Vec output_vec):
+        self.ptr.multWeightTranspose(input_vec.ptr, output_vec.ptr)
         return
 
 cdef class AuxElements:
