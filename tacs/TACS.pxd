@@ -140,7 +140,17 @@ cdef extern from "BVecInterp.h":
         void multTranspose(TACSBVec*, TACSBVec*)
         void multTransposeAdd(TACSBVec*, TACSBVec*, TACSBVec*)
         void multWeightTranspose(TACSBVec*, TACSBVec*)
-        
+        void initialize()
+
+cdef class VecInterp:
+    cdef TACSBVecInterp *ptr
+
+cdef inline _init_VecInterp(TACSBVecInterp *ptr):
+    interp = VecInterp()
+    interp.ptr = ptr
+    interp.ptr.incref()
+    return interp
+    
 cdef extern from "PMat.h":
     cdef cppclass PMat(TACSMat):
         pass

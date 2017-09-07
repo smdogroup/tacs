@@ -199,6 +199,25 @@ cdef class Vec:
         '''
         return self.ptr.readFromFile(&filename[0])
 
+
+cdef class VecInterp:
+    def __cinit__(self):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+    def initialize(self):
+        self.ptr.initialize()
+        return
+        
+    def mult(self, Vec input_vec, Vec output_vec):
+        self.ptr.mult(input_vec.ptr, output_vec.ptr)
+        return
+
 cdef class AuxElements:
     cdef TACSAuxElements *ptr
     def __cinit__(self):
@@ -1090,7 +1109,7 @@ cdef class ToFH5:
 
     cdef TACSToFH5 *ptr
     def __cinit__(self, Assembler tacs, ElementType elem_type,
-                      int out_type):
+                  int out_type):
         '''
         Create the TACSToFH5 file creation object
         
