@@ -15,8 +15,8 @@ cdef extern from "TACSElement.h":
     enum ElementBehaviorType:
         LINEAR
         NONLINEAR
-        LARGE_ROTATION
-    
+        LARGE_ROTATION        
+        
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)

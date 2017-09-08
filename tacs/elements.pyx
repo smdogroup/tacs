@@ -27,18 +27,6 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-# A generic wrapper class for the TACSElement object
-cdef class Element:
-    '''Base element class'''
-    def __cinit__(self):
-        self.ptr = NULL
-        return
-    def setComponentNum(self, int comp_num):
-        self.ptr.setComponentNum(comp_num)
-        return
-    def numNodes(self):
-        return self.ptr.numNodes()
-    
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
     def __cinit__(self, x, y, z):

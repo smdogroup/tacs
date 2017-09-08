@@ -191,23 +191,36 @@ cdef extern from "TACSElement.h":
     cdef cppclass TACSElement(TACSObject):
         int numNodes()
         void setComponentNum(int)
-
+        TACSConstitutive *getConstitutive()
+        
 cdef extern from "TACSFunction.h":
     cdef cppclass TACSFunction(TACSObject):
         pass
 
 cdef extern from "TACSConstitutive.h":
     cdef cppclass TACSConstitutive(TACSObject):
-        pass
+        TacsScalar getDVOutputValue(int, const double*)
     
 cdef class Element:
     cdef TACSElement *ptr
+
+cdef inline _init_Element(TACSElement *ptr):
+    elem = Element()
+    elem.ptr = ptr
+    elem.ptr.incref()
+    return elem
 
 cdef class Function:
     cdef TACSFunction *ptr
    
 cdef class Constitutive:
     cdef TACSConstitutive *ptr
+
+cdef inline _init_Constitutive(TACSConstitutive *ptr):
+    cons = Constitutive()
+    cons.ptr = ptr
+    cons.ptr.incref()
+    return cons
 
 cdef class Vec:
     cdef TACSBVec *ptr
@@ -285,7 +298,8 @@ cdef extern from "TACSAssembler.h":
         int getNumNodes()
         int getNumDependentNodes()
         int getNumElements()
-
+        TACSElement **getElements()
+        
         # MPI communicator
         MPI_Comm getMPIComm()
 
