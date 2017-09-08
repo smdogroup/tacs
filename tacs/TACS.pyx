@@ -222,14 +222,17 @@ cdef class Vec:
         return self.ptr.readFromFile(&filename[0])
 
 cdef class VecInterp:
-    def __cinit__(self):
+    def __cinit__(self, VarMap inmap=None, VarMap outmap=None):
         self.ptr = NULL
+        if inmap and outmap:
+            self.ptr = new TACSBVecInterp(inmap.ptr, outmap.ptr, 1)
+            self.ptr.incref()
         return
 
-    def __dealloc__(self):
-        if self.ptr:
-            self.ptr.decref()
-        return
+    # def __dealloc__(self):
+    #     if self.ptr:
+    #         self.ptr.decref()
+    #     return
 
     def initialize(self):
         self.ptr.initialize()
