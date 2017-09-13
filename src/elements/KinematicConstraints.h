@@ -290,6 +290,110 @@ class TACSRevoluteDriver : public TACSElement {
 };
 
 /*
+  Drives the attached body sinusoidally along the given direction
+*/
+class TACSMotionDriver : public TACSElement {
+ public:
+  TACSMotionDriver( TACSGibbsVector *_dir, 
+                    TacsScalar _omega ){
+    // Copy over the direction
+    dir = _dir;
+    dir->incref();
+
+    // Copy over the angular rate
+    omega = _omega;
+  }
+
+  ~TACSMotionDriver(){    
+    dir->decref();
+  }
+
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+    *multiplier = 1;
+  }
+
+  int numDisplacements(){
+    return 8;
+  }
+
+  int numNodes(){
+    return 2;
+  }
+
+  const char* elementName(){
+    return "TACSMotionDriver";
+  }
+
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] ){
+    *_Te = 0.0;
+    *_Pe = 0.0;
+  }
+
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] ){
+    // Retrieve the direction
+    const TacsScalar *d;
+    dir->getVector(&d);
+    
+    // The Lagrange multipliers
+    const TacsScalar *lam = &vars[8];
+
+    // Specify a sinusoidal motion (might want to generalize later)
+    const TacsScalar scale = sin(omega*time);
+
+    res[8] += vars[0] - scale*d[0];
+    res[9] += vars[1] - scale*d[1];
+    res[10] += vars[2] - scale*d[2];
+
+    // Dummy equations
+    for ( int j = 3; j < 8; j++ ){
+      res[8+j] += lam[j];
+    }
+
+    // Add the coupling with the actual body residual
+    res[0] += lam[0];
+    res[1] += lam[1];
+    res[2] += lam[2];         
+  }
+
+  void addJacobian( double time, TacsScalar J[],
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] ){
+    // Coupling terms
+    J[8] += alpha;
+    J[16+9] += alpha;
+    J[32+10] += alpha;
+
+    // Residual of the contraint
+    J[8*16] += alpha;
+    J[9*16+1] += alpha;
+    J[10*16+2] += alpha;
+
+    // Dummy contraints
+    for ( int j = 3; j < 8; j++ ){
+      J[17*(8+j)] += alpha;
+    }
+  }
+
+ private:
+  TacsScalar omega;
+  TACSGibbsVector *dir;
+};
+
+/*
   Cylindrical constraint between rigid bodies
 */
 class TACSCylindricalConstraint : public TACSElement {

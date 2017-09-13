@@ -212,6 +212,20 @@ cdef class RevoluteDriver(Element):
         self.ptr.setComponentNum(comp_num)
         return
 
+cdef class MotionDriver(Element):
+    def __cinit__(self, GibbsVector dir, TacsScalar omega):
+        self.ptr = new TACSMotionDriver(dir.ptr, omega)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return    
+    def numNodes(self):
+        return self.ptr.numNodes()
+    def setComponentNum(self, int comp_num):
+        self.ptr.setComponentNum(comp_num)
+        return
+
 cdef class AverageConstraint(Element):
     def __cinit__(self, RigidBody body, GibbsVector point,
                   RefFrame frame, int moment_flag=0):
