@@ -83,8 +83,8 @@ tfinal            = 10.0
 num_steps_per_sec = 25
 
 # Create an FH5 object for teceplot output
-flag = (TACS.ToFH5.NODES | TACS.ToFH5.DISPLACEMENTS)
-f5 = TACS.ToFH5(tacs, TACS.PY_RIGID, flag)
+#flag = (TACS.ToFH5.NODES | TACS.ToFH5.DISPLACEMENTS)
+#f5 = TACS.ToFH5(tacs, TACS.PY_RIGID, flag)
 
 # Create functions of interest for adjoint
 print(">> NBG Integration")

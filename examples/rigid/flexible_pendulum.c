@@ -5,26 +5,43 @@
 #include "MITCShell.h"
 #include "TACSShellTraction.h"
 #include "isoFSDTStiffness.h"
+
 #include "KSFailure.h"
 #include "StructuralMass.h"
 #include "Compliance.h"
+#include "InducedFailure.h"
 
 /*
-  Set up a double pendulum with a flexible attachment
+  Code for testing adjoints with plate example. Use command line
+  arguments as necessary.
+ 
+  BDF1 BDF2 BDF3    : for BDF integrators
+  DIRK2 DIRK3 DIRK4 : for DIRK integrators
+  ABM1-6            : for ABM integrators
+  NBG               : for Newmark integrator
+
+  test_gradient : to do a complex step verification of the adjoint gradient
+  test_element  : to test the element implementation
+  num_funcs     : 1 to 3 for the adjoint 
+  num_threads   : number of threads
+  write_solution: write solution to f5 frequency
+  print_level: 0, 1, 2
 */
-int main( int argc, char *argv[] ){
-  // Initialize MPI
-  MPI_Init(&argc, &argv);  
+int main( int argc, char **argv ){
+
+  // Intialize MPI and declare communicator
+  MPI_Init(&argc, &argv);
+
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank; 
   MPI_Comm_rank(comm, &rank); 
 
   // Default values for important parameters
   int scale = 2;
-  int num_funcs = 1;
+  int num_funcs = 12;
   int num_threads = 1;
-  int test_gradient = 0;
-  enum IntegratorType type = BDF2;
+  int test_gradient = 1;
+  enum IntegratorType type = DIRK2;
 
   // Parse command line arguments
   for ( int i = 0; i < argc; i++ ){
@@ -37,7 +54,6 @@ int main( int argc, char *argv[] ){
     // Determine the number of functions for adjoint
     if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
       if (num_funcs < 0){ num_funcs = 1; }
-      if (num_funcs > 3){ num_funcs = 3; }
       if (rank == 0){ printf("Number of functions : %d\n", num_funcs); }
     }
 
@@ -86,8 +102,12 @@ int main( int argc, char *argv[] ){
       type = DIRK4;
 
       // Newmark-Beta-Gamma method
+    } else if (strcmp("NBGE", argv[i]) == 0){
+      type = NBGE;
     } else if (strcmp("NBG2", argv[i]) == 0){
       type = NBG2;
+    } else if (strcmp("NBG3", argv[i]) == 0){
+      type = NBG3;
     }
   }
 
@@ -203,7 +223,7 @@ int main( int argc, char *argv[] ){
   TacsScalar nu = 0.3;
   TacsScalar kcorr = 5.0/6.0;
   TacsScalar yield_stress = 464.0e6;
-  TacsScalar thickness = 0.05;
+  TacsScalar thickness = 0.01;
   
   // Create the stiffness object
   isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, 
@@ -229,28 +249,87 @@ int main( int argc, char *argv[] ){
                              TACSElement::OUTPUT_STRAINS |
                              TACSElement::OUTPUT_STRESSES |
                              TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
 
-  // Set the number of threads
-  tacs->setNumThreads(num_threads);
+  TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  f5->incref();
 
-  // Set up the parameters for adjoint solve
-  int num_dvs = tacs->getNumComponents();
-  TACSFunction *func[num_funcs];
+  /*-----------------------------------------------------------------*/
+  /*------------------ Time Integration and Adjoint Solve -----------*/
+  /*-----------------------------------------------------------------*/
 
+  int num_dvs = 1;
+
+  // Create functions of interest  
+  TACSFunction * func[num_funcs];
   if (num_funcs == 1){
-    func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
+    func[0] = new TACSCompliance(tacs);
   }
   else if (num_funcs == 2){
-    func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
-    func[1] = new TACSCompliance(tacs); func[1]->incref();
+    func[0] = new TACSKSFailure(tacs, 100.0);
+
+    // Set the induced norm failure types
+    TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
+    // ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
+    func[1] = ifunc;
+
+    // func[1] = new TACSCompliance(tacs);
   } 
   else if (num_funcs == 3){
-    func[0] = new TACSKSFailure(tacs, 100.0); func[0]->incref();
-    func[1] = new TACSCompliance(tacs); func[1]->incref();
-    func[2] = new TACSStructuralMass(tacs); func[2]->incref();
+    func[0] = new TACSKSFailure(tacs, 100.0);
+    func[1] = new TACSCompliance(tacs);
+    func[2] = new TACSStructuralMass(tacs);
+  } else if (num_funcs == 12){
+    // Place functions into the func list
+    func[0] = new TACSStructuralMass(tacs);
+    func[1] = new TACSCompliance(tacs);
+
+    // Set the discrete and continuous KS functions
+    TACSKSFailure *ksfunc = new TACSKSFailure(tacs, 20.0);
+    ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
+    func[2] = ksfunc;
+
+    ksfunc = new TACSKSFailure(tacs, 20.0);
+    ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
+    func[3] = ksfunc;
+
+    // Set the induced norm failure types
+    TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
+    func[4] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
+    func[5] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
+    func[6] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
+    func[7] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::POWER);
+    func[8] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER);
+    func[9] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::POWER_SQUARED);
+    func[10] = ifunc;
+
+    ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
+    func[11] = ifunc;
   }
   
+  for ( int i = 0; i < num_funcs; i++){
+    func[i]->incref();
+  }
+
   TacsScalar *funcVals     = new TacsScalar[num_funcs]; // adjoint
   TacsScalar *funcValsTmp  = new TacsScalar[num_funcs]; // CSD
   TacsScalar *funcVals1    = new TacsScalar[num_funcs]; // forward/reverse
@@ -261,81 +340,94 @@ int main( int argc, char *argv[] ){
 
   // Create an array of design variables
   TacsScalar *x = new TacsScalar[ num_dvs ]; 
-  x[0] = 0.05; 
+  x[0] = 0.01; 
 
-  // Set up the parameters for the TACSIntegrator
-  double tinit = 0.0;
-  double tfinal = 0.1;
-  double steps_per_second = 100.0;
+  // Set paramters for time marching
+  double tinit             = 0.0;
+  double tfinal            = 1.0e-3;
+  for ( int k = 0; k < argc; k++ ){
+    if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
+    }
+  }
+  int num_steps_per_sec = 10000;
+
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
-                                                    steps_per_second, 
+                                                    num_steps_per_sec, 
                                                     type);
   obj->incref();
   
   // Set optional parameters
+  obj->setOrderingType(TACSAssembler::RCM_ORDER);
   obj->setRelTol(1.0e-8);
-  obj->setAbsTol(1.0e-8);
-  obj->setMaxNewtonIters(10);
-  obj->setPrintLevel(3);
+  obj->setAbsTol(1.0e-6);
+  obj->setMaxNewtonIters(25);
+  obj->setPrintLevel(2);
   obj->setJacAssemblyFreq(1);
-  obj->setUseLapack(0);
-  obj->setUseLineSearch(0);
-
-  obj->setOutputFrequency(1);
-
-  // Set functions of interest
-  obj->setFunction(func, num_funcs);
+  obj->setOutputFrequency(0);
+  obj->setShellOutput(0);
   
-  // Adjoint gradient
+  // Set functions of interest for adjoint solve
+  obj->setFunction(func, num_funcs);
+
+  // Get the adjoint gradient
   double t0 = MPI_Wtime();
   obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
   t0 = MPI_Wtime() - t0;
-    
+
   // Print a summary of time taken
   if (rank == 0){
     obj->printWallTime(t0, 2);
-
-    // Print the adjoint derivative values
-    for( int j = 0; j < num_funcs; j++) {
-      printf("[%d] Adj NEW  func: %d fval: %15.8e dfdx:", rank, j, TacsRealPart(funcVals[j]));
-      for ( int n = 0; n < num_dvs; n++) {
-        printf(" %15.8e ",  TacsRealPart(dfdx[n+j*num_dvs]));
-      }
-      printf("\n");
-    }
-    printf("\n");
   }
 
   // Test the adjoint derivatives if sought
   if (test_gradient){
+    // The maximum number of gradient components to test
+    // using finite-difference/complex-step
 
-    printf("Finding Complex-step gradient...\n");
+    // Scan any remaining arguments that may be required
+#ifdef TACS_USE_COMPLEX
+    double dh = 1.0e-30;
+#else
+    double dh = 1.0e-8;
+#endif
+    for ( int k = 0; k < argc; k++ ){
+      if (sscanf(argv[k], "dh=%lf", &dh) == 1){
+      }
+    }
 
     // Complex step verification
-    obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, 1.0e-16);
+    obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, dh);
 
-    if ( rank == 0) { 
-      // Print complex step derivative values
-      for( int j = 0; j < num_funcs; j++) {
-        printf("[%d] CSD      func: %d fval: %15.8e dfdx:", rank, j, TacsRealPart(funcValsTmp[j]));
-        for ( int n = 0; n < num_dvs; n++) {
-          printf(" %15.8e ",  TacsRealPart(dfdxTmp[n+j*num_dvs]));
-        }
-        printf("\n");
-      }
-      printf("\n");
+    // Print out the finite-difference interval
+    if (rank == 0){
+#ifdef TACS_USE_COMPLEX
+      printf("Complex-step interval: %le\n", dh);
+#else
+      printf("Finite-difference interval: %le\n", dh);
+#endif
+    }
 
-      // Print the differences between complex step and adjoint derivtives
-      for ( int j = 0; j < num_funcs; j++ ) {
-        printf("[%d] Error Adj NEW  func: %d ferror: %15.8e dfdx error:", rank, j, TacsRealPart(funcValsTmp[j])-TacsRealPart(funcVals[j]) );
-        for ( int n = 0; n < num_dvs; n++ ) {
-          printf(" %15.8e ",  TacsRealPart(dfdxTmp[j*num_dvs+n]) -  TacsRealPart(dfdx[j*num_dvs+n]) );
+    if (rank == 0){
+      printf("Structural sensitivities\n");
+      for ( int j = 0; j < num_funcs; j++ ){
+        printf("Sensitivities for function %s %25.15e\n",
+               func[j]->functionName(), TacsRealPart(funcValsTmp[j]));
+        printf("%25s %25s %25s %25s\n",
+               "Adjoint", "FD/CS", "Abs. error", "Rel. error");
+        for ( int k = 0; k < num_dvs; k++ ){
+          printf("%25.15e %25.15e %25.15e %25.15e\n", 
+                 TacsRealPart(dfdx[k + j*num_dvs]),
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]),
+                 TacsRealPart(dfdx[k + j*num_dvs]) -
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]), 
+                 (TacsRealPart(dfdx[k + j*num_dvs]) -
+                  TacsRealPart(dfdxTmp[k + j*num_dvs]))/
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]));
         }
-        printf("\n");
       }
-      printf("\n");
     }
   }
+  
 
   /*
   // Delete objects
@@ -353,17 +445,8 @@ int main( int argc, char *argv[] ){
   tacs->decref();
   obj->decref();
 
-  if (num_funcs == 1){
-    func[0]->decref();
-  }
-  else if (num_funcs == 2){
-    func[0]->decref();
-    func[1]->decref();
-  } 
-  else if (num_funcs == 3){
-    func[0]->decref();
-    func[1]->decref();
-    func[2]->decref();
+  for ( int i = 0; i < num_funcs; i++){
+    func[i]->decref();
   }
 
   delete [] x;

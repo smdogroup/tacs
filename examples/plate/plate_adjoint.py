@@ -58,7 +58,7 @@ bdfFileName = "plate.bdf" # Specify the name of the file to load which
 # Set the design variables
 #---------------------------------------------------------------------!
 
-x = np.array([0.03])
+x = np.array([0.01],dtype=np.complex)
 
 #---------------------------------------------------------------------!
 # Configure F5 output
@@ -75,7 +75,7 @@ x = np.array([0.03])
 #---------------------------------------------------------------------!
 
 tinit             = 0.00
-tfinal            = 0.01
+tfinal            = 0.1
 num_steps_per_sec = 1000
 
 #---------------------------------------------------------------------!
@@ -125,10 +125,11 @@ tacs = mesh.createTACS(8)
 #---------------------------------------------------------------------!
 
 funcs = []
-funcs.append(functions.KSFailure(tacs, 100.0))
+funcs.append(functions.StructuralMass(tacs))
 funcs.append(functions.Compliance(tacs))
 funcs.append(functions.InducedFailure(tacs, 20.0))
-funcs.append(functions.StructuralMass(tacs))
+funcs.append(functions.KSFailure(tacs, 100.0))
+
 
 #---------------------------------------------------------------------#
 # Setup space for function values and their gradients
@@ -149,15 +150,15 @@ dfdx_fd         = np.zeros(num_funcs*num_design_vars)
 #---------------------------------------------------------------------#
 
 data = []
-def print_details(method, function, index, stepsize, adj_dfdx, fd_dfdx):
+def print_details(method, function, index, stepsize, fvals, adj_dfdx, fd_dfdx):
     #data.append([method, function, stepsize, adj_dfdx, fd_dfdx])
     record = dict(method=method, function=function, index=index, dh=stepsize,
                   adjoint=adj_dfdx, complex_step=fd_dfdx,
                   error=fd_dfdx - adj_dfdx)
     data.append(record)
-    print("%10s %20s %4d %25.16e %25.16e %25.16e %25.16e" %
-          (method, function, index, stepsize, adj_dfdx, fd_dfdx, fd_dfdx - adj_dfdx))
-    
+    print("%10s %20s %4d %25.16e %25.16e %25.16e %25.16e %25.16e" %
+          (method, function, index, stepsize, fvals, adj_dfdx, fd_dfdx, fd_dfdx - adj_dfdx))
+
 #---------------------------------------------------------------------#
 # BDF Integrator
 #---------------------------------------------------------------------#
@@ -173,7 +174,29 @@ for bdf_order in [1,2,3]:
     fnum = 0
     for func in funcs:        
         print_details("BDF" + str(bdf_order), func.__class__.__name__, fnum,
-                      dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+                      dh,
+                      fvals[fnum],
+                      np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+        fnum += 1
+
+    
+#---------------------------------------------------------------------#
+# DIRK Integrator
+#---------------------------------------------------------------------#
+
+for order in [2,3,4]:
+    dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, order)
+    dirk.setPrintLevel(0)
+    dirk.setJacAssemblyFreq(1)
+    dirk.setFunction(funcs)
+    dirk.getFuncGrad(num_design_vars, x, fvals, dfdx)
+    dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
+    fnum = 0
+    for func in funcs:        
+        print_details("DIRK"+str(order), func.__class__.__name__, fnum,
+                      dh,
+                      fvals[fnum],
+                      np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
         fnum += 1
 
 #---------------------------------------------------------------------#
@@ -190,7 +213,9 @@ for abm_order in [1, 2, 3, 4, 5, 6]:
     fnum = 0
     for func in funcs:        
         print_details("ABM" + str(abm_order), func.__class__.__name__, fnum,
-                      dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+                      dh,
+                      fvals[fnum],
+                      np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
         fnum += 1
 
 #---------------------------------------------------------------------#
@@ -206,24 +231,9 @@ nbg.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
 fnum = 0
 for func in funcs:        
     print_details("NBG2", func.__class__.__name__, fnum,
-                  dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
+                  dh,
+                  fvals[fnum],
+                  np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
     fnum += 1
-
-#---------------------------------------------------------------------#
-# DIRK Integrator
-#---------------------------------------------------------------------#
-
-for order in [2,3,4]:
-    dirk = TACS.DIRKIntegrator(tacs, tinit, tfinal, num_steps_per_sec, order)
-    dirk.setPrintLevel(0)
-    dirk.setJacAssemblyFreq(1)
-    dirk.setFunction(funcs)
-    dirk.getFuncGrad(num_design_vars, x, fvals, dfdx)
-    dirk.getFDFuncGrad(num_design_vars, x, fvals_fd, dfdx_fd, dh)
-    fnum = 0
-    for func in funcs:        
-        print_details("DIRK"+str(order), func.__class__.__name__, fnum,
-                      dh, np.real(dfdx[fnum]), np.real(dfdx_fd[fnum]))
-        fnum += 1
 
 #print data

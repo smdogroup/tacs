@@ -42,7 +42,7 @@ int main( int argc, char **argv ){
   int test_element = 0;
   int write_solution = 0;
   int print_level = 1;
-  enum IntegratorType type = BDF1;
+  enum IntegratorType type = DIRK4;
   int convert_mesh = 0;
   for ( int i = 0; i < argc; i++ ){
 
@@ -155,7 +155,6 @@ int main( int argc, char **argv ){
   TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
   mesh->setConvertToCoordinate(convert_mesh);
-
   mesh->scanBDFFile(filename);
 
   // Get number of components prescribed in BDF file
@@ -171,7 +170,7 @@ int main( int argc, char **argv ){
   // Set properties for dynamics
   TacsScalar g[]          = {0.0, 0.0, -9.81};
   TacsScalar v_init[]     = {0.0, 0.0, 0.0}; 
-  TacsScalar omega_init[] = {0.0, 0.0, 0.0};
+  TacsScalar omega_init[] = {0.0, 0.0, 0.25};
 
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
@@ -184,9 +183,9 @@ int main( int argc, char **argv ){
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ) {
     const char       *descriptor    = mesh->getElementDescript(i);
-    double            min_thickness = 0.01;
-    double            max_thickness = 0.1;
-    double            thickness     = 0.05;
+    double            min_thickness = 5.0e-3;
+    double            max_thickness = 2.0e-2;
+    double            thickness     = 5.0e-3;
     isoFSDTStiffness *stiff         = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
 						    thickness, i, 
 						    min_thickness, max_thickness); 
@@ -260,14 +259,15 @@ int main( int argc, char **argv ){
   // Create functions of interest  
   TACSFunction * func[num_funcs];
   if (num_funcs == 1){
-    func[0] = new TACSKSFailure(tacs, 100.0);
+    func[0] = new TACSCompliance(tacs);
+    //func[0] = new TACSKSFailure(tacs, 100.0);
   }
   else if (num_funcs == 2){
     func[0] = new TACSKSFailure(tacs, 100.0);
 
     // Set the induced norm failure types
     TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
+    // ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[1] = ifunc;
 
     // func[1] = new TACSCompliance(tacs);
@@ -338,16 +338,16 @@ int main( int argc, char **argv ){
 
   // Create an array of design variables
   TacsScalar *x = new TacsScalar[ num_dvs ]; 
-  x[0] = 0.03; 
+  x[0] = 0.02; 
 
   // Set paramters for time marching
   double tinit             = 0.0;
-  double tfinal            = 1.0;
+  double tfinal            = 1.0e-3;
   for ( int k = 0; k < argc; k++ ){
     if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
     }
   }
-  int    num_steps_per_sec = 100;
+  int num_steps_per_sec = 100000;
 
   TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
                                                     num_steps_per_sec, 
@@ -357,8 +357,8 @@ int main( int argc, char **argv ){
   // Set options
   obj->setJacAssemblyFreq(1);
   obj->setOrderingType(TACSAssembler::NATURAL_ORDER);
-  //  obj->setAbsTol(1.0e-14);
-  //  obj->setRelTol(1.0e-11);
+  //obj->setAbsTol(1.0e-5);
+  //obj->setRelTol(5.0e-6);
   obj->setPrintLevel(print_level);
   obj->setOutputFrequency(write_solution);
   
@@ -406,8 +406,8 @@ int main( int argc, char **argv ){
     if (rank == 0){
       printf("Structural sensitivities\n");
       for ( int j = 0; j < num_funcs; j++ ){
-        printf("Sensitivities for function %s\n",
-               func[j]->functionName());
+        printf("Sensitivities for function %s %25.15e\n",
+               func[j]->functionName(), TacsRealPart(funcValsTmp[j]));
         printf("%25s %25s %25s %25s\n",
                "Adjoint", "FD/CS", "Abs. error", "Rel. error");
         for ( int k = 0; k < num_dvs; k++ ){
@@ -452,3 +452,4 @@ int main( int argc, char **argv ){
   return 0;
 }
 
+ 

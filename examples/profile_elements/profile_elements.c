@@ -14,7 +14,7 @@
 
 // Include the multibody dynamics code
 #include "RigidBody.h"
-#include "Constraint.h"
+#include "KinematicConstraints.h"
 
 /*
   Generate a random array of values
@@ -300,6 +300,14 @@ int main( int argc, char *argv[] ){
     bodyA->incref();
     test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
+    // Test the motion driver element
+    TACSGibbsVector *dir = new TACSGibbsVector(0.0, 0.0, 0.1);
+    TacsScalar omega = 0.25; // rad/s
+    TACSMotionDriver *mDriver = 
+      new TACSMotionDriver(dir, omega);
+    mDriver->incref();
+    test_element(mDriver, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
     // Test the revolute constraint
     TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
     TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
@@ -313,6 +321,11 @@ int main( int argc, char *argv[] ){
       new TACSCylindricalConstraint(bodyA, point, eRev);
     cyl->incref();
     test_element(cyl, time, Xpts, vars, dvars, ddvars, num_design_vars);
+
+    // Test the fixed constraint
+    TACSFixedConstraint *fix = new TACSFixedConstraint(bodyA, point);
+    fix->incref();
+    test_element(fix, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
     // Test the spherical constraint
     TACSSphericalConstraint *ball = new TACSSphericalConstraint(bodyA, point);
@@ -367,6 +380,8 @@ int main( int argc, char *argv[] ){
     test_element(ball2, time, Xpts, vars, dvars, ddvars, num_design_vars);
   
     // Decref everything
+    cyl->decref();
+    fix->decref();
     rev->decref();
     ball->decref();
     bodyA->decref();
