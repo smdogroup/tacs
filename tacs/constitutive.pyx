@@ -44,12 +44,6 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     
     return ndarray
 
-# A generic wrapper class for the TACSConstitutive object
-cdef class Constitutive:
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-        return
-
 cdef class Timoshenko(Constitutive):
     def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
                       EA, GJ, EIy, EIz, kGAy, kGAz,

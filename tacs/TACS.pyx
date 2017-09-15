@@ -70,8 +70,29 @@ cdef class Function:
             self.ptr.decref()
         return
     
-# A generic wrapper for a TACSVec class - usually TACSBVec
-
+# A generic wrapper class for the TACSElement object
+cdef class Element:
+    '''Base element class'''
+    def __cinit__(self):
+        self.ptr = NULL
+        return
+    def setComponentNum(self, int comp_num):
+        self.ptr.setComponentNum(comp_num)
+        return
+    def numNodes(self):
+        return self.ptr.numNodes()
+    def getConstitutive(self):
+        return _init_Constitutive(self.ptr.getConstitutive())
+    
+# A generic wrapper class for the TACSConstitutive object
+cdef class Constitutive:
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+    
+    def getDVOutputValue(self, int dvIndex,
+                         np.ndarray[double, ndim=1, mode='c']pt):
+        return self.ptr.getDVOutputValue(dvIndex, <double*>pt.data)
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -95,6 +116,7 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
 
     return ndarray
 
+# A generic wrapper for a TACSVec class - usually TACSBVec
 cdef class Vec:
     def __cinit__(self):
         '''
@@ -200,14 +222,17 @@ cdef class Vec:
         return self.ptr.readFromFile(&filename[0])
 
 cdef class VecInterp:
-    def __cinit__(self):
+    def __cinit__(self, VarMap inmap=None, VarMap outmap=None):
         self.ptr = NULL
+        if inmap and outmap:
+            self.ptr = new TACSBVecInterp(inmap.ptr, outmap.ptr, 1)
+            self.ptr.incref()
         return
 
-    def __dealloc__(self):
-        if self.ptr:
-            self.ptr.decref()
-        return
+    # def __dealloc__(self):
+    #     if self.ptr:
+    #         self.ptr.decref()
+    #     return
 
     def initialize(self):
         self.ptr.initialize()
@@ -555,6 +580,17 @@ cdef class Assembler:
         Return the number of elements
         '''
         return self.ptr.getNumElements()
+
+    def getElements(self):
+        '''Get the elements'''
+        # Allocate an array for the element pointers
+        cdef int num_elems = 0
+        elem = self.ptr.getElements()
+        num_elems = self.ptr.getNumElements()
+        e = []
+        for i in xrange(num_elems):
+            e.append(_init_Element(elem[i]))
+        return e
     
     def getDesignVars(self, 
                       np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):

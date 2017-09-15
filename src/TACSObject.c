@@ -28,7 +28,7 @@ void TacsZeroNumFlops(){
 */
 #ifdef TACS_USE_COMPLEX
 void TacsMPIComplexMax( void *_in, void *_out, int *count, 
-			MPI_Datatype *data ){
+                        MPI_Datatype *data ){
   if (*data == MPI_DOUBLE_COMPLEX){
     TacsScalar *in = (TacsScalar*) _in;
     TacsScalar *out = (TacsScalar*) _out;
@@ -36,14 +36,14 @@ void TacsMPIComplexMax( void *_in, void *_out, int *count,
     // Compare the real parts of the array
     for ( int i = 0; i < *count; i++ ){
       if (TacsRealPart(in[i]) >= TacsRealPart(out[i])){
-	out[i] = in[i];
+        out[i] = in[i];
       }
     }
   }
 }
 
 void TacsMPIComplexMin( void *_in, void *_out, int *count, 
-			MPI_Datatype *data ){
+                        MPI_Datatype *data ){
   if (*data == MPI_DOUBLE_COMPLEX){
     TacsScalar *in = (TacsScalar*) _in;
     TacsScalar *out = (TacsScalar*) _out;
@@ -51,7 +51,7 @@ void TacsMPIComplexMin( void *_in, void *_out, int *count,
     // Compare the real parts of the array
     for ( int i = 0; i < *count; i++ ){
       if (TacsRealPart(in[i]) < TacsRealPart(out[i])){
-	out[i] = in[i];
+        out[i] = in[i];
       }
     }
   }

@@ -15,8 +15,8 @@ cdef extern from "TACSElement.h":
     enum ElementBehaviorType:
         LINEAR
         NONLINEAR
-        LARGE_ROTATION
-    
+        LARGE_ROTATION        
+        
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
@@ -99,6 +99,19 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass PSQuadTraction4(TACSElement):
         PSQuadTraction4(int, TacsScalar, TacsScalar)
         PSQuadTraction4(int, TacsScalar*, TacsScalar*)
+
+    # Declare shell traction
+    cdef cppclass TACSShellTraction2(TACSElement):
+        TACSShellTraction2(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction2(TacsScalar*, TacsScalar*, TacsScalar*)
+
+    cdef cppclass TACSShellTraction3(TACSElement):
+        TACSShellTraction3(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction3(TacsScalar*, TacsScalar*, TacsScalar*)
+
+    cdef cppclass TACSShellTraction4(TACSElement):
+        TACSShellTraction4(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction4(TacsScalar*, TacsScalar*, TacsScalar*)
 
     # Declare the 3D traction classes
     cdef cppclass TACS3DTraction2(TACSElement):

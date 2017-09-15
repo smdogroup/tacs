@@ -33,9 +33,11 @@ cdef class Element:
     def __cinit__(self):
         self.ptr = NULL
         return
+
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
+
     def numNodes(self):
         return self.ptr.numNodes()
     
@@ -44,6 +46,7 @@ cdef class GibbsVector:
     def __cinit__(self, x, y, z):
         self.ptr = new TACSGibbsVector(x, y, z)
         self.ptr.incref()
+
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -54,6 +57,7 @@ cdef class RefFrame:
         self.ptr = new TACSRefFrame(r0.ptr, r1.ptr, r2.ptr)
         self.ptr.incref()
         return
+
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -78,6 +82,7 @@ cdef class RigidBodyViz:
 
         self.ptr.incref()
         return
+
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -103,7 +108,8 @@ cdef class RigidBody(Element):
             _Jdvs = <int*>Jdvs.data
 
         # Allocate the rigid body object and set the design variables
-        self.rbptr = new TACSRigidBody(frame.ptr, mass, <TacsScalar*>cRef.data,
+        self.rbptr = new TACSRigidBody(frame.ptr, mass, 
+                                       <TacsScalar*>cRef.data,
                                        <TacsScalar*>JRef.data, r0.ptr,
                                        v0.ptr, omega0.ptr, g.ptr)
         self.rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
@@ -112,13 +118,16 @@ cdef class RigidBody(Element):
         self.ptr = self.rbptr 
         self.ptr.incref()
         return
+
     def setVisualization(self, RigidBodyViz viz):
         self.rbptr.setVisualization(viz.ptr)
     def __dealloc__(self):
         self.ptr.decref()
         return
+
     def numNodes(self):
         return self.ptr.numNodes()
+
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
@@ -343,6 +352,28 @@ cdef class PlaneTri6(Element):
         cdef PlaneStressStiffness *con = _dynamicPlaneStress(stiff.ptr)
         self.ptr = new PlaneStressTri6(con, elem_type, component_num)
         self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+
+cdef class ShellTraction(Element):
+    def __cinit__(self, int order, 
+                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+        if order < 2 or order > 4:
+            errmsg = 'ShellTraction order must be between 2 and 4'
+            raise ValueError(errmsg)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new TACSShellTraction2(tx, ty, tz)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new TACSShellTraction3(tx, ty, tz)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new TACSShellTraction4(tx, ty, tz)
+            self.ptr.incref()
         return
 
     def __dealloc__(self):
