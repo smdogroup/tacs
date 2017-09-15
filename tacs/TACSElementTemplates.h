@@ -3,6 +3,7 @@
 
 #include "PlaneStressQuad.h"
 #include "PlaneStressTraction.h"
+#include "TACSShellTraction.h"
 #include "TACS3DTraction.h"
 #include "MITCShell.h"
 #include "Solid.h"
@@ -23,5 +24,8 @@
 #define TACS3DTraction2 TACS3DTraction<2>
 #define TACS3DTraction3 TACS3DTraction<3>
 #define TACS3DTraction4 TACS3DTraction<4>
+#define TACSShellTraction2 TACSShellTraction<2>
+#define TACSShellTraction3 TACSShellTraction<3>
+#define TACSShellTraction4 TACSShellTraction<4>
 
 #endif // TACS_ELEMENT_TEMPLATES_H

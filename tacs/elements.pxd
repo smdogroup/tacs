@@ -93,6 +93,19 @@ cdef extern from "TACSElementTemplates.h":
         PSQuadTraction4(int, TacsScalar, TacsScalar)
         PSQuadTraction4(int, TacsScalar*, TacsScalar*)
 
+    # Declare shell traction
+    cdef cppclass TACSShellTraction2(TACSElement):
+        TACSShellTraction2(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction2(TacsScalar*, TacsScalar*, TacsScalar*)
+
+    cdef cppclass TACSShellTraction3(TACSElement):
+        TACSShellTraction3(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction3(TacsScalar*, TacsScalar*, TacsScalar*)
+
+    cdef cppclass TACSShellTraction4(TACSElement):
+        TACSShellTraction4(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction4(TacsScalar*, TacsScalar*, TacsScalar*)
+
     # Declare the 3D traction classes
     cdef cppclass TACS3DTraction2(TACSElement):
         TACS3DTraction2(int, TacsScalar, TacsScalar, TacsScalar)
