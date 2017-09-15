@@ -122,6 +122,23 @@ cdef class RigidBody(Element):
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
+    
+cdef class FixedConstraint(Element):
+    def __cinit__(self,
+                  GibbsVector point,
+                  RigidBody bodyA):
+        self.ptr = new TACSFixedConstraint(bodyA.rbptr,
+                                           point.ptr)
+        self.ptr.incref()
+        return    
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+    def numNodes(self):
+        return self.ptr.numNodes()
+    def setComponentNum(self, int comp_num):
+        self.ptr.setComponentNum(comp_num)
+        return
 
 cdef class SphericalConstraint(Element):
     def __cinit__(self,

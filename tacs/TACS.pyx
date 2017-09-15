@@ -1335,7 +1335,7 @@ cdef class MeshLoader:
             for i in xrange(ptr[-1]):
                 conn[i] = elem_conn[i]
 
-        cdef np.ndarray X = np.zeros(3*num_nodes)
+        cdef np.ndarray X = np.zeros(3*num_nodes, dtype)
         if Xpts is not NULL:
             for i in xrange(3*num_nodes):
                 X[i] = Xpts[i]

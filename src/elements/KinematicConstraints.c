@@ -2308,3 +2308,160 @@ void TACSAverageConstraint::addJacobian( double time,
     }
   }
 }
+
+/*
+  Construct a fixed constraint with the two bodies involved and a
+  position vector measured from the global frame to the point where
+  the fixed joint is located.
+*/
+TACSFixedConstraint::TACSFixedConstraint( TACSRigidBody *_body, 
+                                          TACSGibbsVector *_point ){
+  // Copy over the arguments
+  body = _body; body->incref();
+  point = _point; point->incref();
+
+  // Set class variables to NULL
+  xVec = NULL;
+  
+  updatePoints();
+}
+
+/*
+  Destructor for fixed constraint
+*/
+TACSFixedConstraint::~TACSFixedConstraint(){
+  body->decref();
+  point->decref();
+  xVec->decref();
+}
+
+/*
+  Returns the number of nodes based on the constraint nature
+*/
+int TACSFixedConstraint::numNodes(){
+    return 2;
+}
+
+const char *TACSFixedConstraint::elem_name = "TACSFixedConstraint";
+
+/*
+  Update the local data. This takes the initial reference points for
+  the body, given as rA and the initial point for
+  the connection between the A and B bodies, "point pt", and computes
+  the vectors xA and xB in the global frame.
+*/
+void TACSFixedConstraint::updatePoints(){
+  // Retrieve the coordinates of the joint point in the global frame
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Fetch the positions of body in global frame
+  TACSGibbsVector *rAVec = body->getInitPosition();
+  const TacsScalar *rA;
+  rAVec->getVector(&rA);
+
+  // Determine the position of the joint from bodyA in the global frame
+  // xAVec = point - rAVec
+  TacsScalar xA[3];
+  for ( int i = 0; i < 3; i++ ){
+    xA[i] = pt[i] - rA[i];
+  }
+  if (xVec) {
+    xVec->decref();
+  }
+  xVec = new TACSGibbsVector(xA);
+  xVec->incref();
+}
+
+/*
+  Compute the kinetic and potential energy within the element
+*/
+void TACSFixedConstraint::computeEnergies( double time,
+                                               TacsScalar *_Te, 
+                                               TacsScalar *_Pe,
+                                               const TacsScalar Xpts[],
+                                               const TacsScalar vars[],
+                                               const TacsScalar dvars[] ){
+  *_Te = 0.0;
+  *_Pe = 0.0;
+}
+
+/*
+  Compute the residual of the governing equations
+*/
+void TACSFixedConstraint::addResidual( double time, TacsScalar res[],
+                                       const TacsScalar Xpts[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[],
+                                       const TacsScalar ddvars[] ){
+  // Set pointers to the residual
+  TacsScalar *resA = &res[0];
+  TacsScalar *resC = &res[8];
+
+  // Set the variables for body A
+  const TacsScalar *uA = &vars[0];
+  const TacsScalar etaA = vars[3];
+  const TacsScalar *epsA = &vars[4];
+
+  // Set the pointer to the multipliers
+  const TacsScalar *lam = &vars[8];
+
+  // Retrieve the initial position of body A
+  TACSGibbsVector *xAVec = body->getInitPosition();
+  const TacsScalar *xA;
+  xAVec->getVector(&xA);
+
+  // Compute the rotation matrix for body A
+  TacsScalar CA[9];
+  computeRotationMat(etaA, epsA, CA);
+
+  // Compute the distance between body A and the point B in the
+  // initial configuration
+  TacsScalar t[3];
+  t[0] = xA[0];
+  t[1] = xA[1];
+  t[2] = xA[2];
+
+  // Add the residual 
+  // resC = uB - uA + (xB - xA) + CA^{T}*(xA - xB)
+  // resC = uB - uA + t + CA^{T}*(xA - xB)
+  resC[0] += - uA[0];
+  resC[1] += - uA[1];
+  resC[2] += - uA[2];
+  
+  vecAxpy(-1.0, t, resC);
+  matMultTransAdd(CA, t, resC);
+
+  // Add the residual for the quaternions
+  resC[3] += lam[3];
+  resC[4] += - epsA[0];
+  resC[5] += - epsA[1];
+  resC[6] += - epsA[2];
+  
+  // Add the dummy constraint for the remaining multiplier 
+  resC[7] += lam[7];
+
+  // Add the terms from the first constraint
+  vecAxpy(-1.0, &lam[0], &resA[0]);
+  addEMatTransProduct(-1.0, t, &lam[0], etaA, epsA,
+                      &resA[3], &resA[4]);
+ 
+  // Add the terms from the second constraint
+  vecAxpy(-1.0, &lam[4], &resA[4]);
+}
+
+/*
+  Set the design variable values
+*/
+void TACSFixedConstraint::setDesignVars( const TacsScalar dvs[],
+                                         int numDVs ){
+  point->setDesignVars(dvs, numDVs);
+  updatePoints();
+}
+
+/*
+  Get the design variable values associated with the joint location
+*/
+void TACSFixedConstraint::getDesignVars( TacsScalar dvs[], int numDVs ){
+  point->getDesignVars(dvs, numDVs);
+}

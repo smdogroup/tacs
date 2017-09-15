@@ -588,4 +588,64 @@ class TACSAverageConstraint : public TACSElement {
   static const char *elem_name;
 };
 
+/*
+  Fixed constraint constrains all the degrees of freedom 
+  of the attached body
+*/
+class TACSFixedConstraint : public TACSElement {
+ public:
+  TACSFixedConstraint( TACSRigidBody *_bodyA,                       
+                       TACSGibbsVector *_point );
+  ~TACSFixedConstraint();
+  
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+      *multiplier = 1;
+  }
+  
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
+  // Return the number of displacements and nodes
+  // --------------------------------------------
+  int numDisplacements(){ return 8; }
+  int numNodes();
+  const char* elementName(){ return elem_name; }
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+ private:
+  // Update the local data
+  void updatePoints();
+        
+  // The rigid bodies involved in the joint
+  TACSRigidBody *body;
+
+  // The point where the joint is located in global frame
+  TACSGibbsVector *point;
+
+  // The positions of joint from each body in global frame
+  TACSGibbsVector *xVec;
+
+  // The name of the element
+  static const char *elem_name;
+};
+
 #endif // TACS_KINEMATIC_CONSTRAINTS_H

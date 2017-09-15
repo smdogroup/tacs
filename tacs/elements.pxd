@@ -37,6 +37,10 @@ cdef extern from "RigidBody.h":
         void setVisualization(TACSRigidBodyViz*)
 
 cdef extern from "KinematicConstraints.h":
+    cdef cppclass TACSFixedConstraint(TACSElement):
+        TACSFixedConstraint(TACSRigidBody *bodyA,
+                            TACSGibbsVector *point)
+    
     cdef cppclass TACSSphericalConstraint(TACSElement):
         TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
                                 TACSGibbsVector *point)
