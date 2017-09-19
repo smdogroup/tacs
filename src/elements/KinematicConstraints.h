@@ -360,10 +360,10 @@ class TACSMotionDriver : public TACSElement {
       res[8+j] += lam[j];
     }
 
-    // Add the coupling with the actual body residual
+    // Add the constraint reaction forces to the body
     res[0] += lam[0];
     res[1] += lam[1];
-    res[2] += lam[2];         
+    res[2] += lam[2];  
   }
 
   void addJacobian( double time, TacsScalar J[],

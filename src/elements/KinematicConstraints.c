@@ -2406,48 +2406,21 @@ void TACSFixedConstraint::addResidual( double time, TacsScalar res[],
   // Set the pointer to the multipliers
   const TacsScalar *lam = &vars[8];
 
-  // Retrieve the initial position of body A
-  TACSGibbsVector *xAVec = body->getInitPosition();
-  const TacsScalar *xA;
-  xAVec->getVector(&xA);
-
-  // Compute the rotation matrix for body A
-  TacsScalar CA[9];
-  computeRotationMat(etaA, epsA, CA);
-
-  // Compute the distance between body A and the point B in the
-  // initial configuration
-  TacsScalar t[3];
-  t[0] = xA[0];
-  t[1] = xA[1];
-  t[2] = xA[2];
-
-  // Add the residual 
-  // resC = uB - uA + (xB - xA) + CA^{T}*(xA - xB)
-  // resC = uB - uA + t + CA^{T}*(xA - xB)
-  resC[0] += - uA[0];
-  resC[1] += - uA[1];
-  resC[2] += - uA[2];
-  
-  vecAxpy(-1.0, t, resC);
-  matMultTransAdd(CA, t, resC);
-
-  // Add the residual for the quaternions
+  // Add the constraint residual equations
+  resC[0] += uA[0];
+  resC[1] += uA[1];
+  resC[2] += uA[2];
   resC[3] += lam[3];
-  resC[4] += - epsA[0];
-  resC[5] += - epsA[1];
-  resC[6] += - epsA[2];
+  resC[4] += epsA[0];
+  resC[5] += epsA[1];
+  resC[6] += epsA[2];
   
   // Add the dummy constraint for the remaining multiplier 
   resC[7] += lam[7];
 
-  // Add the terms from the first constraint
-  vecAxpy(-1.0, &lam[0], &resA[0]);
-  addEMatTransProduct(-1.0, t, &lam[0], etaA, epsA,
-                      &resA[3], &resA[4]);
- 
-  // Add the terms from the second constraint
-  vecAxpy(-1.0, &lam[4], &resA[4]);
+  // Add the constraint reaction forces/moments to the body residual
+  vecAxpy(1.0, &lam[0], &resA[0]);
+  vecAxpy(1.0, &lam[4], &resA[4]);
 }
 
 /*
