@@ -12,17 +12,16 @@
 #include "RigidBody.h"
 
 /*
-  Spherical constraint
+  Generic base class for constraint elements
 */
-class TACSSphericalConstraint : public TACSElement {
+class TACSKinematicConstraint : public TACSElement {
  public:
-  TACSSphericalConstraint( TACSRigidBody *_bodyA,
-                           TACSRigidBody *_bodyB,
-                           TACSGibbsVector *_point );
-  TACSSphericalConstraint( TACSRigidBody *_bodyA,
-                           TACSGibbsVector *_point );
-  ~TACSSphericalConstraint();
-
+  TACSKinematicConstraint( TACSGibbsVector *_point,
+                           int _dof_flag,
+                           TACSRigidBody *_bodyA,
+                           TACSRigidBody *_bodyB=NULL );
+  ~TACSKinematicConstraint();
+  
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   void getMultiplierIndex( int *multiplier ){
@@ -33,6 +32,38 @@ class TACSSphericalConstraint : public TACSElement {
       *multiplier = 1;
     }    
   }
+
+  // Return the number of displacements and nodes
+  // --------------------------------------------
+  int numDisplacements(){ return 8; }
+  int numNodes() = 0;
+  const char* elementName(){ return elem_name; }
+
+ private:
+  // The point where the joint is located in global frame
+  TACSGibbsVector *point;
+
+  // The rigid bodies involved in the joint
+  TACSRigidBody *bodyA, *bodyB;
+  
+  // The positions of joint from each body in global frame
+  TACSGibbsVector *xAVec, *xBVec;
+  
+  // The name of the element
+  static const char *elem_name;
+};
+
+/*
+  Spherical constraint
+*/
+class TACSSphericalConstraint : public TACSElement {
+ public:
+  TACSSphericalConstraint( TACSRigidBody *_bodyA,
+                           TACSRigidBody *_bodyB,
+                           TACSGibbsVector *_point );
+  TACSSphericalConstraint( TACSRigidBody *_bodyA,
+                           TACSGibbsVector *_point );
+  ~TACSSphericalConstraint();
 
   // Set and retrieve design variable values
   // ---------------------------------------
