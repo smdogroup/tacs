@@ -504,6 +504,85 @@ class TACSCylindricalConstraint : public TACSElement {
 };
 
 /*
+  Sliding pivot constraint
+*/
+class TACSSlidingPivotConstraint : public TACSElement {
+ public:
+  TACSSlidingPivotConstraint( TACSRigidBody *_bodyA,
+			      TACSRigidBody *_bodyB,
+			      TACSGibbsVector *_point,
+			      TACSGibbsVector *_eAVec );
+  TACSSlidingPivotConstraint( TACSRigidBody *_bodyA,
+			      TACSGibbsVector *_point,
+			      TACSGibbsVector *_eAVec );
+  ~TACSSlidingPivotConstraint();
+
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+    if (bodyA && bodyB){
+      *multiplier = 2;
+    }
+    else {
+      *multiplier = 1;
+    }    
+  }
+
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
+  // Return the number of displacements and nodes
+  // --------------------------------------------
+  int numDisplacements(){ return 8; }
+  int numNodes();
+  const char* elementName(){ return elem_name; }
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+ private:
+  // Update the local data 
+  void updatePoints( int init_e=0 );
+
+  // The rigid bodies involved in the joint
+  TACSRigidBody *bodyA, *bodyB;
+
+  // The point where the joint is located in global frame
+  TACSGibbsVector *point;
+
+  // The revolute direction in global frame
+  TACSGibbsVector *eAVec;
+
+  // The positions of joint from each body in global frame
+  TACSGibbsVector *xAVec, *xBVec;
+
+  // The positions of joint from each body in global fram
+  TACSGibbsVector *eB1Vec, *eB2Vec;
+
+  // The coordinate direction in global frame with minimal dot product
+  // with eAVec
+  TACSGibbsVector *eVec;
+
+  // The name of the element
+  static const char *elem_name;
+};
+
+/*
   The following constraint is designed to connect rigid and flexible
   elements in an average sense. The element enforces that the zeroth
   and first moments of the displacements about a reference point in a
