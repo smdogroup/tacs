@@ -379,44 +379,32 @@ class TACSMotionDriver : public TACSElement {
     // The Lagrange multipliers
     const TacsScalar *lam = &vars[8];
 
-    // Specify a sinusoidal motion (might want to generalize later)
+    // Specify a sinusoidal motion
     const TacsScalar scale = sin(omega*time);
 
+    // Specify sinusoidal translatory motion
     res[8] += vars[0] - scale*d[0];
     res[9] += vars[1] - scale*d[1];
     res[10] += vars[2] - scale*d[2];
 
-    // Dummy equations
-    for ( int j = 3; j < 8; j++ ){
-      res[8+j] += lam[j];
-    }
+    // Arrest rotations
+    res[12] += vars[4];
+    res[13] += vars[5];
+    res[14] += vars[6];
+
+    // Dummy constraints
+    res[11] += lam[3];
+    res[15] += lam[7];
 
     // Add the constraint reaction forces to the body
     res[0] += lam[0];
     res[1] += lam[1];
-    res[2] += lam[2];  
-  }
+    res[2] += lam[2];
 
-  void addJacobian( double time, TacsScalar J[],
-                    double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] ){
-    // Coupling terms
-    J[8] += alpha;
-    J[16+9] += alpha;
-    J[32+10] += alpha;
-
-    // Residual of the contraint
-    J[8*16] += alpha;
-    J[9*16+1] += alpha;
-    J[10*16+2] += alpha;
-
-    // Dummy contraints
-    for ( int j = 3; j < 8; j++ ){
-      J[17*(8+j)] += alpha;
-    }
+    // Add the constraint reaction moments to the body
+    res[4] += lam[4];
+    res[5] += lam[5];
+    res[6] += lam[6];
   }
 
  private:
@@ -437,6 +425,85 @@ class TACSCylindricalConstraint : public TACSElement {
                              TACSGibbsVector *_point,
                              TACSGibbsVector *_eAVec );
   ~TACSCylindricalConstraint();
+
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier ){
+    if (bodyA && bodyB){
+      *multiplier = 2;
+    }
+    else {
+      *multiplier = 1;
+    }    
+  }
+
+  // Set and retrieve design variable values
+  // ---------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
+  // Return the number of displacements and nodes
+  // --------------------------------------------
+  int numDisplacements(){ return 8; }
+  int numNodes();
+  const char* elementName(){ return elem_name; }
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] );
+ private:
+  // Update the local data 
+  void updatePoints( int init_e=0 );
+
+  // The rigid bodies involved in the joint
+  TACSRigidBody *bodyA, *bodyB;
+
+  // The point where the joint is located in global frame
+  TACSGibbsVector *point;
+
+  // The revolute direction in global frame
+  TACSGibbsVector *eAVec;
+
+  // The positions of joint from each body in global frame
+  TACSGibbsVector *xAVec, *xBVec;
+
+  // The positions of joint from each body in global fram
+  TACSGibbsVector *eB1Vec, *eB2Vec;
+
+  // The coordinate direction in global frame with minimal dot product
+  // with eAVec
+  TACSGibbsVector *eVec;
+
+  // The name of the element
+  static const char *elem_name;
+};
+
+/*
+  Prismatic constraint between rigid bodies
+*/
+class TACSPrismaticConstraint : public TACSElement {
+ public:
+  TACSPrismaticConstraint( TACSRigidBody *_bodyA,
+                             TACSRigidBody *_bodyB,
+                             TACSGibbsVector *_point,
+                             TACSGibbsVector *_eAVec );
+  TACSPrismaticConstraint( TACSRigidBody *_bodyA,
+                             TACSGibbsVector *_point,
+                             TACSGibbsVector *_eAVec );
+  ~TACSPrismaticConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------

@@ -68,6 +68,18 @@ cdef extern from "KinematicConstraints.h":
         TACSCylindricalConstraint(TACSRigidBody *bodyA,
                                   TACSGibbsVector *point, TACSGibbsVector *eA)
 
+    cdef cppclass TACSPrismaticConstraint(TACSElement):
+        TACSPrismaticConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                                TACSGibbsVector *point, TACSGibbsVector *eA)
+        TACSPrismaticConstraint(TACSRigidBody *bodyA,
+                                TACSGibbsVector *point, TACSGibbsVector *eA)
+
+    cdef cppclass TACSSlidingPivotConstraint(TACSElement):
+        TACSSlidingPivotConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                                   TACSGibbsVector *point, TACSGibbsVector *eA)
+        TACSSlidingPivotConstraint(TACSRigidBody *bodyA,
+                                   TACSGibbsVector *point, TACSGibbsVector *eA)
+
     cdef cppclass TACSAverageConstraint(TACSElement):
         TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
                               TACSRefFrame*, int)
