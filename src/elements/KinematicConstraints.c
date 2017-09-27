@@ -1856,9 +1856,9 @@ void TACSCylindricalConstraint::addResidual( double time, TacsScalar res[],
   point->getVector(&pt);
 
   // Set the bodyA pointers
-  TacsScalar *resA       = &res[0];
-  const TacsScalar *uA   = &vars[0];
-  const TacsScalar etaA  = vars[3];
+  TacsScalar *resA = &res[0];
+  const TacsScalar *uA = &vars[0];
+  const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
   
   // Set the constraint pointers
@@ -2244,14 +2244,13 @@ void TACSPrismaticConstraint::addResidual( double time, TacsScalar res[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
-
   // Retrieve the joint location from  global origin
   const TacsScalar *pt;
   point->getVector(&pt);
 
   // Set the bodyA pointers
-  TacsScalar *resA       = &res[0];
-  const TacsScalar *uA   = &vars[0];
+  TacsScalar *resA = &res[0];
+  const TacsScalar *uA  = &vars[0];
   const TacsScalar etaA  = vars[3];
   const TacsScalar *epsA = &vars[4];
   
@@ -2290,107 +2289,28 @@ void TACSPrismaticConstraint::addResidual( double time, TacsScalar res[],
   xAVec->getVector(&xA);
 
   // Evaluate the constraint 
-  // resC = rA + uA + CA^{T}*xA - pt = 0 or 
-  // resC = rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB = 0
-
+  // resC = rA + uA + CA^{T}*xA - pt = 0
   TacsScalar dA[3] = {0.0, 0.0, 0.0};
   matMultTransAdd(CA, xA, dA);
   vecAxpy(1.0, uA, dA);
   vecAxpy(1.0, rA, dA);
- 
-  if (bodyB){
-    // Set the pointers to bodyB
-    TacsScalar *resB = &res[8];
-    const TacsScalar *uB = &vars[8];
-    const TacsScalar etaB = vars[11];
-    const TacsScalar *epsB = &vars[12];
+  vecAxpy(-1.0, pt, dA);
+  
+  // Complete the translation to an axis by applying two reaction
+  // forces
+  resC[0] += vecDot(eB1, dA);
+  resC[1] += vecDot(eB2, dA);
+  
+  // Restrict rotations
+  resC[4] += vars[4];
+  resC[5] += vars[5];
+  resC[6] += vars[6];
 
-    // Compute the rotation matrix for bodyB
-    TacsScalar CB[9];
-    computeRotationMat(etaB, epsB, CB);
-
-    // Get the initial position for bodyB
-    TACSGibbsVector *rBVec = bodyB->getInitPosition();
-    const TacsScalar *rB;
-    rBVec->getVector(&rB);
-
-    // Get the joint location from body B    
-    const TacsScalar *xB;
-    xBVec->getVector(&xB);
-
-    // Position constraint on body B: dB = CB^{T}*xB + uB + rB0
-    TacsScalar dB[3];  
-    matMultTrans(CB, xB, dB);
-    vecAxpy(1.0, uB, dB);
-    vecAxpy(1.0, rB, dB);
-
-    // Rotate the joint axes into different frames
-    TacsScalar tB1[3], tB2[3];
-    matMultTrans(CB, eB1, tB1);
-    matMultTrans(CB, eB2, tB2);
-
-    // Complete the evaluation of the constraint 1
-    resC[0] += vecDot(tB1, dA);
-    resC[1] += vecDot(tB2, dA);
-    resC[0] -= vecDot(tB1, dB);
-    resC[1] -= vecDot(tB2, dB);
-
-    // Add the contributions of this constraint into body A    
-    TacsScalar f[3];
-    crossProduct(1.0, eA, lam, f);
-
-    vecAxpy(1.0, f, &resA[0]);
-    addEMatTransProduct(1.0, xA, f, etaA, epsA, 
-                        &resA[3], &resA[4]);
-
-    // Add the contributions of this constraint into body B
-    vecAxpy(-1.0, f, &resB[0]);
-    addEMatTransProduct(-1.0, xB, f, etaB, epsB, 
-                        &resB[3], &resB[4]);
-
-    // Compute the contributions to the first cylindrical constraint
-    resC[3] += vecDot(tA, tB1);
-
-    // Add the derivative of this constraint 
-    // (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB to body A
-    addEMatTransProduct(lam[3], eA, tB1, etaA, epsA, 
-                        &resA[3], &resA[4]);
-
-    // Add the derivative of this constraint 
-    // d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA to body B
-    addEMatTransProduct(lam[3], eB1, tA, etaB, epsB,
-                        &resB[3], &resB[4]);
-
-    // Compute the contributions to the second cylindrical constraint
-    resC[4] += vecDot(tA, tB2);
-
-    // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
-    addEMatTransProduct(lam[4], eA, tB2, etaA, epsA, 
-                        &resA[3], &resA[4]);
-    // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
-    addEMatTransProduct(lam[4], eB2, tA, etaB, epsB,
-                        &resB[3], &resB[4]);
-  }
-  else {
-    // This term should take us back to the origin if bodyB is not present
-    vecAxpy(-1.0, pt, dA);
-
-    // Complete the translation to an axis by applying two reaction
-    // forces
-    resC[0] += vecDot(eB1, dA);
-    resC[1] += vecDot(eB2, dA);
-
-    // Restrict rotations
-    resC[4] += vars[4];
-    resC[5] += vars[5];
-    resC[6] += vars[6];
-
-    // Apply reaction forces and moments
-    TacsScalar f[3];
-    crossProduct(1.0, tA, lam, f);
-    vecAxpy(1.0, f, &resA[0]);
-    vecAxpy(1.0, &lam[4], &resA[4]);
-  }
+  // Apply reaction forces and moments
+  TacsScalar f[3];
+  crossProduct(1.0, tA, lam, f);
+  vecAxpy(1.0, f, &resA[0]);
+  vecAxpy(1.0, &lam[4], &resA[4]);
 
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables

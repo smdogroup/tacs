@@ -383,28 +383,18 @@ class TACSMotionDriver : public TACSElement {
     const TacsScalar scale = sin(omega*time);
 
     // Specify sinusoidal translatory motion
-    res[8] += vars[0] - scale*d[0];
+    res[8] += vars[0] - scale*d[0]; 
     res[9] += vars[1] - scale*d[1];
     res[10] += vars[2] - scale*d[2];
-
-    // Arrest rotations
-    res[12] += vars[4];
-    res[13] += vars[5];
-    res[14] += vars[6];
-
-    // Dummy constraints
-    res[11] += lam[3];
-    res[15] += lam[7];
 
     // Add the constraint reaction forces to the body
     res[0] += lam[0];
     res[1] += lam[1];
     res[2] += lam[2];
 
-    // Add the constraint reaction moments to the body
-    res[4] += lam[4];
-    res[5] += lam[5];
-    res[6] += lam[6];
+    for ( int i = 3; i < 8; i++ ){
+      res[8+i] += lam[i];
+    }
   }
 
  private:

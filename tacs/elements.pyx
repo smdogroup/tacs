@@ -239,7 +239,7 @@ cdef class SlidingPivotConstraint(Element):
         else:
             self.ptr = new TACSSlidingPivotConstraint(bodyA.rbptr, bodyB.rbptr,
                                                       point.ptr, eA.ptr)
-            self.ptr.incref()
+        self.ptr.incref()
         return
     def __dealloc__(self):
         self.ptr.decref()
