@@ -1401,7 +1401,7 @@ cdef class MeshLoader:
                 ptr[i] = bc_ptr[i]
 
         cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.int)
-        cdef np.ndarray vals = np.zeros(ptr[-1])
+        cdef np.ndarray vals = np.zeros(ptr[-1], dtype)
         if bc_vars is not NULL and bc_vals is not NULL:
             for i in xrange(ptr[-1]):
                 bvars[i] = bc_vars[i]
