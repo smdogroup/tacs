@@ -57,7 +57,7 @@ cdef extern from "KinematicConstraints.h":
         TACSRigidLink(TACSRigidBody*)
 
     cdef cppclass TACSRevoluteDriver(TACSElement):
-        TACSRevoluteDriver(TACSGibbsVector*, TACSGibbsVector*, TacsScalar)
+        TACSRevoluteDriver(TACSGibbsVector*, TacsScalar)
 
     cdef cppclass TACSMotionDriver(TACSElement):
         TACSMotionDriver(TACSGibbsVector*, TacsScalar)

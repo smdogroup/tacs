@@ -176,6 +176,9 @@ class TACSAssembler : public TACSObject {
                          MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType,
                         TACSMat *A, MatrixOrientation matOr=NORMAL );
+  void assembleMatCombo( ElementMatrixType matTypes[],
+                         TacsScalar scale[], int nmats,
+                         TACSMat *A, MatrixOrientation matOr=NORMAL );
   void addJacobianVecProduct( TacsScalar scale, 
                               double alpha, double beta, double gamma,
                               TACSBVec *x, TACSBVec *y,

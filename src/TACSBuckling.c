@@ -394,7 +394,12 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   if (mat != kmat){
     fprintf(stderr, "Error, solver must be associated with the \
 stiffness matrix\n");
-  } 
+  }
+
+  // Check if the preconditioner is actually a multigrid object. If
+  // so, then we have to allocate extra data to store things for each
+  // multigrid level.
+  mg = dynamic_cast<TACSMg*>(pc);
 
   // Allocate vectors that are required for the eigenproblem
   eigvec = tacs->createVec();  
@@ -444,13 +449,31 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
   Solve the eigenvalue problem
 */
 void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
+  // Zero the variables
   tacs->zeroVariables();
-  tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-  tacs->assembleMatType(MASS_MATRIX, mmat);
 
-  // Form the shifted operator and factor it
-  kmat->axpy(-sigma, mmat);
-  kmat->applyBCs(tacs->getBcMap());
+  if (mg){
+    // Assemble the mass matrix 
+    ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, MASS_MATRIX};
+    TacsScalar scale[2] = {1.0, sigma};
+
+    // Assemble the mass matrix
+    tacs->assembleMatType(MASS_MATRIX, mmat);
+    
+    // Assemble the linear combination
+    mg->assembleMatCombo(matTypes, scale, 2);
+  }
+  else {
+    // Assemble the stiffness and mass matrices
+    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+    tacs->assembleMatType(MASS_MATRIX, mmat);
+
+    // Form the shifted operator and factor it
+    kmat->axpy(-sigma, mmat);
+    kmat->applyBCs(tacs->getBcMap());
+  }
+
+  // Factor the preconditioner
   pc->factor();
 
   // Solve the symmetric eigenvalue problem
@@ -497,7 +520,7 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
 
   ( u^{T} * M * u ) [ d lambda/dx ] = u^{T} * ( dK/dx - lambda * dM/dx ) * u
 */
-void TACSFrequencyAnalysis::evalEigenDVSens( int n, 
+void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 					     TacsScalar fdvSens[], 
 					     int numDVs ){
   // Allocate extra space for the derivative
@@ -525,10 +548,6 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
   }
 
   delete [] temp;
-
-  // All reduce across the processors
-  MPI_Allreduce(MPI_IN_PLACE, fdvSens, numDVs, MPI_INT,
-                MPI_SUM, tacs->getMPIComm());
 }
 
 /*!

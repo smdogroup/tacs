@@ -265,8 +265,8 @@ cdef class RigidLink(Element):
         return
 
 cdef class RevoluteDriver(Element):
-    def __cinit__(self, GibbsVector orig, GibbsVector rev, TacsScalar omega):
-        self.ptr = new TACSRevoluteDriver(orig.ptr, rev.ptr, omega)
+    def __cinit__(self, GibbsVector rev, TacsScalar omega):
+        self.ptr = new TACSRevoluteDriver(rev.ptr, omega)
         self.ptr.incref()
         return
     def __dealloc__(self):

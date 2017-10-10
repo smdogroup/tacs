@@ -91,8 +91,9 @@ cdef class Constitutive:
         return
     
     def getDVOutputValue(self, int dvIndex,
-                         np.ndarray[double, ndim=1, mode='c']pt):
+                         np.ndarray[double, ndim=1, mode='c'] pt):
         return self.ptr.getDVOutputValue(dvIndex, <double*>pt.data)
+    
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):

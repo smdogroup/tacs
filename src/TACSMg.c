@@ -128,7 +128,8 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
   tacs[level]->incref();
 
   if ((!_mat && _smoother) || (!_smoother && _mat)){
-    fprintf(stderr, "TACSMg: You must define both the matrix and preconditioner\n");
+    fprintf(stderr, 
+            "TACSMg: You must define both the matrix and preconditioner\n");
     _mat = NULL;
     _smoother = NULL;      
   }
@@ -309,6 +310,25 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
   // Assemble the coarsest problem 
   if (tacs[nlevels-1]){
     tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+  }
+}
+
+/*
+  Assemble a linear combination of matrices with the specified linear
+  combination
+*/
+void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
+                               TacsScalar scale[], int nmats,
+                               MatrixOrientation matOr ){
+  for ( int i = 0; i < nlevels-1; i++ ){
+    if (tacs[i]){
+      tacs[i]->assembleMatCombo(matTypes, scale, nmats, mat[i], matOr);
+    }
+  }
+
+  // Assemble the coarsest problem 
+  if (tacs[nlevels-1]){
+    tacs[nlevels-1]->assembleMatCombo(matTypes, scale, nmats, root_mat, matOr);
   }
 }
 

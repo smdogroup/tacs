@@ -11,6 +11,8 @@
 #include "TACSGibbsVector.h"
 #include "RigidBody.h"
 
+enum TACSTranslationConType { COINCIDENT, COLINEAR, COPLANAR };
+
 /*
   Generic base class for constraint elements
 */
@@ -55,15 +57,36 @@ class TACSKinematicConstraint : public TACSElement {
 
 /*
   Spherical constraint
+
+  The spherical constraint class imposes no restriction on the
+  relative rotation between the two reference frames (either the first
+  frame A and the inertial frame or the first frame A and a second
+  frame B). 
+
+  The translational degrees of freedom are constrained either to be
+  1. Coincident 
+  2. Colinear
+  3. Coplanar
+
+  The nature of these translational constraints is dictated by the
+  arguments passed to the constructor.
 */
 class TACSSphericalConstraint : public TACSElement {
  public:
   TACSSphericalConstraint( TACSRigidBody *_bodyA,
                            TACSRigidBody *_bodyB,
-                           TACSGibbsVector *_point );
+                           TACSGibbsVector *_point,
+                           TACSGibbsVector *_axis=NULL,
+                           TACSTranslationConType con_type=COINCIDENT );
   TACSSphericalConstraint( TACSRigidBody *_bodyA,
-                           TACSGibbsVector *_point );
+                           TACSGibbsVector *_point,
+                           TACSGibbsVector *_axis=NULL, 
+                           TACSTranslationConType con_type=COINCIDENT );
   ~TACSSphericalConstraint();
+
+  // Get the multiplier precedent to ensure they are ordered last
+  // ------------------------------------------------------------
+  void getMultiplierIndex( int *multiplier );
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -95,7 +118,7 @@ class TACSSphericalConstraint : public TACSElement {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
+  void addJacobian2( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
@@ -103,17 +126,22 @@ class TACSSphericalConstraint : public TACSElement {
                     const TacsScalar ddvars[] );
 
  private:
-  // Update the local data
-  void updatePoints();
-        
+  // Keep a record of the constraint type
+  TACSTranslationConType con_type;
+
+  // Indicates whether the point/constraint is fixed inertially (true)
+  // or whether it is fixed within body A (false)
+  int inertial_fixed_point;
+
   // The rigid bodies involved in the joint
   TACSRigidBody *bodyA, *bodyB;
 
+  // The axis used to define either the axis or plane for the
+  // constraints
+  TACSGibbsVector *axis;
+
   // The point where the joint is located in global frame
   TACSGibbsVector *point;
-
-  // The positions of joint from each body in global frame
-  TACSGibbsVector *xAVec, *xBVec;
 
   // The name of the element
   static const char *elem_name;
@@ -282,8 +310,7 @@ class TACSRigidLink : public TACSElement {
 */
 class TACSRevoluteDriver : public TACSElement {
  public:
-  TACSRevoluteDriver( TACSGibbsVector *orig, 
-                      TACSGibbsVector *rev,
+  TACSRevoluteDriver( TACSGibbsVector *rev,
                       TacsScalar _omega );
   ~TACSRevoluteDriver();
 

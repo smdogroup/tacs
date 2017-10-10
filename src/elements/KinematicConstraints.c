@@ -10,19 +10,23 @@
 */
 TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA, 
                                                   TACSRigidBody *_bodyB, 
-                                                  TACSGibbsVector *_point ){
+                                                  TACSGibbsVector *_point,
+                                                  TACSGibbsVector *_axis,
+                                                  TACSTranslationConType _con_type ){
   // Copy over the arguments
+  inertial_fixed_point = 0;
   bodyA = _bodyA; bodyA->incref();
   bodyB = _bodyB; bodyB->incref();
   point = _point; point->incref();
-
-  // Set class variables to NULL
-  xAVec = NULL;
-  xBVec = NULL;
-  
-  updatePoints();
+  axis = _axis;
+  con_type = _con_type;
+  if (axis){ 
+    axis->incref();
+  }
+  else {
+    con_type = COINCIDENT;
+  }
 }
-
 
 /*
   Construct a spherical constraint with a body involved and a position
@@ -30,91 +34,60 @@ TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA,
   spherical joint is located.
 */
 TACSSphericalConstraint::TACSSphericalConstraint( TACSRigidBody *_bodyA, 
-                                                  TACSGibbsVector *_point ){
+                                                  TACSGibbsVector *_point,
+                                                  TACSGibbsVector *_axis,
+                                                  TACSTranslationConType _con_type ){
   // Copy over the arguments
+  inertial_fixed_point = 1;
   bodyA = _bodyA; bodyA->incref();
   bodyB = NULL;
   point = _point; point->incref();
-
-  // Set class variables to NULL
-  xAVec = NULL;
-  xBVec = NULL;
-  
-  updatePoints();
+  axis = _axis;
+  con_type = _con_type;
+  if (axis){ 
+    axis->incref();
+  }
+  else {
+    con_type = COINCIDENT;
+  }
 }
 
 /*
   Destructor for spherical constraint
 */
 TACSSphericalConstraint::~TACSSphericalConstraint(){
-  bodyA->decref();
-  if(bodyB){ bodyB->decref(); }
+  if (bodyA){ bodyA->decref(); }
+  if (bodyB){ bodyB->decref(); }
   point->decref();
-  xAVec->decref();
-  if(xBVec){ xBVec->decref(); }
+  if (axis){ axis->decref(); }
 }
 
 /*
   Returns the number of nodes based on the constraint nature
 */
 int TACSSphericalConstraint::numNodes(){
-  if(bodyA && bodyB){
-    return 3;
+  if (inertial_fixed_point){
+    return 2;
   } 
   else {
-    return 2;
+    return 3;
   }
 }
-
-const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 
 /*
-  Update the local data. This takes the initial reference points for
-  the bodies A and B, given as rA and rB, and the initial point for
-  the connection between the A and B bodies, "point pt", and computes
-  the vectors xA and xB in the global frame.
+  Returns the multiplier index
 */
-void TACSSphericalConstraint::updatePoints(){
-  // Retrieve the coordinates of the joint point in the global frame
-  const TacsScalar *pt;
-  point->getVector(&pt);
-
-  // Fetch the positions of body in global frame
-  TACSGibbsVector *rAVec = bodyA->getInitPosition();
-  const TacsScalar *rA;
-  rAVec->getVector(&rA);
-
-  // Determine the position of the joint from bodyA in the global frame
-  // xAVec = point - rAVec
-  TacsScalar xA[3];
-  for ( int i = 0; i < 3; i++ ){
-    xA[i] = pt[i] - rA[i];
+void TACSSphericalConstraint::getMultiplierIndex( int *multiplier ){
+  if (inertial_fixed_point){
+    *multiplier = 1;
   }
-  if (xAVec) {
-    xAVec->decref();
-  }
-  xAVec = new TACSGibbsVector(xA);
-  xAVec->incref();
-
-  if (bodyB){
-    // Fetch the positions of body in global frame
-    TACSGibbsVector *rBVec = bodyB->getInitPosition();
-    const TacsScalar *rB;
-    rBVec->getVector(&rB);
-
-    // Determine the position of the joint from bodyB in the global frame
-    // xBVec = point - rBVec
-    TacsScalar xB[3];
-    for ( int i = 0; i < 3; i++ ){
-      xB[i] = pt[i] - rB[i];
-    }
-    if (xBVec) {
-      xBVec->decref();
-    }
-    xBVec = new TACSGibbsVector(xB);
-    xBVec->incref();
-  }
+  else {
+    *multiplier = 2;
+  }    
 }
+
+
+const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 
 /*
   Compute the kinetic and potential energy within the element
@@ -137,14 +110,72 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[] ){
-  // Retrieve the joint location from  global origin
+  // Retrieve the spherical joint location in the global frame
   const TacsScalar *pt;
   point->getVector(&pt);
 
-  // Get the initial position for bodyA  from global origin
-  TACSGibbsVector *rAVec = bodyA->getInitPosition();
-  const TacsScalar *rA;
-  rAVec->getVector(&rA);
+  // Compute the directions that are orthogonal to the axis
+  TacsScalar dir1[3], dir2[3];
+  dir1[0] = dir1[1] = dir1[2] = 0.0;
+  dir2[0] = dir2[1] = dir2[2] = 0.0;
+
+  // If the constraint is colinear, then compute the directions dir1
+  // and dir2 based on the axis directions.
+  if (con_type == COLINEAR){
+    // Get the axis vector
+    const TacsScalar *a;
+    axis->getVector(&a);
+
+    // Compute the absolute values of the
+    double a0 = fabs(TacsRealPart(a[0]));
+    double a1 = fabs(TacsRealPart(a[1]));
+    double a2 = fabs(TacsRealPart(a[2]));
+
+    // Compute a vector that is orthogonal to the axis
+    TacsScalar e[3];
+    e[0] = e[1] = e[2] = 0.0;
+    if ((a0 <= a1) && (a0 <= a2)){
+      e[0] = 1.0;
+    }
+    else if ((a1 <= a0) && (a1 <= a2)){
+      e[1] = 1.0;
+    }
+    else {
+      e[2] = 1.0;
+    }
+    
+    // Compute dir1 = (axis x e) and dir2 = (dir1 x axis)
+    crossProduct(1.0, a, e, dir1);
+    crossProduct(1.0, dir1, a, dir2);
+  }
+
+  // Get the initial position for bodyA and bodyB - if they exist
+  const TacsScalar *rA = NULL, *rB = NULL;
+  if (bodyA){
+    TACSGibbsVector *rAVec = bodyA->getInitPosition();
+    rAVec->getVector(&rA);
+  }
+  else {
+    rA = &Xpts[0];
+  }
+  if (bodyB){
+    TACSGibbsVector *rBVec = bodyB->getInitPosition();
+    rBVec->getVector(&rB);
+  }
+  else {
+    rB = &Xpts[3];
+  }
+
+  // Set the positions relative to the initial location
+  TacsScalar xA[3];
+  xA[0] = pt[0] - rA[0];
+  xA[1] = pt[1] - rA[1];
+  xA[2] = pt[2] - rA[2];
+
+  TacsScalar xB[3];
+  xB[0] = pt[0] - rB[0];
+  xB[1] = pt[1] - rB[1];
+  xB[2] = pt[2] - rB[2];
 
   // Set pointers to the residual of each body
   TacsScalar *resA = &res[0];
@@ -154,6 +185,11 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
   
+  // Set the variables for body B
+  const TacsScalar *uB = &vars[8];
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
+
   // The residual for the constraint equations
   TacsScalar *resC = NULL;
 
@@ -162,75 +198,164 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
 
   // Set the pointers depending on whether both body A and body B
   // exist or not.
-  if (bodyB){
-    resC = &res[16];
-    lam = &vars[16];
-  }
-  else {
+  if (inertial_fixed_point){
     resC = &res[8];
     lam = &vars[8];
   }
+  else {
+    resC = &res[16];
+    lam = &vars[16];
+  }
 
-  // Compute the rotation matrices for each body
+  // Compute the rotation matrix for the first body
   TacsScalar CA[9];
   computeRotationMat(etaA, epsA, CA);
 
-  // Retrieve the pointers to xAVec and xBVec
-  const TacsScalar *xA;
-  xAVec->getVector(&xA);
+  // Compute the distance between the point 
+  // r = rA + uA + CA^{T}*xA - pt = 0
+  TacsScalar r[3];    
+  matMultTrans(CA, xA, r);
+  vecAxpy(1.0, uA, r);
+  vecAxpy(1.0, rA, r);
 
-  // Add the terms for body A
-  vecAxpy(1.0, lam, &resA[0]);
-  addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
-                      &resA[3], &resA[4]);
+  if (inertial_fixed_point){
+    // Finish computing the constraint
+    vecAxpy(-1.0, pt, r);
 
-  // Evaluate the constraint 
-  // resC = rA + uA + CA^{T}*xA - pt = 0 or 
-  // resC = rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB = 0
-  matMultTrans(CA, xA, resC);
-  vecAxpy(1.0, uA, resC);
-  vecAxpy(1.0, rA, resC);
- 
-  if (bodyB){
-    // Set the residual for bodyB
+    // Add the residual
+    if (con_type == COINCIDENT){
+      resC[0] += r[0];
+      resC[1] += r[1];
+      resC[2] += r[2];
+
+      // Add the terms for body A
+      vecAxpy(1.0, lam, &resA[0]);
+      addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
+                          &resA[3], &resA[4]);
+    }
+    else if (con_type == COLINEAR){
+      // resC = dot(rA + uA + CA^{T}*xA - pt, dir) = 0
+      resC[0] += vecDot(r, dir1);
+      resC[1] += vecDot(r, dir2);
+      resC[2] += lam[2];
+
+      // Add the terms for body A
+      resA[0] += lam[0]*dir1[0] + lam[1]*dir2[0];
+      resA[1] += lam[0]*dir1[1] + lam[1]*dir2[1];
+      resA[2] += lam[0]*dir1[2] + lam[1]*dir2[2];
+      
+      // Add the terms from the transpose derivative of the constraint
+      // times the multiplier
+      addEMatTransProduct(lam[0], xA, dir1, etaA, epsA, 
+                          &resA[3], &resA[4]);
+      addEMatTransProduct(lam[1], xA, dir2, etaA, epsA, 
+                          &resA[3], &resA[4]);
+    }
+    else { // con_type == COPLANAR
+      // Get the axis vector
+      const TacsScalar *a;
+      axis->getVector(&a);
+
+      // resC = dot(rA + uA + CA^{T}*xA - pt, axis) = 0
+      resC[0] += vecDot(r, a);
+      resC[1] += lam[1];
+      resC[2] += lam[2];
+
+      // Add the terms from the transpose derivative of the constraint
+      // times the multiplier
+      vecAxpy(lam[0], a, &resA[0]);
+      addEMatTransProduct(lam[0], xA, a, etaA, epsA, 
+                          &resA[3], &resA[4]);
+    }
+  }
+  else {
+    // Set the pointer into the residual
     TacsScalar *resB = &res[8];
-
-    // Set the variables for body B
-    const TacsScalar *uB = &vars[8];
-    const TacsScalar etaB = vars[11];
-    const TacsScalar *epsB = &vars[12];
 
     // Compute the rotation matrix for bodyB
     TacsScalar CB[9];
     computeRotationMat(etaB, epsB, CB);
-    
-    const TacsScalar *xB;
-    xBVec->getVector(&xB);
-    
-    // Add the terms for body B
-    vecAxpy(-1.0, lam, &resB[0]);
-    addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
-                        &resB[3], &resB[4]);
-
+   
     // Compute t = CB^{T}*xB + uB
     TacsScalar t[3];
     matMultTrans(CB, xB, t);
     vecAxpy(1.0, uB, t);
+    vecAxpy(1.0, rB, t);
 
-    // Complete the evaluation of the constraint
-    vecAxpy(-1.0, t, resC);
+    // r = rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB = 0
+    vecAxpy(-1.0, t, r);
 
-    // Get the initial position for bodyB
-    TACSGibbsVector *rBVec = bodyB->getInitPosition();
-    const TacsScalar *rB;
-    rBVec->getVector(&rB);
-    vecAxpy(-1.0, rB, resC);
+    if (con_type == COINCIDENT){
+      // Set the point so that it is coincident
+      resC[0] += r[0];
+      resC[1] += r[1];
+      resC[2] += r[2];
 
-  } else {
-    // subtract the joint location if bodyB is not present
-    vecAxpy(-1.0, pt, resC);      
-  }
-  
+      // Add the terms for body A
+      vecAxpy(1.0, lam, &resA[0]);
+      addEMatTransProduct(1.0, xA, lam, etaA, epsA, 
+                          &resA[3], &resA[4]);
+
+      // Add the terms for body B
+      vecAxpy(-1.0, lam, &resB[0]);
+      addEMatTransProduct(-1.0, xB, lam, etaB, epsB, 
+                          &resB[3], &resB[4]);
+    }
+    else if (con_type == COLINEAR){
+      // Pre-multiply to get the local directions
+      TacsScalar d1[3], d2[3];
+      matMultTrans(CA, dir1, d1);
+      matMultTrans(CA, dir2, d2);
+
+      // resC = dot(rA + uA + CA^{T}*xA - rB - uB - CB^{T}*xB, dir) = 0
+      resC[0] += vecDot(r, d1);
+      resC[1] += vecDot(r, d2);
+      resC[2] += lam[2];
+
+      // Add the terms for body A
+      resA[0] += lam[0]*d1[0] + lam[1]*d2[0];
+      resA[1] += lam[0]*d1[1] + lam[1]*d2[1];
+      resA[2] += lam[0]*d1[2] + lam[1]*d2[2];
+
+      // Add the terms for body B
+      resB[0] -= lam[0]*d1[0] + lam[1]*d2[0];
+      resB[1] -= lam[0]*d1[1] + lam[1]*d2[1];
+      resB[2] -= lam[0]*d1[2] + lam[1]*d2[2];
+      
+      // Add the terms from the transpose derivative of the constraint
+      // times the multiplier
+      addEMatTransProduct(lam[0], xA, d1, etaA, epsA, 
+                          &resA[3], &resA[4]);
+      addEMatTransProduct(lam[1], xA, d2, etaA, epsA, 
+                          &resA[3], &resA[4]);
+
+      addEMatTransProduct(-lam[0], xA, d1, etaA, epsA, 
+                          &resB[3], &resB[4]);
+      addEMatTransProduct(-lam[1], xA, d2, etaA, epsA, 
+                          &resB[3], &resB[4]);
+    }
+    else { // con_type == COPLANAR
+      // Get the axis vector
+      const TacsScalar *a;
+      axis->getVector(&a);
+
+      // Get the vector in the A-axis
+      TacsScalar aA[3];
+      matMultTrans(CA, a, aA);
+
+      // resC = dot(rA + uA + CA^{T}*xA - pt, axis) = 0
+      resC[0] += vecDot(r, aA);
+      resC[1] += lam[1];
+      resC[2] += lam[2];
+
+      // Add the terms from the transpose derivative of the constraint
+      // times the multiplier
+      vecAxpy(lam[0], aA, &resA[0]);
+      addEMatTransProduct(lam[0], xA, aA, etaA, epsA, 
+                          &resA[3], &resA[4]);
+
+    } 
+  } 
 
   // Add the dummy constraints for the remaining Lagrange multiplier
   // variables
@@ -242,17 +367,88 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
 /*
   Compute the Jacobian of the residuals of the governing equations
 */
-void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
+void TACSSphericalConstraint::addJacobian2( double time, TacsScalar J[],
                                            double alpha, 
                                            double beta, 
                                            double gamma,
                                            const TacsScalar Xpts[],
                                            const TacsScalar vars[],
                                            const TacsScalar dvars[],
-                                           const TacsScalar ddvars[] ){
+                                           const TacsScalar ddvars[] ){  
+  // Retrieve the spherical joint location in the global frame
+  const TacsScalar *pt;
+  point->getVector(&pt);
+
+  // Compute the directions that are orthogonal to the axis
+  TacsScalar dir1[3], dir2[3];
+  dir1[0] = dir1[1] = dir1[2] = 0.0;
+  dir2[0] = dir2[1] = dir2[2] = 0.0;
+
+  // If the constraint is colinear, then compute the directions dir1
+  // and dir2 based on the axis directions.
+  if (con_type == COLINEAR){
+    // Get the axis vector
+    const TacsScalar *a;
+    axis->getVector(&a);
+
+    // Compute the absolute values of the
+    double a0 = fabs(TacsRealPart(a[0]));
+    double a1 = fabs(TacsRealPart(a[1]));
+    double a2 = fabs(TacsRealPart(a[2]));
+
+    // Compute a vector that is orthogonal to the axis
+    TacsScalar e[3];
+    e[0] = e[1] = e[2] = 0.0;
+    if ((a0 <= a1) && (a0 <= a2)){
+      e[0] = 1.0;
+    }
+    else if ((a1 <= a0) && (a1 <= a2)){
+      e[1] = 1.0;
+    }
+    else {
+      e[2] = 1.0;
+    }
+    
+    // Compute dir1 = (axis x e) and dir2 = (dir1 x axis)
+    crossProduct(1.0, a, e, dir1);
+    crossProduct(1.0, dir1, a, dir2);
+  }
+
+  // Get the initial position for bodyA and bodyB - if they exist
+  const TacsScalar *rA = NULL, *rB = NULL;
+  if (bodyA){
+    TACSGibbsVector *rAVec = bodyA->getInitPosition();
+    rAVec->getVector(&rA);
+  }
+  else {
+    rA = &Xpts[0];
+  }
+  if (bodyB){
+    TACSGibbsVector *rBVec = bodyB->getInitPosition();
+    rBVec->getVector(&rB);
+  }
+  else {
+    rB = &Xpts[3];
+  }
+
+  // Set the positions relative to the initial location
+  TacsScalar xA[3];
+  xA[0] = pt[0] - rA[0];
+  xA[1] = pt[1] - rA[1];
+  xA[2] = pt[2] - rA[2];
+
+  TacsScalar xB[3];
+  xB[0] = pt[0] - rB[0];
+  xB[1] = pt[1] - rB[1];
+  xB[2] = pt[2] - rB[2];
+
   // Set the variables for body A
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
+
+  // Set the variables for body B
+  const TacsScalar etaB = vars[11];
+  const TacsScalar *epsB = &vars[12];
 
   // Set the Lagrange multipliers for the constraint
   const TacsScalar *lam = NULL;
@@ -262,53 +458,81 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
   
   // Set the offset to the Lagrange multipliers
   int offset = 0;
-  if (bodyB){
-    offset = 16;
-    lam = &vars[16];
-  }
-  else {
+  if (inertial_fixed_point){
     offset = 8;
     lam = &vars[8];
   }
+  else {
+    offset = 16;
+    lam = &vars[16];
+  }
 
-  // Add the identity matricies to the Jacobian
-  addBlockIdent(alpha, &J[offset], nvars);
-  addBlockIdent(alpha, &J[offset*nvars], nvars);
+  if (inertial_fixed_point){
+    if (con_type == COINCIDENT){
+      // Add the identity matricies to the Jacobian
+      addBlockIdent(alpha, &J[offset], nvars);
+      addBlockIdent(alpha, &J[offset*nvars], nvars);
+      
+      // Add the second derivative terms
+      addBlockDMatTransDeriv(alpha, lam, xA, &J[3*(nvars+1)], nvars);
+      
+      // Add the term from the derivative w.r.t. lambda
+      addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*nvars + offset], nvars);
+      
+      // Add the term from the derivative of the constraint
+      addBlockEMat(alpha, etaA, epsA, xA, &J[offset*nvars + 3], nvars);
+    }
+    else if (con_type == COLINEAR){
+      // resC = dot(rA, uA + CA^{T}*xA - pt, dir) = 0
+      addVecMat(alpha, dir1, &J[offset], nvars);
+      addVecMat(alpha, dir2, &J[offset+1], nvars);
 
-  // Retrieve the pointers to xAVec
-  const TacsScalar *xA;
-  xAVec->getVector(&xA);
+      // Add the derivative of to the matrix dir1^{T}*CA^{T}*xA
+      
 
-  // Add the second derivative terms
-  addBlockDMatTransDeriv(alpha, lam, xA, &J[3*(nvars+1)], nvars);
 
-  // Add the term from the derivative w.r.t. lambda
-  addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*nvars + offset], nvars);
-  
-  // Add the term from the derivative of the constraint
-  addBlockEMat(alpha, etaA, epsA, xA, &J[offset*nvars + 3], nvars);
 
-  // Add the terms required for body B if it is defined
-  if (bodyB){
-    addBlockIdent(-alpha, &J[8*nvars + offset], nvars);
-    addBlockIdent(-alpha, &J[offset*nvars + 8], nvars);
+      J[(offset+2)*(nvars+1)] += alpha;
+    }
+    else {
 
-    // Set the variables for body B
-    const TacsScalar etaB = vars[11];
-    const TacsScalar *epsB = &vars[12];
+    }
+  }
+  else {
+    // Add the terms required for body B if it is defined
+    if (con_type == COINCIDENT){
+      // Add the identity matricies to the Jacobian
+      addBlockIdent(alpha, &J[offset], nvars);
+      addBlockIdent(alpha, &J[offset*nvars], nvars);
+      
+      // Add the second derivative terms
+      addBlockDMatTransDeriv(alpha, lam, xA, &J[3*(nvars+1)], nvars);
+      
+      // Add the term from the derivative w.r.t. lambda
+      addBlockEMatTrans(alpha, etaA, epsA, xA, &J[3*nvars + offset], nvars);
+      
+      // Add the term from the derivative of the constraint
+      addBlockEMat(alpha, etaA, epsA, xA, &J[offset*nvars + 3], nvars);
 
-    // Retrieve the pointer to xBVec
-    const TacsScalar *xB;
-    xBVec->getVector(&xB);
+      // Add the identity matrices to the Jacobian
+      addBlockIdent(-alpha, &J[8*nvars + offset], nvars);
+      addBlockIdent(-alpha, &J[offset*nvars + 8], nvars);
 
-    // Add the second derivative terms
-    addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*(nvars+1)], nvars);
+      // Add the second derivative terms
+      addBlockDMatTransDeriv(-alpha, lam, xB, &J[11*(nvars+1)], nvars);
     
-    // Add the terms from the derivatives w.r.t. lambdas
-    addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*nvars + offset], nvars);
+      // Add the terms from the derivatives w.r.t. lambdas
+      addBlockEMatTrans(-alpha, etaB, epsB, xB, &J[11*nvars + offset], nvars);
     
-    // Add the terms from the derivatives of the constraint
-    addBlockEMat(-alpha, etaB, epsB, xB, &J[offset*nvars + 11], nvars);
+      // Add the terms from the derivatives of the constraint
+      addBlockEMat(-alpha, etaB, epsB, xB, &J[offset*nvars + 11], nvars);
+    }
+    else if (con_type == COLINEAR){
+
+    }
+    else {
+
+    }
   }
 
   // Add the Jacobian entries for the dummy constraints
@@ -323,7 +547,6 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
 void TACSSphericalConstraint::setDesignVars( const TacsScalar dvs[], 
                                              int numDVs ){
   point->setDesignVars(dvs, numDVs);
-  updatePoints();
 }
 
 /*
@@ -1231,18 +1454,14 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
   addBlockIdent(alpha, &J[12*nvars + 20], nvars);
 }
 
-TACSRevoluteDriver::TACSRevoluteDriver( TACSGibbsVector *orig, 
-                                        TACSGibbsVector *rev,
+TACSRevoluteDriver::TACSRevoluteDriver( TACSGibbsVector *rev,
                                         TacsScalar _omega ){
-  origVec = orig;
   revVec = rev;
-  origVec->incref();
   revVec->incref();
   omega = _omega;
 }
 
 TACSRevoluteDriver::~TACSRevoluteDriver(){
-  origVec->decref();
   revVec->decref();
 }
 
@@ -1273,63 +1492,43 @@ void TACSRevoluteDriver::addResidual( double time, TacsScalar res[],
                                       const TacsScalar vars[],
                                       const TacsScalar dvars[],
                                       const TacsScalar ddvars[] ){
-  // The displacements at the final time are given
+  // Compute the angle of rotation based on the time
   TacsScalar theta = omega*time;
-  TacsScalar s = sin(theta);
-  TacsScalar c = cos(theta);
+
+  // Compute the sin of the half angle
+  TacsScalar s = sin(0.5*theta);
 
   // Extract the components of the vector
-  const TacsScalar *rev, *orig;
+  const TacsScalar *rev;
   revVec->getVector(&rev);
-  origVec->getVector(&orig);
 
-  // Compute the initial position between the 
-  TacsScalar d1[3];
-  d1[0] = Xpts[0] - orig[0];
-  d1[1] = Xpts[1] - orig[1];
-  d1[2] = Xpts[2] - orig[2];
-
-  // Compute the component of the vector d1 perpendicular to the
-  // revolute direction
-  TacsScalar p[3];
-  TacsScalar a = vecDot(rev, d1);
-  p[0] = d1[0] - a*rev[0];
-  p[1] = d1[1] - a*rev[1];
-  p[2] = d1[2] - a*rev[2];
-    
-  // Find the cross product e = rev x d1
-  TacsScalar e[3];
-  crossProduct(1.0, rev, d1, e);
-
-  // Combine the perpendicular components of the vector
-  TacsScalar d2[3];
-  d2[0] = a*rev[0] + c*p[0] + s*e[0];
-  d2[1] = a*rev[1] + c*p[1] + s*e[1];
-  d2[2] = a*rev[2] + c*p[2] + s*e[2];
-
-  // Compute the displacement from the initial point
-  TacsScalar u[3];
-  u[0] = d2[0] - d1[0];
-  u[1] = d2[1] - d1[1];
-  u[2] = d2[2] - d1[2];
-    
-  // Set the pointers to the Lagrange multipliers
+  // Set the multipliers
   const TacsScalar *lam = &vars[8];
+
+  // Scale the coefficient
+  s *= 1.0/sqrt(rev[0]*rev[0] + rev[1]*rev[1] + rev[2]*rev[2]);
 
   // Add the multipliers (forces) to the equations of motion
   res[0] += lam[0];
   res[1] += lam[1];
   res[2] += lam[2];
 
-  // Add the kinematic constraint equations
-  res[8] += vars[0] - u[0];
-  res[9] += vars[1] - u[1];
-  res[10] += vars[2] - u[2];
+  // Add the multiplier constraints for the quaternions
+  res[4] += lam[3];
+  res[5] += lam[4];
+  res[6] += lam[5];
+
+  // Set the displacements equal to zero
+  res[8] += vars[0];
+  res[9] += vars[1];
+  res[10] += vars[2];
+  
+  // Set the quaternion parameters equal to their specified values
+  res[11] += vars[4] - rev[0]*s;
+  res[12] += vars[5] - rev[1]*s;
+  res[13] += vars[6] - rev[2]*s;
 
   // Add dummy constraints for the remaining multipliers
-  res[11] += lam[3];
-  res[12] += lam[4];
-  res[13] += lam[5];
   res[14] += lam[6];
   res[15] += lam[7];
 }
@@ -1345,12 +1544,14 @@ void TACSRevoluteDriver::addJacobian( double time, TacsScalar J[],
 
   // Add the block from the multipliers
   addBlockIdent(alpha, &J[8], nvars);
+  addBlockIdent(alpha, &J[4*nvars + 11], nvars);
 
   // Add the block from the constraint equations
   addBlockIdent(alpha, &J[8*nvars], nvars);
+  addBlockIdent(alpha, &J[11*nvars + 4], nvars);
 
   // Add the diagonal block from the dummy equations
-  for ( int i = 11; i < nvars; i++ ){
+  for ( int i = 14; i < nvars; i++ ){
     J[(nvars+1)*i] += alpha;
   }
 }

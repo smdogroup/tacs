@@ -63,6 +63,9 @@ class TACSMg : public TACSPc {
                          MatrixOrientation matOr=NORMAL );
   void assembleMatType( ElementMatrixType matType=STIFFNESS_MATRIX, 
                         MatrixOrientation matOr=NORMAL );
+  void assembleMatCombo( ElementMatrixType matTypes[],
+                         TacsScalar scale[], int nmats,
+                         MatrixOrientation matOr=NORMAL );
 
   // Methods required by the TACSPc class
   // ------------------------------------

@@ -11,6 +11,7 @@
 
 #include "TACSAssembler.h"
 #include "GSEP.h"
+#include "TACSMg.h"
 
 /*
   Linearized buckling analysis code.
@@ -120,6 +121,7 @@ class TACSFrequencyAnalysis : public TACSObject {
   TacsScalar checkOrthogonality();
 
  private:
+  // The TACS assembler object
   TACSAssembler *tacs;
  
   // The matrices used in the analysis
@@ -128,6 +130,11 @@ class TACSFrequencyAnalysis : public TACSObject {
   TACSKsm *solver; // Associated with kmat
   TACSPc *pc; // The preconditioner
 
+  // The multigrid object -- only defined if a multigrid
+  // preconditioner is used
+  TACSMg *mg;
+
+  // The eigen solver
   TacsScalar sigma;
   EPGeneralizedShiftInvert *ep_op;
   SEP *sep;

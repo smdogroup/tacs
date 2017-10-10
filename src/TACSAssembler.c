@@ -3201,8 +3201,8 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
   created from the TACSAssembler object have the same non-zero pattern
   and are interchangable.
 
-  A:            the matrix to assemble (output)
   matType:      the matrix type defined in Element.h
+  A:            the matrix to assemble (output)
   matOr:        the matrix orientation: NORMAL or TRANSPOSE
 */
 void TACSAssembler::assembleMatType( ElementMatrixType matType,
@@ -3255,6 +3255,60 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
       // Get the element matrix
       elements[i]->getMatType(matType, elemMat, elemXpts, vars);
 
+      // Add the values into the element
+      addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
+    }
+  }
+
+  A->beginAssembly();
+  A->endAssembly();
+  A->applyBCs(bcMap);
+}
+
+/*!
+  Assemble a linear combination of matrices.
+
+  This is used for some buckling/eigenvalue computations which require 
+  matrices that are linear combinations of specific types.
+
+  matTypes:     the matrix type defined in Element.h
+  scale:        the scalar values
+  nmats:        the number of matrices in the linear combination
+  A:            the matrix to assemble (output)
+  matOr:        the matrix orientation: NORMAL or TRANSPOSE
+*/
+void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
+                                      TacsScalar scale[],
+                                      int nmats,
+                                      TACSMat *A, 
+                                      MatrixOrientation matOr ){
+  // Zero the matrix
+  A->zeroEntries();
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *vars, *elemXpts, *elemMat, *elemWeights;
+  getDataPointers(elementData, &vars, NULL, NULL, NULL,
+                  &elemXpts, NULL, &elemWeights, &elemMat);
+  
+  for ( int i = 0; i < numElements; i++ ){
+    // Retrieve the element variables and node locations
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, vars);
+    
+    for ( int j = 0; j < nmats; j++ ){        
+      // Get the element matrix
+      elements[i]->getMatType(matTypes[j], elemMat, elemXpts, vars);
+      
+      // Scale the matrix
+      if (scale[j] != 1.0){
+        int nvars = elements[i]->numVariables();
+        int n = nvars*nvars, one = 1;
+        BLASscal(&n, &scale[j], elemMat, &one);
+      }
+      
       // Add the values into the element
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
