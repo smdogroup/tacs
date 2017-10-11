@@ -1295,15 +1295,16 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
   if (current_step == 0){
     // Log information
     if (logfp && print_level >= 1){
-      fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", 
-              "time", "tnewton", "#iters", "NwtnFlg", "|R|", "|R|/|R0|", "|dq|",
+      fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", 
+              "status", "time", "tnewton", "#iters", "NwtnFlg", "|R|", "|R|/|R0|", "|dq|",
               "KE", "PE", "E0-E");
       
       // Compute the initial energy
       init_energy = energies[0] + energies[1];
 
       // Log the details
-      fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+              0, num_time_steps,
               time[0], time_newton, 0, 0, 0.0, 0.0, 0.0,
               TacsRealPart(energies[0]), TacsRealPart(energies[1]),  0.0);
     }
@@ -1315,12 +1316,14 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       // Need a title for total summary as details of Newton iteration
       // will overshadow this one line summary
       if (print_level == 2){
-        fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", 
+        fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+                "status",
                 "time", "tnewton", "#iters", "NwtnFlg", "|R|", "|R|/|R0|", "|dq|",
                 "KE", "PE", "E0-E");
       }
       
-      fprintf(logfp, "%12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+              current_step, num_time_steps,
               time[current_step], time_newton,
               niter, newton_term,
               TacsRealPart(res_norm), 
