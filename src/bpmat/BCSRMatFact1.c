@@ -49,17 +49,17 @@ for row %d\n", i);
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < end) && (k < row_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < row_end && cols[k] < cols[p] ){
-	  a++;
-	  k++;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < row_end && cols[k] < cols[p] ){
+          a++;
+          k++;
+        }
 
-	// A[k] = A[k] - A[j] * A[p]
-	if ( k < row_end && cols[k] == cols[p] ){
-	  a[0] -= d11*b[0];
-	}
-	b++;
+        // A[k] = A[k] - A[j] * A[p]
+        if ( k < row_end && cols[k] == cols[p] ){
+          a[0] -= d11*b[0];
+        }
+        b++;
       }
 
       // Copy over the D matrix
@@ -88,7 +88,6 @@ void BCSRMatFactorLower1( BCSRMatData * data, BCSRMatData * Edata ){
   const TacsScalar * A = data->A;
 
   // Retrieve the data required from the matrix
-  const int nrows_e = Edata->nrows;
   const int * erowp = Edata->rowp;
   const int * ecols = Edata->cols;
   TacsScalar * E = Edata->A;
@@ -111,16 +110,16 @@ void BCSRMatFactorLower1( BCSRMatData * data, BCSRMatData * Edata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && ecols[k] < ecols[p] ){
-	  k++;
-	  a++;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && ecols[k] < ecols[p] ){
+          k++;
+          a++;
+        }
 
-	if ( k < k_end && ecols[k] == ecols[p] ){
-	  a[0] -= d[0]*b[0];
-	}
-	b++;
+        if ( k < k_end && ecols[k] == ecols[p] ){
+          a[0] -= d[0]*b[0];
+        }
+        b++;
       }
     }
   }
@@ -129,10 +128,8 @@ void BCSRMatFactorLower1( BCSRMatData * data, BCSRMatData * Edata ){
 /*!
   Compute x = F U_{B}^{-1}
 */
-
 void BCSRMatFactorUpper1( BCSRMatData * data, BCSRMatData * Fdata ){
   // Retrieve the data required from the matrix
-  const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -165,16 +162,16 @@ void BCSRMatFactorUpper1( BCSRMatData * data, BCSRMatData * Fdata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && fcols[k] < cols[p] ){
-	  k++;
-	  a++;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && fcols[k] < cols[p] ){
+          k++;
+          a++;
+        }
 
-	if ( k < k_end && fcols[k] == cols[p] ){
-	  a[0] -= d11*b[0];
-	}
-	b++;
+        if ( k < k_end && fcols[k] == cols[p] ){
+          a[0] -= d11*b[0];
+        }
+        b++;
       }
 
       // Copy over the matrix

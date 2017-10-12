@@ -31,9 +31,9 @@
   X:     the values are added to this array 
 */
 static inline void addScatterColumn( TacsScalar *X, const int xdim,
-				     const TacsScalar *Y, const int ydim, 
-				     const int *index, const int n,
-				     const int m ){
+                                     const TacsScalar *Y, const int ydim, 
+                                     const int *index, const int n,
+                                     const int m ){
   if (m == 1){
     for ( int i = 0; i < n; i++ ){
       TacsScalar *x = &X[xdim*index[0]];
@@ -190,7 +190,7 @@ static inline void addScatterColumn( TacsScalar *X, const int xdim,
     for ( int i = 0; i < n; i++ ){
       TacsScalar *x = &X[xdim*index[0]];
       for ( int j = 0; j < m; j++ ){
-	x[j] += Y[j];
+        x[j] += Y[j];
       }
       Y += ydim;
       index++;
@@ -221,9 +221,9 @@ static inline void addScatterColumn( TacsScalar *X, const int xdim,
   X:     the values are added to this array 
 */
 static inline void subtractScatterColumn( TacsScalar *X, const int xdim,
-					  const TacsScalar *Y, const int ydim, 
-					  const int *index, const int n,
-					  const int m ){
+                                          const TacsScalar *Y, const int ydim, 
+                                          const int *index, const int n,
+                                          const int m ){
   if (m == 1){
     for ( int i = 0; i < n; i++ ){
       TacsScalar *x = &X[xdim*index[0]];
@@ -380,7 +380,7 @@ static inline void subtractScatterColumn( TacsScalar *X, const int xdim,
     for ( int i = 0; i < n; i++ ){
       TacsScalar *x = &X[xdim*index[0]];
       for ( int j = 0; j < m; j++ ){
-	x[j] -= Y[j];
+        x[j] -= Y[j];
       }
       Y += ydim;
       index++;
@@ -412,7 +412,7 @@ static int compare_integers( const void * a, const void * b ){
   A:      the (optional) values of the entries in the matrix
 */
 BCSCMat::BCSCMat( MPI_Comm _comm, int bsize, 
-		  int _nrows, int _ncols,
+                  int _nrows, int _ncols,
                   int **_colp, int **_rows, TacsScalar **_A ){
   comm = _comm;
   rows_sorted = 0;
@@ -475,7 +475,7 @@ BCSCMat::BCSCMat( MPI_Comm _comm, int bsize,
   block_cols:      the index of each block column in the matrix
 */
 BCSCMat::BCSCMat( MPI_Comm _comm, int bsize, 
-		  int num_block_rows, int num_block_cols,
+                  int num_block_rows, int num_block_cols,
                   const int *block_rowp, const int *block_cols ){
   comm = _comm;
   rows_sorted = 1; // Yes, the row indices will be sorted
@@ -492,7 +492,7 @@ BCSCMat::BCSCMat( MPI_Comm _comm, int bsize,
 
   // Create the CSC format from CSR 
   initCSCfromCSR(num_block_rows, num_block_cols,
-		 block_rowp, block_cols);
+                 block_rowp, block_cols);
 
   // Create the aptr array
   aptr = new int[ nblock_cols+1 ];
@@ -530,8 +530,8 @@ BCSCMat::BCSCMat( MPI_Comm _comm, int bsize,
   block_cols:      the index of each block column in the matrix
 */
 BCSCMat::BCSCMat( MPI_Comm _comm, const int bsize[], 
-		  int num_block_rows, int num_block_cols,
-		  const int *block_rowp, const int *block_cols ){
+                  int num_block_rows, int num_block_cols,
+                  const int *block_rowp, const int *block_cols ){
   comm = _comm;
   rows_sorted = 1; // The row indices will be sorted
 
@@ -558,7 +558,7 @@ BCSCMat::BCSCMat( MPI_Comm _comm, const int bsize[],
 
   // Create the CSC format from CSR 
   initCSCfromCSR(num_block_rows, num_block_cols,
-		 block_rowp, block_cols);
+                 block_rowp, block_cols);
 
   // Create the aptr array
   aptr = new int[ nblock_cols+1 ];
@@ -597,9 +597,9 @@ BCSCMat::BCSCMat( MPI_Comm _comm, const int bsize[],
   rows_sorted:     flag to indicate whether the row indices are sorted
 */
 BCSCMat::BCSCMat( MPI_Comm _comm, const int bsize[], 
-		  int num_block_rows, int num_block_cols,
-		  const int *block_colp, const int *block_rows,
-		  int _rows_sorted ){
+                  int num_block_rows, int num_block_cols,
+                  const int *block_colp, const int *block_rows,
+                  int _rows_sorted ){
   comm = _comm;
   rows_sorted = _rows_sorted;
 
@@ -653,7 +653,7 @@ BCSCMat::BCSCMat( MPI_Comm _comm, const int bsize[],
       int i = block_rows[ip];
       int rdim = bptr[i+1] - bptr[i];
       for ( int ii = 0; ii < rdim; ii++, irow++ ){
-	rows[irow] = bptr[i] + ii;
+        rows[irow] = bptr[i] + ii;
       }
     }
   }
@@ -716,29 +716,30 @@ BCSCMat::BCSCMat( MPI_Comm _comm, const char *filename ){
   bptr = new int[ nblock_cols+1 ];
   aptr = new int[ nblock_cols+1 ];
   colp = new int[ nblock_cols+1 ];
-  if (fread(bptr, sizeof(int), nblock_cols+1, fp) != nblock_cols+1){
+  unsigned int size = nblock_cols+1;
+  if (fread(bptr, sizeof(int), nblock_cols+1, fp) != size){
     fprintf(stderr, "BCSCMat: Error reading binary file. Incorrect format?\n");
     return;
   }
-  if (fread(aptr, sizeof(int), nblock_cols+1, fp) != nblock_cols+1){
+  if (fread(aptr, sizeof(int), nblock_cols+1, fp) != size){
     fprintf(stderr, "BCSCMat: Error reading binary file. Incorrect format?\n");
     return;
   }
-  if (fread(colp, sizeof(int), nblock_cols+1, fp) != nblock_cols+1){
+  if (fread(colp, sizeof(int), nblock_cols+1, fp) != size){
     fprintf(stderr, "BCSCMat: Error reading binary file. Incorrect format?\n");
     return;
   }
 
   // Create the rows array and read it in
+  size = colp[nblock_cols];
   rows = new int[ colp[nblock_cols] ];
-  if (fread(rows, sizeof(int), colp[nblock_cols], fp) != 
-      colp[nblock_cols]){
+  if (fread(rows, sizeof(int), colp[nblock_cols], fp) != size){
     fprintf(stderr, "BCSCMat: Error reading binary file. Incorrect format?\n");
   }
 
+  size = aptr[nblock_cols];
   A = new TacsScalar[ aptr[nblock_cols] ];
-  if (fread(A, sizeof(TacsScalar), aptr[nblock_cols], fp) != 
-      aptr[nblock_cols]){
+  if (fread(A, sizeof(TacsScalar), aptr[nblock_cols], fp) != size){
     fprintf(stderr, "BCSCMat: Error reading binary file. Incorrect format?\n");
   }
 
@@ -835,8 +836,8 @@ void BCSCMat::writeToFile( const char *filename ){
   block_cols:      the block column indicies 
 */
 void BCSCMat::initCSCfromCSR( int num_block_rows, int num_block_cols,
-			      const int *block_rowp, 
-			      const int *block_cols ){
+                              const int *block_rowp, 
+                              const int *block_cols ){
   // Set the number of blocked columns in the matrix
   nblock_cols = num_block_cols;
 
@@ -868,8 +869,8 @@ void BCSCMat::initCSCfromCSR( int num_block_rows, int num_block_cols,
     for ( int j = block_rowp[i]; j < block_rowp[i+1]; j++ ){
       int block_column = block_cols[j];
       for ( int ii = 0; ii < rdim; ii++ ){
-	rows[colp[block_column]] = bptr[i] + ii;
-	colp[block_column]++;
+        rows[colp[block_column]] = bptr[i] + ii;
+        colp[block_column]++;
       }
     }
   }
@@ -921,9 +922,9 @@ void BCSCMat::zeroEntries(){
   is_tranpose:  are we adding the transpose of the block?
 */
 void BCSCMat::addMatBlockValues( int num_rows, const int brows[], 
-				 int num_cols, const int bcols[], 
-				 const TacsScalar *mat, int ldmat,
-				 int is_transpose ){
+                                 int num_cols, const int bcols[], 
+                                 const TacsScalar *mat, int ldmat,
+                                 int is_transpose ){
   // There is probably a more inteligent way to do this, but this
   // code just breaks everything down by case: If adding the transpose
   // and by whether the rows are sorted or not.
@@ -931,117 +932,117 @@ void BCSCMat::addMatBlockValues( int num_rows, const int brows[],
     if (rows_sorted){
       // Add values using a bisection search for each column
       for ( int i = 0, ioffset = 0; i < num_rows; i++ ){
-	// Get the block column for this portion of the matrix
-	int col = brows[i];
-	if (col < 0){ continue; }
-	TacsScalar *column = &A[aptr[col]];
-	
-	// Determine the number of columns in the block
-	int cdim = bptr[col+1] - bptr[col];
-	
-	// Determine the number of non-zero block column entries in the
-	// matrix to search them
-	int col_size = colp[col+1] - colp[col];
-	const int * col_rows = &rows[colp[col]];
-	
-	// Loop over all the block rows in this column
-	for ( int j = 0, joffset = 0; j < num_cols; j++ ){
-	  // Find the block row index
-	  int row = bcols[j];
-	  if (row < 0){ continue; }
-	  
-	  // Find the block row dimension
-	  int rdim = bptr[row+1] - bptr[row];
-	  
-	  for ( int ii = 0; ii < rdim; ii++ ){
-	    int r = bptr[row] + ii;
-	    
-	    // Search the column to obtain the row index
-	    int *row_pos = (int*)bsearch(&r, col_rows, col_size, 
-					 sizeof(int), compare_integers);
-	    if (row_pos){
-	      int loc = row_pos - col_rows;
-	      TacsScalar *a = &column[cdim*loc];
-	      
-	      // Add the values into the matrix
-	      for ( int jj = 0; jj < cdim; jj++ ){
-		a[jj] += mat[ldmat*(ioffset + jj) + (joffset + ii)];
-	      }
-	    }
-	    else {
-	      fprintf(stderr, 
-		      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
-		      row, col);
-	    }
-	  }
-	  
-	  // Increment the row pointer within the block matrix
-	  joffset += rdim;
-	}
-	
-	// Increment the column pointer within the block matrix
-	ioffset += cdim;
+        // Get the block column for this portion of the matrix
+        int col = brows[i];
+        if (col < 0){ continue; }
+        TacsScalar *column = &A[aptr[col]];
+        
+        // Determine the number of columns in the block
+        int cdim = bptr[col+1] - bptr[col];
+        
+        // Determine the number of non-zero block column entries in the
+        // matrix to search them
+        int col_size = colp[col+1] - colp[col];
+        const int * col_rows = &rows[colp[col]];
+        
+        // Loop over all the block rows in this column
+        for ( int j = 0, joffset = 0; j < num_cols; j++ ){
+          // Find the block row index
+          int row = bcols[j];
+          if (row < 0){ continue; }
+          
+          // Find the block row dimension
+          int rdim = bptr[row+1] - bptr[row];
+          
+          for ( int ii = 0; ii < rdim; ii++ ){
+            int r = bptr[row] + ii;
+            
+            // Search the column to obtain the row index
+            int *row_pos = (int*)bsearch(&r, col_rows, col_size, 
+                                         sizeof(int), compare_integers);
+            if (row_pos){
+              int loc = row_pos - col_rows;
+              TacsScalar *a = &column[cdim*loc];
+              
+              // Add the values into the matrix
+              for ( int jj = 0; jj < cdim; jj++ ){
+                a[jj] += mat[ldmat*(ioffset + jj) + (joffset + ii)];
+              }
+            }
+            else {
+              fprintf(stderr, 
+                      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
+                      row, col);
+            }
+          }
+          
+          // Increment the row pointer within the block matrix
+          joffset += rdim;
+        }
+        
+        // Increment the column pointer within the block matrix
+        ioffset += cdim;
       }
     }
     else {
       // Add values using a bisection search for each column
       for ( int i = 0, ioffset = 0; i < num_rows; i++ ){
-	// Get the block column for this portion of the matrix
-	int col = brows[i];
-	if (col < 0){ continue; }
-	TacsScalar *column = &A[aptr[col]];
-	
-	// Determine the number of columns in the block
-	int cdim = bptr[col+1] - bptr[col];
-	
-	// Determine the number of non-zero block column entries in the
-	// matrix to search them
-	int col_size = colp[col+1] - colp[col];
-	const int * col_rows = &rows[colp[col]];
-	
-	// Loop over all the block rows in this column
-	for ( int j = 0, joffset = 0; j < num_cols; j++ ){
-	  // Find the block row index
-	  int row = bcols[j];
-	  if (row < 0){ continue; }
-	  
-	  // Find the block row dimension
-	  int rdim = bptr[row+1] - bptr[row];
-	  
-	  for ( int ii = 0; ii < rdim; ii++ ){
-	    int r = bptr[row] + ii;
-	    
-	    // Perform a (slow) linear search in the column
-	    const int * row_pos = col_rows;
-	    for ( int k = 0; k < col_size; k++ ){
-	      if (row_pos[0] == r){ 
-		break; 
-	      }
-	      row_pos++;
-	    }
+        // Get the block column for this portion of the matrix
+        int col = brows[i];
+        if (col < 0){ continue; }
+        TacsScalar *column = &A[aptr[col]];
+        
+        // Determine the number of columns in the block
+        int cdim = bptr[col+1] - bptr[col];
+        
+        // Determine the number of non-zero block column entries in the
+        // matrix to search them
+        int col_size = colp[col+1] - colp[col];
+        const int * col_rows = &rows[colp[col]];
+        
+        // Loop over all the block rows in this column
+        for ( int j = 0, joffset = 0; j < num_cols; j++ ){
+          // Find the block row index
+          int row = bcols[j];
+          if (row < 0){ continue; }
+          
+          // Find the block row dimension
+          int rdim = bptr[row+1] - bptr[row];
+          
+          for ( int ii = 0; ii < rdim; ii++ ){
+            int r = bptr[row] + ii;
+            
+            // Perform a (slow) linear search in the column
+            const int * row_pos = col_rows;
+            for ( int k = 0; k < col_size; k++ ){
+              if (row_pos[0] == r){ 
+                break; 
+              }
+              row_pos++;
+            }
 
-	    if (row_pos[0] == r){
-	      int loc = row_pos - col_rows;
-	      TacsScalar *a = &column[cdim*loc];
-	      
-	      // Add the values into the matrix
-	      for ( int jj = 0; jj < cdim; jj++ ){
-		a[jj] += mat[ldmat*(ioffset + jj) + (joffset + ii)];
-	      }
-	    }
-	    else {
-	      fprintf(stderr, 
-		      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
-		      row, col);
-	    }
-	  }
-	  
-	  // Increment the row pointer within the block matrix
-	  joffset += rdim;
-	}
-	
-	// Increment the column pointer within the block matrix
-	ioffset += cdim;
+            if (row_pos[0] == r){
+              int loc = row_pos - col_rows;
+              TacsScalar *a = &column[cdim*loc];
+              
+              // Add the values into the matrix
+              for ( int jj = 0; jj < cdim; jj++ ){
+                a[jj] += mat[ldmat*(ioffset + jj) + (joffset + ii)];
+              }
+            }
+            else {
+              fprintf(stderr, 
+                      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
+                      row, col);
+            }
+          }
+          
+          // Increment the row pointer within the block matrix
+          joffset += rdim;
+        }
+        
+        // Increment the column pointer within the block matrix
+        ioffset += cdim;
       }
     }
   }
@@ -1049,117 +1050,117 @@ void BCSCMat::addMatBlockValues( int num_rows, const int brows[],
     if (rows_sorted){
       // Add values using a bisection search for each column
       for ( int j = 0, joffset = 0; j < num_cols; j++ ){
-	// Get the block column for this portion of the matrix
-	int col = bcols[j];
-	if (col < 0){ continue; }
-	TacsScalar *column = &A[aptr[col]];
-	
-	// Determine the number of columns in the block
-	int cdim = bptr[col+1] - bptr[col];
-	
-	// Determine the number of non-zero block column entries in the
-	// matrix to search them
-	int col_size = colp[col+1] - colp[col];
-	const int * col_rows = &rows[colp[col]];
-	
-	// Loop over all the block rows in this column
-	for ( int i = 0, ioffset = 0; i < num_rows; i++ ){
-	  // Find the block row index
-	  int row = brows[i];
-	  if (row < 0){ continue; }
-	  
-	  // Find the block row dimension
-	  int rdim = bptr[row+1] - bptr[row];
-	  
-	  for ( int ii = 0; ii < rdim; ii++ ){
-	    int r = bptr[row] + ii;
-	    
-	    // Search the column to obtain the row index
-	    int *row_pos = (int*)bsearch(&r, col_rows, col_size, 
-					 sizeof(int), compare_integers);
-	    if (row_pos){
-	      int loc = row_pos - col_rows;
-	      TacsScalar *a = &column[cdim*loc];
-	      
-	      // Add the values into the matrix
-	      for ( int jj = 0; jj < cdim; jj++ ){
-		a[jj] += mat[ldmat*(ioffset + ii) + (joffset + jj)];
-	      }
-	    }
-	    else {
-	      fprintf(stderr, 
-		      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
-		      row, col);
-	    }
-	  }
-	  
-	  // Increment the row pointer within the block matrix
-	  ioffset += rdim;
-	}
-	
-	// Increment the column pointer within the block matrix
-	joffset += cdim;
+        // Get the block column for this portion of the matrix
+        int col = bcols[j];
+        if (col < 0){ continue; }
+        TacsScalar *column = &A[aptr[col]];
+        
+        // Determine the number of columns in the block
+        int cdim = bptr[col+1] - bptr[col];
+        
+        // Determine the number of non-zero block column entries in the
+        // matrix to search them
+        int col_size = colp[col+1] - colp[col];
+        const int * col_rows = &rows[colp[col]];
+        
+        // Loop over all the block rows in this column
+        for ( int i = 0, ioffset = 0; i < num_rows; i++ ){
+          // Find the block row index
+          int row = brows[i];
+          if (row < 0){ continue; }
+          
+          // Find the block row dimension
+          int rdim = bptr[row+1] - bptr[row];
+          
+          for ( int ii = 0; ii < rdim; ii++ ){
+            int r = bptr[row] + ii;
+            
+            // Search the column to obtain the row index
+            int *row_pos = (int*)bsearch(&r, col_rows, col_size, 
+                                         sizeof(int), compare_integers);
+            if (row_pos){
+              int loc = row_pos - col_rows;
+              TacsScalar *a = &column[cdim*loc];
+              
+              // Add the values into the matrix
+              for ( int jj = 0; jj < cdim; jj++ ){
+                a[jj] += mat[ldmat*(ioffset + ii) + (joffset + jj)];
+              }
+            }
+            else {
+              fprintf(stderr, 
+                      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
+                      row, col);
+            }
+          }
+          
+          // Increment the row pointer within the block matrix
+          ioffset += rdim;
+        }
+        
+        // Increment the column pointer within the block matrix
+        joffset += cdim;
       }
     }
     else {
       // Add values using a linear search for each column
       for ( int j = 0, joffset = 0; j < num_cols; j++ ){
-	// Get the block column for this portion of the matrix
-	int col = bcols[j];
-	if (col < 0){ continue; }
-	TacsScalar *column = &A[aptr[col]];
-	
-	// Determine the size of the column and the column row indices
-	int col_size = colp[col+1] - colp[col];
-	const int * col_rows = &rows[colp[col]];
-	
-	// Compute the column dimension
-	int cdim = bptr[col+1] - bptr[col];
-	
-	// Loop over all the block rows in this column
-	for ( int i = 0, ioffset = 0; i < num_rows; i++ ){
-	  int row = brows[i];
-	  if (row < 0){ continue; }
-	  
-	  // Find the block row dimension
-	  int rdim = bptr[row+1] - bptr[row];
-	  
-	  // Now find all the rows in this block
-	  for ( int ii = 0; ii < rdim; ii++ ){
-	    int r = bptr[row] + ii;
-	    
-	    // Perform a (slow) linear search in the column
-	    const int * row_pos = col_rows;
-	    for ( int k = 0; k < col_size; k++ ){
-	      if (row_pos[0] == r){ 
-		break; 
-	      }
-	      row_pos++;
-	    }
-	    
-	    // If the row position exists, add the values into the matrix
-	    if (row_pos[0] == r){
-	      int loc = row_pos - col_rows;
-	      TacsScalar * a = &column[cdim*loc];
-	      
-	      // Add the values into the matrix
-	      for ( int jj = 0; jj < cdim; jj++ ){
-		a[jj] += mat[ldmat*(ioffset + ii) + (joffset + jj)];
-	      }
-	    }
-	    else {
-	      fprintf(stderr, 
-		      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
-		      row, col);
-	    }
-	  }
-	  
-	  // Increment the offset in the row dimension
-	  ioffset += rdim;
-	}
-	
-	// Increment the offset in the column dimension
-	joffset += cdim;
+        // Get the block column for this portion of the matrix
+        int col = bcols[j];
+        if (col < 0){ continue; }
+        TacsScalar *column = &A[aptr[col]];
+        
+        // Determine the size of the column and the column row indices
+        int col_size = colp[col+1] - colp[col];
+        const int * col_rows = &rows[colp[col]];
+        
+        // Compute the column dimension
+        int cdim = bptr[col+1] - bptr[col];
+        
+        // Loop over all the block rows in this column
+        for ( int i = 0, ioffset = 0; i < num_rows; i++ ){
+          int row = brows[i];
+          if (row < 0){ continue; }
+          
+          // Find the block row dimension
+          int rdim = bptr[row+1] - bptr[row];
+          
+          // Now find all the rows in this block
+          for ( int ii = 0; ii < rdim; ii++ ){
+            int r = bptr[row] + ii;
+            
+            // Perform a (slow) linear search in the column
+            const int * row_pos = col_rows;
+            for ( int k = 0; k < col_size; k++ ){
+              if (row_pos[0] == r){ 
+                break; 
+              }
+              row_pos++;
+            }
+            
+            // If the row position exists, add the values into the matrix
+            if (row_pos[0] == r){
+              int loc = row_pos - col_rows;
+              TacsScalar * a = &column[cdim*loc];
+              
+              // Add the values into the matrix
+              for ( int jj = 0; jj < cdim; jj++ ){
+                a[jj] += mat[ldmat*(ioffset + ii) + (joffset + jj)];
+              }
+            }
+            else {
+              fprintf(stderr, 
+                      "BCSCMat: Entry (%d, %d) not in non-zero pattern\n",
+                      row, col);
+            }
+          }
+          
+          // Increment the offset in the row dimension
+          ioffset += rdim;
+        }
+        
+        // Increment the offset in the column dimension
+        joffset += cdim;
       }
     }
   }
@@ -1232,7 +1233,7 @@ void BCSCMat::multAdd( TacsScalar * X, TacsScalar * Z,
       // next set of operations: min(column_block_size, ip_end - ip) 
       int col_size = col_block_size;
       if ((ip_end - ip) < col_block_size){
-	col_size = (ip_end - ip);
+        col_size = (ip_end - ip);
       }
 
       // We want to compute block = A*X but since the matrices are
@@ -1242,7 +1243,7 @@ void BCSCMat::multAdd( TacsScalar * X, TacsScalar * Z,
       // block = alpha*X*A + beta*block
       TacsScalar alpha = 1.0, beta = 0.0;
       BLASgemm("N", "N", &vec_bsize, &col_size, &cdim,
-	       &alpha, &X[bptr[j]*vec_bsize], &vec_bsize, 
+               &alpha, &X[bptr[j]*vec_bsize], &vec_bsize, 
                col, &cdim, &beta, temp_array, &vec_bsize);
 
       // Update the position of the column array
@@ -1252,7 +1253,7 @@ void BCSCMat::multAdd( TacsScalar * X, TacsScalar * Z,
       // the dense output matrix - this is a sparse AXPY operation
       // Y[rows[ip:col_size], :] += tblock[:col_size, :]
       addScatterColumn(Y, vec_bsize, temp_array, vec_bsize,
-		       &rows[ip], col_size, vec_bsize);
+                       &rows[ip], col_size, vec_bsize);
     }
   }
 }
@@ -1271,7 +1272,7 @@ void BCSCMat::multAdd( TacsScalar * X, TacsScalar * Z,
   A:           the matrix values
 */
 void BCSCMat::getArrays( int *_nrows, int *_ncols, int *_nblock_cols, 
-			 const int **_bptr, const int **_aptr,
+                         const int **_bptr, const int **_aptr,
                          const int **_colp, const int **_rows, 
                          TacsScalar **_A ){
   if (_nrows){ *_nrows = nrows; }
@@ -1311,7 +1312,7 @@ BCSCMatPivot::BCSCMatPivot( BCSCMat *_mat ){
   // Retrieve the data from the BCSRMat data structure
   int mat_nrows, mat_ncols, mat_nblock_cols;
   mat->getArrays(&mat_nrows, &mat_ncols, &mat_nblock_cols, 
-		 &bptr, NULL, NULL, NULL, NULL);
+                 &bptr, NULL, NULL, NULL, NULL);
 
   // Retrieve the maximum block size in the matrix
   max_block_size = mat->getMaxBlockSize();
@@ -1403,12 +1404,12 @@ BCSCMatPivot::~BCSCMatPivot(){
   node_labels:     the labels for the nodes
 */
 void BCSCMatPivot::computeTopologicalOrder( int iteration, 
-					    const int * rhs_rows, 
-					    const int num_rhs_rows,
-					    int * topo_order, 
-					    int * _num_nodes,
-					    int * node_stack,
-					    int * node_labels ){
+                                            const int * rhs_rows, 
+                                            const int num_rhs_rows,
+                                            int * topo_order, 
+                                            int * _num_nodes,
+                                            int * node_stack,
+                                            int * node_labels ){
   // Prepare for the depth first search to determine the
   // non-zero structure of the next column vector
   // Set the vertex labels - no reset necessary
@@ -1426,7 +1427,7 @@ void BCSCMatPivot::computeTopologicalOrder( int iteration,
     // do a depth-first search starting from this node
     int root_node = var_to_node[rhs_rows[j]];
     if (root_node >= 0 &&
-  	node_labels[root_node] != vertex_label_done){
+        node_labels[root_node] != vertex_label_done){
 
       // Set the initial stack-size as 1 - set the node
       // to be labeled as visited
@@ -1437,42 +1438,42 @@ void BCSCMatPivot::computeTopologicalOrder( int iteration,
 
       // While the stack has entries continue ...
       while (stack_size > 0){
-  	// View the top entry in the stack
-  	int node = node_stack[2*stack_size-2];
-  	int jp = node_stack[2*stack_size-1];
+        // View the top entry in the stack
+        int node = node_stack[2*stack_size-2];
+        int jp = node_stack[2*stack_size-1];
 
-  	// Search through all the variables in the current column
-  	// below the diagonal
-  	for ( ; jp < lu_col_ptr[node+1]; jp++ ){
-  	  int row = lu_rows[jp];
-  	  int next_node = var_to_node[row];
-	  
-  	  // Check that the node exists, and that it has not
-  	  // yet been visited or created
-  	  if (next_node >= 0 &&
-  	      node_labels[next_node] != vertex_label_visit &&
-  	      node_labels[next_node] != vertex_label_done){
-	    // We can start searching further down the list next time
-	    // we come back to this node
-	    node_stack[2*stack_size-1] = jp;
+        // Search through all the variables in the current column
+        // below the diagonal
+        for ( ; jp < lu_col_ptr[node+1]; jp++ ){
+          int row = lu_rows[jp];
+          int next_node = var_to_node[row];
+          
+          // Check that the node exists, and that it has not
+          // yet been visited or created
+          if (next_node >= 0 &&
+              node_labels[next_node] != vertex_label_visit &&
+              node_labels[next_node] != vertex_label_done){
+            // We can start searching further down the list next time
+            // we come back to this node
+            node_stack[2*stack_size-1] = jp;
 
-  	    // Set the next node in the stack
-  	    node_labels[next_node] = vertex_label_visit;
-  	    node_stack[2*stack_size] = next_node;
-  	    node_stack[2*stack_size+1] = lu_diag_ptr[next_node]+1;
-  	    stack_size++;
-  	    break;
-  	  }
-  	}
-	
-  	// We've exhausted all possible nodes in the list
-  	if (jp == lu_col_ptr[node+1]){
-  	  // Label the node as done, and update the vertex ordering
-  	  node_labels[node] = vertex_label_done;
-  	  topo_order[num_nodes] = node;
-  	  num_nodes++;
-  	  stack_size--;
-  	}
+            // Set the next node in the stack
+            node_labels[next_node] = vertex_label_visit;
+            node_stack[2*stack_size] = next_node;
+            node_stack[2*stack_size+1] = lu_diag_ptr[next_node]+1;
+            stack_size++;
+            break;
+          }
+        }
+        
+        // We've exhausted all possible nodes in the list
+        if (jp == lu_col_ptr[node+1]){
+          // Label the node as done, and update the vertex ordering
+          node_labels[node] = vertex_label_done;
+          topo_order[num_nodes] = node;
+          num_nodes++;
+          stack_size--;
+        }
       }
     }
   }
@@ -1503,13 +1504,13 @@ void BCSCMatPivot::computeTopologicalOrder( int iteration,
   num_vars:       the number of non-zero variables
 */
 void BCSCMatPivot::computeColNzPattern( int iteration, 
-					const int * rhs_rows, 
-					const int num_rhs_rows,
-					const int * update_nodes,
-					const int num_nodes,
-					int * var_labels, 
-					int * rhs_vars,
-					int * _num_vars ){
+                                        const int * rhs_rows, 
+                                        const int num_rhs_rows,
+                                        const int * update_nodes,
+                                        const int num_nodes,
+                                        int * var_labels, 
+                                        int * rhs_vars,
+                                        int * _num_vars ){
   // Set the vertex label
   int vertex_label_done = 2*(iteration + 1);
 
@@ -1543,11 +1544,11 @@ void BCSCMatPivot::computeColNzPattern( int iteration,
 
       // Add the variable if it is required
       if (node < 0 &&
-  	  var_labels[row] != vertex_label_done){
-  	var_labels[row] = vertex_label_done;
-  	rhs_vars[0] = row;
-  	rhs_vars++;
-  	num_vars++;
+          var_labels[row] != vertex_label_done){
+        var_labels[row] = vertex_label_done;
+        rhs_vars[0] = row;
+        rhs_vars++;
+        num_vars++;
       }
     }
   }
@@ -1585,13 +1586,13 @@ void BCSCMatPivot::computeColNzPattern( int iteration,
   temp_cols_size   size of the temporary storage
 */
 void BCSCMatPivot::applyNodeUpdate( int node,
-				    int node_dim,
-				    TacsScalar *spa,
-				    int spa_dim,
-				    TacsScalar *temp_block,
-				    int temp_block_size,
-				    TacsScalar *temp_cols,
-				    int temp_cols_size ){
+                                    int node_dim,
+                                    TacsScalar *spa,
+                                    int spa_dim,
+                                    TacsScalar *temp_block,
+                                    int temp_block_size,
+                                    TacsScalar *temp_cols,
+                                    int temp_cols_size ){
   // Determine the location of the diagonal of the L matrix
   int loffset = lu_aptr[node] + 
     node_dim*(lu_diag_ptr[node] - lu_col_ptr[node]);
@@ -1650,7 +1651,7 @@ void BCSCMatPivot::applyNodeUpdate( int node,
   // rows in f
   int j_end = lu_col_ptr[node+1];
   for ( int j = lu_diag_ptr[node] + node_dim; j < j_end; 
-	j += max_col_size ){
+        j += max_col_size ){
     // Compute the size of the updating block
     int col_size = max_col_size;
     if (j_end - j < max_col_size){
@@ -1670,7 +1671,7 @@ void BCSCMatPivot::applyNodeUpdate( int node,
     // Add the result of the matrix-vector product back into the sparse
     // accumulator array
     subtractScatterColumn(spa, spa_dim, temp_cols, spa_dim,
-			  &lu_rows[j], col_size, spa_dim);
+                          &lu_rows[j], col_size, spa_dim);
   }
 }
 
@@ -1702,7 +1703,7 @@ void BCSCMatPivot::applyNodeUpdate( int node,
   temp_cols_size   size of the temporary storage
 */
 void BCSCMatPivot::applyNodeUpperUpdate( int node,
-					 int node_dim,
+                                         int node_dim,
                                          TacsScalar *spa,
                                          int spa_dim,
                                          TacsScalar *temp_block,
@@ -1787,7 +1788,7 @@ void BCSCMatPivot::applyNodeUpperUpdate( int node,
     // Add the result of the matrix-vector product back into the
     // sparse accumulator array
     subtractScatterColumn(spa, spa_dim, temp_cols, spa_dim,
-			  &lu_rows[j], col_size, spa_dim);
+                          &lu_rows[j], col_size, spa_dim);
   }
 }
 
@@ -1839,7 +1840,7 @@ void BCSCMatPivot::factorNode( int node,
       for ( int i = diag_index; i < num_rows; i++ ){
         for ( int k = 0; k < j; k++ ){
           col[node_dim*i + j] -= 
-	    col[node_dim*i + k]*U[k*node_dim];
+            col[node_dim*i + k]*U[k*node_dim];
         }
       }
     }
@@ -1854,21 +1855,21 @@ void BCSCMatPivot::factorNode( int node,
     for ( int i = diag_index+1; i < num_rows; i++ ){
       double abs_val = fabs(TacsRealPart(c[0]));
       if (abs_val > fabs(TacsRealPart(max_entry))){
-	max_row_index = i;
-	max_entry = c[0];
+        max_row_index = i;
+        max_entry = c[0];
       }
       c += node_dim;
     }
 
     if (max_entry == 0.0){
       fprintf(stderr, 
-	      "BCSCMatPivot: Error, zero pivot in block column %d\n",
-	      node);
+              "BCSCMatPivot: Error, zero pivot in block column %d\n",
+              node);
     }
     else if (max_entry != max_entry){
      fprintf(stderr, 
-	      "BCSCMatPivot: Error, NaN pivot in block column %d\n",
-	      node);
+              "BCSCMatPivot: Error, NaN pivot in block column %d\n",
+              node);
     }
 
     // Record the pivot variable
@@ -1883,18 +1884,18 @@ void BCSCMatPivot::factorNode( int node,
      
       // Swap rows diag and max_row_index
       if (diag_index != max_row_index){
-	// Swap the index itself
-	int temp_row = rows[max_row_index];
-	rows[max_row_index] = rows[diag_index];
-	rows[diag_index] = temp_row;
-	
-	// Swap the values in the rows diag/max_row_index
-	for ( int i = 0; i < node_dim; i++ ){
-	  TacsScalar temp = col[node_dim*max_row_index + i];
-	  col[node_dim*max_row_index + i] = 
-	    col[node_dim*diag_index + i];
-	  col[node_dim*diag_index + i] = temp;
-	}
+        // Swap the index itself
+        int temp_row = rows[max_row_index];
+        rows[max_row_index] = rows[diag_index];
+        rows[diag_index] = temp_row;
+        
+        // Swap the values in the rows diag/max_row_index
+        for ( int i = 0; i < node_dim; i++ ){
+          TacsScalar temp = col[node_dim*max_row_index + i];
+          col[node_dim*max_row_index + i] = 
+            col[node_dim*diag_index + i];
+          col[node_dim*diag_index + i] = temp;
+        }
       }
     }
 
@@ -1961,7 +1962,7 @@ double BCSCMatPivot::factor( double _fill ){
   const int *mat_colp, *mat_rows;
   TacsScalar *A;
   mat->getArrays(&mat_nrows, &mat_ncols, &mat_nblock_cols, 
-		 &mat_bptr, &mat_aptr,
+                 &mat_bptr, &mat_aptr,
                  &mat_colp, &mat_rows, &A);
 
   // For now, hard code this estimate 
@@ -2027,23 +2028,23 @@ double BCSCMatPivot::factor( double _fill ){
     int col_size = mat_colp[node+1] - mat_colp[node];
   
     for ( int ip = mat_colp[node]; ip < mat_colp[node+1]; 
-	  ip++, A += node_dim ){
+          ip++, A += node_dim ){
       // Copy over the values to the temporary column
       memcpy(&column[node_dim*mat_rows[ip]], A, 
-	     node_dim*sizeof(TacsScalar));
+             node_dim*sizeof(TacsScalar));
     }
 
     // Compute the topological post-order of the nodes
     int num_nodes = 0;
     computeTopologicalOrder(node, &mat_rows[mat_colp[node]], col_size,
-			    topo_order, &num_nodes, 
-			    node_stack, node_labels);
+                            topo_order, &num_nodes, 
+                            node_stack, node_labels);
 
     // Compute the non-zero pattern of the
     int num_vars = 0;
     computeColNzPattern(node, &mat_rows[mat_colp[node]], col_size,
-			topo_order, num_nodes, var_labels, 
-			&topo_order[num_nodes], &num_vars);
+                        topo_order, num_nodes, var_labels, 
+                        &topo_order[num_nodes], &num_vars);
 
     // Compute the additional space required for the non-zero pattern
     int nnz_rows = num_vars;
@@ -2061,14 +2062,14 @@ double BCSCMatPivot::factor( double _fill ){
       TacsScalar * old_LU = LU;
       LU = new (std::nothrow) TacsScalar[ max_lu_size ];
       if (LU){
-	memcpy(LU, old_LU, lu_aptr[node]*sizeof(TacsScalar));
+        memcpy(LU, old_LU, lu_aptr[node]*sizeof(TacsScalar));
       }
       delete [] old_LU;
 
       // If we can't allocate new space, return a fail condition
       // and free the temporary variables
       if (!LU){
-	return -1.0;
+        return -1.0;
       }
     }
 
@@ -2080,14 +2081,14 @@ double BCSCMatPivot::factor( double _fill ){
       int * old_rows = lu_rows;
       lu_rows = new (std::nothrow) int[ max_lu_rows_size ];
       if (lu_rows){
-	memcpy(lu_rows, old_rows, lu_col_ptr[node]*sizeof(int));
+        memcpy(lu_rows, old_rows, lu_col_ptr[node]*sizeof(int));
       }
       delete [] old_rows;
 
       // If we can't allocate new space, return a fail condition
       // and free the temporary variables
       if (!lu_rows){
-	return -1.0;
+        return -1.0;
       }
     }
 
@@ -2121,14 +2122,14 @@ double BCSCMatPivot::factor( double _fill ){
 
         // Copy the data from the row
         memcpy(lu, &column[node_dim*row], node_dim*sizeof(TacsScalar));
-	lu += node_dim;
+        lu += node_dim;
 
         // Zero the corresponding row in the dense column
         memset(&column[node_dim*row], 0, node_dim*sizeof(TacsScalar));
 
         // Set the row index
         lu_row[0] = row;
-	lu_row++;
+        lu_row++;
       }
     }
 
@@ -2174,7 +2175,7 @@ double BCSCMatPivot::factor( double _fill ){
   output:
   X:        the dense matrix of size (nrows, bsize)
 */
-void BCSCMatPivot::applyFactor( TacsScalar * X,	int vec_bsize ){
+void BCSCMatPivot::applyFactor( TacsScalar * X, int vec_bsize ){
   if (vec_bsize == 1){
     memcpy(temp_column, X, nrows*sizeof(TacsScalar));
     
@@ -2194,7 +2195,7 @@ void BCSCMatPivot::applyFactor( TacsScalar * X,	int vec_bsize ){
     while (num_rhs_cols > 0){
       int num_cols = num_rhs_cols;
       if (num_cols > max_block_size){
-	num_cols = max_block_size;
+        num_cols = max_block_size;
       }
 
       // Keep a pointer to where were currently copying
@@ -2203,10 +2204,10 @@ void BCSCMatPivot::applyFactor( TacsScalar * X,	int vec_bsize ){
 
       // Copy the tranpose values to temp_array
       for ( int j = 0; j < num_cols; j++ ){
-	for ( int i = 0; i < nrows; i++ ){
-	  temp_column[j + i*num_cols] = xcopy[0];
-	  xcopy++;
-	}
+        for ( int i = 0; i < nrows; i++ ){
+          temp_column[j + i*num_cols] = xcopy[0];
+          xcopy++;
+        }
       }
 
       // Apply the lower/upper parts of the factorization
@@ -2216,10 +2217,10 @@ void BCSCMatPivot::applyFactor( TacsScalar * X,	int vec_bsize ){
       // Transpose the answer and copy the result back into the array
       TacsScalar *c = temp_column;
       for ( int i = 0; i < nrows; i++ ){
-	for ( int j = 0; j < vec_bsize; j++ ){
-	  X[nrows*j + perm[i]] = c[0];
-	  c++;
-	}
+        for ( int j = 0; j < vec_bsize; j++ ){
+          X[nrows*j + perm[i]] = c[0];
+          c++;
+        }
       }
 
       X += num_cols*nrows;

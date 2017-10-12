@@ -65,19 +65,19 @@ row %d \n", i);
       int p = diag[cj] + 1;
       a = &A[16*k];
       b = &A[16*p];
-	  
+          
       // The final entry for row: cols[j]
       int end = rowp[cj + 1];
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < end) && (k < row_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < row_end && cols[k] < cols[p] ){
-	  k++; a += 16;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < row_end && cols[k] < cols[p] ){
+          k++; a += 16;
+        }
 
-	// A[k] = A[k] - A[j] * A[p]
-	if ( k < row_end && cols[k] == cols[p] ){
+        // A[k] = A[k] - A[j] * A[p]
+        if ( k < row_end && cols[k] == cols[p] ){
           TacsScalar b0, b1, b2, b3;
           b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
           a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3;
@@ -102,9 +102,9 @@ row %d \n", i);
           a[7 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3;
           a[11] -= d20*b0 + d21*b1 + d22*b2 + d23*b3;
           a[15] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;
-	}
-	 
-	b += 16;
+        }
+         
+        b += 16;
       }
 
       // Copy the matrix back into the row
@@ -146,7 +146,6 @@ void BCSRMatFactorLower4( BCSRMatData * data, BCSRMatData * Edata ){
   const TacsScalar * A = data->A;
 
   // Retrieve the data required from the matrix
-  const int nrows_e = Edata->nrows;
   const int * erowp = Edata->rowp;
   const int * ecols = Edata->cols;
   TacsScalar * E = Edata->A;
@@ -169,38 +168,38 @@ void BCSRMatFactorLower4( BCSRMatData * data, BCSRMatData * Edata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && ecols[k] < ecols[p] ){
-	  k++; a += 16;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && ecols[k] < ecols[p] ){
+          k++; a += 16;
+        }
 
-	if ( k < k_end && ecols[k] == ecols[p] ){
+        if ( k < k_end && ecols[k] == ecols[p] ){
           TacsScalar b0, b1, b2, b3;
           b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
           a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3;
-	  a[4 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
-	  a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
-	  a[12] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
-	  
+          a[4 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
+          a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
+          a[12] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
+          
           b0 = b[1 ]; b1 = b[5 ]; b2 = b[9 ]; b3 = b[13];
           a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3;
-	  a[5 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
-	  a[9 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
-	  a[13] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
+          a[5 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
+          a[9 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
+          a[13] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
           
           b0 = b[2 ]; b1 = b[6 ]; b2 = b[10]; b3 = b[14];
           a[2 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3;
-	  a[6 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
-	  a[10] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
-	  a[14] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
+          a[6 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
+          a[10] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
+          a[14] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
 
           b0 = b[3 ]; b1 = b[7 ]; b2 = b[11]; b3 = b[15];
           a[3 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3;
-	  a[7 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
-	  a[11] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
-	  a[15] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
-	}
-	b += 16;
+          a[7 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
+          a[11] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
+          a[15] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
+        }
+        b += 16;
       }
     }
   }
@@ -212,7 +211,6 @@ void BCSRMatFactorLower4( BCSRMatData * data, BCSRMatData * Edata ){
 
 void BCSRMatFactorUpper4( BCSRMatData * data, BCSRMatData * Fdata ){
   // Retrieve the data required from the matrix
-  const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -274,12 +272,12 @@ void BCSRMatFactorUpper4( BCSRMatData * data, BCSRMatData * Fdata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && fcols[k] < cols[p] ){
-	  k++; a += 16;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && fcols[k] < cols[p] ){
+          k++; a += 16;
+        }
 
-	if ( k < k_end && fcols[k] == cols[p] ){
+        if ( k < k_end && fcols[k] == cols[p] ){
 
           b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
           a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3;
@@ -303,9 +301,9 @@ void BCSRMatFactorUpper4( BCSRMatData * data, BCSRMatData * Fdata ){
           a[3 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3;
           a[7 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3;
           a[11] -= d20*b0 + d21*b1 + d22*b2 + d23*b3;
-          a[15] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;	 
-	}
-	b += 16;
+          a[15] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;    
+        }
+        b += 16;
       }
 
       // Copy over the matrix

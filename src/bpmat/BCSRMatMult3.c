@@ -221,7 +221,6 @@ void BCSRMatApplyPartialUpper3( BCSRMatData * data, TacsScalar * x,
 
 void BCSRMatApplyFactorSchur3( BCSRMatData * data, TacsScalar * x, 
                                int var_offset ){
-  const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -268,13 +267,11 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData * Adata,
   const int * acols = Adata->cols;
   const TacsScalar * A = Adata->A;
 
-  const int nrows_b = Bdata->nrows;
   const int * browp = Bdata->rowp;
   const int * bcols = Bdata->cols;
   const TacsScalar * B = Bdata->A;
 
   // The matrix being written to
-  const int nrows_c = Cdata->nrows;
   const int * crowp = Cdata->rowp;
   const int * ccols = Cdata->cols;
   TacsScalar * C = Cdata->A;

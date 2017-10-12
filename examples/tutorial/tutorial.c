@@ -225,10 +225,14 @@ int main( int argc, char * argv[] ){
       mat_type = TACSAssembler::DIRECT_SCHUR; reorder = 1;
     }
     else if (strcmp(argv[k], "ApproximateSchur") == 0){ 
-      mat_type = TACSAssembler::APPROXIMATE_SCHUR; reorder = 1;
+      mat_type = TACSAssembler::APPROXIMATE_SCHUR; 
+      reorder = 1;
+      use_fe_mat = 0;
     }
     else if (strcmp(argv[k], "AdditiveSchwarz") == 0){ 
-      mat_type = TACSAssembler::ADDITIVE_SCHWARZ; reorder = 1;
+      mat_type = TACSAssembler::ADDITIVE_SCHWARZ; 
+      reorder = 1;
+      use_fe_mat = 0;
     }
   }
 
@@ -362,7 +366,7 @@ int main( int argc, char * argv[] ){
   }
   else {
     ksm = new GCROT(kmat, pc, outer_iters, max_outer_iters,
-		    gmres_iters, is_flexible);
+                    gmres_iters, is_flexible);
     ksm->setMonitor(new KSMPrintStdout("GCROT", rank, freq));
   }
   ksm->incref();  

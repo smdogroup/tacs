@@ -181,6 +181,7 @@ if tacs_comm.rank == 0:
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |
         TACS.ToFH5.DISPLACEMENTS |
-        TACS.ToFH5.STRAINS)
+        TACS.ToFH5.STRAINS |
+        TACS.ToFH5.EXTRAS)
 f5 = TACS.ToFH5(tacs, TACS.PY_SHELL, flag)
 f5.writeToFile('ucrm.f5')

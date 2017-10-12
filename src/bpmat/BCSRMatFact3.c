@@ -56,33 +56,33 @@ row %d \n", i);
       int p = diag[cj] + 1;
       a = &A[9*k];
       b = &A[9*p];
-	  
+          
       // The final entry for row: cols[j]
       int end = rowp[cj + 1];
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < end) && (k < row_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < row_end && cols[k] < cols[p] ){
-	  k++; a += 9;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < row_end && cols[k] < cols[p] ){
+          k++; a += 9;
+        }
 
-	// A[k] = A[k] - A[j] * A[p]
-	if ( k < row_end && cols[k] == cols[p] ){
-	  a[0] -= d00*b[0] + d01*b[3] + d02*b[6];
-	  a[3] -= d10*b[0] + d11*b[3] + d12*b[6];
-	  a[6] -= d20*b[0] + d21*b[3] + d22*b[6];
+        // A[k] = A[k] - A[j] * A[p]
+        if ( k < row_end && cols[k] == cols[p] ){
+          a[0] -= d00*b[0] + d01*b[3] + d02*b[6];
+          a[3] -= d10*b[0] + d11*b[3] + d12*b[6];
+          a[6] -= d20*b[0] + d21*b[3] + d22*b[6];
 
-	  a[1] -= d00*b[1] + d01*b[4] + d02*b[7];
-	  a[4] -= d10*b[1] + d11*b[4] + d12*b[7];
-	  a[7] -= d20*b[1] + d21*b[4] + d22*b[7];
+          a[1] -= d00*b[1] + d01*b[4] + d02*b[7];
+          a[4] -= d10*b[1] + d11*b[4] + d12*b[7];
+          a[7] -= d20*b[1] + d21*b[4] + d22*b[7];
 
-	  a[2] -= d00*b[2] + d01*b[5] + d02*b[8];
-	  a[5] -= d10*b[2] + d11*b[5] + d12*b[8];
-	  a[8] -= d20*b[2] + d21*b[5] + d22*b[8];
-	}
-	 
-	b += 9;
+          a[2] -= d00*b[2] + d01*b[5] + d02*b[8];
+          a[5] -= d10*b[2] + d11*b[5] + d12*b[8];
+          a[8] -= d20*b[2] + d21*b[5] + d22*b[8];
+        }
+         
+        b += 9;
       }
 
       // Copy the matrix back into the row
@@ -122,7 +122,6 @@ void BCSRMatFactorLower3( BCSRMatData * data, BCSRMatData * Edata ){
   const TacsScalar * A = data->A;
 
   // Retrieve the data required from the matrix
-  const int nrows_e = Edata->nrows;
   const int * erowp = Edata->rowp;
   const int * ecols = Edata->cols;
   TacsScalar * E = Edata->A;
@@ -145,25 +144,25 @@ void BCSRMatFactorLower3( BCSRMatData * data, BCSRMatData * Edata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && ecols[k] < ecols[p] ){
-	  k++; a += 9;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && ecols[k] < ecols[p] ){
+          k++; a += 9;
+        }
 
-	if ( k < k_end && ecols[k] == ecols[p] ){
-	  a[0] -= d[0]*b[0] + d[1]*b[3] + d[2]*b[6];
-	  a[3] -= d[3]*b[0] + d[4]*b[3] + d[5]*b[6];
-	  a[6] -= d[6]*b[0] + d[7]*b[3] + d[8]*b[6];
+        if ( k < k_end && ecols[k] == ecols[p] ){
+          a[0] -= d[0]*b[0] + d[1]*b[3] + d[2]*b[6];
+          a[3] -= d[3]*b[0] + d[4]*b[3] + d[5]*b[6];
+          a[6] -= d[6]*b[0] + d[7]*b[3] + d[8]*b[6];
 
-	  a[1] -= d[0]*b[1] + d[1]*b[4] + d[2]*b[7];
-	  a[4] -= d[3]*b[1] + d[4]*b[4] + d[5]*b[7];
-	  a[7] -= d[6]*b[1] + d[7]*b[4] + d[8]*b[7];
+          a[1] -= d[0]*b[1] + d[1]*b[4] + d[2]*b[7];
+          a[4] -= d[3]*b[1] + d[4]*b[4] + d[5]*b[7];
+          a[7] -= d[6]*b[1] + d[7]*b[4] + d[8]*b[7];
 
-	  a[2] -= d[0]*b[2] + d[1]*b[5] + d[2]*b[8];
-	  a[5] -= d[3]*b[2] + d[4]*b[5] + d[5]*b[8];
-	  a[8] -= d[6]*b[2] + d[7]*b[5] + d[8]*b[8];
-	}
-	b += 9;
+          a[2] -= d[0]*b[2] + d[1]*b[5] + d[2]*b[8];
+          a[5] -= d[3]*b[2] + d[4]*b[5] + d[5]*b[8];
+          a[8] -= d[6]*b[2] + d[7]*b[5] + d[8]*b[8];
+        }
+        b += 9;
       }
     }
   }
@@ -175,7 +174,6 @@ void BCSRMatFactorLower3( BCSRMatData * data, BCSRMatData * Edata ){
 
 void BCSRMatFactorUpper3( BCSRMatData * data, BCSRMatData * Fdata ){
   // Retrieve the data required from the matrix
-  const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -222,25 +220,25 @@ void BCSRMatFactorUpper3( BCSRMatData * data, BCSRMatData * Fdata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && fcols[k] < cols[p] ){
-	  k++; a += 9;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && fcols[k] < cols[p] ){
+          k++; a += 9;
+        }
 
-	if ( k < k_end && fcols[k] == cols[p] ){
-	  a[0] -= d00*b[0] + d01*b[3] + d02*b[6];
-	  a[3] -= d10*b[0] + d11*b[3] + d12*b[6];
-	  a[6] -= d20*b[0] + d21*b[3] + d22*b[6];
+        if ( k < k_end && fcols[k] == cols[p] ){
+          a[0] -= d00*b[0] + d01*b[3] + d02*b[6];
+          a[3] -= d10*b[0] + d11*b[3] + d12*b[6];
+          a[6] -= d20*b[0] + d21*b[3] + d22*b[6];
 
-	  a[1] -= d00*b[1] + d01*b[4] + d02*b[7];
-	  a[4] -= d10*b[1] + d11*b[4] + d12*b[7];
-	  a[7] -= d20*b[1] + d21*b[4] + d22*b[7];
+          a[1] -= d00*b[1] + d01*b[4] + d02*b[7];
+          a[4] -= d10*b[1] + d11*b[4] + d12*b[7];
+          a[7] -= d20*b[1] + d21*b[4] + d22*b[7];
 
-	  a[2] -= d00*b[2] + d01*b[5] + d02*b[8];
-	  a[5] -= d10*b[2] + d11*b[5] + d12*b[8];
-	  a[8] -= d20*b[2] + d21*b[5] + d22*b[8];
-	}
-	b += 9;
+          a[2] -= d00*b[2] + d01*b[5] + d02*b[8];
+          a[5] -= d10*b[2] + d11*b[5] + d12*b[8];
+          a[8] -= d20*b[2] + d21*b[5] + d22*b[8];
+        }
+        b += 9;
       }
 
       // Copy over the matrix
