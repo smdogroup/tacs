@@ -62,16 +62,16 @@ class TACSMeshLoader : public TACSObject {
   // Create a TACSToFH5 file writer
   // ------------------------------
   TACSToFH5 *createTACSToFH5( TACSAssembler *tacs,
-			      enum ElementType elem_type,
-			      unsigned int write_flag );
+                              enum ElementType elem_type,
+                              unsigned int write_flag );
 
   // Distribute the mesh and create TACS
   // -----------------------------------
   TACSAssembler *createTACS( int vars_per_node,
-			     TACSAssembler::OrderingType order_type = 
-			     TACSAssembler::NATURAL_ORDER, 
-			     TACSAssembler::MatrixOrderingType mat_type = 
-			     TACSAssembler::DIRECT_SCHUR);
+                             TACSAssembler::OrderingType order_type = 
+                             TACSAssembler::NATURAL_ORDER,
+                             TACSAssembler::MatrixOrderingType mat_type = 
+                             TACSAssembler::DIRECT_SCHUR);
 
   // Set the domain of a structural function with component numbers
   // --------------------------------------------------------------

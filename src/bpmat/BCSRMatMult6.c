@@ -59,7 +59,7 @@ void * BCSRMatVecMultAdd6_thread( void * t ){
   Compute the matrix-vector product: y = A * x
 */
 void BCSRMatVecMult6( BCSRMatData * data, 
-		      TacsScalar * x, TacsScalar * y ){
+                      TacsScalar * x, TacsScalar * y ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
@@ -99,7 +99,7 @@ void BCSRMatVecMult6( BCSRMatData * data,
 */
 
 void BCSRMatVecMultAdd6( BCSRMatData * data, 
-			 TacsScalar * x, TacsScalar * y, TacsScalar * z ){
+                         TacsScalar * x, TacsScalar * y, TacsScalar * z ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
@@ -279,7 +279,6 @@ void BCSRMatApplyLower6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     
     int end = diag[i];
     int k = rowp[i];
-    int nz = end - k;
     const TacsScalar * a = &(data->A[36*k]);
     for ( ; k < end; k++ ){
       int j = 6*cols[k];
@@ -315,7 +314,6 @@ void BCSRMatApplyUpper6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     
     int end = rowp[i+1];
     int k = diag[i]+1;
-    int nz = end - k;
     TacsScalar * a = &(data->A[36*k]);
     for ( ; k < end; k++ ){
       int j = 6*cols[k];
@@ -348,7 +346,7 @@ void BCSRMatApplyUpper6( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
 */
 
 void BCSRMatApplyPartialLower6( BCSRMatData * data, TacsScalar * x, 
-				int var_offset ){
+                                int var_offset ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
@@ -362,8 +360,7 @@ void BCSRMatApplyPartialLower6( BCSRMatData * data, TacsScalar * x,
     int end = diag[i];
     int k = rowp[i];
     while ( cols[k] < var_offset ) k++;
-    int nz = end - k;
-
+    
     const TacsScalar * a = &A[36*k];
     for ( ; k < end; k++ ){
       int j = 6*cols[k] - off;
@@ -387,7 +384,7 @@ void BCSRMatApplyPartialLower6( BCSRMatData * data, TacsScalar * x,
 */
 
 void BCSRMatApplyPartialUpper6( BCSRMatData * data, TacsScalar * x, 
-				int var_offset ){
+                                int var_offset ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
@@ -408,7 +405,6 @@ void BCSRMatApplyPartialUpper6( BCSRMatData * data, TacsScalar * x,
 
     int end = rowp[i+1];
     int k = diag[i]+1;
-    int nz = end - k;
     const TacsScalar * a = &A[36*k];
     for ( ; k < end; k++ ){
       int j = 6*cols[k] - off;
@@ -439,7 +435,7 @@ void BCSRMatApplyPartialUpper6( BCSRMatData * data, TacsScalar * x,
 */
 
 void BCSRMatApplyFactorSchur6( BCSRMatData * data, TacsScalar * x, 
-			       int var_offset ){  
+                               int var_offset ){  
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -458,7 +454,6 @@ void BCSRMatApplyFactorSchur6( BCSRMatData * data, TacsScalar * x,
 
     int end = rowp[i+1];
     int k = diag[i]+1;
-    int nz = end - k;
     const TacsScalar * a = &A[36*k];
     for ( ; k < end; k++ ){
       int j = 6*cols[k];
@@ -520,11 +515,11 @@ void * BCSRMatMatMultAdd6_thread( void * t ){
         for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
           int j = acols[jp];
           const TacsScalar * a = &A[36*jp];
-	
+        
           int kp = browp[j];
           int kp_end = browp[j+1];
           const TacsScalar * b = &B[36*kp];
-	
+        
           int cp = crowp[i];
           int cp_end = crowp[i+1];
           TacsScalar * c = &C[36*cp];
@@ -596,15 +591,15 @@ void * BCSRMatMatMultAdd6_thread( void * t ){
         for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
           int j = acols[jp];
           const TacsScalar * a = &A[36*jp];
-	
+        
           int kp = browp[j];
           int kp_end = browp[j+1];
           const TacsScalar * b = &B[36*kp];
-	
+        
           int cp = crowp[i];
           int cp_end = crowp[i+1];
           TacsScalar * c = &C[36*cp];
-	
+        
           for ( ; kp < kp_end; kp++ ){
             while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 36; }
             if (cp >= cp_end){ break; }
@@ -673,15 +668,15 @@ void * BCSRMatMatMultAdd6_thread( void * t ){
         for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
           int j = acols[jp];
           const TacsScalar * a = &A[36*jp];
-	
+        
           int kp = browp[j];
           int kp_end = browp[j+1];
           const TacsScalar * b = &B[36*kp];
-	
+        
           int cp = crowp[i];
           int cp_end = crowp[i+1];
           TacsScalar * c = &C[36*cp];
-	
+        
           for ( ; kp < kp_end; kp++ ){
             while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 36; }
             if (cp >= cp_end){ break; }
@@ -776,15 +771,15 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData * Adata,
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
         int j = acols[jp];
         const TacsScalar * a = &A[36*jp];
-	
+        
         int kp = browp[j];
         int kp_end = browp[j+1];
         const TacsScalar * b = &B[36*kp];
-	
+        
         int cp = crowp[i];
         int cp_end = crowp[i+1];
         TacsScalar * c = &C[36*cp];
-	
+        
         for ( ; kp < kp_end; kp++ ){
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c+= 36; }
           if (cp >= cp_end){ break; }
@@ -856,15 +851,15 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData * Adata,
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
         int j = acols[jp];
         const TacsScalar * a = &A[36*jp];
-	
+        
         int kp = browp[j];
         int kp_end = browp[j+1];
         const TacsScalar * b = &B[36*kp];
-	
+        
         int cp = crowp[i];
         int cp_end = crowp[i+1];
         TacsScalar * c = &C[36*cp];
-	
+        
         for ( ; kp < kp_end; kp++ ){
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 36; }
           if (cp >= cp_end){ break; }
@@ -936,15 +931,15 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData * Adata,
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
         int j = acols[jp];
         const TacsScalar * a = &A[36*jp];
-	
+        
         int kp = browp[j];
         int kp_end = browp[j+1];
         const TacsScalar * b = &B[36*kp];
-	
+        
         int cp = crowp[i];
         int cp_end = crowp[i+1];
         TacsScalar * c = &C[36*cp];
-	
+        
         for ( ; kp < kp_end; kp++ ){
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 36; }
           if (cp >= cp_end){ break; }
@@ -1016,8 +1011,8 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData * Adata,
   Apply a given number of steps of symmetric SOR to the system A*x = b.
 */
 void BCSRMatApplySOR6( BCSRMatData * data, TacsScalar * Adiag,
-		       TacsScalar omega, int iters, TacsScalar * b, 
-		       TacsScalar * x ){
+                       TacsScalar omega, int iters, TacsScalar * b, 
+                       TacsScalar * x ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
@@ -1044,20 +1039,20 @@ void BCSRMatApplySOR6( BCSRMatData * data, TacsScalar * Adiag,
       // tx <- b_i - A_{ij}*x_{j} for j != i
       int end = rowp[i+1];
       for ( int k = rowp[i]; k < end; k++ ){
-	int j = cols[k];
-	TacsScalar * y = &x[6*j];
+        int j = cols[k];
+        TacsScalar * y = &x[6*j];
 
-	if (i != j){
-	  t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5];
-	  t2 -= a[6 ]*y[0] + a[7 ]*y[1] + a[8 ]*y[2] + a[9 ]*y[3] + a[10]*y[4] + a[11]*y[5];
-	  t3 -= a[12]*y[0] + a[13]*y[1] + a[14]*y[2] + a[15]*y[3] + a[16]*y[4] + a[17]*y[5];
-	  t4 -= a[18]*y[0] + a[19]*y[1] + a[20]*y[2] + a[21]*y[3] + a[22]*y[4] + a[23]*y[5];
-	  t5 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5];
-	  t6 -= a[30]*y[0] + a[31]*y[1] + a[32]*y[2] + a[33]*y[3] + a[34]*y[4] + a[35]*y[5];
- 	}
-	
-	// Increment the block pointer by bsize^2
-	a += 36;
+        if (i != j){
+          t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5];
+          t2 -= a[6 ]*y[0] + a[7 ]*y[1] + a[8 ]*y[2] + a[9 ]*y[3] + a[10]*y[4] + a[11]*y[5];
+          t3 -= a[12]*y[0] + a[13]*y[1] + a[14]*y[2] + a[15]*y[3] + a[16]*y[4] + a[17]*y[5];
+          t4 -= a[18]*y[0] + a[19]*y[1] + a[20]*y[2] + a[21]*y[3] + a[22]*y[4] + a[23]*y[5];
+          t5 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5];
+          t6 -= a[30]*y[0] + a[31]*y[1] + a[32]*y[2] + a[33]*y[3] + a[34]*y[4] + a[35]*y[5];
+        }
+        
+        // Increment the block pointer by bsize^2
+        a += 36;
       }
 
       // Set a pointer to the inverse of the diagonal
@@ -1079,8 +1074,8 @@ void BCSRMatApplySOR6( BCSRMatData * data, TacsScalar * Adiag,
   Apply a given number of steps of symmetric SOR to the system A*x = b.
 */
 void BCSRMatApplySSOR6( BCSRMatData * data, TacsScalar * Adiag,
-			TacsScalar omega, int iters, TacsScalar * b, 
-			TacsScalar * x ){
+                        TacsScalar omega, int iters, TacsScalar * b, 
+                        TacsScalar * x ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
@@ -1107,20 +1102,20 @@ void BCSRMatApplySSOR6( BCSRMatData * data, TacsScalar * Adiag,
       // tx <- b_i - A_{ij}*x_{j} for j != i
       int end = rowp[i+1];
       for ( int k = rowp[i]; k < end; k++ ){
-	int j = cols[k];
-	TacsScalar * y = &x[6*j];
+        int j = cols[k];
+        TacsScalar * y = &x[6*j];
 
-	if (i != j){
-	  t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5];
-	  t2 -= a[6 ]*y[0] + a[7 ]*y[1] + a[8 ]*y[2] + a[9 ]*y[3] + a[10]*y[4] + a[11]*y[5];
-	  t3 -= a[12]*y[0] + a[13]*y[1] + a[14]*y[2] + a[15]*y[3] + a[16]*y[4] + a[17]*y[5];
-	  t4 -= a[18]*y[0] + a[19]*y[1] + a[20]*y[2] + a[21]*y[3] + a[22]*y[4] + a[23]*y[5];
-	  t5 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5];
-	  t6 -= a[30]*y[0] + a[31]*y[1] + a[32]*y[2] + a[33]*y[3] + a[34]*y[4] + a[35]*y[5];
- 	}
-	
-	// Increment the block pointer by bsize^2
-	a += 36;
+        if (i != j){
+          t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5];
+          t2 -= a[6 ]*y[0] + a[7 ]*y[1] + a[8 ]*y[2] + a[9 ]*y[3] + a[10]*y[4] + a[11]*y[5];
+          t3 -= a[12]*y[0] + a[13]*y[1] + a[14]*y[2] + a[15]*y[3] + a[16]*y[4] + a[17]*y[5];
+          t4 -= a[18]*y[0] + a[19]*y[1] + a[20]*y[2] + a[21]*y[3] + a[22]*y[4] + a[23]*y[5];
+          t5 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5];
+          t6 -= a[30]*y[0] + a[31]*y[1] + a[32]*y[2] + a[33]*y[3] + a[34]*y[4] + a[35]*y[5];
+        }
+        
+        // Increment the block pointer by bsize^2
+        a += 36;
       }
 
       // Set a pointer to the inverse of the diagonal
@@ -1155,20 +1150,20 @@ void BCSRMatApplySSOR6( BCSRMatData * data, TacsScalar * Adiag,
       // tx <- b_i - A_{ij}*x_{j} for j != i
       int end = rowp[i+1];
       for ( int k = rowp[i]; k < end; k++ ){
-	int j = cols[k];
-	TacsScalar * y = &x[6*j];
+        int j = cols[k];
+        TacsScalar * y = &x[6*j];
 
-	if (i != j){
-	  t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5];
-	  t2 -= a[6 ]*y[0] + a[7 ]*y[1] + a[8 ]*y[2] + a[9 ]*y[3] + a[10]*y[4] + a[11]*y[5];
-	  t3 -= a[12]*y[0] + a[13]*y[1] + a[14]*y[2] + a[15]*y[3] + a[16]*y[4] + a[17]*y[5];
-	  t4 -= a[18]*y[0] + a[19]*y[1] + a[20]*y[2] + a[21]*y[3] + a[22]*y[4] + a[23]*y[5];
-	  t5 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5];
-	  t6 -= a[30]*y[0] + a[31]*y[1] + a[32]*y[2] + a[33]*y[3] + a[34]*y[4] + a[35]*y[5];
- 	}
-	
-	// Increment the block pointer by bsize^2
-	a += 36;
+        if (i != j){
+          t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5];
+          t2 -= a[6 ]*y[0] + a[7 ]*y[1] + a[8 ]*y[2] + a[9 ]*y[3] + a[10]*y[4] + a[11]*y[5];
+          t3 -= a[12]*y[0] + a[13]*y[1] + a[14]*y[2] + a[15]*y[3] + a[16]*y[4] + a[17]*y[5];
+          t4 -= a[18]*y[0] + a[19]*y[1] + a[20]*y[2] + a[21]*y[3] + a[22]*y[4] + a[23]*y[5];
+          t5 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5];
+          t6 -= a[30]*y[0] + a[31]*y[1] + a[32]*y[2] + a[33]*y[3] + a[34]*y[4] + a[35]*y[5];
+        }
+        
+        // Increment the block pointer by bsize^2
+        a += 36;
       }
 
       // Set a pointer to the inverse of the diagonal

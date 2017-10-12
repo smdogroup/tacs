@@ -50,11 +50,11 @@ int main( int argc, char *argv[] ){
     int num_nodes = 0;
     for ( int j = 0; j < 4*ny+1; j++ ){
       for ( int i = 0; i < 4*nx+1; i++ ){
-	int index = i + (4*nx+1)*j;
-	if (anodes[index] >= 0){
-	  anodes[i + (4*nx+1)*j] = num_nodes;
-	  num_nodes++;
-	}
+        int index = i + (4*nx+1)*j;
+        if (anodes[index] >= 0){
+          anodes[i + (4*nx+1)*j] = num_nodes;
+          num_nodes++;
+        }
       }
     }
 
@@ -66,11 +66,11 @@ int main( int argc, char *argv[] ){
     // Now number all the negative block numbers
     for ( int j = 0; j < 2*ny+1; j++ ){
       for ( int i = 0; i < 2*nx+1; i++ ){
-	int index = i + (2*nx+1)*j;
-	if (bnodes[index] <= 0){
-	  bnodes[index] = num_nodes;
-	  num_nodes++;
-	}
+        int index = i + (2*nx+1)*j;
+        if (bnodes[index] <= 0){
+          bnodes[index] = num_nodes;
+          num_nodes++;
+        }
       }
     }
 
@@ -83,14 +83,14 @@ int main( int argc, char *argv[] ){
     dep_ptr[0] = 0;
     for ( int j = 0; j < 2*ny; j++ ){
       if (j % 2 == 0){
-	dep_weights[3*j] = 3.0/8.0;
-	dep_weights[3*j+1] = 3.0/4.0;
-	dep_weights[3*j+2] = -1.0/8.0;
+        dep_weights[3*j] = 3.0/8.0;
+        dep_weights[3*j+1] = 3.0/4.0;
+        dep_weights[3*j+2] = -1.0/8.0;
       }
       else {
-	dep_weights[3*j] = -1.0/8.0;
-	dep_weights[3*j+1] = 3.0/4.0;
-	dep_weights[3*j+2] = 3.0/8.0;
+        dep_weights[3*j] = -1.0/8.0;
+        dep_weights[3*j+1] = 3.0/4.0;
+        dep_weights[3*j+2] = 3.0/8.0;
       }
 
       // Set the dependent node connectivity
@@ -113,23 +113,23 @@ int main( int argc, char *argv[] ){
     // Loop over the a-nodes
     for ( int j = 0; j < 4*ny+1; j++ ){
       for ( int i = 0; i < 4*nx+1; i++ ){
-	int node = anodes[i + (4*nx+1)*j];
-	if (node >= 0){
-	  Xpts[3*node] = 0.25*Lx*i/nx;
-	  Xpts[3*node+1] = 0.25*Ly*j/ny;
-	  Xpts[3*node+2] = 0.0;
-	}
+        int node = anodes[i + (4*nx+1)*j];
+        if (node >= 0){
+          Xpts[3*node] = 0.25*Lx*i/nx;
+          Xpts[3*node+1] = 0.25*Ly*j/ny;
+          Xpts[3*node+2] = 0.0;
+        }
       }
     }
 
     for ( int j = 0; j < 2*ny+1; j++ ){
       for ( int i = 0; i < 2*nx+1; i++ ){
-	int node = bnodes[i + (2*nx+1)*j];
-	if (node >= 0){
-	  Xpts[3*node] = Lx + 0.5*Lx*i/nx;
-	  Xpts[3*node+1] = 0.5*Ly*j/ny;
-	  Xpts[3*node+2] = 0.0;
-	}
+        int node = bnodes[i + (2*nx+1)*j];
+        if (node >= 0){
+          Xpts[3*node] = Lx + 0.5*Lx*i/nx;
+          Xpts[3*node+1] = 0.5*Ly*j/ny;
+          Xpts[3*node+2] = 0.0;
+        }
       }
     }
     
@@ -151,50 +151,50 @@ int main( int argc, char *argv[] ){
     int N = 4*nx+1;
     for ( int j = 0; j < 2*ny; j++ ){
       for ( int i = 0; i < 2*nx; i++ ){
-	conn[0] = anodes[2*i+2 + N*(2*j)];
-	conn[1] = anodes[2*i+2 + N*(2*j+2)];
-	conn[2] = anodes[2*i   + N*(2*j)];
-	conn[3] = anodes[2*i+2 + N*(2*j+1)];
-	conn[4] = anodes[2*i+1 + N*(2*j+1)];
-	conn[5] = anodes[2*i+1 + N*(2*j)];
-	conn += 6;
-	elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
-	n++;
-	
-	conn[0] = anodes[2*i   + N*(2*j+2)];
-	conn[1] = anodes[2*i   + N*(2*j)];
-	conn[2] = anodes[2*i+2 + N*(2*j+2)];
-	conn[3] = anodes[2*i   + N*(2*j+1)];
-	conn[4] = anodes[2*i+1 + N*(2*j+1)];
-	conn[5] = anodes[2*i+1 + N*(2*j+2)];
-	conn += 6;
-	elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
-	n++;
+        conn[0] = anodes[2*i+2 + N*(2*j)];
+        conn[1] = anodes[2*i+2 + N*(2*j+2)];
+        conn[2] = anodes[2*i   + N*(2*j)];
+        conn[3] = anodes[2*i+2 + N*(2*j+1)];
+        conn[4] = anodes[2*i+1 + N*(2*j+1)];
+        conn[5] = anodes[2*i+1 + N*(2*j)];
+        conn += 6;
+        elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
+        n++;
+        
+        conn[0] = anodes[2*i   + N*(2*j+2)];
+        conn[1] = anodes[2*i   + N*(2*j)];
+        conn[2] = anodes[2*i+2 + N*(2*j+2)];
+        conn[3] = anodes[2*i   + N*(2*j+1)];
+        conn[4] = anodes[2*i+1 + N*(2*j+1)];
+        conn[5] = anodes[2*i+1 + N*(2*j+2)];
+        conn += 6;
+        elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
+        n++;
       }
     }
 
     // Add the elements from the b-block
     for ( int j = 0; j < ny; j++ ){
       for ( int i = 0; i < nx; i++ ){
-	conn[0] = bnodes[2*i+2 + (2*nx+1)*(2*j)];
-	conn[1] = bnodes[2*i+2 + (2*nx+1)*(2*j+2)];
-	conn[2] = bnodes[2*i + (2*nx+1)*(2*j)];
-	conn[3] = bnodes[2*i+2 + (2*nx+1)*(2*j+1)];
-	conn[4] = bnodes[2*i+1 + (2*nx+1)*(2*j+1)];
-	conn[5] = bnodes[2*i+1 + (2*nx+1)*(2*j)];
-	conn += 6;
-	elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
-	n++;
-	
-	conn[0] = bnodes[2*i + (2*nx+1)*(2*j+2)];
-	conn[1] = bnodes[2*i + (2*nx+1)*(2*j)];
-	conn[2] = bnodes[2*i+2 + (2*nx+1)*(2*j+2)];
-	conn[3] = bnodes[2*i + (2*nx+1)*(2*j+1)];
-	conn[4] = bnodes[2*i+1 + (2*nx+1)*(2*j+1)];
-	conn[5] = bnodes[2*i+1 + (2*nx+1)*(2*j+2)];
-	conn += 6;
-	elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
-	n++;
+        conn[0] = bnodes[2*i+2 + (2*nx+1)*(2*j)];
+        conn[1] = bnodes[2*i+2 + (2*nx+1)*(2*j+2)];
+        conn[2] = bnodes[2*i + (2*nx+1)*(2*j)];
+        conn[3] = bnodes[2*i+2 + (2*nx+1)*(2*j+1)];
+        conn[4] = bnodes[2*i+1 + (2*nx+1)*(2*j+1)];
+        conn[5] = bnodes[2*i+1 + (2*nx+1)*(2*j)];
+        conn += 6;
+        elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
+        n++;
+        
+        conn[0] = bnodes[2*i + (2*nx+1)*(2*j+2)];
+        conn[1] = bnodes[2*i + (2*nx+1)*(2*j)];
+        conn[2] = bnodes[2*i+2 + (2*nx+1)*(2*j+2)];
+        conn[3] = bnodes[2*i + (2*nx+1)*(2*j+1)];
+        conn[4] = bnodes[2*i+1 + (2*nx+1)*(2*j+1)];
+        conn[5] = bnodes[2*i+1 + (2*nx+1)*(2*j+2)];
+        conn += 6;
+        elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
+        n++;
       }
     }
 
@@ -211,8 +211,8 @@ int main( int argc, char *argv[] ){
     
     // Set the connectivity
     creator->setGlobalConnectivity(num_nodes, num_elements,
-  				   elem_node_ptr, elem_node_conn,
-  				   elem_id_nums);
+                                   elem_node_ptr, elem_node_conn,
+                                   elem_id_nums);
     
     // Set the boundary conditions
     creator->setBoundaryConditions(num_bcs, bc_nodes);
@@ -222,7 +222,7 @@ int main( int argc, char *argv[] ){
 
     // Set the dependent nodes
     creator->setDependentNodes(dep_nodes, dep_ptr,
-  			       dep_conn, dep_weights);
+                               dep_conn, dep_weights);
  
     // Free all the allocated data
     delete [] Xpts;

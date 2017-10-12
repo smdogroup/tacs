@@ -108,8 +108,16 @@ cdef class SimplePlaneStress(PlaneStress):
             
         self.ptr.incref()
         return
-    
+
 cdef class SolidStiff(Constitutive):
+    def __cinit__(self, *args, **kwargs):
+        '''
+        Wraps the SolidStiffness class that is used with 3D elements
+        '''
+        self.ptr = NULL
+        return
+    
+cdef class isoSolidStiff(Constitutive):
     def __cinit__(self, rho, E, nu, *args, **kwargs):
         '''
         Wraps the SolidStiffness class that is used with 3D elements

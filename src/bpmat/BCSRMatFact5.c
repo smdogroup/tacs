@@ -86,19 +86,19 @@ void BCSRMatFactor5( BCSRMatData * data ){
       int p = diag[cj] + 1;
       a = &A[25*k];
       b = &A[25*p];
-	  
+          
       // The final entry for row: cols[j]
       int end = rowp[cj + 1];
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < end) && (k < row_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < row_end && cols[k] < cols[p] ){
-	  k++; a += 25;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < row_end && cols[k] < cols[p] ){
+          k++; a += 25;
+        }
 
-	// A[k] = A[k] - A[j] * A[p]
-	if ( k < row_end && cols[k] == cols[p] ){
+        // A[k] = A[k] - A[j] * A[p]
+        if ( k < row_end && cols[k] == cols[p] ){
 
           b0 = b[0 ]; b1 = b[5 ]; b2 = b[10]; b3 = b[15]; b4 = b[20];
           a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4;
@@ -134,9 +134,9 @@ void BCSRMatFactor5( BCSRMatData * data ){
           a[14] -= d20*b0 + d21*b1 + d22*b2 + d23*b3 + d24*b4;
           a[19] -= d30*b0 + d31*b1 + d32*b2 + d33*b3 + d34*b4;
           a[24] -= d40*b0 + d41*b1 + d42*b2 + d43*b3 + d44*b4;
-	}
+        }
 
-	b += 25;
+        b += 25;
       }
 
       // Copy the matrix back into the row
@@ -180,7 +180,6 @@ void BCSRMatFactorLower5( BCSRMatData * data, BCSRMatData * Edata ){
   const TacsScalar * A = data->A;
 
   // Retrieve the data required from the matrix
-  const int nrows_e = Edata->nrows;
   const int * erowp = Edata->rowp;
   const int * ecols = Edata->cols;
   TacsScalar * E = Edata->A;
@@ -203,49 +202,49 @@ void BCSRMatFactorLower5( BCSRMatData * data, BCSRMatData * Edata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && ecols[k] < ecols[p] ){
-	  k++; a += 25;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && ecols[k] < ecols[p] ){
+          k++; a += 25;
+        }
 
-	if ( k < k_end && ecols[k] == ecols[p] ){
-	  TacsScalar b0, b1, b2, b3, b4;
-	  b0 = b[0 ]; b1 = b[5 ]; b2 = b[10]; b3 = b[15]; b4 = b[20];
-	  a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
-	  a[5 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
-	  a[10] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
-	  a[15] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
-	  a[20] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
+        if ( k < k_end && ecols[k] == ecols[p] ){
+          TacsScalar b0, b1, b2, b3, b4;
+          b0 = b[0 ]; b1 = b[5 ]; b2 = b[10]; b3 = b[15]; b4 = b[20];
+          a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
+          a[5 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
+          a[10] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
+          a[15] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
+          a[20] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
 
-	  b0 = b[1 ]; b1 = b[6 ]; b2 = b[11]; b3 = b[16]; b4 = b[21];
-	  a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
-	  a[6 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
-	  a[11] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
-	  a[16] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
-	  a[21] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
+          b0 = b[1 ]; b1 = b[6 ]; b2 = b[11]; b3 = b[16]; b4 = b[21];
+          a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
+          a[6 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
+          a[11] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
+          a[16] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
+          a[21] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
 
-	  b0 = b[2 ]; b1 = b[7 ]; b2 = b[12]; b3 = b[17]; b4 = b[22];
-	  a[2 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
-	  a[7 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
-	  a[12] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
-	  a[17] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
-	  a[22] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
+          b0 = b[2 ]; b1 = b[7 ]; b2 = b[12]; b3 = b[17]; b4 = b[22];
+          a[2 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
+          a[7 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
+          a[12] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
+          a[17] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
+          a[22] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
 
-	  b0 = b[3 ]; b1 = b[8 ]; b2 = b[13]; b3 = b[18]; b4 = b[23];
-	  a[3 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
-	  a[8 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
-	  a[13] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
-	  a[18] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
-	  a[23] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
+          b0 = b[3 ]; b1 = b[8 ]; b2 = b[13]; b3 = b[18]; b4 = b[23];
+          a[3 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
+          a[8 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
+          a[13] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
+          a[18] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
+          a[23] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
 
-	  b0 = b[4 ]; b1 = b[9 ]; b2 = b[14]; b3 = b[19]; b4 = b[24];
-	  a[4 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
-	  a[9 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
-	  a[14] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
-	  a[19] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
-	  a[24] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
-	}
-	b += 25;
+          b0 = b[4 ]; b1 = b[9 ]; b2 = b[14]; b3 = b[19]; b4 = b[24];
+          a[4 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4;
+          a[9 ] -= d[5 ]*b0 + d[6 ]*b1 + d[7 ]*b2 + d[8 ]*b3 + d[9 ]*b4;
+          a[14] -= d[10]*b0 + d[11]*b1 + d[12]*b2 + d[13]*b3 + d[14]*b4;
+          a[19] -= d[15]*b0 + d[16]*b1 + d[17]*b2 + d[18]*b3 + d[19]*b4;
+          a[24] -= d[20]*b0 + d[21]*b1 + d[22]*b2 + d[23]*b3 + d[24]*b4;
+        }
+        b += 25;
       }
     }
   }
@@ -257,7 +256,6 @@ void BCSRMatFactorLower5( BCSRMatData * data, BCSRMatData * Edata ){
 
 void BCSRMatFactorUpper5( BCSRMatData * data, BCSRMatData * Fdata ){
   // Retrieve the data required from the matrix
-  const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -331,12 +329,12 @@ void BCSRMatFactorUpper5( BCSRMatData * data, BCSRMatData * Fdata ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && fcols[k] < cols[p] ){
-	  k++; a += 25;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && fcols[k] < cols[p] ){
+          k++; a += 25;
+        }
 
-	if ( k < k_end && fcols[k] == cols[p] ){
+        if ( k < k_end && fcols[k] == cols[p] ){
           b0 = b[0 ]; b1 = b[5 ]; b2 = b[10]; b3 = b[15]; b4 = b[20];
           a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4;
           a[5 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4;
@@ -371,8 +369,8 @@ void BCSRMatFactorUpper5( BCSRMatData * data, BCSRMatData * Fdata ){
           a[14] -= d20*b0 + d21*b1 + d22*b2 + d23*b3 + d24*b4;
           a[19] -= d30*b0 + d31*b1 + d32*b2 + d33*b3 + d34*b4;
           a[24] -= d40*b0 + d41*b1 + d42*b2 + d43*b3 + d44*b4;
-	}
-	b += 25;
+        }
+        b += 25;
       }
 
       // Copy over the matrix

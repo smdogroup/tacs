@@ -298,7 +298,6 @@ void BCSRMatApplyLower8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     
     int end = diag[i];
     int k = rowp[i];
-    int nz = end - k;
     const TacsScalar * a = &(data->A[64*k]);
     for ( ; k < end; k++ ){
       int j = 8*cols[k];
@@ -337,7 +336,6 @@ void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     
     int end = rowp[i+1];
     int k = diag[i]+1;
-    int nz = end - k;
     TacsScalar * a = &(data->A[64*k]);
     for ( ; k < end; k++ ){
       int j = 8*cols[k];
@@ -390,7 +388,6 @@ void BCSRMatApplyPartialLower8( BCSRMatData * data, TacsScalar * x,
     int end = diag[i];
     int k = rowp[i];
     while ( cols[k] < var_offset ) k++;
-    int nz = end - k;
 
     const TacsScalar * a = &A[36*k];
     for ( ; k < end; k++ ){
@@ -438,7 +435,6 @@ void BCSRMatApplyPartialUpper8( BCSRMatData * data, TacsScalar * x,
 
     int end = rowp[i+1];
     int k = diag[i]+1;
-    int nz = end - k;
     const TacsScalar * a = &A[64*k];
     for ( ; k < end; k++ ){
       int j = 8*cols[k] - off;
@@ -494,7 +490,6 @@ void BCSRMatApplyFactorSchur8( BCSRMatData * data, TacsScalar * x,
 
     int end = rowp[i+1];
     int k = diag[i]+1;
-    int nz = end - k;
     const TacsScalar * a = &A[64*k];
     for ( ; k < end; k++ ){
       int j = 8*cols[k];
