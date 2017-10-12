@@ -257,8 +257,8 @@ int main( int argc, char * argv[] ){
   for ( int k = 0; k < num_comp; k++ ){
     // Count up the number of elements that use the connectivity
     char *comp_name = file->getComponentName(k);
-    printf("Converting zone %d: %s at time %g\n", 
-           k, comp_name, solution_time);
+    //printf("Converting zone %d: %s at time %g\n", 
+    // k, comp_name, solution_time);
 
     memset(reduced_points, 0, num_points*sizeof(int));
     memset(reduced_conn, 0, conn_dim*num_elements*sizeof(int));
