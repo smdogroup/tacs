@@ -298,6 +298,7 @@ cdef extern from "TACSAssembler.h":
         # Return information about the TACSObject
         int getNumNodes()
         int getNumDependentNodes()
+        int getNumOwnedNodes()
         int getNumElements()
         TACSElement **getElements()
         
@@ -322,6 +323,7 @@ cdef extern from "TACSAssembler.h":
 
         # Reorder the vector based on the selected reordering
         void reorderVec(TACSBVec*)
+        void getReordering(int*)
 
         # Set/get the simulation time
         void setSimulationTime(double)

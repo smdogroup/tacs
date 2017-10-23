@@ -549,6 +549,7 @@ TACSAssembler* TACSCreator::createTACS(){
       start_node += owned_nodes[k];
     }
 
+    delete [] inv_new_nodes;
     delete [] elem_part;
     delete [] dep_nodes;
     delete [] dep_node_flags;

@@ -241,6 +241,13 @@ int TACSAssembler::getNumDependentNodes(){
 }
 
 /*
+  Get the number of owned local nodes
+*/
+int TACSAssembler::getNumOwnedNodes(){
+  return numOwnedNodes;
+}
+
+/*
   Get the number of elements
 */
 int TACSAssembler::getNumElements(){ 

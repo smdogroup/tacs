@@ -715,6 +715,15 @@ cdef class Assembler:
         self.ptr.reorderVec(vec.ptr)
         return
 
+    def getReordering(self):
+        '''Get the reordering'''
+        cdef int size = 0
+        cdef np.ndarray oldtonew
+        size = self.ptr.getNumOwnedNodes()
+        oldtonew = np.zeros(size, dtype=np.intc)
+        self.ptr.getReordering(<int*>oldtonew.data)
+        return oldtonew
+    
     def applyBCs(self, Vec vec):
         '''Apply boundary conditions to the vector'''
         self.ptr.applyBCs(vec.ptr)

@@ -101,6 +101,7 @@ class TACSAssembler : public TACSObject {
   int getVarsPerNode();
   int getNumNodes();
   int getNumDependentNodes();
+  int getNumOwnedNodes();
   int getNumElements();
   TACSVarMap *getVarMap();
   TACSBcMap *getBcMap();
