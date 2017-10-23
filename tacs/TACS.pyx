@@ -1444,7 +1444,7 @@ cdef class Integrator:
         self.ptr.integrate()
         return
 
-    def solve(self, int step_num):
+    def step(self, int step_num):
         '''
         Solve the nonlinear system at current time step
         '''
