@@ -227,6 +227,9 @@ TACSIntegrator::TACSIntegrator( TACSAssembler * _tacs,
 
   // Termination flag for newton solve
   newton_term = 0;
+
+  // Force vector
+  forces = NULL;
 }
 
 /*
@@ -261,9 +264,12 @@ TACSIntegrator::~TACSIntegrator(){
   // Dereference TACS
   if (tacs){ tacs->decref(); }
   
-  if (rigidf5){ rigidf5->incref();}
-  if (shellf5){ shellf5->incref();}
-  if (beamf5){ beamf5->incref();}
+  if (rigidf5){ rigidf5->decref();}
+  if (shellf5){ shellf5->decref();}
+  if (beamf5){ beamf5->decref();}
+
+  // External forces
+  if (forces){forces->decref();}
 }
 
 /*
@@ -899,7 +905,7 @@ void TACSIntegrator::setBeamOutput( int flag ){
   March one step and exit the integration. This is primarily for use 
   with FUNtoFEM. 
 */
-void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
+void TACSIntegrator::marchOneStep( int k ){
   // Retrieve the initial conditions and set into TACS
   if (k == 1){
     tacs->getInitConditions(q[0], qdot[0], qddot[0]);
@@ -941,7 +947,7 @@ void TACSIntegrator::marchOneStep( int k, TACSBVec *forces ){
   Integate forward in time using the initial conditions retrieved from
   TACS
 */
-void TACSIntegrator::integrate(){
+void TACSIntegrator::integrate( ){
   // Keep track of the time taken for foward mode
   time_forward = 0.0;
   time_fwd_assembly = 0.0;
@@ -962,7 +968,7 @@ void TACSIntegrator::integrate(){
 
   // March forward in time
   for (int k = 1; k < num_time_steps; k++){
-    marchOneStep(k, NULL);
+    marchOneStep(k);
   }
 
   // Perform logging, tecplot export, etc.
@@ -1295,18 +1301,20 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
   if (current_step == 0){
     // Log information
     if (logfp && print_level >= 1){
-      fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", 
+      fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n", 
               "status", "time", "tnewton", "#iters", "NwtnFlg", "|R|", "|R|/|R0|", "|dq|",
-              "KE", "PE", "E0-E");
+              "KE", "PE", "E0-E", "|F|");
       
       // Compute the initial energy
       init_energy = energies[0] + energies[1];
 
       // Log the details
-      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
               0, num_time_steps,
               time[0], time_newton, 0, 0, 0.0, 0.0, 0.0,
-              TacsRealPart(energies[0]), TacsRealPart(energies[1]),  0.0);
+              TacsRealPart(energies[0]), TacsRealPart(energies[1]),  
+              0.0, 
+              (forces) ? TacsRealPart(forces->norm()):0.0);
     }
   } 
   else {
@@ -1316,13 +1324,13 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
       // Need a title for total summary as details of Newton iteration
       // will overshadow this one line summary
       if (print_level == 2){
-        fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+        fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
                 "status",
                 "time", "tnewton", "#iters", "NwtnFlg", "|R|", "|R|/|R0|", "|dq|",
-                "KE", "PE", "E0-E");
+                "KE", "PE", "E0-E", "|F|");
       }
       
-      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
               current_step, num_time_steps,
               time[current_step], time_newton,
               niter, newton_term,
@@ -1330,7 +1338,8 @@ void TACSIntegrator::doEachTimeStep( int current_step ) {
               TacsRealPart(res_norm/(rtol + init_res_norm)),
               TacsRealPart(update_norm),
               TacsRealPart(energies[0]), TacsRealPart(energies[1]), 
-              TacsRealPart((init_energy - (energies[0] + energies[1]))));
+              TacsRealPart((init_energy - (energies[0] + energies[1]))), 
+              (forces) ? TacsRealPart(forces->norm()):0.0);
     }
   }
 }
@@ -1522,6 +1531,17 @@ void TACSIntegrator::setTACSStates( double time, TACSBVec *q,
                                     TACSBVec *qdot, TACSBVec * qddot ){
   tacs->setSimulationTime(time);
   tacs->setVariables(q, qdot, qddot);
+}
+
+/*
+  Set external forces into the class variable
+*/
+void TACSIntegrator::setLoads( TACSBVec * forces ){
+  if (this->forces){this->forces->decref();}
+  if (forces){
+    this->forces = forces;
+    this->forces->incref();
+  }
 }
 
 /*
@@ -2172,7 +2192,7 @@ void TACSDIRKIntegrator::getCoeffsInterStage( int current_stage,
   }
 }
 
-void TACSDIRKIntegrator::marchOneStep( int step_num, TACSBVec *forces){ 
+void TACSDIRKIntegrator::marchOneStep( int step_num ){ 
   printf("DIRK marchOneStep unimplemented");
 }
 
@@ -2217,7 +2237,7 @@ void TACSDIRKIntegrator::computeTimeStepStates( int current_step,
   solution over time is set into the class variables q, qdot and qddot
   and time.
 */
-void TACSDIRKIntegrator::integrate(){
+void TACSDIRKIntegrator::integrate( ){
   // Print a summary of the object
   if (!isAdaptiveInstance()){
     printOptionSummary(logfp);
@@ -2264,7 +2284,7 @@ void TACSDIRKIntegrator::integrate(){
       // the approximated states
       newton_term = newtonSolve(alpha, beta, gamma, tS[toffset+i], 
                                 qS[toffset+i], qdotS[toffset+i],
-                                qddotS[toffset+i], NULL);
+                                qddotS[toffset+i], forces);
       if (newton_term < 0){
         exit(-1);
       }

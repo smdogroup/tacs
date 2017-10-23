@@ -1434,11 +1434,11 @@ cdef class Integrator:
         self.ptr.integrate()
         return
 
-    def solve(self, int step_num, Vec forces):
+    def solve(self, int step_num):
         '''
         Solve the nonlinear system at current time step
         '''
-        self.ptr.marchOneStep(step_num, forces.ptr)
+        self.ptr.marchOneStep(step_num)
         return
 
     def getFuncGrad(self,
@@ -1580,6 +1580,13 @@ cdef class Integrator:
         if qddot is not None:
             cqddot = qddot.ptr        
         return self.ptr.getStates(time_step,cq,cqdot,cqddot)
+
+    def setLoads(self, Vec forces=None):
+        cdef TACSBVec *cforces = NULL
+        if forces is not None:
+            cforces = forces.ptr
+        self.ptr.setLoads(cforces)
+        return
     
 cdef class BDFIntegrator(Integrator):
     '''

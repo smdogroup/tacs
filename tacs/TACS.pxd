@@ -455,7 +455,7 @@ cdef extern from "TACSIntegrator.h":
         void integrate()
 
         # Integrate forward in time for one step
-        void marchOneStep(int step_num, TACSBVec *forces)
+        void marchOneStep(int step_num)
 
         # Returns the adjoint gradient for all functions that are set into TACS
         void getFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
@@ -490,6 +490,9 @@ cdef extern from "TACSIntegrator.h":
 
         # return the TACS states at the given time step
         double getStates(int,TACSBVec*,TACSBVec*,TACSBVec*)
+
+        # Set Loads into TACS
+        void setLoads(TACSBVec*)
 
     # BDF Implementation of the integrator
     cdef cppclass TACSBDFIntegrator(TACSIntegrator):

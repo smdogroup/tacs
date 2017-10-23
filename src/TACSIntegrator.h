@@ -47,12 +47,12 @@ class TACSIntegrator : public TACSObject {
   // Function to solve for the states in time
   //-----------------------------------------
   virtual void integrate();
-  virtual void marchOneStep( int step_num, TACSBVec *forces );
+  virtual void marchOneStep( int step_num );
 
   // Function for returning the derivatives for the functions
   //----------------------------------------------------------
   void getFuncGrad( int num_dv, TacsScalar *x, 
-                    TacsScalar *fvals, TacsScalar *dfdx );
+                    TacsScalar *fvals, TacsScalar *dfdx);
   void getFDFuncGrad( int num_dv, TacsScalar *x, 
                       TacsScalar *fvals, TacsScalar *dfdx, 
                       double dh=1.0e-8);
@@ -76,6 +76,7 @@ class TACSIntegrator : public TACSObject {
   void setOrderingType( TACSAssembler::OrderingType _type );
   void setInitNewtonDeltaFraction( double frac );
   void setTACSStates( double time, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
+  void setLoads( TACSBVec *forces );
 
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
@@ -226,6 +227,7 @@ class TACSIntegrator : public TACSObject {
 
   double avg_scale;
 
+  TACSBVec      *forces;               // forces applied at each timestep
  private:
 
   //-----------------------------------------------------------------//
@@ -297,7 +299,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 
   // Overriding the default integration logic
   void integrate();
-  void marchOneStep( int step_num, TACSBVec *forces );
+  void marchOneStep( int step_num );
   
   void evalFunctions( TACSFunction **funcs, TacsScalar *funcVals,
                       int numFuncs );
