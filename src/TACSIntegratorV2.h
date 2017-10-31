@@ -6,14 +6,6 @@
 #include "KSM.h"
 #include "TACSToFH5.h"
 
-// Type of integrator to use. The following are the supported methods.
-//--------------------------------------------------------------------
-enum IntegratorType { 
-  BDF1, BDF2, BDF3,                   // Backward-difference methods
-  ABM1, ABM2, ABM3, ABM4, ABM5, ABM6, // Adams-Bashforth-method
-  DIRK2, DIRK3, DIRK4,                // Diagonally-Implicit-Runge-Kutta
-  NBGE, NBG2, NBG3 };                 // Newmark Beta Gamma Method
-
 /*
   Abstract base class for integration schemes.
   
@@ -26,8 +18,6 @@ enum IntegratorType {
 
   Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved.
 */
-
-
 class TACSIntegrator : public TACSObject {
  public:
   TACSIntegrator( TACSAssembler *tacs,
@@ -36,55 +26,6 @@ class TACSIntegrator : public TACSObject {
                   double num_steps_per_sec ); 
   ~TACSIntegrator();
 
-  // Set the functions to integrate
-  //--------------------------------
-  void setFunctions( TACSFunction **funcs, int num_funcs,
-                     int start_step=-1, int end_step=-1 );
-
-  // Initialize the TACSIntegrator object
-  //-------------------------------------
-  void initialize();
-  
-  // Solve for time-step t with 
-  virtual void iterate( int step_num, TACSBVec *forces=NULL ) = 0;
-
-  // Integrate the equations of motion forward in time
-  virtual void integrate(){
-    for ( int i = 0; i < num_steps; i++ ){
-      iterate(i);
-    }
-  }
-
-  // Set-up right-hand-sides for the adjoint equations
-  virtual void initAdjoint( int step_num ) = 0;
-
-  // Iterate to find a solution of the adjoint equations
-  virtual void iterateAdjoint( int step_num, TACSBVec *psi=NULL ) = 0;
-
-  // Add the contributions to the total derivative from the time-step 
-  virutal void addAdjointDerivative( int step_num ) = 0;
-
-  // Integrate the adjoint and add the total derivative from all
-  // time-steps
-  virtual void integrateAdjoint(){
-    for ( int i = num_steps-1; i >= 0; i-- ){
-      initAdjoint(i);
-      iterateAdjoint(i);
-      addAdjointDerivative(i);
-    }
-  }
-
-  // Get the adjoint vector
-  //-----------------------
-  void getAdjoint( int step_num, TACSBVec **adjoint );
-  virtual void evalFunctions( TacsScalar *fvals );
-  virtual void getGradient( TacsScalar *dfdx );
-
-  // Retrieve the internal states
-  //------------------------------
-  void getStates( int step_num, 
-                  TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot );
-
   // Define members of the class
   // ---------------------------
   void setRelTol( double _rtol );
@@ -92,34 +33,85 @@ class TACSIntegrator : public TACSObject {
   void setMaxNewtonIters( int _max_newton_iters );
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
-  void setUseLapack( int _use_lapack, int _eigensolve=0 );
+  void setUseLapack( int _use_lapack );
   void setUseLineSearch( int _use_line_search );
-  void setUseFEMat( int _use_femat );
+  void setUseFEMat( int _use_femat, TACSAssembler::OrderingType _type );
   void setInitNewtonDeltaFraction( double frac );
+
+  // Set the functions to integrate
+  //--------------------------------
+  void setFunctions( TACSFunction **funcs, int num_funcs,
+                     int num_design_vars,
+                     int start_step=-1, int end_step=-1 );
+  
+  // Solve for time-step t with 
+  virtual int iterate( int step_num, TACSBVec *forces ) = 0;
+
+  // Integrate the equations of motion forward in time
+  virtual void integrate(){
+    for ( int i = 0; i < num_time_steps+1; i++ ){
+      iterate(i, NULL);
+    }
+  }
+
+  // Evaluate the functions of interest
+  virtual void evalFunctions( TacsScalar *fvals ) = 0;
+
+  // Set-up right-hand-sides for the adjoint equations
+  virtual void initAdjoint( int step_num ){}
+
+  // Iterate to find a solution of the adjoint equations
+  virtual void iterateAdjoint( int step_num, TACSBVec **adj_rhs ){}
+
+  // Add the contributions to the total derivative from the time-step 
+  virtual void postAdjoint( int step_num ){}
+
+  // Integrate the adjoint and add the total derivative from all
+  // time-steps
+  virtual void integrateAdjoint(){
+    for ( int i = num_time_steps; i >= 0; i-- ){
+      initAdjoint(i);
+      iterateAdjoint(i, NULL);
+      postAdjoint(i);
+    }
+  }
+
+  // Get the adjoint vector for the given function
+  virtual void getAdjoint( int step_num, int func_num, 
+                           TACSBVec **adjoint ) = 0;
+
+  // Copy out the function
+  virtual void getGradient( TacsScalar *_dfdx ){
+    memcpy(dfdx, _dfdx, num_funcs*num_design_vars*sizeof(TacsScalar));
+  }
+
+  // Retrieve the internal states
+  double getStates( int step_num, 
+                    TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot );
+
+  // Check the gradient using finite-difference
+  void checkGradients( double dh );
 
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
+  void setOutputPrefix( const char *prefix );
   void writeSolution( const char *filename, int format=2 );
-  void writeSolutionToF5( int _write_step );
-  void writeStepToF5( int step );
-  void writeNewtonIterToF5( int step, int newton );
-  void setOutputFrequency( int _write_step, int _write_newton = 0);
-  void setRigidOutput( int flag );    
-  void setShellOutput( int flag );
-  void setBeamOutput( int flag );
+  void writeSolutionToF5( int step_num );
+  void setOutputFrequency( int _write_step );
   void printWallTime( double t0, int level=1 );
-  void printOptionSummary( FILE *fp );
-  void printAdjointOptionSummary( FILE *fp );
+  void printOptionSummary();
+  void printAdjointOptionSummary();
+  void setRigidOutput( TACSToFH5 *_rigidf5 );
+  void setShellOutput( TACSToFH5 *_shellf5 );
+  void setBeamOutput( TACSToFH5 *_beamf5 );
 
  protected:
 
   // Functions for solutions to linear and nonlinear problems
-  // --------------------------------------------------------
   int newtonSolve( double alpha, double beta, double gamma,
                    double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot, 
-                   TACSBVec *forces=NULL, TACSBcMap *addBcs=NULL );
+                   TACSBVec *forces=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
-  void lapackEigenSolve( TACSMat *mat );
 
   // Variables that keep track of time
   double time_fwd_assembly;
@@ -134,99 +126,55 @@ class TACSIntegrator : public TACSObject {
   double time_rev_jac_pdt;
   double time_reverse;
   
-  // Functions to aid adjoint solve
-  // -------------------------------
-  void addVectorTransProducts( TACSBVec **ans, 
-                               double alpha, double beta, double gamma,
-                               int num_funcs, TACSFunction **funcs,
-                               TACSBVec **input );
+  // Log the time step information
+  void logTimeStep( int time_step );
 
-  // // Virtual functions for forward mode
-  // // -----------------------------------
-  // virtual void setupCoeffs() = 0;
-  // virtual void approxStates() = 0;
-  // virtual void getLinearizationCoeffs( double *alpha, double *beta, 
-  //                                      double *gamma ) = 0;
-  
-  // // Virtual functions for reverse mode
-  // // ----------------------------------
-  // virtual void marchBackwards() = 0;
-  // virtual void evalFunctions( TACSFunction **funcs, TacsScalar *funcVals,
-  //                             int numFuncs );  
-
-  // These functions are to be used during adjoint solve and total
-  // derivative computations. Once the state variables are set, the
-  // current state can not only beq used to find the adjoint variables
-  // at the current step but also used to compute as much as possible
-  // with the current snapshot of tacs(t, q, qdot, qddot). These
-  // possible operations are packed into each one of the following
-  // functions.
-  //----------------------------------------------------------------
-  /*
-  void addFuncSVSensToAdjointRHS( double alpha, double beta, double gamma, int index ) ;
-  void addSVSensToAdjointRHS( double scale, double alpha, double beta, double gamma,
-                              int adj_index, TACSFunction **funcs,
-                              int num_funcs, TacsScalar *fvals );
-  void adjointSolve( int adj_index, TACSBVec **adjoint );
-  */
-  // void addToTotalDerivative( double scale, TACSBVec **adjoint );
-    
-  // Functions to pack common logics (file io, output) in one place
-  // and use them in appropriate places
-  // ------------------------------------------------------------------
-  void doEachTimeStep( int current_step );
-  void doEachNonLinearIter( int iter_num );
-  int  doAdaptiveMarching();
-                    
-  //------------------------------------------------------------------//
-  //                  Protected variables
-  //------------------------------------------------------------------//
-
+  // TACSAssembler information
   TACSAssembler *tacs;        // Instance of TACS
-  enum IntegratorType mytype; // Will be set the by child class
-  FILE *logfp;                // Pointer to the output filename
 
-  TACSBVec *forces;           // forces applied to the RHS
+  // The step information
+  int num_time_steps;         // Total number of time steps
+  double *time;               // Stores the time values
   TACSBVec **q;               // state variables across all time steps
   TACSBVec **qdot;            // first time derivative of ''
   TACSBVec **qddot;           // second time derivative of ''
-  
-  double *time;               // Stores the time values
-  int num_time_steps;         // Total number of time steps to take to go from initial time to final time
-  double num_steps_per_sec;   // Number of time steps to take to advance one second
-  int current_time_step;      // Tracks the current time step
-  double h;                   // Time step size
-  double tinit;               // Initial simulation time
-  double tfinal;              // Final simulation time
-  
+
+  // Objects that store information about the functions of interest
+  int start_step, end_step;   // Time-window for the functions of interest
   TACSFunction **funcs;       // List of functions
   int num_funcs;              // The number of objective functions
   TacsScalar *fvals;          // Function values
   TacsScalar *dfdx;           // Derivative values
-  int num_state_vars;         // Number of state variables
   int num_design_vars;        // Number of design variables
 
-  int newton_term;            // Termination of nonlinear solver 
-                              // 1: |R| < atol; 2: |dq| < atol
-                              // 3: |R|/|R0| < rtol
-                              // -1: max_newton_iters // -2: Nan
+  // Linear algebra objects and parameters associated with the Newton solver  
+  TACSBVec *res, *update;     // Residual and Newton update
   TACSMat *mat;               // Jacobian matrix
   TACSPc *pc;                 // Preconditioner
-  TACSBVec *res, *update;     // Residual and Newton update
   TACSKsm *ksm;               // KSM solver
 
-  int num_adjoint_rhs;        // the number of right hand sides allocated in adjoint loop  
-  TACSBVec **rhs;             // storage vector for the right hand sides
-  TACSBVec **psi;             // adjoint variable accumulating qdot dependance
-  TACSBVec **phi;             // adjoint variable accumulating q dependance
-  TACSBVec **lambda;          // adjoint variable qddot
-  TACSBVec **dfdq;            // storage vector for statevariable sensitivities
-
  private:
+  char prefix[256];           // Output prefix
+  FILE *logfp;                // Pointer to the output filename
 
-  static void getString( char *buffer, const char * format, ... );
-  int getWriteFlag( int step, int freq );
+  // Newton solver parameters
+  int max_newton_iters;     // The max number of nonlinear iterations
+  double atol;              // Absolute tolerance
+  double rtol;              // Relative tolerance
+  double init_newton_delta; // Initial value of delta used in the globalization strategy
+  int jac_comp_freq;        // Frequency of Jacobian factorization
+  int use_femat;            // use femet for parallel execution
+  TACSAssembler::OrderingType order_type;
+  int use_lapack;           // Flag to switch to LAPACK for linear solve
 
+  int lev;
+  double fill;
+  int reorder_schur;
+  int gmres_iters;
+  int num_restarts;
+  int is_flexible;
+
+  // Information for visualization/logging purposes
   int print_level;          // 0 = off;
                             // 1 = summary per time step;
                             // 2 = summary per Newton solve iteration
@@ -234,33 +182,12 @@ class TACSIntegrator : public TACSObject {
   TACSToFH5 *shellf5;       // F5 file for shell visualization
   TACSToFH5 *beamf5;        // F5 file for beam visualization
   int f5_write_freq;        // How frequent to write the output during time marching
-  int f5_newton_freq;       // How frequent to write the output during nonlinear solve
   
-  int max_newton_iters;     // The max number of nonlinear iterations
-  double atol;              // Absolute tolerance
-  double rtol;              // Relative tolerance
-  int jac_comp_freq;        // Frequency of Jacobian factorization
-  int use_line_search;      // Flag to make use of line search for nonlinear root finding
-
-  int use_lapack;           // Flag to switch to LAPACK for linear solve
-  int use_femat;            // use femet for parallel execution
-  int eigensolve;           // Solve for eigenvalues
-  int lev;
-  int fill;
-  int reorder_schur;
-  int gmres_iters;
-  int num_restarts;
-  int is_flexible;
-
-  FEMat *D;                 // Matrix associated with Preconditioner
-  int factorized;           // Set whether the matrix is factorized
   int niter;                // Newton iteration number
   TacsScalar res_norm;      // residual norm
   TacsScalar init_res_norm; // Initial norm of the residual
   TacsScalar update_norm;   // Norm of the update                            
-  double init_newton_delta; // Initial value of delta used in the globalization strategy
  
-  TacsScalar energies[2];   // Keep track of energies
   TacsScalar init_energy;   // The energy during time = 0
   int mpiRank;              // rank of the processor
   int mpiSize;              // number of processors
@@ -276,21 +203,39 @@ class TACSBDFIntegrator : public TACSIntegrator {
                      double _tfinal,
                      double _num_steps_per_sec, 
 		     int max_bdf_order );
+  ~TACSBDFIntegrator();
 
- protected:
-  void iterate( int k, TACSBVec *forces=NULL );
+  // Iterate through the forward solution
+  int iterate( int k, TACSBVec *forces );
 
- private:  
-  void getLinearizationCoeffs( double *alpha, double *beta, double *gamma );
+  // Set-up right-hand-sides for the adjoint equations
+  void initAdjoint( int step_num );
+
+  // Iterate to find a solution of the adjoint equations
+  void iterateAdjoint( int step_num, TACSBVec **adj_rhs );
+
+  // Add the contributions to the total derivative from the time-step 
+  void postAdjoint( int step_num );
+
+  // Get the adjoint value for the given function
+  void getAdjoint( int step_num, int func_num, 
+                   TACSBVec **adjoint );
+  
+  // Evaluate the functions of interest
+  void evalFunctions( TacsScalar *fvals );
+
+ private:
   void get2ndBDFCoeff( const int k, double bdf[], int *nbdf,
 		       double bddf[], int *nbddf,
 		       const int max_order );
   int getBDFCoeff( double bdf[], int order );
 
   int max_bdf_order;    // Maximum order of the BDF integration scheme
-  int nbdf, nbddf;      // Number of first and second order BDF coefficients
-  double bdf_coeff[4];  // Store first order BDF coefficients
-  double bddf_coeff[9]; // Store second order BDF coefficients
+
+  // Adjoint information
+  int num_adjoint_rhs;  // the number of right hand sides allocated in adjoint loop  
+  TACSBVec **rhs;  // storage vector for the right hand sides
+  TACSBVec **psi;  // adjoint variable accumulating qdot dependance
 };
 
 #endif

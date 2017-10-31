@@ -429,6 +429,13 @@ int TACSBVec::getExtArray( TacsScalar **array ){
 }
 
 /*
+  Access the var map
+*/
+TACSVarMap *TACSBVec::getVarMap(){
+  return var_map;
+}
+
+/*
   Retrieve the external index values
 */
 TACSBVecIndices *TACSBVec::getBVecIndices(){
@@ -440,6 +447,13 @@ TACSBVecIndices *TACSBVec::getBVecIndices(){
 */
 TACSBVecDistribute *TACSBVec::getBVecDistribute(){
   return ext_dist;
+}
+
+/*
+  Retrieve the dependent node data
+*/
+TACSBVecDepNodes *TACSBVec::getBVecDepNodes(){
+  return dep_nodes;
 }
 
 /*

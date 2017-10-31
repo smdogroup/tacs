@@ -254,6 +254,8 @@ int getGaussPtsWts( enum QuadratureType quad,
                     const double **gaussPts, 
                     const double **gaussWts ){
   int numGauss = 1;
+  *gaussPts = NULL;
+  *gaussWts = NULL;
 
   if (quad == GAUSS_QUADRATURE){
     if (_numGauss <= 1){

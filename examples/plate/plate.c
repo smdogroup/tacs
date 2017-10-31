@@ -1,4 +1,4 @@
-#include "TACSIntegrator.h"
+#include "TACSIntegratorV2.h"
 
 #include "TACSMeshLoader.h"
 #include "MITC9.h"
@@ -42,63 +42,22 @@ int main( int argc, char **argv ){
   int test_element = 0;
   int write_solution = 0;
   int print_level = 1;
-  enum IntegratorType type = DIRK4;
   int convert_mesh = 0;
+
   for ( int i = 0; i < argc; i++ ){
 
     // Determine whether or not to test gradients with complex step
     if (strcmp("--help", argv[i]) == 0){
       if (rank ==0){ 
-        printf("TACS time-dependent analysis of a plate located in the folder as plate.bdf\n\n");
-        printf("BDF1-3, DIRK2-4, ABM1-6, NBG : Selects the integrator to use\n");
-        printf("test_gradient                : Complex-step verification of adjoint gradient\n");
-        printf("num_funcs=1,2,3 and 12       : Number of functions for adjoint problem\n");
-        printf("num_threads=1,2,3...         : Number of threads to use\n");
-        printf("print_level=0,1,2            : Controls the amount of information to print\n");
-        printf("write_solution=0,1,2...      : Controls the frequency of f5 file output\n");
-        printf("convert_mesh=0,1             : Converts the mesh to coordinate ordering if not supplied so\n\n");
+        printf("TACS time-dependent analysis of a plate located in plate.bdf\n\n");
+        printf("num_funcs=1,2,3 and 12  : Number of functions for adjoint problem\n");
+        printf("num_threads=1,2,3...    : Number of threads to use\n");
+        printf("print_level=0,1,2       : Controls the amount of information to print\n");
+        printf("write_solution=0,1,2... : Controls the frequency of f5 file output\n");
+        printf("convert_mesh=0,1        : Converts the mesh to coordinate ordering if not supplied so\n\n");
       }
       MPI_Finalize();
       return 0;
-    }
-    
-    // Backward Difference Formulae
-    if (strcmp("BDF1", argv[i]) == 0){
-      type = BDF1;
-    } else if (strcmp("BDF2", argv[i]) == 0){
-      type = BDF2;
-    } else if (strcmp("BDF3", argv[i]) == 0){
-      type = BDF3;
-
-      // Adams-Bashforth-Moulton
-    } else if (strcmp("ABM1", argv[i]) == 0){
-      type = ABM1;
-    } else if (strcmp("ABM2", argv[i]) == 0){
-      type = ABM2;
-    } else if (strcmp("ABM3", argv[i]) == 0){
-      type = ABM3;
-    } else if (strcmp("ABM4", argv[i]) == 0){
-      type = ABM4;
-    } else if (strcmp("ABM5", argv[i]) == 0){
-      type = ABM5;
-    } else if (strcmp("ABM6", argv[i]) == 0){
-      type = ABM6;
-
-      // Diagonally Implicit Runge Kutta
-    } else if (strcmp("DIRK2", argv[i]) == 0){
-      type = DIRK2;
-    } else if (strcmp("DIRK3", argv[i]) == 0){
-      type = DIRK3;
-    } else if (strcmp("DIRK4", argv[i]) == 0){
-      type = DIRK4;
-
-      // Newmark-Beta-Gamma method
-    } else if (strcmp("NBGE", argv[i]) == 0){
-      type = NBGE;
-    } else if (strcmp("NBG2", argv[i]) == 0){
-      type = NBG2;
-    } else if (strcmp("NBG3", argv[i]) == 0){
-      type = NBG3;
     }
 
     // Determine the number of functions for adjoint
@@ -186,9 +145,10 @@ int main( int argc, char **argv ){
     double            min_thickness = 5.0e-3;
     double            max_thickness = 2.0e-2;
     double            thickness     = 5.0e-3;
-    isoFSDTStiffness *stiff         = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
-						    thickness, i, 
-						    min_thickness, max_thickness); 
+    isoFSDTStiffness *stiff 
+      = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
+                             thickness, i, 
+                             min_thickness, max_thickness); 
     stiff->incref();
     
     // Initialize element object
@@ -216,29 +176,6 @@ int main( int argc, char **argv ){
   // Create tacs assembler from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
-
-  /*-----------------------------------------------------------------*/
-  /*-------------------------Setup Forces----------------------------*/
-  /*-----------------------------------------------------------------*/
-  
-  /*
-  // Create the traction
-  TACSElement *trac = new TACSShellTraction<3>(0.0, 0.0, 0.01);
-  trac->incref();
-  
-  // Create the auxiliary element class
-  int nelems = tacs->getNumElements();
-  TACSAuxElements *aux = new TACSAuxElements(nelems);
-  aux->incref();
-
-  // Associate the traction with each auxiliary element
-  for ( int i = 0; i < nelems; i++ ){
-  aux->addElement(i, trac);
-  }
-  
-  // Set the auxiliary element in to TACS
-  tacs->setAuxElements(aux);
-  */
 
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACSElement::OUTPUT_NODES |
@@ -276,7 +213,8 @@ int main( int argc, char **argv ){
     func[0] = new TACSKSFailure(tacs, 100.0);
     func[1] = new TACSCompliance(tacs);
     func[2] = new TACSStructuralMass(tacs);
-  } else if (num_funcs == 12){
+  } 
+  else if (num_funcs == 12){
     // Place functions into the func list
     func[0] = new TACSStructuralMass(tacs);
     func[1] = new TACSCompliance(tacs);
@@ -342,91 +280,31 @@ int main( int argc, char **argv ){
 
   // Set paramters for time marching
   double tinit             = 0.0;
-  double tfinal            = 1.0e-3;
+  double tfinal            = 0.1;
   for ( int k = 0; k < argc; k++ ){
     if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
     }
   }
-  int num_steps_per_sec = 100000;
+  int num_steps_per_sec = 1000;
 
-  TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
-                                                    num_steps_per_sec, 
-                                                    type);
-  obj->incref();
+  TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, 
+                                              num_steps_per_sec, 2);
+  bdf->incref();
   
   // Set options
-  obj->setJacAssemblyFreq(1);
-  obj->setOrderingType(TACSAssembler::NATURAL_ORDER);
-  //obj->setAbsTol(1.0e-5);
-  //obj->setRelTol(5.0e-6);
-  obj->setPrintLevel(print_level);
-  obj->setOutputFrequency(write_solution);
+  bdf->setPrintLevel(print_level);
+  bdf->setOutputFrequency(write_solution);
   
   // Set functions of interest for adjoint solve
-  obj->setFunction(func, num_funcs);
+  bdf->setFunctions(func, num_funcs, num_dvs);
 
-  // Get the adjoint gradient
-  double t0 = MPI_Wtime();
-  obj->getFuncGrad(num_dvs, x, funcVals, dfdx);
-  t0 = MPI_Wtime() - t0;
-
-  // Print a summary of time taken
-  if (rank == 0){
-    obj->printWallTime(t0, 2);
-  }
-
-  // Test the adjoint derivatives if sought
-  if (test_gradient){
-    // The maximum number of gradient components to test
-    // using finite-difference/complex-step
-
-    // Scan any remaining arguments that may be required
 #ifdef TACS_USE_COMPLEX
-    double dh = 1.0e-30;
+  bdf->checkGradients(1e-30);
 #else
-    double dh = 1.0e-8;
+  bdf->checkGradients(1e-7);
 #endif
-    for ( int k = 0; k < argc; k++ ){
-      if (sscanf(argv[k], "dh=%lf", &dh) == 1){
-      }
-    }
 
-    // Complex step verification
-    obj->getFDFuncGrad(num_dvs, x, funcValsTmp, dfdxTmp, dh);
-
-    // Print out the finite-difference interval
-    if (rank == 0){
-#ifdef TACS_USE_COMPLEX
-      printf("Complex-step interval: %le\n", dh);
-#else
-      printf("Finite-difference interval: %le\n", dh);
-#endif
-    }
-
-    if (rank == 0){
-      printf("Structural sensitivities\n");
-      for ( int j = 0; j < num_funcs; j++ ){
-        printf("Sensitivities for function %s %25.15e\n",
-               func[j]->functionName(), TacsRealPart(funcValsTmp[j]));
-        printf("%25s %25s %25s %25s\n",
-               "Adjoint", "FD/CS", "Abs. error", "Rel. error");
-        for ( int k = 0; k < num_dvs; k++ ){
-          printf("%25.15e %25.15e %25.15e %25.15e\n", 
-                 TacsRealPart(dfdx[k + j*num_dvs]),
-                 TacsRealPart(dfdxTmp[k + j*num_dvs]),
-                 TacsRealPart(dfdx[k + j*num_dvs]) -
-                 TacsRealPart(dfdxTmp[k + j*num_dvs]), 
-                 (TacsRealPart(dfdx[k + j*num_dvs]) -
-                  TacsRealPart(dfdxTmp[k + j*num_dvs]))/
-                 TacsRealPart(dfdxTmp[k + j*num_dvs]));
-        }
-      }
-    }
-  }
-  
-
-  obj->decref();
-
+  bdf->decref();
   mesh->decref();
   gravity->decref();
   v0->decref();

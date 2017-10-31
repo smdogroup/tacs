@@ -2586,8 +2586,8 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
       const int *ownerRange;
       varMap->getOwnerRange(&ownerRange);
 
-      // Modify the permutation to reflect the need for precidence 
-      // in the multiplier nodes. 
+      // Modify the permutation to reflect the need for precidence in
+      // the multiplier nodes.
       for ( int i = 0; i < numElements; i++ ){
         int multiplier;
         elements[i]->getMultiplierIndex(&multiplier);

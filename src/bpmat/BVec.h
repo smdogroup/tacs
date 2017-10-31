@@ -109,9 +109,10 @@ class TACSBVec : public TACSVec {
 
   // Retrieve objects stored within the vector class
   // -----------------------------------------------
-  TACSBcMap *getBcMap();
+  TACSVarMap *getVarMap();
   TACSBVecIndices *getBVecIndices();
   TACSBVecDistribute *getBVecDistribute();
+  TACSBVecDepNodes *getBVecDepNodes();
 
   // Add/set the values from the array
   // ---------------------------------

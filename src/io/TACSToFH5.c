@@ -254,8 +254,8 @@ char *TACSToFH5::getElementVarNames(){
     if (nd > 0){
       strcpy(temp, elem_match->displacementName(0));
       for ( int i = 1; i < nd; i++ ){
-	size_t len = strlen(temp);
-	sprintf(&(temp[len]), ",%s", elem_match->displacementName(i));
+        size_t len = strlen(temp);
+        sprintf(&(temp[len]), ",%s", elem_match->displacementName(i));
       }
     }
     output_names[1] = temp;
@@ -270,8 +270,8 @@ char *TACSToFH5::getElementVarNames(){
     if (ns > 0){
       strcpy(temp, elem_match->strainName(0));
       for ( int i = 1; i < ns; i++ ){
-	size_t len = strlen(temp);
-	sprintf(&temp[len], ",%s", elem_match->strainName(i));
+        size_t len = strlen(temp);
+        sprintf(&temp[len], ",%s", elem_match->strainName(i));
       }
     }
     output_names[2] = temp;
@@ -286,8 +286,8 @@ char *TACSToFH5::getElementVarNames(){
     if (ns > 0){
       strcpy(temp, elem_match->stressName(0));
       for ( int i = 1; i < ns; i++ ){
-	size_t len = strlen(temp);
-	sprintf(&temp[len], ",%s", elem_match->stressName(i));
+        size_t len = strlen(temp);
+        sprintf(&temp[len], ",%s", elem_match->stressName(i));
       }
     }
     output_names[3] = temp;
@@ -302,8 +302,8 @@ char *TACSToFH5::getElementVarNames(){
     if (ne > 0){
       strcpy(temp, elem_match->extraName(0));
       for ( int i = 1; i < ne; i++ ){
-	size_t len = strlen(temp);
-	sprintf(&temp[len], ",%s", elem_match->extraName(i));
+        size_t len = strlen(temp);
+        sprintf(&temp[len], ",%s", elem_match->extraName(i));
       }
     }
     output_names[4] = temp;
