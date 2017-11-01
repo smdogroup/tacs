@@ -63,6 +63,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
   fvals = NULL;
   dfdx = NULL;
   num_design_vars = 0;
+  dfdXpt = NULL;
 
   // Linear algebra objects for Newton's method
   res = tacs->createVec();
@@ -273,6 +274,11 @@ void TACSIntegrator::setFunctions( TACSFunction **_funcs, int _num_funcs,
   }
   dfdx = new TacsScalar[ num_funcs*num_design_vars ];
   memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
+
+  dfdXpt = new TACSBVec*[ num_funcs ];
+  for ( int i = 0; i < num_funcs; i++ ){
+    dfdXpt[i] = tacs->createNodeVec();
+  }
 }
 
 /*
@@ -943,9 +949,25 @@ void TACSIntegrator::checkGradients( double dh ){
   memcpy(xtmp, x, num_design_vars*sizeof(TacsScalar)); 
  
   // Allocate an array of function values
-  TacsScalar *ftmp1 = new TacsScalar[ num_funcs ];
-  TacsScalar *ftmp2 = new TacsScalar[ num_funcs ];
+  TacsScalar *fvs = new TacsScalar[ num_funcs ];
+  TacsScalar *ftmp = new TacsScalar[ num_funcs ];
+  TacsScalar *dfp = new TacsScalar[ num_funcs ];
   
+  // Allocate a temporary vector 
+  TACSBVec *Xpts = tacs->createNodeVec();
+  TACSBVec *Xdup = tacs->createNodeVec();
+  TACSBVec *Xtmp = tacs->createNodeVec();
+  Xpts->incref();
+  Xdup->incref();
+  Xtmp->incref();
+
+  // Get the nodal vector
+  tacs->getNodes(Xdup);
+  tacs->getNodes(Xpts);
+
+  // Create a random vector
+  Xtmp->setRand(-1.0, 1.0);
+
   // Form a finite-difference or complex step approximation of the
   // total derivative
 #ifdef TACS_USE_COMPLEX
@@ -959,11 +981,11 @@ void TACSIntegrator::checkGradients( double dh ){
   integrate();
 
   // Evaluate the functions
-  evalFunctions(ftmp2);
+  evalFunctions(ftmp);
 
   // Compute the total derivative
   for ( int k = 0; k < num_funcs; k++ ){
-    ftmp2[k] = TacsImagPart(ftmp2[k])/dh;
+    ftmp[k] = TacsImagPart(ftmp[k])/dh;
   }
 
   // Evaluate the derivative
@@ -973,48 +995,101 @@ void TACSIntegrator::checkGradients( double dh ){
   integrate();
 
   // Evaluate the functions
-  evalFunctions(ftmp1);
+  evalFunctions(fvs);
 
   // Evaluate the derivative
   integrateAdjoint();
 
+  // Set the design variables
   for ( int k = 0; k < num_design_vars; k++ ){
     xtmp[k] = x[k] + dh;
   }
-
-  // Set the design variables
   tacs->setDesignVars(xtmp, num_design_vars);
 
   // Integrate forward in time
   integrate();
 
   // Evaluate the functions
-  evalFunctions(ftmp2);
+  evalFunctions(ftmp);
 
   // Compute the total derivative
   for ( int k = 0; k < num_funcs; k++ ){
-    ftmp2[k] = (ftmp2[k] - ftmp1[k])/dh;
+    ftmp[k] = (ftmp[k] - fvs[k])/dh;
   }
 #endif // TACS_USE_COMPLEX
+  tacs->setDesignVars(x, num_design_vars);
 
   // Compute the total projected derivative
   for ( int i = 0; i < num_funcs; i++ ){
-    ftmp1[i] = 0.0;
+    dfp[i] = 0.0;
     for ( int j = 0; j < num_design_vars; j++ ){
-      ftmp1[i] += dfdx[num_design_vars*i + j];
+      dfp[i] += dfdx[num_design_vars*i + j];
     }
   }
 
   printf("%3s %15s %15s %15s\n", "Fn", "Adjoint", "FD", "Relative Err");
   for ( int i = 0; i < num_funcs; i++ ){
-    double relerr = fabs(TacsRealPart((ftmp1[i] - ftmp2[i])/ftmp2[i]));
+    double relerr = fabs(TacsRealPart((dfp[i] - ftmp[i])/ftmp[i]));
     printf("%3d %15.8e %15.8e %15.8e\n",
-           i, TacsRealPart(ftmp1[i]), TacsRealPart(ftmp2[i]), relerr);
+           i, TacsRealPart(dfp[i]), TacsRealPart(ftmp[i]), relerr);
   }
 
+  // Now test the derivative w.r.t. node locations
+#ifdef TACS_USE_COMPLEX
+  // Perturb the nodes
+  Xpts->axpy(TacsScalar(0.0, dh), Xtmp);
+  tacs->setNodes(Xpts);
+
+  // Integrate forward in time
+  integrate();
+
+  // Evaluate the functions
+  evalFunctions(ftmp);
+
+  // Compute the total derivative
+  for ( int k = 0; k < num_funcs; k++ ){
+    ftmp[k] = TacsImagPart(ftmp[k])/dh;
+  }
+#else // REAL code
+  // Perturb the nodes
+  Xpts->axpy(dh, Xtmp);
+  tacs->setNodes(Xpts);
+
+  // Integrate forward in time
+  integrate();
+
+  // Evaluate the functions
+  evalFunctions(ftmp);
+
+  // Compute the total derivative
+  for ( int k = 0; k < num_funcs; k++ ){
+    ftmp[k] = (ftmp[k] - fvs[k])/dh;
+  }
+#endif // TACS_USE_COMPLEX
+
+  // Add the contribution from the nodal derivatives
+  for ( int i = 0; i < num_funcs; i++ ){
+    dfp[i] = dfdXpt[i]->dot(Xtmp);
+  }
+
+  printf("%3s %15s %15s %15s\n", "Fn", "Adjoint", "FD", "Relative Err");
+  for ( int i = 0; i < num_funcs; i++ ){
+    double relerr = fabs(TacsRealPart((dfp[i] - ftmp[i])/ftmp[i]));
+    printf("%3d %15.8e %15.8e %15.8e\n",
+           i, TacsRealPart(dfp[i]), TacsRealPart(ftmp[i]), relerr);
+  }
+
+  // Reset the nodes/design variable values
+  tacs->setNodes(Xdup);
+
+  // Free the allocated data
+  Xpts->decref();
+  Xdup->decref();
+  Xtmp->decref();
   delete [] x;
-  delete [] ftmp1;
-  delete [] ftmp2;
+  delete [] fvs;
+  delete [] ftmp;
+  delete [] dfp;
   delete [] xtmp;
 }
 
@@ -1095,7 +1170,7 @@ void TACSBDFIntegrator::get2ndBDFCoeff( const int k,
   // Get the first-order coefficients - one greater than the maximum
   // order of coefficients
   int order = (k < max_order ? k : max_order);
-  *nbdf = getBDFCoeff(bdf, order)+1;
+  *nbdf = getBDFCoeff(k, bdf, order)+1;
   *nbddf = 2*(*nbdf)-1;
   if (*nbddf > k+1){
     *nbddf = k+1;
@@ -1106,7 +1181,7 @@ void TACSBDFIntegrator::get2ndBDFCoeff( const int k,
     // order >= 1 always
     int order = (k-j < max_order ? k-j : max_order);
     double bdf2[5];
-    int len = getBDFCoeff(bdf2, order)+1;
+    int len = getBDFCoeff(k - j, bdf2, order)+1;
 
     for ( int i = 0; i < len; i++ ){
       bddf[j + i] += bdf[j]*bdf2[i];
@@ -1123,23 +1198,31 @@ void TACSBDFIntegrator::get2ndBDFCoeff( const int k,
   output: 
   bdf:    the backwards difference coefficients
 */ 
-int TACSBDFIntegrator::getBDFCoeff( double bdf[], int order ){
+int TACSBDFIntegrator::getBDFCoeff( const int k, double bdf[], int order ){
   if (order <= 1){
-    bdf[0] = 1.0;
-    bdf[1] = -1.0;
+    double h = time[k] - time[k-1];
+    bdf[0] = 1.0/h;
+    bdf[1] = -bdf[0];
     return 1;
   }
   else if (order == 2){
-    bdf[0] =  1.5;
-    bdf[1] = -2.0;
-    bdf[2] =  0.5;
+    double h = time[k] - time[k-1];
+    double h1 = time[k-1] - time[k-2];
+    bdf[0] = (2.0*h + h1)/(h*(h + h1));
+    bdf[1] = -(h + h1)/(h*h1);
+    bdf[2] = h/(h1*(h + h1));
     return 2;
   }
   else if (order >= 3){
-    bdf[0] =  35.0/24.0;
-    bdf[1] = -15.0/8.0;
-    bdf[2] =  3.0/8.0;
-    bdf[3] =  1.0/24.0;
+    double h = time[k] - time[k-1];
+    double h1 = time[k-1] - time[k-2];
+    double h2 = time[k-2] - time[k-3];
+    bdf[0] = (h1*h2 + 2*h*h2 + h1*h1 + 4*h*h1 + 3*h*h)/(
+              (h*(h1 + h)*(h2 + h1 + h)));
+    bdf[1] = -(h1*h2 + h*h2 + h1*h1 + 2*h*h1 + h*h)/(
+               (h*h1*(h2 + h1)));
+    bdf[2] = (h*h2 + h*h1 + h*h)/(h1*(h1 + h)*h2);
+    bdf[3] = -(h*h1 + h*h)/(h2*(h2 + h1)*(h2 + h1 + h));
     return 3;
   }
   return 0;
@@ -1160,12 +1243,10 @@ int TACSBDFIntegrator::iterate( int k, TACSBVec *forces ){
     logTimeStep(k);
     return 0;
   }
- 
-  // Advance time
-  double h = time[k] - time[k-1];
   
   // Extrapolate to next time step: q[k] = q[k-1] + h*qdot[k-1] +
   // h^2/2*qddot[k-1] (helps reduce the initial residual)
+  double h = time[k] - time[k-1];
   q[k]->copyValues(q[k-1]);
   q[k]->axpy(h, qdot[k-1]);
   q[k]->axpy(0.5*h*h, qddot[k-1]);
@@ -1180,28 +1261,28 @@ int TACSBDFIntegrator::iterate( int k, TACSBVec *forces ){
   // approximate qdot using BDF formula
   qdot[k]->zeroEntries();
   for ( int i = 0; i < nbdf; i++ ){
-    double scale = bdf_coeff[i]/h;
+    double scale = bdf_coeff[i];
     qdot[k]->axpy(scale, q[k-i]);
   }
 
   // approximate qddot using BDF formula
   qddot[k]->zeroEntries();
   for ( int i = 0; i < nbddf; i++ ){
-    double scale = bddf_coeff[i]/(h*h);
+    double scale = bddf_coeff[i];
     qddot[k]->axpy(scale, q[k-i]);
   }
 
   // If required, add the contribution to the second derivative
   // from the initial values of the first derivatives
   if (k == nbdf-1){
-    double scale = bdf_coeff[nbdf-1]/h;
+    double scale = bdf_coeff[nbdf-1];
     qddot[k]->axpy(scale, qdot[0]);
   }
   
   // Determine the coefficients for linearizing the Residual
   double alpha = 1.0;
-  double beta = bdf_coeff[0]/h;
-  double gamma = bddf_coeff[0]/(h*h);
+  double beta = bdf_coeff[0];
+  double gamma = bddf_coeff[0];
   
   // Solve the nonlinear system of stage equations starting with the
   // approximated states
@@ -1335,6 +1416,11 @@ void TACSBDFIntegrator::initAdjoint( int k ){
 
     // Zero the derivative!
     memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
+
+    // Zero the derivatives w.r.t. the node locations
+    for ( int i = 0; i < num_funcs; i++ ){
+      dfdXpt[i]->zeroEntries();
+    }
   } 
 
   // Set the simulation time
@@ -1359,13 +1445,10 @@ void TACSBDFIntegrator::initAdjoint( int k ){
       tcoeff += 0.5*(time[k+1] - time[k]);
     }
 
-    // Compute the time interval
-    double h = time[k] - time[k-1];
-
     // Determine the linearization coefficients for Jacobian Assembly
     double alpha = 1.0;
-    double beta  = bdf_coeff[0]/h;
-    double gamma = bddf_coeff[0]/(h*h);
+    double beta  = bdf_coeff[0];
+    double gamma = bddf_coeff[0];
     
     // Find the adjoint index
     int adj_index = k % num_adjoint_rhs;
@@ -1444,6 +1527,7 @@ void TACSBDFIntegrator::postAdjoint( int k ){
   }
   if (k >= start_plane && k < end_plane){
     tacs->addDVSens(tcoeff, funcs, num_funcs, dfdx, num_design_vars);
+    tacs->addXptSens(tcoeff, funcs, num_funcs, dfdXpt);
   }
 
   if (k > 0){
@@ -1453,15 +1537,13 @@ void TACSBDFIntegrator::postAdjoint( int k ){
     double bddf_coeff[9];
     get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, 
                    &nbddf, max_bdf_order);
-
-    // Compute the time interval
-    double h = time[k] - time[k-1];
     
     // Add total derivative contributions from this step to all
     // functions
     double jacpdt = MPI_Wtime();
     tacs->addAdjointResProducts(1.0, psi, num_funcs,
                                 dfdx, num_design_vars);
+    tacs->addAdjointResXptSensProducts(1.0, psi, num_funcs, dfdXpt);
     time_rev_jac_pdt += MPI_Wtime() - jacpdt;
     
     // Drop the contributions from this step to other right hand sides
@@ -1470,10 +1552,10 @@ void TACSBDFIntegrator::postAdjoint( int k ){
       int rhs_index = (k - ii) % num_adjoint_rhs;
       double beta = 0.0, gamma = 0.0;
       if (ii < nbdf){
-        beta = bdf_coeff[ii]/h;
+        beta = bdf_coeff[ii];
       }
       if (ii < nbddf){
-        gamma = bddf_coeff[ii]/(h*h);
+        gamma = bddf_coeff[ii];
       }
       for ( int n = 0; n < num_funcs; n++ ){      
         tacs->addJacobianVecProduct(1.0, 0.0, beta, gamma,
@@ -1485,6 +1567,18 @@ void TACSBDFIntegrator::postAdjoint( int k ){
   }
 
   if (k == 0){
+    // Finally sum up all of the results across all processors
+    for ( int n = 0; n < num_funcs; n++ ){
+      dfdXpt[n]->beginSetValues(TACS_ADD_VALUES);
+    }
+    for ( int n = 0; n < num_funcs; n++ ){
+      dfdXpt[n]->endSetValues(TACS_ADD_VALUES);
+    }
+
+    // All reduce the contributions across processors
+    MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, 
+                  TACS_MPI_TYPE, MPI_SUM, tacs->getMPIComm());
+
     // Keep track of the time taken for foward mode
     time_reverse = MPI_Wtime() - time_reverse;
   }  

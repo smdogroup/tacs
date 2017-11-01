@@ -4392,6 +4392,74 @@ void TACSAssembler::testFunction( TACSFunction *func,
   temp->decref();
   pert->decref();
   vars->decref();  
+
+  TACSBVec *Xtemp = createNodeVec();
+  TACSBVec *Xpert = createNodeVec();
+  TACSBVec *Xvars = createNodeVec();
+  Xtemp->incref();
+  Xpert->incref();
+  Xvars->incref();
+
+  // Get the node locations
+  getNodes(Xvars);
+
+  // Set up a random perturbation 
+  Xpert->setRand(-1.0, 1.0);
+  
+#ifdef TACS_USE_COMPLEX
+  // Evaluate the function at vars + dh*pert
+  Xtemp->copyValues(Xvars);
+  Xtemp->axpy(TacsScalar(0.0, dh), Xpert);
+  setNodes(Xtemp);
+
+  evalFunctions(&func, 1, &fd);
+  fd = TacsImagPart(fd)/dh;
+#else
+  // Evaluate the function at vars + dh*pert
+  Xtemp->copyValues(Xvars);
+  Xtemp->axpy(dh, Xpert);
+  setNodes(Xtemp);
+  evalFunctions(&func, 1, &fval0);
+
+  // Evaluate the function at vars - dh*pert
+  Xtemp->copyValues(Xvars);
+  Xtemp->axpy(-dh, Xpert);
+  setNodes(Xtemp);
+  evalFunctions(&func, 1, &fval1);
+  
+  fd = 0.5*(fval0 - fval1)/dh;
+#endif // TACS_USE_COMPLEX
+
+  // Reset the variable values
+  setNodes(Xvars);
+
+  // Evaluate the state variable sensitivity
+  evalFunctions(&func, 1, &ftmp);
+  Xtemp->zeroEntries();
+  addXptSens(1.0, &func, 1, &Xtemp);
+  Xtemp->beginSetValues(TACS_ADD_VALUES);
+  Xtemp->endSetValues(TACS_ADD_VALUES);
+  pdf = Xtemp->dot(Xpert);
+
+  if (mpiRank == 0){
+    const char * descript = "df/dX^{T}p";
+    fprintf(stderr, "%*s[   ] %15s %15s %15s\n",
+            (int)strlen(descript), "Val", "Analytic", 
+            "Approximate", "Rel. Error");
+    if (pdf != 0.0){
+      fprintf(stderr, "%s[%3d] %15.6e %15.6e %15.4e\n", 
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd), 
+              fabs(TacsRealPart((pdf - fd)/pdf)));
+    }
+    else {
+      fprintf(stderr, "%s[%3d] %15.6e %15.6e\n", 
+              descript, 0, TacsRealPart(pdf), TacsRealPart(fd));
+    }
+  }
+
+  Xtemp->decref();
+  Xpert->decref();
+  Xvars->decref();  
 }
 
 /*!  

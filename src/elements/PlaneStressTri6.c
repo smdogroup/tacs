@@ -14,9 +14,9 @@ const char *PlaneStressTri6::elemName = "PlaneStressTri6";
   Evaluates the shape function at pt = [xi, eta], and its derivatives
 */
 void PlaneStressTri6::getShapeFunctions( const double pt[], 
-					 double N[], 
-					 double Na[], 
-					 double Nb[] ){
+                                         double N[],
+                                         double Na[],
+                                         double Nb[] ){
   // shape function values
   N[0] = 2.0*(1.0 - (pt[0] + pt[1]))*(0.5 - (pt[0] + pt[1]));
   N[1] = 2.0*pt[0]*(pt[0] - 0.5);
@@ -136,13 +136,13 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
     int index = 0;
     if (out_type & TACSElement::OUTPUT_NODES){
       for ( int k = 0; k < 3; k++ ){
-	data[index+k] = TacsRealPart(Xpts[3*n+k]);
+        data[index+k] = TacsRealPart(Xpts[3*n+k]);
       }
       index += 3;
     }
     if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
       for ( int k = 0; k < 2; k++ ){
-	data[index+k] = TacsRealPart(vars[2*n+k]);
+        data[index+k] = TacsRealPart(vars[2*n+k]);
       }
       index += 2;
     }

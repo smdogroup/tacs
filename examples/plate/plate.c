@@ -301,9 +301,9 @@ int main( int argc, char **argv ){
     }
   }
   int num_steps_per_sec = 1000;
-
+  int bdf_order = 3;
   TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, 
-                                              num_steps_per_sec, 2);
+                                              num_steps_per_sec, bdf_order);
   bdf->incref();
   
   // Set options

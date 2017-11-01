@@ -84,6 +84,14 @@ class TACSIntegrator : public TACSObject {
     memcpy(_dfdx, dfdx, num_funcs*num_design_vars*sizeof(TacsScalar));
   }
 
+  // Get the vector of the shape derivatives
+  virtual void getXptGradient( int func_num, TACSBVec **_dfdXpt ){
+    *_dfdXpt = NULL;
+    if (func_num >= 0 && func_num < num_funcs){
+      *_dfdXpt = dfdXpt[func_num];
+    }
+  }
+
   // Retrieve the internal states
   double getStates( int step_num, 
                     TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
@@ -144,6 +152,7 @@ class TACSIntegrator : public TACSObject {
   TacsScalar *fvals;          // Function values
   TacsScalar *dfdx;           // Derivative values
   int num_design_vars;        // Number of design variables
+  TACSBVec **dfdXpt;          // Derivatives w.r.t. node locations
 
   // Linear algebra objects and parameters associated with the Newton solver  
   TACSBVec *res, *update;     // Residual and Newton update
@@ -196,11 +205,11 @@ class TACSIntegrator : public TACSObject {
 */
 class TACSBDFIntegrator : public TACSIntegrator {
  public:
-  TACSBDFIntegrator( TACSAssembler * _tacs, 
-		     double _tinit,
+  TACSBDFIntegrator( TACSAssembler * _tacs,
+                     double _tinit,
                      double _tfinal,
                      double _num_steps_per_sec, 
-		     int max_bdf_order );
+                     int max_bdf_order );
   ~TACSBDFIntegrator();
 
   // Iterate through the forward solution
@@ -224,9 +233,9 @@ class TACSBDFIntegrator : public TACSIntegrator {
 
  private:
   void get2ndBDFCoeff( const int k, double bdf[], int *nbdf,
-		       double bddf[], int *nbddf,
-		       const int max_order );
-  int getBDFCoeff( double bdf[], int order );
+                       double bddf[], int *nbddf, 
+                       const int max_order );
+  int getBDFCoeff( const int k, double bdf[], int order );
 
   int max_bdf_order;    // Maximum order of the BDF integration scheme
 

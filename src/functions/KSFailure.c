@@ -443,13 +443,13 @@ void TACSKSFailure::getElementXptSens( const double tcoef,
           // Compute the derivative of the KS functional
           TacsScalar ksExp = exp(ksWeight*(fail - maxFail))/ksFailSum;
           TacsScalar ksHptWeight = tcoef*weight*ksExp/ksWeight;
-          TacsScalar ksPtWeight = h*weight*loadFactor*ksExp;
+          TacsScalar ksPtWeight = tcoef*h*weight*loadFactor*ksExp;
 
           for ( int j = 0; j < 3*numNodes; j++ ){
             fXptSens[j] += ksHptWeight*hXptSens[j];
           }
 
-          element->addStrainXptSens(fXptSens, pt, tcoef*ksPtWeight, failSens,
+          element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
                                     Xpts, vars);
         }
       }

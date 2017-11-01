@@ -5920,9 +5920,9 @@ void MITC9::addStrainXptSens( TacsScalar eXpt[],
 
   // Add the derivatives the shape function directions
   for ( int k = 0; k < NUM_NODES; k++ ){
-    eXpt[3*k] = Na[k]*Xad[0] + Nb[k]*Xbd[0];
-    eXpt[3*k+1] = Na[k]*Xad[1] + Nb[k]*Xbd[1];
-    eXpt[3*k+2] = Na[k]*Xad[2] + Nb[k]*Xbd[2];
+    eXpt[3*k] += Na[k]*Xad[0] + Nb[k]*Xbd[0];
+    eXpt[3*k+1] += Na[k]*Xad[1] + Nb[k]*Xbd[1];
+    eXpt[3*k+2] += Na[k]*Xad[2] + Nb[k]*Xbd[2];
   }
   
   // input: g13d, g23d, 
