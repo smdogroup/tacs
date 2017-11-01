@@ -1435,8 +1435,97 @@ cdef class Integrator:
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
+        return        
+
+    def setRelTol(self, double rtol):
+        '''
+        Relative tolerance of Newton solver
+        '''        
+        self.ptr.setRelTol(rtol)
+        return
+    
+    def setAbsTol(self, double atol):
+        '''
+        Absolute tolerance of Newton solver
+        '''        
+        self.ptr.setAbsTol(atol)
+        return
+    
+    def setMaxNewtonIters(self, int max_newton_iters):
+        '''
+        Maximum iteration in Newton solver
+        '''     
+        self.ptr.setMaxNewtonIters(max_newton_iters)
+        return
+
+    def setPrintLevel(self, int print_level, char *filename=''):
+        '''
+        Level of print from TACSIntegrator
+        0: off
+        1: summary each step
+        2: summary each newton iteration
+        '''
+        self.ptr.setPrintLevel(print_level, &filename[0])
         return
         
+    def setJacAssemblyFreq(self, int freq):
+        '''
+        How frequent to assemble the Jacobian for nonlinear solve
+        '''
+        self.ptr.setJacAssemblyFreq(freq)
+        return
+    
+    def setUseLapack(self, int use_lapack):
+        '''
+        Should TACSIntegrator use lapack for linear solve. This will
+        be slow and need to be in serial mode only
+        '''
+        self.ptr.setUseLapack(use_lapack)
+        return
+    
+    def setUseFEMat(self, int use_femat, OrderingType order_type):
+        '''
+        Set FEMAT = 1 for parallel execution
+        '''
+        self.ptr.setUseFEMat(use_femat, order_type)
+        return 
+
+    def setInitNewtonDeltaFraction(self, double frac):
+        '''
+        Parameter for globalization in Newton solver
+        '''
+        self.ptr.setInitNewtonDeltaFraction(frac)
+        return
+
+    def setFunctions(self, funclist,
+                     num_design_vars, start_step=-1, end_step=-1):
+        '''
+        Sets the functions for obtaining the derivatives.
+        '''
+        # Allocate the array of TACSFunction pointers
+        #cdef TACSFunction **funcs
+        #funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
+        #if funcs is NULL:
+        #    raise MemoryError()
+        #num_funcs = len(funclist)
+        #for i in xrange(num_funcs):
+        #    funcs[i] = (<Function>funclist[i]).ptr
+        #self.ptr.setFunctions(funcs, num_funcs,
+        #                      num_design_vars,
+        #                      start_step, end_step)
+        #free(funcs)
+        # fixme
+        return
+
+    def iterate(self, int step_num, Vec forces):
+        '''
+        Solve the nonlinear system at current time step
+        '''
+        cdef TACSBVec *fvec = NULL
+        if forces is not None:
+            fvec = forces.ptr
+        return self.ptr.iterate(step_num, fvec)
+
     def integrate(self):
         '''
         Integrates the governing equations forward in time
@@ -1444,142 +1533,76 @@ cdef class Integrator:
         self.ptr.integrate()
         return
 
-    def step(self, int step_num):
+    def evalFunctions(self, funclist):
         '''
-        Solve the nonlinear system at current time step
+        Evaluate a list of TACS function in time
         '''
-        self.ptr.marchOneStep(step_num)
-        return
 
-    def getFuncGrad(self,
-                    int num_dv,
-                    np.ndarray[TacsScalar, ndim=1, mode='c'] x,
-                    np.ndarray[TacsScalar, ndim=1, mode='c'] fvals,
-                    np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx):
-        '''
-        Returns the function values and derivatives with respect to
-        design variables for the given array of design variables
-        
-        input:
-        x: array of design variables
-        
-        output:
-        fvals: array of function values
-        dfdx: gradient of function with respect to design variables
-        '''
-        self.ptr.getFuncGrad(num_dv,
-                             <TacsScalar*>x.data,
-                             <TacsScalar*>fvals.data,
-                             <TacsScalar*>dfdx.data)
-        return
-
-    def getFDFuncGrad(self,
-                      int num_dv,
-                      np.ndarray[TacsScalar, ndim=1, mode='c'] x,
-                      np.ndarray[TacsScalar, ndim=1, mode='c'] fvals,
-                      np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx,
-                      double dh):
-        '''
-        Returns the function values and derivatives with respect to
-        design variables for the given array of design variables using
-        finite differences/complex step
-        
-        input:
-        x: array of design variables
-        dh: finite differences/complex step perturbation step size
-        
-        output:
-        fvals: array of function values
-        dfdx: gradient of function with respect to design variables
-        '''
-        self.ptr.getFDFuncGrad(num_dv,
-                               <TacsScalar*>x.data,
-                               <TacsScalar*>fvals.data,
-                               <TacsScalar*>dfdx.data, dh)
-        return
-
-    def setFunction(self, funclist):
-        '''
-        Sets the functions for obtaining the derivatives. This
-        function should be called before seeking the gradient from
-        this class.
-        '''
         # Allocate the array of TACSFunction pointers
         cdef TACSFunction **funcs
         funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
         if funcs is NULL:
             raise MemoryError()
-        num_funcs = len(funclist)
-        for i in xrange(num_funcs):
+
+        for i in xrange(len(funclist)):
             funcs[i] = (<Function>funclist[i]).ptr
-        self.ptr.setFunction(funcs, num_funcs)
-        # Need to free memory but integrator needs it ()
-        # free(funcs)
+
+        # Allocate the numpy array of function values
+        cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
+
+        self.ptr.evalFunctions(<TacsScalar*>fvals.data)
+        
+        # Free the allocated array
+        #free(funcs)
+        
+        return fvals
+
+    def iterateAdjoint(self, int step_num, adjlist):
+        '''
+        Perform one iteration in reverse mode
+        '''
+        cdef TACSBVec **adjoint
+        #adjoint = <TACSBVec**>malloc(len(adjlist)*sizeof(TACSBVec*))
+        #if adjoint is NULL:
+        #    raise MemoryError()
+        #i = 0
+        #for adj in adjlist:
+        #    adjoint[i] = <TACSBVec*>adj.ptr
+        #    i += 1
+        #self.ptr.iterateAdjoint(step_num, adjoint)
+        #fixme
+        return
+    
+    def integrateAdjoint(self):
+        '''
+        Integrates the adjoint backwards in time
+        '''
+        self.ptr.integrateAdjoint()
         return
 
-    def setPrintLevel(self, int print_level, char *filename=''):
-        self.ptr.setPrintLevel(print_level, &filename[0])
-        return
-    
-    def setRelTol(self, double rtol):
-        self.ptr.setRelTol(rtol)
-        return
-    
-    def setAbsTol(self, double atol):
-        self.ptr.setAbsTol(atol)
-        return
-    
-    def setMaxNewtonIters(self, int max_newton_iters):
-        self.ptr.setMaxNewtonIters(max_newton_iters)
-        return
-    
-    def setJacAssemblyFreq(self, int freq):
-        self.ptr.setJacAssemblyFreq(freq)
-        return
-    
-    def setUseLapack(self, int use_lapack, int eigensolve=0):
-        self.ptr.setUseLapack(use_lapack, eigensolve)
-        return
-    
-    def setUseFEMat(self, int use_femat):
-        self.ptr.setUseFEMat(use_femat)
-        return 
-
-    def setOrderingType(self, OrderingType order_type):
-        self.ptr.setOrderingType(order_type)
+    def getAdjoint(self, int step_num, int func_num, Vec fadjoint):
+        '''
+        Get the adjoint vector at the given step
+        '''
+        cdef TACSBVec *cadjoint = NULL
+        if fadjoint is not None:
+            cadjoint = fadjoint.ptr
+        #fixme
+        self.ptr.getAdjoint(step_num, func_num, &cadjoint)
         return
 
-    def setInitNewtonDeltaFraction(self, double frac):
-        self.ptr.setInitNewtonDeltaFraction(frac)
-        return
-  
-    def setOutputFrequency(self, int write_freq=0, int newton_freq=0):
-        self.ptr.setOutputFrequency(write_freq, newton_freq)
-        return
-
-    def configureAdaptiveMarch(self, int factor, int num_retry):
-        self.ptr.configureAdaptiveMarch(factor, num_retry)
+    def getGradient(self, np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx):
+        '''
+        Get the time-dependent derivative of functionals
+        '''
+        self.ptr.getGradient(<TacsScalar*>dfdx.data)
         return
     
-    def setRigidOutput(self, int flag):
-        self.ptr.setRigidOutput(flag)
-        return
-
-    def setShellOutput(self, int flag):
-        self.ptr.setShellOutput(flag)
-        return
-    
-    def setBeamOutput(self, int flag):
-        self.ptr.setBeamOutput(flag)
-        return
-    
-    def writeASCIISolution(self, char *filename='solution.dat',
-                           int format=2):
-        self.ptr.writeSolution(&filename[0], format)
-        return
-
     def getStates(self, int time_step,
                   Vec q=None, Vec qdot=None, Vec qddot=None):
+        '''
+        TACS state vectors are returned at the given time step
+        '''
         cdef TACSBVec *cq = NULL
         cdef TACSBVec *cqdot = NULL
         cdef TACSBVec *cqddot = NULL
@@ -1590,14 +1613,49 @@ cdef class Integrator:
         if qddot is not None:
             cqddot = qddot.ptr        
         return self.ptr.getStates(time_step,cq,cqdot,cqddot)
+    
+    def checkGradients(self,double dh):
+        '''
+        Performs a FD/CSD verification of the gradients
+        '''
+        self.ptr.checkGradients(dh)
+        return
 
-    def setLoads(self, Vec forces=None):
-        cdef TACSBVec *cforces = NULL
-        if forces is not None:
-            cforces = forces.ptr
-        self.ptr.setLoads(cforces)
+    def setOutputPrefix(self, char *prefix):
+        '''
+        Output directory to use for f5 files
+        '''
+        self.ptr.setOutputPrefix(&prefix[0])
+        return
+
+    def setOutputFrequency(self, int write_freq=0):
+        '''
+        Configure how frequent to write f5 files
+        '''
+        self.ptr.setOutputFrequency(write_freq)
         return
     
+    def setRigidOutput(self, ToFH5 f5):
+        '''
+        Configure the export of rigid bodies
+        '''
+        self.ptr.setRigidOutput(f5.ptr)
+        return
+
+    def setShellOutput(self, ToFH5 f5):
+        '''
+        Configure the export of shell bodies
+        '''
+        self.ptr.setShellOutput(f5.ptr)
+        return
+    
+    def setBeamOutput(self, ToFH5 f5):
+        '''
+        Configure the export of beam elements
+        '''
+        self.ptr.setBeamOutput(f5.ptr)
+        return
+
 cdef class BDFIntegrator(Integrator):
     '''
     Backward-Difference method for integration. This currently
@@ -1625,7 +1683,7 @@ cdef class DIRKIntegrator(Integrator):
                   double tinit, double tfinal,
                   int num_steps_per_sec,
                   int order):
-        self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
                                           num_steps_per_sec, order)
         self.ptr.incref()
         return
@@ -1642,7 +1700,7 @@ cdef class ABMIntegrator(Integrator):
         '''
         Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
         '''
-        self.ptr = new TACSABMIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
                                          num_steps_per_sec, max_abm_order)
         self.ptr.incref()
         return
@@ -1658,7 +1716,7 @@ cdef class NBGIntegrator(Integrator):
         '''
         Constructor for Newmark-Beta-Gamma method of integration
         '''
-        self.ptr = new TACSNBGIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
                                          num_steps_per_sec, order)
         self.ptr.incref()
         return

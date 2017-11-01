@@ -452,49 +452,46 @@ cdef extern from "TACSToFH5.h":
 
 cdef extern from "TACSIntegrator.h":
     # Declare the TACSIntegrator base class
-    cdef cppclass TACSIntegrator(TACSObject):      
-        # Integrate forward in time
-        void integrate()
-
-        # Integrate forward in time for one step
-        void marchOneStep(int step_num)
-
-        # Returns the adjoint gradient for all functions that are set into TACS
-        void getFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
-                         TacsScalar *dfdx)
-
-        # Returns the finite-difference gradient for all
-        # the functions that are set into TACS
-        void getFDFuncGrad(int num_dv, TacsScalar *x, TacsScalar *fvals,
-                           TacsScalar *dfdx, double dh)
-
+    cdef cppclass TACSIntegrator(TACSObject):
         # Setters for class variables
-        void setFunction(TACSFunction **func, int num_funcs)
-        void setPrintLevel(int print_level, const_char *filename)
-        void setRelTol(double rtol)
-        void setAbsTol(double atol)
-        void setMaxNewtonIters(int max_newton_iters)
-        void setJacAssemblyFreq(int jac_comp_freq)
-        void setUseLapack(int use_lapack, int eigensolve)
-        void setUseFEMat(int _use_femat)
-        void setOrderingType(OrderingType)
+        void setRelTol(double)
+        void setAbsTol(double)
+        void setMaxNewtonIters(int)
+        void setPrintLevel(int level, const_char *filename)
+        void setJacAssemblyFreq(int)
+        void setUseLapack(int)
+        void setUseFEMat(int,OrderingType)
         void setInitNewtonDeltaFraction(double)
+        void setFunctions(TACSFunction **funcs, int num_funcs,
+                          int num_design_vars,
+                          int start_step=-1, int end_step=-1)
 
-        # Configure writing F5 files
-        void setOutputFrequency(int write_freq, int newton_freq)
-        void setRigidOutput(int flag)
-        void setShellOutput(int flag)
-        void setBeamOutput(int flag)
-        void configureAdaptiveMarch( int factor, int num_retry )
+        # Forward mode functions
+        int iterate(int step_num,TACSBVec *forces)
+        void integrate()
+        void evalFunctions(TacsScalar *fvals)
 
-        # Configure writing ASCII output data
-        void writeSolution(const_char * filename, int format)
+        # Reverse mode functions
+        void iterateAdjoint(int step_num, TACSBVec **adj_rhs)
+        void integrateAdjoint()
+        void getAdjoint(int step_num, int func_num, TACSBVec **adjoint)
+        void getGradient(TacsScalar *_dfdx)
+        
+        double getStates(int step_num,
+                         TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot)
+        
+        # Configure output
+        void setOutputPrefix(const_char *prefix)
+        void setOutputFrequency(int write_freq)
+        void setRigidOutput(TACSToFH5 *_rigidf5)
+        void setShellOutput(TACSToFH5 *_shellf5)
+        void setBeamOutput(TACSToFH5 *_beamf5)
+        void writeSolution(const_char *filename, int format)
+        void writeSolutionToF5(int step_num)
 
-        # return the TACS states at the given time step
-        double getStates(int,TACSBVec*,TACSBVec*,TACSBVec*)
+        # Debug adjoint
+        void checkGradients(double dh)
 
-        # Set Loads into TACS
-        void setLoads(TACSBVec*)
 
     # BDF Implementation of the integrator
     cdef cppclass TACSBDFIntegrator(TACSIntegrator):
