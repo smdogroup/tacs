@@ -1314,6 +1314,7 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     }
   }
 
+  // Zero the right-hand-sides at the last time-step
   if (k == num_time_steps){
     // Print adjoint mode summary before maching backwards
     printAdjointOptionSummary();
@@ -1331,6 +1332,9 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     for ( int i = 0; i < num_funcs*num_adjoint_rhs; i++ ){
       rhs[i]->zeroEntries();
     }
+
+    // Zero the derivative!
+    memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
   } 
 
   // Set the simulation time
@@ -1367,7 +1371,7 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     int adj_index = k % num_adjoint_rhs;
     
     // Setup the adjoint RHS
-    if (k < end_plane && k >= start_plane){
+    if (k >= start_plane && k < end_plane){
       for ( int n = 0; n < num_funcs; n++ ){
         // Add up the contribution from function state derivative to RHS
         tacs->addSVSens(tcoeff, 0.0, 0.0, &funcs[n], 1, 
@@ -1456,7 +1460,8 @@ void TACSBDFIntegrator::postAdjoint( int k ){
     // Add total derivative contributions from this step to all
     // functions
     double jacpdt = MPI_Wtime();
-    tacs->addAdjointResProducts(1.0, psi, num_funcs, dfdx, num_design_vars);
+    tacs->addAdjointResProducts(1.0, psi, num_funcs,
+                                dfdx, num_design_vars);
     time_rev_jac_pdt += MPI_Wtime() - jacpdt;
     
     // Drop the contributions from this step to other right hand sides
