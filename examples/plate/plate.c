@@ -25,12 +25,12 @@
   print_level: 0, 1, 2
 */
 const char *help_string[] = {
-  "TACS time-dependent analysis of a plate located in plate.bdf\n\n",
-  "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem\n",
-  "num_threads=1,2,3...    : Number of threads to use\n",
-  "print_level=0,1,2       : Controls the amount of information to print\n",
-  "write_solution=0,1,2... : Controls the frequency of f5 file output\n",
-  "convert_mesh=0,1        : Converts the mesh to coordinate ordering\n\n"};
+  "TACS time-dependent analysis of a plate located in plate.bdf",
+  "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem",
+  "num_threads=1,2,3...    : Number of threads to use",
+  "print_level=0,1,2       : Controls the amount of information to print",
+  "write_solution=0,1,2... : Controls the frequency of f5 file output",
+  "convert_mesh=0,1        : Converts the mesh to coordinate ordering" };
 
 int main( int argc, char **argv ){
 
@@ -55,7 +55,7 @@ int main( int argc, char **argv ){
     if (strcmp("--help", argv[i]) == 0){
       if (rank == 0){ 
         for ( int k = 0; k < 6; k++ ){
-          printf(help_string[k]);
+          printf("%s\n", help_string[k]);
         }
       }
       MPI_Finalize();
@@ -311,7 +311,8 @@ int main( int argc, char **argv ){
   bdf->setOutputFrequency(write_solution);
   
   // Set functions of interest for adjoint solve
-  bdf->setFunctions(func, num_funcs, num_dvs);
+  int start_plane = 10;
+  bdf->setFunctions(func, num_funcs, num_dvs, start_plane, -1);
   bdf->checkGradients(dh);
 
   bdf->decref();

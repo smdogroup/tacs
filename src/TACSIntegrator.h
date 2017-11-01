@@ -41,7 +41,7 @@ class TACSIntegrator : public TACSObject {
   //--------------------------------
   void setFunctions( TACSFunction **funcs, int num_funcs,
                      int num_design_vars,
-                     int start_step=-1, int end_step=-1 );
+                     int start_plane=-1, int end_plane=-1 );
   
   // Solve for time-step t with 
   virtual int iterate( int step_num, TACSBVec *forces ) = 0;
@@ -138,7 +138,7 @@ class TACSIntegrator : public TACSObject {
   TACSBVec **qddot;           // second time derivative of ''
 
   // Objects that store information about the functions of interest
-  int start_step, end_step;   // Time-window for the functions of interest
+  int start_plane, end_plane; // Time-window for the functions of interest
   TACSFunction **funcs;       // List of functions
   int num_funcs;              // The number of objective functions
   TacsScalar *fvals;          // Function values

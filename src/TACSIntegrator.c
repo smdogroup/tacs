@@ -57,6 +57,8 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
 
   // Objects to store information about the functions of interest
   funcs = NULL;
+  start_plane = 0;
+  end_plane = num_time_steps+1;
   num_funcs = 0;
   fvals = NULL;
   dfdx = NULL;
@@ -235,15 +237,15 @@ void TACSIntegrator::setInitNewtonDeltaFraction( double frac ){
 */
 void TACSIntegrator::setFunctions( TACSFunction **_funcs, int _num_funcs,
                                    int _num_design_vars,
-                                   int _start_step, int _end_step ){
+                                   int _start_plane, int _end_plane ){
   // Set the time window
-  start_step = _start_step;
-  if (start_step < 0){
-    start_step = 0;
+  start_plane = _start_plane;
+  if (start_plane < 0){
+    start_plane = 0;
   }
-  end_step = _end_step;
-  if (end_step < start_step){
-    end_step = num_time_steps;
+  end_plane = _end_plane;
+  if (end_plane <= start_plane){
+    end_plane = num_time_steps+1;
   }
 
   // Set the number of design variables
@@ -1238,16 +1240,16 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
       funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
     }
     
-    for ( int k = 0; k < num_time_steps+1; k++ ){
+    for ( int k = start_plane; k < end_plane; k++ ){
       // Set the stages
       tacs->setSimulationTime(time[k]);
       tacs->setVariables(q[k], qdot[k], qddot[k]);
 
       double tcoeff = 0.0;
-      if (k > 0){
+      if (k > start_plane){
         tcoeff += 0.5*(time[k] - time[k-1]);
       }
-      if (k < num_time_steps){
+      if (k < end_plane-1){
         tcoeff += 0.5*(time[k+1] - time[k]);
       }
       tacs->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
@@ -1264,15 +1266,15 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
     funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
   }
     
-  for ( int k = 0; k < num_time_steps+1; k++ ){
+  for ( int k = start_plane; k < end_plane; k++ ){
     tacs->setSimulationTime(time[k]);
     tacs->setVariables(q[k], qdot[k], qddot[k]);
       
     double tcoeff = 0.0;
-    if (k > 0){
+    if (k > start_plane){
       tcoeff += 0.5*(time[k] - time[k-1]);
     }
-    if (k < num_time_steps){
+    if (k < end_plane-1){
       tcoeff += 0.5*(time[k+1] - time[k]);
     }
     tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
@@ -1343,11 +1345,14 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     get2ndBDFCoeff(k, bdf_coeff, &nbdf, bddf_coeff, 
                    &nbddf, max_bdf_order);
 
-    // Keep track of the multiplier on the function value (divided by
-    // the time step)
-    double tfact = 0.5;
-    if (k < num_time_steps){
-      tfact += 0.5;
+    // Compute the time coefficient for the integral of
+    // the functional
+    double tcoeff = 0.0;
+    if (k > start_plane){
+      tcoeff += 0.5*(time[k] - time[k-1]);
+    }
+    if (k < end_plane-1){
+      tcoeff += 0.5*(time[k+1] - time[k]);
     }
 
     // Compute the time interval
@@ -1362,13 +1367,16 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     int adj_index = k % num_adjoint_rhs;
     
     // Setup the adjoint RHS
+    if (k < end_plane && k >= start_plane){
+      for ( int n = 0; n < num_funcs; n++ ){
+        // Add up the contribution from function state derivative to RHS
+        tacs->addSVSens(tcoeff, 0.0, 0.0, &funcs[n], 1, 
+                        &rhs[adj_index*num_funcs + n]);
+      }
+    }
+
+    // Scale the right-hand-side by -1
     for ( int n = 0; n < num_funcs; n++ ){
-      // Add up the contribution from function state derivative to RHS
-      psi[n]->zeroEntries();
-      tacs->addSVSens(tfact, 0.0, 0.0, &funcs[n], 1, &psi[n]);
-      
-      // Add the contributions to the current adjoint RHS
-      rhs[adj_index*num_funcs + n]->axpy(1.0, psi[n]);
       rhs[adj_index*num_funcs + n]->scale(-1.0);
     }
  
@@ -1424,13 +1432,15 @@ void TACSBDFIntegrator::postAdjoint( int k ){
   }
 
   double tcoeff = 0.0;
-  if (k > 0){
+  if (k > start_plane){
     tcoeff += 0.5*(time[k] - time[k-1]);
   }
-  if (k < num_time_steps){
+  if (k < end_plane-1){
     tcoeff += 0.5*(time[k+1] - time[k]);
   }
-  tacs->addDVSens(tcoeff, funcs, num_funcs, dfdx, num_design_vars);
+  if (k >= start_plane && k < end_plane){
+    tacs->addDVSens(tcoeff, funcs, num_funcs, dfdx, num_design_vars);
+  }
 
   if (k > 0){
     // Get the BDF coefficients at this time step
@@ -1446,7 +1456,7 @@ void TACSBDFIntegrator::postAdjoint( int k ){
     // Add total derivative contributions from this step to all
     // functions
     double jacpdt = MPI_Wtime();
-    tacs->addAdjointResProducts(h, psi, num_funcs, dfdx, num_design_vars);
+    tacs->addAdjointResProducts(1.0, psi, num_funcs, dfdx, num_design_vars);
     time_rev_jac_pdt += MPI_Wtime() - jacpdt;
     
     // Drop the contributions from this step to other right hand sides
