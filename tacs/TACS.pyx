@@ -1506,24 +1506,20 @@ cdef class Integrator:
         self.ptr.setInitNewtonDeltaFraction(frac)
         return
 
-    def setFunctions(self, funclist,
-                     num_design_vars, start_step=-1, end_step=-1):
+    def setFunctions(self, list funcs, int num_dvs,
+                     int start_step=-1, int end_step=-1):
         '''
         Sets the functions for obtaining the derivatives.
         '''
         # Allocate the array of TACSFunction pointers
-        #cdef TACSFunction **funcs
-        #funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
-        #if funcs is NULL:
-        #    raise MemoryError()
-        #num_funcs = len(funclist)
-        #for i in xrange(num_funcs):
-        #    funcs[i] = (<Function>funclist[i]).ptr
-        #self.ptr.setFunctions(funcs, num_funcs,
-        #                      num_design_vars,
-        #                      start_step, end_step)
-        #free(funcs)
-        # fixme
+        cdef TACSFunction **fn = NULL
+        cdef int nfuncs = 0
+        nfuncs = len(funcs)
+        fn = <TACSFunction**>malloc(nfuncs*sizeof(TACSFunction*))
+        for i in xrange(nfuncs):
+            fn[i] = (<Function>funcs[i]).ptr
+        self.ptr.setFunctions(fn, nfuncs, num_dvs, start_step, end_step)
+        free(fn)
         return
 
     def iterate(self, int step_num, Vec forces):
@@ -1550,36 +1546,33 @@ cdef class Integrator:
         # Allocate the array of TACSFunction pointers
         cdef TACSFunction **funcs
         funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
-        if funcs is NULL:
-            raise MemoryError()
-
         for i in xrange(len(funclist)):
             funcs[i] = (<Function>funclist[i]).ptr
 
         # Allocate the numpy array of function values
         cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
-
         self.ptr.evalFunctions(<TacsScalar*>fvals.data)
         
         # Free the allocated array
-        #free(funcs)
+        free(funcs)
         
         return fvals
 
-    def iterateAdjoint(self, int step_num, adjlist):
+    def iterateAdjoint(self, int step_num, list adjlist=None):
         '''
         Perform one iteration in reverse mode
         '''
-        cdef TACSBVec **adjoint
-        #adjoint = <TACSBVec**>malloc(len(adjlist)*sizeof(TACSBVec*))
-        #if adjoint is NULL:
-        #    raise MemoryError()
-        #i = 0
-        #for adj in adjlist:
-        #    adjoint[i] = <TACSBVec*>adj.ptr
-        #    i += 1
-        #self.ptr.iterateAdjoint(step_num, adjoint)
-        #fixme
+        cdef TACSBVec **adjoint = NULL
+        cdef int nadj = 0
+        if adjlist is not None:
+            nadj = len(adjlist)
+            adjoint = <TACSBVec**>malloc(nadj*sizeof(TACSBVec*))
+
+            for i in range(nadj):
+                adjoint[i] = (<Vec>adjlist[i]).ptr
+        self.ptr.iterateAdjoint(step_num, adjoint)
+        if adjlist is not None:
+            free(adjoint)
         return
     
     def integrateAdjoint(self):
@@ -1589,14 +1582,11 @@ cdef class Integrator:
         self.ptr.integrateAdjoint()
         return
 
-    def getAdjoint(self, int step_num, int func_num, Vec fadjoint):
+    def getAdjoint(self, int step_num, int func_num):
         '''
         Get the adjoint vector at the given step
         '''
         cdef TACSBVec *cadjoint = NULL
-        if fadjoint is not None:
-            cadjoint = fadjoint.ptr
-        #fixme
         self.ptr.getAdjoint(step_num, func_num, &cadjoint)
         return
 

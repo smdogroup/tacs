@@ -465,7 +465,7 @@ cdef extern from "TACSIntegrator.h":
         void setInitNewtonDeltaFraction(double)
         void setFunctions(TACSFunction **funcs, int num_funcs,
                           int num_design_vars,
-                          int start_step=-1, int end_step=-1)
+                          int start_step, int end_step)
 
         # Forward mode functions
         int iterate(int step_num,TACSBVec *forces)

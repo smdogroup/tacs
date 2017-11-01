@@ -1428,11 +1428,6 @@ void TACSBDFIntegrator::postAdjoint( int k ){
     // Compute the time interval
     double h = time[k] - time[k-1];
     
-    // Determine the linearization coefficients for Jacobian Assembly
-    double alpha = 1.0;
-    double beta  = bdf_coeff[0]/h;
-    double gamma = bddf_coeff[0]/(h*h);
-    
     // Add total derivative contributions from this step to all
     // functions
     double jacpdt = MPI_Wtime();
