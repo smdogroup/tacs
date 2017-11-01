@@ -1,4 +1,4 @@
-#include "TACSIntegratorV2.h"
+#include "TACSIntegrator.h"
 
 #include "TACSMeshLoader.h"
 #include "MITC9.h"
@@ -19,13 +19,19 @@
   ABM1-6            : for ABM integrators
   NBG               : for Newmark integrator
 
-  test_gradient : to do a complex step verification of the adjoint gradient
-  test_element  : to test the element implementation
   num_funcs     : 1 to 3 for the adjoint 
   num_threads   : number of threads
   write_solution: write solution to f5 frequency
   print_level: 0, 1, 2
 */
+const char *help_string[] = {
+  "TACS time-dependent analysis of a plate located in plate.bdf\n\n",
+  "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem\n",
+  "num_threads=1,2,3...    : Number of threads to use\n",
+  "print_level=0,1,2       : Controls the amount of information to print\n",
+  "write_solution=0,1,2... : Controls the frequency of f5 file output\n",
+  "convert_mesh=0,1        : Converts the mesh to coordinate ordering\n\n"};
+
 int main( int argc, char **argv ){
 
   // Intialize MPI and declare communicator
@@ -38,68 +44,76 @@ int main( int argc, char **argv ){
   // Parse command line arguments
   int num_funcs = 1;
   int num_threads = 1;
-  int test_gradient = 0;
-  int test_element = 0;
   int write_solution = 0;
   int print_level = 1;
   int convert_mesh = 0;
+  double dh = 1e-7;
 
   for ( int i = 0; i < argc; i++ ){
 
     // Determine whether or not to test gradients with complex step
     if (strcmp("--help", argv[i]) == 0){
-      if (rank ==0){ 
-        printf("TACS time-dependent analysis of a plate located in plate.bdf\n\n");
-        printf("num_funcs=1,2,3 and 12  : Number of functions for adjoint problem\n");
-        printf("num_threads=1,2,3...    : Number of threads to use\n");
-        printf("print_level=0,1,2       : Controls the amount of information to print\n");
-        printf("write_solution=0,1,2... : Controls the frequency of f5 file output\n");
-        printf("convert_mesh=0,1        : Converts the mesh to coordinate ordering if not supplied so\n\n");
+      if (rank == 0){ 
+        for ( int k = 0; k < 6; k++ ){
+          printf(help_string[k]);
+        }
       }
       MPI_Finalize();
       return 0;
     }
 
+    // Determine the complex/finite-difference step interval
+    if (sscanf(argv[i], "dh=%lf", &dh) == 1){
+      if (rank == 0){
+        printf("Difference interval : %g\n", dh);
+      }
+    }
+
     // Determine the number of functions for adjoint
     if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
       if (num_funcs < 0){ num_funcs = 1; }
-      if (rank == 0){ printf("Number of functions : %d\n", num_funcs); }
+      if (rank == 0){ 
+        printf("Number of functions : %d\n", num_funcs); 
+      }
     }
 
     // How frequent to write the f5 files
     if (sscanf(argv[i], "write_solution=%d", &write_solution) == 1){
       if (write_solution < 0){ write_solution = 0; }
-      if (rank == 0){ printf("Write solution freq : %d\n", write_solution); }
+      if (rank == 0){ 
+        printf("Write solution freq : %d\n", write_solution); 
+      }
     }
 
     // Set the print level
     if (sscanf(argv[i], "print_level=%d", &print_level) == 1){
       if (print_level < 0){ print_level = 1; }
       if (print_level > 3){ print_level = 3; }
-      if (rank == 0){ printf("Print level : %d\n", print_level); }
+      if (rank == 0){ 
+        printf("Print level : %d\n", print_level); 
+      }
     }
 
     // Determine the number of threads
     if (sscanf(argv[i], "num_threads=%d", &num_threads) == 1){
       if (num_threads < 0){ num_threads = 1; }
       if (num_threads > 24){ num_threads = 24; }
-      if (rank ==0){ printf("Number of threads : %d\n", num_threads); }
+      if (rank == 0){ 
+        printf("Number of threads : %d\n", num_threads); 
+      }
     }
 
-    // Determine whether or not to test gradients with complex step
-    if (strcmp("test_gradient", argv[i]) == 0){
-      test_gradient = 1;
-      if (rank ==0){ printf("Enabled complex-step verification of gradients...\n"); }
-    }
-
-    // Determine whether or not to convert the connectivities to coordinate ordering
+    // Determine whether or not to convert the 
+    // connectivities to coordinate ordering
     if (sscanf(argv[i], "convert_mesh=%d", &convert_mesh) == 1){
       if (convert_mesh != 1){ 
         convert_mesh = 0; 
       } else {
         convert_mesh = 1; 
       }
-      if (rank == 0){ printf("Convert mesh to coordinate order : %d\n", convert_mesh); }
+      if (rank == 0){ 
+        printf("Convert mesh to coordinate order : %d\n", convert_mesh); 
+      }
     }
   }
 
@@ -138,7 +152,7 @@ int main( int argc, char **argv ){
   TACSGibbsVector *v0      = new TACSGibbsVector(v_init); v0->incref();
   TACSGibbsVector *omega0  = new TACSGibbsVector(omega_init); omega0->incref();
 
-  int vars_per_node;
+  int vars_per_node = 0;
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ) {
     const char       *descriptor    = mesh->getElementDescript(i);
@@ -169,7 +183,8 @@ int main( int argc, char **argv ){
       element->decref();
     }
     else {
-      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", rank, descriptor);
+      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", 
+            rank, descriptor);
     }
   }
 
@@ -297,12 +312,7 @@ int main( int argc, char **argv ){
   
   // Set functions of interest for adjoint solve
   bdf->setFunctions(func, num_funcs, num_dvs);
-
-#ifdef TACS_USE_COMPLEX
-  bdf->checkGradients(1e-30);
-#else
-  bdf->checkGradients(1e-7);
-#endif
+  bdf->checkGradients(dh);
 
   bdf->decref();
   mesh->decref();

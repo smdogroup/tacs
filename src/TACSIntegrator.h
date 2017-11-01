@@ -363,4 +363,4 @@ class TACSNBGIntegrator : public TACSIntegrator {
   double BETA, GAMMA; // Newmark coefficients
 };
 */
-#endif
+#endif // TACS_INTEGRATOR_H
