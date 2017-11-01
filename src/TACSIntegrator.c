@@ -573,6 +573,12 @@ void TACSIntegrator::printAdjointOptionSummary(){
 int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                  double t, TACSBVec *u, TACSBVec *udot, 
                                  TACSBVec *uddot, TACSBVec *forces ){
+  // Compute the norm of the forces if supplied
+  double force_norm = 0.0;
+  if(forces){
+    force_norm = TacsRealPart(forces->norm());
+  }
+
   if (!mat || !ksm){
     // Set the D matrix to NULL
     if (use_femat){
@@ -617,9 +623,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   int newton_exit_flag = 0;
 
   if (logfp && print_level >= 2){
-    fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s\n",
+    fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
             "#iters", "|R|", "|R|/|R0|", "|dq|", 
-            "alpha", "beta", "gamma","delta");
+            "alpha", "beta", "gamma","delta", "|F|");
   }
 
   // Track the time taken for newton solve at each time step
@@ -669,18 +675,18 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if(logfp && print_level >= 2){
       if (niter == 0){
         fprintf(logfp, 
-                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
+                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e %12.5e\n",
                 niter, TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
-                " ", alpha, beta, gamma, delta);
+                " ", alpha, beta, gamma, delta, force_norm);
       }
       else {
         fprintf(logfp, 
-                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
                 niter, TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 TacsRealPart(update_norm),  
-                alpha, beta, gamma, delta);
+                alpha, beta, gamma, delta, force_norm);
       }
     }
 

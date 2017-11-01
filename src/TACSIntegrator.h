@@ -81,7 +81,7 @@ class TACSIntegrator : public TACSObject {
 
   // Copy out the function
   virtual void getGradient( TacsScalar *_dfdx ){
-    memcpy(dfdx, _dfdx, num_funcs*num_design_vars*sizeof(TacsScalar));
+    memcpy(_dfdx, dfdx, num_funcs*num_design_vars*sizeof(TacsScalar));
   }
 
   // Retrieve the internal states
