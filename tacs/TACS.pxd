@@ -443,6 +443,7 @@ cdef extern from "TACSCreator.h":
         void partitionMesh(int split_size, int *part)
         int getElementPartition(const int **)
         TACSAssembler *createTACS()
+        int getNodeNums(const int**)
       
 cdef extern from "TACSToFH5.h":
     cdef cppclass TACSToFH5(TACSObject):

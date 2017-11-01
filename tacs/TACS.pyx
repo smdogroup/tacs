@@ -1286,6 +1286,15 @@ cdef class Creator:
 
     def createTACS(self):
         return _init_Assembler(self.ptr.createTACS())
+    
+    def getNewNodeNums(self):
+        cdef const int *new_nodes = NULL
+        cdef int num_nodes = 0
+        num_nodes = self.ptr.getNodeNums(&new_nodes)
+        array = np.zeros(num_nodes, dtype=np.intc)
+        for i in range(num_nodes):
+            array[i] = new_nodes[i]
+        return array
      
 # Wrap the TACSMeshLoader class
 cdef class MeshLoader:
