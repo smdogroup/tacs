@@ -547,7 +547,8 @@ cdef class Assembler:
             vars_data = <int*>_vars.data
         if values is not None:
             values_data = <TacsScalar*>values.data
-        self.ptr.addInitBCs(nnodes, node_nums, vars_dim, vars_data, values_data)
+        self.ptr.addInitBCs(nnodes, node_nums, vars_dim, 
+                            vars_data, values_data)
         return
 
     def computeReordering(self, OrderingType order_type,
@@ -1586,9 +1587,9 @@ cdef class Integrator:
         '''
         Get the adjoint vector at the given step
         '''
-        cdef TACSBVec *cadjoint = NULL
-        self.ptr.getAdjoint(step_num, func_num, &cadjoint)
-        return
+        cdef TACSBVec *adjoint = NULL
+        self.ptr.getAdjoint(step_num, func_num, &adjoint)
+        return _init_Vec(adjoint)
 
     def getGradient(self, np.ndarray[TacsScalar, ndim=1, mode='c'] dfdx):
         '''
@@ -1613,7 +1614,7 @@ cdef class Integrator:
             cqddot = qddot.ptr        
         return self.ptr.getStates(time_step,cq,cqdot,cqddot)
     
-    def checkGradients(self,double dh):
+    def checkGradients(self, double dh):
         '''
         Performs a FD/CSD verification of the gradients
         '''

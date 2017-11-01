@@ -69,7 +69,9 @@ class TACSIntegrator : public TACSObject {
   // time-steps
   virtual void integrateAdjoint(){
     for ( int i = num_time_steps; i >= 0; i-- ){
+      initAdjoint(i);
       iterateAdjoint(i, NULL);
+      postAdjoint(i);
     }
   }
 
@@ -103,7 +105,6 @@ class TACSIntegrator : public TACSObject {
   void printAdjointOptionSummary();
 
  protected:
-
   // Functions for solutions to linear and nonlinear problems
   int newtonSolve( double alpha, double beta, double gamma,
                    double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot, 
@@ -158,7 +159,7 @@ class TACSIntegrator : public TACSObject {
   int max_newton_iters;     // The max number of nonlinear iterations
   double atol;              // Absolute tolerance
   double rtol;              // Relative tolerance
-  double init_newton_delta; // Initial value of delta used in the globalization strategy
+  double init_newton_delta; // Initial value of delta for globalization
   int jac_comp_freq;        // Frequency of Jacobian factorization
   int use_femat;            // use femet for parallel execution
   TACSAssembler::OrderingType order_type;
@@ -178,7 +179,7 @@ class TACSIntegrator : public TACSObject {
   TACSToFH5 *rigidf5;       // F5 file for rigid body visualization
   TACSToFH5 *shellf5;       // F5 file for shell visualization
   TACSToFH5 *beamf5;        // F5 file for beam visualization
-  int f5_write_freq;        // How frequent to write the output during time marching
+  int f5_write_freq;        // Frequency for output during time marching
   
   int niter;                // Newton iteration number
   TacsScalar res_norm;      // residual norm
@@ -230,7 +231,7 @@ class TACSBDFIntegrator : public TACSIntegrator {
   int max_bdf_order;    // Maximum order of the BDF integration scheme
 
   // Adjoint information
-  int num_adjoint_rhs;  // the number of right hand sides allocated in adjoint loop  
+  int num_adjoint_rhs;  // the number of right hand sides allocated
   TACSBVec **rhs;  // storage vector for the right hand sides
   TACSBVec **psi;  // adjoint variable accumulating qdot dependance
 };

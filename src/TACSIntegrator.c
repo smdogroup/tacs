@@ -288,7 +288,6 @@ void TACSIntegrator::writeSolution( const char *filename, int format ){
   TacsScalar *qvals, *qdotvals, *qddotvals;
 
   if (format == 1){
-    // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
     for ( int k = 0; k < num_time_steps; k++ ){    
       // Copy over the state values from TACSBVec
       int num_state_vars = q[k]->getArray(&qvals);
@@ -340,7 +339,6 @@ void TACSIntegrator::writeSolution( const char *filename, int format ){
     } 
     else {
       // Write the DOFS on user specified element number in final ordering  
-      // Plain format with t q[0], q[1],...,qdot[0], qdot[1],...,qddot[0], qddot[1],...
       for ( int k = 0; k < num_time_steps; k++ ){    
         // Copy over the state values from TACSBVec
         int num_state_vars = q[k]->getArray(&qvals);
@@ -597,7 +595,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       mat = A;
       mat->incref();
       if (mpiSize > 1) {
-        fprintf(stderr, "TACSIntegrator error: Using SerialBCSCMat in parallel\n");
+        fprintf(stderr, 
+                "TACSIntegrator error: Using SerialBCSCMat in parallel\n");
       }
     }
   
@@ -637,7 +636,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     double t0 = MPI_Wtime();
     if ((niter % jac_comp_freq) == 0){
       delta = init_newton_delta*gamma;
-      if (niter > 0 && (TacsRealPart(res_norm) < TacsRealPart(init_res_norm))){
+      if (niter > 0 && 
+          (TacsRealPart(res_norm) < TacsRealPart(init_res_norm))){
         delta *= TacsRealPart(res_norm/init_res_norm);
       }
 
@@ -668,13 +668,15 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Write a summary    
     if(logfp && print_level >= 2){
       if (niter == 0){
-        fprintf(logfp, "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
+        fprintf(logfp, 
+                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e\n",
                 niter, TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 " ", alpha, beta, gamma, delta);
       }
       else {
-        fprintf(logfp, "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+        fprintf(logfp, 
+                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
                 niter, TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 TacsRealPart(update_norm),  
@@ -685,7 +687,8 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Check if the norm of the residuals is a NaN
     if (res_norm != res_norm || update_norm != update_norm ){ 
       if (logfp) {
-        fprintf(stderr,"[%d] Newton iteration %d, failed with NaN residual norm\n", 
+        fprintf(stderr,
+                "[%d] Newton iteration %d, failed with NaN residual norm\n", 
           mpiRank, niter);
       }
       newton_exit_flag = -2;
@@ -756,7 +759,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
   Solves the linear system Ax=b using LAPACK. The execution should be
   in serial mode.
 */
-void TACSIntegrator::lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update ) {
+void TACSIntegrator::lapackLinearSolve( TACSBVec *res, 
+                                        TACSMat *mat, 
+                                        TACSBVec *update ) {
   // Serial only usage for debugging
   // Get the right hand side as an array
   TacsScalar *R;
@@ -797,7 +802,8 @@ void TACSIntegrator::lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *u
   if (info){
     fprintf(stderr,"LAPACK GETRF output error %d\n", info);
     if (info < 0) {
-      fprintf(stderr,"LAPACK GETRF: %d-th argument had an illegal value\n", info);
+      fprintf(stderr,"LAPACK GETRF: %d-th argument had an illegal value\n", 
+              info);
     } else {
       fprintf(stderr,"LAPACK GETRF: The factorization has been completed, \
 but the factor U(%d,%d) is exactly singular, and division by zero will occur \
@@ -891,7 +897,9 @@ void TACSIntegrator::logTimeStep( int step_num ){
   Get the state variables from TACS at the given step
 */
 double TACSIntegrator::getStates( int step_num, 
-                                  TACSBVec *_q, TACSBVec *_qdot, TACSBVec *_qddot){
+                                  TACSBVec *_q, 
+                                  TACSBVec *_qdot, 
+                                  TACSBVec *_qddot){
   if (_q){
     _q->copyValues(q[step_num]);
   }
@@ -913,7 +921,8 @@ double TACSIntegrator::getStates( int step_num,
 void TACSIntegrator::checkGradients( double dh ){
  // Check whether the function has been set properly
   if (num_funcs == 0 || funcs == NULL) {
-    fprintf(stderr, "TACS Warning: Function is not set, skipping adjoint solve. \n");
+    fprintf(stderr, 
+            "TACS Warning: Function is not set, skipping adjoint solve. \n");
     return;
   }
 
