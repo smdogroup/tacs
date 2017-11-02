@@ -474,7 +474,9 @@ cdef extern from "TACSIntegrator.h":
 
         # Reverse mode functions
         void iterateAdjoint(int step_num, TACSBVec **adj_rhs)
+        void initAdjoint(int step_num)
         void integrateAdjoint()
+        void postAdjoint(int step_num)
         void getAdjoint(int step_num, int func_num, TACSBVec **adjoint)
         void getGradient(TacsScalar *_dfdx)
         

@@ -254,13 +254,17 @@ void TACSIntegrator::setFunctions( TACSFunction **_funcs, int _num_funcs,
 
   // Increase the reference counts to all functions to be set
   for ( int i = 0; i < _num_funcs; i++ ){
-    _funcs[i]->incref();
+    if (_funcs[i]){
+      _funcs[i]->incref();
+    }
   }
 
   // Free functions that have already been set
   if (funcs){
     for ( int i = 0; i < num_funcs; i++ ){
-      funcs[i]->decref();
+      if (funcs[i]){
+	funcs[i]->decref();
+      }
     }
     delete [] funcs;
     delete [] dfdx;
@@ -1308,7 +1312,7 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
   // Check whether these are two-stage or single-stage functions
   int twoStage = 0;
   for ( int n = 0; n < num_funcs; n++ ){
-    if (funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
+    if (funcs[n] && funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
       twoStage = 1;
       break;
     }
@@ -1318,7 +1322,9 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
   if (twoStage){
     // First stage
     for ( int n = 0; n < num_funcs; n++ ){
-      funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+      if (funcs[n]){
+	funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+      }
     }
     
     for ( int k = start_plane; k < end_plane; k++ ){
@@ -1338,13 +1344,17 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
     }
 
     for ( int n = 0; n < num_funcs; n++ ){
-      funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);      
+      if (funcs[n]){
+	funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);      
+      }
     }
   }
 
   // Second stage
   for ( int n = 0; n < num_funcs; n++ ){
-    funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+    if (funcs[n]){
+      funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+    }
   }
     
   for ( int k = start_plane; k < end_plane; k++ ){
@@ -1363,12 +1373,17 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
   }
        
   for ( int n = 0; n < num_funcs; n++ ){
-    funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);    
+    if (funcs[n]){
+      funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);    
+    }
   }
 
   // Retrieve the function values
   for ( int n = 0; n < num_funcs; n++ ){
-    fvals[n] = funcs[n]->getFunctionValue();
+    fvals[n] = 0.0;
+    if (funcs[n]){
+      funcs[n]->getFunctionValue();
+    }
   }
 }
 
@@ -1456,9 +1471,11 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     // Setup the adjoint RHS
     if (k >= start_plane && k < end_plane){
       for ( int n = 0; n < num_funcs; n++ ){
-        // Add up the contribution from function state derivative to RHS
-        tacs->addSVSens(tcoeff, 0.0, 0.0, &funcs[n], 1, 
-                        &rhs[adj_index*num_funcs + n]);
+	if (funcs[n]){
+	  // Add up the contribution from function state derivative to RHS
+	  tacs->addSVSens(tcoeff, 0.0, 0.0, &funcs[n], 1, 
+			  &rhs[adj_index*num_funcs + n]);
+	}
       }
     }
 

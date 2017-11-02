@@ -1508,7 +1508,7 @@ cdef class Integrator:
         return
 
     def setFunctions(self, list funcs, int num_dvs,
-                     int start_step=-1, int end_step=-1):
+                     int start_plane=-1, int end_plane=-1):
         '''
         Sets the functions for obtaining the derivatives.
         '''
@@ -1518,12 +1518,15 @@ cdef class Integrator:
         nfuncs = len(funcs)
         fn = <TACSFunction**>malloc(nfuncs*sizeof(TACSFunction*))
         for i in xrange(nfuncs):
-            fn[i] = (<Function>funcs[i]).ptr
-        self.ptr.setFunctions(fn, nfuncs, num_dvs, start_step, end_step)
+            if funcs[i] is None:
+                fn[i] = NULL
+            else:
+                fn[i] = (<Function>funcs[i]).ptr
+        self.ptr.setFunctions(fn, nfuncs, num_dvs, start_plane, end_plane)
         free(fn)
         return
 
-    def iterate(self, int step_num, Vec forces):
+    def iterate(self, int step_num, Vec forces=None):
         '''
         Solve the nonlinear system at current time step
         '''
@@ -1548,7 +1551,10 @@ cdef class Integrator:
         cdef TACSFunction **funcs
         funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
         for i in xrange(len(funclist)):
-            funcs[i] = (<Function>funclist[i]).ptr
+            if funclist[i] is None:
+                funcs[i] = NULL
+            else:
+                funcs[i] = (<Function>funclist[i]).ptr
 
         # Allocate the numpy array of function values
         cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
@@ -1558,6 +1564,13 @@ cdef class Integrator:
         free(funcs)
         
         return fvals
+
+    def initAdjoint(self, int step_num):
+        '''
+        Initialize adjoint step
+        '''
+        self.ptr.initAdjoint(step_num)
+        return
 
     def iterateAdjoint(self, int step_num, list adjlist=None):
         '''
@@ -1574,6 +1587,13 @@ cdef class Integrator:
         self.ptr.iterateAdjoint(step_num, adjoint)
         if adjlist is not None:
             free(adjoint)
+        return
+
+    def postAdjoint(self, int step_num):
+        '''
+        Terminate adjoint step
+        '''
+        self.ptr.postAdjoint(step_num)
         return
     
     def integrateAdjoint(self):

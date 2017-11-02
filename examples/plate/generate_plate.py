@@ -48,7 +48,7 @@ for j in xrange(0, nodes.shape[1]-1, 2):
 # Set up the plate so that it is fully clamped
 for i in xrange(2*nx+1):
     # Set the y = const edges
-    spc = '123'
+    spc = '123456'
     fp.write('%-8s%8d%8d%8s%8.6f\n'%
              ('SPC', 1, nodes[i, 0], spc, 0.0))
 
