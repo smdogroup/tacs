@@ -263,7 +263,7 @@ void TACSIntegrator::setFunctions( TACSFunction **_funcs, int _num_funcs,
   if (funcs){
     for ( int i = 0; i < num_funcs; i++ ){
       if (funcs[i]){
-	funcs[i]->decref();
+        funcs[i]->decref();
       }
     }
     delete [] funcs;
@@ -687,14 +687,16 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if(logfp && print_level >= 2){
       if (niter == 0){
         fprintf(logfp, 
-                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                "%12d %12.5e %12.5e %12s %12.5e %12.5e \
+                %12.5e %12.5e %12.5e\n",
                 niter, TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 " ", alpha, beta, gamma, delta, force_norm);
       }
       else {
         fprintf(logfp, 
-                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e \
+                %12.5e %12.5e %12.5e\n",
                 niter, TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 TacsRealPart(update_norm),  
@@ -1323,7 +1325,7 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
     // First stage
     for ( int n = 0; n < num_funcs; n++ ){
       if (funcs[n]){
-	funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+        funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
       }
     }
     
@@ -1345,7 +1347,7 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
 
     for ( int n = 0; n < num_funcs; n++ ){
       if (funcs[n]){
-	funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);      
+        funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);      
       }
     }
   }
@@ -1471,11 +1473,11 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     // Setup the adjoint RHS
     if (k >= start_plane && k < end_plane){
       for ( int n = 0; n < num_funcs; n++ ){
-	if (funcs[n]){
-	  // Add up the contribution from function state derivative to RHS
-	  tacs->addSVSens(tcoeff, 0.0, 0.0, &funcs[n], 1, 
-			  &rhs[adj_index*num_funcs + n]);
-	}
+        if (funcs[n]){
+          // Add up the contribution from function state derivative to RHS
+          tacs->addSVSens(tcoeff, 0.0, 0.0, &funcs[n], 1, 
+                          &rhs[adj_index*num_funcs + n]);
+        }
       }
     }
 

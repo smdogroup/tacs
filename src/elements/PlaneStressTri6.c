@@ -167,7 +167,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
 	
     if (out_type & TACSElement::OUTPUT_STRAINS){
       for ( int k = 0; k < 3; k++ ){
-	data[index+k] = TacsRealPart(strain[k]);
+        data[index+k] = TacsRealPart(strain[k]);
       }
       index += 3;
     }
@@ -177,7 +177,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
       this->stiff->calculateStress(pt[n], strain, stress);
       
       for ( int k = 0; k < 3; k++ ){
-	data[index+k] = TacsRealPart(stress[k]);
+        data[index+k] = TacsRealPart(stress[k]);
       }
       index += 3;
     }
