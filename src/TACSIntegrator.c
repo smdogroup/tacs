@@ -1186,7 +1186,7 @@ void TACSBDFIntegrator::get2ndBDFCoeff( const int k,
   for ( int j = 0; j < *nbdf && (k - j > 0); j++ ){
     // order >= 1 always
     int order = (k-j < max_order ? k-j : max_order);
-    double bdf2[5];
+    double bdf2[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
     int len = getBDFCoeff(k - j, bdf2, order)+1;
 
     for ( int i = 0; i < len; i++ ){
@@ -1384,7 +1384,7 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
   for ( int n = 0; n < num_funcs; n++ ){
     fvals[n] = 0.0;
     if (funcs[n]){
-      funcs[n]->getFunctionValue();
+      fvals[n] = funcs[n]->getFunctionValue();
     }
   }
 }
