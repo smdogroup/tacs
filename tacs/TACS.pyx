@@ -1617,7 +1617,15 @@ cdef class Integrator:
         '''
         self.ptr.getGradient(<TacsScalar*>dfdx.data)
         return
-    
+
+    def getXptGradient(self, int func_num):
+        '''
+        Get the time-dependent nodal derivatives of the functional
+        '''
+        cdef TACSBVec *dfdXpt = NULL
+        self.ptr.getXptGradient(func_num, &dfdXpt)
+        return _init_Vec(dfdXpt)
+
     def getStates(self, int time_step,
                   Vec q=None, Vec qdot=None, Vec qddot=None):
         '''

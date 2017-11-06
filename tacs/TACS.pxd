@@ -479,6 +479,7 @@ cdef extern from "TACSIntegrator.h":
         void postAdjoint(int step_num)
         void getAdjoint(int step_num, int func_num, TACSBVec **adjoint)
         void getGradient(TacsScalar *_dfdx)
+        void getXptGradient(int func_num, TACSBVec **dfdXpt)
         
         double getStates(int step_num,
                          TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot)
