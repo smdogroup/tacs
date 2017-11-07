@@ -1,8 +1,8 @@
 # Generate a plate mesh
 import numpy as np
 
-nx = 1
-ny = 1
+nx = 3
+ny = 3
 nodes = np.arange(1, (2*nx+1)*(2*ny+1)+1, dtype=np.int).reshape(2*nx+1, 2*ny+1)
 
 x = np.linspace(0, 1, 2*nx+1)
@@ -48,7 +48,7 @@ for j in xrange(0, nodes.shape[1]-1, 2):
 # Set up the plate so that it is fully clamped
 for i in xrange(2*nx+1):
     # Set the y = const edges
-    spc = '123456'
+    spc = '123'
     fp.write('%-8s%8d%8d%8s%8.6f\n'%
              ('SPC', 1, nodes[i, 0], spc, 0.0))
 

@@ -117,10 +117,6 @@ int main( int argc, char **argv ){
     }
   }
 
-  /*-----------------------------------------------------------------*/
-  /*----------------Load Mesh and Setup TACS ------------------------*/
-  /*-----------------------------------------------------------------*/
-
   // Write name of BDF file to be load to char array
   const char *filename = "plate.bdf";
 
@@ -168,11 +164,14 @@ int main( int argc, char **argv ){
     // Initialize element object
     TACSElement *element = NULL;
 
-    // Create element object using constituitive information and type defined in
-    // the descriptor
+    // Create element object using constituitive information and type
+    // defined in the descriptor
     if (strcmp(descriptor, "CQUAD9") == 0 ||
-        strcmp(descriptor, "CQUAD") == 0 ) {
-      element = new MITC9(stiff, gravity, v0, omega0);
+        strcmp(descriptor, "CQUAD") == 0 ){
+      MITC9 *mitc9 = new MITC9(stiff, gravity, v0, omega0);
+      mitc9->testXptSens(1e-30);
+      
+      element = mitc9;
       element->incref();
 
       // Set the number of displacements
@@ -212,17 +211,14 @@ int main( int argc, char **argv ){
   TACSFunction * func[num_funcs];
   if (num_funcs == 1){
     func[0] = new TACSCompliance(tacs);
-    //func[0] = new TACSKSFailure(tacs, 100.0);
   }
   else if (num_funcs == 2){
     func[0] = new TACSKSFailure(tacs, 100.0);
 
     // Set the induced norm failure types
-    TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
-    // ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
+    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
+    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[1] = ifunc;
-
-    // func[1] = new TACSCompliance(tacs);
   } 
   else if (num_funcs == 3){
     func[0] = new TACSKSFailure(tacs, 100.0);
@@ -295,12 +291,17 @@ int main( int argc, char **argv ){
 
   // Set paramters for time marching
   double tinit             = 0.0;
-  double tfinal            = 0.1;
+  double tfinal            = 0.005;
   for ( int k = 0; k < argc; k++ ){
     if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
     }
   }
   int num_steps_per_sec = 1000;
+
+  int start_plane = 0;
+  int end_plane = 90;
+
+  // Check the BDF integrator
   int bdf_order = 3;
   TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, 
                                               num_steps_per_sec, bdf_order);
@@ -311,11 +312,29 @@ int main( int argc, char **argv ){
   bdf->setOutputFrequency(write_solution);
   
   // Set functions of interest for adjoint solve
-  int start_plane = 10;
-  bdf->setFunctions(func, num_funcs, num_dvs, start_plane, -1);
+  bdf->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
   bdf->checkGradients(dh);
 
+  bdf->integrate();
+  tacs->testElement(0, 2, 1e-30);
   bdf->decref();
+
+  // Check the DIRK integrator
+  int num_stages = 1;
+  TACSIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, 
+                                                num_steps_per_sec, 
+                                                num_stages);
+  dirk->incref();
+  
+  // Set options
+  dirk->setPrintLevel(print_level);
+  dirk->setOutputFrequency(write_solution);
+  
+  // Set functions of interest for adjoint solve
+  dirk->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
+  dirk->checkGradients(dh);
+  dirk->decref();
+
   mesh->decref();
   gravity->decref();
   v0->decref();

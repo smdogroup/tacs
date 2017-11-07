@@ -6379,14 +6379,22 @@ void MITC9::testStrainSens( double dh ){
   TacsScalar fd[9];
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Ur[i];
+#ifdef TACS_USE_COMPLEX
+    Ur[i] = Ur[i] + TacsScalar(0.0, dh);
+#else
     Ur[i] = Ur[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Ur[i] = tmp;
   }
   writeErrorComponents(stdout, "Urd", Urd, fd, 9);
@@ -6394,14 +6402,22 @@ void MITC9::testStrainSens( double dh ){
   // Compute the derivative w.r.t. drd
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = dr[i];
+#ifdef TACS_USE_COMPLEX
+    dr[i] = dr[i] + TacsScalar(0.0, dh);
+#else
     dr[i] = dr[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     dr[i] = tmp;
   }
   writeErrorComponents(stdout, "drd", drd, fd, 9);
@@ -6409,14 +6425,22 @@ void MITC9::testStrainSens( double dh ){
   // Compute the derivative w.r.t. Xdinv
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Xdinv[i];
+#ifdef TACS_USE_COMPLEX
+    Xdinv[i] = Xdinv[i] + TacsScalar(0.0, dh);
+#else
     Xdinv[i] = Xdinv[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xdinv[i] = tmp;
   }
   writeErrorComponents(stdout, "Xdinvd", Xdinvd, fd, 9);
@@ -6424,14 +6448,22 @@ void MITC9::testStrainSens( double dh ){
   // Compute the derivative w.r.t. zXdinvd
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = zXdinv[i];
+#ifdef TACS_USE_COMPLEX
+    zXdinv[i] = zXdinv[i] + TacsScalar(0.0, dh);
+#else
     zXdinv[i] = zXdinv[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     zXdinv[i] = tmp;
   }
   writeErrorComponents(stdout, "zXdinvd", zXdinvd, fd, 9);
@@ -6439,14 +6471,22 @@ void MITC9::testStrainSens( double dh ){
   // Compute the derivative w.r.t. Td
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = T[i];
+#ifdef TACS_USE_COMPLEX
+    T[i] = T[i] + TacsScalar(0.0, dh);
+#else
     T[i] = T[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     T[i] = tmp;
   }
   writeErrorComponents(stdout, "Td", Td, fd, 9);
@@ -6454,28 +6494,44 @@ void MITC9::testStrainSens( double dh ){
   // Compute the derivative w.r.t. g13/g23
   for ( int i = 0; i < 6; i++ ){
     TacsScalar tmp = g13[i];
+#ifdef TACS_USE_COMPLEX
+    g13[i] = g13[i] + TacsScalar(0.0, dh);
+#else
     g13[i] = g13[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     g13[i] = tmp;
   }
   writeErrorComponents(stdout, "g13d", g13d, fd, 6);
 
   for ( int i = 0; i < 6; i++ ){
     TacsScalar tmp = g23[i];
+#ifdef TACS_USE_COMPLEX
+    g23[i] = g23[i] + TacsScalar(0.0, dh);
+#else
     g23[i] = g23[i] + dh;
+#endif
     evalStrain(e, Ur, dr, Xdinv, zXdinv, T);
     addTyingStrain(e, N13, N23, g13, g23, Xdinv, T);
     fd[i] = 0.0;
     for ( int j = 0; j < 8; j++ ){
       fd[i] += scale*e[j]*eSens[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     g23[i] = tmp;
   }
   writeErrorComponents(stdout, "g23d", g23d, fd, 6);
@@ -6512,28 +6568,44 @@ void MITC9::testTransformSens( double dh ){
   TacsScalar fd[3];
   for ( int i = 0; i < 3; i++ ){
     TacsScalar tmp = Xa[i];
+#ifdef TACS_USE_COMPLEX
+    Xa[i] = Xa[i] + TacsScalar(0.0, dh);
+#else
     Xa[i] = Xa[i] + dh;
+#endif
     TacsScalar T2[9];
     computeTransform(T2, Xa, Xb);
     fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
       fd[i] += T2[j]*Td[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xa[i] = tmp;
   }
   writeErrorComponents(stdout, "Xad", Xad, fd, 3);
 
   for ( int i = 0; i < 3; i++ ){
     TacsScalar tmp = Xb[i];
+#ifdef TACS_USE_COMPLEX
+    Xb[i] = Xb[i] + TacsScalar(0.0, dh);
+#else
     Xb[i] = Xb[i] + dh;
+#endif
     TacsScalar T2[9];
     computeTransform(T2, Xa, Xb);
     fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
       fd[i] += T2[j]*Td[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xb[i] = tmp;
   }
   writeErrorComponents(stdout, "Xbd", Xbd, fd, 3);
@@ -6582,26 +6654,42 @@ void MITC9::testNormalRateSens( double dh ){
   
   for ( int i = 0; i < 9*NUM_NODES; i++ ){
     TacsScalar tmp = Xr[i];
+#ifdef TACS_USE_COMPLEX
+    Xr[i] = tmp + TacsScalar(0.0, dh);
+#else
     Xr[i] = tmp + dh;
+#endif
     computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
     fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
       fd[i] += zXdinvd[j]*zXdinv[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xr[i] = tmp;
   }
   writeErrorComponents(stdout, "Xrd", Xrd, fd, 9*NUM_NODES);
   
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Xdinv[i];
+#ifdef TACS_USE_COMPLEX
+    Xdinv[i] = tmp + TacsScalar(0.0, dh);
+#else
     Xdinv[i] = tmp + dh;
+#endif
     computeNormalRateMat(Na, Nb, Xr, Xdinv, zXdinv);
     fd[i] = 0.0;
     for ( int j = 0; j < 9; j++ ){
       fd[i] += zXdinvd[j]*zXdinv[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xdinv[i] = tmp;
   }
   writeErrorComponents(stdout, "Xdinv", Xdinvd, fd, 9);
@@ -6699,7 +6787,11 @@ void MITC9::testBmatSens( double dh ){
   TacsScalar fd[6*8*NUM_NODES];
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Ur[i];
+#ifdef TACS_USE_COMPLEX
+    Ur[i] = Ur[i] + TacsScalar(0.0, dh);
+#else
     Ur[i] = Ur[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6708,7 +6800,11 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Ur[i] = tmp;
   }
   writeErrorComponents(stdout, "Urd", Urd, fd, 9);
@@ -6716,7 +6812,11 @@ void MITC9::testBmatSens( double dh ){
   // Compute the derivative w.r.t. drd
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = dr[i];
+#ifdef TACS_USE_COMPLEX
+    dr[i] = dr[i] + TacsScalar(0.0, dh);
+#else
     dr[i] = dr[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6725,7 +6825,11 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     dr[i] = tmp;
   }
   writeErrorComponents(stdout, "drd", drd, fd, 9);
@@ -6733,7 +6837,11 @@ void MITC9::testBmatSens( double dh ){
   // Compute the derivative w.r.t. Xdinv
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = Xdinv[i];
+#ifdef TACS_USE_COMPLEX
+    Xdinv[i] = Xdinv[i] + TacsScalar(0.0, dh);
+#else
     Xdinv[i] = Xdinv[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6742,7 +6850,11 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xdinv[i] = tmp;
   }
   writeErrorComponents(stdout, "Xdinvd", Xdinvd, fd, 9);
@@ -6750,7 +6862,11 @@ void MITC9::testBmatSens( double dh ){
   // Compute the derivative w.r.t. zXdinvd
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = zXdinv[i];
+#ifdef TACS_USE_COMPLEX
+    zXdinv[i] = zXdinv[i] + TacsScalar(0.0, dh);
+#else
     zXdinv[i] = zXdinv[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6759,7 +6875,11 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     zXdinv[i] = tmp;
   }
   writeErrorComponents(stdout, "zXdinvd", zXdinvd, fd, 9);
@@ -6767,7 +6887,11 @@ void MITC9::testBmatSens( double dh ){
   // Compute the derivative w.r.t. Td
   for ( int i = 0; i < 9; i++ ){
     TacsScalar tmp = T[i];
+#ifdef TACS_USE_COMPLEX
+    T[i] = T[i] + TacsScalar(0.0, dh);
+#else
     T[i] = T[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6776,7 +6900,11 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     T[i] = tmp;
   }
   writeErrorComponents(stdout, "Td", Td, fd, 9);
@@ -6784,7 +6912,11 @@ void MITC9::testBmatSens( double dh ){
   // Compute the derivative w.r.t. dirdq
   for ( int i = 0; i < 12*NUM_NODES; i++ ){
     TacsScalar tmp = dirdq[i];
+#ifdef TACS_USE_COMPLEX
+    dirdq[i] = dirdq[i] + TacsScalar(0.0, dh);
+#else
     dirdq[i] = dirdq[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6793,14 +6925,22 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     dirdq[i] = tmp;
   }
   writeErrorComponents(stdout, "dirdq", dirdqd, fd, 12*NUM_NODES);
 
   for ( int i = 0; i < 6*8*NUM_NODES; i++ ){
     TacsScalar tmp = B13[i];
+#ifdef TACS_USE_COMPLEX
+    B13[i] = B13[i] + TacsScalar(0.0, dh);
+#else
     B13[i] = B13[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6809,14 +6949,22 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     B13[i] = tmp;
   }
   writeErrorComponents(stdout, "B13", B13d, fd, 6*8*NUM_NODES);
 
   for ( int i = 0; i < 6*8*NUM_NODES; i++ ){
     TacsScalar tmp = B23[i];
+#ifdef TACS_USE_COMPLEX
+    B23[i] = B23[i] + TacsScalar(0.0, dh);
+#else
     B23[i] = B23[i] + dh;
+#endif
     evalBmat(e, B, N, Na, Nb, Ur, dr, Xdinv, zXdinv, T, dirdq);
     addTyingBmat(B, N13, N23, B13, B23, Xdinv, T);
     fd[i] = 0.0;
@@ -6825,7 +6973,11 @@ void MITC9::testBmatSens( double dh ){
         fd[i] += eSens[j]*B[j + 8*k]*psi[k];
       }
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     B23[i] = tmp;
   }
   writeErrorComponents(stdout, "B23", B23d, fd, 6*8*NUM_NODES);
@@ -6895,7 +7047,11 @@ void MITC9::testTyingBmatSens( double dh ){
   TacsScalar fd[12*NUM_NODES];
   for ( int i = 0; i < 3*NUM_NODES; i++ ){
     TacsScalar tmp = X[i];
+#ifdef TACS_USE_COMPLEX
+    X[i] = X[i] + TacsScalar(0.0, dh);
+#else
     X[i] = X[i] + dh;
+#endif
     computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
     fd[i] = 0.0;
     for ( int k = 0; k < 6; k++ ){
@@ -6904,14 +7060,22 @@ void MITC9::testTyingBmatSens( double dh ){
     for ( int k = 0; k < 6*8*NUM_NODES; k++ ){
       fd[i] += B13d[k]*B13[k] + B23d[k]*B23[k];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     X[i] = tmp;
   }
   writeErrorComponents(stdout, "Xd", Xd, fd, 3*NUM_NODES);
 
   for ( int i = 0; i < 9*NUM_NODES; i++ ){
     TacsScalar tmp = Xr[i];
+#ifdef TACS_USE_COMPLEX
+    Xr[i] = Xr[i] + TacsScalar(0.0, dh);
+#else
     Xr[i] = Xr[i] + dh;
+#endif
     computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
     fd[i] = 0.0;
     for ( int k = 0; k < 6; k++ ){
@@ -6920,14 +7084,22 @@ void MITC9::testTyingBmatSens( double dh ){
     for ( int k = 0; k < 6*8*NUM_NODES; k++ ){
       fd[i] += B13d[k]*B13[k] + B23d[k]*B23[k];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xr[i] = tmp;
   }
   writeErrorComponents(stdout, "Xrd", Xrd, fd, 9*NUM_NODES);
 
   for ( int i = 0; i < 3*NUM_NODES; i++ ){
     TacsScalar tmp = dir[i];
+#ifdef TACS_USE_COMPLEX
+    dir[i] = dir[i] + TacsScalar(0.0, dh);
+#else
     dir[i] = dir[i] + dh;
+#endif
     computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
     fd[i] = 0.0;
     for ( int k = 0; k < 6; k++ ){
@@ -6936,14 +7108,22 @@ void MITC9::testTyingBmatSens( double dh ){
     for ( int k = 0; k < 6*8*NUM_NODES; k++ ){
       fd[i] += B13d[k]*B13[k] + B23d[k]*B23[k];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     dir[i] = tmp;
   }
   writeErrorComponents(stdout, "dird", dird, fd, 3*NUM_NODES);
 
   for ( int i = 0; i < 12*NUM_NODES; i++ ){
     TacsScalar tmp = dirdq[i];
+#ifdef TACS_USE_COMPLEX
+    dirdq[i] = dirdq[i] + TacsScalar(0.0, dh);
+#else
     dirdq[i] = dirdq[i] + dh;
+#endif
     computeTyingBmat(g13, g23, B13, B23, X, Xr, vars, dir, dirdq);
     fd[i] = 0.0;
     for ( int k = 0; k < 6; k++ ){
@@ -6952,7 +7132,11 @@ void MITC9::testTyingBmatSens( double dh ){
     for ( int k = 0; k < 6*8*NUM_NODES; k++ ){
       fd[i] += B13d[k]*B13[k] + B23d[k]*B23[k];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     dirdq[i] = tmp;
   }
   writeErrorComponents(stdout, "dirdqd", dirdqd, fd, 12*NUM_NODES);
@@ -7017,26 +7201,42 @@ void MITC9::testBrotSens( double dh ){
   TacsScalar fd[3];
   for ( int i = 0; i < 3; i++ ){
     TacsScalar tmp = Xa[i];
+#ifdef TACS_USE_COMPLEX
+    Xa[i] = Xa[i] + TacsScalar(0.0, dh);
+#else
     Xa[i] = Xa[i] + dh;
+#endif
     rot = computeBRotPenalty(Brot, N, Na, Nb, Xa, Xb, Ua, Ub, vars);
     fd[i] = scale*rot*rotd;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       fd[i] += scale*Brot[k]*psi[k];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xa[i] = tmp;
   }
   writeErrorComponents(stdout, "Xad", Xad, fd, 3);
 
   for ( int i = 0; i < 3; i++ ){
     TacsScalar tmp = Xb[i];
+#ifdef TACS_USE_COMPLEX
+    Xb[i] = Xb[i] + TacsScalar(0.0, dh);
+#else
     Xb[i] = Xb[i] + dh;
+#endif
     rot = computeBRotPenalty(Brot, N, Na, Nb, Xa, Xb, Ua, Ub, vars);
     fd[i] = scale*rot*rotd;
     for ( int k = 0; k < 8*NUM_NODES; k++ ){
       fd[i] += scale*Brot[k]*psi[k];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
+#endif
     Xb[i] = tmp;
   }
   writeErrorComponents(stdout, "Xbd", Xbd, fd, 3);

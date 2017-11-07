@@ -248,14 +248,13 @@ class TACSBDFIntegrator : public TACSIntegrator {
 /*
   DIRK integration scheme for TACS
 */
-/*
 class TACSDIRKIntegrator : public TACSIntegrator {
  public:
-  TACSDIRKIntegrator( TACSAssembler * _tacs, 
+  TACSDIRKIntegrator( TACSAssembler * _tacs,
                       double _tinit,
                       double _tfinal,
                       double _num_steps_per_sec, 
-                      int _order );
+                      int _num_stages );
   ~TACSDIRKIntegrator();
 
   // Iterate through the forward solution
@@ -278,17 +277,49 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   void evalFunctions( TacsScalar *fvals );
 
  private:
-  void setupCoeffs();
-  void checkButcherTableau();
-  int getRowIdx( int stageNum );
+  // Set the default coefficients
+  void setupDefaultCoeffs();
 
-  double    *tS;                    // Time at each stage
-  TACSBVec **qS, **qdotS, **qddotS; // States at each stage
-  int        num_stages, order;     // The order of accuracy of the scheme
-  double    *A, *B, *C;             // Variables for Butcher tableau
-  int        current_stage;         // The current stage during iteration
+  // Set the second-order coefficients based on the first-order values
+  void setupSecondCoeffs();
+
+  // Get the stage coefficient from the Tableau
+  double getACoeff( const int i, const int j );
+
+  // Check the Butcher tableau for consistency
+  void checkButcherTableau();
+
+  // Get the row index for the stage
+  int getRowIndex( int stageNum );
+
+  // Get the linearization coefficients for the given stage/step
+  void getLinearizationCoeffs( const int stage, const double h, 
+                               double *alpha, double *beta, double *gamma );
+
+  // The number of stages for this method
+  int num_stages;
+
+  // States at each stage
+  TACSBVec **qS, **qdotS, **qddotS; 
+
+  // The Butcher coefficients for the integration scheme
+  double *a, *b, *c;
+
+  // The second-order coefficients for the integration scheme
+  double *A, *B;
+
+  // Right-hand-side vector
+  TACSBVec *rhs;
+
+  // Store the adjoint-stage vectors
+  TACSBVec **lambda;
+
+  // Save the stage right-hand-side integrator
+  TACSBVec **omega, **domega;
+
+  // Save the right-hand-side
+  TACSBVec **psi, **phi;
 };
-*/
 
 /*
   Adams-Bashforth-Moulton integration scheme for TACS
