@@ -300,9 +300,9 @@ int main( int argc, char **argv ){
   }
   int num_steps_per_sec = 1000;
 
-  int start_plane = 0;
-  int end_plane = 90;
-  /*
+  int start_plane = 2;
+  int end_plane = 5;
+
   // Check the BDF integrator
   int bdf_order = 3;
   TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, 
@@ -316,9 +316,8 @@ int main( int argc, char **argv ){
   // Set functions of interest for adjoint solve
   bdf->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
   bdf->checkGradients(dh);
-
   bdf->decref();
-  */
+
   // Check the DIRK integrator
   int num_stages = 2;
   TACSIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, 
@@ -332,10 +331,6 @@ int main( int argc, char **argv ){
   
   // Set functions of interest for adjoint solve
   dirk->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
-
-  dirk->integrate();
-  dirk->integrateAdjoint();
-
   dirk->checkGradients(dh);
   dirk->decref();
 

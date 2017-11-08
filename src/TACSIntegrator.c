@@ -2157,8 +2157,10 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
     pc->factor();
 
     // Compute the derivatives and store them
-    tacs->addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, &omega[num_funcs*stage]);
-    tacs->addSVSens(0.0, 1.0, 0.0, funcs, num_funcs, &domega[num_funcs*stage]);
+    if (k > start_plane && k <= end_plane){
+      tacs->addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, &omega[num_funcs*stage]);
+      tacs->addSVSens(0.0, 1.0, 0.0, funcs, num_funcs, &domega[num_funcs*stage]);
+    }
 
     // Compute all the contributions to the right-hand-side
     for ( int i = 0; i < num_funcs; i++ ){
