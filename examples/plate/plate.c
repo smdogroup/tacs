@@ -137,18 +137,20 @@ int main( int argc, char **argv ){
   double ys    = 350e6;   // yield stress, Pa
 
   // Set properties for dynamics
-  TacsScalar g[]          = {0.0, 0.0, -9.81};
-  TacsScalar v_init[]     = {0.0, 0.0, 0.0}; 
-  TacsScalar omega_init[] = {0.0, 0.0, 0.25};
+  TacsScalar g[] = {0.0, 0.0, -9.81};
+  TacsScalar v_init[] = {0.0, 0.0, 0.0}; 
+  TacsScalar omega_init[] = {0.0, 0.0, 0.0};
 
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
 
   TACSGibbsVector *gravity = new TACSGibbsVector(g);  gravity->incref();
-  TACSGibbsVector *v0      = new TACSGibbsVector(v_init); v0->incref();
+  TACSGibbsVector *v0 = new TACSGibbsVector(v_init); v0->incref();
   TACSGibbsVector *omega0  = new TACSGibbsVector(omega_init); omega0->incref();
 
+  // Variables per node
   int vars_per_node = 0;
+
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ) {
     const char *descriptor    = mesh->getElementDescript(i);
@@ -161,8 +163,8 @@ int main( int argc, char **argv ){
                              min_thickness, max_thickness); 
     stiff->incref();
 
-    // TacsScalar axis[] = {1.0, 0.0, 0.0};
-    // stiff->setRefAxis(axis);
+    TacsScalar axis[] = {1.0, 0.0, 0.0};
+    stiff->setRefAxis(axis);
     
     // Initialize element object
     TACSElement *element = NULL;
@@ -171,10 +173,7 @@ int main( int argc, char **argv ){
     // defined in the descriptor
     if (strcmp(descriptor, "CQUAD9") == 0 ||
         strcmp(descriptor, "CQUAD") == 0 ){
-      MITC9 *mitc9 = new MITC9(stiff, gravity, v0, omega0);
-      mitc9->testXptSens(1e-30);
-      
-      element = mitc9;
+      element = new MITC9(stiff, gravity, v0, omega0);
       element->incref();
 
       // Set the number of displacements
@@ -303,7 +302,7 @@ int main( int argc, char **argv ){
 
   int start_plane = 0;
   int end_plane = 90;
-
+  /*
   // Check the BDF integrator
   int bdf_order = 3;
   TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, 
@@ -318,23 +317,25 @@ int main( int argc, char **argv ){
   bdf->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
   bdf->checkGradients(dh);
 
-  bdf->integrate();
-  tacs->testElement(0, 2, 1e-30);
   bdf->decref();
-
+  */
   // Check the DIRK integrator
-  int num_stages = 1;
+  int num_stages = 2;
   TACSIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, 
                                                 num_steps_per_sec, 
                                                 num_stages);
   dirk->incref();
-  
+
   // Set options
   dirk->setPrintLevel(print_level);
   dirk->setOutputFrequency(write_solution);
   
   // Set functions of interest for adjoint solve
   dirk->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
+
+  dirk->integrate();
+  dirk->integrateAdjoint();
+
   dirk->checkGradients(dh);
   dirk->decref();
 
