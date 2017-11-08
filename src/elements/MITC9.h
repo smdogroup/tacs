@@ -372,9 +372,11 @@ class MITC9 : public TACSElement {
   void testStrainSens( double dh );
   void testTransformSens( double dh );
   void testNormalRateSens( double dh );
+  void testTyingStrainSens( double dh );
   void testBmatSens( double dh );
   void testTyingBmatSens( double dh );
   void testBrotSens( double dh );
+  void testFrameSens( double dh );
 
   // Compute the product of the stress and the strain
   inline TacsScalar strainProduct( const TacsScalar s[], 

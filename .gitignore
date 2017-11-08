@@ -36,3 +36,4 @@ extern/
 *.snm
 *.toc
 tacs/*.cpp
+*.pxi

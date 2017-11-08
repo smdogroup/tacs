@@ -151,15 +151,18 @@ int main( int argc, char **argv ){
   int vars_per_node = 0;
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ) {
-    const char       *descriptor    = mesh->getElementDescript(i);
-    double            min_thickness = 5.0e-3;
-    double            max_thickness = 2.0e-2;
-    double            thickness     = 5.0e-3;
+    const char *descriptor    = mesh->getElementDescript(i);
+    double min_thickness = 5.0e-3;
+    double max_thickness = 2.0e-2;
+    double thickness = 5.0e-3;
     isoFSDTStiffness *stiff 
       = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
                              thickness, i, 
                              min_thickness, max_thickness); 
     stiff->incref();
+
+    // TacsScalar axis[] = {1.0, 0.0, 0.0};
+    // stiff->setRefAxis(axis);
     
     // Initialize element object
     TACSElement *element = NULL;

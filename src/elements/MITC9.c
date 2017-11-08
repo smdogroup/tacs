@@ -2284,7 +2284,7 @@ void MITC9::addFramesSens( TacsScalar Xd[],
 
       // Add the derivative contribution to nd and Xbd
       crossProductAdd(1.0, Xb, nd, Xad);
-      crossProduct(1.0, nd, Xa, Xbd);
+      crossProductAdd(1.0, nd, Xa, Xbd);
 
       // Add the contributions to the derivative
       for ( int k = 0; k < NUM_NODES; k++ ){
@@ -5877,9 +5877,9 @@ void MITC9::addStrainXptSens( TacsScalar eXpt[],
   TacsScalar Urd[9], drd[9], Xdinvd[9], zXdinvd[9], Td[9];
   evalStrainSens(Urd, drd, Xdinvd, zXdinvd, Td,
                  scale, eSens, Ur, dr, Xdinv, zXdinv, T);
-  
+
   // Add the contribution from the tying strain
-  TacsScalar g13d[8], g23d[8];
+  TacsScalar g13d[6], g23d[6];
   memset(g13d, 0, 6*sizeof(TacsScalar));
   memset(g23d, 0, 6*sizeof(TacsScalar));
   addTyingStrainSens(g13d, g23d, Xdinvd, Td,
@@ -5900,8 +5900,8 @@ void MITC9::addStrainXptSens( TacsScalar eXpt[],
   // Compute the derivatives Xrd
   TacsScalar Xrd[9*NUM_NODES];
   memset(Xrd, 0, 9*NUM_NODES*sizeof(TacsScalar));
-  addNormalRateMatSens(Xrd, Xdinvd, zXdinvd,
-                       Na, Nb, Xr, Xdinv);
+  addNormalRateMatSens(Xrd, Xdinvd, 
+                       zXdinvd, Na, Nb, Xr, Xdinv);
 
   // Compute the inverse of the transformation matrix
   TacsScalar Xdd[9];
@@ -5914,7 +5914,7 @@ void MITC9::addStrainXptSens( TacsScalar eXpt[],
   // Add the contributions to Xad and Xbd
   Xad[0] += Xdd[0];  Xad[1] += Xdd[3];  Xad[2] += Xdd[6];
   Xbd[0] += Xdd[1];  Xbd[1] += Xdd[4];  Xbd[2] += Xdd[7];
-  
+
   // // Compute the frame normal
   addFrameNormalSens(fnd, N, Xrd);
 
@@ -6248,8 +6248,7 @@ void MITC9::testStrain( const TacsScalar X[] ){
     // Write out the error components
     char descript[64];
     sprintf(descript, "B%d", k);
-    writeErrorComponents(stdout, descript,
-                         &B[8*k], fd, 8);
+    writeErrorComponents(stdout, descript, &B[8*k], fd, 8);
   }
 }
 
@@ -6262,9 +6261,11 @@ void MITC9::testXptSens( double dh ){
   testStrainSens(dh);
   testTransformSens(dh);
   testNormalRateSens(dh);
+  testTyingStrainSens(dh);
   testBmatSens(dh);
   testTyingBmatSens(dh);
   testBrotSens(dh);
+  testFrameSens(dh);
 }
 
 /*
@@ -6296,7 +6297,11 @@ void MITC9::testInv3x3Sens( double dh ){
     TacsScalar At = A[i];
 
     // Compute the finite-difference value
+#ifdef TACS_USE_COMPLEX
+    A[i] = A[i] + TacsScalar(0.0, dh);
+#else
     A[i] = At + dh;
+#endif
     inv3x3(A, Ainv);
 
     // Compute the function and the finite-difference result
@@ -6304,8 +6309,11 @@ void MITC9::testInv3x3Sens( double dh ){
     for ( int j = 0; j < 9; j++ ){
       fd[i] += Ainv[j]*Ainvd[j];
     }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
     fd[i] = (fd[i] - fval)/dh;
-
+#endif
     // Reset the value of A
     A[i] = At;
   }
@@ -6609,6 +6617,124 @@ void MITC9::testTransformSens( double dh ){
     Xb[i] = tmp;
   }
   writeErrorComponents(stdout, "Xbd", Xbd, fd, 3);
+}
+
+/*
+  Test the sensitivity of the tying strain
+*/
+void MITC9::testTyingStrainSens( double dh ){
+  // Set random points/variables for testing
+  TacsScalar X[3*NUM_NODES];
+  TacsScalar vars[8*NUM_NODES];
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
+    X[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // Set the derivatives
+  TacsScalar g13d[6], g23d[6];
+  for ( int i = 0; i < 6; i++ ){
+    g13d[i] = -1.0 + 2.0*rand()/RAND_MAX;
+    g23d[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the directors at the nodes
+  TacsScalar dir[3*NUM_NODES];
+  computeDirectors(dir, vars, Xr);
+
+  // Compute the tensorial shear strain at the tying points
+  TacsScalar g13[6], g23[6];
+  computeTyingStrain(g13, g23, X, Xr, vars, dir);
+
+  TacsScalar fval = 0.0;
+  for ( int i = 0; i < 6; i++ ){
+    fval += g13[i]*g13d[i] + g23[i]*g23d[i];
+  }
+
+  // The output from the computations
+  TacsScalar dird[3*NUM_NODES];
+  TacsScalar Xrd[9*NUM_NODES];
+  TacsScalar Xd[3*NUM_NODES];
+  memset(dird, 0, 3*NUM_NODES*sizeof(TacsScalar));
+  memset(Xrd, 0, 9*NUM_NODES*sizeof(TacsScalar));
+  memset(Xd, 0, 3*NUM_NODES*sizeof(TacsScalar));
+
+  // input: g13d, g23d, 
+  addComputeTyingStrainSens(Xd, Xrd, dird, 
+                            g13d, g23d, X, Xr, vars, dir);
+
+  // Compute the derivative w.r.t. Ur
+  TacsScalar fd[9*NUM_NODES];
+  for ( int i = 0; i < 9*NUM_NODES; i++ ){
+    TacsScalar tmp = Xr[i];
+#ifdef TACS_USE_COMPLEX
+    Xr[i] = Xr[i] + TacsScalar(0.0, dh);
+#else
+    Xr[i] = Xr[i] + dh;
+#endif
+    computeTyingStrain(g13, g23, X, Xr, vars, dir);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 6; j++ ){
+      fd[i] += g13[j]*g13d[j] + g23[j]*g23d[j];
+    }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
+    fd[i] = (fd[i] - fval)/dh;
+#endif
+    Xr[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xrd", Xrd, fd, 9*NUM_NODES);
+
+  // Compute the derivative w.r.t. drd
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
+    TacsScalar tmp = dir[i];
+#ifdef TACS_USE_COMPLEX
+    dir[i] = dir[i] + TacsScalar(0.0, dh);
+#else
+    dir[i] = dir[i] + dh;
+#endif
+    computeTyingStrain(g13, g23, X, Xr, vars, dir);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 6; j++ ){
+      fd[i] += g13[j]*g13d[j] + g23[j]*g23d[j];
+    }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
+    fd[i] = (fd[i] - fval)/dh;
+#endif
+    dir[i] = tmp;
+  }
+  writeErrorComponents(stdout, "dird", dird, fd, 3*NUM_NODES);
+
+  // Compute the derivative w.r.t. Xdinv
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
+    TacsScalar tmp = X[i];
+#ifdef TACS_USE_COMPLEX
+    X[i] = X[i] + TacsScalar(0.0, dh);
+#else
+    X[i] = X[i] + dh;
+#endif
+    computeTyingStrain(g13, g23, X, Xr, vars, dir);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 6; j++ ){
+      fd[i] += g13[j]*g13d[j] + g23[j]*g23d[j];
+    }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
+    fd[i] = (fd[i] - fval)/dh;
+#endif
+    X[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xd", Xd, fd, 3*NUM_NODES);
 }
 
 /*
@@ -7240,4 +7366,54 @@ void MITC9::testBrotSens( double dh ){
     Xb[i] = tmp;
   }
   writeErrorComponents(stdout, "Xbd", Xbd, fd, 3);
+}
+
+/*
+  Test the sensitivity of the frame assembly code
+*/
+void MITC9::testFrameSens( double dh ){
+  TacsScalar X[3*NUM_NODES], Xrd[9*NUM_NODES];
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
+    X[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+  for ( int i = 0; i < 9*NUM_NODES; i++ ){
+    Xrd[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  }
+
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  TacsScalar fval = 0.0;
+  for ( int j = 0; j < 9*NUM_NODES; j++ ){
+    fval += Xr[j]*Xrd[j];
+  }
+
+  TacsScalar Xd[3*NUM_NODES];
+  memset(Xd, 0, 3*NUM_NODES*sizeof(TacsScalar));
+  addFramesSens(Xd, Xrd, X);
+  
+  // Compute the derivative of a function of zXdinvd
+  // w.r.t. the components of Xr
+  TacsScalar fd[3*NUM_NODES];
+  
+  for ( int i = 0; i < 3*NUM_NODES; i++ ){
+    TacsScalar tmp = X[i];
+#ifdef TACS_USE_COMPLEX
+    X[i] = tmp + TacsScalar(0.0, dh);
+#else
+    X[i] = tmp + dh;
+#endif
+    computeFrames(Xr, X);
+    fd[i] = 0.0;
+    for ( int j = 0; j < 9*NUM_NODES; j++ ){
+      fd[i] += Xr[j]*Xrd[j];
+    }
+#ifdef TACS_USE_COMPLEX
+    fd[i] = TacsImagPart(fd[i])/dh;
+#else
+    fd[i] = (fd[i] - fval)/dh;
+#endif
+    X[i] = tmp;
+  }
+  writeErrorComponents(stdout, "Xd", Xd, fd, 3*NUM_NODES);
 }

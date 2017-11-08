@@ -883,7 +883,6 @@ int TACSElement::testStrainSVSens( const TacsScalar Xpts[],
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
 
-
 /*
   Test the derivative of the strain with respect to the state
   variables
@@ -947,7 +946,7 @@ int TACSElement::testStrainXptSens( const TacsScalar Xpts[],
     // Form the approximation
     form_approximate(&p1, &p2, 1, dh);
 
-    // Set the
+    // Set the value
     fd[k] = p1;
   }
 
