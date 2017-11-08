@@ -285,6 +285,7 @@ void TACSIntegrator::setFunctions( TACSFunction **_funcs, int _num_funcs,
   dfdXpt = new TACSBVec*[ num_funcs ];
   for ( int i = 0; i < num_funcs; i++ ){
     dfdXpt[i] = tacs->createNodeVec();
+    dfdXpt[i]->incref();
   }
 }
 
