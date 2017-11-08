@@ -5,7 +5,7 @@
 # only if you're going to use the python interface.
 
 # the full path to the root TACS directory
-TACS_DIR = ${HOME}/hg/tacs
+TACS_DIR = ${HOME}/git/tacs
 CXX = mpicxx
 RM = rm -f
 
