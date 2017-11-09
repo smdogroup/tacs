@@ -1117,6 +1117,10 @@ TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs,
                                       double _num_steps_per_sec, 
                                       int _max_bdf_order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
+  if (mpiRank == 0){ 
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s order %d\n", mpiRank, "BDF", _max_bdf_order);
+  }
+
   // copy over the variables
   max_bdf_order = _max_bdf_order;
 
@@ -1632,6 +1636,9 @@ TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs,
                                         double _num_steps_per_sec,
                                         int _num_stages ):
 TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){
+  if (mpiRank == 0){ 
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s stages %d\n", mpiRank, "DIRK", _num_stages);
+  }
   // Set the number of stages
   num_stages = _num_stages;
  

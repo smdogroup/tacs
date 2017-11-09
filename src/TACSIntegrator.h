@@ -160,9 +160,12 @@ class TACSIntegrator : public TACSObject {
   TACSPc *pc;                 // Preconditioner
   TACSKsm *ksm;               // KSM solver
 
+  int mpiRank;              // rank of the processor
+  int mpiSize;              // number of processors
+  FILE *logfp;                // Pointer to the output filename
+
  private:
   char prefix[256];           // Output prefix
-  FILE *logfp;                // Pointer to the output filename
 
   // Newton solver parameters
   int max_newton_iters;     // The max number of nonlinear iterations
@@ -196,8 +199,6 @@ class TACSIntegrator : public TACSObject {
   TacsScalar update_norm;   // Norm of the update                            
  
   TacsScalar init_energy;   // The energy during time = 0
-  int mpiRank;              // rank of the processor
-  int mpiSize;              // number of processors
 };
 
 /*
