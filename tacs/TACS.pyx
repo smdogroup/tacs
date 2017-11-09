@@ -1710,9 +1710,9 @@ cdef class DIRKIntegrator(Integrator):
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
                   int num_steps_per_sec,
-                  int order):
-        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
-                                          num_steps_per_sec, order)
+                  int stages):
+        self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
+                                          num_steps_per_sec, stages)
         self.ptr.incref()
         return
 
