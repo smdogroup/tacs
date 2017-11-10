@@ -967,7 +967,6 @@ void TACSPanelAnalysis::addFailureDVSens( const TacsScalar strain[],
       e[3] = strain[3]*c;
       e[4] = e[5] = e[6] = e[7] = 0.0;
       
-      TacsScalar sfail = 0.0;
       panels[seg]->addFailureDVSens(pt, e, weights[k],
                                     fdvSens, dvLen);
     }
@@ -1601,6 +1600,8 @@ did not converge to zero\n", vinfo);
     fprintf(stderr, "TACSPanelAnalysis: Error, eigenvalue solve failure\n");
     return -1;
   }
+
+  return 0;
 }
 
 /*
@@ -3194,9 +3195,9 @@ void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
 
         // Add values to the matrix
         addSensMatValues(smat, Z, ldz, nz, 
-                         4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, Ms);
+                         4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, Ms);
         addSensMatValuesTranspose(smat, Z, ldz, nz, 
-                                  4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, Ms);
+                                  4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, Ms);
       }
     }
   }

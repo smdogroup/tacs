@@ -647,7 +647,7 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
     schur_dist->endReverse(schur_ctx, yinterface, 
                            y, TACS_INSERT_VALUES);
     
-    TacsScalar *g;
+    TacsScalar *g = NULL;
     yschur->getArray(&y);
     pdmat->mult(y_size, y, g);
     
@@ -876,7 +876,7 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     outvec->getArray(&out);
     
     // Pass g to the global Schur complement
-    TacsScalar *g;
+    TacsScalar *g = NULL;
     int gschur_size = gschur->getArray(&g);
     tacs_schur_dist->beginForward(tacs_schur_ctx, in, g);
 
@@ -893,7 +893,7 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     // Transmit yinterface to the Schur complement system
     // Pass F U^{-1} L^{-1} f to yschur
     yschur->zeroEntries();
-    TacsScalar *y;
+    TacsScalar *y = NULL;
     yschur->getArray(&y);
     schur_dist->beginReverse(schur_ctx, yinterface, y, TACS_ADD_VALUES);
 

@@ -614,7 +614,7 @@ TacsScalar compute_transform_sens( TacsScalar dh[],
         drn[1] = 0.0;
         drn[2] = Xd[0]*Nb[k] - Na[k]*Xd[3];
       }
-      else if (kk == 2){
+      else {
         drn[0] = Xd[1]*Nb[k] - Na[k]*Xd[4];
         drn[1] = Na[k]*Xd[3] - Xd[0]*Nb[k];
         drn[2] = 0.0;
@@ -637,7 +637,7 @@ TacsScalar compute_transform_sens( TacsScalar dh[],
         drn_xi[1] = 0.0;
         drn_xi[2] = Xd[0]*Nab[k] + Xdd[0]*Nb[k] - Na[k]*Xdd[3] - Naa[k]*Xd[3];
       }
-      else if (kk == 2){
+      else {
         drn_xi[0] = Xd[1]*Nab[k] + Xdd[1]*Nb[k] - Na[k]*Xdd[4] - Naa[k]*Xd[4];
         drn_xi[1] = Na[k]*Xdd[3] + Naa[k]*Xd[3] - Xd[0]*Nab[k] - Xdd[0]*Nb[k];
         drn_xi[2] = 0.0;
@@ -661,7 +661,7 @@ TacsScalar compute_transform_sens( TacsScalar dh[],
         drn_eta[1] = 0.0;
         drn_eta[2] = Xd[0]*Nbb[k] + Xdd[3]*Nb[k] - Na[k]*Xdd[6] - Nab[k]*Xd[3];
       }
-      else if (kk == 2){
+      else {
         drn_eta[0] = Xd[1]*Nbb[k] + Xdd[4]*Nb[k] - Na[k]*Xdd[7] - Nab[k]*Xd[4];
         drn_eta[1] = Na[k]*Xdd[6] + Nab[k]*Xd[3] - Xd[0]*Nbb[k] - Xdd[3]*Nb[k];
         drn_eta[2] = 0.0;
@@ -1169,7 +1169,7 @@ static inline void normal_rot_bmat( TacsScalar r[], TacsScalar r_xi[],
     r_eta[1] = 0.0;
     r_eta[2] = - N*n_eta[0] - Nb*n[0];
   }
-  else if (ii == 5){    
+  else {
     r[0] = - N*n[1];
     r[1] = N*n[0];
     r[2] = 0.0;

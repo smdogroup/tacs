@@ -239,45 +239,6 @@ void amd_remove_variable( int var, int * elen, int * alen,
 }
 
 /*
-  Update the hash table for the variables in the list.
-
-  The hash table is based on the sum of the element and variable
-  values mod nvars-1, where nvars is the order of the matrix.  This
-  updates only the variables in the list and attempts to avoid over
-  flow by computing the sum % (nvars-1) in stages.  
-
-  Input:
-  hash: The array of hash values for each variable in the list
-  
-  var_list, nlist: The variables to be updated
-  
-  elen, alen: The length of the element and variable lists
-  
-  rowp, cols, nvars: The data structure of the quotient graph
-*/
-static void amd_update_hash( int * hash, 
-			     const int * var_list, int nlist, 
-			     const int * alen, const int * rowp, 
-			     const int * cols,
-			     const int nvars ){
-  for ( int i = 0; i < nlist; i++ ){
-    int var = var_list[i];
-    int h = var; // The hash value to be constructed
-
-    for ( int j = rowp[var]; j < rowp[var] + alen[var]; j++ ){
-      h += cols[j]+1;
-      if (h >= (nvars-1)){
-	// If adding the value caused h to exceed (nvars-1), 
-	// subtract (nvars-1)
-	h -= (nvars-1);
-      }
-    }
-
-    hash[var] = h+1;
-  }
-}
-
-/*
   The following function performs an approximate minimum degree
   reordering of the input matrix.  This code follows the description
   of (Amestoy, Davis and Duff, An Approximate Minimum Degree

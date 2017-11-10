@@ -64,17 +64,6 @@
 */
 
 /*
-  Extend an integer array 
-*/
-static void extend_int_array( int ** array, int old_len, 
-                              int new_len ){
-  int * temp = new int[ new_len ];
-  memcpy(temp, *array, sizeof(int)*old_len);
-  delete [] *array;
-  *array = temp;
-}
-
-/*
   Functions for sorting a list such that:
 
   arg_sort_list[list[i]] is in ascending order
