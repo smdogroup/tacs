@@ -94,6 +94,7 @@ class TACSAssembler : public TACSObject {
   // ---------------------------------------
   void getReordering( int *oldToNew );
   void reorderVec( TACSBVec *vec );
+  void reorderNodes( int *nodes, int num_nodes );
 
   // Return important information about the TACSAssembler object
   // -----------------------------------------------------------

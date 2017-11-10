@@ -1288,13 +1288,26 @@ cdef class Creator:
     def createTACS(self):
         return _init_Assembler(self.ptr.createTACS())
     
-    def getNewNodeNums(self):
-        cdef const int *new_nodes = NULL
-        cdef int num_nodes = 0
-        num_nodes = self.ptr.getNodeNums(&new_nodes)
-        array = np.zeros(num_nodes, dtype=np.intc)
-        for i in range(num_nodes):
+    def getTacsNodeNums(self, Assembler assembler,
+                        np.ndarray[int, ndim=1, mode='c'] nodes=None):
+        cdef int num_orig_nodes = 0
+        cdef int *orig_nodes = NULL
+        cdef int *new_nodes = NULL
+        cdef int num_new_nodes = 0
+        
+        # If the array of nodes exists, set the correct pointers/shapes
+        if nodes is not None:
+            num_orig_nodes = nodes.shape[0]
+            orig_nodes = <int*>nodes.data
+        self.ptr.getTacsNodeNums(assembler.ptr, orig_nodes, num_orig_nodes,
+                                 &new_nodes, &num_new_nodes)
+
+        cdef np.ndarray array = np.zeros(num_new_nodes, dtype=np.int)
+        for i in range(num_new_nodes):
             array[i] = new_nodes[i]
+
+        # Free the array from C++
+        deleteArray(new_nodes)
         return array
      
 # Wrap the TACSMeshLoader class
