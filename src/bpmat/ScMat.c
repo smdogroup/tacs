@@ -320,8 +320,8 @@ void ScMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   output:
   B, E, F, C: the matrices in the ScMat class
 */
-void ScMat::getBCSRMat( BCSRMat ** _B, BCSRMat ** _E,
-                        BCSRMat ** _F, BCSRMat ** _C ){
+void ScMat::getBCSRMat( BCSRMat **_B, BCSRMat **_E,
+                        BCSRMat **_F, BCSRMat **_C ){
   if (_B){ *_B = B; }
   if (_E){ *_E = E; }
   if (_F){ *_F = F; }
@@ -674,6 +674,20 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
   else {
     fprintf(stderr, "PcScMat type error: Input/output must be TACSBVec\n");
   }
+}
+
+/*
+  Retrieve the underlying matrices 
+
+  output:
+  B, E, F, C: the matrices in the ScMat class
+*/
+void PcScMat::getBCSRMat( BCSRMat **_Bpc, BCSRMat **_Epc,
+                          BCSRMat **_Fpc, BCSRMat **_Sc ){
+  if (_Bpc){ *_Bpc = Bpc; }
+  if (_Epc){ *_Epc = Epc; }
+  if (_Fpc){ *_Fpc = Fpc; }
+  if (_Sc){ *_Sc = Sc; }
 }
 
 /*

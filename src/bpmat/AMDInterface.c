@@ -361,6 +361,14 @@ void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
         vars_to_dep_ptr[index]++;
       }
     }
+
+    // Reset the vars_to_dep_ptr array
+    int offset = 0; 
+    for ( int i = 0; i <= nvars; i++ ){
+      int tmp = vars_to_dep_ptr[i];
+      vars_to_dep_ptr[i] = offset;
+      offset = tmp;
+    } 
   }
 
   for ( int i = 0; i < nvars; i++ ){
@@ -418,11 +426,17 @@ initial data structure\n");
         }
       }
 
+      if (piv < 0){
+        fprintf(stderr, 
+                "amd_order_interface: Negative pivot encountered at %d\n", i);
+        fflush(stderr);
+      }
+
       perm[nsvars] = piv;
       state[piv] = 0; // Eliminated variable
 
       // Update the counts
-      for ( int j = vars_to_dep_ptr[piv]; j < vars_to_dep_ptr[piv]; j++ ){
+      for ( int j = vars_to_dep_ptr[piv]; j < vars_to_dep_ptr[piv+1]; j++ ){
         dep_count[vars_to_dep[j]]--;
       }
     }
@@ -463,7 +477,7 @@ initial data structure\n");
     }
 
     // Add the non-zero pattern to Lp
-    // First put the contributions from the elements
+    // First add the contributions from the elements
     for ( int j = rowp[piv]; j < rowp[piv] + elen[piv]; j++ ){
       int e = cols[j];
       for ( int k = rowp[e] + elen[e]; k < rowp[e] + alen[e]; k++ ){
@@ -696,15 +710,13 @@ variables, not element %d\n", piv, cols[j]);
         int start = rowp[lj] + elen[lj];
         int len = alen[lj] - elen[lj];
         if (len > 0){
-          if (bsearch(&lj, &cols[start], len, 
-                      sizeof(int), compare_ints)){
+          if (bsearch(&lj, &cols[start], len, sizeof(int), compare_ints)){
             deg_estimate -= slen[lj];
           }
         }
 
         // If lj is in Lp U piv
-        if (bsearch(&lj, Lp, lenlp, 
-                    sizeof(int), compare_ints)){
+        if (bsearch(&lj, Lp, lenlp, sizeof(int), compare_ints)){
           deg_estimate -= slen[lj];
         }
         
@@ -768,6 +780,13 @@ variables, not element %d\n", piv, cols[j]);
 
           // Quick check to see if the nodes are the same
           if (amd_compare_variables(lj, lk, elen, alen, rowp, cols)){
+            // Update the dependent node counts
+            if (dep_count && slen[lk] == 1){
+              for ( int p = vars_to_dep_ptr[lk]; p < vars_to_dep_ptr[lk+1]; p++ ){
+                dep_count[vars_to_dep[p]]--;
+              }
+            }
+
             // Merge lk into lj
             slen[lj] += slen[lk];
             degree[lj] -= slen[lk];
@@ -807,6 +826,13 @@ variables, not element %d\n", piv, cols[j]);
 
           // Quick check to see if the nodes are the same
           if (amd_compare_variables(lj, lk, elen, alen, rowp, cols)){
+            // Update the dependent node counts
+            if (dep_count && slen[lk] == 1){
+              for ( int p = vars_to_dep_ptr[lk]; p < vars_to_dep_ptr[lk+1]; p++ ){
+                dep_count[vars_to_dep[p]]--;
+              }
+            }
+
             // Merge lk into lj
             slen[lj] += slen[lk];
             degree[lj] -= slen[lk];

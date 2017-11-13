@@ -63,8 +63,9 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
   numElements = _numElements;
   numOwnedNodes = _numOwnedNodes;
   numDependentNodes = _numDependentNodes;
-
+  
   // These values will be computed later
+  numMultiplierNodes = 0;
   numExtNodes = 0;
   numNodes = 0;
   extNodeOffset = 0;
@@ -210,7 +211,7 @@ TACSAssembler::~TACSAssembler(){
   thread_info->decref();
 }
 
-const char * TACSAssembler::tacsName = "TACSAssembler";
+const char *TACSAssembler::tacsName = "TACSAssembler";
 
 /*
   Return the MPI communicator for the TACSAssembler object
@@ -471,6 +472,9 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     }
   }
 
+  // Keep track of the number of multiplier nodes
+  numMultiplierNodes = 0;
+
   // Determine the maximum number of nodes per element
   maxElementStrain = 0;
   maxElementSize = 0;
@@ -500,6 +504,13 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     elemSize = _elements[i]->numStresses();
     if (elemSize >= maxElementStrain){
       maxElementStrain = elemSize;
+    }
+
+    // Count up the multiplier nodes
+    int multiplier;
+    elements[i]->getMultiplierIndex(&multiplier);
+    if (multiplier > 0){
+      numMultiplierNodes++;
     }
   }
 
@@ -1160,8 +1171,8 @@ void TACSAssembler::computeReordering( OrderingType order_type,
 void TACSAssembler::computeMatReordering( OrderingType order_type, 
                                           int nvars, int *rowp, int *cols,
                                           int *perm, int *new_vars ){
-  int * _perm = perm;
-  int * _new_vars = new_vars;
+  int *_perm = perm;
+  int *_new_vars = new_vars;
   if (!perm){ _perm = new int[ nvars ]; }
   if (!new_vars){ _new_vars = new int[ nvars ]; }
   
@@ -1205,7 +1216,7 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
   else if (order_type == TACS_AMD_ORDER){
     int use_exact_degree = 0;
     int ncoupling_nodes = 0;
-    int * coupling_nodes = NULL;
+    int *coupling_nodes = NULL;
     amd_order_interface(nvars, rowp, cols, _perm, 
                         coupling_nodes, ncoupling_nodes,
                         0, NULL, NULL, NULL,
@@ -1456,8 +1467,7 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
   nodeElementPtr[0] = 0;
 
   // Sort and unquify the CSR data structure
-  matutils::SortAndUniquifyCSR(numNodes, nodeElementPtr, 
-                               nodeToElements, 0);
+  matutils::SortAndUniquifyCSR(numNodes, nodeElementPtr, nodeToElements);
 
   // Set the output pointers
   *_nodeToElements = nodeToElements;
@@ -1900,8 +1910,8 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   FElibrary::matchIntervals(mpiSize, ownerRange, 
                             numExtNodes, extNodes, extPtr);
 
-  // Send the nodes owned by other processors the information
-  // First count up how many will go to each process
+  // Send the nodes owned by other processors the information. First
+  // count up how many will go to each process.
   for ( int i = 0; i < mpiSize; i++ ){
     extCount[i] = extPtr[i+1] - extPtr[i];
     if (i == mpiRank){ extCount[i] = 0; }
@@ -1911,7 +1921,7 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   int *recvPtr = new int[ mpiSize+1 ];
   MPI_Alltoall(extCount, 1, MPI_INT, recvCount, 1, MPI_INT, tacs_comm);
 
-  // Now, send the node numbers to the other processors
+  // Now prepare to send the node numbers to the other processors
   recvPtr[0] = 0;
   for ( int i = 0; i < mpiSize; i++ ){
     recvPtr[i+1] = recvPtr[i] + recvCount[i];
@@ -1933,11 +1943,61 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   }
 
   // Uniquely sort the recieved nodes
-  int nextern_unique = 
+  int nrecv_unique = 
     FElibrary::uniqueSort(recvNodesSorted, recvPtr[mpiSize]);
 
+  // Count up the number of multiplier nodes (if any). These are not
+  // all of the locally owned multipliers, only those that refer to
+  // external node numbers on other processors.
+  int num_multipliers = 0;
+  int *multipliers = new int[ numMultiplierNodes ];
+  
+  // Add in the multiplier values
+  for ( int i = 0; i < numElements; i++ ){
+    // Get the multiplier index
+    int multiplier;
+    elements[i]->getMultiplierIndex(&multiplier);
+    if (multiplier >= 0){
+      // Get the local multiplier index
+      int elem_ptr = elementNodeIndex[i];
+
+      // Check if the multiplier is locally owned. If it is not, it is
+      // already in the external nodes anyway.
+      int mult_node = elementTacsNodes[elem_ptr + multiplier];
+      if (mult_node >= ownerRange[mpiRank] &&
+          mult_node < ownerRange[mpiRank+1]){
+        
+        // Get the element size
+        int size = elementNodeIndex[i+1] - elem_ptr;
+
+        // Check if any of the nodes are actually external
+        for ( int j = 0; j < size; j++ ){
+          int node = elementTacsNodes[elem_ptr + j];
+
+          // Add the multiplier node if it's an external node or or it
+          // is one of the nodes referred to on other procs.
+          if (node < ownerRange[mpiRank] ||
+              node >= ownerRange[mpiRank+1]){
+            multipliers[num_multipliers] = mult_node;
+            num_multipliers++;
+            break;
+          }
+          else if (bsearch(&node, recvNodesSorted, nrecv_unique,
+                           sizeof(int), FElibrary::comparator)){
+            multipliers[num_multipliers] = mult_node;
+            num_multipliers++;
+            break;            
+          }
+        }
+      }
+    }
+  }
+
+  // Uniquely sort the number of multiplier nodes
+  num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+
   // Count up the number of coupling nodes
-  int numCouplingNodes = nextern_unique + numExtNodes;
+  int numCouplingNodes = nrecv_unique + numExtNodes + num_multipliers;
   if (_couplingNodes){
     int *couplingNodes = new int[ numCouplingNodes ];
 
@@ -1948,17 +2008,40 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
     }
     
     // Add the coupling nodes received from other processors
-    for ( int i = 0; i < nextern_unique; i++, index++ ){
-      couplingNodes[index] = getLocalNodeNum(recvNodesSorted[i]);
+    if (num_multipliers > 0){
+      for ( int i = 0, j = 0; (i < nrecv_unique || j < num_multipliers); index++ ){
+        if (i < nrecv_unique && j < num_multipliers){
+          if (recvNodesSorted[i] < multipliers[j]){
+            couplingNodes[index] = getLocalNodeNum(recvNodesSorted[i]);  i++;
+          }
+          else {
+            couplingNodes[index] = getLocalNodeNum(multipliers[j]);  j++;
+          }
+        }
+        else if (i < nrecv_unique){
+          couplingNodes[index] = getLocalNodeNum(recvNodesSorted[i]);  i++;
+        }
+        else if (j < num_multipliers){
+          couplingNodes[index] = getLocalNodeNum(multipliers[j]);  j++;
+        }
+      }
+    }
+    else {
+      for ( int i = 0; i < nrecv_unique; index++, i++ ){
+        couplingNodes[index] = getLocalNodeNum(recvNodesSorted[i]);
+      }
     }
     
-    // add in the remaining external nodes
+    // Add in the remaining external nodes
     for ( int i = extNodeOffset; i < numExtNodes; i++, index++ ){
       couplingNodes[index] = numOwnedNodes + i;
     }
 
     *_couplingNodes = couplingNodes;
   }
+
+  // Free the multiplier index
+  delete [] multipliers;
 
   if (_extPtr){ *_extPtr = extPtr; }
   else { delete [] extPtr; }
@@ -2528,6 +2611,143 @@ DistMat *TACSAssembler::createMat(){
   return dmat;
 }
 
+/*
+  Compute the connectivity information for the multiplier nodes
+  
+  This goes through element-by-element and finds the local node
+  numbers associated with the multipliers. These multipliers must be
+  ordered last. A unique set of these multipliers is determined and
+  the associated element variables that must be ordered before the
+  multiplier are determined. This data is stored in a CSR-like data
+  structure that is sorted and uniquified before it is returned.
+*/
+void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
+                                           int **_multipliers,
+                                           int **_indep_ptr,
+                                           int **_indep_nodes ){
+  *_num_multipliers = 0;
+  *_multipliers = NULL;
+  *_indep_ptr = NULL;
+  *_indep_nodes = NULL;
+
+  if (numMultiplierNodes == 0){
+    return;
+  }
+
+  // Determine the local multiplier index - the local node number for
+  // each multiplier node.
+  int *multipliers = new int[ numMultiplierNodes ];
+  int num_multipliers = 0;
+  for ( int i = 0; i < numElements; i++ ){
+    int multiplier;
+    elements[i]->getMultiplierIndex(&multiplier);
+    if (multiplier >= 0){
+      // Get the local multiplier index
+      int elem_ptr = elementNodeIndex[i];
+
+      // Get the new local index for the multiplier
+      int mult_node =
+        getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
+
+      // Set the multiplier node number
+      multipliers[num_multipliers] = mult_node;
+      num_multipliers++;
+    }
+  }
+
+  // Uniquely sort the list of multipliers to determine the number of
+  // true multiplier nodes
+  num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+
+  // Create the array of offsets into the pointer array
+  int *ptr = new int[ num_multipliers+1 ];
+  memset(ptr, 0, (num_multipliers+1)*sizeof(int));
+
+  // Now count up again to determine the total size of the non-zero
+  // pattern required to store all the multiplier information
+  for ( int i = 0; i < numElements; i++ ){
+    int multiplier;
+    elements[i]->getMultiplierIndex(&multiplier);
+    if (multiplier >= 0){
+      // Get the local multiplier index
+      int elem_ptr = elementNodeIndex[i];
+      int size = elementNodeIndex[i+1] - elem_ptr;
+
+      // Get the new local index for the multiplier
+      int mult_node =
+        getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
+
+      // Find the local index for external nodes
+      int *item = (int*)bsearch(&mult_node, multipliers, num_multipliers,
+                                sizeof(int), FElibrary::comparator);
+
+      if (item){
+        int index = item - multipliers;
+
+        // Add in the element size (minus the multiplier node itself)
+        ptr[index+1] += size-1;
+      }    
+    }
+  }
+
+  // Set up the pointer array as an offset into each row
+  for ( int i = 1; i <= num_multipliers; i++ ){
+    ptr[i] += ptr[i-1];
+  }
+
+  // Allocate the array of nodes
+  int *nodes = new int[ ptr[num_multipliers] ];
+
+  // Add in the values
+  for ( int i = 0; i < numElements; i++ ){
+    int multiplier;
+    elements[i]->getMultiplierIndex(&multiplier);
+    if (multiplier >= 0){
+      // Get the local multiplier index
+      int elem_ptr = elementNodeIndex[i];
+      int size = elementNodeIndex[i+1] - elem_ptr;
+
+      // Get the new local index for the multiplier
+      int mult_node =
+        getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
+
+      // Find the local index for external nodes
+      int *item = (int*)bsearch(&mult_node, multipliers, num_multipliers,
+                                sizeof(int), FElibrary::comparator);
+
+      if (item){
+        int index = item - multipliers;
+        for ( int j = 0; j < size; j++ ){
+          if (j != multiplier){
+            // Get the local node number associated with the
+            // independent degrees of freedom at this node
+            nodes[ptr[index]] = 
+              getLocalNodeNum(elementTacsNodes[elem_ptr + j]);
+            ptr[index]++;
+          }
+        }
+      }    
+    }
+  }
+
+  // Reset the pointer array
+  int offset = 0;
+  for ( int i = 0; i <= num_multipliers; i++ ){
+    int tmp = ptr[i];
+    ptr[i] = offset;
+    offset = tmp;
+  }
+
+  // Sort and uniquify the CSR - this compresses the CSR data
+  matutils::SortAndUniquifyCSR(num_multipliers, ptr, nodes);
+
+  // Set the data and return
+  *_num_multipliers = num_multipliers;
+  *_multipliers = multipliers;
+  *_indep_ptr = ptr;
+  *_indep_nodes = nodes;
+}
+
 /*!  
   Create a parallel matrix for finite-element analysis.
   
@@ -2598,76 +2818,32 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
       int *rowp, *cols;
       int no_diagonal = 1;
       computeLocalNodeToNodeCSR(&rowp, &cols, no_diagonal);
+
+      // Compute the multipliers/connectivity
+      int num_multipliers = 0;
+      int *multipliers = NULL;
+      int *indep_ptr = NULL;
+      int *indep_nodes = NULL;
+      computeMultiplierConn(&num_multipliers, &multipliers,
+                            &indep_ptr, &indep_nodes);
       
       // Here perm is the entire permutation array
       int *perm = new int[ numNodes ];
       int use_exact_degree = 0; // Don't use the exact degree
       amd_order_interface(numNodes, rowp, cols, perm, 
                           coupling_nodes, ncoupling_nodes, 
-                          0, NULL, NULL, NULL, use_exact_degree);
-      
+                          num_multipliers, multipliers,
+                          indep_ptr, indep_nodes, use_exact_degree);
+   
       // Free the rowp/cols array (which are modified by the
       // reordering anyway)
       delete [] rowp;
       delete [] cols;
 
-      // Create the inverse of the permutation array
-      int *iperm = new int[ numNodes ];
-      for ( int i = 0; i < numNodes; i++ ){
-        iperm[perm[i]] = i;
-      }
-
-      // Get the ownership range and match the intervals of ownership
-      const int *ownerRange;
-      varMap->getOwnerRange(&ownerRange);
-
-      // Modify the permutation to reflect the need for precidence in
-      // the multiplier nodes.
-      for ( int i = 0; i < numElements; i++ ){
-        int multiplier;
-        elements[i]->getMultiplierIndex(&multiplier);
-
-        if (multiplier >= 0){
-          // Get the local multiplier number
-          int ptr = elementNodeIndex[i];
-          int size = elementNodeIndex[i+1] - ptr;
-          
-          // Get the new local index for the multiplier
-          int mult_node =
-            getLocalNodeNum(elementTacsNodes[ptr + multiplier]);
-          int mult_index = iperm[mult_node];
-
-          // Find the maximum index
-          int max_node = mult_node;
-          int max_index = mult_index;
-          for ( int j = 0; j < size; j++ ){
-            if (j != multiplier){
-              int global = elementTacsNodes[ptr + j];
-              if (global >= ownerRange[mpiRank] &&
-                  global < ownerRange[mpiRank+1]){
-                int node = getLocalNodeNum(global);
-                if (iperm[node] > max_index){
-                  max_node = node;
-                  max_index = iperm[node];
-                }
-              }
-            }
-          }
-
-          // Flip the index for the multiplier
-          if (mult_index < max_index){
-            int temp = perm[iperm[mult_node]];
-            perm[iperm[mult_node]] = perm[iperm[max_node]];
-            perm[iperm[max_node]] = temp;
-
-            temp = iperm[mult_node];
-            iperm[mult_node] = iperm[max_node];
-            iperm[max_node] = temp;
-          }
-        }
-      }
-
-      delete [] iperm;
+      // Free the multipliers array
+      delete [] multipliers;
+      delete [] indep_ptr;
+      delete [] indep_nodes;
 
       // Compute the coupling nodes based on their permutation
       tacs_local_nodes = new int[ nlocal_nodes ];
@@ -3478,7 +3654,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
         }
       }
       else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
-        const int * elementNums;
+        const int *elementNums;
         int subDomainSize = funcs[k]->getElementNums(&elementNums);
         
         for ( int i = 0; i < subDomainSize; i++ ){
@@ -3562,7 +3738,7 @@ void TACSAssembler::addDVSens( double coef,
       
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
         // Get the funcs[k] sub-domain
-        const int * elemSubList;
+        const int *elemSubList;
         int numSubElems = funcs[k]->getElementNums(&elemSubList);
         
         for ( int i = 0; i < numSubElems; i++ ){
@@ -3648,7 +3824,7 @@ void TACSAssembler::addXptSens( double coef,
       
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
         // Get the function sub-domain
-        const int * elemSubList;
+        const int *elemSubList;
         int numSubElems = funcs[k]->getElementNums(&elemSubList);
         for ( int i = 0; i < numSubElems; i++ ){
           int elemNum = elemSubList[i];
@@ -3750,7 +3926,7 @@ void TACSAssembler::addSVSens( double alpha, double beta,
         }
       }
       else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
-        const int * elementNums;
+        const int *elementNums;
         int subDomainSize = funcs[k]->getElementNums(&elementNums);
         
         for ( int i = 0; i < subDomainSize; i++ ){
@@ -4256,7 +4432,7 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
   if (stiffness){
     /*
     double pt[] = {0.0, 0.0, 0.0};
-    TestConstitutive * test = new TestConstitutive(stiffness);
+    TestConstitutive *test = new TestConstitutive(stiffness);
     test->incref();
     test->setPrintLevel(print_level);
     
@@ -4362,7 +4538,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
 
   if (mpiRank == 0){
     fprintf(stderr, "Testing function %s\n", func->functionName());
-    const char * descript = "df/dx^{T}p";
+    const char *descript = "df/dx^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n",
             (int)strlen(descript), "Val", "Analytic", 
             "Approximate", "Rel. Error");
@@ -4430,7 +4606,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   pdf = temp->dot(pert);
 
   if (mpiRank == 0){
-    const char * descript = "df/du^{T}p";
+    const char *descript = "df/du^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n",
             (int)strlen(descript), "Val", "Analytic", 
             "Approximate", "Rel. Error");
@@ -4498,7 +4674,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   pdf = Xtemp->dot(Xpert);
 
   if (mpiRank == 0){
-    const char * descript = "df/dX^{T}p";
+    const char *descript = "df/dX^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n",
             (int)strlen(descript), "Val", "Analytic", 
             "Approximate", "Rel. Error");

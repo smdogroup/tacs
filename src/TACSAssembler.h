@@ -294,6 +294,12 @@ class TACSAssembler : public TACSObject {
                                   int nrnodes, const int *rnodes,
                                   int nodiag );
 
+  // Compute the connectivity of the multiplier information
+  void computeMultiplierConn( int *_num_multipliers,
+                              int **_multipliers,
+                              int **_indep_ptr,
+                              int **_indep_nodes );
+
   // Compute the reordering for a local matrix
   // -----------------------------------------
   void computeMatReordering( OrderingType order_type, 
@@ -339,6 +345,7 @@ class TACSAssembler : public TACSObject {
   int numOwnedNodes; // number of nodes owned by this processor
   int numExtNodes; // number of extneral nodes 
   int numDependentNodes; // number of dependent nodes
+  int numMultiplierNodes; // number of multiplier nodes/elements
 
   // Maximum element information
   int maxElementStrain; // maximum number of strains components

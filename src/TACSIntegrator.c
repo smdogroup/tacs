@@ -604,7 +604,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       // Allocate the factorization
       pc = new PcScMat(D, lev, fill, reorder_schur);
       pc->incref();
-      
+
       // Associate the maxtrix with FEMatrix
       mat = D;
       mat->incref();

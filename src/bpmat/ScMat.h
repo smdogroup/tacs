@@ -65,8 +65,8 @@ class ScMat : public TACSMat {
 
   // Get the underlying representation for ScMat
   // -------------------------------------------
-  void getBCSRMat( BCSRMat ** _B, BCSRMat ** _E,
-                   BCSRMat ** _F, BCSRMat ** _C );
+  void getBCSRMat( BCSRMat **_B, BCSRMat **_E,
+                   BCSRMat **_F, BCSRMat **_C );
 
   TACSBVecDistribute *getLocalMap(){ return b_map; }
   TACSBVecDistribute *getSchurMap(){ return c_map; }
@@ -135,6 +135,11 @@ class PcScMat : public TACSPc {
   // Set the type of matrix assembly to use
   // --------------------------------------
   void setAlltoallAssemblyFlag( int flag );
+
+  // Get the underlying precondition representation
+  // ----------------------------------------------
+  void getBCSRMat( BCSRMat **_Bpc, BCSRMat **_Epc,
+                   BCSRMat **_Fpc, BCSRMat **_Sc );
 
  private:
   ScMat *mat;

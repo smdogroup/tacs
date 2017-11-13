@@ -42,7 +42,7 @@ void ExtendArray( TacsScalar **_array, int oldlen, int newlen ){
   be overlapping so memcpy cannot be used.
 */
 void SortAndUniquifyCSR( int nvars, int *rowp, 
-			 int *cols, int nodiag ){
+                         int *cols, int remove_diag ){
   // Uniquify each column of the array
   int old_start = 0;
   int new_start = 0;
@@ -50,12 +50,12 @@ void SortAndUniquifyCSR( int nvars, int *rowp,
     // sort cols[start:rowp[i]] 
     int rsize = FElibrary::uniqueSort(&cols[old_start], rowp[i+1]-old_start);
       
-    if (nodiag){
+    if (remove_diag){
       int end = old_start + rsize;
       for ( int j = old_start, k = new_start; j < end; j++, k++ ){
         if (cols[j] == i){
           rsize--;
-          k--;	  
+          k--;    
         }
         else if (j != k){
           cols[k] = cols[j];
@@ -167,12 +167,12 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
         // Add all the nodes in the next level set
         for ( int j = rowp[node]; j < rowp[node+1]; j++ ){
           int next_node = cols[j];
-	    
+            
           if (rcm_vars[next_node] < 0){
             rcm_vars[next_node] = var_num;
             levset[next] = next_node;
             var_num++;
-            next++;	
+            next++;     
           }      
         }
       }    

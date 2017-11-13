@@ -20,10 +20,14 @@ void ExtendArray( TacsScalar **_array, int oldlen, int newlen );
 
 /*!
   Sort and uniquify a CSR data structure.
-  nvars/rowp/cols == Input/output CSR data structure
-  nodiag == flag, remove the diagonal entry from the array.
+
+  nvars:        the number of variables
+  rowp:         pointer into the rows of of the matrix
+  cols:         the column indices
+  remove_diag:  remove any diagonal entries encountered
 */
-void SortAndUniquifyCSR( int nvars, int *rowp, int *cols, int nodiag );
+void SortAndUniquifyCSR( int nvars, int *rowp, int *cols, 
+                         int remove_diag=0 );
 
 /*
   Reorder based on RCM-reordering
