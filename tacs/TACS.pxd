@@ -471,7 +471,7 @@ cdef extern from "TACSIntegrator.h":
 
         # Forward mode functions
         int iterate(int step_num,TACSBVec *forces)
-        void integrate()
+        int integrate()
         void evalFunctions(TacsScalar *fvals)
 
         # Reverse mode functions

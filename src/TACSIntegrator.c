@@ -406,14 +406,14 @@ void TACSIntegrator::writeSolutionToF5( int step_num ){
       // Write SHELL body if set
       if (shellf5){
         char fname[256];
-        sprintf(fname, "%s/rigid_%06d.f5", prefix, step_num);
+        sprintf(fname, "%s/shell_%06d.f5", prefix, step_num);
         shellf5->writeToFile(fname);
       }
 
       // Write BEAM body if set
       if (beamf5){
         char fname[256];
-        sprintf(fname, "%s/rigid_%06d.f5", prefix, step_num);
+        sprintf(fname, "%s/beam_%06d.f5", prefix, step_num);
         beamf5->writeToFile(fname);
       }
     }
@@ -1914,6 +1914,7 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
       qddotS[offset]->copyValues(qddot[k-1]);
     }
     else {
+
       qddotS[offset]->copyValues(qddotS[offset-1]);
     }
 

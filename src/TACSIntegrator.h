@@ -47,10 +47,12 @@ class TACSIntegrator : public TACSObject {
   virtual int iterate( int step_num, TACSBVec *forces ) = 0;
 
   // Integrate the equations of motion forward in time
-  virtual void integrate(){
+  virtual int integrate(){
     for ( int i = 0; i < num_time_steps+1; i++ ){
-      iterate(i, NULL);
+      int flag = iterate(i, NULL);
+      if (flag != 0) return flag;
     }
+    return 0;
   }
 
   // Evaluate the functions of interest
