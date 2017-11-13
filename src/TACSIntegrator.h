@@ -47,10 +47,12 @@ class TACSIntegrator : public TACSObject {
   virtual int iterate( int step_num, TACSBVec *forces ) = 0;
 
   // Integrate the equations of motion forward in time
-  virtual void integrate(){
+  virtual int integrate(){
     for ( int i = 0; i < num_time_steps+1; i++ ){
-      iterate(i, NULL);
+      int flag = iterate(i, NULL);
+      if (flag != 0) return flag;
     }
+    return 0;
   }
 
   // Evaluate the functions of interest
@@ -107,7 +109,8 @@ class TACSIntegrator : public TACSObject {
   void setShellOutput( TACSToFH5 *_shellf5 );
   void setBeamOutput( TACSToFH5 *_beamf5 );
   void writeSolution( const char *filename, int format=2 );
-  void writeSolutionToF5( int step_num );
+  void writeSolutionToF5();
+  void writeStepToF5( int step_num );
   void printWallTime( double t0, int level=1 );
   void printOptionSummary();
   void printAdjointOptionSummary();

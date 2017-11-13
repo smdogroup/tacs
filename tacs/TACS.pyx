@@ -1551,9 +1551,8 @@ cdef class Integrator:
     def integrate(self):
         '''
         Integrates the governing equations forward in time
-        '''
-        self.ptr.integrate()
-        return
+        '''        
+        return self.ptr.integrate()
 
     def evalFunctions(self, funclist):
         '''

@@ -356,6 +356,9 @@ cdef class PSQuadTraction(Element):
             self.ptr.decref()
         return
 
+    def numNodes(self):
+        return self.ptr.numNodes()
+    
 cdef class Traction3D(Element):
     def __cinit__(self, int order, int surf, 
                   TacsScalar tx, TacsScalar ty, TacsScalar tz):
@@ -376,12 +379,13 @@ cdef class Traction3D(Element):
             self.ptr = new TACS3DTraction4(surf, tx, ty, tz)
             self.ptr.incref()
         return
-
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
         return
-
+    def numNodes(self):
+        return self.ptr.numNodes()
+    
 cdef class PlaneTri6(Element):
     def __cinit__(self, PlaneStress stiff,
                   ElementBehaviorType elem_type=LINEAR,
@@ -398,6 +402,9 @@ cdef class PlaneTri6(Element):
         self.ptr.decref()
         return
 
+    def numNodes(self):
+        return self.ptr.numNodes()
+    
 cdef class ShellTraction(Element):
     def __cinit__(self, int order, 
                   TacsScalar tx, TacsScalar ty, TacsScalar tz):
@@ -415,10 +422,13 @@ cdef class ShellTraction(Element):
             self.ptr = new TACSShellTraction4(tx, ty, tz)
             self.ptr.incref()
         return
-
+    
     def __dealloc__(self):
         self.ptr.decref()
         return
+    
+    def numNodes(self):
+        return self.ptr.numNodes()
 
 cdef class MITCShell(Element):
     def __cinit__(self, int order, FSDT stiff, 
@@ -437,10 +447,13 @@ cdef class MITCShell(Element):
         elif order == 4:
             self.ptr = new MITCShell4(con, elem_type, component_num)
             self.ptr.incref()
-            
+                    
     def __dealloc__(self):
         self.ptr.decref()
         return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
 
 cdef class Solid(Element):
     def __cinit__(self, int order, SolidStiff stiff, 
@@ -459,10 +472,13 @@ cdef class Solid(Element):
         elif order == 4:
             self.ptr = new Solid4(con, elem_type, component_num)
             self.ptr.incref()
-            
+
     def __dealloc__(self):
         self.ptr.decref()
         return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
         
 cdef class MITC(Element):
     def __cinit__(self, FSDT stiff, GibbsVector gravity=None,
@@ -487,6 +503,9 @@ cdef class MITC(Element):
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
+    
+    def numNodes(self):
+        return self.ptr.numNodes()
 
 cdef class MITCBeam(Element):
     def __cinit__(self, Timoshenko stiff, GibbsVector gravity=None,
@@ -511,3 +530,6 @@ cdef class MITCBeam(Element):
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
+    
+    def numNodes(self):
+        return self.ptr.numNodes()
