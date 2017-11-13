@@ -109,7 +109,8 @@ class TACSIntegrator : public TACSObject {
   void setShellOutput( TACSToFH5 *_shellf5 );
   void setBeamOutput( TACSToFH5 *_beamf5 );
   void writeSolution( const char *filename, int format=2 );
-  void writeSolutionToF5( int step_num );
+  void writeSolutionToF5();
+  void writeStepToF5( int step_num );
   void printWallTime( double t0, int level=1 );
   void printOptionSummary();
   void printAdjointOptionSummary();

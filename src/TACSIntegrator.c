@@ -386,37 +386,41 @@ void TACSIntegrator::writeSolution( const char *filename, int format ){
 }
 
 /*
+  Creates f5 files for each time step.
+*/
+void TACSIntegrator::writeSolutionToF5(){
+  for ( int k = 0; k < num_time_steps; k++ ){
+    writeStepToF5(k);
+  }
+}
+
+/*
   Creates an f5 file for each time step and writes the data.
 */
-void TACSIntegrator::writeSolutionToF5( int step_num ){
-  if (step_num >= 0 && step_num < num_time_steps){
-    // Loop through all timesteps
-    for ( int k = 0; k < num_time_steps; k++ ){
-      // Set the current states into TACS
-      tacs->setVariables(q[k], qdot[k], qddot[k]);
-      tacs->setSimulationTime(time[k]);
-      
-      // Write RIGID body if set
-      if (rigidf5){
-        char fname[256];
-        sprintf(fname, "%s/rigid_%06d.f5", prefix, step_num);
-        rigidf5->writeToFile(fname);
-      }
-
-      // Write SHELL body if set
-      if (shellf5){
-        char fname[256];
-        sprintf(fname, "%s/shell_%06d.f5", prefix, step_num);
-        shellf5->writeToFile(fname);
-      }
-
-      // Write BEAM body if set
-      if (beamf5){
-        char fname[256];
-        sprintf(fname, "%s/beam_%06d.f5", prefix, step_num);
-        beamf5->writeToFile(fname);
-      }
-    }
+void TACSIntegrator::writeStepToF5( int step_num ){
+  // Set the current states into TACS
+  tacs->setVariables(q[step_num], qdot[step_num], qddot[step_num]);
+  tacs->setSimulationTime(time[step_num]);
+  
+  // Write RIGID body if set
+  if (rigidf5){
+    char fname[256];
+    sprintf(fname, "%s/rigid_%06d.f5", prefix, step_num);
+    rigidf5->writeToFile(fname);
+  }
+  
+  // Write SHELL body if set
+  if (shellf5){
+    char fname[256];
+    sprintf(fname, "%s/shell_%06d.f5", prefix, step_num);
+    shellf5->writeToFile(fname);
+  }
+  
+  // Write BEAM body if set
+  if (beamf5){
+    char fname[256];
+    sprintf(fname, "%s/beam_%06d.f5", prefix, step_num);
+    beamf5->writeToFile(fname);
   }
 }
 
@@ -691,17 +695,18 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     if(logfp && print_level >= 2){
       if (niter == 0){
         fprintf(logfp, 
-                "%12d %12.5e %12.5e %12s %12.5e %12.5e \
-                %12.5e %12.5e %12.5e\n",
-                niter, TacsRealPart(res_norm),  
+                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                niter, 
+                TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
-                " ", alpha, beta, gamma, delta, force_norm);
+                " ", 
+                alpha, beta, gamma, delta, force_norm);
       }
       else {
         fprintf(logfp, 
-                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e \
-                %12.5e %12.5e %12.5e\n",
-                niter, TacsRealPart(res_norm),  
+                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                niter, 
+                TacsRealPart(res_norm),  
                 (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm), 
                 TacsRealPart(update_norm),  
                 alpha, beta, gamma, delta, force_norm);
@@ -866,7 +871,7 @@ void TACSIntegrator::logTimeStep( int step_num ){
 
   // Write the tecplot output to disk if sought
   if (f5_write_freq > 0 && step_num % f5_write_freq == 0){
-    writeSolutionToF5(step_num);
+    writeStepToF5(step_num);
   }
 
   // Evaluate the energies
