@@ -3189,7 +3189,6 @@ void TACSFixedConstraint::addResidual( double time, TacsScalar res[],
 
   // Set the variables for body A
   const TacsScalar *uA = &vars[0];
-  const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
 
   // Set the pointer to the multipliers

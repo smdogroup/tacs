@@ -46,6 +46,7 @@ cdef extern from "":
     ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
     PMat* _dynamicPMat "dynamic_cast<PMat*>"(TACSMat*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
+    void deleteArray "delete []"(void*)
 
 cdef extern from "TACSObject.h":
     cdef cppclass TACSObject:
@@ -322,8 +323,8 @@ cdef extern from "TACSAssembler.h":
         FEMat *createFEMat(OrderingType)
 
         # Reorder the vector based on the selected reordering
-        void reorderVec(TACSBVec*)
         void getReordering(int*)
+        void reorderVec(TACSBVec*)
 
         # Set/get the simulation time
         void setSimulationTime(double)
@@ -444,7 +445,8 @@ cdef extern from "TACSCreator.h":
         int getElementPartition(const int **)
         TACSAssembler *createTACS()
         int getNodeNums(const int**)
-      
+        void getTacsNodeNums(TACSAssembler*, const int*, int, int**, int*)
+
 cdef extern from "TACSToFH5.h":
     cdef cppclass TACSToFH5(TACSObject):
         TACSToFH5(TACSAssembler *_tacs, ElementType _elem_type, int _out_type)
@@ -509,7 +511,7 @@ cdef extern from "TACSIntegrator.h":
         TACSDIRKIntegrator(TACSAssembler *tacs,
                            double tinit, double tfinal,
                            int num_steps_per_sec,
-                           int order)
+                           int stages)
       
     # ABM Implementation of the integrator
     cdef cppclass TACSABMIntegrator(TACSIntegrator):

@@ -81,8 +81,14 @@ class TACSCreator : public TACSObject {
   int getElementIdNums( int ids[], int num_ids, 
                         int **elem_nums );
 
-  // Get the new node numbers and element partition
-  // ----------------------------------------------
+  // Convert from the list of nodes from the original serial ordering
+  // ----------------------------------------------------------------
+  void getTacsNodeNums( TACSAssembler *tacs, 
+                        const int *orig_nodes, int num_orig_nodes,
+                        int **new_nodes, int *num_dist_nodes );
+
+  // Get the new node numbers and element partition on the root proc
+  // ---------------------------------------------------------------
   int getNodeNums( const int **_new_nodes );
   int getElementPartition( const int **_partition );
   void getNumOwnedNodes( int **_owned_nodes );

@@ -2325,6 +2325,39 @@ void TACSAssembler::reorderVec( TACSBVec *vec ){
   }
 }
 
+/*
+  Reorder the nodes from the initial ordering to the final ordering
+
+  Note that this only works for the nodes that are owned locally.
+  Non-local or local non-owned nodes will not be reordered properly.
+
+  input/output:
+  nodes:      the owned node numbers that will be converted
+  num_nodes:  the length of the nodes array
+*/
+void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
+  if (newNodeIndices){
+    // Get the ownership range
+    const int *ownerRange;
+    varMap->getOwnerRange(&ownerRange);
+
+    // Get the new node indices
+    const int *newNodes;
+    newNodeIndices->getIndices(&newNodes);
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      if (nodes[i] >= ownerRange[mpiRank] &&
+          nodes[i] < ownerRange[mpiRank+1]){
+        int index = (nodes[i] - ownerRange[mpiRank]) + extNodeOffset;
+        nodes[i] = newNodes[index];
+      }
+      else {
+        nodes[i] = -1;
+      }
+    }
+  }
+}
+
 /*!
   Collect all the design variable values assigned by this process
 

@@ -6,10 +6,10 @@
   Base class constructor for integration schemes.
 
   input:
-  tacs              : the tacs assembler object
-  tInit             : the initial time
-  tfinal            : the final time
-  num_steps_per_sec : the number of steps to take for each second
+  tacs:               the tacs assembler object
+  tInit:              the initial time
+  tfinal:             the final time
+  num_steps_per_sec:  the number of steps to take for each second
 */
 TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
                                 double tinit,
@@ -285,6 +285,7 @@ void TACSIntegrator::setFunctions( TACSFunction **_funcs, int _num_funcs,
   dfdXpt = new TACSBVec*[ num_funcs ];
   for ( int i = 0; i < num_funcs; i++ ){
     dfdXpt[i] = tacs->createNodeVec();
+    dfdXpt[i]->incref();
   }
 }
 
@@ -1116,6 +1117,10 @@ TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs,
                                       double _num_steps_per_sec, 
                                       int _max_bdf_order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
+  if (mpiRank == 0){ 
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s order %d\n", mpiRank, "BDF", _max_bdf_order);
+  }
+
   // copy over the variables
   max_bdf_order = _max_bdf_order;
 
@@ -1631,6 +1636,9 @@ TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs,
                                         double _num_steps_per_sec,
                                         int _num_stages ):
 TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){
+  if (mpiRank == 0){ 
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s stages %d\n", mpiRank, "DIRK", _num_stages);
+  }
   // Set the number of stages
   num_stages = _num_stages;
  
@@ -2119,7 +2127,7 @@ void TACSDIRKIntegrator::initAdjoint( int step_num ){
 /*
   Iterate to find a solution of the adjoint equations
 */
-void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){  
+void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
   if (k == 0){
     // Retrieve the initial conditions and set into TACS
     tacs->getInitConditions(q[0], qdot[0], qddot[0]);
@@ -2155,15 +2163,26 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
     // Factor the preconditioner
     pc->factor();
 
+    // Compute the derivatives and store them
+    if (k > start_plane && k <= end_plane){
+      tacs->addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, &omega[num_funcs*stage]);
+      tacs->addSVSens(0.0, 1.0, 0.0, funcs, num_funcs, &domega[num_funcs*stage]);
+    }
+
     // Compute all the contributions to the right-hand-side
     for ( int i = 0; i < num_funcs; i++ ){
       rhs->copyValues(phi[i]);
       rhs->axpy(h*B[stage]/b[stage], psi[i]);
 
+      // Add the derivatives to the right-hand-side
+      int index = getRowIndex(stage);
+      rhs->axpy(-h*h*A[index + stage], omega[num_funcs*stage + i]);
+      rhs->axpy(-h*a[index + stage], domega[num_funcs*stage + i]);
+
       // Add up the values to get the right-hand-side
       for ( int j = stage+1; j < num_stages; j++ ){
         // a[j,stage]*b[j]/b[stage]
-        int index = getRowIndex(j);
+        index = getRowIndex(j);
 
         // Compute the coefficient for the domega terms
         double alpha = a[index + stage]*b[j]/b[stage];
@@ -2179,8 +2198,7 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
       ksm->solve(rhs, lambda[num_funcs*stage + i]);
     }
 
-    // Add the products of omega and domega 
-    tacs->addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, &omega[num_funcs*stage]);
+    // Add the products to omega and domega 
     for ( int i = 0; i < num_funcs; i++ ){
       tacs->addJacobianVecProduct(1.0, 1.0, 0.0, 0.0,
                                   lambda[num_funcs*stage + i], 
@@ -2189,7 +2207,6 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
     }
 
     // Add the products of omega and domega 
-    tacs->addSVSens(0.0, 1.0, 0.0, funcs, num_funcs, &domega[num_funcs*stage]);
     for ( int i = 0; i < num_funcs; i++ ){
       tacs->addJacobianVecProduct(1.0, 0.0, 1.0, 0.0,
                                   lambda[num_funcs*stage + i], 
@@ -2218,13 +2235,13 @@ void TACSDIRKIntegrator::postAdjoint( int k ){
       // Set the time step and stage variables
       tacs->setSimulationTime(tS);
       tacs->setVariables(qS[offset], qdotS[offset], qddotS[offset]);
-      
+
       double tcoeff = h*b[stage];
       if (k > start_plane && k <= end_plane){
         tacs->addDVSens(tcoeff, funcs, num_funcs, dfdx, num_design_vars);
         tacs->addXptSens(tcoeff, funcs, num_funcs, dfdXpt);
       }
-      
+
       // Add the derivative of the product of the adjoint to the
       // output vector
       tacs->addAdjointResProducts(tcoeff, 
@@ -2240,8 +2257,8 @@ void TACSDIRKIntegrator::postAdjoint( int k ){
       // Integrate phi over the last time step
       phi[i]->axpy(h, psi[i]);
       for ( int stage = 0; stage < num_stages; stage++ ){
-        phi[i]->axpy(-h*h*b[stage]*c[stage], omega[num_funcs*stage + i]);
         phi[i]->axpy(-h*b[stage], domega[num_funcs*stage + i]);
+        phi[i]->axpy(-h*h*b[stage]*c[stage], omega[num_funcs*stage + i]);
       }
 
       // Integrate psi over the last time step

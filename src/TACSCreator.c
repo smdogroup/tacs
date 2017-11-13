@@ -290,6 +290,94 @@ void TACSCreator::getNumOwnedElements( int **_owned_elements ){
 }
 
 /*
+  Input the node numbers on the root processor in the original order,
+  and get out the distributed node numbers on the final mesh
+*/
+void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
+                                   const int *_orig_nodes, int num_orig_nodes,
+                                   int **_tacs_nodes, int *num_dist_nodes ){
+  // Figure out how to distribute the nodes
+  int size, rank;
+  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &rank);
+
+  // The array of original nodes - only relevant on the root proc
+  int *orig_nodes = NULL;
+  int *ext_ptr = NULL;
+
+  // The array of new node numbers
+  int *tacs_nodes = NULL;
+
+  // Get the variable map from TACSAssembler
+  TACSVarMap *varMap = tacs->getVarMap();
+  const int *owner_range = NULL;
+  varMap->getOwnerRange(&owner_range);
+
+  if (rank == root_rank){
+    // First allocate an array of nodes that we will overwrite 
+    orig_nodes = new int[ num_orig_nodes ];
+    memcpy(orig_nodes, _orig_nodes, num_orig_nodes*sizeof(int));
+  
+    // Convert the original node ordering to the new node ordering
+    for ( int i = 0; i < num_orig_nodes; i++ ){
+      if (orig_nodes[i] >= 0 && orig_nodes[i] < num_nodes){
+        orig_nodes[i] = new_nodes[orig_nodes[i]];
+      }
+      else {
+        orig_nodes[i] = 0;
+      }
+    }
+
+    // Sort the nodes uniquely 
+    num_orig_nodes = FElibrary::uniqueSort(orig_nodes, num_orig_nodes);
+
+    // Match the intervals for the external node numbers
+    ext_ptr = new int[ size+1 ];
+    FElibrary::matchIntervals(size, owner_range, 
+                              num_orig_nodes, orig_nodes, ext_ptr);
+ 
+    // Send the processors the information, one at a time
+    for ( int i = 0; i < size; i++ ){
+      if (i != root_rank){
+        int count = ext_ptr[i+1] - ext_ptr[i];
+        int tag = 1;
+        MPI_Send(&orig_nodes[ext_ptr[i]], count, MPI_INT, i, tag, comm);
+
+      }
+    }
+
+    // Get the number of distributed nodes for the root proc
+    int count = ext_ptr[root_rank+1] - ext_ptr[root_rank];
+    *num_dist_nodes = count; 
+
+    // Copy the nodes on the root proc
+    tacs_nodes = new int[ count ];
+    memcpy(tacs_nodes, &orig_nodes[ext_ptr[root_rank]], count*sizeof(int));
+  }
+  else {
+    MPI_Status status;
+    int tag = 1;
+    MPI_Probe(root_rank, tag, comm, &status);
+
+    // Get the count that we are about to recv
+    MPI_Get_count(&status, MPI_INT, num_dist_nodes);
+    int count = *num_dist_nodes;
+    if (count > 0){
+      tacs_nodes = new int[ count ];
+    }
+
+    // Recv the nodes from the root
+    MPI_Recv(tacs_nodes, count, MPI_INT, root_rank, tag, comm, 
+             MPI_STATUS_IGNORE);
+  }
+
+  // Apply the reordering in TACS
+  tacs->reorderNodes(tacs_nodes, *num_dist_nodes);
+
+  *_tacs_nodes = tacs_nodes;
+}
+
+/*
   Create the instance of the TACSAssembler object and return it.
 
   This code partitions the mesh, calls for the elements to be
