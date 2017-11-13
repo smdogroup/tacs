@@ -1208,6 +1208,7 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     int * coupling_nodes = NULL;
     amd_order_interface(nvars, rowp, cols, _perm, 
                         coupling_nodes, ncoupling_nodes,
+                        0, NULL, NULL, NULL,
                         use_exact_degree);
 
     if (new_vars){
@@ -2569,7 +2570,8 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
       int *perm = new int[ numNodes ];
       int use_exact_degree = 0; // Don't use the exact degree
       amd_order_interface(numNodes, rowp, cols, perm, 
-                          coupling_nodes, ncoupling_nodes, use_exact_degree);
+                          coupling_nodes, ncoupling_nodes, 
+                          0, NULL, NULL, NULL, use_exact_degree);
       
       // Free the rowp/cols array (which are modified by the
       // reordering anyway)
