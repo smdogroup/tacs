@@ -432,7 +432,7 @@ cdef extern from "TACSCreator.h":
                                    int *_elem_node_conn,
                                    int *_elem_id_nums )
         void setBoundaryConditions(int _num_bcs, int *_bc_nodes, 
-                                   int *_bc_vars, int *_bc_ptr )
+                                   int *_bc_vars, int *_bc_ptr)
         void setDependentNodes(int num_dep_nodes, 
                                int *_dep_node_ptr,
                                int *_dep_node_conn, 
