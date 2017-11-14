@@ -1736,18 +1736,20 @@ void MITC9::addAdjResProduct( double time, double scale,
         mscale[0] -= 
           h*N[ii]*(g[0]*psi[8*ii] + g[1]*psi[8*ii+1] + g[2]*psi[8*ii+2]);
       }
+      mscale[0] *= scale;
+      mscale[1] *= scale;
 
       // Scale the psi vector by the determinant of the Jacobian
       // transformation
       for ( int k = 0; k < 8; k++ ){
-        epsi[k] *= h;
+        epsi[k] *= h*scale;
       }
 
       // Add the derivative contribution from the mass/area
       stiff->addPointwiseMassDVSens(pt, mscale, fdvSens, dvLen);
 
       // Add the derivative
-      stiff->addStiffnessDVSens(pt, e, epsi, h*rot*rotPsi,
+      stiff->addStiffnessDVSens(pt, e, epsi, h*scale*rot*rotPsi,
                                 fdvSens, dvLen);
     }
   }
@@ -1940,14 +1942,14 @@ void MITC9::addAdjResXptProduct( double time, double scale,
         hd += 2.0*scl*deta*vecDot(w, &p[4]);
 
         // Add the contributions to wd and dwd
-        scl *= h;
+        scl *= h*scale;
         vecAxpy(-scl*p[3], eps, dwd);
         crossProductAdd(scl, &p[4], eps, dwd);
         vecAxpy(scl*eta, &p[4], dwd);
 
-        vecAxpy(-2.0*scl*p[3], eps, wd);
-        crossProductAdd(2.0*scl, &p[4], eps, wd);
-        vecAxpy(2.0*scl*eta, &p[4], wd);
+        vecAxpy(-2.0*scl*p[3], deps, wd);
+        crossProductAdd(2.0*scl, &p[4], deps, wd);
+        vecAxpy(2.0*scl*deta, &p[4], wd);
 
         p += 8;
         q += 8;

@@ -1007,7 +1007,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   generate_random_array(adjoint, nvars);
   
   // Evaluate the derivative of the adjoint-residual product
-  double scale = 1.0;
+  double scale = 1.0*rand()/RAND_MAX;
   
   addAdjResProduct(time, scale,
                    result, dvLen, adjoint,
@@ -1206,6 +1206,7 @@ int TACSElement::testAdjResXptProduct( double time,
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
 	    max_rel, max_rel_index);
   }
+
   // Print the error if required
   if (test_print_level > 1){
     print_error_components(stderr, "Adj-Res Xpt product",

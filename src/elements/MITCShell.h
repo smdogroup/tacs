@@ -582,7 +582,8 @@ void MITCShell<order>::addResidual( double time,
 
       // Compute the accelerations at the current point due to the
       // ddvars input. Store the accelerations in the variable U[].
-      compute_shell_U(NUM_NODES, U, ddvars, N);
+      TacsScalar Uddot[NUM_DISPS];
+      compute_shell_U(NUM_NODES, Uddot, ddvars, N);
 
       TacsScalar *r = res;
       const TacsScalar *b = B;
@@ -595,16 +596,16 @@ void MITCShell<order>::addResidual( double time,
         }
 
         // Add the inertial terms from the accelerations
-        r[0] += h*N[i]*mass[0]*U[0];
-        r[1] += h*N[i]*mass[0]*U[1];
-        r[2] += h*N[i]*mass[0]*U[2];
+        r[0] += h*N[i]*mass[0]*Uddot[0];
+        r[1] += h*N[i]*mass[0]*Uddot[1];
+        r[2] += h*N[i]*mass[0]*Uddot[2];
 
-        // Add the inertial terms from the rotations
-        TacsScalar d = normal[0]*U[3] + normal[1]*U[4] + normal[2]*U[5];
-        r[3] += h*N[i]*mass[1]*(U[3] - normal[0]*d);
-        r[4] += h*N[i]*mass[1]*(U[4] - normal[1]*d);
-        r[5] += h*N[i]*mass[1]*(U[5] - normal[2]*d);
-
+	// Add the inertial terms from the rotations
+        TacsScalar d = normal[0]*Uddot[3] + normal[1]*Uddot[4] + normal[2]*Uddot[5];
+        r[3] += h*N[i]*mass[1]*(Uddot[3] - normal[0]*d);
+        r[4] += h*N[i]*mass[1]*(Uddot[4] - normal[1]*d);
+        r[5] += h*N[i]*mass[1]*(Uddot[5] - normal[2]*d);
+	
         r += NUM_DISPS;
       }
     }
@@ -1345,7 +1346,7 @@ void MITCShell<order>::addAdjResProduct( double time,
 
       // Scale the determinant of the Jacobian transformation by the
       // quadrature weight
-      h = gaussWts[n]*gaussWts[m]*h;
+      h = scale*gaussWts[n]*gaussWts[m]*h;
 
       // Calculate the deformation at the current point... 
       TacsScalar rot = 0.0;
@@ -1419,9 +1420,9 @@ void MITCShell<order>::addAdjResProduct( double time,
 
       // Scale the strain and rotational terms by scale*h
       for ( int i = 0; i < NUM_STRESSES; i++ ){
-        bpsi[i] *= scale*h;
+        bpsi[i] *= h;
       }
-      brot *= scale*h;
+      brot *= h;
       
       // Add the term: scale*psi^{T}*B^{T}*dC/dx*strain to the vector
       // dvSens - Note that this is much more efficient than computing
@@ -1429,22 +1430,26 @@ void MITCShell<order>::addAdjResProduct( double time,
       stiff->addStiffnessDVSens(pt, strain, bpsi, brot*rot,
                                 fdvSens, dvLen);
 
-      // Set the scalar for the mass matrix
-      TacsScalar alpha[2];
-      alpha[0] = alpha[1] = 0.0;
-      for ( int i = 0; i < NUM_NODES; i++ ){
-        alpha[0] += scale*h*N[i]*(U[0]*psi[NUM_DISPS*i] +
-                                  U[1]*psi[NUM_DISPS*i+1] +
-                                  U[2]*psi[NUM_DISPS*i+2]);
+      // Compute the accelerations at the current point due to the
+      // ddvars input. Store the accelerations in the variable U[].
+      TacsScalar Uddot[NUM_DISPS];
+      compute_shell_U(NUM_NODES, Uddot, ddvars, N);
 
-        TacsScalar d = normal[0]*U[3] + normal[1]*U[4] + normal[2]*U[5];
-        alpha[1] += scale*h*N[i]*((U[3] - normal[0]*d)*psi[NUM_DISPS*i+3] +
-                                  (U[4] - normal[1]*d)*psi[NUM_DISPS*i+4] +
-                                  (U[5] - normal[2]*d)*psi[NUM_DISPS*i+5]);
+      // Set the scalar for the mass matrix
+      TacsScalar mscale[2] = {0.0, 0.0};
+      const TacsScalar *p = psi;
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        mscale[0] += h*N[i]*(Uddot[0]*p[0] + Uddot[1]*p[1] + Uddot[2]*p[2]);
+
+        TacsScalar d = normal[0]*Uddot[3] + normal[1]*Uddot[4] + normal[2]*Uddot[5];
+        mscale[1] += h*N[i]*((Uddot[3] - normal[0]*d)*p[3] +
+			     (Uddot[4] - normal[1]*d)*p[4] +
+			     (Uddot[5] - normal[2]*d)*p[5]);
+	p += NUM_DISPS;
       }
 
       // Add the sensitivity term from the mass matrix contribution
-      stiff->addPointwiseMassDVSens(pt, alpha, fdvSens, dvLen);
+      stiff->addPointwiseMassDVSens(pt, mscale, fdvSens, dvLen);
     }
   }
 }
@@ -1634,27 +1639,38 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
       add_tying_bmat_sens<order>((type == LINEAR), fXptSens, psi, h, stress, tx, dtx,
                                  knots, pknots, vars, Xpts, N11, N22, N12);
 
-      // Set the scalar for the mass matrix
+      // Get the pointwise mass at the quadrature point
+      TacsScalar mass[2];
+      stiff->getPointwiseMass(pt, mass);
+
+      // Compute the accelerations at the current point due to the
+      // ddvars input. Store the accelerations in the variable U[].
+      TacsScalar Uddot[NUM_DISPS];
+      compute_shell_U(NUM_NODES, Uddot, ddvars, N);
+
+      // Find the derivative of the inner product w.r.t. the
+      // determinant of the Jacobian transformation and the derivative
+      // w.r.t. the normal direction
+      double alpha = scale*gaussWts[n]*gaussWts[m];
       TacsScalar hd = 0.0;
       TacsScalar nd[3] = {0.0, 0.0, 0.0};
+      const TacsScalar *p = psi;
       for ( int i = 0; i < NUM_NODES; i++ ){
-        hd += scale*N[i]*(U[0]*psi[NUM_DISPS*i] +
-                          U[1]*psi[NUM_DISPS*i+1] +
-                          U[2]*psi[NUM_DISPS*i+2]);
-
-        TacsScalar d = normal[0]*U[3] + normal[1]*U[4] + normal[2]*U[5];
-        hd += scale*N[i]*((U[3] - normal[0]*d)*psi[NUM_DISPS*i+3] +
-                          (U[4] - normal[1]*d)*psi[NUM_DISPS*i+4] +
-                          (U[5] - normal[2]*d)*psi[NUM_DISPS*i+5]);
+        hd += alpha*mass[0]*N[i]*(Uddot[0]*p[0] + Uddot[1]*p[1] + Uddot[2]*p[2]);
+	
+        TacsScalar d = normal[0]*Uddot[3] + normal[1]*Uddot[4] + normal[2]*Uddot[5];
+        hd += alpha*mass[1]*N[i]*((Uddot[3] - normal[0]*d)*p[3] +
+				  (Uddot[4] - normal[1]*d)*p[4] +
+				  (Uddot[5] - normal[2]*d)*p[5]);
         
-        // Psi^{T}*(I - n*n^{T})*U
-        TacsScalar psid = (psi[NUM_DISPS*i+3]*normal[0] + 
-                           psi[NUM_DISPS*i+4]*normal[1] + 
-                           psi[NUM_DISPS*i+5]*normal[2]);
+        // Find the derivative of Psi^{T}*(I - n*n^{T})*U w.r.t n:
+        TacsScalar psid = (p[3]*normal[0] + p[4]*normal[1] + p[5]*normal[2]);
           
-        nd[0] -= scale*h*N[i]*(psi[NUM_DISPS*i+3]*d + U[3]*psid);
-        nd[1] -= scale*h*N[i]*(psi[NUM_DISPS*i+4]*d + U[4]*psid);
-        nd[2] -= scale*h*N[i]*(psi[NUM_DISPS*i+5]*d + U[5]*psid);
+        nd[0] -= h*mass[1]*N[i]*(p[3]*d + Uddot[3]*psid);
+        nd[1] -= h*mass[1]*N[i]*(p[4]*d + Uddot[4]*psid);
+        nd[2] -= h*mass[1]*N[i]*(p[5]*d + Uddot[5]*psid);
+
+	p += NUM_DISPS;
       }
 
       // Add the derivative to the fXptSens array
@@ -1663,7 +1679,7 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
           TacsScalar XdSens[9];
           XdSens[0] = XdSens[1] = XdSens[2] = 0.0;
           XdSens[3] = XdSens[4] = XdSens[5] = 0.0;
-          XdSens[k]   = Na[i];
+          XdSens[k] = Na[i];
           XdSens[3+k] = Nb[i];
 
           // Compute the derivative of the cross product
@@ -1677,7 +1693,8 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
           TacsScalar hXptSens;
           FElibrary::jacobian3dSens(Xd, XdSens, &hXptSens);
 
-          fXptSens[3*i+k] += hXptSens*hd + nd[k]*XdSens[6+k];
+          fXptSens[3*i+k] += hXptSens*hd +
+	    (nd[0]*XdSens[6] + nd[1]*XdSens[7] + nd[2]*XdSens[8]);
         }
       }
     }
