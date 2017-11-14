@@ -353,13 +353,17 @@ class TACSRevoluteDriver : public TACSElement {
 class TACSMotionDriver : public TACSElement {
  public:
   TACSMotionDriver( TACSGibbsVector *_dir, 
-                    TacsScalar _omega ){
+                    TacsScalar _omega,
+                    int _arrest_rotations = 0){
     // Copy over the direction
     dir = _dir;
     dir->incref();
-
+    
     // Copy over the angular rate
     omega = _omega;
+    
+    // Arrest rotations if requested
+    arrest_rotations = _arrest_rotations;
   }
 
   ~TACSMotionDriver(){    
@@ -405,11 +409,11 @@ class TACSMotionDriver : public TACSElement {
     
     // The Lagrange multipliers
     const TacsScalar *lam = &vars[8];
-
+    
     // Specify a sinusoidal motion
     const TacsScalar scale = sin(omega*time);
 
-    // Specify sinusoidal translatory motion
+    // Equations to specify sinusoidal translatory motion
     res[8] += vars[0] - scale*d[0]; 
     res[9] += vars[1] - scale*d[1];
     res[10] += vars[2] - scale*d[2];
@@ -419,14 +423,33 @@ class TACSMotionDriver : public TACSElement {
     res[1] += lam[1];
     res[2] += lam[2];
 
-    for ( int i = 3; i < 8; i++ ){
-      res[8+i] += lam[i];
+    if (arrest_rotations){
+      // Equations to arrest rotational DOF
+      res[8+4] += vars[4];
+      res[8+5] += vars[5];
+      res[8+6] += vars[6];
+      
+      // Apply reaction moments to arrest rotational dof
+      res[4] += lam[4];
+      res[5] += lam[5];
+      res[6] += lam[6];
+
+      //Add dummy constraint eqns
+      res[8+3] += lam[3];
+      res[8+7] += lam[7];
+
+    } else {
+      // Add the dummy constraints for remaining constraint equations
+      for ( int i = 3; i < 8; i++ ){
+        res[8+i] += lam[i];
+      }
     }
   }
-
+  
  private:
   TacsScalar omega;
   TACSGibbsVector *dir;
+  int arrest_rotations;
 };
 
 /*

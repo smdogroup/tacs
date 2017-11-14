@@ -279,8 +279,12 @@ cdef class RevoluteDriver(Element):
         return
 
 cdef class MotionDriver(Element):
-    def __cinit__(self, GibbsVector dir, TacsScalar omega):
-        self.ptr = new TACSMotionDriver(dir.ptr, omega)
+    def __cinit__(self, GibbsVector dir, TacsScalar omega,
+                  arrest_rot=False):
+        if arrest_rot is False:
+            self.ptr = new TACSMotionDriver(dir.ptr, omega, 0)
+        else:
+            self.ptr = new TACSMotionDriver(dir.ptr, omega, 1)
         self.ptr.incref()
         return
     def __dealloc__(self):
