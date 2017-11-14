@@ -1428,6 +1428,23 @@ void MITCShell<order>::addAdjResProduct( double time,
       // the terms component by component
       stiff->addStiffnessDVSens(pt, strain, bpsi, brot*rot,
                                 fdvSens, dvLen);
+
+      // Set the scalar for the mass matrix
+      TacsScalar alpha[2];
+      alpha[0] = alpha[1] = 0.0;
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        alpha[0] += scale*h*N[i]*(U[0]*psi[NUM_DISPS*i] +
+                                  U[1]*psi[NUM_DISPS*i+1] +
+                                  U[2]*psi[NUM_DISPS*i+2]);
+
+        TacsScalar d = normal[0]*U[3] + normal[1]*U[4] + normal[2]*U[5];
+        alpha[1] += scale*h*N[i]*((U[3] - normal[0]*d)*psi[NUM_DISPS*i+3] +
+                                  (U[4] - normal[1]*d)*psi[NUM_DISPS*i+4] +
+                                  (U[5] - normal[2]*d)*psi[NUM_DISPS*i+5]);
+      }
+
+      // Add the sensitivity term from the mass matrix contribution
+      stiff->addPointwiseMassDVSens(pt, alpha, fdvSens, dvLen);
     }
   }
 }
@@ -1616,6 +1633,53 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
 
       add_tying_bmat_sens<order>((type == LINEAR), fXptSens, psi, h, stress, tx, dtx,
                                  knots, pknots, vars, Xpts, N11, N22, N12);
+
+      // Set the scalar for the mass matrix
+      TacsScalar hd = 0.0;
+      TacsScalar nd[3] = {0.0, 0.0, 0.0};
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        hd += scale*N[i]*(U[0]*psi[NUM_DISPS*i] +
+                          U[1]*psi[NUM_DISPS*i+1] +
+                          U[2]*psi[NUM_DISPS*i+2]);
+
+        TacsScalar d = normal[0]*U[3] + normal[1]*U[4] + normal[2]*U[5];
+        hd += scale*N[i]*((U[3] - normal[0]*d)*psi[NUM_DISPS*i+3] +
+                          (U[4] - normal[1]*d)*psi[NUM_DISPS*i+4] +
+                          (U[5] - normal[2]*d)*psi[NUM_DISPS*i+5]);
+        
+        // Psi^{T}*(I - n*n^{T})*U
+        TacsScalar psid = (psi[NUM_DISPS*i+3]*normal[0] + 
+                           psi[NUM_DISPS*i+4]*normal[1] + 
+                           psi[NUM_DISPS*i+5]*normal[2]);
+          
+        nd[0] -= scale*h*N[i]*(psi[NUM_DISPS*i+3]*d + U[3]*psid);
+        nd[1] -= scale*h*N[i]*(psi[NUM_DISPS*i+4]*d + U[4]*psid);
+        nd[2] -= scale*h*N[i]*(psi[NUM_DISPS*i+5]*d + U[5]*psid);
+      }
+
+      // Add the derivative to the fXptSens array
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar XdSens[9];
+          XdSens[0] = XdSens[1] = XdSens[2] = 0.0;
+          XdSens[3] = XdSens[4] = XdSens[5] = 0.0;
+          XdSens[k]   = Na[i];
+          XdSens[3+k] = Nb[i];
+
+          // Compute the derivative of the cross product
+          Tensor::crossProduct3DSens(&Xd[6], &XdSens[6],
+                                     &Xd[0], &Xd[3], &XdSens[0], &XdSens[3]);
+
+          // Compute the derivative of the normal vector
+          TacsScalar snrm;
+          Tensor::normalize3DSens(&snrm, &Xd[6], &XdSens[6]);
+
+          TacsScalar hXptSens;
+          FElibrary::jacobian3dSens(Xd, XdSens, &hXptSens);
+
+          fXptSens[3*i+k] += hXptSens*hd + nd[k]*XdSens[6+k];
+        }
+      }
     }
   }
 }

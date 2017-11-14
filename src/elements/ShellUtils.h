@@ -1247,7 +1247,7 @@ void compute_tying_strain_sens( const int is_linear,
 	    normalSens[1] = 0.0;
 	    normalSens[2] = Xd[0]*Nb[i] - Na[i]*Xd[3];
 	  }
-	  else if (k == 2){
+	  else {
 	    normalSens[0] = Xd[1]*Nb[i] - Na[i]*Xd[4];
 	    normalSens[1] = Na[i]*Xd[3] - Xd[0]*Nb[i];
 	    normalSens[2] = 0.0;
@@ -1356,7 +1356,7 @@ void compute_tying_strain_sens( const int is_linear,
 	    normalSens[1] = 0.0;
 	    normalSens[2] = Xd[0]*Nb[i] - Na[i]*Xd[3];
 	  }
-	  else if (k == 2){
+	  else {
 	    normalSens[0] = Xd[1]*Nb[i] - Na[i]*Xd[4];
 	    normalSens[1] = Na[i]*Xd[3] - Xd[0]*Nb[i];
 	    normalSens[2] = 0.0;
@@ -1510,7 +1510,7 @@ void add_tying_bmat_sens( const int is_linear,
               normalSens[1] = 0.0;
               normalSens[2] = Xd[0]*Nbj - Naj*Xd[3];
             }
-            else if (k == 2){
+            else {
               normalSens[0] = Xd[1]*Nbj - Naj*Xd[4];
               normalSens[1] = Naj*Xd[3] - Xd[0]*Nbj;
               normalSens[2] = 0.0;
@@ -1663,7 +1663,7 @@ void add_tying_bmat_sens( const int is_linear,
               normalSens[1] = 0.0;
               normalSens[2] = Xd[0]*Nbj - Naj*Xd[3];
             }
-            else if (k == 2){
+            else {
               normalSens[0] = Xd[1]*Nbj - Naj*Xd[4];
               normalSens[1] = Naj*Xd[3] - Xd[0]*Nbj;
               normalSens[2] = 0.0;

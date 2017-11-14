@@ -95,9 +95,6 @@ int main( int argc, char *argv[] ){
   generate_random_array(dvars, MAX_VARS);
   generate_random_array(ddvars, MAX_VARS);
 
-  memset(dvars, 0, MAX_VARS*sizeof(TacsScalar));
-  memset(ddvars, 0, MAX_VARS*sizeof(TacsScalar));
-
   // Set the tolerances depending on whether we're using complex step
   // or not...
 #ifdef TACS_USE_COMPLEX
