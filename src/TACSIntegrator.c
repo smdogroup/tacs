@@ -1123,7 +1123,8 @@ TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs,
                                       int _max_bdf_order):
 TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
   if (mpiRank == 0){ 
-    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s order %d\n", mpiRank, "BDF", _max_bdf_order);
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s order %d\n", 
+            mpiRank, "BDF", _max_bdf_order);
   }
 
   // copy over the variables
@@ -1642,7 +1643,8 @@ TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs,
                                         int _num_stages ):
 TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){
   if (mpiRank == 0){ 
-    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s stages %d\n", mpiRank, "DIRK", _num_stages);
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s stages %d\n", 
+            mpiRank, "DIRK", _num_stages);
   }
   // Set the number of stages
   num_stages = _num_stages;
@@ -2296,4 +2298,3 @@ void TACSDIRKIntegrator::getAdjoint( int step_num, int func_num,
                                      TACSBVec **adjoint ){
   *adjoint = lambda[func_num];
 }
-

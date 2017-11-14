@@ -109,6 +109,24 @@ int main( int argc, char *argv[] ){
   // Set up the constitutive relationship
   TacsScalar rho = 2700.0, E = 35e4, nu = 0.3, kcorr = 0.8333;
   TacsScalar ys = 434.0e6, t = 0.01;
+
+  // Set the parameter values from the command line
+  for ( int i = 0; i < argc; i++ ){
+    double Ec = 0.0, rhoc = 0.0;
+    if (sscanf(argv[i], "E=%lf", &Ec)){
+      if (Ec >= 0.0){
+        E = Ec;
+        printf("E = %g\n", TacsRealPart(E));
+      }
+    }
+    if (sscanf(argv[i], "rho=%lf", &rhoc)){
+      if (rhoc >= 0.0){
+        rho = rhoc;
+        printf("rho = %g\n", TacsRealPart(rho));
+      }
+    }
+  }
+
   int dv_num = 14;
   int num_design_vars = dv_num+1;
   FSDTStiffness *fsdt = new isoFSDTStiffness(rho, E, nu, kcorr, ys, t, 
@@ -173,7 +191,7 @@ int main( int argc, char *argv[] ){
   shell->incref();
   if (!ename || strcmp(ename, shell->elementName()) == 0){
     test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-    mitc9->testStrain(Xpts);
+    // mitc9->testStrain(Xpts);
   }
   shell->decref();
   fsdt->decref();

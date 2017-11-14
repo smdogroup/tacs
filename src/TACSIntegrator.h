@@ -163,8 +163,8 @@ class TACSIntegrator : public TACSObject {
   TACSPc *pc;                 // Preconditioner
   TACSKsm *ksm;               // KSM solver
 
-  int mpiRank;              // rank of the processor
-  int mpiSize;              // number of processors
+  int mpiRank;                // rank of the processor
+  int mpiSize;                // number of processors
   FILE *logfp;                // Pointer to the output filename
 
  private:
@@ -332,10 +332,10 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 class TACSABMIntegrator : public TACSIntegrator {
  public:
   TACSABMIntegrator( TACSAssembler *tacs, 
-		     double tinit,
+                     double tinit,
                      double tfinal,
                      double num_steps_per_sec, 
-		     int max_abm_order );
+                     int max_abm_order );
   ~TACSABMIntegrator();
 
   // Iterate through the forward solution
@@ -376,7 +376,7 @@ class TACSABMIntegrator : public TACSIntegrator {
 class TACSNBGIntegrator : public TACSIntegrator {
  public:
   TACSNBGIntegrator( TACSAssembler *tacs, 
-		     double tinit,
+                     double tinit,
                      double tfinal, 
                      double num_steps_per_sec,
                      int order );

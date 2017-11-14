@@ -62,9 +62,9 @@ class PDMat : public TACSObject {
  public:
   // Create a sparse matrix
   PDMat( MPI_Comm _comm, int csr_m, int csr_n, 
-	 int csr_bsize, const int *csr_vars, 
-	 int nvars, const int *csr_rowp, const int *csr_cols,
-	 int csr_blocks_per_block, int reorder_blocks );
+         int csr_bsize, const int *csr_vars, 
+         int nvars, const int *csr_rowp, const int *csr_cols,
+         int csr_blocks_per_block, int reorder_blocks );
 
   // Create a dense matrix
   PDMat( MPI_Comm _comm, int _nrows, int _ncols );
@@ -83,8 +83,8 @@ class PDMat : public TACSObject {
                      const int *csr_rowp, const int *csr_cols, 
                      TacsScalar *vals );
   void addAlltoallValues( int csr_bsize, int nvars, const int *vars,
-			  const int *csr_rowp, const int *csr_cols, 
-			  TacsScalar *vals );
+                          const int *csr_rowp, const int *csr_cols, 
+                          TacsScalar *vals );
   void setRand();
 
   // Matrix operations - note that factorization is in-place
@@ -102,12 +102,12 @@ class PDMat : public TACSObject {
   void merge_nz_pattern( int root, int *rowp, int *cols,
                          int reorder_blocks );
   void compute_symbolic_factor( int ** _rowp, int ** _cols, 
-				int max_size );
+                                int max_size );
   void init_ptr_arrays( int *rowp, int *cols );
   int get_block_num( int var, const int *ptr );
   int add_values( int rank, int i, int j, 
-		  int csr_bsize, int csr_i, int csr_j, 
-		  TacsScalar *b );
+                  int csr_bsize, int csr_i, int csr_j, 
+                  TacsScalar *b );
 
   // Helper functions for applying the lower-triangular back-solve
   void lower_column_update( int col, TacsScalar *x, 
