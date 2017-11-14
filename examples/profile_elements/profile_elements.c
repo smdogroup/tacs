@@ -107,7 +107,7 @@ int main( int argc, char *argv[] ){
   TACSElement::setPrintLevel(2);
 
   // Set up the constitutive relationship
-  TacsScalar rho = 2700.0, E = 35e8, nu = 0.3, kcorr = 0.8333;
+  TacsScalar rho = 2700.0, E = 35e4, nu = 0.3, kcorr = 0.8333;
   TacsScalar ys = 434.0e6, t = 0.01;
   int dv_num = 14;
   int num_design_vars = dv_num+1;
@@ -176,7 +176,6 @@ int main( int argc, char *argv[] ){
     mitc9->testStrain(Xpts);
   }
   shell->decref();
-
   fsdt->decref();
 
   // Set the variables back to a random array
