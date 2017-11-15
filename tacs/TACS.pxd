@@ -503,26 +503,26 @@ cdef extern from "TACSIntegrator.h":
     cdef cppclass TACSBDFIntegrator(TACSIntegrator):
         TACSBDFIntegrator(TACSAssembler *tacs,
                         double tinit, double tfinal,
-                        int num_steps_per_sec,
+                        double num_steps_per_sec,
                         int max_bdf_order)
 
     # DIRK Implementation of the integrator
     cdef cppclass TACSDIRKIntegrator(TACSIntegrator):
         TACSDIRKIntegrator(TACSAssembler *tacs,
                            double tinit, double tfinal,
-                           int num_steps_per_sec,
+                           double num_steps_per_sec,
                            int stages)
       
     # ABM Implementation of the integrator
     cdef cppclass TACSABMIntegrator(TACSIntegrator):
         TACSABMIntegrator(TACSAssembler *tacs,
                           double tinit, double tfinal,
-                          int num_steps_per_sec,
+                          double num_steps_per_sec,
                           int max_abm_order)
 
     # NBG Implementation of the integrator
     cdef cppclass TACSNBGIntegrator(TACSIntegrator):
         TACSNBGIntegrator(TACSAssembler *tacs,
                           double tinit, double tfinal,
-                          int num_steps_per_sec,
+                          double num_steps_per_sec,
                           int order)

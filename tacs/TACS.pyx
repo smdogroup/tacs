@@ -1703,7 +1703,7 @@ cdef class BDFIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
-                  int num_steps_per_sec,
+                  double num_steps_per_sec,
                   int max_bdf_order):
         '''
         Constructor for BDF Integrators of order 1, 2 and 3
@@ -1721,7 +1721,7 @@ cdef class DIRKIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
-                  int num_steps_per_sec,
+                  double num_steps_per_sec,
                   int stages):
         self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
                                           num_steps_per_sec, stages)
@@ -1735,7 +1735,7 @@ cdef class ABMIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
-                  int num_steps_per_sec,
+                  double num_steps_per_sec,
                   int max_abm_order):
         '''
         Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
@@ -1751,7 +1751,7 @@ cdef class NBGIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                       double tinit, double tfinal,
-                      int num_steps_per_sec,
+                      double num_steps_per_sec,
                       int order):
         '''
         Constructor for Newmark-Beta-Gamma method of integration
