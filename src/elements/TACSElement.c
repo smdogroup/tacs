@@ -746,9 +746,9 @@ int TACSElement::testJacobian( double time,
               elementName());
     }
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
+            max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
+            max_rel, max_rel_index);
   }
   // Print the error if required
   if (test_print_level > 1){
@@ -856,12 +856,12 @@ int TACSElement::testStrainSVSens( const TacsScalar Xpts[],
 
   if (test_print_level > 0){
     fprintf(stderr, 
-	    "Testing the strain sensivity w.r.t. state variables for %s.\n",
-	    elementName());
+            "Testing the strain sensivity w.r.t. state variables for %s.\n",
+            elementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
+            max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
+            max_rel, max_rel_index);
   }
   // Print the error if required
   if (test_print_level > 1){
@@ -959,12 +959,12 @@ int TACSElement::testStrainXptSens( const TacsScalar Xpts[],
 
   if (test_print_level > 0){
     fprintf(stderr, 
-	    "Testing the strain sensivity w.r.t. node locations for %s.\n",
-	    elementName());
+            "Testing the strain sensivity w.r.t. node locations for %s.\n",
+            elementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
+            max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
+            max_rel, max_rel_index);
   }
   // Print the error if required
   if (test_print_level > 1){
@@ -1047,7 +1047,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   memset(res, 0, nvars*sizeof(TacsScalar));
   addResidual(time, res, Xpts, vars, dvars, ddvars);
   for ( int k = 0; k < nvars; k++ ){
-    p1 += res[k]*adjoint[k];
+    p1 += scale*res[k]*adjoint[k];
   }
 
   fd_dpdx = TacsImagPart(p1)/dh;
@@ -1068,7 +1068,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 
   TacsScalar p1 = 0.0;
   for ( int k = 0; k < nvars; k++ ){
-    p1 += res[k]*adjoint[k];
+    p1 += scale*res[k]*adjoint[k];
   }
 
   // Pertub the design variables: xpert = x - dh*sign(result[k])
@@ -1087,7 +1087,7 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   addResidual(time, res, Xpts, vars, dvars, ddvars);
   TacsScalar p2 = 0.0;
   for ( int k = 0; k < nvars; k++ ){
-    p2 += res[k]*adjoint[k];
+    p2 += scale*res[k]*adjoint[k];
   }
 
   // Compute the finite-difference approximation
@@ -1109,9 +1109,9 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
             "Testing the derivative of the adjoint-residual product for %s\n",
             elementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
+            max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
+            max_rel, max_rel_index);
   }
   // Print the error if required
   if (test_print_level > 1){
@@ -1202,9 +1202,9 @@ int TACSElement::testAdjResXptProduct( double time,
             "Testing the derivative of the adjoint-residual product for %s\n",
             elementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
+            max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
+            max_rel, max_rel_index);
   }
 
   // Print the error if required
@@ -1270,12 +1270,12 @@ int TACSElement::testJacobianXptSens( const TacsScalar Xpts[] ){
 
   if (test_print_level > 0){
     fprintf(stderr, 
-	    "Testing the det. Jacobian sensivity w.r.t. the nodes for %s.\n",
-	    elementName());
+            "Testing the det. Jacobian sensivity w.r.t. the nodes for %s.\n",
+            elementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-	    max_err, max_err_index);
+            max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-	    max_rel, max_rel_index);
+            max_rel, max_rel_index);
   }
   // Print the error if required
   if (test_print_level > 1){
