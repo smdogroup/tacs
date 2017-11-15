@@ -1229,13 +1229,21 @@ cdef class Creator:
                                        <int*>id_nums.data)
         return
 
-    def setBoundaryConditions(self, np.ndarray[int, ndim=1, mode='c'] nodes,
-                              np.ndarray[int, ndim=1, mode='c'] ptr,
-                              np.ndarray[int, ndim=1, mode='c'] bcvars):
+    def setBoundaryConditions(self,
+                              np.ndarray[int, ndim=1, mode='c'] nodes,
+                              np.ndarray[int, ndim=1, mode='c'] ptr=None,
+                              np.ndarray[int, ndim=1, mode='c'] bcvars=None):
         '''Set the boundary conditions'''
         cdef int num_bcs = nodes.shape[0]
-        self.ptr.setBoundaryConditions(num_bcs, <int*>nodes.data,
-                                       <int*>ptr.data, <int*>bcvars.data)
+        if ptr is not None and bcvars is not None:
+            self.ptr.setBoundaryConditions(num_bcs,
+                                           <int*>nodes.data,
+                                           <int*>ptr.data,
+                                           <int*>bcvars.data)
+        else:
+            self.ptr.setBoundaryConditions(num_bcs,
+                                           <int*>nodes.data,
+                                           NULL, NULL) 
         return
 
     def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
@@ -1245,7 +1253,6 @@ cdef class Creator:
 
     def setElements(self, elements):
         '''Set the elements'''
-
         # Allocate an array for the element pointers
         cdef TACSElement **elems
         elems = <TACSElement**>malloc(len(elements)*sizeof(TACSElement*))
