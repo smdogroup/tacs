@@ -453,6 +453,94 @@ class TACSMotionDriver : public TACSElement {
 };
 
 /*
+
+  Drives the attached body sinusoidally along the given direction for bodies
+  with six degrees of freedom (for linearized rotations)
+
+*/
+
+class TACSLinearizedMotionDriver : public TACSElement {
+ public:
+  TACSLinearizedMotionDriver( TACSGibbsVector *_dir, 
+                    TacsScalar _omega,
+                    int _arrest_rotations = 0){
+    // Copy over the direction
+    dir[0] = _dir[0];
+    
+    // Copy over the angular rate
+    omega = _omega;
+    
+    // Arrest rotations if requested
+    arrest_rotations = _arrest_rotations;
+  }
+
+  ~TACSLinearizedMotionDriver(){}
+
+  void getMultiplierIndex( int *multiplier ){
+    *multiplier = 1;
+  }
+
+  int numDisplacements(){
+    return 6;
+  }
+
+  int numNodes(){
+    return 2;
+  }
+
+  const char* elementName(){
+    return "TACSMotionDriver";
+  }
+
+  void computeEnergies( double time,
+                        TacsScalar *_Te, 
+                        TacsScalar *_Pe,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[] ){
+    *_Te = 0.0;
+    *_Pe = 0.0;
+  }
+
+  void addResidual( double time, TacsScalar res[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[] ){
+    // Retrieve the direction
+    const TacsScalar *d;
+    dir->getVector(&d);
+    
+    // The Lagrange multipliers
+    const TacsScalar *lam = &vars[6];
+    
+    // Specify a sinusoidal motion
+    const TacsScalar scale = sin(omega*time);
+
+    // Equations to specify sinusoidal translatory motion
+    res[6] += vars[0] - scale*d[0]; 
+    res[7] += vars[1] - scale*d[1];
+    res[8] += vars[2] - scale*d[2];
+    res[9] += vars[3];
+    res[10] += vars[4];
+    res[11] += vars[5];
+
+    // Add the constraint reaction forces to the body
+    res[0] += lam[0];
+    res[1] += lam[1];
+    res[2] += lam[2];
+    res[3] += lam[3];
+    res[4] += lam[4];
+    res[5] += lam[5];
+  }
+  
+ private:
+  TacsScalar omega;
+  TACSGibbsVector *dir;
+  int arrest_rotations;
+};
+
+/*
   Cylindrical constraint between rigid bodies
 */
 class TACSCylindricalConstraint : public TACSElement {

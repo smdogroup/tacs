@@ -62,6 +62,9 @@ cdef extern from "KinematicConstraints.h":
     cdef cppclass TACSMotionDriver(TACSElement):
         TACSMotionDriver(TACSGibbsVector*, TacsScalar, int)
 
+    cdef cppclass TACSLinearizedMotionDriver(TACSElement):
+        TACSLinearizedMotionDriver(TACSGibbsVector*, TacsScalar, int)
+
     cdef cppclass TACSCylindricalConstraint(TACSElement):
         TACSCylindricalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
                                   TACSGibbsVector *point, TACSGibbsVector *eA)

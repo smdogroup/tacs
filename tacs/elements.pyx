@@ -296,6 +296,24 @@ cdef class MotionDriver(Element):
         self.ptr.setComponentNum(comp_num)
         return
 
+cdef class LinearizedMotionDriver(Element):
+    def __cinit__(self, GibbsVector dir, TacsScalar omega,
+                  arrest_rot=False):
+        if arrest_rot is False:
+            self.ptr = new TACSLinearizedMotionDriver(dir.ptr, omega, 0)
+        else:
+            self.ptr = new TACSLinearizedMotionDriver(dir.ptr, omega, 1)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return    
+    def numNodes(self):
+        return self.ptr.numNodes()
+    def setComponentNum(self, int comp_num):
+        self.ptr.setComponentNum(comp_num)
+        return
+
 cdef class AverageConstraint(Element):
     def __cinit__(self, RigidBody body, GibbsVector point,
                   RefFrame frame, int moment_flag=0):
