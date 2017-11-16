@@ -1606,7 +1606,7 @@ void MITC9::addAdjResProduct( double time, double scale,
       // Compute the derivatives of the shape functions
       TacsScalar Xdinv[9];
       TacsScalar h = inv3x3(Xd, Xdinv);
-      h *= scale*gaussWts[i]*gaussWts[j];
+      h *= gaussWts[i]*gaussWts[j];
 
       // Evaluate the areal mass properties
       TacsScalar rho[2];
