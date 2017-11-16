@@ -465,7 +465,8 @@ class TACSLinearizedMotionDriver : public TACSElement {
                     TacsScalar _omega,
                     int _arrest_rotations = 0){
     // Copy over the direction
-    dir[0] = _dir[0];
+    dir = _dir;
+    dir->incref();
     
     // Copy over the angular rate
     omega = _omega;
@@ -474,7 +475,9 @@ class TACSLinearizedMotionDriver : public TACSElement {
     arrest_rotations = _arrest_rotations;
   }
 
-  ~TACSLinearizedMotionDriver(){}
+  ~TACSLinearizedMotionDriver(){
+    dir->decref();
+  }
 
   void getMultiplierIndex( int *multiplier ){
     *multiplier = 1;
