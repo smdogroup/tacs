@@ -1,10 +1,12 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-OBJS = crm.o
+OBJS = crm.o \
+	crm_frequency.o
 
 default: ${OBJS}
 	${CXX} -o crm crm.o ${TACS_LD_FLAGS}
+	${CXX} -o crm_frequency crm_frequency.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
