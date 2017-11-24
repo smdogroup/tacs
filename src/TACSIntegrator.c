@@ -299,12 +299,12 @@ void TACSIntegrator::setOutputPrefix( const char *_prefix ){
 /*
   Function that writes time, q, qdot, qddot to file
 */
-void TACSIntegrator::writeSolution( const char *filename, int format ){
+void TACSIntegrator::writeRawSolution( const char *filename, int format ){
   FILE *fp = fopen(filename, "w");
   TacsScalar *qvals, *qdotvals, *qddotvals;
 
   if (format == 1){
-    for ( int k = 0; k < num_time_steps; k++ ){    
+    for ( int k = 0; k < num_time_steps + 1; k++ ){    
       // Copy over the state values from TACSBVec
       int num_state_vars = q[k]->getArray(&qvals);
       qdot[k]->getArray(&qdotvals);
@@ -331,7 +331,7 @@ void TACSIntegrator::writeSolution( const char *filename, int format ){
         . qdot
         . qddot
       */
-      for ( int k = 0; k < num_time_steps; k++ ){       
+      for ( int k = 0; k < num_time_steps + 1; k++ ){       
         // Copy over the state values from TACSBVec
         int num_state_vars = q[k]->getArray(&qvals);
         qdot[k]->getArray(&qdotvals);
@@ -355,7 +355,7 @@ void TACSIntegrator::writeSolution( const char *filename, int format ){
     } 
     else {
       // Write the DOFS on user specified element number in final ordering  
-      for ( int k = 0; k < num_time_steps; k++ ){    
+      for ( int k = 0; k < num_time_steps + 1; k++ ){    
         // Copy over the state values from TACSBVec
         int num_state_vars = q[k]->getArray(&qvals);
         qdot[k]->getArray(&qdotvals);
@@ -389,7 +389,7 @@ void TACSIntegrator::writeSolution( const char *filename, int format ){
   Creates f5 files for each time step.
 */
 void TACSIntegrator::writeSolutionToF5(){
-  for ( int k = 0; k < num_time_steps; k++ ){
+  for ( int k = 0; k < num_time_steps + 1; k++ ){
     writeStepToF5(k);
   }
 }
@@ -525,7 +525,7 @@ void TACSIntegrator::printOptionSummary(){
     fprintf(logfp, "TACSIntegrator: Parameter values\n");
     fprintf(logfp, "===============================================\n");
     fprintf(logfp, "%-30s %15g\n", "tinit", time[0] );
-    fprintf(logfp, "%-30s %15g\n", "tfinal", time[num_time_steps-1]);
+    fprintf(logfp, "%-30s %15g\n", "tfinal", time[num_time_steps+1]);
     fprintf(logfp, "%-30s %15d\n", "num_time_steps", num_time_steps );
     fprintf(logfp, "%-30s %15d\n", "mpiSize", mpiSize);
     fprintf(logfp, "%-30s %15d\n", "print_level", print_level);

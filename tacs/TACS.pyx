@@ -1708,7 +1708,11 @@ cdef class Integrator:
         Get the number of time steps
         '''
         return self.ptr.getNumTimeSteps()
-    
+
+    def writeRawSolution(self, char *name, int format_flag=2):
+        self.ptr.writeRawSolution(&name[0], format_flag)
+        return
+
 cdef class BDFIntegrator(Integrator):
     '''
     Backward-Difference method for integration. This currently
