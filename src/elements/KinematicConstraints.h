@@ -118,7 +118,7 @@ class TACSSphericalConstraint : public TACSElement {
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian2( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
@@ -707,12 +707,12 @@ class TACSPrismaticConstraint : public TACSElement {
 class TACSSlidingPivotConstraint : public TACSElement {
  public:
   TACSSlidingPivotConstraint( TACSRigidBody *_bodyA,
-			      TACSRigidBody *_bodyB,
-			      TACSGibbsVector *_point,
-			      TACSGibbsVector *_eAVec );
+                              TACSRigidBody *_bodyB,
+                              TACSGibbsVector *_point,
+                              TACSGibbsVector *_eAVec );
   TACSSlidingPivotConstraint( TACSRigidBody *_bodyA,
-			      TACSGibbsVector *_point,
-			      TACSGibbsVector *_eAVec );
+                              TACSGibbsVector *_point,
+                              TACSGibbsVector *_eAVec );
   ~TACSSlidingPivotConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
