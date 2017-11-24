@@ -568,6 +568,13 @@ void TACSIntegrator::printAdjointOptionSummary(){
 }
 
 /*
+  The number of time steps configured during instantiation
+*/
+int TACSIntegrator::getNumTimeSteps(){
+  return num_time_steps;
+}
+
+/*
   Drives the residual R(t,q,qdot,qddot) to zero using Newton's method
 
   Input: 

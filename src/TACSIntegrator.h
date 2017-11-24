@@ -115,6 +115,10 @@ class TACSIntegrator : public TACSObject {
   void printOptionSummary();
   void printAdjointOptionSummary();
 
+  // Returns the number of time steps configured during instantiation
+  //-----------------------------------------------------------------
+  int getNumTimeSteps();
+
  protected:
   // Functions for solutions to linear and nonlinear problems
   int newtonSolve( double alpha, double beta, double gamma,

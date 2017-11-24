@@ -1752,6 +1752,12 @@ cdef class Integrator:
         self.ptr.setBeamOutput(f5.ptr)
         return
 
+    def getNumTimeSteps(self):
+        '''
+        Get the number of time steps
+        '''
+        return self.ptr.getNumTimeSteps()
+    
 cdef class BDFIntegrator(Integrator):
     '''
     Backward-Difference method for integration. This currently
