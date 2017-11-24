@@ -367,7 +367,7 @@ void TACSSphericalConstraint::addResidual( double time, TacsScalar res[],
 /*
   Compute the Jacobian of the residuals of the governing equations
 */
-void TACSSphericalConstraint::addJacobian2( double time, TacsScalar J[],
+void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
                                            double alpha, 
                                            double beta, 
                                            double gamma,
@@ -1567,9 +1567,9 @@ void TACSRevoluteDriver::addJacobian( double time, TacsScalar J[],
   rev   : the revolute direction in global frame
 */
  TACSSlidingPivotConstraint::TACSSlidingPivotConstraint( TACSRigidBody *_bodyA, 
-							 TACSRigidBody *_bodyB, 
-							 TACSGibbsVector *_point, 
-							 TACSGibbsVector *_eAVec ){
+                                                         TACSRigidBody *_bodyB, 
+                                                         TACSGibbsVector *_point, 
+                                                         TACSGibbsVector *_eAVec ){
    // Copy over the input arguments
    bodyA = _bodyA; bodyA->incref();
    bodyB = _bodyB; bodyB->incref();
@@ -1594,8 +1594,8 @@ void TACSRevoluteDriver::addJacobian( double time, TacsScalar J[],
    eAVec : direction vector to slide along
  */
  TACSSlidingPivotConstraint::TACSSlidingPivotConstraint( TACSRigidBody *_bodyA, 
-							 TACSGibbsVector *_point, 
-							 TACSGibbsVector *_eAVec ){
+                                                         TACSGibbsVector *_point, 
+                                                         TACSGibbsVector *_eAVec ){
    // Copy over the input arguments
    bodyA = _bodyA; bodyA->incref();
    bodyB = NULL;
@@ -1829,7 +1829,7 @@ void TACSSlidingPivotConstraint::addResidual( double time, TacsScalar res[],
    Set the design variable values
  */
  void TACSSlidingPivotConstraint::setDesignVars( const TacsScalar dvs[], 
-						 int numDVs ){
+                                                 int numDVs ){
    point->setDesignVars(dvs, numDVs);
    updatePoints();
  }
