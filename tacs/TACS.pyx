@@ -431,7 +431,8 @@ cdef class KSM:
         '''
         self.ptr.setTolerances(rtol, atol)
 
-    def setMonitor(self, MPI.Comm comm, char *descript, int freq):
+    def setMonitor(self, MPI.Comm comm, 
+                   char *descript='GMRES', int freq=10):
         '''
         Set the object to control how the convergence history is displayed
         (if at all)
@@ -1449,6 +1450,54 @@ cdef class MeshLoader:
                 vals[i] = bc_vals[i]
 
         return nodes, ptr, bvars, vals
+
+cdef class FrequencyAnalysis:
+    cdef TACSFrequencyAnalysis *ptr
+    def __cinit__(self, Assembler assembler, TacsScalar sigma,
+                  Mat M, Mat K, KSM solver, int max_lanczos=100,
+                  int num_eigs=5, double eig_tol=1e-6):
+        self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr, 
+                                             K.ptr, solver.ptr, max_lanczos, 
+                                             num_eigs, eig_tol)
+        self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def getSigma(self):
+        return self.ptr.getSigma()
+
+    def setSigma(self, TacsScalar sigma):
+        self.ptr.setSigma(sigma)
+
+    def solve(self, print_flag=True, int freq=10):
+        cdef MPI_Comm comm 
+        cdef int rank
+        cdef TACSAssembler *assembler = NULL
+        cdef KSMPrint *ksm_print = NULL
+        
+        if print_flag:
+            assembler = self.ptr.getTACS()
+            comm = assembler.getMPIComm()
+            MPI_Comm_rank(comm, &rank)
+            ksm_print = new KSMPrintStdout("FrequencyAnalysis", rank, freq)
+
+        self.ptr.solve(ksm_print)
+        return
+
+    def extractEigenvalue(self, int eig):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvalue(eig, &err)
+        return eigval, err
+
+    def extractEigenvector(self, int eig, Vec vec):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvector(eig, vec.ptr, &err)
+        return eigval, err
 
 # A generic abstract class for all integrators implemented in TACS
 cdef class Integrator:
