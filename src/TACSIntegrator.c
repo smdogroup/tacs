@@ -526,8 +526,8 @@ void TACSIntegrator::printOptionSummary(){
     fprintf(logfp, "===============================================\n");
     fprintf(logfp, "%-30s %15g\n", "tinit", time[0] );
     fprintf(logfp, "%-30s %15g\n", "tfinal", time[num_time_steps]);
-    fprintf(logfp, "%-30s %15d\n", "num_time_steps", num_time_steps );
     fprintf(logfp, "%-30s %15g\n", "step_size", time[1]-time[0] );
+    fprintf(logfp, "%-30s %15d\n", "num_time_steps", num_time_steps );
     fprintf(logfp, "%-30s %15d\n", "mpiSize", mpiSize);
     fprintf(logfp, "%-30s %15d\n", "print_level", print_level);
 
