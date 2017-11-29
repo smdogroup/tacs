@@ -1335,6 +1335,7 @@ void TACSRigidLink::addResidual( double time, TacsScalar res[],
 
   // Set the variables for point B
   const TacsScalar *uB = &vars[8];
+  const TacsScalar etaB = vars[11];
   const TacsScalar *epsB = &vars[12];
 
   // Set the pointer to the multipliers
@@ -1389,8 +1390,10 @@ void TACSRigidLink::addResidual( double time, TacsScalar res[],
   vecAxpy(1.0, &lam[4], &resB[4]);
   
   // Add the scalar part to the residual of the linked body
-
-
+  resA[7] += 10.0*(etaB - etaA);
+  resB[7] += 10.0*(etaB - etaA);
+  resB[3] += 10.0*(vars[7] + vars[15]);
+  resA[3] -= 10.0*(vars[7] + vars[15]);
 }
 
 /*
@@ -1455,6 +1458,17 @@ void TACSRigidLink::addJacobian( double time, TacsScalar J[],
   // Add the remaining quaternion constraint derivatives w.r.t. lam[4:]
   addBlockIdent(-alpha, &J[4*nvars + 20], nvars);
   addBlockIdent(alpha, &J[12*nvars + 20], nvars);
+
+  // Add the contributions to the residual of the linked body
+  J[7*nvars + 11] += 10.0*alpha;
+  J[11*nvars + 7] += 10.0*alpha;
+  J[7*nvars + 3] -= 10.0*alpha;
+  J[3*nvars + 7] -= 10.0*alpha;
+
+  J[15*nvars + 11] += 10.0*alpha;
+  J[11*nvars + 15] += 10.0*alpha;
+  J[15*nvars + 3] -= 10.0*alpha;
+  J[3*nvars + 15] -= 10.0*alpha;
 }
 
 TACSRevoluteDriver::TACSRevoluteDriver( TACSGibbsVector *rev,
@@ -1535,8 +1549,8 @@ void TACSRevoluteDriver::addResidual( double time, TacsScalar res[],
   res[5] += lam[5];
   res[6] += lam[6];
 
-  res[7] += vars[3] - cos(0.5*theta);
-  res[3] += vars[7];
+  res[7] += 10.0*(vars[3] - cos(0.5*theta));
+  res[3] += 10.0*vars[7];
 }
 
 void TACSRevoluteDriver::addJacobian( double time, 
@@ -1574,8 +1588,8 @@ void TACSRevoluteDriver::addJacobian( double time,
   J[6*nvars+14] += alpha;
 
   // Add the extra constraint
-  J[7*nvars+3] += alpha;
-  J[3*nvars+7] += alpha; 
+  J[7*nvars+3] += 10.0*alpha;
+  J[3*nvars+7] += 10.0*alpha; 
 }
 
 /*
