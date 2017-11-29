@@ -404,7 +404,19 @@ cdef inline _init_Assembler(TACSAssembler *ptr):
     tacs.ptr = ptr
     tacs.ptr.incref()
     return tacs
-      
+
+cdef extern from "TACSBuckling.h":
+    cdef cppclass TACSFrequencyAnalysis(TACSObject):
+        TACSFrequencyAnalysis(TACSAssembler *, TacsScalar,
+                              TACSMat*, TACSMat*, TACSKsm*,
+                              int, int, double)
+        TACSAssembler* getTACS()
+        TacsScalar getSigma()
+        void setSigma(TacsScalar)
+        void solve(KSMPrint*)
+        TacsScalar extractEigenvalue(int, TacsScalar*)
+        TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+
 cdef extern from "TACSMeshLoader.h":
     cdef cppclass TACSMeshLoader(TACSObject):
         TACSMeshLoader(MPI_Comm _comm)
@@ -502,7 +514,6 @@ cdef extern from "TACSIntegrator.h":
 
         # Debug adjoint
         void checkGradients(double dh)
-
 
     # BDF Implementation of the integrator
     cdef cppclass TACSBDFIntegrator(TACSIntegrator):

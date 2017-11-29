@@ -355,7 +355,7 @@ class TACSMotionDriver : public TACSElement {
  public:
   TACSMotionDriver( TACSGibbsVector *_dir, 
                     TacsScalar _omega,
-                    int _arrest_rotations=0 ){
+                    int _arrest_rotations = 0 ){
     // Copy over the direction
     dir = _dir;
     dir->incref();
