@@ -302,6 +302,9 @@ class TACSRigidLink : public TACSElement {
  private:
   TACSRigidBody *bodyA; // The rigid body
   static const char *elem_name; // The name of the element
+  static const TacsScalar delta = 10.0; // Parameter used to avoid
+                                        // linearly dependent rows in
+                                        // Jacobian at singular points
 };
 
 /*
@@ -346,6 +349,9 @@ class TACSRevoluteDriver : public TACSElement {
  private:
   TacsScalar omega;
   TACSGibbsVector *origVec, *revVec;
+  static const TacsScalar delta = 10.0; // Parameter used to avoid
+                                        // linearly dependent rows in
+                                        // Jacobian at singular points
 };
 
 /*
