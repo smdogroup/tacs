@@ -29,7 +29,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
   time = new double[ num_time_steps+1 ];
   memset(time, 0, num_time_steps*sizeof(double));
   for ( int k = 0; k < num_time_steps+1; k++ ){
-    time[k] = tinit + k*(tfinal - tinit)/num_time_steps;
+    time[k] = tinit + double(k)*(tfinal - tinit)/double(num_time_steps);
   }
 
   // MPI information
@@ -873,7 +873,7 @@ void TACSIntegrator::logTimeStep( int step_num ){
     time_fwd_apply_factor = 0.0;
     time_newton = 0.0;
   }
-  if (step_num == num_time_steps-1){
+  if (step_num == num_time_steps){
     time_forward = MPI_Wtime() - time_forward;
   }
 

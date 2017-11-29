@@ -335,6 +335,7 @@ class TACSRevoluteDriver : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
+
   void addJacobian( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],

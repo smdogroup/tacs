@@ -879,16 +879,14 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
     TacsScalar CB[9];
     computeRotationMat(etaB, epsB, CB);
 
-    // Compute t = CB^{T}*xB + uB
+    // Compute t = rB + uB + CB^{T}*xB
     TacsScalar t[3];
     matMultTrans(CB, xB, t);
     vecAxpy(1.0, uB, t);
+    vecAxpy(1.0, rB, t);
 
     // Complete the evaluation of the constraint
     vecAxpy(-1.0, t, resC);
-
-    // Get the initial position for bodyB
-    vecAxpy(-1.0, rB, resC);
 
     // Add the terms for body B
     vecAxpy(-1.0, lam, &resB[0]);
@@ -937,6 +935,7 @@ void TACSRevoluteConstraint::addResidual( double time, TacsScalar res[],
       matMultTrans(CB, eB1, tB1);
       matMultTrans(CB, eB2, tB2);
 
+      
       // Compute the contributions to the first revolute constraint
       resC[3] += vecDot(tA, tB1);
       
@@ -1388,6 +1387,10 @@ void TACSRigidLink::addResidual( double time, TacsScalar res[],
   // Add the terms from the second constraint
   vecAxpy(-1.0, &lam[4], &resA[4]);
   vecAxpy(1.0, &lam[4], &resB[4]);
+  
+  // Add the scalar part to the residual of the linked body
+
+
 }
 
 /*
@@ -1504,56 +1507,75 @@ void TACSRevoluteDriver::addResidual( double time, TacsScalar res[],
 
   // Set the multipliers
   const TacsScalar *lam = &vars[8];
+  TacsScalar *resC = &res[8];
 
   // Scale the coefficient
   s *= 1.0/sqrt(rev[0]*rev[0] + rev[1]*rev[1] + rev[2]*rev[2]);
+
+  // Set the displacements equal to zero
+  resC[0] += vars[0];
+  resC[1] += vars[1];
+  resC[2] += vars[2];
+  
+  // Set the quaternion parameters equal to their specified values
+  resC[4] += vars[4] - rev[0]*s;
+  resC[5] += vars[5] - rev[1]*s;
+  resC[6] += vars[6] - rev[2]*s;
+
+  // Add dummy constraints for the remaining multipliers
+  resC[3] += lam[3];
+  resC[7] += lam[7];
 
   // Add the multipliers (forces) to the equations of motion
   res[0] += lam[0];
   res[1] += lam[1];
   res[2] += lam[2];
 
-  // Add the multiplier constraints for the quaternions
-  res[4] += lam[3];
-  res[5] += lam[4];
-  res[6] += lam[5];
+  res[4] += lam[4];
+  res[5] += lam[5];
+  res[6] += lam[6];
 
-  // Set the displacements equal to zero
-  res[8] += vars[0];
-  res[9] += vars[1];
-  res[10] += vars[2];
-  
-  // Set the quaternion parameters equal to their specified values
-  res[11] += vars[4] - rev[0]*s;
-  res[12] += vars[5] - rev[1]*s;
-  res[13] += vars[6] - rev[2]*s;
-
-  // Add dummy constraints for the remaining multipliers
-  res[14] += lam[6];
-  res[15] += lam[7];
+  res[7] += vars[3] - cos(0.5*theta);
+  res[3] += vars[7];
 }
-  
-void TACSRevoluteDriver::addJacobian( double time, TacsScalar J[],
-                                      double alpha, double beta, double gamma,
+
+void TACSRevoluteDriver::addJacobian( double time, 
+                                      TacsScalar J[],
+                                      double alpha, 
+                                      double beta, 
+                                      double gamma,
                                       const TacsScalar Xpts[],
                                       const TacsScalar vars[],
                                       const TacsScalar dvars[],
                                       const TacsScalar ddvars[] ){
-  // The number of variables in the Jacobian matrix
-  const int nvars = 2*8;
+  const int nvars = 16;
 
-  // Add the block from the multipliers
-  addBlockIdent(alpha, &J[8], nvars);
-  addBlockIdent(alpha, &J[4*nvars + 11], nvars);
+  // Add the terms from the displacement
+  J[8*nvars] += alpha;
+  J[9*nvars+1] += alpha;
+  J[10*nvars+2] += alpha;
 
-  // Add the block from the constraint equations
-  addBlockIdent(alpha, &J[8*nvars], nvars);
-  addBlockIdent(alpha, &J[11*nvars + 4], nvars);
+  // Add terms from the quaternion constraint
+  J[12*nvars+4] += alpha;
+  J[13*nvars+5] += alpha;
+  J[14*nvars+6] += alpha;
 
-  // Add the diagonal block from the dummy equations
-  for ( int i = 14; i < nvars; i++ ){
-    J[(nvars+1)*i] += alpha;
-  }
+  // Add the dummy terms
+  J[11*nvars+11] += alpha;
+  J[15*nvars+15] += alpha;
+
+  // Add the multiplier/rigid-body coupling terms
+  J[8] += alpha;
+  J[nvars+9] += alpha;
+  J[2*nvars+10] += alpha;
+
+  J[4*nvars+12] += alpha;
+  J[5*nvars+13] += alpha;
+  J[6*nvars+14] += alpha;
+
+  // Add the extra constraint
+  J[7*nvars+3] += alpha;
+  J[3*nvars+7] += alpha; 
 }
 
 /*
