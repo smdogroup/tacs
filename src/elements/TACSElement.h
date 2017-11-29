@@ -415,7 +415,6 @@ class TACSElement : public TACSOptObject {
   static void setFailTolerances( double fail_rtol, double fail_atol );
   static void setPrintLevel( int flag );
   static void setStepSize( double dh );
-  double getStepSize();
 
   int testResidual( double time, const TacsScalar Xpts[],
                     const TacsScalar vars[], 

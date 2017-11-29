@@ -190,6 +190,8 @@ cdef extern from "TACSMg.h":
                              MatrixOrientation)
        
 cdef extern from "TACSElement.h":
+    void TACSSetElementFDStepSize"TACSElement::setStepSize"(double)
+
     cdef cppclass TACSElement(TACSObject):
         int numNodes()
         void setComponentNum(int)

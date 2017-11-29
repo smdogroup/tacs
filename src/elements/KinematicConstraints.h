@@ -355,7 +355,7 @@ class TACSMotionDriver : public TACSElement {
  public:
   TACSMotionDriver( TACSGibbsVector *_dir, 
                     TacsScalar _omega,
-                    int _arrest_rotations = 0){
+                    int _arrest_rotations=0 ){
     // Copy over the direction
     dir = _dir;
     dir->incref();
@@ -438,8 +438,8 @@ class TACSMotionDriver : public TACSElement {
       //Add dummy constraint eqns
       res[8+3] += lam[3];
       res[8+7] += lam[7];
-
-    } else {
+    } 
+    else {
       // Add the dummy constraints for remaining constraint equations
       for ( int i = 3; i < 8; i++ ){
         res[8+i] += lam[i];
