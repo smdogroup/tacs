@@ -455,7 +455,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
   if (mg){
     // Assemble the mass matrix 
     ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, MASS_MATRIX};
-    TacsScalar scale[2] = {1.0, sigma};
+    TacsScalar scale[2] = {1.0, -sigma};
 
     // Assemble the mass matrix
     tacs->assembleMatType(MASS_MATRIX, mmat);
