@@ -1077,8 +1077,9 @@ void TACS3DElement<NUM_NODES>::computeEnergies( double time,
     stiff->calculateStress(pt, strain, stress);
        
     // Compute the contribution from the potential energy
-    Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] + stress[2]*strain[2] + 
-                 stress[3]*strain[3] + stress[4]*strain[4] +stress[5]*strain[5]);
+    Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] + 
+                 stress[2]*strain[2] + stress[3]*strain[3] + 
+                 stress[4]*strain[4] + stress[5]*strain[5]);
     
     // Get value of the mass/area at this point
     TacsScalar mass;
@@ -1537,11 +1538,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       TacsScalar J[9];
       TacsScalar h = FElibrary::jacobian3d(Xa, J);
       h = h*weight;
-      
-      // Compute the strain
-      TacsScalar strain[NUM_STRESSES];
-      evalStrain(strain, J, Na, Nb, Nc, vars);
-      
+            
       // Get the derivative of the strain with respect to the nodal
       // displacements
       getBmat(B, J, Na, Nb, Nc, vars);
@@ -1553,7 +1550,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       
       TacsScalar *b = B;
       const TacsScalar *ps = psi, *ph = phi;
-      for ( int i = 0; i < NUM_VARIABLES; i++ ){
+      for ( int i = 0; i < 3*NUM_NODES; i++ ){
         bpsi[0] += ps[0]*b[0];  bpsi[1] += ps[0]*b[1];
         bpsi[2] += ps[0]*b[2];  bpsi[3] += ps[0]*b[3];
         bpsi[4] += ps[0]*b[4];  bpsi[5] += ps[0]*b[5];
@@ -1613,7 +1610,8 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       }
 
       // Add the result to the design variable vector
-      TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
+      TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + 
+                                      upsi[1]*uphi[1] + 
                                       upsi[2]*uphi[2]);
       stiff->addPointwiseMassDVSens(pt, &rho_alpha, dvSens, dvLen);
     }
@@ -1726,9 +1724,6 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       // Compute the corresponding stress
       TacsScalar stress[NUM_STRESSES];
       stiff->calculateStress(pt, strain, stress);
-       
-      // Add the stress times the second derivative of the strain
-      addGeoStiffness(mat, h, stress, J, Na, Nb, Nc);
       
       // Get the derivative of the strain with respect to the nodal
       // displacements

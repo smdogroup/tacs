@@ -4144,9 +4144,13 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
                                               TACSBVec *psi, TACSBVec *phi,
                                               TacsScalar *fdvSens, int numDVs ){
   psi->beginDistributeValues();
-  phi->beginDistributeValues();
+  if (phi != psi){
+    phi->beginDistributeValues();
+  }
   psi->endDistributeValues();
-  phi->endDistributeValues();
+  if (phi != psi){
+    phi->endDistributeValues();
+  }
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemPsi, *elemPhi, *elemXpts;
@@ -4197,9 +4201,13 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
 
   // Distribute the variable values
   psi->beginDistributeValues();
-  phi->beginDistributeValues();
+  if (phi != psi){
+    phi->beginDistributeValues();
+  }
   psi->endDistributeValues();
-  phi->endDistributeValues();
+  if (phi != psi){
+    phi->endDistributeValues();
+  }
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemPsi, *elemPhi, *elemRes, *elemXpts;
