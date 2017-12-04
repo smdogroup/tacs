@@ -34,10 +34,10 @@
 */
 TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_tacs, 
                                         TacsScalar _sigma, 
-					TACSMat *_gmat, TACSMat *_kmat, 
-					TACSMat *_aux_mat, TACSKsm *_solver,
+                                        TACSMat *_gmat, TACSMat *_kmat, 
+                                        TACSMat *_aux_mat, TACSKsm *_solver,
                                         int _max_lanczos_vecs, 
-					int _num_eigvals, 
+                                        int _num_eigvals, 
                                         double _eig_tol ){
   // Copy pointer to the TACS assembler object
   tacs = _tacs;
@@ -82,7 +82,7 @@ auxiliary matrix\n");
   sep = new SEP(ep_op, max_lanczos_vecs, SEP::FULL, tacs->getBcMap());
   sep->incref();
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE, 
-		     num_eigvals);
+                     num_eigvals);
       
   // Allocate temporary local vectors 
   res = tacs->createVec();
@@ -194,7 +194,7 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
   Extract the eigenvalue from the analysis.
 */
 TacsScalar TACSLinearBuckling::extractEigenvalue( int n, 
-						  TacsScalar *error ){
+                                                  TacsScalar *error ){
   return sep->extractEigenvalue(n, error);
 }
 
@@ -249,7 +249,7 @@ void TACSLinearBuckling::checkEigenvector( int n ){
   // Print out the norms of the products K*eigvec and G*eigvec
   if (rank == 0){
     printf("|K*e| = %15.5e  \n|G*e| = %15.5e \n", 
-	   TacsRealPart(t1n), TacsRealPart(t2n));
+           TacsRealPart(t1n), TacsRealPart(t2n));
   }
 
   // Add the two vectors together and print out the error
@@ -297,8 +297,8 @@ void TACSLinearBuckling::checkEigenvector( int n ){
   K*psi = d(u^{T}*G*u)/d(path)
 */
 void TACSLinearBuckling::evalEigenDVSens( int n, 
-					  TacsScalar fdvSens[], 
-					  int numDVs ){
+                                          TacsScalar fdvSens[], 
+                                          int numDVs ){
   // Copy over the values of the stiffness matrix, factor
   // the stiffness matrix.
   aux_mat->copyValues(kmat);
@@ -319,7 +319,7 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   // Evaluate derivative of the inner product with respect to 
   // the path variables
   tacs->evalMatSVSensInnerProduct(GEOMETRIC_STIFFNESS_MATRIX,
-				  eigvec, eigvec, res);
+                                  eigvec, eigvec, res);
 
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
@@ -366,10 +366,10 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
 TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs, 
                                               TacsScalar _sigma, 
                                               TACSMat *_mmat, 
-					      TACSMat *_kmat,
+                                              TACSMat *_kmat,
                                               TACSKsm *_solver,
                                               int max_lanczos, 
-					      int num_eigvals,
+                                              int num_eigvals,
                                               double eig_tol ){
   // Store the TACSAssembler pointer
   tacs = _tacs;         
@@ -415,7 +415,7 @@ stiffness matrix\n");
   sep = new SEP(ep_op, max_lanczos, SEP::FULL, tacs->getBcMap());
   sep->incref();
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE, 
-		     num_eigvals);
+                     num_eigvals);
 }
 
 /*
@@ -521,8 +521,8 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
   ( u^{T} * M * u ) [ d lambda/dx ] = u^{T} * ( dK/dx - lambda * dM/dx ) * u
 */
 void TACSFrequencyAnalysis::evalEigenDVSens( int n,
-					     TacsScalar fdvSens[], 
-					     int numDVs ){
+                                             TacsScalar fdvSens[], 
+                                             int numDVs ){
   // Allocate extra space for the derivative
   TacsScalar *temp = new TacsScalar[ numDVs ];
 

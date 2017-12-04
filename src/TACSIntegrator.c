@@ -14,7 +14,7 @@
 TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
                                 double tinit,
                                 double tfinal, 
-                                double num_steps_per_sec ){
+                                double num_steps ){
   // Copy over the input parameters
   tacs = _tacs; 
   tacs->incref();
@@ -23,13 +23,13 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
   sprintf(prefix, "results");
 
   // Allocate the total number of time steps
-  num_time_steps = int(num_steps_per_sec*(tfinal-tinit));
+  num_time_steps = int(num_steps);
 
   // Store physical time of simulation
   time = new double[ num_time_steps+1 ];
   memset(time, 0, num_time_steps*sizeof(double));
   for ( int k = 0; k < num_time_steps+1; k++ ){
-    time[k] = tinit + k*(tfinal - tinit)/num_time_steps;
+    time[k] = tinit + double(k)*(tfinal - tinit)/double(num_time_steps);
   }
 
   // MPI information
@@ -525,7 +525,8 @@ void TACSIntegrator::printOptionSummary(){
     fprintf(logfp, "TACSIntegrator: Parameter values\n");
     fprintf(logfp, "===============================================\n");
     fprintf(logfp, "%-30s %15g\n", "tinit", time[0] );
-    fprintf(logfp, "%-30s %15g\n", "tfinal", time[num_time_steps+1]);
+    fprintf(logfp, "%-30s %15g\n", "tfinal", time[num_time_steps]);
+    fprintf(logfp, "%-30s %15g\n", "step_size", time[1]-time[0] );
     fprintf(logfp, "%-30s %15d\n", "num_time_steps", num_time_steps );
     fprintf(logfp, "%-30s %15d\n", "mpiSize", mpiSize);
     fprintf(logfp, "%-30s %15d\n", "print_level", print_level);
@@ -872,7 +873,7 @@ void TACSIntegrator::logTimeStep( int step_num ){
     time_fwd_apply_factor = 0.0;
     time_newton = 0.0;
   }
-  if (step_num == num_time_steps-1){
+  if (step_num == num_time_steps){
     time_forward = MPI_Wtime() - time_forward;
   }
 
@@ -1121,14 +1122,14 @@ void TACSIntegrator::checkGradients( double dh ){
   Input:
   tinit: the initial time
   tfinal: the final time
-  num_steps_per_sec: the number of steps to take for each second
+  num_steps: the number of steps to take for each second
   max_bdf_order: global order of accuracy
 */
 TACSBDFIntegrator::TACSBDFIntegrator( TACSAssembler * _tacs, 
                                       double _tinit, double _tfinal, 
-                                      double _num_steps_per_sec, 
+                                      double _num_steps, 
                                       int _max_bdf_order):
-TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps_per_sec){
+TACSIntegrator(_tacs, _tinit,  _tfinal,  _num_steps){
   if (mpiRank == 0){ 
     fprintf(logfp, "[%d] Creating TACSIntegrator of type %s order %d\n", 
             mpiRank, "BDF", _max_bdf_order);
@@ -1641,14 +1642,14 @@ void TACSBDFIntegrator::getAdjoint( int step_num, int func_num,
   num_stages:        the number of Runge-Kutta stages
   tinit:             the initial time
   tfinal:            the final time
-  num_steps_per_sec: the number of steps to take for each second
+  num_steps:         the number of steps to take
   order:             order of the truncation error
 */
 TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs, 
                                         double _tinit, double _tfinal, 
-                                        double _num_steps_per_sec,
+                                        double _num_steps,
                                         int _num_stages ):
-TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps_per_sec){
+TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps){
   if (mpiRank == 0){ 
     fprintf(logfp, "[%d] Creating TACSIntegrator of type %s stages %d\n", 
             mpiRank, "DIRK", _num_stages);

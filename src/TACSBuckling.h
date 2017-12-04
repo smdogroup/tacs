@@ -27,12 +27,16 @@
 class TACSLinearBuckling : public TACSObject {
  public:
   TACSLinearBuckling( TACSAssembler *_tacs, 
-		      TacsScalar _sigma,
-		      TACSMat *_gmat, TACSMat *_kmat, 
-		      TACSMat *_aux_mat, TACSKsm *_solver,
-		      int _max_lanczos_vecs, 
-		      int _num_eigvals, double _eig_tol );
+                      TacsScalar _sigma,
+                      TACSMat *_gmat, TACSMat *_kmat, 
+                      TACSMat *_aux_mat, TACSKsm *_solver,
+                      int _max_lanczos_vecs, 
+                      int _num_eigvals, double _eig_tol );
   ~TACSLinearBuckling();
+
+  // Retrieve the instance of TACSAssembler
+  // --------------------------------------
+  TACSAssembler* getTACS(){ return tacs; }
   
   // Functions to set the shift value
   // --------------------------------
@@ -100,17 +104,21 @@ class TACSLinearBuckling : public TACSObject {
 class TACSFrequencyAnalysis : public TACSObject {
  public:
   TACSFrequencyAnalysis( TACSAssembler *_tacs,
-			 TacsScalar _sigma,
-			 TACSMat *_mmat, TACSMat *_kmat,
-			 TACSKsm *_solver, int max_lanczos, 
-			 int num_eigvals, double _eig_tol );
+                         TacsScalar _sigma,
+                         TACSMat *_mmat, TACSMat *_kmat,
+                         TACSKsm *_solver, int max_lanczos, 
+                         int num_eigvals, double _eig_tol );
   ~TACSFrequencyAnalysis();
 
+  // Retrieve the instance of TACSAssembler
+  // --------------------------------------
+  TACSAssembler* getTACS(){ return tacs; }
+  
   // Solve the generalized eigenvalue problem
   // ----------------------------------------
   TacsScalar getSigma();
   void setSigma( TacsScalar _sigma );
-  void solve( KSMPrint *ksm_print = NULL );
+  void solve( KSMPrint *ksm_print=NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
   // Extract and check the solution 

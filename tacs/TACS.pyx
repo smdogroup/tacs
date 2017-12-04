@@ -431,7 +431,8 @@ cdef class KSM:
         '''
         self.ptr.setTolerances(rtol, atol)
 
-    def setMonitor(self, MPI.Comm comm, char *descript, int freq):
+    def setMonitor(self, MPI.Comm comm, 
+                   char *descript='GMRES', int freq=10):
         '''
         Set the object to control how the convergence history is displayed
         (if at all)
@@ -1450,6 +1451,54 @@ cdef class MeshLoader:
 
         return nodes, ptr, bvars, vals
 
+cdef class FrequencyAnalysis:
+    cdef TACSFrequencyAnalysis *ptr
+    def __cinit__(self, Assembler assembler, TacsScalar sigma,
+                  Mat M, Mat K, KSM solver, int max_lanczos=100,
+                  int num_eigs=5, double eig_tol=1e-6):
+        self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr, 
+                                             K.ptr, solver.ptr, max_lanczos, 
+                                             num_eigs, eig_tol)
+        self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def getSigma(self):
+        return self.ptr.getSigma()
+
+    def setSigma(self, TacsScalar sigma):
+        self.ptr.setSigma(sigma)
+
+    def solve(self, print_flag=True, int freq=10):
+        cdef MPI_Comm comm 
+        cdef int rank
+        cdef TACSAssembler *assembler = NULL
+        cdef KSMPrint *ksm_print = NULL
+        
+        if print_flag:
+            assembler = self.ptr.getTACS()
+            comm = assembler.getMPIComm()
+            MPI_Comm_rank(comm, &rank)
+            ksm_print = new KSMPrintStdout("FrequencyAnalysis", rank, freq)
+
+        self.ptr.solve(ksm_print)
+        return
+
+    def extractEigenvalue(self, int eig):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvalue(eig, &err)
+        return eigval, err
+
+    def extractEigenvector(self, int eig, Vec vec):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvector(eig, vec.ptr, &err)
+        return eigval, err
+
 # A generic abstract class for all integrators implemented in TACS
 cdef class Integrator:
     '''
@@ -1720,13 +1769,13 @@ cdef class BDFIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
-                  double num_steps_per_sec,
+                  double num_steps,
                   int max_bdf_order):
         '''
         Constructor for BDF Integrators of order 1, 2 and 3
         '''
         self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
-                                         num_steps_per_sec, max_bdf_order)
+                                         num_steps, max_bdf_order)
         self.ptr.incref()
         return
 
@@ -1738,10 +1787,10 @@ cdef class DIRKIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
-                  double num_steps_per_sec,
+                  double num_steps,
                   int stages):
         self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
-                                          num_steps_per_sec, stages)
+                                          num_steps, stages)
         self.ptr.incref()
         return
 
@@ -1752,13 +1801,13 @@ cdef class ABMIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
-                  double num_steps_per_sec,
+                  double num_steps,
                   int max_abm_order):
         '''
         Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
         '''
         self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
-                                         num_steps_per_sec, max_abm_order)
+                                         num_steps, max_abm_order)
         self.ptr.incref()
         return
 
@@ -1768,12 +1817,12 @@ cdef class NBGIntegrator(Integrator):
     '''     
     def __cinit__(self, Assembler tacs,
                       double tinit, double tfinal,
-                      double num_steps_per_sec,
+                      double num_steps,
                       int order):
         '''
         Constructor for Newmark-Beta-Gamma method of integration
         '''
         self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
-                                         num_steps_per_sec, order)
+                                         num_steps, order)
         self.ptr.incref()
         return

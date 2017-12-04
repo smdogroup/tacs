@@ -27,6 +27,9 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
+def setElementFDStepSize(double dh):
+    TACSSetElementFDStepSize(dh)
+
 # A generic wrapper class for the TACSElement object
 cdef class Element:
     '''Base element class'''

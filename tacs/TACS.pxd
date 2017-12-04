@@ -190,6 +190,8 @@ cdef extern from "TACSMg.h":
                              MatrixOrientation)
        
 cdef extern from "TACSElement.h":
+    void TACSSetElementFDStepSize"TACSElement::setStepSize"(double)
+
     cdef cppclass TACSElement(TACSObject):
         int numNodes()
         void setComponentNum(int)
@@ -402,7 +404,19 @@ cdef inline _init_Assembler(TACSAssembler *ptr):
     tacs.ptr = ptr
     tacs.ptr.incref()
     return tacs
-      
+
+cdef extern from "TACSBuckling.h":
+    cdef cppclass TACSFrequencyAnalysis(TACSObject):
+        TACSFrequencyAnalysis(TACSAssembler *, TacsScalar,
+                              TACSMat*, TACSMat*, TACSKsm*,
+                              int, int, double)
+        TACSAssembler* getTACS()
+        TacsScalar getSigma()
+        void setSigma(TacsScalar)
+        void solve(KSMPrint*)
+        TacsScalar extractEigenvalue(int, TacsScalar*)
+        TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+
 cdef extern from "TACSMeshLoader.h":
     cdef cppclass TACSMeshLoader(TACSObject):
         TACSMeshLoader(MPI_Comm _comm)
@@ -501,31 +515,30 @@ cdef extern from "TACSIntegrator.h":
         # Debug adjoint
         void checkGradients(double dh)
 
-
     # BDF Implementation of the integrator
     cdef cppclass TACSBDFIntegrator(TACSIntegrator):
         TACSBDFIntegrator(TACSAssembler *tacs,
-                        double tinit, double tfinal,
-                        double num_steps_per_sec,
-                        int max_bdf_order)
+                          double tinit, double tfinal,
+                          double num_steps,
+                          int max_bdf_order)
 
     # DIRK Implementation of the integrator
     cdef cppclass TACSDIRKIntegrator(TACSIntegrator):
         TACSDIRKIntegrator(TACSAssembler *tacs,
                            double tinit, double tfinal,
-                           double num_steps_per_sec,
+                           double num_steps,
                            int stages)
       
     # ABM Implementation of the integrator
     cdef cppclass TACSABMIntegrator(TACSIntegrator):
         TACSABMIntegrator(TACSAssembler *tacs,
                           double tinit, double tfinal,
-                          double num_steps_per_sec,
+                          double num_steps,
                           int max_abm_order)
 
     # NBG Implementation of the integrator
     cdef cppclass TACSNBGIntegrator(TACSIntegrator):
         TACSNBGIntegrator(TACSAssembler *tacs,
                           double tinit, double tfinal,
-                          double num_steps_per_sec,
+                          double num_steps,
                           int order)

@@ -157,10 +157,6 @@ void TACSElement::setStepSize( double dh ){
   test_step_size = dh;
 }
 
-double TACSElement::getStepSize( ){
-  return test_step_size;
-}
-
 /*
   Finds the finite-difference based Jacobian of the element. This is
   the default Jacobian implementation for any TACSElement. The user
@@ -179,85 +175,136 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
   int nvars = numVariables();
 
   // The step length
-  const double dh = getStepSize();
+  const double dh = test_step_size;
 
   // Original and perturbed residual vectors
-  TacsScalar *R = new TacsScalar[nvars];
-  TacsScalar *Rtmp = new TacsScalar[nvars];
+  TacsScalar *Rtmp1 = new TacsScalar[nvars];
+  TacsScalar *Rtmp2 = new TacsScalar[nvars];
 
-  // Perturbed state vector
-  TacsScalar *pstate = new TacsScalar[nvars];
-
-  // Assemble the unperturbed residual
-  memset(R, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, R, Xpts, vars, dvars, ddvars);
+  // Perturbed state vectors
+  // TacsScalar *pstate = new TacsScalar[nvars];
+  TacsScalar *qTmp = new TacsScalar[nvars];
+  TacsScalar *qdotTmp = new TacsScalar[nvars];
+  TacsScalar *qddotTmp = new TacsScalar[nvars];
 
   // Copy the state variables into pstate
-  memcpy(pstate, vars, nvars*sizeof(TacsScalar));
+  memcpy(qTmp, vars, nvars*sizeof(TacsScalar));
+  memcpy(qdotTmp, dvars, nvars*sizeof(TacsScalar));
+  memcpy(qddotTmp, ddvars, nvars*sizeof(TacsScalar));
 
   // Perturb each state variable and find the residual
   for ( int i = 0; i < nvars; i++ ){
-    // Perturb the i-th variable
-    pstate[i] += dh;
-    
+#ifdef TACS_USE_COMPLEX
+    qTmp[i] = vars[i] + TacsScalar(0.0, dh);
+
     // Assemble the unperturbed residual
-    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp, Xpts, pstate, dvars, ddvars);
+    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
 
     // Find the approximated jacobian    
     for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += alpha*(Rtmp[j] - R[j])/dh;
+      J[j*nvars+i] += alpha*TacsImagPart(Rtmp1[j])/dh;
     }
+#else
+    // Perturb the i-th variable
+    qTmp[i] = vars[i] + dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
 
-    // Restore the i-th variable   
-    pstate[i] = vars[i];
+    // Perturb the i-th variable
+    qTmp[i] = vars[i] - dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp2, Xpts, qTmp, qdotTmp, qddotTmp);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += 0.5*alpha*(Rtmp1[j] - Rtmp2[j])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+    // Restore the i-th variable
+    qTmp[i] = vars[i];
   }
 
-  // Copy the vel state variables into pstate
-  memcpy(pstate, dvars, nvars*sizeof(TacsScalar));
-
   // Perturb each state variable and find the residual
   for ( int i = 0; i < nvars; i++ ){
-    // Perturb the i-th variable
-    pstate[i] += dh;
-    
+#ifdef TACS_USE_COMPLEX
+    qdotTmp[i] = dvars[i] + TacsScalar(0.0, dh);
+
     // Assemble the unperturbed residual
-    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp, Xpts, vars, pstate, ddvars);
+    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
 
     // Find the approximated jacobian    
     for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += beta*(Rtmp[j] - R[j])/dh;
+      J[j*nvars+i] += beta*TacsImagPart(Rtmp1[j])/dh;
     }
+#else
+    // Perturb the i-th variable
+    qdotTmp[i] = dvars[i] + dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
 
-    // Restore the i-th variable   
-    pstate[i] = dvars[i];
+    // Perturb the i-th variable
+    qdotTmp[i] = dvars[i] - dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp2, Xpts, qTmp, qdotTmp, qddotTmp);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += 0.5*beta*(Rtmp1[j] - Rtmp2[j])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+    // Restore the i-th variable
+    qdotTmp[i] = dvars[i];
   }
 
-  // Copy the vel state variables into pstate
-  memcpy(pstate, ddvars, nvars*sizeof(TacsScalar));
-
   // Perturb each state variable and find the residual
   for ( int i = 0; i < nvars; i++ ){
-    // Perturb the i-th variable
-    pstate[i] += dh;
-    
+#ifdef TACS_USE_COMPLEX
+    qddotTmp[i] = ddvars[i] + TacsScalar(0.0, dh);
+
     // Assemble the unperturbed residual
-    memset(Rtmp, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp, Xpts, vars, dvars, pstate);
+    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
 
     // Find the approximated jacobian    
     for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += gamma*(Rtmp[j] - R[j])/dh;
+      J[j*nvars+i] += gamma*TacsImagPart(Rtmp1[j])/dh;
     }
+#else
+    // Perturb the i-th variable
+    qddotTmp[i] = ddvars[i] + dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
 
-    // Restore the i-th variable   
-    pstate[i] = ddvars[i];
+    // Perturb the i-th variable
+    qddotTmp[i] = ddvars[i] - dh;
+    
+    // Assemble the unperturbed residual
+    memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
+    addResidual(time, Rtmp2, Xpts, qTmp, qdotTmp, qddotTmp);
+
+    // Find the approximated jacobian    
+    for ( int j = 0; j < nvars; j++ ){
+      J[j*nvars+i] += 0.5*gamma*(Rtmp1[j] - Rtmp2[j])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+    // Restore the i-th variable
+    qddotTmp[i] = ddvars[i];    
   }
   
-  delete [] R;
-  delete [] Rtmp;
-  delete [] pstate;
+  delete [] Rtmp1, Rtmp2;
+  delete [] qTmp, qdotTmp, qddotTmp;
 }
 
 /*

@@ -302,6 +302,9 @@ class TACSRigidLink : public TACSElement {
  private:
   TACSRigidBody *bodyA; // The rigid body
   static const char *elem_name; // The name of the element
+  static const TacsScalar delta = 10.0; // Parameter used to avoid
+                                        // linearly dependent rows in
+                                        // Jacobian at singular points
 };
 
 /*
@@ -335,6 +338,7 @@ class TACSRevoluteDriver : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
+
   void addJacobian( double time, TacsScalar J[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
@@ -345,6 +349,9 @@ class TACSRevoluteDriver : public TACSElement {
  private:
   TacsScalar omega;
   TACSGibbsVector *origVec, *revVec;
+  static const TacsScalar delta = 10.0; // Parameter used to avoid
+                                        // linearly dependent rows in
+                                        // Jacobian at singular points
 };
 
 /*
@@ -354,7 +361,7 @@ class TACSMotionDriver : public TACSElement {
  public:
   TACSMotionDriver( TACSGibbsVector *_dir, 
                     TacsScalar _omega,
-                    int _arrest_rotations = 0){
+                    int _arrest_rotations = 0 ){
     // Copy over the direction
     dir = _dir;
     dir->incref();
@@ -437,8 +444,8 @@ class TACSMotionDriver : public TACSElement {
       //Add dummy constraint eqns
       res[8+3] += lam[3];
       res[8+7] += lam[7];
-
-    } else {
+    } 
+    else {
       // Add the dummy constraints for remaining constraint equations
       for ( int i = 3; i < 8; i++ ){
         res[8+i] += lam[i];

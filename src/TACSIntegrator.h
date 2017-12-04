@@ -23,7 +23,7 @@ class TACSIntegrator : public TACSObject {
   TACSIntegrator( TACSAssembler *tacs,
                   double tinit,
                   double tfinal, 
-                  double num_steps_per_sec ); 
+                  double num_steps ); 
   ~TACSIntegrator();
 
   // Define members of the class
@@ -216,7 +216,7 @@ class TACSBDFIntegrator : public TACSIntegrator {
   TACSBDFIntegrator( TACSAssembler * _tacs,
                      double _tinit,
                      double _tfinal,
-                     double _num_steps_per_sec, 
+                     double _num_steps, 
                      int max_bdf_order );
   ~TACSBDFIntegrator();
 
@@ -261,7 +261,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   TACSDIRKIntegrator( TACSAssembler * _tacs,
                       double _tinit,
                       double _tfinal,
-                      double _num_steps_per_sec, 
+                      double _num_steps, 
                       int _num_stages );
   ~TACSDIRKIntegrator();
 
@@ -338,7 +338,7 @@ class TACSABMIntegrator : public TACSIntegrator {
   TACSABMIntegrator( TACSAssembler *tacs, 
                      double tinit,
                      double tfinal,
-                     double num_steps_per_sec, 
+                     double num_steps, 
                      int max_abm_order );
   ~TACSABMIntegrator();
 
@@ -382,7 +382,7 @@ class TACSNBGIntegrator : public TACSIntegrator {
   TACSNBGIntegrator( TACSAssembler *tacs, 
                      double tinit,
                      double tfinal, 
-                     double num_steps_per_sec,
+                     double num_steps,
                      int order );
   ~TACSNBGIntegrator();
 
