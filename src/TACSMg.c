@@ -279,7 +279,7 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
                               res, mat[0], matOr);
   }
 
-  for ( int i = 0; i < nlevels-1; i++ ){
+  for ( int i = 1; i < nlevels-1; i++ ){
     if (tacs[i]){
       tacs[i]->assembleJacobian(alpha, beta, gamma,
                                 NULL, mat[i], matOr);
