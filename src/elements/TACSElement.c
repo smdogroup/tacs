@@ -303,8 +303,11 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
     qddotTmp[i] = ddvars[i];    
   }
   
-  delete [] Rtmp1, Rtmp2;
-  delete [] qTmp, qdotTmp, qddotTmp;
+  delete [] Rtmp1;
+  delete [] Rtmp2;
+  delete [] qTmp;
+  delete [] qdotTmp;
+  delete [] qddotTmp;
 }
 
 /*

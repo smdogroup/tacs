@@ -86,7 +86,6 @@ void TACSSphericalConstraint::getMultiplierIndex( int *multiplier ){
   }    
 }
 
-
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 
 /*
@@ -494,7 +493,7 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
 
       J[(offset+2)*(nvars+1)] += alpha;
     }
-    else {
+    else { // con_type == COPLANAR
 
     }
   }
@@ -530,7 +529,7 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
     else if (con_type == COLINEAR){
 
     }
-    else {
+    else { // con_type == COPLANAR
 
     }
   }

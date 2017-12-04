@@ -10,12 +10,12 @@
   Copyright (c) 2010 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 
-  The Lanczos method is used to construct an orthonormal basis
-  of a Krylov subspace. This method produces a tri-diagonal
-  Hessenberg matrix. Approximate eigenvalues of the full matrix
-  may be found by discarding the last row of the rectangular 
-  - equivalent to projecting the matrix onto the orthonormal basis
-  - and computing the eigenvalues of the much smaller system. 
+  The Lanczos method is used to construct an orthonormal basis of a
+  Krylov subspace. This method produces a tri-diagonal Hessenberg
+  matrix. Approximate eigenvalues of the full matrix may be found by
+  discarding the last row of the rectangular - equivalent to
+  projecting the matrix onto the orthonormal basis - and computing the
+  eigenvalues of the much smaller system.
 
   The method is implemented in a block-form such that operations
   are performed with a block-size of P.

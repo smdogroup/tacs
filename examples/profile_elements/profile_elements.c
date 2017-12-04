@@ -353,8 +353,6 @@ int main( int argc, char *argv[] ){
     // Test the rigid link
     test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
 
-    /////////////////////////////////////////////////////////////////////
-
     // Define the inertial properties
     const TacsScalar mB    = 2.0;
     const TacsScalar cB[3] = {2.0, 3.0, 4.0};
