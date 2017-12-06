@@ -6,64 +6,6 @@
 #include "KinematicConstraints.h"
 
 /*
-  Create the driver constraint
-*/
-class TACSRotationDriver : public TACSElement {
- public:
-  TACSRotationDriver( double _omega ){
-    omega = _omega;
-  }
-  int numDisplacements(){ return 8; }
-  int numNodes(){ return 2; }
-  const char* elementName(){ return "TACSRotationDriver"; }
-
-  // Compute the kinetic and potential energy within the element
-  // -----------------------------------------------------------
-  void computeEnergies( double time,
-                        TacsScalar *_Te, 
-                        TacsScalar *_Pe,
-                        const TacsScalar Xpts[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] ){
-    *_Te = 0.0;
-    *_Pe = 0.0;
-  }
-
-  // Compute the residual of the governing equations
-  // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] ){
-    TacsScalar *con = &res[8];
-
-    res[0] += vars[8];
-    res[1] += vars[9];
-    res[2] += vars[10];
-
-    res[4] += vars[11];
-    res[5] += vars[12];
-    res[6] += vars[13];
-
-    con[0] += vars[0];
-    con[1] += vars[1];
-    con[2] += vars[2];
-
-    con[3] += vars[4];
-    con[4] += vars[5];
-    con[5] += vars[6] - sin(0.5*omega*time);
-
-    // Add the dummy constraints
-    con[6] += vars[14];
-    con[7] += vars[15];
-  }
-
- private:
-  TacsScalar omega;
-};
-
-/*
   Create the one bar
 */
 TACSAssembler *one_bar_beam( int nA ){
@@ -217,6 +159,7 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   TACSGibbsVector *ptD = new TACSGibbsVector(0.24, 0.0, 0.0);
 
   // Create the revolute direction for B and D
+  TACSGibbsVector *revDirA = new TACSGibbsVector(0.0, 0.0, 1.0);
   TACSGibbsVector *revDirB = new TACSGibbsVector(0.0, 0.0, 1.0);
   TACSGibbsVector *revDirD = new TACSGibbsVector(0.0, 0.0, 1.0);
 
@@ -226,12 +169,11 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
 
   // Create the revolute constraints
   TacsScalar omega = -0.6; // rad/seconds
-  int inertial_rev = 0;
   int fixed_point = 1;
   int not_fixed = 0;
   
-  TACSRotationDriver *revDriverA =
-    new TACSRotationDriver(omega);
+  TACSRevoluteDriver *revDriverA =
+    new TACSRevoluteDriver(revDirA, omega);
   TACSRevoluteConstraint *revB = 
     new TACSRevoluteConstraint(not_fixed, ptB, revDirB);
   TACSRevoluteConstraint *revC = 
@@ -584,27 +526,30 @@ int main( int argc, char *argv[] ){
     beam->decref();
   }
   else {
+    // Create the finite-element model
     int nA = 4, nB = 8, nC = 4;
     TACSAssembler *tacs = four_bar_mechanism(nA, nB, nC);
     tacs->incref();
 
-    // Now... we're ready
-    int num_steps = 250;
-    // double tf = 2*M_PI/omega;
+    // Set the final time
     double tf = 12.0;
+
+    // The number of total steps (100 per second)
+    int num_steps = 1200;
+
+    // Create the integrator class
     TACSIntegrator *integrator = 
       new TACSBDFIntegrator(tacs, 0.0, tf, num_steps, 2);
     integrator->incref();
 
-    // The number of iterations
-    int niters = int(num_steps*tf) + 1;
-
-    integrator->setUseFEMat(0);
+    // Set the integrator options
+    integrator->setUseFEMat(1, TACSAssembler::TACS_AMD_ORDER);
     integrator->setAbsTol(1e-7);
     integrator->setOutputFrequency(10);
-    integrator->setBeamOutput(1);
+    integrator->setPrintLevel(-1);
     integrator->integrate();
 
+    // Set the output options/locations
     int elem[3];
     // elem[0] = nA/2;
     // elem[1] = nA + nB/2;
@@ -615,6 +560,7 @@ int main( int argc, char *argv[] ){
     elem[2] = nA + nB + nC/2;
     double param[][1] = {{-1.0}, {-1.0}, {0.0}}; 
 
+    // Extra the data to a file
     for ( int pt = 0; pt < 3; pt++ ){
       char filename[128];
       sprintf(filename, "mid_beam_%d.dat", pt+1);
@@ -623,10 +569,11 @@ int main( int argc, char *argv[] ){
       fprintf(fp, "Variables = t, u0, v0, w0, sx0, st0, sy1, sz1, sxy0, sxz0\n");
 
       // Write out data from the beams
-      for ( int k = 0; k < niters; k++ ){
+      TACSBVec *q = tacs->createVec();
+      q->incref();
+      for ( int k = 0; k < num_steps+1; k++ ){
         TacsScalar X[3*3], vars[8*3];
-        TACSBVec *q = NULL;
-        double time = integrator->getStates(k, &q);
+        double time = integrator->getStates(k, q, NULL, NULL);
         tacs->setVariables(q);
         TACSElement *element = tacs->getElement(elem[pt], X, vars);
 
@@ -639,6 +586,7 @@ int main( int argc, char *argv[] ){
                 time, vars[0], vars[1], vars[2], 
                 s[0], s[1], s[2], s[3], s[4], s[5]);
       }
+      q->decref();
       fclose(fp);
     }
 

@@ -54,6 +54,8 @@ void test_element( TACSElement *element,
   element->testStrainSVSens(Xpts, vars);
   element->testStrainXptSens(Xpts, vars);
   element->testJacobianXptSens(Xpts);
+  element->testMatDVSensInnerProduct(STIFFNESS_MATRIX, x, dvLen, Xpts, vars);
+  element->testMatDVSensInnerProduct(MASS_MATRIX, x, dvLen, Xpts, vars);
 
   delete [] x;
 }

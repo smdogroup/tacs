@@ -444,6 +444,10 @@ class TACSElement : public TACSOptObject {
                             const TacsScalar dvars[],
                             const TacsScalar ddvars[] );
   int testJacobianXptSens( const TacsScalar Xpts[] );
+  int testMatDVSensInnerProduct( ElementMatrixType matType, 
+                                 const TacsScalar *x, int dvLen,
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[] );
 
  private: 
   int componentNum;

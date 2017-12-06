@@ -203,35 +203,32 @@ int main( int argc, char * argv[] ){
 
   // Reorder the nodal variables
   int use_fe_mat = 1;
-  int reorder = 0;
   TACSAssembler::OrderingType order_type = TACSAssembler::ND_ORDER;
   TACSAssembler::MatrixOrderingType mat_type = 
     TACSAssembler::APPROXIMATE_SCHUR;
 
   for ( int k = 0; k < argc; k++ ){
     if (strcmp(argv[k], "AMD") == 0){ 
-      order_type = TACSAssembler::AMD_ORDER; reorder = 1;
+      order_type = TACSAssembler::AMD_ORDER;
     }
     else if (strcmp(argv[k], "RCM") == 0){ 
-      order_type = TACSAssembler::RCM_ORDER; reorder = 1;
+      order_type = TACSAssembler::RCM_ORDER;
     }
     else if (strcmp(argv[k], "ND") == 0){ 
-      order_type = TACSAssembler::ND_ORDER; reorder = 1;
+      order_type = TACSAssembler::ND_ORDER;
     }
     else if (strcmp(argv[k], "TACS_AMD") == 0){
-      order_type = TACSAssembler::TACS_AMD_ORDER; reorder = 1;
+      order_type = TACSAssembler::TACS_AMD_ORDER;
     }
     else if (strcmp(argv[k], "DirectSchur") == 0){ 
-      mat_type = TACSAssembler::DIRECT_SCHUR; reorder = 1;
+      mat_type = TACSAssembler::DIRECT_SCHUR;
     }
     else if (strcmp(argv[k], "ApproximateSchur") == 0){ 
       mat_type = TACSAssembler::APPROXIMATE_SCHUR; 
-      reorder = 1;
       use_fe_mat = 0;
     }
     else if (strcmp(argv[k], "AdditiveSchwarz") == 0){ 
       mat_type = TACSAssembler::ADDITIVE_SCHWARZ; 
-      reorder = 1;
       use_fe_mat = 0;
     }
   }

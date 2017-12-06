@@ -92,7 +92,6 @@ TACSAssembler *create2DModel( MPI_Comm comm, int varsPerNode,
   int numElements = lastElem - firstElem;
 
   // There are no dependent nodes in this problem
-  int numDependentNodes = 0;
   TACSAssembler *tacs = new TACSAssembler(comm, varsPerNode,
                                           numOwnedNodes, numElements);
 
@@ -347,8 +346,6 @@ void testSolve( TACSAssembler *tacs,
   double fill = 10.0;
   int levFill = 5;
   int inner_gmres = 10;
-  double inner_rtol = -1.0;
-  double inner_atol = 1e-30;
   double sor_omega = 1.0;
   int sor_iters = 2;
   int sor_symmetric = 1;
@@ -477,7 +474,6 @@ void testBCSRMat( TACSAssembler *tacs ){
   mat->incref();
 
   // Assemble the Jacobian
-  int load_case = 0;
   tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, mat);
 
   if (rank == 0){

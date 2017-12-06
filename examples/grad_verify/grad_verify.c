@@ -45,7 +45,7 @@ int main( int argc, char * argv[] ){
   // Check if the input file exists, if not quit
   const char * bdf_file = argv[1];
   FILE *file_test = NULL;
-  if (file_test = fopen(bdf_file, "r")){
+  if ((file_test = fopen(bdf_file, "r"))){
     fclose(file_test);
   }
   else {
@@ -65,9 +65,6 @@ int main( int argc, char * argv[] ){
 
   // Scan the BDF file to get the input data
   mesh->scanBDFFile(bdf_file);
-
-  // Get the number of BDF components within the file
-  int num_components = mesh->getNumComponents();
 
   // Retrieve the MPI rank
   int rank;
@@ -280,12 +277,10 @@ int main( int argc, char * argv[] ){
 		   num_grad_comp : num_design_vars);
 
   // Scan any remaining arguments that may be required
-  int fd_flag = 0, test_flag = 0;
+  int test_flag = 0;
   double dh = 1e-6;
   for ( int k = 0; k < argc; k++ ){
-    if (sscanf(argv[k], "dh=%lf", &dh) == 1){
-      fd_flag = 1;
-    }
+    if (sscanf(argv[k], "dh=%lf", &dh) == 1){}
     else if (sscanf(argv[k], "num_grad_comp=%d", 
 		    &num_grad_comp) == 1){
       num_grad_comp = (num_design_vars > num_grad_comp ? 

@@ -1301,6 +1301,8 @@ const char* TACSRigidLink::elementName(){
   return elem_name;
 }
 
+const TacsScalar TACSRigidLink::delta = 10.0;
+
 /*
   Compute the kinetic and potential energy within the element
 */
@@ -1492,6 +1494,8 @@ int TACSRevoluteDriver::numNodes(){
 const char* TACSRevoluteDriver::elementName(){ 
   return "TACSRevoluteDriver"; 
 }
+
+const TacsScalar TACSRevoluteDriver::delta = 10.0;
 
 void TACSRevoluteDriver::computeEnergies( double time,
                                           TacsScalar *_Te, 
