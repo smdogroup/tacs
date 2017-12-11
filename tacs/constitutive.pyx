@@ -117,7 +117,7 @@ cdef class SolidStiff(Constitutive):
         self.ptr = NULL
         return
     
-cdef class isoSolidStiff(Constitutive):
+cdef class isoSolidStiff(SolidStiff):
     def __cinit__(self, rho, E, nu, *args, **kwargs):
         '''
         Wraps the SolidStiffness class that is used with 3D elements

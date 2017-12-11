@@ -359,7 +359,7 @@ cdef class Pc:
         self.ptr.applyFactor(x.ptr, y.ptr)
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
-                         Vec residual,
+                         Vec residual=None,
                          MatrixOrientation matOr=NORMAL):
         '''Assemble the Jacobian for all levels'''
         cdef TACSBVec *res = NULL

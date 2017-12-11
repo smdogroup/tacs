@@ -140,7 +140,7 @@ int main( int argc, char * argv[] ){
   }
   
   for ( int k = 1; k < argc; k++ ){
-    char *infile = new char[ strlen(argv[1])+1 ];
+    char *infile = new char[ strlen(argv[k])+1 ];
     strcpy(infile, argv[k]);
 
     FILE *fp = fopen(infile, "r");
@@ -166,7 +166,7 @@ int main( int argc, char * argv[] ){
            infile, outfile);
 
     char data_info[] = "Created by f5totec";
-    char dir_name[] = "."; // Assume we'll be working with the current directory
+    char dir_name[] = "."; // We'll be working with the current directory
     int tec_init = 0;      // Tecplot initialized flag
 
     // Open the FH5 file for reading
@@ -178,8 +178,8 @@ int main( int argc, char * argv[] ){
       return (1);
     }
 
-    // Retrieve all the data from the file including the variables, connectivity
-    // and component numbers
+    // Retrieve all the data from the file including the 
+    // variables, connectivity and component numbers
     double solution_time = 0.0;
     int *element_comp_num = NULL;
     int *conn = NULL;
@@ -239,7 +239,8 @@ int main( int argc, char * argv[] ){
     } while (file->nextZone());
     
     if (!(element_comp_num && conn && data)){
-      fprintf(stderr, "Error, data, connectivity or component numbers not defined in file\n");
+      fprintf(stderr, "Error, data, connectivity or \
+component numbers not defined in file\n");
     }
 
     // Set the element type to use

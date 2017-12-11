@@ -193,13 +193,26 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       FEMat *femat = tacs[level]->createFEMat();
       root_mat = femat;
       root_mat->incref();
-      
+
       // Set up the root preconditioner/solver
       int lev = 10000;
       double fill = 15.0;
       int reorder_schur = 1; 
       root_pc = new PcScMat(femat, lev, fill, reorder_schur);
       root_pc->incref();
+
+      /*
+      // Create a smoother on the lowest level
+      PMat *pmat = tacs[level]->createMat();
+      root_mat = pmat;
+      root_mat->incref();
+      
+      // Do not zero the initial guess for the PSOR object
+      int zero_guess = 1; 
+      root_pc = new PSOR(pmat, zero_guess, sor_omega, 
+                         sor_iters, sor_symmetric);
+      root_pc->incref();
+      */
     }
   }
   
