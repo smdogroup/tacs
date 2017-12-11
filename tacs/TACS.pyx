@@ -329,7 +329,7 @@ cdef class Pc:
         cdef int lev_fill = 1000000
         cdef double fill = 10.0
         cdef int reorder = 1
-        cdef PMat *p_ptr = NULL
+        cdef TACSPMat *p_ptr = NULL
         cdef ScMat *sc_ptr = NULL
 
         if mat is not None:
@@ -341,7 +341,7 @@ cdef class Pc:
             self.ptr = new PcScMat(sc_ptr, lev_fill, fill, reorder)
             self.ptr.incref()
         elif p_ptr != NULL:
-            self.ptr = new AdditiveSchwarz(p_ptr, 5, 10.0)
+            self.ptr = new TACSAdditiveSchwarz(p_ptr, 5, 10.0)
             self.ptr.incref()
         return
             

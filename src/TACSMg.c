@@ -163,7 +163,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       pc[level] = _smoother;
     }
     else {
-      PMat *pmat = tacs[level]->createMat();
+      TACSPMat *pmat = tacs[level]->createMat();
       mat[level] = pmat;
       mat[level]->incref();
       
@@ -203,7 +203,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
 
       /*
       // Create a smoother on the lowest level
-      PMat *pmat = tacs[level]->createMat();
+      TACSPMat *pmat = tacs[level]->createMat();
       root_mat = pmat;
       root_mat->incref();
       

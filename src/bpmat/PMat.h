@@ -1,5 +1,5 @@
-#ifndef TACS_PARALLEL_BCSR_MAT_H
-#define TACS_PARALLEL_BCSR_MAT_H
+#ifndef TACS_PARALLEL_MATRIX_H
+#define TACS_PARALLEL_MATRIX_H
 
 /*
   Parallel matrix code
@@ -34,12 +34,12 @@
   3. End scatter operation 
   4. Perform local, exteral matrix-vector product  
 */
-class PMat : public TACSMat {
+class TACSPMat : public TACSMat {
  public:
-  PMat( TACSVarMap *rmap,
-        BCSRMat *_Aloc, BCSRMat *_Bext,
-        TACSBVecDistribute *_col_map );
-  ~PMat();
+  TACSPMat( TACSVarMap *rmap,
+            BCSRMat *_Aloc, BCSRMat *_Bext,
+            TACSBVecDistribute *_col_map );
+  ~TACSPMat();
 
   // Functions for setting values in the matrix
   // ------------------------------------------
@@ -56,7 +56,6 @@ class PMat : public TACSMat {
   void axpy( TacsScalar alpha, TACSMat *mat ); // Compute y <- y + alpha*x
   void axpby( TacsScalar alpha, 
               TacsScalar beta, TACSMat *mat ); // Compute y <- alpha*x + beta*y
-
   void addDiag( TacsScalar alpha );
 
   // Other miscelaneous functions
@@ -72,7 +71,7 @@ class PMat : public TACSMat {
   MPI_Comm getMPIComm(){ return rmap->getMPIComm(); }
 
  protected:
-  PMat();
+  TACSPMat();
 
   // Common initialization routine
   void init( TACSVarMap *_rmap, 
@@ -84,7 +83,7 @@ class PMat : public TACSMat {
     
   // Map the local entries into the global data
   TACSVarMap *rmap;
-  TACSBVecDistribute *ext_dist; 
+  TACSBVecDistribute *ext_dist;
   TACSBVecDistCtx *ctx;
 
   // Sizes/dimensions of the matrix
@@ -102,14 +101,17 @@ class PMat : public TACSMat {
 };
 
 /*
-  Parallel successive over relaxation (PSOR)
-  ------------------------------------------
-  
+  Parallel successive over relaxation
+
+  This uses repeated applications of block Gauss--Seidel. Off-processor 
+  updates are delayed, effectively making this a hybrid Jacobi Gauss-Seidel
+  method.performed using a Jacobi update, while 
+  Updates are performed locally, while off-processor updates 
   Set up involves factoring the diagonal matrix
 */
 class PSOR : public TACSPc {
  public:
-  PSOR( PMat *_mat, int _zero_guess, TacsScalar _omega, int _iters, 
+  PSOR( TACSPMat *_mat, int _zero_guess, TacsScalar _omega, int _iters, 
         int _isSymmetric, int *pairs=NULL, int npairs=0 );
   ~PSOR();
 
@@ -119,7 +121,7 @@ class PSOR : public TACSPc {
 
  private:
   // Parallel matrix pointer
-  PMat *mat;
+  TACSPMat *mat;
 
   // Information about how to handle the smoother
   int iters;
@@ -139,17 +141,14 @@ class PSOR : public TACSPc {
 
 /*
   Additive Schwarz Method (ASM)
-  -----------------------------
 
   Set up involves factoring the diagonal portion of the matrix
-  
-  ASM: Apply preconditioner
   Apply the local preconditioner to the local components of the residual. 
 */
-class AdditiveSchwarz : public TACSPc {
+class TACSAdditiveSchwarz : public TACSPc {
  public:
-  AdditiveSchwarz( PMat *mat, int levFill, double fill );
-  ~AdditiveSchwarz();
+  TACSAdditiveSchwarz( TACSPMat *mat, int levFill, double fill );
+  ~TACSAdditiveSchwarz();
 
   void setDiagShift( TacsScalar _alpha );
   void factor();
@@ -158,15 +157,14 @@ class AdditiveSchwarz : public TACSPc {
   void getMat( TACSMat **_mat );
 
  private:
-  PMat *mat;
+  TACSPMat *mat;
   BCSRMat *Aloc;
   TacsScalar alpha;
   BCSRMat *Apc;
 };
 
 /*
-  Approximate Schur 
-  -----------------
+  Approximate Schur
 
   Set up involves factoring the diagonal portion of the matrix
 
@@ -176,10 +174,10 @@ class AdditiveSchwarz : public TACSPc {
   unknowns
   3. Determine the solution at the internal interface unknowns
 */
-class GlobalSchurMat : public TACSMat {
+class TACSGlobalSchurMat : public TACSMat {
  public:
-  GlobalSchurMat( PMat *mat, BCSRMat *Apc );
-  ~GlobalSchurMat();
+  TACSGlobalSchurMat( TACSPMat *mat, BCSRMat *Apc );
+  ~TACSGlobalSchurMat();
 
   // Functions used to solve the linear system
   // -----------------------------------------
@@ -204,12 +202,12 @@ class GlobalSchurMat : public TACSMat {
 /*!
   The approximate Schur preconditioner
 */
-class ApproximateSchur : public TACSPc {
+class TACSApproximateSchur : public TACSPc {
  public:
-  ApproximateSchur( PMat *mat, int levFill, double fill, 
-                    int inner_gmres_iters, double inner_rtol=1e-3, 
-                    double inner_atol=1e-30 );
-  ~ApproximateSchur();
+  TACSApproximateSchur( TACSPMat *mat, int levFill, double fill, 
+                        int inner_gmres_iters, double inner_rtol=1e-3, 
+                        double inner_atol=1e-30 );
+  ~TACSApproximateSchur();
 
   void setDiagShift( TacsScalar _alpha );
   void setMonitor( KSMPrint *ksm_print );
@@ -220,7 +218,7 @@ class ApproximateSchur : public TACSPc {
 
  private:
   TACSBVec *rvec, *wvec;
-  PMat *mat;
+  TACSPMat *mat;
   BCSRMat *Aloc, *Apc;
   TacsScalar alpha;
  
@@ -228,8 +226,8 @@ class ApproximateSchur : public TACSPc {
   int start, end, var_offset;
 
   // Global Schur matrix and its associated KSM object
-  GlobalSchurMat *gsmat;
+  TACSGlobalSchurMat *gsmat;
   TACSKsm *inner_ksm;
 };
 
-#endif
+#endif // TACS_PARALLEL_MATRIX_H

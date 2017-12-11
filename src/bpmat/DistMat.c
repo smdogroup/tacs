@@ -3,7 +3,7 @@
 #include "MatUtils.h"
 
 /*
-  DistMat implementation
+  TACSDistMat implementation
 
   Copyright (c) 2010 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
@@ -52,10 +52,10 @@
   7. The CSR data structures from all procs are merged
   8. The persistent data communication paths are initialized 
 */
-DistMat::DistMat( TACSThreadInfo *thread_info, 
-                  TACSVarMap *map, int bsize,
-                  int num_ext_vars, const int *rowp, const int *cols, 
-                  TACSBVecIndices *bindex ){
+TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info, 
+                          TACSVarMap *map, int bsize, int num_ext_vars, 
+                          const int *rowp, const int *cols, 
+                          TACSBVecIndices *bindex ){
   comm = map->getMPIComm();
 
   int mpiRank, mpiSize;
@@ -144,11 +144,13 @@ equal to the number of rows\n", mpiRank);
     }
   }
   
-  // Match the intervals of the external variables to be sent to other processes
+  // Match the intervals of the external variables to be 
+  // sent to other processes
   ext_row_ptr = new int[ mpiSize+1 ];
   ext_row_count = new int[ mpiSize ];
 
-  FElibrary::matchIntervals(mpiSize, ownerRange, next_rows, ext_rows, ext_row_ptr);
+  FElibrary::matchIntervals(mpiSize, ownerRange, next_rows, 
+    ext_rows, ext_row_ptr);
 
   for ( int k = 0; k < mpiSize; k++ ){
     ext_row_count[k] = ext_row_ptr[k+1] - ext_row_ptr[k];    
@@ -199,9 +201,11 @@ equal to the number of rows\n", mpiRank);
 
   for ( int i = 0; i < mpiSize; i++ ){
     ext_cols_ptr[i] = ext_rowp[ ext_row_ptr[i] ];    
-    ext_cols_count[i] = ext_rowp[ ext_row_ptr[i+1] ] - ext_rowp[ ext_row_ptr[i] ];
+    ext_cols_count[i] = 
+      ext_rowp[ ext_row_ptr[i+1] ] - ext_rowp[ ext_row_ptr[i] ];
     in_cols_ptr[i] = in_rowp[ in_row_ptr[i] ];
-    in_cols_count[i] = in_rowp[ in_row_ptr[i+1] ] - in_rowp[ in_row_ptr[i] ]; 
+    in_cols_count[i] = 
+      in_rowp[ in_row_ptr[i+1] ] - in_rowp[ in_row_ptr[i] ]; 
   }
 
   // Send the column numbers to the other processors
@@ -285,7 +289,7 @@ equal to the number of rows\n", mpiRank);
   initPersistent();
 }
 
-DistMat::~DistMat(){
+TACSDistMat::~TACSDistMat(){
   delete [] ext_rows;
   delete [] ext_rowp;
   delete [] ext_cols;
@@ -320,12 +324,12 @@ DistMat::~DistMat(){
   [ B, E ][ x ]
   [ F, C ][ y ] + [ Bext ][ y_ext ] = 0  
 */
-void DistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars, 
-                                const int *rowp, const int *cols,
-                                int lower, int upper,
-                                int nz_per_row,
-                                int ** _Arowp, int ** _Acols,
-                                int *_np, int ** _Browp, int ** _Bcols ){
+void TACSDistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars, 
+                                    const int *rowp, const int *cols,
+                                    int lower, int upper,
+                                    int nz_per_row,
+                                    int **_Arowp, int **_Acols,
+                                    int *_np, int **_Browp, int **_Bcols ){
   int mpiRank, mpiSize;
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
@@ -580,7 +584,7 @@ void DistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars,
   matrix values that are set on this processor, but are destined for
   other processors.
 */
-void DistMat::initPersistent(){   
+void TACSDistMat::initPersistent(){   
   int bsize = Aloc->getBlockSize();
   
   int mpiRank, mpiSize;
@@ -672,9 +676,9 @@ void DistMat::initPersistent(){
   nv, mv:   number of true rows/columns in the dense matrix
   values:   the dense matrix values
 */
-void DistMat::addValues( int nrow, const int *row, 
-                         int ncol, const int *col,
-                         int nv, int mv, const TacsScalar *values ){
+void TACSDistMat::addValues( int nrow, const int *row, 
+                             int ncol, const int *col,
+                             int nv, int mv, const TacsScalar *values ){
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
 
@@ -778,7 +782,8 @@ void DistMat::addValues( int nrow, const int *row,
               
               for ( int ii = 0; ii < bsize; ii++ ){
                 for ( int jj = 0; jj < bsize; jj++ ){
-                  a[ii*bsize + jj] += values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                  a[ii*bsize + jj] += 
+                    values[mv*(ii + i*bsize) + (jj + j*bsize)];
                 }
               }
             }
@@ -819,10 +824,10 @@ void DistMat::addValues( int nrow, const int *row,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
-void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
-                               const TacsScalar *weights,
-                               int nv, int mv, const TacsScalar *values,
-                               MatrixOrientation matOr ){
+void TACSDistMat::addWeightValues( int nvars, const int *varp, const int *vars,
+                                   const TacsScalar *weights,
+                                   int nv, int mv, const TacsScalar *values,
+                                   MatrixOrientation matOr ){
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
 
@@ -941,14 +946,16 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
                   if (matOr == NORMAL){
                     for ( int ii = 0; ii < bsize; ii++ ){
                       for ( int jj = 0; jj < bsize; jj++ ){
-                        a[ii*bsize + jj] += aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                        a[ii*bsize + jj] += 
+                          aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
                       }
                     }
                   }
                   else {
                     for ( int ii = 0; ii < bsize; ii++ ){
                       for ( int jj = 0; jj < bsize; jj++ ){
-                        a[ii*bsize + jj] += aw*values[mv*(jj + j*bsize) + (ii + i*bsize)];
+                        a[ii*bsize + jj] += 
+                          aw*values[mv*(jj + j*bsize) + (ii + i*bsize)];
                       }
                     }
                   }
@@ -975,9 +982,9 @@ void DistMat::addWeightValues( int nvars, const int *varp, const int *vars,
 /*!
   Given a non-zero pattern, pass in the values for the array
 */
-void DistMat::setValues( int nvars, const int *ext_vars,
-                         const int *rowp, const int *cols, 
-                         TacsScalar *avals ){
+void TACSDistMat::setValues( int nvars, const int *ext_vars,
+                             const int *rowp, const int *cols, 
+                             TacsScalar *avals ){
   zeroEntries();
 
   int bsize = Aloc->getBlockSize();
@@ -1087,7 +1094,7 @@ range 0 <= %d < %d\n", mpiRank, c, nvars);
   delete [] acols;
 }
 
-void DistMat::zeroEntries(){
+void TACSDistMat::zeroEntries(){
   int bsize = Aloc->getBlockSize();
   Aloc->zeroEntries();
   Bext->zeroEntries();
@@ -1099,7 +1106,7 @@ void DistMat::zeroEntries(){
 /* 
    Initiate the communication of the off-process matrix entries 
 */
-void DistMat::beginAssembly(){
+void TACSDistMat::beginAssembly(){
   if (nreceives > 0){
     int ierr = MPI_Startall(nreceives, receives);
     if (ierr != MPI_SUCCESS){
@@ -1121,7 +1128,8 @@ void DistMat::beginAssembly(){
       int len;
       char err_str[MPI_MAX_ERROR_STRING];
       MPI_Error_string(ierr, err_str, &len);
-      fprintf(stderr, "[%d] DistMat::beginAssembly MPI startall sends error\n%s\n", 
+      fprintf(stderr, 
+              "[%d] DistMat::beginAssembly MPI startall sends error\n%s\n", 
               mpiRank, err_str);
     }      
   }
@@ -1132,7 +1140,7 @@ void DistMat::beginAssembly(){
   Once the communication is completed, add the off-processor
   entries to the matrix.
 */
-void DistMat::endAssembly(){
+void TACSDistMat::endAssembly(){
   // Get the map between the global-external variables 
   // and the local variables (for Bext)
   int bsize = Aloc->getBlockSize();

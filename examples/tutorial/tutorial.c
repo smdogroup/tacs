@@ -302,10 +302,10 @@ int main( int argc, char * argv[] ){
     }
 
     // Create the distributed matrix class
-    DistMat *_kmat = tacs->createMat();
-    DistMat *_mmat = tacs->createMat();
-    pc = new ApproximateSchur(_kmat, lev_fill, fill, 
-			      inner_gmres_iters, inner_rtol, inner_atol);
+    TACSDistMat *_kmat = tacs->createMat();
+    TACSDistMat *_mmat = tacs->createMat();
+    pc = new TACSApproximateSchur(_kmat, lev_fill, fill, 
+                                  inner_gmres_iters, inner_rtol, inner_atol);
     kmat = _kmat;
     mmat = _mmat;
   }

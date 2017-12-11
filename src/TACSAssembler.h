@@ -158,7 +158,7 @@ class TACSAssembler : public TACSObject {
 
   // Create the matrices that can be used for analysis
   // -------------------------------------------------
-  DistMat *createMat();
+  TACSDistMat *createMat();
   FEMat *createFEMat( OrderingType order_type=TACS_AMD_ORDER );
   SerialBCSCMat *createSerialBCSCMat();
 
