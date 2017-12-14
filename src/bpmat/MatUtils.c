@@ -191,115 +191,70 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
   return var_num;
 }
 
-/*!  
-  The following function takes a list of elements and the
-  corresponding variables and creates a list of variables that point
-  to each variable.  
+/*
+  Multicolor code for a single process using a greedy algorithm
 */
-void ElementListToVarList( const int *elems, const int *elemptr, int nelems,
-                           int lower, int upper,
-                           int **_varelems, int **_varptr ){
-  int N = upper - lower;
-  int *varptr = new int[ N+1 ];
+int ComputeSerialMultiColor( const int nvars, const int *rowp,
+                             const int *cols, int *colors, 
+                             int *new_vars ){
 
-  for ( int i = 0; i < N+1; i++ ){
-    varptr[i] = 0;
+  // Allocate a temporary array to store the
+  int *tmp = new int[ nvars+1 ];
+  for ( int i = 0; i < nvars; i++ ){
+    tmp[i] = -1;
+    colors[i] = -1;
   }
   
-  for ( int i = 0; i < nelems; i++ ){
-    for ( int j = elemptr[i]; j < elemptr[i+1]; j++ ){
-      if (elems[j] >= lower && elems[j] < upper){
-        int var = elems[j] - lower;
-        varptr[var+1]++;
+  int num_colors = 0;
+  for ( int i = 0; i < nvars; i++ ){
+    // Find the minimum color that is not referred to by any adjacent
+    // node. 
+    for ( int jp = rowp[i], k = 0; jp < rowp[i+1]; jp++, k++ ){
+      int j = cols[jp];
+      if (colors[j] >= 0){
+        tmp[colors[j]] = i;
       }
+    }
+
+    // Set the color for this variable if it already exists
+    int flag = 1;
+    for ( int k = 0; k < num_colors; k++ ){
+      if (tmp[k] != i){
+        colors[i] = k;
+        flag = 0;
+        break;
+      }
+    }
+
+    // Create a new color
+    if (flag){
+      colors[i] = num_colors;
+      num_colors++;
     }
   }
 
-  for ( int i = 0; i < N; i++ ){
-    varptr[i+1] += varptr[i];
+  // Now that all the nodes have been colored, order them
+  memset(tmp, 0, (num_colors+1)*sizeof(int));
+
+  // Count up the number of nodes for each color
+  for ( int i = 0; i < nvars; i++ ){
+    tmp[colors[i]+1]++;
   }
 
-  int *varelems = new int[ varptr[N] ];
-
-  for ( int i = 0; i < nelems; i++ ){
-    for ( int j = elemptr[i]; j < elemptr[i+1]; j++ ){
-      if (elems[j] >= lower && elems[j] < upper){
-        int var   = elems[j] - lower;
-        varelems[ varptr[var] ] = i;
-        varptr[var]++;
-      }
-    }
+  // Set tmp as an offset for each color
+  for ( int i = 1; i < num_colors+1; i++ ){
+    tmp[i] += tmp[i-1];
+  }
+  
+  // Create the new color variables
+  for ( int i = 0; i < nvars; i++ ){
+    new_vars[i] = tmp[colors[i]];
+    tmp[colors[i]]++;
   }
 
-  // Put the pointers back to their proper position
-  for ( int i = 0; i < N; i++ ){
-    varptr[ N-i ] = varptr[ N-i-1 ];
-  }
-  varptr[0] = 0;
+  delete [] tmp;
 
-  *_varptr = varptr;
-  *_varelems = varelems;
-}
-
-/*!  
-  Given a list of elements -> variables, an ownership range defined
-  by lower <= var < upper and an external variable to local map
-  defined by extvars[i], compute the variable to element map 
-*/
-void ElementListToExtVarList( const int *elems, const int *elemptr, int nelems,
-                              const int *extvars, int nextvars,
-                              int lower, int upper,
-                              int **_varelems, int **_varptr ){
-  // Construct a variable -> element scheme for the off-processor variables  
-  int *varptr = new int[ nextvars+1 ];
-  for ( int i = 0; i < nextvars+1; i++ ){
-    varptr[i] = 0;
-  }
-
-  for ( int i = 0; i < nelems; i++ ){
-    for ( int j = elemptr[i]; j < elemptr[i+1]; j++ ){
-      if ( elems[j] < lower || elems[j] >= upper ){
-        // search ext_vars for this variable
-        int *item = (int*)bsearch(&elems[j], extvars, nextvars, 
-                                   sizeof(int), FElibrary::comparator);
-
-        if (item != NULL){
-          int var = item - extvars;
-          varptr[var+1]++;
-        }  
-      }
-    }
-  }
-
-  for ( int i = 0; i < nextvars; i++ ){
-    varptr[i+1] += varptr[i];
-  }
-
-  int *varelems = new int[ varptr[nextvars] ];
-  for ( int i = 0; i < nelems; i++ ){
-    for ( int j = elemptr[i]; j < elemptr[i+1]; j++ ){
-      if ( elems[j] < lower || elems[j] >= upper ){
-        // search the ext_vars for this variable
-        int *item = (int*)bsearch(&elems[j], extvars, nextvars, 
-                                  sizeof(int), FElibrary::comparator);
-
-        if (item != NULL){
-          int var = item - extvars; // index into ext_vars corresponding to elems[j]
-          varelems[ varptr[var] ] = i;
-          varptr[var]++;
-        }
-      }
-    }
-  }
-
-  // Put the pointers back to their proper position
-  for ( int i = 0; i < nextvars; i++ ){
-    varptr[ nextvars-i ] = varptr[ nextvars-i-1 ];
-  }
-  varptr[0] = 0;
-
-  *_varptr = varptr;
-  *_varelems = varelems;
+  return num_colors;
 }
 
 TACS_END_NAMESPACE

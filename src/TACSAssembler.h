@@ -52,7 +52,8 @@ class TACSAssembler : public TACSObject {
                       RCM_ORDER, // Reverse Cuthill Mackee ordering
                       AMD_ORDER, // Approximate minimum degree
                       ND_ORDER, // Nested disection
-                      TACS_AMD_ORDER }; // Interface variables ordered last
+                      TACS_AMD_ORDER, // Interface variables ordered last
+                      MULTICOLOR_ORDER }; // Multicolor via greedy algorithm
   enum MatrixOrderingType { ADDITIVE_SCHWARZ, 
                             APPROXIMATE_SCHUR,
                             DIRECT_SCHUR };
@@ -92,6 +93,7 @@ class TACSAssembler : public TACSObject {
 
   // Functions for retrieving the reordering
   // ---------------------------------------
+  int isReordered();
   void getReordering( int *oldToNew );
   void reorderVec( TACSBVec *vec );
   void reorderNodes( int *nodes, int num_nodes );
@@ -541,4 +543,4 @@ inline void TACSAssembler::addMatValues( TACSMat *A,
   }
 }
 
-#endif
+#endif // TACS_ASSEMBLER_H

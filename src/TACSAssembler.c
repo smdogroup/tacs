@@ -1130,8 +1130,8 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     tacsExtNodeNums[i] = newNodeNums[i + numOwnedNodes];
   }
 
-  // Resort the external node numbers - these are already unique
-  // and the extNodeOffset should not change either
+  // Resort the external node numbers - these are already unique and
+  // the extNodeOffset should not change either
   FElibrary::uniqueSort(tacsExtNodeNums, numExtNodes);
 
   // Save the mapping to the new numbers for later reorderings
@@ -1225,6 +1225,20 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     if (new_vars){
       for ( int k = 0; k < nvars; k++ ){
         new_vars[_perm[k]] = k;
+      }
+    }
+  }
+  else if (order_type == MULTICOLOR_ORDER){
+    // Compute the matrix reordering using RCM TACS' version of the
+    // RCM algorithm
+    int *colors = new int[ nvars ];   
+    matutils::ComputeSerialMultiColor(nvars, rowp, cols,
+                                      colors, new_vars);
+    delete [] colors;
+
+    if (perm){
+      for ( int k = 0; k < nvars; k++ ){
+        perm[_new_vars[k]] = k;    
       }
     }
   }
@@ -2341,6 +2355,13 @@ void TACSAssembler::getDataPointers( TacsScalar *data,
 }
 
 /*
+  Check whether a reordering has been applied to the nodes
+*/
+int TACSAssembler::isReordered(){
+  return (newNodeIndices != NULL);
+}
+
+/*
   Get the ordering from the old nodes to the new nodes
 
   input/output:
@@ -3184,7 +3205,8 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   conditions are applied after the assembly of the residual is
   complete.
   
-  rhs:      the residual output
+  in/out:
+  residual:      the residual evaluated at the current point
 */
 void TACSAssembler::assembleRes( TACSBVec *residual ){
   // Sort the list of auxiliary elements - this only performs the

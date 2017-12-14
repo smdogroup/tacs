@@ -10,6 +10,7 @@
 
 #include "BVec.h"
 #include "BVecDist.h"
+#include "TACSAssembler.h"
 
 /*
   BVecInterp: Interpolate with constant weights between two vectors
@@ -46,6 +47,7 @@
 class TACSBVecInterp : public TACSObject {
  public:
   TACSBVecInterp( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
+  TACSBVecInterp( TACSAssembler *_inTacs, TACSAssembler *_outTacs );
   ~TACSBVecInterp();
 
   // Add components of the interpolation
@@ -74,6 +76,9 @@ class TACSBVecInterp : public TACSObject {
  private:
   // The MPI communicator
   MPI_Comm comm;
+
+  // Initialize the distribution object
+  void init( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
 
   void (*multadd)( int bsize, int nrows, 
 		   const int *rowp, const int *cols,
@@ -108,6 +113,9 @@ class TACSBVecInterp : public TACSObject {
   // The number of local rows from outMap
   int N, M, bsize;
   TACSVarMap *inMap, *outMap;
+
+  // The TACSAssembler classes - these may not exist
+  TACSAssembler *inTacs, *outTacs;
 
   // Store the transpose weights
   TacsScalar *transpose_weights;

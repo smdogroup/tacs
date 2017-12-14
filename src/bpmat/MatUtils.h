@@ -12,6 +12,7 @@
 #include "TACSObject.h"
 
 TACS_BEGIN_NAMESPACE(matutils)
+
 /*!
   Extend an array and copy values from the old to the new array
 */
@@ -30,7 +31,7 @@ void SortAndUniquifyCSR( int nvars, int *rowp, int *cols,
                          int remove_diag=0 );
 
 /*
-  Reorder based on RCM-reordering
+  Reorder locally based on RCM-reordering
 */
 int ComputeRCMOrder( const int nvars, const int *rowp, const int *cols,
                      int *rcm_order, int root, int n_rcm_iters );
@@ -38,13 +39,12 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
                            const int *cols, int *rcm_vars, int *levset, 
                            int root );
 
-void ElementListToVarList( const int *elems, const int *elemptr, int nelems,
-                           int lower, int upper,
-                           int *_varelems, int *_varptr );
-void ElementListToExtVarList( const int *elems, const int *elemptr, 
-                              int nelems, const int *extvars, int nextvars,
-                              int lower, int upper,
-                              int *_varelems, int *_varptr );
+/*
+  Compute the multicolor order via a greedy algorithm
+*/
+int ComputeSerialMultiColor( const int nvars, const int *rowp,
+                             const int *cols, int *colors, 
+                             int *new_vars );
 
 TACS_END_NAMESPACE
 
