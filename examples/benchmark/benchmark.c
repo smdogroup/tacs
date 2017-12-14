@@ -382,11 +382,11 @@ void testSolve( TACSAssembler *tacs,
       mat = _mat;
       break;
     }
-    else if (strcmp(opts[k], "PSOR") == 0){
+    else if (strcmp(opts[k], "GaussSeidel") == 0){
       int zero_guess = 0; // Zero the initial guess for psor
       TACSPMat *_mat = tacs->createMat();
-      pc = new PSOR(_mat, zero_guess, 
-                    sor_omega, sor_iters, sor_symmetric);
+      pc = new TACSGaussSeidel(_mat, zero_guess, 
+                               sor_omega, sor_iters, sor_symmetric);
       mat = _mat;
     }
   }

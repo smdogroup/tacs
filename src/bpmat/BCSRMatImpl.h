@@ -115,20 +115,13 @@ void BCSRMatFactorLower( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper( BCSRMatData *A, BCSRMatData *F );
 void BCSRMatMatMultNormal( BCSRMatData *A, TacsScalar *s, BCSRMatData *B );
 
-void BCSRMatApplySOR( BCSRMatData *A, TacsScalar *Adiag,
-		      TacsScalar omega, int iters, 
-                      TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR( BCSRMatData *A, TacsScalar *Adiag,
-		       TacsScalar omega, int iters, 
-                       TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySOR( BCSRMatData *A, TacsScalar *Adiag,
-                      const int *pairs, int npairs,
-		      TacsScalar omega, int iters, 
-                      TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR( BCSRMatData *A, TacsScalar *Adiag,
-                       const int *pairs, int npairs,
-		       TacsScalar omega, int iters, 
-                       TacsScalar *b, TacsScalar *x );
+/*
+void BCSRMatApplySOR( BCSRMatData *Adata, BCSRMatData *Bdata,
+                      const int start, const int end, const int incr,
+                      const int var_offset, const TacsScalar *Adiag,
+                      const TacsScalar omega, const TacsScalar *b, 
+                      const TacsScalar *xext, TacsScalar *x );
+*/
 
 /*
   These are the definitions for the block-specific code.
@@ -201,21 +194,11 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData *A,
                          BCSRMatData *B, BCSRMatData *C );
 void BCSRMatFactorLower3( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper3( BCSRMatData *A, BCSRMatData *F );
-
-void BCSRMatApplySOR3( BCSRMatData *A, TacsScalar *Adiag,
-		       TacsScalar omega, int iters, 
-		       TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR3( BCSRMatData *A, TacsScalar *Adiag,
-			TacsScalar omega, int iters, 
-			TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySOR3( BCSRMatData *A, TacsScalar *Adiag,
-                       const int *pairs, int npairs,
-                       TacsScalar omega, int iters, 
-                       TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR3( BCSRMatData *A, TacsScalar *Adiag,
-                        const int *pairs, int npairs,
-                        TacsScalar omega, int iters, 
-                        TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySOR3( BCSRMatData *Adata, BCSRMatData *Bdata,
+                       const int start, const int end, const int incr,
+                       const int var_offset, const TacsScalar *Adiag,
+                       const TacsScalar omega, const TacsScalar *b, 
+                       const TacsScalar *xext, TacsScalar *x );
 
 // The bsize == 4 code
 void BCSRMatVecMult4( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
@@ -238,14 +221,11 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData *A,
                          BCSRMatData *B, BCSRMatData *C );
 void BCSRMatFactorLower4( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper4( BCSRMatData *A, BCSRMatData *F );
-
-void BCSRMatApplySOR4( BCSRMatData *A, TacsScalar *Adiag,
-		       TacsScalar omega, int iters,
-		       TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR4( BCSRMatData *A, TacsScalar *Adiag,
-			TacsScalar omega, int iters,
-			TacsScalar *b, TacsScalar *x );
-
+void BCSRMatApplySOR4( BCSRMatData *Adata, BCSRMatData *Bdata,
+                       const int start, const int end, const int incr,
+                       const int var_offset, const TacsScalar *Adiag,
+                       const TacsScalar omega, const TacsScalar *b, 
+                       const TacsScalar *xext, TacsScalar *x );
 
 // The bsize == 5 code
 void BCSRMatVecMult5( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
@@ -291,12 +271,11 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData *A,
 void BCSRMatFactorLower6( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper6( BCSRMatData *A, BCSRMatData *F );
 
-void BCSRMatApplySOR6( BCSRMatData *A, TacsScalar *Adiag,
-		       TacsScalar omega, int iters, 
-		       TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR6( BCSRMatData *A, TacsScalar *Adiag,
-			TacsScalar omega, int iters, 
-			TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySOR6( BCSRMatData *Adata, BCSRMatData *Bdata,
+                       const int start, const int end, const int incr,
+                       const int var_offset, const TacsScalar *Adiag,
+                       const TacsScalar omega, const TacsScalar *b, 
+                       const TacsScalar *xext, TacsScalar *x );
 
 // The threaded implementations for bsize = 6
 void *BCSRMatVecMultAdd6_thread( void *t );
@@ -331,12 +310,11 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData *A,
 void BCSRMatFactorLower8( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper8( BCSRMatData *A, BCSRMatData *F );
 
-void BCSRMatApplySOR8( BCSRMatData *A, TacsScalar *Adiag,
-		       TacsScalar omega, int iters, 
-		       TacsScalar *b, TacsScalar *x );
-void BCSRMatApplySSOR8( BCSRMatData *A, TacsScalar *Adiag,
-			TacsScalar omega, int iters, 
-			TacsScalar *b, TacsScalar *x );
+void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
+                       const int start, const int end, const int incr,
+                       const int var_offset, const TacsScalar *Adiag,
+                       const TacsScalar omega, const TacsScalar *b, 
+                       const TacsScalar *xext, TacsScalar *x );
 
 // The threaded implementations for bsize = 8
 void *BCSRMatVecMultAdd8_thread( void *t );

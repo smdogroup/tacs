@@ -196,9 +196,6 @@ void TACSPMat::addDiag( TacsScalar alpha ){
   Aloc->addDiag(alpha);
 }
 
-// Functions required for solving linear systems
-// ---------------------------------------------
-
 /*!
   Matrix multiplication
 */
@@ -226,23 +223,23 @@ void TACSPMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   Access the underlying matrices
 */
 void TACSPMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
-  *A = Aloc;
-  *B = Bext;
+  if (A){ *A = Aloc; }
+  if (B){ *B = Bext; }
 }
 
 void TACSPMat::getRowMap( int *_bs, int *_N, int *_Nc ){
-  *_bs = bsize;
-  *_Nc = Nc;
-  *_N = N;
+  if (_bs){ *_bs = bsize; }
+  if (_Nc){ *_Nc = Nc; }
+  if (_N){ *_N = N; }
 }
 
 void TACSPMat::getColMap( int *_bs, int *_M ){
-  *_bs = bsize;
-  *_M = N;
+  if (_bs){ *_bs = bsize; }
+  if (_M){ *_M = N; }
 }
 
 void TACSPMat::getExtColMap( TACSBVecDistribute ** ext_map ){
-  *ext_map = ext_dist;
+  if (ext_map){ *ext_map = ext_dist; }
 }
 
 /*!
@@ -352,9 +349,9 @@ const char *TACSPMat::matName = "TACSPMat";
 /*
   Build a simple SOR or Symmetric-SOR preconditioner for the matrix
 */
-PSOR::PSOR( TACSPMat *_mat, int _zero_guess, 
-            TacsScalar _omega, int _iters, 
-            int _isSymmetric, int *pairs, int npairs ){
+TACSGaussSeidel::TACSGaussSeidel( TACSPMat *_mat, int _zero_guess, 
+                                  TacsScalar _omega, int _iters, 
+                                  int _symmetric ){
   mat = _mat;
   mat->incref();
 
@@ -370,7 +367,8 @@ PSOR::PSOR( TACSPMat *_mat, int _zero_guess,
     bvec->incref();
   }
   else {
-    fprintf(stderr, "PSOR type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "TACSGaussSeidel error: Input/output must be TACSBVec\n");
   }
 
   // Get the number of variables in the row map
@@ -394,37 +392,13 @@ PSOR::PSOR( TACSPMat *_mat, int _zero_guess,
   zero_guess = _zero_guess;
   omega = _omega;
   iters = _iters;
-  isSymmetric = _isSymmetric;
-
-  if (pairs){
-    // Readjust the pair indices so that they are within the supplied
-    // range of the pairs.
-    int mpi_rank;
-    const int *range;
-    TACSVarMap *vmap = mat->getRowMap();
-    vmap->getOwnerRange(&range);
-    MPI_Comm_rank(vmap->getMPIComm(), &mpi_rank);
-
-    // Readjust the range of the pairs
-    for ( int i = 0; i < npairs; i++ ){
-      if (pairs[i] >= range[mpi_rank] &&
-          pairs[i] < range[mpi_rank+1]){
-        pairs[i] = pairs[i] - range[mpi_rank];
-      }
-      else {
-        pairs[i] = -1;
-      }
-    }
-
-    // Set the diagonal pairs
-    Aloc->setDiagPairs(pairs, npairs);
-  }
+  symmetric = _symmetric;
 }
   
 /*
   Free the SOR preconditioner
 */
-PSOR::~PSOR(){
+TACSGaussSeidel::~TACSGaussSeidel(){
   mat->decref();
   Aloc->decref();
   Bext->decref();
@@ -437,7 +411,7 @@ PSOR::~PSOR(){
 /*
   Factor the diagonal of the matrix
 */
-void PSOR::factor(){
+void TACSGaussSeidel::factor(){
   Aloc->factorDiag();
 }
 
@@ -454,27 +428,47 @@ void PSOR::factor(){
 
   where b = x - Bext * yext
 */
-void PSOR::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
+void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
   // Covert to TACSBVec objects
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
 
   if (xvec && yvec){
-    // Apply the ILU factorization to a vector
+    // Retrieve the values from the input vectors
     TacsScalar *x, *y, *b;
     yvec->getArray(&y);
     xvec->getArray(&x);
     bvec->getArray(&b);
     
+    /*
+    // Start smoothing the
+    top_ext->beginForward(top_ctx, x, xtop);
+    
+    // Start smoothing the first group of interior nodes
+    Aloc->applySOR(NULL, start, end, incr, ext_offset,
+                   omega, b, NULL, x);
+
+    top_ext->endForward(top_ctx, x, xtop);
+    // Insert the top nodes into their correct locations
+
+
+    // Smooth the top nodes
+    
+
+    // Send the top node values back to the destination
+
+
+
+
+    // Finish smoothing the first group of interior nodes    
+    Aloc->applySOR(NULL, start, end, incr, ext_offset,
+                   omega, b, NULL, x);
+    */
+
     if (zero_guess){
       yvec->zeroEntries();      
-      if (isSymmetric){
-        Aloc->applySSOR(x, y, omega, iters);
-      }
-      else {
-        Aloc->applySOR(x, y, omega, iters);
-      }
+      Aloc->applySOR(x, y, omega, iters);
     }
     else {
       // Begin sending the external-interface values
@@ -492,76 +486,39 @@ void PSOR::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
       // Compute b = xvec - Bext*yext
       bvec->axpby(1.0, -1.0, xvec);         
       
-      if (isSymmetric){
-        Aloc->applySSOR(b, y, omega, iters);
-      }
-      else {
-        Aloc->applySOR(b, y, omega, iters);
-      }
-    }
+      Aloc->applySOR(b, y, omega, iters);
+    }  
+
+    /*
+    // Get the number of variables in the row map
+    int bsize, N, Nc;
+    mat->getRowMap(&bsize, &N, &Nc);
+
+    int start = 0;
+    int end = N;
+    int incr = 1;
+    Aloc->applySOR(NULL, start, end, incr, 0,
+                   omega, x, NULL, y);
+    
+    start = N-1;
+    end = -1;
+    incr = -1;
+    Aloc->applySOR(NULL, start, end, incr, 0,
+                   omega, x, NULL, y);
+    */
   }
   else {
-    fprintf(stderr, "PSOR type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "TACSGaussSeidel type error: Input/output must be TACSBVec\n");
   }
 }
 
 /*
   Retrieve the underlying matrix
 */
-void PSOR::getMat( TACSMat **_mat ){
+void TACSGaussSeidel::getMat( TACSMat **_mat ){
   *_mat = mat;
 }
-
-
-/*
-  Create a multicolor smoother based on the non-zero pattern input.
-  This relies on 
-*/
-/*
-TACSMulticolorPc::TACSMulticolorPc( PMat *_mat ){
-  mat = _mat;
-  mat->incref();
-
-  // Compute the matrix colors
-  colors = new int[ n ];
-  int *tmp = new int[ n ];
-
-  int num_colors = 0;
-
-  // Find the colors locally
-  for ( int i = 0; i < n; i++ ){
-
-
-
-    // Loop over the matrices 
-    for ( int j = rowp[i]; j < rowp[i+1]; j++ ){
-
-
-
-    }
-
-    // Loop over the non-local part in B
-  }
-
-
-
-
-
-
-}
-
-  Factor the diagonal of the matrix
-void TACSMulticolorPc::factor(){
-  Aloc->factorDiag();
-}
-
-void TACSMulticolorPc::
-
-
-*/
-
-
-
 
 /*!
   Build the additive Schwarz preconditioner 

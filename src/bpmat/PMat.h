@@ -109,11 +109,11 @@ class TACSPMat : public TACSMat {
   Updates are performed locally, while off-processor updates 
   Set up involves factoring the diagonal matrix
 */
-class PSOR : public TACSPc {
+class TACSGaussSeidel : public TACSPc {
  public:
-  PSOR( TACSPMat *_mat, int _zero_guess, TacsScalar _omega, int _iters, 
-        int _isSymmetric, int *pairs=NULL, int npairs=0 );
-  ~PSOR();
+  TACSGaussSeidel( TACSPMat *_mat, int _zero_guess, 
+                   TacsScalar _omega, int _iters, int _symmetric );
+  ~TACSGaussSeidel();
 
   void factor();
   void applyFactor( TACSVec *xvec, TACSVec *yvec );
@@ -124,9 +124,10 @@ class PSOR : public TACSPc {
   TACSPMat *mat;
 
   // Information about how to handle the smoother
-  int iters;
-  TacsScalar omega;
-  int zero_guess, isSymmetric;
+  int iters; // The number of iterations to apply
+  TacsScalar omega; // The over/under relaxation factor
+  int zero_guess; // Zero the initial guess
+  int symmetric; // Apply the symmetric variant 
 
   // Pointers to the local/external matrix
   BCSRMat *Aloc, *Bext;
@@ -201,6 +202,10 @@ class TACSGlobalSchurMat : public TACSMat {
 
 /*!
   The approximate Schur preconditioner
+
+  This preconditioner solves an approximate Schur complement system at
+  each iteration. The Schur complement system is formed globally in
+  parallel across all processors.
 */
 class TACSApproximateSchur : public TACSPc {
  public:

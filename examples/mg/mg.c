@@ -12,8 +12,7 @@
   creator object 
 */
 void createTACS( MPI_Comm comm, int nx, int ny,
-                 TACSAssembler **_tacs, TACSCreator **_creator,
-                 int *part=NULL ){
+                 TACSAssembler **_tacs, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -87,13 +86,6 @@ void createTACS( MPI_Comm comm, int nx, int ny,
     // Set the nodal locations
     creator->setNodes(Xpts);
     delete [] Xpts;
-
-    // Set the partition
-    if (part){
-      int size;
-      MPI_Comm_size(comm, &size);
-      creator->partitionMesh(size, part);
-    }
   }
 
   // Create and set the element
@@ -109,6 +101,9 @@ void createTACS( MPI_Comm comm, int nx, int ny,
                                                  yield_stress, thickness);
   TACSElement *elem = new MITCShell<2>(stiff);
   creator->setElements(&elem, 1);
+
+  creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
+                             TACSAssembler::ADDITIVE_SCHWARZ);
 
   // Create TACS
   TACSAssembler *tacs = creator->createTACS();
@@ -168,7 +163,7 @@ int main( int argc, char *argv[] ){
 
   // Number of different levels
   int nlevels = 3;
-  int max_nlevels = 5;
+  const int max_nlevels = 5;
   TACSAssembler *tacs[max_nlevels];
   TACSCreator *creator[max_nlevels];
 
@@ -206,37 +201,17 @@ int main( int argc, char *argv[] ){
 
   // Create the TACS/Creator objects for all levels
   for ( int i = 0; i < nlevels; i++ ){
-    int *part = NULL;
     int Nx = nx/(1 << i), Ny = ny/(1 << i);
-
-    if (i > 0 && rank == 0){
-      // Note that the partition array is only allocated
-      // on the root processor
-      const int *fine_part;
-      creator[i-1]->getElementPartition(&fine_part);
-      part = new int[ Nx*Ny ];
-      for ( int j = 0; j < Ny; j++ ){
-        for ( int i = 0; i < Nx; i++ ){
-          part[i + Nx*j] = fine_part[2*i + 4*Nx*j];
-        }
-      }
-    }
-
-    createTACS(comm, Nx, Ny, &tacs[i], &creator[i], part);
+    createTACS(comm, Nx, Ny, &tacs[i], &creator[i]);
     tacs[i]->incref();
     creator[i]->incref();
-    if (part){
-      delete [] part;
-    }
   }
 
   // Create the interpolation operators
   for ( int level = 0; level < nlevels-1; level++ ){
     // Allocate the interpolation object
     TACSBVecInterp *interp = 
-      new TACSBVecInterp(tacs[level+1]->getVarMap(),
-                         tacs[level]->getVarMap(), 
-                         tacs[level]->getVarsPerNode());
+      new TACSBVecInterp(tacs[level+1], tacs[level]);
 
     if (rank == 0){
       // Retrieve the node numbers
@@ -288,7 +263,8 @@ int main( int argc, char *argv[] ){
             nvars = 4;
           }
 
-          interp->addInterp(nodes[i + (nx_fine+1)*j], w, vars, nvars);
+          int node = nodes[i + (nx_fine+1)*j];
+          interp->addInterp(node, w, vars, nvars);
         }
       }
     }

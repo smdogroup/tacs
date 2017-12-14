@@ -87,8 +87,10 @@ class BCSRMat : public TACSObject {
   void factorDiag();
   void applySOR( TacsScalar *x, TacsScalar *y, 
                  TacsScalar omega, int iters );
-  void applySSOR( TacsScalar *x, TacsScalar *y, 
-                  TacsScalar omega, int iters );
+  void applySOR( BCSRMat *B, int start, int end, int incr,
+                 int var_offset, TacsScalar omega, 
+                 const TacsScalar *b, const TacsScalar *xext, TacsScalar *x );
+                
   void matMultAdd( double alpha, BCSRMat *amat, BCSRMat *bmat );
   void applyLowerFactor( BCSRMat *emat );
   void applyUpperFactor( BCSRMat *fmat );
@@ -146,16 +148,11 @@ class BCSRMat : public TACSObject {
   void (*applypartiallower)( BCSRMatData *A, TacsScalar *x, 
 			     int var_offset );
   void (*applyschur)( BCSRMatData *A, TacsScalar *x, int var_offset );
-  void (*applysor)( BCSRMatData *A, TacsScalar *Adiag, TacsScalar omega, 
-		    int iters, TacsScalar *b, TacsScalar *x );
-  void (*applyssor)( BCSRMatData *A, TacsScalar *Adiag, TacsScalar omega, 
-		     int iters, TacsScalar *b, TacsScalar *x );
-  void (*applysorpairs)( BCSRMatData *A, TacsScalar *Adiag, 
-                         const int *pairs, int npairs, TacsScalar omega, 
-                         int iters, TacsScalar *b, TacsScalar *x );
-  void (*applyssorpairs)( BCSRMatData *A, TacsScalar *Adiag, 
-                          const int *pairs, int npairs, TacsScalar omega, 
-                          int iters, TacsScalar *b, TacsScalar *x );
+  void (*applysor)( BCSRMatData *Adata, BCSRMatData *Bdata,
+                    const int start, const int end, const int incr,
+                    const int var_offset, const TacsScalar *Adiag,
+                    const TacsScalar omega, const TacsScalar *b, 
+                    const TacsScalar *xext, TacsScalar *x );
   
   void (*bmatmult)( double alpha, BCSRMatData *A, 
                     BCSRMatData *B, BCSRMatData *C ); 
@@ -190,4 +187,4 @@ class BCSRMat : public TACSObject {
   int *pairs;
 };
 
-#endif
+#endif // TACS_BCSR_MATRIX_H

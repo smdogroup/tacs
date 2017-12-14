@@ -168,9 +168,9 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       mat[level]->incref();
       
       // Do not zero the initial guess for the PSOR object
-      int zero_guess = 0; 
-      pc[level] = new PSOR(pmat, zero_guess, sor_omega, 
-                           sor_iters, sor_symmetric);
+      int zero_guess = 0;
+      pc[level] = new TACSGaussSeidel(pmat, zero_guess, sor_omega, 
+                                      sor_iters, sor_symmetric);
       pc[level]->incref();
     }
   }
@@ -201,16 +201,16 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       root_pc = new PcScMat(femat, lev, fill, reorder_schur);
       root_pc->incref();
 
-      /*
+      /*      
       // Create a smoother on the lowest level
       TACSPMat *pmat = tacs[level]->createMat();
       root_mat = pmat;
       root_mat->incref();
       
-      // Do not zero the initial guess for the PSOR object
-      int zero_guess = 1; 
-      root_pc = new PSOR(pmat, zero_guess, sor_omega, 
-                         sor_iters, sor_symmetric);
+      // Do not zero the initial guess
+      int zero_guess = 0; 
+      root_pc = new TACSGaussSeidel(pmat, zero_guess, sor_omega, 
+                                    sor_iters, sor_symmetric);
       root_pc->incref();
       */
     }
