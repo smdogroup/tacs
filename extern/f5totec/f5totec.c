@@ -19,8 +19,8 @@
 enum FileType { FULL=0, GRID=1, SOLUTION=2 };
 
 enum ZoneType { ORDERED=0, FELINESEG, FETRIANGLE, 
-		FEQUADRILATERAL, FETETRAHEDRON, FEBRICK, 
-		FEPOLYGON, FEPOLYHEDRA };
+                FEQUADRILATERAL, FETETRAHEDRON, FEBRICK, 
+                FEPOLYGON, FEPOLYHEDRA };
 
 /*
   Initialize a data file.
@@ -31,14 +31,14 @@ enum ZoneType { ORDERED=0, FELINESEG, FETRIANGLE,
   dir_name  == Name of the directory
   file_type == Type of data
 */
-int create_tec_file( char * data_info, char * var_names,
-		     char * file_name, char * dir_name,
-		     enum FileType _file_type ){
+int create_tec_file( char *data_info, char *var_names,
+                     char *file_name, char *dir_name,
+                     enum FileType _file_type ){
   INTEGER4 file_type = _file_type;
   INTEGER4 debug = 0;
-  INTEGER4 variables_are_double = 1; // We'll always use doubles
+  INTEGER4 variables_are_double = 0;
   return TECINI112(data_info, var_names, file_name, dir_name,
-		   &file_type, &debug, &variables_are_double);
+                   &file_type, &debug, &variables_are_double);
 }
 
 /*
@@ -49,13 +49,13 @@ int create_tec_file( char * data_info, char * var_names,
   num_points   == The number of points
   num_elements == The number of elements
 */
-int create_fe_tec_zone( char * zone_name, ZoneType _zone_type,
-			int _num_points, int _num_elements,
+int create_fe_tec_zone( char *zone_name, ZoneType _zone_type,
+                        int _num_points, int _num_elements,
                         int use_strands=0,
                         double solution_time=0.0 ){
-  if ( _zone_type == ORDERED ||
-       _zone_type == FEPOLYGON ||
-       _zone_type == FEPOLYHEDRA ){
+  if (_zone_type == ORDERED ||
+      _zone_type == FEPOLYGON ||
+      _zone_type == FEPOLYHEDRA ){
     fprintf(stderr, "Cannot create finite element zone with given \
 zone type\n");
     return -1;
@@ -86,13 +86,13 @@ zone type\n");
   }
 
   return TECZNE112(zone_name, &zone_type, &num_points, &num_elements, 
-		   &num_faces, &icmax, &jcmax, &kcmax,
-		   &solution_time, &strand_id, &parent_zone, &is_block,
-		   &num_face_connections, &face_neighbour_mode,
-		   &total_num_face_nodes, &num_connected_boundary_faces,
-		   &total_num_boundary_connections, 
-		   passive_var_list, value_location,
-		   share_var_from_zone, &share_con_from_zone);
+                   &num_faces, &icmax, &jcmax, &kcmax,
+                   &solution_time, &strand_id, &parent_zone, &is_block,
+                   &num_face_connections, &face_neighbour_mode,
+                   &total_num_face_nodes, &num_connected_boundary_faces,
+                   &total_num_boundary_connections, 
+                   passive_var_list, value_location,
+                   share_var_from_zone, &share_con_from_zone);
 }
 
 /*
@@ -101,10 +101,18 @@ zone type\n");
   len  == Length of the data
   data == The array of data
 */
-int write_tec_data( int _len, double * data ){
+int write_tec_double_data( int _len, double *data ){
   INTEGER4 len = _len;
   INTEGER4 is_double = 1;
+  return TECDAT112(&len, data, &is_double);
+}
 
+/*
+  Write float data to a tecplot file
+*/
+int write_tec_float_data( int _len, float *data ){
+  INTEGER4 len = _len;
+  INTEGER4 is_double = 0;
   return TECDAT112(&len, data, &is_double);
 }
 
@@ -184,22 +192,24 @@ int main( int argc, char * argv[] ){
     int *element_comp_num = NULL;
     int *conn = NULL;
     double *data = NULL;
+    float *float_data = NULL;
     int conn_dim = 0, num_elements = 0, num_points = 0, num_variables = 0;
     file->firstZone();
     do {
       // Find the zone corresponding to all the data
       const char *zone_name, *var_names;
+      FH5File::FH5DataType dtype;
       int dim1, dim2;
 
-      if (!file->getZoneInfo(&zone_name, &var_names, &dim1, &dim2)){
+      if (!file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2)){
         fprintf(stderr, "Error, zone not defined\n");
         break;
       }
     
       if (strcmp(zone_name, "components") == 0){
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &vdata, 
-                              &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype,
+                              &vdata, &dim1, &dim2)){
           element_comp_num = (int*)vdata;
         }
       }
@@ -207,8 +217,8 @@ int main( int argc, char * argv[] ){
         num_elements = dim1;
         conn_dim = dim2;
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &vdata, 
-                              &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype, 
+                              &vdata, &dim1, &dim2)){
           conn = (int*)vdata;
         }
       }
@@ -229,16 +239,21 @@ int main( int argc, char * argv[] ){
  
         // Retrieve the data
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &vdata, 
-                              &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype,
+                              &vdata, &dim1, &dim2)){
           num_points = dim1;
           num_variables = dim2;
-          data = (double*)vdata;
+          if (dtype == FH5File::FH5_DOUBLE){
+            data = (double*)vdata;
+          }
+          else if (dtype == FH5File::FH5_FLOAT){
+            float_data = (float*)vdata;
+          }
         }
       }
     } while (file->nextZone());
     
-    if (!(element_comp_num && conn && data)){
+    if (!(element_comp_num && conn && (data || float_data))){
       fprintf(stderr, "Error, data, connectivity or \
 component numbers not defined in file\n");
     }
@@ -259,7 +274,14 @@ component numbers not defined in file\n");
 
     int *reduced_points = new int[ num_points ];
     int *reduced_conn = new int[ conn_dim*num_elements ];
-    double *reduced_data = new double[ num_points ];
+    double *reduced_data = NULL;
+    float *reduced_float_data = NULL;
+    if (data){ 
+      reduced_data = new double[ num_points ];
+    }
+    else if (float_data){
+      reduced_float_data = new float[ num_points ];      
+    }
 
     for ( int k = 0; k < num_comp; k++ ){
       // Count up the number of elements that use the connectivity
@@ -303,13 +325,23 @@ component numbers not defined in file\n");
 
         // Retrieve the data
         for ( int j = 0; j < num_variables; j++ ){
-          for ( int i = 0; i < num_points; i++ ){
-            if (reduced_points[i] > 0){
-              reduced_data[reduced_points[i]-1] = data[i*num_variables + j];
+          if (reduced_data){
+            for ( int i = 0; i < num_points; i++ ){
+              if (reduced_points[i] > 0){
+                reduced_data[reduced_points[i]-1] = data[i*num_variables + j];
+              }
             }
+            write_tec_double_data(npts, reduced_data);
           }
-        
-          write_tec_data(npts, reduced_data);
+          else if (reduced_float_data){
+            for ( int i = 0; i < num_points; i++ ){
+              if (reduced_points[i] > 0){
+                reduced_float_data[reduced_points[i]-1] = 
+                  float_data[i*num_variables + j];
+              }
+            }
+            write_tec_float_data(npts, reduced_float_data);
+          }
         }
       
         // Now, write the connectivity

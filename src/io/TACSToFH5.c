@@ -27,7 +27,6 @@
 TACSToFH5::TACSToFH5( TACSAssembler *_tacs,
                       enum ElementType _elem_type,
                       unsigned int _write_flag ){
-
   tacs = _tacs;
   tacs->incref();
   elem_type = _elem_type;
@@ -175,37 +174,46 @@ void TACSToFH5::writeToFile( const char *filename ){
   int dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
   int dim2 = 1;
   char comp_name[] = "components";
-  file->writeZoneData(comp_name, FH5File::FH5_INT,
-                      comp_name, comp_nums, dim1, dim2);
+  file->writeZoneData(comp_name, comp_name, FH5File::FH5_INT,
+                      comp_nums, dim1, dim2);
   if (comp_nums){ delete [] comp_nums; }
 
   // Write the data to a zone
   dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
   dim2 = con_size;
   char conn_name[] = "connectivity";
-  file->writeZoneData(conn_name, FH5File::FH5_INT,
-                      conn_name, csr, dim1, dim2);  
+  file->writeZoneData(conn_name, conn_name, FH5File::FH5_INT,
+                      csr, dim1, dim2);  
   if (csr){ delete [] csr; }
   if (csr_range){ delete [] csr_range; }
 
-  // Allocate space for the output data - the nodes, displacements, stresses etc.
+  // Allocate space for the output data - 
+  // the nodes, displacements, stresses etc.
   int len = nvals*(node_range[rank+1] - node_range[rank]);
   double *data = new double[ len ];
   memset(data, 0, len*sizeof(double));
 
   // Get the output data from TACS
   tacs->getOutputData(elem_type, write_flag, data, nvals);
-  
+
+  // Get the dimensions of the data
   dim1 = node_range[rank+1] - node_range[rank];
   dim2 = nvals;
+
+  // Convert the data to float
+  float *float_data = new float[ len ];
+  for ( int i = 0; i < dim1*dim2; i++ ){
+    float_data[i] = data[i];
+  }
 
   // Write the data with a time stamp from the simulation in TACS
   char data_name[128];
   double t = tacs->getSimulationTime();
   sprintf(data_name, "data t=%.10e", t);
-  file->writeZoneData(data_name, FH5File::FH5_DOUBLE, variable_names,
-                      data, dim1, dim2);
+  file->writeZoneData(data_name, variable_names, 
+                      FH5File::FH5_FLOAT, float_data, dim1, dim2);
   delete [] data;
+  delete [] float_data;
   if (node_range){ delete [] node_range; }
 
   file->close();
@@ -238,7 +246,7 @@ char *TACSToFH5::getElementVarNames(){
   }
 
   char *output_names[7] = {NULL, NULL, NULL, 
-                            NULL, NULL, NULL, NULL};
+                           NULL, NULL, NULL, NULL};
 
   if (write_flag & TACSElement::OUTPUT_NODES){ 
     output_names[0] = new char[ 6 ];

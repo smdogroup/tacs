@@ -5,6 +5,9 @@
   Not for commercial purposes.
 */
 
+/*
+  Create the FH5 object with the given communicator
+*/
 FH5File::FH5File( MPI_Comm _comm ){
   fp = NULL;
   comm = _comm;
@@ -18,6 +21,9 @@ FH5File::FH5File( MPI_Comm _comm ){
   comp_names = NULL;
 }
 
+/*
+  Free the FH5 object
+*/
 FH5File::~FH5File(){
   if (rfp){ fclose(rfp); }
   if (root){ deleteFH5FileInfo(); }
@@ -167,8 +173,8 @@ int FH5File::createFile( const char *file_name,
   dim1*dim2*sizeof(double)/sizeof(int)
 */
 int FH5File::writeZoneData( char *zone_name, 
-                            enum FH5DataNames data_name, 
                             char *var_names,
+                            FH5DataType data_name, 
                             void *data, int dim1, int dim2 ){
   // Check the file status to ensure that it's open
   if (fp && file_for_writing){
@@ -186,7 +192,8 @@ int FH5File::writeZoneData( char *zone_name,
     int total_dim = dim[size];
 
     // Calculate the size of the buffer to use
-    size_t header_len = 5*sizeof(int) + strlen(zone_name) + strlen(var_names) + 2;
+    size_t header_len = 
+      5*sizeof(int) + strlen(zone_name) + strlen(var_names) + 2;
 
     // Write the zone and variable names to the file
     char datarep[] = "native";
@@ -225,6 +232,9 @@ int FH5File::writeZoneData( char *zone_name,
     if (data_name == FH5_INT){
       dtype = MPI_INT;
     }
+    else if (data_name == FH5_FLOAT){
+      dtype = MPI_FLOAT;
+    }
 
     MPI_File_set_view(fp, file_offset, dtype, dtype,
                       datarep, MPI_INFO_NULL);   
@@ -233,6 +243,9 @@ int FH5File::writeZoneData( char *zone_name,
 
     if (dtype == MPI_DOUBLE){
       file_offset += total_dim*dim2*sizeof(double);
+    }
+    else if (dtype == MPI_FLOAT){
+      file_offset += total_dim*dim2*sizeof(float);      
     }
     else if (dtype == MPI_INT){
       file_offset += total_dim*dim2*sizeof(int);
@@ -247,6 +260,9 @@ int FH5File::writeZoneData( char *zone_name,
   return 0;
 }
 
+/*
+  Close the file
+*/
 void FH5File::close(){
   if (fp){
     MPI_File_set_size(fp, file_offset);
@@ -451,11 +467,21 @@ int FH5File::nextZone(){
 */
 int FH5File::getZoneInfo( const char **zone_name,
                           const char **var_names,
+                          FH5DataType *dtype,
                           int *dim1, int *dim2 ){
   if (!current){
     return 0;
   }
 
+  if (current->dtype == FH5_INT){
+    *dtype = FH5_INT;
+  }
+  else if (current->dtype == FH5_FLOAT){
+    *dtype = FH5_FLOAT;
+  }
+  else if (current->dtype == FH5_DOUBLE){
+    *dtype = FH5_DOUBLE;
+  }
   *zone_name = current->zone_name;
   *var_names = current->var_names;
   *dim1 = current->dim1;
@@ -469,6 +495,7 @@ int FH5File::getZoneInfo( const char **zone_name,
 */
 int FH5File::getZoneData( const char **zone_name,
                           const char **var_names,
+                          FH5DataType *_dtype,
                           void **data, int *dim1, int *dim2 ){
   // No pointer or no file
   if (!current || !rfp){
@@ -493,13 +520,23 @@ int FH5File::getZoneData( const char **zone_name,
 
   size_t len = current->dim1*current->dim2;
   if (dtype == FH5_INT){
+    *_dtype = FH5_INT;
     *data = new int[ len ];
     if (fread(*data, sizeof(int), len, rfp) != len){
       fprintf(stderr, "FH5: Error reading integer data\n");
       return 0;
     }
   }
-  else {
+  else if (dtype == FH5_FLOAT){
+    *_dtype = FH5_FLOAT;
+    *data = new float[ len ];
+    if (fread(*data, sizeof(float), len, rfp) != len){
+      fprintf(stderr, "FH5: Error reading float data\n");
+      return 0;
+    }
+  }
+  else if (dtype == FH5_DOUBLE){
+    *_dtype = FH5_DOUBLE;
     *data = new double[ len ];
     if (fread(*data, sizeof(double), len, rfp) != len){
       fprintf(stderr, "FH5: Error reading double data\n");

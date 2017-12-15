@@ -268,6 +268,7 @@ cdef extern from "TACSAssembler.h":
         AMD_ORDER"TACSAssembler::AMD_ORDER"
         ND_ORDER"TACSAssembler::ND_ORDER"
         TACS_AMD_ORDER"TACSAssembler::TACS_AMD_ORDER"
+        MULTICOLOR_ORDER"TACSAssembler::MULTICOLOR_ORDER"
         
     enum MatrixOrderingType"TACSAssembler::MatrixOrderingType":
         ADDITIVE_SCHWARZ"TACSAssembler::ADDITIVE_SCHWARZ"

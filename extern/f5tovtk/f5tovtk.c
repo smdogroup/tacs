@@ -68,6 +68,7 @@ int main( int argc, char * argv[] ){
     int *element_comp_num = NULL;
     int *conn = NULL;
     double *data = NULL;
+    float *float_data = NULL;
     int conn_dim = 0, num_elements = 0;
     int num_points = 0, num_variables = 0;
 
@@ -79,17 +80,18 @@ int main( int argc, char * argv[] ){
     do {
       // Find the zone corresponding to all the data
       const char *zone_name, *var_names;
+      FH5File::FH5DataType dtype;
       int dim1, dim2;
 
-      if (!file->getZoneInfo(&zone_name, &var_names, &dim1, &dim2)){
+      if (!file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2)){
         fprintf(stderr, "Error, zone not defined\n");
         break;
       }
       
       if (strcmp(zone_name, "components") == 0){
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &vdata, 
-                              &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype,
+                              &vdata, &dim1, &dim2)){
           element_comp_num = (int*)vdata;
         }
       }
@@ -97,8 +99,8 @@ int main( int argc, char * argv[] ){
         num_elements = dim1;
         conn_dim = dim2;
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &vdata, 
-                              &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype,
+                              &vdata, &dim1, &dim2)){
           conn = (int*)vdata;
         }
       }
@@ -115,16 +117,21 @@ int main( int argc, char * argv[] ){
    
         // Retrieve the data
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &vdata, 
-                              &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype,
+                              &vdata, &dim1, &dim2)){
           num_points = dim1;
           num_variables = dim2;
-          data = (double*)vdata;
+          if (dtype == FH5File::FH5_DOUBLE){
+            data = (double*)vdata;
+          }
+          else if (dtype == FH5File::FH5_FLOAT){
+            float_data = (float*)vdata;
+          }
         }
       }
     } while (file->nextZone());
       
-    if (!(element_comp_num && conn && data)){
+    if (!(element_comp_num && conn && (data || float_data))){
       fprintf(stderr, 
               "Error, data, connectivity or \
 component numbers not defined in file\n");
@@ -137,18 +144,35 @@ component numbers not defined in file\n");
       
     // Write out the points
     fprintf(fp, "POINTS %d float\n", num_points);
-    const double *d = data;
 
-    if (plot_displaced_shape){
-      for ( int k = 0; k < num_points; k++ ){
-        fprintf(fp, "%e %e %e\n", d[0]+d[3], d[1]+d[4], d[2]+d[5]);
-        d += num_variables;
+    if (data){
+      const double *d = data;
+      if (plot_displaced_shape){
+        for ( int k = 0; k < num_points; k++ ){
+          fprintf(fp, "%e %e %e\n", d[0]+d[3], d[1]+d[4], d[2]+d[5]);
+          d += num_variables;
+        }
+      }
+      else {
+        for ( int k = 0; k < num_points; k++ ){
+          fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
+          d += num_variables;
+        }
       }
     }
-    else {
-      for ( int k = 0; k < num_points; k++ ){
-        fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
-        d += num_variables;
+    else if (float_data){
+      const float *d = float_data;
+      if (plot_displaced_shape){
+        for ( int k = 0; k < num_points; k++ ){
+          fprintf(fp, "%e %e %e\n", d[0]+d[3], d[1]+d[4], d[2]+d[5]);
+          d += num_variables;
+        }
+      }
+      else {
+        for ( int k = 0; k < num_points; k++ ){
+          fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
+          d += num_variables;
+        }
       }
     }
 
@@ -201,8 +225,16 @@ component numbers not defined in file\n");
         fprintf(fp, "SCALARS %s float 1\n", name);
         fprintf(fp, "LOOKUP_TABLE default\n");
       
-        for ( int k = 0; k < num_points; k++ ){
-          fprintf(fp, "%e\n", data[num_variables*k + j]);
+        if (data){
+          for ( int k = 0; k < num_points; k++ ){
+            fprintf(fp, "%.3e\n", data[num_variables*k + j]);
+          }
+        }
+        else if (float_data){
+          for ( int k = 0; k < num_points; k++ ){
+            double d = float_data[num_variables*k + j];
+            fprintf(fp, "%.3e\n", d);
+          }          
         }
       }
     }
