@@ -193,7 +193,7 @@ int main( int argc, char *argv[] ){
   }
 
   // Create the multigrid object
-  double omega = 0.75;
+  double omega = 1.0;
   int sor_iters = 1;
   int sor_symm = 0;
   TACSMg *mg = new TACSMg(comm, nlevels, omega, sor_iters, sor_symm);
@@ -274,7 +274,7 @@ int main( int argc, char *argv[] ){
     interp->initialize();
     
     // Set the multigrid information at this level
-    mg->setLevel(level, tacs[level], interp, 2);
+    mg->setLevel(level, tacs[level], interp, 1);
   }
 
   // Set the model at the lowest grid level
@@ -309,6 +309,9 @@ int main( int argc, char *argv[] ){
 
   // "Factor" the preconditioner
   mg->factor();
+
+  mg->setMonitor(new KSMPrintStdout("MG", rank, freq));
+  mg->solve(res, ans);
 
   // Compute the solution using GMRES
   gmres->solve(res, ans);

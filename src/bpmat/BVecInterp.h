@@ -81,13 +81,13 @@ class TACSBVecInterp : public TACSObject {
   void init( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
 
   void (*multadd)( int bsize, int nrows, 
-		   const int *rowp, const int *cols,
-		   const TacsScalar *weights,
-		   const TacsScalar *x, TacsScalar *y );
+                   const int *rowp, const int *cols,
+                   const TacsScalar *weights,
+                   const TacsScalar *x, TacsScalar *y );
   void (*multtransadd)( int bsize, int nrows, 
-			const int *rowp, const int *cols,
-			const TacsScalar *weights,
-			const TacsScalar *x, TacsScalar *y );
+                        const int *rowp, const int *cols,
+                        const TacsScalar *weights,
+                        const TacsScalar *x, TacsScalar *y );
 
   // The on and off-processor parts of the interpolation
   // These are dynamically expanded if they are not large enough

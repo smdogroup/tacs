@@ -440,31 +440,6 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
     yvec->getArray(&y);
     xvec->getArray(&x);
     bvec->getArray(&b);
-    
-    /*
-    // Start smoothing the
-    top_ext->beginForward(top_ctx, x, xtop);
-    
-    // Start smoothing the first group of interior nodes
-    Aloc->applySOR(NULL, start, end, incr, ext_offset,
-                   omega, b, NULL, x);
-
-    top_ext->endForward(top_ctx, x, xtop);
-    // Insert the top nodes into their correct locations
-
-
-    // Smooth the top nodes
-    
-
-    // Send the top node values back to the destination
-
-
-
-
-    // Finish smoothing the first group of interior nodes    
-    Aloc->applySOR(NULL, start, end, incr, ext_offset,
-                   omega, b, NULL, x);
-    */
 
     if (zero_guess){
       yvec->zeroEntries();      
@@ -486,26 +461,27 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
       // Compute b = xvec - Bext*yext
       bvec->axpby(1.0, -1.0, xvec);         
       
-      Aloc->applySOR(b, y, omega, iters);
-    }  
+      Aloc->applySOR(b, y, omega, 1);
+    }
 
-    /*
-    // Get the number of variables in the row map
-    int bsize, N, Nc;
-    mat->getRowMap(&bsize, &N, &Nc);
+    for ( int i = 1; i < iters; i++ ){
+      // Begin sending the external-interface values
+      ext_dist->beginForward(ctx, y, yext);
+      
+      // Zero entries in the local vector
+      bvec->zeroEntries();
 
-    int start = 0;
-    int end = N;
-    int incr = 1;
-    Aloc->applySOR(NULL, start, end, incr, 0,
-                   omega, x, NULL, y);
-    
-    start = N-1;
-    end = -1;
-    incr = -1;
-    Aloc->applySOR(NULL, start, end, incr, 0,
-                   omega, x, NULL, y);
-    */
+      // Finish sending the external-interface unknowns
+      ext_dist->endForward(ctx, y, yext);
+      
+      // Compute b[ext_offset] = Bext*yext
+      Bext->mult(yext, &b[ext_offset]); 
+
+      // Compute b = xvec - Bext*yext
+      bvec->axpby(1.0, -1.0, xvec);         
+      
+      Aloc->applySOR(b, y, omega, 1);    
+    }
   }
   else {
     fprintf(stderr, 

@@ -416,7 +416,7 @@ void BCSRMatApplySOR3( BCSRMatData *Adata, BCSRMatData *Bdata,
   TacsScalar t1, t2, t3;
 
   // Go through the matrix with the forward ordering
-  for ( int i = start; i < end; i += incr ){
+  for ( int i = 0; i < Adata->nrows; i++ ){
     // Copy the right-hand-side to the temporary vector for this row
     t1 = b[3*i];
     t2 = b[3*i+1];

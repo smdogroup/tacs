@@ -197,7 +197,6 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
 int ComputeSerialMultiColor( const int nvars, const int *rowp,
                              const int *cols, int *colors, 
                              int *new_vars ){
-
   // Allocate a temporary array to store the
   int *tmp = new int[ nvars+1 ];
   for ( int i = 0; i < nvars; i++ ){
@@ -209,7 +208,7 @@ int ComputeSerialMultiColor( const int nvars, const int *rowp,
   for ( int i = 0; i < nvars; i++ ){
     // Find the minimum color that is not referred to by any adjacent
     // node. 
-    for ( int jp = rowp[i], k = 0; jp < rowp[i+1]; jp++, k++ ){
+    for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
       int j = cols[jp];
       if (colors[j] >= 0){
         tmp[colors[j]] = i;

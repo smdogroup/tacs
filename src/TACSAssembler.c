@@ -903,9 +903,9 @@ void TACSAssembler::computeReordering( OrderingType order_type,
   int *newNodeNums = new int[ numNodes ];
 
   // Metis can't handle the non-zero diagonal in the CSR data structure
-  int noDiagonal = 0;
+  int removeDiagonal = 0;
   if (order_type == ND_ORDER){ 
-    noDiagonal = 1;
+    removeDiagonal = 1;
   }
 
   // If using only one processor, order everything. In this case
@@ -913,7 +913,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
   if (mpiSize == 1){
     // The node connectivity
     int *rowp, *cols;
-    computeLocalNodeToNodeCSR(&rowp, &cols, noDiagonal);
+    computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
     computeMatReordering(order_type, numNodes, rowp, cols, 
                          NULL, newNodeNums);
 
@@ -977,7 +977,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     int *rowp, *cols;
     computeLocalNodeToNodeCSR(&rowp, &cols, 
                               numReducedNodes, reducedNodes, 
-                              noDiagonal);
+                              removeDiagonal);
     computeMatReordering(order_type, numReducedNodes, rowp, cols,
                          NULL, newReducedNodes);
     delete [] rowp;
@@ -1028,7 +1028,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
       newReducedNodes = new int[ numReducedNodes ];
       computeLocalNodeToNodeCSR(&rowp, &cols, 
                                 numReducedNodes, reducedNodes, 
-                                noDiagonal);
+                                removeDiagonal);
       computeMatReordering(order_type, numReducedNodes, rowp, cols,
                            NULL, newReducedNodes);
 
@@ -1180,9 +1180,9 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     // Compute the matrix reordering using RCM TACS' version
     // of the RCM algorithm
     int root_node = 0;
-    int n_rcm_iters = 1;
+    int num_rcm_iters = 1;
     matutils::ComputeRCMOrder(nvars, rowp, cols,
-                              _new_vars, root_node, n_rcm_iters);
+                              _new_vars, root_node, num_rcm_iters);
 
     if (perm){
       for ( int k = 0; k < nvars; k++ ){
