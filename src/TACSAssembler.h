@@ -56,7 +56,8 @@ class TACSAssembler : public TACSObject {
                       MULTICOLOR_ORDER }; // Multicolor via greedy algorithm
   enum MatrixOrderingType { ADDITIVE_SCHWARZ, 
                             APPROXIMATE_SCHUR,
-                            DIRECT_SCHUR };
+                            DIRECT_SCHUR,
+                            GAUSS_SEIDEL };
   
   // Create the TACSAssembler object in parallel
   // -------------------------------------------

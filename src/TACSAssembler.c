@@ -911,14 +911,113 @@ void TACSAssembler::computeReordering( OrderingType order_type,
   // If using only one processor, order everything. In this case
   // there is no distinction between local and global ordering.
   if (mpiSize == 1){
-    // The node connectivity
+    // Compute the local (global since it's serial) node to node
+    // connectivity based on the element connectivity. 
     int *rowp, *cols;
     computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
+
+    // Compute the reordering
     computeMatReordering(order_type, numNodes, rowp, cols, 
                          NULL, newNodeNums);
 
     delete [] rowp;
     delete [] cols;
+  }
+  else if (mat_type == GAUSS_SEIDEL){
+    // Compute the local node to node connectivity
+    int *rowp, *cols;
+    computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
+
+    // Compute the node types. This is the node type relative to its
+    // owner.
+    int *nodeType = new int[ numNodes ];
+
+    for ( int i = 0; i < numNodes; i++ ){
+      // Set the node as a local node type
+      nodeType[i] = 0;
+
+      // Get the global node number
+      int node = getGlobalNodeNum(i);
+      
+      // Get the processor that owns this node
+      int owner = varMap->getOwner(node);
+
+      // Search the columns for the type of node
+      for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
+        // Get the local column index
+        int j = cols[jp];
+
+        // Get the global node number
+        int col = getGlobalNodeNum(j);
+
+        if (col < ownerRange[owner]){
+          if (nodeType[i] == 0){
+            // Top node type
+            nodeType[i] = 1;
+          }
+          else if (nodeType[i] == 2){
+            // Mid-node type
+            nodeType[i] = 3;
+          }
+        }
+        else if (col >= ownerRange[owner+1]){
+          if (nodeType[i] == 0){
+            // Bottom node type
+            nodeType[i] = 2;
+          }
+          else if (nodeType[i] == 1){
+            // Mid-node type
+            nodeType[i] = 3;
+          }
+        }
+      }
+    }
+
+    // This type of connectivity information is no longer required
+    delete [] rowp;
+    delete [] cols;
+
+    // We've computed the local node types, but this may be affected
+    // by the contributions from other processors. Now, perform some
+    // collective communication to globalize the node type
+    // information. This will order all the internal nodes first,
+    // followed by the top nodes, mid nodes and bottom nodes,
+    // respectively.
+      
+    // First, match the intervals for the external node numbers
+    int *extPtr = new int[ mpiSize+1 ];
+    int *extCount = new int[ mpiSize ];
+    FElibrary::matchIntervals(mpiSize, ownerRange, 
+                              numExtNodes, extNodes, extPtr);
+
+    // Send the nodes owned by other processors the information. First
+    // count up how many will go to each process.
+    for ( int i = 0; i < mpiSize; i++ ){
+      extCount[i] = extPtr[i+1] - extPtr[i];
+      if (i == mpiRank){ extCount[i] = 0; }
+    }
+
+    int *recvCount = new int[ mpiSize ];
+    int *recvPtr = new int[ mpiSize+1 ];
+    MPI_Alltoall(extCount, 1, MPI_INT, recvCount, 1, MPI_INT, tacs_comm);
+
+    // Now prepare to send the node numbers to the other processors
+    recvPtr[0] = 0;
+    for ( int i = 0; i < mpiSize; i++ ){
+      recvPtr[i+1] = recvPtr[i] + recvCount[i];
+    }
+    
+    // Number of nodes that will be received from other procs
+    int *recvNodeAndType = new int[ recvPtr[mpiSize] ];
+    MPI_Alltoallv((void*)extNodes, extCount, extPtr, MPI_INT, 
+                  recvNodes, recvCount, recvPtr, MPI_INT, tacs_comm);
+
+    // Now
+
+
+
+
+
   }
   else {
     // First, find the reduced nodes - the set of nodes that are only
@@ -1960,55 +2059,59 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   int nrecv_unique = 
     FElibrary::uniqueSort(recvNodesSorted, recvPtr[mpiSize]);
 
-  // Count up the number of multiplier nodes (if any). These are not
-  // all of the locally owned multipliers, only those that refer to
-  // external node numbers on other processors.
   int num_multipliers = 0;
-  int *multipliers = new int[ numMultiplierNodes ];
+  int *multipliers = NULL;
+
+  if (numMultiplierNodes > 0){
+    // Count up the number of multiplier nodes (if any). These are not
+    // all of the locally owned multipliers, only those that refer to
+    // external node numbers on other processors.
+    multipliers = new int[ numMultiplierNodes ];
   
-  // Add in the multiplier values
-  for ( int i = 0; i < numElements; i++ ){
-    // Get the multiplier index
-    int multiplier;
-    elements[i]->getMultiplierIndex(&multiplier);
-    if (multiplier >= 0){
-      // Get the local multiplier index
-      int elem_ptr = elementNodeIndex[i];
+    // Add in the multiplier values
+    for ( int i = 0; i < numElements; i++ ){
+      // Get the multiplier index
+      int multiplier;
+      elements[i]->getMultiplierIndex(&multiplier);
+      if (multiplier >= 0){
+        // Get the local multiplier index
+        int elem_ptr = elementNodeIndex[i];
 
-      // Check if the multiplier is locally owned. If it is not, it is
-      // already in the external nodes anyway.
-      int mult_node = elementTacsNodes[elem_ptr + multiplier];
-      if (mult_node >= ownerRange[mpiRank] &&
-          mult_node < ownerRange[mpiRank+1]){
+        // Check if the multiplier is locally owned. If it is not, it is
+        // already in the external nodes anyway.
+        int mult_node = elementTacsNodes[elem_ptr + multiplier];
+        if (mult_node >= ownerRange[mpiRank] &&
+            mult_node < ownerRange[mpiRank+1]){
         
-        // Get the element size
-        int size = elementNodeIndex[i+1] - elem_ptr;
+          // Get the element size
+          int size = elementNodeIndex[i+1] - elem_ptr;
 
-        // Check if any of the nodes are actually external
-        for ( int j = 0; j < size; j++ ){
-          int node = elementTacsNodes[elem_ptr + j];
+          // Check if any of the nodes are actually external
+          for ( int j = 0; j < size; j++ ){
+            int node = elementTacsNodes[elem_ptr + j];
 
-          // Add the multiplier node if it's an external node or or it
-          // is one of the nodes referred to on other procs.
-          if (node < ownerRange[mpiRank] ||
-              node >= ownerRange[mpiRank+1]){
-            multipliers[num_multipliers] = mult_node;
-            num_multipliers++;
-            break;
-          }
-          else if (bsearch(&node, recvNodesSorted, nrecv_unique,
-                           sizeof(int), FElibrary::comparator)){
-            multipliers[num_multipliers] = mult_node;
-            num_multipliers++;
-            break;            
+            // Add the multiplier node if it's an external node or or it
+            // is one of the nodes referred to on other procs.
+            if (node < ownerRange[mpiRank] ||
+                node >= ownerRange[mpiRank+1]){
+              multipliers[num_multipliers] = mult_node;
+              num_multipliers++;
+              break;
+            }
+            else if (bsearch(&node, recvNodesSorted, nrecv_unique,
+                             sizeof(int), FElibrary::comparator)){
+              multipliers[num_multipliers] = mult_node;
+              num_multipliers++;
+              break;            
+            }
           }
         }
       }
     }
-  }
 
-  // Uniquely sort the number of multiplier nodes
-  num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+    // Uniquely sort the number of multiplier nodes
+    num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+  }
 
   // Count up the number of coupling nodes
   int numCouplingNodes = nrecv_unique + numExtNodes + num_multipliers;
@@ -2055,7 +2158,9 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   }
 
   // Free the multiplier index
-  delete [] multipliers;
+  if (multipliers){
+    delete [] multipliers;
+  }
 
   if (_extPtr){ *_extPtr = extPtr; }
   else { delete [] extPtr; }
