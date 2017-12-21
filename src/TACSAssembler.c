@@ -928,6 +928,10 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     int *rowp, *cols;
     computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
 
+    // Get the owner range
+    const int *ownerRange;
+    varMap->getOwnerRange(&ownerRange);
+
     // Compute the node types. This is the node type relative to its
     // owner.
     int *nodeType = new int[ numNodes ];
@@ -955,19 +959,19 @@ void TACSAssembler::computeReordering( OrderingType order_type,
             // Top node type
             nodeType[i] = 1;
           }
-          else if (nodeType[i] == 2){
+          else if (nodeType[i] == 3){
             // Mid-node type
-            nodeType[i] = 3;
+            nodeType[i] = 2;
           }
         }
         else if (col >= ownerRange[owner+1]){
           if (nodeType[i] == 0){
             // Bottom node type
-            nodeType[i] = 2;
+            nodeType[i] = 3;
           }
           else if (nodeType[i] == 1){
             // Mid-node type
-            nodeType[i] = 3;
+            nodeType[i] = 2;
           }
         }
       }
@@ -983,41 +987,96 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     // information. This will order all the internal nodes first,
     // followed by the top nodes, mid nodes and bottom nodes,
     // respectively.
+
+    // Now allocate space for the node types 
+    int *sendNodeType = new int[ numExtNodes ];
+    for ( int i = 0; i < numExtNodes; i++ ){
+      // Get the local node number
+      int index = getLocalNodeNum(tacsExtNodeNums[i]);
+      sendNodeType[i] = nodeType[index];
+    }
+
+    int *recvNodeType = new int[ recvPtr[mpiSize] ];
+    MPI_Alltoallv(sendNodeType, extCount, extPtr, MPI_INT, 
+                  recvNodeType, recvCount, recvPtr, MPI_INT, tacs_comm);
+
+    // Update the internal node types based on the recv'd values
+    for ( int i = 0; i < recvPtr[mpiSize]; i++ ){
+      int node = getLocalNodeNum(recvNodes[i]);
       
-    // First, match the intervals for the external node numbers
-    int *extPtr = new int[ mpiSize+1 ];
-    int *extCount = new int[ mpiSize ];
-    FElibrary::matchIntervals(mpiSize, ownerRange, 
-                              numExtNodes, extNodes, extPtr);
-
-    // Send the nodes owned by other processors the information. First
-    // count up how many will go to each process.
-    for ( int i = 0; i < mpiSize; i++ ){
-      extCount[i] = extPtr[i+1] - extPtr[i];
-      if (i == mpiRank){ extCount[i] = 0; }
+      if (nodeType[node] == 0){
+        // Set the node type as the recv node type
+        nodeType[node] = recvNodeType[i];
+      }
+      else if (nodeType[node] != recvNodeType[i]){
+        // Mid-node type
+        nodeType[node] = 2;
+      }
     }
 
-    int *recvCount = new int[ mpiSize ];
-    int *recvPtr = new int[ mpiSize+1 ];
-    MPI_Alltoall(extCount, 1, MPI_INT, recvCount, 1, MPI_INT, tacs_comm);
+    // Free the allocated data
+    delete [] sendNodeType;
+    delete [] recvNodeType;
 
-    // Now prepare to send the node numbers to the other processors
-    recvPtr[0] = 0;
-    for ( int i = 0; i < mpiSize; i++ ){
-      recvPtr[i+1] = recvPtr[i] + recvCount[i];
+    // So now the local nodes have the correct node types, 
+    // compute the local ordering. 
+    int *reducedNodes = new int[ numNodes ];
+    memset(reducedNodes, 0, numNodes*sizeof(int));
+
+    // Exclude all the nodes that are external to this processor
+    for ( int i = 0; i < extNodeOffset; i++ ){
+      reducedNodes[i] = -1;
     }
-    
-    // Number of nodes that will be received from other procs
-    int *recvNodeAndType = new int[ recvPtr[mpiSize] ];
-    MPI_Alltoallv((void*)extNodes, extCount, extPtr, MPI_INT, 
-                  recvNodes, recvCount, recvPtr, MPI_INT, tacs_comm);
+    for ( int i = extNodeOffset + numOwnedNodes; i < numNodes; i++ ){
+      reducedNodes[i] = -1;
+    }
 
-    // Now
+    // Loop over all of the node types. This will order all the
+    // internal nodes first
+    int offset = ownerRange[mpiRank];
+    for ( int ntype = 0; ntype < 4; ntype++ ){
+      int numReducedNodes = 0;
+      for ( int i = extNodeOffset; i < extNodeOffset + numOwnedNodes; i++ ){
+        if (nodeType[i] == ntype){
+          reducedNodes[i] = numReducedNodes;
+          numReducedNodes++;
+        }
+        else {
+          reducedNodes[i] = -1;
+        }
+      }
 
+      if (numReducedNodes > 0){
+        // Compute the reordering for the reduced set of nodes
+        int *newReducedNodes = new int[ numReducedNodes ];
+        int *reduced_rowp, *reduced_cols;
+        computeLocalNodeToNodeCSR(&reduced_rowp, &reduced_cols, 
+                                  numReducedNodes, reducedNodes, 
+                                  removeDiagonal);
+        computeMatReordering(order_type, numReducedNodes, 
+                             reduced_rowp, reduced_cols,
+                             NULL, newReducedNodes);
+        delete [] reduced_rowp;
+        delete [] reduced_cols;
 
+        // Set the new variable numbers for the boundary nodes
+        // and include their offset
+        for ( int i = 0, j = 0; i < numNodes; i++ ){
+          if (reducedNodes[i] >= 0){
+            newNodeNums[i] = offset + newReducedNodes[j];
+            j++;
+          }
+        }
 
+        offset += numReducedNodes;
 
+        // Free the new node numbers
+        delete [] newReducedNodes;
+      }
+    }
 
+    // Free the node type array
+    delete [] nodeType;
   }
   else {
     // First, find the reduced nodes - the set of nodes that are only
@@ -1026,7 +1085,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     int *reducedNodes = new int[ numNodes ];
     memset(reducedNodes, 0, numNodes*sizeof(int));
 
-    // Add all the nodes that are external to this processor
+    // Exclude all the nodes that are external to this processor
     for ( int i = 0; i < extNodeOffset; i++ ){
       reducedNodes[i] = -1;
     }

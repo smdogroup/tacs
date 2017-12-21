@@ -8,7 +8,6 @@
   Not for commercial purposes.
 */
 
-
 /*!
   TACSVarMap
   
@@ -70,10 +69,8 @@ void TACSVarMap::getOwnerRange( const int **_ownerRange ){
   then return -1;
 */
 int TACSVarMap::getOwner( int node ){
-  // Return whether the 
-  int mpi_size;
-  MPI_Comm_size(comm, &mpiSize);
-  if (node < 0 || node >= ownerRange[mpi_size]){
+  // If the node is out of range, return immediately
+  if (node < 0 || node >= ownerRange[mpiSize]){
     return -1;
   }
 
@@ -104,7 +101,6 @@ int TACSVarMap::getOwner( int node ){
 
   return (high + low)/2;
 }
-
 
 /*!
   BVecIndices class definitions

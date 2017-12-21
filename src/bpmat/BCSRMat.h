@@ -25,19 +25,19 @@ class BCSRMat : public TACSObject {
   // Create a (possibly rectangular matrix)
   BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
            int _bsize, int _nrows, int _ncols, 
-	   int **_rowp, int **_cols );
+           int **_rowp, int **_cols );
 
   // Perform the symbolic computation C = S + A*B
   BCSRMat( MPI_Comm _comm, BCSRMat *Smat, 
-	   int *alevs, BCSRMat *Amat, 
-	   int *blevs, BCSRMat *Bmat, int levFill, double fill );
+           int *alevs, BCSRMat *Amat, 
+           int *blevs, BCSRMat *Bmat, int levFill, double fill );
 
   // Perform a symbolic computation of the Schur complement
   BCSRMat( MPI_Comm _comm, 
-	   BCSRMat *Bmat, BCSRMat *Emat, BCSRMat *Fmat, BCSRMat *Cmat,
-	   int levFill, double fill,
-	   BCSRMat **Epc, BCSRMat **Fpc, BCSRMat **Sc,
-	   int use_full_schur );
+           BCSRMat *Bmat, BCSRMat *Emat, BCSRMat *Fmat, BCSRMat *Cmat,
+           int levFill, double fill,
+           BCSRMat **Epc, BCSRMat **Fpc, BCSRMat **Sc,
+           int use_full_schur );
 
   // Perform a symbolic computation of A = B^{T}*B
   BCSRMat( MPI_Comm comm, BCSRMat *Bmat, double fill );
@@ -48,17 +48,17 @@ class BCSRMat : public TACSObject {
   // ------------------------------------------
   void zeroEntries();
   void addRowValues( int row, int ncol, const int *col, 
-		     int nca, const TacsScalar *avals );
+                     int nca, const TacsScalar *avals );
   void addRowWeightValues( TacsScalar alpha, int row,
-			   int nwrows, const int *wrowp,
-			   const int *wcols, const TacsScalar *weights,
-			   int nca, const TacsScalar *avals,
+                           int nwrows, const int *wrowp,
+                           const int *wcols, const TacsScalar *weights,
+                           int nca, const TacsScalar *avals,
                            MatrixOrientation matOr=NORMAL );
   void addBlockRowValues( int row, int ncol, 
-			  const int *col, const TacsScalar *a );
+                          const int *col, const TacsScalar *a );
   void zeroRow( int row, int vars, int ident=0 );
   void getArrays( int *_bsize, int *nrows, int *ncols, 
-		  const int **rowp, const int **cols, TacsScalar **Avals );
+                  const int **rowp, const int **cols, TacsScalar **Avals );
 
   // Returns 'this' in the form of array
   void getDenseColumnMajor( TacsScalar *A );
@@ -109,14 +109,14 @@ class BCSRMat : public TACSObject {
   // ----------------------------------------------
   void getNumUpperLowerDiagonals( int *_bl, int *_bu );
   void extractBandedMatrix( TacsScalar *A, int size, 
-			    int symm_flag );
+                            int symm_flag );
 
   // Other miscelaneous functions
   // ----------------------------
   int isEqual( BCSRMat *mat, double tol = 1e-12 );   
   void partition( int Np, 
-		  BCSRMat **Bmat, BCSRMat **Emat,
-		  BCSRMat **Fmat, BCSRMat **Cmat ); 
+                  BCSRMat **Bmat, BCSRMat **Emat,
+                  BCSRMat **Fmat, BCSRMat **Cmat ); 
   void testSchur( int Np, int lev, double fill, double tol = 1e-12 );
   void printMat( const char *fname );
   void printNzPattern( const char *fname );
@@ -144,9 +144,9 @@ class BCSRMat : public TACSObject {
   void (*applyupper)( BCSRMatData *A, TacsScalar *x, TacsScalar *y );
 
   void (*applypartialupper)( BCSRMatData *A, TacsScalar *x, 
-			     int var_offset );
+                             int var_offset );
   void (*applypartiallower)( BCSRMatData *A, TacsScalar *x, 
-			     int var_offset );
+                             int var_offset );
   void (*applyschur)( BCSRMatData *A, TacsScalar *x, int var_offset );
   void (*applysor)( BCSRMatData *Adata, BCSRMatData *Bdata,
                     const int start, const int end, const int incr,
@@ -174,7 +174,7 @@ class BCSRMat : public TACSObject {
 
   // Information about the threaded execution
   TACSThreadInfo *thread_info;
-  		   
+
   // The matrix BCSR data
   BCSRMatData *data;
                                                 

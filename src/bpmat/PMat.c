@@ -43,6 +43,9 @@ TACSPMat::TACSPMat( TACSVarMap *_rmap,
   init(_rmap, _Aloc, _Bext, _ext_dist);
 }
 
+/*
+  The protected constructor that does not take any arguments.
+*/
 TACSPMat::TACSPMat(){
   rmap = NULL;
   Aloc = NULL;
@@ -83,10 +86,6 @@ void TACSPMat::init( TACSVarMap *_rmap,
     fprintf(stderr, "PMat error: Block-diagonal matrix must be square\n");
     return;
   }
-
-  int rank;
-  MPI_Comm_rank(rmap->getMPIComm(), &rank);
-  printf("[%d] PMat diagnostics: N = %d, Nc = %d\n", rank, N, Nc);
 
   // Copy the distribution array vector
   ext_dist = _ext_dist;
@@ -416,10 +415,11 @@ void TACSGaussSeidel::factor(){
 }
 
 /*!
-  Apply the preconditioner to the input vector
-  Apply SOR to the system A y = x
+  Apply the preconditioner to the input vector.
 
-  The SOR is applied by computing
+  This code applies multiple SOR steps to the system A*y = x.
+  On each processor, the system of equations is
+
   Aloc * y = x - Bext * yext
 
   Then applying the matrix-smoothing for the system of equations,
@@ -441,6 +441,10 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
     xvec->getArray(&x);
     bvec->getArray(&b);
 
+    // Get the number of variables in the row map
+    int bsize, N, Nc;
+    mat->getRowMap(&bsize, &N, &Nc);
+
     if (zero_guess){
       yvec->zeroEntries();      
       Aloc->applySOR(x, y, omega, iters);
@@ -449,6 +453,14 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
       // Begin sending the external-interface values
       ext_dist->beginForward(ctx, y, yext);
       
+      // Apply the smoother to the local part of the matrix
+      int start = 0;
+      int end = N - Nc;
+      int incr = 1;
+      int offset = N - Nc;
+      Aloc->applySOR(NULL, start, end, incr, offset, omega,
+                     x, NULL, y);
+
       // Zero entries in the local vector
       bvec->zeroEntries();
       
@@ -460,17 +472,29 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
 
       // Compute b = xvec - Bext*yext
       bvec->axpby(1.0, -1.0, xvec);         
-      
-      Aloc->applySOR(b, y, omega, 1);
+
+      // Apply the smoother to the local part of the matrix
+      start = end;
+      end = N;
+      Aloc->applySOR(NULL, start, end, incr, offset, omega,
+                     b, NULL, y);
     }
 
     for ( int i = 1; i < iters; i++ ){
       // Begin sending the external-interface values
       ext_dist->beginForward(ctx, y, yext);
       
+      // Apply the smoother to the local part of the matrix
+      int start = 0;
+      int end = N - Nc;
+      int incr = 1;
+      int offset = N - Nc;
+      Aloc->applySOR(NULL, start, end, incr, offset, omega,
+                     x, NULL, y);
+
       // Zero entries in the local vector
       bvec->zeroEntries();
-
+      
       // Finish sending the external-interface unknowns
       ext_dist->endForward(ctx, y, yext);
       
@@ -479,8 +503,12 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
 
       // Compute b = xvec - Bext*yext
       bvec->axpby(1.0, -1.0, xvec);         
-      
-      Aloc->applySOR(b, y, omega, 1);    
+
+      // Apply the smoother to the local part of the matrix
+      start = end;
+      end = N;
+      Aloc->applySOR(NULL, start, end, incr, offset, omega,
+                     b, NULL, y);
     }
   }
   else {

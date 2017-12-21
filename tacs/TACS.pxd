@@ -274,6 +274,7 @@ cdef extern from "TACSAssembler.h":
         ADDITIVE_SCHWARZ"TACSAssembler::ADDITIVE_SCHWARZ"
         APPROXIMATE_SCHUR"TACSAssembler::APPROXIMATE_SCHUR"
         DIRECT_SCHUR"TACSAssembler::DIRECT_SCHUR"
+        GAUSS_SEIDEL"TACSAssembler::GAUSS_SEIDEL"
        
     cdef cppclass TACSAssembler(TACSObject):
         TACSAssembler(MPI_Comm tacs_comm, int varsPerNode,
