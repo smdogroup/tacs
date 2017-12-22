@@ -303,7 +303,7 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
   const int * ccols = Cdata->cols;
   TacsScalar * C = Cdata->A;
 
-  if ( alpha == 1.0 ){
+  if (alpha == 1.0){
     // C_{ik} = A_{ij} B_{jk}
     for ( int i = 0; i < nrows_a; i++ ){
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
@@ -319,10 +319,12 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
         TacsScalar * c = &C[16*cp];
         
         for ( ; kp < kp_end; kp++ ){
-          while ( ( cp < cp_end ) && ( ccols[cp] < bcols[kp] ) ){ cp++; c+= 16; }
-          if ( cp >= cp_end ){ break; }
+          while ((cp < cp_end) && (ccols[cp] < bcols[kp])){
+            cp++; c += 16;
+          }
+          if (cp >= cp_end){ break; }
 
-          if ( bcols[kp] == ccols[cp] ){
+          if (bcols[kp] == ccols[cp]){
             TacsScalar b0, b1, b2, b3;
             b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
             c[0 ] += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3;
@@ -354,7 +356,7 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
       }
     }
   }
-  else if ( alpha == -1.0 ){
+  else if (alpha == -1.0){
     // C_{ik} = A_{ij} B_{jk}
     for ( int i = 0; i < nrows_a; i++ ){
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
@@ -370,10 +372,12 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
         TacsScalar * c = &C[16*cp];
         
         for ( ; kp < kp_end; kp++ ){
-          while ( ( cp < cp_end ) && ( ccols[cp] < bcols[kp] ) ){ cp++; c += 16; }
-          if ( cp >= cp_end ){ break; }
+          while ((cp < cp_end) && (ccols[cp] < bcols[kp])){
+            cp++; c += 16;
+          }
+          if (cp >= cp_end){ break; }
 
-          if ( bcols[kp] == ccols[cp] ){
+          if (bcols[kp] == ccols[cp]){
             TacsScalar b0, b1, b2, b3;
             b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
             c[0 ] -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3;
@@ -406,7 +410,6 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
     }
   }
   else {
-
     // C_{ik} = A_{ij} B_{jk}
     for ( int i = 0; i < nrows_a; i++ ){
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
@@ -422,10 +425,12 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
         TacsScalar * c = &C[16*cp];
         
         for ( ; kp < kp_end; kp++ ){
-          while ( ( cp < cp_end ) && ( ccols[cp] < bcols[kp] ) ){ cp++; c += 16; }
-          if ( cp >= cp_end ){ break; }
+          while ((cp < cp_end) && (ccols[cp] < bcols[kp])){
+            cp++; c += 16;
+          }
+          if (cp >= cp_end){ break; }
 
-          if ( bcols[kp] == ccols[cp] ){
+          if (bcols[kp] == ccols[cp]){
             TacsScalar b0, b1, b2, b3;
             b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
             c[0 ] += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3);
@@ -461,7 +466,7 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData * Adata,
   Apply an iteration of SOR to the system A*x = b.
 */
 void BCSRMatApplySOR4( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, 
                        const TacsScalar *Adiag,
                        const TacsScalar omega, 

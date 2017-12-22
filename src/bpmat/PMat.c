@@ -226,17 +226,26 @@ void TACSPMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
   if (B){ *B = Bext; }
 }
 
+/*
+  Get the local number of rows/coupling rows in the matrix
+*/
 void TACSPMat::getRowMap( int *_bs, int *_N, int *_Nc ){
   if (_bs){ *_bs = bsize; }
   if (_Nc){ *_Nc = Nc; }
   if (_N){ *_N = N; }
 }
 
+/*
+  Get the number of columns in the matrix
+*/
 void TACSPMat::getColMap( int *_bs, int *_M ){
   if (_bs){ *_bs = bsize; }
   if (_M){ *_M = N; }
 }
 
+/*
+  Get the distribute object to distribute values to other processors
+*/
 void TACSPMat::getExtColMap( TACSBVecDistribute ** ext_map ){
   if (ext_map){ *ext_map = ext_dist; }
 }
@@ -456,28 +465,18 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
       // Apply the smoother to the local part of the matrix
       int start = 0;
       int end = N - Nc;
-      int incr = 1;
       int offset = N - Nc;
-      Aloc->applySOR(NULL, start, end, incr, offset, omega,
+      Aloc->applySOR(NULL, start, end, offset, omega,
                      x, NULL, y);
-
-      // Zero entries in the local vector
-      bvec->zeroEntries();
       
       // Finish sending the external-interface unknowns
-      ext_dist->endForward(ctx, y, yext);
-      
-      // Compute b[ext_offset] = Bext*yext
-      Bext->mult(yext, &b[ext_offset]); 
-
-      // Compute b = xvec - Bext*yext
-      bvec->axpby(1.0, -1.0, xvec);         
+      ext_dist->endForward(ctx, y, yext);     
 
       // Apply the smoother to the local part of the matrix
       start = end;
       end = N;
-      Aloc->applySOR(NULL, start, end, incr, offset, omega,
-                     b, NULL, y);
+      Aloc->applySOR(Bext, start, end, offset, omega,
+                     x, yext, y);
     }
 
     for ( int i = 1; i < iters; i++ ){
@@ -487,28 +486,18 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
       // Apply the smoother to the local part of the matrix
       int start = 0;
       int end = N - Nc;
-      int incr = 1;
       int offset = N - Nc;
-      Aloc->applySOR(NULL, start, end, incr, offset, omega,
+      Aloc->applySOR(NULL, start, end, offset, omega,
                      x, NULL, y);
-
-      // Zero entries in the local vector
-      bvec->zeroEntries();
       
       // Finish sending the external-interface unknowns
-      ext_dist->endForward(ctx, y, yext);
-      
-      // Compute b[ext_offset] = Bext*yext
-      Bext->mult(yext, &b[ext_offset]); 
-
-      // Compute b = xvec - Bext*yext
-      bvec->axpby(1.0, -1.0, xvec);         
+      ext_dist->endForward(ctx, y, yext);     
 
       // Apply the smoother to the local part of the matrix
       start = end;
       end = N;
-      Aloc->applySOR(NULL, start, end, incr, offset, omega,
-                     b, NULL, y);
+      Aloc->applySOR(Bext, start, end, offset, omega,
+                     x, yext, y);
     }
   }
   else {
@@ -709,10 +698,16 @@ TACSApproximateSchur::~TACSApproximateSchur(){
   if (inner_ksm){ inner_ksm->decref(); }
 }
 
+/*
+  Add a diagonal contribution to the preconditioner
+*/
 void TACSApproximateSchur::setDiagShift( TacsScalar _alpha ){
   alpha = _alpha;
 }
 
+/*
+  Set a monitor for the inner Krylov method
+*/
 void TACSApproximateSchur::setMonitor( KSMPrint *ksm_print ){
   if (inner_ksm){
     inner_ksm->setMonitor(ksm_print);
@@ -920,6 +915,9 @@ TACSGlobalSchurMat::TACSGlobalSchurMat( TACSPMat *mat, BCSRMat *_Apc ){
   x_ext = new TacsScalar[ xsize ];  
 }
 
+/*
+  Free the information associated with the global Schur complement matrix
+*/
 TACSGlobalSchurMat::~TACSGlobalSchurMat(){
   Apc->decref();
   Bext->decref(); 
@@ -928,6 +926,9 @@ TACSGlobalSchurMat::~TACSGlobalSchurMat(){
   delete [] x_ext;
 }
 
+/*
+  Get the size of the number of local rows/columns
+*/
 void TACSGlobalSchurMat::getSize( int *_nr, int *_nc ){
   // Get the local dimensions of the matrix
   *_nr = nvars;
@@ -985,7 +986,9 @@ void TACSGlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){
   Bext->mult(x_ext, y);
 }
 
-// Return a new Vector
+/*
+  Return a new Vector
+*/
 TACSVec *TACSGlobalSchurMat::createVec(){
   return new TACSBVec(rmap, Apc->getBlockSize());
 }

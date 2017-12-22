@@ -292,8 +292,10 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData * Adata,
         TacsScalar * c = &C[9*cp];
         
         for ( ; kp < kp_end; kp++ ){
-          while ( ( cp < cp_end ) && ( ccols[cp] < bcols[kp] ) ){ cp++; c+= 9; }
-          if ( cp >= cp_end ){ break; }
+          while ((cp < cp_end) && (ccols[cp] < bcols[kp])){
+            cp++; c += 9;
+          }
+          if (cp >= cp_end){ break; }
 
           if (bcols[kp] == ccols[cp]){
             c[0] += a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
@@ -329,10 +331,12 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData * Adata,
         TacsScalar * c = &C[9*cp];
         
         for ( ; kp < kp_end; kp++ ){
-          while ( ( cp < cp_end ) && ( ccols[cp] < bcols[kp] ) ){ cp++; c += 9; }
-          if ( cp >= cp_end ){ break; }
+          while ((cp < cp_end) && (ccols[cp] < bcols[kp])){
+            cp++; c += 9;
+          }
+          if (cp >= cp_end){ break; }
 
-          if ( bcols[kp] == ccols[cp] ){
+          if (bcols[kp] == ccols[cp]){
             c[0] -= a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
             c[3] -= a[3]*b[0] + a[4]*b[3] + a[5]*b[6];
             c[6] -= a[6]*b[0] + a[7]*b[3] + a[8]*b[6];
@@ -370,7 +374,7 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData * Adata,
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ 
             cp++; c += 9; 
           }
-          if ( cp >= cp_end ){ break; }
+          if (cp >= cp_end){ break; }
 
           if (bcols[kp] == ccols[cp]){
             c[0] += alpha*(a[0]*b[0] + a[1]*b[3] + a[2]*b[6]);
@@ -397,7 +401,7 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData * Adata,
   Apply a given number of steps of SOR to the system A*x = b.
 */
 void BCSRMatApplySOR3( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, 
                        const TacsScalar *Adiag,
                        const TacsScalar omega, 

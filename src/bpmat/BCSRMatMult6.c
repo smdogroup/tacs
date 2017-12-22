@@ -1008,7 +1008,7 @@ void BCSRMatMatMultAdd6( double alpha, BCSRMatData *Adata,
   Apply a given number of steps of SOR to the system A*x = b - B*xext
 */
 void BCSRMatApplySOR6( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, 
                        const TacsScalar *Adiag,
                        const TacsScalar omega, 

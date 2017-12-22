@@ -1293,7 +1293,7 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
   Apply an iteration of SOR to the system A*x = b.
 */
 void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, 
                        const TacsScalar *Adiag,
                        const TacsScalar omega, 

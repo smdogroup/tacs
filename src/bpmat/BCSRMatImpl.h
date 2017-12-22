@@ -195,7 +195,7 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData *A,
 void BCSRMatFactorLower3( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper3( BCSRMatData *A, BCSRMatData *F );
 void BCSRMatApplySOR3( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, const TacsScalar *Adiag,
                        const TacsScalar omega, const TacsScalar *b, 
                        const TacsScalar *xext, TacsScalar *x );
@@ -222,7 +222,7 @@ void BCSRMatMatMultAdd4( double alpha, BCSRMatData *A,
 void BCSRMatFactorLower4( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper4( BCSRMatData *A, BCSRMatData *F );
 void BCSRMatApplySOR4( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, const TacsScalar *Adiag,
                        const TacsScalar omega, const TacsScalar *b, 
                        const TacsScalar *xext, TacsScalar *x );
@@ -272,7 +272,7 @@ void BCSRMatFactorLower6( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper6( BCSRMatData *A, BCSRMatData *F );
 
 void BCSRMatApplySOR6( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, const TacsScalar *Adiag,
                        const TacsScalar omega, const TacsScalar *b, 
                        const TacsScalar *xext, TacsScalar *x );
@@ -311,7 +311,7 @@ void BCSRMatFactorLower8( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper8( BCSRMatData *A, BCSRMatData *F );
 
 void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
-                       const int start, const int end, const int incr,
+                       const int start, const int end,
                        const int var_offset, const TacsScalar *Adiag,
                        const TacsScalar omega, const TacsScalar *b, 
                        const TacsScalar *xext, TacsScalar *x );

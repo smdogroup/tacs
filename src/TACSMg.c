@@ -474,7 +474,7 @@ void TACSMg::applyMg( int level ){
 
   // If we've made it to the lowest level, apply the direct solver
   // otherwise, perform multigrid on the next-lowest level
-  if (level+1 == nlevels-1){
+  if (level == nlevels-2){
     // Perform a direct solve on the smallest grid
     root_pc->applyFactor(b[nlevels-1], x[nlevels-1]); 
   }

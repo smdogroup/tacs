@@ -103,7 +103,7 @@ void createTACS( MPI_Comm comm, int nx, int ny,
   creator->setElements(&elem, 1);
 
   creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
-                             TACSAssembler::ADDITIVE_SCHWARZ);
+                             TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
   TACSAssembler *tacs = creator->createTACS();

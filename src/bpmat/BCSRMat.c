@@ -1503,7 +1503,7 @@ void BCSRMat::applySOR( TacsScalar *b, TacsScalar *x,
                         TacsScalar omega, int iters ){
   if (Adiag){
     for ( int i = 0; i < iters; i++ ){
-      applysor(data, NULL, 0, data->nrows, 1, 0, 
+      applysor(data, NULL, 0, data->nrows, 0, 
                Adiag, omega, b, NULL, x);
     }
   }
@@ -1515,17 +1515,17 @@ void BCSRMat::applySOR( TacsScalar *b, TacsScalar *x,
 /*!
   Apply SOR to the matrix over the given interval
 */
-void BCSRMat::applySOR( BCSRMat *B, int start, int end, int incr,
+void BCSRMat::applySOR( BCSRMat *B, int start, int end,
                         int var_offset, TacsScalar omega, 
                         const TacsScalar *b, const TacsScalar *xext, 
                         TacsScalar *x ){
   if (Adiag){
     if (B){
-      applysor(data, B->data, start, end, incr, var_offset,
+      applysor(data, B->data, start, end, var_offset,
                Adiag, omega, b, xext, x);
     }
     else {
-      applysor(data, NULL, start, end, incr, var_offset,
+      applysor(data, NULL, start, end, var_offset,
                Adiag, omega, b, xext, x);
     }
   }

@@ -87,7 +87,7 @@ class BCSRMat : public TACSObject {
   void factorDiag();
   void applySOR( TacsScalar *x, TacsScalar *y, 
                  TacsScalar omega, int iters );
-  void applySOR( BCSRMat *B, int start, int end, int incr,
+  void applySOR( BCSRMat *B, int start, int end,
                  int var_offset, TacsScalar omega, 
                  const TacsScalar *b, const TacsScalar *xext, TacsScalar *x );
                 
@@ -149,7 +149,7 @@ class BCSRMat : public TACSObject {
                              int var_offset );
   void (*applyschur)( BCSRMatData *A, TacsScalar *x, int var_offset );
   void (*applysor)( BCSRMatData *Adata, BCSRMatData *Bdata,
-                    const int start, const int end, const int incr,
+                    const int start, const int end,
                     const int var_offset, const TacsScalar *Adiag,
                     const TacsScalar omega, const TacsScalar *b, 
                     const TacsScalar *xext, TacsScalar *x );
