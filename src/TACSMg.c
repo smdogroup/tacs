@@ -200,19 +200,6 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       int reorder_schur = 1; 
       root_pc = new PcScMat(femat, lev, fill, reorder_schur);
       root_pc->incref();
-
-      /*      
-      // Create a smoother on the lowest level
-      TACSPMat *pmat = tacs[level]->createMat();
-      root_mat = pmat;
-      root_mat->incref();
-      
-      // Do not zero the initial guess
-      int zero_guess = 0; 
-      root_pc = new TACSGaussSeidel(pmat, zero_guess, sor_omega, 
-                                    sor_iters, sor_symmetric);
-      root_pc->incref();
-      */
     }
   }
   
@@ -460,6 +447,13 @@ void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
   post-smoothing.
 */
 void TACSMg::applyMg( int level ){
+  // If we've made it to the lowest level, apply the direct solver
+  // otherwise, perform multigrid on the next-lowest level
+  if (level == nlevels-1){
+    root_pc->applyFactor(b[level], x[level]);   
+    return;
+  }
+
   // Pre-smooth at the current level
   pc[level]->applyFactor(b[level], x[level]);  
 
@@ -471,20 +465,11 @@ void TACSMg::applyMg( int level ){
   // to form the RHS at that level
   interp[level]->multTranspose(r[level], b[level+1]);
   b[level+1]->applyBCs(tacs[level+1]->getBcMap());
+  x[level+1]->zeroEntries();
 
-  // If we've made it to the lowest level, apply the direct solver
-  // otherwise, perform multigrid on the next-lowest level
-  if (level == nlevels-2){
-    // Perform a direct solve on the smallest grid
-    root_pc->applyFactor(b[nlevels-1], x[nlevels-1]); 
-  }
-  else {
-    x[level+1]->zeroEntries();
-
-    // Perform iters[level] cycle at the next lowest level
-    for ( int k = 0; k < iters[level]; k++ ){
-      applyMg(level+1);
-    }
+  // Perform iters[level] cycle at the next lowest level
+  for ( int k = 0; k < iters[level]; k++ ){
+    applyMg(level+1);
   }
 
   // Interpolate back from the next lowest level
