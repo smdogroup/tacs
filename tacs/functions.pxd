@@ -26,8 +26,8 @@ cdef extern from "StructuralMass.h":
 
 cdef extern from "KSFailure.h":
     enum KSFailureType"TACSKFailure::KSFailureType":
-        DISCRETE"TACSKFailure::DISCRETE"
-        CONTINUOUS"TACSKFailure::CONTINUOUS"
+        KS_DISCRETE"TACSKSFailure::DISCRETE"
+        KS_CONTINUOUS"TACSKSFailure::CONTINUOUS"
         
     enum KSConstitutiveFunction"TACSKSFailure::KSConstitutiveFunction":
         KS_FAILURE"TACSKSFailure::FAILURE"

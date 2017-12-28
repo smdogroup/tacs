@@ -52,11 +52,11 @@
 class TACSInducedFailure : public TACSFunction {
  public:
   enum InducedNormType { EXPONENTIAL, POWER, 
-			 EXPONENTIAL_SQUARED, POWER_SQUARED,
-			 DISCRETE_EXPONENTIAL, 
-			 DISCRETE_POWER, 
-			 DISCRETE_EXPONENTIAL_SQUARED,
-			 DISCRETE_POWER_SQUARED };
+                         EXPONENTIAL_SQUARED, POWER_SQUARED,
+                         DISCRETE_EXPONENTIAL, 
+                         DISCRETE_POWER, 
+                         DISCRETE_EXPONENTIAL_SQUARED,
+                         DISCRETE_POWER_SQUARED };
   enum InducedConstitutiveFunction { FAILURE, BUCKLING };
 
   TACSInducedFailure( TACSAssembler *_tacs, double _P,
@@ -150,4 +150,4 @@ class TACSInducedFailure : public TACSFunction {
   static const char *funcName;
 };
 
-#endif 
+#endif // TACS_INDUCED_FAILURE_H

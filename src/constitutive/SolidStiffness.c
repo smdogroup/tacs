@@ -107,10 +107,10 @@ SolidStiffness::SolidStiffness( TacsScalar _rho, TacsScalar E,
 */
 
 SolidStiffness::SolidStiffness( TacsScalar _rho, 
-				TacsScalar E1, TacsScalar E2, TacsScalar E3, 
-				TacsScalar nu_12, TacsScalar nu_13, 
-				TacsScalar nu_23, TacsScalar _G23, 
-				TacsScalar _G13, TacsScalar _G12 ){
+                                TacsScalar E1, TacsScalar E2, TacsScalar E3, 
+                                TacsScalar nu_12, TacsScalar nu_13, 
+                                TacsScalar nu_23, TacsScalar _G23, 
+                                TacsScalar _G13, TacsScalar _G12 ){
   rho = _rho;
 
   TacsScalar nu_21 = (E2*nu_12)/E1;
@@ -142,7 +142,7 @@ SolidStiffness::SolidStiffness(){
 int SolidStiffness::getNumStresses(){ return NUM_STRESSES; }
 
 void SolidStiffness::calculateStress( const double gpt[], 
-				      const TacsScalar strain[],
-				      TacsScalar stress[] ){
+                                      const TacsScalar strain[],
+                                      TacsScalar stress[] ){
   calcStress(strain, stress);
 }

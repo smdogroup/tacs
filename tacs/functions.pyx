@@ -37,39 +37,48 @@ cdef class Function:
         return
 
 cdef class Compliance(Function):
-     def __cinit__(self, Assembler tacs):
-          '''
-          Wrap the function Compliance
-          '''
-          self.ptr = new TACSCompliance(tacs.ptr)
-          self.ptr.incref()
-          return
+    def __cinit__(self, Assembler tacs):
+        '''
+        Wrap the function Compliance
+        '''
+        self.ptr = new TACSCompliance(tacs.ptr)
+        self.ptr.incref()
+        return
      
 cdef class StructuralMass(Function):
-     def __cinit__(self, Assembler tacs):
-          '''
-          Wrap the function StructuralMass
-          '''
-          self.ptr = new TACSStructuralMass(tacs.ptr)
-          self.ptr.incref()
-          return
+    def __cinit__(self, Assembler tacs):
+        '''
+        Wrap the function StructuralMass
+        '''
+        self.ptr = new TACSStructuralMass(tacs.ptr)
+        self.ptr.incref()
+        return
 
 cdef class KSFailure(Function):
-     def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
-          '''
-          Wrap the function KSFailure
-          '''
-          self.ptr = new TACSKSFailure(tacs.ptr, ksWeight,
+    cdef TACSKSFailure *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+        '''
+        Wrap the function KSFailure
+        '''
+        self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight,
                                        KS_FAILURE, alpha)
-          self.ptr.incref()
-          return
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
+    def setKSFailureType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSFailureType(KS_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSFailureType(KS_CONTINUOUS)
+        return
 
 cdef class InducedFailure(Function):
-     def __cinit__(self, Assembler tacs, double P):
-          '''
-          Wrap the function InducedFailure
-          '''
-          self.ptr = new TACSInducedFailure(tacs.ptr, P,
-                                            INDUCED_FAILURE)
-          self.ptr.incref()
-          return
+    def __cinit__(self, Assembler tacs, double P):
+        '''
+        Wrap the function InducedFailure
+        '''
+        self.ptr = new TACSInducedFailure(tacs.ptr, P,
+                                          INDUCED_FAILURE)
+        self.ptr.incref()
+        return
