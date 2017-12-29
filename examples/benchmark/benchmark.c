@@ -92,7 +92,6 @@ TACSAssembler *create2DModel( MPI_Comm comm, int varsPerNode,
   int numElements = lastElem - firstElem;
 
   // There are no dependent nodes in this problem
-  int numDependentNodes = 0;
   TACSAssembler *tacs = new TACSAssembler(comm, varsPerNode,
                                           numOwnedNodes, numElements);
 
@@ -252,9 +251,9 @@ void testEigenSolver( TACSAssembler *tacs,
   TACSBVec *rhs = tacs->createVec();  rhs->incref();
   TACSBVec *res = tacs->createVec();  res->incref();
 
-  PMat *mat      = tacs->createMat();  mat->incref();
-  PMat *mass_mat = tacs->createMat();  mass_mat->incref();
-  PMat *k_mat    = tacs->createMat();  k_mat->incref();
+  TACSPMat *mat = tacs->createMat();       mat->incref();
+  TACSPMat *mass_mat = tacs->createMat();  mass_mat->incref();
+  TACSPMat *k_mat = tacs->createMat();     k_mat->incref();
 
   double start = MPI_Wtime();
   tacs->assembleMatType(STIFFNESS_MATRIX, k_mat);
@@ -273,8 +272,8 @@ void testEigenSolver( TACSAssembler *tacs,
   // Set up the spectral transformation
   double rtol = -1.0; // Max-out on iterations
   double atol = 1e-10;
-  ApproximateSchur *pc = new ApproximateSchur(mat, levFill, fill, 
-                                              inner_iters, rtol, atol);
+  TACSApproximateSchur *pc = new TACSApproximateSchur(mat, levFill, fill, 
+                                                      inner_iters, rtol, atol);
   pc->incref();
   pc->factor();
 
@@ -347,8 +346,6 @@ void testSolve( TACSAssembler *tacs,
   double fill = 10.0;
   int levFill = 5;
   int inner_gmres = 10;
-  double inner_rtol = -1.0;
-  double inner_atol = 1e-30;
   double sor_omega = 1.0;
   int sor_iters = 2;
   int sor_symmetric = 1;
@@ -370,11 +367,11 @@ void testSolve( TACSAssembler *tacs,
   // Create the matrix and associated preconditioner
   for ( int k = 0; k < noptions; k++ ){
     if (strcmp(opts[k], "ApproximateSchur") == 0){
-      PMat *_mat = tacs->createMat();
+      TACSPMat *_mat = tacs->createMat();
       double inner_rtol = -1.0;
       double inner_atol = 1e-10;
-      pc = new ApproximateSchur(_mat, levFill, fill, 
-                                inner_gmres, inner_rtol, inner_atol);
+      pc = new TACSApproximateSchur(_mat, levFill, fill, 
+                                    inner_gmres, inner_rtol, inner_atol);
       mat = _mat;
       break;
     }
@@ -385,11 +382,11 @@ void testSolve( TACSAssembler *tacs,
       mat = _mat;
       break;
     }
-    else if (strcmp(opts[k], "PSOR") == 0){
+    else if (strcmp(opts[k], "GaussSeidel") == 0){
       int zero_guess = 0; // Zero the initial guess for psor
-      PMat *_mat = tacs->createMat();
-      pc = new PSOR(_mat, zero_guess, 
-                    sor_omega, sor_iters, sor_symmetric);
+      TACSPMat *_mat = tacs->createMat();
+      pc = new TACSGaussSeidel(_mat, zero_guess, 
+                               sor_omega, sor_iters, sor_symmetric);
       mat = _mat;
     }
   }
@@ -397,8 +394,8 @@ void testSolve( TACSAssembler *tacs,
   // Create the additive Schwarz preconditioner
   if (!pc || !mat){
     isflexible = 0;
-    PMat *_mat = tacs->createMat();
-    pc = new AdditiveSchwarz(_mat, levFill, fill);
+    TACSPMat *_mat = tacs->createMat();
+    pc = new TACSAdditiveSchwarz(_mat, levFill, fill);
     mat = _mat;
   }
   mat->incref();
@@ -477,7 +474,6 @@ void testBCSRMat( TACSAssembler *tacs ){
   mat->incref();
 
   // Assemble the Jacobian
-  int load_case = 0;
   tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, mat);
 
   if (rank == 0){

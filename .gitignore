@@ -37,3 +37,4 @@ extern/
 *.toc
 tacs/*.cpp
 *.pxi
+*.vtk

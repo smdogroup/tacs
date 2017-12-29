@@ -1290,194 +1290,99 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
 }
 
 /*!
-  Apply a given number of steps of symmetric SOR to the system A*x = b.
+  Apply an iteration of SOR to the system A*x = b.
 */
-void BCSRMatApplySOR8( BCSRMatData * data, TacsScalar * Adiag,
-		       TacsScalar omega, int iters, TacsScalar * b, 
-		       TacsScalar * x ){
-  const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
-
-  TacsScalar t1, t2, t3, t4, t5, t6, t7, t8;
-
-  for ( int iter = 0; iter < iters; iter++ ){
-    // Go through the matrix with the forward ordering
-    for ( int i = 0; i < nrows; i++ ){
-
-      // Copy the right-hand-side to the temporary vector
-      // for this row
-      t1 = b[8*i];
-      t2 = b[8*i+1];
-      t3 = b[8*i+2];
-      t4 = b[8*i+3];
-      t5 = b[8*i+4];
-      t6 = b[8*i+5];
-      t7 = b[8*i+6];
-      t8 = b[8*i+7];
-        
-      // Set the pointer to the beginning of the current
-      // row
-      TacsScalar * a = &data->A[64*rowp[i]];
-
-      // Scan through the row and compute the result:
-      // tx <- b_i - A_{ij}*x_{j} for j != i
-      int end = rowp[i+1];
-      for ( int k = rowp[i]; k < end; k++ ){
-	int j = cols[k];
-	TacsScalar * y = &x[8*j];
-
-	if (i != j){
-          t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5] + a[6 ]*y[6] + a[7 ]*y[7];
-          t2 -= a[8 ]*y[0] + a[9 ]*y[1] + a[10]*y[2] + a[11]*y[3] + a[12]*y[4] + a[13]*y[5] + a[14]*y[6] + a[15]*y[7];
-          t3 -= a[16]*y[0] + a[17]*y[1] + a[18]*y[2] + a[19]*y[3] + a[20]*y[4] + a[21]*y[5] + a[22]*y[6] + a[23]*y[7];
-          t4 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5] + a[30]*y[6] + a[31]*y[7];
-          t5 -= a[32]*y[0] + a[33]*y[1] + a[34]*y[2] + a[35]*y[3] + a[36]*y[4] + a[37]*y[5] + a[38]*y[6] + a[39]*y[7];
-          t6 -= a[40]*y[0] + a[41]*y[1] + a[42]*y[2] + a[43]*y[3] + a[44]*y[4] + a[45]*y[5] + a[46]*y[6] + a[47]*y[7];
-          t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
-          t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
- 	}
-	
-	// Increment the block pointer by bsize^2
-	a += 64;
-      }
-
-      // Set a pointer to the inverse of the diagonal
-      TacsScalar * d = &Adiag[64*i];
-
-      // Compute the first term in the update:
-      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
-      x[8*i]   = (1.0 - omega)*x[8*i]   + omega*(d[0 ]*t1 + d[1 ]*t2 + d[2 ]*t3 + d[3 ]*t4 + d[4 ]*t5 + d[5 ]*t6 + d[6 ]*t7 + d[7 ]*t8);
-      x[8*i+1] = (1.0 - omega)*x[8*i+1] + omega*(d[8 ]*t1 + d[9 ]*t2 + d[10]*t3 + d[11]*t4 + d[12]*t5 + d[13]*t6 + d[14]*t7 + d[15]*t8);
-      x[8*i+2] = (1.0 - omega)*x[8*i+2] + omega*(d[16]*t1 + d[17]*t2 + d[18]*t3 + d[19]*t4 + d[20]*t5 + d[21]*t6 + d[22]*t7 + d[23]*t8);
-      x[8*i+3] = (1.0 - omega)*x[8*i+3] + omega*(d[24]*t1 + d[25]*t2 + d[26]*t3 + d[27]*t4 + d[28]*t5 + d[29]*t6 + d[30]*t7 + d[31]*t8);
-      x[8*i+4] = (1.0 - omega)*x[8*i+4] + omega*(d[32]*t1 + d[33]*t2 + d[34]*t3 + d[35]*t4 + d[36]*t5 + d[37]*t6 + d[38]*t7 + d[39]*t8);
-      x[8*i+5] = (1.0 - omega)*x[8*i+5] + omega*(d[40]*t1 + d[41]*t2 + d[42]*t3 + d[43]*t4 + d[44]*t5 + d[45]*t6 + d[46]*t7 + d[47]*t8);
-      x[8*i+6] = (1.0 - omega)*x[8*i+6] + omega*(d[48]*t1 + d[49]*t2 + d[50]*t3 + d[51]*t4 + d[52]*t5 + d[53]*t6 + d[54]*t7 + d[55]*t8);
-      x[8*i+7] = (1.0 - omega)*x[8*i+7] + omega*(d[56]*t1 + d[57]*t2 + d[58]*t3 + d[59]*t4 + d[60]*t5 + d[61]*t6 + d[62]*t7 + d[63]*t8);
-    }
+void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
+                       const int start, const int end,
+                       const int var_offset, 
+                       const TacsScalar *Adiag,
+                       const TacsScalar omega, 
+                       const TacsScalar *b, 
+                       const TacsScalar *xext, TacsScalar *x ){
+  const int *Arowp = Adata->rowp;
+  const int *Acols = Adata->cols;
+  const int *Browp = NULL;
+  const int *Bcols = NULL;
+  if (Bdata){
+    Browp = Bdata->rowp;
+    Bcols = Bdata->cols;
   }
-}
 
-/*!
-  Apply a given number of steps of symmetric SOR to the system A*x = b.
-*/
-void BCSRMatApplySSOR8( BCSRMatData * data, TacsScalar * Adiag,
-			TacsScalar omega, int iters, TacsScalar * b, 
-			TacsScalar * x ){
-  const int nrows = data->nrows;
-  const int * rowp = data->rowp;
-  const int * cols = data->cols;
-
+  // Store temporary data for each row
   TacsScalar t1, t2, t3, t4, t5, t6, t7, t8;
 
-  for ( int iter = 0; iter < iters; iter++ ){
-    // Go through the matrix with the forward ordering
-    for ( int i = 0; i < nrows; i++ ){
-      // Copy the right-hand-side to the temporary vector
-      // for this row
-      t1 = b[8*i];
-      t2 = b[8*i+1];
-      t3 = b[8*i+2];
-      t4 = b[8*i+3];
-      t5 = b[8*i+4];
-      t6 = b[8*i+5];
-      t7 = b[8*i+6];
-      t8 = b[8*i+7];
-        
-      // Set the pointer to the beginning of the current
-      // row
-      TacsScalar * a = &data->A[64*rowp[i]];
+  // Go through the matrix with the forward ordering
+  for ( int i = start; i < end; i++ ){
+    // Copy the right-hand-side to the temporary vector for this row
+    t1 = b[8*i];
+    t2 = b[8*i+1];
+    t3 = b[8*i+2];
+    t4 = b[8*i+3];
+    t5 = b[8*i+4];
+    t6 = b[8*i+5];
+    t7 = b[8*i+6];
+    t8 = b[8*i+7];
 
-      // Scan through the row and compute the result:
-      // tx <- b_i - A_{ij}*x_{j} for j != i
-      int end = rowp[i+1];
-      for ( int k = rowp[i]; k < end; k++ ){
-	int j = cols[k];
-	TacsScalar * y = &x[8*j];
+    // Set the pointer to the beginning of the current row
+    const TacsScalar *a = &Adata->A[64*Arowp[i]];
 
-	if (i != j){
-          t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5] + a[6 ]*y[6] + a[7 ]*y[7];
-          t2 -= a[8 ]*y[0] + a[9 ]*y[1] + a[10]*y[2] + a[11]*y[3] + a[12]*y[4] + a[13]*y[5] + a[14]*y[6] + a[15]*y[7];
-          t3 -= a[16]*y[0] + a[17]*y[1] + a[18]*y[2] + a[19]*y[3] + a[20]*y[4] + a[21]*y[5] + a[22]*y[6] + a[23]*y[7];
-          t4 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5] + a[30]*y[6] + a[31]*y[7];
-          t5 -= a[32]*y[0] + a[33]*y[1] + a[34]*y[2] + a[35]*y[3] + a[36]*y[4] + a[37]*y[5] + a[38]*y[6] + a[39]*y[7];
-          t6 -= a[40]*y[0] + a[41]*y[1] + a[42]*y[2] + a[43]*y[3] + a[44]*y[4] + a[45]*y[5] + a[46]*y[6] + a[47]*y[7];
-          t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
-          t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
- 	}
-	
-	// Increment the block pointer by bsize^2
-	a += 64;
+    // Scan through the row and compute the result:
+    // tx <- b_i - A_{ij}*x_{j} for j != i
+    int end = Arowp[i+1];
+    for ( int k = Arowp[i]; k < end; k++ ){
+      int j = Acols[k];
+      TacsScalar *y = &x[8*j];
+
+      if (i != j){
+        t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5] + a[6 ]*y[6] + a[7 ]*y[7];
+        t2 -= a[8 ]*y[0] + a[9 ]*y[1] + a[10]*y[2] + a[11]*y[3] + a[12]*y[4] + a[13]*y[5] + a[14]*y[6] + a[15]*y[7];
+        t3 -= a[16]*y[0] + a[17]*y[1] + a[18]*y[2] + a[19]*y[3] + a[20]*y[4] + a[21]*y[5] + a[22]*y[6] + a[23]*y[7];
+        t4 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5] + a[30]*y[6] + a[31]*y[7];
+        t5 -= a[32]*y[0] + a[33]*y[1] + a[34]*y[2] + a[35]*y[3] + a[36]*y[4] + a[37]*y[5] + a[38]*y[6] + a[39]*y[7];
+        t6 -= a[40]*y[0] + a[41]*y[1] + a[42]*y[2] + a[43]*y[3] + a[44]*y[4] + a[45]*y[5] + a[46]*y[6] + a[47]*y[7];
+        t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
+        t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
       }
-
-      // Set a pointer to the inverse of the diagonal
-      TacsScalar * d = &Adiag[64*i];
-
-      // Compute the first term in the update:
-      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
-      x[8*i]   = (1.0 - omega)*x[8*i]   + omega*(d[0 ]*t1 + d[1 ]*t2 + d[2 ]*t3 + d[3 ]*t4 + d[4 ]*t5 + d[5 ]*t6 + d[6 ]*t7 + d[7 ]*t8);
-      x[8*i+1] = (1.0 - omega)*x[8*i+1] + omega*(d[8 ]*t1 + d[9 ]*t2 + d[10]*t3 + d[11]*t4 + d[12]*t5 + d[13]*t6 + d[14]*t7 + d[15]*t8);
-      x[8*i+2] = (1.0 - omega)*x[8*i+2] + omega*(d[16]*t1 + d[17]*t2 + d[18]*t3 + d[19]*t4 + d[20]*t5 + d[21]*t6 + d[22]*t7 + d[23]*t8);
-      x[8*i+3] = (1.0 - omega)*x[8*i+3] + omega*(d[24]*t1 + d[25]*t2 + d[26]*t3 + d[27]*t4 + d[28]*t5 + d[29]*t6 + d[30]*t7 + d[31]*t8);
-      x[8*i+4] = (1.0 - omega)*x[8*i+4] + omega*(d[32]*t1 + d[33]*t2 + d[34]*t3 + d[35]*t4 + d[36]*t5 + d[37]*t6 + d[38]*t7 + d[39]*t8);
-      x[8*i+5] = (1.0 - omega)*x[8*i+5] + omega*(d[40]*t1 + d[41]*t2 + d[42]*t3 + d[43]*t4 + d[44]*t5 + d[45]*t6 + d[46]*t7 + d[47]*t8);
-      x[8*i+6] = (1.0 - omega)*x[8*i+6] + omega*(d[48]*t1 + d[49]*t2 + d[50]*t3 + d[51]*t4 + d[52]*t5 + d[53]*t6 + d[54]*t7 + d[55]*t8);
-      x[8*i+7] = (1.0 - omega)*x[8*i+7] + omega*(d[56]*t1 + d[57]*t2 + d[58]*t3 + d[59]*t4 + d[60]*t5 + d[61]*t6 + d[62]*t7 + d[63]*t8);
+        
+      // Increment the block pointer by bsize^2
+      a += 64;
     }
 
-    // Go through the matrix with the reverse ordering
-    for ( int i = nrows-1; i >= 0; i-- ){
-      // Copy the right-hand-side to the temporary vector
-      // for this row
-      t1 = b[8*i];
-      t2 = b[8*i+1];
-      t3 = b[8*i+2];
-      t4 = b[8*i+3];
-      t5 = b[8*i+4];
-      t6 = b[8*i+5];
-      t7 = b[8*i+6];
-      t8 = b[8*i+7];
+    if (Bdata && i >= var_offset){
+      const int row = i - var_offset;
+
+      // Set the pointer to the row in B
+      a = &Bdata->A[64*Browp[row]];       
+      end = Browp[row+1];
+      for ( int k = Browp[row]; k < end; k++ ){
+        int j = Bcols[k];
+        const TacsScalar *y = &xext[8*j];
+
+        t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5] + a[6 ]*y[6] + a[7 ]*y[7];
+        t2 -= a[8 ]*y[0] + a[9 ]*y[1] + a[10]*y[2] + a[11]*y[3] + a[12]*y[4] + a[13]*y[5] + a[14]*y[6] + a[15]*y[7];
+        t3 -= a[16]*y[0] + a[17]*y[1] + a[18]*y[2] + a[19]*y[3] + a[20]*y[4] + a[21]*y[5] + a[22]*y[6] + a[23]*y[7];
+        t4 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5] + a[30]*y[6] + a[31]*y[7];
+        t5 -= a[32]*y[0] + a[33]*y[1] + a[34]*y[2] + a[35]*y[3] + a[36]*y[4] + a[37]*y[5] + a[38]*y[6] + a[39]*y[7];
+        t6 -= a[40]*y[0] + a[41]*y[1] + a[42]*y[2] + a[43]*y[3] + a[44]*y[4] + a[45]*y[5] + a[46]*y[6] + a[47]*y[7];
+        t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
+        t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
         
-      // Set the pointer to the beginning of the current
-      // row
-      TacsScalar * a = &data->A[64*rowp[i]];
-
-      // Scan through the row and compute the result:
-      // tx <- b_i - A_{ij}*x_{j} for j != i
-      int end = rowp[i+1];
-      for ( int k = rowp[i]; k < end; k++ ){
-	int j = cols[k];
-	TacsScalar * y = &x[8*j];
-
-	if (i != j){
-          t1 -= a[0 ]*y[0] + a[1 ]*y[1] + a[2 ]*y[2] + a[3 ]*y[3] + a[4 ]*y[4] + a[5 ]*y[5] + a[6 ]*y[6] + a[7 ]*y[7];
-          t2 -= a[8 ]*y[0] + a[9 ]*y[1] + a[10]*y[2] + a[11]*y[3] + a[12]*y[4] + a[13]*y[5] + a[14]*y[6] + a[15]*y[7];
-          t3 -= a[16]*y[0] + a[17]*y[1] + a[18]*y[2] + a[19]*y[3] + a[20]*y[4] + a[21]*y[5] + a[22]*y[6] + a[23]*y[7];
-          t4 -= a[24]*y[0] + a[25]*y[1] + a[26]*y[2] + a[27]*y[3] + a[28]*y[4] + a[29]*y[5] + a[30]*y[6] + a[31]*y[7];
-          t5 -= a[32]*y[0] + a[33]*y[1] + a[34]*y[2] + a[35]*y[3] + a[36]*y[4] + a[37]*y[5] + a[38]*y[6] + a[39]*y[7];
-          t6 -= a[40]*y[0] + a[41]*y[1] + a[42]*y[2] + a[43]*y[3] + a[44]*y[4] + a[45]*y[5] + a[46]*y[6] + a[47]*y[7];
-          t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
-          t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
- 	}
-	
-	// Increment the block pointer by bsize^2
-	a += 64;
+        a += 64;
       }
-
-      // Set a pointer to the inverse of the diagonal
-      TacsScalar * d = &Adiag[64*i];
-
-      // Compute the first term in the update:
-      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
-      x[8*i]   = (1.0 - omega)*x[8*i]   + omega*(d[0 ]*t1 + d[1 ]*t2 + d[2 ]*t3 + d[3 ]*t4 + d[4 ]*t5 + d[5 ]*t6 + d[6 ]*t7 + d[7 ]*t8);
-      x[8*i+1] = (1.0 - omega)*x[8*i+1] + omega*(d[8 ]*t1 + d[9 ]*t2 + d[10]*t3 + d[11]*t4 + d[12]*t5 + d[13]*t6 + d[14]*t7 + d[15]*t8);
-      x[8*i+2] = (1.0 - omega)*x[8*i+2] + omega*(d[16]*t1 + d[17]*t2 + d[18]*t3 + d[19]*t4 + d[20]*t5 + d[21]*t6 + d[22]*t7 + d[23]*t8);
-      x[8*i+3] = (1.0 - omega)*x[8*i+3] + omega*(d[24]*t1 + d[25]*t2 + d[26]*t3 + d[27]*t4 + d[28]*t5 + d[29]*t6 + d[30]*t7 + d[31]*t8);
-      x[8*i+4] = (1.0 - omega)*x[8*i+4] + omega*(d[32]*t1 + d[33]*t2 + d[34]*t3 + d[35]*t4 + d[36]*t5 + d[37]*t6 + d[38]*t7 + d[39]*t8);
-      x[8*i+5] = (1.0 - omega)*x[8*i+5] + omega*(d[40]*t1 + d[41]*t2 + d[42]*t3 + d[43]*t4 + d[44]*t5 + d[45]*t6 + d[46]*t7 + d[47]*t8);
-      x[8*i+6] = (1.0 - omega)*x[8*i+6] + omega*(d[48]*t1 + d[49]*t2 + d[50]*t3 + d[51]*t4 + d[52]*t5 + d[53]*t6 + d[54]*t7 + d[55]*t8);
-      x[8*i+7] = (1.0 - omega)*x[8*i+7] + omega*(d[56]*t1 + d[57]*t2 + d[58]*t3 + d[59]*t4 + d[60]*t5 + d[61]*t6 + d[62]*t7 + d[63]*t8);
     }
+
+    // Set a pointer to the inverse of the diagonal
+    const TacsScalar * d = &Adiag[64*i];
+
+    // Compute the first term in the update:
+    // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+    x[8*i]   = (1.0 - omega)*x[8*i]   + omega*(d[0 ]*t1 + d[1 ]*t2 + d[2 ]*t3 + d[3 ]*t4 + d[4 ]*t5 + d[5 ]*t6 + d[6 ]*t7 + d[7 ]*t8);
+    x[8*i+1] = (1.0 - omega)*x[8*i+1] + omega*(d[8 ]*t1 + d[9 ]*t2 + d[10]*t3 + d[11]*t4 + d[12]*t5 + d[13]*t6 + d[14]*t7 + d[15]*t8);
+    x[8*i+2] = (1.0 - omega)*x[8*i+2] + omega*(d[16]*t1 + d[17]*t2 + d[18]*t3 + d[19]*t4 + d[20]*t5 + d[21]*t6 + d[22]*t7 + d[23]*t8);
+    x[8*i+3] = (1.0 - omega)*x[8*i+3] + omega*(d[24]*t1 + d[25]*t2 + d[26]*t3 + d[27]*t4 + d[28]*t5 + d[29]*t6 + d[30]*t7 + d[31]*t8);
+    x[8*i+4] = (1.0 - omega)*x[8*i+4] + omega*(d[32]*t1 + d[33]*t2 + d[34]*t3 + d[35]*t4 + d[36]*t5 + d[37]*t6 + d[38]*t7 + d[39]*t8);
+    x[8*i+5] = (1.0 - omega)*x[8*i+5] + omega*(d[40]*t1 + d[41]*t2 + d[42]*t3 + d[43]*t4 + d[44]*t5 + d[45]*t6 + d[46]*t7 + d[47]*t8);
+    x[8*i+6] = (1.0 - omega)*x[8*i+6] + omega*(d[48]*t1 + d[49]*t2 + d[50]*t3 + d[51]*t4 + d[52]*t5 + d[53]*t6 + d[54]*t7 + d[55]*t8);
+    x[8*i+7] = (1.0 - omega)*x[8*i+7] + omega*(d[56]*t1 + d[57]*t2 + d[58]*t3 + d[59]*t4 + d[60]*t5 + d[61]*t6 + d[62]*t7 + d[63]*t8);
   }
 }

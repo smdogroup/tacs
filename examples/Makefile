@@ -8,18 +8,19 @@ include ../Makefile.in
 include ../TACS_Common.mk
 
 EXAMPLE_SUBDIRS = \
-	tutorial \
 	annulus \
-	cylinder \
-	triangle \
+	beam \
+	benchmark \
 	crm \
-	mg \
-	stiffened_panel \
+	cylinder \
 	grad_verify \
+	mg \
+	plate \
 	profile_elements \
 	rigid \
-	plate \
-	benchmark
+	stiffened_panel \
+	triangle \
+	tutorial
 
 default:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \

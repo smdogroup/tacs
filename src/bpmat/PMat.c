@@ -37,13 +37,16 @@
   The matrix structure outlined above can be exploited to achieve 
   efficient and effective parallel preconditioning.
 */
-PMat::PMat( TACSVarMap *_rmap,
-            BCSRMat *_Aloc, BCSRMat *_Bext,
-            TACSBVecDistribute *_ext_dist ){
+TACSPMat::TACSPMat( TACSVarMap *_rmap,
+                    BCSRMat *_Aloc, BCSRMat *_Bext,
+                    TACSBVecDistribute *_ext_dist ){
   init(_rmap, _Aloc, _Bext, _ext_dist);
 }
 
-PMat::PMat(){
+/*
+  The protected constructor that does not take any arguments.
+*/
+TACSPMat::TACSPMat(){
   rmap = NULL;
   Aloc = NULL;
   Bext = NULL;
@@ -56,9 +59,9 @@ PMat::PMat(){
 /*
   Initialize the PMat object
 */
-void PMat::init( TACSVarMap *_rmap,
-                 BCSRMat *_Aloc, BCSRMat *_Bext,
-                 TACSBVecDistribute *_ext_dist ){
+void TACSPMat::init( TACSVarMap *_rmap,
+                     BCSRMat *_Aloc, BCSRMat *_Bext,
+                     TACSBVecDistribute *_ext_dist ){
   // Set the variable map and the local matrix components
   rmap = _rmap;
   Aloc = _Aloc;
@@ -83,10 +86,6 @@ void PMat::init( TACSVarMap *_rmap,
     fprintf(stderr, "PMat error: Block-diagonal matrix must be square\n");
     return;
   }
-
-  int rank;
-  MPI_Comm_rank(rmap->getMPIComm(), &rank);
-  printf("[%d] PMat diagnostics: N = %d, Nc = %d\n", rank, N, Nc);
 
   // Copy the distribution array vector
   ext_dist = _ext_dist;
@@ -114,7 +113,7 @@ external block matrix do not match\n");
   ext_offset = bsize*Np;
 }
 
-PMat::~PMat(){
+TACSPMat::~TACSPMat(){
   if (rmap){ rmap->decref(); }
   if (Aloc){ Aloc->decref(); }
   if (Bext){ Bext->decref(); }
@@ -126,7 +125,7 @@ PMat::~PMat(){
 /*!
   Determine the local dimensions of the matrix - the diagonal part
 */
-void PMat::getSize( int *_nr, int *_nc ){
+void TACSPMat::getSize( int *_nr, int *_nc ){
   *_nr = N*bsize;
   *_nc = N*bsize;
 }
@@ -134,7 +133,7 @@ void PMat::getSize( int *_nr, int *_nc ){
 /*!
   Zero all matrix-entries
 */
-void PMat::zeroEntries(){
+void TACSPMat::zeroEntries(){
   Aloc->zeroEntries();
   Bext->zeroEntries();
 }
@@ -142,8 +141,8 @@ void PMat::zeroEntries(){
 /*!
   Copy the values from the another matrix
 */
-void PMat::copyValues( TACSMat *mat ){
-  PMat *pmat = dynamic_cast<PMat*>(mat);
+void TACSPMat::copyValues( TACSMat *mat ){
+  TACSPMat *pmat = dynamic_cast<TACSPMat*>(mat);
   if (pmat){  
     Aloc->copyValues(pmat->Aloc);
     Bext->copyValues(pmat->Bext);
@@ -156,7 +155,7 @@ void PMat::copyValues( TACSMat *mat ){
 /*!
   Scale the entries in the other matrices by a given scalar
 */
-void PMat::scale( TacsScalar alpha ){
+void TACSPMat::scale( TacsScalar alpha ){
   Aloc->scale(alpha);
   Bext->scale(alpha);
 }
@@ -164,8 +163,8 @@ void PMat::scale( TacsScalar alpha ){
 /*!
   Compute y <- y + alpha * x
 */
-void PMat::axpy( TacsScalar alpha, TACSMat *mat ){
-  PMat *pmat = dynamic_cast<PMat*>(mat);
+void TACSPMat::axpy( TacsScalar alpha, TACSMat *mat ){
+  TACSPMat *pmat = dynamic_cast<TACSPMat*>(mat);
   if (pmat){
     Aloc->axpy(alpha, pmat->Aloc);
     Bext->axpy(alpha, pmat->Bext);
@@ -178,8 +177,8 @@ void PMat::axpy( TacsScalar alpha, TACSMat *mat ){
 /*!
   Compute y <- alpha * x + beta * y
 */
-void PMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
-  PMat *pmat = dynamic_cast<PMat*>(mat);
+void TACSPMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
+  TACSPMat *pmat = dynamic_cast<TACSPMat*>(mat);
   if (pmat){
     Aloc->axpby(alpha, beta, pmat->Aloc);
     Bext->axpby(alpha, beta, pmat->Bext);
@@ -192,17 +191,14 @@ void PMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
 /*
   Add a scalar to the diagonal
 */
-void PMat::addDiag( TacsScalar alpha ){
+void TACSPMat::addDiag( TacsScalar alpha ){
   Aloc->addDiag(alpha);
 }
-
-// Functions required for solving linear systems
-// ---------------------------------------------
 
 /*!
   Matrix multiplication
 */
-void PMat::mult( TACSVec *txvec, TACSVec *tyvec ){
+void TACSPMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
@@ -225,24 +221,33 @@ void PMat::mult( TACSVec *txvec, TACSVec *tyvec ){
 /*!
   Access the underlying matrices
 */
-void PMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
-  *A = Aloc;
-  *B = Bext;
+void TACSPMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
+  if (A){ *A = Aloc; }
+  if (B){ *B = Bext; }
 }
 
-void PMat::getRowMap( int *_bs, int *_N, int *_Nc ){
-  *_bs = bsize;
-  *_Nc = Nc;
-  *_N = N;
+/*
+  Get the local number of rows/coupling rows in the matrix
+*/
+void TACSPMat::getRowMap( int *_bs, int *_N, int *_Nc ){
+  if (_bs){ *_bs = bsize; }
+  if (_Nc){ *_Nc = Nc; }
+  if (_N){ *_N = N; }
 }
 
-void PMat::getColMap( int *_bs, int *_M ){
-  *_bs = bsize;
-  *_M = N;
+/*
+  Get the number of columns in the matrix
+*/
+void TACSPMat::getColMap( int *_bs, int *_M ){
+  if (_bs){ *_bs = bsize; }
+  if (_M){ *_M = N; }
 }
 
-void PMat::getExtColMap( TACSBVecDistribute ** ext_map ){
-  *ext_map = ext_dist;
+/*
+  Get the distribute object to distribute values to other processors
+*/
+void TACSPMat::getExtColMap( TACSBVecDistribute ** ext_map ){
+  if (ext_map){ *ext_map = ext_dist; }
 }
 
 /*!
@@ -250,7 +255,7 @@ void PMat::getExtColMap( TACSBVecDistribute ** ext_map ){
 
   This code applies the boundary conditions supplied to the matrix
 */
-void PMat::applyBCs( TACSBcMap *bcmap ){
+void TACSPMat::applyBCs( TACSBcMap *bcmap ){
   // Get the MPI rank and ownership range
   int mpi_rank;
   const int *ownerRange;
@@ -285,14 +290,14 @@ void PMat::applyBCs( TACSBcMap *bcmap ){
 /*
   Create a vector for the matrix
 */
-TACSVec *PMat::createVec(){
+TACSVec *TACSPMat::createVec(){
   return new TACSBVec(rmap, Aloc->getBlockSize());
 }
 
 /*!
   Print the matrix non-zero pattern to the screen.
 */
-void PMat::printNzPattern( const char *fileName ){
+void TACSPMat::printNzPattern( const char *fileName ){
   int mpi_rank;
   const int *ownerRange;
   MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
@@ -343,17 +348,18 @@ void PMat::printNzPattern( const char *fileName ){
   }
 }
 
-const char *PMat::TACSObjectName(){
+const char *TACSPMat::TACSObjectName(){
   return matName;
 }
 
-const char *PMat::matName = "PMat";
+const char *TACSPMat::matName = "TACSPMat";
 
 /*
   Build a simple SOR or Symmetric-SOR preconditioner for the matrix
 */
-PSOR::PSOR( PMat *_mat, int _zero_guess, TacsScalar _omega, int _iters, 
-            int _isSymmetric, int *pairs, int npairs ){
+TACSGaussSeidel::TACSGaussSeidel( TACSPMat *_mat, int _zero_guess, 
+                                  TacsScalar _omega, int _iters, 
+                                  int _symmetric ){
   mat = _mat;
   mat->incref();
 
@@ -369,7 +375,8 @@ PSOR::PSOR( PMat *_mat, int _zero_guess, TacsScalar _omega, int _iters,
     bvec->incref();
   }
   else {
-    fprintf(stderr, "PSOR type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "TACSGaussSeidel error: Input/output must be TACSBVec\n");
   }
 
   // Get the number of variables in the row map
@@ -393,37 +400,13 @@ PSOR::PSOR( PMat *_mat, int _zero_guess, TacsScalar _omega, int _iters,
   zero_guess = _zero_guess;
   omega = _omega;
   iters = _iters;
-  isSymmetric = _isSymmetric;
-
-  if (pairs){
-    // Readjust the pair indices so that they are within the supplied
-    // range of the pairs.
-    int mpi_rank;
-    const int *range;
-    TACSVarMap *vmap = mat->getRowMap();
-    vmap->getOwnerRange(&range);
-    MPI_Comm_rank(vmap->getMPIComm(), &mpi_rank);
-
-    // Readjust the range of the pairs
-    for ( int i = 0; i < npairs; i++ ){
-      if (pairs[i] >= range[mpi_rank] &&
-          pairs[i] < range[mpi_rank+1]){
-        pairs[i] = pairs[i] - range[mpi_rank];
-      }
-      else {
-        pairs[i] = -1;
-      }
-    }
-
-    // Set the diagonal pairs
-    Aloc->setDiagPairs(pairs, npairs);
-  }
+  symmetric = _symmetric;
 }
   
 /*
   Free the SOR preconditioner
 */
-PSOR::~PSOR(){
+TACSGaussSeidel::~TACSGaussSeidel(){
   mat->decref();
   Aloc->decref();
   Bext->decref();
@@ -436,15 +419,16 @@ PSOR::~PSOR(){
 /*
   Factor the diagonal of the matrix
 */
-void PSOR::factor(){
+void TACSGaussSeidel::factor(){
   Aloc->factorDiag();
 }
 
 /*!
-  Apply the preconditioner to the input vector
-  Apply SOR to the system A y = x
+  Apply the preconditioner to the input vector.
 
-  The SOR is applied by computing
+  This code applies multiple SOR steps to the system A*y = x.
+  On each processor, the system of equations is
+
   Aloc * y = x - Bext * yext
 
   Then applying the matrix-smoothing for the system of equations,
@@ -453,68 +437,87 @@ void PSOR::factor(){
 
   where b = x - Bext * yext
 */
-void PSOR::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
+void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
   // Covert to TACSBVec objects
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
 
   if (xvec && yvec){
-    // Apply the ILU factorization to a vector
+    // Retrieve the values from the input vectors
     TacsScalar *x, *y, *b;
     yvec->getArray(&y);
     xvec->getArray(&x);
     bvec->getArray(&b);
-    
+
+    // Get the number of variables in the row map
+    int bsize, N, Nc;
+    mat->getRowMap(&bsize, &N, &Nc);
+
     if (zero_guess){
       yvec->zeroEntries();      
-      if (isSymmetric){
-        Aloc->applySSOR(x, y, omega, iters);
-      }
-      else {
-        Aloc->applySOR(x, y, omega, iters);
-      }
+      Aloc->applySOR(x, y, omega, iters);
     }
     else {
       // Begin sending the external-interface values
       ext_dist->beginForward(ctx, y, yext);
       
-      // Zero entries in the local vector
-      bvec->zeroEntries();
+      // Apply the smoother to the local part of the matrix
+      int start = 0;
+      int end = N - Nc;
+      int offset = N - Nc;
+      Aloc->applySOR(NULL, start, end, offset, omega,
+                     x, NULL, y);
       
       // Finish sending the external-interface unknowns
-      ext_dist->endForward(ctx, y, yext);
-      
-      // Compute b[ext_offset] = Bext*yext
-      Bext->mult(yext, &b[ext_offset]); 
+      ext_dist->endForward(ctx, y, yext);     
 
-      // Compute b = xvec - Bext*yext
-      bvec->axpby(1.0, -1.0, xvec);         
+      // Apply the smoother to the local part of the matrix
+      start = end;
+      end = N;
+      Aloc->applySOR(Bext, start, end, offset, omega,
+                     x, yext, y);
+    }
+
+    for ( int i = 1; i < iters; i++ ){
+      // Begin sending the external-interface values
+      ext_dist->beginForward(ctx, y, yext);
       
-      if (isSymmetric){
-        Aloc->applySSOR(b, y, omega, iters);
-      }
-      else {
-        Aloc->applySOR(b, y, omega, iters);
-      }
+      // Apply the smoother to the local part of the matrix
+      int start = 0;
+      int end = N - Nc;
+      int offset = N - Nc;
+      Aloc->applySOR(NULL, start, end, offset, omega,
+                     x, NULL, y);
+      
+      // Finish sending the external-interface unknowns
+      ext_dist->endForward(ctx, y, yext);     
+
+      // Apply the smoother to the local part of the matrix
+      start = end;
+      end = N;
+      Aloc->applySOR(Bext, start, end, offset, omega,
+                     x, yext, y);
     }
   }
   else {
-    fprintf(stderr, "PSOR type error: Input/output must be TACSBVec\n");
+    fprintf(stderr, 
+            "TACSGaussSeidel type error: Input/output must be TACSBVec\n");
   }
 }
 
 /*
   Retrieve the underlying matrix
 */
-void PSOR::getMat( TACSMat **_mat ){
+void TACSGaussSeidel::getMat( TACSMat **_mat ){
   *_mat = mat;
 }
 
 /*!
   Build the additive Schwarz preconditioner 
 */
-AdditiveSchwarz::AdditiveSchwarz( PMat *_mat, int levFill, double fill ){
+TACSAdditiveSchwarz::TACSAdditiveSchwarz( TACSPMat *_mat, 
+                                          int levFill, double fill ){
   mat = _mat;
   mat->incref();
 
@@ -534,7 +537,7 @@ AdditiveSchwarz::AdditiveSchwarz( PMat *_mat, int levFill, double fill ){
 /*
   Free the memory from the additive Schwarz preconditioner
 */
-AdditiveSchwarz::~AdditiveSchwarz(){
+TACSAdditiveSchwarz::~TACSAdditiveSchwarz(){
   mat->decref();
   Aloc->decref();
   Apc->decref();
@@ -544,7 +547,7 @@ AdditiveSchwarz::~AdditiveSchwarz(){
   Add the diagonal shift factor to the preconditioner. The shift
   defaults to zero
 */
-void AdditiveSchwarz::setDiagShift( TacsScalar _alpha ){
+void TACSAdditiveSchwarz::setDiagShift( TacsScalar _alpha ){
   alpha = _alpha;
 }
 
@@ -552,7 +555,7 @@ void AdditiveSchwarz::setDiagShift( TacsScalar _alpha ){
   Factor the preconditioner by copying the values from the 
   block-diagonal matrix and then factoring the copy.
 */
-void AdditiveSchwarz::factor(){
+void TACSAdditiveSchwarz::factor(){
   Apc->copyValues(Aloc);
   if (alpha != 0.0){ 
     Apc->addDiag(alpha);
@@ -568,7 +571,7 @@ void AdditiveSchwarz::factor(){
 
   y = U^{-1} L^{-1} x
 */
-void AdditiveSchwarz::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
+void TACSAdditiveSchwarz::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
@@ -583,7 +586,7 @@ void AdditiveSchwarz::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
   }
   else {
     fprintf(stderr, 
-            "AdditiveSchwarz type error: Input/output must be TACSBVec\n");
+            "TACSAdditiveSchwarz type error: Input/output must be TACSBVec\n");
   }
 }
 
@@ -595,7 +598,7 @@ void AdditiveSchwarz::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
 
   y = U^{-1} L^{-1} y
 */
-void AdditiveSchwarz::applyFactor( TACSVec *txvec ){
+void TACSAdditiveSchwarz::applyFactor( TACSVec *txvec ){
   TACSBVec *xvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
 
@@ -609,23 +612,25 @@ void AdditiveSchwarz::applyFactor( TACSVec *txvec ){
   }
   else {
     fprintf(stderr, 
-            "AdditiveSchwarz type error: Input/output must be TACSBVec\n");
+            "TACSAdditiveSchwarz type error: Input/output must be TACSBVec\n");
   }
 }
 
 /*!
   Retrieve the underlying matrix
 */
-void AdditiveSchwarz::getMat( TACSMat **_mat ){
+void TACSAdditiveSchwarz::getMat( TACSMat **_mat ){
   *_mat = mat;
 }
 
 /*!
   The approximate Schur preconditioner class.
 */
-ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill, 
-                                    int inner_gmres_iters, double inner_rtol, 
-                                    double inner_atol ){
+TACSApproximateSchur::TACSApproximateSchur( TACSPMat *_mat, 
+                                            int levFill, double fill, 
+                                            int inner_gmres_iters, 
+                                            double inner_rtol, 
+                                            double inner_atol ){
   mat = _mat;
   mat->incref();
 
@@ -648,7 +653,7 @@ ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill,
   inner_ksm = NULL;
   
   if (size > 1){
-    gsmat = new GlobalSchurMat(mat, Apc);
+    gsmat = new TACSGlobalSchurMat(mat, Apc);
     gsmat->incref();
 
     TACSVec *trvec = gsmat->createVec();
@@ -663,7 +668,7 @@ ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill,
     }
     else {
       fprintf(stderr, 
-              "ApproximateSchur type error: Input/output must be TACSBVec\n");
+              "TACSApproximateSchur error: Input/output must be TACSBVec\n");
     }
     
     int nrestart = 0;
@@ -683,7 +688,7 @@ ApproximateSchur::ApproximateSchur( PMat *_mat, int levFill, double fill,
 /*
   Free the data associated with the approximate Schur preconditioner
 */
-ApproximateSchur::~ApproximateSchur(){
+TACSApproximateSchur::~TACSApproximateSchur(){
   Aloc->decref();
   Apc->decref();
   mat->decref();
@@ -693,11 +698,17 @@ ApproximateSchur::~ApproximateSchur(){
   if (inner_ksm){ inner_ksm->decref(); }
 }
 
-void ApproximateSchur::setDiagShift( TacsScalar _alpha ){
+/*
+  Add a diagonal contribution to the preconditioner
+*/
+void TACSApproximateSchur::setDiagShift( TacsScalar _alpha ){
   alpha = _alpha;
 }
 
-void ApproximateSchur::setMonitor( KSMPrint *ksm_print ){
+/*
+  Set a monitor for the inner Krylov method
+*/
+void TACSApproximateSchur::setMonitor( KSMPrint *ksm_print ){
   if (inner_ksm){
     inner_ksm->setMonitor(ksm_print);
   }
@@ -706,7 +717,7 @@ void ApproximateSchur::setMonitor( KSMPrint *ksm_print ){
 /*
   Factor preconditioner based on the values in the matrix.
 */
-void ApproximateSchur::factor(){
+void TACSApproximateSchur::factor(){
   Apc->copyValues(Aloc);
   if (alpha != 0.0){
     Apc->addDiag(alpha);
@@ -717,7 +728,7 @@ void ApproximateSchur::factor(){
 /*
   Print the non-zero pattern to a file
 */
-void ApproximateSchur::printNzPattern( const char *fileName ){
+void TACSApproximateSchur::printNzPattern( const char *fileName ){
   // Get the sizes of the Aloc and Bext matrices
   int b, Na, Ma;
   const int *rowp;
@@ -826,7 +837,7 @@ void ApproximateSchur::printNzPattern( const char *fileName ){
 
   x_i = U_b^{-1} L_b^{-1} ( f_i - E * y_i)  
 */
-void ApproximateSchur::applyFactor( TACSVec * txvec, TACSVec * tyvec ){
+void TACSApproximateSchur::applyFactor( TACSVec * txvec, TACSVec * tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
@@ -871,7 +882,7 @@ void ApproximateSchur::applyFactor( TACSVec * txvec, TACSVec * tyvec ){
 /*
   Retrieve the underlying matrix
 */
-void ApproximateSchur::getMat( TACSMat **_mat ){
+void TACSApproximateSchur::getMat( TACSMat **_mat ){
   *_mat = mat;
 }
 
@@ -880,7 +891,7 @@ void ApproximateSchur::getMat( TACSMat **_mat ){
 
   This matrix is used within the ApproximateSchur preconditioner.
 */
-GlobalSchurMat::GlobalSchurMat( PMat * mat, BCSRMat * _Apc ){
+TACSGlobalSchurMat::TACSGlobalSchurMat( TACSPMat *mat, BCSRMat *_Apc ){
   Apc = _Apc;
   Apc->incref();
 
@@ -904,7 +915,10 @@ GlobalSchurMat::GlobalSchurMat( PMat * mat, BCSRMat * _Apc ){
   x_ext = new TacsScalar[ xsize ];  
 }
 
-GlobalSchurMat::~GlobalSchurMat(){
+/*
+  Free the information associated with the global Schur complement matrix
+*/
+TACSGlobalSchurMat::~TACSGlobalSchurMat(){
   Apc->decref();
   Bext->decref(); 
   ext_dist->decref();
@@ -912,7 +926,10 @@ GlobalSchurMat::~GlobalSchurMat(){
   delete [] x_ext;
 }
 
-void GlobalSchurMat::getSize( int *_nr, int *_nc ){
+/*
+  Get the size of the number of local rows/columns
+*/
+void TACSGlobalSchurMat::getSize( int *_nr, int *_nc ){
   // Get the local dimensions of the matrix
   *_nr = nvars;
   *_nc = nvars;
@@ -921,7 +938,7 @@ void GlobalSchurMat::getSize( int *_nr, int *_nc ){
 /*
   Compute y <- A * x 
 */
-void GlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
+void TACSGlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
@@ -956,7 +973,7 @@ void GlobalSchurMat::mult( TACSVec *txvec, TACSVec *tyvec ){
 /*
   Compute y <- Bext * xext
 */
-void GlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){  
+void TACSGlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){  
   TacsScalar *x, *y;
   xvec->getArray(&x);
   yvec->getArray(&y);  
@@ -969,7 +986,9 @@ void GlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){
   Bext->mult(x_ext, y);
 }
 
-// Return a new Vector
-TACSVec * GlobalSchurMat::createVec(){
+/*
+  Return a new Vector
+*/
+TACSVec *TACSGlobalSchurMat::createVec(){
   return new TACSBVec(rmap, Apc->getBlockSize());
 }

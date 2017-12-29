@@ -163,14 +163,14 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       pc[level] = _smoother;
     }
     else {
-      PMat *pmat = tacs[level]->createMat();
+      TACSPMat *pmat = tacs[level]->createMat();
       mat[level] = pmat;
       mat[level]->incref();
       
       // Do not zero the initial guess for the PSOR object
-      int zero_guess = 0; 
-      pc[level] = new PSOR(pmat, zero_guess, sor_omega, 
-                           sor_iters, sor_symmetric);
+      int zero_guess = 0;
+      pc[level] = new TACSGaussSeidel(pmat, zero_guess, sor_omega, 
+                                      sor_iters, sor_symmetric);
       pc[level]->incref();
     }
   }
@@ -193,7 +193,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       FEMat *femat = tacs[level]->createFEMat();
       root_mat = femat;
       root_mat->incref();
-      
+
       // Set up the root preconditioner/solver
       int lev = 10000;
       double fill = 15.0;
@@ -279,7 +279,7 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
                               res, mat[0], matOr);
   }
 
-  for ( int i = 0; i < nlevels-1; i++ ){
+  for ( int i = 1; i < nlevels-1; i++ ){
     if (tacs[i]){
       tacs[i]->assembleJacobian(alpha, beta, gamma,
                                 NULL, mat[i], matOr);
@@ -447,6 +447,13 @@ void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
   post-smoothing.
 */
 void TACSMg::applyMg( int level ){
+  // If we've made it to the lowest level, apply the direct solver
+  // otherwise, perform multigrid on the next-lowest level
+  if (level == nlevels-1){
+    root_pc->applyFactor(b[level], x[level]);   
+    return;
+  }
+
   // Pre-smooth at the current level
   pc[level]->applyFactor(b[level], x[level]);  
 
@@ -458,20 +465,11 @@ void TACSMg::applyMg( int level ){
   // to form the RHS at that level
   interp[level]->multTranspose(r[level], b[level+1]);
   b[level+1]->applyBCs(tacs[level+1]->getBcMap());
+  x[level+1]->zeroEntries();
 
-  // If we've made it to the lowest level, apply the direct solver
-  // otherwise, perform multigrid on the next-lowest level
-  if (level+1 == nlevels-1){
-    // Perform a direct solve on the smallest grid
-    root_pc->applyFactor(b[nlevels-1], x[nlevels-1]); 
-  }
-  else {
-    x[level+1]->zeroEntries();
-
-    // Perform iters[level] cycle at the next lowest level
-    for ( int k = 0; k < iters[level]; k++ ){
-      applyMg(level+1);
-    }
+  // Perform iters[level] cycle at the next lowest level
+  for ( int k = 0; k < iters[level]; k++ ){
+    applyMg(level+1);
   }
 
   // Interpolate back from the next lowest level

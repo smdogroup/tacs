@@ -341,7 +341,7 @@ int main( int argc, char *argv[] ){
     = new TACSLinearBuckling(tacs, sigma, gmat, kmat, aux_mat, ksm, 
 			     max_lanczos, neigvals, eig_tol);
   linear_buckling->incref();
-  linear_buckling->solve(ksm_print);
+  linear_buckling->solve(NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
   linear_buckling->checkEigenvector(0);
 
@@ -390,7 +390,7 @@ int main( int argc, char *argv[] ){
   tacs->setDesignVars(x, ndvs);
   
   // Solve the buckling problem again
-  linear_buckling->solve(ksm_print);
+  linear_buckling->solve(NULL, ksm_print);
   TacsScalar eigvalue1 = 
     linear_buckling->extractEigenvalue(0, &error);
 

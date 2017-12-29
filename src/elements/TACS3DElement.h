@@ -1077,8 +1077,9 @@ void TACS3DElement<NUM_NODES>::computeEnergies( double time,
     stiff->calculateStress(pt, strain, stress);
        
     // Compute the contribution from the potential energy
-    Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] + stress[2]*strain[2] + 
-                 stress[3]*strain[3] + stress[4]*strain[4] +stress[5]*strain[5]);
+    Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] + 
+                 stress[2]*strain[2] + stress[3]*strain[3] + 
+                 stress[4]*strain[4] + stress[5]*strain[5]);
     
     // Get value of the mass/area at this point
     TacsScalar mass;
@@ -1537,11 +1538,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       TacsScalar J[9];
       TacsScalar h = FElibrary::jacobian3d(Xa, J);
       h = h*weight;
-      
-      // Compute the strain
-      TacsScalar strain[NUM_STRESSES];
-      evalStrain(strain, J, Na, Nb, Nc, vars);
-      
+            
       // Get the derivative of the strain with respect to the nodal
       // displacements
       getBmat(B, J, Na, Nb, Nc, vars);
@@ -1553,7 +1550,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       
       TacsScalar *b = B;
       const TacsScalar *ps = psi, *ph = phi;
-      for ( int i = 0; i < NUM_VARIABLES; i++ ){
+      for ( int i = 0; i < 3*NUM_NODES; i++ ){
         bpsi[0] += ps[0]*b[0];  bpsi[1] += ps[0]*b[1];
         bpsi[2] += ps[0]*b[2];  bpsi[3] += ps[0]*b[3];
         bpsi[4] += ps[0]*b[4];  bpsi[5] += ps[0]*b[5];
@@ -1613,7 +1610,8 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       }
 
       // Add the result to the design variable vector
-      TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + upsi[1]*uphi[1] + 
+      TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + 
+                                      upsi[1]*uphi[1] + 
                                       upsi[2]*uphi[2]);
       stiff->addPointwiseMassDVSens(pt, &rho_alpha, dvSens, dvLen);
     }
@@ -1683,6 +1681,72 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       }
     }
 
+    // Apply symmetry to the matrix
+    for ( int j = 0; j < NUM_VARIABLES; j++ ){
+      for ( int i = 0; i < j; i++ ){
+        mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
+      }
+    }
+  }
+  else if (matType == STIFFNESS_MATRIX){
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
+    
+    // The derivative of the stress with respect to the strain
+    TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+    
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+    
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weight
+      double pt[3];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb, Nc);
+      
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[9];
+      TacsScalar h = FElibrary::jacobian3d(Xa, J);
+      h = h*weight;
+      
+      // Compute the strain
+      TacsScalar strain[NUM_STRESSES];
+      evalStrain(strain, J, Na, Nb, Nc, vars);
+      
+      // Compute the corresponding stress
+      TacsScalar stress[NUM_STRESSES];
+      stiff->calculateStress(pt, strain, stress);
+      
+      // Get the derivative of the strain with respect to the nodal
+      // displacements
+      getBmat(B, J, Na, Nb, Nc, vars);
+
+      // Fill-in the upper portion of the matrix
+      TacsScalar *bj = B;
+      for ( int j = 0; j < NUM_VARIABLES; j++ ){
+        // Compute the stress at the given point
+        TacsScalar bs[NUM_STRESSES];
+        stiff->calculateStress(pt, bj, bs);
+      
+        TacsScalar *bi = B;
+        for ( int i = 0; i <= j; i++ ){
+          mat[i + j*NUM_VARIABLES] += 
+            h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2] +
+               bi[3]*bs[3] + bi[4]*bs[4] + bi[5]*bs[5]);
+          bi += NUM_STRESSES;
+        }
+        bj += NUM_STRESSES;
+      }
+    }
+  
     // Apply symmetry to the matrix
     for ( int j = 0; j < NUM_VARIABLES; j++ ){
       for ( int i = 0; i < j; i++ ){

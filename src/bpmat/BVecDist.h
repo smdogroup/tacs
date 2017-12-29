@@ -32,9 +32,11 @@ class TACSVarMap : public TACSObject {
   int getDim();
   MPI_Comm getMPIComm();
   void getOwnerRange( const int **_ownerRange );
+  int getOwner( int node );
 
  private:
   MPI_Comm comm; // The MPI communicator
+  int mpiSize, mpiRank; // The size/rank of the processor
   int *ownerRange; // The ownership range of the variables
   int N; // Number of nodes on this processor
 };

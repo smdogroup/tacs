@@ -86,7 +86,6 @@ void TACSSphericalConstraint::getMultiplierIndex( int *multiplier ){
   }    
 }
 
-
 const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 
 /*
@@ -494,7 +493,7 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
 
       J[(offset+2)*(nvars+1)] += alpha;
     }
-    else {
+    else { // con_type == COPLANAR
 
     }
   }
@@ -530,7 +529,7 @@ void TACSSphericalConstraint::addJacobian( double time, TacsScalar J[],
     else if (con_type == COLINEAR){
 
     }
-    else {
+    else { // con_type == COPLANAR
 
     }
   }
@@ -1302,6 +1301,8 @@ const char* TACSRigidLink::elementName(){
   return elem_name;
 }
 
+const TacsScalar TACSRigidLink::delta = 10.0;
+
 /*
   Compute the kinetic and potential energy within the element
 */
@@ -1493,6 +1494,8 @@ int TACSRevoluteDriver::numNodes(){
 const char* TACSRevoluteDriver::elementName(){ 
   return "TACSRevoluteDriver"; 
 }
+
+const TacsScalar TACSRevoluteDriver::delta = 10.0;
 
 void TACSRevoluteDriver::computeEnergies( double time,
                                           TacsScalar *_Te, 

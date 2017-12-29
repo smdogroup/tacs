@@ -54,6 +54,8 @@ void test_element( TACSElement *element,
   element->testStrainSVSens(Xpts, vars);
   element->testStrainXptSens(Xpts, vars);
   element->testJacobianXptSens(Xpts);
+  element->testMatDVSensInnerProduct(STIFFNESS_MATRIX, x, dvLen, Xpts, vars);
+  element->testMatDVSensInnerProduct(MASS_MATRIX, x, dvLen, Xpts, vars);
 
   delete [] x;
 }
@@ -352,8 +354,6 @@ int main( int argc, char *argv[] ){
 
     // Test the rigid link
     test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    /////////////////////////////////////////////////////////////////////
 
     // Define the inertial properties
     const TacsScalar mB    = 2.0;

@@ -53,11 +53,13 @@ PY_RCM_ORDER = RCM_ORDER
 PY_AMD_ORDER = AMD_ORDER
 PY_ND_ORDER = ND_ORDER
 PY_TACS_AMD_ORDER = TACS_AMD_ORDER
-        
+PY_MULTICOLOR_ORDER = MULTICOLOR_ORDER
+
 # Import the matrix ordering types
 PY_ADDITIVE_SCHWARZ = ADDITIVE_SCHWARZ
 PY_APPROXIMATE_SCHUR = APPROXIMATE_SCHUR
 PY_DIRECT_SCHUR = DIRECT_SCHUR
+PY_GAUSS_SEIDEL = GAUSS_SEIDEL
 
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
@@ -329,7 +331,7 @@ cdef class Pc:
         cdef int lev_fill = 1000000
         cdef double fill = 10.0
         cdef int reorder = 1
-        cdef PMat *p_ptr = NULL
+        cdef TACSPMat *p_ptr = NULL
         cdef ScMat *sc_ptr = NULL
 
         if mat is not None:
@@ -341,7 +343,7 @@ cdef class Pc:
             self.ptr = new PcScMat(sc_ptr, lev_fill, fill, reorder)
             self.ptr.incref()
         elif p_ptr != NULL:
-            self.ptr = new AdditiveSchwarz(p_ptr, 5, 10.0)
+            self.ptr = new TACSAdditiveSchwarz(p_ptr, 5, 10.0)
             self.ptr.incref()
         return
             
@@ -359,7 +361,7 @@ cdef class Pc:
         self.ptr.applyFactor(x.ptr, y.ptr)
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
-                         Vec residual,
+                         Vec residual=None,
                          MatrixOrientation matOr=NORMAL):
         '''Assemble the Jacobian for all levels'''
         cdef TACSBVec *res = NULL

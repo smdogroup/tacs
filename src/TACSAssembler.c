@@ -903,22 +903,180 @@ void TACSAssembler::computeReordering( OrderingType order_type,
   int *newNodeNums = new int[ numNodes ];
 
   // Metis can't handle the non-zero diagonal in the CSR data structure
-  int noDiagonal = 0;
+  int removeDiagonal = 0;
   if (order_type == ND_ORDER){ 
-    noDiagonal = 1;
+    removeDiagonal = 1;
   }
 
   // If using only one processor, order everything. In this case
   // there is no distinction between local and global ordering.
   if (mpiSize == 1){
-    // The node connectivity
+    // Compute the local (global since it's serial) node to node
+    // connectivity based on the element connectivity. 
     int *rowp, *cols;
-    computeLocalNodeToNodeCSR(&rowp, &cols, noDiagonal);
+    computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
+
+    // Compute the reordering
     computeMatReordering(order_type, numNodes, rowp, cols, 
                          NULL, newNodeNums);
 
     delete [] rowp;
     delete [] cols;
+  }
+  else if (mat_type == GAUSS_SEIDEL){
+    // Compute the local node to node connectivity
+    int *rowp, *cols;
+    computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
+
+    // Get the owner range
+    const int *ownerRange;
+    varMap->getOwnerRange(&ownerRange);
+
+    // Compute the node types. This is the node type relative to its
+    // owner.
+    int *nodeType = new int[ numNodes ];
+
+    for ( int i = 0; i < numNodes; i++ ){
+      // Set the node as a local node type
+      nodeType[i] = 0;
+
+      // Get the global node number
+      int node = getGlobalNodeNum(i);
+      
+      // Get the processor that owns this node
+      int owner = varMap->getOwner(node);
+
+      // Search the columns for the type of node
+      for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
+        // Get the local column index
+        int j = cols[jp];
+
+        // Get the global node number
+        int col = getGlobalNodeNum(j);
+
+        if (col < ownerRange[owner]){
+          if (nodeType[i] == 0){
+            // Top node type
+            nodeType[i] = 1;
+          }
+          else if (nodeType[i] == 3){
+            // Mid-node type
+            nodeType[i] = 2;
+          }
+        }
+        else if (col >= ownerRange[owner+1]){
+          if (nodeType[i] == 0){
+            // Bottom node type
+            nodeType[i] = 3;
+          }
+          else if (nodeType[i] == 1){
+            // Mid-node type
+            nodeType[i] = 2;
+          }
+        }
+      }
+    }
+
+    // This type of connectivity information is no longer required
+    delete [] rowp;
+    delete [] cols;
+
+    // We've computed the local node types, but this may be affected
+    // by the contributions from other processors. Now, perform some
+    // collective communication to globalize the node type
+    // information. This will order all the internal nodes first,
+    // followed by the top nodes, mid nodes and bottom nodes,
+    // respectively.
+
+    // Now allocate space for the node types 
+    int *sendNodeType = new int[ numExtNodes ];
+    for ( int i = 0; i < numExtNodes; i++ ){
+      // Get the local node number
+      int index = getLocalNodeNum(tacsExtNodeNums[i]);
+      sendNodeType[i] = nodeType[index];
+    }
+
+    int *recvNodeType = new int[ recvPtr[mpiSize] ];
+    MPI_Alltoallv(sendNodeType, extCount, extPtr, MPI_INT, 
+                  recvNodeType, recvCount, recvPtr, MPI_INT, tacs_comm);
+
+    // Update the internal node types based on the recv'd values
+    for ( int i = 0; i < recvPtr[mpiSize]; i++ ){
+      int node = getLocalNodeNum(recvNodes[i]);
+      
+      if (nodeType[node] == 0){
+        // Set the node type as the recv node type
+        nodeType[node] = recvNodeType[i];
+      }
+      else if (nodeType[node] != recvNodeType[i]){
+        // Mid-node type
+        nodeType[node] = 2;
+      }
+    }
+
+    // Free the allocated data
+    delete [] sendNodeType;
+    delete [] recvNodeType;
+
+    // So now the local nodes have the correct node types, 
+    // compute the local ordering. 
+    int *reducedNodes = new int[ numNodes ];
+    memset(reducedNodes, 0, numNodes*sizeof(int));
+
+    // Exclude all the nodes that are external to this processor
+    for ( int i = 0; i < extNodeOffset; i++ ){
+      reducedNodes[i] = -1;
+    }
+    for ( int i = extNodeOffset + numOwnedNodes; i < numNodes; i++ ){
+      reducedNodes[i] = -1;
+    }
+
+    // Loop over all of the node types. This will order all the
+    // internal nodes first
+    int offset = ownerRange[mpiRank];
+    for ( int ntype = 0; ntype < 4; ntype++ ){
+      int numReducedNodes = 0;
+      for ( int i = extNodeOffset; i < extNodeOffset + numOwnedNodes; i++ ){
+        if (nodeType[i] == ntype){
+          reducedNodes[i] = numReducedNodes;
+          numReducedNodes++;
+        }
+        else {
+          reducedNodes[i] = -1;
+        }
+      }
+
+      if (numReducedNodes > 0){
+        // Compute the reordering for the reduced set of nodes
+        int *newReducedNodes = new int[ numReducedNodes ];
+        int *reduced_rowp, *reduced_cols;
+        computeLocalNodeToNodeCSR(&reduced_rowp, &reduced_cols, 
+                                  numReducedNodes, reducedNodes, 
+                                  removeDiagonal);
+        computeMatReordering(order_type, numReducedNodes, 
+                             reduced_rowp, reduced_cols,
+                             NULL, newReducedNodes);
+        delete [] reduced_rowp;
+        delete [] reduced_cols;
+
+        // Set the new variable numbers for the boundary nodes
+        // and include their offset
+        for ( int i = 0, j = 0; i < numNodes; i++ ){
+          if (reducedNodes[i] >= 0){
+            newNodeNums[i] = offset + newReducedNodes[j];
+            j++;
+          }
+        }
+
+        offset += numReducedNodes;
+
+        // Free the new node numbers
+        delete [] newReducedNodes;
+      }
+    }
+
+    // Free the node type array
+    delete [] nodeType;
   }
   else {
     // First, find the reduced nodes - the set of nodes that are only
@@ -927,7 +1085,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     int *reducedNodes = new int[ numNodes ];
     memset(reducedNodes, 0, numNodes*sizeof(int));
 
-    // Add all the nodes that are external to this processor
+    // Exclude all the nodes that are external to this processor
     for ( int i = 0; i < extNodeOffset; i++ ){
       reducedNodes[i] = -1;
     }
@@ -977,7 +1135,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     int *rowp, *cols;
     computeLocalNodeToNodeCSR(&rowp, &cols, 
                               numReducedNodes, reducedNodes, 
-                              noDiagonal);
+                              removeDiagonal);
     computeMatReordering(order_type, numReducedNodes, rowp, cols,
                          NULL, newReducedNodes);
     delete [] rowp;
@@ -1028,7 +1186,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
       newReducedNodes = new int[ numReducedNodes ];
       computeLocalNodeToNodeCSR(&rowp, &cols, 
                                 numReducedNodes, reducedNodes, 
-                                noDiagonal);
+                                removeDiagonal);
       computeMatReordering(order_type, numReducedNodes, rowp, cols,
                            NULL, newReducedNodes);
 
@@ -1130,8 +1288,8 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     tacsExtNodeNums[i] = newNodeNums[i + numOwnedNodes];
   }
 
-  // Resort the external node numbers - these are already unique
-  // and the extNodeOffset should not change either
+  // Resort the external node numbers - these are already unique and
+  // the extNodeOffset should not change either
   FElibrary::uniqueSort(tacsExtNodeNums, numExtNodes);
 
   // Save the mapping to the new numbers for later reorderings
@@ -1180,9 +1338,9 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     // Compute the matrix reordering using RCM TACS' version
     // of the RCM algorithm
     int root_node = 0;
-    int n_rcm_iters = 1;
+    int num_rcm_iters = 1;
     matutils::ComputeRCMOrder(nvars, rowp, cols,
-                              _new_vars, root_node, n_rcm_iters);
+                              _new_vars, root_node, num_rcm_iters);
 
     if (perm){
       for ( int k = 0; k < nvars; k++ ){
@@ -1225,6 +1383,20 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     if (new_vars){
       for ( int k = 0; k < nvars; k++ ){
         new_vars[_perm[k]] = k;
+      }
+    }
+  }
+  else if (order_type == MULTICOLOR_ORDER){
+    // Compute the matrix reordering using RCM TACS' version of the
+    // RCM algorithm
+    int *colors = new int[ nvars ];   
+    matutils::ComputeSerialMultiColor(nvars, rowp, cols,
+                                      colors, new_vars);
+    delete [] colors;
+
+    if (perm){
+      for ( int k = 0; k < nvars; k++ ){
+        perm[_new_vars[k]] = k;    
       }
     }
   }
@@ -1946,55 +2118,59 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   int nrecv_unique = 
     FElibrary::uniqueSort(recvNodesSorted, recvPtr[mpiSize]);
 
-  // Count up the number of multiplier nodes (if any). These are not
-  // all of the locally owned multipliers, only those that refer to
-  // external node numbers on other processors.
   int num_multipliers = 0;
-  int *multipliers = new int[ numMultiplierNodes ];
+  int *multipliers = NULL;
+
+  if (numMultiplierNodes > 0){
+    // Count up the number of multiplier nodes (if any). These are not
+    // all of the locally owned multipliers, only those that refer to
+    // external node numbers on other processors.
+    multipliers = new int[ numMultiplierNodes ];
   
-  // Add in the multiplier values
-  for ( int i = 0; i < numElements; i++ ){
-    // Get the multiplier index
-    int multiplier;
-    elements[i]->getMultiplierIndex(&multiplier);
-    if (multiplier >= 0){
-      // Get the local multiplier index
-      int elem_ptr = elementNodeIndex[i];
+    // Add in the multiplier values
+    for ( int i = 0; i < numElements; i++ ){
+      // Get the multiplier index
+      int multiplier;
+      elements[i]->getMultiplierIndex(&multiplier);
+      if (multiplier >= 0){
+        // Get the local multiplier index
+        int elem_ptr = elementNodeIndex[i];
 
-      // Check if the multiplier is locally owned. If it is not, it is
-      // already in the external nodes anyway.
-      int mult_node = elementTacsNodes[elem_ptr + multiplier];
-      if (mult_node >= ownerRange[mpiRank] &&
-          mult_node < ownerRange[mpiRank+1]){
+        // Check if the multiplier is locally owned. If it is not, it is
+        // already in the external nodes anyway.
+        int mult_node = elementTacsNodes[elem_ptr + multiplier];
+        if (mult_node >= ownerRange[mpiRank] &&
+            mult_node < ownerRange[mpiRank+1]){
         
-        // Get the element size
-        int size = elementNodeIndex[i+1] - elem_ptr;
+          // Get the element size
+          int size = elementNodeIndex[i+1] - elem_ptr;
 
-        // Check if any of the nodes are actually external
-        for ( int j = 0; j < size; j++ ){
-          int node = elementTacsNodes[elem_ptr + j];
+          // Check if any of the nodes are actually external
+          for ( int j = 0; j < size; j++ ){
+            int node = elementTacsNodes[elem_ptr + j];
 
-          // Add the multiplier node if it's an external node or or it
-          // is one of the nodes referred to on other procs.
-          if (node < ownerRange[mpiRank] ||
-              node >= ownerRange[mpiRank+1]){
-            multipliers[num_multipliers] = mult_node;
-            num_multipliers++;
-            break;
-          }
-          else if (bsearch(&node, recvNodesSorted, nrecv_unique,
-                           sizeof(int), FElibrary::comparator)){
-            multipliers[num_multipliers] = mult_node;
-            num_multipliers++;
-            break;            
+            // Add the multiplier node if it's an external node or or it
+            // is one of the nodes referred to on other procs.
+            if (node < ownerRange[mpiRank] ||
+                node >= ownerRange[mpiRank+1]){
+              multipliers[num_multipliers] = mult_node;
+              num_multipliers++;
+              break;
+            }
+            else if (bsearch(&node, recvNodesSorted, nrecv_unique,
+                             sizeof(int), FElibrary::comparator)){
+              multipliers[num_multipliers] = mult_node;
+              num_multipliers++;
+              break;            
+            }
           }
         }
       }
     }
-  }
 
-  // Uniquely sort the number of multiplier nodes
-  num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+    // Uniquely sort the number of multiplier nodes
+    num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+  }
 
   // Count up the number of coupling nodes
   int numCouplingNodes = nrecv_unique + numExtNodes + num_multipliers;
@@ -2041,7 +2217,9 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   }
 
   // Free the multiplier index
-  delete [] multipliers;
+  if (multipliers){
+    delete [] multipliers;
+  }
 
   if (_extPtr){ *_extPtr = extPtr; }
   else { delete [] extPtr; }
@@ -2341,6 +2519,13 @@ void TACSAssembler::getDataPointers( TacsScalar *data,
 }
 
 /*
+  Check whether a reordering has been applied to the nodes
+*/
+int TACSAssembler::isReordered(){
+  return (newNodeIndices != NULL);
+}
+
+/*
   Get the ordering from the old nodes to the new nodes
 
   input/output:
@@ -2574,7 +2759,7 @@ void TACSAssembler::setBCs( TACSVec *vec ){
   TACSBVecIndices object is reused if any subsequent DistMat objects
   are created.
 */
-DistMat *TACSAssembler::createMat(){
+TACSDistMat *TACSAssembler::createMat(){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createMat() before initialize()\n", 
             mpiRank);
@@ -2599,9 +2784,8 @@ DistMat *TACSAssembler::createMat(){
   computeLocalNodeToNodeCSR(&rowp, &cols);
   
   // Create the distributed matrix class
-  DistMat *dmat = new DistMat(thread_info, varMap, varsPerNode,
-                              numNodes, rowp, cols,
-                              distMatIndices);
+  TACSDistMat *dmat = new TACSDistMat(thread_info, varMap, varsPerNode,
+                                      numNodes, rowp, cols, distMatIndices);
 
   // Free the local connectivity
   delete [] rowp;
@@ -3185,7 +3369,8 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   conditions are applied after the assembly of the residual is
   complete.
   
-  rhs:      the residual output
+  in/out:
+  residual:      the residual evaluated at the current point
 */
 void TACSAssembler::assembleRes( TACSBVec *residual ){
   // Sort the list of auxiliary elements - this only performs the
@@ -4144,9 +4329,13 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
                                               TACSBVec *psi, TACSBVec *phi,
                                               TacsScalar *fdvSens, int numDVs ){
   psi->beginDistributeValues();
-  phi->beginDistributeValues();
+  if (phi != psi){
+    phi->beginDistributeValues();
+  }
   psi->endDistributeValues();
-  phi->endDistributeValues();
+  if (phi != psi){
+    phi->endDistributeValues();
+  }
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemPsi, *elemPhi, *elemXpts;
@@ -4197,9 +4386,13 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
 
   // Distribute the variable values
   psi->beginDistributeValues();
-  phi->beginDistributeValues();
+  if (phi != psi){
+    phi->beginDistributeValues();
+  }
   psi->endDistributeValues();
-  phi->endDistributeValues();
+  if (phi != psi){
+    phi->endDistributeValues();
+  }
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemPsi, *elemPhi, *elemRes, *elemXpts;

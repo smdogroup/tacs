@@ -5,14 +5,14 @@
 #include "TACSMg.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
+#include "TACSBuckling.h"
 
 /*
   Create the TACSAssembler object and return the associated TACS
   creator object 
 */
 void createTACS( MPI_Comm comm, int nx, int ny,
-                 TACSAssembler **_tacs, TACSCreator **_creator,
-                 int *part=NULL ){
+                 TACSAssembler **_tacs, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -57,7 +57,7 @@ void createTACS( MPI_Comm comm, int nx, int ny,
     delete [] ptr;
     delete [] ids;
 
-    // We're over-counting one of the nodes
+    // We're over-counting one of the nodes on each edge
     int numBcs = 4*(nx+1);
     int *bcNodes = new int[ numBcs ]; 
 
@@ -86,13 +86,6 @@ void createTACS( MPI_Comm comm, int nx, int ny,
     // Set the nodal locations
     creator->setNodes(Xpts);
     delete [] Xpts;
-
-    // Set the partition
-    if (part){
-      int size;
-      MPI_Comm_size(comm, &size);
-      creator->partitionMesh(size, part);
-    }
   }
 
   // Create and set the element
@@ -108,6 +101,9 @@ void createTACS( MPI_Comm comm, int nx, int ny,
                                                  yield_stress, thickness);
   TACSElement *elem = new MITCShell<2>(stiff);
   creator->setElements(&elem, 1);
+
+  creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
+                             TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
   TACSAssembler *tacs = creator->createTACS();
@@ -167,9 +163,12 @@ int main( int argc, char *argv[] ){
 
   // Number of different levels
   int nlevels = 3;
-  int max_nlevels = 5;
+  const int max_nlevels = 5;
   TACSAssembler *tacs[max_nlevels];
   TACSCreator *creator[max_nlevels];
+
+  // Set whether to use the direct solver or not
+  int use_direct_lanczos = 0;
 
   // Set the dimension of the largest meshes
   int nx = 128;
@@ -188,10 +187,13 @@ int main( int argc, char *argv[] ){
       if (nlevels < 2){ nlevels = 2; }
       if (nlevels > max_nlevels){ nlevels = max_nlevels; }
     }
+    if (strcmp(argv[k], "use_direct_lanczos") == 0){
+      use_direct_lanczos = 1;
+    }
   }
 
   // Create the multigrid object
-  double omega = 0.75;
+  double omega = 1.0;
   int sor_iters = 1;
   int sor_symm = 0;
   TACSMg *mg = new TACSMg(comm, nlevels, omega, sor_iters, sor_symm);
@@ -199,37 +201,17 @@ int main( int argc, char *argv[] ){
 
   // Create the TACS/Creator objects for all levels
   for ( int i = 0; i < nlevels; i++ ){
-    int *part = NULL;
     int Nx = nx/(1 << i), Ny = ny/(1 << i);
-
-    if (i > 0 && rank == 0){
-      // Note that the partition array is only allocated
-      // on the root processor
-      const int *fine_part;
-      creator[i-1]->getElementPartition(&fine_part);
-      part = new int[ Nx*Ny ];
-      for ( int j = 0; j < Ny; j++ ){
-        for ( int i = 0; i < Nx; i++ ){
-          part[i + Nx*j] = fine_part[2*i + 4*Nx*j];
-        }
-      }
-    }
-
-    createTACS(comm, Nx, Ny, &tacs[i], &creator[i], part);
+    createTACS(comm, Nx, Ny, &tacs[i], &creator[i]);
     tacs[i]->incref();
     creator[i]->incref();
-    if (part){
-      delete [] part;
-    }
   }
 
   // Create the interpolation operators
   for ( int level = 0; level < nlevels-1; level++ ){
     // Allocate the interpolation object
     TACSBVecInterp *interp = 
-      new TACSBVecInterp(tacs[level+1]->getVarMap(),
-                         tacs[level]->getVarMap(), 
-                         tacs[level]->getVarsPerNode());
+      new TACSBVecInterp(tacs[level+1], tacs[level]);
 
     if (rank == 0){
       // Retrieve the node numbers
@@ -247,12 +229,11 @@ int main( int argc, char *argv[] ){
       int nx_fine = nx/(1 << level);
       int ny_fine = ny/(1 << level);
       int nx_coarse = nx/(1 << (level+1));
-      int ny_coarse = ny/(1 << (level+1));
 
       // In this case, we cheat and set the entire interpolation
-      // operator just from the root processor. The operator will
-      // be communicated to the appropriate procs during 
-      // initialization on all procs.
+      // operator just from the root processor. The operator will be
+      // communicated to the appropriate procs during initialization
+      // on all procs.
       for ( int j = 0; j < ny_fine+1; j++ ){
         for ( int i = 0; i < nx_fine+1; i++ ){
           int nvars = 0;
@@ -282,7 +263,8 @@ int main( int argc, char *argv[] ){
             nvars = 4;
           }
 
-          interp->addInterp(nodes[i + (nx_fine+1)*j], w, vars, nvars);
+          int node = nodes[i + (nx_fine+1)*j];
+          interp->addInterp(node, w, vars, nvars);
         }
       }
     }
@@ -292,7 +274,7 @@ int main( int argc, char *argv[] ){
     interp->initialize();
     
     // Set the multigrid information at this level
-    mg->setLevel(level, tacs[level], interp, 2);
+    mg->setLevel(level, tacs[level], interp, 1);
   }
 
   // Set the model at the lowest grid level
@@ -316,7 +298,7 @@ int main( int argc, char *argv[] ){
   gmres->incref();
 
   // Set a monitor to check on solution progress
-  int freq = 1;
+  int freq = 5;
   gmres->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
 
   // The initial time
@@ -327,6 +309,9 @@ int main( int argc, char *argv[] ){
 
   // "Factor" the preconditioner
   mg->factor();
+
+  mg->setMonitor(new KSMPrintStdout("MG", rank, freq));
+  mg->solve(res, ans);
 
   // Compute the solution using GMRES
   gmres->solve(res, ans);
@@ -353,9 +338,83 @@ int main( int argc, char *argv[] ){
   TACSToFH5 *f5 = new TACSToFH5(tacs[0], TACS_SHELL, write_flag);
   f5->incref();
   f5->writeToFile("mg_plate.f5");
-  f5->decref();
+  
+  // Perform the Frequency Analysis
+  int max_lanczos = 100;
+  int num_eigvals = 20;
+  double eigtol = 1e-12;
+  TacsScalar sigma = 0.0;
 
-  // Free up the remaining data
+  TACSFrequencyAnalysis *freq_analysis = NULL;
+
+  if (use_direct_lanczos){
+    // Create matrix and vectors
+    FEMat *kmat = tacs[0]->createFEMat(); // stiffness matrix
+    kmat->incref();
+    
+    FEMat *mmat = tacs[0]->createFEMat();
+    mmat->incref();
+    
+    // Create the preconditioner
+    int lev_fill = 10000;
+    double fill = 10.0;
+    PcScMat *pc = new PcScMat(kmat, lev_fill, fill, 1);
+    pc->incref();
+    
+    GMRES *ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
+    ksm->incref();
+    ksm->setTolerances(1e-12, 1e-30);
+
+    freq_analysis =
+      new TACSFrequencyAnalysis(tacs[0], sigma, mmat, kmat, ksm, 
+                                max_lanczos, num_eigvals, eigtol);
+    freq_analysis->incref();
+
+    // Decref the pointers that go out of scope
+    kmat->decref();
+    mmat->decref();
+    pc->decref();
+  }
+  else {
+    // Create a mass matrix
+    TACSMat *mmat = tacs[0]->createMat();
+    mmat->incref();
+    
+    // Create the frequency analysis object
+    freq_analysis = 
+      new TACSFrequencyAnalysis(tacs[0], sigma, mmat, 
+                                mg->getMat(0), gmres,
+                                max_lanczos, num_eigvals, eigtol);
+    freq_analysis->incref();
+    
+    // Decref the poitners that go out of scope
+    mmat->decref();
+  }
+ 
+  // Solve the frequency analysis problem
+  freq_analysis->solve(new KSMPrintStdout("Frequency analysis", rank, freq));
+
+  // Print out the eigenvalues and natural frequencies
+  for ( int k = 0; k < num_eigvals; k++ ){
+    TacsScalar error;
+    TacsScalar eigvalue = 
+      freq_analysis->extractEigenvector(k, ans, &error);
+
+    tacs[0]->setVariables(ans);
+    char filename[128];
+    sprintf(filename, "eigenvector%d.f5", k);
+    f5->writeToFile(filename);
+
+    if (rank == 0){
+      printf("TACS eigs[%2d]: %15.6f Omega = %15.6f [Hz]\n", 
+	     k, TacsRealPart(eigvalue), 
+             TacsRealPart(sqrt(eigvalue))/(2.0*3.14159));
+    }
+  }
+
+  // Free the memory
+  freq_analysis->decref();
+  f5->decref();
   ans->decref();
   res->decref();
   gmres->decref();

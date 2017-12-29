@@ -455,7 +455,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
   if (mg){
     // Assemble the mass matrix 
     ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, MASS_MATRIX};
-    TacsScalar scale[2] = {1.0, sigma};
+    TacsScalar scale[2] = {1.0, -sigma};
 
     // Assemble the mass matrix
     tacs->assembleMatType(MASS_MATRIX, mmat);
@@ -509,22 +509,22 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
 
   The derivative of the eigenvalue problem is given as follows,
 
-  dK/dx * u + K * du/dx = 
-  d lambda/dx M u + lambda * dM/dx * u + lambda M * du/dx
+  dK/dx*u + K*du/dx = 
+  d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
 
   Since M = M^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
 
-  u^{T} * dK/dx * u = d lambda/dx ( u^{T} * M * u ) + lambda * u^{T} * dM/dx * u
+  u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*M*u) + lambda*u^{T}*dM/dx*u
 
   Rearranging gives, 
 
-  ( u^{T} * M * u ) [ d lambda/dx ] = u^{T} * ( dK/dx - lambda * dM/dx ) * u
+  (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
 */
 void TACSFrequencyAnalysis::evalEigenDVSens( int n,
                                              TacsScalar fdvSens[], 
                                              int numDVs ){
-  // Allocate extra space for the derivative
-  TacsScalar *temp = new TacsScalar[ numDVs ];
+  // Zero the derivative
+  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
 
   // Extract the eigenvalue and eigenvector
   TacsScalar error;
@@ -536,7 +536,7 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 
   // Evaluate the derivative of the geometric stiffness matrix
   tacs->addMatDVSensInnerProduct(-TacsRealPart(eig), MASS_MATRIX,
-                                 eigvec, eigvec, temp, numDVs);
+                                 eigvec, eigvec, fdvSens, numDVs);
   
   // Finish computing the derivative
   mmat->mult(eigvec, res);
@@ -546,8 +546,6 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
   for ( int i = 0; i < numDVs; i++ ){
     fdvSens[i] *= scale;
   }
-
-  delete [] temp;
 }
 
 /*!

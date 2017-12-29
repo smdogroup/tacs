@@ -20,6 +20,10 @@ clean:
 
 test: default
 	python generate_plate.py
+	mpirun -np 1 ./plate BDF2  &> bdf2.log
+
+test_all: default
+	python generate_plate.py
 	mpirun -np 1 ./plate NBG   &> nbg.log
 	mpirun -np 1 ./plate BDF1  &> bdf1.log
 	mpirun -np 1 ./plate BDF2  &> bdf2.log

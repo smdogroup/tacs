@@ -14,13 +14,13 @@
   Distributed matrix based on a parallel distribution of rows
   (equations).  Inherits from PMat.
 */
-class DistMat : public PMat {
+class TACSDistMat : public TACSPMat {
  public:
-  DistMat( TACSThreadInfo *thread_info, 
-           TACSVarMap *_rmap, int bsize,
-           int next_vars, const int *rowp, const int *cols, 
-           TACSBVecIndices *bindex );
-  ~DistMat();
+  TACSDistMat( TACSThreadInfo *thread_info, 
+               TACSVarMap *_rmap, int bsize,
+               int next_vars, const int *rowp, const int *cols, 
+               TACSBVecIndices *bindex );
+  ~TACSDistMat();
     
   // Functions for setting values in the matrix
   // ------------------------------------------

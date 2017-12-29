@@ -8,7 +8,6 @@
   Not for commercial purposes.
 */
 
-
 /*!
   TACSVarMap
   
@@ -23,13 +22,13 @@ TACSVarMap::TACSVarMap( MPI_Comm _comm, int _N ){
   comm = _comm;
   
   // Get the communicator size
-  int mpi_size;
-  MPI_Comm_size(comm, &mpi_size);
+  MPI_Comm_size(comm, &mpiSize);
+  MPI_Comm_rank(comm, &mpiRank);
 
   // The ownership ranges for all processes
   N = _N;
-  ownerRange = new int[ mpi_size+1 ];
-  memset(ownerRange, 0, (mpi_size+1)*sizeof(int));
+  ownerRange = new int[ mpiSize+1 ];
+  memset(ownerRange, 0, (mpiSize+1)*sizeof(int));
 
   // Get the number of variables 
   ownerRange[0] = 0;
@@ -37,7 +36,7 @@ TACSVarMap::TACSVarMap( MPI_Comm _comm, int _N ){
 
   // Set the ownership values so that they range over
   // the owned unknown node numbers
-  for ( int i = 0; i < mpi_size; i++ ){    
+  for ( int i = 0; i < mpiSize; i++ ){    
     ownerRange[i+1] += ownerRange[i];
   }
 }
@@ -61,10 +60,47 @@ MPI_Comm TACSVarMap::getMPIComm(){ return comm; }
 /*
   Get the ownership range for this processor
 */
-void TACSVarMap::getOwnerRange( const int ** _ownerRange ){
+void TACSVarMap::getOwnerRange( const int **_ownerRange ){
   *_ownerRange = ownerRange;
 }  
 
+/*
+  Get the owner of this processor. If the node number is out of range,
+  then return -1;
+*/
+int TACSVarMap::getOwner( int node ){
+  // If the node is out of range, return immediately
+  if (node < 0 || node >= ownerRange[mpiSize]){
+    return -1;
+  }
+
+  // Check whether the node is on the current processor
+  if (node >= ownerRange[mpiRank] && 
+      node < ownerRange[mpiRank+1]){
+    return mpiRank;
+  }
+  
+  // Perform a binary search starting from the mid-processor
+  int low = 0;
+  int high = mpiSize-1;
+
+  while (high - low >= 0){
+    // Compute the mid-point
+    int mid = (high + low)/2;
+    if (node >= ownerRange[mid] &&
+        node < ownerRange[mid+1]){
+      return mid;
+    }
+    else if (node < ownerRange[mid]){
+      high = mid-1;
+    }
+    else if (node >= ownerRange[mid+1]){
+      low = mid+1;
+    }
+  }
+
+  return (high + low)/2;
+}
 
 /*!
   BVecIndices class definitions

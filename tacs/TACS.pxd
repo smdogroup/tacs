@@ -44,7 +44,7 @@ cdef extern from "BVecDist.h":
 # Special functions required for converting pointers
 cdef extern from "":
     ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
-    PMat* _dynamicPMat "dynamic_cast<PMat*>"(TACSMat*)
+    TACSPMat* _dynamicPMat "dynamic_cast<TACSPMat*>"(TACSMat*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
     void deleteArray "delete []"(void*)
 
@@ -154,19 +154,19 @@ cdef inline _init_VecInterp(TACSBVecInterp *ptr):
     return interp
     
 cdef extern from "PMat.h":
-    cdef cppclass PMat(TACSMat):
+    cdef cppclass TACSPMat(TACSMat):
         pass
 
-    cdef cppclass AdditiveSchwarz(TACSPc):
-        AdditiveSchwarz(PMat *mat, int levFill, double fill)
+    cdef cppclass TACSAdditiveSchwarz(TACSPc):
+        TACSAdditiveSchwarz(TACSPMat *mat, int levFill, double fill)
 
     cdef cppclass ApproximateSchur(TACSPc):
-        ApproximateSchur(PMat *mat, int levFill, double fill, 
-                         int inner_gmres_iters, double inner_rtol,
-                         double inner_atol)
+        TACSApproximateSchur(TACSPMat *mat, int levFill, double fill, 
+                             int inner_gmres_iters, double inner_rtol,
+                             double inner_atol)
         
 cdef extern from "DistMat.h":
-    cdef cppclass DistMat(PMat):
+    cdef cppclass TACSDistMat(TACSPMat):
         pass
 
 cdef extern from "ScMat.h":
@@ -268,11 +268,13 @@ cdef extern from "TACSAssembler.h":
         AMD_ORDER"TACSAssembler::AMD_ORDER"
         ND_ORDER"TACSAssembler::ND_ORDER"
         TACS_AMD_ORDER"TACSAssembler::TACS_AMD_ORDER"
+        MULTICOLOR_ORDER"TACSAssembler::MULTICOLOR_ORDER"
         
     enum MatrixOrderingType"TACSAssembler::MatrixOrderingType":
         ADDITIVE_SCHWARZ"TACSAssembler::ADDITIVE_SCHWARZ"
         APPROXIMATE_SCHUR"TACSAssembler::APPROXIMATE_SCHUR"
         DIRECT_SCHUR"TACSAssembler::DIRECT_SCHUR"
+        GAUSS_SEIDEL"TACSAssembler::GAUSS_SEIDEL"
        
     cdef cppclass TACSAssembler(TACSObject):
         TACSAssembler(MPI_Comm tacs_comm, int varsPerNode,
@@ -321,7 +323,7 @@ cdef extern from "TACSAssembler.h":
 
         # Create vectors/matrices
         TACSBVec *createVec()
-        DistMat *createMat()
+        TACSDistMat *createMat()
         FEMat *createFEMat(OrderingType)
 
         # Reorder the vector based on the selected reordering

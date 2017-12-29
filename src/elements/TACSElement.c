@@ -303,8 +303,11 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
     qddotTmp[i] = ddvars[i];    
   }
   
-  delete [] Rtmp1, Rtmp2;
-  delete [] qTmp, qdotTmp, qddotTmp;
+  delete [] Rtmp1;
+  delete [] Rtmp2;
+  delete [] qTmp;
+  delete [] qdotTmp;
+  delete [] qddotTmp;
 }
 
 /*
@@ -1340,4 +1343,152 @@ int TACSElement::testJacobianXptSens( const TacsScalar Xpts[] ){
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
 
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to material design variables.
+*/
+int TACSElement::testMatDVSensInnerProduct( ElementMatrixType matType, 
+                                            const TacsScalar *x, int dvLen,
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[] ){
+  int nvars = numVariables();
+  setDesignVars(x, dvLen);
 
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *result = new TacsScalar[ dvLen ];
+  memset(result, 0, dvLen*sizeof(TacsScalar));
+
+  // Generate a random array of values
+  TacsScalar *psi = new TacsScalar[ nvars ];
+  TacsScalar *phi = new TacsScalar[ nvars ];
+  generate_random_array(psi, nvars);
+  generate_random_array(phi, nvars);
+  
+  // Evaluate the derivative of the adjoint-residual product
+  double scale = 1.0*rand()/RAND_MAX;
+
+  // Compute the inner product
+  addMatDVSensInnerProduct(matType, scale, result, dvLen,
+                           psi, phi, Xpts, vars);
+
+  // Compute the product of the result with a perturbation 
+  // vector that is equal to perturb = sign(result[k])
+  TacsScalar dpdx = 0.0;
+  for ( int k = 0; k < dvLen; k++ ){
+    dpdx += fabs(result[k]);
+  }
+
+  // The step length
+  double dh = test_step_size;
+
+  // Allocate an array to store the perturbed design variable values
+  TacsScalar *xpert = new TacsScalar[ dvLen ];
+  TacsScalar fd_dpdx = 0.0;
+
+  // Create the space for the matrix
+  TacsScalar *mat = new TacsScalar[ nvars*nvars ];
+  
+#ifdef TACS_USE_COMPLEX
+  // Perturb the design variables: xpert = x + dh*sign(result[k])
+  for ( int k = 0; k < dvLen; k++ ){
+    if (TacsRealPart(result[k]) >= 0.0){
+      xpert[k] = x[k] + TacsScalar(0.0, dh);
+    }
+    else {
+      xpert[k] = x[k] - TacsScalar(0.0, dh);
+    }
+  }
+  setDesignVars(xpert, dvLen);
+
+  getMatType(matType, mat, Xpts, vars);
+
+  TacsScalar p1 = 0.0;
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      p1 += scale*mat[nvars*i + j]*phi[i]*psi[j];
+    }
+  }
+
+  fd_dpdx = TacsImagPart(p1)/dh;
+#else
+  // Perturb the design variables: xpert = x + dh*sign(result[k])
+  for ( int k = 0; k < dvLen; k++ ){
+    if (result[k] >= 0.0){
+      xpert[k] = x[k] + dh;
+    }
+    else {
+      xpert[k] = x[k] - dh;
+    }
+  }
+  setDesignVars(xpert, dvLen);
+
+  // Compute the perturbed value
+  getMatType(matType, mat, Xpts, vars);
+
+  TacsScalar p1 = 0.0;
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      p1 += scale*mat[nvars*i + j]*phi[i]*psi[j];
+    }
+  }
+
+  // Pertub the design variables: xpert = x - dh*sign(result[k])
+  for ( int k = 0; k < dvLen; k++ ){
+    if (result[k] >= 0.0){
+      xpert[k] = x[k] - dh;
+    }
+    else {
+      xpert[k] = x[k] + dh;
+    }
+  }
+  setDesignVars(xpert, dvLen);
+
+  // Compute the perturbed value again
+  getMatType(matType, mat, Xpts, vars);
+
+  TacsScalar p2 = 0.0;
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      p2 += scale*mat[nvars*i + j]*phi[i]*psi[j];
+    }
+  }
+
+  // Compute the finite-difference approximation
+  fd_dpdx = 0.5*(p1 - p2)/dh;
+#endif
+
+  // Set the design variable values
+  setDesignVars(x, dvLen);
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(&dpdx, &fd_dpdx, 1, &max_err_index);
+  double max_rel = get_max_rel_error(&dpdx, &fd_dpdx, 1,
+                                     &max_rel_index);
+ 
+  test_print_level = 2;
+  if (test_print_level > 0){
+    fprintf(stderr, 
+            "Testing the derivative of matrix inner product for %s\n",
+            elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    print_error_components(stderr, "Mat-inner product",
+                           &dpdx, &fd_dpdx, 1);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] psi;
+  delete [] phi;
+  delete [] xpert;
+  delete [] mat;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}

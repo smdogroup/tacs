@@ -13,8 +13,11 @@
 
 class FH5File : public TACSObject {
  public:
-  enum FH5DataNames { FH5_INT = 0,
-                      FH5_DOUBLE };
+  // Data types accepted by FH5: Note that float comes last
+  // for backwards compatibility
+  enum FH5DataType { FH5_INT=0,
+                     FH5_DOUBLE=1,
+                     FH5_FLOAT=2 };
 
   FH5File( MPI_Comm _comm );
   ~FH5File();
@@ -24,9 +27,9 @@ class FH5File : public TACSObject {
   int createFile( const char *file_name,
                   char **component_names, 
                   int num_components );
-  int writeZoneData( char *zone_name, 
-                     enum FH5DataNames data_name, 
+  int writeZoneData( char *zone_name,
                      char *var_names,
+                     FH5DataType data_name,
                      void *data, int dim1, int dim2 );
   void close();
 
@@ -43,11 +46,11 @@ class FH5File : public TACSObject {
   // ------------------
   void firstZone();
   int nextZone(); 
-  int getZoneInfo( const char **zone_name,
-                   const char **var_names,
+  int getZoneInfo( const char **zone_name, const char **var_names,
+                   FH5DataType *_dtype,
                    int *dim1, int *dim2 );
-  int getZoneData( const char **zone_name,
-                   const char **var_names,
+  int getZoneData( const char **zone_name, const char **var_names,
+                   FH5DataType *_dtype,
                    void **data, int *dim1, int *dim2 );
  private:
   // Store information about the location of the data within the file

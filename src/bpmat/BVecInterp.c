@@ -14,72 +14,72 @@
   matrix-vector operations required in the BVecInterp class.
 */
 void BVecInterpMultAddGen( int bsize, int nrows, 
-			   const int *rowp, const int *cols,
-			   const TacsScalar *weights,
-			   const TacsScalar *x, TacsScalar *y );
+                           const int *rowp, const int *cols,
+                           const TacsScalar *weights,
+                           const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAddGen( int bsize, int nrows, 
-				    const int *rowp, 
+                                    const int *rowp, 
                                     const int *cols,
-				    const TacsScalar *weights,
-				    const TacsScalar *x, 
+                                    const TacsScalar *weights,
+                                    const TacsScalar *x, 
                                     TacsScalar *y );
 
 void BVecInterpMultAdd1( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *weights,
-			 const TacsScalar *x, TacsScalar *y );
+                         const int *rowp, const int *cols,
+                         const TacsScalar *weights,
+                         const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAdd1( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *weights,
-				  const TacsScalar *x, 
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *weights,
+                                  const TacsScalar *x, 
                                   TacsScalar *y );
 
 void BVecInterpMultAdd2( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *weights,
-			 const TacsScalar *x, TacsScalar *y );
+                         const int *rowp, const int *cols,
+                         const TacsScalar *weights,
+                         const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAdd2( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *weights,
-				  const TacsScalar *x, 
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *weights,
+                                  const TacsScalar *x, 
                                   TacsScalar *y );
 
 void BVecInterpMultAdd3( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *weights,
-			 const TacsScalar *x, TacsScalar *y );
+                         const int *rowp, const int *cols,
+                         const TacsScalar *weights,
+                         const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAdd3( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *weights,
-				  const TacsScalar *x, 
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *weights,
+                                  const TacsScalar *x, 
                                   TacsScalar *y );
 void BVecInterpMultAdd4( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *weights,
-			 const TacsScalar *x, TacsScalar *y );
+                         const int *rowp, const int *cols,
+                         const TacsScalar *weights,
+                         const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAdd4( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *weights,
-				  const TacsScalar *x, 
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *weights,
+                                  const TacsScalar *x, 
                                   TacsScalar *y );
 void BVecInterpMultAdd5( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *weights,
-			 const TacsScalar *x, TacsScalar *y );
+                         const int *rowp, const int *cols,
+                         const TacsScalar *weights,
+                         const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAdd5( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *weights,
-				  const TacsScalar *x, 
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *weights,
+                                  const TacsScalar *x, 
                                   TacsScalar *y );
 
 void BVecInterpMultAdd6( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *weights,
-			 const TacsScalar *x, TacsScalar *y );
+                         const int *rowp, const int *cols,
+                         const TacsScalar *weights,
+                         const TacsScalar *x, TacsScalar *y );
 void BVecInterpMultTransposeAdd6( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *weights,
-				  const TacsScalar *x, 
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *weights,
+                                  const TacsScalar *x, 
                                   TacsScalar *y );
 
 /*
@@ -98,6 +98,33 @@ void BVecInterpMultTransposeAdd6( int bsize, int nrows,
 TACSBVecInterp::TACSBVecInterp( TACSVarMap *_inMap,
                                 TACSVarMap *_outMap,
                                 int _bsize ){
+  inTacs = NULL;
+  outTacs = NULL;
+  init(_inMap, _outMap, _bsize);
+}
+
+/*
+  Initialize TACSBVecInterp with the TACSAssembler objects themselves.
+  
+  This is required when the TACSAssembler objects reorder the variables
+*/
+TACSBVecInterp::TACSBVecInterp( TACSAssembler *_inTacs,
+                                TACSAssembler *_outTacs ){
+  inTacs = _inTacs;
+  inTacs->incref();
+
+  outTacs = _outTacs;
+  outTacs->incref();
+  init(inTacs->getVarMap(), outTacs->getVarMap(), 
+       inTacs->getVarsPerNode());
+}
+
+/*
+  Initialize the underlying TACSAssembler classes
+*/
+void TACSBVecInterp::init( TACSVarMap *_inMap,
+                           TACSVarMap *_outMap,
+                           int _bsize ){
   inMap = _inMap;
   inMap->incref();
 
@@ -205,6 +232,8 @@ or congruent. Cannot form interpolant.\n");
 TACSBVecInterp::~TACSBVecInterp(){
   inMap->decref();
   outMap->decref();
+  if (inTacs){ inTacs->decref(); }
+  if (outTacs){ outTacs->decref(); }
 
   // Deallocate data that may have been freed in finalize()
   if (on_nums){ delete [] on_nums; }
@@ -258,9 +287,9 @@ void TACSBVecInterp::addInterp( int num, TacsScalar w[],
   if (num >= outOwnerRange[mpi_rank] &&
       num < outOwnerRange[mpi_rank+1]){
     // This code stores the values locally until the finalize call is
-    // made. First, check if the current size of the allocated memory is
-    // sufficient to store the interpolation. If not, allocate larger
-    // arrays.
+    // made. First, check if the current size of the allocated memory
+    // is sufficient to store the interpolation. If not, allocate
+    // larger arrays.
     if (on_size >= max_on_size){
       // Double the current size of the array and copy the old 
       // values into the newly allocated part.
@@ -377,8 +406,8 @@ void TACSBVecInterp::initialize(){
   inMap->getOwnerRange(&inOwnerRange);
 
   // Find the number of contributions that need to be sent to other
-  // processors. Count the number of times each off-processor 
-  // equation is referenced. 
+  // processors. Count the number of times each off-processor equation
+  // is referenced.
   int *tmp_count = new int[ mpi_size ];
   int *tmp_ptr = new int[ mpi_size+1 ];
   int *tmp_weights_count = new int[ mpi_size ];
@@ -389,13 +418,13 @@ void TACSBVecInterp::initialize(){
 
   for ( int i = 0; i < off_size; i++ ){
     int index = FElibrary::findInterval(off_nums[i], 
-					outOwnerRange, mpi_size+1);
+                                        outOwnerRange, mpi_size+1);
     tmp_count[index]++;
     tmp_weights_count[index] += off_rowp[i+1] - off_rowp[i];
   }
 
-  // Set a pointer array into the newly allocated block of memory
-  // that will store the arranged interpolants
+  // Set a pointer array into the newly allocated block of memory that
+  // will store the arranged interpolants
   tmp_ptr[0] = 0;
   tmp_weights_ptr[0] = 0;
   for ( int i = 0; i < mpi_size; i++ ){
@@ -417,7 +446,7 @@ void TACSBVecInterp::initialize(){
   // temporary data arrays.
   for ( int i = 0; i < off_size; i++ ){
     int index = FElibrary::findInterval(off_nums[i], 
-					outOwnerRange, mpi_size+1);
+                                        outOwnerRange, mpi_size+1);
 
     if (!(index < 0 || index >= mpi_size)){
       // Copy the values over to a temporary array
@@ -426,8 +455,8 @@ void TACSBVecInterp::initialize(){
       // Copy the weight and variable information to the new array
       int j = tmp_weights_ptr[index];
       for ( int k = off_rowp[i]; k < off_rowp[i+1]; k++, j++ ){
-	tmp_weights[j] = off_weights[k];
-	tmp_vars[j] = off_vars[k];
+        tmp_weights[j] = off_weights[k];
+        tmp_vars[j] = off_vars[k];
       }
       
       // Record the number of weights stored for this rows
@@ -475,7 +504,7 @@ void TACSBVecInterp::initialize(){
 
   // Send/recieve the in-coming weight counts
   MPI_Alltoall(tmp_weights_count, 1, MPI_INT, 
-	       in_weights_count, 1, MPI_INT, comm);
+               in_weights_count, 1, MPI_INT, comm);
 
   // Set a pointer for the incoming weights/variables data
   in_weights_ptr[0] = 0;
@@ -492,20 +521,20 @@ void TACSBVecInterp::initialize(){
   // Send and recieve all the data destined for this processor
   // Send the variable numbers
   MPI_Alltoallv(tmp_nums, tmp_count, tmp_ptr, MPI_INT,
-		in_nums, in_count, in_ptr, MPI_INT, comm);
+                in_nums, in_count, in_ptr, MPI_INT, comm);
   
   // Send the number of variables per row
   MPI_Alltoallv(tmp_weights_per_row, tmp_count, tmp_ptr, MPI_INT,
-		in_weights_per_row, in_count, in_ptr, MPI_INT, comm);
+                in_weights_per_row, in_count, in_ptr, MPI_INT, comm);
 
   // Send the variables for each row
   MPI_Alltoallv(tmp_vars, tmp_weights_count, tmp_weights_ptr, MPI_INT,
-		in_vars, in_weights_count, in_weights_ptr, MPI_INT, comm);
+                in_vars, in_weights_count, in_weights_ptr, MPI_INT, comm);
 
   // Send the weights for each variable
   MPI_Alltoallv(tmp_weights, tmp_weights_count, tmp_weights_ptr, TACS_MPI_TYPE,
-		in_weights, in_weights_count, in_weights_ptr, 
-		TACS_MPI_TYPE, comm);
+                in_weights, in_weights_count, in_weights_ptr, 
+                TACS_MPI_TYPE, comm);
 
   // Delete the temporary data - this is no longer required since we
   // now have the final data on the actual processors
@@ -528,9 +557,9 @@ void TACSBVecInterp::initialize(){
   delete [] in_weights_ptr;
 
   // Now all the data required to assemble the internal data
-  // structures are on the local processors. Now, we just assemble
-  // the on and off-processor parts, but all assignments (i.e. all
-  // the output) is local.
+  // structures are on the local processors. Now, we just assemble the
+  // on and off-processor parts, but all assignments (i.e. all the
+  // output) is local.
 
   // Allocate space for the internal and external portions of the
   // matrix
@@ -547,8 +576,11 @@ void TACSBVecInterp::initialize(){
     int num = on_nums[i];
     
     if (num >= outOwnerRange[mpi_rank] &&
-	num < outOwnerRange[mpi_rank+1]){
+        num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
+      if (outTacs){
+        outTacs->reorderNodes(&num, 1);
+      }
       num = num - outOwnerRange[mpi_rank];
       
       // Count up the number of internal and external variables
@@ -557,15 +589,15 @@ void TACSBVecInterp::initialize(){
       int num_local = 0, num_ext = 0;
       
       for ( int j = on_rowp[i]; j < on_rowp[i+1]; j++ ){
-	if (on_vars[j] >= inOwnerRange[mpi_rank] &&
-	    on_vars[j] < inOwnerRange[mpi_rank+1]){
-	  num_local++;
-	}
-	else {
-	  num_ext++;
-	}
+        if (on_vars[j] >= inOwnerRange[mpi_rank] &&
+            on_vars[j] < inOwnerRange[mpi_rank+1]){
+          num_local++;
+        }
+        else {
+          num_ext++;
+        }
       }
-	
+        
       rowp[num+1] += num_local;
       ext_rowp[num+1] += num_ext;
     }
@@ -582,8 +614,11 @@ void TACSBVecInterp::initialize(){
     int num = in_nums[i];
     
     if (num >= outOwnerRange[mpi_rank] &&
-	num < outOwnerRange[mpi_rank+1]){
+        num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
+      if (outTacs){
+        outTacs->reorderNodes(&num, 1);
+      }
       num = num - outOwnerRange[mpi_rank];
       
       // Count up the number of internal and external variables
@@ -592,15 +627,15 @@ void TACSBVecInterp::initialize(){
       int num_local = 0, num_ext = 0;
       
       for ( int j = 0; j < in_weights_per_row[i]; j++, k++ ){
-	if (in_vars[k] >= inOwnerRange[mpi_rank] &&
-	    in_vars[k] < inOwnerRange[mpi_rank+1]){
-	  num_local++;
-	}
-	else {
-	  num_ext++;
-	}
+        if (in_vars[k] >= inOwnerRange[mpi_rank] &&
+            in_vars[k] < inOwnerRange[mpi_rank+1]){
+          num_local++;
+        }
+        else {
+          num_ext++;
+        }
       }
-	
+        
       rowp[num+1] += num_local;
       ext_rowp[num+1] += num_ext;
     }
@@ -636,20 +671,27 @@ void TACSBVecInterp::initialize(){
     int num = on_nums[i];
     
     if (num >= outOwnerRange[mpi_rank] &&
-	num < outOwnerRange[mpi_rank+1]){
+        num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
+      if (outTacs){
+        outTacs->reorderNodes(&num, 1);
+      }
       num = num - outOwnerRange[mpi_rank];
       
       for ( int j = on_rowp[i]; j < on_rowp[i+1]; j++ ){
-	if (on_vars[j] >= inOwnerRange[mpi_rank] &&
-	    on_vars[j] < inOwnerRange[mpi_rank+1]){
-	  cols[rowp[num]] = on_vars[j];
-	  rowp[num]++;
-	}
-	else {
-	  ext_cols[ext_rowp[num]] = on_vars[j];
-	  ext_rowp[num]++;
-	}
+        if (on_vars[j] >= inOwnerRange[mpi_rank] &&
+            on_vars[j] < inOwnerRange[mpi_rank+1]){
+          int index = on_vars[j];
+          if (inTacs){
+            inTacs->reorderNodes(&index, 1);
+          }
+          cols[rowp[num]] = index;
+          rowp[num]++;
+        }
+        else {
+          ext_cols[ext_rowp[num]] = on_vars[j];
+          ext_rowp[num]++;
+        }
       }
     }
   }
@@ -661,20 +703,27 @@ void TACSBVecInterp::initialize(){
     int num = in_nums[i];
     
     if (num >= outOwnerRange[mpi_rank] &&
-	num < outOwnerRange[mpi_rank+1]){
+        num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
+      if (outTacs){
+        outTacs->reorderNodes(&num, 1);
+      }
       num = num - outOwnerRange[mpi_rank];
             
       for ( int j = 0; j < in_weights_per_row[i]; j++, k++ ){
-	if (in_vars[k] >= inOwnerRange[mpi_rank] &&
-	    in_vars[k] < inOwnerRange[mpi_rank+1]){
-	  cols[rowp[num]] = in_vars[k];
-	  rowp[num]++;
-	}
-	else {
-	  ext_cols[ext_rowp[num]] = in_vars[k];
-	  ext_rowp[num]++;
-	}
+        if (in_vars[k] >= inOwnerRange[mpi_rank] &&
+            in_vars[k] < inOwnerRange[mpi_rank+1]){
+          int index = in_vars[k];
+          if (inTacs){
+            inTacs->reorderNodes(&index, 1);
+          }
+          cols[rowp[num]] = index;
+          rowp[num]++;
+        }
+        else {
+          ext_cols[ext_rowp[num]] = in_vars[k];
+          ext_rowp[num]++;
+        }
       }
     }
     else {
@@ -712,65 +761,77 @@ void TACSBVecInterp::initialize(){
     int num = on_nums[i];
     
     if (num >= outOwnerRange[mpi_rank] &&
-	num < outOwnerRange[mpi_rank+1]){
+        num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
+      if (outTacs){
+        outTacs->reorderNodes(&num, 1);
+      }
       num = num - outOwnerRange[mpi_rank];
       
       for ( int j = on_rowp[i]; j < on_rowp[i+1]; j++ ){
-	if (on_vars[j] >= inOwnerRange[mpi_rank] &&
-	    on_vars[j] < inOwnerRange[mpi_rank+1]){
-	  int size = rowp[num+1] - rowp[num];
-	  int *item = (int*)bsearch(&on_vars[j], 
-				     &cols[rowp[num]], size,  
-				     sizeof(int), FElibrary::comparator);
-	  if (item){
-	    weights[item - cols] += on_weights[j]; 
-	  }
-	}
-	else {
-	  int size = ext_rowp[num+1] - ext_rowp[num];
-	  int *item = (int*)bsearch(&on_vars[j], 
-				     &ext_cols[ext_rowp[num]], size,  
-				     sizeof(int), FElibrary::comparator);
-	  if (item){
-	    ext_weights[item - ext_cols] += on_weights[j]; 
-	  }
-	}
+        if (on_vars[j] >= inOwnerRange[mpi_rank] &&
+            on_vars[j] < inOwnerRange[mpi_rank+1]){
+          int index = on_vars[j];
+          if (inTacs){
+            inTacs->reorderNodes(&index, 1);
+          }
+          int size = rowp[num+1] - rowp[num];
+          int *item = (int*)bsearch(&index, &cols[rowp[num]], size,  
+                                    sizeof(int), FElibrary::comparator);
+          if (item){
+            weights[item - cols] += on_weights[j]; 
+          }
+        }
+        else {
+          int size = ext_rowp[num+1] - ext_rowp[num];
+          int *item = (int*)bsearch(&on_vars[j], 
+                                    &ext_cols[ext_rowp[num]], size,  
+                                    sizeof(int), FElibrary::comparator);
+          if (item){
+            ext_weights[item - ext_cols] += on_weights[j]; 
+          }
+        }
       }
     }
   }
 
-  // Add the entries into the CSR data structure from the 
+  // Add the entries into the CSR data structure from the
   // off-processor data
   for ( int i = 0, k = 0; i < in_size; i++ ){
     // Compute the on-processor variable number
     int num = in_nums[i];
     
     if (num >= outOwnerRange[mpi_rank] &&
-	num < outOwnerRange[mpi_rank+1]){
+        num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
+      if (outTacs){
+        outTacs->reorderNodes(&num, 1);
+      }
       num = num - outOwnerRange[mpi_rank];
             
       for ( int j = 0; j < in_weights_per_row[i]; j++, k++ ){
-	if (in_vars[k] >= inOwnerRange[mpi_rank] &&
-	    in_vars[k] < inOwnerRange[mpi_rank+1]){
-	  int size = rowp[num+1] - rowp[num];
-	  int *item = (int*)bsearch(&in_vars[k], 
-				     &cols[rowp[num]], size,  
-				     sizeof(int), FElibrary::comparator);
-	  if (item){
-	    weights[item - cols] += in_weights[k]; 
-	  }
-	}
-	else {
-	  int size = ext_rowp[num+1] - ext_rowp[num];
-	  int *item = (int*)bsearch(&in_vars[k], 
-				     &ext_cols[ext_rowp[num]], size,  
-				     sizeof(int), FElibrary::comparator);
-	  if (item){
-	    ext_weights[item - ext_cols] += in_weights[k]; 
-	  }
-	}
+        if (in_vars[k] >= inOwnerRange[mpi_rank] &&
+            in_vars[k] < inOwnerRange[mpi_rank+1]){
+          int index = in_vars[k];
+          if (inTacs){
+            inTacs->reorderNodes(&index, 1);
+          }
+          int size = rowp[num+1] - rowp[num];
+          int *item = (int*)bsearch(&index, &cols[rowp[num]], size,  
+                                    sizeof(int), FElibrary::comparator);
+          if (item){
+            weights[item - cols] += in_weights[k]; 
+          }
+        }
+        else {
+          int size = ext_rowp[num+1] - ext_rowp[num];
+          int *item = (int*)bsearch(&in_vars[k], 
+                                    &ext_cols[ext_rowp[num]], size,  
+                                    sizeof(int), FElibrary::comparator);
+          if (item){
+            ext_weights[item - ext_cols] += in_weights[k]; 
+          }
+        }
       }
     }
     else {
@@ -791,24 +852,84 @@ void TACSBVecInterp::initialize(){
   delete [] on_vars;
   delete [] on_weights;
 
+  // Adjust both the internal and external CSR data structures to
+  // reflect the internal ordering. We order the local on-processor
+  // components of the input map based on shifting the variable input
+  // from inOwnerRange[mpi_rank] to start at zero. The external data
+  // ordering is based on the ext_vars array.
+  for ( int j = 0; j < rowp[N]; j++ ){
+    cols[j] = cols[j] - inOwnerRange[mpi_rank];
+  }
+
   // Allocate space for the external variable numbers
   int *ext_vars = new int[ ext_rowp[N] ];
   memcpy(ext_vars, ext_cols, ext_rowp[N]*sizeof(int));
   num_ext_vars = FElibrary::uniqueSort(ext_vars, ext_rowp[N]);
 
-  // Adjust both the internal and external CSR data structures to 
-  // reflect the internal ordering. We order the local on-processor
-  // components of the input map based on shifting the variable
-  // input from inOwnerRange[mpi_rank] to start at zero. The external
-  // data ordering is based on the ext_vars array.
-  for ( int j = 0; j < rowp[N]; j++ ){
-    cols[j] = cols[j] - inOwnerRange[mpi_rank];
+  // Check if the version of TACS has been reordered. If so, 
+  if (inTacs && inTacs->isReordered()){
+    // Match the intervals for the external node numbers
+    int *ext_ptr = new int[ mpi_size+1 ];
+    int *ext_count = new int[ mpi_size ];
+    FElibrary::matchIntervals(mpi_size, inOwnerRange,
+                              num_ext_vars, ext_vars, ext_ptr);
+
+    // Send the nodes owned by other processors the information. First
+    // count up how many will go to each process.
+    for ( int i = 0; i < mpi_size; i++ ){
+      ext_count[i] = ext_ptr[i+1] - ext_ptr[i];
+    }
+
+    int *recv_count = new int[ mpi_size ];
+    int *recv_ptr = new int[ mpi_size+1 ];
+    MPI_Alltoall(ext_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+    // Now prepare to send the node numbers to the other processors
+    recv_ptr[0] = 0;
+    for ( int i = 0; i < mpi_size; i++ ){
+      recv_ptr[i+1] = recv_ptr[i] + recv_count[i];
+    }
+
+    // Number of nodes that will be received from other procs
+    int *recv_vars = new int[ recv_ptr[mpi_size] ];
+    MPI_Alltoallv(ext_vars, ext_count, ext_ptr, MPI_INT, 
+                  recv_vars, recv_count, recv_ptr, MPI_INT, comm);
+
+    // Reorder the variables that are local to this processor
+    inTacs->reorderNodes(recv_vars, recv_ptr[mpi_size]);  
+
+    // Send the new variables back to the original processors in the
+    // same order as we recvd them
+    int *new_ext_vars = new int[ num_ext_vars ];
+    MPI_Alltoallv(recv_vars, recv_count, recv_ptr, MPI_INT,
+                  new_ext_vars, ext_count, ext_ptr, MPI_INT, comm);
+
+    // Adjust the ordering of the external variables
+    for ( int j = 0; j < ext_rowp[N]; j++ ){
+      int *item = (int*)bsearch(&ext_cols[j], ext_vars, num_ext_vars,
+                                sizeof(int), FElibrary::comparator);
+      ext_cols[j] = new_ext_vars[item - ext_vars];
+    }
+    
+    // Free the old ext_vars array - this is no longer required
+    delete [] ext_vars;
+
+    // Set the new ext vars array and sort it
+    ext_vars = new_ext_vars;
+    FElibrary::uniqueSort(ext_vars, num_ext_vars);
+
+    // Free the recv_vars array - it is no longer required
+    delete [] recv_vars;
+    delete [] ext_ptr;
+    delete [] ext_count;
+    delete [] recv_count;
+    delete [] recv_ptr;
   }
 
   // Adjust the external ordering
   for ( int j = 0; j < ext_rowp[N]; j++ ){
     int *item = (int*)bsearch(&ext_cols[j], ext_vars, num_ext_vars,
-			       sizeof(int), FElibrary::comparator);
+                              sizeof(int), FElibrary::comparator);
     ext_cols[j] = item - ext_vars;
   }
 
@@ -857,7 +978,7 @@ void TACSBVecInterp::initialize(){
         weights[j] *= w;
       }
       for ( int j = ext_rowp[i]; j < ext_rowp[i+1]; j++ ){
-	ext_weights[j] *= w;
+        ext_weights[j] *= w;
       }
     }
   }
@@ -1136,16 +1257,16 @@ void TACSBVecInterp::printInterp( const char *filename ){
   Compute a matrix-vector product for generic bsize
 */
 void BVecInterpMultAddGen( int bsize, int nrows, 
-			   const int *rowp, const int *cols,
-			   const TacsScalar *w,
-			   const TacsScalar *x, TacsScalar *y ){
+                           const int *rowp, const int *cols,
+                           const TacsScalar *w,
+                           const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
     
     for (; j < end; j++ ){
       for ( int k = 0; k < bsize; k++ ){
-	y[bsize*i+k] += w[0]*x[bsize*cols[j]+k];
+        y[bsize*i+k] += w[0]*x[bsize*cols[j]+k];
       }
       w++;
     }
@@ -1156,16 +1277,16 @@ void BVecInterpMultAddGen( int bsize, int nrows,
   Compute the matrix-vector transpose product for generic bsize
 */
 void BVecInterpMultTransposeAddGen( int bsize, int nrows, 
-				    const int *rowp, const int *cols,
-				    const TacsScalar *w,
-				    const TacsScalar *x, TacsScalar *y ){
+                                    const int *rowp, const int *cols,
+                                    const TacsScalar *w,
+                                    const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
 
     for (; j < end; j++ ){
       for ( int k = 0; k < bsize; k++ ){
-	y[bsize*cols[j]+k] += w[0]*x[bsize*i+k];
+        y[bsize*cols[j]+k] += w[0]*x[bsize*i+k];
       }
       w++;
     }
@@ -1176,9 +1297,9 @@ void BVecInterpMultTransposeAddGen( int bsize, int nrows,
   Compute a matrix-vector product for bsize = 1
 */
 void BVecInterpMultAdd1( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *w,
-			 const TacsScalar *x, TacsScalar *y ){
+                         const int *rowp, const int *cols,
+                         const TacsScalar *w,
+                         const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1194,9 +1315,9 @@ void BVecInterpMultAdd1( int bsize, int nrows,
   Compute the matrix-vector transpose product for bsize = 1
 */
 void BVecInterpMultTransposeAdd1( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *w,
-				  const TacsScalar *x, TacsScalar *y ){
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *w,
+                                  const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1212,9 +1333,9 @@ void BVecInterpMultTransposeAdd1( int bsize, int nrows,
   Compute a matrix-vector product for bsize = 2
 */
 void BVecInterpMultAdd2( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *w,
-			 const TacsScalar *x, TacsScalar *y ){
+                         const int *rowp, const int *cols,
+                         const TacsScalar *w,
+                         const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1231,9 +1352,9 @@ void BVecInterpMultAdd2( int bsize, int nrows,
   Compute the matrix-vector transpose product for bsize = 2
 */
 void BVecInterpMultTransposeAdd2( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *w,
-				  const TacsScalar *x, TacsScalar *y ){
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *w,
+                                  const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1250,9 +1371,9 @@ void BVecInterpMultTransposeAdd2( int bsize, int nrows,
   Compute a matrix-vector product for bsize = 3
 */
 void BVecInterpMultAdd3( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *w,
-			 const TacsScalar *x, TacsScalar *y ){
+                         const int *rowp, const int *cols,
+                         const TacsScalar *w,
+                         const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1270,9 +1391,9 @@ void BVecInterpMultAdd3( int bsize, int nrows,
   Compute the matrix-vector transpose product for bsize = 3
 */
 void BVecInterpMultTransposeAdd3( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *w,
-				  const TacsScalar *x, TacsScalar *y ){
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *w,
+                                  const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1289,9 +1410,9 @@ void BVecInterpMultTransposeAdd3( int bsize, int nrows,
   Compute a matrix-vector product for bsize = 4
 */
 void BVecInterpMultAdd4( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *w,
-			 const TacsScalar *x, TacsScalar *y ){
+                         const int *rowp, const int *cols,
+                         const TacsScalar *w,
+                         const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1310,9 +1431,9 @@ void BVecInterpMultAdd4( int bsize, int nrows,
   Compute the matrix-vector transpose product for bsize = 4
 */
 void BVecInterpMultTransposeAdd4( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *w,
-				  const TacsScalar *x, TacsScalar *y ){
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *w,
+                                  const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1330,9 +1451,9 @@ void BVecInterpMultTransposeAdd4( int bsize, int nrows,
   Compute a matrix-vector product for bsize = 5
 */
 void BVecInterpMultAdd5( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *w,
-			 const TacsScalar *x, TacsScalar *y ){
+                         const int *rowp, const int *cols,
+                         const TacsScalar *w,
+                         const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1352,9 +1473,9 @@ void BVecInterpMultAdd5( int bsize, int nrows,
   Compute the matrix-vector transpose product for bsize = 5
 */
 void BVecInterpMultTransposeAdd5( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *w,
-				  const TacsScalar *x, TacsScalar *y ){
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *w,
+                                  const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1374,9 +1495,9 @@ void BVecInterpMultTransposeAdd5( int bsize, int nrows,
   Compute a matrix-vector product for bsize = 5
 */
 void BVecInterpMultAdd6( int bsize, int nrows, 
-			 const int *rowp, const int *cols,
-			 const TacsScalar *w,
-			 const TacsScalar *x, TacsScalar *y ){
+                         const int *rowp, const int *cols,
+                         const TacsScalar *w,
+                         const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];
@@ -1397,9 +1518,9 @@ void BVecInterpMultAdd6( int bsize, int nrows,
   Compute the matrix-vector transpose product for bsize = 6
 */
 void BVecInterpMultTransposeAdd6( int bsize, int nrows, 
-				  const int *rowp, const int *cols,
-				  const TacsScalar *w,
-				  const TacsScalar *x, TacsScalar *y ){
+                                  const int *rowp, const int *cols,
+                                  const TacsScalar *w,
+                                  const TacsScalar *x, TacsScalar *y ){
   for ( int i = 0; i < nrows; i++ ){
     int j = rowp[i];
     int end = rowp[i+1];

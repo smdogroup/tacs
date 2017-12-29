@@ -288,7 +288,7 @@ int main( int argc, char *argv[] ){
     linear_buckling = new TACSLinearBuckling(tacs, sigma, gmat, kmat, aux_mat, ksm, 
 					     max_lanczos, num_eigvals, eig_tol);
   linear_buckling->incref();
-  linear_buckling->solve(ksm_print);
+  linear_buckling->solve(NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
   
   TACSBVec *vec = tacs->createVec(); vec->incref();
