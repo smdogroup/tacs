@@ -557,7 +557,6 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
 
   if (isFlexible){
     Z = new TACSVec*[ msub ];
-
     for ( int i = 0; i < msub; i++ ){
       Z[i] = mat->createVec();
       Z[i]->incref();

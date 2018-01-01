@@ -104,6 +104,7 @@ class BCSRMat : public TACSObject {
   int getBlockSize(){ return data->bsize; }
   int getRowDim(){ return data->nrows; }
   int getColDim(){ return data->ncols; }
+  BCSRMatData* getMatData(){ return data; }
 
   // Extract the matrix to the banded LAPACK format
   // ----------------------------------------------

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "PMat.h"
 #include "FElibrary.h"
+#include "tacslapack.h"
 
 /*
   Parallel matrix implementation
@@ -511,6 +512,323 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
 */
 void TACSGaussSeidel::getMat( TACSMat **_mat ){
   *_mat = mat;
+}
+
+/*
+  Create the Chebyshev smoother object
+*/
+TACSChebyshevSmoother::TACSChebyshevSmoother( TACSPMat *_mat, int _degree,
+                                              double _lower_factor,
+                                              double _upper_factor, 
+                                              int _iters ){
+  mat = _mat;
+  mat->incref();
+
+  // Create the vectors that are needed in the computation
+  TACSVec *tt = mat->createVec();
+  TACSVec *ht = mat->createVec();
+  TACSVec *rest = mat->createVec();
+  
+  // Convert the vectors to TACSBVecs 
+  t = dynamic_cast<TACSBVec*>(tt);
+  h = dynamic_cast<TACSBVec*>(ht);
+  res = dynamic_cast<TACSBVec*>(rest);
+  t->incref();
+  h->incref();
+  res->incref();
+
+  // Set the lower/upper factors
+  lower_factor = _lower_factor;
+  upper_factor = _upper_factor;
+
+  // Set the numger of iterations
+  iters = _iters;
+
+  // Compute the order
+  degree = _degree;
+  alpha = beta = 0.0;
+  r = new double[ degree ];
+  c = new double[ degree+1 ];
+
+  // Set default values
+  for ( int i = 0; i < degree; i++ ){
+    r[i] = 0.0;
+  }
+  for ( int i = 0; i < degree+1; i++ ){
+    c[i] = 1.0;
+  }
+}
+
+/*
+  Free the memory associated with the Chebyshev smoother
+*/
+TACSChebyshevSmoother::~TACSChebyshevSmoother(){
+  mat->decref();
+  delete [] r;
+  delete [] c;
+  h->decref();
+  t->decref();
+  res->decref();
+}
+
+/*
+  Factor the smoother.
+
+  This involves first estimating the spectrum of the matrix and
+  then applying the smoother.
+*/
+void TACSChebyshevSmoother::factor(){
+  // Compute the approximate maximum eigenvalue of the matrix
+  alpha = 0.0;
+  beta = 0.0;
+
+  double rho = gershgorin();
+  // double rho = arnoldi(15);
+
+  // Compute the factor
+  alpha = lower_factor*rho;
+  beta = upper_factor*rho;
+
+  // Compute the roots of the characteristic polynomial
+  for ( int k = 0; k < degree; k++ ){
+    r[k] = cos(M_PI*(0.5 + k)/degree);
+  }
+
+  // Scale the roots from the interval [-1, 1] 
+  // to the correct interval [alpha, beta]
+  for ( int k = 0; k < degree; k++ ){
+    r[k] = 0.5*(beta - alpha)*(r[k] + 1.0) + alpha;
+  }
+
+  // Compute the coefficients of the polynomial
+  memset(c, 0, (degree+1)*sizeof(double));
+  c[0] = 1.0;
+  for ( int j = 0; j < degree; j++ ){
+    for ( int k = j; k >= 0; k-- ){
+      c[k+1] = c[k+1] - r[j]*c[k];
+    }
+  }
+
+  // Now scale the coefficients so that q(0) = 1.0
+  // Note that q(A) = 1 - p(A)*A
+  for ( int k = 0; k < degree; k++ ){
+    c[k] = c[k]/c[degree];
+  }
+  c[degree] = 1.0;
+}
+
+/*
+  Apply the Chebyshev smoother to the preconditioner
+*/
+void TACSChebyshevSmoother::applyFactor( TACSVec *tx, 
+                                         TACSVec *ty ){
+  // Covert to TACSBVec objects
+  TACSBVec *x, *y;
+  x = dynamic_cast<TACSBVec*>(tx);
+  y = dynamic_cast<TACSBVec*>(ty);
+
+  if (x && y){
+    for ( int i = 0; i < iters; i++ ){
+      // Compute the initial residual
+      // res := x - A*y
+      res->copyValues(x);
+      mat->mult(y, t);
+      res->axpy(-1.0, t);
+      
+      // h = c[0]*res
+      h->copyValues(res);
+      h->scale(-c[0]);
+
+      // Compute the polynomial smoother
+      for ( int j = 0; j < degree-1; j++ ){
+        // t = A*h
+        mat->mult(h, t);
+
+        // h = c[j+1]*res + t = c[j+1]*res + A*h
+        h->copyValues(res);
+        h->scale(-c[j+1]);
+        h->axpy(1.0, t);
+      }
+    
+      // y <- y + h
+      y->axpy(1.0, h);
+    }
+  }
+}
+
+/*
+  Retrieve the matrix associated with the smoother
+*/
+void TACSChebyshevSmoother::getMat( TACSMat **_mat ){
+  *_mat = mat;
+}
+
+/*
+  Estimate the spectral radius using Gershgorin disks
+*/
+double TACSChebyshevSmoother::gershgorin(){
+  double rho = 0.0;
+
+  // Get the matrices
+  BCSRMat *A, *B;
+  mat->getBCSRMat(&A, &B);
+  BCSRMatData *Adata = A->getMatData();
+  BCSRMatData *Bdata = B->getMatData();
+
+  // Compute the local sizes
+  const int bsize = Adata->bsize;
+  const int b2 = bsize*bsize;
+
+  // Get the number of variables in the row map
+  int N, Nc;
+  mat->getRowMap(NULL, &N, &Nc);
+  int var_offset = N - Nc;
+
+  // Allocate space to store the 
+  double *eig = new double[ bsize ];
+
+  // Use Gershgorin theorem to estimate the max eigenvalue
+  for ( int i = 0; i < Adata->nrows; i++ ){
+    memset(eig, 0, bsize*sizeof(double));
+
+    // Add the contribution from the local part of the matrix
+    for ( int jp = Adata->rowp[i]; jp < Adata->rowp[i+1]; jp++ ){
+      int j = Adata->cols[jp];
+
+      // Set the pointer
+      const TacsScalar *a = &Adata->A[b2*jp];
+
+      // This is the diagonal
+      if (i == j){
+        // For each row, compute the max eigenvalue
+        for ( int ii = 0; ii < bsize; ii++ ){
+          for ( int jj = 0; jj < bsize; jj++ ){
+            if (ii == jj){
+              eig[ii] += TacsRealPart(a[0]);
+            }
+            else {
+              eig[ii] += fabs(TacsRealPart(a[0]));
+            }
+            a++;
+          }
+        }
+      }
+      else {
+        // For each row, add up the absolute sum from each entry
+        for ( int ii = 0; ii < bsize; ii++ ){
+          for ( int jj = 0; jj < bsize; jj++ ){
+            eig[ii] += fabs(TacsRealPart(a[0]));
+            a++;
+          }
+        }
+      }
+    }
+
+    if (i >= var_offset){
+      const int ib = i - var_offset;
+
+      // Add the contribution from the local part of the matrix
+      for ( int jp = Bdata->rowp[ib]; jp < Bdata->rowp[ib+1]; jp++ ){
+        // Set the pointer
+        const TacsScalar *a = &Bdata->A[b2*jp];
+
+        // For each row, add up the absolute sum
+        for ( int ii = 0; ii < bsize; ii++ ){
+          for ( int jj = 0; jj < bsize; jj++ ){
+            eig[ii] += fabs(TacsRealPart(a[0]));
+            a++;
+          }
+        }
+      }
+    }
+    
+    // Update beta
+    for ( int ii = 0; ii < bsize; ii++ ){
+      if (eig[ii] > rho){
+        rho = eig[ii];
+      }
+    }
+  }
+
+  delete [] eig;
+
+  // Perform an Allreduce across all processors
+  double temp = 0.0;
+  MPI_Allreduce(&rho, &temp, 1, MPI_DOUBLE, MPI_MAX, mat->getMPIComm());
+
+  return temp;
+}
+
+/*
+  Estimate the spectral radius using Arnoldi
+*/
+double TACSChebyshevSmoother::arnoldi( int size ){
+  double *H = new double[ size*(size+1) ];
+  memset(H, 0, size*(size+1)*sizeof(double));
+
+  // Allocate space for the vectors
+  TACSVec **W = new TACSVec*[ size+1 ];
+
+  // Create an initial random vector
+  W[0] = mat->createVec();
+  W[0]->incref();
+  W[0]->setRand(-1.0, 1.0);
+  W[0]->scale(1.0/W[0]->norm());
+
+  // Apply the boundary conditions
+  for ( int i = 0; i < size; i++ ){
+    W[i+1] = mat->createVec();
+    W[i+1]->incref();
+
+    // Multiply by the matrix to get the next vector
+    mat->mult(W[i], W[i+1]);
+
+    // Orthogonalize against the existing subspace
+    for ( int j = 0; j <= i; j++ ){
+      int index = j + i*(size+1);
+      H[index] = TacsRealPart(W[i+1]->dot(W[j]));
+      W[i+1]->axpy(-H[index], W[j]);
+    }
+
+    // Add the term to the matrix
+    int index = i+1 + i*(size+1);
+    H[index] = W[i+1]->norm();
+    W[i+1]->scale(1.0/H[index]);
+  }
+
+  // Allocate space for the real/complex eigenvalue
+  double *eigreal = new double[ size ];
+  double *eigimag = new double[ size ];
+
+  // Compute the eigenspectrum of the Hessenberg matrix
+  int lwork = 4*size;
+  double *work = new double[ lwork ];
+  int ldv = 1;
+  int ldh = size+1;
+  int info = 0;
+  LAPACKdgeev("N", "N", &size, H, &ldh, eigreal, eigimag,
+              NULL, &ldv, NULL, &ldv, work, &lwork, &info);
+
+  // Find the maximum absolute eigenvalue
+  double rho = 0.0;
+  for ( int i = 0; i < size; i++ ){
+    double val = sqrt(eigreal[i]*eigreal[i] + eigimag[i]*eigimag[i]);
+    if (val > rho){
+      rho = val;
+    }
+  }
+
+  for ( int i = 0; i < size+1; i++ ){
+    W[i]->decref();
+  }
+
+  delete [] eigreal;
+  delete [] eigimag;
+  delete [] work;
+  delete [] H;
+  delete [] W;
+
+  return rho;
 }
 
 /*!

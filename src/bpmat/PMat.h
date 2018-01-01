@@ -101,7 +101,7 @@ class TACSPMat : public TACSMat {
 };
 
 /*
-  Parallel successive over relaxation
+  Parallel Gauss--Seidel/SOR
 
   This uses repeated applications of block Gauss--Seidel. Off-processor 
   updates are delayed, effectively making this a hybrid Jacobi Gauss-Seidel
@@ -138,6 +138,48 @@ class TACSGaussSeidel : public TACSPc {
   TACSBVecDistCtx *ctx;
   int ext_offset;
   TacsScalar *yext;
+};
+
+/*
+  Chebyshev Smoother
+*/
+class TACSChebyshevSmoother : public TACSPc {
+ public:
+  TACSChebyshevSmoother( TACSPMat *_mat, int _degree,
+                         double _lower_factor=1.0/30.0,
+                         double _upper_factor=1.1, int _iters=1 );
+  ~TACSChebyshevSmoother();
+
+  void factor();
+  void applyFactor( TACSVec *xvec, TACSVec *yvec );
+  void getMat( TACSMat **_mat );
+
+ private:
+  // Estimate the spectral radius using Gershgorin method
+  double gershgorin();
+
+  // Estimate the spectral radius using Arnoldi
+  double arnoldi( int size );
+
+  // Parallel matrix pointer
+  TACSPMat *mat;
+
+  // The factor to apply to the largest eigenvalue
+  double lower_factor;
+  double upper_factor;
+
+  // Set the values for the upper/lower eigenvalues
+  double alpha, beta;
+
+  // The number of iterations to apply
+  int iters;
+
+  // The degree of the polynomial, the roots and coefficients
+  int degree;
+  double *r, *c;
+
+  // Temporary vectors
+  TACSBVec *res, *t, *h;
 };
 
 /*
