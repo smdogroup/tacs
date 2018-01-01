@@ -1410,6 +1410,7 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
       fvals[n] = funcs[n]->getFunctionValue();
     }
   }
+
 }
 
 /*
@@ -1932,6 +1933,9 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
 
       qddotS[offset]->copyValues(qddotS[offset-1]);
     }
+
+    //
+    qddotS[offset]->zeroEntries();
 
     // Compute approximations for qS 
     qS[offset]->copyValues(q[k-1]);
