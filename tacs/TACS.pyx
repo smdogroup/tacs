@@ -591,13 +591,43 @@ cdef class Assembler:
         '''Get the elements'''
         # Allocate an array for the element pointers
         cdef int num_elems = 0
-        elem = self.ptr.getElements()
+        cdef TACSElement **elements
         num_elems = self.ptr.getNumElements()
+        elements = self.ptr.getElements()
         e = []
         for i in xrange(num_elems):
-            e.append(_init_Element(elem[i]))
+            e.append(_init_Element(elements[i]))
         return e
-    
+
+    def getElementData(self, int num):
+        '''Return the element data associated with the element'''
+        cdef TACSElement *element = NULL
+        cdef int nnodes = 0
+        cdef int nvars = 0
+        cdef np.ndarray Xpt
+        cdef np.ndarray vars0
+        cdef np.ndarray dvars
+        cdef np.ndarray ddvars
+                
+        if num >= 0 and num < self.ptr.getNumElements():
+            # Get the element and query the size of the entries
+            element = self.ptr.getElement(num, NULL, NULL, NULL, NULL)
+            nnodes = element.numNodes()
+            nvars = element.numVariables()
+
+            # Allocate the numpy array and retrieve the internal data
+            Xpt = np.zeros(3*nnodes, dtype=dtype)
+            vars0 = np.zeros(nvars, dtype=dtype)
+            dvars = np.zeros(nvars, dtype=dtype)
+            ddvars = np.zeros(nvars, dtype=dtype)
+            self.ptr.getElement(num, <TacsScalar*>Xpt.data,
+                                <TacsScalar*>vars0.data, <TacsScalar*>dvars.data,
+                                <TacsScalar*>ddvars.data)
+        else:
+            raise ValueError('Element index out of range')
+
+        return _init_Element(element), Xpt, vars0, dvars, ddvars
+        
     def getDesignVars(self, 
                       np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
         '''

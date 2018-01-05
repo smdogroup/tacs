@@ -431,25 +431,34 @@ cdef class PlaneTri6(Element):
         return self.ptr.numNodes()
     
 cdef class ShellTraction(Element):
-    def __cinit__(self, int order, 
-                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+    def __cinit__(self, int order,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tz):
+        self.ptr = NULL
         if order < 2 or order > 4:
             errmsg = 'ShellTraction order must be between 2 and 4'
             raise ValueError(errmsg)
-        self.ptr = NULL
         if order == 2:
-            self.ptr = new TACSShellTraction2(tx, ty, tz)
+            self.ptr = new TACSShellTraction2(<TacsScalar*>tx.data,
+                                              <TacsScalar*>ty.data,
+                                              <TacsScalar*>tz.data)
             self.ptr.incref()
         elif order == 3:
-            self.ptr = new TACSShellTraction3(tx, ty, tz)
+            self.ptr = new TACSShellTraction3(<TacsScalar*>tx.data,
+                                              <TacsScalar*>ty.data,
+                                              <TacsScalar*>tz.data)
             self.ptr.incref()
         elif order == 4:
-            self.ptr = new TACSShellTraction4(tx, ty, tz)
+            self.ptr = new TACSShellTraction4(<TacsScalar*>tx.data,
+                                              <TacsScalar*>ty.data,
+                                              <TacsScalar*>tz.data)
             self.ptr.incref()
         return
     
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr:
+            self.ptr.decref()
         return
     
     def numNodes(self):

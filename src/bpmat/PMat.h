@@ -105,9 +105,7 @@ class TACSPMat : public TACSMat {
 
   This uses repeated applications of block Gauss--Seidel. Off-processor 
   updates are delayed, effectively making this a hybrid Jacobi Gauss-Seidel
-  method.performed using a Jacobi update, while 
-  Updates are performed locally, while off-processor updates 
-  Set up involves factoring the diagonal matrix
+  method.
 */
 class TACSGaussSeidel : public TACSPc {
  public:
@@ -185,8 +183,8 @@ class TACSChebyshevSmoother : public TACSPc {
 /*
   Additive Schwarz Method (ASM)
 
-  Set up involves factoring the diagonal portion of the matrix
-  Apply the local preconditioner to the local components of the residual. 
+  Set up involves factoring the diagonal portion of the matrix.  Apply
+  the local preconditioner to the local components of the residual.
 */
 class TACSAdditiveSchwarz : public TACSPc {
  public:
@@ -213,8 +211,8 @@ class TACSAdditiveSchwarz : public TACSPc {
 
   AS: Apply preconditioner
   1. Restrict to the interface unknowns
-  2. Solve a GMRES-accelerated, Jacobi-preconditioned problem for the interface
-  unknowns
+  2. Solve a GMRES-accelerated, Jacobi-preconditioned problem for the
+  interface unknowns 
   3. Determine the solution at the internal interface unknowns
 */
 class TACSGlobalSchurMat : public TACSMat {

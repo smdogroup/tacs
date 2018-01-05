@@ -194,6 +194,7 @@ cdef extern from "TACSElement.h":
 
     cdef cppclass TACSElement(TACSObject):
         int numNodes()
+        int numVariables()
         void setComponentNum(int)
         TACSConstitutive *getConstitutive()
         
@@ -306,6 +307,10 @@ cdef extern from "TACSAssembler.h":
         int getNumOwnedNodes()
         int getNumElements()
         TACSElement **getElements()
+
+        # Return information about the element
+        TACSElement *getElement(int, TacsScalar*, TacsScalar*,
+                                TacsScalar*, TacsScalar*)
         
         # MPI communicator
         MPI_Comm getMPIComm()
