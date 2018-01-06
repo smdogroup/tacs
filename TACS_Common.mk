@@ -21,9 +21,9 @@ TACS_LD_FLAGS = ${EXTRA_LD_FLAGS} ${TACS_LD_CMD} ${TACS_EXTERN_LIBS}
 
 # This is the one rule that is used to compile all the
 # source code in TACS
-%.o: %.c
+%.o: %.cpp
 	${CXX} ${TACS_CC_FLAGS} -c $< -o $*.o
 	@echo
-	@echo "        --- Compiled $*.c successfully ---"
+	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo
 
