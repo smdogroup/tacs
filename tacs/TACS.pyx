@@ -575,6 +575,12 @@ cdef class Assembler:
         '''
         return self.ptr.getNumNodes()
 
+    def getNumOwnedNodes(self):
+        '''
+        Return the number of owned nodes
+        '''
+        return self.ptr.getNumOwnedNodes()
+
     def getNumDependentNodes(self):
         '''
         Return the number of dependent nodes
