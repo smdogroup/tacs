@@ -398,7 +398,7 @@ void BCSRMatMatMultAdd3( double alpha, BCSRMatData * Adata,
 }
 
 /*!
-  Apply a given number of steps of SOR to the system A*x = b.
+  Apply a step of SOR to the system A*x = b.
 */
 void BCSRMatApplySOR3( BCSRMatData *Adata, BCSRMatData *Bdata,
                        const int start, const int end,
@@ -419,58 +419,116 @@ void BCSRMatApplySOR3( BCSRMatData *Adata, BCSRMatData *Bdata,
   // Store temporary data for each row
   TacsScalar t1, t2, t3;
 
-  // Go through the matrix with the forward ordering
-  for ( int i = start; i < end; i++ ){
-    // Copy the right-hand-side to the temporary vector for this row
-    t1 = b[3*i];
-    t2 = b[3*i+1];
-    t3 = b[3*i+2];
+  if (start < end){
+    // Go through the matrix with the forward ordering
+    for ( int i = start; i < end; i++ ){
+      // Copy the right-hand-side to the temporary vector for this row
+      t1 = b[3*i];
+      t2 = b[3*i+1];
+      t3 = b[3*i+2];
     
-    // Set the pointer to the beginning of the current row
-    const TacsScalar *a = &Adata->A[9*Arowp[i]];
+      // Set the pointer to the beginning of the current row
+      const TacsScalar *a = &Adata->A[9*Arowp[i]];
 
-    // Scan through the row and compute the result:
-    // tx <- b_i - A_{ij}*x_{j} for j != i
-    int end = Arowp[i+1];
-    for ( int k = Arowp[i]; k < end; k++ ){
-      int j = Acols[k];
-      TacsScalar *y = &x[3*j];
+      // Scan through the row and compute the result:
+      // tx <- b_i - A_{ij}*x_{j} for j != i
+      int end = Arowp[i+1];
+      for ( int k = Arowp[i]; k < end; k++ ){
+        int j = Acols[k];
+        TacsScalar *y = &x[3*j];
 
-      if (i != j){
-        t1 -= a[0]*y[0] + a[1]*y[1] + a[2]*y[2];
-        t2 -= a[3]*y[0] + a[4]*y[1] + a[5]*y[2];
-        t3 -= a[6]*y[0] + a[7]*y[1] + a[8]*y[2];
-      }
+        if (i != j){
+          t1 -= a[0]*y[0] + a[1]*y[1] + a[2]*y[2];
+          t2 -= a[3]*y[0] + a[4]*y[1] + a[5]*y[2];
+          t3 -= a[6]*y[0] + a[7]*y[1] + a[8]*y[2];
+        }
         
-      // Increment the block pointer by bsize^2
-      a += 9;
-    }
-
-    if (Bdata && i >= var_offset){
-      const int row = i - var_offset;
-
-      // Set the pointer to the row in B
-      a = &Bdata->A[9*Browp[row]];       
-      end = Browp[row+1];
-      for ( int k = Browp[row]; k < end; k++ ){
-        int j = Bcols[k];
-        const TacsScalar *y = &xext[3*j];
-
-        t1 -= a[0]*y[0] + a[1]*y[1] + a[2]*y[2];
-        t2 -= a[3]*y[0] + a[4]*y[1] + a[5]*y[2];
-        t3 -= a[6]*y[0] + a[7]*y[1] + a[8]*y[2];
-
+        // Increment the block pointer by bsize^2
         a += 9;
       }
+
+      if (Bdata && i >= var_offset){
+        const int row = i - var_offset;
+
+        // Set the pointer to the row in B
+        a = &Bdata->A[9*Browp[row]];       
+        end = Browp[row+1];
+        for ( int k = Browp[row]; k < end; k++ ){
+          int j = Bcols[k];
+          const TacsScalar *y = &xext[3*j];
+
+          t1 -= a[0]*y[0] + a[1]*y[1] + a[2]*y[2];
+          t2 -= a[3]*y[0] + a[4]*y[1] + a[5]*y[2];
+          t3 -= a[6]*y[0] + a[7]*y[1] + a[8]*y[2];
+
+          a += 9;
+        }
+      }
+
+      // Set a pointer to the inverse of the diagonal
+      const TacsScalar *d = &Adiag[9*i];
+
+      // Compute the first term in the update:
+      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+      x[3*i]   = (1.0 - omega)*x[3*i]   + omega*(d[0]*t1 + d[1]*t2 + d[2]*t3);
+      x[3*i+1] = (1.0 - omega)*x[3*i+1] + omega*(d[3]*t1 + d[4]*t2 + d[5]*t3);
+      x[3*i+2] = (1.0 - omega)*x[3*i+2] + omega*(d[6]*t1 + d[7]*t2 + d[8]*t3);
     }
+  }
+  else {
+    // Go through the matrix with the forward ordering
+    for ( int i = start-1; i >= end; i-- ){
+      // Copy the right-hand-side to the temporary vector for this row
+      t1 = b[3*i];
+      t2 = b[3*i+1];
+      t3 = b[3*i+2];
+    
+      // Set the pointer to the beginning of the current row
+      const TacsScalar *a = &Adata->A[9*Arowp[i]];
 
-    // Set a pointer to the inverse of the diagonal
-    const TacsScalar *d = &Adiag[9*i];
+      // Scan through the row and compute the result:
+      // tx <- b_i - A_{ij}*x_{j} for j != i
+      int end = Arowp[i+1];
+      for ( int k = Arowp[i]; k < end; k++ ){
+        int j = Acols[k];
+        TacsScalar *y = &x[3*j];
 
-    // Compute the first term in the update:
-    // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
-    x[3*i]   = (1.0 - omega)*x[3*i]   + omega*(d[0]*t1 + d[1]*t2 + d[2]*t3);
-    x[3*i+1] = (1.0 - omega)*x[3*i+1] + omega*(d[3]*t1 + d[4]*t2 + d[5]*t3);
-    x[3*i+2] = (1.0 - omega)*x[3*i+2] + omega*(d[6]*t1 + d[7]*t2 + d[8]*t3);
+        if (i != j){
+          t1 -= a[0]*y[0] + a[1]*y[1] + a[2]*y[2];
+          t2 -= a[3]*y[0] + a[4]*y[1] + a[5]*y[2];
+          t3 -= a[6]*y[0] + a[7]*y[1] + a[8]*y[2];
+        }
+        
+        // Increment the block pointer by bsize^2
+        a += 9;
+      }
+
+      if (Bdata && i >= var_offset){
+        const int row = i - var_offset;
+
+        // Set the pointer to the row in B
+        a = &Bdata->A[9*Browp[row]];       
+        end = Browp[row+1];
+        for ( int k = Browp[row]; k < end; k++ ){
+          int j = Bcols[k];
+          const TacsScalar *y = &xext[3*j];
+
+          t1 -= a[0]*y[0] + a[1]*y[1] + a[2]*y[2];
+          t2 -= a[3]*y[0] + a[4]*y[1] + a[5]*y[2];
+          t3 -= a[6]*y[0] + a[7]*y[1] + a[8]*y[2];
+
+          a += 9;
+        }
+      }
+
+      // Set a pointer to the inverse of the diagonal
+      const TacsScalar *d = &Adiag[9*i];
+
+      // Compute the first term in the update:
+      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+      x[3*i]   = (1.0 - omega)*x[3*i]   + omega*(d[0]*t1 + d[1]*t2 + d[2]*t3);
+      x[3*i+1] = (1.0 - omega)*x[3*i+1] + omega*(d[3]*t1 + d[4]*t2 + d[5]*t3);
+      x[3*i+2] = (1.0 - omega)*x[3*i+2] + omega*(d[6]*t1 + d[7]*t2 + d[8]*t3);
+    }
   }
 }

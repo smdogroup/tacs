@@ -1016,6 +1016,7 @@ void BCSRMat::initBlockImpl(){
     applypartiallower = BCSRMatApplyPartialLower2;
     applypartialupper = BCSRMatApplyPartialUpper2;
     applyschur        = BCSRMatApplyFactorSchur2;
+    applysor = BCSRMatApplySOR2;
     break;
   case 3:
     bfactor    = BCSRMatFactor3;
@@ -1057,6 +1058,7 @@ void BCSRMat::initBlockImpl(){
     applypartiallower = BCSRMatApplyPartialLower5;
     applypartialupper = BCSRMatApplyPartialUpper5;
     applyschur        = BCSRMatApplyFactorSchur5;
+    applysor = BCSRMatApplySOR5;
     break;
   case 6:
     // These are tuning parameters
