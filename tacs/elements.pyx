@@ -345,6 +345,9 @@ cdef class PlaneQuad(Element):
         elif order == 4:
             self.ptr = new PlaneStressQuad4(con, elem_type, component_num)
             self.ptr.incref()
+        elif order == 5:
+            self.ptr = new PlaneStressQuad5(con, elem_type, component_num)
+            self.ptr.incref()
         return
         
     def __dealloc__(self):
@@ -358,7 +361,7 @@ cdef class PSQuadTraction(Element):
         if len(tx) != len(ty):
             errmsg = 'Traction lengths must be equal'
             raise ValueError(errmsg)
-        if len(tx) < 2 or len(tx) > 4:
+        if len(tx) < 2 or len(tx) > 5:
             errmsg = 'Traction lengths must be between 2 and 4'
         cdef int order = len(tx)
         self.ptr = NULL
@@ -374,6 +377,10 @@ cdef class PSQuadTraction(Element):
             self.ptr = new PSQuadTraction4(surf, <TacsScalar*>tx.data,
                                            <TacsScalar*>ty.data)
             self.ptr.incref()
+        elif order == 5:
+            self.ptr = new PSQuadTraction5(surf, <TacsScalar*>tx.data,
+                                           <TacsScalar*>ty.data)
+            self.ptr.incref()
         return
 
     def __dealloc__(self):
@@ -387,7 +394,7 @@ cdef class PSQuadTraction(Element):
 cdef class Traction3D(Element):
     def __cinit__(self, int order, int surf, 
                   TacsScalar tx, TacsScalar ty, TacsScalar tz):
-        if order < 2 or order > 4:
+        if order < 2 or order > 5:
             errmsg = 'Traction3D order must be between 2 and 4'
             raise ValueError(errmsg)
         if surf < 0 or surf >= 6:
@@ -402,6 +409,9 @@ cdef class Traction3D(Element):
             self.ptr.incref()
         elif order == 4:
             self.ptr = new TACS3DTraction4(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new TACS3DTraction5(surf, tx, ty, tz)
             self.ptr.incref()
         return
     def __dealloc__(self):
@@ -436,7 +446,7 @@ cdef class ShellTraction(Element):
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ty,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] tz):
         self.ptr = NULL
-        if order < 2 or order > 4:
+        if order < 2 or order > 5:
             errmsg = 'ShellTraction order must be between 2 and 4'
             raise ValueError(errmsg)
         if order == 2:
@@ -451,6 +461,11 @@ cdef class ShellTraction(Element):
             self.ptr.incref()
         elif order == 4:
             self.ptr = new TACSShellTraction4(<TacsScalar*>tx.data,
+                                              <TacsScalar*>ty.data,
+                                              <TacsScalar*>tz.data)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new TACSShellTraction5(<TacsScalar*>tx.data,
                                               <TacsScalar*>ty.data,
                                               <TacsScalar*>tz.data)
             self.ptr.incref()
@@ -481,6 +496,9 @@ cdef class MITCShell(Element):
         elif order == 4:
             self.ptr = new MITCShell4(con, elem_type, component_num)
             self.ptr.incref()
+        elif order == 5:
+            self.ptr = new MITCShell5(con, elem_type, component_num)
+            self.ptr.incref()
                     
     def __dealloc__(self):
         self.ptr.decref()
@@ -506,6 +524,9 @@ cdef class Solid(Element):
         elif order == 4:
             self.ptr = new Solid4(con, elem_type, component_num)
             self.ptr.incref()
+        elif order == 5:
+            self.ptr = new Solid5(con, elem_type, component_num)
+            self.ptr.incref()
 
     def __dealloc__(self):
         self.ptr.decref()
@@ -520,7 +541,7 @@ cdef class MITC(Element):
         cdef FSDTStiffness *con = _dynamicFSDT(stiff.ptr)
         if omegaInit is not None:
             self.ptr = new MITC9(con, gravity.ptr,
-                                        vInit.ptr, omegaInit.ptr)
+                                 vInit.ptr, omegaInit.ptr)
         elif vInit is not None:
             self.ptr = new MITC9(con, gravity.ptr, vInit.ptr, NULL)
         elif gravity is not None:
