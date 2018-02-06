@@ -1,8 +1,20 @@
 /*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2014 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+*/
+
+/*
   An FH5 to VTK converter. This only works for specially written FH5
   files. (This is designed primarily to work with TACS).
-
-  Copyright (c) 2017 Graeme Kennedy. All rights reserved. 
 */
 
 #include <stdlib.h>

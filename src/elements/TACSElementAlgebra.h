@@ -1,11 +1,23 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2014 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #ifndef TACS_ELEMENT_ALGEBRA_H
 #define TACS_ELEMENT_ALGEBRA_H
 
 /*
   A header file with lots of useful linear algebra. Note that this is
   designed to be included in .c/.cpp files directly.
-
-  Copyright (c) 2015 Graeme Kennedy. All rights reserved. 
 */
 
 /*
