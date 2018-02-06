@@ -53,4 +53,5 @@ Kennedy, G. J. and Martins, J. R. R. A, "A parallel finite-element framework for
 If you use the function evaluation routines in TACS, please consider citing the following papers:
 
 Kennedy, G. J. and Hicken, J. E., "Improved Constraint-Aggregation Methods", Computer Methods in Applied Mechanics and Engineering, 2015, doi:10.1016/j.cma.2015.02.017
+
 Kennedy, G. J., "Strategies for adaptive optimization with aggregation constraints using interior-point methods", 2015, doi:10.1016/j.compstruc.2015.02.024

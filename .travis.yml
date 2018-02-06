@@ -1,0 +1,52 @@
+language: python
+
+os:
+  - linux
+
+sudo: required
+dist: trusty
+group: edge
+
+notifications:
+    email: false
+
+git:
+  depth: 10
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - libblas-dev
+    - liblapack-dev
+    - libopenmpi-dev
+    - openmpi-bin
+    - cmake
+
+before_install:
+  # Need Cython for generating C/python wrapper
+  - pip install --upgrade pip
+  - pip install numpy
+  - pip install mpi4py
+  - pip install Cython
+  
+  # Download the external dependencies
+  - export INSTALL_PREFIX=/home/$USER
+  - cd $INSTALL_PREFIX
+  - git clone https://github.com/gjkennedy/tacs.git
+  - export TACS_DIR=/home/$USER/tacs
+  - cd $TACS_DIR/extern/
+  - wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz
+  - make 
+
+install:
+  - cd $TACS_DIR
+  - cp Makefile.in.info Makefile.in
+  - make TACS_DIR=$TACS_DIR
+  - python setup.py develop --user
+  - python setup.py build_ext --inplace
+
+script: 
+  - cd $TACS_DIR/examples
+  - make
