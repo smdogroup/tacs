@@ -49,8 +49,7 @@ install:
   - cp Makefile.in.info Makefile.in
   - cp setup.cfg.info setup.cfg
   - make TACS_DIR=$TACS_DIR
-  - python setup.py develop --user
-  - python setup.py build_ext --inplace
+  - python setup.py install
 
 script: 
   - cd $TACS_DIR/examples
