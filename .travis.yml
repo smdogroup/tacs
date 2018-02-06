@@ -53,4 +53,4 @@ install:
 
 script: 
   - cd $TACS_DIR/examples
-  - make
+  - make TACS_DIR=/home/$USER/tacs
