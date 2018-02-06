@@ -30,7 +30,8 @@ before_install:
   - pip install numpy
   - pip install mpi4py
   - pip install Cython
-  
+  - pip install setuptools
+
   # Download the external dependencies
   - export INSTALL_PREFIX=/home/$USER
   - cd $INSTALL_PREFIX
