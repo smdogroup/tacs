@@ -19,11 +19,6 @@
 #include "FEMat.h"
 #include "FElibrary.h"
 
-// Reordering routines
-#include "MatUtils.h"
-#include "amd.h"
-#include "tacsmetis.h"
-
 /*
   Finite-element matrix implementation
 */

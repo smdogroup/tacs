@@ -24,7 +24,9 @@
 #include "AMDInterface.h"
 
 // Include the AMD package if we have it
+#ifdef TACS_HAS_AMD_LIBRARY
 #include "amd.h"
+#endif // TACS_HAS_AMD_LIBRARY
 
 // The TACS-METIS header
 #include "tacsmetis.h"
@@ -1360,6 +1362,7 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     }
   }
   else if (order_type == AMD_ORDER){
+#if TACS_HAS_AMD_LIBRARY
     // Use the approximate minimum degree ordering
     double control[AMD_CONTROL], info[AMD_INFO];
     amd_defaults(control); // Use the default values
@@ -1371,6 +1374,20 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
         new_vars[_perm[k]] = k;
       }
     }
+#else
+    int use_exact_degree = 0;
+    int ncoupling_nodes = 0;
+    int *coupling_nodes = NULL;
+    amd_order_interface(nvars, rowp, cols, _perm, 
+                        coupling_nodes, ncoupling_nodes,
+                        0, NULL, NULL, NULL, use_exact_degree);
+
+    if (new_vars){
+      for ( int k = 0; k < nvars; k++ ){
+        new_vars[_perm[k]] = k;
+      }
+    }
+#endif // TACS_HAS_AMD_LIBRARY
   }
   else if (order_type == ND_ORDER){
     // Set the default options in METIS

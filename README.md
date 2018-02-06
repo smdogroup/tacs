@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/gjkennedy/tacs.svg?branch=master)](https://travis-ci.org/gjkennedy/tacs)
+
 # TACS README #
 
 The Toolkit for the Analysis of Composite Structures is a parallel finite-element code for analysis and gradient-based design of advanced structures. Originally, it was primarily designed as a tool for the analysis of shell structures, such as wing-boxes. More recently it has been extended to perform topology optimization of large three-dimensional structures using gradient-based methods. 

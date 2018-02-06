@@ -21,7 +21,12 @@
 #include "tacslapack.h"
 #include "FElibrary.h"
 #include "MatUtils.h"
+
+#ifdef TACS_HAS_AMD_LIBRARY
 #include "amd.h"
+#else
+#include "AMDInterface.h"
+#endif // TACS_HAS_AMD_LIBRARY
 
 /*
   Assemble the non-zero pattern of the matrix and pass it to the
@@ -371,12 +376,29 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     int m = bptr[nrows], n = bptr[ncols];
     if (reorder_blocks && n == m){
       if (m && n){
+#ifdef TACS_HAS_AMD_LIBRARY
         // Use AMD to compute the reordering of the variables.
         double control[AMD_CONTROL], info[AMD_INFO];
         amd_defaults(control); // Use the default values
         amd_order(nrows, root_rowp, root_cols, perm, 
                   control, info);
-        
+#else
+        // Allocate temporary space
+        int *tmp_rowp = new int[ nrows+1 ];
+        int *tmp_cols = new int[ root_rowp[nrows] ];
+        memcpy(tmp_rowp, root_rowp, (nrows+1)*sizeof(int));
+        memcpy(tmp_cols, root_cols, root_rowp[nrows]*sizeof(int));
+
+        // This call destroys data in tmp_rowp/tmp_cols
+        int use_exact_degree = 0;
+        amd_order_interface(nrows, tmp_rowp, tmp_cols, perm,
+                            NULL, 0, 0, NULL, NULL, NULL, 
+                            use_exact_degree);
+
+        // Free the temporary space
+        delete [] tmp_rowp;
+        delete [] tmp_cols;
+#endif // TACS_HAS_AMD_LIBRARY
         // Reorder the non-zero pattern to correspond to the new ordering
         // perm:  new variable i -> old variable perm[i]
         // iperm: old variable i -> new variable iperm[i]
