@@ -21,9 +21,6 @@
 
 /*
   Implementations of the various block-specific operations
-
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved.
-  Not for commercial purposes.
 */
 #include "TACSObject.h"
 

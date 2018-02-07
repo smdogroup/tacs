@@ -27,9 +27,6 @@
 /*!
   Block Compressed Sparse Row format matrix.
 
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved.
-  Not for commercial purposes.
-
   This matrix requires that the blocks be all the same size.
   Different, optimized code is used for performance-critical 
   operations for each block size.
