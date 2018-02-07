@@ -485,8 +485,10 @@ initial data structure\n");
     
     // Add the contributions from the row piv
     for ( int j = rowp[piv] + elen[piv]; j < rowp[piv] + alen[piv]; j++ ){
-      Lp[lenlp] = cols[j];
-      lenlp++;
+      if (piv != cols[j]){
+        Lp[lenlp] = cols[j];
+        lenlp++;
+      }
     }
 
     // Add the non-zero pattern to Lp
