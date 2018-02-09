@@ -1,3 +1,21 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2010 University of Toronto
+  Copyright (C) 2012 University of Michigan
+  Copyright (C) 2014 Georgia Tech Research Corporation
+  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
+  R.R.A. Martins All rights reserved.
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #ifdef TACS_USE_COMPLEX
 #warning "TACSPanelAnalysis cannot be used with complex TACS"
 #else
@@ -7,9 +25,6 @@
 #include "tacslapack.h"
 
 /*
-  Copyright (c) 2014 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
-
   The following code uses a finite-strip panel model to compute the
   critical buckling loads and frequencies of a simply supported
   stiffened panel model. The critical buckling modes can be computed

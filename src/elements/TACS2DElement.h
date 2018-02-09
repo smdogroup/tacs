@@ -1,12 +1,23 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2014 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #ifndef TACS_2D_ELEMENT_H
 #define TACS_2D_ELEMENT_H
 
 /*
   The following file contains the general definition of a
   three-dimensional element that can be used in TACS.
-
-  Copyright (c) 2014 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
 */
 
 #include "TACSElement.h"

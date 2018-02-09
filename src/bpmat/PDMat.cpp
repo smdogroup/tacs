@@ -1,14 +1,32 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2010 University of Toronto
+  Copyright (C) 2012 University of Michigan
+  Copyright (C) 2014 Georgia Tech Research Corporation
+  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
+  R.R.A. Martins All rights reserved.
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #include <stdlib.h>
 #include "PDMat.h"
 #include "tacslapack.h"
 #include "FElibrary.h"
 #include "MatUtils.h"
-#include "amd.h"
 
-/*
-  Copyright (c) 2011 Graeme Kennedy. All rights reserved.
-  Not for commercial purposes.
-*/
+#ifdef TACS_HAS_AMD_LIBRARY
+#include "amd.h"
+#else
+#include "AMDInterface.h"
+#endif // TACS_HAS_AMD_LIBRARY
 
 /*
   Assemble the non-zero pattern of the matrix and pass it to the
@@ -358,12 +376,29 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     int m = bptr[nrows], n = bptr[ncols];
     if (reorder_blocks && n == m){
       if (m && n){
+#ifdef TACS_HAS_AMD_LIBRARY
         // Use AMD to compute the reordering of the variables.
         double control[AMD_CONTROL], info[AMD_INFO];
         amd_defaults(control); // Use the default values
         amd_order(nrows, root_rowp, root_cols, perm, 
                   control, info);
-        
+#else
+        // Allocate temporary space
+        int *tmp_rowp = new int[ nrows+1 ];
+        int *tmp_cols = new int[ root_rowp[nrows] ];
+        memcpy(tmp_rowp, root_rowp, (nrows+1)*sizeof(int));
+        memcpy(tmp_cols, root_cols, root_rowp[nrows]*sizeof(int));
+
+        // This call destroys data in tmp_rowp/tmp_cols
+        int use_exact_degree = 0;
+        amd_order_interface(nrows, tmp_rowp, tmp_cols, perm,
+                            NULL, 0, 0, NULL, NULL, NULL, 
+                            use_exact_degree);
+
+        // Free the temporary space
+        delete [] tmp_rowp;
+        delete [] tmp_cols;
+#endif // TACS_HAS_AMD_LIBRARY
         // Reorder the non-zero pattern to correspond to the new ordering
         // perm:  new variable i -> old variable perm[i]
         // iperm: old variable i -> new variable iperm[i]

@@ -1,18 +1,33 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2010 University of Toronto
+  Copyright (C) 2012 University of Michigan
+  Copyright (C) 2014 Georgia Tech Research Corporation
+  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
+  R.R.A. Martins All rights reserved.
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #ifndef TACS_DISTRIBUTED_MAT_H
 #define TACS_DISTRIBUTED_MAT_H
 
 /*
   Distributed matrix implementation
-
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved.
-  Not for commercial purposes.
 */
 
 #include "PMat.h"
 
 /*
-  Distributed matrix based on a parallel distribution of rows
-  (equations).  Inherits from PMat.
+  Distributed matrix based on a parallel distribution of rows.  This
+  class inherits from PMat.
 */
 class TACSDistMat : public TACSPMat {
  public:
@@ -91,4 +106,4 @@ class TACSDistMat : public TACSPMat {
   int *send_proc, *receive_proc;
 };
 
-#endif
+#endif // TACS_DISTRIBUTED_MAT_H

@@ -1,3 +1,15 @@
+#  This file is part of TACS: The Toolkit for the Analysis of Composite
+#  Structures, a parallel finite-element code for structural and
+#  multidisciplinary design optimization.
+#
+#  Copyright (C) 2014 Georgia Tech Research Corporation
+#
+#  TACS is licensed under the Apache License, Version 2.0 (the
+#  "License"); you may not use this software except in compliance with
+#  the License.  You may obtain a copy of the License at
+#  
+#  http://www.apache.org/licenses/LICENSE-2.0 
+
 # For MPI capabilities
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
@@ -101,6 +113,10 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass PlaneStressQuad4(TACSElement):
         PlaneStressQuad4(PlaneStressStiffness *stiff, 
                          ElementBehaviorType type, int)
+        
+    cdef cppclass PlaneStressQuad5(TACSElement):
+        PlaneStressQuad5(PlaneStressStiffness *stiff, 
+                         ElementBehaviorType type, int)
 
     # Declare theee PSQuadTraction elements
     cdef cppclass PSQuadTraction2(TACSElement):
@@ -115,6 +131,10 @@ cdef extern from "TACSElementTemplates.h":
         PSQuadTraction4(int, TacsScalar, TacsScalar)
         PSQuadTraction4(int, TacsScalar*, TacsScalar*)
 
+    cdef cppclass PSQuadTraction5(TACSElement):
+        PSQuadTraction5(int, TacsScalar, TacsScalar)
+        PSQuadTraction5(int, TacsScalar*, TacsScalar*)
+
     # Declare shell traction
     cdef cppclass TACSShellTraction2(TACSElement):
         TACSShellTraction2(TacsScalar, TacsScalar, TacsScalar)
@@ -127,6 +147,10 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass TACSShellTraction4(TACSElement):
         TACSShellTraction4(TacsScalar, TacsScalar, TacsScalar)
         TACSShellTraction4(TacsScalar*, TacsScalar*, TacsScalar*)
+
+    cdef cppclass TACSShellTraction5(TACSElement):
+        TACSShellTraction5(TacsScalar, TacsScalar, TacsScalar)
+        TACSShellTraction5(TacsScalar*, TacsScalar*, TacsScalar*)
 
     # Declare the 3D traction classes
     cdef cppclass TACS3DTraction2(TACSElement):
@@ -141,6 +165,10 @@ cdef extern from "TACSElementTemplates.h":
         TACS3DTraction4(int, TacsScalar, TacsScalar, TacsScalar)
         TACS3DTraction4(int, TacsScalar[], TacsScalar[], TacsScalar[])
 
+    cdef cppclass TACS3DTraction5(TACSElement):
+        TACS3DTraction5(int, TacsScalar, TacsScalar, TacsScalar)
+        TACS3DTraction5(int, TacsScalar[], TacsScalar[], TacsScalar[])
+
     # Declare the MITCShell elements
     cdef cppclass MITCShell2(TACSElement):
         MITCShell2(FSDTStiffness *stiff, ElementBehaviorType type, int)
@@ -151,6 +179,9 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass MITCShell4(TACSElement):
         MITCShell4(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
+    cdef cppclass MITCShell5(TACSElement):
+        MITCShell5(FSDTStiffness *stiff, ElementBehaviorType type, int)
+
     # Declare the Solid elements
     cdef cppclass Solid2(TACSElement):
         Solid2(SolidStiffness *stiff, ElementBehaviorType type, int)
@@ -160,6 +191,9 @@ cdef extern from "TACSElementTemplates.h":
 
     cdef cppclass Solid4(TACSElement):
         Solid4(SolidStiffness *stiff, ElementBehaviorType type, int)
+
+    cdef cppclass Solid5(TACSElement):
+        Solid5(SolidStiffness *stiff, ElementBehaviorType type, int)
 
 cdef extern from "PlaneStressTri6.h":
     cdef cppclass PlaneStressTri6(TACSElement):

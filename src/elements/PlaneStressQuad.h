@@ -1,11 +1,22 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2014 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #ifndef TACS_PLANE_STRESS_QUAD_H
 #define TACS_PLANE_STRESS_QUAD_H
 
 /*
   Plane stress element implementation. 
-  
-  Copyright (c) 2010-2015 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
 
   The following code uses templates to allow for arbitrary order elements.
 */
@@ -49,6 +60,9 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
  private:
   static const int NUM_NODES = order*order;
 
+  // The knot locations for this quad
+  double knots[order];
+
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
@@ -63,6 +77,23 @@ PlaneStressQuad<order>::PlaneStressQuad( PlaneStressStiffness *_stiff,
                                          int _componentNum ):
 TACS2DElement<order*order>(_stiff, type, _componentNum){  
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+
+  // Set the knot locations
+  if (order == 2){
+    knots[0] = -1.0;
+    knots[1] = 1.0;
+  }
+  else if (order == 3){
+    knots[0] = -1.0;
+    knots[1] = 0.0;
+    knots[1] = 1.0;
+  }
+  else {
+    // Set a co-sine spacing for the knot locations
+    for ( int k = 0; k < order; k++ ){
+      knots[k] = -cos(M_PI*k/(order-1));
+    }
+  }
 }
 
 template <int order>
@@ -100,7 +131,14 @@ double PlaneStressQuad<order>::getGaussWtsPts( int npoint, double pt[] ){
 template <int order>
 void PlaneStressQuad<order>::getShapeFunctions( const double pt[], 
                                                 double N[] ){
-  FElibrary::biLagrangeSF(N, pt, order);
+  double na[order], nb[order];
+  FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
+  for ( int j = 0; j < order; j++ ){
+    for ( int i = 0; i < order; i++ ){
+      N[i + j*order] = na[i]*nb[j];
+    }
+  }
 }
 
 /*
@@ -110,7 +148,17 @@ void PlaneStressQuad<order>::getShapeFunctions( const double pt[],
 template <int order>
 void PlaneStressQuad<order>::getShapeFunctions( const double pt[], double N[],
                                                 double Na[], double Nb[] ){
-  FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
+  double na[order], nb[order];
+  double dna[order], dnb[order];
+  FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+  for ( int j = 0; j < order; j++ ){
+    for ( int i = 0; i < order; i++ ){
+      N[i + j*order] = na[i]*nb[j];
+      Na[i + j*order] = dna[i]*nb[j];
+      Nb[i + j*order] = na[i]*dnb[j];
+    }
+  }
 }
 
 /*
@@ -170,8 +218,8 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       
       // Set the parametric point to extract the data
       double pt[2];
-      pt[0] = -1.0 + 2.0*n/(order - 1.0);
-      pt[1] = -1.0 + 2.0*m/(order - 1.0);
+      pt[0] = knots[n];
+      pt[1] = knots[m];
 	
       // Compute the shape functions
       double N[NUM_NODES];

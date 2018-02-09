@@ -327,14 +327,6 @@ int main( int argc, char *argv[] ){
   // Create a print object for writing output to the screen
   int freq = 1;
   KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, freq);
-
-  // Optionally print the matrix out to a file
-  int print_mat = 0;
-  for ( int i = 0; i < argc; i++ ){
-    if (strcmp("print_mat", argv[i]) == 0){
-      print_mat = 1;
-    }
-  }
   
   // Allocate the linear buckling analysis object
   TACSLinearBuckling *linear_buckling 

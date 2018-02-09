@@ -1,3 +1,17 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2014 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0 
+*/
+
 #ifndef TACS_INTEGRATOR_H
 #define TACS_INTEGRATOR_H
 
@@ -15,9 +29,8 @@
   Certain functions are pure virtual and therefore the integrator can
   be instantiated only after those functions are provided a full
   implementation in an extending child class.
-
-  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved.
 */
+
 class TACSIntegrator : public TACSObject {
  public:
   TACSIntegrator( TACSAssembler *tacs,
