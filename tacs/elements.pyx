@@ -42,6 +42,11 @@ cdef extern from "mpi-compat.h":
 def setElementFDStepSize(double dh):
     TACSSetElementFDStepSize(dh)
 
+# Wrap the element behavior types
+PY_LINEAR = LINEAR
+PY_NONLINEAR = NONLINEAR
+PY_LARGE_ROTATION = LARGE_ROTATION
+
 # A generic wrapper class for the TACSElement object
 cdef class Element:
     '''Base element class'''
