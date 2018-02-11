@@ -60,7 +60,7 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
  private:
   static const int NUM_NODES = order*order;
 
-  // The knot locations for this quad
+  // The knot locations for the basis functions
   double knots[order];
 
   // The Gauss quadrature scheme
