@@ -121,6 +121,7 @@ class TACSIntegrator : public TACSObject {
   void setRigidOutput( TACSToFH5 *_rigidf5 );
   void setShellOutput( TACSToFH5 *_shellf5 );
   void setBeamOutput( TACSToFH5 *_beamf5 );
+  void setSolidOutput( TACSToFH5 *_solidf5 );
   void writeRawSolution( const char *filename, int format=2 );
   void writeSolutionToF5();
   void writeStepToF5( int step_num );
@@ -211,6 +212,7 @@ class TACSIntegrator : public TACSObject {
   TACSToFH5 *rigidf5;       // F5 file for rigid body visualization
   TACSToFH5 *shellf5;       // F5 file for shell visualization
   TACSToFH5 *beamf5;        // F5 file for beam visualization
+  TACSToFH5 *solidf5;        // F5 file for solid visualization
   int f5_write_freq;        // Frequency for output during time marching
   
   int niter;                // Newton iteration number

@@ -1802,6 +1802,13 @@ cdef class Integrator:
         self.ptr.setBeamOutput(f5.ptr)
         return
 
+    def setSolidOutput(self, ToFH5 f5):
+        '''
+        Configure the export of solid elements
+        '''
+        self.ptr.setSolidOutput(f5.ptr)
+        return
+
     def getNumTimeSteps(self):
         '''
         Get the number of time steps
