@@ -86,7 +86,7 @@ TACS3DElement<order*order*order>(_stiff, type, _componentNum){
   else if (order == 3){
     knots[0] = -1.0;
     knots[1] = 0.0;
-    knots[1] = 1.0;
+    knots[2] = 1.0;
   }
   else {
     // Set a co-sine spacing for the knot locations
@@ -137,10 +137,12 @@ void Solid<order>::getShapeFunctions( const double pt[],
   FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
   FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
   FElibrary::lagrangeSFKnots(nc, pt[2], knots, order);
-  for ( int j = 0; j < order; j++ ){
-    for ( int i = 0; i < order; i++ ){
-      N[0] = na[i]*nb[j];
-      N++;
+  for ( int k = 0; k < order; k++ ){
+    for ( int j = 0; j < order; j++ ){
+      for ( int i = 0; i < order; i++ ){
+        N[0] = na[i]*nb[j]*nc[k];
+        N++;
+      }
     }
   }
 }
