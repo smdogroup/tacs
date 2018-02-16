@@ -1590,6 +1590,9 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       // Retrieve the quadrature points and weight
       double pt[3];
       double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb, Nc);
 
       // Compute the derivative of X with respect to the
       // coordinate directions
@@ -1605,7 +1608,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       TacsScalar upsi[3], uphi[3];
       upsi[0] = upsi[1] = upsi[2] = 0.0;
       uphi[0] = uphi[1] = uphi[2] = 0.0;
-
+      
       double *ns = N;
       const TacsScalar *ps = psi, *ph = phi;
       for ( int i = 0; i < NUM_NODES; i++ ){
@@ -1624,6 +1627,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + 
                                       upsi[1]*uphi[1] + 
                                       upsi[2]*uphi[2]);
+      
       stiff->addPointwiseMassDVSens(pt, &rho_alpha, dvSens, dvLen);
     }
   }
@@ -1685,6 +1689,7 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       for ( int j = 0; j < NUM_NODES; j++ ){
         for ( int i = 0; i <= j; i++ ){
           TacsScalar d = h*ptmass[0]*N[i]*N[j];
+          
           mat[3*i + 3*j*NUM_VARIABLES] += d;
           mat[3*i+1 + (3*j+1)*NUM_VARIABLES] += d;
           mat[3*i+2 + (3*j+2)*NUM_VARIABLES] += d;

@@ -60,6 +60,9 @@ class Solid : public TACS3DElement<order*order*order> {
   // The number of nodes in the element
   static const int NUM_NODES = order*order*order;
 
+  // The knot locations for the basis functions
+  double knots[order];
+  
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
@@ -74,6 +77,23 @@ Solid<order>::Solid( SolidStiffness * _stiff,
                      int _componentNum ):
 TACS3DElement<order*order*order>(_stiff, type, _componentNum){
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+
+  // Set the knot locations
+  if (order == 2){
+    knots[0] = -1.0;
+    knots[1] = 1.0;
+  }
+  else if (order == 3){
+    knots[0] = -1.0;
+    knots[1] = 0.0;
+    knots[1] = 1.0;
+  }
+  else {
+    // Set a co-sine spacing for the knot locations
+    for ( int k = 0; k < order; k++ ){
+      knots[k] = -cos(M_PI*k/(order-1));
+    }
+  }  
 } 
 
 template <int order>
@@ -113,7 +133,16 @@ double Solid<order>::getGaussWtsPts( int npoint, double pt[] ){
 template <int order>
 void Solid<order>::getShapeFunctions( const double pt[],
                                       double N[] ){
-  FElibrary::triLagrangeSF(N, pt, order);
+  double na[order], nb[order], nc[order];
+  FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
+  FElibrary::lagrangeSFKnots(nc, pt[2], knots, order);
+  for ( int j = 0; j < order; j++ ){
+    for ( int i = 0; i < order; i++ ){
+      N[0] = na[i]*nb[j];
+      N++;
+    }
+  }
 }
 
 /*
@@ -124,7 +153,23 @@ template <int order>
 void Solid<order>::getShapeFunctions( const double pt[], double N[],
                                       double Na[], double Nb[],
                                       double Nc[] ){
-  FElibrary::triLagrangeSF(N, Na, Nb, Nc, pt, order);
+  double na[order], nb[order], nc[order];
+  double dna[order], dnb[order], dnc[order];
+  FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+  FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
+  for ( int k = 0; k < order; k++ ){
+    for ( int j = 0; j < order; j++ ){
+      for ( int i = 0; i < order; i++ ){
+        N[0] = na[i]*nb[j]*nc[k];
+        Na[0] = dna[i]*nb[j]*nc[k];
+        Nb[0] = na[i]*dnb[j]*nc[k];
+        Nc[0] = na[i]*nb[j]*dnc[k];
+        N++;
+        Na++;  Nb++;  Nc++;          
+      }
+    }
+  }
 }
 
 /*
@@ -186,9 +231,9 @@ void Solid<order>::getOutputData( unsigned int out_type,
         // Set the parametric point where to evaluate the 
         // stresses/strains
         double pt[3];
-        pt[0] = -1.0 + 2.0/(order-1.0)*n;
-        pt[1] = -1.0 + 2.0/(order-1.0)*m;
-        pt[2] = -1.0 + 2.0/(order-1.0)*p;
+        pt[0] = knots[n];
+        pt[1] = knots[m];
+        pt[2] = knots[p];
         
         // Compute the shape functions
         double N[NUM_NODES];

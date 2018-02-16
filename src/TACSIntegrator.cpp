@@ -485,6 +485,19 @@ void TACSIntegrator::setBeamOutput( TACSToFH5 *_beamf5 ){
 }
 
 /*
+  Set whether SOLID body components are a part of the output
+*/
+void TACSIntegrator::setSolidOutput( TACSToFH5 *_solidf5 ){
+  if (_solidf5){
+    _solidf5->incref();
+  }
+  if (solidf5){
+    solidf5->decref();
+  }
+  solidf5 = _solidf5;
+}
+
+/*
   Prints the wall time taken during operations in TACSIntegrator
    
   input:
