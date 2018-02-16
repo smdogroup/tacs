@@ -149,6 +149,7 @@ cdef inline _init_VecIndices(TACSBVecIndices *ptr):
 cdef extern from "BVecInterp.h":
     cdef cppclass TACSBVecInterp(TACSObject):
         TACSBVecInterp(TACSVarMap*, TACSVarMap*, int)
+        TACSBVecInterp(TACSAssembler*, TACSAssembler*)
         void mult(TACSBVec*, TACSBVec*)
         void multAdd(TACSBVec*, TACSBVec*, TACSBVec*)
         void multTranspose(TACSBVec*, TACSBVec*)
