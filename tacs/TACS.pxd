@@ -525,7 +525,8 @@ cdef extern from "TACSIntegrator.h":
         void setOutputFrequency(int write_freq)
         void setRigidOutput(TACSToFH5 *_rigidf5)
         void setShellOutput(TACSToFH5 *_shellf5)
-        void setBeamOutput(TACSToFH5 *_beamf5)        
+        void setBeamOutput(TACSToFH5 *_beamf5)
+        void setSolidOutput(TACSToFH5 *_solidf5)
         void writeSolution(const_char *filename, int format)
         void writeSolutionToF5(int step_num)
 

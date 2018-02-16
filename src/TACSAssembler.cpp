@@ -497,8 +497,8 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     // Check if the number of variables per node matches
     if (_elements[i]->numDisplacements() != varsPerNode){
       fprintf(stderr, 
-              "[%d] Element %s does not match variables per node\n",
-              mpiRank, _elements[i]->elementName());
+              "[%d] Element %s, num displacements (%d) does not match variables per node (%d)\n",
+              mpiRank, _elements[i]->elementName(),_elements[i]->numDisplacements(),varsPerNode);
       return 1;
     }
 
