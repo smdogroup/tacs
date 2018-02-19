@@ -237,11 +237,16 @@ cdef class Vec:
         return self.ptr.readFromFile(&filename[0])
 
 cdef class VecInterp:
-    def __cinit__(self, VarMap inmap=None, VarMap outmap=None,
+    def __cinit__(self, inobj=None, outobj=None,
                   int vars_per_node=1):
         self.ptr = NULL
-        if inmap and outmap:
-            self.ptr = new TACSBVecInterp(inmap.ptr, outmap.ptr, vars_per_node)
+        if isinstance(inobj, VarMap) and isinstance(outobj, VarMap):
+            self.ptr = new TACSBVecInterp((<VarMap>inobj).ptr,
+                                          (<VarMap>outobj).ptr, vars_per_node)
+            self.ptr.incref()
+        elif isinstance(inobj, Assembler) and isinstance(outobj, Assembler):
+            self.ptr = new TACSBVecInterp((<Assembler>inobj).ptr,
+                                          (<Assembler>outobj).ptr)
             self.ptr.incref()
         return
 

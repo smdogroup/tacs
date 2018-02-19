@@ -1978,4 +1978,4 @@ void TACS3DElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
                    J, Xa, Na, Nb, Nc, vars);
 }
 
-#endif
+#endif // TACS_3D_ELEMENT_H
