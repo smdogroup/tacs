@@ -215,6 +215,9 @@ cdef extern from "TACSElementWrapper.h":
         TACSElementWrapper(PyObject *obj, int, int)
 
         # Member functions
+        void (*getinitconditions)( void *, int, int, 
+                                   TacsScalar *, TacsScalar *, 
+                                   TacsScalar *, const TacsScalar * )
         void (*addresidual)( void *, int, int, double time, TacsScalar *,
                              const TacsScalar *,
                              const TacsScalar *,
