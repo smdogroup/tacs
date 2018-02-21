@@ -1578,6 +1578,9 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       stiff->addStressDVSens(pt, bphi, scale*h, bpsi, dvSens, dvLen);
     }
   }
+  else if (matType == GEOMETRIC_STIFFNESS_MATRIX){
+    
+  }
   else if (matType == MASS_MATRIX){
     // The shape functions associated with the element
     double N[NUM_NODES];
@@ -1703,6 +1706,9 @@ void TACS3DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
         mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
       }
     }
+  }
+  else if (matType == GEOMETRIC_STIFFNESS_MATRIX){
+    
   }
   else if (matType == STIFFNESS_MATRIX){
     // The shape functions associated with the element
