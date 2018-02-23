@@ -379,8 +379,8 @@ void PCG::setOperators( TACSMat *_mat, TACSPc *_pc ){
 }
 
 void PCG::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  *_mat = mat;
-  *_pc = pc;
+  if (_mat){*_mat = mat; }
+  if (_pc){*_pc = pc; }
 }
 
 void PCG::setTolerances( double _rtol, double _atol ){
@@ -668,8 +668,8 @@ void GMRES::setOperators( TACSMat *_mat, TACSPc *_pc ){
   pc:  the preconditioner
 */
 void GMRES::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  *_mat = mat;
-  *_pc = pc;
+  if (_mat){*_mat = mat; }
+  if (_pc){*_pc = pc; }
 }
 
 /*
