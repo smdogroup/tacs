@@ -43,6 +43,23 @@ class TACS3DTraction : public TACSElement {
     memcpy(tx, _tx, order*order*sizeof(TacsScalar));
     memcpy(ty, _ty, order*order*sizeof(TacsScalar));
     memcpy(tz, _tz, order*order*sizeof(TacsScalar));
+
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }  
   }
   TACS3DTraction( int _surface, 
                   TacsScalar _tx,
@@ -52,6 +69,23 @@ class TACS3DTraction : public TACSElement {
     for ( int i = 0; i < order*order; i++ ){
       tx[i] = _tx;  ty[i] = _ty;  tz[i] = _tz;
     }
+
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }  
   }
                      
   // Return the number of displacements, stresses and nodes
@@ -68,6 +102,27 @@ class TACS3DTraction : public TACSElement {
                         const TacsScalar vars[],
                         const TacsScalar dvars[] ){
     *Te = 0.0, *Pe = 0.0;
+  }
+
+  /*
+    Compute the shape functions and their derivatives w.r.t. the
+    parametric element location 
+  */
+  void getShapeFunctions( const double pt[], double N[],
+                          double Na[], double Nb[] ){
+    double na[order], nb[order];
+    double dna[order], dnb[order];
+    FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+    FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+    for ( int j = 0; j < order; j++ ){
+      for ( int i = 0; i < order; i++ ){
+        N[0] = na[i]*nb[j];
+        Na[0] = dna[i]*nb[j];
+        Nb[0] = na[i]*dnb[j];
+        N++;
+        Na++;  Nb++;          
+      }
+    }
   }
 
   // Compute the residual of the governing equations
@@ -92,7 +147,7 @@ class TACS3DTraction : public TACSElement {
         // Compute X, Xd, N, Na and Nb
         double N[order*order];
         double Na[order*order], Nb[order*order];
-        FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
+        getShapeFunctions(pt, N, Na, Nb);
 
         TacsScalar Xa[3], Xb[3];
         Xa[0] = Xa[1] = Xa[2] = 0.0;
@@ -218,6 +273,9 @@ class TACS3DTraction : public TACSElement {
   TacsScalar tx[order*order];
   TacsScalar ty[order*order];
   TacsScalar tz[order*order];
+
+  // The knot locations for the basis functions
+  double knots[order];
 };
 
 
