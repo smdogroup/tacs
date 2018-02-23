@@ -210,3 +210,19 @@ cdef extern from  "MITC3.h":
         MITC3(TimoshenkoStiffness *_stiff, TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit)
 
+cdef extern from "TACSElementWrapper.h":
+    cdef cppclass TACSElementWrapper(TACSElement):
+        TACSElementWrapper(PyObject *obj, int, int)
+
+        # Member functions
+        void (*addresidual)( void *, int, int, double time, TacsScalar *,
+                             const TacsScalar *,
+                             const TacsScalar *,
+                             const TacsScalar *,
+                             const TacsScalar * )
+        void (*addjacobian)( void *, int, int, double time, TacsScalar *,
+                             double alpha, double beta, double gamma,
+                             const TacsScalar *,
+                             const TacsScalar *,
+                             const TacsScalar *,
+                             const TacsScalar * )

@@ -66,11 +66,7 @@ class FEMat : public ScMat {
                         int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=NORMAL );
   void applyBCs( TACSBcMap *bcmap );
-  TACSVec *createVec();  
- 
- private:
-  TACSBcMap *bcs; // Boundary conditions
-  int Nb, Nc;  // Size of B/C
+  TACSVec *createVec();
 };
 
-#endif
+#endif // TACS_FE_MATRIX_H
