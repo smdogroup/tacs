@@ -95,6 +95,10 @@ class TACSLinearBuckling : public TACSObject {
   // Vectors used in the analysis
   TACSBVec *path; // The solution path
   TACSBVec *res, *update, *eigvec;  
+
+  // The multigrid object -- only defined if a multigrid
+  // preconditioner is used
+  TACSMg *mg;
 };
 
 /*!  
