@@ -49,6 +49,7 @@ class TACSIntegrator : public TACSObject {
   void setUseLapack( int _use_lapack );
   void setUseFEMat( int _use_femat, TACSAssembler::OrderingType _type );
   void setInitNewtonDeltaFraction( double frac );
+  void setKrylovSubspaceMethod( TACSKsm *_ksm );
 
   // Set the functions to integrate
   //--------------------------------

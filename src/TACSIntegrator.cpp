@@ -15,6 +15,7 @@
 #include "TACSIntegrator.h"
 #include <math.h>
 #include "tacslapack.h"
+#include "TACSMg.h"
 
 /*
   Base class constructor for integration schemes.
@@ -119,6 +120,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
   rigidf5 = NULL;
   shellf5 = NULL;
   beamf5 = NULL;
+  solidf5 = NULL;
   
   // Set kinetic and potential energies
   init_energy = 0.0;
@@ -158,6 +160,7 @@ TACSIntegrator::~TACSIntegrator(){
   if (rigidf5){ rigidf5->decref();}
   if (shellf5){ shellf5->decref();}
   if (beamf5){ beamf5->decref();}
+  if (solidf5){ solidf5->decref();}
 }
 
 /*
@@ -245,6 +248,19 @@ void TACSIntegrator::setInitNewtonDeltaFraction( double frac ){
   else {
     init_newton_delta = 0.0;
   }
+}
+
+/*
+  Set the liner solver
+ */
+void TACSIntegrator::setKrylovSubspaceMethod( TACSKsm *_ksm ){
+  if (_ksm){
+    _ksm->incref();
+  }
+  if (ksm){
+    ksm->decref();
+  }
+  ksm = _ksm;
 }
 
 /*
@@ -435,6 +451,13 @@ void TACSIntegrator::writeStepToF5( int step_num ){
     char fname[256];
     sprintf(fname, "%s/beam_%06d.f5", prefix, step_num);
     beamf5->writeToFile(fname);
+  }
+
+  // Write solid body if set
+  if (solidf5){
+    char fname[256];
+    sprintf(fname, "%s/solid_%06d.f5", prefix, step_num);
+    solidf5->writeToFile(fname);
   }
 }
 
@@ -634,7 +657,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     force_norm = TacsRealPart(forces->norm());
   }
 
-  if (!mat || !ksm){
+  if (!ksm){
     // Set the D matrix to NULL
     if (use_femat){
       // Create a matrix for storing the Jacobian
@@ -665,9 +688,12 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
     ksm->incref();
   }
+  else {
+    ksm->getOperators(&mat, &pc);
+  }
 
   // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
-  ksm->setTolerances(rtol, atol);
+  ksm->setTolerances(0.1*rtol, 1.0e-30);
 
   // Initialize the update norms
   update_norm = 1.0e99; 
@@ -701,15 +727,23 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
           (TacsRealPart(res_norm) < TacsRealPart(init_res_norm))){
         delta *= TacsRealPart(res_norm/init_res_norm);
       }
-
-      tacs->assembleJacobian(alpha, beta, gamma + delta,
-                             res, mat, NORMAL);
+      
+      // Try to down cast the preconditioner to a multigrid pc
+      TACSMg *mg = dynamic_cast<TACSMg*>(pc);
+      if (mg){
+        mg->assembleJacobian(alpha, beta, gamma + delta, 
+                             res, NORMAL);
+      }
+      else {
+        tacs->assembleJacobian(alpha, beta, gamma + delta,
+                               res, mat, NORMAL);
+      }
     }
     else {
       tacs->assembleRes(res);
     }
 
-    // Add the forces into the residual    
+    // Add the forces into the residual
     if (forces){
       tacs->applyBCs(forces);
       res->axpy(-1.0, forces);
@@ -1539,7 +1573,15 @@ void TACSBDFIntegrator::initAdjoint( int k ){
  
     // Setup the Jacobian
     double tassembly = MPI_Wtime();
-    tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+    
+    // Try to downcast to a multigrid pc
+    TACSMg *mg = dynamic_cast<TACSMg*>(pc);
+    if (mg){
+      mg->assembleJacobian(alpha, beta, gamma, NULL, TRANSPOSE);
+    }
+    else {
+      tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+    }
     time_rev_assembly += MPI_Wtime() - tassembly;
     
     // LU factorization of the Jacobian
@@ -2205,7 +2247,13 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
     getLinearizationCoeffs(stage, h, &alpha, &beta, &gamma);
 
     // Setup the Jacobian
-    tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+    TACSMg *mg = dynamic_cast<TACSMg*>(pc);
+    if (mg){
+      mg->assembleJacobian(alpha, beta, gamma, NULL, TRANSPOSE);
+    }
+    else {
+      tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+    }
 
     // Factor the preconditioner
     pc->factor();

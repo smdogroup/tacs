@@ -339,7 +339,7 @@ cdef class Mat:
 
 # Create a generic preconditioner class
 cdef class Pc:
-    def __cinit__(self, Mat mat=None):
+    def __cinit__(self, *args, Mat mat=None, **kwargs):
         '''
         This creates a default preconditioner depending on the matrix
         type.
@@ -377,19 +377,6 @@ cdef class Pc:
         '''Apply the preconditioner'''
         self.ptr.applyFactor(x.ptr, y.ptr)
 
-    def assembleJacobian(self, double alpha, double beta, double gamma,
-                         Vec residual=None,
-                         MatrixOrientation matOr=NORMAL):
-        '''Assemble the Jacobian for all levels'''
-        cdef TACSBVec *res = NULL
-        cdef TACSMg *mg = NULL
-        mg = _dynamicTACSMg(self.ptr)
-        if mg:
-            if residual is not None:
-                res = residual.ptr
-            mg.assembleJacobian(alpha, beta, gamma, res, matOr)
-        return
-
     def getMat(self):
         '''Retrieve the associated matrix'''
         cdef TACSMat *mat = NULL
@@ -397,6 +384,53 @@ cdef class Pc:
         if mat:
             return _init_Mat(mat)
         return None
+
+cdef class Mg(Pc):
+    def __cinit__(self, MPI.Comm comm=None, int num_levs=-1, double omega=0.5,
+                  int num_smooth=1, int mg_symm=0):
+        if comm is not None and num_levs >= 2:
+            self.mg = new TACSMg(comm.ob_mpi, num_levs, omega, num_smooth, mg_symm)
+            self.mg.incref()
+        else:
+            self.mg = NULL
+        self.ptr = self.mg
+
+    def __dealloc__(self):
+        if self.mg:
+            self.mg.decref()
+        return
+
+    def setLevel(self, int lev, Assembler assembler, VecInterp interp=None,
+                 int num_iters=0, Mat mat=None, Pc pc=None):
+        cdef TACSBVecInterp *_interp = NULL
+        cdef TACSMat *_mat = NULL
+        cdef TACSPc *_pc = NULL
+        if interp is not None:
+            _interp = interp.ptr
+        if mat is not None:
+            _mat = mat.ptr
+        if pc is not None:
+            _pc = pc.ptr
+        self.mg.setLevel(lev, assembler.ptr, _interp, num_iters, _mat, _pc)
+        return
+
+    def setVariables(self, Vec vec):
+        self.mg.setVariables(vec.ptr)
+
+    def assembleJacobian(self, double alpha, double beta, double gamma,
+                         Vec residual=None,
+                         MatrixOrientation matOr=NORMAL):
+        '''Assemble the Jacobian for all levels'''
+        cdef TACSBVec *res = NULL
+        if residual is not None:
+            res = residual.ptr
+        self.mg.assembleJacobian(alpha, beta, gamma, res, matOr)
+        return
+
+    def assembleMatType(self, ElementMatrixType matType,
+                        MatrixOrientation matOr):
+        self.mg.assembleMatType(matType, matOr)
+        return
 
 cdef class KSM:
     def __cinit__(self, Mat mat, Pc pc, int m, 
@@ -1629,6 +1663,13 @@ cdef class Integrator:
         Parameter for globalization in Newton solver
         '''
         self.ptr.setInitNewtonDeltaFraction(frac)
+        return
+
+    def setKrylovSubspaceMethod(self, KSM ksm):
+        '''
+        Make TACS use this linear solver
+        '''
+        self.ptr.setKrylovSubspaceMethod(ksm.ptr)
         return
 
     def setFunctions(self, list funcs, int num_dvs,
