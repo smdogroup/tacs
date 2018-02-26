@@ -1812,8 +1812,8 @@ void TACS3DElement<NUM_NODES>::getMatSVSensInnerProduct( ElementMatrixType matTy
       // 
       TacsScalar *db = DB;
       for ( int j = 0; j < NUM_VARIABLES; j++ ){
-        res[j] += db[0]*sumN[0] + db[1]*sumN[1] + db[2]*sumN[2] + db[3]*sumN[3]
-          + db[4]*sumN[4] + db[5]*sumN[5];
+        res[j] += h*(db[0]*sumN[0] + db[1]*sumN[1] + db[2]*sumN[2] + 
+                     db[3]*sumN[3] + db[4]*sumN[4] + db[5]*sumN[5]);
         db += NUM_STRESSES;
       }     
     }
