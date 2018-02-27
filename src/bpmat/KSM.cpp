@@ -1086,8 +1086,8 @@ void GCROT::setOperators( TACSMat *_mat, TACSPc *_pc ){
   Retrieve the matrix/preconditioner operators set in the GCROT object
 */
 void GCROT::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  *_mat = mat;
-  *_pc = pc;
+  if (_mat){*_mat = mat; }
+  if (_pc){*_pc = pc; }
 }
 
 /*
@@ -1515,8 +1515,8 @@ void ConGMRES::setOperators( TACSMat *_mat, TACSPc *_pc ){
 }
 
 void ConGMRES::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  *_mat = mat;
-  *_pc = pc;
+  if (_mat){*_mat = mat; }
+  if (_pc){*_pc = pc; }
 }
 
 void ConGMRES::setTolerances( double _rtol, double _atol ){
@@ -1896,8 +1896,8 @@ void KsmPreconditioner::setOperators( TACSMat *_mat, TACSPc *_pc ){
 }
 
 void KsmPreconditioner::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  *_mat = mat;
-  *_pc = pc;
+  if (_mat){*_mat = mat; }
+  if (_pc){*_pc = pc; }
 }
  
 /*
