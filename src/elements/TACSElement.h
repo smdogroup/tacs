@@ -465,6 +465,10 @@ class TACSElement : public TACSOptObject {
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[] );
 
+  int testMatSVSensInnerProduct( ElementMatrixType matType, 
+                                 const TacsScalar *x, int dvLen,
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[] );
  private: 
   int componentNum;
 
