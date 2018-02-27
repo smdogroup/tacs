@@ -236,6 +236,15 @@ cdef class Vec:
         '''
         return self.ptr.readFromFile(&filename[0])
 
+cdef class VarMap:
+    def __cinit__(self, MPI.Comm comm, int owned_size):
+        self.ptr = new TACSVarMap(comm.ob_mpi, owned_size)
+        self.ptr.incref()
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
 cdef class VecInterp:
     def __cinit__(self, inobj=None, outobj=None,
                   int vars_per_node=1):
