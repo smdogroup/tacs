@@ -35,17 +35,18 @@
 class TACSElementWrapper : public TACSElement {
  public:
   TACSElementWrapper( PyObject *_self_ptr, 
-                      int _numDisplacements, 
-                      int _numNodes ){
+                      int _num_nodes,
+                      int _num_displacements ){ 
     self_ptr = _self_ptr;
-    num_displacements = _numDisplacements;
-    num_nodes = _numNodes;
+    num_nodes = _num_nodes;
+    num_displacements = _num_displacements;
 
     // This causes a circular reference so the object is never
     // deleted. This should be fixed properly using weak references,
     // but I'm not 100% sure how to do this yet...
     Py_INCREF(self_ptr);
-
+    
+    getinitconditions = NULL;
     addresidual = NULL;
     addjacobian = NULL;
 
@@ -56,8 +57,8 @@ class TACSElementWrapper : public TACSElement {
 
   // TACS Element member variables
   // -----------------------------
-  int num_displacements;
   int num_nodes;
+  int num_displacements;
 
   // TACS Element member functions
   // -----------------------------
@@ -69,6 +70,22 @@ class TACSElementWrapper : public TACSElement {
     return num_nodes;
   }
 
+  // Retrieve the initial conditions and add the derivative
+  // ------------------------------------------------------
+  void getInitConditions( TacsScalar vars[],
+                          TacsScalar dvars[],
+                          TacsScalar ddvars[],
+                          const TacsScalar Xpts[] ){
+    memset(vars, 0, numVariables()*sizeof(TacsScalar));
+    memset(dvars, 0, numVariables()*sizeof(TacsScalar));
+    memset(ddvars, 0, numVariables()*sizeof(TacsScalar));
+    if (self_ptr && getinitconditions) {
+      int nvars = num_nodes*num_displacements;
+      getinitconditions(self_ptr, nvars, num_nodes, 
+                        vars, dvars, ddvars, Xpts);
+    }
+  }
+  
   // Compute the residual of the governing equations
   // -----------------------------------------------
   void addResidual( double time, TacsScalar res[],
@@ -108,11 +125,16 @@ class TACSElementWrapper : public TACSElement {
   // Function pointers
   // -----------------
   PyObject *self_ptr; // Pointer to the python object
+  void (*getinitconditions)( void *, int, int, 
+                             TacsScalar *, TacsScalar *, 
+                             TacsScalar *, const TacsScalar * );
+  
   void (*addresidual)( void *, int, int, double time, TacsScalar res[],
                        const TacsScalar Xpts[],
                        const TacsScalar vars[],
                        const TacsScalar dvars[],
                        const TacsScalar ddvars[] );
+  
   void (*addjacobian)( void *, int, int, double time, TacsScalar J[],
                        double alpha, double beta, double gamma,
                        const TacsScalar Xpts[],
