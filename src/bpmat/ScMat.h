@@ -170,10 +170,6 @@ class PcScMat : public TACSPc {
   int monitor_factor; // Monitor the factorization time
   int monitor_back_solve; // Monitor the back-solves
 
-  // The permutation matrices - only allocated if the permutation is
-  // performed
-  int *perm, *iperm;
-
   // The partially dense matrix
   PDMat *pdmat; // This stores the Schur complement
 
@@ -181,7 +177,7 @@ class PcScMat : public TACSPc {
   // These objects defines a mapping between the local C-variables
   // (in xlocal/ylocal) to the global Schur complement system (scmat).
   TACSVarMap *schur_map; // The variable map associated with Sc
-  TACSBVecDistribute *schur_dist; // The map that distributes the Schur complement
+  TACSBVecDistribute *schur_dist; // Map that distributes the Schur complement
   TACSBVecDistCtx *schur_ctx; // The context for the distribution object
   int use_pdmat_alltoall; // Use the Alltoall version for matrix assembly
 
@@ -196,4 +192,4 @@ class PcScMat : public TACSPc {
   TACSBVec *gschur, *yschur; // The Schur complement vectors
 };
 
-#endif
+#endif // TACS_SCHUR_MATRIX_H

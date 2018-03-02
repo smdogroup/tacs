@@ -196,6 +196,9 @@ cdef extern from "FEMat.h":
 
 cdef extern from "TACSMg.h":
     cdef cppclass TACSMg(TACSPc):
+        TACSMg(MPI_Comm, int, double, int, int)
+        void setLevel(int, TACSAssembler*, TACSBVecInterp*, int,
+                      TACSMat*, TACSPc*)
         void setVariables(TACSBVec*)
         void assembleJacobian(double, double, double, TACSBVec*,
                               MatrixOrientation)
@@ -266,6 +269,15 @@ cdef inline _init_Pc(TACSPc *ptr):
     pc.ptr = ptr
     pc.ptr.incref()
     return pc
+
+cdef class Mg(Pc):
+    cdef TACSMg *mg
+
+cdef inline _init_Mg(TACSMg *ptr):
+    mg = Mg()
+    mg.mg = ptr
+    mg.mg.incref()
+    return mg
 
 cdef class KSM:
     cdef TACSKsm *ptr
@@ -499,6 +511,7 @@ cdef extern from "TACSIntegrator.h":
         void setUseLapack(int)
         void setUseFEMat(int,OrderingType)
         void setInitNewtonDeltaFraction(double)
+        void setKrylovSubspaceMethod(TACSKsm *_ksm)
         void setFunctions(TACSFunction **funcs, int num_funcs,
                           int num_design_vars,
                           int start_step, int end_step)

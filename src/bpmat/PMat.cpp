@@ -803,7 +803,7 @@ double TACSChebyshevSmoother::arnoldi( int size ){
 
     // Add the term to the matrix
     int index = i+1 + i*(size+1);
-    H[index] = W[i+1]->norm();
+    H[index] = TacsRealPart(W[i+1]->norm());
     W[i+1]->scale(1.0/H[index]);
   }
 

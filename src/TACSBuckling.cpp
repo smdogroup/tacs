@@ -81,6 +81,11 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_tacs,
 auxiliary matrix\n");
   } 
     
+  // Check if the preconditioner is actually a multigrid object. If
+  // so, then we have to allocate extra data to store things for each
+  // multigrid level.
+  mg = dynamic_cast<TACSMg*>(pc);
+
   // Store the spectral shift info
   sigma = _sigma;
 
@@ -174,31 +179,78 @@ void TACSLinearBuckling::setSigma( TacsScalar _sigma ){
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x 
 */
 void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
+  // Zero the variables
   tacs->zeroVariables();
-  tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-
-  // Copy values from kmat to aux_mat
-  // This requires a pointer to either ScMat or PMat 
-  aux_mat->copyValues(kmat);
   
-  // Determine the tangent to the solution path at the origin
-  pc->factor();
-  tacs->assembleRes(res);
-  // If need to add rhs
-  if (rhs){
-    res->axpy(-1.0, rhs);
-    tacs->applyBCs(res);
+  if (mg){
+    double alpha = 1.0, beta = 0.0, gamma = 0.0;
+    mg->assembleJacobian(alpha, beta, gamma, res);
+    mg->factor();
+    // If need to add rhs
+    if (rhs){
+      //res->axpy(-1.0, rhs);
+      res->copyValues(rhs);
+      tacs->applyBCs(res);
+    }
+   
+    solver->solve(res, path);
+    path->scale(-1.0);
+    tacs->setVariables(path);
+    ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX,
+                                     GEOMETRIC_STIFFNESS_MATRIX}; 
+    TacsScalar scale[2] = {1.0, sigma};
+    // Assemble the geometric stiffness matrix
+    tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
+
+    // Assemble the linear combination
+    mg->assembleMatCombo(matTypes, scale, 2);
   }
-  solver->solve(res, path);
-  path->scale(-1.0);
+  else{
+    pc->factor();
+    tacs->assembleRes(res);
+    // If need to add rhs
+    if (rhs){
+      res->axpy(-1.0, rhs);
+      tacs->applyBCs(res);
+    }
+    solver->solve(res, path);
+    path->scale(-1.0); 
+    tacs->setVariables(path);
+    // Assemble the stiffness and geometric stiffness matrix
+    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+    tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
 
-  // Assemble the geometric stiffness matrix
-  tacs->setVariables(path);
-  tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
+    // Form the shifted operator and factor it
+    kmat->axpy(sigma, gmat);
+    kmat->applyBCs(tacs->getBcMap());
+  }
+  
+  // tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
 
-  // Set up the eigenvalue problem
-  aux_mat->axpy(sigma, gmat);
-  aux_mat->applyBCs(tacs->getBcMap());
+  // // Copy values from kmat to aux_mat
+  // // This requires a pointer to either ScMat or PMat 
+  // aux_mat->copyValues(kmat);
+  
+  // // Determine the tangent to the solution path at the origin
+  // pc->factor();
+  // tacs->assembleRes(res);
+  // // If need to add rhs
+  // if (rhs){
+  //   res->axpy(-1.0, rhs);
+  //   tacs->applyBCs(res);
+  // }
+  // solver->solve(res, path);
+  // path->scale(-1.0); 
+  // exit(0);//
+  // // Assemble the geometric stiffness matrix
+  // tacs->setVariables(path);
+  // tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
+
+  // // Set up the eigenvalue problem
+  // aux_mat->axpy(sigma, gmat);
+  // aux_mat->applyBCs(tacs->getBcMap());
+
+  // Factor the preconditioner
   pc->factor();
     
   // Solve the symmetric eigenvalue problem
@@ -314,10 +366,13 @@ void TACSLinearBuckling::checkEigenvector( int n ){
 void TACSLinearBuckling::evalEigenDVSens( int n, 
                                           TacsScalar fdvSens[], 
                                           int numDVs ){
-  // Copy over the values of the stiffness matrix, factor
-  // the stiffness matrix.
-  aux_mat->copyValues(kmat);
-  pc->factor();
+  // Zero the derivative
+  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+
+  // // Copy over the values of the stiffness matrix, factor
+  // // the stiffness matrix.
+  // aux_mat->copyValues(kmat);
+  // pc->factor();
 
   // Get the eigenvalue and eigenvector
   TacsScalar error;

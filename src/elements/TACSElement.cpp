@@ -1507,3 +1507,134 @@ int TACSElement::testMatDVSensInnerProduct( ElementMatrixType matType,
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to state variables.
+*/
+int TACSElement::testMatSVSensInnerProduct( ElementMatrixType matType, 
+                                            const TacsScalar *x, int dvLen,
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[] ){
+  int nvars = numVariables();
+  setDesignVars(x, dvLen);
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *result = new TacsScalar[ nvars ];
+  memset(result, 0, nvars*sizeof(TacsScalar));
+
+  // Generate a random array of values
+  TacsScalar *psi = new TacsScalar[ nvars ];
+  TacsScalar *phi = new TacsScalar[ nvars ];
+  
+  generate_random_array(psi, nvars);
+  generate_random_array(phi, nvars);
+  
+  // Compute the inner product
+  getMatSVSensInnerProduct(matType, result, 
+                           psi, phi, Xpts, vars);
+  // Compute the product of the result with a perturbation 
+  // vector that is equal to perturb = sign(result[k])
+  TacsScalar dpdu = 0.0;
+  for ( int k = 0; k < nvars; k++ ){
+    dpdu += fabs(result[k]);
+  }
+  // The step length
+  double dh = test_step_size;
+  TacsScalar *upert = new TacsScalar [nvars];
+  TacsScalar fd_dpdu = 0.0;
+
+  // Create the space for the matrix
+  TacsScalar *mat = new TacsScalar[ nvars*nvars ];
+
+#ifdef TACS_USE_COMPLEX
+  // Perturb the state variables: upert = u + dh*sign(result[k])
+  for ( int k = 0; k < nvars; k++ ){
+    if (TacsRealPart(result[k]) >= 0.0){
+      upert[k] = vars[k] + TacsScalar(0.0, dh);
+    }
+    else {
+      upert[k] = vars[k] - TacsScalar(0.0, dh);
+    }
+  }
+  getMatType(matType, mat, Xpts, upert);
+
+  TacsScalar p1 = 0.0;
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      p1 += 1.0*mat[nvars*i + j]*phi[i]*psi[j];
+    }
+  }
+
+  fd_dpdu = TacsImagPart(p1)/dh;
+#else
+  // Perturb the state variables: upert = u + dh*sign(result[k])
+  for ( int k = 0; k < nvars; k++ ){
+    if (result[k] >= 0.0){
+      upert[k] = vars[k] + dh;
+    }
+    else {
+      upert[k] = vars[k] - dh;
+    }
+  }
+
+  // Compute the perturbed value
+  getMatType(matType, mat, Xpts, upert);
+
+  TacsScalar p1 = 0.0;
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      p1 += 1.0*mat[nvars*i + j]*phi[i]*psi[j];
+    }
+  }
+
+  // Pertub the design variables: xpert = x - dh*sign(result[k])
+  for ( int k = 0; k < nvars; k++ ){
+    if (result[k] >= 0.0){
+      upert[k] = vars[k] - dh;
+    }
+    else {
+      upert[k] = vars[k] + dh;
+    }
+  }
+  // Compute the perturbed value again
+  getMatType(matType, mat, Xpts, upert);
+
+  TacsScalar p2 = 0.0;
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int j = 0; j < nvars; j++ ){
+      p2 += 1.0*mat[nvars*i + j]*phi[i]*psi[j];
+    }
+  }
+
+  // Compute the finite-difference approximation
+  fd_dpdu = 0.5*(p1 - p2)/dh;
+#endif
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = get_max_error(&dpdu, &fd_dpdu, 1, &max_err_index);
+  double max_rel = get_max_rel_error(&dpdu, &fd_dpdu, 1,
+                                     &max_rel_index);
+  test_print_level = 2;
+  if (test_print_level > 0){
+  fprintf(stderr, "Testing the derivative of matrix inner product for %s\
+  w.r.t. state variables\n", elementName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    print_error_components(stderr, "Mat-inner product",
+                           &dpdu, &fd_dpdu, 1);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] psi;
+  delete [] phi;
+  delete [] upert;
+  delete [] mat;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}

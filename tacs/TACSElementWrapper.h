@@ -45,7 +45,7 @@ class TACSElementWrapper : public TACSElement {
     // deleted. This should be fixed properly using weak references,
     // but I'm not 100% sure how to do this yet...
     Py_INCREF(self_ptr);
-
+    
     getinitconditions = NULL;
     addresidual = NULL;
     addjacobian = NULL;
@@ -85,7 +85,7 @@ class TACSElementWrapper : public TACSElement {
                         vars, dvars, ddvars, Xpts);
     }
   }
-
+  
   // Compute the residual of the governing equations
   // -----------------------------------------------
   void addResidual( double time, TacsScalar res[],
@@ -128,11 +128,13 @@ class TACSElementWrapper : public TACSElement {
   void (*getinitconditions)( void *, int, int, 
                              TacsScalar *, TacsScalar *, 
                              TacsScalar *, const TacsScalar * );
+  
   void (*addresidual)( void *, int, int, double time, TacsScalar res[],
                        const TacsScalar Xpts[],
                        const TacsScalar vars[],
                        const TacsScalar dvars[],
                        const TacsScalar ddvars[] );
+  
   void (*addjacobian)( void *, int, int, double time, TacsScalar J[],
                        double alpha, double beta, double gamma,
                        const TacsScalar Xpts[],

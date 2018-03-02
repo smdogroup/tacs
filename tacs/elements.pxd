@@ -218,11 +218,13 @@ cdef extern from "TACSElementWrapper.h":
         void (*getinitconditions)( void *, int, int, 
                                    TacsScalar *, TacsScalar *, 
                                    TacsScalar *, const TacsScalar * )
+
         void (*addresidual)( void *, int, int, double time, TacsScalar *,
                              const TacsScalar *,
                              const TacsScalar *,
                              const TacsScalar *,
                              const TacsScalar * )
+        
         void (*addjacobian)( void *, int, int, double time, TacsScalar *,
                              double alpha, double beta, double gamma,
                              const TacsScalar *,

@@ -654,8 +654,7 @@ cdef void getinitconditions(void * _self, int nvars, int num_nodes,
     _Xpts = inplace_array_1d(np.NPY_DOUBLE, 3*num_nodes, <void*>Xpts)
     (<object>_self).getInitConditions(_vars, _dvars, _ddvars, _Xpts)
     return 
-
-
+  
 cdef void addresidual(void * _self, int nvars, int num_nodes, 
                       double time, TacsScalar * res,
                       const TacsScalar * Xpts,
@@ -665,7 +664,7 @@ cdef void addresidual(void * _self, int nvars, int num_nodes,
     '''Add the residual'''
     _res = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>res)
     _Xpts = inplace_array_1d(np.NPY_DOUBLE, 3*num_nodes, <void*>Xpts)
-    _vars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>vars) 
+    _vars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>vars)
     _dvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>dvars)
     _ddvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>ddvars)
     (<object>_self).addResidual(time, _res, _Xpts, _vars, _dvars, _ddvars)
@@ -690,7 +689,6 @@ cdef void addjacobian(void * _self, int nvars, int num_nodes,
 cdef class pyElement(Element):
     def __cinit__(self, int num_nodes, int num_displacements, *args, **kwargs):
         cdef TACSElementWrapper *pointer
-
         pointer = new TACSElementWrapper(<PyObject*>self, num_nodes, num_displacements)
         pointer.incref()
 
