@@ -74,13 +74,28 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_tacs,
   TACSMat *mat;
   solver->getOperators(&mat, &pc);
 
-  // Check that the matrix associated with the solver object
-  // is the auxiliary matrix. If not, complain about it.
+  // Check that the matrix associated with the solver object is the auxiliary
+  // matrix. If not, complain about it.
   if (mat != aux_mat){
-    fprintf(stderr, "Error, solver must be associated with the \
+    fprintf(stderr, "TACSBuckling: Error, solver must be associated with the \
 auxiliary matrix\n");
   } 
-    
+
+  // Check that the auxiliary matrix, geometric stiffness and stiffness
+  // matrices are different objects
+  if (aux_mat == kmat){
+    fprintf(stderr, "TACSBuckling: Error, stiffness and auxiliary matrices \
+must be different instances\n");
+  }
+  if (aux_mat == gmat){
+    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and auxiliary matrices \
+must be different instances\n");
+  }
+  if (gmat == kmat){
+    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and stiffness matrices \
+must be different instances\n");
+  }
+
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
@@ -186,69 +201,56 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
     mg->assembleJacobian(alpha, beta, gamma, res);
     mg->factor();
-    // If need to add rhs
+
+    // Add the right-hand-side due to external forces
     if (rhs){
-      //res->axpy(-1.0, rhs);
-      res->copyValues(rhs);
+      //res->axpy(1.0, rhs);
       tacs->applyBCs(res);
     }
    
+    // Solve for the load path
     solver->solve(res, path);
     path->scale(-1.0);
     tacs->setVariables(path);
+
+    // Assemble the linear combination of the stiffness matrix
+    // and geometric stiffness matrix
     ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX,
                                      GEOMETRIC_STIFFNESS_MATRIX}; 
     TacsScalar scale[2] = {1.0, sigma};
-    // Assemble the geometric stiffness matrix
-    tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
-
-    // Assemble the linear combination
     mg->assembleMatCombo(matTypes, scale, 2);
+
+    // Assemble the geometric stiffness matrix and the stiffness matrix itself
+    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+    tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
   }
   else{
+    // Compute the stiffness matrix and copy the values to the
+    // auxiliary matrix used to solve for the load path.
+    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+    aux_mat->copyValues(kmat);
+
     pc->factor();
     tacs->assembleRes(res);
+
     // If need to add rhs
     if (rhs){
       res->axpy(-1.0, rhs);
       tacs->applyBCs(res);
     }
+
+    // Solve for the load path and set the variables
     solver->solve(res, path);
     path->scale(-1.0); 
     tacs->setVariables(path);
+
     // Assemble the stiffness and geometric stiffness matrix
-    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
     tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
 
     // Form the shifted operator and factor it
-    kmat->axpy(sigma, gmat);
-    kmat->applyBCs(tacs->getBcMap());
+    aux_mat->axpy(sigma, gmat);
+    aux_mat->applyBCs(tacs->getBcMap());
   }
-  
-  // tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-
-  // // Copy values from kmat to aux_mat
-  // // This requires a pointer to either ScMat or PMat 
-  // aux_mat->copyValues(kmat);
-  
-  // // Determine the tangent to the solution path at the origin
-  // pc->factor();
-  // tacs->assembleRes(res);
-  // // If need to add rhs
-  // if (rhs){
-  //   res->axpy(-1.0, rhs);
-  //   tacs->applyBCs(res);
-  // }
-  // solver->solve(res, path);
-  // path->scale(-1.0); 
-  // exit(0);//
-  // // Assemble the geometric stiffness matrix
-  // tacs->setVariables(path);
-  // tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
-
-  // // Set up the eigenvalue problem
-  // aux_mat->axpy(sigma, gmat);
-  // aux_mat->applyBCs(tacs->getBcMap());
 
   // Factor the preconditioner
   pc->factor();
