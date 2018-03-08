@@ -348,7 +348,7 @@ cdef class Mat:
 
 # Create a generic preconditioner class
 cdef class Pc:
-    def __cinit__(self, *args, Mat mat=None, **kwargs):
+    def __cinit__(self, Mat mat=None, *args, **kwargs):
         '''
         This creates a default preconditioner depending on the matrix
         type.
