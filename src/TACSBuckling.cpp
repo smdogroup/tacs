@@ -371,23 +371,25 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   // Zero the derivative
   memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
 
-  // // Copy over the values of the stiffness matrix, factor
-  // // the stiffness matrix.
-  // aux_mat->copyValues(kmat);
-  // pc->factor();
+  // Copy over the values of the stiffness matrix, factor
+  // the stiffness matrix.
+  aux_mat->copyValues(kmat);
+  pc->factor();
 
   // Get the eigenvalue and eigenvector
   TacsScalar error;
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
-
+  
   // Evaluate the partial derivative for the stiffness matrix
   tacs->addMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
-
+  int mpi_rank;
+  MPI_Comm_rank(tacs->getMPIComm(),&mpi_rank);
+  
   // Evaluate the derivative of the geometric stiffness matrix
   tacs->addMatDVSensInnerProduct(TacsRealPart(eig), GEOMETRIC_STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
-
+  
   // Evaluate derivative of the inner product with respect to 
   // the path variables
   tacs->evalMatSVSensInnerProduct(GEOMETRIC_STIFFNESS_MATRIX,
@@ -398,18 +400,14 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   solver->solve(res, update);
   tacs->addAdjointResProducts(-TacsRealPart(eig), &update, 1, 
                               fdvSens, numDVs);
-
+  
   // Now compute the inner product: u^{T}*G*u
   gmat->mult(eigvec, res);
   TacsScalar scale = res->dot(eigvec);
-
-  // All reduce across the processors
-  MPI_Allreduce(MPI_IN_PLACE, fdvSens, numDVs, MPI_INT,
-                MPI_SUM, tacs->getMPIComm());
-
+  
   // Prepare to scale the final result
   scale = -1.0/scale;
-
+  
   // Scale the gradient to complete the calculation
   for ( int i = 0; i < numDVs; i++ ){
     fdvSens[i] *= scale;
