@@ -772,9 +772,12 @@ cdef class Assembler:
         self.ptr.setNumThreads(t)
         return
 
-    def setAuxElements(self, AuxElements elems):
+    def setAuxElements(self, AuxElements elems=None):
         '''Set the auxiliary elements'''
-        self.ptr.setAuxElements(elems.ptr)
+        cdef TACSAuxElements *ptr = NULL
+        if elems is not None:
+            ptr = elems.ptr
+        self.ptr.setAuxElements(ptr)
         return
 
     def createNodeVec(self):
