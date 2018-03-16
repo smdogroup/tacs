@@ -356,7 +356,6 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
         int count = ext_ptr[i+1] - ext_ptr[i];
         int tag = 1;
         MPI_Send(&orig_nodes[ext_ptr[i]], count, MPI_INT, i, tag, comm);
-
       }
     }
 

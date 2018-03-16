@@ -124,6 +124,8 @@ cdef extern from "BVec.h":
 cdef extern from "BVecDist.h":
      cdef cppclass TACSVarMap(TACSObject):
         TACSVarMap(MPI_Comm, int)
+        MPI_Comm getMPIComm()
+        void getOwnerRange(const int**)
 
      cdef cppclass TACSBVecIndices(TACSObject):
          TACSBVecIndices(int**, int)
@@ -331,9 +333,10 @@ cdef extern from "TACSAssembler.h":
         int getNumDependentNodes()
         int getNumOwnedNodes()
         int getNumElements()
-        TACSElement **getElements()
+        TACSVarMap *getVarMap()
 
         # Return information about the element
+        TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)
         

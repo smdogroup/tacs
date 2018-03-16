@@ -622,7 +622,7 @@ const char * TACSRigidBody::extraName( int i ){
   JDV:      design variable numbers for the second moments of mass
 */
 void TACSRigidBody::setDesignVarNums( int _massDV, 
-                                    const int _cDV[], 
+                                      const int _cDV[], 
 				    const int _JDV[] ){
   massDV = _massDV;
   if (_cDV){

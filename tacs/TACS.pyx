@@ -210,29 +210,21 @@ cdef class Vec:
         self.ptr.setRand(lower, upper)
         return
         
-    def writeToFile(self, char* filename=''):
+    def writeToFile(self, char* filename):
         '''
         Write the values to a file.
         
         This uses MPI file I/O. The filenames must be the same on all
         processors. The format is independent of the number of processors.
-        
-        The file format is as follows:
-        int                              The length of the vector
-        len * sizeof(TacsScalar)  The vector entries
         '''
         return self.ptr.writeToFile(&filename[0])
     
-    def readFromFile(self, char* filename=''):
+    def readFromFile(self, char* filename):
         '''
         Read values from a binary data file.
         
         The size of this vector must be the size of the vector
         originally stored in the file otherwise nothing is read in.
-        
-        The file format is as follows:
-        int                              The length of the vector
-        len * sizeof(TacsScalar)  The vector entries
         '''
         return self.ptr.readFromFile(&filename[0])
 
@@ -655,6 +647,23 @@ cdef class Assembler:
         Return the number of elements
         '''
         return self.ptr.getNumElements()
+
+    def getOwnerRange(self):
+        '''
+        Get the ranges of global node numbers owned by each processor
+        '''
+        cdef MPI_Comm c_comm
+        cdef TACSVarMap *varmap = NULL
+        cdef const int *owner_range = NULL
+        cdef int size = 0 
+        varmap = self.ptr.getVarMap()
+        c_comm = varmap.getMPIComm()
+        varmap.getOwnerRange(&owner_range)
+        MPI_Comm_size(c_comm, &size)
+        rng = np.zeros(size+1, dtype=np.intc)
+        for i in range(size+1):
+            rng[i] = owner_range[i]
+        return rng
 
     def getElements(self):
         '''Get the elements'''
