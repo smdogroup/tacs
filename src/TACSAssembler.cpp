@@ -2525,7 +2525,7 @@ void TACSAssembler::scatterExternalBCs( TACSBcMap *bcs ){
   automatically segment an array to avoid coding mistakes.
 
   Note that this is coded in such a way that you can provide NULL
-  arguments to
+  arguments
 */
 void TACSAssembler::getDataPointers( TacsScalar *data,
                                      TacsScalar **v1, TacsScalar **v2, 
@@ -2727,7 +2727,8 @@ void TACSAssembler::getDesignVarRange( TacsScalar lb[],
   if (auxElements){
     auxElements->getDesignVarRange(lb, ub, numDVs);
   }
-}                         
+}
+
 /*!
   Set the number of threads to use in the computation
 */
@@ -5061,4 +5062,89 @@ void TACSAssembler::getOutputData( ElementType elem_type,
       elements[i]->addOutputCount(&nelems, &nnodes, &ncsr);
     }
   }  
+}
+
+/*
+  Get continuous output data by averaging the element quantities to
+  the nodes.
+
+  This results in approximate strains/stresses but a significantly
+  smaller data footprint. In addition, there is extra parallel
+  overhead involed in averaging quantities across different
+  processors.
+*/
+TACSBVec* TACSAssembler::getContinuousOutputData( ElementType elem_type,
+                                                  unsigned int out_type,
+                                                  int nvals ){
+  TacsScalar *elem_data = new TacsScalar[ nvals*maxElementNodes ];
+  TacsScalar *elem_weights = new TacsScalar[ maxElementNodes ];
+  for ( int i = 0; i < maxElementNodes; i++ ){
+    elem_weights[i] = 1.0;
+  }
+
+  TACSBVec *weights = new TACSBVec(varMap, 1, extDist, depNodes);
+  weights->incref();
+
+  // Create the element data vector
+  TACSBVec *data = new TACSBVec(varMap, nvals, extDist, depNodes);
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *elemVars, *elemXpts;
+  getDataPointers(elementData, &elemVars, NULL, NULL, NULL,
+                  &elemXpts, NULL, NULL, NULL);
+
+  for ( int i = 0; i < numElements; i++ ){
+    if (elements[i]->getElementType() == elem_type){
+      int ptr = elementNodeIndex[i];
+      int len = elementNodeIndex[i+1] - ptr;
+      const int *nodes = &elementTacsNodes[ptr];
+      xptVec->getValues(len, nodes, elemXpts);
+      varsVec->getValues(len, nodes, elemVars);
+
+      // Get the element output data
+      elements[i]->getOutputData(out_type, elem_data, nvals,
+                                 elemXpts, elemVars);
+
+      // Add the entries into the vector
+      data->setValues(len, nodes, elem_data, TACS_ADD_VALUES);
+      weights->setValues(len, nodes, elem_weights, TACS_ADD_VALUES);
+    }
+  }
+
+  delete [] elem_data;
+  delete [] elem_weights;
+
+  // Distribute the values to all the processors
+  data->beginSetValues(TACS_ADD_VALUES);
+  weights->beginSetValues(TACS_ADD_VALUES);
+
+  data->endSetValues(TACS_ADD_VALUES);
+  weights->endSetValues(TACS_ADD_VALUES);
+
+  // Average the data by the weights
+  TacsScalar *w, *d;
+  int size = weights->getArray(&w);
+  data->getArray(&d);
+
+  for ( int i = 0; i < size; i++ ){
+    if (w[i] != 0.0){
+      TacsScalar winv = 1.0/w[i];
+      TacsScalar *dv = &d[nvals*i];
+
+      for ( int j = 0; j < nvals; j++ ){
+        dv[0] *= winv;
+        dv++;
+      }
+    }
+  }
+
+  // Free the weights
+  weights->decref();
+
+  // Distribute the data values so that they are consistent across all
+  // processors; apply the dependent node interpolation
+  data->beginDistributeValues();
+  data->endDistributeValues();
+
+  return data;
 }

@@ -281,6 +281,9 @@ class TACSAssembler : public TACSObject {
   void getOutputData( ElementType elem_type,
                       unsigned int out_type,
                       double *data, int nvals );
+  TACSBVec* getContinuousOutputData( ElementType elem_type,
+                                     unsigned int out_type,
+                                     int nvals );
 
   // Functions for ordering the variables
   // ------------------------------------

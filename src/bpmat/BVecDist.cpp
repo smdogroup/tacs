@@ -228,10 +228,10 @@ int TACSBVecIndices::findIndex( int var ){
   const int n_linear_search = 10; // Start linear search when list is this long
 
   if (index_args){
-    // Unforunately bsearch cannot be used in this situation, 
-    // because var is the value, while the arg-sort implemented
-    // above uses indirect addressing. This implements a binary 
-    // search to achieve moderately okay times, I think.
+    // Unforunately bsearch cannot be used in this situation, because
+    // var is the value, while the arg-sort implemented above uses
+    // indirect addressing. This implements a binary search to achieve
+    // moderately okay times, I think.
 
     // If the number of indices is smaller than a certain value, 
     // just perform a linear search

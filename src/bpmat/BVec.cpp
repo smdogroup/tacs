@@ -540,7 +540,7 @@ const char *TACSBVec::TACSObjectName(){
   processors. The format is independent of the number of processors.
 
   The file format is as follows:
-  int                       The length of the vector
+  int                      The length of the vector
   len *sizeof(TacsScalar)  The vector entries
 */
 int TACSBVec::writeToFile( const char *filename ){
@@ -595,7 +595,7 @@ int TACSBVec::writeToFile( const char *filename ){
   stored in the file otherwise nothing is read in.
 
   The file format is as follows:
-  int                       The length of the vector
+  int                      The length of the vector
   len *sizeof(TacsScalar)  The vector entries
 */  
 int TACSBVec::readFromFile( const char *filename ){
