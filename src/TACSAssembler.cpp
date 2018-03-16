@@ -3204,7 +3204,7 @@ SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
   }
   if (mpiSize > 1){
     fprintf(stderr, 
-            "[%d] Cannot call createSerialCSCMat() with multiple processors\n",
+            "[%d] Cannot call createSerialBCSCMat() with multiple processors\n",
             mpiRank);
     return NULL;
   }
