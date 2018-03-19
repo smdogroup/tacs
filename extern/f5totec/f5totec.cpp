@@ -145,7 +145,7 @@ int main( int argc, char * argv[] ){
   MPI_Init(&argc, &argv);
 
   // Check if we're going to use strands or not
-  int use_strands = 0;
+  int use_strands = 1;
   for ( int k = 0; k < argc; k++ ){
     if (strcmp(argv[k], "--use_strands") == 0){
       use_strands = 1;

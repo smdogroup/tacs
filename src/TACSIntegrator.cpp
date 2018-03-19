@@ -186,13 +186,6 @@ void TACSIntegrator::setMaxNewtonIters( int _max_newton_iters ){
 }
 
 /*
-  Set whether TACS should write to disk
-*/
-void TACSIntegrator::setWriteStatesToDisk( int _write_to_disk ){
-  write_to_disk = _write_to_disk;
-}
-
-/*
   Control the amount of information printed to the console and the
   logging stream
 */
@@ -630,13 +623,6 @@ void TACSIntegrator::printAdjointOptionSummary(){
 */
 int TACSIntegrator::getNumTimeSteps(){
   return num_time_steps;
-}
-
-/*
-  Inform whether writing states to disk is configured
-*/
-int TACSIntegrator::isWriteStatesToDisk(){
-  return write_to_disk;
 }
 
 /*

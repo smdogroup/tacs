@@ -44,7 +44,6 @@ class TACSIntegrator : public TACSObject {
   void setRelTol( double _rtol );
   void setAbsTol( double _atol );
   void setMaxNewtonIters( int _max_newton_iters );
-  void setWriteStatesToDisk( int _write_to_disk );
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
@@ -134,7 +133,6 @@ class TACSIntegrator : public TACSObject {
   // Returns the number of time steps configured during instantiation
   //-----------------------------------------------------------------
   int getNumTimeSteps();
-  int isWriteStatesToDisk();
 
  protected:
   // Functions for solutions to linear and nonlinear problems
@@ -217,8 +215,7 @@ class TACSIntegrator : public TACSObject {
   TACSToFH5 *beamf5;        // F5 file for beam visualization
   TACSToFH5 *solidf5;        // F5 file for solid visualization
   int f5_write_freq;        // Frequency for output during time marching
-  int write_to_disk;        // configure write states to disk
-
+  
   int niter;                // Newton iteration number
   TacsScalar res_norm;      // residual norm
   TacsScalar init_res_norm; // Initial norm of the residual
