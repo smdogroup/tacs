@@ -683,13 +683,15 @@ cdef void addjacobian(void * _self, int nvars, int num_nodes,
     _vars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>vars)
     _dvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>dvars)
     _ddvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>ddvars)
-    (<object>_self).addJacobian(time, _J, alpha, beta, gamma, _Xpts, _vars, _dvars, _ddvars)
+    (<object>_self).addJacobian(time, _J, alpha, beta, gamma, 
+                                _Xpts, _vars, _dvars, _ddvars)
     return 
 
 cdef class pyElement(Element):
     def __cinit__(self, int num_nodes, int num_displacements, *args, **kwargs):
         cdef TACSElementWrapper *pointer
-        pointer = new TACSElementWrapper(<PyObject*>self, num_nodes, num_displacements)
+        pointer = new TACSElementWrapper(<PyObject*>self, 
+                                         num_nodes, num_displacements)
         pointer.incref()
 
         # Set the function pointers

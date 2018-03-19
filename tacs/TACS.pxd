@@ -8,7 +8,7 @@
 #  "License"); you may not use this software except in compliance with
 #  the License.  You may obtain a copy of the License at
 #  
-#  http://www.apache.org/licenses/LICENSE-2.0 
+#  http://www.apache.org/licenses/LICENSE-2.0
 
 # For MPI capabilities
 from mpi4py.libmpi cimport *
@@ -23,6 +23,11 @@ import numpy as np
 
 # Typdefs required for either real or complex mode
 include "TacsTypedefs.pxi"
+
+cdef inline char* convert_to_chars(s):
+   if isinstance(s, unicode):
+      s = (<unicode>s).encode('utf8')
+   return s
 
 cdef extern from "TACSElement.h":
     enum ElementType:

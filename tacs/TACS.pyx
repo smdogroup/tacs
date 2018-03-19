@@ -10,6 +10,8 @@
 #  
 #  http://www.apache.org/licenses/LICENSE-2.0 
 
+from __future__ import print_function, division
+
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
@@ -210,23 +212,25 @@ cdef class Vec:
         self.ptr.setRand(lower, upper)
         return
         
-    def writeToFile(self, char* filename):
+    def writeToFile(self, fname):
         '''
         Write the values to a file.
         
         This uses MPI file I/O. The filenames must be the same on all
         processors. The format is independent of the number of processors.
         '''
-        return self.ptr.writeToFile(&filename[0])
+        cdef char *filename = convert_to_chars(fname)
+        return self.ptr.writeToFile(filename)
     
-    def readFromFile(self, char* filename):
+    def readFromFile(self, fname):
         '''
         Read values from a binary data file.
         
         The size of this vector must be the size of the vector
         originally stored in the file otherwise nothing is read in.
         '''
-        return self.ptr.readFromFile(&filename[0])
+        cdef char *filename = convert_to_chars(fname)
+        return self.ptr.readFromFile(filename)
 
 cdef class VarMap:
     def __cinit__(self, MPI.Comm comm=None, int owned_size=0):
@@ -489,7 +493,7 @@ cdef class KSM:
         self.ptr.setTolerances(rtol, atol)
 
     def setMonitor(self, MPI.Comm comm, 
-                   char *descript='GMRES', int freq=10):
+                   _descript='GMRES', int freq=10):
         '''
         Set the object to control how the convergence history is displayed
         (if at all)
@@ -497,7 +501,8 @@ cdef class KSM:
         input:
         monitor: the KSMPrint monitor object
         '''
-        self.ptr.setMonitor(new KSMPrintStdout(&descript[0], comm.rank, freq))
+        cdef char *descript = convert_to_chars(_descript)
+        self.ptr.setMonitor(new KSMPrintStdout(descript, comm.rank, freq))
 
 cdef class Assembler:    
     def __cinit__(self):
@@ -1304,17 +1309,19 @@ cdef class ToFH5:
             self.ptr.decref()
         return
      
-    def setComponentName(self, int comp_num, char *group_name):
+    def setComponentName(self, int comp_num, _group_name):
         '''
         Set the component name for the variable
         '''
-        self.ptr.setComponentName(comp_num, &group_name[0])
+        cdef char *group_name = convert_to_chars(_group_name)
+        self.ptr.setComponentName(comp_num, group_name)
         
-    def writeToFile(self, char *filename):
+    def writeToFile(self, fname):
         '''
         Write the data stored in the TACSAssembler object to filename
         '''
-        self.ptr.writeToFile(&filename[0])
+        cdef char *filename = convert_to_chars(fname)
+        self.ptr.writeToFile(filename)
 
 # Wrap the TACSCreator object
 cdef class Creator:
@@ -1445,7 +1452,7 @@ cdef class MeshLoader:
     def __dealloc__(self):
         self.ptr.decref()
 
-    def scanBDFFile(self, char*filename):
+    def scanBDFFile(self, fname):
         '''
         This scans a Nastran file - only scanning in information from the
         bulk data section
@@ -1453,7 +1460,8 @@ cdef class MeshLoader:
         The only entries scanned are the entries beginning with elem_types
         and any GRID/GRID* entries
         '''
-        self.ptr.scanBDFFile(&filename[0])
+        cdef char *filename = convert_to_chars(fname)
+        self.ptr.scanBDFFile(fname)
 
     def getNumComponents(self):
         '''
@@ -1650,14 +1658,17 @@ cdef class Integrator:
         self.ptr.setMaxNewtonIters(max_newton_iters)
         return
 
-    def setPrintLevel(self, int print_level, char *filename=''):
+    def setPrintLevel(self, int print_level, fname=None):
         '''
         Level of print from TACSIntegrator
         0: off
         1: summary each step
         2: summary each newton iteration
         '''
-        self.ptr.setPrintLevel(print_level, &filename[0])
+        cdef char *filename = NULL
+        if fname is not None:
+            filename = convert_to_chars(fname)
+        self.ptr.setPrintLevel(print_level, filename)
         return
         
     def setJacAssemblyFreq(self, int freq):
@@ -1837,11 +1848,12 @@ cdef class Integrator:
         self.ptr.checkGradients(dh)
         return
 
-    def setOutputPrefix(self, char *prefix):
+    def setOutputPrefix(self, _prefix):
         '''
         Output directory to use for f5 files
         '''
-        self.ptr.setOutputPrefix(&prefix[0])
+        cdef char *prefix = convert_to_chars(_prefix)
+        self.ptr.setOutputPrefix(prefix)
         return
 
     def setOutputFrequency(self, int write_freq=0):
@@ -1885,8 +1897,9 @@ cdef class Integrator:
         '''
         return self.ptr.getNumTimeSteps()
 
-    def writeRawSolution(self, char *name, int format_flag=2):
-        self.ptr.writeRawSolution(&name[0], format_flag)
+    def writeRawSolution(self, fname, int format_flag=2):
+        cdef char *filename = convert_to_chars(fname)
+        self.ptr.writeRawSolution(filename, format_flag)
         return
 
 cdef class BDFIntegrator(Integrator):
