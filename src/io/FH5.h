@@ -87,7 +87,7 @@ class FH5File : public TACSObject {
     char *zone_name;
     char *var_names;
     int dim1, dim2;
-    int data_offset;
+    size_t data_offset;
     FH5FileInfo *next;
   } *root, *tip, *current;
 

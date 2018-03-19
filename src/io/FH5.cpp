@@ -357,9 +357,9 @@ void FH5File::scanFH5File(){
 
   // Determine the file size
   fseek(rfp, 0, SEEK_END);
-  int file_size = ftell(rfp);
+  size_t file_size = ftell(rfp);
   rewind(rfp);
-  int file_pos = 0;
+  size_t file_pos = 0;
 
   // Read the header information
   num_comp = 0;
@@ -370,7 +370,7 @@ void FH5File::scanFH5File(){
 
   comp_names = new char*[ num_comp ];
   for ( int k = 0; (k < num_comp) && !feof(rfp); k++ ){
-    int slen = 0;
+    size_t slen = 0;
     if (fread(&slen, sizeof(int), 1, rfp) != 1){
       fprintf(stderr, "FH5: Error reading header\n");
       return;
@@ -435,6 +435,9 @@ void FH5File::scanFH5File(){
     tip->data_offset = file_pos;
     if (tip->dtype == FH5_INT){
       file_pos += sizeof(int)*tip->dim1*tip->dim2;
+    }
+    else if (tip->dtype == FH5_FLOAT){
+      file_pos += sizeof(float)*tip->dim1*tip->dim2;
     }
     else {
       file_pos += sizeof(double)*tip->dim1*tip->dim2;
@@ -512,7 +515,7 @@ int FH5File::getZoneData( const char **zone_name,
                           void **data, int *dim1, int *dim2 ){
   // No pointer or no file
   if (!current || !rfp){
-    fprintf(stderr, "FH5File: Error, no file opened yet\n");
+    fprintf(stderr, "FH5: Error, no file opened yet\n");
     return 0;
   }
 
