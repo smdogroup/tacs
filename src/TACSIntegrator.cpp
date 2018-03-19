@@ -995,19 +995,17 @@ void TACSIntegrator::logTimeStep( int step_num ){
   Get the state variables from TACS at the given step
 */
 double TACSIntegrator::getStates( int step_num, 
-                                  TACSBVec *_q, 
-                                  TACSBVec *_qdot, 
-                                  TACSBVec *_qddot){
+                                  TACSBVec **_q, 
+                                  TACSBVec **_qdot, 
+                                  TACSBVec **_qddot){
   if (_q){
-    _q->copyValues(q[step_num]);
+    *_q = q[step_num];
   }
-
   if (_qdot){
-    _qdot->copyValues(qdot[step_num]);
+    *_qdot = qdot[step_num];
   }
-
   if (_qddot){
-    _qddot->copyValues(qddot[step_num]);
+    *_qddot = qdot[step_num];
   }
   return time[step_num];
 }

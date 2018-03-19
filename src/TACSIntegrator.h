@@ -110,7 +110,7 @@ class TACSIntegrator : public TACSObject {
 
   // Retrieve the internal states
   double getStates( int step_num, 
-                    TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot );
+                    TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot );
 
   // Check the gradient using finite-difference
   void checkGradients( double dh );

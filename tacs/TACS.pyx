@@ -1825,21 +1825,16 @@ cdef class Integrator:
         self.ptr.getXptGradient(func_num, &dfdXpt)
         return _init_Vec(dfdXpt)
 
-    def getStates(self, int time_step,
-                  Vec q=None, Vec qdot=None, Vec qddot=None):
+    def getStates(self, int time_step):
         '''
         TACS state vectors are returned at the given time step
         '''
+        cdef double time 
         cdef TACSBVec *cq = NULL
         cdef TACSBVec *cqdot = NULL
         cdef TACSBVec *cqddot = NULL
-        if q is not None:
-            cq = q.ptr
-        if qdot is not None:
-            cqdot = qdot.ptr
-        if qddot is not None:
-            cqddot = qddot.ptr        
-        return self.ptr.getStates(time_step,cq,cqdot,cqddot)
+        time = self.ptr.getStates(time_step, &cq, &cqdot, &cqddot)
+        return time, _init_Vec(cq), _init_Vec(cqdot), _init_Vec(cqddot)
     
     def checkGradients(self, double dh):
         '''

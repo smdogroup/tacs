@@ -38,11 +38,6 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-cdef char* convert_to_chars(s):
-   if isinstance(s, unicode):
-      s = (<unicode>s).encode('utf8')
-   return s
-
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     '''Return a numpy version of the array'''

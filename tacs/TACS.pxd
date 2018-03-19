@@ -539,7 +539,7 @@ cdef extern from "TACSIntegrator.h":
         void getXptGradient(int func_num, TACSBVec **dfdXpt)
         
         double getStates(int step_num,
-                         TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot)
+                         TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot)
         
         # Configure output
         void setOutputPrefix(const_char *prefix)

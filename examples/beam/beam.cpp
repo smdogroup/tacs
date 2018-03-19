@@ -569,11 +569,10 @@ int main( int argc, char *argv[] ){
       fprintf(fp, "Variables = t, u0, v0, w0, sx0, st0, sy1, sz1, sxy0, sxz0\n");
 
       // Write out data from the beams
-      TACSBVec *q = tacs->createVec();
-      q->incref();
+      TACSBVec *q = NULL;
       for ( int k = 0; k < num_steps+1; k++ ){
         TacsScalar X[3*3], vars[8*3];
-        double time = integrator->getStates(k, q, NULL, NULL);
+        double time = integrator->getStates(k, &q, NULL, NULL);
         tacs->setVariables(q);
         TACSElement *element = tacs->getElement(elem[pt], X, vars);
 
@@ -586,7 +585,6 @@ int main( int argc, char *argv[] ){
                 time, vars[0], vars[1], vars[2], 
                 s[0], s[1], s[2], s[3], s[4], s[5]);
       }
-      q->decref();
       fclose(fp);
     }
 
