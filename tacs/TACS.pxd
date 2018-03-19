@@ -514,6 +514,7 @@ cdef extern from "TACSIntegrator.h":
         void setRelTol(double)
         void setAbsTol(double)
         void setMaxNewtonIters(int)
+        void setWriteStatesToDisk(int)
         void setPrintLevel(int level, const_char *filename)
         void setJacAssemblyFreq(int)
         void setUseLapack(int)
@@ -552,6 +553,7 @@ cdef extern from "TACSIntegrator.h":
         void writeSolutionToF5(int step_num)
 
         int getNumTimeSteps()
+        int isWriteStatesToDisk()
         void writeRawSolution(const_char *name, int format_flag)
 
         # Debug adjoint

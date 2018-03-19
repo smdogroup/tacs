@@ -1627,7 +1627,7 @@ cdef class Integrator:
     time and adjoint.
     '''     
     cdef TACSIntegrator *ptr
-    
+
     def __cinit__(self):
         self.ptr = NULL
         return
@@ -1705,6 +1705,10 @@ cdef class Integrator:
         Make TACS use this linear solver
         '''
         self.ptr.setKrylovSubspaceMethod(ksm.ptr)
+        return
+
+    def setWriteStatesToDisk(self, int flag):
+        self.ptr.setWriteStatesToDisk(flag)
         return
 
     def setFunctions(self, list funcs, int num_dvs,
@@ -1892,11 +1896,41 @@ cdef class Integrator:
         '''
         return self.ptr.getNumTimeSteps()
 
+    def isWriteStatesToDisk(self):
+        return self.ptr.isWriteStatesToDisk()
+    
     def writeRawSolution(self, fname, int format_flag=2):
         cdef char *filename = convert_to_chars(fname)
         self.ptr.writeRawSolution(filename, format_flag)
         return
 
+    def persistStates(self, int step_num, prefix=''):
+        '''
+        Writes the states variables to disk. The string argument
+        prefix can be used to put the binaries in a separate
+        directory.
+        '''
+        # Get the current state varibles from integrator
+        t, q, qd, qdd = self.getStates(step_num)
+
+        # Make filenames for each state vector
+        qfnametmp = '%sq-%d.bin' % (prefix, step_num)
+        qdfnametmp = '%sqd-%d.bin' % (prefix, step_num)
+        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)        
+        cdef char *qfname = convert_to_chars(qfnametmp)
+        cdef char *qdfname = convert_to_chars(qdfnametmp)
+        cdef char *qddfname = convert_to_chars(qddfnametmp)
+
+        # Write states to disk
+        try:
+            q.writeToFile(qfname)
+            qd.writeToFile(qdfname)
+            qdd.writeToFile(qddfname)
+        except:
+            raise("Writing states to disk failed at step %d\n",
+                  step_num)        
+        return
+    
 cdef class BDFIntegrator(Integrator):
     '''
     Backward-Difference method for integration. This currently

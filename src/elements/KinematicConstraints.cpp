@@ -1319,7 +1319,7 @@ const char* TACSRigidLink::elementName(){
   return elem_name;
 }
 
-const TacsScalar TACSRigidLink::delta = 10.0;
+const TacsScalar TACSRigidLink::delta = 20.0;
 
 /*
   Compute the kinetic and potential energy within the element
