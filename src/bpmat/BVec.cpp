@@ -627,8 +627,11 @@ int TACSBVec::readFromFile( const char *filename ){
     MPI_Bcast(&len, 1, MPI_INT, 0, comm);
     if (len != range[mpi_size]){
       fprintf( stderr, "[%d] Cannot read TACSBVec from file, incorrect size \
- %d != %d \n", mpi_rank, range[mpi_size], len );
+ %d != %d. File does not exist? \n", mpi_rank, range[mpi_size], len );
       memset(x, 0, size*sizeof(TacsScalar));
+
+      // Mark this as a failure
+      fail = 1;
     }
 
     char datarep[] = "native";

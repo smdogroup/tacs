@@ -1900,6 +1900,53 @@ cdef class Integrator:
         self.ptr.writeRawSolution(filename, format_flag)
         return
 
+    def persistStates(self, int step_num, prefix=''):
+        '''
+        Writes the states variables to disk. The string argument
+        prefix can be used to put the binaries in a separate
+        directory.
+        '''
+        # Get the current state varibles from integrator
+        t, q, qd, qdd = self.getStates(step_num)
+
+        # Make filenames for each state vector
+        qfnametmp = '%sq-%d.bin' % (prefix, step_num)
+        qdfnametmp = '%sqd-%d.bin' % (prefix, step_num)
+        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)        
+        cdef char *qfname = convert_to_chars(qfnametmp)
+        cdef char *qdfname = convert_to_chars(qdfnametmp)
+        cdef char *qddfname = convert_to_chars(qddfnametmp)
+
+        # Write states to disk
+        flag1 = q.writeToFile(qfname)
+        flag2 = qd.writeToFile(qdfname)
+        flag3 = qdd.writeToFile(qddfname)
+        flag = max(flag1, flag2, flag3)
+        
+        return flag
+
+    def loadStates(self, int step_num, prefix=''):
+        '''
+        Loads the states variables to disk. The string argument
+        prefix can be used to put the binaries in a separate
+        directory.
+        '''
+        # Make filenames for each state vector
+        qfnametmp = '%sq-%d.bin' % (prefix, step_num)
+        qdfnametmp = '%sqd-%d.bin' % (prefix, step_num)
+        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)        
+        cdef char *qfname = convert_to_chars(qfnametmp)
+        cdef char *qdfname = convert_to_chars(qdfnametmp)
+        cdef char *qddfname = convert_to_chars(qddfnametmp)
+
+        # Get the current state varibles from integrator
+        t, q, qd, qdd = self.getStates(step_num)
+
+        # Store values read from file
+        return max(q.readFromFile(qfname),
+                   qd.readFromFile(qdfname),
+                   qdd.readFromFile(qddfname))
+
 cdef class BDFIntegrator(Integrator):
     '''
     Backward-Difference method for integration. This currently
