@@ -13,8 +13,8 @@ fp.write('$ Input file for a square clamped plate\n')
 fp.write('SOL 103\nCEND\nBEGIN BULK\n')
 
 # Write the grid points to a file
-for j in xrange(2*ny+1):
-    for i in xrange(2*nx+1):
+for j in range(2*ny+1):
+    for i in range(2*nx+1):
         # Write the nodal data
         spc = ' '
         coord_disp = 0
@@ -30,8 +30,8 @@ for j in xrange(2*ny+1):
 # Output 3rd order elements
 elem = 1
 part_id = 1
-for j in xrange(0, nodes.shape[1]-1, 2):
-    for i in xrange(0, nodes.shape[0]-1, 2):
+for j in range(0, nodes.shape[1]-1, 2):
+    for i in range(0, nodes.shape[0]-1, 2):
         # Write the connectivity data
         # CQUAD9 elem id n1 n2 n3 n4 n5 n6
         #        n7   n8 n9
@@ -46,7 +46,7 @@ for j in xrange(0, nodes.shape[1]-1, 2):
         elem += 1
 
 # Set up the plate so that it is fully clamped
-for i in xrange(2*nx+1):
+for i in range(2*nx+1):
     # Set the y = const edges
     spc = '123'
     fp.write('%-8s%8d%8d%8s%8.6f\n'%

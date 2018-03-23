@@ -23,7 +23,7 @@ thickness = 0.02
 
 # Loop over components, creating stiffness and element object for each
 num_components = struct_mesh.getNumComponents()
-for i in xrange(num_components):
+for i in range(num_components):
     descriptor = struct_mesh.getElementDescript(i)
     stiff = constitutive.isoFSDT(rho, E, nu, kcorr, ys, thickness, i,
                                  min_thickness, max_thickness)

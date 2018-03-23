@@ -596,6 +596,9 @@ void TACSMeshLoader::setConvertToCoordinate( int flag ){
   convertToCoordinate = flag;
 }
 
+/*
+  Get the component description from the file
+*/
 const char *TACSMeshLoader::getComponentDescript( int comp_num ){
   if (component_descript && (comp_num >= 0) && 
       (comp_num < num_components)){
@@ -1216,7 +1219,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
         else if (strncmp(line[0], "CQUAD4", 6) == 0 ||
                  strncmp(line[0], "CQUADR", 6) == 0){
           // Read in the component number and nodes associated
-    // with this element
+          // with this element
           int elem_num, component_num;
           int nodes[4]; // Should have at most four nodes
           parse_element_field(line[0],
@@ -1606,4 +1609,3 @@ void TACSMeshLoader::addAuxElement( TACSAuxElements *aux, int component_num,
     delete [] elems;
   }
 }
-

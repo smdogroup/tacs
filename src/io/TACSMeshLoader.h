@@ -101,11 +101,13 @@ class TACSMeshLoader : public TACSObject {
   void getConnectivity( int *_num_nodes, int *_num_elements,
                         const int **_elem_node_ptr, 
                         const int **_elem_node_conn,
+                        const int **_elem_component,
                         const TacsScalar **_Xpts ){
     if (_num_nodes){ *_num_nodes = num_nodes; }
     if (_num_elements){ *_num_elements = num_elements; }
     if (_elem_node_ptr){ *_elem_node_ptr = elem_node_ptr; }
     if (_elem_node_conn){ *_elem_node_conn = elem_node_conn; }
+    if (_elem_component){ *_elem_component = elem_component; }
     if (_Xpts){ *_Xpts = Xpts; }
   }
   void getBCs( int *_num_bcs, const int **_bc_nodes, const int **_bc_vars, 
@@ -156,4 +158,4 @@ class TACSMeshLoader : public TACSObject {
   int convertToCoordinate;
 };
 
-#endif
+#endif // TACS_MESH_LOADER_H

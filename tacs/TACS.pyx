@@ -403,11 +403,6 @@ cdef class Mg(Pc):
             self.mg = NULL
         self.ptr = self.mg
 
-    def __dealloc__(self):
-        if self.mg:
-            self.mg.decref()
-        return
-
     def setLevel(self, int lev, Assembler assembler, VecInterp interp=None,
                  int num_iters=0, Mat mat=None, Pc pc=None):
         cdef TACSBVecInterp *_interp = NULL
@@ -567,7 +562,7 @@ cdef class Assembler:
         if elems is NULL:
             raise MemoryError()
 
-        for i in xrange(len(elements)):
+        for i in range(len(elements)):
             elems[i] = (<Element>elements[i]).ptr
 
         self.ptr.setElements(elems)
@@ -678,7 +673,7 @@ cdef class Assembler:
         num_elems = self.ptr.getNumElements()
         elements = self.ptr.getElements()
         e = []
-        for i in xrange(num_elems):
+        for i in range(num_elems):
             e.append(_init_Element(elements[i]))
         return e
 
@@ -1066,7 +1061,7 @@ cdef class Assembler:
         if funcs is NULL:
             raise MemoryError()
 
-        for i in xrange(len(funclist)):
+        for i in range(len(funclist)):
             funcs[i] = (<Function>funclist[i]).ptr
 
         # Allocate the numpy array of function values
@@ -1380,7 +1375,7 @@ cdef class Creator:
         if elems is NULL:
             raise MemoryError()
 
-        for i in xrange(len(elements)):
+        for i in range(len(elements)):
             elems[i] = (<Element>elements[i]).ptr
 
         self.ptr.setElements(elems, len(elements))
@@ -1407,7 +1402,7 @@ cdef class Creator:
 
         # Create the partition array and return it
         partition = np.zeros(nelems, dtype=np.intc)
-        for i in xrange(nelems):
+        for i in range(nelems):
             partition[i] = part[i]
 
         # Retrun the copy of the partition array
@@ -1473,18 +1468,20 @@ cdef class MeshLoader:
         '''
         Return the component description
         '''
+        cdef const char *descript
         cdef bytes py_string
         py_string = self.ptr.getComponentDescript(comp_num)
-        return py_string
-    
+        return str(py_string)
+
     def getElementDescript(self, int comp_num):
         '''
         Retrieve the element description corresponding to 
         the component number
         '''
+        cdef const char *descript
         cdef bytes py_string
         py_string = self.ptr.getElementDescript(comp_num)
-        return py_string
+        return str(py_string)
     
     def setElement(self, int comp_num, Element elem):
         '''
@@ -1499,7 +1496,7 @@ cdef class MeshLoader:
     def getNumNodes(self):
         return self.ptr.getNumNodes()
 
-    def getNumElement(self):
+    def getNumElements(self):
         return self.ptr.getNumElements()
      
     def createTACS(self, int varsPerNode,
@@ -1519,27 +1516,33 @@ cdef class MeshLoader:
         cdef int num_elements
         cdef const int *elem_ptr
         cdef const int *elem_conn
+        cdef const int *elem_comps
         cdef const TacsScalar *Xpts
 
         self.ptr.getConnectivity(&num_nodes, &num_elements,
-                                 &elem_ptr, &elem_conn, &Xpts)
+                                 &elem_ptr, &elem_conn, &elem_comps, &Xpts)
 
         cdef np.ndarray ptr = np.zeros(num_elements+1, dtype=np.int)
         if elem_ptr is not NULL:
-            for i in xrange(num_elements+1):
+            for i in range(num_elements+1):
                 ptr[i] = elem_ptr[i]
 
         cdef np.ndarray conn = np.zeros(ptr[-1], dtype=np.int)
         if elem_conn is not NULL:
-            for i in xrange(ptr[-1]):
+            for i in range(ptr[-1]):
                 conn[i] = elem_conn[i]
+
+        cdef np.ndarray comps = np.zeros(num_elements, dtype=np.int)
+        if elem_comps is not NULL:
+            for i in range(num_elements):
+                comps[i] = elem_comps[i]
 
         cdef np.ndarray X = np.zeros(3*num_nodes, dtype)
         if Xpts is not NULL:
-            for i in xrange(3*num_nodes):
+            for i in range(3*num_nodes):
                 X[i] = Xpts[i]
 
-        return ptr, conn, X
+        return ptr, conn, comps, X
 
     def getBCs(self):
         '''
@@ -1555,18 +1558,18 @@ cdef class MeshLoader:
 
         cdef np.ndarray nodes = np.zeros(num_bcs, dtype=np.int)
         if bc_nodes is not NULL:
-            for i in xrange(num_bcs):
+            for i in range(num_bcs):
                 nodes[i] = bc_nodes[i]
 
         cdef np.ndarray ptr = np.zeros(num_bcs+1, dtype=np.int)
         if bc_ptr is not NULL:
-            for i in xrange(num_bcs+1):
+            for i in range(num_bcs+1):
                 ptr[i] = bc_ptr[i]
 
         cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.int)
         cdef np.ndarray vals = np.zeros(ptr[-1], dtype)
         if bc_vars is not NULL and bc_vals is not NULL:
-            for i in xrange(ptr[-1]):
+            for i in range(ptr[-1]):
                 bvars[i] = bc_vars[i]
                 vals[i] = bc_vals[i]
 
@@ -1717,7 +1720,7 @@ cdef class Integrator:
         cdef int nfuncs = 0
         nfuncs = len(funcs)
         fn = <TACSFunction**>malloc(nfuncs*sizeof(TACSFunction*))
-        for i in xrange(nfuncs):
+        for i in range(nfuncs):
             if funcs[i] is None:
                 fn[i] = NULL
             else:
@@ -1749,7 +1752,7 @@ cdef class Integrator:
         # Allocate the array of TACSFunction pointers
         cdef TACSFunction **funcs
         funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
-        for i in xrange(len(funclist)):
+        for i in range(len(funclist)):
             if funclist[i] is None:
                 funcs[i] = NULL
             else:

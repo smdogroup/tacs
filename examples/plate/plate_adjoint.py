@@ -109,7 +109,7 @@ mesh.setConvertToCoordinate(convert_mesh)
 mesh.scanBDFFile(bdfFileName)
 
 num_components  = mesh.getNumComponents()
-for i in xrange(num_components):
+for i in range(num_components):
     descriptor  = mesh.getElementDescript(i)
     stiff       = constitutive.isoFSDT(rho, E, nu, kcorr, ys, thickness,
                                       i, min_thickness, max_thickness)

@@ -283,6 +283,7 @@ cdef class Mg(Pc):
 cdef inline _init_Mg(TACSMg *ptr):
     mg = Mg()
     mg.mg = ptr
+    mg.ptr = ptr
     mg.mg.incref()
     return mg
 
@@ -472,11 +473,13 @@ cdef extern from "TACSMeshLoader.h":
                                   OrderingType order_type,
                                   MatrixOrderingType mat_type)
         void getConnectivity(int *_num_nodes, int *_num_elements,
-                             int **_elem_node_ptr, 
-                             int **_elem_node_conn,
+                             const int **_elem_node_ptr, 
+                             const int **_elem_node_conn,
+                             const int **elem_compoennts,
                              TacsScalar**_Xpts)
-        void getBCs(int *_num_bcs, int **_bc_nodes, int **_bc_vars, 
-                    int **_bc_ptr, TacsScalar **_bc_vals)
+        void getBCs(int *_num_bcs, const int **_bc_nodes, 
+                    const int **_bc_vars, const int **_bc_ptr, 
+                    const TacsScalar **_bc_vals)
 
 cdef extern from "TACSCreator.h":
     cdef cppclass TACSCreator(TACSObject):

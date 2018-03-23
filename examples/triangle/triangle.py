@@ -72,8 +72,8 @@ if comm.rank == 0:
     nodes = np.arange(nnodes).reshape((2*nx+1, 2*ny+1))
     
     conn = []
-    for j in xrange(ny):
-        for i in xrange(nx):
+    for j in range(ny):
+        for i in range(nx):
             # Append the first set of nodes
             conn.append([nodes[2*i, 2*j],
                          nodes[2*i+2, 2*j],
@@ -113,8 +113,8 @@ if comm.rank == 0:
     Xpts = np.zeros(3*nnodes)
     x = np.linspace(0, 10, 2*nx+1)
     y = np.linspace(0, 10, 2*nx+1)
-    for j in xrange(2*ny+1):
-        for i in xrange(2*nx+1):
+    for j in range(2*ny+1):
+        for i in range(2*nx+1):
             Xpts[3*nodes[i,j]] = x[i]
             Xpts[3*nodes[i,j]+1] = y[j]
             
@@ -156,7 +156,7 @@ funcs = []
 
 # Create the KS function
 ksweight = 100.0
-for i in xrange(1):
+for i in range(1):
     funcs.append(functions.KSFailure(tacs, ksweight))
 
 func_vals = tacs.evalFunctions(funcs)

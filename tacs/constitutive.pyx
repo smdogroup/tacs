@@ -147,7 +147,7 @@ cdef void getdesignvars(void *_self, TacsScalar *x, int dvLen):
 cdef void setdesignvars(void *_self, const TacsScalar *x, int dvLen):
     '''Set the design variable values'''
     cdef np.ndarray xvals = np.zeros(dvLen)
-    for i in xrange(dvLen):
+    for i in range(dvLen):
         xvals[i] = x[i]
     (<object>_self).setDesignVars(xvals)
     return
@@ -372,7 +372,7 @@ cdef TacsScalar fsdt_getstiffness(void *_self, const double *pt,
     A, B, D, As, rot = (<object>_self).getStiffness(p)
 
     # Copy over the stiffness values
-    for i in xrange(6):
+    for i in range(6):
         a[i] = A[i]
         b[i] = B[i]
         d[i] = D[i]
@@ -391,10 +391,10 @@ cdef void fsdt_addstiffnessdvsens(void *_self, const double *pt,
                                   TacsScalar *fdvSens, int dvLen):
     # Extract the strain
     cdef np.ndarray e = np.zeros(8)
-    for i in xrange(8):
+    for i in range(8):
         e[i] = strain[i]
     cdef np.ndarray ps = np.zeros(8)
-    for i in xrange(8):
+    for i in range(8):
         ps[i] = psi[i]
         
     # Extract the parametric point
@@ -449,7 +449,7 @@ cdef TacsScalar fsdt_fail(void *_self, const double *pt,
 
     # Extract the strain
     cdef np.ndarray e = np.zeros(8)
-    for i in xrange(8):
+    for i in range(8):
         e[i] = strain[i]
         
     # Extract the parametric point
@@ -466,7 +466,7 @@ cdef void fsdt_failstrainsens(void *_self, const double *pt,
                               TacsScalar *sens):
     # Extract the strain
     cdef np.ndarray e = np.zeros(8)
-    for i in xrange(8):
+    for i in range(8):
         e[i] = strain[i]
 
     # Extract the parametric point
@@ -476,7 +476,7 @@ cdef void fsdt_failstrainsens(void *_self, const double *pt,
     
     fsens = (<object>_self).failureStrainSens(p, e)
 
-    for i in xrange(8):
+    for i in range(8):
         sens[i] = fsens[i]
 
     return
@@ -487,7 +487,7 @@ cdef void fsdt_addfaildvsens(void *_self, const double *pt,
                              TacsScalar *fdvSens, int dvLen):
     # Extract the strain
     cdef np.ndarray e = np.zeros(8)
-    for i in xrange(8):
+    for i in range(8):
         e[i] = strain[i]
     
     # Extract the parametric point

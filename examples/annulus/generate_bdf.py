@@ -53,15 +53,15 @@ theta = np.linspace(0.0, np.pi/2.0, nx)
 u = np.linspace(0.0, 1.0, ny)
 
 # Set the nodal coordinates the coordinates for the center section
-for j in xrange(ny):
-    for i in xrange(nx):       
+for j in range(ny):
+    for i in range(nx):       
         r = Rinner*(1.0 - u[j]) + Router*u[j]
         x[i,j] = r*np.cos(theta[i])
         y[i,j] = r*np.sin(theta[i])
 
 # Write the grid points to a file
-for j in xrange(ny):
-    for i in xrange(nx):
+for j in range(ny):
+    for i in range(nx):
         # Write the nodal data
         spc = ' '
         coord_disp = 0
@@ -78,8 +78,8 @@ elem = 1
 part_id = 1
 if order == 2:
     # Ouput 2nd order elements
-    for j in xrange(nodes.shape[1]-1):
-        for i in xrange(nodes.shape[0]-1):
+    for j in range(nodes.shape[1]-1):
+        for i in range(nodes.shape[0]-1):
             # Write the connectivity data
             fp.write('%-8s%8d%8d%8d%8d%8d%8d\n'%
                      ('CQUAD4', elem, elem, 
@@ -87,8 +87,8 @@ if order == 2:
                       nodes[i+1, j+1], nodes[i+1, j]))
 elif order == 3:
     # Output 3rd order elements                
-    for j in xrange(0, nodes.shape[1]-1, order-1):
-        for i in xrange(0, nodes.shape[0]-1, order-1):
+    for j in range(0, nodes.shape[1]-1, order-1):
+        for i in range(0, nodes.shape[0]-1, order-1):
             # Write the connectivity data
             # CQUAD9 elem id n1 n2 n3 n4 n5 n6
             #        n7   n8 n9
@@ -103,8 +103,8 @@ elif order == 3:
             elem += 1
 elif order == 4:
     # Output 4th order elements
-    for j in xrange(0, nodes.shape[1]-1, order-1):
-        for i in xrange(0, nodes.shape[0]-1, order-1):
+    for j in range(0, nodes.shape[1]-1, order-1):
+        for i in range(0, nodes.shape[0]-1, order-1):
             # Write the connectivity data
             # CQUAD16 elem id  n1  n2  n3  n4  n5  n6
             #         n7   n8  n9  n10 n11 n12 n13 n14
@@ -125,14 +125,14 @@ elif order == 4:
             elem += 1
 
 # Set up the plate so that it is fully clamped
-for k in xrange(ny):
+for k in range(ny):
     # Set the y = const edges
     # Clamp w, roty, rotz
     spc = '2'
     fp.write('%-8s%8d%8d%8s%8.6f\n'%
              ('SPC', 1, nodes[0, k], spc, 0.0))
 
-for k in xrange(ny):
+for k in range(ny):
     spc = '1'
     fp.write('%-8s%8d%8d%8s%8.6f\n'%
              ('SPC', 1, nodes[-1, k], spc, 0.0))
