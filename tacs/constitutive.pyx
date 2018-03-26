@@ -134,7 +134,7 @@ cdef class isoSolidStiff(SolidStiff):
         '''
         Wraps the SolidStiffness class that is used with 3D elements
         '''
-        self.ptr = new SolidStiffness(rho, E, nu)
+        self.ptr = new SolidStiffness(rho, E, nu, eNum=0)
         self.ptr.incref()
         return
 
