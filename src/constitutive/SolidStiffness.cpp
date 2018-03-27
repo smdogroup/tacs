@@ -181,7 +181,7 @@ void SolidStiffness::addStressDVSens( const double pt[],
                                       TacsScalar dvSens[], int dvLen ){
 
   if (nvars == 1) {
-    if (eNum  >= 0 && eNum > dvLen){
+    if (eNum  >= 0 && eNum < dvLen){
       TacsScalar C0 = alpha * (1.0 - nu) / ((1.0 + nu) * (1.0 - 2.0 * nu));
       TacsScalar C1 = alpha * nu / ((1.0 + nu) * (1.0 - 2.0 * nu ));
       TacsScalar G  = alpha / (2.0 * (1 + nu));
@@ -202,7 +202,7 @@ void SolidStiffness::addStressDVSens( const double pt[],
 */
 void SolidStiffness::setDesignVars( const TacsScalar dvs[], int dvLen ){
   if (nvars == 1){
-    if (eNum  >= 0 && eNum > dvLen){
+    if (eNum  >= 0 && eNum < dvLen){
       E  = dvs[eNum];
 
       TacsScalar D = E/((1.0 + nu)*(1.0 - 2.0*nu));
@@ -219,7 +219,7 @@ void SolidStiffness::setDesignVars( const TacsScalar dvs[], int dvLen ){
 */
 void SolidStiffness::getDesignVars( TacsScalar dvs[], int dvLen ){
   if (nvars == 1){
-    if (eNum  >= 0 && eNum > dvLen){
+    if (eNum  >= 0 && eNum < dvLen){
       dvs[eNum] = E;
     }
   }
