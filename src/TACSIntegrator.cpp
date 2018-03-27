@@ -657,44 +657,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     force_norm = TacsRealPart(forces->norm());
   }
 
-  if (!ksm){
-    // Set the D matrix to NULL
-    if (use_femat){
-      // Create a matrix for storing the Jacobian
-      FEMat *D = tacs->createFEMat(order_type);
-      
-      // Allocate the factorization
-      pc = new PcScMat(D, lev, fill, reorder_schur);
-      pc->incref();
-
-      // Associate the maxtrix with FEMatrix
-      mat = D;
-      mat->incref();
-    } 
-    else {
-      SerialBCSCMat *A = tacs->createSerialBCSCMat();
-      pc = new SerialBCSCPc(A);
-      pc->incref();
-      
-      mat = A;
-      mat->incref();
-      if (mpiSize > 1) {
-        fprintf(stderr, 
-                "TACSIntegrator error: Using SerialBCSCMat in parallel\n");
-      }
-    }
+  // Create KSM
+  initializeLinearSolver();
   
-    // The Krylov subspace method (KSM) associated with the solver
-    ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
-    ksm->incref();
-  }
-  else {
-    ksm->getOperators(&mat, &pc);
-  }
-
-  // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
-  ksm->setTolerances(0.1*rtol, 1.0e-30);
-
   // Initialize the update norms
   update_norm = 1.0e99; 
 
@@ -1005,9 +970,52 @@ double TACSIntegrator::getStates( int step_num,
     *_qdot = qdot[step_num];
   }
   if (_qddot){
-    *_qddot = qdot[step_num];
+    *_qddot = qddot[step_num];
   }
   return time[step_num];
+}
+
+/*
+  Creates mat, ksm and pc objectsx
+*/
+void TACSIntegrator::initializeLinearSolver( ){
+  if (!ksm){
+    // Set the D matrix to NULL
+    if (use_femat){
+      // Create a matrix for storing the Jacobian
+      FEMat *D = tacs->createFEMat(order_type);
+      
+      // Allocate the factorization
+      pc = new PcScMat(D, lev, fill, reorder_schur);
+      pc->incref();
+
+      // Associate the maxtrix with FEMatrix
+      mat = D;
+      mat->incref();
+    } 
+    else {
+      SerialBCSCMat *A = tacs->createSerialBCSCMat();
+      pc = new SerialBCSCPc(A);
+      pc->incref();
+      
+      mat = A;
+      mat->incref();
+      if (mpiSize > 1) {
+        fprintf(stderr, 
+                "TACSIntegrator error: Using SerialBCSCMat in parallel\n");
+      }
+    }
+  
+    // The Krylov subspace method (KSM) associated with the solver
+    ksm = new GMRES(mat, pc, gmres_iters, num_restarts, is_flexible);
+    ksm->incref();
+  }
+  else {
+    ksm->getOperators(&mat, &pc);
+  }
+  
+  // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
+  ksm->setTolerances(0.1*rtol, 1.0e-30);
 }
 
 /*
@@ -1521,6 +1529,9 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     for ( int i = 0; i < num_funcs; i++ ){
       dfdXpt[i]->zeroEntries();
     }
+    
+    // Initialize linear solver
+    initializeLinearSolver();
   } 
 
   // Set the simulation time
@@ -2203,6 +2214,9 @@ void TACSDIRKIntegrator::initAdjoint( int step_num ){
     for ( int i = 0; i < num_funcs; i++ ){
       dfdXpt[i]->zeroEntries();
     }
+    
+    // Initialize linear solver
+    initializeLinearSolver();
   }
 
   for ( int i = 0; i < num_funcs*num_stages; i++ ){

@@ -112,9 +112,13 @@ class TACSIntegrator : public TACSObject {
   double getStates( int step_num, 
                     TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot );
 
+  // Initialize linear solver
+  //--------------------------
+  void initializeLinearSolver();
+
   // Check the gradient using finite-difference
   void checkGradients( double dh );
-
+  
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
   void setOutputPrefix( const char *prefix );
@@ -186,9 +190,6 @@ class TACSIntegrator : public TACSObject {
   int mpiSize;                // number of processors
   FILE *logfp;                // Pointer to the output filename
 
- private:
-  char prefix[256];           // Output prefix
-
   // Newton solver parameters
   int max_newton_iters;     // The max number of nonlinear iterations
   double atol;              // Absolute tolerance
@@ -205,6 +206,9 @@ class TACSIntegrator : public TACSObject {
   int gmres_iters;
   int num_restarts;
   int is_flexible;
+
+ private:
+  char prefix[256];           // Output prefix
 
   // Information for visualization/logging purposes
   int print_level;          // 0 = off;
