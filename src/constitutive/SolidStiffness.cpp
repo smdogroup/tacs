@@ -182,9 +182,9 @@ void SolidStiffness::addStressDVSens( const double pt[],
 
   if (nvars == 1) {
     if (eNum  >= 0 && eNum < dvLen){
-      TacsScalar C0 = alpha * (1.0 - nu) / ((1.0 + nu) * (1.0 - 2.0 * nu));
-      TacsScalar C1 = alpha * nu / ((1.0 + nu) * (1.0 - 2.0 * nu ));
-      TacsScalar G  = alpha / (2.0 * (1 + nu));
+      TacsScalar C0 = alpha * (1.0 - nu) / ((1.0 + nu) * (1.0 - 2.0*nu));
+      TacsScalar C1 = alpha * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
+      TacsScalar G  = alpha * 0.5 / (1.0 + nu);
 
       dvSens[eNum] +=  psi[0] * (C0*strain[0] + C1*strain[1] + C1*strain[2]);
       dvSens[eNum] +=  psi[1] * (C1*strain[0] + C0*strain[1] + C1*strain[2]);

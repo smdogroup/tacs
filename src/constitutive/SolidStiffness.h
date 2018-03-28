@@ -88,7 +88,7 @@ inline void SolidStiffness::calcStress( const TacsScalar e[],
   s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
   s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
   s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];
-  
+
   s[3] = G23*e[3];
   s[4] = G13*e[4];
   s[5] = G12*e[5];
