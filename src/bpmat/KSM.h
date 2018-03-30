@@ -487,81 +487,6 @@ class GCROT : public TACSKsm {
   static const char *gcrotName;
 };
 
-/*!
-  Right-preconditioned GMRES with a constraint Cx = 0
-
-  Determine the solution of a system of linear equations using GMRES
-  subject to a set of constraints that can be set later.
-*/
-class ConGMRES : public TACSKsm {
- public:
-  enum OrthoType { CLASSICAL_GRAM_SCHMIDT, MODIFIED_GRAM_SCHMIDT };
-  ConGMRES( TACSMat *_mat, TACSPc *_pc, 
-            int _m, int _nrestart, int _isFlexible );
-  ConGMRES( TACSMat *_mat, int _m, int _nrestart );
-  ~ConGMRES();
-
-  TACSVec *createVec(){ return mat->createVec(); }
-  void solve( TACSVec *b, TACSVec *x, int zero_guess = 1 ); 
-  void setOperators( TACSMat *_mat, TACSPc *_pc );
-  void getOperators( TACSMat **_mat, TACSPc **_pc );
-  void setTolerances( double _rtol, double _atol );
-  void setOrthoType( enum OrthoType otype );
-  void setMonitor( KSMPrint *_monitor );
-  void setTimeMonitor();
-  void setConstraints( TACSVec **_C, int nconstr );
-  const char *TACSObjectName();
-
- private:
-  // Initialize the class
-  void init( TACSMat *_mat, TACSPc *_pc, int _m, 
-             int _nrestart, int _isFlexible );
-
-  // Orthogonalize a vector against a set of vectors
-  void (*orthogonalize)(TacsScalar *, TACSVec *, TACSVec **, int);
-
-  TACSMat *mat; 
-  TACSPc *pc; 
-  int msub;
-  int nrestart;
-  int isFlexible;
-
-  // Constraint information
-  int nconstr; // The number of constraints
-  TACSVec **C; // The set of constraints (that are orthonormalized on input)
-  TacsScalar *lambda;
-
-  void con_mat_mult( TACSVec *x, TacsScalar *y, 
-                     TACSVec *out, TacsScalar *out_lambda );
-  TacsScalar con_norm( TACSVec *x, TacsScalar *y );
-  TacsScalar con_dot( TACSVec *x, TacsScalar *y,
-                      TACSVec *X, TacsScalar *Y );
-  void con_axpy( TACSVec *x, TacsScalar *X, 
-                 TacsScalar alpha,
-                 TACSVec *y, TacsScalar *Y );
-  void con_scale( TACSVec *x, TacsScalar *y, TacsScalar alpha );
-
-  TACSVec **W;   // The Arnoldi vectors that span the Krylov subspace
-  TacsScalar *Wl; // The portion of the Arnoldi vector for lambda
-  TACSVec **Z;   // Additional subspace of vectors -- for the flexible variant
-  TACSVec *work; // A work vector
-
-  int *Hptr;   // Array to make accessing the elements of the matrix easier!
-  TacsScalar *H; // The Hessenberg matrix
-
-  double rtol;
-  double atol;
-
-  TacsScalar *Qsin;
-  TacsScalar *Qcos;
-  TacsScalar *res;
-
-  int monitor_time;
-  KSMPrint *monitor;
-
-  static const char *gmresName;
-};
-
 /*
   Create a Krylov-subspace class that is just a preconditioner.
 
@@ -587,4 +512,4 @@ class KsmPreconditioner : public TACSKsm {
   TACSPc *pc;
 };
 
-#endif
+#endif // TACS_KSM_H
