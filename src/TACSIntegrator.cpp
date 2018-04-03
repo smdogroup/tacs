@@ -819,6 +819,87 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 }
 
 /*
+  Obtain a column-major array containing the matrix values.
+*/
+void TACSIntegrator::getRawMatrix( TACSMat *mat, TacsScalar *mat_vals) {
+  FEMat *femat = dynamic_cast<FEMat*>(mat);
+  if (femat){
+    int bsize, nrows;
+    BCSRMat *B;
+    femat->getBCSRMat(&B, NULL, NULL, NULL);
+    B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+    B->getDenseColumnMajor(mat_vals);
+  }
+  else {
+    fprintf(stderr,"Casting to FEMat failed\n");
+  }
+}
+
+/*
+  Performs an eigen solve of the Jacobian matrix
+ */
+void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
+                                       TACSBVec *qdot,
+                                       TACSBVec *qddot,
+                                       TacsScalar *eigvals) {
+  // Determine the size of state vector
+  int num_state_vars;
+  q->getSize(&num_state_vars);
+
+  // Set the (steady-state) state variables into TACS
+  tacs->setVariables(q, qdot, qddot);
+  
+  // Create K matrix
+  TACSMat *kmat;
+  tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
+  TacsScalar *K = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(kmat, K);
+
+  // Create M matrix
+  TACSMat *mmat;
+  tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
+  TacsScalar *M = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(mmat, M);
+
+  // Set up LAPACK call
+  int itype = 1;
+  int size = num_state_vars;
+  int lwork = 2*size+1;
+  TacsScalar *work = new TacsScalar[lwork];
+  TacsScalar *W = new TacsScalar[size];
+  int liwork = 1;
+  int *iwork = new int[liwork];
+  int info = 0;
+  
+  // Call LAPACK
+  LAPACKdsygvd(&itype, "N", "L",
+               &size, M, &size, K, &size,
+               W, work,
+               &lwork, iwork, &liwork, &info);
+
+  // Post Process
+  if (info != 0){
+    fprintf(stderr, "LAPACK : DSYGVD returned info =%d\n", info);
+    if (info < 0){
+      fprintf(stderr, "the %d-th argument had an illegal value\n", -info);
+    } else if (info <= size) {
+      fprintf(stderr, "The leading minor of order %d of B is not \
+positive definite. The factorization of B could not be completed \
+and no eigenvalues or eigenvectors were computed.\n", info-size);
+    } else {
+      fprintf(stderr, "the algorithm failed to compute an eigenvalue\
+ while working on the submatrix lying in rows and columns %d through %d \n",
+              info/(size+1), info % (size+1));    
+    }
+  }
+
+  memcpy(eigvals, W, num_state_vars*sizeof(TacsScalar));
+  
+  delete [] work;
+  delete [] W;
+}
+
+/*
   Solves the linear system Ax=b using LAPACK. The execution should be
   in serial mode.
 */

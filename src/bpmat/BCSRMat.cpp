@@ -2233,6 +2233,7 @@ void BCSRMat::getDenseColumnMajor( TacsScalar *D ){
       }
     }
   }
+  return bsize*bsize*nrows*nrows;
 }
 
 /*!

@@ -87,6 +87,12 @@ TimoshenkoStiffness::TimoshenkoStiffness( const TacsScalar _axis[],
   C[31] = C[11];
   C[34] = C[29];
   C[35] = kG33;
+  
+  // Set the entries of the density matrix
+  rho[0] = m00;
+  rho[1] = m11;
+  rho[2] = m22;
+  rho[3] = 0.0; //m00*xm2*xm3;
 }
 
 /*
