@@ -487,6 +487,88 @@ stiffness matrix\n");
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE,
                      num_eigvals);
 }
+/*!
+  The following code computes the eigenvalues and eigenvectors
+  for the natural frequency eigenproblem:
+
+  K u = lambda M u
+
+  The method uses the Jacobi-Davidson method
+
+  Input:
+  tacs:        the TACS assembler object
+  init_eig:    the initial eigenvalue estimate
+  mmat:        the mass matrix object
+  kmat:        the stiffness matrix object
+  pcmat:       the preconditioner matrix object
+  max_jd_size: the maximum number of vectors to use
+  fgmres_size: the number of FGMRES iteration
+  num_eigvals: the number of eigenvalues to use
+  eig_tol:     the eigenproblem tolerance
+*/
+TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
+                                              TacsScalar _init_eig,
+                                              TACSMat *_mmat, 
+                                              TACSMat *_kmat,
+                                              TACSMat *_pcmat, 
+                                              int max_jd_size, 
+                                              int fgmres_size,
+                                              int num_eigvals, 
+                                              double eig_rtol,
+                                              double eig_atol ){
+  // Store the TACSAssembler pointer
+  tacs = _tacs;
+  tacs->incref();
+
+  // Set the initial eigenvalue estimate
+  sigma = _init_eig;
+
+  // Store the stiffness/mass/preconditioner matrices
+  mmat = _mmat;
+  kmat = _kmat;
+  pcmat = _pcmat;
+  if (!pcmat){
+    fprintf(stderr, "TACSFrequency: Error, the preconditioner matrix associated \
+  with the Jacobi-Davidson method cannot be NULL\n");
+  }
+  mmat->incref();
+  kmat->incref();
+  pcmat->incref();
+
+  // Check if the preconditioner is actually a multigrid object. If
+  // so, then we have to allocate extra data to store things for each
+  // multigrid level.
+  mg = dynamic_cast<TACSMg*>(pc);
+
+  // Allocate vectors that are required for the eigenproblem
+  eigvec = tacs->createVec();
+  res = tacs->createVec();
+  eigvec->incref();
+  res->incref();
+
+  // Allocate the Jacobi-Davidson operator
+  if (mg){
+    jd_op = new TACSJDFrequencyOperator(tacs, kmat, mmat, 
+                                        pcmat, mg);
+  }
+  else {
+    jd_op = new TACSJDFrequencyOperator(tacs, kmat, mmat, 
+                                        pcmat, pc);
+  }
+  jd_op->incref();
+  // Allocate the Jacobi-Davidson solver
+  jd = new TACSJacobiDavidson(jd_op, num_eigvals, max_jd_size, 
+                              fgmres_size);
+  jd->incref();
+  // Set unallocated objects to NULL
+  ep_op = NULL;
+  sep = NULL;
+  solver = NULL;
+  // Set the initial eigenvalue estimate
+  jd_op->setEigenvalueEstimate(sigma);
+  // Set the tolerance to the Jacobi-Davidson solver
+  jd->setTolerances(eig_rtol, eig_atol);
+}
 
 /*
   Deallocate all of the stored data
@@ -495,9 +577,16 @@ TACSFrequencyAnalysis::~TACSFrequencyAnalysis(){
   tacs->decref();
   eigvec->decref();
   res->decref();
-  solver->decref();
-  ep_op->decref();
-  sep->decref();
+  
+  if (jd){
+    jd_op->decref();
+    jd->decref();
+  }
+  else{
+    solver->decref();
+    ep_op->decref();
+    sep->decref();
+  }
 }
 
 /*
@@ -512,7 +601,12 @@ TacsScalar TACSFrequencyAnalysis::getSigma(){
 */
 void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
   sigma = _sigma;
-  ep_op->setSigma(_sigma);
+  if (ep_op){
+    ep_op->setSigma(_sigma);
+  }
+  else if (jd_op){
+    jd_op->setEigenvalueEstimate(_sigma);
+  }
 }
 
 /*
@@ -521,33 +615,44 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
 void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
   // Zero the variables
   tacs->zeroVariables();
+  
+  if (jd){
+    if (mg){
 
-  if (mg){
-    // Assemble the mass matrix
-    ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, MASS_MATRIX};
-    TacsScalar scale[2] = {1.0, -sigma};
+    }
+    else {
 
-    // Assemble the mass matrix
-    tacs->assembleMatType(MASS_MATRIX, mmat);
-
-    // Assemble the linear combination
-    mg->assembleMatCombo(matTypes, scale, 2);
+    }
   }
-  else {
-    // Assemble the stiffness and mass matrices
-    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-    tacs->assembleMatType(MASS_MATRIX, mmat);
+  else{
+    if (mg){
+      // Assemble the mass matrix
+      ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, 
+                                       MASS_MATRIX};
+      TacsScalar scale[2] = {1.0, -sigma};
 
-    // Form the shifted operator and factor it
-    kmat->axpy(-sigma, mmat);
-    kmat->applyBCs(tacs->getBcMap());
+      // Assemble the mass matrix
+      tacs->assembleMatType(MASS_MATRIX, mmat);
+
+      // Assemble the linear combination
+      mg->assembleMatCombo(matTypes, scale, 2);
+    }
+    else {
+      // Assemble the stiffness and mass matrices
+      tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+      tacs->assembleMatType(MASS_MATRIX, mmat);
+
+      // Form the shifted operator and factor it
+      kmat->axpy(-sigma, mmat);
+      kmat->applyBCs(tacs->getBcMap());
+    }
+
+    // Factor the preconditioner
+    pc->factor();
+
+    // Solve the symmetric eigenvalue problem
+    sep->solve(ksm_print);
   }
-
-  // Factor the preconditioner
-  pc->factor();
-
-  // Solve the symmetric eigenvalue problem
-  sep->solve(ksm_print);
 }
 
 /*!

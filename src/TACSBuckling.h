@@ -27,6 +27,7 @@
 #include "TACSAssembler.h"
 #include "GSEP.h"
 #include "TACSMg.h"
+#include "JacobiDavidson.h"
 
 /*
   Linearized buckling analysis code.
@@ -127,6 +128,15 @@ class TACSFrequencyAnalysis : public TACSObject {
                          TACSMat *_mmat, TACSMat *_kmat,
                          TACSKsm *_solver, int max_lanczos,
                          int num_eigvals, double _eig_tol );
+
+  TACSFrequencyAnalysis( TACSAssembler *_tacs,
+                         TacsScalar _sigma,
+                         TACSMat *_mmat, TACSMat *_kmat,
+                         TACSMat *_pcmat, int max_jd_size, 
+                         int fgmres_size, int num_eigvals, 
+                         double eig_rtol=1e-9, 
+                         double eig_atol=1e-30 );
+  
   ~TACSFrequencyAnalysis();
 
   // Retrieve the instance of TACSAssembler
@@ -154,6 +164,7 @@ class TACSFrequencyAnalysis : public TACSObject {
   // The matrices used in the analysis
   TACSMat *mmat; // The mass matrix
   TACSMat *kmat; // The stiffness matrix
+  TACSMat *pcmat; // Matrix associated with the preconditioner (JD)
   TACSKsm *solver; // Associated with kmat
   TACSPc *pc; // The preconditioner
 
@@ -165,6 +176,10 @@ class TACSFrequencyAnalysis : public TACSObject {
   TacsScalar sigma;
   EPGeneralizedShiftInvert *ep_op;
   SEP *sep;
+
+  // Objects associated with the Jacobi-Davidson method
+  TACSJDFrequencyOperator *jd_op;
+  TACSJacobiDavidson *jd;
 
   // Vectors required for eigen-sensitivity analysis
   TACSBVec *eigvec, *res;
