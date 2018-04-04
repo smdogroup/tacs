@@ -565,3 +565,16 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
 
   delete [] rwork;
 }
+/*
+  Set the relative and absolute tolerances used for the stopping
+  criterion.
+
+  input:
+  rtol: the relative tolerance ||r_k|| < rtol*||r_0||
+  atol: the absolute tolerancne ||r_k|| < atol
+*/
+void TACSJacobiDavidson::setTolerances( double _rtol, 
+                                        double _atol ){
+  rtol = _rtol;
+  atol = _atol;
+}

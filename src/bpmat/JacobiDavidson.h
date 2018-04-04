@@ -114,7 +114,9 @@ class TACSJacobiDavidson : public TACSObject {
 
   // Solve the eigenvalue problem
   void solve( KSMPrint *ksm_print=NULL );
-
+  
+  // Set tolerances to FGMRES
+  void setTolerances( double _rtol, double _atol );
  private:
   // The operator class that defines the eigenproblem
   TACSJacobiDavidsonOperator *oper;
