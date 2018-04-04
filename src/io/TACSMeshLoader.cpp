@@ -129,7 +129,7 @@ static int read_buffer_line( char *line, size_t line_len,
   list[arg[k]] = var
 */
 static int find_index_arg_sorted( int var, int size, 
-                                                          const int * list, 
+                                  const int * list, 
                                   const int * args ){
   // Binary search an array to find k such that list[k] = var,
   // where the array list[args[k]] is sorted in ascending
