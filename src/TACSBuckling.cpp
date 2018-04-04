@@ -486,6 +486,11 @@ stiffness matrix\n");
   sep->incref();
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE,
                      num_eigvals);
+
+  // Set unallocated objects to NULL
+  pcmat = NULL;
+  jd_op = NULL;
+  jd = NULL;
 }
 /*!
   The following code computes the eigenvalues and eigenvectors
@@ -618,11 +623,26 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
   
   if (jd){
     if (mg){
+      // Assemble the mass matrix
+      ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, 
+                                       MASS_MATRIX};
+      TacsScalar scale[2] = {1.0, -sigma};
 
+      // Assemble the mass matrix
+      tacs->assembleMatType(MASS_MATRIX, mmat);
+
+      // Assemble the linear combination
+      mg->assembleMatCombo(matTypes, scale, 2);
     }
     else {
-
+      tacs->assembleMatType(MASS_MATRIX, mmat);
+      tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
     }
+    // Factor the preconditioner
+    pc->factor();
+    
+    // Solve the problem using Jacobi-Davidson
+    jd->solve(ksm_print);
   }
   else{
     if (mg){
@@ -660,7 +680,13 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
 */
 TacsScalar TACSFrequencyAnalysis::extractEigenvalue( int n,
                                                      TacsScalar *error ){
-  return sep->extractEigenvalue(n, error);
+  if (sep){
+    return sep->extractEigenvalue(n, error);
+  }
+  else {
+    // Error should be NULL unless needed
+    return jd->extractEigenvalue(n, error);
+  }
 }
 
 /*!
@@ -668,14 +694,25 @@ TacsScalar TACSFrequencyAnalysis::extractEigenvalue( int n,
 */
 TacsScalar TACSFrequencyAnalysis::extractEigenvector( int n, TACSBVec *ans,
                                                       TacsScalar *error ){
-  return sep->extractEigenvector(n, ans, error);
+  if (sep){
+    return sep->extractEigenvector(n, ans, error);
+  }
+  else {
+    // Error should be NULL unless needed
+    return jd->extractEigenvector(n, ans, error);
+  }
 }
 
 /*
   Check the orthogonality of the Lanczos subspace
 */
 TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
-  return sep->checkOrthogonality();
+  if (sep){
+    return sep->checkOrthogonality();
+  }
+  else {
+    fprintf(stderr, "TACSFrequency: No orthogonality check for Jacobi-Davidson\n");
+  }  
 }
 
 /*!
