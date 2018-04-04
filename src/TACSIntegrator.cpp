@@ -850,53 +850,60 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   tacs->setVariables(q, qdot, qddot);
   
   // Create K matrix
+  FEMat *DK = tacs->createFEMat(order_type);
+  TACSPc *kpc = new PcScMat(DK, lev, fill, reorder_schur);
+  kpc->incref();
   TACSMat *kmat;
+  kmat = DK;
   tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
-  TacsScalar *K = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(kmat, K);
+  TacsScalar *Kvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(kmat, Kvals);
 
   // Create M matrix
+  FEMat *DM = tacs->createFEMat(order_type);
+  TACSPc *mpc = new PcScMat(DM, lev, fill, reorder_schur);
+  mpc->incref();
   TACSMat *mmat;
+  mmat = DM;
   tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
-  TacsScalar *M = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(mmat, M);
+  TacsScalar *Mvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(mmat, Mvals);
 
-  // Set up LAPACK call
-  int itype = 1;
-  int size = num_state_vars;
-  int lwork = 2*size+1;
-  TacsScalar *work = new TacsScalar[lwork];
-  TacsScalar *W = new TacsScalar[size];
-  int liwork = 1;
-  int *iwork = new int[liwork];
-  int info = 0;
-  
   // Call LAPACK
-  LAPACKdsygvd(&itype, "N", "L",
-               &size, M, &size, K, &size,
-               W, work,
-               &lwork, iwork, &liwork, &info);
+  int size = num_state_vars;
+  TacsScalar *alphar = new TacsScalar[size];
+  TacsScalar *alphai = new TacsScalar[size];
+  TacsScalar *beta = new TacsScalar[size];
+  TacsScalar *vl = new TacsScalar[size*size];
+  TacsScalar *vr = new TacsScalar[size*size];
+  int lwork = 8*size;
+  TacsScalar *work = new TacsScalar[lwork];
+  int info = 0; 
 
-  // Post Process
-  if (info != 0){
-    fprintf(stderr, "LAPACK : DSYGVD returned info =%d\n", info);
-    if (info < 0){
-      fprintf(stderr, "the %d-th argument had an illegal value\n", -info);
-    } else if (info <= size) {
-      fprintf(stderr, "The leading minor of order %d of B is not \
-positive definite. The factorization of B could not be completed \
-and no eigenvalues or eigenvectors were computed.\n", info-size);
-    } else {
-      fprintf(stderr, "the algorithm failed to compute an eigenvalue\
- while working on the submatrix lying in rows and columns %d through %d \n",
-              info/(size+1), info % (size+1));    
+  // Call lapack to solve the eigenvalue problem
+  LAPACKdggev("N", "N", &size,
+              Kvals, &size, Mvals, &size,
+              alphar, alphai, beta,
+              vl, &size, vr, &size,
+              work, &lwork,
+              &info);
+
+  // K v = lam M v
+
+  // Print the eigenvalues
+  for (int i = 0; i < size; i++){
+    //    printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], beta[i]);
+    if (beta[i] > 1.0e-14 && alphar[i] > 0.0 ) {
+      eigvals[i] = alphar[i]/beta[i];
     }
   }
-
-  memcpy(eigvals, W, num_state_vars*sizeof(TacsScalar));
   
+  delete [] alphar;
+  delete [] alphai;
+  delete [] beta;
   delete [] work;
-  delete [] W;
+  delete [] vl;
+  delete [] vr;
 }
 
 /*

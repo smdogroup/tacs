@@ -1729,6 +1729,11 @@ cdef class Integrator:
         free(fn)
         return
 
+    def lapackEigenSolve(self, Vec q, Vec qdot, Vec qddot,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] evals):
+        self.ptr.lapackEigenSolve(q.ptr, qdot.ptr, qddot.ptr, <TacsScalar*>evals.data)
+        return
+    
     def iterate(self, int step_num, Vec forces=None):
         '''
         Solve the nonlinear system at current time step
