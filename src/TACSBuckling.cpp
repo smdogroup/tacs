@@ -88,12 +88,12 @@ auxiliary matrix\n");
 must be different instances\n");
   }
   if (aux_mat == gmat){
-    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and auxiliary matrices \
-must be different instances\n");
+    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and auxiliary \
+matrices must be different instances\n");
   }
   if (gmat == kmat){
-    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and stiffness matrices \
-must be different instances\n");
+    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and stiffness \
+matrices must be different instances\n");
   }
 
   // Check if the preconditioner is actually a multigrid object. If
@@ -224,7 +224,7 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
     tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
     tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
   }
-  else{
+  else {
     // Compute the stiffness matrix and copy the values to the
     // auxiliary matrix used to solve for the load path.
     tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
@@ -566,6 +566,9 @@ TacsScalar TACSFrequencyAnalysis::extractEigenvector( int n, TACSBVec *ans,
   return sep->extractEigenvector(n, ans, error);
 }
 
+/*
+  Check the orthogonality of the Lanczos subspace
+*/
 TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
   return sep->checkOrthogonality();
 }
@@ -652,317 +655,4 @@ void TACSFrequencyAnalysis::checkEigenvector( int n ){
   // Decref the vectors to free the memory
   t1->decref();
   t2->decref();
-}
-
-
-/*
-  Constraint
-*/
-TACSFrequencyConstraint::TACSFrequencyConstraint( TACSAssembler *_tacs,
-                                                  TacsScalar _min_lambda,
-                                                  TACSMat *_mmat,
-                                                  TACSMat *_kmat,
-                                                  TACSPc *_pc ){
-  tacs = _tacs;
-  tacs->incref();
-
-  // Set the matrices
-  mmat = _mmat;
-  kmat = _kmat;
-  pc = _pc;
-
-  min_lambda = _min_lambda;
-
-  // The maximum size of the Jacobi-Davidson subspace
-  max_jd_size = 25;
-
-  // The maximum size of the deflation space
-  max_eigen_vectors = 10;
-
-  // The eigen tolerance
-  eigtol = 1e-6;
-
-  // Allocate space for the vectors
-  V = new TACSBVec*[ max_jd_size+1 ];
-  Q = new TACSBVec*[ max_eigen_vectors+1 ];
-
-  // The maximum number of gmres iterations
-  max_gmres_size = 30;
-
-  // The residual tolerances for the GMRES iterations
-  rtol = 1e-3;
-  atol = 1e-30;
-
-  // Create and populate the pointer into the H columns
-  Hptr = new int[ max_gmres_size+1 ];
-  Hptr[0] = 0;
-  for ( int i = 0; i < max_gmres_size; i++ ){
-    Hptr[i+1] = Hptr[i] + i+2;
-  }
-
-  // Allocate the Hessenberg matrix
-  H = new TacsScalar[ Hptr[max_gmres_size] ];
-  res = new TacsScalar[ max_gmres_size+1 ];
-
-  // Allocate space for the unitary matrix Q
-  Qsin = new TacsScalar[ max_gmres_size ];
-  Qcos = new TacsScalar[ max_gmres_size ];
-
-  // Allocate space for the vectors
-  W = new TACSBVec*[ max_gmres_size+1 ];
-
-  Z = NULL;
-  if (is_flexible){
-    Z = new TACSBVec*[ max_gmres_size ];
-    for ( int i = 0; i < max_gmres_size; i++ ){
-
-    }
-  }
-}
-
-TACSFrequencyConstraint::~TACSFrequencyConstraint(){
-  // Free the data to solve the GMRES problem
-  delete [] H;
-  delete [] Hptr;
-  delete [] res;
-  delete [] Qsin;
-  delete [] Qcos;
-
-  // Free the
-
-
-  // Free the GMRES subspace vectors
-  W[0]->decref();
-  for ( int i = 0; i < max_gmres_size; i++ ){
-    W[i+1]->decref();
-  }
-  delete [] W;
-
-  if (Z){
-    for ( int i = 0; i < max_gmres_size; i++ ){
-      Z[i]->decref();
-    }
-    delete [] Z;
-  }
-}
-
-void TACSFrequencyConstraint::mult( TACSBVec *x, TACSBVec *y ){
-  kmat->mult(x, y); // mmat->mult(x, y);
-}
-
-void TACSFrequencyConstraint::applyPc( TACSBVec *x, TACSBVec *y ){
-  pc->applyFactor(x, y);
-}
-
-void TACSFrequencyConstraint::solve(){
-  // Keep track of the current subspace
-  V[0]->setRand(-1.0, 1.0);
-
-  // The maximum size of the Jacobi--Davidson subspace
-  const int m = max_jd_size;
-  memset(M, 0, m*m*sizeof(TacsScalar));
-
-  // Allocate the space for the real work vector
-  int lwork = 16*max_jd_size;
-  double *rwork = new double[ lwork ];
-
-  // Store the number of converged eigenvalues
-  int nconverged = 0;
-
-  for ( int k = 0; k < m; k++ ){
-    // Orthogonalize V[k] against all other vectors in the current
-    // solution subspace
-    for ( int i = 0; i < k; i++ ){
-      TacsScalar h = V[k]->dot(V[i]);
-      V[k]->axpy(-h, V[i]);
-    }
-
-    // Normalize the vector so that it is orthonormal
-    TacsScalar vnorm = V[k]->norm();
-    V[k]->scale(1.0/vnorm);
-
-    // Compute work = A*V[k]
-    mult(V[k], work);
-
-    // Complete the entries in the symmetric matrix M that is formed
-    // by M = V^{T}*A*V
-    for ( int i = 0; i <= k; i++ ){
-      M[k*m + i] = V[i]->dot(work);
-      M[i*m + k] = M[k*m + i];
-    }
-
-    // Compute the eigenvalues/eigenvectors of the M matrix. Copy over
-    // the values from the M matrix into the eigvecs array.
-    for ( int j = 0; j <= k; j++ ){
-      for ( int i = 0; i <= k; i++ ){
-        eigvecs[i + (k+1)*j] = TacsRealPart(M[i + m*j]);
-      }
-    }
-
-    // The input arguments required for LAPACK
-    const char *jobz = "V", *uplo = "U";
-
-    // Compute the eigenvalues of a symmetric matrix
-    int info;
-    int n = k+1, ldm = k+1;
-    LAPACKdsyev(jobz, uplo, &n, eigvecs, &ldm, eigvals,
-                rwork, &lwork, &info);
-
-    // Assemble the th predicted eigenvector
-    Q[nconverged]->zeroEntries();
-    for ( int j = 0; j <= k; j++ ){
-      Q[nconverged]->axpy(eigvecs[j], V[j]);
-    }
-    TacsScalar qnorm = Q[nconverged]->norm();
-    Q[nconverged]->scale(1.0/qnorm);
-
-    // Compute the residual and store it in the work vector
-    mult(Q[nconverged], work);
-    work->axpy(-eigvals[0], Q[nconverged]);
-
-    // Compute the norm of the eigenvalue to check if it has converged
-    if (work->norm() < eigtol){
-      // This eigenvalue has converged, store it in Q[nconverged] and
-      // modify the remaining entries of V. Now we need to compute the
-      // new starting vector for the next eigenvalue
-      work->zeroEntries();
-      for ( int j = 0; j <= k; j++ ){
-        work->axpy(eigvecs[k+1 + j], V[j]);
-      }
-
-      // Orthogonalize the new starting vector against all other
-      // converged eigenvalues
-      for ( int j = 0; j < nconverged; j++ ){
-        TacsScalar h = work->dot(Q[j]);
-        work->axpy(-h, Q[j]);
-      }
-      nconverged++;
-
-      // Check if we should quit the loop or continue
-      if (nconverged >= max_eigen_vectors){
-        break;
-      }
-
-      // Reset the iteration loop and continue
-      k = 0;
-      V[0]->copyValues(work);
-      continue;
-    }
-
-    // Now solve the system (K - min_lambda*M)*t = -work
-    // Keep track of the number of iterations in GMRES
-    int niters = 0;
-
-    // Copy the residual to the first work vector
-    W[0]->copyValues(work);
-    res[0] = W[0]->norm();
-    W[0]->scale(1.0/res[0]); // W[0] = b/|| b ||
-
-    // Keep track of the initial norm of the right-hand-side
-    double beta = TacsRealPart(res[0]);
-
-    // Using GMRES, solve for the update equation
-    for ( int i = 0; i < max_gmres_size; i++ ){
-      if (is_flexible){
-        // Apply the preconditioner, Z[i] = M^{-1} W[i]
-        applyPc(W[i], Z[i]);
-        mult(Z[i], W[i+1]); // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
-      }
-      else {
-        // W[i+1] = A*work = A*M^{-1}*W[i]
-        applyPc(W[i], work);
-        mult(work, W[i+1]);
-      }
-
-      // First, orthonormalize W[i+1] with respect to the basis from
-      // the deflation sub-space. This ensures that the solution
-      // remains orthogonal to the basis vectors Q[j] which are
-      // orthogonal.
-      for ( int j = 0; j <= nconverged; j++ ){
-        TacsScalar h = W[i+1]->dot(Q[j]); // h = dot( W[i+1], C[j] )
-        W[i+1]->axpy(-h, Q[j]);           // W[i+1] = W[i+1] - h*C[j]
-      }
-
-      // Build the orthogonal basis using MGS
-      for ( int j = i; j >= 0; j-- ){
-        H[j + Hptr[i]] = W[i+1]->dot(W[j]); // H[j,i] = dot( W[i+1], W[i] )
-        W[i+1]->axpy(-H[j + Hptr[i]], W[j]); // W[i+1] = W[i+1] - H[j,i]*W[j]
-      }
-
-      // Complete the basis
-      H[i+1 + Hptr[i]] = W[i+1]->norm(); // H[i+1,i] = || W[i+1] ||
-      W[i+1]->scale(1.0/H[i+1 + Hptr[i]]); // W[i+1] = W[i+1]/|| W[i+1] ||
-
-      // Apply the existing part of Q to the new components of the
-      // Hessenberg matrix
-      TacsScalar h1, h2;
-      for ( int k = 0; k < i; k++ ){
-        h1 = H[k   + Hptr[i]];
-        h2 = H[k+1 + Hptr[i]];
-        H[k   + Hptr[i]] =  h1*Qcos[k] + h2*Qsin[k];
-        H[k+1 + Hptr[i]] = -h1*Qsin[k] + h2*Qcos[k];
-      }
-
-      // Now, compute the rotation for the new column that was just added
-      h1 = H[i   + Hptr[i]];
-      h2 = H[i+1 + Hptr[i]];
-      TacsScalar sq = sqrt(h1*h1 + h2*h2);
-
-      // Evaluate the sin/cos of the rotation matrix
-      Qcos[i] = h1/sq;
-      Qsin[i] = h2/sq;
-      H[i   + Hptr[i]] =  h1*Qcos[i] + h2*Qsin[i];
-      H[i+1 + Hptr[i]] = -h1*Qsin[i] + h2*Qcos[i];
-
-      // Update the residual
-      h1 = res[i];
-      res[i]   =   h1*Qcos[i];
-      res[i+1] = - h1*Qsin[i];
-
-      // if (monitor){
-      //   monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i+1])));
-      // }
-
-      niters++;
-
-      if (fabs(TacsRealPart(res[i+1])) < atol ||
-          fabs(TacsRealPart(res[i+1])) < rtol*beta){
-        break;
-      }
-    }
-
-    // Now, compute the solution. The linear combination of the
-    // Arnoldi vectors. The matrix H is now upper triangular. First
-    // compute the weights for each basis vector.
-    for ( int i = niters-1; i >= 0; i-- ){
-      for ( int j = i+1; j < niters; j++ ){
-        res[i] = res[i] - H[i + Hptr[j]]*res[j];
-      }
-      res[i] = res[i]/H[i + Hptr[i]];
-    }
-
-    // Zero the next basis vector for the outer Jacobi--Davidson basis
-    V[k+1]->zeroEntries();
-
-    // Build the solution based on the minimum residual solution. Note
-    // that a factor of -1.0 is applied here since we should solve (K
-    // - min_lambda*M)*t = -r = -(A*x - lambda*x). Since the factor is
-    // not included above, we include it here.
-    double fact = -1.0;
-    if (is_flexible){
-      for ( int i = 0; i < niters; i++ ){
-        V[k+1]->axpy(fact*res[i], Z[i]);
-      }
-    }
-    else {
-      // Apply M^{-1} to the linear combination
-      work->zeroEntries();
-      for ( int i = 0; i < niters; i++ ){
-        work->axpy(fact*res[i], W[i]);
-      }
-      applyPc(work, V[k+1]);
-    }
-  }
-
-  delete [] rwork;
 }

@@ -2,11 +2,19 @@
 #include "MITCShell.h"
 #include "isoFSDTStiffness.h"
 #include "TACSBuckling.h"
+#include "JacobiDavidson.h"
 
 int main( int argc, char **argv ){
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
+
+  int use_lanczos = 1;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp(argv[i], "jd") == 0){
+      use_lanczos = 0;
+    }
+  }
 
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -79,58 +87,102 @@ int main( int argc, char **argv ){
   FEMat *mmat = tacs->createFEMat();
   mmat->incref();
 
-  PcScMat *pc = new PcScMat(kmat, lev_fill, fill, 1);
-  pc->incref();
+  if (use_lanczos){
+    PcScMat *pc = new PcScMat(kmat, lev_fill, fill, 1);
+    pc->incref();
 
-  TACSBVec *vec = tacs->createVec();
-  vec->incref();
+    TACSBVec *vec = tacs->createVec();
+    vec->incref();
 
-  // Assemble and factor the stiffness/Jacobian matrix. Factor the
-  // Jacobian and solve the linear system for the displacements
-  double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  tacs->assembleJacobian(alpha, beta, gamma, NULL, kmat);
-  pc->factor(); // LU factorization of stiffness matrix
+    // Assemble and factor the stiffness/Jacobian matrix. Factor the
+    // Jacobian and solve the linear system for the displacements
+    double alpha = 1.0, beta = 0.0, gamma = 0.0;
+    tacs->assembleJacobian(alpha, beta, gamma, NULL, kmat);
+    pc->factor(); // LU factorization of stiffness matrix
 
-  int gmres_iters = 15;
-  int nrestart = 0; // Number of allowed restarts
-  int is_flexible = 0; // Is a flexible preconditioner?
-  GMRES *ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
-  ksm->incref();
-  ksm->setTolerances(1e-12, 1e-30);
+    int gmres_iters = 15;
+    int nrestart = 0; // Number of allowed restarts
+    int is_flexible = 0; // Is a flexible preconditioner?
+    GMRES *ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
+    ksm->incref();
+    ksm->setTolerances(1e-12, 1e-30);
 
-  // Perform the Frequency Analysis
-  int max_lanczos = 60;
-  int num_eigvals = 20;
-  double eig_tol = 1e-8;
-  TacsScalar sigma = 10.0;
-  int output_freq = 1;
+    // Perform the Frequency Analysis
+    int max_lanczos = 60;
+    int num_eigvals = 20;
+    double eig_tol = 1e-8;
+    TacsScalar sigma = 10.0;
+    int output_freq = 1;
 
-  KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
-  TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(
-          tacs,sigma, mmat, kmat, ksm, max_lanczos, num_eigvals, eig_tol);
+    KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
+    TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(
+            tacs, sigma, mmat, kmat, ksm, max_lanczos, num_eigvals, eig_tol);
+    freq_analysis->incref();
 
-  freq_analysis->incref();
-  freq_analysis->solve(ksm_print);
+    double t1 = MPI_Wtime();
+    freq_analysis->solve(ksm_print);
+    t1 = MPI_Wtime() - t1;
+    printf("Lanczos time: %15.5e\n", t1);
 
-  TacsScalar freq;
-  for (int k = 0; k < num_eigvals; k++ ){
-    TacsScalar error;
-    TacsScalar eigvalue = freq_analysis->extractEigenvector(k,vec, &error);
-    eigvalue = sqrt(eigvalue);
-    freq = TacsRealPart(eigvalue)/(2.0*3.14159);
+    TacsScalar freq;
+    for ( int k = 0; k < num_eigvals; k++ ){
+      TacsScalar error;
+      TacsScalar eigvalue = freq_analysis->extractEigenvector(k, vec, &error);
+      eigvalue = sqrt(eigvalue);
+      freq = TacsRealPart(eigvalue)/(2.0*3.14159);
 
-    printf("TACS frequency[%2d]: %15.6f %15.6f\n", 
-           k, TacsRealPart(eigvalue), TacsRealPart(freq));
+      printf("TACS frequency[%2d]: %15.6f %15.6f\n", 
+             k, TacsRealPart(eigvalue), TacsRealPart(freq));
+    }
+
+    pc->decref();
+    vec->decref();
+    ksm->decref();
+    freq_analysis->decref();
+  }
+  else {
+    FEMat *pcmat = tacs->createFEMat();
+    PcScMat *pc = new PcScMat(pcmat, lev_fill, fill, 1);
+    pc->incref();
+
+    tacs->assembleMatType(MASS_MATRIX, mmat);
+    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+
+    TACSJDFrequencyOperator *oper = 
+      new TACSJDFrequencyOperator(tacs, kmat, mmat, pcmat, pc);
+    oper->setEigenvalueEstimate(0.0);
+
+    int num_eigvals = 20;
+    int jd_size = 25;
+    int fgmres_size = 5;
+    TACSJacobiDavidson *jd = 
+      new TACSJacobiDavidson(oper, num_eigvals, jd_size, fgmres_size);
+    jd->incref();
+
+    int output_freq = 1;
+    KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
+    double t1 = MPI_Wtime();
+    jd->solve(ksm_print);
+    t1 = MPI_Wtime() - t1;
+    printf("Jacobi-Davidson time: %15.5e\n", t1);
+
+    for ( int k = 0; k < num_eigvals; k++ ){
+      TacsScalar eigvalue = jd->extractEigenvalue(k, NULL);
+      eigvalue = sqrt(eigvalue);
+      TacsScalar freq = TacsRealPart(eigvalue)/(2.0*3.14159);
+
+      printf("TACS frequency[%2d]: %15.6f %15.6f\n", 
+             k, TacsRealPart(eigvalue), TacsRealPart(freq));
+    }
+
+    jd->decref();
+    pc->decref();
   }
 
   // Decrefs
-  vec->decref();
-  pc->decref();
   kmat->decref();
   mmat->decref();
-  ksm->decref();
   tacs->decref();
-  freq_analysis->decref();
 
   MPI_Finalize();
 

@@ -57,11 +57,17 @@ EPRegular::EPRegular( TACSMat *_mat ){
   mat->incref();
 }
 
-EPRegular::~EPRegular(){ mat->decref(); }
+EPRegular::~EPRegular(){
+  mat->decref();
+}
 
-TACSVec *EPRegular::createVec(){ return mat->createVec(); }
+TACSVec *EPRegular::createVec(){
+  return mat->createVec();
+}
 
-void EPRegular::mult( TACSVec *x, TACSVec *y ){ return mat->mult(x, y); }
+void EPRegular::mult( TACSVec *x, TACSVec *y ){
+  return mat->mult(x, y);
+}
 
 /*
   Shift and invert operator. This requires that the matrix be shifted
@@ -87,16 +93,22 @@ EPShiftInvert::EPShiftInvert( TacsScalar _sigma, TACSKsm *_ksm ){
   ksm = _ksm; ksm->incref();   
 }
 
-EPShiftInvert::~EPShiftInvert(){ ksm->decref(); }
+EPShiftInvert::~EPShiftInvert(){
+  ksm->decref();
+}
 
-TACSVec *EPShiftInvert::createVec(){ return ksm->createVec(); }
+TACSVec *EPShiftInvert::createVec(){
+  return ksm->createVec();
+}
 
-void EPShiftInvert::mult( TACSVec *x, TACSVec *y ){ return ksm->solve(x, y); }
+void EPShiftInvert::mult( TACSVec *x, TACSVec *y ){
+  return ksm->solve(x, y); 
+}
 
 // The eigenvalues are computed as mu = 1.0/( eig - sigma )
 // eig = 1.0/mu + sigma
 TacsScalar EPShiftInvert::convertEigenvalue( TacsScalar value ){ 
-  return (1.0/value + sigma); 
+  return (1.0/value + sigma);
 }
 
 /*
@@ -119,8 +131,8 @@ TacsScalar EPShiftInvert::convertEigenvalue( TacsScalar value ){
   in the literature.
 */
 EPGeneralizedShiftInvert::EPGeneralizedShiftInvert( TacsScalar _sigma, 
-						    TACSKsm *_ksm, 
-						    TACSMat *_inner ){
+                                                    TACSKsm *_ksm,
+                                                    TACSMat *_inner ){
   sigma = _sigma;
   ksm = _ksm;                ksm->incref();
   inner = _inner;            inner->incref();
@@ -329,10 +341,10 @@ static void ComputeEigsTriDiag( int n,
     for ( int j = 0; j < n; j++ ){ // Cycle over matrix entries
       double ans = TacsImagPart(_diag[j])*eigvecs[n*i + j];
       if (j > 0){    
-	ans += TacsImagPart(_upper[j-1])*eigvecs[n*i + j-1]; 
+        ans += TacsImagPart(_upper[j-1])*eigvecs[n*i + j-1]; 
       }
       if (j < n-1){  
-	ans += TacsImagPart(_upper[j])*eigvecs[n*i + j+1]; 
+        ans += TacsImagPart(_upper[j])*eigvecs[n*i + j+1]; 
       }
 
       dot += eigvecs[n*i + j]*eigvecs[n*i + j];
@@ -504,7 +516,7 @@ void SEP::solve( KSMPrint *ksm_print ){
       }
       
       if (i > 0){
-	Q[i+1]->axpy(-Beta[i-1], Q[i-1]);	  	
+        Q[i+1]->axpy(-Beta[i-1], Q[i-1]);	  	
       }
       
       // Next, compute the new alpha term
@@ -517,8 +529,8 @@ void SEP::solve( KSMPrint *ksm_print ){
 
       // Check if the desired eigenvalues have converged 
       if (checkConverged(Alpha, Beta, i+1)){
-	niters = i+1;
-	break;
+        niters = i+1;
+        break;
       }
     } 
 
@@ -538,14 +550,14 @@ void SEP::solve( KSMPrint *ksm_print ){
       }
 
       for ( int j = i; j >= 0; j-- ){
-	TacsScalar h = Op->dot(Q[i+1], Q[j]);
-	Q[i+1]->axpy(-h, Q[j]);
+        TacsScalar h = Op->dot(Q[i+1], Q[j]);
+        Q[i+1]->axpy(-h, Q[j]);
 
-	// Store the diagonal term (and discard all other terms which
-	// will only be non-zero due to numerical issues
-	if (j == i){ 
-	  Alpha[i] = h;
-	}
+        // Store the diagonal term (and discard all other terms which
+        // will only be non-zero due to numerical issues
+        if (j == i){ 
+          Alpha[i] = h;
+        }
       }
       
       // Evalute the sub-digonal
@@ -554,8 +566,8 @@ void SEP::solve( KSMPrint *ksm_print ){
 
       // Check if the desired eigenvalues have converged
       if (checkConverged(Alpha, Beta, i+1)){
-	niters = i+1;
-	break;
+        niters = i+1;
+        break;
       }
     }
 
@@ -726,15 +738,15 @@ void SEP::sortEigenvalues( TacsScalar *values, int neigs, int *p ){
       // If this is the right place, place the new index here
       if (sort_ascending && 
           TacsRealPart(eig_new) > TacsRealPart(eig_j)){
-	break; 
+        break; 
       }
       else if (!sort_ascending && 
                TacsRealPart(eig_new) < TacsRealPart(eig_j)){
-	break; 
+        break; 
       }
       else {
-	// This is not the right place, just move the indices back
-	p[j+1] = p[j];
+        // This is not the right place, just move the indices back
+        p[j+1] = p[j];
       }
     }
       

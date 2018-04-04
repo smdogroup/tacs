@@ -80,7 +80,6 @@ class EPRegular : public EPOperator {
   TACSMat *mat;
 };
 
-
 /*!
   Shift and invert the spectrum
 */
@@ -121,8 +120,8 @@ class EPGeneralizedShiftInvert : public EPOperator {
   
   void setSigma( TacsScalar _sigma );
   TACSVec *createVec();
-  void mult( TACSVec *x, TACSVec *y ); // Compute y = (A - sigma B)^{-1} * inner * x
-  TacsScalar dot( TACSVec *x, TACSVec *y ); // Compute <x,y> = x^{T} * inner * y
+  void mult( TACSVec *x, TACSVec *y ); // Compute y = (A - sigma B)^{-1}*inner*x
+  TacsScalar dot( TACSVec *x, TACSVec *y ); // Compute <x,y> = x^{T}*inner*y
   TacsScalar errorNorm( TACSVec *x );
   TacsScalar convertEigenvalue( TacsScalar value );
 
@@ -153,8 +152,8 @@ class EPBucklingShiftInvert : public EPOperator {
   
   void setSigma( TacsScalar _sigma );
   TACSVec *createVec();
-  void mult( TACSVec *x, TACSVec *y ); // Compute y = (A - sigma B)^{-1} * inner * x
-  TacsScalar dot( TACSVec *x, TACSVec *y ); // Compute <x,y> = x^{T} * inner * y
+  void mult( TACSVec *x, TACSVec *y ); // Compute y = (A - sigma B)^{-1}*inner*x
+  TacsScalar dot( TACSVec *x, TACSVec *y ); // Compute <x,y> = x^{T}*inner*y
   TacsScalar errorNorm( TACSVec *x );
   TacsScalar convertEigenvalue( TacsScalar value );
 
@@ -199,7 +198,7 @@ class SEP : public TACSObject {
   void setOperator( EPOperator *_Op );
 
   // Solve the eigenproblem
-  void solve( KSMPrint *ksm_print = NULL );
+  void solve( KSMPrint *ksm_print=NULL );
 
   // Extract the eigenvalues and eigenvectors from the solver
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
@@ -248,4 +247,4 @@ class SEP : public TACSObject {
   TACSBcMap *bcs;
 };
 
-#endif
+#endif // TACS_GSEP_H
