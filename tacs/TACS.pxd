@@ -453,6 +453,7 @@ cdef extern from "TACSBuckling.h":
                               int, int, double)
         TACSFrequencyAnalysis(TACSAssembler*, TacsScalar,
                               TACSMat*, TACSMat*, TACSMat*,
+                              TACSPc*,
                               int, int, int, double, double)
         TACSAssembler* getTACS()
         TacsScalar getSigma()

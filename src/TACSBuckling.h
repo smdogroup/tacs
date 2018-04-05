@@ -132,7 +132,8 @@ class TACSFrequencyAnalysis : public TACSObject {
   TACSFrequencyAnalysis( TACSAssembler *_tacs,
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
-                         TACSMat *_pcmat, int max_jd_size, 
+                         TACSMat *_pcmat, TACSPc *_pc,
+                         int max_jd_size, 
                          int fgmres_size, int num_eigvals, 
                          double eig_rtol=1e-9, 
                          double eig_atol=1e-30 );

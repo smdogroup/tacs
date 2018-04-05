@@ -515,7 +515,8 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
                                               TacsScalar _init_eig,
                                               TACSMat *_mmat, 
                                               TACSMat *_kmat,
-                                              TACSMat *_pcmat, 
+                                              TACSMat *_pcmat,
+                                              TACSPc *_pc,
                                               int max_jd_size, 
                                               int fgmres_size,
                                               int num_eigvals, 
@@ -532,6 +533,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   mmat = _mmat;
   kmat = _kmat;
   pcmat = _pcmat;
+  pc = _pc;
   if (!pcmat){
     fprintf(stderr, "TACSFrequency: Error, the preconditioner matrix associated \
   with the Jacobi-Davidson method cannot be NULL\n");
@@ -544,7 +546,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
   mg = dynamic_cast<TACSMg*>(pc);
-
+  
   // Allocate vectors that are required for the eigenproblem
   eigvec = tacs->createVec();
   res = tacs->createVec();
@@ -569,8 +571,6 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   ep_op = NULL;
   sep = NULL;
   solver = NULL;
-  // Set the initial eigenvalue estimate
-  jd_op->setEigenvalueEstimate(sigma);
   // Set the tolerance to the Jacobi-Davidson solver
   jd->setTolerances(eig_rtol, eig_atol);
 }
@@ -639,7 +639,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
       tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
     }
     // Factor the preconditioner
-    pc->factor();
+    jd_op->setEigenvalueEstimate(sigma);
     
     // Solve the problem using Jacobi-Davidson
     jd->solve(ksm_print);
