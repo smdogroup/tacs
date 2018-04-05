@@ -389,7 +389,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
     }
 
     // Compute the norm of the eigenvalue to check if it has converged
-    if (work->norm() < eigtol*Anorm){
+    if (TacsRealPart(work->norm()) < TacsRealPart(eigtol*Anorm)){
       // Record the Ritz value as the eigenvalue
       eigvals[nconverged] = theta;
 
