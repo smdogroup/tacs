@@ -30,7 +30,7 @@ class SolidStiffness : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 6;
   SolidStiffness( TacsScalar _rho, TacsScalar _E,
-                  TacsScalar _nu, int _eNum = 0 );
+                  TacsScalar _nu, int _eNum = -1 );
   SolidStiffness( TacsScalar _rho, 
 		  TacsScalar E1, TacsScalar E2, TacsScalar E3, 
 		  TacsScalar nu_12, TacsScalar nu_13, TacsScalar nu_23,
@@ -69,7 +69,6 @@ class SolidStiffness : public TACSConstitutive {
   inline void calcStress( const TacsScalar e[], TacsScalar s[] );
 
   // Design variables
-  int nvars;
   int eNum;
   TacsScalar E, nu;
 
