@@ -610,7 +610,7 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
     ep_op->setSigma(_sigma);
   }
   else if (jd_op){
-    jd_op->setEigenvalueEstimate(_sigma);
+    jd_op->setEigenvalueEstimate(TacsRealPart(_sigma));
   }
 }
 
@@ -639,7 +639,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
       tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
     }
     // Factor the preconditioner
-    jd_op->setEigenvalueEstimate(sigma);
+    jd_op->setEigenvalueEstimate(TacsRealPart(sigma));
     
     // Solve the problem using Jacobi-Davidson
     jd->solve(ksm_print);
