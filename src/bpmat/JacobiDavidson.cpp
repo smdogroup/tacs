@@ -584,7 +584,8 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
   if (ksm_print){
     for ( int i = 0; i < nconverged; i++ ){
       char line[256];
-      sprintf(line, "Eigenvalue[%2d]: %25.10e\n", i, eigvals[i]);
+      sprintf(line, "Eigenvalue[%2d]: %25.10e\n",
+              i, TacsRealPart(eigvals[i]));
       ksm_print->print(line);
     }
   }
