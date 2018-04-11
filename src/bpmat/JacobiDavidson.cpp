@@ -49,6 +49,9 @@ TACSVec *TACSJDFrequencyOperator::createVec(){
 void TACSJDFrequencyOperator::setEigenvalueEstimate( double estimate ){
   pc_mat->zeroEntries();
   pc_mat->copyValues(kmat);
+  if (estimate != 0.0){
+    pc_mat->axpy(-estimate, mmat);
+  }
   tacs->applyBCs(pc_mat);
   pc->factor();
 }
@@ -112,7 +115,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   max_gmres_size = _max_gmres_size;
 
   // The eigen tolerance
-  eigtol = 1e-6;
+  eigtol = 1e-10;
 
   // The residual tolerances for the GMRES iterations
   rtol = 1e-9;
@@ -359,51 +362,64 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
     LAPACKdsyev(jobz, uplo, &n, ritzvecs, &n, ritzvals,
                 rwork, &lwork, &info);
 
-    // Set the Ritz values
-    TacsScalar theta = ritzvals[0];
+    // The Ritz value that estimates the smallest eigenvalue that
+    // has not yet converged
+    double theta = ritzvals[0];
 
-    // Assemble the predicted Ritz vector
-    Q[nconverged]->zeroEntries();
-    for ( int j = 0; j <= k; j++ ){
-      Q[nconverged]->axpy(ritzvecs[j], V[j]);
-    }
-    oper->applyBCs(Q[nconverged]);
+    int num_new_eigvals = 0;
+    for ( int i = 0; i < k+1; i++, num_new_eigvals++ ){
+      // Set the Ritz value
+      theta = ritzvals[i];
 
-    // Normalize the predicted eigenvalue
-    TacsScalar qnorm = sqrt(oper->dot(Q[nconverged], Q[nconverged]));
-    Q[nconverged]->scale(1.0/qnorm);
+      // Assemble the predicted Ritz vector
+      Q[nconverged]->zeroEntries();
+      for ( int j = 0; j <= k; j++ ){
+        Q[nconverged]->axpy(ritzvecs[i*(k+1) + j], V[j]);
+      }
+      oper->applyBCs(Q[nconverged]);
 
-    // Compute the residual: work = A*q - theta*B*q 
-    // and store it in the work vector
-    oper->multA(Q[nconverged], work);
-    TacsScalar Anorm = work->norm();
-    oper->multB(Q[nconverged], P[nconverged]);
-    work->axpy(-theta, P[nconverged]);
-    oper->applyBCs(work);
+      // Normalize the predicted eigenvalue
+      TacsScalar qnorm = sqrt(oper->dot(Q[nconverged], Q[nconverged]));
+      Q[nconverged]->scale(1.0/qnorm);
 
-    if (ksm_print){
-      char line[256];
-      sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %15.5e\n", 
-              iteration, work->norm(), nconverged, theta);
-      ksm_print->print(line);
-    }
+      // Compute the residual: work = A*q - theta*B*q 
+      // and store it in the work vector
+      oper->multA(Q[nconverged], work);
+      TacsScalar Anorm = work->norm();
+      oper->multB(Q[nconverged], P[nconverged]);
+      work->axpy(-theta, P[nconverged]);
+      oper->applyBCs(work);
 
-    // Compute the norm of the eigenvalue to check if it has converged
-    if (TacsRealPart(work->norm()) < TacsRealPart(eigtol*Anorm)){
-      // Record the Ritz value as the eigenvalue
-      eigvals[nconverged] = theta;
-
-      nconverged++;
-
-      // Check if we should quit the loop or continue
-      if (nconverged >= max_eigen_vectors){
-        break;
+      if (ksm_print){
+        char line[256];
+        sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %20.10e\n", 
+                iteration, TacsRealPart(work->norm()), nconverged, theta);
+        ksm_print->print(line);
       }
 
+      // Compute the norm of the eigenvalue to check if it has converged
+      if (TacsRealPart(work->norm()) <= TacsRealPart(eigtol*Anorm)){
+        // Record the Ritz value as the eigenvalue
+        eigvals[nconverged] = theta;
+
+        nconverged++;
+      }
+      else {
+        // The eigenvalue did not converge, repeat the computation
+        break;
+      }
+    }
+
+    // Check if we should quit the loop or continue
+    if (nconverged >= max_eigen_vectors){
+      break;
+    }
+
+    if (num_new_eigvals > 0){
       // This eigenvalue has converged, store it in Q[nconverged] and
       // modify the remaining entries of V. Now we need to compute the
       // new starting vector for the next eigenvalue
-      int max_new_vecs = k;
+      int max_new_vecs = k+1 - num_new_eigvals;
       if (max_new_vecs > max_gmres_size+1){
         max_new_vecs = max_gmres_size+1;
       }
@@ -413,12 +429,14 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
 
       // Set the vectors that will be used
       for ( int i = 0; i < max_new_vecs; i++ ){
+        int ritz_index = i + num_new_eigvals;
+
         // Set the ritz value
-        M[i + i*m] = ritzvals[i+1];
+        M[i + i*m] = ritzvals[ritz_index];
 
         W[i]->zeroEntries();
         for ( int j = 0; j <= k; j++ ){
-          W[i]->axpy(ritzvecs[(i+1)*(k+1) + j], V[j]);
+          W[i]->axpy(ritzvecs[ritz_index*(k+1) + j], V[j]);
         }
 
         // Orthogonalize the new starting vector against all other
@@ -524,8 +542,8 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
       res[i]   =   h1*Qcos[i];
       res[i+1] = - h1*Qsin[i];
 
-      // if (monitor){
-      //   monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i+1])));
+      // if (ksm_print){
+      //   ksm_print->printResidual(niters, fabs(TacsRealPart(res[i+1])));
       // }
 
       niters++;
@@ -563,8 +581,17 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
     iteration++;
   }
 
+  if (ksm_print){
+    for ( int i = 0; i < nconverged; i++ ){
+      char line[256];
+      sprintf(line, "Eigenvalue[%2d]: %25.10e\n", i, eigvals[i]);
+      ksm_print->print(line);
+    }
+  }
+
   delete [] rwork;
 }
+
 /*
   Set the relative and absolute tolerances used for the stopping
   criterion.

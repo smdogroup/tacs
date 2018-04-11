@@ -534,6 +534,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   kmat = _kmat;
   pcmat = _pcmat;
   pc = _pc;
+
   if (!pcmat){
     fprintf(stderr, "TACSFrequency: Error, the preconditioner matrix associated \
   with the Jacobi-Davidson method cannot be NULL\n");
@@ -563,14 +564,17 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
                                         pcmat, pc);
   }
   jd_op->incref();
+
   // Allocate the Jacobi-Davidson solver
   jd = new TACSJacobiDavidson(jd_op, num_eigvals, max_jd_size, 
                               fgmres_size);
   jd->incref();
+  
   // Set unallocated objects to NULL
   ep_op = NULL;
   sep = NULL;
   solver = NULL;
+
   // Set the tolerance to the Jacobi-Davidson solver
   jd->setTolerances(eig_rtol, eig_atol);
 }
@@ -624,22 +628,25 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
   if (jd){
     if (mg){
       // Assemble the mass matrix
-      ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, 
-                                       MASS_MATRIX};
-      TacsScalar scale[2] = {1.0, -sigma};
+      // ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, 
+      //                                  MASS_MATRIX};
+      // TacsScalar scale[2] = {1.0, sigma};
 
       // Assemble the mass matrix
       tacs->assembleMatType(MASS_MATRIX, mmat);
+      tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
 
       // Assemble the linear combination
-      mg->assembleMatCombo(matTypes, scale, 2);
+      // mg->assembleMatCombo(matTypes, scale, 2);
+      mg->assembleMatType(STIFFNESS_MATRIX);
+      mg->factor();
     }
     else {
       tacs->assembleMatType(MASS_MATRIX, mmat);
       tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
     }
     // Factor the preconditioner
-    jd_op->setEigenvalueEstimate(TacsRealPart(sigma));
+    // jd_op->setEigenvalueEstimate(0.0); // TacsRealPart(sigma));
     
     // Solve the problem using Jacobi-Davidson
     jd->solve(ksm_print);
