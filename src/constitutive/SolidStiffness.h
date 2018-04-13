@@ -23,24 +23,27 @@
 
 /*
   Compute the stiffness matrix associated with a linear solid
-  isotropic or orthotropic material.
+  isotropic material.
 */
-
 class SolidStiffness : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 6;
   SolidStiffness( TacsScalar _rho, TacsScalar _E,
-                  TacsScalar _nu, int _eNum = -1 );
-  SolidStiffness( TacsScalar _rho, 
-		  TacsScalar E1, TacsScalar E2, TacsScalar E3, 
-		  TacsScalar nu_12, TacsScalar nu_13, TacsScalar nu_23,
-		  TacsScalar G23, TacsScalar G13, TacsScalar G12 );
+                  TacsScalar _nu, TacsScalar _ys,
+                  int _eNum=-1 );
   virtual ~SolidStiffness(){}
 
   // Functions for design variable control
   // -------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
+  
+  // Return the mass moments
+  // -----------------------
+  int getNumMassMoments(){ return 1; }
+  void getPointwiseMass( const double gpt[], TacsScalar mass[] ){
+    mass[0] = rho;
+  }
 
   // Calculate the stress
   // --------------------
@@ -51,14 +54,20 @@ class SolidStiffness : public TACSConstitutive {
   void addStressDVSens( const double pt[], const TacsScalar strain[],
                         TacsScalar alpha, const TacsScalar psi[],
                         TacsScalar dvSens[], int dvLen );
-  
-  // Return the mass moments
-  // -----------------------
-  int getNumMassMoments(){ return 1; }
-  void getPointwiseMass( const double gpt[], TacsScalar mass[] ){
-    mass[0] = rho;
-  }
 
+  // Functions to compute the failure properties
+  // -------------------------------------------
+  void failure( const double pt[], 
+                const TacsScalar strain[], 
+                TacsScalar *fail );
+  void failureStrainSens( const double pt[], 
+                          const TacsScalar strain[],
+                          TacsScalar sens[] );
+  void addFailureDVSens( const double pt[],
+                         const TacsScalar strain[],
+                         TacsScalar alpha,
+                         TacsScalar dvSens[], int dvLen );
+  
   // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
@@ -68,15 +77,17 @@ class SolidStiffness : public TACSConstitutive {
 
   inline void calcStress( const TacsScalar e[], TacsScalar s[] );
 
+  // Mass, stiffness and Poisson ratio
+  TacsScalar rho;
+  TacsScalar E, nu;
+  TacsScalar ys;
+
   // Design variables
   int eNum;
-  TacsScalar E, nu;
 
   // The stiffness parameters
   TacsScalar C[6];
   TacsScalar G23, G13, G12;
-
-  TacsScalar rho;
 
  private:
   static const char *constName;
@@ -93,4 +104,4 @@ inline void SolidStiffness::calcStress( const TacsScalar e[],
   s[5] = G12*e[5];
 }
 
-#endif
+#endif // TACS_SOLID_STIFFNESS_H
