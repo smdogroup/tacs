@@ -54,7 +54,7 @@ cdef extern from "PlaneStressStiffness.h":
 cdef extern from "SolidStiffness.h":
     cdef cppclass SolidStiffness(TACSConstitutive):
         SolidStiffness()
-        SolidStiffness(TacsScalar rho, TacsScalar E, TacsScalar nu)
+        SolidStiffness(TacsScalar rho, TacsScalar E, TacsScalar nu, int eNum)
 
 cdef extern from "TACSConstitutiveWrapper.h":
     cdef cppclass PSStiffnessWrapper(PlaneStressStiffness):

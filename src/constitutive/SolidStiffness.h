@@ -29,19 +29,28 @@
 class SolidStiffness : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 6;
-  SolidStiffness( TacsScalar _rho, TacsScalar E, TacsScalar nu );
+  SolidStiffness( TacsScalar _rho, TacsScalar _E,
+                  TacsScalar _nu, int _eNum = -1 );
   SolidStiffness( TacsScalar _rho, 
 		  TacsScalar E1, TacsScalar E2, TacsScalar E3, 
 		  TacsScalar nu_12, TacsScalar nu_13, TacsScalar nu_23,
 		  TacsScalar G23, TacsScalar G13, TacsScalar G12 );
   virtual ~SolidStiffness(){}
 
+  // Functions for design variable control
+  // -------------------------------------
+  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void getDesignVars( TacsScalar dvs[], int numDVs );
+
   // Calculate the stress
   // --------------------
   int getNumStresses();
   void calculateStress( const double pt[], 
                         const TacsScalar strain[],
-			TacsScalar stress[] );
+                        TacsScalar stress[] );
+  void addStressDVSens( const double pt[], const TacsScalar strain[],
+                        TacsScalar alpha, const TacsScalar psi[],
+                        TacsScalar dvSens[], int dvLen );
   
   // Return the mass moments
   // -----------------------
@@ -59,6 +68,10 @@ class SolidStiffness : public TACSConstitutive {
 
   inline void calcStress( const TacsScalar e[], TacsScalar s[] );
 
+  // Design variables
+  int eNum;
+  TacsScalar E, nu;
+
   // The stiffness parameters
   TacsScalar C[6];
   TacsScalar G23, G13, G12;
@@ -74,7 +87,7 @@ inline void SolidStiffness::calcStress( const TacsScalar e[],
   s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
   s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
   s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];
-  
+
   s[3] = G23*e[3];
   s[4] = G13*e[4];
   s[5] = G12*e[5];
