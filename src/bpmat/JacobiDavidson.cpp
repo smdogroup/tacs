@@ -115,7 +115,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   max_gmres_size = _max_gmres_size;
 
   // The eigen tolerance
-  eigtol = 1e-10;
+  eigtol = 1e-9;
 
   // The residual tolerances for the GMRES iterations
   rtol = 1e-9;
@@ -600,8 +600,10 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
   rtol: the relative tolerance ||r_k|| < rtol*||r_0||
   atol: the absolute tolerancne ||r_k|| < atol
 */
-void TACSJacobiDavidson::setTolerances( double _rtol, 
+void TACSJacobiDavidson::setTolerances( double _eigtol,
+                                        double _rtol, 
                                         double _atol ){
+  eigtol = _eigtol;
   rtol = _rtol;
   atol = _atol;
 }
