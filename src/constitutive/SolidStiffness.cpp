@@ -34,7 +34,8 @@ SolidStiffness::SolidStiffness( TacsScalar _rho, TacsScalar _E,
   rho = _rho;
   E = _E;
   nu = _nu;
-
+  ys = _ys;
+  
   TacsScalar D = E/((1.0 + nu)*(1.0 - 2.0*nu));
   C[0] = C[3] = C[5] = (1.0 - nu)*D;
   C[1] = C[2] = C[4] = nu*D;
@@ -96,7 +97,7 @@ void SolidStiffness::calculateStress( const double gpt[],
   input vector psi, given the strain
 */
 void SolidStiffness::addStressDVSens( const double pt[],
-                                      const TacsScalar strain[],
+                                      const TacsScalar e[],
                                       TacsScalar alpha,
                                       const TacsScalar psi[],
                                       TacsScalar dvSens[], int dvLen ){
@@ -106,13 +107,13 @@ void SolidStiffness::addStressDVSens( const double pt[],
     TacsScalar C1 = alpha*nu/((1.0 + nu)*(1.0 - 2.0*nu));
     TacsScalar G  = alpha*0.5/(1.0 + nu);
 
-    dvSens[eNum] += psi[0]*(C0*strain[0] + C1*strain[1] + C1*strain[2]);
-    dvSens[eNum] += psi[1]*(C1*strain[0] + C0*strain[1] + C1*strain[2]);
-    dvSens[eNum] += psi[2]*(C1*strain[0] + C1*strain[1] + C0*strain[2]);
+    dvSens[eNum] += psi[0]*(C0*e[0] + C1*e[1] + C1*e[2]);
+    dvSens[eNum] += psi[1]*(C1*e[0] + C0*e[1] + C1*e[2]);
+    dvSens[eNum] += psi[2]*(C1*e[0] + C1*e[1] + C0*e[2]);
 
-    dvSens[eNum] += psi[3]*G*strain[3];
-    dvSens[eNum] += psi[4]*G*strain[4];
-    dvSens[eNum] += psi[5]*G*strain[5];
+    dvSens[eNum] += psi[3]*G*e[3];
+    dvSens[eNum] += psi[4]*G*e[4];
+    dvSens[eNum] += psi[5]*G*e[5];
   }
 }
 
