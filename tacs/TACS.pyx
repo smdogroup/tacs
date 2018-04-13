@@ -1579,14 +1579,14 @@ cdef class FrequencyAnalysis:
     cdef TACSFrequencyAnalysis *ptr
     def __cinit__(self, Assembler assembler, TacsScalar sigma,
                   Mat M, Mat K, KSM solver, int max_lanczos=100,
-                  int num_eigs=5, double eig_tol=1e-6,
+                  int num_eigs=5, double eig_tol=1e-6, double eig_rtol=1e-9, 
                   Mat PC=None, Pc pc=None, int fgmres_size=5,
                   double eig_atol=1e-30):
         if solver is None:
             self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr, 
                                                  K.ptr, PC.ptr, pc.ptr, max_lanczos,
-                                                 fgmres_size, num_eigs,
-                                                 eig_tol, eig_atol)
+                                                 fgmres_size, num_eigs, eig_tol,
+                                                 eig_rtol, eig_atol)
         else:
             self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr, 
                                                  K.ptr, solver.ptr, max_lanczos, 

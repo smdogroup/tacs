@@ -519,7 +519,8 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
                                               TACSPc *_pc,
                                               int max_jd_size, 
                                               int fgmres_size,
-                                              int num_eigvals, 
+                                              int num_eigvals,
+                                              double eigtol,
                                               double eig_rtol,
                                               double eig_atol ){
   // Store the TACSAssembler pointer
@@ -576,7 +577,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   solver = NULL;
 
   // Set the tolerance to the Jacobi-Davidson solver
-  jd->setTolerances(eig_rtol, eig_atol);
+  jd->setTolerances(eigtol, eig_rtol, eig_atol);
 }
 
 /*
