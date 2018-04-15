@@ -557,24 +557,40 @@ void MITC3::computeInertiaTensor( const TacsScalar rho[],
                                   TacsScalar Jr[] ){
   // Compute the inertia tensor components for this point
   // in the beam
-  TacsScalar d11 = 
-    rho[1]*vecDot(n1, n1) + rho[2]*vecDot(n2, n2) + 
-    2.0*rho[3]*vecDot(n1, n2);
+  // TacsScalar d11 = 
+  //   rho[1]*vecDot(n1, n1) + rho[2]*vecDot(n2, n2) + 
+  //   2.0*rho[3]*vecDot(n1, n2);
 
-  Jr[0] = d11 - rho[1]*n1[0]*n1[0] - 
-    rho[2]*n2[0]*n2[0] - 2.0*rho[3]*n1[0]*n2[0];
-  Jr[1] = - rho[1]*n1[0]*n1[1] - 
-    rho[2]*n2[0]*n2[1] - rho[3]*(n1[0]*n2[1] + n2[0]*n1[1]);
-  Jr[2] = - rho[1]*n1[0]*n1[2] - 
-    rho[2]*n2[0]*n2[2] - rho[3]*(n1[0]*n2[2] + n2[0]*n1[2]);
+  // Jr[0] = d11 - rho[1]*n1[0]*n1[0] - 
+  //   rho[2]*n2[0]*n2[0] - 2.0*rho[3]*n1[0]*n2[0];
+  // Jr[1] = - rho[1]*n1[0]*n1[1] - 
+  //   rho[2]*n2[0]*n2[1] - rho[3]*(n1[0]*n2[1] + n2[0]*n1[1]);
+  // Jr[2] = - rho[1]*n1[0]*n1[2] - 
+  //   rho[2]*n2[0]*n2[2] - rho[3]*(n1[0]*n2[2] + n2[0]*n1[2]);
   
-  Jr[3] = d11 - rho[1]*n1[1]*n1[1] - 
-    rho[2]*n2[1]*n2[1] - 2.0*rho[3]*n1[1]*n2[1];
-  Jr[4] = - rho[1]*n1[1]*n1[2] - 
-    rho[2]*n2[1]*n2[2] - rho[3]*(n1[1]*n2[2] + n2[1]*n1[2]);
+  // Jr[3] = d11 - rho[1]*n1[1]*n1[1] - 
+  //   rho[2]*n2[1]*n2[1] - 2.0*rho[3]*n1[1]*n2[1];
+  // Jr[4] = - rho[1]*n1[1]*n1[2] - 
+  //   rho[2]*n2[1]*n2[2] - rho[3]*(n1[1]*n2[2] + n2[1]*n1[2]);
 
-  Jr[5] = d11 - rho[1]*n1[2]*n1[2] - 
-    rho[2]*n2[2]*n2[2] - 2.0*rho[3]*n1[2]*n2[2];
+  // Jr[5] = d11 - rho[1]*n1[2]*n1[2] - 
+  //   rho[2]*n2[2]*n2[2] - 2.0*rho[3]*n1[2]*n2[2];
+
+  Jr[0] = rho[1] + rho[2];
+  Jr[1] = 0.0;
+  Jr[2] = 0.0;
+
+  Jr[3] = rho[2];
+  Jr[4] = 0.0;
+
+  Jr[5] = rho[1];
+  
+  // printf("Jr[%d] = %e \n", 0, Jr[0]);
+  // printf("Jr[%d] = %e \n", 1, Jr[1]);
+  // printf("Jr[%d] = %e \n", 2, Jr[2]);
+  // printf("Jr[%d] = %e \n", 3, Jr[3]);
+  // printf("Jr[%d] = %e \n", 4, Jr[4]);
+  // printf("Jr[%d] = %e \n", 5, Jr[5]);
 }
 
 /*
