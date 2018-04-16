@@ -139,4 +139,4 @@ class TACSConstitutive : public TACSOptObject {
                               double theta_min, double theta_max );
 };
 
-# endif // TACS_CONSTITUTIVE_H
+#endif // TACS_CONSTITUTIVE_H

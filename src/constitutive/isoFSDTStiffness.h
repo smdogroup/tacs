@@ -68,7 +68,7 @@ class isoFSDTStiffness : public FSDTStiffness {
   // -------------------------------------------
   void failure( const double pt[], 
                 const TacsScalar strain[], 
-                TacsScalar * fail );
+                TacsScalar *fail );
   void failureStrainSens( const double pt[], 
                           const TacsScalar strain[],
                           TacsScalar sens[] );
@@ -83,7 +83,7 @@ class isoFSDTStiffness : public FSDTStiffness {
 
   // Return the name of the constitutive object
   // ------------------------------------------
-  const char * constitutiveName(){ return constName; }
+  const char *constitutiveName(){ return constName; }
 
  private:
   // Calculate the state of plane stress within the element
