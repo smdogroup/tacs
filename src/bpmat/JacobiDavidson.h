@@ -117,9 +117,15 @@ class TACSJacobiDavidson : public TACSObject {
   
   // Set tolerances to FGMRES
   void setTolerances( double _eigtol, double _rtol, double _atol );
+  // Set the number of vectors to recycle
+  void setRecycle( int _recycle);
  private:
   // The operator class that defines the eigenproblem
   TACSJacobiDavidsonOperator *oper;
+
+  // The recycle flag that indicates the number of converged eigenvectors to
+  // recycle in the next solve
+  int recycle;
 
   // Generic work vector
   TACSVec *work;
@@ -138,6 +144,9 @@ class TACSJacobiDavidson : public TACSObject {
 
   // The vectors for the eigenvalue space
   TACSVec **V;
+
+  // The number of converged eigenvectors/eigenvalues
+  int nconverged;
 
   // The vectors for the deflation space
   TACSVec **Q, **P;

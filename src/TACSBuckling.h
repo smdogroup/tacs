@@ -137,7 +137,8 @@ class TACSFrequencyAnalysis : public TACSObject {
                          int fgmres_size, int num_eigvals,
                          double eigtol=1e-9,
                          double eig_rtol=1e-9, 
-                         double eig_atol=1e-30 );
+                         double eig_atol=1e-30,
+                         int num_recycle=0 );
   
   ~TACSFrequencyAnalysis();
 
