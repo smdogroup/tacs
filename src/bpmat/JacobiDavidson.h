@@ -18,6 +18,9 @@
 #include "KSM.h"
 #include "TACSAssembler.h"
 
+enum JDRecycleType { JD_SUM_TWO,
+                     JD_NUM_RECYCLE };
+
 /*
   The following code implements a Jacobi-Davidson method for 
   simple and generalized eigenvalue problems.
@@ -118,7 +121,8 @@ class TACSJacobiDavidson : public TACSObject {
   // Set tolerances to FGMRES
   void setTolerances( double _eigtol, double _rtol, double _atol );
   // Set the number of vectors to recycle
-  void setRecycle( int _recycle);
+  void setRecycle( int _recycle, JDRecycleType _recycle_type );
+
  private:
   // The operator class that defines the eigenproblem
   TACSJacobiDavidsonOperator *oper;
@@ -126,6 +130,7 @@ class TACSJacobiDavidson : public TACSObject {
   // The recycle flag that indicates the number of converged eigenvectors to
   // recycle in the next solve
   int recycle;
+  JDRecycleType recycle_type;
 
   // Generic work vector
   TACSVec *work;

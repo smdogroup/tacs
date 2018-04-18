@@ -523,7 +523,8 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
                                               double eigtol,
                                               double eig_rtol,
                                               double eig_atol,
-                                              int num_recycle ){
+                                              int num_recycle,
+                                              JDRecycleType recycle_type ){
   // Store the TACSAssembler pointer
   tacs = _tacs;
   tacs->incref();
@@ -580,7 +581,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   // Set the tolerance to the Jacobi-Davidson solver
   jd->setTolerances(eigtol, eig_rtol, eig_atol);
   // Set the number of eigenvectors to recycle
-  jd->setRecycle(num_recycle);
+  jd->setRecycle(num_recycle, recycle_type);
 }
 
 /*

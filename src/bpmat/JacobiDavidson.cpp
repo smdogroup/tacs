@@ -119,6 +119,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
 
   // Set the number of vectors to recycle (0 by default)
   recycle = 0;
+  recycle_type = JD_NUM_RECYCLE;
 
   // The eigen tolerance
   eigtol = 1e-9;
@@ -321,73 +322,75 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
     if (num_recycle > nconverged){
       num_recycle = nconverged;
     }
-    // if (num_recycle > 0){
-    //   V[0]->setRand(-1.0, 1.0);
-    //   V[1]->zeroEntries();
-    //   for (int i = 0; i < nconverged; i++){
-    //     V[1]->axpy(1.0, Q[i]);
-    //   }
-    //   for ( int k = 0; k < 2; k++ ){
-    //     // B-orthogonalize the eigenvectors
-    //     for ( int i = 0; i < k; i++ ){
-    //       TacsScalar h = oper->dot(V[k], V[i]);
-    //       V[k]->axpy(-h, V[i]);
-    //     }
-    //     // Apply boundary conditions for this vector
-    //     oper->applyBCs(V[k]);
-        
-    //     // Normalize the vector so that it is orthonormal
-    //     TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
-    //     V[k]->scale(1.0/vnorm);
-    //     // Compute work = A*V[k]
-    //     oper->multA(V[k], work);
-        
-    //     // Complete the entries in the symmetric matrix M that is formed by 
-    //     // M = V^{T}*A*V
-    //     for ( int i = 0; i <= k; i++ ){
-    //       M[k*m + i] = V[i]->dot(work);
-    //       M[i*m + k] = M[k*m + i];
-    //     }
-    //   }
-    //   kstart = 2;
-    // }
     if (num_recycle > 0){
-      // B-orthogonalize the old eigenvectors with respect to the new matrix for
-      // all but the last recycled eigenvector which will be orthogonalized by
-      // the first iteration through the solution loop.
-      for ( int k = 0; k < num_recycle; k++ ){
-        // Copy the vector from the old eigenvector
-        if (k >= 1){
-          V[k]->copyValues(Q[k-1]);
+      if (recycle_type == JD_SUM_TWO){
+        V[0]->setRand(-1.0, 1.0);
+        V[1]->zeroEntries();
+        for (int i = 0; i < nconverged; i++){
+          V[1]->axpy(1.0, Q[i]);
         }
-
-        // B-orthogonalize the eigenvectors
-        for ( int i = 0; i < k; i++ ){
-          TacsScalar h = oper->dot(V[k], V[i]);
-          V[k]->axpy(-h, V[i]);
+        for ( int k = 0; k < 2; k++ ){
+          // B-orthogonalize the eigenvectors
+          for ( int i = 0; i < k; i++ ){
+            TacsScalar h = oper->dot(V[k], V[i]);
+            V[k]->axpy(-h, V[i]);
+          }
+          // Apply boundary conditions for this vector
+          oper->applyBCs(V[k]);
+          
+          // Normalize the vector so that it is orthonormal
+          TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
+          V[k]->scale(1.0/vnorm);
+          // Compute work = A*V[k]
+          oper->multA(V[k], work);
+          
+          // Complete the entries in the symmetric matrix M that is formed by 
+          // M = V^{T}*A*V
+          for ( int i = 0; i <= k; i++ ){
+            M[k*m + i] = V[i]->dot(work);
+            M[i*m + k] = M[k*m + i];
+          }
         }
-
-        // Apply boundary conditions for this vector
-        oper->applyBCs(V[k]);
-
-        // Normalize the vector so that it is orthonormal
-        TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
-        V[k]->scale(1.0/vnorm);
-
-        // Compute work = A*V[k]
-        oper->multA(V[k], work);
-
-        // Complete the entries in the symmetric matrix M that is formed by 
-        // M = V^{T}*A*V
-        for ( int i = 0; i <= k; i++ ){
-          M[k*m + i] = V[i]->dot(work);
-          M[i*m + k] = M[k*m + i];
-        }
+        kstart = 2;      
       }
+      else if (recycle_type == JD_NUM_RECYCLE){ 
+        // B-orthogonalize the old eigenvectors with respect to the new matrix for
+        // all but the last recycled eigenvector which will be orthogonalized by
+        // the first iteration through the solution loop.
+        for ( int k = 0; k < num_recycle; k++ ){
+          // Copy the vector from the old eigenvector
+          if (k >= 1){
+            V[k]->copyValues(Q[k-1]);
+          }
 
-      // Copy over the last eigenvector
-      kstart = num_recycle;
-      V[kstart]->copyValues(Q[num_recycle-1]);
+          // B-orthogonalize the eigenvectors
+          for ( int i = 0; i < k; i++ ){
+            TacsScalar h = oper->dot(V[k], V[i]);
+            V[k]->axpy(-h, V[i]);
+          }
+
+          // Apply boundary conditions for this vector
+          oper->applyBCs(V[k]);
+
+          // Normalize the vector so that it is orthonormal
+          TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
+          V[k]->scale(1.0/vnorm);
+
+          // Compute work = A*V[k]
+          oper->multA(V[k], work);
+
+          // Complete the entries in the symmetric matrix M that is formed by 
+          // M = V^{T}*A*V
+          for ( int i = 0; i <= k; i++ ){
+            M[k*m + i] = V[i]->dot(work);
+            M[i*m + k] = M[k*m + i];
+          }
+        }
+
+        // Copy over the last eigenvector
+        kstart = num_recycle;
+        V[kstart]->copyValues(Q[num_recycle-1]);
+      }
     }
   }
 
@@ -704,6 +707,8 @@ void TACSJacobiDavidson::setTolerances( double _eigtol,
   input:
   recycle: number of vectors to recycle
 */
-void TACSJacobiDavidson::setRecycle( int _recycle ){
+void TACSJacobiDavidson::setRecycle( int _recycle, 
+                                     JDRecycleType _recycle_type ){ 
   recycle = _recycle;
+  recycle_type = _recycle_type;  
 }
