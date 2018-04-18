@@ -75,6 +75,10 @@ PY_APPROXIMATE_SCHUR = APPROXIMATE_SCHUR
 PY_DIRECT_SCHUR = DIRECT_SCHUR
 PY_GAUSS_SEIDEL = GAUSS_SEIDEL
 
+# JDRecycleType
+SUM_TWO = JD_SUM_TWO
+NUM_RECYCLE = JD_NUM_RECYCLE
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
     def __cinit__(self):
