@@ -321,7 +321,36 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
     if (num_recycle > nconverged){
       num_recycle = nconverged;
     }
-
+    // if (num_recycle > 0){
+    //   V[0]->setRand(-1.0, 1.0);
+    //   V[1]->zeroEntries();
+    //   for (int i = 0; i < nconverged; i++){
+    //     V[1]->axpy(1.0, Q[i]);
+    //   }
+    //   for ( int k = 0; k < 2; k++ ){
+    //     // B-orthogonalize the eigenvectors
+    //     for ( int i = 0; i < k; i++ ){
+    //       TacsScalar h = oper->dot(V[k], V[i]);
+    //       V[k]->axpy(-h, V[i]);
+    //     }
+    //     // Apply boundary conditions for this vector
+    //     oper->applyBCs(V[k]);
+        
+    //     // Normalize the vector so that it is orthonormal
+    //     TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
+    //     V[k]->scale(1.0/vnorm);
+    //     // Compute work = A*V[k]
+    //     oper->multA(V[k], work);
+        
+    //     // Complete the entries in the symmetric matrix M that is formed by 
+    //     // M = V^{T}*A*V
+    //     for ( int i = 0; i <= k; i++ ){
+    //       M[k*m + i] = V[i]->dot(work);
+    //       M[i*m + k] = M[k*m + i];
+    //     }
+    //   }
+    //   kstart = 2;
+    // }
     if (num_recycle > 0){
       // B-orthogonalize the old eigenvectors with respect to the new matrix for
       // all but the last recycled eigenvector which will be orthogonalized by
@@ -366,18 +395,18 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
   nconverged = 0;
 
   for ( int k = kstart; k < m; k++ ){
+    // Orthogonalize against converged eigenvectors as well (if any)...
+    for ( int i = 0; i < nconverged; i++ ){
+      TacsScalar h = oper->dot(V[k], Q[i]);
+      V[k]->axpy(-h, Q[i]);
+    }
+
     // Orthogonalize V[k] against all other vectors in the current
     // solution subspace. This ensures that the vectors are orthogonal
     // with respect to the operator.
     for ( int i = 0; i < k; i++ ){
       TacsScalar h = oper->dot(V[k], V[i]);
       V[k]->axpy(-h, V[i]);
-    }
-
-    // Orthogonalize against converged eigenvectors as well (if any)...
-    for ( int i = 0; i < nconverged; i++ ){
-      TacsScalar h = oper->dot(V[k], Q[i]);
-      V[k]->axpy(-h, Q[i]);
     }
 
     // Apply boundary conditions for this vector
@@ -424,7 +453,8 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
     double theta = ritzvals[0];
 
     int num_new_eigvals = 0;
-    for ( int i = 0; i < k+1; i++, num_new_eigvals++ ){
+    for ( int i = 0; i < k+1 && nconverged < max_eigen_vectors; 
+          i++, num_new_eigvals++ ){
       // Set the Ritz value
       theta = ritzvals[i];
 
@@ -446,16 +476,17 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
       oper->multB(Q[nconverged], P[nconverged]);
       work->axpy(-theta, P[nconverged]);
       oper->applyBCs(work);
-
+      
+      TacsScalar w_norm = work->norm();
       if (ksm_print){
         char line[256];
         sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %20.10e\n", 
-                iteration, TacsRealPart(work->norm()), nconverged, theta);
+                iteration, TacsRealPart(w_norm), nconverged, theta);
         ksm_print->print(line);
       }
 
       // Compute the norm of the eigenvalue to check if it has converged
-      if (TacsRealPart(work->norm()) <= TacsRealPart(eigtol*Anorm)){
+      if (TacsRealPart(w_norm) <= TacsRealPart(eigtol*Anorm)){
         // Record the Ritz value as the eigenvalue
         eigvals[nconverged] = theta;
 
@@ -507,6 +538,8 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
           TacsScalar h = oper->dot(W[i], W[j]);
           W[i]->axpy(-h, W[j]);
         }
+        
+        oper->applyBCs(W[i]);
 
         // Normalize the vector so that it is orthonormal
         TacsScalar vnorm = sqrt(oper->dot(W[i], W[i]));
@@ -516,7 +549,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
       for ( int i = 0; i < max_new_vecs; i++ ){
         V[i]->copyValues(W[i]);
       }
-      k = max_new_vecs-1;
+      k = max_new_vecs-2;
 
       // Reset the iteration loop and continue
       continue;
