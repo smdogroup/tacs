@@ -298,7 +298,8 @@ TacsScalar TACSJacobiDavidson::extractEigenvector( int n, TACSVec *ans,
   where r is orthogonal to the subspace Q and t is orthogonal to the
   subspace t by construction. FGMRES builds the subspaces W and Z.
 */
-void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
+void TACSJacobiDavidson::solve( KSMPrint *ksm_print, 
+                                KSMPrint *ksm_file ){
   // Keep track of the current subspace
   V[0]->setRand(-1.0, 1.0);
   oper->applyBCs(V[0]);
@@ -682,7 +683,12 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print ){
       ksm_print->print(line);
     }
   }
-
+  // Print the iteration count to file
+  if (ksm_file){
+    char line[256];
+    sprintf(line, "%2d\n", iteration);
+    ksm_file->print(line);
+  }
   delete [] rwork;
 }
 

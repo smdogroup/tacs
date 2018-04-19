@@ -493,7 +493,7 @@ void SEP::setOperator( EPOperator *_Op ){
   eigenvalue problem with a Lanczos method. The method generates a
   series or orthonormal vectors with respect to a given inner product.
 */
-void SEP::solve( KSMPrint *ksm_print ){
+void SEP::solve( KSMPrint *ksm_print, KSMPrint *ksm_file ){
   // Select the initial vector randomly
   Q[0]->setRand();
   if (bcs){
@@ -598,6 +598,12 @@ void SEP::solve( KSMPrint *ksm_print ){
                             eigvecs[index*niters + (niters-1)]*er)));
       ksm_print->print(line);
     }
+  }
+  // Print the iteration count to file
+  if (ksm_file){
+    char line[256];
+    sprintf(line, "%2d\n", niters);
+    ksm_file->print(line);
   }
 }
 

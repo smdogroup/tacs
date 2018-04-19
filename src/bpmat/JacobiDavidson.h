@@ -116,7 +116,7 @@ class TACSJacobiDavidson : public TACSObject {
   TacsScalar extractEigenvector( int n, TACSVec *ans, TacsScalar *error );
 
   // Solve the eigenvalue problem
-  void solve( KSMPrint *ksm_print=NULL );
+  void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
   
   // Set tolerances to FGMRES
   void setTolerances( double _eigtol, double _rtol, double _atol );

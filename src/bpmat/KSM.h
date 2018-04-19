@@ -292,6 +292,7 @@ class KSMPrintStdout : public KSMPrint {
   Write out the print statements to a file
 */
 class KSMPrintFile : public KSMPrint {
+ public:
   KSMPrintFile( const char *filename, const char *_descript, 
                 int _rank, int _freq );
   ~KSMPrintFile();

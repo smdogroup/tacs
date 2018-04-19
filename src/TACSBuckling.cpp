@@ -655,7 +655,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     // jd_op->setEigenvalueEstimate(0.0); // TacsRealPart(sigma));
     
     // Solve the problem using Jacobi-Davidson
-    jd->solve(ksm_print);
+    jd->solve(ksm_print, ksm_file);
   }
   else{
     if (mg){
@@ -684,7 +684,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     pc->factor();
 
     // Solve the symmetric eigenvalue problem
-    sep->solve(ksm_print);
+    sep->solve(ksm_print, ksm_file);
   }
 }
 

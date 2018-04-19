@@ -198,7 +198,7 @@ class SEP : public TACSObject {
   void setOperator( EPOperator *_Op );
 
   // Solve the eigenproblem
-  void solve( KSMPrint *ksm_print=NULL );
+  void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
 
   // Extract the eigenvalues and eigenvectors from the solver
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
