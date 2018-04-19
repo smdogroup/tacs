@@ -151,7 +151,7 @@ class TACSFrequencyAnalysis : public TACSObject {
   // ----------------------------------------
   TacsScalar getSigma();
   void setSigma( TacsScalar _sigma );
-  void solve( KSMPrint *ksm_print=NULL );
+  void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
   // Extract and check the solution

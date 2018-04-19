@@ -626,7 +626,8 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
 /*
   Solve the eigenvalue problem
 */
-void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print ){
+void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
+                                   KSMPrint *ksm_file ){
   // Zero the variables
   tacs->zeroVariables();
   
