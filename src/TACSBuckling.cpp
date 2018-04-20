@@ -630,7 +630,6 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
                                    KSMPrint *ksm_file ){
   // Zero the variables
   tacs->zeroVariables();
-  
   if (jd){
     if (mg){
       // Assemble the mass matrix
@@ -653,7 +652,6 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     }
     // Factor the preconditioner
     // jd_op->setEigenvalueEstimate(0.0); // TacsRealPart(sigma));
-    
     // Solve the problem using Jacobi-Davidson
     jd->solve(ksm_print, ksm_file);
   }
@@ -682,7 +680,6 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
 
     // Factor the preconditioner
     pc->factor();
-
     // Solve the symmetric eigenvalue problem
     sep->solve(ksm_print, ksm_file);
   }
