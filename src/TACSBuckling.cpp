@@ -653,7 +653,15 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     // Factor the preconditioner
     // jd_op->setEigenvalueEstimate(0.0); // TacsRealPart(sigma));
     // Solve the problem using Jacobi-Davidson
-    jd->solve(ksm_print, ksm_file);
+    // Print the iteration count to file
+    double t0 = MPI_Wtime();
+    jd->solve(ksm_print);
+    double t1 = MPI_Wtime();
+    if (ksm_file){
+      char line[256];
+      sprintf(line, "%15.6f\n", t1-t0);
+      ksm_file->print(line);
+    } 
   }
   else{
     if (mg){
@@ -681,7 +689,14 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     // Factor the preconditioner
     pc->factor();
     // Solve the symmetric eigenvalue problem
-    sep->solve(ksm_print, ksm_file);
+    double t0 = MPI_Wtime();
+    sep->solve(ksm_print);
+    double t1 = MPI_Wtime();
+    if (ksm_file){
+      char line[256];
+      sprintf(line, "%2.6f\n", t1-t0);
+      ksm_file->print(line);
+    }
   }
 }
 
