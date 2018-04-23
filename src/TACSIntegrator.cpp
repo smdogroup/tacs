@@ -838,10 +838,13 @@ void TACSIntegrator::getRawMatrix( TACSMat *mat, TacsScalar *mat_vals) {
 /*
   Performs an eigen solve of the Jacobian matrix
 */
+/*
 void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
                                        TACSBVec *qdot,
                                        TACSBVec *qddot,
                                        TacsScalar *eigvals) {
+#ifdef TACS_USE_COMPLEX
+#else
   // Determine the size of state vector
   int num_state_vars;
   q->getSize(&num_state_vars);
@@ -899,28 +902,17 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   memset(B, 0, size*size*sizeof(TacsScalar));
 
   for ( int ii = 0; ii < nvars; ii++ ){
-    // printf("identity B[%d, %d] \n", ii*size, ii);
     B[ii+ii*size] = 1.0;
   }
   
   for ( int ii = nvars; ii < size; ii++ ){
     for ( int jj = 0; jj < nvars; jj++ ){
-      /*
-      printf("identity B[%d, %d] =C[%d, %d] \n",
-             jj*size, ii,
-             (ii-nvars)*nvars, jj);
-      */
       B[ii+jj*size] = Cvals[(ii-nvars)*nvars + jj];
     }
   }
   
   for ( int ii = nvars; ii < size; ii++ ){
     for ( int jj = nvars; jj < size; jj++ ){
-      /*
-      printf("identity BB[%d, %d] =C[%d, %d] \n",
-             jj*size, ii,
-             (ii-nvars)*nvars , jj-nvars);
-      */
       B[ii+jj*size] = Mvals[(ii-nvars)*nvars + (jj-nvars)];
     }
   }  
@@ -958,7 +950,7 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
               &info);
 
   // K v = lam M v
-
+ 
   // Print the eigenvalues
   for (int i = 0; i < size; i++){
     // printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], alphai[i]/beta[i]);
@@ -969,17 +961,17 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   }
   
   
-  // kmat->decref();
-  // cmat->decref();
-  // mmat->decref();
+  kmat->decref();
+  cmat->decref();
+  mmat->decref();
 
-  // kpc->decref();
-  // cpc->decref();
-  // mpc->decref();
+  kpc->decref();
+  cpc->decref();
+  mpc->decref();
   
-  // delete [] Kvals;
-  // delete [] Cvals;
-  // delete [] Mvals;
+  delete [] Kvals;
+  delete [] Cvals;
+  delete [] Mvals;
                  
   delete [] alphar;
   delete [] alphai;
@@ -987,16 +979,22 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   delete [] work;
   delete [] vl;
   delete [] vr;
+
+#endif
+
 }
+*/
 
 /*
   Performs an eigen solve of the Jacobian matrix
- */
-/*
+*/
 void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
                                        TACSBVec *qdot,
                                        TACSBVec *qddot,
                                        TacsScalar *eigvals) {
+#ifdef TACS_USE_COMPLEX
+#else
+
   // Determine the size of state vector
   int num_state_vars;
   q->getSize(&num_state_vars);
@@ -1010,6 +1008,7 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   kpc->incref();
   TACSMat *kmat;
   kmat = DK;
+  kmat->incref();
   tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
   TacsScalar *Kvals = new TacsScalar[ num_state_vars*num_state_vars ];
   getRawMatrix(kmat, Kvals);
@@ -1020,6 +1019,7 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   mpc->incref();
   TACSMat *mmat;
   mmat = DM;
+  mmat->incref();
   tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
   TacsScalar *Mvals = new TacsScalar[ num_state_vars*num_state_vars ];
   getRawMatrix(mmat, Mvals);
@@ -1043,15 +1043,21 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
               work, &lwork,
               &info);
 
-  // K v = lam M v
-
-  // Print the eigenvalues
+  // Print the eigenvalues K v = lam M v
   for (int i = 0; i < size; i++){
     //    printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], beta[i]);
     if (beta[i] > 1.0e-14 && alphar[i] > 0.0 ) {
       eigvals[i] = alphar[i]/beta[i];
     }
   }
+
+  kmat->decref();
+  kpc->decref();
+  mmat->decref();
+  mpc->decref();
+
+  delete [] Kvals;
+  delete [] Mvals;
   
   delete [] alphar;
   delete [] alphai;
@@ -1059,8 +1065,8 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   delete [] work;
   delete [] vl;
   delete [] vr;
+#endif
 }
-*/
 
 /*
   Solves the linear system Ax=b using LAPACK. The execution should be
