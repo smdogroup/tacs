@@ -2480,8 +2480,8 @@ void BCSRMat::getNumUpperLowerDiagonals( int *_bl, int *_bu ){
 
   returns: the matrix band size
 */
-void BCSRMat::extractBandedMatrix( TacsScalar *A, int size, 
-                                   int symm_flag ){
+void BCSRMat::getBandedMatrix( TacsScalar *A, int size, 
+                               int symm_flag ){
   // Compute the matrix bandwidth
   int bl, bu;
   getNumUpperLowerDiagonals(&bl, &bu);

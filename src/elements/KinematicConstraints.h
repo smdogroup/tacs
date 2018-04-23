@@ -447,7 +447,7 @@ class TACSMotionDriver : public TACSElement {
  public:
   TACSMotionDriver( TACSGibbsVector *_dir, 
                     TacsScalar _omega,
-                    int _arrest_rotations = 0 ){
+                    int _fix_rotations=0 ){
     // Copy over the direction
     dir = _dir;
     dir->incref();
@@ -455,8 +455,8 @@ class TACSMotionDriver : public TACSElement {
     // Copy over the angular rate
     omega = _omega;
     
-    // Arrest rotations if requested
-    arrest_rotations = _arrest_rotations;
+    // Fix the rotations if requested
+    fix_rotations = _fix_rotations;
   }
 
   ~TACSMotionDriver(){    
@@ -516,7 +516,7 @@ class TACSMotionDriver : public TACSElement {
     res[1] += lam[1];
     res[2] += lam[2];
 
-    if (arrest_rotations){
+    if (fix_rotations){
       // Equations to arrest rotational DOF
       res[8+4] += vars[4];
       res[8+5] += vars[5];
@@ -542,7 +542,7 @@ class TACSMotionDriver : public TACSElement {
  private:
   TacsScalar omega;
   TACSGibbsVector *dir;
-  int arrest_rotations;
+  int fix_rotations;
 };
 
 /*

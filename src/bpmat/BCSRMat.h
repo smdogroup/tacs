@@ -75,9 +75,6 @@ class BCSRMat : public TACSObject {
   void getArrays( int *_bsize, int *nrows, int *ncols, 
                   const int **rowp, const int **cols, TacsScalar **Avals );
 
-  // Returns 'this' in the form of array
-  void getDenseColumnMajor( TacsScalar *A );
-
   void copyValues( BCSRMat *mat );
   void scale( TacsScalar alpha );
   void axpy( TacsScalar alpha, BCSRMat *x );
@@ -121,11 +118,11 @@ class BCSRMat : public TACSObject {
   int getColDim(){ return data->ncols; }
   BCSRMatData* getMatData(){ return data; }
 
-  // Extract the matrix to the banded LAPACK format
-  // ----------------------------------------------
+  // Extract the matrix in a  LAPACK format
+  // --------------------------------------
   void getNumUpperLowerDiagonals( int *_bl, int *_bu );
-  void extractBandedMatrix( TacsScalar *A, int size, 
-                            int symm_flag );
+  void getDenseColumnMajor( TacsScalar *A );
+  void getBandedMatrix( TacsScalar *A, int size, int symm_flag );
 
   // Other miscelaneous functions
   // ----------------------------
