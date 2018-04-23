@@ -560,7 +560,7 @@ void MITC3::computeInertiaTensor( const TacsScalar rho[],
   TacsScalar d11 = 
     rho[1]*vecDot(n1, n1) + rho[2]*vecDot(n2, n2) + 
     2.0*rho[3]*vecDot(n1, n2);
-
+  
   Jr[0] = d11 - rho[1]*n1[0]*n1[0] - 
     rho[2]*n2[0]*n2[0] - 2.0*rho[3]*n1[0]*n2[0];
   Jr[1] = - rho[1]*n1[0]*n1[1] - 

@@ -819,6 +819,256 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 }
 
 /*
+  Obtain a column-major array containing the matrix values.
+*/
+void TACSIntegrator::getRawMatrix( TACSMat *mat, TacsScalar *mat_vals) {
+  FEMat *femat = dynamic_cast<FEMat*>(mat);
+  if (femat){
+    int bsize, nrows;
+    BCSRMat *B;
+    femat->getBCSRMat(&B, NULL, NULL, NULL);
+    B->getArrays(&bsize, &nrows, NULL, NULL, NULL, NULL);
+    B->getDenseColumnMajor(mat_vals);
+  }
+  else {
+    fprintf(stderr,"Casting to FEMat failed\n");
+  }
+}
+
+/*
+  Performs an eigen solve of the Jacobian matrix
+*/
+/*
+void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
+                                       TACSBVec *qdot,
+                                       TACSBVec *qddot,
+                                       TacsScalar *eigvals) {
+#ifdef TACS_USE_COMPLEX
+#else
+  // Determine the size of state vector
+  int num_state_vars;
+  q->getSize(&num_state_vars);
+
+  // Set the (steady-state) state variables into TACS
+  tacs->setVariables(q, qdot, qddot);
+  
+  // Create K matrix
+  FEMat *DK = tacs->createFEMat(order_type);
+  TACSPc *kpc = new PcScMat(DK, lev, fill, reorder_schur);
+  kpc->incref();
+  TACSMat *kmat;
+  kmat = DK;
+  kmat->incref();
+  tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
+  TacsScalar *Kvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(kmat, Kvals);
+  
+  // Create C matrix
+  FEMat *DC = tacs->createFEMat(order_type);
+  TACSPc *cpc = new PcScMat(DC, lev, fill, reorder_schur);
+  cpc->incref();
+  TACSMat *cmat;
+  cmat = DC;
+  cmat->incref();
+  tacs->assembleJacobian(0.0, 1.0, 0.0, NULL, cmat);
+  TacsScalar *Cvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(cmat, Cvals);
+
+  // Create M matrix
+  FEMat *DM = tacs->createFEMat(order_type);
+  TACSPc *mpc = new PcScMat(DM, lev, fill, reorder_schur);
+  mpc->incref();
+  TACSMat *mmat;
+  mmat = DM;
+  mmat->incref();
+  tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
+  TacsScalar *Mvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(mmat, Mvals);
+
+  // Call LAPACK
+  int nvars = num_state_vars;
+  int size = num_state_vars*2;
+  TacsScalar *alphar = new TacsScalar[size];
+  TacsScalar *alphai = new TacsScalar[size];
+  TacsScalar *beta = new TacsScalar[size];
+  TacsScalar *vl = new TacsScalar[size*size];
+  TacsScalar *vr = new TacsScalar[size*size];
+  int lwork = 8*size;
+  TacsScalar *work = new TacsScalar[lwork];
+  int info = 0; 
+
+  // Create matrix B
+  TacsScalar *B = new TacsScalar[ size*size ];
+  memset(B, 0, size*size*sizeof(TacsScalar));
+
+  for ( int ii = 0; ii < nvars; ii++ ){
+    B[ii+ii*size] = 1.0;
+  }
+  
+  for ( int ii = nvars; ii < size; ii++ ){
+    for ( int jj = 0; jj < nvars; jj++ ){
+      B[ii+jj*size] = Cvals[(ii-nvars)*nvars + jj];
+    }
+  }
+  
+  for ( int ii = nvars; ii < size; ii++ ){
+    for ( int jj = nvars; jj < size; jj++ ){
+      B[ii+jj*size] = Mvals[(ii-nvars)*nvars + (jj-nvars)];
+    }
+  }  
+
+  // Create matrix A
+  TacsScalar *A = new TacsScalar[ size*size ];
+  memset(A, 0, size*size*sizeof(TacsScalar));
+
+  // Identity matrix along diagonals  
+  for ( int ii = 0; ii < nvars; ii++ ){
+    //    printf("A[%d, %d] = \n", ii*size, ii + nvars);
+    A[ii + (ii + nvars)*size] = 1.0;    
+  }
+  
+  for ( int ii = nvars; ii < size; ii++ ){
+    for ( int jj = 0; jj < nvars; jj++ ){
+      
+      // printf("identity AA[%d, %d] =C[%d, %d] \n",
+      //        ii*size, jj,
+      //        (ii-nvars)*nvars , jj);
+      
+      A[jj*size+ii] = Kvals[(ii-nvars)*nvars + jj];
+    }
+  }
+  
+  // Create matrix B
+  // A * v(j) = lambda(j) * B * v(j).
+  
+  // Call lapack to solve the eigenvalue problem
+  LAPACKdggev("N", "N", &size,
+              A, &size, B, &size,
+              alphar, alphai, beta,
+              vl, &size, vr, &size,
+              work, &lwork,
+              &info);
+
+  // K v = lam M v
+ 
+  // Print the eigenvalues
+  for (int i = 0; i < size; i++){
+    // printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], alphai[i]/beta[i]);
+    if ( beta[i] > 1.0e-14  && alphar[i] > 0.0) {
+      // eigvals[i] = alphar[i]*alphar[i]/(beta[i]*beta[i]) + alphai[i]*alphai[i]/(beta[i]*beta[i]);
+      eigvals[i] = alphar[i]*alphar[i]/beta[i]/beta[i];
+    }
+  }
+  
+  
+  kmat->decref();
+  cmat->decref();
+  mmat->decref();
+
+  kpc->decref();
+  cpc->decref();
+  mpc->decref();
+  
+  delete [] Kvals;
+  delete [] Cvals;
+  delete [] Mvals;
+                 
+  delete [] alphar;
+  delete [] alphai;
+  delete [] beta;
+  delete [] work;
+  delete [] vl;
+  delete [] vr;
+
+#endif
+
+}
+*/
+
+/*
+  Performs an eigen solve of the Jacobian matrix
+*/
+void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
+                                       TACSBVec *qdot,
+                                       TACSBVec *qddot,
+                                       TacsScalar *eigvals) {
+#ifdef TACS_USE_COMPLEX
+#else
+
+  // Determine the size of state vector
+  int num_state_vars;
+  q->getSize(&num_state_vars);
+
+  // Set the (steady-state) state variables into TACS
+  tacs->setVariables(q, qdot, qddot);
+  
+  // Create K matrix
+  FEMat *DK = tacs->createFEMat(order_type);
+  TACSPc *kpc = new PcScMat(DK, lev, fill, reorder_schur);
+  kpc->incref();
+  TACSMat *kmat;
+  kmat = DK;
+  kmat->incref();
+  tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
+  TacsScalar *Kvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(kmat, Kvals);
+
+  // Create M matrix
+  FEMat *DM = tacs->createFEMat(order_type);
+  TACSPc *mpc = new PcScMat(DM, lev, fill, reorder_schur);
+  mpc->incref();
+  TACSMat *mmat;
+  mmat = DM;
+  mmat->incref();
+  tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
+  TacsScalar *Mvals = new TacsScalar[ num_state_vars*num_state_vars ];
+  getRawMatrix(mmat, Mvals);
+
+  // Call LAPACK
+  int size = num_state_vars;
+  TacsScalar *alphar = new TacsScalar[size];
+  TacsScalar *alphai = new TacsScalar[size];
+  TacsScalar *beta = new TacsScalar[size];
+  TacsScalar *vl = new TacsScalar[size*size];
+  TacsScalar *vr = new TacsScalar[size*size];
+  int lwork = 8*size;
+  TacsScalar *work = new TacsScalar[lwork];
+  int info = 0; 
+
+  // Call lapack to solve the eigenvalue problem
+  LAPACKdggev("N", "N", &size,
+              Kvals, &size, Mvals, &size,
+              alphar, alphai, beta,
+              vl, &size, vr, &size,
+              work, &lwork,
+              &info);
+
+  // Print the eigenvalues K v = lam M v
+  for (int i = 0; i < size; i++){
+    //    printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], beta[i]);
+    if (beta[i] > 1.0e-14 && alphar[i] > 0.0 ) {
+      eigvals[i] = alphar[i]/beta[i];
+    }
+  }
+
+  kmat->decref();
+  kpc->decref();
+  mmat->decref();
+  mpc->decref();
+
+  delete [] Kvals;
+  delete [] Mvals;
+  
+  delete [] alphar;
+  delete [] alphai;
+  delete [] beta;
+  delete [] work;
+  delete [] vl;
+  delete [] vr;
+#endif
+}
+
+/*
   Solves the linear system Ax=b using LAPACK. The execution should be
   in serial mode.
 */

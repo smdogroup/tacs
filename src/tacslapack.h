@@ -37,6 +37,8 @@
 #define LAPACKdsyev dsyev_
 #define LAPACKdpbsv dpbsv_
 #define LAPACKzggev zggev_
+#define LAPACKdsygvd dsygvd_
+#define LAPACKdggev dggev_
 
 #ifdef TACS_USE_COMPLEX
 #define BLASdot     zdotu_
@@ -175,6 +177,20 @@ extern "C" {
                            double *work, int *lwork, int *iwork, int *liwork, 
                            int *info );
 
+  // DSYGVD computes all the eigenvalues, and optionally, the eigenvectors
+  // of a real generalized symmetric-definite eigenproblem, of the form
+  // A*x=(lambda)*B*x,  A*Bx=(lambda)*x,  or B*A*x=(lambda)*x. 
+  extern void LAPACKdsygvd( int *ITYPE, const char * JOBZ, const char * UPLO,
+                            int *N, double *A, int *LDA, double *B, int *LDB,
+                            double *W, double *WORK,
+                            int *LWORK, int *IWORK, int *LIWORK, int *INFO );
+  
+  extern void LAPACKdggev( const char *jobvl, const char * jobvr,
+                           int *N, double *A, int *lda, double *B, int *ldb,
+                           double *alphar, double *alphai, double *beta,
+                           double *vl, int *ldvl, double *vr, int *ldvr,
+                           double *work, int *lwork, int *info );
+    
   // Compute selected eigenvalues of a symmetric tridiagonal matrix
   extern void LAPACKstevr( const char * jobz, const char * range,
                            int * n, double * d, double * e,

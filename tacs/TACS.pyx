@@ -169,6 +169,14 @@ cdef class Vec:
         Py_INCREF(self)
         return arry
 
+    def getSize(self):
+        '''
+        Length of the array
+        '''
+        cdef int size
+        self.ptr.getSize(&size)
+        return size
+
     def norm(self):
         '''
         Vector norm
@@ -1743,6 +1751,11 @@ cdef class Integrator:
         free(fn)
         return
 
+    def lapackEigenSolve(self, Vec q, Vec qdot, Vec qddot,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] evals):
+        self.ptr.lapackEigenSolve(q.ptr, qdot.ptr, qddot.ptr, <TacsScalar*>evals.data)
+        return
+    
     def iterate(self, int step_num, Vec forces=None):
         '''
         Solve the nonlinear system at current time step

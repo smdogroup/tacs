@@ -138,6 +138,10 @@ class TACSIntegrator : public TACSObject {
   //-----------------------------------------------------------------
   int getNumTimeSteps();
 
+  void lapackEigenSolve( TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot,
+                         TacsScalar *eigvals );
+  void getRawMatrix( TACSMat *mat, TacsScalar *mat_vals );
+  
  protected:
   // Functions for solutions to linear and nonlinear problems
   int newtonSolve( double alpha, double beta, double gamma,

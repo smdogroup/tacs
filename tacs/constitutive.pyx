@@ -57,6 +57,25 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     return ndarray
 
 cdef class Timoshenko(Constitutive):
+    ## def __cinit__(self,
+    ##               np.ndarray[TacsScalar, ndim=1, mode='c'] axis,
+    ##               EA, EIy, EIz, EIyz,
+    ##               GJ, kGy, kGz, kGyz,
+    ##               rho, Iyy, Izz, Iyz,
+    ##               xm2, xm3,
+    ##               xc2, xc3,
+    ##               xk2, xk3,
+    ##               muS):        
+    ##     self.ptr = new TimoshenkoStiffness(<TacsScalar*>axis.data,
+    ##                                        EA, EIy, EIz, EIyz,
+    ##                                        GJ, kGy, kGz, kGyz,
+    ##                                        rho, Iyy, Izz, Iyz,
+    ##                                        xm2, xm3,
+    ##                                        xc2, xc3,
+    ##                                        xk2, xk3,
+    ##                                        muS)
+    ##     return
+                  
     def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
                       EA, GJ, EIy, EIz, kGAy, kGAz,
                       np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
