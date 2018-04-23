@@ -5082,6 +5082,14 @@ TACSBVec* TACSAssembler::getContinuousOutputData( ElementType elem_type,
     elem_weights[i] = 1.0;
   }
 
+  // Define the real data pointer differently if the
+  double *elem_data_real = NULL;
+#ifdef TACS_USE_COMPLEX
+  elem_data_real = new double[ nvals*maxElementNodes ];
+#else
+  elem_data_real = elem_data;
+#endif // TACS_USE_COMPLEX
+
   TACSBVec *weights = new TACSBVec(varMap, 1, extDist, depNodes);
   weights->incref();
 
@@ -5102,8 +5110,14 @@ TACSBVec* TACSAssembler::getContinuousOutputData( ElementType elem_type,
       varsVec->getValues(len, nodes, elemVars);
 
       // Get the element output data
-      elements[i]->getOutputData(out_type, elem_data, nvals,
+      elements[i]->getOutputData(out_type, elem_data_real, nvals,
                                  elemXpts, elemVars);
+
+#ifdef TACS_USE_COMPLEX
+      for ( int i = 0; i < len*nvals; i++ ){
+        elem_data[i] = elem_data_real[i];
+      }
+#endif // TACS_USE_COMPLEX
 
       // Add the entries into the vector
       data->setValues(len, nodes, elem_data, TACS_ADD_VALUES);

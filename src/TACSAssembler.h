@@ -287,6 +287,9 @@ class TACSAssembler : public TACSObject {
 
   // Functions for ordering the variables
   // ------------------------------------
+  int getLocalNodeNum( int node );
+  int getGlobalNodeNum( int node );
+  void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, int nodiag=0 );
   void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex );
 
  private:
@@ -301,9 +304,6 @@ class TACSAssembler : public TACSObject {
   // Functions that are used to perform reordering
   // ---------------------------------------------
   int computeExtNodes();
-  int getLocalNodeNum( int node );
-  int getGlobalNodeNum( int node );
-  void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, int nodiag=0 );
   int computeCouplingNodes( int **_couplingNodes,
                             int **_extPtr=NULL, int **_extCount=NULL,
                             int **_recvPtr=NULL, int **_recvCount=NULL,

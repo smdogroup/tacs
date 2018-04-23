@@ -586,7 +586,7 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   // Allocate space for the Hessenberg matrix
   // This is a (msub+1) x msub matrix with non-zeros 
   // on and above the first diagonal below the main diagonal
-  Hptr = new int[msub + 1];
+  Hptr = new int[ msub+1 ];
   Hptr[0] = 0;
 
   for ( int i = 0; i < msub; i++ ){
@@ -594,7 +594,7 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   }
   
   int size = Hptr[msub];
-  H = new TacsScalar[size];        // The Hessenberg matrix
+  H = new TacsScalar[ size ];      // The Hessenberg matrix
   res = new TacsScalar[ msub+1 ];  // The residual
 
   memset(H, 0, size*sizeof(TacsScalar));
@@ -804,7 +804,7 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
         t_pc += t0; t_ortho -= t0; 
       }
 
-      // Build the orthogonal factorization MGS
+      // Build the orthogonal basis using MGS
       orthogonalize(&H[Hptr[i]], W[i+1], W, i+1);
       if (monitor_time){ t_ortho += MPI_Wtime(); }
 
@@ -1151,7 +1151,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
   for ( int count = 0 ; count < max_outer; count++ ){
     // Size of the U/C subspaces
-    int outer_size = ( count < outer ? count : outer ); // min( count, outer ); 
+    int outer_size = (count < outer ? count : outer); // min(count, outer); 
     int niters = 0; // The size of the Hessenberg matrix  
 
     W[0]->copyValues(R); // W[0] = R
@@ -1167,7 +1167,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       if (isFlexible){
         // Apply the preconditioner, Z[i] = M^{-1} W[i] 
         pc->applyFactor(W[i], Z[i]);
-        mat->mult( Z[i], W[i+1] ); // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
+        mat->mult(Z[i], W[i+1]); // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
       }
       else {
         if (pc){
@@ -1189,7 +1189,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
         W[i+1]->axpy(-B[j*msub + i], C[j]); // W[i+1] = W[i+1] - B[j,i]*C[j]
       }
       
-      // Build the orthogonal factorization MGS
+      // Build expand the orthogonal basis using MGS
       for ( int j = i; j >= 0; j-- ){
         H[j + Hptr[i]] = W[i+1]->dot(W[j]); // H[j,i] = dot( W[i+1], W[i] )
         W[i+1]->axpy(-H[j + Hptr[i]], W[j]); // W[i+1] = W[i+1] - H[j,i]*W[j]
@@ -1291,7 +1291,6 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       u_hat->axpy(-bsum, U[i]);
     }
 
-
     c_hat->zeroEntries();
     
     // Compute c_hat = W*H*y
@@ -1348,7 +1347,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     TACSVec *c = c_hat;
     
     // This is the size of the subspace on the next iteration
-    outer_size = ( count+1 < outer ? count+1 : outer );
+    outer_size = (count+1 < outer ? count+1 : outer);
 
     for ( int i = 0; i < outer_size; i++ ){
       TACSVec *tu = U[i];
@@ -1363,498 +1362,6 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       
     u_hat = u;
     c_hat = c;          
-  }
-}
-
-/*
-  Constrainted GMRES code.
-
-  Perform GMRES but also satisfy a set of constraints at the same time.
-
-  These constraints may be dense and are added as a set of vectors at
-  some point after the creation of the object. This code could
-  probably be incorperated into the regular GMRES code for more
-  flexibility later, but for now will just be included separately.
-*/
-ConGMRES::ConGMRES( TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, 
-                    int _isFlexible ){
-  init(_mat, _pc, _m, _nrestart, _isFlexible);
-}
-
-ConGMRES::ConGMRES( TACSMat *_mat, int _m, int _nrestart ){
-  init(_mat, NULL, _m, _nrestart, 0);
-}
-
-void ConGMRES::init( TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, 
-                     int _isFlexible ){
-
-  orthogonalize = ModifiedGramSchmidt;
-  monitor = NULL;
-  monitor_time = 0;
-  msub = _m;
-  nrestart = (_nrestart >= 0 ? _nrestart : 0);
-  isFlexible = _isFlexible;
-
-  mat = _mat;
-  pc = _pc;
-  mat->incref();
-
-  if (pc){
-    pc->incref();
-  }
-  else {
-    // If there's no Pc then it doesn't have to be a flexible variant
-    isFlexible = 0;
-  }
-
-  // Set default absolute and relative tolerances
-  rtol = 1e-8;
-  atol = 1e-30;
-
-  // Allocate the subspace of vectors
-  work = NULL;   // Required only for regular GMRES
-  Z = NULL;      // Required only for flexible GMRES
-  W = new TACSVec*[ msub+1 ]; // The orthonormal Krylov subspace
-  C = NULL;      // The constraint vectors
-  nconstr = 0;   // The number of constraints
-  lambda = NULL; // The Lagrange multipliers
-  Wl = NULL;     // The basis for lambda
-
-  for ( int i = 0; i < msub+1; i++ ){
-    W[i] = mat->createVec();
-    W[i]->incref();
-  }
-
-  if (isFlexible){
-    Z = new TACSVec*[ msub ];
-
-    for ( int i = 0; i < msub; i++ ){
-      Z[i] = mat->createVec();
-      Z[i]->incref();
-    }
-  }
-  else if (pc){
-    // Allocate the work array
-    work = mat->createVec();
-    work->incref();
-  }
-
-  // Allocate space for the Hessenberg matrix
-  // This is a (msub+1) x msub matrix with non-zeros 
-  // on and above the first diagonal below the main diagonal
-  Hptr = new int[msub + 1];
-  Hptr[0] = 0;
-
-  for ( int i = 0; i < msub; i++ ){
-    Hptr[i+1] = Hptr[i] + i+2;
-  }
-  
-  int size = Hptr[msub];
-  H = new TacsScalar[size];        // The Hessenberg matrix
-  res = new TacsScalar[ msub+1 ];  // The residual
-
-  memset(H, 0, size*sizeof(TacsScalar));
-  memset(res, 0, (msub+1)*sizeof(TacsScalar));
-
-  // Allocate the terms that represent the unitary Q matrix
-  // in the QR factorixation of H
-  Qsin = new TacsScalar[ msub ];
-  Qcos = new TacsScalar[ msub ];
-
-  memset(Qsin, 0, msub*sizeof(TacsScalar));
-  memset(Qcos, 0, msub*sizeof(TacsScalar));
-}
-
-ConGMRES::~ConGMRES(){
-  mat->decref();
-
-  if (pc){   pc->decref(); }
-  if (work){ work->decref(); }
-  
-  if (Z){
-    for ( int i = 0; i < msub; i++ ){
-      Z[i]->decref();
-    }
-    delete [] Z;
-  }
-
-  for ( int i = 0; i < msub+1; i++ ){
-    W[i]->decref();
-  }
-  delete [] W;
-
-  if (C){
-    for ( int i = 0; i < nconstr; i++ ){
-      C[i]->decref();
-    }
-    delete [] C;
-  }
-
-  if (Wl){ delete [] Wl; }
-  if (lambda){ delete [] lambda; }
-  if (monitor){ monitor->decref(); }
-
-  delete [] H;
-  delete [] Hptr;
-  delete [] res;
-  delete [] Qsin;
-  delete [] Qcos;
-}
-
-void ConGMRES::setOperators( TACSMat *_mat, TACSPc *_pc ){
-  if (_mat){
-    _mat->incref();
-    if (mat){ mat->decref(); }
-    mat = _mat;
-  }
-  if (_pc){
-    _pc->incref();
-    if (pc){ pc->decref(); }
-    pc = _pc;
-  }
-}
-
-void ConGMRES::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  if (_mat){*_mat = mat; }
-  if (_pc){*_pc = pc; }
-}
-
-void ConGMRES::setTolerances( double _rtol, double _atol ){
-  rtol = _rtol;
-  atol = _atol;
-}
-
-void ConGMRES::setMonitor( KSMPrint *_monitor ){
-  _monitor->incref();
-  if (monitor){
-    monitor->decref();
-  }
-  monitor = _monitor;
-}
-
-void ConGMRES::setOrthoType( enum OrthoType otype ){
-  if (otype == CLASSICAL_GRAM_SCHMIDT){
-    orthogonalize = ClassicalGramSchmidt;
-  }
-  else {
-    orthogonalize = ModifiedGramSchmidt;
-  }
-}
-
-void ConGMRES::setTimeMonitor(){
-  monitor_time = 1;
-}
-
-const char *ConGMRES::TACSObjectName(){
-  return gmresName;
-}
-
-const char *ConGMRES::gmresName = "ConGMRES";
-
-
-/*!
-  Add the constraints to the KSM object.
-
-  These constraints are immediately othonormalized and should not be 
-  accessed again unless this object is later destroyed or new constraints
-  are set.
-*/
-
-void ConGMRES::setConstraints( TACSVec **_C, int _nconstr ){
-  // Read in the constraints and set them to be equal 
-  if (C){
-    for ( int i = 0; i < nconstr; i++ ){
-      C[i]->decref();
-    }
-
-    delete [] C;
-  }
-
-  nconstr = _nconstr;
-  C = new TACSVec*[ nconstr ];
-
-  for ( int i = 0; i < nconstr; i++ ){
-    C[i] = _C[i];
-    C[i]->incref();
-  }
-
-  if (lambda){ delete [] lambda; }
-  lambda = new TacsScalar[ nconstr ];
-  if (Wl){ delete [] Wl; }
-  Wl = new TacsScalar[ nconstr*(msub+1) ];
-}
-
-/*
-  Perform vector operations but add an additional constraint to the
-  linear system. This can be used to impose additional condditions.
-*/
-
-/*
-  Perform the matrix-vector multiplication
-  out        = A*x + C*y
-  out_lambda = C*x
-*/
-void ConGMRES::con_mat_mult( TACSVec *x, TacsScalar *y, 
-                             TACSVec *out, TacsScalar *out_lambda ){
-  mat->mult(x, out);
-  for ( int k = 0; k < nconstr; k++ ){
-    out->axpy(y[k], C[k]);
-    out_lambda[k] = C[k]->dot(x);
-  }
-}
-
-// Compute the norm with the constraints
-TacsScalar ConGMRES::con_norm( TACSVec *x, TacsScalar *y ){
-  TacsScalar norm = x->norm();
-  norm *= norm;
-  for ( int k = 0; k < nconstr; k++ ){
-    norm += y[k]*y[k];
-  }
-
-  return sqrt(norm);
-}
-
-// Compute the dot product
-TacsScalar ConGMRES::con_dot( TACSVec *x, TacsScalar *y,
-                              TACSVec *X, TacsScalar *Y ){
-  TacsScalar dot_product = 0.0;
-  for ( int k = 0; k < nconstr; k++ ){
-    dot_product += y[k]*Y[k];
-  }
-  
-  return x->dot(X) + dot_product;
-}
-
-  // Compute an axpy including constraints
-void ConGMRES::con_axpy( TACSVec *x, TacsScalar *X, 
-                         TacsScalar alpha,
-                         TACSVec *y, TacsScalar *Y ){
-  x->axpy(alpha, y);
-  for ( int k = 0; k < nconstr; k++ ){
-    X[k] += alpha*Y[k];
-  }
-}
-
-// Compute the constrained scaling
-void ConGMRES::con_scale( TACSVec *x, TacsScalar *y, TacsScalar alpha ){
-  x->scale(alpha);
-  for ( int k = 0; k < nconstr; k++ ){
-    y[k] *= alpha;
-  }
-}
-
-/*!
-  Constrained GMRES iteration
-
-  Compute (x,lambda), such that
-
-  A x + C lambda = b
-  C^{T} x = d 
-
-  where C is a small set of vectors, lambda is a set of Lagrange
-  multipliers and b is the right hand side.
-  
-  Approach:
-  
-  1. Compute the C = QR factorization of the set of vectors, where Q
-  is orthonormal and R is upper triangular.  This is stored in place
-  in the vectors C and the matrix R.
-  
-  2. Compute the right hand side r = (I - Q*Q^{T})b
-  
-  3. Compute the solution to the problem: (I - Q Q^{T})Ax = r
-
-  (Optional)
-  4. Compute the Lagrange multipliers lambda = R^{-1}(Q^{T}Ax - b)  
-*/
-void ConGMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
-  TacsScalar rhs_norm = 0.0;
-  int solve_flag = 0; 
-
-  double t_pc = 0.0, t_ortho = 0.0;
-  double t_total = 0.0;
-
-  if (monitor_time){ t_total = MPI_Wtime(); }
-
-  for ( int count = 0 ; count < nrestart+1; count++ ){
-    // Compute the residual
-    if (count == 0 && zero_guess){
-      // If the initial guess is zero
-      x->zeroEntries();    // Set x = 0
-      W[0]->copyValues(b); // W[0] = b
-
-      memset(lambda, 0, nconstr*sizeof(TacsScalar));
-      memset(&Wl[0], 0, nconstr*sizeof(TacsScalar));
-
-      // W[0] = b/|| b ||
-      res[0] = con_norm(W[0], &Wl[0]);
-      con_scale(W[0], &Wl[0], 1.0/res[0]);
-    }
-    else {
-      // If the initial guess is non-zero or restarting
-      con_mat_mult(x, lambda, W[0], &Wl[0]);
-      W[0]->axpy(-1.0, b); // W[0] = A*x + C*lambda - b
-
-      // W[0] = b/|| b ||
-      res[0] = con_norm(W[0], &Wl[0]);
-      con_scale(W[0], &Wl[0], -1.0/res[0]);
-    }
-
-    if (monitor){
-      monitor->printResidual(0, fabs(TacsRealPart(res[0])));
-    }
-
-    if (count == 0){
-      rhs_norm = res[0]; // The initial residual 
-    }  
-
-    int niters = 0; // Keep track of the size of the Hessenberg matrix  
-
-    if (TacsRealPart(res[0]) < atol){
-      break;
-    }
-
-    for ( int i = 0; i < msub; i++ ){
-      if (monitor_time){ t_pc -= MPI_Wtime(); }
-      if (isFlexible){
-        pc->applyFactor(W[i], Z[i]); // Apply the preconditioner
-        con_mat_mult(Z[i], &Wl[i*nconstr], 
-                     W[i+1], &Wl[(i+1)*nconstr]); // W[i+1] = A*Z[i]
-      }
-      else {
-        if (pc){
-          // Apply the preconditioner, work = M^{-1} W[i] 
-          pc->applyFactor(W[i], work); 
-          con_mat_mult(work, &Wl[i*nconstr], 
-                       W[i+1], &Wl[(i+1)*nconstr]); 
-        }
-        else {
-          con_mat_mult(W[i], &Wl[i*nconstr], 
-                       W[i+1], &Wl[(i+1)*nconstr]); 
-        }
-      }
-      if (monitor_time){ 
-        double t0 = MPI_Wtime();
-        t_pc += t0; t_ortho -= t0; 
-      }
-
-      // Build the orthogonal factorization using MGS
-      for ( int j = 0; j < i+1; j++ ){
-        H[j + Hptr[i]] = con_dot(W[i+1], &Wl[(i+1)*nconstr], 
-                                 W[j], &Wl[j*nconstr]);
-
-        con_axpy(W[i+1], &Wl[(i+1)*nconstr], 
-                 -H[j + Hptr[i]],
-                 W[j], &Wl[j*nconstr]);
-      }
-
-      if (monitor_time){ t_ortho += MPI_Wtime(); }
-
-      // compute W[i+1] = W[i+1]/|| W[i+1] ||
-      H[i+1 + Hptr[i]] = con_norm(W[i+1], &Wl[(i+1)*nconstr]);
-      con_scale(W[i+1], &Wl[(i+1)*nconstr], 1.0/H[i+1 + Hptr[i]]); 
-      
-      // Apply the existing part of Q to the new components of 
-      // the Hessenberg matrix
-      TacsScalar h1, h2;
-      for ( int k = 0; k < i; k++ ){
-        h1 = H[k   + Hptr[i]];
-        h2 = H[k+1 + Hptr[i]];
-        H[k   + Hptr[i]] =  h1*Qcos[k] + h2*Qsin[k];
-        H[k+1 + Hptr[i]] = -h1*Qsin[k] + h2*Qcos[k];
-      }
-      
-      // Now, compute the rotation for the new column that was just added
-      h1 = H[i   + Hptr[i]];
-      h2 = H[i+1 + Hptr[i]];
-      TacsScalar sq = sqrt(h1*h1 + h2*h2);
-      
-      Qcos[i] = h1/sq;
-      Qsin[i] = h2/sq;
-      H[i   + Hptr[i]] =  h1*Qcos[i] + h2*Qsin[i];
-      H[i+1 + Hptr[i]] = -h1*Qsin[i] + h2*Qcos[i];
-      
-      // Update the residual
-      h1 = res[i];
-      // h2 = res[i+1]; = 0
-      res[i]   =   h1*Qcos[i];
-      res[i+1] = - h1*Qsin[i];
-
-      if (monitor){
-        monitor->printResidual(i+1, fabs(TacsRealPart(res[i+1])));
-      }
-      
-      niters++;
-      
-      if (fabs(TacsRealPart(res[i+1])) < atol ||
-          fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
-        // Set the solve flag 
-        solve_flag = 1;
-        
-        break;
-      }
-    }
-
-    // Now, compute the solution - the linear combination of the
-    // Arnoldi vectors H is upper triangular
-
-    // Compute the weights
-    for ( int i = niters-1; i >= 0; i-- ){
-      for ( int j = i+1; j < niters; j++ ){ 
-        res[i] = res[i] - H[i + Hptr[j]]*res[j];
-      }
-      res[i] = res[i]/H[i + Hptr[i]];
-    }
-    
-    // Compute the linear combination
-    if (isFlexible){ // Flexible variant
-      for ( int i = 0; i < niters; i++ ){
-        con_axpy(x, lambda, 
-                 res[i], Z[i], &Wl[i*nconstr]);
-      }
-    }
-    else if (!pc){   // If there's no pc
-      for ( int i = 0; i < niters; i++ ){
-        con_axpy(x, lambda, 
-                 res[i], W[i], &Wl[i*nconstr]);
-      }
-    }
-    else {             // If the pc isn't flexible
-      work->zeroEntries();
-      for ( int i = 0; i < niters; i++ ){
-        con_axpy(work, lambda, 
-                 res[i], W[i], &Wl[i*nconstr]);
-      }
-    
-      // Apply M^{-1} to the linear combination
-      pc->applyFactor(work, W[0]);
-      x->axpy(1.0, W[0]);
-    }
-
-    if (solve_flag){
-      break;
-    }
-  }
-
-  if (monitor){
-    // If the initial guess is non-zero or restarting
-    con_mat_mult(x, lambda, W[0], &Wl[0]);
-    W[0]->axpy(-1.0, b); // W[0] = A*x + C*y - b
-    TacsScalar norm = con_norm(W[0], &Wl[0]);
-    char str_norm[80];
-    sprintf(str_norm, "|A*x + C*y - b|: %15.8e\n", TacsRealPart(norm));
-    monitor->print(str_norm);
-  }
-  
-  if (monitor_time && monitor){
-    t_total = MPI_Wtime() - t_total;
-    char str_mat[80], str_ort[80], str_tot[80];
-    sprintf(str_mat, "pc-mat time %10.6f\n", t_pc);
-    sprintf(str_ort, "ortho time  %10.6f\n", t_ortho);
-    sprintf(str_tot, "total time  %10.6f\n", t_total);
-    monitor->print(str_mat);
-    monitor->print(str_ort);
-    monitor->print(str_tot);
   }
 }
 

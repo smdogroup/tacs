@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_BUCKLING_H
@@ -27,6 +27,7 @@
 #include "TACSAssembler.h"
 #include "GSEP.h"
 #include "TACSMg.h"
+#include "JacobiDavidson.h"
 
 /*
   Linearized buckling analysis code.
@@ -37,22 +38,22 @@
   with the TACSMat interface because it would be difficult to do this
   for matrices of different alternate types. This intermediate object
   maintains consistency between matrix types involved in the operation
-  without exposing the underlying matrix type.  
+  without exposing the underlying matrix type.
 */
 class TACSLinearBuckling : public TACSObject {
  public:
-  TACSLinearBuckling( TACSAssembler *_tacs, 
+  TACSLinearBuckling( TACSAssembler *_tacs,
                       TacsScalar _sigma,
-                      TACSMat *_gmat, TACSMat *_kmat, 
+                      TACSMat *_gmat, TACSMat *_kmat,
                       TACSMat *_aux_mat, TACSKsm *_solver,
-                      int _max_lanczos_vecs, 
+                      int _max_lanczos_vecs,
                       int _num_eigvals, double _eig_tol );
   ~TACSLinearBuckling();
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
   TACSAssembler* getTACS(){ return tacs; }
-  
+
   // Functions to set the shift value
   // --------------------------------
   TacsScalar getSigma();
@@ -63,7 +64,7 @@ class TACSLinearBuckling : public TACSObject {
   void solve( TACSVec *rhs=NULL, KSMPrint *ksm_print=NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
-  // Extract the eigenvalue or check the solution 
+  // Extract the eigenvalue or check the solution
   // --------------------------------------------
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
   TacsScalar extractEigenvector( int n, TACSBVec *ans, TacsScalar *error );
@@ -71,13 +72,13 @@ class TACSLinearBuckling : public TACSObject {
   TacsScalar checkOrthogonality();
   void printOrthogonality();
 
- private:  
+ private:
   // Data for the eigenvalue analysis
   TacsScalar sigma;
-  
+
   EPBucklingShiftInvert *ep_op;
   SEP *sep;
-  
+
   // The tacs object
   TACSAssembler *tacs;
 
@@ -94,14 +95,14 @@ class TACSLinearBuckling : public TACSObject {
 
   // Vectors used in the analysis
   TACSBVec *path; // The solution path
-  TACSBVec *res, *update, *eigvec;  
+  TACSBVec *res, *update, *eigvec;
 
   // The multigrid object -- only defined if a multigrid
   // preconditioner is used
   TACSMg *mg;
 };
 
-/*!  
+/*!
   The following class performs frequency analysis and gradient
   evaluation of a TACS finite-element model.
 
@@ -125,22 +126,35 @@ class TACSFrequencyAnalysis : public TACSObject {
   TACSFrequencyAnalysis( TACSAssembler *_tacs,
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
-                         TACSKsm *_solver, int max_lanczos, 
+                         TACSKsm *_solver, int max_lanczos,
                          int num_eigvals, double _eig_tol );
+
+  TACSFrequencyAnalysis( TACSAssembler *_tacs,
+                         TacsScalar _sigma,
+                         TACSMat *_mmat, TACSMat *_kmat,
+                         TACSMat *_pcmat, TACSPc *_pc,
+                         int max_jd_size, 
+                         int fgmres_size, int num_eigvals,
+                         double eigtol=1e-9,
+                         double eig_rtol=1e-9, 
+                         double eig_atol=1e-30,
+                         int num_recycle=0,
+                         JDRecycleType recycle_type=JD_NUM_RECYCLE );
+  
   ~TACSFrequencyAnalysis();
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
   TACSAssembler* getTACS(){ return tacs; }
-  
+
   // Solve the generalized eigenvalue problem
   // ----------------------------------------
   TacsScalar getSigma();
   void setSigma( TacsScalar _sigma );
-  void solve( KSMPrint *ksm_print=NULL );
+  void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
   void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
 
-  // Extract and check the solution 
+  // Extract and check the solution
   // ------------------------------
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
   TacsScalar extractEigenvector( int n, TACSBVec *ans, TacsScalar *error );
@@ -150,10 +164,11 @@ class TACSFrequencyAnalysis : public TACSObject {
  private:
   // The TACS assembler object
   TACSAssembler *tacs;
- 
+
   // The matrices used in the analysis
   TACSMat *mmat; // The mass matrix
   TACSMat *kmat; // The stiffness matrix
+  TACSMat *pcmat; // Matrix associated with the preconditioner (JD)
   TACSKsm *solver; // Associated with kmat
   TACSPc *pc; // The preconditioner
 
@@ -166,8 +181,12 @@ class TACSFrequencyAnalysis : public TACSObject {
   EPGeneralizedShiftInvert *ep_op;
   SEP *sep;
 
+  // Objects associated with the Jacobi-Davidson method
+  TACSJDFrequencyOperator *jd_op;
+  TACSJacobiDavidson *jd;
+
   // Vectors required for eigen-sensitivity analysis
   TACSBVec *eigvec, *res;
 };
 
-#endif 
+#endif // TACS_BUCKLING_H

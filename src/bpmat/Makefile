@@ -34,6 +34,7 @@ CXX_OBJS = BCSRMat.o \
 	ScMat.o \
 	FEMat.o \
 	GSEP.o \
+	JacobiDavidson.o \
 	PDMat.o \
 	AMDInterface.o \
 	BCSCMatPivot.o \

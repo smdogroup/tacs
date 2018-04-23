@@ -446,11 +446,22 @@ cdef inline _init_Assembler(TACSAssembler *ptr):
     tacs.ptr.incref()
     return tacs
 
+cdef extern from "JacobiDavidson.h":
+   # Set the type of recycling scheme
+   enum JDRecycleType:
+      JD_SUM_TWO
+      JD_NUM_RECYCLE
+      
 cdef extern from "TACSBuckling.h":
     cdef cppclass TACSFrequencyAnalysis(TACSObject):
         TACSFrequencyAnalysis(TACSAssembler *, TacsScalar,
                               TACSMat*, TACSMat*, TACSKsm*,
                               int, int, double)
+        TACSFrequencyAnalysis(TACSAssembler*, TacsScalar,
+                              TACSMat*, TACSMat*, TACSMat*,
+                              TACSPc*,
+                              int, int, int, double, double, double,
+                              int, JDRecycleType)
         TACSAssembler* getTACS()
         TacsScalar getSigma()
         void setSigma(TacsScalar)

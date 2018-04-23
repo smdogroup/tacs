@@ -1867,6 +1867,7 @@ void TACSBDFIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
       // of this computation
       res->copyValues(adj_rhs[n]);
       res->axpy(1.0, rhs[adj_index*num_funcs + n]);
+      tacs->applyBCs(res);
       ksm->solve(res, psi[n]);
     }
     else {
