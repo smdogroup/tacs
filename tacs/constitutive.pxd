@@ -42,21 +42,22 @@ cdef extern from "isoFSDTStiffness.h":
 
 cdef extern from "TimoshenkoStiffness.h":
     cdef cppclass TimoshenkoStiffness(TACSConstitutive):
-        TimoshenkoStiffness(const TacsScalar* axis,
-                            TacsScalar EA, 
-                            TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-                            TacsScalar GJ,
-                            TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
-                            TacsScalar m00,
-                            TacsScalar m11, TacsScalar m22, TacsScalar m33,
-                            TacsScalar xm2, TacsScalar xm3,
-                            TacsScalar xc2, TacsScalar xc3,
-                            TacsScalar xk2, TacsScalar xk3,
-                            TacsScalar muS);
+        
+        ## TimoshenkoStiffness(const TacsScalar* axis,
+        ##                     TacsScalar EA, 
+        ##                     TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
+        ##                     TacsScalar GJ,
+        ##                     TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
+        ##                     TacsScalar m00,
+        ##                     TacsScalar m11, TacsScalar m22, TacsScalar m33,
+        ##                     TacsScalar xm2, TacsScalar xm3,
+        ##                     TacsScalar xc2, TacsScalar xc3,
+        ##                     TacsScalar xk2, TacsScalar xk3,
+        ##                     TacsScalar muS);
                        
-        #TimoshenkoStiffness(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-        #                    TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-        #                    TacsScalar, TacsScalar, const TacsScalar*)
+        TimoshenkoStiffness(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                            TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                            TacsScalar, TacsScalar, const TacsScalar*)
 
 cdef extern from "PlaneStressStiffness.h":
     cdef cppclass PlaneStressStiffness(TACSConstitutive):

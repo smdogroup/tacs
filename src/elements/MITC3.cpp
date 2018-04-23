@@ -575,22 +575,6 @@ void MITC3::computeInertiaTensor( const TacsScalar rho[],
 
   Jr[5] = d11 - rho[1]*n1[2]*n1[2] - 
     rho[2]*n2[2]*n2[2] - 2.0*rho[3]*n1[2]*n2[2];
-
-  // Jr[0] = rho[1] + rho[2];
-  // Jr[1] = 0.0;
-  // Jr[2] = 0.0;
-
-  // Jr[3] = rho[2];
-  // Jr[4] = 0.0;
-
-  // Jr[5] = rho[1];
-  
-  // printf("Jr[%d] = %e \n", 0, Jr[0]);
-  // printf("Jr[%d] = %e \n", 1, Jr[1]);
-  // printf("Jr[%d] = %e \n", 2, Jr[2]);
-  // printf("Jr[%d] = %e \n", 3, Jr[3]);
-  // printf("Jr[%d] = %e \n", 4, Jr[4]);
-  // printf("Jr[%d] = %e \n", 5, Jr[5]);
 }
 
 /*

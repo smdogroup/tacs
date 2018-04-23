@@ -92,7 +92,7 @@ TimoshenkoStiffness::TimoshenkoStiffness( const TacsScalar _axis[],
   rho[0] = m00;
   rho[1] = m11;
   rho[2] = m22;
-  rho[3] = 0.0; //m00*xm2*xm3;
+  rho[3] = m00*xm2*xm3;
 }
 
 /*
