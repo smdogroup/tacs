@@ -165,6 +165,14 @@ cdef class Vec:
         Py_INCREF(self)
         return arry
 
+    def getSize(self):
+        '''
+        Length of the array
+        '''
+        cdef int size
+        self.ptr.getSize(&size)
+        return size
+
     def norm(self):
         '''
         Vector norm
