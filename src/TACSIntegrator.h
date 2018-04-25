@@ -137,9 +137,9 @@ class TACSIntegrator : public TACSObject {
   // Returns the number of time steps configured during instantiation
   //-----------------------------------------------------------------
   int getNumTimeSteps();
-
-  void lapackEigenSolve( TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot,
-                         TacsScalar *eigvals );
+  int lapackNaturalFrequencies( int use_gyroscopic,
+                                TACSBVec *q, TACSBVec *qdot,
+                                TACSBVec *qddot, TacsScalar *eigvals );
   void getRawMatrix( TACSMat *mat, TacsScalar *mat_vals );
   
  protected:

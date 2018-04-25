@@ -838,162 +838,16 @@ void TACSIntegrator::getRawMatrix( TACSMat *mat, TacsScalar *mat_vals) {
 /*
   Performs an eigen solve of the Jacobian matrix
 */
-/*
-void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
-                                       TACSBVec *qdot,
-                                       TACSBVec *qddot,
-                                       TacsScalar *eigvals) {
-#ifdef TACS_USE_COMPLEX
-#else
-  // Determine the size of state vector
-  int num_state_vars;
-  q->getSize(&num_state_vars);
-
-  // Set the (steady-state) state variables into TACS
-  tacs->setVariables(q, qdot, qddot);
-  
-  // Create K matrix
-  FEMat *DK = tacs->createFEMat(order_type);
-  TACSPc *kpc = new PcScMat(DK, lev, fill, reorder_schur);
-  kpc->incref();
-  TACSMat *kmat;
-  kmat = DK;
-  kmat->incref();
-  tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
-  TacsScalar *Kvals = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(kmat, Kvals);
-  
-  // Create C matrix
-  FEMat *DC = tacs->createFEMat(order_type);
-  TACSPc *cpc = new PcScMat(DC, lev, fill, reorder_schur);
-  cpc->incref();
-  TACSMat *cmat;
-  cmat = DC;
-  cmat->incref();
-  tacs->assembleJacobian(0.0, 1.0, 0.0, NULL, cmat);
-  TacsScalar *Cvals = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(cmat, Cvals);
-
-  // Create M matrix
-  FEMat *DM = tacs->createFEMat(order_type);
-  TACSPc *mpc = new PcScMat(DM, lev, fill, reorder_schur);
-  mpc->incref();
-  TACSMat *mmat;
-  mmat = DM;
-  mmat->incref();
-  tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
-  TacsScalar *Mvals = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(mmat, Mvals);
-
-  // Call LAPACK
-  int nvars = num_state_vars;
-  int size = num_state_vars*2;
-  TacsScalar *alphar = new TacsScalar[size];
-  TacsScalar *alphai = new TacsScalar[size];
-  TacsScalar *beta = new TacsScalar[size];
-  TacsScalar *vl = new TacsScalar[size*size];
-  TacsScalar *vr = new TacsScalar[size*size];
-  int lwork = 8*size;
-  TacsScalar *work = new TacsScalar[lwork];
-  int info = 0; 
-
-  // Create matrix B
-  TacsScalar *B = new TacsScalar[ size*size ];
-  memset(B, 0, size*size*sizeof(TacsScalar));
-
-  for ( int ii = 0; ii < nvars; ii++ ){
-    B[ii+ii*size] = 1.0;
+int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
+                                              TACSBVec *q,
+                                              TACSBVec *qdot,
+                                              TACSBVec *qddot,
+                                              TacsScalar *freq ){
+  if (mpiSize > 1){
+    fprintf(stderr, "TACSIntegrator: Natural frequencies \
+      can only be determined in serial\n");
+    return -1;
   }
-  
-  for ( int ii = nvars; ii < size; ii++ ){
-    for ( int jj = 0; jj < nvars; jj++ ){
-      B[ii+jj*size] = Cvals[(ii-nvars)*nvars + jj];
-    }
-  }
-  
-  for ( int ii = nvars; ii < size; ii++ ){
-    for ( int jj = nvars; jj < size; jj++ ){
-      B[ii+jj*size] = Mvals[(ii-nvars)*nvars + (jj-nvars)];
-    }
-  }  
-
-  // Create matrix A
-  TacsScalar *A = new TacsScalar[ size*size ];
-  memset(A, 0, size*size*sizeof(TacsScalar));
-
-  // Identity matrix along diagonals  
-  for ( int ii = 0; ii < nvars; ii++ ){
-    //    printf("A[%d, %d] = \n", ii*size, ii + nvars);
-    A[ii + (ii + nvars)*size] = 1.0;    
-  }
-  
-  for ( int ii = nvars; ii < size; ii++ ){
-    for ( int jj = 0; jj < nvars; jj++ ){
-      
-      // printf("identity AA[%d, %d] =C[%d, %d] \n",
-      //        ii*size, jj,
-      //        (ii-nvars)*nvars , jj);
-      
-      A[jj*size+ii] = Kvals[(ii-nvars)*nvars + jj];
-    }
-  }
-  
-  // Create matrix B
-  // A * v(j) = lambda(j) * B * v(j).
-  
-  // Call lapack to solve the eigenvalue problem
-  LAPACKdggev("N", "N", &size,
-              A, &size, B, &size,
-              alphar, alphai, beta,
-              vl, &size, vr, &size,
-              work, &lwork,
-              &info);
-
-  // K v = lam M v
- 
-  // Print the eigenvalues
-  for (int i = 0; i < size; i++){
-    // printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], alphai[i]/beta[i]);
-    if ( beta[i] > 1.0e-14  && alphar[i] > 0.0) {
-      // eigvals[i] = alphar[i]*alphar[i]/(beta[i]*beta[i]) + alphai[i]*alphai[i]/(beta[i]*beta[i]);
-      eigvals[i] = alphar[i]*alphar[i]/beta[i]/beta[i];
-    }
-  }
-  
-  
-  kmat->decref();
-  cmat->decref();
-  mmat->decref();
-
-  kpc->decref();
-  cpc->decref();
-  mpc->decref();
-  
-  delete [] Kvals;
-  delete [] Cvals;
-  delete [] Mvals;
-                 
-  delete [] alphar;
-  delete [] alphai;
-  delete [] beta;
-  delete [] work;
-  delete [] vl;
-  delete [] vr;
-
-#endif
-
-}
-*/
-
-/*
-  Performs an eigen solve of the Jacobian matrix
-*/
-void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
-                                       TACSBVec *qdot,
-                                       TACSBVec *qddot,
-                                       TacsScalar *eigvals) {
-#ifdef TACS_USE_COMPLEX
-#else
 
   // Determine the size of state vector
   int num_state_vars;
@@ -1003,69 +857,138 @@ void TACSIntegrator::lapackEigenSolve( TACSBVec *q,
   tacs->setVariables(q, qdot, qddot);
   
   // Create K matrix
-  FEMat *DK = tacs->createFEMat(order_type);
-  TACSPc *kpc = new PcScMat(DK, lev, fill, reorder_schur);
-  kpc->incref();
-  TACSMat *kmat;
-  kmat = DK;
-  kmat->incref();
-  tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, kmat);
+  FEMat *DK = tacs->createFEMat();  DK->incref();
+  FEMat *DG = tacs->createFEMat();  DG->incref();
+  FEMat *DM = tacs->createFEMat();  DM->incref();
+  tacs->assembleJacobian(1.0, 0.0, 0.0, NULL, DK);
+  tacs->assembleJacobian(0.0, 1.0, 0.0, NULL, DG);
+  tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, DM);
+
+  // Get the dense column-major orientations of the matrix
+  BCSRMat *Kbcsr, *Gbcsr, *Mbcsr;
+  DK->getBCSRMat(&Kbcsr, NULL, NULL, NULL);
+  DG->getBCSRMat(&Gbcsr, NULL, NULL, NULL);
+  DM->getBCSRMat(&Mbcsr, NULL, NULL, NULL);
+
+  // Retrieve the values from the matrices
   TacsScalar *Kvals = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(kmat, Kvals);
-
-  // Create M matrix
-  FEMat *DM = tacs->createFEMat(order_type);
-  TACSPc *mpc = new PcScMat(DM, lev, fill, reorder_schur);
-  mpc->incref();
-  TACSMat *mmat;
-  mmat = DM;
-  mmat->incref();
-  tacs->assembleJacobian(0.0, 0.0, 1.0, NULL, mmat);
+  TacsScalar *Gvals = new TacsScalar[ num_state_vars*num_state_vars ];
   TacsScalar *Mvals = new TacsScalar[ num_state_vars*num_state_vars ];
-  getRawMatrix(mmat, Mvals);
+  Kbcsr->getDenseColumnMajor(Kvals);
+  Gbcsr->getDenseColumnMajor(Gvals);
+  Mbcsr->getDenseColumnMajor(Mvals);
 
-  // Call LAPACK
-  int size = num_state_vars;
-  TacsScalar *alphar = new TacsScalar[size];
-  TacsScalar *alphai = new TacsScalar[size];
-  TacsScalar *beta = new TacsScalar[size];
-  TacsScalar *vl = new TacsScalar[size*size];
-  TacsScalar *vr = new TacsScalar[size*size];
-  int lwork = 8*size;
-  TacsScalar *work = new TacsScalar[lwork];
-  int info = 0; 
+  int index = 0;
+  if (use_gyroscopic){
+    // Create an A/B matrix for the generalized eigenproblem
+    int n = 2*num_state_vars;
+    double *A = new double[ n*n ];
+    double *B = new double[ n*n ];
+    memset(A, 0, n*n*sizeof(double));
+    memset(B, 0, n*n*sizeof(double));
 
-  // Call lapack to solve the eigenvalue problem
-  LAPACKdggev("N", "N", &size,
-              Kvals, &size, Mvals, &size,
-              alphar, alphai, beta,
-              vl, &size, vr, &size,
-              work, &lwork,
-              &info);
+    // Call LAPACK
+    double *alphar = new double[ n ];
+    double *alphai = new double[ n ];
+    double *beta = new double[ n ];
+    double *vl = NULL, *vr = NULL;
+    int lwork = 20*n;
+    double *work = new double[ lwork ];
+    int info = 0;
 
-  // Print the eigenvalues K v = lam M v
-  for (int i = 0; i < size; i++){
-    //    printf("%d %12.5e %12.5e\n", i, alphar[i]/beta[i], beta[i]);
-    if (beta[i] > 1.0e-14 && alphar[i] > 0.0 ) {
-      eigvals[i] = alphar[i]/beta[i];
+    // A*x = lambda*B*x
+    const int nvars = num_state_vars;
+    for ( int j = 0; j < nvars; j++ ){
+      for ( int i = 0; i < nvars; i++ ){
+        // Set the A-matrix:
+        // [ 0  -K ]
+        // [ K   G ]
+        A[i+nvars + n*j] = TacsRealPart(Kvals[i + nvars*j]);
+        A[i + n*(j + nvars)] = -TacsRealPart(Kvals[i + nvars*j]);
+        A[i+nvars + n*(j + nvars)] = TacsRealPart(Gvals[i + nvars*j]);
+
+        // Set the B-matrix:
+        // [ K  0 ]
+        // [ 0  M ]
+        B[i + n*j] = TacsRealPart(Kvals[i + nvars*j]);
+        B[i+nvars + n*(j + nvars)] = TacsRealPart(Mvals[i + nvars*j]);
+      }
     }
+    
+    // Call lapack to solve the eigenvalue problem
+    LAPACKdggev("N", "N", &n, A, &n, B, &n,
+                alphar, alphai, beta,
+                vl, &n, vr, &n, work, &lwork, &info);
+
+    // Print the eigenvalues
+    for ( int i = 0; i < n; i++ ){
+      if (fabs(beta[i]) > 1e-14 && alphai[i] > 0.0){
+        freq[index] = alphai[i]/beta[i];
+        index++;
+        i++;
+      }
+    }
+
+    delete [] A;
+    delete [] B;
+    delete [] alphar;
+    delete [] alphai;
+    delete [] beta;
+    delete [] work;
+  }
+  else {
+    int n = num_state_vars;
+    double *A = new double[ n*n ];
+    double *B = new double[ n*n ];
+    memset(A, 0, n*n*sizeof(double));
+    memset(B, 0, n*n*sizeof(double));
+
+    // Call LAPACK
+    double *alphar = new double[ n ];
+    double *alphai = new double[ n ];
+    double *beta = new double[ n ];
+    double *vl = NULL, *vr = NULL;
+    int lwork = 20*n;
+    double *work = new double[ lwork ];
+    int info = 0;
+
+    for ( int j = 0; j < n; j++ ){
+      for ( int i = 0; i < n; i++ ){
+        A[i + n*j] = TacsRealPart(Kvals[i + n*j]);
+        B[i + n*j] = TacsRealPart(Mvals[i + n*j]);
+      }
+    }
+
+    // Call lapack to solve the eigenvalue problem
+    LAPACKdggev("N", "N", &n, A, &n, B, &n,
+                alphar, alphai, beta,
+                vl, &n, vr, &n, work, &lwork, &info);
+
+    // Print the eigenvalues K v = lam M v
+    for ( int i = 0; i < n; i++ ){
+      if (fabs(beta[i]) > 1e-14 && alphar[i] > 0.0){
+        freq[index] = sqrt(alphar[i]/beta[i]);
+        index++;
+      }
+    }
+
+    delete [] A;
+    delete [] B;
+    delete [] alphar;
+    delete [] alphai;
+    delete [] beta;
+    delete [] work;
   }
 
-  kmat->decref();
-  kpc->decref();
-  mmat->decref();
-  mpc->decref();
+  DK->decref();
+  DG->decref();
+  DM->decref();
 
   delete [] Kvals;
+  delete [] Gvals;
   delete [] Mvals;
-  
-  delete [] alphar;
-  delete [] alphai;
-  delete [] beta;
-  delete [] work;
-  delete [] vl;
-  delete [] vr;
-#endif
+
+  return index;
 }
 
 /*

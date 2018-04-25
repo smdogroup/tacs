@@ -47,7 +47,7 @@ int comparator( const void *a, const void *b ){
   the size of the unique list <= numDVs
 */
 int uniqueSort( int *dvNums, int numDVs ){
-  // Sort the dvNums    
+  // Sort the dvNums
   qsort(dvNums, numDVs, sizeof(int), FElibrary::comparator);
 
   int i = 0; // The location from which to take the entires

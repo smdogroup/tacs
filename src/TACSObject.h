@@ -44,6 +44,7 @@ extern MPI_Op TACS_MPI_MAX;
   Use the cplx type for TacsComplex
 */
 typedef std::complex<double> TacsComplex;
+typedef double TacsReal;
 
 /*
   Define the basic scalar type TacsScalar
@@ -169,7 +170,7 @@ class TACSOptObject : public TACSObject {
     numDVs:      The size of the arrays lowerBound and upperBound
   */
   virtual void getDesignVarRange( TacsScalar lowerBound[], 
-				  TacsScalar upperBound[], int numDVs ){}
+                                  TacsScalar upperBound[], int numDVs ){}
 };
 
 /*!  
