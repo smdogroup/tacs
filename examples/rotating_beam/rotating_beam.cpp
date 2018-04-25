@@ -39,46 +39,92 @@ int main( int argc, char *argv[] ){
   const TacsScalar angular_rate = Omega;
 
   // Set the length of the rotating beam
-  const TacsScalar r = 0.4;
+  const TacsScalar precone = 2.5*M_PI/180.0; // 2.5 degrees
+  const TacsScalar r = 0.22;
   const TacsScalar L = 2.0;
 
-  // h = sqrt((12*L^2)/alpha^2)
-  const TacsScalar h = 0.0769800358919501;
+  // Create the Timoshenko stiffness object
+  TimoshenkoStiffness *stiff = NULL;
 
-  // Set the material properties
-  const TacsScalar E = 70e9; // Pa
-  const TacsScalar rho = 2600.0; // kg/m^3
-  const TacsScalar nu = 0.33; // Poisson's ratio
-  const TacsScalar Gmod = 0.5*E/(1.0 + nu);
-  const TacsScalar kappa = 5.0/6.0;
+  TacsScalar freq_normalization = 1.0;
 
-  // Set the stiffness properties
-  TacsScalar mA = rho*h*h;
-  TacsScalar IA = rho*h*h*h*h/12.0;
+  int generic = 0;
+  if (generic){
+    // h = sqrt((12*L^2)/beta^2)
+    const TacsScalar h = 0.13856406460551018;
 
-  TacsScalar EA = E*h*h;
-  TacsScalar GJ = 2.25*Gmod*h*h*h*h;
-  TacsScalar kGAz = kappa*Gmod*h*h;
-  TacsScalar EIz = E*h*h*h*h/12.0;
+    // Set the material properties
+    const TacsScalar E = 70e9; // Pa
+    const TacsScalar rho = 2600.0; // kg/m^3
+    const TacsScalar nu = 0.33; // Poisson's ratio
+    const TacsScalar Gmod = 0.5*E/(1.0 + nu);
+    const TacsScalar kappa = 0.5*(1.0 + nu); // 5.0/6.0;
 
-  // Print out the properties to the screen
-  TacsScalar delta = r/L;
-  TacsScalar alpha = sqrt(mA*L*L/IA);
-  TacsScalar eta = EIz/(mA*L*L*L*L);
-  TacsScalar T = 1.0/sqrt(eta);
-  TacsScalar gamma = T*Omega;
-  printf("delta: %25.15e\n", delta);
-  printf("alpha: %25.15e\n", alpha);
-  printf("eta:   %25.15e\n", eta);
-  printf("T:     %25.15e\n", T);
-  printf("gamma: %25.15e\n", gamma);
+    // Set the stiffness properties
+    TacsScalar mA = rho*h*h;
+    TacsScalar IA = rho*h*h*h*h/12.0;
 
-  // Set the reference axes
-  TacsScalar axis_A[] = {0.0, 1.0, 0.0};
+    TacsScalar EA = E*h*h;
+    TacsScalar GJ = 2.25*Gmod*h*h*h*h;
+    TacsScalar kGAz = kappa*Gmod*h*h;
+    TacsScalar EIz = E*h*h*h*h/12.0;
+
+    // Print out the properties to the screen
+    TacsScalar delta = r/L;
+    TacsScalar beta = sqrt(mA*L*L/IA);
+    TacsScalar eta = EIz/(mA*L*L*L*L);
+    TacsScalar T = 1.0/sqrt(eta);
+    TacsScalar gamma = T*Omega;
+
+    printf("delta: %25.15e\n", delta);
+    printf("beta:  %25.15e\n", beta);
+    printf("eta:   %25.15e\n", eta);
+    printf("T:     %25.15e\n", T);
+    printf("gamma: %25.15e\n", gamma);
+    printf("kG/E:  %25.15e\n", kGAz/EA);
+
+    // Set the reference axes
+    TacsScalar axis_A[] = {0.0, 1.0, 0.0};
+
+    stiff = new TimoshenkoStiffness(mA, IA, IA, 0.0,
+                                    EA, GJ, EIz, EIz, kGAz, kGAz,
+                                    axis_A);
+  }
+  else {
+    TacsScalar Omega_ref = 109.12; // rad/s
+    freq_normalization = 1.0/Omega_ref;
+    
+    // Set the inertial properties
+    TacsScalar mA = 0.95; // kg/m
+    TacsScalar m11 = 7.1828e-4; // kg m
+    TacsScalar m22 = 1.7e-5;    // kg m
+    TacsScalar m33 = 7.0128e-4; // kg m
+
+    // Axial stiffness
+    TacsScalar EA = 1.17e7;  // N
+
+    // Torsional stiffness
+    TacsScalar GJ = 1.6e2; // N m^2
+
+    // Bending stiffness
+    TacsScalar EI22 = 2.5e2;
+    TacsScalar EI33 = 5.2e3;
+    TacsScalar EI23 = 0.0;
+
+    // Shear stiffness    
+    TacsScalar kG22 = 5.85e5; // N
+    TacsScalar kG33 = 5.85e5; // N
+
+    // Set the reference axes
+    TacsScalar axis_A[] = {0.0, 0.0, 1.0};
+
+    stiff = new TimoshenkoStiffness(mA, m22, m33, 0.0,
+                                    EA, GJ, EI22, EI33, kG22, kG33,
+                                    axis_A);
+  }
 
   TACSGibbsVector *direction = new TACSGibbsVector(0.0, 0.0, 1.0);
 
-  const int fix_rotations = 1;
   TACSRevoluteDriver *rd = 
     new TACSRevoluteDriver(direction, angular_rate);
 
@@ -102,15 +148,9 @@ int main( int argc, char *argv[] ){
   // Create the rigid link
   TACSRigidLink *rl = new TACSRigidLink(rb);
 
-  // Create the Timoshenko stiffness object
-  TimoshenkoStiffness *stiffA =
-    new TimoshenkoStiffness(mA, IA, IA, 0.0,
-                            EA, GJ, EIz, EIz, kGAz, kGAz,
-                            axis_A);
-
   // Create the element
   TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, 0.0);
-  MITC3 *beam = new MITC3(stiffA, gravity, zero, omegainit);
+  MITC3 *beam = new MITC3(stiff, gravity, zero, omegainit);
   beam->incref();
 
   // Set the number of elements in the beam
@@ -175,14 +215,16 @@ int main( int argc, char *argv[] ){
   Xvec->incref();
   Xvec->getArray(&X);
   for ( int i = 0; i < 2*ne+1; i++ ){
-    X[3*i] = r + i*(L - r)/(2*ne);
+    TacsScalar xdist = i*(L - r)/(2*ne);
+    X[3*i] = r + xdist;
+    X[3*i+2] = -xdist*sin(precone);
   }
 
   tacs->setNodes(Xvec);
 
   // Set the rotational rate
   int steps_per_rotation = 180;
-  int num_rotations = 5;
+  int num_rotations = 20;
   double angular_freq = angular_rate/(2*M_PI);
   double tfinal = num_rotations/angular_freq;
   int num_steps = num_rotations*steps_per_rotation + 1;
@@ -192,7 +234,7 @@ int main( int argc, char *argv[] ){
     new TACSBDFIntegrator(tacs, 0.0, tfinal, num_steps, order);
   integrator->incref();
 
-  integrator->setPrintLevel(1);
+  integrator->setPrintLevel(0);
   integrator->integrate();
 
   // Create an TACSToFH5 object for writing output to files
@@ -220,91 +262,10 @@ int main( int argc, char *argv[] ){
   printf("number of frequencies = %d\n", nfreq);
 
   qsort(freq, nfreq, sizeof(TacsScalar), compare);
-  for ( int i = 0; i < 10; i++ ){
-    printf("Normalized frequency[%3d]: %25.15e\n", i, freq[i]*T);
+  printf("Normalized frequencies\n");
+  for ( int i = 0; i < 12; i++ ){
+    printf("%25.15e\n", freq[i]*freq_normalization);
   }
-
-  // // Compute the kinetic energy
-  // TacsScalar angular_rate = 5.0;
-  // TacsScalar angular_dir[3] = {0.0, 1.0, 0.0};
-  // TacsScalar omega[3];
-  // omega[0] = angular_rate*angular_dir[0];
-  // omega[1] = angular_rate*angular_dir[1];
-  // omega[2] = angular_rate*angular_dir[2];
-
-  // // Test the straight beam for bending/torsion/extension 
-  // // relationships
-  // TacsScalar X[] = {0.0, 0.0, 0.0, 
-  //                   0.5*L, 0.0, 0.0,
-  //                   1.0*L, 0.0, 0.0};
-  // TacsScalar vars[24], dvars[24], ddvars[24];
-
-  // for ( int i = 0; i < 3; i++ ){
-  //   // Set the displacement
-  //   TacsScalar u[3] = {0.0, 0.0, 0.0};
-  //   TacsScalar q[4] = {1.0, 0.0, 0.0, 0.0};
-
-  //   // Set the velocity/time derivative components
-  //   TacsScalar v[3], qdot[4];
-  //   crossProduct(1.0, omega, &X[3*i], v);
-  //   qdot[0] = 0.0;
-  //   qdot[1] = 0.5*angular_rate*angular_dir[0];
-  //   qdot[2] = 0.5*angular_rate*angular_dir[1];
-  //   qdot[3] = 0.5*angular_rate*angular_dir[2];
-
-  //   // Set the acceleration
-  //   TacsScalar a[3], qddot[4];
-  //   crossProduct(1.0, omega, v, a);
-  //   qddot[0] = -0.25*angular_rate*angular_rate;
-  //   qddot[1] = 0.0;
-  //   qddot[2] = 0.0;
-  //   qddot[3] = 0.0;
-    
-  //   // Set the displacement variables
-  //   vars[8*i] = u[0];
-  //   vars[8*i+1] = u[1];
-  //   vars[8*i+2] = u[2];
-  //   vars[8*i+3] = q[0];
-  //   vars[8*i+4] = q[1];
-  //   vars[8*i+5] = q[2];
-  //   vars[8*i+6] = q[3];
-  //   vars[8*i+7] = 0.0;
-
-  //   // Set the velocity
-  //   dvars[8*i] = v[0];
-  //   dvars[8*i+1] = v[1];
-  //   dvars[8*i+2] = v[2];
-  //   dvars[8*i+3] = qdot[0];
-  //   dvars[8*i+4] = qdot[1];
-  //   dvars[8*i+5] = qdot[2];
-  //   dvars[8*i+6] = qdot[3];
-  //   dvars[8*i+7] = 0.0;
-
-  //   // Set the acceleration
-  //   ddvars[8*i] = a[0];
-  //   ddvars[8*i+1] = a[1];
-  //   ddvars[8*i+2] = a[2];
-  //   ddvars[8*i+3] = qddot[0];
-  //   ddvars[8*i+4] = qddot[1];
-  //   ddvars[8*i+5] = qddot[2];
-  //   ddvars[8*i+6] = qddot[3];
-  //   ddvars[8*i+7] = 0.0;
-  // }
-
-  // double time = 0.0;
-
-  // // Compute the kinetic energy
-  // TacsScalar Te, Pe;
-  // beam->computeEnergies(time, &Te, &Pe, X, vars, dvars);
-
-  // printf("Kinetic energy: %25.15e\n", Te);
-  // printf("Kinetic energy: %25.15e\n",
-  //        0.5*angular_rate*angular_rate*mA*L*L*L/3.0);
-
-  // int multipliers[3] = {7, 15, 23};
-  // beam->setStepSize(1e-5);
-  // beam->setPrintLevel(2);
-  // beam->testResidual(time, X, vars, dvars, ddvars, multipliers, 3);
 
   MPI_Finalize();
   return 0;

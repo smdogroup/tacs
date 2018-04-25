@@ -1751,10 +1751,16 @@ cdef class Integrator:
         free(fn)
         return
 
-    def lapackEigenSolve(self, Vec q, Vec qdot, Vec qddot,
-                         np.ndarray[TacsScalar, ndim=1, mode='c'] evals):
-        self.ptr.lapackEigenSolve(q.ptr, qdot.ptr, qddot.ptr, <TacsScalar*>evals.data)
-        return
+    def lapackNaturalFrequencies(self, Vec q, Vec qdot, Vec qddot,
+                                 int use_gyroscopic=1):
+        cdef int size = 0
+        cdef np.ndarray eigvals
+        size = q.ptr.getArray(NULL)
+        eigvals = np.zeros(size)
+        self.ptr.lapackNaturalFrequencies(use_gyroscopic,
+                                          q.ptr, qdot.ptr, qddot.ptr,
+                                          <TacsScalar*>eigvals.data)
+        return eigvals
     
     def iterate(self, int step_num, Vec forces=None):
         '''
