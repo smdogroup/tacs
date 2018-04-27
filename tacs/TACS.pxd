@@ -538,7 +538,7 @@ cdef extern from "TACSIntegrator.h":
                           int num_design_vars,
                           int start_step, int end_step)
         void lapackNaturalFrequencies(int, TACSBVec*, TACSBVec*,
-                                      TACSBVec*, TacsScalar*)
+                                      TACSBVec*, TacsScalar*, TacsScalar*)
         
         # Forward mode functions
         int iterate(int step_num,TACSBVec *forces)

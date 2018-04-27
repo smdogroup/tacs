@@ -842,7 +842,8 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
                                               TACSBVec *q,
                                               TACSBVec *qdot,
                                               TACSBVec *qddot,
-                                              TacsScalar *freq ){
+                                              TacsScalar *freq, 
+                                              TacsScalar *modes ){
   if (mpiSize > 1){
     fprintf(stderr, "TACSIntegrator: Natural frequencies \
       can only be determined in serial\n");
@@ -916,14 +917,32 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
     }
     
     // Call lapack to solve the eigenvalue problem
-    LAPACKdggev("N", "N", &n, A, &n, B, &n,
-                alphar, alphai, beta,
-                vl, &n, vr, &n, work, &lwork, &info);
-
+    if (modes){
+      vr = new double[ n*n];
+      LAPACKdggev("N", "V", &n, A, &n, B, &n,
+                  alphar, alphai, beta,
+                  vl, &n, vr, &n, work, &lwork, &info);    
+    }
+    else {
+      LAPACKdggev("N", "N", &n, A, &n, B, &n,
+                  alphar, alphai, beta,
+                  vl, &n, vr, &n, work, &lwork, &info);
+    }
+    
     // Print the eigenvalues
     for ( int i = 0; i < n; i++ ){
       if (fabs(beta[i]) > 1e-14 && alphai[i] > 0.0){
-        freq[index] = alphai[i]/beta[i];
+        freq[index] = alphai[i]/beta[i];        
+        //  Get the corresponding eigenvector. If the j-th eigenvalue
+        // is real, then v(j) = VR(:,j), the j-th column of VR. If the
+        // j-th and (j+1)-th eigenvalues form a complex conjugate
+        // pair, then v(j) = VR(:,j)+i*VR(:,j+1) and v(j+1) =
+        // VR(:,j)-i*VR(:,j+1).
+        if (modes){
+          for ( int k = 0; k < n; k++ ){
+            modes[index*n+k] = vr[i*n+k];
+          }          
+        }
         index++;
         i++;
       }
@@ -957,21 +976,39 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
         A[i + n*j] = TacsRealPart(Kvals[i + n*j]);
         B[i + n*j] = TacsRealPart(Mvals[i + n*j]);
       }
-    }
+    
+}
 
     // Call lapack to solve the eigenvalue problem
-    LAPACKdggev("N", "N", &n, A, &n, B, &n,
-                alphar, alphai, beta,
-                vl, &n, vr, &n, work, &lwork, &info);
+    if (modes){
+      vr = new double[ n*n];
+      LAPACKdggev("N", "V", &n, A, &n, B, &n,
+                  alphar, alphai, beta,
+                  vl, &n, vr, &n, work, &lwork, &info);    
+    }
+    else {
+      LAPACKdggev("N", "N", &n, A, &n, B, &n,
+                  alphar, alphai, beta,
+                  vl, &n, vr, &n, work, &lwork, &info);
+    }
 
     // Print the eigenvalues K v = lam M v
     for ( int i = 0; i < n; i++ ){
       if (fabs(beta[i]) > 1e-14 && alphar[i] > 0.0){
-        freq[index] = sqrt(alphar[i]/beta[i]);
+        freq[index] = sqrt(alphar[i]/beta[i]);        
+        // Get the eigenvector corresponding to this eigenvalue. If
+        // the j-th eigenvalue is real, then v(j) = VR(:,j), the j-th
+        // column of VR
+        if (modes){
+          for ( int k = 0; k < n; k++ ){
+            modes[index*n+k] = vr[i*n+k];
+          }          
+        }
         index++;
       }
     }
 
+    if (vr){ delete [] vr; };
     delete [] A;
     delete [] B;
     delete [] alphar;

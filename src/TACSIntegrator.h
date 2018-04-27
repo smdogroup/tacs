@@ -139,7 +139,8 @@ class TACSIntegrator : public TACSObject {
   int getNumTimeSteps();
   int lapackNaturalFrequencies( int use_gyroscopic,
                                 TACSBVec *q, TACSBVec *qdot,
-                                TACSBVec *qddot, TacsScalar *eigvals );
+                                TACSBVec *qddot, TacsScalar *eigvals,
+                                TacsScalar *modes = NULL);
   void getRawMatrix( TACSMat *mat, TacsScalar *mat_vals );
   
  protected:

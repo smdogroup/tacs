@@ -1759,8 +1759,23 @@ cdef class Integrator:
         eigvals = np.zeros(size)
         self.ptr.lapackNaturalFrequencies(use_gyroscopic,
                                           q.ptr, qdot.ptr, qddot.ptr,
-                                          <TacsScalar*>eigvals.data)
+                                          <TacsScalar*>eigvals.data,
+                                          NULL)
         return eigvals
+    
+    def lapackNaturalModes(self, Vec q, Vec qdot, Vec qddot,
+                           int use_gyroscopic=1):
+        cdef int size = 0
+        cdef np.ndarray eigvals
+        size = q.ptr.getArray(NULL)
+        eigvals = np.zeros(size)
+        cdef np.ndarray modes
+        modes = np.zeros((size,size))
+        self.ptr.lapackNaturalFrequencies(use_gyroscopic,
+                                          q.ptr, qdot.ptr, qddot.ptr,
+                                          <TacsScalar*>eigvals.data,
+                                          <TacsScalar*>modes.data)
+        return eigvals, modes
     
     def iterate(self, int step_num, Vec forces=None):
         '''
