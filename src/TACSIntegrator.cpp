@@ -844,6 +844,12 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
                                               TACSBVec *qddot,
                                               TacsScalar *freq, 
                                               TacsScalar *modes ){
+  // TACSVec for mode
+  TACSBVec *mode = tacs->createVec();
+  mode->incref();
+  TacsScalar *mode_vals;
+  mode->getArray(&mode_vals);
+
   if (mpiSize > 1){
     fprintf(stderr, "TACSIntegrator: Natural frequencies \
       can only be determined in serial\n");
@@ -853,7 +859,7 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
   // Determine the size of state vector
   int num_state_vars;
   q->getSize(&num_state_vars);
-
+  
   // Set the (steady-state) state variables into TACS
   tacs->setVariables(q, qdot, qddot);
   
@@ -921,7 +927,7 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
       vr = new double[ n*n];
       LAPACKdggev("N", "V", &n, A, &n, B, &n,
                   alphar, alphai, beta,
-                  vl, &n, vr, &n, work, &lwork, &info);    
+                  vl, &n, vr, &n, work, &lwork, &info);
     }
     else {
       LAPACKdggev("N", "N", &n, A, &n, B, &n,
@@ -941,7 +947,15 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
         if (modes){
           for ( int k = 0; k < n; k++ ){
             modes[index*n+k] = vr[i*n+k];
+            mode_vals[k] = vr[i*n+k];
           }          
+          // Write the mode to disk as f5
+          tacs->setVariables(mode, mode, mode);
+          if (beamf5){
+            char fname[256];
+            sprintf(fname, "mode_freq_%g.f5", freq[index]);
+            beamf5->writeToFile(fname);
+          }      
         }
         index++;
         i++;
@@ -977,7 +991,7 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
         B[i + n*j] = TacsRealPart(Mvals[i + n*j]);
       }
     
-}
+    }
 
     // Call lapack to solve the eigenvalue problem
     if (modes){
@@ -996,13 +1010,22 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
     for ( int i = 0; i < n; i++ ){
       if (fabs(beta[i]) > 1e-14 && alphar[i] > 0.0){
         freq[index] = sqrt(alphar[i]/beta[i]);        
+
         // Get the eigenvector corresponding to this eigenvalue. If
         // the j-th eigenvalue is real, then v(j) = VR(:,j), the j-th
         // column of VR
         if (modes){
           for ( int k = 0; k < n; k++ ){
             modes[index*n+k] = vr[i*n+k];
-          }          
+            mode_vals[k] = vr[i*n+k];
+          }
+          // Write the mode to disk as f5
+          tacs->setVariables(mode, mode, mode);
+          if (beamf5){
+            char fname[256];
+            sprintf(fname, "mode_freq_%g.f5", freq[index]);
+            beamf5->writeToFile(fname);
+          }
         }
         index++;
       }
@@ -1016,7 +1039,8 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
     delete [] beta;
     delete [] work;
   }
-
+  
+  mode->decref();
   DK->decref();
   DG->decref();
   DM->decref();
