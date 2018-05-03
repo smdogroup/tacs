@@ -49,6 +49,7 @@ class TACSElementWrapper : public TACSElement {
     getinitconditions = NULL;
     addresidual = NULL;
     addjacobian = NULL;
+    addadjresproduct = NULL;
 
   }
   ~TACSElementWrapper() {
@@ -116,6 +117,22 @@ class TACSElementWrapper : public TACSElement {
     }
   }
 
+  // Add the product of the adjoint variables with the derivative of the residual
+  // ----------------------------------------------------------------------------
+  void addAdjResProduct( double time, double scale,
+                         TacsScalar dvSens[], int dvLen,
+                         const TacsScalar psi[],
+                         const TacsScalar Xpts[],
+                         const TacsScalar vars[],
+                         const TacsScalar dvars[],
+                         const TacsScalar ddvars[] ) {
+    if (self_ptr && addadjresproduct) {
+      int nvars = num_nodes*num_displacements;
+      addadjresproduct(self_ptr, nvars, num_nodes, time, scale, dvSens, dvLen, 
+                       psi, Xpts, vars, dvars, ddvars);
+    }
+  }
+
   // Define the object name 
   // ----------------------
   const char * elementName(){ 
@@ -142,6 +159,10 @@ class TACSElementWrapper : public TACSElement {
                        const TacsScalar dvars[],
                        const TacsScalar ddvars[] );
 
+  void (*addadjresproduct)( void*, int, int, double, TacsScalar, TacsScalar *,
+                            int, const TacsScalar *, const TacsScalar *, 
+                            const TacsScalar *, const TacsScalar *, 
+                            const TacsScalar * );
 };
 
 #endif
