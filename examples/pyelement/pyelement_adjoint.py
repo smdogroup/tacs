@@ -53,7 +53,7 @@ class SpringMassDamper(elements.pyElement):
 num_nodes = 1
 num_disps = 1
 m = 1.0
-c = 1.0
+c = 0.5
 k = 5.0
 spr = SpringMassDamper(num_nodes, num_disps, m, c, k)     
 
@@ -63,16 +63,15 @@ assembler = TACS.Assembler.create(comm, 1, 1, 1)
 
 conn = np.array([0], dtype=np.intc)
 ptr = np.array([0, 1], dtype=np.intc)
+
 assembler.setElementConnectivity(conn, ptr)
-
 assembler.setElements([spr])
-
 assembler.initialize()
 
 # Create instance of integrator
 t0 = 0.0
-dt = 0.1
-num_steps = 200
+dt = 0.01
+num_steps = 1000
 tf = num_steps*dt
 order = 2
 bdf = TACS.BDFIntegrator(assembler, t0, tf, num_steps, order)
@@ -82,6 +81,8 @@ bdf.setPrintLevel(0) # turn off printing
 bdf.iterate(0)
 for step in range(1,num_steps+1):
     bdf.iterate(step)
+_, uvec, _, _ = bdf.getStates(num_steps)
+u = uvec.getArray().copy()
 bdf.writeRawSolution('spring.dat', 0)
 
 # Specify the number of design variables and the function to the integrator
@@ -124,6 +125,7 @@ bdf.writeRawSolution('spring.dat', 0)
 _, uneg_vec, _, _ = bdf.getStates(num_steps)
 uneg = uneg_vec.getArray().copy()
 
+print "f = ", u
 print "df/dx =         ", dfdx
 approx = 0.5*(upos - uneg)/h
 print "df/dx, approx = ", approx
