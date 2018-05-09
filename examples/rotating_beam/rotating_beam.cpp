@@ -19,13 +19,14 @@ int main( int argc, char *argv[] ){
 
   MPI_Comm comm = MPI_COMM_WORLD;
 
-  int ne = 10;
-  double Omega = 10.0;
+  const TacsScalar Omega_ref = 109.12; // rad/s
+  double Omega = 1.0;
   int gyroscopic = 1;
-
+  int ne = 20;
+  int test_case = 2;
   for ( int i = 0; i < argc; i++ ){
     if (sscanf(argv[i], "Omega=%lf", &Omega) == 1){
-      printf("Omega = %e\n", Omega);
+      printf("Omega = %e\n", Omega*Omega_ref);
     }
     if (sscanf(argv[i], "gyroscopic=%d", &gyroscopic) == 1){
       printf("gyroscopic = %d\n", gyroscopic);
@@ -35,21 +36,18 @@ int main( int argc, char *argv[] ){
     }
   }
 
-  // Create the motion driver
-  const TacsScalar angular_rate = Omega;
-
   // Set the length of the rotating beam
-  const TacsScalar precone = 2.5*M_PI/180.0; // 2.5 degrees
-  const TacsScalar r = 0.22;
-  const TacsScalar L = 2.0;
+  TacsScalar precone = 0.0; // 2.5 degrees
+  TacsScalar r = 0.0; // cutout
+  TacsScalar L = 2.0;
 
   // Create the Timoshenko stiffness object
   TimoshenkoStiffness *stiff = NULL;
-
+  
+  const TacsScalar angular_rate = Omega*Omega_ref;
   TacsScalar freq_normalization = 1.0;
 
-  int generic = 0;
-  if (generic){
+  if (test_case == 0){
     // h = sqrt((12*L^2)/beta^2)
     const TacsScalar h = 0.13856406460551018;
 
@@ -89,16 +87,20 @@ int main( int argc, char *argv[] ){
     stiff = new TimoshenkoStiffness(mA, IA, IA, 0.0,
                                     EA, GJ, EIz, EIz, kGAz, kGAz,
                                     axis_A);
-  }
-  else {
-    TacsScalar Omega_ref = 109.12; // rad/s
+
+  } else if (test_case == 1) {
+
+    // Run uniform HART-II case
+   
+    precone = 2.5*M_PI/180.0; // 2.5 degrees
+    r = 0.12; // cutout
     freq_normalization = 1.0/Omega_ref;
     
     // Set the inertial properties
     TacsScalar mA = 0.95; // kg/m
-    TacsScalar m11 = 7.1828e-4; // kg m
     TacsScalar m22 = 1.7e-5;    // kg m
     TacsScalar m33 = 7.0128e-4; // kg m
+    TacsScalar m11 = m22 + m33; // kg m
 
     // Axial stiffness
     TacsScalar EA = 1.17e7;  // N
@@ -118,9 +120,68 @@ int main( int argc, char *argv[] ){
     // Set the reference axes
     TacsScalar axis_A[] = {0.0, 0.0, 1.0};
 
-    stiff = new TimoshenkoStiffness(mA, m22, m33, 0.0,
+    // stiff = new TimoshenkoStiffness(mA, m22, m33, 0.0,
+    //                                 EA, GJ, EI22, EI33, kG22, kG33,
+    //                                 axis_A);
+    
+    stiff = new TimoshenkoStiffness( axis_A,
+                                     EA, 
+                                     EI22, EI33, 0.0,
+                                     GJ,
+                                     kG22, kG33, 0.0,
+                                     mA,
+                                     m11, m22,  m33,
+                                     0.0,0.0,
+                                     0.0,0.0,
+                                     0.0,0.0,
+                                     0.0);
+
+  } else {
+    
+    // Run uniform rectangular geometry
+    
+    freq_normalization = 1.0/Omega_ref;
+    
+    // Set the inertial properties
+    TacsScalar mA = 2.7; // kg/m
+    TacsScalar m22 = 2.25e-5;    // kg m
+    TacsScalar m33 = 2.25e-3; // kg m
+    TacsScalar m11 = m22 + m33; // kg m
+    TacsScalar m23 = 0.0; 
+
+    // Axial stiffness
+    TacsScalar EA = 70.0e6;  // N
+
+    // Torsional stiffness
+    TacsScalar GJ = 811.20; // N m^2
+
+    // Bending stiffness
+    TacsScalar EI22 = 583.3333333333333;
+    TacsScalar EI33 = 58333.33333333333;
+    TacsScalar EI23 = 0.0;
+
+    // Shear stiffness    
+    TacsScalar kG22 = 21666666.666666668; // N
+    TacsScalar kG33 = 21666666.666666668; // N
+
+    // Set the reference axes
+    TacsScalar axis_A[] = {0.0, 1.0, 0.0};
+
+    stiff = new TimoshenkoStiffness(mA, m22, m33, m23,
                                     EA, GJ, EI22, EI33, kG22, kG33,
                                     axis_A);
+    
+    // stiff = new TimoshenkoStiffness( axis_A,
+    //                                  EA, 
+    //                                  EI22, EI33, 0.0,
+    //                                  GJ,
+    //                                  kG22, kG33, 0.0,
+    //                                  mA,
+    //                                  m11, m22,  m33,
+    //                                  0.0, 0.0, 
+    //                                  0.0, 0.0,
+    //                                  0.0, 0.0, 0.0);
+    
   }
 
   TACSGibbsVector *direction = new TACSGibbsVector(0.0, 0.0, 1.0);
@@ -224,17 +285,17 @@ int main( int argc, char *argv[] ){
 
   // Set the rotational rate
   int steps_per_rotation = 180;
-  int num_rotations = 20;
+  int num_rotations = 1;
   double angular_freq = angular_rate/(2*M_PI);
   double tfinal = num_rotations/angular_freq;
-  int num_steps = num_rotations*steps_per_rotation + 1;
+  int num_steps = num_rotations*steps_per_rotation ;
   int order = 2;
 
   TACSIntegrator *integrator =
     new TACSBDFIntegrator(tacs, 0.0, tfinal, num_steps, order);
   integrator->incref();
 
-  integrator->setPrintLevel(0);
+  integrator->setPrintLevel(1);
   integrator->integrate();
 
   // Create an TACSToFH5 object for writing output to files
