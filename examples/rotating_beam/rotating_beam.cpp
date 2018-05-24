@@ -87,11 +87,9 @@ int main( int argc, char *argv[] ){
     stiff = new TimoshenkoStiffness(mA, IA, IA, 0.0,
                                     EA, GJ, EIz, EIz, kGAz, kGAz,
                                     axis_A);
-
-  } else if (test_case == 1) {
-
+  } 
+  else if (test_case == 1) {
     // Run uniform HART-II case
-   
     precone = 2.5*M_PI/180.0; // 2.5 degrees
     r = 0.12; // cutout
     freq_normalization = 1.0/Omega_ref;
@@ -135,11 +133,9 @@ int main( int argc, char *argv[] ){
                                      0.0,0.0,
                                      0.0,0.0,
                                      0.0);
-
-  } else {
-    
+  }
+  else {
     // Run uniform rectangular geometry
-    
     freq_normalization = 1.0/Omega_ref;
     
     // Set the inertial properties
@@ -170,18 +166,6 @@ int main( int argc, char *argv[] ){
     stiff = new TimoshenkoStiffness(mA, m22, m33, m23,
                                     EA, GJ, EI22, EI33, kG22, kG33,
                                     axis_A);
-    
-    // stiff = new TimoshenkoStiffness( axis_A,
-    //                                  EA, 
-    //                                  EI22, EI33, 0.0,
-    //                                  GJ,
-    //                                  kG22, kG33, 0.0,
-    //                                  mA,
-    //                                  m11, m22,  m33,
-    //                                  0.0, 0.0, 
-    //                                  0.0, 0.0,
-    //                                  0.0, 0.0, 0.0);
-    
   }
 
   TACSGibbsVector *direction = new TACSGibbsVector(0.0, 0.0, 1.0);

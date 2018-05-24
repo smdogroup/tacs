@@ -468,6 +468,18 @@ int TACSAssembler::setElements( TACSElement **_elements ){
     return 1;
   }
 
+  // Check if the number of variables per node matches
+  for ( int i = 0; i < numElements; i++ ){
+    if (_elements[i]->numDisplacements() != varsPerNode){
+      fprintf(stderr, 
+              "[%d] Element %s, num displacements %d \
+does not match variables per node %d\n",
+              mpiRank, _elements[i]->elementName(),
+              _elements[i]->numDisplacements(), varsPerNode);
+      return 1;
+    }
+  }
+
   // Copy over the element pointers into a local array
   if (elements){
     for ( int i = 0; i < numElements; i++ ){
@@ -494,14 +506,6 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   maxElementNodes = 0;
 
   for ( int i = 0; i < numElements; i++ ){
-    // Check if the number of variables per node matches
-    if (_elements[i]->numDisplacements() != varsPerNode){
-      fprintf(stderr, 
-              "[%d] Element %s, num displacements (%d) does not match variables per node (%d)\n",
-              mpiRank, _elements[i]->elementName(),_elements[i]->numDisplacements(),varsPerNode);
-      return 1;
-    }
-
     // Determine if the maximum number of variables and nodes needs to
     // be changed
     int elemSize = _elements[i]->numVariables();
@@ -2213,7 +2217,8 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
     
     // Add the coupling nodes received from other processors
     if (num_multipliers > 0){
-      for ( int i = 0, j = 0; (i < nrecv_unique || j < num_multipliers); index++ ){
+      for ( int i = 0, j = 0; 
+          (i < nrecv_unique || j < num_multipliers); index++ ){
         if (i < nrecv_unique && j < num_multipliers){
           if (recvNodesSorted[i] < multipliers[j]){
             couplingNodes[index] = getLocalNodeNum(recvNodesSorted[i]);  i++;

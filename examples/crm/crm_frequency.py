@@ -1,5 +1,6 @@
 # A demonstration of basic functions of the Python interface for TACS: loading a
 # mesh, creating elements, evaluating functions, solution, and output
+from __future__ import print_function
 
 # Import necessary libraries
 import numpy as np

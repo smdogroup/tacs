@@ -1487,7 +1487,7 @@ void BCSRMat::applyFactorSchur( TacsScalar *x, int var_offset ){
   Copy the diagonal entries to a set of diagonal matrices.  Factor
   these matrices and store the result.
 */
-void BCSRMat::factorDiag(){
+void BCSRMat::factorDiag( const TacsScalar *diag ){
   if (!data->diag){
     setUpDiag();
   }
@@ -1506,6 +1506,11 @@ void BCSRMat::factorDiag(){
   for ( int i = 0; i < nrows; i++ ){
     int d = b2*data->diag[i];
     memcpy(D, &(data->A[d]), b2*sizeof(TacsScalar));
+    if (diag){
+      for ( int j = 0; j < bsize; j++ ){
+        D[j*(bsize+1)] += diag[bsize*i + j];
+      }
+    }
     BMatComputeInverse(&Adiag[b2*i], D, ipiv, bsize);
   }
 

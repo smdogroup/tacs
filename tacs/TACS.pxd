@@ -17,6 +17,9 @@ cimport mpi4py.MPI as MPI
 # Import numpy
 from libc.string cimport const_char
 
+# Import the major python version
+from cpython.version cimport PY_MAJOR_VERSION
+
 # Import numpy 
 cimport numpy as np
 import numpy as np
@@ -28,6 +31,11 @@ cdef inline char* convert_to_chars(s):
    if isinstance(s, unicode):
       s = (<unicode>s).encode('utf8')
    return s
+
+cdef inline convert_bytes_to_str(bytes s):
+    if PY_MAJOR_VERSION >= 3:
+        return s.decode('utf8')
+    return s
 
 cdef extern from "TACSElement.h":
     enum ElementType:
