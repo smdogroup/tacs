@@ -1468,7 +1468,7 @@ cdef class MeshLoader:
         and any GRID/GRID* entries
         '''
         cdef char *filename = convert_to_chars(fname)
-        self.ptr.scanBDFFile(fname)
+        self.ptr.scanBDFFile(filename)
 
     def getNumComponents(self):
         '''
@@ -1483,7 +1483,7 @@ cdef class MeshLoader:
         cdef const char *descript
         cdef bytes py_string
         py_string = self.ptr.getComponentDescript(comp_num)
-        return str(py_string)
+        return convert_bytes_to_str(py_string)
 
     def getElementDescript(self, int comp_num):
         '''
@@ -1493,7 +1493,7 @@ cdef class MeshLoader:
         cdef const char *descript
         cdef bytes py_string
         py_string = self.ptr.getElementDescript(comp_num)
-        return str(py_string)
+        return convert_bytes_to_str(py_string)
     
     def setElement(self, int comp_num, Element elem):
         '''
