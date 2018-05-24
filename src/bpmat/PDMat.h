@@ -228,4 +228,4 @@ class PDMat : public TACSObject {
   int *upper_row_sum_count, *upper_row_sum_recv;
 };
 
-#endif
+#endif // TACS_PD_MAT_H

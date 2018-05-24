@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSMg.h"
@@ -38,10 +38,10 @@
   sor_iters:     number of SOR iterations to perform at each level
   sor_symmetric: symmetric SOR flag
 */
-TACSMg::TACSMg( MPI_Comm _comm, int _nlevels, 
-                double _sor_omega, int _sor_iters, 
+TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
+                double _sor_omega, int _sor_iters,
                 int _sor_symmetric ){
-  // Copy over the data 
+  // Copy over the data
   comm = _comm;
   nlevels = _nlevels;
   sor_omega = _sor_omega;
@@ -53,11 +53,11 @@ TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
 not make any sense!\n");
   }
 
-  // Create the list of pointers to the TACS objects at each level 
+  // Create the list of pointers to the TACS objects at each level
   tacs = new TACSAssembler*[ nlevels ];
-  
+
   // Number of smoothing operations to be performed at each iteration
-  iters = new int[ nlevels ];    
+  iters = new int[ nlevels ];
 
   // The solution, residual and right-hand-side at each iteration
   x = new TACSBVec*[ nlevels ];
@@ -65,7 +65,7 @@ not make any sense!\n");
   r = new TACSBVec*[ nlevels ];
 
   // Initialie the data in the arrays
-  for ( int i = 0; i < nlevels; i++ ){ 
+  for ( int i = 0; i < nlevels; i++ ){
     iters[i] = 1; // defaults to one - a V cycle
     tacs[i] = NULL;
     r[i] = NULL;
@@ -75,10 +75,10 @@ not make any sense!\n");
 
   // Create the pointers to the matrices
   mat = new TACSMat*[ nlevels-1 ];
- 
+
   // should re-assemble this matrix
   interp = new TACSBVecInterp*[ nlevels-1 ];
-  pc = new TACSPc*[ nlevels-1 ]; 
+  pc = new TACSPc*[ nlevels-1 ];
 
   for ( int i = 0; i < nlevels-1; i++ ){
     interp[i] = NULL;
@@ -136,17 +136,17 @@ TACSMg::~TACSMg(){
   iters:     the number of iterations to take at this level
 */
 void TACSMg::setLevel( int level, TACSAssembler *_tacs,
-                       TACSBVecInterp *_interp, 
+                       TACSBVecInterp *_interp,
                        int _iters, TACSMat *_mat,
                        TACSPc *_smoother ){
   tacs[level] = _tacs;
   tacs[level]->incref();
 
   if ((!_mat && _smoother) || (!_smoother && _mat)){
-    fprintf(stderr, 
+    fprintf(stderr,
             "TACSMg: You must define both the matrix and preconditioner\n");
     _mat = NULL;
-    _smoother = NULL;      
+    _smoother = NULL;
   }
 
   iters[level] = 1;
@@ -154,7 +154,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
     iters[level] = _iters;
   }
 
-  // Only define the restriction/interpolation 
+  // Only define the restriction/interpolation
   // operators for level < nlevels-1
   if (level < nlevels-1){
     if (!_interp){
@@ -181,10 +181,10 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       TACSPMat *pmat = tacs[level]->createMat();
       mat[level] = pmat;
       mat[level]->incref();
-      
+
       // Do not zero the initial guess for the PSOR object
       int zero_guess = 0;
-      pc[level] = new TACSGaussSeidel(pmat, zero_guess, sor_omega, 
+      pc[level] = new TACSGaussSeidel(pmat, zero_guess, sor_omega,
                                       sor_iters, sor_symmetric);
       pc[level]->incref();
     }
@@ -212,12 +212,12 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       // Set up the root preconditioner/solver
       int lev = 10000;
       double fill = 15.0;
-      int reorder_schur = 1; 
+      int reorder_schur = 1;
       root_pc = new PcScMat(femat, lev, fill, reorder_schur);
       root_pc->incref();
     }
   }
-  
+
   if (level > 0){
     x[level] = tacs[level]->createVec();
     x[level]->incref();
@@ -259,7 +259,7 @@ void TACSMg::setVariables( TACSBVec *vec ){
 
   input:
   dvs:     the design variable values
-  numDVs:  the number of design variables 
+  numDVs:  the number of design variables
 */
 void TACSMg::setDesignVars( const TacsScalar dvs[], int numDVs ){
   for ( int i = 0; i < nlevels; i++ ){
@@ -270,7 +270,7 @@ void TACSMg::setDesignVars( const TacsScalar dvs[], int numDVs ){
 }
 
 /*
-  Factor the SOR objects for each level of multi-grid, and 
+  Factor the SOR objects for each level of multi-grid, and
   the direct solver for the lowest level.
 */
 void TACSMg::factor(){
@@ -282,10 +282,10 @@ void TACSMg::factor(){
 
 /*
   Set up the multi-grid data by computing the matrices at each
-  multi-grid level within the problem. 
+  multi-grid level within the problem.
 */
 void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
-                               TACSBVec *res, 
+                               TACSBVec *res,
                                MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
@@ -303,16 +303,16 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
 
   // Assemble the coarsest problem
   if (tacs[nlevels-1]){
-    tacs[nlevels-1]->assembleJacobian(alpha, beta, gamma, 
+    tacs[nlevels-1]->assembleJacobian(alpha, beta, gamma,
                                       NULL, root_mat, matOr);
   }
 }
 
 /*
   Set up the multi-grid data by computing the matrices at each
-  multi-grid level within the problem. 
+  multi-grid level within the problem.
 */
-void TACSMg::assembleMatType( ElementMatrixType matType, 
+void TACSMg::assembleMatType( ElementMatrixType matType,
                               MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
@@ -322,7 +322,7 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
     }
   }
 
-  // Assemble the coarsest problem 
+  // Assemble the coarsest problem
   if (tacs[nlevels-1]){
     tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
   }
@@ -341,14 +341,14 @@ void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
     }
   }
 
-  // Assemble the coarsest problem 
+  // Assemble the coarsest problem
   if (tacs[nlevels-1]){
     tacs[nlevels-1]->assembleMatCombo(matTypes, scale, nmats, root_mat, matOr);
   }
 }
 
 /*
-  Get the matrix operator associated with the highest 
+  Get the matrix operator associated with the highest
 */
 void TACSMg::getMat( TACSMat **_mat ){
   *_mat = mat[0];
@@ -363,7 +363,7 @@ TACSMat *TACSMg::getMat( int level ){
   if (level >= 0 && level < nlevels-1){
     return mat[level];
   }
-  
+
   return NULL;
 }
 
@@ -407,39 +407,39 @@ void TACSMg::solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters,
                     double rtol, double atol ){
   b[0] = bvec; // Set the RHS at the finest level
   x[0] = xvec; // Set the solution at the finest level
-  
+
   // Compute the initial residual and multiply
   TacsScalar rhs_norm = 0.0;
   for ( int i = 0; i < max_iters; i++ ){
     applyMg(0);
     TacsScalar norm = r[0]->norm();
     if (monitor){ monitor->printResidual(i, norm); }
-    if (i == 0){ 
-      rhs_norm = norm; 
+    if (i == 0){
+      rhs_norm = norm;
     }
 
-    if (TacsRealPart(norm) < atol || 
+    if (TacsRealPart(norm) < atol ||
         TacsRealPart(norm) < rtol*TacsRealPart(rhs_norm)){
       break;
     }
-  } 
+  }
 
   b[0] = NULL;
   x[0] = NULL;
 }
 
-/*  
+/*
   Apply the multi-grid preconditioner to try and solve the problem
   x = A^{-1} b
 
-  Assume an initial guess of zero. 
+  Assume an initial guess of zero.
 */
 void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
   // Set the RHS at the finest level
-  b[0] = dynamic_cast<TACSBVec*>(bvec); 
+  b[0] = dynamic_cast<TACSBVec*>(bvec);
 
   // Set the solution at the finest level
-  x[0] = dynamic_cast<TACSBVec*>(xvec); 
+  x[0] = dynamic_cast<TACSBVec*>(xvec);
 
   if (b[0] && x[0]){
     x[0]->zeroEntries();
@@ -448,14 +448,14 @@ void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
   else {
     fprintf(stderr, "TACSMg type error: Input/output must be TACSBVec\n");
   }
-  
+
   b[0] = NULL;
   x[0] = NULL;
 }
 
 /*
   Apply the multigrid algorithm from McCormick and Runge 1983 - but
-  with added post-smoothing. 
+  with added post-smoothing.
 
   This function applies multigrid recursively by smoothing the
   residual, restricting to the next level, applying multigrid, then
@@ -465,32 +465,32 @@ void TACSMg::applyMg( int level ){
   // If we've made it to the lowest level, apply the direct solver
   // otherwise, perform multigrid on the next-lowest level
   if (level == nlevels-1){
-    root_pc->applyFactor(b[level], x[level]);   
+    root_pc->applyFactor(b[level], x[level]);
     return;
   }
 
-  // Pre-smooth at the current level
-  pc[level]->applyFactor(b[level], x[level]);  
-
-  // Compute r[level] = b[level] - A*x[level]
-  mat[level]->mult(x[level], r[level]);
-  r[level]->axpby(1.0, -1.0, b[level]);
-
-  // Restrict the residual to the next lowest level 
-  // to form the RHS at that level
-  interp[level]->multTranspose(r[level], b[level+1]);
-  b[level+1]->applyBCs(tacs[level+1]->getBcMap());
-  x[level+1]->zeroEntries();
-
   // Perform iters[level] cycle at the next lowest level
   for ( int k = 0; k < iters[level]; k++ ){
+    // Pre-smooth at the current level
+    pc[level]->applyFactor(b[level], x[level]);
+
+    // Compute r[level] = b[level] - A*x[level]
+    mat[level]->mult(x[level], r[level]);
+    r[level]->axpby(1.0, -1.0, b[level]);
+
+    // Restrict the residual to the next lowest level
+    // to form the RHS at that level
+    interp[level]->multTranspose(r[level], b[level+1]);
+    b[level+1]->applyBCs(tacs[level+1]->getBcMap());
+    x[level+1]->zeroEntries();
+
     applyMg(level+1);
+
+    // Interpolate back from the next lowest level
+    interp[level]->multAdd(x[level+1], x[level], x[level]);
+    x[level]->applyBCs(tacs[level]->getBcMap());
   }
 
-  // Interpolate back from the next lowest level
-  interp[level]->multAdd(x[level+1], x[level], x[level]);
-  x[level]->applyBCs(tacs[level]->getBcMap());
-
   // Post-Smooth the residual
-  pc[level]->applyFactor(b[level], x[level]);  
+  pc[level]->applyFactor(b[level], x[level]);
 }
