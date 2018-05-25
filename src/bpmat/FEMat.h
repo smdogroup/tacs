@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_FE_MATRIX_H
@@ -44,23 +44,23 @@
   b_map: The map from the global variables to the local indices
 
   c_local_indices: The local indices of the C-matrix
-  c_map: The map from the global 
-  
+  c_map: The map from the global
+
   bcs: The boundary conditions
 */
 class FEMat : public ScMat {
  public:
-  FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap, 
-         int bsize, int nlocal_vars, 
-         const int *rowp, const int *cols, 
-         TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
+  FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
+         int bsize, int nlocal_vars,
+         const int *rowp, const int *cols,
+         TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map,
          TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map );
   ~FEMat();
-    
+
   // Functions for setting values in the matrix
   // ------------------------------------------
   void addValues( int nrow, const int *row, int ncol, const int *col,
-                  int nv, int mv, const TacsScalar *values );  
+                  int nv, int mv, const TacsScalar *values );
   void addWeightValues( int nvars, const int *varp, const int *vars,
                         const TacsScalar *weights,
                         int nv, int mv, const TacsScalar *values,

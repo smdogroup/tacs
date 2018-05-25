@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include <stdlib.h>
@@ -30,10 +30,10 @@
 
 /*
   Assemble the non-zero pattern of the matrix and pass it to the
-  required processes.  
+  required processes.
 
   Purpose:
-  -------- 
+  --------
 
   This constructor accepts the distributed non-zero pattern of a
   matrix that will be assembled at a future point in time.  The
@@ -51,7 +51,7 @@
   csr_vars:              global block-CSR variable numbers
   csr_nvars:             number of CSR variables
   csr_rowp:              CSR row pointer
-  csr_cols:              CSR non-zero columns 
+  csr_cols:              CSR non-zero columns
   csr_blocks_per_block:  number of CSR blocks per block
 
   Procedure:
@@ -65,10 +65,11 @@
   5. Pass the block structure back to all processes.
   6. Clean up time.
 */
-PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n, 
-              int csr_bsize, const int *csr_vars, 
+PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
+              int csr_bsize, const int *csr_vars,
               int csr_nvars, const int *csr_rowp, const int *csr_cols,
-              int csr_blocks_per_block, int reorder_blocks ){
+              int csr_blocks_per_block, int reorder_blocks,
+              int max_grid_size ){
   comm = _comm;
   monitor_factor = 0;
   perm = iperm = orig_bptr = NULL;
@@ -76,9 +77,12 @@ PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
   int rank = 0, size = 0;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
-  
+
   // Determine the process grid
-  init_proc_grid(size);
+  if (max_grid_size <= 0 || max_grid_size > size){
+    max_grid_size = size;
+  }
+  init_proc_grid(max_grid_size);
 
   // The total size of the matrix
   int m = csr_m*csr_bsize;
@@ -86,7 +90,7 @@ PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
 
   // Set up the bptr array
   int bsize = csr_blocks_per_block*csr_bsize;
-  nrows = m/bsize; 
+  nrows = m/bsize;
   ncols = n/bsize;
   if (m % bsize > 0){
     nrows++;
@@ -137,14 +141,14 @@ PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
       rowp[ib+1]++;
     }
   }
-  
+
   for ( int k = 0; k < nrows; k++ ){
     rowp[k+1] += rowp[k];
   }
 
   int col_size = rowp[nrows];
   int *cols = new int[col_size];
-  
+
   for ( int ip = 0; ip < csr_nvars; ip++ ){
     int i = csr_vars[ip];
     int ib = get_block_num(csr_bsize*i, bptr);
@@ -165,7 +169,7 @@ PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
 
   int nodiag = 0;
   matutils::SortAndUniquifyCSR(nrows, rowp, cols, nodiag);
-  
+
   int root = size-1;
 
   // This initializes Urowp/Ucols and Lcolp/Lrows on all procs
@@ -208,7 +212,9 @@ PDMat::PDMat( MPI_Comm _comm, int _nrows, int _ncols ){
     if (i % 3 == 0){      bptr[i+1] = bptr[i] + 24; }
     else if (i % 3 == 1){ bptr[i+1] = bptr[i] + 36; }
     else if (i % 3 == 2){ bptr[i+1] = bptr[i] + 30; }
-    if (bptr[i+1] - bptr[i] > max_bsize){ max_bsize = bptr[i+1] - bptr[i]; }
+    if (bptr[i+1] - bptr[i] > max_bsize){
+      max_bsize = bptr[i+1] - bptr[i];
+    }
   }
 
   // Set Urowp and Ucols and Lrowp and Lcols
@@ -232,7 +238,7 @@ PDMat::PDMat( MPI_Comm _comm, int _nrows, int _ncols ){
   Lcolp[0] = 0;
   for ( int j = 0, n = 0; j < ncols; j++ ){
     for ( int i = j+1; i < nrows; i++, n++ ){
-      Lrows[n] = i;      
+      Lrows[n] = i;
     }
     Lcolp[j+1] = n;
   }
@@ -285,14 +291,14 @@ PDMat::~PDMat(){
 
 /*
   Merge the non-zero pattern of the matrices to the root process.
-  
+
   At this point rowp/cols point to the local contribution to the
   non-zero pattern. Send these contributions from all processors to
   the root process, at which point the full set of fill ins can be
   computed. Finally, the arrays Urowp/Ucols and Lcolp/Lrows can be
   allocated and set.
 */
-void PDMat::merge_nz_pattern( int root, int *rowp, int *cols, 
+void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
                               int reorder_blocks ){
   int rank, size;
   MPI_Comm_rank(comm, &rank);
@@ -304,7 +310,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
   MPI_Reduce(&col_size, &root_col_size, 1, MPI_INT, MPI_SUM, root, comm);
 
   int *root_rowp = NULL;
-  int *root_cols = NULL; 
+  int *root_cols = NULL;
   int *root_all_rowp = NULL;
 
   int *recv_row = NULL;
@@ -323,19 +329,19 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     recv_count = new int[size];
   }
 
-  MPI_Gather(rowp, nrows+1, MPI_INT, 
+  MPI_Gather(rowp, nrows+1, MPI_INT,
              root_all_rowp, (nrows+1), MPI_INT, root, comm);
 
   for ( int i = 0; i < nrows; i++ ){
     if (rank == root){
       recv_ptr[0] = 0;
-      for ( int k = 0; k < size; k++ ){ 
-        recv_count[k] = (root_all_rowp[i+1 + k*(nrows+1)] - 
+      for ( int k = 0; k < size; k++ ){
+        recv_count[k] = (root_all_rowp[i+1 + k*(nrows+1)] -
                          root_all_rowp[i + k*(nrows+1)]);
         recv_ptr[k+1] = recv_ptr[k] + recv_count[k];
       }
     }
-    
+
     int row_size = rowp[i+1] - rowp[i];
     MPI_Gatherv(&cols[rowp[i]], row_size, MPI_INT,
                 recv_row, recv_count, recv_ptr, MPI_INT, root, comm);
@@ -380,7 +386,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
         // Use AMD to compute the reordering of the variables.
         double control[AMD_CONTROL], info[AMD_INFO];
         amd_defaults(control); // Use the default values
-        amd_order(nrows, root_rowp, root_cols, perm, 
+        amd_order(nrows, root_rowp, root_cols, perm,
                   control, info);
 #else
         // Allocate temporary space
@@ -392,7 +398,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
         // This call destroys data in tmp_rowp/tmp_cols
         int use_exact_degree = 0;
         amd_order_interface(nrows, tmp_rowp, tmp_cols, perm,
-                            NULL, 0, 0, NULL, NULL, NULL, 
+                            NULL, 0, 0, NULL, NULL, NULL,
                             use_exact_degree);
 
         // Free the temporary space
@@ -408,7 +414,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
 
         int *temp_rowp = new int[nrows+1];
         int *temp_cols = new int[root_col_size];
-        
+
         temp_rowp[0] = 0;
         for ( int i = 0, p = 0; i < nrows; i++ ){
           int row = perm[i];
@@ -424,10 +430,10 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
                    rank);
           }
         }
-        
+
         delete [] root_rowp;
         delete [] root_cols;
-        
+
         root_rowp = temp_rowp;
         root_cols = temp_cols;
       }
@@ -436,11 +442,11 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     // perform the symbolic factorization
     int init_nnz = root_rowp[nrows];
     compute_symbolic_factor(&root_rowp, &root_cols, root_col_size);
-    int final_nnz = root_rowp[nrows];    
-    
+    int final_nnz = root_rowp[nrows];
+
     if (m && n){
       printf("[%d] initial density: %4.3f factor fill in: %4.3f\n",
-             root, (1.0*init_nnz)/(nrows*ncols), 
+             root, (1.0*init_nnz)/(nrows*ncols),
              (1.0*(final_nnz - init_nnz))/init_nnz);
     }
 
@@ -473,9 +479,9 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     // Flip the two
     int *temp = bptr;
     bptr = orig_bptr;
-    orig_bptr = temp;    
+    orig_bptr = temp;
   }
-  
+
   // Broadcast the nonzero pattern
   if (rank != root){
     Urowp = new int[nrows+1];
@@ -504,14 +510,14 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
   generated at each step in the factorization process.  This shift is
   delayed until all the new entries for the new row are processed.
 */
-void PDMat::compute_symbolic_factor( int ** _rowp, int ** _cols, 
+void PDMat::compute_symbolic_factor( int ** _rowp, int ** _cols,
                                      int max_size ){
   int *rowp = *_rowp;
   int *cols = *_cols;
 
   int *diag = new int[nrows];
   int *rcols = new int[ncols];
-  
+
   for ( int i = 0; i < nrows; i++ ){
     int nr = 0; // Number of entries in the current row
 
@@ -533,19 +539,19 @@ void PDMat::compute_symbolic_factor( int ** _rowp, int ** _cols,
       int p = j+1;                    // The index into rcols
       int k_end = rowp[rcols[j] + 1]; // the end of row number cols[j]
 
-      // Start with the first entry after the diagonal in row, cols[j] 
+      // Start with the first entry after the diagonal in row, cols[j]
       // k is the index into cols for row cols[j]
       for ( int k = diag[rcols[j]] + 1; k < k_end; k++ ){
 
         // Increment p to an entry where we may have cols[k] == rcols[p]
         while ((p < nr) && (rcols[p] < cols[k])){
-          p++; 
+          p++;
         }
-        
+
         if (p == nr){
           // Insert the new element at the end of the row
           rcols[p] = cols[k];
-          nr++;   
+          nr++;
         }
         else if (rcols[p] != cols[k]){
           // Insert the new entry into the list, but keep the list sorted
@@ -607,7 +613,7 @@ void PDMat::compute_symbolic_factor( int ** _rowp, int ** _cols,
   Lcolp/Lrows arrays. Note that rowp/cols must be sorted row-wise.
 
   Note that the row indices in Urowp/Ucols and the column indices
-  in Lcolp/Lrows will be sorted if rowp/cols are sorted - which 
+  in Lcolp/Lrows will be sorted if rowp/cols are sorted - which
   they must be!
 */
 void PDMat::init_ptr_arrays( int *rowp, int *cols ){
@@ -619,10 +625,10 @@ void PDMat::init_ptr_arrays( int *rowp, int *cols ){
   for ( int i = 0; i < nrows; i++ ){
     for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
       int j = cols[jp];
-      if (j > i){ // Upper part 
-        Urowp[i+1]++;   
+      if (j > i){ // Upper part
+        Urowp[i+1]++;
       }
-      else if (j < i){ // Lower part 
+      else if (j < i){ // Lower part
         Lcolp[j+1]++;
       }
     }
@@ -640,21 +646,21 @@ void PDMat::init_ptr_arrays( int *rowp, int *cols ){
   // Allocate the arrays
   Ucols = new int[Urowp[nrows]];
   Lrows = new int[Lcolp[ncols]];
-  
+
   for ( int i = 0; i < nrows; i++ ){
     for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
       int j = cols[jp];
-      if (j > i){ // Upper part 
+      if (j > i){ // Upper part
         Ucols[Urowp[i]] = j;
         Urowp[i]++;
       }
-      else if (j < i){ // Lower part 
+      else if (j < i){ // Lower part
         Lrows[Lcolp[j]] = i;
         Lcolp[j]++;
       }
     }
   }
-  
+
   // Fix the pointer arrays
   for ( int i = nrows; i > 0; i-- ){
     Urowp[i] = Urowp[i-1];
@@ -664,7 +670,7 @@ void PDMat::init_ptr_arrays( int *rowp, int *cols ){
   for ( int i = ncols; i > 0; i-- ){
     Lcolp[i] = Lcolp[i-1];
   }
-  Lcolp[0] = 0;  
+  Lcolp[0] = 0;
 }
 
 /*
@@ -675,7 +681,7 @@ void PDMat::init_ptr_arrays( int *rowp, int *cols ){
   should be considered for future versions of the code.
 */
 void PDMat::init_proc_grid( int size ){
-  // Check for the nearest perfect square  
+  // Check for the nearest perfect square
   int n = 1;
   while (n*n > 0){
     if (n*n <= size && size < (n+1)*(n+1)){
@@ -687,7 +693,7 @@ void PDMat::init_proc_grid( int size ){
   nprows = n;
   npcols = size/n;
 
-  proc_grid = new int[ nprows*npcols ];  
+  proc_grid = new int[ nprows*npcols ];
 
   for ( int i = 0, p = 0; i < nprows; i++ ){
     for ( int j = 0; j < npcols; j++, p++ ){
@@ -816,7 +822,7 @@ void PDMat::init_nz_arrays(){
   int max_buff[2], max_buff_all[2];
   max_buff[0] = max_lbuff_size;
   max_buff[1] = max_ubuff_size;
-  
+
   MPI_Allreduce(max_buff, max_buff_all, 2, MPI_INT, MPI_MAX, comm);
 
   max_lbuff_size = max_buff_all[0];
@@ -843,15 +849,15 @@ void PDMat::zeroEntries(){
   call to MPI_Alltoallv which may be faster, but requires more memory.
 */
 void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
-                          const int *csr_rowp, const int *csr_cols, 
+                          const int *csr_rowp, const int *csr_cols,
                           TacsScalar *vals ){
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
-  
+
   int b2 = csr_bsize*csr_bsize;
 
-  // Count up the number of recvs for each processor 
+  // Count up the number of recvs for each processor
   int *recv_count = new int[ size ];
   int *recv_ptr = new int[ size+1 ];
 
@@ -860,7 +866,7 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
 
   int *send_counts = new int[ size ];
   memset(send_counts, 0, size*sizeof(int));
-  
+
   // Go through and add any contributions from the local process
   for ( int ip = 0; ip < nvars; ip++ ){
     int i = csr_bsize*vars[ip];
@@ -874,12 +880,12 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
       ib = get_block_num(i, bptr);
       ioff = i - bptr[ib];
     }
-        
+
     // Determine the local block for vars
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
       int j = csr_bsize*vars[csr_cols[jp]];
       int joff = 0;
-          
+
       // Get the block numbers
       if (orig_bptr){
         int jb = get_block_num(j, orig_bptr);
@@ -890,11 +896,11 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
         jblock[jp] = get_block_num(j, bptr);
         joff = j - bptr[jblock[jp]];
       }
-      
+
       int owner = get_block_owner(ib, jblock[jp]);
       if (owner == rank){
         add_values(rank, ib, jblock[jp],
-                   csr_bsize, ioff, joff, &vals[b2*jp]);       
+                   csr_bsize, ioff, joff, &vals[b2*jp]);
       }
       else {
         send_counts[owner]++;
@@ -931,15 +937,15 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
         else {
           ib = get_block_num(i, bptr);
         }
-        
+
         // Determine the local block for vars
         for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
           int j = csr_bsize*vars[csr_cols[jp]];
-         
+
           if (get_block_owner(ib, jblock[jp]) == k){
             send_ivals[send_count] = i;
             send_jvals[send_count] = j;
-            memcpy(&send_vals[b2*send_count], 
+            memcpy(&send_vals[b2*send_count],
                    &vals[b2*jp], b2*sizeof(TacsScalar));
             send_count++;
           }
@@ -949,7 +955,7 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
 
     MPI_Gather(&send_count, 1, MPI_INT,
                recv_count, 1, MPI_INT, k, comm);
-    
+
     // Count up the reciving information
     int nrecv = 0;
     int *recv_ivals = NULL;
@@ -963,7 +969,7 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
       }
 
       nrecv = recv_ptr[size];
-    
+
       recv_ivals = new int[nrecv];
       recv_jvals = new int[nrecv];
       recv_vals = new TacsScalar[b2*nrecv];
@@ -973,7 +979,7 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
                 recv_ivals, recv_count, recv_ptr, MPI_INT, k, comm);
     MPI_Gatherv(send_jvals, send_count, MPI_INT,
                 recv_jvals, recv_count, recv_ptr, MPI_INT, k, comm);
-    
+
     // Reset the array sizes to send the blocks
     send_count *= b2;
     for ( int n = 0; n < size; n++ ){
@@ -990,7 +996,7 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
       for ( int n = 0; n < nrecv; n++ ){
         int i = recv_ivals[n];
         int j = recv_jvals[n];
-        
+
         int ib, jb; // The blocks
         int ioff, joff;
         if (orig_bptr){
@@ -1007,7 +1013,7 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
           ioff = i - bptr[ib];
           joff = j - bptr[jb];
         }
-        
+
         // Add this to the correct block ...
         add_values(rank, ib, jb,
                    csr_bsize, ioff, joff, &recv_vals[b2*n]);
@@ -1043,25 +1049,25 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
   buffer is allocated to store all incoming contributions. Next,
   MPI_Alltoallv calls are made to pass the information to all required
   processes. The receive buffers are then added to the local components.
-  All allocated memory is freed.  
-*/  
+  All allocated memory is freed.
+*/
 void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
-                               const int *csr_rowp, const int *csr_cols, 
+                               const int *csr_rowp, const int *csr_cols,
                                TacsScalar *vals ){
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
-  
+
   int b2 = csr_bsize*csr_bsize;
 
-  // Count up the number of recvs for each processor 
+  // Count up the number of recvs for each processor
   int *recv_counts = new int[ size ];
   int *recv_ptr = new int[ size+1 ];
 
   int *send_counts = new int[ size ];
   int *send_ptr = new int[ size+1 ];
   memset(send_counts, 0, size*sizeof(int));
- 
+
   // Go through and add any contributions from the local process
   for ( int ip = 0; ip < nvars; ip++ ){
     int i = csr_bsize*vars[ip];
@@ -1075,12 +1081,12 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
       ib = get_block_num(i, bptr);
       ioff = i - bptr[ib];
     }
-        
+
     // Determine the local block for vars
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
       int j = csr_bsize*vars[csr_cols[jp]];
       int joff = 0, jb = 0;
-          
+
       // Get the block numbers
       if (orig_bptr){
         jb = get_block_num(j, orig_bptr);
@@ -1091,7 +1097,7 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
         jb = get_block_num(j, bptr);
         joff = j - bptr[jb];
       }
-      
+
       int owner = get_block_owner(ib, jb);
       if (owner == rank){
         add_values(rank, ib, jb,
@@ -1106,7 +1112,7 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
   // Send the counts to all processors
   MPI_Alltoall(send_counts, 1, MPI_INT,
                recv_counts, 1, MPI_INT, comm);
-  
+
   // Sum up the send and recv pointers
   send_ptr[0] = 0;
   recv_ptr[0] = 0;
@@ -1132,12 +1138,12 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
     else {
       ib = get_block_num(i, bptr);
     }
-        
+
     // Determine the local block for vars
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
       int j = csr_bsize*vars[csr_cols[jp]];
       int jb = 0;
-          
+
       // Get the block numbers
       if (orig_bptr){
         jb = get_block_num(j, orig_bptr);
@@ -1146,7 +1152,7 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
       else {
         jb = get_block_num(j, bptr);
       }
-      
+
       int owner = get_block_owner(ib, jb);
       if (owner != rank){
         int sc = send_ptr[owner] + send_counts[owner];
@@ -1169,7 +1175,7 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
   int *recv_counts2 = new int[ size ];
   int *recv_ptr2 = new int[ size ];
 
-  // Adjust the pointers/counts to receive the (i,j) indices 
+  // Adjust the pointers/counts to receive the (i,j) indices
   for ( int k = 0; k < size; k++ ){
     send_counts2[k] = 2*send_counts[k];
     send_ptr2[k] = 2*send_ptr[k];
@@ -1212,7 +1218,7 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
   for ( int n = 0; n < nrecv; n++ ){
     int i = recv_index[2*n];
     int j = recv_index[2*n+1];
-        
+
     int ib, jb; // The block indices
     int ioff, joff;
     if (orig_bptr){
@@ -1229,12 +1235,12 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
       ioff = i - bptr[ib];
       joff = j - bptr[jb];
     }
-    
+
     // Add this to the correct block ...
     add_values(rank, ib, jb,
                csr_bsize, ioff, joff, &recv_vals[b2*n]);
   }
-  
+
   delete [] recv_index;
   delete [] recv_vals;
   delete [] recv_counts;
@@ -1261,7 +1267,7 @@ int PDMat::get_block_num( int var, const int *ptr ){
   if (ptr[low] == var){
     return low;
   }
-  
+
   while (high - low > 1){
     int mid = low + (int)((high - low)/2);
 
@@ -1288,8 +1294,8 @@ int PDMat::get_block_num( int var, const int *ptr ){
   The input block matrix a[] is in row-major order (C-order), and the
   storage format is in column-major (fortran-order).
 */
-int PDMat::add_values( int rank, int i, int j, 
-                       int csr_bsize, int ioff, int joff, 
+int PDMat::add_values( int rank, int i, int j,
+                       int csr_bsize, int ioff, int joff,
                        TacsScalar *a ){
   TacsScalar *A = get_block(rank, i, j);
 
@@ -1304,7 +1310,7 @@ int PDMat::add_values( int rank, int i, int j,
           A[(ioff + m) + bi*(joff + n)] += a[csr_bsize*m + n];
         }
       }
-      
+
       return 1;
     }
   }
@@ -1315,7 +1321,7 @@ int PDMat::add_values( int rank, int i, int j,
 
   return 0;
 }
-  
+
 /*
   Assign randomly generated entries to the matrix.
 
@@ -1333,7 +1339,7 @@ void PDMat::setRand(){
       int np = dval_offset[i];
       TacsScalar *a = &Dvals[np];
       for ( int k = 0; k < bi*bi; k++ ){
-        a[k] = (1.0*rand())/RAND_MAX;        
+        a[k] = (1.0*rand())/RAND_MAX;
       }
     }
     else {
@@ -1355,11 +1361,11 @@ void PDMat::setRand(){
         TacsScalar *a = &Uvals[np];
         for ( int k = 0; k < bi*bj; k++ ){
           a[k] = (1.0*rand())/RAND_MAX;
-        }         
+        }
       }
       else {
         for ( int k = 0; k < bi*bj; k++ ){
-          rand();         
+          rand();
         }
       }
     }
@@ -1375,22 +1381,22 @@ void PDMat::setRand(){
       if (rank == get_block_owner(i, j)){
         int np = lval_offset[ip];
         TacsScalar *a = &Lvals[np];
-        
+
         for ( int k = 0; k < bi*bj; k++ ){
           a[k] = (1.0*rand())/RAND_MAX;
         }
       }
       else {
         for ( int k = 0; k < bi*bj; k++ ){
-          rand();          
+          rand();
         }
       }
-    }    
+    }
   }
 }
 
 /*
-  Multiply y = A*x when x and y are distributed. 
+  Multiply y = A*x when x and y are distributed.
 
   This function multiplies y = A*x when x and y are not on all
   processors - a requirement for using the other functions.  This code
@@ -1421,7 +1427,7 @@ void PDMat::mult( int local_size, TacsScalar *x, TacsScalar *y ){
   memcpy(y, &y_all[disp[rank]], count[rank]*sizeof(TacsScalar));
 
   delete [] count;
-  delete [] disp;              
+  delete [] disp;
   delete [] x_all;
   delete [] y_all;
 }
@@ -1431,7 +1437,7 @@ void PDMat::mult( int local_size, TacsScalar *x, TacsScalar *y ){
 
   This function applies the factorization directly to the input vector
   x, when x is distributed across all processors. The function first
-  collects the components of x onto all processors, then calls the 
+  collects the components of x onto all processors, then calls the
   original dense code.
 */
 void PDMat::applyFactor( int local_size, TacsScalar *x ){
@@ -1458,7 +1464,7 @@ void PDMat::applyFactor( int local_size, TacsScalar *x ){
   memcpy(x, &x_all[disp[rank]], count[rank]*sizeof(TacsScalar));
 
   delete [] count;
-  delete [] disp;              
+  delete [] disp;
   delete [] x_all;
 }
 
@@ -1467,7 +1473,7 @@ void PDMat::applyFactor( int local_size, TacsScalar *x ){
 
   Note that this code assumes that x/y are on all processors.  This
   function will be less than useless after the matrix is factored
-  since the factorization over-writes the original matrix entries.  
+  since the factorization over-writes the original matrix entries.
 */
 void PDMat::mult( TacsScalar *x, TacsScalar *y ){
   int rank;
@@ -1485,7 +1491,7 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
     }
     else {
       ni = bptr[i];
-    }        
+    }
 
     if (rank == get_block_owner(i, i)){
       int np = dval_offset[i];
@@ -1568,8 +1574,8 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
 /*
   Based on the non-zero structure of the LU-factorization, determine
-  in advance the sizes of the data structure required for the 
-  back-solves. 
+  in advance the sizes of the data structure required for the
+  back-solves.
 
   This function allocates the following data:
 
@@ -1592,7 +1598,7 @@ void PDMat::init_row_counts(){
   upper_row_sum_recv = NULL;
 
   // Get the location of rank on the process grid
-  int proc_row = -1, proc_col = -1; 
+  int proc_row = -1, proc_col = -1;
 
   // Check if this process is on the process grid - if not, then
   // it does not participate in the computation
@@ -1612,7 +1618,7 @@ void PDMat::init_row_counts(){
           if (rank == owner){
             lower_row_sum_count[i]++;
           }
-        
+
           // If this is the diagonal owner but not the
           // owner of L[i,j], then this will contribute a
           // row sum to the proc. 'owner'
@@ -1653,7 +1659,7 @@ void PDMat::init_row_counts(){
         if (rank == owner){
           upper_row_sum_count[i]++;
         }
-        
+
         // If this is the diagonal owner but not the
         // owner of L[i,j], then this will contribute a
         // row sum to the proc. 'owner'
@@ -1683,7 +1689,7 @@ void PDMat::init_row_counts(){
 }
 
 /*
-  Apply the LU factorization to x 
+  Apply the LU factorization to x
 
   x <-- U^{-1} L^{-1} x
 
@@ -1706,24 +1712,24 @@ void PDMat::init_row_counts(){
 
   for i in range(0, nrows):
   .   if lower_row_sum_count[i] == 0 and lower_row_sum_recv[i] == 0:
-  .       compute x[i] = L[i,i]^{-1}x[i] 
+  .       compute x[i] = L[i,i]^{-1}x[i]
   .       send x[i] to processors in column i
 
   Until completed do:
 
   1. Receive x[i] and add the product with column xsum[:] += L[:,i]*x[i]
-  for j in Lrows[Lcolp[i]:Lcolp[i+1]]: 
+  for j in Lrows[Lcolp[i]:Lcolp[i+1]]:
   .   xsum[j] += L[j,i]*x[i]
   .   row_sum_count[j] += 1.
   .   if row_sum_count[j] == lower_row_sum_count[j]
   .       send xsum[j] to the diagonal owner of L[j,j]
 
   2. Receive xsum for row i and add to x[i]
-  x[i] += xsum 
+  x[i] += xsum
   row_sum_recv[i] += 1
-  If (row_sum_recv[i] == lower_row_sum_recv[i] and 
+  If (row_sum_recv[i] == lower_row_sum_recv[i] and
   .   row_sum_count[i] == lower_row_sum_count[i]):
-  .     compute x[i] = L[i,i]^{-1}(x[i] - xsum[i]), 
+  .     compute x[i] = L[i,i]^{-1}(x[i] - xsum[i]),
   .     send x[i] to the j-th columns
 */
 void PDMat::applyFactor( TacsScalar *x ){
@@ -1739,7 +1745,7 @@ void PDMat::applyFactor( TacsScalar *x ){
   int *row_sum_recv = NULL;
 
   // Get the location of rank on the process grid
-  int proc_row = -1, proc_col = -1; 
+  int proc_row = -1, proc_col = -1;
   get_proc_row_column(rank, &proc_row, &proc_col);
 
   // Check if this process is on the process grid - if not, then
@@ -1758,15 +1764,15 @@ void PDMat::applyFactor( TacsScalar *x ){
     row_sum_recv = new int[ nrows ];
     memset(row_sum_count, 0, nrows*sizeof(int));
     memset(row_sum_recv, 0, nrows*sizeof(int));
-    
-    // Initiate the back-solve by initiating all factorizations with 
+
+    // Initiate the back-solve by initiating all factorizations with
     // a row-sum of zero.
     for ( int row = 0; row < nrows; row++ ){
       if (lower_row_sum_count[row] == 0 &&
           lower_row_sum_recv[row] == 0 &&
           rank == get_block_owner(row, row)){
         // Finish this entry
-        add_lower_row_sum(row, x, xsum, xlocal, 
+        add_lower_row_sum(row, x, xsum, xlocal,
                           row_sum_count, row_sum_recv);
       }
     }
@@ -1793,17 +1799,17 @@ void PDMat::applyFactor( TacsScalar *x ){
         }
 
         // Receieve x[ni]
-        MPI_Recv(&x[ni], bi, TACS_MPI_TYPE, 
+        MPI_Recv(&x[ni], bi, TACS_MPI_TYPE,
                  status.MPI_SOURCE, status.MPI_TAG, comm, &status);
 
         // Compute the update to the column
-        lower_column_update(col, x, xsum, xlocal, 
+        lower_column_update(col, x, xsum, xlocal,
                             row_sum_count, row_sum_recv);
       }
       else {
         // The message contains the completed row sum: xsum[row]
         int row = (status.MPI_TAG-1)/2;
- 
+
         // Find the local block size and location
         int ni = 0;
         int bi = bptr[row+1] - bptr[row];
@@ -1815,7 +1821,7 @@ void PDMat::applyFactor( TacsScalar *x ){
         }
 
         // Receieve xsum[i] into the buffer xlocal
-        MPI_Recv(xlocal, bi, TACS_MPI_TYPE, 
+        MPI_Recv(xlocal, bi, TACS_MPI_TYPE,
                  status.MPI_SOURCE, status.MPI_TAG, comm, &status);
 
         // Add the contribution from the non-local block
@@ -1830,14 +1836,14 @@ void PDMat::applyFactor( TacsScalar *x ){
         // Finalize the entry if all sums have been computed
         if (row_sum_recv[row] == lower_row_sum_recv[row] &&
             row_sum_count[row] == lower_row_sum_count[row]){
-          add_lower_row_sum(row, x, xsum, xlocal, 
+          add_lower_row_sum(row, x, xsum, xlocal,
                             row_sum_count, row_sum_recv);
         }
       }
     }
   }
-    
-  // Barrier required to prevent interference between 
+
+  // Barrier required to prevent interference between
   // communication since we're using an event-driven
   // scheme
 
@@ -1850,7 +1856,7 @@ void PDMat::applyFactor( TacsScalar *x ){
     // Now, apply the upper factorization
     memset(row_sum_count, 0, nrows*sizeof(int));
     memset(row_sum_recv, 0, nrows*sizeof(int));
-    
+
     for ( int row = nrows-1; row >= 0; row-- ){
       if (upper_row_sum_count[row] == 0 &&
           upper_row_sum_recv[row] == 0 &&
@@ -1858,7 +1864,7 @@ void PDMat::applyFactor( TacsScalar *x ){
         // Entry can be completed
         add_upper_row_sum(row, x, xsum, xlocal,
                            row_sum_count, row_sum_recv);
-        
+
       }
     }
 
@@ -1894,7 +1900,7 @@ void PDMat::applyFactor( TacsScalar *x ){
       else {
         // The message contains the completed row sum: xsum[row]
         int row = (status.MPI_TAG-1)/2;
-        
+
         // Find the local block size and location
         int ni = 0;
         int bi = bptr[row+1] - bptr[row];
@@ -1908,7 +1914,7 @@ void PDMat::applyFactor( TacsScalar *x ){
         // Receieve xsum[i] into the buffer xlocal
         MPI_Recv(xlocal, bi, TACS_MPI_TYPE,
                  status.MPI_SOURCE, status.MPI_TAG, comm, &status);
-        
+
         // Add the contributions from the non-local blocks
         TacsScalar alpha = 1.0;
         int one = 1;
@@ -1947,9 +1953,9 @@ void PDMat::applyFactor( TacsScalar *x ){
   }
 
   // Compute the number of remaining processors
-  int remain = (size % (nprows*npcols));
+  int remain = size - (nprows*npcols);
 
-  // The number of extra processes in the extended process row
+  // The number of extra processes in the extended process rows
   int nextra = remain/nprows;
   if (proc_row < remain % nprows){
     nextra++;
@@ -1976,7 +1982,7 @@ void PDMat::applyFactor( TacsScalar *x ){
           int dest = get_block_owner(proc_row, col+k);
           MPI_Send(&x[ni], bi, TACS_MPI_TYPE, dest, col, comm);
         }
-        for ( int k = 0; k < nextra; k++ ){ 
+        for ( int k = 0; k < nextra; k++ ){
           int dest = nprows*npcols + proc_row + k*nprows;
           MPI_Send(&x[ni], bi, TACS_MPI_TYPE, dest, col, comm);
         }
@@ -2004,16 +2010,16 @@ void PDMat::applyFactor( TacsScalar *x ){
 
 /*
   Apply the update to the columns of the lower-diagonal matrix.
-  
+
   Note that this is a doubly-recursive function with
   add_lower_row_sum.
 
-  Given the factored matrix S = L*U, compute 
+  Given the factored matrix S = L*U, compute
 
   for i = col+1:n
   .  xsum[i] += L[i,col]*x[col]
   .  row_sum_count[i] += 1
-  .  if (row_sum_count[i] == lower_row_sum_count[i] and 
+  .  if (row_sum_count[i] == lower_row_sum_count[i] and
   .      row_sum_recv[i] == lower_row_sum_recv[i])
   .      send xsum[i] to proc_owner(i,i)
 
@@ -2028,7 +2034,7 @@ void PDMat::applyFactor( TacsScalar *x ){
   row_sum_recv:  the number of received row sums
 */
 void PDMat::lower_column_update( int col,
-                                 TacsScalar *x, 
+                                 TacsScalar *x,
                                  TacsScalar *xsum,
                                  TacsScalar *xlocal,
                                  int *row_sum_count,
@@ -2064,12 +2070,12 @@ void PDMat::lower_column_update( int col,
       else {
         ni = bptr[row];
       }
-              
+
       TacsScalar *L = &Lvals[lval_offset[jp]];
-              
+
       TacsScalar alpha = 1.0, beta = 1.0;
       int one = 1;
-      // xsum[i] = xsum[i] + L[i,j]*x[j] for 
+      // xsum[i] = xsum[i] + L[i,j]*x[j] for
       BLASgemv("N", &bi, &bj, &alpha, L, &bi,
                &x[nj], &one, &beta, &xsum[ni], &one);
       TacsAddFlops(2*bi*bj);
@@ -2089,16 +2095,16 @@ void PDMat::lower_column_update( int col,
             MPI_Waitall(nreq, req_list, MPI_STATUSES_IGNORE);
             nreq = 0;
           }
-  
+
           // Send the row sum to the other processor
-          MPI_Isend(&xsum[ni], bi, TACS_MPI_TYPE, 
+          MPI_Isend(&xsum[ni], bi, TACS_MPI_TYPE,
                     dest, 2*row+1, comm, &req_list[nreq]);
           nreq++;
         }
         else if (rank == dest &&
                  row_sum_recv[row] == lower_row_sum_recv[row]){
           // If all remaining blocks have been received, finish this entry
-          add_lower_row_sum(row, x, xsum, xlocal, 
+          add_lower_row_sum(row, x, xsum, xlocal,
                             row_sum_count, row_sum_recv);
         }
       }
@@ -2125,8 +2131,8 @@ void PDMat::lower_column_update( int col,
   row_sum_count: the number of updates required for the row[i]
   row_sum_recv:  the number of received row sums
 */
-void PDMat::add_lower_row_sum( int col, 
-                               TacsScalar *x, 
+void PDMat::add_lower_row_sum( int col,
+                               TacsScalar *x,
                                TacsScalar *xsum,
                                TacsScalar *xlocal,
                                int *row_sum_count,
@@ -2137,7 +2143,7 @@ void PDMat::add_lower_row_sum( int col,
   // Keep track of the number of the send requests
   MPI_Request req_list[BACKSOLVE_COLUMN_SIZE];
   int nreq = 0;
-  
+
   // Find the local block size and location
   int ni = 0;
   int bi = bptr[col+1] - bptr[col];
@@ -2147,7 +2153,7 @@ void PDMat::add_lower_row_sum( int col,
   else {
     ni = bptr[col];
   }
-  
+
   // Add the contributions from the non-local blocks
   // x[i] <- x[i] - xsum[i]
   TacsScalar alpha = -1.0;
@@ -2158,7 +2164,7 @@ void PDMat::add_lower_row_sum( int col,
   // Send the result to the processors in this column
   for ( int ii = 0; ii < nprows; ii++ ){
     int dest = get_block_owner(ii, col);
-        
+
     // Send the result to the column processors
     if (dest != rank){
       // If the number of requests exceeds the buffer size,
@@ -2169,14 +2175,14 @@ void PDMat::add_lower_row_sum( int col,
       }
 
       // Send x[i] to all the processes in the column
-      MPI_Isend(&x[ni], bi, TACS_MPI_TYPE, 
+      MPI_Isend(&x[ni], bi, TACS_MPI_TYPE,
                 dest, 2*col, comm, &req_list[nreq]);
       nreq++;
     }
   }
 
   // Now, initiate the block-diagonal solve
-  lower_column_update(col, x, xsum, xlocal, 
+  lower_column_update(col, x, xsum, xlocal,
                       row_sum_count, row_sum_recv);
 
   // Wait for any pending communication requests
@@ -2185,11 +2191,11 @@ void PDMat::add_lower_row_sum( int col,
 
 /*
   Apply the update to the columns of the upper-diagonal matrix.
-  
+
   Note that this is a doubly-recursive function with
   add_upper_row_sum.
 
-  Given the factored matrix S = L*U, compute 
+  Given the factored matrix S = L*U, compute
 
   for i = col+1:n
   .  xsum[i] += L[i,col]*x[col]
@@ -2207,7 +2213,7 @@ void PDMat::add_lower_row_sum( int col,
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
 */
 void PDMat::upper_column_update( int col,
-                                 TacsScalar *x, 
+                                 TacsScalar *x,
                                  TacsScalar *xsum,
                                  TacsScalar *xlocal,
                                  int *row_sum_count,
@@ -2236,7 +2242,7 @@ void PDMat::upper_column_update( int col,
   // start -= nprows;
   // }
   // for ( int row = start; row >= 0; row -= nprows ){
-  
+
   for ( int row = col-1; row >= 0; row--){
     // If this is the block owner, multiply by L[row, col]*x[col]
     if (rank == get_block_owner(row, col)){
@@ -2245,7 +2251,7 @@ void PDMat::upper_column_update( int col,
       int size = Urowp[row+1] - jp;
       int *item = (int*)bsearch(&col, &Ucols[jp], size,
                                  sizeof(int), FElibrary::comparator);
-      
+
       // Check if the column is in the array
       if (item){
         jp += item - &Ucols[jp];
@@ -2258,23 +2264,23 @@ void PDMat::upper_column_update( int col,
         else {
           ni = bptr[row];
         }
-        
+
         TacsScalar *U = &Uvals[uval_offset[jp]];
-              
+
         TacsScalar alpha = 1.0, beta = 1.0;
         int one = 1;
-        // xsum[i] <-- xsum[i] + U[i,j]*x[j] for 
+        // xsum[i] <-- xsum[i] + U[i,j]*x[j] for
         BLASgemv("N", &bi, &bj, &alpha, U, &bi,
                  &x[nj], &one, &beta, &xsum[ni], &one);
         TacsAddFlops(2*bi*bj);
 
         // Update row_sum_count[row]
         row_sum_count[row]++;
-      
+
         if (row_sum_count[row] == upper_row_sum_count[row]){
           // Send the result to the diagonal owner
           int dest = get_block_owner(row, row);
-          
+
           if (rank != dest){
             // If the number of requests exceeds the buffer size,
             // wait for them to complete
@@ -2291,7 +2297,7 @@ void PDMat::upper_column_update( int col,
           else if (rank == dest &&
                    row_sum_recv[row] == upper_row_sum_recv[row]){
             // Update this row
-            add_upper_row_sum(row, x, xsum, xlocal, 
+            add_upper_row_sum(row, x, xsum, xlocal,
                               row_sum_count, row_sum_recv);
           }
         }
@@ -2318,8 +2324,8 @@ void PDMat::upper_column_update( int col,
   xlocal:        a temporary array
   row_sum_count: the number of updates required for the row[i]
 */
-void PDMat::add_upper_row_sum( int row, 
-                               TacsScalar *x, 
+void PDMat::add_upper_row_sum( int row,
+                               TacsScalar *x,
                                TacsScalar *xsum,
                                TacsScalar *xlocal,
                                int *row_sum_count,
@@ -2340,7 +2346,7 @@ void PDMat::add_upper_row_sum( int row,
   else {
     ni = bptr[row];
   }
-  
+
   // Add the contributions from the non-local blocks
   // xsum[i] <- xsum[i] - x[i]
   TacsScalar alpha = -1.0;
@@ -2369,14 +2375,14 @@ void PDMat::add_upper_row_sum( int row,
       }
 
       // Send x[i] to all processors in this column
-      MPI_Isend(&x[ni], bi, TACS_MPI_TYPE, 
+      MPI_Isend(&x[ni], bi, TACS_MPI_TYPE,
                 dest, 2*row, comm, &req_list[nreq]);
       nreq++;
     }
   }
 
   // Perform the column update
-  upper_column_update(row, x, xsum, xlocal, 
+  upper_column_update(row, x, xsum, xlocal,
                       row_sum_count, row_sum_recv);
 
   // Wait for any pending communication requests
@@ -2391,18 +2397,18 @@ void PDMat::add_upper_row_sum( int row,
   This function first checks whether the block is in the L/D/U blocks.
   Then, it uses either the column or row indices to locate the row or
   column it is in. These searches rely on the fact that the
-  rows/column indices are sorted.  
+  rows/column indices are sorted.
 */
 TacsScalar *PDMat::get_block( int rank, int i, int j ){
   TacsScalar *A = NULL;
 
-  if (rank == get_block_owner(i, j)){     
+  if (rank == get_block_owner(i, j)){
     if (i > j){ // L
       int lp = Lcolp[j];
       int size = Lcolp[j+1] - Lcolp[j];
-            
+
       // Look for row i
-      int *item = (int*)bsearch(&i, &Lrows[lp], size, 
+      int *item = (int*)bsearch(&i, &Lrows[lp], size,
                                  sizeof(int), FElibrary::comparator);
       if (item){
         lp = lp + (item - &Lrows[lp]);
@@ -2415,14 +2421,14 @@ TacsScalar *PDMat::get_block( int rank, int i, int j ){
     else { // i < j : U
       int up = Urowp[i];
       int size = Urowp[i+1] - Urowp[i];
-      
-      // Look for column j 
+
+      // Look for column j
       int *item = (int*)bsearch(&j, &Ucols[up], size,
                                  sizeof(int), FElibrary::comparator);
       if (item){
         up = up + (item - &Ucols[up]);
         A = &Uvals[uval_offset[up]];
-      }              
+      }
     }
   }
 
@@ -2444,13 +2450,13 @@ TacsScalar *PDMat::get_block( int rank, int i, int j ){
 
   [ A[i,i]      |  A[i+1,i:n]     ]
   [ A[i+1:n,i]  |  A[i+1:n,i+1:n] ]
-  = 
-  [ 1           |   0             ][ U[i,i]  |  U[i,i+1:n]     ] 
+  =
+  [ 1           |   0             ][ U[i,i]  |  U[i,i+1:n]     ]
   [ L[i+1:n,i]  |  L[i+1:n,i+1:n] ][ 0       |  U[i+1:n,i+1:n] ]
 
   As a result, the following relationships hold:
 
-  U[i,i] = A[i,i] 
+  U[i,i] = A[i,i]
   U[i,i+1:n] = A[i,i+1:n]
   L[i+1:n,i] = A[i+1:n,i]*U[i,i]^{-1}
 
@@ -2459,19 +2465,19 @@ TacsScalar *PDMat::get_block( int rank, int i, int j ){
   A[i+1:n,i+1:n] <-- A[i+1:n,i+1:n] - L[+1i:n,i]*U[i,i+1:n]
 
   The computational steps involved in the factorization are:
-  
+
   For i = 1,...,n
-  
-  1. Compute the diagonal block factorization of A[i,i] 
+
+  1. Compute the diagonal block factorization of A[i,i]
   2. Compute L[i+1:n,i] = A[i+1:n,i]*U[i,i]^{-1}
-  3. Compute the update 
+  3. Compute the update
   A[i+1:n,i+1:n] <-- A[i+1:n,i+1:n] - L[i+1:n,i]*U[i,i+1:n]
 */
-void PDMat::factor(){  
+void PDMat::factor(){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  int proc_row, proc_col; // Get the location of rank on the process grid  
+  int proc_row, proc_col; // Get the location of rank on the process grid
   if (!get_proc_row_column(rank, &proc_row, &proc_col)){
     // This process is not on the process grid - does not participate
     return;
@@ -2482,11 +2488,11 @@ void PDMat::factor(){
   TacsScalar *temp_block = new TacsScalar[max_bsize*max_bsize];
   int lwork = 128*max_bsize;
   TacsScalar *work = new TacsScalar[lwork];
-  
+
   // Buffers to handle the recieves information
   TacsScalar *Ubuff = new TacsScalar[max_ubuff_size];
   TacsScalar *Lbuff = new TacsScalar[max_lbuff_size];
- 
+
   // Send information for rows owning U
   MPI_Request *U_send_request = new MPI_Request[nprows-1];
   MPI_Status *U_send_status = new MPI_Status[nprows-1];
@@ -2515,7 +2521,7 @@ void PDMat::factor(){
 
       // Compute the inverse of the diagonal block
       int info;
-      LAPACKgetrf(&bi, &bi, d_diag, &bi, 
+      LAPACKgetrf(&bi, &bi, d_diag, &bi,
                   temp_piv, &info);
       LAPACKgetri(&bi, d_diag, &bi, temp_piv,
                   work, &lwork, &info);
@@ -2526,12 +2532,12 @@ void PDMat::factor(){
       for ( int p = 0; p < nprows; p++ ){
         int dest = proc_grid[proc_col + p*npcols];
         if (rank != dest){
-          MPI_Send(d_diag, bi*bi, TACS_MPI_TYPE, 
+          MPI_Send(d_diag, bi*bi, TACS_MPI_TYPE,
                    dest, p, comm);
         }
       }
     }
-    
+
     // Receive U[i,i]^{-1}
     if (rank != diag_owner && proc_col == get_proc_column(i)){
       MPI_Status status;
@@ -2574,7 +2580,7 @@ void PDMat::factor(){
       // The receiving processes
       int source = proc_grid[proc_col + source_proc_row*npcols];
       int tag = 2*i;
-      MPI_Irecv(Ubuff, ubuff_size, TACS_MPI_TYPE, 
+      MPI_Irecv(Ubuff, ubuff_size, TACS_MPI_TYPE,
                 source, tag, comm, &U_recv_request);
     }
 
@@ -2583,33 +2589,33 @@ void PDMat::factor(){
     for ( int jp = Lcolp[i]; jp < Lcolp[i+1]; jp++ ){
       int j = Lrows[jp];
       int bj = bptr[j+1] - bptr[j];
-      
+
       if (get_proc_row(j) == proc_row){
         lbuff_size += bi*bj;
       }
     }
 
-    // Compute L[i+1:n,i] = A[i+1:n,i]*U[i,i]^{-1} and send the results to 
+    // Compute L[i+1:n,i] = A[i+1:n,i]*U[i,i]^{-1} and send the results to
     // the destination immediately
     if (proc_col == get_proc_column(i)){
       for ( int jp = Lcolp[i]; jp < Lcolp[i+1]; jp++ ){
-        int j = Lrows[jp]; 
+        int j = Lrows[jp];
         int bj = bptr[j+1] - bptr[j];
 
         if (rank == get_block_owner(j, i)){
           int np = lval_offset[jp];
-          
+
           // Compute L[i+1:n,i] = A[i+1:n,i]*U[i,i]^{-1}
           // L in bj x bi
           // A in bj x bi
           // U^{-1} in bi x bi
           TacsScalar alpha = 1.0, beta = 0.0;
           BLASgemm("N", "N", &bj, &bi, &bi,
-                   &alpha, &Lvals[np], &bj, 
+                   &alpha, &Lvals[np], &bj,
                    d_diag, &bi, &beta, temp_block, &bj);
           n_gemm++;
           TacsAddFlops(2*bi*bi*bj);
-          
+
           memcpy(&Lvals[np], temp_block, bi*bj*sizeof(TacsScalar));
         }
       }
@@ -2635,20 +2641,20 @@ void PDMat::factor(){
       // The receiving processes
       int source = proc_grid[source_proc_column + proc_row*npcols];
       int tag = 2*i+1;
-      MPI_Irecv(Lbuff, lbuff_size, TACS_MPI_TYPE, 
+      MPI_Irecv(Lbuff, lbuff_size, TACS_MPI_TYPE,
                 source, tag, comm, &L_recv_request);
     }
 
     // There are four cases:
-    // 1. The processor owns both the row and column elements required. 
+    // 1. The processor owns both the row and column elements required.
     // This is true of only the root processor.
     // 2. The processor owns the column but not the row and must wait for
     // any of the U_recv requests.
     // 3. The processor owns the row but not the column and must wait for
     // any of the L_recv requests.
-    // 4. The processor owns neither the column or the row and must wait 
+    // 4. The processor owns neither the column or the row and must wait
     // for combinations of requests to begin.
-    
+
     if (monitor_factor){
       t_send_wait -= MPI_Wtime();
     }
@@ -2689,7 +2695,7 @@ void PDMat::factor(){
     if (source_proc_column == proc_col){
       L = &Lvals[lval_offset[Lcolp[i]]];
     }
-      
+
     for ( int iip = Lcolp[i]; iip < Lcolp[i+1]; iip++ ){
       // Skip rows not locally owned
       int ii = Lrows[iip];
@@ -2697,13 +2703,13 @@ void PDMat::factor(){
       if (get_proc_row(ii) != proc_row){
         continue;
       }
-      
+
       // Initialize the U-pointer
       TacsScalar *U = Ubuff;
       if (source_proc_row == proc_row){
         U = &Uvals[uval_offset[Urowp[i]]];
       }
-      
+
       for ( int jjp = Urowp[i]; jjp < Urowp[i+1]; jjp++ ){
         // Skip columns not locally owned
         int jj = Ucols[jjp];
@@ -2720,10 +2726,10 @@ void PDMat::factor(){
           // A in bii x bjj
           // L in bii x bi
           // U in bi x bjj
-          
+
           TacsScalar alpha = -1.0, beta = 1.0;
           BLASgemm("N", "N", &bii, &bjj, &bi,
-                   &alpha, L, &bii, 
+                   &alpha, L, &bii,
                    U, &bi, &beta, A, &bii);
           n_gemm++;
           TacsAddFlops(2*bii*bjj*bi);
@@ -2738,7 +2744,7 @@ void PDMat::factor(){
     if (monitor_factor){
       t_update += MPI_Wtime();
     }
-  }  
+  }
 
   if (monitor_factor){
     printf("[%d] Number of GEMM updates: %d\n", rank, n_gemm);
