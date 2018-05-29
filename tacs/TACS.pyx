@@ -405,6 +405,18 @@ cdef class Pc:
             return _init_Mat(mat)
         return None
 
+    def setMonitorFlags(self, int flag=1):
+        '''
+        Monitor the time taken in the back-solve
+        '''
+        cdef PcScMat *pc_ptr = NULL
+        pc_ptr = _dynamicPcScMat(self.ptr)
+        if pc_ptr is not NULL:
+            pc_ptr.setMonitorFactorFlag(flag)
+            pc_ptr.setMonitorBackSolveFlag(flag)
+        return
+
+
 cdef class Mg(Pc):
     def __cinit__(self, MPI.Comm comm=None, int num_levs=-1, double omega=0.5,
                   int num_smooth=1, int mg_symm=0):
@@ -446,6 +458,18 @@ cdef class Mg(Pc):
                         MatrixOrientation matOr):
         self.mg.assembleMatType(matType, matOr)
         return
+
+    def setMonitor(self, MPI.Comm comm,
+                   _descript='GMRES', int freq=10):
+        '''
+        Set the object to control how the convergence history is displayed
+        (if at all)
+
+        input:
+        monitor: the KSMPrint monitor object
+        '''
+        cdef char *descript = convert_to_chars(_descript)
+        self.mg.setMonitor(new KSMPrintStdout(descript, comm.rank, freq))
 
 cdef class KSM:
     def __cinit__(self, Mat mat, Pc pc, int m, 

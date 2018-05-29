@@ -89,6 +89,10 @@ not make any sense!\n");
   monitor = NULL;
   root_mat = NULL;
   root_pc = NULL;
+
+  // Total time for smoothing and interpolation for each level
+  cumulative_level_time = new double[ nlevels ];
+  memset(cumulative_level_time, 0, nlevels*sizeof(double));
 }
 
 /*
@@ -120,6 +124,7 @@ TACSMg::~TACSMg(){
   delete [] b;
   delete [] interp;
   delete [] pc;
+  delete [] cumulative_level_time;
 }
 
 /*
@@ -213,7 +218,9 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       int lev = 10000;
       double fill = 15.0;
       int reorder_schur = 1;
-      root_pc = new PcScMat(femat, lev, fill, reorder_schur);
+      PcScMat *_pc = new PcScMat(femat, lev, fill, reorder_schur);
+      // _pc->setMonitorBackSolveFlag(1);
+      root_pc = _pc;
       root_pc->incref();
     }
   }
@@ -443,7 +450,18 @@ void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
 
   if (b[0] && x[0]){
     x[0]->zeroEntries();
+    if (monitor){
+      memset(cumulative_level_time, 0, nlevels*sizeof(double));
+    }
     applyMg(0);
+    if (monitor){
+      for ( int k = 0; k < nlevels; k++ ){
+        char descript[128];
+        sprintf(descript, "TACSMg level %2d time %15.8e\n",
+                k, cumulative_level_time[k]);
+        monitor->print(descript);
+      }
+    }
   }
   else {
     fprintf(stderr, "TACSMg type error: Input/output must be TACSBVec\n");
@@ -465,11 +483,14 @@ void TACSMg::applyMg( int level ){
   // If we've made it to the lowest level, apply the direct solver
   // otherwise, perform multigrid on the next-lowest level
   if (level == nlevels-1){
+    double t1 = MPI_Wtime();
     root_pc->applyFactor(b[level], x[level]);
+    cumulative_level_time[level] += MPI_Wtime() - t1;
     return;
   }
 
   // Perform iters[level] cycle at the next lowest level
+  double t1 = MPI_Wtime();
   for ( int k = 0; k < iters[level]; k++ ){
     // Pre-smooth at the current level
     pc[level]->applyFactor(b[level], x[level]);
@@ -493,4 +514,6 @@ void TACSMg::applyMg( int level ){
 
   // Post-Smooth the residual
   pc[level]->applyFactor(b[level], x[level]);
+
+  cumulative_level_time[level] += MPI_Wtime() - t1;
 }

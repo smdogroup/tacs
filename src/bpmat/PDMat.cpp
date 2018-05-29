@@ -204,7 +204,7 @@ PDMat::PDMat( MPI_Comm _comm, int _nrows, int _ncols ){
   ncols = _ncols;
 
   int len_bsize = (nrows > ncols ? nrows : ncols);
-  bptr = new int[ len_bsize+1];
+  bptr = new int[ len_bsize+1 ];
   bptr[0] = 0;
   max_bsize = 0;
 
@@ -256,7 +256,8 @@ PDMat::~PDMat(){
 
   // Delete the pointer to the block starting locations
   delete [] bptr;
-
+  delete [] xbptr;
+  
   // Delete the permutation information if it exists
   if (orig_bptr){
     delete [] perm;
@@ -445,7 +446,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     int final_nnz = root_rowp[nrows];
 
     if (m && n){
-      printf("[%d] initial density: %4.3f factor fill in: %4.3f\n",
+      printf("[%d] PDMat: Initial density: %4.3f factor fill in: %4.3f\n",
              root, (1.0*init_nnz)/(nrows*ncols),
              (1.0*(final_nnz - init_nnz))/init_nnz);
     }
@@ -457,6 +458,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     delete [] root_cols;
   }
 
+  // Reorder the blocks
   if (reorder_blocks){
     MPI_Bcast(perm, nrows, MPI_INT, root, comm);
 
@@ -480,6 +482,15 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     int *temp = bptr;
     bptr = orig_bptr;
     orig_bptr = temp;
+  }
+  
+  // Set the offset to the vector
+  xbptr = new int[ nrows+1 ];
+  xbptr[0] = 0;
+  for ( int i = 0; i < nrows; i++ ){
+    if (rank == get_block_owner(i, i)){
+      xbptr[i+1] = xbptr[i] + (bptr[i+1] - bptr[i]);
+    }
   }
 
   // Broadcast the nonzero pattern
@@ -1396,79 +1407,6 @@ void PDMat::setRand(){
 }
 
 /*
-  Multiply y = A*x when x and y are distributed.
-
-  This function multiplies y = A*x when x and y are not on all
-  processors - a requirement for using the other functions.  This code
-  assembles an array on all processes and then calls the
-  non-distributed code.
-*/
-void PDMat::mult( int local_size, TacsScalar *x, TacsScalar *y ){
-  int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
-  int *count = new int[size];
-  int *disp = new int[size+1];
-
-  MPI_Allgather(&local_size, 1, MPI_INT, count, 1, MPI_INT, comm);
-  disp[0] = 0;
-  for ( int k = 0; k < size; k++ ){
-    disp[k+1] = disp[k] + count[k];
-  }
-
-  int all_size = disp[size];
-  TacsScalar *x_all = new TacsScalar[all_size];
-  TacsScalar *y_all = new TacsScalar[all_size];
-
-  MPI_Allgatherv(x, count[rank], TACS_MPI_TYPE,
-                 x_all, count, disp, TACS_MPI_TYPE, comm);
-
-  mult(x_all, y_all);
-  memcpy(y, &y_all[disp[rank]], count[rank]*sizeof(TacsScalar));
-
-  delete [] count;
-  delete [] disp;
-  delete [] x_all;
-  delete [] y_all;
-}
-
-/*
-  Apply the factorization x = U^{-1} L^{-1} x when x is distributed.
-
-  This function applies the factorization directly to the input vector
-  x, when x is distributed across all processors. The function first
-  collects the components of x onto all processors, then calls the
-  original dense code.
-*/
-void PDMat::applyFactor( int local_size, TacsScalar *x ){
-  int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
-  int *count = new int[size];
-  int *disp = new int[size+1];
-
-  MPI_Allgather(&local_size, 1, MPI_INT, count, 1, MPI_INT, comm);
-
-  disp[0] = 0;
-  for ( int k = 0; k < size; k++ ){
-    disp[k+1] = disp[k] + count[k];
-  }
-
-  int all_size = disp[size];
-  TacsScalar *x_all = new TacsScalar[all_size];
-
-  MPI_Allgatherv(x, count[rank], TACS_MPI_TYPE,
-                 x_all, count, disp, TACS_MPI_TYPE, comm);
-
-  applyFactor(x_all);
-  memcpy(x, &x_all[disp[rank]], count[rank]*sizeof(TacsScalar));
-
-  delete [] count;
-  delete [] disp;
-  delete [] x_all;
-}
-
-/*
   Multiply y = A*x
 
   Note that this code assumes that x/y are on all processors.  This
@@ -1479,19 +1417,13 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  TacsScalar *ty = new TacsScalar[bptr[nrows]];
-  memset(ty, 0, bptr[nrows]*sizeof(TacsScalar));
+  TacsScalar *ty = new TacsScalar[ xbptr[nrows] ];
+  memset(ty, 0, xbptr[nrows]*sizeof(TacsScalar));
 
   // Compute the on-process parts for the diagonal contributions
   for ( int i = 0; i < nrows; i++ ){
-    int ni = 0;
+    int ni = xbptr[i];
     int bi = bptr[i+1] - bptr[i];
-    if (orig_bptr){
-      ni = orig_bptr[perm[i]];
-    }
-    else {
-      ni = bptr[i];
-    }
 
     if (rank == get_block_owner(i, i)){
       int np = dval_offset[i];
@@ -1505,25 +1437,13 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
   // Compute the upper triangular part
   for ( int i = 0; i < nrows; i++ ){
-    int ni = 0;
+    int ni = xbptr[i];
     int bi = bptr[i+1] - bptr[i];
-    if (orig_bptr){
-      ni = orig_bptr[perm[i]];
-    }
-    else {
-      ni = bptr[i];
-    }
 
     for ( int jp = Urowp[i]; jp < Urowp[i+1]; jp++ ){
       int j = Ucols[jp];
-      int nj = 0;
+      int nj = xbptr[j];
       int bj = bptr[j+1] - bptr[j];
-      if (orig_bptr){
-        nj = orig_bptr[perm[j]];
-      }
-      else {
-        nj = bptr[j];
-      }
 
       if (rank == get_block_owner(i, j)){
         int np = uval_offset[jp];
@@ -1538,25 +1458,12 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
   // Compute the lower triangular part
   for ( int j = 0; j < ncols; j++ ){
-    int nj = 0;
+    int nj = xbptr[j];
     int bj = bptr[j+1] - bptr[j];
-    if (orig_bptr){
-      nj = orig_bptr[perm[j]];
-    }
-    else {
-      nj = bptr[j];
-    }
 
     for ( int ip = Lcolp[j]; ip < Lcolp[j+1]; ip++ ){
       int i = Lrows[ip];
-      int ni = 0;
-      int bi = bptr[i+1] - bptr[i];
-      if (orig_bptr){
-        ni = orig_bptr[perm[i]];
-      }
-      else {
-        ni = bptr[i];
-      }
+      int ni = xbptr[i];
 
       if (rank == get_block_owner(i, j)){
         int np = lval_offset[ip];
@@ -1736,6 +1643,8 @@ void PDMat::applyFactor( TacsScalar *x ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
+  double t0 = MPI_Wtime();
+
   // Space required for the factorization
   TacsScalar *xlocal = NULL;
   TacsScalar *xsum = NULL;
@@ -1789,14 +1698,8 @@ void PDMat::applyFactor( TacsScalar *x ){
         int col = status.MPI_TAG/2;
 
         // Find the local block size and location
-        int ni = 0;
+        int ni = xbptr[col];
         int bi = bptr[col+1] - bptr[col];
-        if (orig_bptr){
-          ni = orig_bptr[perm[col]];
-        }
-        else {
-          ni = bptr[col];
-        }
 
         // Receieve x[ni]
         MPI_Recv(&x[ni], bi, TACS_MPI_TYPE,
@@ -1811,14 +1714,8 @@ void PDMat::applyFactor( TacsScalar *x ){
         int row = (status.MPI_TAG-1)/2;
 
         // Find the local block size and location
-        int ni = 0;
+        int ni = xbptr[row];
         int bi = bptr[row+1] - bptr[row];
-        if (orig_bptr){
-          ni = orig_bptr[perm[row]];
-        }
-        else {
-          ni = bptr[row];
-        }
 
         // Receieve xsum[i] into the buffer xlocal
         MPI_Recv(xlocal, bi, TACS_MPI_TYPE,
@@ -1880,14 +1777,8 @@ void PDMat::applyFactor( TacsScalar *x ){
         int col = status.MPI_TAG/2;
 
         // Find the local block size and location
-        int ni = 0;
+        int ni = xbptr[col];
         int bi = bptr[col+1] - bptr[col];
-        if (orig_bptr){
-          ni = orig_bptr[perm[col]];
-        }
-        else {
-          ni = bptr[col];
-        }
 
         // Receieve x[ni]
         MPI_Recv(&x[ni], bi, TACS_MPI_TYPE,
@@ -1902,14 +1793,8 @@ void PDMat::applyFactor( TacsScalar *x ){
         int row = (status.MPI_TAG-1)/2;
 
         // Find the local block size and location
-        int ni = 0;
+        int ni = xbptr[row];
         int bi = bptr[row+1] - bptr[row];
-        if (orig_bptr){
-          ni = orig_bptr[perm[row]];
-        }
-        else {
-          ni = bptr[row];
-        }
 
         // Receieve xsum[i] into the buffer xlocal
         MPI_Recv(xlocal, bi, TACS_MPI_TYPE,
@@ -1943,68 +1828,9 @@ void PDMat::applyFactor( TacsScalar *x ){
   // application and the re-distribution of the vector components
   MPI_Barrier(comm);
 
-  // Get the comm size
-  int size;
-  MPI_Comm_size(comm, &size);
-
-  // Artificially extend the process grid
-  if (proc_row < 0){
-    proc_row = rank % nprows;
-  }
-
-  // Compute the number of remaining processors
-  int remain = size - (nprows*npcols);
-
-  // The number of extra processes in the extended process rows
-  int nextra = remain/nprows;
-  if (proc_row < remain % nprows){
-    nextra++;
-  }
-
-  for ( int start = 0; start < npcols; start++ ){
-    // Get the source based on the extended block col
-    int source = get_block_owner(proc_row, start);
-
-    if (source == rank){
-      // Send block to the processors in this extended block-row
-      for ( int col = start; col < ncols; col += npcols ){
-        // Find the local block size and location
-        int ni = 0;
-        int bi = bptr[col+1] - bptr[col];
-        if (orig_bptr){
-          ni = orig_bptr[perm[col]];
-        }
-        else {
-          ni = bptr[col];
-        }
-
-        for ( int k = 1; k < npcols; k++ ){
-          int dest = get_block_owner(proc_row, col+k);
-          MPI_Send(&x[ni], bi, TACS_MPI_TYPE, dest, col, comm);
-        }
-        for ( int k = 0; k < nextra; k++ ){
-          int dest = nprows*npcols + proc_row + k*nprows;
-          MPI_Send(&x[ni], bi, TACS_MPI_TYPE, dest, col, comm);
-        }
-      }
-    }
-    else {
-      for ( int col = start; col < ncols; col += npcols ){
-        MPI_Status status;
-
-        // Find the local block size and location
-        int ni = 0;
-        int bi = bptr[col+1] - bptr[col];
-        if (orig_bptr){
-          ni = orig_bptr[perm[col]];
-        }
-        else {
-          ni = bptr[col];
-        }
-
-        MPI_Recv(&x[ni], bi, TACS_MPI_TYPE, source, col, comm, &status);
-      }
-    }
+  t0 -= MPI_Wtime();
+  if (proc_row >= 0){
+    printf("Backsolve time[%3d] %15.8e\n", rank, t0);
   }
 }
 
@@ -2047,14 +1873,8 @@ void PDMat::lower_column_update( int col,
   int nreq = 0;
 
   // Compute the location/number of columns in the block
-  int nj = 0;
+  int nj = xbptr[col];
   int bj = bptr[col+1] - bptr[col];
-  if (orig_bptr){
-    nj = orig_bptr[perm[col]];
-  }
-  else {
-    nj = bptr[col];
-  }
 
   // Loop over the column and compute xsum[j] += L[j,col]*x[col]
   for ( int jp = Lcolp[col]; jp < Lcolp[col+1]; jp++ ){
@@ -2062,15 +1882,8 @@ void PDMat::lower_column_update( int col,
 
     // If this is the block owner, multiply by L[row, col]*x[col]
     if (rank == get_block_owner(row, col)){
-      int ni = 0;
+      int ni = xbptr[row];
       int bi = bptr[row+1] - bptr[row];
-      if (orig_bptr){
-        ni = orig_bptr[perm[row]];
-      }
-      else {
-        ni = bptr[row];
-      }
-
       TacsScalar *L = &Lvals[lval_offset[jp]];
 
       TacsScalar alpha = 1.0, beta = 1.0;
@@ -2111,7 +1924,7 @@ void PDMat::lower_column_update( int col,
     }
   }
 
-  // Wait for any pending communication requests
+  // Wait for the pending communication requests
   MPI_Waitall(nreq, req_list, MPI_STATUSES_IGNORE);
 }
 
@@ -2145,14 +1958,8 @@ void PDMat::add_lower_row_sum( int col,
   int nreq = 0;
 
   // Find the local block size and location
-  int ni = 0;
+  int ni = xbptr[col];
   int bi = bptr[col+1] - bptr[col];
-  if (orig_bptr){
-    ni = orig_bptr[perm[col]];
-  }
-  else {
-    ni = bptr[col];
-  }
 
   // Add the contributions from the non-local blocks
   // x[i] <- x[i] - xsum[i]
@@ -2185,7 +1992,7 @@ void PDMat::add_lower_row_sum( int col,
   lower_column_update(col, x, xsum, xlocal,
                       row_sum_count, row_sum_recv);
 
-  // Wait for any pending communication requests
+  // Wait for the pending communication requests
   MPI_Waitall(nreq, req_list, MPI_STATUSES_IGNORE);
 }
 
@@ -2256,15 +2063,8 @@ void PDMat::upper_column_update( int col,
       if (item){
         jp += item - &Ucols[jp];
 
-        int ni = 0;
+        int ni = xbptr[row];
         int bi = bptr[row+1] - bptr[row];
-        if (orig_bptr){
-          ni = orig_bptr[perm[row]];
-        }
-        else {
-          ni = bptr[row];
-        }
-
         TacsScalar *U = &Uvals[uval_offset[jp]];
 
         TacsScalar alpha = 1.0, beta = 1.0;
@@ -2305,7 +2105,7 @@ void PDMat::upper_column_update( int col,
     }
   }
 
-  // Wait for any pending sends
+  // Wait the pending sends
   MPI_Waitall(nreq, req_list, MPI_STATUSES_IGNORE);
 }
 
@@ -2338,14 +2138,8 @@ void PDMat::add_upper_row_sum( int row,
   int nreq = 0;
 
   // Find the local block size and location
-  int ni = 0;
+  int ni = xbptr[row];
   int bi = bptr[row+1] - bptr[row];
-  if (orig_bptr){
-    ni = orig_bptr[perm[row]];
-  }
-  else {
-    ni = bptr[row];
-  }
 
   // Add the contributions from the non-local blocks
   // xsum[i] <- xsum[i] - x[i]
@@ -2385,7 +2179,7 @@ void PDMat::add_upper_row_sum( int row,
   upper_column_update(row, x, xsum, xlocal,
                       row_sum_count, row_sum_recv);
 
-  // Wait for any pending communication requests
+  // Wait the pending communication requests
   MPI_Waitall(nreq, req_list, MPI_STATUSES_IGNORE);
 }
 
@@ -2659,7 +2453,7 @@ void PDMat::factor(){
       t_send_wait -= MPI_Wtime();
     }
 
-    // Wait for any remaining sends to complete
+    // Wait for the remaining sends to complete
     if (source_proc_row == proc_row){
       MPI_Waitall(nprows-1, U_send_request, U_send_status);
     }
@@ -2672,7 +2466,7 @@ void PDMat::factor(){
       t_recv_wait -= MPI_Wtime();
     }
 
-    // Wait for any receives to completex
+    // Wait for the receive to completex
     if (source_proc_column != proc_col){
       MPI_Status L_recv_status;
       MPI_Wait(&L_recv_request, &L_recv_status);

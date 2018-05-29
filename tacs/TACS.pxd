@@ -70,6 +70,7 @@ cdef extern from "BVecDist.h":
 cdef extern from "":
     ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
     TACSPMat* _dynamicPMat "dynamic_cast<TACSPMat*>"(TACSMat*)
+    PcScMat* _dynamicPcScMat "dynamic_cast<PcScMat*>"(TACSPc*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
     void deleteArray "delete []"(void*)
 
@@ -199,11 +200,13 @@ cdef extern from "DistMat.h":
 
 cdef extern from "ScMat.h":
     cdef cppclass ScMat(TACSMat):
-        pass
+         pass
 
     cdef cppclass PcScMat(TACSPc):
         PcScMat(ScMat *mat, int levFill, double fill, 
                 int reorder_schur_complement)
+        void setMonitorFactorFlag(int)
+        void setMonitorBackSolveFlag(int)
     
 cdef extern from "FEMat.h":
     cdef cppclass FEMat(ScMat):
@@ -219,7 +222,8 @@ cdef extern from "TACSMg.h":
                               MatrixOrientation)
         void assembleMatType(ElementMatrixType,
                              MatrixOrientation)
-       
+        void setMonitor(KSMPrint*)
+
 cdef extern from "TACSElement.h":
     void TACSSetElementFDStepSize"TACSElement::setStepSize"(double)
 

@@ -918,7 +918,8 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     int gschur_size = gschur->getArray(&g);
     tacs_schur_dist->beginForward(tacs_schur_ctx, in, g);
 
-    // Re-order the local variables into xlocal
+    // Re-order the local variables into xlocal. Note that this is a
+    // local-only reordering and does not require communication.
     b_map->beginForward(b_ctx, in, xlocal);
     b_map->endForward(b_ctx, in, xlocal);
 
@@ -948,7 +949,7 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
 
     // Apply the global Schur complement factorization to the right
     // hand side
-    pdmat->applyFactor(gschur_size, g);
+    pdmat->applyFactor(g);
 
     if (monitor_back_solve){
       schur_time += MPI_Wtime();
@@ -980,9 +981,11 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     Bpc->applyUpper(xlocal, xlocal);
 
     b_map->beginReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
+    b_map->endReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
+
+    // Finish inserting the Schur complement values
     tacs_schur_dist->endReverse(tacs_schur_ctx, y, out,
                                 TACS_INSERT_VALUES);
-    b_map->endReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
 
     if (monitor_back_solve){
       local_time += MPI_Wtime();
