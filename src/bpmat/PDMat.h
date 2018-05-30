@@ -92,6 +92,12 @@ class PDMat : public TACSObject {
   void getProcessGridSize( int *_nprows, int *_npcols );
   void setMonitorFactorFlag( int flag );
 
+  // Get block pointers to the columns
+  // ---------------------------------
+  void getBlockPointers( int *_nrows, int *_ncols, 
+                         const int **_bptr, const int **_orig_bptr, 
+                         const int **_xbptr );
+
   // Functions for setting values into the matrix
   // --------------------------------------------
   void zeroEntries();
@@ -106,9 +112,7 @@ class PDMat : public TACSObject {
   // Matrix operations - note that factorization is in-place
   // -------------------------------------------------------
   void mult( TacsScalar *x, TacsScalar *y );
-  void mult( int local_size, TacsScalar *x, TacsScalar *y );
   void applyFactor( TacsScalar *x );
-  void applyFactor( int local_size, TacsScalar *x ); // This is faster
   void factor();
 
  private:
@@ -198,6 +202,7 @@ class PDMat : public TACSObject {
   // The block sizes for the matrix
   int *bptr; // len(bptr) = max(nrows, ncols)+1
   int max_bsize; // max_bsize = max(bsize)
+  int *xbptr; // Pointer to the beginning/end of the vector
 
   // Additional variables if reordering has been performed
   int *orig_bptr;

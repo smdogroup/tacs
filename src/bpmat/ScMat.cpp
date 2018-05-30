@@ -484,12 +484,39 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
   MPI_Scatterv(global_schur_root, global_schur_count, global_schur_ptr, MPI_INT,
                new_global_schur_vars, nglobal_schur, MPI_INT, root, comm);
 
-  int nremain = nunique_schur % size;
-  int nlocal_schur = (int)((nunique_schur - nremain)/size);
+  // Retrieve the non-zero pattern from the local Schur complement
+  int bs, nschur_vars;
+  const int *rowp, *cols;
+  TacsScalar *vals;
+  Sc->getArrays(&bs, &nschur_vars, &nschur_vars,
+                &rowp, &cols, &vals);
 
-  if (rank < nremain){
-    nlocal_schur += 1;
+  // Determine the size of the global Schur complement
+  int M = nunique_schur, N = nunique_schur;
+  printf("M = %d, N = %d\n", M, N);
+
+  // Determine the number of blocks to use per block-cylic block
+  int csr_blocks_per_block = 36/bsize;
+
+  // Don't reorder yet... getting too complicated...
+  reorder_schur_complement = 0;
+
+  // Create the global block-cyclic Schur complement matrix
+  pdmat = new PDMat(comm, M, N, bsize, new_global_schur_vars,
+                    nschur_vars, rowp, cols, csr_blocks_per_block,
+                    reorder_schur_complement, max_grid_size);
+  pdmat->incref();
+
+  // Get the information about the 
+  int nrows, ncols;
+  const int *bptr, *orig_bptr, *xbptr;
+  pdmat->getBlockPointers(&nrows, &ncols, &bptr, &orig_bptr, &xbptr);
+  if (!orig_bptr){
+    orig_bptr = bptr;
   }
+
+  // Set the number of local variables that are defined
+  int nlocal_schur = xbptr[N]/bsize;
 
   // unique_schur are the tacs variables corresponding to
   // the local ordering, stored on the root processor. Gather the
@@ -498,17 +525,49 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
   MPI_Gather(&nlocal_schur, 1, MPI_INT,
              global_schur_count, 1, MPI_INT, root, comm);
 
+  // Now, reorder the variables in the Schur complement
+  int *new_unique_schur = new int[ nunique_schur ];
   if (rank == root){
     nglobal_schur_root = 0;
     for ( int i = 0; i < size; i++ ){
       global_schur_ptr[i] = nglobal_schur_root;
       nglobal_schur_root += global_schur_count[i];
     }
+
+    // Find out where to place variable i from the unique list of
+    new_unique_schur = new int[ nunique_schur ];
+    for ( int i = 0, j = 0; (i < nrows) && (j < nunique_schur); i++ ){
+      while (j < nunique_schur &&
+             bsize*j >= orig_bptr[i] && 
+             bsize*j < orig_bptr[i+1]){
+        int offset = bsize*j - orig_bptr[i];
+        int index = global_schur_ptr[rank] + (xbptr[i] + offset)/bsize;
+
+        // Set the new value of the schur index
+        new_unique_schur[index] = unique_schur[j];
+        j++;
+      }
+    }
+
+    // Free the unique schur variables
+    delete [] unique_schur;
+  }
+
+  // Extract the reordered global numbers from the reordering data
+  for ( int i = 0, j = 0; (i < nrows) && (j < nglobal_schur); i++ ){
+    while (j < nglobal_schur &&
+           bsize*new_global_schur_vars[j] >= orig_bptr[i] && 
+           bsize*new_global_schur_vars[j] < orig_bptr[i+1]){
+      int offset = bsize*new_global_schur_vars[j] - orig_bptr[i];
+      new_global_schur_vars[j] =
+        global_schur_ptr[rank] + (xbptr[i] + offset)/bsize;
+      j++;
+    }
   }
 
   // Send unique_schur back to the owning processes
-  int *tacs_schur_vars = new int[nlocal_schur];
-  MPI_Scatterv(unique_schur, global_schur_count, global_schur_ptr, MPI_INT,
+  int *tacs_schur_vars = new int[ nlocal_schur ];
+  MPI_Scatterv(new_unique_schur, global_schur_count, global_schur_ptr, MPI_INT,
                tacs_schur_vars, nlocal_schur, MPI_INT, root, comm);
 
   // Free memory not required anymore
@@ -516,7 +575,7 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
     delete [] global_schur_count;
     delete [] global_schur_ptr;
     delete [] global_schur_root;
-    delete [] unique_schur;
+    delete [] new_unique_schur;
   }
 
   // Set up information required for the global Schur complement matrix
@@ -547,27 +606,6 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
   // Create the context for the Schur complement in the global indices
   tacs_schur_ctx = tacs_schur_dist->createCtx(bsize);
   tacs_schur_ctx->incref();
-
-  // Retrieve the non-zero pattern from the local Schur complement
-  int bs, nschur_vars;
-  const int *rowp, *cols;
-  TacsScalar *vals;
-  Sc->getArrays(&bs, &nschur_vars, &nschur_vars,
-                &rowp, &cols, &vals);
-
-  // Determine the size of the global Schur complement
-  int M = nunique_schur;
-  int N = nunique_schur;
-  schur_index->getIndices(&global_schur_vars);
-
-  // Determine the number of blocks to use per block-cylic block
-  int csr_blocks_per_block = 36/bsize;
-
-  // Create the global block-cyclic Schur complement matrix
-  pdmat = new PDMat(comm, M, N, bsize, global_schur_vars,
-                    nschur_vars, rowp, cols, csr_blocks_per_block,
-                    reorder_schur_complement, max_grid_size);
-  pdmat->incref();
 
   // Allocate space for local storage of vectors
   int xsize = bsize*b_map->getDim();
@@ -673,7 +711,7 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
 
     TacsScalar *g = NULL;
     yschur->getArray(&y);
-    pdmat->mult(y_size, y, g);
+    pdmat->mult(y, g);
 
     TacsScalar outnorm = outvec->norm();
     TacsScalar gnorm = gschur->norm();
@@ -682,7 +720,7 @@ void PcScMat::testSchurComplement( TACSVec *tin, TACSVec *tout ){
     tacs_schur_dist->beginForward(tacs_schur_ctx, in, y);
     tacs_schur_dist->endForward(tacs_schur_ctx, in, y);
 
-    pdmat->mult(y_size, y, g);
+    pdmat->mult(y, g);
     TacsScalar gnorm2 = gschur->norm();
 
     int rank;
@@ -918,7 +956,8 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     int gschur_size = gschur->getArray(&g);
     tacs_schur_dist->beginForward(tacs_schur_ctx, in, g);
 
-    // Re-order the local variables into xlocal
+    // Re-order the local variables into xlocal. Note that this is a
+    // local-only reordering and does not require communication.
     b_map->beginForward(b_ctx, in, xlocal);
     b_map->endForward(b_ctx, in, xlocal);
 
@@ -948,7 +987,7 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
 
     // Apply the global Schur complement factorization to the right
     // hand side
-    pdmat->applyFactor(gschur_size, g);
+    pdmat->applyFactor(g);
 
     if (monitor_back_solve){
       schur_time += MPI_Wtime();
@@ -980,9 +1019,11 @@ void PcScMat::applyFactor( TACSVec *tin, TACSVec *tout ){
     Bpc->applyUpper(xlocal, xlocal);
 
     b_map->beginReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
+    b_map->endReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
+
+    // Finish inserting the Schur complement values
     tacs_schur_dist->endReverse(tacs_schur_ctx, y, out,
                                 TACS_INSERT_VALUES);
-    b_map->endReverse(b_ctx, xlocal, out, TACS_INSERT_VALUES);
 
     if (monitor_back_solve){
       local_time += MPI_Wtime();
