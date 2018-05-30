@@ -493,13 +493,14 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
 
   // Determine the size of the global Schur complement
   int M = nunique_schur, N = nunique_schur;
-  printf("M = %d, N = %d\n", M, N);
 
   // Determine the number of blocks to use per block-cylic block
   int csr_blocks_per_block = 36/bsize;
 
   // Don't reorder yet... getting too complicated...
+  // ###############################################
   reorder_schur_complement = 0;
+  // ###############################################
 
   // Create the global block-cyclic Schur complement matrix
   pdmat = new PDMat(comm, M, N, bsize, new_global_schur_vars,
@@ -509,15 +510,35 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
 
   // Get the information about the 
   int nrows, ncols;
-  const int *bptr, *orig_bptr, *xbptr;
-  pdmat->getBlockPointers(&nrows, &ncols, &bptr, &orig_bptr, &xbptr);
+  const int *bptr, *xbptr, *perm, *iperm, *orig_bptr;
+  pdmat->getBlockPointers(&nrows, &ncols, &bptr, &xbptr,
+                          &perm, &iperm, &orig_bptr);
   if (!orig_bptr){
     orig_bptr = bptr;
   }
 
   // Set the number of local variables that are defined
-  int nlocal_schur = xbptr[N]/bsize;
+  int nlocal_schur = xbptr[nrows]/bsize;
 
+  if (rank == root){
+    // For each global Schur variable, now assign an output - the index
+    // into the unique list of global Schur variables
+    for ( int i = 0; i < nglobal_schur_root; i++ ){
+      int *item = (int*)bsearch(&global_schur_root[i], unique_schur,
+                                nunique_schur, sizeof(int),
+                                FElibrary::comparator);
+
+      
+      
+      global_schur_root[i] = item - unique_schur;
+    }
+  }
+
+  // Now, pass the unique Schur indices back to the original procs
+  // This is an initial ordering of the variables,
+  MPI_Scatterv(global_schur_root, global_schur_count, global_schur_ptr, MPI_INT,
+               new_global_schur_vars, nglobal_schur, MPI_INT, root, comm);
+  
   // unique_schur are the tacs variables corresponding to
   // the local ordering, stored on the root processor. Gather the
   // number of expected variables on each proc to the root.
@@ -534,35 +555,34 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
       nglobal_schur_root += global_schur_count[i];
     }
 
+    int *owner_offset = new int[ size ];
+    memcpy(owner_offset, global_schur_ptr, size*sizeof(int));
+
     // Find out where to place variable i from the unique list of
     new_unique_schur = new int[ nunique_schur ];
     for ( int i = 0, j = 0; (i < nrows) && (j < nunique_schur); i++ ){
       while (j < nunique_schur &&
              bsize*j >= orig_bptr[i] && 
              bsize*j < orig_bptr[i+1]){
-        int offset = bsize*j - orig_bptr[i];
-        int index = global_schur_ptr[rank] + (xbptr[i] + offset)/bsize;
+        // Compute the offset into the original block
+        int offset = (bsize*j - orig_bptr[i])/bsize;
 
+        // Get the re-ordered block
+        int block = i;
+        if (iperm){ block = iperm[i]; }
+        int owner = pdmat->get_block_owner(block, block);
+        int index = owner_offset[owner];
+        owner_offset[owner]++;
+        
         // Set the new value of the schur index
         new_unique_schur[index] = unique_schur[j];
         j++;
       }
     }
 
-    // Free the unique schur variables
+    // Free the original set of unique schur variables
+    delete [] owner_offset;
     delete [] unique_schur;
-  }
-
-  // Extract the reordered global numbers from the reordering data
-  for ( int i = 0, j = 0; (i < nrows) && (j < nglobal_schur); i++ ){
-    while (j < nglobal_schur &&
-           bsize*new_global_schur_vars[j] >= orig_bptr[i] && 
-           bsize*new_global_schur_vars[j] < orig_bptr[i+1]){
-      int offset = bsize*new_global_schur_vars[j] - orig_bptr[i];
-      new_global_schur_vars[j] =
-        global_schur_ptr[rank] + (xbptr[i] + offset)/bsize;
-      j++;
-    }
   }
 
   // Send unique_schur back to the owning processes

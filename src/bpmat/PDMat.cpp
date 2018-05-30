@@ -217,6 +217,44 @@ PDMat::PDMat( MPI_Comm _comm, int _nrows, int _ncols ){
     }
   }
 
+  // Set the offset to the solution vector itself
+  xbptr = new int[ len_bsize+1 ];
+  xbptr[0] = 0;
+  for ( int i = 0; i < len_bsize; i++ ){
+    if (rank == get_block_owner(i, i)){
+      xbptr[i+1] = xbptr[i] + (bptr[i+1] - bptr[i]);
+    }
+    else {
+      xbptr[i+1] = xbptr[i];
+    }
+  }
+
+  // Get the process row/column
+  int proc_row, proc_col;
+  get_proc_row_column(rank, &proc_row, &proc_col);
+
+  // Allocate cbptr and rbptr
+  cbptr = new int[ ncols+1 ];
+  cbptr[0] = 0;
+  for ( int j = 0; j < ncols; j++ ){
+    if (rank == get_block_owner(proc_row, j)){
+      cbptr[j+1] = cbptr[j] + bptr[j+1] - bptr[j];
+    }
+    else {
+      cbptr[j+1] = cbptr[j];
+    }
+  }
+  rbptr = new int[ nrows+1 ];
+  rbptr[0] = 0;
+  for ( int i = 0; i < nrows; i++ ){
+    if (rank == get_block_owner(i, proc_col)){
+      rbptr[i+1] = rbptr[i] + bptr[i+1] - bptr[i];
+    }
+    else {
+      rbptr[i+1] = rbptr[i];
+    }
+  }
+
   // Set Urowp and Ucols and Lrowp and Lcols
   Urowp = new int[nrows+1];
   int unnz = ((nrows+1)*nrows)/2;
@@ -257,7 +295,9 @@ PDMat::~PDMat(){
   // Delete the pointer to the block starting locations
   delete [] bptr;
   delete [] xbptr;
-  
+  delete [] rbptr;
+  delete [] cbptr;
+
   // Delete the permutation information if it exists
   if (orig_bptr){
     delete [] perm;
@@ -479,13 +519,42 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     bptr = orig_bptr;
     orig_bptr = temp;
   }
-  
+
   // Set the offset to the vector
   xbptr = new int[ nrows+1 ];
   xbptr[0] = 0;
   for ( int i = 0; i < nrows; i++ ){
     if (rank == get_block_owner(i, i)){
       xbptr[i+1] = xbptr[i] + (bptr[i+1] - bptr[i]);
+    }
+    else {
+      xbptr[i+1] = xbptr[i];
+    }
+  }
+
+  // Get the process row/column
+  int proc_row, proc_col;
+  get_proc_row_column(rank, &proc_row, &proc_col);
+
+  // Allocate cbptr and rbptr
+  cbptr = new int[ ncols+1 ];
+  cbptr[0] = 0;
+  for ( int j = 0; j < ncols; j++ ){
+    if (rank == get_block_owner(proc_row, j)){
+      cbptr[j+1] = cbptr[j] + bptr[j+1] - bptr[j];
+    }
+    else {
+      cbptr[j+1] = cbptr[j];
+    }
+  }
+  rbptr = new int[ nrows+1 ];
+  rbptr[0] = 0;
+  for ( int i = 0; i < nrows; i++ ){
+    if (rank == get_block_owner(i, proc_col)){
+      rbptr[i+1] = rbptr[i] + bptr[i+1] - bptr[i];
+    }
+    else {
+      rbptr[i+1] = rbptr[i];
     }
   }
 
@@ -688,18 +757,30 @@ void PDMat::init_ptr_arrays( int *rowp, int *cols ){
   should be considered for future versions of the code.
 */
 void PDMat::init_proc_grid( int size ){
-  // Check for the nearest perfect square
-  int n = 1;
-  while (n*n > 0){
-    if (n*n <= size && size < (n+1)*(n+1)){
-      break;
+  // Special cases
+  if (size == 1){
+    nprows = 1;
+    npcols = 1;
+  }
+  else if (size == 4 || size == 5){
+    nprows = 2;
+    npcols = 2;
+  }
+  else {
+    // Favor more columns than rows
+    int n = 1;
+    while (n*(n+1) > 0){
+      if (n*(n+1) <= size && size < (n+1)*(n+2)){
+        break;
+      }
+      n++;
     }
-    n++;
+
+    nprows = n;
+    npcols = size/n;
   }
 
-  nprows = n;
-  npcols = size/n;
-
+  // Allocate the process grid and assign the processors
   proc_grid = new int[ nprows*npcols ];
 
   for ( int i = 0, p = 0; i < nprows; i++ ){
@@ -728,14 +809,17 @@ void PDMat::getProcessGridSize( int *_nprows, int *_npcols ){
 /*
   Retrieve the block pointers
 */
-void PDMat::getBlockPointers( int *_nrows, int *_ncols, 
-                              const int **_bptr, const int **_orig_bptr, 
-                              const int **_xbptr ){
+void PDMat::getBlockPointers( int *_nrows, int *_ncols,
+                              const int **_bptr, const int **_xbptr,
+                              const int **_perm, const int **_iperm,
+                              const int **_orig_bptr ){
   if (_nrows){ *_nrows = nrows; }
   if (_ncols){ *_ncols = ncols; }
   if (_bptr){ *_bptr = bptr; }
-  if (_orig_bptr){ *_orig_bptr = orig_bptr; }
   if (_xbptr){ *_xbptr = xbptr; }
+  if (_perm){ *_perm = perm; }
+  if (_iperm){ *_iperm = iperm; }
+  if (_orig_bptr){ *_orig_bptr = orig_bptr; }
 }
 
 /*
@@ -1419,74 +1503,266 @@ void PDMat::setRand(){
   Multiply y = A*x
 
   Note that this code assumes that x/y are on all processors.  This
-  function will be less than useless after the matrix is factored
-  since the factorization over-writes the original matrix entries.
+  function will not work after the matrix is factored since the
+  factorization over-writes the original matrix entries.
 */
 void PDMat::mult( TacsScalar *x, TacsScalar *y ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  TacsScalar *ty = new TacsScalar[ xbptr[nrows] ];
-  memset(ty, 0, xbptr[nrows]*sizeof(TacsScalar));
+  // Get the location of rank on the process grid
+  int proc_row = -1, proc_col = -1;
+  get_proc_row_column(rank, &proc_row, &proc_col);
 
-  // Compute the on-process parts for the diagonal contributions
-  for ( int i = 0; i < nrows; i++ ){
-    int ni = xbptr[i];
-    int bi = bptr[i+1] - bptr[i];
+  memset(y, 0, xbptr[nrows]*sizeof(TacsScalar));
+  
+  // Allocate temporary space (if needed)
+  TacsScalar *tx = new TacsScalar[ cbptr[ncols] ];
+  TacsScalar *ty = new TacsScalar[ rbptr[nrows] ];
+  memset(ty, 0, rbptr[nrows]*sizeof(TacsScalar));
+    
+  if (proc_row >= 0){
 
-    if (rank == get_block_owner(i, i)){
-      int np = dval_offset[i];
-      TacsScalar alpha = 1.0, beta = 1.0;
-      int one = 1;
-      BLASgemv("N", &bi, &bi, &alpha, &Dvals[np], &bi,
-               &x[ni], &one, &beta, &ty[ni], &one);
-      TacsAddFlops(2*bi*bi);
-    }
-  }
+    // Allocate an array of requests
+    MPI_Request *sreq = new MPI_Request[ nprows ];
 
-  // Compute the upper triangular part
-  for ( int i = 0; i < nrows; i++ ){
-    int ni = xbptr[i];
-    int bi = bptr[i+1] - bptr[i];
-
-    for ( int jp = Urowp[i]; jp < Urowp[i+1]; jp++ ){
-      int j = Ucols[jp];
-      int nj = xbptr[j];
+    // Compute the on-process parts for the diagonal contributions
+    for ( int j = 0; j < ncols; j++ ){
+      // Compute the block size
       int bj = bptr[j+1] - bptr[j];
 
-      if (rank == get_block_owner(i, j)){
-        int np = uval_offset[jp];
-        TacsScalar alpha = 1.0, beta = 1.0;
-        int one = 1;
-        BLASgemv("N", &bi, &bj, &alpha, &Uvals[np], &bi,
-                 &x[nj], &one, &beta, &ty[ni], &one);
-        TacsAddFlops(2*bi*bj);
+      if (rank == get_block_owner(j, j)){
+        // Send the x-values to the other processors in this process
+        // column
+        int nj = xbptr[j];
+
+        // Send the vector components to the other processors in this
+        // process column
+        for ( int p = 0, k = 0; p < nprows; p++ ){
+          int dest = proc_grid[proc_col + p*npcols];
+          if (dest != rank){
+            MPI_Isend(&x[nj], bj, TACS_MPI_TYPE, dest, p, comm, &sreq[k]);
+            k++;
+          }
+          else {
+            memcpy(&tx[cbptr[j]], &x[nj], bj*sizeof(TacsScalar));
+          }
+        }
+
+        if (j < nrows){
+          // Multiply by the diagonal part
+          int np = dval_offset[j];
+          TacsScalar alpha = 1.0, beta = 1.0;
+          int one = 1;
+          BLASgemv("N", &bj, &bj, &alpha, &Dvals[np], &bj,
+                   &x[nj], &one, &beta, &y[nj], &one);
+          TacsAddFlops(2*bj*bj);
+
+          // Compute the lower triangular part
+          for ( int ip = Lcolp[j]; ip < Lcolp[j+1]; ip++ ){
+            int i = Lrows[ip];
+
+            if (rank == get_block_owner(i, j)){
+              // Compute the size of the block
+              int bi = bptr[i+1] - bptr[i];
+
+              // Compute where this should go in the row-space
+              int ni = rbptr[i];
+              
+              int np = lval_offset[ip];
+              TacsScalar alpha = 1.0, beta = 1.0;
+              int one = 1;
+              BLASgemv("N", &bi, &bj, &alpha, &Lvals[np], &bi,
+                       &x[nj], &one, &beta, &ty[ni], &one);
+              TacsAddFlops(2*bi*bj);
+            }
+          }
+        }
+
+        // Wait for all the sends to complete
+        MPI_Waitall(nprows-1, sreq, MPI_STATUSES_IGNORE);
+      }
+      else if (proc_col == get_proc_column(j)){
+        // Recv the column values
+        int source = get_block_owner(j, j);
+
+        // Get the column owner
+        int nj = cbptr[j];
+
+        // Recv and store the column value
+        MPI_Recv(&tx[nj], bj, TACS_MPI_TYPE, source, proc_row,
+                 comm, MPI_STATUS_IGNORE);
+
+        // Compute the lower triangular part
+        for ( int ip = Lcolp[j]; ip < Lcolp[j+1]; ip++ ){
+          int i = Lrows[ip];
+
+          if (rank == get_block_owner(i, j)){
+            // Compute the size of the block
+            int bi = bptr[i+1] - bptr[i];
+
+            // Compute where this should go in the row-space
+            int ni = rbptr[i];
+            
+            // Compute the product
+            int np = lval_offset[ip];
+            TacsScalar alpha = 1.0, beta = 1.0;
+            int one = 1;
+            BLASgemv("N", &bi, &bj, &alpha, &Lvals[np], &bi,
+                     &tx[nj], &one, &beta, &ty[ni], &one);
+            TacsAddFlops(2*bi*bj);
+          }
+        }
       }
     }
+
+    // Free the send request array
+    delete [] sreq;
   }
 
-  // Compute the lower triangular part
-  for ( int j = 0; j < ncols; j++ ){
-    int nj = xbptr[j];
-    int bj = bptr[j+1] - bptr[j];
+  MPI_Barrier(comm);
 
-    for ( int ip = Lcolp[j]; ip < Lcolp[j+1]; ip++ ){
-      int i = Lrows[ip];
-      int ni = xbptr[i];
+  if (proc_row >= 0){
+
+    // Keep track of the send request from the current row
+    MPI_Request row_req;
+
+    // Keep track of the last row sent on this proc
+    int nrecvs = 0;
+    
+    // Loop over the rows in the matrix   
+    for ( int i = 0; i < nrows; i++ ){
       int bi = bptr[i+1] - bptr[i];
+      int ni = rbptr[i];
 
-      if (rank == get_block_owner(i, j)){
-        int np = lval_offset[ip];
-        TacsScalar alpha = 1.0, beta = 1.0;
-        int one = 1;
-        BLASgemv("N", &bi, &bj, &alpha, &Lvals[np], &bi,
-                 &x[nj], &one, &beta, &ty[ni], &one);
-        TacsAddFlops(2*bi*bj);
+      // Compute the product from this row
+      if (proc_row == get_proc_row(i)){
+        for ( int jp = Urowp[i]; jp < Urowp[i+1]; jp++ ){
+          int j = Ucols[jp];
+          int bj = bptr[j+1] - bptr[j];
+
+          if (rank == get_block_owner(i, j)){
+            // Set the pointer to the correct components of x
+            TacsScalar *xp = NULL;
+            if (i == j){
+              int nj = xbptr[j];
+              xp = &x[nj];
+            }
+            else {
+              int nj = cbptr[j];
+              xp = &tx[nj];
+            }
+
+            for ( int k = 0; k < bj; k++ ){
+              if (xp[k] != 1.0){
+                printf("Big error here\n");
+              }
+            }
+
+            // Compute the product
+            int np = uval_offset[jp];
+            TacsScalar alpha = 1.0, beta = 1.0;
+            int one = 1;
+            BLASgemv("N", &bi, &bj, &alpha, &Uvals[np], &bi,
+                     xp, &one, &beta, &ty[ni], &one);
+            TacsAddFlops(2*bi*bj);
+          }
+        }
+
+        // Send the product from this processor from the current
+        // iteration
+        int dest = get_block_owner(i, i);
+        if (dest != rank){
+          int tag = i;
+          MPI_Isend(&ty[ni], bi, TACS_MPI_TYPE, dest, tag,
+                    comm, &row_req);
+        }
+        else {
+          // Add up the contributions from this processor
+          int nj = xbptr[i];
+          for ( int j = 0; j < bi; j++ ){
+            y[nj+j] += ty[ni+j];
+          }
+
+          // Add up the additional expected recvs from other
+          // processors
+          nrecvs += npcols-1;          
+        }
+        
+        // Keep track of any incoming recvs
+        int flag = 1;
+
+        while (nrecvs > 0 && flag){
+          MPI_Status status;
+          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &flag, &status);
+
+          if (flag){
+            // Get the incoming tag - the data for where to put the
+            // result on this processor
+            int row = status.MPI_TAG;
+            
+            // Keep track of the expected
+            int bk = bptr[row+1] - bptr[row];
+            int nk = xbptr[row];
+            int ck = rbptr[row];
+
+            int count;
+            MPI_Get_count(&status, TACS_MPI_TYPE, &count);
+            if (count != bk){
+              printf("Count is inconsistent\n");
+            }
+
+            MPI_Recv(&ty[ck], bk, TACS_MPI_TYPE,
+                     status.MPI_SOURCE, status.MPI_TAG, comm, &status);
+
+            // Add the values into the vector
+            for ( int j = 0; j < bk; j++ ){
+              y[nk+j] += ty[ck+j];
+            }
+
+            // Update the recv count
+            nrecvs--;
+          }
+        }
+
+        if (dest != rank){
+          MPI_Wait(&row_req, MPI_STATUS_IGNORE);
+        }
       }
     }
+
+    // Finalize the processing of incoming messages
+    while (nrecvs > 0){
+      MPI_Status status;
+      MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &status);
+
+      // Get the incoming tag - the data for where to put the
+      // result on this processor
+      int row = status.MPI_TAG;
+            
+      // Keep track of the expected
+      int bk = bptr[row+1] - bptr[row];
+      int nk = xbptr[row];
+      int ck = rbptr[row];
+
+      MPI_Recv(&ty[ck], bk, TACS_MPI_TYPE,
+               status.MPI_SOURCE, status.MPI_TAG, comm, &status);
+      
+      // Add the values into the vector
+      for ( int j = 0; j < bk; j++ ){
+        y[nk+j] += ty[ck+j];
+      }
+      
+      // Update the recv count
+      nrecvs--;
+    }
+   
+    // Free the temporary data
+    delete [] tx;
+    delete [] ty;
   }
 
-  MPI_Allreduce(ty, y, bptr[nrows], TACS_MPI_TYPE, MPI_SUM, comm);
+  MPI_Barrier(comm);
 }
 
 /*
@@ -1653,11 +1929,12 @@ void PDMat::applyFactor( TacsScalar *x ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  double t0 = MPI_Wtime();
+  // double t0 = MPI_Wtime();
 
   // Space required for the factorization
-  TacsScalar *xlocal = NULL;
+  TacsScalar *tx = NULL;
   TacsScalar *xsum = NULL;
+  TacsScalar *xlocal = NULL;
 
   // Row sum and recv counters
   int *row_sum_count = NULL;
@@ -1672,11 +1949,14 @@ void PDMat::applyFactor( TacsScalar *x ){
   if (proc_row >= 0){
     // The temporary array used to store in-coming values
     xlocal = new TacsScalar[ max_bsize ];
-    memset(xlocal, 0, max_bsize*sizeof(TacsScalar));
+
+    // Temporary vector of x-values on this processor
+    tx = new TacsScalar[ cbptr[nrows] ];   
+    memset(tx, 0, cbptr[nrows]*sizeof(TacsScalar));
 
     // The locally stored sum of the products of L[i:0:i]*x[0:i]
-    xsum = new TacsScalar[ bptr[nrows] ];
-    memset(xsum, 0, bptr[nrows]*sizeof(TacsScalar));
+    xsum = new TacsScalar[ rbptr[nrows] ];
+    memset(xsum, 0, rbptr[nrows]*sizeof(TacsScalar));
 
     // Allocate space for the counters
     row_sum_count = new int[ nrows ];
@@ -1691,7 +1971,7 @@ void PDMat::applyFactor( TacsScalar *x ){
           lower_row_sum_recv[row] == 0 &&
           rank == get_block_owner(row, row)){
         // Finish this entry
-        add_lower_row_sum(row, x, xsum, xlocal,
+        add_lower_row_sum(row, x, tx, xsum,
                           row_sum_count, row_sum_recv);
       }
     }
@@ -1708,15 +1988,15 @@ void PDMat::applyFactor( TacsScalar *x ){
         int col = status.MPI_TAG/2;
 
         // Find the local block size and location
-        int ni = xbptr[col];
+        int ni = cbptr[col];
         int bi = bptr[col+1] - bptr[col];
 
         // Receieve x[ni]
-        MPI_Recv(&x[ni], bi, TACS_MPI_TYPE,
+        MPI_Recv(&tx[ni], bi, TACS_MPI_TYPE,
                  status.MPI_SOURCE, status.MPI_TAG, comm, &status);
 
         // Compute the update to the column
-        lower_column_update(col, x, xsum, xlocal,
+        lower_column_update(col, x, tx, xsum,
                             row_sum_count, row_sum_recv);
       }
       else {
@@ -1724,7 +2004,7 @@ void PDMat::applyFactor( TacsScalar *x ){
         int row = (status.MPI_TAG-1)/2;
 
         // Find the local block size and location
-        int ni = xbptr[row];
+        int ni = rbptr[row];
         int bi = bptr[row+1] - bptr[row];
 
         // Receieve xsum[i] into the buffer xlocal
@@ -1743,7 +2023,7 @@ void PDMat::applyFactor( TacsScalar *x ){
         // Finalize the entry if all sums have been computed
         if (row_sum_recv[row] == lower_row_sum_recv[row] &&
             row_sum_count[row] == lower_row_sum_count[row]){
-          add_lower_row_sum(row, x, xsum, xlocal,
+          add_lower_row_sum(row, x, tx, xsum,
                             row_sum_count, row_sum_recv);
         }
       }
@@ -1758,7 +2038,7 @@ void PDMat::applyFactor( TacsScalar *x ){
 
   if (proc_row >= 0){
     // Set the partial row sums to zero again
-    memset(xsum, 0, bptr[nrows]*sizeof(TacsScalar));
+    memset(xsum, 0, rbptr[nrows]*sizeof(TacsScalar));
 
     // Now, apply the upper factorization
     memset(row_sum_count, 0, nrows*sizeof(int));
@@ -1769,9 +2049,8 @@ void PDMat::applyFactor( TacsScalar *x ){
           upper_row_sum_recv[row] == 0 &&
           rank == get_block_owner(row, row)){
         // Entry can be completed
-        add_upper_row_sum(row, x, xsum, xlocal,
+        add_upper_row_sum(row, x, tx, xsum,
                            row_sum_count, row_sum_recv);
-
       }
     }
 
@@ -1787,15 +2066,15 @@ void PDMat::applyFactor( TacsScalar *x ){
         int col = status.MPI_TAG/2;
 
         // Find the local block size and location
-        int ni = xbptr[col];
+        int ni = cbptr[col];
         int bi = bptr[col+1] - bptr[col];
 
         // Receieve x[ni]
-        MPI_Recv(&x[ni], bi, TACS_MPI_TYPE,
+        MPI_Recv(&tx[ni], bi, TACS_MPI_TYPE,
                  status.MPI_SOURCE, status.MPI_TAG, comm, &status);
 
         // Add the update to the column
-        upper_column_update(col, x, xsum, xlocal,
+        upper_column_update(col, x, tx, xsum,
                             row_sum_count, row_sum_recv);
       }
       else {
@@ -1803,7 +2082,7 @@ void PDMat::applyFactor( TacsScalar *x ){
         int row = (status.MPI_TAG-1)/2;
 
         // Find the local block size and location
-        int ni = xbptr[row];
+        int ni = rbptr[row];
         int bi = bptr[row+1] - bptr[row];
 
         // Receieve xsum[i] into the buffer xlocal
@@ -1822,13 +2101,14 @@ void PDMat::applyFactor( TacsScalar *x ){
         // Finalize the entry if all sums have been computed
         if (row_sum_recv[row] == upper_row_sum_recv[row] &&
             row_sum_count[row] == upper_row_sum_count[row]){
-          add_upper_row_sum(row, x, xsum, xlocal,
+          add_upper_row_sum(row, x, tx, xsum,
                             row_sum_count, row_sum_recv);
         }
       }
     }
 
     delete [] xlocal;
+    delete [] tx;
     delete [] xsum;
     delete [] row_sum_count;
     delete [] row_sum_recv;
@@ -1838,10 +2118,10 @@ void PDMat::applyFactor( TacsScalar *x ){
   // application and the re-distribution of the vector components
   MPI_Barrier(comm);
 
-  t0 -= MPI_Wtime();
-  if (proc_row >= 0){
-    printf("Backsolve time[%3d] %15.8e\n", rank, t0);
-  }
+  // t0 = MPI_Wtime() - t0;
+  // if (proc_row >= 0){
+  //   printf("Backsolve time[%3d] %15.8e\n", rank, t0);
+  // }
 }
 
 /*
@@ -1871,8 +2151,8 @@ void PDMat::applyFactor( TacsScalar *x ){
 */
 void PDMat::lower_column_update( int col,
                                  TacsScalar *x,
+                                 TacsScalar *tx,
                                  TacsScalar *xsum,
-                                 TacsScalar *xlocal,
                                  int *row_sum_count,
                                  int *row_sum_recv ){
   int rank;
@@ -1883,8 +2163,9 @@ void PDMat::lower_column_update( int col,
   int nreq = 0;
 
   // Compute the location/number of columns in the block
-  int nj = xbptr[col];
-  int bj = bptr[col+1] - bptr[col];
+  int dj = xbptr[col]; // Variable location in x
+  int nj = cbptr[col]; // Variable location in tx
+  int bj = bptr[col+1] - bptr[col]; // block size
 
   // Loop over the column and compute xsum[j] += L[j,col]*x[col]
   for ( int jp = Lcolp[col]; jp < Lcolp[col+1]; jp++ ){
@@ -1892,15 +2173,21 @@ void PDMat::lower_column_update( int col,
 
     // If this is the block owner, multiply by L[row, col]*x[col]
     if (rank == get_block_owner(row, col)){
-      int ni = xbptr[row];
+      int ni = rbptr[row];
       int bi = bptr[row+1] - bptr[row];
       TacsScalar *L = &Lvals[lval_offset[jp]];
 
+      // Set the pointer for where to take xp from...
+      TacsScalar *xp = &tx[nj];
+      if (rank == get_block_owner(col, col)){
+        xp = &x[dj];
+      }
+      
       TacsScalar alpha = 1.0, beta = 1.0;
       int one = 1;
       // xsum[i] = xsum[i] + L[i,j]*x[j] for
       BLASgemv("N", &bi, &bj, &alpha, L, &bi,
-               &x[nj], &one, &beta, &xsum[ni], &one);
+               xp, &one, &beta, &xsum[ni], &one);
       TacsAddFlops(2*bi*bj);
 
       // Update row_sum_count[row]
@@ -1927,7 +2214,7 @@ void PDMat::lower_column_update( int col,
         else if (rank == dest &&
                  row_sum_recv[row] == lower_row_sum_recv[row]){
           // If all remaining blocks have been received, finish this entry
-          add_lower_row_sum(row, x, xsum, xlocal,
+          add_lower_row_sum(row, x, tx, xsum,
                             row_sum_count, row_sum_recv);
         }
       }
@@ -1944,7 +2231,7 @@ void PDMat::lower_column_update( int col,
   This is a doubly-recursive function with lower_column_update.
 
   Add the row sum stored in xlocal to xsum. If the total number of
-  updates to the row == the number of required updates, perform
+  updates to the row == the number of required updates
 
   input:
   col:           the integer for the column
@@ -1956,8 +2243,8 @@ void PDMat::lower_column_update( int col,
 */
 void PDMat::add_lower_row_sum( int col,
                                TacsScalar *x,
+                               TacsScalar *tx,
                                TacsScalar *xsum,
-                               TacsScalar *xlocal,
                                int *row_sum_count,
                                int *row_sum_recv ){
   int rank;
@@ -1968,14 +2255,15 @@ void PDMat::add_lower_row_sum( int col,
   int nreq = 0;
 
   // Find the local block size and location
-  int ni = xbptr[col];
+  int di = xbptr[col]; // Variable location in x
+  int ni = rbptr[col]; // Variable location in xsum
   int bi = bptr[col+1] - bptr[col];
 
   // Add the contributions from the non-local blocks
   // x[i] <- x[i] - xsum[i]
   TacsScalar alpha = -1.0;
   int one = 1;
-  BLASaxpy(&bi, &alpha, &xsum[ni], &one, &x[ni], &one);
+  BLASaxpy(&bi, &alpha, &xsum[ni], &one, &x[di], &one);
   TacsAddFlops(2*bi);
 
   // Send the result to the processors in this column
@@ -1992,14 +2280,14 @@ void PDMat::add_lower_row_sum( int col,
       }
 
       // Send x[i] to all the processes in the column
-      MPI_Isend(&x[ni], bi, TACS_MPI_TYPE,
+      MPI_Isend(&x[di], bi, TACS_MPI_TYPE,
                 dest, 2*col, comm, &req_list[nreq]);
       nreq++;
     }
   }
 
   // Now, initiate the block-diagonal solve
-  lower_column_update(col, x, xsum, xlocal,
+  lower_column_update(col, x, tx, xsum,
                       row_sum_count, row_sum_recv);
 
   // Wait for the pending communication requests
@@ -2026,13 +2314,14 @@ void PDMat::add_lower_row_sum( int col,
   input:
   col:           the column to update
   x:             the solution vector on all procs
+  tx:            temporary local x-values 
   xsum:          the column sums on this processor
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
 */
 void PDMat::upper_column_update( int col,
                                  TacsScalar *x,
+                                 TacsScalar *tx,
                                  TacsScalar *xsum,
-                                 TacsScalar *xlocal,
                                  int *row_sum_count,
                                  int *row_sum_recv ){
   int rank;
@@ -2043,25 +2332,11 @@ void PDMat::upper_column_update( int col,
   int nreq = 0;
 
   // Compute the location/number of columns in the block
-  int nj = 0;
-  int bj = bptr[col+1] - bptr[col];
-  if (orig_bptr){
-    nj = orig_bptr[perm[col]];
-  }
-  else {
-    nj = bptr[col];
-  }
-
-  // Loop over the column and compute xsum[j] += L[j,col]*xlocal
-  // Find the row such that proc_row + n*nprows = col-1
-  // int start = col-1 + nprows - ((col-1) % nprows);
-  // if (start > col-1){
-  // start -= nprows;
-  // }
-  // for ( int row = start; row >= 0; row -= nprows ){
+  int dj = xbptr[col]; // Variable location in x
+  int nj = cbptr[col]; // Variable location in tx
+  int bj = bptr[col+1] - bptr[col]; // block size
 
   for ( int row = col-1; row >= 0; row--){
-    // If this is the block owner, multiply by L[row, col]*x[col]
     if (rank == get_block_owner(row, col)){
       // Find the location where Ucols[jp] == col
       int jp = Urowp[row];
@@ -2073,15 +2348,22 @@ void PDMat::upper_column_update( int col,
       if (item){
         jp += item - &Ucols[jp];
 
-        int ni = xbptr[row];
+        // Find the row-sum information
+        int ni = rbptr[row];
         int bi = bptr[row+1] - bptr[row];
         TacsScalar *U = &Uvals[uval_offset[jp]];
 
+        // Determine whether this is locally owned or not
+        TacsScalar *xp = &tx[nj];
+        if (rank == get_block_owner(col, col)){
+          xp = &x[dj];
+        }
+        
         TacsScalar alpha = 1.0, beta = 1.0;
         int one = 1;
         // xsum[i] <-- xsum[i] + U[i,j]*x[j] for
         BLASgemv("N", &bi, &bj, &alpha, U, &bi,
-                 &x[nj], &one, &beta, &xsum[ni], &one);
+                 xp, &one, &beta, &xsum[ni], &one);
         TacsAddFlops(2*bi*bj);
 
         // Update row_sum_count[row]
@@ -2107,7 +2389,7 @@ void PDMat::upper_column_update( int col,
           else if (rank == dest &&
                    row_sum_recv[row] == upper_row_sum_recv[row]){
             // Update this row
-            add_upper_row_sum(row, x, xsum, xlocal,
+            add_upper_row_sum(row, x, tx, xsum,
                               row_sum_count, row_sum_recv);
           }
         }
@@ -2130,14 +2412,14 @@ void PDMat::upper_column_update( int col,
   input:
   row:           the integer for the row sum
   x:             the solution vector
+  tx:            a temporary array of x-local values
   xsum:          the sum of all rows
-  xlocal:        a temporary array
   row_sum_count: the number of updates required for the row[i]
 */
 void PDMat::add_upper_row_sum( int row,
                                TacsScalar *x,
+                               TacsScalar *tx,
                                TacsScalar *xsum,
-                               TacsScalar *xlocal,
                                int *row_sum_count,
                                int *row_sum_recv ){
   int rank;
@@ -2148,14 +2430,15 @@ void PDMat::add_upper_row_sum( int row,
   int nreq = 0;
 
   // Find the local block size and location
-  int ni = xbptr[row];
+  int di = xbptr[row];
+  int ni = rbptr[row];
   int bi = bptr[row+1] - bptr[row];
 
   // Add the contributions from the non-local blocks
   // xsum[i] <- xsum[i] - x[i]
   TacsScalar alpha = -1.0;
   int one = 1;
-  BLASaxpy(&bi, &alpha, &x[ni], &one, &xsum[ni], &one);
+  BLASaxpy(&bi, &alpha, &x[di], &one, &xsum[ni], &one);
   TacsAddFlops(2*bi);
 
   // Assign x <- -D*(xsum - x)
@@ -2163,7 +2446,7 @@ void PDMat::add_upper_row_sum( int row,
   alpha = -1.0;
   TacsScalar beta = 0.0;
   BLASgemv("N", &bi, &bi, &alpha, &Dvals[np], &bi,
-           &xsum[ni], &one, &beta, &x[ni], &one);
+           &xsum[ni], &one, &beta, &x[di], &one);
   TacsAddFlops(2*bi*bi);
 
   // Send the result to the processors in this column
@@ -2179,14 +2462,14 @@ void PDMat::add_upper_row_sum( int row,
       }
 
       // Send x[i] to all processors in this column
-      MPI_Isend(&x[ni], bi, TACS_MPI_TYPE,
+      MPI_Isend(&x[di], bi, TACS_MPI_TYPE,
                 dest, 2*row, comm, &req_list[nreq]);
       nreq++;
     }
   }
 
   // Perform the column update
-  upper_column_update(row, x, xsum, xlocal,
+  upper_column_update(row, x, tx, xsum,
                       row_sum_count, row_sum_recv);
 
   // Wait the pending communication requests
