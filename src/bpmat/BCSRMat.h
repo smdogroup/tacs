@@ -96,7 +96,7 @@ class BCSRMat : public TACSObject {
   void applyPartialUpper( TacsScalar *xvec, int var_offset );
   void applyFactorSchur( TacsScalar *x, int var_offset );
   void setDiagPairs( const int *_pairs, int _npairs );
-  void factorDiag();
+  void factorDiag( const TacsScalar *diag=NULL );
   void applySOR( TacsScalar *x, TacsScalar *y, 
                  TacsScalar omega, int iters );
   void applySOR( BCSRMat *B, int start, int end,

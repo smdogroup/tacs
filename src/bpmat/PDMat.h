@@ -79,7 +79,8 @@ class PDMat : public TACSObject {
   PDMat( MPI_Comm _comm, int csr_m, int csr_n, 
          int csr_bsize, const int *csr_vars, 
          int nvars, const int *csr_rowp, const int *csr_cols,
-         int csr_blocks_per_block, int reorder_blocks );
+         int csr_blocks_per_block, int reorder_blocks,
+         int max_grid_size=-1 );
 
   // Create a dense matrix
   PDMat( MPI_Comm _comm, int _nrows, int _ncols );
@@ -228,4 +229,4 @@ class PDMat : public TACSObject {
   int *upper_row_sum_count, *upper_row_sum_recv;
 };
 
-#endif
+#endif // TACS_PD_MAT_H

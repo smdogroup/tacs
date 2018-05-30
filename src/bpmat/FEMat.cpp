@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "FEMat.h"
@@ -23,7 +23,7 @@
   Finite-element matrix implementation
 */
 
-/*!  
+/*!
   This constructor produces the data required for the ScMat matrix
   from the data provided by TACS.
 
@@ -36,8 +36,8 @@
   B-matrix are only local - they are not referenced on other
   processors. All coupling between processors occurs in the matrix
   C. No matrix assembly is required to perform matrix-vector products
-  because the effect of assembly is handled by adding contributions 
-  from the C components. 
+  because the effect of assembly is handled by adding contributions
+  from the C components.
 
   This matrix is especially well suited for almost dense
   preconditioning. In this case, the factorization can be split into
@@ -49,7 +49,7 @@
   problem.
 
   Input:
-  
+
   rmap: The variable map that defines the row-distribution of the
   global matrix. This is required for matrix-vector products.
 
@@ -60,10 +60,10 @@
   b_map: The map from the global variables to the local indices
 
   c_local_indices: The local indices of the C-matrix
-  c_map: The map from the global 
-    
+  c_map: The map from the global
+
   Note that b_local_indices/c_local_indices are not required after
-  initialization of the FEMat class.  
+  initialization of the FEMat class.
 
   Procedure:
 
@@ -86,12 +86,12 @@
   However, the matrix A is provided in a CSR format. This complicates
   the code somewhat.
 */
-FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap, 
-              int bsize, int nlocal_vars, 
-              const int *rowp, const int *cols, 
-              TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map, 
+FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
+              int bsize, int nlocal_vars,
+              const int *rowp, const int *cols,
+              TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map,
               TACSBVecIndices *c_local_indices, TACSBVecDistribute *_c_map ){
-  // Get the block size 
+  // Get the block size
   int rank;
   MPI_Comm_rank(_rmap->getMPIComm(), &rank);
 
@@ -145,7 +145,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
         erowp[i+1]++;
       }
       else {
-        fprintf(stderr, 
+        fprintf(stderr,
                 "[%d] FEMat error, C/B indices not complete\n",
                 rank);
       }
@@ -154,7 +154,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
 
   for ( int i = 0; i < Nc; i++ ){
     int row = ci[i];
-    
+
     // Add the variables in the row to either B or E
     for ( int jp = rowp[row]; jp < rowp[row+1]; jp++ ){
       if (binv[cols[jp]] >= 0){
@@ -164,7 +164,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
         crowp[i+1]++;
       }
       else {
-        fprintf(stderr, 
+        fprintf(stderr,
                 "[%d] FEMat error, C/B indices not complete\n",
                 rank);
       }
@@ -205,7 +205,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
         erowp[i]++;
       }
       else {
-        fprintf(stderr, 
+        fprintf(stderr,
                 "[%d] FEMat error, C/B indices not complete\n",
                 rank);
       }
@@ -214,7 +214,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
 
   for ( int i = 0; i < Nc; i++ ){
     int row = ci[i];
-    
+
     // Add the variables in the row to either B or E
     for ( int jp = rowp[row]; jp < rowp[row+1]; jp++ ){
       if (binv[cols[jp]] >= 0){
@@ -226,13 +226,13 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
         crowp[i]++;
       }
       else {
-        fprintf(stderr, 
+        fprintf(stderr,
                 "[%d] FEMat error, C/B indices not complete\n",
                 rank);
       }
     }
   }
-  
+
   delete [] binv;
   delete [] cinv;
 
@@ -291,7 +291,7 @@ FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
 
   // Insure that the inverse look-up has been allocated
   (_b_map->getIndices())->setUpInverse();
-  (_c_map->getIndices())->setUpInverse(); 
+  (_c_map->getIndices())->setUpInverse();
 
   // Initialize the underlying class
   init(_rmap, _B, _E, _F, _C, _b_map, _c_map);
@@ -309,19 +309,19 @@ FEMat::~FEMat(){}
   Temporary arrays are allocated for the indices. If the number of
   rows/columns in the dense sub-matrix are less than 128, then use the
   statically allocated array, otherwise dynamically allocate temporary
-  arrays to store the indices.  
+  arrays to store the indices.
 */
 void FEMat::addValues( int nrow, const int *row,
-                       int ncol, const int *col,  
-                       int nv, int mv, const TacsScalar *values ){ 
+                       int ncol, const int *col,
+                       int nv, int mv, const TacsScalar *values ){
   int bsize = B->getBlockSize();
   TACSBVecIndices *bindx = b_map->getIndices();
   TACSBVecIndices *cindx = c_map->getIndices();
-  
+
   // Set up storage for the values of the local variable numbers
   int array[256];
   int *temp = NULL, *bcols = NULL, *ccols = NULL;
-  
+
   if (ncol > 128){
     temp = new int[ 2*ncol ];
     bcols = &temp[0];
@@ -333,7 +333,7 @@ void FEMat::addValues( int nrow, const int *row,
   }
 
   // Flag to indicate whether we found any items in the c-index set
-  int cflag = 0; 
+  int cflag = 0;
 
   // Convert the columns first so that when we loop over the
   // rows, we can add the entire row in a single shot
@@ -351,7 +351,7 @@ void FEMat::addValues( int nrow, const int *row,
         cflag = 1;
         ccols[i] = cindx->findIndex(c);
       }
-    
+
       // If neither turned up anything, print an error
       if ((ccols[i] < 0) &&
           (bcols[i] < 0)){
@@ -372,7 +372,7 @@ void FEMat::addValues( int nrow, const int *row,
     if (r >= 0){
       int br = 0, cr = 0;
       if ((br = bindx->findIndex(r)) >= 0){
-        B->addRowValues(br, ncol, bcols, mv, &values[mv*i*bsize]);      
+        B->addRowValues(br, ncol, bcols, mv, &values[mv*i*bsize]);
         if (cflag){
           E->addRowValues(br, ncol, ccols, mv, &values[mv*i*bsize]);
         }
@@ -380,7 +380,7 @@ void FEMat::addValues( int nrow, const int *row,
       else if ((cr = cindx->findIndex(r)) >= 0){
         F->addRowValues(cr, ncol, bcols, mv, &values[mv*i*bsize]);
         if (cflag){
-          C->addRowValues(cr, ncol, ccols, mv, &values[mv*i*bsize]);      
+          C->addRowValues(cr, ncol, ccols, mv, &values[mv*i*bsize]);
         }
       }
       else {
@@ -392,7 +392,7 @@ void FEMat::addValues( int nrow, const int *row,
     }
   }
 
-  if (temp){ delete [] temp; }  
+  if (temp){ delete [] temp; }
 }
 
 /*
@@ -426,7 +426,7 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
   // Get the index sets corresponding to the B/C matrices
   TACSBVecIndices *bindx = b_map->getIndices();
   TACSBVecIndices *cindx = c_map->getIndices();
-  
+
   // The number of variables we'll have to convert = row dim(W^{T})
   int n = varp[nvars];
 
@@ -446,7 +446,7 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
   }
 
   // Flag to indicate whether we found any items in the c-index set
-  int cflag = 0; 
+  int cflag = 0;
 
   // Convert the columns first so that when we loop over the
   // rows, we can add the entire row in a single shot
@@ -464,7 +464,7 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
         cflag = 1;
         cvars[i] = cindx->findIndex(c);
       }
-    
+
       // If neither turned up anything, print an error
       if ((cvars[i] < 0) &&
           (bvars[i] < 0)){
@@ -489,22 +489,22 @@ void FEMat::addWeightValues( int nvars, const int *varp, const int *vars,
     for ( int j = varp[i]; j < varp[i+1]; j++ ){
       // Check where to place this value
       if (bvars[j] >= 0){
-        B->addRowWeightValues(weights[j], bvars[j], 
-                              nvars, varp, bvars, weights, 
+        B->addRowWeightValues(weights[j], bvars[j],
+                              nvars, varp, bvars, weights,
                               mv, &values[incr*i*bsize], matOr);
         if (cflag){
-          E->addRowWeightValues(weights[j], bvars[j], 
-                                nvars, varp, cvars, weights, 
+          E->addRowWeightValues(weights[j], bvars[j],
+                                nvars, varp, cvars, weights,
                                 mv, &values[incr*i*bsize], matOr);
         }
       }
       else if (cvars[j] >= 0){
-        F->addRowWeightValues(weights[j], cvars[j], 
-                              nvars, varp, bvars, weights, 
+        F->addRowWeightValues(weights[j], cvars[j],
+                              nvars, varp, bvars, weights,
                               mv, &values[incr*i*bsize], matOr);
         if (cflag){
-          C->addRowWeightValues(weights[j], cvars[j], 
-                                nvars, varp, cvars, weights, 
+          C->addRowWeightValues(weights[j], cvars[j],
+                                nvars, varp, cvars, weights,
                                 mv, &values[incr*i*bsize], matOr);
         }
       }
@@ -531,13 +531,13 @@ TACSVec *FEMat::createVec(){
 /*
   Apply the Dirichlet boundary conditions by zeroing the rows
   associated with the boundary conditions and setting corresponding
-  the diagonal entries to 1.  
+  the diagonal entries to 1.
 */
 void FEMat::applyBCs( TACSBcMap *bcmap ){
   if (bcmap){
     TACSBVecIndices *bindx = b_map->getIndices();
     TACSBVecIndices *cindx = c_map->getIndices();
-    
+
     int mpiRank;
     MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
 
@@ -557,13 +557,13 @@ void FEMat::applyBCs( TACSBcMap *bcmap ){
         int ident = 1; // Replace the diagonal with the identity matrix
         B->zeroRow(br, vars[i], ident);
         ident = 0;
-        E->zeroRow(br, vars[i], ident); 
+        E->zeroRow(br, vars[i], ident);
       }
       else if ((cr = cindx->findIndex(nodes[i])) >= 0){
         int cident = 0;
         int fident = 0;
         if (nodes[i] >= ownerRange[mpiRank] &&
-            nodes[i] < ownerRange[mpiRank+1]){ 
+            nodes[i] < ownerRange[mpiRank+1]){
           // Only use the identity here if it is locally owned
           cident = 1;
         }
