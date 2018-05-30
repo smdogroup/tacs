@@ -37,8 +37,9 @@ int main( int argc, char *argv[] ){
   }
 
   // Set the length of the rotating beam
-  TacsScalar precone = 0.0; // 2.5 degrees
-  TacsScalar r = 0.0; // cutout
+  TacsScalar chord = 0.121; // 
+  TacsScalar precone = 2.5*M_PI/180.0; // 2.5 degrees
+  TacsScalar r = 0.22;
   TacsScalar L = 2.0;
 
   // Create the Timoshenko stiffness object
@@ -87,11 +88,9 @@ int main( int argc, char *argv[] ){
     stiff = new TimoshenkoStiffness(mA, IA, IA, 0.0,
                                     EA, GJ, EIz, EIz, kGAz, kGAz,
                                     axis_A);
-
-  } else if (test_case == 1) {
-
+  }
+  else if (test_case == 1){
     // Run uniform HART-II case
-   
     precone = 2.5*M_PI/180.0; // 2.5 degrees
     r = 0.12; // cutout
     freq_normalization = 1.0/Omega_ref;
@@ -116,14 +115,10 @@ int main( int argc, char *argv[] ){
     // Shear stiffness    
     TacsScalar kG22 = 5.85e5; // N
     TacsScalar kG33 = 5.85e5; // N
-
+   
     // Set the reference axes
     TacsScalar axis_A[] = {0.0, 0.0, 1.0};
 
-    // stiff = new TimoshenkoStiffness(mA, m22, m33, 0.0,
-    //                                 EA, GJ, EI22, EI33, kG22, kG33,
-    //                                 axis_A);
-    
     stiff = new TimoshenkoStiffness( axis_A,
                                      EA, 
                                      EI22, EI33, 0.0,
@@ -135,11 +130,9 @@ int main( int argc, char *argv[] ){
                                      0.0,0.0,
                                      0.0,0.0,
                                      0.0);
-
-  } else {
-    
-    // Run uniform rectangular geometry
-    
+  }
+  else {
+    // Run uniform rectangular geometry  
     freq_normalization = 1.0/Omega_ref;
     
     // Set the inertial properties
@@ -170,20 +163,8 @@ int main( int argc, char *argv[] ){
     stiff = new TimoshenkoStiffness(mA, m22, m33, m23,
                                     EA, GJ, EI22, EI33, kG22, kG33,
                                     axis_A);
-    
-    // stiff = new TimoshenkoStiffness( axis_A,
-    //                                  EA, 
-    //                                  EI22, EI33, 0.0,
-    //                                  GJ,
-    //                                  kG22, kG33, 0.0,
-    //                                  mA,
-    //                                  m11, m22,  m33,
-    //                                  0.0, 0.0, 
-    //                                  0.0, 0.0,
-    //                                  0.0, 0.0, 0.0);
-    
   }
-
+  
   TACSGibbsVector *direction = new TACSGibbsVector(0.0, 0.0, 1.0);
 
   TACSRevoluteDriver *rd = 
@@ -278,6 +259,7 @@ int main( int argc, char *argv[] ){
   for ( int i = 0; i < 2*ne+1; i++ ){
     TacsScalar xdist = i*(L - r)/(2*ne);
     X[3*i] = r + xdist;
+    X[3*i+1] = 0.0;
     X[3*i+2] = -xdist*sin(precone);
   }
 
@@ -310,7 +292,7 @@ int main( int argc, char *argv[] ){
 
   integrator->setBeamOutput(f5);
 
-  integrator->writeSolutionToF5();
+  // integrator->writeSolutionToF5();
 
   TACSBVec *q, *qdot, *qddot;
   integrator->getStates(num_steps-1, &q, &qdot, &qddot);

@@ -24,16 +24,11 @@ enum JDRecycleType { JD_SUM_TWO,
 /*
   The following code implements a Jacobi-Davidson method for 
   simple and generalized eigenvalue problems.
-
 */
 
 /*
   This is the abstract base class that are required to define the 
   operators needed in the Jacobi-Davidson method.
-
-  This class defines a 
-
-
 */
 class TACSJacobiDavidsonOperator : public TACSObject {
  public:
