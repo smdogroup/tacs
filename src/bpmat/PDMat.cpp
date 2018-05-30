@@ -366,12 +366,8 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     iperm = new int[ ncols ];
     orig_bptr = new int[ nrows+1 ];
   }
-  else{
+  else {
     reorder_blocks = 0;
-    if (rank == 0){
-      printf("[%d] PDMat: Cannot re-order blocks with nrows != ncols\n",
-             rank);
-    }
   }
 
   if (rank == root){
@@ -717,16 +713,29 @@ void PDMat::init_proc_grid( int size ){
   Get the size of the matrix
 */
 void PDMat::getSize( int *nr, int *nc ){
-  *nr = bptr[nrows];
-  *nc = bptr[ncols];
+  if (nr){ *nr = bptr[nrows]; }
+  if (nc){ *nc = bptr[ncols]; }
 }
 
 /*
   Retrieve the size of the process grid.
 */
 void PDMat::getProcessGridSize( int *_nprows, int *_npcols ){
-  *_nprows = nprows;
-  *_npcols = npcols;
+  if (_nprows){ *_nprows = nprows; }
+  if (_npcols){ *_npcols = npcols; }
+}
+
+/*
+  Retrieve the block pointers
+*/
+void PDMat::getBlockPointers( int *_nrows, int *_ncols, 
+                              const int **_bptr, const int **_orig_bptr, 
+                              const int **_xbptr ){
+  if (_nrows){ *_nrows = nrows; }
+  if (_ncols){ *_ncols = ncols; }
+  if (_bptr){ *_bptr = bptr; }
+  if (_orig_bptr){ *_orig_bptr = orig_bptr; }
+  if (_xbptr){ *_xbptr = xbptr; }
 }
 
 /*
@@ -1464,6 +1473,7 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
     for ( int ip = Lcolp[j]; ip < Lcolp[j+1]; ip++ ){
       int i = Lrows[ip];
       int ni = xbptr[i];
+      int bi = bptr[i+1] - bptr[i];
 
       if (rank == get_block_owner(i, j)){
         int np = lval_offset[ip];

@@ -92,6 +92,12 @@ class PDMat : public TACSObject {
   void getProcessGridSize( int *_nprows, int *_npcols );
   void setMonitorFactorFlag( int flag );
 
+  // Get block pointers to the columns
+  // ---------------------------------
+  void getBlockPointers( int *_nrows, int *_ncols, 
+                         const int **_bptr, const int **_orig_bptr, 
+                         const int **_xbptr );
+
   // Functions for setting values into the matrix
   // --------------------------------------------
   void zeroEntries();
