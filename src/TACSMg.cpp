@@ -457,7 +457,7 @@ void TACSMg::applyFactor( TACSVec *bvec, TACSVec *xvec ){
     if (monitor){
       for ( int k = 0; k < nlevels; k++ ){
         char descript[128];
-        sprintf(descript, "TACSMg level %2d time %15.8e\n",
+        sprintf(descript, "TACSMg cumulative level %2d time %15.8e\n",
                 k, cumulative_level_time[k]);
         monitor->print(descript);
       }
@@ -483,14 +483,16 @@ void TACSMg::applyMg( int level ){
   // If we've made it to the lowest level, apply the direct solver
   // otherwise, perform multigrid on the next-lowest level
   if (level == nlevels-1){
-    double t1 = MPI_Wtime();
+    double t1 = 0.0;
+    if (monitor){ t1 = MPI_Wtime(); }
     root_pc->applyFactor(b[level], x[level]);
-    cumulative_level_time[level] += MPI_Wtime() - t1;
+    if (monitor){ cumulative_level_time[level] += MPI_Wtime() - t1; }
     return;
   }
 
   // Perform iters[level] cycle at the next lowest level
-  double t1 = MPI_Wtime();
+  double t1 = 0.0;
+  if (monitor){ t1 = MPI_Wtime(); }
   for ( int k = 0; k < iters[level]; k++ ){
     // Pre-smooth at the current level
     pc[level]->applyFactor(b[level], x[level]);
@@ -515,5 +517,7 @@ void TACSMg::applyMg( int level ){
   // Post-Smooth the residual
   pc[level]->applyFactor(b[level], x[level]);
 
-  cumulative_level_time[level] += MPI_Wtime() - t1;
+  if (monitor){
+    cumulative_level_time[level] += MPI_Wtime() - t1;
+  }
 }
