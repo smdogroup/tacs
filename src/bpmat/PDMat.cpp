@@ -1522,7 +1522,6 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
   memset(ty, 0, rbptr[nrows]*sizeof(TacsScalar));
     
   if (proc_row >= 0){
-
     // Allocate an array of requests
     MPI_Request *sreq = new MPI_Request[ nprows ];
 
@@ -1618,11 +1617,6 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
     // Free the send request array
     delete [] sreq;
-  }
-
-  MPI_Barrier(comm);
-
-  if (proc_row >= 0){
 
     // Keep track of the send request from the current row
     MPI_Request row_req;
@@ -1653,12 +1647,6 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
               xp = &tx[nj];
             }
 
-            for ( int k = 0; k < bj; k++ ){
-              if (xp[k] != 1.0){
-                printf("Big error here\n");
-              }
-            }
-
             // Compute the product
             int np = uval_offset[jp];
             TacsScalar alpha = 1.0, beta = 1.0;
@@ -1671,90 +1659,32 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
         // Send the product from this processor from the current
         // iteration
-        int dest = get_block_owner(i, i);
-        if (dest != rank){
-          int tag = i;
-          MPI_Isend(&ty[ni], bi, TACS_MPI_TYPE, dest, tag,
-                    comm, &row_req);
+        int owner = get_block_owner(i, i);
+        if (owner != rank){
+          int tag = proc_col;
+          MPI_Send(&ty[ni], bi, TACS_MPI_TYPE, owner, tag, comm);
         }
-        else {
+        else if (owner == rank){
           // Add up the contributions from this processor
           int nj = xbptr[i];
           for ( int j = 0; j < bi; j++ ){
             y[nj+j] += ty[ni+j];
           }
 
-          // Add up the additional expected recvs from other
-          // processors
-          nrecvs += npcols-1;          
-        }
-        
-        // Keep track of any incoming recvs
-        int flag = 1;
+          for ( int k = 0; k < npcols; k++ ){
+            int source = get_block_owner(proc_row, k);
+            if (source != owner){
+              int tag = k;
+              MPI_Recv(&ty[ni], bi, TACS_MPI_TYPE, source, tag,
+                       comm, MPI_STATUS_IGNORE);
 
-        while (nrecvs > 0 && flag){
-          MPI_Status status;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &flag, &status);
-
-          if (flag){
-            // Get the incoming tag - the data for where to put the
-            // result on this processor
-            int row = status.MPI_TAG;
-            
-            // Keep track of the expected
-            int bk = bptr[row+1] - bptr[row];
-            int nk = xbptr[row];
-            int ck = rbptr[row];
-
-            int count;
-            MPI_Get_count(&status, TACS_MPI_TYPE, &count);
-            if (count != bk){
-              printf("Count is inconsistent\n");
+              for ( int j = 0; j < bi; j++ ){
+                y[nj+j] += ty[ni+j];
+              }
             }
-
-            MPI_Recv(&ty[ck], bk, TACS_MPI_TYPE,
-                     status.MPI_SOURCE, status.MPI_TAG, comm, &status);
-
-            // Add the values into the vector
-            for ( int j = 0; j < bk; j++ ){
-              y[nk+j] += ty[ck+j];
-            }
-
-            // Update the recv count
-            nrecvs--;
           }
         }
-
-        if (dest != rank){
-          MPI_Wait(&row_req, MPI_STATUS_IGNORE);
-        }
       }
-    }
-
-    // Finalize the processing of incoming messages
-    while (nrecvs > 0){
-      MPI_Status status;
-      MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &status);
-
-      // Get the incoming tag - the data for where to put the
-      // result on this processor
-      int row = status.MPI_TAG;
-            
-      // Keep track of the expected
-      int bk = bptr[row+1] - bptr[row];
-      int nk = xbptr[row];
-      int ck = rbptr[row];
-
-      MPI_Recv(&ty[ck], bk, TACS_MPI_TYPE,
-               status.MPI_SOURCE, status.MPI_TAG, comm, &status);
-      
-      // Add the values into the vector
-      for ( int j = 0; j < bk; j++ ){
-        y[nk+j] += ty[ck+j];
-      }
-      
-      // Update the recv count
-      nrecvs--;
     }
    
     // Free the temporary data

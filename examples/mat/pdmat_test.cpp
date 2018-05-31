@@ -26,8 +26,6 @@ int main( int argc, char *argv[] ){
     x[i] = 1.0;
   }
 
-  printf("size = %d\n", size);
-  
   // Multiply to get the right size
   double tm = MPI_Wtime();
   mat->mult(x, y);

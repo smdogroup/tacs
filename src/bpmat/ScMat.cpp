@@ -527,8 +527,6 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
       int *item = (int*)bsearch(&global_schur_root[i], unique_schur,
                                 nunique_schur, sizeof(int),
                                 FElibrary::comparator);
-
-      
       
       global_schur_root[i] = item - unique_schur;
     }
