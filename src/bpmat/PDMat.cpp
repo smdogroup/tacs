@@ -762,10 +762,6 @@ void PDMat::init_proc_grid( int size ){
     nprows = 1;
     npcols = 1;
   }
-  else if (size == 4 || size == 5){
-    nprows = 2;
-    npcols = 2;
-  }
   else {
     // Favor more columns than rows
     int n = 1;
@@ -1617,12 +1613,6 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
     // Free the send request array
     delete [] sreq;
-
-    // Keep track of the send request from the current row
-    MPI_Request row_req;
-
-    // Keep track of the last row sent on this proc
-    int nrecvs = 0;
     
     // Loop over the rows in the matrix   
     for ( int i = 0; i < nrows; i++ ){
