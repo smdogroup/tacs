@@ -29,7 +29,6 @@ for i in range(num_components):
     stiff = constitutive.isoFSDT(rho, E, nu, kcorr, ys, thickness, i,
                                  min_thickness, max_thickness)
     element = None
-    print(descriptor)
     if descriptor in ["CQUAD", "CQUADR", "CQUAD4"]:
         element = elements.MITCShell(2, stiff, component_num=i)
     struct_mesh.setElement(i, element)
