@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_ELEMENT_ALGEBRA_H
@@ -28,7 +28,7 @@
   x:   the input 3-vector
 
   output:
-  y:   the resulting vector 
+  y:   the resulting vector
 */
 static inline void matMult( const TacsScalar A[],
                             const TacsScalar x[],
@@ -46,7 +46,7 @@ static inline void matMult( const TacsScalar A[],
   x:   the input 3-vector
 
   output:
-  y:   the resulting vector 
+  y:   the resulting vector
 */
 static inline void matMultTrans( const TacsScalar A[],
                                  const TacsScalar x[],
@@ -64,7 +64,7 @@ static inline void matMultTrans( const TacsScalar A[],
   x:   the input 3-vector
 
   in/out:
-  y:   the resulting vector 
+  y:   the resulting vector
 */
 static inline void matMultAdd( const TacsScalar A[],
                                const TacsScalar x[],
@@ -82,7 +82,7 @@ static inline void matMultAdd( const TacsScalar A[],
   x:   the input 3-vector
 
   in/out:
-  y:   the resulting vector 
+  y:   the resulting vector
 */
 static inline void matMultTransAdd( const TacsScalar A[],
                                     const TacsScalar x[],
@@ -98,16 +98,16 @@ static inline void matMultTransAdd( const TacsScalar A[],
   input:
   A:   the 3x3 input matrix in row-major order
   x:   the input 3-vector
-  y:   the resulting vector 
+  y:   the resulting vector
 
   returns:  the inner product
 */
 static inline TacsScalar matSymmInner( const TacsScalar A[],
                                        const TacsScalar x[],
                                        const TacsScalar y[] ){
-  return (y[0]*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2]) + 
+  return (y[0]*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2]) +
           y[1]*(A[1]*x[0] + A[3]*x[1] + A[4]*x[2]) +
-          y[2]*(A[2]*x[0] + A[4]*x[1] + A[5]*x[2]));  
+          y[2]*(A[2]*x[0] + A[4]*x[1] + A[5]*x[2]));
 }
 
 /*
@@ -118,7 +118,7 @@ static inline TacsScalar matSymmInner( const TacsScalar A[],
   x:   the input 3-vector
 
   in/out:
-  y:   the resulting vector 
+  y:   the resulting vector
 */
 static inline void matSymmMult( const TacsScalar A[],
                                 const TacsScalar x[],
@@ -136,7 +136,7 @@ static inline void matSymmMult( const TacsScalar A[],
   x:   the input 3-vector
 
   in/out:
-  y:   the resulting vector 
+  y:   the resulting vector
 */
 static inline void matSymmMultAdd( const TacsScalar A[],
                                    const TacsScalar x[],
@@ -154,7 +154,7 @@ static inline void matSymmMultAdd( const TacsScalar A[],
   B:   the second 3x3 input matrix in row-major order
 
   output:
-  C:   the resulting matrix 
+  C:   the resulting matrix
 */
 static inline void matMatMult( const TacsScalar A[],
                                const TacsScalar B[],
@@ -180,7 +180,7 @@ static inline void matMatMult( const TacsScalar A[],
   B:   the second 3x3 input matrix in row-major order
 
   output:
-  C:   the resulting matrix 
+  C:   the resulting matrix
 */
 static inline void matMatTransMult( const TacsScalar A[],
                                     const TacsScalar B[],
@@ -206,7 +206,7 @@ static inline void matMatTransMult( const TacsScalar A[],
   B:   the second 3x3 input matrix in row-major order
 
   output:
-  C:   the resulting matrix 
+  C:   the resulting matrix
 */
 static inline void matTransMatMult( const TacsScalar A[],
                                     const TacsScalar B[],
@@ -232,7 +232,7 @@ static inline void matTransMatMult( const TacsScalar A[],
   B:   the second 3x3 input matrix in row-major order
 
   output:
-  C:   the resulting matrix 
+  C:   the resulting matrix
 */
 static inline void matTransMatMultAdd( const TacsScalar A[],
                                        const TacsScalar B[],
@@ -258,7 +258,7 @@ static inline void matTransMatMultAdd( const TacsScalar A[],
   B:   the second 3x3 input matrix in row-major order
 
   output:
-  C:   the resulting matrix 
+  C:   the resulting matrix
 */
 static inline void matMatMultAdd( const TacsScalar A[],
                                   const TacsScalar B[],
@@ -284,7 +284,7 @@ static inline void matMatMultAdd( const TacsScalar A[],
   B:   the second 3x3 input matrix in row-major order
 
   output:
-  C:   the resulting matrix 
+  C:   the resulting matrix
 */
 static inline void matMatTransMultAdd( const TacsScalar A[],
                                        const TacsScalar B[],
@@ -303,12 +303,12 @@ static inline void matMatTransMultAdd( const TacsScalar A[],
 }
 
 /*
-  Multiply the matrix by 
+  Multiply the matrix by
 
   [ A[0] A[1] A[2] ][ B[0]  B[1]  B[2]  B[3] ]
   [ A[3] A[4] A[5] ][ B[4]  B[5]  B[6]  B[7] ]
   [ A[6] A[7] A[8] ][ B[8]  B[9]  B[10] B[11] ]
-  
+
   input:
   A:   a symmetric 3x3 matrix
   B:   a 3x4 matrix in row-major order
@@ -369,7 +369,7 @@ static inline void matSymmMat3x4Mult( const TacsScalar A[],
 }
 
 /*
-  Compute the cross-product 
+  Compute the cross-product
 
   out = a*(x cross y)
 
@@ -416,7 +416,7 @@ static inline void crossProductAdd( const TacsScalar a,
   Scale the vector by the given scalar
 
   input
-  a:   the scalar 
+  a:   the scalar
   x:   the vector
 */
 static inline void vecScale( const TacsScalar a,
@@ -434,7 +434,7 @@ static inline void vecScale( const TacsScalar a,
   input:
   x:   the first vector
   y:   the second vector
-  
+
   returns: the dot product
 */
 static inline TacsScalar vecDot( const TacsScalar x[],
@@ -475,7 +475,7 @@ static inline void vecNormDeriv( TacsScalar nrm,
                                  TacsScalar D[] ){
   TacsScalar s = 1.0/(nrm*nrm*nrm);
   TacsScalar t = nrm*nrm;
- 
+
   D[0] = s*(t - x[0]*x[0]);
   D[1] =-s*x[0]*x[1];
   D[2] =-s*x[0]*x[2];
@@ -613,7 +613,7 @@ static inline void addMatSkewSkew( const TacsScalar a,
   a:    the scalar
   A:    the 3x3 block matrix
   ldd:  the leading row-dimension of the D matrix
-  
+
   in/out:
   D: the block matrix with in row-major order
 */
@@ -644,7 +644,7 @@ static inline void addBlockMat( const TacsScalar a,
   a:    the scalar
   A:    the 3x3 block matrix
   ldd:  the leading row-dimension of the D matrix
-  
+
   in/out:
   D:    the block matrix with in row-major order
 */
@@ -667,7 +667,7 @@ static inline void addBlockMatTrans( const TacsScalar a,
 }
 
 /*
-  Add a vector to the matrix 
+  Add a vector to the matrix
 
   D[:,:] += a*A
 
@@ -675,7 +675,7 @@ static inline void addBlockMatTrans( const TacsScalar a,
   a:    the scalar
   A:    the 3-vector to add to the matrix
   ldd:  the leading row-dimension of the D matrix
-  
+
   in/out:
   D:    the block matrix with in row-major order
 */
@@ -697,7 +697,7 @@ static inline void addVecMat( const TacsScalar a,
   a:    the scalar
   A:    the 3x3 block matrix
   ldd:  the leading row-dimension of the D matrix
-  
+
   in/out:
   D: the block matrix with in row-major order
 */
@@ -725,7 +725,7 @@ static inline void addBlockSymmMat( const TacsScalar a,
   input:
   a:    the scalar
   ldd:  the leading row-dimension of the D matrix
- 
+
   in/out:
   D:    the block matrix in row-major order
 */
@@ -745,9 +745,9 @@ static inline void addBlockIdent( const TacsScalar a,
 
   input:
   a:    the scalar
-  x:    the vector 
+  x:    the vector
   ldd:  the leading row-dimension of the D matrix
- 
+
   in/out:
   D:    the block matrix in row-major order
 */
@@ -773,10 +773,10 @@ static inline void addBlockSkew( const TacsScalar a,
 
   input:
   a:    the scalar
-  x:    the first vector 
+  x:    the first vector
   y:    the second vectorr
   ldd:  the leading row-dimension of the D matrix
- 
+
   in/out:
   D:    the block matrix in row-major order
 */
@@ -808,8 +808,8 @@ static inline void addBlockSkewSkew( const TacsScalar a,
   returns:  the determinant of A
 */
 static inline TacsScalar det3x3( const TacsScalar A[] ){
-  return (A[8]*(A[0]*A[4] - A[3]*A[1]) - 
-          A[7]*(A[0]*A[5] - A[3]*A[2]) + 
+  return (A[8]*(A[0]*A[4] - A[3]*A[1]) -
+          A[7]*(A[0]*A[5] - A[3]*A[2]) +
           A[6]*(A[1]*A[5] - A[2]*A[4]));
 }
 
@@ -840,24 +840,24 @@ static inline void det3x3Sens( const TacsScalar A[],
 
   output:
   Ainv:       the inverse of the 3x3 matrix
-  
+
   returns:    the determinant of A
 */
 static inline TacsScalar inv3x3( const TacsScalar A[],
                                  TacsScalar Ainv[] ){
-  TacsScalar det = (A[8]*(A[0]*A[4] - A[3]*A[1]) - 
-                    A[7]*(A[0]*A[5] - A[3]*A[2]) + 
+  TacsScalar det = (A[8]*(A[0]*A[4] - A[3]*A[1]) -
+                    A[7]*(A[0]*A[5] - A[3]*A[2]) +
                     A[6]*(A[1]*A[5] - A[2]*A[4]));
   TacsScalar detinv = 1.0/det;
 
   Ainv[0] = (A[4]*A[8] - A[5]*A[7])*detinv;
   Ainv[1] =-(A[1]*A[8] - A[2]*A[7])*detinv;
   Ainv[2] = (A[1]*A[5] - A[2]*A[4])*detinv;
-    
+
   Ainv[3] =-(A[3]*A[8] - A[5]*A[6])*detinv;
   Ainv[4] = (A[0]*A[8] - A[2]*A[6])*detinv;
   Ainv[5] =-(A[0]*A[5] - A[2]*A[3])*detinv;
-    
+
   Ainv[6] = (A[3]*A[7] - A[4]*A[6])*detinv;
   Ainv[7] =-(A[0]*A[7] - A[1]*A[6])*detinv;
   Ainv[8] = (A[0]*A[4] - A[1]*A[3])*detinv;
@@ -878,14 +878,14 @@ static inline TacsScalar inv3x3( const TacsScalar A[],
 static inline void inv3x3Sens( TacsScalar Ad[],
                                const TacsScalar Ainvd[],
                                const TacsScalar Ainv[] ){
-  // d(Ainv_{kl})/d(A_{ij}) 
+  // d(Ainv_{kl})/d(A_{ij})
   //  = -Ainv_{kn}*delta_{ni}*delta{mj}*Ainv_{ml}
   //  = -Ainv_{ki}*Ainv_{jl}
 
   // Ad_{ij}
   //  = d(Ainv_{kl})/d(A_{ij})*Ainvd_{kl}
   //  = -Ainv_{ki}*Ainv_{jl}*Ainvd_{kl}
-  
+
   // Ad = -Ainv^{T}*Ainvd*Ainv^{T}
   TacsScalar t[9];
   matTransMatMult(Ainv, Ainvd, t);
@@ -980,17 +980,17 @@ static inline void computeRotationMatDeriv( const TacsScalar eta,
 
 /*
   Compute the product of the 3x4 rotation rate matrix with the
-  given components of the quaternion vector. 
+  given components of the quaternion vector.
 
-  y <- S(eta, eps)*x 
+  y <- S(eta, eps)*x
   y <- -2*eps*xeta + 2*(eta*I - eps^{x})*xeps
 
-  input: 
+  input:
   eta:   the quaternion scalar
   eps:   the quaternion vector
   xeta:  the x component of the scalar
   xeps:  the x components of the vector
-  
+
   output:
   y:     3-vector containing the result
 */
@@ -1008,15 +1008,15 @@ static inline void computeSRateProduct( const TacsScalar eta,
   Add the product of the 3x4 rotation rate matrix with the given
   components of the quaternion vector.
 
-  y <- y + a*S(eta, eps)*x 
+  y <- y + a*S(eta, eps)*x
   y <- y - 2*a*eps*xeta + 2*a*(eta*I - eps^{x})*xeps
 
-  input: 
+  input:
   eta:   the quaternion scalar
   eps:   the quaternion vector
   xeta:  the x component of the scalar
   xeps:  the x components of the vector
-  
+
   output:
   y:     3-vector containing the result
 */
@@ -1035,17 +1035,17 @@ static inline void addSRateProduct( const TacsScalar eta,
   with the given components of x.
 
   y <- y + a*S(eta, eps)^{T}*x
-  
-  [ yeta ] += a*S^{T}*x = [      2*a*eps^{T}*x      ]
-  [ yeps ] +=             [ 2*a*(eta*I + eps^{x})*x ] 
-  
 
-  input: 
+  [ yeta ] += a*S^{T}*x = [      2*a*eps^{T}*x      ]
+  [ yeps ] +=             [ 2*a*(eta*I + eps^{x})*x ]
+
+
+  input:
   a:     the scalar input
   eta:   the quaternion scalar
   eps:   the quaternion vector
   x:     the 3-vector input
-  
+
   output:
   yeps:  the scalar component of the output
   yeta:  the 3-vector component of the output
@@ -1067,10 +1067,10 @@ static inline void addSRateTransProduct( const TacsScalar a,
 
   S = 2[ -eps | (eta*I - eps^{x}) ]
 
-  input: 
+  input:
   eta:   the quaternion scalar
   eps:   the quaternion vector
-  
+
   output:
   S:     the 3x4 rate matrix
 */
@@ -1094,20 +1094,20 @@ static inline void computeSRateMat( const TacsScalar eta,
 }
 
 /*
-  Compute the product of the matrix 
+  Compute the product of the matrix
 
-  y <- y + a*D(v)^{T}*x 
+  y <- y + a*D(v)^{T}*x
 
   The matrix D(v) is the derivative of d(C*v)/dq and is given as
   follows:
 
   D(v) = 2*[ v^{x}*eps | (v^{x}*eps^{x} + eta*v^{x} - 2*eps^{x}*v^{x}) ]
 
-  
+
   D(v)^{T}*x = 2*[ -eps^{T}*v^{x}*x ]
   .              [ eps^{x}*v^{x}*x - eta*v^{x}*x - 2*v^{x}*eps^{x}*x ]
-  
-  input: 
+
+  input:
   a:    the scalar input
   v:    the vector input for D(v)
   x:    the multiplier vector
@@ -1140,16 +1140,16 @@ static inline void addDMatTransProduct( const TacsScalar a,
 }
 
 /*
-  Compute the product of the matrix 
+  Compute the product of the matrix
 
-  y <- y + a*E(v)^{T}*x 
+  y <- y + a*E(v)^{T}*x
 
   The matrix E(v) is the derivative of d(C^{T}*v)/dq and is given as
   follows:
 
   E(v) = 2*[ -v^{x}*eps | (v^{x}*eps^{x} - eta*v^{x} - 2*eps^{x}*v^{x}) ]
 
-  input: 
+  input:
   a:    the scalar input
   v:    the vector input for D(v)
   x:    the multiplier vector
@@ -1341,7 +1341,7 @@ static inline void computeEMat( const TacsScalar eta,
   ldd:   the leading row dimension of the block matrix D
 
   output:
-  D:     the resulting block matrix  
+  D:     the resulting block matrix
 */
 static inline void addBlockDMatTransDeriv( const TacsScalar a,
                                            const TacsScalar v[],
@@ -1380,7 +1380,7 @@ static inline void addBlockDMatTransDeriv( const TacsScalar a,
   Add the 3x4 matrix E(v) to the block matrix
 
   E(v) = 2*[ -v^{x}*eps | (eps*v^{T} - 2*v*eps^{T} - eta*^{x} + v^{T}*eps*1) ]
-  
+
   input:
   a:    the scalar value
   eta:   the scalar quaternion
@@ -1389,7 +1389,7 @@ static inline void addBlockDMatTransDeriv( const TacsScalar a,
   ldd:   the leading dimension (row-dimension) of D
 
   output:
-  D:     the result is added to this matrix 
+  D:     the result is added to this matrix
 */
 static inline void addBlockEMat( const TacsScalar a,
                                  const TacsScalar eta,
@@ -1420,7 +1420,7 @@ static inline void addBlockEMat( const TacsScalar a,
   Add the transpose of the 3x4 matrix E(v) to the block matrix
 
   E(v) = 2*[ -v^{x}*eps | (eps*v^{T} - 2*v*eps^{T} - eta*^{x} + v^{T}*eps*1) ]
-  
+
   input:
   a:    the scalar value
   eta:   the scalar quaternion
@@ -1429,7 +1429,7 @@ static inline void addBlockEMat( const TacsScalar a,
   ldd:   the leading dimension (row-dimension) of D
 
   output:
-  D:     the result is added to this matrix 
+  D:     the result is added to this matrix
 */
 static inline void addBlockEMatTrans( const TacsScalar a,
                                       const TacsScalar eta,
@@ -1457,12 +1457,12 @@ static inline void addBlockEMatTrans( const TacsScalar a,
   D[1] += b*(eps[1]*v[2] - 2.0*v[1]*eps[2] + eta*v[0]);
   D[2] += b*(v[0]*eps[0] + v[1]*eps[1]);
 }
- 
+
 /*
   Add the 4x4 matrix from the derivative of the transpose of the
   angular rate S matrix
 
-  d(S^{T}*v)/dq = 
+  d(S^{T}*v)/dq =
   [ 0 | -v^{T} ]
   [ v | -v^{x} ]
 
@@ -1502,10 +1502,10 @@ static inline void addSRateMatTransDeriv( const TacsScalar a,
 /*
   Compute the product of a 3x3 and 3x4 matrix and add the result to
   the block matrix D
-  
+
   D += A*B
 
-  input: 
+  input:
   A:    a 3x3 matrix in row-major order
   B:    a 3x4 matrix in row-major order
 
@@ -1537,10 +1537,10 @@ static inline void addBlock3x3x4Product( const TacsScalar A[],
 /*
   Compute the product of a 3x3 and 3x4 matrix and add the result to
   the block matrix D
-  
+
   D += A^{T}*B
 
-  input: 
+  input:
   A:    a 3x4 matrix in row-major order
   B:    a 3x4 matrix in row-major order
 
@@ -1575,7 +1575,7 @@ static inline void addBlock4x3x3Product( const TacsScalar A[],
   Compute: D += a*A^{T}*B where a is a scalar, and A and B are 3x4
   matrices stored in column-major order.
 
-  input: 
+  input:
   a:    the scalar multiple
   A:    3x4 matrix in row-major order
   B:    3x4 matrix in row-major order
