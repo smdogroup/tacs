@@ -21,8 +21,7 @@ cimport numpy as np
 # Ensure that numpy is initialized
 np.import_array()
 
-# Import the definition required for const strings
-from libc.string cimport const_char
+# Import the definition required for const strings from libc.string cimport const_char
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
@@ -648,10 +647,10 @@ cdef void getinitconditions(void * _self, int nvars, int num_nodes,
                             TacsScalar * ddvars, 
                             const TacsScalar * Xpts):
     '''Get the initial conditions'''
-    _vars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>vars) 
-    _dvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>dvars)
-    _ddvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>ddvars)
-    _Xpts = inplace_array_1d(np.NPY_DOUBLE, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars) 
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
     (<object>_self).getInitConditions(_vars, _dvars, _ddvars, _Xpts)
     return 
   
@@ -662,11 +661,11 @@ cdef void addresidual(void * _self, int nvars, int num_nodes,
                       const TacsScalar * dvars,
                       const TacsScalar * ddvars):
     '''Add the residual'''
-    _res = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>res)
-    _Xpts = inplace_array_1d(np.NPY_DOUBLE, 3*num_nodes, <void*>Xpts)
-    _vars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>vars)
-    _dvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>dvars)
-    _ddvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>ddvars)
+    _res = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>res)
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars)
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
     (<object>_self).addResidual(time, _res, _Xpts, _vars, _dvars, _ddvars)
     return 
 
@@ -678,14 +677,32 @@ cdef void addjacobian(void * _self, int nvars, int num_nodes,
                       const TacsScalar dvars[],
                       const TacsScalar ddvars[]):
     '''Add the Jacobian'''
-    _J = inplace_array_2d(np.NPY_DOUBLE, nvars, nvars, <void*>J)
-    _Xpts = inplace_array_1d(np.NPY_DOUBLE, 3*num_nodes, <void*>Xpts)
-    _vars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>vars)
-    _dvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>dvars)
-    _ddvars = inplace_array_1d(np.NPY_DOUBLE, nvars, <void*>ddvars)
+    _J = inplace_array_2d(TACS_NPY_SCALAR, nvars, nvars, <void*>J)
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars)
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
     (<object>_self).addJacobian(time, _J, alpha, beta, gamma, 
                                 _Xpts, _vars, _dvars, _ddvars)
     return 
+
+cdef void addadjresproduct(void * _self, int nvars, int num_nodes, double time,
+                           TacsScalar scale, TacsScalar dvSens[], int dvLen,
+                           const TacsScalar psi[], const TacsScalar Xpts[],
+                           const TacsScalar vars[], const TacsScalar dvars[],
+                           const TacsScalar ddvars[]):
+    '''Add the derivative of the adjoint-residual product'''
+    _dvSens = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>dvSens)
+    _psi = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>psi)
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars)
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
+
+    (<object>_self).addAdjResProduct(time, scale, _dvSens, _psi, _Xpts, 
+                                     _vars, _dvars, _ddvars)
+
+    return
 
 cdef class pyElement(Element):
     def __cinit__(self, int num_nodes, int num_displacements, *args, **kwargs):
@@ -698,9 +715,15 @@ cdef class pyElement(Element):
         pointer.getinitconditions = getinitconditions
         pointer.addresidual = addresidual
         pointer.addjacobian = addjacobian
+        pointer.addadjresproduct = addadjresproduct
 
         self.ptr = pointer
 
     def __dealloc__(self):
         self.ptr.decref()
         return
+
+    def addAdjResProduct(self, time, scale, dvSens, psi, 
+                         Xpts, vars, dvars, ddvars):
+        '''Raise error if this function is called and hasn't been overrided'''
+        raise NotImplementedError()
