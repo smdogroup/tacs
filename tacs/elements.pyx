@@ -727,5 +727,3 @@ cdef class pyElement(Element):
                          Xpts, vars, dvars, ddvars):
         '''Raise error if this function is called and hasn't been overrided'''
         raise NotImplementedError()
-
-        return
