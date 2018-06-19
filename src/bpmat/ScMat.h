@@ -173,6 +173,11 @@ class PcScMat : public TACSPc {
   // The partially dense matrix
   PDMat *pdmat; // This stores the Schur complement
 
+  // This set of indices defines the ordering passed into the 
+  // parallel block-cyclic matrix factorization
+  int num_local_schur_vars;
+  int *local_schur_vars;
+
   // There are two Schur maps here:
   // These objects defines a mapping between the local C-variables
   // (in xlocal/ylocal) to the global Schur complement system (scmat).

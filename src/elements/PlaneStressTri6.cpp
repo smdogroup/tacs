@@ -8,14 +8,14 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "PlaneStressTri6.h"
 #include "FElibrary.h"
 
-PlaneStressTri6::PlaneStressTri6( PlaneStressStiffness *_stiff, 
+PlaneStressTri6::PlaneStressTri6( PlaneStressStiffness *_stiff,
                                   ElementBehaviorType type,
 				  int _componentNum ):
 TACS2DElement<6>(_stiff, type, _componentNum){}
@@ -27,7 +27,7 @@ const char *PlaneStressTri6::elemName = "PlaneStressTri6";
 /*
   Evaluates the shape function at pt = [xi, eta], and its derivatives
 */
-void PlaneStressTri6::getShapeFunctions( const double pt[], 
+void PlaneStressTri6::getShapeFunctions( const double pt[],
                                          double N[],
                                          double Na[],
                                          double Nb[] ){
@@ -48,7 +48,7 @@ void PlaneStressTri6::getShapeFunctions( const double pt[],
   Na[5] = -4.0*pt[1];
 
   // derivative of shape function with respect to eta
-  Nb[0] = 4.0*(pt[0] + pt[1] - 0.75); 
+  Nb[0] = 4.0*(pt[0] + pt[1] - 0.75);
   Nb[1] = 0.0;
   Nb[2] = 4.0*pt[1] - 1.0;
   Nb[3] = -4.0*pt[0];
@@ -83,19 +83,19 @@ double PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
   // Set coordinates of point specified by num input in pt[]
   // Return weight of point as TacsScalar output
   switch (num) {
-  case 0:	
+  case 0:
     pt[0] = 1.0/3.0;
     pt[1] = 1.0/3.0;
     return -27.0/48.0;
-  case 1:	
+  case 1:
     pt[0] = 1.0/5.0;
     pt[1] = 3.0/5.0;
-    return 25.0/48.0;  
-  case 2:	
+    return 25.0/48.0;
+  case 2:
     pt[0] = 1.0/5.0;
     pt[1] = 1.0/5.0;
     return 25.0/48.0;
-  case 3:	
+  case 3:
     pt[0] = 3.0/5.0;
     pt[1] = 1.0/5.0;
     return 25.0/48.0;
@@ -108,9 +108,9 @@ double PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
 
 /*
   Get the number of elemens/nodes and CSR size of the contributed by
-  this element.  
+  this element.
 */
-void PlaneStressTri6::addOutputCount( int *nelems, 
+void PlaneStressTri6::addOutputCount( int *nelems,
 				      int *nnodes, int *ncsr ){
   *nelems += 3;
   *nnodes += 6;
@@ -120,16 +120,16 @@ void PlaneStressTri6::addOutputCount( int *nelems,
 /*
   Get the output data from this element and place it in a real
   array for visualization later. The values generated for visualization
-  are determined by a bit-wise selection variable 'out_type' which is 
+  are determined by a bit-wise selection variable 'out_type' which is
   can be used to simultaneously write out different data. Note that this
-  is why the bitwise operation & is used below. 
+  is why the bitwise operation & is used below.
 
   The output may consist of the following:
   - the nodal locations
   - the displacements and rotations
   - the strains or strains within the element
   - extra variables that are used for optimization
-  
+
   output:
   data:     the data to write to the file (eventually)
 
@@ -138,7 +138,7 @@ void PlaneStressTri6::addOutputCount( int *nelems,
   vars:     the element variables
   Xpts:     the element nodal locations
 */
-void PlaneStressTri6::getOutputData( unsigned int out_type, 
+void PlaneStressTri6::getOutputData( unsigned int out_type,
 				     double *data, int ld_data,
 				     const TacsScalar Xpts[],
 				     const TacsScalar vars[] ){
@@ -160,7 +160,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
       }
       index += 2;
     }
-    	
+
     // Compute the shape functions
     double N[NUM_NODES];
     double Na[NUM_NODES], Nb[NUM_NODES];
@@ -178,7 +178,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
     // Compute the strain
     TacsScalar strain[3];
     this->evalStrain(strain, J, Na, Nb, vars);
-	
+
     if (out_type & TACSElement::OUTPUT_STRAINS){
       for ( int k = 0; k < 3; k++ ){
         data[index+k] = TacsRealPart(strain[k]);
@@ -189,7 +189,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
       // Calculate the strain at the current point
       TacsScalar stress[3];
       this->stiff->calculateStress(pt[n], strain, stress);
-      
+
       for ( int k = 0; k < 3; k++ ){
         data[index+k] = TacsRealPart(stress[k]);
       }
@@ -203,10 +203,10 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
 
       this->stiff->buckling(strain, &lambda);
       data[index+1] = TacsRealPart(lambda);
-      
+
       data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt[n]));
       data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt[n]));
-      
+
       index += this->NUM_EXTRAS;
     }
 
@@ -224,7 +224,7 @@ void PlaneStressTri6::getOutputData( unsigned int out_type,
   by this finite-element
 
   input:
-  node:  the node offset number - so that this connectivity is more or 
+  node:  the node offset number - so that this connectivity is more or
   less global
 */
 void PlaneStressTri6::getOutputConnectivity( int *con, int node ){

@@ -131,6 +131,9 @@ class TACSMg : public TACSPc {
   // The interpolation operators
   TACSBVecInterp **interp;
 
+  // Time spent on each level
+  double *cumulative_level_time;
+
   // The matrices/preconditioner objects required for multigrid
   TACSMat *root_mat; // The root matrix 
   TACSPc *root_pc; // The root direct solver
@@ -138,4 +141,5 @@ class TACSMg : public TACSPc {
   TACSPc **pc; // The smoothers for all but the lowest level
 };
 
-#endif
+#endif // TACS_MG_H
+

@@ -121,7 +121,8 @@ class TACSPMat : public TACSMat {
 class TACSGaussSeidel : public TACSPc {
  public:
   TACSGaussSeidel( TACSPMat *_mat, int _zero_guess, 
-                   TacsScalar _omega, int _iters, int _symmetric );
+                   TacsScalar _omega, int _iters, int _symmetric,
+                   int _use_l1_gauss_seidel=0 );
   ~TACSGaussSeidel();
 
   void factor();
@@ -137,6 +138,7 @@ class TACSGaussSeidel : public TACSPc {
   TacsScalar omega; // The over/under relaxation factor
   int zero_guess; // Zero the initial guess
   int symmetric; // Apply the symmetric variant 
+  int use_l1_gauss_seidel; // Apply the L1 variant of Gauss-Seidel
 
   // Pointers to the local/external matrix
   BCSRMat *Aloc, *Bext;

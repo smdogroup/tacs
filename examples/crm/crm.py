@@ -1,5 +1,6 @@
 # A demonstration of basic functions of the Python interface for TACS: loading a
 # mesh, creating elements, evaluating functions, solution, and output
+from __future__ import print_function   
 
 # Import necessary libraries
 import numpy as np
@@ -138,9 +139,9 @@ else:
 
 result = np.dot(xpert, fdvSens)
 if tacs_comm.rank == 0:
-    print 'FD:      ', fd[0]
-    print 'Result:  ', result
-    print 'Rel err: ', (result - fd[0])/result
+    print('FD:      ', fd[0])
+    print('Result:  ', result)
+    print('Rel err: ', (result - fd[0])/result)
 
 # Reset the old variable values
 tacs.setDesignVars(x)
@@ -174,9 +175,9 @@ else:
 result = pert.dot(fXptSens)
 
 if tacs_comm.rank == 0:
-    print 'FD:      ', fd[0]
-    print 'Result:  ', result
-    print 'Rel err: ', (result - fd[0])/result
+    print('FD:      ', fd[0])
+    print('Result:  ', result)
+    print('Rel err: ', (result - fd[0])/result)
 
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |

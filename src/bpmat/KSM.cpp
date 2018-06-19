@@ -309,7 +309,10 @@ void KSMPrintFile::printResidual( int iter, TacsScalar res ){
   Print a string out to the file
 */
 void KSMPrintFile::print( const char *cstr ){
-  if (fp){ fprintf(fp, "%s", cstr); }
+  if (fp){ 
+    fprintf(fp, "%s", cstr);
+    fflush(fp);
+  }
 }
 
 /*
