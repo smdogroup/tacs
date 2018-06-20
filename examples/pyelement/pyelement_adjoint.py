@@ -11,6 +11,8 @@ from mpi4py import MPI
 from tacs import TACS, elements, functions
 import numpy as np
 
+np.set_printoptions(precision=15)
+
 # Define an element in TACS using the pyElement feature
 class SpringMassDamper(elements.pyElement):
     def __init__(self, num_nodes, num_disps, m, c, k):
@@ -53,7 +55,7 @@ class SpringMassDamper(elements.pyElement):
 num_nodes = 1
 num_disps = 1
 m = 1.0
-c = 0.5
+c = 0.05
 k = 5.0
 spr = SpringMassDamper(num_nodes, num_disps, m, c, k)     
 
@@ -71,7 +73,7 @@ assembler.initialize()
 # Create instance of integrator
 t0 = 0.0
 dt = 0.01
-num_steps = 1000
+num_steps = 2000
 tf = num_steps*dt
 order = 2
 bdf = TACS.BDFIntegrator(assembler, t0, tf, num_steps, order)
@@ -103,12 +105,17 @@ for step in range(num_steps, -1, -1):
     bdf.iterateAdjoint(step, [dfdu_vec])
     bdf.postAdjoint(step)
 
-dfdx = np.array([0.0])
+dfdx = np.array([0.0], dtype=TACS.dtype)
 bdf.getGradient(dfdx)
 
-# Check the gradient by finite difference
-h = 1.0e-6
-spr.updateStiffness(k + h)
+# Check the gradient by finite difference or complex step
+if TACS.dtype == complex:
+    h = 1.0e-30
+    spr.updateStiffness(k + 1j*h)
+else:
+    h = 1.0e-6
+    spr.updateStiffness(k + h)
+
 bdf.iterate(0)
 for step in range(1,num_steps+1):
     bdf.iterate(step)
@@ -116,18 +123,22 @@ bdf.writeRawSolution('spring.dat', 0)
 _, upos_vec, _, _ = bdf.getStates(num_steps)
 upos = upos_vec.getArray().copy()
 
-h = 1.0e-6
-spr.updateStiffness(k - h)
-bdf.iterate(0)
-for step in range(1,num_steps+1):
-    bdf.iterate(step)
-bdf.writeRawSolution('spring.dat', 0)
-_, uneg_vec, _, _ = bdf.getStates(num_steps)
-uneg = uneg_vec.getArray().copy()
+if TACS.dtype == complex:
+    approx = upos.imag/h
+else:
+    spr.updateStiffness(k - h)
+    bdf.iterate(0)
+    for step in range(1,num_steps+1):
+        bdf.iterate(step)
+    bdf.writeRawSolution('spring.dat', 0)
+    _, uneg_vec, _, _ = bdf.getStates(num_steps)
+    uneg = uneg_vec.getArray().copy()
 
-print "f = ", u
-print "df/dx =         ", dfdx
-approx = 0.5*(upos - uneg)/h
-print "df/dx, approx = ", approx
-rel_error = (dfdx - approx)/approx
-print "rel. error =    ", rel_error
+    approx = 0.5*(upos - uneg)/h
+
+rel_error = (dfdx.real - approx)/approx
+
+print "f = ", u[0].real
+print "df/dx =         ", dfdx[0].real
+print "df/dx, approx = ", approx[0]
+print "rel. error =    ", rel_error[0]
