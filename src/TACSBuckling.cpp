@@ -736,7 +736,9 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
     return sep->checkOrthogonality();
   }
   else {
-    fprintf(stderr, "TACSFrequency: No orthogonality check for Jacobi-Davidson\n");
+    fprintf(stderr,
+            "TACSFrequency: No orthogonality check for Jacobi-Davidson\n");
+    return 0.0;
   }  
 }
 

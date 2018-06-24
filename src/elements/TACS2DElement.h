@@ -84,7 +84,8 @@ class TACS2DElement : public TACSElement {
   // Add the second derivatives of the strain times the stress to the
   // upper portion of the matrix
   // ----------------------------------------------------------------
-  void addGeoStiffness( TacsScalar kmat[], TacsScalar h, const TacsScalar stress[],
+  void addGeoStiffness( TacsScalar kmat[], TacsScalar h, 
+                        const TacsScalar stress[],
                         const TacsScalar J[], const double Na[], 
                         const double Nb[] );
   
