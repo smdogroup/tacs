@@ -231,3 +231,11 @@ cdef extern from "TACSElementWrapper.h":
                              const TacsScalar *,
                              const TacsScalar *,
                              const TacsScalar * )
+
+        void addadjresproduct(void * , int, int, double,
+                           TacsScalar, TacsScalar *, int,
+                           const TacsScalar *, 
+                           const TacsScalar *, 
+                           const TacsScalar *, 
+                           const TacsScalar *, 
+                           const TacsScalar * )
