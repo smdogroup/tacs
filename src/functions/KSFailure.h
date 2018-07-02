@@ -64,7 +64,7 @@ class TACSKSFailure : public TACSFunction {
 
   // Retrieve the name of the function
   // ---------------------------------
-  const char * functionName();
+  const char *functionName();
 
   // Set parameters for the KS function
   // ----------------------------------
