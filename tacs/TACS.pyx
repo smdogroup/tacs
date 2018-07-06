@@ -535,6 +535,13 @@ cdef class KSM:
         cdef char *descript = convert_to_chars(_descript)
         self.ptr.setMonitor(new KSMPrintStdout(descript, comm.rank, freq))
 
+    def setTimeMonitor(self):
+        cdef GMRES *gmres_ptr = NULL
+        gmres_ptr = _dynamicGMRES(self.ptr)
+        if gmres_ptr != NULL:
+            gmres_ptr.setTimeMonitor()
+  
+        
 cdef class Assembler:    
     def __cinit__(self):
         '''
