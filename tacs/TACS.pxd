@@ -72,6 +72,7 @@ cdef extern from "":
     TACSPMat* _dynamicPMat "dynamic_cast<TACSPMat*>"(TACSMat*)
     PcScMat* _dynamicPcScMat "dynamic_cast<PcScMat*>"(TACSPc*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
+    GMRES* _dynamicGMRES "dynamic_cast<GMRES*>"(TACSKsm*)
     void deleteArray "delete []"(void*)
 
 cdef extern from "TACSObject.h":
@@ -117,12 +118,13 @@ cdef extern from "KSM.h":
         void getOperators(TACSMat **_mat, TACSPc **_pc)
         void solve(TACSVec *b, TACSVec *x, int zero_guess)
         void setTolerances(double _rtol, double _atol)
-        void setMonitor(KSMPrint *_monitor)
+        void setMonitor(KSMPrint *_monitor)        
         
     cdef cppclass GMRES(TACSKsm):
         GMRES(TACSMat *_mat, TACSPc *_pc, int _m,
               int _nrestart, int _isFlexible )
-      
+        void setTimeMonitor()
+        
 cdef extern from "BVec.h":   
     cdef cppclass TACSBVec(TACSVec):
         TACSBVec(TACSVarMap*, int)
