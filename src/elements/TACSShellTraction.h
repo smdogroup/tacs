@@ -88,40 +88,40 @@ class TACSShellTraction : public TACSElement {
       for ( int n = 0; n < order; n++ ){
         // Set the quadrature point
         double pt[2];
-	pt[0] = gaussPts[n];
-	pt[1] = gaussPts[m];
+        pt[0] = gaussPts[n];
+        pt[1] = gaussPts[m];
 
-        // Compute X, Xd, N, Na and Nb
-	double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+              // Compute X, Xd, N, Na and Nb
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
         TacsScalar X[3], Xd[9];
         shellutils::shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
 
         // Determine the normal direction and normalize it
-	Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
-	Tensor::normalize3D(&Xd[6]);
+        Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
+        Tensor::normalize3D(&Xd[6]);
 
         // Compute the determinant of the Jacobian
-	TacsScalar h = FElibrary::jacobian3d(Xd);
-	h *= gaussWts[n]*gaussWts[m];
+        TacsScalar h = FElibrary::jacobian3d(Xd);
+        h *= gaussWts[n]*gaussWts[m];
 
-	// Evaluate the traction force evaluated at the
+        // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  Tx += tx[i]*N[i];
-	  Ty += ty[i]*N[i];
-	  Tz += tz[i]*N[i];
-	}
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          Tx += tx[i]*N[i];
+          Ty += ty[i]*N[i];
+          Tz += tz[i]*N[i];
+        }
 
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         TacsScalar *r = res;
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  r[0] -= h*Tx*N[i];
-	  r[1] -= h*Ty*N[i];
-	  r[2] -= h*Tz*N[i];
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          r[0] -= h*Tx*N[i];
+          r[1] -= h*Ty*N[i];
+          r[2] -= h*Tz*N[i];
           r += 6;
-	}
+        }
       }
     }
   }
@@ -150,34 +150,34 @@ class TACSShellTraction : public TACSElement {
       for ( int n = 0; n < order; n++ ){
         // Set the quadrature point
         double pt[2];
-	pt[0] = gaussPts[n];
-	pt[1] = gaussPts[m];
+        pt[0] = gaussPts[n];
+        pt[1] = gaussPts[m];
 
         // Compute X, Xd, N, Na and Nb
-	double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
         TacsScalar X[3], Xd[9];
         shellutils::shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
 
         // Determine the normal direction and normalize it
-	Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
-	Tensor::normalize3D(&Xd[6]);
+        Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
+        Tensor::normalize3D(&Xd[6]);
 
         // Compute the determinant of the Jacobian
-	TacsScalar h = FElibrary::jacobian3d(Xd);
-	h *= gaussWts[n]*gaussWts[m];
+        TacsScalar h = FElibrary::jacobian3d(Xd);
+        h *= gaussWts[n]*gaussWts[m];
 
-	// Evaluate the traction force evaluated at the
+        // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
         TacsScalar Ax = 0.0, Ay = 0.0, Az = 0.0;
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  Tx += tx[i]*N[i];
-	  Ty += ty[i]*N[i];
-	  Tz += tz[i]*N[i];
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          Tx += tx[i]*N[i];
+          Ty += ty[i]*N[i];
+          Tz += tz[i]*N[i];
           Ax += adjoint[6*i]*N[i];
           Ay += adjoint[6*i+1]*N[i];
           Az += adjoint[6*i+2]*N[i];
-	}
+        }
 
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
@@ -258,38 +258,38 @@ class TACSShellPressure : public TACSElement {
       for ( int n = 0; n < order; n++ ){
         // Set the quadrature point
         double pt[2];
-	pt[0] = gaussPts[n];
-	pt[1] = gaussPts[m];
+        pt[0] = gaussPts[n];
+        pt[1] = gaussPts[m];
 
         // Compute X, Xd, N, Na and Nb
-	double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
         TacsScalar X[3], Xd[9];
         shellutils::shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
 
         // Determine the normal direction and normalize it
-	Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
-	Tensor::normalize3D(&Xd[6]);
+        Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
+        Tensor::normalize3D(&Xd[6]);
 
         // Compute the determinant of the Jacobian
-	TacsScalar h = FElibrary::jacobian3d(Xd);
-	h *= gaussWts[n]*gaussWts[m];
+        TacsScalar h = FElibrary::jacobian3d(Xd);
+        h *= gaussWts[n]*gaussWts[m];
 
-	// Evaluate the traction force evaluated at the
+        // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar P = 0.0;
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  P += p[i]*N[i];
-	}
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          P += p[i]*N[i];
+        }
 
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         TacsScalar *r = res;
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  r[0] -= h*P*Xd[6]*N[i];
-	  r[1] -= h*P*Xd[7]*N[i];
-	  r[2] -= h*P*Xd[8]*N[i];
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          r[0] -= h*P*Xd[6]*N[i];
+          r[1] -= h*P*Xd[7]*N[i];
+          r[2] -= h*P*Xd[8]*N[i];
           r += 6;
-	}
+        }
       }
     }
   }
@@ -318,34 +318,34 @@ class TACSShellPressure : public TACSElement {
       for ( int n = 0; n < order; n++ ){
         // Set the quadrature point
         double pt[2];
-	pt[0] = gaussPts[n];
-	pt[1] = gaussPts[m];
+        pt[0] = gaussPts[n];
+        pt[1] = gaussPts[m];
 
         // Compute X, Xd, N, Na and Nb
-	double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
+        double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
         TacsScalar X[3], Xd[9];
         shellutils::shell_jacobian(order, X, Xd, N, Na, Nb, pt, Xpts);
 
         // Determine the normal direction and normalize it
-	Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
-	Tensor::normalize3D(&Xd[6]);
+        Tensor::crossProduct3D(&Xd[6], &Xd[0], &Xd[3]);
+        Tensor::normalize3D(&Xd[6]);
 
         // Compute the determinant of the Jacobian
-	TacsScalar h = FElibrary::jacobian3d(Xd);
-	h *= gaussWts[n]*gaussWts[m];
+        TacsScalar h = FElibrary::jacobian3d(Xd);
+        h *= gaussWts[n]*gaussWts[m];
 
-	// Evaluate the traction force evaluated at the
+        // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar P = 0.0;
         TacsScalar Ax = 0.0, Ay = 0.0, Az = 0.0;
-	for ( int i = 0; i < NUM_NODES; i++ ){
-	  P += p[i]*N[i];
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          P += p[i]*N[i];
           Ax += adjoint[6*i]*N[i];
           Ay += adjoint[6*i+1]*N[i];
           Az += adjoint[6*i+2]*N[i];
-	}
+        }
 
-	// Evaluate the traction force evaluated at the
+        // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = P*Xd[6], Ty = P*Xd[7], Tz = P*Xd[8];
 
