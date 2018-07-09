@@ -157,4 +157,4 @@ class TACSKSFailure : public TACSFunction {
   TacsScalar ksFailSum, maxFail;
 };
 
-#endif 
+#endif // TACS_KS_FAILURE_H

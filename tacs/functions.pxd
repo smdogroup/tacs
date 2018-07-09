@@ -55,6 +55,11 @@ cdef extern from "KSFailure.h":
         void setLoadFactor(TacsScalar _loadFactor)
         void setMaxFailOffset(TacsScalar _maxFail)
 
+cdef extern from "KSDisplacement.h":
+    cdef cppclass TACSKSDisplacement(TACSFunction):
+        TACSKSDisplacement(TACSAssembler *tacs, double ksWeight, 
+                           TacsScalar dir[])
+
 cdef extern from "InducedFailure.h":
     enum InducedNormType"TACSInducedFailure::InducedNormType":
         EXPONENTIAL"TACSInducedFailure::EXPONENTIAL"

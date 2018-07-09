@@ -369,7 +369,8 @@ void TACSKSFailure::getElementSVSens( double alpha, double beta, double gamma,
           // Get the determinant of the Jacobian
           TacsScalar h = element->getDetJacobian(pt, Xpts);
           
-          ksPtWeight = h*weight*loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
+          ksPtWeight = 
+            h*weight*loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
         }
 
         // Determine the sensitivity of the state variables to SV

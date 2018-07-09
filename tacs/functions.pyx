@@ -85,6 +85,21 @@ cdef class KSFailure(Function):
             self.ksptr.setKSFailureType(KS_CONTINUOUS)
         return
 
+cdef class KSDisplacement(Function):
+    cdef TACSKSDisplacement *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight, dirs):
+        '''
+        Wrap the function KSFailure
+        '''
+        cdef TacsScalar _dirs[3]
+        _dirs[0] = dirs[0]
+        _dirs[1] = dirs[1]
+        _dirs[2] = dirs[2]
+        self.ksptr = new TACSKSDisplacement(tacs.ptr, ksWeight, _dirs)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
 cdef class InducedFailure(Function):
     def __cinit__(self, Assembler tacs, double P):
         '''
