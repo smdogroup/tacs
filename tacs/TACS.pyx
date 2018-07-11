@@ -7,8 +7,8 @@
 #  TACS is licensed under the Apache License, Version 2.0 (the
 #  "License"); you may not use this software except in compliance with
 #  the License.  You may obtain a copy of the License at
-#  
-#  http://www.apache.org/licenses/LICENSE-2.0 
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import print_function, division
 
@@ -16,7 +16,7 @@ from __future__ import print_function, division
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
-# Import numpy 
+# Import numpy
 cimport numpy as np
 import numpy as np
 
@@ -46,7 +46,7 @@ PY_POINT_ELEMENT = TACS_POINT_ELEMENT
 PY_EULER_BEAM = TACS_EULER_BEAM
 PY_TIMOSHENKO_BEAM = TACS_TIMOSHENKO_BEAM
 PY_PLANE_STRESS = TACS_PLANE_STRESS
-PY_SHELL = TACS_SHELL 
+PY_SHELL = TACS_SHELL
 PY_SOLID = TACS_SOLID
 PY_Q3D_ELEMENT = TACS_Q3D_ELEMENT
 PY_RIGID = TACS_RIGID
@@ -89,7 +89,7 @@ cdef class Function:
         if self.ptr:
             self.ptr.decref()
         return
-    
+
 # A generic wrapper class for the TACSElement object
 cdef class Element:
     '''Base element class'''
@@ -103,17 +103,17 @@ cdef class Element:
         return self.ptr.numNodes()
     def getConstitutive(self):
         return _init_Constitutive(self.ptr.getConstitutive())
-    
+
 # A generic wrapper class for the TACSConstitutive object
 cdef class Constitutive:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
         return
-    
+
     def getDVOutputValue(self, int dvIndex,
                          np.ndarray[double, ndim=1, mode='c'] pt):
         return self.ptr.getDVOutputValue(dvIndex, <double*>pt.data)
-    
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -125,7 +125,7 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
 
     # Set the first entry of the shape array
     shape[0] = <np.npy_intp>dim1
-        
+
     # Create the array itself - Note that this function will not
     # delete the data once the ndarray goes out of scope
     ndarray = np.PyArray_SimpleNewFromData(size, shape,
@@ -150,7 +150,7 @@ cdef class Vec:
         if self.ptr:
             self.ptr.decref()
         return
-    
+
     def zeroEntries(self):
         '''
         Zero the entries in the matrix
@@ -161,10 +161,10 @@ cdef class Vec:
     def getArray(self):
         '''
         Get the local values
-        ''' 
+        '''
         cdef TacsScalar *array
         cdef int size = self.ptr.getArray(&array)
-        arry = inplace_array_1d(TACS_NPY_SCALAR, size, <void*>array, 
+        arry = inplace_array_1d(TACS_NPY_SCALAR, size, <void*>array,
                                 <PyObject*>self)
         Py_INCREF(self)
         return arry
@@ -182,34 +182,34 @@ cdef class Vec:
         Vector norm
         '''
         return self.ptr.norm()
-      
+
     def dot(self, Vec vec):
         '''
         Take the dot product with the other vector
         '''
         return self.ptr.dot(vec.ptr)
-    
+
     def copyValues(self, Vec vec):
         '''
-        Copy the values from mat            
+        Copy the values from mat
         '''
         self.ptr.copyValues(vec.ptr)
         return
-     
+
     def scale(self, TacsScalar alpha):
         '''
         Scale the entries in the matrix by alpha
         '''
         self.ptr.scale(alpha)
         return
-     
+
     def axpy(self, TacsScalar alpha, Vec vec):
         '''
         Compute y <- y + alpha * x
         '''
         self.ptr.axpy(alpha, vec.ptr)
         return
-     
+
     def axpby(self, TacsScalar alpha, TacsScalar beta, Vec vec):
         '''
         Compute y <- alpha * x + beta * y
@@ -223,21 +223,21 @@ cdef class Vec:
         '''
         self.ptr.setRand(lower, upper)
         return
-        
+
     def writeToFile(self, fname):
         '''
         Write the values to a file.
-        
+
         This uses MPI file I/O. The filenames must be the same on all
         processors. The format is independent of the number of processors.
         '''
         cdef char *filename = convert_to_chars(fname)
         return self.ptr.writeToFile(filename)
-    
+
     def readFromFile(self, fname):
         '''
         Read values from a binary data file.
-        
+
         The size of this vector must be the size of the vector
         originally stored in the file otherwise nothing is read in.
         '''
@@ -248,7 +248,7 @@ cdef class VarMap:
     def __cinit__(self, MPI.Comm comm=None, int owned_size=0):
         if comm is None:
             self.ptr = NULL
-        else:            
+        else:
             self.ptr = new TACSVarMap(comm.ob_mpi, owned_size)
             self.ptr.incref()
 
@@ -278,7 +278,7 @@ cdef class VecInterp:
     def initialize(self):
         self.ptr.initialize()
         return
-        
+
     def mult(self, Vec input_vec, Vec output_vec):
         self.ptr.mult(input_vec.ptr, output_vec.ptr)
         return
@@ -309,7 +309,7 @@ cdef class AuxElements:
     def __dealloc__(self):
         self.ptr.decref()
         return
-    
+
     def addElement(self, int num, Element elem):
         self.ptr.addElement(num, elem.ptr)
         return
@@ -318,10 +318,10 @@ cdef class Mat:
     def __cinit__(self):
         '''
         A generic wrapper for any of the TACS matrix types
-        '''          
+        '''
         self.ptr = NULL
         return
-        
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
@@ -341,9 +341,9 @@ cdef class Mat:
 
     def copyValues(self, Mat mat):
         '''
-        Copy the values from mat            
+        Copy the values from mat
         '''
-        self.ptr.copyValues(mat.ptr) 
+        self.ptr.copyValues(mat.ptr)
 
     def scale(self, TacsScalar alpha):
         '''
@@ -383,7 +383,7 @@ cdef class Pc:
             self.ptr = new TACSAdditiveSchwarz(p_ptr, 5, 10.0)
             self.ptr.incref()
         return
-            
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
@@ -472,12 +472,12 @@ cdef class Mg(Pc):
         self.mg.setMonitor(new KSMPrintStdout(descript, comm.rank, freq))
 
 cdef class KSM:
-    def __cinit__(self, Mat mat, Pc pc, int m, 
+    def __cinit__(self, Mat mat, Pc pc, int m,
                   int nrestart=1, int isFlexible=0):
         '''
         Create a GMRES object for solving a linear system with or
         without a preconditioner.
-        
+
         This automatically allocates the requried Krylov subspace on
         initialization.
 
@@ -488,7 +488,7 @@ cdef class KSM:
         nrestart:   the number of restarts before we give up
         isFlexible: is the preconditioner actually flexible? If so use FGMRES
         '''
-        
+
         self.ptr = new GMRES(mat.ptr, pc.ptr, m, nrestart, isFlexible)
         self.ptr.incref()
         return
@@ -523,7 +523,7 @@ cdef class KSM:
         '''
         self.ptr.setTolerances(rtol, atol)
 
-    def setMonitor(self, MPI.Comm comm, 
+    def setMonitor(self, MPI.Comm comm,
                    _descript='GMRES', int freq=10):
         '''
         Set the object to control how the convergence history is displayed
@@ -540,9 +540,9 @@ cdef class KSM:
         gmres_ptr = _dynamicGMRES(self.ptr)
         if gmres_ptr != NULL:
             gmres_ptr.setTimeMonitor()
-  
-        
-cdef class Assembler:    
+
+
+cdef class Assembler:
     def __cinit__(self):
         '''
         Constructor for the TACSAssembler object
@@ -552,7 +552,7 @@ cdef class Assembler:
 
     @staticmethod
     def create(MPI.Comm comm, int varsPerNode,
-               int numOwnedNodes, int numElements, 
+               int numOwnedNodes, int numElements,
                int numDependentNodes=0):
         '''
         Static factory method for creating an instance of Assembler
@@ -560,10 +560,10 @@ cdef class Assembler:
         cdef MPI_Comm c_comm = comm.ob_mpi
         cdef TACSAssembler *tacs = NULL
         tacs = new TACSAssembler(c_comm, varsPerNode,
-                                        numOwnedNodes, numElements, 
+                                        numOwnedNodes, numElements,
                                         numDependentNodes)
         return _init_Assembler(tacs)
-    
+
     def __dealloc__(self):
         '''
         Destructor for Assembler
@@ -582,7 +582,7 @@ cdef class Assembler:
 
         # Set the connectivity into TACSAssembler
         self.ptr.setElementConnectivity(<int*>conn.data, <int*>ptr.data)
-        
+
         return
 
     def setDependentNodes(self,
@@ -593,7 +593,7 @@ cdef class Assembler:
         self.ptr.setDependentNodes(<int*>ptr.data, <int*>conn.data,
                                    <double*>weights.data)
         return
-    
+
     def setElements(self, elements):
         '''Set the elements in to TACSAssembler'''
         if len(elements) != self.getNumElements():
@@ -617,7 +617,7 @@ cdef class Assembler:
 
     def addBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes,
                np.ndarray[int, ndim=1, mode='c'] _vars=None,
-               np.ndarray[int, ndim=1, mode='c'] values=None):    
+               np.ndarray[int, ndim=1, mode='c'] values=None):
         cdef int nnodes = nodes.shape[0]
         cdef int *node_nums = <int*>nodes.data
         cdef int vars_dim = -1
@@ -635,7 +635,7 @@ cdef class Assembler:
 
     def addInitBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes,
                    np.ndarray[int, ndim=1, mode='c'] _vars=None,
-                   np.ndarray[int, ndim=1, mode='c'] values=None):    
+                   np.ndarray[int, ndim=1, mode='c'] values=None):
         cdef int nnodes = nodes.shape[0]
         cdef int *node_nums = <int*>nodes.data
         cdef int vars_dim = -1
@@ -648,7 +648,7 @@ cdef class Assembler:
             vars_data = <int*>_vars.data
         if values is not None:
             values_data = <TacsScalar*>values.data
-        self.ptr.addInitBCs(nnodes, node_nums, vars_dim, 
+        self.ptr.addInitBCs(nnodes, node_nums, vars_dim,
                             vars_data, values_data)
         return
 
@@ -698,7 +698,7 @@ cdef class Assembler:
         cdef MPI_Comm c_comm
         cdef TACSVarMap *varmap = NULL
         cdef const int *owner_range = NULL
-        cdef int size = 0 
+        cdef int size = 0
         varmap = self.ptr.getVarMap()
         c_comm = varmap.getMPIComm()
         varmap.getOwnerRange(&owner_range)
@@ -729,7 +729,7 @@ cdef class Assembler:
         cdef np.ndarray vars0
         cdef np.ndarray dvars
         cdef np.ndarray ddvars
-                
+
         if num >= 0 and num < self.ptr.getNumElements():
             # Get the element and query the size of the entries
             element = self.ptr.getElement(num, NULL, NULL, NULL, NULL)
@@ -748,43 +748,43 @@ cdef class Assembler:
             raise ValueError('Element index out of range')
 
         return _init_Element(element), Xpt, vars0, dvars, ddvars
-        
-    def getDesignVars(self, 
+
+    def getDesignVars(self,
                       np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
         '''
-        Collect all the design variable values assigned by this 
+        Collect all the design variable values assigned by this
         process
-        
+
         This code does not ensure consistency of the design variable
-        values between processes. If the values of the design 
+        values between processes. If the values of the design
         variables are inconsistent to begin with, the maximum
-        design variable value is returned. Call setDesignVars to 
+        design variable value is returned. Call setDesignVars to
         make them consistent.
-     
+
         Each process contains objects that maintain their own design
         variable values. Ensuring the consistency of the ordering is
-        up to the user. Having multiply-defined design variable 
-        numbers corresponding to different design variables 
+        up to the user. Having multiply-defined design variable
+        numbers corresponding to different design variables
         results in undefined behaviour.
-        
+
         dvs:     the array of design variable values (output)
         numDVs: the number of design variables
         '''
-     
+
         # Get number of the design variables
         num_dvs = dvs.shape[0]
         self.ptr.getDesignVars(<TacsScalar*>dvs.data, num_dvs)
         return
-        
-    def setDesignVars(self, 
+
+    def setDesignVars(self,
                       np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
         '''
         Set the design variables.
-        
+
         The design variable values provided must be the same on all
-        processes for consistency. This call however, is not 
+        processes for consistency. This call however, is not
         collective.
-        
+
         dvs:     the array of design variable values
         numDVs: the number of design variables
         '''
@@ -793,30 +793,30 @@ cdef class Assembler:
         self.ptr.setDesignVars(<TacsScalar*>dvs.data, num_dvs)
         return
 
-    def getDesignVarRange(self, 
+    def getDesignVarRange(self,
                           np.ndarray[TacsScalar, ndim=1, mode='c'] lb,
                           np.ndarray[TacsScalar, ndim=1, mode='c'] ub):
         '''
         Retrieve the design variable range.
-        
-        This call is collective on all TACS processes. The ranges 
-        provided by indivdual objects may not be consistent (if 
-        someone provided incorrect data they could be.) Make a 
-        best guess; take the minimum upper bound and the maximum 
+
+        This call is collective on all TACS processes. The ranges
+        provided by indivdual objects may not be consistent (if
+        someone provided incorrect data they could be.) Make a
+        best guess; take the minimum upper bound and the maximum
         lower bound.
-        
+
         lowerBound: the lower bound on the design variables (output)
         upperBound: the upper bound on the design variables (output)
         numDVs:      the number of design variables
         '''
-        
+
         # Get the number of design variables
         num_dvs = lb.shape[0]
         self.ptr.getDesignVarRange(<TacsScalar*>lb.data,
-                                   <TacsScalar*>ub.data, 
+                                   <TacsScalar*>ub.data,
                                    num_dvs)
         return
-    
+
     def setNumThreads(self, int t):
         '''
         Set the number of threads to use in computation
@@ -851,17 +851,17 @@ cdef class Assembler:
         '''
         self.ptr.getNodes(X.ptr)
         return
-    
+
     def createVec(self):
         '''
         Create a distributed vector.
-        
-        Vector classes initialized by one TACS object, cannot be 
+
+        Vector classes initialized by one TACS object, cannot be
         used by a second, unless they share are exactly the
         parallel layout.
         '''
         return _init_Vec(self.ptr.createVec())
-  
+
     def createMat(self):
         '''
         Create a distributed matrix
@@ -881,7 +881,7 @@ cdef class Assembler:
         oldtonew = np.zeros(size, dtype=np.intc)
         self.ptr.getReordering(<int*>oldtonew.data)
         return oldtonew
-    
+
     def applyBCs(self, Vec vec):
         '''Apply boundary conditions to the vector'''
         self.ptr.applyBCs(vec.ptr)
@@ -890,13 +890,13 @@ cdef class Assembler:
     def applyMatBCs(self, Mat mat):
         '''Apply boundary conditions to the matrix'''
         self.ptr.applyBCs(mat.ptr)
-        return        
-    
+        return
+
     def createFEMat(self, OrderingType order_type=TACS_AMD_ORDER):
         '''
         Create a parallel matrix specially suited for finite-element
         analysis.
-        
+
         On the first call, this computes a reordering with the scheme
         provided. On subsequent calls, the reordering scheme is reused s
         that all FEMats, created from the same TACSAssembler object have
@@ -915,7 +915,7 @@ cdef class Assembler:
         full set.  Next, order the local nodes. Tis hopefully reduces
         the fill-ins required, although there is no firm proof to back
         that up.
-        
+
         The results from the reordering are placed in a set of
         objects. The matrix reordering is stored in feMatBIndices and
         feMatCIndices while two mapping objects are created that map the
@@ -924,7 +924,7 @@ cdef class Assembler:
         Mathematically this reordering can be written as follows,
 
         A1 = (P A P^{T})
-          
+
         where P^{T} is a permutation of the columns (variables), while P
         is a permutation of the rows (equations).
         '''
@@ -938,21 +938,21 @@ cdef class Assembler:
     def getSimulationTime(self):
         '''Retrieve the simulation time from TACS'''
         return self.ptr.getSimulationTime()
-      
+
     def zeroVariables(self):
         '''
         Zero the entries of the local variables
         '''
         self.ptr.zeroVariables()
         return
-        
+
     def zeroDotVariables(self):
         '''
         Zero the values of the time-derivatives of the state variables
         '''
         self.ptr.zeroDotVariables()
         return
-     
+
     def zeroDDotVariables(self):
         '''
         Zero the values of the 2nd time-derivatives of the state
@@ -960,7 +960,7 @@ cdef class Assembler:
         '''
         self.ptr.zeroDDotVariables()
         return
-    
+
     def setVariables(self, Vec vec=None,
                      Vec dvec=None, Vec ddvec=None):
         '''
@@ -976,7 +976,7 @@ cdef class Assembler:
             cdvec = dvec.ptr
         if ddvec is not None:
             cddvec = ddvec.ptr
-        
+
         self.ptr.setVariables(cvec, cdvec, cddvec)
         return
 
@@ -995,11 +995,11 @@ cdef class Assembler:
             cdvec = dvec.ptr
         if ddvec is not None:
             cddvec = ddvec.ptr
-        
+
         self.ptr.getVariables(cvec, cdvec, cddvec)
         return
 
-    def getInitConditions(self, Vec vec=None, 
+    def getInitConditions(self, Vec vec=None,
                           Vec dvec=None, Vec ddvec=None):
         '''
         Retrieve the initial conditions
@@ -1023,28 +1023,28 @@ cdef class Assembler:
         cdef TacsScalar Te, Pe
         self.ptr.evalEnergies(&Te, &Pe)
         return Te, Pe
-    
+
     def assembleRes(self, Vec residual):
         '''
-        Assemble the residual associated with the input load case.  
-        
+        Assemble the residual associated with the input load case.
+
         This residual includes the contributions from element tractions
         set in the TACSSurfaceTraction class and any point loads. Note
         that the vector entries are zeroed first, and that the Dirichlet
         boundary conditions are applied after the assembly of the
         residual is complete.
-        
+
         rhs:        the residual output
         '''
         self.ptr.assembleRes(residual.ptr)
         return
-    
+
     def assembleJacobian(self, double alpha, double beta, double gamma,
                          Vec residual, Mat A,
                          MatrixOrientation matOr=NORMAL):
         '''
         Assemble the Jacobian matrix
-        
+
         This function assembles the global Jacobian matrix and
         residual. This Jacobian includes the contributions from all
         elements. The Dirichlet boundary conditions are applied to the
@@ -1063,17 +1063,17 @@ cdef class Assembler:
         cdef TACSBVec *res = NULL
         if residual is not None:
             res = residual.ptr
-        
+
         self.ptr.assembleJacobian(alpha, beta, gamma,
                                   res, A.ptr, matOr)
         return
 
     def assembleMatType(self, ElementMatrixType matType,
                         Mat A, MatrixOrientation matOr):
-        
+
         '''
         Assemble the Jacobian matrix
-        
+
         This function assembles the global Jacobian matrix and
         residual. This Jacobian includes the contributions from all
         elements. The Dirichlet boundary conditions are applied to the
@@ -1081,18 +1081,18 @@ cdef class Assembler:
         boundary condition, and setting the diagonal to unity. The
         matrix assembly also performs any communication required so that
         the matrix can be used immediately after assembly.
-          
+
         residual:  the residual of the governing equations
         A:            the Jacobian matrix
         alpha:      coefficient on the variables
         beta:        coefficient on the time-derivative terms
-        gamma:      coefficient on the second time derivative 
-        term 
+        gamma:      coefficient on the second time derivative
+        term
         matOr:      the matrix orientation NORMAL or TRANSPOSE
         '''
         self.ptr.assembleMatType(matType, A.ptr, matOr)
         return
-        
+
     def evalFunctions(self, funclist):
         '''
         Evaluate a list of TACS function
@@ -1109,12 +1109,12 @@ cdef class Assembler:
 
         # Allocate the numpy array of function values
         cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
-            
+
         self.ptr.evalFunctions(funcs, len(funclist), <TacsScalar*>fvals.data)
-        
+
         # Free the allocated array
         free(funcs)
-        
+
         return fvals
 
     def evalDVSens(self, func, np.ndarray[TacsScalar, mode='c'] A):
@@ -1149,9 +1149,9 @@ cdef class Assembler:
         '''
         Evaluate the derivative of the function w.r.t. the state
         variables.
-        
+
         function: the function pointer
-        vec:        the derivative of the function w.r.t. the state variables 
+        vec:        the derivative of the function w.r.t. the state variables
         '''
         cdef int num_funcs = 1
         cdef TACSFunction **funcs = &((<Function>func).ptr)
@@ -1162,7 +1162,7 @@ cdef class Assembler:
         self.ptr.addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, vecs)
         return
 
-    def evalAdjointResProduct(self, adjoint, 
+    def evalAdjointResProduct(self, adjoint,
                               np.ndarray[TacsScalar, mode='c'] A):
         '''
         This function is collective on all TACSAssembler processes. This
@@ -1184,11 +1184,11 @@ cdef class Assembler:
         cdef TacsScalar *Avals = <TacsScalar*>A.data
         cdef int num_design_vars = A.shape[0]
         cdef MPI_Comm comm
-        
+
         # Get the communicator
         comm = self.ptr.getMPIComm()
 
-        # Add the derivative of the product of the adjoint and residual 
+        # Add the derivative of the product of the adjoint and residual
         A[:] = 0.0
         self.ptr.addAdjointResProducts(1.0, adj, num_adj,
                                                  Avals, num_design_vars)
@@ -1200,7 +1200,7 @@ cdef class Assembler:
 
     def evalXptSens(self, Function func, Vec vec):
         '''
-        Evaluate the derivative of a list of functions w.r.t. 
+        Evaluate the derivative of a list of functions w.r.t.
         the node locations
         '''
         cdef int num_funcs = 1
@@ -1224,7 +1224,7 @@ cdef class Assembler:
         This function is collective on all TACSAssembler processes. This
         computes the product of the derivative of the residual
         w.r.t. the node locations with several adjoint vectors
-        simultaneously. 
+        simultaneously.
         '''
         cdef int num_adj = 1
         cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
@@ -1233,9 +1233,9 @@ cdef class Assembler:
         # Zero the entries in the product
         prod.zeroEntries()
 
-        # Add the derivative of the product of the adjoint and residual 
+        # Add the derivative of the product of the adjoint and residual
         self.ptr.addAdjointResXptSensProducts(1.0, adj, num_adj, prods)
-        
+
         # Add the contributions across all processors
         prod.ptr.beginSetValues(TACS_ADD_VALUES)
         prod.ptr.endSetValues(TACS_ADD_VALUES)
@@ -1243,7 +1243,7 @@ cdef class Assembler:
         return
 
     def addMatDVSensInnerProduct(self, double scale,
-                                 ElementMatrixType matType, 
+                                 ElementMatrixType matType,
                                  Vec psi, Vec phi,
                                  np.ndarray[TacsScalar, mode='c'] A):
         '''
@@ -1256,13 +1256,23 @@ cdef class Assembler:
         self.ptr.addMatDVSensInnerProduct(scale, matType, psi.ptr, phi.ptr,
                                           Avals, num_design_vars)
         return
-        
-    def evalMatSVSensInnerProduct(self, ElementMatrixType matType, 
+
+    def evalMatSVSensInnerProduct(self, ElementMatrixType matType,
                                   Vec psi, Vec phi, Vec res):
         self.ptr.evalMatSVSensInnerProduct(matType,
                                            psi.ptr, phi.ptr, res.ptr)
-        return        
-          
+        return
+
+    def addJacobianVecProduct(self, TacsScalar scale,
+                              double alpha, double beta, double gamma,
+                              Vec x, Vec y, MatrixOrientation matOr=NORMAL):
+        '''
+        Compute the Jacobian-vector product
+        '''
+        self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma, 
+                                       x.ptr, y.ptr, matOr)
+        return
+
     def testElement(self, int elemNum, int print_level,
                     double dh=1e-6, double rtol=1e-8, double atol=1e-1):
         '''
@@ -1275,15 +1285,15 @@ cdef class Assembler:
         residual w.r.t. the design variables and nodal coordinates.
 
         elemNum:      the element number to test
-        print_level:  the print level to use 
-        ''' 
+        print_level:  the print level to use
+        '''
         self.ptr.testElement(elemNum, print_level, dh, rtol, atol)
         return
 
     def testConstitutive(self, int elemNum, print_level):
         '''
         Test the implementation of the given element constitutive
-        class. 
+        class.
 
         This function tests the failure computation and the mass
         sensitivities for the given element.
@@ -1297,7 +1307,7 @@ cdef class Assembler:
     def testFunction(self, Function func, int num_dvs,
                      double dh):
         '''
-        Test the implementation of the function. 
+        Test the implementation of the function.
 
         This tests the state variable sensitivities and the design
         variable sensitivities of the function of interest. These
@@ -1305,10 +1315,10 @@ cdef class Assembler:
         the input values.  Note that a system of equations should be
         solved - or the variables should be set randomly before
         calling this function, otherwise this function may produce
-        unrealistic function values. 
+        unrealistic function values.
 
-        Note that this function uses a central difference if the 
-        real code is compiled, and a complex step approximation if 
+        Note that this function uses a central difference if the
+        real code is compiled, and a complex step approximation if
         the complex version of the code is used.
 
         func:    the function to test
@@ -1317,7 +1327,7 @@ cdef class Assembler:
         '''
         self.ptr.testFunction(func.ptr, num_dvs, dh)
         return
-    
+
 # Wrap the TACStoFH5 class
 cdef class ToFH5:
     NODES = 1
@@ -1332,28 +1342,28 @@ cdef class ToFH5:
                   int out_type):
         '''
         Create the TACSToFH5 file creation object
-        
+
         input:
         tacs:         the instance of the TACSAssembler object
         elem_type:    the type of element to be used
-        out_type:     the output type to write 
+        out_type:     the output type to write
         '''
         self.ptr = new TACSToFH5(tacs.ptr, elem_type, out_type)
         self.ptr.incref()
         return
-    
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
         return
-     
+
     def setComponentName(self, int comp_num, _group_name):
         '''
         Set the component name for the variable
         '''
         cdef char *group_name = convert_to_chars(_group_name)
         self.ptr.setComponentName(comp_num, group_name)
-        
+
     def writeToFile(self, fname):
         '''
         Write the data stored in the TACSAssembler object to filename
@@ -1375,7 +1385,7 @@ cdef class Creator:
         return
 
     def setGlobalConnectivity(self, int num_nodes,
-                              np.ndarray[int, ndim=1, mode='c'] node_ptr, 
+                              np.ndarray[int, ndim=1, mode='c'] node_ptr,
                               np.ndarray[int, ndim=1, mode='c'] node_conn,
                               np.ndarray[int, ndim=1, mode='c'] id_nums):
         '''Set the connectivity and the element id numbers'''
@@ -1402,7 +1412,7 @@ cdef class Creator:
         else:
             self.ptr.setBoundaryConditions(num_bcs,
                                            <int*>nodes.data,
-                                           NULL, NULL) 
+                                           NULL, NULL)
         return
 
     def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
@@ -1427,7 +1437,7 @@ cdef class Creator:
         free(elems)
 
         return
-    
+
     def setNodes(self, np.ndarray[TacsScalar, ndim=1, mode='c'] Xpts):
         self.ptr.setNodes(<TacsScalar*>Xpts.data)
         return
@@ -1453,14 +1463,14 @@ cdef class Creator:
 
     def createTACS(self):
         return _init_Assembler(self.ptr.createTACS())
-    
+
     def getTacsNodeNums(self, Assembler assembler,
                         np.ndarray[int, ndim=1, mode='c'] nodes=None):
         cdef int num_orig_nodes = 0
         cdef int *orig_nodes = NULL
         cdef int *new_nodes = NULL
         cdef int num_new_nodes = 0
-        
+
         # If the array of nodes exists, set the correct pointers/shapes
         if nodes is not None:
             num_orig_nodes = nodes.shape[0]
@@ -1475,7 +1485,7 @@ cdef class Creator:
         # Free the array from C++
         deleteArray(new_nodes)
         return array
-     
+
 # Wrap the TACSMeshLoader class
 cdef class MeshLoader:
     cdef TACSMeshLoader *ptr
@@ -1486,7 +1496,7 @@ cdef class MeshLoader:
         cdef MPI_Comm c_comm = comm.ob_mpi
         self.ptr = new TACSMeshLoader(c_comm)
         self.ptr.incref()
-        
+
     def __dealloc__(self):
         self.ptr.decref()
 
@@ -1494,7 +1504,7 @@ cdef class MeshLoader:
         '''
         This scans a Nastran file - only scanning in information from the
         bulk data section
-        
+
         The only entries scanned are the entries beginning with elem_types
         and any GRID/GRID* entries
         '''
@@ -1506,7 +1516,7 @@ cdef class MeshLoader:
         Return the number of components
         '''
         return self.ptr.getNumComponents()
-    
+
     def getComponentDescript(self, int comp_num):
         '''
         Return the component description
@@ -1518,20 +1528,20 @@ cdef class MeshLoader:
 
     def getElementDescript(self, int comp_num):
         '''
-        Retrieve the element description corresponding to 
+        Retrieve the element description corresponding to
         the component number
         '''
         cdef const char *descript
         cdef bytes py_string
         py_string = self.ptr.getElementDescript(comp_num)
         return convert_bytes_to_str(py_string)
-    
+
     def setElement(self, int comp_num, Element elem):
         '''
         Set the element associated with a given component number
         '''
         self.ptr.setElement(comp_num, elem.ptr)
-    
+
     def setConvertToCoordinate(self, int flag):
         self.ptr.setConvertToCoordinate(flag)
         return
@@ -1541,7 +1551,7 @@ cdef class MeshLoader:
 
     def getNumElements(self):
         return self.ptr.getNumElements()
-     
+
     def createTACS(self, int varsPerNode,
                    OrderingType order_type=NATURAL_ORDER,
                    MatrixOrderingType mat_type=DIRECT_SCHUR):
@@ -1622,19 +1632,19 @@ cdef class FrequencyAnalysis:
     cdef TACSFrequencyAnalysis *ptr
     def __cinit__(self, Assembler assembler, TacsScalar sigma,
                   Mat M, Mat K, KSM solver, int max_lanczos=100,
-                  int num_eigs=5, double eig_tol=1e-6, double eig_rtol=1e-9, 
+                  int num_eigs=5, double eig_tol=1e-6, double eig_rtol=1e-9,
                   Mat PC=None, Pc pc=None, int fgmres_size=5,
                   double eig_atol=1e-30, int num_recycle=0,
                   JDRecycleType recycle_type=JD_NUM_RECYCLE):
         if solver is None:
-            self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr, 
+            self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
                                                  K.ptr, PC.ptr, pc.ptr, max_lanczos,
                                                  fgmres_size, num_eigs, eig_tol,
                                                  eig_rtol, eig_atol,
                                                  num_recycle, recycle_type)
         else:
-            self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr, 
-                                                 K.ptr, solver.ptr, max_lanczos, 
+            self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
+                                                 K.ptr, solver.ptr, max_lanczos,
                                                  num_eigs, eig_tol)
         self.ptr.incref()
         return
@@ -1650,11 +1660,11 @@ cdef class FrequencyAnalysis:
         self.ptr.setSigma(sigma)
 
     def solve(self, print_flag=True, int freq=10):
-        cdef MPI_Comm comm 
+        cdef MPI_Comm comm
         cdef int rank
         cdef TACSAssembler *assembler = NULL
         cdef KSMPrint *ksm_print = NULL
-        
+
         if print_flag:
             assembler = self.ptr.getTACS()
             comm = assembler.getMPIComm()
@@ -1681,36 +1691,36 @@ cdef class Integrator:
     '''
     Class containing functions for solving the equations forward in
     time and adjoint.
-    '''     
+    '''
     cdef TACSIntegrator *ptr
-    
+
     def __cinit__(self):
         self.ptr = NULL
         return
-    
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
-        return        
+        return
 
     def setRelTol(self, double rtol):
         '''
         Relative tolerance of Newton solver
-        '''        
+        '''
         self.ptr.setRelTol(rtol)
         return
-    
+
     def setAbsTol(self, double atol):
         '''
         Absolute tolerance of Newton solver
-        '''        
+        '''
         self.ptr.setAbsTol(atol)
         return
-    
+
     def setMaxNewtonIters(self, int max_newton_iters):
         '''
         Maximum iteration in Newton solver
-        '''     
+        '''
         self.ptr.setMaxNewtonIters(max_newton_iters)
         return
 
@@ -1726,14 +1736,14 @@ cdef class Integrator:
             filename = convert_to_chars(fname)
         self.ptr.setPrintLevel(print_level, filename)
         return
-        
+
     def setJacAssemblyFreq(self, int freq):
         '''
         How frequent to assemble the Jacobian for nonlinear solve
         '''
         self.ptr.setJacAssemblyFreq(freq)
         return
-    
+
     def setUseLapack(self, int use_lapack):
         '''
         Should TACSIntegrator use lapack for linear solve. This will
@@ -1741,13 +1751,13 @@ cdef class Integrator:
         '''
         self.ptr.setUseLapack(use_lapack)
         return
-    
+
     def setUseFEMat(self, int use_femat, OrderingType order_type):
         '''
         Set FEMAT = 1 for parallel execution
         '''
         self.ptr.setUseFEMat(use_femat, order_type)
-        return 
+        return
 
     def setInitNewtonDeltaFraction(self, double frac):
         '''
@@ -1793,7 +1803,7 @@ cdef class Integrator:
                                           <TacsScalar*>eigvals.data,
                                           NULL)
         return eigvals
-    
+
     def lapackNaturalModes(self, Vec q, Vec qdot, Vec qddot,
                            int use_gyroscopic=1):
         cdef int size = 0
@@ -1807,7 +1817,7 @@ cdef class Integrator:
                                           <TacsScalar*>eigvals.data,
                                           <TacsScalar*>modes.data)
         return eigvals, modes
-    
+
     def iterate(self, int step_num, Vec forces=None):
         '''
         Solve the nonlinear system at current time step
@@ -1820,7 +1830,7 @@ cdef class Integrator:
     def integrate(self):
         '''
         Integrates the governing equations forward in time
-        '''        
+        '''
         return self.ptr.integrate()
 
     def evalFunctions(self, funclist):
@@ -1840,10 +1850,10 @@ cdef class Integrator:
         # Allocate the numpy array of function values
         cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
         self.ptr.evalFunctions(<TacsScalar*>fvals.data)
-        
+
         # Free the allocated array
         free(funcs)
-        
+
         return fvals
 
     def initAdjoint(self, int step_num):
@@ -1876,7 +1886,7 @@ cdef class Integrator:
         '''
         self.ptr.postAdjoint(step_num)
         return
-    
+
     def integrateAdjoint(self):
         '''
         Integrates the adjoint backwards in time
@@ -1911,13 +1921,13 @@ cdef class Integrator:
         '''
         TACS state vectors are returned at the given time step
         '''
-        cdef double time 
+        cdef double time
         cdef TACSBVec *cq = NULL
         cdef TACSBVec *cqdot = NULL
         cdef TACSBVec *cqddot = NULL
         time = self.ptr.getStates(time_step, &cq, &cqdot, &cqddot)
         return time, _init_Vec(cq), _init_Vec(cqdot), _init_Vec(cqddot)
-    
+
     def checkGradients(self, double dh):
         '''
         Performs a FD/CSD verification of the gradients
@@ -1939,7 +1949,7 @@ cdef class Integrator:
         '''
         self.ptr.setOutputFrequency(write_freq)
         return
-    
+
     def setRigidOutput(self, ToFH5 f5):
         '''
         Configure the export of rigid bodies
@@ -1953,7 +1963,7 @@ cdef class Integrator:
         '''
         self.ptr.setShellOutput(f5.ptr)
         return
-    
+
     def setBeamOutput(self, ToFH5 f5):
         '''
         Configure the export of beam elements
@@ -1991,7 +2001,7 @@ cdef class Integrator:
         # Make filenames for each state vector
         qfnametmp = '%sq-%d.bin' % (prefix, step_num)
         qdfnametmp = '%sqd-%d.bin' % (prefix, step_num)
-        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)        
+        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)
         cdef char *qfname = convert_to_chars(qfnametmp)
         cdef char *qdfname = convert_to_chars(qdfnametmp)
         cdef char *qddfname = convert_to_chars(qddfnametmp)
@@ -2001,7 +2011,7 @@ cdef class Integrator:
         flag2 = qd.writeToFile(qdfname)
         flag3 = qdd.writeToFile(qddfname)
         flag = max(flag1, flag2, flag3)
-        
+
         return flag
 
     def loadStates(self, int step_num, prefix=''):
@@ -2013,7 +2023,7 @@ cdef class Integrator:
         # Make filenames for each state vector
         qfnametmp = '%sq-%d.bin' % (prefix, step_num)
         qdfnametmp = '%sqd-%d.bin' % (prefix, step_num)
-        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)        
+        qddfnametmp = '%sqdd-%d.bin' % (prefix, step_num)
         cdef char *qfname = convert_to_chars(qfnametmp)
         cdef char *qdfname = convert_to_chars(qdfnametmp)
         cdef char *qddfname = convert_to_chars(qddfnametmp)
@@ -2030,7 +2040,7 @@ cdef class BDFIntegrator(Integrator):
     '''
     Backward-Difference method for integration. This currently
     supports upto third order accuracy in time integration.
-    '''     
+    '''
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
                   double num_steps,
@@ -2038,7 +2048,7 @@ cdef class BDFIntegrator(Integrator):
         '''
         Constructor for BDF Integrators of order 1, 2 and 3
         '''
-        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal,
                                          num_steps, max_bdf_order)
         self.ptr.incref()
         return
@@ -2048,12 +2058,12 @@ cdef class DIRKIntegrator(Integrator):
     Diagonally-Implicit-Runge-Kutta integration class. This supports
     upto fourth order accuracy in time and domain. One stage DIRK is
     second order accurate, two stage DIRK is third order accurate and
-    '''     
+    '''
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
                   double num_steps,
                   int stages):
-        self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSDIRKIntegrator(tacs.ptr, tinit, tfinal,
                                           num_steps, stages)
         self.ptr.incref()
         return
@@ -2062,7 +2072,7 @@ cdef class ABMIntegrator(Integrator):
     '''
     Adams-Bashforth-Moulton method for integration. This currently
     supports upto sixth order accuracy in time integration.
-    '''     
+    '''
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
                   double num_steps,
@@ -2070,7 +2080,7 @@ cdef class ABMIntegrator(Integrator):
         '''
         Constructor for ABM Integrators of order 1, 2, 3, 4, 5 and 6
         '''
-        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal,
                                          num_steps, max_abm_order)
         self.ptr.incref()
         return
@@ -2078,7 +2088,7 @@ cdef class ABMIntegrator(Integrator):
 cdef class NBGIntegrator(Integrator):
     '''
     Newmark-Beta-Gamma method for integration.
-    '''     
+    '''
     def __cinit__(self, Assembler tacs,
                       double tinit, double tfinal,
                       double num_steps,
@@ -2086,7 +2096,7 @@ cdef class NBGIntegrator(Integrator):
         '''
         Constructor for Newmark-Beta-Gamma method of integration
         '''
-        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal, 
+        self.ptr = new TACSBDFIntegrator(tacs.ptr, tinit, tfinal,
                                          num_steps, order)
         self.ptr.incref()
         return

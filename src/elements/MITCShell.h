@@ -622,7 +622,7 @@ void MITCShell<order>::addResidual( double time,
         r[1] += h*N[i]*mass[0]*Uddot[1];
         r[2] += h*N[i]*mass[0]*Uddot[2];
 
-	// Add the inertial terms from the rotations
+        // Add the inertial terms from the rotations
         TacsScalar d = normal[0]*Uddot[3] + normal[1]*Uddot[4] + normal[2]*Uddot[5];
         r[3] += h*N[i]*mass[1]*(Uddot[3] - normal[0]*d);
         r[4] += h*N[i]*mass[1]*(Uddot[4] - normal[1]*d);
@@ -1465,9 +1465,9 @@ void MITCShell<order>::addAdjResProduct( double time,
 
         TacsScalar d = normal[0]*Uddot[3] + normal[1]*Uddot[4] + normal[2]*Uddot[5];
         mscale[1] += h*N[i]*((Uddot[3] - normal[0]*d)*p[3] +
-			     (Uddot[4] - normal[1]*d)*p[4] +
-			     (Uddot[5] - normal[2]*d)*p[5]);
-	p += NUM_DISPS;
+                             (Uddot[4] - normal[1]*d)*p[4] +
+                             (Uddot[5] - normal[2]*d)*p[5]);
+        p += NUM_DISPS;
       }
 
       // Add the sensitivity term from the mass matrix contribution
@@ -1682,8 +1682,8 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
 
         TacsScalar d = normal[0]*Uddot[3] + normal[1]*Uddot[4] + normal[2]*Uddot[5];
         hd += alpha*mass[1]*N[i]*((Uddot[3] - normal[0]*d)*p[3] +
-				  (Uddot[4] - normal[1]*d)*p[4] +
-				  (Uddot[5] - normal[2]*d)*p[5]);
+                                  (Uddot[4] - normal[1]*d)*p[4] +
+                                  (Uddot[5] - normal[2]*d)*p[5]);
 
         // Find the derivative of Psi^{T}*(I - n*n^{T})*U w.r.t n:
         TacsScalar psid = (p[3]*normal[0] + p[4]*normal[1] + p[5]*normal[2]);
@@ -1692,7 +1692,7 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
         nd[1] -= h*mass[1]*N[i]*(p[4]*d + Uddot[4]*psid);
         nd[2] -= h*mass[1]*N[i]*(p[5]*d + Uddot[5]*psid);
 
-	p += NUM_DISPS;
+        p += NUM_DISPS;
       }
 
       // Add the derivative to the fXptSens array
@@ -1716,7 +1716,7 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
           FElibrary::jacobian3dSens(Xd, XdSens, &hXptSens);
 
           fXptSens[3*i+k] += hXptSens*hd +
-	    (nd[0]*XdSens[6] + nd[1]*XdSens[7] + nd[2]*XdSens[8]);
+            (nd[0]*XdSens[6] + nd[1]*XdSens[7] + nd[2]*XdSens[8]);
         }
       }
     }
