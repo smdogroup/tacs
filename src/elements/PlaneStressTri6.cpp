@@ -17,7 +17,7 @@
 
 PlaneStressTri6::PlaneStressTri6( PlaneStressStiffness *_stiff,
                                   ElementBehaviorType type,
-				  int _componentNum ):
+                                  int _componentNum ):
 TACS2DElement<6>(_stiff, type, _componentNum){}
 
 PlaneStressTri6::~PlaneStressTri6(){}
@@ -111,7 +111,7 @@ double PlaneStressTri6::getGaussWtsPts( const int num, double pt[] ){
   this element.
 */
 void PlaneStressTri6::addOutputCount( int *nelems,
-				      int *nnodes, int *ncsr ){
+                                      int *nnodes, int *ncsr ){
   *nelems += 3;
   *nnodes += 6;
   *ncsr += 12;
@@ -139,12 +139,12 @@ void PlaneStressTri6::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 void PlaneStressTri6::getOutputData( unsigned int out_type,
-				     double *data, int ld_data,
-				     const TacsScalar Xpts[],
-				     const TacsScalar vars[] ){
+                                     double *data, int ld_data,
+                                     const TacsScalar Xpts[],
+                                     const TacsScalar vars[] ){
   // Set the nodal parametric coordinates
   double pt[][2] = {{0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
-		    {0.5, 0.0}, {0.5, 0.5}, {0.0, 0.5}};
+                    {0.5, 0.0}, {0.5, 0.5}, {0.0, 0.5}};
 
   for ( int n = 0; n < 6; n++ ){
     int index = 0;

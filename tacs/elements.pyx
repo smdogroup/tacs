@@ -605,6 +605,27 @@ cdef class MITCBeam(Element):
     def numNodes(self):
         return self.ptr.numNodes()
 
+cdef class PoissonQuad(Element):
+    def __cinit__(self, int order, 
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] fx):
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new PoissonQuad2(<TacsScalar*>fx.data)
+        elif order == 3:
+            self.ptr = new PoissonQuad3(<TacsScalar*>fx.data)
+        elif order == 4:
+            self.ptr = new PoissonQuad4(<TacsScalar*>fx.data)
+        elif order == 5:
+            self.ptr = new PoissonQuad5(<TacsScalar*>fx.data)
+        if self.ptr is not NULL:
+            self.ptr.incref()
+        return
+    
+    def __dealloc__(self):
+        if self.ptr is not NULL:
+            self.ptr.decref()
+        return
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     '''Return a numpy version of the array'''

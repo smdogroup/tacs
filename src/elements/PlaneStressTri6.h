@@ -21,8 +21,8 @@
 class PlaneStressTri6 : public TACS2DElement<6> {
  public:
   PlaneStressTri6( PlaneStressStiffness *_stiff,
-		   ElementBehaviorType type=LINEAR,
-		   int _componentNum=0 );
+                   ElementBehaviorType type=LINEAR,
+                   int _componentNum=0 );
   ~PlaneStressTri6();
 
     // Return the name of this element
@@ -33,7 +33,7 @@ class PlaneStressTri6 : public TACS2DElement<6> {
   // ----------------------------
   void getShapeFunctions( const double pt[], double N[]);
   void getShapeFunctions( const double pt[], double N[],
-			  double Na[], double Nb[] );
+                          double Na[], double Nb[] );
 
   // Retrieve the Gauss points/weights
   // ---------------------------------
@@ -44,9 +44,9 @@ class PlaneStressTri6 : public TACS2DElement<6> {
   // -----------------------------
   void addOutputCount( int * nelems, int * nnodes, int * ncsr );
   void getOutputData( unsigned int out_type,
-		      double * data, int ld_data,
-		      const TacsScalar Xpts[],
-		      const TacsScalar vars[] );
+                      double * data, int ld_data,
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
 
  private:

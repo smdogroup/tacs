@@ -19,7 +19,7 @@
 #include "TACSShell.h"
 
 TACSShell::TACSShell( FSDTStiffness * _stiff,
-		      int componentNum ):
+                      int componentNum ):
 TACSElement(componentNum){
   stiff = _stiff;
   stiff->incref();
@@ -36,18 +36,18 @@ TACSShell::~TACSShell(){
 const char * TACSShell::elemName = "TACSShell";
 
 const char * TACSShell::dispNames[] = { "u0", "v0", "w0", 
-					"rotx", "roty", "rotz" };
+                                        "rotx", "roty", "rotz" };
 
 const char * TACSShell::stressNames[] = { "sx0", "sy0", "sxy0", 
-					  "sx1", "sy1", "sxy1", 
-					  "syz0", "sxz0" };
+                                          "sx1", "sy1", "sxy1", 
+                                          "syz0", "sxz0" };
  
 const char * TACSShell::strainNames[] = { "ex0", "ey0", "exy0", 
-					  "ex1", "ey1", "exy1", 
-					  "eyz0", "exz0" };
+                                          "ex1", "ey1", "exy1", 
+                                          "eyz0", "exz0" };
 
 const char * TACSShell::extraNames[] = { "lambda", "buckling",
-					 "dv1", "dv2" };
+                                         "dv1", "dv2" };
 
 /*
   Define the functions that return the element names, displacements,
@@ -115,7 +115,7 @@ void TACSShell::getDesignVars( TacsScalar dvs[], int numDVs ){
   Populate the arrays lowerBound[] and upperBound[] 
 */
 void TACSShell::getDesignVarRange( TacsScalar lowerBound[], 
-				   TacsScalar upperBound[], 
-				   int numDVs ){
+                                   TacsScalar upperBound[], 
+                                   int numDVs ){
   stiff->getDesignVarRange(lowerBound, upperBound, numDVs);
 }

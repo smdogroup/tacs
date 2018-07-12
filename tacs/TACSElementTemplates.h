@@ -21,6 +21,7 @@
 #include "TACS3DTraction.h"
 #include "MITCShell.h"
 #include "Solid.h"
+#include "PoissonElement.h"
 
 // Add define statements for the element types
 #define PlaneStressQuad2 PlaneStressQuad<2>
@@ -47,5 +48,9 @@
 #define TACSShellTraction3 TACSShellTraction<3>
 #define TACSShellTraction4 TACSShellTraction<4>
 #define TACSShellTraction5 TACSShellTraction<5>
+#define PoissonQuad2 PoissonQuad<2>
+#define PoissonQuad3 PoissonQuad<3>
+#define PoissonQuad4 PoissonQuad<4>
+#define PoissonQuad5 PoissonQuad<5>
 
 #endif // TACS_ELEMENT_TEMPLATES_H

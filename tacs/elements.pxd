@@ -195,6 +195,19 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass Solid5(TACSElement):
         Solid5(SolidStiffness *stiff, ElementBehaviorType type, int)
 
+    # Declare the Poisson Quadrilateral elements
+    cdef cppclass PoissonQuad2(TACSElement):
+        PoissonQuad2(TacsScalar*)
+
+    cdef cppclass PoissonQuad3(TACSElement):
+        PoissonQuad3(TacsScalar*)
+
+    cdef cppclass PoissonQuad4(TACSElement):
+        PoissonQuad4(TacsScalar*)
+
+    cdef cppclass PoissonQuad5(TACSElement):
+        PoissonQuad5(TacsScalar*)
+
 cdef extern from "PlaneStressTri6.h":
     cdef cppclass PlaneStressTri6(TACSElement):
         PlaneStressTri6(PlaneStressStiffness *stiff, 

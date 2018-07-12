@@ -204,7 +204,7 @@ enum ElementBehaviorType{ LINEAR,
 // The TACSElement base class
 class TACSElement : public TACSOptObject {
  public:
-  TACSElement( int _componentNum = 0 ){
+  TACSElement( int _componentNum=0 ){
     componentNum = _componentNum;
   }
   virtual ~TACSElement(){}

@@ -41,7 +41,7 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
   // ----------------------------
   void getShapeFunctions( const double pt[], double N[] );
   void getShapeFunctions( const double pt[], double N[],
-			  double Na[], double Nb[] );
+                          double Na[], double Nb[] );
 
   // Retrieve the Gauss points/weights
   // ---------------------------------
@@ -52,9 +52,9 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
   // -----------------------------
   void addOutputCount( int *nelems, int *nnodes, int *ncsr );
   void getOutputData( unsigned int out_type, 
-		      double *data, int ld_data, 
-		      const TacsScalar Xpts[],
-		      const TacsScalar vars[] );
+                      double *data, int ld_data, 
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
 
  private:
@@ -204,15 +204,15 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       int p = n + order*m;
       int index = 0;
       if (out_type & TACSElement::OUTPUT_NODES){
-	for ( int k = 0; k < 3; k++ ){
-	  data[index+k] = TacsRealPart(Xpts[3*p+k]);
-	}
+        for ( int k = 0; k < 3; k++ ){
+          data[index+k] = TacsRealPart(Xpts[3*p+k]);
+        }
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-	for ( int k = 0; k < 2; k++ ){
-	  data[index+k] = TacsRealPart(vars[2*p+k]);
-	}
+        for ( int k = 0; k < 2; k++ ){
+          data[index+k] = TacsRealPart(vars[2*p+k]);
+        }
         index += 2;
       }
       
@@ -220,7 +220,7 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       double pt[2];
       pt[0] = knots[n];
       pt[1] = knots[m];
-	
+        
       // Compute the shape functions
       double N[NUM_NODES];
       double Na[NUM_NODES], Nb[NUM_NODES];
@@ -238,7 +238,7 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       // Compute the strain
       TacsScalar strain[3];
       this->evalStrain(strain, J, Na, Nb, vars);
-	
+        
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < 3; k++ ){
           data[index+k] = TacsRealPart(strain[k]);
@@ -248,7 +248,7 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       if (out_type & TACSElement::OUTPUT_STRESSES){
         // Calculate the strain at the current point
         TacsScalar stress[3];
-	this->stiff->calculateStress(pt, strain, stress);
+        this->stiff->calculateStress(pt, strain, stress);
         
         for ( int k = 0; k < 3; k++ ){
           data[index+k] = TacsRealPart(stress[k]);
@@ -256,16 +256,16 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_EXTRAS){
-	// Compute the failure value
-	TacsScalar lambda;
-	this->stiff->failure(pt, strain, &lambda);
-	data[index] = TacsRealPart(lambda);
+        // Compute the failure value
+        TacsScalar lambda;
+        this->stiff->failure(pt, strain, &lambda);
+        data[index] = TacsRealPart(lambda);
 
-	this->stiff->buckling(strain, &lambda);
-	data[index+1] = TacsRealPart(lambda);
+        this->stiff->buckling(strain, &lambda);
+        data[index+1] = TacsRealPart(lambda);
 
-	data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
-	data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
+        data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+        data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
 
         index += this->NUM_EXTRAS;
       }

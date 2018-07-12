@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_SHELL_ELEMENT_H
@@ -24,7 +24,7 @@
 
 /*
   The following class defines the base class for all Shell elements
-  used in TACS. This class defines some of the operations required 
+  used in TACS. This class defines some of the operations required
   by the generic TACSElement base class.
 */
 class TACSShell : public TACSElement {
@@ -35,15 +35,15 @@ class TACSShell : public TACSElement {
   static const int NUM_EXTRAS = 4;
 
   TACSShell( FSDTStiffness * _stiff,
-	     int componentNum );
+             int componentNum );
   ~TACSShell();
 
   // Functions to access the design variable information
   // ---------------------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lowerBound[], 
-			  TacsScalar upperBound[], int numDVs );
+  void getDesignVarRange( TacsScalar lowerBound[],
+                          TacsScalar upperBound[], int numDVs );
 
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
