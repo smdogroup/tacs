@@ -86,7 +86,7 @@ TACS2DElement<order*order>(_stiff, type, _componentNum){
   else if (order == 3){
     knots[0] = -1.0;
     knots[1] = 0.0;
-    knots[1] = 1.0;
+    knots[2] = 1.0;
   }
   else {
     // Set a co-sine spacing for the knot locations

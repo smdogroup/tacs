@@ -190,7 +190,7 @@ void BCSRMatFactorUpper1( BCSRMatData * data, BCSRMatData * Fdata ){
       }
 
       // Copy over the matrix
-      F[4*j] = d11;
+      F[j] = d11;
     }
   }
 }

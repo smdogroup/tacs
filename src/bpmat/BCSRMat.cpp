@@ -1018,6 +1018,7 @@ void BCSRMat::initBlockImpl(){
     applypartialupper = BCSRMatApplyPartialUpper1;
     applyschur        = BCSRMatApplyFactorSchur1;
     bmatmatmultnormal = BCSRMatMatMultNormal1;
+    applysor = BCSRMatApplySOR1;
     break;
   case 2:
     bfactor    = BCSRMatFactor2;

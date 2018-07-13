@@ -48,6 +48,8 @@ cdef extern from "TACSElement.h":
         TACS_SOLID
         TACS_Q3D_ELEMENT
         TACS_RIGID
+        TACS_POISSON_2D_ELEMENT
+        TACS_POISSON_3D_ELEMENT
 
     enum ElementMatrixType:
         STIFFNESS_MATRIX
@@ -412,7 +414,7 @@ cdef extern from "TACSAssembler.h":
                               MatrixOrientation matOr)
         void assembleMatType(ElementMatrixType matType,
                              TACSMat *A, MatrixOrientation matOr)
-        void addJacobianVecProduct(TacsScalar scale, 
+        void addJacobianVecProduct(TacsScalar scale,
                                    double alpha, double beta, double gamma,
                                    TACSBVec *x, TACSBVec *y,
                                    MatrixOrientation matOr)

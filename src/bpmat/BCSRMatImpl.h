@@ -165,6 +165,11 @@ void BCSRMatMatMultAdd1( double alpha, BCSRMatData *A,
 void BCSRMatFactorLower1( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper1( BCSRMatData *A, BCSRMatData *F );
 void BCSRMatMatMultNormal1( BCSRMatData *A, TacsScalar *s, BCSRMatData *B );
+void BCSRMatApplySOR1( BCSRMatData *Adata, BCSRMatData *Bdata,
+                       const int start, const int end,
+                       const int var_offset, const TacsScalar *Adiag,
+                       const TacsScalar omega, const TacsScalar *b, 
+                       const TacsScalar *xext, TacsScalar *x );
 
 // The bsize == 2 code
 void BCSRMatVecMult2( BCSRMatData *A, TacsScalar *x, TacsScalar *y );

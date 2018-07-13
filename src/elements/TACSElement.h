@@ -188,7 +188,9 @@ enum ElementType { TACS_ELEMENT_NONE,
                    TACS_SHELL,
                    TACS_SOLID,
                    TACS_Q3D_ELEMENT,
-                   TACS_RIGID };
+                   TACS_RIGID,
+                   TACS_POISSON_2D_ELEMENT,
+                   TACS_POISSON_3D_ELEMENT };
 
 // The different element matrix types
 enum ElementMatrixType { STIFFNESS_MATRIX,

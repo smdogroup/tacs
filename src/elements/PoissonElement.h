@@ -36,7 +36,7 @@ class PoissonQuad : public TACSElement {
     else if (order == 3){
       knots[0] = -1.0;
       knots[1] = 0.0;
-      knots[1] = 1.0;
+      knots[2] = 1.0;
     }
     else {
       // Set a co-sine spacing for the knot locations
@@ -46,10 +46,59 @@ class PoissonQuad : public TACSElement {
     }    
   }
   ~PoissonQuad(){}
-
+  
+  const char* elementName(){
+    return "PoissonQuad";
+  }
+  const char* displacementName( int i ){
+    return "phi";
+  }
+  const char* stressName( int i ){
+    if (i == 0){ return "px"; }
+    else if (i == 1){ return "py"; }
+    return NULL;
+  }
+  const char* strainName( int i ){
+    if (i == 0){ return "px"; }
+    else if (i == 1){ return "py"; }
+    return NULL;
+  }
+  const char* extraName( int i ){
+    return NULL;
+  }
   int numDisplacements(){ return 1; }
   int numNodes(){ return order*order; }
+  int numStresses(){ return 2; }
+  int numExtras(){ return 0; }
+  ElementType getElementType(){
+    return TACS_POISSON_2D_ELEMENT;
+  }
+  
+  int getNumGaussPts(){
+    return order*order;
+  }
+  double getGaussWtsPts( const int num, double *pt ){
+    int n = num % order;
+    int m = num/order;
+    
+    const double *pts, *wts;
+    FElibrary::getGaussPtsWts(order, &pts, &wts);
+    pt[0] = pts[n];
+    pt[1] = pts[m];
+    return wts[n]*wts[m];
+  }
+  TacsScalar getDetJacobian( const double *pt,
+                             const TacsScalar Xpts[] ){
+    // Get the shape functions
+    double N[order*order], Na[order*order], Nb[order*order];
+    getShapeFunctions(pt, N, Na, Nb);
 
+    // Compute the Jacobian transformation
+    TacsScalar Xd[4];
+    getJacobianTransform(Na, Nb, Xpts, Xd);
+    return Xd[0]*Xd[3] - Xd[1]*Xd[2];
+  }
+    
   void getShapeFunctions( const double pt[], double N[] ){
     double na[order], nb[order];
     FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
@@ -79,6 +128,7 @@ class PoissonQuad : public TACSElement {
   void getJacobianTransform( const double Na[], const double Nb[],
                              const TacsScalar Xpts[],
                              TacsScalar Xd[] ){
+    Xd[0] = Xd[1] = Xd[2] = Xd[3] = 0.0;
     for ( int i = 0; i < order*order; i++ ){
       Xd[0] += Na[i]*Xpts[3*i];
       Xd[1] += Nb[i]*Xpts[3*i];
@@ -131,7 +181,7 @@ class PoissonQuad : public TACSElement {
       }
     }
   }
-  void addJacobian( double time, TacsScalar J[],
+  void addJacobian( double time, TacsScalar mat[],
                     double alpha, double beta, double gamma,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
@@ -168,7 +218,7 @@ class PoissonQuad : public TACSElement {
             TacsScalar Nxi = Na[i]*J[0] + Nb[i]*J[2];
             TacsScalar Nyi = Na[i]*J[1] + Nb[i]*J[3];
 
-            J[i + j*order*order] += h*(Nxi*Nxj + Nyi*Nyj);
+            mat[i + j*order*order] += h*(Nxi*Nxj + Nyi*Nyj);
           }
         }
       }
@@ -206,12 +256,14 @@ class PoissonQuad : public TACSElement {
         TacsScalar px = 0.0, py = 0.0;
         TacsScalar ax = 0.0, ay = 0.0;
         for ( int i = 0; i < order*order; i++ ){
+          TacsScalar Nx = Na[i]*J[0] + Nb[i]*J[2];
+          TacsScalar Ny = Na[i]*J[1] + Nb[i]*J[3];
           fval += N[i]*f[i];
           adj += N[i]*adjoint[i];
-          px += (Na[i]*J[0] + Nb[i]*J[2])*vars[i];
-          py += (Na[i]*J[1] + Nb[i]*J[3])*vars[i];
-          ax += (Na[i]*J[0] + Nb[i]*J[2])*adjoint[i];
-          ay += (Na[i]*J[1] + Nb[i]*J[3])*adjoint[i];
+          px += Nx*vars[i];
+          py += Ny*vars[i];
+          ax += Nx*adjoint[i];
+          ay += Ny*adjoint[i];
         }
 
         TacsScalar product = h*(ax*px + ay*py - adj*fval);
@@ -227,6 +279,80 @@ class PoissonQuad : public TACSElement {
         err[order-1] += Nerr[1]*product;
         err[order*(order-1)] += Nerr[2]*product;
         err[order*order-1] += Nerr[3]*product;
+      }
+    }
+  }
+
+  void addOutputCount( int *nelems, int *nnodes, int *ncsr ){
+    *nelems += (order-1)*(order-1);
+    *nnodes += order*order;
+    *ncsr += 4*(order-1)*(order-1);
+  }
+  void getOutputData( unsigned int out_type, 
+                      double *data, int ld_data,
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] ){
+    for ( int m = 0; m < order; m++ ){
+      for ( int n = 0; n < order; n++ ){
+        int p = n + order*m;
+        int index = 0;
+        if (out_type & TACSElement::OUTPUT_NODES){
+          for ( int k = 0; k < 3; k++ ){
+            data[index+k] = TacsRealPart(Xpts[3*p+k]);
+          }
+          index += 3;
+        }
+        if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
+          data[index] = TacsRealPart(vars[p]);
+          index++;
+        }
+      
+        // Set the parametric point to extract the data
+        double pt[2];
+        pt[0] = knots[n];
+        pt[1] = knots[m];
+        
+        // Get the shape functions
+        double N[order*order], Na[order*order], Nb[order*order];
+        getShapeFunctions(pt, N, Na, Nb);
+
+        // Compute the Jacobian transformation
+        TacsScalar Xd[4];
+        getJacobianTransform(Na, Nb, Xpts, Xd);
+
+        // Compute the determinant of Xa and the transformation
+        TacsScalar J[4];
+        FElibrary::jacobian2d(Xd, J);
+
+        TacsScalar px = 0.0, py = 0.0;
+        for ( int i = 0; i < order*order; i++ ){
+          px += (Na[i]*J[0] + Nb[i]*J[2])*vars[i];
+          py += (Na[i]*J[1] + Nb[i]*J[3])*vars[i];
+        }
+       
+        if (out_type & TACSElement::OUTPUT_STRAINS){
+          data[index] = px;
+          data[index+1] = py;
+          index += 2;
+        }
+        if (out_type & TACSElement::OUTPUT_STRESSES){
+          data[index] = px;
+          data[index+1] = py;
+          index += 2;
+        }
+        data += ld_data;
+      }
+    }
+  }
+  void getOutputConnectivity( int *con, int node ){
+    int p = 0;
+    for ( int m = 0; m < order-1; m++ ){
+      for ( int n = 0; n < order-1; n++ ){
+        con[4*p]   = node + n   + m*order;
+        con[4*p+1] = node + n+1 + m*order; 
+        con[4*p+2] = node + n+1 + (m+1)*order;
+        con[4*p+3] = node + n   + (m+1)*order;
+        p++;
       }
     }
   }
