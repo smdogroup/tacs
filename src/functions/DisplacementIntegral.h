@@ -12,19 +12,18 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_KS_DISPLACEMENT_H
-#define TACS_KS_DISPLACEMENT_H
+#ifndef TACS_DISPLACEMENT_INTEGRAL_H
+#define TACS_DISPLACEMENT_INTEGRAL_H
 
 #include "TACSFunction.h"
 
 /*
   Compute the KS functional of the displacement along a given direction
 */
-class TACSKSDisplacement : public TACSFunction {
+class TACSDisplacementIntegral : public TACSFunction {
  public:
-  TACSKSDisplacement( TACSAssembler *_tacs, double _ksWeight,
-                      const TacsScalar _dir[] );
-  ~TACSKSDisplacement();
+  TACSDisplacementIntegral( TACSAssembler *_tacs, const TacsScalar _dir[] );
+  ~TACSDisplacementIntegral();
 
   // Retrieve the name of the function
   // ---------------------------------
@@ -90,14 +89,10 @@ class TACSKSDisplacement : public TACSFunction {
   TacsScalar dir[3];
 
   // The value of the KS weight
-  double ksWeight;
-
-  // Intermediate values in the functional evaluation
-  TacsScalar ksSum;
-  TacsScalar maxValue;
+  TacsScalar value;
 
   // The max number of nodes
   int maxNumNodes;
 };
 
-#endif // TACS_KS_DISPLACEMENT_H
+#endif // TACS_DISPLACEMENT_INTEGRAL_H

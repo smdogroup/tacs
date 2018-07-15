@@ -10,6 +10,7 @@ include ../../TACS_Common.mk
 CXX_OBJS = TACSFunction.o \
 	KSFailure.o \
 	KSDisplacement.o \
+	DisplacementIntegral.o \
 	Compliance.o \
 	InducedFailure.o \
 	StructuralMass.o

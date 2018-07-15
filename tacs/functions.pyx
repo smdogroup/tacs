@@ -100,6 +100,21 @@ cdef class KSDisplacement(Function):
         self.ptr.incref()
         return
 
+cdef class DisplacementIntegral(Function):
+    cdef TACSDisplacementIntegral *dptr
+    def __cinit__(self, Assembler tacs, dirs):
+        '''
+        Wrap the function KSFailure
+        '''
+        cdef TacsScalar _dirs[3]
+        _dirs[0] = dirs[0]
+        _dirs[1] = dirs[1]
+        _dirs[2] = dirs[2]
+        self.dptr = new TACSDisplacementIntegral(tacs.ptr, _dirs)
+        self.ptr = self.dptr
+        self.ptr.incref()
+        return
+
 cdef class InducedFailure(Function):
     def __cinit__(self, Assembler tacs, double P):
         '''
