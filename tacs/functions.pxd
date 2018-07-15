@@ -60,6 +60,10 @@ cdef extern from "KSDisplacement.h":
         TACSKSDisplacement(TACSAssembler *tacs, double ksWeight, 
                            TacsScalar dir[])
 
+cdef extern from "DisplacementIntegral.h":
+    cdef cppclass TACSDisplacementIntegral(TACSFunction):
+        TACSDisplacementIntegral(TACSAssembler *tacs, TacsScalar dir[])
+
 cdef extern from "InducedFailure.h":
     enum InducedNormType"TACSInducedFailure::InducedNormType":
         EXPONENTIAL"TACSInducedFailure::EXPONENTIAL"
