@@ -109,13 +109,13 @@ void TACSDisplacementIntegral::initThread( const double tcoef,
   Perform the element-wise evaluation of the TACSDisplacementIntegral function.
 */
 void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
-                                          TACSElement *element,
-                                          int elemNum,
-                                          const TacsScalar Xpts[],
-                                          const TacsScalar vars[],
-                                          const TacsScalar dvars[],
-                                          const TacsScalar ddvars[],
-                                          TACSFunctionCtx *fctx ){
+                                                TACSElement *element,
+                                                int elemNum,
+                                                const TacsScalar Xpts[],
+                                                const TacsScalar vars[],
+                                                const TacsScalar dvars[],
+                                                const TacsScalar ddvars[],
+                                                TACSFunctionCtx *fctx ){
   DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx*>(fctx);
   if (ctx){
     // Get the number of quadrature points for this element
@@ -127,7 +127,7 @@ void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
     for ( int i = 0; i < numGauss; i++ ){
       // Get the Gauss points one at a time
       double pt[3];
-      element->getGaussWtsPts(i, pt);
+      double weight = element->getGaussWtsPts(i, pt);
       element->getShapeFunctions(pt, ctx->N);
 
       // Evaluate the dot-product with the displacements
@@ -149,7 +149,11 @@ void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
         N++;
       }
 
-      ctx->value = value;
+      // Add up the contribution from the quadrature
+      TacsScalar h = element->getDetJacobian(pt, Xpts);
+      h *= weight;
+
+      ctx->value += h*value;
     }
   }
 }
