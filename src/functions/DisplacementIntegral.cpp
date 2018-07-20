@@ -90,7 +90,7 @@ void TACSDisplacementIntegral::initEvaluation( EvaluationType ftype ){
 void TACSDisplacementIntegral::finalEvaluation( EvaluationType ftype ){
   TacsScalar temp = value;
   MPI_Allreduce(&temp, &value, 1, TACS_MPI_TYPE,
-                TACS_MPI_MAX, tacs->getMPIComm());
+                MPI_SUM, tacs->getMPIComm());
 }
 
 /*
