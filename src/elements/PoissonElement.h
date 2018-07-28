@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_POISSON_ELEMENT_H
@@ -40,13 +40,15 @@ class PoissonQuad : public TACSElement {
     }
     else {
       // Set a co-sine spacing for the knot locations
-      for ( int k = 0; k < order; k++ ){
+      for ( int k = 1; k < order-1; k++ ){
         knots[k] = -cos(M_PI*k/(order-1));
       }
-    }    
+      knots[0] = -1.0;
+      knots[order-1] = 1.0;
+    }
   }
   ~PoissonQuad(){}
-  
+
   const char* elementName(){
     return "PoissonQuad";
   }
@@ -73,14 +75,14 @@ class PoissonQuad : public TACSElement {
   ElementType getElementType(){
     return TACS_POISSON_2D_ELEMENT;
   }
-  
+
   int getNumGaussPts(){
     return order*order;
   }
   double getGaussWtsPts( const int num, double *pt ){
     int n = num % order;
     int m = num/order;
-    
+
     const double *pts, *wts;
     FElibrary::getGaussPtsWts(order, &pts, &wts);
     pt[0] = pts[n];
@@ -98,7 +100,7 @@ class PoissonQuad : public TACSElement {
     getJacobianTransform(Na, Nb, Xpts, Xd);
     return Xd[0]*Xd[3] - Xd[1]*Xd[2];
   }
-    
+
   void getShapeFunctions( const double pt[], double N[] ){
     double na[order], nb[order];
     FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
@@ -124,6 +126,13 @@ class PoissonQuad : public TACSElement {
         N++;  Na++;  Nb++;
       }
     }
+  }
+  void getPartUnityShapeFunctions( const double pt[],
+                                   double N[] ){
+    N[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
+    N[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
+    N[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
+    N[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
   }
   void getJacobianTransform( const double Na[], const double Nb[],
                              const TacsScalar Xpts[],
@@ -252,43 +261,51 @@ class PoissonQuad : public TACSElement {
         h *= wts[n]*wts[m];
 
         // Compute the terms needed to localize the error
-        TacsScalar fval = 0.0, adj = 0.0;
+        TacsScalar fval = 0.0;
         TacsScalar px = 0.0, py = 0.0;
+
+        // Adjoint terms
+        TacsScalar adj = 0.0;
         TacsScalar ax = 0.0, ay = 0.0;
         for ( int i = 0; i < order*order; i++ ){
+          // Compute the local right-hand-side
+          fval += N[i]*f[i];
+
+          // Compute the derivative of the shape functions
           TacsScalar Nx = Na[i]*J[0] + Nb[i]*J[2];
           TacsScalar Ny = Na[i]*J[1] + Nb[i]*J[3];
-          fval += N[i]*f[i];
-          adj += N[i]*adjoint[i];
           px += Nx*vars[i];
           py += Ny*vars[i];
+
+          // Compute the local adjoint
+          adj += N[i]*adjoint[i];
+
+          // Compute the derivative of the adjoint
           ax += Nx*adjoint[i];
           ay += Ny*adjoint[i];
         }
 
+        // Compute the local contribution
         TacsScalar product = h*(ax*px + ay*py - adj*fval);
 
         // Compute the partition of unity shape functions
-        double Nerr[4];
-        Nerr[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
-        Nerr[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
-        Nerr[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
-        Nerr[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+        double Np[4];
+        getPartUnityShapeFunctions(pt, Np);
 
-        err[0] += Nerr[0]*product;
-        err[order-1] += Nerr[1]*product;
-        err[order*(order-1)] += Nerr[2]*product;
-        err[order*order-1] += Nerr[3]*product;
+        for ( int node = 0; node < 4; node++ ){
+          // Set the pointer for the node
+          err[(node % 2)*(order-1) +
+              (node/2)*order*(order-1)] += Np[node]*product;
+        }
       }
     }
   }
-
   void addOutputCount( int *nelems, int *nnodes, int *ncsr ){
     *nelems += (order-1)*(order-1);
     *nnodes += order*order;
     *ncsr += 4*(order-1)*(order-1);
   }
-  void getOutputData( unsigned int out_type, 
+  void getOutputData( unsigned int out_type,
                       double *data, int ld_data,
                       const TacsScalar Xpts[],
                       const TacsScalar vars[] ){
@@ -306,12 +323,12 @@ class PoissonQuad : public TACSElement {
           data[index] = TacsRealPart(vars[p]);
           index++;
         }
-      
+
         // Set the parametric point to extract the data
         double pt[2];
         pt[0] = knots[n];
         pt[1] = knots[m];
-        
+
         // Get the shape functions
         double N[order*order], Na[order*order], Nb[order*order];
         getShapeFunctions(pt, N, Na, Nb);
@@ -329,7 +346,7 @@ class PoissonQuad : public TACSElement {
           px += (Na[i]*J[0] + Nb[i]*J[2])*vars[i];
           py += (Na[i]*J[1] + Nb[i]*J[3])*vars[i];
         }
-       
+
         if (out_type & TACSElement::OUTPUT_STRAINS){
           data[index] = px;
           data[index+1] = py;
@@ -349,7 +366,7 @@ class PoissonQuad : public TACSElement {
     for ( int m = 0; m < order-1; m++ ){
       for ( int n = 0; n < order-1; n++ ){
         con[4*p]   = node + n   + m*order;
-        con[4*p+1] = node + n+1 + m*order; 
+        con[4*p+1] = node + n+1 + m*order;
         con[4*p+2] = node + n+1 + (m+1)*order;
         con[4*p+3] = node + n   + (m+1)*order;
         p++;

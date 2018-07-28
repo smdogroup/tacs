@@ -219,6 +219,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       double fill = 15.0;
       int reorder_schur = 1;
       PcScMat *_pc = new PcScMat(femat, lev, fill, reorder_schur);
+      // _pc->setMonitorFactorFlag(1);
       // _pc->setMonitorBackSolveFlag(1);
       root_pc = _pc;
       root_pc->incref();

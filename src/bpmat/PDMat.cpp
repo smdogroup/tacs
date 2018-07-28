@@ -482,8 +482,8 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     int final_nnz = root_rowp[nrows];
 
     if (m && n){
-      printf("[%d] PDMat: Initial density: %4.3f factor fill in: %4.3f\n",
-             root, (1.0*init_nnz)/(nrows*ncols),
+      printf("[%d] PDMat: (%d,%d) Initial density: %4.3f factor fill in: %4.3f\n",
+             root, m, n, (1.0*init_nnz)/(nrows*ncols),
              (1.0*(final_nnz - init_nnz))/init_nnz);
     }
 
