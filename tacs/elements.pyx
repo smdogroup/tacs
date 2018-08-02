@@ -503,6 +503,7 @@ cdef class MITCShell(Element):
         Wrap the MITCShell element class for order 2,3,4
         '''
         cdef FSDTStiffness *con = _dynamicFSDT(stiff.ptr)
+        self.ptr = NULL
         if order == 2:
             self.ptr = new MITCShell2(con, elem_type, component_num)
             self.ptr.incref()
@@ -517,7 +518,8 @@ cdef class MITCShell(Element):
             self.ptr.incref()
                     
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr:
+            self.ptr.decref()
         return
 
     def numNodes(self):
