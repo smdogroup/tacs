@@ -141,11 +141,14 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
 
 # A generic wrapper for a TACSVec class - usually TACSBVec
 cdef class Vec:
-    def __cinit__(self):
+    def __cinit__(self, VarMap vmap=None, int bsize=1):
         '''
         A generic wrapper for any of the TACS vector types
         '''
         self.ptr = NULL
+        if vmap is not None:
+            self.ptr = new TACSBVec(vmap.ptr, bsize)
+            self.ptr.incref()
         return
 
     def __dealloc__(self):
