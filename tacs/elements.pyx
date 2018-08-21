@@ -409,7 +409,8 @@ cdef class PSQuadTraction(Element):
     
 cdef class Traction3D(Element):
     def __cinit__(self, int order, int surf, 
-                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+                  TacsScalar tx, TacsScalar ty, TacsScalar tz,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] box=None):
         if order < 2 or order > 5:
             errmsg = 'Traction3D order must be between 2 and 4'
             raise ValueError(errmsg)
@@ -418,7 +419,12 @@ cdef class Traction3D(Element):
             raise ValueError(errmsg)
         self.ptr = NULL
         if order == 2:
-            self.ptr = new TACS3DTraction2(surf, tx, ty, tz)
+            if box is None:
+                self.ptr = new TACS3DTraction2(surf, tx, ty, tz)
+            else:                
+                self.ptr = new TACS3DBoundingTraction2(surf, tx, ty, tz,
+                                                       <TacsScalar*>box.data)
+                            
             self.ptr.incref()
         elif order == 3:
             self.ptr = new TACS3DTraction3(surf, tx, ty, tz)

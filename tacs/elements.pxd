@@ -169,6 +169,10 @@ cdef extern from "TACSElementTemplates.h":
         TACS3DTraction5(int, TacsScalar, TacsScalar, TacsScalar)
         TACS3DTraction5(int, TacsScalar[], TacsScalar[], TacsScalar[])
 
+    cdef cppclass TACS3DBoundingTraction2(TACSElement):
+        TACS3DBoundingTraction2(int, TacsScalar, TacsScalar, TacsScalar, TacsScalar[])
+        TACS3DBoundingTraction2(int, TacsScalar[], TacsScalar[], TacsScalar[], TacsScalar[])
+
     # Declare the MITCShell elements
     cdef cppclass MITCShell2(TACSElement):
         MITCShell2(FSDTStiffness *stiff, ElementBehaviorType type, int)

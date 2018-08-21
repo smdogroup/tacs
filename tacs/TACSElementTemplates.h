@@ -44,6 +44,7 @@
 #define TACS3DTraction3 TACS3DTraction<3>
 #define TACS3DTraction4 TACS3DTraction<4>
 #define TACS3DTraction5 TACS3DTraction<5>
+#define TACS3DBoundingTraction2 TACS3DBoundingTraction<2>
 #define TACSShellTraction2 TACSShellTraction<2>
 #define TACSShellTraction3 TACSShellTraction<3>
 #define TACSShellTraction4 TACSShellTraction<4>
