@@ -156,7 +156,7 @@ void TACSKSDisplacement::elementWiseEval( EvaluationType ftype,
 
         // Evaluate the dot-product with the displacements
         const double *N = ctx->N;
-        const double *d = vars;
+        const TacsScalar *d = vars;
 
         TacsScalar value = 0.0;
         for ( int j = 0; j < numNodes; j++ ){
@@ -188,7 +188,7 @@ void TACSKSDisplacement::elementWiseEval( EvaluationType ftype,
 
         // Evaluate the dot-product with the displacements
         const double *N = ctx->N;
-        const double *d = vars;
+        const TacsScalar *d = vars;
 
         TacsScalar value = 0.0;
         for ( int j = 0; j < numNodes; j++ ){
@@ -270,7 +270,7 @@ void TACSKSDisplacement::getElementSVSens( double alpha,
 
       // Evaluate the dot-product with the displacements
       const double *N = ctx->N;
-      const double *d = vars;
+      const TacsScalar *d = vars;
 
       TacsScalar value = 0.0;
       for ( int j = 0; j < numNodes; j++ ){

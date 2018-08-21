@@ -429,19 +429,18 @@ class TACS3DBoundingTraction : public TACSElement {
               Xb[1] += Nb[j + k*order]*Xpts[3*node+1];
               Xb[2] += Nb[j + k*order]*Xpts[3*node+2];
               
-              if ((Xpts[3*node] <= box[3]) && 
-                  (Xpts[3*node] >= box[0])){
+              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) && 
+                  (TacsRealPart(Xpts[3*node]) >= TacsRealPart(box[0]))){
                 box_x = 1;
               }
-              if ((Xpts[3*node+1] <= box[4]) && 
-                  (Xpts[3*node+1] >= box[1])){
+              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) && 
+                  (TacsRealPart(Xpts[3*node+1]) >= TacsRealPart(box[1]))){
                 box_y = 1;
               }
-              if ((Xpts[3*node+2] <= box[5]) && 
-                  (Xpts[3*node+2] >= box[2])){
+              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) && 
+                  (TacsRealPart(Xpts[3*node+2]) >= TacsRealPart(box[2]))){
                 box_z = 1;
               }
-              
             }
           }
         }
@@ -459,19 +458,18 @@ class TACS3DBoundingTraction : public TACSElement {
               Xb[1] += Nb[i + k*order]*Xpts[3*node+1];
               Xb[2] += Nb[i + k*order]*Xpts[3*node+2];
 
-              if ((Xpts[3*node] <= box[3]) && 
-                  (Xpts[3*node] >= box[0])){
+              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) && 
+                  (TacsRealPart(Xpts[3*node]) >= TacsRealPart(box[0]))){
                 box_x = 1;
               }
-              if ((Xpts[3*node+1] <= box[4]) && 
-                  (Xpts[3*node+1] >= box[1])){
+              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) && 
+                  (TacsRealPart(Xpts[3*node+1]) >= TacsRealPart(box[1]))){
                 box_y = 1;
               }
-              if ((Xpts[3*node+2] <= box[5]) && 
-                  (Xpts[3*node+2] >= box[2])){
+              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) && 
+                  (TacsRealPart(Xpts[3*node+2]) >= TacsRealPart(box[2]))){
                 box_z = 1;
               }
-
             }
           }
         }
@@ -489,16 +487,17 @@ class TACS3DBoundingTraction : public TACSElement {
               Xb[1] += Nb[i + j*order]*Xpts[3*node+1];
               Xb[2] += Nb[i + j*order]*Xpts[3*node+2];
 
-              if ((Xpts[3*node] <= box[3]) && 
-                  (Xpts[3*node] >= box[0])){
+
+              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) && 
+                  (TacsRealPart(Xpts[3*node]) >= TacsRealPart(box[0]))){
                 box_x = 1;
               }
-              if ((Xpts[3*node+1] <= box[4]) && 
-                  (Xpts[3*node+1] >= box[1])){
+              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) && 
+                  (TacsRealPart(Xpts[3*node+1]) >= TacsRealPart(box[1]))){
                 box_y = 1;
               }
-              if ((Xpts[3*node+2] <= box[5]) && 
-                  (Xpts[3*node+2] >= box[2])){
+              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) && 
+                  (TacsRealPart(Xpts[3*node+2]) >= TacsRealPart(box[2]))){
                 box_z = 1;
               }
             }

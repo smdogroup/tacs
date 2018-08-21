@@ -348,13 +348,13 @@ class PoissonQuad : public TACSElement {
         }
 
         if (out_type & TACSElement::OUTPUT_STRAINS){
-          data[index] = px;
-          data[index+1] = py;
+          data[index] = TacsRealPart(px);
+          data[index+1] = TacsRealPart(py);
           index += 2;
         }
         if (out_type & TACSElement::OUTPUT_STRESSES){
-          data[index] = px;
-          data[index+1] = py;
+          data[index] = TacsRealPart(px);
+          data[index+1] = TacsRealPart(py);
           index += 2;
         }
         data += ld_data;

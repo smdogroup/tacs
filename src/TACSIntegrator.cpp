@@ -953,7 +953,7 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
           tacs->setVariables(mode, mode, mode);
           if (beamf5){
             char fname[256];
-            sprintf(fname, "mode_freq_%g.f5", freq[index]);
+            sprintf(fname, "mode_freq_%g.f5", TacsRealPart(freq[index]));
             beamf5->writeToFile(fname);
           }      
         }
@@ -1023,7 +1023,7 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
           tacs->setVariables(mode, mode, mode);
           if (beamf5){
             char fname[256];
-            sprintf(fname, "mode_freq_%g.f5", freq[index]);
+            sprintf(fname, "mode_freq_%g.f5", TacsRealPart(freq[index]));
             beamf5->writeToFile(fname);
           }
         }
