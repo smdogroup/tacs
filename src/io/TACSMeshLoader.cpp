@@ -296,37 +296,6 @@ static void parse_node_short_free_field( char *line, int *node,
   *z = bdf_atof(field[4]);
 }
 
-/*
-  Parse an element
-*/
-// static void parse_element_field( char line[], 
-//                                  int * elem_num, int * component_num,
-//                                  int * node_nums, int num_nodes, int width=8 ){
-//   char node[17];
-//   int entry = width;
-
-//   strncpy(node, &line[entry], width);
-//   node[width] = '\0';
-//   *elem_num = atoi(node);
-//   entry += width;
-  
-//   strncpy(node, &line[entry], width);
-//   node[width] = '\0';
-//   *component_num = atoi(node);
-//   entry += width;
-  
-//   if (*component_num <= 0){
-//     fprintf(stderr, 
-//             "Error: The component numbers must be strictly positive\n");
-//   }
-  
-//   for ( int n = 0; n < num_nodes && entry < 160; entry += width, n++ ){
-//     // Parse the line containing the entry
-//     strncpy(node, &line[entry], width);
-//     node[width] = '\0';
-//     node_nums[n] = atoi(node);
-//   }
-// }
 static void parse_element_field( char line[], 
                                  int * elem_num, int * component_num,
                                  int * node_nums, int num_nodes ){
@@ -355,40 +324,7 @@ static void parse_element_field( char line[],
     node_nums[n] = atoi(node);
   }
 }
-// static void parse_element_field2( char line1[], char line2[],
-//                                   int * elem_num, int * component_num,
-//                                   int * node_nums, int num_nodes ){
 
-//   int n = 0; // The number of parsed nodes
-//   char node[9];
-
-//   for ( int m = 0; m < 2; m++ ){
-//     int entry = 8;
-//     const char * line = line1;
-//     if (m == 1){
-//       line = line2;
-//     }
-
-//     if (n == 0){ 
-//       strncpy(node, &line[entry], 8);
-//       node[8] = '\0';
-//       *elem_num = atoi(node);
-//       entry += 8;
-
-//       strncpy(node, &line[entry], 8);
-//       node[8] = '\0';
-//       *component_num = atoi(node);
-//       entry += 8;
-//     }
-
-//     for ( ; n < num_nodes && entry < 72; entry += 8, n++ ){
-//       // Parse the line containing the entry
-//       strncpy(node, &line[entry], 8);
-//       node[8] = '\0';
-//       node_nums[n] = atoi(node);
-//     }
-//   }
-// }
 static void parse_element_field2( char line1[], char line2[],
                                   int * elem_num, int * component_num,
                                   int * node_nums, int num_nodes, int width=8 ){
@@ -1308,8 +1244,6 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           // Add the element to the connectivity list
           elem_nums[num_elements] = elem_num-1;
           elem_comp[num_elements] = component_num-1;
-          // printf("nodes: %d %d %d %d\n", nodes[0], nodes[1], 
-          //        nodes[3], nodes[2]);
           elem_con[elem_con_size]   = nodes[0]-1;
           elem_con[elem_con_size+1] = nodes[1]-1;
           elem_con[elem_con_size+2] = nodes[3]-1;
