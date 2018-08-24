@@ -299,6 +299,34 @@ static void parse_node_short_free_field( char *line, int *node,
 /*
   Parse an element
 */
+// static void parse_element_field( char line[], 
+//                                  int * elem_num, int * component_num,
+//                                  int * node_nums, int num_nodes, int width=8 ){
+//   char node[17];
+//   int entry = width;
+
+//   strncpy(node, &line[entry], width);
+//   node[width] = '\0';
+//   *elem_num = atoi(node);
+//   entry += width;
+  
+//   strncpy(node, &line[entry], width);
+//   node[width] = '\0';
+//   *component_num = atoi(node);
+//   entry += width;
+  
+//   if (*component_num <= 0){
+//     fprintf(stderr, 
+//             "Error: The component numbers must be strictly positive\n");
+//   }
+  
+//   for ( int n = 0; n < num_nodes && entry < 160; entry += width, n++ ){
+//     // Parse the line containing the entry
+//     strncpy(node, &line[entry], width);
+//     node[width] = '\0';
+//     node_nums[n] = atoi(node);
+//   }
+// }
 static void parse_element_field( char line[], 
                                  int * elem_num, int * component_num,
                                  int * node_nums, int num_nodes ){
@@ -327,37 +355,69 @@ static void parse_element_field( char line[],
     node_nums[n] = atoi(node);
   }
 }
+// static void parse_element_field2( char line1[], char line2[],
+//                                   int * elem_num, int * component_num,
+//                                   int * node_nums, int num_nodes ){
 
+//   int n = 0; // The number of parsed nodes
+//   char node[9];
+
+//   for ( int m = 0; m < 2; m++ ){
+//     int entry = 8;
+//     const char * line = line1;
+//     if (m == 1){
+//       line = line2;
+//     }
+
+//     if (n == 0){ 
+//       strncpy(node, &line[entry], 8);
+//       node[8] = '\0';
+//       *elem_num = atoi(node);
+//       entry += 8;
+
+//       strncpy(node, &line[entry], 8);
+//       node[8] = '\0';
+//       *component_num = atoi(node);
+//       entry += 8;
+//     }
+
+//     for ( ; n < num_nodes && entry < 72; entry += 8, n++ ){
+//       // Parse the line containing the entry
+//       strncpy(node, &line[entry], 8);
+//       node[8] = '\0';
+//       node_nums[n] = atoi(node);
+//     }
+//   }
+// }
 static void parse_element_field2( char line1[], char line2[],
                                   int * elem_num, int * component_num,
-                                  int * node_nums, int num_nodes ){
+                                  int * node_nums, int num_nodes, int width=8 ){
 
   int n = 0; // The number of parsed nodes
-  char node[9];
-
+  char node[17];
   for ( int m = 0; m < 2; m++ ){
-    int entry = 8;
+    int entry = width;
     const char * line = line1;
     if (m == 1){
       line = line2;
     }
 
     if (n == 0){ 
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
+      strncpy(node, &line[entry], width);
+      node[width] = '\0';
       *elem_num = atoi(node);
-      entry += 8;
+      entry += width;
 
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
+      strncpy(node, &line[entry], width);
+      node[width] = '\0';
       *component_num = atoi(node);
-      entry += 8;
+      entry += width;
     }
-
-    for ( ; n < num_nodes && entry < 72; entry += 8, n++ ){
+    
+    for ( ; n < num_nodes && entry < 72; entry += width, n++ ){
       // Parse the line containing the entry
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
+      strncpy(node, &line[entry], width);
+      node[width] = '\0';
       node_nums[n] = atoi(node);
     }
   }
@@ -853,6 +913,22 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           elem_con_size += 9;
           num_elements++;
         }
+        else if (strncmp(line[0], "CQUAD4*", 7) == 0 ){
+          // Read in the component number and nodes associated 
+          // with this element
+          int elem_num, component_num;
+          int nodes[4]; // Should have at most four nodes
+          parse_element_field2(line[0], line[1],
+                              &elem_num, &component_num,
+                               nodes, 4, 16);
+
+          if (component_num > num_components){
+            num_components = component_num;
+          }
+
+          elem_con_size += 4;
+          num_elements++;
+        }
         else if (strncmp(line[0], "CQUAD4", 6) == 0 || 
                  strncmp(line[0], "CQUADR", 6) == 0){
           // Read in the component number and nodes associated 
@@ -1216,6 +1292,37 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             strcpy(&component_elems[9*(component_num-1)], "CQUAD9");
           }
         }
+        else if (strncmp(line[0], "CQUAD4*", 7) == 0 ){
+          if (!read_buffer_line(line[1], sizeof(line[1]), 
+                                &buffer_loc, buffer, buffer_len)){
+            fail = 1;
+            break;
+          }
+          // Read in the component number and nodes associated
+          // with this element
+          int elem_num, component_num;
+          int nodes[4]; // Should have at most four nodes
+          parse_element_field2(line[0], line[1],
+                               &elem_num, &component_num,
+                               nodes, 4, 16);
+          // Add the element to the connectivity list
+          elem_nums[num_elements] = elem_num-1;
+          elem_comp[num_elements] = component_num-1;
+          // printf("nodes: %d %d %d %d\n", nodes[0], nodes[1], 
+          //        nodes[3], nodes[2]);
+          elem_con[elem_con_size]   = nodes[0]-1;
+          elem_con[elem_con_size+1] = nodes[1]-1;
+          elem_con[elem_con_size+2] = nodes[3]-1;
+          elem_con[elem_con_size+3] = nodes[2]-1;
+          elem_con_size += 4;
+
+          elem_con_ptr[num_elements+1] = elem_con_size;
+          num_elements++;
+
+          if (component_elems[9*(component_num-1)] == '\0'){
+            strcpy(&component_elems[9*(component_num-1)], "CQUAD4");
+          }
+        }
         else if (strncmp(line[0], "CQUAD4", 6) == 0 ||
                  strncmp(line[0], "CQUADR", 6) == 0){
           // Read in the component number and nodes associated
@@ -1225,7 +1332,6 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           parse_element_field(line[0],
                               &elem_num, &component_num,
                               nodes, 4);
-          
           // Add the element to the connectivity list
           elem_nums[num_elements] = elem_num-1;
           elem_comp[num_elements] = component_num-1;
@@ -1242,7 +1348,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           if (component_elems[9*(component_num-1)] == '\0'){
             strcpy(&component_elems[9*(component_num-1)], "CQUAD4");
           }
-        }
+        }        
         else if (strncmp(line[0], "CQUAD", 5) == 0){
           if (!read_buffer_line(line[1], sizeof(line[1]), 
                                 &buffer_loc, buffer, buffer_len)){
