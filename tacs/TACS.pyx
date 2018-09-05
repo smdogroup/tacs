@@ -1295,7 +1295,7 @@ cdef class Assembler:
         self.ptr.testElement(elemNum, print_level, dh, rtol, atol)
         return
 
-    def testConstitutive(self, int elemNum, print_level):
+    def testConstitutive(self, int elemNum, int print_level):
         '''
         Test the implementation of the given element constitutive
         class.
