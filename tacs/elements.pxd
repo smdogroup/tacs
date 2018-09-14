@@ -211,6 +211,23 @@ cdef extern from "TACSElementTemplates.h":
 
     cdef cppclass PoissonQuad5(TACSElement):
         PoissonQuad5(TacsScalar*)
+        
+    # Declare the Plane Stress Thermoelastic Quad elements
+    cdef cppclass PSThermoQuad2(TACSElement):
+        PSThermoQuad2(CoupledThermoPlaneStressStiffness *stiff,
+                      ElementBehaviorType type, int)
+        
+    cdef cppclass PSThermoQuad3(TACSElement):
+        PSThermoQuad3(CoupledThermoPlaneStressStiffness *stiff,
+                      ElementBehaviorType type, int)
+        
+    cdef cppclass PSThermoQuad4(TACSElement):
+        PSThermoQuad4(CoupledThermoPlaneStressStiffness *stiff,
+                      ElementBehaviorType type, int)
+        
+    cdef cppclass PSThermoQuad5(TACSElement):
+        PSThermoQuad5(CoupledThermoPlaneStressStiffness *stiff,
+                      ElementBehaviorType type, int)
 
 cdef extern from "PlaneStressTri6.h":
     cdef cppclass PlaneStressTri6(TACSElement):

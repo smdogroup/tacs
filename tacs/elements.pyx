@@ -634,6 +634,32 @@ cdef class PoissonQuad(Element):
             self.ptr.decref()
         return
 
+cdef class PSThermoelasticQuad(Element):
+    def __cinit__(self, int order, CoupledPlaneStress stiff,
+                  ElementBehaviorType elem_type=LINEAR,
+                  int component_num=0):
+        '''
+        Wrap the PSThermoQuad element class for order 2,3,4
+        '''
+        cdef CoupledThermoPlaneStressStiffness *con = _dynamicPSThermo(stiff.ptr)
+        if order == 2:
+            self.ptr = new PlaneStressQuad2(con, elem_type, component_num)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new PlaneStressQuad3(con, elem_type, component_num)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new PlaneStressQuad4(con, elem_type, component_num)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new PlaneStressQuad5(con, elem_type, component_num)
+            self.ptr.incref()
+        return
+        
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     '''Return a numpy version of the array'''
