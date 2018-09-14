@@ -1566,6 +1566,22 @@ cdef class MeshLoader:
         return _init_Assembler(self.ptr.createTACS(varsPerNode,
                                                    order_type, mat_type))
 
+    def addFunctionDomain(self, Function func, list comp_list):
+        '''Add the specified components to the domain of the function'''
+        cdef int num_comps = len(comp_list)
+        cdef int *comps = NULL
+        comps = <int*>malloc(num_comps*sizeof(int))
+        for i in range(num_comps):
+            comps[i] = <int>comp_list[i]
+        self.ptr.addFunctionDomain(func.ptr, comps, num_comps)
+        free(comps)
+        return
+
+    def addAuxElement(self, AuxElements aux, int component, Element elem):
+        '''Add the traction to the component'''
+        self.ptr.addAuxElement(aux.ptr, component, elem.ptr)
+        return
+
     def getConnectivity(self):
         '''
         Return the connectivity of the mesh
