@@ -22,6 +22,8 @@
 #include "MITCShell.h"
 #include "Solid.h"
 #include "PoissonElement.h"
+#include "PlaneStressCoupledThermoQuad.h"
+#include "PlaneStressCoupledThermoTraction.h"
 
 // Add define statements for the element types
 #define PlaneStressQuad2 PlaneStressQuad<2>
@@ -53,5 +55,16 @@
 #define PoissonQuad3 PoissonQuad<3>
 #define PoissonQuad4 PoissonQuad<4>
 #define PoissonQuad5 PoissonQuad<5>
-
+#define PSThermoQuad2 PlaneStressCoupledThermoQuad<2>
+#define PSThermoQuad3 PlaneStressCoupledThermoQuad<3>
+#define PSThermoQuad4 PlaneStressCoupledThermoQuad<4>
+#define PSThermoQuad5 PlaneStressCoupledThermoQuad<5>
+#define PSThermoQuadTraction2 PSQuadThermoTraction<2>
+#define PSThermoQuadTraction3 PSQuadThermoTraction<3>
+#define PSThermoQuadTraction4 PSQuadThermoTraction<4>
+#define PSThermoQuadTraction5 PSQuadThermoTraction<5>
+#define PSThermoQuadHF2 PSQuadHeatFluxTraction<2>
+#define PSThermoQuadHF3 PSQuadHeatFluxTraction<3>
+#define PSThermoQuadHF4 PSQuadHeatFluxTraction<4>
+#define PSThermoQuadHF5 PSQuadHeatFluxTraction<5>
 #endif // TACS_ELEMENT_TEMPLATES_H

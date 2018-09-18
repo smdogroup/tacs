@@ -643,16 +643,16 @@ cdef class PSThermoelasticQuad(Element):
         '''
         cdef CoupledThermoPlaneStressStiffness *con = _dynamicPSThermo(stiff.ptr)
         if order == 2:
-            self.ptr = new PlaneStressQuad2(con, elem_type, component_num)
+            self.ptr = new PSThermoQuad2(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 3:
-            self.ptr = new PlaneStressQuad3(con, elem_type, component_num)
+            self.ptr = new PSThermoQuad3(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 4:
-            self.ptr = new PlaneStressQuad4(con, elem_type, component_num)
+            self.ptr = new PSThermoQuad4(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 5:
-            self.ptr = new PlaneStressQuad5(con, elem_type, component_num)
+            self.ptr = new PSThermoQuad5(con, elem_type, component_num)
             self.ptr.incref()
         return
         
@@ -660,6 +660,80 @@ cdef class PSThermoelasticQuad(Element):
         self.ptr.decref()
         return
 
+cdef class PSThermoQuadTraction(Element):
+    def __cinit__(self, int surf,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty):
+        if len(tx) != len(ty):
+            errmsg = 'Traction lengths must be equal'
+            raise ValueError(errmsg)
+        if len(tx) < 2 or len(tx) > 5:
+            errmsg = 'Traction lengths must be between 2 and 4'
+        cdef int order = len(tx)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new PSThermoQuadTraction2(surf, <TacsScalar*>tx.data,
+                                                 <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new PSThermoQuadTraction3(surf, <TacsScalar*>tx.data,
+                                                 <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new PSThermoQuadTraction4(surf, <TacsScalar*>tx.data,
+                                                 <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new PSThermoQuadTraction5(surf, <TacsScalar*>tx.data,
+                                                 <TacsScalar*>ty.data)
+            self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
+
+cdef class PSThermoQuadHF(Element):
+    def __cinit__(self, int surf,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty):
+        if len(tx) != len(ty):
+            errmsg = 'Traction lengths must be equal'
+            raise ValueError(errmsg)
+        if len(tx) < 2 or len(tx) > 5:
+            errmsg = 'Traction lengths must be between 2 and 4'
+        cdef int order = len(tx)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new PSThermoQuadHF2(surf, <TacsScalar*>tx.data,
+                                           <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new PSThermoQuadHF3(surf, <TacsScalar*>tx.data,
+                                           <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new PSThermoQuadHF4(surf, <TacsScalar*>tx.data,
+                                           <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new PSThermoQuadHF5(surf, <TacsScalar*>tx.data,
+                                           <TacsScalar*>ty.data)
+            self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
+    
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     '''Return a numpy version of the array'''

@@ -198,24 +198,24 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       }
       if (out_type & TACSElement::OUTPUT_STRESSES){
         // Calculate the effective stress at the current point
-        TacsScalar stress[3],estrain[3];
+        TacsScalar stress[3];//,estrain[3];
         // ---------------------------------------------------------
         // ---------------------------------------------------------
-        TacsScalar aT = this->stiff->getThermalAlpha();
+        //TacsScalar aT = this->stiff->getThermalAlpha();
         TacsScalar T = 0.0;
         for ( int k = 0; k < NUM_NODES; k++){
           T += N[k]*vars[3*k+2];
         }
         
-        // Effective strain
-        estrain[0] = strain[0]-aT*T;
-        estrain[1] = strain[1]-aT*T;
-        estrain[2] = strain[2];
+        /* // Effective strain */
+        /* estrain[0] = strain[0]-aT*T; */
+        /* estrain[1] = strain[1]-aT*T; */
+        /* estrain[2] = strain[2]; */
         
-        //this->stiff->calculateStress(pt, estrain, stress);
-        stress[0] = estrain[0];
-        stress[1] = estrain[1];
-        stress[2] = estrain[2];
+        this->stiff->calculateStress(pt, strain, stress);
+        /* stress[0] = estrain[0]; */
+        /* stress[1] = estrain[1]; */
+        /* stress[2] = estrain[2]; */
         // ---------------------------------------------------------
         // ---------------------------------------------------------
         for ( int k = 0; k < 3; k++ ){
