@@ -733,7 +733,99 @@ cdef class PSThermoQuadHF(Element):
 
     def numNodes(self):
         return self.ptr.numNodes()
+
+
+cdef class SolidThermo(Element):
+    def __cinit__(self, int order, CoupledSolid stiff,
+                  ElementBehaviorType elem_type=LINEAR,
+                  int component_num=0):
+        '''
+        Wrap the SolidThermo element class for order 2,3,4
+        '''
+        cdef CoupledThermoSolidStiffness *con = _dynamicSolidThermo(stiff.ptr)
+        if order == 2:
+            self.ptr = new SolidThermo2(con, elem_type, component_num)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new SolidThermo3(con, elem_type, component_num)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new SolidThermo4(con, elem_type, component_num)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new SolidThermo5(con, elem_type, component_num)
+            self.ptr.incref()
+        return
+        
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
     
+cdef class TACS3DThermoTraction(Element):
+    def __cinit__(self, int order, int surf,
+                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+        if order < 2 or order > 5:
+            errmsg = 'ThermoTraction3D order must be between 2 and 4'
+            raise ValueError(errmsg)
+        if surf < 0 or surf >= 6:
+            errmsg = 'ThermoTraction3D surf must be between 0 and 5'
+            raise ValueError(errmsg)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new TACS3DThermoTraction2(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new TACS3DThermoTraction3(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new TACS3DThermoTraction4(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new TACS3DThermoTraction5(surf, tx, ty, tz)
+            self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
+
+cdef class TACS3DThermoHF(Element):
+    def __cinit__(self, int order, int surf,
+                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+        if order < 2 or order > 5:
+            errmsg = 'HeatFlux3D order must be between 2 and 4'
+            raise ValueError(errmsg)
+        if surf < 0 or surf >= 6:
+            errmsg = 'HeatFlux3D surf must be between 0 and 5'
+            raise ValueError(errmsg)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new TACS3DThermoHF2(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new TACS3DThermoHF3(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new TACS3DThermoHF4(surf, tx, ty, tz)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new TACS3DThermoHF5(surf, tx, ty, tz)
+            self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
+
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     '''Return a numpy version of the array'''

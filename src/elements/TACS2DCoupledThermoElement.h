@@ -1269,7 +1269,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct( double time, doubl
     TacsScalar *b = B;
     TacsScalar *ps = psi_u;
     for ( int i = 0; i < 2*NUM_NODES; i++ ){
-      //printf("b: %e %e %e\n", b[0], b[1], b[2]);
       bpsi[0] += ps[0]*b[0];
       bpsi[1] += ps[0]*b[1];
       bpsi[2] += ps[0]*b[2];
@@ -1437,8 +1436,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getMatType( ElementMatrixType matTyp
       for ( int j = 0; j < NUM_NODES; j++ ){
         for ( int i = 0; i <= j; i++ ){
           TacsScalar d = h*ptmass[0]*N[i]*N[j];
-          /* mat[2*i + 2*j*NUM_VARIABLES] += d; */
-          /* mat[2*i+1 + (2*j+1)*NUM_VARIABLES] += d; */
           mat[(3*i)*NUM_VARIABLES+3*j] += d;
           mat[(3*i+1)*NUM_VARIABLES+3*j+1] += d;
         }

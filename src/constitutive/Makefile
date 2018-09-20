@@ -18,7 +18,8 @@ CXX_OBJS = TACSConstitutive.o \
 	EBStiffness.o \
 	TimoshenkoStiffness.o \
 	TACSPanelAnalysis.o \
-	CoupledThermoPlaneStressStiffness.o
+	CoupledThermoPlaneStressStiffness.o \
+	CoupledThermoSolidStiffness.o
 
 DIR=${TACS_DIR}/src/constitutive
 

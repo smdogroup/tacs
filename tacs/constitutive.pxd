@@ -75,6 +75,11 @@ cdef extern from "SolidStiffness.h":
         SolidStiffness()
         SolidStiffness(TacsScalar rho, TacsScalar E, TacsScalar nu,
                        TacsScalar ys, int eNum)
+cdef extern from "CoupledThermoSolidStiffness.h":
+    cdef cppclass CoupledThermoSolidStiffness(SolidStiffness):
+        CoupledThermoSolidStiffness()
+        CoupledThermoSolidStiffness( TacsScalar, TacsScalar, TacsScalar,
+                                     TacsScalar, TacsScalar, TacsScalar )
 
 cdef extern from "TACSConstitutiveWrapper.h":
     cdef cppclass PSStiffnessWrapper(PlaneStressStiffness):
@@ -135,6 +140,9 @@ cdef class SolidStiff(Constitutive):
 cdef class CoupledPlaneStress(Constitutive):
     pass
 
+cdef class CoupledSolid(Constitutive):
+    pass
+
 # Special functions required for converting pointers
 cdef extern from "":
     PlaneStressStiffness* _dynamicPlaneStress"dynamic_cast<PlaneStressStiffness*>"(TACSConstitutive*)
@@ -142,3 +150,4 @@ cdef extern from "":
     SolidStiffness* _dynamicSolid"dynamic_cast<SolidStiffness*>"(TACSConstitutive*)
     TimoshenkoStiffness* _dynamicTimoshenko"dynamic_cast<TimoshenkoStiffness*>"(TACSConstitutive*)
     CoupledThermoPlaneStressStiffness* _dynamicPSThermo"dynamic_cast<CoupledThermoPlaneStressStiffness*>"(TACSConstitutive*)
+    CoupledThermoSolidStiffness* _dynamicSolidThermo"dynamic_cast<CoupledThermoSolidStiffness*>"(TACSConstitutive*)
