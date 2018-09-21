@@ -1302,6 +1302,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       b += NUM_STRESSES;
     }
 
+    b = NULL;
     // Get value of the mass/area at this point
     TacsScalar mass;
     stiff->getPointwiseMass(pt, &mass);
@@ -1325,6 +1326,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       stiff->calculateThermal(pt, phi, stress);
       // Get the derivative of the strain with respect to the nodal
       // displacements [6x24] (24 = 3*NUM_NODES for order 2)
+      memset(B, 0.0, NUM_STRESSES*3*NUM_NODES*sizeof(TacsScalar));
       getBmat(B, J, Na, Nb, Nc,vars);
       b = NULL; 
       b = B;
@@ -1442,43 +1444,24 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
 
       // Fill-in the lower portion of the matrix
       TacsScalar *bj = B;
-      // Fill-in the lower portion of the matrix K blockwise
-      int Kmult = NUM_NODES*3;
-      int index = 0;
-      TacsScalar Kmat[Kmult*NUM_NODES*3];
-      memset(Kmat, 0.0, Kmult*NUM_NODES*3*sizeof(TacsScalar));
-      for ( int j = 0; j < 3*NUM_NODES; j++ ){
-        TacsScalar bs[NUM_STRESSES];
-        stiff->calculateStress(pt, bj, bs);        
-        TacsScalar *bi = B;
-        // Compute the product of B^{T}*D*B
-        for ( int i = 0; i <= j; i++ ){
-          Kmat[index] +=
-            alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2] +
-                     bi[3]*bs[3] + bi[4]*bs[4] + bi[5]*bs[5]);     
-          index++;
-          bi += NUM_STRESSES;
-        }       
-        bj += NUM_STRESSES;
-      } // end for int j = 0; j < 3*NUM_NODES
-
-      // Input the K matrix into the displacement row/columns in a
-      // upper triangular block-wise format
-      index = 0;
-      for ( int j = 0; j < NUM_VARIABLES; j++ ){
-        // Skip the temperature row
-        if ( j % 4 != 3 ){
-          for ( int i = 0; i <= j; i++ ){
-            // Skip the temperature column
-            if (i % 4 != 3){
-              mat[i+j*NUM_VARIABLES] += 1.0*Kmat[index];
-              index++;
-            } // end if i % 3 != 2
-          } // end for int i = 0; i <= j
-        } // end if j % 4 != 3
-      } // end for int j = 0; j < NUM_VARIABLES
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        for ( int jj = 0; jj < 3; jj++ ){
+          // Compute the product of D*B at the given point
+          TacsScalar bs[NUM_STRESSES];
+          stiff->calculateStress(pt, bj, bs);
+          bj += NUM_STRESSES;
+          for ( int i = 0; i < NUM_NODES; i++ ){
+            for ( int ii = 0; ii < 3; ii++ ){
+              const TacsScalar *bi = &B[NUM_STRESSES*(3*i + ii)];
+              mat[NUM_VARIABLES*(4*j + jj) + (4*i + ii)] +=
+                alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2] 
+                         +bi[3]*bs[3] + bi[4]*bs[4] + bi[5]*bs[5]);
+            } // end for int ii = 0; ii < 2 
+          } // end for int i = 0; i < NUM_NODES 
+        } // end for int jj = 0; jj < 3 
+      }// end for int j = 0; j < NUM_NODES
     } // end if alpha != 0.0
-
+    // ----------------------------------------------------------------
     if (gamma != 0.0){
       // Get value of the mass/area at this point
       TacsScalar mass;
@@ -1498,135 +1481,55 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
     // Add contribution of heat transfer to the Jacobian
     // Add heat conduction to the bottom right of the Jacobian [H] [NUM_NODESxNUM_NODES] 
     if (conduction){
+      // Compute the nonsymmetric part of the Jacobian i.e. matrix L
+      memset(B, 0.0, NUM_STRESSES*3*NUM_NODES*sizeof(TacsScalar));
+      TacsScalar s[NUM_STRESSES], BDs[3*NUM_NODES];
+      memset(s, 0.0, NUM_STRESSES*sizeof(TacsScalar));
+      memset(BDs, 0.0, 3*NUM_NODES*sizeof(TacsScalar));
+      // Get the coefficient of thermal expansion
+      TacsScalar phi[] = {1.0,1.0,1.0,0.0,0.0,0.0};
+      // Get B [NUM_STRESSESx3*NUM_NODES];
+      getBmat(B, J, Na, Nb, Nc, vars);
+      TacsScalar *bj = B;
+      // Compute the vector D*phi*aT [NUM_STRESSESx1]
+      stiff->calculateThermal(pt, phi, s);
+      // Compute the vector B^{T}*D*phi*aT [3xNUM_NODESx1]
+      for (int i = 0; i < 3*NUM_NODES; i++){
+        BDs[i] += (bj[0]*s[0]+bj[1]*s[1]+bj[2]*s[2]+
+                   bj[3]*s[3]+bj[4]*s[4]+bj[5]*s[5]);
+        bj += NUM_STRESSES;      
+      }
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        for ( int jj = 0; jj < 3; jj++ ){
+          for ( int i = 0; i < NUM_NODES; i++ ){
+            for ( int ii = 3; ii < 4; ii++ ){
+              mat[NUM_VARIABLES*(4*j + jj) + (4*i + ii)] -=
+                h*alpha*BDs[3*j+jj]*N[i];
+            }
+          }
+        }
+      } 
       // Get the B matrix [3xNUM_NODES] associated with the heat
       // transfer problem
       memset(B, 0.0, 3*NUM_NODES*sizeof(TacsScalar));
       getBmatTemp(B, J, Na, Nb, Nc,vars);
       // Fill-in the upper portion of the matrix
-      TacsScalar *bj = B;
-      int Hsize = 36;
-      if (NUM_NODES > 8){
-        Hsize = 0;
-        for (int i = 1; i <= NUM_NODES; i++){
-          Hsize += i;
-        }
-      }
-      
-      TacsScalar Hmat[Hsize];
-      memset(Hmat, 0.0, Hsize*sizeof(TacsScalar));
-      int index = 0;
-      for ( int j = 0; j < NUM_NODES; j++ ){
-        // Compute the product of D*B [3xNUM_NODES] at the given point
-        TacsScalar bs[3]; // column of B
-        stiff->calculateConduction(pt, bj, bs);
-        TacsScalar *bi = B;
-        // Compute the product of B^{T}*D*B [NUM_NODESxNUM_NODES]
-        for ( int i = 0; i <= j; i++ ){
-          Hmat[index] +=
-            alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] +bi[2]*bs[2]);
-          index++;
-          bi += 3;
-        }       
-        bj += 3;
-      } // end for j = 0; j < NUM_NODES
-      // Input Hmat into the temperature column/rows of the stiffness
-      // matrix  
-      // ---------------------------------------------------------------
-      index = 0;
-      for ( int j = 0; j < NUM_VARIABLES; j++ ){
-        // Skip the temperature row
-        if ( j % 4 == 3 ){
-          for ( int i = 0; i <= j; i++ ){
-            // Skip the temperature column
-            if (i % 4 == 3){
-              mat[i+j*NUM_VARIABLES] += 1.0*Hmat[index];
-              index++;
-            } // end if i % 4 != 3
-          }
-        }  // end if j % 4 != 3
-      } // end for int j = 0; j < NUM_VARIABLES
-    } // end if conduction
-  } // end for int n = 0; n < numGauss
-
-  // Apply symmetry to the K and H matrix
-  for ( int j = 0; j < NUM_VARIABLES; j++ ){
-    for ( int i = 0; i < j; i++ ){
-      mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
-    }
-  }
-  // --------------------------------------------------
-  // Compute the nonsymmetric parts of the matrix L
-  // --------------------------------------------------
-  for ( int n = 0; n < numGauss; n++ ){
-    // Retrieve the quadrature points and weight
-    double pt[3];
-    double weight = getGaussWtsPts(n, pt);
-
-    // Compute the element shape functions
-    getShapeFunctions(pt, N, Na, Nb, Nc);
-
-    // Compute the derivative of X with respect to the
-    // coordinate directions
-    TacsScalar X[3], Xa[9];
-    solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
-
-    // Compute the determinant of Xa and the transformation
-    TacsScalar J[9];
-    TacsScalar h = FElibrary::jacobian3d(Xa, J);
-    h = h*weight;
-    if (conduction){
-      TacsScalar Lmat[3*NUM_NODES*NUM_NODES];
-      memset(Lmat, 0.0, 3*NUM_NODES*NUM_NODES*sizeof(TacsScalar));
-      // Compute the cross matrix term -L [3*NUM_NODESxNUM_NODES]
-      TacsScalar s[NUM_STRESSES], BDs[3*NUM_NODES];
-      memset(s, 0.0, NUM_STRESSES*sizeof(TacsScalar));
-      memset(BDs, 0.0, 3*NUM_NODES*sizeof(TacsScalar));
-      TacsScalar phi[] = {1.0,1.0,1.0,0.0,0.0,0.0};
-      // Get B [NUM_STRESSESx3*NUM_NODES]
-      getBmat(B, J, Na, Nb, Nc,vars);
-      TacsScalar *bj = NULL;
       bj = B;
-      // Compute the product D*phi*aT [NUM_STRESSESx1]
-      stiff->calculateThermal(pt, phi,s);
-      // Compute the vector B^{T}*D*phi*aT [3*NUM_NODESx1]
-      for (int i = 0; i < 3*NUM_NODES; i++){
-        BDs[i] += (bj[0]*s[0]+bj[1]*s[1]+bj[2]*s[2]+
-                   bj[3]*s[3]+bj[4]*s[4]+bj[5]*s[5]);
-        bj += NUM_STRESSES;
-      
-      }
-      // Compute the cross term matrix -L [3*NUM_NODESxNUM_NODES]
-      // jth column
-      int index = 0;
-      for (int i = 0; i < 3*NUM_NODES; i++){
-        for (int j = 0; j < NUM_NODES; j++){
-          Lmat[index] -= h*alpha*BDs[i]*N[j];
-          index++;
-        } // end for int j = 0; j < NUM_NODES;
-      } // end for int i = 0; i < 3*NUM_NODES;
-
-      // Input into the displacement row     
-      index = 0;
-      for (int i = 0; i < NUM_NODES; i++){
-        // Input into the first displacement row
-        for (int j = 0; j < NUM_NODES; j++){
-          int l_index = (4*i)*NUM_VARIABLES+4*j+3;
-          mat[l_index] += 1.0*Lmat[index];
-          index++;
-        }
-        // Input into the second displacement row
-        for (int j = 0; j < NUM_NODES; j++){
-          int l_index = (4*i+1)*NUM_VARIABLES+4*j+3;
-          mat[l_index] += 1.0*Lmat[index];
-          index++;
-        }
-        // Input into the third displacement row
-        for (int j = 0; j < NUM_NODES; j++){
-          int l_index = (4*i+2)*NUM_VARIABLES+4*j+3;
-          mat[l_index] += 1.0*Lmat[index];
-          index++;
-        }
-      }      
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        for ( int jj = 3; jj < 4; jj++ ){
+          // Compute the product of Dtemp*Btemp [3xNUM_NODES] at the given point
+          TacsScalar bs[3]; // column of B
+          stiff->calculateConduction(pt, bj, bs);
+          bj += 3;
+          for ( int i = 0; i < NUM_NODES; i++ ){
+            for ( int ii = 3; ii < 4; ii++ ){
+              const TacsScalar *bi = &B[3*i];
+              mat[NUM_VARIABLES*(4*j + jj) + (4*i + ii)] +=
+                alpha*h*(bi[0]*bs[0] + bi[1]*bs[1]+bi[2]*bs[2]);
+            } // end for int ii = 3; ii < 4
+          } // end for int i = 0; i < NUM_NODES
+        } // end for int jj = 3; jj < 4
+      } // end for int j = 0; j < NUM_NODES
     } // end if conduction
   } // end for int n = 0; n < numGauss 
 }
