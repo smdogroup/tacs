@@ -24,6 +24,8 @@
 #include "PoissonElement.h"
 #include "PlaneStressCoupledThermoQuad.h"
 #include "PlaneStressCoupledThermoTraction.h"
+#include "CoupledThermoSolid.h"
+#include "TACS3DCoupledThermoTraction.h"
 
 // Add define statements for the element types
 #define PlaneStressQuad2 PlaneStressQuad<2>
@@ -67,4 +69,17 @@
 #define PSThermoQuadHF3 PSQuadHeatFluxTraction<3>
 #define PSThermoQuadHF4 PSQuadHeatFluxTraction<4>
 #define PSThermoQuadHF5 PSQuadHeatFluxTraction<5>
+#define SolidThermo2 CoupledThermoSolid<2>
+#define SolidThermo3 CoupledThermoSolid<3>
+#define SolidThermo4 CoupledThermoSolid<4>
+#define SolidThermo5 CoupledThermoSolid<5>
+#define TACS3DThermoTraction2 TACS3DThermoTraction<2>
+#define TACS3DThermoTraction3 TACS3DThermoTraction<3>
+#define TACS3DThermoTraction4 TACS3DThermoTraction<4>
+#define TACS3DThermoTraction5 TACS3DThermoTraction<5>
+#define TACS3DThermoHF2 TACS3DHeatFluxTraction<2>
+#define TACS3DThermoHF3 TACS3DHeatFluxTraction<3>
+#define TACS3DThermoHF4 TACS3DHeatFluxTraction<4>
+#define TACS3DThermoHF5 TACS3DHeatFluxTraction<5>
+
 #endif // TACS_ELEMENT_TEMPLATES_H
