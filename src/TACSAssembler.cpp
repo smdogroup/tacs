@@ -2393,7 +2393,7 @@ int TACSAssembler::initialize(){
   extDistIndices->incref();
   extDistIndices->setUpInverse();
   
-  // Set up the external indices
+  // Set up the external vector distribute object
   extDist = new TACSBVecDistribute(varMap, extDistIndices);
   extDist->incref();
 

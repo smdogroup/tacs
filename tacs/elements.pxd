@@ -7,8 +7,8 @@
 #  TACS is licensed under the Apache License, Version 2.0 (the
 #  "License"); you may not use this software except in compliance with
 #  the License.  You may obtain a copy of the License at
-#  
-#  http://www.apache.org/licenses/LICENSE-2.0 
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
 
 # For MPI capabilities
 from mpi4py.libmpi cimport *
@@ -27,8 +27,8 @@ cdef extern from "TACSElement.h":
     enum ElementBehaviorType:
         LINEAR
         NONLINEAR
-        LARGE_ROTATION        
-        
+        LARGE_ROTATION
+
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
@@ -40,7 +40,7 @@ cdef extern from "RigidBody.h":
     cdef cppclass TACSRigidBodyViz(TACSObject):
         TACSRigidBodyViz(int, int, TacsScalar*, int*, TACSGibbsVector*)
         TACSRigidBodyViz(TacsScalar, TacsScalar, TacsScalar)
-        
+
     cdef cppclass TACSRigidBody(TACSElement):
         TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
                       const TacsScalar*, TACSGibbsVector*,
@@ -52,7 +52,7 @@ cdef extern from "KinematicConstraints.h":
     cdef cppclass TACSFixedConstraint(TACSElement):
         TACSFixedConstraint(TACSRigidBody *bodyA,
                             TACSGibbsVector *point)
-    
+
     cdef cppclass TACSSphericalConstraint(TACSElement):
         TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
                                 TACSGibbsVector *point)
@@ -103,19 +103,19 @@ cdef extern from "KinematicConstraints.h":
 cdef extern from "TACSElementTemplates.h":
     # Declare the PlaneStressQuad elements
     cdef cppclass PlaneStressQuad2(TACSElement):
-        PlaneStressQuad2(PlaneStressStiffness *stiff, 
+        PlaneStressQuad2(PlaneStressStiffness *stiff,
                          ElementBehaviorType type, int)
-        
+
     cdef cppclass PlaneStressQuad3(TACSElement):
-        PlaneStressQuad3(PlaneStressStiffness *stiff, 
+        PlaneStressQuad3(PlaneStressStiffness *stiff,
                          ElementBehaviorType type, int)
-        
+
     cdef cppclass PlaneStressQuad4(TACSElement):
-        PlaneStressQuad4(PlaneStressStiffness *stiff, 
+        PlaneStressQuad4(PlaneStressStiffness *stiff,
                          ElementBehaviorType type, int)
-        
+
     cdef cppclass PlaneStressQuad5(TACSElement):
-        PlaneStressQuad5(PlaneStressStiffness *stiff, 
+        PlaneStressQuad5(PlaneStressStiffness *stiff,
                          ElementBehaviorType type, int)
 
     # Declare theee PSQuadTraction elements
@@ -179,7 +179,7 @@ cdef extern from "TACSElementTemplates.h":
 
     cdef cppclass MITCShell3(TACSElement):
         MITCShell3(FSDTStiffness *stiff, ElementBehaviorType type, int)
-        
+
     cdef cppclass MITCShell4(TACSElement):
         MITCShell4(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
@@ -200,21 +200,27 @@ cdef extern from "TACSElementTemplates.h":
         Solid5(SolidStiffness *stiff, ElementBehaviorType type, int)
 
     # Declare the Poisson Quadrilateral elements
+    ctypedef TacsScalar (*poisson_evalf)(void*, const TacsScalar*)
+
     cdef cppclass PoissonQuad2(TACSElement):
         PoissonQuad2(TacsScalar*)
+        PoissonQuad2(void*, poisson_evalf)
 
     cdef cppclass PoissonQuad3(TACSElement):
         PoissonQuad3(TacsScalar*)
+        PoissonQuad3(void*, poisson_evalf)
 
     cdef cppclass PoissonQuad4(TACSElement):
         PoissonQuad4(TacsScalar*)
+        PoissonQuad4(void*, poisson_evalf)
 
     cdef cppclass PoissonQuad5(TACSElement):
         PoissonQuad5(TacsScalar*)
+        PoissonQuad5(void*, poisson_evalf)
 
 cdef extern from "PlaneStressTri6.h":
     cdef cppclass PlaneStressTri6(TACSElement):
-        PlaneStressTri6(PlaneStressStiffness *stiff, 
+        PlaneStressTri6(PlaneStressStiffness *stiff,
                         ElementBehaviorType type, int)
 
 cdef extern from  "MITC9.h":
@@ -232,8 +238,8 @@ cdef extern from "TACSElementWrapper.h":
         TACSElementWrapper(PyObject *obj, int, int)
 
         # Member functions
-        void (*getinitconditions)( void *, int, int, 
-                                   TacsScalar *, TacsScalar *, 
+        void (*getinitconditions)( void *, int, int,
+                                   TacsScalar *, TacsScalar *,
                                    TacsScalar *, const TacsScalar * )
 
         void (*addresidual)( void *, int, int, double time, TacsScalar *,
@@ -241,7 +247,7 @@ cdef extern from "TACSElementWrapper.h":
                              const TacsScalar *,
                              const TacsScalar *,
                              const TacsScalar * )
-        
+
         void (*addjacobian)( void *, int, int, double time, TacsScalar *,
                              double alpha, double beta, double gamma,
                              const TacsScalar *,
@@ -251,8 +257,8 @@ cdef extern from "TACSElementWrapper.h":
 
         void addadjresproduct(void * , int, int, double,
                            TacsScalar, TacsScalar *, int,
-                           const TacsScalar *, 
-                           const TacsScalar *, 
-                           const TacsScalar *, 
-                           const TacsScalar *, 
+                           const TacsScalar *,
+                           const TacsScalar *,
+                           const TacsScalar *,
+                           const TacsScalar *,
                            const TacsScalar * )
