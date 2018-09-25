@@ -99,9 +99,9 @@ class TACSFunction : public TACSObject {
   enum EvaluationType { INITIALIZE, INTEGRATE };
 
   TACSFunction( TACSAssembler *_tacs, 
-		DomainType _funcDomain=ENTIRE_DOMAIN,
+                DomainType _funcDomain=ENTIRE_DOMAIN,
                 StageType _funcStages=SINGLE_STAGE,
-		int _maxElems=0 );
+                int _maxElems=0 );
   virtual ~TACSFunction();
 
   virtual const char *functionName() = 0;
@@ -175,10 +175,10 @@ class TACSFunction : public TACSObject {
   // Nodal sensitivities
   // -------------------
   virtual void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-				  TACSElement *element, int elemNum,
-				  const TacsScalar Xpts[], const TacsScalar vars[],
-				  const TacsScalar dvars[], const TacsScalar ddvars[],
-				  TACSFunctionCtx *ctx ){
+                                  TACSElement *element, int elemNum,
+                                  const TacsScalar Xpts[], const TacsScalar vars[],
+                                  const TacsScalar dvars[], const TacsScalar ddvars[],
+                                  TACSFunctionCtx *ctx ){
     int numNodes = element->numNodes();
     memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
   }
