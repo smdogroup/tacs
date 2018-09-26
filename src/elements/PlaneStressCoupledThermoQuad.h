@@ -154,19 +154,6 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
     for ( int n = 0; n < order; n++ ){
       int p = n + order*m;
       int index = 0;
-      if (out_type & TACSElement::OUTPUT_NODES){
-	for ( int k = 0; k < 3; k++ ){
-	  data[index+k] = TacsRealPart(Xpts[3*p+k]);
-	}
-        index += 3;
-      }
-      if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-	for ( int k = 0; k < 3; k++ ){
-          data[index+k] = TacsRealPart(vars[3*p+k]);
-	}
-        index += 3;
-      }
-      
       // Set the parametric point to extract the data
       double pt[2];
       pt[0] = -1.0 + 2.0*n/(order - 1.0);
@@ -177,6 +164,27 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       double Na[NUM_NODES], Nb[NUM_NODES];
       getShapeFunctions(pt, N, Na, Nb);
 
+      if (out_type & TACSElement::OUTPUT_NODES){
+	for ( int k = 0; k < 3; k++ ){
+          TacsScalar X = 0.0;
+          for (int i = 0; i < NUM_NODES; i++){
+            X += N[i]*Xpts[3*p+k];
+          }
+          data[index+k] = TacsRealPart(X);	 
+	}
+        index += 3;
+      }
+      if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
+	for ( int k = 0; k < 3; k++ ){
+          TacsScalar u = 0.0;
+          for (int i = 0; i < NUM_NODES; i++){
+            u += N[i]*vars[3*p+k];
+          }
+          data[index+k] = TacsRealPart(u);
+	}
+        index += 3;
+      }
+      
       // Compute the derivative of X with respect to the
       // coordinate directions
       TacsScalar X[3], Xa[4];

@@ -152,27 +152,14 @@ void CoupledThermoSolid<order>::addOutputCount( int *nelems,
 */
 template <int order>
 void CoupledThermoSolid<order>::getOutputData( unsigned int out_type, 
-                                  double *data, int ld_data,
-                                  const TacsScalar Xpts[],
-                                  const TacsScalar vars[] ){
+                                               double *data, int ld_data,
+                                               const TacsScalar Xpts[],
+                                               const TacsScalar vars[] ){
   for ( int p = 0; p < order; p++ ){
     for ( int m = 0; m < order; m++ ){
       for ( int n = 0; n < order; n++ ){
         int node = n + m*order + p*order*order;
         int index = 0;
-        if (out_type & TACSElement::OUTPUT_NODES){
-          for ( int k = 0; k < 3; k++ ){
-            data[index+k] = TacsRealPart(Xpts[3*node+k]);
-          }
-          index += 3;
-        }
-        if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-          for ( int k = 0; k < 4; k++ ){
-            data[index+k] = TacsRealPart(vars[4*node+k]);
-          }
-          index += 4;
-        }
-
         // Set the parametric point where to evaluate the 
         // stresses/strains
         double pt[3];
@@ -184,6 +171,27 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
         double N[NUM_NODES];
         double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
         getShapeFunctions(pt, N, Na, Nb, Nc);
+
+        if (out_type & TACSElement::OUTPUT_NODES){
+          for ( int k = 0; k < 3; k++ ){
+            TacsScalar X = 0.0;
+            for (int i = 0; i < NUM_NODES; i++){
+              X += N[i]*Xpts[3*node+k];
+            }
+            data[index+k] = TacsRealPart(X);
+          }
+          index += 3;
+        }
+        if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
+          for ( int k = 0; k < 4; k++ ){
+            TacsScalar u = 0.0;
+            for (int i = 0; i < NUM_NODES; i++){
+              u += N[i]*vars[4*node+k];
+            }
+            data[index+k] = TacsRealPart(u);
+          }
+          index += 4;
+        }
 
         // Compute the derivative of X with respect to the
         // coordinate directions
