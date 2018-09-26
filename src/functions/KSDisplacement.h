@@ -22,8 +22,12 @@
 */
 class TACSKSDisplacement : public TACSFunction {
  public:
+  enum KSDisplacementType { DISCRETE, CONTINUOUS,
+                            PNORM_DISCRETE, PNORM_CONTINUOUS };
+
   TACSKSDisplacement( TACSAssembler *_tacs, double _ksWeight,
-                      const TacsScalar _dir[] );
+                      const TacsScalar _dir[],
+                      KSDisplacementType _ksType=CONTINUOUS );
   ~TACSKSDisplacement();
 
   // Retrieve the name of the function
@@ -33,6 +37,10 @@ class TACSKSDisplacement : public TACSFunction {
   // Create the function context for evaluation
   // ------------------------------------------
   TACSFunctionCtx *createFunctionCtx();
+
+  // Set the type of displacement aggregate
+  // --------------------------------------
+  void setKSDispType( KSDisplacementType _ksType );
 
   // Collective calls on the TACS MPI Comm
   // -------------------------------------
@@ -95,6 +103,10 @@ class TACSKSDisplacement : public TACSFunction {
   // Intermediate values in the functional evaluation
   TacsScalar ksSum;
   TacsScalar maxValue;
+  TacsScalar invPnorm;
+
+  // Set the type of constraint aggregate
+  KSDisplacementType ksType;
 
   // The max number of nodes
   int maxNumNodes;

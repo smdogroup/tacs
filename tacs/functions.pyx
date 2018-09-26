@@ -80,9 +80,13 @@ cdef class KSFailure(Function):
 
     def setKSFailureType(self, ftype='discrete'):
         if ftype == 'discrete':
-            self.ksptr.setKSFailureType(KS_DISCRETE)
+            self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
         elif ftype == 'continuous':
-            self.ksptr.setKSFailureType(KS_CONTINUOUS)
+            self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSFailureType(PNORM_FAILURE_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSFailureType(PNORM_FAILURE_CONTINUOUS)
         return
 
 cdef class KSDisplacement(Function):
@@ -98,6 +102,17 @@ cdef class KSDisplacement(Function):
         self.ksptr = new TACSKSDisplacement(tacs.ptr, ksWeight, _dirs)
         self.ptr = self.ksptr
         self.ptr.incref()
+        return
+
+    def setKSDispType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSDispType(KS_DISP_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSDispType(KS_DISP_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSDispType(PNORM_DISP_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSDispType(PNORM_DISP_CONTINUOUS)
         return
 
 cdef class DisplacementIntegral(Function):
