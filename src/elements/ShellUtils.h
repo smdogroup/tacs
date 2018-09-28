@@ -1184,6 +1184,181 @@ void compute_tying_bmat( const int is_linear,
 }
 
 /*
+  Compute the linear tying strain bmat matrices. This corresponds to
+  the derivative of the displacement-based strain at each of the tying
+  points.
+
+  input:
+  knots: the 'order'th (ie 2, 3 or 4) Gauss-points
+  pknots: the 'order-1'th Gauss-points
+  Xpts: the nodal locations for the element
+
+  output:
+  b11: the derivative of the in-plane normal tensorial strain in the 1
+  direction
+  b22: the derivative of the in-plane normal tensorial strain in the 2
+  direction
+  b12: the derivative of the in-plane tensorial shear strain
+
+  b23: the derivative of the out-of-plane tensorial shear strain in
+  the 2-direction
+  b13: the derivative of the out-of-plane tensorial shear strain in
+  the 1-direction
+*/
+template <int order>
+void compute_tying_bmat_part_unity( const int is_linear,
+                                    const double Np,
+                                    const double Npa, const double Npb,
+                                    TacsScalar b11[], TacsScalar b22[],
+                                    TacsScalar b12[],
+                                    TacsScalar b23[], TacsScalar b13[],
+                                    const double knots[], const double pknots[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar Xpts[] ){
+  double N[order*order], Na[order*order], Nb[order*order];
+
+  // Evaluate g22 and g23
+  for ( int m = 0; m < order-1; m++ ){
+    for ( int n = 0; n < order; n++ ){
+      double pt[2];
+      pt[0] = knots[n];
+      pt[1] = pknots[m];
+
+      TacsScalar Urot[3], Ud[6], Xd[6];
+      compute_tensorial_components(order, Urot, Ud, Xd,
+                                   N, Na, Nb, pt, Xpts, vars);
+
+      // Caculate the normal
+      TacsScalar normal[3];
+      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
+      Tensor::normalize3D(normal);
+
+      if (is_linear){
+        // Add the derivative to the b-matrix
+        for ( int i = 0; i < order*order; i++ ){
+          b22[0] = Xd[3]*(Np*Nb[i] + Npb*N[i]);
+          b22[1] = Xd[4]*(Np*Nb[i] + Npb*N[i]);
+          b22[2] = Xd[5]*(Np*Nb[i] + Npb*N[i]);
+          b22 += 3;
+
+          b23[0] = 0.5*normal[0]*(Np*Nb[i] + Npb*N[i]);
+          b23[1] = 0.5*normal[1]*(Np*Nb[i] + Npb*N[i]);
+          b23[2] = 0.5*normal[2]*(Np*Nb[i] + Npb*N[i]);
+          b23[3] = 0.5*Np*N[i]*(Xd[5]*normal[1] - Xd[4]*normal[2]);
+          b23[4] = 0.5*Np*N[i]*(Xd[3]*normal[2] - Xd[5]*normal[0]);
+          b23[5] = 0.5*Np*N[i]*(Xd[4]*normal[0] - Xd[3]*normal[1]);
+          b23 += 6;
+        }
+      }
+      else {
+        // Add the derivative to the b-matrix
+        for ( int i = 0; i < order*order; i++ ){
+          b22[0] = (Xd[3] + Ud[1])*(Np*Nb[i] + Npb*N[i]);
+          b22[1] = (Xd[4] + Ud[3])*(Np*Nb[i] + Npb*N[i]);
+          b22[2] = (Xd[5] + Ud[5])*(Np*Nb[i] + Npb*N[i]);
+          b22 += 3;
+
+          b23[0] = 0.5*normal[0]*(Np*Nb[i] + Npb*N[i]);
+          b23[1] = 0.5*normal[1]*(Np*Nb[i] + Npb*N[i]);
+          b23[2] = 0.5*normal[2]*(Np*Nb[i] + Npb*N[i]);
+          b23[3] = 0.5*Np*N[i]*(Xd[5]*normal[1] - Xd[4]*normal[2]);
+          b23[4] = 0.5*Np*N[i]*(Xd[3]*normal[2] - Xd[5]*normal[0]);
+          b23[5] = 0.5*Np*N[i]*(Xd[4]*normal[0] - Xd[3]*normal[1]);
+          b23 += 6;
+        }
+      }
+    }
+  }
+
+  // Evaluate g12
+  for ( int m = 0; m < order-1; m++ ){
+    for ( int n = 0; n < order-1; n++ ){
+      double pt[2];
+      pt[0] = pknots[n];
+      pt[1] = pknots[m];
+
+      TacsScalar Urot[3], Ud[6], Xd[6];
+      compute_tensorial_components(order, Urot, Ud, Xd,
+                                   N, Na, Nb, pt, Xpts, vars);
+
+      if (is_linear){
+        for ( int i = 0; i < order*order; i++ ){
+          b12[0] = 0.5*(Xd[3]*(Np*Na[i] + Npa*N[i]) +
+                        Xd[0]*(Np*Nb[i] + Npb*N[i]));
+          b12[1] = 0.5*(Xd[4]*(Np*Na[i] + Npa*N[i]) +
+                        Xd[1]*(Np*Nb[i] + Npb*N[i]));
+          b12[2] = 0.5*(Xd[5]*(Np*Na[i] + Npa*N[i]) +
+                        Xd[2]*(Np*Nb[i] + Npb*N[i]));
+          b12 += 3;
+        }
+      }
+      else {
+        for ( int i = 0; i < order*order; i++ ){
+          b12[0] = 0.5*((Xd[3] + Ud[1])*(Np*Na[i] + Npa*N[i]) +
+                        (Xd[0] + Ud[0])*(Np*Nb[i] + Npb*N[i]));
+          b12[1] = 0.5*((Xd[4] + Ud[3])*(Np*Na[i] + Npa*N[i]) +
+                        (Xd[1] + Ud[2])*(Np*Nb[i] + Npb*N[i]));
+          b12[2] = 0.5*((Xd[5] + Ud[5])*(Np*Na[i] + Npa*N[i]) +
+                        (Xd[2] + Ud[4])*(Np*Nb[i] + Npb*N[i]));
+          b12 += 3;
+        }
+      }
+    }
+  }
+
+  // Evaluate g11 and g13
+  for ( int m = 0; m < order; m++ ){
+    for ( int n = 0; n < order-1; n++ ){
+      double pt[2];
+      pt[0] = pknots[n];
+      pt[1] = knots[m];
+
+      TacsScalar Urot[3], Ud[6], Xd[6];
+      compute_tensorial_components(order, Urot, Ud, Xd,
+                                   N, Na, Nb, pt, Xpts, vars);
+
+      // Caculate the normal
+      TacsScalar normal[3];
+      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
+      Tensor::normalize3D(normal);
+
+      if (is_linear){
+        for ( int i = 0; i < order*order; i++ ){
+          b11[0] = Xd[0]*(Np*Na[i] + Npa*N[i]);
+          b11[1] = Xd[1]*(Np*Na[i] + Npa*N[i]);
+          b11[2] = Xd[2]*(Np*Na[i] + Npa*N[i]);
+          b11 += 3;
+
+          b13[0] = 0.5*normal[0]*(Np*Na[i] + Npa*N[i]);
+          b13[1] = 0.5*normal[1]*(Np*Na[i] + Npa*N[i]);
+          b13[2] = 0.5*normal[2]*(Np*Na[i] + Npa*N[i]);
+          b13[3] = 0.5*Np*N[i]*(Xd[2]*normal[1] - Xd[1]*normal[2]);
+          b13[4] = 0.5*Np*N[i]*(Xd[0]*normal[2] - Xd[2]*normal[0]);
+          b13[5] = 0.5*Np*N[i]*(Xd[1]*normal[0] - Xd[0]*normal[1]);
+          b13 += 6;
+        }
+      }
+      else {
+        for ( int i = 0; i < order*order; i++ ){
+          b11[0] = (Xd[0] + Ud[0])*(Np*Na[i] + Npa*N[i]);
+          b11[1] = (Xd[1] + Ud[2])*(Np*Na[i] + Npa*N[i]);
+          b11[2] = (Xd[2] + Ud[4])*(Np*Na[i] + Npa*N[i]);
+          b11 += 3;
+
+          b13[0] = 0.5*normal[0]*(Np*Na[i] + Npa*N[i]);
+          b13[1] = 0.5*normal[1]*(Np*Na[i] + Npa*N[i]);
+          b13[2] = 0.5*normal[2]*(Np*Na[i] + Npa*N[i]);
+          b13[3] = 0.5*Np*N[i]*(Xd[2]*normal[1] - Xd[1]*normal[2]);
+          b13[4] = 0.5*Np*N[i]*(Xd[0]*normal[2] - Xd[2]*normal[0]);
+          b13[5] = 0.5*Np*N[i]*(Xd[1]*normal[0] - Xd[0]*normal[1]);
+          b13 += 6;
+        }
+      }
+    }
+  }
+}
+
+/*
   Evaluate the strain at the tying points and the sensitivity of the
   strain at the tying points w.r.t. the nodal locations.
 

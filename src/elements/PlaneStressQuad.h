@@ -65,6 +65,9 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
   void getOutputConnectivity( int *con, int node );
 
  private:
+  void getPartUnityShapeFunctions( const double pt[],
+                                   double N[], double Na[], double Nb[] );
+
   static const int NUM_NODES = order*order;
 
   // The knot locations for the basis functions
@@ -169,6 +172,30 @@ void PlaneStressQuad<order>::getShapeFunctions( const double pt[], double N[],
 }
 
 /*
+  Get the partition of unity shape functions and their derivatives
+*/
+template <int order>
+void PlaneStressQuad<order>::getPartUnityShapeFunctions( const double pt[],
+                                                         double N[],
+                                                         double Na[],
+                                                         double Nb[] ){
+  N[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
+  N[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
+  N[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
+  N[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+
+  Na[0] =-0.25*(1.0 - pt[1]);
+  Na[1] = 0.25*(1.0 - pt[1]);
+  Na[2] =-0.25*(1.0 + pt[1]);
+  Na[3] = 0.25*(1.0 + pt[1]);
+
+  Nb[0] =-0.25*(1.0 - pt[0]);
+  Nb[1] =-0.25*(1.0 + pt[0]);
+  Nb[2] = 0.25*(1.0 - pt[0]);
+  Nb[3] = 0.25*(1.0 + pt[0]);
+}
+
+/*
   Add the localized error
 */
 template <int order>
@@ -215,35 +242,42 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
     TacsScalar stress[NUM_STRESSES];
     this->stiff->calculateStress(pt, strain, stress);
 
-    // Get the derivative of the strain with respect to the nodal
-    // displacements
-    this->getBmat(B, J, Na, Nb, vars);
+    for ( int node = 0; node < 4; node++ ){
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
 
-    const TacsScalar *adj = adjoint;
-    const TacsScalar *b = B;
+      // Get the partition of unity shape functions
+      double Np[4], Npa[4], Npb[4];
+      getPartUnityShapeFunctions(pt, Np, Npa, Npb);
 
-    // Compute the local product of the stress/strain
-    TacsScalar product = 0.0;
-    for ( int i = 0; i < NUM_NODES; i++ ){
-      for ( int ii = 0; ii < NUM_DISPS; ii++ ){
-        product += adj[ii]*h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]);
-        b += NUM_STRESSES;
+      // Modify the shape functions to account for the partition of
+      // unity term
+      for ( int i = 0; i < order*order; i++ ){
+        Na[i] = Np[node]*Na[i] + N[i]*Npa[node];
+        Nb[i] = Np[node]*Nb[i] + N[i]*Npb[node];
       }
-      adj += NUM_DISPS;
+
+      // Get the derivative of the strain with respect to the nodal
+      // displacements
+      this->getBmat(B, J, Na, Nb, vars);
+
+      const TacsScalar *adj = adjoint;
+      const TacsScalar *b = B;
+
+      // Compute the local product of the stress/strain
+      TacsScalar product = 0.0;
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        for ( int ii = 0; ii < NUM_DISPS; ii++ ){
+          product += adj[ii]*h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]);
+          b += NUM_STRESSES;
+        }
+        adj += NUM_DISPS;
+      }
+
+      // Add the result to the localized error
+      err[(node % 2)*(order-1) +
+          (node/2)*order*(order-1)] += product;
     }
-
-    // Add the product using the linear partition of unity basis
-    // functions
-    double Nerr[4];
-    Nerr[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
-    Nerr[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
-    Nerr[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
-    Nerr[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
-
-    err[0] += Nerr[0]*product;
-    err[order-1] += Nerr[1]*product;
-    err[order*(order-1)] += Nerr[2]*product;
-    err[order*order-1] += Nerr[3]*product;
   }
 }
 

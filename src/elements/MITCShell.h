@@ -218,6 +218,10 @@ class MITCShell : public TACSShell {
   static const int NUM_VARIABLES = 6*order*order;
 
  private:
+  // Get the partition of unity constraint
+  void getPartUnityShapeFunctions( const double pt[],
+                                   double N[], double Na[], double Nb[] );
+
   static const int NUM_G11 = (order-1)*order;
   static const int NUM_G22 = (order-1)*order;
   static const int NUM_G12 = (order-1)*(order-1);
@@ -2640,6 +2644,30 @@ void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[],
 }
 
 /*
+  Get the partition of unity shape functions and their derivatives
+*/
+template <int order>
+void MITCShell<order>::getPartUnityShapeFunctions( const double pt[],
+                                                   double N[],
+                                                   double Na[],
+                                                   double Nb[] ){
+  N[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
+  N[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
+  N[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
+  N[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+
+  Na[0] =-0.25*(1.0 - pt[1]);
+  Na[1] = 0.25*(1.0 - pt[1]);
+  Na[2] =-0.25*(1.0 + pt[1]);
+  Na[3] = 0.25*(1.0 + pt[1]);
+
+  Nb[0] =-0.25*(1.0 - pt[0]);
+  Nb[1] =-0.25*(1.0 + pt[0]);
+  Nb[2] = 0.25*(1.0 - pt[0]);
+  Nb[3] = 0.25*(1.0 + pt[0]);
+}
+
+/*
   Add the localized error term to the input.
 
   This localization is based on a partition of unity constraint that
@@ -2650,7 +2678,6 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
                                           const TacsScalar adjoint[],
                                           const TacsScalar Xpts[],
                                           const TacsScalar vars[] ){
-
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -2730,38 +2757,25 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
         linear_bend_strain(strain, &rot, U, Ud,
                            t, tx, ztx,
                            normal, normal_xi, normal_eta);
-        linear_bend_bmat(B, drot, NUM_NODES,
-                         N, Na, Nb, t, tx, ztx,
-                         normal, normal_xi, normal_eta);
       }
       else if (type == NONLINEAR){
         nonlinear_bend_strain(strain, &rot, U, Ud,
                               t, tx, ztx,
                               normal, normal_xi, normal_eta);
-        nonlinear_bend_bmat(B, drot, NUM_NODES,
-                            N, Na, Nb, U, Ud, t, tx, ztx,
-                            normal, normal_xi, normal_eta);
       }
       else {
         // Rotation matrix data
-        TacsScalar C[9], Ct[27], Ctt[54];
+        TacsScalar C[9], Ct[27];
 
         // Compute the rotation matrices
         TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
         TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
         TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
         compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
-        compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
-
-        // Evaluate the in-plane rotation term
-        rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud,
-                                      C, Ct, N, Na, Nb);
 
         // Calculate the deformation at the current point...
         large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx,
                               normal, normal_xi, normal_eta);
-        large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt,
-                            t, tx, ztx, normal, normal_xi, normal_eta);
       }
 
       // Evaluate the strain interpolation at this point
@@ -2770,40 +2784,84 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
       add_tying_strain<order>(strain, tx,
                               g11, g22, g12, g23, g13,
                               N11, N22, N12);
-      add_tying_bmat<order>(B, NUM_NODES, tx,
-                            b11, b22, b12, b23, b13,
-                            N11, N22, N12);
 
       // Compute the stress at the current Gauss point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
-      const TacsScalar *adj = adjoint;
-      const TacsScalar *b = B;
-      const TacsScalar *br = drot;
+      for ( int node = 0; node < 4; node++ ){
+        // Evaluate the partition of unity constraint
+        double Np[4], Npa[4], Npb[4];
+        getPartUnityShapeFunctions(pt, Np, Npa, Npb);
 
-      // Compute the local product of the stress/strain
-      TacsScalar product = 0.0;
-      for ( int i = 0; i < NUM_NODES; i++ ){
-        for ( int ii = 0; ii < NUM_DISPS; ii++ ){
-          product += adj[ii]*h*(strain_product(b, stress) + kpenalty*rot*br[0]);
-          b += NUM_STRESSES;
-          br++;
+        // Compute the modified shape functions
+        double Nm[NUM_NODES], Nma[NUM_NODES], Nmb[NUM_NODES];
+        for ( int i = 0; i < order*order; i++ ){
+          Nm[i] = Np[node]*N[i];
+          Nma[i] = Np[node]*Na[i] + N[i]*Npa[node];
+          Nmb[i] = Np[node]*Nb[i] + N[i]*Npb[node];
         }
-        adj += NUM_DISPS;
+
+        // Compute the deriv. components of the strain
+        if (type == LINEAR){
+          linear_bend_bmat(B, drot, NUM_NODES,
+                           Nm, Nma, Nmb, t, tx, ztx,
+                           normal, normal_xi, normal_eta);
+        }
+        else if (type == NONLINEAR){
+          nonlinear_bend_bmat(B, drot, NUM_NODES,
+                              Nm, Nma, Nmb, U, Ud, t, tx, ztx,
+                              normal, normal_xi, normal_eta);
+        }
+        else {
+          // Rotation matrix data
+          TacsScalar C[9], Ct[27], Ctt[54];
+
+          // Compute the rotation matrices
+          TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
+          TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
+          TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
+          compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
+          compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
+
+          large_rot_bend_bmat(B, NUM_NODES, Nm, Nma, Nmb, U, Ud, C, Ct, Ctt,
+                              t, tx, ztx, normal, normal_xi, normal_eta);
+        }
+
+        // The derivatives of the displacement strain
+        TacsScalar bp11[3*NUM_NODES*NUM_G11], bp22[3*NUM_NODES*NUM_G22];
+        TacsScalar bp12[3*NUM_NODES*NUM_G12];
+        TacsScalar bp13[NUM_VARIABLES*NUM_G13], bp23[NUM_VARIABLES*NUM_G23];
+
+        // Evaluate the strain interpolation at this point
+        compute_tying_bmat_part_unity<order>((type == LINEAR),
+                                             Np[node], Npa[node], Npb[node],
+                                             bp11, bp22, bp12, bp23, bp13,
+                                             knots, pknots, vars, Xpts);
+
+        // Add the tying strain
+        add_tying_bmat<order>(B, NUM_NODES, tx,
+                              bp11, bp22, bp12, bp23, bp13,
+                              N11, N22, N12);
+
+        const TacsScalar *adj = adjoint;
+        const TacsScalar *b = B;
+        const TacsScalar *br = drot;
+
+        // Compute the local product of the stress/strain
+        TacsScalar product = 0.0;
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          for ( int ii = 0; ii < NUM_DISPS; ii++ ){
+            product += adj[ii]*h*(strain_product(b, stress) + kpenalty*rot*br[0]);
+            b += NUM_STRESSES;
+            br++;
+          }
+          adj += NUM_DISPS;
+        }
+
+        // Add the result to the localized error
+        err[(node % 2)*(order-1) +
+            (node/2)*order*(order-1)] += product;
       }
-
-      // Add the product using the linear partition of unity basis
-      // functions
-      double Nerr[4];
-      Nerr[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
-      Nerr[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
-      Nerr[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
-      Nerr[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
-
-      err[0] += Nerr[0]*product;
-      err[order-1] += Nerr[1]*product;
-      err[order*(order-1)] += Nerr[2]*product;
-      err[order*order-1] += Nerr[3]*product;
     }
   }
 }
