@@ -43,6 +43,8 @@ class TACSShellTraction : public TACSElement {
   TACSShellTraction( TacsScalar _tx[],
                      TacsScalar _ty[],
                      TacsScalar _tz[] ){
+    self = NULL;
+    evalf = NULL;
     memcpy(tx, _tx, NUM_NODES*sizeof(TacsScalar));
     memcpy(ty, _ty, NUM_NODES*sizeof(TacsScalar));
     memcpy(tz, _tz, NUM_NODES*sizeof(TacsScalar));
@@ -50,11 +52,17 @@ class TACSShellTraction : public TACSElement {
   TACSShellTraction( TacsScalar _tx,
                      TacsScalar _ty,
                      TacsScalar _tz ){
+    self = NULL;
+    evalf = NULL;
     for ( int i = 0; i < NUM_NODES; i++ ){
       tx[i] = _tx;  ty[i] = _ty;  tz[i] = _tz;
     }
   }
-
+  TACSShellTraction( void *_self,
+                     void (*_evalf)(void*, const TacsScalar*, TacsScalar*) ){
+    self = _self;
+    evalf = _evalf;
+  }
 
   // Return the number of displacements, stresses and nodes
   // ------------------------------------------------------
@@ -107,10 +115,23 @@ class TACSShellTraction : public TACSElement {
         // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
-        for ( int i = 0; i < NUM_NODES; i++ ){
-          Tx += tx[i]*N[i];
-          Ty += ty[i]*N[i];
-          Tz += tz[i]*N[i];
+        if (evalf){
+          TacsScalar X[3] = {0.0, 0.0, 0.0};
+          for ( int i = 0; i < order*order; i++ ){
+            X[0] += N[i]*Xpts[3*i];
+            X[1] += N[i]*Xpts[3*i+1];
+            X[2] += N[i]*Xpts[3*i+2];
+          }
+          TacsScalar t[3];
+          evalf(self, X, t);
+          Tx = t[0];  Ty = t[1];  Tz = t[2];
+        }
+        else {
+          for ( int i = 0; i < NUM_NODES; i++ ){
+            Tx += tx[i]*N[i];
+            Ty += ty[i]*N[i];
+            Tz += tz[i]*N[i];
+          }
         }
 
         // Add the contribution to the residual - the minus sign
@@ -169,11 +190,28 @@ class TACSShellTraction : public TACSElement {
         // Evaluate the traction force evaluated at the
         // quadrature point within the element
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
+        if (evalf){
+          TacsScalar X[3] = {0.0, 0.0, 0.0};
+          for ( int i = 0; i < order*order; i++ ){
+            X[0] += N[i]*Xpts[3*i];
+            X[1] += N[i]*Xpts[3*i+1];
+            X[2] += N[i]*Xpts[3*i+2];
+          }
+          TacsScalar t[3];
+          evalf(self, X, t);
+          Tx = t[0];  Ty = t[1];  Tz = t[2];
+        }
+        else {
+          for ( int i = 0; i < NUM_NODES; i++ ){
+            Tx += tx[i]*N[i];
+            Ty += ty[i]*N[i];
+            Tz += tz[i]*N[i];
+          }
+        }
+
+        // Compute the adjoint terms
         TacsScalar Ax = 0.0, Ay = 0.0, Az = 0.0;
         for ( int i = 0; i < NUM_NODES; i++ ){
-          Tx += tx[i]*N[i];
-          Ty += ty[i]*N[i];
-          Tz += tz[i]*N[i];
           Ax += adjoint[6*i]*N[i];
           Ay += adjoint[6*i+1]*N[i];
           Az += adjoint[6*i+2]*N[i];
@@ -191,16 +229,21 @@ class TACSShellTraction : public TACSElement {
         Nerr[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
         Nerr[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
 
-        err[0] += Nerr[0]*product;
-        err[order-1] += Nerr[1]*product;
-        err[order*(order-1)] += Nerr[2]*product;
-        err[order*order-1] += Nerr[3]*product;
+        // Add the contributions to the error
+        for ( int node = 0; node < 4; node++ ){
+          err[(node % 2)*(order-1) +
+              (node/2)*order*(order-1)] += Nerr[node]*product;
+        }
       }
     }
   }
 
  private:
   TacsScalar tx[NUM_NODES], ty[NUM_NODES], tz[NUM_NODES];
+
+  // The data/function for the right-hand-side
+  void *self;
+  void (*evalf)( void*, const TacsScalar*, TacsScalar* );
 };
 
 /*

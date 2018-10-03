@@ -135,22 +135,29 @@ cdef extern from "TACSElementTemplates.h":
         PSQuadTraction5(int, TacsScalar, TacsScalar)
         PSQuadTraction5(int, TacsScalar*, TacsScalar*)
 
+    # Declare the Poisson Quadrilateral elements
+    ctypedef void (*shell_evalf)(void*, const TacsScalar*, TacsScalar*)
+
     # Declare shell traction
     cdef cppclass TACSShellTraction2(TACSElement):
         TACSShellTraction2(TacsScalar, TacsScalar, TacsScalar)
         TACSShellTraction2(TacsScalar*, TacsScalar*, TacsScalar*)
+        TACSShellTraction2(void*, shell_evalf)
 
     cdef cppclass TACSShellTraction3(TACSElement):
         TACSShellTraction3(TacsScalar, TacsScalar, TacsScalar)
         TACSShellTraction3(TacsScalar*, TacsScalar*, TacsScalar*)
+        TACSShellTraction3(void*, shell_evalf)
 
     cdef cppclass TACSShellTraction4(TACSElement):
         TACSShellTraction4(TacsScalar, TacsScalar, TacsScalar)
         TACSShellTraction4(TacsScalar*, TacsScalar*, TacsScalar*)
+        TACSShellTraction4(void*, shell_evalf)
 
     cdef cppclass TACSShellTraction5(TACSElement):
         TACSShellTraction5(TacsScalar, TacsScalar, TacsScalar)
         TACSShellTraction5(TacsScalar*, TacsScalar*, TacsScalar*)
+        TACSShellTraction5(void*, shell_evalf)
 
     # Declare the 3D traction classes
     cdef cppclass TACS3DTraction2(TACSElement):

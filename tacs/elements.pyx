@@ -462,34 +462,52 @@ cdef class PlaneTri6(Element):
     def numNodes(self):
         return self.ptr.numNodes()
 
+cdef void _shell_evalf(void *_self, const TacsScalar *X, TacsScalar *T):
+    cdef list Xp
+    Xp = [X[0], X[1], X[2]]
+    t = (<object>_self)(Xp)
+    T[0] = t[0]
+    T[1] = t[1]
+    T[2] = t[2]
+    return
+
 cdef class ShellTraction(Element):
     def __cinit__(self, int order,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] tz):
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tz=None,
+                  evalf=None):
         self.ptr = NULL
         if order < 2 or order > 5:
             errmsg = 'ShellTraction order must be between 2 and 4'
             raise ValueError(errmsg)
-        if order == 2:
-            self.ptr = new TACSShellTraction2(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
-            self.ptr.incref()
-        elif order == 3:
-            self.ptr = new TACSShellTraction3(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
-            self.ptr.incref()
-        elif order == 4:
-            self.ptr = new TACSShellTraction4(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
-            self.ptr.incref()
-        elif order == 5:
-            self.ptr = new TACSShellTraction5(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
+        if evalf is not None:
+            if order == 2:
+                self.ptr = new TACSShellTraction2(<void*>evalf, _shell_evalf)
+            elif order == 3:
+                self.ptr = new TACSShellTraction3(<void*>evalf, _shell_evalf)
+            elif order == 4:
+                self.ptr = new TACSShellTraction4(<void*>evalf, _shell_evalf)
+            elif order == 5:
+                self.ptr = new TACSShellTraction5(<void*>evalf, _shell_evalf)
+        else:
+            if order == 2:
+                self.ptr = new TACSShellTraction2(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+            elif order == 3:
+                self.ptr = new TACSShellTraction3(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+            elif order == 4:
+                self.ptr = new TACSShellTraction4(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+            elif order == 5:
+                self.ptr = new TACSShellTraction5(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+        if self.ptr is not NULL:
             self.ptr.incref()
         return
 
@@ -623,6 +641,9 @@ cdef class PoissonQuad(Element):
                   np.ndarray[TacsScalar, ndim=1, mode='c'] fx=None,
                   evalf=None):
         self.ptr = NULL
+        if order < 2 or order > 5:
+            errmsg = 'PoissonQuad order must be between 2 and 4'
+            raise ValueError(errmsg)
         if evalf is not None:
             if order == 2:
                 self.ptr = new PoissonQuad2(<void*>evalf, _poisson_evalf)

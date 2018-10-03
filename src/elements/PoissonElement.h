@@ -434,6 +434,8 @@ class PoissonQuad : public TACSElement {
   // Forcing provided either through function pointer or as an
   // interpolation over the nodes
   TacsScalar f[order*order];
+
+  // The data/function for the right-hand-side
   void *self;
   TacsScalar (*evalf)( void*, const TacsScalar* );
 
