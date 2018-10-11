@@ -343,7 +343,7 @@ void add_large_rot_bend_stress_bmat( TacsScalar matrix[], const int num_points,
   g23: the out-of-plane tensorial shear strain in the 2-direction
   g13: the out-of-plane tensorial shear strain in the 1-direction
 */
-template <int order>
+template <int order, int tying_order>
 void compute_lr_tying_strain( TacsScalar g11[], TacsScalar g22[], 
                               TacsScalar g12[], 
                               TacsScalar g23[], TacsScalar g13[],
@@ -353,8 +353,8 @@ void compute_lr_tying_strain( TacsScalar g11[], TacsScalar g22[],
   double N[order*order], Na[order*order], Nb[order*order];
     
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -391,8 +391,8 @@ void compute_lr_tying_strain( TacsScalar g11[], TacsScalar g22[],
   }
 
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -409,8 +409,8 @@ void compute_lr_tying_strain( TacsScalar g11[], TacsScalar g22[],
   }
     
   // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -464,7 +464,7 @@ void compute_lr_tying_strain( TacsScalar g11[], TacsScalar g22[],
   tensorial strains and out-of-plane tensorial shear strains at the
   tying points w.r.t. the nodal locataions
 */
-template <int order>
+template <int order, int tying_order>
 void compute_lr_tying_strain_sens( TacsScalar g11[], TacsScalar g22[], 
                                    TacsScalar g12[], 
                                    TacsScalar g23[], TacsScalar g13[],
@@ -477,8 +477,8 @@ void compute_lr_tying_strain_sens( TacsScalar g11[], TacsScalar g22[],
   double N[order*order], Na[order*order], Nb[order*order];
 
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -567,8 +567,8 @@ void compute_lr_tying_strain_sens( TacsScalar g11[], TacsScalar g22[],
   }
   
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -592,8 +592,8 @@ void compute_lr_tying_strain_sens( TacsScalar g11[], TacsScalar g22[],
   }
     
   // Evaluate g11 and g13  
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -698,7 +698,7 @@ void compute_lr_tying_strain_sens( TacsScalar g11[], TacsScalar g22[],
   b13: the derivative of the out-of-plane tensorial shear strain in
   the 1-direction 
 */
-template <int order>
+template <int order, int tying_order>
 void compute_lr_tying_bmat( TacsScalar g11[], TacsScalar g22[], 
                             TacsScalar g12[], 
                             TacsScalar g23[], TacsScalar g13[],
@@ -711,8 +711,8 @@ void compute_lr_tying_bmat( TacsScalar g11[], TacsScalar g22[],
   double N[order*order], Na[order*order], Nb[order*order];
     
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -777,8 +777,8 @@ void compute_lr_tying_bmat( TacsScalar g11[], TacsScalar g22[],
   }
     
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -802,8 +802,8 @@ void compute_lr_tying_bmat( TacsScalar g11[], TacsScalar g22[],
   }
     
   // Evaluate g11 and g13  
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -894,7 +894,7 @@ void compute_lr_tying_bmat( TacsScalar g11[], TacsScalar g22[],
   3*(order*order*(order*order+1))*NUM_G23, and
   3*(order*order*(order*order+1))*NUM_G13
 */
-template <int order>
+template <int order, int tying_order>
 void compute_lr_tying_nmat( TacsScalar g11[], TacsScalar g22[], 
                             TacsScalar g12[], 
                             TacsScalar g23[], TacsScalar g13[],
@@ -908,8 +908,8 @@ void compute_lr_tying_nmat( TacsScalar g11[], TacsScalar g22[],
   double N[order*order], Na[order*order], Nb[order*order];
     
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -1021,8 +1021,8 @@ void compute_lr_tying_nmat( TacsScalar g11[], TacsScalar g22[],
   }
     
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -1046,8 +1046,8 @@ void compute_lr_tying_nmat( TacsScalar g11[], TacsScalar g22[],
   }
     
   // Evaluate g11 and g13  
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -1172,7 +1172,7 @@ void compute_lr_tying_nmat( TacsScalar g11[], TacsScalar g22[],
   points -> these are large arrays
   N11, N22, N12: the strain interpolation functions interpolations
 */
-template <int order>
+template <int order, int tying_order>
 void add_lr_tying_stress_nmat( TacsScalar matrix[], 
                                TacsScalar scale, const TacsScalar stress[],
                                const TacsScalar n13[], const TacsScalar n23[],
@@ -1190,8 +1190,9 @@ void add_lr_tying_stress_nmat( TacsScalar matrix[],
   memset(h11, 0, sizeof(h11));
   memset(h22, 0, sizeof(h22));
   memset(h12, 0, sizeof(h12));
-  shellutils::nonlinear_tying_nmat<order>(h11, h22, h12,
-                                          N11, N22, N12, knots, pknots);
+  shellutils::nonlinear_tying_nmat<order, tying_order>(h11, h22, h12,
+                                                       N11, N22, N12,
+                                                       knots, pknots);
 
   // The second derivatives of the shear strain components
   // There are 2*9 + 6 = 24 second derivative components per point
@@ -1201,7 +1202,7 @@ void add_lr_tying_stress_nmat( TacsScalar matrix[],
   memset(h23, 0, sizeof(h23));
 
   // Loop over each tying-point in the element 
-  for ( int i = 0; i < order*(order-1); i++ ){
+  for ( int i = 0; i < tying_order*(tying_order-1); i++ ){
     TacsScalar * _h13 = h13;
     TacsScalar * _h23 = h23;
 

@@ -89,6 +89,9 @@ cdef class KSFailure(Function):
             self.ksptr.setKSFailureType(PNORM_FAILURE_CONTINUOUS)
         return
 
+    def setParameter(self, double ksparam):
+        self.ksptr.setParameter(ksparam)
+
 cdef class KSDisplacement(Function):
     cdef TACSKSDisplacement *ksptr
     def __cinit__(self, Assembler tacs, double ksWeight, dirs):
@@ -131,11 +134,34 @@ cdef class DisplacementIntegral(Function):
         return
 
 cdef class InducedFailure(Function):
+    cdef TACSInducedFailure *iptr
     def __cinit__(self, Assembler tacs, double P):
         '''
         Wrap the function InducedFailure
         '''
-        self.ptr = new TACSInducedFailure(tacs.ptr, P,
-                                          INDUCED_FAILURE)
+        self.iptr = new TACSInducedFailure(tacs.ptr, P,
+                                           INDUCED_FAILURE)
+        self.ptr = self.iptr
         self.ptr.incref()
         return
+
+    def setInducedType(self, ftype='exponential'):
+        if ftype == 'exponential':
+            self.iptr.setInducedType(INDUCED_EXPONENTIAL)
+        elif ftype == 'power':
+            self.iptr.setInducedType(INDUCED_POWER)
+        elif ftype == 'exponential-squared':
+            self.iptr.setInducedType(INDUCED_EXPONENTIAL_SQUARED)
+        elif ftype == 'power-squared':
+            self.iptr.setInducedType(INDUCED_POWER_SQUARED)
+        elif ftype == 'discrete-exponential':
+            self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL)
+        elif ftype == 'discrete-power':
+            self.iptr.setInducedType(INDUCED_DISCRETE_POWER)
+        elif ftype == 'discrete-exponential-squared':
+            self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL_SQUARED)
+        elif ftype == 'discrete-power-squared':
+            self.iptr.setInducedType(INDUCED_DISCRETE_POWER_SQUARED)
+
+    def setParameter(self, double param):
+        self.iptr.setParameter(param)

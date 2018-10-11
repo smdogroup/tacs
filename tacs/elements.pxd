@@ -184,14 +184,23 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass MITCShell2(TACSElement):
         MITCShell2(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
+    cdef cppclass MITCShell32(TACSElement):
+        MITCShell32(FSDTStiffness *stiff, ElementBehaviorType type, int)
+
     cdef cppclass MITCShell3(TACSElement):
         MITCShell3(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
     cdef cppclass MITCShell4(TACSElement):
         MITCShell4(FSDTStiffness *stiff, ElementBehaviorType type, int)
+        
+    cdef cppclass MITCShell43(TACSElement):
+        MITCShell43(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
     cdef cppclass MITCShell5(TACSElement):
         MITCShell5(FSDTStiffness *stiff, ElementBehaviorType type, int)
+
+    cdef cppclass MITCShell54(TACSElement):
+        MITCShell54(FSDTStiffness *stiff, ElementBehaviorType type, int)
 
     # Declare the Solid elements
     cdef cppclass Solid2(TACSElement):

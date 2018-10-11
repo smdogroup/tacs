@@ -361,6 +361,7 @@ cdef extern from "TACSAssembler.h":
         TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)
+        TACSElement *getElement(int, const int**, int*)
 
         # MPI communicator
         MPI_Comm getMPIComm()

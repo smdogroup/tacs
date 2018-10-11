@@ -522,9 +522,9 @@ cdef class ShellTraction(Element):
 cdef class MITCShell(Element):
     def __cinit__(self, int order, FSDT stiff,
                   ElementBehaviorType elem_type=LINEAR,
-                  int component_num=0):
+                  int component_num=0, int tying_order=-1):
         '''
-        Wrap the MITCShell element class for order 2,3,4
+        Wrap the MITCShell element class for order 2, 3, 4, and 5
         '''
         cdef FSDTStiffness *con = _dynamicFSDT(stiff.ptr)
         self.ptr = NULL
@@ -532,13 +532,22 @@ cdef class MITCShell(Element):
             self.ptr = new MITCShell2(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 3:
-            self.ptr = new MITCShell3(con, elem_type, component_num)
+            if tying_order == 2:
+                self.ptr = new MITCShell32(con, elem_type, component_num)
+            else:
+                self.ptr = new MITCShell3(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 4:
-            self.ptr = new MITCShell4(con, elem_type, component_num)
+            if tying_order == 3:
+                self.ptr = new MITCShell43(con, elem_type, component_num)
+            else:
+                self.ptr = new MITCShell4(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 5:
-            self.ptr = new MITCShell5(con, elem_type, component_num)
+            if tying_order == 4:
+                self.ptr = new MITCShell54(con, elem_type, component_num)
+            else:
+                self.ptr = new MITCShell5(con, elem_type, component_num)
             self.ptr.incref()
 
     def __dealloc__(self):

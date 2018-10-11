@@ -760,30 +760,30 @@ void bspline_tensorial_components( const int order,
 /*
   Evaluate the tying-interpolation at the appropriate points
 */
-template <int order>
+template <int tying_order>
 void tying_interpolation( const double pt[],
                           double N11[], double N22[], double N12[],
                           const double knots[], const double pknots[] ){
-  double na[order], nb[order];
-  FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
-  FElibrary::lagrangeSFKnots(nb, pt[1], pknots, order-1);
-  for ( int j = 0; j < order-1; j++ ){
-    for ( int i = 0; i < order; i++ ){
-      N22[i + j*order] = na[i]*nb[j];
+  double na[tying_order], nb[tying_order];
+  FElibrary::lagrangeSFKnots(na, pt[0], knots, tying_order);
+  FElibrary::lagrangeSFKnots(nb, pt[1], pknots, tying_order-1);
+  for ( int j = 0; j < tying_order-1; j++ ){
+    for ( int i = 0; i < tying_order; i++ ){
+      N22[i + j*tying_order] = na[i]*nb[j];
     }
   }
 
-  FElibrary::lagrangeSFKnots(na, pt[0], pknots, order-1);
-  for ( int j = 0; j < order-1; j++ ){
-    for ( int i = 0; i < order-1; i++ ){
-      N12[i + j*(order-1)] = na[i]*nb[j];
+  FElibrary::lagrangeSFKnots(na, pt[0], pknots, tying_order-1);
+  for ( int j = 0; j < tying_order-1; j++ ){
+    for ( int i = 0; i < tying_order-1; i++ ){
+      N12[i + j*(tying_order-1)] = na[i]*nb[j];
     }
   }
 
-  FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
-  for ( int j = 0; j < order; j++ ){
-    for ( int i = 0; i < order-1; i++ ){
-      N11[i + j*(order-1)] = na[i]*nb[j];
+  FElibrary::lagrangeSFKnots(nb, pt[1], knots, tying_order);
+  for ( int j = 0; j < tying_order; j++ ){
+    for ( int i = 0; i < tying_order-1; i++ ){
+      N11[i + j*(tying_order-1)] = na[i]*nb[j];
     }
   }
 }
@@ -812,7 +812,7 @@ void tying_interpolation( const double pt[],
   g23: the out-of-plane tensorial shear strain in the 2-direction
   g13: the out-of-plane tensorial shear strain in the 1-direction
 */
-template <int order>
+template <int order, int tying_order>
 void compute_tying_strain( const int is_linear,
                            TacsScalar g11[], TacsScalar g22[],
                            TacsScalar g12[],
@@ -824,8 +824,8 @@ void compute_tying_strain( const int is_linear,
 
   // Evaluate g22 and g23
   if (is_linear){
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order; n++ ){
+    for ( int m = 0; m < tying_order-1; m++ ){
+      for ( int n = 0; n < tying_order; n++ ){
         double pt[2];
         pt[0] = knots[n];
         pt[1] = pknots[m];
@@ -851,8 +851,8 @@ void compute_tying_strain( const int is_linear,
     }
   }
   else {
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order; n++ ){
+    for ( int m = 0; m < tying_order-1; m++ ){
+      for ( int n = 0; n < tying_order; n++ ){
         double pt[2];
         pt[0] = knots[n];
         pt[1] = pknots[m];
@@ -881,8 +881,8 @@ void compute_tying_strain( const int is_linear,
 
   // Evaluate g12
   if (is_linear){
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
+    for ( int m = 0; m < tying_order-1; m++ ){
+      for ( int n = 0; n < tying_order-1; n++ ){
         double pt[2];
         pt[0] = pknots[n];
         pt[1] = pknots[m];
@@ -898,8 +898,8 @@ void compute_tying_strain( const int is_linear,
     }
   }
   else {
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
+    for ( int m = 0; m < tying_order-1; m++ ){
+      for ( int n = 0; n < tying_order-1; n++ ){
         double pt[2];
         pt[0] = pknots[n];
         pt[1] = pknots[m];
@@ -918,8 +918,8 @@ void compute_tying_strain( const int is_linear,
 
   // Evaluate g11 and g13
   if (is_linear){
-    for ( int m = 0; m < order; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
+    for ( int m = 0; m < tying_order; m++ ){
+      for ( int n = 0; n < tying_order-1; n++ ){
         double pt[2];
         pt[0] = pknots[n];
         pt[1] = knots[m];
@@ -945,8 +945,8 @@ void compute_tying_strain( const int is_linear,
     }
   }
   else {
-    for ( int m = 0; m < order; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
+    for ( int m = 0; m < tying_order; m++ ){
+      for ( int n = 0; n < tying_order-1; n++ ){
         double pt[2];
         pt[0] = pknots[n];
         pt[1] = knots[m];
@@ -996,7 +996,7 @@ void compute_tying_strain( const int is_linear,
   b13: the derivative of the out-of-plane tensorial shear strain in
   the 1-direction
 */
-template <int order>
+template <int order, int tying_order>
 void compute_tying_bmat( const int is_linear,
                          TacsScalar g11[], TacsScalar g22[],
                          TacsScalar g12[],
@@ -1010,8 +1010,8 @@ void compute_tying_bmat( const int is_linear,
   double N[order*order], Na[order*order], Nb[order*order];
 
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -1078,8 +1078,8 @@ void compute_tying_bmat( const int is_linear,
   }
 
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -1117,8 +1117,8 @@ void compute_tying_bmat( const int is_linear,
   }
 
   // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -1184,181 +1184,6 @@ void compute_tying_bmat( const int is_linear,
 }
 
 /*
-  Compute the linear tying strain bmat matrices. This corresponds to
-  the derivative of the displacement-based strain at each of the tying
-  points.
-
-  input:
-  knots: the 'order'th (ie 2, 3 or 4) Gauss-points
-  pknots: the 'order-1'th Gauss-points
-  Xpts: the nodal locations for the element
-
-  output:
-  b11: the derivative of the in-plane normal tensorial strain in the 1
-  direction
-  b22: the derivative of the in-plane normal tensorial strain in the 2
-  direction
-  b12: the derivative of the in-plane tensorial shear strain
-
-  b23: the derivative of the out-of-plane tensorial shear strain in
-  the 2-direction
-  b13: the derivative of the out-of-plane tensorial shear strain in
-  the 1-direction
-*/
-template <int order>
-void compute_tying_bmat_part_unity( const int is_linear,
-                                    const double Np,
-                                    const double Npa, const double Npb,
-                                    TacsScalar b11[], TacsScalar b22[],
-                                    TacsScalar b12[],
-                                    TacsScalar b23[], TacsScalar b13[],
-                                    const double knots[], const double pknots[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar Xpts[] ){
-  double N[order*order], Na[order*order], Nb[order*order];
-
-  // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      double pt[2];
-      pt[0] = knots[n];
-      pt[1] = pknots[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      compute_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      Tensor::normalize3D(normal);
-
-      if (is_linear){
-        // Add the derivative to the b-matrix
-        for ( int i = 0; i < order*order; i++ ){
-          b22[0] = Xd[3]*(Np*Nb[i] + Npb*N[i]);
-          b22[1] = Xd[4]*(Np*Nb[i] + Npb*N[i]);
-          b22[2] = Xd[5]*(Np*Nb[i] + Npb*N[i]);
-          b22 += 3;
-
-          b23[0] = 0.5*normal[0]*(Np*Nb[i] + Npb*N[i]);
-          b23[1] = 0.5*normal[1]*(Np*Nb[i] + Npb*N[i]);
-          b23[2] = 0.5*normal[2]*(Np*Nb[i] + Npb*N[i]);
-          b23[3] = 0.5*Np*N[i]*(Xd[5]*normal[1] - Xd[4]*normal[2]);
-          b23[4] = 0.5*Np*N[i]*(Xd[3]*normal[2] - Xd[5]*normal[0]);
-          b23[5] = 0.5*Np*N[i]*(Xd[4]*normal[0] - Xd[3]*normal[1]);
-          b23 += 6;
-        }
-      }
-      else {
-        // Add the derivative to the b-matrix
-        for ( int i = 0; i < order*order; i++ ){
-          b22[0] = (Xd[3] + Ud[1])*(Np*Nb[i] + Npb*N[i]);
-          b22[1] = (Xd[4] + Ud[3])*(Np*Nb[i] + Npb*N[i]);
-          b22[2] = (Xd[5] + Ud[5])*(Np*Nb[i] + Npb*N[i]);
-          b22 += 3;
-
-          b23[0] = 0.5*normal[0]*(Np*Nb[i] + Npb*N[i]);
-          b23[1] = 0.5*normal[1]*(Np*Nb[i] + Npb*N[i]);
-          b23[2] = 0.5*normal[2]*(Np*Nb[i] + Npb*N[i]);
-          b23[3] = 0.5*Np*N[i]*(Xd[5]*normal[1] - Xd[4]*normal[2]);
-          b23[4] = 0.5*Np*N[i]*(Xd[3]*normal[2] - Xd[5]*normal[0]);
-          b23[5] = 0.5*Np*N[i]*(Xd[4]*normal[0] - Xd[3]*normal[1]);
-          b23 += 6;
-        }
-      }
-    }
-  }
-
-  // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = pknots[n];
-      pt[1] = pknots[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      compute_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, Xpts, vars);
-
-      if (is_linear){
-        for ( int i = 0; i < order*order; i++ ){
-          b12[0] = 0.5*(Xd[3]*(Np*Na[i] + Npa*N[i]) +
-                        Xd[0]*(Np*Nb[i] + Npb*N[i]));
-          b12[1] = 0.5*(Xd[4]*(Np*Na[i] + Npa*N[i]) +
-                        Xd[1]*(Np*Nb[i] + Npb*N[i]));
-          b12[2] = 0.5*(Xd[5]*(Np*Na[i] + Npa*N[i]) +
-                        Xd[2]*(Np*Nb[i] + Npb*N[i]));
-          b12 += 3;
-        }
-      }
-      else {
-        for ( int i = 0; i < order*order; i++ ){
-          b12[0] = 0.5*((Xd[3] + Ud[1])*(Np*Na[i] + Npa*N[i]) +
-                        (Xd[0] + Ud[0])*(Np*Nb[i] + Npb*N[i]));
-          b12[1] = 0.5*((Xd[4] + Ud[3])*(Np*Na[i] + Npa*N[i]) +
-                        (Xd[1] + Ud[2])*(Np*Nb[i] + Npb*N[i]));
-          b12[2] = 0.5*((Xd[5] + Ud[5])*(Np*Na[i] + Npa*N[i]) +
-                        (Xd[2] + Ud[4])*(Np*Nb[i] + Npb*N[i]));
-          b12 += 3;
-        }
-      }
-    }
-  }
-
-  // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = pknots[n];
-      pt[1] = knots[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      compute_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      Tensor::normalize3D(normal);
-
-      if (is_linear){
-        for ( int i = 0; i < order*order; i++ ){
-          b11[0] = Xd[0]*(Np*Na[i] + Npa*N[i]);
-          b11[1] = Xd[1]*(Np*Na[i] + Npa*N[i]);
-          b11[2] = Xd[2]*(Np*Na[i] + Npa*N[i]);
-          b11 += 3;
-
-          b13[0] = 0.5*normal[0]*(Np*Na[i] + Npa*N[i]);
-          b13[1] = 0.5*normal[1]*(Np*Na[i] + Npa*N[i]);
-          b13[2] = 0.5*normal[2]*(Np*Na[i] + Npa*N[i]);
-          b13[3] = 0.5*Np*N[i]*(Xd[2]*normal[1] - Xd[1]*normal[2]);
-          b13[4] = 0.5*Np*N[i]*(Xd[0]*normal[2] - Xd[2]*normal[0]);
-          b13[5] = 0.5*Np*N[i]*(Xd[1]*normal[0] - Xd[0]*normal[1]);
-          b13 += 6;
-        }
-      }
-      else {
-        for ( int i = 0; i < order*order; i++ ){
-          b11[0] = (Xd[0] + Ud[0])*(Np*Na[i] + Npa*N[i]);
-          b11[1] = (Xd[1] + Ud[2])*(Np*Na[i] + Npa*N[i]);
-          b11[2] = (Xd[2] + Ud[4])*(Np*Na[i] + Npa*N[i]);
-          b11 += 3;
-
-          b13[0] = 0.5*normal[0]*(Np*Na[i] + Npa*N[i]);
-          b13[1] = 0.5*normal[1]*(Np*Na[i] + Npa*N[i]);
-          b13[2] = 0.5*normal[2]*(Np*Na[i] + Npa*N[i]);
-          b13[3] = 0.5*Np*N[i]*(Xd[2]*normal[1] - Xd[1]*normal[2]);
-          b13[4] = 0.5*Np*N[i]*(Xd[0]*normal[2] - Xd[2]*normal[0]);
-          b13[5] = 0.5*Np*N[i]*(Xd[1]*normal[0] - Xd[0]*normal[1]);
-          b13 += 6;
-        }
-      }
-    }
-  }
-}
-
-/*
   Evaluate the strain at the tying points and the sensitivity of the
   strain at the tying points w.r.t. the nodal locations.
 
@@ -1375,7 +1200,7 @@ void compute_tying_bmat_part_unity( const int is_linear,
   tensorial strains and out-of-plane tensorial shear strains at the
   tying points w.r.t. the nodal locataions
 */
-template <int order>
+template <int order, int tying_order>
 void compute_tying_strain_sens( const int is_linear,
                                 TacsScalar g11[], TacsScalar g22[],
                                 TacsScalar g12[],
@@ -1389,8 +1214,8 @@ void compute_tying_strain_sens( const int is_linear,
   double N[order*order], Na[order*order], Nb[order*order];
 
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -1466,8 +1291,8 @@ void compute_tying_strain_sens( const int is_linear,
   }
 
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -1498,8 +1323,8 @@ void compute_tying_strain_sens( const int is_linear,
   }
 
   // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -1596,7 +1421,7 @@ void compute_tying_strain_sens( const int is_linear,
   N11, N22, N12: the shape functions for the tying strain
   interpolation
 */
-template <int order>
+template <int order, int tying_order>
 void add_tying_bmat_sens( const int is_linear,
                           TacsScalar fXptSens[],
                           const TacsScalar psi[],
@@ -1636,8 +1461,8 @@ void add_tying_bmat_sens( const int is_linear,
   double N[order*order], Na[order*order], Nb[order*order];
 
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -1746,8 +1571,8 @@ void add_tying_bmat_sens( const int is_linear,
   }
 
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -1787,8 +1612,8 @@ void add_tying_bmat_sens( const int is_linear,
   }
 
   // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -2083,7 +1908,7 @@ void add_tying_bmat_sens( const int is_linear,
   n11, n22, n12: the second derivative of the strain w.r.t. the nodal
   displacements
 */
-template <int order>
+template <int order, int tying_order>
 void nonlinear_tying_nmat( TacsScalar n11[], TacsScalar n22[],
                            TacsScalar n12[],
                            const double N11[], const double N22[],
@@ -2092,8 +1917,8 @@ void nonlinear_tying_nmat( TacsScalar n11[], TacsScalar n22[],
   double N[order*order], Na[order*order], Nb[order*order];
 
   // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -2112,8 +1937,8 @@ void nonlinear_tying_nmat( TacsScalar n11[], TacsScalar n22[],
   }
 
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -2132,8 +1957,8 @@ void nonlinear_tying_nmat( TacsScalar n11[], TacsScalar n22[],
   }
 
   // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -2157,7 +1982,7 @@ void nonlinear_tying_nmat( TacsScalar n11[], TacsScalar n22[],
   the strain to part of the matrix.  This is used for the nonlinear
   contributions from the in-plane components of the tensorial strain.
 */
-template <int order>
+template <int order, int tying_order>
 void add_nonlinear_tying_stress_nmat( TacsScalar matrix[],
                                       TacsScalar scale,
                                       const TacsScalar stress[],
@@ -2176,8 +2001,8 @@ void add_nonlinear_tying_stress_nmat( TacsScalar matrix[],
   memset(n22, 0, size*sizeof(TacsScalar));
   memset(n12, 0, size*sizeof(TacsScalar));
 
-  nonlinear_tying_nmat<order>(n11, n22, n12,
-                              N11, N22, N12, knots, pknots);
+  nonlinear_tying_nmat<order, tying_order>(n11, n22, n12,
+                                           N11, N22, N12, knots, pknots);
 
   TacsScalar * _n11 = n11;
   TacsScalar * _n12 = n12;
@@ -2224,7 +2049,7 @@ void add_nonlinear_tying_stress_nmat( TacsScalar matrix[],
   the strain to part of the matrix.  This is used for the nonlinear
   contributions from the in-plane components of the tensorial strain.
 */
-template <int order>
+template <int order, int tying_order>
 void add_nonlinear_tying_inner_nmat( TacsScalar bstrain[],
                                      const TacsScalar psi[],
                                      const TacsScalar phi[],
@@ -2246,8 +2071,8 @@ void add_nonlinear_tying_inner_nmat( TacsScalar bstrain[],
   memset(g, 0, 6*sizeof(TacsScalar));
 
   // Evaluate g11
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = knots[m];
@@ -2268,8 +2093,8 @@ void add_nonlinear_tying_inner_nmat( TacsScalar bstrain[],
   }
 
   // Evaluate g22
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order; n++ ){
       double pt[2];
       pt[0] = knots[n];
       pt[1] = pknots[m];
@@ -2290,8 +2115,8 @@ void add_nonlinear_tying_inner_nmat( TacsScalar bstrain[],
   }
 
   // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
+  for ( int m = 0; m < tying_order-1; m++ ){
+    for ( int n = 0; n < tying_order-1; n++ ){
       double pt[2];
       pt[0] = pknots[n];
       pt[1] = pknots[m];
@@ -2342,7 +2167,7 @@ void add_nonlinear_tying_inner_nmat( TacsScalar bstrain[],
   strain: the strain values are set into the in-plane components (0, 1, 2)
   and the shear strain components (6, 7)
 */
-template <int order>
+template <int tying_order>
 void add_tying_strain( TacsScalar strain[], const TacsScalar tx[],
                        const TacsScalar g11[], const TacsScalar g22[],
                        const TacsScalar g12[],
@@ -2353,7 +2178,7 @@ void add_tying_strain( TacsScalar strain[], const TacsScalar tx[],
                      0.0, 0.0, 0.0};
 
   // Use the interpolations
-  for ( int k = 0; k < order*(order-1); k++ ){
+  for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
     g[0] += g11[k]*N11[k];
     g[1] += g22[k]*N22[k];
 
@@ -2361,7 +2186,7 @@ void add_tying_strain( TacsScalar strain[], const TacsScalar tx[],
     g[4] += g13[k]*N11[k];
   }
 
-  for ( int k = 0; k < (order-1)*(order-1); k++ ){
+  for ( int k = 0; k < (tying_order-1)*(tying_order-1); k++ ){
     g[5] += g12[k]*N12[k];
   }
 
@@ -2391,7 +2216,7 @@ void add_tying_strain( TacsScalar strain[], const TacsScalar tx[],
   only writes in the in-plane and out-of-plane shear components (not
   the bending components.)
 */
-template <int order>
+template <int tying_order>
 void add_tying_bmat( TacsScalar B[], const int num_nodes,
                      const TacsScalar tx[],
                      const TacsScalar b11[], const TacsScalar b22[],
@@ -2411,20 +2236,20 @@ void add_tying_bmat( TacsScalar B[], const int num_nodes,
       if ( ii < 3 ){
         int row3 = 3*i + ii;
         // Use the interpolations
-        for ( int k = 0; k < order*(order-1); k++ ){
+        for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
           g[0] += b11[n3pts*k + row3]*N11[k];
           g[1] += b22[n3pts*k + row3]*N22[k];
           g[3] += b23[n6pts*k + row]*N22[k];
           g[4] += b13[n6pts*k + row]*N11[k];
         }
 
-        for ( int k = 0; k < (order-1)*(order-1); k++ ){
+        for ( int k = 0; k < (tying_order-1)*(tying_order-1); k++ ){
           g[5] += b12[n3pts*k + row3]*N12[k];
         }
       }
       else {
         // Use the interpolations
-        for ( int k = 0; k < order*(order-1); k++ ){
+        for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
           g[3] += b23[n6pts*k + row]*N22[k];
           g[4] += b13[n6pts*k + row]*N11[k];
         }
@@ -2457,7 +2282,7 @@ void add_tying_bmat( TacsScalar B[], const int num_nodes,
 
   N11, N22, N12: the shape functions for interpolating the tying strain
 */
-template <int order>
+template <int tying_order>
 void add_tying_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
                             const TacsScalar tx[], const TacsScalar dtx[],
                             const TacsScalar g11[], const TacsScalar g22[],
@@ -2473,25 +2298,25 @@ void add_tying_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
   TacsScalar g[6];
   g[0] = g[1] = g[2] = g[3] = g[4] = g[5] = 0.0;
 
-  for ( int k = 0; k < order*(order-1); k++ ){
+  for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
     g[0] += g11[k]*N11[k];
     g[1] += g22[k]*N22[k];
     g[3] += g23[k]*N22[k];
     g[4] += g13[k]*N11[k];
   }
 
-  for ( int k = 0; k < (order-1)*(order-1); k++ ){
+  for ( int k = 0; k < (tying_order-1)*(tying_order-1); k++ ){
     g[5] += g12[k]*N12[k];
   }
 
   // Now compute the sensitivity of the transformation
-  TacsScalar _dg[18*order*order];
+  TacsScalar _dg[18*tying_order*tying_order];
 
   // The number of derivatives in each of dg11, dg22, dg12 etc.
-  const int nc = 3*order*order;
-  memset(_dg, 0, 18*order*order*sizeof(TacsScalar));
+  const int nc = 3*tying_order*tying_order;
+  memset(_dg, 0, 18*tying_order*tying_order*sizeof(TacsScalar));
 
-  for ( int k = 0; k < order*(order-1); k++ ){
+  for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
     for ( int j = 0; j < nc; j++ ){
       _dg[6*j]   += dg11[nc*k+j]*N11[k];
       _dg[6*j+1] += dg22[nc*k+j]*N22[k];
@@ -2500,7 +2325,7 @@ void add_tying_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
     }
   }
 
-  for ( int k = 0; k < (order-1)*(order-1); k++ ){
+  for ( int k = 0; k < (tying_order-1)*(tying_order-1); k++ ){
     for ( int j = 0; j < nc; j++ ){
       _dg[6*j+5] += dg12[nc*k+j]*N12[k];
     }
@@ -2572,7 +2397,7 @@ void add_tying_strain_sens( TacsScalar strain[], TacsScalar dstrain[],
   }
 }
 
-template <int order>
+template <int order, int tying_order>
 void add_tying_bmat_sens( TacsScalar B[], TacsScalar dB[],
                           const TacsScalar tx[],
                           const TacsScalar dtx[],
@@ -2602,7 +2427,7 @@ void add_tying_bmat_sens( TacsScalar B[], TacsScalar dB[],
         int row3 = 3*i + ii;
 
         // Use the interpolations
-        for ( int k = 0; k < order*(order-1); k++ ){
+        for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
           g[0] += b11[n3pts*k + row3]*N11[k];
           g[1] += b22[n3pts*k + row3]*N22[k];
           g[3] += b23[n6pts*k + row]*N22[k];
@@ -2614,14 +2439,14 @@ void add_tying_bmat_sens( TacsScalar B[], TacsScalar dB[],
           dg[4] += db13[n6pts*k + row]*N11[k];
         }
 
-        for ( int k = 0; k < (order-1)*(order-1); k++ ){
+        for ( int k = 0; k < (tying_order-1)*(tying_order-1); k++ ){
           g[5] += b12[n3pts*k + row3]*N12[k];
           dg[5] += db12[n3pts*k + row3]*N12[k];
         }
       }
       else {
         // Use the interpolations
-        for ( int k = 0; k < order*(order-1); k++ ){
+        for ( int k = 0; k < tying_order*(tying_order-1); k++ ){
           g[3] += b23[n6pts*k + row]*N22[k];
           g[4] += b13[n6pts*k + row]*N11[k];
           dg[3] += db23[n6pts*k + row]*N22[k];
@@ -2646,1332 +2471,6 @@ void add_tying_bmat_sens( TacsScalar B[], TacsScalar dB[],
 
       B += 8;
       dB += 8;
-    }
-  }
-}
-
-/*
-  Evaluate the tensorial displacement-based strain at the tying points.
-
-  The tensorial strain is given as follows,
-
-  E_t = U_{x,xi}*X_{,xi}^{T} + X_{,xi}*U_{x,xi}^{T}
-
-  X_{,xi} = Xd^{T}
-  U_{x,xi} = [ Ud, r ]
-
-  input:
-  knots: the 'order'th (ie 2, 3 or 4) Gauss-points
-  pknots: the 'order-1'th Gauss-points
-  vars: the displacements and rotations at the nodal locations
-  Xpts: the nodal locations for the element
-
-  output:
-  g11: the in-plane normal tensorial strain in the 1 direction
-  g22: the in-plane normal tensorial strain in the 2 direction
-  g12: the in-plane tensorial shear strain
-
-  g23: the out-of-plane tensorial shear strain in the 2-direction
-  g13: the out-of-plane tensorial shear strain in the 1-direction
-*/
-template <int order>
-void bspline_tying_strain( const int is_linear,
-                           TacsScalar g11[], TacsScalar g22[],
-                           TacsScalar g12[],
-                           TacsScalar g23[], TacsScalar g13[],
-                           const double tying_points[],
-                           const double ptying_points[],
-                           int intu, int intv,
-                           const double tu[], const double tv[],
-                           const TacsScalar vars[],
-                           const TacsScalar Xpts[] ){
-  double N[order*order], Na[order*order], Nb[order*order];
-
-  // Evaluate g22 and g23
-  if (is_linear){
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order; n++ ){
-        double pt[2];
-        pt[0] = tying_points[n];
-        pt[1] = ptying_points[m];
-
-        TacsScalar Urot[3], Ud[6], Xd[6];
-        bspline_tensorial_components(order, Urot, Ud, Xd,
-                                     N, Na, Nb, pt, intu, intv,
-                                     tu, tv, Xpts, vars);
-
-        // Caculate the normal
-        TacsScalar normal[3];
-        Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-        Tensor::normalize3D(normal);
-
-        // Calculate the rotation
-        TacsScalar r[3];
-        Tensor::crossProduct3D(r, Urot, normal);
-
-        g22[0] = Xd[3]*Ud[1] + Xd[4]*Ud[3] + Xd[5]*Ud[5];
-        g23[0] = 0.5*(Xd[3]*r[0] + Xd[4]*r[1] + Xd[5]*r[2] +
-                      normal[0]*Ud[1] + normal[1]*Ud[3] + normal[2]*Ud[5]);
-        g22++; g23++;
-      }
-    }
-  }
-  else {
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order; n++ ){
-        double pt[2];
-        pt[0] = tying_points[n];
-        pt[1] = ptying_points[m];
-
-        TacsScalar Urot[3], Ud[6], Xd[6];
-        bspline_tensorial_components(order, Urot, Ud, Xd,
-                                     N, Na, Nb, pt, intu, intv,
-                                     tu, tv, Xpts, vars);
-
-        // Caculate the normal
-        TacsScalar normal[3];
-        Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-        Tensor::normalize3D(normal);
-
-        // Calculate the rotation
-        TacsScalar r[3];
-        Tensor::crossProduct3D(r, Urot, normal);
-
-        g22[0] = (Xd[3]*Ud[1] + Xd[4]*Ud[3] + Xd[5]*Ud[5] +
-                  0.5*(Ud[1]*Ud[1] + Ud[3]*Ud[3] + Ud[5]*Ud[5]));
-        g23[0] = 0.5*(Xd[3]*r[0] + Xd[4]*r[1] + Xd[5]*r[2] +
-                      normal[0]*Ud[1] + normal[1]*Ud[3] + normal[2]*Ud[5]);
-        g22++; g23++;
-      }
-    }
-  }
-
-  // Evaluate g12
-  if (is_linear){
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
-        double pt[2];
-        pt[0] = ptying_points[n];
-        pt[1] = ptying_points[m];
-
-        TacsScalar Urot[3], Ud[6], Xd[6];
-        bspline_tensorial_components(order, Urot, Ud, Xd,
-                                     N, Na, Nb, pt, intu, intv,
-                                     tu, tv, Xpts, vars);
-
-        g12[0] = 0.5*(Xd[0]*Ud[1] + Xd[1]*Ud[3] + Xd[2]*Ud[5] +
-                      Xd[3]*Ud[0] + Xd[4]*Ud[2] + Xd[5]*Ud[4]);
-        g12++;
-      }
-    }
-  }
-  else {
-    for ( int m = 0; m < order-1; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
-        double pt[2];
-        pt[0] = ptying_points[n];
-        pt[1] = ptying_points[m];
-
-        TacsScalar Urot[3], Ud[6], Xd[6];
-        bspline_tensorial_components(order, Urot, Ud, Xd,
-                                     N, Na, Nb, pt, intu, intv,
-                                     tu, tv, Xpts, vars);
-
-        g12[0] = 0.5*(Xd[0]*Ud[1] + Xd[1]*Ud[3] + Xd[2]*Ud[5] +
-                      Xd[3]*Ud[0] + Xd[4]*Ud[2] + Xd[5]*Ud[4] +
-                      Ud[0]*Ud[1] + Ud[2]*Ud[3] + Ud[4]*Ud[5]);
-        g12++;
-      }
-    }
-  }
-
-  // Evaluate g11 and g13
-  if (is_linear){
-    for ( int m = 0; m < order; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
-        double pt[2];
-        pt[0] = ptying_points[n];
-        pt[1] = tying_points[m];
-
-        TacsScalar Urot[3], Ud[6], Xd[6];
-        bspline_tensorial_components(order, Urot, Ud, Xd,
-                                     N, Na, Nb, pt, intu, intv,
-                                     tu, tv, Xpts, vars);
-
-        // Caculate the normal
-        TacsScalar normal[3];
-        Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-        Tensor::normalize3D(normal);
-
-        // Calculate the rotation
-        TacsScalar r[3];
-        Tensor::crossProduct3D(r, Urot, normal);
-
-        g11[0] = Xd[0]*Ud[0] + Xd[1]*Ud[2] + Xd[2]*Ud[4];
-        g13[0] = 0.5*(Xd[0]*r[0] + Xd[1]*r[1] + Xd[2]*r[2] +
-                      normal[0]*Ud[0] + normal[1]*Ud[2] + normal[2]*Ud[4]);
-        g11++; g13++;
-      }
-    }
-  }
-  else {
-    for ( int m = 0; m < order; m++ ){
-      for ( int n = 0; n < order-1; n++ ){
-        double pt[2];
-        pt[0] = ptying_points[n];
-        pt[1] = tying_points[m];
-
-        TacsScalar Urot[3], Ud[6], Xd[6];
-        bspline_tensorial_components(order, Urot, Ud, Xd,
-                                     N, Na, Nb, pt, intu, intv,
-                                     tu, tv, Xpts, vars);
-
-        // Caculate the normal
-        TacsScalar normal[3];
-        Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-        Tensor::normalize3D(normal);
-
-        // Calculate the rotation
-        TacsScalar r[3];
-        Tensor::crossProduct3D(r, Urot, normal);
-
-        g11[0] = (Xd[0]*Ud[0] + Xd[1]*Ud[2] + Xd[2]*Ud[4] +
-                  0.5*(Ud[0]*Ud[0] + Ud[2]*Ud[2] + Ud[4]*Ud[4]));
-        g13[0] = 0.5*(Xd[0]*r[0] + Xd[1]*r[1] + Xd[2]*r[2] +
-                      normal[0]*Ud[0] + normal[1]*Ud[2] + normal[2]*Ud[4]);
-        g11++; g13++;
-      }
-    }
-  }
-}
-
-/*
-  Compute the linear tying strain bmat matrices. This corresponds to
-  the derivative of the displacement-based strain at each of the tying
-  points.
-
-  input:
-  tying_points: the 'order'th (ie 2, 3 or 4) Gauss-points
-  ptying_points: the 'order-1'th Gauss-points
-  Xpts: the nodal locations for the element
-
-  output:
-  b11: the derivative of the in-plane normal tensorial strain in the 1
-  direction
-  b22: the derivative of the in-plane normal tensorial strain in the 2
-  direction
-  b12: the derivative of the in-plane tensorial shear strain
-
-  b23: the derivative of the out-of-plane tensorial shear strain in
-  the 2-direction
-  b13: the derivative of the out-of-plane tensorial shear strain in
-  the 1-direction
-*/
-template <int order>
-void bspline_tying_bmat( const int is_linear,
-                         TacsScalar g11[], TacsScalar g22[],
-                         TacsScalar g12[],
-                         TacsScalar g23[], TacsScalar g13[],
-                         TacsScalar b11[], TacsScalar b22[],
-                         TacsScalar b12[],
-                         TacsScalar b23[], TacsScalar b13[],
-                         const double tying_points[],
-                         const double ptying_points[],
-                         int intu, int intv,
-                         const double tu[], const double tv[],
-                         const TacsScalar vars[],
-                         const TacsScalar Xpts[] ){
-  double N[order*order], Na[order*order], Nb[order*order];
-
-  // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      double pt[2];
-      pt[0] = tying_points[n];
-      pt[1] = ptying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      Tensor::normalize3D(normal);
-
-      // Calculate the rotation
-      TacsScalar r[3];
-      Tensor::crossProduct3D(r, Urot, normal);
-
-      if (is_linear){
-        g22[0] = Xd[3]*Ud[1] + Xd[4]*Ud[3] + Xd[5]*Ud[5];
-        g23[0] = 0.5*(Xd[3]*r[0] + Xd[4]*r[1] + Xd[5]*r[2] +
-                      normal[0]*Ud[1] + normal[1]*Ud[3] + normal[2]*Ud[5]);
-        g22++; g23++;
-
-        // Add the derivative to the b-matrix
-        for ( int i = 0; i < order*order; i++ ){
-          b22[0] = Xd[3]*Nb[i];
-          b22[1] = Xd[4]*Nb[i];
-          b22[2] = Xd[5]*Nb[i];
-          b22 += 3;
-
-          b23[0] = 0.5*normal[0]*Nb[i];
-          b23[1] = 0.5*normal[1]*Nb[i];
-          b23[2] = 0.5*normal[2]*Nb[i];
-          b23[3] = 0.5*N[i]*(Xd[5]*normal[1] - Xd[4]*normal[2]);
-          b23[4] = 0.5*N[i]*(Xd[3]*normal[2] - Xd[5]*normal[0]);
-          b23[5] = 0.5*N[i]*(Xd[4]*normal[0] - Xd[3]*normal[1]);
-          b23 += 6;
-        }
-      }
-      else {
-        g22[0] = (Xd[3]*Ud[1] + Xd[4]*Ud[3] + Xd[5]*Ud[5] +
-                  0.5*(Ud[1]*Ud[1] + Ud[3]*Ud[3] + Ud[5]*Ud[5]));
-        g23[0] = 0.5*(Xd[3]*r[0] + Xd[4]*r[1] + Xd[5]*r[2] +
-                      normal[0]*Ud[1] + normal[1]*Ud[3] + normal[2]*Ud[5]);
-        g22++; g23++;
-
-        // Add the derivative to the b-matrix
-        for ( int i = 0; i < order*order; i++ ){
-          b22[0] = (Xd[3] + Ud[1])*Nb[i];
-          b22[1] = (Xd[4] + Ud[3])*Nb[i];
-          b22[2] = (Xd[5] + Ud[5])*Nb[i];
-          b22 += 3;
-
-          b23[0] = 0.5*normal[0]*Nb[i];
-          b23[1] = 0.5*normal[1]*Nb[i];
-          b23[2] = 0.5*normal[2]*Nb[i];
-          b23[3] = 0.5*N[i]*(Xd[5]*normal[1] - Xd[4]*normal[2]);
-          b23[4] = 0.5*N[i]*(Xd[3]*normal[2] - Xd[5]*normal[0]);
-          b23[5] = 0.5*N[i]*(Xd[4]*normal[0] - Xd[3]*normal[1]);
-          b23 += 6;
-        }
-      }
-    }
-  }
-
-  // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = ptying_points[n];
-      pt[1] = ptying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      if (is_linear){
-        g12[0] = 0.5*(Xd[0]*Ud[1] + Xd[1]*Ud[3] + Xd[2]*Ud[5] +
-                      Xd[3]*Ud[0] + Xd[4]*Ud[2] + Xd[5]*Ud[4]);
-        g12++;
-
-        for ( int i = 0; i < order*order; i++ ){
-          b12[0] = 0.5*(Xd[3]*Na[i] + Xd[0]*Nb[i]);
-          b12[1] = 0.5*(Xd[4]*Na[i] + Xd[1]*Nb[i]);
-          b12[2] = 0.5*(Xd[5]*Na[i] + Xd[2]*Nb[i]);
-          b12 += 3;
-        }
-      }
-      else {
-        g12[0] = 0.5*(Xd[0]*Ud[1] + Xd[1]*Ud[3] + Xd[2]*Ud[5] +
-                      Xd[3]*Ud[0] + Xd[4]*Ud[2] + Xd[5]*Ud[4] +
-                      Ud[0]*Ud[1] + Ud[2]*Ud[3] + Ud[4]*Ud[5]);
-        g12++;
-
-        for ( int i = 0; i < order*order; i++ ){
-          b12[0] = 0.5*((Xd[3] + Ud[1])*Na[i] + (Xd[0] + Ud[0])*Nb[i]);
-          b12[1] = 0.5*((Xd[4] + Ud[3])*Na[i] + (Xd[1] + Ud[2])*Nb[i]);
-          b12[2] = 0.5*((Xd[5] + Ud[5])*Na[i] + (Xd[2] + Ud[4])*Nb[i]);
-          b12 += 3;
-        }
-      }
-    }
-  }
-
-  // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = ptying_points[n];
-      pt[1] = tying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      Tensor::normalize3D(normal);
-
-      // Calculate the rotation
-      TacsScalar r[3];
-      Tensor::crossProduct3D(r, Urot, normal);
-
-      if (is_linear){
-        g11[0] = Xd[0]*Ud[0] + Xd[1]*Ud[2] + Xd[2]*Ud[4];
-        g13[0] = 0.5*(Xd[0]*r[0] + Xd[1]*r[1] + Xd[2]*r[2] +
-                      normal[0]*Ud[0] + normal[1]*Ud[2] + normal[2]*Ud[4]);
-        g11++; g13++;
-
-        for ( int i = 0; i < order*order; i++ ){
-          b11[0] = Xd[0]*Na[i];
-          b11[1] = Xd[1]*Na[i];
-          b11[2] = Xd[2]*Na[i];
-          b11 += 3;
-
-          b13[0] = 0.5*normal[0]*Na[i];
-          b13[1] = 0.5*normal[1]*Na[i];
-          b13[2] = 0.5*normal[2]*Na[i];
-          b13[3] = 0.5*N[i]*(Xd[2]*normal[1] - Xd[1]*normal[2]);
-          b13[4] = 0.5*N[i]*(Xd[0]*normal[2] - Xd[2]*normal[0]);
-          b13[5] = 0.5*N[i]*(Xd[1]*normal[0] - Xd[0]*normal[1]);
-          b13 += 6;
-        }
-      }
-      else {
-        g11[0] = (Xd[0]*Ud[0] + Xd[1]*Ud[2] + Xd[2]*Ud[4] +
-                  0.5*(Ud[0]*Ud[0] + Ud[2]*Ud[2] + Ud[4]*Ud[4]));
-        g13[0] = 0.5*(Xd[0]*r[0] + Xd[1]*r[1] + Xd[2]*r[2] +
-                      normal[0]*Ud[0] + normal[1]*Ud[2] + normal[2]*Ud[4]);
-        g11++; g13++;
-
-        for ( int i = 0; i < order*order; i++ ){
-          b11[0] = (Xd[0] + Ud[0])*Na[i];
-          b11[1] = (Xd[1] + Ud[2])*Na[i];
-          b11[2] = (Xd[2] + Ud[4])*Na[i];
-          b11 += 3;
-
-          b13[0] = 0.5*normal[0]*Na[i];
-          b13[1] = 0.5*normal[1]*Na[i];
-          b13[2] = 0.5*normal[2]*Na[i];
-          b13[3] = 0.5*N[i]*(Xd[2]*normal[1] - Xd[1]*normal[2]);
-          b13[4] = 0.5*N[i]*(Xd[0]*normal[2] - Xd[2]*normal[0]);
-          b13[5] = 0.5*N[i]*(Xd[1]*normal[0] - Xd[0]*normal[1]);
-          b13 += 6;
-        }
-      }
-    }
-  }
-}
-
-/*
-  Evaluate the strain at the tying points and the sensitivity of the
-  strain at the tying points w.r.t. the nodal locations.
-
-  input:
-  tying_points: the 'order'th (ie 2, 3 or 4) Gauss-points
-  ptying_points: the 'order-1'th Gauss-points
-  Xpts: the nodal locations for the element
-
-  output:
-  g11, g22, g12, g23, g13: the in-plane tensorial strains and
-  out-of-plane tensorial shear strains at the tying points
-
-  dg11, dg22, dg12, dg23, dg13: the sensitivities of the the in-plane
-  tensorial strains and out-of-plane tensorial shear strains at the
-  tying points w.r.t. the nodal locataions
-*/
-template <int order>
-void bspline_tying_strain_sens( const int is_linear,
-                                TacsScalar g11[], TacsScalar g22[],
-                                TacsScalar g12[],
-                                TacsScalar g23[], TacsScalar g13[],
-                                TacsScalar dg11[], TacsScalar dg22[],
-                                TacsScalar dg12[],
-                                TacsScalar dg23[], TacsScalar dg13[],
-                                const double tying_points[],
-                                const double ptying_points[],
-                                int intu, int intv,
-                                const double tu[], const double tv[],
-                                const TacsScalar vars[],
-                                const TacsScalar Xpts[] ){
-  double N[order*order], Na[order*order], Nb[order*order];
-
-  // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      double pt[2];
-      pt[0] = tying_points[n];
-      pt[1] = ptying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      TacsScalar inv_norm = Tensor::normalize3D(normal);
-      inv_norm = 1.0/inv_norm;
-
-      // Calculate the rotation
-      TacsScalar r[3];
-      Tensor::crossProduct3D(r, Urot, normal);
-
-      if (is_linear){
-        g22[0] = Xd[3]*Ud[1] + Xd[4]*Ud[3] + Xd[5]*Ud[5];
-        g23[0] = 0.5*(Xd[3]*r[0] + Xd[4]*r[1] + Xd[5]*r[2] +
-                      normal[0]*Ud[1] + normal[1]*Ud[3] + normal[2]*Ud[5]);
-        g22++; g23++;
-      }
-      else {
-        g22[0] = (Xd[3]*Ud[1] + Xd[4]*Ud[3] + Xd[5]*Ud[5] +
-                  0.5*(Ud[1]*Ud[1] + Ud[3]*Ud[3] + Ud[5]*Ud[5]));
-        g23[0] = 0.5*(Xd[3]*r[0] + Xd[4]*r[1] + Xd[5]*r[2] +
-                      normal[0]*Ud[1] + normal[1]*Ud[3] + normal[2]*Ud[5]);
-        g22++; g23++;
-      }
-
-      for ( int i = 0; i < order*order; i++ ){
-        for ( int k = 0; k < 3; k++ ){
-          TacsScalar normalSens[3];
-
-          if (k == 0){
-            normalSens[0] = 0.0;
-            normalSens[1] = Xd[2]*Nb[i] - Na[i]*Xd[5];
-            normalSens[2] = Na[i]*Xd[4] - Xd[1]*Nb[i];
-          }
-          else if (k == 1){
-            normalSens[0] = Na[i]*Xd[5] - Xd[2]*Nb[i];
-            normalSens[1] = 0.0;
-            normalSens[2] = Xd[0]*Nb[i] - Na[i]*Xd[3];
-          }
-          else if (k == 2){
-            normalSens[0] = Xd[1]*Nb[i] - Na[i]*Xd[4];
-            normalSens[1] = Na[i]*Xd[3] - Xd[0]*Nb[i];
-            normalSens[2] = 0.0;
-          }
-
-          TacsScalar normSens = (normal[0]*normalSens[0] +
-                                 normal[1]*normalSens[1] +
-                                 normal[2]*normalSens[2]);
-
-          normalSens[0] = (normalSens[0] - normSens*normal[0])*inv_norm;
-          normalSens[1] = (normalSens[1] - normSens*normal[1])*inv_norm;
-          normalSens[2] = (normalSens[2] - normSens*normal[2])*inv_norm;
-
-          // Calculate the rotation
-          TacsScalar rSens[3];
-          Tensor::crossProduct3D(rSens, Urot, normalSens);
-
-          dg22[0] = Ud[2*k + 1]*Nb[i];
-          dg23[0] =
-            0.5*(r[k]*Nb[i] + Xd[3]*rSens[0] + Xd[4]*rSens[1] + Xd[5]*rSens[2] +
-                 normalSens[0]*Ud[1] + normalSens[1]*Ud[3] + normalSens[2]*Ud[5]);
-          dg22++;  dg23++;
-        }
-      }
-    }
-  }
-
-  // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = ptying_points[n];
-      pt[1] = ptying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      if (is_linear){
-        g12[0] = 0.5*(Xd[0]*Ud[1] + Xd[1]*Ud[3] + Xd[2]*Ud[5] +
-                      Xd[3]*Ud[0] + Xd[4]*Ud[2] + Xd[5]*Ud[4]);
-        g12++;
-      }
-      else {
-        g12[0] = 0.5*(Xd[0]*Ud[1] + Xd[1]*Ud[3] + Xd[2]*Ud[5] +
-                      Xd[3]*Ud[0] + Xd[4]*Ud[2] + Xd[5]*Ud[4] +
-                      Ud[0]*Ud[1] + Ud[2]*Ud[3] + Ud[4]*Ud[5]);
-        g12++;
-      }
-
-      for ( int i = 0; i < order*order; i++ ){
-        for ( int k = 0; k < 3; k++ ){
-          dg12[0] = 0.5*(Nb[i]*Ud[2*k] + Na[i]*Ud[2*k+1]);
-          dg12++;
-        }
-      }
-    }
-  }
-
-  // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = ptying_points[n];
-      pt[1] = tying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      TacsScalar inv_norm = Tensor::normalize3D(normal);
-      inv_norm = 1.0/inv_norm;
-
-      // Calculate the rotation
-      TacsScalar r[3];
-      Tensor::crossProduct3D(r, Urot, normal);
-
-      if (is_linear){
-        g11[0] = Xd[0]*Ud[0] + Xd[1]*Ud[2] + Xd[2]*Ud[4];
-        g13[0] = 0.5*(Xd[0]*r[0] + Xd[1]*r[1] + Xd[2]*r[2] +
-                      normal[0]*Ud[0] + normal[1]*Ud[2] + normal[2]*Ud[4]);
-        g11++; g13++;
-      }
-      else {
-        g11[0] = (Xd[0]*Ud[0] + Xd[1]*Ud[2] + Xd[2]*Ud[4] +
-                  0.5*(Ud[0]*Ud[0] + Ud[2]*Ud[2] + Ud[4]*Ud[4]));
-        g13[0] = 0.5*(Xd[0]*r[0] + Xd[1]*r[1] + Xd[2]*r[2] +
-                      normal[0]*Ud[0] + normal[1]*Ud[2] + normal[2]*Ud[4]);
-        g11++; g13++;
-      }
-
-      for ( int i = 0; i < order*order; i++ ){
-        for ( int k = 0; k < 3; k++ ){
-          TacsScalar normalSens[3];
-
-          if (k == 0){
-            normalSens[0] = 0.0;
-            normalSens[1] = Xd[2]*Nb[i] - Na[i]*Xd[5];
-            normalSens[2] = Na[i]*Xd[4] - Xd[1]*Nb[i];
-          }
-          else if (k == 1){
-            normalSens[0] = Na[i]*Xd[5] - Xd[2]*Nb[i];
-            normalSens[1] = 0.0;
-            normalSens[2] = Xd[0]*Nb[i] - Na[i]*Xd[3];
-          }
-          else if (k == 2){
-            normalSens[0] = Xd[1]*Nb[i] - Na[i]*Xd[4];
-            normalSens[1] = Na[i]*Xd[3] - Xd[0]*Nb[i];
-            normalSens[2] = 0.0;
-          }
-
-          TacsScalar normSens = (normal[0]*normalSens[0] +
-                                 normal[1]*normalSens[1] +
-                                 normal[2]*normalSens[2]);
-
-          normalSens[0] = (normalSens[0] - normSens*normal[0])*inv_norm;
-          normalSens[1] = (normalSens[1] - normSens*normal[1])*inv_norm;
-          normalSens[2] = (normalSens[2] - normSens*normal[2])*inv_norm;
-
-          // Calculate the rotation
-          TacsScalar rSens[3];
-          Tensor::crossProduct3D(rSens, Urot, normalSens);
-
-          dg11[0] = Ud[2*k]*Na[i];
-          dg13[0] =
-            0.5*(Na[i]*r[k] + Xd[0]*rSens[0] + Xd[1]*rSens[1] + Xd[2]*rSens[2] +
-                 normalSens[0]*Ud[0] + normalSens[1]*Ud[2] + normalSens[2]*Ud[4]);
-          dg11++;  dg13++;
-        }
-      }
-    }
-  }
-}
-
-/*
-  Add the contribution from the tying strain components to the
-  derivative of the residual w.r.t. the nodal coordinates.  This
-  function, unlike the others in this file, adds the tying strain
-  contributions only at a point - at a specific value of N11, N22 and
-  N12. This saves on a significant amount of memory, without
-  sacrificing too much in terms of performance.
-
-  inputs:
-  scale: scale all contributions by this value
-  stress: the values of the stresses at the current point
-  tx: the transformation between global and local ref. frames
-  dtx: the derivative of tx w.r.t. each coordinate
-
-  tying_points, ptying_points: the vectors of Gauss points for the tying strain
-  locations
-
-  Xpts: the nodal coordinates
-  N11, N22, N12: the shape functions for the tying strain
-  interpolation
-*/
-template <int order>
-void add_bspline_tying_bmat_sens( const int is_linear,
-                                  TacsScalar res[],
-                                  const TacsScalar scale,
-                                  const TacsScalar stress[],
-                                  const TacsScalar tx[],
-                                  const TacsScalar _dtx[],
-                                  const double tying_points[],
-                                  const double ptying_points[],
-                                  int intu, int intv,
-                                  const double tu[],
-                                  const double tv[],
-                                  const TacsScalar vars[],
-                                  const TacsScalar Xpts[],
-                                  const double N11[], const double N22[],
-                                  const double N12[] ){
-  TacsScalar B22[3*order*order], B23[6*order*order];
-  TacsScalar B12[3*order*order];
-  TacsScalar B11[3*order*order], B13[6*order*order];
-
-  TacsScalar DB22[9*order*order*order*order];
-  TacsScalar DB23[18*order*order*order*order];
-  TacsScalar DB12[9*order*order*order*order];
-  TacsScalar DB11[9*order*order*order*order];
-  TacsScalar DB13[18*order*order*order*order];
-
-  // Zero the b-matrices
-  memset(B22, 0, 3*order*order*sizeof(TacsScalar));
-  memset(B23, 0, 6*order*order*sizeof(TacsScalar));
-  memset(B12, 0, 3*order*order*sizeof(TacsScalar));
-  memset(B11, 0, 3*order*order*sizeof(TacsScalar));
-  memset(B13, 0, 6*order*order*sizeof(TacsScalar));
-
-  // Zero the derivatives of the b-matrices
-  memset(DB22, 0, 9*order*order*order*order*sizeof(TacsScalar));
-  memset(DB23, 0, 18*order*order*order*order*sizeof(TacsScalar));
-  memset(DB12, 0, 9*order*order*order*order*sizeof(TacsScalar));
-  memset(DB11, 0, 9*order*order*order*order*sizeof(TacsScalar));
-  memset(DB13, 0, 18*order*order*order*order*sizeof(TacsScalar));
-
-  double N[order*order], Na[order*order], Nb[order*order];
-
-  // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      double pt[2];
-      pt[0] = tying_points[n];
-      pt[1] = ptying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      TacsScalar inv_norm = Tensor::normalize3D(normal);
-      inv_norm = 1.0/inv_norm;
-
-      TacsScalar * b22 = B22;
-      TacsScalar * b23 = B23;
-      TacsScalar * db22 = DB22;
-      TacsScalar * db23 = DB23;
-
-      for ( int i = 0; i < order*order; i++ ){
-        double Ni  = N22[0]*N[i];
-        double Nbi = N22[0]*Nb[i];
-
-        // Sum up the contributions to the B-matrices
-        if (is_linear){
-          b22[0] += Xd[3]*Nbi;
-          b22[1] += Xd[4]*Nbi;
-          b22[2] += Xd[5]*Nbi;
-        }
-        else {
-          b22[0] += (Xd[3] + Ud[1])*Nbi;
-          b22[1] += (Xd[4] + Ud[3])*Nbi;
-          b22[2] += (Xd[5] + Ud[5])*Nbi;
-        }
-        b22 += 3;
-
-        b23[0] += 0.5*normal[0]*Nbi;
-        b23[1] += 0.5*normal[1]*Nbi;
-        b23[2] += 0.5*normal[2]*Nbi;
-        b23[3] += 0.5*Ni*(Xd[5]*normal[1] - Xd[4]*normal[2]);
-        b23[4] += 0.5*Ni*(Xd[3]*normal[2] - Xd[5]*normal[0]);
-        b23[5] += 0.5*Ni*(Xd[4]*normal[0] - Xd[3]*normal[1]);
-        b23 += 6;
-
-        // Add the contributions to the derivative of the B-matrices
-        for ( int j = 0; j < order*order; j++ ){
-          double Naj = Na[j];
-          double Nbj = Nb[j];
-
-          for ( int k = 0; k < 3; k++ ){
-            TacsScalar normalSens[3];
-
-            if (k == 0){
-              normalSens[0] = 0.0;
-              normalSens[1] = Xd[2]*Nbj - Naj*Xd[5];
-              normalSens[2] = Naj*Xd[4] - Xd[1]*Nbj;
-            }
-            else if (k == 1){
-              normalSens[0] = Naj*Xd[5] - Xd[2]*Nbj;
-              normalSens[1] = 0.0;
-              normalSens[2] = Xd[0]*Nbj - Naj*Xd[3];
-            }
-            else if (k == 2){
-              normalSens[0] = Xd[1]*Nbj - Naj*Xd[4];
-              normalSens[1] = Naj*Xd[3] - Xd[0]*Nbj;
-              normalSens[2] = 0.0;
-            }
-
-            TacsScalar normSens = (normal[0]*normalSens[0] +
-                                   normal[1]*normalSens[1] +
-                                   normal[2]*normalSens[2]);
-            normalSens[0] = (normalSens[0] - normSens*normal[0])*inv_norm;
-            normalSens[1] = (normalSens[1] - normSens*normal[1])*inv_norm;
-            normalSens[2] = (normalSens[2] - normSens*normal[2])*inv_norm;
-
-            db22[k] += Nbj*Nbi;
-            db22 += 3;
-
-            db23[0] += 0.5*normalSens[0]*Nbi;
-            db23[1] += 0.5*normalSens[1]*Nbi;
-            db23[2] += 0.5*normalSens[2]*Nbi;
-            db23[3] += 0.5*Ni*(Xd[5]*normalSens[1] - Xd[4]*normalSens[2]);
-            db23[4] += 0.5*Ni*(Xd[3]*normalSens[2] - Xd[5]*normalSens[0]);
-            db23[5] += 0.5*Ni*(Xd[4]*normalSens[0] - Xd[3]*normalSens[1]);
-
-            if (k == 0){
-              db23[4] += 0.5*Ni*Nbj*normal[2];
-              db23[5] -= 0.5*Ni*Nbj*normal[1];
-            }
-            else if (k == 1){
-              db23[3] -= 0.5*Ni*Nbj*normal[2];
-              db23[5] += 0.5*Ni*Nbj*normal[0];
-            }
-            else { // k == 2
-              db23[3] += 0.5*Ni*Nbj*normal[1];
-              db23[4] -= 0.5*Ni*Nbj*normal[0];
-            }
-
-            db23 += 6;
-          }
-        }
-      }
-
-      N22++;
-    }
-  }
-
-  // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = ptying_points[n];
-      pt[1] = ptying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      TacsScalar * b12 = B12;
-      TacsScalar * db12 = DB12;
-      for ( int i = 0; i < order*order; i++ ){
-        double Nai = N12[0]*Na[i];
-        double Nbi = N12[0]*Nb[i];
-
-        if (is_linear){
-          b12[0] += 0.5*(Xd[3]*Nai + Xd[0]*Nbi);
-          b12[1] += 0.5*(Xd[4]*Nai + Xd[1]*Nbi);
-          b12[2] += 0.5*(Xd[5]*Nai + Xd[2]*Nbi);
-        }
-        else {
-          b12[0] += 0.5*((Xd[3] + Ud[1])*Nai + (Xd[0] + Ud[0])*Nbi);
-          b12[1] += 0.5*((Xd[4] + Ud[3])*Nai + (Xd[1] + Ud[2])*Nbi);
-          b12[2] += 0.5*((Xd[5] + Ud[5])*Nai + (Xd[2] + Ud[4])*Nbi);
-        }
-        b12 += 3;
-
-        for ( int j = 0; j < order*order; j++ ){
-          double Naj = Na[j];
-          double Nbj = Nb[j];
-          db12[0] += 0.5*(Nbj*Nai + Naj*Nbi);  db12 += 3;
-          db12[1] += 0.5*(Nbj*Nai + Naj*Nbi);  db12 += 3;
-          db12[2] += 0.5*(Nbj*Nai + Naj*Nbi);  db12 += 3;
-        }
-      }
-      N12++;
-    }
-  }
-
-  // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      double pt[2];
-      pt[0] = ptying_points[n];
-      pt[1] = tying_points[m];
-
-      TacsScalar Urot[3], Ud[6], Xd[6];
-      bspline_tensorial_components(order, Urot, Ud, Xd,
-                                   N, Na, Nb, pt, intu, intv,
-                                   tu, tv, Xpts, vars);
-
-      // Caculate the normal
-      TacsScalar normal[3];
-      Tensor::crossProduct3D(normal, &Xd[0], &Xd[3]);
-      TacsScalar inv_norm = Tensor::normalize3D(normal);
-      inv_norm = 1.0/inv_norm;
-
-      // Calculate the rotation
-      TacsScalar r[3];
-      Tensor::crossProduct3D(r, Urot, normal);
-
-      TacsScalar * b11 = B11;
-      TacsScalar * b13 = B13;
-      TacsScalar * db11 = DB11;
-      TacsScalar * db13 = DB13;
-
-      for ( int i = 0; i < order*order; i++ ){
-        double Ni  = N11[0]*N[i];
-        double Nai = N11[0]*Na[i];
-
-        if (is_linear){
-          b11[0] += Xd[0]*Nai;
-          b11[1] += Xd[1]*Nai;
-          b11[2] += Xd[2]*Nai;
-        }
-        else {
-          b11[0] += (Xd[0] + Ud[0])*Nai;
-          b11[1] += (Xd[1] + Ud[2])*Nai;
-          b11[2] += (Xd[2] + Ud[4])*Nai;
-        }
-        b11 += 3;
-
-        b13[0] += 0.5*normal[0]*Nai;
-        b13[1] += 0.5*normal[1]*Nai;
-        b13[2] += 0.5*normal[2]*Nai;
-        b13[3] += 0.5*Ni*(Xd[2]*normal[1] - Xd[1]*normal[2]);
-        b13[4] += 0.5*Ni*(Xd[0]*normal[2] - Xd[2]*normal[0]);
-        b13[5] += 0.5*Ni*(Xd[1]*normal[0] - Xd[0]*normal[1]);
-        b13 += 6;
-
-        for ( int j = 0; j < order*order; j++ ){
-          double Naj = Na[j];
-          double Nbj = Nb[j];
-
-          for ( int k = 0; k < 3; k++ ){
-            TacsScalar normalSens[3];
-
-            if (k == 0){
-              normalSens[0] = 0.0;
-              normalSens[1] = Xd[2]*Nbj - Naj*Xd[5];
-              normalSens[2] = Naj*Xd[4] - Xd[1]*Nbj;
-            }
-            else if (k == 1){
-              normalSens[0] = Naj*Xd[5] - Xd[2]*Nbj;
-              normalSens[1] = 0.0;
-              normalSens[2] = Xd[0]*Nbj - Naj*Xd[3];
-            }
-            else if (k == 2){
-              normalSens[0] = Xd[1]*Nbj - Naj*Xd[4];
-              normalSens[1] = Naj*Xd[3] - Xd[0]*Nbj;
-              normalSens[2] = 0.0;
-            }
-
-            TacsScalar normSens = (normal[0]*normalSens[0] +
-                                   normal[1]*normalSens[1] +
-                                   normal[2]*normalSens[2]);
-
-            normalSens[0] = (normalSens[0] - normSens*normal[0])*inv_norm;
-            normalSens[1] = (normalSens[1] - normSens*normal[1])*inv_norm;
-            normalSens[2] = (normalSens[2] - normSens*normal[2])*inv_norm;
-
-            db11[k] += Naj*Nai;
-            db11 += 3;
-
-            db13[0] += 0.5*normalSens[0]*Nai;
-            db13[1] += 0.5*normalSens[1]*Nai;
-            db13[2] += 0.5*normalSens[2]*Nai;
-            db13[3] += 0.5*Ni*(Xd[2]*normalSens[1] - Xd[1]*normalSens[2]);
-            db13[4] += 0.5*Ni*(Xd[0]*normalSens[2] - Xd[2]*normalSens[0]);
-            db13[5] += 0.5*Ni*(Xd[1]*normalSens[0] - Xd[0]*normalSens[1]);
-
-            if (k == 0){
-              db13[4] += 0.5*Ni*Naj*normal[2];
-              db13[5] -= 0.5*Ni*Naj*normal[1];
-            }
-            else if (k == 1){
-              db13[3] -= 0.5*Ni*Naj*normal[2];
-              db13[5] += 0.5*Ni*Naj*normal[0];
-            }
-            else { // k == 2
-              db13[3] += 0.5*Ni*Naj*normal[1];
-              db13[4] -= 0.5*Ni*Naj*normal[0];
-            }
-
-            db13 += 6;
-          }
-        }
-      }
-
-      N11++;
-    }
-  }
-
-  // B22, B23, B12, B11 and B13 contain the total contribution to
-  // the B-matrix interpolated from the tying points using N11, N12, N22
-
-  // DB22, DB23, DB12, DB11 and DB13 contain the derivatives of the
-  // B-matrix interpolated from the tying points using N11, N12, N22
-
-  // Next, transform these contributions and add their values to
-  // the derivative of the residuals
-  const int nc = 3*order*order;
-
-  for ( int i = 0; i < order*order; i++ ){
-    for ( int ii = 0; ii < 6; ii++ ){
-      const int row = 6*i + ii;
-
-      if (ii < 3){
-        const int row3 = 3*i + ii;
-
-        // Retrieve the values of the B-matrix
-        TacsScalar g[6];
-        g[0] = B11[row3];
-        g[1] = B22[row3];
-        g[2] = 0.0;
-        g[3] = B23[row];
-        g[4] = B13[row];
-        g[5] = B12[row3];
-
-        // Complete the first part of the transformation
-        // Compute as = tx * G - where G is a matrix formed
-        // as follows:
-        // G = [ g[0]  g[5]  g[4] ]
-        //     [ g[5]  g[1]  g[3] ]
-        //     [ g[4]  g[3]  g[2] ]
-        // The complete transformation is tx * G * tx^{T}, but
-        // only the derivative is required in this computation
-
-        TacsScalar as[9];
-        as[0] = tx[0]*g[0] + tx[1]*g[5] + tx[2]*g[4];
-        as[3] = tx[3]*g[0] + tx[4]*g[5] + tx[5]*g[4];
-        as[6] = tx[6]*g[0] + tx[7]*g[5] + tx[8]*g[4];
-
-        as[1] = tx[0]*g[5] + tx[1]*g[1] + tx[2]*g[3];
-        as[4] = tx[3]*g[5] + tx[4]*g[1] + tx[5]*g[3];
-        as[7] = tx[6]*g[5] + tx[7]*g[1] + tx[8]*g[3];
-
-        as[2] = tx[0]*g[4] + tx[1]*g[3] + tx[2]*g[2];
-        as[5] = tx[3]*g[4] + tx[4]*g[3] + tx[5]*g[2];
-        as[8] = tx[6]*g[4] + tx[7]*g[3] + tx[8]*g[2];
-
-        const TacsScalar * dtx = _dtx;
-        for ( int k = 0; k < nc; k++ ){
-          // Retrieve the derivative of the B-matrix
-          TacsScalar dg[6];
-          // 3*i + ii
-          // ii + 3*k + 3*nc*i
-
-          dg[0] = DB11[3*nc*i + 3*k + ii]; // DB11[nc*row3 + k];
-          dg[1] = DB22[3*nc*i + 3*k + ii];
-          dg[2] = 0.0;
-          dg[3] = DB23[6*nc*i + 6*k + ii];
-          dg[4] = DB13[6*nc*i + 6*k + ii];
-          dg[5] = DB12[3*nc*i + 3*k + ii];
-
-          // Get the derivative of the temporary variable as
-          TacsScalar das[9];
-          das[0] = (dtx[0]*g[0] + dtx[1]*g[5] + dtx[2]*g[4] +
-                    tx[0]*dg[0] + tx[1]*dg[5] + tx[2]*dg[4]);
-          das[3] = (dtx[3]*g[0] + dtx[4]*g[5] + dtx[5]*g[4] +
-                    tx[3]*dg[0] + tx[4]*dg[5] + tx[5]*dg[4]);
-          das[6] = (dtx[6]*g[0] + dtx[7]*g[5] + dtx[8]*g[4] +
-                    tx[6]*dg[0] + tx[7]*dg[5] + tx[8]*dg[4]);
-
-          das[1] = (dtx[0]*g[5] + dtx[1]*g[1] + dtx[2]*g[3] +
-                    tx[0]*dg[5] + tx[1]*dg[1] + tx[2]*dg[3]);
-          das[4] = (dtx[3]*g[5] + dtx[4]*g[1] + dtx[5]*g[3] +
-                    tx[3]*dg[5] + tx[4]*dg[1] + tx[5]*dg[3]);
-          das[7] = (dtx[6]*g[5] + dtx[7]*g[1] + dtx[8]*g[3] +
-                    tx[6]*dg[5] + tx[7]*dg[1] + tx[8]*dg[3]);
-
-          das[2] = (dtx[0]*g[4] + dtx[1]*g[3] + dtx[2]*g[2] +
-                    tx[0]*dg[4] + tx[1]*dg[3] + tx[2]*dg[2]);
-          das[5] = (dtx[3]*g[4] + dtx[4]*g[3] + dtx[5]*g[2] +
-                    tx[3]*dg[4] + tx[4]*dg[3] + tx[5]*dg[2]);
-          das[8] = (dtx[6]*g[4] + dtx[7]*g[3] + dtx[8]*g[2] +
-                    tx[6]*dg[4] + tx[7]*dg[3] + tx[8]*dg[2]);
-
-          // Add this
-          res[6*order*order*k + row] += scale*
-            (stress[0]*(as[0]*dtx[0] + as[1]*dtx[1] + as[2]*dtx[2] +
-                        das[0]*tx[0] + das[1]*tx[1] + das[2]*tx[2]) +
-             stress[1]*(as[3]*dtx[3] + as[4]*dtx[4] + as[5]*dtx[5] +
-                        das[3]*tx[3] + das[4]*tx[4] + das[5]*tx[5]) +
-             2.0*stress[2]*(as[0]*dtx[3] + as[1]*dtx[4] + as[2]*dtx[5] +
-                            das[0]*tx[3] + das[1]*tx[4] + das[2]*tx[5]) +
-             2.0*stress[6]*(as[3]*dtx[6] + as[4]*dtx[7] + as[5]*dtx[8] +
-                            das[3]*tx[6] + das[4]*tx[7] + das[5]*tx[8]) +
-             2.0*stress[7]*(as[0]*dtx[6] + as[1]*dtx[7] + as[2]*dtx[8] +
-                            das[0]*tx[6] + das[1]*tx[7] + das[2]*tx[8]));
-
-          dtx += 9;
-        }
-      }
-      else {
-        // Retrieve the values of the B-matrix
-        TacsScalar g[6];
-        g[0] = g[1] = g[2] = 0.0;
-        g[3] = B23[row];
-        g[4] = B13[row];
-        g[5] = 0.0;
-
-        // Complete the first part of the transformation
-        // Compute as = tx * G. This computation ignores zero entries
-        TacsScalar as[9];
-        as[0] = tx[2]*g[4];
-        as[3] = tx[5]*g[4];
-        as[6] = tx[8]*g[4];
-
-        as[1] = tx[2]*g[3];
-        as[4] = tx[5]*g[3];
-        as[7] = tx[8]*g[3];
-
-        as[2] = tx[0]*g[4] + tx[1]*g[3];
-        as[5] = tx[3]*g[4] + tx[4]*g[3];
-        as[8] = tx[6]*g[4] + tx[7]*g[3];
-
-        // Point dtx at the beginning of the derivatives of tx
-        const TacsScalar * dtx = _dtx;
-        for ( int k = 0; k < nc; k++ ){
-          // Retrieve the derivative of the B-matrix
-          TacsScalar dg[6];
-          dg[0] = dg[1] = dg[2] = 0.0;
-          dg[3] = DB23[6*nc*i + 6*k + ii];
-          dg[4] = DB13[6*nc*i + 6*k + ii];
-          dg[5] = 0.0;
-
-          // Get the derivative of the temporary variable as
-          TacsScalar das[9];
-          das[0] = (dtx[2]*g[4] + tx[2]*dg[4]);
-          das[3] = (dtx[5]*g[4] + tx[5]*dg[4]);
-          das[6] = (dtx[8]*g[4] + tx[8]*dg[4]);
-
-          das[1] = (dtx[2]*g[3] + tx[2]*dg[3]);
-          das[4] = (dtx[5]*g[3] + tx[5]*dg[3]);
-          das[7] = (dtx[8]*g[3] + tx[8]*dg[3]);
-
-          das[2] = (dtx[0]*g[4] + dtx[1]*g[3] +
-                    tx[0]*dg[4] + tx[1]*dg[3]);
-          das[5] = (dtx[3]*g[4] + dtx[4]*g[3] +
-                    tx[3]*dg[4] + tx[4]*dg[3]);
-          das[8] = (dtx[6]*g[4] + dtx[7]*g[3] +
-                    tx[6]*dg[4] + tx[7]*dg[3]);
-
-          // Add the deterivative of tx * G * tx^{T} * stress to res
-          res[6*order*order*k + row] += scale*
-            (stress[0]*(as[0]*dtx[0] + as[1]*dtx[1] + as[2]*dtx[2] +
-                        das[0]*tx[0] + das[1]*tx[1] + das[2]*tx[2]) +
-             stress[1]*(as[3]*dtx[3] + as[4]*dtx[4] + as[5]*dtx[5] +
-                        das[3]*tx[3] + das[4]*tx[4] + das[5]*tx[5]) +
-             2.0*stress[2]*(as[0]*dtx[3] + as[1]*dtx[4] + as[2]*dtx[5] +
-                            das[0]*tx[3] + das[1]*tx[4] + das[2]*tx[5]) +
-             2.0*stress[6]*(as[3]*dtx[6] + as[4]*dtx[7] + as[5]*dtx[8] +
-                            das[3]*tx[6] + das[4]*tx[7] + das[5]*tx[8]) +
-             2.0*stress[7]*(as[0]*dtx[6] + as[1]*dtx[7] + as[2]*dtx[8] +
-                            das[0]*tx[6] + das[1]*tx[7] + das[2]*tx[8]));
-
-          dtx += 9;
-        }
-      }
-    }
-  }
-}
-
-/*
-  Compute the second derivative of the strain w.r.t. the
-  displacements/rotations - many of these components are the same.
-
-  input:
-  N11, N22, N12: the shape functions associated with the interpolation
-  of the strain components
-
-  tying_points, ptying_points: the tying interpolation points
-
-  ouput:
-  n11, n22, n12: the second derivative of the strain w.r.t. the nodal
-  displacements
-*/
-template <int order>
-void nonlinear_bspline_tying_nmat( TacsScalar n11[], TacsScalar n22[],
-                                   TacsScalar n12[],
-                                   const double N11[], const double N22[],
-                                   const double N12[],
-                                   const double tying_points[],
-                                   const double ptying_points[],
-                                   int intu, int intv,
-                                   const double tu[],
-                                   const double tv[] ){
-  // The shape functions
-  double Na[order*order], Nb[order*order];
-  double Nu[2*order], Nv[2*order], work[2*order + order*order];
-
-  // Compute the derivative of pt with respect to the Gauss poitns
-  double du = 0.5*(tu[intu+1] - tu[intu]);
-  double dv = 0.5*(tv[intv+1] - tv[intv]);
-
-  // Evaluate g22 and g23
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      // Evaluate the b-spline basis functions
-      int ideriv = 1;
-      FElibrary::bspline_basis(Nu, intu, tying_points[n],
-                               tu, order, work);
-      FElibrary::bspline_basis_derivative(Nv, intv, ptying_points[m],
-                                          ideriv, tv, order, work);
-
-      double *nb = Nb;
-      for ( int j = 0; j < order; j++ ){
-        for ( int i = 0; i < order; i++ ){
-          nb[0] = Nu[i]*Nv[order+j]*dv;
-          nb++;
-        }
-      }
-
-      TacsScalar * _n22 = n22;
-      for ( int i = 0; i < order*order; i++ ){
-        for ( int j = 0; j <= i; j++ ){
-          _n22[0] += Nb[i]*Nb[j]*N22[0];
-          _n22++;
-        }
-      }
-      N22++;
-    }
-  }
-
-  // Evaluate g12
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      // Evaluate the b-spline basis functions
-      int ideriv = 1;
-      FElibrary::bspline_basis_derivative(Nu, intu, ptying_points[n],
-                                          ideriv, tu, order, work);
-      FElibrary::bspline_basis_derivative(Nv, intv, ptying_points[m],
-                                          ideriv, tv, order, work);
-
-      double *na = Na, *nb = Nb;
-      for ( int j = 0; j < order; j++ ){
-        for ( int i = 0; i < order; i++ ){
-          na[0] = Nu[order+i]*Nv[j]*du;
-          nb[0] = Nu[i]*Nv[order+j]*dv;
-          na++;  nb++;
-        }
-      }
-
-      TacsScalar * _n12 = n12;
-      for ( int i = 0; i < order*order; i++ ){
-        for ( int j = 0; j <= i; j++ ){
-          _n12[0] += 0.5*(Na[i]*Nb[j] + Nb[i]*Na[j])*N12[0];
-          _n12++;
-        }
-      }
-      N12++;
-    }
-  }
-
-  // Evaluate g11 and g13
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      // Evaluate the b-spline basis functions
-      int ideriv = 1;
-      FElibrary::bspline_basis_derivative(Nu, intu, ptying_points[n],
-                                          ideriv, tu, order, work);
-      FElibrary::bspline_basis(Nv, intv, tying_points[m],
-                               tv, order, work);
-
-      double *na = Na;
-      for ( int j = 0; j < order; j++ ){
-        for ( int i = 0; i < order; i++ ){
-          na[0] = Nu[order+i]*Nv[j]*du;
-          na++;
-        }
-      }
-
-      TacsScalar * _n11 = n11;
-      for ( int i = 0; i < order*order; i++ ){
-        for ( int j = 0; j <= i; j++ ){
-          _n11[0] += Na[i]*Na[j]*N11[0];
-          _n11++;
-        }
-      }
-      N11++;
-    }
-  }
-}
-
-/*
-  Add the derivative of the product of stress and the derivative of
-  the strain to part of the matrix.  This is used for the nonlinear
-  contributions from the in-plane components of the tensorial strain.
-*/
-template <int order>
-void add_nonlinear_bspline_tying_stress_nmat( TacsScalar matrix[],
-                                              TacsScalar scale,
-                                              const TacsScalar stress[],
-                                              const TacsScalar tx[],
-                                              const double N11[],
-                                              const double N22[],
-                                              const double N12[],
-                                              const double tying_points[],
-                                              const double ptying_points[],
-                                              int intu, int intv,
-                                              const double tu[],
-                                              const double tv[],
-                                              const TacsScalar Xpts[] ){
-  const int nvars = 6*order*order;
-  const int size = (order*order*(order*order+1))/2;
-
-  TacsScalar n11[size], n22[size], n12[size];
-  memset(n11, 0, size*sizeof(TacsScalar));
-  memset(n22, 0, size*sizeof(TacsScalar));
-  memset(n12, 0, size*sizeof(TacsScalar));
-
-  nonlinear_bspline_tying_nmat<order>(n11, n22, n12, N11, N22, N12,
-                                      tying_points, ptying_points,
-                                      intu, intv, tu, tv);
-
-  TacsScalar * _n11 = n11;
-  TacsScalar * _n12 = n12;
-  TacsScalar * _n22 = n22;
-
-  // Compute the second derivative contributions
-  for ( int i = 0; i < order*order; i++ ){
-    const int row = 6*i;
-    for ( int j = 0; j <= i; j++ ){
-      const int col = 6*j;
-
-      // Evaluate the second derivative of the tensorial strain.
-      // Note that this is NOT the engineering strain!
-      TacsScalar g[6], s[6];
-      g[0] = _n11[0];
-      g[1] = _n22[0];
-      g[5] = _n12[0];
-      g[2] = g[3] = g[4] = 0.0;
-
-      // Transform to the local axis - note that this employs the
-      // transformation for stress - since we're using tensorial strain -
-      // not engineering strain
-      Tensor::transform3DStress(s, g, tx);
-
-      // Evaluate the contribution - note the factor of 2.0 due to the
-      // use of tensorial strain
-      TacsScalar val =
-        scale*(stress[0]*s[0] + stress[1]*s[1] +
-               2.0*(stress[2]*s[5] + stress[6]*s[3] + stress[7]*s[4]));
-
-      // Add values to the diagonal of each component
-      for ( int k = 0; k < 3; k++ ){
-        matrix[(row+k)*nvars + col+k] += val;
-      }
-
-      // Increment the pointers
-      _n11++; _n22++; _n12++;
     }
   }
 }

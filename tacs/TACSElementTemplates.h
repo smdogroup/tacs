@@ -36,6 +36,9 @@
 #define MITCShell3 MITCShell<3>
 #define MITCShell4 MITCShell<4>
 #define MITCShell5 MITCShell<5>
+#define MITCShell32 MITCShell<3,2>
+#define MITCShell43 MITCShell<4,3>
+#define MITCShell54 MITCShell<5,4>
 #define Solid2 Solid<2>
 #define Solid3 Solid<3>
 #define Solid4 Solid<4>

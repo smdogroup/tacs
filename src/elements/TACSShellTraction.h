@@ -164,11 +164,11 @@ class TACSShellTraction : public TACSElement {
                           const TacsScalar vars[] ){
     // Get the quadrature points and weights
     const double *gaussPts, *gaussWts;
-    FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+    int npts = FElibrary::getGaussPtsWts(order+1, &gaussPts, &gaussWts);
 
     // Add the residual due to the shell traction
-    for ( int m = 0; m < order; m++ ){
-      for ( int n = 0; n < order; n++ ){
+    for ( int m = 0; m < npts; m++ ){
+      for ( int n = 0; n < npts; n++ ){
         // Set the quadrature point
         double pt[2];
         pt[0] = gaussPts[n];

@@ -754,6 +754,21 @@ cdef class Assembler:
 
         return _init_Element(element), Xpt, vars0, dvars, ddvars
 
+    def getElementNodes(self, int num):
+        '''Get the node numbers associated with the given element'''
+        cdef int num_nodes = 0
+        cdef const int *node_nums = NULL
+        cdef np.ndarray nodes
+
+        # Get the node numbers
+        if num >= 0 and num < self.ptr.getNumElements():
+            self.ptr.getElement(num, &node_nums, &num_nodes)
+            nodes = np.zeros(num_nodes, dtype=np.int)
+            for i in range(num_nodes):
+                nodes[i] = node_nums[i]
+
+        return nodes
+
     def getDesignVars(self,
                       np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
         '''
