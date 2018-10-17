@@ -42,7 +42,8 @@ class KSDisplacementCtx : public TACSFunctionCtx {
 */
 TACSKSDisplacement::TACSKSDisplacement( TACSAssembler *_tacs,
                                         double _ksWeight,
-                                        const TacsScalar _dir[] ):
+                                        const TacsScalar _dir[],
+                                        KSDisplacementType _ksType ):
 TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
              TACSFunction::TWO_STAGE, 0){
   maxNumNodes = _tacs->getMaxElementNodes();
@@ -50,8 +51,10 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
   dir[1] = _dir[1];
   dir[2] = _dir[2];
   ksWeight = _ksWeight;
+  ksType = _ksType;
   maxValue = -1e20;
   ksSum = 0.0;
+  invPnorm = 0.0;
 }
 
 TACSKSDisplacement::~TACSKSDisplacement(){}
@@ -69,11 +72,23 @@ const char *TACSKSDisplacement::functionName(){
 }
 
 /*
+  Set the displacement aggregate type
+*/
+void TACSKSDisplacement::setKSDispType( KSDisplacementType _ksType ){
+  ksType = _ksType;
+}
+
+/*
   Retrieve the function value
 */
 TacsScalar TACSKSDisplacement::getFunctionValue(){
   // Compute the final value of the KS function on all processors
-  return maxValue + log(ksSum)/ksWeight;
+  if (ksType == CONTINUOUS || ksType == DISCRETE){
+    return maxValue + log(ksSum)/ksWeight;
+  }
+  else {
+    return maxValue*pow(ksSum, 1.0/ksWeight);
+  }
 }
 
 /*
@@ -110,6 +125,14 @@ void TACSKSDisplacement::finalEvaluation( EvaluationType ftype ){
     TacsScalar temp = ksSum;
     MPI_Allreduce(&temp, &ksSum, 1, TACS_MPI_TYPE,
                   MPI_SUM, tacs->getMPIComm());
+
+    // Compute the P-norm quantity if needed
+    invPnorm = 0.0;
+    if (ksType == PNORM_DISCRETE || ksType == PNORM_CONTINUOUS){
+      if (ksSum != 0.0){
+        invPnorm = pow(ksSum, (1.0 - ksWeight)/ksWeight);
+      }
+    }
   }
 }
 
@@ -156,7 +179,7 @@ void TACSKSDisplacement::elementWiseEval( EvaluationType ftype,
 
         // Evaluate the dot-product with the displacements
         const double *N = ctx->N;
-        const double *d = vars;
+        const TacsScalar *d = vars;
 
         TacsScalar value = 0.0;
         for ( int j = 0; j < numNodes; j++ ){
@@ -188,7 +211,7 @@ void TACSKSDisplacement::elementWiseEval( EvaluationType ftype,
 
         // Evaluate the dot-product with the displacements
         const double *N = ctx->N;
-        const double *d = vars;
+        const TacsScalar *d = vars;
 
         TacsScalar value = 0.0;
         for ( int j = 0; j < numNodes; j++ ){
@@ -207,7 +230,19 @@ void TACSKSDisplacement::elementWiseEval( EvaluationType ftype,
 
         // Add up the contribution from the quadrature
         TacsScalar h = element->getDetJacobian(pt, Xpts);
-        ctx->ksSum += h*weight*exp(ksWeight*(value - maxValue));
+        if (ksType == CONTINUOUS){
+          ctx->ksSum += h*weight*exp(ksWeight*(value - maxValue));
+        }
+        else if (ksType == DISCRETE){
+          ctx->ksSum += exp(ksWeight*(value - maxValue));
+        }
+        else if (ksType == PNORM_CONTINUOUS){
+          ctx->ksSum += 
+            h*weight*pow(fabs(TacsRealPart(value/maxValue)), ksWeight);
+        }
+        else if (ksType == PNORM_DISCRETE){
+          ctx->ksSum += pow(fabs(TacsRealPart(value/maxValue)), ksWeight);
+        }
       }
     }
   }
@@ -270,7 +305,7 @@ void TACSKSDisplacement::getElementSVSens( double alpha,
 
       // Evaluate the dot-product with the displacements
       const double *N = ctx->N;
-      const double *d = vars;
+      const TacsScalar *d = vars;
 
       TacsScalar value = 0.0;
       for ( int j = 0; j < numNodes; j++ ){
@@ -289,8 +324,22 @@ void TACSKSDisplacement::getElementSVSens( double alpha,
 
       // Add up the contribution from the quadrature
       TacsScalar h = element->getDetJacobian(pt, Xpts);
-      TacsScalar ptWeight = 
-        alpha*h*weight*exp(ksWeight*(value - maxValue))/ksSum;
+      TacsScalar ptWeight = 0.0;
+
+      if (ksType == CONTINUOUS){
+        ptWeight = alpha*h*weight*exp(ksWeight*(value - maxValue))/ksSum;
+      }
+      else if (ksType == DISCRETE){
+        ptWeight = alpha*exp(ksWeight*(value - maxValue))/ksSum;
+      }
+      else if (ksType == PNORM_CONTINUOUS){
+        ptWeight = value*pow(fabs(TacsRealPart(value/maxValue)), ksWeight-2.0);
+        ptWeight *= alpha*h*weight*invPnorm;
+      }
+      else if (ksType == PNORM_DISCRETE){
+        ptWeight = value*pow(fabs(TacsRealPart(value/maxValue)), ksWeight-2.0);
+        ptWeight *= alpha*ksWeight*invPnorm;
+      }
 
       // Reset the shape function pointer and run through the
       // element nodes again to set the derivative

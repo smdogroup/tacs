@@ -80,10 +80,17 @@ cdef class KSFailure(Function):
 
     def setKSFailureType(self, ftype='discrete'):
         if ftype == 'discrete':
-            self.ksptr.setKSFailureType(KS_DISCRETE)
+            self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
         elif ftype == 'continuous':
-            self.ksptr.setKSFailureType(KS_CONTINUOUS)
+            self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSFailureType(PNORM_FAILURE_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSFailureType(PNORM_FAILURE_CONTINUOUS)
         return
+
+    def setParameter(self, double ksparam):
+        self.ksptr.setParameter(ksparam)
 
 cdef class KSDisplacement(Function):
     cdef TACSKSDisplacement *ksptr
@@ -98,6 +105,17 @@ cdef class KSDisplacement(Function):
         self.ksptr = new TACSKSDisplacement(tacs.ptr, ksWeight, _dirs)
         self.ptr = self.ksptr
         self.ptr.incref()
+        return
+
+    def setKSDispType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSDispType(KS_DISP_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSDispType(KS_DISP_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSDispType(PNORM_DISP_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSDispType(PNORM_DISP_CONTINUOUS)
         return
 
 cdef class DisplacementIntegral(Function):
@@ -116,11 +134,34 @@ cdef class DisplacementIntegral(Function):
         return
 
 cdef class InducedFailure(Function):
+    cdef TACSInducedFailure *iptr
     def __cinit__(self, Assembler tacs, double P):
         '''
         Wrap the function InducedFailure
         '''
-        self.ptr = new TACSInducedFailure(tacs.ptr, P,
-                                          INDUCED_FAILURE)
+        self.iptr = new TACSInducedFailure(tacs.ptr, P,
+                                           INDUCED_FAILURE)
+        self.ptr = self.iptr
         self.ptr.incref()
         return
+
+    def setInducedType(self, ftype='exponential'):
+        if ftype == 'exponential':
+            self.iptr.setInducedType(INDUCED_EXPONENTIAL)
+        elif ftype == 'power':
+            self.iptr.setInducedType(INDUCED_POWER)
+        elif ftype == 'exponential-squared':
+            self.iptr.setInducedType(INDUCED_EXPONENTIAL_SQUARED)
+        elif ftype == 'power-squared':
+            self.iptr.setInducedType(INDUCED_POWER_SQUARED)
+        elif ftype == 'discrete-exponential':
+            self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL)
+        elif ftype == 'discrete-power':
+            self.iptr.setInducedType(INDUCED_DISCRETE_POWER)
+        elif ftype == 'discrete-exponential-squared':
+            self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL_SQUARED)
+        elif ftype == 'discrete-power-squared':
+            self.iptr.setInducedType(INDUCED_DISCRETE_POWER_SQUARED)
+
+    def setParameter(self, double param):
+        self.iptr.setParameter(param)

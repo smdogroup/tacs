@@ -36,6 +36,9 @@
 #define MITCShell3 MITCShell<3>
 #define MITCShell4 MITCShell<4>
 #define MITCShell5 MITCShell<5>
+#define MITCShell32 MITCShell<3,2>
+#define MITCShell43 MITCShell<4,3>
+#define MITCShell54 MITCShell<5,4>
 #define Solid2 Solid<2>
 #define Solid3 Solid<3>
 #define Solid4 Solid<4>
@@ -44,6 +47,7 @@
 #define TACS3DTraction3 TACS3DTraction<3>
 #define TACS3DTraction4 TACS3DTraction<4>
 #define TACS3DTraction5 TACS3DTraction<5>
+#define TACS3DBoundingTraction2 TACS3DBoundingTraction<2>
 #define TACSShellTraction2 TACSShellTraction<2>
 #define TACSShellTraction3 TACSShellTraction<3>
 #define TACSShellTraction4 TACSShellTraction<4>

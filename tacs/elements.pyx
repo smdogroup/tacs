@@ -7,14 +7,14 @@
 #  TACS is licensed under the Apache License, Version 2.0 (the
 #  "License"); you may not use this software except in compliance with
 #  the License.  You may obtain a copy of the License at
-#  
-#  http://www.apache.org/licenses/LICENSE-2.0 
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
-# Import numpy 
+# Import numpy
 import numpy as np
 cimport numpy as np
 
@@ -59,7 +59,7 @@ cdef class Element:
 
     def numNodes(self):
         return self.ptr.numNodes()
-    
+
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
     def __cinit__(self, x, y, z):
@@ -87,7 +87,7 @@ cdef class RigidBodyViz:
                   int npts=0, int nelems=0,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] xpts=None,
                   np.ndarray[int, ndim=1, mode='c'] conn=None,
-                  GibbsVector vref=None, 
+                  GibbsVector vref=None,
                   TacsScalar Lx=1.0, TacsScalar Ly=1.0, TacsScalar Lz=1.0):
         cdef TACSGibbsVector *vptr = NULL
         if vref is not None:
@@ -127,14 +127,14 @@ cdef class RigidBody(Element):
             _Jdvs = <int*>Jdvs.data
 
         # Allocate the rigid body object and set the design variables
-        self.rbptr = new TACSRigidBody(frame.ptr, mass, 
+        self.rbptr = new TACSRigidBody(frame.ptr, mass,
                                        <TacsScalar*>cRef.data,
                                        <TacsScalar*>JRef.data, r0.ptr,
                                        v0.ptr, omega0.ptr, g.ptr)
         self.rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
         # Increase the reference count to the underlying object
-        self.ptr = self.rbptr 
+        self.ptr = self.rbptr
         self.ptr.incref()
         return
 
@@ -150,7 +150,7 @@ cdef class RigidBody(Element):
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
-    
+
 cdef class FixedConstraint(Element):
     def __cinit__(self,
                   GibbsVector point,
@@ -158,7 +158,7 @@ cdef class FixedConstraint(Element):
         self.ptr = new TACSFixedConstraint(bodyA.rbptr,
                                            point.ptr)
         self.ptr.incref()
-        return    
+        return
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -179,7 +179,7 @@ cdef class SphericalConstraint(Element):
             self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
                                                    point.ptr)
         self.ptr.incref()
-        return    
+        return
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -202,7 +202,7 @@ cdef class RevoluteConstraint(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -222,7 +222,7 @@ cdef class CylindricalConstraint(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -242,7 +242,7 @@ cdef class PrismaticConstraint(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -262,7 +262,7 @@ cdef class SlidingPivotConstraint(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -290,7 +290,7 @@ cdef class RevoluteDriver(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -308,7 +308,7 @@ cdef class MotionDriver(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -326,7 +326,7 @@ cdef class LinearizedMotionDriver(Element):
         return
     def __dealloc__(self):
         self.ptr.decref()
-        return    
+        return
     def numNodes(self):
         return self.ptr.numNodes()
     def setComponentNum(self, int comp_num):
@@ -365,7 +365,7 @@ cdef class PlaneQuad(Element):
             self.ptr = new PlaneStressQuad5(con, elem_type, component_num)
             self.ptr.incref()
         return
-        
+
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -406,10 +406,11 @@ cdef class PSQuadTraction(Element):
 
     def numNodes(self):
         return self.ptr.numNodes()
-    
+
 cdef class Traction3D(Element):
-    def __cinit__(self, int order, int surf, 
-                  TacsScalar tx, TacsScalar ty, TacsScalar tz):
+    def __cinit__(self, int order, int surf,
+                  TacsScalar tx, TacsScalar ty, TacsScalar tz,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] box=None):
         if order < 2 or order > 5:
             errmsg = 'Traction3D order must be between 2 and 4'
             raise ValueError(errmsg)
@@ -418,7 +419,12 @@ cdef class Traction3D(Element):
             raise ValueError(errmsg)
         self.ptr = NULL
         if order == 2:
-            self.ptr = new TACS3DTraction2(surf, tx, ty, tz)
+            if box is None:
+                self.ptr = new TACS3DTraction2(surf, tx, ty, tz)
+            else:
+                self.ptr = new TACS3DBoundingTraction2(surf, tx, ty, tz,
+                                                       <TacsScalar*>box.data)
+
             self.ptr.incref()
         elif order == 3:
             self.ptr = new TACS3DTraction3(surf, tx, ty, tz)
@@ -436,7 +442,7 @@ cdef class Traction3D(Element):
         return
     def numNodes(self):
         return self.ptr.numNodes()
-    
+
 cdef class PlaneTri6(Element):
     def __cinit__(self, PlaneStress stiff,
                   ElementBehaviorType elem_type=LINEAR,
@@ -455,52 +461,70 @@ cdef class PlaneTri6(Element):
 
     def numNodes(self):
         return self.ptr.numNodes()
-    
+
+cdef void _shell_evalf(void *_self, const TacsScalar *X, TacsScalar *T):
+    cdef list Xp
+    Xp = [X[0], X[1], X[2]]
+    t = (<object>_self)(Xp)
+    T[0] = t[0]
+    T[1] = t[1]
+    T[2] = t[2]
+    return
+
 cdef class ShellTraction(Element):
     def __cinit__(self, int order,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] tz):
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tx=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ty=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] tz=None,
+                  evalf=None):
         self.ptr = NULL
         if order < 2 or order > 5:
             errmsg = 'ShellTraction order must be between 2 and 4'
             raise ValueError(errmsg)
-        if order == 2:
-            self.ptr = new TACSShellTraction2(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
-            self.ptr.incref()
-        elif order == 3:
-            self.ptr = new TACSShellTraction3(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
-            self.ptr.incref()
-        elif order == 4:
-            self.ptr = new TACSShellTraction4(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
-            self.ptr.incref()
-        elif order == 5:
-            self.ptr = new TACSShellTraction5(<TacsScalar*>tx.data,
-                                              <TacsScalar*>ty.data,
-                                              <TacsScalar*>tz.data)
+        if evalf is not None:
+            if order == 2:
+                self.ptr = new TACSShellTraction2(<void*>evalf, _shell_evalf)
+            elif order == 3:
+                self.ptr = new TACSShellTraction3(<void*>evalf, _shell_evalf)
+            elif order == 4:
+                self.ptr = new TACSShellTraction4(<void*>evalf, _shell_evalf)
+            elif order == 5:
+                self.ptr = new TACSShellTraction5(<void*>evalf, _shell_evalf)
+        else:
+            if order == 2:
+                self.ptr = new TACSShellTraction2(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+            elif order == 3:
+                self.ptr = new TACSShellTraction3(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+            elif order == 4:
+                self.ptr = new TACSShellTraction4(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+            elif order == 5:
+                self.ptr = new TACSShellTraction5(<TacsScalar*>tx.data,
+                                                  <TacsScalar*>ty.data,
+                                                  <TacsScalar*>tz.data)
+        if self.ptr is not NULL:
             self.ptr.incref()
         return
-    
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
         return
-    
+
     def numNodes(self):
         return self.ptr.numNodes()
 
 cdef class MITCShell(Element):
-    def __cinit__(self, int order, FSDT stiff, 
+    def __cinit__(self, int order, FSDT stiff,
                   ElementBehaviorType elem_type=LINEAR,
-                  int component_num=0):
+                  int component_num=0, int tying_order=-1):
         '''
-        Wrap the MITCShell element class for order 2,3,4
+        Wrap the MITCShell element class for order 2, 3, 4, and 5
         '''
         cdef FSDTStiffness *con = _dynamicFSDT(stiff.ptr)
         self.ptr = NULL
@@ -508,15 +532,24 @@ cdef class MITCShell(Element):
             self.ptr = new MITCShell2(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 3:
-            self.ptr = new MITCShell3(con, elem_type, component_num)
+            if tying_order == 2:
+                self.ptr = new MITCShell32(con, elem_type, component_num)
+            else:
+                self.ptr = new MITCShell3(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 4:
-            self.ptr = new MITCShell4(con, elem_type, component_num)
+            if tying_order == 3:
+                self.ptr = new MITCShell43(con, elem_type, component_num)
+            else:
+                self.ptr = new MITCShell4(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 5:
-            self.ptr = new MITCShell5(con, elem_type, component_num)
+            if tying_order == 4:
+                self.ptr = new MITCShell54(con, elem_type, component_num)
+            else:
+                self.ptr = new MITCShell5(con, elem_type, component_num)
             self.ptr.incref()
-                    
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
@@ -526,7 +559,7 @@ cdef class MITCShell(Element):
         return self.ptr.numNodes()
 
 cdef class Solid(Element):
-    def __cinit__(self, int order, SolidStiff stiff, 
+    def __cinit__(self, int order, SolidStiff stiff,
                   ElementBehaviorType elem_type=LINEAR,
                   int component_num=0):
         '''
@@ -552,7 +585,7 @@ cdef class Solid(Element):
 
     def numNodes(self):
         return self.ptr.numNodes()
-        
+
 cdef class MITC(Element):
     def __cinit__(self, FSDT stiff, GibbsVector gravity=None,
                   GibbsVector vInit=None, GibbsVector omegaInit=None):
@@ -568,7 +601,7 @@ cdef class MITC(Element):
             self.ptr = new MITC9(con, NULL, NULL, NULL)
         self.ptr.incref()
         return
-    
+
     def __dealloc__(self):
         self.ptr.decref()
         return
@@ -576,7 +609,7 @@ cdef class MITC(Element):
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
-    
+
     def numNodes(self):
         return self.ptr.numNodes()
 
@@ -595,34 +628,53 @@ cdef class MITCBeam(Element):
             self.ptr = new MITC3(con, NULL, NULL, NULL)
         self.ptr.incref()
         return
-    
+
     def __dealloc__(self):
         self.ptr.decref()
         return
-    
+
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
-    
+
     def numNodes(self):
         return self.ptr.numNodes()
 
+cdef TacsScalar _poisson_evalf(void *_self, const TacsScalar *X):
+    cdef list Xp
+    Xp = [X[0], X[1], X[2]]
+    return (<object>_self)(Xp)
+
 cdef class PoissonQuad(Element):
-    def __cinit__(self, int order, 
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] fx):
+    def __cinit__(self, int order,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] fx=None,
+                  evalf=None):
         self.ptr = NULL
-        if order == 2:
-            self.ptr = new PoissonQuad2(<TacsScalar*>fx.data)
-        elif order == 3:
-            self.ptr = new PoissonQuad3(<TacsScalar*>fx.data)
-        elif order == 4:
-            self.ptr = new PoissonQuad4(<TacsScalar*>fx.data)
-        elif order == 5:
-            self.ptr = new PoissonQuad5(<TacsScalar*>fx.data)
+        if order < 2 or order > 5:
+            errmsg = 'PoissonQuad order must be between 2 and 4'
+            raise ValueError(errmsg)
+        if evalf is not None:
+            if order == 2:
+                self.ptr = new PoissonQuad2(<void*>evalf, _poisson_evalf)
+            elif order == 3:
+                self.ptr = new PoissonQuad3(<void*>evalf, _poisson_evalf)
+            elif order == 4:
+                self.ptr = new PoissonQuad4(<void*>evalf, _poisson_evalf)
+            elif order == 5:
+                self.ptr = new PoissonQuad5(<void*>evalf, _poisson_evalf)
+        else:
+            if order == 2:
+                self.ptr = new PoissonQuad2(<TacsScalar*>fx.data)
+            elif order == 3:
+                self.ptr = new PoissonQuad3(<TacsScalar*>fx.data)
+            elif order == 4:
+                self.ptr = new PoissonQuad4(<TacsScalar*>fx.data)
+            elif order == 5:
+                self.ptr = new PoissonQuad5(<TacsScalar*>fx.data)
         if self.ptr is not NULL:
             self.ptr.incref()
         return
-    
+
     def __dealloc__(self):
         if self.ptr is not NULL:
             self.ptr.decref()
@@ -638,12 +690,12 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
 
     # Set the first entry of the shape array
     shape[0] = <np.npy_intp>dim1
-        
+
     # Create the array itself - Note that this function will not
     # delete the data once the ndarray goes out of scope
     ndarray = np.PyArray_SimpleNewFromData(size, shape,
                                            nptype, data_ptr)
-    
+
     return ndarray
 
 cdef inplace_array_2d(int nptype, int dim1, int dim2, void *data_ptr):
@@ -656,28 +708,28 @@ cdef inplace_array_2d(int nptype, int dim1, int dim2, void *data_ptr):
     # Set the first entry of the shape array
     shape[0] = <np.npy_intp>dim1
     shape[1] = <np.npy_intp>dim2
-        
+
     # Create the array itself - Note that this function will not
     # delete the data once the ndarray goes out of scope
     ndarray = np.PyArray_SimpleNewFromData(size, shape,
                                            nptype, data_ptr)
-    
+
     return ndarray
 
 cdef void getinitconditions(void * _self, int nvars, int num_nodes,
-                            TacsScalar * vars, 
-                            TacsScalar * dvars, 
-                            TacsScalar * ddvars, 
+                            TacsScalar * vars,
+                            TacsScalar * dvars,
+                            TacsScalar * ddvars,
                             const TacsScalar * Xpts):
     '''Get the initial conditions'''
-    _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars) 
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars)
     _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
     _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
     (<object>_self).getInitConditions(_vars, _dvars, _ddvars, _Xpts)
-    return 
-  
-cdef void addresidual(void * _self, int nvars, int num_nodes, 
+    return
+
+cdef void addresidual(void * _self, int nvars, int num_nodes,
                       double time, TacsScalar * res,
                       const TacsScalar * Xpts,
                       const TacsScalar * vars,
@@ -690,9 +742,9 @@ cdef void addresidual(void * _self, int nvars, int num_nodes,
     _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
     (<object>_self).addResidual(time, _res, _Xpts, _vars, _dvars, _ddvars)
-    return 
+    return
 
-cdef void addjacobian(void * _self, int nvars, int num_nodes, 
+cdef void addjacobian(void * _self, int nvars, int num_nodes,
                       double time, TacsScalar J[],
                       double alpha, double beta, double gamma,
                       const TacsScalar Xpts[],
@@ -705,9 +757,9 @@ cdef void addjacobian(void * _self, int nvars, int num_nodes,
     _vars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>vars)
     _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
-    (<object>_self).addJacobian(time, _J, alpha, beta, gamma, 
+    (<object>_self).addJacobian(time, _J, alpha, beta, gamma,
                                 _Xpts, _vars, _dvars, _ddvars)
-    return 
+    return
 
 cdef void addadjresproduct(void * _self, int nvars, int num_nodes, double time,
                            TacsScalar scale, TacsScalar dvSens[], int dvLen,
@@ -722,7 +774,7 @@ cdef void addadjresproduct(void * _self, int nvars, int num_nodes, double time,
     _dvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>dvars)
     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, nvars, <void*>ddvars)
 
-    (<object>_self).addAdjResProduct(time, scale, _dvSens, _psi, _Xpts, 
+    (<object>_self).addAdjResProduct(time, scale, _dvSens, _psi, _Xpts,
                                      _vars, _dvars, _ddvars)
 
     return
@@ -730,7 +782,7 @@ cdef void addadjresproduct(void * _self, int nvars, int num_nodes, double time,
 cdef class pyElement(Element):
     def __cinit__(self, int num_nodes, int num_displacements, *args, **kwargs):
         cdef TACSElementWrapper *pointer
-        pointer = new TACSElementWrapper(<PyObject*>self, 
+        pointer = new TACSElementWrapper(<PyObject*>self,
                                          num_nodes, num_displacements)
         pointer.incref()
 
@@ -746,7 +798,7 @@ cdef class pyElement(Element):
         self.ptr.decref()
         return
 
-    def addAdjResProduct(self, time, scale, dvSens, psi, 
+    def addAdjResProduct(self, time, scale, dvSens, psi,
                          Xpts, vars, dvars, ddvars):
         '''Raise error if this function is called and hasn't been overrided'''
         raise NotImplementedError()

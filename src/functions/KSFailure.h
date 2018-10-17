@@ -54,7 +54,8 @@
 */
 class TACSKSFailure : public TACSFunction {
  public:
-  enum KSFailureType { DISCRETE, CONTINUOUS };
+  enum KSFailureType { DISCRETE, CONTINUOUS,
+                       PNORM_DISCRETE, PNORM_CONTINUOUS };
   enum KSConstitutiveFunction { FAILURE, BUCKLING };
 
   TACSKSFailure( TACSAssembler * _tacs, double ksWeight, 
@@ -155,6 +156,9 @@ class TACSKSFailure : public TACSFunction {
   // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxFail)
   // and the value of the KS function
   TacsScalar ksFailSum, maxFail;
+
+  // Used for the case when this is used to evaluate the p-norm
+  TacsScalar invPnorm;
 };
 
 #endif // TACS_KS_FAILURE_H

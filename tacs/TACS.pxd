@@ -361,6 +361,7 @@ cdef extern from "TACSAssembler.h":
         TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)
+        TACSElement *getElement(int, const int**, int*)
 
         # MPI communicator
         MPI_Comm getMPIComm()
@@ -505,6 +506,9 @@ cdef extern from "TACSMeshLoader.h":
                                   MatrixOrderingType mat_type)
         void addAuxElement(TACSAuxElements *aux, int comp_num,
 	                   TACSElement *_element)
+
+        void addFunctionDomain(TACSFunction * function,
+                               int *comp_nums, int num_comps)
         void getConnectivity(int *_num_nodes, int *_num_elements,
                              const int **_elem_node_ptr,
                              const int **_elem_node_conn,

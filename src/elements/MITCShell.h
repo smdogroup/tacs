@@ -59,7 +59,7 @@ using namespace largerot;
   locking is a key advantage and these elements should be used whenever
   possible!
 */
-template <int order>
+template <int order, int tying_order=order>
 class MITCShell : public TACSShell {
  public:
   MITCShell( FSDTStiffness *_stiff,
@@ -218,11 +218,15 @@ class MITCShell : public TACSShell {
   static const int NUM_VARIABLES = 6*order*order;
 
  private:
-  static const int NUM_G11 = (order-1)*order;
-  static const int NUM_G22 = (order-1)*order;
-  static const int NUM_G12 = (order-1)*(order-1);
-  static const int NUM_G13 = (order-1)*order;
-  static const int NUM_G23 = (order-1)*order;
+  // Get the partition of unity constraint
+  void getPartUnityShapeFunctions( const double pt[],
+                                   double N[], double Na[], double Nb[] );
+
+  static const int NUM_G11 = (tying_order-1)*tying_order;
+  static const int NUM_G22 = (tying_order-1)*tying_order;
+  static const int NUM_G12 = (tying_order-1)*(tying_order-1);
+  static const int NUM_G13 = (tying_order-1)*tying_order;
+  static const int NUM_G23 = (tying_order-1)*tying_order;
 
   inline static TacsScalar strain_product( const TacsScalar a[],
                                            const TacsScalar b[] ){
@@ -240,17 +244,17 @@ class MITCShell : public TACSShell {
   const double *gaussWts, *gaussPts;
 
   // The knot locations
-  const double *knots; // "order" Gauss points
-  const double *pknots; // "order"-1 Gauss points
+  const double *knots; // "tying_order" Gauss points
+  const double *pknots; // "tying_order"-1 Gauss points
 };
 
 const double MITCShellFirstOrderKnots[2] = {-1.0, 1.0};
 
-template <int order>
-MITCShell<order>::MITCShell( FSDTStiffness * _stiff,
-                             ElementBehaviorType _type,
-                             int _componentNum,
-                             int use_lobatto_quadrature ):
+template <int order, int tying_order>
+MITCShell<order, tying_order>::MITCShell( FSDTStiffness * _stiff,
+                                          ElementBehaviorType _type,
+                                          int _componentNum,
+                                          int use_lobatto_quadrature ):
 TACSShell(_stiff, _componentNum){
   type = _type;
 
@@ -280,25 +284,25 @@ TACSShell(_stiff, _componentNum){
     numGauss = FElibrary::getGaussPtsWts(gaussOrder, &gaussPts, &gaussWts);
   }
   // Get the knot points - the order and order-1-th Gauss points
-  if (order == 2){
+  if (tying_order == 2){
     knots = MITCShellFirstOrderKnots;
   }
   else {
-    FElibrary::getGaussPtsWts(order, &knots, NULL);
+    FElibrary::getGaussPtsWts(tying_order, &knots, NULL);
   }
-  FElibrary::getGaussPtsWts(order-1, &pknots, NULL);
+  FElibrary::getGaussPtsWts(tying_order-1, &pknots, NULL);
 }
 
-template <int order>
-MITCShell<order>::~MITCShell(){}
+template <int order, int tying_order>
+MITCShell<order, tying_order>::~MITCShell(){}
 
-template <int order>
-int MITCShell<order>::numNodes(){
+template <int order, int tying_order>
+int MITCShell<order, tying_order>::numNodes(){
   return NUM_NODES;
 }
 
-template <int order>
-int MITCShell<order>::numVariables(){
+template <int order, int tying_order>
+int MITCShell<order, tying_order>::numVariables(){
   return NUM_VARIABLES;
 }
 
@@ -317,13 +321,13 @@ int MITCShell<order>::numVariables(){
   Te:      the kinetic energy within the body
   Pe:      the potential energy of the body
 */
-template <int order>
-void MITCShell<order>::computeEnergies( double time,
-                                        TacsScalar *_Te,
-                                        TacsScalar *_Pe,
-                                        const TacsScalar Xpts[],
-                                        const TacsScalar vars[],
-                                        const TacsScalar dvars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::computeEnergies( double time,
+                                                     TacsScalar *_Te,
+                                                     TacsScalar *_Pe,
+                                                     const TacsScalar Xpts[],
+                                                     const TacsScalar vars[],
+                                                     const TacsScalar dvars[] ){
 
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
@@ -359,15 +363,15 @@ void MITCShell<order>::computeEnergies( double time,
 
   // Compute the values of the tensorial strain at the tying points
   if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13,
-                                 knots, pknots, vars, Xpts);
+    compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13,
+                                              knots, pknots, vars, Xpts);
   }
   else {
-    compute_tying_bmat<order>((type == LINEAR),
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                           g11, g22, g12, g23, g13,
+                                           b11, b22, b12, b23, b13,
+                                           knots, pknots, vars, Xpts);
   }
 
   for ( int m = 0; m < numGauss; m++ ){
@@ -436,11 +440,11 @@ void MITCShell<order>::computeEnergies( double time,
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12,
-                                 knots, pknots);
-      add_tying_strain<order>(strain, tx,
-                              g11, g22, g12, g23, g13,
-                              N11, N22, N12);
+      tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                       knots, pknots);
+      add_tying_strain<tying_order>(strain, tx,
+                                    g11, g22, g12, g23, g13,
+                                    N11, N22, N12);
 
       // Compute the stress at the current Gauss point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
@@ -465,13 +469,13 @@ void MITCShell<order>::computeEnergies( double time,
   vars:    the element variables
   Xpts:    the element nodal locations in R^{3}
 */
-template <int order>
-void MITCShell<order>::addResidual( double time,
-                                    TacsScalar res[],
-                                    const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addResidual( double time,
+                                                 TacsScalar res[],
+                                                 const TacsScalar Xpts[],
+                                                 const TacsScalar vars[],
+                                                 const TacsScalar dvars[],
+                                                 const TacsScalar ddvars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -501,15 +505,15 @@ void MITCShell<order>::addResidual( double time,
   TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
 
   if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13,
-                                 knots, pknots, vars, Xpts);
+    compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13,
+                                              knots, pknots, vars, Xpts);
   }
   else {
-    compute_tying_bmat<order>((type == LINEAR),
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                           g11, g22, g12, g23, g13,
+                                           b11, b22, b12, b23, b13,
+                                           knots, pknots, vars, Xpts);
   }
 
   for ( int m = 0; m < numGauss; m++ ){
@@ -586,14 +590,14 @@ void MITCShell<order>::addResidual( double time,
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12,
-                                 knots, pknots);
-      add_tying_strain<order>(strain, tx,
-                              g11, g22, g12, g23, g13,
-                              N11, N22, N12);
-      add_tying_bmat<order>(B, NUM_NODES, tx,
-                            b11, b22, b12, b23, b13,
-                            N11, N22, N12);
+      tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                       knots, pknots);
+      add_tying_strain<tying_order>(strain, tx,
+                                    g11, g22, g12, g23, g13,
+                                    N11, N22, N12);
+      add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                  b11, b22, b12, b23, b13,
+                                  N11, N22, N12);
 
       // Compute the stress at the current Gauss point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
@@ -647,14 +651,14 @@ void MITCShell<order>::addResidual( double time,
   Xpts:    the element nodal locations in R^{3}
   matOr:   the matrix orientation (NORMAL or TRANSPOSE)
 */
-template <int order>
-void MITCShell<order>::addJacobian( double time,
-                                    TacsScalar J[],
-                                    double alpha, double beta, double gamma,
-                                    const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addJacobian( double time,
+                                                 TacsScalar J[],
+                                                 double alpha, double beta, double gamma,
+                                                 const TacsScalar Xpts[],
+                                                 const TacsScalar vars[],
+                                                 const TacsScalar dvars[],
+                                                 const TacsScalar ddvars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -691,15 +695,15 @@ void MITCShell<order>::addJacobian( double time,
   // Evaluate the strain and derivative of the strain at the
   // tying points within the element
   if (type == LARGE_ROTATION){
-    compute_lr_tying_nmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13, n23, n13,
-                                 knots, pknots, vars, Xpts);
+    compute_lr_tying_nmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13, n23, n13,
+                                              knots, pknots, vars, Xpts);
   }
   else {
-    compute_tying_bmat<order>((type == LINEAR),
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                           g11, g22, g12, g23, g13,
+                                           b11, b22, b12, b23, b13,
+                                           knots, pknots, vars, Xpts);
   }
 
   for ( int m = 0; m < numGauss; m++ ){
@@ -778,15 +782,17 @@ void MITCShell<order>::addJacobian( double time,
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12,
-                                 knots, pknots);
+      tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                       knots, pknots);
 
       // Add the interpolated strain and the interpolated b-matrix to the
       // point-wise strain and strain-derivative (B)
-      add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
-                              N11, N22, N12);
-      add_tying_bmat<order>(B, NUM_NODES, tx, b11, b22, b12, b23, b13,
-                            N11, N22, N12);
+      add_tying_strain<tying_order>(strain, tx,
+                                    g11, g22, g12, g23, g13,
+                                    N11, N22, N12);
+      add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                  b11, b22, b12, b23, b13,
+                                  N11, N22, N12);
 
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
@@ -825,9 +831,9 @@ void MITCShell<order>::addJacobian( double time,
         nonlinear_bend_stress_bmat(J, NUM_NODES, ha, stress,
                                    N, Na, Nb, t, tx, ztx,
                                    normal, normal_xi, normal_eta);
-        add_nonlinear_tying_stress_nmat<order>(J, ha, stress,
-                                               tx, N11, N22, N12,
-                                               knots, pknots, Xpts);
+        add_nonlinear_tying_stress_nmat<order, tying_order>(J, ha, stress,
+                                                            tx, N11, N22, N12,
+                                                            knots, pknots, Xpts);
       }
       else if (type == LARGE_ROTATION){
         // Add the second-derivative contributions from the bending strain
@@ -836,8 +842,8 @@ void MITCShell<order>::addJacobian( double time,
                                        t, tx, ztx, normal, normal_xi, normal_eta);
 
         // Add the contributions to the second derivative of the tying strain
-        add_lr_tying_stress_nmat<order>(J, ha, stress, n13, n23, tx,
-                                        N11, N22, N12, knots, pknots);
+        add_lr_tying_stress_nmat<order, tying_order>(J, ha, stress, n13, n23, tx,
+                                                     N11, N22, N12, knots, pknots);
 
         // Add the second derivative of the in-plane penalty
         add_inplane_penalty(J, NUM_NODES, ha*kpenalty*rot, Xd, Ud,
@@ -906,11 +912,11 @@ void MITCShell<order>::addJacobian( double time,
   vars:        the element variables
   Xpts:        the nodal coordinates in R^{3}
 */
-template <int order>
-void MITCShell<order>::getMatType( ElementMatrixType matType,
-                                   TacsScalar *mat,
-                                   const TacsScalar Xpts[],
-                                   const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getMatType( ElementMatrixType matType,
+                                                TacsScalar *mat,
+                                                const TacsScalar Xpts[],
+                                                const TacsScalar vars[] ){
   memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
 
   if (matType == STIFFNESS_MATRIX){
@@ -950,15 +956,15 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
     // Evaluate the strain and derivative of the strain at the
     // tying points within the element
     if (type == LARGE_ROTATION){
-      compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                   b11, b22, b12, b23, b13,
-                                   knots, pknots, vars, Xpts);
+      compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                                b11, b22, b12, b23, b13,
+                                                knots, pknots, vars, Xpts);
     }
     else {
-      compute_tying_bmat<order>((type == LINEAR),
-                                g11, g22, g12, g23, g13,
-                                b11, b22, b12, b23, b13,
-                                knots, pknots, vars, Xpts);
+      compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                             g11, g22, g12, g23, g13,
+                                             b11, b22, b12, b23, b13,
+                                             knots, pknots, vars, Xpts);
     }
 
     for ( int m = 0; m < numGauss; m++ ){
@@ -1037,15 +1043,17 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
         }
 
         // Evaluate the strain interpolation at this point
-        tying_interpolation<order>(pt, N11, N22, N12,
-                                   knots, pknots);
+        tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                         knots, pknots);
 
         // Add the interpolated strain and the interpolated b-matrix to the
         // point-wise strain and strain-derivative (B)
-        add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
-                                N11, N22, N12);
-        add_tying_bmat<order>(B, NUM_NODES, tx, b11, b22, b12, b23, b13,
-                              N11, N22, N12);
+        add_tying_strain<tying_order>(strain, tx,
+                                      g11, g22, g12, g23, g13,
+                                      N11, N22, N12);
+        add_tying_bmat<tying_order>(B, NUM_NODES,
+                                    tx, b11, b22, b12, b23, b13,
+                                    N11, N22, N12);
 
         stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
@@ -1079,9 +1087,9 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
           nonlinear_bend_stress_bmat(mat, NUM_NODES, h, stress,
                                      N, Na, Nb, t, tx, ztx,
                                      normal, normal_xi, normal_eta);
-          add_nonlinear_tying_stress_nmat<order>(mat, h, stress,
-                                                 tx, N11, N22, N12,
-                                                 knots, pknots, Xpts);
+          add_nonlinear_tying_stress_nmat<order, tying_order>(mat, h, stress,
+                                                              tx, N11, N22, N12,
+                                                              knots, pknots, Xpts);
         }
         else if (type == LARGE_ROTATION){
           // Add the second-derivative contributions from the bending strain
@@ -1090,8 +1098,8 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
                                          t, tx, ztx, normal, normal_xi, normal_eta);
 
           // Add the contributions to the second derivative of the tying strain
-          add_lr_tying_stress_nmat<order>(mat, h, stress, n13, n23, tx,
-                                          N11, N22, N12, knots, pknots);
+          add_lr_tying_stress_nmat<order, tying_order>(mat, h, stress, n13, n23, tx,
+                                                       N11, N22, N12, knots, pknots);
 
           // Add the second derivative of the in-plane penalty
           add_inplane_penalty(mat, NUM_NODES, h*kpenalty*rot, Xd, Ud,
@@ -1207,9 +1215,9 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
 
     // Compute the tying strain
     const int is_linear = 1;
-    compute_tying_strain<order>(is_linear,
-                                g11, g22, g12, g23, g13,
-                                knots, pknots, vars, Xpts);
+    compute_tying_strain<order, tying_order>(is_linear,
+                                             g11, g22, g12, g23, g13,
+                                             knots, pknots, vars, Xpts);
 
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
@@ -1247,10 +1255,10 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
                            normal, normal_xi, normal_eta);
 
         // Evaluate the strain interpolation at this point
-        tying_interpolation<order>(pt, N11, N22, N12,
+        tying_interpolation<tying_order>(pt, N11, N22, N12,
                                    knots, pknots);
-        add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
-                                N11, N22, N12);
+        add_tying_strain<tying_order>(strain, tx, g11, g22, g12, g23, g13,
+                                      N11, N22, N12);
 
         // Compute the stress at this Gauss point
         stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
@@ -1259,9 +1267,9 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
         nonlinear_bend_stress_bmat(mat, NUM_NODES, h, stress,
                                    N, Na, Nb, t, tx, ztx,
                                    normal, normal_xi, normal_eta);
-        add_nonlinear_tying_stress_nmat<order>(mat, h, stress,
-                                               tx, N11, N22, N12,
-                                               knots, pknots, Xpts);
+        add_nonlinear_tying_stress_nmat<order, tying_order>(mat, h, stress,
+                                                            tx, N11, N22, N12,
+                                                            knots, pknots, Xpts);
       }
     }
 
@@ -1292,15 +1300,15 @@ void MITCShell<order>::getMatType( ElementMatrixType matType,
   output:
   dvSens:   the result is added to this vector
 */
-template <int order>
-void MITCShell<order>::addAdjResProduct( double time,
-                                         double scale,
-                                         TacsScalar fdvSens[], int dvLen,
-                                         const TacsScalar psi[],
-                                         const TacsScalar Xpts[],
-                                         const TacsScalar vars[],
-                                         const TacsScalar dvars[],
-                                         const TacsScalar ddvars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addAdjResProduct( double time,
+                                                      double scale,
+                                                      TacsScalar fdvSens[], int dvLen,
+                                                      const TacsScalar psi[],
+                                                      const TacsScalar Xpts[],
+                                                      const TacsScalar vars[],
+                                                      const TacsScalar dvars[],
+                                                      const TacsScalar ddvars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -1330,15 +1338,15 @@ void MITCShell<order>::addAdjResProduct( double time,
 
   // Compute the tying terms in the matrix
   if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13,
-                                 knots, pknots, vars, Xpts);
+    compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13,
+                                              knots, pknots, vars, Xpts);
   }
   else {
-    compute_tying_bmat<order>((type == LINEAR),
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                           g11, g22, g12, g23, g13,
+                                           b11, b22, b12, b23, b13,
+                                           knots, pknots, vars, Xpts);
   }
 
   for ( int m = 0; m < numGauss; m++ ){
@@ -1409,14 +1417,14 @@ void MITCShell<order>::addAdjResProduct( double time,
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12,
+      tying_interpolation<tying_order>(pt, N11, N22, N12,
                                  knots, pknots);
-      add_tying_strain<order>(strain, tx,
-                              g11, g22, g12, g23, g13,
-                              N11, N22, N12);
-      add_tying_bmat<order>(B, NUM_NODES, tx,
-                            b11, b22, b12, b23, b13,
-                            N11, N22, N12);
+      add_tying_strain<tying_order>(strain, tx,
+                                    g11, g22, g12, g23, g13,
+                                    N11, N22, N12);
+      add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                  b11, b22, b12, b23, b13,
+                                  N11, N22, N12);
 
       // Compute the product of psi^{T}*B^{T}
       TacsScalar bpsi[NUM_STRESSES], brot = 0.0;
@@ -1487,14 +1495,14 @@ void MITCShell<order>::addAdjResProduct( double time,
   vars:    the element variables
   Xpts:    the element nodal locations
 */
-template <int order>
-void MITCShell<order>::addAdjResXptProduct( double time, double scale,
-                                            TacsScalar fXptSens[],
-                                            const TacsScalar psi[],
-                                            const TacsScalar Xpts[],
-                                            const TacsScalar vars[],
-                                            const TacsScalar dvars[],
-                                            const TacsScalar ddvars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addAdjResXptProduct( double time, double scale,
+                                                         TacsScalar fXptSens[],
+                                                         const TacsScalar psi[],
+                                                         const TacsScalar Xpts[],
+                                                         const TacsScalar vars[],
+                                                         const TacsScalar dvars[],
+                                                         const TacsScalar ddvars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -1539,14 +1547,14 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
   // The sensitivity of the determinant of the Jacobian
   TacsScalar dh[3*NUM_NODES];
 
-  compute_tying_strain_sens<order>((type == LINEAR),
-                                   g11, g22, g12, g23, g13,
-                                   dg11, dg22, dg12, dg23, dg13,
-                                   knots, pknots, vars, Xpts);
-  compute_tying_bmat<order>((type == LINEAR),
-                            g11, g22, g12, g23, g13,
-                            b11, b22, b12, b23, b13,
-                            knots, pknots, vars, Xpts);
+  compute_tying_strain_sens<order, tying_order>((type == LINEAR),
+                                                g11, g22, g12, g23, g13,
+                                                dg11, dg22, dg12, dg23, dg13,
+                                                knots, pknots, vars, Xpts);
+  compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                         g11, g22, g12, g23, g13,
+                                         b11, b22, b12, b23, b13,
+                                         knots, pknots, vars, Xpts);
 
   for ( int m = 0; m < numGauss; m++ ){
     for ( int n = 0; n < numGauss; n++ ){
@@ -1569,7 +1577,7 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
       compute_shell_Ud(NUM_NODES, U, Ud, vars, N, Na, Nb);
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12, knots, pknots);
+      tying_interpolation<tying_order>(pt, N11, N22, N12, knots, pknots);
 
       TacsScalar h = 0.0;
       if (stiff->getTransformType() == FSDTStiffness::NATURAL){
@@ -1616,15 +1624,15 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
 
       // Add the sensitivities of the tying strain points into the
       // strain senstivities
-      add_tying_strain_sens<order>(strain, dstrain, tx, dtx,
-                                   g11, g22, g12, g23, g13,
-                                   dg11, dg22, dg12, dg23, dg13,
-                                   N11, N22, N12);
+      add_tying_strain_sens<tying_order>(strain, dstrain, tx, dtx,
+                                         g11, g22, g12, g23, g13,
+                                         dg11, dg22, dg12, dg23, dg13,
+                                         N11, N22, N12);
 
       // Add the tying strain to the B-matrix
-      add_tying_bmat<order>(B, NUM_NODES, tx,
-                            b11, b22, b12, b23, b13,
-                            N11, N22, N12);
+      add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                  b11, b22, b12, b23, b13,
+                                  N11, N22, N12);
 
       // Calculate the stress at the current point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
@@ -1658,8 +1666,10 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
                                      normal_eta, dnormal_eta, 3*NUM_NODES);
       }
 
-      add_tying_bmat_sens<order>((type == LINEAR), fXptSens, psi, h, stress, tx, dtx,
-                                 knots, pknots, vars, Xpts, N11, N22, N12);
+      add_tying_bmat_sens<order, tying_order>((type == LINEAR),
+                                              fXptSens, psi, h, stress, tx, dtx,
+                                              knots, pknots, vars, Xpts,
+                                              N11, N22, N12);
 
       // Get the pointwise mass at the quadrature point
       TacsScalar mass[2];
@@ -1741,14 +1751,14 @@ void MITCShell<order>::addAdjResXptProduct( double time, double scale,
   output:
   dvSens:   the result is added to this vector
 */
-template <int order>
-void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
-                                                 double scale,
-                                                 TacsScalar fdvSens[], int dvLen,
-                                                 const TacsScalar psi[],
-                                                 const TacsScalar phi[],
-                                                 const TacsScalar Xpts[],
-                                                 const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addMatDVSensInnerProduct( ElementMatrixType matType,
+                                                              double scale,
+                                                              TacsScalar fdvSens[], int dvLen,
+                                                              const TacsScalar psi[],
+                                                              const TacsScalar phi[],
+                                                              const TacsScalar Xpts[],
+                                                              const TacsScalar vars[] ){
   if (matType == STIFFNESS_MATRIX){
     // Geometric data
     TacsScalar X[3], Xd[9], Xdd[9];
@@ -1779,15 +1789,15 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
 
     // Compute the tying terms in the matrix
     if (type == LARGE_ROTATION){
-      compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                   b11, b22, b12, b23, b13,
-                                   knots, pknots, vars, Xpts);
+      compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                                b11, b22, b12, b23, b13,
+                                                knots, pknots, vars, Xpts);
     }
     else {
-      compute_tying_bmat<order>((type == LINEAR),
-                                g11, g22, g12, g23, g13,
-                                b11, b22, b12, b23, b13,
-                                knots, pknots, vars, Xpts);
+      compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                             g11, g22, g12, g23, g13,
+                                             b11, b22, b12, b23, b13,
+                                             knots, pknots, vars, Xpts);
     }
 
     for ( int m = 0; m < numGauss; m++ ){
@@ -1825,14 +1835,14 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
         }
 
         // Evaluate the strain interpolation at this point
-        tying_interpolation<order>(pt, N11, N22, N12,
+        tying_interpolation<tying_order>(pt, N11, N22, N12,
                                    knots, pknots);
-        add_tying_strain<order>(strain, tx,
-                                g11, g22, g12, g23, g13,
-                                N11, N22, N12);
-        add_tying_bmat<order>(B, NUM_NODES, tx,
-                              b11, b22, b12, b23, b13,
-                              N11, N22, N12);
+        add_tying_strain<tying_order>(strain, tx,
+                                      g11, g22, g12, g23, g13,
+                                      N11, N22, N12);
+        add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                    b11, b22, b12, b23, b13,
+                                    N11, N22, N12);
 
         // Compute the product of psi^{T}*B^{T}
         TacsScalar bpsi[NUM_STRESSES], bphi[NUM_STRESSES];
@@ -1959,9 +1969,9 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
 
     // Compute the tying strain values
     const int is_linear = 1;
-    compute_tying_strain<order>(is_linear,
-                                g11, g22, g12, g23, g13,
-                                knots, pknots, vars, Xpts);
+    compute_tying_strain<order, tying_order>(is_linear,
+                                             g11, g22, g12, g23, g13,
+                                             knots, pknots, vars, Xpts);
 
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
@@ -1994,10 +2004,10 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
                            normal, normal_xi, normal_eta);
 
         // Evaluate the strain interpolation at this point
-        tying_interpolation<order>(gpt, N11, N22, N12,
+        tying_interpolation<tying_order>(gpt, N11, N22, N12,
                                    knots, pknots);
-        add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
-                                N11, N22, N12);
+        add_tying_strain<tying_order>(strain, tx, g11, g22, g12, g23, g13,
+                                      N11, N22, N12);
 
         // Compute the derivatives of the phi/psi vectors
         TacsScalar Upsi[NUM_DISPS], Udpsi[2*NUM_DISPS];
@@ -2009,9 +2019,9 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
         // stiffness matrix with the psi and phi vectors
         inner_nonlinear_bend_bmat(bstrain, Upsi, Udpsi, Uphi, Udphi,
                                   t, tx, ztx, normal, normal_xi, normal_eta);
-        add_nonlinear_tying_inner_nmat<order>(bstrain, psi, phi,
-                                              tx, N11, N22, N12,
-                                              knots, pknots, Xpts);
+        add_nonlinear_tying_inner_nmat<order, tying_order>(bstrain, psi, phi,
+                                                           tx, N11, N22, N12,
+                                                           knots, pknots, Xpts);
 
         for ( int i = 0; i < NUM_STRESSES; i++ ){
           strain[i] *= scale*h;
@@ -2044,13 +2054,13 @@ void MITCShell<order>::addMatDVSensInnerProduct( ElementMatrixType matType,
   output:
   res:      the derivative of the inner product w.r.t. vars
 */
-template <int order>
-void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
-                                                 TacsScalar res[],
-                                                 const TacsScalar psi[],
-                                                 const TacsScalar phi[],
-                                                 const TacsScalar Xpts[],
-                                                 const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getMatSVSensInnerProduct( ElementMatrixType matType,
+                                                              TacsScalar res[],
+                                                              const TacsScalar psi[],
+                                                              const TacsScalar phi[],
+                                                              const TacsScalar Xpts[],
+                                                              const TacsScalar vars[] ){
   if (matType == GEOMETRIC_STIFFNESS_MATRIX &&
       type == LINEAR){
     // Geometric data
@@ -2087,10 +2097,10 @@ void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
 
     // Compute the tying strain values
     const int is_linear = 1;
-    compute_tying_bmat<order>(is_linear,
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    compute_tying_bmat<order, tying_order>(is_linear,
+                                    g11, g22, g12, g23, g13,
+                                    b11, b22, b12, b23, b13,
+                                    knots, pknots, vars, Xpts);
 
     for ( int m = 0; m < numGauss; m++ ){
       for ( int n = 0; n < numGauss; n++ ){
@@ -2129,13 +2139,13 @@ void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
                          normal, normal_xi, normal_eta);
 
         // Evaluate the strain interpolation at this point
-        tying_interpolation<order>(pt, N11, N22, N12,
+        tying_interpolation<tying_order>(pt, N11, N22, N12,
                                    knots, pknots);
-        add_tying_strain<order>(strain, tx, g11, g22, g12, g23, g13,
-                                N11, N22, N12);
-        add_tying_bmat<order>(B, NUM_NODES, tx,
-                              b11, b22, b12, b23, b13,
-                              N11, N22, N12);
+        add_tying_strain<tying_order>(strain, tx, g11, g22, g12, g23, g13,
+                                      N11, N22, N12);
+        add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                    b11, b22, b12, b23, b13,
+                                    N11, N22, N12);
 
         // Compute the derivatives of the phi/psi vectors
         TacsScalar Upsi[NUM_DISPS], Udpsi[2*NUM_DISPS];
@@ -2147,9 +2157,9 @@ void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
         // stiffness matrix with the psi and phi vectors
         inner_nonlinear_bend_bmat(bstrain, Upsi, Udpsi, Uphi, Udphi,
                                   t, tx, ztx, normal, normal_xi, normal_eta);
-        add_nonlinear_tying_inner_nmat<order>(bstrain, psi, phi,
-                                              tx, N11, N22, N12,
-                                              knots, pknots, Xpts);
+        add_nonlinear_tying_inner_nmat<order, tying_order>(bstrain, psi, phi,
+                                                           tx, N11, N22, N12,
+                                                           knots, pknots, Xpts);
 
         // Compute the stress at the current Gauss point
         stiff->calculateStress(At, Bt, Dt, Ats, bstrain, bstress);
@@ -2169,8 +2179,8 @@ void MITCShell<order>::getMatSVSensInnerProduct( ElementMatrixType matType,
 /*
   Return the number of points in the specified quadrature scheme
 */
-template <int order>
-int MITCShell<order>::getNumGaussPts(){
+template <int order, int tying_order>
+int MITCShell<order, tying_order>::getNumGaussPts(){
   return numGauss*numGauss;
 }
 
@@ -2187,8 +2197,8 @@ int MITCShell<order>::getNumGaussPts(){
   output:
   pt:   the Gauss point for the given index
 */
-template <int order>
-double MITCShell<order>::getGaussWtsPts( const int num, double *pt ){
+template <int order, int tying_order>
+double MITCShell<order, tying_order>::getGaussWtsPts( const int num, double *pt ){
   int m = (int)(num/numGauss);
   int n = num % numGauss;
   pt[0] = gaussPts[n];
@@ -2206,8 +2216,8 @@ double MITCShell<order>::getGaussWtsPts( const int num, double *pt ){
   input:
   pt: the parametric point within the element
 */
-template <int order>
-void MITCShell<order>::getShapeFunctions( const double pt[], double N[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getShapeFunctions( const double pt[], double N[] ){
   double na[order], nb[order];
   FElibrary::lagrangeSF(na, pt[0], order);
   FElibrary::lagrangeSF(nb, pt[1], order);
@@ -2229,9 +2239,9 @@ void MITCShell<order>::getShapeFunctions( const double pt[], double N[] ){
   pt: the parametric point within the element
   Xpts: the element nodes
 */
-template <int order>
-TacsScalar MITCShell<order>::getDetJacobian( const double * pt,
-                                             const TacsScalar Xpts[] ){
+template <int order, int tying_order>
+TacsScalar MITCShell<order, tying_order>::getDetJacobian( const double * pt,
+                                                          const TacsScalar Xpts[] ){
   TacsScalar X[3], Xd[9];
   TacsScalar normal[3];
   double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
@@ -2260,10 +2270,10 @@ TacsScalar MITCShell<order>::getDetJacobian( const double * pt,
   pt: the parametric point within the element
   Xpts: the element nodes
 */
-template <int order>
-TacsScalar MITCShell<order>::getDetJacobianXptSens( TacsScalar * hXptSens,
-                                                    const double * pt,
-                                                    const TacsScalar Xpts[] ){
+template <int order, int tying_order>
+TacsScalar MITCShell<order, tying_order>::getDetJacobianXptSens( TacsScalar * hXptSens,
+                                                                 const double * pt,
+                                                                 const TacsScalar Xpts[] ){
   TacsScalar h = 0.0;
   TacsScalar X[3], Xd[9], XdSens[9];
   double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
@@ -2300,11 +2310,11 @@ TacsScalar MITCShell<order>::getDetJacobianXptSens( TacsScalar * hXptSens,
   vars:     the element variable values
   Xpts:     the element nodal locations
 */
-template <int order>
-void MITCShell<order>::getStrain( TacsScalar strain[],
-                                  const double pt[],
-                                  const TacsScalar Xpts[],
-                                  const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getStrain( TacsScalar strain[],
+                                               const double pt[],
+                                               const TacsScalar Xpts[],
+                                               const TacsScalar vars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -2344,14 +2354,14 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
   }
 
   if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13,
-                                 knots, pknots, vars, Xpts);
+    compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13,
+                                              knots, pknots, vars, Xpts);
   }
   else {
-    compute_tying_strain<order>((type == LINEAR),
-                                g11, g22, g12, g23, g13,
-                                knots, pknots, vars, Xpts);
+    compute_tying_strain<order, tying_order>((type == LINEAR),
+                                             g11, g22, g12, g23, g13,
+                                             knots, pknots, vars, Xpts);
   }
 
   TacsScalar rot;
@@ -2373,18 +2383,18 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
     TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
     compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
 
-    compute_lr_tying_strain<order>(g11, g22, g12, g23, g13,
-                                   knots, pknots, vars, Xpts);
+    compute_lr_tying_strain<order, tying_order>(g11, g22, g12, g23, g13,
+                                                knots, pknots, vars, Xpts);
     large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx,
                           normal, normal_xi, normal_eta);
   }
 
   // Evaluate the strain interpolation at this point
-  tying_interpolation<order>(pt, N11, N22, N12,
-                             knots, pknots);
-  add_tying_strain<order>(strain, tx,
-                          g11, g22, g12, g23, g13,
-                          N11, N22, N12);
+  tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                   knots, pknots);
+  add_tying_strain<tying_order>(strain, tx,
+                                g11, g22, g12, g23, g13,
+                                N11, N22, N12);
 }
 
 /*
@@ -2400,13 +2410,13 @@ void MITCShell<order>::getStrain( TacsScalar strain[],
   vars:          the element variables
   Xpts:          the nodal locations
 */
-template <int order>
-void MITCShell<order>::addStrainXptSens( TacsScalar fXptSens[],
-                                         const double pt[],
-                                         const TacsScalar scale,
-                                         const TacsScalar strainSens[],
-                                         const TacsScalar Xpts[],
-                                         const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addStrainXptSens( TacsScalar fXptSens[],
+                                                      const double pt[],
+                                                      const TacsScalar scale,
+                                                      const TacsScalar strainSens[],
+                                                      const TacsScalar Xpts[],
+                                                      const TacsScalar vars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -2445,7 +2455,7 @@ void MITCShell<order>::addStrainXptSens( TacsScalar fXptSens[],
   memset(strainXptSens, 0, 3*NUM_STRESSES*NUM_NODES*sizeof(TacsScalar));
 
   // Evaluate the tying interpolation
-  tying_interpolation<order>(pt, N11, N22, N12,
+  tying_interpolation<tying_order>(pt, N11, N22, N12,
                              knots, pknots);
 
   // Calculate the shape functions
@@ -2482,19 +2492,19 @@ void MITCShell<order>::addStrainXptSens( TacsScalar fXptSens[],
     TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
     compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
 
-    compute_lr_tying_strain_sens<order>(g11, g22, g12, g23, g13,
-                                        dg11, dg22, dg12, dg23, dg13,
-                                        knots, pknots, vars, Xpts);
+    compute_lr_tying_strain_sens<order, tying_order>(g11, g22, g12, g23, g13,
+                                                     dg11, dg22, dg12, dg23, dg13,
+                                                     knots, pknots, vars, Xpts);
     large_rot_bend_strain_sens(strain, strainXptSens,
                                U, Ud, C, Ct, t, dt, tx, dtx, ztx, dztx,
                                normal, dnormal, normal_xi, dnormal_xi,
                                normal_eta, dnormal_eta, 3*NUM_NODES);
   }
   else {
-    compute_tying_strain_sens<order>((type == LINEAR),
-                                     g11, g22, g12, g23, g13,
-                                     dg11, dg22, dg12, dg23, dg13,
-                                     knots, pknots, vars, Xpts);
+    compute_tying_strain_sens<order, tying_order>((type == LINEAR),
+                                                  g11, g22, g12, g23, g13,
+                                                  dg11, dg22, dg12, dg23, dg13,
+                                                  knots, pknots, vars, Xpts);
 
     TacsScalar rot;
     if (type == LINEAR){
@@ -2514,10 +2524,10 @@ void MITCShell<order>::addStrainXptSens( TacsScalar fXptSens[],
   }
 
   // Evaluate the strain interpolation at this point
-  add_tying_strain_sens<order>(strain, strainXptSens, tx, dtx,
-                               g11, g22, g12, g23, g13,
-                               dg11, dg22, dg12, dg23, dg13,
-                               N11, N22, N12);
+  add_tying_strain_sens<tying_order>(strain, strainXptSens, tx, dtx,
+                                     g11, g22, g12, g23, g13,
+                                     dg11, dg22, dg12, dg23, dg13,
+                                     N11, N22, N12);
 
   // Add the product of the input sensitivity and the derivative of the
   // strain w.r.t. the node locations to the input vector
@@ -2545,13 +2555,13 @@ void MITCShell<order>::addStrainXptSens( TacsScalar fXptSens[],
   vars:        the element variables
   Xpts:        the element nodal locations
 */
-template <int order>
-void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[],
-                                        const double pt[],
-                                        const TacsScalar scale,
-                                        const TacsScalar strainSens[],
-                                        const TacsScalar Xpts[],
-                                        const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addStrainSVSens( TacsScalar strainSVSens[],
+                                                     const double pt[],
+                                                     const TacsScalar scale,
+                                                     const TacsScalar strainSens[],
+                                                     const TacsScalar Xpts[],
+                                                     const TacsScalar vars[] ){
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
   // Transformation and the transformation derivative w.r.t. zeta
@@ -2604,17 +2614,17 @@ void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[],
     compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
     compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
 
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13,
-                                 knots, pknots, vars, Xpts);
+    compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13,
+                                              knots, pknots, vars, Xpts);
     large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt,
                         t, tx, ztx, normal, normal_xi, normal_eta);
   }
   else {
-    compute_tying_bmat<order>((type == LINEAR),
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                    g11, g22, g12, g23, g13,
+                                    b11, b22, b12, b23, b13,
+                                    knots, pknots, vars, Xpts);
 
     if (type == LINEAR){
       linear_bend_bmat(B, dinplane_rot, NUM_NODES,
@@ -2628,15 +2638,39 @@ void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[],
     }
   }
 
-  tying_interpolation<order>(pt, N11, N22, N12,
+  tying_interpolation<tying_order>(pt, N11, N22, N12,
                              knots, pknots);
-  add_tying_bmat<order>(B, NUM_NODES, tx,
-                        b11, b22, b12, b23, b13,
-                        N11, N22, N12);
+  add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                              b11, b22, b12, b23, b13,
+                              N11, N22, N12);
 
   for ( int k = 0; k < NUM_VARIABLES; k++ ){
     strainSVSens[k] += scale*strain_product(strainSens, &B[k*NUM_STRESSES]);
   }
+}
+
+/*
+  Get the partition of unity shape functions and their derivatives
+*/
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getPartUnityShapeFunctions( const double pt[],
+                                                                double N[],
+                                                                double Na[],
+                                                                double Nb[] ){
+  N[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
+  N[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
+  N[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
+  N[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+
+  Na[0] =-0.25*(1.0 - pt[1]);
+  Na[1] = 0.25*(1.0 - pt[1]);
+  Na[2] =-0.25*(1.0 + pt[1]);
+  Na[3] = 0.25*(1.0 + pt[1]);
+
+  Nb[0] =-0.25*(1.0 - pt[0]);
+  Nb[1] =-0.25*(1.0 + pt[0]);
+  Nb[2] = 0.25*(1.0 - pt[0]);
+  Nb[3] = 0.25*(1.0 + pt[0]);
 }
 
 /*
@@ -2645,12 +2679,11 @@ void MITCShell<order>::addStrainSVSens( TacsScalar strainSVSens[],
   This localization is based on a partition of unity constraint that
   distributes the error to nodes.
 */
-template <int order>
-void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
-                                          const TacsScalar adjoint[],
-                                          const TacsScalar Xpts[],
-                                          const TacsScalar vars[] ){
-
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addLocalizedError( double time, TacsScalar err[],
+                                                       const TacsScalar adjoint[],
+                                                       const TacsScalar Xpts[],
+                                                       const TacsScalar vars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -2679,24 +2712,70 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
   TacsScalar drot[NUM_VARIABLES];
   TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
 
-  if (type == LARGE_ROTATION){
-    compute_lr_tying_bmat<order>(g11, g22, g12, g23, g13,
-                                 b11, b22, b12, b23, b13,
-                                 knots, pknots, vars, Xpts);
+  // Determine the knots/pknots from the lower-order element
+  const double *low_knots = NULL;
+  const double *low_pknots = NULL;
+  if (tying_order == 3){
+    low_knots = MITCShellFirstOrderKnots;
   }
   else {
-    compute_tying_bmat<order>((type == LINEAR),
-                              g11, g22, g12, g23, g13,
-                              b11, b22, b12, b23, b13,
-                              knots, pknots, vars, Xpts);
+    FElibrary::getGaussPtsWts(tying_order-1, &low_knots, NULL);
+  }
+  FElibrary::getGaussPtsWts(tying_order-2, &low_pknots, NULL);
+
+  // Evaluate the strain/bmatrix at the tying points
+  if (type == LARGE_ROTATION){
+    compute_lr_tying_bmat<order, tying_order>(g11, g22, g12, g23, g13,
+                                              b11, b22, b12, b23, b13,
+                                              knots, pknots, vars, Xpts);
+    compute_lr_tying_strain<order, tying_order-1>(g11, g22, g12, g23, g13,
+                                                  low_knots, low_pknots, vars, Xpts);
+
+  }
+  else {
+    // Compute the B-mat contribution from the full residual
+    compute_tying_bmat<order, tying_order>((type == LINEAR),
+                                           g11, g22, g12, g23, g13,
+                                           b11, b22, b12, b23, b13,
+                                           knots, pknots, vars, Xpts);
+
+    if (order == 3 && tying_order == 3){
+      TacsScalar Xpts2nd[12], vars2nd[24];
+      for ( int j = 0; j < 2; j++ ){
+        for ( int i = 0; i < 2; i++ ){
+          for ( int k = 0; k < 3; k++ ){
+            Xpts2nd[3*(i + 2*j)+k] = Xpts[3*(2*i + 6*j)+k];
+          }
+          for ( int k = 0; k < 6; k++ ){
+            vars2nd[6*(i + 2*j)+k] = vars[6*(2*i + 6*j)+k];
+          }
+        }
+      }
+
+      // Compute the strain contribution from the lower-order element
+      compute_tying_strain<order-1, tying_order-1>((type == LINEAR),
+                                                   g11, g22, g12, g23, g13,
+                                                   low_knots, low_pknots,
+                                                   vars2nd, Xpts2nd);
+    }
+    else {
+      // Compute the strain contribution from the lower-order element
+      compute_tying_strain<order, tying_order-1>((type == LINEAR),
+                                                 g11, g22, g12, g23, g13,
+                                                 low_knots, low_pknots, vars, Xpts);
+    }
   }
 
-  for ( int m = 0; m < numGauss; m++ ){
-    for ( int n = 0; n < numGauss; n++ ){
+  // Perform the integration over a larger domain
+  const double *pts, *wts;
+  int npts = FElibrary::getGaussPtsWts(order+1, &pts, &wts);
+
+  for ( int m = 0; m < npts; m++ ){
+    for ( int n = 0; n < npts; n++ ){
       // Set the quadrature point
       double pt[2];
-      pt[0] = gaussPts[n];
-      pt[1] = gaussPts[m];
+      pt[0] = pts[n];
+      pt[1] = pts[m];
 
       // Evaluate the stiffness at the parametric point within the
       // element
@@ -2722,7 +2801,7 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
         h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi,
                                       normal_eta, axis, Xd, Xdd);
       }
-      h = gaussWts[n]*gaussWts[m]*h;
+      h = wts[n]*wts[m]*h;
 
       // Compute the strain and rotation at the qudrature point
       TacsScalar rot = 0.0;
@@ -2744,35 +2823,33 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
       }
       else {
         // Rotation matrix data
-        TacsScalar C[9], Ct[27], Ctt[54];
+        TacsScalar C[9], Ct[27];
 
         // Compute the rotation matrices
         TacsScalar c1 = cos(U[3]), s1 = sin(U[3]);
         TacsScalar c2 = cos(U[4]), s2 = sin(U[4]);
         TacsScalar c3 = cos(U[5]), s3 = sin(U[5]);
         compute_rate_matrix(C, Ct, c1, s1, c2, s2, c3, s3);
-        compute_2nd_rate_matrix(Ctt, c1, s1, c2, s2, c3, s3);
-
-        // Evaluate the in-plane rotation term
-        rot = compute_inplane_penalty(drot, NUM_NODES, Xd, Ud,
-                                      C, Ct, N, Na, Nb);
 
         // Calculate the deformation at the current point...
         large_rot_bend_strain(strain, U, Ud, C, Ct, t, tx, ztx,
                               normal, normal_xi, normal_eta);
-        large_rot_bend_bmat(B, NUM_NODES, N, Na, Nb, U, Ud, C, Ct, Ctt,
-                            t, tx, ztx, normal, normal_xi, normal_eta);
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12,
-                                 knots, pknots);
-      add_tying_strain<order>(strain, tx,
-                              g11, g22, g12, g23, g13,
-                              N11, N22, N12);
-      add_tying_bmat<order>(B, NUM_NODES, tx,
-                            b11, b22, b12, b23, b13,
-                            N11, N22, N12);
+      tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                       knots, pknots);
+      add_tying_bmat<tying_order>(B, NUM_NODES, tx,
+                                  b11, b22, b12, b23, b13,
+                                  N11, N22, N12);
+
+      // Evaluate the strain interpolation using the lower-order
+      // element tying points
+      tying_interpolation<tying_order-1>(pt, N11, N22, N12,
+                                         low_knots, low_pknots);
+      add_tying_strain<tying_order-1>(strain, tx,
+                                      g11, g22, g12, g23, g13,
+                                      N11, N22, N12);
 
       // Compute the stress at the current Gauss point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
@@ -2792,18 +2869,15 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
         adj += NUM_DISPS;
       }
 
-      // Add the product using the linear partition of unity basis
-      // functions
-      double Nerr[4];
-      Nerr[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
-      Nerr[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
-      Nerr[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
-      Nerr[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+      // Evaluate the partition of unity constraint
+      double Np[4], Npa[4], Npb[4];
+      getPartUnityShapeFunctions(pt, Np, Npa, Npb);
 
-      err[0] += Nerr[0]*product;
-      err[order-1] += Nerr[1]*product;
-      err[order*(order-1)] += Nerr[2]*product;
-      err[order*order-1] += Nerr[3]*product;
+      for ( int node = 0; node < 4; node++ ){
+        // Add the result to the localized error
+        err[(node % 2)*(order-1) +
+            (node/2)*order*(order-1)] += Np[node]*product;
+      }
     }
   }
 }
@@ -2819,9 +2893,9 @@ void MITCShell<order>::addLocalizedError( double time, TacsScalar err[],
   ncsr:    the number of entries in a CSR-type data structure used
   to store the connectivity
 */
-template <int order>
-void MITCShell<order>::addOutputCount( int * nelems,
-                                       int * nnodes, int * ncsr ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::addOutputCount( int * nelems,
+                                                    int * nnodes, int * ncsr ){
   *nelems += (order-1)*(order-1);
   *nnodes += order*order;
   *ncsr += 4*(order-1)*(order-1);
@@ -2848,11 +2922,11 @@ void MITCShell<order>::addOutputCount( int * nelems,
   vars:     the element variables
   Xpts:     the element nodal locations
 */
-template <int order>
-void MITCShell<order>::getOutputData( unsigned int out_type,
-                                      double * data, int ld_data,
-                                      const TacsScalar Xpts[],
-                                      const TacsScalar vars[] ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getOutputData( unsigned int out_type,
+                                                   double * data, int ld_data,
+                                                   const TacsScalar Xpts[],
+                                                   const TacsScalar vars[] ){
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
   TacsScalar normal[3], normal_xi[3], normal_eta[3];
@@ -2875,13 +2949,13 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
   TacsScalar stress[NUM_STRESSES], strain[NUM_STRESSES];
 
   if (type == LARGE_ROTATION){
-    compute_lr_tying_strain<order>(g11, g22, g12, g23, g13,
-                                   knots, pknots, vars, Xpts);
+    compute_lr_tying_strain<order, tying_order>(g11, g22, g12, g23, g13,
+                                                knots, pknots, vars, Xpts);
   }
   else {
-    compute_tying_strain<order>((type == LINEAR),
-                                g11, g22, g12, g23, g13,
-                                knots, pknots, vars, Xpts);
+    compute_tying_strain<order, tying_order>((type == LINEAR),
+                                             g11, g22, g12, g23, g13,
+                                             knots, pknots, vars, Xpts);
   }
 
   for ( int m = 0; m < order; m++ ){
@@ -2932,11 +3006,11 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
       }
 
       // Evaluate the strain interpolation at this point
-      tying_interpolation<order>(pt, N11, N22, N12,
-                                 knots, pknots);
-      add_tying_strain<order>(strain, tx,
-                              g11, g22, g12, g23, g13,
-                              N11, N22, N12);
+      tying_interpolation<tying_order>(pt, N11, N22, N12,
+                                       knots, pknots);
+      add_tying_strain<tying_order>(strain, tx,
+                                    g11, g22, g12, g23, g13,
+                                    N11, N22, N12);
 
       int index = 0;
       int p = n + m*order;
@@ -3013,8 +3087,8 @@ void MITCShell<order>::getOutputData( unsigned int out_type,
   node:  the node offset number - so that this connectivity is more or
   less global
 */
-template <int order>
-void MITCShell<order>::getOutputConnectivity( int * con, int node ){
+template <int order, int tying_order>
+void MITCShell<order, tying_order>::getOutputConnectivity( int * con, int node ){
   int p = 0;
   for ( int m = 0; m < order-1; m++ ){
     for ( int n = 0; n < order-1; n++ ){

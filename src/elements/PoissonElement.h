@@ -24,28 +24,19 @@
 template <int order>
 class PoissonQuad : public TACSElement {
  public:
+  PoissonQuad( void *_self, TacsScalar (*_evalf)( void*, const TacsScalar* ) ){
+    self = _self;
+    evalf = _evalf;
+    memset(f, 0, order*order*sizeof(TacsScalar));
+    setUpKnots();
+  }
   PoissonQuad( const TacsScalar _f[] ){
+    self = NULL;
+    evalf = NULL;
     for ( int i = 0; i < order*order; i++ ){
       f[i] = _f[i];
     }
-    // Set the knot locations
-    if (order == 2){
-      knots[0] = -1.0;
-      knots[1] = 1.0;
-    }
-    else if (order == 3){
-      knots[0] = -1.0;
-      knots[1] = 0.0;
-      knots[2] = 1.0;
-    }
-    else {
-      // Set a co-sine spacing for the knot locations
-      for ( int k = 1; k < order-1; k++ ){
-        knots[k] = -cos(M_PI*k/(order-1));
-      }
-      knots[0] = -1.0;
-      knots[order-1] = 1.0;
-    }
+    setUpKnots();
   }
   ~PoissonQuad(){}
 
@@ -128,11 +119,21 @@ class PoissonQuad : public TACSElement {
     }
   }
   void getPartUnityShapeFunctions( const double pt[],
-                                   double N[] ){
+                                   double N[], double Na[], double Nb[] ){
     N[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
     N[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
     N[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
     N[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+
+    Na[0] =-0.25*(1.0 - pt[1]);
+    Na[1] = 0.25*(1.0 - pt[1]);
+    Na[2] =-0.25*(1.0 + pt[1]);
+    Na[3] = 0.25*(1.0 + pt[1]);
+
+    Nb[0] =-0.25*(1.0 - pt[0]);
+    Nb[1] =-0.25*(1.0 + pt[0]);
+    Nb[2] = 0.25*(1.0 - pt[0]);
+    Nb[3] = 0.25*(1.0 + pt[0]);
   }
   void getJacobianTransform( const double Na[], const double Nb[],
                              const TacsScalar Xpts[],
@@ -174,9 +175,25 @@ class PoissonQuad : public TACSElement {
         h *= wts[n]*wts[m];
 
         TacsScalar fval = 0.0;
+        if (evalf){
+          TacsScalar X[3] = {0.0, 0.0, 0.0};
+          for ( int i = 0; i < order*order; i++ ){
+            X[0] += N[i]*Xpts[3*i];
+            X[1] += N[i]*Xpts[3*i+1];
+            X[2] += N[i]*Xpts[3*i+2];
+          }
+          fval = evalf(self, X);
+        }
+        else {
+          // Compute the local right-hand-side
+          for ( int i = 0; i < order*order; i++ ){
+            fval += N[i]*f[i];
+          }
+        }
+
+        // Compute the derivatives of fval
         TacsScalar px = 0.0, py = 0.0;
         for ( int i = 0; i < order*order; i++ ){
-          fval += N[i]*f[i];
           px += (Na[i]*J[0] + Nb[i]*J[2])*vars[i];
           py += (Na[i]*J[1] + Nb[i]*J[3])*vars[i];
         }
@@ -238,10 +255,10 @@ class PoissonQuad : public TACSElement {
                           const TacsScalar Xpts[],
                           const TacsScalar vars[] ){
     const double *pts, *wts;
-    FElibrary::getGaussPtsWts(order, &pts, &wts);
+    FElibrary::getGaussPtsWts(order+1, &pts, &wts);
 
-    for ( int m = 0; m < order; m++ ){
-      for ( int n = 0; n < order; n++ ){
+    for ( int m = 0; m < order+1; m++ ){
+      for ( int n = 0; n < order+1; n++ ){
         // Set the quadrature points
         double pt[2];
         pt[0] = pts[n];
@@ -250,6 +267,10 @@ class PoissonQuad : public TACSElement {
         // Get the shape functions
         double N[order*order], Na[order*order], Nb[order*order];
         getShapeFunctions(pt, N, Na, Nb);
+
+        // Get the Partition of unity functions
+        double Np[4], Npa[4], Npb[4];
+        getPartUnityShapeFunctions(pt, Np, Npa, Npb);
 
         // Compute the Jacobian transformation
         TacsScalar Xd[4];
@@ -262,15 +283,29 @@ class PoissonQuad : public TACSElement {
 
         // Compute the terms needed to localize the error
         TacsScalar fval = 0.0;
+        if (evalf){
+          TacsScalar X[3] = {0.0, 0.0, 0.0};
+          for ( int i = 0; i < order*order; i++ ){
+            X[0] += N[i]*Xpts[3*i];
+            X[1] += N[i]*Xpts[3*i+1];
+            X[2] += N[i]*Xpts[3*i+2];
+          }
+          fval = evalf(self, X);
+        }
+        else {
+          // Compute the local right-hand-side
+          for ( int i = 0; i < order*order; i++ ){
+            fval += N[i]*f[i];
+          }
+        }
+
+        // Derivative of phi along the x/y directions
         TacsScalar px = 0.0, py = 0.0;
 
         // Adjoint terms
-        TacsScalar adj = 0.0;
+        TacsScalar a = 0.0;
         TacsScalar ax = 0.0, ay = 0.0;
         for ( int i = 0; i < order*order; i++ ){
-          // Compute the local right-hand-side
-          fval += N[i]*f[i];
-
           // Compute the derivative of the shape functions
           TacsScalar Nx = Na[i]*J[0] + Nb[i]*J[2];
           TacsScalar Ny = Na[i]*J[1] + Nb[i]*J[3];
@@ -278,24 +313,24 @@ class PoissonQuad : public TACSElement {
           py += Ny*vars[i];
 
           // Compute the local adjoint
-          adj += N[i]*adjoint[i];
+          a += N[i]*adjoint[i];
 
           // Compute the derivative of the adjoint
           ax += Nx*adjoint[i];
           ay += Ny*adjoint[i];
         }
 
-        // Compute the local contribution
-        TacsScalar product = h*(ax*px + ay*py - adj*fval);
-
-        // Compute the partition of unity shape functions
-        double Np[4];
-        getPartUnityShapeFunctions(pt, Np);
-
         for ( int node = 0; node < 4; node++ ){
-          // Set the pointer for the node
+          TacsScalar Nx = Npa[node]*J[0] + Npb[node]*J[2];
+          TacsScalar Ny = Npa[node]*J[1] + Npb[node]*J[3];
+          TacsScalar adjx = ax*Np[node] + Nx*a;
+          TacsScalar adjy = ay*Np[node] + Ny*a;
+
+          // Compute the local contribution
+          TacsScalar product = h*(adjx*px + adjy*py - Np[node]*a*fval);
+
           err[(node % 2)*(order-1) +
-              (node/2)*order*(order-1)] += Np[node]*product;
+              (node/2)*order*(order-1)] += product;
         }
       }
     }
@@ -348,13 +383,13 @@ class PoissonQuad : public TACSElement {
         }
 
         if (out_type & TACSElement::OUTPUT_STRAINS){
-          data[index] = px;
-          data[index+1] = py;
+          data[index] = TacsRealPart(px);
+          data[index+1] = TacsRealPart(py);
           index += 2;
         }
         if (out_type & TACSElement::OUTPUT_STRESSES){
-          data[index] = px;
-          data[index+1] = py;
+          data[index] = TacsRealPart(px);
+          data[index+1] = TacsRealPart(py);
           index += 2;
         }
         data += ld_data;
@@ -375,7 +410,35 @@ class PoissonQuad : public TACSElement {
   }
 
  private:
+  void setUpKnots(){
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 1; k < order-1; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+      knots[0] = -1.0;
+      knots[order-1] = 1.0;
+    }
+  }
+
+  // Forcing provided either through function pointer or as an
+  // interpolation over the nodes
   TacsScalar f[order*order];
+
+  // The data/function for the right-hand-side
+  void *self;
+  TacsScalar (*evalf)( void*, const TacsScalar* );
+
   double knots[order];
 };
 

@@ -754,6 +754,21 @@ cdef class Assembler:
 
         return _init_Element(element), Xpt, vars0, dvars, ddvars
 
+    def getElementNodes(self, int num):
+        '''Get the node numbers associated with the given element'''
+        cdef int num_nodes = 0
+        cdef const int *node_nums = NULL
+        cdef np.ndarray nodes
+
+        # Get the node numbers
+        if num >= 0 and num < self.ptr.getNumElements():
+            self.ptr.getElement(num, &node_nums, &num_nodes)
+            nodes = np.zeros(num_nodes, dtype=np.int)
+            for i in range(num_nodes):
+                nodes[i] = node_nums[i]
+
+        return nodes
+
     def getDesignVars(self,
                       np.ndarray[TacsScalar, ndim=1, mode='c'] dvs):
         '''
@@ -1295,7 +1310,7 @@ cdef class Assembler:
         self.ptr.testElement(elemNum, print_level, dh, rtol, atol)
         return
 
-    def testConstitutive(self, int elemNum, print_level):
+    def testConstitutive(self, int elemNum, int print_level):
         '''
         Test the implementation of the given element constitutive
         class.
@@ -1571,6 +1586,17 @@ cdef class MeshLoader:
         Add the auxiliary element to the given component
         '''
         self.ptr.addAuxElement(aux.ptr, comp_num, elem.ptr)
+
+    def addFunctionDomain(self, Function func, list comp_list):
+        '''Add the specified components to the domain of the function'''
+        cdef int num_comps = len(comp_list)
+        cdef int *comps = NULL
+        comps = <int*>malloc(num_comps*sizeof(int))
+        for i in range(num_comps):
+            comps[i] = <int>comp_list[i]
+        self.ptr.addFunctionDomain(func.ptr, comps, num_comps)
+        free(comps)
+        return
 
     def getConnectivity(self):
         '''

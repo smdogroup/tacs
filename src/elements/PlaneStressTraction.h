@@ -126,6 +126,78 @@ class PSQuadTraction : public TACSElement {
     }
   }
 
+  // Function used for localizing the error to nodes with PU-weights
+  // ---------------------------------------------------------------
+  void addLocalizedError( double time, TacsScalar err[],
+                          const TacsScalar adjoint[],
+                          const TacsScalar Xpts[],
+                          const TacsScalar vars[] ){
+    // Retrieve the quadrature scheme of the appropriate order
+    const double *gaussPts, *gaussWts;
+    int numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+
+    // Integrate over the specified element surface
+    for ( int n = 0; n < numGauss; n++ ){
+      double pt[2];
+      pt[0] = gaussPts[n]*dir[0] + base[0];
+      pt[1] = gaussPts[n]*dir[1] + base[1];
+
+      // Evaluate the Lagrange basis in each direction
+      double na[order], nb[order], dna[order], dnb[order];
+      FElibrary::lagrangeSF(na, dna, pt[0], order);
+      FElibrary::lagrangeSF(nb, dnb, pt[1], order);
+
+      // Calcualte the Jacobian at the current point
+      const TacsScalar *x = Xpts;
+      TacsScalar Xd[4] = {0.0, 0.0, 0.0, 0.0};
+      TacsScalar Ax = 0.0, Ay = 0.0;
+      for ( int j = 0; j < order; j++ ){
+        for ( int i = 0; i < order; i++ ){
+          Xd[0] += x[0]*dna[i]*nb[j];
+          Xd[1] += x[0]*na[i]*dnb[j];
+
+          Xd[2] += x[1]*dna[i]*nb[j];
+          Xd[3] += x[1]*na[i]*dnb[j];
+          x += 3;
+
+          Ax += adjoint[2*i]*na[i]*nb[j];
+          Ay += adjoint[2*i+1]*na[i]*nb[j];
+        }
+      }
+
+      // Compute the derivative along each direction
+      TacsScalar dx = Xd[0]*dir[0] + Xd[2]*dir[1];
+      TacsScalar dy = Xd[1]*dir[0] + Xd[3]*dir[1];
+      TacsScalar hsurf = gaussWts[n]*sqrt(dx*dx + dy*dy);
+
+      // Calculate the traction at the current point
+      TacsScalar Tx = 0.0, Ty = 0.0;
+      double N[order];
+      FElibrary::lagrangeSF(N, gaussPts[n], order);
+      for ( int i = 0; i < order; i++ ){
+        Tx += N[i]*tx[i];
+        Ty += N[i]*ty[i];
+      }
+
+      // Add the contribution to the residual - the minus sign is due
+      // to the fact that this is a work term
+      TacsScalar product = -hsurf*(Tx*Ax + Ty*Ay);
+
+      // Add the product using the linear partition of unity basis
+      // functions
+      double Nerr[4];
+      Nerr[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
+      Nerr[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
+      Nerr[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
+      Nerr[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+
+      err[0] += Nerr[0]*product;
+      err[order-1] += Nerr[1]*product;
+      err[order*(order-1)] += Nerr[2]*product;
+      err[order*order-1] += Nerr[3]*product;
+    }
+  }
+
  private:
   // Set the base point and direction
   // --------------------------------

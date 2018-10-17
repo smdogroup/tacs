@@ -38,8 +38,10 @@ cdef extern from "StructuralMass.h":
 
 cdef extern from "KSFailure.h":
     enum KSFailureType"TACSKFailure::KSFailureType":
-        KS_DISCRETE"TACSKSFailure::DISCRETE"
-        KS_CONTINUOUS"TACSKSFailure::CONTINUOUS"
+        KS_FAILURE_DISCRETE"TACSKSFailure::DISCRETE"
+        KS_FAILURE_CONTINUOUS"TACSKSFailure::CONTINUOUS"
+        PNORM_FAILURE_DISCRETE"TACSKSFailure::PNORM_DISCRETE"
+        PNORM_FAILURE_CONTINUOUS"TACSKSFailure::PNORM_CONTINUOUS"
         
     enum KSConstitutiveFunction"TACSKSFailure::KSConstitutiveFunction":
         KS_FAILURE"TACSKSFailure::FAILURE"
@@ -56,9 +58,16 @@ cdef extern from "KSFailure.h":
         void setMaxFailOffset(TacsScalar _maxFail)
 
 cdef extern from "KSDisplacement.h":
+    enum KSDisplacementType"KSDisplacement::KSFailureType":
+        KS_DISP_DISCRETE"TACSKSDisplacement::DISCRETE"
+        KS_DISP_CONTINUOUS"TACSKSDisplacement::CONTINUOUS"
+        PNORM_DISP_DISCRETE"TACSKSDisplacement::PNORM_DISCRETE"
+        PNORM_DISP_CONTINUOUS"TACSKSDisplacement::PNORM_CONTINUOUS"
+
     cdef cppclass TACSKSDisplacement(TACSFunction):
         TACSKSDisplacement(TACSAssembler *tacs, double ksWeight, 
                            TacsScalar dir[])
+        void setKSDispType(KSDisplacementType)
 
 cdef extern from "DisplacementIntegral.h":
     cdef cppclass TACSDisplacementIntegral(TACSFunction):
@@ -66,14 +75,14 @@ cdef extern from "DisplacementIntegral.h":
 
 cdef extern from "InducedFailure.h":
     enum InducedNormType"TACSInducedFailure::InducedNormType":
-        EXPONENTIAL"TACSInducedFailure::EXPONENTIAL"
-        POWER"TACSInducedFailure::POWER"
-        EXPONENTIAL_SQUARED"TACSInducedFailure::EXPONENTIAL_SQUARED"
-        POWER_SQUARED"TACSInducedFailure::POWER_SQUARED"
-        DISCRETE_EXPONENTIAL"TACSInducedFailure::DISCRETE_EXPONENTIAL"
-        DISCRETE_POWER"TACSInducedFailure::DISCRETE_POWER"
-        DISCRETE_EXPONENTIAL_SQUARED"TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED"
-        DISCRETE_POWER_SQUARED"TACSInducedFailure::DISCRETE_POWER_SQUARED"
+        INDUCED_EXPONENTIAL"TACSInducedFailure::EXPONENTIAL"
+        INDUCED_POWER"TACSInducedFailure::POWER"
+        INDUCED_EXPONENTIAL_SQUARED"TACSInducedFailure::EXPONENTIAL_SQUARED"
+        INDUCED_POWER_SQUARED"TACSInducedFailure::POWER_SQUARED"
+        INDUCED_DISCRETE_EXPONENTIAL"TACSInducedFailure::DISCRETE_EXPONENTIAL"
+        INDUCED_DISCRETE_POWER"TACSInducedFailure::DISCRETE_POWER"
+        INDUCED_DISCRETE_EXPONENTIAL_SQUARED"TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED"
+        INDUCED_DISCRETE_POWER_SQUARED"TACSInducedFailure::DISCRETE_POWER_SQUARED"
 
     enum InducedConstitutiveFunction"TACSInducedFailure::InducedConstitutiveFunction":
         INDUCED_FAILURE"TACSInducedFailure::FAILURE"
