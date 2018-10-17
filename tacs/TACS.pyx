@@ -1156,6 +1156,7 @@ cdef class Assembler:
         variables.
 
         function: the function pointer
+
         vec:        the derivative of the function w.r.t. the state variables
         '''
         cdef int num_funcs = 1
@@ -1179,10 +1180,9 @@ cdef class Assembler:
         evalAdjointResProduct, but uses more memory than calling it for
         each adjoint vector.
 
-        adjoint:      the array of adjoint vectors
-        dvSens:        the product of the derivative of the residuals
-                          and the adjoint
-        num_dvs:        the number of design variables
+        adjoint: the array of adjoint vectors
+        dvSens: the product of the derivative of the residuals and the adjoint
+        num_dvs: the number of design variables
         '''
         cdef int num_adj = 1
         cdef TACSBVec **adj = &((<Vec>adjoint).ptr)
@@ -1565,6 +1565,12 @@ cdef class MeshLoader:
         '''
         return _init_Assembler(self.ptr.createTACS(varsPerNode,
                                                    order_type, mat_type))
+
+    def addAuxElement(self, AuxElements aux, int comp_num, Element elem):
+        '''
+        Add the auxiliary element to the given component
+        '''
+        self.ptr.addAuxElement(aux.ptr, comp_num, elem.ptr)
 
     def getConnectivity(self):
         '''
