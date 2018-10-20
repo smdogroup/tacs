@@ -333,14 +333,21 @@ void TACSBVec::copyValues( TACSVec *tvec ){
   TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec){
     if (vec->size != size){
-      printf("size: %d %d\n",vec->size, size);
       fprintf(stderr, 
-              "TACSBVec::copyValues error, sizes must be the same\n");
+              "TACSBVec::copyValues error, sizes %d and %d must be the same\n",
+              size, vec->size);
       return;
     }
     
     int one = 1;
     BLAScopy(&size, vec->x, &one, x, &one);
+
+    if (x_dep && vec->x_dep){
+      BLAScopy(&dep_size, vec->x_dep, &one, x_dep, &one);
+    }
+    if (x_ext && vec->x_ext){
+      BLAScopy(&ext_size, vec->x_ext, &one, x_ext, &one);
+    }
   }
   else {
     fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
@@ -753,8 +760,6 @@ void TACSBVec::setValues( int n, const int *index,
 
 /*
   Begin collecting the vector values to their owners
-
-  This is used 
 */
 void TACSBVec::beginSetValues( TACSBVecOperation op ){
   // Get the MPI rank

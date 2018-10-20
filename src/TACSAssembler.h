@@ -248,6 +248,11 @@ class TACSAssembler : public TACSObject {
                                   TACSBVec *psi, TACSBVec *phi, 
                                   TACSBVec *res );
 
+  // Direct copy of the variable values
+  // ----------------------------------
+  void copyVariables( TACSBVec *q, 
+                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
+
   // Return elements and node numbers
   // --------------------------------
   TACSElement **getElements();

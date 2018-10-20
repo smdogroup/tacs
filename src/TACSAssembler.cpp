@@ -3308,19 +3308,34 @@ void TACSAssembler::zeroDDotVariables(){
 void TACSAssembler::setVariables( TACSBVec *q, 
                                   TACSBVec *qdot, 
                                   TACSBVec *qddot ){
-  // Copy the values to the array. Only local values are 
-  // copied, not external/dependents
+  // Copy the values to the array.
   if (q){ varsVec->copyValues(q); }
   if (qdot){ dvarsVec->copyValues(qdot); }
   if (qddot){ ddvarsVec->copyValues(qddot); }
 
-  // Distribute the values
+  // Distribute the values and evaluate the dependent nodes.
   if (q){ varsVec->beginDistributeValues(); }
   if (qdot){ dvarsVec->beginDistributeValues(); }
   if (qddot){ ddvarsVec->beginDistributeValues(); }
   if (q){ varsVec->endDistributeValues(); }
   if (qdot){ dvarsVec->endDistributeValues(); }
   if (qddot){ ddvarsVec->endDistributeValues(); }
+}
+
+/*
+  Copy the values directly without distributing them.
+
+  This is designed for specific instances where you want to use the
+  values in the vector directly without distributing them.  This means
+  that the variable values may be inconsistent across processors.
+  This is not usually what you want to do.
+*/
+void TACSAssembler::copyVariables( TACSBVec *q, 
+                                   TACSBVec *qdot, 
+                                   TACSBVec *qddot ){
+  if (q){ varsVec->copyValues(q); }
+  if (qdot){ dvarsVec->copyValues(qdot); }
+  if (qddot){ ddvarsVec->copyValues(qddot); }
 }
 
 /*

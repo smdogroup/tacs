@@ -131,9 +131,12 @@ cdef extern from "BVec.h":
     cdef cppclass TACSBVec(TACSVec):
         TACSBVec(TACSVarMap*, int)
         int getSize(int*)
+        int getBlockSize()
         int getArray(TacsScalar**)
         int readFromFile(const_char*)
         int writeToFile(const_char*)
+        int getValues(int, const int*, TacsScalar*)
+        void setValues(int, const int*, const TacsScalar*, TACSBVecOperation)
         void beginSetValues(TACSBVecOperation)
         void endSetValues(TACSBVecOperation)
         void beginDistributeValues()
@@ -401,6 +404,7 @@ cdef extern from "TACSAssembler.h":
         # Set and retrieve the state variables
         void setVariables(TACSBVec*, TACSBVec*, TACSBVec*)
         void getVariables(TACSBVec*, TACSBVec*, TACSBVec*)
+        void copyVariables(TACSBVec*, TACSBVec*, TACSBVec*)
 
         # Get the initial conditions
         void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)

@@ -255,10 +255,10 @@ class PoissonQuad : public TACSElement {
                           const TacsScalar Xpts[],
                           const TacsScalar vars[] ){
     const double *pts, *wts;
-    FElibrary::getGaussPtsWts(order+1, &pts, &wts);
+    FElibrary::getGaussPtsWts(order, &pts, &wts);
 
-    for ( int m = 0; m < order+1; m++ ){
-      for ( int n = 0; n < order+1; n++ ){
+    for ( int m = 0; m < order; m++ ){
+      for ( int n = 0; n < order; n++ ){
         // Set the quadrature points
         double pt[2];
         pt[0] = pts[n];
