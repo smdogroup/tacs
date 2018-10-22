@@ -1,0 +1,392 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TACS Interface &#8212; TACS  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example: CRM Optimization" href="Example-CRM_Optimization.html" />
+    <link rel="prev" title="Installing TACS" href="install.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="tacs-interface">
+<h1>TACS Interface<a class="headerlink" href="#tacs-interface" title="Permalink to this headline">¶</a></h1>
+<p>TACS has interfaces at the C++ level and the Python level. TACS is implemented in C++,
+so the interface through C++ contains all publicly accessible class member functions.
+The Python level interface wraps the most important classes and functions, of which the
+most frequently used are discussed below.</p>
+<div class="section" id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<p>The most common usage of TACS is to evaluate the values and gradients of desired
+structural functions with respect to specified design variables. In general, this workflow
+proceeds as follows:</p>
+<ol class="arabic simple">
+<li>Load in a finite element model of the desired structure (in the form of a NASTRAN-style
+file) using an instance of the <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> class.</li>
+<li>For each component of the loaded model, generate an element with the desired
+cosntitutive properties and design variables.</li>
+<li>Create an instance of the <a class="reference internal" href="#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> class and apply boundary conditions.</li>
+<li>Solve the system and evaluate the functions and their gradients with respect to the
+design variables.</li>
+</ol>
+<p>These function values and gradients can then be passed to an optimizer (such as ParOpt)
+in order to minimize the value of a particular function subject to some constraints.
+Improved design variable values are iteratively computed by the optimizer and Step 4 is
+repeated until the optimization criteria are satisfied.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<p>There are several structural functions built into TACS. These functions and their gradients with respect to design variables can be evaluated by the <a class="reference internal" href="#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> object. These functions inherit from the <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code> class. The most commonly used of these include:</p>
+<ul class="simple">
+<li>StructuralMass</li>
+<li>KSFailure (approximate maximum ratio of the von Mises stress to the design stress)</li>
+<li>Compliance</li>
+</ul>
+</div>
+<div class="section" id="assembler">
+<h2>Assembler<a class="headerlink" href="#assembler" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> object can be created using the <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> or <a class="reference internal" href="#TACS.Creator" title="TACS.Creator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Creator</span></code></a> classes. It contains the methods that allow the user to solve the finite element problem and evaluate the desired structural functions and their gradients. Once an instance has been created, its typical usage is as follows:</p>
+<ol class="arabic simple">
+<li>Apply loads to the model with the <code class="xref py py-func docutils literal notranslate"><span class="pre">applyBCs()</span></code>.</li>
+<li>Create the solver using the <a class="reference internal" href="#TACS.Assembler.createVec" title="TACS.Assembler.createVec"><code class="xref py py-func docutils literal notranslate"><span class="pre">createVec()</span></code></a> and
+<a class="reference internal" href="#TACS.Assembler.createFEMat" title="TACS.Assembler.createFEMat"><code class="xref py py-func docutils literal notranslate"><span class="pre">createFEMat()</span></code></a> functions.</li>
+<li>Use the <a class="reference internal" href="#TACS.Assembler.setDesignVars" title="TACS.Assembler.setDesignVars"><code class="xref py py-func docutils literal notranslate"><span class="pre">setDesignVars()</span></code></a> function to set design variable
+vales.</li>
+<li>Evaluate structural functions (e.g. Structural Mass, KSFailure) using the
+<a class="reference internal" href="#TACS.Assembler.evalFunctions" title="TACS.Assembler.evalFunctions"><code class="xref py py-func docutils literal notranslate"><span class="pre">evalFunctions()</span></code></a> call.</li>
+<li>The gradients of the functions with respect to the design variables can
+be evaluated using the adjoint method with the <a class="reference internal" href="#TACS.Assembler.evalDVSens" title="TACS.Assembler.evalDVSens"><code class="xref py py-func docutils literal notranslate"><span class="pre">evalDVSens()</span></code></a>,
+<a class="reference internal" href="#TACS.Assembler.evalSVSens" title="TACS.Assembler.evalSVSens"><code class="xref py py-func docutils literal notranslate"><span class="pre">evalSVSens()</span></code></a>, and <a class="reference internal" href="#TACS.Assembler.evalAdjointResProduct" title="TACS.Assembler.evalAdjointResProduct"><code class="xref py py-func docutils literal notranslate"><span class="pre">evalAdjointResProduct()</span></code></a> functions.</li>
+</ol>
+<div class="toggle docutils container">
+<div class="header docutils container">
+<strong>Assembler Class Methods</strong></div>
+<span class="target" id="module-TACS"></span><dl class="class">
+<dt id="TACS.Assembler">
+<em class="property">class </em><code class="descclassname">TACS.</code><code class="descname">Assembler</code><a class="headerlink" href="#TACS.Assembler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TACS.Assembler.assembleMatType">
+<code class="descname">assembleMatType</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assemble the Jacobian matrix</p>
+<p>This function assembles the global Jacobian matrix and
+residual. This Jacobian includes the contributions from all
+elements. The Dirichlet boundary conditions are applied to the
+matrix by zeroing the rows of the matrix associated with a
+boundary condition, and setting the diagonal to unity. The
+matrix assembly also performs any communication required so that
+the matrix can be used immediately after assembly.</p>
+<p>residual:  the residual of the governing equations
+A:            the Jacobian matrix
+alpha:      coefficient on the variables
+beta:        coefficient on the time-derivative terms
+gamma:      coefficient on the second time derivative
+term
+matOr:      the matrix orientation NORMAL or TRANSPOSE</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.createFEMat">
+<code class="descname">createFEMat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.createFEMat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a parallel matrix specially suited for finite-element
+analysis.</p>
+<p>On the first call, this computes a reordering with the scheme
+provided. On subsequent calls, the reordering scheme is reused s
+that all FEMats, created from the same TACSAssembler object have
+the same non-zero structure.  This makes adding matrices
+together easier (which is required for eigenvalue computations.)</p>
+<p>The first step is to determine the coupling nodes. (For a serial
+case there are no coupling nodes, so this is very simple!)
+Then, the nodes that are not coupled to other processes are
+determined. The coupling and non-coupling nodes are ordered
+separately.  The coupling nodes must be ordered at the end of
+the block, while the local nodes must be ordered first. This
+type of constraint is not usually imposed in matrix ordering
+routines, so here we use a kludge.  First, order all the nodes
+and determine the ordering of the coupling variables within the
+full set.  Next, order the local nodes. Tis hopefully reduces
+the fill-ins required, although there is no firm proof to back
+that up.</p>
+<p>The results from the reordering are placed in a set of
+objects. The matrix reordering is stored in feMatBIndices and
+feMatCIndices while two mapping objects are created that map the
+variables from the global vector to reordered matrix.</p>
+<p>Mathematically this reordering can be written as follows,</p>
+<p>A1 = (P A P^{T})</p>
+<p>where P^{T} is a permutation of the columns (variables), while P
+is a permutation of the rows (equations).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.createVec">
+<code class="descname">createVec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.createVec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a distributed vector.</p>
+<p>Vector classes initialized by one TACS object, cannot be
+used by a second, unless they share are exactly the
+parallel layout.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.evalAdjointResProduct">
+<code class="descname">evalAdjointResProduct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalAdjointResProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is collective on all TACSAssembler processes. This
+computes the product of the derivative of the residual
+w.r.t. the design variables with several adjoint vectors
+simultaneously. This saves computational time as the derivative
+of the element residuals can be reused for each adjoint
+vector. This function performs the same task as
+evalAdjointResProduct, but uses more memory than calling it for
+each adjoint vector.</p>
+<p>adjoint: the array of adjoint vectors
+dvSens: the product of the derivative of the residuals and the adjoint
+num_dvs: the number of design variables</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.evalDVSens">
+<code class="descname">evalDVSens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalDVSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the derivative of a list of functions w.r.t. the design
+variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.evalFunctions">
+<code class="descname">evalFunctions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalFunctions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a list of TACS function</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.evalSVSens">
+<code class="descname">evalSVSens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalSVSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the derivative of the function w.r.t. the state
+variables.</p>
+<p>function: the function pointer</p>
+<p>vec:        the derivative of the function w.r.t. the state variables</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.initialize">
+<code class="descname">initialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to call after all the nodes and elements have been
+added into the created instance of TACS. This function need not
+be called when tacs is created using TACSCreator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Assembler.setDesignVars">
+<code class="descname">setDesignVars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the design variables.</p>
+<p>The design variable values provided must be the same on all
+processes for consistency. This call however, is not
+collective.</p>
+<p>dvs:     the array of design variable values
+numDVs: the number of design variables</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="meshloader">
+<h2>MeshLoader<a class="headerlink" href="#meshloader" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> is an interface for reading in FEM data from
+NASTRAN-style files (such as .bdf files).</p>
+<p>The typical usage for a <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> class is as follows:</p>
+<ol class="arabic simple">
+<li>Create the object and call <a class="reference internal" href="#TACS.MeshLoader.scanBDFFile" title="TACS.MeshLoader.scanBDFFile"><code class="xref py py-func docutils literal notranslate"><span class="pre">scanBDFFile()</span></code></a> on
+the desired NASTRAN .bdf file.</li>
+<li>Retrieve the number of components using <a class="reference internal" href="#TACS.MeshLoader.getNumComponents" title="TACS.MeshLoader.getNumComponents"><code class="xref py py-func docutils literal notranslate"><span class="pre">getNumComponents()</span></code></a></li>
+<li>Iterate through each component, create elements with desired constitutive properties
+and design variables. Set elements into the <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> object and
+create the <a class="reference internal" href="#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> object.</li>
+</ol>
+<div class="toggle docutils container">
+<div class="header docutils container">
+<strong>MeshLoader Class Methods</strong></div>
+<dl class="class">
+<dt id="TACS.MeshLoader">
+<em class="property">class </em><code class="descclassname">TACS.</code><code class="descname">MeshLoader</code><a class="headerlink" href="#TACS.MeshLoader" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TACS.MeshLoader.createTACS">
+<code class="descname">createTACS</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.createTACS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a distribtued version of TACS</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.MeshLoader.getBCs">
+<code class="descname">getBCs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.getBCs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the boundary conditions associated with the file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.MeshLoader.getNumComponents">
+<code class="descname">getNumComponents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.getNumComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of components</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.MeshLoader.scanBDFFile">
+<code class="descname">scanBDFFile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.scanBDFFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>This scans a Nastran file - only scanning in information from the
+bulk data section</p>
+<p>The only entries scanned are the entries beginning with elem_types
+and any GRID/GRID* entries</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.MeshLoader.setElement">
+<code class="descname">setElement</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.setElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the element associated with a given component number</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="creator">
+<h2>Creator<a class="headerlink" href="#creator" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#TACS.Creator" title="TACS.Creator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Creator</span></code></a> object is similar to the <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> object, but
+sets the nodes, elements, boundary conditions, etc. manually rather than loading them
+from a NASTRAN-style file. This involves the use of the <code class="xref py py-func docutils literal notranslate"><span class="pre">setNodes()</span></code>,
+<a class="reference internal" href="#TACS.Creator.setElements" title="TACS.Creator.setElements"><code class="xref py py-func docutils literal notranslate"><span class="pre">setElements()</span></code></a>, and <a class="reference internal" href="#TACS.Creator.setBoundaryConditions" title="TACS.Creator.setBoundaryConditions"><code class="xref py py-func docutils literal notranslate"><span class="pre">setBoundaryConditions()</span></code></a> functions,
+and finally the <code class="xref py py-func docutils literal notranslate"><span class="pre">createTACS()</span></code> function which creates the <a class="reference internal" href="#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a>
+object.</p>
+<div class="toggle docutils container">
+<div class="header docutils container">
+<strong>Creator Class Methods</strong></div>
+<dl class="class">
+<dt id="TACS.Creator">
+<em class="property">class </em><code class="descclassname">TACS.</code><code class="descname">Creator</code><a class="headerlink" href="#TACS.Creator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TACS.Creator.setBoundaryConditions">
+<code class="descname">setBoundaryConditions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setBoundaryConditions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the boundary conditions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TACS.Creator.setElements">
+<code class="descname">setElements</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setElements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the elements</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="frequencyanalysis">
+<h2>FrequencyAnalysis<a class="headerlink" href="#frequencyanalysis" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">FrequencyAnalysis</span></code> object solves the natural frequency eigenproblem
+and extracts the eigenvalues and eigenvectors (natural frequencies and mode shapes).
+This could be used to, for example, minimize the mass of a beam by varying element
+thicknesses with a lower bound constraint on its lowest natural frequency and an upper
+bound constraint on the KSFailure function.</p>
+</div>
+<div class="section" id="integrator">
+<h2>Integrator<a class="headerlink" href="#integrator" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">Integrator</span></code> class contains functions for solving the adjoint equations and governing equations forward in time. Classes for BDF, DIRK, ABM, and NBG integration inherit from this class.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">TACS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing TACS</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">TACS Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#assembler">Assembler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#meshloader">MeshLoader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creator">Creator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#frequencyanalysis">FrequencyAnalysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integrator">Integrator</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Example-CRM_Optimization.html">Example: CRM Optimization</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="install.html" title="previous chapter">Installing TACS</a></li>
+      <li>Next: <a href="Example-CRM_Optimization.html" title="next chapter">Example: CRM Optimization</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

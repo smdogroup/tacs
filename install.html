@@ -1,0 +1,154 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Installing TACS &#8212; TACS  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="TACS Interface" href="interface.html" />
+    <link rel="prev" title="Welcome to TACS’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installing-tacs">
+<h1>Installing TACS<a class="headerlink" href="#installing-tacs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>The following packages are required to use TACS:</p>
+<ul class="simple">
+<li>MPI and mpi4py</li>
+<li>BLAS</li>
+<li>LAPACK</li>
+<li>Metis 5.1</li>
+<li>numpy</li>
+</ul>
+<p>Optional packages:</p>
+<ul class="simple">
+<li>AMD - TACS can use the approximate minimum degree ordering routines from AMD/UFConfig</li>
+<li>TecIO - to convert TACS FH5 output files to tecplot-compatible files</li>
+</ul>
+</div>
+<div class="section" id="steps-to-compile">
+<h2>Steps to Compile<a class="headerlink" href="#steps-to-compile" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Clone the TACS git repository</p>
+</li>
+<li><p class="first">In the base ‘tacs’ directory, copy the Makefile.in.info to Makefile.in. Edit
+the Makefile.in and follow the directions within to set the variables. Set
+the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li>TACS_DIR: the root director of TACS</li>
+<li>CXX: the C++ compiler, must be MPI-enabled</li>
+<li>LAPACK_LIBS: linking arguments for the LAPACK libraries</li>
+<li>METIS_INCLUDE/METIS_LIB: the include/linking arguments for METIS</li>
+<li>AMD_INCLUDE/AMD_LIBS: optional include/linking arguments for AMD</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">To compile, from the base directory, run <em>make</em> then <em>make interface</em></p>
+</li>
+<li><p class="first">To set up the Python interface, run <em>python setup.py</em></p>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">TACS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing TACS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#steps-to-compile">Steps to Compile</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="interface.html">TACS Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example-CRM_Optimization.html">Example: CRM Optimization</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to TACS’s documentation!</a></li>
+      <li>Next: <a href="interface.html" title="next chapter">TACS Interface</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
