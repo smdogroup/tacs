@@ -18,7 +18,8 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
  public:
   PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff, 
                                 ElementBehaviorType type=LINEAR, 
-                                int _componentNum = 0 );
+                                int _componentNum=0,
+                                int _use_lobatto_quadrature=0 );
   ~PlaneStressCoupledThermoQuad();
 
   // Return the name of this element
@@ -59,9 +60,15 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
 template <int order>
 PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff, 
                                                      ElementBehaviorType type, 
-                                                     int _componentNum ):
-TACS2DCoupledThermoElement<order*order>(_stiff, type, _componentNum){  
-  numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+                                                     int _componentNum,
+                                                     int use_lobatto_quadrature ):
+TACS2DCoupledThermoElement<order*order>(_stiff, type, _componentNum){
+  if (use_lobatto_quadrature){
+
+  }
+  else {
+    numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+  }
 }
 
 template <int order>
@@ -158,7 +165,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       double pt[2];
       pt[0] = -1.0 + 2.0*n/(order - 1.0);
       pt[1] = -1.0 + 2.0*m/(order - 1.0);
-	
+      //printf("Pt: %f %f\n", pt[0], pt[1]);
       // Compute the shape functions
       double N[NUM_NODES];
       double Na[NUM_NODES], Nb[NUM_NODES];
@@ -189,7 +196,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       // coordinate directions
       TacsScalar X[3], Xa[4];
       this->planeJacobian(X, Xa, N, Na, Nb, Xpts);
-
+      
       // Compute the determinant of Xa and the transformation
       TacsScalar J[4];
       FElibrary::jacobian2d(Xa, J);
@@ -197,12 +204,17 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       // Compute the strain
       TacsScalar strain[3];
       this->evalStrain(strain, J, Na, Nb, vars);
-	
+      if (pt[0] > 1 || pt[1] > 1 || pt[0] < -1 || pt[1] < -1){
+        printf("cPt: %f %f\n", pt[0], pt[1]);
+      }
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < 3; k++ ){
           data[index+k] = TacsRealPart(strain[k]);
         }
         index += 3;
+      }
+      if (pt[0] > 1 || pt[1] > 1 || pt[0] < -1 || pt[1] < -1){
+        printf("Pt: %f %f\n", pt[0], pt[1]);
       }
       if (out_type & TACSElement::OUTPUT_STRESSES){
         // Calculate the effective stress at the current point
@@ -231,27 +243,19 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
         }
         index += 3;
       }
+      if (pt[0] > 1 || pt[1] > 1 || pt[0] < -1 || pt[1] < -1){
+        printf("Pt: %f %f\n", pt[0], pt[1]);
+      }
       if (out_type & TACSElement::OUTPUT_EXTRAS){
         // Get the temperature
-        TacsScalar T[] = {0.0};
-        this->getTemperature(pt, N, T);
-	// Compute the failure value
+        // Compute the failure value
 	TacsScalar lambda = 0.0;
-        /* con = NULL; */
-        /* /\* TMRCoupledThermoQuadStiffness *con = *\/ */
-        /* /\*   dynamic_cast<TMRCoupledThermoQuadStiffness*>(this->stiff); *\/ */
-        /* if (con){ */
-        /*   con->failure(pt, T, strain, &lambda); */
-        /* } */
-        /* else { */
-        /*   lambda = 0.0; */
-        /* } */
         data[index] = TacsRealPart(lambda);
 
 	this->stiff->buckling(strain, &lambda);
 	data[index+1] = TacsRealPart(lambda);
-
-	data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+        
+        data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
 	data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
         
         index += this->NUM_EXTRAS;

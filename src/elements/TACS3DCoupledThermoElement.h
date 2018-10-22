@@ -562,17 +562,17 @@ void TACS3DCoupledThermoElement<NUM_NODES>::getDisplGradientSens( TacsScalar Ud[
   }
 
   // Compute the displacement gradient: Ud = Ua*J
-  Ud[0] = Ua[0]*J[0] + Ua[1]*J[3] + Ua[2]*J[6];
-  Ud[3] = Ua[3]*J[0] + Ua[4]*J[3] + Ua[5]*J[6];
-  Ud[6] = Ua[6]*J[0] + Ua[7]*J[3] + Ua[8]*J[6];
+  Ud[0] = Ua[0]*J[0] + Ua[1]*J[3] + Ua[2]*J[6]; // u,x
+  Ud[3] = Ua[3]*J[0] + Ua[4]*J[3] + Ua[5]*J[6]; // v,x
+  Ud[6] = Ua[6]*J[0] + Ua[7]*J[3] + Ua[8]*J[6]; // w,x
 
-  Ud[1] = Ua[0]*J[1] + Ua[1]*J[4] + Ua[2]*J[7];
-  Ud[4] = Ua[3]*J[1] + Ua[4]*J[4] + Ua[5]*J[7];
-  Ud[7] = Ua[6]*J[1] + Ua[7]*J[4] + Ua[8]*J[7];
+  Ud[1] = Ua[0]*J[1] + Ua[1]*J[4] + Ua[2]*J[7]; // u,y
+  Ud[4] = Ua[3]*J[1] + Ua[4]*J[4] + Ua[5]*J[7]; // v,y
+  Ud[7] = Ua[6]*J[1] + Ua[7]*J[4] + Ua[8]*J[7]; // w,y
 
-  Ud[2] = Ua[0]*J[2] + Ua[1]*J[5] + Ua[2]*J[8];
-  Ud[5] = Ua[3]*J[2] + Ua[4]*J[5] + Ua[5]*J[8];
-  Ud[8] = Ua[6]*J[2] + Ua[7]*J[5] + Ua[8]*J[8];
+  Ud[2] = Ua[0]*J[2] + Ua[1]*J[5] + Ua[2]*J[8]; // u,z
+  Ud[5] = Ua[3]*J[2] + Ua[4]*J[5] + Ua[5]*J[8]; // v,z
+  Ud[8] = Ua[6]*J[2] + Ua[7]*J[5] + Ua[8]*J[8]; // w,z
 
   // Compute the derivative of the displacement gradient
   UdSens[0] = Ua[0]*JSens[0] + Ua[1]*JSens[3] + Ua[2]*JSens[6];
@@ -1281,7 +1281,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
     // Compute the corresponding stress
     TacsScalar stress[NUM_STRESSES];
     stiff->calculateStress(pt, strain, stress);
-       
+    
     // Get the derivative of the strain with respect to the nodal
     // displacements
     getBmat(B, J, Na, Nb, Nc, vars);
@@ -1325,7 +1325,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       // Compute D*alpha*phi [6x1]
       stiff->calculateThermal(pt, phi, stress);
       // Get the derivative of the strain with respect to the nodal
-      // displacements [6x24] (24 = 3*NUM_NODES for order 2)
+      // displacements [NUM_STRESSESx3*NUM_NODES]
       memset(B, 0.0, NUM_STRESSES*3*NUM_NODES*sizeof(TacsScalar));
       getBmat(B, J, Na, Nb, Nc,vars);
       b = NULL; 
@@ -1335,7 +1335,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       // Compute B^{T}*D*alpha*phi [24x1]
       for ( int i = 0; i < 3*NUM_NODES; i++ ){
         q[i] += (b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]
-                 +b[3]*stress[3] + b[4]*stress[4] + b[5]*stress[5]);
+                 + b[3]*stress[3] + b[4]*stress[4] + b[5]*stress[5]);
         b += NUM_STRESSES;
       }
       // Get the temperature N^{T}*T
@@ -1372,7 +1372,6 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
     } // end if conduction
   } // end for int n = 0; n < numGauss
 }
-
 /*
   Get the Jacobian of the governing equations- the exact Jacobian of the
   residual expressions.
@@ -1425,7 +1424,6 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
     TacsScalar J[9];
     TacsScalar h = FElibrary::jacobian3d(Xa, J);
     h = h*weight;
-    // ----------------------------------------------------------
     if (alpha != 0.0){
       // Compute the strain
       TacsScalar strain[NUM_STRESSES];
@@ -1513,7 +1511,6 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
       // transfer problem
       memset(B, 0.0, 3*NUM_NODES*sizeof(TacsScalar));
       getBmatTemp(B, J, Na, Nb, Nc,vars);
-      // Fill-in the upper portion of the matrix
       bj = B;
       for ( int j = 0; j < NUM_NODES; j++ ){
         for ( int jj = 3; jj < 4; jj++ ){

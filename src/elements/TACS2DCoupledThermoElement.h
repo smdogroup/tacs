@@ -645,7 +645,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getBmatTemp( TacsScalar B[],
   }
 }
 
-//---------------------------------------------------------------------------------------- 
+//----------------------------------------------------------------------------------- 
 /*
   Compute the derivative of the strain with respect to the nodal
   coordinates
@@ -998,7 +998,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       // Compute D*alpha*phi [3x1]
       stiff->calculateThermal(pt, phi, stress);
       // Get the derivative of the strain with respect to the nodal
-      // displacements [3x8] 8 = 2*NUM_NODES
+      // displacements [NUM_STRESSESx2*NUM_NODES]
       memset(B, 0.0, NUM_STRESSES*2*NUM_NODES*sizeof(TacsScalar));
       getBmat(B, J, Na, Nb, vars);
       b = NULL; 
@@ -1020,7 +1020,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
         res[3*i] -= q[2*i]*h*T;
         res[3*i+1] -= q[2*i+1]*h*T;
       }      
-      // --------------------------------------------------------
       // Evaluate the product B*dT [2x1]
       strain[0] = strain[1] = 0.0;
       evalBT(strain, J, Na, Nb, vars);
@@ -1037,11 +1036,9 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
         res[3*i+2] += h*(b[0]*stress[0] + b[1]*stress[1]);        
         b += 2;
       }      
-      // ---------------------------------------------------------------
     } // end if conduction
   } // end for int n = 0; n < numGauss
 }
-// -------------------------------------------------------------------------
 /*
   Add the Jacobian of the governing equations - the exact Jacobian of
   the residual expression.
@@ -1092,7 +1089,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
     TacsScalar J[4];
     TacsScalar h = FElibrary::jacobian2d(Xa, J);
     h = h*weight;
-    // ------------------------------------------------------------
     if (alpha != 0.0){
       // Compute the strain which is the product B*u
       TacsScalar strain[NUM_STRESSES];
@@ -1112,7 +1108,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
           // Compute the product of D*B at the given point
           TacsScalar bs[NUM_STRESSES];
           stiff->calculateStress(pt, bj, bs);
-          bj += 3;
+          bj += NUM_STRESSES;
           for ( int i = 0; i < NUM_NODES; i++ ){
             for ( int ii = 0; ii < 2; ii++ ){
               const TacsScalar *bi = &B[3*(2*i + ii)];
@@ -1172,7 +1168,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
       // problem
       memset(B, 0.0, 2*NUM_NODES*sizeof(TacsScalar));
       getBmatTemp(B, J, Na, Nb, vars);
-      // Fill-in the upper portion of the matrix
       bj = B;
       for ( int j = 0; j < NUM_NODES; j++ ){
         for ( int jj = 2; jj < 3; jj++ ){
@@ -1188,11 +1183,10 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
             } // end for int ii = 2; ii < 3
           } // end for int i = 0; i < NUM_NODES
         } // end for int jj = 2; jj < 3
-      }       
+      }
     } // end if conduction 
   } // end for int n = 0; n < numGauss
 }
-//---------------------------------------------------------------------------------
 /*
   Add the product of the adjoint vector times the derivative of the
   residuals multiplied by a scalar to the given derivative vector.
@@ -1441,7 +1435,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getMatType( ElementMatrixType matTyp
         }
       }
     }
-
     // Apply symmetry to the matrix
     for ( int j = 0; j < NUM_VARIABLES; j++ ){
       for ( int i = 0; i < j; i++ ){
@@ -1641,7 +1634,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSV
   // Get the derivative of the strain with respect to the nodal
   // displacements
   getBmat(B, J, Na, Nb, vars);
-  // --------------------------------------------------
   TacsScalar *b = B;
   for ( int i = 0; i < NUM_NODES; i++ ){
     strainSVSens[3*i] += scale*(strainSens[0]*b[0] +
@@ -1653,7 +1645,6 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSV
                                   strainSens[2]*b[2]);
     b += NUM_STRESSES;
   }
-  // ----------------------------------------------------
 }
 
 /*

@@ -260,17 +260,19 @@ cdef extern from "TACSElementTemplates.h":
     # Declare the Solid Thermoelastic elements
     cdef cppclass SolidThermo2(TACSElement):
         SolidThermo2(CoupledThermoSolidStiffness *stiff,
-                     ElementBehaviorType type, int)
+                     ElementBehaviorType type, int, int)
     cdef cppclass SolidThermo3(TACSElement):
         SolidThermo3(CoupledThermoSolidStiffness *stiff,
-                     ElementBehaviorType type, int)
+                     ElementBehaviorType type, int, int)
     cdef cppclass SolidThermo4(TACSElement):
         SolidThermo4(CoupledThermoSolidStiffness *stiff,
-                     ElementBehaviorType type, int)
+                     ElementBehaviorType type, int, int)
     cdef cppclass SolidThermo5(TACSElement):
         SolidThermo5(CoupledThermoSolidStiffness *stiff,
-                     ElementBehaviorType type, int)
-
+                     ElementBehaviorType type, int, int)
+    cdef cppclass SolidThermo6(TACSElement):
+        SolidThermo5(CoupledThermoSolidStiffness *stiff,
+                     ElementBehaviorType type, int, int)
     # Declare the Solid Thermoelastic Traction elements
     cdef cppclass TACS3DThermoTraction2(TACSElement):
         TACS3DThermoTraction2(int, TacsScalar, TacsScalar, TacsScalar)

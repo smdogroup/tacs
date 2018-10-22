@@ -657,7 +657,8 @@ cdef class PSThermoelasticQuad(Element):
         return
         
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr:
+            self.ptr.decref()
         return
 
 cdef class PSThermoQuadTraction(Element):
@@ -738,27 +739,37 @@ cdef class PSThermoQuadHF(Element):
 cdef class SolidThermo(Element):
     def __cinit__(self, int order, CoupledSolid stiff,
                   ElementBehaviorType elem_type=LINEAR,
-                  int component_num=0):
+                  int component_num=0, int use_lobatto_quad=0):
         '''
         Wrap the SolidThermo element class for order 2,3,4
         '''
         cdef CoupledThermoSolidStiffness *con = _dynamicSolidThermo(stiff.ptr)
         if order == 2:
-            self.ptr = new SolidThermo2(con, elem_type, component_num)
+            self.ptr = new SolidThermo2(con, elem_type, component_num,
+                                        use_lobatto_quad)
             self.ptr.incref()
         elif order == 3:
-            self.ptr = new SolidThermo3(con, elem_type, component_num)
+            self.ptr = new SolidThermo3(con, elem_type, component_num,
+                                        use_lobatto_quad)
             self.ptr.incref()
         elif order == 4:
-            self.ptr = new SolidThermo4(con, elem_type, component_num)
+            self.ptr = new SolidThermo4(con, elem_type, component_num,
+                                        use_lobatto_quad)
             self.ptr.incref()
         elif order == 5:
-            self.ptr = new SolidThermo5(con, elem_type, component_num)
+            self.ptr = new SolidThermo5(con, elem_type, component_num,
+                                        use_lobatto_quad)
             self.ptr.incref()
+        elif order == 6:
+            self.ptr = new SolidThermo5(con, elem_type, component_num,
+                                        use_lobatto_quad)
+            self.ptr.incref()
+        
         return
         
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr:
+            self.ptr.decref()
         return
     
 cdef class TACS3DThermoTraction(Element):
