@@ -16,6 +16,7 @@ CXX_OBJS = TACSConstitutive.o \
 	isoFSDTStiffness.o \
 	compFSDTStiffness.o \
 	EBStiffness.o \
+	rectangleEBStiffness.o \
 	TimoshenkoStiffness.o \
 	TACSPanelAnalysis.o
 

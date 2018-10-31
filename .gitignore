@@ -1,6 +1,7 @@
 # use glob syntax.
 syntax: glob
 
+examples/bin
 extern/
 *~
 *.in
@@ -35,6 +36,7 @@ extern/
 *.nav
 *.snm
 *.toc
+*.xlsx
 tacs/*.cpp
 *.pxi
 *.vtk

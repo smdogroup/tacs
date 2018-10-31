@@ -1952,12 +1952,12 @@ void TACSBDFIntegrator::getAdjoint( int step_num, int func_num,
   Constructor for TACSDIRKIntegrator
 
   Input:
-
+  
+  tacs:              the TACS assembler object
   num_stages:        the number of Runge-Kutta stages
   tinit:             the initial time
   tfinal:            the final time
   num_steps:         the number of steps to take
-  order:             order of the truncation error
 */
 TACSDIRKIntegrator::TACSDIRKIntegrator( TACSAssembler * _tacs, 
                                         double _tinit, double _tfinal, 
@@ -2067,42 +2067,156 @@ TACSDIRKIntegrator::~TACSDIRKIntegrator(){
 */
 void TACSDIRKIntegrator::setupDefaultCoeffs(){
   if (num_stages == 1){
-    // Implicit mid-point rule (A-stable)
+    // Implicit mid-point rule (A-stable), 2nd Order
     a[0] = 0.5;
     b[0] = 1.0;
     c[0] = 0.5;
+
+    // Backward Euler (BDF1), 1st Order, Works
+    // a[0] = 1.0;
+    // b[0] = 1.0;
+    // c[0] = 1.0;
   } 
   else if (num_stages == 2){
-    // Crouzeix formula (A-stable)
-    double tmp = 1.0/(2.0*sqrt(3.0));
-    a[0] = 0.5 + tmp;
-    a[1] = -1.0/sqrt(3.0);
-    a[2] = a[0];
+    // Crouzeix formula (A-stable), 3rd order
+    // double tmp = 1.0/(2.0*sqrt(3.0));
+    // a[0] = 0.5 + tmp;
+    // a[1] = -1.0/sqrt(3.0);
+    // a[2] = a[0];
 
-    b[0] = 0.5;
-    b[1] = 0.5;
+    // b[0] = 0.5;
+    // b[1] = 0.5;
 
-    c[0] = 0.5 + tmp;
-    c[1] = 0.5 - tmp;
+    // c[0] = 0.5 + tmp;
+    // c[1] = 0.5 - tmp;
+
+    // a[0] = 1.0;
+    // a[1] = 0.0;
+    // a[2] = 1.0;
+
+    // b[0] = 0.0;
+    // b[1] = 1.0;
+
+    // c[0] = 1.0;
+    // c[1] = 1.0;
+
+    // Butcher's DIRK2 (L-stable), Doesn't work
+    double lambda = (1.0/2.0)*sqrt(2.0);
+    a[0] = 1.0-lambda;
+    a[1] = lambda;
+    a[2] = 1.0-lambda;
+
+    b[0] = lambda;
+    b[1] = 1.0-lambda;
+
+    c[0] = 1.0-lambda;
+    c[1] = 1.0;
+
+    // Miller's Formula (L-stable) Doesn't Work
+    // a[0] = 1.0/3.0;
+    // a[1] = 3.0/4.0;
+    // a[2] = 1.0/4.0;
+
+    // b[0] = 3.0/4.0;
+    // b[1] = 1.0/4.0;
+
+    // c[0] = 1.0/3.0;
+    // c[1] = 1.0;
+
+    // Qin and Zhang Formula (A-stable) Doesn't Work
+    // a[0] = 1.0/4.0;
+    // a[1] = 1.0/2.0;
+    // a[2] = 1.0/4.0;
+
+    // b[0] = 1.0/2.0;
+    // b[1] = 1.0/2.0;
+
+    // c[0] = 1.0/4.0;
+    // c[1] = 3.0/4.0;
+
   } 
   else if (num_stages == 3){
     // Crouzeix formula (A-stable)
-    double alpha = 2.0*cos(M_PI/18.0)/sqrt(3.0);
+    // double alpha = 2.0*cos(M_PI/18.0)/sqrt(3.0);
     
-    a[0] = (1.0 + alpha)*0.5;
-    a[1] = -0.5*alpha;
-    a[2] = a[0];
-    a[3] = 1.0 + alpha;
-    a[4] = -(1.0 + 2.0*alpha);
-    a[5] = a[0];    
+    // a[0] = (1.0 + alpha)*0.5;
+    // a[1] = -0.5*alpha;
+    // a[2] = a[0];
+    // a[3] = 1.0 + alpha;
+    // a[4] = -(1.0 + 2.0*alpha);
+    // a[5] = a[0];    
 
-    b[0] = 1.0/(6.0*alpha*alpha);
-    b[1] = 1.0 - 1.0/(3.0*alpha*alpha);
-    b[2] = b[0];
+    // b[0] = 1.0/(6.0*alpha*alpha);
+    // b[1] = 1.0 - 1.0/(3.0*alpha*alpha);
+    // b[2] = b[0];
 
-    c[0] = 0.5*(1.0+alpha);
-    c[1] = 0.5;
-    c[2] = 0.5*(1.0-alpha);
+    // c[0] = 0.5*(1.0+alpha);
+    // c[1] = 0.5;
+    // c[2] = 0.5*(1.0-alpha);
+
+    // Miller's Formula (L-stable) Doesn't work
+    // a[0] = 1.0;
+    // a[1] = -1.0/12.0;
+    // a[2] = 5.0/12.0;
+    // a[3] = 0.0;
+    // a[4] = 3.0/4.0;
+    // a[5] = 1.0/4.0;
+
+    // b[0] = 0.0;
+    // b[1] = 3.0/4.0;
+    // b[2] = 1.0/4.0;
+
+    // c[0] = 1.0;
+    // c[1] = 1.0/3.0;
+    // c[2] = 1.0;
+
+    // Xflow DIRK3, Doesn't work
+    a[0] = 0.435866521508459;
+    a[1] = 0.2820667393;
+    a[2] = 0.435866521508459;
+    a[3] = 1.2084966492;
+    a[4] = -0.6443631707;
+    a[5] = 0.435866521508549;
+
+    b[0] = 1.2084966492;
+    b[1] = -0.6443631707;
+    b[2] = 0.435866521508549;
+
+    c[0] = 0.435866521508459;
+    c[1] = 0.7179332608;
+    c[2] = 1.0;
+  }
+  else if (num_stages == 5){
+    // 5-stage, 4th-order accurate DIRK scheme that is more stable for stiff problems
+    // Same as DIRK4 scheme used in UM-Xflow, Doesn't Work
+
+    a[0]  =  1.0/4.0;
+    a[1]  =  1.0/2.0;
+    a[2]  =  a[0];
+    a[3]  =  17.0/50.0;
+    a[4]  = -1.0/25.0;
+    a[5]  =  a[0];
+    a[6]  =  371.0/1360.0;
+    a[7]  = -137.0/2720.0;
+    a[8]  =  15.0/544.0;
+    a[9]  =  a[0];
+    a[10] =  25.0/24.0;
+    a[11] = -49.0/48.0;
+    a[12] =  125.0/16.0;
+    a[13] = -85.0/12.0;
+    a[14] =  a[0];
+
+    b[0]  =  a[10];
+    b[1]  =  a[11];
+    b[2]  =  a[12];
+    b[3]  =  a[13];
+    b[4]  =  a[14];
+
+    c[0]  =  1.0/4.0;
+    c[1]  =  3.0/4.0;
+    c[2]  =  11.0/20.0;
+    c[3]  =  1.0/2.0;
+    c[4]  =  1.0;
   }
   else {
     fprintf(stderr, "ERROR: Invalid number of stages %d\n", num_stages);

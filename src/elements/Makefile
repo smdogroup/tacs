@@ -15,6 +15,7 @@ CXX_OBJS = TACSElement.o \
 	PlaneStressTri6.o \
 	MITC3.o \
 	MITC9.o \
+	EBBeam.o \
 	RigidBody.o \
 	KinematicConstraints.o	
 
