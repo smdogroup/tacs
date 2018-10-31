@@ -19,8 +19,7 @@ class CoupledThermoSolid : public TACS3DCoupledThermoElement<order*order*order> 
  public:
   CoupledThermoSolid( CoupledThermoSolidStiffness * _stiff, 
                       ElementBehaviorType type=LINEAR, 
-                      int _componentNum=0, 
-                      int _use_lobatto_quadrature=0 ); 
+                      int _componentNum=0 ); 
   ~CoupledThermoSolid();
 
   // Return the name of this element
@@ -62,39 +61,9 @@ class CoupledThermoSolid : public TACS3DCoupledThermoElement<order*order*order> 
 template <int order>
 CoupledThermoSolid<order>::CoupledThermoSolid( CoupledThermoSolidStiffness * _stiff, 
                                                ElementBehaviorType type, 
-                                               int _componentNum,
-                                               int use_lobatto_quadrature ):
+                                               int _componentNum ):
 TACS3DCoupledThermoElement<order*order*order>(_stiff, type, _componentNum){
-  if (use_lobatto_quadrature){
-    if (order == 2){
-      numGauss = 2;
-      gaussPts = FElibrary::lobattoPts2;
-      gaussWts = FElibrary::lobattoWts2;
-    }
-    else if (order == 3){
-      numGauss = 3;
-      gaussPts = FElibrary::lobattoPts3;
-      gaussWts = FElibrary::lobattoWts3;
-    }
-    else if (order == 4){
-      numGauss = 4;
-      gaussPts = FElibrary::lobattoPts4;
-      gaussWts = FElibrary::lobattoWts4;
-    }
-    else if (order == 5){
-      numGauss = 5;
-      gaussPts = FElibrary::lobattoPts5;
-      gaussWts = FElibrary::lobattoWts5;
-    }
-    else if (order == 6){
-      numGauss = 6;
-      gaussPts = FElibrary::lobattoPts6;
-      gaussWts = FElibrary::lobattoWts6;
-    }
-  }
-  else {
-    numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
-  }
+  numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 } 
 
 template <int order>
