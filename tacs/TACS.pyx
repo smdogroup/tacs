@@ -81,6 +81,11 @@ PY_GAUSS_SEIDEL = GAUSS_SEIDEL
 SUM_TWO = JD_SUM_TWO
 NUM_RECYCLE = JD_NUM_RECYCLE
 
+# The vector sum/set operations
+INSERT_VALUES = TACS_INSERT_VALUES
+ADD_VALUES = TACS_ADD_VALUES
+INSERT_NONZERO_VALUES = TACS_INSERT_NONZERO_VALUES
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
     def __cinit__(self):
@@ -228,7 +233,78 @@ cdef class Vec:
         '''
         self.ptr.setRand(lower, upper)
         return
+    
+    def getValues(self, np.ndarray[int, ndim=1] var):
+        '''
+        Get the values from the given global indices
+        '''        
+        cdef int fail = 0
+        cdef int length = 0
+        cdef int bsize = 0
+        cdef np.ndarray values
+        bsize = self.ptr.getBlockSize()
+        length = bsize*var.shape[0]
+        values = np.zeros(length)
+        fail = self.ptr.getValues(length, <int*>var.data, <TacsScalar*>values.data)
+        if fail:
+            errmsg = 'Vec: Failed on get values. Incorrect indices'
+            raise RuntimeError(errmsg)
+        return values
 
+    def setValues(self, np.ndarray[int, ndim=1] var,
+                  np.ndarray[TacsScalar, ndim=1] values,
+                  TACSBVecOperation op=ADD_VALUES):
+        '''
+        Set the values into the given vector components.
+
+        Note: Vector indices are global
+        '''
+        cdef int bsize = 0
+        cdef int length = 0
+        bsize = self.ptr.getBlockSize()
+        if bsize*var.shape[0] != values.shape[0]:
+            errmsg = 'Vec: Inconsistent arrays. Must be of size (%d) and (%d)'%(
+                var.shape[0], bsize*var.shape[0])
+            raise ValueError(errmsg)
+        length = var.shape[0]
+        self.ptr.setValues(length, <int*>var.data, <TacsScalar*>values.data, op)
+        return
+
+    def beginSetValues(self, TACSBVecOperation op=ADD_VALUES):
+        '''Begin setting the values: Collective on the TACS communicator'''
+        self.ptr.beginSetValues(op)
+        return
+
+    def endSetValues(self, TACSBVecOperation op=ADD_VALUES):
+        '''Finish setting the values: Collective on the TACS communicator'''
+        self.ptr.endSetValues(op)
+        return
+
+    def distributeValues(self):
+        '''
+        Distribute values: Collective on the TACS communicator
+        '''
+        self.ptr.beginDistributeValues()
+        self.ptr.endDistributeValues()
+        return
+
+    def beginDistributeValues(self):
+        '''
+        Begin distributing the values to attain consistent
+        local/global entries.  This function is collective on the TACS
+        communicator.
+        '''
+        self.ptr.beginDistributeValues()
+        return
+
+    def endDistributeValues(self):
+        '''
+        Finishe distributing values to attain consistent local/global
+        entries. This function is collective on the TACS communicator.
+        '''
+        self.ptr.endDistributeValues()
+        return
+    
     def writeToFile(self, fname):
         '''
         Write the values to a file.

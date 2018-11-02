@@ -131,14 +131,17 @@ cdef extern from "BVec.h":
     cdef cppclass TACSBVec(TACSVec):
         TACSBVec(TACSVarMap*, int)
         int getSize(int*)
+        int getBlockSize()
         int getArray(TacsScalar**)
         int readFromFile(const_char*)
         int writeToFile(const_char*)
+        int getValues(int, const int*, TacsScalar*)
+        void setValues(int, const int*, const TacsScalar*, TACSBVecOperation)
         void beginSetValues(TACSBVecOperation)
         void endSetValues(TACSBVecOperation)
         void beginDistributeValues()
         void endDistributeValues()
-
+        
 cdef extern from "BVecDist.h":
      cdef cppclass TACSVarMap(TACSObject):
         TACSVarMap(MPI_Comm, int)

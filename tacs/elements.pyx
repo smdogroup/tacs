@@ -654,6 +654,11 @@ cdef class PSThermoelasticQuad(Element):
         elif order == 5:
             self.ptr = new PSThermoQuad5(con, elem_type, component_num)
             self.ptr.incref()
+        elif order == 6:
+            self.ptr = new PSThermoQuad6(con, elem_type, component_num)
+            self.ptr.incref()
+        else:
+            print("Order %d not implemented"%(order))
         return
         
     def __dealloc__(self):
@@ -686,6 +691,10 @@ cdef class PSThermoQuadTraction(Element):
             self.ptr.incref()
         elif order == 5:
             self.ptr = new PSThermoQuadTraction5(surf, <TacsScalar*>tx.data,
+                                                 <TacsScalar*>ty.data)
+            self.ptr.incref()
+        elif order == 6:
+            self.ptr = new PSThermoQuadTraction6(surf, <TacsScalar*>tx.data,
                                                  <TacsScalar*>ty.data)
             self.ptr.incref()
         return
@@ -757,9 +766,8 @@ cdef class SolidThermo(Element):
             self.ptr = new SolidThermo5(con, elem_type, component_num)
             self.ptr.incref()
         elif order == 6:
-            self.ptr = new SolidThermo5(con, elem_type, component_num)
-            self.ptr.incref()
-        
+            self.ptr = new SolidThermo6(con, elem_type, component_num)
+            self.ptr.incref()        
         return
         
     def __dealloc__(self):
@@ -770,7 +778,7 @@ cdef class SolidThermo(Element):
 cdef class TACS3DThermoTraction(Element):
     def __cinit__(self, int order, int surf,
                   TacsScalar tx, TacsScalar ty, TacsScalar tz):
-        if order < 2 or order > 5:
+        if order < 2 or order > 7:
             errmsg = 'ThermoTraction3D order must be between 2 and 4'
             raise ValueError(errmsg)
         if surf < 0 or surf >= 6:
@@ -789,6 +797,10 @@ cdef class TACS3DThermoTraction(Element):
         elif order == 5:
             self.ptr = new TACS3DThermoTraction5(surf, tx, ty, tz)
             self.ptr.incref()
+        elif order == 6:
+            self.ptr = new TACS3DThermoTraction6(surf, tx, ty, tz)
+            self.ptr.incref()
+
         return
 
     def __dealloc__(self):

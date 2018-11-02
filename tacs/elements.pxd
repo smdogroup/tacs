@@ -228,6 +228,10 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass PSThermoQuad5(TACSElement):
         PSThermoQuad5(CoupledThermoPlaneStressStiffness *stiff,
                       ElementBehaviorType type, int)
+        
+    cdef cppclass PSThermoQuad6(TACSElement):
+        PSThermoQuad6(CoupledThermoPlaneStressStiffness *stiff,
+                      ElementBehaviorType type, int)
                 
     # Declare the Plane Stress Thermoelastic Traction Quad elements
     cdef cppclass PSThermoQuadTraction2(TACSElement):
@@ -242,6 +246,9 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass PSThermoQuadTraction5(TACSElement):
         PSThermoQuadTraction5(int, TacsScalar, TacsScalar)
         PSThermoQuadTraction5(int, TacsScalar*, TacsScalar*)
+    cdef cppclass PSThermoQuadTraction6(TACSElement):
+        PSThermoQuadTraction6(int, TacsScalar, TacsScalar)
+        PSThermoQuadTraction6(int, TacsScalar*, TacsScalar*)
         
     # Declare Plane Stress Thermoelastic Heat Flux elements
     cdef cppclass PSThermoQuadHF2(TACSElement):
@@ -271,8 +278,9 @@ cdef extern from "TACSElementTemplates.h":
         SolidThermo5(CoupledThermoSolidStiffness *stiff,
                      ElementBehaviorType type, int)
     cdef cppclass SolidThermo6(TACSElement):
-        SolidThermo5(CoupledThermoSolidStiffness *stiff,
+        SolidThermo6(CoupledThermoSolidStiffness *stiff,
                      ElementBehaviorType type, int)
+        
     # Declare the Solid Thermoelastic Traction elements
     cdef cppclass TACS3DThermoTraction2(TACSElement):
         TACS3DThermoTraction2(int, TacsScalar, TacsScalar, TacsScalar)
@@ -286,6 +294,9 @@ cdef extern from "TACSElementTemplates.h":
     cdef cppclass TACS3DThermoTraction5(TACSElement):
         TACS3DThermoTraction5(int, TacsScalar, TacsScalar, TacsScalar)
         TACS3DThermoTraction5(int, TacsScalar*, TacsScalar*, TacsScalar*)
+    cdef cppclass TACS3DThermoTraction6(TACSElement):
+        TACS3DThermoTraction6(int, TacsScalar, TacsScalar, TacsScalar)
+        TACS3DThermoTraction6(int, TacsScalar*, TacsScalar*, TacsScalar*)
         
     # Declare the Solid Thermoelastic Heat Flux elements
     cdef cppclass TACS3DThermoHF2(TACSElement):
