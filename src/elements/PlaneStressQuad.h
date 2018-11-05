@@ -30,7 +30,7 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
  public:
   PlaneStressQuad( PlaneStressStiffness *_stiff,
                    ElementBehaviorType type=LINEAR,
-                   int _componentNum = 0 );
+                   int _componentNum=0 );
   ~PlaneStressQuad();
 
   // Return the name of this element
@@ -64,7 +64,7 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
                       const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
 
- private:
+ protected:
   void getPartUnityShapeFunctions( const double pt[],
                                    double N[], double Na[], double Nb[] );
 
