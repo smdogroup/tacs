@@ -154,6 +154,25 @@ class TACS2DElement : public TACSElement {
                             const TacsScalar dvars[],
                             const TacsScalar ddvars[] );
 
+  // Compute the derivative of the inner product w.r.t. design variables
+  // -------------------------------------------------------------------
+  void addMatDVSensInnerProduct( ElementMatrixType matType,
+                                 double scale,
+                                 TacsScalar dvSens[], int dvLen,
+                                 const TacsScalar psi[],
+                                 const TacsScalar phi[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[] );
+
+  // Compute the derivative of the inner product w.r.t. vars[]
+  // ---------------------------------------------------------
+  void getMatSVSensInnerProduct( ElementMatrixType matType,
+                                 TacsScalar res[],
+                                 const TacsScalar psi[],
+                                 const TacsScalar phi[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[] );
+  
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
   void getMatType( ElementMatrixType matType, 
@@ -1255,8 +1274,425 @@ void TACS2DElement<NUM_NODES>::getMatType( ElementMatrixType matType,
       }
     }
   }
+  else if (matType == GEOMETRIC_STIFFNESS_MATRIX){
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES];
+      
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+    
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weight
+      double pt[3];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
+
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xa, J);
+      h = h*weight;
+      
+      // Compute the strain derived from load path
+      TacsScalar strain[NUM_STRESSES];
+      evalStrain(strain, J, Na, Nb, vars);
+      
+      // Compute the corresponding stress
+      TacsScalar stress[NUM_STRESSES];
+      stiff->calculateStress(pt, strain, stress);
+      
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        TacsScalar Dxj = Na[j]*J[0] + Nb[j]*J[2];
+        TacsScalar Dyj = Na[j]*J[1] + Nb[j]*J[3];
+      
+        for ( int i = 0; i < NUM_NODES; i++ ){
+          TacsScalar Dxi = Na[i]*J[0] + Nb[i]*J[2];
+          TacsScalar Dyi = Na[i]*J[1] + Nb[i]*J[3];
+
+          // Add the contributions to the stiffness matrix
+          TacsScalar scale = h*(stress[0]*Dxi*Dxj +
+                                stress[1]*Dyi*Dyj +
+                                stress[2]*(Dxi*Dyj + Dxj*Dyi));
+
+          mat[2*i + 2*j*NUM_VARIABLES] += scale;
+          mat[2*i+1 + (2*j+1)*NUM_VARIABLES] += scale;
+        }
+      }
+    }
+  }
+  else if (matType == STIFFNESS_MATRIX){
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES];
+    
+    // The derivative of the stress with respect to the strain
+    TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+    
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+    
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weight
+      double pt[3];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
+      
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xa, J);
+      h = h*weight;
+      
+      // Compute the strain
+      TacsScalar strain[NUM_STRESSES];
+      evalStrain(strain, J, Na, Nb, vars);
+      
+      // Compute the corresponding stress
+      TacsScalar stress[NUM_STRESSES];
+      stiff->calculateStress(pt, strain, stress);
+      
+      // Get the derivative of the strain with respect to the nodal
+      // displacements
+      getBmat(B, J, Na, Nb, vars);
+
+      // Fill-in the upper portion of the matrix
+      TacsScalar *bj = B;
+      for ( int j = 0; j < NUM_VARIABLES; j++ ){
+        // Compute the stress at the given point
+        TacsScalar bs[NUM_STRESSES];
+        stiff->calculateStress(pt, bj, bs);
+      
+        TacsScalar *bi = B;
+        for ( int i = 0; i <= j; i++ ){
+          mat[i + j*NUM_VARIABLES] += 
+            h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2]);
+          bi += NUM_STRESSES;
+        }
+        bj += NUM_STRESSES;
+      }
+    }
+  
+    // Apply symmetry to the matrix
+    for ( int j = 0; j < NUM_VARIABLES; j++ ){
+      for ( int i = 0; i < j; i++ ){
+        mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
+      }
+    }
+  }
 }
 
+/*
+  Add the derivative of the inner product of the stiffness or mass
+  matrix with respect to the design variables to a design variable
+  vector. This is much more efficient than computing the derivative of
+  the stiffness/mass matrix, then computing the product for each 
+  design variable.
+
+  input:
+  matType:     the matrix type (e.g. MASS_MATRIX)
+  scale:       the scaling factor
+  dvLen:       the length of the design variable vector
+  psi:         the left inner-product vector
+  phi:         the right inner-product vector
+  Xpts:        the nodal locations
+  vars:        the state variable values
+
+  output:
+  dvSens:      vector of the design sensitivity
+*/
+template <int NUM_NODES>
+void TACS2DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matType,
+                                                         double scale,
+                                                         TacsScalar dvSens[], int dvLen,
+                                                         const TacsScalar psi[],
+                                                         const TacsScalar phi[],
+                                                         const TacsScalar Xpts[],
+                                                         const TacsScalar vars[] ){
+  if (matType == STIFFNESS_MATRIX){
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES];
+    
+    // The derivative of the stress with respect to the strain
+    TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weights
+      double pt[2];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
+
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xa, J);
+      h = h*weight;
+            
+      // Get the derivative of the strain with respect to the nodal
+      // displacements
+      getBmat(B, J, Na, Nb, vars);
+      
+      // Compute the product of psi^{T}*B^{T}
+      TacsScalar bpsi[NUM_STRESSES], bphi[NUM_STRESSES];
+      memset(bpsi, 0, NUM_STRESSES*sizeof(TacsScalar));
+      memset(bphi, 0, NUM_STRESSES*sizeof(TacsScalar));
+      
+      TacsScalar *b = B;
+      const TacsScalar *ps = psi, *ph = phi;
+      for ( int i = 0; i < NUM_VARIABLES; i++ ){
+        bpsi[0] += ps[0]*b[0];
+        bpsi[1] += ps[0]*b[1];
+        bpsi[2] += ps[0]*b[2];
+
+        bphi[0] += ph[0]*b[0];
+        bphi[1] += ph[0]*b[1];
+        bphi[2] += ph[0]*b[2];
+
+        b += NUM_STRESSES;
+        ps++;  ph++;
+      }
+
+      // Add the result to the design variable vector
+      stiff->addStressDVSens(pt, bphi, scale*h, bpsi, dvSens, dvLen);
+    }
+  }
+  else if (matType == GEOMETRIC_STIFFNESS_MATRIX){
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES];
+   
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+    
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weight
+      double pt[3];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
+
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xa, J);
+      h = h*weight;
+      
+      // Compute the strain derived from load path
+      TacsScalar strain[NUM_STRESSES];
+      evalStrain(strain, J, Na, Nb, vars);
+      
+      // Compute dN/dx*phi
+      // Compute the product of psi^{T}*G^{T} and G*phi
+      TacsScalar gpsi[4], gphi[4];
+      memset(gpsi, 0, 4*sizeof(TacsScalar));
+      memset(gphi, 0, 4*sizeof(TacsScalar));
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        TacsScalar Dx = Na[j]*J[0] + Nb[j]*J[2];
+        TacsScalar Dy = Na[j]*J[1] + Nb[j]*J[3];
+        
+        gpsi[0] += Dx*psi[2*j];   gphi[0] += Dx*phi[2*j];
+        gpsi[1] += Dx*psi[2*j+1]; gphi[1] += Dx*phi[2*j+1];
+        
+        gpsi[2] += Dy*psi[2*j];   gphi[2] += Dy*phi[2*j];
+        gpsi[3] += Dy*psi[2*j+1]; gphi[3] += Dy*phi[2*j+1];
+      }
+      
+      TacsScalar sumN[NUM_STRESSES];
+      memset(sumN, 0, NUM_STRESSES*sizeof(TacsScalar));
+
+      TacsScalar *gs = gpsi, *gh = gphi;
+      for ( int j = 0; j < 2; j++ ){
+        sumN[j] = gs[0]*gh[0] + gs[1]*gh[1];
+        gs += 2;  gh += 2;
+      }
+      for ( int j = 0; j < 2; j++ ){
+        sumN[2] += gpsi[j]*gphi[2+j] + gpsi[2+j]*gphi[j];
+      }
+
+      // Add the result to the design variable vector
+      stiff->addStressDVSens(pt, sumN, scale*h, strain, dvSens, dvLen);
+    }
+  }
+  else if (matType == MASS_MATRIX){
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES];
+  
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+    
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weight
+      double pt[3];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
+
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xa, J);
+      h = h*weight;
+      
+      // Compute the nodal accelerations at the quadrature point
+      TacsScalar upsi[2], uphi[2];
+      upsi[0] = upsi[1] = 0.0;
+      uphi[0] = uphi[1] = 0.0;
+      
+      double *ns = N;
+      const TacsScalar *ps = psi, *ph = phi;
+      for ( int i = 0; i < NUM_NODES; i++ ){
+        upsi[0] += ns[0]*ps[0];
+        upsi[1] += ns[0]*ps[1];  
+        
+        uphi[0] += ns[0]*ph[0];  
+        uphi[1] += ns[0]*ph[1];  
+        
+        ps += 2; ph += 2; ns++;
+      }
+
+      // Add the result to the design variable vector
+      TacsScalar rho_alpha = scale*h*(upsi[0]*uphi[0] + 
+                                      upsi[1]*uphi[1]);
+      
+      stiff->addPointwiseMassDVSens(pt, &rho_alpha, dvSens, dvLen);
+    }
+  }
+}
+
+/*
+  Evaluate the derivative of the inner product of the stiffness or mass
+  matrix with respect to the state variables or load path variables. This is
+  much more efficient than computing the derivative of the stiffness/mass
+  matrix, then computing the product for each state variable.
+
+  input:
+  matType:     the matrix type (e.g. MASS_MATRIX)
+  res:         the derivative inner product w.r.t. the state variables 
+  psi:         the left inner-product vector
+  phi:         the right inner-product vector
+  Xpts:        the nodal locations
+  vars:        the state variable values
+
+  output:
+  dvSens:      vector of the design sensitivity
+*/
+template <int NUM_NODES>
+void TACS2DElement<NUM_NODES>::getMatSVSensInnerProduct( ElementMatrixType matType,
+                                                         TacsScalar res[],
+                                                         const TacsScalar psi[],
+                                                         const TacsScalar phi[],
+                                                         const TacsScalar Xpts[],
+                                                         const TacsScalar vars[] ){
+  if (matType == GEOMETRIC_STIFFNESS_MATRIX){  
+    // The shape functions associated with the element
+    double N[NUM_NODES];
+    double Na[NUM_NODES], Nb[NUM_NODES];
+   
+    // Get the number of quadrature points
+    int numGauss = getNumGaussPts();
+    
+    for ( int n = 0; n < numGauss; n++ ){
+      // Retrieve the quadrature points and weight
+      double pt[3];
+      double weight = getGaussWtsPts(n, pt);
+      
+      // Compute the element shape functions
+      getShapeFunctions(pt, N, Na, Nb);
+
+      // Compute the derivative of X with respect to the
+      // coordinate directions
+      TacsScalar X[3], Xa[9];
+      planeJacobian(X, Xa, N, Na, Nb, Xpts);
+      
+      // Compute the determinant of Xa and the transformation
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xa, J);
+      h = h*weight;
+      
+      // Compute the strain derived from load path
+      TacsScalar strain[NUM_STRESSES];
+      evalStrain(strain, J, Na, Nb, vars);
+
+      // The derivative of the stress with respect to the strain
+      TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+      
+      // Get the derivative of the strain with respect to the nodal
+      // displacements
+      getBmat(B, J, Na, Nb, vars);
+
+      // Compute dN/dx*phi
+      // Compute the product of psi^{T}*G^{T} and G*phi
+      TacsScalar gpsi[4], gphi[4];
+      memset(gpsi, 0, 4*sizeof(TacsScalar));
+      memset(gphi, 0, 4*sizeof(TacsScalar));
+      for ( int j = 0; j < NUM_NODES; j++ ){
+        TacsScalar Dx = Na[j]*J[0] + Nb[j]*J[2];
+        TacsScalar Dy = Na[j]*J[1] + Nb[j]*J[3];
+        
+        gpsi[0] += Dx*psi[2*j];   gphi[0] += Dx*phi[2*j];
+        gpsi[1] += Dx*psi[2*j+1]; gphi[1] += Dx*phi[2*j+1];
+
+        gpsi[2] += Dy*psi[2*j];   gphi[2] += Dy*phi[2*j];
+        gpsi[3] += Dy*psi[2*j+1]; gphi[3] += Dy*phi[2*j+1];
+      }
+      
+      TacsScalar sumN[NUM_STRESSES];
+      memset(sumN, 0, NUM_STRESSES*sizeof(TacsScalar));
+      TacsScalar *gs = gpsi, *gh = gphi;
+      for ( int j = 0; j < 2; j++ ){
+        sumN[j] = gs[0]*gh[0] + gs[1]*gh[1];
+        gs += 2;  gh += 2;
+      }
+      for ( int j = 0; j < 2; j++ ){
+        sumN[2] += gpsi[j]*gphi[2+j] + gpsi[2+j]*gphi[j];
+      }
+
+      // Get D*sumN
+      TacsScalar s[NUM_STRESSES];
+      stiff->calculateStress(pt, sumN, s);
+      
+      TacsScalar *b = B;
+      for ( int j = 0; j < NUM_VARIABLES; j++ ){
+        res[j] += h*(b[0]*s[0] + b[1]*s[1] + b[2]*s[2]);
+        b += NUM_STRESSES;
+      }     
+    }
+  }
+}
+  
 /*
   Evaluate the determinant of the Jacobian for numerical integration
 
