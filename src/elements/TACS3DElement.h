@@ -1630,6 +1630,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
         gpsi[7] += Dz*psi[3*j+1]; gphi[7] += Dz*phi[3*j+1];
         gpsi[8] += Dz*psi[3*j+2]; gphi[8] += Dz*phi[3*j+2];
       }
+      
       TacsScalar sumN[NUM_STRESSES];
       memset(sumN, 0, NUM_STRESSES*sizeof(TacsScalar));
       TacsScalar *gs = gpsi, *gh = gphi;
@@ -1646,6 +1647,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
       for ( int j = 0; j < 3; j++ ){
         sumN[5] += gpsi[j]*gphi[3+j]+gpsi[3+j]*gphi[j];
       }
+      
       // Add the result to the design variable vector
       stiff->addStressDVSens(pt, sumN, scale*h, strain, dvSens, dvLen);
     }
@@ -1704,6 +1706,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct( ElementMatrixType matTy
     }
   }
 }
+
 /*
   Evaluate the derivative of the inner product of the stiffness or mass
   matrix with respect to the state variables or load path variables. This is
@@ -1728,7 +1731,6 @@ void TACS3DElement<NUM_NODES>::getMatSVSensInnerProduct( ElementMatrixType matTy
                                                          const TacsScalar phi[],
                                                          const TacsScalar Xpts[],
                                                          const TacsScalar vars[] ){
-  
   if (matType == GEOMETRIC_STIFFNESS_MATRIX){
     // The shape functions associated with the element
     double N[NUM_NODES];
@@ -1787,29 +1789,31 @@ void TACS3DElement<NUM_NODES>::getMatSVSensInnerProduct( ElementMatrixType matTy
         gpsi[7] += Dz*psi[3*j+1]; gphi[7] += Dz*phi[3*j+1];
         gpsi[8] += Dz*psi[3*j+2]; gphi[8] += Dz*phi[3*j+2];
       }
+      
       TacsScalar sumN[NUM_STRESSES];
       memset(sumN, 0, NUM_STRESSES*sizeof(TacsScalar));
       TacsScalar *gs = gpsi, *gh = gphi;
       for ( int j = 0; j < 3; j++ ){
-        sumN[j] = gs[0]*gh[0]+gs[1]*gh[1]+gs[2]*gh[2];
-        gs+=3;  gh+=3;
+        sumN[j] = gs[0]*gh[0] + gs[1]*gh[1] + gs[2]*gh[2];
+        gs += 3;  gh += 3;
       }
       for ( int j = 0; j < 3; j++ ){
-        sumN[3] += gpsi[3+j]*gphi[6+j]+gpsi[6+j]*gphi[3+j];
+        sumN[3] += gpsi[3+j]*gphi[6+j] + gpsi[6+j]*gphi[3+j];
       }
       for ( int j = 0; j < 3; j++ ){
-        sumN[4] += gpsi[j]*gphi[6+j]+gpsi[6+j]*gphi[j];
+        sumN[4] += gpsi[j]*gphi[6+j] + gpsi[6+j]*gphi[j];
       }
       for ( int j = 0; j < 3; j++ ){
-        sumN[5] += gpsi[j]*gphi[3+j]+gpsi[3+j]*gphi[j];
+        sumN[5] += gpsi[j]*gphi[3+j] + gpsi[3+j]*gphi[j];
       }
+
       // Get D*B
       TacsScalar DB[NUM_STRESSES*NUM_VARIABLES];
       memset(DB, 0, NUM_STRESSES*NUM_VARIABLES*sizeof(TacsScalar));
       for ( int j = 0; j < NUM_VARIABLES; j++ ){
         stiff->calculateStress(pt, &B[NUM_STRESSES*j], &DB[NUM_STRESSES*j]);
       }
-      // 
+      
       TacsScalar *db = DB;
       for ( int j = 0; j < NUM_VARIABLES; j++ ){
         res[j] += h*(db[0]*sumN[0] + db[1]*sumN[1] + db[2]*sumN[2] + 

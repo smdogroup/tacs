@@ -492,6 +492,7 @@ stiffness matrix\n");
   jd_op = NULL;
   jd = NULL;
 }
+
 /*!
   The following code computes the eigenvalues and eigenvectors
   for the natural frequency eigenproblem:
@@ -688,6 +689,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
 
     // Factor the preconditioner
     pc->factor();
+    
     // Solve the symmetric eigenvalue problem
     double t0 = MPI_Wtime();
     sep->solve(ksm_print);
