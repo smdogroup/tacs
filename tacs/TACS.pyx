@@ -1818,6 +1818,63 @@ cdef class FrequencyAnalysis:
         eigval = self.ptr.extractEigenvector(eig, vec.ptr, &err)
         return eigval, err
 
+cdef class BucklingAnalysis:
+    cdef TACSLinearBuckling *ptr
+    def __cinit__(self, Assembler assembler, TacsScalar sigma,
+                  Mat G, Mat K, KSM solver, int max_lanczos=100,
+                  int num_eigs=5, double eig_tol=1e-6):
+        # Get the auxiliary matrix from the solver
+        cdef TACSMat *aux_mat
+        solver.getOperators(&aux_mat, NULL)
+
+        # Create the linear buckling class
+        self.ptr = new TACSLinearBuckling(assembler.ptr, sigma, G.ptr,
+                                          K.ptr, aux_mat, solver.ptr, max_lanczos,
+                                          num_eigs, eig_tol)
+        self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def getSigma(self):
+        return self.ptr.getSigma()
+
+    def setSigma(self, TacsScalar sigma):
+        self.ptr.setSigma(sigma)
+
+    def solve(self, Vec force=None, print_flag=True, int freq=10):
+        cdef TACSBVec *f = NULL
+        cdef MPI_Comm comm
+        cdef int rank
+        cdef TACSAssembler *assembler = NULL
+        cdef KSMPrint *ksm_print = NULL
+
+        if force is not None:
+            f = force.ptr
+
+        if print_flag:
+            assembler = self.ptr.getTACS()
+            comm = assembler.getMPIComm()
+            MPI_Comm_rank(comm, &rank)
+            ksm_print = new KSMPrintStdout("BucklingAnalysis", rank, freq)
+
+        self.ptr.solve(f, ksm_print)
+        return
+
+    def extractEigenvalue(self, int eig):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvalue(eig, &err)
+        return eigval, err
+
+    def extractEigenvector(self, int eig, Vec vec):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvector(eig, vec.ptr, &err)
+        return eigval, err
+
 # A generic abstract class for all integrators implemented in TACS
 cdef class Integrator:
     '''

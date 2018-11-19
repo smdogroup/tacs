@@ -494,6 +494,20 @@ cdef extern from "TACSBuckling.h":
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
 
+    cdef cppclass TACSLinearBuckling(TACSObject):
+        TACSLinearBuckling( TACSAssembler *,
+                            TacsScalar,
+                            TACSMat *, TACSMat *,
+                            TACSMat *, TACSKsm *,
+                            int, int, double)
+        TACSAssembler* getTACS()
+        TacsScalar getSigma()
+        void setSigma(TacsScalar)
+        void solve(TACSVec*, KSMPrint*)
+        void evalEigenDVSens(int, TacsScalar, int)
+        TacsScalar extractEigenvalue(int, TacsScalar*)
+        TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+
 cdef extern from "TACSMeshLoader.h":
     cdef cppclass TACSMeshLoader(TACSObject):
         TACSMeshLoader(MPI_Comm _comm)
