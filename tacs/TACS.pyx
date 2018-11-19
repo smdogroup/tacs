@@ -1825,7 +1825,7 @@ cdef class BucklingAnalysis:
                   int num_eigs=5, double eig_tol=1e-6):
         # Get the auxiliary matrix from the solver
         cdef TACSMat *aux_mat
-        solver.getOperators(&aux_mat, NULL)
+        solver.ptr.getOperators(&aux_mat, NULL)
 
         # Create the linear buckling class
         self.ptr = new TACSLinearBuckling(assembler.ptr, sigma, G.ptr,
