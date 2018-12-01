@@ -237,7 +237,7 @@ cdef class Vec:
     def getValues(self, np.ndarray[int, ndim=1] var):
         '''
         Get the values from the given global indices
-        '''        
+        '''
         cdef int fail = 0
         cdef int length = 0
         cdef int bsize = 0
@@ -438,6 +438,29 @@ cdef class Mat:
         '''
         self.ptr.axpy(alpha, mat.ptr)
 
+    def getDenseMatrix(self):
+        '''
+        Get the dense, column-major order of the matrix.  This only
+        works for serial cases.
+        '''
+        cdef int n = 0
+        cdef int m = 0
+        cdef np.ndarray A = None
+        cdef ScMat *sc_ptr = NULL
+        cdef BCSRMat *bcsr = NULL
+
+        sc_ptr = _dynamicScMat(self.ptr)
+        if sc_ptr != NULL:
+            sc_ptr.getBCSRMat(&bcsr, NULL, NULL, NULL)
+            if bcsr != NULL:
+                n = bcsr.getRowDim()*bcsr.getBlockSize()
+                m = bcsr.getColDim()*bcsr.getBlockSize()
+                A = np.zeros((m, n), dtype=dtype)
+                bcsr.getDenseColumnMajor(<TacsScalar*>A.data)
+                return A.T
+
+        return None
+
 # Create a generic preconditioner class
 cdef class Pc:
     def __cinit__(self, Mat mat=None, *args, **kwargs):
@@ -496,7 +519,6 @@ cdef class Pc:
             pc_ptr.setMonitorFactorFlag(flag)
             pc_ptr.setMonitorBackSolveFlag(flag)
         return
-
 
 cdef class Mg(Pc):
     def __cinit__(self, MPI.Comm comm=None, int num_levs=-1, double omega=0.5,
@@ -1384,7 +1406,7 @@ cdef class Assembler:
         '''
         Compute the Jacobian-vector product
         '''
-        self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma, 
+        self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma,
                                        x.ptr, y.ptr, matOr)
         return
 

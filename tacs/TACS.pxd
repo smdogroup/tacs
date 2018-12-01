@@ -189,6 +189,13 @@ cdef inline _init_VecInterp(TACSBVecInterp *ptr):
     interp.ptr.incref()
     return interp
 
+cdef extern from "BCSRMat.h":
+    cdef cppclass BCSRMat(TACSObject):
+        int getBlockSize()
+        int getRowDim()
+        int getColDim()
+        void getDenseColumnMajor(TacsScalar*)
+
 cdef extern from "PMat.h":
     cdef cppclass TACSPMat(TACSMat):
         pass
@@ -207,7 +214,7 @@ cdef extern from "DistMat.h":
 
 cdef extern from "ScMat.h":
     cdef cppclass ScMat(TACSMat):
-         pass
+        void getBCSRMat(BCSRMat**, BCSRMat**, BCSRMat**, BCSRMat**)
 
     cdef cppclass PcScMat(TACSPc):
         PcScMat(ScMat *mat, int levFill, double fill,
