@@ -309,10 +309,6 @@ class PSQuadHeatSourceSink : public TACSElement {
   // Get the number of displacements/nodes
   int numDisplacements(){ return 3; } // u,v,dT
   int numNodes(){ return order*order; }
-  void getShapeFunctions( const double pt[], double N[],
-                          double Na[], double Nb[]){
-    FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
-  }
   int getNumGaussPts(){ return numGauss*numGauss; }
   double getGaussWtsPts( int npoint, double pt[] ){
     // Compute the n/m/p indices of the Gauss quadrature scheme
@@ -343,24 +339,35 @@ class PSQuadHeatSourceSink : public TACSElement {
       // Retrieve the quadrature points and weight
       double pt[3];
       double weight = getGaussWtsPts(n, pt);
-      // Compute the element shape functions
-      getShapeFunctions(pt, N, Na, Nb);
+      // Evaluate the Lagrange basis in each direction
+      double na[order], nb[order], dna[order], dnb[order];
+      FElibrary::lagrangeSF(na, dna, pt[0], order);
+      FElibrary::lagrangeSF(nb, dnb, pt[1], order);
 
-      // Compute the derivative of X with respect to the
-      // coordinate directions
-      TacsScalar X[3], Xa[9];
-      planeJacobian(X, Xa, N, Na, Nb, Xpts);
-
-      // Compute the determinant of Xa and the transformation
-      TacsScalar J[4];
-      TacsScalar h = FElibrary::jacobian2d(Xa, J);
-      h = h*weight;
+      // Calcualte the Jacobian at the current point	
+      const TacsScalar *x = Xpts;
+      TacsScalar Xd[4] = {0.0, 0.0, 0.0, 0.0};
+      for ( int j = 0; j < order; j++ ){
+        for ( int i = 0; i < order; i++ ){
+          Xd[0] += x[0]*dna[i]*nb[j];
+          Xd[1] += x[0]*na[i]*dnb[j];
+          
+          Xd[2] += x[1]*dna[i]*nb[j];
+          Xd[3] += x[1]*na[i]*dnb[j];
+          x += 3;
+        }
+      }
+      // Compute the derivative along each direction
+      TacsScalar dx = Xd[0]*dir[0] + Xd[2]*dir[1];
+      TacsScalar dy = Xd[1]*dir[0] + Xd[3]*dir[1];
+      TacsScalar hsurf = gaussWts[n]*sqrt(dx*dx + dy*dy); 
+      double N[order];
+      FElibrary::lagrangeSF(N, gaussPts[n], order);
       // Add the contribution to the residual - the minus sign
       // is due to the fact that this is a work term
       for ( int i = 0; i < NUM_NODES; i++){
-        res[3*i+2] -= h*Q[i]*N[i];
+        res[3*i+2] -= hsurf*Q[i]*N[i];
       }
-
     } // end for int n = 0; n < numGauss
   }
  private:

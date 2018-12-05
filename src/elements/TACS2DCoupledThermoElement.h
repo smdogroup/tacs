@@ -966,7 +966,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
     // displacements
     getBmat(B, J, Na, Nb, vars);
     TacsScalar *b = B;    
-    // Input into residual position of 0,1,3,4,6,7,9,10 for order 2
+    // Input into corresponding residual position
     for ( int i = 0; i < NUM_NODES; i++ ){
       // Contribution to u
       res[3*i] += h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]);
@@ -1005,7 +1005,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       b = B;
       TacsScalar q[2*NUM_NODES];
       memset(q, 0.0, 2*NUM_NODES*sizeof(TacsScalar));
-      // Compute B^{T}*D*alpha*phi [8x1]
+      // Compute B^{T}*D*alpha*phi [2xNUM_NODESx1]
       for ( int i = 0; i < 2*NUM_NODES; i++ ){
         q[i] += (b[0]*stress[0] + b[1]*stress[1]);
         b += NUM_STRESSES;
@@ -1144,7 +1144,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
       memset(BDs, 0.0, 2*NUM_NODES*sizeof(TacsScalar));
       // Get the coefficient of thermal expansion
       TacsScalar phi[] = {1.0, 1.0, 0.0};
-      // Get B [3x2*NUM_NODES];
+      // Get B [NUM_STRESSESx2*NUM_NODES];
       getBmat(B, J, Na, Nb, vars);
       TacsScalar *bj = B;
       // Compute the vector D*phi*aT [NUM_STRESSESx1]

@@ -165,7 +165,6 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       double pt[2];
       pt[0] = -1.0 + 2.0*n/(order - 1.0);
       pt[1] = -1.0 + 2.0*m/(order - 1.0);
-      //printf("Pt: %f %f\n", pt[0], pt[1]);
       // Compute the shape functions
       double N[NUM_NODES];
       double Na[NUM_NODES], Nb[NUM_NODES];
@@ -204,17 +203,11 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       // Compute the strain
       TacsScalar strain[3];
       this->evalStrain(strain, J, Na, Nb, vars);
-      if (pt[0] > 1 || pt[1] > 1 || pt[0] < -1 || pt[1] < -1){
-        printf("cPt: %f %f\n", pt[0], pt[1]);
-      }
       if (out_type & TACSElement::OUTPUT_STRAINS){
         for ( int k = 0; k < 3; k++ ){
           data[index+k] = TacsRealPart(strain[k]);
         }
         index += 3;
-      }
-      if (pt[0] > 1 || pt[1] > 1 || pt[0] < -1 || pt[1] < -1){
-        printf("Pt: %f %f\n", pt[0], pt[1]);
       }
       if (out_type & TACSElement::OUTPUT_STRESSES){
         // Calculate the effective stress at the current point
@@ -242,10 +235,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
           data[index+k] = TacsRealPart(stress[k]);
         }
         index += 3;
-      }
-      if (pt[0] > 1 || pt[1] > 1 || pt[0] < -1 || pt[1] < -1){
-        printf("Pt: %f %f\n", pt[0], pt[1]);
-      }
+      }      
       if (out_type & TACSElement::OUTPUT_EXTRAS){
         // Get the temperature
         // Compute the failure value

@@ -673,8 +673,8 @@ cdef class PSThermoQuadTraction(Element):
         if len(tx) != len(ty):
             errmsg = 'Traction lengths must be equal'
             raise ValueError(errmsg)
-        if len(tx) < 2 or len(tx) > 5:
-            errmsg = 'Traction lengths must be between 2 and 4'
+        if len(tx) < 2 or len(tx) > 7:
+            errmsg = 'Traction lengths must be between 2 and 7'
         cdef int order = len(tx)
         self.ptr = NULL
         if order == 2:

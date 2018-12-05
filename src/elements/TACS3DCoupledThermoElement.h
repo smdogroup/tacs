@@ -1332,7 +1332,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       b = B;
       TacsScalar q[3*NUM_NODES];
       memset(q, 0.0, 3*NUM_NODES*sizeof(TacsScalar));
-      // Compute B^{T}*D*alpha*phi [24x1]
+      // Compute B^{T}*D*alpha*phi [3xNUM_NODESx1]
       for ( int i = 0; i < 3*NUM_NODES; i++ ){
         q[i] += (b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]
                  + b[3]*stress[3] + b[4]*stress[4] + b[5]*stress[5]);
