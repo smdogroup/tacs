@@ -68,10 +68,12 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
   maxNumNodes = _tacs->getMaxElementNodes();
   maxNumStrains = _tacs->getMaxElementStrains();
   if (maxNumStrains == 6){
-    is_3d = 0;
+    is_3d = 1;
+    is_2d = 0;
   }
   else if (maxNumStrains == 3){
-    is_2d = 0;
+    is_2d = 1;
+    is_3d = 0;
   }
 }
 
@@ -125,6 +127,7 @@ const char *TACSThermalKSFailure::functionName(){
 TacsScalar TACSThermalKSFailure::getFunctionValue(){
   // Compute the final value of the KS function on all processors
   TacsScalar ksFail = maxFail + log(ksFailSum/alpha)/ksWeight;
+  printf("ksFail: %e %e %e\n", maxFail, log(ksFailSum), ksWeight);
   return ksFail;
 }
 
@@ -205,7 +208,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
       order = sqrt(numNodes);
     }
     else { // 3D elements
-      order = pow(numNodes,1/3);
+      order = pow(numNodes,1./3.);
     }
 
     // Get the constitutive object for this element
@@ -394,6 +397,53 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
               }
             }
           }
+          else if (order == 5){
+            if (is_3d){
+              CoupledThermoSolid<5>* elem =
+                dynamic_cast<CoupledThermoSolid<5>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+            else {
+              PlaneStressCoupledThermoQuad<5>* elem =
+                dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+          }
+          else if (order == 6){
+            if (is_3d){
+              CoupledThermoSolid<6>* elem =
+                dynamic_cast<CoupledThermoSolid<6>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+            else {
+              PlaneStressCoupledThermoQuad<6>* elem =
+                dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+          }
+          else{
+            printf("Not implemented\n");
+          }
           // Scale the strain by the load factor
           for ( int k = 0; k < numStresses; k++ ){
             strain[k] *= loadFactor;
@@ -473,7 +523,7 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
   // variables
   int numVars = element->numVariables();
   memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
-
+  //printf("3d: %d 2d: %d\n", is_3d,is_2d);
   if (ctx){
     // Get the number of stress components and total number of variables
     // for this element.
@@ -483,24 +533,36 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
     int numGauss = element->getNumGaussPts();
 
     double N[numNodes];
-    int order = 0;         
+    int order = 0;
+    int nvars = 1;
     if (is_2d){ // 2D elements
-      order = sqrt(numNodes);
+      order = sqrt(numNodes);      
     }
     else { // 3D elements
-      order = pow(numNodes,1/3);
+      order = pow(numNodes,1./3.);
     }
     // Get the constitutive object
     TACSConstitutive *constitutive = element->getConstitutive();
-    // Test constitutive type
-    CoupledThermoSolidStiffness *con =
-      dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-    if (con){
+    if (constitutive){
       // Set pointers into the buffer
       TacsScalar *strain = ctx->strain;
       TacsScalar *failSens = ctx->failSens;
-
-      int nvars = con->getVarsPerNode();
+      //printf("%d %d\n", is_3d,is_2d);
+      if (is_3d){
+        CoupledThermoSolidStiffness *con =
+          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
+        if (con){
+          nvars = con->getVarsPerNode();
+        }
+      }
+      else {
+        CoupledThermoPlaneStressStiffness *con =
+          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
+        //printf("Here\n");
+        if (con){
+          nvars = con->getVarsPerNode();
+        }
+      }     
       for ( int i = 0; i < numGauss; i++ ){
         double pt[3];
         TacsScalar T[] = {0.0};
@@ -559,10 +621,55 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
             }
           }
         }
+        else if (order == 5){
+          if (is_3d){
+            CoupledThermoSolid<5>* elem =
+              dynamic_cast<CoupledThermoSolid<5>*>(element);
+
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
+            }
+          }
+          else {
+            PlaneStressCoupledThermoQuad<5>* elem =
+              dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
+
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
+            }
+          }
+        }
+        else if (order == 6){
+          if (is_3d){
+            CoupledThermoSolid<6>* elem =
+              dynamic_cast<CoupledThermoSolid<6>*>(element);
+
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
+            }
+          }
+          else {
+            PlaneStressCoupledThermoQuad<6>* elem =
+              dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
+
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
+            }
+          }
+        }
         for ( int k = 0; k < numStresses; k++ ){
           strain[k] *= loadFactor;
         }
         T[0] *= loadFactor;
+        
         // Compute the failure term
         TacsScalar fail;
         if (is_3d){
@@ -579,8 +686,8 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
           if (conType == TACSKSFailure::FAILURE && con){
             con->failure(pt, T, strain, &fail);
           }
-        }        
-        if (conType == TACSKSFailure::FAILURE && con){
+        }
+        if (conType == TACSKSFailure::FAILURE){
           TacsScalar ksPtWeight = 0.0;
           if (ksType == TACSKSFailure::DISCRETE){
             // d(log(ksFailSum))/du = 1/(ksFailSum)*d(fail)/du
@@ -592,16 +699,138 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
 
             ksPtWeight = h*weight*loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
           }
+         
           if (nvars == 1){
+            if (is_3d){
+              CoupledThermoSolidStiffness *con =
+                dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
+              if (con){
+                con->failureStrainSens(pt, T, strain, failSens, 0);
+              }
+            }
+            else {
+              CoupledThermoPlaneStressStiffness *con =
+                dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
+          
+              if (con){
+                con->failureStrainSens(pt, T, strain, failSens, 0);
+              }
+            }
             // Evaluate the derivative of the failure criteria
-            con->failureStrainSens(pt, T, strain, failSens, 0);
-            
+            if (order == 2){
+              if (is_3d){
+                CoupledThermoSolid<2>* elem =
+                  dynamic_cast<CoupledThermoSolid<2>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+              else {
+                PlaneStressCoupledThermoQuad<2>* elem =
+                  dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+            }
+            else if (order == 3){
+              if (is_3d){
+                CoupledThermoSolid<3>* elem =
+                  dynamic_cast<CoupledThermoSolid<3>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+              else {
+                PlaneStressCoupledThermoQuad<3>* elem =
+                  dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+            }
+            else if (order == 4){
+              if (is_3d){
+                CoupledThermoSolid<4>* elem =
+                  dynamic_cast<CoupledThermoSolid<4>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+              else {
+                PlaneStressCoupledThermoQuad<4>* elem =
+                  dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+            }
+            else if (order == 5){
+              if (is_3d){
+                CoupledThermoSolid<5>* elem =
+                  dynamic_cast<CoupledThermoSolid<5>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+              else {
+                PlaneStressCoupledThermoQuad<5>* elem =
+                  dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+            }
+
+            else if (order == 6){
+              if (is_3d){
+                CoupledThermoSolid<6>* elem =
+                  dynamic_cast<CoupledThermoSolid<6>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+              else {
+                PlaneStressCoupledThermoQuad<6>* elem =
+                  dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, 0);
+                }
+              }
+            }
           }
           else {
-            for ( int j = 1; j < nvars; j++ ){
-              // Evaluate the derivative of the failure criteria for i-th material
-              con->failureStrainSens(pt, T, strain, failSens, j);
-
+            for ( int j = 1; j < nvars; j++ ){              
+              // Evaluate the derivative of the failure criteria for i-th
+              // material
+              if (is_3d){
+                CoupledThermoSolidStiffness *con =
+                  dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
+                if (con){
+                  con->failureStrainSens(pt, T, strain, failSens, j);
+                }
+              }
+              else {
+                CoupledThermoPlaneStressStiffness *con =
+                  dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
+                
+                if (con){
+                  con->failureStrainSens(pt, T, strain, failSens, j);
+                }
+              }             
+              // printf("failSens: %f %f %f\n", failSens[0],
+              //        failSens[1], failSens[2]);
+              // exit(0);
               // Evaluate the derivative of the i-th strain w.r.t. to the state
               // variables
               if (order == 2){
@@ -695,10 +924,8 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
                   }
                 }
               }
-
-
-            }
-          }// end j < nvars
+            }// end j < nvars
+          }// else
         }
       }
     }
@@ -736,7 +963,7 @@ void TACSThermalKSFailure::getElementXptSens( const double tcoef,
       order = sqrt(numNodes);
     }
     else { // 3D elements
-      order = pow(numNodes,1/3);
+      order = pow(numNodes,1./3.);
     }
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
@@ -948,7 +1175,7 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       order = sqrt(numNodes);
     }
     else { // 3D elements
-      order = pow(numNodes,1/3);
+      order = pow(numNodes,1./3.);
     }
     
     // Set pointers into the buffer
@@ -1070,7 +1297,7 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
             elem->getTemperature(T, N, vars);
           }
         }
-      }
+      }     
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;
       }
@@ -1078,12 +1305,22 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       // Determine the strain failure criteria
       TacsScalar fail;
       // Test constitutive type
-      CoupledThermoSolidStiffness *con =
-        dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-      if (conType == TACSKSFailure::FAILURE && con){
-        con->failure(pt, T, strain, &fail);
+      if (is_3d){
+        CoupledThermoSolidStiffness *con =
+          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
+        if (conType == TACSKSFailure::FAILURE && con){
+          con->failure(pt, T, strain, &fail);
+        }
       }
-
+      else {
+        CoupledThermoPlaneStressStiffness *con =
+          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
+        
+        if (conType == TACSKSFailure::FAILURE && con){
+          con->failure(pt, T, strain, &fail);
+        }
+      }
+      
       // Add contribution from the design variable sensitivity
       // of the failure calculation
       // Compute the sensitivity contribution
@@ -1099,9 +1336,22 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       }
 
       // Add the derivative of the criteria w.r.t. design variables
-      if (conType == TACSKSFailure::FAILURE && con){
-        con->addFailureDVSens(pt, T, strain, tcoef*ksPtWeight,
-                              fdvSens, numDVs);
+      if (is_3d){
+        CoupledThermoSolidStiffness *con =
+          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
+        if (conType == TACSKSFailure::FAILURE && con){
+          con->addFailureDVSens(pt, T, strain, tcoef*ksPtWeight,
+                                fdvSens, numDVs);
+        }
+      }
+      else {
+        CoupledThermoPlaneStressStiffness *con =
+          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
+        
+        if (conType == TACSKSFailure::FAILURE && con){
+          con->addFailureDVSens(pt, T, strain, tcoef*ksPtWeight,
+                                fdvSens, numDVs);
+        }
       }
     }
   }
