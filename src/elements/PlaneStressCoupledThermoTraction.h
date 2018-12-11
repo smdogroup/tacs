@@ -357,16 +357,15 @@ class PSQuadHeatSourceSink : public TACSElement {
           x += 3;
         }
       }
-      // Compute the derivative along each direction
-      TacsScalar dx = Xd[0]*dir[0] + Xd[2]*dir[1];
-      TacsScalar dy = Xd[1]*dir[0] + Xd[3]*dir[1];
-      TacsScalar hsurf = gaussWts[n]*sqrt(dx*dx + dy*dy); 
+      TacsScalar J[4];
+      TacsScalar h = FElibrary::jacobian2d(Xd, J);
+      h = h*weight;
       double N[order];
       FElibrary::lagrangeSF(N, gaussPts[n], order);
       // Add the contribution to the residual - the minus sign
       // is due to the fact that this is a work term
       for ( int i = 0; i < NUM_NODES; i++){
-        res[3*i+2] -= hsurf*Q[i]*N[i];
+        res[3*i+2] -= h*Q[i]*N[i];
       }
     } // end for int n = 0; n < numGauss
   }

@@ -49,14 +49,14 @@ class KSFunctionCtx : public TACSFunctionCtx {
 */
 TACSThermalKSFailure::TACSThermalKSFailure( TACSAssembler *_tacs,
                                             double _ksWeight,
-                                            KSConstitutiveFunction func,
+                                            TACSKSFailure::KSConstitutiveFunction func,
                                             double _alpha ):
 TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
              TACSFunction::TWO_STAGE, 0){
   ksWeight = _ksWeight;
   alpha = _alpha;
   conType = func;
-  ksType = CONTINUOUS;
+  ksType = TACSKSFailure::CONTINUOUS;
   loadFactor = 1.0;
 
   // Initialize the maximum failure value and KS sum to default values
@@ -85,7 +85,7 @@ const char * TACSThermalKSFailure::funcName = "TACSThermalKSFailure";
 /*
   Set the KS aggregation type
 */
-void TACSThermalKSFailure::setKSFailureType( enum KSFailureType type ){
+void TACSThermalKSFailure::setKSFailureType( enum TACSKSFailure::KSFailureType type ){
   ksType = type;
 }
 
@@ -302,7 +302,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
             CoupledThermoSolidStiffness *con =
               dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
 
-            if (conType == FAILURE && con){
+            if (conType == TACSKSFailure::TACSKSFailure::FAILURE && con){
               con->failure(pt, T, strain, &fail);
             }
           }
@@ -310,7 +310,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
             CoupledThermoPlaneStressStiffness *con =
               dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
 
-            if (conType == FAILURE && con){
+            if (conType == TACSKSFailure::FAILURE && con){
               con->failure(pt, T, strain, &fail);
             }
           }
@@ -405,7 +405,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
           if (is_3d){
             CoupledThermoSolidStiffness *con =
               dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-            if (conType == FAILURE && con){
+            if (conType == TACSKSFailure::FAILURE && con){
               con->failure(pt, T, strain, &fail);
             }
           }
@@ -413,14 +413,14 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
             CoupledThermoPlaneStressStiffness *con =
               dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
 
-            if (conType == FAILURE && con){
+            if (conType == TACSKSFailure::FAILURE && con){
               con->failure(pt, T, strain, &fail);
             }
           }
           // Add the failure load to the sum
           TacsScalar fexp = exp(ksWeight*(fail - maxFail));
 
-          if (ksType == DISCRETE){
+          if (ksType == TACSKSFailure::DISCRETE){
             ctx->ksFailSum += fexp;
           }
           else {
@@ -568,7 +568,7 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
         if (is_3d){
           CoupledThermoSolidStiffness *con =
             dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-          if (conType == FAILURE && con){
+          if (conType == TACSKSFailure::FAILURE && con){
             con->failure(pt, T, strain, &fail);
           }
         }
@@ -576,13 +576,13 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
           CoupledThermoPlaneStressStiffness *con =
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
           
-          if (conType == FAILURE && con){
+          if (conType == TACSKSFailure::FAILURE && con){
             con->failure(pt, T, strain, &fail);
           }
         }        
-        if (conType == FAILURE && con){
+        if (conType == TACSKSFailure::FAILURE && con){
           TacsScalar ksPtWeight = 0.0;
-          if (ksType == DISCRETE){
+          if (ksType == TACSKSFailure::DISCRETE){
             // d(log(ksFailSum))/du = 1/(ksFailSum)*d(fail)/du
             ksPtWeight = loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
           }
@@ -876,7 +876,7 @@ void TACSThermalKSFailure::getElementXptSens( const double tcoef,
         // Test constitutive type
         CoupledThermoSolidStiffness *con =
           dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-        if (conType == FAILURE && con){
+        if (conType == TACSKSFailure::FAILURE && con){
           // Determine the sensitivity of the failure criteria to
           // the design variables and stresses
           con->failure(pt, T, strain, &fail);
@@ -888,7 +888,7 @@ void TACSThermalKSFailure::getElementXptSens( const double tcoef,
         }
 
         // Compute the sensitivity contribution
-        if (ksType == DISCRETE){
+        if (ksType == TACSKSFailure::DISCRETE){
           // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
           TacsScalar ksPtWeight =
             loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
@@ -1080,7 +1080,7 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       // Test constitutive type
       CoupledThermoSolidStiffness *con =
         dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-      if (conType == FAILURE && con){
+      if (conType == TACSKSFailure::FAILURE && con){
         con->failure(pt, T, strain, &fail);
       }
 
@@ -1088,7 +1088,7 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       // of the failure calculation
       // Compute the sensitivity contribution
       TacsScalar ksPtWeight = 0.0;
-      if (ksType == DISCRETE){
+      if (ksType == TACSKSFailure::DISCRETE){
         // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
         ksPtWeight = exp(ksWeight*(fail - maxFail))/ksFailSum;
       }
@@ -1099,7 +1099,7 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       }
 
       // Add the derivative of the criteria w.r.t. design variables
-      if (conType == FAILURE && con){
+      if (conType == TACSKSFailure::FAILURE && con){
         con->addFailureDVSens(pt, T, strain, tcoef*ksPtWeight,
                               fdvSens, numDVs);
       }

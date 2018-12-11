@@ -9,6 +9,7 @@
 */
 
 #include "TACSFunction.h"
+#include "KSFailure.h"
 
 /*
   The following class implements the methods from TACSFunction.h
@@ -39,11 +40,8 @@
 */
 class TACSThermalKSFailure : public TACSFunction {
  public:
-  enum KSFailureType { DISCRETE, CONTINUOUS };
-  enum KSConstitutiveFunction { FAILURE, BUCKLING };
-
   TACSThermalKSFailure( TACSAssembler * _tacs, double ksWeight, 
-                        KSConstitutiveFunction func=FAILURE,
+                        TACSKSFailure::KSConstitutiveFunction func=TACSKSFailure::FAILURE,
                         double alpha=1.0 );
   ~TACSThermalKSFailure();
 
@@ -53,7 +51,7 @@ class TACSThermalKSFailure : public TACSFunction {
 
   // Set parameters for the KS function
   // ----------------------------------
-  void setKSFailureType( enum KSFailureType type );
+  void setKSFailureType( enum TACSKSFailure::KSFailureType type );
   double getParameter();
   void setParameter( double _ksWeight );
   void setLoadFactor( TacsScalar _loadFactor );
@@ -119,10 +117,10 @@ class TACSThermalKSFailure : public TACSFunction {
   void getShapeFunctions(const double pt[], double N[],
                          int order, int dim);
   // The type of aggregation to use
-  KSFailureType ksType;
+  TACSKSFailure::KSFailureType ksType;
 
   // The constitutive function to use
-  KSConstitutiveFunction conType;
+  TACSKSFailure::KSConstitutiveFunction conType;
 
   // The weight on the ks function value
   double ksWeight;

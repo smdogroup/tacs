@@ -124,3 +124,22 @@ cdef class InducedFailure(Function):
                                           INDUCED_FAILURE)
         self.ptr.incref()
         return
+
+cdef class ThermalKSFailure(Function):
+    cdef TACSThermalKSFailure *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+        '''
+        Wrap the function KSFailure
+        '''
+        self.ksptr = new TACSThermalKSFailure(tacs.ptr, ksWeight,
+                                              KS_FAILURE, alpha)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
+    def setKSFailureType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSFailureType(KS_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSFailureType(KS_CONTINUOUS)
+        return

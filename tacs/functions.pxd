@@ -37,7 +37,7 @@ cdef extern from "StructuralMass.h":
         TACSStructuralMass(TACSAssembler *tacs)
 
 cdef extern from "KSFailure.h":
-    enum KSFailureType"TACSKFailure::KSFailureType":
+    enum KSFailureType"TACSKSFailure::KSFailureType":
         KS_DISCRETE"TACSKSFailure::DISCRETE"
         KS_CONTINUOUS"TACSKSFailure::CONTINUOUS"
         
@@ -87,3 +87,14 @@ cdef extern from "InducedFailure.h":
         double getParameter()
         void setLoadFactor(TacsScalar _loadFactor)
         void setMaxFailOffset(TacsScalar _max_fail)
+
+cdef extern from "ThermalKSFailure.h":
+    cdef cppclass TACSThermalKSFailure(TACSFunction):
+        TACSThermalKSFailure(TACSAssembler *tacs, double ksWeight,  
+                             KSConstitutiveFunction func,
+                             double alpha)
+        void setKSFailureType(KSFailureType ftype)
+        double getParameter()
+        void setParameter(double _ksWeight)
+        void setLoadFactor(TacsScalar _loadFactor)
+        void setMaxFailOffset(TacsScalar _maxFail)
