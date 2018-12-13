@@ -353,14 +353,18 @@ void TACS2DCoupledThermoElement<NUM_NODES>::planeJacobian( TacsScalar X[],
   Xa[0] = Xa[1] = Xa[2] = Xa[3] = 0.0;
 
   for ( int i = 0; i < NUM_NODES; i++ ){
-    X[0] += Xpts[3*i]*N[i];
-    X[1] += Xpts[3*i+1]*N[i];
+    X[0] += Xpts[0]*N[0];
+    X[1] += Xpts[1]*N[0];
 
-    Xa[0] += Xpts[3*i]*Na[i];
-    Xa[1] += Xpts[3*i]*Nb[i];
+    Xa[0] += Xpts[0]*Na[0];
+    Xa[1] += Xpts[0]*Nb[0];
     
-    Xa[2] += Xpts[3*i+1]*Na[i];
-    Xa[3] += Xpts[3*i+1]*Nb[i];
+    Xa[2] += Xpts[1]*Na[0];
+    Xa[3] += Xpts[1]*Nb[0];
+        
+    N++;
+    Na++; Nb++;
+    Xpts += 3;
   }
 }
 
@@ -1463,10 +1467,11 @@ TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobian( const double p
   
   // Compute the derivative of the shape functions w.r.t. the 
   // parametric locations
-  TacsScalar X[3], Xa[4];
+  TacsScalar X[3], Xa[9];
   planeJacobian(X, Xa, N, Na, Nb, Xpts);
 
-  return FElibrary::jacobian2d(Xa);
+  TacsScalar J[4];
+  return FElibrary::jacobian2d(Xa, J);
 }
 
 /*

@@ -18,8 +18,7 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
  public:
   PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff, 
                                 ElementBehaviorType type=LINEAR, 
-                                int _componentNum=0,
-                                int _use_lobatto_quadrature=0 );
+                                int _componentNum=0 );
   ~PlaneStressCoupledThermoQuad();
 
   // Return the name of this element
@@ -47,6 +46,9 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
   void getOutputConnectivity( int *con, int node );
 
  private:
+  // The knot locations for the basis functions
+  double knots[order];
+
   static const int NUM_NODES = order*order;
 
   // The Gauss quadrature scheme
@@ -60,14 +62,24 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
 template <int order>
 PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff, 
                                                      ElementBehaviorType type, 
-                                                     int _componentNum,
-                                                     int use_lobatto_quadrature ):
+                                                     int _componentNum ):
 TACS2DCoupledThermoElement<order*order>(_stiff, type, _componentNum){
-  if (use_lobatto_quadrature){
-
+  numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+  // Set the knot locations
+  if (order == 2){
+    knots[0] = -1.0;
+    knots[1] = 1.0;
+  }
+  else if (order == 3){
+    knots[0] = -1.0;
+    knots[1] = 0.0;
+    knots[2] = 1.0;
   }
   else {
-    numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
+    // Set a co-sine spacing for the knot locations
+    for ( int k = 0; k < order; k++ ){
+      knots[k] = -cos(M_PI*k/(order-1));
+    }
   }
 }
 
@@ -105,7 +117,14 @@ double PlaneStressCoupledThermoQuad<order>::getGaussWtsPts( int npoint, double p
 template <int order>
 void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[], 
                                                              double N[] ){
-  FElibrary::biLagrangeSF(N, pt, order);
+  double na[order], nb[order];
+  FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
+  for ( int j = 0; j < order; j++ ){
+    for ( int i = 0; i < order; i++ ){
+      N[i + j*order] = na[i]*nb[j];
+    }
+  }
 }
 
 /*
@@ -113,9 +132,20 @@ void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
   parametric element location 
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[], double N[],
+void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[], 
+                                                             double N[],
                                                              double Na[], double Nb[] ){
-  FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
+  double na[order], nb[order];
+  double dna[order], dnb[order];
+  FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+  for ( int j = 0; j < order; j++ ){
+    for ( int i = 0; i < order; i++ ){
+      N[i + j*order] = na[i]*nb[j];
+      Na[i + j*order] = dna[i]*nb[j];
+      Nb[i + j*order] = na[i]*dnb[j];
+    }
+  }
 }
 
 /*
@@ -163,8 +193,8 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       int index = 0;
       // Set the parametric point to extract the data
       double pt[2];
-      pt[0] = -1.0 + 2.0*n/(order - 1.0);
-      pt[1] = -1.0 + 2.0*m/(order - 1.0);
+      pt[0] = knots[n];
+      pt[1] = knots[m];
       // Compute the shape functions
       double N[NUM_NODES];
       double Na[NUM_NODES], Nb[NUM_NODES];
