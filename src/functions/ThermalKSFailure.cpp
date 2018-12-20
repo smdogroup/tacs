@@ -127,7 +127,6 @@ const char *TACSThermalKSFailure::functionName(){
 TacsScalar TACSThermalKSFailure::getFunctionValue(){
   // Compute the final value of the KS function on all processors
   TacsScalar ksFail = maxFail + log(ksFailSum/alpha)/ksWeight;
-  printf("ksFail: %e %e %e\n", maxFail, log(ksFailSum), ksWeight);
   return ksFail;
 }
 
@@ -208,9 +207,8 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
       order = sqrt(numNodes);
     }
     else { // 3D elements
-      order = pow(numNodes,1./3.);
+      order = cbrt(numNodes);
     }
-
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     if (constitutive){
@@ -283,6 +281,52 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
             else {
               PlaneStressCoupledThermoQuad<4>* elem =
                 dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+          }
+
+          else if (order == 5){
+            if (is_3d){
+              CoupledThermoSolid<5>* elem =
+                dynamic_cast<CoupledThermoSolid<5>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+            else {
+              PlaneStressCoupledThermoQuad<5>* elem =
+                dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+          }
+
+          else if (order == 6){
+            if (is_3d){
+              CoupledThermoSolid<6>* elem =
+                dynamic_cast<CoupledThermoSolid<6>*>(element);
+
+              if (elem){
+                elem->getShapeFunctions(pt, N);
+                elem->getStrain(strain, pt, Xpts, vars);
+                elem->getTemperature(T, N, vars);
+              }
+            }
+            else {
+              PlaneStressCoupledThermoQuad<6>* elem =
+                dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
 
               if (elem){
                 elem->getShapeFunctions(pt, N);
@@ -469,7 +513,6 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
           }
           // Add the failure load to the sum
           TacsScalar fexp = exp(ksWeight*(fail - maxFail));
-
           if (ksType == TACSKSFailure::DISCRETE){
             ctx->ksFailSum += fexp;
           }
@@ -523,7 +566,6 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
   // variables
   int numVars = element->numVariables();
   memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
-  //printf("3d: %d 2d: %d\n", is_3d,is_2d);
   if (ctx){
     // Get the number of stress components and total number of variables
     // for this element.
@@ -547,7 +589,6 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
       // Set pointers into the buffer
       TacsScalar *strain = ctx->strain;
       TacsScalar *failSens = ctx->failSens;
-      //printf("%d %d\n", is_3d,is_2d);
       if (is_3d){
         CoupledThermoSolidStiffness *con =
           dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
@@ -828,9 +869,6 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
                   con->failureStrainSens(pt, T, strain, failSens, j);
                 }
               }             
-              // printf("failSens: %f %f %f\n", failSens[0],
-              //        failSens[1], failSens[2]);
-              // exit(0);
               // Evaluate the derivative of the i-th strain w.r.t. to the state
               // variables
               if (order == 2){
