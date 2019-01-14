@@ -21,13 +21,13 @@ assembler.initialize()
 
 # Time marching setup
 tinit  = 0.0
-tfinal = 10.0
+tfinal = 1000.0
 
 # Create integrators for implicit time marching of system
 sizes = [1250, 2500, 5000, 10000]
 for nsteps in sizes:
     # BDF solution
-    bdf_orders = [1,2,3,4,5,6]
+    bdf_orders = [1,2,3]
     for order in bdf_orders:
         bdf = TACS.BDFIntegrator(assembler, tinit, tfinal, nsteps, order)
         bdf.setPrintLevel(0)
