@@ -4461,10 +4461,6 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
     psi->getValues(len, nodes, elemPsi);
     phi->getValues(len, nodes, elemPhi);
 
-    // Zero the residual
-    int nvars = varsPerNode*len;
-    memset(elemRes, 0, nvars*sizeof(TacsScalar));
-
     // Add the contribution to the design variable vector
     elements[i]->getMatSVSensInnerProduct(matType, elemRes,
                                           elemPsi, elemPhi, elemXpts,

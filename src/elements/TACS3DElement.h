@@ -402,8 +402,7 @@ void TACS3DElement<NUM_NODES>::solidJacobian( TacsScalar X[],
 
 /*
   Compute the displacement given the provided values of the shape functions
- */
-
+*/
 template <int NUM_NODES>
 void TACS3DElement<NUM_NODES>::getDisplacement( TacsScalar U[],
                                                 const double N[],
@@ -420,7 +419,6 @@ void TACS3DElement<NUM_NODES>::getDisplacement( TacsScalar U[],
     vars+=3;
   }
 }
-
 
 /*
   Compute the displacement gradient using the provided basis functions.
@@ -1732,6 +1730,8 @@ void TACS3DElement<NUM_NODES>::getMatSVSensInnerProduct( ElementMatrixType matTy
                                                          const TacsScalar Xpts[],
                                                          const TacsScalar vars[] ){
   if (matType == GEOMETRIC_STIFFNESS_MATRIX){
+    memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
+
     // The shape functions associated with the element
     double N[NUM_NODES];
     double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
