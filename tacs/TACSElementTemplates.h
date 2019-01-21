@@ -22,6 +22,10 @@
 #include "MITCShell.h"
 #include "Solid.h"
 #include "PoissonElement.h"
+#include "PlaneStressCoupledThermoQuad.h"
+#include "PlaneStressCoupledThermoTraction.h"
+#include "CoupledThermoSolid.h"
+#include "TACS3DCoupledThermoTraction.h"
 
 // Add define statements for the element types
 #define PlaneStressQuad2 PlaneStressQuad<2>
@@ -56,5 +60,33 @@
 #define PoissonQuad3 PoissonQuad<3>
 #define PoissonQuad4 PoissonQuad<4>
 #define PoissonQuad5 PoissonQuad<5>
+#define PSThermoQuad2 PlaneStressCoupledThermoQuad<2>
+#define PSThermoQuad3 PlaneStressCoupledThermoQuad<3>
+#define PSThermoQuad4 PlaneStressCoupledThermoQuad<4>
+#define PSThermoQuad5 PlaneStressCoupledThermoQuad<5>
+#define PSThermoQuad6 PlaneStressCoupledThermoQuad<6>
+#define PSThermoQuadTraction2 PSQuadThermoTraction<2>
+#define PSThermoQuadTraction3 PSQuadThermoTraction<3>
+#define PSThermoQuadTraction4 PSQuadThermoTraction<4>
+#define PSThermoQuadTraction5 PSQuadThermoTraction<5>
+#define PSThermoQuadTraction6 PSQuadThermoTraction<6>
+#define PSThermoQuadHF2 PSQuadHeatFluxTraction<2>
+#define PSThermoQuadHF3 PSQuadHeatFluxTraction<3>
+#define PSThermoQuadHF4 PSQuadHeatFluxTraction<4>
+#define PSThermoQuadHF5 PSQuadHeatFluxTraction<5>
+#define SolidThermo2 CoupledThermoSolid<2>
+#define SolidThermo3 CoupledThermoSolid<3>
+#define SolidThermo4 CoupledThermoSolid<4>
+#define SolidThermo5 CoupledThermoSolid<5>
+#define SolidThermo6 CoupledThermoSolid<6>
+#define TACS3DThermoTraction2 TACS3DThermoTraction<2>
+#define TACS3DThermoTraction3 TACS3DThermoTraction<3>
+#define TACS3DThermoTraction4 TACS3DThermoTraction<4>
+#define TACS3DThermoTraction5 TACS3DThermoTraction<5>
+#define TACS3DThermoTraction6 TACS3DThermoTraction<6>
+#define TACS3DThermoHF2 TACS3DHeatFluxTraction<2>
+#define TACS3DThermoHF3 TACS3DHeatFluxTraction<3>
+#define TACS3DThermoHF4 TACS3DHeatFluxTraction<4>
+#define TACS3DThermoHF5 TACS3DHeatFluxTraction<5>
 
 #endif // TACS_ELEMENT_TEMPLATES_H

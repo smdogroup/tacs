@@ -1071,7 +1071,7 @@ void TACSBVecInterp::mult( TACSBVec *inVec, TACSBVec *outVec ){
   // Multiply the on-processor part
   multadd(bsize, N, rowp, cols, weights, in, out);
 
-  // Finish the off-processo communication
+  // Finish the off-processor communication
   vecDist->endForward(ctx, in, x_ext);
 
   // Multiply the off-processor part

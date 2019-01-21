@@ -63,12 +63,23 @@ cdef extern from "PlaneStressStiffness.h":
     cdef cppclass PlaneStressStiffness(TACSConstitutive):
         PlaneStressStiffness()
         PlaneStressStiffness(TacsScalar rho, TacsScalar E, TacsScalar nu)
+
+cdef extern from "CoupledThermoPlaneStressStiffness.h":
+    cdef cppclass CoupledThermoPlaneStressStiffness(PlaneStressStiffness):
+        CoupledThermoPlaneStressStiffness()
+        CoupledThermoPlaneStressStiffness( TacsScalar, TacsScalar, TacsScalar,
+                                           TacsScalar, TacsScalar, TacsScalar )
         
 cdef extern from "SolidStiffness.h":
     cdef cppclass SolidStiffness(TACSConstitutive):
         SolidStiffness()
         SolidStiffness(TacsScalar rho, TacsScalar E, TacsScalar nu,
                        TacsScalar ys, int eNum)
+cdef extern from "CoupledThermoSolidStiffness.h":
+    cdef cppclass CoupledThermoSolidStiffness(SolidStiffness):
+        CoupledThermoSolidStiffness()
+        CoupledThermoSolidStiffness( TacsScalar, TacsScalar, TacsScalar,
+                                     TacsScalar, TacsScalar, TacsScalar )
 
 cdef extern from "TACSConstitutiveWrapper.h":
     cdef cppclass PSStiffnessWrapper(PlaneStressStiffness):
@@ -126,9 +137,17 @@ cdef class PlaneStress(Constitutive):
 cdef class SolidStiff(Constitutive):
     pass
 
+cdef class CoupledPlaneStress(Constitutive):
+    pass
+
+cdef class CoupledSolid(Constitutive):
+    pass
+
 # Special functions required for converting pointers
 cdef extern from "":
     PlaneStressStiffness* _dynamicPlaneStress"dynamic_cast<PlaneStressStiffness*>"(TACSConstitutive*)
     FSDTStiffness* _dynamicFSDT"dynamic_cast<FSDTStiffness*>"(TACSConstitutive*)
     SolidStiffness* _dynamicSolid"dynamic_cast<SolidStiffness*>"(TACSConstitutive*)
     TimoshenkoStiffness* _dynamicTimoshenko"dynamic_cast<TimoshenkoStiffness*>"(TACSConstitutive*)
+    CoupledThermoPlaneStressStiffness* _dynamicPSThermo"dynamic_cast<CoupledThermoPlaneStressStiffness*>"(TACSConstitutive*)
+    CoupledThermoSolidStiffness* _dynamicSolidThermo"dynamic_cast<CoupledThermoSolidStiffness*>"(TACSConstitutive*)

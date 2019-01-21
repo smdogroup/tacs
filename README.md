@@ -10,6 +10,10 @@ TACS has been under continuous development since 2010 by the [Structural and Mul
 
 If you use TACS, please cite one or more of the following papers.
 
+This paper describes the time-dependent flexible multibody dynamics and adjoint capabilities implemented in TACS:
+
+K. Boopathy and G. J. Kennedy.  "Parallel Finite Element Framework for Rotorcraft Multibody Dynamics and Discrete Adjoint Sensitivities", 2019, https://doi.org/10.2514/1.J056585 
+
 This paper describes the core functionality of TACS, including the adjoint-based gradient evaluation techniques it implements:
 
 Kennedy, G. J. and Martins, J. R. R. A, "A parallel finite-element framework for large-scale gradient-based design optimization of high-performance structures", Finite Elements in Analysis and Design, 2014, doi:http://dx.doi.org/10.1016/j.finel.2014.04.011

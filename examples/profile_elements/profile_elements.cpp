@@ -245,7 +245,7 @@ int main( int argc, char *argv[] ){
   ps->decref();
 
   // Create the solid stiffness classes
-  SolidStiffness *stiff = new SolidStiffness(rho, E, nu);
+  SolidStiffness *stiff = new SolidStiffness(rho, E, nu, ys);
   stiff->incref();
   
   elem = new Solid<2>(stiff); elem->incref();
