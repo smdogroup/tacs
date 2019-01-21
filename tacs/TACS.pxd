@@ -28,9 +28,9 @@ import numpy as np
 include "TacsTypedefs.pxi"
 
 cdef inline char* convert_to_chars(s):
-   if isinstance(s, unicode):
-      s = (<unicode>s).encode('utf8')
-   return s
+    if isinstance(s, unicode):
+        s = (<unicode>s).encode('utf8')
+    return s
 
 cdef inline convert_bytes_to_str(bytes s):
     if PY_MAJOR_VERSION >= 3:
@@ -143,13 +143,17 @@ cdef extern from "BVec.h":
         void endDistributeValues()
 
 cdef extern from "BVecDist.h":
-     cdef cppclass TACSVarMap(TACSObject):
+    cdef cppclass TACSVarMap(TACSObject):
         TACSVarMap(MPI_Comm, int)
         MPI_Comm getMPIComm()
         void getOwnerRange(const int**)
 
-     cdef cppclass TACSBVecIndices(TACSObject):
-         TACSBVecIndices(int**, int)
+    cdef cppclass TACSBVecIndices(TACSObject):
+        TACSBVecIndices(int**, int)
+        int getIndices(const int **)
+
+    cdef cppclass TACSBVecDistribute(TACSObject):
+        TACSBVecIndices *getIndices()
 
 cdef class VarMap:
     cdef TACSVarMap *ptr
@@ -215,6 +219,8 @@ cdef extern from "DistMat.h":
 cdef extern from "ScMat.h":
     cdef cppclass ScMat(TACSMat):
         void getBCSRMat(BCSRMat**, BCSRMat**, BCSRMat**, BCSRMat**)
+        TACSBVecDistribute *getLocalMap()
+        TACSBVecDistribute *getSchurMap()
 
     cdef cppclass PcScMat(TACSPc):
         PcScMat(ScMat *mat, int levFill, double fill,

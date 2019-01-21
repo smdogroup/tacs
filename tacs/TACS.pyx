@@ -445,19 +445,37 @@ cdef class Mat:
         '''
         cdef int n = 0
         cdef int m = 0
+        cdef int bs = 0
         cdef np.ndarray A = None
         cdef ScMat *sc_ptr = NULL
         cdef BCSRMat *bcsr = NULL
+        cdef TACSBVecDistribute *dist = NULL
+        cdef TACSBVecIndices *indices = NULL
+        cdef const int *indx = NULL
 
         sc_ptr = _dynamicScMat(self.ptr)
         if sc_ptr != NULL:
             sc_ptr.getBCSRMat(&bcsr, NULL, NULL, NULL)
+            bs = bcsr.getBlockSize()
+            dist = sc_ptr.getLocalMap()
+            indices = dist.getIndices()
             if bcsr != NULL:
-                n = bcsr.getRowDim()*bcsr.getBlockSize()
-                m = bcsr.getColDim()*bcsr.getBlockSize()
+                n = bcsr.getRowDim()*bs
+                m = bcsr.getColDim()*bs
                 A = np.zeros((m, n), dtype=dtype)
                 bcsr.getDenseColumnMajor(<TacsScalar*>A.data)
-                return A.T
+
+                # Reorder the matrix
+                if indices != NULL:
+                    indices.getIndices(&indx)
+                    P = np.zeros((m, n), dtype=dtype)
+                    for j in range(bcsr.getColDim()):
+                        for i in range(bcsr.getRowDim()):
+                            P[bs*indx[i]:bs*(indx[i]+1), bs*indx[j]:bs*(indx[j]+1)] =\
+                                                          A[bs*i:bs*(i+1), bs*j:bs*(j+1)]
+                    return P.T
+                else:
+                    return A.T
 
         return None
 
@@ -1328,11 +1346,11 @@ cdef class Assembler:
         # Add the derivative of the product of the adjoint and residual
         A[:] = 0.0
         self.ptr.addAdjointResProducts(1.0, adj, num_adj,
-                                                 Avals, num_design_vars)
+                                       Avals, num_design_vars)
 
         # Allreduce the contributions in-place across all processors
         MPI_Allreduce(MPI_IN_PLACE, Avals, num_design_vars*num_adj,
-                          TACS_MPI_TYPE, MPI_SUM, comm)
+                      TACS_MPI_TYPE, MPI_SUM, comm)
         return
 
     def evalXptSens(self, Function func, Vec vec):
