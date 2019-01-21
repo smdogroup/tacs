@@ -13,7 +13,8 @@ CXX_OBJS = TACSFunction.o \
 	DisplacementIntegral.o \
 	Compliance.o \
 	InducedFailure.o \
-	StructuralMass.o
+	StructuralMass.o \
+	ThermalKSFailure.o
 
 DIR=${TACS_DIR}/src/functions
 

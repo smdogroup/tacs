@@ -7,14 +7,14 @@
 #  TACS is licensed under the Apache License, Version 2.0 (the
 #  "License"); you may not use this software except in compliance with
 #  the License.  You may obtain a copy of the License at
-#  
-#  http://www.apache.org/licenses/LICENSE-2.0 
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
-# Import numpy 
+# Import numpy
 import numpy as np
 cimport numpy as np
 
@@ -56,7 +56,7 @@ cdef class Compliance(Function):
         self.ptr = new TACSCompliance(tacs.ptr)
         self.ptr.incref()
         return
-     
+
 cdef class StructuralMass(Function):
     def __cinit__(self, Assembler tacs):
         '''
@@ -165,3 +165,22 @@ cdef class InducedFailure(Function):
 
     def setParameter(self, double param):
         self.iptr.setParameter(param)
+
+cdef class ThermalKSFailure(Function):
+    cdef TACSThermalKSFailure *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+        '''
+        Wrap the function KSFailure
+        '''
+        self.ksptr = new TACSThermalKSFailure(tacs.ptr, ksWeight,
+                                              KS_FAILURE, alpha)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
+    def setKSFailureType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
+        return

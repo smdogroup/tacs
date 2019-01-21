@@ -141,7 +141,7 @@ cdef extern from "BVec.h":
         void endSetValues(TACSBVecOperation)
         void beginDistributeValues()
         void endDistributeValues()
-
+        
 cdef extern from "BVecDist.h":
     cdef cppclass TACSVarMap(TACSObject):
         TACSVarMap(MPI_Comm, int)
