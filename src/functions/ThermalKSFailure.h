@@ -1,12 +1,19 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2018 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+*/
+
 #ifndef TACS_THERMAL_KS_FAILURE_H
 #define TACS_THERMAL_KS_FAILURE_H
-
-/*
-  Compute the KS function in TACS  
-  
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
-  Not for commercial purposes.
-*/
 
 #include "TACSFunction.h"
 #include "KSFailure.h"
@@ -24,24 +31,25 @@
   The failure load is calculated using the strain-based failure
   criteria from the base Constitutive class which requires linear and
   constant components of the strain to determine the failure load.
- 
+
   The arguments to the KSFailure class are:
 
   ksWeight:  the ks weight used in the calculation
 
-  optional arguments: 
+  optional arguments:
 
   elementNums, numElements -- these specify a subdomain of the TACS
   model over which the KS function should be calculated by passing in
   the element numbers and number of elements in the subdomain.
 
   note: if no subdomain is specified, the calculation takes place over
-  all the elements in the model 
+  all the elements in the model
 */
 class TACSThermalKSFailure : public TACSFunction {
  public:
-  TACSThermalKSFailure( TACSAssembler * _tacs, double ksWeight, 
-                        TACSKSFailure::KSConstitutiveFunction func=TACSKSFailure::FAILURE,
+  TACSThermalKSFailure( TACSAssembler * _tacs, double ksWeight,
+                        TACSKSFailure::KSConstitutiveFunction
+                          func=TACSKSFailure::FAILURE,
                         double alpha=1.0 );
   ~TACSThermalKSFailure();
 
@@ -81,7 +89,7 @@ class TACSThermalKSFailure : public TACSFunction {
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
                         TACSFunctionCtx *ctx );
-  void finalThread( double tcoef, 
+  void finalThread( double tcoef,
                     EvaluationType ftype,
                     TACSFunctionCtx *ctx );
 
@@ -91,8 +99,8 @@ class TACSThermalKSFailure : public TACSFunction {
 
   // State variable sensitivities
   // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma, 
-                         TacsScalar *elemSVSens, 
+  void getElementSVSens( double alpha, double beta, double gamma,
+                         TacsScalar *elemSVSens,
                          TACSElement *element, int elemNum,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
@@ -112,10 +120,11 @@ class TACSThermalKSFailure : public TACSFunction {
                           TACSElement *element, int elemNum,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx ); 
+                          TACSFunctionCtx *ctx );
  private:
-  void getShapeFunctions(const double pt[], double N[],
-                         int order, int dim);
+  void getShapeFunctions( const double pt[], double N[],
+                          int order, int dim );
+
   // The type of aggregation to use
   TACSKSFailure::KSFailureType ksType;
 
@@ -129,7 +138,7 @@ class TACSThermalKSFailure : public TACSFunction {
   double alpha;
 
   // Load factor applied to the strain
-  TacsScalar loadFactor; 
+  TacsScalar loadFactor;
 
   // The maximum number of nodes/stresses in any given element
   int maxNumNodes, maxNumStrains;
@@ -145,4 +154,4 @@ class TACSThermalKSFailure : public TACSFunction {
   int is_2d, is_3d;
 };
 
-#endif 
+#endif

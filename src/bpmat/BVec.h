@@ -107,6 +107,7 @@ class TACSBVec : public TACSVec {
   void axpby( TacsScalar alpha, 
               TacsScalar beta, TACSVec *x ); // y <- alpha*x + beta*y 
   void applyBCs( TACSBcMap *map, TACSVec *vec=NULL );
+  void setBCs( TACSBcMap *map );
 
   // Get/set the vector elements
   // ---------------------------
