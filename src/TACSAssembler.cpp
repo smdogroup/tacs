@@ -2778,7 +2778,7 @@ void TACSAssembler::applyBCs( TACSMat *mat ){
   Set the Dirichlet boundary conditions into the vector
 */
 void TACSAssembler::setBCs( TACSVec *vec ){
-  vec->setBCs(bcMap, varsVec);
+  vec->setBCs(bcMap);
 }
 
 /*!

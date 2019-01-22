@@ -111,6 +111,7 @@ class TACSVec : public TACSObject {
   // ----------------------------------
   virtual void setRand( double lower = -1.0, double upper = 1.0 ){}
   virtual void applyBCs( TACSBcMap *map, TACSVec *vec=NULL ){}
+  virtual void setBCs( TACSBcMap *map ){}
 };
 
 /*!  

@@ -1,4 +1,4 @@
-u/*
+/*
   This file is part of TACS: The Toolkit for the Analysis of Composite
   Structures, a parallel finite-element code for structural and
   multidisciplinary design optimization.

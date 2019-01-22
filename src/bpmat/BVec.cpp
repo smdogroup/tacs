@@ -536,13 +536,7 @@ void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
   Set the boundary conditions values (both zero and non-zero values)
 */
 
-void TACSBVec::setBCs( TACSBcMap *bcmap, TACSVec *tvec ){
-  TacsScalar *uvals = NULL;
-  if (tvec){
-    TACSBVec *vec = dynamic_cast<TACSBVec*>(tvec);
-    vec->getArray(&uvals);
-  }
-
+void TACSBVec::setBCs( TACSBcMap *bcmap ){
   // apply the boundary conditions
   if (x){
     int mpi_rank;
