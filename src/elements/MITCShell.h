@@ -1303,7 +1303,8 @@ void MITCShell<order, tying_order>::getMatType( ElementMatrixType matType,
 template <int order, int tying_order>
 void MITCShell<order, tying_order>::addAdjResProduct( double time,
                                                       double scale,
-                                                      TacsScalar fdvSens[], int dvLen,
+                                                      TacsScalar fdvSens[], 
+                                                      int dvLen,
                                                       const TacsScalar psi[],
                                                       const TacsScalar Xpts[],
                                                       const TacsScalar vars[],
@@ -2729,8 +2730,8 @@ void MITCShell<order, tying_order>::addLocalizedError( double time, TacsScalar e
                                               b11, b22, b12, b23, b13,
                                               knots, pknots, vars, Xpts);
     compute_lr_tying_strain<order, tying_order-1>(g11, g22, g12, g23, g13,
-                                                  low_knots, low_pknots, vars, Xpts);
-
+                                                  low_knots, low_pknots,
+                                                  vars, Xpts);
   }
   else {
     // Compute the B-mat contribution from the full residual
@@ -2762,13 +2763,14 @@ void MITCShell<order, tying_order>::addLocalizedError( double time, TacsScalar e
       // Compute the strain contribution from the lower-order element
       compute_tying_strain<order, tying_order-1>((type == LINEAR),
                                                  g11, g22, g12, g23, g13,
-                                                 low_knots, low_pknots, vars, Xpts);
+                                                 low_knots, low_pknots,
+                                                 vars, Xpts);
     }
   }
 
   // Perform the integration over a larger domain
   const double *pts, *wts;
-  int npts = FElibrary::getGaussPtsWts(order+1, &pts, &wts);
+  int npts = FElibrary::getGaussPtsWts(order, &pts, &wts);
 
   for ( int m = 0; m < npts; m++ ){
     for ( int n = 0; n < npts; n++ ){
