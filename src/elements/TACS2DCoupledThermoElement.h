@@ -188,6 +188,8 @@ class TACS2DCoupledThermoElement : public TACSElement {
                            const TacsScalar Xpts[],
                            const TacsScalar vars[],
                            int vars_j=0 );
+  void getBT( TacsScalar strain[], const double pt[], 
+              const TacsScalar Xpts[], const TacsScalar vars[] );
  protected:
   ElementBehaviorType strain_type;
   CoupledThermoPlaneStressStiffness *stiff;
@@ -1761,5 +1763,39 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens( TacsScalar strainX
   // Compute the derivative of the strain w.r.t. nocal coordinates
   addStrainXptSens(strainXptSens, scale, strainSens, J, Xa, Na, Nb, vars);
 }
+/*
+  Evaluate the derivative of dT at the specified point using the provided set of
+  variables
 
-#endif
+  output:
+  strain:   the strain evaluate at the specific parametric point
+  
+  input:
+  vars:     the element variable values
+  Xpts:     the element nodal locations
+*/
+template <int NUM_NODES>
+void TACS2DCoupledThermoElement<NUM_NODES>::getBT( TacsScalar strain[],
+                                                   const double pt[],
+                                                   const TacsScalar Xpts[],
+                                                   const TacsScalar vars[] ){
+  // The shape functions associated with the element
+  double N[NUM_NODES];
+  double Na[NUM_NODES], Nb[NUM_NODES];
+
+  // Compute the element shape functions
+  getShapeFunctions(pt, N, Na, Nb);
+
+  // Compute the derivative of X with respect to the coordinate directions
+  TacsScalar X[3], Xa[4];
+  planeJacobian(X, Xa, N, Na, Nb, Xpts);
+
+  // Compute the determinant of Xa and the transformation
+  TacsScalar J[4];
+  FElibrary::jacobian2d(Xa, J);
+
+  // Compute the strain B*dT
+  evalBT(strain, J, Na, Nb, vars);
+}
+
+#endif // TACS_2D_COUPLED_THERMO_ELEMENT_H

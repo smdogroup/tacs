@@ -211,6 +211,8 @@ class TACS3DCoupledThermoElement : public TACSElement {
                            const TacsScalar Xpts[],
                            const TacsScalar vars[],
                            int vars_j=0 );
+  void getBT( TacsScalar strain[], const double pt[], 
+              const TacsScalar Xpts[], const TacsScalar vars[] );
  protected:
   ElementBehaviorType strain_type;
   CoupledThermoSolidStiffness * stiff;
@@ -2363,5 +2365,38 @@ void TACS3DCoupledThermoElement<NUM_NODES>::addStrainXptSens( TacsScalar strainX
   addStrainXptSens(strainXptSens, scale, strainSens, 
                    J, Xa, Na, Nb, Nc, vars);
 }
+/*
+  Evaluate the strain at the specified point using the provided set of
+  variables
 
-#endif
+  output:
+  strain:   the strain evaluate at the specific parametric point
+  
+  input:
+  vars:     the element variable values
+  Xpts:     the element nodal locations
+*/
+template <int NUM_NODES>
+void TACS3DCoupledThermoElement<NUM_NODES>::getBT( TacsScalar strain[], 
+                                                   const double pt[],
+                                                   const TacsScalar Xpts[],
+                                                   const TacsScalar vars[] ){
+  // The shape functions associated with the element
+  double N[NUM_NODES];
+  double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
+
+  // Compute the element shape functions
+  getShapeFunctions(pt, N, Na, Nb, Nc);
+
+  // Compute the derivative of X with respect to the coordinate directions
+  TacsScalar X[3], Xa[9];
+  solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
+
+  // Compute the determinant of Xa and the transformation
+  TacsScalar J[9];
+  FElibrary::jacobian3d(Xa, J);
+
+  // Compute the strain
+  evalBT(strain, J, Na, Nb, Nc, vars);
+}
+#endif // TACS_3D_COUPLED_THERMO_ELEMENT_H
