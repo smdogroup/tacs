@@ -84,15 +84,16 @@ class TACS3DCoupledThermoElement : public TACSElement {
   void addGeoStiffness( TacsScalar kmat[], TacsScalar h, const TacsScalar stress[],
                         const TacsScalar J[], const double Na[], 
                         const double Nb[], const double Nc[] );
-  
+
   // Compute the derivative of the strain with respect to the nodal coordinates
   // --------------------------------------------------------------------------
   void addStrainXptSens( TacsScalar sens[], TacsScalar scale,
                          const TacsScalar strainSens[],
-                         const TacsScalar J[], const TacsScalar Xa[], 
-                         const double Na[],  const double Nb[], const double Nc[],
+                         const TacsScalar J[], const TacsScalar Xa[],
+                         const double Na[],  const double Nb[], 
+                         const double Nc[],
                          const TacsScalar vars[] );
-
+  
   // The design variable query functions
   // -----------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
@@ -213,6 +214,12 @@ class TACS3DCoupledThermoElement : public TACSElement {
                            int vars_j=0 );
   void getBT( TacsScalar strain[], const double pt[], 
               const TacsScalar Xpts[], const TacsScalar vars[] );
+  void addBTSVSens( TacsScalar strainSVSens[], 
+                    const double pt[], 
+                    const TacsScalar scale,
+                    const TacsScalar strainSens[], 
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[] );
  protected:
   ElementBehaviorType strain_type;
   CoupledThermoSolidStiffness * stiff;
@@ -2398,5 +2405,60 @@ void TACS3DCoupledThermoElement<NUM_NODES>::getBT( TacsScalar strain[],
 
   // Compute the strain
   evalBT(strain, J, Na, Nb, Nc, vars);
+}
+
+/*
+  Compute the derivative of the point-wise strain multiplied by a
+  specified vector with respect to the element variables and add the
+  result to an array. This can be used to evaluate the derivative of a
+  function of interest with respect to the element variables.
+
+  output:
+  sens:        the output array - same length as the number of elem variables
+ 
+  input:
+  pt:          parametric point used to evaluate the derivative [-1, 1]^{3}
+  scaleFactor: scale ther result by this scalar
+  strainSens:  the sensitivity of each straint component 
+  vars:        the element variables
+  Xpts:        the element nodal locations
+*/
+template <int NUM_NODES>
+void TACS3DCoupledThermoElement<NUM_NODES>::addBTSVSens( TacsScalar sens[],
+                                                         const double pt[], 
+                                                         const TacsScalar scale,
+                                                         const TacsScalar strainSens[], 
+                                                         const TacsScalar Xpts[],
+                                                         const TacsScalar vars[] ){
+  // The shape functions associated with the element
+  double N[NUM_NODES];
+  double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
+
+  // The derivative of the stress with respect to the strain
+  TacsScalar B[3*NUM_NODES];
+
+  // Compute the element shape functions
+  getShapeFunctions(pt, N, Na, Nb, Nc);
+  
+  // Compute the derivative of X with respect to the coordinate
+  // directions
+  TacsScalar X[3], Xa[9];
+  solidJacobian(X, Xa, N, Na, Nb, Nc, Xpts);
+  
+  // Compute the determinant of Xa and the transformation
+  TacsScalar J[9];
+  FElibrary::jacobian3d(Xa, J);
+        
+  // Get the derivative of the strain with respect to the nodal
+  // displacements
+  getBmatTemp(B, J, Na, Nb, Nc, vars);
+
+  TacsScalar *b = B;
+  for ( int i = 0; i < NUM_NODES; i++ ){
+    sens[4*i+3] += scale*(strainSens[0]*b[0] + 
+                          strainSens[1]*b[1] + 
+                          strainSens[2]*b[2]);
+    b += 3;    
+  }
 }
 #endif // TACS_3D_COUPLED_THERMO_ELEMENT_H

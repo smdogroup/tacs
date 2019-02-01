@@ -23,6 +23,7 @@ np.import_array()
 
 # Import the definition required for const strings
 from libc.string cimport const_char
+from libc.stdlib cimport malloc, free
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
@@ -178,9 +179,39 @@ cdef class ThermalKSFailure(Function):
         self.ptr.incref()
         return
 
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        
     def setKSFailureType(self, ftype='discrete'):
         if ftype == 'discrete':
             self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
         elif ftype == 'continuous':
             self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
         return
+
+cdef class HeatFlux(Function):
+    cdef HeatFluxIntegral *hptr
+    def __cinit__(self, Assembler assembler, list elem_index,
+                  list surfaces):
+        cdef int num_elems = len(elem_index)
+        cdef int *elem_ind = NULL
+        cdef int *surf = NULL
+
+        elem_ind = <int*>malloc(num_elems*sizeof(int));
+        surf = <int*>malloc(num_elems*sizeof(int));
+
+        for i in range(num_elems):
+            elem_ind[i] = <int>elem_index[i]
+            surf[i] = <int>surfaces[i]
+        self.hptr = new HeatFluxIntegral(assembler.ptr, elem_ind, surf,
+                                         num_elems)
+        self.ptr = self.hptr
+        self.ptr.incref()
+        
+        free(elem_ind)
+        free(surf)
+        
+    def __dealloc__(self):
+        if self.ptr:
+           self.ptr.decref()

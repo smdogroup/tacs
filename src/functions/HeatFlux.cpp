@@ -14,8 +14,7 @@
 
 #include "HeatFlux.h"
 #include "TACSAssembler.h"
-#include "CoupledThermoSolid.h"
-#include "PlaneStressCoupledThermoQuad.h"
+#include  "ThermoElements.h"
 #include "CoupledThermoSolidStiffness.h"
 #include "CoupledThermoPlaneStressStiffness.h"
 #include "TensorToolbox.h"
@@ -222,45 +221,48 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
           }
           // Compute the normal to the element
           Tensor::crossProduct3D(dir, Xa, Xb);
-
-          if (order == 2){
-            CoupledThermoSolid<2>* elem =
-              dynamic_cast<CoupledThermoSolid<2>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
+          ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
+          if (elem){
+            elem->getBT(strain, pt, Xpts, vars);
           }
-          else if (order == 3){
-            CoupledThermoSolid<3>* elem =
-              dynamic_cast<CoupledThermoSolid<3>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 4){
-            CoupledThermoSolid<4>* elem =
-              dynamic_cast<CoupledThermoSolid<4>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 5){
-            CoupledThermoSolid<5>* elem =
-              dynamic_cast<CoupledThermoSolid<5>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 6){
-            CoupledThermoSolid<6>* elem =
-              dynamic_cast<CoupledThermoSolid<6>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else {
-            printf("Heat flux element not implemented\n");
-          }
+          // if (order == 2){
+          //   CoupledThermoSolid<2>* elem =
+          //     dynamic_cast<CoupledThermoSolid<2>*>(element);
+          //   if (elem){
+          //     elem->getBT(strain, pt, Xpts, vars);
+          //   }
+          // }
+          // else if (order == 3){
+          //   CoupledThermoSolid<3>* elem =
+          //     dynamic_cast<CoupledThermoSolid<3>*>(element);
+          //   if (elem){
+          //     elem->getBT(strain, pt, Xpts, vars);
+          //   }
+          // }
+          // else if (order == 4){
+          //   CoupledThermoSolid<4>* elem =
+          //     dynamic_cast<CoupledThermoSolid<4>*>(element);
+          //   if (elem){
+          //     elem->getBT(strain, pt, Xpts, vars);
+          //   }
+          // }
+          // else if (order == 5){
+          //   CoupledThermoSolid<5>* elem =
+          //     dynamic_cast<CoupledThermoSolid<5>*>(element);
+          //   if (elem){
+          //     elem->getBT(strain, pt, Xpts, vars);
+          //   }
+          // }
+          // else if (order == 6){
+          //   CoupledThermoSolid<6>* elem =
+          //     dynamic_cast<CoupledThermoSolid<6>*>(element);
+          //   if (elem){
+          //     elem->getBT(strain, pt, Xpts, vars);
+          //   }
+          // }
+          // else {
+          //   printf("Heat flux element not implemented\n");
+          // }
           CoupledThermoSolidStiffness *con =
             dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
           // Compute the heat flux to the surface
@@ -278,45 +280,10 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
           else {
             dir[0] = 1.0;
             dir[1] = 0.0;
-          }         
-
-          if (order == 2){
-            PlaneStressCoupledThermoQuad<2>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 3){
-            PlaneStressCoupledThermoQuad<3>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 4){
-            PlaneStressCoupledThermoQuad<4>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 5){
-            PlaneStressCoupledThermoQuad<5>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else if (order == 6){
-            PlaneStressCoupledThermoQuad<6>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-            if (elem){
-              elem->getBT(strain, pt, Xpts, vars);
-            }
-          }
-          else {
-            printf("Heat flux element not implemented\n");
+          }          
+          ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+          if (elem){
+            elem->getBT(strain, pt, Xpts, vars);
           }
           CoupledThermoPlaneStressStiffness *con =
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
@@ -361,8 +328,50 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
                                          const TacsScalar dvars[],
                                          const TacsScalar ddvars[],
                                          TACSFunctionCtx *fctx ){
-  
-  
+  HeatFluxIntCtx *ctx = dynamic_cast<HeatFluxIntCtx*>(fctx);
+  if (ctx){
+    int numGauss = element->getNumGaussPts();
+    const int numDisps = element->numDisplacements();
+    // Set the stress/strain arrays
+    TacsScalar stress[numDisps-1];
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the quadrature point
+      double pt[3];
+      TacsScalar weight = element->getGaussWtsPts(i, pt);
+      TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
+      // Add the sensitivity of the heat flux wrt to dT
+      // q = {1,1}* H(x) * B * dT
+      // dq/d(dT) = {1,1}* H(x) * B
+      // Get the derivative of dT at the current point
+      if (numDisps == 4){
+        CoupledThermoSolidStiffness *con =
+          dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
+        // Compute the heat flux to the surface
+        if (con){
+          TacsScalar psi[] = {1., 1., 1.};
+          con->calculateConduction(pt, psi, stress);       
+        }
+        ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
+        if (elem){
+          elem->addBTSVSens(elemSVSens, pt, h*alpha, stress, 
+                            Xpts, vars);
+        }
+      }
+      else {
+        CoupledThermoPlaneStressStiffness *con =
+          dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
+        if (con){
+          TacsScalar psi[] = {1., 1.};
+          con->calculateConduction(pt, psi, stress); 
+        }
+        ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+        if (elem){
+          elem->addBTSVSens(elemSVSens, pt, h*alpha, stress, 
+                            Xpts, vars);
+        }
+      }
+    }
+  }
 }
 /*
   Determine the derivative of the function with respect to
@@ -393,4 +402,46 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
                                          const TacsScalar dvars[],
                                          const TacsScalar ddvars[],
                                          TACSFunctionCtx *fctx ){
+  HeatFluxIntCtx *ctx = dynamic_cast<HeatFluxIntCtx*>(fctx);
+  if (ctx){
+    int numGauss = element->getNumGaussPts();
+    const int numDisps = element->numDisplacements();
+
+    // Set the stress/strain arrays
+    TacsScalar strain[numDisps-1];
+    for ( int i = 0; i < numGauss; i++ ){
+      // Get the quadrature point
+      double pt[3];
+      TacsScalar weight = element->getGaussWtsPts(i, pt);
+      TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
+      // Get the derivative of dT at the current point
+      if (numDisps == 4){
+        ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
+        if (elem){
+          elem->getBT(strain, pt, Xpts, vars);
+        }
+        CoupledThermoSolidStiffness *con =
+          dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
+        // Compute the heat flux to the surface
+        if (con){
+          TacsScalar psi[] = {1., 1., 1.};
+          con->addConductionDVSens(pt, strain, tcoef*h, psi,
+                                   fdvSens, numDVs);
+        }
+      }
+      else {
+        ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+        if (elem){
+          elem->getBT(strain, pt, Xpts, vars);
+        }
+        CoupledThermoPlaneStressStiffness *con =
+          dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
+        if (con){
+          TacsScalar psi[] = {1., 1.};
+          con->addConductionDVSens(pt, strain, tcoef*h, psi, 
+                                    fdvSens, numDVs);
+        }
+      }      
+    }    
+  }
 }

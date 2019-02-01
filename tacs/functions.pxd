@@ -107,3 +107,7 @@ cdef extern from "ThermalKSFailure.h":
         void setParameter(double _ksWeight)
         void setLoadFactor(TacsScalar _loadFactor)
         void setMaxFailOffset(TacsScalar _maxFail)
+
+cdef extern from "HeatFlux.h":
+    cdef cppclass HeatFluxIntegral( TACSFunction ):
+        HeatFluxIntegral( TACSAssembler*, int*, int*, int )
