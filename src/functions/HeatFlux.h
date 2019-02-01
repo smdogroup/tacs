@@ -68,6 +68,14 @@ class HeatFluxIntegral : public TACSFunction {
                           TACSFunctionCtx *ctx );
 
  private:
+  void computeDirections( double dir[],
+                          const int surface,
+                          const int order, 
+                          const int numDisps,
+                          const TacsScalar Xpts[],
+                          const double Na[],
+                          const double Nb[] );
+
   // The name of the function
   static const char *funcName;
 
@@ -81,5 +89,8 @@ class HeatFluxIntegral : public TACSFunction {
   int *elem_index;
   int *surface_index;
   int num_elems;
+
+  std::map<int, int>elem_to_surf;
+  std::map<int, int>::iterator elem_to_surf_it;
 };
 #endif // TACS_HEAT_FLUX_H

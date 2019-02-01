@@ -63,7 +63,11 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
              TACSFunction::SINGLE_STAGE, 0){
   maxNumNodes = _tacs->getMaxElementNodes();
   value = 0.0;
-  // Create hash table
+  // Create map
+  num_elems = _num_elems;
+  for (int i = 0; i < num_elems; i++){
+    elem_to_surf.insert(std::make_pair(_elem_index[i], _surface_index[i]));
+  }  
 }
 HeatFluxIntegral::~HeatFluxIntegral(){}
 
@@ -133,8 +137,8 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
                                         const TacsScalar ddvars[],
                                         TACSFunctionCtx *fctx ){
   HeatFluxIntCtx *ctx = dynamic_cast<HeatFluxIntCtx*>(fctx);
-  // Fix this for hash table
-  int surface = surface_index[elem_index[elemNum]];
+  elem_to_surf_it = elem_to_surf.find(elemNum);
+  int surface = elem_to_surf_it->second;
   if (ctx){
     // Get the number of quadrature points for this element
     const int numGauss = element->getNumGaussPts();
@@ -160,109 +164,19 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
         // Get the Gauss points one at a time
         double pt[3];
         double weight = element->getGaussWtsPts(i, pt);
-        element->getShapeFunctions(pt, N);
-
-        TacsScalar Xa[3], Xb[3];
-        Xa[0] = Xa[1] = Xa[2] = 0.0;
-        Xb[0] = Xb[1] = Xb[2] = 0.0;
-
+                
         dir[0] = dir[1] = dir[2] = 0.0;
         
         // Get the strain B*u and temperature dT
         // If 3D structure
         if (numDisps == 4){
-          if (surface < 2){
-            const int ii = (order-1)*(surface % 2);
-            for ( int kk = 0; kk < order; kk++ ){
-              for ( int jj = 0; jj < order; jj++ ){
-                const int node = ii + jj*order + kk*order*order;
-              
-                Xa[0] += Na[jj + kk*order]*Xpts[3*node];
-                Xa[1] += Na[jj + kk*order]*Xpts[3*node+1];
-                Xa[2] += Na[jj + kk*order]*Xpts[3*node+2];
-
-                Xb[0] += Nb[jj + kk*order]*Xpts[3*node];
-                Xb[1] += Nb[jj + kk*order]*Xpts[3*node+1];
-                Xb[2] += Nb[jj + kk*order]*Xpts[3*node+2];
-              }
-            }
-          }
-          else if (surface < 4){
-            const int jj = (order-1)*(surface % 2);
-            for ( int kk = 0; kk < order; kk++ ){
-              for ( int ii = 0; ii < order; ii++ ){
-                const int node = ii + jj*order + kk*order*order;
-              
-                Xa[0] += Na[ii + kk*order]*Xpts[3*node];
-                Xa[1] += Na[ii + kk*order]*Xpts[3*node+1];
-                Xa[2] += Na[ii + kk*order]*Xpts[3*node+2];
-
-                Xb[0] += Nb[ii + kk*order]*Xpts[3*node];
-                Xb[1] += Nb[ii + kk*order]*Xpts[3*node+1];
-                Xb[2] += Nb[ii + kk*order]*Xpts[3*node+2];
-              }
-            }
-          }
-          else {
-            const int kk = (order-1)*(surface % 2);
-            for ( int jj = 0; jj < order; jj++ ){
-              for ( int ii = 0; ii < order; ii++ ){
-                const int node = ii + jj*order + kk*order*order;
-              
-                Xa[0] += Na[ii + jj*order]*Xpts[3*node];
-                Xa[1] += Na[ii + jj*order]*Xpts[3*node+1];
-                Xa[2] += Na[ii + jj*order]*Xpts[3*node+2];
-
-                Xb[0] += Nb[ii + jj*order]*Xpts[3*node];
-                Xb[1] += Nb[ii + jj*order]*Xpts[3*node+1];
-                Xb[2] += Nb[ii + jj*order]*Xpts[3*node+2];
-              }
-            }
-          }
-          // Compute the normal to the element
-          Tensor::crossProduct3D(dir, Xa, Xb);
           ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
           if (elem){
+            elem->getShapeFunctions(pt, N, Na, Nb);
+            computeDirections(dir, surface, order, numDisps,
+                              Xpts, Na, Nb);
             elem->getBT(strain, pt, Xpts, vars);
-          }
-          // if (order == 2){
-          //   CoupledThermoSolid<2>* elem =
-          //     dynamic_cast<CoupledThermoSolid<2>*>(element);
-          //   if (elem){
-          //     elem->getBT(strain, pt, Xpts, vars);
-          //   }
-          // }
-          // else if (order == 3){
-          //   CoupledThermoSolid<3>* elem =
-          //     dynamic_cast<CoupledThermoSolid<3>*>(element);
-          //   if (elem){
-          //     elem->getBT(strain, pt, Xpts, vars);
-          //   }
-          // }
-          // else if (order == 4){
-          //   CoupledThermoSolid<4>* elem =
-          //     dynamic_cast<CoupledThermoSolid<4>*>(element);
-          //   if (elem){
-          //     elem->getBT(strain, pt, Xpts, vars);
-          //   }
-          // }
-          // else if (order == 5){
-          //   CoupledThermoSolid<5>* elem =
-          //     dynamic_cast<CoupledThermoSolid<5>*>(element);
-          //   if (elem){
-          //     elem->getBT(strain, pt, Xpts, vars);
-          //   }
-          // }
-          // else if (order == 6){
-          //   CoupledThermoSolid<6>* elem =
-          //     dynamic_cast<CoupledThermoSolid<6>*>(element);
-          //   if (elem){
-          //     elem->getBT(strain, pt, Xpts, vars);
-          //   }
-          // }
-          // else {
-          //   printf("Heat flux element not implemented\n");
-          // }
+          }         
           CoupledThermoSolidStiffness *con =
             dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
           // Compute the heat flux to the surface
@@ -272,17 +186,11 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
           value += dir[0]*q[0] + dir[1]*q[1] + dir[2]*q[2];
         }
         else {
-          // Compute direction
-          if (surface == 0 || surface == 1){
-            dir[0] = 0.0;
-            dir[1] = 1.0;
-          }
-          else {
-            dir[0] = 1.0;
-            dir[1] = 0.0;
-          }          
           ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
           if (elem){
+            elem->getShapeFunctions(pt, N, Na, Nb);
+            computeDirections(dir, surface, order, numDisps,
+                              Xpts, Na, Nb);
             elem->getBT(strain, pt, Xpts, vars);
           }
           CoupledThermoPlaneStressStiffness *con =
@@ -329,9 +237,16 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
                                          const TacsScalar ddvars[],
                                          TACSFunctionCtx *fctx ){
   HeatFluxIntCtx *ctx = dynamic_cast<HeatFluxIntCtx*>(fctx);
+  elem_to_surf_it = elem_to_surf.find(elemNum);
+  int surface = elem_to_surf_it->second;
   if (ctx){
     int numGauss = element->getNumGaussPts();
     const int numDisps = element->numDisplacements();
+    const int numNodes = element->numNodes();
+    double N[numNodes], Na[numNodes], Nb[numNodes];
+
+    TacsScalar dir[3];
+    dir[0] = dir[1] = dir[2] = 0.0;
     // Set the stress/strain arrays
     TacsScalar stress[numDisps-1];
     for ( int i = 0; i < numGauss; i++ ){
@@ -339,32 +254,44 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
       double pt[3];
       TacsScalar weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
+            
+      dir[0] = dir[1] = dir[2] = 0.0;
       // Add the sensitivity of the heat flux wrt to dT
       // q = {1,1}* H(x) * B * dT
       // dq/d(dT) = {1,1}* H(x) * B
       // Get the derivative of dT at the current point
       if (numDisps == 4){
+        int order = cbrt(numNodes);
+        ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
+        if (elem){
+          elem->getShapeFunctions(pt, N, Na, Nb);
+          computeDirections(dir, surface, order, numDisps, 
+                            Xpts, Na, Nb);
+        }        
         CoupledThermoSolidStiffness *con =
           dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
         // Compute the heat flux to the surface
         if (con){
-          TacsScalar psi[] = {1., 1., 1.};
-          con->calculateConduction(pt, psi, stress);       
-        }
-        ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
+          con->calculateConduction(pt, dir, stress);
+        }        
         if (elem){
           elem->addBTSVSens(elemSVSens, pt, h*alpha, stress, 
                             Xpts, vars);
         }
       }
       else {
+        int order = sqrt(numNodes);
+        ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+        if (elem){
+          elem->getShapeFunctions(pt, N, Na, Nb);
+          computeDirections(dir, surface, order, numDisps, Xpts, 
+                            Na, Nb);
+        }
         CoupledThermoPlaneStressStiffness *con =
           dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
         if (con){
-          TacsScalar psi[] = {1., 1.};
-          con->calculateConduction(pt, psi, stress); 
+          con->calculateConduction(pt, dir, stress); 
         }
-        ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
         if (elem){
           elem->addBTSVSens(elemSVSens, pt, h*alpha, stress, 
                             Xpts, vars);
@@ -403,10 +330,17 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
                                          const TacsScalar ddvars[],
                                          TACSFunctionCtx *fctx ){
   HeatFluxIntCtx *ctx = dynamic_cast<HeatFluxIntCtx*>(fctx);
+  elem_to_surf_it = elem_to_surf.find(elemNum);
+  int surface = elem_to_surf_it->second;
   if (ctx){
     int numGauss = element->getNumGaussPts();
     const int numDisps = element->numDisplacements();
+    const int numNodes = element->numNodes();
 
+    double N[numNodes], Na[numNodes], Nb[numNodes];
+    TacsScalar dir[3];
+    dir[0] = dir[1] = dir[2] = 0.0;
+    
     // Set the stress/strain arrays
     TacsScalar strain[numDisps-1];
     for ( int i = 0; i < numGauss; i++ ){
@@ -414,34 +348,119 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
       double pt[3];
       TacsScalar weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
+      
+      dir[0] = dir[1] = dir[2] = 0.0;
       // Get the derivative of dT at the current point
       if (numDisps == 4){
+        int order = cbrt(numNodes);
         ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
         if (elem){
+          elem->getShapeFunctions(pt, N, Na, Nb);
+          computeDirections(dir, surface, order, numDisps,
+                            Xpts, Na, Nb);
           elem->getBT(strain, pt, Xpts, vars);
         }
         CoupledThermoSolidStiffness *con =
           dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
         // Compute the heat flux to the surface
         if (con){
-          TacsScalar psi[] = {1., 1., 1.};
-          con->addConductionDVSens(pt, strain, tcoef*h, psi,
+          con->addConductionDVSens(pt, strain, tcoef*h, dir,
                                    fdvSens, numDVs);
         }
       }
       else {
+        int order = sqrt(numNodes);        
         ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
         if (elem){
+          elem->getShapeFunctions(pt, N, Na, Nb);
+          computeDirections(dir, surface, order, numDisps, 
+                            Xpts, Na, Nb);
           elem->getBT(strain, pt, Xpts, vars);
         }
         CoupledThermoPlaneStressStiffness *con =
           dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
         if (con){
-          TacsScalar psi[] = {1., 1.};
-          con->addConductionDVSens(pt, strain, tcoef*h, psi, 
+          con->addConductionDVSens(pt, strain, tcoef*h, dir,
                                     fdvSens, numDVs);
         }
       }      
     }    
+  }
+}
+/*
+  Compute the surface or edge normal
+*/
+void HeatFluxIntegral::computeDirections( double dir[],
+                                          const int surface,
+                                          const int order,
+                                          const int numDisps,
+                                          const TacsScalar Xpts[],
+                                          const double Na[],
+                                          const double Nb[] ){
+  TacsScalar Xa[3], Xb[3];
+  Xa[0] = Xa[1] = Xa[2] = 0.0;
+  Xb[0] = Xb[1] = Xb[2] = 0.0;
+
+  if (numDisps-1 == 4){
+    if (surface < 2){
+      const int ii = (order-1)*(surface % 2);
+      for ( int kk = 0; kk < order; kk++ ){
+        for ( int jj = 0; jj < order; jj++ ){
+          const int node = ii + jj*order + kk*order*order;
+              
+          Xa[0] += Na[jj + kk*order]*Xpts[3*node];
+          Xa[1] += Na[jj + kk*order]*Xpts[3*node+1];
+          Xa[2] += Na[jj + kk*order]*Xpts[3*node+2];
+
+          Xb[0] += Nb[jj + kk*order]*Xpts[3*node];
+          Xb[1] += Nb[jj + kk*order]*Xpts[3*node+1];
+          Xb[2] += Nb[jj + kk*order]*Xpts[3*node+2];
+        }
+      }
+    }
+    else if (surface < 4){
+      const int jj = (order-1)*(surface % 2);
+      for ( int kk = 0; kk < order; kk++ ){
+        for ( int ii = 0; ii < order; ii++ ){
+          const int node = ii + jj*order + kk*order*order;
+              
+          Xa[0] += Na[ii + kk*order]*Xpts[3*node];
+          Xa[1] += Na[ii + kk*order]*Xpts[3*node+1];
+          Xa[2] += Na[ii + kk*order]*Xpts[3*node+2];
+
+          Xb[0] += Nb[ii + kk*order]*Xpts[3*node];
+          Xb[1] += Nb[ii + kk*order]*Xpts[3*node+1];
+          Xb[2] += Nb[ii + kk*order]*Xpts[3*node+2];
+        }
+      }
+    }
+    else {
+      const int kk = (order-1)*(surface % 2);
+      for ( int jj = 0; jj < order; jj++ ){
+        for ( int ii = 0; ii < order; ii++ ){
+          const int node = ii + jj*order + kk*order*order;
+              
+          Xa[0] += Na[ii + jj*order]*Xpts[3*node];
+          Xa[1] += Na[ii + jj*order]*Xpts[3*node+1];
+          Xa[2] += Na[ii + jj*order]*Xpts[3*node+2];
+
+          Xb[0] += Nb[ii + jj*order]*Xpts[3*node];
+          Xb[1] += Nb[ii + jj*order]*Xpts[3*node+1];
+          Xb[2] += Nb[ii + jj*order]*Xpts[3*node+2];
+        }
+      }
+    }
+    // Compute the normal to the element
+    Tensor::crossProduct3D(dir, Xa, Xb);
+  }
+  else {
+    if (surface == 0 || surface == 1){
+      dir[0] = 0.0;
+      dir[1] = 1.0;
+    }
+    else {
+      dir[0] = 1.0;
+      dir[1] = 0.0;
+    }
   }
 }
