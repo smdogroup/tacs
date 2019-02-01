@@ -14,7 +14,7 @@
 
 #include "HeatFlux.h"
 #include "TACSAssembler.h"
-#include  "ThermoElements.h"
+#include "ThermoElements.h"
 #include "CoupledThermoSolidStiffness.h"
 #include "CoupledThermoPlaneStressStiffness.h"
 #include "TensorToolbox.h"
@@ -170,7 +170,7 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
         // Get the strain B*u and temperature dT
         // If 3D structure
         if (numDisps == 4){
-          ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
+          ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
           if (elem){
             elem->getShapeFunctions(pt, N, Na, Nb);
             computeDirections(dir, surface, order, numDisps,

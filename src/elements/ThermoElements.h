@@ -10,15 +10,15 @@ class ThermoQuad : public TACSElement {
               ElementBehaviorType type=LINEAR, 
               int _componentNum=0 ){}
   virtual void getShapeFunctions( const double pt[], double N[],
-                                  double Na[], double Nb[] );
+                                  double Na[], double Nb[] ) = 0;
   virtual void getBT( TacsScalar strain[], const double pt[], 
-                      const TacsScalar Xpts[], const TacsScalar vars[] );
+                      const TacsScalar Xpts[], const TacsScalar vars[] ) = 0;
   virtual void addBTSVSens( TacsScalar strainSVSens[],
                             const double pt[],
                             const TacsScalar scale,
                             const TacsScalar strainSens[],
                             const TacsScalar Xpts[],
-                            const TacsScalar vars[] );
+                            const TacsScalar vars[] ) = 0;
 };
 
 class ThermoSolid : public TACSElement {
@@ -27,13 +27,13 @@ class ThermoSolid : public TACSElement {
                ElementBehaviorType type=LINEAR, 
                int _componentNum=0 ){}
   virtual void getShapeFunctions( const double pt[], double N[],
-                                  double Na[], double Nb[] );
+                                  double Na[], double Nb[] ) = 0;
   virtual void getBT( TacsScalar strain[], const double pt[], 
-                      const TacsScalar Xpts[], const TacsScalar vars[] );
+                      const TacsScalar Xpts[], const TacsScalar vars[] ) = 0;
   virtual void addBTSVSens( TacsScalar strainSVSens[],
                             const double pt[],
                             const TacsScalar scale,
                             const TacsScalar strainSens[],
                             const TacsScalar Xpts[],
-                            const TacsScalar vars[] );
+                            const TacsScalar vars[] ) = 0;
 };
