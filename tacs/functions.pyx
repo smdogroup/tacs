@@ -178,10 +178,6 @@ cdef class ThermalKSFailure(Function):
         self.ptr = self.ksptr
         self.ptr.incref()
         return
-
-    def __dealloc__(self):
-        if self.ptr:
-            self.ptr.decref()
         
     def setKSFailureType(self, ftype='discrete'):
         if ftype == 'discrete':
@@ -211,7 +207,4 @@ cdef class HeatFlux(Function):
         
         free(elem_ind)
         free(surf)
-        
-    def __dealloc__(self):
-        if self.ptr:
-           self.ptr.decref()
+        return
