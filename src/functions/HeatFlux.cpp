@@ -237,6 +237,11 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
   HeatFluxIntCtx *ctx = dynamic_cast<HeatFluxIntCtx*>(fctx);
   elem_to_surf_it = elem_to_surf.find(elemNum);
   int surface = elem_to_surf_it->second;
+
+  // Zero the derivative of the function w.r.t. the element state
+  // variables
+  int numVars = element->numVariables();
+  memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
   if (ctx){
     int numGauss = element->getNumGaussPts();
     const int numDisps = element->numDisplacements();
