@@ -15,8 +15,7 @@
 #include "ThermalKSFailure.h"
 #include "TACSAssembler.h"
 #include "FElibrary.h"
-#include "CoupledThermoSolid.h"
-#include "PlaneStressCoupledThermoQuad.h"
+#include "ThermoElements.h"
 #include "CoupledThermoSolidStiffness.h"
 #include "CoupledThermoPlaneStressStiffness.h"
 
@@ -206,7 +205,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
     // Retrieve the number of stress components for this element
     int numStresses = element->numStresses();
     int numNodes = element->numNodes();
-
+    
     // Get the number of quadrature points for this element
     int numGauss = element->getNumGaussPts();
     double N[numNodes];
@@ -229,121 +228,24 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
           double pt[3];
           TacsScalar T[] = {0.0};
           element->getGaussWtsPts(i, pt);
-
           // Get the strain B*u and temperature dT
-          if (order == 2){
-            if (is_3d){
-              CoupledThermoSolid<2>* elem =
-                dynamic_cast<CoupledThermoSolid<2>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<2>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
+          if (is_3d){
+            ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
             }
           }
-          else if (order == 3){
-            if (is_3d){
-              CoupledThermoSolid<3>* elem =
-                dynamic_cast<CoupledThermoSolid<3>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<3>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
+          else{
+            ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
             }
           }
-          else if (order == 4){
-            if (is_3d){
-              CoupledThermoSolid<4>* elem =
-                dynamic_cast<CoupledThermoSolid<4>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<4>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-
-          else if (order == 5){
-            if (is_3d){
-              CoupledThermoSolid<5>* elem =
-                dynamic_cast<CoupledThermoSolid<5>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<5>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-
-          else if (order == 6){
-            if (is_3d){
-              CoupledThermoSolid<6>* elem =
-                dynamic_cast<CoupledThermoSolid<6>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<6>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-
+          
           // Scale the strain by the load factor
           for ( int k = 0; k < numStresses; k++ ){
             strain[k] *= loadFactor;
@@ -383,118 +285,21 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
           TacsScalar T[] = {0.0};
 
           // Get the strain B*u and temperature dT
-          if (order == 2){
-            if (is_3d){
-              CoupledThermoSolid<2>* elem =
-                dynamic_cast<CoupledThermoSolid<2>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<2>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-          else if (order == 3){
-            if (is_3d){
-              CoupledThermoSolid<3>* elem =
-                dynamic_cast<CoupledThermoSolid<3>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<3>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-          else if (order == 4){
-            if (is_3d){
-              CoupledThermoSolid<4>* elem =
-                dynamic_cast<CoupledThermoSolid<4>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<4>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-          else if (order == 5){
-            if (is_3d){
-              CoupledThermoSolid<5>* elem =
-                dynamic_cast<CoupledThermoSolid<5>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<5>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-          }
-          else if (order == 6){
-            if (is_3d){
-              CoupledThermoSolid<6>* elem =
-                dynamic_cast<CoupledThermoSolid<6>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
-            }
-            else {
-              PlaneStressCoupledThermoQuad<6>* elem =
-                dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-
-              if (elem){
-                elem->getShapeFunctions(pt, N);
-                elem->getStrain(strain, pt, Xpts, vars);
-                elem->getTemperature(T, N, vars);
-              }
+          if (is_3d){
+            ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
             }
           }
           else{
-            printf("Not implemented\n");
+            ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+            if (elem){
+              elem->getShapeFunctions(pt, N);
+              elem->getStrain(strain, pt, Xpts, vars);
+              elem->getTemperature(T, N, vars);
+            }
           }
           // Scale the strain by the load factor
           for ( int k = 0; k < numStresses; k++ ){
@@ -607,7 +412,6 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
       else {
         CoupledThermoPlaneStressStiffness *con =
           dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-        //printf("Here\n");
         if (con){
           nvars = con->getVarsPerNode();
         }
@@ -618,102 +422,23 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
         double weight = element->getGaussWtsPts(i, pt);
 
         // Get the strain B*u and temperature dT
-        if (order == 2){
-          if (is_3d){
-            CoupledThermoSolid<2>* elem =
-              dynamic_cast<CoupledThermoSolid<2>*>(element);
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<2>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
-        else if (order == 3){
-          CoupledThermoSolid<3>* elem =
-            dynamic_cast<CoupledThermoSolid<3>*>(element);
+        if (is_3d){
+          ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
           if (elem){
             elem->getShapeFunctions(pt, N);
             elem->getStrain(strain, pt, Xpts, vars);
             elem->getTemperature(T, N, vars);
           }
         }
-        else if (order == 4){
-          if (is_3d){
-            CoupledThermoSolid<4>* elem =
-              dynamic_cast<CoupledThermoSolid<4>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<4>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
+        else{
+          ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+          if (elem){
+            elem->getShapeFunctions(pt, N);
+            elem->getStrain(strain, pt, Xpts, vars);
+            elem->getTemperature(T, N, vars);
           }
         }
-        else if (order == 5){
-          if (is_3d){
-            CoupledThermoSolid<5>* elem =
-              dynamic_cast<CoupledThermoSolid<5>*>(element);
 
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<5>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
-        else if (order == 6){
-          if (is_3d){
-            CoupledThermoSolid<6>* elem =
-              dynamic_cast<CoupledThermoSolid<6>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<6>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
         for ( int k = 0; k < numStresses; k++ ){
           strain[k] *= loadFactor;
         }
@@ -756,6 +481,11 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
               if (con){
                 con->failureStrainSens(pt, T, strain, failSens, 0);
               }
+              ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
+              if (elem){
+                elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                         failSens, Xpts, vars, 0);
+              }
             }
             else {
               CoupledThermoPlaneStressStiffness *con =
@@ -764,97 +494,10 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
               if (con){
                 con->failureStrainSens(pt, T, strain, failSens, 0);
               }
-            }
-            // Evaluate the derivative of the failure criteria
-            if (order == 2){
-              if (is_3d){
-                CoupledThermoSolid<2>* elem =
-                  dynamic_cast<CoupledThermoSolid<2>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+              ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+              if (elem){
+                elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
                                            failSens, Xpts, vars, 0);
-                }
-              }
-              else {
-                PlaneStressCoupledThermoQuad<2>* elem =
-                  dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-            }
-            else if (order == 3){
-              if (is_3d){
-                CoupledThermoSolid<3>* elem =
-                  dynamic_cast<CoupledThermoSolid<3>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-              else {
-                PlaneStressCoupledThermoQuad<3>* elem =
-                  dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-            }
-            else if (order == 4){
-              if (is_3d){
-                CoupledThermoSolid<4>* elem =
-                  dynamic_cast<CoupledThermoSolid<4>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-              else {
-                PlaneStressCoupledThermoQuad<4>* elem =
-                  dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-            }
-            else if (order == 5){
-              if (is_3d){
-                CoupledThermoSolid<5>* elem =
-                  dynamic_cast<CoupledThermoSolid<5>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-              else {
-                PlaneStressCoupledThermoQuad<5>* elem =
-                  dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-            }
-
-            else if (order == 6){
-              if (is_3d){
-                CoupledThermoSolid<6>* elem =
-                  dynamic_cast<CoupledThermoSolid<6>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
-              }
-              else {
-                PlaneStressCoupledThermoQuad<6>* elem =
-                  dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-                if (elem){
-                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                           failSens, Xpts, vars, 0);
-                }
               }
             }
           }
@@ -868,6 +511,13 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
                 if (con){
                   con->failureStrainSens(pt, T, strain, failSens, j);
                 }
+                // Evaluate the derivative of the i-th strain w.r.t. to the state
+                // variables
+                ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                                           failSens, Xpts, vars, j);
+                }
               }
               else {
                 CoupledThermoPlaneStressStiffness *con =
@@ -876,100 +526,14 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
                 if (con){
                   con->failureStrainSens(pt, T, strain, failSens, j);
                 }
-              }
-              // Evaluate the derivative of the i-th strain w.r.t. to the state
-              // variables
-              if (order == 2){
-                if (is_3d){
-                  CoupledThermoSolid<2>* elem =
-                    dynamic_cast<CoupledThermoSolid<2>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
+                // Evaluate the derivative of the i-th strain w.r.t. to the state
+                // variables
+                ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+                if (elem){
+                  elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
                                              failSens, Xpts, vars, j);
-                  }
                 }
-                else {
-                  PlaneStressCoupledThermoQuad<2>* elem =
-                    dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-              }
-              else if (order == 3){
-                if (is_3d){
-                  CoupledThermoSolid<3>* elem =
-                    dynamic_cast<CoupledThermoSolid<3>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-                else {
-                  PlaneStressCoupledThermoQuad<3>* elem =
-                    dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-              }
-              else if (order == 4){
-                if (is_3d){
-                  CoupledThermoSolid<4>* elem =
-                    dynamic_cast<CoupledThermoSolid<4>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-                else {
-                  PlaneStressCoupledThermoQuad<4>* elem =
-                    dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-              }
-              else if (order == 5){
-                if (is_3d){
-                  CoupledThermoSolid<5>* elem =
-                    dynamic_cast<CoupledThermoSolid<5>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-                else {
-                  PlaneStressCoupledThermoQuad<5>* elem =
-                    dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-              }
-
-              else if (order == 6){
-                if (is_3d){
-                  CoupledThermoSolid<6>* elem =
-                    dynamic_cast<CoupledThermoSolid<6>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-                else {
-                  PlaneStressCoupledThermoQuad<6>* elem =
-                    dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-                  if (elem){
-                    elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
-                                             failSens, Xpts, vars, j);
-                  }
-                }
-              }
+              }              
             }// end j < nvars
           }// else
         }
@@ -1026,119 +590,23 @@ void TACSThermalKSFailure::getElementXptSens( const double tcoef,
         double weight = element->getGaussWtsPts(i, pt);
 
         // Get the strain
-        if (order == 2){
-          if (is_3d){
-            CoupledThermoSolid<2>* elem =
-              dynamic_cast<CoupledThermoSolid<2>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<2>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
-        else if (order == 3){
-          if (is_3d){
-            CoupledThermoSolid<3>* elem =
-              dynamic_cast<CoupledThermoSolid<3>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<3>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
-        else if (order == 4){
-          if (is_3d){
-            CoupledThermoSolid<4>* elem =
-              dynamic_cast<CoupledThermoSolid<4>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<4>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
-        else if (order == 5){
-          if (is_3d){
-            CoupledThermoSolid<5>* elem =
-              dynamic_cast<CoupledThermoSolid<5>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<5>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-        }
-        else if (order == 6){
-          if (is_3d){
-            CoupledThermoSolid<6>* elem =
-              dynamic_cast<CoupledThermoSolid<6>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
-          }
-          else {
-            PlaneStressCoupledThermoQuad<6>* elem =
-              dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-
-            if (elem){
-              elem->getShapeFunctions(pt, N);
-              elem->getStrain(strain, pt, Xpts, vars);
-              elem->getTemperature(T, N, vars);
-            }
+        if (is_3d){
+          ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
+          if (elem){
+            elem->getShapeFunctions(pt, N);
+            elem->getStrain(strain, pt, Xpts, vars);
+            elem->getTemperature(T, N, vars);
           }
         }
         else {
-          //element->getStrain(strain, pt, Xpts, vars);
+          ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+          if (elem){
+            elem->getShapeFunctions(pt, N);
+            elem->getStrain(strain, pt, Xpts, vars);
+            elem->getTemperature(T, N, vars);
+          }
         }
+        
         // Multiply by the load factor
         for ( int k = 0; k < numStresses; k++ ){
           strain[k] *= loadFactor;
@@ -1234,116 +702,23 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
       TacsScalar T[] = {0.0};
 
       // Get the strain B*u and temperature dT
-      if (order == 2){
-        if (is_3d){
-          CoupledThermoSolid<2>* elem =
-            dynamic_cast<CoupledThermoSolid<2>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-        else {
-          PlaneStressCoupledThermoQuad<2>* elem =
-            dynamic_cast<PlaneStressCoupledThermoQuad<2>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
+      if (is_3d){
+        ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
+        if (elem){
+          elem->getShapeFunctions(pt, N);
+          elem->getStrain(strain, pt, Xpts, vars);
+          elem->getTemperature(T, N, vars);
         }
       }
-      else if (order == 3){
-        if (is_3d){
-          CoupledThermoSolid<3>* elem =
-            dynamic_cast<CoupledThermoSolid<3>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
+      else {
+        ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
+        if (elem){
+          elem->getShapeFunctions(pt, N);
+          elem->getStrain(strain, pt, Xpts, vars);
+          elem->getTemperature(T, N, vars);
         }
-        else {
-          PlaneStressCoupledThermoQuad<3>* elem =
-            dynamic_cast<PlaneStressCoupledThermoQuad<3>*>(element);
+      }      
 
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-      }
-      else if (order == 4){
-        if (is_3d){
-          CoupledThermoSolid<4>* elem =
-            dynamic_cast<CoupledThermoSolid<4>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-        else {
-          PlaneStressCoupledThermoQuad<4>* elem =
-            dynamic_cast<PlaneStressCoupledThermoQuad<4>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-      }
-      else if (order == 5){
-        if (is_3d){
-          CoupledThermoSolid<5>* elem =
-            dynamic_cast<CoupledThermoSolid<5>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-        else {
-          PlaneStressCoupledThermoQuad<5>* elem =
-            dynamic_cast<PlaneStressCoupledThermoQuad<5>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-      }
-      else if (order == 6){
-        if (is_3d){
-          CoupledThermoSolid<6>* elem =
-            dynamic_cast<CoupledThermoSolid<6>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-        else {
-          PlaneStressCoupledThermoQuad<6>* elem =
-            dynamic_cast<PlaneStressCoupledThermoQuad<6>*>(element);
-
-          if (elem){
-            elem->getShapeFunctions(pt, N);
-            elem->getStrain(strain, pt, Xpts, vars);
-            elem->getTemperature(T, N, vars);
-          }
-        }
-      }
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;
       }
