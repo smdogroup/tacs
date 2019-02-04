@@ -10,7 +10,7 @@
   Not for commercial purposes.
 */
 
-#include "TACSElement.h"
+#include "ThermoElements.h"
 #include "CoupledThermoPlaneStressStiffness.h"
 #include "FElibrary.h"
 
@@ -24,7 +24,7 @@
   B-matrix with the constitutive matrix.
 */
 template<int NUM_NODES>
-class TACS2DCoupledThermoElement : public TACSElement {
+class TACS2DCoupledThermoElement : public ThermoQuad {
  public:
   // Define some constants for this element type
   static const int NUM_DISPS = 3; // u, v, dT
@@ -36,11 +36,6 @@ class TACS2DCoupledThermoElement : public TACSElement {
                               ElementBehaviorType type,
                               int _component );
   ~TACS2DCoupledThermoElement();
-
-  // Retrieve the shape functions
-  // ----------------------------
-  virtual void getShapeFunctions( const double pt[], double N[],
-                                  double Na[], double Nb[] ) = 0;
 
   // Compute the position vector and its derivative
   // ----------------------------------------------
@@ -214,7 +209,7 @@ template <int NUM_NODES>
 TACS2DCoupledThermoElement<NUM_NODES>::TACS2DCoupledThermoElement( CoupledThermoPlaneStressStiffness *_stiff,
                                                                    ElementBehaviorType type,
                                                                    int component ) :
-TACSElement(component){
+ThermoQuad(component){
   strain_type = type;
   stiff = _stiff;
   stiff->incref();

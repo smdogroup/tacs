@@ -1,14 +1,10 @@
-#include "TACS3DCoupledThermoElement.h"
-#include "TACS2DCoupledThermoElement.h"
 #include "TACSElement.h"
 #include "CoupledThermoPlaneStressStiffness.h"
 #include "CoupledThermoSolidStiffness.h"
 
 class ThermoQuad : public TACSElement {
  public:
-  ThermoQuad( CoupledThermoPlaneStressStiffness * _stiff, 
-              ElementBehaviorType type=LINEAR, 
-              int _componentNum=0 ){}
+ ThermoQuad(int component):TACSElement(component){};
   virtual void getShapeFunctions( const double pt[], double N[],
                                   double Na[], double Nb[] ) = 0;
   virtual void getBT( TacsScalar strain[], const double pt[], 
@@ -23,11 +19,9 @@ class ThermoQuad : public TACSElement {
 
 class ThermoSolid : public TACSElement {
  public:
-  ThermoSolid( CoupledThermoSolidStiffness * _stiff, 
-               ElementBehaviorType type=LINEAR, 
-               int _componentNum=0 ){}
+  ThermoSolid(int component):TACSElement(component){};
   virtual void getShapeFunctions( const double pt[], double N[],
-                                  double Na[], double Nb[] ) = 0;
+                                  double Na[], double Nb[], double Nc[] ) = 0;
   virtual void getBT( TacsScalar strain[], const double pt[], 
                       const TacsScalar Xpts[], const TacsScalar vars[] ) = 0;
   virtual void addBTSVSens( TacsScalar strainSVSens[],

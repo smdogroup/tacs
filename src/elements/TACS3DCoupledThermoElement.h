@@ -25,7 +25,7 @@
   the B-matrix with the constitutive matrix.
 */
 template<int NUM_NODES>
-class TACS3DCoupledThermoElement : public TACSElement {
+class TACS3DCoupledThermoElement : public ThermoSolid {
  public:
   // Define some constants for this element type
   static const int NUM_DISPS = 4; //u, v, w, dT
@@ -37,11 +37,6 @@ class TACS3DCoupledThermoElement : public TACSElement {
                               ElementBehaviorType type,
                               int _component );
   ~TACS3DCoupledThermoElement();
-
-  // Retrieve the shape functions
-  // ----------------------------
-  virtual void getShapeFunctions( const double pt[], double N[],
-                                  double Na[], double Nb[], double Nc[] ) = 0;
 
   // Compute the position vector and its derivative
   // ----------------------------------------------
@@ -239,7 +234,7 @@ template <int NUM_NODES>
 TACS3DCoupledThermoElement<NUM_NODES>::TACS3DCoupledThermoElement( CoupledThermoSolidStiffness * _stiff,
                                                                    ElementBehaviorType type,
                                                                    int component ) :
-TACSElement(component){
+ThermoSolid(component){
   strain_type = type;
   stiff = _stiff;
   stiff->incref();

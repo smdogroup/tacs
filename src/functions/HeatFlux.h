@@ -76,6 +76,9 @@ class HeatFluxIntegral : public TACSFunction {
                           const double Na[],
                           const double Nb[] );
 
+  void getShapeFunctions( const double pt[], const double knots[],
+                          const int order, double N[],
+                          double Na[], double Nb[] );
   // The name of the function
   static const char *funcName;
 
