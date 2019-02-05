@@ -168,7 +168,7 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
         double weight = element->getGaussWtsPts(i, pt);
 
         dir[0] = dir[1] = dir[2] = 0.0;
-
+        value = 0.0;
         // Get the product of B*dT
         // If 3D structure
         if (numDisps == 4){
@@ -287,6 +287,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
       double pt[3];
       TacsScalar weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
+      value = 0.0;
 
       dir[0] = dir[1] = dir[2] = 0.0;
       // Add the sensitivity of the heat flux wrt to dT
@@ -403,6 +404,7 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
       double pt[3];
       TacsScalar weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = weight*element->getDetJacobian(pt, Xpts);
+      value = 0.0;
 
       dir[0] = dir[1] = dir[2] = 0.0;
       // Get the derivative of dT at the current point
@@ -513,13 +515,21 @@ void HeatFluxIntegral::computeDirections( double dir[],
     dir[2] /= h;
   }
   else {
-    if (surface == 0 || surface == 1){
-      dir[0] = 0.0;
-      dir[1] = 1.0;
+    if (surface == 0){
+      dir[0] = -1.0;
+      dir[1] = 0.0;
     }
-    else {
+    else if (surface == 1){
       dir[0] = 1.0;
       dir[1] = 0.0;
+    }
+    else if (surface == 2){
+      dir[0] = 0.0;
+      dir[1] = -1.0;
+    }
+    else {
+      dir[0] = 0.0;
+      dir[1] = 1.0;
     }
   }
 }
