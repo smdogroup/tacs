@@ -48,7 +48,7 @@ cdef class Function:
         if self.ptr:
             self.ptr.decref()
         return
-
+    
 cdef class Compliance(Function):
     def __cinit__(self, Assembler tacs):
         '''
@@ -167,24 +167,24 @@ cdef class InducedFailure(Function):
     def setParameter(self, double param):
         self.iptr.setParameter(param)
 
-# cdef class ThermalKSFailure(Function):
-#     cdef TACSThermalKSFailure *ksptr
-#     def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
-#         '''
-#         Wrap the function KSFailure
-#         '''
-#         self.ksptr = new TACSThermalKSFailure(tacs.ptr, ksWeight,
-#                                               KS_FAILURE, alpha)
-#         self.ptr = self.ksptr
-#         self.ptr.incref()
-#         return
+cdef class ThermalKSFailure(Function):
+    cdef TACSThermalKSFailure *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+        '''
+        Wrap the function KSFailure
+        '''
+        self.ksptr = new TACSThermalKSFailure(tacs.ptr, ksWeight,
+                                              KS_FAILURE, alpha)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
         
-#     def setKSFailureType(self, ftype='discrete'):
-#         if ftype == 'discrete':
-#             self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
-#         elif ftype == 'continuous':
-#             self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
-#         return
+    def setKSFailureType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
+        return
 
 cdef class HeatFlux(Function):
     cdef HeatFluxIntegral *hptr

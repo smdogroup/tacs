@@ -255,7 +255,7 @@ cdef extern from "TACSElement.h":
 
 cdef extern from "TACSFunction.h":
     cdef cppclass TACSFunction(TACSObject):
-        pass
+        void setDomain(int*, int)
 
 cdef extern from "TACSConstitutive.h":
     cdef cppclass TACSConstitutive(TACSObject):

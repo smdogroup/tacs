@@ -96,7 +96,17 @@ cdef class Function:
         if self.ptr:
             self.ptr.decref()
         return
+    def setDomain(self, list elem_index):
+        cdef int num_elems = len(elem_index)
+        cdef int *elem_ind = NULL
+    
+        elem_ind = <int*>malloc(num_elems*sizeof(int));
+        for i in range(num_elems):
+            elem_ind[i] = <int>elem_index[i]
 
+        self.ptr.setDomain(elem_ind, num_elems)
+        free(elem_ind)
+        return 
 # A generic wrapper class for the TACSElement object
 cdef class Element:
     '''Base element class'''
