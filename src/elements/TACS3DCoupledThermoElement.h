@@ -2403,7 +2403,7 @@ void TACS3DCoupledThermoElement<NUM_NODES>::getBT( TacsScalar strain[],
 }
 
 /*
-  Compute the derivative of the point-wise strain multiplied by a
+  Compute the derivative of the point-wise B*dT multiplied by a
   specified vector with respect to the element variables and add the
   result to an array. This can be used to evaluate the derivative of a
   function of interest with respect to the element variables.

@@ -92,7 +92,8 @@ class HeatFluxIntegral : public TACSFunction {
   int *elem_index;
   int *surface_index;
   int num_elems;
-
+  
+  int mpi_rank;
   std::map<int, int>elem_to_surf;
   std::map<int, int>::iterator elem_to_surf_it;
 };
