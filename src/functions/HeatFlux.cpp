@@ -262,6 +262,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
     else {
       order = sqrt(numNodes);
     }
+
     // The knot locations for the basis functions
     double knots[order];
     // Set the knot locations
@@ -343,7 +344,10 @@ void HeatFluxIntegral::getElementXptSens( const double tcoef,
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[],
-                                          TACSFunctionCtx *fctx ){}
+                                          TACSFunctionCtx *fctx ){
+  int numNodes = element->numNodes();
+  memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
+}
 
 /*
   Determine the derivative of the function with respect to
