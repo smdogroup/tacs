@@ -50,6 +50,22 @@ class PSQuadTraction : public TACSElement {
       ty[k] = _ty;
     }
     initBaseDir(surf);
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
   PSQuadTraction( int surf,
                   TacsScalar _tx[], TacsScalar _ty[] ){
@@ -58,6 +74,22 @@ class PSQuadTraction : public TACSElement {
       ty[k] = _ty[k];
     }
     initBaseDir(surf);
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
 
   // Get the number of displacements/nodes
@@ -83,8 +115,8 @@ class PSQuadTraction : public TACSElement {
 
       // Evaluate the Lagrange basis in each direction
       double na[order], nb[order], dna[order], dnb[order];
-      FElibrary::lagrangeSF(na, dna, pt[0], order);
-      FElibrary::lagrangeSF(nb, dnb, pt[1], order);
+      FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+      FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
 
       // Calcualte the Jacobian at the current point
       const TacsScalar *x = Xpts;
@@ -108,7 +140,7 @@ class PSQuadTraction : public TACSElement {
       // Calculate the traction at the current point
       TacsScalar Tx = 0.0, Ty = 0.0;
       double N[order];
-      FElibrary::lagrangeSF(N, gaussPts[n], order);
+      FElibrary::lagrangeSFKnots(N, gaussPts[n], knots, order);
       for ( int i = 0; i < order; i++ ){
         Tx += N[i]*tx[i];
         Ty += N[i]*ty[i];
@@ -144,8 +176,8 @@ class PSQuadTraction : public TACSElement {
 
       // Evaluate the Lagrange basis in each direction
       double na[order], nb[order], dna[order], dnb[order];
-      FElibrary::lagrangeSF(na, dna, pt[0], order);
-      FElibrary::lagrangeSF(nb, dnb, pt[1], order);
+      FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+      FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
 
       // Calcualte the Jacobian at the current point
       const TacsScalar *x = Xpts;
@@ -173,7 +205,7 @@ class PSQuadTraction : public TACSElement {
       // Calculate the traction at the current point
       TacsScalar Tx = 0.0, Ty = 0.0;
       double N[order];
-      FElibrary::lagrangeSF(N, gaussPts[n], order);
+      FElibrary::lagrangeSFKnots(N, gaussPts[n], knots, order);
       for ( int i = 0; i < order; i++ ){
         Tx += N[i]*tx[i];
         Ty += N[i]*ty[i];
@@ -228,6 +260,8 @@ class PSQuadTraction : public TACSElement {
   // The parametric base point and direction along which the
   // integration will occur.
   double base[2], dir[2];
+
+  double knots[order];
 };
 
 #endif // PLANE_STRESS_TRACTION_H

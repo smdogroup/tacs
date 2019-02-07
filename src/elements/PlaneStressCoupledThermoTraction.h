@@ -36,6 +36,22 @@ class PSQuadThermoTraction : public TACSElement {
       ty[k] = _ty;
     }
     initBaseDir(surf);
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
   PSQuadThermoTraction( int surf, 
                         TacsScalar _tx[], TacsScalar _ty[] ){
@@ -44,6 +60,22 @@ class PSQuadThermoTraction : public TACSElement {
       ty[k] = _ty[k];
     }
     initBaseDir(surf);
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
 
   // Get the number of displacements/nodes
@@ -69,8 +101,8 @@ class PSQuadThermoTraction : public TACSElement {
 
       // Evaluate the Lagrange basis in each direction
       double na[order], nb[order], dna[order], dnb[order];
-      FElibrary::lagrangeSF(na, dna, pt[0], order);
-      FElibrary::lagrangeSF(nb, dnb, pt[1], order);
+      FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+      FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
     
       // Calcualte the Jacobian at the current point	
       const TacsScalar *x = Xpts;
@@ -94,7 +126,8 @@ class PSQuadThermoTraction : public TACSElement {
       // Calculate the traction at the current point
       TacsScalar Tx = 0.0, Ty = 0.0;
       double N[order];
-      FElibrary::lagrangeSF(N, gaussPts[n], order);
+      FElibrary::lagrangeSFKnots(N, gaussPts[n], knots, order);
+
       for ( int i = 0; i < order; i++ ){
         Tx += N[i]*tx[i];
         Ty += N[i]*ty[i];
@@ -142,6 +175,7 @@ class PSQuadThermoTraction : public TACSElement {
   // The parametric base point and direction along which the
   // integration will occur.
   double base[2], dir[2];
+  double knots[order];
 };
 /*
   Class for heat flux due to conduction, treat it like a traction
@@ -157,6 +191,22 @@ class PSQuadHeatFluxTraction : public TACSElement {
       ty[k] = _ty;
     }
     initBaseDir(surf);
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
   PSQuadHeatFluxTraction( int surf, 
                           TacsScalar _tx[], 
@@ -166,6 +216,22 @@ class PSQuadHeatFluxTraction : public TACSElement {
       ty[k] = _ty[k];
     }
     initBaseDir(surf);
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
   // Get the number of displacements/nodes
   int numDisplacements(){ return 3; } // u,v,dT
@@ -189,8 +255,8 @@ class PSQuadHeatFluxTraction : public TACSElement {
 
       // Evaluate the Lagrange basis in each direction
       double na[order], nb[order], dna[order], dnb[order];
-      FElibrary::lagrangeSF(na, dna, pt[0], order);
-      FElibrary::lagrangeSF(nb, dnb, pt[1], order);
+      FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+      FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
     
       // Calcualte the Jacobian at the current point	
       const TacsScalar *x = Xpts;
@@ -214,19 +280,16 @@ class PSQuadHeatFluxTraction : public TACSElement {
       // Calculate the heat flux 
       TacsScalar qx = 0.0, qy = 0.0;
       double N[order];
-      FElibrary::lagrangeSF(N, gaussPts[n], order);
+      FElibrary::lagrangeSFKnots(N, gaussPts[n], knots, order);
       for ( int i = 0; i < order; i++ ){
         qx += N[i]*tx[i];
         qy += N[i]*ty[i];
       } // end for int i = 0; i < order
       // ---------------------------------------------------
       // Compute the heat flux outward normal to the edge
-      TacsScalar nx = Xd[0]*norm_dir[0] + Xd[2]*norm_dir[1];
-      TacsScalar ny = Xd[1]*norm_dir[0] + Xd[3]*norm_dir[1];
-      // Normalize the vector
-      nx /= sqrt(nx*nx + ny*ny);
-      ny /= sqrt(nx*nx + ny*ny);
-      //TacsScalar hsurf = gaussWts[n]*sqrt(nx*nx + ny*ny);
+      TacsScalar nx = dx/sqrt(dx*dx + dy*dy);
+      TacsScalar ny = dy/sqrt(dx*dx + dy*dy);
+      
       // Compute flux that is outwards normal to the edge
       TacsScalar qn = qx*nx+qy*ny;
       
@@ -235,9 +298,7 @@ class PSQuadHeatFluxTraction : public TACSElement {
       TacsScalar *r = res;
       for ( int j = 0; j < order; j++ ){
         for ( int i = 0; i < order; i++ ){
-          //printf("r: %e\n", r[2]);
           r[2] += hsurf*na[i]*nb[j]*qn;
-          //printf("r: %e\n", hsurf*na[i]*nb[j]*qn);
           r += 3;
         }
       }
@@ -251,27 +312,11 @@ class PSQuadHeatFluxTraction : public TACSElement {
     // Determine the base point and integration direction
     if (surf == 0 || surf == 1){
       dir[0] = 0.0;
-      dir[1] = 1.0;
-      
-      norm_dir[1] = 0.0;
-      if (surf == 0){
-        norm_dir[0] = -1.0;
-      }
-      else{
-        norm_dir[1] = 1.0;
-      }
+      dir[1] = 1.0;      
     }
     else {
       dir[0] = 1.0;
-      dir[1] = 0.0;
-      
-      norm_dir[0] = 0.0;
-      if (surf == 2){
-        norm_dir[1] = -1.0;
-      }
-      else{
-        norm_dir[1] = 1.0;
-      }
+      dir[1] = 0.0;      
     }
     
     // Set the base point: The mid-point of the edge
@@ -288,9 +333,9 @@ class PSQuadHeatFluxTraction : public TACSElement {
   TacsScalar tx[order], ty[order];
 
   // The parametric base point and direction along which the
-  // integration will occur as well as the normal direction of the
-  // edge 
-  double base[2], dir[2], norm_dir[2];
+  // integration will occur
+  double base[2], dir[2];
+  double knots[order];
 };
 /*
   Class for heat source/sink in the plane quad element. Treat it like
