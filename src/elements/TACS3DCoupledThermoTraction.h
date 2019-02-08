@@ -29,6 +29,24 @@ class TACS3DThermoTraction : public TACSElement {
     memcpy(tx, _tx, order*order*sizeof(TacsScalar));
     memcpy(ty, _ty, order*order*sizeof(TacsScalar));
     memcpy(tz, _tz, order*order*sizeof(TacsScalar));
+
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }  
+  
   }
   TACS3DThermoTraction( int _surface, 
                   TacsScalar _tx,
@@ -38,6 +56,22 @@ class TACS3DThermoTraction : public TACSElement {
     for ( int i = 0; i < order*order; i++ ){
       tx[i] = _tx;  ty[i] = _ty;  tz[i] = _tz;
     }
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }  
   }
                      
   // Return the number of displacements, stresses and nodes
@@ -56,6 +90,26 @@ class TACS3DThermoTraction : public TACSElement {
     *Te = 0.0, *Pe = 0.0;
   }
 
+  /*
+    Compute the shape functions and their derivatives w.r.t. the
+    parametric element location 
+  */
+  void getShapeFunctions( const double pt[], double N[],
+                          double Na[], double Nb[] ){
+    double na[order], nb[order];
+    double dna[order], dnb[order];
+    FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+    FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+    for ( int j = 0; j < order; j++ ){
+      for ( int i = 0; i < order; i++ ){
+        N[0] = na[i]*nb[j];
+        Na[0] = dna[i]*nb[j];
+        Nb[0] = na[i]*dnb[j];
+        N++;
+        Na++;  Nb++;          
+      }
+    }
+  }
   // Compute the residual of the governing equations
   // -----------------------------------------------
   void addResidual( double time, TacsScalar res[],
@@ -78,7 +132,7 @@ class TACS3DThermoTraction : public TACSElement {
         // Compute X, Xd, N, Na and Nb
         double N[order*order];
         double Na[order*order], Nb[order*order];
-        FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
+        getShapeFunctions(pt, N, Na, Nb);
 
         TacsScalar Xa[3], Xb[3];
         Xa[0] = Xa[1] = Xa[2] = 0.0;
@@ -204,6 +258,8 @@ class TACS3DThermoTraction : public TACSElement {
   TacsScalar tx[order*order];
   TacsScalar ty[order*order];
   TacsScalar tz[order*order];
+  // The knot locations for the basis functions
+  double knots[order];
 };
 
 /*
@@ -230,6 +286,22 @@ class TACS3DHeatFluxTraction : public TACSElement {
     memcpy(tx, _tx, order*order*sizeof(TacsScalar));
     memcpy(ty, _ty, order*order*sizeof(TacsScalar));
     memcpy(tz, _tz, order*order*sizeof(TacsScalar));
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
   }
   TACS3DHeatFluxTraction( int _surface, 
                           TacsScalar _tx,
@@ -238,6 +310,22 @@ class TACS3DHeatFluxTraction : public TACSElement {
     surface = _surface;
     for ( int i = 0; i < order*order; i++ ){
       tx[i] = _tx;  ty[i] = _ty;  tz[i] = _tz;
+    }
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
     }
   }
                      
@@ -255,6 +343,26 @@ class TACS3DHeatFluxTraction : public TACSElement {
                         const TacsScalar vars[],
                         const TacsScalar dvars[] ){
     *Te = 0.0, *Pe = 0.0;
+  }
+  /*
+    Compute the shape functions and their derivatives w.r.t. the
+    parametric element location 
+  */
+  void getShapeFunctions( const double pt[], double N[],
+                          double Na[], double Nb[] ){
+    double na[order], nb[order];
+    double dna[order], dnb[order];
+    FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+    FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+    for ( int j = 0; j < order; j++ ){
+      for ( int i = 0; i < order; i++ ){
+        N[0] = na[i]*nb[j];
+        Na[0] = dna[i]*nb[j];
+        Nb[0] = na[i]*dnb[j];
+        N++;
+        Na++;  Nb++;          
+      }
+    }
   }
 
   // Compute the residual of the governing equations
@@ -350,10 +458,12 @@ class TACS3DHeatFluxTraction : public TACSElement {
           Qy += ty[i]*N[i];
           Qz += tz[i]*N[i];
         }
+
         // Compute the heat flux outward normal to the edge
         TacsScalar n_dir[3];
         Tensor::normalize3D(n_dir,normal);
         TacsScalar qn = Qx*n_dir[0]+Qy*n_dir[1]+Qz*n_dir[2];
+
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         if (surface < 2){
@@ -401,6 +511,8 @@ class TACS3DHeatFluxTraction : public TACSElement {
   TacsScalar tx[order*order];
   TacsScalar ty[order*order];
   TacsScalar tz[order*order];
+  // The knot locations for the basis functions
+  double knots[order];
 };
 
 /*
@@ -422,14 +534,47 @@ class TACS3DHeatSourceSink : public TACSElement {
   TACS3DHeatSourceSink( TacsScalar _Q){
     for ( int i = 0; i < NUM_NODES; i++){
       Q[i] = _Q;
-    }    
+    }
+    // Set the knot locations
+    if (order == 2){
+      knots[0] = -1.0;
+      knots[1] = 1.0;
+    }
+    else if (order == 3){
+      knots[0] = -1.0;
+      knots[1] = 0.0;
+      knots[2] = 1.0;
+    }
+    else {
+      // Set a co-sine spacing for the knot locations
+      for ( int k = 0; k < order; k++ ){
+        knots[k] = -cos(M_PI*k/(order-1));
+      }
+    }
+    
     numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);    
   }
   // Get the number of displacements/nodes
   int numDisplacements(){ return 4; } // u,v,w,dT
   void getShapeFunctions( const double pt[], double N[],
                           double Na[], double Nb[], double Nc[]){
-    FElibrary::triLagrangeSF(N, Na, Nb, Nc,pt, order);
+    double na[order], nb[order], nc[order];
+    double dna[order], dnb[order], dnc[order];
+    FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+    FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+    FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
+    for ( int k = 0; k < order; k++ ){
+      for ( int j = 0; j < order; j++ ){
+        for ( int i = 0; i < order; i++ ){
+          N[0] = na[i]*nb[j]*nc[k];
+          Na[0] = dna[i]*nb[j]*nc[k];
+          Nb[0] = na[i]*dnb[j]*nc[k];
+          Nc[0] = na[i]*nb[j]*dnc[k];
+          N++;
+          Na++;  Nb++;  Nc++;          
+        }
+      }
+    }
   }
   int getNumGaussPts(){ return numGauss*numGauss*numGauss; }
   double getGaussWtsPts( int npoint, double pt[] ){
@@ -462,7 +607,7 @@ class TACS3DHeatSourceSink : public TACSElement {
       double pt[3];
       double weight = getGaussWtsPts(n, pt);
       // Compute the element shape functions
-      getShapeFunctions(pt, N, Na, Nb);
+      getShapeFunctions(pt, N, Na, Nb, Nc);
       // Compute the derivative of X with respect to the
       // coordinate directions
       TacsScalar X[3], Xa[9];
@@ -494,6 +639,8 @@ class TACS3DHeatSourceSink : public TACSElement {
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
+  // The knot locations for the basis functions
+  double knots[order];
 };
 
 #endif // TACS_3D_COUPLED_THERMO_TRACTION_H

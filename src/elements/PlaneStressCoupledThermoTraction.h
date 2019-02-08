@@ -384,8 +384,17 @@ class PSQuadHeatSourceSink : public TACSElement {
       // Retrieve the quadrature points and weight
       double pt[3];
       double weight = getGaussWtsPts(n, pt);
-      getShapeFunctions(pt, N);
+
+      double na[order], nb[order];
+      FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
+      FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
+      for ( int j = 0; j < order; j++ ){
+        for ( int i = 0; i < order; i++ ){
+          N[i + j*order] = na[i]*nb[j];
+        }
+      }      
       TacsScalar h = getDetJacobian(pt, Xpts);
+      h = h*weight;
       // Add the contribution to the residual - the minus sign
       // is due to the fact that this is a work term
       for ( int i = 0; i < NUM_NODES; i++){
@@ -399,6 +408,8 @@ class PSQuadHeatSourceSink : public TACSElement {
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
+  // The knot locations for the basis functions
+  double knots[order];
 };
 
 #endif // PLANE_STRESS_COUPLED_TRACTION_H
