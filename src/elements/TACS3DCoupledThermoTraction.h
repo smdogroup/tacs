@@ -387,7 +387,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
         // Compute X, Xd, N, Na and Nb
         double N[order*order];
         double Na[order*order], Nb[order*order];
-        FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
+        getShapeFunctions(pt, N, Na, Nb);
 
         TacsScalar Xa[3], Xb[3];
         Xa[0] = Xa[1] = Xa[2] = 0.0;
