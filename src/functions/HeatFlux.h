@@ -68,15 +68,23 @@ class HeatFluxIntegral : public TACSFunction {
                           TACSFunctionCtx *ctx );
 
  private:
-  void computeDirections( double dir[],
-                          double base[],
-                          const double pt[],
-                          const double knots[], 
-                          const int surface,
-                          const int order,
-                          const int numDisps,
-                          const TacsScalar Xpts[] );
-
+  TacsScalar computeDirections2D( const double pt[],
+                                  const double knots[],
+                                  const double dir[],
+                                  const int surface,
+                                  const int order,
+                                  const TacsScalar Xpts[],
+                                  TacsScalar n[] );
+  
+  TacsScalar computeDirections3D( const double pt[],
+                                  const double knots[], 
+                                  const double dir1[],
+                                  const double dir2[],
+                                  const int surface,
+                                  const int order,
+                                  const TacsScalar Xpts[],
+                                  TacsScalar n[] );
+  
   void getShapeFunctions( const double pt[], const double knots[],
                           const int order, double N[],
                           double Na[], double Nb[] );

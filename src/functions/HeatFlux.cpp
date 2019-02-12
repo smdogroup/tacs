@@ -132,7 +132,7 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     // Direction vector of the surface/edge
-    TacsScalar dir[3], base[2];
+    TacsScalar dir1[3], dir2[3], base[3];
     if (numDisps == 4){
       order = cbrt(numNodes);
     }
@@ -168,26 +168,39 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
           for ( int n = 0; n < order; n++ ){
             // Set the quadrature point
             double pt[3];
-            pt[0] = gaussPts[n];
-            pt[1] = gaussPts[m];
-            pt[2] = 0.0;
-
-            value = 0.0;
-            dir[0] = dir[1] = dir[2] = 0.0;
-
-            computeDirections(dir, NULL, pt, knots, surface, order, numDisps,
-                              Xpts);
-            // Get magnitude of normal to surface
-            TacsScalar h = sqrt(dir[0]*dir[0] +
-                                dir[1]*dir[1] +
-                                dir[2]*dir[2]);
-            // Get normalized direction
-            TacsScalar normal[3];
-            normal[0] = dir[0]/h;
-            normal[1] = dir[1]/h;
-            normal[2] = dir[2]/h;
+            // Compute the base point and direction of the surface tangent in
+            // parameter space
+            TacsScalar dir1[3], dir2[3];
+            dir1[0] = dir1[1] = dir1[2] = 0.0;
+            dir2[0] = dir2[1] = dir2[2] = 0.0;
+            base[0] = base[1] = base[2] = 0.0;
             
-            h *= gaussWts[n]*gaussWts[m];
+            if (surface == 0 || surface == 1){
+              base[0] = -1.0 + 2.0*(surface % 2);
+              dir1[1] = -1.0 + 2.0*(surface % 2);
+              dir2[2] = -1.0 + 2.0*(surface % 2);
+            }
+            else if (surface == 2 || surface == 3) {
+              base[1] = -1.0 + 2.0*(surface % 2);
+              dir1[0] = -1.0 + 2.0*(surface % 2);
+              dir2[2] = -1.0 + 2.0*(surface % 2);
+            }
+            else {
+              base[2] = -1.0 + 2.0*(surface % 2);
+              dir1[0] = -1.0 + 2.0*(surface % 2);
+              dir2[1] = -1.0 + 2.0*(surface % 2);
+            }
+
+            pt[0] = gaussPts[n]*dir1[0] + gaussPts[m]*dir2[0] + base[0];
+            pt[1] = gaussPts[n]*dir1[1] + gaussPts[m]*dir2[1] + base[1];
+            pt[2] = gaussPts[n]*dir1[2] + gaussPts[m]*dir2[2] + base[2];
+
+            // Get magnitude and direction of the normal to surface
+            TacsScalar normal[3];
+            TacsScalar tn = computeDirections3D(pt, knots, dir1, dir2, surface,
+                                                order, Xpts, normal); 
+            // Multiply by the quadrature weight
+            tn *= gaussWts[n]*gaussWts[m];
             
             ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
             if (elem){
@@ -199,9 +212,9 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
             if (con){
               con->calculateConduction(pt, strain, q);
             }
-            value += (normal[0]*q[0] + normal[1]*q[1] + normal[2]*q[2]);
+            value = (normal[0]*q[0] + normal[1]*q[1] + normal[2]*q[2]);
             // Add up the contribution from the quadrature
-            ctx->value += h*value;
+            ctx->value += tn*value;
           } // end int n
         } // end int m
       }
@@ -209,27 +222,30 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
         for ( int n = 0; n < order; n++ ){
           double pt[2];
           
-          dir[0] = dir[1] = 0.0;
+          // Compute the base point and direction of the surface tangent in
+          // parameter space
+          dir1[0] = dir1[1] = 0.0;
           base[0] = base[1] = 0.0;
-          value = 0.0;
-          
-          computeDirections(dir, base, NULL, NULL, surface, 0.0, numDisps,
-                            Xpts);
-          // Get the integration gauss points
-          pt[0] = gaussPts[n]*dir[0] + base[0];
-          pt[1] = gaussPts[n]*dir[1] + base[1];
+          if (surface == 0 || surface == 1){
+            dir1[1] = -1.0 + 2.0*(surface % 2);
+            base[0] = -1.0 + 2.0*(surface % 2);
+          }
+          else {
+            dir1[0] = -1.0 + 2.0*(surface % 2);
+            base[1] = -1.0 + 2.0*(surface % 2);
+          }
          
-          computeDirections(dir, NULL, pt, knots, surface, order, numDisps,
-                            Xpts);
-          // Get magnitude of normal to surface
-          TacsScalar h = sqrt(dir[0]*dir[0] +
-                              dir[1]*dir[1]);
-          // Compute the normal direction
-          TacsScalar normal[2];
-          normal[0] = dir[0]/h;
-          normal[1] = dir[1]/h;
-          
-          h *= gaussWts[n];
+          // Get the integration gauss points on the element surface
+          pt[0] = gaussPts[n]*dir1[0] + base[0];
+          pt[1] = gaussPts[n]*dir1[1] + base[1];
+
+          // Compute the normal direction and element tangent magnitude
+          TacsScalar normal[3];
+          TacsScalar tn = computeDirections2D(pt, knots, dir1, surface, order,
+                                              Xpts, normal);
+
+          // Multiply by the quadrature weight
+          tn *= gaussWts[n];
 
           ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
           if (elem){            
@@ -242,9 +258,10 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
             con->calculateConduction(pt, strain, q);
           }
           
-          value += (normal[0]*q[0] + normal[1]*q[1]);
+          value = (normal[0]*q[0] + normal[1]*q[1]);
+
           // Add up the contribution from the quadrature
-          ctx->value += h*value;
+          ctx->value += tn*value;
         } // end int n
       }    
     } // end if constitutive
@@ -296,7 +313,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     // Direction vector of the surface/edge
-    TacsScalar dir[3], base[2];
+    TacsScalar dir1[3], dir2[3], base[3];
     if (numDisps == 4){
       order = cbrt(numNodes);
     }
@@ -337,20 +354,16 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
             pt[1] = gaussPts[m];
             pt[2] = 0.0;
 
-            dir[0] = dir[1] = dir[2] = 0.0;
-            computeDirections(dir, NULL, pt, knots, surface, order, numDisps,
-                              Xpts);
-            // Get magnitude of normal to surface
-            TacsScalar h = sqrt(dir[0]*dir[0] +
-                                dir[1]*dir[1] +
-                                dir[2]*dir[2]);
-            // Get normalized direction
+            TacsScalar dir1[3], dir2[3];
+            dir1[0] = dir1[1] = dir1[2] = 0.0;
+            dir2[0] = dir2[1] = dir2[2] = 0.0;
+            // Get magnitude and direction of the normal to surface
             TacsScalar normal[3];
-            normal[0] = dir[0]/h;
-            normal[1] = dir[1]/h;
-            normal[2] = dir[2]/h;
-            
-            h *= gaussWts[n]*gaussWts[m];
+            TacsScalar tn = computeDirections3D(pt, knots, dir1, dir2, surface,
+                                                order, Xpts, normal); 
+            // Multiply by the quadrature weight
+            tn *= gaussWts[n]*gaussWts[m];
+
             // Add the sensitivity of the heat flux wrt to dT
             // q = {nx,ny,nz}* H(x) * B * dT
             // dq/d(dT) = {nx,ny,nz}* H(x) * B
@@ -363,7 +376,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
             }
             ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
             if (elem){
-              elem->addBTSVSens(elemSVSens, pt, h*alpha, q,
+              elem->addBTSVSens(elemSVSens, pt, tn*alpha, q,
                                 Xpts, vars);
             }
           }
@@ -373,26 +386,31 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
         for ( int n = 0; n < order; n++ ){
           double pt[2];
           
-          dir[0] = dir[1] = 0.0;
+          // Compute the base point and direction of the surface tangent in
+          // parameter space
+          dir1[0] = dir1[1] = 0.0;
           base[0] = base[1] = 0.0;
-          
-          computeDirections(dir, base, NULL, NULL, surface, 0.0, numDisps,
-                            Xpts);
-          // Get the integration gauss points
-          pt[0] = gaussPts[n]*dir[0] + base[0];
-          pt[1] = gaussPts[n]*dir[1] + base[1];
-          
-          computeDirections(dir, NULL, pt, knots, surface, order, numDisps,
-                            Xpts);
-          // Get magnitude of normal to surface
-          TacsScalar h = sqrt(dir[0]*dir[0] +
-                              dir[1]*dir[1]);
-          // Get normalized direction
-          TacsScalar normal[2];
-          normal[0] = dir[0]/h;
-          normal[1] = dir[1]/h;
+          if (surface == 0 || surface == 1){
+            dir1[1] = -1.0 + 2.0*(surface % 2);
+            base[0] = -1.0 + 2.0*(surface % 2);
+          }
+          else {
+            dir1[0] = -1.0 + 2.0*(surface % 2);
+            base[1] = -1.0 + 2.0*(surface % 2);
+          }
+         
+          // Get the integration gauss points on the element surface
+          pt[0] = gaussPts[n]*dir1[0] + base[0];
+          pt[1] = gaussPts[n]*dir1[1] + base[1];
 
-          h *= gaussWts[n];
+          // Compute the normal direction and element tangent magnitude
+          TacsScalar normal[3];
+          TacsScalar tn = computeDirections2D(pt, knots, dir1, surface, order,
+                                              Xpts, normal);
+
+          // Multiply by the quadrature weight
+          tn *= gaussWts[n];
+
           CoupledThermoPlaneStressStiffness *con =
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
           // Compute the heat flux to the edge
@@ -401,7 +419,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
           }
           ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
           if (elem){
-            elem->addBTSVSens(elemSVSens, pt, h*alpha, q,
+            elem->addBTSVSens(elemSVSens, pt, tn*alpha, q,
                               Xpts, vars);
           }
         }
@@ -453,7 +471,7 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     // Direction vector of the surface/edge
-    TacsScalar dir[3], base[2];
+    TacsScalar dir1[3], dir2[3], base[3];
     if (numDisps == 4){
       order = cbrt(numNodes);
     }
@@ -493,21 +511,17 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
             pt[1] = gaussPts[m];
             pt[2] = 0.0;
             value = 0.0;
-
-            dir[0] = dir[1] = dir[2] = 0.0;
-            computeDirections(dir, NULL, pt, knots, surface, order, numDisps,
-                              Xpts);
-            // Get magnitude of normal to surface
-            TacsScalar h = sqrt(dir[0]*dir[0] +
-                                dir[1]*dir[1] +
-                                dir[2]*dir[2]);
-            // Get normalized direction
-            TacsScalar normal[3];
-            normal[0] = dir[0]/h;
-            normal[1] = dir[1]/h;
-            normal[2] = dir[2]/h;
             
-            h *= gaussWts[n]*gaussWts[m];
+            TacsScalar dir1[3], dir2[3];
+            dir1[0] = dir1[1] = dir1[2] = 0.0;
+            dir2[0] = dir2[1] = dir2[2] = 0.0;
+            // Get magnitude and direction of the normal to surface
+            TacsScalar normal[3];
+            TacsScalar tn = computeDirections3D(pt, knots, dir1, dir2, surface,
+                                                order, Xpts, normal); 
+            // Multiply by the quadrature weight
+            tn *= gaussWts[n]*gaussWts[m];
+            
             // Get the derivative of dT at the current point
             ThermoSolid* elem = dynamic_cast<ThermoSolid*>(element);
             if (elem){
@@ -517,7 +531,7 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
               dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
             // Compute the heat flux to the surface
             if (con){
-              con->addConductionDVSens(pt, strain, tcoef*h, normal,
+              con->addConductionDVSens(pt, strain, tcoef*tn, normal,
                                        fdvSens, numDVs);
             }
           }
@@ -527,37 +541,39 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
         for ( int n = 0; n < order; n++ ){
           double pt[2];
           
-          dir[0] = dir[1] = 0.0;
+          // Compute the base point and direction of the surface tangent in
+          // parameter space
+          dir1[0] = dir1[1] = 0.0;
           base[0] = base[1] = 0.0;
-          strain[0] = strain[1] = 0.0;
+          if (surface == 0 || surface == 1){
+            dir1[1] = -1.0 + 2.0*(surface % 2);
+            base[0] = -1.0 + 2.0*(surface % 2);
+          }
+          else {
+            dir1[0] = -1.0 + 2.0*(surface % 2);
+            base[1] = -1.0 + 2.0*(surface % 2);
+          }
+         
+          // Get the integration gauss points on the element surface
+          pt[0] = gaussPts[n]*dir1[0] + base[0];
+          pt[1] = gaussPts[n]*dir1[1] + base[1];
 
-          computeDirections(dir, base, NULL, NULL, surface, 0.0, numDisps,
-                            Xpts);
-          // Get the integration gauss points
-          pt[0] = gaussPts[n]*dir[0] + base[0];
-          pt[1] = gaussPts[n]*dir[1] + base[1];
-          
-          computeDirections(dir, NULL, pt, knots, surface, order, numDisps,
-                            Xpts);
-          // Get magnitude of normal to surface
-          TacsScalar h = sqrt(dir[0]*dir[0] +
-                              dir[1]*dir[1]);
-          // Get normalized direction
-          TacsScalar normal[2];
-          normal[0] = dir[0]/h;
-          normal[1] = dir[1]/h;
+          // Compute the normal direction and element tangent magnitude
+          TacsScalar normal[3];
+          TacsScalar tn = computeDirections2D(pt, knots, dir1, surface, order,
+                                              Xpts, normal);
 
-          h *= gaussWts[n];
+          // Multiply by the quadrature weight
+          tn *= gaussWts[n];
           
           ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
           if (elem){            
             elem->getBT(strain, pt, Xpts, vars);
           }
-          //printf("DVThermo gradient[%d]: %e %e \n", elemNum, strain[0], strain[1]);
           CoupledThermoPlaneStressStiffness *con =
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
           if (con){
-            con->addConductionDVSens(pt, strain, tcoef*h, normal,
+            con->addConductionDVSens(pt, strain, tcoef*tn, normal,
                                      fdvSens, numDVs);
           }
         }
@@ -565,123 +581,109 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
     }    
   }
 }
+
 /*
   Compute the surface or edge normal
 */
-void HeatFluxIntegral::computeDirections( double dir[],
-                                          double base[],
-                                          const double pt[],
-                                          const double knots[],
-                                          const int surface,
-                                          const int order,
-                                          const int numDisps,
-                                          const TacsScalar Xpts[] ){
-    
-  if (numDisps == 4){
-    TacsScalar Xa[3], Xb[3];
-    Xa[0] = Xa[1] = Xa[2] = 0.0;
-    Xb[0] = Xb[1] = Xb[2] = 0.0;
-
-    dir[0] = dir[1] = dir[2] = 0.0;
-    // Compute X, Xd, N, Na and Nb
-    double N[order*order];
-    double Na[order*order], Nb[order*order];
-    
-    getShapeFunctions(pt, knots, order, N, Na, Nb);
-    if (surface < 2){
-      const int ii = (order-1)*(surface % 2);
-      for ( int kk = 0; kk < order; kk++ ){
-        for ( int jj = 0; jj < order; jj++ ){
-          const int node = ii + jj*order + kk*order*order;
-
-          Xa[0] += Na[jj + kk*order]*Xpts[3*node];
-          Xa[1] += Na[jj + kk*order]*Xpts[3*node+1];
-          Xa[2] += Na[jj + kk*order]*Xpts[3*node+2];
-
-          Xb[0] += Nb[jj + kk*order]*Xpts[3*node];
-          Xb[1] += Nb[jj + kk*order]*Xpts[3*node+1];
-          Xb[2] += Nb[jj + kk*order]*Xpts[3*node+2];
-        }
-      }
-    }
-    else if (surface < 4){
-      const int jj = (order-1)*(surface % 2);
-      for ( int kk = 0; kk < order; kk++ ){
-        for ( int ii = 0; ii < order; ii++ ){
-          const int node = ii + jj*order + kk*order*order;
-
-          Xa[0] += Na[ii + kk*order]*Xpts[3*node];
-          Xa[1] += Na[ii + kk*order]*Xpts[3*node+1];
-          Xa[2] += Na[ii + kk*order]*Xpts[3*node+2];
-
-          Xb[0] += Nb[ii + kk*order]*Xpts[3*node];
-          Xb[1] += Nb[ii + kk*order]*Xpts[3*node+1];
-          Xb[2] += Nb[ii + kk*order]*Xpts[3*node+2];
-        }
-      }
-    }
-    else {
-      const int kk = (order-1)*(surface % 2);
-      for ( int jj = 0; jj < order; jj++ ){
-        for ( int ii = 0; ii < order; ii++ ){
-          const int node = ii + jj*order + kk*order*order;
-
-          Xa[0] += Na[ii + jj*order]*Xpts[3*node];
-          Xa[1] += Na[ii + jj*order]*Xpts[3*node+1];
-          Xa[2] += Na[ii + jj*order]*Xpts[3*node+2];
-
-          Xb[0] += Nb[ii + jj*order]*Xpts[3*node];
-          Xb[1] += Nb[ii + jj*order]*Xpts[3*node+1];
-          Xb[2] += Nb[ii + jj*order]*Xpts[3*node+2];
-        }
-      }
-    }
-    // Compute the normal to the element
-    Tensor::crossProduct3D(dir, Xa, Xb);
-  }
-  else {
-    if (base){
-      base[0] = base[1] = 0.0;
-      // Determine the base point and integration direction
-      if (surface == 0 || surface == 1){
-        dir[0] = 0.0;
-        dir[1] = 1.0;
-        
-        base[0] = -1.0 + 2.0*(surface % 2);
-      }
-      else {
-        dir[0] = 1.0;
-        dir[1] = 0.0;
-
-        base[1] = -1.0 + 2.0*(surface % 2);
-      }
-    }
-    else {
-      // Evaluate the Lagrange basis in each direction
-      double na[order], nb[order], dna[order], dnb[order];
-      FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
-      FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
-      // Calcualte the Jacobian at the current point
-      const TacsScalar *x = Xpts;
-      TacsScalar Xd[4] = {0.0, 0.0, 0.0, 0.0};
-      for ( int j = 0; j < order; j++ ){
-        for ( int i = 0; i < order; i++ ){
-          Xd[0] += x[0]*dna[i]*nb[j];
-          Xd[1] += x[0]*na[i]*dnb[j];
-
-          Xd[2] += x[1]*dna[i]*nb[j];
-          Xd[3] += x[1]*na[i]*dnb[j];
-          x += 3;
-        }
-      }
-      // Compute the derivative along each direction
-      TacsScalar dx = Xd[0]*dir[0] + Xd[2]*dir[1];
-      TacsScalar dy = Xd[1]*dir[0] + Xd[3]*dir[1];
+TacsScalar HeatFluxIntegral::computeDirections2D( const double pt[],
+                                                  const double knots[],
+                                                  const double dir[],
+                                                  const int surface,
+                                                  const int order,
+                                                  const TacsScalar Xpts[],
+                                                  TacsScalar n[] ){
+  // Evaluate the Lagrange basis in each direction
+  double na[order], nb[order];
+  double dna[order], dnb[order];
+  FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+  
+  // Calcualte the Jacobian at the current point
+  const TacsScalar *x = Xpts;
+  TacsScalar Xd[4] = {0.0, 0.0, 0.0, 0.0};
+  for ( int j = 0; j < order; j++ ){
+    for ( int i = 0; i < order; i++ ){
+      Xd[0] += x[0]*dna[i]*nb[j];
+      Xd[1] += x[0]*na[i]*dnb[j];
       
-      dir[0] = dy;
-      dir[1] = dx;
+      Xd[2] += x[1]*dna[i]*nb[j];
+      Xd[3] += x[1]*na[i]*dnb[j];
+      x += 3;
     }
   }
+  
+  // Compute the derivative along each direction
+  TacsScalar tx = Xd[0]*dir[0] + Xd[2]*dir[1];
+  TacsScalar ty = Xd[1]*dir[0] + Xd[3]*dir[1];
+  
+  // Compute the magnitude of the tangent vector
+  TacsScalar tn = sqrt(tx*tx + ty*ty);
+  
+  // Compute the normal vector (outward facing from the element edge)
+  n[0] = ty/tn;
+  n[1] = -tx/tn;
+}
+
+TacsScalar HeatFluxIntegral::computeDirections3D( const double pt[],
+                                                  const double knots[],
+                                                  const double dir1[],
+                                                  const double dir2[],
+                                                  const int surface,
+                                                  const int order,
+                                                  const TacsScalar Xpts[],
+                                                  TacsScalar n[] ){
+    
+  // Evaluate the Lagrange basis in each direction
+  double na[order], nb[order], nc[order];
+  double dna[order], dnb[order], dnc[order];
+  FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+  FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+  FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
+  
+  // Calcualte the Jacobian at the current point
+  const TacsScalar *x = Xpts;
+  TacsScalar Xd[9] = {0.0, 0.0, 0.0,
+                      0.0, 0.0, 0.0,
+                      0.0, 0.0, 0.0};
+  
+  for ( int k  = 0; k < order; k++ ){
+    for ( int j = 0; j < order; j++ ){
+      for ( int i = 0; i < order; i++ ){
+        Xd[0] += x[0]*dna[i]*nb[j]*nc[k];
+        Xd[1] += x[0]*na[i]*dnb[j]*nc[k];
+        Xd[2] += x[0]*na[i]*nb[j]*dnc[k];
+        
+        Xd[0] += x[0]*dna[i]*nb[j]*nc[k];
+        Xd[1] += x[0]*na[i]*dnb[j]*nc[k];
+        Xd[2] += x[0]*na[i]*nb[j]*dnc[k];
+
+        Xd[0] += x[0]*dna[i]*nb[j]*nc[k];
+        Xd[1] += x[0]*na[i]*dnb[j]*nc[k];
+        Xd[2] += x[0]*na[i]*nb[j]*dnc[k];
+
+        x += 3;
+      }
+    }
+  }
+
+  // Compute the first tangent direction
+  TacsScalar t1[3];
+  t1[0] = Xd[0]*dir1[0] + Xd[1]*dir1[1] + Xd[2]*dir1[2];
+  t1[1] = Xd[3]*dir1[0] + Xd[4]*dir1[1] + Xd[5]*dir1[2];
+  t1[2] = Xd[6]*dir1[0] + Xd[7]*dir1[1] + Xd[8]*dir1[2];
+
+  // Compute the second tangent direction
+  TacsScalar t2[3];
+  t2[0] = Xd[0]*dir2[0] + Xd[1]*dir2[1] + Xd[2]*dir2[2];
+  t2[1] = Xd[3]*dir2[0] + Xd[4]*dir2[1] + Xd[5]*dir2[2];
+  t2[2] = Xd[6]*dir2[0] + Xd[7]*dir2[1] + Xd[8]*dir2[2];
+
+  // Compute the normal to the element
+  Tensor::crossProduct3D(n, t1, t2);
+
+  TacsScalar tn = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+
+  return tn;
 }
 
 /*
