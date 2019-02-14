@@ -210,9 +210,10 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
               dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
             // Compute the heat flux to the surface
             if (con){
-              con->calculateConduction(pt, strain, q);
+              //con->calculateConduction(pt, strain, q);
+              con->heatflux(pt, normal, strain, &value);
             }
-            value = (normal[0]*q[0] + normal[1]*q[1] + normal[2]*q[2]);
+            // value = (normal[0]*q[0] + normal[1]*q[1] + normal[2]*q[2]);
             // Add up the contribution from the quadrature
             ctx->value += tn*value;
           } // end int n
@@ -390,7 +391,8 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
               dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
             // Compute the heat flux to the surface
             if (con){
-              con->calculateConduction(pt, normal, q);
+              //con->calculateConduction(pt, normal, q);
+              con->heatfluxStrainSens(pt, normal, normal, q, 0);
             }
             ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
             if (elem){
@@ -568,8 +570,10 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
               dynamic_cast<CoupledThermoSolidStiffness*>(element->getConstitutive());
             // Compute the heat flux to the surface
             if (con){
-              con->addConductionDVSens(pt, strain, tcoef*tn, normal,
-                                       fdvSens, numDVs);
+              // con->addConductionDVSens(pt, strain, tcoef*tn, normal,
+              //                          fdvSens, numDVs);
+              con->addHeatFluxDVSens(pt, normal, strain, tcoef*tn,
+                                     fdvSens, numDVs);
             }
           }
         }

@@ -67,6 +67,20 @@ class CoupledThermoSolidStiffness : public SolidStiffness {
                                  TacsScalar sens[], 
                                  int vars_j=0 ) = 0;
   virtual int getVarsPerNode() = 0;
+  virtual void heatflux( const double pt[],
+                         const TacsScalar normal[],
+                         const TacsScalar strain[],
+                         TacsScalar * qn ) = 0;
+  virtual void addHeatFluxDVSens( const double pt[],
+                                  const TacsScalar normal[],
+                                  const TacsScalar strain[],
+                                  TacsScalar alpha,
+                                  TacsScalar dvSens[], int dvLen ) = 0;
+  virtual void heatfluxStrainSens( const double pt[],
+                                   const TacsScalar normal[],
+                                   const TacsScalar strain[],
+                                   TacsScalar sens[], 
+                                   int vars_j=0 ) = 0;
   // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
