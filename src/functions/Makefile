@@ -15,7 +15,8 @@ CXX_OBJS = TACSFunction.o \
 	InducedFailure.o \
 	StructuralMass.o \
 	ThermalKSFailure.o \
-	HeatFlux.o
+	HeatFlux.o \
+	KSTemperature.o
 
 DIR=${TACS_DIR}/src/functions
 

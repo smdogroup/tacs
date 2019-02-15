@@ -208,3 +208,25 @@ cdef class HeatFlux(Function):
         free(elem_ind)
         free(surf)
         return
+
+cdef class KSTemperature(Function):
+    cdef TACSKSTemperature *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight):
+        '''
+        Wrap the function KSFailure
+        '''
+        self.ksptr = new TACSKSTemperature(tacs.ptr, ksWeight)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
+    def setKSDispType(self, ftype='continuous'):
+        if ftype == 'discrete':
+            self.ksptr.setKSDispType(KS_TEMP_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSDispType(KS_TEMP_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSDispType(PNORM_TEMP_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSDispType(PNORM_TEMP_CONTINUOUS)
+        return

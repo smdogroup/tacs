@@ -275,25 +275,27 @@ class PSQuadHeatFluxTraction : public TACSElement {
       // Compute the derivative along each direction
       TacsScalar dx = Xd[0]*dir[0] + Xd[2]*dir[1];
       TacsScalar dy = Xd[1]*dir[0] + Xd[3]*dir[1];
-      TacsScalar hsurf = gaussWts[n]*sqrt(dx*dx + dy*dy);
+
+      // Compute the magnitude of the tangent vector
+      TacsScalar tn = sqrt(dx*dx + dy*dy);
+      TacsScalar hsurf = gaussWts[n]*tn;
+      TacsScalar normal[2];
+      normal[0] = dy/tn;
+      normal[1] = -dx/tn;
+
       // --------------------------------------------------
       // Calculate the heat flux 
       TacsScalar qx = 0.0, qy = 0.0;
       double N[order];
       FElibrary::lagrangeSFKnots(N, gaussPts[n], knots, order);
+
       for ( int i = 0; i < order; i++ ){
         qx += N[i]*tx[i];
         qy += N[i]*ty[i];
+
       } // end for int i = 0; i < order
       // ---------------------------------------------------
-      // Compute the heat flux outward normal to the edge
-      TacsScalar nx = dx/sqrt(dx*dx + dy*dy);
-      TacsScalar ny = dy/sqrt(dx*dx + dy*dy);
-      
-      // Compute flux that is outwards normal to the edge
-      TacsScalar qn = qx*nx+qy*ny;
-      
-      // ---------------------------------------------(+ or -)
+      TacsScalar qn = qx*normal[0]+qy*normal[1];
       // Add the result to the element
       TacsScalar *r = res;
       for ( int j = 0; j < order; j++ ){

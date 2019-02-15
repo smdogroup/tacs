@@ -286,6 +286,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
     memcpy(tx, _tx, order*order*sizeof(TacsScalar));
     memcpy(ty, _ty, order*order*sizeof(TacsScalar));
     memcpy(tz, _tz, order*order*sizeof(TacsScalar));
+    initBaseDir(surface);
     // Set the knot locations
     if (order == 2){
       knots[0] = -1.0;
@@ -311,6 +312,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
     for ( int i = 0; i < order*order; i++ ){
       tx[i] = _tx;  ty[i] = _ty;  tz[i] = _tz;
     }
+    initBaseDir(surface);
     // Set the knot locations
     if (order == 2){
       knots[0] = -1.0;
@@ -381,74 +383,70 @@ class TACS3DHeatFluxTraction : public TACSElement {
       for ( int n = 0; n < order; n++ ){
         // Set the quadrature point
         double pt[3];
-        pt[0] = gaussPts[n];
-        pt[1] = gaussPts[m];
+        pt[0] = gaussPts[n]*dir1[0] + gaussPts[m]*dir2[0] + base[0];
+        pt[1] = gaussPts[n]*dir1[1] + gaussPts[m]*dir2[1] + base[1];
+        pt[2] = gaussPts[n]*dir1[2] + gaussPts[m]*dir2[2] + base[2];        
+        
+        // Evaluate the Lagrange basis in each direction
+        double na[order], nb[order], nc[order];
+        double dna[order], dnb[order], dnc[order];
+        FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
+        FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
+        FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
+  
+        // Calcualte the Jacobian at the current point
+        const TacsScalar *x = Xpts;
+        TacsScalar Xd[9] = {0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0};
+  
+        for ( int k  = 0; k < order; k++ ){
+          for ( int j = 0; j < order; j++ ){
+            for ( int i = 0; i < order; i++ ){
+              Xd[0] += x[0]*dna[i]*nb[j]*nc[k];
+              Xd[1] += x[0]*na[i]*dnb[j]*nc[k];
+              Xd[2] += x[0]*na[i]*nb[j]*dnc[k];
+        
+              Xd[3] += x[1]*dna[i]*nb[j]*nc[k];
+              Xd[4] += x[1]*na[i]*dnb[j]*nc[k];
+              Xd[5] += x[1]*na[i]*nb[j]*dnc[k];
 
-        // Compute X, Xd, N, Na and Nb
+              Xd[6] += x[2]*dna[i]*nb[j]*nc[k];
+              Xd[7] += x[2]*na[i]*dnb[j]*nc[k];
+              Xd[8] += x[2]*na[i]*nb[j]*dnc[k];
+
+              x += 3;
+            }
+          }
+        }
+        // Compute the first tangent direction
+        TacsScalar t1[3];
+        t1[0] = Xd[0]*dir1[0] + Xd[1]*dir1[1] + Xd[2]*dir1[2];
+        t1[1] = Xd[3]*dir1[0] + Xd[4]*dir1[1] + Xd[5]*dir1[2];
+        t1[2] = Xd[6]*dir1[0] + Xd[7]*dir1[1] + Xd[8]*dir1[2];
+
+        // Compute the second tangent direction
+        TacsScalar t2[3];
+        t2[0] = Xd[0]*dir2[0] + Xd[1]*dir2[1] + Xd[2]*dir2[2];
+        t2[1] = Xd[3]*dir2[0] + Xd[4]*dir2[1] + Xd[5]*dir2[2];
+        t2[2] = Xd[6]*dir2[0] + Xd[7]*dir2[1] + Xd[8]*dir2[2];
+
+        // Compute the normal to the element
+        TacsScalar normal[3];
+        Tensor::crossProduct3D(normal, t1, t2);
+        // Compute the magnitude of the tangent vector
+        TacsScalar tn = sqrt(normal[0]*normal[0] + normal[1]*normal[1] 
+                             + normal[2]*normal[2]);
+        // Determine the normal direction
+        normal[0] /= tn;
+        normal[1] /= tn;
+        normal[2] /= tn;
+        
+        TacsScalar h = tn*gaussWts[n]*gaussWts[m];
+
         double N[order*order];
         double Na[order*order], Nb[order*order];
         getShapeFunctions(pt, N, Na, Nb);
-
-        TacsScalar Xa[3], Xb[3];
-        Xa[0] = Xa[1] = Xa[2] = 0.0;
-        Xb[0] = Xb[1] = Xb[2] = 0.0;
-
-        if (surface < 2){
-          const int i = (order-1)*(surface % 2);
-          for ( int k = 0; k < order; k++ ){
-            for ( int j = 0; j < order; j++ ){
-              const int node = i + j*order + k*order*order;
-              
-              Xa[0] += Na[j + k*order]*Xpts[3*node];
-              Xa[1] += Na[j + k*order]*Xpts[3*node+1];
-              Xa[2] += Na[j + k*order]*Xpts[3*node+2];
-
-              Xb[0] += Nb[j + k*order]*Xpts[3*node];
-              Xb[1] += Nb[j + k*order]*Xpts[3*node+1];
-              Xb[2] += Nb[j + k*order]*Xpts[3*node+2];
-            }
-          }
-        }
-        else if (surface < 4){
-          const int j = (order-1)*(surface % 2);
-          for ( int k = 0; k < order; k++ ){
-            for ( int i = 0; i < order; i++ ){
-              const int node = i + j*order + k*order*order;
-              
-              Xa[0] += Na[i + k*order]*Xpts[3*node];
-              Xa[1] += Na[i + k*order]*Xpts[3*node+1];
-              Xa[2] += Na[i + k*order]*Xpts[3*node+2];
-
-              Xb[0] += Nb[i + k*order]*Xpts[3*node];
-              Xb[1] += Nb[i + k*order]*Xpts[3*node+1];
-              Xb[2] += Nb[i + k*order]*Xpts[3*node+2];
-            }
-          }
-        }
-        else {
-          const int k = (order-1)*(surface % 2);
-          for ( int j = 0; j < order; j++ ){
-            for ( int i = 0; i < order; i++ ){
-              const int node = i + j*order + k*order*order;
-              
-              Xa[0] += Na[i + j*order]*Xpts[3*node];
-              Xa[1] += Na[i + j*order]*Xpts[3*node+1];
-              Xa[2] += Na[i + j*order]*Xpts[3*node+2];
-
-              Xb[0] += Nb[i + j*order]*Xpts[3*node];
-              Xb[1] += Nb[i + j*order]*Xpts[3*node+1];
-              Xb[2] += Nb[i + j*order]*Xpts[3*node+2];
-            }
-          }
-        }
-
-        // Determine the normal direction
-        TacsScalar normal[3];
-        Tensor::crossProduct3D(normal, Xa, Xb);
-        TacsScalar h = sqrt(normal[0]*normal[0] +
-                            normal[1]*normal[1] +
-                            normal[2]*normal[2]);
-        h *= gaussWts[n]*gaussWts[m];
 
         // Evaluate the heat flux force evaluated at the
         // quadrature point within the element
@@ -460,9 +458,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
         }
 
         // Compute the heat flux outward normal to the edge
-        TacsScalar n_dir[3];
-        Tensor::normalize3D(n_dir,normal);
-        TacsScalar qn = Qx*n_dir[0]+Qy*n_dir[1]+Qz*n_dir[2];
+        TacsScalar qn = Qx*normal[0]+Qy*normal[1]+Qz*normal[2];
 
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
@@ -507,12 +503,34 @@ class TACS3DHeatFluxTraction : public TACSElement {
                     const TacsScalar ddvars[] ){}
   
  private:
+  // Set the base point and direction
+  // --------------------------------
+  void initBaseDir( int surface ){
+    // Determine the base point and integration direction
+    if (surface == 0 || surface == 1){
+      base[0] = -1.0 + 2.0*(surface % 2);
+      dir1[1] = -1.0 + 2.0*(surface % 2);
+      dir2[2] = 1.0;     
+    }
+    else if (surface == 2 || surface == 3) {
+      base[1] = -1.0 + 2.0*(surface % 2);
+      dir1[0] = -1.0 + 2.0*(surface % 2);
+      dir2[2] = -1.0;
+    }
+    else {
+      base[2] = -1.0 + 2.0*(surface % 2);
+      dir1[0] = -1.0 + 2.0*(surface % 2);
+      dir2[1] = 1.0;
+    }
+  }
+
   int surface;
   TacsScalar tx[order*order];
   TacsScalar ty[order*order];
   TacsScalar tz[order*order];
   // The knot locations for the basis functions
   double knots[order];
+  TacsScalar dir1[3], dir2[3], base[3];
 };
 
 /*
