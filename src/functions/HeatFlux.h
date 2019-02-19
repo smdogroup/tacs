@@ -2,6 +2,7 @@
 #define TACS_HEAT_FLUX_H
 
 #include "TACSFunction.h"
+#include <map>
 
 /*
   Compute the KS functional of the heat flux on a given face or edge
@@ -106,4 +107,5 @@ class HeatFluxIntegral : public TACSFunction {
   std::map<int, int>elem_to_surf;
   std::map<int, int>::iterator elem_to_surf_it;
 };
+
 #endif // TACS_HEAT_FLUX_H
