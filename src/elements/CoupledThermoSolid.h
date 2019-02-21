@@ -248,7 +248,7 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
         TacsScalar J[9];
         FElibrary::jacobian3d(Xa, J);
 
-        // Compute the strain
+        // Compute the strain B*u
         TacsScalar strain[6];
         this->evalStrain(strain, J, Na, Nb, Nc, vars);
         
@@ -259,19 +259,8 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
           index += 6;
         }
         if (out_type & TACSElement::OUTPUT_STRESSES){
-          // Calculate the effective stress at the current point
-          TacsScalar stress[6];//,estrain[6];
-          /* TacsScalar aT = this->stiff->getThermalAlpha(); */
-          /* TacsScalar T = 0.0; */
-          /* for (int i = 0; i < NUM_NODES; i++){ */
-          /*   T += N[i]*vars[4*i+3]; */
-          /* } */
-          /* aT *= T; */
-          /* // Effective strain */
-          /* memcpy(estrain, strain, 6*sizeof(TacsScalar)); */
-          /* estrain[0] -= aT; */
-          /* estrain[1] -= aT; */
-          /* estrain[2] -= aT; */
+          // Calculate the stress D*B*u at the current point
+          TacsScalar stress[6];
           this->stiff->calculateStress(pt, strain, stress);
           
           for ( int k = 0; k < 6; k++ ){
@@ -280,20 +269,19 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
           index += 6;
         }
         if (out_type & TACSElement::OUTPUT_EXTRAS){
-          /* // Get the temperature */
-          /* TacsScalar T[] = {0.0}; */
-          /* this->getTemperature(pt, N, T); */
-          /* // Compute the failure value */
-          /* TacsScalar lambda; */
-          /* TMRCoupledThermoOctStiffness *con = */
-          /*   dynamic_cast<TMRCoupledThermoOctStiffness*>(this->stiff); */
-          /* if (con){ */
-          /*   con->failure(pt, T, strain, &lambda); */
-          /* } */
-          /* else { */
-          /*   lambda = 0.0; */
-          /* } */
+          // Get the temperature
+          TacsScalar T[] = {0.0};
+          ThermoSolid *elem = dynamic_cast<ThermoSolid*>(this);
+          if (elem){
+            elem->getTemperature(T, N, vars);
+          }
+          // Compute the failure value
           TacsScalar lambda = 0.0;
+          CoupledThermoSolidStiffness *con =
+            dynamic_cast<CoupledThermoSolidStiffness*>(this->stiff);
+          if (con){
+            con->failure(pt, T, strain, &lambda);
+          }
           data[index] = TacsRealPart(lambda);
           
           this->stiff->buckling(strain, &lambda);

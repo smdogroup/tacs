@@ -256,10 +256,10 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
           // Compute the heat flux to the edge
           if (con){
-            con->calculateConduction(pt, strain, q);
+            //con->calculateConduction(pt, strain, q);
+            con->heatflux(pt, normal, strain, &value);
           }
-          value = (normal[0]*q[0] + normal[1]*q[1]);
-
+          // value = (normal[0]*q[0] + normal[1]*q[1]);
           // Add up the contribution from the quadrature
           ctx->value += tn*value;
         } // end int n
@@ -392,7 +392,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
             // Compute the heat flux to the surface
             if (con){
               //con->calculateConduction(pt, normal, q);
-              con->heatfluxStrainSens(pt, normal, normal, q, 0);
+              con->heatfluxStrainSens(pt, normal, q);
             }
             ThermoSolid *elem = dynamic_cast<ThermoSolid*>(element);
             if (elem){
@@ -435,7 +435,8 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
           // Compute the heat flux to the edge
           if (con){
-            con->calculateConduction(pt, normal, q);
+            //con->calculateConduction(pt, normal, q);
+            con->heatfluxStrainSens(pt, normal, q);
           }
           ThermoQuad* elem = dynamic_cast<ThermoQuad*>(element);
           if (elem){
@@ -612,7 +613,9 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
           CoupledThermoPlaneStressStiffness *con =
             dynamic_cast<CoupledThermoPlaneStressStiffness*>(element->getConstitutive());
           if (con){
-            con->addConductionDVSens(pt, strain, tcoef*tn, normal,
+            // con->addConductionDVSens(pt, strain, tcoef*tn, normal,
+            //                          fdvSens, numDVs);
+            con->addHeatFluxDVSens(pt, normal, strain, tcoef*tn,
                                      fdvSens, numDVs);
           }
         }

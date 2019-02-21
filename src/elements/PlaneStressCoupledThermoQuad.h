@@ -240,27 +240,9 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_STRESSES){
-        // Calculate the effective stress at the current point
-        TacsScalar stress[3];//,estrain[3];
-        // ---------------------------------------------------------
-        // ---------------------------------------------------------
-        //TacsScalar aT = this->stiff->getThermalAlpha();
-        TacsScalar T = 0.0;
-        for ( int k = 0; k < NUM_NODES; k++){
-          T += N[k]*vars[3*k+2];
-        }
-        
-        /* // Effective strain */
-        /* estrain[0] = strain[0]-aT*T; */
-        /* estrain[1] = strain[1]-aT*T; */
-        /* estrain[2] = strain[2]; */
-        
+        // Calculate the stress D*B*u at the current point
+        TacsScalar stress[3];
         this->stiff->calculateStress(pt, strain, stress);
-        /* stress[0] = estrain[0]; */
-        /* stress[1] = estrain[1]; */
-        /* stress[2] = estrain[2]; */
-        // ---------------------------------------------------------
-        // ---------------------------------------------------------
         for ( int k = 0; k < 3; k++ ){
           data[index+k] = TacsRealPart(stress[k]);
         }
@@ -268,8 +250,18 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       }      
       if (out_type & TACSElement::OUTPUT_EXTRAS){
         // Get the temperature
+        TacsScalar T[] = {0.0};
+        ThermoQuad *elem = dynamic_cast<ThermoQuad*>(this);
+        if (elem){
+          elem->getTemperature(T, N, vars);
+        }
         // Compute the failure value
 	TacsScalar lambda = 0.0;
+        CoupledThermoPlaneStressStiffness *con =
+          dynamic_cast<CoupledThermoPlaneStressStiffness*>(this->stiff);
+        if (con){
+          con->failure(pt, T, strain, &lambda);
+        }
         data[index] = TacsRealPart(lambda);
 
 	this->stiff->buckling(strain, &lambda);
