@@ -441,12 +441,15 @@ class TACS3DHeatFluxTraction : public TACSElement {
         normal[0] /= tn;
         normal[1] /= tn;
         normal[2] /= tn;
-        
+	
         TacsScalar h = tn*gaussWts[n]*gaussWts[m];
 
+	// Compute the shape functions
         double N[order*order];
         double Na[order*order], Nb[order*order];
-        getShapeFunctions(pt, N, Na, Nb);
+
+	double gpt[] = {gaussPts[n], gaussPts[m]};
+        getShapeFunctions(gpt, N, Na, Nb);
 
         // Evaluate the heat flux force evaluated at the
         // quadrature point within the element
@@ -531,6 +534,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
   // The knot locations for the basis functions
   double knots[order];
   TacsScalar dir1[3], dir2[3], base[3];
+  
 };
 
 /*
