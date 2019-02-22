@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = 	benchmark.o
 
 default: ${OBJS}
-	${CXX} -o benchmark ${OBJS} ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/benchmark ${OBJS} ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

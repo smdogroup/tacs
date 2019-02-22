@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = grad_verify.o
 
 default: ${OBJS}
-	${CXX} -o grad_verify grad_verify.o ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/grad_verify grad_verify.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = profile_elements.o
 
 default: ${OBJS}
-	${CXX} -o profile_elements profile_elements.o ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/profile_elements profile_elements.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

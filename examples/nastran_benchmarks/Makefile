@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = nastran_benchmarks.o
 
 default: ${OBJS}
-	${CXX} -o nastran_benchmarks nastran_benchmarks.o ${TACS_LD_FLAGS} 
+	${CXX} -o ../bin/nastran_benchmarks nastran_benchmarks.o ${TACS_LD_FLAGS} 
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

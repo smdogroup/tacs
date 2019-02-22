@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = pdmat_test.o
 
 default: ${OBJS}
-	${CXX} -o pdmat_test pdmat_test.o ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/pdmat_test pdmat_test.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

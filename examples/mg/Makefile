@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = mg.o
 
 default: ${OBJS}
-	${CXX} -o mg mg.o ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/mg mg.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
