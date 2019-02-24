@@ -9,7 +9,6 @@ Welcome to TACS's documentation!
 .. toctree::
    :maxdepth: 2
 
-   readme
    install
    interface
    Example-CRM_Optimization
