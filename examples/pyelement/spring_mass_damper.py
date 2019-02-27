@@ -56,8 +56,8 @@ assembler.initialize()
 
 # Create instance of integrator
 t0 = 0.0
-dt = 0.01 
-num_steps = 1000 
+dt = 0.1
+num_steps = 100 
 tf = num_steps*dt
 
 # order = 2 #BDF integrator order 
@@ -65,46 +65,50 @@ tf = num_steps*dt
 # bdf.setRelTol(1e-9)
 # bdf.setAbsTol(1e-12)
 
-stages = 3
-dirk = TACS.DIRKIntegrator(assembler, t0, tf, num_steps, stages)
-dirk.setRelTol(1e-9)
-dirk.setAbsTol(1e-12)
+# stages = 3
+# dirk = TACS.DIRKIntegrator(assembler, t0, tf, num_steps, stages)
+# dirk.setRelTol(1e-9)
+# dirk.setAbsTol(1e-12)
 
-# stages = 8
-# esdirk = TACS.ESDIRKIntegrator(assembler, t0, tf, num_steps, stages)
-# esdirk.setRelTol(1e-9)
-# esdirk.setAbsTol(1e-12)
+stages = 6
+esdirk = TACS.ESDIRKIntegrator(assembler, t0, tf, num_steps, stages)
+esdirk.setRelTol(1e-9)
+esdirk.setAbsTol(1e-12)
 
 # Integrate governing equations
 # bdf.integrate()
 # bdf.iterate(0)
-dirk.iterate(0)
-# esdirk.iterate(0)
+# dirk.iterate(0)
+esdirk.iterate(0)
 for step in range(1,num_steps+1):
     # bdf.iterate(step)
-    dirk.iterate(step)
+    # dirk.iterate(step)
     # esdirk.iterate(step)
+    for stage in range(stages):
+        # dirk.iterateStage(step, stage)
+        esdirk.iterateStage(step, stage)
 
 # Get states at final time step
 # _, uvec, _, _ = bdf.getStates(num_steps)
-_, uvec, _, _ = dirk.getStates(num_steps)
-# _, uvec, _, _ = esdirk.getStates(num_steps)
+# _, uvec, _, _ = dirk.getStates(num_steps)
+_, uvec, _, _ = esdirk.getStates(num_steps)
 
 # Get states at specified stage of final time step
-_, qS, qdotS, qddotS = dirk.getStageStates(num_steps,1)
+# _, qS, qdotS, qddotS = dirk.getStageStates(num_steps,1)
 
 # Get values of states
 u = uvec.getArray()
-stage_disp = qS.getArray()
-stage_vel = qdotS.getArray()
-stage_acc = qddotS.getArray()
+# stage_disp = qS.getArray()
+# stage_vel = qdotS.getArray()
+# stage_acc = qddotS.getArray()
 
 # Print states
 print "u_f = ", u
-print "qS = ", stage_disp
-print "qdotS = ", stage_vel
-print "qddotS = ", stage_acc
+# print "qS = ", stage_disp
+# print "qdotS = ", stage_vel
+# print "qddotS = ", stage_acc
 # print "df/dx, approx = ", u.imag/1e-30
+# dirk.say_hello()
 
 # Write out solution
 # bdf.writeRawSolution('spring.dat', 0)

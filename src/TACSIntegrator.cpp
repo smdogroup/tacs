@@ -801,9 +801,9 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     update_norm = update->norm()*alpha;
 
     // Update the state variables using the solution
-    uddot->axpy(-gamma, update);
-    udot->axpy(-beta, update);
-    u->axpy(-alpha, update);
+    uddot->axpy(-gamma, update); 
+    udot->axpy(-beta, update); 
+    u->axpy(-alpha, update); 
   }
 
   // Failed nonlinear solution
@@ -2072,47 +2072,37 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
     b[0] = 1.0;
     c[0] = 0.5;
 
-    // Backward Euler (BDF1), 1st Order, Works
+    // Backward Euler (BDF1), 1st Order
     // a[0] = 1.0;
     // b[0] = 1.0;
     // c[0] = 1.0;
   } 
   else if (num_stages == 2){
     // Crouzeix formula (A-stable), 3rd order
-    // double tmp = 1.0/(2.0*sqrt(3.0));
-    // a[0] = 0.5 + tmp;
-    // a[1] = -1.0/sqrt(3.0);
-    // a[2] = a[0];
+    double tmp = 1.0/(2.0*sqrt(3.0));
+    a[0] = 0.5 + tmp;
+    a[1] = -1.0/sqrt(3.0);
+    a[2] = a[0];
 
-    // b[0] = 0.5;
-    // b[1] = 0.5;
+    b[0] = 0.5;
+    b[1] = 0.5;
 
-    // c[0] = 0.5 + tmp;
-    // c[1] = 0.5 - tmp;
+    c[0] = 0.5 + tmp;
+    c[1] = 0.5 - tmp;
 
-    // a[0] = 1.0;
-    // a[1] = 0.0;
-    // a[2] = 1.0;
+    // Butcher's DIRK2 (L-stable)
+    // double lambda = (1.0/2.0)*sqrt(2.0);
+    // a[0] = 1.0-lambda;
+    // a[1] = lambda;
+    // a[2] = 1.0-lambda;
 
-    // b[0] = 0.0;
-    // b[1] = 1.0;
+    // b[0] = lambda;
+    // b[1] = 1.0-lambda;
 
-    // c[0] = 1.0;
+    // c[0] = 1.0-lambda;
     // c[1] = 1.0;
 
-    // Butcher's DIRK2 (L-stable), Doesn't work
-    double lambda = (1.0/2.0)*sqrt(2.0);
-    a[0] = 1.0-lambda;
-    a[1] = lambda;
-    a[2] = 1.0-lambda;
-
-    b[0] = lambda;
-    b[1] = 1.0-lambda;
-
-    c[0] = 1.0-lambda;
-    c[1] = 1.0;
-
-    // Miller's Formula (L-stable) Doesn't Work
+    // Miller's Formula (L-stable)
     // a[0] = 1.0/3.0;
     // a[1] = 3.0/4.0;
     // a[2] = 1.0/4.0;
@@ -2123,7 +2113,7 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
     // c[0] = 1.0/3.0;
     // c[1] = 1.0;
 
-    // Qin and Zhang Formula (A-stable) Doesn't Work
+    // Qin and Zhang Formula (A-stable)
     // a[0] = 1.0/4.0;
     // a[1] = 1.0/2.0;
     // a[2] = 1.0/4.0;
@@ -2136,25 +2126,25 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
 
   } 
   else if (num_stages == 3){
-    // Crouzeix formula (A-stable)
-    // double alpha = 2.0*cos(M_PI/18.0)/sqrt(3.0);
+    // Crouzeix formula (S-stable)
+    double alpha = 2.0*cos(M_PI/18.0)/sqrt(3.0);
     
-    // a[0] = (1.0 + alpha)*0.5;
-    // a[1] = -0.5*alpha;
-    // a[2] = a[0];
-    // a[3] = 1.0 + alpha;
-    // a[4] = -(1.0 + 2.0*alpha);
-    // a[5] = a[0];    
+    a[0] = (1.0 + alpha)*0.5;
+    a[1] = -0.5*alpha;
+    a[2] = a[0];
+    a[3] = 1.0 + alpha;
+    a[4] = -(1.0 + 2.0*alpha);
+    a[5] = a[0];    
 
-    // b[0] = 1.0/(6.0*alpha*alpha);
-    // b[1] = 1.0 - 1.0/(3.0*alpha*alpha);
-    // b[2] = b[0];
+    b[0] = 1.0/(6.0*alpha*alpha);
+    b[1] = 1.0 - 1.0/(3.0*alpha*alpha);
+    b[2] = b[0];
 
-    // c[0] = 0.5*(1.0+alpha);
-    // c[1] = 0.5;
-    // c[2] = 0.5*(1.0-alpha);
+    c[0] = 0.5*(1.0+alpha);
+    c[1] = 0.5;
+    c[2] = 0.5*(1.0-alpha);
 
-    // Miller's Formula (L-stable) Doesn't work
+    // Miller's Formula (L-stable)
     // a[0] = 1.0;
     // a[1] = -1.0/12.0;
     // a[2] = 5.0/12.0;
@@ -2170,21 +2160,21 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
     // c[1] = 1.0/3.0;
     // c[2] = 1.0;
 
-    // Xflow DIRK3, Doesn't work
-    a[0] = 0.435866521508459;
-    a[1] = 0.2820667393;
-    a[2] = 0.435866521508459;
-    a[3] = 1.2084966492;
-    a[4] = -0.6443631707;
-    a[5] = 0.435866521508549;
+    // UM/xflow DIRK3
+    // a[0] = 0.435866521508459;
+    // a[1] = 0.2820667393;
+    // a[2] = 0.435866521508459;
+    // a[3] = 1.2084966492;
+    // a[4] = -0.6443631707;
+    // a[5] = 0.435866521508549;
 
-    b[0] = 1.2084966492;
-    b[1] = -0.6443631707;
-    b[2] = 0.435866521508549;
+    // b[0] = 1.2084966492;
+    // b[1] = -0.6443631707;
+    // b[2] = 0.435866521508549;
 
-    c[0] = 0.435866521508459;
-    c[1] = 0.7179332608;
-    c[2] = 1.0;
+    // c[0] = 0.435866521508459;
+    // c[1] = 0.7179332608;
+    // c[2] = 1.0;
   }
   else if (num_stages == 5){
     // 5-stage, 4th-order accurate DIRK scheme that is more stable for stiff problems
@@ -2207,9 +2197,9 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
     a[14] =  1.0/4.0;
 
     b[0]  =  25.0/24.0;
-    b[1]  =  -49.0/48.0;
+    b[1]  = -49.0/48.0;
     b[2]  =  125.0/16.0;
-    b[3]  =  -85.0/12.0;
+    b[3]  = -85.0/12.0;
     b[4]  =  1.0/4.0;
 
     c[0]  =  1.0/4.0;
@@ -2232,8 +2222,13 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
   Get the stage coefficient from the tableau using the full index
 */
 double TACSDIRKIntegrator::getACoeff( const int i, const int j ){
+
   if (i < num_stages && j < num_stages){
-    if (i <= j){
+    if (j > i){
+      // Coefficients in upper triangular region are 0 for DIRK
+      return 0.0;
+    }
+    else {
       int index = getRowIndex(i);
       return a[index + j];
     }
@@ -2261,7 +2256,7 @@ void TACSDIRKIntegrator::setupSecondCoeffs(){
     for ( int j = 0; j <= i; j++ ){
       A[index + j] = 0.0;
       for ( int k = 0; k < num_stages; k++ ){
-        A[index + j] += getACoeff(i, k)*getACoeff(k, j);
+        A[index + j] += getACoeff(i, k)*getACoeff(k, j); 
       }
     }
   }
@@ -2417,6 +2412,91 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
   logTimeStep(k);
   
   return 0;
+}
+
+/*
+  Integration logic of a single stage of DIRK. Use this function to 
+  march in time a single stage. The solution over time is set into the class 
+  variables q, qdot and qddot and time.
+*/
+int TACSDIRKIntegrator::iterateStage( int k, int s, TACSBVec *forces){
+  if (k == 0){    
+    // If its the first time step, call iterate() for initial conditions
+    iterate(k, forces);
+  }
+
+  // Compute the time step
+  double h = time[k] - time[k-1];
+
+  // Compute the stage time
+  double tS = time[k-1] + c[s]*h;
+
+  // Compute the offset to this stage
+  int offset = (k-1)*num_stages + s;
+
+  // Always zero out stage accelerations before solving
+  qddotS[offset]->zeroEntries();
+
+  // Initialize qS with previous state values 
+  qS[offset]->copyValues(q[k-1]);
+  qS[offset]->axpy(h*c[s], qdot[k-1]);
+
+  // Initialize qdotS with previous state values
+  qdotS[offset]->copyValues(qdot[k-1]);
+
+  // For stages after 0, add previous qddotS contributions
+  int index = getRowIndex(s);
+  for ( int j = 0; j <= s; j++ ){
+    int prev = (k-1)*num_stages + j;
+    qS[offset]->axpy(h*h*A[index+j], qddotS[prev]);
+    qdotS[offset]->axpy(h*a[index+j], qddotS[prev]);
+  }
+
+  // Determine the coefficients for Jacobian assembly used in Newton solve
+  double alpha, beta, gamma;
+  getLinearizationCoeffs(s, h, &alpha, &beta, &gamma);
+
+
+  // Solve the nonlinear system of stage equations starting with
+  // the approximated states
+  int newton_term = newtonSolve(alpha, beta, gamma, tS,
+                                qS[offset], qdotS[offset], qddotS[offset], 
+                                forces);
+
+  // Check the flag set from Newton's method to see if we have a
+  // problem at this point...
+  int fail = 0;
+  if (newton_term < 0){
+    fail = 1;
+    return fail;
+  }
+
+  // If its the last stage - compute the state variables at the 
+  // current time step using the intermediate stage states
+  if ( s == num_stages-1 ){
+    // Initialize q to include state values from previous step
+    q[k]->copyValues(q[k-1]);
+    q[k]->axpy(h, qdot[k-1]);
+
+    // Initialize qdot to include state values from previous step
+    qdot[k]->copyValues(qdot[k-1]);
+
+    // Zero the qddot terms - not used later
+    qddot[k]->zeroEntries();
+
+    // Compute the new values
+    for ( int stage = 0; stage < num_stages; stage++ ){
+      int offset_f = (k-1)*num_stages + stage;
+      q[k]->axpy(h*h*B[stage], qddotS[offset_f]);
+      qdot[k]->axpy(h*b[stage], qddotS[offset_f]);
+      qddot[k]->axpy(b[stage], qddotS[offset_f]);
+    }
+
+    // Perform logging, tecplot export, etc.
+    logTimeStep(k);
+  
+    return 0;
+  }
 }
 
 /*
@@ -2745,4 +2825,944 @@ void TACSDIRKIntegrator::postAdjoint( int k ){
 void TACSDIRKIntegrator::getAdjoint( int step_num, int func_num, 
                                      TACSBVec **adjoint ){
   *adjoint = lambda[func_num];
+}
+
+/*
+  Retrieve the internal states at the specified stage of the specified time step
+*/
+double TACSDIRKIntegrator::getStageStates( int step_num, 
+                                           int stageNum,
+                                           TACSBVec **_qS,  
+                                           TACSBVec **_qdotS, 
+                                           TACSBVec **_qddotS ){
+  if (step_num == 0){
+    // Stage States don't exist for 0th time step since initial conditions are provided
+    if (_qS){
+      *_qS = q[step_num];
+    }
+    if (_qdotS){
+      *_qdotS = qdot[step_num];
+    }
+    if (_qddotS){
+      *_qddotS = qddot[step_num];
+    }
+    return time[step_num]; 
+  }
+  else {
+    int offset = (step_num-1)*num_stages + stageNum;
+    double h = time[step_num] - time[step_num - 1];
+    double timeS = time[step_num-1] + c[stageNum]*h;
+
+    if (_qS){
+      *_qS = qS[offset];
+    }
+    if (_qdotS){
+      *_qdotS = qdotS[offset];
+    }
+    if (_qddotS){
+      *_qddotS = qddotS[offset];
+    }
+    return timeS;
+  }
+}
+
+/*
+  Constructor for TACSESDIRKIntegrator
+
+  Input:
+  
+  tacs:              the TACS assembler object
+  num_stages:        the total number of Runge-Kutta stages
+  tinit:             the initial time
+  tfinal:            the final time
+  num_steps:         the number of steps to take
+*/
+
+TACSESDIRKIntegrator::TACSESDIRKIntegrator( TACSAssembler * _tacs, 
+                                            double _tinit, double _tfinal, 
+                                            double _num_steps,
+                                            int _num_stages ):
+TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps){
+  if (mpiRank == 0){ 
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s stages %d\n", 
+            mpiRank, "ESDIRK", _num_stages);
+  }
+  // Set the number of stages
+  num_stages = _num_stages;
+ 
+  // allocate space for stage state variables
+  qS = new TACSBVec*[ num_stages*num_time_steps ];
+  qdotS = new TACSBVec*[ num_stages*num_time_steps ];
+  qddotS = new TACSBVec*[ num_stages*num_time_steps ];
+  
+  // create state vectors for TACS during each timestep
+  for ( int k = 0; k < num_stages*num_time_steps; k++ ){
+    qS[k] = tacs->createVec(); 
+    qS[k]->incref(); 
+    
+    qdotS[k] = tacs->createVec(); 
+    qdotS[k]->incref(); 
+
+    qddotS[k] = tacs->createVec(); 
+    qddotS[k]->incref(); 
+  }
+  
+  // Allocate space for Butcher tableau
+  a = new double[num_stages*(num_stages+1)/2];
+  b = new double[num_stages];
+  c = new double[num_stages];
+  A = new double[num_stages*(num_stages+1)/2];
+  B = new double[num_stages];
+  
+  // Set the Butcher tableau entries to zero
+  memset(a, 0, num_stages*(num_stages+1)/2*sizeof(double));
+  memset(b, 0, num_stages*sizeof(double));
+  memset(c, 0, num_stages*sizeof(double));
+  memset(A, 0, num_stages*(num_stages+1)/2*sizeof(double));
+  memset(B, 0, num_stages*sizeof(double));
+
+  // Add entries into the Butcher tableau
+  setupDefaultCoeffs();
+
+  // Set the second-order coefficients
+  setupSecondCoeffs();
+
+  // NULL-out the adjoint stuff
+  rhs = NULL;
+  lambda = NULL;
+  omega = NULL;
+  domega = NULL;
+  phi = NULL;
+  psi = NULL;
+}
+
+/*
+  Destructor for TACSDIRKIntegrator
+*/
+TACSESDIRKIntegrator::~TACSESDIRKIntegrator(){
+  // Cleanup Butcher's Tableau
+  delete [] a;
+  delete [] b;
+  delete [] c;
+  delete [] A;
+  delete [] B;
+
+  // Cleanup stage states
+  for ( int i = 0; i < num_stages*num_time_steps; i++ ){
+    qS[i]->decref();
+    qdotS[i]->decref();
+    qddotS[i]->decref();
+  }
+
+  delete [] qS;
+  delete [] qdotS;
+  delete [] qddotS;
+
+  // Free the data that was allocated
+  if (lambda){
+    rhs->decref();
+
+    for ( int i = 0; i < num_funcs; i++ ){
+      phi[i]->decref();
+      psi[i]->decref();
+    }
+    
+    for ( int i = 0; i < num_funcs*num_stages; i++ ){
+      lambda[i]->decref();
+      omega[i]->decref();
+      domega[i]->decref();
+    }
+
+    delete [] lambda;
+    delete [] phi;
+    delete [] psi;
+    delete [] omega;
+    delete [] domega;
+  }
+}
+
+/*
+  Function that puts the entries into Butcher tableau
+*/
+void TACSESDIRKIntegrator::setupDefaultCoeffs(){
+  if (num_stages == 4){
+    // 4-stage, 3rd-order accurate 
+    // Coefficients taken from UM/xflow
+
+    a[0] =  0.0;
+    a[1] =  1767732205903.0/4055673282236.0;
+    a[2] =  1767732205903.0/4055673282236.0;
+    a[3] =  2746238789719.0/10658868560708.0;
+    a[4] = -640167445237.0/6845629431997.0;
+    a[5] =  1767732205903.0/4055673282236.0;
+    a[6] =  1471266399579.0/7840856788654.0;
+    a[7] = -4482444167858.0/7529755066697.0;
+    a[8] =  11266239266428.0/11593286722821.0;
+    a[9] =  1767732205903.0/4055673282236.0;
+
+    b[0] =  1471266399579.0/7840856788654.0;
+    b[1] = -4482444167858.0/7529755066697.0;
+    b[2] =  11266239266428.0/11593286722821.0;
+    b[3] =  1767732205903.0/4055673282236.0;
+
+    c[0] =  0.0;
+    c[1] =  1767732205903.0/2027836641118.0;
+    c[2] =  3.0/5.0;
+    c[3] =  1.0;
+
+  } 
+  else if (num_stages == 6){
+    // 6-stage, 4th-order accurate 
+    // Coefficients taken from UM/xflow
+
+    a[0]  =  0.0;
+    a[1]  =  0.25;
+    a[2]  =  0.25;
+    a[3]  =  8611.0/62500.0;
+    a[4]  = -1743.0/31250.0;
+    a[5]  =  0.25;
+    a[6]  =  5012029.0/34652500.0;
+    a[7]  = -654441.0/2922500.0;
+    a[8]  =  174375.0/388108.0;
+    a[9]  =  0.25;
+    a[10] =  15267082809.0/155376265600.0;
+    a[11] = -71443401.0/120774400.0;
+    a[12] =  730878875.0/902184768.0;
+    a[13] =  2285395.0/8070912.0;
+    a[14] =  0.25;
+    a[15] =  82889.0/524892.0;
+    a[16] =  0.0;
+    a[17] =  15625.0/83664.0;
+    a[18] =  69875.0/102672.0;
+    a[19] = -2260.0/8211.0;
+    a[20] =  0.25;
+
+    b[0] =  82889.0/524892.0;
+    b[1] =  0.0;
+    b[2] =  15625.0/83664.0;
+    b[3] =  69875.0/102672.0;
+    b[4] = -2260.0/8211.0;
+    b[5] =  0.25;
+
+    c[0] =  0.0;
+    c[1] =  0.5;
+    c[2] =  83.0/250.0;
+    c[3] =  31.0/50.0;
+    c[4] =  17.0/20.0;
+    c[5] =  1.0;
+
+  } 
+  else if (num_stages == 8){
+    // 8-stage, 5th-order accurate
+    // Coefficients taken from UM/xflow
+    a[0]  =  0.0;
+    a[1]  =  41.0/200.0;
+    a[2]  =  41.0/200.0;
+    a[3]  =  41.0/400.0;
+    a[4]  = -567603406766.0/11931857280679.0;
+    a[5]  =  41.0/200.0;
+    a[6]  =  683785636431.0/9252920307686.0;
+    a[7]  =  0.0;
+    a[8]  = -110385047103.0/1367015193373.0;
+    a[9]  =  41.0/200.0;
+    a[10] =  3016520224154.0/10081342136671.0;
+    a[11] =  0.0;
+    a[12] =  30586259806659.0/12414158314087.0;
+    a[13] = -22760509404356.0/11113319521817.0;
+    a[14] =  41.0/200.0;
+    a[15] =  218866479029.0/1489978393911.0;
+    a[16] =  0.0;
+    a[17] =  638256894668.0/5436446318841.0;
+    a[18] = -1179710474555.0/5321154724896.0;
+    a[19] = -60928119172.0/8023461067671.0;
+    a[20] =  41.0/200.0;
+    a[21] =  1020004230633.0/5715676835656.0;
+    a[22] =  0.0;
+    a[23] =  25762820946817.0/25263940353407.0;
+    a[24] = -2161375909145.0/9755907335909.0;
+    a[25] = -211217309593.0/5846859502534.0;
+    a[26] = -4269925059573.0/7827059040749.0;
+    a[27] =  41.0/200.0;
+    a[28] = -872700587467.0/9133579230613.0;
+    a[29] =  0.0;
+    a[30] =  0.0;
+    a[31] =  22348218063261.0/9555858737531.0;
+    a[32] = -1143369518992.0/8141816002931.0;
+    a[33] = -39379526789629.0/19018526304540.0;
+    a[34] =  32727382324388.0/42900044865799.0;
+    a[35] =  41.0/200.0;
+
+    b[0] = -872700587467.0/9133579230613.0;
+    b[1] =  0.0;
+    b[2] =  0.0;
+    b[3] =  22348218063261.0/9555858737531.0;
+    b[4] = -1143369518992.0/8141816002931.0;
+    b[5] = -39379526789629.0/19018526304540.0;
+    b[6] =  32727382324388.0/42900044865799.0;
+    b[7] =  41.0/200.0;
+
+    c[0] = 0.0;
+    c[1] = 41.0/100.0;
+    c[2] = 2935347310677.0/11292855782101.0;
+    c[3] = 1426016391358.0/7196633302097.0;
+    c[4] = 92.0/100.0;
+    c[5] = 24.0/100.0;
+    c[6] = 3.0/5.0;
+    c[7] = 1.0;
+  }
+  else {
+    fprintf(stderr, "ERROR: Invalid number of stages %d\n", num_stages);
+    num_stages = 4;
+    setupDefaultCoeffs();
+  }
+
+  // check for the consistency of butcher tableau entries
+  checkButcherTableau();
+}
+
+/*
+  Get the stage coefficient from the tableau using the full index
+*/
+double TACSESDIRKIntegrator::getACoeff( const int i, const int j ){
+
+  if (i < num_stages && j < num_stages){
+    if (j > i){
+      // Coefficients in the upper triangular region are 0 for ESDIRK
+      return 0.0;
+    }
+    else {
+      int index = getRowIndex(i);
+      return a[index + j];
+    }
+  }
+  return 0.0;
+}
+
+/*
+  Set the second-order coefficients based on the Butcher tableau values
+*/
+void TACSESDIRKIntegrator::setupSecondCoeffs(){
+  // Set the values of the B coefficients
+  for ( int i = 0; i < num_stages; i++ ){
+    B[i] = 0.0;
+    
+    // Loop over the rows in the tableau
+    for ( int j = 0; j < num_stages; j++ ){
+      B[i] += b[j]*getACoeff(j, i);
+    }
+  }
+
+  // Set the values of the A coefficients
+  for ( int i = 0; i < num_stages; i++ ){
+    int index = getRowIndex(i);
+    for ( int j = 0; j <= i; j++ ){
+      A[index + j] = 0.0;
+      for ( int k = 0; k < num_stages; k++ ){
+        A[index + j] += getACoeff(i, k)*getACoeff(k, j);
+      }
+    }
+  }
+}
+
+/*
+  Function that checks the consistency of Butcher tableau values
+*/
+void TACSESDIRKIntegrator::checkButcherTableau(){
+  double tmp;
+
+  // Check #1: sum(A(i,:)) = C(i)  
+  int idx = -1;
+  for ( int i = 0; i < num_stages; i++ ){
+    tmp = 0.0;
+    for ( int j = 0; j <= i; j++ ){
+      idx++;
+      tmp += a[idx];
+    }
+
+    // Check the difference
+    if (fabs(c[i] - tmp) >= 1.0e-6) {
+      fprintf(stderr, "WARNING: Sum A[%d,:] != c[%d] i.e. %f != %f \n", 
+              i, i, c[i], tmp);
+    }  
+  }
+  
+  // Check #2: sum(B) = 1.0
+  tmp = 0.0;
+  for ( int i = 0; i < num_stages; i++ ){
+    tmp += b[i];
+  }
+  if (fabs(1.0 - tmp) >= 1.0e-6) {
+    fprintf(stderr, "WARNING: Sum B != 1.0 \n");
+  }
+}
+
+/*
+  Return the coefficients for linearizing the Residual using NBG method
+*/
+void TACSESDIRKIntegrator::getLinearizationCoeffs( const int stage,
+                                                   const double h, 
+                                                   double *alpha, 
+                                                   double *beta, 
+                                                   double *gamma ){
+  // Starting entry of Butcher Tableau for this stage
+  int index = getRowIndex(stage);
+  
+  // Compute the coefficients
+  *gamma = 1.0;
+  *beta = h*a[index + stage];
+  *alpha = h*h*A[index + stage];
+}
+
+/*
+  Start index of the Butcher Tableau A for the supplied stage
+*/
+int TACSESDIRKIntegrator::getRowIndex( int stageNum ){
+  return stageNum*(stageNum+1)/2;
+}
+
+/*
+  Integration logic of ESDIRK. Use this function to march in time. The
+  solution over time is set into the class variables q, qdot and qddot
+  and time.
+*/
+int TACSESDIRKIntegrator::iterate( int k, TACSBVec *forces ){
+  if (k == 0){    
+    // Retrieve the initial conditions and set into TACS
+    tacs->getInitConditions(q[0], qdot[0], qddot[0]);
+    tacs->setVariables(q[0], qdot[0], qddot[0]);
+
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+    logTimeStep(k);
+    return 0;
+  }
+
+  // Compute the time step
+  double h = time[k] - time[k-1];
+
+  // Compute the stage states (qS, qdotS, qddotS) based on the ESDIRK formula
+  for ( int stage = 0; stage < num_stages; stage++ ){
+    // Compute the stage time
+    double tS = time[k-1] + c[stage]*h;
+
+    // Compute the offset to this stage
+    int offset = (k-1)*num_stages + stage;
+
+    // Approximate the stage states using the ESDIRK formula
+    if (stage == 0){
+      qddotS[offset]->copyValues(qddot[k-1]);
+    }
+    else {
+
+      qddotS[offset]->copyValues(qddotS[offset-1]);
+    }
+
+    //
+    qddotS[offset]->zeroEntries();
+
+    // Compute approximations for qS 
+    qS[offset]->copyValues(q[k-1]);
+    qS[offset]->axpy(h*c[stage], qdot[k-1]);
+
+    // Compute the approximations for qdotS
+    qdotS[offset]->copyValues(qdot[k-1]);
+
+    int index = getRowIndex(stage);
+    for ( int j = 0; j <= stage; j++ ){
+      int prev = (k-1)*num_stages + j;
+      qS[offset]->axpy(h*h*A[index+j], qddotS[prev]);
+      qdotS[offset]->axpy(h*a[index+j], qddotS[prev]);
+    }
+    
+    // Determine the coefficients for Jacobian assembly
+    double alpha, beta, gamma;
+    getLinearizationCoeffs(stage, h, &alpha, &beta, &gamma);
+    
+    // Solve the nonlinear system of stage equations starting with
+    // the approximated states
+    int newton_term = newtonSolve(alpha, beta, gamma, tS,
+                                  qS[offset], qdotS[offset], qddotS[offset], 
+                                  forces);
+
+    // Check the flag set from Newton's method to see if we have a
+    // problem at this point..
+    int fail = 0;
+    if (newton_term < 0){
+      fail = 1;
+      return fail;
+    }
+  }
+  
+  // Compute the state varialbes at the current time step using the
+  // intermediate stage states
+  q[k]->copyValues(q[k-1]);
+  q[k]->axpy(h, qdot[k-1]);
+
+  qdot[k]->copyValues(qdot[k-1]);
+  qddot[k]->zeroEntries();
+
+  // Compute the new values
+  for ( int stage = 0; stage < num_stages; stage++ ){
+    int offset = (k-1)*num_stages + stage;
+    q[k]->axpy(h*h*B[stage], qddotS[offset]);
+    qdot[k]->axpy(h*b[stage], qddotS[offset]);
+    qddot[k]->axpy(b[stage], qddotS[offset]);
+  }
+
+  // Perform logging, tecplot export, etc.
+  logTimeStep(k);
+  
+  return 0;
+}
+
+/*
+  Integration logic of a single stage of ESDIRK. Use this function to 
+  march in time a single stage. The solution over time is set into the class 
+  variables q, qdot and qddot and time.
+*/
+int TACSESDIRKIntegrator::iterateStage( int k, int s, TACSBVec *forces){
+  if (k == 0){    
+    // If its the first time step, call iterate() for initial conditions
+    iterate(k, forces);
+  }
+
+  // Compute the time step
+  double h = time[k] - time[k-1];
+
+  // Compute the stage time
+  double tS = time[k-1] + c[s]*h;
+
+  // Compute the offset to this stage
+  int offset = (k-1)*num_stages + s;
+
+  // Always zero out stage accelerations before solving
+  qddotS[offset]->zeroEntries();
+
+  // Initialize qS with previous state values 
+  qS[offset]->copyValues(q[k-1]);
+  qS[offset]->axpy(h*c[s], qdot[k-1]);
+
+  // Initialize qdotS with previous state values
+  qdotS[offset]->copyValues(qdot[k-1]);
+
+  // For stages after 0, add previous qddotS contributions
+  int index = getRowIndex(s);
+  for ( int j = 0; j <= s; j++ ){
+    int prev = (k-1)*num_stages + j;
+    qS[offset]->axpy(h*h*A[index+j], qddotS[prev]);
+    qdotS[offset]->axpy(h*a[index+j], qddotS[prev]);
+  }
+
+  // Determine the coefficients for Jacobian assembly used in Newton solve
+  double alpha, beta, gamma;
+  getLinearizationCoeffs(s, h, &alpha, &beta, &gamma);
+
+
+  // Solve the nonlinear system of stage equations starting with
+  // the approximated states
+  int newton_term = newtonSolve(alpha, beta, gamma, tS,
+                                qS[offset], qdotS[offset], qddotS[offset], 
+                                forces);
+
+  // Check the flag set from Newton's method to see if we have a
+  // problem at this point...
+  int fail = 0;
+  if (newton_term < 0){
+    fail = 1;
+    return fail;
+  }
+
+  // If its the last stage - compute the state variables at the 
+  // current time step using the intermediate stage states
+  if ( s == num_stages-1 ){
+    // Initialize q to include state values from previous step
+    q[k]->copyValues(q[k-1]);
+    q[k]->axpy(h, qdot[k-1]);
+
+    // Initialize qdot to include state values from previous step
+    qdot[k]->copyValues(qdot[k-1]);
+
+    // Zero the qddot terms - not used later
+    qddot[k]->zeroEntries();
+
+    // Compute the new values
+    for ( int stage = 0; stage < num_stages; stage++ ){
+      int offset_f = (k-1)*num_stages + stage;
+      q[k]->axpy(h*h*B[stage], qddotS[offset_f]);
+      qdot[k]->axpy(h*b[stage], qddotS[offset_f]);
+      qddot[k]->axpy(b[stage], qddotS[offset_f]);
+    }
+
+    // Perform logging, tecplot export, etc.
+    logTimeStep(k);
+  
+    return 0;
+  }
+}
+
+/*
+  Evaluate the functions of interest
+*/
+void TACSESDIRKIntegrator::evalFunctions( TacsScalar *fvals ){
+  // Check whether these are two-stage or single-stage functions
+  int twoStage = 0;
+  for ( int n = 0; n < num_funcs; n++ ){
+    if (funcs[n] && funcs[n]->getStageType() == TACSFunction::TWO_STAGE){
+      twoStage = 1;
+      break;
+    }
+  }
+
+  // Initialize the function if had already not been initialized
+  if (twoStage){
+    // First stage
+    for ( int n = 0; n < num_funcs; n++ ){
+      if (funcs[n]){
+        funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+      }
+    }
+    
+    for ( int k = start_plane; k < end_plane; k++ ){
+      // Compute the time-step
+      double h = time[k+1] - time[k];
+     
+      for ( int stage = 0; stage < num_stages; stage++ ){
+        double tS = time[k] + c[stage]*h;
+        tacs->setSimulationTime(tS);
+
+        // Set the offset into the stage variable vectors
+        int offset = k*num_stages + stage;
+        tacs->setVariables(qS[offset], qdotS[offset], qddotS[offset]);
+
+        // Set the time-integration coefficient
+        double tcoeff = h*b[stage];
+
+        // Integrate the functions
+        tacs->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
+                                 funcs, num_funcs);
+      }
+    }
+
+    for ( int n = 0; n < num_funcs; n++ ){
+      if (funcs[n]){
+        funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);      
+      }
+    }
+  }
+
+  // Second stage
+  for ( int n = 0; n < num_funcs; n++ ){
+    if (funcs[n]){
+      funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+    }
+  }
+    
+  for ( int k = start_plane; k < end_plane; k++ ){
+    // Compute the time-step
+    double h = time[k+1] - time[k];
+     
+    for ( int stage = 0; stage < num_stages; stage++ ){
+      double tS = time[k] + c[stage]*h;
+      tacs->setSimulationTime(tS);
+
+      // Set the offset into the stage variable vectors
+      int offset = k*num_stages + stage;
+      tacs->setVariables(qS[offset], qdotS[offset], qddotS[offset]);
+
+      // Set the time-integration coefficient
+      double tcoeff = h*b[stage];
+
+      // Integrate the functions
+      tacs->integrateFunctions(tcoeff, TACSFunction::INTEGRATE,
+                               funcs, num_funcs);
+    }
+  }
+       
+  for ( int n = 0; n < num_funcs; n++ ){
+    if (funcs[n]){
+      funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);    
+    }
+  }
+
+  // Retrieve the function values
+  for ( int n = 0; n < num_funcs; n++ ){
+    fvals[n] = 0.0;
+    if (funcs[n]){
+      fvals[n] = funcs[n]->getFunctionValue();
+    }
+  }
+}
+
+/*
+  Set-up right-hand-sides for the adjoint equations
+*/
+void TACSESDIRKIntegrator::initAdjoint( int step_num ){
+  // Adjoint variables for each function of interest
+  if (!lambda){
+    rhs = tacs->createVec();
+    rhs->incref();
+
+    // Allocate the adjoint stage vectors
+    lambda = new TACSBVec*[ num_funcs*num_stages ];
+    for ( int i = 0; i < num_funcs*num_stages; i++ ){
+      lambda[i] = tacs->createVec();
+      lambda[i]->incref();
+    }
+
+    // Allocate the temporary adjoint stage-vectors
+    omega = new TACSBVec*[ num_funcs*num_stages ];
+    domega = new TACSBVec*[ num_funcs*num_stages ];
+    for ( int i = 0; i < num_funcs*num_stages; i++ ){
+      omega[i] = tacs->createVec();
+      domega[i] = tacs->createVec();
+      omega[i]->incref();
+      domega[i]->incref();
+    }
+
+    // Allocate the inter-stage adjoint vectors
+    phi = new TACSBVec*[ num_funcs ];
+    psi = new TACSBVec*[ num_funcs ];
+    for ( int i = 0; i < num_funcs; i++ ){
+      phi[i] = tacs->createVec();
+      psi[i] = tacs->createVec();
+      phi[i]->incref();
+      psi[i]->incref();
+    }
+  }
+
+  // Zero the entries at the final step
+  if (step_num == num_time_steps){
+    for ( int i = 0; i < num_funcs; i++ ){
+      psi[i]->zeroEntries();
+      phi[i]->zeroEntries();
+    }
+
+    // Zero the derivative!
+    memset(dfdx, 0, num_funcs*num_design_vars*sizeof(TacsScalar));
+
+    // Zero the derivatives w.r.t. the node locations
+    for ( int i = 0; i < num_funcs; i++ ){
+      dfdXpt[i]->zeroEntries();
+    }
+    
+    // Initialize linear solver
+    initializeLinearSolver();
+  }
+
+  for ( int i = 0; i < num_funcs*num_stages; i++ ){
+    omega[i]->zeroEntries();
+    domega[i]->zeroEntries();
+  }
+}
+
+/*
+  Iterate to find a solution of the adjoint equations
+*/
+void TACSESDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
+  if (k == 0){
+    // Retrieve the initial conditions and set into TACS
+    tacs->getInitConditions(q[0], qdot[0], qddot[0]);
+    tacs->setVariables(q[0], qdot[0], qddot[0]);
+
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+    return;
+  }
+
+  // Compute the time step
+  double h = time[k] - time[k-1];
+
+  // Iterate in reverse through the stage equations
+  for ( int stage = num_stages-1; stage >= 0; stage-- ){
+    // Compute the stage time
+    double tS = time[k-1] + c[stage]*h;
+
+    // Compute the offset to this stage
+    int offset = (k-1)*num_stages + stage;
+
+    // Set the time step and stage variables
+    tacs->setSimulationTime(tS);
+    tacs->setVariables(qS[offset], qdotS[offset], qddotS[offset]);
+  
+    // Determine the coefficients for Jacobian assembly
+    double alpha, beta, gamma;
+    getLinearizationCoeffs(stage, h, &alpha, &beta, &gamma);
+
+    // Setup the Jacobian
+    TACSMg *mg = dynamic_cast<TACSMg*>(pc);
+    if (mg){
+      mg->assembleJacobian(alpha, beta, gamma, NULL, TRANSPOSE);
+    }
+    else {
+      tacs->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+    }
+
+    // Factor the preconditioner
+    pc->factor();
+
+    // Compute the derivatives and store them
+    if (k > start_plane && k <= end_plane){
+      tacs->addSVSens(1.0, 0.0, 0.0, funcs, num_funcs, &omega[num_funcs*stage]);
+      tacs->addSVSens(0.0, 1.0, 0.0, funcs, num_funcs, &domega[num_funcs*stage]);
+    }
+
+    // Compute all the contributions to the right-hand-side
+    for ( int i = 0; i < num_funcs; i++ ){
+      rhs->copyValues(phi[i]);
+      rhs->axpy(h*B[stage]/b[stage], psi[i]);
+
+      // Add the derivatives to the right-hand-side
+      int index = getRowIndex(stage);
+      rhs->axpy(-h*h*A[index + stage], omega[num_funcs*stage + i]);
+      rhs->axpy(-h*a[index + stage], domega[num_funcs*stage + i]);
+
+      // Add up the values to get the right-hand-side
+      for ( int j = stage+1; j < num_stages; j++ ){
+        // a[j,stage]*b[j]/b[stage]
+        index = getRowIndex(j);
+
+        // Compute the coefficient for the domega terms
+        double alpha = a[index + stage]*b[j]/b[stage];
+        rhs->axpy(-h*alpha, domega[num_funcs*j + i]);
+
+        // Compute the coefficient for the omega terms
+        double beta = A[index + stage]*b[j]/b[stage];
+        rhs->axpy(-h*h*beta, omega[num_funcs*j + i]);
+      }
+
+      // Apply the factorization for all right hand sides and solve
+      // for the adjoint variables
+      ksm->solve(rhs, lambda[num_funcs*stage + i]);
+    }
+
+    // Add the products to omega and domega 
+    for ( int i = 0; i < num_funcs; i++ ){
+      tacs->addJacobianVecProduct(1.0, 1.0, 0.0, 0.0,
+                                  lambda[num_funcs*stage + i], 
+                                  omega[num_funcs*stage + i],
+                                  TRANSPOSE);
+    }
+
+    // Add the products of omega and domega 
+    for ( int i = 0; i < num_funcs; i++ ){
+      tacs->addJacobianVecProduct(1.0, 0.0, 1.0, 0.0,
+                                  lambda[num_funcs*stage + i], 
+                                  domega[num_funcs*stage + i],
+                                  TRANSPOSE);
+    }
+  }
+}
+
+/*
+  Add the contributions to the total derivative from the time-step 
+*/
+void TACSESDIRKIntegrator::postAdjoint( int k ){
+  if (k > 0){
+    // Compute the time step
+    double h = time[k] - time[k-1];
+
+    // Add the contributions to the total derivatives
+    for ( int stage = num_stages-1; stage >= 0; stage-- ){
+      // Compute the stage time
+      double tS = time[k-1] + c[stage]*h;
+      
+      // Compute the offset to this stage
+      int offset = (k-1)*num_stages + stage;
+      
+      // Set the time step and stage variables
+      tacs->setSimulationTime(tS);
+      tacs->setVariables(qS[offset], qdotS[offset], qddotS[offset]);
+
+      double tcoeff = h*b[stage];
+      if (k > start_plane && k <= end_plane){
+        tacs->addDVSens(tcoeff, funcs, num_funcs, dfdx, num_design_vars);
+        tacs->addXptSens(tcoeff, funcs, num_funcs, dfdXpt);
+      }
+
+      // Add the derivative of the product of the adjoint to the
+      // output vector
+      tacs->addAdjointResProducts(tcoeff, 
+                                  &lambda[num_funcs*stage], num_funcs,
+                                  dfdx, num_design_vars);
+      tacs->addAdjointResXptSensProducts(tcoeff, 
+                                         &lambda[num_funcs*stage], num_funcs, 
+                                         dfdXpt);
+    }
+    
+    // Sum up the contributions to the phi vectors
+    for ( int i = 0; i < num_funcs; i++ ){
+      // Integrate phi over the last time step
+      phi[i]->axpy(h, psi[i]);
+      for ( int stage = 0; stage < num_stages; stage++ ){
+        phi[i]->axpy(-h*b[stage], domega[num_funcs*stage + i]);
+        phi[i]->axpy(-h*h*b[stage]*c[stage], omega[num_funcs*stage + i]);
+      }
+
+      // Integrate psi over the last time step
+      for ( int stage = 0; stage < num_stages; stage++ ){
+        psi[i]->axpy(-h*b[stage], omega[num_funcs*stage + i]);
+      }
+    }
+  }
+
+  if (k == 0){
+    // Finally sum up all of the results across all processors
+    for ( int i = 0; i < num_funcs; i++ ){
+      dfdXpt[i]->beginSetValues(TACS_ADD_VALUES);
+    }
+    for ( int i = 0; i < num_funcs; i++ ){
+      dfdXpt[i]->endSetValues(TACS_ADD_VALUES);
+    }
+
+    // All reduce the contributions across processors
+    MPI_Allreduce(MPI_IN_PLACE, dfdx, num_funcs*num_design_vars, 
+                  TACS_MPI_TYPE, MPI_SUM, tacs->getMPIComm());
+  }
+}
+
+/*
+  Get the adjoint value for the given function
+*/
+void TACSESDIRKIntegrator::getAdjoint( int step_num, int func_num, 
+                                       TACSBVec **adjoint ){
+  *adjoint = lambda[func_num];
+}
+
+/*
+  Retrieve the internal states at the specified stage of the specified time step
+*/
+double TACSESDIRKIntegrator::getStageStates( int step_num, 
+                                             int stageNum,
+                                             TACSBVec **_qS,  
+                                             TACSBVec **_qdotS, 
+                                             TACSBVec **_qddotS ){
+  if (step_num == 0){
+    // Stage States don't exist for 0th time step since initial conditions are provided
+    if (_qS){
+      *_qS = q[step_num];
+    }
+    if (_qdotS){
+      *_qdotS = qdot[step_num];
+    }
+    if (_qddotS){
+      *_qddotS = qddot[step_num];
+    }
+    return time[step_num]; 
+  }
+  else {
+    int offset = (step_num-1)*num_stages + stageNum;
+    double h = time[step_num] - time[step_num - 1];
+    double timeS = time[step_num-1] + c[stageNum]*h;
+
+    if (_qS){
+      *_qS = qS[offset];
+    }
+    if (_qdotS){
+      *_qdotS = qdotS[offset];
+    }
+    if (_qddotS){
+      *_qddotS = qddotS[offset];
+    }
+    return timeS;
+  }
 }

@@ -2077,9 +2077,11 @@ cdef class BDFIntegrator(Integrator):
 cdef class DIRKIntegrator(Integrator):
     '''
     Diagonally-Implicit-Runge-Kutta integration class. This supports
-    upto fourth order accuracy in time and domain. One stage DIRK is
-    second order accurate, two stage DIRK is third order accurate and
+    upto fourth order accuracy in time and domain. 1-stage DIRK is
+    second-order accurate, 2-stage DIRK is third-order accurate and
+    3-stage DIRK is fourth-order accurate.
     '''
+
     def __cinit__(self, Assembler tacs,
                   double tinit, double tfinal,
                   double num_steps,
@@ -2088,6 +2090,68 @@ cdef class DIRKIntegrator(Integrator):
                                           num_steps, stages)
         self.ptr.incref()
         return
+
+    def iterateStage(self, int step_num, int stage_num, Vec forces=None):
+        '''
+        Solve nonlinear system for states at the specified stage of 
+        the specified time step
+        '''
+        cdef TACSDIRKIntegrator *dirk = <TACSDIRKIntegrator*> self.ptr
+        cdef TACSBVec *fvec = NULL
+        if forces is not None:
+            fvec = forces.ptr
+        return dirk.iterateStage(step_num, stage_num, fvec)
+
+    def getStageStates(self, int step_num, int stage_num):
+        '''
+        TACS state vectors are returned at the given stage of the given time step
+        '''
+        cdef TACSDIRKIntegrator *dirk = <TACSDIRKIntegrator*> self.ptr
+        cdef double timeS
+        cdef TACSBVec *cqS = NULL
+        cdef TACSBVec *cqdotS = NULL
+        cdef TACSBVec *cqddotS = NULL
+        timeS = dirk.getStageStates(step_num, stage_num, &cqS, &cqdotS, &cqddotS)
+        return timeS, _init_Vec(cqS), _init_Vec(cqdotS), _init_Vec(cqddotS)
+
+cdef class ESDIRKIntegrator(Integrator):
+    '''
+    Explicit Singly Diagonally-Implicit-Runge-Kutta integration class. This supports
+    upto fifth-order accuracy in time and domain. 4-stage ESDIRK is thrid-order 
+    accurate, 6-stage ESDIRK is fourth-order accurate, and 8-stage ESDIRK is fifth-
+    order accurate.
+    '''
+    def __cinit__(self, Assembler tacs,
+                  double tinit, double tfinal,
+                  double num_steps,
+                  int stages):
+        self.ptr = new TACSESDIRKIntegrator(tacs.ptr, tinit, tfinal,
+                                            num_steps, stages)
+        self.ptr.incref()
+        return
+
+    def iterateStage(self, int step_num, int stage_num, Vec forces=None):
+        '''
+        Solve nonlinear system for states at the specified stage of 
+        the specified time step
+        '''
+        cdef TACSESDIRKIntegrator *esdirk = <TACSESDIRKIntegrator*> self.ptr
+        cdef TACSBVec *fvec = NULL
+        if forces is not None:
+            fvec = forces.ptr
+        return esdirk.iterateStage(step_num, stage_num, fvec)
+
+    def getStageStates(self, int step_num, int stage_num):
+        '''
+        TACS state vectors are returned at the given stage of the given time step
+        '''
+        cdef TACSESDIRKIntegrator *esdirk = <TACSESDIRKIntegrator*> self.ptr
+        cdef double timeS
+        cdef TACSBVec *cqS = NULL
+        cdef TACSBVec *cqdotS = NULL
+        cdef TACSBVec *cqddotS = NULL
+        timeS = esdirk.getStageStates(step_num, stage_num, &cqS, &cqdotS, &cqddotS)
+        return timeS, _init_Vec(cqS), _init_Vec(cqdotS), _init_Vec(cqddotS)        
 
 cdef class ABMIntegrator(Integrator):
     '''

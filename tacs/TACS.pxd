@@ -611,6 +611,25 @@ cdef extern from "TACSIntegrator.h":
                            double num_steps,
                            int stages)
 
+        int iterateStage( int step_num, int stageNum, TACSBVec *forces)
+
+        double getStageStates(int step_num, 
+                              int stageNum,
+                              TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
+
+    # ESDIRK Implementation of the integrator
+    cdef cppclass TACSESDIRKIntegrator(TACSIntegrator):
+        TACSESDIRKIntegrator(TACSAssembler *tacs,
+                             double tinit, double tfinal,
+                             double num_steps,
+                             int stages)   
+
+        int iterateStage( int step_num, int stageNum, TACSBVec *forces)
+
+        double getStageStates(int step_num, 
+                              int stageNum,
+                              TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS) 
+
     # ABM Implementation of the integrator
     cdef cppclass TACSABMIntegrator(TACSIntegrator):
         TACSABMIntegrator(TACSAssembler *tacs,
