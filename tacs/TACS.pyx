@@ -10,6 +10,8 @@
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 
+# distutils: language=c++
+
 from __future__ import print_function, division
 
 # For the use of MPI
