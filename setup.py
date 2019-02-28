@@ -23,6 +23,9 @@ def get_mpi_flags():
     # Split the output from the mpicxx command
     args = check_output(['mpicxx', '-show']).split()
 
+    # decode strings to utf-8 (for Python 3 to avoid bytes literals)
+    args = [x.decode('utf-8') for x in args]
+
     # Determine whether the output is an include/link/lib command
     inc_dirs, lib_dirs, libs = [], [], []
     for flag in args:
@@ -63,7 +66,6 @@ inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
 exts = []
 for mod in ['TACS', 'elements', 'constitutive', 'functions']:
     exts.append(Ext('tacs.%s'%(mod), sources=['tacs/%s.pyx'%(mod)],
-                    language='c++',
                     include_dirs=inc_dirs, libraries=libs, 
                     library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs))
 for e in exts:
@@ -75,5 +77,4 @@ setup(name='tacs',
       description='Parallel finite-element analysis package',
       author='Graeme J. Kennedy',
       author_email='graeme.kennedy@ae.gatech.edu',
-      ext_modules=cythonize(exts, language='c++', 
-        include_path=inc_dirs))
+      ext_modules=cythonize(exts, include_path=inc_dirs))

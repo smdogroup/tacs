@@ -10,6 +10,8 @@
 #  
 #  http://www.apache.org/licenses/LICENSE-2.0 
 
+# distutils: language=c++
+
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
