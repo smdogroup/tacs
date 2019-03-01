@@ -131,6 +131,14 @@ const char *TACSKSFailure::functionName(){
 TacsScalar TACSKSFailure::getFunctionValue(){
   // Compute the final value of the KS function on all processors
   TacsScalar ksFail = maxFail + log(ksFailSum/alpha)/ksWeight;
+  
+  int mpi_rank;
+  MPI_Comm_rank(tacs->getMPIComm(), &mpi_rank);
+  if (mpi_rank == 0){
+    printf("KS stress value:  %25.10e\n", ksFail);
+    printf("Max stress value: %25.10e\n", maxFail);
+  }
+  
   return ksFail;
 }
 
