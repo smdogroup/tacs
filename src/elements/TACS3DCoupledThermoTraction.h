@@ -385,28 +385,28 @@ class TACS3DHeatFluxTraction : public TACSElement {
         double pt[3];
         pt[0] = gaussPts[n]*dir1[0] + gaussPts[m]*dir2[0] + base[0];
         pt[1] = gaussPts[n]*dir1[1] + gaussPts[m]*dir2[1] + base[1];
-        pt[2] = gaussPts[n]*dir1[2] + gaussPts[m]*dir2[2] + base[2];        
-        
+        pt[2] = gaussPts[n]*dir1[2] + gaussPts[m]*dir2[2] + base[2];
+
         // Evaluate the Lagrange basis in each direction
         double na[order], nb[order], nc[order];
         double dna[order], dnb[order], dnc[order];
         FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
         FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
         FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
-  
+
         // Calcualte the Jacobian at the current point
         const TacsScalar *x = Xpts;
         TacsScalar Xd[9] = {0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0};
-  
+
         for ( int k  = 0; k < order; k++ ){
           for ( int j = 0; j < order; j++ ){
             for ( int i = 0; i < order; i++ ){
               Xd[0] += x[0]*dna[i]*nb[j]*nc[k];
               Xd[1] += x[0]*na[i]*dnb[j]*nc[k];
               Xd[2] += x[0]*na[i]*nb[j]*dnc[k];
-        
+
               Xd[3] += x[1]*dna[i]*nb[j]*nc[k];
               Xd[4] += x[1]*na[i]*dnb[j]*nc[k];
               Xd[5] += x[1]*na[i]*nb[j]*dnc[k];
@@ -509,6 +509,9 @@ class TACS3DHeatFluxTraction : public TACSElement {
   // Set the base point and direction
   // --------------------------------
   void initBaseDir( int surface ){
+    base[0] = base[1] = base[2] = 0.0;
+    dir1[0] = dir1[1] = dir1[2] = 0.0;
+    dir2[0] = dir2[1] = dir2[2] = 0.0;
     // Determine the base point and integration direction
     if (surface == 0 || surface == 1){
       base[0] = -1.0 + 2.0*(surface % 2);

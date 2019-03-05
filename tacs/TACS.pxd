@@ -408,7 +408,8 @@ cdef extern from "TACSAssembler.h":
 
         void applyBCs(TACSVec*)
         void applyBCs(TACSMat*)
-
+        void setBCs(TACSVec*)
+        
         # Zero the variables
         void zeroVariables()
         void zeroDotVariables()

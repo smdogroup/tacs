@@ -216,13 +216,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
     // Get the number of quadrature points for this element
     int numGauss = element->getNumGaussPts();
     double N[numNodes];
-    int order = 0;
-    if (is_2d){ // 2D elements
-      order = sqrt(numNodes);
-    }
-    else { // 3D elements
-      order = cbrt(numNodes);
-    }
+   
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     if (constitutive){
@@ -395,14 +389,8 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
     int numGauss = element->getNumGaussPts();
 
     double N[numNodes];
-    int order = 0;
     int nvars = 1;
-    if (is_2d){ // 2D elements
-      order = sqrt(numNodes);
-    }
-    else { // 3D elements
-      order = pow(numNodes,1./3.);
-    }
+    
     // Get the constitutive object
     TACSConstitutive *constitutive = element->getConstitutive();
     if (constitutive){
@@ -575,13 +563,6 @@ void TACSThermalKSFailure::getElementXptSens( const double tcoef,
     // Get the quadrature scheme information
     int numGauss = element->getNumGaussPts();
     double N[numNodes];
-    int order = 0;
-    if (is_2d){ // 2D elements
-      order = sqrt(numNodes);
-    }
-    else { // 3D elements
-      order = pow(numNodes,1./3.);
-    }
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     if (constitutive){
@@ -691,14 +672,6 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
     // Get the quadrature scheme information
     int numGauss = element->getNumGaussPts();
     double N[numNodes];
-    int order = 0;
-    if (is_2d){ // 2D elements
-      order = sqrt(numNodes);
-    }
-    else { // 3D elements
-      order = pow(numNodes,1./3.);
-    }
-
     // Set pointers into the buffer
     TacsScalar *strain = ctx->strain;
 

@@ -1038,6 +1038,11 @@ cdef class Assembler:
         self.ptr.applyBCs(mat.ptr)
         return
 
+    def setBCs(self, Vec vec):
+        '''Apply the Dirichlet boundary conditions to the state vector'''
+        self.ptr.setBCs(vec.ptr)
+        return
+
     def createFEMat(self, OrderingType order_type=TACS_AMD_ORDER):
         '''
         Create a parallel matrix specially suited for finite-element
