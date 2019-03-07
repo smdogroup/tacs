@@ -488,4 +488,4 @@ class TACSElement : public TACSOptObject {
   static double test_fail_atol;
 };
 
-#endif
+#endif // TACS_ELEMENT_H
