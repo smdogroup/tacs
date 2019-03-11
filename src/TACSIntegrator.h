@@ -293,6 +293,9 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   // Iterate through the forward solution
   int iterate( int k, TACSBVec *forces );
 
+  // Iterate through a single stage of the forward solution
+  int iterateStage( int step_num, int stage_num, TACSBVec *forces );
+
   // Set-up right-hand-sides for the adjoint equations
   void initAdjoint( int step_num );
 
@@ -308,6 +311,93 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   
   // Evaluate the functions of interest
   void evalFunctions( TacsScalar *fvals );
+
+  // Retrieve the internal states at given stage of given time step
+  double getStageStates( int step_num, int stageNum,
+                         TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS );
+
+ private:
+  // Set the default coefficients
+  void setupDefaultCoeffs();
+
+  // Set the second-order coefficients based on the first-order values
+  void setupSecondCoeffs();
+
+  // Get the stage coefficient from the Tableau
+  double getACoeff( const int i, const int j );
+
+  // Check the Butcher tableau for consistency
+  void checkButcherTableau();
+
+  // Get the row index for the stage
+  int getRowIndex( int stageNum );
+
+  // Get the linearization coefficients for the given stage/step
+  void getLinearizationCoeffs( const int stage, const double h, 
+                               double *alpha, double *beta, double *gamma );
+
+  // The number of stages for this method
+  int num_stages;
+
+  // States at each stage
+  TACSBVec **qS, **qdotS, **qddotS; 
+
+  // The Butcher coefficients for the integration scheme
+  double *a, *b, *c;
+
+  // The second-order coefficients for the integration scheme
+  double *A, *B;
+
+  // Right-hand-side vector
+  TACSBVec *rhs;
+
+  // Store the adjoint-stage vectors
+  TACSBVec **lambda;
+
+  // Save the stage right-hand-side integrator
+  TACSBVec **omega, **domega;
+
+  // Save the right-hand-side
+  TACSBVec **psi, **phi;
+};
+
+/*
+  ESDIRK integration scheme for TACS
+*/
+class TACSESDIRKIntegrator : public TACSIntegrator {
+ public:
+  TACSESDIRKIntegrator( TACSAssembler * _tacs,
+                        double _tinit,
+                        double _tfinal,
+                        double _num_steps, 
+                        int _num_stages );
+  ~TACSESDIRKIntegrator();
+
+  // Iterate through the forward solution
+  int iterate( int k, TACSBVec *forces );
+
+  // Iterate through a single stage of the forward solution
+  int iterateStage( int step_num, int stage_num, TACSBVec *forces );
+
+  // Set-up right-hand-sides for the adjoint equations
+  void initAdjoint( int step_num );
+
+  // Iterate to find a solution of the adjoint equations
+  void iterateAdjoint( int step_num, TACSBVec **adj_rhs );
+
+  // Add the contributions to the total derivative from the time-step 
+  void postAdjoint( int step_num );
+
+  // Get the adjoint value for the given function
+  void getAdjoint( int step_num, int func_num, 
+                   TACSBVec **adjoint );
+  
+  // Evaluate the functions of interest
+  void evalFunctions( TacsScalar *fvals );
+
+  // Retrieve the internal states at given stage of given time step
+  double getStageStates( int step_num, int stageNum,
+                         TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS );
 
  private:
   // Set the default coefficients

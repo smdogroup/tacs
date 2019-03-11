@@ -15,6 +15,7 @@ EXAMPLE_SUBDIRS = \
 	cylinder \
 	grad_verify \
 	mg \
+	nastran_benchmarks \
 	plate \
 	profile_elements \
 	rigid \

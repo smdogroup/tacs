@@ -7,9 +7,9 @@ include ../../TACS_Common.mk
 OBJS = two_link_mechanism.o
 
 default: ${OBJS}
-#	${CXX} -o double_pendulum double_pendulum.o ${TACS_LD_FLAGS}
-#	${CXX} -o flexible_pendulum flexible_pendulum.o ${TACS_LD_FLAGS}
-	${CXX} -o two_link_mechanism two_link_mechanism.o ${TACS_LD_FLAGS}
+#	${CXX} -o ../bin/double_pendulum double_pendulum.o ${TACS_LD_FLAGS}
+#	${CXX} -o ../bin/flexible_pendulum flexible_pendulum.o ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/two_link_mechanism two_link_mechanism.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default

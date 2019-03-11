@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = beam.o
 
 default: ${OBJS}
-	${CXX} -o beam beam.o ${TACS_LD_FLAGS}
+	${CXX} -o ../bin/beam beam.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
