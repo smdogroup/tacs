@@ -99,14 +99,14 @@ cdef class Function:
     def setDomain(self, list elem_index):
         cdef int num_elems = len(elem_index)
         cdef int *elem_ind = NULL
-    
+
         elem_ind = <int*>malloc(num_elems*sizeof(int));
         for i in range(num_elems):
             elem_ind[i] = <int>elem_index[i]
 
         self.ptr.setDomain(elem_ind, num_elems)
         free(elem_ind)
-        return 
+        return
 # A generic wrapper class for the TACSElement object
 cdef class Element:
     '''Base element class'''
@@ -2015,6 +2015,13 @@ cdef class Integrator:
         Make TACS use this linear solver
         '''
         self.ptr.setKrylovSubspaceMethod(ksm.ptr)
+        return
+
+    def setTimeInterval(self, double tinit, double tfinal):
+        '''
+        Set the time interval for the simulation
+        '''
+        self.ptr.setTimeInterval(tinit, tfinal)
         return
 
     def setFunctions(self, list funcs, int num_dvs,
