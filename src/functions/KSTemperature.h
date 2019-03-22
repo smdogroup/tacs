@@ -106,6 +106,10 @@ class TACSKSTemperature : public TACSFunction {
 
   // The max number of nodes
   int maxNumNodes;
+  
+  // Whether the domain is a plane stress or 3d
+  int is_2d, is_3d;
+
 };
 
 #endif // TACS_KS_DISPLACEMENT_H

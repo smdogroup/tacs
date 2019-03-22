@@ -137,8 +137,8 @@ TacsScalar TACSThermalKSFailure::getFunctionValue(){
   int mpi_rank;
   MPI_Comm_rank(tacs->getMPIComm(), &mpi_rank);
   if (mpi_rank == 0){
-    printf("KS stress value: %25.10e\n", maxFail);
-    printf("Max stress value: %25.10e\n", ksFail);
+    printf("KS stress value: %25.10e\n", ksFail);
+    printf("Max stress value: %25.10e\n", maxFail);
   }
 
   return ksFail;

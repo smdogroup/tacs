@@ -30,7 +30,7 @@ class CoupledThermoSolidStiffness : public SolidStiffness {
                                 TacsScalar fdvSens[],
                                 int dvLen ) = 0;
 
-  //Compute the design dependent thermal loading stress
+  // Compute the design dependent thermal loading stress
   //---------------------------------------------------
   virtual TacsScalar getEffThermalAlpha(int var_j) = 0;
   virtual void calculateThermal( const double pt[],
@@ -51,7 +51,7 @@ class CoupledThermoSolidStiffness : public SolidStiffness {
                                    const TacsScalar psi[],
                                    TacsScalar fdvSens[],
                                    int dvLen) = 0;
-  
+  // Functions that evaluate the failure function
   virtual void failure( const double pt[],
                         const TacsScalar T[],
                         const TacsScalar strain[],
@@ -67,6 +67,7 @@ class CoupledThermoSolidStiffness : public SolidStiffness {
                                  TacsScalar sens[], 
                                  int vars_j=0 ) = 0;
   virtual int getVarsPerNode() = 0;
+  // Functions that evaluate the heat flux at a location
   virtual void heatflux( const double pt[],
                          const TacsScalar normal[],
                          const TacsScalar strain[],
@@ -79,6 +80,18 @@ class CoupledThermoSolidStiffness : public SolidStiffness {
   virtual void heatfluxStrainSens( const double pt[],
                                    const TacsScalar normal[],
                                    TacsScalar sens[] ) = 0;
+  // Functions that evaluate the maximum temperature of an element
+  virtual void maxtemp( const double pt[],
+			const TacsScalar max_temp,
+			TacsScalar *fail ) = 0;
+  virtual void addMaxTempDVSens ( const double pt[], 
+				  const TacsScalar max_temp,
+				  TacsScalar alpha,
+                                  TacsScalar dvSens[], int dvLen ) = 0;
+  virtual void maxtempStrainSens( const double pt[],
+				  const TacsScalar max_temp,
+				  TacsScalar sens[] ) = 0;
+  
   // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
