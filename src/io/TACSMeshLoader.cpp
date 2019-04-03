@@ -359,14 +359,15 @@ static void parse_element_field2( char line1[], char line2[],
   }
 }
 
+
 static void parse_element_field3( char line1[], char line2[], char line3[],
                                   int * elem_num, int * component_num,
-                                  int * node_nums, int num_nodes ){  
+                                  int * node_nums, int num_nodes, int width=8 ){  
   int n = 0; // The number of parsed nodes
-  char node[9];
+  char node[17];
 
   for ( int m = 0; m < 3; m++ ){
-    int entry = 8;
+    int entry = width;
     const char * line = line1;
     if (m == 1){
       line = line2;
@@ -376,21 +377,21 @@ static void parse_element_field3( char line1[], char line2[], char line3[],
     }
 
     if (n == 0){ 
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
+      strncpy(node, &line[entry], width);
+      node[width] = '\0';
       *elem_num = atoi(node);
-      entry += 8;
+      entry += width;
 
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
+      strncpy(node, &line[entry], width);
+      node[width] = '\0';
       *component_num = atoi(node);
-      entry += 8;
+      entry += width;
     }
-
-    for ( ; n < num_nodes && entry < 72; entry += 8, n++ ){
+    
+    for ( ; n < num_nodes && entry < 72; entry += width, n++ ){
       // Parse the line containing the entry
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
+      strncpy(node, &line[entry], width);
+      node[width] = '\0';
       node_nums[n] = atoi(node);
     }
   }
@@ -728,6 +729,26 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           elem_con_size += 2;
           num_elements++;
         }
+        
+	else if (strncmp(line[0], "CHEXA*", 6) == 0){
+	  for ( int i = 1; i < 3; i++ ){
+            if (!read_buffer_line(line[i], sizeof(line[i]), 
+                                  &buffer_loc, buffer, buffer_len)){
+              fail = 1; break;
+            }
+          }
+          // Read in the component number and nodes associated with
+          // this element
+          int elem_num, component_num, nodes[8];
+	  parse_element_field3(line[0], line[1], line[2],
+                               &elem_num, &component_num, 
+                               nodes, 8, 16);
+	  if (component_num > num_components){
+            num_components = component_num;
+          }
+	  elem_con_size += 8;
+          num_elements++;
+	}
         else if (strncmp(line[0], "CHEXA", 5) == 0){
           if (!read_buffer_line(line[1], sizeof(line[1]), 
                                 &buffer_loc, buffer, buffer_len)){
@@ -1060,6 +1081,40 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 
           if (component_elems[9*(component_num-1)] == '\0'){
             strcpy(&component_elems[9*(component_num-1)], "CBAR");
+          }
+        }
+        
+	else if (strncmp(line[0], "CHEXA*", 6) == 0){
+	  for ( int i = 1; i < 3; i++ ){
+            if (!read_buffer_line(line[i], sizeof(line[i]), 
+                                  &buffer_loc, buffer, buffer_len)){
+              fail = 1; break;
+            }
+          }
+          // Read in the component number and nodes associated 
+          // with this element
+          int elem_num, component_num, nodes[8]; 
+          parse_element_field3(line[0], line[1], line[2], 
+                               &elem_num, &component_num, 
+                               nodes, 8, 16);
+
+          elem_nums[num_elements] = elem_num-1;
+          elem_comp[num_elements] = component_num-1;
+
+          elem_con[elem_con_size]   = nodes[0]-1;
+          elem_con[elem_con_size+1] = nodes[1]-1;
+          elem_con[elem_con_size+2] = nodes[3]-1;
+          elem_con[elem_con_size+3] = nodes[2]-1;
+          elem_con[elem_con_size+4] = nodes[4]-1;
+          elem_con[elem_con_size+5] = nodes[5]-1;
+          elem_con[elem_con_size+6] = nodes[7]-1;
+          elem_con[elem_con_size+7] = nodes[6]-1;
+	  
+          elem_con_size += 8;
+          elem_con_ptr[num_elements+1] = elem_con_size;
+          num_elements++;
+	  if (component_elems[9*(component_num-1)] == '\0'){
+            strcpy(&component_elems[9*(component_num-1)], "CHEXA*");
           }
         }
         else if (strncmp(line[0], "CHEXA", 5) == 0){
