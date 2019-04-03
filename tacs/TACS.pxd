@@ -141,7 +141,7 @@ cdef extern from "BVec.h":
         void endSetValues(TACSBVecOperation)
         void beginDistributeValues()
         void endDistributeValues()
-        
+
 cdef extern from "BVecDist.h":
     cdef cppclass TACSVarMap(TACSObject):
         TACSVarMap(MPI_Comm, int)
@@ -408,6 +408,7 @@ cdef extern from "TACSAssembler.h":
 
         void applyBCs(TACSVec*)
         void applyBCs(TACSMat*)
+        void setBCs(TACSVec*)
 
         # Zero the variables
         void zeroVariables()
@@ -591,6 +592,7 @@ cdef extern from "TACSIntegrator.h":
         void setUseFEMat(int,OrderingType)
         void setInitNewtonDeltaFraction(double)
         void setKrylovSubspaceMethod(TACSKsm *_ksm)
+        void setTimeInterval(double, double)
         void setFunctions(TACSFunction **funcs, int num_funcs,
                           int num_design_vars,
                           int start_step, int end_step)

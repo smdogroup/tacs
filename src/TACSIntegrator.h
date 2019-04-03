@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_INTEGRATOR_H
@@ -22,7 +22,7 @@
 
 /*
   Abstract base class for integration schemes.
-  
+
   This base class contains common functions and variables pertaining
   to the integration and adjoint schemes used in TACS.
 
@@ -35,8 +35,8 @@ class TACSIntegrator : public TACSObject {
  public:
   TACSIntegrator( TACSAssembler *tacs,
                   double tinit,
-                  double tfinal, 
-                  double num_steps ); 
+                  double tfinal,
+                  double num_steps );
   ~TACSIntegrator();
 
   // Define members of the class
@@ -51,13 +51,17 @@ class TACSIntegrator : public TACSObject {
   void setInitNewtonDeltaFraction( double frac );
   void setKrylovSubspaceMethod( TACSKsm *_ksm );
 
+  // Set (or reset) the time interval
+  // --------------------------------
+  void setTimeInterval( double tinit, double tfinal );
+
   // Set the functions to integrate
   //--------------------------------
   void setFunctions( TACSFunction **funcs, int num_funcs,
                      int num_design_vars,
                      int start_plane=-1, int end_plane=-1 );
-  
-  // Solve for time-step t with 
+
+  // Solve for time-step t with
   virtual int iterate( int step_num, TACSBVec *forces ) = 0;
 
   // Integrate the equations of motion forward in time
@@ -78,7 +82,7 @@ class TACSIntegrator : public TACSObject {
   // Iterate to find a solution of the adjoint equations
   virtual void iterateAdjoint( int step_num, TACSBVec **adj_rhs ){}
 
-  // Add the contributions to the total derivative from the time-step 
+  // Add the contributions to the total derivative from the time-step
   virtual void postAdjoint( int step_num ){}
 
   // Integrate the adjoint and add the total derivative from all
@@ -92,7 +96,7 @@ class TACSIntegrator : public TACSObject {
   }
 
   // Get the adjoint vector for the given function
-  virtual void getAdjoint( int step_num, int func_num, 
+  virtual void getAdjoint( int step_num, int func_num,
                            TACSBVec **adjoint ) = 0;
 
   // Copy out the function
@@ -109,7 +113,7 @@ class TACSIntegrator : public TACSObject {
   }
 
   // Retrieve the internal states
-  double getStates( int step_num, 
+  double getStates( int step_num,
                     TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot );
 
   // Initialize linear solver
@@ -118,7 +122,7 @@ class TACSIntegrator : public TACSObject {
 
   // Check the gradient using finite-difference
   void checkGradients( double dh );
-  
+
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
   void setOutputPrefix( const char *prefix );
@@ -142,11 +146,11 @@ class TACSIntegrator : public TACSObject {
                                 TACSBVec *qddot, TacsScalar *eigvals,
                                 TacsScalar *modes = NULL);
   void getRawMatrix( TACSMat *mat, TacsScalar *mat_vals );
-  
+
  protected:
   // Functions for solutions to linear and nonlinear problems
   int newtonSolve( double alpha, double beta, double gamma,
-                   double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot, 
+                   double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot,
                    TACSBVec *forces=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
 
@@ -162,7 +166,7 @@ class TACSIntegrator : public TACSObject {
   double time_rev_apply_factor;
   double time_rev_jac_pdt;
   double time_reverse;
-  
+
   // Log the time step information
   void logTimeStep( int time_step );
 
@@ -185,7 +189,7 @@ class TACSIntegrator : public TACSObject {
   int num_design_vars;        // Number of design variables
   TACSBVec **dfdXpt;          // Derivatives w.r.t. node locations
 
-  // Linear algebra objects and parameters associated with the Newton solver  
+  // Linear algebra objects and parameters associated with the Newton solver
   TACSBVec *res, *update;     // Residual and Newton update
   TACSMat *mat;               // Jacobian matrix
   TACSPc *pc;                 // Preconditioner
@@ -224,12 +228,12 @@ class TACSIntegrator : public TACSObject {
   TACSToFH5 *beamf5;        // F5 file for beam visualization
   TACSToFH5 *solidf5;        // F5 file for solid visualization
   int f5_write_freq;        // Frequency for output during time marching
-  
+
   int niter;                // Newton iteration number
   TacsScalar res_norm;      // residual norm
   TacsScalar init_res_norm; // Initial norm of the residual
-  TacsScalar update_norm;   // Norm of the update                            
- 
+  TacsScalar update_norm;   // Norm of the update
+
   TacsScalar init_energy;   // The energy during time = 0
 };
 
@@ -241,7 +245,7 @@ class TACSBDFIntegrator : public TACSIntegrator {
   TACSBDFIntegrator( TACSAssembler * _tacs,
                      double _tinit,
                      double _tfinal,
-                     double _num_steps, 
+                     double _num_steps,
                      int max_bdf_order );
   ~TACSBDFIntegrator();
 
@@ -254,19 +258,19 @@ class TACSBDFIntegrator : public TACSIntegrator {
   // Iterate to find a solution of the adjoint equations
   void iterateAdjoint( int step_num, TACSBVec **adj_rhs );
 
-  // Add the contributions to the total derivative from the time-step 
+  // Add the contributions to the total derivative from the time-step
   void postAdjoint( int step_num );
 
   // Get the adjoint value for the given function
-  void getAdjoint( int step_num, int func_num, 
+  void getAdjoint( int step_num, int func_num,
                    TACSBVec **adjoint );
-  
+
   // Evaluate the functions of interest
   void evalFunctions( TacsScalar *fvals );
 
  private:
   void get2ndBDFCoeff( const int k, double bdf[], int *nbdf,
-                       double bddf[], int *nbddf, 
+                       double bddf[], int *nbddf,
                        const int max_order );
   int getBDFCoeff( const int k, double bdf[], int order );
 
@@ -286,7 +290,7 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   TACSDIRKIntegrator( TACSAssembler * _tacs,
                       double _tinit,
                       double _tfinal,
-                      double _num_steps, 
+                      double _num_steps,
                       int _num_stages );
   ~TACSDIRKIntegrator();
 
@@ -299,13 +303,13 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   // Iterate to find a solution of the adjoint equations
   void iterateAdjoint( int step_num, TACSBVec **adj_rhs );
 
-  // Add the contributions to the total derivative from the time-step 
+  // Add the contributions to the total derivative from the time-step
   void postAdjoint( int step_num );
 
   // Get the adjoint value for the given function
-  void getAdjoint( int step_num, int func_num, 
+  void getAdjoint( int step_num, int func_num,
                    TACSBVec **adjoint );
-  
+
   // Evaluate the functions of interest
   void evalFunctions( TacsScalar *fvals );
 
@@ -326,14 +330,14 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   int getRowIndex( int stageNum );
 
   // Get the linearization coefficients for the given stage/step
-  void getLinearizationCoeffs( const int stage, const double h, 
+  void getLinearizationCoeffs( const int stage, const double h,
                                double *alpha, double *beta, double *gamma );
 
   // The number of stages for this method
   int num_stages;
 
   // States at each stage
-  TACSBVec **qS, **qdotS, **qddotS; 
+  TACSBVec **qS, **qdotS, **qddotS;
 
   // The Butcher coefficients for the integration scheme
   double *a, *b, *c;
@@ -360,10 +364,10 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 /*
 class TACSABMIntegrator : public TACSIntegrator {
  public:
-  TACSABMIntegrator( TACSAssembler *tacs, 
+  TACSABMIntegrator( TACSAssembler *tacs,
                      double tinit,
                      double tfinal,
-                     double num_steps, 
+                     double num_steps,
                      int max_abm_order );
   ~TACSABMIntegrator();
 
@@ -376,13 +380,13 @@ class TACSABMIntegrator : public TACSIntegrator {
   // Iterate to find a solution of the adjoint equations
   void iterateAdjoint( int step_num, TACSBVec **adj_rhs );
 
-  // Add the contributions to the total derivative from the time-step 
+  // Add the contributions to the total derivative from the time-step
   void postAdjoint( int step_num );
 
   // Get the adjoint value for the given function
-  void getAdjoint( int step_num, int func_num, 
+  void getAdjoint( int step_num, int func_num,
                    TACSBVec **adjoint );
-  
+
   // Evaluate the functions of interest
   void evalFunctions( TacsScalar *fvals );
 
@@ -404,9 +408,9 @@ class TACSABMIntegrator : public TACSIntegrator {
 /*
 class TACSNBGIntegrator : public TACSIntegrator {
  public:
-  TACSNBGIntegrator( TACSAssembler *tacs, 
+  TACSNBGIntegrator( TACSAssembler *tacs,
                      double tinit,
-                     double tfinal, 
+                     double tfinal,
                      double num_steps,
                      int order );
   ~TACSNBGIntegrator();
@@ -420,16 +424,16 @@ class TACSNBGIntegrator : public TACSIntegrator {
   // Iterate to find a solution of the adjoint equations
   void iterateAdjoint( int step_num, TACSBVec **adj_rhs );
 
-  // Add the contributions to the total derivative from the time-step 
+  // Add the contributions to the total derivative from the time-step
   void postAdjoint( int step_num );
 
   // Get the adjoint value for the given function
-  void getAdjoint( int step_num, int func_num, 
+  void getAdjoint( int step_num, int func_num,
                    TACSBVec **adjoint );
-  
+
   // Evaluate the functions of interest
   void evalFunctions( TacsScalar *fvals );
-  
+
  private:
   void setupCoeffs();
   int order;          // order of integration
