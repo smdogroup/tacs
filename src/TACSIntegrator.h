@@ -152,6 +152,7 @@ class TACSIntegrator : public TACSObject {
   int newtonSolve( double alpha, double beta, double gamma,
                    double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot,
                    TACSBVec *forces=NULL );
+  int initAccelerationSolve( TACSBVec *forces=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
 
   // Variables that keep track of time
@@ -194,7 +195,7 @@ class TACSIntegrator : public TACSObject {
   TACSMat *mat;               // Jacobian matrix
   TACSPc *pc;                 // Preconditioner
   TACSKsm *ksm;               // KSM solver
-
+  int linear_solver_initialized; // flag to indicate whether the linear solver is initialized
   int mpiRank;                // rank of the processor
   int mpiSize;                // number of processors
   FILE *logfp;                // Pointer to the output filename
