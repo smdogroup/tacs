@@ -90,6 +90,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_tacs,
   mat = NULL;
   pc = NULL;
   ksm = NULL;
+  linear_solver_initialized = 0;
 
   // Default parameters for Newton's method
   max_newton_iters = 25;
@@ -632,6 +633,113 @@ void TACSIntegrator::printAdjointOptionSummary(){
 */
 int TACSIntegrator::getNumTimeSteps(){
   return num_time_steps;
+}
+
+/*
+  Perform a nonlinear solve to obtain accelerations with q and qdot
+  held constant as obtained from intial conditions.
+*/
+int TACSIntegrator::initAccelerationSolve(TACSBVec *forces){
+ double force_norm = 0.0;
+  if(forces){
+    force_norm = TacsRealPart(forces->norm());
+  }
+
+  // initialize the linear solver
+  initializeLinearSolver();
+
+  // Create KSM
+  TACSMg *mg = dynamic_cast<TACSMg*>(pc);
+  if (mg){
+    mg->incref();
+  };
+
+  if (logfp && print_level >= 2){
+    fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+            "#iters", "|R|", "|R|/|R0|", "|dq|",
+            "alpha", "beta", "gamma","delta", "|F|");
+  }
+
+  // Assemble the residual and jacobian
+  TacsScalar alpha = 0.0;
+  TacsScalar beta  = 0.0;
+  TacsScalar gamma = 1.0;
+    
+  // Iterate accelerations until residual is zero
+  for ( niter = 0; niter < max_newton_iters; niter++ ){
+
+    // Assemble residual and jacobian
+    if (mg){
+      mg->assembleJacobian(alpha, beta, gamma, res, NORMAL);
+    }
+    else {
+      tacs->assembleJacobian(alpha, beta, gamma, res, mat, NORMAL);
+    }
+
+    // Add the forces into the residual
+    if (forces){
+      tacs->applyBCs(forces);
+      res->axpy(-1.0, forces);
+      tacs->applyBCs(res);
+    }   
+    res_norm = res->norm();    
+
+    // Record the residual norm at the first Newton iteration
+    if (niter == 0){
+      init_res_norm = res_norm;
+    }
+
+    // Write a summary
+    if(logfp && print_level >= 2){
+      if (niter == 0){
+        fprintf(logfp,
+                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                niter,
+                TacsRealPart(res_norm),
+                (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm),
+                " ",
+                alpha, beta, gamma, 0.0, force_norm);
+      }
+      else {
+        fprintf(logfp,
+                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
+                niter,
+                TacsRealPart(res_norm),
+                (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm),
+                TacsRealPart(update_norm),
+                alpha, beta, gamma, 0.0, force_norm);
+      }
+    }
+
+    // Check if the Newton convergence tolerance is satisfied
+    if (TacsRealPart(res_norm) < atol){
+      break;
+    }
+
+    // LU Factor the matrix when needed
+    if ((niter % jac_comp_freq) == 0){
+      pc->factor();
+    }
+
+    // Solve for update using KSM
+    ksm->solve(res, update);
+     
+    // Update the state variables using the solution
+    qddot[0]->axpy(-1.0, update);
+
+    // Set states into TACS (new acceleration)
+    tacs->setVariables(q[0], qdot[0], qddot[0]);
+
+    // Check whether the update is sufficiently small
+    if (TacsRealPart(update_norm) < atol){
+      break;
+    }
+
+  }
+
+  if (mg){
+    mg->decref();
+  };
 }
 
 /*
@@ -1219,9 +1327,15 @@ double TACSIntegrator::getStates( int step_num,
 }
 
 /*
-  Creates mat, ksm and pc objectsx
+  Creates mat, ksm and pc objects
 */
 void TACSIntegrator::initializeLinearSolver( ){
+
+  // Return if already initialized
+  if (linear_solver_initialized == 1){
+    return;  
+  };
+  
   if (!ksm){
     // Set the D matrix to NULL
     if (use_femat){
@@ -1259,6 +1373,9 @@ void TACSIntegrator::initializeLinearSolver( ){
 
   // ksm->setMonitor(new KSMPrintStdout("GMRES", 0, 1));
   ksm->setTolerances(0.1*rtol, 1.0e-30);
+
+  // Set the global variable to initialize linear solver
+  linear_solver_initialized = 1;
 }
 
 /*
@@ -1572,13 +1689,17 @@ int TACSBDFIntegrator::getBDFCoeff( const int k, double bdf[], int order ){
 */
 int TACSBDFIntegrator::iterate( int k, TACSBVec *forces ){
   if (k == 0){
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+
     // Retrieve the initial conditions and set into TACS
     tacs->getInitConditions(q[0], qdot[0], qddot[0]);
     tacs->setVariables(q[0], qdot[0], qddot[0]);
 
-    // Output the results at the initial condition if configured
-    printOptionSummary();
+    // Solve for acceleration and set into TACS
     logTimeStep(k);
+    initAccelerationSolve(forces);
+
     return 0;
   }
 
@@ -2225,13 +2346,17 @@ int TACSDIRKIntegrator::getRowIndex( int stageNum ){
 */
 int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
   if (k == 0){
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+
     // Retrieve the initial conditions and set into TACS
     tacs->getInitConditions(q[0], qdot[0], qddot[0]);
     tacs->setVariables(q[0], qdot[0], qddot[0]);
 
-    // Output the results at the initial condition if configured
-    printOptionSummary();
+    // Solve for acceleration and set into TACS
     logTimeStep(k);
+    initAccelerationSolve(forces);
+
     return 0;
   }
 
