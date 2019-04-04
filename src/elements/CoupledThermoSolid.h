@@ -283,8 +283,11 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
             con->failure(pt, T, strain, &lambda);
           }
           data[index] = TacsRealPart(lambda);
-          
-          this->stiff->buckling(strain, &lambda);
+	  lambda = 0.0;
+          if (con){
+	    con->maxtemp(pt, T[0], &lambda);
+	    //this->stiff->buckling(strain, &lambda);
+	  }
           data[index+1] = TacsRealPart(lambda);
 
           data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
