@@ -97,5 +97,9 @@
 #define TACS3DThermoHF3 TACS3DHeatFluxTraction<3>
 #define TACS3DThermoHF4 TACS3DHeatFluxTraction<4>
 #define TACS3DThermoHF5 TACS3DHeatFluxTraction<5>
+#define TACS3DThermoNormalHF2 TACS3DNormalHeatFluxTraction<2>
+#define TACS3DThermoNormalHF3 TACS3DNormalHeatFluxTraction<3>
+#define TACS3DThermoNormalHF4 TACS3DNormalHeatFluxTraction<4>
+#define TACS3DThermoNormalHF5 TACS3DNormalHeatFluxTraction<5>
 
 #endif // TACS_ELEMENT_TEMPLATES_H

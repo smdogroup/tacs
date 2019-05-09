@@ -952,6 +952,37 @@ cdef class TACS3DThermoHF(Element):
     def numNodes(self):
         return self.ptr.numNodes()
 
+cdef class TACS3DThermoNormalHF(Element):
+    def __cinit__(self, int order, int surf,
+                  TacsScalar qn):
+        if order < 2 or order > 4:
+            errmsg = 'HeatFlux3D order must be between 2 and 4'
+            raise ValueError(errmsg)
+        if surf < 0 or surf >= 6:
+            errmsg = 'HeatFlux3D surf must be between 0 and 5'
+            raise ValueError(errmsg)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new TACS3DThermoNormalHF2(surf, qn)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new TACS3DThermoNormalHF3(surf, qn)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new TACS3DThermoNormalHF4(surf, qn)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new TACS3DThermoNormalHF5(surf, qn)
+            self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+
+    def numNodes(self):
+        return self.ptr.numNodes()
 
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
