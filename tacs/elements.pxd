@@ -176,6 +176,18 @@ cdef extern from "TACSElementTemplates.h":
         TACS3DTraction5(int, TacsScalar, TacsScalar, TacsScalar)
         TACS3DTraction5(int, TacsScalar[], TacsScalar[], TacsScalar[])
 
+    cdef cppclass TACS3DPressureTraction2(TACSElement):
+        TACS3DPressureTraction2(int, TacsScalar)
+
+    cdef cppclass TACS3DPressureTraction3(TACSElement):
+        TACS3DPressureTraction3(int, TacsScalar)
+
+    cdef cppclass TACS3DPressureTraction4(TACSElement):
+        TACS3DPressureTraction4(int, TacsScalar)
+
+    cdef cppclass TACS3DPressureTraction5(TACSElement):
+        TACS3DPressureTraction5(int, TacsScalar)
+
     cdef cppclass TACS3DBoundingTraction2(TACSElement):
         TACS3DBoundingTraction2(int, TacsScalar, TacsScalar, TacsScalar, TacsScalar[])
         TACS3DBoundingTraction2(int, TacsScalar[], TacsScalar[], TacsScalar[], TacsScalar[])

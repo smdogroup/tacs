@@ -412,7 +412,7 @@ cdef class Traction3D(Element):
                   TacsScalar tx, TacsScalar ty, TacsScalar tz,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] box=None):
         if order < 2 or order > 5:
-            errmsg = 'Traction3D order must be between 2 and 4'
+            errmsg = 'Traction3D order must be between 2 and 5'
             raise ValueError(errmsg)
         if surf < 0 or surf >= 6:
             errmsg = 'Traction3D surf must be between 0 and 5'
@@ -434,6 +434,36 @@ cdef class Traction3D(Element):
             self.ptr.incref()
         elif order == 5:
             self.ptr = new TACS3DTraction5(surf, tx, ty, tz)
+            self.ptr.incref()
+        return
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+        return
+    def numNodes(self):
+        return self.ptr.numNodes()
+
+cdef class PressureTraction3D(Element):
+    def __cinit__(self, int order, int surf,
+                  TacsScalar pressure):
+        if order < 2 or order > 5:
+            errmsg = 'PressureTraction3D order must be between 2 and 5'
+            raise ValueError(errmsg)
+        if surf < 0 or surf >= 6:
+            errmsg = 'PressureTraction3D surf must be between 0 and 5'
+            raise ValueError(errmsg)
+        self.ptr = NULL
+        if order == 2:
+            self.ptr = new TACS3DPressureTraction2(surf, pressure)
+            self.ptr.incref()
+        elif order == 3:
+            self.ptr = new TACS3DPressureTraction3(surf, pressure)
+            self.ptr.incref()
+        elif order == 4:
+            self.ptr = new TACS3DPressureTraction4(surf, pressure)
+            self.ptr.incref()
+        elif order == 5:
+            self.ptr = new TACS3DPressureTraction5(surf, pressure)
             self.ptr.incref()
         return
     def __dealloc__(self):
