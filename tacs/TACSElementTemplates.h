@@ -88,6 +88,11 @@
 #define TACS3DThermoTraction4 TACS3DThermoTraction<4>
 #define TACS3DThermoTraction5 TACS3DThermoTraction<5>
 #define TACS3DThermoTraction6 TACS3DThermoTraction<6>
+#define TACS3DThermoPressureTraction2 TACS3DThermoPressureTraction<2>
+#define TACS3DThermoPressureTraction3 TACS3DThermoPressureTraction<3>
+#define TACS3DThermoPressureTraction4 TACS3DThermoPressureTraction<4>
+#define TACS3DThermoPressureTraction5 TACS3DThermoPressureTraction<5>
+#define TACS3DThermoPressureTraction6 TACS3DThermoPressureTraction<6>
 #define TACS3DThermoHF2 TACS3DHeatFluxTraction<2>
 #define TACS3DThermoHF3 TACS3DHeatFluxTraction<3>
 #define TACS3DThermoHF4 TACS3DHeatFluxTraction<4>

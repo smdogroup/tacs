@@ -332,6 +332,22 @@ cdef extern from "TACSElementTemplates.h":
         TACS3DThermoTraction6(int, TacsScalar, TacsScalar, TacsScalar)
         TACS3DThermoTraction6(int, TacsScalar*, TacsScalar*, TacsScalar*)
 
+    # Declare the Solid Thermoelastic Pressure Traction elements
+    cdef cppclass TACS3DThermoPressureTraction2(TACSElement):
+        TACS3DThermoPressureTraction2(int, TacsScalar)
+
+    cdef cppclass TACS3DThermoPressureTraction3(TACSElement):
+        TACS3DThermoPressureTraction3(int, TacsScalar)
+
+    cdef cppclass TACS3DThermoPressureTraction4(TACSElement):
+        TACS3DThermoPressureTraction4(int, TacsScalar)
+
+    cdef cppclass TACS3DThermoPressureTraction5(TACSElement):
+        TACS3DThermoPressureTraction5(int, TacsScalar)
+
+    cdef cppclass TACS3DThermoPressureTraction6(TACSElement):
+        TACS3DThermoPressureTraction6(int, TacsScalar)
+
     # Declare the Solid Thermoelastic Heat Flux elements
     cdef cppclass TACS3DThermoHF2(TACSElement):
         TACS3DThermoHF2(int, TacsScalar, TacsScalar, TacsScalar)
