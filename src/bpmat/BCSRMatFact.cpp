@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -23,7 +23,7 @@
 */
 
 /*!
-  Perform an ILU factorization of the matrix using the existing 
+  Perform an ILU factorization of the matrix using the existing
   non-zero pattern. The entries are over-written and all operations
   are performed in place. This is for an arbitrary block size.
 */
@@ -39,7 +39,7 @@ void BCSRMatFactor( BCSRMatData * data ){
   TacsScalar * A = data->A;
 
   TacsScalar * D = new TacsScalar[ bsize*bsize ];
-  int * ipiv = new int[ bsize ]; 
+  int * ipiv = new int[ bsize ];
 
   for ( int i = 0; i < nrows; i++ ){
     // variable = i
@@ -53,18 +53,18 @@ void BCSRMatFactor( BCSRMatData * data ){
     int row_end = rowp[i+1];
 
     for ( int j = rowp[i]; cols[j] < i; j++ ){
-      int cj = cols[j];      
+      int cj = cols[j];
       TacsScalar * a = &A[b2*j];
       TacsScalar * b = &A[b2*diag[cj]];
 
       // D = A[cj] * A[diag[cj]]
       for ( int n = 0; n < bsize; n++ ){
-	for ( int m = 0; m < bsize; m++ ){
-	  D[n*bsize + m] = 0.0;
-	  for ( int l = 0; l < bsize; l++ ){
-	    D[n*bsize + m] += a[n*bsize + l]*b[l*bsize + m];
-	  }
-	}
+        for ( int m = 0; m < bsize; m++ ){
+          D[n*bsize + m] = 0.0;
+          for ( int l = 0; l < bsize; l++ ){
+            D[n*bsize + m] += a[n*bsize + l]*b[l*bsize + m];
+          }
+        }
       }
 
       // Scan through the remainder of the row
@@ -75,43 +75,43 @@ void BCSRMatFactor( BCSRMatData * data ){
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( int p = diag[cj] + 1; (p < end) && (k < row_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < row_end && cols[k] < cols[p] ){
-	  k++;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < row_end && cols[k] < cols[p] ){
+          k++;
+        }
 
-	// A[k] = A[k] - A[j] * A[p]
-	if ( k < row_end && cols[k] == cols[p] ){
-	  a = &A[b2*k];
-	  b = &A[b2*p];
+        // A[k] = A[k] - A[j] * A[p]
+        if ( k < row_end && cols[k] == cols[p] ){
+          a = &A[b2*k];
+          b = &A[b2*p];
 
-	  for ( int n = 0; n < bsize; n++ ){
-	    int nb = n*bsize;
-	    for ( int m = 0; m < bsize; m++ ){
-	      for ( int l = 0; l < bsize; l++ ){
-		a[nb + m] -= D[nb + l]*b[l*bsize + m];
-	      }
-	    }
-	  }
-	}
+          for ( int n = 0; n < bsize; n++ ){
+            int nb = n*bsize;
+            for ( int m = 0; m < bsize; m++ ){
+              for ( int l = 0; l < bsize; l++ ){
+                a[nb + m] -= D[nb + l]*b[l*bsize + m];
+              }
+            }
+          }
+        }
       }
 
       // Copy over the matrix
       a = &A[b2*j];
       for ( int n = 0; n < b2; n++ ){
-	a[n] = D[n];	
+        a[n] = D[n];
       }
     }
 
     // Invert the diagonal matrix component -- Invert( &A[b2*diag[i] )
     TacsScalar * a = &A[b2*diag[i]];
     for ( int n = 0; n < b2; n++ ){
-      D[n] = a[n];	
+      D[n] = a[n];
     }
 
     int fail = BMatComputeInverse(a, D, ipiv, bsize);
     if (fail != 0){
-      fprintf(stderr, "Failure in factorization of row %d, block row %d\n", 
+      fprintf(stderr, "Failure in factorization of row %d, block row %d\n",
               i, fail);
     }
   }
@@ -143,35 +143,35 @@ void BCSRMatFactorLower( BCSRMatData * data, BCSRMatData * Edata ){
     int j_end = diag[i];
 
     for ( int j = rowp[i]; j < j_end; j++ ){
-      int cj = cols[j];      
+      int cj = cols[j];
       const TacsScalar * d = &A[b2*j];
 
       int k = erowp[i];
       int k_end = erowp[i+1];
 
-      int p = erowp[cj]; 
+      int p = erowp[cj];
       int p_end = erowp[cj+1];
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && ecols[k] < ecols[p] ){
-	  k++;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && ecols[k] < ecols[p] ){
+          k++;
+        }
 
-	if ( k < k_end && ecols[k] == ecols[p] ){
-	  TacsScalar * a = &E[b2*k];
-	  TacsScalar * b = &E[b2*p];
+        if ( k < k_end && ecols[k] == ecols[p] ){
+          TacsScalar * a = &E[b2*k];
+          TacsScalar * b = &E[b2*p];
 
-	  for ( int n = 0; n < bsize; n++ ){
-	    int nb = n*bsize;
-	    for ( int m = 0; m < bsize; m++ ){
-	      for ( int l = 0; l < bsize; l++ ){
-		a[nb + m] -= d[nb + l]*b[l*bsize + m];
-	      }
-	    }
-	  }
-	}
+          for ( int n = 0; n < bsize; n++ ){
+            int nb = n*bsize;
+            for ( int m = 0; m < bsize; m++ ){
+              for ( int l = 0; l < bsize; l++ ){
+                a[nb + m] -= d[nb + l]*b[l*bsize + m];
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -201,52 +201,52 @@ void BCSRMatFactorUpper( BCSRMatData * data, BCSRMatData * Fdata ){
     int j_end = frowp[i+1];
 
     for ( int j = frowp[i]; j < j_end; j++ ){
-      int cj = fcols[j];      
+      int cj = fcols[j];
       TacsScalar * a = &F[b2*j];
       const TacsScalar * b = &A[b2*diag[cj]];
 
       // D = A[cj] * A[diag[cj]]
       for ( int n = 0; n < bsize; n++ ){
-	for ( int m = 0; m < bsize; m++ ){
-	  D[n*bsize + m] = 0.0;
-	  for ( int l = 0; l < bsize; l++ ){
-	    D[n*bsize + m] += a[n*bsize + l]*b[l*bsize + m];
-	  }
-	}
+        for ( int m = 0; m < bsize; m++ ){
+          D[n*bsize + m] = 0.0;
+          for ( int l = 0; l < bsize; l++ ){
+            D[n*bsize + m] += a[n*bsize + l]*b[l*bsize + m];
+          }
+        }
       }
-      
-      int k     = j+1;      
+
+      int k     = j+1;
       int k_end = frowp[i+1];
-      
+
       int p     = diag[cj]+1;
       int p_end = rowp[cj+1];
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for ( ; (p < p_end) && (k < k_end); p++ ){
-	// Determine where the two rows have the same elements
-	while ( k < k_end && fcols[k] < cols[p] ){
-	  k++;
-	}
+        // Determine where the two rows have the same elements
+        while ( k < k_end && fcols[k] < cols[p] ){
+          k++;
+        }
 
-	if ( k < k_end && fcols[k] == cols[p] ){
-	  a = &F[b2*k];
-	  b = &A[b2*p];
+        if ( k < k_end && fcols[k] == cols[p] ){
+          a = &F[b2*k];
+          b = &A[b2*p];
 
-	  for ( int n = 0; n < bsize; n++ ){
-	    int nb = n*bsize;
-	    for ( int m = 0; m < bsize; m++ ){
-	      for ( int l = 0; l < bsize; l++ ){
-		a[nb + m] -= D[nb + l]*b[l*bsize + m];
-	      }
-	    }
-	  }
-	}
+          for ( int n = 0; n < bsize; n++ ){
+            int nb = n*bsize;
+            for ( int m = 0; m < bsize; m++ ){
+              for ( int l = 0; l < bsize; l++ ){
+                a[nb + m] -= D[nb + l]*b[l*bsize + m];
+              }
+            }
+          }
+        }
       }
 
       // Copy over the matrix
       a = &F[b2*j];
       for ( int n = 0; n < b2; n++ ){
-	a[n] = D[n];	
+        a[n] = D[n];
       }
     }
   }

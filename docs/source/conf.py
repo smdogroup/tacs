@@ -38,11 +38,16 @@ release = u''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
+extensions = ['sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.githubpages',
     'sphinx.ext.mathjax',
+    'sphinxcontrib.bibtex',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -70,7 +75,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -78,7 +83,8 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'scipy'
+html_theme_path = ['_theme']
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -187,5 +193,6 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 #-----------------------------------------------------------------------------
 # Document both class docstring and init docstring
 autoclass_content = 'both'
+
 # Order members by source and not alphabetical order
 autodoc_member_order = 'bysource'

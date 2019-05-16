@@ -534,10 +534,10 @@ class TACS3DHeatFluxTraction : public TACSElement {
   TacsScalar tx[order*order];
   TacsScalar ty[order*order];
   TacsScalar tz[order*order];
+
   // The knot locations for the basis functions
   double knots[order];
-  TacsScalar dir1[3], dir2[3], base[3];
-  
+  double dir1[3], dir2[3], base[3];
 };
 
 /*
@@ -596,7 +596,7 @@ class TACS3DHeatSourceSink : public TACSElement {
           Nb[0] = na[i]*dnb[j]*nc[k];
           Nc[0] = na[i]*nb[j]*dnc[k];
           N++;
-          Na++;  Nb++;  Nc++;          
+          Na++;  Nb++;  Nc++;
         }
       }
     }

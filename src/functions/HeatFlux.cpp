@@ -131,14 +131,16 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
     int order = 0;
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
+
     // Direction vector of the surface/edge
-    TacsScalar dir1[3], dir2[3], base[3];
+    double dir1[3], dir2[3], base[3];
     if (numDisps == 4){
       order = cbrt(numNodes);
     }
     else {
       order = sqrt(numNodes);
     }
+
     // The knot locations for the basis functions
     double knots[order];
     // Set the knot locations
@@ -168,9 +170,9 @@ void HeatFluxIntegral::elementWiseEval( EvaluationType ftype,
           for ( int n = 0; n < order; n++ ){
             // Set the quadrature point
             double pt[3];
+
             // Compute the base point and direction of the surface tangent in
             // parameter space
-            TacsScalar dir1[3], dir2[3];
             dir1[0] = dir1[1] = dir1[2] = 0.0;
             dir2[0] = dir2[1] = dir2[2] = 0.0;
             base[0] = base[1] = base[2] = 0.0;
@@ -313,7 +315,7 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     // Direction vector of the surface/edge
-    TacsScalar dir1[3], dir2[3], base[3];
+    double dir1[3], dir2[3], base[3];
     if (numDisps == 4){
       order = cbrt(numNodes);
     }
@@ -352,7 +354,6 @@ void HeatFluxIntegral::getElementSVSens( double alpha,
             double pt[3];
             // Compute the base point and direction of the surface tangent in
             // parameter space
-            TacsScalar dir1[3], dir2[3];
             dir1[0] = dir1[1] = dir1[2] = 0.0;
             dir2[0] = dir2[1] = dir2[2] = 0.0;
             base[0] = base[1] = base[2] = 0.0;
@@ -491,8 +492,9 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
     int order = 0;
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
+
     // Direction vector of the surface/edge
-    TacsScalar dir1[3], dir2[3], base[3];
+    double dir1[3], dir2[3], base[3];
     if (numDisps == 4){
       order = cbrt(numNodes);
     }
@@ -530,7 +532,6 @@ void HeatFluxIntegral::addElementDVSens( const double tcoef,
             double pt[3];
             // Compute the base point and direction of the surface tangent in
             // parameter space
-            TacsScalar dir1[3], dir2[3];
             dir1[0] = dir1[1] = dir1[2] = 0.0;
             dir2[0] = dir2[1] = dir2[2] = 0.0;
             base[0] = base[1] = base[2] = 0.0;
