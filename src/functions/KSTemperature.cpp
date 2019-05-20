@@ -203,9 +203,7 @@ void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
           d += numDisps;
           N++;	  
         }
-	if (ns > 1.0){
-	  printf("Wrong shape functions\n");
-	}
+	
 	// --------------------------------------------------------
 	// Get the constitutive object for this element
 	TacsScalar value1 = value;
@@ -215,9 +213,6 @@ void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
 	    dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
 	  if (con){
 	    con->maxtemp(pt, value1, &value);
-	    if (value/value1 > 1.0){
-	      printf("Value: %f %f\n", value1, value);
-	    }
 	  }
 	}
 	else {
@@ -229,7 +224,7 @@ void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
 	}
 	// ---------------------------------------------------------
         if (TacsRealPart(value) > TacsRealPart(ctx->maxValue)){
-          ctx->maxValue = value;
+	  ctx->maxValue = value;
         }
       }
     }
@@ -261,9 +256,6 @@ void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
 	    dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
 	  if (con){
 	    con->maxtemp(pt, value1, &value);
-	    if (value/value1 > 1.0){
-	      printf("Value: %f %f\n", value1, value);
-	    }
 	  }
 	}
 	else {

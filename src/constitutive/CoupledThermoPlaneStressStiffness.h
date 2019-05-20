@@ -78,16 +78,18 @@ class CoupledThermoPlaneStressStiffness : public PlaneStressStiffness {
   // Functions that evaluate the maximum temperature of an element
   virtual void maxtemp( const double pt[],
 			const TacsScalar max_temp,
-			TacsScalar *fail ) = 0;
+			TacsScalar *fail,
+			int vars_j=0 ) = 0;
   virtual void addMaxTempDVSens ( const double pt[], 
 				  const TacsScalar max_temp,
 				  TacsScalar alpha,
-                                  TacsScalar dvSens[], int dvLen ) = 0;
+                                  TacsScalar dvSens[], int dvLen,
+				  int vars_j=0 ) = 0;
   virtual void maxtempStrainSens( const double pt[],
 				  const TacsScalar max_temp,
-				  TacsScalar sens[] ) = 0;
-
-  // Extra info about the constitutive class
+				  TacsScalar sens[],
+				  int vars_j=0 ) = 0;
+ // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
  protected:

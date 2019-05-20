@@ -122,3 +122,8 @@ cdef extern from "KSTemperature.h":
     cdef cppclass TACSKSTemperature(TACSFunction):
         TACSKSTemperature(TACSAssembler *tacs, double ksWeight)
         void setKSDispType(KSTemperatureType)
+cdef extern from "KSMatTemperature.h":
+    cdef cppclass TACSKSMatTemperature(TACSFunction):
+        TACSKSMatTemperature(TACSAssembler *tacs, double ksWeight, KSTemperatureType, int)
+        void setKSDispType(KSTemperatureType)
+        void setNumMats(int)
