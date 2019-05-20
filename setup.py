@@ -21,7 +21,7 @@ def get_global_dir(files):
 
 def get_mpi_flags():
     # Split the output from the mpicxx command
-    args = check_output(['mpicxx', '-show']).split()
+    args = check_output(['mpicxx', '-show']).decode('utf-8').split()
 
     # Determine whether the output is an include/link/lib command
     inc_dirs, lib_dirs, libs = [], [], []

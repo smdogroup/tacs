@@ -661,9 +661,9 @@ int TACSIntegrator::initAccelerationSolve(TACSBVec *forces){
   }
 
   // Assemble the residual and jacobian
-  TacsScalar alpha = 0.0;
-  TacsScalar beta  = 0.0;
-  TacsScalar gamma = 1.0;
+  double alpha = 0.0;
+  double beta  = 0.0;
+  double gamma = 1.0;
     
   // Iterate accelerations until residual is zero
   for ( niter = 0; niter < max_newton_iters; niter++ ){
