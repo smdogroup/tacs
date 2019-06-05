@@ -201,6 +201,7 @@ void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
         if (TacsRealPart(ns) > 1.0){
           printf("Wrong shape functions\n");
         }
+
         // --------------------------------------------------------
         // Get the constitutive object for this element
         TacsScalar value1 = value;
@@ -263,6 +264,7 @@ void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
           }
         }
         // ---------------------------------------------------------
+
         // Add up the contribution from the quadrature
         TacsScalar h = element->getDetJacobian(pt, Xpts);
         if (ksType == CONTINUOUS){

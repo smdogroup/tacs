@@ -51,6 +51,10 @@
 #define TACS3DTraction3 TACS3DTraction<3>
 #define TACS3DTraction4 TACS3DTraction<4>
 #define TACS3DTraction5 TACS3DTraction<5>
+#define TACS3DPressureTraction2 TACS3DPressureTraction<2>
+#define TACS3DPressureTraction3 TACS3DPressureTraction<3>
+#define TACS3DPressureTraction4 TACS3DPressureTraction<4>
+#define TACS3DPressureTraction5 TACS3DPressureTraction<5>
 #define TACS3DBoundingTraction2 TACS3DBoundingTraction<2>
 #define TACSShellTraction2 TACSShellTraction<2>
 #define TACSShellTraction3 TACSShellTraction<3>
@@ -84,9 +88,18 @@
 #define TACS3DThermoTraction4 TACS3DThermoTraction<4>
 #define TACS3DThermoTraction5 TACS3DThermoTraction<5>
 #define TACS3DThermoTraction6 TACS3DThermoTraction<6>
+#define TACS3DThermoPressureTraction2 TACS3DThermoPressureTraction<2>
+#define TACS3DThermoPressureTraction3 TACS3DThermoPressureTraction<3>
+#define TACS3DThermoPressureTraction4 TACS3DThermoPressureTraction<4>
+#define TACS3DThermoPressureTraction5 TACS3DThermoPressureTraction<5>
+#define TACS3DThermoPressureTraction6 TACS3DThermoPressureTraction<6>
 #define TACS3DThermoHF2 TACS3DHeatFluxTraction<2>
 #define TACS3DThermoHF3 TACS3DHeatFluxTraction<3>
 #define TACS3DThermoHF4 TACS3DHeatFluxTraction<4>
 #define TACS3DThermoHF5 TACS3DHeatFluxTraction<5>
+#define TACS3DThermoNormalHF2 TACS3DNormalHeatFluxTraction<2>
+#define TACS3DThermoNormalHF3 TACS3DNormalHeatFluxTraction<3>
+#define TACS3DThermoNormalHF4 TACS3DNormalHeatFluxTraction<4>
+#define TACS3DThermoNormalHF5 TACS3DNormalHeatFluxTraction<5>
 
 #endif // TACS_ELEMENT_TEMPLATES_H

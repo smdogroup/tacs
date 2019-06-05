@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "StructuralMass.h"
@@ -57,8 +57,8 @@ const char *TACSStructuralMass::funcName = "StructuralMass";
 /*
   The structural mass function name
 */
-const char *TACSStructuralMass::functionName(){ 
-  return funcName; 
+const char *TACSStructuralMass::functionName(){
+  return funcName;
 }
 
 /*
@@ -87,7 +87,7 @@ void TACSStructuralMass::initEvaluation( EvaluationType ftype ){
 */
 void TACSStructuralMass::finalEvaluation( EvaluationType ftype ){
   TacsScalar temp = totalMass;
-  MPI_Allreduce(&temp, &totalMass, 1, TACS_MPI_TYPE, 
+  MPI_Allreduce(&temp, &totalMass, 1, TACS_MPI_TYPE,
                 MPI_SUM, tacs->getMPIComm());
 }
 
@@ -102,22 +102,22 @@ void TACSStructuralMass::initThread( double tcoef,
     ctx->mass = 0.0;
   }
 }
- 
+
 /*
   Evaluate the mass for each element in the domain
 */
 void TACSStructuralMass::elementWiseEval(  EvaluationType ftype,
-                                           TACSElement *element, 
+                                           TACSElement *element,
                                            int elemNum,
-                                           const TacsScalar Xpts[], 
+                                           const TacsScalar Xpts[],
                                            const TacsScalar vars[],
-                                           const TacsScalar dvars[], 
+                                           const TacsScalar dvars[],
                                            const TacsScalar ddvars[],
                                            TACSFunctionCtx *fctx ){
   StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
   TACSConstitutive *constitutive = element->getConstitutive();
 
-  // If the element does not define a constitutive class, 
+  // If the element does not define a constitutive class,
   // return without adding any contribution to the function
   if (ctx && constitutive){
     int numGauss = element->getNumGaussPts();
@@ -135,7 +135,7 @@ void TACSStructuralMass::elementWiseEval(  EvaluationType ftype,
 /*
   Add the contribution from the mass from all threads
 */
-void TACSStructuralMass::finalThread( double tcoef, 
+void TACSStructuralMass::finalThread( double tcoef,
                                       EvaluationType ftype,
                                       TACSFunctionCtx *fctx ){
   StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
@@ -146,15 +146,15 @@ void TACSStructuralMass::finalThread( double tcoef,
 
 /*
   Determine the derivative of the mass w.r.t. the element nodal
-  locations.  
+  locations.
 */
-void TACSStructuralMass::getElementXptSens( double tcoef, 
+void TACSStructuralMass::getElementXptSens( double tcoef,
                                             TacsScalar fXptSens[],
-                                            TACSElement *element, 
+                                            TACSElement *element,
                                             int elemNum,
-                                            const TacsScalar Xpts[], 
+                                            const TacsScalar Xpts[],
                                             const TacsScalar vars[],
-                                            const TacsScalar dvars[], 
+                                            const TacsScalar dvars[],
                                             const TacsScalar ddvars[],
                                             TACSFunctionCtx *fctx ){
   int numNodes = element->numNodes();
@@ -164,21 +164,21 @@ void TACSStructuralMass::getElementXptSens( double tcoef,
   StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
   TACSConstitutive *constitutive = element->getConstitutive();
 
-  // If the element does not define a constitutive class, 
+  // If the element does not define a constitutive class,
   // return without adding any contribution to the function
   if (ctx && constitutive){
     TacsScalar *hXptSens = ctx->hXptSens;
-  
-    int numGauss = element->getNumGaussPts();  
+
+    int numGauss = element->getNumGaussPts();
     // Add the sensitivity due to det of the Jacobian
     for ( int i = 0; i < numGauss; i++ ){
       double pt[3]; // The gauss point
       TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
       element->getDetJacobianXptSens(hXptSens, pt, Xpts);
-      
+
       TacsScalar ptmass[6];
       constitutive->getPointwiseMass(pt, ptmass);
-      
+
       for ( int k = 0; k < 3*numNodes; k++ ){
         fXptSens[k] += tcoef*gauss_weight*hXptSens[k]*ptmass[0];
       }
@@ -190,32 +190,32 @@ void TACSStructuralMass::getElementXptSens( double tcoef,
   Determine the derivative of the mass w.r.t. the material
   design variables
 */
-void TACSStructuralMass::addElementDVSens( double tcoef, 
+void TACSStructuralMass::addElementDVSens( double tcoef,
                                            TacsScalar *fdvSens, int numDVs,
                                            TACSElement *element, int elemNum,
-                                           const TacsScalar Xpts[], 
+                                           const TacsScalar Xpts[],
                                            const TacsScalar vars[],
-                                           const TacsScalar dvars[], 
+                                           const TacsScalar dvars[],
                                            const TacsScalar ddvars[],
                                            TACSFunctionCtx *fctx ){
   // Get the objects
   StructuralMassCtx *ctx = dynamic_cast<StructuralMassCtx*>(fctx);
   TACSConstitutive *constitutive = element->getConstitutive();
 
-  // If the element does not define a constitutive class, 
+  // If the element does not define a constitutive class,
   // return without adding any contribution to the function
   if (ctx && constitutive){
     // The coefficients on the mass moments
     TacsScalar alpha[6] = {1.0, 0.0, 0.0,
-                           0.0, 0.0, 0.0};  
+                           0.0, 0.0, 0.0};
     int numGauss = element->getNumGaussPts();
-  
+
     // Add the sensitivity from the first mass moment
     for ( int i = 0; i < numGauss; i++ ){
       double pt[3];
       TacsScalar gauss_weight = element->getGaussWtsPts(i, pt);
       TacsScalar h = element->getDetJacobian(pt, Xpts);
-    
+
       alpha[0] = tcoef*gauss_weight*h;
       constitutive->addPointwiseMassDVSens(pt, alpha, fdvSens, numDVs);
     }

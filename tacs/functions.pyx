@@ -230,3 +230,29 @@ cdef class KSTemperature(Function):
         elif ftype == 'pnorm-continuous':
             self.ksptr.setKSDispType(PNORM_TEMP_CONTINUOUS)
         return
+	
+cdef class KSMatTemperature(Function):
+    cdef TACSKSMatTemperature *ksptr
+    def __cinit__(self, Assembler tacs, double ksWeight, int nmats):
+        '''
+        Wrap the function KSMatTemperature
+        '''
+        self.ksptr = new TACSKSMatTemperature(tacs.ptr, ksWeight, KS_TEMP_CONTINUOUS, nmats)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
+    def setKSDispType(self, ftype='continuous'):
+        if ftype == 'discrete':
+            self.ksptr.setKSDispType(KS_TEMP_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSDispType(KS_TEMP_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSDispType(PNORM_TEMP_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSDispType(PNORM_TEMP_CONTINUOUS)
+        return
+
+    def setNumMats(self, _nmats):
+        self.ksptr.setNumMats(_nmats)
+        return
