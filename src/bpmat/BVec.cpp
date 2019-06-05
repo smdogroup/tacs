@@ -342,11 +342,13 @@ void TACSBVec::copyValues( TACSVec *tvec ){
     int one = 1;
     BLAScopy(&size, vec->x, &one, x, &one);
 
-    if (x_dep && vec->x_dep){
-      BLAScopy(&dep_size, vec->x_dep, &one, x_dep, &one);
-    }
-    if (x_ext && vec->x_ext){
+    // Copy the external nodes and dependent nodes only if this
+    // vector and the source share the same objects
+    if (x_ext && vec->x_ext && ext_dist == vec->ext_dist){
       BLAScopy(&ext_size, vec->x_ext, &one, x_ext, &one);
+    }
+    if (x_dep && vec->x_dep && dep_nodes == vec->dep_nodes){
+      BLAScopy(&dep_size, vec->x_dep, &one, x_dep, &one);
     }
   }
   else {
