@@ -172,6 +172,28 @@ entry %d with 0\n", i);
   }
 }
 
+/*
+  Merge two arrays of indices together
+*/
+TACSBVecIndices::TACSBVecIndices( TACSBVecIndices *idx1,
+                                  TACSBVecIndices *idx2 ){
+  nindices = idx1->nindices + idx2->nindices;
+  int *temp = new int[ nindices ];
+  memcpy(temp, idx1->indices, idx1->nindices*sizeof(int));
+  memcpy(&temp[idx1->nindices], idx2->indices, idx2->nindices*sizeof(int));
+
+  nindices = FElibrary::uniqueSort(temp, nindices);
+  indices = new int[ nindices ];
+  memcpy(indices, temp, nindices*sizeof(int));
+  delete [] temp;
+
+  issorted = 1;
+  index_args = NULL;
+}
+
+/*
+  Destroy the array of indices
+*/
 TACSBVecIndices::~TACSBVecIndices(){
   if (indices){ delete [] indices; }
   if (index_args){ delete [] index_args; }

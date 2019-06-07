@@ -69,6 +69,7 @@ class TACSVarMap : public TACSObject {
 class TACSBVecIndices : public TACSObject {
  public:
   TACSBVecIndices( int **_indices, int _nindices );
+  TACSBVecIndices( TACSBVecIndices *idx1, TACSBVecIndices *idx2 );
   ~TACSBVecIndices();
 
   // Retrieve information about the indices
