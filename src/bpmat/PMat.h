@@ -60,7 +60,8 @@ class TACSPMat : public TACSMat {
   // Functions required for solving linear systems
   // ---------------------------------------------
   void getSize( int *_nr, int *_nc );          // Get the local dimensions
-  void mult( TACSVec *x, TACSVec *y );         // y <- A*x 
+  void mult( TACSVec *x, TACSVec *y );         // y <- A*x
+  void multTranspose( TACSVec *x, TACSVec *y ); // y <- A^{T}*x
   TACSVec *createVec();                        // Create a vector
   void copyValues( TACSMat *mat );             // Copy matrix entries
   void scale( TacsScalar alpha );              // Scale the matrix

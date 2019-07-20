@@ -170,6 +170,7 @@ class TACSMat : public TACSObject {
   // Operations required for solving problems
   // ----------------------------------------
   virtual void mult( TACSVec *x, TACSVec *y ) = 0;
+  virtual void multTranspose( TACSVec *x, TACSVec *y ){}
   virtual void copyValues( TACSMat *mat ){}
   virtual void scale( TacsScalar alpha ){}
   virtual void axpy( TacsScalar alpha, TACSMat *mat ){}

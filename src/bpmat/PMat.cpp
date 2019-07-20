@@ -231,6 +231,30 @@ void TACSPMat::mult( TACSVec *txvec, TACSVec *tyvec ){
 }
 
 /*!
+  Matrix multiplication
+*/
+void TACSPMat::multTranspose( TACSVec *txvec, TACSVec *tyvec ){
+  TACSBVec *xvec, *yvec;
+  xvec = dynamic_cast<TACSBVec*>(txvec);
+  yvec = dynamic_cast<TACSBVec*>(tyvec);
+
+  if (xvec && yvec){
+    TacsScalar *x, *y;
+    xvec->getArray(&x);
+    yvec->getArray(&y);
+
+    Bext->multTranspose(&x[ext_offset], x_ext);
+    Aloc->multTranspose(x, y);
+
+    ext_dist->beginReverse(ctx, x_ext, y, TACS_ADD_VALUES);
+    ext_dist->endReverse(ctx, x_ext, y, TACS_ADD_VALUES);
+  }
+  else {
+    fprintf(stderr, "PMat type error: Input/output must be TACSBVec\n");
+  }
+}
+
+/*!
   Access the underlying matrices
 */
 void TACSPMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){

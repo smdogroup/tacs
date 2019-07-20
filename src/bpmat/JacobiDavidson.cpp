@@ -355,9 +355,10 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
         kstart = 2;      
       }
       else if (recycle_type == JD_NUM_RECYCLE){ 
-        // B-orthogonalize the old eigenvectors with respect to the new matrix for
-        // all but the last recycled eigenvector which will be orthogonalized by
-        // the first iteration through the solution loop.
+        // B-orthogonalize the old eigenvectors with respect to the
+        // new matrix for all but the last recycled eigenvector which
+        // will be orthogonalized by the first iteration through the
+        // solution loop.
         for ( int k = 0; k < num_recycle; k++ ){
           // Copy the vector from the old eigenvector
           if (k >= 1){
