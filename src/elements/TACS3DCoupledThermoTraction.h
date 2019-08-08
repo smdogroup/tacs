@@ -444,11 +444,11 @@ class TACS3DHeatFluxTraction : public TACSElement {
 
         TacsScalar h = tn*gaussWts[n]*gaussWts[m];
 
-	// Compute the shape functions
+        // Compute the shape functions
         double N[order*order];
         double Na[order*order], Nb[order*order];
 
-	double gpt[] = {gaussPts[n], gaussPts[m]};
+        double gpt[] = {gaussPts[n], gaussPts[m]};
         getShapeFunctions(gpt, N, Na, Nb);
 
         // Evaluate the heat flux force evaluated at the
@@ -1042,11 +1042,11 @@ class TACS3DNormalHeatFluxTraction : public TACSElement {
 
         TacsScalar h = tn*gaussWts[n]*gaussWts[m];
 
-	// Compute the shape functions
+        // Compute the shape functions
         double N[order*order];
         double Na[order*order], Nb[order*order];
 
-	double gpt[] = {gaussPts[n], gaussPts[m]};
+        double gpt[] = {gaussPts[n], gaussPts[m]};
         getShapeFunctions(gpt, N, Na, Nb);
 
         // Add the contribution to the residual - the minus sign
@@ -1121,7 +1121,7 @@ class TACS3DNormalHeatFluxTraction : public TACSElement {
 
   // The knot locations for the basis functions
   double knots[order];
-  TacsScalar dir1[3], dir2[3], base[3];
+  double dir1[3], dir2[3], base[3];
 
 };
 
