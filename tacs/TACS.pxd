@@ -132,6 +132,7 @@ cdef extern from "BVec.h":
         TACSBVec(TACSVarMap*, int)
         int getSize(int*)
         int getBlockSize()
+        TACSVarMap *getVarMap()
         int getArray(TacsScalar**)
         int readFromFile(const_char*)
         int writeToFile(const_char*)

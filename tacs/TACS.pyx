@@ -171,6 +171,12 @@ cdef class Vec:
             self.ptr.decref()
         return
 
+    def getVarsPerNode(self):
+        '''
+        Return the number of variables per node
+        '''
+        return self.ptr.getBlockSize()
+
     def zeroEntries(self):
         '''
         Zero the entries in the matrix
@@ -314,6 +320,12 @@ cdef class Vec:
         '''
         self.ptr.endDistributeValues()
         return
+
+    def getVarMap(self):
+        '''
+        Get the TACSVarMap object from the class
+        '''
+        return _init_VarMap(self.ptr.getVarMap())
 
     def writeToFile(self, fname):
         '''
