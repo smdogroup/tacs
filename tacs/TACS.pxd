@@ -368,6 +368,7 @@ cdef extern from "TACSAssembler.h":
         void initialize()
 
         # Return information about the TACSObject
+        int getVarsPerNode()
         int getNumNodes()
         int getNumDependentNodes()
         int getNumOwnedNodes()

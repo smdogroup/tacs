@@ -834,6 +834,12 @@ cdef class Assembler:
         '''
         return self.ptr.getNumElements()
 
+    def getVarsPerNode(self):
+        '''
+        Return the number of variables per node
+        '''
+        return self.ptr.getVarsPerNode()
+
     def getOwnerRange(self):
         '''
         Get the ranges of global node numbers owned by each processor
@@ -974,6 +980,14 @@ cdef class Assembler:
                                    <TacsScalar*>ub.data,
                                    num_dvs)
         return
+
+    def getMPIComm(self):
+        '''
+        Get the MPI communicator
+        '''
+        cdef MPI.Comm comm = MPI.Comm()
+        comm.ob_mpi = self.ptr.getMPIComm()
+        return comm
 
     def setNumThreads(self, int t):
         '''
