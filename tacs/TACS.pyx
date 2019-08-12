@@ -173,6 +173,12 @@ cdef class Vec:
             self.ptr.decref()
         return
 
+    def getVarsPerNode(self):
+        '''
+        Return the number of variables per node
+        '''
+        return self.ptr.getBlockSize()
+
     def zeroEntries(self):
         '''
         Zero the entries in the matrix
@@ -316,6 +322,12 @@ cdef class Vec:
         '''
         self.ptr.endDistributeValues()
         return
+
+    def getVarMap(self):
+        '''
+        Get the TACSVarMap object from the class
+        '''
+        return _init_VarMap(self.ptr.getVarMap())
 
     def writeToFile(self, fname):
         '''
@@ -824,6 +836,12 @@ cdef class Assembler:
         '''
         return self.ptr.getNumElements()
 
+    def getVarsPerNode(self):
+        '''
+        Return the number of variables per node
+        '''
+        return self.ptr.getVarsPerNode()
+
     def getOwnerRange(self):
         '''
         Get the ranges of global node numbers owned by each processor
@@ -964,6 +982,14 @@ cdef class Assembler:
                                    <TacsScalar*>ub.data,
                                    num_dvs)
         return
+
+    def getMPIComm(self):
+        '''
+        Get the MPI communicator
+        '''
+        cdef MPI.Comm comm = MPI.Comm()
+        comm.ob_mpi = self.ptr.getMPIComm()
+        return comm
 
     def setNumThreads(self, int t):
         '''

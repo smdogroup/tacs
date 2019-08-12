@@ -134,6 +134,7 @@ cdef extern from "BVec.h":
         TACSBVec(TACSVarMap*, int)
         int getSize(int*)
         int getBlockSize()
+        TACSVarMap *getVarMap()
         int getArray(TacsScalar**)
         int readFromFile(const_char*)
         int writeToFile(const_char*)
@@ -369,6 +370,7 @@ cdef extern from "TACSAssembler.h":
         void initialize()
 
         # Return information about the TACSObject
+        int getVarsPerNode()
         int getNumNodes()
         int getNumDependentNodes()
         int getNumOwnedNodes()
