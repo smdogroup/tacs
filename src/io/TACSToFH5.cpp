@@ -18,80 +18,60 @@
 
 #include "TACSToFH5.h"
 
-/*
-  Create the TACSToFH5 file creation object
+/**
+   Create the TACSToFH5 object.
 
-  input:
-  tacs:        the instance of the TACSAssembler object
-  elem_type:   the type of element to be used
-  write_flag:  a variable indicating the type of output to write
+   This class creates an .f5 file in parallel using a binary output
+   format.  This format can then be converted into output for viewing
+   or used for post-processing in some cases.
 
-  For example if:
+   The object creates two types of output: (1) element-wise
+   independent output or (2) continuous output with nodal averaging of
+   quantities of interest. (1) may be useful if you want to look at
+   the stress or strain independently in each element, (2) can produce
+   a smaller output file and may be best for large-scale computations.
 
-  write_flag =
-  (Element::OUTPUT_NODES |
-   Element::OUTPUT_DISPLACEMENTS |
-   Element::OUTPUT_STRESSES)
-
-  then the TACSToFH5 object will output the nodes, displacements and
-  stresses for each element of type 'elem_type' in the TACSAssembler
-  object. Note that this is a bit-wise OR operation.
+   @param assembler The TACSAssembler object
+   @param elem_type The type of element output to generate
+   @param write_flag XOR flag indicating classes of output to write
+   @param average_node_data Average the node data or use element-independent
 */
-TACSToFH5::TACSToFH5( TACSAssembler *_tacs,
-                      enum ElementType _elem_type,
-                      unsigned int _write_flag ){
-  tacs = _tacs;
-  tacs->incref();
+TACSToFH5::TACSToFH5( TACSAssembler *_assembler,
+                      ElementType _elem_type,
+                      int _write_flag,
+                      int _average_node_data ){
+  assembler = _assembler;
+  assembler->incref();
+
+  // Record the options
   elem_type = _elem_type;
   write_flag = _write_flag;
-
-  // 3 coordinates for each of 3 coordinate axes
-  ncoordinates = 9;
-
-  // Get the number of displacements/stresses
-  ndisplacements = 0;
-  nstresses = 0;
-  nextras = 0;
-
-  // Get the size of the outputs
-  int numElements = tacs->getNumElements();
-  TACSElement **elements = tacs->getElements();
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i] && elements[i]->getElementType() == elem_type){
-      ndisplacements = elements[i]->numDisplacements();
-      nstresses = elements[i]->numStresses();
-      nextras = elements[i]->numExtras();
-      break;
-    }
-  }
+  average_node_data = _average_node_data;
 
   // Count up the number of values that will be output for each point
   // in the mesh
   nvals = 0;
-  if (write_flag & TACSElement::OUTPUT_NODES){
-    nvals += 3; // Always 3 coordinates - even for planar problems
+  if (write_flag & TACS_OUTPUT_NODES){
+    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_NODES);
   }
-  if (write_flag & TACSElement::OUTPUT_DISPLACEMENTS){
-    nvals += ndisplacements;
+  if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
   }
-  if (write_flag & TACSElement::OUTPUT_STRAINS){
-    nvals += nstresses; // Number of stresses == number of strains
+  if (write_flag & TACS_OUTPUT_STRAINS){
+    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_STRESSES);
   }
-  if (write_flag & TACSElement::OUTPUT_STRESSES){
-    nvals += nstresses;
+  if (write_flag & TACS_OUTPUT_STRESSES){
+    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_STRAINS);
   }
-  if (write_flag & TACSElement::OUTPUT_EXTRAS){
-    nvals += nextras;
-  }
-  if (write_flag & TACSElement::OUTPUT_COORDINATES){
-    nvals += ncoordinates;
+  if (write_flag & TACS_OUTPUT_EXTRAS){
+    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_EXTRAS);
   }
 
   // Get a comma separated list of the variable names
   variable_names = getElementVarNames();
 
   // Retrieve the number of components
-  num_components = tacs->getNumComponents();
+  num_components = assembler->getNumComponents();
 
   // Allocate space for the component names
   component_names = new char*[ num_components ];
@@ -104,8 +84,11 @@ TACSToFH5::TACSToFH5( TACSAssembler *_tacs,
   }
 }
 
+/**
+   Free the FH5 object
+*/
 TACSToFH5::~TACSToFH5(){
-  tacs->decref();
+  assembler->decref();
 
   // Deallocate the comma separated list of variable names
   delete [] variable_names;
@@ -119,10 +102,13 @@ TACSToFH5::~TACSToFH5(){
   delete [] component_names;
 }
 
-/*
-  Set the component names for the elements
+/**
+   Set the specified component name for a group of elements
+
+   @param comp_num The component number to set
+   @param comp_name The component name to apply
 */
-void TACSToFH5::setComponentName( int comp_num, const char *group_name ){
+void TACSToFH5::setComponentName( int comp_num, const char *comp_name ){
   if (comp_num >= 0 && comp_num < num_components){
     // If the name already exists, over-write it
     if (component_names[comp_num]){
@@ -130,27 +116,33 @@ void TACSToFH5::setComponentName( int comp_num, const char *group_name ){
     }
 
     // Allocate space for the name
-    size_t len = strlen(group_name)+1;
+    size_t len = strlen(comp_name)+1;
     component_names[comp_num] = new char[ len ];
 
     // Copy the component name
-    strcpy(component_names[comp_num], group_name);
+    strcpy(component_names[comp_num], comp_name);
   }
 }
 
-/*
-  Write the data stored in the TACSAssembler object to a file
+/**
+   Write the data stored in the TACSAssembler object to a file
 
-  input:
-  filename:  the name of the file to create
+   Write the data in parallel to a binary file format with the
+   specified name. This code writes out the component names, component
+   numbers, layout types, element data and global connectivity (when
+   node-averaging data is specified). Computing and writting all this
+   data can be expensive and take considerable diskspace, so care
+   should be exercised when creating these files.
+
+   @param filename The name of the file to write
 */
 void TACSToFH5::writeToFile( const char *filename ){
   int rank, size;
-  MPI_Comm_rank(tacs->getMPIComm(), &rank);
-  MPI_Comm_size(tacs->getMPIComm(), &size);
+  MPI_Comm_rank(assembler->getMPIComm(), &rank);
+  MPI_Comm_size(assembler->getMPIComm(), &size);
 
   // Create the FH5 file object for writting
-  FH5File *file = new FH5File(tacs->getMPIComm());
+  FH5File *file = new FH5File(assembler->getMPIComm());
   file->incref();
 
   // Open the file - if possible for writing
@@ -166,40 +158,55 @@ void TACSToFH5::writeToFile( const char *filename ){
     return;
   }
 
-  // Write the connectivity
-  int *comp_nums = NULL; // The component numbers of each element
-  int *csr = NULL;       // Local segment of the global CSR data structure
-  int *csr_range = NULL; // node/csr range over the number of processes
-  int *node_range = NULL;
-  tacs->getOutputConnectivity(elem_type, &comp_nums,
-                              &csr, &csr_range, &node_range);
+  // Record the layout types and component numbers
+  int num_elements = assembler->getNumElements();
+  int *comp_nums = new int[ num_elements ];
+  int *layout_types = new int[ num_elements ];
 
-  int con_size = 4;
-  if (elem_type == TACS_EULER_BEAM ||
-      elem_type == TACS_TIMOSHENKO_BEAM){
-    con_size = 2;
-  }
-  else if (elem_type == TACS_SOLID ||
-           elem_type == TACS_POISSON_3D_ELEMENT){
-    con_size = 8;
+  TACSElement **elements;
+  assembler->getElements(&elements);
+
+  // Set the layout types and the component numbers
+  int *
+  for ( int i = 0; i < num_elements; i++ ){
+    layout_types[i] = elements[i]->getLayoutType();
+    comp_nums[i] = elements[i]->getComponentNum();
   }
 
   // Write the component numbers to a zone
-  int dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
+  int dim1 = num_elements;
   int dim2 = 1;
   char comp_name[] = "components";
   file->writeZoneData(comp_name, comp_name, FH5File::FH5_INT,
                       comp_nums, dim1, dim2);
-  if (comp_nums){ delete [] comp_nums; }
+  delete [] comp_nums;
 
-  // Write the data to a zone
-  dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
-  dim2 = con_size;
-  char conn_name[] = "connectivity";
-  file->writeZoneData(conn_name, conn_name, FH5File::FH5_INT,
-                      csr, dim1, dim2);
-  if (csr){ delete [] csr; }
-  if (csr_range){ delete [] csr_range; }
+  // Write the layout types to a new zone
+  char layout_name[] = "ltypes";
+  file->writeZoneData(layout_name, layout_name, FH5File::FH5_INT,
+                      comp_nums, dim1, dim2);
+  delete [] layout_types;
+
+  if (use_continuous_data){
+    // Record the element data
+    dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
+    dim2 = con_size;
+    char conn_name[] = "connectivity";
+    file->writeZoneData(conn_name, conn_name, FH5File::FH5_INT,
+                        csr, dim1, dim2);
+    if (csr){ delete [] csr; }
+    if (csr_range){ delete [] csr_range; }
+
+
+
+
+
+
+  }
+  else {
+
+
+  }
 
   // Allocate space for the output data -
   // the nodes, displacements, stresses etc.
@@ -208,7 +215,7 @@ void TACSToFH5::writeToFile( const char *filename ){
   memset(data, 0, len*sizeof(double));
 
   // Get the output data from TACS
-  tacs->getOutputData(elem_type, write_flag, data, nvals);
+  assembler->getOutputData(elem_type, write_flag, data, nvals);
 
   // Get the dimensions of the data
   dim1 = node_range[rank+1] - node_range[rank];
@@ -222,7 +229,7 @@ void TACSToFH5::writeToFile( const char *filename ){
 
   // Write the data with a time stamp from the simulation in TACS
   char data_name[128];
-  double t = tacs->getSimulationTime();
+  double t = assembler->getSimulationTime();
   sprintf(data_name, "data t=%.10e", t);
   file->writeZoneData(data_name, variable_names,
                       FH5File::FH5_FLOAT, float_data, dim1, dim2);
@@ -239,107 +246,42 @@ void TACSToFH5::writeToFile( const char *filename ){
 */
 char *TACSToFH5::getElementVarNames(){
   // Find the first variable name
-  int numElements = tacs->getNumElements();
-  TACSElement **elements = tacs->getElements();
-  TACSElement *elem_match = NULL;
   char *elem_vars = NULL;
+  char *output_names[5] = { NULL, NULL, NULL, NULL, NULL };
 
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i] && elements[i]->getElementType() == elem_type){
-      elem_match = elements[i];
-      break;
-    }
-  }
+  int out_types[5] =
+    { TACS_OUTPUT_NODES,
+      TACS_OUTPUT_DISPLACEMENTS,
+      TACS_OUTPUT_STRAINS,
+      TACS_OUTPUT_STRESSES,
+      TACS_OUTPUT_EXTRAS };
 
-  if (!elem_match){
-    int rank;
-    MPI_Comm_rank(tacs->getMPIComm(), &rank);
-    fprintf(stderr, "[%d] TACSToFH5: Could not find an element match\n",
-            rank);
-    return elem_vars;
-  }
-
-  char *output_names[7] = {NULL, NULL, NULL,
-                           NULL, NULL, NULL, NULL};
-
-  if (write_flag & TACSElement::OUTPUT_NODES){
-    output_names[0] = new char[ 6 ];
-    sprintf(output_names[0], "X,Y,Z");
-  }
-  if (write_flag & TACSElement::OUTPUT_DISPLACEMENTS){
-    int nd = elem_match->numDisplacements();
-    size_t str_len = 2;
-    for ( int i = 0; i < nd; i++ ){
-      str_len += strlen(elem_match->displacementName(i))+1;
-    }
-    char *temp = new char[ str_len ];
-    if (nd > 0){
-      strcpy(temp, elem_match->displacementName(0));
-      for ( int i = 1; i < nd; i++ ){
-        size_t len = strlen(temp);
-        sprintf(&(temp[len]), ",%s", elem_match->displacementName(i));
+  for ( int k = 0; k < 5; k++ ){
+    if (write_flag & out_types[k]){
+      const char *stemp = NULL;
+      int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
+      size_t str_len = 2;           
+      for ( int i = 0; i < nd; i++ ){
+        stemp = TacsGetOutputComponentName(elem_type, out_type[k], i);
+        str_len += strlen(s);
       }
-    }
-    output_names[1] = temp;
-  }
-  if (write_flag & TACSElement::OUTPUT_STRAINS){
-    int ns = elem_match->numStresses();
-    size_t str_len = 2;
-    for ( int i = 0; i < ns; i++ ){
-      str_len += strlen(elem_match->strainName(i))+1;
-    }
-    char *temp = new char[ str_len ];
-    if (ns > 0){
-      strcpy(temp, elem_match->strainName(0));
-      for ( int i = 1; i < ns; i++ ){
-        size_t len = strlen(temp);
-        sprintf(&temp[len], ",%s", elem_match->strainName(i));
+      char *temp = new char[ str_len ];
+      if (nd > 0){
+        stemp = TacsGetOutputComponentName(elem_type, out_type[k], 0);
+        strcpy(temp, s);
+        for ( int i = 1; i < nd; i++ ){
+          stemp = TacsGetOutputComponentName(elem_type, out_type[k], i);
+          size_t len = strlen(temp);
+          sprintf(&(temp[len]), ",%s", stemp);
+        }
       }
+      output_names[k] = temp;
     }
-    output_names[2] = temp;
-  }
-  if (write_flag & TACSElement::OUTPUT_STRESSES){
-    int ns = elem_match->numStresses();
-    size_t str_len = 2;
-    for ( int i = 0; i < ns; i++ ){
-      str_len += strlen(elem_match->stressName(i))+1;
-    }
-    char *temp = new char[ str_len ];
-    if (ns > 0){
-      strcpy(temp, elem_match->stressName(0));
-      for ( int i = 1; i < ns; i++ ){
-        size_t len = strlen(temp);
-        sprintf(&temp[len], ",%s", elem_match->stressName(i));
-      }
-    }
-    output_names[3] = temp;
-  }
-  if (write_flag & TACSElement::OUTPUT_EXTRAS){
-    int ne = elem_match->numExtras();
-    size_t str_len = 2;
-    for ( int i = 0; i < ne; i++ ){
-      str_len += strlen(elem_match->extraName(i))+1;
-    }
-    char *temp = new char[ str_len ];
-    if (ne > 0){
-      strcpy(temp, elem_match->extraName(0));
-      for ( int i = 1; i < ne; i++ ){
-        size_t len = strlen(temp);
-        sprintf(&temp[len], ",%s", elem_match->extraName(i));
-      }
-    }
-    output_names[4] = temp;
-  }
-  if (write_flag & TACSElement::OUTPUT_COORDINATES){
-    int ne = 9;
-    size_t str_len = 4*ne;
-    output_names[5] = new char[ str_len ];
-    strcpy(output_names[5], "1x,1y,1z,2x,2y,2z,3x,3y,3z");
   }
 
   // Count up the size of the elem_vars string
-  int elem_size = 14; // Extra space for either a comma or \0
-  for ( int k = 0; k < 7; k++ ){
+  int elem_size = 0; // Extra space for either a comma or \0
+  for ( int k = 0; k < 5; k++ ){
     if (output_names[k]){
       elem_size += strlen(output_names[k]);
     }
@@ -349,7 +291,7 @@ char *TACSToFH5::getElementVarNames(){
 
   // Copy the first zone into the list directly
   int k = 0;
-  for ( ; k < 7; k++ ){
+  for ( ; k < 5; k++ ){
     if (output_names[k]){
       strcpy(elem_vars, output_names[k]);
       k++;
@@ -359,14 +301,14 @@ char *TACSToFH5::getElementVarNames(){
 
   // For subsequent non-zero zones - add a comma before adding
   // the remainder of the list
-  for ( ; k < 7; k++ ){
+  for ( ; k < 5; k++ ){
     if (output_names[k]){
       int len = strlen(elem_vars);
       sprintf(&elem_vars[len], ",%s", output_names[k]);
     }
   }
 
-  for ( int k = 0; k < 7; k++ ){
+  for ( int k = 0; k < 5; k++ ){
     if (output_names[k]){ delete [] output_names[k]; }
   }
 

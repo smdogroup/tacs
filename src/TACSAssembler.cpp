@@ -34,15 +34,14 @@
 // TACS-BLAS/LAPACK header
 #include "tacslapack.h"
 
-/*
+/**
   Constructor for the TACSAssembler object
 
-  input:
-  tacs_comm:           the TACS communicator
-  varsPerNode:         the number of degrees of freedom per node
-  numOwnedNodes:       the number of locally-owned nodes
-  numElements:         the number of elements in the mesh
-  numDependentNodes:   the number of dependent nodes in the mesh
+  @param tacs_comm the TACS communicator
+  @param varsPerNode the number of degrees of freedom per node
+  @param numOwnedNodes the number of locally-owned nodes
+  @param numElements the number of elements in the mesh
+  @param numDependentNodes the number of dependent nodes in the mesh
 */
 TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
                               int _varsPerNode,
@@ -159,10 +158,8 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   elementIData = NULL;
 }
 
-/*
-  The TACSAssembler destructor.
-
-  Clean up the allocated memory and decref() all objects
+/**
+   Clean up the allocated memory and decref() all objects
 */
 TACSAssembler::~TACSAssembler(){
   TacsFinalize();
@@ -226,35 +223,39 @@ TACSAssembler::~TACSAssembler(){
 
 const char *TACSAssembler::tacsName = "TACSAssembler";
 
-/*
-  Return the MPI communicator for the TACSAssembler object
+/**
+   Return the MPI communicator for the TACSAssembler object
+
+   @return the MPI communicator
 */
 MPI_Comm TACSAssembler::getMPIComm(){
   return tacs_comm;
 }
 
-/*
-  Get the number of unknowns per node
+/**
+   Get the number of degrees of freedom per node
+   
+   @return the number of degrees of freedom per node
 */
 int TACSAssembler::getVarsPerNode(){
   return varsPerNode;
 }
 
-/*
+/**
   Get the number of local nodes
 */
 int TACSAssembler::getNumNodes(){
   return numNodes;
 }
 
-/*
+/**
   Get the number of dependent nodes
 */
 int TACSAssembler::getNumDependentNodes(){
   return numDependentNodes;
 }
 
-/*
+/**
   Get the number of owned local nodes
 */
 int TACSAssembler::getNumOwnedNodes(){
@@ -4932,7 +4933,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   Xvars->decref();
 }
 
-/*!
+/**
   Determine the number of components defined by elements in the
   TACSAssembler object.
 
