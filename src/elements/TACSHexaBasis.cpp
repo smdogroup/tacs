@@ -15,6 +15,39 @@
 #include "TACSHexaBasis.h"
 #include "TACSGaussHexarature.h"
 
+static void getFaceTangents( int face, double t[] ){
+  if (face == 0){
+    // Z - Y plane make a -X normal direction
+    t[0] = 0.0;  t[1] = 0.0;  t[2] = 1.0;
+    t[3] = 0.0;  t[4] = 1.0;  t[5] = 0.0;
+  }
+  else if (face == 1){
+    // Y - Z plane makes a X normal direction
+    t[0] = 0.0;  t[1] = 1.0;  t[2] = 0.0;
+    t[3] = 0.0;  t[4] = 0.0;  t[5] = 1.0;
+  }
+  else if (face == 2){
+    // X - Z plane makes a -Y normal direction
+    t[0] = 1.0;  t[1] = 0.0;  t[2] = 0.0;
+    t[3] = 0.0;  t[4] = 0.0;  t[5] = 1.0;
+  }
+  else if (face == 3){
+    // Z - X plane makes a Y normal direction
+    t[0] = 0.0;  t[1] = 0.0;  t[2] = 1.0;
+    t[3] = 1.0;  t[4] = 0.0;  t[5] = 0.0;
+  }
+  else if (face == 4){
+    // Y - X plane makes a -Z normal direction
+    t[0] = 0.0;  t[1] = 1.0;  t[2] = 0.0;
+    t[3] = 1.0;  t[4] = 0.0;  t[5] = 0.0;
+  }
+  else if (face == 5){
+    // X - Y plane makes a Z normal direction
+    t[0] = 1.0;  t[1] = 0.0;  t[2] = 0.0;
+    t[3] = 0.0;  t[4] = 0.0;  t[5] = 1.0;
+  }
+}
+
 /*
   Linear Hexa basis class functions
 */
@@ -74,6 +107,8 @@ double TACSLinearHexaBasis::getFaceQuadraturePoint( int face,
     pt[1] = TacsGaussHexaWts2[n/2];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
+
+  getFaceTangents(face, t);
 
   return (TacsGaussHexaWts2[n % 2]*TacsGaussHexaWts2[n/2]);
 }
@@ -177,7 +212,8 @@ int TACSQuadraticHexaBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSQuadraticHexaBasis::getFaceQuadraturePoint( int face,
                                                        int n,
-                                                       double pt[] ){
+                                                       double pt[],
+                                                       double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
     pt[1] = TacsGaussHexaWts3[n % 3];    
@@ -193,6 +229,8 @@ double TACSQuadraticHexaBasis::getFaceQuadraturePoint( int face,
     pt[1] = TacsGaussHexaWts3[n/3];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
+
+  getFaceTangents(face, t);
 
   return (TacsGaussHexaWts3[n % 3]*TacsGaussHexaWts3[n/3]);
 }
@@ -313,7 +351,8 @@ int TACSCubicHexaBasis::getNumFaceHexaraturePoints( int face ){
 
 double TACSCubicHexaBasis::getFaceHexaraturePoint( int face,
                                                    int n,
-                                                   double pt[] ){
+                                                   double pt[],
+                                                   double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
     pt[1] = TacsGaussHexaWts4[n % 4];    
@@ -329,6 +368,8 @@ double TACSCubicHexaBasis::getFaceHexaraturePoint( int face,
     pt[1] = TacsGaussHexaWts3[n/4];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
+
+  getFaceTangents(face, t);
 
   return (TacsGaussHexaWts4[n % 4]*TacsGaussHexaWts4[n/4]);
 }

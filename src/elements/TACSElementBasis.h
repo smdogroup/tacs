@@ -294,7 +294,24 @@ class TACSElementBasis {
                                    const TacsScalar DUt[],
                                    const TacsScalar DUx[],
                                    TacsScalar res[] );
-
+  static void addWeakFormJacobian( const int num_params,
+                                   const int num_nodes,
+                                   const double N[],
+                                   const TacsScalar Nx[],
+                                   const TacsScalar J[],
+                                   TacsScalar weight,
+                                   const int vars_per_node,
+                                   const TacsScalar DUt[],
+                                   const TacsScalar DUx[],
+                                   double alpha, double beta, double gamma,
+                                   const int DDUt_nnz,
+                                   const int *DDUt_pairs,
+                                   const TacsScalar *DDUt,
+                                   const int DDUx_nnz,
+                                   const int *DDUx_paris,
+                                   const TacsScalar *DDUx,
+                                   TacsScalar *res,
+                                   TacsScalar *mat );
 };
 
 #endif // TACS_ELEMENT_BASIS_H

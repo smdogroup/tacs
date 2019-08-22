@@ -15,6 +15,26 @@
 #include "TACSQuadBasis.h"
 #include "TACSGaussQuadrature.h"
 
+
+static void getEdgeTangent( int edge, double t[] ){
+  if (edge == 0){
+    // -X edge
+    t[0] = 0.0;  t[1] = -1.0;
+  }
+  else if (edge == 1){
+    // +X edge
+    t[0] = 0.0;  t[1] = 1.0;
+  }
+  else if (edge == 2){
+    // -Y edge
+    t[0] = 1.0;  t[1] = 0.0;
+  }
+  else if (edge == 3){
+    // +Y edge
+    t[0] = -1.0;  t[1] = 0.0;
+  }
+}
+
 /*
   Linear Quad basis class functions
 */
@@ -52,7 +72,8 @@ int TACSLinearQuadBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSLinearQuadBasis::getFaceQuadraturePoint( int face,
                                                     int n,
-                                                    double pt[] ){
+                                                    double pt[],
+                                                    double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
     pt[1] = TacsGaussQuadWts2[n];    
@@ -61,6 +82,8 @@ double TACSLinearQuadBasis::getFaceQuadraturePoint( int face,
     pt[0] = TacsGaussQuadWts2[n];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
+
+  getEdgeTangent(face, t);
 
   return TacsGaussQuadWts2[n];
 }
@@ -131,7 +154,8 @@ int TACSQuadraticQuadBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSQuadraticQuadBasis::getFaceQuadraturePoint( int face,
                                                        int n,
-                                                       double pt[] ){
+                                                       double pt[],
+                                                       double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
     pt[1] = TacsGaussQuadWts3[n];    
@@ -140,6 +164,8 @@ double TACSQuadraticQuadBasis::getFaceQuadraturePoint( int face,
     pt[0] = TacsGaussQuadWts3[n];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
+
+  getEdgeTangent(face, t);
 
   return TacsGaussQuadWts3[n];
 }
@@ -257,7 +283,8 @@ int TACSCubicQuadBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSCubicQuadBasis::getFaceQuadraturePoint( int face,
                                                    int n,
-                                                   double pt[] ){
+                                                   double pt[],
+                                                   double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
     pt[1] = TacsGaussQuadWts4[n];    
@@ -266,6 +293,8 @@ double TACSCubicQuadBasis::getFaceQuadraturePoint( int face,
     pt[0] = TacsGaussQuadWts4[n];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
+
+  getEdgeTangent(face, t);
 
   return TacsGaussQuadWts4[n];
 }
