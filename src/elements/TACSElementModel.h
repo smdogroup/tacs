@@ -21,7 +21,7 @@
   TACSElementModel defines a physical model class independent of a
   finite element basis
 */
-class TACSElementModel : class TACSObject {
+class TACSElementModel {
  public:
   /**
     Returns the spatial dimension of the element: 1, 2 or 3

@@ -14,13 +14,13 @@
 
 #include "TACSElementModel.h"
 
-class TACS3dLinearEleasticity : public TACSElementModel {
+class TACSLinearEleasticity2D : public TACSElementModel {
  public:
-  TACS3dLinearEleasticity( TACSConstitutive *_con ){
+  TACSLinearEleasticity2D( TACSConstitutive *_con ){
     con = _con;
     con->incref();
   }
-  ~TACS3dLinearEleasticity(){
+  ~TACSLinearEleasticity2D(){
     con->decref();
   }
   

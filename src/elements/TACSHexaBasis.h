@@ -29,7 +29,7 @@ class TACSLinearHexaBasis : public TACSElementBasis {
   double getQuadraturePoint( int n, double pt[] );
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[] );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
@@ -46,7 +46,7 @@ class TACSQuadraticHexaBasis : public TACSElementBasis {
   double getQuadraturePoint( int n, double pt[] );
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[] );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
@@ -63,7 +63,7 @@ class TACSCubicHexaBasis : public TACSElementBasis {
   double getQuadraturePoint( int n, double pt[] );
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[] );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };

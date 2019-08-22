@@ -28,7 +28,12 @@
 
 class TACSElementBasis {
  public:
-  static const int MAX_BASIS_SIZE = 216;  
+  static const int MAX_BASIS_SIZE = 216;
+
+  /**
+    Get the layout type
+  */
+  virtual getLayoutType(){}
 
   /**
     Get the number of basis functions
@@ -175,13 +180,13 @@ class TACSElementBasis {
     @param DUt The coefficients of the temporal part of the weak form
     @param DUx The coefficients of the spatial part of the weak form
   */
-  void addWeakFormResidual( int n, const double pt[],
-                            TacsScalar weight,
-                            const TacsScalar J[],
-                            const int vars_per_node,
-                            const TacsScalar DUt[],
-                            const TacsScalar DUx[],
-                            TacsScalar res[] );
+  virtual void addWeakFormResidual( int n, const double pt[],
+                                    TacsScalar weight,
+                                    const TacsScalar J[],
+                                    const int vars_per_node,
+                                    const TacsScalar DUt[],
+                                    const TacsScalar DUx[],
+                                    TacsScalar res[] );
 
   /**
     Add the weak form of the governing equations to the residual
@@ -194,21 +199,21 @@ class TACSElementBasis {
     @param DUt The coefficients of the temporal part of the weak form
     @param DUx The coefficients of the spatial part of the weak form
   */
-  void addWeakFormJacobian( int n, const double pt[],
-                            TacsScalar weight,
-                            const TacsScalar J[],
-                            const int vars_per_node,
-                            const TacsScalar DUt[],
-                            const TacsScalar DUx[],
-                            double alpha, double beta, double gamma,
-                            const int DDUt_nnz,
-                            const int *DDUt_pairs,
-                            const TacsScalar *DDUt,
-                            const int DDUx_nnz,
-                            const int *DDUx_paris,
-                            const TacsScalar *DDUx,
-                            TacsScalar res[],
-                            TacsScalar mat[] );
+  virtual void addWeakFormJacobian( int n, const double pt[],
+                                    TacsScalar weight,
+                                    const TacsScalar J[],
+                                    const int vars_per_node,
+                                    const TacsScalar DUt[],
+                                    const TacsScalar DUx[],
+                                    double alpha, double beta, double gamma,
+                                    const int DDUt_nnz,
+                                    const int *DDUt_pairs,
+                                    const TacsScalar *DDUt,
+                                    const int DDUx_nnz,
+                                    const int *DDUx_paris,
+                                    const TacsScalar *DDUx,
+                                    TacsScalar res[],
+                                    TacsScalar mat[] );
 
   /**
     Evaluate basis functions at a parametric point
@@ -279,6 +284,16 @@ class TACSElementBasis {
                                     TacsScalar Udot[],
                                     TacsScalar Uddot[],
                                     TacsScalar Ux[] );
+  static void addWeakFormResidual( const int num_params,
+                                   const int num_nodes,
+                                   const double N[],
+                                   const double Nxi[],
+                                   const TacsScalar J[],
+                                   TacsScalar weight,
+                                   const int vars_per_node,
+                                   const TacsScalar DUt[],
+                                   const TacsScalar DUx[],
+                                   TacsScalar res[] );
 
 };
 
