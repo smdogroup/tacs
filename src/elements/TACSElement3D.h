@@ -25,7 +25,8 @@ class TACSElement3D : public TACSElement {
     model = _model;
     basis = _basis;
   }
-  
+
+  // Get the layout properties of the element
   int getVarsPerNode(){ return basis->getVarsPerNode(); }
   int getNumNodes(){ return basis->getNumNodes(); }
   ElementLayout getLayoutType(){ basis->getLayoutType(); }
@@ -194,4 +195,4 @@ void TACSElement3D<VARS_PER_NODE>::addAdjResXptProduct( double time,
   
 }
 
-#endif // TACS_3D_ELEMENT_H
+#endif // TACS_ELEMENT_3D_H

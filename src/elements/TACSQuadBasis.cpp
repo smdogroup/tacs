@@ -58,7 +58,7 @@ double TACSLinearQuadBasis::getQuadraturePoint( int n,
                                                 double pt[] ){
   pt[0] = TacsGaussQuadWts2[n % 2];
   pt[1] = TacsGaussQuadWts2[n/2];
-  
+
   return TacsGaussQuadWts2[n % 2]*TacsGaussQuadWts2[n/2];
 }
 
@@ -76,7 +76,7 @@ double TACSLinearQuadBasis::getFaceQuadraturePoint( int face,
                                                     double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussQuadWts2[n];    
+    pt[1] = TacsGaussQuadWts2[n];
   }
   else {
     pt[0] = TacsGaussQuadWts2[n];
@@ -109,7 +109,7 @@ void TACSLinearQuadBasis::computeBasisGradient( const double pt[],
 
   Nxi[2] = 0.25*(1.0 - pt[1]);
   Nxi[3] = -0.25*(1.0 + pt[0]);
-  
+
   Nxi[4] = -0.25*(1.0 + pt[1]);
   Nxi[5] = 0.25*(1.0 - pt[0]);
 
@@ -140,7 +140,7 @@ double TACSQuadraticQuadBasis::getQuadraturePoint( int n,
                                                    double pt[] ){
   pt[0] = TacsGaussQuadWts3[n % 3];
   pt[1] = TacsGaussQuadWts3[n/3];
-  
+
   return TacsGaussQuadWts3[n % 3]*TacsGaussQuadWts3[n/3];
 }
 
@@ -158,7 +158,7 @@ double TACSQuadraticQuadBasis::getFaceQuadraturePoint( int face,
                                                        double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussQuadWts3[n];    
+    pt[1] = TacsGaussQuadWts3[n];
   }
   else {
     pt[0] = TacsGaussQuadWts3[n];
@@ -205,7 +205,7 @@ void TACSQuadraticQuadBasis::computeBasisGradient( const double pt[],
   nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
   nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
   nb[2] = 0.5*(1.0 + pt[1])*pt[1];
-  
+
   N[0] = na[0]*nb[0];
   N[1] = na[1]*nb[0];
   N[2] = na[2]*nb[0];
@@ -227,7 +227,7 @@ void TACSQuadraticQuadBasis::computeBasisGradient( const double pt[],
   dnb[2] = 0.5 + pt[1];
 
   Nxi[0] = dna[0]*nb[0];
-  Nxi[1] = na[0]*dnb[0]; 
+  Nxi[1] = na[0]*dnb[0];
   Nxi[2] = dna[1]*nb[0];
   Nxi[3] = na[1]*dnb[0];
   Nxi[4] = dna[2]*nb[0];
@@ -269,7 +269,7 @@ double TACSCubicQuadBasis::getQuadraturePoint( int n,
                                                double pt[] ){
   pt[0] = TacsGaussQuadWts4[n % 4];
   pt[1] = TacsGaussQuadWts4[n/4];
-  
+
   return TacsGaussQuadWts4[n % 4]*TacsGaussQuadWts4[n/4];
 }
 
@@ -287,7 +287,7 @@ double TACSCubicQuadBasis::getFaceQuadraturePoint( int face,
                                                    double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussQuadWts4[n];    
+    pt[1] = TacsGaussQuadWts4[n];
   }
   else {
     pt[0] = TacsGaussQuadWts4[n];
@@ -304,13 +304,13 @@ void TACSCubicQuadBasis::computeBasis( const double pt[],
   double na[4];
   na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
   na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])(0.5 + pt[0])*(1.0 - pt[0]);
+  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
   na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
-  
+
   double nb[4];
   nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
   nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])(0.5 + pt[1])*(1.0 - pt[1]);
+  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
   nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
   N[0] = na[0]*nb[0];
@@ -337,13 +337,13 @@ void TACSCubicQuadBasis::computeBasisGradient( const double pt[],
   double na[4];
   na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
   na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])(0.5 + pt[0])*(1.0 - pt[0]);
+  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
   na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
-  
+
   double nb[4];
   nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
   nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])(0.5 + pt[1])*(1.0 - pt[1]);
+  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
   nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
   N[0] = na[0]*nb[0];
@@ -366,13 +366,13 @@ void TACSCubicQuadBasis::computeBasisGradient( const double pt[],
   double dna[4];
   dna[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
   dna[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
-  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*ptp[0] + 4.0/3.0;
+  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
   dna[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
 
   double dnb[4];
   dnb[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
   dnb[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
-  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*ptp[0] + 4.0/3.0;
+  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
   dnb[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
 
   N[0] = dna[0]*nb[0];

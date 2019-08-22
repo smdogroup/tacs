@@ -4,7 +4,7 @@
   multidisciplinary design optimization
 
   Copyright (C) 2014 Georgia Tech Research Corporation
- 
+
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 */
 
 #include "TACSElementTypes.h"
+#include "TACSObject.h"
 
 /*
   Get the number of components associated with the output
@@ -95,6 +96,8 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 3;
     }
   }
+
+  return 0;
 }
 
 /*
@@ -103,7 +106,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
 const char* TacsGetOutputComponentName( ElementType etype,
                                         int comp,
                                         int index ){
-  if (index < 0 || index > getOutputComponentCount(etype, comp)){
+  if (index < 0 || index > TacsGetOutputComponentCount(etype, comp)){
     return NULL;
   }
 
@@ -292,6 +295,8 @@ const char* TacsGetOutputComponentName( ElementType etype,
       }
     }
   }
+
+  return NULL;
 }
 
 /*
@@ -425,7 +430,7 @@ void TacsConvertVizLayoutToBasicCount( ElementLayout ltype,
   case TACS_PETTA_QUADRATIC_ELEMENT:
   case TACS_PENTA_CUBIC_ELEMENT:
     break;
-    
+
   default: break;
   }
 }
@@ -441,4 +446,3 @@ void TacsConvertVizLayoutToBasic( ElementLayout ltype,
 
 
 }
-

@@ -12,103 +12,50 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_2D_ELEMENT_H
-#define TACS_2D_ELEMENT_H
+#ifndef TACS_ELEMENT_2D_H
+#define TACS_ELEMENT_2D_H
 
 #include "TACSElementModel.h"
 #include "TACSElementBasis.h"
 
 template <int VARS_PER_NODE>
-class TACS3DElement : public TACSElement {
+class TACSElement2D : public TACSElement {
  public:
-  TACS3DElement( TACSElementModel *_model, TACSElementBasis *_basis ){
+  TACSElement2D( TACSElementModel *_model, TACSElementBasis *_basis ){
     model = _model;
     basis = _basis;
   }
 
-  // Get the variable information
-  // ----------------------------
-  const char *getDisplacementName( int i );
-  const char *getStressName( int i );
-  const char *getStrainName( int i );
-  const char *getExtraName( int i );
-  int getNumDisplacements();
-  int getNumStresses();
-  int getNumNodes();
-  int getNumVariables();
-  int getNumExtras();
-  ElementType getElementType();
-
-  // The design variable query functions
-  // -----------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lowerBound[], 
-                          TacsScalar upperBound[], int numDVs );
+  // Get the layout properties of the element
+  int getVarsPerNode(){ return basis->getVarsPerNode(); }
+  int getNumNodes(){ return basis->getNumNodes(); }
+  ElementLayout getLayoutType(){ basis->getLayoutType(); }
   
-  // Compute the kinetic and potential energy within the element
-  // -----------------------------------------------------------
-  void computeEnergies( double time, TacsScalar *_Te, TacsScalar *_Pe,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+  // The design variable functions
+  void setDesignVars( int dvLen, const TacsScalar dvs[] );
+  void getDesignVars( int dvLen, TacsScalar dvs[] );
+  void getDesignVarRange( int dvLen,
+                          TacsScalar lowerBound[], 
+                          TacsScalar upperBound[] );
 
-  // Compute the residual of the governing equations
-  // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[], const TacsScalar Xpts[],
+  // Analysis functions
+  void addResidual( double time, const TacsScalar Xpts[],
                     const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
-
-  // Compute the Jacobian of the governing equations
-  // -----------------------------------------------
-  void addJacobian( double time, TacsScalar res[], TacsScalar J[],
-                    double alpha, double beta, double gamma,
+                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addJacobian( double time, double alpha, double beta, double gamma,
                     const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[] );
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
 
-  // Add the product of the adjoint with the derivative of the design variables
-  // --------------------------------------------------------------------------
-  void addAdjResProduct( double time, double scale,
-                         TacsScalar dvSens[], int dvLen,
-                         const TacsScalar psi[], const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[] );
-
-  // Add the product of the adjoint with the derivative of the design variables
-  // -------------------------------------------------------------------------- 
-  void addAdjResXptProduct( double time, double scale, 
-                            TacsScalar fXptSens[],
-                            const TacsScalar psi[],
-                            const TacsScalar Xpts[],
-                            const TacsScalar vars[],
-                            const TacsScalar dvars[],
-                            const TacsScalar ddvars[] );
-    
-  // Retrieve a specific time-independent matrix from the element
-  // ------------------------------------------------------------
-  void getMatType( ElementMatrixType matType, 
-                   TacsScalar mat[], 
-                   const TacsScalar Xpts[],
-                   const TacsScalar vars[] );
-
-  // Compute the derivative of the inner product w.r.t. design variables
-  // -------------------------------------------------------------------
-  void addMatDVSensInnerProduct( ElementMatrixType matType, 
-                                 double scale,
-                                 TacsScalar dvSens[], int dvLen,
-                                 const TacsScalar psi[], 
-                                 const TacsScalar phi[],
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[] );
-
-  // Compute the derivative of the inner product w.r.t. vars[]
-  // ---------------------------------------------------------
-  void getMatSVSensInnerProduct( ElementMatrixType matType, 
-                                 TacsScalar res[],
-                                 const TacsScalar psi[], 
-                                 const TacsScalar phi[],
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[] );
-
+  // Functions for the adjoint
+  void addAdjResProduct( double time, double scale, const TacsScalar psi[],
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        int dvLen, TacsScalar dvSens[] );
+  void addAdjResXptProduct( double time, double scale, const TacsScalar psi[],
+                            const TacsScalar Xpts[], const TacsScalar vars[],
+                            const TacsScalar dvars[], const TacsScalar ddvars[],
+                            TacsScalar fXptSens[] );
 };
 
 /*
@@ -122,7 +69,7 @@ class TACS3DElement : public TACSElement {
   @param res The element residual output 
 */
 template <int VARS_PER_NODE>
-void TACS3DElement<VARS_PER_NODE>::addResidual( double time,
+void TACSElement2D<VARS_PER_NODE>::addResidual( double time,
                                                 const TacsScalar *Xpts,
                                                 const TacsScalar *vars,
                                                 const TacsScalar *dvars,
@@ -169,7 +116,7 @@ void TACS3DElement<VARS_PER_NODE>::addResidual( double time,
   @param mat The element Jacobian output 
 */
 template <int VARS_PER_NODE>
-void TACS3DElement<VARS_PER_NODE>::addJacobian( double time,
+void TACSElement2D<VARS_PER_NODE>::addJacobian( double time,
                                                 double alpha,
                                                 double beta,
                                                 double gamma,
@@ -217,4 +164,4 @@ void TACS3DElement<VARS_PER_NODE>::addJacobian( double time,
   }
 }
 
-#endif // TACS_2D_ELEMENT_H
+#endif // TACS_ELEMENT_2D_H

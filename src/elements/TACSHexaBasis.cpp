@@ -13,7 +13,7 @@
 */
 
 #include "TACSHexaBasis.h"
-#include "TACSGaussHexarature.h"
+#include "TACSGaussQuadrature.h"
 
 static void getFaceTangents( int face, double t[] ){
   if (face == 0){
@@ -64,20 +64,20 @@ int TACSLinearHexaBasis::getNumQuadraturePoints(){
 }
 
 double TACSLinearHexaBasis::getQuadratureWeight( int n ){
-  return (TacsGaussHexaWts2[n % 2]*
-          TacsGaussHexaWts2[(n % 4)/2]*
-          TacsGaussHexaWts2[n/4]);
+  return (TacsGaussQuadWts2[n % 2]*
+          TacsGaussQuadWts2[(n % 4)/2]*
+          TacsGaussQuadWts2[n/4]);
 }
 
 double TACSLinearHexaBasis::getQuadraturePoint( int n,
                                                 double pt[] ){
-  pt[0] = TacsGaussHexaWts2[n % 2];
-  pt[1] = TacsGaussHexaWts2[(n % 4)/2];
-  pt[2] = TacsGaussHexaWts2[n/4];
+  pt[0] = TacsGaussQuadWts2[n % 2];
+  pt[1] = TacsGaussQuadWts2[(n % 4)/2];
+  pt[2] = TacsGaussQuadWts2[n/4];
 
-  return (TacsGaussHexaWts2[n % 2]*
-          TacsGaussHexaWts2[(n % 4)/2]*
-          TacsGaussHexaWts2[n/4]);
+  return (TacsGaussQuadWts2[n % 2]*
+          TacsGaussQuadWts2[(n % 4)/2]*
+          TacsGaussQuadWts2[n/4]);
 }
 
 int TACSLinearHexaBasis::getNumElementFaces(){
@@ -94,23 +94,23 @@ double TACSLinearHexaBasis::getFaceQuadraturePoint( int face,
                                                     double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussHexaWts2[n % 2];
-    pt[2] = TacsGaussHexaWts2[n/2];
+    pt[1] = TacsGaussQuadWts2[n % 2];
+    pt[2] = TacsGaussQuadWts2[n/2];
   }
   else if (face/2 == 1){
-    pt[0] = TacsGaussHexaWts2[n % 2];
+    pt[0] = TacsGaussQuadWts2[n % 2];
     pt[1] = -1.0 + 2.0*(face % 2);
-    pt[2] = TacsGaussHexaWts2[n/2];
+    pt[2] = TacsGaussQuadWts2[n/2];
   }
   else {
-    pt[0] = TacsGaussHexaWts2[n % 2];
-    pt[1] = TacsGaussHexaWts2[n/2];
+    pt[0] = TacsGaussQuadWts2[n % 2];
+    pt[1] = TacsGaussQuadWts2[n/2];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
 
   getFaceTangents(face, t);
 
-  return (TacsGaussHexaWts2[n % 2]*TacsGaussHexaWts2[n/2]);
+  return (TacsGaussQuadWts2[n % 2]*TacsGaussQuadWts2[n/2]);
 }
 
 void TACSLinearHexaBasis::computeBasis( const double pt[],
@@ -144,7 +144,7 @@ void TACSLinearHexaBasis::computeBasisGradient( const double pt[],
   Nxi[3] = 0.125*(1.0 - pt[1])*(1.0 - pt[2]);
   Nxi[4] = -0.125*(1.0 + pt[0])*(1.0 - pt[2]);
   Nxi[5] = -0.125*(1.0 + pt[0])*(1.0 - pt[1]);
-  
+
   Nxi[6] = -0.125*(1.0 + pt[1])*(1.0 - pt[2]);
   Nxi[7] = 0.125*(1.0 - pt[0])*(1.0 - pt[2]);
   Nxi[8] = -0.125*(1.0 - pt[0])*(1.0 + pt[1]);
@@ -160,7 +160,7 @@ void TACSLinearHexaBasis::computeBasisGradient( const double pt[],
   Nxi[15] = 0.125*(1.0 - pt[1])*(1.0 + pt[2]);
   Nxi[16] = -0.125*(1.0 + pt[0])*(1.0 + pt[2]);
   Nxi[17] = 0.125*(1.0 + pt[0])*(1.0 - pt[1]);
-  
+
   Nxi[18] = -0.125*(1.0 + pt[1])*(1.0 + pt[2]);
   Nxi[19] = 0.125*(1.0 - pt[0])*(1.0 + pt[2]);
   Nxi[20] = 0.125*(1.0 - pt[0])*(1.0 + pt[1]);
@@ -186,20 +186,20 @@ int TACSQuadraticHexaBasis::getNumQuadraturePoints(){
 }
 
 double TACSQuadraticHexaBasis::getQuadratureWeight( int n ){
-  return (TacsGaussHexaWts3[n % 3]*
-          TacsGaussHexaWts3[(n % 9)/3]*
-          TacsGaussHexaWts3[n/9]);
+  return (TacsGaussQuadWts3[n % 3]*
+          TacsGaussQuadWts3[(n % 9)/3]*
+          TacsGaussQuadWts3[n/9]);
 }
 
 double TACSQuadraticHexaBasis::getQuadraturePoint( int n,
                                                    double pt[] ){
-  pt[0] = TacsGaussHexaWts3[n % 3];
-  pt[1] = TacsGaussHexaWts3[(n % 9)/3];
-  pt[2] = TacsGaussHexaWts3[n/9];
+  pt[0] = TacsGaussQuadWts3[n % 3];
+  pt[1] = TacsGaussQuadWts3[(n % 9)/3];
+  pt[2] = TacsGaussQuadWts3[n/9];
 
-  return (TacsGaussHexaWts3[n % 3]*
-          TacsGaussHexaWts3[(n % 9)/3]*
-          TacsGaussHexaWts3[n/9]);
+  return (TacsGaussQuadWts3[n % 3]*
+          TacsGaussQuadWts3[(n % 9)/3]*
+          TacsGaussQuadWts3[n/9]);
 }
 
 int TACSQuadraticHexaBasis::getNumElementFaces(){
@@ -216,23 +216,23 @@ double TACSQuadraticHexaBasis::getFaceQuadraturePoint( int face,
                                                        double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussHexaWts3[n % 3];    
-    pt[2] = TacsGaussHexaWts3[n/3];    
+    pt[1] = TacsGaussQuadWts3[n % 3];
+    pt[2] = TacsGaussQuadWts3[n/3];
   }
   else if (face/2 == 1){
-    pt[0] = TacsGaussHexaWts3[n % 3];
+    pt[0] = TacsGaussQuadWts3[n % 3];
     pt[1] = -1.0 + 2.0*(face % 2);
-    pt[2] = TacsGaussHexaWts3[n/3];  
+    pt[2] = TacsGaussQuadWts3[n/3];
   }
   else {
-    pt[0] = TacsGaussHexaWts3[n % 3];
-    pt[1] = TacsGaussHexaWts3[n/3];
+    pt[0] = TacsGaussQuadWts3[n % 3];
+    pt[1] = TacsGaussQuadWts3[n/3];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
 
   getFaceTangents(face, t);
 
-  return (TacsGaussHexaWts3[n % 3]*TacsGaussHexaWts3[n/3]);
+  return (TacsGaussQuadWts3[n % 3]*TacsGaussQuadWts3[n/3]);
 }
 
 void TACSQuadraticHexaBasis::computeBasis( const double pt[],
@@ -320,58 +320,58 @@ int TACSCubicHexaBasis::getNumParameters(){
   return 3;
 }
 
-int TACSCubicHexaBasis::getNumHexaraturePoints(){
+int TACSCubicHexaBasis::getNumQuadraturePoints(){
   return 64;
 }
 
-double TACSCubicHexaBasis::getHexaratureWeight( int n ){
-  return (TacsGaussHexaWts4[n % 4]*
-          TacsGaussHexaWts4[(n % 16)/4]*
-          TacsGaussHexaWts4[n/16]);
+double TACSCubicHexaBasis::getQuadratureWeight( int n ){
+  return (TacsGaussQuadWts4[n % 4]*
+          TacsGaussQuadWts4[(n % 16)/4]*
+          TacsGaussQuadWts4[n/16]);
 }
 
-double TACSCubicHexaBasis::getHexaraturePoint( int n,
+double TACSCubicHexaBasis::getQuadraturePoint( int n,
                                                double pt[] ){
-  pt[0] = TacsGaussHexaWts4[n % 4];
-  pt[1] = TacsGaussHexaWts4[(n % 16)/4];
-  pt[2] = TacsGaussHexaWts4[n/16];
+  pt[0] = TacsGaussQuadWts4[n % 4];
+  pt[1] = TacsGaussQuadWts4[(n % 16)/4];
+  pt[2] = TacsGaussQuadWts4[n/16];
 
-  return (TacsGaussHexaWts4[n % 4]*
-          TacsGaussHexaWts4[(n % 16)/4]*
-          TacsGaussHexaWts4[n/16]);
+  return (TacsGaussQuadWts4[n % 4]*
+          TacsGaussQuadWts4[(n % 16)/4]*
+          TacsGaussQuadWts4[n/16]);
 }
 
 int TACSCubicHexaBasis::getNumElementFaces(){
   return 4;
 }
 
-int TACSCubicHexaBasis::getNumFaceHexaraturePoints( int face ){
+int TACSCubicHexaBasis::getNumFaceQuadraturePoints( int face ){
   return 4;
 }
 
-double TACSCubicHexaBasis::getFaceHexaraturePoint( int face,
+double TACSCubicHexaBasis::getFaceQuadraturePoint( int face,
                                                    int n,
                                                    double pt[],
                                                    double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussHexaWts4[n % 4];    
-    pt[2] = TacsGaussHexaWts4[n/4];    
+    pt[1] = TacsGaussQuadWts4[n % 4];
+    pt[2] = TacsGaussQuadWts4[n/4];
   }
   else if (face/2 == 1){
-    pt[0] = TacsGaussHexaWts3[n % 4];
+    pt[0] = TacsGaussQuadWts3[n % 4];
     pt[1] = -1.0 + 2.0*(face % 2);
-    pt[2] = TacsGaussHexaWts3[n/4];  
+    pt[2] = TacsGaussQuadWts3[n/4];
   }
   else {
-    pt[0] = TacsGaussHexaWts3[n % 4];
-    pt[1] = TacsGaussHexaWts3[n/4];
+    pt[0] = TacsGaussQuadWts3[n % 4];
+    pt[1] = TacsGaussQuadWts3[n/4];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
 
   getFaceTangents(face, t);
 
-  return (TacsGaussHexaWts4[n % 4]*TacsGaussHexaWts4[n/4]);
+  return (TacsGaussQuadWts4[n % 4]*TacsGaussQuadWts4[n/4]);
 }
 
 void TACSCubicHexaBasis::computeBasis( const double pt[],
@@ -379,30 +379,26 @@ void TACSCubicHexaBasis::computeBasis( const double pt[],
   double na[4];
   na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
   na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])(0.5 + pt[0])*(1.0 - pt[0]);
+  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
   na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
-  
+
   double nb[4];
   nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
   nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])(0.5 + pt[1])*(1.0 - pt[1]);
+  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
   nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
   double nc[4];
   nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
   nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])(0.5 + pt[2])*(1.0 - pt[2]);
+  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
   nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
   for ( int k = 0; k < 4; k++ ){
     for ( int j = 0; j < 4; j++ ){
       for ( int i = 0; i < 4; i++ ){
         N[0] = na[i]*nb[j]*nc[k];
-        Nxi[0] = dna[i]*nb[j]*nc[k];
-        Nxi[1] = na[i]*dnb[j]*nc[k];
-        Nxi[2] = na[i]*nb[j]*dnc[k];
         N++;
-        Nxi += 3;
       }
     }
   }
@@ -414,37 +410,37 @@ void TACSCubicHexaBasis::computeBasisGradient( const double pt[],
   double na[4];
   na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
   na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])(0.5 + pt[0])*(1.0 - pt[0]);
+  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
   na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
-  
+
   double nb[4];
   nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
   nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])(0.5 + pt[1])*(1.0 - pt[1]);
+  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
   nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
   double nc[4];
   nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
   nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])(0.5 + pt[2])*(1.0 - pt[2]);
+  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
   nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
   double dna[4];
   dna[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
   dna[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
-  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*ptp[0] + 4.0/3.0;
+  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
   dna[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
 
   double dnb[4];
   dnb[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
   dnb[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
-  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*ptp[0] + 4.0/3.0;
+  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
   dnb[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
 
   double dnc[4];
   dnc[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
   dnc[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
-  dnc[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*ptp[0] + 4.0/3.0;
+  dnc[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
   dnc[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
 
   for ( int k = 0; k < 4; k++ ){

@@ -16,6 +16,7 @@
 #define TACS_ELEMENT_BASIS_H
 
 #include "TACSObject.h"
+#include "TACSElementTypes.h"
 
 /*
   This virtual base class defines the interface for the basis functions
@@ -33,18 +34,20 @@ class TACSElementBasis {
   /**
     Get the layout type
   */
-  virtual getLayoutType(){}
+  virtual ElementLayout getLayoutType(){
+    return TACS_LAYOUT_NONE;
+  }
 
   /**
     Get the number of basis functions
   */
   virtual int getNumNodes() = 0;
-  
+
   /**
     Get the spatial dimension of parameter input space = 1, 2, or 3
   */
   virtual int getNumParameters() = 0;
-  
+
   /**
     Get the number of quadrature points for the volume/area of the element
   */
@@ -153,7 +156,7 @@ class TACSElementBasis {
     @param U The variables at the quadrature point
     @param Udot The time derivative of the variables
     @param Uddot The second time derivative of the variables
-    @param Ux The spatial derivatives of the variables at the parametric location 
+    @param Ux The spatial derivatives of the variables at the parametric location
   */
   virtual TacsScalar getFieldGradient( const double pt[],
                                        const TacsScalar Xpts[],
@@ -199,7 +202,8 @@ class TACSElementBasis {
     @param DUt The coefficients of the temporal part of the weak form
     @param DUx The coefficients of the spatial part of the weak form
   */
-  virtual void addWeakFormJacobian( int n, const double pt[],
+  virtual void addWeakFormJacobian( int n,
+                                    const double pt[],
                                     TacsScalar weight,
                                     const TacsScalar J[],
                                     const int vars_per_node,
@@ -210,14 +214,14 @@ class TACSElementBasis {
                                     const int *DDUt_pairs,
                                     const TacsScalar *DDUt,
                                     const int DDUx_nnz,
-                                    const int *DDUx_paris,
+                                    const int *DDUx_pairs,
                                     const TacsScalar *DDUx,
-                                    TacsScalar res[],
-                                    TacsScalar mat[] );
+                                    TacsScalar *res,
+                                    TacsScalar *mat );
 
   /**
     Evaluate basis functions at a parametric point
-    
+
     @param pt The parametric point
     @parma N The shape function values
   */
@@ -228,16 +232,16 @@ class TACSElementBasis {
     parametric coordinates. This is stored by basis function in
     coordinate order, i.e. Nx = [N[0],pt[0], N[0],pt[1], N[0],pt[2],
     N[1],pt[0] ...
-    
+
     @param pt The parametric point
     @parma N The shape function values
-    @param Nxi The derivative of the shape functions w.r.t. the parameters   
+    @param Nxi The derivative of the shape functions w.r.t. the parameters
   */
   virtual void computeBasisGradient( const double pt[], double N[],
                                      double Nxi[] ) = 0;
 
   /**
-    Compute the derivative of the basis functions with respect to 
+    Compute the derivative of the basis functions with respect to
 
     @param n Index of the parametric point
     @parma N The shape function values
@@ -249,7 +253,7 @@ class TACSElementBasis {
   }
 
   /**
-    Compute the derivative of the basis functions with respect to 
+    Compute the derivative of the basis functions with respect to
 
     @param n Index of the parametric point
     @parma N The shape function values
@@ -257,7 +261,7 @@ class TACSElementBasis {
   virtual void computeBasisGradient( int n, double N[], double Nxi[] ){
     double pt[3];
     getQuadraturePoint(n, pt);
-    computeBasis(pt, N, Nxi);
+    computeBasisGradient(pt, N, Nxi);
   }
 
  protected:
@@ -268,28 +272,28 @@ class TACSElementBasis {
                                   const TacsScalar vars[],
                                   TacsScalar X[],
                                   TacsScalar U[] );
-  static void computeFieldGradient( const int num_params,
-                                    const int num_nodes,
-                                    const double N[],
-                                    const double Nxi[],
-                                    const TacsScalar Xpts[],
-                                    const int vars_per_node,
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[],
-                                    TacsScalar X[],
-                                    TacsScalar Xd[],
-                                    TacsScalar J[],
-                                    TacsScalar U[],
-                                    TacsScalar Udot[],
-                                    TacsScalar Uddot[],
-                                    TacsScalar Ux[] );
+  static TacsScalar computeFieldGradient( const int num_params,
+                                          const int num_nodes,
+                                          const double N[],
+                                          const double Nxi[],
+                                          const TacsScalar Xpts[],
+                                          const int vars_per_node,
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[],
+                                          TacsScalar X[],
+                                          TacsScalar Xd[],
+                                          TacsScalar J[],
+                                          TacsScalar U[],
+                                          TacsScalar Udot[],
+                                          TacsScalar Uddot[],
+                                          TacsScalar Ux[] );
   static void addWeakFormResidual( const int num_params,
                                    const int num_nodes,
                                    const double N[],
                                    const double Nxi[],
-                                   const TacsScalar J[],
                                    TacsScalar weight,
+                                   const TacsScalar J[],
                                    const int vars_per_node,
                                    const TacsScalar DUt[],
                                    const TacsScalar DUx[],
@@ -298,17 +302,19 @@ class TACSElementBasis {
                                    const int num_nodes,
                                    const double N[],
                                    const TacsScalar Nx[],
-                                   const TacsScalar J[],
                                    TacsScalar weight,
+                                   const TacsScalar J[],
                                    const int vars_per_node,
                                    const TacsScalar DUt[],
                                    const TacsScalar DUx[],
-                                   double alpha, double beta, double gamma,
+                                   double alpha,
+                                   double beta,
+                                   double gamma,
                                    const int DDUt_nnz,
                                    const int *DDUt_pairs,
                                    const TacsScalar *DDUt,
                                    const int DDUx_nnz,
-                                   const int *DDUx_paris,
+                                   const int *DDUx_pairs,
                                    const TacsScalar *DDUx,
                                    TacsScalar *res,
                                    TacsScalar *mat );

@@ -4,7 +4,7 @@
   multidisciplinary design optimization
 
   Copyright (C) 2014 Georgia Tech Research Corporation
- 
+
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
@@ -40,11 +40,11 @@ enum ElementType { TACS_ELEMENT_NONE=0,
 */
 enum ElementLayout { TACS_LAYOUT_NONE=0,
                      TACS_POINT_ELEMENT=1,
-                     
+
                      TACS_LINE_ELEMENT=2,
                      TACS_LINE_QUADRATIC_ELEMENT=3,
                      TACS_LINE_CUBIC_ELEMENT=4,
-                     
+
                      TACS_TRI_ELEMENT=5,
                      TACS_TRI_QUADRATIC_ELEMENT=6,
                      TACS_TRI_CUBIC_ELEMENT=7,
@@ -113,14 +113,14 @@ int TacsGetNumVizNodes( ElementLayout ltype );
    number of element types that are needed and the number of new
    entries required in the connectivity array. The basic element types
    are:
-  
+
    TACS_POINT_ELEMENT
    TACS_LINE_ELEMENT
    TACS_TRI_ELEMENT
    TACS_QUAD_ELEMENT
    TACS_TETRA_ELEMENT
    TACS_HEXA_ELEMENT
-   
+
    @param ltype The element layout type
    @param ntypes The number of basic element types.
 */
