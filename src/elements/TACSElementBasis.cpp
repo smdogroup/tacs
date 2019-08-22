@@ -30,6 +30,16 @@ void TACSElementBasis::getFieldValues( const double pt[],
   double N[MAX_BASIS_SIZE];
   computeBasis(pt, N);
 
+  computeFieldValues(num_nodes, N, Xpts, vars_per_node, X, U);
+}
+
+void TACSElementBasis::computeFieldValues( const int num_nodes,
+                                           const double N[],
+                                           const TacsScalar Xpts[],
+                                           const int vars_per_node,
+                                           const TacsScalar vars[],
+                                           TacsScalar X[],
+                                           TacsScalar U[] ){
   // Zero the values of the coordinates and state variable values
   X[0] = X[1] = X[2] = 0.0;
   for ( int j = 0; j < vars_per_node; j++ ){
@@ -43,8 +53,13 @@ void TACSElementBasis::getFieldValues( const double pt[],
     X[0] += n[0]*Xpts[0];
     X[1] += n[0]*Xpts[1];
     X[2] += n[0]*Xpts[2];
+    n++;
     Xpts += 3;
+  }
 
+  // Re-set the shape function pointer
+  n = N;
+  for ( int i = 0; i < num_nodes; i++ ){
     // Add the contribution to the state variable values
     TacsScalar *u = U;
     for ( int j = 0; j < vars_per_node; j++ ){
@@ -54,7 +69,7 @@ void TACSElementBasis::getFieldValues( const double pt[],
     }
 
     // Increment the pointer to the shape functions
-    n++;
+    n++
   }
 }
 
@@ -89,10 +104,29 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
                                                TacsScalar Uddot[],
                                                TacsScalar Ux[] ){
   const int num_nodes = getNumNodes();
+  const int num_params = getNumParameters();
   double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
   computeBasisGradient(pt, N, Nxi);
 
-  if (getParameterSize() == 3){
+}
+
+TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
+                                                   const int num_nodes,
+                                                   const double N[],
+                                                   const double Nxi[],
+                                                   const TacsScalar Xpts[],
+                                                   const int vars_per_node,
+                                                   const TacsScalar vars[],
+                                                   const TacsScalar dvars[],
+                                                   const TacsScalar ddvars[],
+                                                   TacsScalar X[],
+                                                   TacsScalar Xd[],
+                                                   TacsScalar J[],
+                                                   TacsScalar U[],
+                                                   TacsScalar Udot[],
+                                                   TacsScalar Uddot[],
+                                                   TacsScalar Ux[] ){
+  if (num_params == 3){
     // Zero the values of the coordinate and its derivative
     X[0] = X[1] = X[2] = 0.0;
     Xd[0] = Xd[1] = Xd[2] = 0.0;
@@ -124,7 +158,12 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
       Xd[7] += nxi[1]*Xpts[2];
       Xd[8] += nxi[2]*Xpts[2];
       Xpts += 3;
+      n++;
+      nxi += 3;
+    }
 
+    n = N, nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
       // Add contributions to the derivatives of the displacements
       TacsScalar *u = U, *ux = Ux;
       for ( int j = 0; j < vars_per_node; j++ ){
@@ -143,7 +182,7 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
       nxi += 3;
     }
   }
-  else if (getParameterSize() == 2){
+  else if (param_size == 2){
     // Zero the values of the coordinate and its derivative
     X[0] = X[1] = X[2] = 0.0;
     Xd[0] = Xd[1] = Xd[2] = Xd[3] = 0.0;
@@ -185,7 +224,7 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
       nxi += 2;
     }
   }
-  else if (getParameterSize() == 1){
+  else if (param_size == 1){
     // Zero the values of the coordinate and its derivative
     X[0] = X[1] = X[2] = 0.0;
     Xd[0] = Xd[1] = Xd[2] = 0.0;
@@ -223,11 +262,11 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
 
         vars++;
         u++;
-        nx += 2;
+        nxi;
       }
 
       n++;
-      nxi += 2;
+      nxi += 1;
     }
 
   }
@@ -250,6 +289,11 @@ void TACSElementBasis::addWeakFormResidual( int n,
 
   // Compute the basis and its derivative
   computeBasisGradient(pt, N, Nxi);
+
+
+}
+
+void
 
   // Transform Nxi to Nx
   for ( int i = 0; i < num_nodes; i++ ){
@@ -414,23 +458,5 @@ void TACSElementBasis::addWeakFormJacobian( int n,
       nx++;
     }
   }
-  
 }
 
-/*
-  Compute the derivative of the basis functions with respect to
-*/
-void computeBasis( int n, double N[] ){
-  double pt[3];
-  getQuadraturePoint(n, pt);
-  computeBasis(pt, N);
-}
-
-/*
-  Compute the derivative of the basis functions with respect to
-*/
-virtual void computeBasisGradient( int n, double N[], double Nxi[] ){
-  double pt[3];
-  getQuadraturePoint(n, pt);
-  computeBasis(pt, N, Nxi);
-}

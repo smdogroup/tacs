@@ -18,7 +18,7 @@
 #include "TACSElementBasis.h"
 
 /**
-   Basis class for a linear triangular element
+   Basis class for a linear quad element
 */
 class TACSLinearQuadBasis : public TACSElementBasis {
  public:
@@ -29,13 +29,13 @@ class TACSLinearQuadBasis : public TACSElementBasis {
   double getQuadraturePoint( int n, double pt[] );
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[] );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
 
 /**
-   Basis class for a quadratic triangular element
+   Basis class for a quadratic quad element
 */
 class TACSQuadraticQuadBasis : public TACSElementBasis {
  public:
@@ -46,13 +46,13 @@ class TACSQuadraticQuadBasis : public TACSElementBasis {
   double getQuadraturePoint( int n, double pt[] );
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[] );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
 
 /**
-   Basis class for a cubic triangular element
+   Basis class for a cubic quad element
 */
 class TACSCubicQuadBasis : public TACSElementBasis {
  public:
@@ -63,9 +63,9 @@ class TACSCubicQuadBasis : public TACSElementBasis {
   double getQuadraturePoint( int n, double pt[] );
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[] );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
 
-#endif // TACS_TRIANGULAR_BASIS_H
+#endif // TACS_QUAD_BASIS_H

@@ -165,57 +165,8 @@ class TACSElement : public TACSOptObject {
                               const TacsScalar dvars[],
                               const TacsScalar ddvars[] ){}
 
-  // Test functions used to test the derivative evaluation code
-  // ----------------------------------------------------------
-  static void setFailTolerances( double fail_rtol, double fail_atol );
-  static void setPrintLevel( int flag );
-  static void setStepSize( double dh );
-
-  int testResidual( double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
-  int testResidual( double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[],
-                    const int multipliers[],
-                    int nmultipliers );
-  int testJacobian( double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[], int col=-1 );
-  int testStrainSVSens( const TacsScalar Xpts[],
-                        const TacsScalar vars[] );
-  int testStrainXptSens( const TacsScalar Xpts[],
-                         const TacsScalar vars[] );
-  int testAdjResProduct( const TacsScalar *x, int dvLen,
-                         double time, const TacsScalar Xpts[],
-                         const TacsScalar vars[],
-                         const TacsScalar dvars[],
-                         const TacsScalar ddvars[] );
-  int testAdjResXptProduct( double time, const TacsScalar Xpts[],
-                            const TacsScalar vars[],
-                            const TacsScalar dvars[],
-                            const TacsScalar ddvars[] );
-  int testJacobianXptSens( const TacsScalar Xpts[] );
-  int testMatDVSensInnerProduct( ElementMatrixType matType,
-                                 const TacsScalar *x, int dvLen,
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[] );
-
-  int testMatSVSensInnerProduct( ElementMatrixType matType,
-                                 const TacsScalar *x, int dvLen,
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[] );
  private:
   int componentNum;
-
-  // Static information used in the test functions
-  static int test_print_level;
-  static double test_step_size;
-  static double test_fail_rtol;
-  static double test_fail_atol;
 };
 
 #endif // TACS_ELEMENT_H

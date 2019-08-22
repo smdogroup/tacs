@@ -80,12 +80,26 @@ class TACSElementBasis {
   /**
     Get the quadrature point for the given face/edge
 
+    The quadrature point and weight are in the original parameter space
+    (not parametrized along an edge or face). The tangent parameter
+    direction(s) correspond to the directions in parameter space along
+    the specified surface. In the case when the parameter space is
+    of dimention 1, 2, or 3, there are respectively 0, 1 and 2 tagents
+    stored in row major order so that for the 3D case:
+
+    tangent = [d1[0], d1[1], d1[2], d2[0], d2[1], d2[2]]
+
+    Note that the tangents obey the right-hand rule so that
+    crossProduct(Xd*d1, Xd*d2) gives an outward-facing normal direction.
+
     @param face The face/edge index
     @param n The quadrautre point index
     @param pt The quadrature point
-    @return The number of quadrature points for the face
+    @param tangent Parametric direction(s) parallel to the face
+    @return The quadrature weight for the face
   */
-  virtual double getFaceQuadraturePoint( int face, int n, double pt[] ) = 0;
+  virtual double getFaceQuadraturePoint( int face, int n, double pt[],
+                                         double tangent[] ) = 0;
 
   /**
     Get the field values at the specified quadrature point
@@ -214,7 +228,8 @@ class TACSElementBasis {
     @parma N The shape function values
     @param Nxi The derivative of the shape functions w.r.t. the parameters   
   */
-  virtual void computeBasisGradient( const double pt[], double N[], double Nxi[] ) = 0;
+  virtual void computeBasisGradient( const double pt[], double N[],
+                                     double Nxi[] ) = 0;
 
   /**
     Compute the derivative of the basis functions with respect to 
@@ -239,6 +254,32 @@ class TACSElementBasis {
     getQuadraturePoint(n, pt);
     computeBasis(pt, N, Nxi);
   }
+
+ protected:
+  static void computeFieldValues( const int num_nodes,
+                                  const double N[],
+                                  const TacsScalar Xpts[],
+                                  const int vars_per_node,
+                                  const TacsScalar vars[],
+                                  TacsScalar X[],
+                                  TacsScalar U[] );
+  static void computeFieldGradient( const int num_params,
+                                    const int num_nodes,
+                                    const double N[],
+                                    const double Nxi[],
+                                    const TacsScalar Xpts[],
+                                    const int vars_per_node,
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    TacsScalar X[],
+                                    TacsScalar Xd[],
+                                    TacsScalar J[],
+                                    TacsScalar U[],
+                                    TacsScalar Udot[],
+                                    TacsScalar Uddot[],
+                                    TacsScalar Ux[] );
+
 };
 
 #endif // TACS_ELEMENT_BASIS_H

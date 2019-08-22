@@ -12,8 +12,8 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_TRIANGULAR_BASIS_H
-#define TACS_TRIANGULAR_BASIS_H
+#ifndef TACS_HEXA_BASIS_H
+#define TACS_HEXA_BASIS_H
 
 #include "TACSElementBasis.h"
 
@@ -68,4 +68,4 @@ class TACSCubicHexaBasis : public TACSElementBasis {
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
 
-#endif // TACS_TRIANGULAR_BASIS_H
+#endif // TACS_HEXA_BASIS_H

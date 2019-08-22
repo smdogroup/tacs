@@ -3,11 +3,7 @@
   Structures, a parallel finite-element code for structural and
   multidisciplinary design optimization.
 
-  Copyright (C) 2010 University of Toronto
-  Copyright (C) 2012 University of Michigan
   Copyright (C) 2014 Georgia Tech Research Corporation
-  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
-  R.R.A. Martins All rights reserved.
 
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
@@ -18,10 +14,6 @@
 
 #ifndef TACS_GAUSS_QUADRATURE_H
 #define TACS_GAUSS_QUADRATURE_H
-
-enum TACSQuadratureType {
-  TACS_GAUSS_LEGENDRE_QUADRATURE,
-  TACS_GAUSS_LOBATTO_QUADRATURE };
 
 /*
   The following are the definitions of the Gauss (or Gauss-Legendre)
