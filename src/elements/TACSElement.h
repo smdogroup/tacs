@@ -61,6 +61,15 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Get a string representation of the element name
+
+    @return The name of the element
+  */
+  const char* getElementName(){
+    return "TACSElement";
+  }
+
+  /**
     Get the number of degrees of freedom per node for this element
 
     @return The number of degrees of freedom per node
@@ -73,6 +82,13 @@ class TACSElement : public TACSObject {
     @return The number of nodes for this element
   */
   virtual int getNumNodes() = 0; // Number of nodes for this element
+
+  /**
+    Get the number of variables owned by the element
+  */
+  int getNumVariables(){
+    return getNumNodes()*getVarsPerNode();
+  }
 
   /**
     Get the node index where a Lagrange multiplier is defined.

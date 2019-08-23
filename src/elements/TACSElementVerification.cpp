@@ -1,14 +1,27 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
 
+  Copyright (C) 2014 Georgia Tech Research Corporation
 
-test_print_level =
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+*/
+
+#include "TACSElementVerification.h"
+#include "tacslapack.h"
 
 /*
   Assign variables randomly to an array. This is useful for
   testing various things.
 */
 void TacsGenerateRandomArray( TacsScalar *array, int size,
-                              TacsScalar lower=-1.0,
-                              TacsScalar upper=1.0 ){
+                              TacsScalar lower,
+                              TacsScalar upper ){
   for ( int i = 0; i < size; i++ ){
     array[i] = (upper - lower)*(rand()/((double)RAND_MAX+1)) + lower;
   }
@@ -129,7 +142,6 @@ void TacsFormDiffApproximate( TacsScalar *forward,
 #endif // TACS_USE_COMPLEX
 }
 
-
 /*
   The following function tests the consistency of the implementation
   of the residuals and the energy expressions, relying on Lagrange's
@@ -161,11 +173,11 @@ int TacsTestElementResidual( TACSElement *element,
                              const TacsScalar dvars[],
                              const TacsScalar ddvars[],
                              double dh,
-                             int test_print_leve,
-                             double test_fail_atol
+                             int test_print_level,
+                             double test_fail_atol,
                              double test_fail_rtol ){
   // Retrieve the number of variables
-  int nvars = numVariables();
+  int nvars = element->getNumNodes()*element->getVarsPerNode();
 
   // Allocate temporary arrays for the computation
   TacsScalar *q = new TacsScalar[ nvars ];
@@ -189,14 +201,14 @@ int TacsTestElementResidual( TACSElement *element,
     TacsScalar dqtmp = dq[i];
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
-    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq&, T1, &P1);
     res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     dq[i] = dqtmp + dh;
-    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T1, &P1);
 
     dq[i] = dqtmp - dh;
-    computeEnergies(time, &T2, &P2, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T2, &P2);
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
 #endif
     dq[i] = dqtmp;
@@ -215,14 +227,14 @@ int TacsTestElementResidual( TACSElement *element,
     TacsScalar dqtmp = dq[i];
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
-    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     dq[i] = dqtmp + dh;
-    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T1, &P1);
 
     dq[i] = dqtmp - dh;
-    computeEnergies(time, &T2, &P2, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T2, &P2);
 
     // Compute and store the approximation
     res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
@@ -250,14 +262,14 @@ int TacsTestElementResidual( TACSElement *element,
 
 #ifdef TACS_USE_COMPLEX
     q[i] = qtmp + TacsScalar(0.0, dh);
-    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     q[i] = qtmp + dh;
-    computeEnergies(time, &T1, &P1, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T1, &P1);
 
     q[i] = qtmp - dh;
-    computeEnergies(time, &T2, &P2, Xpts, q, dq);
+    element->computeEnergies(time, Xpts, q, dq, &T2, &P2);
 
     // Compute and store the approximation
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
@@ -272,17 +284,17 @@ int TacsTestElementResidual( TACSElement *element,
 
   // Evaluate the residual using the code
   memset(res1, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, res1, Xpts, vars, dvars, ddvars);
+  element->addResidual(time, Xpts, vars, dvars, ddvars, res1);
 
   // Compute the error
   int max_err_index, max_rel_index;
-  double max_err = get_max_error(res1, fd, nvars, &max_err_index);
-  double max_rel = get_max_rel_error(res1, fd, nvars, &max_rel_index);
+  double max_err = TacsGetMaxError(res1, fd, nvars, &max_err_index);
+  double max_rel = TacsGetMaxRelError(res1, fd, nvars, &max_rel_index);
 
   if (test_print_level > 0){
     fprintf(stderr,
             "Testing the residual implementation for element %s.\n",
-            elementName());
+            element->getElementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
             max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
@@ -293,8 +305,8 @@ int TacsTestElementResidual( TACSElement *element,
   if (test_print_level > 1){
     fprintf(stderr,
             "The difference between the FD and true residual is:\n");
-    print_error_components(stderr, "Res error",
-                           res1, fd, nvars);
+    TacsPrintErrorComponents(stderr, "Res error",
+                             res1, fd, nvars);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
@@ -311,6 +323,7 @@ int TacsTestElementResidual( TACSElement *element,
   Test the Lagrange multiplier implementation using only the specified
   constraint set
 */
+/*
 int TACSElement::testResidual( double time,
                                const TacsScalar Xpts[],
                                const TacsScalar vars[],
@@ -529,6 +542,7 @@ int TACSElement::testResidual( double time,
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
+*/
 
 /*
   The following function tests the consistency between the
@@ -538,17 +552,19 @@ int TACSElement::testResidual( double time,
   input:
   col:   test only the specified column of the matrix
 */
-int TacsTestElementJacobian( double time,
-                               const TacsScalar Xpts[],
-                               const TacsScalar vars[],
-                               const TacsScalar dvars[],
-                               const TacsScalar ddvars[],
-                               int col
+int TacsTestElementJacobian( TACSElement *element,
+                             double time,
+                             const TacsScalar Xpts[],
+                             const TacsScalar vars[],
+                             const TacsScalar dvars[],
+                             const TacsScalar ddvars[],
+                             int col,
                              double dh,
-                             int test_print_leve,
-                             double test_fail_atol
+                             int test_print_level,
+                             double test_fail_atol,
                              double test_fail_rtol ){
-  int nvars = numVariables();
+  // Retrieve the number of variables
+  int nvars = element->getNumNodes()*element->getVarsPerNode();
 
   TacsScalar *result = new TacsScalar[nvars];
   TacsScalar *temp = new TacsScalar[nvars];
@@ -565,7 +581,7 @@ int TacsTestElementJacobian( double time,
     pert[col] = 1.0;
   }
   else {
-    generate_random_array(pert, nvars);
+    TacsGenerateRandomArray(pert, nvars);
   }
 
   // Compute the Jacobian
@@ -574,8 +590,8 @@ int TacsTestElementJacobian( double time,
   double gamma = (1.0*rand())/RAND_MAX;
 
   memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
-  addJacobian(time, mat, alpha, beta, gamma,
-              Xpts, vars, dvars, ddvars);
+  element->addJacobian(time, alpha, beta, gamma,
+                       Xpts, vars, dvars, ddvars, res, mat);
 
   // Evaluate the Jacobian
   int one = 1;
@@ -583,41 +599,38 @@ int TacsTestElementJacobian( double time,
   BLASgemv("T", &nvars, &nvars, &a, mat, &nvars,
            pert, &one, &b, result, &one);
 
-  // The step length
-  double dh = test_step_size;
-
   // Perturb the variables in the forward sense
-  forward_perturb(q, nvars, vars, pert, alpha*dh);
-  forward_perturb(dq, nvars, dvars, pert, beta*dh);
-  forward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
+  TacsForwardDiffPerturb(q, nvars, vars, pert, alpha*dh);
+  TacsForwardDiffPerturb(dq, nvars, dvars, pert, beta*dh);
+  TacsForwardDiffPerturb(ddq, nvars, ddvars, pert, gamma*dh);
   memset(res, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, res, Xpts, q, dq, ddq);
+  element->addResidual(time, Xpts, q, dq, ddq, res);
 
   // Perturb the variables in the backward sens
-  backward_perturb(q, nvars, vars, pert, alpha*dh);
-  backward_perturb(dq, nvars, dvars, pert, beta*dh);
-  backward_perturb(ddq, nvars, ddvars, pert, gamma*dh);
+  TacsBackwardDiffPerturb(q, nvars, vars, pert, alpha*dh);
+  TacsBackwardDiffPerturb(dq, nvars, dvars, pert, beta*dh);
+  TacsBackwardDiffPerturb(ddq, nvars, ddvars, pert, gamma*dh);
   memset(temp, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, temp, Xpts, q, dq, ddq);
+  element->addResidual(time, Xpts, q, dq, ddq, temp);
 
   // Form the FD/CS approximate
-  form_approximate(res, temp, nvars, dh);
+  TacsFormDiffApproximate(res, temp, nvars, dh);
 
   // Compute the error
   int max_err_index, max_rel_index;
-  double max_err = get_max_error(result, res, nvars, &max_err_index);
-  double max_rel = get_max_rel_error(result, res, nvars, &max_rel_index);
+  double max_err = TacsGetMaxError(result, res, nvars, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, res, nvars, &max_rel_index);
 
   if (test_print_level > 0){
     if (col >= 0 && col < nvars){
       fprintf(stderr,
               "Testing column %d of the stiffness matrix for element %s.\n",
-              col, elementName());
+              col, element->getElementName());
     }
     else {
       fprintf(stderr,
               "Testing the stiffness matrix for element %s.\n",
-              elementName());
+              element->getElementName());
     }
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
             max_err, max_err_index);
@@ -634,8 +647,8 @@ int TacsTestElementJacobian( double time,
       fprintf(stderr,
               "The product of a random vector and the stiffness matrix is\n");
     }
-    print_error_components(stderr, "K*u",
-                           result, res, nvars);
+    TacsPrintErrorComponents(stderr, "K*u",
+                             result, res, nvars);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
@@ -655,14 +668,21 @@ int TacsTestElementJacobian( double time,
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
-                                    double time, const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[] ){
+int TacsTestAdjResProduct( TACSElement *element,
+                           int dvLen,
+                           const TacsScalar *x,
+                           double time,
+                           const TacsScalar Xpts[],
+                           const TacsScalar vars[],
+                           const TacsScalar dvars[],
+                           const TacsScalar ddvars[],
+                           double dh,
+                           int test_print_level,
+                           double test_fail_atol,
+                           double test_fail_rtol ){
+  // Retrieve the number of variables
+  int nvars = element->getNumNodes()*element->getVarsPerNode();
 
-  int nvars = numVariables();
-  setDesignVars(x, dvLen);
   // Create an array to store the values of the adjoint-residual
   // product
   TacsScalar *result = new TacsScalar[ dvLen ];
@@ -670,14 +690,13 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[ nvars ];
-  generate_random_array(adjoint, nvars);
+  TacsGenerateRandomArray(adjoint, nvars);
 
   // Evaluate the derivative of the adjoint-residual product
   double scale = 1.0*rand()/RAND_MAX;
 
-  addAdjResProduct(time, scale,
-                   result, dvLen, adjoint,
-                   Xpts, vars, dvars, ddvars);
+  element->addAdjResProduct(time, scale, adjoint,
+                            Xpts, vars, dvars, ddvars, dvLen, result);
 
   // Compute the product of the result with a perturbation
   // vector that is equal to perturb = sign(result[k])
@@ -685,9 +704,6 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   for ( int k = 0; k < dvLen; k++ ){
     dpdx += fabs(result[k]);
   }
-
-  // The step length
-  double dh = test_step_size;
 
   // Allocate an array to store the perturbed design variable
   // values
@@ -707,11 +723,11 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
       xpert[k] = x[k] - TacsScalar(0.0, dh);
     }
   }
-  setDesignVars(xpert, dvLen);
+  element->setDesignVars(dvLen, xpert);
 
   TacsScalar p1 = 0.0;
   memset(res, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, res, Xpts, vars, dvars, ddvars);
+  element->addResidual(time, Xpts, vars, dvars, ddvars, res);
   for ( int k = 0; k < nvars; k++ ){
     p1 += scale*res[k]*adjoint[k];
   }
@@ -727,10 +743,10 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
       xpert[k] = x[k] - dh;
     }
   }
-  setDesignVars(xpert, dvLen);
+  element->setDesignVars(dvLen, xpert);
 
   memset(res, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, res, Xpts, vars, dvars, ddvars);
+  element->addResidual(time, Xpts, vars, dvars, ddvars, res);
 
   TacsScalar p1 = 0.0;
   for ( int k = 0; k < nvars; k++ ){
@@ -746,11 +762,11 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
       xpert[k] = x[k] + dh;
     }
   }
-  setDesignVars(xpert, dvLen);
+  element->setDesignVars(dvLen, xpert);
 
   // Compute the residual again
   memset(res, 0, nvars*sizeof(TacsScalar));
-  addResidual(time, res, Xpts, vars, dvars, ddvars);
+  element->addResidual(time, Xpts, vars, dvars, ddvars, res);
   TacsScalar p2 = 0.0;
   for ( int k = 0; k < nvars; k++ ){
     p2 += scale*res[k]*adjoint[k];
@@ -761,19 +777,19 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
 #endif
 
   // Set the design variable values
-  setDesignVars(x, dvLen);
+  element->setDesignVars(dvLen, x);
 
   // Compute the error
   int max_err_index, max_rel_index;
-  double max_err = get_max_error(&dpdx, &fd_dpdx, 1, &max_err_index);
-  double max_rel = get_max_rel_error(&dpdx, &fd_dpdx, 1,
-                                     &max_rel_index);
+  double max_err = TacsGetMaxError(&dpdx, &fd_dpdx, 1, &max_err_index);
+  double max_rel = TacsGetMaxRelError(&dpdx, &fd_dpdx, 1,
+                                      &max_rel_index);
 
   test_print_level = 2;
   if (test_print_level > 0){
     fprintf(stderr,
             "Testing the derivative of the adjoint-residual product for %s\n",
-            elementName());
+            element->getElementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
             max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
@@ -781,8 +797,8 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   }
   // Print the error if required
   if (test_print_level > 1){
-    print_error_components(stderr, "Adj-Res product",
-                           &dpdx, &fd_dpdx, 1);
+    TacsPrintErrorComponents(stderr, "Adj-Res product",
+                             &dpdx, &fd_dpdx, 1);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
@@ -798,13 +814,18 @@ int TACSElement::testAdjResProduct( const TacsScalar *x, int dvLen,
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TACSElement::testAdjResXptProduct( double time,
-                                       const TacsScalar Xpts[],
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[] ){
-  int nnodes = numNodes();
-  int nvars = numVariables();
+int TacsTestAdjResXptProduct( TACSElement *element,
+                              double time,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
+                              const TacsScalar dvars[],
+                              const TacsScalar ddvars[],
+                              double dh,
+                              int test_print_level,
+                              double test_fail_atol,
+                              double test_fail_rtol ){
+  int nvars = element->getNumNodes()*element->getVarsPerNode();
+  int nnodes = element->getNumNodes();
 
   // Create an array to store the values of the adjoint-residual
   // product
@@ -813,15 +834,12 @@ int TACSElement::testAdjResXptProduct( double time,
 
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[ nvars ];
-  generate_random_array(adjoint, nvars);
+  TacsGenerateRandomArray(adjoint, nvars);
 
   // Evaluate the derivative of the adjoint-residual product
   double scale = 1.0*rand()/RAND_MAX;
-  addAdjResXptProduct(time, scale, result, adjoint,
-                      Xpts, vars, dvars, ddvars);
-
-  // The step length
-  double dh = test_step_size;
+  element->addAdjResXptProduct(time, scale, adjoint,
+                               Xpts, vars, dvars, ddvars, result);
 
   // Allocate space to store the results
   TacsScalar *fd = new TacsScalar[ 3*nnodes ];
@@ -834,25 +852,25 @@ int TACSElement::testAdjResXptProduct( double time,
 
     // Perturb the nodes in the forward sense
     TacsScalar one = 1.0;
-    forward_perturb(&X[k], 1, &Xpts[k], &one, dh);
+    TacsForwardDiffPerturb(&X[k], 1, &Xpts[k], &one, dh);
     memset(res, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, res, X, vars, dvars, ddvars);
+    element->addResidual(time, X, vars, dvars, ddvars, res);
     TacsScalar p1 = 0.0;
     for ( int i = 0; i < nvars; i++ ){
       p1 += scale*adjoint[i]*res[i];
     }
 
     // Perturb the nodes in the reverse sense
-    backward_perturb(&X[k], 1, &Xpts[k], &one, dh);
+    TacsBackwardDiffPerturb(&X[k], 1, &Xpts[k], &one, dh);
     memset(res, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, res, X, vars, dvars, ddvars);
+    element->addResidual(time, X, vars, dvars, ddvars, res);
     TacsScalar p2 = 0.0;
     for ( int i = 0; i < nvars; i++ ){
       p2 += scale*adjoint[i]*res[i];
     }
 
     // Form the approximation
-    form_approximate(&p1, &p2, 1, dh);
+    TacsFormDiffApproximate(&p1, &p2, 1, dh);
 
     // Set the
     fd[k] = p1;
@@ -860,13 +878,13 @@ int TACSElement::testAdjResXptProduct( double time,
 
   // Compute the error
   int max_err_index, max_rel_index;
-  double max_err = get_max_error(result, fd, 3*nnodes, &max_err_index);
-  double max_rel = get_max_rel_error(result, fd, 3*nnodes, &max_rel_index);
+  double max_err = TacsGetMaxError(result, fd, 3*nnodes, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, 3*nnodes, &max_rel_index);
 
   if (test_print_level > 0){
     fprintf(stderr,
             "Testing the derivative of the adjoint-residual product for %s\n",
-            elementName());
+            element->getElementName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
             max_err, max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
@@ -875,8 +893,8 @@ int TACSElement::testAdjResXptProduct( double time,
 
   // Print the error if required
   if (test_print_level > 1){
-    print_error_components(stderr, "Adj-Res Xpt product",
-                           result, fd, 3*nnodes);
+    TacsPrintErrorComponents(stderr, "Adj-Res Xpt product",
+                             result, fd, 3*nnodes);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
@@ -890,79 +908,10 @@ int TACSElement::testAdjResXptProduct( double time,
 }
 
 /*
-  Test the derivative of the strain w.r.t. the nodal coordinates
-*/
-int TACSElement::testJacobianXptSens( const TacsScalar Xpts[] ){
-  // Set the parametric point within the element
-  double pt[3];
-  pt[0] = -1.0 + 2.0*rand()/RAND_MAX;
-  pt[1] = -1.0 + 2.0*rand()/RAND_MAX;
-  pt[2] = -1.0 + 2.0*rand()/RAND_MAX;
-
-  // First, test the derivative w.r.t. the nodal coordinates
-  int nnodes = 3*numNodes(); // actually 3 times the number of nodes
-  TacsScalar jacSens, jacSensApprox, temp;
-  TacsScalar *jacXptSens = new TacsScalar[nnodes];
-  TacsScalar *Xpt_pert = new TacsScalar[nnodes];
-  TacsScalar *Xpt_copy = new TacsScalar[nnodes];
-
-  generate_random_array(Xpt_pert, nnodes);
-
-  // Compute the sensitivity
-  getDetJacobianXptSens(jacXptSens, pt, Xpts);
-
-  // The step length
-  double dh = test_step_size;
-
-  int one = 1;
-  TacsScalar a = 1.0, b = 0.0;
-  BLASgemv("N", &one, &nnodes, &a, jacXptSens, &one,
-           Xpt_pert, &one, &b, &jacSens, &one);
-
-  forward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  jacSensApprox = getDetJacobian(pt, Xpt_copy);
-
-  backward_perturb(Xpt_copy, nnodes, Xpts, Xpt_pert, dh);
-  temp = getDetJacobian(pt, Xpt_copy);
-
-  form_approximate(&jacSensApprox, &temp, 1, dh);
-
-  // Compute the error
-  int max_err_index, max_rel_index;
-  double max_err = get_max_error(&jacSens, &jacSensApprox, 1,
-                                 &max_err_index);
-  double max_rel = get_max_rel_error(&jacSens, &jacSensApprox, 1,
-                                     &max_rel_index);
-
-  if (test_print_level > 0){
-    fprintf(stderr,
-            "Testing the det. Jacobian sensivity w.r.t. the nodes for %s.\n",
-            elementName());
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    fprintf(stderr,
-            "The sensitivity of the det. Jacobian w.r.t. the nodes\n");
-    print_error_components(stderr, "jacXptSens",
-                           &jacSens, &jacSensApprox, 1);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
-
-  delete [] jacXptSens;
-  delete [] Xpt_pert;
-  delete [] Xpt_copy;
-
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
-}
-
-/*
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
+/*
 int TACSElement::testMatDVSensInnerProduct( ElementMatrixType matType,
                                             const TacsScalar *x, int dvLen,
                                             const TacsScalar Xpts[],
@@ -1108,11 +1057,13 @@ int TACSElement::testMatDVSensInnerProduct( ElementMatrixType matType,
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
+*/
 
 /*
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to state variables.
 */
+/*
 int TACSElement::testMatSVSensInnerProduct( ElementMatrixType matType,
                                             const TacsScalar *x, int dvLen,
                                             const TacsScalar Xpts[],
@@ -1240,3 +1191,4 @@ int TACSElement::testMatSVSensInnerProduct( ElementMatrixType matType,
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
+*/

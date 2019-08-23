@@ -433,7 +433,7 @@ class TACSAssembler : public TACSObject {
       res = NULL;
       mat = NULL;
       alpha = beta = gamma = 0.0;
-      matType = STIFFNESS_MATRIX;
+      matType = TACS_STIFFNESS_MATRIX;
       matOr = NORMAL;
       coef = 0.0;
       numFuncs = 0;

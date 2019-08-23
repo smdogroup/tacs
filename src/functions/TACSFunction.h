@@ -160,7 +160,7 @@ class TACSFunction : public TACSObject {
                                  const TacsScalar Xpts[], const TacsScalar vars[],
                                  const TacsScalar dvars[], const TacsScalar ddvars[],
                                  TACSFunctionCtx *ctx ){
-    int numVars = element->numVariables();
+    int numVars = element->getNumVariables();
     memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
   }
 
@@ -179,7 +179,7 @@ class TACSFunction : public TACSObject {
                                   const TacsScalar Xpts[], const TacsScalar vars[],
                                   const TacsScalar dvars[], const TacsScalar ddvars[],
                                   TACSFunctionCtx *ctx ){
-    int numNodes = element->numNodes();
+    int numNodes = element->getNumNodes();
     memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
   }
 

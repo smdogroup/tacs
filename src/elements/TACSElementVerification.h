@@ -63,7 +63,24 @@ void TacsBackwardDiffPerturb( TacsScalar *out, int size,
                               double dh );
 
 /*
+  Form the forward approximation
+*/
+void TacsFormDiffApproximate( TacsScalar *forward,
+                              const TacsScalar *backward,
+                              int size,
+                              TacsScalar dh );
+
+/**
+  Test the residual implementation against the Lagrangian equations
+  of motion. This relies on the element implementation of the kinetic
+  and potential energies.
   
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
 */
 int TacsTestElementResidual( TACSElement *element,
                              double time,
@@ -71,9 +88,77 @@ int TacsTestElementResidual( TACSElement *element,
                              const TacsScalar vars[],
                              const TacsScalar dvars[],
                              const TacsScalar ddvars[],
-                             double dh,
-                             int test_print_leve,
-                             double test_fail_atol
-                             double test_fail_rtol );
+                             double dh=1e-7,
+                             int test_print_level=2,
+                             double test_fail_atol=1e-5,
+                             double test_fail_rtol=1e-5 );
 
-#endif TACS_ELEMENT_VERIFICATION_H
+/**
+  Test the Jacobian matrix implementation against the residual.
+  
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+*/
+int TacsTestElementJacobian( TACSElement *element,
+                             double time,
+                             const TacsScalar Xpts[],
+                             const TacsScalar vars[],
+                             const TacsScalar dvars[],
+                             const TacsScalar ddvars[],
+                             int col=-1,
+                             double dh=1e-7,
+                             int test_print_level=2,
+                             double test_fail_atol=1e-5,
+                             double test_fail_rtol=1e-5 );
+
+/**
+  Test the adjoint-residual product implementation
+  
+  @param element The element object
+  @param dvLen The length of the design variable array
+  @param x The design variable array
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+*/
+int TacsTestAdjResProduct( TACSElement *element,
+                           int dvLen,
+                           const TacsScalar *x,
+                           double time,
+                           const TacsScalar Xpts[],
+                           const TacsScalar vars[],
+                           const TacsScalar dvars[],
+                           const TacsScalar ddvars[],
+                           double dh=1e-7,
+                           int test_print_level=2,
+                           double test_fail_atol=1e-5,
+                           double test_fail_rtol=1e-5 );
+
+/**
+  Test the adjoint-residual product implementation
+  
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+*/
+int TacsTestAdjResXptProduct( TACSElement *element,
+                              double time,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
+                              const TacsScalar dvars[],
+                              const TacsScalar ddvars[],
+                              double dh=1e-7,
+                              int test_print_level=2,
+                              double test_fail_atol=1e-5,
+                              double test_fail_rtol=1e-5 );
+
+#endif // TACS_ELEMENT_VERIFICATION_H

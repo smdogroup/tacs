@@ -56,8 +56,8 @@ double TACSLinearQuadBasis::getQuadratureWeight( int n ){
 
 double TACSLinearQuadBasis::getQuadraturePoint( int n,
                                                 double pt[] ){
-  pt[0] = TacsGaussQuadWts2[n % 2];
-  pt[1] = TacsGaussQuadWts2[n/2];
+  pt[0] = TacsGaussQuadPts2[n % 2];
+  pt[1] = TacsGaussQuadPts2[n/2];
 
   return TacsGaussQuadWts2[n % 2]*TacsGaussQuadWts2[n/2];
 }
@@ -76,10 +76,10 @@ double TACSLinearQuadBasis::getFaceQuadraturePoint( int face,
                                                     double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussQuadWts2[n];
+    pt[1] = TacsGaussQuadPts2[n];
   }
   else {
-    pt[0] = TacsGaussQuadWts2[n];
+    pt[0] = TacsGaussQuadPts2[n];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
 
@@ -158,10 +158,10 @@ double TACSQuadraticQuadBasis::getFaceQuadraturePoint( int face,
                                                        double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussQuadWts3[n];
+    pt[1] = TacsGaussQuadPts3[n];
   }
   else {
-    pt[0] = TacsGaussQuadWts3[n];
+    pt[0] = TacsGaussQuadPts3[n];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
 
@@ -287,10 +287,10 @@ double TACSCubicQuadBasis::getFaceQuadraturePoint( int face,
                                                    double t[] ){
   if (face/2 == 0){
     pt[0] = -1.0 + 2.0*(face % 2);
-    pt[1] = TacsGaussQuadWts4[n];
+    pt[1] = TacsGaussQuadPts4[n];
   }
   else {
-    pt[0] = TacsGaussQuadWts4[n];
+    pt[0] = TacsGaussQuadPts4[n];
     pt[1] = -1.0 + 2.0*(face % 2);
   }
 

@@ -21,7 +21,8 @@ include ../../TACS_Common.mk
 CXX_OBJS = TACSElementTypes.o \
 	TACSElementBasis.o \
 	TACSQuadBasis.o \
-	TACSHexaBasis.o 
+	TACSHexaBasis.o \
+	TACSElementVerification.o
 
 DIR=${TACS_DIR}/src/elements
 

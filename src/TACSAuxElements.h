@@ -49,7 +49,7 @@ class TACSAuxElem {
   pattern as the existing elements that are set in the TACSAssembler
   object.   
 */
-class TACSAuxElements : public TACSOptObject {
+class TACSAuxElements : public TACSObject {
  public:
   TACSAuxElements( int _num_elems=100 );
   ~TACSAuxElements();
@@ -72,9 +72,9 @@ class TACSAuxElements : public TACSOptObject {
 
   // Functions to control the design variables
   // -----------------------------------------
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+  void getDesignVars( int numDVs, TacsScalar dvs[] );
+  void setDesignVars( int numDVs, const TacsScalar dvs[] );
+  void getDesignVarRange( int numDVs, TacsScalar lb[], TacsScalar ub[] );
   
   // Print the name of the TACSObject
   // --------------------------------
