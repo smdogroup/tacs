@@ -26,6 +26,76 @@
 
 #include "TACSObject.h"
 
+/**
+   This class stores the mechanical and thermal material properties for
+   isotropic and anisotropic materials.
+   
+   The goal of this class is to store a set of material properties
+   that can be queried by constitutive classes for beams, shells,
+   plane stress and solid elements. The minimum set of properties
+   consists of isotroic mechanical properties, with zero thermal
+   expansion.
+*/
+class TACSMaterialProperties : public TACSObject {
+ public:
+  enum MaterialType { TACS_ISOTROPIC_MATERIAL,
+                      TACS_ANISOTROPIC_MATERIAL };
+  
+  TACSMaterialProperties( TacsScalar _rho,
+                          TacsScalar _E, TacsScalar _nu,
+                          TacsScalar _ys, TacsScalar _alpha );
+  TACSMaterialProperties( TacsScalar _rho,
+                          TacsScalar _E1, TacsScalar _E2, TacsScalar _E3,
+                          TacsScalar _nu12, TacsScalar _nu13, TacsScalar _nu23,
+                          TacsScalar _G12, TacsScalar _G13, TacsScalar _G23,
+                          TacsScalar _alpha1, TacsScalar _alpha2,
+                          TacsScalar _alpha3 );
+  ~TACSMaterialProperties();
+  
+  // Set the failure properties
+
+  // Get the material type
+  MaterialType getMaterialType();
+  
+  // Extract material property values
+  TacsScalar getDensity();
+
+  // Extract the coefficients
+  int getIsotropicCoefficients( TacsScalar *_nu,
+                                TacsScalar *_E );
+  void getOrthotropicCoefficients( TacsScalar *_E1,
+                                   TacsScalar *_E2,
+                                   TacsScalar *_E3,
+                                   TacsScalar _nu12, );
+  
+  void getCoefThermalExpansion( TacsScalar *_ax,
+                                TacsScalar *_ay,
+                                TacsScalar *_az );
+
+
+ private:
+  // Density
+  TacsScalar rho;
+
+  // Isotropic properties
+  TacsScalar E, nu; // Modulus and Poisson ratio
+  TacsScalar alpha; // Coefficient of thermal expansion
+
+  // Failure criterion
+  TacsScalar ys;
+
+  
+                          
+  
+
+};
+
+
+
+
+
+
+
 /*
   The following class holds the material stiffness and strength
   properties for an orthotropic ply. This class is used by several
@@ -44,20 +114,12 @@
   is determined. Be careful - the value can easily fall outside
   acceptible bounds - these are tested during initialization.
 */
-class OrthoPly : public TACSObject {
+class TACSOrthotropicPly : public TACSObject {
  public:
   // Create OrthoPly with a full set of orthotropic material relationships
   // ---------------------------------------------------------------------
-  OrthoPly( TacsScalar _plyThickness, TacsScalar _rho, 
-	    TacsScalar _E1, TacsScalar _E2, TacsScalar _nu12, 
-	    TacsScalar _G12, TacsScalar _G23, TacsScalar _G13,
-	    TacsScalar _Xt, TacsScalar _Xc, TacsScalar _Yt, TacsScalar _Yc, 
-	    TacsScalar _S12, TacsScalar C = 0.0 );
-
-  // Create OrthoPly with an equivalent von Mises relationships
-  // ----------------------------------------------------------
-  OrthoPly( TacsScalar _plyThickness, TacsScalar _rho, 
-            TacsScalar E, TacsScalar nu, TacsScalar ys );
+  OrthoPly( TacsScalar _plyThickness,
+            TACSMaterialProperties *_properties );
 
   void setKSWeight( TacsScalar _ksWeight );
   void setUseMaxStrainCriterion();

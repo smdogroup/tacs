@@ -16,7 +16,10 @@
   http://www.apache.org/licenses/LICENSE-2.0 
 */
 
-#include "MaterialProperties.h"
+#include "TACSMaterialProperties.h"
+
+
+
 #include "YSlibrary.h"
 
 const char * OrthoPly::name = "OrthoPly";

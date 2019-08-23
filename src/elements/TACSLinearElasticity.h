@@ -16,8 +16,8 @@
 #define TACS_LINEAR_ELASTICITY_H
 
 #include "TACSElementModel.h"
-#include "PlaneStressStiffness.h"
-#include "SolidStiffness.h"
+#include "TACSPlaneStressConstitutive.h"
+#include "TACSSolidConstitutive.h"
 
 enum ElementStrainType { TACS_LINEAR_STRAIN,
                          TACS_NONLINEAR_STRAIN };

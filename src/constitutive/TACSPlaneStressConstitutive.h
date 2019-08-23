@@ -16,8 +16,8 @@
   http://www.apache.org/licenses/LICENSE-2.0 
 */
 
-#ifndef TACS_PLANE_STRESS_STIFFNESS_H
-#define TACS_PLANE_STRESS_STIFFNESS_H
+#ifndef TACS_PLANE_STRESS_CONSTITUTIVE_H
+#define TACS_PLANE_STRESS_CONSTITUTIVE_H
 
 #include "TACSConstitutive.h"
 
@@ -26,12 +26,13 @@
   
   All objects performing plane stress analysis should utilize this class. 
 */
-class PlaneStressStiffness : public TACSConstitutive {
+class TACSPlaneStressConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 3;
-  PlaneStressStiffness();
-  PlaneStressStiffness( TACSMaterialProperties *properties );
-  virtual ~PlaneStressStiffness(){}
+
+  TACSPlaneStressConstitutive();
+  TACSPlaneStressConstitutive( TACSMaterialProperties *properties );
+  virtual ~TACSPlaneStressConstitutive(){}
 
   // Evaluate the stresss
   virtual void evalStress( const double pt[],
@@ -53,7 +54,7 @@ class PlaneStressStiffness : public TACSConstitutive {
   virtual TacsScalar evalDensity( const double pt[], const TacsScalar X[] );
 
   // Extra info about the constitutive class
-  const char *getConstitutiveName();
+  const char *getObjectName();
 
  private:
   static const char *constName;
@@ -62,4 +63,4 @@ class PlaneStressStiffness : public TACSConstitutive {
   TACSMaterialProperties *properties;
 };
 
-#endif
+#endif // TACS_PLANE_STRESS_CONSTITUTIVE_H
