@@ -30,35 +30,36 @@ class PlaneStressStiffness : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 3;
   PlaneStressStiffness();
-  PlaneStressStiffness( TacsScalar _rho, TacsScalar E, TacsScalar nu );
-  PlaneStressStiffness( TacsScalar _rho, TacsScalar E1, 
-			TacsScalar E2, TacsScalar G12, TacsScalar nu12 );
+  PlaneStressStiffness( TACSMaterialProperties *properties );
   virtual ~PlaneStressStiffness(){}
 
-  // Calculate the stress
-  // --------------------
-  int getNumStresses();
-  void calculateStress( const double pt[], 
-                        const TacsScalar strain[],
-			TacsScalar stress[] );
+  // Evaluate the stresss
+  virtual void evalStress( const double pt[],
+                           const TacsScalar X[], 
+                           const TacsScalar strain[],
+                           TacsScalar stress[] );
 
-  // Return the mass moments
-  // -----------------------
-  int getNumMassMoments(){ return 1; }
-  void getPointwiseMass( const double pt[], TacsScalar mass[] ){
-    mass[0] = rho;
-  }
+  // Evaluate the tangent stiffness
+  virtual void evalTangentStiffness( const double pt[],
+                                     const TacsScalar X[], 
+                                     TacsScalar C[] );
+
+  // Evaluate the thermal strain
+  virtual void evalThermalStrain( const double pt[],
+                                  const TacsScalar X[],
+                                  TacsScalar strain );
+
+  // Evaluate the material density
+  virtual TacsScalar evalDensity( const double pt[], const TacsScalar X[] );
 
   // Extra info about the constitutive class
-  // ---------------------------------------
-  const char *constitutiveName();
+  const char *getConstitutiveName();
 
- protected:
-  // The stiffness matrix
-  TacsScalar Cmat[6]; 
-  TacsScalar rho;
  private:
   static const char *constName;
+
+  // Materiial properties class
+  TACSMaterialProperties *properties;
 };
 
 #endif

@@ -22,6 +22,7 @@ CXX_OBJS = TACSElementTypes.o \
 	TACSElementBasis.o \
 	TACSQuadBasis.o \
 	TACSHexaBasis.o \
+	TACSLinearElasticity.o \
 	TACSElementVerification.o
 
 DIR=${TACS_DIR}/src/elements

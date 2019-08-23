@@ -30,7 +30,6 @@ class TACSLinearEleasticity2D : public TACSElementModel {
   
   int getSpatialDim();
   int getVarsPerNode();
-
   void evalWeakIntegrand( const double time,
                           const double pt[],
                           const TacsScalar X[],
@@ -40,7 +39,6 @@ class TACSLinearEleasticity2D : public TACSElementModel {
                           const TacsScalar Ux[],
                           TacsScalar DUt[],
                           TacsScalar DUx[] );
-  
   void evalIntegrandDeriv( const double time,
                            const double pt[],
                            const TacsScalar X[],
@@ -50,18 +48,23 @@ class TACSLinearEleasticity2D : public TACSElementModel {
                            const TacsScalar Ux[],
                            TacsScalar DUt[],
                            TacsScalar DUx[],
-                           int *_DDt_num_non_zeros,
-                           const int *_DDt_non_zero_pairs[],
+                           int *DDUt_nnz,
+                           const int *_DDUt_pairs[],
                            TacsScalar DDUt[],
-                           int *_DDUx_num_non_zeros,
-                           const int *_DDUx_non_zero_pairs[],
+                           int *DDUx_nnz,
+                           const int *_DDUx_pairs[],
                            TacsScalar DDUx[] );
 
  private:
   ElementStrainType strain_type;
   PlaneStressStiffness *stiff;
-  static const int DDt_non_zero_pairs[6] = {3, 3, 6, 6, 9, 9};
+
+  // Constant member data
+  static const int DDUt_pairs[4];
+  static const int DDUx_pairs[32];
 };
+
+/*
 
 class TACSLinearEleasticity3D : public TACSElementModel {
  public:
@@ -70,7 +73,6 @@ class TACSLinearEleasticity3D : public TACSElementModel {
   
   int getSpatialDim();
   int getVarsPerNode();
-
   void evalWeakIntegrand( const double time,
                           const double pt[],
                           const TacsScalar X[],
@@ -80,7 +82,6 @@ class TACSLinearEleasticity3D : public TACSElementModel {
                           const TacsScalar Ux[],
                           TacsScalar DUt[],
                           TacsScalar DUx[] );
-  
   void evalIntegrandDeriv( const double time,
                            const double pt[],
                            const TacsScalar X[],
@@ -90,17 +91,19 @@ class TACSLinearEleasticity3D : public TACSElementModel {
                            const TacsScalar Ux[],
                            TacsScalar DUt[],
                            TacsScalar DUx[],
-                           int *_DDt_num_non_zeros,
-                           const int *_DDt_non_zero_pairs[],
+                           int *DDUt_nnz,
+                           const int *_DDUt_pairs[],
                            TacsScalar DDUt[],
-                           int *_DDUx_num_non_zeros,
-                           const int *_DDUx_non_zero_pairs[],
+                           int *DDUx_nnz,
+                           const int *_DDUx_pairs[],
                            TacsScalar DDUx[] );
 
  private:
+  ElementStrainType strain_type;
   SolidStiffness *stiff;
-  static const int DDt_non_zero_pairs[6] = {3, 3, 6, 6, 9, 9};
+  static const int DDt_non_zero_pairs[6] = {2, 2, 5, 5, 8, 8};
 };
+*/
 
 #endif // TACS_LINEAR_ELASTICITY_H
 

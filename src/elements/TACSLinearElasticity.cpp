@@ -15,16 +15,25 @@
 #include "TACSLinearElasticity.h"
 
 
-TACSLinearEleasticity2D::TACSLinearEleasticity2D( PlaneStressStiffness *_con,
+TACSLinearEleasticity2D::TACSLinearEleasticity2D( PlaneStressStiffness *_stiff,
                                                   ElementStrainType _strain_type ){
-  con = _con;
-  con->incref();
+  stiff = _stiff;
+  stiff->incref();
   strain_type = _strain_type;
 }
 
 TACSLinearEleasticity2D::~TACSLinearEleasticity2D(){
-  con->decref();
+  stiff->decref();
 }
+
+const int TACSLinearEleasticity2D::DDUt_pairs[] =
+  {2, 2, 5, 5};
+
+const int TACSLinearEleasticity2D::DDUx_pairs[] = 
+  {1, 1, 1, 2, 1, 4, 1, 5,
+   2, 1, 2, 2, 2, 4, 2, 5,
+   4, 1, 4, 2, 4, 4, 4, 5,
+   5, 1, 5, 2, 5, 4, 5, 5};
   
 int TACSLinearEleasticity2D::getSpatialDim(){
   return 3;
@@ -44,7 +53,7 @@ void TACSLinearEleasticity2D::evalWeakIntegrand( const double time,
                                                  TacsScalar DUt[],
                                                  TacsScalar DUx[] ){
   // Evaluate the density
-  TacsScalar rho = con->evalDensity(pt, X);
+  TacsScalar rho = stiff->evalDensity(pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
@@ -68,7 +77,7 @@ void TACSLinearEleasticity2D::evalWeakIntegrand( const double time,
 
   // Evaluate the stress
   TacsScalar s[3];
-  con->evalStress(pt, X, e, s);
+  stiff->evalStress(pt, X, e, s);
 
   DUx[0] = 0.0;
   DUx[1] = s[0];
@@ -88,15 +97,15 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( const double time,
                                                   const TacsScalar Ux[],
                                                   TacsScalar DUt[],
                                                   TacsScalar DUx[],
-                                                  int *_DDt_nnz,
-                                                  const int *_DDt_pairs[],
+                                                  int *DDUt_nnz,
+                                                  const int *_DDUt_pairs[],
                                                   TacsScalar DDUt[],
-                                                  int *_DDUx_nnz,
+                                                  int *DDUx_nnz,
                                                   const int *_DDUx_pairs[],
                                                   TacsScalar DDUx[] ){
 
   // Evaluate the density
-  TacsScalar rho = con->evalDensity(pt, X);
+  TacsScalar rho = stiff->evalDensity(pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
@@ -120,31 +129,88 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( const double time,
 
   // Evaluate the stress
   TacsScalar s[3];
-  con->evalStress(pt, X, e, s);
+  stiff->evalStress(pt, X, e, s);
 
-  DUx[0] = 0.0;
-  DUx[1] = s[0];
-  DUx[2] = s[2];
+  DUx[0] = 0.0;  // u
+  DUx[1] = s[0]; // u,x
+  DUx[2] = s[2]; // u,y
 
-  DUx[4] = 0.0;
-  DUx[5] = s[2];
-  DUx[6] = s[1];
+  DUx[4] = 0.0;  // v
+  DUx[5] = s[2]; // v,x
+  DUx[6] = s[1]; // v,y
 
-  TacsScalar C[36];
-  con->evalTangentStiffness(pt, X, C);
+  TacsScalar C[21];
+  stiff->evalTangentStiffness(pt, X, C);
 
-  // Use a dense matrix
-  _DDUx_num_non_zeros = -1;
-  _DDUx_non_zero_pairs = NULL;
+  // Set the non-zero terms in the Jacobian
+  *DDUt_nnz = 2;
+  *_DDUt_pairs = DDUt_pairs;  
+  *DDUx_nnz = 16;
+  *_DDUx_pairs = DDUx_pairs;
 
+  // Set the acceleration terms
+  DDUt[0] = rho;
+  DDUt[1] = rho;
+
+  // s = C*e
   if (strain_type == TACS_LINEAR_STRAIN){
+    // Index:       1            5            2     4
+    // s[0] = C[0]*(u,x) + C[1]*(v,y) + C[2]*(u,y + v,x)
+    // s[1] = C[1]*(u,x) + C[3]*(v,y) + C[4]*(u,y + v,x)
+    // s[2] = C[2]*(u,x) + C[4]*(v,y) + C[5]*(u,y + v,x)
 
+    // i == 1 (s[0])
+    DDUx[0] = C[0]; // j == 1
+    DDUx[1] = C[2]; // j == 2
+    DDUx[2] = C[2]; // j == 4
+    DDUx[3] = C[1]; // j == 5
+
+    // i == 2 (s[2])
+    DDUx[4] = C[2]; // j == 1
+    DDUx[5] = C[5]; // j == 2
+    DDUx[6] = C[5]; // j == 4
+    DDUx[7] = C[4]; // j == 5
+
+    // i == 4 (s[2])
+    DDUx[8] = C[2]; // j == 1
+    DDUx[9] = C[5]; // j == 2
+    DDUx[10] = C[5]; // j == 4
+    DDUx[11] = C[4]; // j == 5
+
+    // i == 5 (s[1])
+    DDUx[12] = C[1]; // j == 1
+    DDUx[13] = C[4]; // j == 2
+    DDUx[14] = C[4]; // j == 4
+    DDUx[15] = C[3]; // j == 5
   }
   else {
+    // i == 1 (s[0])
+    DDUx[0] = C[0]; // j == 1
+    DDUx[1] = C[2]; // j == 2
+    DDUx[2] = C[2]; // j == 4
+    DDUx[3] = C[1]; // j == 5
 
+    // i == 2 (s[2])
+    DDUx[4] = C[2]; // j == 1
+    DDUx[5] = C[5]; // j == 2
+    DDUx[6] = C[5]; // j == 4
+    DDUx[7] = C[4]; // j == 5
+
+    // i == 4 (s[2])
+    DDUx[8] = C[2]; // j == 1
+    DDUx[9] = C[5]; // j == 2
+    DDUx[10] = C[5]; // j == 4
+    DDUx[11] = C[4]; // j == 5
+
+    // i == 5 (s[1])
+    DDUx[12] = C[1]; // j == 1
+    DDUx[13] = C[4]; // j == 2
+    DDUx[14] = C[4]; // j == 4
+    DDUx[15] = C[3]; // j == 5
   }
 }
-  
+
+/*
 TACSLinearEleasticity3D::TACSLinearEleasticity3D( TACSConstitutive *_con ){
   con = _con;
   con->incref();
@@ -316,3 +382,4 @@ void TACSLinearEleasticity3D::evalIntegrandDeriv(const double time,
 
   }
 }
+*/
