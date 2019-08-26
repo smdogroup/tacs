@@ -19,12 +19,11 @@
 #ifndef TACS_CONSTITUTIVE_H
 #define TACS_CONSTITUTIVE_H
 
-#include <stdio.h>
 #include "TACSObject.h"
 
-/*!  
-  This class defines the basic behaviour required for all
-  constitutive objects in TACS
+/**
+  This class defines basic linear constitutive behaviour for some
+  elements in TACS. This includes linear 
 
   The object defines mass, stiffness, failure and buckling behavior.
   These properties do not all need to be defined to implement the
@@ -37,106 +36,165 @@
   coordinate axes are defined and these are used to compute a 2D
   representation of the failure or buckling envelope.
 */
-class TACSConstitutive : public TACSOptObject {
+class TACSConstitutive : public TACSObject {
  public:
   TACSConstitutive(){}
   virtual ~TACSConstitutive(){}
 
-  // Define the object name 
-  // ----------------------
-  virtual const char * constitutiveName() = 0;
-  const char * TACSObjectName();
+  /**
+    Set the object name
+  */
+  const char* getObjectName();
   
-  // Return the number of stress and strain components
-  // -------------------------------------------------
+  /**
+    Return the number of stress and strain components
+  */
   virtual int getNumStresses() = 0;
   
-  // Return the stress as a function of the strain at the Gauss point
-  // ----------------------------------------------------------------
-  virtual void calculateStress( const double pt[],
+  /**
+    Return the stress as a function of the strain at the Gauss point
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param strain The strain evaluated at the point
+    @param stress The components of the stress
+  */
+  virtual void evalStress( int elemIndex,
+                           const double pt[],
+                           const TacsScalar X[],
+                           const TacsScalar strain[],
+                           TacsScalar stress[] ) = 0;
+
+  /**
+    Compute the tangent stiffness matrix
+
+    Note that the format of the entries of the C matrix are constitutive
+    implementation dependent. The matrix is not always of the same size.
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param C The components of the tangent stiffness
+  */
+  virtual void evalTangentStiffness( int elemIndex,
+                                     const double pt[],
+                                     const TacsScalar X[], 
+                                     TacsScalar C[] ) = 0;
+
+  /**
+    Add the derivative of the stress times an input vector to dvSens
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param scale The scalar factor
+    @param psi The adjoint components of the strain
+    @param dvLen The length of the design vector array
+    @param dvSens The sensitivity vector
+  */
+  virtual void addStressDVSens( int elemIndex,
+                                const double pt[],
                                 const TacsScalar strain[],
-                                TacsScalar stress[] ) = 0;
+                                TacsScalar scale,
+                                const TacsScalar psi[],
+                                int dvLen, TacsScalar dvSens[] ){}
 
-  // Add the derivative of the stress times an input vector to dvSens
-  // ----------------------------------------------------------------
-  virtual void addStressDVSens( const double pt[], const TacsScalar strain[],
-                                TacsScalar alpha, const TacsScalar psi[],
-                                TacsScalar dvSens[], int dvLen ){}
+  /**
+    Evaluate the thermal strain at a point
 
-  // Return the number of mass moments
-  // ---------------------------------
-  virtual int getNumMassMoments() = 0;
-
-  // Return the mass moments
-  // -----------------------
-  virtual void getPointwiseMass( const double pt[],
-                                 TacsScalar mass[] ) = 0;
-
-  // Add the derivative of the pointwise mass times the given scalar
-  // ---------------------------------------------------------------
-  virtual void addPointwiseMassDVSens( const double pt[],
-                                       const TacsScalar alpha[],
-                                       TacsScalar dvSens[], int dvLen ){}
-
-  // Evaluate the failure function at a quadrature point
-  // ---------------------------------------------------
-  virtual void failure( const double pt[], 
-                        const TacsScalar strain[],
-                        TacsScalar * fail ){ *fail = 0.0; }
-
-  // Evaluate the derivative of the failure point w.r.t. the strain
-  // --------------------------------------------------------------
-  virtual void failureStrainSens( const double pt[], 
-                                  const TacsScalar strain[],
-                                  TacsScalar sens[] ){
-    memset(sens, 0, getNumStresses()*sizeof(TacsScalar));
+  */ 
+  virtual void evalThermalStrain( int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  TacsScalar strain[] ){
+    memset(strain, 0, getNumStresses()*sizeof(TacsScalar));
   }
 
-  // Add the derivative of the failure w.r.t. design variables
-  // ---------------------------------------------------------
-  virtual void addFailureDVSens( const double pt[],
+  /**
+    Evaluate the mass per unit length, area or volume for the element
+    
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The density
+  */
+  virtual TacsScalar evalDensity( int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[] ) = 0;
+
+  /**
+    Add the derivative of the pointwise mass times the given scalar
+
+  */
+  virtual void addDensityDVSens( int elemIndex,
+                                 const double pt[],
+                                 const TacsScalar X[],
+                                 const TacsScalar scale,
+                                 int dvLen, TacsScalar dvSens[] ){}
+
+  /**
+    Evaluate the failure index at a quadrature point
+
+    @param pt The parametric point
+    @param X The physical node location
+    @param strain the strain value
+    @return The failure index value
+  */
+  virtual TacsScalar failure( int elemIndex,
+                              const double pt[], 
+                              const TacsScalar X[],
+                              const TacsScalar strain[] ){
+    return 0.0;
+  }
+
+  /**
+    Evaluate the failure index at a quadrature point
+
+    @param pt The parametric point
+    @param X The physical node location
+    @param strain the strain value
+    @param sens The derivative of the failure index w.r.t. the strain
+    @return The failure index value
+  */
+  virtual TacsScalar failureStrainSens( int elemIndex,
+                                        const double pt[],
+                                        const TacsScalar X[],
+                                        const TacsScalar strain[],
+                                        TacsScalar sens[] ){
+    memset(sens, 0, getNumStresses()*sizeof(TacsScalar));
+    return 0.0;
+  }
+
+  /**
+    Add the derivative of the failure w.r.t. design variables
+
+    @param pt The parametric point
+    @param X The physical node location
+    @param strain the strain value
+    @param scale Scale The derivative of the failure index w.r.t. the strain
+    @param dvLen The length of the design vector
+    @param dvSens The sensitivity contribution
+  */
+  virtual void addFailureDVSens( int elemIndex,
+                                 const double pt[],
+                                 const TacsScalar X[],
                                  const TacsScalar strain[],
-                                 TacsScalar alpha,
-                                 TacsScalar dvSens[], int dvLen ){}
-  
-  // Apply a buckling criterion
-  // --------------------------
-  virtual void buckling( const TacsScalar strain[],
-                         TacsScalar *bval ){ *bval = 0.0; }
+                                 TacsScalar scale,
+                                 int dvLen, TacsScalar dvSens[] ){}
 
-  // Compute the derivative of the buckling value w.r.t. the strain
-  // --------------------------------------------------------------
-  virtual void bucklingStrainSens( const TacsScalar strain[],
-                                   TacsScalar *sens ){
-    memset(sens, 0, getNumStresses()*sizeof(TacsScalar));
-  }
-
-  // Add the derivative of the failure w.r.t. design variables
-  // ---------------------------------------------------------
-  virtual void addBucklingDVSens( const TacsScalar strain[],
-                                  TacsScalar alpha,
-                                  TacsScalar dvSens[], int dvLen ){}
-
-  // Return a design variable value for visualization
-  // ------------------------------------------------
-  virtual TacsScalar getDVOutputValue( int dvIndex, const double pt[] ){ 
-    return 0.0; 
-  }
-
-  // Write out a two-dimensional representation of the failure envelope
-  // ------------------------------------------------------------------
+  /**
+    Write out a two-dimensional representation of the failure envelope
+  */
   void writeFailureEnvelope( const char *file_name, int npts,
+                             int elemIndex,
                              const double pt[],
+                             const TacsScalar X[],
                              const TacsScalar x_stress[],
                              const TacsScalar y_stress[] );
 
-  // Write out a two-dimensional buckling envelope to a file
-  // -------------------------------------------------------
-  void writeBucklingEnvelope( const char *file_name, int npts,
-                              const double pt[],
-                              const TacsScalar x_stress[],
-                              const TacsScalar y_stress[],
-                              double theta_min, double theta_max );
+ private:
+  static const char *constName;
 };
 
 #endif // TACS_CONSTITUTIVE_H

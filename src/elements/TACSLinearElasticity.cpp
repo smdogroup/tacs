@@ -14,8 +14,7 @@
 
 #include "TACSLinearElasticity.h"
 
-
-TACSLinearEleasticity2D::TACSLinearEleasticity2D( PlaneStressStiffness *_stiff,
+TACSLinearEleasticity2D::TACSLinearEleasticity2D( TACSPlaneStressConstitutive *_stiff,
                                                   ElementStrainType _strain_type ){
   stiff = _stiff;
   stiff->incref();
@@ -43,7 +42,8 @@ int TACSLinearEleasticity2D::getVarsPerNode(){
   return 3;
 }
 
-void TACSLinearEleasticity2D::evalWeakIntegrand( const double time,
+void TACSLinearEleasticity2D::evalWeakIntegrand( int elemIndex,
+                                                 const double time,
                                                  const double pt[],
                                                  const TacsScalar X[],
                                                  const TacsScalar U[],
@@ -53,7 +53,7 @@ void TACSLinearEleasticity2D::evalWeakIntegrand( const double time,
                                                  TacsScalar DUt[],
                                                  TacsScalar DUx[] ){
   // Evaluate the density
-  TacsScalar rho = stiff->evalDensity(pt, X);
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
@@ -77,7 +77,7 @@ void TACSLinearEleasticity2D::evalWeakIntegrand( const double time,
 
   // Evaluate the stress
   TacsScalar s[3];
-  stiff->evalStress(pt, X, e, s);
+  stiff->evalStress(elemIndex, pt, X, e, s);
 
   DUx[0] = 0.0;
   DUx[1] = s[0];
@@ -88,7 +88,8 @@ void TACSLinearEleasticity2D::evalWeakIntegrand( const double time,
   DUx[6] = s[1];
 }
   
-void TACSLinearEleasticity2D::evalIntegrandDeriv( const double time,
+void TACSLinearEleasticity2D::evalIntegrandDeriv( int elemIndex,
+                                                  const double time,
                                                   const double pt[],
                                                   const TacsScalar X[],
                                                   const TacsScalar U[],
@@ -105,7 +106,7 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( const double time,
                                                   TacsScalar DDUx[] ){
 
   // Evaluate the density
-  TacsScalar rho = stiff->evalDensity(pt, X);
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
@@ -129,7 +130,7 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( const double time,
 
   // Evaluate the stress
   TacsScalar s[3];
-  stiff->evalStress(pt, X, e, s);
+  stiff->evalStress(elemIndex, pt, X, e, s);
 
   DUx[0] = 0.0;  // u
   DUx[1] = s[0]; // u,x
@@ -140,7 +141,7 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( const double time,
   DUx[6] = s[1]; // v,y
 
   TacsScalar C[21];
-  stiff->evalTangentStiffness(pt, X, C);
+  stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
   // Set the non-zero terms in the Jacobian
   *DDUt_nnz = 2;

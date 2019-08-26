@@ -18,10 +18,12 @@ include ../../TACS_Common.mk
 # 	RigidBody.o \
 # 	KinematicConstraints.o	
 
-CXX_OBJS = TACSElementTypes.o \
+CXX_OBJS = FElibrary.o \
+	TACSElementTypes.o \
 	TACSElementBasis.o \
 	TACSQuadBasis.o \
 	TACSHexaBasis.o \
+	TACSTriangularBasis.o \
 	TACSLinearElasticity.o \
 	TACSElementVerification.o
 

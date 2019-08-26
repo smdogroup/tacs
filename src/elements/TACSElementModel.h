@@ -75,6 +75,7 @@ class TACSElementModel {
     are both for the displacement u and v, respectively. This means that 
     the implementation is not unique.
 
+    @param elemIndex The local element index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
     @param U The values of the state variables
@@ -84,7 +85,8 @@ class TACSElementModel {
     @param DUt Coefficients of the time-dependent weak form
     @param DUx Coefficients of the spatial-derivative weak form
   */
-  virtual void evalWeakIntegrand( const double time,
+  virtual void evalWeakIntegrand( int elemIndex,
+                                  const double time,
                                   const double pt[],
                                   const TacsScalar X[],
                                   const TacsScalar U[],
@@ -131,6 +133,7 @@ class TACSElementModel {
     DDt[0] = rho
     DDt[1] = rho
 
+    @param elemIndex The local element index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
     @param U The values of the state variables
@@ -146,7 +149,8 @@ class TACSElementModel {
     @param DDt_non_zero_pairs Non-zero Jacobian matrix pairs for DDx
     @param DDUx Jacobian of the spatial-derivative weak form
   */
-  virtual void evalWeakIntegrandJacobian( const double time,
+  virtual void evalWeakIntegrandJacobian( int elemIndex,
+                                          const double time,
                                           const double pt[],
                                           const TacsScalar X[],
                                           const TacsScalar U[],

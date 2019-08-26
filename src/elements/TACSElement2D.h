@@ -32,11 +32,11 @@ class TACSElement2D : public TACSElement {
   ElementLayout getLayoutType(){ basis->getLayoutType(); }
   
   // The design variable functions
-  void setDesignVars( int dvLen, const TacsScalar dvs[] );
-  void getDesignVars( int dvLen, TacsScalar dvs[] );
-  void getDesignVarRange( int dvLen,
-                          TacsScalar lowerBound[], 
-                          TacsScalar upperBound[] );
+  // void setDesignVars( int dvLen, const TacsScalar dvs[] );
+  // void getDesignVars( int dvLen, TacsScalar dvs[] );
+  // void getDesignVarRange( int dvLen,
+  //                         TacsScalar lowerBound[], 
+  //                         TacsScalar upperBound[] );
 
   // Analysis functions
   void addResidual( double time, const TacsScalar Xpts[],
@@ -51,11 +51,11 @@ class TACSElement2D : public TACSElement {
   void addAdjResProduct( double time, double scale, const TacsScalar psi[],
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                        int dvLen, TacsScalar dvSens[] );
+                        int dvLen, TacsScalar dvSens[] ){}
   void addAdjResXptProduct( double time, double scale, const TacsScalar psi[],
                             const TacsScalar Xpts[], const TacsScalar vars[],
                             const TacsScalar dvars[], const TacsScalar ddvars[],
-                            TacsScalar fXptSens[] );
+                            TacsScalar fXptSens[] ){}
 };
 
 /*

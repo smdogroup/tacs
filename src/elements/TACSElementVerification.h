@@ -83,6 +83,7 @@ void TacsFormDiffApproximate( TacsScalar *forward,
   @param ddvars The second time derivatives of the state variables
 */
 int TacsTestElementResidual( TACSElement *element,
+                             int elemIndex,
                              double time,
                              const TacsScalar Xpts[],
                              const TacsScalar vars[],
@@ -104,6 +105,7 @@ int TacsTestElementResidual( TACSElement *element,
   @param ddvars The second time derivatives of the state variables
 */
 int TacsTestElementJacobian( TACSElement *element,
+                             int elemIndex,
                              double time,
                              const TacsScalar Xpts[],
                              const TacsScalar vars[],
@@ -128,6 +130,7 @@ int TacsTestElementJacobian( TACSElement *element,
   @param ddvars The second time derivatives of the state variables
 */
 int TacsTestAdjResProduct( TACSElement *element,
+                           int elemIndex,
                            int dvLen,
                            const TacsScalar *x,
                            double time,
@@ -151,6 +154,7 @@ int TacsTestAdjResProduct( TACSElement *element,
   @param ddvars The second time derivatives of the state variables
 */
 int TacsTestAdjResXptProduct( TACSElement *element,
+                              int elemIndex,
                               double time,
                               const TacsScalar Xpts[],
                               const TacsScalar vars[],

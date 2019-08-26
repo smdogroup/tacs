@@ -88,22 +88,22 @@ double TacsGetNumFlops();
 #define TACS_BEGIN_NAMESPACE(a) namespace a {
 #define TACS_END_NAMESPACE }
 
-/*!
+/**
   Initialize some static variables related to MPI
 */
 void TacsInitialize();
 
-/*!
+/**
   Check if TacsInitialize has been called
 */
 int TacsIsInitialized();
 
-/*!
+/**
   Clean up from the Tacs initialization
 */
 void TacsFinalize();
 
-/*!
+/**
   TACSObject: The base class for all TACS objects to enable reference
   counting. In most cases this is sufficient to free any allocated 
   memory. 
@@ -113,67 +113,32 @@ class TACSObject {
   TACSObject();
   virtual ~TACSObject();
 
-  // Increase the reference count functions
-  // --------------------------------------
+  /**
+    Increase the reference count function
+  */
   void incref();
 
-  // Decrease the reference count
-  // ----------------------------
+  /**
+    Decrease the reference count
+  */
   void decref();
 
-  // Return the reference count
-  // --------------------------
+  /**
+    Return the reference count
+  */
   int refcount();
 
-  // Return the name of the object
-  // -----------------------------
-  virtual const char *TACSObjectName();
+  /**
+    Return the name of the object
+  */
+  virtual const char *getObjectName();
 
  private:
   int ref_count;
   static const char *tacsDefault;
 };
 
-/*!  
-  TACSOptObject: Base class for objects that contain design
-  variable information 
-*/
-class TACSOptObject : public TACSObject {
- public:
-  TACSOptObject() : TACSObject() {}
-
-  virtual ~TACSOptObject(){}
-
-  /*!
-    Set the design variable numbers owned by this object to those passed 
-    into the object in dvs[]
-    
-    dvs:    An array of the design variable values 
-    numDVs: The size of the array dvs
-  */
-  virtual void setDesignVars( const TacsScalar dvs[], 
-                              int numDVs ){}
-
-  /*!
-    Get the current values of the design variables
-
-    dvs:    An array of the design variable values 
-    numDVs: The size of the array dvs
-  */ 
-  virtual void getDesignVars( TacsScalar dvs[], int numDVs ){}
-
-  /*!
-    Get the range of allowable design variable values
-    
-    lowerBound:  The design variable lower bounds
-    upperBound:  The design variable upper bounds
-    numDVs:      The size of the arrays lowerBound and upperBound
-  */
-  virtual void getDesignVarRange( TacsScalar lowerBound[], 
-                                  TacsScalar upperBound[], int numDVs ){}
-};
-
-/*!  
+/**
   Information about the number of threads to use in a computation.
   This should only be allocated by the TACSAssembler object. The
   number of threads is volitile in the sense that it can change

@@ -20,6 +20,7 @@
 #define TACS_PLANE_STRESS_CONSTITUTIVE_H
 
 #include "TACSConstitutive.h"
+#include "TACSMaterialProperties.h"
 
 /*
   This is the base class for the plane stress constitutive objects. 
@@ -30,37 +31,50 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 3;
 
-  TACSPlaneStressConstitutive();
   TACSPlaneStressConstitutive( TACSMaterialProperties *properties );
-  virtual ~TACSPlaneStressConstitutive(){}
+  ~TACSPlaneStressConstitutive();
+
+  int getNumStresses();
 
   // Evaluate the stresss
-  virtual void evalStress( const double pt[],
-                           const TacsScalar X[], 
-                           const TacsScalar strain[],
-                           TacsScalar stress[] );
+  void evalStress( int elemIndex,
+                   const double pt[],
+                   const TacsScalar X[], 
+                   const TacsScalar strain[],
+                   TacsScalar stress[] );
 
   // Evaluate the tangent stiffness
-  virtual void evalTangentStiffness( const double pt[],
-                                     const TacsScalar X[], 
-                                     TacsScalar C[] );
+  void evalTangentStiffness( int elemIndex,
+                             const double pt[],
+                             const TacsScalar X[], 
+                             TacsScalar C[] );
 
   // Evaluate the thermal strain
-  virtual void evalThermalStrain( const double pt[],
-                                  const TacsScalar X[],
-                                  TacsScalar strain );
+  void evalThermalStrain( int elemIndex,
+                          const double pt[],
+                          const TacsScalar X[],
+                          TacsScalar strain[] );
 
   // Evaluate the material density
-  virtual TacsScalar evalDensity( const double pt[], const TacsScalar X[] );
+  TacsScalar evalDensity( int elemIndex,
+                          const double pt[],
+                          const TacsScalar X[] );
+
+  // Evaluate the material failure index
+  TacsScalar failure( int elemIndex,
+                      const double pt[], 
+                      const TacsScalar X[],
+                      const TacsScalar strain[] );
 
   // Extra info about the constitutive class
   const char *getObjectName();
 
- private:
-  static const char *constName;
-
+ protected:
   // Materiial properties class
-  TACSMaterialProperties *properties;
+  TACSMaterialProperties *properties;  
+
+ private:
+  static const char *psName;
 };
 
 #endif // TACS_PLANE_STRESS_CONSTITUTIVE_H

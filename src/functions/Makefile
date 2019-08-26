@@ -7,17 +7,17 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-CXX_OBJS = TACSFunction.o \
-	KSFailure.o \
-	KSDisplacement.o \
-	DisplacementIntegral.o \
-	Compliance.o \
-	InducedFailure.o \
-	StructuralMass.o \
-	ThermalKSFailure.o \
-	HeatFlux.o \
-	KSTemperature.o \
-	KSMatTemperature.o
+CXX_OBJS = TACSFunction.o
+# 	KSFailure.o \
+# 	KSDisplacement.o \
+# 	DisplacementIntegral.o \
+# 	Compliance.o \
+# 	InducedFailure.o \
+# 	StructuralMass.o \
+# 	ThermalKSFailure.o \
+# 	HeatFlux.o \
+# 	KSTemperature.o \
+# 	KSMatTemperature.o
 
 DIR=${TACS_DIR}/src/functions
 

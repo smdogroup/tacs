@@ -26,6 +26,9 @@
 
 #include "TACSObject.h"
 
+enum MaterialType { TACS_ISOTROPIC_MATERIAL,
+                    TACS_ANISOTROPIC_MATERIAL };
+
 /**
    This class stores the mechanical and thermal material properties for
    isotropic and anisotropic materials.
@@ -38,21 +41,24 @@
 */
 class TACSMaterialProperties : public TACSObject {
  public:
-  enum MaterialType { TACS_ISOTROPIC_MATERIAL,
-                      TACS_ANISOTROPIC_MATERIAL };
-  
   TACSMaterialProperties( TacsScalar _rho,
                           TacsScalar _E, TacsScalar _nu,
-                          TacsScalar _ys, TacsScalar _alpha );
+                          TacsScalar _ys, TacsScalar _alpha,
+                          TacsScalar _kappa );
   TACSMaterialProperties( TacsScalar _rho,
                           TacsScalar _E1, TacsScalar _E2, TacsScalar _E3,
                           TacsScalar _nu12, TacsScalar _nu13, TacsScalar _nu23,
                           TacsScalar _G12, TacsScalar _G13, TacsScalar _G23,
-                          TacsScalar _alpha1, TacsScalar _alpha2,
-                          TacsScalar _alpha3 );
-  ~TACSMaterialProperties();
-  
-  // Set the failure properties
+                          TacsScalar _T1=0.0, TacsScalar _C1=0.0,
+                          TacsScalar _T2=0.0, TacsScalar _C2=0.0,
+                          TacsScalar _T3=0.0, TacsScalar _C3=0.0,
+                          TacsScalar _S12=0.0, TacsScalar _S13=0.0,
+                          TacsScalar _S23=0.0,
+                          TacsScalar _alpha1=0.0, TacsScalar _alpha2=0.0,
+                          TacsScalar _alpha3=0.0,
+                          TacsScalar _kappa1=0.0, TacsScalar _kappa2=0.0,
+                          TacsScalar _kappa3=0.0 );
+  ~TACSMaterialProperties(){}
 
   // Get the material type
   MaterialType getMaterialType();
@@ -61,40 +67,71 @@ class TACSMaterialProperties : public TACSObject {
   TacsScalar getDensity();
 
   // Extract the coefficients
-  int getIsotropicCoefficients( TacsScalar *_nu,
-                                TacsScalar *_E );
-  void getOrthotropicCoefficients( TacsScalar *_E1,
-                                   TacsScalar *_E2,
-                                   TacsScalar *_E3,
-                                   TacsScalar _nu12, );
-  
-  void getCoefThermalExpansion( TacsScalar *_ax,
-                                TacsScalar *_ay,
-                                TacsScalar *_az );
+  void getIsotropicProperties( TacsScalar *_E, TacsScalar *_nu );
+  void getOrthotropicProperties( TacsScalar *_E1, TacsScalar *_E2,
+                                 TacsScalar *_E3,
+                                 TacsScalar *_nu12, TacsScalar *_nu13, 
+                                 TacsScalar *_nu23,
+                                 TacsScalar *_G12, TacsScalar *_G13,
+                                 TacsScalar *_G23 );
+  void getStrengthProperties( TacsScalar *_T1, TacsScalar *_C1,
+                              TacsScalar *_T2, TacsScalar *_C2,
+                              TacsScalar *_T3, TacsScalar *_C3,
+                              TacsScalar *_S12, TacsScalar *_S13,
+                              TacsScalar *_S23 );
+  void getCoefThermalExpansion( TacsScalar *_a1,
+                                TacsScalar *_a2,
+                                TacsScalar *_a3 );
+  void getThermalConductivity( TacsScalar *_k1,
+                               TacsScalar *_k2,
+                               TacsScalar *_k3 );
 
+  void evalTangentStiffness( TacsScalar C[] );
+  void evalTangentStiffness2D( TacsScalar C[] );
+
+  void evalThermalStrain( TacsScalar e[] );
+  void evalThermalStrain2D( TacsScalar e[] );
+
+  // Compute the failure index using the von Mises stress
+  TacsScalar vonMisesFailure3D( const TacsScalar stress[] );
+  TacsScalar vonMisesFailure3DStressSens( const TacsScalar stress[],
+                                          TacsScalar sens[] );
+
+  //  The von Mises failure criteria for plane stress problems
+  TacsScalar vonMisesFailure2D( const TacsScalar stress[] );
+  TacsScalar vonMisesFailure2DStressSens( const TacsScalar stress[],
+                                          TacsScalar sens[] );
 
  private:
+  MaterialType mat_type;
+
   // Density
   TacsScalar rho;
 
   // Isotropic properties
-  TacsScalar E, nu; // Modulus and Poisson ratio
-  TacsScalar alpha; // Coefficient of thermal expansion
+  TacsScalar E, nu, G; // Modulus and Poisson ratio
 
-  // Failure criterion
+  // Coefficient of thermal expansion
+  TacsScalar alpha;
+
+  // Yield stress value
   TacsScalar ys;
 
-  
-                          
-  
+  // Thermal conductivity coefficient
+  TacsScalar kappa;
 
+  // The orthotropic material properties
+  TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23;
+
+  // The strength coefficients 
+  TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23;
+
+  // The thermal coefficients of expansion
+  TacsScalar alpha1, alpha2, alpha3;
+
+  // Thermal conductivity coefficients along each axis
+  TacsScalar kappa1, kappa2, kappa3;
 };
-
-
-
-
-
-
 
 /*
   The following class holds the material stiffness and strength
@@ -118,8 +155,8 @@ class TACSOrthotropicPly : public TACSObject {
  public:
   // Create OrthoPly with a full set of orthotropic material relationships
   // ---------------------------------------------------------------------
-  OrthoPly( TacsScalar _plyThickness,
-            TACSMaterialProperties *_properties );
+  TACSOrthotropicPly( TacsScalar _plyThickness,
+                      TACSMaterialProperties *_properties );
 
   void setKSWeight( TacsScalar _ksWeight );
   void setUseMaxStrainCriterion();
@@ -127,7 +164,7 @@ class TACSOrthotropicPly : public TACSObject {
 
   // Retrieve the material properties
   // --------------------------------
-  TacsScalar getRho();
+  TacsScalar getDensity();
   TacsScalar getPlyThickness();
   void getStiffness( TacsScalar *_E1, TacsScalar *_E2, TacsScalar *_nu12,
                      TacsScalar *_G12, TacsScalar *_G23, TacsScalar *_G13 );
@@ -142,8 +179,8 @@ class TACSOrthotropicPly : public TACSObject {
                   TacsScalar *_F11, TacsScalar *_F12, TacsScalar *_F22,
                   TacsScalar *_F66 );
   void getLaminateInvariants( TacsScalar *U1, TacsScalar *U2, 
-			      TacsScalar *U3, TacsScalar *U4,
-			      TacsScalar *U5, TacsScalar *U6 );
+                              TacsScalar *U3, TacsScalar *U4,
+                              TacsScalar *U5, TacsScalar *U6 );
 
   // Calculate the Abar and Qbar matrices and their derivatives
   // Taken from Jones, Mechanics of composite materials pg. 51
@@ -157,7 +194,7 @@ class TACSOrthotropicPly : public TACSObject {
   // stress in the laminate coordinates
   // -----------------------------------------------------------
   void calculateStress( TacsScalar stress[], const TacsScalar strain[], 
-			TacsScalar angle );
+                        TacsScalar angle );
 
   // Given the strain in the laminate coordinates, determine the failure load
   // ------------------------------------------------------------------------
@@ -190,38 +227,40 @@ class TACSOrthotropicPly : public TACSObject {
   // -----------------------------------------------------------
   void getPlyStress( TacsScalar stress[], const TacsScalar strain[] );
   void transformStressGlobal2Ply( TacsScalar plyStress[], 
-				  const TacsScalar global[], 
-				  TacsScalar angle );
+                                  const TacsScalar global[], 
+                                  TacsScalar angle );
   void transformStressPly2Global( TacsScalar global[], 
-				  const TacsScalar plyStress[], 
-				  TacsScalar angle );
+                                  const TacsScalar plyStress[], 
+                                  TacsScalar angle );
   void transformStressGlobal2PlyAngleSens( TacsScalar plyStress[], 
-					   const TacsScalar global[], 
-					   TacsScalar angle );
+                                           const TacsScalar global[], 
+                                           TacsScalar angle );
   void transformStressPly2GlobalAngleSens( TacsScalar global[], 
-					   const TacsScalar plyStress[], 
-					   TacsScalar angle );
+                                           const TacsScalar plyStress[], 
+                                           TacsScalar angle );
   void transformStrainGlobal2Ply( TacsScalar plyStrain[], 
-				  const TacsScalar global[], 
-				  TacsScalar angle );
+                                  const TacsScalar global[], 
+                                  TacsScalar angle );
   void transformStrainPly2Global( TacsScalar global[], 
-				  const TacsScalar plyStrain[], 
-				  TacsScalar angle );
+                                  const TacsScalar plyStrain[], 
+                                  TacsScalar angle );
   void transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[], 
-					   const TacsScalar global[], 
-					   TacsScalar angle );
+                                           const TacsScalar global[], 
+                                           TacsScalar angle );
   void transformStrainPly2GlobalAngleSens( TacsScalar global[], 
-					   const TacsScalar plyStrain[], 
-					   TacsScalar angle );
+                                           const TacsScalar plyStrain[], 
+                                           TacsScalar angle );
   // Get or print other information
   // ------------------------------
   void testFailSens( double dh, TacsScalar angle );
   void printProperties();
 
-  const char * TACSObjectName();
+  const char* getObjectName();
 
  private:
   static const char * name;
+
+  TACSMaterialProperties *properties;
 
   // The stiffness properties
   TacsScalar Q11, Q12, Q22, Q44, Q55, Q66;

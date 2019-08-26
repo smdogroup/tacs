@@ -77,7 +77,7 @@ class TACSMg : public TACSPc {
   void assembleJacobian( double alpha, double beta, double gamma,
                          TACSBVec *res=NULL, 
                          MatrixOrientation matOr=NORMAL );
-  void assembleMatType( ElementMatrixType matType=STIFFNESS_MATRIX, 
+  void assembleMatType( ElementMatrixType matType=TACS_STIFFNESS_MATRIX, 
                         MatrixOrientation matOr=NORMAL );
   void assembleMatCombo( ElementMatrixType matTypes[],
                          TacsScalar scale[], int nmats,

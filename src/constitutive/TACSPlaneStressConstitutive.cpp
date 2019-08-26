@@ -16,59 +16,105 @@
   http://www.apache.org/licenses/LICENSE-2.0 
 */
 
-#include "PlaneStressStiffness.h"
+#include "TACSPlaneStressConstitutive.h"
 
-const char * PlaneStressStiffness::constName = "PlaneStressStiffness";
+const char* TACSPlaneStressConstitutive::psName = "TACSPlaneStressConstitutive";
 
-const char * PlaneStressStiffness::constitutiveName(){ 
-  return constName; 
+const char* TACSPlaneStressConstitutive::getObjectName(){ 
+  return psName; 
 }
 
 /*
   PlaneStressStiffness member function definitions
 */
-PlaneStressStiffness::PlaneStressStiffness( TacsScalar _rho, TacsScalar E,
-					    TacsScalar nu ){
-  rho = _rho;
-
-  Cmat[0] = Cmat[3] = E/(1.0 - nu*nu);
-  Cmat[5] = 0.5*E/(1.0 + nu);
-
-  Cmat[1] = nu*Cmat[0];
-  Cmat[2] = 0.0;
-  Cmat[4] = 0.0;
+TACSPlaneStressConstitutive::TACSPlaneStressConstitutive( TACSMaterialProperties *props ){
+  properties = props;
+  if (properties){
+    properties->incref();
+  }
 }
 
-PlaneStressStiffness::PlaneStressStiffness( TacsScalar _rho, TacsScalar E1,
-					    TacsScalar E2, TacsScalar G12, 
-					    TacsScalar nu12 ){
-  rho = _rho;
-
-  TacsScalar nu21 = E2/E1*nu12;
-  TacsScalar S = (1.0 - nu12*nu21);
-
-  Cmat[0] = E1/S;
-  Cmat[3] = E2/S;
-  Cmat[5] = G12;
-
-  Cmat[1] = nu21 * E1/S;
-  Cmat[2] = 0.0;
-  Cmat[4] = 0.0;
+TACSPlaneStressConstitutive::~TACSPlaneStressConstitutive(){
+  if (properties){
+    properties->decref();
+  }
 }
 
-PlaneStressStiffness::PlaneStressStiffness(){
-  Cmat[0] = Cmat[1] = Cmat[2] = 0.0;
-  Cmat[3] = Cmat[4] = Cmat[5] = 0.0;
-
-  rho = 0.0;
+int TACSPlaneStressConstitutive::getNumStresses(){
+  return NUM_STRESSES;
 }
 
-int PlaneStressStiffness::getNumStresses(){ return NUM_STRESSES; }
+/**
+  Evaluate the stresss
+*/
+void TACSPlaneStressConstitutive::evalStress( int elemIndex,
+                                              const double pt[],
+                                              const TacsScalar X[], 
+                                              const TacsScalar e[],
+                                              TacsScalar s[] ){
+  TacsScalar C[6];
+  if (properties){
+    properties->evalTangentStiffness2D(C);
 
-void PlaneStressStiffness::calculateStress( const double pt[], 
-					    const TacsScalar strain[],
-					    TacsScalar stress[] ){
-  stress[0] = Cmat[0]*strain[0] + Cmat[1]*strain[1] + Cmat[2]*strain[2];
-  stress[1] = Cmat[1]*strain[0] + Cmat[3]*strain[1] + Cmat[4]*strain[2];
-  stress[2] = Cmat[2]*strain[0] + Cmat[4]*strain[1] + Cmat[5]*strain[2];
+    s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
+    s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
+    s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];
+  }
+  else {
+    s[0] = s[1] = s[2] = 0.0;
+  }
+}
+
+/**
+  Evaluate the tangent stiffness
+*/
+void TACSPlaneStressConstitutive::evalTangentStiffness( int elemIndex,
+                                                        const double pt[],
+                                                        const TacsScalar X[], 
+                                                        TacsScalar C[] ){
+  if (properties){
+    properties->evalTangentStiffness2D(C);
+  }
+  else {
+    C[0] = C[1] = C[2] = C[3] = C[4] = C[5] = 0.0;
+  }
+}
+
+/**
+  Evaluate the thermal strain
+*/
+void TACSPlaneStressConstitutive::evalThermalStrain( int elemIndex,
+                                                     const double pt[],
+                                                     const TacsScalar X[],
+                                                     TacsScalar e[] ){
+  if (properties){
+    properties->evalThermalStrain2D(e);
+  }
+  else {
+    e[0] = e[1] = e[2] = 0.0;
+  }
+}
+
+// Evaluate the material density
+TacsScalar TACSPlaneStressConstitutive::evalDensity( int elemIndex,
+                                                     const double pt[],
+                                                     const TacsScalar X[] ){
+  if (properties){
+    return properties->getDensity();
+  }
+
+  return 0.0;
+}
+
+// Evaluate the material failure index
+TacsScalar TACSPlaneStressConstitutive::failure( int elemIndex,
+                                                 const double pt[], 
+                                                 const TacsScalar X[],
+                                                 const TacsScalar e[] ){
+  if (properties){
+    TacsScalar s[3];
+    evalStress(elemIndex, pt, X, e, s);
+    return properties->vonMisesFailure2D(s);
+  }
+  return 0.0;
 }

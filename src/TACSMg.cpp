@@ -49,8 +49,10 @@ TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
   sor_symmetric = _sor_symmetric;
 
   if (nlevels < 2){
-    fprintf(stderr, "Multigrid with fewer than 2 levels does \
-not make any sense!\n");
+    int mpi_rank;
+    MPI_Comm_rank(comm, &mpi_rank);
+    fprintf(stderr, "[%d] TACSMg: Multigrid object cannot "
+            "be used less than 2 levels\n", mpi_rank);
   }
 
   // Create the list of pointers to the TACS objects at each level

@@ -1590,13 +1590,13 @@ int TACSMeshLoader::getNumNodes(){
 */
 TACSToFH5 *TACSMeshLoader::createTACSToFH5( TACSAssembler *tacs,
                                             ElementType elem_type,
-                                            unsigned int write_flag ){
+                                            int write_flag ){
   // Set the component numbers in the elements
   for ( int k = 0; k < num_components; k++ ){
     elements[k]->setComponentNum(k);
   }
 
-  TACSToFH5 * f5 = new TACSToFH5(tacs, elem_type, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, elem_type, write_flag);
   for ( int k = 0; k < num_components; k++ ){
     if (strlen(&component_descript[33*k]) == 0){
       char name[64];

@@ -421,7 +421,7 @@ int TACSAssembler::setElementConnectivity( const int *conn,
       if (size != elements[i]->getNumNodes()){
         fprintf(stderr,
                 "[%d] Element %s does not match connectivity\n",
-                mpiRank, elements[i]->getElementName());
+                mpiRank, elements[i]->getObjectName());
         return 1;
       }
     }
@@ -476,7 +476,7 @@ int TACSAssembler::setElements( TACSElement **_elements ){
       fprintf(stderr,
               "[%d] Element %s, num displacements %d \
 does not match variables per node %d\n",
-              mpiRank, _elements[i]->getElementName(),
+              mpiRank, _elements[i]->getObjectName(),
               _elements[i]->getVarsPerNode(), varsPerNode);
       return 1;
     }
@@ -534,7 +534,7 @@ does not match variables per node %d\n",
       if (size != elements[i]->getNumNodes()){
         fprintf(stderr,
                 "[%d] Element %s does not match connectivity\n",
-                mpiRank, elements[i]->getElementName());
+                mpiRank, elements[i]->getObjectName());
         return 1;
       }
     }
@@ -2674,7 +2674,7 @@ void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
 void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
   // Get the design variables from the elements on this process
   for ( int i = 0; i < numElements; i++ ){
-    elements[i]->getDesignVars(numDVs, dvs);
+    elements[i]->getDesignVars(i, numDVs, dvs);
   }
 
   // Get the design variables from the auxiliary elements
@@ -2694,7 +2694,7 @@ void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
 */
 void TACSAssembler::setDesignVars( const TacsScalar dvs[], int numDVs ){
   for ( int i = 0; i < numElements; i++ ){
-    elements[i]->setDesignVars(numDVs, dvs);
+    elements[i]->setDesignVars(i, numDVs, dvs);
   }
 
   // Set the design variables in the auxiliary elements
@@ -2720,7 +2720,7 @@ void TACSAssembler::getDesignVarRange( TacsScalar lb[],
                                        int numDVs ){
   // Get the design variables from the elements on this process
   for ( int i = 0; i < numElements; i++ ){
-    elements[i]->getDesignVarRange(numDVs, lb, ub);
+    elements[i]->getDesignVarRange(i, numDVs, lb, ub);
   }
 
   // Get the design variable range from the auxiliary elements
@@ -3247,8 +3247,8 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
     memset(elemVars, 0, nvars*sizeof(TacsScalar));
     memset(elemDVars, 0, nvars*sizeof(TacsScalar));
     memset(elemDDVars, 0, nvars*sizeof(TacsScalar));
-    elements[i]->getInitConditions(elemVars, elemDVars, elemDDVars,
-                                   elemXpts);
+    elements[i]->getInitConditions(i, elemXpts,
+                                   elemVars, elemDVars, elemDDVars);
 
     // Set the values into the vectors
     if (vars){
@@ -3381,7 +3381,7 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
     // Compute and add the element's contributions to the total
     // energy
     TacsScalar elemTe, elemPe;
-    elements[i]->computeEnergies(time, elemXpts, vars, dvars,
+    elements[i]->computeEnergies(i, time, elemXpts, vars, dvars,
                                  &elemTe, &elemPe);
 
     // Add up the kinetic and potential energy
@@ -3473,12 +3473,12 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
       // Add the residual from the working element
       int nvars = elements[i]->getNumVariables();
       memset(elemRes, 0, nvars*sizeof(TacsScalar));
-      elements[i]->addResidual(time, elemXpts,
+      elements[i]->addResidual(i, time, elemXpts,
                                vars, dvars, ddvars, elemRes);
 
       // Add the residual from any auxiliary elements
       while (aux_count < naux && aux[aux_count].num == i){
-        aux[aux_count].elem->addResidual(time, elemXpts,
+        aux[aux_count].elem->addResidual(i, time, elemXpts,
                                          vars, dvars, ddvars, elemRes);
         aux_count++;
       }
@@ -3592,14 +3592,14 @@ void TACSAssembler::assembleJacobian( double alpha, double beta,
       // Compute and add the contributions to the Jacobian
       memset(elemRes, 0, nvars*sizeof(TacsScalar));
       memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
-      elements[i]->addJacobian(time, alpha, beta, gamma,
+      elements[i]->addJacobian(i, time, alpha, beta, gamma,
                                elemXpts, vars, dvars, ddvars,
                                elemRes, elemMat);
 
       // Add the contribution to the residual and the Jacobian
       // from the auxiliary elements - if any
       while (aux_count < naux && aux[aux_count].num == i){
-        aux[aux_count].elem->addJacobian(time, alpha, beta, gamma,
+        aux[aux_count].elem->addJacobian(i, time, alpha, beta, gamma,
                                          elemXpts, vars, dvars, ddvars,
                                          elemRes, elemMat);
         aux_count++;
@@ -3687,7 +3687,7 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
       varsVec->getValues(len, nodes, vars);
 
       // Get the element matrix
-      elements[i]->getMatType(matType, elemXpts, vars, elemMat);
+      elements[i]->getMatType(i, matType, elemXpts, vars, elemMat);
 
       // Add the values into the element
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
@@ -3734,7 +3734,7 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
 
     for ( int j = 0; j < nmats; j++ ){
       // Get the element matrix
-      elements[i]->getMatType(matTypes[j], elemXpts, vars, elemMat);
+      elements[i]->getMatType(i, matTypes[j], elemXpts, vars, elemMat);
 
       // Scale the matrix
       if (scale[j] != 1.0){
@@ -4246,14 +4246,14 @@ void TACSAssembler::addAdjointResProducts( double scale,
     // Get the adjoint variables
     for ( int k = 0; k < numAdjoints; k++ ){
       adjoint[k]->getValues(len, nodes, elemAdjoint);
-      elements[i]->addAdjResProduct(time, scale,
+      elements[i]->addAdjResProduct(i, time, scale,
                                     elemAdjoint, elemXpts,
                                     vars, dvars, ddvars,
                                     numDVs, &fdvSens[k*numDVs]);
 
       // Add the contribution from the auxiliary elements
       while (aux_count < naux && aux[aux_count].num == i){
-        aux[aux_count].elem->addAdjResProduct(time, scale,
+        aux[aux_count].elem->addAdjResProduct(i, time, scale,
                                               elemAdjoint, elemXpts,
                                               vars, dvars, ddvars,
                                               numDVs, &fdvSens[k*numDVs]);
@@ -4322,13 +4322,13 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
     for ( int k = 0; k < numAdjoints; k++ ){
       memset(xptSens, 0, TACS_SPATIAL_DIM*len*sizeof(TacsScalar));
       adjoint[k]->getValues(len, nodes, elemAdjoint);
-      elements[i]->addAdjResXptProduct(time, scale,
+      elements[i]->addAdjResXptProduct(i, time, scale,
                                        elemAdjoint, elemXpts,
                                        vars, dvars, ddvars, xptSens);
 
       // Add the contribution from the auxiliary elements
       while (aux_count < naux && aux[aux_count].num == i){
-        aux[aux_count].elem->addAdjResXptProduct(time, scale,
+        aux[aux_count].elem->addAdjResXptProduct(i, time, scale,
                                                  elemAdjoint, elemXpts,
                                                  vars, dvars, ddvars, xptSens);
         aux_count++;
@@ -4387,7 +4387,7 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
     phi->getValues(len, nodes, elemPhi);
 
     // Add the contribution to the design variable vector
-    elements[i]->addMatDVSensInnerProduct(matType, scale, 
+    elements[i]->addMatDVSensInnerProduct(i, matType, scale, 
                                           elemPsi, elemPhi, elemXpts,
                                           elemVars, numDVs, fdvSens);
   }
@@ -4444,7 +4444,7 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
     phi->getValues(len, nodes, elemPhi);
 
     // Add the contribution to the design variable vector
-    elements[i]->getMatSVSensInnerProduct(matType,
+    elements[i]->getMatSVSensInnerProduct(i, matType,
                                           elemPsi, elemPhi, elemXpts,
                                           elemVars, elemRes);
 
@@ -4520,14 +4520,14 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
 
     // Compute and add the contributions to the Jacobian
     memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
-    elements[i]->addJacobian(time, alpha, beta, gamma,
+    elements[i]->addJacobian(i, time, alpha, beta, gamma,
                              elemXpts, vars, dvars, ddvars,
                              yvars, elemMat);
 
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any
     while (aux_count < naux && aux[aux_count].num == i){
-      aux[aux_count].elem->addJacobian(time, alpha, beta, gamma,
+      aux[aux_count].elem->addJacobian(i, time, alpha, beta, gamma,
                                        elemXpts, vars, dvars, ddvars,
                                        yvars, elemMat);
       aux_count++;
@@ -4605,10 +4605,10 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   ddvarsVec->getValues(len, nodes, ddvars);
 
   int col = -1;
-  TacsTestElementJacobian(elements[elemNum], time,
+  TacsTestElementJacobian(elements[elemNum], elemNum, time,
                           elemXpts, vars, dvars, ddvars,
                           col, dh, print_level, rtol, atol);
-  TacsTestAdjResXptProduct(elements[elemNum], time,
+  TacsTestAdjResXptProduct(elements[elemNum], elemNum, time,
                           elemXpts, vars, dvars, ddvars,
                           dh, print_level, rtol, atol);
 
@@ -4618,7 +4618,7 @@ void TACSAssembler::testElement( int elemNum, int print_level,
       vars[i] = 0.0;
     }
   }
-  TacsTestElementResidual(elements[elemNum], time, elemXpts,
+  TacsTestElementResidual(elements[elemNum], elemNum, time, elemXpts,
                           vars, dvars, ddvars,
                           dh, print_level, rtol, atol);
 }
@@ -4935,96 +4935,6 @@ int TACSAssembler::getNumComponents(){
 }
 
 /*
-  Return the output nodal ranges. These may be used to determine what
-  range of node numbers need to be determined by this process.
-*/
-void TACSAssembler::getOutputNodeRange( ElementType elem_type,
-                                        int **_node_range ){
-  /*
-  int nelems = 0, nodes = 0, ncsr = 0;
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i]->getElementType() == elem_type){
-      elements[i]->addOutputCount(&nelems, &nodes, &ncsr);
-    }
-  }
-
-  int *node_range = new int[ mpiSize+1 ];
-  node_range[0] = 0;
-  MPI_Allgather(&nodes, 1, MPI_INT, &node_range[1], 1, MPI_INT, tacs_comm);
-
-  for ( int i = 0; i < mpiSize; i++ ){
-    node_range[i+1] += node_range[i];
-  }
-  *_node_range = node_range;
-  */
-}
-
-/*
-  Given the element type, determine the connectivity of the global
-  data structure. Record the component number for each element within
-  the data structure
-
-  input:
-  elem_type: the type of element eg SHELL, EULER_BEAM, SOLID etc.
-  (see all the element types in Element.h)
-
-  output:
-  component_nums: an array of size nelems of the component numbers
-  csr:            the csr element->nodes information for this class
-  csr_range:      the range of csr data on this processor
-  node_range:     the range of nodal values on this processor
-*/
-void TACSAssembler::getOutputConnectivity( ElementType elem_type,
-                                           int **component_nums,
-                                           int **_csr, int **_csr_range,
-                                           int **_node_range ){
-  /*
-  // First go through and count up the number of elements and the
-  // size of the connectivity array required
-  int nelems = 0, nodes = 0, ncsr = 0;
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i]->getElementType() == elem_type){
-      elements[i]->addOutputCount(&nelems, &nodes, &ncsr);
-    }
-  }
-
-  int *node_range = new int[ mpiSize+1 ];
-  int *csr_range = new int[ mpiSize+1 ];
-  node_range[0] = 0;
-  MPI_Allgather(&nodes, 1, MPI_INT, &node_range[1], 1, MPI_INT, tacs_comm);
-  csr_range[0] = 0;
-  MPI_Allgather(&ncsr, 1, MPI_INT, &csr_range[1], 1, MPI_INT, tacs_comm);
-
-  for ( int i = 0; i < mpiSize; i++ ){
-    node_range[i+1] += node_range[i];
-    csr_range[i+1]  += csr_range[i];
-  }
-
-  int *csr = new int[ ncsr ];
-  int *comp_nums = new int[ nelems ];
-  ncsr = 0;
-  nelems = 0;
-  nodes = node_range[mpiRank];
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i]->getElementType() == elem_type){
-      elements[i]->getOutputConnectivity(&csr[ncsr], nodes);
-      int n = nelems;
-      elements[i]->addOutputCount(&nelems, &nodes, &ncsr);
-      int c = elements[i]->getComponentNum();
-      for ( ; n < nelems; n++ ){
-        comp_nums[n] = c;
-      }
-    }
-  }
-
-  *component_nums = comp_nums;
-  *_csr = csr;
-  *_csr_range = csr_range;
-  *_node_range = node_range;
-  */
-}
-
-/*
   Go through each element and get the output data for that element.
 
   The data is stored point-wise with each variable stored contiguously
@@ -5039,30 +4949,42 @@ void TACSAssembler::getOutputConnectivity( ElementType elem_type,
   data:      the data array - nvals x the number of elements
   nvals:     the number of values to skip at each point
 */
-void TACSAssembler::getOutputData( ElementType elem_type,
-                                   unsigned int out_type,
-                                   double *data, int nvals ){
-  /*
+void TACSAssembler::getElementOutputData( ElementType elem_type,
+                                          int write_flag,
+                                          int *_nvals, int *_len,
+                                          double **_data ){
+  int nvals = TacsGetTotalOutputCount(elem_type, write_flag);
+  int len = 0;
+  for ( int i = 0; i < numElements; i++ ){
+    len += elements[i]->getNumNodes();
+  }
+  double *data = new double[ len*nvals ];
+
   // Retrieve pointers to temporary storage
-  TacsScalar *elemVars, *elemXpts;
-  getDataPointers(elementData, &elemVars, NULL, NULL, NULL,
+  TacsScalar *elemXpts, *vars, *dvars, *ddvars;
+  getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
                   &elemXpts, NULL, NULL, NULL);
 
-  int nelems = 0, nnodes = 0, ncsr = 0;
-  for ( int i = 0; i < numElements; i++ ){
-    if (elements[i]->getElementType() == elem_type){
-      int ptr = elementNodeIndex[i];
-      int len = elementNodeIndex[i+1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
-      xptVec->getValues(len, nodes, elemXpts);
-      varsVec->getValues(len, nodes, elemVars);
+  for ( int i = 0, offset = 0; i < numElements; i++ ){
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, vars);
+    dvarsVec->getValues(len, nodes, dvars);
+    ddvarsVec->getValues(len, nodes, ddvars);
 
-      elements[i]->getOutputData(out_type, &data[nvals*nnodes], nvals,
-                                 elemXpts, elemVars);
-      elements[i]->addOutputCount(&nelems, &nnodes, &ncsr);
-    }
+    elements[i]->getOutputData(i, elem_type, write_flag, 
+                               elemXpts, vars, dvars, ddvars,
+                               nvals, &data[offset]);
+
+    offset += nvals*elements[i]->getNumNodes();
   }
-  */
+
+  // Set the output pointers
+  *_nvals = nvals;
+  *_len = len;
+  *_data = data;
 }
 
 /*
@@ -5074,11 +4996,9 @@ void TACSAssembler::getOutputData( ElementType elem_type,
   overhead involed in averaging quantities across different
   processors.
 */
-TACSBVec* TACSAssembler::getContinuousOutputData( ElementType elem_type,
-                                                  int write_flag ){
-  int nvals = ;
-
-
+TACSBVec* TACSAssembler::getNodeAverageOutputData( ElementType elem_type,
+                                                   int write_flag ){
+  int nvals = TacsGetTotalOutputCount(elem_type, write_flag);
   TacsScalar *elem_data = new TacsScalar[ nvals*maxElementNodes ];
   TacsScalar *elem_weights = new TacsScalar[ maxElementNodes ];
   for ( int i = 0; i < maxElementNodes; i++ ){
@@ -5114,7 +5034,7 @@ TACSBVec* TACSAssembler::getContinuousOutputData( ElementType elem_type,
     ddvarsVec->getValues(len, nodes, ddvars);
 
     // Get the element output data
-    elements[i]->getOutputData(elem_type, write_flag, 
+    elements[i]->getOutputData(i, elem_type, write_flag, 
                                elemXpts, vars, dvars, ddvars,
                                nvals, elem_data_real);
 

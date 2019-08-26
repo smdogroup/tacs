@@ -16,6 +16,30 @@
 #include "TACSObject.h"
 
 /*
+  Count up the total number of values associate with all outputs
+*/
+int TacsGetTotalOutputCount( ElementType etype, int flag ){
+  int nvals = 0;
+  if (flag & TACS_OUTPUT_NODES){
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_NODES);
+  }
+  if (flag & TACS_OUTPUT_DISPLACEMENTS){
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_DISPLACEMENTS);
+  }
+  if (flag & TACS_OUTPUT_STRAINS){
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_STRESSES);
+  }
+  if (flag & TACS_OUTPUT_STRESSES){
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_STRAINS);
+  }
+  if (flag & TACS_OUTPUT_EXTRAS){
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_EXTRAS);
+  }
+
+  return nvals;
+}
+
+/*
   Get the number of components associated with the output
 */
 int TacsGetOutputComponentCount( ElementType etype, int comp ){

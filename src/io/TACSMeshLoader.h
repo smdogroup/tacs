@@ -77,8 +77,8 @@ class TACSMeshLoader : public TACSObject {
   // Create a TACSToFH5 file writer
   // ------------------------------
   TACSToFH5 *createTACSToFH5( TACSAssembler *tacs,
-                              enum ElementType elem_type,
-                              unsigned int write_flag );
+                              ElementType elem_type,
+                              int write_flag );
 
   // Distribute the mesh and create TACS
   // -----------------------------------

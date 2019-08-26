@@ -78,6 +78,16 @@ enum ElementMatrixType { TACS_STIFFNESS_MATRIX,
                          TACS_STIFFNESS_PRODUCT_DERIVATIVE };
 
 /**
+   Get the total number of components associated with the element type
+   and flag
+
+   @param etype Element type
+   @param flag A binary flag indicating all the categories of component
+   @return The total number of components
+*/
+int TacsGetTotalOutputCount( ElementType etype, int flag );
+
+/**
    Get the number of components associated with the output
 
    @param etype Element type

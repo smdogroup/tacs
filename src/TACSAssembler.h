@@ -277,18 +277,9 @@ class TACSAssembler : public TACSObject {
   // Get information about the output files; For use by TACSToFH5
   // ------------------------------------------------------------
   int getNumComponents();
-  void getOutputNodeRange( ElementType elem_type, 
-                           int **_node_range );
-  void getOutputConnectivity( ElementType elem_type,
-                              int **_component_nums,
-                              int **_csr, int **_csr_range, 
-                              int **_node_range );
-  void getOutputData( ElementType elem_type,
-                      unsigned int out_type,
-                      double *data, int nvals );
-  TACSBVec* getContinuousOutputData( ElementType elem_type,
-                                     unsigned int out_type,
-                                     int nvals );
+  void getElementOutputData( ElementType elem_type, int write_flag,
+                             int *nvals, int *len, double **data );
+  TACSBVec* getNodeAverageOutputData( ElementType elem_type, int write_flag );
 
   // Functions for ordering the variables
   // ------------------------------------

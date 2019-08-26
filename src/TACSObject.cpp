@@ -113,14 +113,14 @@ TACSObject::TACSObject(){
 
 TACSObject::~TACSObject(){}
 
-/*!
+/*
   Increase the reference count functions
 */
 void TACSObject::incref(){ 
   ref_count++; 
 }
 
-/*!
+/*
   Decrease the reference count
 */
 void TACSObject::decref(){
@@ -129,21 +129,25 @@ void TACSObject::decref(){
   if (ref_count == 0){
 #ifdef TACS_DEBUG
     fprintf(stderr, "Deleting object %s\n",
-            this->TACSObjectName());
+            this->getObjectName());
 #endif
     delete this;
   }
   else if (ref_count < 0){
     fprintf(stderr, "Encountered a negative reference count for %s\n",
-            this->TACSObjectName());
+            this->getObjectName());
   }
 }
 
 //! Return the reference count
-int TACSObject::refcount(){ return ref_count; }
+int TACSObject::refcount(){
+  return ref_count;
+}
 
 //! Return the name of the object
-const char *TACSObject::TACSObjectName(){ return tacsDefault; }
+const char *TACSObject::getObjectName(){
+  return tacsDefault;
+}
 
 const char *TACSObject::tacsDefault = "TACSObject";
 

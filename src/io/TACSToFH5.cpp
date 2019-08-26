@@ -50,22 +50,7 @@ TACSToFH5::TACSToFH5( TACSAssembler *_assembler,
 
   // Count up the number of values that will be output for each point
   // in the mesh
-  nvals = 0;
-  if (write_flag & TACS_OUTPUT_NODES){
-    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_NODES);
-  }
-  if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
-    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
-  }
-  if (write_flag & TACS_OUTPUT_STRAINS){
-    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_STRESSES);
-  }
-  if (write_flag & TACS_OUTPUT_STRESSES){
-    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_STRAINS);
-  }
-  if (write_flag & TACS_OUTPUT_EXTRAS){
-    nvals += TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_EXTRAS);
-  }
+  nvals = TacsGetTotalOutputCount(elem_type, write_flag);
 
   // Get a comma separated list of the variable names
   variable_names = getElementVarNames();
@@ -163,16 +148,15 @@ void TACSToFH5::writeToFile( const char *filename ){
   int *comp_nums = new int[ num_elements ];
   int *layout_types = new int[ num_elements ];
 
-  TACSElement **elements;
-  assembler->getElements(&elements);
+  TACSElement **elements = assembler->getElements();
 
   // Set the layout types and the component numbers
-  int *
   for ( int i = 0; i < num_elements; i++ ){
     layout_types[i] = elements[i]->getLayoutType();
     comp_nums[i] = elements[i]->getComponentNum();
   }
 
+/*
   // Write the component numbers to a zone
   int dim1 = num_elements;
   int dim2 = 1;
@@ -187,7 +171,7 @@ void TACSToFH5::writeToFile( const char *filename ){
                       comp_nums, dim1, dim2);
   delete [] layout_types;
 
-  if (use_continuous_data){
+  if (average_node_data){
     // Record the element data
     dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
     dim2 = con_size;
@@ -239,9 +223,10 @@ void TACSToFH5::writeToFile( const char *filename ){
 
   file->close();
   file->decref();
+  */
 }
 
-/*
+/**
   Create a comma-separated list of the element variable names
 */
 char *TACSToFH5::getElementVarNames(){
@@ -262,15 +247,15 @@ char *TACSToFH5::getElementVarNames(){
       int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
       size_t str_len = 2;           
       for ( int i = 0; i < nd; i++ ){
-        stemp = TacsGetOutputComponentName(elem_type, out_type[k], i);
-        str_len += strlen(s);
+        stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
+        str_len += strlen(stemp);
       }
       char *temp = new char[ str_len ];
       if (nd > 0){
-        stemp = TacsGetOutputComponentName(elem_type, out_type[k], 0);
-        strcpy(temp, s);
+        stemp = TacsGetOutputComponentName(elem_type, out_types[k], 0);
+        strcpy(temp, stemp);
         for ( int i = 1; i < nd; i++ ){
-          stemp = TacsGetOutputComponentName(elem_type, out_type[k], i);
+          stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
           size_t len = strlen(temp);
           sprintf(&(temp[len]), ",%s", stemp);
         }

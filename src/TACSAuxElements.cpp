@@ -145,7 +145,7 @@ int TACSAuxElements::getAuxElements( TACSAuxElem **_elems ){
 */
 void TACSAuxElements::getDesignVars( int numDVs, TacsScalar dvs[] ){
   for ( int i = 0; i < num_elements; i++ ){
-    aux[i].elem->getDesignVars(numDVs, dvs);
+    aux[i].elem->getDesignVars(i, numDVs, dvs);
   }
 }
 
@@ -154,7 +154,7 @@ void TACSAuxElements::getDesignVars( int numDVs, TacsScalar dvs[] ){
 */
 void TACSAuxElements::setDesignVars( int numDVs, const TacsScalar dvs[] ){
   for ( int i = 0; i < num_elements; i++ ){
-    aux[i].elem->setDesignVars(numDVs, dvs);
+    aux[i].elem->setDesignVars(i, numDVs, dvs);
   }
 }
 
@@ -164,6 +164,6 @@ void TACSAuxElements::setDesignVars( int numDVs, const TacsScalar dvs[] ){
 void TACSAuxElements::getDesignVarRange( int numDVs, TacsScalar lb[], 
                                          TacsScalar ub[] ){
   for ( int i = 0; i < num_elements; i++ ){
-    aux[i].elem->getDesignVarRange(numDVs, lb, ub);
+    aux[i].elem->getDesignVarRange(i, numDVs, lb, ub);
   }
 }

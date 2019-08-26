@@ -39,7 +39,7 @@ class TACSToFH5 : public TACSObject {
   TACSToFH5( TACSAssembler *assembler,
              ElementType elem_type,
              int write_flag,
-             int average_node_data );
+             int average_node_data=0 );
   ~TACSToFH5();
 
   // Set the group name for each zone
@@ -56,9 +56,10 @@ class TACSToFH5 : public TACSObject {
   TACSAssembler *assembler;
 
   // Parameters to control how data is written to the file
-  ElementType elem_type;
-  int write_flag;
-  int average_node_data;
+  ElementType elem_type; // Write flag type
+  int write_flag; // Keep track of which components to write
+  int average_node_data; // Average the data to the nodes
+  int nvals; // The number of values
 
   int num_components; // The number of components in the model
   char **component_names; // The names of each of the components

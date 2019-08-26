@@ -77,23 +77,23 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_tacs,
   // Check that the matrix associated with the solver object is the auxiliary
   // matrix. If not, complain about it.
   if (mat != aux_mat){
-    fprintf(stderr, "TACSBuckling: Error, solver must be associated with the \
-auxiliary matrix\n");
+    fprintf(stderr, "TACSBuckling: Error, solver must be associated with the "
+            "auxiliary matrix\n");
   }
 
   // Check that the auxiliary matrix, geometric stiffness and stiffness
   // matrices are different objects
   if (aux_mat == kmat){
-    fprintf(stderr, "TACSBuckling: Error, stiffness and auxiliary matrices \
-must be different instances\n");
+    fprintf(stderr, "TACSBuckling: Error, stiffness and auxiliary matrices "
+            "must be different instances\n");
   }
   if (aux_mat == gmat){
-    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and auxiliary \
-matrices must be different instances\n");
+    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and auxiliary "
+            "matrices must be different instances\n");
   }
   if (gmat == kmat){
-    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and stiffness \
-matrices must be different instances\n");
+    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and stiffness "
+            "matrices must be different instances\n");
   }
 
   // Check if the preconditioner is actually a multigrid object. If
@@ -215,19 +215,19 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
 
     // Assemble the linear combination of the stiffness matrix
     // and geometric stiffness matrix
-    ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX,
-                                     GEOMETRIC_STIFFNESS_MATRIX};
+    ElementMatrixType matTypes[2] = {TACS_STIFFNESS_MATRIX,
+                                     TACS_GEOMETRIC_STIFFNESS_MATRIX};
     TacsScalar scale[2] = {1.0, sigma};
     mg->assembleMatCombo(matTypes, scale, 2);
 
     // Assemble the geometric stiffness matrix and the stiffness matrix itself
-    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-    tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
+    tacs->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+    tacs->assembleMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, gmat);
   }
   else {
     // Compute the stiffness matrix and copy the values to the
     // auxiliary matrix used to solve for the load path.
-    tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+    tacs->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
     aux_mat->copyValues(kmat);
 
     pc->factor();
@@ -245,7 +245,7 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
     tacs->setVariables(path);
 
     // Assemble the stiffness and geometric stiffness matrix
-    tacs->assembleMatType(GEOMETRIC_STIFFNESS_MATRIX, gmat);
+    tacs->assembleMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, gmat);
 
     // Form the shifted operator and factor it
     aux_mat->axpy(sigma, gmat);
@@ -381,18 +381,19 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
 
   // Evaluate the partial derivative for the stiffness matrix
-  tacs->addMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
+  tacs->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
   int mpi_rank;
   MPI_Comm_rank(tacs->getMPIComm(),&mpi_rank);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->addMatDVSensInnerProduct(TacsRealPart(eig), GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->addMatDVSensInnerProduct(TacsRealPart(eig),
+                                 TACS_GEOMETRIC_STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate derivative of the inner product with respect to
   // the path variables
-  tacs->evalMatSVSensInnerProduct(GEOMETRIC_STIFFNESS_MATRIX,
+  tacs->evalMatSVSensInnerProduct(TACS_GEOMETRIC_STIFFNESS_MATRIX,
                                   eigvec, eigvec, res);
 
   // Solve for the adjoint vector and evaluate the derivative of
@@ -639,17 +640,17 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
       // TacsScalar scale[2] = {1.0, sigma};
 
       // Assemble the mass matrix
-      tacs->assembleMatType(MASS_MATRIX, mmat);
-      tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+      tacs->assembleMatType(TACS_MASS_MATRIX, mmat);
+      tacs->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
 
       // Assemble the linear combination
       // mg->assembleMatCombo(matTypes, scale, 2);
-      mg->assembleMatType(STIFFNESS_MATRIX);
+      mg->assembleMatType(TACS_STIFFNESS_MATRIX);
       mg->factor();
     }
     else {
-      tacs->assembleMatType(MASS_MATRIX, mmat);
-      tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
+      tacs->assembleMatType(TACS_MASS_MATRIX, mmat);
+      tacs->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
     }
     // Factor the preconditioner
     // jd_op->setEigenvalueEstimate(0.0); // TacsRealPart(sigma));
@@ -667,20 +668,20 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
   else{
     if (mg){
       // Assemble the mass matrix
-      ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, 
-                                       MASS_MATRIX};
+      ElementMatrixType matTypes[2] = {TACS_STIFFNESS_MATRIX, 
+                                       TACS_MASS_MATRIX};
       TacsScalar scale[2] = {1.0, -sigma};
 
       // Assemble the mass matrix
-      tacs->assembleMatType(MASS_MATRIX, mmat);
+      tacs->assembleMatType(TACS_MASS_MATRIX, mmat);
 
       // Assemble the linear combination
       mg->assembleMatCombo(matTypes, scale, 2);
     }
     else {
       // Assemble the stiffness and mass matrices
-      tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-      tacs->assembleMatType(MASS_MATRIX, mmat);
+      tacs->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+      tacs->assembleMatType(TACS_MASS_MATRIX, mmat);
 
       // Form the shifted operator and factor it
       kmat->axpy(-sigma, mmat);
@@ -775,11 +776,11 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
 
   // Evaluate the partial derivative for the stiffness matrix
-  tacs->addMatDVSensInnerProduct(1.0, STIFFNESS_MATRIX,
+  tacs->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  tacs->addMatDVSensInnerProduct(-TacsRealPart(eig), MASS_MATRIX,
+  tacs->addMatDVSensInnerProduct(-TacsRealPart(eig), TACS_MASS_MATRIX,
                                  eigvec, eigvec, fdvSens, numDVs);
 
   // Finish computing the derivative
@@ -798,8 +799,8 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 void TACSFrequencyAnalysis::checkEigenvector( int n ){
   // Assemble the stiffness/mass matrices
   tacs->zeroVariables();
-  tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
-  tacs->assembleMatType(MASS_MATRIX, mmat);
+  tacs->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+  tacs->assembleMatType(TACS_MASS_MATRIX, mmat);
 
   // Create temporary arrays required
   TACSBVec *t1 = tacs->createVec();
