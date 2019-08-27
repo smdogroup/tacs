@@ -148,6 +148,7 @@ void TACSToFH5::writeToFile( const char *filename ){
   int *comp_nums = new int[ num_elements ];
   int *layout_types = new int[ num_elements ];
 
+  // Get the array of elements
   TACSElement **elements = assembler->getElements();
 
   // Set the layout types and the component numbers
@@ -156,7 +157,6 @@ void TACSToFH5::writeToFile( const char *filename ){
     comp_nums[i] = elements[i]->getComponentNum();
   }
 
-/*
   // Write the component numbers to a zone
   int dim1 = num_elements;
   int dim2 = 1;
@@ -172,58 +172,56 @@ void TACSToFH5::writeToFile( const char *filename ){
   delete [] layout_types;
 
   if (average_node_data){
-    // Record the element data
-    dim1 = (csr_range[rank+1] - csr_range[rank])/con_size;
-    dim2 = con_size;
-    char conn_name[] = "connectivity";
-    file->writeZoneData(conn_name, conn_name, FH5File::FH5_INT,
-                        csr, dim1, dim2);
-    if (csr){ delete [] csr; }
-    if (csr_range){ delete [] csr_range; }
+    // Write out the data to a file
+    TacsScalar *data;
+    assembler->getElementOutputData(elem_type, write_flag,
+                                    &dim1, &dim2, &data);
 
+    // Convert the data to float
+    float *float_data = new float[ dim1*dim2 ];
+    for ( int i = 0; i < dim1*dim2; i++ ){
+      float_data[i] = data[i];
+    }
+    delete [] data;
 
-
-
-
-
+    // Write the data with a time stamp from the simulation in TACS
+    char data_name[128];
+    double t = assembler->getSimulationTime();
+    sprintf(data_name, "data t=%.10e", t);
+    file->writeZoneData(data_name, variable_names,
+                        FH5File::FH5_FLOAT, float_data, dim1, dim2);
+    delete [] float_data;
   }
   else {
+    // Create the continuous output data
+    TACSBVec *data_vec =
+      assembler->getNodeAverageOutputData(elem_type, write_flag);
+    data_vec->incref();
 
+    /*
+    float *float_data = NULL;
 
+    // Convert the data to float
+    float_data = new float[ dim1*dim2 ];
+    for ( int i = 0; i < dim1*dim2; i++ ){
+      float_data[i] = data[i];
+    }
+    delete [] data;
+
+    // Write the data with a time stamp from the simulation in TACS
+    char data_name[128];
+    double t = assembler->getSimulationTime();
+    sprintf(data_name, "data t=%.10e", t);
+    file->writeZoneData(data_name, variable_names,
+                        FH5File::FH5_FLOAT, float_data, dim1, dim2);
+    delete [] float_data;
+    */
+
+    data_vec->decref();
   }
-
-  // Allocate space for the output data -
-  // the nodes, displacements, stresses etc.
-  int len = nvals*(node_range[rank+1] - node_range[rank]);
-  double *data = new double[ len ];
-  memset(data, 0, len*sizeof(double));
-
-  // Get the output data from TACS
-  assembler->getOutputData(elem_type, write_flag, data, nvals);
-
-  // Get the dimensions of the data
-  dim1 = node_range[rank+1] - node_range[rank];
-  dim2 = nvals;
-
-  // Convert the data to float
-  float *float_data = new float[ len ];
-  for ( int i = 0; i < dim1*dim2; i++ ){
-    float_data[i] = data[i];
-  }
-
-  // Write the data with a time stamp from the simulation in TACS
-  char data_name[128];
-  double t = assembler->getSimulationTime();
-  sprintf(data_name, "data t=%.10e", t);
-  file->writeZoneData(data_name, variable_names,
-                      FH5File::FH5_FLOAT, float_data, dim1, dim2);
-  delete [] data;
-  delete [] float_data;
-  if (node_range){ delete [] node_range; }
 
   file->close();
   file->decref();
-  */
 }
 
 /**
@@ -245,7 +243,7 @@ char *TACSToFH5::getElementVarNames(){
     if (write_flag & out_types[k]){
       const char *stemp = NULL;
       int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
-      size_t str_len = 2;           
+      size_t str_len = 2;
       for ( int i = 0; i < nd; i++ ){
         stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
         str_len += strlen(stemp);

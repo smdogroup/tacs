@@ -12,16 +12,16 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSPlaneStressConstitutive.h"
 
 const char* TACSPlaneStressConstitutive::psName = "TACSPlaneStressConstitutive";
 
-const char* TACSPlaneStressConstitutive::getObjectName(){ 
-  return psName; 
+const char* TACSPlaneStressConstitutive::getObjectName(){
+  return psName;
 }
 
 /*
@@ -49,7 +49,7 @@ int TACSPlaneStressConstitutive::getNumStresses(){
 */
 void TACSPlaneStressConstitutive::evalStress( int elemIndex,
                                               const double pt[],
-                                              const TacsScalar X[], 
+                                              const TacsScalar X[],
                                               const TacsScalar e[],
                                               TacsScalar s[] ){
   TacsScalar C[6];
@@ -70,7 +70,7 @@ void TACSPlaneStressConstitutive::evalStress( int elemIndex,
 */
 void TACSPlaneStressConstitutive::evalTangentStiffness( int elemIndex,
                                                         const double pt[],
-                                                        const TacsScalar X[], 
+                                                        const TacsScalar X[],
                                                         TacsScalar C[] ){
   if (properties){
     properties->evalTangentStiffness2D(C);
@@ -108,7 +108,7 @@ TacsScalar TACSPlaneStressConstitutive::evalDensity( int elemIndex,
 
 // Evaluate the material failure index
 TacsScalar TACSPlaneStressConstitutive::failure( int elemIndex,
-                                                 const double pt[], 
+                                                 const double pt[],
                                                  const TacsScalar X[],
                                                  const TacsScalar e[] ){
   if (properties){

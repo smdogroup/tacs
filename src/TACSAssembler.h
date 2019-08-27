@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_ASSEMBLER_H
@@ -24,7 +24,7 @@
   analysis and sensitivity analysis.
 */
 
-class TACSAssembler; 
+class TACSAssembler;
 
 // Basic analysis classes
 #include "TACSObject.h"
@@ -70,15 +70,15 @@ class TACSAssembler : public TACSObject {
                       ND_ORDER, // Nested disection
                       TACS_AMD_ORDER, // Interface variables ordered last
                       MULTICOLOR_ORDER }; // Multicolor via greedy algorithm
-  enum MatrixOrderingType { ADDITIVE_SCHWARZ, 
+  enum MatrixOrderingType { ADDITIVE_SCHWARZ,
                             APPROXIMATE_SCHUR,
                             DIRECT_SCHUR,
                             GAUSS_SEIDEL };
-  
+
   // Create the TACSAssembler object in parallel
   // -------------------------------------------
   TACSAssembler( MPI_Comm _tacs_comm, int _varsPerNode,
-                 int _numOwnedNodes, int _numElements, 
+                 int _numOwnedNodes, int _numElements,
                  int _numDependentNodes=0 );
   ~TACSAssembler();
 
@@ -86,22 +86,22 @@ class TACSAssembler : public TACSObject {
   // ----------------------------
   int setElementConnectivity( const int *conn, const int *ptr );
   int setElements( TACSElement **_elements );
-  int setDependentNodes( const int *_depNodeIndex, 
+  int setDependentNodes( const int *_depNodeIndex,
                          const int *_depNodeToTacs,
                          const double *_depNodeWeights );
 
   // Associate a Dirichlet boundary condition with the given variables
   // -----------------------------------------------------------------
-  void addBCs( int nnodes, const int *nodes, 
-               int nbcs=-1, const int *vars=NULL, 
+  void addBCs( int nnodes, const int *nodes,
+               int nbcs=-1, const int *vars=NULL,
                const TacsScalar *vals=NULL );
-  void addInitBCs( int nnodes, const int *nodes, 
-                   int nbcs=-1, const int *vars=NULL, 
+  void addInitBCs( int nnodes, const int *nodes,
+                   int nbcs=-1, const int *vars=NULL,
                    const TacsScalar *vals=NULL );
 
   // Reorder the unknowns according to the specified reordering
   // ----------------------------------------------------------
-  void computeReordering( OrderingType order_type, 
+  void computeReordering( OrderingType order_type,
                           MatrixOrderingType mat_type );
 
   // Initialize the mesh
@@ -140,10 +140,10 @@ class TACSAssembler : public TACSObject {
   void setAuxElements( TACSAuxElements *aux_elems );
   TACSAuxElements *getAuxElements();
 
-  // Set the nodes in TACS 
+  // Set the nodes in TACS
   // ---------------------
   TACSBVec *createNodeVec();
-  void setNodes( TACSBVec *X ); 
+  void setNodes( TACSBVec *X );
   void getNodes( TACSBVec *X );
 
   // Set/get the simulation time
@@ -167,12 +167,12 @@ class TACSAssembler : public TACSObject {
   void zeroVariables();
   void zeroDotVariables();
   void zeroDDotVariables();
-  
+
   // Methods for setting/getting variables
   // -------------------------------------
-  void setVariables( TACSBVec *q, 
+  void setVariables( TACSBVec *q,
                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
-  void getVariables( TACSBVec *q, 
+  void getVariables( TACSBVec *q,
                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
 
   // Create the matrices that can be used for analysis
@@ -200,7 +200,7 @@ class TACSAssembler : public TACSObject {
   void assembleMatCombo( ElementMatrixType matTypes[],
                          TacsScalar scale[], int nmats,
                          TACSMat *A, MatrixOrientation matOr=NORMAL );
-  void addJacobianVecProduct( TacsScalar scale, 
+  void addJacobianVecProduct( TacsScalar scale,
                               double alpha, double beta, double gamma,
                               TACSBVec *x, TACSBVec *y,
                               MatrixOrientation matOr=NORMAL );
@@ -223,7 +223,7 @@ class TACSAssembler : public TACSObject {
   void addSVSens( double alpha, double beta, double gamma,
                   TACSFunction **funcs, int numFuncs,
                   TACSBVec **fuSens );
-  void addAdjointResProducts( double scale, 
+  void addAdjointResProducts( double scale,
                               TACSBVec **adjoint, int numAdjoints,
                               TacsScalar *dvSens, int numDVs );
   void addXptSens( double coef, TACSFunction **funcs, int numFuncs,
@@ -241,24 +241,24 @@ class TACSAssembler : public TACSObject {
   // Add the derivatives of inner products
   // -------------------------------------
   void addMatDVSensInnerProduct( double scale,
-                                 ElementMatrixType matType, 
+                                 ElementMatrixType matType,
                                  TACSBVec *psi, TACSBVec *phi,
                                  TacsScalar *dvSens, int numDVs );
-  void evalMatSVSensInnerProduct( ElementMatrixType matType, 
-                                  TACSBVec *psi, TACSBVec *phi, 
+  void evalMatSVSensInnerProduct( ElementMatrixType matType,
+                                  TACSBVec *psi, TACSBVec *phi,
                                   TACSBVec *res );
 
   // Direct copy of the variable values
   // ----------------------------------
-  void copyVariables( TACSBVec *q, 
+  void copyVariables( TACSBVec *q,
                       TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
 
   // Return elements and node numbers
   // --------------------------------
   TACSElement **getElements();
-  TACSElement *getElement( int elem, TacsScalar *Xpts=NULL, 
-                           TacsScalar *vars=NULL, 
-                           TacsScalar *dvars=NULL, 
+  TACSElement *getElement( int elem, TacsScalar *Xpts=NULL,
+                           TacsScalar *vars=NULL,
+                           TacsScalar *dvars=NULL,
                            TacsScalar *ddvars=NULL );
   TACSElement *getElement( int elem, const int **nodes, int *len );
 
@@ -267,9 +267,9 @@ class TACSAssembler : public TACSObject {
   void testElement( int elemNum, int print_level, double dh=1e-6,
                     double rtol=1e-8, double atol=1e-1 );
   void testConstitutive( int elemNum, int print_level );
-  void testFunction( TACSFunction *func, 
+  void testFunction( TACSFunction *func,
                      int num_design_vars, double dh );
-  
+
   // Set the number of threads to work with
   // --------------------------------------
   void setNumThreads( int t );
@@ -278,7 +278,7 @@ class TACSAssembler : public TACSObject {
   // ------------------------------------------------------------
   int getNumComponents();
   void getElementOutputData( ElementType elem_type, int write_flag,
-                             int *nvals, int *len, double **data );
+                             int *len, int *nvals, double **data );
   TACSBVec* getNodeAverageOutputData( ElementType elem_type, int write_flag );
 
   // Functions for ordering the variables
@@ -291,8 +291,8 @@ class TACSAssembler : public TACSObject {
  private:
   // Get pointers to the start-locations within the data array
   // ---------------------------------------------------------
-  void getDataPointers( TacsScalar *data, 
-                        TacsScalar **v1, TacsScalar **v2, 
+  void getDataPointers( TacsScalar *data,
+                        TacsScalar **v1, TacsScalar **v2,
                         TacsScalar **v3, TacsScalar **v4,
                         TacsScalar **x1, TacsScalar **x2,
                         TacsScalar **weights, TacsScalar **mat );
@@ -308,7 +308,7 @@ class TACSAssembler : public TACSObject {
 
   // Functions for ordering the variables
   // ------------------------------------
-  void computeLocalNodeToNodeCSR( int **_rowp, int **_cols, 
+  void computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
                                   int nrnodes, const int *rnodes,
                                   int nodiag );
 
@@ -320,7 +320,7 @@ class TACSAssembler : public TACSObject {
 
   // Compute the reordering for a local matrix
   // -----------------------------------------
-  void computeMatReordering( OrderingType order_type, 
+  void computeMatReordering( OrderingType order_type,
                              int nvars, int *rowp, int *cols,
                              int *perm, int *new_vars );
 
@@ -328,7 +328,7 @@ class TACSAssembler : public TACSObject {
   void scatterExternalBCs( TACSBcMap *bcs );
 
   // Add values into the matrix
-  inline void addMatValues( TACSMat *A, const int elemNum, 
+  inline void addMatValues( TACSMat *A, const int elemNum,
                             const TacsScalar *mat,
                             int *item, TacsScalar *temp,
                             MatrixOrientation matOr );
@@ -361,7 +361,7 @@ class TACSAssembler : public TACSObject {
   int numElements; // number of elements
   int numNodes; // number of nodes referenced by this process
   int numOwnedNodes; // number of nodes owned by this processor
-  int numExtNodes; // number of extneral nodes 
+  int numExtNodes; // number of extneral nodes
   int numDependentNodes; // number of dependent nodes
   int numMultiplierNodes; // number of multiplier nodes/elements
 
@@ -369,13 +369,13 @@ class TACSAssembler : public TACSObject {
   int maxElementStrain; // maximum number of strains components
   int maxElementNodes; // maximum number of ind. and dep. element nodes
   int maxElementSize; // maximum number of variables for any element
-  int maxElementIndepNodes; // maximum number of independent nodes 
+  int maxElementIndepNodes; // maximum number of independent nodes
 
   // Node numbers that are referred to from this processor
   int *tacsExtNodeNums; // node numbers associated with TACS
   int extNodeOffset; // Offset into the external nodes
 
-  // Variables that define the CSR data structure to 
+  // Variables that define the CSR data structure to
   // store the element -> node information
   int *elementNodeIndex;
   int *elementTacsNodes;
@@ -420,7 +420,7 @@ class TACSAssembler : public TACSObject {
   class TACSAssemblerPthreadInfo {
   public:
     TACSAssemblerPthreadInfo(){
-      tacs = NULL; 
+      tacs = NULL;
       res = NULL;
       mat = NULL;
       alpha = beta = gamma = 0.0;
@@ -468,9 +468,9 @@ class TACSAssembler : public TACSObject {
   // The pthread data required to pthread tacs operations
   int numCompletedElements; // Keep track of how much work has been done
   TACSThreadInfo *thread_info;// The pthread object
-  
+
   // The thread objects
-  pthread_t threads[TACSThreadInfo::TACS_MAX_NUM_THREADS]; 
+  pthread_t threads[TACSThreadInfo::TACS_MAX_NUM_THREADS];
   pthread_mutex_t tacs_mutex; // The mutex for coordinating assembly ops.
 
   // The name of the TACSAssembler object
@@ -478,7 +478,7 @@ class TACSAssembler : public TACSObject {
 };
 
 /*
-  Add the values of the element matrix to the provided TACSMat. 
+  Add the values of the element matrix to the provided TACSMat.
 
   This code takes into account dependent-nodes (when they exist) by
   adding the inner product of the dependent weights with the element
@@ -489,7 +489,7 @@ class TACSAssembler : public TACSObject {
   local element.
 
   input:
-  elemNum:    the element number 
+  elemNum:    the element number
   mat:        the corresponding element matrix
   itemp:      temporary integer storage len(itemp) >= nnodes+1 + len(vars)
   temp:       temporary scalar storage len(temp) >= len(weights)
@@ -497,8 +497,8 @@ class TACSAssembler : public TACSObject {
   input/output:
   A:          the matrix to which the element-matrix is added
 */
-inline void TACSAssembler::addMatValues( TACSMat *A, 
-                                         const int elemNum, 
+inline void TACSAssembler::addMatValues( TACSMat *A,
+                                         const int elemNum,
                                          const TacsScalar *mat,
                                          int *itemp, TacsScalar *temp,
                                          MatrixOrientation matOr ){
@@ -523,10 +523,10 @@ inline void TACSAssembler::addMatValues( TACSMat *A,
     const int *depNodeConn = NULL;
     const double *depNodeWeights = NULL;
     if (depNodes){
-      depNodes->getDepNodes(&depNodePtr, &depNodeConn, 
+      depNodes->getDepNodes(&depNodePtr, &depNodeConn,
                             &depNodeWeights);
     }
-    
+
     // Set pointers to the temporary arrays
     int *varp = &itemp[0];
     int *vars = &itemp[nnodes+1];

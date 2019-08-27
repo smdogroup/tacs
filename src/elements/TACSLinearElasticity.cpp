@@ -14,44 +14,44 @@
 
 #include "TACSLinearElasticity.h"
 
-TACSLinearEleasticity2D::TACSLinearEleasticity2D( TACSPlaneStressConstitutive *_stiff,
-                                                  ElementStrainType _strain_type ){
+TACSLinearElasticity2D::TACSLinearElasticity2D( TACSPlaneStressConstitutive *_stiff,
+                                                ElementStrainType _strain_type ){
   stiff = _stiff;
   stiff->incref();
   strain_type = _strain_type;
 }
 
-TACSLinearEleasticity2D::~TACSLinearEleasticity2D(){
+TACSLinearElasticity2D::~TACSLinearElasticity2D(){
   stiff->decref();
 }
 
-const int TACSLinearEleasticity2D::DDUt_pairs[] =
+const int TACSLinearElasticity2D::DDUt_pairs[] =
   {2, 2, 5, 5};
 
-const int TACSLinearEleasticity2D::DDUx_pairs[] = 
+const int TACSLinearElasticity2D::DDUx_pairs[] =
   {1, 1, 1, 2, 1, 4, 1, 5,
    2, 1, 2, 2, 2, 4, 2, 5,
    4, 1, 4, 2, 4, 4, 4, 5,
    5, 1, 5, 2, 5, 4, 5, 5};
-  
-int TACSLinearEleasticity2D::getSpatialDim(){
+
+int TACSLinearElasticity2D::getSpatialDim(){
   return 3;
 }
 
-int TACSLinearEleasticity2D::getVarsPerNode(){
-  return 3;
+int TACSLinearElasticity2D::getVarsPerNode(){
+  return 2;
 }
 
-void TACSLinearEleasticity2D::evalWeakIntegrand( int elemIndex,
-                                                 const double time,
-                                                 const double pt[],
-                                                 const TacsScalar X[],
-                                                 const TacsScalar U[],
-                                                 const TacsScalar Udot[],
-                                                 const TacsScalar Uddot[],
-                                                 const TacsScalar Ux[],
-                                                 TacsScalar DUt[],
-                                                 TacsScalar DUx[] ){
+void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
+                                                const double time,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                const TacsScalar U[],
+                                                const TacsScalar Udot[],
+                                                const TacsScalar Uddot[],
+                                                const TacsScalar Ux[],
+                                                TacsScalar DUt[],
+                                                TacsScalar DUx[] ){
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
@@ -87,24 +87,23 @@ void TACSLinearEleasticity2D::evalWeakIntegrand( int elemIndex,
   DUx[5] = s[2];
   DUx[6] = s[1];
 }
-  
-void TACSLinearEleasticity2D::evalIntegrandDeriv( int elemIndex,
-                                                  const double time,
-                                                  const double pt[],
-                                                  const TacsScalar X[],
-                                                  const TacsScalar U[],
-                                                  const TacsScalar Udot[],
-                                                  const TacsScalar Uddot[],
-                                                  const TacsScalar Ux[],
-                                                  TacsScalar DUt[],
-                                                  TacsScalar DUx[],
-                                                  int *DDUt_nnz,
-                                                  const int *_DDUt_pairs[],
-                                                  TacsScalar DDUt[],
-                                                  int *DDUx_nnz,
-                                                  const int *_DDUx_pairs[],
-                                                  TacsScalar DDUx[] ){
 
+void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
+                                               const double time,
+                                               const double pt[],
+                                               const TacsScalar X[],
+                                               const TacsScalar U[],
+                                               const TacsScalar Udot[],
+                                               const TacsScalar Uddot[],
+                                               const TacsScalar Ux[],
+                                               TacsScalar DUt[],
+                                               TacsScalar DUx[],
+                                               int *DDUt_nnz,
+                                               const int *_DDUt_pairs[],
+                                               TacsScalar DDUt[],
+                                               int *DDUx_nnz,
+                                               const int *_DDUx_pairs[],
+                                               TacsScalar DDUx[] ){
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
@@ -145,7 +144,7 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( int elemIndex,
 
   // Set the non-zero terms in the Jacobian
   *DDUt_nnz = 2;
-  *_DDUt_pairs = DDUt_pairs;  
+  *_DDUt_pairs = DDUt_pairs;
   *DDUx_nnz = 16;
   *_DDUx_pairs = DDUx_pairs;
 
@@ -212,24 +211,24 @@ void TACSLinearEleasticity2D::evalIntegrandDeriv( int elemIndex,
 }
 
 /*
-TACSLinearEleasticity3D::TACSLinearEleasticity3D( TACSConstitutive *_con ){
+TACSLinearElasticity3D::TACSLinearElasticity3D( TACSConstitutive *_con ){
   con = _con;
   con->incref();
 }
 
-TACSLinearEleasticity3D::~TACSLinearEleasticity3D(){
+TACSLinearElasticity3D::~TACSLinearElasticity3D(){
   con->decref();
 }
-  
-int TACSLinearEleasticity3D::getSpatialDim(){
+
+int TACSLinearElasticity3D::getSpatialDim(){
   return 3;
 }
 
-int TACSLinearEleasticity3D::getVarsPerNode(){
+int TACSLinearElasticity3D::getVarsPerNode(){
   return 3;
 }
 
-void TACSLinearEleasticity3D::evalWeakIntegrand( const double time,
+void TACSLinearElasticity3D::evalWeakIntegrand( const double time,
                                                  const double pt[],
                                                  const TacsScalar X[],
                                                  const TacsScalar U[],
@@ -267,7 +266,7 @@ void TACSLinearEleasticity3D::evalWeakIntegrand( const double time,
     e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
     e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
     e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
-    
+
     e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
     e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
     e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
@@ -293,7 +292,7 @@ void TACSLinearEleasticity3D::evalWeakIntegrand( const double time,
   DUx[11] = s[2];
 }
 
-void TACSLinearEleasticity3D::evalIntegrandDeriv(const double time,
+void TACSLinearElasticity3D::evalIntegrandDeriv(const double time,
                                                   const double pt[],
                                                   const TacsScalar X[],
                                                   const TacsScalar U[],
@@ -344,7 +343,7 @@ void TACSLinearEleasticity3D::evalIntegrandDeriv(const double time,
     e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
     e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
     e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
-    
+
     e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
     e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
     e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);

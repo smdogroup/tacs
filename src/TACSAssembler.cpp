@@ -4944,21 +4944,23 @@ int TACSAssembler::getNumComponents(){
   remaining data may be design variable entries that are computed
   below.
 
-  elem_type: the element type to match
-  out_type:  the output type
-  data:      the data array - nvals x the number of elements
-  nvals:     the number of values to skip at each point
+  elem_type:   the element type
+  write_flag:  the components to write to the file
+  len:         the number of nodes
+  nvals:       the number of entries
+  data:        the output data array
 */
 void TACSAssembler::getElementOutputData( ElementType elem_type,
                                           int write_flag,
-                                          int *_nvals, int *_len,
-                                          double **_data ){
+                                          int *_len, int *_nvals,
+                                          TacsScalar **_data ){
   int nvals = TacsGetTotalOutputCount(elem_type, write_flag);
   int len = 0;
   for ( int i = 0; i < numElements; i++ ){
     len += elements[i]->getNumNodes();
   }
   double *data = new double[ len*nvals ];
+  memset(data, 0, len*nvals*sizeof(double));
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemXpts, *vars, *dvars, *ddvars;

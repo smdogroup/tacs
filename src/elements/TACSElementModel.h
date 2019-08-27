@@ -25,14 +25,14 @@ class TACSElementModel {
  public:
   /**
     Returns the spatial dimension of the element: 1, 2 or 3
-  
+
     @return Degrees of freedom per node
   */
   virtual int getSpatialDim() = 0;
-  
+
   /**
     Returns the number of degrees of freedom per node
-  
+
     @return Degrees of freedom per node
   */
   virtual int getVarsPerNode() = 0;
@@ -54,8 +54,8 @@ class TACSElementModel {
     the zero-th, first and second time derivatives with the rows representing
     each variable. Therefore, the weak form for a problem with the variable
     components U = (u, v) will have the following form:
-    
-    int_{Area} (DUt[0]*du + DUt[1]*d(dot{u}) + DUt[2]*d(ddot{u}) + 
+
+    int_{Area} (DUt[0]*du + DUt[1]*d(dot{u}) + DUt[2]*d(ddot{u}) +
                 DUt[3]*dv + DUt[4]*d(dot{v}) + DUt[5]*d(ddot{v}) +
                 spatial terms) dA = 0
 
@@ -63,16 +63,16 @@ class TACSElementModel {
     weak form in a matrix of size (vars_per_node x (spatial_dim + 1)).
     The first component represents the coefficient of the variable, while
     the second, third and possibly fourth component represent the remaining
-    spatial derivative coefficients. A problem with the variable 
+    spatial derivative coefficients. A problem with the variable
     components U = (u, v) with a spatial dimension of two will have the
     following weak form:
 
-    int_{Area} (time dependent terms + 
+    int_{Area} (time dependent terms +
                 DUx[0]*du + DUx[1]*d(du/dx) + DUx[2]*d(du/dy)) +
                 DUx[3]*dv + DUx[4]*d(dv/dx) + DUx[5]*d(dv/dy)) dA = 0
 
     Note that the coefficients DUt[0] and DUx[0], and DUt[3] and DUx[3],
-    are both for the displacement u and v, respectively. This means that 
+    are both for the displacement u and v, respectively. This means that
     the implementation is not unique.
 
     @param elemIndex The local element index
@@ -107,11 +107,11 @@ class TACSElementModel {
     evalWeakIntegrand() function described above.
 
     The parameter *DDUt* contains a sparse matrix representation of the
-    the derivatives of the coefficients in DUt with respect to the 
-    displacement and their first and second time derivatives. A complete 
-    matrix DDUt would be a matrix of dimension 
+    the derivatives of the coefficients in DUt with respect to the
+    displacement and their first and second time derivatives. A complete
+    matrix DDUt would be a matrix of dimension
     (3*vars_per_node X 3*vars_per_node).
-    
+
     For instance, for the problem U = (u, v), the full DDUt would be a
     6 X 6 matrix whose first row would contain
 
@@ -143,28 +143,28 @@ class TACSElementModel {
     @param DUt Coefficients of the time-dependent weak form
     @param DUx Coefficients of the spatial-derivative weak form
     @param DDUt_num_non_zeros Number of non-zeros (negative for dense matrix)
-    @param DDUt_non_zero_pairs Non-zero Jacobian matrix pairs for DDt 
+    @param DDUt_non_zero_pairs Non-zero Jacobian matrix pairs for DDt
     @param DDUt Jacobian of the time-dependent weak form
     @param DDUx_num_non_zeros Number of non-zeros (negative for dense matrix)
     @param DDt_non_zero_pairs Non-zero Jacobian matrix pairs for DDx
     @param DDUx Jacobian of the spatial-derivative weak form
   */
-  virtual void evalWeakIntegrandJacobian( int elemIndex,
-                                          const double time,
-                                          const double pt[],
-                                          const TacsScalar X[],
-                                          const TacsScalar U[],
-                                          const TacsScalar Udot[],
-                                          const TacsScalar Uddot[],
-                                          const TacsScalar Ux[],
-                                          TacsScalar DUt[],
-                                          TacsScalar DUx[],
-                                          int *DDUt_num_non_zeros,
-                                          const int *DDUt_non_zero_pairs[],
-                                          TacsScalar DDUt[],
-                                          int *DDUx_num_non_zeros,
-                                          const int *DDUx_non_zero_pairs[],
-                                          TacsScalar DDUx[] ) = 0;
+  virtual void evalWeakJacobian( int elemIndex,
+                                 const double time,
+                                 const double pt[],
+                                 const TacsScalar X[],
+                                 const TacsScalar U[],
+                                 const TacsScalar Udot[],
+                                 const TacsScalar Uddot[],
+                                 const TacsScalar Ux[],
+                                 TacsScalar DUt[],
+                                 TacsScalar DUx[],
+                                 int *DDUt_num_non_zeros,
+                                 const int *DDUt_non_zero_pairs[],
+                                 TacsScalar DDUt[],
+                                 int *DDUx_num_non_zeros,
+                                 const int *DDUx_non_zero_pairs[],
+                                 TacsScalar DDUx[] ) = 0;
 };
 
 #endif // TACS_ELEMENT_MODEL_H

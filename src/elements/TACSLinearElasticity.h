@@ -22,12 +22,12 @@
 enum ElementStrainType { TACS_LINEAR_STRAIN,
                          TACS_NONLINEAR_STRAIN };
 
-class TACSLinearEleasticity2D : public TACSElementModel {
+class TACSLinearElasticity2D : public TACSElementModel {
  public:
-  TACSLinearEleasticity2D( TACSPlaneStressConstitutive *_con,
-                           ElementStrainType strain_type );
-  ~TACSLinearEleasticity2D();
-  
+  TACSLinearElasticity2D( TACSPlaneStressConstitutive *_con,
+                          ElementStrainType strain_type );
+  ~TACSLinearElasticity2D();
+
   int getSpatialDim();
   int getVarsPerNode();
   void evalWeakIntegrand( int elemIndex,
@@ -40,22 +40,22 @@ class TACSLinearEleasticity2D : public TACSElementModel {
                           const TacsScalar Ux[],
                           TacsScalar DUt[],
                           TacsScalar DUx[] );
-  void evalIntegrandDeriv( int elemIndex,
-                           const double time,
-                           const double pt[],
-                           const TacsScalar X[],
-                           const TacsScalar U[],
-                           const TacsScalar Udot[],
-                           const TacsScalar Uddot[],
-                           const TacsScalar Ux[],
-                           TacsScalar DUt[],
-                           TacsScalar DUx[],
-                           int *DDUt_nnz,
-                           const int *_DDUt_pairs[],
-                           TacsScalar DDUt[],
-                           int *DDUx_nnz,
-                           const int *_DDUx_pairs[],
-                           TacsScalar DDUx[] );
+  void evalWeakJacobian( int elemIndex,
+                         const double time,
+                         const double pt[],
+                         const TacsScalar X[],
+                         const TacsScalar U[],
+                         const TacsScalar Udot[],
+                         const TacsScalar Uddot[],
+                         const TacsScalar Ux[],
+                         TacsScalar DUt[],
+                         TacsScalar DUx[],
+                         int *DDUt_nnz,
+                         const int *_DDUt_pairs[],
+                         TacsScalar DDUt[],
+                         int *DDUx_nnz,
+                         const int *_DDUx_pairs[],
+                         TacsScalar DDUx[] );
 
  private:
   ElementStrainType strain_type;
@@ -68,11 +68,11 @@ class TACSLinearEleasticity2D : public TACSElementModel {
 
 /*
 
-class TACSLinearEleasticity3D : public TACSElementModel {
+class TACSLinearElasticity3D : public TACSElementModel {
  public:
-  TACSLinearEleasticity3D( SolidStiffness *_con );
-  ~TACSLinearEleasticity3D();
-  
+  TACSLinearElasticity3D( SolidStiffness *_con );
+  ~TACSLinearElasticity3D();
+
   int getSpatialDim();
   int getVarsPerNode();
   void evalWeakIntegrand( int elemIndex,
@@ -110,4 +110,3 @@ class TACSLinearEleasticity3D : public TACSElementModel {
 */
 
 #endif // TACS_LINEAR_ELASTICITY_H
-

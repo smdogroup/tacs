@@ -50,10 +50,10 @@ class TACSElement : public TACSObject {
   void setComponentNum( int comp_num ){
     componentNum = comp_num;
   }
-  
+
   /**
     Get the component number for this element
-  
+
     @return The component number for the element
   */
   int getComponentNum(){
@@ -73,7 +73,7 @@ class TACSElement : public TACSObject {
     Get the number of degrees of freedom per node for this element
 
     @return The number of degrees of freedom per node
-  */  
+  */
   virtual int getVarsPerNode() = 0;
 
   /**
@@ -95,7 +95,7 @@ class TACSElement : public TACSObject {
 
     A negative index indicates that no multiplier is defined. The
     index is relative to the ordering in the element.
-  
+
     @return Index of a Lagrange multiplier node
   */
   virtual int getMultiplierIndex(){
@@ -132,7 +132,7 @@ class TACSElement : public TACSObject {
 
     @param elemIndex The local element index
     @param dvLen The length of the design array
-    @param dvs The design variable values 
+    @param dvs The design variable values
   */
   virtual void setDesignVars( int elemIndex,
                               int dvLen, const TacsScalar dvs[] ){}
@@ -142,7 +142,7 @@ class TACSElement : public TACSObject {
 
     @param elemIndex The local element index
     @param dvLen The length of the design array
-    @param dvs The design variable values 
+    @param dvs The design variable values
   */
   virtual void getDesignVars( int elemIndex,
                               int dvLen, TacsScalar dvs[] ){}
@@ -152,13 +152,13 @@ class TACSElement : public TACSObject {
 
     @param elemIndex The local element index
     @param dvLen The length of the design array
-    @param lowerBound The design variable lower bounds 
+    @param lowerBound The design variable lower bounds
     @param lowerBound The design variable upper bounds
   */
   virtual void getDesignVarRange( int elemIndex, int dvLen,
-                                  TacsScalar lowerBound[], 
-                                  TacsScalar upperBound[] );
-  
+                                  TacsScalar lowerBound[],
+                                  TacsScalar upperBound[] ){}
+
   /**
     Retrieve the initial conditions for time-dependent analysis
 
@@ -260,7 +260,7 @@ class TACSElement : public TACSObject {
     @param ddvars The second time derivative of the element DOF
     @param res The element residual input/output
   */
-  virtual void addResidual( int elemIndex, double time, 
+  virtual void addResidual( int elemIndex, double time,
                             const TacsScalar Xpts[],
                             const TacsScalar vars[],
                             const TacsScalar dvars[],
@@ -281,7 +281,7 @@ class TACSElement : public TACSObject {
 
     @param elemIndex The local element index
     @param time The simulation time
-    @param alpha The coefficient for the DOF Jacobian 
+    @param alpha The coefficient for the DOF Jacobian
     @param beta The coefficient for the first time derivative DOF Jacobian
     @param gamma The coefficient for the second time derivative DOF Jacobian
     @param Xpts The element node locations
@@ -364,7 +364,7 @@ class TACSElement : public TACSObject {
   /**
     Compute a specific type of element matrix (mass, stiffness, geometric
     stiffness, etc.)
-    
+
     @param elemIndex The local element index
     @param matType The type of element matrix to compute
     @param Xpts The element node locations
@@ -384,7 +384,7 @@ class TACSElement : public TACSObject {
     the design variables
 
     dvSens += scale*d(psi^{T}*(mat)*phi)/d(x)
-    
+
     where mat is computed via the getMatType().
 
     @param elemIndex The local element index
@@ -411,7 +411,7 @@ class TACSElement : public TACSObject {
     the input variables (vars).
 
     dvSens = d(psi^{T}*(mat)*phi)/d(vars)
-    
+
     where mat is computed via the getMatType().
 
     @param elemIndex The local element index
@@ -452,7 +452,7 @@ class TACSElement : public TACSObject {
                               const TacsScalar vars[],
                               const TacsScalar dvars[],
                               const TacsScalar ddvars[],
-                              int ld_data, double *data ){}
+                              int ld_data, TacsScalar *data ){}
 
  private:
   int componentNum;

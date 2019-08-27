@@ -206,11 +206,11 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       X[1] += n[0]*Xpts[1];
       X[2] += n[0]*Xpts[2];
 
-      X[0] += nxi[0]*Xpts[0];
-      X[1] += nxi[1]*Xpts[0];
+      Xd[0] += nxi[0]*Xpts[0];
+      Xd[1] += nxi[1]*Xpts[0];
 
-      X[2] += nxi[0]*Xpts[1];
-      X[3] += nxi[1]*Xpts[1];
+      Xd[2] += nxi[0]*Xpts[1];
+      Xd[3] += nxi[1]*Xpts[1];
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements

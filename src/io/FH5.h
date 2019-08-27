@@ -19,12 +19,12 @@
 #ifndef FH5_INCLUDE_H
 #define FH5_INCLUDE_H
 
+#include "TACSObject.h"
+
 /*
   Create a file that contains information about a finite-element
   problem. 
 */
-
-#include "TACSObject.h"
 
 class FH5File : public TACSObject {
  public:

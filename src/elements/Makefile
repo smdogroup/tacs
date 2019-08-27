@@ -19,6 +19,8 @@ include ../../TACS_Common.mk
 # 	KinematicConstraints.o	
 
 CXX_OBJS = FElibrary.o \
+	TACSElement.o \
+	TACSElement2D.o \
 	TACSElementTypes.o \
 	TACSElementBasis.o \
 	TACSQuadBasis.o \

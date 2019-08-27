@@ -739,7 +739,9 @@ int TACSIntegrator::initAccelerationSolve(TACSBVec *forces){
 
   if (mg){
     mg->decref();
-  };
+  }
+
+  return 0;
 }
 
 /*

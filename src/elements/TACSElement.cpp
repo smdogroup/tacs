@@ -26,19 +26,26 @@
   can override this function and provide an analytic Jacobian
   implemention in descendant classes.
 */
-void TACSElement::addJacobian( double time, TacsScalar J[],
+void TACSElement::addJacobian( int elemIndex,
+                               double time,
                                double alpha,
                                double beta,
                                double gamma,
                                const TacsScalar Xpts[],
                                const TacsScalar vars[],
                                const TacsScalar dvars[],
-                               const TacsScalar ddvars[] ){
+                               const TacsScalar ddvars[],
+                               TacsScalar res[],
+                               TacsScalar J[] ){
   // Get the number of variables
-  int nvars = numVariables();
+  int nvars = getNumVariables();
 
   // The step length
-  const double dh = test_step_size;
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif // TACS_USE_COMPLEX
 
   // Original and perturbed residual vectors
   TacsScalar *Rtmp1 = new TacsScalar[nvars];
@@ -62,7 +69,7 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
 
     // Assemble the unperturbed residual
     memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
     // Find the approximated jacobian
     for ( int j = 0; j < nvars; j++ ){
@@ -74,14 +81,14 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
 
     // Assemble the unperturbed residual
     memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
     // Perturb the i-th variable
     qTmp[i] = vars[i] - dh;
 
     // Assemble the unperturbed residual
     memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp2, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
     // Find the approximated jacobian
     for ( int j = 0; j < nvars; j++ ){
@@ -99,7 +106,7 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
 
     // Assemble the unperturbed residual
     memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
     // Find the approximated jacobian
     for ( int j = 0; j < nvars; j++ ){
@@ -111,14 +118,14 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
 
     // Assemble the unperturbed residual
     memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
     // Perturb the i-th variable
     qdotTmp[i] = dvars[i] - dh;
 
     // Assemble the unperturbed residual
     memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp2, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
     // Find the approximated jacobian
     for ( int j = 0; j < nvars; j++ ){
@@ -136,7 +143,7 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
 
     // Assemble the unperturbed residual
     memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
     // Find the approximated jacobian
     for ( int j = 0; j < nvars; j++ ){
@@ -148,14 +155,14 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
 
     // Assemble the unperturbed residual
     memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp1, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
     // Perturb the i-th variable
     qddotTmp[i] = ddvars[i] - dh;
 
     // Assemble the unperturbed residual
     memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
-    addResidual(time, Rtmp2, Xpts, qTmp, qdotTmp, qddotTmp);
+    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
     // Find the approximated jacobian
     for ( int j = 0; j < nvars; j++ ){
@@ -172,4 +179,3 @@ void TACSElement::addJacobian( double time, TacsScalar J[],
   delete [] qdotTmp;
   delete [] qddotTmp;
 }
-
