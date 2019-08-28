@@ -172,27 +172,6 @@ void TACSToFH5::writeToFile( const char *filename ){
   delete [] layout_types;
 
   if (average_node_data){
-    // Write out the data to a file
-    TacsScalar *data;
-    assembler->getElementOutputData(elem_type, write_flag,
-                                    &dim1, &dim2, &data);
-
-    // Convert the data to float
-    float *float_data = new float[ dim1*dim2 ];
-    for ( int i = 0; i < dim1*dim2; i++ ){
-      float_data[i] = data[i];
-    }
-    delete [] data;
-
-    // Write the data with a time stamp from the simulation in TACS
-    char data_name[128];
-    double t = assembler->getSimulationTime();
-    sprintf(data_name, "data t=%.10e", t);
-    file->writeZoneData(data_name, variable_names,
-                        FH5File::FH5_FLOAT, float_data, dim1, dim2);
-    delete [] float_data;
-  }
-  else {
     // Create the continuous output data
     TACSBVec *data_vec =
       assembler->getNodeAverageOutputData(elem_type, write_flag);
@@ -218,6 +197,27 @@ void TACSToFH5::writeToFile( const char *filename ){
     */
 
     data_vec->decref();
+  }
+  else {
+    // Write out the data to a file
+    TacsScalar *data;
+    assembler->getElementOutputData(elem_type, write_flag,
+                                    &dim1, &dim2, &data);
+
+    // Convert the data to float
+    float *float_data = new float[ dim1*dim2 ];
+    for ( int i = 0; i < dim1*dim2; i++ ){
+      float_data[i] = data[i];
+    }
+    delete [] data;
+
+    // Write the data with a time stamp from the simulation in TACS
+    char data_name[128];
+    double t = assembler->getSimulationTime();
+    sprintf(data_name, "data t=%.10e", t);
+    file->writeZoneData(data_name, variable_names,
+                        FH5File::FH5_FLOAT, float_data, dim1, dim2);
+    delete [] float_data;
   }
 
   file->close();

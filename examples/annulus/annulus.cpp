@@ -1,4 +1,7 @@
-#include "PlaneStressQuad.h"
+#include "TACSLinearElasticity.h"
+#include "TACSQuadBasis.h"
+#include "TACSElement2D.h"
+#include "TACSToFH5.h"
 #include "TACSMeshLoader.h"
 
 /*
@@ -14,13 +17,36 @@ int main( int argc, char *argv[] ){
   TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
   mesh->incref();
 
-  // Create the plane stress stiffness object
-  PlaneStressStiffness *stiff = new PlaneStressStiffness(1.0, 70e3, 0.3);
+  // Create the isotropic material class
+  TacsScalar rho = 2700.0;
+  TacsScalar E = 70e3;
+  TacsScalar nu = 0.3;
+  TacsScalar ys = 270.0;
+  TacsScalar cte = 0.0, kappa = 0.0;
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, E, nu, ys, cte, kappa);
+
+  // Create the stiffness object
+  TACSPlaneStressConstitutive *stiff =
+    new TACSPlaneStressConstitutive(props);
   stiff->incref();
+
+  // Create the model class
+  TACSLinearElasticity2D model(stiff, TACS_LINEAR_STRAIN);
+
+  // Create the basis
+  TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
+  TACSElementBasis *quad_basis = new TACSQuadraticQuadBasis();
+  TACSElementBasis *cubic_basis = new TACSCubicQuadBasis();
+
+  // Create the element type
+  TACSElement2D *linear_element = new TACSElement2D(&model, linear_basis);
+  TACSElement2D *quad_element = new TACSElement2D(&model, quad_basis);
+  TACSElement2D *cubic_element = new TACSElement2D(&model, cubic_basis);
 
   // The TACSAssembler object - which should be allocated if the mesh
   // is loaded correctly
-  TACSAssembler *tacs = NULL;
+  TACSAssembler *assembler = NULL;
 
   // Try to load the input file as a BDF file through the
   // TACSMeshLoader class
@@ -44,14 +70,14 @@ int main( int argc, char *argv[] ){
 	  // Get the BDF description of the element
 	  const char *elem_descript = mesh->getElementDescript(i);
 	  if (strcmp(elem_descript, "CQUAD4") == 0){
-	    elem = new PlaneStressQuad<2>(stiff);
+	    elem = linear_element;
 	  }
 	  else if (strcmp(elem_descript, "CQUAD") == 0 ||
 		   strcmp(elem_descript, "CQUAD9") == 0){
-	    elem = new PlaneStressQuad<3>(stiff);
+	    elem = quad_element;
 	  }
 	  else if (strcmp(elem_descript, "CQUAD16") == 0){
-	    elem = new PlaneStressQuad<4>(stiff);
+	    elem = cubic_element;
 	  }
 
 	  // Set the element object into the mesh loader class
@@ -62,8 +88,8 @@ int main( int argc, char *argv[] ){
 
 	// Now, create the TACSAssembler object
         int vars_per_node = 2;
-	tacs = mesh->createTACS(vars_per_node);
-	tacs->incref();
+	assembler = mesh->createTACS(vars_per_node);
+	assembler->incref();
       }
     }
     else {
@@ -74,11 +100,11 @@ int main( int argc, char *argv[] ){
     fprintf(stderr, "No BDF file provided\n");
   }
 
-  if (tacs){
+  if (assembler){
     // Create the preconditioner
-    TACSBVec *res = tacs->createVec();
-    TACSBVec *ans = tacs->createVec();
-    FEMat *mat = tacs->createFEMat();
+    TACSBVec *res = assembler->createVec();
+    TACSBVec *ans = assembler->createVec();
+    FEMat *mat = assembler->createFEMat();
   
     // Increment the reference count to the matrix/vectors
     res->incref();
@@ -102,21 +128,22 @@ int main( int argc, char *argv[] ){
 
     // Assemble and factor the stiffness/Jacobian matrix
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
-    tacs->assembleJacobian(alpha, beta, gamma, res, mat);
+    assembler->assembleJacobian(alpha, beta, gamma, res, mat);
     pc->factor();
     
     res->set(1.0);
-    tacs->applyBCs(res);
+    assembler->applyBCs(res);
     ksm->solve(res, ans);
-    tacs->setVariables(ans);
+    assembler->setVariables(ans);
 
     // Create an TACSToFH5 object for writing output to files
-    unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-			       TACSElement::OUTPUT_DISPLACEMENTS |
-			       TACSElement::OUTPUT_STRAINS |
-			       TACSElement::OUTPUT_STRESSES |
-			       TACSElement::OUTPUT_EXTRAS);
-    TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_PLANE_STRESS, write_flag);
+    ElementType etype = TACS_PLANE_STRESS_ELEMENT;
+    int write_flag = (TACS_OUTPUT_NODES |
+                      TACS_OUTPUT_DISPLACEMENTS |
+                      TACS_OUTPUT_STRAINS |
+                      TACS_OUTPUT_STRESSES |
+                      TACS_OUTPUT_EXTRAS);
+    TACSToFH5 * f5 = new TACSToFH5(assembler, etype, write_flag);
     f5->incref();
     f5->writeToFile("output.f5");
     
@@ -134,7 +161,7 @@ int main( int argc, char *argv[] ){
   // Deallocate the objects
   mesh->decref();
   stiff->decref();
-  if (tacs){ tacs->decref(); }
+  if (assembler){ assembler->decref(); }
 
   MPI_Finalize();
   return (0);
