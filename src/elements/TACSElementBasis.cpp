@@ -139,6 +139,8 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     // Zero the values of the displacements and their derivatives
     for ( int j = 0; j < vars_per_node; j++ ){
       U[j] = 0.0;
+      Udot[j] = 0.0;
+      Uddot[j] = 0.0;
       Ux[3*j] = Ux[3*j+1] = Ux[3*j+2] = 0.0;
     }
 
@@ -168,16 +170,22 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     n = N, nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
       // Add contributions to the derivatives of the displacements
-      TacsScalar *u = U, *ux = Ux;
+      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ux = Ux;
       for ( int j = 0; j < vars_per_node; j++ ){
         u[0] += n[0]*vars[0];
+        udot[0] += n[0]*dvars[0];
+        uddot[0] += n[0]*ddvars[0];
 
         ux[0] += nxi[0]*vars[0];
         ux[1] += nxi[1]*vars[0];
         ux[2] += nxi[2]*vars[0];
 
         vars++;
+        dvars++;
+        ddvars++;
         u++;
+        udot++;
+        uddot++;
         ux += 3;
       }
 
@@ -186,7 +194,22 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     }
 
     // Compute the Jacobian transformation
-    return inv3x3(Xd, J);
+    TacsScalar detJ = inv3x3(Xd, J);
+
+    // U,x = U,xi * J
+    TacsScalar *ux = Ux;
+    for ( int j = 0; j < vars_per_node; j++ ){
+      TacsScalar ud[3];
+      ud[0] = ux[0];
+      ud[1] = ux[1];
+      ud[2] = ux[2];
+
+      mat3x3MultTrans(J, ud, ux);
+
+      ux += 3;
+    }
+
+    return detJ;
   }
   else if (num_params == 2){
     // Zero the values of the coordinate and its derivative
@@ -196,6 +219,8 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     // Zero the values of the displacements and their derivatives
     for ( int j = 0; j < vars_per_node; j++ ){
       U[j] = 0.0;
+      Udot[j] = 0.0;
+      Uddot[j] = 0.0;
       Ux[2*j] = Ux[2*j+1] = 0.0;
     }
 
@@ -214,15 +239,21 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements
-      TacsScalar *u = U, *ux = Ux;
+      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ux = Ux;
       for ( int j = 0; j < vars_per_node; j++ ){
         u[0] += n[0]*vars[0];
+        udot[0] += n[0]*dvars[0];
+        uddot[0] += n[0]*ddvars[0];
 
         ux[0] += nxi[0]*vars[0];
         ux[1] += nxi[1]*vars[0];
 
         vars++;
+        dvars++;
+        ddvars++;
         u++;
+        udot++;
+        uddot++;
         ux += 2;
       }
 
@@ -231,7 +262,21 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     }
 
     // Compute the Jacobian transformation
-    return inv2x2(Xd, J);
+    TacsScalar detJ = inv2x2(Xd, J);
+
+    // U,x = U,xi * J
+    TacsScalar *ux = Ux;
+    for ( int j = 0; j < vars_per_node; j++ ){
+      TacsScalar ud[2];
+      ud[0] = ux[0];
+      ud[1] = ux[1];
+
+      mat2x2MultTrans(J, ud, ux);
+
+      ux += 2;
+    }
+
+    return detJ;
   }
   else if (num_params == 1){
     // Zero the values of the coordinate and its derivative
@@ -255,13 +300,19 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements
-      TacsScalar *u = U, *ux = Ux;
+      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ux = Ux;
       for ( int j = 0; j < vars_per_node; j++ ){
         u[0] += n[0]*vars[0];
+        udot[0] += n[0]*dvars[0];
+        uddot[0] += n[0]*ddvars[0];
         ux[0] += nxi[0]*vars[0];
 
         vars++;
+        dvars++;
+        ddvars++;
         u++;
+        udot++;
+        uddot++;
         ux++;
       }
 
@@ -269,7 +320,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       nxi++;
     }
 
-    return 1.0/Xd[0];
+    return Xd[0];
   }
 
   return 0.0;
@@ -324,7 +375,7 @@ void TACSElementBasis::addWeakFormResidual( const int num_params,
   if (num_params == 3){
     for ( int i = 0; i < num_nodes; i++ ){
       TacsScalar nx[3];
-      mat3x3Mult(J, nxi, nx);
+      mat3x3MultTrans(J, nxi, nx);
       for ( int ii = 0; ii < vars_per_node; ii++ ){
         r[0] += weight*(n[0]*DUx[4*ii] + nx[0]*DUx[4*ii+1] +
                         nx[1]*DUx[4*ii+2] + nx[2]*DUx[4*ii+3]);
@@ -337,7 +388,7 @@ void TACSElementBasis::addWeakFormResidual( const int num_params,
   else if (num_params == 2){
     for ( int i = 0; i < num_nodes; i++ ){
       TacsScalar nx[2];
-      mat2x2Mult(J, nxi, nx);
+      mat2x2MultTrans(J, nxi, nx);
       for ( int ii = 0; ii < vars_per_node; ii++ ){
         r[0] += weight*(n[0]*DUx[3*ii] + nx[0]*DUx[3*ii+1] + nx[1]*DUx[3*ii+2]);
         r++;
@@ -396,12 +447,12 @@ void TACSElementBasis::addWeakFormJacobian( int n,
 
   if (num_params == 3){
     for ( int i = 0; i < num_nodes; i++ ){
-      mat3x3Mult(J, &Nxi[3*i], &Nx[3*i]);
+      mat3x3MultTrans(J, &Nxi[3*i], &Nx[3*i]);
     }
   }
   else if (num_params == 2){
     for ( int i = 0; i < num_nodes; i++ ){
-      mat2x2Mult(J, &Nxi[2*i], &Nx[2*i]);
+      mat2x2MultTrans(J, &Nxi[2*i], &Nx[2*i]);
     }
   }
   else {
@@ -418,7 +469,7 @@ void TACSElementBasis::addWeakFormJacobian( int n,
   if (num_params == 3){
     for ( int i = 0; i < num_nodes; i++ ){
       TacsScalar nx[3];
-      mat3x3Mult(J, &Nxi[3*i], nx);
+      mat3x3MultTrans(J, &Nxi[3*i], nx);
       Nxi[3*i] = nx[0];
       Nxi[3*i+1] = nx[1];
       Nxi[3*i+2] = nx[2];
@@ -427,7 +478,7 @@ void TACSElementBasis::addWeakFormJacobian( int n,
   else if (num_params == 2){
     for ( int i = 0; i < num_nodes; i++ ){
       TacsScalar nx[2];
-      mat2x2Mult(J, &Nxi[2*i], nx);
+      mat2x2MultTrans(J, &Nxi[2*i], nx);
       Nxi[2*i] = nx[0];
       Nxi[2*i+1] = nx[1];
     }
@@ -589,26 +640,33 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
           double *M = &mat[init_index];
 
           // Evaluate which shape function to use
-          const TacsScalar *ni = NULL, *nj = NULL;
+          int incr = 1;
+          const TacsScalar *ni = NULL;
           if (ix % (num_params+1) == 0){
             ni = N;
           }
           else {
-            ni = &Nx[(ix % (num_params+1))];
-          }
-
-          if (jx % (num_params+1) == 0){
-            nj = N;
-          }
-          else {
-            nj = &Nx[(jx % (num_params+1))];
+            incr = num_params;
+            ni = &Nx[(ix % (num_params+1))-1];
           }
 
           for ( int i = 0; i < num_nodes; i++ ){
-            for ( int j = 0; j < num_nodes; j++ ){
-              M[0] += scale*ni[i]*nj[j];
-              M += vars_per_node;
+            int jncr = 1;
+            const TacsScalar *nj = NULL;
+            if (jx % (num_params+1) == 0){
+              nj = N;
             }
+            else {
+              jncr = num_params;
+              nj = &Nx[(jx % (num_params+1))-1];
+            }
+
+            for ( int j = 0; j < num_nodes; j++ ){
+              M[0] += scale*ni[0]*nj[0];
+              M += vars_per_node;
+              nj += jncr;
+            }
+            ni += incr;
 
             M += num_vars*(vars_per_node-1);
           }
@@ -631,26 +689,33 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
         double *M = &mat[init_index];
 
         // Evaluate which shape function to use
-        const TacsScalar *ni = NULL, *nj = NULL;
+        int incr = 1;
+        const TacsScalar *ni = NULL;
         if (ix % (num_params+1) == 0){
           ni = N;
         }
         else {
-          ni = &Nx[(ix % (num_params+1))];
-        }
-
-        if (jx % (num_params+1) == 0){
-          nj = N;
-        }
-        else {
-          nj = &Nx[(jx % (num_params+1))];
+          incr = num_params;
+          ni = &Nx[(ix % (num_params+1))-1];
         }
 
         for ( int i = 0; i < num_nodes; i++ ){
-          for ( int j = 0; j < num_nodes; j++ ){
-            M[0] += scale*ni[i]*nj[j];
-            M += vars_per_node;
+          int jncr = 1;
+          const TacsScalar *nj = NULL;
+          if (jx % (num_params+1) == 0){
+            nj = N;
           }
+          else {
+            jncr = num_params;
+            nj = &Nx[(jx % (num_params+1))-1];
+          }
+
+          for ( int j = 0; j < num_nodes; j++ ){
+            M[0] += scale*ni[0]*nj[0];
+            M += vars_per_node;
+            nj += jncr;
+          }
+          ni += incr;
 
           M += num_vars*(vars_per_node-1);
         }

@@ -168,7 +168,7 @@ void TACSToFH5::writeToFile( const char *filename ){
   // Write the layout types to a new zone
   char layout_name[] = "ltypes";
   file->writeZoneData(layout_name, layout_name, FH5File::FH5_INT,
-                      comp_nums, dim1, dim2);
+                      layout_types, dim1, dim2);
   delete [] layout_types;
 
   if (average_node_data){
@@ -243,10 +243,10 @@ char *TACSToFH5::getElementVarNames(){
     if (write_flag & out_types[k]){
       const char *stemp = NULL;
       int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
-      size_t str_len = 2;
+      size_t str_len = 1;
       for ( int i = 0; i < nd; i++ ){
         stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
-        str_len += strlen(stemp);
+        str_len += strlen(stemp) + 1;
       }
       char *temp = new char[ str_len ];
       if (nd > 0){
@@ -263,10 +263,10 @@ char *TACSToFH5::getElementVarNames(){
   }
 
   // Count up the size of the elem_vars string
-  int elem_size = 0; // Extra space for either a comma or \0
+  int elem_size = 1; // Extra space for either a comma or \0
   for ( int k = 0; k < 5; k++ ){
     if (output_names[k]){
-      elem_size += strlen(output_names[k]);
+      elem_size += strlen(output_names[k])+1;
     }
   }
 

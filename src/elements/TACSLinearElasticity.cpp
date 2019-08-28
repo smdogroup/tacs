@@ -57,11 +57,11 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Uddot[0];
+  DUt[2] = 0.0; // rho*Uddot[0];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Uddot[1];
+  DUt[5] = 0.0; // rho*Uddot[1];
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -83,9 +83,9 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
   DUx[1] = s[0];
   DUx[2] = s[2];
 
-  DUx[4] = 0.0;
-  DUx[5] = s[2];
-  DUx[6] = s[1];
+  DUx[3] = 0.0;
+  DUx[4] = s[2];
+  DUx[5] = s[1];
 }
 
 void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
@@ -109,11 +109,11 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Uddot[0];
+  DUt[2] = 0.0; // rho*Uddot[0];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Uddot[1];
+  DUt[5] = 0.0; // rho*Uddot[1];
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -135,11 +135,11 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   DUx[1] = s[0]; // u,x
   DUx[2] = s[2]; // u,y
 
-  DUx[4] = 0.0;  // v
-  DUx[5] = s[2]; // v,x
-  DUx[6] = s[1]; // v,y
+  DUx[3] = 0.0;  // v
+  DUx[4] = s[2]; // v,x
+  DUx[5] = s[1]; // v,y
 
-  TacsScalar C[21];
+  TacsScalar C[6];
   stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
   // Set the non-zero terms in the Jacobian
@@ -149,8 +149,8 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   *_DDUx_pairs = DDUx_pairs;
 
   // Set the acceleration terms
-  DDUt[0] = rho;
-  DDUt[1] = rho;
+  DDUt[0] = 0.0; // rho;
+  DDUt[1] = 0.0; // rho;
 
   // s = C*e
   if (strain_type == TACS_LINEAR_STRAIN){
