@@ -57,11 +57,11 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = 0.0; // rho*Uddot[0];
+  DUt[2] = rho*Uddot[0];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = 0.0; // rho*Uddot[1];
+  DUt[5] = rho*Uddot[1];
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -109,11 +109,11 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = 0.0; // rho*Uddot[0];
+  DUt[2] = rho*Uddot[0];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = 0.0; // rho*Uddot[1];
+  DUt[5] = rho*Uddot[1];
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -149,8 +149,8 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   *_DDUx_pairs = DDUx_pairs;
 
   // Set the acceleration terms
-  DDUt[0] = 0.0; // rho;
-  DDUt[1] = 0.0; // rho;
+  DDUt[0] = rho;
+  DDUt[1] = rho;
 
   // s = C*e
   if (strain_type == TACS_LINEAR_STRAIN){
