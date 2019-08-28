@@ -83,9 +83,9 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
   DUx[1] = s[0];
   DUx[2] = s[2];
 
-  DUx[4] = 0.0;
-  DUx[5] = s[2];
-  DUx[6] = s[1];
+  DUx[3] = 0.0;
+  DUx[4] = s[2];
+  DUx[5] = s[1];
 }
 
 void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
@@ -135,11 +135,11 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   DUx[1] = s[0]; // u,x
   DUx[2] = s[2]; // u,y
 
-  DUx[4] = 0.0;  // v
-  DUx[5] = s[2]; // v,x
-  DUx[6] = s[1]; // v,y
+  DUx[3] = 0.0;  // v
+  DUx[4] = s[2]; // v,x
+  DUx[5] = s[1]; // v,y
 
-  TacsScalar C[21];
+  TacsScalar C[6];
   stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
   // Set the non-zero terms in the Jacobian

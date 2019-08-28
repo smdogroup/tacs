@@ -314,9 +314,6 @@ int main( int argc, char *argv[] ){
   // Free everything
   f5->decref();
 
-  assembler->zeroVariables();
-  assembler->testElement(0, 2);
-
   // Decrease the reference count to the linear algebra objects
   pc->decref();
   mat->decref();

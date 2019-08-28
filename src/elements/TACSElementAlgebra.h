@@ -1247,7 +1247,7 @@ static inline TacsScalar inv2x2( const TacsScalar A[],
 
   Ainv[0] =   A[3]*detinv;
   Ainv[1] = - A[1]*detinv;
-    
+
   Ainv[2] = - A[2]*detinv;
   Ainv[3] =   A[0]*detinv;
 
@@ -1260,7 +1260,7 @@ static inline TacsScalar inv2x2( const TacsScalar A[],
   input:
   Ainv:   The 3x3 inverse of the matrix
   Ainvd:  The derivative of the 3x3 inverse
-  
+
   output:
   Ainvd:      derivative of the inverse of the 3x3 matrix
 */

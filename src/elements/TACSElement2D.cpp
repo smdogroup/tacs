@@ -69,7 +69,7 @@ void TACSElement2D::addResidual( int elemIndex,
     detJ *= weight;
 
     // Evaluate the weak form of the model
-    TacsScalar DUt[MAX_VARS_PER_NODE*3], DUx[6*MAX_VARS_PER_NODE];
+    TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
     model->evalWeakIntegrand(elemIndex, time, pt, X, U, Udot, Uddot, Ux, DUt, DUx);
 
     // Add the weak form of the residual at this point
@@ -117,9 +117,9 @@ void TACSElement2D::addJacobian( int elemIndex,
     // Evaluate the weak form of the model
     int DDUt_nnz, DDUx_nnz;
     const int *DDUt_pairs, *DDUx_pairs;
-    TacsScalar DUt[MAX_VARS_PER_NODE*3], DUx[6*MAX_VARS_PER_NODE];
+    TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
     TacsScalar DDUt[9*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
-    TacsScalar DDUx[32*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
+    TacsScalar DDUx[9*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
     model->evalWeakJacobian(elemIndex, time, pt,
                             X, U, Udot, Uddot, Ux, DUt, DUx,
                             &DDUt_nnz, &DDUt_pairs, DDUt,
