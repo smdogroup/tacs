@@ -25,10 +25,6 @@
   to read in other formats. The class can also be used to distribute
   the mesh over a set of processors. 
 
-  This class could easily be extended to take in the mesh and
-  connectivity from memory on the root processor and then distribute
-  it to other processors.
-  
   The limited capabilities of reading in data from a Nastran file are:
   1. Reading GRID and GRID* entries for the physical locations of the 
   nodes.
@@ -41,12 +37,9 @@
   in to the object based on the component number.
 */
 
-#include "TACSObject.h"
-#include "TACSElement.h"
-#include "TACSAssembler.h"
+#include "TACSCreator.h"
 #include "TACSToFH5.h"
 #include "TACSAuxElements.h"
-#include "TACSCreator.h"
 
 class TACSMeshLoader : public TACSObject {
  public:

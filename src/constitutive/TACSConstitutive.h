@@ -103,6 +103,10 @@ class TACSConstitutive : public TACSObject {
   /**
     Evaluate the thermal strain at a point
 
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param strain The components of the thermal strain
   */ 
   virtual void evalThermalStrain( int elemIndex,
                                   const double pt[],

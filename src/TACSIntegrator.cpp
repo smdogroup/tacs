@@ -580,7 +580,7 @@ void TACSIntegrator::printWallTime( double t0, int level ){
   Write out all of the options that have been set to a output stream.
 */
 void TACSIntegrator::printOptionSummary(){
-  if (logfp && print_level>0){
+  if (logfp && print_level > 0){
     fprintf(logfp, "===============================================\n");
     fprintf(logfp, "TACSIntegrator: Parameter values\n");
     fprintf(logfp, "===============================================\n");
@@ -618,7 +618,7 @@ void TACSIntegrator::printOptionSummary(){
   Print the adjoint options before marching backwards in time
 */
 void TACSIntegrator::printAdjointOptionSummary(){
-  if (logfp && print_level>0){
+  if (logfp && print_level > 0){
     fprintf(logfp, "===============================================\n");
     fprintf(logfp, "Adjoint Mode : Parameter values\n");
     fprintf(logfp, "===============================================\n");
@@ -639,7 +639,7 @@ int TACSIntegrator::getNumTimeSteps(){
   Perform a nonlinear solve to obtain accelerations with q and qdot
   held constant as obtained from intial conditions.
 */
-int TACSIntegrator::initAccelerationSolve(TACSBVec *forces){
+int TACSIntegrator::initAccelerationSolve( TACSBVec *forces ){
  double force_norm = 0.0;
   if(forces){
     force_norm = TacsRealPart(forces->norm());
@@ -1109,7 +1109,6 @@ int TACSIntegrator::lapackNaturalFrequencies( int use_gyroscopic,
         A[i + n*j] = TacsRealPart(Kvals[i + n*j]);
         B[i + n*j] = TacsRealPart(Mvals[i + n*j]);
       }
-
     }
 
     // Call lapack to solve the eigenvalue problem
@@ -1276,8 +1275,8 @@ void TACSIntegrator::logTimeStep( int step_num ){
       init_energy = energies[0] + energies[1];
 
       // Log the details
-      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12.5e \
-%12.5e %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12.5e "
+              "%12.5e %12.5e %12.5e %12.5e %12.5e\n",
               0, num_time_steps,
               time[0], time_newton, 0, 0.0, 0.0, 0.0,
               TacsRealPart(energies[0]), TacsRealPart(energies[1]),
@@ -1296,8 +1295,8 @@ void TACSIntegrator::logTimeStep( int step_num ){
                 "|R|", "|R|/|R0|", "|dq|", "KE", "PE", "E0-E");
       }
 
-      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12.5e \
-%12.5e %12.5e %12.5e %12.5e %12.5e\n",
+      fprintf(logfp, "%6d/%-6d %12.5e %12.5e %12d %12.5e "
+              "%12.5e %12.5e %12.5e %12.5e %12.5e\n",
               step_num, num_time_steps,
               time[step_num], time_newton, niter,
               TacsRealPart(res_norm),
@@ -2379,7 +2378,6 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
       qddotS[offset]->copyValues(qddot[k-1]);
     }
     else {
-
       qddotS[offset]->copyValues(qddotS[offset-1]);
     }
 
