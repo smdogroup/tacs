@@ -22,12 +22,12 @@ enum JDRecycleType { JD_SUM_TWO,
                      JD_NUM_RECYCLE };
 
 /*
-  The following code implements a Jacobi-Davidson method for 
+  The following code implements a Jacobi-Davidson method for
   simple and generalized eigenvalue problems.
 */
 
 /*
-  This is the abstract base class that are required to define the 
+  This is the abstract base class that are required to define the
   operators needed in the Jacobi-Davidson method.
 */
 class TACSJacobiDavidsonOperator : public TACSObject {
@@ -62,7 +62,7 @@ class TACSJacobiDavidsonOperator : public TACSObject {
 */
 class TACSJDFrequencyOperator : public TACSJacobiDavidsonOperator {
  public:
-  TACSJDFrequencyOperator( TACSAssembler *_tacs, 
+  TACSJDFrequencyOperator( TACSAssembler *_tacs,
                            TACSMat *_kmat, TACSMat *_mmat,
                            TACSMat *_pc_mat, TACSPc *_pc );
   ~TACSJDFrequencyOperator();
@@ -112,7 +112,7 @@ class TACSJacobiDavidson : public TACSObject {
 
   // Solve the eigenvalue problem
   void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
-  
+
   // Set tolerances to FGMRES
   void setTolerances( double _eigtol, double _rtol, double _atol );
   // Set the number of vectors to recycle

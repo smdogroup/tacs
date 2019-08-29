@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_PARALLEL_MATRIX_H
@@ -42,8 +42,8 @@
   ----------------------
   1. Begin scatter operation from global to local-external unknowns
   2. Perform local matrix-vector product
-  3. End scatter operation 
-  4. Perform local, exteral matrix-vector product  
+  3. End scatter operation
+  4. Perform local, exteral matrix-vector product
 */
 class TACSPMat : public TACSMat {
  public:
@@ -54,7 +54,7 @@ class TACSPMat : public TACSMat {
 
   // Functions for setting values in the matrix
   // ------------------------------------------
-  void zeroEntries();                // Zero the matrix values 
+  void zeroEntries();                // Zero the matrix values
   void applyBCs( TACSBcMap *bcmap ); // Apply the boundary conditions
 
   // Functions required for solving linear systems
@@ -66,7 +66,7 @@ class TACSPMat : public TACSMat {
   void copyValues( TACSMat *mat );             // Copy matrix entries
   void scale( TacsScalar alpha );              // Scale the matrix
   void axpy( TacsScalar alpha, TACSMat *mat ); // Compute y <- y + alpha*x
-  void axpby( TacsScalar alpha, 
+  void axpby( TacsScalar alpha,
               TacsScalar beta, TACSMat *mat ); // Compute y <- alpha*x + beta*y
   void addDiag( TacsScalar alpha );
 
@@ -76,7 +76,7 @@ class TACSPMat : public TACSMat {
   void getRowMap( int *bs, int *_N, int *_Nc );
   void getColMap( int *bs, int *_M );
   TACSVarMap *getRowMap(){ return rmap; }
-  void getExtColMap( TACSBVecDistribute **ext_map ); // Access the column map  
+  void getExtColMap( TACSBVecDistribute **ext_map ); // Access the column map
   void printNzPattern( const char *fileName ); // Print the non-zero pattern
 
   const char *TACSObjectName();
@@ -86,13 +86,13 @@ class TACSPMat : public TACSMat {
   TACSPMat();
 
   // Common initialization routine
-  void init( TACSVarMap *_rmap, 
+  void init( TACSVarMap *_rmap,
              BCSRMat *_Aloc, BCSRMat *_Bext,
              TACSBVecDistribute *_col_map );
 
   // Local entries for the matrix
   BCSRMat *Aloc, *Bext;
-    
+
   // Map the local entries into the global data
   TACSVarMap *rmap;
   TACSBVecDistribute *ext_dist;
@@ -104,9 +104,9 @@ class TACSPMat : public TACSMat {
   int Nc; // Number of equations that are coupled to other processors
   int Np; // The number of local-only equations Np + Nc = N
 
- private: 
+ private:
   // External values - used for matrix-vector products
-  TacsScalar *x_ext; 
+  TacsScalar *x_ext;
   int ext_offset;
 
   static const char *matName;
@@ -115,13 +115,13 @@ class TACSPMat : public TACSMat {
 /*
   Parallel Gauss--Seidel/SOR
 
-  This uses repeated applications of block Gauss--Seidel. Off-processor 
+  This uses repeated applications of block Gauss--Seidel. Off-processor
   updates are delayed, effectively making this a hybrid Jacobi Gauss-Seidel
   method.
 */
 class TACSGaussSeidel : public TACSPc {
  public:
-  TACSGaussSeidel( TACSPMat *_mat, int _zero_guess, 
+  TACSGaussSeidel( TACSPMat *_mat, int _zero_guess,
                    TacsScalar _omega, int _iters, int _symmetric,
                    int _use_l1_gauss_seidel=0 );
   ~TACSGaussSeidel();
@@ -138,7 +138,7 @@ class TACSGaussSeidel : public TACSPc {
   int iters; // The number of iterations to apply
   TacsScalar omega; // The over/under relaxation factor
   int zero_guess; // Zero the initial guess
-  int symmetric; // Apply the symmetric variant 
+  int symmetric; // Apply the symmetric variant
   int use_l1_gauss_seidel; // Apply the L1 variant of Gauss-Seidel
 
   // Pointers to the local/external matrix
@@ -226,7 +226,7 @@ class TACSAdditiveSchwarz : public TACSPc {
   AS: Apply preconditioner
   1. Restrict to the interface unknowns
   2. Solve a GMRES-accelerated, Jacobi-preconditioned problem for the
-  interface unknowns 
+  interface unknowns
   3. Determine the solution at the internal interface unknowns
 */
 class TACSGlobalSchurMat : public TACSMat {
@@ -240,14 +240,14 @@ class TACSGlobalSchurMat : public TACSMat {
   void mult( TACSVec *x, TACSVec *y );
   TACSVec *createVec();
 
-  // Multiply y <- Bext *x_ext 
+  // Multiply y <- Bext *x_ext
   void multOffDiag( TACSBVec *x, TACSBVec *y );
 
  private:
   TACSVarMap *rmap; // The variable map for the interface variables
-  BCSRMat *Apc; // The factored diagonal matrix 
+  BCSRMat *Apc; // The factored diagonal matrix
   BCSRMat *Bext; // The off-diagonal part
-  TACSBVecDistribute *ext_dist; 
+  TACSBVecDistribute *ext_dist;
   TACSBVecDistCtx *ctx;
 
   int nvars, varoffset;
@@ -263,8 +263,8 @@ class TACSGlobalSchurMat : public TACSMat {
 */
 class TACSApproximateSchur : public TACSPc {
  public:
-  TACSApproximateSchur( TACSPMat *mat, int levFill, double fill, 
-                        int inner_gmres_iters, double inner_rtol=1e-3, 
+  TACSApproximateSchur( TACSPMat *mat, int levFill, double fill,
+                        int inner_gmres_iters, double inner_rtol=1e-3,
                         double inner_atol=1e-30 );
   ~TACSApproximateSchur();
 
@@ -280,7 +280,7 @@ class TACSApproximateSchur : public TACSPc {
   TACSPMat *mat;
   BCSRMat *Aloc, *Apc;
   TacsScalar alpha;
- 
+
   // Offsets into the array
   int start, end, var_offset;
 

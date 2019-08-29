@@ -25,7 +25,7 @@ const double TacsTrianglePts3[] = { 1.0/6.0, 1.0/6.0,
                                     1.0/6.0, 2.0/3.0 };
 
 const double TacsTriangleWts4[] = { -27.0/48.0, 25.0/48.0 };
-const double TacsTrianglePts4[] = { 1.0/3.0, 1.0/3.0, 1.0/5.0, 1.0/5.0, 
+const double TacsTrianglePts4[] = { 1.0/3.0, 1.0/3.0, 1.0/5.0, 1.0/5.0,
                                     3.0/5.0, 1.0/5.0, 1.0/5.0, 3.0/5.0 };
 
 const double TacsTriangleWts6[] = { 0.109951743655322, 0.223381589678011 };

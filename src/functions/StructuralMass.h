@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_STRUCTURAL_MASS_H
@@ -32,7 +32,7 @@ class TACSStructuralMass : public TACSFunction {
  public:
   TACSStructuralMass( TACSAssembler * _tacs );
   ~TACSStructuralMass();
-  
+
   const char *functionName();
 
   // Create the function context for evaluation
@@ -54,7 +54,7 @@ class TACSStructuralMass : public TACSFunction {
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
                         TACSFunctionCtx *ctx );
-  void finalThread( double tcoef, 
+  void finalThread( double tcoef,
                     EvaluationType ftype,
                     TACSFunctionCtx *ctx );
 
@@ -76,15 +76,15 @@ class TACSStructuralMass : public TACSFunction {
                           TACSElement *element, int elemNum,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx ); 
+                          TACSFunctionCtx *ctx );
  private:
   // Max. number of nodes
   int maxNumNodes;
 
   // The total mass of all elements in the specified domain
-  TacsScalar totalMass; 
+  TacsScalar totalMass;
 
   static const char * funcName;
 };
 
-#endif 
+#endif

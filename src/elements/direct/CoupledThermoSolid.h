@@ -4,7 +4,7 @@
 /*
   Solid element implementation
 
-  Copyright (c) 2010-2015 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2010-2015 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 
   The following code uses templates to allow for arbitrary order elements.
@@ -17,9 +17,9 @@
 template <int order>
 class CoupledThermoSolid : public TACS3DCoupledThermoElement<order*order*order> {
  public:
-  CoupledThermoSolid( CoupledThermoSolidStiffness * _stiff, 
-                      ElementBehaviorType type=LINEAR, 
-                      int _componentNum=0 ); 
+  CoupledThermoSolid( CoupledThermoSolidStiffness * _stiff,
+                      ElementBehaviorType type=LINEAR,
+                      int _componentNum=0 );
   ~CoupledThermoSolid();
 
   // Return the name of this element
@@ -35,13 +35,13 @@ class CoupledThermoSolid : public TACS3DCoupledThermoElement<order*order*order> 
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  double getGaussWtsPts( const int num, double pt[] ); 
+  double getGaussWtsPts( const int num, double pt[] );
 
   // Functions for post-processing
   // -----------------------------
   void addOutputCount( int * nelems, int * nnodes, int * ncsr );
-  void getOutputData( unsigned int out_type, 
-                      double * data, int ld_data, 
+  void getOutputData( unsigned int out_type,
+                      double * data, int ld_data,
                       const TacsScalar Xpts[],
                       const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
@@ -62,8 +62,8 @@ class CoupledThermoSolid : public TACS3DCoupledThermoElement<order*order*order> 
 };
 
 template <int order>
-CoupledThermoSolid<order>::CoupledThermoSolid( CoupledThermoSolidStiffness * _stiff, 
-                                               ElementBehaviorType type, 
+CoupledThermoSolid<order>::CoupledThermoSolid( CoupledThermoSolidStiffness * _stiff,
+                                               ElementBehaviorType type,
                                                int _componentNum ):
 TACS3DCoupledThermoElement<order*order*order>(_stiff, type, _componentNum){
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
@@ -83,7 +83,7 @@ TACS3DCoupledThermoElement<order*order*order>(_stiff, type, _componentNum){
       knots[k] = -cos(M_PI*k/(order-1));
     }
   }
-} 
+}
 
 template <int order>
 CoupledThermoSolid<order>::~CoupledThermoSolid(){}
@@ -108,11 +108,11 @@ double CoupledThermoSolid<order>::getGaussWtsPts( int npoint, double pt[] ){
   int p = (int)((npoint)/(numGauss*numGauss));
   int m = (int)((npoint - numGauss*numGauss*p)/numGauss);
   int n = npoint - numGauss*m - numGauss*numGauss*p;
-  
+
   pt[0] = gaussPts[n];
-  pt[1] = gaussPts[m];    
+  pt[1] = gaussPts[m];
   pt[2] = gaussPts[p];
-  
+
   return gaussWts[n]*gaussWts[m]*gaussWts[p];
 }
 
@@ -138,7 +138,7 @@ void CoupledThermoSolid<order>::getShapeFunctions( const double pt[],
 
 /*
   Compute the shape functions and their derivatives w.r.t. the
-  parametric element location 
+  parametric element location
 */
 template <int order>
 void CoupledThermoSolid<order>::getShapeFunctions( const double pt[], double N[],
@@ -157,7 +157,7 @@ void CoupledThermoSolid<order>::getShapeFunctions( const double pt[], double N[]
         Nb[0] = na[i]*dnb[j]*nc[k];
         Nc[0] = na[i]*nb[j]*dnc[k];
         N++;
-        Na++;  Nb++;  Nc++;          
+        Na++;  Nb++;  Nc++;
       }
     }
   }
@@ -165,10 +165,10 @@ void CoupledThermoSolid<order>::getShapeFunctions( const double pt[], double N[]
 
 /*
   Get the number of elemens/nodes and CSR size of the contributed by
-  this element.  
+  this element.
 */
 template <int order>
-void CoupledThermoSolid<order>::addOutputCount( int *nelems, 
+void CoupledThermoSolid<order>::addOutputCount( int *nelems,
                                                 int *nnodes, int *ncsr ){
   *nelems += (order-1)*(order-1)*(order-1);
   *nnodes += order*order*order;
@@ -178,16 +178,16 @@ void CoupledThermoSolid<order>::addOutputCount( int *nelems,
 /*
   Get the output data from this element and place it in a real
   array for visualization later. The values generated for visualization
-  are determined by a bit-wise selection variable 'out_type' which is 
+  are determined by a bit-wise selection variable 'out_type' which is
   can be used to simultaneously write out different data. Note that this
-  is why the bitwise operation & is used below. 
+  is why the bitwise operation & is used below.
 
   The output may consist of the following:
   - the nodal locations
   - the displacements and rotations
   - the strains or strains within the element
   - extra variables that are used for optimization
-  
+
   output:
   data:     the data to write to the file (eventually)
 
@@ -197,7 +197,7 @@ void CoupledThermoSolid<order>::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 template <int order>
-void CoupledThermoSolid<order>::getOutputData( unsigned int out_type, 
+void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
                                                double *data, int ld_data,
                                                const TacsScalar Xpts[],
                                                const TacsScalar vars[] ){
@@ -206,13 +206,13 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
       for ( int n = 0; n < order; n++ ){
         int node = n + m*order + p*order*order;
         int index = 0;
-        // Set the parametric point where to evaluate the 
+        // Set the parametric point where to evaluate the
         // stresses/strains
         double pt[3];
         pt[0] = knots[n];
         pt[1] = knots[m];
         pt[2] = knots[p];
-        
+
         // Compute the shape functions
         double N[NUM_NODES];
         double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
@@ -251,7 +251,7 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
         // Compute the strain B*u
         TacsScalar strain[6];
         this->evalStrain(strain, J, Na, Nb, Nc, vars);
-        
+
         if (out_type & TACSElement::OUTPUT_STRAINS){
           for ( int k = 0; k < 6; k++ ){
             data[index+k] = TacsRealPart(strain[k]);
@@ -262,7 +262,7 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
           // Calculate the stress D*B*u at the current point
           TacsScalar stress[6];
           this->stiff->calculateStress(pt, strain, stress);
-          
+
           for ( int k = 0; k < 6; k++ ){
             data[index+k] = TacsRealPart(stress[k]);
           }
@@ -283,16 +283,16 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
             con->failure(pt, T, strain, &lambda);
           }
           data[index] = TacsRealPart(lambda);
-	  lambda = 0.0;
+          lambda = 0.0;
           if (con){
-	    con->maxtemp(pt, T[0], &lambda);
-	    //this->stiff->buckling(strain, &lambda);
-	  }
+            con->maxtemp(pt, T[0], &lambda);
+            //this->stiff->buckling(strain, &lambda);
+          }
           data[index+1] = TacsRealPart(lambda);
 
           data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
           data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
-          
+
           index += this->NUM_EXTRAS;
         }
 
@@ -312,7 +312,7 @@ void CoupledThermoSolid<order>::getOutputData( unsigned int out_type,
   by this finite-element
 
   input:
-  node:  the node offset number - so that this connectivity is more or 
+  node:  the node offset number - so that this connectivity is more or
   less global
 */
 template <int order>

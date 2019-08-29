@@ -3,8 +3,8 @@
 
 /*
   Plane stress element with coupled thermoelastic analysis
-  
-  Copyright (c) 2010-2015 Graeme Kennedy. All rights reserved. 
+
+  Copyright (c) 2010-2015 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 
   The following code uses templates to allow for arbitrary order elements.
@@ -16,8 +16,8 @@
 template <int order>
 class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*order>{
  public:
-  PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff, 
-                                ElementBehaviorType type=LINEAR, 
+  PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff,
+                                ElementBehaviorType type=LINEAR,
                                 int _componentNum=0 );
   ~PlaneStressCoupledThermoQuad();
 
@@ -29,20 +29,20 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
   // ----------------------------
   void getShapeFunctions( const double pt[], double N[] );
   void getShapeFunctions( const double pt[], double N[],
-			  double Na[], double Nb[] );
+                          double Na[], double Nb[] );
 
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  double getGaussWtsPts( const int num, double pt[] ); 
+  double getGaussWtsPts( const int num, double pt[] );
 
   // Functions for post-processing
   // -----------------------------
   void addOutputCount( int *nelems, int *nnodes, int *ncsr );
-  void getOutputData( unsigned int out_type, 
-		      double *data, int ld_data, 
-		      const TacsScalar Xpts[],
-		      const TacsScalar vars[] );
+  void getOutputData( unsigned int out_type,
+                      double *data, int ld_data,
+                      const TacsScalar Xpts[],
+                      const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
 
  private:
@@ -60,8 +60,8 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
 };
 
 template <int order>
-PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff, 
-                                                     ElementBehaviorType type, 
+PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff,
+                                                     ElementBehaviorType type,
                                                      int _componentNum ):
 TACS2DCoupledThermoElement<order*order>(_stiff, type, _componentNum){
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
@@ -104,10 +104,10 @@ double PlaneStressCoupledThermoQuad<order>::getGaussWtsPts( int npoint, double p
   // Compute the n/m/p indices of the Gauss quadrature scheme
   int m = (int)((npoint)/(numGauss));
   int n = npoint - numGauss*m;
-  
+
   pt[0] = gaussPts[n];
   pt[1] = gaussPts[m];
-  
+
   return gaussWts[n]*gaussWts[m];
 }
 
@@ -115,7 +115,7 @@ double PlaneStressCoupledThermoQuad<order>::getGaussWtsPts( int npoint, double p
   Evaluate the shape functions and their derivatives
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[], 
+void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
                                                              double N[] ){
   double na[order], nb[order];
   FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
@@ -129,10 +129,10 @@ void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
 
 /*
   Compute the shape functions and their derivatives w.r.t. the
-  parametric element location 
+  parametric element location
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[], 
+void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
                                                              double N[],
                                                              double Na[], double Nb[] ){
   double na[order], nb[order];
@@ -150,10 +150,10 @@ void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
 
 /*
   Get the number of elemens/nodes and CSR size of the contributed by
-  this element.  
+  this element.
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::addOutputCount( int *nelems, 
+void PlaneStressCoupledThermoQuad<order>::addOutputCount( int *nelems,
                                                           int *nnodes, int *ncsr ){
   *nelems += (order-1)*(order-1);
   *nnodes += order*order;
@@ -163,16 +163,16 @@ void PlaneStressCoupledThermoQuad<order>::addOutputCount( int *nelems,
 /*
   Get the output data from this element and place it in a real
   array for visualization later. The values generated for visualization
-  are determined by a bit-wise selection variable 'out_type' which is 
+  are determined by a bit-wise selection variable 'out_type' which is
   can be used to simultaneously write out different data. Note that this
-  is why the bitwise operation & is used below. 
+  is why the bitwise operation & is used below.
 
   The output may consist of the following:
   - the nodal locations
   - the displacements and rotations
   - the strains or strains within the element
   - extra variables that are used for optimization
-  
+
   output:
   data:     the data to write to the file (eventually)
 
@@ -182,11 +182,11 @@ void PlaneStressCoupledThermoQuad<order>::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type, 
+void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
                                                          double *data, int ld_data,
                                                          const TacsScalar Xpts[],
                                                          const TacsScalar vars[] ){
-  
+
   for ( int m = 0; m < order; m++ ){
     for ( int n = 0; n < order; n++ ){
       int p = n + order*m;
@@ -201,31 +201,31 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       getShapeFunctions(pt, N, Na, Nb);
 
       if (out_type & TACSElement::OUTPUT_NODES){
-	for ( int k = 0; k < 3; k++ ){
+        for ( int k = 0; k < 3; k++ ){
           TacsScalar X = 0.0;
           for (int i = 0; i < NUM_NODES; i++){
             X += N[i]*Xpts[3*p+k];
           }
-          data[index+k] = TacsRealPart(X);	 
-	}
+          data[index+k] = TacsRealPart(X);
+        }
         index += 3;
       }
       if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-	for ( int k = 0; k < 3; k++ ){
+        for ( int k = 0; k < 3; k++ ){
           TacsScalar u = 0.0;
           for (int i = 0; i < NUM_NODES; i++){
             u += N[i]*vars[3*p+k];
           }
           data[index+k] = TacsRealPart(u);
-	}
+        }
         index += 3;
       }
-      
+
       // Compute the derivative of X with respect to the
       // coordinate directions
       TacsScalar X[3], Xa[4];
       this->planeJacobian(X, Xa, N, Na, Nb, Xpts);
-      
+
       // Compute the determinant of Xa and the transformation
       TacsScalar J[4];
       FElibrary::jacobian2d(Xa, J);
@@ -247,7 +247,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
           data[index+k] = TacsRealPart(stress[k]);
         }
         index += 3;
-      }      
+      }
       if (out_type & TACSElement::OUTPUT_EXTRAS){
         // Get the temperature
         TacsScalar T[] = {0.0};
@@ -256,7 +256,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
           elem->getTemperature(T, N, vars);
         }
         // Compute the failure value
-	TacsScalar lambda = 0.0;
+        TacsScalar lambda = 0.0;
         CoupledThermoPlaneStressStiffness *con =
           dynamic_cast<CoupledThermoPlaneStressStiffness*>(this->stiff);
         if (con){
@@ -264,12 +264,12 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
         }
         data[index] = TacsRealPart(lambda);
 
-	this->stiff->buckling(strain, &lambda);
-	data[index+1] = TacsRealPart(lambda);
-        
+        this->stiff->buckling(strain, &lambda);
+        data[index+1] = TacsRealPart(lambda);
+
         data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
-	data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
-        
+        data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
+
         index += this->NUM_EXTRAS;
       }
 
@@ -288,7 +288,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
   by this finite-element
 
   input:
-  node:  the node offset number - so that this connectivity is more or 
+  node:  the node offset number - so that this connectivity is more or
   less global
 */
 template <int order>
@@ -297,7 +297,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputConnectivity( int *con, int n
   for ( int m = 0; m < order-1; m++ ){
     for ( int n = 0; n < order-1; n++ ){
       con[4*p]   = node + n   + m*order;
-      con[4*p+1] = node + n+1 + m*order; 
+      con[4*p+1] = node + n+1 + m*order;
       con[4*p+2] = node + n+1 + (m+1)*order;
       con[4*p+3] = node + n   + (m+1)*order;
       p++;

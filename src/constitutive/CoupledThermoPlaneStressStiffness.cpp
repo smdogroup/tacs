@@ -1,18 +1,18 @@
 #include "CoupledThermoPlaneStressStiffness.h"
 /*
-  Copyright (c) 2017 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2017 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 */
 
 const char * CoupledThermoPlaneStressStiffness::constName = "CoupledThermoPlaneStressStiffness";
 
-const char * CoupledThermoPlaneStressStiffness::constitutiveName(){ 
-  return constName; 
+const char * CoupledThermoPlaneStressStiffness::constitutiveName(){
+  return constName;
 }
 /*
   CoupledThermoPlaneStressStiffness member function definitions
 */
-CoupledThermoPlaneStressStiffness::CoupledThermoPlaneStressStiffness( TacsScalar _rho, 
+CoupledThermoPlaneStressStiffness::CoupledThermoPlaneStressStiffness( TacsScalar _rho,
                                                                       TacsScalar E,
                                                                       TacsScalar nu,
                                                                       TacsScalar _alpha,
@@ -28,11 +28,11 @@ CoupledThermoPlaneStressStiffness::CoupledThermoPlaneStressStiffness( TacsScalar
   Cmat[1] = nu*Cmat[0];
   Cmat[2] = 0.0;
   Cmat[4] = 0.0;
-  
+
   // Constitutive matrix for the thermal analysis
   Tmat[0] = Tmat[2] = _kcond;
   Tmat[1] = 0.0;
-  
+
   // Initialize the thermal parameter
   alpha = _alpha;
   Tref = _Tref;

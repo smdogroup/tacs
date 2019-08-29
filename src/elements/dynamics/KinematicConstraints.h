@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_KINEMATIC_CONSTRAINTS_H
@@ -39,7 +39,7 @@ class TACSKinematicConstraint : public TACSElement {
                            TACSRigidBody *_bodyA,
                            TACSRigidBody *_bodyB=NULL );
   ~TACSKinematicConstraint();
-  
+
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   void getMultiplierIndex( int *multiplier ){
@@ -48,7 +48,7 @@ class TACSKinematicConstraint : public TACSElement {
     }
     else {
       *multiplier = 1;
-    }    
+    }
   }
 
   // Return the number of displacements and nodes
@@ -63,10 +63,10 @@ class TACSKinematicConstraint : public TACSElement {
 
   // The rigid bodies involved in the joint
   TACSRigidBody *bodyA, *bodyB;
-  
+
   // The positions of joint from each body in global frame
   TACSGibbsVector *xAVec, *xBVec;
-  
+
   // The name of the element
   static const char *elem_name;
 };
@@ -77,10 +77,10 @@ class TACSKinematicConstraint : public TACSElement {
   The spherical constraint class imposes no restriction on the
   relative rotation between the two reference frames (either the first
   frame A and the inertial frame or the first frame A and a second
-  frame B). 
+  frame B).
 
   The translational degrees of freedom are constrained either to be
-  1. Coincident 
+  1. Coincident
   2. Colinear
   3. Coplanar
 
@@ -96,7 +96,7 @@ class TACSSphericalConstraint : public TACSElement {
                            TACSTranslationConType con_type=COINCIDENT );
   TACSSphericalConstraint( TACSRigidBody *_bodyA,
                            TACSGibbsVector *_point,
-                           TACSGibbsVector *_axis=NULL, 
+                           TACSGibbsVector *_axis=NULL,
                            TACSTranslationConType con_type=COINCIDENT );
   ~TACSSphericalConstraint();
 
@@ -118,7 +118,7 @@ class TACSSphericalConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -166,17 +166,17 @@ class TACSSphericalConstraint : public TACSElement {
 /*
   Revolute constraint
 
-  This constraint forces the relative rotation between two bodies 
-  (body A and body B) at a point to lie on a single axis. There are 
+  This constraint forces the relative rotation between two bodies
+  (body A and body B) at a point to lie on a single axis. There are
   several different ways that this constraint can be formualted. Body A
   is treated as the primary body, while body B is treated as a secondary
   body. When TACSRigidBody objects are passed in, the reference point
-  location is retrieved from the body object, whereas if no body is 
+  location is retrieved from the body object, whereas if no body is
   passed in, the point is taken from the node location.
 
   First, the revolute axis may be either fixed to the inertial reference
-  frame or fixed/convected with body B's body-aligned frame. In the 
-  latter case, the revolute axis changes continuously as a function of 
+  frame or fixed/convected with body B's body-aligned frame. In the
+  latter case, the revolute axis changes continuously as a function of
   the orientation of body B.
 
   Second, the reference point may be constrained such that it is:
@@ -218,7 +218,7 @@ class TACSRevoluteConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -252,19 +252,19 @@ class TACSRevoluteConstraint : public TACSElement {
   int inertial_fixed_point;
 
   // The rigid bodies involved in the joint
-  TACSRigidBody *bodyA, *bodyB; 
+  TACSRigidBody *bodyA, *bodyB;
 
   // Point where the joint is located in global frame
-  TACSGibbsVector *point; 
+  TACSGibbsVector *point;
 
   // Revolute direction in global frame
-  TACSGibbsVector *eAVec; 
-  
+  TACSGibbsVector *eAVec;
+
   // Local axis in the B-frame
-  TACSGibbsVector *eB1Vec, *eB2Vec; 
+  TACSGibbsVector *eB1Vec, *eB2Vec;
 
   // The coordinate direction in global frame
-  TACSGibbsVector *eVec; 
+  TACSGibbsVector *eVec;
 
   static const char *elem_name; // The name of the element
 };
@@ -292,7 +292,7 @@ class TACSRigidLink : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -314,7 +314,7 @@ class TACSRigidLink : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
- 
+
  private:
   TACSRigidBody *bodyA; // The rigid body
   static const char *elem_name; // The name of the element
@@ -357,10 +357,10 @@ class TACSRigidLink : public TACSElement {
   position of Xref in the inertial frame is given as:
 
   X' = r0 + u0 + CB^{T}(bref + Xref)
-  
+
   The difference between X(xi) + U(xi) and X' is the displacement
   observed in frame C. This is then
-  
+
   U' = X(xi) + U(xi) - X'
   .  = X(xi) + U(xi) - r0 - u0 - CB^{T}(bref + Xref)
 
@@ -377,7 +377,7 @@ class TACSAverageConstraint : public TACSElement {
  public:
   static const int X_MOMENT = 1;
   static const int Y_MOMENT = 2;
-  static const int Z_MOMENT = 4; 
+  static const int Z_MOMENT = 4;
 
   TACSAverageConstraint( TACSRigidBody *_bodyA,
                          TACSGibbsVector *_point,
@@ -400,7 +400,7 @@ class TACSAverageConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -425,7 +425,7 @@ class TACSAverageConstraint : public TACSElement {
   // displacements and the moments of the displacement
   int moment_flag;
 
-  // The rigid body 
+  // The rigid body
   TACSRigidBody *bodyA;
 
   // The point in the inertial reference frame
@@ -434,7 +434,7 @@ class TACSAverageConstraint : public TACSElement {
   // The reference frame used to define the local coordinate system in
   // the initial configuration (moments are taken about the y-z plane
   // in this reference frame)
-  TACSRefFrame *refFrame;  
+  TACSRefFrame *refFrame;
 
   // The element name
   static const char *elem_name;
@@ -445,21 +445,21 @@ class TACSAverageConstraint : public TACSElement {
 */
 class TACSMotionDriver : public TACSElement {
  public:
-  TACSMotionDriver( TACSGibbsVector *_dir, 
+  TACSMotionDriver( TACSGibbsVector *_dir,
                     TacsScalar _omega,
                     int _fix_rotations=0 ){
     // Copy over the direction
     dir = _dir;
     dir->incref();
-    
+
     // Copy over the angular rate
     omega = _omega;
-    
+
     // Fix the rotations if requested
     fix_rotations = _fix_rotations;
   }
 
-  ~TACSMotionDriver(){    
+  ~TACSMotionDriver(){
     dir->decref();
   }
 
@@ -482,7 +482,7 @@ class TACSMotionDriver : public TACSElement {
   }
 
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -499,15 +499,15 @@ class TACSMotionDriver : public TACSElement {
     // Retrieve the direction
     const TacsScalar *d;
     dir->getVector(&d);
-    
+
     // The Lagrange multipliers
     const TacsScalar *lam = &vars[8];
-    
+
     // Specify a sinusoidal motion
     const TacsScalar scale = sin(omega*time);
 
     // Equations to specify sinusoidal translatory motion
-    res[8] += vars[0] - scale*d[0]; 
+    res[8] += vars[0] - scale*d[0];
     res[9] += vars[1] - scale*d[1];
     res[10] += vars[2] - scale*d[2];
 
@@ -521,7 +521,7 @@ class TACSMotionDriver : public TACSElement {
       res[8+4] += vars[4];
       res[8+5] += vars[5];
       res[8+6] += vars[6];
-      
+
       // Apply reaction moments to arrest rotational dof
       res[4] += lam[4];
       res[5] += lam[5];
@@ -530,7 +530,7 @@ class TACSMotionDriver : public TACSElement {
       //Add dummy constraint eqns
       res[8+3] += lam[3];
       res[8+7] += lam[7];
-    } 
+    }
     else {
       // Add the dummy constraints for remaining constraint equations
       for ( int i = 3; i < 8; i++ ){
@@ -538,7 +538,7 @@ class TACSMotionDriver : public TACSElement {
       }
     }
   }
-  
+
  private:
   TacsScalar omega;
   TACSGibbsVector *dir;
@@ -554,16 +554,16 @@ class TACSMotionDriver : public TACSElement {
 
 class TACSLinearizedMotionDriver : public TACSElement {
  public:
-  TACSLinearizedMotionDriver( TACSGibbsVector *_dir, 
+  TACSLinearizedMotionDriver( TACSGibbsVector *_dir,
                     TacsScalar _omega,
                     int _arrest_rotations = 0){
     // Copy over the direction
     dir = _dir;
     dir->incref();
-    
+
     // Copy over the angular rate
     omega = _omega;
-    
+
     // Arrest rotations if requested
     arrest_rotations = _arrest_rotations;
   }
@@ -589,7 +589,7 @@ class TACSLinearizedMotionDriver : public TACSElement {
   }
 
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -606,15 +606,15 @@ class TACSLinearizedMotionDriver : public TACSElement {
     // Retrieve the direction
     const TacsScalar *d;
     dir->getVector(&d);
-    
+
     // The Lagrange multipliers
     const TacsScalar *lam = &vars[6];
-    
+
     // Specify a sinusoidal motion
     const TacsScalar scale = sin(omega*time);
 
     // Equations to specify sinusoidal translatory motion
-    res[6] += vars[0] - scale*d[0]; 
+    res[6] += vars[0] - scale*d[0];
     res[7] += vars[1] - scale*d[1];
     res[8] += vars[2] - scale*d[2];
     res[9] += vars[3];
@@ -629,7 +629,7 @@ class TACSLinearizedMotionDriver : public TACSElement {
     res[4] += lam[4];
     res[5] += lam[5];
   }
-  
+
  private:
   TacsScalar omega;
   TACSGibbsVector *dir;
@@ -657,7 +657,7 @@ class TACSRevoluteDriver : public TACSElement {
   const char* elementName();
 
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -713,7 +713,7 @@ class TACSCylindricalConstraint : public TACSElement {
     }
     else {
       *multiplier = 1;
-    }    
+    }
   }
 
   // Set and retrieve design variable values
@@ -730,7 +730,7 @@ class TACSCylindricalConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -744,7 +744,7 @@ class TACSCylindricalConstraint : public TACSElement {
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
  private:
-  // Update the local data 
+  // Update the local data
   void updatePoints( int init_e=0 );
 
   // The rigid bodies involved in the joint
@@ -792,7 +792,7 @@ class TACSPrismaticConstraint : public TACSElement {
     }
     else {
       *multiplier = 1;
-    }    
+    }
   }
 
   // Set and retrieve design variable values
@@ -809,7 +809,7 @@ class TACSPrismaticConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -823,7 +823,7 @@ class TACSPrismaticConstraint : public TACSElement {
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
  private:
-  // Update the local data 
+  // Update the local data
   void updatePoints( int init_e=0 );
 
   // The rigid bodies involved in the joint
@@ -871,7 +871,7 @@ class TACSSlidingPivotConstraint : public TACSElement {
     }
     else {
       *multiplier = 1;
-    }    
+    }
   }
 
   // Set and retrieve design variable values
@@ -888,7 +888,7 @@ class TACSSlidingPivotConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -902,7 +902,7 @@ class TACSSlidingPivotConstraint : public TACSElement {
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] );
  private:
-  // Update the local data 
+  // Update the local data
   void updatePoints( int init_e=0 );
 
   // The rigid bodies involved in the joint
@@ -929,21 +929,21 @@ class TACSSlidingPivotConstraint : public TACSElement {
 };
 
 /*
-  Fixed constraint constrains all the degrees of freedom 
+  Fixed constraint constrains all the degrees of freedom
   of the attached body
 */
 class TACSFixedConstraint : public TACSElement {
  public:
-  TACSFixedConstraint( TACSRigidBody *_bodyA,                       
+  TACSFixedConstraint( TACSRigidBody *_bodyA,
                        TACSGibbsVector *_point );
   ~TACSFixedConstraint();
-  
+
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   void getMultiplierIndex( int *multiplier ){
       *multiplier = 1;
   }
-  
+
   // Set and retrieve design variable values
   // ---------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
@@ -958,7 +958,7 @@ class TACSFixedConstraint : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -974,7 +974,7 @@ class TACSFixedConstraint : public TACSElement {
  private:
   // Update the local data
   void updatePoints();
-        
+
   // The rigid bodies involved in the joint
   TACSRigidBody *body;
 

@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "FH5.h"
@@ -49,7 +49,7 @@ FH5File::~FH5File(){
     }
     delete [] comp_names;
   }
-  
+
 }
 
 /*
@@ -66,12 +66,12 @@ FH5File::~FH5File(){
   returns:
   0 on successs, 1 if there is an error creating the file
 
-  Test if the 
+  Test if the
 */
 int FH5File::createFile( const char *file_name,
-                         char **component_names, 
+                         char **component_names,
                          int num_components ){
-  if (fp){ 
+  if (fp){
     int rank;
     MPI_Comm_rank(comm, &rank);
     fprintf(stderr, "[%d] FH5: Error, cannot create new file\n",
@@ -86,8 +86,8 @@ int FH5File::createFile( const char *file_name,
     strcpy(fname, file_name);
 
     // Open the file for writing
-    MPI_File_open(comm, fname, MPI_MODE_WRONLY | MPI_MODE_CREATE, 
-                  MPI_INFO_NULL, &fp); 
+    MPI_File_open(comm, fname, MPI_MODE_WRONLY | MPI_MODE_CREATE,
+                  MPI_INFO_NULL, &fp);
     delete [] fname;
 
     file_for_writing = 1;
@@ -98,7 +98,7 @@ int FH5File::createFile( const char *file_name,
       // Write the zone and variable names to the file
       char datarep[] = "native";
       MPI_File_set_view(fp, file_offset, MPI_CHAR, MPI_CHAR,
-                        datarep, MPI_INFO_NULL);   
+                        datarep, MPI_INFO_NULL);
 
       int rank;
       MPI_Comm_rank(comm, &rank);
@@ -131,7 +131,7 @@ int FH5File::createFile( const char *file_name,
             slen = strlen(component_names[k])+1;
           }
           else {
-            slen = strlen(zone_name)+1; 
+            slen = strlen(zone_name)+1;
           }
           memcpy(&header[header_len], &slen, sizeof(int));
           header_len += sizeof(int);
@@ -170,31 +170,31 @@ int FH5File::createFile( const char *file_name,
 
   Header information:
   -------------------
-  
-  data type (int), 
-  dim 1 (int), 
-  dim 2 (int), 
+
+  data type (int),
+  dim 1 (int),
+  dim 2 (int),
   size zone name (int)
   size of variable (int)
   zone_name (char)
   variable name (char)
-  
+
   Data:
   -----
-  data (double) or (int) 
-  
+  data (double) or (int)
+
   dim1*dim2*sizeof(double)/sizeof(int)
 */
-int FH5File::writeZoneData( char *zone_name, 
+int FH5File::writeZoneData( char *zone_name,
                             char *var_names,
-                            FH5DataType data_name, 
+                            FH5DataType data_name,
                             void *data, int dim1, int dim2 ){
   // Check the file status to ensure that it's open
   if (fp && file_for_writing){
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
-    
+
     int *dim = new int[ size+1 ];
     dim[0] = 0;
     MPI_Allgather(&dim1, 1, MPI_INT, &dim[1], 1, MPI_INT, comm);
@@ -205,7 +205,7 @@ int FH5File::writeZoneData( char *zone_name,
     int total_dim = dim[size];
 
     // Calculate the size of the buffer to use
-    size_t header_len = 
+    size_t header_len =
       5*sizeof(int) + strlen(zone_name) + strlen(var_names) + 2;
 
     // Write the zone and variable names to the file
@@ -223,7 +223,7 @@ int FH5File::writeZoneData( char *zone_name,
       pre_int[2] = dim2;
       pre_int[3] = strlen(zone_name)+1;
       pre_int[4] = strlen(var_names)+1;
-      
+
       // Copy the pre-header to the file
       memcpy(pre_header, pre_int, 5*sizeof(int));
 
@@ -250,15 +250,15 @@ int FH5File::writeZoneData( char *zone_name,
     }
 
     MPI_File_set_view(fp, file_offset, dtype, dtype,
-                      datarep, MPI_INFO_NULL);   
-    MPI_File_write_at_all(fp, dim[rank]*dim2, data, dim1*dim2, dtype, 
+                      datarep, MPI_INFO_NULL);
+    MPI_File_write_at_all(fp, dim[rank]*dim2, data, dim1*dim2, dtype,
                           MPI_STATUS_IGNORE);
 
     if (dtype == MPI_DOUBLE){
       file_offset += total_dim*dim2*sizeof(double);
     }
     else if (dtype == MPI_FLOAT){
-      file_offset += total_dim*dim2*sizeof(float);      
+      file_offset += total_dim*dim2*sizeof(float);
     }
     else if (dtype == MPI_INT){
       file_offset += total_dim*dim2*sizeof(int);
@@ -285,7 +285,7 @@ void FH5File::close(){
 }
 
 /*
-  Open a file for reading 
+  Open a file for reading
 */
 int FH5File::openFile( const char *file_name ){
   int rank, size = 0;
@@ -296,7 +296,7 @@ int FH5File::openFile( const char *file_name ){
     fprintf(stderr, "[%d] FH5File: Error, cannot read file \
 with more than one processor\n", rank);
   }
-  else if (fp){ 
+  else if (fp){
     fprintf(stderr, "[%d] FH5File: Error, cannot open file\n",
             rank);
     return 0;
@@ -317,14 +317,14 @@ with more than one processor\n", rank);
 /*
   Get the number of components defined in this file
 */
-int FH5File::getNumComponents(){ 
-  return num_comp; 
+int FH5File::getNumComponents(){
+  return num_comp;
 }
 
 /*
   Return the component name, if defined
 */
-char *FH5File::getComponentName( int comp ){ 
+char *FH5File::getComponentName( int comp ){
   if (comp >= 0 && comp < num_comp){
     return comp_names[comp];
   }
@@ -333,7 +333,7 @@ char *FH5File::getComponentName( int comp ){
 
 /*
   Scan the FH5 file and obtain:
-  
+
   1. The zone names
   2. The offsets into the file for the beginning of all data entries
   3. The size of the data entries
@@ -375,7 +375,7 @@ void FH5File::scanFH5File(){
       fprintf(stderr, "FH5: Error reading header\n");
       return;
     }
-    
+
     size_t len = slen;
     comp_names[k] = new char[ len ];
     if (fread(comp_names[k], sizeof(char), len, rfp) != len){
@@ -391,8 +391,8 @@ void FH5File::scanFH5File(){
     // Set the position in the file
     fseek(rfp, file_pos, SEEK_SET);
 
-    // Read the header information 
-    int header[5] = {0, 0, 0, 0, 0};  
+    // Read the header information
+    int header[5] = {0, 0, 0, 0, 0};
     if (fread(header, sizeof(int), 5, rfp) != 5){
       fprintf(stderr, "FH5: Error scanning header\n");
       return;
@@ -474,7 +474,7 @@ int FH5File::nextZone(){
     current = current->next;
     return 1;
   }
-  
+
   return 0;
 }
 

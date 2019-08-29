@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_PLANE_STRESS_CONSTITUTIVE_H
@@ -23,9 +23,9 @@
 #include "TACSMaterialProperties.h"
 
 /*
-  This is the base class for the plane stress constitutive objects. 
-  
-  All objects performing plane stress analysis should utilize this class. 
+  This is the base class for the plane stress constitutive objects.
+
+  All objects performing plane stress analysis should utilize this class.
 */
 class TACSPlaneStressConstitutive : public TACSConstitutive {
  public:
@@ -39,14 +39,14 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
   // Evaluate the stresss
   void evalStress( int elemIndex,
                    const double pt[],
-                   const TacsScalar X[], 
+                   const TacsScalar X[],
                    const TacsScalar strain[],
                    TacsScalar stress[] );
 
   // Evaluate the tangent stiffness
   void evalTangentStiffness( int elemIndex,
                              const double pt[],
-                             const TacsScalar X[], 
+                             const TacsScalar X[],
                              TacsScalar C[] );
 
   // Evaluate the thermal strain
@@ -62,7 +62,7 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
 
   // Evaluate the material failure index
   TacsScalar failure( int elemIndex,
-                      const double pt[], 
+                      const double pt[],
                       const TacsScalar X[],
                       const TacsScalar strain[] );
 
@@ -71,7 +71,7 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
 
  protected:
   // Materiial properties class
-  TACSMaterialProperties *properties;  
+  TACSMaterialProperties *properties;
 
  private:
   static const char *psName;

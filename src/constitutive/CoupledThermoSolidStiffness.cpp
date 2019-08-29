@@ -1,18 +1,18 @@
 #include "CoupledThermoSolidStiffness.h"
 /*
-  Copyright (c) 2017 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2017 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 */
 
 const char * CoupledThermoSolidStiffness::constName = "CoupledThermoSolidStiffness";
 
-const char * CoupledThermoSolidStiffness::constitutiveName(){ 
-  return constName; 
+const char * CoupledThermoSolidStiffness::constitutiveName(){
+  return constName;
 }
 /*
   CoupledThermoSolidStiffness member function definitions
 */
-CoupledThermoSolidStiffness::CoupledThermoSolidStiffness( TacsScalar _rho, 
+CoupledThermoSolidStiffness::CoupledThermoSolidStiffness( TacsScalar _rho,
                                                           TacsScalar E,
                                                           TacsScalar nu,
                                                           TacsScalar _alpha,
@@ -26,11 +26,11 @@ CoupledThermoSolidStiffness::CoupledThermoSolidStiffness( TacsScalar _rho,
   C[1] = C[2] = C[4] = nu*D;
 
   G23 = G13 = G12 = 0.5*E/(1.0 + nu);
-  
+
   // Constitutive matrix for the thermal analysis
   Tmat[0] = Tmat[2] = _kcond;
   Tmat[1] = _kcond;
-  
+
   // Initialize the thermal parameter
   alpha = _alpha;
   Tref = _Tref;

@@ -664,7 +664,7 @@ int TACSIntegrator::initAccelerationSolve( TACSBVec *forces ){
   double alpha = 0.0;
   double beta  = 0.0;
   double gamma = 1.0;
-    
+
   // Iterate accelerations until residual is zero
   for ( niter = 0; niter < max_newton_iters; niter++ ){
 
@@ -681,8 +681,8 @@ int TACSIntegrator::initAccelerationSolve( TACSBVec *forces ){
       tacs->applyBCs(forces);
       res->axpy(-1.0, forces);
       tacs->applyBCs(res);
-    }   
-    res_norm = res->norm();    
+    }
+    res_norm = res->norm();
 
     // Record the residual norm at the first Newton iteration
     if (niter == 0){
@@ -723,7 +723,7 @@ int TACSIntegrator::initAccelerationSolve( TACSBVec *forces ){
 
     // Solve for update using KSM
     ksm->solve(res, update);
-     
+
     // Update the state variables using the solution
     qddot[0]->axpy(-1.0, update);
 
@@ -1334,9 +1334,9 @@ void TACSIntegrator::initializeLinearSolver( ){
 
   // Return if already initialized
   if (linear_solver_initialized == 1){
-    return;  
+    return;
   };
-  
+
   if (!ksm){
     // Set the D matrix to NULL
     if (use_femat){

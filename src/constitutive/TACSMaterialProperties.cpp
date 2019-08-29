@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSMaterialProperties.h"
@@ -25,7 +25,7 @@ TACSMaterialProperties::TACSMaterialProperties( TacsScalar _rho,
                                                 TacsScalar _E,
                                                 TacsScalar _nu,
                                                 TacsScalar _ys,
-                                                TacsScalar _alpha, 
+                                                TacsScalar _alpha,
                                                 TacsScalar _kappa){
   rho = _rho;
   E = _E;
@@ -136,7 +136,7 @@ void TACSMaterialProperties::getOrthotropicProperties( TacsScalar *_E1,
                                                        TacsScalar *_E2,
                                                        TacsScalar *_E3,
                                                        TacsScalar *_nu12,
-                                                       TacsScalar *_nu13, 
+                                                       TacsScalar *_nu13,
                                                        TacsScalar *_nu23,
                                                        TacsScalar *_G12,
                                                        TacsScalar *_G13,
@@ -252,7 +252,7 @@ void TACSMaterialProperties::evalTangentStiffness2D( TacsScalar C[] ){
   else {
     TacsScalar nu21 = nu12*E2/E1;
     C[0] = E1/(1.0 - nu12*nu21);
-    C[1] = nu12*E2/(1.0 - nu12*nu21);  
+    C[1] = nu12*E2/(1.0 - nu12*nu21);
     C[2] = 0.0;
     C[3] = E2/(1.0 - nu12*nu21);
     C[4] = 0.0;
@@ -275,7 +275,7 @@ void TACSMaterialProperties::evalThermalStrain2D( TacsScalar e[] ){
 
 /*!
   The von Mises failure criteria is the following:
-  
+
   (sx - sy)^2 + (sx - sz)^2 + (sy - sz)^2 +
   6.0 * ( sxy^2 + sxz^2 + syz^2 ) = 2.0 * ys^2
 
@@ -289,7 +289,7 @@ void TACSMaterialProperties::evalThermalStrain2D( TacsScalar e[] ){
 TacsScalar TACSMaterialProperties::vonMisesFailure3D( const TacsScalar s[] ){
   TacsScalar fail = sqrt(0.5*((s[0] - s[1])*(s[0] - s[1]) +
                               (s[0] - s[2])*(s[0] - s[2]) +
-                              (s[1] - s[2])*(s[1] - s[2]) + 
+                              (s[1] - s[2])*(s[1] - s[2]) +
                               6.0*(s[3]*s[3] + s[4]*s[4] + s[5]*s[5])))/ys;
   return fail;
 }
@@ -298,7 +298,7 @@ TacsScalar TACSMaterialProperties::vonMisesFailure3DStressSens( const TacsScalar
                                                                 TacsScalar sens[] ){
   TacsScalar fail = sqrt(0.5*((s[0] - s[1])*(s[0] - s[1]) +
                               (s[0] - s[2])*(s[0] - s[2]) +
-                              (s[1] - s[2])*(s[1] - s[2]) + 
+                              (s[1] - s[2])*(s[1] - s[2]) +
                               6.0*(s[3]*s[3] + s[4]*s[4] + s[5]*s[5])));
 
   if (fail != 0.0){
@@ -350,9 +350,9 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens( const TacsScalar
 }
 
 /*
-  The OrthoPly material class. 
+  The OrthoPly material class.
 
-  This uses a Tsai-Wu tensor failure criteria. 
+  This uses a Tsai-Wu tensor failure criteria.
 
   Inputs are:
   E1, E2, nu12, G12 = In-plane stiffness properties
@@ -377,12 +377,12 @@ TACSOrthotropicPly::TACSOrthotropicPly( TacsScalar _plyThickness,
   Q11 = E1/(1.0 - nu12*nu21);
   Q22 = E2/(1.0 - nu12*nu21);
   Q12 = nu12*E2/(1.0 - nu12*nu21);
-  
+
   Q44 = G23;
   Q55 = G13;
   Q66 = G12;
 
-  // Definitions from Jones, Mechanics of Composite Materials 
+  // Definitions from Jones, Mechanics of Composite Materials
   C12 = (Q11 + Q22 - 4.0*Q66);
   C16 = (Q11 - Q12 - 2.0*Q66);
   C26 = (Q12 - Q22 + 2.0*Q66);
@@ -394,7 +394,7 @@ TACSOrthotropicPly::TACSOrthotropicPly( TacsScalar _plyThickness,
                                     &S12, NULL, NULL);
   C = 0.0;
 
-  // Determine the strain strength values based on the 
+  // Determine the strain strength values based on the
   // supplied stress strength values.
   eXt = Xt/E1;
   eXc = Xc/E1;
@@ -425,9 +425,9 @@ TACSOrthotropicPly::TACSOrthotropicPly( TacsScalar _plyThickness,
             TacsRealPart(C), TacsRealPart(F12));
     fprintf(stderr, "TACSOrthotropicPly: Tsai-Wu coefficients: F11: "
             "%e, F22: %e, F66: %e, F1: %e, F2: %e\n",
-            TacsRealPart(F11), TacsRealPart(F22), 
+            TacsRealPart(F11), TacsRealPart(F22),
             TacsRealPart(F66), TacsRealPart(F1), TacsRealPart(F2));
-    F12 = 0.0;      
+    F12 = 0.0;
   }
 
   // Set the default value of the KS penalty
@@ -460,7 +460,7 @@ void TACSOrthotropicPly::setUseTsaiWuCriterion(){
 TacsScalar TACSOrthotropicPly::getDensity(){ return rho; }
 
 /*
-  Get the thickness of a single laminae 
+  Get the thickness of a single laminae
 */
 TacsScalar TACSOrthotropicPly::getPlyThickness(){ return plyThickness; }
 
@@ -468,21 +468,21 @@ TacsScalar TACSOrthotropicPly::getPlyThickness(){ return plyThickness; }
   Get the stiffness constants
 */
 void TACSOrthotropicPly::getStiffness( TacsScalar *_E1, TacsScalar *_E2,
-                                       TacsScalar *_nu12, TacsScalar *_G12, 
+                                       TacsScalar *_nu12, TacsScalar *_G12,
                                        TacsScalar *_G23, TacsScalar *_G13 ){
   *_E1 = E1;
   *_E2 = E2;
   *_nu12 = nu12;
   *_G12 = G12;
   *_G23 = G23;
-  *_G13 = G13;  
+  *_G13 = G13;
 }
 
 /*
   Get the lamination stiffness objects
 */
 void TACSOrthotropicPly::getLaminateStiffness( TacsScalar *_Q11,
-                                               TacsScalar *_Q12, 
+                                               TacsScalar *_Q12,
                                                TacsScalar *_Q22,
                                                TacsScalar *_Q44,
                                                TacsScalar *_Q55,
@@ -512,8 +512,8 @@ void TACSOrthotropicPly::getStrength( TacsScalar *_Xt, TacsScalar *_Xc,
 /*
   Get the strength parameters for strain
 */
-void TACSOrthotropicPly::getStrainStrength( TacsScalar *_eXt, TacsScalar *_eXc, 
-                                            TacsScalar *_eYt, TacsScalar *_eYc, 
+void TACSOrthotropicPly::getStrainStrength( TacsScalar *_eXt, TacsScalar *_eXc,
+                                            TacsScalar *_eYt, TacsScalar *_eYc,
                                             TacsScalar *_eS12 ){
   *_eXt = eXt;
   *_eXc = eXc;
@@ -525,7 +525,7 @@ void TACSOrthotropicPly::getStrainStrength( TacsScalar *_eXt, TacsScalar *_eXc,
 /*
   Get the Tsai-Wu failure constants
 */
-void TACSOrthotropicPly::getTsaiWu( TacsScalar *_F1, TacsScalar *_F2, 
+void TACSOrthotropicPly::getTsaiWu( TacsScalar *_F1, TacsScalar *_F2,
                                     TacsScalar *_F11, TacsScalar *_F12,
                                     TacsScalar *_F22,
                                     TacsScalar *_F66 ){
@@ -540,7 +540,7 @@ void TACSOrthotropicPly::getTsaiWu( TacsScalar *_F1, TacsScalar *_F2,
 /*
   Retrieve the stiffness invariants for the laminate
 */
-void TACSOrthotropicPly::getLaminateInvariants( TacsScalar *U1, TacsScalar *U2, 
+void TACSOrthotropicPly::getLaminateInvariants( TacsScalar *U1, TacsScalar *U2,
                                                 TacsScalar *U3, TacsScalar *U4,
                                                 TacsScalar *U5, TacsScalar *U6 ){
   *U1 = 0.125*(3.0*Q11 + 3.0*Q22 + 2.0*Q12 + 4.0*Q66);
@@ -554,7 +554,7 @@ void TACSOrthotropicPly::getLaminateInvariants( TacsScalar *U1, TacsScalar *U2,
 /*!
   Calculate the in-plane stresses in the ply-coordinate axis
 */
-void TACSOrthotropicPly::getPlyStress( TacsScalar stress[], 
+void TACSOrthotropicPly::getPlyStress( TacsScalar stress[],
                                        const TacsScalar strain[] ){
   stress[0] = Q11*strain[0] + Q12*strain[1];
   stress[1] = Q12*strain[0] + Q22*strain[1];
@@ -567,7 +567,7 @@ void TACSOrthotropicPly::getPlyStress( TacsScalar stress[],
 void TACSOrthotropicPly::calculateAbar( TacsScalar Abar[], TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
-  
+
   TacsScalar cos2 = cos1*cos1;
   TacsScalar sin2 = sin1*sin1;
 
@@ -577,7 +577,7 @@ void TACSOrthotropicPly::calculateAbar( TacsScalar Abar[], TacsScalar angle ){
 }
 
 /*
-  Calculate the derivative of the Abar matrix w.r.t. the angle 
+  Calculate the derivative of the Abar matrix w.r.t. the angle
 */
 void TACSOrthotropicPly::calculateAbarAngleSens( TacsScalar Abar[], TacsScalar angle ){
   TacsScalar cos_2 = cos(2.0*angle);
@@ -594,25 +594,25 @@ void TACSOrthotropicPly::calculateAbarAngleSens( TacsScalar Abar[], TacsScalar a
 void TACSOrthotropicPly::calculateQbar( TacsScalar Qbar[], TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
-  
+
   TacsScalar cos2 = cos1*cos1;
   TacsScalar sin2 = sin1*sin1;
-  
+
   TacsScalar cos4 = cos2*cos2;
   TacsScalar sin4 = sin2*sin2;
-    
+
   // First row of the matrix
   Qbar[0] = Q11*cos4 + 2.0*(Q12 + 2.0*Q66 )*sin2*cos2 + Q22*sin4;
   Qbar[1] = C12*sin2*cos2 + Q12*(sin4 + cos4 );
   Qbar[2] = C16*sin1*cos2*cos1 + C26*sin2*sin1*cos1;
-  
-  // Second row of the matrix    
+
+  // Second row of the matrix
   Qbar[3] = Q11*sin4 + 2.0*(Q12 + 2.0*Q66 )*sin2*cos2 + Q22*cos4;
   Qbar[4] = C16*sin2*sin1*cos1 + C26*sin1*cos2*cos1;
-  
+
   // Last row of the matrix
   Qbar[5] = C66*sin2*cos2 + Q66*(sin4 + cos4 );
-} 
+}
 
 /*
   Calculate the sensitivity of the Qbar matrix w.r.t. the angle
@@ -626,29 +626,29 @@ void TACSOrthotropicPly::calculateQbarAngleSens( TacsScalar Qbar[], TacsScalar a
 
   TacsScalar s_cos2 = - 2.0*cos1*sin1;
   TacsScalar s_sin2 =   2.0*sin1*cos1;
-  
+
   TacsScalar s_cos4 = - 4.0*cos2*cos1*sin1;
   TacsScalar s_sin4 =   4.0*sin2*sin1*cos1;
-  
+
   TacsScalar s_sin2cos2 = (sin2*s_cos2 + s_sin2*cos2);
-  
+
   TacsScalar s_sin3cos1 =   3.0*sin2*cos2 - sin2*sin2;
   TacsScalar s_cos3sin1 = - 3.0*cos2*sin2 + cos2*cos2;
-  
+
   // First row of the matrix
   Qbar[0] = Q11*s_cos4 + 2.0*(Q12 + 2.0*Q66)*s_sin2cos2 +  Q22*s_sin4;
-  Qbar[1] = C12*s_sin2cos2 + Q12*(s_sin4 + s_cos4);  
+  Qbar[1] = C12*s_sin2cos2 + Q12*(s_sin4 + s_cos4);
   Qbar[2] = C16*s_cos3sin1 + C26*s_sin3cos1;
-  
-  // Second row of the matrix    
+
+  // Second row of the matrix
   Qbar[3] = Q11*s_sin4 + 2.0*(Q12 + 2.0*Q66)*s_sin2cos2 + Q22*s_cos4;
   Qbar[4] = C16*s_sin3cos1 + C26*s_cos3sin1;
-  
+
   // Last row of the matrix
   Qbar[5] = C66*s_sin2cos2 + Q66*(s_sin4 + s_cos4 );
-} 
+}
 
-void TACSOrthotropicPly::calculateStress( TacsScalar stress[], const TacsScalar strain[], 
+void TACSOrthotropicPly::calculateStress( TacsScalar stress[], const TacsScalar strain[],
                                           TacsScalar angle ){
   TacsScalar strn[3], strs[3];
   transformStrainGlobal2Ply(strn, strain, angle);
@@ -660,7 +660,7 @@ void TACSOrthotropicPly::calculateStress( TacsScalar stress[], const TacsScalar 
   Calculate the failure criteria
 
   fail (the return value) is such that
-  
+
   fail <  1.0 ==> Okay
   fail >= 1.0 ==> Material failure
 
@@ -668,9 +668,9 @@ void TACSOrthotropicPly::calculateStress( TacsScalar stress[], const TacsScalar 
 
   1. The Tsai-Wu failure criterion:
 
-  F(s) = 
+  F(s) =
   F1*s[0] + F2*s[1]
-  F11*s[0]**2 + F22*s[1]**2 + 
+  F11*s[0]**2 + F22*s[1]**2 +
   2.0*F12*s[0]*s[1] + F66*s[2]**2 <= 1.0
 
   2. The maximum strain failure criteria:
@@ -681,17 +681,17 @@ void TACSOrthotropicPly::calculateStress( TacsScalar stress[], const TacsScalar 
   for component i. This ensures that the ratio of the maximum strain
   over the strain at failure is below 1.
 */
-TacsScalar TACSOrthotropicPly::failure( TacsScalar angle, 
+TacsScalar TACSOrthotropicPly::failure( TacsScalar angle,
                                         const TacsScalar strain[] ){
   TacsScalar e[3]; // Ply strain
   transformStrainGlobal2Ply(e, strain, angle);
-  
+
   TacsScalar fail = 0.0;
   if (useTsaiWuCriterion){
     TacsScalar s[3]; // Ply stress
     getPlyStress(s, e);
-    
-    fail = (F11*s[0]*s[0] + F22*s[1]*s[1] + 2.0*F12*s[0]*s[1] + 
+
+    fail = (F11*s[0]*s[0] + F22*s[1]*s[1] + 2.0*F12*s[0]*s[1] +
             F66*s[2]*s[2] + F1*s[0] + F2*s[1]);
   }
   else {
@@ -703,8 +703,8 @@ TacsScalar TACSOrthotropicPly::failure( TacsScalar angle,
 
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
-      if (TacsRealPart(f[k]) > TacsRealPart(max)){ 
-        max = f[k]; 
+      if (TacsRealPart(f[k]) > TacsRealPart(max)){
+        max = f[k];
       }
     }
 
@@ -718,8 +718,8 @@ TacsScalar TACSOrthotropicPly::failure( TacsScalar angle,
   return fail;
 }
 
-TacsScalar TACSOrthotropicPly::failureStrainSens( TacsScalar sens[], 
-                                                  TacsScalar angle, 
+TacsScalar TACSOrthotropicPly::failureStrainSens( TacsScalar sens[],
+                                                  TacsScalar angle,
                                                   const TacsScalar strain[] ){
   TacsScalar e[3]; // Ply strain
   transformStrainGlobal2Ply(e, strain, angle);
@@ -728,17 +728,17 @@ TacsScalar TACSOrthotropicPly::failureStrainSens( TacsScalar sens[],
   if (useTsaiWuCriterion){
     TacsScalar s[3]; // Ply stress
     getPlyStress(s, e);
-    
-    fail = (F11*s[0]*s[0] + F22*s[1]*s[1] + 2.0*F12*s[0]*s[1] + 
+
+    fail = (F11*s[0]*s[0] + F22*s[1]*s[1] + 2.0*F12*s[0]*s[1] +
             F66*s[2]*s[2] + F1*s[0] + F2*s[1]);
-    
+
     sens[0] = F1 + 2.0*F11*s[0] + 2.0*F12*s[1];
     sens[1] = F2 + 2.0*F22*s[1] + 2.0*F12*s[0];
     sens[2] = 2.0*F66*s[2];
 
     TacsScalar sSens[3];
     getPlyStress(sSens, sens);
-    
+
     transformStressPly2Global(sens, sSens, angle);
   }
   else {
@@ -751,7 +751,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens( TacsScalar sens[],
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
       if (TacsRealPart(f[k]) > TacsRealPart(max)){
-        max = f[k]; 
+        max = f[k];
       }
     }
 
@@ -774,10 +774,10 @@ TacsScalar TACSOrthotropicPly::failureStrainSens( TacsScalar sens[],
   return fail;
 }
 
-TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens, 
-                                                 TacsScalar angle, 
+TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens,
+                                                 TacsScalar angle,
                                                  const TacsScalar strain[] ){
- 
+
   TacsScalar e[3], se[3]; // The ply strain
   transformStrainGlobal2Ply(e, strain, angle);
 
@@ -785,20 +785,20 @@ TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens,
   if (useTsaiWuCriterion){
     TacsScalar s[3]; // The ply stress
     getPlyStress(s, e);
-    
-    fail = (F11*s[0]*s[0] + F22*s[1]*s[1] + 2.0*F12*s[0]*s[1] + 
+
+    fail = (F11*s[0]*s[0] + F22*s[1]*s[1] + 2.0*F12*s[0]*s[1] +
             F66*s[2]*s[2] + F1*s[0] + F2*s[1]);
-    
+
     // Compute the sensitivity of the transformation
     transformStrainGlobal2PlyAngleSens(se, strain, angle);
-    
+
     // Compute the sensitivity of the stress
     TacsScalar ss[3];
     getPlyStress(ss, se);
-    
-    *failSens = (2.0*(F11*s[0]*ss[0] + F22*s[1]*ss[1] + 
+
+    *failSens = (2.0*(F11*s[0]*ss[0] + F22*s[1]*ss[1] +
                       F12*(ss[0]*s[1] + s[0]*ss[1]) +
-                      F66*s[2]*ss[2]) + 
+                      F66*s[2]*ss[2]) +
                  F1*ss[0] + F2*ss[1]);
   }
   else {
@@ -817,7 +817,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens,
     TacsScalar max = f[0];
     for ( int k = 1; k < 6; k++ ){
       if (TacsRealPart(f[k]) > TacsRealPart(max)){
-        max = f[k]; 
+        max = f[k];
       }
     }
 
@@ -832,7 +832,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens,
     fail = max + log(ksSum)/ksWeight;
 
     *failSens = fSens/ksSum;
-  }  
+  }
 
   return fail;
 }
@@ -847,7 +847,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens,
 
   returns:
   the multiple of lstrain at which failure occurs
-  
+
   input:
   angle = [radians] the orientation angle of the lamina
   cstrain = the constant in-plane strain components
@@ -856,29 +856,29 @@ TacsScalar TACSOrthotropicPly::failureAngleSens( TacsScalar * failSens,
   This works by computing F(cstrain, P*lstrain) = 0 for some P. This
   turns out to be a quadratic in P.
 */
-TacsScalar TACSOrthotropicPly::calculateFailLoad( TacsScalar angle, 
-                                                  const TacsScalar cstrain[], 
+TacsScalar TACSOrthotropicPly::calculateFailLoad( TacsScalar angle,
+                                                  const TacsScalar cstrain[],
                                                   const TacsScalar lstrain[] ){
 
   // The constant and linearly varying components of the strain
-  TacsScalar cstn[3], lstn[3]; 
+  TacsScalar cstn[3], lstn[3];
   transformStrainGlobal2Ply(cstn, cstrain, angle);
   transformStrainGlobal2Ply(lstn, lstrain, angle);
-  
-  TacsScalar cstr[3], lstr[3]; 
+
+  TacsScalar cstr[3], lstr[3];
   getPlyStress(cstr, cstn);
   getPlyStress(lstr, lstn);
 
-  TacsScalar c = (F1*cstr[0] + F2*cstr[1] + 
-                  F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] + 
-                  2.0*F12*cstr[0]*cstr[1] + 
+  TacsScalar c = (F1*cstr[0] + F2*cstr[1] +
+                  F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] +
+                  2.0*F12*cstr[0]*cstr[1] +
                   F66*cstr[2]*cstr[2]) - 1.0;
-  TacsScalar b = (F1*lstr[0] + F2*lstr[1] + 
-                  2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] + 
+  TacsScalar b = (F1*lstr[0] + F2*lstr[1] +
+                  2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] +
                   2.0*F12*(cstr[0]*lstr[1] + cstr[1]*lstr[0]) +
                   2.0*F66*cstr[2]*lstr[2]);
-  TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] + 
-                  2.0*F12*lstr[0]*lstr[1] + 
+  TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] +
+                  2.0*F12*lstr[0]*lstr[1] +
                   F66*lstr[2]*lstr[2]);
   TacsScalar pos = 0.0;
 
@@ -895,7 +895,7 @@ TacsScalar TACSOrthotropicPly::calculateFailLoad( TacsScalar angle,
     }
     else {
       discrim = sqrt(discrim);
-      
+
       if (TacsRealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
       }
@@ -904,7 +904,7 @@ TacsScalar TACSOrthotropicPly::calculateFailLoad( TacsScalar angle,
       }
     }
   }
-  
+
   return pos;
 }
 
@@ -916,31 +916,31 @@ TacsScalar TACSOrthotropicPly::calculateFailLoad( TacsScalar angle,
   the sensitivity of the failure load w.r.t. to the constant and linear
   strain components.
 */
-TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens( TacsScalar cSens[], 
-                                                            TacsScalar lSens[], 
-                                                            TacsScalar angle, 
-                                                            const TacsScalar cstrain[], 
+TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens( TacsScalar cSens[],
+                                                            TacsScalar lSens[],
+                                                            TacsScalar angle,
+                                                            const TacsScalar cstrain[],
                                                             const TacsScalar lstrain[] ){
   // The constant and linearly varying components of the strain
-  TacsScalar cstn[3], lstn[3]; 
+  TacsScalar cstn[3], lstn[3];
   transformStrainGlobal2Ply(cstn, cstrain, angle);
   transformStrainGlobal2Ply(lstn, lstrain, angle);
 
   // The constant and linearly varying components of stress - in the ply axis
-  TacsScalar cstr[3], lstr[3]; 
+  TacsScalar cstr[3], lstr[3];
   getPlyStress(cstr, cstn);
   getPlyStress(lstr, lstn);
- 
-  TacsScalar c = (F1*cstr[0] + F2*cstr[1] + 
-                  F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] + 
-                  2.0*F12*cstr[0]*cstr[1] + 
+
+  TacsScalar c = (F1*cstr[0] + F2*cstr[1] +
+                  F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] +
+                  2.0*F12*cstr[0]*cstr[1] +
                   F66*cstr[2]*cstr[2]) - 1.0;
-  TacsScalar b = (F1*lstr[0] + F2*lstr[1] + 
-                  2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] + 
+  TacsScalar b = (F1*lstr[0] + F2*lstr[1] +
+                  2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] +
                   2.0*F12*(cstr[0]*lstr[1] + cstr[1]*lstr[0]) +
-                  2.0*F66*cstr[2]*lstr[2]);  
-  TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] + 
-                  2.0*F12*lstr[0]*lstr[1] + 
+                  2.0*F66*cstr[2]*lstr[2]);
+  TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] +
+                  2.0*F12*lstr[0]*lstr[1] +
                   F66*lstr[2]*lstr[2]);
 
   TacsScalar pos = 0.0;
@@ -958,7 +958,7 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens( TacsScalar cSens[],
       pos = 0.0;
     }
     else {
-      discrim = sqrt(discrim);      
+      discrim = sqrt(discrim);
 
       if (TacsRealPart(b) >= 0.0){
         pos = 2.0*c/(b + discrim);
@@ -972,9 +972,9 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens( TacsScalar cSens[],
       pc = - 1.0/discrim;
     }
   }
-  
-  // Now, multiply the derivative of dp/da, dp/db, dp/dc by 
-  // da/dcstr, db/dcstr, 
+
+  // Now, multiply the derivative of dp/da, dp/db, dp/dc by
+  // da/dcstr, db/dcstr,
 
   cSens[0] = (pc*(F1 + 2.0*F11*cstr[0] + 2.0*F12*cstr[1]) +
               pb*(2.0*F11*lstr[0] + 2.0*F12*lstr[1]));
@@ -987,9 +987,9 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens( TacsScalar cSens[],
               pa*(2.0*F11*lstr[0] + 2.0*F12*lstr[1]));
   lSens[1] = (pb*(F2 + 2.0*F12*cstr[1] + 2.0*F22*cstr[1]) +
               pa*(2.0*F12*lstr[0] + 2.0*F22*lstr[1]));
-  lSens[2] = (pb*(2.0*F66*cstr[2]) + 
+  lSens[2] = (pb*(2.0*F66*cstr[2]) +
               pa*(2.0*F66*lstr[2]));
-  
+
   TacsScalar cstrSens[3], lstrSens[3];
   getPlyStress(cstrSens, cSens);
   getPlyStress(lstrSens, lSens);
@@ -1005,16 +1005,16 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens( TacsScalar cSens[],
   angle. Here, the arguments are the same. The return value posSens is
   the sensitivity of the failure load w.r.t. the ply angle.
 */
-TacsScalar TACSOrthotropicPly::calculateFailLoadAngleSens( TacsScalar * posSens, 
-                                                           TacsScalar angle, 
-                                                           const TacsScalar cstrain[], 
+TacsScalar TACSOrthotropicPly::calculateFailLoadAngleSens( TacsScalar * posSens,
+                                                           TacsScalar angle,
+                                                           const TacsScalar cstrain[],
                                                            const TacsScalar lstrain[] ){
- 
+
   // The constant and linearly varying components of the strain
-  TacsScalar cstn[3], lstn[3]; 
+  TacsScalar cstn[3], lstn[3];
   transformStrainGlobal2Ply(cstn, cstrain, angle);
   transformStrainGlobal2Ply(lstn, lstrain, angle);
-  
+
   // The constant and linearly varying components of stress - in the ply axis
   TacsScalar cstr[3], lstr[3];
   getPlyStress(cstr, cstn);
@@ -1029,16 +1029,16 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadAngleSens( TacsScalar * posSens,
   getPlyStress(scstr, cstn);
   getPlyStress(slstr, lstn);
 
-  TacsScalar c = (F1*cstr[0] + F2*cstr[1] + 
-                  F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] + 
-                  2.0*F12*cstr[0]*cstr[1] + 
+  TacsScalar c = (F1*cstr[0] + F2*cstr[1] +
+                  F11*cstr[0]*cstr[0] + F22*cstr[1]*cstr[1] +
+                  2.0*F12*cstr[0]*cstr[1] +
                   F66*cstr[2]*cstr[2]) - 1.0;
-  TacsScalar b = (F1*lstr[0] + F2*lstr[1] + 
-                  2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] + 
+  TacsScalar b = (F1*lstr[0] + F2*lstr[1] +
+                  2.0*F11*cstr[0]*lstr[0] + 2.0*F22*cstr[1]*lstr[1] +
                   2.0*F12*(cstr[0]*lstr[1] + cstr[1]*lstr[0]) +
                   2.0*F66*cstr[2]*lstr[2]);
-  TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] + 
-                  2.0*F12*lstr[0]*lstr[1] + 
+  TacsScalar a = (F11*lstr[0]*lstr[0] + F22*lstr[1]*lstr[1] +
+                  2.0*F12*lstr[0]*lstr[1] +
                   F66*lstr[2]*lstr[2]);
 
   *posSens = 0.0;
@@ -1072,17 +1072,17 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadAngleSens( TacsScalar * posSens,
     }
   }
 
-  TacsScalar sc = (F1*scstr[0] + F2*scstr[1] + 
-                   2.0*F11*cstr[0]*scstr[0] + 2.0*F22*cstr[1]*scstr[1] + 
+  TacsScalar sc = (F1*scstr[0] + F2*scstr[1] +
+                   2.0*F11*cstr[0]*scstr[0] + 2.0*F22*cstr[1]*scstr[1] +
                    2.0*F12*(cstr[0]*scstr[1] + scstr[0]*cstr[1] ) +
                    2.0*F66*cstr[2]*scstr[2]);
-  TacsScalar sb = (F1*slstr[0] + F2*slstr[1] + 
-                   2.0*F11*(cstr[0]*slstr[0] + scstr[0]*lstr[0]) + 
+  TacsScalar sb = (F1*slstr[0] + F2*slstr[1] +
+                   2.0*F11*(cstr[0]*slstr[0] + scstr[0]*lstr[0]) +
                    2.0*F22*(cstr[1]*slstr[1] + scstr[1]*lstr[1]) +
                    2.0*F12*(cstr[0]*slstr[1] + scstr[1]*lstr[0] +
                             scstr[0]*lstr[1] + cstr[1]*slstr[0]) +
                    2.0*F66*(cstr[2]*slstr[2] + scstr[2]*lstr[2]));
-  TacsScalar sa = (2.0*F11*lstr[0]*slstr[0] + 2.0*F22*lstr[1]*slstr[1] + 
+  TacsScalar sa = (2.0*F11*lstr[0]*slstr[0] + 2.0*F22*lstr[1]*slstr[1] +
                    2.0*F12*(lstr[0]*slstr[1] + slstr[0]*lstr[1]) +
                    2.0*F66*lstr[2]*slstr[2]);
 
@@ -1090,16 +1090,16 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadAngleSens( TacsScalar * posSens,
   return pos;
 }
 
-/*! 
+/*!
   The following function tests the accuracy of the implementation
   of the sensitivities for the failure calculation and the sensitivity
-  of the transformation equations 
+  of the transformation equations
 */
 void TACSOrthotropicPly::testFailSens( double dh, TacsScalar angle ){
   // Select various strain components ...
   TacsScalar strain[3];
 
-  printf("\nTesting failure sensitivity for angle = %5.2f \n", 
+  printf("\nTesting failure sensitivity for angle = %5.2f \n",
          TacsRealPart(angle));
 
   for ( int k = 0; k < 3; k++ ){
@@ -1125,11 +1125,11 @@ void TACSOrthotropicPly::testFailSens( double dh, TacsScalar angle ){
       strain[j] = val;
 
       TacsScalar fd = 0.5*(p1 - p2)/dh;
-      printf("sens[%d] FD: %15.8e An: %15.8e Error: %10.3e \n", 
-             j, TacsRealPart(fd), TacsRealPart(sens[j]), 
+      printf("sens[%d] FD: %15.8e An: %15.8e Error: %10.3e \n",
+             j, TacsRealPart(fd), TacsRealPart(sens[j]),
              TacsRealPart((fd - sens[j])/sens[j]));
     }
-    
+
     // Calculate the sensitivity w.r.t. the angle
     TacsScalar paSens;
     failureAngleSens(&paSens, angle, strain);
@@ -1137,7 +1137,7 @@ void TACSOrthotropicPly::testFailSens( double dh, TacsScalar angle ){
     TacsScalar p2 = failure(angle-dh, strain);
     TacsScalar fd = 0.5*(p1 - p2)/dh;
 
-    printf("Angle sensitivity FD: %15.8e An: %15.8e Error: %10.3e \n", 
+    printf("Angle sensitivity FD: %15.8e An: %15.8e Error: %10.3e \n",
            TacsRealPart(fd), TacsRealPart(paSens), TacsRealPart((fd - paSens)/paSens));
   }
 }
@@ -1180,9 +1180,9 @@ void TACSOrthotropicPly::printProperties(){
 }
 
 // First, the stress transformations
-// Transform stress from the global to the local frame  
-void TACSOrthotropicPly::transformStressGlobal2Ply( TacsScalar plyStress[], 
-                                                    const TacsScalar global[], 
+// Transform stress from the global to the local frame
+void TACSOrthotropicPly::transformStressGlobal2Ply( TacsScalar plyStress[],
+                                                    const TacsScalar global[],
                                                     TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
@@ -1192,13 +1192,13 @@ void TACSOrthotropicPly::transformStressGlobal2Ply( TacsScalar plyStress[],
 
   plyStress[0] = cos2*global[0] + sin2*global[1] + 2.0*sin1*cos1*global[2];
   plyStress[1] = sin2*global[0] + cos2*global[1] - 2.0*sin1*cos1*global[2];
-  plyStress[2] = sin1*cos1*(- global[0] + global[1]) + 
+  plyStress[2] = sin1*cos1*(- global[0] + global[1]) +
     (cos2 - sin2)*global[2];
 }
 
 // Transform stress from the ply frame to the global frame
-void TACSOrthotropicPly::transformStressPly2Global( TacsScalar global[], 
-                                                    const TacsScalar plyStress[], 
+void TACSOrthotropicPly::transformStressPly2Global( TacsScalar global[],
+                                                    const TacsScalar plyStress[],
                                                     TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
@@ -1211,15 +1211,15 @@ void TACSOrthotropicPly::transformStressPly2Global( TacsScalar global[],
   global[2] = sin1*cos1*(plyStress[0] - plyStress[1]) + (cos2 - sin2)*plyStress[2];
 }
 
-// The sensitivity of the transformation of 
-void TACSOrthotropicPly::transformStressGlobal2PlyAngleSens( TacsScalar plyStress[], 
-                                                             const TacsScalar global[], 
+// The sensitivity of the transformation of
+void TACSOrthotropicPly::transformStressGlobal2PlyAngleSens( TacsScalar plyStress[],
+                                                             const TacsScalar global[],
                                                              TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
   TacsScalar s_cos2 = - 2.0*cos1*sin1; // sensitivity of cos**2
-  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2  
+  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2
   TacsScalar s_sincos = cos1*cos1 - sin1*sin1; // sensitivity of cos*sin
 
   plyStress[0] = s_cos2*global[0] + s_sin2*global[1] + 2.0*s_sincos*global[2];
@@ -1228,31 +1228,31 @@ void TACSOrthotropicPly::transformStressGlobal2PlyAngleSens( TacsScalar plyStres
 }
 
 // Transform stress from the ply frame to the global frame
-void TACSOrthotropicPly::transformStressPly2GlobalAngleSens( TacsScalar global[], 
-                                                             const TacsScalar plyStress[], 
+void TACSOrthotropicPly::transformStressPly2GlobalAngleSens( TacsScalar global[],
+                                                             const TacsScalar plyStress[],
                                                              TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
   TacsScalar s_cos2 = - 2.0*cos1*sin1; // sensitivity of cos**2
-  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2  
+  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2
   TacsScalar s_sincos = cos1*cos1 - sin1*sin1; // sensitivity of cos*sin
 
   global[0] = s_cos2*plyStress[0] + s_sin2*plyStress[1] - 2.0*s_sincos*plyStress[2];
   global[1] = s_sin2*plyStress[0] + s_cos2*plyStress[1] + 2.0*s_sincos*plyStress[2];
-  global[2] = s_sincos*(plyStress[0] - plyStress[1]) + 
+  global[2] = s_sincos*(plyStress[0] - plyStress[1]) +
     (s_cos2 - s_sin2)*plyStress[2];
 }
 
 
 // Next, the strain transformations
 // Transform strain from the global to the local frame
-void TACSOrthotropicPly::transformStrainGlobal2Ply( TacsScalar plyStrain[], 
-                                                    const TacsScalar global[], 
+void TACSOrthotropicPly::transformStrainGlobal2Ply( TacsScalar plyStrain[],
+                                                    const TacsScalar global[],
                                                     TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
-  
+
   TacsScalar cos2 = cos1*cos1;
   TacsScalar sin2 = sin1*sin1;
 
@@ -1262,53 +1262,53 @@ void TACSOrthotropicPly::transformStrainGlobal2Ply( TacsScalar plyStrain[],
 }
 
 // Transform stress from the ply frame to the global frame
-void TACSOrthotropicPly::transformStrainPly2Global( TacsScalar global[], 
-                                                    const TacsScalar plyStrain[], 
+void TACSOrthotropicPly::transformStrainPly2Global( TacsScalar global[],
+                                                    const TacsScalar plyStrain[],
                                                     TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
   TacsScalar cos2 = cos1*cos1;
   TacsScalar sin2 = sin1*sin1;
-    
+
   global[0] = cos2*plyStrain[0] + sin2*plyStrain[1] - sin1*cos1*plyStrain[2];
   global[1] = sin2*plyStrain[0] + cos2*plyStrain[1] + sin1*cos1*plyStrain[2];
-  global[2] = 2.0*sin1*cos1*(plyStrain[0] - plyStrain[1]) + 
+  global[2] = 2.0*sin1*cos1*(plyStrain[0] - plyStrain[1]) +
     (cos2 - sin2)*plyStrain[2];
 }
 
-// The sensitivity of the transformation to the 
-void TACSOrthotropicPly::transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[], 
-                                                             const TacsScalar global[], 
+// The sensitivity of the transformation to the
+void TACSOrthotropicPly::transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[],
+                                                             const TacsScalar global[],
                                                              TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
   TacsScalar s_cos2 = - 2.0*cos1*sin1; // sensitivity of cos**2
-  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2  
+  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2
   TacsScalar s_sincos = cos1*cos1 - sin1*sin1; // sensitivity of cos*sin
 
   plyStrain[0] = s_cos2*global[0] + s_sin2*global[1] + s_sincos*global[2];
   plyStrain[1] = s_sin2*global[0] + s_cos2*global[1] - s_sincos*global[2];
-  plyStrain[2] = 2.0*s_sincos*(- global[0] + global[1]) + 
+  plyStrain[2] = 2.0*s_sincos*(- global[0] + global[1]) +
     (s_cos2 - s_sin2)*global[2];
 }
 
 // Transform stress from the ply frame to the global frame
-void TACSOrthotropicPly::transformStrainPly2GlobalAngleSens( TacsScalar global[], 
+void TACSOrthotropicPly::transformStrainPly2GlobalAngleSens( TacsScalar global[],
                                                              const TacsScalar plyStrain[],
                                                              TacsScalar angle ){
   TacsScalar cos1 = cos(angle);
   TacsScalar sin1 = sin(angle);
 
   TacsScalar s_cos2 = - 2.0*cos1*sin1; // sensitivity of cos**2
-  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2  
+  TacsScalar s_sin2 =   2.0*sin1*cos1; // sensitivity of sin**2
   TacsScalar s_sincos = cos1*cos1 - sin1*sin1; // sensitivity of cos*sin
 
   global[0] = s_cos2*plyStrain[0] + s_sin2*plyStrain[1] - s_sincos*plyStrain[2];
   global[1] = s_sin2*plyStrain[0] + s_cos2*plyStrain[1] + s_sincos*plyStrain[2];
-  global[2] = 2.0*s_sincos*(plyStrain[0] - plyStrain[1]) + 
+  global[2] = 2.0*s_sincos*(plyStrain[0] - plyStrain[1]) +
     (s_cos2 - s_sin2)*plyStrain[2];
 }
 
-const char* TACSOrthotropicPly::getObjectName(){ return name; }  
+const char* TACSOrthotropicPly::getObjectName(){ return name; }

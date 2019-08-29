@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_BVEC_DISTRIBUTE_H
@@ -79,7 +79,7 @@ class TACSBVecIndices : public TACSObject {
   int isSorted();
 
   // Set up/use an arg-sorted array to find the reverse
-  // map to find k such that indices[k] = var 
+  // map to find k such that indices[k] = var
   // --------------------------------------------------
   void setUpInverse();
   int findIndex( int index );
@@ -92,7 +92,7 @@ class TACSBVecIndices : public TACSObject {
 };
 
 /*!
-  Distribute vector components to other processors and collect 
+  Distribute vector components to other processors and collect
   contributions from other processors.
 
   This class is used to pass external interface variables between
@@ -141,7 +141,7 @@ class TACSBVecDistribute : public TACSObject {
   // Add or insert data back into the vector
   // ---------------------------------------
   void beginReverse( TACSBVecDistCtx *ctx,
-                     TacsScalar *local, TacsScalar *global, 
+                     TacsScalar *local, TacsScalar *global,
                      TACSBVecOperation op=TACS_ADD_VALUES );
   void endReverse( TACSBVecDistCtx *ctx,
                    TacsScalar *local, TacsScalar *global,
@@ -154,14 +154,14 @@ class TACSBVecDistribute : public TACSObject {
   // Block-specific implementation pointers
   // --------------------------------------
   void initImpl( int bsize );
-  void (*bgetvars)( int bsize, int nvars, const int *vars, 
+  void (*bgetvars)( int bsize, int nvars, const int *vars,
                     int lower,
-		    TacsScalar *x, TacsScalar *y, 
-		    TACSBVecOperation op );
-  void (*bsetvars)( int bsize, int nvars, const int *vars, 
+                    TacsScalar *x, TacsScalar *y,
+                    TACSBVecOperation op );
+  void (*bsetvars)( int bsize, int nvars, const int *vars,
                     int lower,
-		    TacsScalar *x, TacsScalar *y, 
-		    TACSBVecOperation op );
+                    TacsScalar *x, TacsScalar *y,
+                    TACSBVecOperation op );
 
   // The communicator and the MPI data
   MPI_Comm comm;
@@ -214,7 +214,7 @@ class TACSBVecDistCtx : public TACSObject {
   ~TACSBVecDistCtx();
 
  private:
-  TACSBVecDistCtx( TACSBVecDistribute *_me, 
+  TACSBVecDistCtx( TACSBVecDistribute *_me,
                    int _bsize );
 
   // The block size for this context
@@ -222,7 +222,7 @@ class TACSBVecDistCtx : public TACSObject {
 
   // Pointer to ensure the context is used correctly
   TACSBVecDistribute *me;
-  
+
   // The external data sorted
   TacsScalar *ext_sorted_vals;
 

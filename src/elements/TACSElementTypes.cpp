@@ -544,6 +544,6 @@ void TacsConvertVisLayoutToBasic( ElementLayout ltype,
   else if (ltype == TACS_PENTA_ELEMENT ||
            ltype == TACS_PETTA_QUADRATIC_ELEMENT ||
            ltype == TACS_PENTA_CUBIC_ELEMENT){
-    
+
   }
 }

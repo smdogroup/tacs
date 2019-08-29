@@ -54,14 +54,14 @@ double TACSLinearTetrahedralBasis::getFaceQuadraturePoint( int face,
 
 void TACSLinearTetrahedralBasis::computeBasis( const double pt[],
                                                double N[] ){
-  
+
 
 }
 
 void TACSLinearTetrahedralBasis::computeBasisGradient( const double pt[],
                                                        double N[],
                                                        double Nxi[] ){
-  
+
 
 }
 
@@ -106,14 +106,14 @@ double TACSQuadraticTetrahedralBasis::getFaceQuadraturePoint( int face,
 
 void TACSQuadraticTetrahedralBasis::computeBasis( const double pt[],
                                                   double N[] ){
-  
+
 
 }
 
 void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
                                                           double N[],
                                                           double Nxi[] ){
-  
+
 
 }
 
@@ -158,13 +158,13 @@ double TACSCubicTetrahedralBasis::getFaceQuadraturePoint( int face,
 
 void TACSCubicTetrahedralBasis::computeBasis( const double pt[],
                                               double N[] ){
-  
+
 
 }
 
 void TACSCubicTetrahedralBasis::computeBasisGradient( const double pt[],
                                                       double N[],
                                                       double Nxi[] ){
-  
+
 
 }

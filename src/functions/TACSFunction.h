@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_FUNCTION_H
@@ -26,7 +26,7 @@ class TACSAssembler;
 
 /*
   Base class for the TACSFunctionCtx. Each context is function-specific
-  and is designed to store information required to 
+  and is designed to store information required to
 
   It's implementation is designed to be opaque to the user, but its
   data is required when evaluating the function. It is used to store
@@ -88,7 +88,7 @@ class TACSFunctionCtx {
   from a previous function call. As a reult, it may be necessary to evaluate
   the function before evaluating the derivatives.
 
-  Note: You cannot mix calling sequences. That is you cannot call 
+  Note: You cannot mix calling sequences. That is you cannot call
   elementWiseDVSens() before finishing the ENTIRE evaluation sequence in
   2. Otherwise the work arrays will not contain the correct data.
 */
@@ -98,7 +98,7 @@ class TACSFunction : public TACSObject {
   enum StageType { SINGLE_STAGE, TWO_STAGE };
   enum EvaluationType { INITIALIZE, INTEGRATE };
 
-  TACSFunction( TACSAssembler *_tacs, 
+  TACSFunction( TACSAssembler *_tacs,
                 DomainType _funcDomain=ENTIRE_DOMAIN,
                 StageType _funcStages=SINGLE_STAGE,
                 int _maxElems=0 );
@@ -144,7 +144,7 @@ class TACSFunction : public TACSObject {
                                 const TacsScalar Xpts[], const TacsScalar vars[],
                                 const TacsScalar dvars[], const TacsScalar ddvars[],
                                 TACSFunctionCtx *ctx ){}
-  virtual void finalThread( double tcoef, 
+  virtual void finalThread( double tcoef,
                             EvaluationType ftype,
                             TACSFunctionCtx *ctx ){}
 
@@ -154,8 +154,8 @@ class TACSFunction : public TACSObject {
 
   // State variable sensitivities
   // ----------------------------
-  virtual void getElementSVSens( double alpha, double beta, double gamma, 
-                                 TacsScalar *elemSVSens, 
+  virtual void getElementSVSens( double alpha, double beta, double gamma,
+                                 TacsScalar *elemSVSens,
                                  TACSElement *element, int elemNum,
                                  const TacsScalar Xpts[], const TacsScalar vars[],
                                  const TacsScalar dvars[], const TacsScalar ddvars[],
@@ -185,10 +185,10 @@ class TACSFunction : public TACSObject {
 
  protected:
   TACSAssembler *tacs;
-  
+
  private:
   // Store the function domain type
-  DomainType funcDomain; 
+  DomainType funcDomain;
   StageType funcStageType;
 
   // Store the element domain information

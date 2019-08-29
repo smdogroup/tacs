@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_SERIAL_BCSC_MATRIX_H
@@ -24,14 +24,14 @@
 
 class SerialBCSCMat : public TACSMat {
  public:
-  SerialBCSCMat( TACSVarMap *_rmap, int bsize, 
+  SerialBCSCMat( TACSVarMap *_rmap, int bsize,
                  int num_block_rows, int num_block_cols,
                  const int *block_rowp, const int *block_cols );
   ~SerialBCSCMat();
 
   // Set entries into the matrix
   void zeroEntries();
-  void addValues( int nrow, const int *row, 
+  void addValues( int nrow, const int *row,
                   int ncol, const int *col,
                   int nv, int mv, const TacsScalar *values );
   void addWeightValues( int nvars, const int *varp, const int *vars,

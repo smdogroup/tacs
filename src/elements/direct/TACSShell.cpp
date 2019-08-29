@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSShell.h"
@@ -35,15 +35,15 @@ TACSShell::~TACSShell(){
 */
 const char * TACSShell::elemName = "TACSShell";
 
-const char * TACSShell::dispNames[] = { "u0", "v0", "w0", 
+const char * TACSShell::dispNames[] = { "u0", "v0", "w0",
                                         "rotx", "roty", "rotz" };
 
-const char * TACSShell::stressNames[] = { "sx0", "sy0", "sxy0", 
-                                          "sx1", "sy1", "sxy1", 
+const char * TACSShell::stressNames[] = { "sx0", "sy0", "sxy0",
+                                          "sx1", "sy1", "sxy1",
                                           "syz0", "sxz0" };
- 
-const char * TACSShell::strainNames[] = { "ex0", "ey0", "exy0", 
-                                          "ex1", "ey1", "exy1", 
+
+const char * TACSShell::strainNames[] = { "ex0", "ey0", "exy0",
+                                          "ex1", "ey1", "exy1",
                                           "eyz0", "exz0" };
 
 const char * TACSShell::extraNames[] = { "lambda", "buckling",
@@ -53,7 +53,7 @@ const char * TACSShell::extraNames[] = { "lambda", "buckling",
   Define the functions that return the element names, displacements,
   stresses, strains and extra variables.
 */
-const char * TACSShell::elementName(){ 
+const char * TACSShell::elementName(){
   return elemName;
 }
 
@@ -64,7 +64,7 @@ const char * TACSShell::displacementName( int i ){
   return NULL;
 }
 
-const char * TACSShell::stressName( int i ){ 
+const char * TACSShell::stressName( int i ){
   if (i >= 0 && i < NUM_STRESSES){
     return stressNames[i];
   }
@@ -100,7 +100,7 @@ ElementType TACSShell::getElementType(){ return TACS_SHELL; }
 /*
   Set the values of the design variables
 */
-void TACSShell::setDesignVars( const TacsScalar dvs[], int numDVs ){ 
+void TACSShell::setDesignVars( const TacsScalar dvs[], int numDVs ){
   stiff->setDesignVars(dvs, numDVs);
 }
 
@@ -112,10 +112,10 @@ void TACSShell::getDesignVars( TacsScalar dvs[], int numDVs ){
 }
 
 /*
-  Populate the arrays lowerBound[] and upperBound[] 
+  Populate the arrays lowerBound[] and upperBound[]
 */
-void TACSShell::getDesignVarRange( TacsScalar lowerBound[], 
-                                   TacsScalar upperBound[], 
+void TACSShell::getDesignVarRange( TacsScalar lowerBound[],
+                                   TacsScalar upperBound[],
                                    int numDVs ){
   stiff->getDesignVarRange(lowerBound, upperBound, numDVs);
 }

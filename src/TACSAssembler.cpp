@@ -235,7 +235,7 @@ MPI_Comm TACSAssembler::getMPIComm(){
 
 /**
    Get the number of degrees of freedom per node
-   
+
    @return the number of degrees of freedom per node
 */
 int TACSAssembler::getVarsPerNode(){
@@ -4387,7 +4387,7 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
     phi->getValues(len, nodes, elemPhi);
 
     // Add the contribution to the design variable vector
-    elements[i]->addMatDVSensInnerProduct(i, matType, scale, 
+    elements[i]->addMatDVSensInnerProduct(i, matType, scale,
                                           elemPsi, elemPhi, elemXpts,
                                           elemVars, numDVs, fdvSens);
   }
@@ -4976,7 +4976,7 @@ void TACSAssembler::getElementOutputData( ElementType elem_type,
     dvarsVec->getValues(len, nodes, dvars);
     ddvarsVec->getValues(len, nodes, ddvars);
 
-    elements[i]->getOutputData(i, elem_type, write_flag, 
+    elements[i]->getOutputData(i, elem_type, write_flag,
                                elemXpts, vars, dvars, ddvars,
                                nvals, &data[offset]);
 
@@ -5036,7 +5036,7 @@ TACSBVec* TACSAssembler::getNodeAverageOutputData( ElementType elem_type,
     ddvarsVec->getValues(len, nodes, ddvars);
 
     // Get the element output data
-    elements[i]->getOutputData(i, elem_type, write_flag, 
+    elements[i]->getOutputData(i, elem_type, write_flag,
                                elemXpts, vars, dvars, ddvars,
                                nvals, elem_data_real);
 

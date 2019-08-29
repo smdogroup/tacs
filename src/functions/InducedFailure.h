@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_INDUCED_FAILURE_H
@@ -31,17 +31,17 @@
   f_i = int_{A} f * g(f, P) dA/ int_{A} g(f, P) dA
 
   This is always less than or equal to the supremum or infinity norm
-  of the function f. This can be shown by Holder's inequality. 
+  of the function f. This can be shown by Holder's inequality.
 
   The induced aggregation technique relies on selecting a function
   g(f, P) that approximates the action of a delta function as P -->
-  inifty. In addition, g(f, P) should be easily computable. Two 
+  inifty. In addition, g(f, P) should be easily computable. Two
   possible selectionsn are:
-  
+
   g(f, P) = e^{P*f}
 
   and
-  
+
   g(f, P) = |f|^{P}
 
   Both of these options are implemented below. Note that the first
@@ -62,10 +62,10 @@
 
 class TACSInducedFailure : public TACSFunction {
  public:
-  enum InducedNormType { EXPONENTIAL, POWER, 
+  enum InducedNormType { EXPONENTIAL, POWER,
                          EXPONENTIAL_SQUARED, POWER_SQUARED,
-                         DISCRETE_EXPONENTIAL, 
-                         DISCRETE_POWER, 
+                         DISCRETE_EXPONENTIAL,
+                         DISCRETE_POWER,
                          DISCRETE_EXPONENTIAL_SQUARED,
                          DISCRETE_POWER_SQUARED };
   enum InducedConstitutiveFunction { FAILURE, BUCKLING };
@@ -110,7 +110,7 @@ class TACSInducedFailure : public TACSFunction {
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
                         TACSFunctionCtx *ctx );
-  void finalThread( double tcoef, 
+  void finalThread( double tcoef,
                     EvaluationType ftype,
                     TACSFunctionCtx *ctx );
 
@@ -120,8 +120,8 @@ class TACSInducedFailure : public TACSFunction {
 
   // State variable sensitivities
   // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma, 
-                         TacsScalar *elemSVSens, 
+  void getElementSVSens( double alpha, double beta, double gamma,
+                         TacsScalar *elemSVSens,
                          TACSElement *element, int elemNum,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
@@ -141,7 +141,7 @@ class TACSInducedFailure : public TACSFunction {
                           TACSElement *element, int elemNum,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx ); 
+                          TACSFunctionCtx *ctx );
 
  private:
   // The type of norm to evaluate
@@ -153,7 +153,7 @@ class TACSInducedFailure : public TACSFunction {
 
   TacsScalar max_fail; // The maximum failure function at a Gauss point
   TacsScalar fail_numer, fail_denom; // The numerator and denominator
-  
+
   // The P in the P-norm
   double P;
 

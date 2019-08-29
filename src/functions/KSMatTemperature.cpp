@@ -134,7 +134,7 @@ void TACSKSMatTemperature::initEvaluation( EvaluationType ftype ){
   if (ftype == TACSFunction::INITIALIZE){
     for ( int i = 0; i < nmats; i++ ){
       maxValue[i] = -1e20;
-    }    
+    }
   }
   else if (ftype == TACSFunction::INTEGRATE){
     ksSum = 0.0;
@@ -218,14 +218,14 @@ void TACSKSMatTemperature::elementWiseEval( EvaluationType ftype,
         const TacsScalar *d = vars;
 
         TacsScalar value = 0.0;
-        TacsScalar ns = 0.0;   
+        TacsScalar ns = 0.0;
         for ( int j = 0; j < numNodes; j++ ){
           ns += N[0];
           value += N[0]*d[numDisps-1];
           d += numDisps;
-          N++;    
+          N++;
         }
-        
+
         // --------------------------------------------------------
         // Get the constitutive object for this element
         TacsScalar value1 = value;
@@ -251,7 +251,7 @@ void TACSKSMatTemperature::elementWiseEval( EvaluationType ftype,
               if (TacsRealPart(dT[i]) > TacsRealPart(ctx->maxValue[i])){
                 ctx->maxValue[i] = dT[i];
               }
-            }    
+            }
           }
         }
       }
@@ -287,7 +287,7 @@ void TACSKSMatTemperature::elementWiseEval( EvaluationType ftype,
           if (con){
             for ( int i = 0; i < nmats; i++ ){
               con->maxtemp(pt, value1, &dT[i], i);
-            }       
+            }
           }
         }
         else {
@@ -299,7 +299,7 @@ void TACSKSMatTemperature::elementWiseEval( EvaluationType ftype,
             }
           }
         }
-        
+
         // ---------------------------------------------------------
         if (ksType == TACSKSTemperature::CONTINUOUS){
           for ( int i = 0; i < nmats; i++ ){
@@ -308,11 +308,11 @@ void TACSKSMatTemperature::elementWiseEval( EvaluationType ftype,
         }
         //exit(0);
         // else if (ksType == DISCRETE){
-        //   for 
+        //   for
         //     ctx->ksSum += exp(ksWeight*(value - maxValue[0]));
         // }
         // else if (ksType == PNORM_CONTINUOUS){
-        //   ctx->ksSum += 
+        //   ctx->ksSum +=
         //     h*weight*pow(fabs(TacsRealPart(value/maxValue[0])), ksWeight);
         // }
         // else if (ksType == PNORM_DISCRETE){
@@ -411,14 +411,14 @@ void TACSKSMatTemperature::getElementSVSens( double alpha,
             con->maxtemp(pt, value1, &dT[i], i);
           }
         }
-      }            
+      }
       // Add up the contribution from the quadrature
       TacsScalar h = element->getDetJacobian(pt, Xpts);
       TacsScalar ptWeight = 0.0;
 
       if (ksType == TACSKSTemperature::CONTINUOUS){
         for ( int i = 0; i < nmats; i++ ){
-          ptWeight = alpha*h*weight*exp(ksWeight*(dT[i] - 
+          ptWeight = alpha*h*weight*exp(ksWeight*(dT[i] -
                       maxValue[i]))/ksSum;
           // Reset the shape function pointer and run through the
           // element nodes again to set the derivative
@@ -503,7 +503,7 @@ void TACSKSMatTemperature::getElementXptSens( const double tcoef,
                                               const TacsScalar dvars[],
                                               const TacsScalar ddvars[],
                                               TACSFunctionCtx *fctx ){}
- 
+
 /*
   Determine the derivative of the function with respect to
   the design variables defined by the element - usually just
@@ -533,11 +533,11 @@ void TACSKSMatTemperature::addElementDVSens( const double tcoef,
       double pt[3];
       double weight = element->getGaussWtsPts(i, pt);
       element->getShapeFunctions(pt, ctx->N);
-      
+
       // Evaluate the dot-product with the displacements
       const double *N = ctx->N;
       const TacsScalar *d = vars;
-      
+
       TacsScalar value = 0.0;
       for ( int j = 0; j < numNodes; j++ ){
         value += N[0]*d[numDisps-1];
@@ -581,7 +581,7 @@ void TACSKSMatTemperature::addElementDVSens( const double tcoef,
               con->addMaxTempDVSens(pt, dT[i], tcoef*ptWeight,
                                     fdvSens, numDVs, i);
             }
-          }       
+          }
           else {
             CoupledThermoPlaneStressStiffness *con =
               dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);

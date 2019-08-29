@@ -16,7 +16,7 @@
 #include "JacobiDavidson.h"
 
 
-TACSJDFrequencyOperator::TACSJDFrequencyOperator( TACSAssembler *_tacs, 
+TACSJDFrequencyOperator::TACSJDFrequencyOperator( TACSAssembler *_tacs,
                                                   TACSMat *_kmat,
                                                   TACSMat *_mmat,
                                                   TACSMat *_pc_mat,
@@ -278,27 +278,27 @@ TacsScalar TACSJacobiDavidson::extractEigenvector( int n, TACSVec *ans,
 /*
   Solve the general eigenproblem using the Jacobi-Davidson method.
 
-  This code implements a technique to find the absolute smallest 
+  This code implements a technique to find the absolute smallest
   eigenvalues. The code maintains a B-orthonormal basis V that
   is used to form a Galerkin approximation of the eigenvalue problem
 
   V^{T}*A*V*y - theta*V^{T}*B*V*y = M*y - theta*y = 0.
 
-  The updates to the subspace V are obtained by seeking a 
+  The updates to the subspace V are obtained by seeking a
   Jacobi-Davidson update that is B-orthogonal to the current
   eigenvector estimate. To obtain multiple eigenvectors the code
-  uses a deflation subspace Q which consists of orthogonal 
+  uses a deflation subspace Q which consists of orthogonal
   eigenvectors that have converged. In addition, the current estimate
   of the eigenvector is maintained in the same array of vectors.
-  At each iteration, we seek a new vector t that approximately 
+  At each iteration, we seek a new vector t that approximately
   satisfies the following equation
 
-  (I - P*Q^{T})*A*(I - Q*P^{T})*t = -r 
+  (I - P*Q^{T})*A*(I - Q*P^{T})*t = -r
 
   where r is orthogonal to the subspace Q and t is orthogonal to the
   subspace t by construction. FGMRES builds the subspaces W and Z.
 */
-void TACSJacobiDavidson::solve( KSMPrint *ksm_print, 
+void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
                                 KSMPrint *ksm_file ){
   // Keep track of the current subspace
   V[0]->setRand(-1.0, 1.0);
@@ -338,23 +338,23 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
           }
           // Apply boundary conditions for this vector
           oper->applyBCs(V[k]);
-          
+
           // Normalize the vector so that it is orthonormal
           TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
           V[k]->scale(1.0/vnorm);
           // Compute work = A*V[k]
           oper->multA(V[k], work);
-          
-          // Complete the entries in the symmetric matrix M that is formed by 
+
+          // Complete the entries in the symmetric matrix M that is formed by
           // M = V^{T}*A*V
           for ( int i = 0; i <= k; i++ ){
             M[k*m + i] = V[i]->dot(work);
             M[i*m + k] = M[k*m + i];
           }
         }
-        kstart = 2;      
+        kstart = 2;
       }
-      else if (recycle_type == JD_NUM_RECYCLE){ 
+      else if (recycle_type == JD_NUM_RECYCLE){
         // B-orthogonalize the old eigenvectors with respect to the
         // new matrix for all but the last recycled eigenvector which
         // will be orthogonalized by the first iteration through the
@@ -381,7 +381,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
           // Compute work = A*V[k]
           oper->multA(V[k], work);
 
-          // Complete the entries in the symmetric matrix M that is formed by 
+          // Complete the entries in the symmetric matrix M that is formed by
           // M = V^{T}*A*V
           for ( int i = 0; i <= k; i++ ){
             M[k*m + i] = V[i]->dot(work);
@@ -442,10 +442,10 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     // The input arguments required for LAPACK
     const char *jobz = "V", *uplo = "U";
 
-    // Compute the eigenvalues and eigenvectors of a (small) symmetric 
+    // Compute the eigenvalues and eigenvectors of a (small) symmetric
     // matrix using lapack. The eigenvalues are the ritzvalues. The
     // eigenvectors can be used to construct the Ritz vectors (in the
-    // code the ritzvecs array contains the vectors of the reduced 
+    // code the ritzvecs array contains the vectors of the reduced
     // eigenproblem that are not Ritz vectors themselves but are used
     // to compute them.)
     int info;
@@ -458,7 +458,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     double theta = ritzvals[0];
 
     int num_new_eigvals = 0;
-    for ( int i = 0; i < k+1 && nconverged < max_eigen_vectors; 
+    for ( int i = 0; i < k+1 && nconverged < max_eigen_vectors;
           i++, num_new_eigvals++ ){
       // Set the Ritz value
       theta = ritzvals[i];
@@ -474,18 +474,18 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       TacsScalar qnorm = sqrt(oper->dot(Q[nconverged], Q[nconverged]));
       Q[nconverged]->scale(1.0/qnorm);
 
-      // Compute the residual: work = A*q - theta*B*q 
+      // Compute the residual: work = A*q - theta*B*q
       // and store it in the work vector
       oper->multA(Q[nconverged], work);
       TacsScalar Anorm = work->norm();
       oper->multB(Q[nconverged], P[nconverged]);
       work->axpy(-theta, P[nconverged]);
       oper->applyBCs(work);
-      
+
       TacsScalar w_norm = work->norm();
       if (ksm_print){
         char line[256];
-        sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %20.10e\n", 
+        sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %20.10e\n",
                 iteration, TacsRealPart(w_norm), nconverged, theta);
         ksm_print->print(line);
       }
@@ -543,7 +543,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
           TacsScalar h = oper->dot(W[i], W[j]);
           W[i]->axpy(-h, W[j]);
         }
-        
+
         oper->applyBCs(W[i]);
 
         // Normalize the vector so that it is orthonormal
@@ -578,7 +578,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       // Note that we compute the product in this way since
       // it is numerical more stable and equivalent to the form above
       // since Q^{T}P = 0 so that: (since Q is a B-orthogonal subspace)
-      // (I - q1*p1^{T})*(I - q2*p2^{T}) = 
+      // (I - q1*p1^{T})*(I - q2*p2^{T}) =
       // (I - q1*p1^{T} - q2*p2^{T} - q1*p1^{T}*q2*p2^{T}) =
       // (I - q1*p1^{T} - q2*p2^{T})
 
@@ -664,7 +664,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     for ( int i = 0; i < niters; i++ ){
       V[k+1]->axpy(-res[i], Z[i]);
     }
-  
+
     // Compute the product to test the error
     // (1 - P*Q^{T})*(A - theta*B)*(1 - Q*P^{T})
     W[0]->copyValues(V[k+1]);
@@ -702,20 +702,20 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
   atol: the absolute tolerancne ||r_k|| < atol
 */
 void TACSJacobiDavidson::setTolerances( double _eigtol,
-                                        double _rtol, 
+                                        double _rtol,
                                         double _atol ){
   eigtol = _eigtol;
   rtol = _rtol;
   atol = _atol;
 }
 /*
-  Set the number of vectors to recycle if the eigenvectors are converged 
+  Set the number of vectors to recycle if the eigenvectors are converged
 
   input:
   recycle: number of vectors to recycle
 */
-void TACSJacobiDavidson::setRecycle( int _recycle, 
-                                     JDRecycleType _recycle_type ){ 
+void TACSJacobiDavidson::setRecycle( int _recycle,
+                                     JDRecycleType _recycle_type ){
   recycle = _recycle;
-  recycle_type = _recycle_type;  
+  recycle_type = _recycle_type;
 }

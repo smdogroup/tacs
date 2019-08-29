@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_TO_FH5_H
@@ -21,7 +21,7 @@
 
 /*
   Create an FH5 file from the TACSAssembler object
-*/  
+*/
 
 #include "FH5.h"
 #include "TACSAssembler.h"
@@ -29,7 +29,7 @@
 /**
   Write out the solution data to a binary file in a TACS-specific
   format.
-  
+
   This .f5 file format is specific to TACS, but is written in
   parallel.  Data recorded in the file can later be accessed and
   converted to formats for visualization.
@@ -44,7 +44,7 @@ class TACSToFH5 : public TACSObject {
 
   // Set the group name for each zone
   void setComponentName( int comp_num, const char *group_name );
-  
+
   // Write the data to a file
   void writeToFile( const char *filename );
 

@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_MESH_LOADER_H
@@ -23,17 +23,17 @@
   This class provides a limited capability to read in nodal and
   connectivity information from a .bdf file - and could be extended
   to read in other formats. The class can also be used to distribute
-  the mesh over a set of processors. 
+  the mesh over a set of processors.
 
   The limited capabilities of reading in data from a Nastran file are:
-  1. Reading GRID and GRID* entries for the physical locations of the 
+  1. Reading GRID and GRID* entries for the physical locations of the
   nodes.
   2. Reading in connectivity information from CQUAD4 elements.
   3. Reading SPC entries (single point constraint) for the application
   of boundary conditions.
 
   The loader does not understand the different load-case capabilities
-  that can be placed within a Nastran file. The elements must be passed 
+  that can be placed within a Nastran file. The elements must be passed
   in to the object based on the component number.
 */
 
@@ -56,12 +56,12 @@ class TACSMeshLoader : public TACSObject {
   const char *getComponentDescript( int comp_num );
   const char *getElementDescript( int comp_num );
 
-  // Set the elements corresponding to each of the component numbers 
+  // Set the elements corresponding to each of the component numbers
   // ---------------------------------------------------------------
   void setElement( int component_num, TACSElement *_element );
   void setConvertToCoordinate( int flag );
 
-  // Retrieve the element numbers corresponding to the given 
+  // Retrieve the element numbers corresponding to the given
   // component numbers
   // -------------------------------------------------------
   int getNumNodes();
@@ -76,14 +76,14 @@ class TACSMeshLoader : public TACSObject {
   // Distribute the mesh and create TACS
   // -----------------------------------
   TACSAssembler *createTACS( int vars_per_node,
-                             TACSAssembler::OrderingType order_type = 
+                             TACSAssembler::OrderingType order_type =
                              TACSAssembler::NATURAL_ORDER,
-                             TACSAssembler::MatrixOrderingType mat_type = 
+                             TACSAssembler::MatrixOrderingType mat_type =
                              TACSAssembler::DIRECT_SCHUR);
 
   // Set the domain of a structural function with component numbers
   // --------------------------------------------------------------
-  void addFunctionDomain( TACSFunction *function, 
+  void addFunctionDomain( TACSFunction *function,
                           int comp_nums[], int num_comps );
 
   // Add the auxiliary element to the given component
@@ -92,7 +92,7 @@ class TACSMeshLoader : public TACSObject {
                       TACSElement *_element );
 
   void getConnectivity( int *_num_nodes, int *_num_elements,
-                        const int **_elem_node_ptr, 
+                        const int **_elem_node_ptr,
                         const int **_elem_node_conn,
                         const int **_elem_component,
                         const TacsScalar **_Xpts ){
@@ -103,7 +103,7 @@ class TACSMeshLoader : public TACSObject {
     if (_elem_component){ *_elem_component = elem_component; }
     if (_Xpts){ *_Xpts = Xpts; }
   }
-  void getBCs( int *_num_bcs, const int **_bc_nodes, const int **_bc_vars, 
+  void getBCs( int *_num_bcs, const int **_bc_nodes, const int **_bc_vars,
                const int **_bc_ptr, const TacsScalar **_bc_vals ){
     if (_num_bcs){ *_num_bcs = num_bcs; }
     if (_bc_nodes){ *_bc_nodes = bc_nodes; }
@@ -126,9 +126,9 @@ class TACSMeshLoader : public TACSObject {
   // ordering may not be contiguous. The node numbers associated
   // with the original ordering are stored in node_nums.
   int *node_nums;
-  double *Xpts_unsorted; 
+  double *Xpts_unsorted;
 
-  // Reduced set of contiguous nodes 
+  // Reduced set of contiguous nodes
   TacsScalar *Xpts;
 
   // The mesh and element connectivity

@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_BVEC_INTERP_H
@@ -38,7 +38,7 @@
   produce results on this processor.
 
   2. The input from the forward operation (mult/multAdd) can be from
-  any processor. 
+  any processor.
 
   The operation of the BVecInterp object is essentially equivalent to
   a matrix-vector product with a non-rectangular matrix. However, the
@@ -95,11 +95,11 @@ class TACSBVecInterp : public TACSObject {
   // Initialize the distribution object
   void init( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
 
-  void (*multadd)( int bsize, int nrows, 
+  void (*multadd)( int bsize, int nrows,
                    const int *rowp, const int *cols,
                    const TacsScalar *weights,
                    const TacsScalar *x, TacsScalar *y );
-  void (*multtransadd)( int bsize, int nrows, 
+  void (*multtransadd)( int bsize, int nrows,
                         const int *rowp, const int *cols,
                         const TacsScalar *weights,
                         const TacsScalar *x, TacsScalar *y );
@@ -135,7 +135,7 @@ class TACSBVecInterp : public TACSObject {
   // Store the transpose weights
   TacsScalar *transpose_weights;
 
-  // The object responsible for fetching/distributing the 
+  // The object responsible for fetching/distributing the
   // external variables
   TACSBVecDistribute *vecDist;
   TACSBVecDistCtx *ctx;

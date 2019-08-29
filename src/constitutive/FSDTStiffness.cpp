@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "FSDTStiffness.h"
@@ -33,8 +33,8 @@ FSDTStiffness::FSDTStiffness(){
 /*
   Return the constitutive name
 */
-const char * FSDTStiffness::constitutiveName(){ 
-  return constName; 
+const char * FSDTStiffness::constitutiveName(){
+  return constName;
 }
 
 /*
@@ -44,17 +44,17 @@ double FSDTStiffness::DRILLING_REGULARIZATION = 10.0;
 
 /*
   Set the drilling stiffness regularization parameter
-*/ 
+*/
 void FSDTStiffness::setDrillingRegularization( double kval ){
   DRILLING_REGULARIZATION = kval;
 }
 
 /*
   Return the number of stresses associated with this constitutive
-  object 
+  object
 */
-int FSDTStiffness::getNumStresses(){ 
-  return NUM_STRESSES; 
+int FSDTStiffness::getNumStresses(){
+  return NUM_STRESSES;
 }
 
 /*
@@ -66,7 +66,7 @@ int FSDTStiffness::getNumMassMoments(){
 }
 
 /*
-  Given the parametric point within the element and the value of the 
+  Given the parametric point within the element and the value of the
   strain, compute the stress
 
   input:
@@ -108,7 +108,7 @@ void FSDTStiffness::calculateStress( const double pt[],
   fdvSens:  the design variable vector
 */
 void FSDTStiffness::addStressDVSens( const double pt[], const TacsScalar e[],
-                                     TacsScalar alpha, const TacsScalar psi[], 
+                                     TacsScalar alpha, const TacsScalar psi[],
                                      TacsScalar fdvSens[], int dvLen ){
   // Scale the input vector psi by the scalar alpha
   TacsScalar p[8];
@@ -136,7 +136,7 @@ void FSDTStiffness::printStiffness( const double pt[] ){
 
   // Evaluate the stiffness
   TacsScalar A[6], B[6], D[6], As[3];
-  if (pt){ 
+  if (pt){
     getStiffness(pt, A, B, D, As);
   }
   else {
@@ -145,32 +145,32 @@ void FSDTStiffness::printStiffness( const double pt[] ){
 
   // Print out the stiffness matrices
   printf("\nThe A matrix: \n");
-  printf("%20.4f %20.4f %20.4f \n", 
+  printf("%20.4f %20.4f %20.4f \n",
          TacsRealPart(A[0]), TacsRealPart(A[1]), TacsRealPart(A[2]));
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(A[1]), TacsRealPart(A[3]), TacsRealPart(A[4]));
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(A[2]), TacsRealPart(A[4]), TacsRealPart(A[5]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(A[1]), TacsRealPart(A[3]), TacsRealPart(A[4]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(A[2]), TacsRealPart(A[4]), TacsRealPart(A[5]));
 
   printf("\nThe B matrix: \n");
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(B[0]), TacsRealPart(B[1]), TacsRealPart(B[2]));
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(B[1]), TacsRealPart(B[3]), TacsRealPart(B[4]));
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(B[2]), TacsRealPart(B[4]), TacsRealPart(B[5]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(B[0]), TacsRealPart(B[1]), TacsRealPart(B[2]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(B[1]), TacsRealPart(B[3]), TacsRealPart(B[4]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(B[2]), TacsRealPart(B[4]), TacsRealPart(B[5]));
 
   printf("\nThe D matrix: \n");
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(D[0]), TacsRealPart(D[1]), TacsRealPart(D[2]));
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(D[1]), TacsRealPart(D[3]), TacsRealPart(D[4]));
-  printf("%20.4f %20.4f %20.4f \n", 
-	 TacsRealPart(D[2]), TacsRealPart(D[4]), TacsRealPart(D[5]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(D[0]), TacsRealPart(D[1]), TacsRealPart(D[2]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(D[1]), TacsRealPart(D[3]), TacsRealPart(D[4]));
+  printf("%20.4f %20.4f %20.4f \n",
+         TacsRealPart(D[2]), TacsRealPart(D[4]), TacsRealPart(D[5]));
 
   printf("\nThe Ashear matrix: \n");
-  printf("%20.4f %20.4f \n", 
-	 TacsRealPart(As[0]), TacsRealPart(As[1]));
-  printf( "%20.4f %20.4f \n", 
-	 TacsRealPart(As[1]), TacsRealPart(As[2]));
+  printf("%20.4f %20.4f \n",
+         TacsRealPart(As[0]), TacsRealPart(As[1]));
+  printf( "%20.4f %20.4f \n",
+         TacsRealPart(As[1]), TacsRealPart(As[2]));
 }

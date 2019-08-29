@@ -74,7 +74,7 @@ void TacsFormDiffApproximate( TacsScalar *forward,
   Test the residual implementation against the Lagrangian equations
   of motion. This relies on the element implementation of the kinetic
   and potential energies.
-  
+
   @param element The element object
   @param time Simulation time
   @param Xpts The element nodal variables
@@ -96,7 +96,7 @@ int TacsTestElementResidual( TACSElement *element,
 
 /**
   Test the Jacobian matrix implementation against the residual.
-  
+
   @param element The element object
   @param time Simulation time
   @param Xpts The element nodal variables
@@ -119,7 +119,7 @@ int TacsTestElementJacobian( TACSElement *element,
 
 /**
   Test the adjoint-residual product implementation
-  
+
   @param element The element object
   @param dvLen The length of the design variable array
   @param x The design variable array
@@ -145,7 +145,7 @@ int TacsTestAdjResProduct( TACSElement *element,
 
 /**
   Test the adjoint-residual product implementation
-  
+
   @param element The element object
   @param time Simulation time
   @param Xpts The element nodal variables

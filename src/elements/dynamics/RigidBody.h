@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_RIGID_BODY_DYNAMICS_H
@@ -17,7 +17,7 @@
 
 /*
   Rigid-body dynamics classes for TACS.
-  
+
   1. TACSRefFrame
   2. TACSRigidBody
   3. TACSSphericalConstraint
@@ -32,8 +32,8 @@
 */
 class TACSRigidBodyViz : public TACSObject {
  public:
-  TACSRigidBodyViz( int _npts, int _nelems, 
-                    TacsScalar *_Xpt, int _conn[], 
+  TACSRigidBodyViz( int _npts, int _nelems,
+                    TacsScalar *_Xpt, int _conn[],
                     TACSGibbsVector *_vref=NULL );
   TACSRigidBodyViz( TacsScalar Lx, TacsScalar Ly, TacsScalar Lz );
   ~TACSRigidBodyViz();
@@ -41,10 +41,10 @@ class TACSRigidBodyViz : public TACSObject {
                 const TacsScalar **_Xpts, const int **_conn );
 
  private:
-  void init( int _npts, int _nelems, 
-             TacsScalar *_Xpt, int _conn[], 
+  void init( int _npts, int _nelems,
+             TacsScalar *_Xpt, int _conn[],
              TACSGibbsVector *_vref=NULL );
-  
+
   TacsScalar *Xpts;
   int npts, nelems;
   int *conn;
@@ -65,7 +65,7 @@ class TACSRigidBodyViz : public TACSObject {
 */
 class TACSRefFrame : public TACSObject {
  public:
-  TACSRefFrame( TACSGibbsVector *_r0, 
+  TACSRefFrame( TACSGibbsVector *_r0,
                 TACSGibbsVector *_r1,
                 TACSGibbsVector *_r2 );
   ~TACSRefFrame();
@@ -73,7 +73,7 @@ class TACSRefFrame : public TACSObject {
   // Returns the rotation matrix associated with the frame of ref.
   //--------------------------------------------------------------
   void getRotation( const TacsScalar ** _C );
-  
+
   // Getters and setters for DVs
   //----------------------------
   void setDesignVars( const TacsScalar *dvs, int numDVs );
@@ -102,7 +102,7 @@ class TACSRefFrame : public TACSObject {
   // rotation matrix with respect to the vectors d1 = r1 - r0
   // and d2 = r2 - r0
   TacsScalar dC1d1[9];
-  TacsScalar dC2d1[9], dC2d2[9]; 
+  TacsScalar dC2d1[9], dC2d2[9];
 
   // The basis points for the reference frame
   TACSGibbsVector *r0, *r1, *r2;
@@ -137,7 +137,7 @@ class TACSRigidBody : public TACSElement {
                  TACSGibbsVector *_omegaInit,
                  TACSGibbsVector *_gvec );
   ~TACSRigidBody();
- 
+
   // Set design variables numbers associated with the inertial props.
   // ----------------------------------------------------------------
   void setDesignVarNums( int _massDV, const int _cDV[], const int _JDV[] );
@@ -157,7 +157,7 @@ class TACSRigidBody : public TACSElement {
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
   const char* displacementName( int i );
-  const char* extraName( int i );  
+  const char* extraName( int i );
   ElementType getElementType(){ return TACS_RIGID; }
 
   // Retrieve the initial values of the state variables
@@ -174,7 +174,7 @@ class TACSRigidBody : public TACSElement {
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
-                        TacsScalar *_Te, 
+                        TacsScalar *_Te,
                         TacsScalar *_Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -200,14 +200,14 @@ class TACSRigidBody : public TACSElement {
   // Test the residual implementation
   // --------------------------------
   void testResidual( double dh );
-  void testJacobian( double dh, double alpha, 
+  void testJacobian( double dh, double alpha,
                      double beta, double gamma );
 
   // Functions for post-processing
   // -----------------------------
   void addOutputCount( int *nelems, int *nnodes, int *ncsr );
-  void getOutputData( unsigned int out_type, 
-                      double *data, int ld_data, 
+  void getOutputData( unsigned int out_type,
+                      double *data, int ld_data,
                       const TacsScalar Xpts[],
                       const TacsScalar vars[] );
   void getOutputConnectivity( int *con, int node );
@@ -228,8 +228,8 @@ class TACSRigidBody : public TACSElement {
   TACSGibbsVector *rInit, *vInit, *omegaInit;
 
   // The accel. due to gravity in the global ref. frame
-  TACSGibbsVector *gvec; 
-  
+  TACSGibbsVector *gvec;
+
   // The initial reference frame
   TACSRefFrame *CRef;
 
@@ -237,7 +237,7 @@ class TACSRigidBody : public TACSElement {
   // oriented with respect to CRef
   TacsScalar cRef[3];
   TacsScalar JRef[6];
-  
+
   // The design variable numbers associated with the inertial properties
   int massDV, cDV[3], JDV[6];
 

@@ -8,7 +8,7 @@ class ThermoQuad : public TACSElement {
   virtual void getShapeFunctions( const double pt[], double N[] ) = 0;
   virtual void getShapeFunctions( const double pt[], double N[],
                                   double Na[], double Nb[] ) = 0;
-  virtual void getBT( TacsScalar strain[], const double pt[], 
+  virtual void getBT( TacsScalar strain[], const double pt[],
                       const TacsScalar Xpts[], const TacsScalar vars[] ) = 0;
   virtual void addBTSVSens( TacsScalar strainSVSens[],
                             const double pt[],
@@ -33,7 +33,7 @@ class ThermoSolid : public TACSElement {
   virtual void getShapeFunctions( const double pt[], double N[] ) = 0;
   virtual void getShapeFunctions( const double pt[], double N[],
                                   double Na[], double Nb[], double Nc[] ) = 0;
-  virtual void getBT( TacsScalar strain[], const double pt[], 
+  virtual void getBT( TacsScalar strain[], const double pt[],
                       const TacsScalar Xpts[], const TacsScalar vars[] ) = 0;
   virtual void addBTSVSens( TacsScalar strainSVSens[],
                             const double pt[],

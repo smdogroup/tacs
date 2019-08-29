@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "FElibrary.h"
@@ -42,7 +42,7 @@ int comparator( const void *a, const void *b ){
   input:
   dvNums:   the array of values to be sorted
   numDVs:   the length of the array
-  
+
   returns:
   the size of the unique list <= numDVs
 */
@@ -55,7 +55,7 @@ int uniqueSort( int *dvNums, int numDVs ){
 
   // Remove the negative entries
   while (i < numDVs && dvNums[i] < 0)
-    i++;  
+    i++;
 
   for ( ; i < numDVs; i++, j++ ){
     while ((i < numDVs-1) && (dvNums[i] == dvNums[i+1])){
@@ -67,10 +67,10 @@ int uniqueSort( int *dvNums, int numDVs ){
     }
   }
 
-  return j;    
+  return j;
 }
 
-/*!  
+/*!
   Merge two sorted arrays into a single sorted array, in place.
   This relies on both arrays having unique elements independently (ie
   a cannot contain duplicates and b cannot contain duplicates, but a
@@ -102,7 +102,7 @@ int mergeArrays( int *a, int na, const int *b, int nb ){
 
   j = nb-1;
   i = na-1;
-  while (i >= 0 && 
+  while (i >= 0 &&
          j >= 0){
     if (a[i] > b[j]){
       a[end] = a[i];
@@ -115,9 +115,9 @@ int mergeArrays( int *a, int na, const int *b, int nb ){
     else { // b[j] == a[i]
       a[end] = a[i];
       end--, j--, i--;
-    }      
+    }
   }
-    
+
   // Only need to copy over remaining elements from b - if any
   while (j >= 0){
     a[j] = b[j];
@@ -126,7 +126,7 @@ int mergeArrays( int *a, int na, const int *b, int nb ){
 
   return len;
 }
-  
+
 /*!
   Find the interval such that the given index satisfies:
 
@@ -134,7 +134,7 @@ int mergeArrays( int *a, int na, const int *b, int nb ){
 
   The intervals must be non-decreasing. Note that len is equal to the
   length of the intv array which is one more than the total number of
-  intervals. 
+  intervals.
 */
 int findInterval( int index, const int intv[], int len ){
   // Check that the basic conditions are satisfied
@@ -155,7 +155,7 @@ int findInterval( int index, const int intv[], int len ){
   // By construction the following condition always applies:
   // intv[low] <= index < intv[high]
 
-  while (low != high){    
+  while (low != high){
     if (index < intv[low+1]){ // Check the low interval
       return low;
     }
@@ -179,61 +179,61 @@ int findInterval( int index, const int intv[], int len ){
 /*!
   Match the intervals in a list of sorted variables.
 */
-void matchIntervals( int mpiSize, const int ownerRange[], 
-                     int nvars, const int vars[], int ext_ptr[] ){                          
-    
+void matchIntervals( int mpiSize, const int ownerRange[],
+                     int nvars, const int vars[], int ext_ptr[] ){
+
   // ext_ptr[n] should be the greatest integer such that
   // vars[ext_ptr[n]] <= ownerRange[n]
-  // all variables on [exp_ptr[m],ext_ptr[m+1]) belong to 
+  // all variables on [exp_ptr[m],ext_ptr[m+1]) belong to
   // processor m
-    
+
   // Nothing to do
-  if (nvars == 0){ 
+  if (nvars == 0){
     for ( int n = 0; n < mpiSize+1; n++ ){
       ext_ptr[n] = 0;
     }
-      
-    return; 
-  } 
-    
+
+    return;
+  }
+
   for ( int n = 0; n < mpiSize+1; n++ ){
     // First check the lower bound
     if (ownerRange[n] <= vars[0]){
-      ext_ptr[n] = 0;      
+      ext_ptr[n] = 0;
     }
-    else if (ownerRange[n] > vars[nvars-1]){ // No more variables 
+    else if (ownerRange[n] > vars[nvars-1]){ // No more variables
       ext_ptr[n] = nvars;
     }
     else { // Determine the interval using a binary search
       int low = 0;
       int high = nvars-1;
       int mid = low + (int)((high - low)/2);
-        
+
       // maintain that the variable is in the interval (vars[low],vars[high])
       // note that if high-low=1, then mid = high
       while (high != mid){
         if (vars[mid] == ownerRange[n]){
           break;
         }
-          
+
         if (ownerRange[n] < vars[mid]){
           high = mid;
-        } 
+        }
         else {
           low = mid;
         }
-          
+
         mid = high - (int)((high - low)/2);
-      }           
-        
+      }
+
       ext_ptr[n] = mid;
     }
-  }    
+  }
 }
 
 /*
   Test the derivative of the b-spline basis
-  
+
   input:
   k: the order of the basis to test
 */
@@ -269,7 +269,7 @@ void bspline_basis_test( int k ){
 
   printf("Testing basis functions of order: %d\n", k);
 
-  bspline_basis(Na_forward, idx, u, Tu, k, work); 
+  bspline_basis(Na_forward, idx, u, Tu, k, work);
   for ( int i = 0; i < k; i++ ){
     printf("N[%d] = %15.5e\n", i, Na_forward[i]);
   }
@@ -277,8 +277,8 @@ void bspline_basis_test( int k ){
   // Compute the derivatives of the b-spline basis
   bspline_basis_derivative(Na, idx, u, ideriv, Tu, k, work);
 
-  bspline_basis(Na_forward, idx, u+dh, Tu, k, work); 
-  bspline_basis(Na_reverse, idx, u-dh, Tu, k, work); 
+  bspline_basis(Na_forward, idx, u+dh, Tu, k, work);
+  bspline_basis(Na_reverse, idx, u-dh, Tu, k, work);
   for ( int i = 0; i < k; i++ ){
     double fd = 0.5*(Na_forward[i] - Na_reverse[i])/dh;
     printf("N^(%d)_[%d,%d]: %15.5e  FD: %15.5e\n",
@@ -286,14 +286,14 @@ void bspline_basis_test( int k ){
   }
 
   for ( int j = 1; j < ideriv; j++ ){
-    bspline_basis_derivative(Na_forward, idx, u+dh, ideriv, Tu, k, work); 
+    bspline_basis_derivative(Na_forward, idx, u+dh, ideriv, Tu, k, work);
     bspline_basis_derivative(Na_reverse, idx, u-dh, ideriv, Tu, k, work);
- 
+
     for ( int i = 0; i < k; i++ ){
       double fd = 0.5*(Na_forward[i + j*k] - Na_reverse[i + j*k])/dh;
       printf("N^(%d)_[%d,%d]: %15.5e  FD: %15.5e\n",
              j+1, k-1-i, k-1, Na[i + (j+1)*k], fd);
-    } 
+    }
   }
 }
 
@@ -348,23 +348,23 @@ int bspline_interval( double u, const double *T, int n, int k ){
   work: a temporary array of size 2*k
 
   u is on the idx-th knot span such that u is in the interval
-  u \in [Tu[idx], Tu[idx+1]) 
+  u \in [Tu[idx], Tu[idx+1])
 */
-void bspline_basis( double *N, const int idx, const double u, 
-                    const double *Tu, 
+void bspline_basis( double *N, const int idx, const double u,
+                    const double *Tu,
                     const int ku, double *work ){
   N[0] = 1.0;
-  
+
   // Set the pointers for the temporary work arrays
   // Note that left[j] = u - Tu[i+1 - j]
   // and right[j] = Tu[i+j] - u
   double *left = &work[0];
   double *right = &work[ku];
-  
+
   for ( int j = 1; j < ku; j++ ){
     left[j] = u - Tu[idx+1-j];
     right[j] = Tu[idx+j] - u;
-    
+
     N[j] = 0.0;
     for ( int i = 0; i < j; i++ ){
       double temp = N[i]/(right[i+1] + left[j-i]);
@@ -388,7 +388,7 @@ void bspline_basis( double *N, const int idx, const double u,
   work: a temporary array of size 2*k + k*k
 
   u is on the idx-th knot span such that u is in the interval
-  u \in [Tu[idx], Tu[idx+1]) 
+  u \in [Tu[idx], Tu[idx+1])
 */
 void bspline_basis_derivative( double *N, const int idx, const double u,
                                int ideriv, const double *Tu,
@@ -433,12 +433,12 @@ void bspline_basis_derivative( double *N, const int idx, const double u,
     }
 
     // Store the basis function
-    ndu[j*(ku+1)] = njj; 
+    ndu[j*(ku+1)] = njj;
   }
 
   // Set the basis functions
   for ( int i = 0; i < ku; i++ ){
-    N[i] = ndu[(ku-1) + i*ku]; 
+    N[i] = ndu[(ku-1) + i*ku];
   }
 
   // Set the temporary arrays for the a-coefficients
@@ -448,7 +448,7 @@ void bspline_basis_derivative( double *N, const int idx, const double u,
   for ( int i = 0; i < ku; i++ ){
     a0[0] = 1.0;
 
-    for ( int k = 1; k <= ideriv; k++ ){ 
+    for ( int k = 1; k <= ideriv; k++ ){
       double d = 0.0;
 
       // Compute the first of the a-terms
@@ -470,7 +470,7 @@ void bspline_basis_derivative( double *N, const int idx, const double u,
         d += a1[j]*ndu[(ku-k-1) + (i-k+j)*ku];
       }
 
-      // Compute the term 
+      // Compute the term
       // a_{k,k} = -a_{k-1}/(u_{i+ku} - u_{i+k})
       if (i <= ku-k-1){
         a1[k] = -a0[k-1]/ndu[i + (ku-k)*ku];
@@ -501,7 +501,7 @@ void bspline_basis_derivative( double *N, const int idx, const double u,
 
   input:
   u:     the parametric location for the spline evaluation
-  idu:   the order of the derivative to use 
+  idu:   the order of the derivative to use
   T:     the knot vector of length n + k
   n:     the number of knots
   k:     the order of the spline to evaluate
@@ -509,13 +509,13 @@ void bspline_basis_derivative( double *N, const int idx, const double u,
   work:  a working array for temporary storage
 
   the work array must be of size:
-  if idu == 0: len = 3*ku   
+  if idu == 0: len = 3*ku
   otherwise: len = (idu+3)*ku + ku*ku
 
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline1d( const double u, const int idu, const double *Tu, 
+TacsScalar bspline1d( const double u, const int idu, const double *Tu,
                       const int nu, const int ku, const TacsScalar *coef,
                       double *work ){
   double *Nu = work;
@@ -525,7 +525,7 @@ TacsScalar bspline1d( const double u, const int idu, const double *Tu,
 
   // Evaluate the basis functions
   if (idu > 0){
-    bspline_basis_derivative(Nu, intu, u, idu, Tu, ku, &work[(idu+1)*ku]); 
+    bspline_basis_derivative(Nu, intu, u, idu, Tu, ku, &work[(idu+1)*ku]);
   }
   else {
     bspline_basis(Nu, intu, u, Tu, ku, &work[ku]);
@@ -548,7 +548,7 @@ TacsScalar bspline1d( const double u, const int idu, const double *Tu,
 
   input:
   u, v:       the parametric location for the spline evaluation
-  idu, idv:   the order of the derivative to use 
+  idu, idv:   the order of the derivative to use
   Tu, Tv:     the knot vector of length n + k
   nu, nv:     the number of knots
   ku, kv:     the order of the spline to evaluate
@@ -562,10 +562,10 @@ TacsScalar bspline1d( const double u, const int idu, const double *Tu,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline2d( const double u, const double v, 
+TacsScalar bspline2d( const double u, const double v,
                       const int idu, const int idv,
                       const double *Tu, const double *Tv,
-                      const int nu, const int nv, const int ku, const int kv, 
+                      const int nu, const int nv, const int ku, const int kv,
                       const TacsScalar *coef,
                       double *work ){
   // The basis functions
@@ -578,7 +578,7 @@ TacsScalar bspline2d( const double u, const double v,
 
   // Evaluate the basis functions
   if (idu > 0){
-    bspline_basis_derivative(Nu, intu, u, idu, Tu, ku, &work[(idu+1)*ku]); 
+    bspline_basis_derivative(Nu, intu, u, idu, Tu, ku, &work[(idu+1)*ku]);
   }
   else {
     bspline_basis(Nu, intu, u, Tu, ku, &work[ku]);
@@ -586,13 +586,13 @@ TacsScalar bspline2d( const double u, const double v,
 
   // Evaluate the basis functions
   if (idv > 0){
-    bspline_basis_derivative(Nv, intv, v, idv, Tv, kv, 
-                             &work[(idu+1)*ku + (idv+1)*kv]); 
+    bspline_basis_derivative(Nv, intv, v, idv, Tv, kv,
+                             &work[(idu+1)*ku + (idv+1)*kv]);
   }
   else {
     bspline_basis(Nv, intv, v, Tv, kv, &work[(idu+1)*ku + kv]);
   }
-  
+
   // Set the interval to the initial control point
   intu = intu - ku + 1;
   intv = intv - kv + 1;
@@ -600,7 +600,7 @@ TacsScalar bspline2d( const double u, const double v,
   TacsScalar fval = 0.0;
   for ( int j = 0; j < kv; j++ ){
     for ( int i = 0; i < ku; i++ ){
-      fval += 
+      fval +=
         Nu[i + idu*ku]*Nv[j + idv*kv]*coef[(intu + i) + (intv + j)*nu];
     }
   }
@@ -613,7 +613,7 @@ TacsScalar bspline2d( const double u, const double v,
 
   input:
   u, v, w:        the parametric location for the spline evaluation
-  idu, idv, idw:  the order of the derivative to use 
+  idu, idv, idw:  the order of the derivative to use
   Tu, Tv, Tw:     the knot vector of length n + k
   nu, nv, nw:     the number of knots
   ku, kv, kw:     the order of the spline to evaluate
@@ -622,18 +622,18 @@ TacsScalar bspline2d( const double u, const double v,
 
   the work array must be of size:
   if idu == 0: len = ku + kv + kw + 2*max(ku, kv, kw)
-  otherwise: 
-  len = (idu+1)*ku + (idv+1)*kv + (idw+1)*kw + 
+  otherwise:
+  len = (idu+1)*ku + (idv+1)*kv + (idw+1)*kw +
   max(2*ku + ku**2, 2*kv + kv**2, 2*kw + kw**2)
 
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline3d( const double u, const double v, const double w, 
+TacsScalar bspline3d( const double u, const double v, const double w,
                       const int idu, const int idv, const int idw,
                       const double *Tu, const double *Tv, const double *Tw,
-                      const int nu, const int nv, const int nw, 
-                      const int ku, const int kv, const int kw, 
+                      const int nu, const int nv, const int nw,
+                      const int ku, const int kv, const int kw,
                       const TacsScalar *coef,
                       double *work ){
   // The basis functions
@@ -648,7 +648,7 @@ TacsScalar bspline3d( const double u, const double v, const double w,
 
   // Evaluate the basis functions
   if (idu > 0){
-    bspline_basis_derivative(Nu, intu, u, idu, Tu, ku, &work[(idu+1)*ku]); 
+    bspline_basis_derivative(Nu, intu, u, idu, Tu, ku, &work[(idu+1)*ku]);
   }
   else {
     bspline_basis(Nu, intu, u, Tu, ku, &work[ku]);
@@ -656,21 +656,21 @@ TacsScalar bspline3d( const double u, const double v, const double w,
 
   // Evaluate the basis functions
   if (idv > 0){
-    bspline_basis_derivative(Nv, intv, v, idv, Tv, kv, 
-                             &work[(idu+1)*ku + (idv+1)*kv]); 
+    bspline_basis_derivative(Nv, intv, v, idv, Tv, kv,
+                             &work[(idu+1)*ku + (idv+1)*kv]);
   }
   else {
     bspline_basis(Nv, intv, v, Tv, kv, &work[(idu+1)*ku + kv]);
   }
-  
+
   // Evaluate the basis functions
   if (idw > 0){
-    bspline_basis_derivative(Nw, intw, w, idw, Tw, kw, 
-                             &work[(idu+1)*ku + (idv+1)*kv + (idw+1)*kw]); 
+    bspline_basis_derivative(Nw, intw, w, idw, Tw, kw,
+                             &work[(idu+1)*ku + (idv+1)*kv + (idw+1)*kw]);
   }
   else {
-    bspline_basis(Nw, intw, w, Tw, kw, 
-                  &work[(idu+1)*ku + (idv+1)*kv + (idw+1)*kw]); 
+    bspline_basis(Nw, intw, w, Tw, kw,
+                  &work[(idu+1)*ku + (idv+1)*kv + (idw+1)*kw]);
   }
 
   // Set the interval to the initial control point
@@ -682,7 +682,7 @@ TacsScalar bspline3d( const double u, const double v, const double w,
   for ( int k = 0; k < kw; k++ ){
     for ( int j = 0; j < kv; j++ ){
       for ( int i = 0; i < ku; i++ ){
-        fval += 
+        fval +=
           (Nu[i + idu*ku]*Nv[j + idv*kv]*Nw[k + idw*kw]*
            coef[(intu + i) + (intv + j)*nu + (intw + k)*nu*nv]);
       }
@@ -721,7 +721,7 @@ TacsScalar bspline3d( const double u, const double v, const double w,
   // Second derivatives
   Naa[0] = 1.5*a;
   Naa[1] = -0.5 + 1.5*a;
-    
+
   Naa[2] = -1.5*a;
   Naa[3] = 0.5 + 1.5*a;
 }
@@ -736,7 +736,7 @@ TacsScalar bspline3d( const double u, const double v, const double w,
   N: the shape functions
   Na: the derivative of the shape functions
   Naa: the second derivative of the shape functions
-*/  
+*/
 void quinticHP( double N[], double Na[], double Naa[], double a ){
   // Shape functions
   N[0] = (1.0 + (-1.25 + (-0.5 + 0.75*a)*a)*a)*a*a;

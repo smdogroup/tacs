@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_SOLID_H
@@ -27,9 +27,9 @@
 template <int order>
 class Solid : public TACS3DElement<order*order*order> {
  public:
-  Solid( SolidStiffness * _stiff, 
-         ElementBehaviorType type=LINEAR, 
-         int _componentNum = 0 ); 
+  Solid( SolidStiffness * _stiff,
+         ElementBehaviorType type=LINEAR,
+         int _componentNum = 0 );
   ~Solid();
 
   // Return the name of this element
@@ -45,13 +45,13 @@ class Solid : public TACS3DElement<order*order*order> {
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  double getGaussWtsPts( const int num, double pt[] ); 
+  double getGaussWtsPts( const int num, double pt[] );
 
   // Functions for post-processing
   // -----------------------------
   void addOutputCount( int * nelems, int * nnodes, int * ncsr );
-  void getOutputData( unsigned int out_type, 
-                      double * data, int ld_data, 
+  void getOutputData( unsigned int out_type,
+                      double * data, int ld_data,
                       const TacsScalar Xpts[],
                       const TacsScalar vars[] );
   void getOutputConnectivity( int * con, int node );
@@ -62,7 +62,7 @@ class Solid : public TACS3DElement<order*order*order> {
 
   // The knot locations for the basis functions
   double knots[order];
-  
+
   // The Gauss quadrature scheme
   int numGauss;
   const double *gaussWts, *gaussPts;
@@ -72,8 +72,8 @@ class Solid : public TACS3DElement<order*order*order> {
 };
 
 template <int order>
-Solid<order>::Solid( SolidStiffness * _stiff, 
-                     ElementBehaviorType type, 
+Solid<order>::Solid( SolidStiffness * _stiff,
+                     ElementBehaviorType type,
                      int _componentNum ):
 TACS3DElement<order*order*order>(_stiff, type, _componentNum){
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
@@ -93,8 +93,8 @@ TACS3DElement<order*order*order>(_stiff, type, _componentNum){
     for ( int k = 0; k < order; k++ ){
       knots[k] = -cos(M_PI*k/(order-1));
     }
-  }  
-} 
+  }
+}
 
 template <int order>
 Solid<order>::~Solid(){}
@@ -119,11 +119,11 @@ double Solid<order>::getGaussWtsPts( int npoint, double pt[] ){
   int p = (int)((npoint)/(numGauss*numGauss));
   int m = (int)((npoint - numGauss*numGauss*p)/numGauss);
   int n = npoint - numGauss*m - numGauss*numGauss*p;
-  
+
   pt[0] = gaussPts[n];
-  pt[1] = gaussPts[m];    
+  pt[1] = gaussPts[m];
   pt[2] = gaussPts[p];
-  
+
   return gaussWts[n]*gaussWts[m]*gaussWts[p];
 }
 
@@ -149,7 +149,7 @@ void Solid<order>::getShapeFunctions( const double pt[],
 
 /*
   Compute the shape functions and their derivatives w.r.t. the
-  parametric element location 
+  parametric element location
 */
 template <int order>
 void Solid<order>::getShapeFunctions( const double pt[], double N[],
@@ -168,7 +168,7 @@ void Solid<order>::getShapeFunctions( const double pt[], double N[],
         Nb[0] = na[i]*dnb[j]*nc[k];
         Nc[0] = na[i]*nb[j]*dnc[k];
         N++;
-        Na++;  Nb++;  Nc++;          
+        Na++;  Nb++;  Nc++;
       }
     }
   }
@@ -176,10 +176,10 @@ void Solid<order>::getShapeFunctions( const double pt[], double N[],
 
 /*
   Get the number of elemens/nodes and CSR size of the contributed by
-  this element.  
+  this element.
 */
 template <int order>
-void Solid<order>::addOutputCount( int *nelems, 
+void Solid<order>::addOutputCount( int *nelems,
                                    int *nnodes, int *ncsr ){
   *nelems += (order-1)*(order-1)*(order-1);
   *nnodes += order*order*order;
@@ -189,16 +189,16 @@ void Solid<order>::addOutputCount( int *nelems,
 /*
   Get the output data from this element and place it in a real
   array for visualization later. The values generated for visualization
-  are determined by a bit-wise selection variable 'out_type' which is 
+  are determined by a bit-wise selection variable 'out_type' which is
   can be used to simultaneously write out different data. Note that this
-  is why the bitwise operation & is used below. 
+  is why the bitwise operation & is used below.
 
   The output may consist of the following:
   - the nodal locations
   - the displacements and rotations
   - the strains or strains within the element
   - extra variables that are used for optimization
-  
+
   output:
   data:     the data to write to the file (eventually)
 
@@ -208,7 +208,7 @@ void Solid<order>::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 template <int order>
-void Solid<order>::getOutputData( unsigned int out_type, 
+void Solid<order>::getOutputData( unsigned int out_type,
                                   double *data, int ld_data,
                                   const TacsScalar Xpts[],
                                   const TacsScalar vars[] ){
@@ -230,13 +230,13 @@ void Solid<order>::getOutputData( unsigned int out_type,
           index += 3;
         }
 
-        // Set the parametric point where to evaluate the 
+        // Set the parametric point where to evaluate the
         // stresses/strains
         double pt[3];
         pt[0] = knots[n];
         pt[1] = knots[m];
         pt[2] = knots[p];
-        
+
         // Compute the shape functions
         double N[NUM_NODES];
         double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
@@ -254,7 +254,7 @@ void Solid<order>::getOutputData( unsigned int out_type,
         // Compute the strain
         TacsScalar strain[6];
         this->evalStrain(strain, J, Na, Nb, Nc, vars);
-        
+
         if (out_type & TACSElement::OUTPUT_STRAINS){
           for ( int k = 0; k < 6; k++ ){
             data[index+k] = TacsRealPart(strain[k]);
@@ -264,7 +264,7 @@ void Solid<order>::getOutputData( unsigned int out_type,
         if (out_type & TACSElement::OUTPUT_STRESSES){
           TacsScalar stress[6];
           this->stiff->calculateStress(pt, strain, stress);
-          
+
           for ( int k = 0; k < 6; k++ ){
             data[index+k] = TacsRealPart(stress[k]);
           }
@@ -281,7 +281,7 @@ void Solid<order>::getOutputData( unsigned int out_type,
 
           data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
           data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
-          
+
           index += this->NUM_EXTRAS;
         }
 
@@ -301,7 +301,7 @@ void Solid<order>::getOutputData( unsigned int out_type,
   by this finite-element
 
   input:
-  node:  the node offset number - so that this connectivity is more or 
+  node:  the node offset number - so that this connectivity is more or
   less global
 */
 template <int order>

@@ -12,14 +12,14 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_FE_LIBRARY_H
 #define TACS_FE_LIBRARY_H
 
-/*!  
+/*!
   FElibrary.h contains many important functions and data that are
   repeatedly used in the formation of various finite element stiffness
   matricies. The intent of this code is to provide functions for
@@ -40,7 +40,7 @@
   Gauss-Lobatto) quadrature schemes that include the end points of the
   interval.
 */
-enum QuadratureType { GAUSS_QUADRATURE, 
+enum QuadratureType { GAUSS_QUADRATURE,
                       LOBATTO_QUADRATURE };
 
 TACS_BEGIN_NAMESPACE(FElibrary)
@@ -49,9 +49,9 @@ int comparator( const void * a, const void * b );
 
 // Design variable related operations
 
-/*! 
-  Sort an array and return the number of unique design variables within 
-  that array start is the index of the first non-negative value and the 
+/*!
+  Sort an array and return the number of unique design variables within
+  that array start is the index of the first non-negative value and the
   return value is the number of non-negative design variables
   &dvNums[start] is the start of the new array of unique design vars...
 */
@@ -75,7 +75,7 @@ int mergeArrays( int *a, int na, const int *b, int nb );
   intv[k] <= index < intv[k+1]
 
   The intervals must be non-decreasing. Note that len is equal
-  to the length of the intv array which is one more than the 
+  to the length of the intv array which is one more than the
   total number of intervals.
 */
 int findInterval( int index, const int intv[], int len );
@@ -83,22 +83,22 @@ int findInterval( int index, const int intv[], int len );
 /*!
   Match the intervals in a list of sorted variables.
 
-  Given the intervals, the range of the intervals and 
+  Given the intervals, the range of the intervals and
   the list of sorted variables, local a point such that
 
   vars[ext_ptr[n]] <= ownerRange[n]
 */
-void matchIntervals( int mpiSize, const int ownerRange[], 
+void matchIntervals( int mpiSize, const int ownerRange[],
                      int nvars, const int vars[], int ext_ptr[] );
 
-/*!  
+/*!
   Solve the quadratic equation and return the positive and negative
   roots.
 
   The code returns the roots of the equation:
 
   a*x^2 + b*x + c = 0
-  
+
   This code avoids truncation error by testing the sign of the
   b coefficient and using the corresponding expression with the
   least susceptibility to truncation error.
@@ -124,7 +124,7 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
     return;
   }
 
-  // Depending on the sign of b, use different expressions to 
+  // Depending on the sign of b, use different expressions to
   // avoid truncation error
   discrim = sqrt(discrim);
 
@@ -140,7 +140,7 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
 
 /*
   Test the derivative of the b-spline basis
-  
+
   input:
   k: the order of the basis to test
 */
@@ -171,10 +171,10 @@ int bspline_interval( double u, const double * T, int n, int k );
   work: a temporary array of size 2*k
 
   u is on the idx-th knot span such that u is in the interval
-  u \in [Tu[idx], Tu[idx+1]) 
+  u \in [Tu[idx], Tu[idx+1])
 */
-void bspline_basis( double * N, const int idx, const double u, 
-                    const double * Tu, 
+void bspline_basis( double * N, const int idx, const double u,
+                    const double * Tu,
                     const int ku, double * work );
 
 /*
@@ -191,7 +191,7 @@ void bspline_basis( double * N, const int idx, const double u,
   work: a temporary array of size 2*k + k*k
 
   u is on the idx-th knot span such that u is in the interval
-  u \in [Tu[idx], Tu[idx+1]) 
+  u \in [Tu[idx], Tu[idx+1])
 */
 void bspline_basis_derivative( double * N, const int idx, const double u,
                                int ideriv, const double * Tu,
@@ -202,7 +202,7 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
 
   input:
   u:     the parametric location for the spline evaluation
-  idu:   the order of the derivative to use 
+  idu:   the order of the derivative to use
   T:     the knot vector of length n + k
   n:     the number of knots
   k:     the order of the spline to evaluate
@@ -210,13 +210,13 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
   work:  a working array for temporary storage
 
   the work array must be of size:
-  if idu == 0: len = 3*ku   
+  if idu == 0: len = 3*ku
   otherwise: len = (idu+3)*ku + ku*ku
 
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline1d( const double u, const int idu, const double * Tu, 
+TacsScalar bspline1d( const double u, const int idu, const double * Tu,
                       const int nu, const int ku, const TacsScalar * coef,
                       double * work );
 
@@ -225,7 +225,7 @@ TacsScalar bspline1d( const double u, const int idu, const double * Tu,
 
   input:
   u, v:       the parametric location for the spline evaluation
-  idu, idv:   the order of the derivative to use 
+  idu, idv:   the order of the derivative to use
   Tu, Tv:     the knot vector of length n + k
   nu, nv:     the number of knots
   ku, kv:     the order of the spline to evaluate
@@ -239,10 +239,10 @@ TacsScalar bspline1d( const double u, const int idu, const double * Tu,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline2d( const double u, const double v, 
+TacsScalar bspline2d( const double u, const double v,
                       const int idu, const int idv,
                       const double * Tu, const double * Tv,
-                      const int nu, const int nv, const int ku, const int kv, 
+                      const int nu, const int nv, const int ku, const int kv,
                       const TacsScalar * coef,
                       double * work );
 
@@ -251,7 +251,7 @@ TacsScalar bspline2d( const double u, const double v,
 
   input:
   u, v, w:        the parametric location for the spline evaluation
-  idu, idv, idw:  the order of the derivative to use 
+  idu, idv, idw:  the order of the derivative to use
   Tu, Tv, Tw:     the knot vector of length n + k
   nu, nv, nw:     the number of knots
   ku, kv, kw:     the order of the spline to evaluate
@@ -260,18 +260,18 @@ TacsScalar bspline2d( const double u, const double v,
 
   the work array must be of size:
   if idu == 0: len = ku + kv + kw + 2*max(ku, kv, kw)
-  otherwise: 
-  len = (idu+1)*ku + (idv+1)*kv + (idw+1)*kw + 
+  otherwise:
+  len = (idu+1)*ku + (idv+1)*kv + (idw+1)*kw +
   max(2*ku + ku**2, 2*kv + kv**2, 2*kw + kw**2)
 
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline3d( const double u, const double v, const double w, 
+TacsScalar bspline3d( const double u, const double v, const double w,
                       const int idu, const int idv, const int idw,
                       const double * Tu, const double * Tv, const double * Tw,
-                      const int nu, const int nv, const int nw, 
-                      const int ku, const int kv, const int kw, 
+                      const int nu, const int nv, const int nw,
+                      const int ku, const int kv, const int kw,
                       const TacsScalar * coef,
                       double * work );
 

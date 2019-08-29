@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_3D_TRACTION_H
@@ -33,10 +33,10 @@ class TACS3DTraction : public TACSElement {
   static const int V_POSITIVE = 3;
   static const int W_NEGATIVE = 4;
   static const int W_POSITIVE = 5;
-  
+
   // Constructor for the shell element
-  TACS3DTraction( int _surface, 
-                  TacsScalar _tx[], 
+  TACS3DTraction( int _surface,
+                  TacsScalar _tx[],
                   TacsScalar _ty[],
                   TacsScalar _tz[] ){
     surface = surface;
@@ -59,9 +59,9 @@ class TACS3DTraction : public TACSElement {
       for ( int k = 0; k < order; k++ ){
         knots[k] = -cos(M_PI*k/(order-1));
       }
-    }  
+    }
   }
-  TACS3DTraction( int _surface, 
+  TACS3DTraction( int _surface,
                   TacsScalar _tx,
                   TacsScalar _ty,
                   TacsScalar _tz ){
@@ -85,18 +85,18 @@ class TACS3DTraction : public TACSElement {
       for ( int k = 0; k < order; k++ ){
         knots[k] = -cos(M_PI*k/(order-1));
       }
-    }  
+    }
   }
-                     
+
   // Return the number of displacements, stresses and nodes
   // ------------------------------------------------------
   int numDisplacements(){ return 3; }
   int numNodes(){ return NUM_NODES; }
   int numStresses(){ return 0; }
-  
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time, 
+  void computeEnergies( double time,
                         TacsScalar *Te, TacsScalar *Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -106,7 +106,7 @@ class TACS3DTraction : public TACSElement {
 
   /*
     Compute the shape functions and their derivatives w.r.t. the
-    parametric element location 
+    parametric element location
   */
   void getShapeFunctions( const double pt[], double N[],
                           double Na[], double Nb[] ){
@@ -120,7 +120,7 @@ class TACS3DTraction : public TACSElement {
         Na[0] = dna[i]*nb[j];
         Nb[0] = na[i]*dnb[j];
         N++;
-        Na++;  Nb++;          
+        Na++;  Nb++;
       }
     }
   }
@@ -158,7 +158,7 @@ class TACS3DTraction : public TACSElement {
           for ( int k = 0; k < order; k++ ){
             for ( int j = 0; j < order; j++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[j + k*order]*Xpts[3*node];
               Xa[1] += Na[j + k*order]*Xpts[3*node+1];
               Xa[2] += Na[j + k*order]*Xpts[3*node+2];
@@ -174,7 +174,7 @@ class TACS3DTraction : public TACSElement {
           for ( int k = 0; k < order; k++ ){
             for ( int i = 0; i < order; i++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[i + k*order]*Xpts[3*node];
               Xa[1] += Na[i + k*order]*Xpts[3*node+1];
               Xa[2] += Na[i + k*order]*Xpts[3*node+2];
@@ -190,7 +190,7 @@ class TACS3DTraction : public TACSElement {
           for ( int j = 0; j < order; j++ ){
             for ( int i = 0; i < order; i++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[i + j*order]*Xpts[3*node];
               Xa[1] += Na[i + j*order]*Xpts[3*node+1];
               Xa[2] += Na[i + j*order]*Xpts[3*node+2];
@@ -218,7 +218,7 @@ class TACS3DTraction : public TACSElement {
           Ty += ty[i]*N[i];
           Tz += tz[i]*N[i];
         }
-        
+
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         if (surface < 2){
@@ -267,7 +267,7 @@ class TACS3DTraction : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] ){}
-  
+
  private:
   int surface;
   TacsScalar tx[order*order];
@@ -292,7 +292,7 @@ class TACS3DPressureTraction : public TACSElement {
   static const int V_POSITIVE = 3;
   static const int W_NEGATIVE = 4;
   static const int W_POSITIVE = 5;
-  
+
   // Constructor for the shell element
   TACS3DPressureTraction( int _surface,
                           TacsScalar _pressure ){
@@ -314,18 +314,18 @@ class TACS3DPressureTraction : public TACSElement {
       for ( int k = 0; k < order; k++ ){
         knots[k] = -cos(M_PI*k/(order-1));
       }
-    }  
+    }
   }
-                     
+
   // Return the number of displacements, stresses and nodes
   // ------------------------------------------------------
   int numDisplacements(){ return 3; }
   int numNodes(){ return NUM_NODES; }
   int numStresses(){ return 0; }
-  
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time, 
+  void computeEnergies( double time,
                         TacsScalar *Te, TacsScalar *Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -335,7 +335,7 @@ class TACS3DPressureTraction : public TACSElement {
 
   /*
     Compute the shape functions and their derivatives w.r.t. the
-    parametric element location 
+    parametric element location
   */
   void getShapeFunctions( const double pt[], double N[],
                           double Na[], double Nb[] ){
@@ -349,7 +349,7 @@ class TACS3DPressureTraction : public TACSElement {
         Na[0] = dna[i]*nb[j];
         Nb[0] = na[i]*dnb[j];
         N++;
-        Na++;  Nb++;          
+        Na++;  Nb++;
       }
     }
   }
@@ -387,7 +387,7 @@ class TACS3DPressureTraction : public TACSElement {
           for ( int k = 0; k < order; k++ ){
             for ( int j = 0; j < order; j++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[j + k*order]*Xpts[3*node];
               Xa[1] += Na[j + k*order]*Xpts[3*node+1];
               Xa[2] += Na[j + k*order]*Xpts[3*node+2];
@@ -403,7 +403,7 @@ class TACS3DPressureTraction : public TACSElement {
           for ( int k = 0; k < order; k++ ){
             for ( int i = 0; i < order; i++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[i + k*order]*Xpts[3*node];
               Xa[1] += Na[i + k*order]*Xpts[3*node+1];
               Xa[2] += Na[i + k*order]*Xpts[3*node+2];
@@ -419,7 +419,7 @@ class TACS3DPressureTraction : public TACSElement {
           for ( int j = 0; j < order; j++ ){
             for ( int i = 0; i < order; i++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[i + j*order]*Xpts[3*node];
               Xa[1] += Na[i + j*order]*Xpts[3*node+1];
               Xa[2] += Na[i + j*order]*Xpts[3*node+2];
@@ -444,7 +444,7 @@ class TACS3DPressureTraction : public TACSElement {
         TacsScalar Tx = -pressure*normal[0];
         TacsScalar Ty = -pressure*normal[1];
         TacsScalar Tz = -pressure*normal[2];
-        
+
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
         if (surface < 2){
@@ -493,7 +493,7 @@ class TACS3DPressureTraction : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] ){}
-  
+
  private:
   int surface;
   TacsScalar pressure;
@@ -513,10 +513,10 @@ class TACS3DBoundingTraction : public TACSElement {
   static const int V_POSITIVE = 3;
   static const int W_NEGATIVE = 4;
   static const int W_POSITIVE = 5;
-  
+
   // Constructor for the shell element
-  TACS3DBoundingTraction( int _surface, 
-                          TacsScalar _tx[], 
+  TACS3DBoundingTraction( int _surface,
+                          TacsScalar _tx[],
                           TacsScalar _ty[],
                           TacsScalar _tz[],
                           TacsScalar _box[]){
@@ -543,7 +543,7 @@ class TACS3DBoundingTraction : public TACSElement {
     }
     memcpy(box, _box, 6*sizeof(TacsScalar));
   }
-  TACS3DBoundingTraction( int _surface, 
+  TACS3DBoundingTraction( int _surface,
                           TacsScalar _tx,
                           TacsScalar _ty,
                           TacsScalar _tz,
@@ -568,19 +568,19 @@ class TACS3DBoundingTraction : public TACSElement {
       for ( int k = 0; k < order; k++ ){
         knots[k] = -cos(M_PI*k/(order-1));
       }
-    }  
+    }
     memcpy(box, _box, 6*sizeof(TacsScalar));
   }
-                     
+
   // Return the number of displacements, stresses and nodes
   // ------------------------------------------------------
   int numDisplacements(){ return 3; }
   int numNodes(){ return NUM_NODES; }
   int numStresses(){ return 0; }
-  
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time, 
+  void computeEnergies( double time,
                         TacsScalar *Te, TacsScalar *Pe,
                         const TacsScalar Xpts[],
                         const TacsScalar vars[],
@@ -590,7 +590,7 @@ class TACS3DBoundingTraction : public TACSElement {
 
   /*
     Compute the shape functions and their derivatives w.r.t. the
-    parametric element location 
+    parametric element location
   */
   void getShapeFunctions( const double pt[], double N[],
                           double Na[], double Nb[] ){
@@ -604,7 +604,7 @@ class TACS3DBoundingTraction : public TACSElement {
         Na[0] = dna[i]*nb[j];
         Nb[0] = na[i]*dnb[j];
         N++;
-        Na++;  Nb++;          
+        Na++;  Nb++;
       }
     }
   }
@@ -636,15 +636,15 @@ class TACS3DBoundingTraction : public TACSElement {
         TacsScalar Xa[3], Xb[3];
         Xa[0] = Xa[1] = Xa[2] = 0.0;
         Xb[0] = Xb[1] = Xb[2] = 0.0;
-        
+
         int box_x = 0, box_y = 0, box_z = 0;
-        
+
         if (surface < 2){
           const int i = (order-1)*(surface % 2);
           for ( int k = 0; k < order; k++ ){
             for ( int j = 0; j < order; j++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[j + k*order]*Xpts[3*node];
               Xa[1] += Na[j + k*order]*Xpts[3*node+1];
               Xa[2] += Na[j + k*order]*Xpts[3*node+2];
@@ -652,16 +652,16 @@ class TACS3DBoundingTraction : public TACSElement {
               Xb[0] += Nb[j + k*order]*Xpts[3*node];
               Xb[1] += Nb[j + k*order]*Xpts[3*node+1];
               Xb[2] += Nb[j + k*order]*Xpts[3*node+2];
-              
-              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) && 
+
+              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) &&
                   (TacsRealPart(Xpts[3*node]) >= TacsRealPart(box[0]))){
                 box_x = 1;
               }
-              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) && 
+              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) &&
                   (TacsRealPart(Xpts[3*node+1]) >= TacsRealPart(box[1]))){
                 box_y = 1;
               }
-              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) && 
+              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) &&
                   (TacsRealPart(Xpts[3*node+2]) >= TacsRealPart(box[2]))){
                 box_z = 1;
               }
@@ -673,7 +673,7 @@ class TACS3DBoundingTraction : public TACSElement {
           for ( int k = 0; k < order; k++ ){
             for ( int i = 0; i < order; i++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[i + k*order]*Xpts[3*node];
               Xa[1] += Na[i + k*order]*Xpts[3*node+1];
               Xa[2] += Na[i + k*order]*Xpts[3*node+2];
@@ -682,15 +682,15 @@ class TACS3DBoundingTraction : public TACSElement {
               Xb[1] += Nb[i + k*order]*Xpts[3*node+1];
               Xb[2] += Nb[i + k*order]*Xpts[3*node+2];
 
-              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) && 
+              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) &&
                   (TacsRealPart(Xpts[3*node]) >= TacsRealPart(box[0]))){
                 box_x = 1;
               }
-              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) && 
+              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) &&
                   (TacsRealPart(Xpts[3*node+1]) >= TacsRealPart(box[1]))){
                 box_y = 1;
               }
-              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) && 
+              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) &&
                   (TacsRealPart(Xpts[3*node+2]) >= TacsRealPart(box[2]))){
                 box_z = 1;
               }
@@ -702,7 +702,7 @@ class TACS3DBoundingTraction : public TACSElement {
           for ( int j = 0; j < order; j++ ){
             for ( int i = 0; i < order; i++ ){
               const int node = i + j*order + k*order*order;
-              
+
               Xa[0] += Na[i + j*order]*Xpts[3*node];
               Xa[1] += Na[i + j*order]*Xpts[3*node+1];
               Xa[2] += Na[i + j*order]*Xpts[3*node+2];
@@ -712,15 +712,15 @@ class TACS3DBoundingTraction : public TACSElement {
               Xb[2] += Nb[i + j*order]*Xpts[3*node+2];
 
 
-              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) && 
+              if ((TacsRealPart(Xpts[3*node]) <= TacsRealPart(box[3])) &&
                   (TacsRealPart(Xpts[3*node]) >= TacsRealPart(box[0]))){
                 box_x = 1;
               }
-              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) && 
+              if ((TacsRealPart(Xpts[3*node+1]) <= TacsRealPart(box[4])) &&
                   (TacsRealPart(Xpts[3*node+1]) >= TacsRealPart(box[1]))){
                 box_y = 1;
               }
-              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) && 
+              if ((TacsRealPart(Xpts[3*node+2]) <= TacsRealPart(box[5])) &&
                   (TacsRealPart(Xpts[3*node+2]) >= TacsRealPart(box[2]))){
                 box_z = 1;
               }
@@ -737,9 +737,9 @@ class TACS3DBoundingTraction : public TACSElement {
         h *= gaussWts[n]*gaussWts[m];
 
         // Evaluate the traction force evaluated at the quadrature point within
-        // the element if it is within the bounding box        
+        // the element if it is within the bounding box
         TacsScalar Tx = 0.0, Ty = 0.0, Tz = 0.0;
-        
+
         if (box_x && box_y && box_z){
           for ( int i = 0; i < order*order; i++ ){
             Tx += tx[i]*N[i];
@@ -795,7 +795,7 @@ class TACS3DBoundingTraction : public TACSElement {
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[] ){}
-  
+
  private:
   int surface;
   TacsScalar tx[order*order];

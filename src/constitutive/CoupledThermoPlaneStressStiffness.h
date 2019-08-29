@@ -2,18 +2,18 @@
 #define TACS_COUPLED_THERMO_PLANE_STRESS_STIFFNESS_H
 
 /*
-  Copyright (c) 2017 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2017 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 */
 #include "PlaneStressStiffness.h"
 /*
-  This is the plane stress constitutive objects with thermal loading. 
+  This is the plane stress constitutive objects with thermal loading.
 */
 class CoupledThermoPlaneStressStiffness : public PlaneStressStiffness {
  public:
   CoupledThermoPlaneStressStiffness();
   CoupledThermoPlaneStressStiffness( TacsScalar _rho, TacsScalar E,
-                                     TacsScalar nu, TacsScalar _alpha, 
+                                     TacsScalar nu, TacsScalar _alpha,
                                      TacsScalar Tref, TacsScalar kcond );
 
   ~CoupledThermoPlaneStressStiffness();
@@ -59,7 +59,7 @@ class CoupledThermoPlaneStressStiffness : public PlaneStressStiffness {
   virtual void failureStrainSens(const double pt[],
                                  const TacsScalar T[],
                                  const TacsScalar strain[],
-                                 TacsScalar sens[], 
+                                 TacsScalar sens[],
                                  int vars_j=0 ) = 0;
   virtual int getVarsPerNode() = 0;
   // Functions that evaluate the heat flux at a location
@@ -77,24 +77,24 @@ class CoupledThermoPlaneStressStiffness : public PlaneStressStiffness {
                                    TacsScalar sens[] ) = 0;
   // Functions that evaluate the maximum temperature of an element
   virtual void maxtemp( const double pt[],
-			const TacsScalar max_temp,
-			TacsScalar *fail,
-			int vars_j=0 ) = 0;
-  virtual void addMaxTempDVSens ( const double pt[], 
-				  const TacsScalar max_temp,
-				  TacsScalar alpha,
+                        const TacsScalar max_temp,
+                        TacsScalar *fail,
+                        int vars_j=0 ) = 0;
+  virtual void addMaxTempDVSens ( const double pt[],
+                                  const TacsScalar max_temp,
+                                  TacsScalar alpha,
                                   TacsScalar dvSens[], int dvLen,
-				  int vars_j=0 ) = 0;
+                                  int vars_j=0 ) = 0;
   virtual void maxtempStrainSens( const double pt[],
-				  const TacsScalar max_temp,
-				  TacsScalar sens[],
-				  int vars_j=0 ) = 0;
+                                  const TacsScalar max_temp,
+                                  TacsScalar sens[],
+                                  int vars_j=0 ) = 0;
  // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
  protected:
   // The stiffness matrix
-  TacsScalar Cmat[6], Tmat[3]; 
+  TacsScalar Cmat[6], Tmat[3];
   TacsScalar rho, alpha,xw, Tref;
  private:
   static const char *constName;

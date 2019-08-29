@@ -133,14 +133,14 @@ class TACSFrequencyAnalysis : public TACSObject {
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
                          TACSMat *_pcmat, TACSPc *_pc,
-                         int max_jd_size, 
+                         int max_jd_size,
                          int fgmres_size, int num_eigvals,
                          double eigtol=1e-9,
-                         double eig_rtol=1e-9, 
+                         double eig_rtol=1e-9,
                          double eig_atol=1e-30,
                          int num_recycle=0,
                          JDRecycleType recycle_type=JD_NUM_RECYCLE );
-  
+
   ~TACSFrequencyAnalysis();
 
   // Retrieve the instance of TACSAssembler

@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "SolidStiffness.h"
@@ -24,7 +24,7 @@ const char * SolidStiffness::constName = "SolidStiffness";
 const char * SolidStiffness::constitutiveName(){
   return constName;
 }
-  
+
 /*
   SolidStiffness member function definitions: Definitions for a simple
   beam element
@@ -35,7 +35,7 @@ SolidStiffness::SolidStiffness( TacsScalar _rho, TacsScalar _E,
   E = _E;
   nu = _nu;
   ys = _ys;
-  
+
   TacsScalar D = E/((1.0 + nu)*(1.0 - 2.0*nu));
   C[0] = C[3] = C[5] = (1.0 - nu)*D;
   C[1] = C[2] = C[4] = nu*D;
@@ -86,7 +86,7 @@ void SolidStiffness::getDesignVars( TacsScalar dvs[], int dvLen ){
 /*
   Given the strain, compute the stress at the given parametric point
 */
-void SolidStiffness::calculateStress( const double gpt[], 
+void SolidStiffness::calculateStress( const double gpt[],
                                       const TacsScalar strain[],
                                       TacsScalar stress[] ){
   calcStress(strain, stress);
@@ -120,8 +120,8 @@ void SolidStiffness::addStressDVSens( const double pt[],
 /*
   Compute the failure function
 */
-void SolidStiffness::failure( const double pt[], 
-                              const TacsScalar e[], 
+void SolidStiffness::failure( const double pt[],
+                              const TacsScalar e[],
                               TacsScalar *fail ){
   TacsScalar s[6];
   calcStress(e, s);
@@ -132,13 +132,13 @@ void SolidStiffness::failure( const double pt[],
   Evaluate the derivative of the failure function with respect to the
   strain
 */
-void SolidStiffness::failureStrainSens( const double pt[], 
+void SolidStiffness::failureStrainSens( const double pt[],
                                         const TacsScalar e[],
                                         TacsScalar sens[] ){
   TacsScalar s[6], ssens[6];
   calcStress(e, s);
   VonMisesFailure3DStressSens(ssens, s, ys);
-  calcStress(ssens, sens);  
+  calcStress(ssens, sens);
 }
 
 /*
@@ -166,4 +166,4 @@ void SolidStiffness::addFailureDVSens( const double pt[],
     dvSens[eNum] += ssens[5]*G*e[5];
   }
 }
-  
+

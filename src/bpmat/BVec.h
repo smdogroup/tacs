@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_BVEC_H
@@ -29,24 +29,24 @@
 /*
   The following class defines the dependent node information.
 
-  Note that this class steals the ownership of the data. 
+  Note that this class steals the ownership of the data.
 */
 class TACSBVecDepNodes : public TACSObject {
  public:
-  TACSBVecDepNodes( int _ndep_nodes, 
+  TACSBVecDepNodes( int _ndep_nodes,
                     int **_dep_ptr, int **_dep_conn,
                     double **_dep_weights ){
     ndep_nodes = _ndep_nodes;
-    dep_ptr = *_dep_ptr;  *_dep_ptr = NULL; 
-    dep_conn = *_dep_conn;  *_dep_conn = NULL; 
-    dep_weights = *_dep_weights;  *_dep_weights = NULL; 
+    dep_ptr = *_dep_ptr;  *_dep_ptr = NULL;
+    dep_conn = *_dep_conn;  *_dep_conn = NULL;
+    dep_weights = *_dep_weights;  *_dep_weights = NULL;
   }
   ~TACSBVecDepNodes(){
     delete [] dep_ptr;
     delete [] dep_conn;
     delete [] dep_weights;
   }
-  
+
   // Get the dependent connectivity and weights
   // ------------------------------------------
   int getDepNodes( const int **_dep_ptr, const int **_dep_conn,
@@ -79,18 +79,18 @@ class TACSBVecDepNodes : public TACSObject {
   operations. There are two flavours of this class: One with the
   capability to set/add and get values from both local and pre-defined
   global locations within the vector, and the plain vanilla variety
-  which only has local variables. 
+  which only has local variables.
 
   The communication of the local/global variable value locations takes
   place behind the scenes and is transparent to the user.
 */
 class TACSBVec : public TACSVec {
- public: 
+ public:
   TACSBVec( TACSVarMap *map, int bsize,
             TACSBVecDistribute *ext_dist=NULL,
             TACSBVecDepNodes *dep_nodes=NULL );
   TACSBVec( MPI_Comm _comm, int size, int bsize );
-  ~TACSBVec();  
+  ~TACSBVec();
 
   // The basic vector operations
   // ---------------------------
@@ -100,12 +100,12 @@ class TACSBVec : public TACSVec {
   TacsScalar norm();                         // Compute the Cartesian 2 norm
   void scale( TacsScalar alpha );            // Scale the vector by a value
   TacsScalar dot( TACSVec *x );              // Compute x^{T}*y
-  void mdot( TACSVec **x, 
+  void mdot( TACSVec **x,
              TacsScalar *ans, int m );       // Multiple dot product
   void axpy( TacsScalar alpha, TACSVec *x ); // y <- y + alpha*x
   void copyValues( TACSVec *x );             // Copy values from x to this
-  void axpby( TacsScalar alpha, 
-              TacsScalar beta, TACSVec *x ); // y <- alpha*x + beta*y 
+  void axpby( TacsScalar alpha,
+              TacsScalar beta, TACSVec *x ); // y <- alpha*x + beta*y
   void applyBCs( TACSBcMap *map, TACSVec *vec=NULL );
   void setBCs( TACSBcMap *map );
 

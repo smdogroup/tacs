@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include <stdio.h>
@@ -25,7 +25,7 @@
 */
 
 /*!
-  TACSBcMap class 
+  TACSBcMap class
 
   Defines the Dirichlet boundary conditions for the vector and matrix
   classes.
@@ -57,7 +57,7 @@ TACSBcMap::TACSBcMap( int _bsize, int num_bcs ){
 */
 TACSBcMap::~TACSBcMap(){
   delete [] nodes;
-  delete [] vars;  
+  delete [] vars;
   delete [] values;
 }
 
@@ -89,7 +89,7 @@ void TACSBcMap::addBC( int node, int nvals,
     delete [] nodes;
     delete [] vars;
     delete [] values;
-    
+
     // Copy over the new arrays
     nodes = temp_nodes;
     vars = temp_vars;
@@ -117,7 +117,7 @@ void TACSBcMap::addBC( int node, int nvals,
       vars[nbcs] = vars[nbcs] | (1 << i);
     }
   }
-  
+
   // Increment the boundary conditions
   nbcs++;
 }
@@ -148,7 +148,7 @@ void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
     delete [] nodes;
     delete [] vars;
     delete [] values;
-    
+
     // Copy over the new arrays
     nodes = temp_nodes;
     vars = temp_vars;
@@ -218,7 +218,7 @@ const char *TACSKsm::ksmName = "TACSKsm";
 
 /*
   The KSMPrint object controls how the data it output to the screen
-  (if at all) 
+  (if at all)
 
   input:
   descript: prepend this descriptor to the output
@@ -274,7 +274,7 @@ void KSMPrintStdout::print( const char *cstr ){
   rank:     output/create file if rank == 0
   freq:     the frequency to generate output
 */
-KSMPrintFile::KSMPrintFile( const char *filename, const char *_descript, 
+KSMPrintFile::KSMPrintFile( const char *filename, const char *_descript,
                             int _rank, int _freq ){
   rank = _rank;
   freq = _freq;
@@ -309,7 +309,7 @@ void KSMPrintFile::printResidual( int iter, TacsScalar res ){
   Print a string out to the file
 */
 void KSMPrintFile::print( const char *cstr ){
-  if (fp){ 
+  if (fp){
     fprintf(fp, "%s", cstr);
     fflush(fp);
   }
@@ -332,7 +332,7 @@ PCG::PCG( TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter ){
 
   mat = _mat;
   pc = _pc;
-  
+
   mat->incref();
   pc->incref();
 
@@ -343,7 +343,7 @@ PCG::PCG( TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter ){
   rtol = 1e-8;
   atol = 1e-30;
 
-  // Create the vectors required 
+  // Create the vectors required
   work = mat->createVec();
   R = mat->createVec();
   Z = mat->createVec();
@@ -352,7 +352,7 @@ PCG::PCG( TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter ){
   work->incref();
   R->incref();
   Z->incref();
-  P->incref();  
+  P->incref();
 }
 
 PCG::~PCG(){
@@ -362,7 +362,7 @@ PCG::~PCG(){
   work->decref();
   R->decref();
   Z->decref();
-  P->decref();  
+  P->decref();
 }
 
 /*
@@ -375,7 +375,7 @@ void PCG::setOperators( TACSMat *_mat, TACSPc *_pc ){
     mat = _mat;
   }
   if (_pc){
-    _pc->incref();  
+    _pc->incref();
     if (pc){ pc->decref(); }
     pc = _pc;
   }
@@ -402,7 +402,7 @@ void PCG::setMonitor( KSMPrint *_monitor ){
 
 /*
   Solve the linear system with the preconditioned conjugate gradient
-  method 
+  method
 
   input:
   b:          the right-hand-side
@@ -425,23 +425,23 @@ void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     else {
       mat->mult(x, R);        // R = A*x
       R->axpby(1.0, -1.0, b); // R = b - A*x
-    }    
-    
+    }
+
     if (count == 0){
       rhs_norm = R->norm();
     }
 
-    if (monitor && count == 0){ 
+    if (monitor && count == 0){
       monitor->printResidual(0, rhs_norm);
     }
 
     if (TacsRealPart(rhs_norm) > atol){
       // Apply the preconditioner
       pc->applyFactor(R, Z);
-      
+
       // Copy Z to P, ie. P = Z
       P->copyValues(Z);
-      
+
       for ( int i = 0; i < reset; i++ ){
         mat->mult(P, work);                     // work = A*P
         TacsScalar temp = R->dot(Z);            // (R,Z)
@@ -450,15 +450,15 @@ void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
         R->axpy(-alpha, work);                  // R' = R - alpha*A*P
         pc->applyFactor(R, Z);                  // Z' = M^{-1} R
         TacsScalar beta = R->dot(Z)/temp;       // beta = (R',Z')/(R,Z)
-        P->axpby(1.0, beta, Z);                 // P' = Z' + beta*P 
+        P->axpby(1.0, beta, Z);                 // P' = Z' + beta*P
 
         TacsScalar norm = R->norm();
-        
+
         if (monitor){
           monitor->printResidual(i+1, norm);
         }
-        
-        if (TacsRealPart(norm) < atol || 
+
+        if (TacsRealPart(norm) < atol ||
             TacsRealPart(norm) < rtol*TacsRealPart(rhs_norm)){
           solve_flag = 1;
           break;
@@ -474,15 +474,15 @@ void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
 /*
   Classical Gram-Schmidt orthogonalization.
-  
+
   Given an input vector q, and the set of orthogonal vectors w. Make q
   orthogonal to the set of vectors w.
-  
+
   Return an array h = w^{T} q.
   q' = q - w h
-  w^{T} q' = w^{T} q - w^{T} w w^{T} q 
+  w^{T} q' = w^{T} q - w^{T} w w^{T} q
 */
-static void ClassicalGramSchmidt( TacsScalar *h, TACSVec *q, 
+static void ClassicalGramSchmidt( TacsScalar *h, TACSVec *q,
                                   TACSVec **w, int nvecs ){
   q->mdot(w, h, nvecs);
   for ( int j = 0; j < nvecs; j++ ){
@@ -493,7 +493,7 @@ static void ClassicalGramSchmidt( TacsScalar *h, TACSVec *q,
 /*
   Modified Gram-Schmidt orthogonalization
 */
-static void ModifiedGramSchmidt( TacsScalar *h, TACSVec *q, 
+static void ModifiedGramSchmidt( TacsScalar *h, TACSVec *q,
                                  TACSVec **w, int nvecs ){
   for ( int j = 0; j < nvecs; j++ ){
     h[j] = w[j]->dot(q);
@@ -514,7 +514,7 @@ static void ModifiedGramSchmidt( TacsScalar *h, TACSVec *q,
   nrestart:   the number of restarts before we give up
   isFlexible: is the preconditioner actually flexible? If so use FGMRES
 */
-GMRES::GMRES( TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, 
+GMRES::GMRES( TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
               int _isFlexible ){
   init(_mat, _pc, _m, _nrestart, _isFlexible);
 }
@@ -535,9 +535,9 @@ GMRES::GMRES( TACSMat *_mat, int _m, int _nrestart ){
 /*
   Initialize the underlying GMRES data structure.
 
-  This is called by both of the two constructors above. 
+  This is called by both of the two constructors above.
 */
-void GMRES::init( TACSMat *_mat, TACSPc *_pc, 
+void GMRES::init( TACSMat *_mat, TACSPc *_pc,
                   int _m, int _nrestart, int _isFlexible ){
 
   orthogonalize = ModifiedGramSchmidt;
@@ -556,7 +556,7 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   }
   else {
     // If there's no Pc then it doesn't have to be a flexible variant
-    isFlexible = 0; 
+    isFlexible = 0;
   }
 
   // Set default absolute and relative tolerances
@@ -587,7 +587,7 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   }
 
   // Allocate space for the Hessenberg matrix
-  // This is a (msub+1) x msub matrix with non-zeros 
+  // This is a (msub+1) x msub matrix with non-zeros
   // on and above the first diagonal below the main diagonal
   Hptr = new int[ msub+1 ];
   Hptr[0] = 0;
@@ -595,7 +595,7 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   for ( int i = 0; i < msub; i++ ){
     Hptr[i+1] = Hptr[i] + i+2;
   }
-  
+
   int size = Hptr[msub];
   H = new TacsScalar[ size ];      // The Hessenberg matrix
   res = new TacsScalar[ msub+1 ];  // The residual
@@ -620,7 +620,7 @@ GMRES::~GMRES(){
 
   if (pc){   pc->decref(); }
   if (work){ work->decref(); }
-  
+
   if (Z){
     for ( int i = 0; i < msub; i++ ){
       Z[i]->decref();
@@ -657,7 +657,7 @@ void GMRES::setOperators( TACSMat *_mat, TACSPc *_pc ){
     mat = _mat;
   }
   if (_pc){
-    _pc->incref();  
+    _pc->incref();
     if (pc){ pc->decref(); }
     pc = _pc;
   }
@@ -706,7 +706,7 @@ void GMRES::setMonitor( KSMPrint *_monitor ){
 /*
   Set the type of orthogonalization to use. This will be either
   classical Gram-Schmidt or modified Gram-Schmidt (default).
-  
+
   Unless you have a good reason, you should use modified Gram-Schmidt.
 */
 void GMRES::setOrthoType( enum OrthoType otype ){
@@ -720,7 +720,7 @@ void GMRES::setOrthoType( enum OrthoType otype ){
 
 /*
   Set a flag to also monitor the time spent in various operations
-  internally. 
+  internally.
 */
 void GMRES::setTimeMonitor(){
   monitor_time = 1;
@@ -736,7 +736,7 @@ const char *GMRES::gmresName = "GMRES";
   Try to solve the linear system using GMRES.
 
   The following code tries to solve the linear system using GMRES (or
-  FGMRES if the preconditioner is flexible.) 
+  FGMRES if the preconditioner is flexible.)
 
   input:
   b:          the right-hand-side
@@ -745,7 +745,7 @@ const char *GMRES::gmresName = "GMRES";
 */
 void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
   TacsScalar rhs_norm = 0.0;
-  int solve_flag = 0; 
+  int solve_flag = 0;
 
   double t_pc = 0.0, t_ortho = 0.0;
   double t_total = 0.0;
@@ -768,7 +768,7 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       W[0]->axpy(-1.0, b); // W[0] = A*x - b
 
       res[0] = W[0]->norm();
-      W[0]->scale(-1.0/res[0]); // W[0] = (b - A*x)/|| b - A*x ||    
+      W[0]->scale(-1.0/res[0]); // W[0] = (b - A*x)/|| b - A*x ||
     }
 
     if (monitor){
@@ -776,10 +776,10 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     }
 
     if (count == 0){
-      rhs_norm = res[0]; // The initial residual 
-    }  
+      rhs_norm = res[0]; // The initial residual
+    }
 
-    int niters = 0; // Keep track of the size of the Hessenberg matrix  
+    int niters = 0; // Keep track of the size of the Hessenberg matrix
 
     if (TacsRealPart(res[0]) < atol){
       break;
@@ -788,23 +788,23 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     for ( int i = 0; i < msub; i++ ){
       if (monitor_time){ t_pc -= MPI_Wtime(); }
       if (isFlexible){
-        // Apply the preconditioner, Z[i] = M^{-1} W[i] 
-        pc->applyFactor(W[i], Z[i]); 
+        // Apply the preconditioner, Z[i] = M^{-1} W[i]
+        pc->applyFactor(W[i], Z[i]);
         mat->mult(Z[i], W[i+1]);  // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
       }
       else {
         if (pc){
-          // Apply the preconditioner, work = M^{-1} W[i] 
-          pc->applyFactor(W[i], work); 
+          // Apply the preconditioner, work = M^{-1} W[i]
+          pc->applyFactor(W[i], work);
           mat->mult(work, W[i+1]); // W[i+1] = A*work = A*M^{-1}*W[i]
         }
         else {
-          mat->mult(W[i], W[i+1]); // Compute W[i+1] = A*W[i] 
+          mat->mult(W[i], W[i+1]); // Compute W[i+1] = A*W[i]
         }
       }
-      if (monitor_time){ 
+      if (monitor_time){
         double t0 = MPI_Wtime();
-        t_pc += t0; t_ortho -= t0; 
+        t_pc += t0; t_ortho -= t0;
       }
 
       // Build the orthogonal basis using MGS
@@ -813,8 +813,8 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
       H[i+1 + Hptr[i]] = W[i+1]->norm(); // H[i+1,i] = || W[i+1] ||
       W[i+1]->scale(1.0/H[i+1 + Hptr[i]]); // W[i+1] = W[i+1]/|| W[i+1] ||
-      
-      // Apply the existing part of Q to the new components of 
+
+      // Apply the existing part of Q to the new components of
       // the Hessenberg matrix
       TacsScalar h1, h2;
       for ( int k = 0; k < i; k++ ){
@@ -823,17 +823,17 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
         H[k   + Hptr[i]] =  h1*Qcos[k] + h2*Qsin[k];
         H[k+1 + Hptr[i]] = -h1*Qsin[k] + h2*Qcos[k];
       }
-      
+
       // Now, compute the rotation for the new column that was just added
       h1 = H[i   + Hptr[i]];
       h2 = H[i+1 + Hptr[i]];
       TacsScalar sq = sqrt(h1*h1 + h2*h2);
-      
+
       Qcos[i] = h1/sq;
       Qsin[i] = h2/sq;
       H[i   + Hptr[i]] =  h1*Qcos[i] + h2*Qsin[i];
       H[i+1 + Hptr[i]] = -h1*Qsin[i] + h2*Qcos[i];
-      
+
       // Update the residual
       h1 = res[i];
       // h2 = res[i+1]; = 0
@@ -843,14 +843,14 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       if (monitor){
         monitor->printResidual(i+1, fabs(TacsRealPart(res[i+1])));
       }
-      
+
       niters++;
-      
+
       if (fabs(TacsRealPart(res[i+1])) < atol ||
           fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
-        // Set the solve flag 
+        // Set the solve flag
         solve_flag = 1;
-        
+
         break;
       }
     }
@@ -860,12 +860,12 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
     // Compute the weights
     for ( int i = niters-1; i >= 0; i-- ){
-      for ( int j = i+1; j < niters; j++ ){ // 
+      for ( int j = i+1; j < niters; j++ ){ //
         res[i] = res[i] - H[i + Hptr[j]]*res[j];
       }
       res[i] = res[i]/H[i + Hptr[i]];
     }
-    
+
     // Compute the linear combination
     if (isFlexible){ // Flexible variant
       for ( int i = 0; i < niters; i++ ){
@@ -882,17 +882,17 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       for ( int i = 0; i < niters; i++ ){
         work->axpy(res[i], W[i]);
       }
-    
+
       // Apply M^{-1} to the linear combination
       pc->applyFactor(work, W[0]);
       x->axpy(1.0, W[0]);
     }
-    
+
     if (solve_flag){
       break;
     }
   }
-  
+
   if (monitor_time && monitor){
     t_total = MPI_Wtime() - t_total;
     char str_mat[80], str_ort[80], str_tot[80];
@@ -919,7 +919,7 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
   msub:       the size of the underlying GMRES (FGMRES) subspace
   isFlexible: flag to indicate required use of flexible GCROT
 */
-GCROT::GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, 
+GCROT::GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
               int _msub, int _isFlexible ){
   init(_mat, _pc, _outer, _max_outer, _msub, _isFlexible);
 }
@@ -937,9 +937,9 @@ GCROT::GCROT( TACSMat *_mat, int _outer, int _max_outer, int _msub ){
 
   This allocates all the vectors required for the underlying subspace.
   After initialization, no new significant memory allocation is
-  required.  
+  required.
 */
-void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, 
+void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
                   int _msub, int _isFlexible ){
   monitor = NULL;
   msub = _msub;             // Size of the F/GMRES subspace
@@ -956,7 +956,7 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   }
   else {
     // If there's no Pc then it doesn't have to be a flexible variant
-    isFlexible = 0; 
+    isFlexible = 0;
   }
 
   // Set default absolute and relative tolerances
@@ -981,7 +981,7 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
     }
   }
 
-  R = mat->createVec();  
+  R = mat->createVec();
   c_hat = mat->createVec();
   u_hat = mat->createVec();
 
@@ -1000,7 +1000,7 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   }
 
   // Allocate space for the Hessenberg matrix
-  // This is a (msub+1) x msub matrix with non-zeros 
+  // This is a (msub+1) x msub matrix with non-zeros
   // on and above the first diagonal below the main diagonal
   Hptr = new int[msub + 1];
   Hptr[0] = 0;
@@ -1008,7 +1008,7 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   for ( int i = 0; i < msub; i++ ){
     Hptr[i+1] = Hptr[i] + i+2;
   }
-  
+
   int size = Hptr[msub];
   H   = new TacsScalar[size];        // The Hessenberg matrix
   res = new TacsScalar[ msub+1 ];  // The residual
@@ -1071,7 +1071,7 @@ GCROT::~GCROT(){
 
 /*
   Set the matrix/preconditioner operators used for GCROT
-*/ 
+*/
 void GCROT::setOperators( TACSMat *_mat, TACSPc *_pc ){
   if (_mat){
     _mat->incref();
@@ -1079,7 +1079,7 @@ void GCROT::setOperators( TACSMat *_mat, TACSPc *_pc ){
     mat = _mat;
   }
   if (_pc){
-    _pc->incref();  
+    _pc->incref();
     if (pc){ pc->decref(); }
     pc = _pc;
   }
@@ -1120,7 +1120,7 @@ const char *GCROT::gcrotName = "GCROT";
 
 /*
   Solve the linear system defined by the matrix operator with the
-  given (possibly flexible) preconditioner 
+  given (possibly flexible) preconditioner
 
   input:
   b:          the input right-hand-side
@@ -1129,7 +1129,7 @@ const char *GCROT::gcrotName = "GCROT";
 */
 void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
   TacsScalar rhs_norm = 0.0;
-  int solve_flag = 0; 
+  int solve_flag = 0;
   int mat_iters = 0;
 
   // Compute the residual
@@ -1146,7 +1146,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     R->scale(-1.0);       // R = b - A*x0
   }
 
-  rhs_norm = R->norm(); // The initial residual 
+  rhs_norm = R->norm(); // The initial residual
 
   if (TacsRealPart(rhs_norm) < atol){
     return;
@@ -1154,8 +1154,8 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
   for ( int count = 0 ; count < max_outer; count++ ){
     // Size of the U/C subspaces
-    int outer_size = (count < outer ? count : outer); // min(count, outer); 
-    int niters = 0; // The size of the Hessenberg matrix  
+    int outer_size = (count < outer ? count : outer); // min(count, outer);
+    int niters = 0; // The size of the Hessenberg matrix
 
     W[0]->copyValues(R); // W[0] = R
     res[0] = W[0]->norm();
@@ -1168,40 +1168,40 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // The inner F/GMRES loop
     for ( int i = 0; i < msub; i++ ){
       if (isFlexible){
-        // Apply the preconditioner, Z[i] = M^{-1} W[i] 
+        // Apply the preconditioner, Z[i] = M^{-1} W[i]
         pc->applyFactor(W[i], Z[i]);
         mat->mult(Z[i], W[i+1]); // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
       }
       else {
         if (pc){
           // Use u_hat here as a temporary array
-          // Apply the preconditioner, work = M^{-1} W[i] 
-          pc->applyFactor(W[i], u_hat); 
+          // Apply the preconditioner, work = M^{-1} W[i]
+          pc->applyFactor(W[i], u_hat);
           mat->mult(u_hat, W[i+1]); // W[i+1] = A*work = A*M^{-1}*W[i]
         }
         else {
-          mat->mult(W[i], W[i+1]); // Compute W[i+1] = A*W[i] 
+          mat->mult(W[i], W[i+1]); // Compute W[i+1] = A*W[i]
         }
       }
       mat_iters++;
 
-      // First, orthonormalize W[i+1] w.r.t. 
+      // First, orthonormalize W[i+1] w.r.t.
       // the basis C[j] j = 0 .. outer_size-1 B is (outer_size, msub)
       for ( int j = 0; j < outer_size; j++ ){
-        B[j*msub + i] = W[i+1]->dot(C[j]); // B[j,i] = dot( W[i+1], C[j] )  
+        B[j*msub + i] = W[i+1]->dot(C[j]); // B[j,i] = dot( W[i+1], C[j] )
         W[i+1]->axpy(-B[j*msub + i], C[j]); // W[i+1] = W[i+1] - B[j,i]*C[j]
       }
-      
+
       // Build expand the orthogonal basis using MGS
       for ( int j = i; j >= 0; j-- ){
         H[j + Hptr[i]] = W[i+1]->dot(W[j]); // H[j,i] = dot( W[i+1], W[i] )
         W[i+1]->axpy(-H[j + Hptr[i]], W[j]); // W[i+1] = W[i+1] - H[j,i]*W[j]
       }
-      
+
       H[i+1 + Hptr[i]] = W[i+1]->norm(); // H[i+1,i] = || W[i+1] ||
       W[i+1]->scale(1.0/H[i+1 + Hptr[i]]); // W[i+1] = W[i+1]/|| W[i+1] ||
-       
-      // Apply the existing part of Q to the new components of 
+
+      // Apply the existing part of Q to the new components of
       // the Hessenberg matrix
       TacsScalar h1, h2;
       for ( int k = 0; k < i; k++ ){
@@ -1210,17 +1210,17 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
         H[k   + Hptr[i]] =  h1*Qcos[k] + h2*Qsin[k];
         H[k+1 + Hptr[i]] = -h1*Qsin[k] + h2*Qcos[k];
       }
-      
+
       // Now, compute the rotation for the new column that was just added
       h1 = H[i   + Hptr[i]];
       h2 = H[i+1 + Hptr[i]];
       TacsScalar sq = sqrt(h1*h1 + h2*h2);
-      
+
       Qcos[i] = h1/sq;
       Qsin[i] = h2/sq;
       H[i   + Hptr[i]] =  h1*Qcos[i] + h2*Qsin[i];
       H[i+1 + Hptr[i]] = -h1*Qsin[i] + h2*Qcos[i];
-      
+
       // Update the residual
       h1 = res[i];
       // h2 = res[i+1]; = 0
@@ -1230,14 +1230,14 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       if (monitor){
         monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i+1])));
       }
-      
+
       niters++;
-      
+
       if (fabs(TacsRealPart(res[i+1])) < atol ||
           fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
-        // Set the solve flag 
+        // Set the solve flag
         solve_flag = 1;
-        
+
         break;
       }
     }
@@ -1277,7 +1277,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       for ( int i = 0; i < niters; i++ ){
         c_hat->axpy(res[i], W[i]);
       }
-    
+
       // Apply u_hat = M^{-1} c_hat to the linear combination
       pc->applyFactor(c_hat, u_hat);
     }
@@ -1295,7 +1295,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     }
 
     c_hat->zeroEntries();
-    
+
     // Compute c_hat = W*H*y
     // The Hessenberg matrix has been modified by pre-multiplying by Q
     // now, undo these rotations and multiply by Q^{T}
@@ -1331,9 +1331,9 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // Update the residual and solution
     TacsScalar alpha = R->dot(c_hat);
     R->axpy(-alpha, c_hat);
-    x->axpy(alpha, u_hat); 
+    x->axpy(alpha, u_hat);
 
-    // Compute the residual and compare... 
+    // Compute the residual and compare...
     // mat->mult( x, R );      // R = A*x
     // R->axpy( -1.0, b );     // R = A*x - b
     // R->scale( -1.0 );
@@ -1344,35 +1344,35 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
 
     // Now, prepend c_hat and u_hat to C and U respectively.
     // All this is done with pointers - no copying actually occurs.
-    // Otherwise, discard the oldest vector - 
+    // Otherwise, discard the oldest vector -
     // but use it for the 'new' u_hat/c_hat
     TACSVec *u = u_hat;
     TACSVec *c = c_hat;
-    
+
     // This is the size of the subspace on the next iteration
     outer_size = (count+1 < outer ? count+1 : outer);
 
     for ( int i = 0; i < outer_size; i++ ){
       TACSVec *tu = U[i];
       TACSVec *tc = C[i];
-      
+
       U[i] = u;
-      C[i] = c; 
-      
+      C[i] = c;
+
       u = tu;
       c = tc;
     }
-      
+
     u_hat = u;
-    c_hat = c;          
+    c_hat = c;
   }
 }
 
 /*
   Create the preconditioner class with the specified
-  matrix/preconditioner pair 
+  matrix/preconditioner pair
 */
-KsmPreconditioner::KsmPreconditioner( TACSMat *_mat, 
+KsmPreconditioner::KsmPreconditioner( TACSMat *_mat,
                                       TACSPc *_pc ){
   mat = _mat;
   pc = _pc;
@@ -1388,8 +1388,8 @@ KsmPreconditioner::~KsmPreconditioner(){
 /*
   Create a solution vector using the direct preconditioner
 */
-TACSVec *KsmPreconditioner::createVec(){ 
-  return mat->createVec(); 
+TACSVec *KsmPreconditioner::createVec(){
+  return mat->createVec();
 }
 
 /*
@@ -1399,7 +1399,7 @@ void KsmPreconditioner::setOperators( TACSMat *_mat, TACSPc *_pc ){
   if (_mat){ _mat->incref(); }
   mat->decref();
   mat = _mat;
-  
+
   if (_pc){ _pc->incref(); }
   pc->decref();
   pc = _pc;
@@ -1409,12 +1409,12 @@ void KsmPreconditioner::getOperators( TACSMat **_mat, TACSPc **_pc ){
   if (_mat){*_mat = mat; }
   if (_pc){*_pc = pc; }
 }
- 
+
 /*
   'Solve' the problem - this is only really a solution if a direct
   solver is used. This is often the case within TACS.
 */
-void KsmPreconditioner::solve( TACSVec *b, TACSVec *x, 
+void KsmPreconditioner::solve( TACSVec *b, TACSVec *x,
                                int zero_guess ){
   pc->applyFactor(b, x);
 }
@@ -1425,7 +1425,7 @@ void KsmPreconditioner::solve( TACSVec *b, TACSVec *x,
 void KsmPreconditioner::setTolerances( double _rtol, double _atol ){}
 
 /*
-  Set a solution monitor - don't monitor anything since there are 
+  Set a solution monitor - don't monitor anything since there are
   no real iterations
 */
 void KsmPreconditioner::setMonitor( KSMPrint *monitor ){

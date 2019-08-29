@@ -30,12 +30,12 @@ class TACSElement3D : public TACSElement {
   int getVarsPerNode(){ return basis->getVarsPerNode(); }
   int getNumNodes(){ return basis->getNumNodes(); }
   ElementLayout getLayoutType(){ basis->getLayoutType(); }
-  
+
   // The design variable functions
   void setDesignVars( int dvLen, const TacsScalar dvs[] );
   void getDesignVars( int dvLen, TacsScalar dvs[] );
   void getDesignVarRange( int dvLen,
-                          TacsScalar lowerBound[], 
+                          TacsScalar lowerBound[],
                           TacsScalar upperBound[] );
 
   // Analysis functions
@@ -65,19 +65,19 @@ class TACSElement3D : public TACSElement {
 /*
   Add the residual to the provided vector
 
-  @param time The simulation time 
+  @param time The simulation time
   @param Xpts The element node locations
   @param vars The element state variable values
   @param dvars The time derivative of the element state variables
   @param ddvars The second time derivative of the element state variables
-  @param res The element residual output 
+  @param res The element residual output
 */
 template <int VARS_PER_NODE>
 void TACSElement3D<VARS_PER_NODE>::addResidual( double time,
                                                 const TacsScalar *Xpts,
                                                 const TacsScalar *vars,
                                                 const TacsScalar *dvars,
-                                                const TacsScalar *ddvars, 
+                                                const TacsScalar *ddvars,
                                                 TacsScalar *res ){
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
@@ -111,13 +111,13 @@ void TACSElement3D<VARS_PER_NODE>::addResidual( double time,
 /*
   Add the residual and Jacobians to the arrays
 
-  @param time The simulation time 
+  @param time The simulation time
   @param Xpts The element node locations
   @param vars The element state variable values
   @param dvars The time derivative of the element state variables
   @param ddvars The second time derivative of the element state variables
   @param res The element residual output
-  @param mat The element Jacobian output 
+  @param mat The element Jacobian output
 */
 template <int VARS_PER_NODE>
 void TACSElement3D<VARS_PER_NODE>::addJacobian( double time,
@@ -127,7 +127,7 @@ void TACSElement3D<VARS_PER_NODE>::addJacobian( double time,
                                                 const TacsScalar *Xpts,
                                                 const TacsScalar *vars,
                                                 const TacsScalar *dvars,
-                                                const TacsScalar *ddvars, 
+                                                const TacsScalar *ddvars,
                                                 TacsScalar *res,
                                                 TacsScalar *mat ){
   // Compute the number of quadrature points
@@ -152,7 +152,7 @@ void TACSElement3D<VARS_PER_NODE>::addJacobian( double time,
 
     // Evaluate the weak form of the model
     int DDUt_nnz, DDUx_nnz;
-    const int *DDUt_pairs, *DDUx_pairs; 
+    const int *DDUt_pairs, *DDUx_pairs;
     TacsScalar DUt[VARS_PER_NODE*3], DUx[6*VARS_PER_NODE];
     TacsScalar DDUt[9*VARS_PER_NODE*VARS_PER_NODE];
     TacsScalar DDUx[32*VARS_PER_NODE*VARS_PER_NODE];
@@ -192,7 +192,7 @@ void TACSElement3D<VARS_PER_NODE>::addAdjResXptProduct( double time,
                                                         const TacsScalar dvars[],
                                                         const TacsScalar ddvars[],
                                                         TacsScalar fXptSens[] ){
-  
+
 }
 
 #endif // TACS_ELEMENT_3D_H

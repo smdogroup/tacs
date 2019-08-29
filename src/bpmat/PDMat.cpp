@@ -1511,12 +1511,12 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
   get_proc_row_column(rank, &proc_row, &proc_col);
 
   memset(y, 0, xbptr[nrows]*sizeof(TacsScalar));
-  
+
   // Allocate temporary space (if needed)
   TacsScalar *tx = new TacsScalar[ cbptr[ncols] ];
   TacsScalar *ty = new TacsScalar[ rbptr[nrows] ];
   memset(ty, 0, rbptr[nrows]*sizeof(TacsScalar));
-    
+
   if (proc_row >= 0){
     // Allocate an array of requests
     MPI_Request *sreq = new MPI_Request[ nprows ];
@@ -1563,7 +1563,7 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
               // Compute where this should go in the row-space
               int ni = rbptr[i];
-              
+
               int np = lval_offset[ip];
               TacsScalar alpha = 1.0, beta = 1.0;
               int one = 1;
@@ -1598,7 +1598,7 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
             // Compute where this should go in the row-space
             int ni = rbptr[i];
-            
+
             // Compute the product
             int np = lval_offset[ip];
             TacsScalar alpha = 1.0, beta = 1.0;
@@ -1613,8 +1613,8 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
 
     // Free the send request array
     delete [] sreq;
-    
-    // Loop over the rows in the matrix   
+
+    // Loop over the rows in the matrix
     for ( int i = 0; i < nrows; i++ ){
       int bi = bptr[i+1] - bptr[i];
       int ni = rbptr[i];
@@ -1676,7 +1676,7 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
         }
       }
     }
-   
+
     // Free the temporary data
     delete [] tx;
     delete [] ty;
@@ -1871,7 +1871,7 @@ void PDMat::applyFactor( TacsScalar *x ){
     xlocal = new TacsScalar[ max_bsize ];
 
     // Temporary vector of x-values on this processor
-    tx = new TacsScalar[ cbptr[nrows] ];   
+    tx = new TacsScalar[ cbptr[nrows] ];
     memset(tx, 0, cbptr[nrows]*sizeof(TacsScalar));
 
     // The locally stored sum of the products of L[i:0:i]*x[0:i]
@@ -2102,7 +2102,7 @@ void PDMat::lower_column_update( int col,
       if (rank == get_block_owner(col, col)){
         xp = &x[dj];
       }
-      
+
       TacsScalar alpha = 1.0, beta = 1.0;
       int one = 1;
       // xsum[i] = xsum[i] + L[i,j]*x[j] for
@@ -2234,7 +2234,7 @@ void PDMat::add_lower_row_sum( int col,
   input:
   col:           the column to update
   x:             the solution vector on all procs
-  tx:            temporary local x-values 
+  tx:            temporary local x-values
   xsum:          the column sums on this processor
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
 */
@@ -2278,7 +2278,7 @@ void PDMat::upper_column_update( int col,
         if (rank == get_block_owner(col, col)){
           xp = &x[dj];
         }
-        
+
         TacsScalar alpha = 1.0, beta = 1.0;
         int one = 1;
         // xsum[i] <-- xsum[i] + U[i,j]*x[j] for

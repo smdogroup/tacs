@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_TIMOSHENKO_STIFFNESS_H
@@ -19,12 +19,12 @@
   Base class for the Timoshenko beam constitutive object
 */
 
-#include "TACSConstitutive.h"  
+#include "TACSConstitutive.h"
 
 class TimoshenkoStiffness : public TACSConstitutive {
  public:
   TimoshenkoStiffness( const TacsScalar _axis[],
-                       TacsScalar EA, 
+                       TacsScalar EA,
                        TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
                        TacsScalar GJ,
                        TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
@@ -40,7 +40,7 @@ class TimoshenkoStiffness : public TACSConstitutive {
                        TacsScalar EIy, TacsScalar EIz,
                        TacsScalar kGAy, TacsScalar kGAz,
                        const TacsScalar axis[] );
-  TimoshenkoStiffness( const TacsScalar rho[], 
+  TimoshenkoStiffness( const TacsScalar rho[],
                        const TacsScalar C[],
                        const TacsScalar axis[] );
   virtual ~TimoshenkoStiffness();
@@ -52,10 +52,10 @@ class TimoshenkoStiffness : public TACSConstitutive {
   // Calculate the stress
   // --------------------
   int getNumStresses();
-  void calculateStress( const double pt[], 
+  void calculateStress( const double pt[],
                         const TacsScalar strain[],
-			TacsScalar stress[] );
-  
+                        TacsScalar stress[] );
+
   // Return the mass moments
   // -----------------------
   int getNumMassMoments(){ return 4; }
@@ -69,7 +69,7 @@ class TimoshenkoStiffness : public TACSConstitutive {
   // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
-  
+
  protected:
   // Compute the stress using an inline function
   inline void calcStress( const TacsScalar e[], TacsScalar s[] );

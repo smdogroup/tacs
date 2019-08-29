@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_SCHUR_MATRIX_H
@@ -42,7 +42,7 @@
   order. This reduces the number of degrees of freedom in the Schur
   complement. This matrix stores the equations in the following form
   on each processor:
-  
+
   [ B, E ][ x ]   [ f ]
   [ F, C ][ y ] = [ g ]
 
@@ -91,7 +91,7 @@ class ScMat : public TACSMat {
   ScMat();
   void init( TACSVarMap *_rmap,
              BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
-             TACSBVecDistribute *_b_map, 
+             TACSBVecDistribute *_b_map,
              TACSBVecDistribute *_c_map );
 
   BCSRMat *B, *E, *F, *C; // The local matrices
@@ -104,7 +104,7 @@ class ScMat : public TACSMat {
   int local_size, local_offset;
 
   // The local variables used for mat-vec products
-  TacsScalar *xlocal, *ylocal; 
+  TacsScalar *xlocal, *ylocal;
 
   static const char *matName;
 };
@@ -131,7 +131,7 @@ class ScMat : public TACSMat {
 */
 class PcScMat : public TACSPc {
  public:
-  PcScMat( ScMat *_mat, int levFill, double fill, 
+  PcScMat( ScMat *_mat, int levFill, double fill,
            int reorder_schur_complement );
   ~PcScMat();
 
@@ -173,7 +173,7 @@ class PcScMat : public TACSPc {
   // The partially dense matrix
   PDMat *pdmat; // This stores the Schur complement
 
-  // This set of indices defines the ordering passed into the 
+  // This set of indices defines the ordering passed into the
   // parallel block-cyclic matrix factorization
   int num_local_schur_vars;
   int *local_schur_vars;
@@ -187,12 +187,12 @@ class PcScMat : public TACSPc {
   int use_pdmat_alltoall; // Use the Alltoall version for matrix assembly
 
   // This object defines a mapping between the variables in the
-  // global vectors (from ScMat - in/out in applyFactor) and the 
+  // global vectors (from ScMat - in/out in applyFactor) and the
   // global Schur complement system (scmat).
   TACSBVecDistribute *tacs_schur_dist;
   TACSBVecDistCtx *tacs_schur_ctx;
 
-  TacsScalar *xlocal; // The local variables 
+  TacsScalar *xlocal; // The local variables
   TacsScalar *yinterface; // The interface variables
   TACSBVec *gschur, *yschur; // The Schur complement vectors
 };

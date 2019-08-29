@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "FElibrary.h"
@@ -43,7 +43,7 @@ void ExtendArray( TacsScalar **_array, int oldlen, int newlen ){
   *_array = newarray;
 }
 
-/*!  
+/*!
   Given an unsorted CSR data structure, with duplicate entries,
   sort/uniquify each array, and recompute the rowp values on the
   fly.
@@ -52,21 +52,21 @@ void ExtendArray( TacsScalar **_array, int oldlen, int newlen ){
   values if required and skip the diagonal.  Note that the copy may
   be overlapping so memcpy cannot be used.
 */
-void SortAndUniquifyCSR( int nvars, int *rowp, 
+void SortAndUniquifyCSR( int nvars, int *rowp,
                          int *cols, int remove_diag ){
   // Uniquify each column of the array
   int old_start = 0;
   int new_start = 0;
   for ( int i = 0; i < nvars; i++ ){
-    // sort cols[start:rowp[i]] 
+    // sort cols[start:rowp[i]]
     int rsize = FElibrary::uniqueSort(&cols[old_start], rowp[i+1]-old_start);
-      
+
     if (remove_diag){
       int end = old_start + rsize;
       for ( int j = old_start, k = new_start; j < end; j++, k++ ){
         if (cols[j] == i){
           rsize--;
-          k--;    
+          k--;
         }
         else if (j != k){
           cols[k] = cols[j];
@@ -79,10 +79,10 @@ void SortAndUniquifyCSR( int nvars, int *rowp,
         cols[k] = cols[j];
       }
     }
-      
+
     old_start = rowp[i+1];
     rowp[i] = new_start;
-    new_start += rsize;    
+    new_start += rsize;
   }
 
   rowp[nvars] = new_start;
@@ -93,18 +93,18 @@ void SortAndUniquifyCSR( int nvars, int *rowp,
 
   Input:
   ------
-  nvars, rowp, cols == The CSR data structure containing the 
+  nvars, rowp, cols == The CSR data structure containing the
   graph representation of the matrix
 
   root: The root node to perform the reordering from
   Returns:
   --------
-  rcm_vars == The new variable ordering 
+  rcm_vars == The new variable ordering
 
   The number of variables ordered in this pass of the RCM reordering
 */
 int ComputeRCMOrder( const int nvars, const int *rowp, const int *cols,
-                     int *rcm_vars, int root, int n_rcm_iters ){    
+                     int *rcm_vars, int root, int n_rcm_iters ){
   if (n_rcm_iters < 1){
     n_rcm_iters = 1;
   }
@@ -112,7 +112,7 @@ int ComputeRCMOrder( const int nvars, const int *rowp, const int *cols,
   int *levset = new int[ nvars ];
   int rvars = 0;
   for ( int k = 0; k < n_rcm_iters; k++ ){
-    rvars = ComputeRCMLevSetOrder(nvars, rowp, cols, 
+    rvars = ComputeRCMLevSetOrder(nvars, rowp, cols,
                                   rcm_vars, levset, root);
     if (nvars != rvars){
       return rvars;
@@ -134,8 +134,8 @@ int ComputeRCMOrder( const int nvars, const int *rowp, const int *cols,
   Here levset is a unique, 0 to nvars array containing the level
   sets
 */
-int ComputeRCMLevSetOrder( const int nvars, const int *rowp, 
-                           const int *cols, int *rcm_vars, int *levset, 
+int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
+                           const int *cols, int *rcm_vars, int *levset,
                            int root ){
   int start = 0; // The start of the current level
   int end   = 0; // The end of the current level
@@ -162,7 +162,7 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
           return var_num;
         }
       }
-    
+
       levset[end] = root;
       rcm_vars[root] = var_num;
       var_num++;
@@ -178,15 +178,15 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
         // Add all the nodes in the next level set
         for ( int j = rowp[node]; j < rowp[node+1]; j++ ){
           int next_node = cols[j];
-            
+
           if (rcm_vars[next_node] < 0){
             rcm_vars[next_node] = var_num;
             levset[next] = next_node;
             var_num++;
-            next++;     
-          }      
+            next++;
+          }
         }
-      }    
+      }
 
       start = end;
       end   = next;
@@ -206,7 +206,7 @@ int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
   Multicolor code for a single process using a greedy algorithm
 */
 int ComputeSerialMultiColor( const int nvars, const int *rowp,
-                             const int *cols, int *colors, 
+                             const int *cols, int *colors,
                              int *new_vars ){
   // Allocate a temporary array to store the
   int *tmp = new int[ nvars+1 ];
@@ -214,11 +214,11 @@ int ComputeSerialMultiColor( const int nvars, const int *rowp,
     tmp[i] = -1;
     colors[i] = -1;
   }
-  
+
   int num_colors = 0;
   for ( int i = 0; i < nvars; i++ ){
     // Find the minimum color that is not referred to by any adjacent
-    // node. 
+    // node.
     for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
       int j = cols[jp];
       if (colors[j] >= 0){
@@ -255,7 +255,7 @@ int ComputeSerialMultiColor( const int nvars, const int *rowp,
   for ( int i = 1; i < num_colors+1; i++ ){
     tmp[i] += tmp[i-1];
   }
-  
+
   // Create the new color variables
   for ( int i = 0; i < nvars; i++ ){
     new_vars[i] = tmp[colors[i]];

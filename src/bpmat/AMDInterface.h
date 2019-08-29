@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_AMD_INTERFACE_H
@@ -28,7 +28,7 @@
 
 void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
                           int *interface_nodes, int ninterface_nodes,
-                          int ndep_vars, const int *dep_vars, 
+                          int ndep_vars, const int *dep_vars,
                           const int *indep_ptr, const int *indep_vars,
                           int use_exact_degree );
 

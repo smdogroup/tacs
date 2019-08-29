@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_PANEL_ANALYSIS_H
@@ -22,7 +22,7 @@
 /*
   This code is not compatible with the complex verion of
   TACS. Therefore, when TACS_USE_COMPLEX is defined, we remove the
-  TACSPanelAnslysis class from TACS itself.  
+  TACSPanelAnslysis class from TACS itself.
 */
 #ifdef TACS_USE_COMPLEX
 #warning "TACSPanelAnalysis cannot be used with complex TACS"
@@ -33,18 +33,18 @@
 
 /*
   This class implements a panel-level buckling analysis for
-  determining the buckling loads of the panel and stiffeners. 
+  determining the buckling loads of the panel and stiffeners.
 */
 class TACSPanelAnalysis : public TACSObject {
  public:
   static const int SKIN_SEGMENT = 0;
   static const int STIFFENER_SEGMENT = 1;
 
-  TACSPanelAnalysis( int _nnodes, int _nsegments, 
-                     int _nbeams, int _nmodes, 
+  TACSPanelAnalysis( int _nnodes, int _nsegments,
+                     int _nbeams, int _nmodes,
                      TacsScalar Lx, TacsScalar theta = 0.0 );
   ~TACSPanelAnalysis();
-  
+
   // Functions for initialization
   // ----------------------------
   void setPoints( TacsScalar *Xpts, int npoints );
@@ -58,7 +58,7 @@ class TACSPanelAnalysis : public TACSObject {
   // Compute the mass per unit area and its derivative
   // -------------------------------------------------
   TacsScalar computePtMass();
-  void addPtMassDVSens( TacsScalar scale, 
+  void addPtMassDVSens( TacsScalar scale,
                         TacsScalar fdvSens[], int numDVs );
 
   // Compute the KS failure function over the segments
@@ -69,11 +69,11 @@ class TACSPanelAnalysis : public TACSObject {
   void addFailureDVSens( const TacsScalar strain[],
                          const TacsScalar weights[], int nfail,
                          TacsScalar fdvSens[], int dvLen );
-  void failureStrainSens( const TacsScalar strain[], 
-                          const TacsScalar weights[], int nfail, 
+  void failureStrainSens( const TacsScalar strain[],
+                          const TacsScalar weights[], int nfail,
                           TacsScalar failStrainSens[] );
 
-  // Compute the smeared stiffness and its derivative 
+  // Compute the smeared stiffness and its derivative
   // ------------------------------------------------
   void computeStiffness( TacsScalar A[], TacsScalar B[],
                          TacsScalar D[], TacsScalar As[] );
@@ -83,39 +83,39 @@ class TACSPanelAnalysis : public TACSObject {
   // Update the buckling loads or frequencies
   // ----------------------------------------
   int computeFrequencies( TacsScalar freq[], int nfreq,
-                          const char *prefix = NULL ); 
+                          const char *prefix = NULL );
   // Compute just the positive values of the buckling loads
-  int computeBucklingLoads( TacsScalar Nx, TacsScalar Nxy, 
+  int computeBucklingLoads( TacsScalar Nx, TacsScalar Nxy,
                             TacsScalar loads[], int nloads,
                             const char *prefix = NULL );
   // Compute the positive and negative loads
-  int computeBucklingLoads( TacsScalar Nxy, 
+  int computeBucklingLoads( TacsScalar Nxy,
                             TacsScalar posLoads[], TacsScalar negLoads[],
                             int nloads );
 
   // Compute the solution with a uniform surface pressure
   // ----------------------------------------------------
-  int computePressureLoad( TacsScalar p, const char *file_name ); 
+  int computePressureLoad( TacsScalar p, const char *file_name );
 
-  // Compute the design variable sensitivity of the 
+  // Compute the design variable sensitivity of the
   // buckling loads or frequencies
   // ----------------------------------------------
-  int computeFrequenciesDVSens( TacsScalar freq[], 
+  int computeFrequenciesDVSens( TacsScalar freq[],
                                 TacsScalar freqDVSens[], int nfreq );
   /*
   int computeBucklingLoadsDVSens( TacsScalar Nx, TacsScalar Nxy,
-                                  TacsScalar loads[], 
+                                  TacsScalar loads[],
                                   TacsScalar loadDVSens[], int nloads );
   int computeBucklingLoadsDVSens( TacsScalar Nxy,
-				  TacsScalar posLoads[], TacsScalar negLoads[], 
-				  TacsScalar posLoadDVSens[], 
-				  TacsScalar negLoadDVSens[], int nloads );
+                                  TacsScalar posLoads[], TacsScalar negLoads[],
+                                  TacsScalar posLoadDVSens[],
+                                  TacsScalar negLoadDVSens[], int nloads );
   */
 
   // Set the geometric design variable dependence
   // --------------------------------------------
-  void setGeoDesignDependence( TacsScalar *_XptConst, 
-                               TacsScalar *_XptLin, 
+  void setGeoDesignDependence( TacsScalar *_XptConst,
+                               TacsScalar *_XptLin,
                                TacsScalar *_geoDvs,
                                int *_dvNums, int _nDvGeo );
   void setGeoDVBounds( TacsScalar *lb, TacsScalar *ub );
@@ -125,8 +125,8 @@ class TACSPanelAnalysis : public TACSObject {
   // ---------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs ) const;
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], 
-			  int numDVs ) const;
+  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[],
+                          int numDVs ) const;
 
   // Test the implementations of the sensitivities
   // ---------------------------------------------
@@ -136,7 +136,7 @@ class TACSPanelAnalysis : public TACSObject {
                         const TacsScalar strain[],
                         const TacsScalar weights[],
                         int nfail );
-  void testBucklingDVSens( double dh, 
+  void testBucklingDVSens( double dh,
                            TacsScalar Nx, TacsScalar Nxy,
                            int nloads );
   */
@@ -152,25 +152,25 @@ class TACSPanelAnalysis : public TACSObject {
  private:
   // Compute the raw eigenvalues and eigenmodes
   // ------------------------------------------
-  int computeEigenvalues( int lm, const char *auplo, 
-			  const char *buplo, int n,
-			  int ka, TacsScalar *A, int lda,
-			  int kb, TacsScalar *B, int ldb,
-			  int k, int m, TacsScalar *work, double tol,
-			  TacsScalar *eigs, TacsScalar *Z );
-  int computeFrequencies( int neigs, TacsScalar eigvals[], 
-			  TacsScalar eigvecs[] );
-  int computeBucklingLoads( const TacsScalar segmentLoads[], 
+  int computeEigenvalues( int lm, const char *auplo,
+                          const char *buplo, int n,
+                          int ka, TacsScalar *A, int lda,
+                          int kb, TacsScalar *B, int ldb,
+                          int k, int m, TacsScalar *work, double tol,
+                          TacsScalar *eigs, TacsScalar *Z );
+  int computeFrequencies( int neigs, TacsScalar eigvals[],
+                          TacsScalar eigvecs[] );
+  int computeBucklingLoads( const TacsScalar segmentLoads[],
                             const TacsScalar beamLoads[],
-                            int neigs, TacsScalar eigvals[], 
-			    TacsScalar eigvecs[],
-			    int two_sided );
+                            int neigs, TacsScalar eigvals[],
+                            TacsScalar eigvecs[],
+                            int two_sided );
 
   // Function to compute the derivative of the buckling loads
   // --------------------------------------------------------
   int computeBucklingLoadsDVSens( TacsScalar Nx, TacsScalar Nxy,
-                                  TacsScalar posLoads[], 
-                                  TacsScalar negLoads[], 
+                                  TacsScalar posLoads[],
+                                  TacsScalar negLoads[],
                                   TacsScalar posLoadDVSens[],
                                   TacsScalar negLoadDVSens[],
                                   int nloads );
@@ -178,18 +178,18 @@ class TACSPanelAnalysis : public TACSObject {
   // Compute the segment loads and their sensitivities
   // -------------------------------------------------
   void computeSegmentLoads( TacsScalar Nx, TacsScalar Nxy,
-                            TacsScalar segmentLoads[], 
+                            TacsScalar segmentLoads[],
                             TacsScalar beamLoads[] );
   void computeSegmentLoadsDVSens( int dvNum, TacsScalar Nx, TacsScalar Nxy,
-                                  TacsScalar segmentLoads[], 
+                                  TacsScalar segmentLoads[],
                                   TacsScalar beamLoads[] );
   void computeSegmentLoadsGeoSens( TacsScalar Nx, TacsScalar Nxy, int dv,
-                                   TacsScalar segmentLoads[], 
+                                   TacsScalar segmentLoads[],
                                    TacsScalar beamLoads[] );
 
   // Print the displaced shape of the panel
   // --------------------------------------
-  void printPanelMode( const char *file_name, 
+  void printPanelMode( const char *file_name,
                        const TacsScalar *x, int nx );
 
   // Update the Xpt array based on the current values of the geoDvs
@@ -197,9 +197,9 @@ class TACSPanelAnalysis : public TACSObject {
 
   // The maximum number of nodes in an element
   static const int NUM_NODES = 2;
-  
+
   // Add a segment to the stiffness matrix
-  // -------------------------------------  
+  // -------------------------------------
   void addStiffMat( TacsScalar mat[],
                     int n1, int n2,
                     const TacsScalar At[], const TacsScalar Bt[],
@@ -210,7 +210,7 @@ class TACSPanelAnalysis : public TACSObject {
 
   // Add a segment to the mass matrix
   // --------------------------------
-  void addMassMat( TacsScalar mat[], int n1, int n2, 
+  void addMassMat( TacsScalar mat[], int n1, int n2,
                    const TacsScalar mass[] );
   void addMassMatBeam( TacsScalar mat[], int n1,
                        const TacsScalar mass[] );
@@ -228,7 +228,7 @@ class TACSPanelAnalysis : public TACSObject {
   void addStiffMatDVSens( TacsScalar smat[],
                           const TacsScalar Z[], int ldz, int nz,
                           int n1, int n2,
-                          const TacsScalar sAt[], 
+                          const TacsScalar sAt[],
                           const TacsScalar sBt[],
                           const TacsScalar sDt[] );
   void addGeoStiffMatDVSens( TacsScalar smat[],
@@ -244,11 +244,11 @@ class TACSPanelAnalysis : public TACSObject {
   void addStiffMatGeoSens( TacsScalar smat[], int dv,
                            const TacsScalar Z[], int ldz, int nz,
                            int n1, int n2,
-                           const TacsScalar At[], 
+                           const TacsScalar At[],
                            const TacsScalar Bt[],
                            const TacsScalar Dt[] );
   void addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
-                              const TacsScalar Z[], int ldz, int nz, 
+                              const TacsScalar Z[], int ldz, int nz,
                               int n1, int n2,
                               const TacsScalar stress[],
                               const TacsScalar sstress[] );
@@ -261,11 +261,11 @@ class TACSPanelAnalysis : public TACSObject {
   void addStiffMatLxSens( TacsScalar smat[],
                           const TacsScalar Z[], int ldz, int nz,
                           int n1, int n2,
-                          const TacsScalar At[], 
+                          const TacsScalar At[],
                           const TacsScalar Bt[],
                           const TacsScalar Dt[] );
-  void addGeoStiffMatLxSens( TacsScalar smat[], 
-                             const TacsScalar Z[], int ldz, int nz, 
+  void addGeoStiffMatLxSens( TacsScalar smat[],
+                             const TacsScalar Z[], int ldz, int nz,
                              int n1, int n2,
                              const TacsScalar stress[] );
 
@@ -273,7 +273,7 @@ class TACSPanelAnalysis : public TACSObject {
   // -------------------------------------------
   void addPressureLoad( TacsScalar F[], int n1, int n2, TacsScalar p );
 
-  void addValues( TacsScalar mat[], int kband, 
+  void addValues( TacsScalar mat[], int kband,
                   int n, const int rows[],
                   int m, const int cols[],
                   const TacsScalar values[] );
@@ -327,23 +327,23 @@ class TACSPanelAnalysis : public TACSObject {
 
   // Code to add the contributions to the geometric stiffness matrix
   // ---------------------------------------------------------------
-  void addGs( TacsScalar G[], TacsScalar scale, const TacsScalar s[], 
-              TacsScalar lambda, TacsScalar h, 
+  void addGs( TacsScalar G[], TacsScalar scale, const TacsScalar s[],
+              TacsScalar lambda, TacsScalar h,
               const double N[], const double Na[],
               const double Nhp[], const double Nahp[] );
-  void addGcs( TacsScalar G[], TacsScalar scale, 
+  void addGcs( TacsScalar G[], TacsScalar scale,
                const TacsScalar s[], TacsScalar lambda_n, TacsScalar lambda_m,
                TacsScalar h, const double N[], const double Na[],
                const double Nhp[], const double Nahp[] );
 
-  void addGsGeoSens( TacsScalar G[], TacsScalar scale, 
-                     TacsScalar sscale, const TacsScalar s[], 
+  void addGsGeoSens( TacsScalar G[], TacsScalar scale,
+                     TacsScalar sscale, const TacsScalar s[],
                      TacsScalar lambda, TacsScalar slambda,
-                     TacsScalar h, TacsScalar sh, 
+                     TacsScalar h, TacsScalar sh,
                      const double N[], const double Na[],
                      const double Nhp[], const double Nahp[] );
-  void addGcsGeoSens( TacsScalar G[], TacsScalar scale, 
-                      TacsScalar sscale, const TacsScalar s[], 
+  void addGcsGeoSens( TacsScalar G[], TacsScalar scale,
+                      TacsScalar sscale, const TacsScalar s[],
                       TacsScalar lambda_n, TacsScalar slambda_n,
                       TacsScalar lambda_m, TacsScalar slambda_m,
                       TacsScalar h, TacsScalar sh,
@@ -359,7 +359,7 @@ class TACSPanelAnalysis : public TACSObject {
                     const double N[], const double Nhp[],
                     const double Nahp[] );
 
-  void computeMsinGeoSens( TacsScalar M[], TacsScalar lambda, 
+  void computeMsinGeoSens( TacsScalar M[], TacsScalar lambda,
                            TacsScalar slambda, TacsScalar h, TacsScalar sh,
                            const double N[], const double Nhp[],
                            const double Nahp[] );
@@ -376,11 +376,11 @@ class TACSPanelAnalysis : public TACSObject {
   void computeBeamMsin( TacsScalar M[], TacsScalar lambda );
   void computeBeamMcos( TacsScalar M[], TacsScalar lambda );
 
-  // Inline inner-product functions 
+  // Inline inner-product functions
   // ------------------------------
-  TacsScalar innerProduct( const TacsScalar s[], 
+  TacsScalar innerProduct( const TacsScalar s[],
                            const TacsScalar e[] ){
-    return (s[0]*e[0] + s[1]*e[1] + s[2]*e[2] + 
+    return (s[0]*e[0] + s[1]*e[1] + s[2]*e[2] +
             s[3]*e[3] + s[4]*e[4] + s[5]*e[5]);
   }
 
@@ -388,14 +388,14 @@ class TACSPanelAnalysis : public TACSObject {
                                const TacsScalar e[] ){
     return (s[0]*e[0] + s[1]*e[1] + s[2]*e[2] + s[3]*e[3]);
   }
-  
+
   // Compute the inertial terms for the mass matrix
   // k = d/dt[u, v, w, dw/dx, dv/dx]
   // m = int_{t} [ rho, rho*z, rho*z^2 ] dz
   TacsScalar innerMassProduct( const TacsScalar m[],
                                const TacsScalar k0[],
                                const TacsScalar k1[] ){
-    return (m[0]*(k0[0]*k1[0] + k0[1]*k1[1] + k0[2]*k1[2]) 
+    return (m[0]*(k0[0]*k1[0] + k0[1]*k1[1] + k0[2]*k1[2])
             + m[1]*(k0[3]*k1[3] + k0[4]*k1[4]));
   }
 
@@ -406,17 +406,17 @@ class TACSPanelAnalysis : public TACSObject {
   TacsScalar innerBeamMassProduct( const TacsScalar m[],
                                    const TacsScalar k0[],
                                    const TacsScalar k1[] ){
-    
+
     return (m[0]*(k0[0]*k1[0] + k0[1]*k1[1] + k0[2]*k1[2]) -
             m[1]*(k0[0]*k1[3] + k0[3]*k1[0]) -
             m[2]*(k0[1]*k1[4] + k0[4]*k1[1]) +
             m[3]*k0[3]*k1[3] + m[5]*k0[4]*k1[4] -
             m[4]*(k0[3]*k1[4] + k0[4]*k1[3]));
   }
-                               
+
   // Compute the stress in a segment
   // -------------------------------
-  void computeStress( TacsScalar s[], const TacsScalar e[], 
+  void computeStress( TacsScalar s[], const TacsScalar e[],
                       const TacsScalar At[], const TacsScalar Bt[],
                       const TacsScalar Dt[] ){
     s[0] = At[0]*e[0]+At[1]*e[1]+At[2]*e[2] + Bt[0]*e[3]+Bt[1]*e[4]+Bt[2]*e[5];
@@ -428,7 +428,7 @@ class TACSPanelAnalysis : public TACSObject {
     s[5] = Bt[2]*e[0]+Bt[4]*e[1]+Bt[5]*e[2] + Dt[2]*e[3]+Dt[4]*e[4]+Dt[5]*e[5];
   }
 
-  void computeBeamStress( TacsScalar s[], const TacsScalar e[], 
+  void computeBeamStress( TacsScalar s[], const TacsScalar e[],
                           const TacsScalar Ct[] ){
     s[0] = Ct[0]*e[0] + Ct[1]*e[1] + Ct[2]*e[2] + Ct[3]*e[3];
     s[1] = Ct[1]*e[0] + Ct[4]*e[1] + Ct[5]*e[2] + Ct[6]*e[3];
@@ -451,11 +451,11 @@ class TACSPanelAnalysis : public TACSObject {
   int lanczos_subspace_size;
   double lanczos_eigen_tol;
 
-  // Assign the start and end nodes - these are used 
+  // Assign the start and end nodes - these are used
   // to compute the mass per unit area of the panel
   int first_node, last_node;
   int first_node_bc, last_node_bc;
-  
+
   int nDvGeo; // Number of geometric design variables
   int *geoDvNums; // Geometric design variable numbers
   TacsScalar *geoDvs; // The geometric design variable values
@@ -477,7 +477,7 @@ class TACSPanelAnalysis : public TACSObject {
   EBStiffness **beams; // The beam stiffness objects
   int nsegments; // The number of panel segments
   int nbeams; // The number of longitudinal beams
-  int nmodes; // The number of terms in the 
+  int nmodes; // The number of terms in the
   int *segmentType; // Segment types - skin or stiffener
 
   // The unknowns associated with each panel segment

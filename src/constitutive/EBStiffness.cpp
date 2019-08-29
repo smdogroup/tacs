@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "EBStiffness.h"
@@ -21,10 +21,10 @@
 /*
   Set the stiffness and mass properties of the EBStiffness class.
 */
-EBStiffness::EBStiffness( TacsScalar rho, TacsScalar E, TacsScalar G, 
-			  TacsScalar A, TacsScalar Ix, TacsScalar Iy,
-			  TacsScalar J, TacsScalar _ref_dir[3], 
-			  EBReferenceDirection _ref_type ):
+EBStiffness::EBStiffness( TacsScalar rho, TacsScalar E, TacsScalar G,
+                          TacsScalar A, TacsScalar Ix, TacsScalar Iy,
+                          TacsScalar J, TacsScalar _ref_dir[3],
+                          EBReferenceDirection _ref_type ):
 ref_type(_ref_type){
   // Save the input parameters
   ref_dir[0] = _ref_dir[0];
@@ -42,7 +42,7 @@ ref_type(_ref_type){
   memset(mass, 0, sizeof(mass));
   mass[0] = rho*A;
   mass[3] = rho*Ix;
-  mass[5] = rho*Iy;  
+  mass[5] = rho*Iy;
 }
 
 /*
@@ -62,7 +62,7 @@ const char *EBStiffness::constitutiveName(){
 */
 void EBStiffness::getStiffness( const double pt[], TacsScalar Ct[] ){
   memcpy(Ct, C, sizeof(C));
-} 
+}
 
 /*
   Get the number of stresses
@@ -74,7 +74,7 @@ int EBStiffness::getNumStresses(){
 /*
   Compute the stress
 */
-void EBStiffness::calculateStress( const double pt[], 
+void EBStiffness::calculateStress( const double pt[],
                                    const TacsScalar strain[],
                                    TacsScalar stress[] ){
   calcStress(C, strain, stress);
@@ -82,7 +82,7 @@ void EBStiffness::calculateStress( const double pt[],
 
 /*
   Add the derivative of the inner product of the stiffness matrix to
-  the design variable vector 
+  the design variable vector
 
   Note that this constitutive object does not define any design
   variables.
@@ -90,7 +90,7 @@ void EBStiffness::calculateStress( const double pt[],
 void addStressDVSens( const double pt[], const TacsScalar strain[],
                       TacsScalar alpha, const TacsScalar psi[],
                       TacsScalar fdvSens, int numDVs ){}
- 
+
 /*
   Return the number of mass moments
 */
@@ -104,11 +104,11 @@ void EBStiffness::getPointwiseMass( const double pt[], TacsScalar _mass[] ){
 }
 
 /*
-  Add the derivative of the product of the mass components with the 
+  Add the derivative of the product of the mass components with the
   given input vector.
 
   Note this constitutive class does not define any design variables.
 */
-void EBStiffness::addPointwiseMassDVSens( const double pt[], 
+void EBStiffness::addPointwiseMassDVSens( const double pt[],
                                           const TacsScalar alpha[],
                                           TacsScalar dvSens[], int dvLen ){}

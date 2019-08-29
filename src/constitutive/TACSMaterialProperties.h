@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_MATERIAL_PROPERTIES_H
@@ -32,7 +32,7 @@ enum MaterialType { TACS_ISOTROPIC_MATERIAL,
 /**
    This class stores the mechanical and thermal material properties for
    isotropic and anisotropic materials.
-   
+
    The goal of this class is to store a set of material properties
    that can be queried by constitutive classes for beams, shells,
    plane stress and solid elements. The minimum set of properties
@@ -62,7 +62,7 @@ class TACSMaterialProperties : public TACSObject {
 
   // Get the material type
   MaterialType getMaterialType();
-  
+
   // Extract material property values
   TacsScalar getDensity();
 
@@ -70,7 +70,7 @@ class TACSMaterialProperties : public TACSObject {
   void getIsotropicProperties( TacsScalar *_E, TacsScalar *_nu );
   void getOrthotropicProperties( TacsScalar *_E1, TacsScalar *_E2,
                                  TacsScalar *_E3,
-                                 TacsScalar *_nu12, TacsScalar *_nu13, 
+                                 TacsScalar *_nu12, TacsScalar *_nu13,
                                  TacsScalar *_nu23,
                                  TacsScalar *_G12, TacsScalar *_G13,
                                  TacsScalar *_G23 );
@@ -123,7 +123,7 @@ class TACSMaterialProperties : public TACSObject {
   // The orthotropic material properties
   TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23;
 
-  // The strength coefficients 
+  // The strength coefficients
   TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23;
 
   // The thermal coefficients of expansion
@@ -168,17 +168,17 @@ class TACSOrthotropicPly : public TACSObject {
   TacsScalar getPlyThickness();
   void getStiffness( TacsScalar *_E1, TacsScalar *_E2, TacsScalar *_nu12,
                      TacsScalar *_G12, TacsScalar *_G23, TacsScalar *_G13 );
-  void getLaminateStiffness( TacsScalar *_Q11, TacsScalar *_Q12, 
+  void getLaminateStiffness( TacsScalar *_Q11, TacsScalar *_Q12,
                              TacsScalar *_Q22, TacsScalar *_Q44,
                              TacsScalar *_Q55, TacsScalar *_Q66 );
-  void getStrength( TacsScalar *_Xt, TacsScalar *_Xc, TacsScalar *_Yt, 
+  void getStrength( TacsScalar *_Xt, TacsScalar *_Xc, TacsScalar *_Yt,
                     TacsScalar *_Yc, TacsScalar *_S12, TacsScalar *_C );
-  void getStrainStrength( TacsScalar *_eXt, TacsScalar *_eXc, TacsScalar *_eYt, 
+  void getStrainStrength( TacsScalar *_eXt, TacsScalar *_eXc, TacsScalar *_eYt,
                           TacsScalar *_eYc, TacsScalar *_eS12 );
-  void getTsaiWu( TacsScalar *_F1, TacsScalar *_F2, 
+  void getTsaiWu( TacsScalar *_F1, TacsScalar *_F2,
                   TacsScalar *_F11, TacsScalar *_F12, TacsScalar *_F22,
                   TacsScalar *_F66 );
-  void getLaminateInvariants( TacsScalar *U1, TacsScalar *U2, 
+  void getLaminateInvariants( TacsScalar *U1, TacsScalar *U2,
                               TacsScalar *U3, TacsScalar *U4,
                               TacsScalar *U5, TacsScalar *U6 );
 
@@ -190,65 +190,65 @@ class TACSOrthotropicPly : public TACSObject {
   void calculateQbar( TacsScalar Qbar[], TacsScalar angle );
   void calculateQbarAngleSens( TacsScalar Qbar[], TacsScalar angle );
 
-  // Given the strain in the laminate coordinates, determine the 
+  // Given the strain in the laminate coordinates, determine the
   // stress in the laminate coordinates
   // -----------------------------------------------------------
-  void calculateStress( TacsScalar stress[], const TacsScalar strain[], 
+  void calculateStress( TacsScalar stress[], const TacsScalar strain[],
                         TacsScalar angle );
 
   // Given the strain in the laminate coordinates, determine the failure load
   // ------------------------------------------------------------------------
-  TacsScalar failure( TacsScalar angle, 
+  TacsScalar failure( TacsScalar angle,
                       const TacsScalar strain[] );
-  TacsScalar failureStrainSens( TacsScalar sens[], 
-                                TacsScalar angle, 
+  TacsScalar failureStrainSens( TacsScalar sens[],
+                                TacsScalar angle,
                                 const TacsScalar strain[] );
-  TacsScalar failureAngleSens( TacsScalar * failSens, 
-                               TacsScalar angle, 
+  TacsScalar failureAngleSens( TacsScalar * failSens,
+                               TacsScalar angle,
                                const TacsScalar strain[] );
 
-  // Calculate the failure load fraction for given 
+  // Calculate the failure load fraction for given
   // constant and linear strain components
   // ---------------------------------------------
-  TacsScalar calculateFailLoad( TacsScalar angle, 
-                                const TacsScalar cstrain[], 
+  TacsScalar calculateFailLoad( TacsScalar angle,
+                                const TacsScalar cstrain[],
                                 const TacsScalar lstrain[] );
-  TacsScalar calculateFailLoadStrainSens( TacsScalar cSens[], 
-                                          TacsScalar lSens[], 
-                                          TacsScalar angle, 
-                                          const TacsScalar cstrain[], 
+  TacsScalar calculateFailLoadStrainSens( TacsScalar cSens[],
+                                          TacsScalar lSens[],
+                                          TacsScalar angle,
+                                          const TacsScalar cstrain[],
                                           const TacsScalar lstrain[] );
-  TacsScalar calculateFailLoadAngleSens( TacsScalar * posSens, 
-                                         TacsScalar angle, 
-                                         const TacsScalar cstrain[], 
+  TacsScalar calculateFailLoadAngleSens( TacsScalar * posSens,
+                                         TacsScalar angle,
+                                         const TacsScalar cstrain[],
                                          const TacsScalar lstrain[] );
 
   // Transform the stress and strain between global/local frames
   // -----------------------------------------------------------
   void getPlyStress( TacsScalar stress[], const TacsScalar strain[] );
-  void transformStressGlobal2Ply( TacsScalar plyStress[], 
-                                  const TacsScalar global[], 
+  void transformStressGlobal2Ply( TacsScalar plyStress[],
+                                  const TacsScalar global[],
                                   TacsScalar angle );
-  void transformStressPly2Global( TacsScalar global[], 
-                                  const TacsScalar plyStress[], 
+  void transformStressPly2Global( TacsScalar global[],
+                                  const TacsScalar plyStress[],
                                   TacsScalar angle );
-  void transformStressGlobal2PlyAngleSens( TacsScalar plyStress[], 
-                                           const TacsScalar global[], 
+  void transformStressGlobal2PlyAngleSens( TacsScalar plyStress[],
+                                           const TacsScalar global[],
                                            TacsScalar angle );
-  void transformStressPly2GlobalAngleSens( TacsScalar global[], 
-                                           const TacsScalar plyStress[], 
+  void transformStressPly2GlobalAngleSens( TacsScalar global[],
+                                           const TacsScalar plyStress[],
                                            TacsScalar angle );
-  void transformStrainGlobal2Ply( TacsScalar plyStrain[], 
-                                  const TacsScalar global[], 
+  void transformStrainGlobal2Ply( TacsScalar plyStrain[],
+                                  const TacsScalar global[],
                                   TacsScalar angle );
-  void transformStrainPly2Global( TacsScalar global[], 
-                                  const TacsScalar plyStrain[], 
+  void transformStrainPly2Global( TacsScalar global[],
+                                  const TacsScalar plyStrain[],
                                   TacsScalar angle );
-  void transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[], 
-                                           const TacsScalar global[], 
+  void transformStrainGlobal2PlyAngleSens( TacsScalar plyStrain[],
+                                           const TacsScalar global[],
                                            TacsScalar angle );
-  void transformStrainPly2GlobalAngleSens( TacsScalar global[], 
-                                           const TacsScalar plyStrain[], 
+  void transformStrainPly2GlobalAngleSens( TacsScalar global[],
+                                           const TacsScalar plyStrain[],
                                            TacsScalar angle );
   // Get or print other information
   // ------------------------------

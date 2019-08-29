@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSConstitutive.h"
@@ -26,7 +26,7 @@ const char* TACSConstitutive::constName = "TACSConstitutive";
 /**
   Return the generic constitutive class name
 */
-const char* TACSConstitutive::getObjectName(){ 
+const char* TACSConstitutive::getObjectName(){
   return constName;
 }
 
@@ -45,7 +45,7 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
                                              int elemIndex,
                                              const double pt[],
                                              const TacsScalar X[],
-                                             const TacsScalar x_stress[], 
+                                             const TacsScalar x_stress[],
                                              const TacsScalar y_stress[] ){
   FILE * fp = fopen(file_name, "w");
 
@@ -75,15 +75,15 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
     // Factor the constitutive matrix
     int info;
     LAPACKgetrf(&nstress, &nstress, C, &nstress, ipiv, &info);
-    
+
     // Copy over the stress values and solve for the strain
     memcpy(x_strain, x_stress, nstress*sizeof(TacsScalar));
     memcpy(y_strain, y_stress, nstress*sizeof(TacsScalar));
 
     int one = 1;
-    LAPACKgetrs("N", &nstress, &one, C, &nstress, ipiv, 
+    LAPACKgetrs("N", &nstress, &one, C, &nstress, ipiv,
                 x_strain, &nstress, &info);
-    LAPACKgetrs("N", &nstress, &one, C, &nstress, ipiv, 
+    LAPACKgetrs("N", &nstress, &one, C, &nstress, ipiv,
                 y_strain, &nstress, &info);
 
     fprintf(fp, "Variables = ");
@@ -97,8 +97,8 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
       TacsScalar theta = (2.0*M_PI*k)/(npts-1);
       TacsScalar c = cos(theta), s = sin(theta);
 
-      // Solve the equation: 
-      // failure(gpt, P*(c*x_strain + s*y_strain)) - 1.0 = 0           
+      // Solve the equation:
+      // failure(gpt, P*(c*x_strain + s*y_strain)) - 1.0 = 0
       for ( int i = 0; i < max_newton_iters; i++ ){
         for ( int j = 0; j < nstress; j++ ){
           e[j] = P*(c*x_strain[j] + s*y_strain[j]);
@@ -108,7 +108,7 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
         // failure criterion w.r.t. the load parameter P
         TacsScalar fail, failSens;
         fail = failure(elemIndex, pt, X, e);
-        
+
         if (fabs(TacsRealPart(fail) - 1.0) < tol){
           break;
         }

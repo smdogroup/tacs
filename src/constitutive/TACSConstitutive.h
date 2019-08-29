@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_CONSTITUTIVE_H
@@ -23,7 +23,7 @@
 
 /**
   This class defines basic linear constitutive behaviour for some
-  elements in TACS. This includes linear 
+  elements in TACS. This includes linear
 
   The object defines mass, stiffness, failure and buckling behavior.
   These properties do not all need to be defined to implement the
@@ -45,12 +45,12 @@ class TACSConstitutive : public TACSObject {
     Set the object name
   */
   const char* getObjectName();
-  
+
   /**
     Return the number of stress and strain components
   */
   virtual int getNumStresses() = 0;
-  
+
   /**
     Return the stress as a function of the strain at the Gauss point
 
@@ -79,7 +79,7 @@ class TACSConstitutive : public TACSObject {
   */
   virtual void evalTangentStiffness( int elemIndex,
                                      const double pt[],
-                                     const TacsScalar X[], 
+                                     const TacsScalar X[],
                                      TacsScalar C[] ) = 0;
 
   /**
@@ -107,7 +107,7 @@ class TACSConstitutive : public TACSObject {
     @param pt The parametric point within the element
     @param X The physical point location
     @param strain The components of the thermal strain
-  */ 
+  */
   virtual void evalThermalStrain( int elemIndex,
                                   const double pt[],
                                   const TacsScalar X[],
@@ -117,7 +117,7 @@ class TACSConstitutive : public TACSObject {
 
   /**
     Evaluate the mass per unit length, area or volume for the element
-    
+
     @param elemIndex The local element index
     @param pt The parametric location
     @param X The point location
@@ -146,7 +146,7 @@ class TACSConstitutive : public TACSObject {
     @return The failure index value
   */
   virtual TacsScalar failure( int elemIndex,
-                              const double pt[], 
+                              const double pt[],
                               const TacsScalar X[],
                               const TacsScalar strain[] ){
     return 0.0;

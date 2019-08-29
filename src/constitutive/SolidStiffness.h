@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_SOLID_STIFFNESS_H
@@ -37,7 +37,7 @@ class SolidStiffness : public TACSConstitutive {
   // -------------------------------------
   void setDesignVars( const TacsScalar dvs[], int numDVs );
   void getDesignVars( TacsScalar dvs[], int numDVs );
-  
+
   // Return the mass moments
   // -----------------------
   int getNumMassMoments(){ return 1; }
@@ -48,7 +48,7 @@ class SolidStiffness : public TACSConstitutive {
   // Calculate the stress
   // --------------------
   int getNumStresses();
-  void calculateStress( const double pt[], 
+  void calculateStress( const double pt[],
                         const TacsScalar strain[],
                         TacsScalar stress[] );
   void addStressDVSens( const double pt[], const TacsScalar strain[],
@@ -57,21 +57,21 @@ class SolidStiffness : public TACSConstitutive {
 
   // Functions to compute the failure properties
   // -------------------------------------------
-  void failure( const double pt[], 
-                const TacsScalar strain[], 
+  void failure( const double pt[],
+                const TacsScalar strain[],
                 TacsScalar *fail );
-  void failureStrainSens( const double pt[], 
+  void failureStrainSens( const double pt[],
                           const TacsScalar strain[],
                           TacsScalar sens[] );
   void addFailureDVSens( const double pt[],
                          const TacsScalar strain[],
                          TacsScalar alpha,
                          TacsScalar dvSens[], int dvLen );
-  
+
   // Extra info about the constitutive class
   // ---------------------------------------
   const char *constitutiveName();
-  
+
  protected:
   SolidStiffness();
 
@@ -94,7 +94,7 @@ class SolidStiffness : public TACSConstitutive {
 };
 
 inline void SolidStiffness::calcStress( const TacsScalar e[],
-					TacsScalar s[] ){
+                                        TacsScalar s[] ){
   s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
   s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
   s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];

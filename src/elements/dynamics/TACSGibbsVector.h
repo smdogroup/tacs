@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_GIBBS_VECTOR_H
@@ -21,7 +21,7 @@
 
   The components of this vector can be set as design variables that
   modify either initial conditions or the initial orientation of the
-  bodies within a multibody system.  
+  bodies within a multibody system.
 */
 class TACSGibbsVector : public TACSObject {
  public:
@@ -45,7 +45,7 @@ class TACSGibbsVector : public TACSObject {
 };
 
 /*
-  A vector class for the multibody dynamics code. 
+  A vector class for the multibody dynamics code.
 
   These vectors are global objects that exist in the global reference
   frame. The purpose of this object is to provide an easier input to
@@ -58,7 +58,7 @@ class TACSGibbsVector : public TACSObject {
 
   input:
   x:    the 3-space coordinate of the point
-  
+
   Note: The design variable numbers are initialized to -1
 */
 inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[] ){
@@ -74,13 +74,13 @@ inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[] ){
   Create the vector object using the coordinates of the point within
   the inertial reference frame and the corresponding design variable
   numbers.
-  
+
   input:
   x1, x2, x3:   the 3 coordinates
   n1, n2, n3:   the design variable numbers
 */
-inline TACSGibbsVector::TACSGibbsVector( TacsScalar x1, 
-                                         TacsScalar x2, 
+inline TACSGibbsVector::TACSGibbsVector( TacsScalar x1,
+                                         TacsScalar x2,
                                          TacsScalar x3,
                                          int n1, int n2, int n3 ){
   x[0] = x1;
@@ -98,7 +98,7 @@ inline TACSGibbsVector::TACSGibbsVector( TacsScalar x1,
   x:    the coordinate of the point
   xDV:  the design variable numbers of the point
 */
-inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[], 
+inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[],
                                          const int _xDV[] ){
   x[0] = _x[0];
   x[1] = _x[1];
@@ -111,10 +111,10 @@ inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[],
 /*
   Retrieve the coordinates of the point
 */
-inline void TACSGibbsVector::getVector( const TacsScalar **_x ){ 
+inline void TACSGibbsVector::getVector( const TacsScalar **_x ){
   *_x = x;
 }
- 
+
 /*
   Set the design variable values from the input vector into this object
 
@@ -130,7 +130,7 @@ inline void TACSGibbsVector::setDesignVars( const TacsScalar *dvs, int numDVs ){
 
 /*
   Retrieve the design variable values from the object
-  
+
   input:
   numDVs:  the number of design variable values in the array
 
@@ -150,11 +150,11 @@ inline void TACSGibbsVector::getDesignVars( TacsScalar *dvs, int numDVs ){
   numDVs:  the number of design variables
   scale:   the sensitivity is multiplied by this scalar
   psi:     the adjoint vector
-  
+
   input/output:
   fdvSens: the array of derivatives
 */
-inline void TACSGibbsVector::addPointAdjResProduct( TacsScalar fdvSens[], 
+inline void TACSGibbsVector::addPointAdjResProduct( TacsScalar fdvSens[],
                                                     int numDVs,
                                                     TacsScalar scale,
                                                     const TacsScalar psi[] ){

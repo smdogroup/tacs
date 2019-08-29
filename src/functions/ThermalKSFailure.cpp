@@ -206,11 +206,11 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
     // Retrieve the number of stress components for this element
     int numStresses = element->numStresses();
     int numNodes = element->numNodes();
-    
+
     // Get the number of quadrature points for this element
     int numGauss = element->getNumGaussPts();
     double N[numNodes];
-   
+
     // Get the constitutive object for this element
     TACSConstitutive *constitutive = element->getConstitutive();
     if (constitutive){
@@ -240,7 +240,7 @@ void TACSThermalKSFailure::elementWiseEval( EvaluationType ftype,
               elem->getTemperature(T, N, vars);
             }
           }
-          
+
           // Scale the strain by the load factor
           for ( int k = 0; k < numStresses; k++ ){
             strain[k] *= loadFactor;
@@ -384,7 +384,7 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
 
     double N[numNodes];
     int nvars = 1;
-    
+
     // Get the constitutive object
     TACSConstitutive *constitutive = element->getConstitutive();
     if (constitutive){
@@ -522,7 +522,7 @@ void TACSThermalKSFailure::getElementSVSens( double alpha, double beta, double g
                   elem->addEffStrainSVSens(elemSVSens, pt, alpha*ksPtWeight,
                                              failSens, Xpts, vars, j);
                 }
-              }              
+              }
             }// end j < nvars
           }// else
         }
@@ -588,7 +588,7 @@ void TACSThermalKSFailure::getElementXptSens( const double tcoef,
             elem->getTemperature(T, N, vars);
           }
         }
-        
+
         // Multiply by the load factor
         for ( int k = 0; k < numStresses; k++ ){
           strain[k] *= loadFactor;
@@ -691,7 +691,7 @@ void TACSThermalKSFailure::addElementDVSens( const double tcoef,
           elem->getStrain(strain, pt, Xpts, vars);
           elem->getTemperature(T, N, vars);
         }
-      }      
+      }
 
       for ( int k = 0; k < numStresses; k++ ){
         strain[k] *= loadFactor;

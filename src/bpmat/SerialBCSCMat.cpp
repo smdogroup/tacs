@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "SerialBCSCMat.h"
@@ -42,8 +42,8 @@ int compare_integers( const void *a, const void *b ){
   block_cols:       the columns in each row
   bcs:              the boundary conditions for the problem
 */
-SerialBCSCMat::SerialBCSCMat( TACSVarMap *_rmap, int _bsize, 
-                              int num_block_rows, 
+SerialBCSCMat::SerialBCSCMat( TACSVarMap *_rmap, int _bsize,
+                              int num_block_rows,
                               int num_block_cols,
                               const int *block_rowp,
                               const int *block_cols ){
@@ -60,7 +60,7 @@ SerialBCSCMat::SerialBCSCMat( TACSVarMap *_rmap, int _bsize,
   nrows = num_block_rows;
   rowp = new int[ nrows+1 ];
   memcpy(rowp, block_rowp, (nrows+1)*sizeof(int));
-  
+
   cols = new int[ rowp[nrows] ];
   memcpy(cols, block_cols, rowp[nrows]*sizeof(int));
 }
@@ -97,7 +97,7 @@ void SerialBCSCMat::zeroEntries(){
   mv:      the column dimension of the dense vaules matrix
   values:  the values to add to the matrix
 */
-void SerialBCSCMat::addValues( int nrow, const int *row, 
+void SerialBCSCMat::addValues( int nrow, const int *row,
                                int ncol, const int *col,
                                int nv, int mv, const TacsScalar *values ){
   mat->addMatBlockValues(nrow, row, ncol, col, values, mv);
@@ -115,7 +115,7 @@ void SerialBCSCMat::addValues( int nrow, const int *row,
   values:   the dense input matrix
 */
 void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
-                                     const int *vars, 
+                                     const int *vars,
                                      const TacsScalar *weights,
                                      int nv, int mv,
                                      const TacsScalar *values,
@@ -126,29 +126,29 @@ void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
     if (matOr == TRANSPOSE){
       is_transpose = 1;
     }
-    mat->addMatBlockValues(nvars, vars, nvars, vars, 
+    mat->addMatBlockValues(nvars, vars, nvars, vars,
                            values, mv, is_transpose);
   }
   else {
     // Allocate space for the matrix
     int n = varp[nvars];
     TacsScalar *Aw = new TacsScalar[ bsize*bsize*n*n ];
-    
-    // Compute the weighted matrix - this loop is a bit horrendous 
+
+    // Compute the weighted matrix - this loop is a bit horrendous
     for ( int i = 0; i < nvars; i++ ){
       for ( int j = 0; j < nvars; j++ ){
         for ( int ip = varp[i]; ip < varp[i+1]; ip++ ){
           for ( int jp = varp[j]; jp < varp[j+1]; jp++ ){
             TacsScalar w = weights[ip]*weights[jp];
             for ( int ii = 0; ii < bsize; ii++ ){
-              for ( int jj = 0; jj < bsize; jj++ ){              
-                Aw[(bsize*ip + ii)*n + bsize*jp + jj] = 
+              for ( int jj = 0; jj < bsize; jj++ ){
+                Aw[(bsize*ip + ii)*n + bsize*jp + jj] =
                   w*values[(bsize*i + ii)*mv + bsize*j + jj];
               }
             }
           }
-        }                                                    
-      }  
+        }
+      }
     }
 
     // Check whether the weighted matrix should be transposed or not
@@ -185,7 +185,7 @@ void SerialBCSCMat::applyBCs( TACSBcMap *bcmap ){
   for ( int i = 0; i < nbcs; i++ ){
     int node = nodes[i];
 
-    // Search through the columns 
+    // Search through the columns
     for ( int jp = rowp[node]; jp < rowp[node+1]; jp++ ){
       int col = cols[jp];
 
@@ -239,7 +239,7 @@ void SerialBCSCMat::mult( TACSVec *tx, TACSVec *ty ){
     TacsScalar *x, *y;
     xvec->getArray(&x);
     yvec->getArray(&y);
-      
+
     mat->mult(x, y, 1);
   }
 }
@@ -281,7 +281,7 @@ SerialBCSCPc::~SerialBCSCPc(){
 void SerialBCSCPc::factor(){
   // Factor the matrix
   double new_fill = pivot->factor(fill);
-  
+
   // Update the matrix fill estimate
   if (new_fill > fill){
     fill = new_fill;
@@ -309,7 +309,7 @@ void SerialBCSCPc::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
 
     // Copy over the array
     memcpy(y, x, size*sizeof(TacsScalar));
-      
+
     // Apply the factor
     pivot->applyFactor(y, 1);
   }

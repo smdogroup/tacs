@@ -515,11 +515,11 @@ stiffness matrix\n");
 */
 TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
                                               TacsScalar _init_eig,
-                                              TACSMat *_mmat, 
+                                              TACSMat *_mmat,
                                               TACSMat *_kmat,
                                               TACSMat *_pcmat,
                                               TACSPc *_pc,
-                                              int max_jd_size, 
+                                              int max_jd_size,
                                               int fgmres_size,
                                               int num_eigvals,
                                               double eigtol,
@@ -552,7 +552,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
   mg = dynamic_cast<TACSMg*>(pc);
-  
+
   // Allocate vectors that are required for the eigenproblem
   eigvec = tacs->createVec();
   res = tacs->createVec();
@@ -561,20 +561,20 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_tacs,
 
   // Allocate the Jacobi-Davidson operator
   if (mg){
-    jd_op = new TACSJDFrequencyOperator(tacs, kmat, mmat, 
+    jd_op = new TACSJDFrequencyOperator(tacs, kmat, mmat,
                                         pcmat, mg);
   }
   else {
-    jd_op = new TACSJDFrequencyOperator(tacs, kmat, mmat, 
+    jd_op = new TACSJDFrequencyOperator(tacs, kmat, mmat,
                                         pcmat, pc);
   }
   jd_op->incref();
 
   // Allocate the Jacobi-Davidson solver
-  jd = new TACSJacobiDavidson(jd_op, num_eigvals, max_jd_size, 
+  jd = new TACSJacobiDavidson(jd_op, num_eigvals, max_jd_size,
                               fgmres_size);
   jd->incref();
-  
+
   // Set unallocated objects to NULL
   ep_op = NULL;
   sep = NULL;
@@ -593,7 +593,7 @@ TACSFrequencyAnalysis::~TACSFrequencyAnalysis(){
   tacs->decref();
   eigvec->decref();
   res->decref();
-  
+
   if (jd){
     jd_op->decref();
     jd->decref();
@@ -635,7 +635,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
   if (jd){
     if (mg){
       // Assemble the mass matrix
-      // ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX, 
+      // ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX,
       //                                  MASS_MATRIX};
       // TacsScalar scale[2] = {1.0, sigma};
 
@@ -663,12 +663,12 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
       char line[256];
       sprintf(line, "%15.6f\n", t1-t0);
       ksm_file->print(line);
-    } 
+    }
   }
   else{
     if (mg){
       // Assemble the mass matrix
-      ElementMatrixType matTypes[2] = {TACS_STIFFNESS_MATRIX, 
+      ElementMatrixType matTypes[2] = {TACS_STIFFNESS_MATRIX,
                                        TACS_MASS_MATRIX};
       TacsScalar scale[2] = {1.0, -sigma};
 
@@ -690,7 +690,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
 
     // Factor the preconditioner
     pc->factor();
-    
+
     // Solve the symmetric eigenvalue problem
     double t0 = MPI_Wtime();
     sep->solve(ksm_print);
@@ -742,7 +742,7 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
     fprintf(stderr,
             "TACSFrequency: No orthogonality check for Jacobi-Davidson\n");
     return 0.0;
-  }  
+  }
 }
 
 /*!

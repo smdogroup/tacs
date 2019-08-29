@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_MAT_UTILS_H
@@ -31,7 +31,7 @@ TACS_BEGIN_NAMESPACE(matutils)
 /*!
   Extend an array and copy values from the old to the new array
 */
-void ExtendArray( int **_array, int oldlen, int newlen );  
+void ExtendArray( int **_array, int oldlen, int newlen );
 void ExtendArray( TacsScalar **_array, int oldlen, int newlen );
 
 /*!
@@ -42,7 +42,7 @@ void ExtendArray( TacsScalar **_array, int oldlen, int newlen );
   cols:         the column indices
   remove_diag:  remove any diagonal entries encountered
 */
-void SortAndUniquifyCSR( int nvars, int *rowp, int *cols, 
+void SortAndUniquifyCSR( int nvars, int *rowp, int *cols,
                          int remove_diag=0 );
 
 /*
@@ -50,15 +50,15 @@ void SortAndUniquifyCSR( int nvars, int *rowp, int *cols,
 */
 int ComputeRCMOrder( const int nvars, const int *rowp, const int *cols,
                      int *rcm_order, int root, int n_rcm_iters );
-int ComputeRCMLevSetOrder( const int nvars, const int *rowp, 
-                           const int *cols, int *rcm_vars, int *levset, 
+int ComputeRCMLevSetOrder( const int nvars, const int *rowp,
+                           const int *cols, int *rcm_vars, int *levset,
                            int root );
 
 /*
   Compute the multicolor order via a greedy algorithm
 */
 int ComputeSerialMultiColor( const int nvars, const int *rowp,
-                             const int *cols, int *colors, 
+                             const int *cols, int *colors,
                              int *new_vars );
 
 TACS_END_NAMESPACE

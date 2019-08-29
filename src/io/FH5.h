@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef FH5_INCLUDE_H
@@ -23,7 +23,7 @@
 
 /*
   Create a file that contains information about a finite-element
-  problem. 
+  problem.
 */
 
 class FH5File : public TACSObject {
@@ -40,7 +40,7 @@ class FH5File : public TACSObject {
   // Create a file for output
   // ------------------------
   int createFile( const char *file_name,
-                  char **component_names, 
+                  char **component_names,
                   int num_components );
   int writeZoneData( char *zone_name,
                      char *var_names,
@@ -60,7 +60,7 @@ class FH5File : public TACSObject {
   // Retrieve zone data
   // ------------------
   void firstZone();
-  int nextZone(); 
+  int nextZone();
   int getZoneInfo( const char **zone_name, const char **var_names,
                    FH5DataType *_dtype,
                    int *dim1, int *dim2 );
@@ -94,14 +94,14 @@ class FH5File : public TACSObject {
   // Scan the file and record the header information
   void scanFH5File();
   void deleteFH5FileInfo();
-  
+
   int num_comp; // The number of components
   char **comp_names; // The component names
 
   int file_for_writing; // Is this file for writing?
-  MPI_Comm comm; // The communicator over which the 
+  MPI_Comm comm; // The communicator over which the
   MPI_File fp; // The MPI file pointer
-  MPI_Offset file_offset; // The offset into the file 
+  MPI_Offset file_offset; // The offset into the file
   MPI_Offset file_end; // The offset at the end of the file
 
   // Serial file containing the FE solution

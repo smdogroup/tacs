@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_COMPLIANCE_H
@@ -28,7 +28,7 @@
 #include "TACSElement.h"
 
 /*
-  Evaluate the compliance of the structure. 
+  Evaluate the compliance of the structure.
 
   This evaluates the compliance within the structure based on an
   integration of the strain energy in each element, not by the product
@@ -60,7 +60,7 @@ class TACSCompliance : public TACSFunction {
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
                         TACSFunctionCtx *ctx );
-  void finalThread( double tcoef, 
+  void finalThread( double tcoef,
                     EvaluationType ftype,
                     TACSFunctionCtx *ctx );
 
@@ -70,8 +70,8 @@ class TACSCompliance : public TACSFunction {
 
   // State variable sensitivities
   // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma, 
-                         TacsScalar *elemSVSens, 
+  void getElementSVSens( double alpha, double beta, double gamma,
+                         TacsScalar *elemSVSens,
                          TACSElement *element, int elemNum,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
@@ -91,7 +91,7 @@ class TACSCompliance : public TACSFunction {
                           TACSElement *element, int elemNum,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx ); 
+                          TACSFunctionCtx *ctx );
 
  private:
   // The maximum number of nodes/stresses within any given element
@@ -101,7 +101,7 @@ class TACSCompliance : public TACSFunction {
   static const char * funcName;
 
   // The compliance value
-  TacsScalar compliance;  
+  TacsScalar compliance;
 };
 
 #endif

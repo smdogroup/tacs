@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef COMP_FSDT_STIFFNESS_H
@@ -37,10 +37,10 @@
 class compFSDTStiffness : public FSDTStiffness {
  public:
   compFSDTStiffness( OrthoPly **_ortho_ply, TacsScalar _kcorr,
-		     TacsScalar *_thickness, TacsScalar *_ply_angles, 
-		     int _num_plies );
+                     TacsScalar *_thickness, TacsScalar *_ply_angles,
+                     int _num_plies );
   ~compFSDTStiffness();
- 
+
   const char *constitutiveName();
 
   // Functions required by FSDTStiffness
@@ -52,13 +52,13 @@ class compFSDTStiffness : public FSDTStiffness {
 
   // Compute the failure criteria
   // ----------------------------
-  void failure( const double pt[], const TacsScalar strain[], 
+  void failure( const double pt[], const TacsScalar strain[],
                 TacsScalar *fail );
 
  private:
   // Get the strain in a particular lamina -- still in the global ref. axis
-  void getLaminaStrain( TacsScalar strain[], 
-			const TacsScalar rmStrain[], TacsScalar tp );
+  void getLaminaStrain( TacsScalar strain[],
+                        const TacsScalar rmStrain[], TacsScalar tp );
 
   TacsScalar evalFailLoads( const TacsScalar constStrain[],
                             const TacsScalar linStrain[] );
