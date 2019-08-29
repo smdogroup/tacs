@@ -22,9 +22,9 @@ TACSAssembler *one_bar_beam( int nA ){
 
   // Create the revolute constraints
   int fixed_point = 1;
-  TACSRevoluteConstraint *revA = 
+  TACSRevoluteConstraint *revA =
     new TACSRevoluteConstraint(fixed_point, ptA, revDirA);
-  TACSRevoluteConstraint *revB = 
+  TACSRevoluteConstraint *revB =
     new TACSRevoluteConstraint(fixed_point, ptB, revDirB);
 
   // Create the stiffness objects for each element
@@ -33,12 +33,12 @@ TACSAssembler *one_bar_beam( int nA ){
 
   TacsScalar EA_A = 52.99e6;
   TacsScalar GJ_A = 733.5;
-  TacsScalar kGAz_A = 16.88e6; 
+  TacsScalar kGAz_A = 16.88e6;
   TacsScalar EIz_A = 1131.0;
 
   // Set the reference axes for each beam
   TacsScalar axis_A[] = {0.0, 1.0, 0.0};
-  
+
   // Create the Timoshenko stiffness object
   TimoshenkoStiffness *stiffA =
     new TimoshenkoStiffness(mA, IA, IA, 0.0,
@@ -67,7 +67,7 @@ TACSAssembler *one_bar_beam( int nA ){
   int n = 0;
   for ( int i = 0; i < 2*nA+1; i++, n++ ){
     nodesA[i] = n;
-    X[3*n+1] = 0.12*i/(2*nA); 
+    X[3*n+1] = 0.12*i/(2*nA);
   }
 
   // Set the connectivity for the beams
@@ -138,12 +138,12 @@ TACSAssembler *one_bar_beam( int nA ){
 
   A, B and D are revolute joints in the plane perpendicular to the
   plane of the mechanism
-  
+
   C is a revolute joint in a plane +5 degrees along the DC axis of the
   beam
 
   Beam properties:
-  
+
   Young's modulus 207 GPa, nu = 0.3
 
   Bars 1 and 2 are square and of dimension 16 x 16 mm
@@ -171,14 +171,14 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   TacsScalar omega = -0.6; // rad/seconds
   int fixed_point = 1;
   int not_fixed = 0;
-  
+
   TACSRevoluteDriver *revDriverA =
     new TACSRevoluteDriver(revDirA, omega);
-  TACSRevoluteConstraint *revB = 
+  TACSRevoluteConstraint *revB =
     new TACSRevoluteConstraint(not_fixed, ptB, revDirB);
-  TACSRevoluteConstraint *revC = 
+  TACSRevoluteConstraint *revC =
     new TACSRevoluteConstraint(not_fixed, ptC, revDirC);
-  TACSRevoluteConstraint *revD = 
+  TACSRevoluteConstraint *revD =
     new TACSRevoluteConstraint(fixed_point, ptD, revDirD);
 
   // Create the stiffness objects for each element
@@ -187,7 +187,7 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
 
   TacsScalar EA_A = 52.99e6;
   TacsScalar GJ_A = 733.5;
-  TacsScalar kGAz_A = 16.88e6; 
+  TacsScalar kGAz_A = 16.88e6;
   TacsScalar EIz_A = 1131.0;
 
   // The properties of the second beam
@@ -203,7 +203,7 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   TacsScalar axis_A[] = {-1.0, 0.0, 0.0};
   TacsScalar axis_B[] = {0.0, 1.0, 0.0};
   TacsScalar axis_C[] = {1.0, 0.0, 0.0};
-  
+
   // Create the Timoshenko stiffness object
   TimoshenkoStiffness *stiffA =
     new TimoshenkoStiffness(mA, IA, IA, 0.0,
@@ -246,12 +246,12 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   int n = 0;
   for ( int i = 0; i < 2*nA+1; i++, n++ ){
     nodesA[i] = n;
-    X[3*n+1] = 0.12*i/(2*nA); 
+    X[3*n+1] = 0.12*i/(2*nA);
   }
   for ( int i = 0; i < 2*nB+1; i++, n++ ){
     nodesB[i] = n;
     X[3*n] = 0.24*i/(2*nB);
-    X[3*n+1] = 0.12; 
+    X[3*n+1] = 0.12;
   }
   for ( int i = 0; i < 2*nC+1; i++, n++ ){
     nodesC[i] = n;
@@ -354,8 +354,8 @@ void test_beam_element(){
 
   // Set the gravity vector
   TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, -9.81);
-  
-  // Set the element properties  
+
+  // Set the element properties
   TacsScalar rhoA = 1.5;
   TacsScalar rhoIy = 0.15;
   TacsScalar rhoIz = 0.15;
@@ -367,7 +367,7 @@ void test_beam_element(){
   TacsScalar EIz = 3.24e4;
   TacsScalar kGAy = 2.5e3;
   TacsScalar kGAz = 5.2e3;
-  
+
   // Create the Timoshenko stiffness object
   TimoshenkoStiffness *stiff =
     new TimoshenkoStiffness(rhoA, rhoIy, rhoIz, rhoIyz,
@@ -385,7 +385,7 @@ void test_beam_element(){
                       0.375, 0.5, 0.1,
                       1.0, 1.0, 0.2};
     beam->testStrain(X);
-   
+
     int multipliers[3] = {7, 15, 23};
     TacsScalar vars[24], dvars[24], ddvars[24];
     for ( int i = 0; i < 24; i++ ){
@@ -393,7 +393,7 @@ void test_beam_element(){
       dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
       ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
     }
-    
+
     beam->setStepSize(5e-6);
     beam->setPrintLevel(2);
     beam->testResidual(0.0, X, vars, dvars, ddvars, multipliers, 3);
@@ -407,7 +407,7 @@ void test_beam_element(){
                       1.0, 3.0, 0.2,
                       2.0, 4.0, 0.3,
                       3.0, 3.0, 1.0};
-    
+
     int nmultipliers = 6;
     int multipliers[] = {32, 33, 34, 35, 36, 37};
     TacsScalar vars[40], dvars[40], ddvars[40];
@@ -416,9 +416,9 @@ void test_beam_element(){
       dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
       ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
     }
-        
+
     // Construct the frame of reference
-    TACSGibbsVector *rAInitVec = new TACSGibbsVector(5.2, 5.3, 5.4); 
+    TACSGibbsVector *rAInitVec = new TACSGibbsVector(5.2, 5.3, 5.4);
     TACSGibbsVector *rA1Vec = new TACSGibbsVector(5.2+1.0, 5.3, 5.4);
     TACSGibbsVector *rA2Vec = new TACSGibbsVector(5.2, 5.3+1.0, 5.4);
     TACSRefFrame *refFrame = new TACSRefFrame(rAInitVec, rA1Vec, rA2Vec);
@@ -439,12 +439,12 @@ void test_beam_element(){
     TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
 
     int moment_flag = 7;
-    TACSAverageConstraint *avg = 
+    TACSAverageConstraint *avg =
       new TACSAverageConstraint(bodyA, point, refFrame, moment_flag);
 
     avg->setStepSize(5e-6);
     avg->setPrintLevel(2);
-    avg->testResidual(0.0, X, vars, dvars, ddvars, 
+    avg->testResidual(0.0, X, vars, dvars, ddvars,
                       multipliers, nmultipliers);
     avg->testJacobian(0.0, X, vars, dvars, ddvars);
   }
@@ -470,12 +470,12 @@ int main( int argc, char *argv[] ){
 
     TacsScalar EA_A = 52.99e6;
     TacsScalar GJ_A = 733.5;
-    TacsScalar kGAz_A = 16.88e6; 
+    TacsScalar kGAz_A = 16.88e6;
     TacsScalar EIz_A = 1131.0;
 
     // Set the reference axes
     TacsScalar axis_A[] = {0.0, 1.0, 0.0};
-  
+
     // Create the Timoshenko stiffness object
     TimoshenkoStiffness *stiffA =
       new TimoshenkoStiffness(mA, IA, IA, 0.0,
@@ -487,7 +487,7 @@ int main( int argc, char *argv[] ){
     MITC3 *beam = new MITC3(stiffA, gravity);
     beam->incref();
 
-    // Test the straight beam for bending/torsion/extension 
+    // Test the straight beam for bending/torsion/extension
     // relationships
     TacsScalar X[] = {-1.5, 0., 0., 0.0, 0., 0., 2.5, 0., 0.};
     TacsScalar vars[24];
@@ -511,7 +511,7 @@ int main( int argc, char *argv[] ){
       vars[8*k+6] = 0.5*eps*(theta0[2] + X[3*k]*thetax[2]);
     }
 
-    printf("%5s %15s %15s %15s %15s %15s %15s\n", 
+    printf("%5s %15s %15s %15s %15s %15s %15s\n",
            "pt", "ex0", "et0", "ey1", "ez2", "exy", "exz");
 
     for ( int i = 1; i < 11; i += 2 ){
@@ -538,7 +538,7 @@ int main( int argc, char *argv[] ){
     int num_steps = 1200;
 
     // Create the integrator class
-    TACSIntegrator *integrator = 
+    TACSIntegrator *integrator =
       new TACSBDFIntegrator(tacs, 0.0, tf, num_steps, 2);
     integrator->incref();
 
@@ -554,11 +554,11 @@ int main( int argc, char *argv[] ){
     // elem[0] = nA/2;
     // elem[1] = nA + nB/2;
     // elem[2] = nA + nB + nC/2;
-    // double param[][1] = {{-1.0}, {-1.0}, {-1.0}}; 
+    // double param[][1] = {{-1.0}, {-1.0}, {-1.0}};
     elem[0] = nA/2;
     elem[1] = nA + nB/2;
     elem[2] = nA + nB + nC/2;
-    double param[][1] = {{-1.0}, {-1.0}, {0.0}}; 
+    double param[][1] = {{-1.0}, {-1.0}, {0.0}};
 
     // Extra the data to a file
     for ( int pt = 0; pt < 3; pt++ ){
@@ -582,7 +582,7 @@ int main( int argc, char *argv[] ){
         con->calculateStress(param[pt], e, s);
 
         fprintf(fp, "%e  %e %e %e  %e %e %e  %e %e %e\n",
-                time, vars[0], vars[1], vars[2], 
+                time, vars[0], vars[1], vars[2],
                 s[0], s[1], s[2], s[3], s[4], s[5]);
       }
       fclose(fp);

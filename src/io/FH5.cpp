@@ -18,8 +18,10 @@
 
 #include "FH5.h"
 
-/*
+/**
   Create the FH5 object with the given communicator
+
+  @param comm The communicator
 */
 FH5File::FH5File( MPI_Comm _comm ){
   fp = NULL;
@@ -34,7 +36,7 @@ FH5File::FH5File( MPI_Comm _comm ){
   comp_names = NULL;
 }
 
-/*
+/**
   Free the FH5 object
 */
 FH5File::~FH5File(){
@@ -52,25 +54,21 @@ FH5File::~FH5File(){
 
 }
 
-/*
+/**
   Open a file and write the pre-header information.
 
   Write the zone map to the file. This consists of a map between the
   zone numbers and the variable names.
 
-  input:
-  file_name: the file that will be created
-  num_components:  the total number of zones
-  component_names: the names of the components
+  @param file_name the file that will be created
+  @param component_names the names of the components
+  @param num_components the total number of zones
 
-  returns:
-  0 on successs, 1 if there is an error creating the file
-
-  Test if the
+  @return 0 on successs, 1 if there is an error creating the file
 */
 int FH5File::createFile( const char *file_name,
-                         char **component_names,
-                         int num_components ){
+                         int num_components,
+                         char **component_names ){
   if (fp){
     int rank;
     MPI_Comm_rank(comm, &rank);
@@ -158,7 +156,7 @@ int FH5File::createFile( const char *file_name,
   return 1;
 }
 
-/*
+/**
   Write the data to a file.
 
   The file consists of a series of headers followed by two dimensional
@@ -188,7 +186,7 @@ int FH5File::createFile( const char *file_name,
 int FH5File::writeZoneData( char *zone_name,
                             char *var_names,
                             FH5DataType data_name,
-                            void *data, int dim1, int dim2 ){
+                            int dim1, int dim2, void *data ){
   // Check the file status to ensure that it's open
   if (fp && file_for_writing){
     int rank, size;
@@ -273,7 +271,7 @@ int FH5File::writeZoneData( char *zone_name,
   return 0;
 }
 
-/*
+/**
   Close the file
 */
 void FH5File::close(){
@@ -284,8 +282,10 @@ void FH5File::close(){
   }
 }
 
-/*
+/**
   Open a file for reading
+
+  @param file_name The file name to open
 */
 int FH5File::openFile( const char *file_name ){
   int rank, size = 0;
@@ -314,15 +314,18 @@ with more than one processor\n", rank);
   return 0;
 }
 
-/*
+/**
   Get the number of components defined in this file
 */
 int FH5File::getNumComponents(){
   return num_comp;
 }
 
-/*
-  Return the component name, if defined
+/**
+  Return the component name
+
+  @param comp The component number
+  @return The component name
 */
 char *FH5File::getComponentName( int comp ){
   if (comp >= 0 && comp < num_comp){
@@ -331,7 +334,7 @@ char *FH5File::getComponentName( int comp ){
   return NULL;
 }
 
-/*
+/**
   Scan the FH5 file and obtain:
 
   1. The zone names
@@ -445,7 +448,7 @@ void FH5File::scanFH5File(){
   }
 }
 
-/*
+/**
   Delete the file information
 */
 void FH5File::deleteFH5FileInfo(){
@@ -459,15 +462,17 @@ void FH5File::deleteFH5FileInfo(){
   current = tip = root = NULL;
 }
 
-/*
+/**
   Set the pointer to work from the first zone in the file
 */
 void FH5File::firstZone(){
   current = root;
 }
 
-/*
+/**
   Set the zone pointer to the next zone in the list
+
+  @return 1 if there is another zone, 0 if there is no new zone
 */
 int FH5File::nextZone(){
   if (current->next != NULL){
@@ -478,8 +483,8 @@ int FH5File::nextZone(){
   return 0;
 }
 
-/*
-  Just get the variable names - if any
+/**
+  Get the zone header information without the data
 */
 int FH5File::getZoneInfo( const char **zone_name,
                           const char **var_names,
@@ -506,13 +511,13 @@ int FH5File::getZoneInfo( const char **zone_name,
   return 1;
 }
 
-/*
-  Read the current group of data - both header info and actual data
+/**
+  Read the current zone of data - both header info and actual data
 */
 int FH5File::getZoneData( const char **zone_name,
                           const char **var_names,
                           FH5DataType *_dtype,
-                          void **data, int *dim1, int *dim2 ){
+                          int *dim1, int *dim2, void **data ){
   // No pointer or no file
   if (!current || !rfp){
     fprintf(stderr, "FH5: Error, no file opened yet\n");

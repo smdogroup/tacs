@@ -6,7 +6,7 @@ int main( int argc, char *argv[] ){
 
   // Set the communicator
   MPI_Comm comm = MPI_COMM_WORLD;
-  
+
   // Create a square matrix
   int nrows = 50;
   PDMat *mat = new PDMat(comm, nrows, nrows);
@@ -18,7 +18,7 @@ int main( int argc, char *argv[] ){
 
   // Get the size of the local vector
   int size = mat->getLocalVecSize();
-  
+
   // Allocate the vectors for the size of matrix
   TacsScalar *x = new TacsScalar[ size ];
   TacsScalar *y = new TacsScalar[ size ];
@@ -41,7 +41,7 @@ int main( int argc, char *argv[] ){
   double ta = MPI_Wtime();
   mat->applyFactor(y);
   ta = MPI_Wtime() - ta;
-  
+
   // Compute the error
   TacsScalar error[2] = {0.0, 0.0};
   for ( int i = 0; i < size; i++ ){
@@ -49,7 +49,7 @@ int main( int argc, char *argv[] ){
     error[1] += x[i];
   }
 
-  // Create 
+  // Create
   TacsScalar err[2];
   MPI_Reduce(error, err, 2, TACS_MPI_TYPE, MPI_SUM, 0, comm);
 
@@ -64,6 +64,6 @@ int main( int argc, char *argv[] ){
   }
 
   TacsFinalize();
-  MPI_Finalize();  
+  MPI_Finalize();
   return 0;
 }

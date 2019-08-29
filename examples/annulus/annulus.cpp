@@ -55,7 +55,7 @@ int main( int argc, char *argv[] ){
     FILE *fp = fopen(filename, "r");
     if (fp){
       fclose(fp);
-      
+
       // Scan the BDF file
       int fail = mesh->scanBDFFile(filename);
 
@@ -105,12 +105,12 @@ int main( int argc, char *argv[] ){
     TACSBVec *res = assembler->createVec();
     TACSBVec *ans = assembler->createVec();
     FEMat *mat = assembler->createFEMat();
-  
+
     // Increment the reference count to the matrix/vectors
     res->incref();
     ans->incref();
     mat->incref();
-    
+
     // Allocate the factorization
     int lev = 4500;
     double fill = 10.0;
@@ -119,10 +119,10 @@ int main( int argc, char *argv[] ){
     pc->incref();
 
     // Allocate the GMRES object
-    int gmres_iters = 80; 
+    int gmres_iters = 80;
     int nrestart = 2; // Number of allowed restarts
     int is_flexible = 0; // Is a flexible preconditioner?
-    TACSKsm *ksm = new GMRES(mat, pc, gmres_iters, 
+    TACSKsm *ksm = new GMRES(mat, pc, gmres_iters,
                              nrestart, is_flexible);
     ksm->incref();
 
@@ -130,7 +130,7 @@ int main( int argc, char *argv[] ){
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
     assembler->assembleJacobian(alpha, beta, gamma, res, mat);
     pc->factor();
-    
+
     res->set(1.0);
     assembler->applyBCs(res);
     ksm->solve(res, ans);
@@ -146,10 +146,10 @@ int main( int argc, char *argv[] ){
     TACSToFH5 * f5 = new TACSToFH5(assembler, etype, write_flag);
     f5->incref();
     f5->writeToFile("output.f5");
-    
+
     // Free everything
     f5->decref();
-    
+
     // Decrease the reference count to the linear algebra objects
     ksm->decref();
     pc->decref();

@@ -34,31 +34,26 @@ class FH5File : public TACSObject {
                      FH5_DOUBLE=1,
                      FH5_FLOAT=2 };
 
+  // Create the FH5 object
   FH5File( MPI_Comm _comm );
   ~FH5File();
 
-  // Create a file for output
-  // ------------------------
-  int createFile( const char *file_name,
-                  char **component_names,
-                  int num_components );
-  int writeZoneData( char *zone_name,
-                     char *var_names,
+  // Create an output file
+  int createFile( const char *file_name, int num_components,
+                  char **component_names );
+  int writeZoneData( char *zone_name, char *var_names,
                      FH5DataType data_name,
-                     void *data, int dim1, int dim2 );
+                     int dim1, int dim2, void *data );
   void close();
 
   // Open a file for reading input
-  // -----------------------------
   int openFile( const char *file_name );
 
   // Retrieve the component names
-  // ----------------------------
   int getNumComponents();
-  char *getComponentName( int comp );
+  char* getComponentName( int comp );
 
   // Retrieve zone data
-  // ------------------
   void firstZone();
   int nextZone();
   int getZoneInfo( const char **zone_name, const char **var_names,
@@ -66,11 +61,11 @@ class FH5File : public TACSObject {
                    int *dim1, int *dim2 );
   int getZoneData( const char **zone_name, const char **var_names,
                    FH5DataType *_dtype,
-                   void **data, int *dim1, int *dim2 );
+                   int *dim1, int *dim2, void **data );
  private:
   // Store information about the location of the data within the file
   class FH5FileInfo {
-  public:
+   public:
     FH5FileInfo(){
       zone_name = NULL;
       next = NULL;

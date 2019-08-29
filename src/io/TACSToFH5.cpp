@@ -131,8 +131,8 @@ void TACSToFH5::writeToFile( const char *filename ){
   file->incref();
 
   // Open the file - if possible for writing
-  int write_err = file->createFile(filename, component_names,
-                                   num_components);
+  int write_err = file->createFile(filename, num_components,
+                                   component_names);
 
   if (write_err){
     file->decref();
@@ -162,13 +162,13 @@ void TACSToFH5::writeToFile( const char *filename ){
   int dim2 = 1;
   char comp_name[] = "components";
   file->writeZoneData(comp_name, comp_name, FH5File::FH5_INT,
-                      comp_nums, dim1, dim2);
+                      dim1, dim2, comp_nums);
   delete [] comp_nums;
 
   // Write the layout types to a new zone
   char layout_name[] = "ltypes";
   file->writeZoneData(layout_name, layout_name, FH5File::FH5_INT,
-                      layout_types, dim1, dim2);
+                      dim1, dim2, layout_types);
   delete [] layout_types;
 
   if (average_node_data){
@@ -216,7 +216,7 @@ void TACSToFH5::writeToFile( const char *filename ){
     double t = assembler->getSimulationTime();
     sprintf(data_name, "data t=%.10e", t);
     file->writeZoneData(data_name, variable_names,
-                        FH5File::FH5_FLOAT, float_data, dim1, dim2);
+                        FH5File::FH5_FLOAT, dim1, dim2, float_data);
     delete [] float_data;
   }
 

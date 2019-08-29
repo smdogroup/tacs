@@ -9,7 +9,7 @@
 
 /*
   Create the TACSAssembler object and return the associated TACS
-  creator object 
+  creator object
 */
 void createTACS( MPI_Comm comm, int nx, int ny,
                  TACSAssembler **_tacs, TACSCreator **_creator ){
@@ -34,7 +34,7 @@ void createTACS( MPI_Comm comm, int nx, int ny,
 
     // Use just one element
     memset(ids, 0, numElements*sizeof(int));
-    
+
     ptr[0] = 0;
     for ( int k = 0; k < numElements; k++ ){
       // Back out the i, j coordinates from the corresponding
@@ -49,7 +49,7 @@ void createTACS( MPI_Comm comm, int nx, int ny,
       conn[4*k+3] = i+1 + (j+1)*(nx+1);
       ptr[k+1] = 4*(k+1);
     }
-  
+
     // Set the connectivity
     creator->setGlobalConnectivity(numNodes, numElements,
                                    ptr, conn, ids);
@@ -59,7 +59,7 @@ void createTACS( MPI_Comm comm, int nx, int ny,
 
     // We're over-counting one of the nodes on each edge
     int numBcs = 4*(nx+1);
-    int *bcNodes = new int[ numBcs ]; 
+    int *bcNodes = new int[ numBcs ];
 
     for ( int i = 0; i < (nx+1); i++ ){
       bcNodes[4*i] = i;
@@ -95,9 +95,9 @@ void createTACS( MPI_Comm comm, int nx, int ny,
   TacsScalar kcorr = 5.0/6.0; // The shear correction factor
   TacsScalar yield_stress = 464.0e6;
   TacsScalar thickness = 0.005;
-    
+
   // Create the stiffness object
-  isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, 
+  isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr,
                                                  yield_stress, thickness);
   TACSElement *elem = new MITCShell<2>(stiff);
   creator->setElements(&elem, 1);
@@ -112,14 +112,14 @@ void createTACS( MPI_Comm comm, int nx, int ny,
   int *elemNums;
   int id = 0;
   int numElems = creator->getElementIdNums(&id, 1, &elemNums);
-  
+
   // Create the auxiliary element class
   TACSAuxElements *aux = new TACSAuxElements(tacs->getNumElements());
 
   // Create a surface traction associated with this element and add
   // it to the auxilary elements. Note that the element number must
   // correspond to the local element number used for this processor.
-  TacsScalar tx = 0.0, ty = 0.0, tz = -1e5; 
+  TacsScalar tx = 0.0, ty = 0.0, tz = -1e5;
   TACSShellTraction<2> *trac = new TACSShellTraction<2>(tx, ty, tz);
   for ( int i = 0; i < numElems; i++ ){
     aux->addElement(elemNums[i], trac);
@@ -141,11 +141,11 @@ void createTACS( MPI_Comm comm, int nx, int ny,
   The main work required is the assembly of the inter-grid operators
   themselves. The TACSBVecInterp class is used to simplify the set up
   of these operators which are stored explicitly.
-  
+
   The multigrid operations are performed using the TACSMg object which
   inherits from the TACSPc interface. It can be used directly as a
   preconditioner and needs to be "factored" in the same manner as
-  regular preconditioners. 
+  regular preconditioners.
 
   TACSMg has a number of member functions which facilitate setting
   state and design variables on all multigrid levels and matrix
@@ -210,16 +210,16 @@ int main( int argc, char *argv[] ){
   // Create the interpolation operators
   for ( int level = 0; level < nlevels-1; level++ ){
     // Allocate the interpolation object
-    TACSBVecInterp *interp = 
+    TACSBVecInterp *interp =
       new TACSBVecInterp(tacs[level+1], tacs[level]);
 
     if (rank == 0){
       // Retrieve the node numbers
-      const int *nodes, *coarse_nodes; 
+      const int *nodes, *coarse_nodes;
       creator[level]->getNodeNums(&nodes);
       creator[level+1]->getNodeNums(&coarse_nodes);
 
-      // Set the weights and variables for 
+      // Set the weights and variables for
       // each node in the fine mesh
       int vars[4];
       TacsScalar w[4];
@@ -244,21 +244,21 @@ int main( int argc, char *argv[] ){
           }
           else if (i % 2 == 0){
             w[0] = w[1] = 0.5;
-            vars[0] = coarse_nodes[(i/2) + (j/2)*(nx_coarse+1)]; 
+            vars[0] = coarse_nodes[(i/2) + (j/2)*(nx_coarse+1)];
             vars[1] = coarse_nodes[(i/2) + (j/2+1)*(nx_coarse+1)];
             nvars = 2;
           }
           else if (j % 2 == 0){
             w[0] = w[1] = 0.5;
-            vars[0] = coarse_nodes[(i/2) + (j/2)*(nx_coarse+1)]; 
+            vars[0] = coarse_nodes[(i/2) + (j/2)*(nx_coarse+1)];
             vars[1] = coarse_nodes[(i/2+1) + (j/2)*(nx_coarse+1)];
             nvars = 2;
           }
           else {
             w[0] = w[1] = w[2] = w[3] = 0.25;
-            vars[0] = coarse_nodes[(i/2) + (j/2)*(nx_coarse+1)]; 
+            vars[0] = coarse_nodes[(i/2) + (j/2)*(nx_coarse+1)];
             vars[1] = coarse_nodes[(i/2+1) + (j/2)*(nx_coarse+1)];
-            vars[2] = coarse_nodes[(i/2) + (j/2+1)*(nx_coarse+1)]; 
+            vars[2] = coarse_nodes[(i/2) + (j/2+1)*(nx_coarse+1)];
             vars[3] = coarse_nodes[(i/2+1) + (j/2+1)*(nx_coarse+1)];
             nvars = 4;
           }
@@ -272,7 +272,7 @@ int main( int argc, char *argv[] ){
     // Initialize the interpolation object. This is a collective
     // call that distributes the interpolation operator.
     interp->initialize();
-    
+
     // Set the multigrid information at this level
     mg->setLevel(level, tacs[level], interp, 1);
   }
@@ -317,7 +317,7 @@ int main( int argc, char *argv[] ){
   gmres->solve(res, ans);
 
   t0 = MPI_Wtime() - t0;
-  
+
   // Set the variables into TACS
   ans->scale(-1.0);
   tacs[0]->setVariables(ans);
@@ -338,7 +338,7 @@ int main( int argc, char *argv[] ){
   TACSToFH5 *f5 = new TACSToFH5(tacs[0], TACS_SHELL, write_flag);
   f5->incref();
   f5->writeToFile("mg_plate.f5");
-  
+
   // Perform the Frequency Analysis
   int max_lanczos = 100;
   int num_eigvals = 20;
@@ -351,22 +351,22 @@ int main( int argc, char *argv[] ){
     // Create matrix and vectors
     FEMat *kmat = tacs[0]->createFEMat(); // stiffness matrix
     kmat->incref();
-    
+
     FEMat *mmat = tacs[0]->createFEMat();
     mmat->incref();
-    
+
     // Create the preconditioner
     int lev_fill = 10000;
     double fill = 10.0;
     PcScMat *pc = new PcScMat(kmat, lev_fill, fill, 1);
     pc->incref();
-    
+
     GMRES *ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
     ksm->incref();
     ksm->setTolerances(1e-12, 1e-30);
 
     freq_analysis =
-      new TACSFrequencyAnalysis(tacs[0], sigma, mmat, kmat, ksm, 
+      new TACSFrequencyAnalysis(tacs[0], sigma, mmat, kmat, ksm,
                                 max_lanczos, num_eigvals, eigtol);
     freq_analysis->incref();
 
@@ -379,25 +379,25 @@ int main( int argc, char *argv[] ){
     // Create a mass matrix
     TACSMat *mmat = tacs[0]->createMat();
     mmat->incref();
-    
+
     // Create the frequency analysis object
-    freq_analysis = 
-      new TACSFrequencyAnalysis(tacs[0], sigma, mmat, 
+    freq_analysis =
+      new TACSFrequencyAnalysis(tacs[0], sigma, mmat,
                                 mg->getMat(0), gmres,
                                 max_lanczos, num_eigvals, eigtol);
     freq_analysis->incref();
-    
+
     // Decref the poitners that go out of scope
     mmat->decref();
   }
- 
+
   // Solve the frequency analysis problem
   freq_analysis->solve(new KSMPrintStdout("Frequency analysis", rank, freq));
 
   // Print out the eigenvalues and natural frequencies
   for ( int k = 0; k < num_eigvals; k++ ){
     TacsScalar error;
-    TacsScalar eigvalue = 
+    TacsScalar eigvalue =
       freq_analysis->extractEigenvector(k, ans, &error);
 
     tacs[0]->setVariables(ans);
@@ -406,8 +406,8 @@ int main( int argc, char *argv[] ){
     f5->writeToFile(filename);
 
     if (rank == 0){
-      printf("TACS eigs[%2d]: %15.6f Omega = %15.6f [Hz]\n", 
-	     k, TacsRealPart(eigvalue), 
+      printf("TACS eigs[%2d]: %15.6f Omega = %15.6f [Hz]\n",
+             k, TacsRealPart(eigvalue),
              TacsRealPart(sqrt(eigvalue))/(2.0*3.14159));
     }
   }

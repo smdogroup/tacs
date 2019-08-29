@@ -1,7 +1,7 @@
 /*
   A pressure-loaded plate example for TACS.
 
-  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2010-2016 Graeme Kennedy. All rights reserved.
 */
 
 #include "TACSAssembler.h"
@@ -13,14 +13,14 @@
 
 /*
   The following example demonstrates the use of TACS on a pressure
-  loaded plate. 
+  loaded plate.
 
   This code uses the TACSAssembler interface directly. Other creation
   code (TACSCreator/TACSMeshLoader) can also be used to generate
   TACSAssembler instances. Once a TACSAssembler instance has been
   created and initialized, it should be able to be used interchangeably
-  withe 
-  
+  withe
+
   Note: This code does not intelligently partition the mesh. You could
   use TACSCreator to perform the partitioning for you to achieve
   better results, but this code is designed to demonstrate the
@@ -31,7 +31,7 @@
 */
 int main( int argc, char * argv[] ){
   MPI_Init(&argc, &argv);
-  
+
   // Find the MPI rank and size
   MPI_Comm tacs_comm = MPI_COMM_WORLD;
   int rank, size;
@@ -86,7 +86,7 @@ int main( int argc, char * argv[] ){
   // going to be equal to 6 (You can find this value by checking
   // with element->numDisplacements() which returns the number
   // of displacements (or unknowns) per node)
-  int varsPerNode = 6;  
+  int varsPerNode = 6;
 
   int nodesPerProc = ((nx+1)*(ny+1))/size;
   int elemsPerProc = (nx*ny)/size;
@@ -108,7 +108,7 @@ int main( int argc, char * argv[] ){
                                           numDependentNodes);
   tacs->incref(); // Increase the reference count to TACSAssembler
 
-  // Set the global element index for the first and last element 
+  // Set the global element index for the first and last element
   // in the partition
   int firstElem = rank*elemsPerProc;
   int firstNode = rank*nodesPerProc;
@@ -149,7 +149,7 @@ int main( int argc, char * argv[] ){
     conn[4*k+3] = i+1 + (j+1)*(nx+1);
     ptr[k+1] = 4*(k+1);
   }
-  
+
   // Set the connectivity
   tacs->setElementConnectivity(conn, ptr);
   delete [] conn;
@@ -161,7 +161,7 @@ int main( int argc, char * argv[] ){
   // Create the auxiliary element class - we'll use this to apply
   // surface tractions
   TACSAuxElements *aux = new TACSAuxElements(numElements);
-  
+
   for ( int k = 0, elem = firstElem; elem < lastElem; k++, elem++ ){
     // Create the constitutive objects
     TacsScalar rho = 2500.0; // Not used
@@ -173,19 +173,19 @@ int main( int argc, char * argv[] ){
 
     // Set the thickness design variable = the element number
     int tNum = elem;
-    
+
     // Create the stiffness object
-    isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, 
-                                                   yield_stress, thickness, 
+    isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr,
+                                                   yield_stress, thickness,
                                                    tNum);
 
-    // Create the shell element    
+    // Create the shell element
     elements[k] = new MITCShell<2>(stiff);
 
     // Create a surface traction associated with this element and add
     // it to the auxilary elements. Note that the element number must
     // correspond to the local element number used for this processor.
-    TacsScalar tx = 0.0, ty = 0.0, tz = -1e5; 
+    TacsScalar tx = 0.0, ty = 0.0, tz = -1e5;
     TACSShellTraction<2> *trac = new TACSShellTraction<2>(tx, ty, tz);
     aux->addElement(k, trac);
   }
@@ -204,31 +204,31 @@ int main( int argc, char * argv[] ){
   // Reorder the nodal variables
   int use_fe_mat = 1;
   TACSAssembler::OrderingType order_type = TACSAssembler::ND_ORDER;
-  TACSAssembler::MatrixOrderingType mat_type = 
+  TACSAssembler::MatrixOrderingType mat_type =
     TACSAssembler::APPROXIMATE_SCHUR;
 
   for ( int k = 0; k < argc; k++ ){
-    if (strcmp(argv[k], "AMD") == 0){ 
+    if (strcmp(argv[k], "AMD") == 0){
       order_type = TACSAssembler::AMD_ORDER;
     }
-    else if (strcmp(argv[k], "RCM") == 0){ 
+    else if (strcmp(argv[k], "RCM") == 0){
       order_type = TACSAssembler::RCM_ORDER;
     }
-    else if (strcmp(argv[k], "ND") == 0){ 
+    else if (strcmp(argv[k], "ND") == 0){
       order_type = TACSAssembler::ND_ORDER;
     }
     else if (strcmp(argv[k], "TACS_AMD") == 0){
       order_type = TACSAssembler::TACS_AMD_ORDER;
     }
-    else if (strcmp(argv[k], "DirectSchur") == 0){ 
+    else if (strcmp(argv[k], "DirectSchur") == 0){
       mat_type = TACSAssembler::DIRECT_SCHUR;
     }
-    else if (strcmp(argv[k], "ApproximateSchur") == 0){ 
-      mat_type = TACSAssembler::APPROXIMATE_SCHUR; 
+    else if (strcmp(argv[k], "ApproximateSchur") == 0){
+      mat_type = TACSAssembler::APPROXIMATE_SCHUR;
       use_fe_mat = 0;
     }
-    else if (strcmp(argv[k], "AdditiveSchwarz") == 0){ 
-      mat_type = TACSAssembler::ADDITIVE_SCHWARZ; 
+    else if (strcmp(argv[k], "AdditiveSchwarz") == 0){
+      mat_type = TACSAssembler::ADDITIVE_SCHWARZ;
       use_fe_mat = 0;
     }
   }
@@ -257,7 +257,7 @@ int main( int argc, char * argv[] ){
   }
 
   // Reorder the vector if required
-  tacs->reorderVec(X);  
+  tacs->reorderVec(X);
 
   // Set the node locations
   tacs->setNodes(X);
@@ -270,12 +270,12 @@ int main( int argc, char * argv[] ){
   TACSMat *mmat = NULL;
   TACSPc *pc = NULL;
 
-  // Depending on the input options, solve the 
+  // Depending on the input options, solve the
   int lev_fill = 5; // ILU(k) fill in
   int fill = 8.0; // Expected number of non-zero entries
 
   // Options for the ApproximateSchur preconditioner class
-  int inner_gmres_iters = 10; 
+  int inner_gmres_iters = 10;
   double inner_rtol = 1e-4, inner_atol = 1e-30;
 
   // These calls compute the symbolic factorization and allocate
@@ -304,7 +304,7 @@ int main( int argc, char * argv[] ){
     // Create the distributed matrix class
     TACSDistMat *_kmat = tacs->createMat();
     TACSDistMat *_mmat = tacs->createMat();
-    pc = new TACSApproximateSchur(_kmat, lev_fill, fill, 
+    pc = new TACSApproximateSchur(_kmat, lev_fill, fill,
                                   inner_gmres_iters, inner_rtol, inner_atol);
     kmat = _kmat;
     mmat = _mmat;
@@ -340,13 +340,13 @@ int main( int argc, char * argv[] ){
 
   // This call copies then factors the matrix
   double t0 = MPI_Wtime();
-  pc->factor(); 
+  pc->factor();
   t0 = MPI_Wtime() - t0;
   printf("[%d] Factor time %f \n", rank, t0);
 
   // Now, set up the solver
   int use_gmres = 1;
-  int gmres_iters = 80; 
+  int gmres_iters = 80;
   int nrestart = 2; // Number of allowed restarts
   int is_flexible = 1; // Is a flexible preconditioner?
 
@@ -366,7 +366,7 @@ int main( int argc, char * argv[] ){
                     gmres_iters, is_flexible);
     ksm->setMonitor(new KSMPrintStdout("GCROT", rank, freq));
   }
-  ksm->incref();  
+  ksm->incref();
 
   // Test the actual residual
   ksm->solve(res, ans);
@@ -381,7 +381,7 @@ int main( int argc, char * argv[] ){
   ans->scale(-1.0);
   tacs->setVariables(ans);
   tacs->assembleRes(res);
-  norm = res->norm();  
+  norm = res->norm();
   if (rank == 0){
     printf("|R|: %15.5e\n", TacsRealPart(norm));
   }
@@ -400,7 +400,7 @@ int main( int argc, char * argv[] ){
   /*
     Now we will use TACS to compute the total derivative of a function
     of interest with respect to design variables. The design variable
-    numbers are set in the constitutive object. 
+    numbers are set in the constitutive object.
 
     The user is in charge of the design variable numbering. It can be
     either local to each processor or global across all processors.
@@ -441,10 +441,10 @@ int main( int argc, char * argv[] ){
   */
   MPI_Allreduce(MPI_IN_PLACE, x, numDesignVars, TACS_MPI_TYPE,
                 TACS_MPI_MAX, tacs_comm);
-  
+
   // Now, set the design variables values to ensure that they are
   // locally consistent
-  tacs->setDesignVars(x, numDesignVars); 
+  tacs->setDesignVars(x, numDesignVars);
 
   // Evaluate the function
   TacsScalar ksFuncVal = 0.0;
@@ -470,12 +470,12 @@ int main( int argc, char * argv[] ){
 
   // Solve for the adjoint variables
   ksm->solve(dfdu, ans);
-  
+
   // Compute the total derivative
   tacs->addAdjointResProducts(-1.0, &ans, 1, dfdx, numDesignVars);
 
   // Add up the contributions across all processors
-  MPI_Allreduce(MPI_IN_PLACE, dfdx, numDesignVars, TACS_MPI_TYPE, 
+  MPI_Allreduce(MPI_IN_PLACE, dfdx, numDesignVars, TACS_MPI_TYPE,
                 MPI_SUM, tacs_comm);
 
   // Now check with a finite-difference projected derivative
@@ -513,7 +513,7 @@ int main( int argc, char * argv[] ){
   ksm->solve(res, ans);
   ans->scale(-1.0);
   tacs->setVariables(ans);
-  
+
   // Evaluate the function
   TacsScalar ksFuncVal1 = 0.0;
   tacs->evalFunctions(&func, 1, &ksFuncVal1);
@@ -526,15 +526,15 @@ int main( int argc, char * argv[] ){
 #else
     fd = (ksFuncVal1 - ksFuncVal)/dh;
 #endif
-    printf("The %s is %15.8f \n", func->functionName(), 
+    printf("The %s is %15.8f \n", func->functionName(),
            TacsRealPart(ksFuncVal));
-    printf("The projected derivative is             %20.8e \n", 
+    printf("The projected derivative is             %20.8e \n",
            TacsRealPart(proj_deriv));
-    printf("The finite-difference approximation is  %20.8e \n", 
+    printf("The finite-difference approximation is  %20.8e \n",
            TacsRealPart(fd));
-    printf("The relative error is                   %20.5e \n", 
-	   fabs(TacsRealPart((fd - proj_deriv)/fd)));
-  } 
+    printf("The relative error is                   %20.5e \n",
+           fabs(TacsRealPart((fd - proj_deriv)/fd)));
+  }
 
   // Clean up data required by the adjoint
   delete [] x;

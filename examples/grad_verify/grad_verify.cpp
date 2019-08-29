@@ -20,7 +20,7 @@
   ./shell_grad_verify input_file.bdf [options]
 
   where [options] may consist of any of the following:
-  
+
   test             perform additional tests on the functions/elements
   fd               indicate whether to use finite-differece or not
   fd=%f            specify the finite-difference (or CS) interval
@@ -32,7 +32,7 @@ int main( int argc, char * argv[] ){
 
   // Set the communicator to use for this example
   MPI_Comm comm = MPI_COMM_WORLD;
-  
+
   // The number of pthreads to use
   int num_threads = 1;
 
@@ -93,7 +93,7 @@ int main( int argc, char * argv[] ){
 
     // Get the description of the element type to determine what
     // order of shell we're dealing with
-    const char *elem_descript = mesh->getElementDescript(k); 
+    const char *elem_descript = mesh->getElementDescript(k);
 
     // Allocate the element
     TACSElement *elem = NULL;
@@ -107,11 +107,11 @@ int main( int argc, char * argv[] ){
     else if (strcmp(elem_descript, "CQUAD16") == 0){
       elem = new MITCShell<4>(con, LINEAR, elem_id);
     }
-    
+
     // Set the element object into the mesh
     mesh->setElement(k, elem);
   }
-  
+
   // The number of variables per node in the mesh
   int vars_per_node = 6;
 
@@ -133,12 +133,12 @@ int main( int argc, char * argv[] ){
 
   // Set a gravity load
   TACSAuxElements *aux = new TACSAuxElements(tacs->getNumElements());
-  
+
   // Add a traction in the negative z-direction
   TacsScalar tx = 0.0, ty = 0.0, tz = -1e3;
   for ( int k = 0; k < mesh->getNumComponents(); k++ ){
     // Get the element description
-    const char *elem_descript = mesh->getElementDescript(k); 
+    const char *elem_descript = mesh->getElementDescript(k);
 
     // Allocate the associate gravity traction
     TACSElement *elem = NULL;
@@ -152,14 +152,14 @@ int main( int argc, char * argv[] ){
     else if (strcmp(elem_descript, "CQUAD16") == 0){
       elem = new TACSShellTraction<4>(tx, ty, tz);
     }
-    
+
     // Add the element traction to the mesh
     mesh->addAuxElement(aux, k, elem);
   }
 
   // Add the tractions/loads to the TACSAssembler object
   tacs->setAuxElements(aux);
-  
+
   //  Set up the ks functions
   static const int NUM_FUNCS = 12;
   TACSFunction *funcs[NUM_FUNCS];
@@ -209,7 +209,7 @@ int main( int argc, char * argv[] ){
   ifunc = new TACSInducedFailure(tacs, 20.0);
   ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
   funcs[11] = ifunc;
-  
+
   for ( int k = 0; k < NUM_FUNCS; k++ ){
     funcs[k]->incref();
   }
@@ -232,7 +232,7 @@ int main( int argc, char * argv[] ){
   PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur);
   pc->setMonitorFactorFlag(0);
   pc->setAlltoallAssemblyFlag(1);
-  
+
   // Create GMRES object
   int gmres_iters = 4, nrestart = 0, isflexible = 0;
   GMRES *gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
@@ -273,18 +273,18 @@ int main( int argc, char * argv[] ){
   // The maximum number of gradient components to test
   // using finite-difference/complex-step
   int num_grad_comp = 10;
-  num_grad_comp = (num_design_vars > num_grad_comp ? 
-		   num_grad_comp : num_design_vars);
+  num_grad_comp = (num_design_vars > num_grad_comp ?
+                   num_grad_comp : num_design_vars);
 
   // Scan any remaining arguments that may be required
   int test_flag = 0;
   double dh = 1e-6;
   for ( int k = 0; k < argc; k++ ){
     if (sscanf(argv[k], "dh=%lf", &dh) == 1){}
-    else if (sscanf(argv[k], "num_grad_comp=%d", 
-		    &num_grad_comp) == 1){
-      num_grad_comp = (num_design_vars > num_grad_comp ? 
-		       num_grad_comp : num_design_vars);
+    else if (sscanf(argv[k], "num_grad_comp=%d",
+                    &num_grad_comp) == 1){
+      num_grad_comp = (num_design_vars > num_grad_comp ?
+                       num_grad_comp : num_design_vars);
     }
     if (strcmp(argv[k], "test") == 0){
       test_flag = 1;
@@ -307,7 +307,7 @@ int main( int argc, char * argv[] ){
   gmres->solve(res, ans);
   ans->scale(-1.0);
   tacs->setVariables(ans);
-  
+
   // Write the solution to an .f5 file
   if (f5){
     // Find the location of the first '.' in the string
@@ -315,17 +315,17 @@ int main( int argc, char * argv[] ){
     int len = strlen(bdf_file);
     int i = len-1;
     for ( ; i >= 0; i-- ){
-      if (bdf_file[i] == '.'){ 
-        break; 
-      }     
+      if (bdf_file[i] == '.'){
+        break;
+      }
     }
-    
+
     // Copy the entire input string to the filename
     strcpy(outfile, bdf_file);
-    
+
     // Over-write the last part of the string
     strcpy(&outfile[i], ".f5");
-    
+
     // Write out the file
     f5->writeToFile(outfile);
     delete [] outfile;
@@ -334,11 +334,11 @@ int main( int argc, char * argv[] ){
   // Evaluate each of the functions
   TacsScalar fvals[NUM_FUNCS];
   tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
-  
+
   // Evaluate the partial derivative of each function w.r.t. x
-  tacs->addDVSens(1.0, funcs, NUM_FUNCS, 
+  tacs->addDVSens(1.0, funcs, NUM_FUNCS,
                   dfdx, num_design_vars);
-  
+
   // Create the adjoint variables for each function of interest
   TACSBVec *adjoints[NUM_FUNCS];
   TACSBVec *dfdu[NUM_FUNCS];
@@ -348,30 +348,30 @@ int main( int argc, char * argv[] ){
     dfdu[j] = tacs->createVec();
     dfdu[j]->incref();
   }
-  
+
   // Evaluate the partial derivative of each function of interest
   // w.r.t. the state variables and compute the adjoint
   tacs->addSVSens(1.0, 0.0, 0.0, funcs, NUM_FUNCS, dfdu);
-  
+
   // Solve all of the adjoint equations
   for ( int j = 0; j < NUM_FUNCS; j++ ){
     gmres->solve(dfdu[j], adjoints[j]);
   }
-  
+
   // Evaluate the adjoint-residual product
   tacs->addAdjointResProducts(-1.0, adjoints, NUM_FUNCS,
                               dfdx, num_design_vars);
-  
+
   // Delete all of the adjoints
   for ( int j = 0; j < NUM_FUNCS; j++ ){
     adjoints[j]->decref();
     dfdu[j]->decref();
   }
-  
+
   // Add up the contributions across all processors
   MPI_Allreduce(MPI_IN_PLACE, dfdx, NUM_FUNCS*num_design_vars,
                 TACS_MPI_TYPE, MPI_SUM, comm);
-  
+
   // Test the function that will be used
   if (test_flag){
     // Test the derivatives of the functions of interest w.r.t. the
@@ -416,10 +416,10 @@ int main( int argc, char * argv[] ){
     // (xvals[ok] + dh)
     memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
     xtemp[k] += dh;
-    
+
     // Set the perturbed value of the design variables
     tacs->setDesignVars(xtemp, num_design_vars);
-      
+
     // Solve the problem
     tacs->zeroVariables();
     tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
@@ -468,7 +468,7 @@ int main( int argc, char * argv[] ){
       printf("%25s %25s %25s\n",
              "Adjoint", "FD/CS", "Abs. error");
       for ( int k = 0; k < num_grad_comp; k++ ){
-        printf("%25.15e %25.15e %25.15e\n", 
+        printf("%25.15e %25.15e %25.15e\n",
                TacsRealPart(dfdx[k + j*num_design_vars]),
                fd[k + j*num_design_vars],
                TacsRealPart(dfdx[k + j*num_design_vars]) -

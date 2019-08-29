@@ -37,7 +37,7 @@ int main( int argc, char **argv ){
   // Get number of components prescribed in BDF file
   int num_components = mesh->getNumComponents();
 
-  // Set properties needed to create stiffness object 
+  // Set properties needed to create stiffness object
   double rho = 2500.0; // density, kg/m^3
   double E = 70e9; // elastic modulus, Pa
   double nu = 0.3; // poisson's ratio
@@ -51,21 +51,21 @@ int main( int argc, char **argv ){
     double max_thickness = 0.20;
     double thickness = 0.01;
     isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
-        thickness, i, min_thickness, max_thickness); 
+        thickness, i, min_thickness, max_thickness);
 
     // Initialize element object
     TACSElement *element = NULL;
 
-    // Create element object using constituitive information and 
+    // Create element object using constituitive information and
     // type defined in descriptor
-    if ( strcmp(descriptor, "CQUAD") == 0 || 
+    if ( strcmp(descriptor, "CQUAD") == 0 ||
          strcmp(descriptor, "CQUADR") == 0 ||
          strcmp(descriptor, "CQUAD4") == 0) {
       element = new MITCShell<2>(stiff, LINEAR, i);
     }
     mesh->setElement(i, element);
   }
-  
+
   // Create tacs assembler from mesh loader object
   TACSAssembler *tacs = mesh->createTACS(6);
   tacs->incref();
@@ -82,7 +82,7 @@ int main( int argc, char **argv ){
   // Get the design variable values
   tacs->getDesignVars(x, num_components);
 
-  // Create matrix and vectors 
+  // Create matrix and vectors
   TACSBVec *ans = tacs->createVec(); // displacements and rotations
   TACSBVec *f = tacs->createVec(); // loads
   TACSBVec *res = tacs->createVec(); // The residual
@@ -100,7 +100,7 @@ int main( int argc, char **argv ){
   int lev = 10000;
   double fill = 10.0;
   int reorder_schur = 1;
-  PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur); 
+  PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur);
   pc->incref();
 
   // Set all the entries in load vector to specified value
@@ -228,7 +228,7 @@ int main( int argc, char **argv ){
 
   // Set the new node locations
   tacs->setNodes(X);
-  
+
   // Solve the equations again
   tacs->assembleJacobian(alpha, beta, gamma, NULL, mat);
   pc->factor(); // LU factorization of stiffness matrix
@@ -237,7 +237,7 @@ int main( int argc, char **argv ){
 
   // Re-evaluate the function
   tacs->evalFunctions(&func, 1, &fval2);
-  
+
   if (rank == 0){
     printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
 #ifdef TACS_USE_COMPLEX
@@ -278,7 +278,7 @@ int main( int argc, char **argv ){
   f->decref();
   res->decref();
   adjoint->decref();
-  
+
   // Decref the nodal vectors
   dfdXpts->decref();
   pert->decref();

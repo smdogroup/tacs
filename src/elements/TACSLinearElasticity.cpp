@@ -264,6 +264,7 @@ void TACSLinearElasticity2D::getOutputData( int elemIndex,
       data[0] = stiff->failure(elemIndex, pt, X, e);
       data[1] = 0.0;
       data[2] = 0.0;
+      data += 3;
     }
   }
 }
