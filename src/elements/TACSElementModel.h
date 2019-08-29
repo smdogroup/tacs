@@ -16,6 +16,7 @@
 #define TACS_ELEMENT_MODEL_H
 
 #include "TACSObject.h"
+#include "TACSElementTypes.h"
 
 /**
   TACSElementModel defines a physical model class independent of a
@@ -165,6 +166,33 @@ class TACSElementModel {
                                  int *DDUx_num_non_zeros,
                                  const int *DDUx_non_zero_pairs[],
                                  TacsScalar DDUx[] ) = 0;
+
+  /**
+    Generate a line of output for a single visualization point
+
+    @param elemIndex The local element index
+    @param etype The class of element output to generate
+    @param write_flag The flag to indicate which components to write
+    @param pt The parametric position of the quadrature point
+    @param X The physical position of the quadrature point
+    @param U The values of the state variables
+    @param Udot The time derivatives of the state variables
+    @param Uddot The second time derivatives of the state variables
+    @param Ux The spatial derivatives of the state variables
+  */
+  virtual void getOutputData( int elemIndex,
+                              ElementType etype,
+                              int write_flag,
+                              const double pt[],
+                              const TacsScalar X[],
+                              const TacsScalar U[],
+                              const TacsScalar Udot[],
+                              const TacsScalar Uddot[],
+                              const TacsScalar Ux[],
+                              int ld_data,
+                              TacsScalar *data ) = 0;
+
+
 };
 
 #endif // TACS_ELEMENT_MODEL_H

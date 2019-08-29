@@ -112,7 +112,7 @@ const char* TacsGetOutputComponentName( ElementType etype, int comp, int index )
    @param ltype The element layout type for the visualization
    @return The number of nodes in the visual representation of the element
 */
-int TacsGetNumVizNodes( ElementLayout ltype );
+int TacsGetNumVisNodes( ElementLayout ltype );
 
 /**
    Get the element layout count and number of entries in the new
@@ -134,7 +134,7 @@ int TacsGetNumVizNodes( ElementLayout ltype );
    @param ltype The element layout type
    @param ntypes The number of basic element types.
 */
-void TacsConvertVizLayoutToBasicCount( ElementLayout ltype,
+void TacsConvertVisLayoutToBasicCount( ElementLayout ltype,
                                        int *ntypes, int *nconn );
 
 /**
@@ -146,7 +146,7 @@ void TacsConvertVizLayoutToBasicCount( ElementLayout ltype,
    @param basic_ltypes The basic element types (cast of ElementLayout to int)
    @param basic_conn The basic element connectivity
 */
-void TacsConvertVizLayoutToBasic( ElementLayout ltype, const int conn[],
+void TacsConvertVisLayoutToBasic( ElementLayout ltype, const int conn[],
                                   int basic_ltypes[], int basic_conn[] );
 
 #endif // TACS_ELEMENT_TYPES_H

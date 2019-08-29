@@ -60,36 +60,36 @@ int main( int argc, char *argv[] ){
       int fail = mesh->scanBDFFile(filename);
 
       if (fail){
-	fprintf(stderr, "Failed to read in the BDF file\n");
+        fprintf(stderr, "Failed to read in the BDF file\n");
       }
       else {
-	// Add the elements to the mesh loader class
-	for ( int i = 0; i < mesh->getNumComponents(); i++ ){
-	  TACSElement *elem = NULL;
+        // Add the elements to the mesh loader class
+        for ( int i = 0; i < mesh->getNumComponents(); i++ ){
+          TACSElement *elem = NULL;
 
-	  // Get the BDF description of the element
-	  const char *elem_descript = mesh->getElementDescript(i);
-	  if (strcmp(elem_descript, "CQUAD4") == 0){
-	    elem = linear_element;
-	  }
-	  else if (strcmp(elem_descript, "CQUAD") == 0 ||
-		   strcmp(elem_descript, "CQUAD9") == 0){
-	    elem = quad_element;
-	  }
-	  else if (strcmp(elem_descript, "CQUAD16") == 0){
-	    elem = cubic_element;
-	  }
+          // Get the BDF description of the element
+          const char *elem_descript = mesh->getElementDescript(i);
+          if (strcmp(elem_descript, "CQUAD4") == 0){
+            elem = linear_element;
+          }
+          else if (strcmp(elem_descript, "CQUAD") == 0 ||
+                   strcmp(elem_descript, "CQUAD9") == 0){
+            elem = quad_element;
+          }
+          else if (strcmp(elem_descript, "CQUAD16") == 0){
+            elem = cubic_element;
+          }
 
-	  // Set the element object into the mesh loader class
-	  if (elem){
-	    mesh->setElement(i, elem);
-	  }
-	}
+          // Set the element object into the mesh loader class
+          if (elem){
+            mesh->setElement(i, elem);
+          }
+        }
 
-	// Now, create the TACSAssembler object
+        // Now, create the TACSAssembler object
         int vars_per_node = 2;
-	assembler = mesh->createTACS(vars_per_node);
-	assembler->incref();
+        assembler = mesh->createTACS(vars_per_node);
+        assembler->incref();
       }
     }
     else {

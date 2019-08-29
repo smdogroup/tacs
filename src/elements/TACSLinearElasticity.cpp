@@ -210,6 +210,64 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   }
 }
 
+void TACSLinearElasticity2D::getOutputData( int elemIndex,
+                                            ElementType etype,
+                                            int write_flag,
+                                            const double pt[],
+                                            const TacsScalar X[],
+                                            const TacsScalar U[],
+                                            const TacsScalar Udot[],
+                                            const TacsScalar Uddot[],
+                                            const TacsScalar Ux[],
+                                            int ld_data,
+                                            TacsScalar *data ){
+  if (etype == TACS_PLANE_STRESS_ELEMENT){
+    if (write_flag & TACS_OUTPUT_NODES){
+      data[0] = X[0];
+      data[1] = X[1];
+      data[2] = X[2];
+      data += 3;
+    }
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+      data[0] = U[0];
+      data[1] = U[1];
+      data += 2;
+    }
+
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+    }
+
+    if (write_flag & TACS_OUTPUT_STRAINS){
+      data[0] = e[0];
+      data[1] = e[1];
+      data[2] = e[2];
+      data += 3;
+    }
+    if (write_flag & TACS_OUTPUT_STRESSES){
+      TacsScalar s[3];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+      data[0] = s[0];
+      data[1] = s[1];
+      data[1] = s[1];
+      data += 3;
+    }
+    if (write_flag & TACS_OUTPUT_EXTRAS){
+      data[0] = stiff->failure(elemIndex, pt, X, e);
+      data[1] = 0.0;
+      data[2] = 0.0;
+    }
+  }
+}
+
 /*
 TACSLinearElasticity3D::TACSLinearElasticity3D( TACSConstitutive *_con ){
   con = _con;

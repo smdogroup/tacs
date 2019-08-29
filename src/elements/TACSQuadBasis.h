@@ -22,6 +22,8 @@
 */
 class TACSLinearQuadBasis : public TACSElementBasis {
  public:
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
@@ -39,6 +41,8 @@ class TACSLinearQuadBasis : public TACSElementBasis {
 */
 class TACSQuadraticQuadBasis : public TACSElementBasis {
  public:
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
@@ -56,6 +60,8 @@ class TACSQuadraticQuadBasis : public TACSElementBasis {
 */
 class TACSCubicQuadBasis : public TACSElementBasis {
  public:
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();

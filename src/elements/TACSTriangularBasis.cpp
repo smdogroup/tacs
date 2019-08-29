@@ -34,6 +34,22 @@ static void getFaceTangents( int face, double t[] ){
 /*
   Linear Triangle basis class functions
 */
+ElementLayout TACSLinearTriangleBasis::getLayoutType(){
+  return TACS_TRI_ELEMENT;
+}
+
+void TACSLinearTriangleBasis::getVisPoint( int n, double pt[] ){
+  if (n == 0){
+    pt[0] = pt[1] = 0.0;
+  }
+  else if (n == 1){
+    pt[0] = 1.0;  pt[1] = 0.0;
+  }
+  else {
+    pt[0] = 0.0;  pt[1] = 1.0;
+  }
+}
+
 int TACSLinearTriangleBasis::getNumNodes(){
   return 3;
 }
@@ -130,6 +146,31 @@ void TACSLinearTriangleBasis::computeBasisGradient( const double pt[],
 /*
   Quadratic Triangle basis class functions
 */
+ElementLayout TACSQuadraticTriangleBasis::getLayoutType(){
+  return TACS_TRI_QUADRATIC_ELEMENT;
+}
+
+void TACSQuadraticTriangleBasis::getVisPoint( int n, double pt[] ){
+  if (n == 0){
+    pt[0] = 0.0;  pt[1] = 0.0;
+  }
+  else if (n == 1){
+    pt[0] = 1.0;  pt[1] = 0.0;
+  }
+  else if (n == 2){
+    pt[0] = 0.0;  pt[1] = 1.0;
+  }
+  else if (n == 3){
+    pt[0] = 0.5;  pt[1] = 0.0;
+  }
+  else if (n == 4){
+    pt[0] = 0.5;  pt[1] = 0.5;
+  }
+  else if (n == 5){
+    pt[0] = 0.0;  pt[1] = 0.5;
+  }
+}
+
 int TACSQuadraticTriangleBasis::getNumNodes(){
   return 6;
 }
@@ -249,6 +290,43 @@ void TACSQuadraticTriangleBasis::computeBasisGradient( const double pt[],
 /*
   Cubic Triangle basis class functions
 */
+ElementLayout TACSCubicTriangleBasis::getLayoutType(){
+  return TACS_TRI_CUBIC_ELEMENT;
+}
+
+void TACSCubicTriangleBasis::getVisPoint( int n, double pt[] ){
+  if (n == 0){
+    pt[0] = 0.0;  pt[1] = 0.0;
+  }
+  else if (n == 1){
+    pt[0] = 1.0;  pt[1] = 0.0;
+  }
+  else if (n == 2){
+    pt[0] = 0.0;  pt[1] = 1.0;
+  }
+  else if (n == 3){
+    pt[0] = 0.25;  pt[1] = 0.0;
+  }
+  else if (n == 4){
+    pt[0] = 0.0;  pt[1] = 0.75;
+  }
+  else if (n == 5){
+    pt[0] = 0.75;  pt[1] = 0.25;
+  }
+  else if (n == 6){
+    pt[0] = 0.25;  pt[1] = 0.75;
+  }
+  else if (n == 7){
+    pt[0] = 0.0;  pt[1] = 0.75;
+  }
+  else if (n == 8){
+    pt[0] = 0.0;  pt[1] = 0.75;
+  }
+  else if (n == 9){
+    pt[0] = 0.25;  pt[1] = 0.25;
+  }
+}
+
 int TACSCubicTriangleBasis::getNumNodes(){
   return 10;
 }

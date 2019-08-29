@@ -132,3 +132,40 @@ void TACSElement2D::addJacobian( int elemIndex,
                                DDUx_nnz, DDUx_pairs, DDUx, res, mat);
   }
 }
+
+/*
+  Get the element data for the basis
+*/
+void TACSElement2D::getOutputData( int elemIndex,
+                                   ElementType etype,
+                                   int write_flag,
+                                   const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[],
+                                   int ld_data,
+                                   TacsScalar *data ){
+  int num_vis_nodes = TacsGetNumVisNodes(basis->getLayoutType());
+  const int vars_per_node = model->getVarsPerNode();
+
+  // Write out the output data
+  for ( int i = 0; i < num_vis_nodes; i++ ){
+    double pt[3];
+    basis->getVisPoint(i, pt);
+
+    // Get the field gradient information
+    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar U[MAX_VARS_PER_NODE], Udot[MAX_VARS_PER_NODE];
+    TacsScalar Uddot[MAX_VARS_PER_NODE];
+    TacsScalar Ux[3*MAX_VARS_PER_NODE];
+    basis->getFieldGradient(pt, Xpts, vars_per_node,
+                            vars, dvars, ddvars,
+                            X, Xd, J, U, Udot, Uddot, Ux);
+
+    // Evaluate the output from the data
+    model->getOutputData(elemIndex, etype, write_flag, pt,
+                         X, U, Udot, Uddot, Ux, ld_data, data);
+
+    data += ld_data;
+  }
+}

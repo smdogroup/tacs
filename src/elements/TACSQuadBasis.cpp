@@ -15,7 +15,6 @@
 #include "TACSQuadBasis.h"
 #include "TACSGaussQuadrature.h"
 
-
 static void getEdgeTangent( int edge, double t[] ){
   if (edge == 0){
     // -X edge
@@ -38,6 +37,15 @@ static void getEdgeTangent( int edge, double t[] ){
 /*
   Linear Quad basis class functions
 */
+ElementLayout TACSLinearQuadBasis::getLayoutType(){
+  return TACS_QUAD_ELEMENT;
+}
+
+void TACSLinearQuadBasis::getVisPoint( int n, double pt[] ){
+  pt[0] = -1.0 + 2.0*(n % 2);
+  pt[1] = -1.0 + 2.0*(n/2);
+}
+
 int TACSLinearQuadBasis::getNumNodes(){
   return 4;
 }
@@ -120,6 +128,15 @@ void TACSLinearQuadBasis::computeBasisGradient( const double pt[],
 /*
   Quadratic Quad basis class functions
 */
+ElementLayout TACSQuadraticQuadBasis::getLayoutType(){
+  return TACS_QUAD_QUADRATIC_ELEMENT;
+}
+
+void TACSQuadraticQuadBasis::getVisPoint( int n, double pt[] ){
+  pt[0] = -1.0 + 1.0*(n % 3);
+  pt[1] = -1.0 + 1.0*(n/3);
+}
+
 int TACSQuadraticQuadBasis::getNumNodes(){
   return 9;
 }
@@ -249,6 +266,16 @@ void TACSQuadraticQuadBasis::computeBasisGradient( const double pt[],
 /*
   Cubic Quad basis class functions
 */
+ElementLayout TACSCubicQuadBasis::getLayoutType(){
+  return TACS_QUAD_CUBIC_ELEMENT;
+}
+
+void TACSCubicQuadBasis::getVisPoint( int n, double pt[] ){
+  static const double pts[4] = {-1.0, -0.5, 0.5, 1.0};
+  pt[0] = pts[n % 4];
+  pt[1] = pts[n/4];
+}
+
 int TACSCubicQuadBasis::getNumNodes(){
   return 9;
 }

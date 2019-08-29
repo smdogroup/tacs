@@ -56,6 +56,17 @@ class TACSLinearElasticity2D : public TACSElementModel {
                          int *DDUx_nnz,
                          const int *_DDUx_pairs[],
                          TacsScalar DDUx[] );
+  void getOutputData( int elemIndex,
+                      ElementType etype,
+                      int write_flag,
+                      const double pt[],
+                      const TacsScalar X[],
+                      const TacsScalar U[],
+                      const TacsScalar Udot[],
+                      const TacsScalar Uddot[],
+                      const TacsScalar Ux[],
+                      int ld_data,
+                      TacsScalar *data );
 
  private:
   ElementStrainType strain_type;

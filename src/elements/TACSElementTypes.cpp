@@ -326,7 +326,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
 /*
   Get the number of visualization nodes for the given element layout
 */
-int TacsGetNumVizNodes( ElementLayout ltype ){
+int TacsGetNumVisNodes( ElementLayout ltype ){
   switch (ltype){
   case TACS_LAYOUT_NONE: return 0;
   case TACS_POINT_ELEMENT: return 1;
@@ -368,7 +368,7 @@ int TacsGetNumVizNodes( ElementLayout ltype ){
   Get the element layout count and number of entries in the new
   connectivity.
 */
-void TacsConvertVizLayoutToBasicCount( ElementLayout ltype,
+void TacsConvertVisLayoutToBasicCount( ElementLayout ltype,
                                        int *ntypes, int *nconn ){
   *ntypes = 0;
   *nconn = 0;
@@ -463,7 +463,7 @@ void TacsConvertVizLayoutToBasicCount( ElementLayout ltype,
   Retrieve the new element types and new element connectivity for the
   basic elements used for visualization
 */
-void TacsConvertVizLayoutToBasic( ElementLayout ltype,
+void TacsConvertVisLayoutToBasic( ElementLayout ltype,
                                   const int conn[],
                                   int basic_ltypes[],
                                   int basic_conn[] ){

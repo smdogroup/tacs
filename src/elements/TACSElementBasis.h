@@ -33,10 +33,18 @@ class TACSElementBasis {
 
   /**
     Get the layout type
+
+    @return The element layout type
   */
-  virtual ElementLayout getLayoutType(){
-    return TACS_LAYOUT_NONE;
-  }
+  virtual ElementLayout getLayoutType();
+
+  /**
+    Get the parametric point visualization point
+
+    @param n Index for the parametric point for visualization
+    @param pt Parametric point location within the element
+  */
+  virtual void getVisPoint( int n, double pt[] );
 
   /**
     Get the number of basis functions

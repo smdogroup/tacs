@@ -16,6 +16,28 @@
 #include "TACSElementAlgebra.h"
 
 /*
+  Get the layout type
+*/
+ElementLayout TACSElementBasis::getLayoutType(){
+  return TACS_LAYOUT_NONE;
+}
+
+/*
+  Get the visualization parametric point
+*/
+void TACSElementBasis::getVisPoint( int n, double pt[] ){
+  if (getNumParameters() == 3){
+    pt[0] = pt[1] = pt[2] = 0.0;
+  }
+  else if (getNumParameters() == 2){
+    pt[0] = pt[1] = 0.0;
+  }
+  else {
+    pt[0] = 0.0;
+  }
+}
+
+/*
   Get the field values at the specified quadrature point
 */
 void TACSElementBasis::getFieldValues( const double pt[],

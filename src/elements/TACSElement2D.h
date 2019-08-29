@@ -33,13 +33,6 @@ class TACSElement2D : public TACSElement {
 
   /**
     Add the residual to the provided vector
-
-    @param time The simulation time
-    @param Xpts The element node locations
-    @param vars The element state variable values
-    @param dvars The time derivative of the element state variables
-    @param ddvars The second time derivative of the element state variables
-    @param res The element residual output
   */
   void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
                     const TacsScalar *vars, const TacsScalar *dvars,
@@ -47,14 +40,6 @@ class TACSElement2D : public TACSElement {
 
   /**
     Add the residual and Jacobians to the arrays
-
-    @param time The simulation time
-    @param Xpts The element node locations
-    @param vars The element state variable values
-    @param dvars The time derivative of the element state variables
-    @param ddvars The second time derivative of the element state variables
-    @param res The element residual output
-    @param mat The element Jacobian output
   */
   void addJacobian( int elemIndex, double time,
                     double alpha, double beta, double gamma,
@@ -73,6 +58,16 @@ class TACSElement2D : public TACSElement {
                             const TacsScalar dvars[], const TacsScalar ddvars[],
                             TacsScalar fXptSens[] ){}
   */
+
+
+  /**
+    Compute the output data for visualization
+  */
+  void getOutputData( int elemIndex, ElementType etype, int write_flag,
+                      const TacsScalar Xpts[], const TacsScalar vars[],
+                      const TacsScalar dvars[], const TacsScalar ddvars[],
+                      int ld_data, TacsScalar *data );
+
  private:
   TACSElementModel *model;
   TACSElementBasis *basis;
