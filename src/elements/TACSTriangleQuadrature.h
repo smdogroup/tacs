@@ -19,16 +19,16 @@
   Quadrature points for triangles on the [0, 1];[0, 1] intervals.
 */
 
-const double TacsTriangleWts3[] = { 1.0/3.0 };
+const double TacsTriangleWts3[] = { 1.0/6.0 };
 const double TacsTrianglePts3[] = { 1.0/6.0, 1.0/6.0,
                                     2.0/3.0, 1.0/6.0,
                                     1.0/6.0, 2.0/3.0 };
 
-const double TacsTriangleWts4[] = { -27.0/48.0, 25.0/48.0 };
+const double TacsTriangleWts4[] = { -27.0/96.0, 25.0/96.0 };
 const double TacsTrianglePts4[] = { 1.0/3.0, 1.0/3.0, 1.0/5.0, 1.0/5.0,
                                     3.0/5.0, 1.0/5.0, 1.0/5.0, 3.0/5.0 };
 
-const double TacsTriangleWts6[] = { 0.109951743655322, 0.223381589678011 };
+const double TacsTriangleWts6[] = { 0.054975871827661, 0.111690794839006 };
 const double TacsTrianglePts6[] = { 0.091576213509771, 0.091576213509771,
                                     0.816847572980459, 0.091576213509771,
                                     0.091576213509771, 0.816847572980459,
