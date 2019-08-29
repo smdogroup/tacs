@@ -42,6 +42,39 @@ int TACSLinearElasticity2D::getVarsPerNode(){
   return 2;
 }
 
+/**
+  Retrieve the global design variable numbers associated with this element
+*/
+int TACSLinearElasticity2D::getDesignVarNums( int elemIndex, int dvLen,
+                                              int dvNums[] ){
+  return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
+}
+
+/**
+  Set the element design variables from the design vector
+*/
+void TACSLinearElasticity2D::setDesignVars( int elemIndex, int dvLen,
+                                   const TacsScalar dvs[] ){
+  stiff->setDesignVars(elemIndex, dvLen, dvs);
+}
+
+/**
+  Get the element design variables values
+*/
+void TACSLinearElasticity2D::getDesignVars( int elemIndex, int dvLen,
+                                            TacsScalar dvs[] ){
+  stiff->getDesignVars(elemIndex, dvLen, dvs);
+}
+
+/**
+  Get the lower and upper bounds for the design variable values
+*/
+void TACSLinearElasticity2D::getDesignVarRange( int elemIndex, int dvLen,
+                                                TacsScalar lb[],
+                                                TacsScalar ub[] ){
+  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+}
+
 void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
                                                 const double time,
                                                 const double pt[],
@@ -210,6 +243,9 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   }
 }
 
+/*
+  Get the data for visualization at a given point
+*/
 void TACSLinearElasticity2D::getOutputData( int elemIndex,
                                             ElementType etype,
                                             int write_flag,
@@ -257,7 +293,7 @@ void TACSLinearElasticity2D::getOutputData( int elemIndex,
       stiff->evalStress(elemIndex, pt, X, e, s);
       data[0] = s[0];
       data[1] = s[1];
-      data[1] = s[1];
+      data[2] = s[2];
       data += 3;
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){

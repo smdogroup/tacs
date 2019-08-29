@@ -41,6 +41,10 @@ class TACSElementBasis {
   /**
     Get the parametric point visualization point
 
+    Note that the number of visualization points must be consistent with
+    the number of points defined by the call to TacsGetNumVisNodes()
+    with the corresponding element layout type.
+
     @param n Index for the parametric point for visualization
     @param pt Parametric point location within the element
   */
@@ -164,7 +168,8 @@ class TACSElementBasis {
     @param U The variables at the quadrature point
     @param Udot The time derivative of the variables
     @param Uddot The second time derivative of the variables
-    @param Ux The spatial derivatives of the variables at the parametric location
+    @param Ud The derivative of the variables w.r.t. the parametric coords
+    @param Ux The derivative of the variables w.r.t. the spatial coords
   */
   virtual TacsScalar getFieldGradient( const double pt[],
                                        const TacsScalar Xpts[],
@@ -178,6 +183,7 @@ class TACSElementBasis {
                                        TacsScalar U[],
                                        TacsScalar Udot[],
                                        TacsScalar Uddot[],
+                                       TacsScalar Ud[],
                                        TacsScalar Ux[] );
 
   /**
@@ -295,6 +301,7 @@ class TACSElementBasis {
                                           TacsScalar U[],
                                           TacsScalar Udot[],
                                           TacsScalar Uddot[],
+                                          TacsScalar Ud[],
                                           TacsScalar Ux[] );
   static void addWeakFormResidual( const int num_params,
                                    const int num_nodes,

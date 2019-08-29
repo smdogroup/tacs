@@ -52,6 +52,52 @@ class TACSConstitutive : public TACSObject {
   virtual int getNumStresses() = 0;
 
   /**
+    Retrieve the global design variable numbers
+
+    Note when the dvNums argument is NULL, then the result is a query
+    on the number of design variables and the array is not set.
+
+    @param dvLen The length of the array dvNums
+    @param dvNums An array of the design variable numbers
+    @return The number of design variable numbers defined
+  */
+  virtual int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+    return 0;
+  }
+
+  /**
+    Set the design variables from the design vector
+
+    @param elemIndex The local element index
+    @param dvLen The length of the design array
+    @param dvs The design variable values
+  */
+  virtual void setDesignVars( int elemIndex,
+                              int dvLen, const TacsScalar dvs[] ){}
+
+  /**
+    Get the design variables values
+
+    @param elemIndex The local element index
+    @param dvLen The length of the design array
+    @param dvs The design variable values
+  */
+  virtual void getDesignVars( int elemIndex,
+                              int dvLen, TacsScalar dvs[] ){}
+
+  /**
+    Get the lower and upper bounds for the design variable values
+
+    @param elemIndex The local element index
+    @param dvLen The length of the design array
+    @param lowerBound The design variable lower bounds
+    @param lowerBound The design variable upper bounds
+  */
+  virtual void getDesignVarRange( int elemIndex, int dvLen,
+                                  TacsScalar lowerBound[],
+                                  TacsScalar upperBound[] ){}
+
+  /**
     Return the stress as a function of the strain at the Gauss point
 
     @param elemIndex The local element index

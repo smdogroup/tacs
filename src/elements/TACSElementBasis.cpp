@@ -124,6 +124,7 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
                                                TacsScalar U[],
                                                TacsScalar Udot[],
                                                TacsScalar Uddot[],
+                                               TacsScalar Ud[],
                                                TacsScalar Ux[] ){
   const int num_params = getNumParameters();
   const int num_nodes = getNumNodes();
@@ -132,7 +133,7 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
 
   return computeFieldGradient(num_params, num_nodes, N, Nxi, Xpts,
                               vars_per_node, vars, dvars, ddvars,
-                              X, Xd, J, U, Udot, Uddot, Ux);
+                              X, Xd, J, U, Udot, Uddot, Ud, Ux);
 }
 
 TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
@@ -150,6 +151,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
                                                    TacsScalar U[],
                                                    TacsScalar Udot[],
                                                    TacsScalar Uddot[],
+                                                   TacsScalar Ud[],
                                                    TacsScalar Ux[] ){
   if (num_params == 3){
     // Zero the values of the coordinate and its derivative
@@ -163,7 +165,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       U[j] = 0.0;
       Udot[j] = 0.0;
       Uddot[j] = 0.0;
-      Ux[3*j] = Ux[3*j+1] = Ux[3*j+2] = 0.0;
+      Ud[3*j] = Ud[3*j+1] = Ud[3*j+2] = 0.0;
     }
 
     // Loop over each quadrature point for each basis function
@@ -192,15 +194,15 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     n = N, nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
       // Add contributions to the derivatives of the displacements
-      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ux = Ux;
+      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ud = Ud;
       for ( int j = 0; j < vars_per_node; j++ ){
         u[0] += n[0]*vars[0];
         udot[0] += n[0]*dvars[0];
         uddot[0] += n[0]*ddvars[0];
 
-        ux[0] += nxi[0]*vars[0];
-        ux[1] += nxi[1]*vars[0];
-        ux[2] += nxi[2]*vars[0];
+        ud[0] += nxi[0]*vars[0];
+        ud[1] += nxi[1]*vars[0];
+        ud[2] += nxi[2]*vars[0];
 
         vars++;
         dvars++;
@@ -208,7 +210,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
         u++;
         udot++;
         uddot++;
-        ux += 3;
+        ud += 3;
       }
 
       n++;
@@ -221,13 +223,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     // U,x = U,xi * J
     TacsScalar *ux = Ux;
     for ( int j = 0; j < vars_per_node; j++ ){
-      TacsScalar ud[3];
-      ud[0] = ux[0];
-      ud[1] = ux[1];
-      ud[2] = ux[2];
-
-      mat3x3MultTrans(J, ud, ux);
-
+      mat3x3MultTrans(J, &Ud[3*j], ux);
       ux += 3;
     }
 
@@ -243,7 +239,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       U[j] = 0.0;
       Udot[j] = 0.0;
       Uddot[j] = 0.0;
-      Ux[2*j] = Ux[2*j+1] = 0.0;
+      Ud[2*j] = Ud[2*j+1] = 0.0;
     }
 
     // Loop over each quadrature point for each basis function
@@ -261,14 +257,14 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements
-      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ux = Ux;
+      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ud = Ud;
       for ( int j = 0; j < vars_per_node; j++ ){
         u[0] += n[0]*vars[0];
         udot[0] += n[0]*dvars[0];
         uddot[0] += n[0]*ddvars[0];
 
-        ux[0] += nxi[0]*vars[0];
-        ux[1] += nxi[1]*vars[0];
+        ud[0] += nxi[0]*vars[0];
+        ud[1] += nxi[1]*vars[0];
 
         vars++;
         dvars++;
@@ -276,7 +272,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
         u++;
         udot++;
         uddot++;
-        ux += 2;
+        ud += 2;
       }
 
       n++;
@@ -289,12 +285,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     // U,x = U,xi * J
     TacsScalar *ux = Ux;
     for ( int j = 0; j < vars_per_node; j++ ){
-      TacsScalar ud[2];
-      ud[0] = ux[0];
-      ud[1] = ux[1];
-
-      mat2x2MultTrans(J, ud, ux);
-
+      mat2x2MultTrans(J, &Ud[2*j], ux);
       ux += 2;
     }
 
@@ -308,7 +299,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     // Zero the values of the displacements and their derivatives
     for ( int j = 0; j < vars_per_node; j++ ){
       U[j] = 0.0;
-      Ux[2*j] = 0.0;
+      Ud[j] = 0.0;
     }
 
     // Loop over each quadrature point for each basis function
@@ -322,12 +313,12 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements
-      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ux = Ux;
+      TacsScalar *u = U, *udot = Udot, *uddot = Uddot, *ud = Ud;
       for ( int j = 0; j < vars_per_node; j++ ){
         u[0] += n[0]*vars[0];
         udot[0] += n[0]*dvars[0];
         uddot[0] += n[0]*ddvars[0];
-        ux[0] += nxi[0]*vars[0];
+        ud[0] += nxi[0]*vars[0];
 
         vars++;
         dvars++;
@@ -335,11 +326,16 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
         u++;
         udot++;
         uddot++;
-        ux++;
+        ud++;
       }
 
       n++;
       nxi++;
+    }
+
+    J[0] = 1.0/Xd[0];
+    for ( int j = 0; j < vars_per_node; j++ ){
+      Ux[j] = J[0]*Ud[j];
     }
 
     return Xd[0];

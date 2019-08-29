@@ -39,6 +39,52 @@ class TACSElementModel {
   virtual int getVarsPerNode() = 0;
 
   /**
+    Retrieve the global design variable numbers associated with this element
+
+    Note when the dvNums argument is NULL, then the result is a query
+    on the number of design variables and the array is not set.
+
+    @param dvLen The length of the array dvNums
+    @param dvNums An array of the design variable numbers for this element
+    @return The number of design variable numbers defined by the element
+  */
+  virtual int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+    return 0;
+  }
+
+  /**
+    Set the element design variables from the design vector
+
+    @param elemIndex The local element index
+    @param dvLen The length of the design array
+    @param dvs The design variable values
+  */
+  virtual void setDesignVars( int elemIndex,
+                              int dvLen, const TacsScalar dvs[] ){}
+
+  /**
+    Get the element design variables values
+
+    @param elemIndex The local element index
+    @param dvLen The length of the design array
+    @param dvs The design variable values
+  */
+  virtual void getDesignVars( int elemIndex,
+                              int dvLen, TacsScalar dvs[] ){}
+
+  /**
+    Get the lower and upper bounds for the design variable values
+
+    @param elemIndex The local element index
+    @param dvLen The length of the design array
+    @param lowerBound The design variable lower bounds
+    @param lowerBound The design variable upper bounds
+  */
+  virtual void getDesignVarRange( int elemIndex, int dvLen,
+                                  TacsScalar lowerBound[],
+                                  TacsScalar upperBound[] ){}
+
+  /**
     Evaluate the point-wise integrand for the weak form of the governing
     equations of motion.
 

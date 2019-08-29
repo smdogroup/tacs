@@ -30,43 +30,58 @@ class TACSLinearElasticity2D : public TACSElementModel {
 
   int getSpatialDim();
   int getVarsPerNode();
-  void evalWeakIntegrand( int elemIndex,
-                          const double time,
-                          const double pt[],
-                          const TacsScalar X[],
-                          const TacsScalar U[],
-                          const TacsScalar Udot[],
-                          const TacsScalar Uddot[],
-                          const TacsScalar Ux[],
-                          TacsScalar DUt[],
+
+  /**
+    Retrieve the global design variable numbers associated with this element
+  */
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+
+  /**
+    Set the element design variables from the design vector
+  */
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  /**
+    Get the element design variables values
+  */
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  /**
+    Get the lower and upper bounds for the design variable values
+  */
+  void getDesignVarRange( int elemIndex, int dvLen,
+                          TacsScalar lb[], TacsScalar ub[] );
+
+  /**
+    Evaluate the coefficients of the weak form integrand
+  */
+  void evalWeakIntegrand( int elemIndex, const double time, const double pt[],
+                          const TacsScalar X[], const TacsScalar U[],
+                          const TacsScalar Udot[], const TacsScalar Uddot[],
+                          const TacsScalar Ux[], TacsScalar DUt[],
                           TacsScalar DUx[] );
-  void evalWeakJacobian( int elemIndex,
-                         const double time,
-                         const double pt[],
-                         const TacsScalar X[],
-                         const TacsScalar U[],
-                         const TacsScalar Udot[],
-                         const TacsScalar Uddot[],
-                         const TacsScalar Ux[],
-                         TacsScalar DUt[],
+
+  /**
+    Evaluate the derivatives of the weak form coefficients
+  */
+  void evalWeakJacobian( int elemIndex, const double time, const double pt[],
+                         const TacsScalar X[], const TacsScalar U[],
+                         const TacsScalar Udot[], const TacsScalar Uddot[],
+                         const TacsScalar Ux[], TacsScalar DUt[],
                          TacsScalar DUx[],
-                         int *DDUt_nnz,
-                         const int *_DDUt_pairs[],
+                         int *DDUt_nnz, const int *_DDUt_pairs[],
                          TacsScalar DDUt[],
-                         int *DDUx_nnz,
-                         const int *_DDUx_pairs[],
+                         int *DDUx_nnz, const int *_DDUx_pairs[],
                          TacsScalar DDUx[] );
-  void getOutputData( int elemIndex,
-                      ElementType etype,
-                      int write_flag,
-                      const double pt[],
-                      const TacsScalar X[],
-                      const TacsScalar U[],
-                      const TacsScalar Udot[],
-                      const TacsScalar Uddot[],
-                      const TacsScalar Ux[],
-                      int ld_data,
-                      TacsScalar *data );
+
+  /**
+    Get the output for a single node in the mesh
+  */
+  void getOutputData( int elemIndex, ElementType etype, int write_flag,
+                      const double pt[], const TacsScalar X[],
+                      const TacsScalar U[], const TacsScalar Udot[],
+                      const TacsScalar Uddot[], const TacsScalar Ux[],
+                      int ld_data, TacsScalar *data );
 
  private:
   ElementStrainType strain_type;

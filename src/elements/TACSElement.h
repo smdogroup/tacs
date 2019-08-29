@@ -114,16 +114,14 @@ class TACSElement : public TACSObject {
   /**
     Retrieve the global design variable numbers associated with this element
 
-    Note when the argument is NULL, then the result is a query on the number
-    of design variables and the array is not set.
+    Note when the dvNums argument is NULL, then the result is a query
+    on the number of design variables and the array is not set.
 
+    @param dvLen The length of the array dvNums
     @param dvNums An array of the design variable numbers for this element
-    @return The number of design variable numbers
+    @return The number of design variable numbers defined by the element
   */
-  virtual int getDesignVarNums( const int **dvNums ){
-    if (dvNums){
-      *dvNums = NULL;
-    }
+  virtual int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
     return 0;
   }
 

@@ -32,6 +32,27 @@ class TACSElement2D : public TACSElement {
   ElementLayout getLayoutType();
 
   /**
+    Retrieve the global design variable numbers associated with this element
+  */
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+
+  /**
+    Set the element design variables from the design vector
+  */
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  /**
+    Get the element design variables values
+  */
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  /**
+    Get the lower and upper bounds for the design variable values
+  */
+  void getDesignVarRange( int elemIndex, int dvLen,
+                          TacsScalar lb[], TacsScalar ub[] );
+
+  /**
     Add the residual to the provided vector
   */
   void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
@@ -47,18 +68,24 @@ class TACSElement2D : public TACSElement {
                     const TacsScalar *dvars, const TacsScalar *ddvars,
                     TacsScalar *res, TacsScalar *mat );
 
-  // Functions for the adjoint
-  /*
-  void addAdjResProduct( double time, double scale, const TacsScalar psi[],
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                        int dvLen, TacsScalar dvSens[] ){}
-  void addAdjResXptProduct( double time, double scale, const TacsScalar psi[],
-                            const TacsScalar Xpts[], const TacsScalar vars[],
-                            const TacsScalar dvars[], const TacsScalar ddvars[],
-                            TacsScalar fXptSens[] ){}
+  /**
+    Add the derivative of the product of the adjoint variables w.r.t.
+    the material design variables
   */
+  void addAdjResProduct( int elemIndex, double time, double scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[],
+                        int dvLen, TacsScalar dvSens[] );
 
+  /**
+    Add the derivative of the product of the adjoint variables and the
+    residuals with respect to the node locations
+  */
+  void addAdjResXptProduct( int elemIndex, double time, double scale,
+                            const TacsScalar psi[], const TacsScalar Xpts[],
+                            const TacsScalar vars[], const TacsScalar dvars[],
+                            const TacsScalar ddvars[], TacsScalar fXptSens[] );
 
   /**
     Compute the output data for visualization
