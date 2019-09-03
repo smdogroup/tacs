@@ -3,6 +3,7 @@
 #include "TACSElement2D.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
+#include "TACSFH5Loader.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -302,7 +303,8 @@ int main( int argc, char *argv[] ){
 
   // Create an TACSToFH5 object for writing output to files
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
-  int write_flag = (TACS_OUTPUT_NODES |
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS |
                     TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES |
@@ -325,6 +327,17 @@ int main( int argc, char *argv[] ){
   elem->decref();
   assembler->decref();
   creator->decref();
+
+  if (rank == 0){
+    TACSFH5Loader *loader = new TACSFH5Loader();
+    loader->incref();
+    int fail = loader->loadData("triangle.f5");
+    if (fail){
+      printf("failed\n");
+    }
+
+    loader->decref();
+  }
 
   MPI_Finalize();
   return (0);

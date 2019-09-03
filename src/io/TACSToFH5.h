@@ -23,7 +23,7 @@
   Create an FH5 file from the TACSAssembler object
 */
 
-#include "FH5.h"
+#include "TACSFH5.h"
 #include "TACSAssembler.h"
 
 /**
@@ -52,7 +52,7 @@ class TACSToFH5 : public TACSObject {
   char* getElementVarNames( int flag );
 
   // Write the connectivity information to a file
-  int writeConnectivity( FH5File *file );
+  int writeConnectivity( TACSFH5File *file );
 
   // The Assembler object
   TACSAssembler *assembler;

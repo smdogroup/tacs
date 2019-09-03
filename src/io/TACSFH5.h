@@ -26,7 +26,7 @@
   problem.
 */
 
-class FH5File : public TACSObject {
+class TACSFH5File : public TACSObject {
  public:
   // Data types accepted by FH5: Note that float comes last
   // for backwards compatibility
@@ -35,8 +35,8 @@ class FH5File : public TACSObject {
                      FH5_FLOAT=2 };
 
   // Create the FH5 object
-  FH5File( MPI_Comm _comm );
-  ~FH5File();
+  TACSFH5File( MPI_Comm _comm );
+  ~TACSFH5File();
 
   // Create an output file
   int createFile( const char *file_name, int num_components,
@@ -87,7 +87,7 @@ class FH5File : public TACSObject {
   } *root, *tip, *current;
 
   // Scan the file and record the header information
-  void scanFH5File();
+  int scanFH5File();
   void deleteFH5FileInfo();
 
   int num_comp; // The number of components

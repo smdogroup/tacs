@@ -47,8 +47,8 @@ TACSToFH5::TACSToFH5( TACSAssembler *_assembler,
 
   // Form a flag that masks off the connectivity, nodes and displacements
   // which are handled separately from the remaining variables
-  int flag = write_flag & (~(TACS_OUTPUT_CONNECTIVITY &
-                             TACS_OUTPUT_NODES &
+  int flag = write_flag & (~(TACS_OUTPUT_CONNECTIVITY |
+                             TACS_OUTPUT_NODES |
                              TACS_OUTPUT_DISPLACEMENTS));
 
   // Count up the number of values that will be output for each point
@@ -130,14 +130,14 @@ int TACSToFH5::writeToFile( const char *filename ){
   MPI_Comm_size(assembler->getMPIComm(), &size);
 
   // Create the FH5 file object for writting
-  FH5File *file = new FH5File(assembler->getMPIComm());
+  TACSFH5File *file = new TACSFH5File(assembler->getMPIComm());
   file->incref();
 
   // Open the file - if possible for writing
-  int write_err = file->createFile(filename, num_components,
-                                   component_names);
+  int fail = file->createFile(filename, num_components,
+                              component_names);
 
-  if (write_err){
+  if (fail){
     file->decref();
     if (rank == 0){
       fprintf(stderr, "[%d] TACSToFH5 error: Could not create file\n",
@@ -153,6 +153,44 @@ int TACSToFH5::writeToFile( const char *filename ){
   // Write out the nodes and solution vector to a file (continuous)
   if (write_flag & TACS_OUTPUT_NODES ||
       write_flag & TACS_OUTPUT_DISPLACEMENTS){
+    int vars_per_node = assembler->getVarsPerNode();
+
+    // Find the maximum string length
+    int str_len = strlen("X,Y,Z") + 1;
+    int nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
+    int k = 0;
+    for ( ; (k < nd && k < vars_per_node); k++ ){
+      const char *stemp = TacsGetOutputComponentName(elem_type,
+                                                     TACS_OUTPUT_DISPLACEMENTS, k);
+      str_len += strlen(stemp) + 1;
+    }
+    for ( ; k < vars_per_node; k++ ){
+      char stemp[64];
+      sprintf(stemp, "v%d", k);
+      str_len += strlen(stemp) + 1;
+    }
+
+    char *var_names = new char[str_len];
+    var_names[0] = '\0';
+    if (write_flag & TACS_OUTPUT_NODES){
+      sprintf(var_names, "X,Y,Z");
+    }
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+      str_len = strlen(var_names);
+      nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
+      k = 0;
+      for ( ; (k < nd && k < vars_per_node); k++ ){
+        const char* stemp = TacsGetOutputComponentName(elem_type,
+                                                       TACS_OUTPUT_DISPLACEMENTS, k);
+        size_t len = strlen(var_names);
+        sprintf(&(var_names[len]), ",%s", stemp);
+      }
+      for ( ; k < vars_per_node; k++ ){
+        size_t len = strlen(var_names);
+        sprintf(&(var_names[len]), ",v%d", k);
+      }
+    }
+
     // Get the data from tacs
     TACSBVec *q, *X;
     assembler->getVariables(&q);
@@ -164,7 +202,6 @@ int TACSToFH5::writeToFile( const char *filename ){
     X->getArray(&Xarray);
 
     // Compute the first length of the array
-    int vars_per_node = assembler->getVarsPerNode();
     int nnodes = assembler->getNumOwnedNodes();
     int ndep = assembler->getNumDependentNodes();
     int dim1 = nnodes + ndep;
@@ -223,10 +260,11 @@ int TACSToFH5::writeToFile( const char *filename ){
     // Write the data with a time stamp from the simulation in TACS
     char data_name[128];
     double t = assembler->getSimulationTime();
-    sprintf(data_name, "data t=%.10e", t);
-    file->writeZoneData(data_name, variable_names,
-                        FH5File::FH5_FLOAT, dim1, dim2, float_data);
+    sprintf(data_name, "continuous data t=%.10e", t);
+    file->writeZoneData(data_name, var_names,
+                        TACSFH5File::FH5_FLOAT, dim1, dim2, float_data);
     delete [] float_data;
+    delete [] var_names;
   }
 
   if (nvals > 0){
@@ -246,9 +284,9 @@ int TACSToFH5::writeToFile( const char *filename ){
     // Write the data with a time stamp from the simulation in TACS
     char data_name[128];
     double t = assembler->getSimulationTime();
-    sprintf(data_name, "data t=%.10e", t);
+    sprintf(data_name, "element data t=%.10e", t);
     file->writeZoneData(data_name, variable_names,
-                        FH5File::FH5_FLOAT, dim1, dim2, float_data);
+                        TACSFH5File::FH5_FLOAT, dim1, dim2, float_data);
     delete [] float_data;
   }
 
@@ -261,7 +299,7 @@ int TACSToFH5::writeToFile( const char *filename ){
 /**
   Write out the connectivity information to the file
 */
-int TACSToFH5::writeConnectivity( FH5File *file ){
+int TACSToFH5::writeConnectivity( TACSFH5File *file ){
   int mpi_rank, mpi_size;
   MPI_Comm comm = assembler->getMPIComm();
   MPI_Comm_rank(comm, &mpi_rank);
@@ -285,13 +323,13 @@ int TACSToFH5::writeConnectivity( FH5File *file ){
   int dim1 = num_elements;
   int dim2 = 1;
   char comp_name[] = "components";
-  file->writeZoneData(comp_name, comp_name, FH5File::FH5_INT,
+  file->writeZoneData(comp_name, comp_name, TACSFH5File::FH5_INT,
                       dim1, dim2, comp_nums);
   delete [] comp_nums;
 
   // Write the layout types to a new zone
   char layout_name[] = "ltypes";
-  file->writeZoneData(layout_name, layout_name, FH5File::FH5_INT,
+  file->writeZoneData(layout_name, layout_name, TACSFH5File::FH5_INT,
                       dim1, dim2, layout_types);
   delete [] layout_types;
 
@@ -299,12 +337,34 @@ int TACSToFH5::writeConnectivity( FH5File *file ){
   const int *ptr, *conn;
   assembler->getElementConnectivity(&ptr, &conn);
 
+  // Modify the pointer so that it is consistent across processors
   int *ptr_copy = new int[ num_elements+1 ];
   memcpy(ptr_copy, ptr, (num_elements+1)*sizeof(int));
 
-  dim1 = num_elements+1;
+  int offset = 0;
+  if (mpi_rank > 0){
+    MPI_Status status;
+    MPI_Recv(&offset, 1, MPI_INT, mpi_rank-1, 1, comm, &status);
+  }
+
+  if (offset > 0){
+    for ( int i = 0; i < num_elements; i++ ){
+      ptr_copy[i] += offset;
+    }
+  }
+  offset = ptr[num_elements];
+
+  if (mpi_rank < mpi_size-1){
+    MPI_Send(&offset, 1, MPI_INT, mpi_rank+1, 1, comm);
+  }
+
+  dim1 = num_elements;
+  if (mpi_rank == mpi_size-1){
+    dim1++;
+  }
+
   char ptr_name[] = "ptr";
-  file->writeZoneData(ptr_name, ptr_name, FH5File::FH5_INT,
+  file->writeZoneData(ptr_name, ptr_name, TACSFH5File::FH5_INT,
                       dim1, dim2, ptr_copy);
   delete [] ptr_copy;
 
@@ -354,11 +414,13 @@ int TACSToFH5::writeConnectivity( FH5File *file ){
       }
     }
   }
+  delete [] new_owner_range;
 
   dim1 = conn_size;
+  dim2 = 1;
   char conn_name[] = "connectivity";
-  file->writeZoneData(conn_name, conn_name, FH5File::FH5_INT,
-                      dim1, dim2, conn_copy, new_owner_range);
+  file->writeZoneData(conn_name, conn_name, TACSFH5File::FH5_INT,
+                      dim1, dim2, conn_copy);
   delete [] conn_copy;
   delete [] new_owner_range;
 
