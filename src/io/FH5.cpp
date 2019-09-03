@@ -63,7 +63,6 @@ FH5File::~FH5File(){
   @param file_name the file that will be created
   @param component_names the names of the components
   @param num_components the total number of zones
-
   @return 0 on successs, 1 if there is an error creating the file
 */
 int FH5File::createFile( const char *file_name,
@@ -72,8 +71,7 @@ int FH5File::createFile( const char *file_name,
   if (fp){
     int rank;
     MPI_Comm_rank(comm, &rank);
-    fprintf(stderr, "[%d] FH5: Error, cannot create new file\n",
-            rank);
+    fprintf(stderr, "[%d] FH5: Error, cannot create new file\n", rank);
     return 1;
   }
   else {
@@ -186,21 +184,26 @@ int FH5File::createFile( const char *file_name,
 int FH5File::writeZoneData( char *zone_name,
                             char *var_names,
                             FH5DataType data_name,
-                            int dim1, int dim2, void *data ){
+                            int dim1, int dim2, void *data,
+                            int *dim1_range ){
   // Check the file status to ensure that it's open
   if (fp && file_for_writing){
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
-    int *dim = new int[ size+1 ];
-    dim[0] = 0;
-    MPI_Allgather(&dim1, 1, MPI_INT, &dim[1], 1, MPI_INT, comm);
+    int *dim_count = NULL;
+    if (!dim1_range){
+      int *dim_count = new int[ size+1 ];
+      dim_count[0] = 0;
+      MPI_Allgather(&dim1, 1, MPI_INT, &dim_count[1], 1, MPI_INT, comm);
 
-    for ( int k = 0; k < size; k++ ){
-      dim[k+1] += dim[k];
+      for ( int k = 0; k < size; k++ ){
+        dim_count[k+1] += dim_count[k];
+      }
+      dim1_range = dim_count;
     }
-    int total_dim = dim[size];
+    int total_dim = dim1_range[size];
 
     // Calculate the size of the buffer to use
     size_t header_len =
@@ -249,7 +252,7 @@ int FH5File::writeZoneData( char *zone_name,
 
     MPI_File_set_view(fp, file_offset, dtype, dtype,
                       datarep, MPI_INFO_NULL);
-    MPI_File_write_at_all(fp, dim[rank]*dim2, data, dim1*dim2, dtype,
+    MPI_File_write_at_all(fp, dim1_range[rank]*dim2, data, dim1*dim2, dtype,
                           MPI_STATUS_IGNORE);
 
     if (dtype == MPI_DOUBLE){
@@ -263,7 +266,9 @@ int FH5File::writeZoneData( char *zone_name,
     }
 
     // Free the dimension count
-    delete [] dim;
+    if (dim_count){
+      delete [] dim_count;
+    }
 
     return 1;
   }
@@ -293,8 +298,8 @@ int FH5File::openFile( const char *file_name ){
   MPI_Comm_rank(comm, &rank);
 
   if (size != 1){
-    fprintf(stderr, "[%d] FH5File: Error, cannot read file \
-with more than one processor\n", rank);
+    fprintf(stderr, "[%d] FH5File: Error, cannot read file with more "
+            "than one processor\n", rank);
   }
   else if (fp){
     fprintf(stderr, "[%d] FH5File: Error, cannot open file\n",

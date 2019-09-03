@@ -176,6 +176,12 @@ class TACSConstitutive : public TACSObject {
   /**
     Add the derivative of the pointwise mass times the given scalar
 
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param scale Scale factor for the derivative
+    @param dvLen the length of the sensitivity array
+    @param dvSens The sensitivity array
   */
   virtual void addDensityDVSens( int elemIndex,
                                  const double pt[],

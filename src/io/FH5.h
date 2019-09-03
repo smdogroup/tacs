@@ -43,7 +43,7 @@ class FH5File : public TACSObject {
                   char **component_names );
   int writeZoneData( char *zone_name, char *var_names,
                      FH5DataType data_name,
-                     int dim1, int dim2, void *data );
+                     int dim1, int dim2, void *data, int *dim1_range=NULL );
   void close();
 
   // Open a file for reading input

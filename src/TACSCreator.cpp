@@ -747,8 +747,8 @@ TACSAssembler* TACSCreator::createTACS(){
   }
 
   // Set the connectivity
-  tacs->setElementConnectivity(local_elem_node_conn,
-                               local_elem_node_ptr);
+  tacs->setElementConnectivity(local_elem_node_ptr,
+                               local_elem_node_conn);
 
   // Add the elements
   if (elements){

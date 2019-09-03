@@ -113,7 +113,7 @@ int main( int argc, char *argv[] ){
                 0, 2,
                 0, 1, 3};
   int ptr[]  = {0, 1, 2, 4, 7};
-  tacs->setElementConnectivity(conn, ptr);
+  tacs->setElementConnectivity(ptr, conn);
   tacs->initialize();
 
   tacs->testElement(2, 2);

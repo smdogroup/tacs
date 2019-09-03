@@ -114,6 +114,7 @@ class TACSBVec : public TACSVec {
   void set( TacsScalar val );           // Set all values of the vector
   void zeroEntries();                   // Zero all the entries
   int getArray( TacsScalar **vals );    // Get the local values
+  int getDepArray( TacsScalar **vals ); // Get the dependent values
   int getExtArray( TacsScalar **vals ); // Get the external values
   void initRand();                      // Init random number generator
   void setRand( double lower, double upper ); // Set random values

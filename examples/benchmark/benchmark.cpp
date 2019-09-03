@@ -118,7 +118,7 @@ TACSAssembler *create2DModel( MPI_Comm comm, int varsPerNode,
   }
 
   // Set the connectivity
-  tacs->setElementConnectivity(conn, ptr);
+  tacs->setElementConnectivity(ptr, conn);
   delete [] conn;
   delete [] ptr;
 

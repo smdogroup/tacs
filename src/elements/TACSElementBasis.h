@@ -165,9 +165,7 @@ class TACSElementBasis {
     @param dvars The first time derivative of the element state vars
     @param ddvars The second time derivative of the element state vars
     @param X The physical quadrature point
-    @param U The variables at the quadrature point
-    @param Udot The time derivative of the variables
-    @param Uddot The second time derivative of the variables
+    @param Ut The variables and time derivatives at the quadrature point
     @param Ud The derivative of the variables w.r.t. the parametric coords
     @param Ux The derivative of the variables w.r.t. the spatial coords
   */
@@ -180,11 +178,45 @@ class TACSElementBasis {
                                        TacsScalar X[],
                                        TacsScalar Xd[],
                                        TacsScalar J[],
-                                       TacsScalar U[],
-                                       TacsScalar Udot[],
-                                       TacsScalar Uddot[],
+                                       TacsScalar Ut[],
                                        TacsScalar Ud[],
                                        TacsScalar Ux[] );
+  /**
+    Get the gradient of the field at the quadrature point
+
+    Note that all matrices are row-major order.
+
+    @param n The quadrature point index
+    @param Xpts The element node locations
+    @param vars_per_node The number of degrees of freedom per node
+    @param vars The element state variables
+    @param dvars The first time derivative of the element state vars
+    @param ddvars The second time derivative of the element state vars
+    @param X The physical quadrature point
+    @param U The variables at the quadrature point
+    @param Ut The variables and time derivatives at the quadrature point
+    @param Ud The derivative of the variables w.r.t. the parametric coords
+    @param Ux The derivative of the variables w.r.t. the spatial coords
+    @param Psi The adjoint variable values (no time derivatives!)
+    @param Psid The derivatives of the adjoint variables w.r.t. parameters
+    @param Psix The spatial derivatives of the adjoint variables
+  */
+  virtual TacsScalar getFieldGradient( const double pt[],
+                                       const TacsScalar Xpts[],
+                                       const int vars_per_node,
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[],
+                                       const TacsScalar ddvars[],
+                                       const TacsScalar psi[],
+                                       TacsScalar X[],
+                                       TacsScalar Xd[],
+                                       TacsScalar J[],
+                                       TacsScalar Ut[],
+                                       TacsScalar Ud[],
+                                       TacsScalar Ux[],
+                                       TacsScalar Psi[],
+                                       TacsScalar Psid[],
+                                       TacsScalar Psix[] );
 
   /**
     Add the weak form of the governing equations to the residual
@@ -224,12 +256,9 @@ class TACSElementBasis {
                                     const TacsScalar DUt[],
                                     const TacsScalar DUx[],
                                     double alpha, double beta, double gamma,
-                                    const int DDUt_nnz,
-                                    const int *DDUt_pairs,
-                                    const TacsScalar *DDUt,
-                                    const int DDUx_nnz,
-                                    const int *DDUx_pairs,
-                                    const TacsScalar *DDUx,
+                                    const int Jac_nnz,
+                                    const int *Jac_pairs,
+                                    const TacsScalar *Jac,
                                     TacsScalar *res,
                                     TacsScalar *mat );
 
@@ -279,60 +308,50 @@ class TACSElementBasis {
   }
 
  protected:
-  static void computeFieldValues( const int num_nodes,
-                                  const double N[],
+  static void computeFieldValues( const int num_nodes, const double N[],
                                   const TacsScalar Xpts[],
                                   const int vars_per_node,
                                   const TacsScalar vars[],
-                                  TacsScalar X[],
-                                  TacsScalar U[] );
+                                  TacsScalar X[], TacsScalar U[] );
   static TacsScalar computeFieldGradient( const int num_params,
                                           const int num_nodes,
-                                          const double N[],
-                                          const double Nxi[],
+                                          const double N[], const double Nxi[],
                                           const TacsScalar Xpts[],
                                           const int vars_per_node,
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[],
-                                          TacsScalar X[],
-                                          TacsScalar Xd[],
-                                          TacsScalar J[],
-                                          TacsScalar U[],
-                                          TacsScalar Udot[],
-                                          TacsScalar Uddot[],
-                                          TacsScalar Ud[],
-                                          TacsScalar Ux[] );
-  static void addWeakFormResidual( const int num_params,
-                                   const int num_nodes,
-                                   const double N[],
-                                   const double Nxi[],
-                                   TacsScalar weight,
-                                   const TacsScalar J[],
+                                          TacsScalar X[], TacsScalar Xd[],
+                                          TacsScalar J[], TacsScalar Ut[],
+                                          TacsScalar Ud[], TacsScalar Ux[] );
+  static TacsScalar computeFieldGradient( const int num_params,
+                                          const int num_nodes,
+                                          const double N[], const double Nxi[],
+                                          const TacsScalar Xpts[],
+                                          const int vars_per_node,
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[],
+                                          TacsScalar X[], TacsScalar Xd[],
+                                          TacsScalar J[], TacsScalar Ut[],
+                                          TacsScalar Ud[], TacsScalar Ux[],
+                                          TacsScalar Psi[], TacsScalar Psid[],
+                                          TacsScalar Psix[] );
+  static void addWeakFormResidual( const int num_params, const int num_nodes,
+                                   const double N[], const double Nxi[],
+                                   TacsScalar weight, const TacsScalar J[],
                                    const int vars_per_node,
-                                   const TacsScalar DUt[],
-                                   const TacsScalar DUx[],
+                                   const TacsScalar DUt[], const TacsScalar DUx[],
                                    TacsScalar res[] );
-  static void addWeakFormJacobian( const int num_params,
-                                   const int num_nodes,
-                                   const double N[],
-                                   const TacsScalar Nx[],
-                                   TacsScalar weight,
-                                   const TacsScalar J[],
+  static void addWeakFormJacobian( const int num_params, const int num_nodes,
+                                   const double N[], const TacsScalar Nx[],
+                                   TacsScalar weight, const TacsScalar J[],
                                    const int vars_per_node,
-                                   const TacsScalar DUt[],
-                                   const TacsScalar DUx[],
-                                   double alpha,
-                                   double beta,
-                                   double gamma,
-                                   const int DDUt_nnz,
-                                   const int *DDUt_pairs,
-                                   const TacsScalar *DDUt,
-                                   const int DDUx_nnz,
-                                   const int *DDUx_pairs,
-                                   const TacsScalar *DDUx,
-                                   TacsScalar *res,
-                                   TacsScalar *mat );
+                                   const TacsScalar DUt[], const TacsScalar DUx[],
+                                   double alpha, double beta, double gamma,
+                                   const int Jac_nnz, const int *Jac_pairs,
+                                   const TacsScalar *Jac,
+                                   TacsScalar *res, TacsScalar *mat );
 };
 
 #endif // TACS_ELEMENT_BASIS_H

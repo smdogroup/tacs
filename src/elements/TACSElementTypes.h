@@ -18,11 +18,12 @@
 /*
   The output flags from each element type
 */
-const int TACS_OUTPUT_NODES = 1;
-const int TACS_OUTPUT_DISPLACEMENTS = 2;
-const int TACS_OUTPUT_STRAINS = 4;
-const int TACS_OUTPUT_STRESSES = 8;
-const int TACS_OUTPUT_EXTRAS = 16;
+const int TACS_OUTPUT_CONNECTIVITY = 1;
+const int TACS_OUTPUT_NODES = 2;
+const int TACS_OUTPUT_DISPLACEMENTS = 4;
+const int TACS_OUTPUT_STRAINS = 8;
+const int TACS_OUTPUT_STRESSES = 16;
+const int TACS_OUTPUT_EXTRAS = 32;
 
 /**
    The Element type defines how many displacement, stress, and strain

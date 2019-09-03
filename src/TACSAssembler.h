@@ -84,7 +84,8 @@ class TACSAssembler : public TACSObject {
 
   // Set the connectivity in TACS
   // ----------------------------
-  int setElementConnectivity( const int *conn, const int *ptr );
+  int setElementConnectivity( const int *ptr, const int *conn );
+  void getElementConnectivity( const int **ptr, const int **conn );
   int setElements( TACSElement **_elements );
   int setDependentNodes( const int *_depNodeIndex,
                          const int *_depNodeToTacs,
@@ -104,16 +105,16 @@ class TACSAssembler : public TACSObject {
   void computeReordering( OrderingType order_type,
                           MatrixOrderingType mat_type );
 
-  // Initialize the mesh
-  // -------------------
-  int initialize();
-
   // Functions for retrieving the reordering
   // ---------------------------------------
   int isReordered();
   void getReordering( int *oldToNew );
   void reorderVec( TACSBVec *vec );
   void reorderNodes( int *nodes, int num_nodes );
+
+  // Initialize the mesh
+  // -------------------
+  int initialize();
 
   // Return important information about the TACSAssembler object
   // -----------------------------------------------------------
@@ -145,6 +146,7 @@ class TACSAssembler : public TACSObject {
   TACSBVec *createNodeVec();
   void setNodes( TACSBVec *X );
   void getNodes( TACSBVec *X );
+  void getNodes( TACSBVec **X );
 
   // Set/get the simulation time
   // ---------------------------
@@ -174,6 +176,8 @@ class TACSAssembler : public TACSObject {
                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
   void getVariables( TACSBVec *q,
                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
+  void getVariables( TACSBVec **q,
+                     TACSBVec **qdot=NULL, TACSBVec **qddot=NULL );
 
   // Create the matrices that can be used for analysis
   // -------------------------------------------------
@@ -279,7 +283,6 @@ class TACSAssembler : public TACSObject {
   int getNumComponents();
   void getElementOutputData( ElementType elem_type, int write_flag,
                              int *len, int *nvals, double **data );
-  TACSBVec* getNodeAverageOutputData( ElementType elem_type, int write_flag );
 
   // Functions for ordering the variables
   // ------------------------------------

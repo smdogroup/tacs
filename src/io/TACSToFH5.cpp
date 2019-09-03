@@ -34,26 +34,29 @@
    @param assembler The TACSAssembler object
    @param elem_type The type of element output to generate
    @param write_flag XOR flag indicating classes of output to write
-   @param average_node_data Average the node data or use element-independent
 */
 TACSToFH5::TACSToFH5( TACSAssembler *_assembler,
                       ElementType _elem_type,
-                      int _write_flag,
-                      int _average_node_data ){
+                      int _write_flag ){
   assembler = _assembler;
   assembler->incref();
 
   // Record the options
   elem_type = _elem_type;
   write_flag = _write_flag;
-  average_node_data = _average_node_data;
+
+  // Form a flag that masks off the connectivity, nodes and displacements
+  // which are handled separately from the remaining variables
+  int flag = write_flag & (~(TACS_OUTPUT_CONNECTIVITY &
+                             TACS_OUTPUT_NODES &
+                             TACS_OUTPUT_DISPLACEMENTS));
 
   // Count up the number of values that will be output for each point
   // in the mesh
-  nvals = TacsGetTotalOutputCount(elem_type, write_flag);
+  nvals = TacsGetTotalOutputCount(elem_type, flag);
 
   // Get a comma separated list of the variable names
-  variable_names = getElementVarNames();
+  variable_names = getElementVarNames(flag);
 
   // Retrieve the number of components
   num_components = assembler->getNumComponents();
@@ -121,7 +124,7 @@ void TACSToFH5::setComponentName( int comp_num, const char *comp_name ){
 
    @param filename The name of the file to write
 */
-void TACSToFH5::writeToFile( const char *filename ){
+int TACSToFH5::writeToFile( const char *filename ){
   int rank, size;
   MPI_Comm_rank(assembler->getMPIComm(), &rank);
   MPI_Comm_size(assembler->getMPIComm(), &size);
@@ -140,8 +143,129 @@ void TACSToFH5::writeToFile( const char *filename ){
       fprintf(stderr, "[%d] TACSToFH5 error: Could not create file\n",
               rank);
     }
-    return;
+    return 1;
   }
+
+  if (write_flag & TACS_OUTPUT_CONNECTIVITY){
+    writeConnectivity(file);
+  }
+
+  // Write out the nodes and solution vector to a file (continuous)
+  if (write_flag & TACS_OUTPUT_NODES ||
+      write_flag & TACS_OUTPUT_DISPLACEMENTS){
+    // Get the data from tacs
+    TACSBVec *q, *X;
+    assembler->getVariables(&q);
+    assembler->getNodes(&X);
+
+    // Get the arrays
+    TacsScalar *ans_array, *Xarray;
+    q->getArray(&ans_array);
+    X->getArray(&Xarray);
+
+    // Compute the first length of the array
+    int vars_per_node = assembler->getVarsPerNode();
+    int nnodes = assembler->getNumOwnedNodes();
+    int ndep = assembler->getNumDependentNodes();
+    int dim1 = nnodes + ndep;
+
+    // Check the dimension of the data
+    int dim2 = 0, offset = 0;
+    if (write_flag & TACS_OUTPUT_NODES){
+      dim2 = 3;
+      offset = 3;
+    }
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+      dim2 += assembler->getVarsPerNode();
+    }
+
+    // Allocate the float data
+    float *float_data = new float[ dim1*dim2 ];
+
+    // Write out the file
+    if (write_flag & TACS_OUTPUT_NODES){
+      for ( int i = 0; i < nnodes; i++ ){
+        for ( int j = 0; j < 3; j++ ){
+          float_data[dim2*i + j] = TacsRealPart(Xarray[3*i + j]);
+        }
+      }
+    }
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+      for ( int i = 0; i < nnodes; i++ ){
+        for ( int j = 0; j < vars_per_node; j++ ){
+          float_data[dim2*i + offset + j] =
+            TacsRealPart(ans_array[vars_per_node*i + j]);
+        }
+      }
+    }
+
+    // Get the dependent parts of the arrays
+    q->getDepArray(&ans_array);
+    X->getDepArray(&Xarray);
+
+    // Write the dependent nodes
+    if (write_flag & TACS_OUTPUT_NODES){
+      for ( int i = 0; i < ndep; i++ ){
+        for ( int j = 0; j < 3; j++ ){
+          float_data[dim2*(i + nnodes) + j] = TacsRealPart(Xarray[3*i + j]);
+        }
+      }
+    }
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+      for ( int i = 0; i < ndep; i++ ){
+        for ( int j = 0; j < vars_per_node; j++ ){
+          float_data[dim2*(i + nnodes) + offset + j] =
+            TacsRealPart(ans_array[vars_per_node*i + j]);
+        }
+      }
+    }
+
+    // Write the data with a time stamp from the simulation in TACS
+    char data_name[128];
+    double t = assembler->getSimulationTime();
+    sprintf(data_name, "data t=%.10e", t);
+    file->writeZoneData(data_name, variable_names,
+                        FH5File::FH5_FLOAT, dim1, dim2, float_data);
+    delete [] float_data;
+  }
+
+  if (nvals > 0){
+    // Write out the data to a file
+    TacsScalar *data;
+    int dim1, dim2;
+    assembler->getElementOutputData(elem_type, write_flag,
+                                    &dim1, &dim2, &data);
+
+    // Convert the data to float
+    float *float_data = new float[ dim1*dim2 ];
+    for ( int i = 0; i < dim1*dim2; i++ ){
+      float_data[i] = data[i];
+    }
+    delete [] data;
+
+    // Write the data with a time stamp from the simulation in TACS
+    char data_name[128];
+    double t = assembler->getSimulationTime();
+    sprintf(data_name, "data t=%.10e", t);
+    file->writeZoneData(data_name, variable_names,
+                        FH5File::FH5_FLOAT, dim1, dim2, float_data);
+    delete [] float_data;
+  }
+
+  file->close();
+  file->decref();
+
+  return 0;
+}
+
+/**
+  Write out the connectivity information to the file
+*/
+int TACSToFH5::writeConnectivity( FH5File *file ){
+  int mpi_rank, mpi_size;
+  MPI_Comm comm = assembler->getMPIComm();
+  MPI_Comm_rank(comm, &mpi_rank);
+  MPI_Comm_size(comm, &mpi_size);
 
   // Record the layout types and component numbers
   int num_elements = assembler->getNumElements();
@@ -171,76 +295,91 @@ void TACSToFH5::writeToFile( const char *filename ){
                       dim1, dim2, layout_types);
   delete [] layout_types;
 
-  if (average_node_data){
-    // Create the continuous output data
-    TACSBVec *data_vec =
-      assembler->getNodeAverageOutputData(elem_type, write_flag);
-    data_vec->incref();
+  // Copy over the connectivity
+  const int *ptr, *conn;
+  assembler->getElementConnectivity(&ptr, &conn);
 
-    /*
-    float *float_data = NULL;
+  int *ptr_copy = new int[ num_elements+1 ];
+  memcpy(ptr_copy, ptr, (num_elements+1)*sizeof(int));
 
-    // Convert the data to float
-    float_data = new float[ dim1*dim2 ];
-    for ( int i = 0; i < dim1*dim2; i++ ){
-      float_data[i] = data[i];
-    }
-    delete [] data;
+  dim1 = num_elements+1;
+  char ptr_name[] = "ptr";
+  file->writeZoneData(ptr_name, ptr_name, FH5File::FH5_INT,
+                      dim1, dim2, ptr_copy);
+  delete [] ptr_copy;
 
-    // Write the data with a time stamp from the simulation in TACS
-    char data_name[128];
-    double t = assembler->getSimulationTime();
-    sprintf(data_name, "data t=%.10e", t);
-    file->writeZoneData(data_name, variable_names,
-                        FH5File::FH5_FLOAT, float_data, dim1, dim2);
-    delete [] float_data;
-    */
+  // Get the ownership range for each group of nodes
+  const int *ownerRange;
+  TACSVarMap *varMap = assembler->getVarMap();
+  varMap->getOwnerRange(&ownerRange);
 
-    data_vec->decref();
-  }
-  else {
-    // Write out the data to a file
-    TacsScalar *data;
-    assembler->getElementOutputData(elem_type, write_flag,
-                                    &dim1, &dim2, &data);
+  // Get the number of nodes and dependent nodes
+  int nnodes = assembler->getNumOwnedNodes();
+  int ndep = assembler->getNumDependentNodes();
 
-    // Convert the data to float
-    float *float_data = new float[ dim1*dim2 ];
-    for ( int i = 0; i < dim1*dim2; i++ ){
-      float_data[i] = data[i];
-    }
-    delete [] data;
-
-    // Write the data with a time stamp from the simulation in TACS
-    char data_name[128];
-    double t = assembler->getSimulationTime();
-    sprintf(data_name, "data t=%.10e", t);
-    file->writeZoneData(data_name, variable_names,
-                        FH5File::FH5_FLOAT, dim1, dim2, float_data);
-    delete [] float_data;
+  // Count up the number of new nodes (including dependent nodes) for each
+  // processor. Reset the connectivity so that both dependent and indepdent
+  // nodes are all positive.
+  int node_count = nnodes + ndep;
+  int *new_owner_range = new int[ mpi_size+1 ];
+  MPI_Allgather(&node_count, 1, MPI_INT, &new_owner_range[1], 1, MPI_INT, comm);
+  new_owner_range[0] = 0;
+  for ( int k = 0; k < mpi_size; k++ ){
+    new_owner_range[k+1] += new_owner_range[k];
   }
 
-  file->close();
-  file->decref();
+  // Create the copy of the connectivity
+  int conn_size = ptr[num_elements];
+  int *conn_copy = new int[ conn_size ];
+  memcpy(conn_copy, conn, conn_size*sizeof(int));
+
+  for ( int i = 0; i < conn_size; i++ ){
+    if (conn_copy[i] >= ownerRange[mpi_rank] &&
+        conn_copy[i] < ownerRange[mpi_rank+1]){
+      conn_copy[i] = (conn_copy[i] - ownerRange[mpi_rank] +
+                      new_owner_range[mpi_rank]);
+    }
+    else if (conn_copy[i] < 0){
+      int dep = -conn_copy[i]-1;
+      conn_copy[i] = new_owner_range[mpi_rank] + nnodes + dep;
+    }
+    else {
+      for ( int j = 0; j < mpi_size; j++ ){
+        if (conn_copy[i] >= ownerRange[j] &&
+            conn_copy[i] < ownerRange[j+1]){
+          conn_copy[i] = (conn_copy[i] - ownerRange[j] +
+                          new_owner_range[j]);
+          break;
+        }
+      }
+    }
+  }
+
+  dim1 = conn_size;
+  char conn_name[] = "connectivity";
+  file->writeZoneData(conn_name, conn_name, FH5File::FH5_INT,
+                      dim1, dim2, conn_copy, new_owner_range);
+  delete [] conn_copy;
+  delete [] new_owner_range;
+
+  return 0;
 }
 
 /**
   Create a comma-separated list of the element variable names
 */
-char *TACSToFH5::getElementVarNames(){
+char* TACSToFH5::getElementVarNames( int flag ){
   // Find the first variable name
   char *elem_vars = NULL;
-  char *output_names[5] = { NULL, NULL, NULL, NULL, NULL };
+  char *output_names[3] = { NULL, NULL, NULL };
 
-  int out_types[5] =
-    { TACS_OUTPUT_NODES,
-      TACS_OUTPUT_DISPLACEMENTS,
-      TACS_OUTPUT_STRAINS,
+  int out_types[3] =
+    { TACS_OUTPUT_STRAINS,
       TACS_OUTPUT_STRESSES,
       TACS_OUTPUT_EXTRAS };
 
-  for ( int k = 0; k < 5; k++ ){
-    if (write_flag & out_types[k]){
+  for ( int k = 0; k < 3; k++ ){
+    if (flag & out_types[k]){
       const char *stemp = NULL;
       int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
       size_t str_len = 1;
@@ -264,7 +403,7 @@ char *TACSToFH5::getElementVarNames(){
 
   // Count up the size of the elem_vars string
   int elem_size = 1; // Extra space for either a comma or \0
-  for ( int k = 0; k < 5; k++ ){
+  for ( int k = 0; k < 3; k++ ){
     if (output_names[k]){
       elem_size += strlen(output_names[k])+1;
     }
@@ -274,7 +413,7 @@ char *TACSToFH5::getElementVarNames(){
 
   // Copy the first zone into the list directly
   int k = 0;
-  for ( ; k < 5; k++ ){
+  for ( ; k < 3; k++ ){
     if (output_names[k]){
       strcpy(elem_vars, output_names[k]);
       k++;
@@ -284,14 +423,14 @@ char *TACSToFH5::getElementVarNames(){
 
   // For subsequent non-zero zones - add a comma before adding
   // the remainder of the list
-  for ( ; k < 5; k++ ){
+  for ( ; k < 3; k++ ){
     if (output_names[k]){
       int len = strlen(elem_vars);
       sprintf(&elem_vars[len], ",%s", output_names[k]);
     }
   }
 
-  for ( int k = 0; k < 5; k++ ){
+  for ( int k = 0; k < 3; k++ ){
     if (output_names[k]){ delete [] output_names[k]; }
   }
 

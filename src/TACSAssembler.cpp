@@ -375,7 +375,7 @@ TACSElement *TACSAssembler::getElement( int elem,
   return NULL;
 }
 
-/*!
+/**
   Set the element connectivity.
 
   Note that the number of elements that are set at this stage must be
@@ -383,12 +383,11 @@ TACSElement *TACSAssembler::getElement( int elem,
   is created.  (The connectivity arrays are copied and should be freed
   by the caller.)
 
-  input:
-  conn:   the connectivity from elements to global node index
-  ptr:    offset into the connectivity array for this processor
+  @param ptr Offset into the connectivity array for this processor
+  @param conn The connectivity from elements to global node index
 */
-int TACSAssembler::setElementConnectivity( const int *conn,
-                                           const int *ptr ){
+int TACSAssembler::setElementConnectivity( const int *ptr,
+                                           const int *conn ){
   if (meshInitializedFlag){
     fprintf(stderr,
             "[%d] Cannot call setElementConnectivity() after initialize()\n",
@@ -452,7 +451,29 @@ int TACSAssembler::setElementConnectivity( const int *conn,
   return 0;
 }
 
-/*!
+/**
+  Get the element connectivity.
+
+  @param ptr Offset into the connectivity array for this processor
+  @param conn The connectivity from elements to global node index
+*/
+void TACSAssembler::getElementConnectivity( const int **ptr,
+                                            const int **conn ){
+  if (!meshInitializedFlag){
+    fprintf(stderr,
+            "[%d] Cannot call getElementConnectivity() before initialize()\n",
+            mpiRank);
+  if (ptr){ *ptr = NULL; }
+  if (conn){ *conn = NULL; }
+    return;
+  }
+
+  // Free the data if it has already been set before
+  if (ptr){ *ptr = elementNodeIndex; }
+  if (conn){ *conn = elementTacsNodes; }
+}
+
+/**
   Set the element array within TACS.
 
   The number of element pointers provided should be equal to the
@@ -460,8 +481,7 @@ int TACSAssembler::setElementConnectivity( const int *conn,
   that the elements themselves are not copied, just the pointers to
   them.
 
-  input:
-  elements:  the array of element pointers with length = numElements.
+  @param elements The array of element pointers with length = numElements.
 */
 int TACSAssembler::setElements( TACSElement **_elements ){
   if (meshInitializedFlag){
@@ -709,7 +729,14 @@ void TACSAssembler::setNodes( TACSBVec *X ){
   Get the node locations from TACS
 */
 void TACSAssembler::getNodes( TACSBVec *X ){
-  X->copyValues(xptVec);
+  if (X){ X->copyValues(xptVec); }
+}
+
+/*!
+  Get the node locations from TACS
+*/
+void TACSAssembler::getNodes( TACSBVec **X ){
+  if (X){ *X = xptVec; }
 }
 
 /*
@@ -3339,7 +3366,21 @@ void TACSAssembler::getVariables( TACSBVec *q,
   // copied, not external/dependents
   if (q){ q->copyValues(varsVec); }
   if (qdot){ qdot->copyValues(dvarsVec); }
-  if (qddot){ qddot->copyValues(ddvarsVec); }}
+  if (qddot){ qddot->copyValues(ddvarsVec); }
+}
+
+/*
+  Get the variables from the vectors in TACS
+*/
+void TACSAssembler::getVariables( TACSBVec **q,
+                                  TACSBVec **qdot,
+                                  TACSBVec **qddot ){
+  // Copy the values to the array. Only local values are
+  // copied, not external/dependents
+  if (q){ *q = varsVec; }
+  if (qdot){ *qdot = dvarsVec; }
+  if (qddot){ *qddot = ddvarsVec; }
+}
 
 /*
   Set the simulation time internally in the TACSAssembler object
@@ -4987,104 +5028,4 @@ void TACSAssembler::getElementOutputData( ElementType elem_type,
   *_nvals = nvals;
   *_len = len;
   *_data = data;
-}
-
-/*
-  Get continuous output data by averaging the element quantities to
-  the nodes.
-
-  This results in approximate strains/stresses but a significantly
-  smaller data footprint. In addition, there is extra parallel
-  overhead involed in averaging quantities across different
-  processors.
-*/
-TACSBVec* TACSAssembler::getNodeAverageOutputData( ElementType elem_type,
-                                                   int write_flag ){
-  int nvals = TacsGetTotalOutputCount(elem_type, write_flag);
-  TacsScalar *elem_data = new TacsScalar[ nvals*maxElementNodes ];
-  TacsScalar *elem_weights = new TacsScalar[ maxElementNodes ];
-  for ( int i = 0; i < maxElementNodes; i++ ){
-    elem_weights[i] = 1.0;
-  }
-
-  // Define the real data pointer differently if the
-  double *elem_data_real = NULL;
-#ifdef TACS_USE_COMPLEX
-  elem_data_real = new double[ nvals*maxElementNodes ];
-#else
-  elem_data_real = elem_data;
-#endif // TACS_USE_COMPLEX
-
-  TACSBVec *weights = new TACSBVec(varMap, 1, extDist, depNodes);
-  weights->incref();
-
-  // Create the element data vector
-  TACSBVec *data = new TACSBVec(varMap, nvals, extDist, depNodes);
-
-  // Retrieve pointers to temporary storage
-  TacsScalar *elemXpts, *vars, *dvars, *ddvars;
-  getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
-                  &elemXpts, NULL, NULL, NULL);
-
-  for ( int i = 0; i < numElements; i++ ){
-    int ptr = elementNodeIndex[i];
-    int len = elementNodeIndex[i+1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
-    xptVec->getValues(len, nodes, elemXpts);
-    varsVec->getValues(len, nodes, vars);
-    dvarsVec->getValues(len, nodes, dvars);
-    ddvarsVec->getValues(len, nodes, ddvars);
-
-    // Get the element output data
-    elements[i]->getOutputData(i, elem_type, write_flag,
-                               elemXpts, vars, dvars, ddvars,
-                               nvals, elem_data_real);
-
-#ifdef TACS_USE_COMPLEX
-    for ( int i = 0; i < len*nvals; i++ ){
-      elem_data[i] = elem_data_real[i];
-    }
-#endif // TACS_USE_COMPLEX
-
-    // Add the entries into the vector
-    data->setValues(len, nodes, elem_data, TACS_ADD_VALUES);
-    weights->setValues(len, nodes, elem_weights, TACS_ADD_VALUES);
-  }
-
-  delete [] elem_data;
-  delete [] elem_weights;
-
-  // Distribute the values to all the processors
-  data->beginSetValues(TACS_ADD_VALUES);
-  weights->beginSetValues(TACS_ADD_VALUES);
-
-  data->endSetValues(TACS_ADD_VALUES);
-  weights->endSetValues(TACS_ADD_VALUES);
-
-  // Average the data by the weights
-  TacsScalar *w, *d;
-  int size = weights->getArray(&w);
-  data->getArray(&d);
-
-  for ( int i = 0; i < size; i++ ){
-    if (w[i] != 0.0){
-      TacsScalar winv = 1.0/w[i];
-      TacsScalar *dv = &d[nvals*i];
-
-      for ( int j = 0; j < nvals; j++ ){
-        dv[0] *= winv;
-        dv++;
-      }
-    }
-  }
-
-  // Free the weights
-  weights->decref();
-
-  // Distribute the data values so that they are consistent across all
-  // processors; apply the dependent node interpolation
-  data->beginDistributeValues();
-  data->endDistributeValues();
-
-  return data;
 }

@@ -123,22 +123,21 @@ class TACSElementModel {
     the implementation is not unique.
 
     @param elemIndex The local element index
+    @param n The quadrature point index
+    @param time The simulation time
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
-    @param U The values of the state variables
-    @param Udot The time derivatives of the state variables
-    @param Uddot The second time derivatives of the state variables
+    @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param DUt Coefficients of the time-dependent weak form
     @param DUx Coefficients of the spatial-derivative weak form
   */
   virtual void evalWeakIntegrand( int elemIndex,
+                                  int n,
                                   const double time,
                                   const double pt[],
                                   const TacsScalar X[],
-                                  const TacsScalar U[],
-                                  const TacsScalar Udot[],
-                                  const TacsScalar Uddot[],
+                                  const TacsScalar Ut[],
                                   const TacsScalar Ux[],
                                   TacsScalar DUt[],
                                   TacsScalar DUx[] ) = 0;
@@ -181,37 +180,46 @@ class TACSElementModel {
     DDt[1] = rho
 
     @param elemIndex The local element index
+    @param n The quadrature point index
+    @param time The simulation time
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
-    @param U The values of the state variables
-    @param Udot The time derivatives of the state variables
-    @param Uddot The second time derivatives of the state variables
+    @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param DUt Coefficients of the time-dependent weak form
     @param DUx Coefficients of the spatial-derivative weak form
     @param DDUt_num_non_zeros Number of non-zeros (negative for dense matrix)
     @param DDUt_non_zero_pairs Non-zero Jacobian matrix pairs for DDt
     @param DDUt Jacobian of the time-dependent weak form
-    @param DDUx_num_non_zeros Number of non-zeros (negative for dense matrix)
-    @param DDt_non_zero_pairs Non-zero Jacobian matrix pairs for DDx
-    @param DDUx Jacobian of the spatial-derivative weak form
   */
   virtual void evalWeakJacobian( int elemIndex,
+                                 int n,
                                  const double time,
                                  const double pt[],
                                  const TacsScalar X[],
-                                 const TacsScalar U[],
-                                 const TacsScalar Udot[],
-                                 const TacsScalar Uddot[],
+                                 const TacsScalar Ut[],
                                  const TacsScalar Ux[],
                                  TacsScalar DUt[],
                                  TacsScalar DUx[],
-                                 int *DDUt_num_non_zeros,
-                                 const int *DDUt_non_zero_pairs[],
-                                 TacsScalar DDUt[],
-                                 int *DDUx_num_non_zeros,
-                                 const int *DDUx_non_zero_pairs[],
-                                 TacsScalar DDUx[] ) = 0;
+                                 int *Jac_nnz,
+                                 const int *Jac_Pairs[],
+                                 TacsScalar Jac[] ) = 0;
+
+  /*
+
+  */
+  virtual void addWeakAdjProduct( int elemIndex,
+                                  int n,
+                                  const double time,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar Ut[],
+                                  const TacsScalar Ux[],
+                                  const TacsScalar Psi[],
+                                  const TacsScalar Psix[],
+                                  TacsScalar scale,
+                                  int dvLen,
+                                  TacsScalar *fdvSens ){}
 
   /**
     Generate a line of output for a single visualization point
@@ -227,18 +235,15 @@ class TACSElementModel {
     @param Ux The spatial derivatives of the state variables
   */
   virtual void getOutputData( int elemIndex,
+                              const double time,
                               ElementType etype,
                               int write_flag,
                               const double pt[],
                               const TacsScalar X[],
-                              const TacsScalar U[],
-                              const TacsScalar Udot[],
-                              const TacsScalar Uddot[],
+                              const TacsScalar Ut[],
                               const TacsScalar Ux[],
                               int ld_data,
                               TacsScalar *data ) = 0;
-
-
 };
 
 #endif // TACS_ELEMENT_MODEL_H

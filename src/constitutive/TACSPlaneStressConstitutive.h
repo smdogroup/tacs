@@ -31,10 +31,25 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 3;
 
-  TACSPlaneStressConstitutive( TACSMaterialProperties *properties );
+  TACSPlaneStressConstitutive( TACSMaterialProperties *properties,
+                               TacsScalar _t=1.0, int _tNum=-1,
+                               TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
   ~TACSPlaneStressConstitutive();
 
   int getNumStresses();
+
+  // Retrieve the global design variable numbers
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+
+  // Set the element design variable from the design vector
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  // Get the element design variables values
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  // Get the lower and upper bounds for the design variable values
+  void getDesignVarRange( int elemIndex, int dvLen,
+                          TacsScalar lb[], TacsScalar ub[] );
 
   // Evaluate the stresss
   void evalStress( int elemIndex,
@@ -74,6 +89,10 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
   TACSMaterialProperties *properties;
 
  private:
+  // Store information about the design variable
+  TacsScalar t, tlb, tub;
+  int tNum;
+
   static const char *psName;
 };
 

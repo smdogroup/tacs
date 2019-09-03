@@ -88,6 +88,34 @@ class TACSElement2D : public TACSElement {
                             const TacsScalar ddvars[], TacsScalar fXptSens[] );
 
   /**
+    Compute a specific type of element matrix (mass, stiffness, geometric
+    stiffness, etc.)
+  */
+  void getMatType( int elemIndex, ElementMatrixType matType,
+                   const TacsScalar Xpts[], const TacsScalar vars[],
+                   TacsScalar mat[] );
+
+  /**
+    Add the derivative of the product of a specific matrix w.r.t.
+    the design variables
+  */
+  void addMatDVSensInnerProduct( int elemIndex, ElementMatrixType matType,
+                                 double scale, const TacsScalar psi[],
+                                 const TacsScalar phi[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 int dvLen, TacsScalar dvSens[] );
+
+  /**
+    Compute the derivative of the product of a specific matrix w.r.t.
+    the input variables (vars).
+  */
+  void getMatSVSensInnerProduct( int elemIndex, ElementMatrixType matType,
+                                 const TacsScalar psi[], const TacsScalar phi[],
+                                 const TacsScalar Xpts[], const TacsScalar vars[],
+                                 TacsScalar res[] );
+
+  /**
     Compute the output data for visualization
   */
   void getOutputData( int elemIndex, ElementType etype, int write_flag,

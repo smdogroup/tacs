@@ -25,14 +25,15 @@ TACSLinearElasticity2D::~TACSLinearElasticity2D(){
   stiff->decref();
 }
 
-const int TACSLinearElasticity2D::DDUt_pairs[] =
-  {2, 2, 5, 5};
+// 0;   1;    2;   3;   4; 5;   6;    7;   8;   9;
+// u; u,t; u,tt; u,x; u,y; v; v,t; v,tt; v,x; v,y;
 
-const int TACSLinearElasticity2D::DDUx_pairs[] =
-  {1, 1, 1, 2, 1, 4, 1, 5,
-   2, 1, 2, 2, 2, 4, 2, 5,
-   4, 1, 4, 2, 4, 4, 4, 5,
-   5, 1, 5, 2, 5, 4, 5, 5};
+const int TACSLinearElasticity2D::linear_Jac_pairs[] =
+  {2, 2, 7, 7,
+   3, 3, 3, 4, 3, 8, 3, 9,
+   4, 3, 4, 4, 4, 8, 4, 9,
+   8, 3, 8, 4, 8, 8, 8, 9,
+   9, 3, 9, 4, 9, 8, 9, 9};
 
 int TACSLinearElasticity2D::getSpatialDim(){
   return 3;
@@ -42,7 +43,7 @@ int TACSLinearElasticity2D::getVarsPerNode(){
   return 2;
 }
 
-/**
+/*
   Retrieve the global design variable numbers associated with this element
 */
 int TACSLinearElasticity2D::getDesignVarNums( int elemIndex, int dvLen,
@@ -50,7 +51,7 @@ int TACSLinearElasticity2D::getDesignVarNums( int elemIndex, int dvLen,
   return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
 }
 
-/**
+/*
   Set the element design variables from the design vector
 */
 void TACSLinearElasticity2D::setDesignVars( int elemIndex, int dvLen,
@@ -58,7 +59,7 @@ void TACSLinearElasticity2D::setDesignVars( int elemIndex, int dvLen,
   stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
-/**
+/*
   Get the element design variables values
 */
 void TACSLinearElasticity2D::getDesignVars( int elemIndex, int dvLen,
@@ -66,7 +67,7 @@ void TACSLinearElasticity2D::getDesignVars( int elemIndex, int dvLen,
   stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
-/**
+/*
   Get the lower and upper bounds for the design variable values
 */
 void TACSLinearElasticity2D::getDesignVarRange( int elemIndex, int dvLen,
@@ -76,12 +77,11 @@ void TACSLinearElasticity2D::getDesignVarRange( int elemIndex, int dvLen,
 }
 
 void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
+                                                int n,
                                                 const double time,
                                                 const double pt[],
                                                 const TacsScalar X[],
-                                                const TacsScalar U[],
-                                                const TacsScalar Udot[],
-                                                const TacsScalar Uddot[],
+                                                const TacsScalar Ut[],
                                                 const TacsScalar Ux[],
                                                 TacsScalar DUt[],
                                                 TacsScalar DUx[] ){
@@ -90,11 +90,11 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Uddot[0];
+  DUt[2] = rho*Ut[2];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Uddot[1];
+  DUt[5] = rho*Ut[5];
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -112,41 +112,35 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
   TacsScalar s[3];
   stiff->evalStress(elemIndex, pt, X, e, s);
 
-  DUx[0] = 0.0;
-  DUx[1] = s[0];
-  DUx[2] = s[2];
+  DUx[0] = s[0];
+  DUx[1] = s[2];
 
-  DUx[3] = 0.0;
-  DUx[4] = s[2];
-  DUx[5] = s[1];
+  DUx[2] = s[2];
+  DUx[3] = s[1];
 }
 
 void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
+                                               int n,
                                                const double time,
                                                const double pt[],
                                                const TacsScalar X[],
-                                               const TacsScalar U[],
-                                               const TacsScalar Udot[],
-                                               const TacsScalar Uddot[],
+                                               const TacsScalar Ut[],
                                                const TacsScalar Ux[],
                                                TacsScalar DUt[],
                                                TacsScalar DUx[],
-                                               int *DDUt_nnz,
-                                               const int *_DDUt_pairs[],
-                                               TacsScalar DDUt[],
-                                               int *DDUx_nnz,
-                                               const int *_DDUx_pairs[],
-                                               TacsScalar DDUx[] ){
+                                               int *Jac_nnz,
+                                               const int *Jac_pairs[],
+                                               TacsScalar Jac[] ){
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Uddot[0];
+  DUt[2] = rho*Ut[2];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Uddot[1];
+  DUt[5] = rho*Ut[5];
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -164,82 +158,53 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   TacsScalar s[3];
   stiff->evalStress(elemIndex, pt, X, e, s);
 
-  DUx[0] = 0.0;  // u
-  DUx[1] = s[0]; // u,x
-  DUx[2] = s[2]; // u,y
+  DUx[0] = s[0]; // u,x
+  DUx[1] = s[2]; // u,y
 
-  DUx[3] = 0.0;  // v
-  DUx[4] = s[2]; // v,x
-  DUx[5] = s[1]; // v,y
+  DUx[2] = s[2]; // v,x
+  DUx[3] = s[1]; // v,y
 
   TacsScalar C[6];
   stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
   // Set the non-zero terms in the Jacobian
-  *DDUt_nnz = 2;
-  *_DDUt_pairs = DDUt_pairs;
-  *DDUx_nnz = 16;
-  *_DDUx_pairs = DDUx_pairs;
+  *Jac_nnz = 18;
+  *Jac_pairs = linear_Jac_pairs;
 
   // Set the acceleration terms
-  DDUt[0] = rho;
-  DDUt[1] = rho;
+  Jac[0] = rho;
+  Jac[1] = rho;
 
   // s = C*e
   if (strain_type == TACS_LINEAR_STRAIN){
-    // Index:       1            5            2     4
+    // Index:         3            9            4     8
     // s[0] = C[0]*(u,x) + C[1]*(v,y) + C[2]*(u,y + v,x)
     // s[1] = C[1]*(u,x) + C[3]*(v,y) + C[4]*(u,y + v,x)
     // s[2] = C[2]*(u,x) + C[4]*(v,y) + C[5]*(u,y + v,x)
 
     // i == 1 (s[0])
-    DDUx[0] = C[0]; // j == 1
-    DDUx[1] = C[2]; // j == 2
-    DDUx[2] = C[2]; // j == 4
-    DDUx[3] = C[1]; // j == 5
+    Jac[0] = C[0]; // j == 3
+    Jac[1] = C[2]; // j == 4
+    Jac[2] = C[2]; // j == 8
+    Jac[3] = C[1]; // j == 9
 
     // i == 2 (s[2])
-    DDUx[4] = C[2]; // j == 1
-    DDUx[5] = C[5]; // j == 2
-    DDUx[6] = C[5]; // j == 4
-    DDUx[7] = C[4]; // j == 5
+    Jac[4] = C[2]; // j == 3
+    Jac[5] = C[5]; // j == 4
+    Jac[6] = C[5]; // j == 8
+    Jac[7] = C[4]; // j == 9
 
     // i == 4 (s[2])
-    DDUx[8] = C[2]; // j == 1
-    DDUx[9] = C[5]; // j == 2
-    DDUx[10] = C[5]; // j == 4
-    DDUx[11] = C[4]; // j == 5
+    Jac[8] = C[2]; // j == 3
+    Jac[9] = C[5]; // j == 4
+    Jac[10] = C[5]; // j == 8
+    Jac[11] = C[4]; // j == 9
 
     // i == 5 (s[1])
-    DDUx[12] = C[1]; // j == 1
-    DDUx[13] = C[4]; // j == 2
-    DDUx[14] = C[4]; // j == 4
-    DDUx[15] = C[3]; // j == 5
-  }
-  else {
-    // i == 1 (s[0])
-    DDUx[0] = C[0]; // j == 1
-    DDUx[1] = C[2]; // j == 2
-    DDUx[2] = C[2]; // j == 4
-    DDUx[3] = C[1]; // j == 5
-
-    // i == 2 (s[2])
-    DDUx[4] = C[2]; // j == 1
-    DDUx[5] = C[5]; // j == 2
-    DDUx[6] = C[5]; // j == 4
-    DDUx[7] = C[4]; // j == 5
-
-    // i == 4 (s[2])
-    DDUx[8] = C[2]; // j == 1
-    DDUx[9] = C[5]; // j == 2
-    DDUx[10] = C[5]; // j == 4
-    DDUx[11] = C[4]; // j == 5
-
-    // i == 5 (s[1])
-    DDUx[12] = C[1]; // j == 1
-    DDUx[13] = C[4]; // j == 2
-    DDUx[14] = C[4]; // j == 4
-    DDUx[15] = C[3]; // j == 5
+    Jac[12] = C[1]; // j == 3
+    Jac[13] = C[4]; // j == 4
+    Jac[14] = C[4]; // j == 8
+    Jac[15] = C[3]; // j == 9
   }
 }
 
@@ -247,13 +212,12 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   Get the data for visualization at a given point
 */
 void TACSLinearElasticity2D::getOutputData( int elemIndex,
+                                            const double time,
                                             ElementType etype,
                                             int write_flag,
                                             const double pt[],
                                             const TacsScalar X[],
-                                            const TacsScalar U[],
-                                            const TacsScalar Udot[],
-                                            const TacsScalar Uddot[],
+                                            const TacsScalar Ut[],
                                             const TacsScalar Ux[],
                                             int ld_data,
                                             TacsScalar *data ){
@@ -265,8 +229,8 @@ void TACSLinearElasticity2D::getOutputData( int elemIndex,
       data += 3;
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
-      data[0] = U[0];
-      data[1] = U[1];
+      data[0] = Ut[0];
+      data[1] = Ut[3];
       data += 2;
     }
 

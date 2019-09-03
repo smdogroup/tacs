@@ -55,32 +55,28 @@ class TACSLinearElasticity2D : public TACSElementModel {
   /**
     Evaluate the coefficients of the weak form integrand
   */
-  void evalWeakIntegrand( int elemIndex, const double time, const double pt[],
-                          const TacsScalar X[], const TacsScalar U[],
-                          const TacsScalar Udot[], const TacsScalar Uddot[],
-                          const TacsScalar Ux[], TacsScalar DUt[],
-                          TacsScalar DUx[] );
+  void evalWeakIntegrand( int elemIndex, int n, const double time,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar Ut[], const TacsScalar Ux[],
+                          TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
     Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, const double time, const double pt[],
-                         const TacsScalar X[], const TacsScalar U[],
-                         const TacsScalar Udot[], const TacsScalar Uddot[],
-                         const TacsScalar Ux[], TacsScalar DUt[],
-                         TacsScalar DUx[],
-                         int *DDUt_nnz, const int *_DDUt_pairs[],
-                         TacsScalar DDUt[],
-                         int *DDUx_nnz, const int *_DDUx_pairs[],
-                         TacsScalar DDUx[] );
+  void evalWeakJacobian( int elemIndex, int n, const double time,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar Ut[], const TacsScalar Ux[],
+                          TacsScalar DUt[], TacsScalar DUx[],
+                          int *Jac_nnz, const int *_Jac_pairs[],
+                          TacsScalar Jac[] );
 
   /**
     Get the output for a single node in the mesh
   */
-  void getOutputData( int elemIndex, ElementType etype, int write_flag,
+  void getOutputData( int elemIndex, const double time,
+                      ElementType etype, int write_flag,
                       const double pt[], const TacsScalar X[],
-                      const TacsScalar U[], const TacsScalar Udot[],
-                      const TacsScalar Uddot[], const TacsScalar Ux[],
+                      const TacsScalar Ut[], const TacsScalar Ux[],
                       int ld_data, TacsScalar *data );
 
  private:
@@ -88,8 +84,7 @@ class TACSLinearElasticity2D : public TACSElementModel {
   TACSPlaneStressConstitutive *stiff;
 
   // Constant member data
-  static const int DDUt_pairs[4];
-  static const int DDUx_pairs[32];
+  static const int linear_Jac_pairs[36];
 };
 
 /*

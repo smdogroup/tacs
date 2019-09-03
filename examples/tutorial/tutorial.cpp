@@ -151,7 +151,7 @@ int main( int argc, char * argv[] ){
   }
 
   // Set the connectivity
-  tacs->setElementConnectivity(conn, ptr);
+  tacs->setElementConnectivity(ptr, conn);
   delete [] conn;
   delete [] ptr;
 

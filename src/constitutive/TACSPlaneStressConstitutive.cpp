@@ -27,11 +27,19 @@ const char* TACSPlaneStressConstitutive::getObjectName(){
 /*
   PlaneStressStiffness member function definitions
 */
-TACSPlaneStressConstitutive::TACSPlaneStressConstitutive( TACSMaterialProperties *props ){
+TACSPlaneStressConstitutive::TACSPlaneStressConstitutive( TACSMaterialProperties *props,
+                                                          TacsScalar _t,
+                                                          int _tNum,
+                                                          TacsScalar _tlb,
+                                                          TacsScalar _tub ){
   properties = props;
   if (properties){
     properties->incref();
   }
+  t = _t;
+  tNum = _tNum;
+  tlb = _tlb;
+  tub = _tub;
 }
 
 TACSPlaneStressConstitutive::~TACSPlaneStressConstitutive(){
@@ -42,6 +50,47 @@ TACSPlaneStressConstitutive::~TACSPlaneStressConstitutive(){
 
 int TACSPlaneStressConstitutive::getNumStresses(){
   return NUM_STRESSES;
+}
+
+// Retrieve the global design variable numbers
+int TACSPlaneStressConstitutive::getDesignVarNums( int elemIndex,
+                                                   int dvLen, int dvNums[] ){
+  if (tNum >= 0){
+    if (dvNums && dvLen >= 1){
+      dvNums[0] = tNum;
+    }
+    return 1;
+  }
+  return 0;
+}
+
+// Set the element design variable from the design vector
+void TACSPlaneStressConstitutive::setDesignVars( int elemIndex,
+                                                 int dvLen,
+                                                 const TacsScalar dvs[] ){
+  if (tNum >= 0 && dvLen >= 1){
+    t = dvs[0];
+  }
+}
+
+// Get the element design variables values
+void TACSPlaneStressConstitutive::getDesignVars( int elemIndex,
+                                                 int dvLen,
+                                                 TacsScalar dvs[] ){
+  if (tNum >= 0 && dvLen >= 1){
+    dvs[0] = t;
+  }
+}
+
+// Get the lower and upper bounds for the design variable values
+void TACSPlaneStressConstitutive::getDesignVarRange( int elemIndex,
+                                                     int dvLen,
+                                                     TacsScalar lb[],
+                                                     TacsScalar ub[] ){
+  if (tNum >= 0 && dvLen >= 1){
+    lb[0] = tlb;
+    ub[0] = tub;
+  }
 }
 
 /**
@@ -56,9 +105,9 @@ void TACSPlaneStressConstitutive::evalStress( int elemIndex,
   if (properties){
     properties->evalTangentStiffness2D(C);
 
-    s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
-    s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
-    s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];
+    s[0] = t*(C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
+    s[1] = t*(C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
+    s[2] = t*(C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
   }
   else {
     s[0] = s[1] = s[2] = 0.0;
@@ -74,6 +123,8 @@ void TACSPlaneStressConstitutive::evalTangentStiffness( int elemIndex,
                                                         TacsScalar C[] ){
   if (properties){
     properties->evalTangentStiffness2D(C);
+    C[0] *= t;  C[1] *= t;  C[2] *= t;
+    C[3] *= t;  C[4] *= t;  C[5] *= t;
   }
   else {
     C[0] = C[1] = C[2] = C[3] = C[4] = C[5] = 0.0;
@@ -89,6 +140,7 @@ void TACSPlaneStressConstitutive::evalThermalStrain( int elemIndex,
                                                      TacsScalar e[] ){
   if (properties){
     properties->evalThermalStrain2D(e);
+    e[0] *= t;  e[1] *= t;  e[2] *= t;
   }
   else {
     e[0] = e[1] = e[2] = 0.0;

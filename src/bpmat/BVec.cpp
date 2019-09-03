@@ -444,6 +444,14 @@ int TACSBVec::getArray( TacsScalar **array ){
 }
 
 /*
+  Retrieve the array of dependent node values
+*/
+int TACSBVec::getDepArray( TacsScalar **array ){
+  if (array){ *array = x_dep; }
+  return dep_size;
+}
+
+/*
   Retrieve the external values stored on this processor
 */
 int TACSBVec::getExtArray( TacsScalar **array ){
