@@ -36,7 +36,7 @@ const int TACSLinearElasticity2D::linear_Jac_pairs[] =
    9, 3, 9, 4, 9, 8, 9, 9};
 
 int TACSLinearElasticity2D::getSpatialDim(){
-  return 3;
+  return 2;
 }
 
 int TACSLinearElasticity2D::getVarsPerNode(){
