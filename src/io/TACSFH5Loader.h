@@ -39,9 +39,13 @@ class TACSFH5Loader : public TACSObject {
   char* getComponentName( int comp );
 
   // Get the component data
-  // void getConnectivity( int **comp_nums, int **ltypes,
-  // int **ptr, int **conn );
-  // void getContinuousData( );
+  void getConnectivity( int *num_elements,
+                        int **comp_nums, int **ltypes,
+                        int **ptr, int **conn );
+  void getContinuousData( const char **zone_name, const char **var_names,
+                          int *dim1, int *dim2, float **data );
+  void getElementData( const char **zone_name, const char **var_names,
+                       int *dim1, int *dim2, float **data );
 
  private:
   // Things associated with the types of elements
@@ -52,9 +56,15 @@ class TACSFH5Loader : public TACSObject {
   int conn_size;
   int *ptr, *conn;
 
-  // Size of the data
+  // Continuous data
+  const char *continuous_zone, *continuous_vars;
   int num_nodes_continuous, num_vals_continuous;
+  float *continuous_data;
+
+  // Element data
+  const char *element_zone, *element_vars;
   int num_nodes_element, num_vals_element;
+  float *element_data;
 
   // Open file that contains the
   TACSFH5File *data_file;

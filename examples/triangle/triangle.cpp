@@ -309,11 +309,9 @@ int main( int argc, char *argv[] ){
                     TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES |
                     TACS_OUTPUT_EXTRAS);
-  TACSToFH5 * f5 = new TACSToFH5(assembler, etype, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("triangle.f5");
-
-  // Free everything
   f5->decref();
 
   // Decrease the reference count to the linear algebra objects
@@ -333,9 +331,23 @@ int main( int argc, char *argv[] ){
     loader->incref();
     int fail = loader->loadData("triangle.f5");
     if (fail){
-      printf("failed\n");
+      printf("TACSFH5Loader failed to load file\n");
     }
+    else {
+      int num_elements;
+      int *comp_nums, *ltypes, *ptr, *conn;
+      loader->getConnectivity(&num_elements, &comp_nums, &ltypes, &ptr, &conn);
 
+      const char *cname, *cvars;
+      int cdim1, cdim2;
+      float *cdata;
+      loader->getContinuousData(&cname, &cvars, &cdim1, &cdim2, &cdata);
+
+      const char *ename, *evars;
+      int edim1, edim2;
+      float *edata;
+      loader->getElementData(&ename, &evars, &edim1, &edim2, &edata);
+    }
     loader->decref();
   }
 

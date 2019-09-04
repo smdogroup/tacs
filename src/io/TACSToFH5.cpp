@@ -183,7 +183,12 @@ int TACSToFH5::writeToFile( const char *filename ){
         const char* stemp = TacsGetOutputComponentName(elem_type,
                                                        TACS_OUTPUT_DISPLACEMENTS, k);
         size_t len = strlen(var_names);
-        sprintf(&(var_names[len]), ",%s", stemp);
+        if (k == 0 && !(write_flag & TACS_OUTPUT_NODES)){
+          sprintf(&(var_names[len]), "%s", stemp);
+        }
+        else {
+          sprintf(&(var_names[len]), ",%s", stemp);
+        }
       }
       for ( ; k < vars_per_node; k++ ){
         size_t len = strlen(var_names);

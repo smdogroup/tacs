@@ -15,6 +15,8 @@
 #include "TACSFH5Loader.h"
 
 TACSFH5Loader::TACSFH5Loader(){
+  data_file = NULL;
+
   comp_nums = NULL;
   ltypes = NULL;
   ptr = NULL;
@@ -23,12 +25,17 @@ TACSFH5Loader::TACSFH5Loader(){
   num_elements = -1;
   conn_size = -1;
 
+  continuous_data = NULL;
+  continuous_zone = NULL;
+  continuous_vars = NULL;
   num_nodes_continuous = -1;
   num_vals_continuous = -1;
+
+  element_data = NULL;
+  element_zone = NULL;
+  element_vars = NULL;
   num_nodes_element = -1;
   num_vals_element = -1;
-
-  data_file = NULL;
 }
 
 TACSFH5Loader::~TACSFH5Loader(){
@@ -36,6 +43,8 @@ TACSFH5Loader::~TACSFH5Loader(){
   if (ltypes){ delete [] ltypes; }
   if (ptr){ delete [] ptr; }
   if (conn){ delete [] conn; }
+  if (continuous_data){ delete [] continuous_data; }
+  if (element_data){ delete [] element_data; }
   if (data_file){ data_file->decref(); }
 }
 
@@ -49,6 +58,7 @@ int TACSFH5Loader::loadData( const char *conn_fname,
   int fail = conn_file->openFile(conn_fname);
   if (fail){
     conn_file->decref();
+    conn_file = NULL;
     return fail;
   }
 
@@ -126,6 +136,8 @@ int TACSFH5Loader::loadData( const char *conn_fname,
     fail = data_file->openFile(data_fname);
     if (fail){
       data_file->decref();
+      data_file = NULL;
+      return fail;
     }
 
     iterate = 1;
@@ -138,12 +150,20 @@ int TACSFH5Loader::loadData( const char *conn_fname,
       data_file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2);
 
       if (strncmp("continuous data", zone_name, 15) == 0){
+        void *fdata;
+        data_file->getZoneData(&continuous_zone, &continuous_vars,
+                               NULL, NULL, NULL, &fdata);
         num_nodes_continuous = dim1;
         num_vals_continuous = dim2;
+        continuous_data = (float*)fdata;
       }
       else if (strncmp("element data", zone_name, 12) == 0){
+        void *fdata;
+        data_file->getZoneData(&element_zone, &element_vars,
+                               NULL, NULL, NULL, &fdata);
         num_nodes_element = dim1;
         num_vals_element = dim2;
+        element_data = (float*)fdata;
       }
 
       if (!data_file->nextZone()){
@@ -176,4 +196,35 @@ char *TACSFH5Loader::getComponentName( int comp ){
     return data_file->getComponentName(comp);
   }
   return NULL;
+}
+
+
+void TACSFH5Loader::getConnectivity( int *_num_elements,
+                                     int **_comp_nums, int **_ltypes,
+                                     int **_ptr, int **_conn ){
+  if (_num_elements){ *_num_elements = num_elements; }
+  if (_comp_nums){ *_comp_nums = comp_nums; }
+  if (_ltypes){ *_ltypes = ltypes; }
+  if (_ptr){ *_ptr = ptr; }
+  if (_conn){ *_conn = conn; }
+}
+
+void TACSFH5Loader::getContinuousData( const char **zone_name,
+                                       const char **var_names,
+                                       int *dim1, int *dim2, float **data ){
+  if (zone_name){ *zone_name = continuous_zone; }
+  if (var_names){ *var_names = continuous_vars; }
+  if (dim1){ *dim1 = num_nodes_continuous; }
+  if (dim2){ *dim2 = num_vals_continuous; }
+  if (data){ *data = continuous_data; }
+}
+
+void TACSFH5Loader::getElementData( const char **zone_name,
+                                    const char **var_names,
+                                    int *dim1, int *dim2, float **data ){
+  if (zone_name){ *zone_name = element_zone; }
+  if (var_names){ *var_names = element_vars; }
+  if (dim1){ *dim1 = num_nodes_element; }
+  if (dim2){ *dim2 = num_vals_element; }
+  if (data){ *data = element_data; }
 }
