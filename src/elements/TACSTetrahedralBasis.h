@@ -15,6 +15,8 @@
 #ifndef TACS_TETRAHEDRAL_BASIS_H
 #define TACS_TETRAHEDRAL_BASIS_H
 
+#include "TACSElementBasis.h"
+
 /**
    Basis class for a linear tetrahedral element
 */

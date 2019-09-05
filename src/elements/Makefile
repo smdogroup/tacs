@@ -26,6 +26,7 @@ CXX_OBJS = FElibrary.o \
 	TACSQuadBasis.o \
 	TACSHexaBasis.o \
 	TACSTriangularBasis.o \
+	TACSTetrahedralBasis.o \
 	TACSLinearElasticity.o \
 	TACSElementVerification.o
 

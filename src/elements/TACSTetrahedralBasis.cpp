@@ -11,8 +11,9 @@
 
   http://www.apache.org/licenses/LICENSE-2.0
 */
+
 #include "TACSTetrahedronQuadrature.h"
-#include "TacsTriangleQuadrature.h"
+#include "TACSTriangleQuadrature.h"
 #include "TACSTetrahedralBasis.h"
 
 static void getFaceTangents( int face, double t[] ){
@@ -72,37 +73,39 @@ int TACSLinearTetrahedralBasis::getNumQuadraturePoints(){
 }
 
 double TACSLinearTetrahedralBasis::getQuadratureWeight( int n ){
-  if ( n == 0 || n == 1 || n == 2 || n == 3 ){
+  if (n == 0 || n == 1 || n == 2 || n == 3){
     return TacsTetrahedronWts4[0];
   }
+  return 0.0;
 }
 
 double TACSLinearTetrahedralBasis::getQuadraturePoint( int n,
                                                        double pt[] ){
-  if ( n == 0 ){
+  if (n == 0){
     pt[0] = TacsTetrahedronPts4[0];
     pt[1] = TacsTetrahedronPts4[1];
     pt[2] = TacsTetrahedronPts4[2];
     return TacsTetrahedronWts4[0];
   }
-  else if ( n == 1 ){
+  else if (n == 1){
     pt[0] = TacsTetrahedronPts4[3];
     pt[1] = TacsTetrahedronPts4[4];
     pt[2] = TacsTetrahedronPts4[5];
     return TacsTetrahedronWts4[0];
   }
-  else if ( n == 2 ){
+  else if (n == 2){
     pt[0] = TacsTetrahedronPts4[6];
     pt[1] = TacsTetrahedronPts4[7];
     pt[2] = TacsTetrahedronPts4[8];
     return TacsTetrahedronWts4[0];
   }
-  else if ( n == 3 ){
+  else if (n == 3){
     pt[0] = TacsTetrahedronPts4[9];
     pt[1] = TacsTetrahedronPts4[10];
     pt[2] = TacsTetrahedronPts4[11];
     return TacsTetrahedronWts4[0];
   }
+  return 0.0;
 }
 
 int TACSLinearTetrahedralBasis::getNumElementFaces(){
@@ -115,83 +118,84 @@ int TACSLinearTetrahedralBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSLinearTetrahedralBasis::getFaceQuadraturePoint( int face,
                                                            int n,
-                                                           double pt[]
+                                                           double pt[],
                                                            double t[] ){
   getFaceTangents(face, t);
 
-  if ( face == 0 ){
+  if (face == 0){
     // XY plane face
     pt[2] = 0;
-    if ( n == 0 ){
+    if (n == 0){
       pt[0] = TacsTrianglePts3[0];
       pt[1] = TacsTrianglePts3[1];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[0] = TacsTrianglePts3[2];
       pt[1] = TacsTrianglePts3[3];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[0] = TacsTrianglePts3[4];
       pt[1] = TacsTrianglePts3[5];
     }
     return TacsTriangleWts3[0];
   }
-  else if ( face == 1 ){
+  else if (face == 1){
     // XZ plane face
     pt[1] = 0;
-    if ( n == 0 ){
+    if (n == 0){
       pt[0] = TacsTrianglePts3[0];
       pt[2] = TacsTrianglePts3[1];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[0] = TacsTrianglePts3[2];
       pt[2] = TacsTrianglePts3[3];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[0] = TacsTrianglePts3[4];
       pt[2] = TacsTrianglePts3[5];
     }
     return TacsTriangleWts3[0];
   }
-  else if ( face == 2 ){
+  else if (face == 2){
     // slanted face -- not sure how to do this
     // points should be the same but multiplied by rt 2
     // weight is already multiplied by 1/2 (area of regular tri)
     // needs to me multiplied by 2 to remove that and then by the area of slanted tri
-    if ( n == 0 ){
+    if (n == 0){
       pt[0] = 1.0/6.0;
       pt[1] = 1.0/6.0;
       pt[2] = 2.0/3.0;
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[0] = 2.0/3.0;
       pt[1] = 1.0/6.0;
       pt[2] = 1.0/6.0;
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[0] = 1.0/6.0;
       pt[1] = 2.0/3.0;
       pt[2] = 1.0/6.0;
     }
     return sqrt(3.0) * TacsTriangleWts3[0];
   }
-  else if ( face == 3 ){
+  else if (face == 3){
     // YZ face
     pt[0] = 0;
-    if ( n == 0 ){
+    if (n == 0){
       pt[1] = TacsTrianglePts3[0];
       pt[2] = TacsTrianglePts3[1];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[1] = TacsTrianglePts3[2];
       pt[2] = TacsTrianglePts3[3];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[1] = TacsTrianglePts3[4];
       pt[2] = TacsTrianglePts3[5];
     }
     return TacsTriangleWts3[0];
   }
+  return 0.0;
 }
 
 void TACSLinearTetrahedralBasis::computeBasis( const double pt[],
@@ -222,7 +226,6 @@ void TACSLinearTetrahedralBasis::computeBasisGradient( const double pt[],
   Nxi[9] = 0.0;
   Nxi[10] = 0.0;
   Nxi[11] = 1.0;
-  
 }
 
 /*
@@ -241,46 +244,48 @@ int TACSQuadraticTetrahedralBasis::getNumQuadraturePoints(){
 }
 
 double TACSQuadraticTetrahedralBasis::getQuadratureWeight( int n ){
-  if ( n == 0 ){
+  if (n == 0){
     return TacsTetrahedronWts5[0];
   }
-  else if ( n == 1 || n == 2 || n == 3 || n == 4 ){
+  else if (n == 1 || n == 2 || n == 3 || n == 4){
     return TacsTetrahedronWts5[1];
   }
+  return 0.0;
 }
 
 double TACSQuadraticTetrahedralBasis::getQuadraturePoint( int n,
                                                           double pt[] ){
-  if ( n == 0 ){
+  if (n == 0){
     pt[0] = TacsTetrahedronPts5[0];
     pt[1] = TacsTetrahedronPts5[1];
     pt[2] = TacsTetrahedronPts5[2];
     return TacsTetrahedronWts5[0];
   }
-  else if ( n == 1 ){
+  else if (n == 1){
     pt[0] = TacsTetrahedronPts5[3];
     pt[1] = TacsTetrahedronPts5[4];
     pt[2] = TacsTetrahedronPts5[5];
     return TacsTetrahedronWts5[1];
   }
-  else if ( n == 2 ){
+  else if (n == 2){
     pt[0] = TacsTetrahedronPts5[6];
     pt[1] = TacsTetrahedronPts5[7];
     pt[2] = TacsTetrahedronPts5[8];
     return TacsTetrahedronWts5[1];
   }
-  else if ( n == 3 ){
+  else if (n == 3){
     pt[0] = TacsTetrahedronPts5[9];
     pt[1] = TacsTetrahedronPts5[10];
     pt[2] = TacsTetrahedronPts5[11];
     return TacsTetrahedronWts5[1];
   }
-  else if ( n == 4 ){
+  else if (n == 4){
     pt[0] = TacsTetrahedronPts5[12];
     pt[1] = TacsTetrahedronPts5[13];
     pt[2] = TacsTetrahedronPts5[14];
     return TacsTetrahedronWts5[1];
   }
+  return 0.0;
 }
 
 int TACSQuadraticTetrahedralBasis::getNumElementFaces(){
@@ -293,118 +298,119 @@ int TACSQuadraticTetrahedralBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSQuadraticTetrahedralBasis::getFaceQuadraturePoint( int face,
                                                               int n,
-                                                              double pt[]
+                                                              double pt[],
                                                               double t[] ){
   getFaceTangents(face, t);
 
-  if ( face == 0 ){
+  if (face == 0){
     // XY plane face
     pt[2] = 0;
-    if ( n == 0 ){
+    if (n == 0){
       pt[0] = TacsTrianglePts4[0];
       pt[1] = TacsTrianglePts4[1];
       return TacsTriangleWts4[0];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[0] = TacsTrianglePts4[2];
       pt[1] = TacsTrianglePts4[3];
       return TacsTriangleWts4[1];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[0] = TacsTrianglePts4[4];
       pt[1] = TacsTrianglePts4[5];
       return TacsTriangleWts4[1];
     }
-    else if ( n == 3 ){
+    else if (n == 3){
       pt[0] = TacsTrianglePts4[6];
       pt[1] = TacsTrianglePts4[7];
       return TacsTriangleWts4[1];
     }
   }
-  else if ( face == 1 ){
+  else if (face == 1){
     // XZ plane face
     pt[1] = 0;
-    if ( n == 0 ){
+    if (n == 0){
       pt[0] = TacsTrianglePts4[0];
       pt[2] = TacsTrianglePts4[1];
       return TacsTriangleWts4[0];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[0] = TacsTrianglePts4[2];
       pt[2] = TacsTrianglePts4[3];
       return TacsTriangleWts4[1];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[0] = TacsTrianglePts4[4];
       pt[2] = TacsTrianglePts4[5];
       return TacsTriangleWts4[1];
     }
-    else if ( n == 3 ){
+    else if (n == 3){
       pt[0] = TacsTrianglePts4[6];
       pt[2] = TacsTrianglePts4[7];
       return TacsTriangleWts4[1];
     }
   }
-  else if ( face == 2 ){
+  else if (face == 2){
     // slanted face -- same procedure as linear
-    if ( n == 0 ){
+    if (n == 0){
       pt[0] = 1.0/3.0;
       pt[1] = 1.0/3.0;
       pt[2] = 1.0/3.0;
       return sqrt(3.0) * TacsTriangleWts4[0];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[0] = 1.0/5.0;
       pt[1] = 1.0/5.0;
       pt[2] = 3.0/5.0;
       return sqrt(3.0) * TacsTriangleWts4[1];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[0] = 3.0/5.0;
       pt[1] = 1.0/5.0;
       pt[2] = 1.0/5.0;
       return sqrt(3.0) * TacsTriangleWts4[1];
     }
-    else if ( n == 3 ){
+    else if (n == 3){
       pt[0] = 1.0/5.0;
       pt[1] = 3.0/5.0;
       pt[2] = 1.0/5.0;
       return sqrt(3.0) * TacsTriangleWts4[1];
-    }    
+    }
   }
-  else if ( face == 3 ){
+  else if (face == 3){
     // YZ face
     pt[0] = 0;
-    if ( n == 0 ){
+    if (n == 0){
       pt[1] = TacsTrianglePts4[0];
       pt[2] = TacsTrianglePts4[1];
       return TacsTriangleWts4[0];
     }
-    else if ( n == 1 ){
+    else if (n == 1){
       pt[1] = TacsTrianglePts4[2];
       pt[2] = TacsTrianglePts4[3];
       return TacsTriangleWts4[1];
     }
-    else if ( n == 2 ){
+    else if (n == 2){
       pt[1] = TacsTrianglePts4[4];
       pt[2] = TacsTrianglePts4[5];
       return TacsTriangleWts4[1];
     }
-    else if ( n == 3 ){
+    else if (n == 3){
       pt[1] = TacsTrianglePts4[6];
       pt[2] = TacsTrianglePts4[7];
       return TacsTriangleWts4[1];
     }
   }
+  return 0.0;
 }
 
 void TACSQuadraticTetrahedralBasis::computeBasis( const double pt[],
                                                   double N[] ){
 
-  l0 = 1 - pt[0] - pt[1] - pt[2];
-  l1 = pt[0];
-  l2 = pt[1];
-  l3 = pt[2];
+  double l0 = 1 - pt[0] - pt[1] - pt[2];
+  double l1 = pt[0];
+  double l2 = pt[1];
+  double l3 = pt[2];
 
   // Corner nodes
   N[0] = l0*(2*l0 - 1);
@@ -419,16 +425,15 @@ void TACSQuadraticTetrahedralBasis::computeBasis( const double pt[],
   N[7] = 4*l3*l1;
   N[8] = 4*l2*l3;
   N[9] = 4*l3*l0;
-
 }
 
 void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
                                                           double N[],
                                                           double Nxi[] ){
-  l0 = 1 - pt[0] - pt[1] - pt[2];
-  l1 = pt[0];
-  l2 = pt[1];
-  l3 = pt[2];
+  double l0 = 1 - pt[0] - pt[1] - pt[2];
+  double l1 = pt[0];
+  double l2 = pt[1];
+  double l3 = pt[2];
 
   // Corner nodes
   N[0] = l0*(2*l0 - 1);
@@ -482,7 +487,6 @@ void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
   Nxi[27] = -4*pt[2];
   Nxi[28] = -4*pt[2];
   Nxi[29] = -4*(pt[0] + pt[1] + 2*pt[2] - 1);
-
 }
 
 /*
@@ -519,20 +523,14 @@ int TACSCubicTetrahedralBasis::getNumFaceQuadraturePoints( int face ){
 
 double TACSCubicTetrahedralBasis::getFaceQuadraturePoint( int face,
                                                           int n,
-                                                          double pt[] ){
-
+                                                          double pt[],
+                                                          double t[] ){
   return 0.1;
 }
 
 void TACSCubicTetrahedralBasis::computeBasis( const double pt[],
-                                              double N[] ){
-
-
-}
+                                              double N[] ){}
 
 void TACSCubicTetrahedralBasis::computeBasisGradient( const double pt[],
                                                       double N[],
-                                                      double Nxi[] ){
-
-
-}
+                                                      double Nxi[] ){}

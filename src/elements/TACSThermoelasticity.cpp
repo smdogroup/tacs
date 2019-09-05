@@ -97,8 +97,8 @@ void TACSLinearThermoelasticity2D::evalWeakIntegrand( int elemIndex,
   DUt[5] = rho*Ut[5];
 
   DUt[6] = 0.0;
-  DUt[7] = 0.0;
-  DUt[8] = rho*Cp*Ut[8];
+  DUt[7] = rho*Cp*Ut[8];
+  DUt[8] = 0.0;
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){
@@ -121,6 +121,12 @@ void TACSLinearThermoelasticity2D::evalWeakIntegrand( int elemIndex,
 
   DUx[2] = s[2];
   DUx[3] = s[1];
+
+  TacsScalar q[2];
+  stiff->evalThermalFlux(elementIndex, pt, X, grad, q);
+
+  DUx[4] = q[0];
+  DUx[5] = q[1];
 }
 
 void TACSLinearThermoelasticity2D::evalWeakJacobian( int elemIndex,
