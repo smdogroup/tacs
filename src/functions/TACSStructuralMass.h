@@ -87,4 +87,4 @@ class TACSStructuralMass : public TACSFunction {
   static const char * funcName;
 };
 
-#endif
+#endif // TACS_STRUCTURAL_MASS_H

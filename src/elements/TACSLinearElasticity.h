@@ -55,7 +55,7 @@ class TACSLinearElasticity2D : public TACSElementModel {
   /**
     Evaluate the coefficients of the weak form integrand
   */
-  void evalWeakIntegrand( int elemIndex, int n, const double time,
+  void evalWeakIntegrand( int elemIndex, const double time, int n,
                           const double pt[], const TacsScalar X[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           TacsScalar DUt[], TacsScalar DUx[] );
@@ -63,14 +63,14 @@ class TACSLinearElasticity2D : public TACSElementModel {
   /**
     Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, int n, const double time,
-                          const double pt[], const TacsScalar X[],
-                          const TacsScalar Ut[], const TacsScalar Ux[],
-                          TacsScalar DUt[], TacsScalar DUx[],
-                          int *Jac_nnz, const int *_Jac_pairs[],
-                          TacsScalar Jac[] );
+  void evalWeakJacobian( int elemIndex, const double time, int n,
+                         const double pt[], const TacsScalar X[],
+                         const TacsScalar Ut[], const TacsScalar Ux[],
+                         TacsScalar DUt[], TacsScalar DUx[],
+                         int *Jac_nnz, const int *_Jac_pairs[],
+                         TacsScalar Jac[] );
 
-  void addWeakAdjProduct( int elemIndex, int n, const double time,
+  void addWeakAdjProduct( int elemIndex, const double time, int n,
                           const double pt[], const TacsScalar X[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],

@@ -122,6 +122,15 @@ class TACSElementBasis {
                                          double tangent[] ) = 0;
 
   /**
+    Get the Jacobian transformation from computational to physical
+    coordinates.
+  */
+  virtual TacsScalar getJacobianTransform( const double pt[],
+                                           const TacsScalar Xpts[],
+                                           TacsScalar Xd[],
+                                           TacsScalar J[] );
+
+  /**
     Get the field values at the specified quadrature point
 
     @param n The quadrature point

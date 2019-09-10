@@ -29,17 +29,17 @@
   the entire finite-element mesh.
 
   input:
-  tacs:          the TACSAssembler object
+  assembler:     the TACSAssembler object
   funcDomain:    the domain type
   funcEval:      the type of evaluation to use
   maxElems:      the maximum number of elements expected
 */
-TACSFunction::TACSFunction( TACSAssembler *_tacs,
+TACSFunction::TACSFunction( TACSAssembler *_assembler,
                             DomainType _funcDomain,
                             StageType _funcStages,
                             int _maxElems ){
-  tacs = _tacs;
-  tacs->incref();
+  assembler = _assembler;
+  assembler->incref();
 
   // Set function domain and function evaluation type
   funcDomain = _funcDomain;
@@ -58,7 +58,7 @@ TACSFunction::~TACSFunction(){
   if (elemNums){
     delete [] elemNums;
   }
-  tacs->decref();
+  assembler->decref();
 }
 
 /*
@@ -86,7 +86,7 @@ enum TACSFunction::StageType TACSFunction::getStageType(){
 void TACSFunction::setDomain( int _elemNums[], int _numElems ){
   if (funcDomain == NO_DOMAIN){
     fprintf(stderr, "Cannot set function domain for %s\n",
-            this->functionName());
+            getObjectName());
     return;
   }
   else {
@@ -123,7 +123,7 @@ void TACSFunction::setDomain( int _elemNums[], int _numElems ){
 void TACSFunction::addDomain( int _elemNums[], int _numElems ){
   if (funcDomain == NO_DOMAIN){
     fprintf(stderr, "Cannot add function domain for %s\n",
-            this->functionName());
+            getObjectName());
     return;
   }
   else {
@@ -159,11 +159,6 @@ void TACSFunction::addDomain( int _elemNums[], int _numElems ){
 }
 
 /*
-  Retrieve the name of the function object
-*/
-const char * TACSFunction::TACSObjectName(){ return this->functionName(); }
-
-/*
   Get the elements in the domain of this object
 */
 int TACSFunction::getElementNums( const int **_elemNums ){
@@ -174,4 +169,13 @@ int TACSFunction::getElementNums( const int **_elemNums ){
 /*
   Get the TACSAssembler object associated with this function
 */
-TACSAssembler * TACSFunction::getTACS(){ return tacs; }
+TACSAssembler* TACSFunction::getAssembler(){
+  return assembler;
+}
+
+/*
+  Retrieve the object name
+*/
+const char* TACSFunction::getObjectName(){
+  return "TACSFunction";
+}

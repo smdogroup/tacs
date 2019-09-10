@@ -18,12 +18,11 @@
 /*
   Quantity output types defined
 */
-const int TACS_MASS_DENSITY;
-const int TACS_X_DIPLACEMENT_VALUE;
-const int TACS_Y_DIPLACEMENT_VALUE;
-const int TACS_Z_DIPLACEMENT_VALUE;
-const int TACS_HEAT_FLUX;
-const int TACS_FAILURE_INDEX;
+const int TACS_MASS_DENSITY = 1;
+const int TACS_FAILURE_INDEX = 2;
+const int TACS_X_DIPLACEMENT_VALUE = 3;
+const int TACS_Y_DIPLACEMENT_VALUE = 4;
+const int TACS_Z_DIPLACEMENT_VALUE = 5;
 
 /*
   The output flags from each element type

@@ -132,7 +132,7 @@ class TACSFunction : public TACSObject {
                                 const TacsScalar Xpts[],
                                 const TacsScalar vars[],
                                 const TacsScalar dvars[],
-                                const TacsScalar ddvars[] );
+                                const TacsScalar ddvars[] ){}
   virtual void finalEvaluation( EvaluationType ftype ){}
   virtual TacsScalar getFunctionValue() = 0;
 
@@ -187,4 +187,4 @@ class TACSFunction : public TACSObject {
   int *elemNums; // sorted array of element numbers
 };
 
-#endif
+#endif // TACS_FUNCTION_H

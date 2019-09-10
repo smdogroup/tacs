@@ -65,7 +65,7 @@ class TACSKSFailure : public TACSFunction {
 
   // Retrieve the name of the function
   // ---------------------------------
-  const char *functionName();
+  const char* getObjectName();
 
   // Set parameters for the KS function
   // ----------------------------------
@@ -80,10 +80,6 @@ class TACSKSFailure : public TACSFunction {
     maxFail = _maxFail;
   }
 
-  // Create the function context for evaluation
-  // ------------------------------------------
-  TACSFunctionCtx *createFunctionCtx();
-
   // Collective calls on the TACS MPI Comm
   // -------------------------------------
   void initEvaluation( EvaluationType ftype );
@@ -91,17 +87,11 @@ class TACSKSFailure : public TACSFunction {
 
   // Functions for integration over the structural domain on each thread
   // -------------------------------------------------------------------
-  void initThread( double tcoef,
-                   EvaluationType ftype,
-                   TACSFunctionCtx *ctx );
   void elementWiseEval( EvaluationType ftype,
                         TACSElement *element, int elemNum,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
                         TACSFunctionCtx *ctx );
-  void finalThread( double tcoef,
-                    EvaluationType ftype,
-                    TACSFunctionCtx *ctx );
 
   // Return the value of the function
   // --------------------------------

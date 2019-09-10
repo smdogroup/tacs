@@ -3966,15 +3966,9 @@ void TACSAssembler::integrateFunctions( double tcoef,
   TacsScalar *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
                     &elemXpts, NULL, NULL, NULL);
-
+ 
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
-      TACSFunctionCtx *ctx =
-        funcs[k]->createFunctionCtx();
-
-      // Initialize the function evaluation context
-      funcs[k]->initThread(tcoef, ftype, ctx);
-
       if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
         for ( int i = 0; i < numElements; i++ ){
           // Determine the values of the state variables for the
@@ -3988,8 +3982,8 @@ void TACSAssembler::integrateFunctions( double tcoef,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise component of the function
-          funcs[k]->elementWiseEval(ftype, elements[i], i,
-                                    elemXpts, vars, dvars, ddvars, ctx);
+          funcs[k]->elementWiseEval(ftype, i, elements[i],
+                                    elemXpts, vars, dvars, ddvars);
         }
       }
       else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
@@ -4011,17 +4005,11 @@ void TACSAssembler::integrateFunctions( double tcoef,
             ddvarsVec->getValues(len, nodes, ddvars);
 
             // Evaluate the element-wise component of the function
-            funcs[k]->elementWiseEval(ftype, elements[elemNum], elemNum,
-                                      elemXpts, vars, dvars, ddvars, ctx);
+            funcs[k]->elementWiseEval(ftype, elemNum, elements[elemNum],
+                                      elemXpts, vars, dvars, ddvars);
           }
         }
       }
-
-      // Record the local values stored in the context
-      funcs[k]->finalThread(tcoef, ftype, ctx);
-
-      // Free the function context
-      if (ctx){ delete ctx; }
     }
   }
 }
@@ -4144,9 +4132,9 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
                                 TACSBVec **fXptSens ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
-    if (funcs[k] && this != funcs[k]->getTACS()){
+    if (funcs[k] && this != funcs[k]->getAssembler()){
       fprintf(stderr, "[%d] Cannot evaluate function %s, wrong TACS object\n",
-              mpiRank, funcs[k]->functionName());
+              mpiRank, funcs[k]->getObjectName());
     }
   }
 
@@ -4160,9 +4148,6 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
   // nodal locations for all elements or part of the domain
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
-      TACSFunctionCtx *ctx =
-        funcs[k]->createFunctionCtx();
-
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
         // Get the function sub-domain
         const int *elemSubList;
@@ -4179,9 +4164,9 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->getElementXptSens(coef, elemXptSens,
-                                      elements[elemNum], elemNum,
-                                      elemXpts, vars, dvars, ddvars, ctx);
+          funcs[k]->getElementXptSens(coef, elemNum, elements[elemNum],
+                                      elemXpts, vars, dvars, ddvars,
+                                      elemXptSens);
           fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
         }
       }
@@ -4197,15 +4182,12 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->getElementXptSens(coef, elemXptSens,
-                                      elements[elemNum], elemNum,
-                                      elemXpts, vars, dvars, ddvars, ctx);
+          funcs[k]->getElementXptSens(coef, elemNum, elements[elemNum],
+                                      elemXpts, vars, dvars, ddvars,
+                                      elemXptSens);
           fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
         }
       }
-
-      // Free the context
-      if (ctx){ delete ctx; }
     }
   }
 }
@@ -4232,9 +4214,9 @@ void TACSAssembler::addSVSens( double alpha, double beta,
                                TACSBVec **vec ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
-    if (funcs[k] && this != funcs[k]->getTACS()){
+    if (funcs[k] && this != funcs[k]->getAssembler()){
       fprintf(stderr, "[%d] Cannot evaluate function %s, wrong TACS object\n",
-              mpiRank, funcs[k]->functionName());
+              mpiRank, funcs[k]->getObjectName());
     }
   }
 
@@ -4245,9 +4227,6 @@ void TACSAssembler::addSVSens( double alpha, double beta,
 
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
-      TACSFunctionCtx *ctx =
-        funcs[k]->createFunctionCtx();
-
       if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
         for ( int i = 0; i < numElements; i++ ){
           // Determine the values of the state variables for subElem
@@ -4261,8 +4240,9 @@ void TACSAssembler::addSVSens( double alpha, double beta,
 
           // Evaluate the element-wise sensitivity of the function
           funcs[k]->getElementSVSens(alpha, beta, gamma,
-                                     elemRes, elements[i], i,
-                                     elemXpts, vars, dvars, ddvars, ctx);
+                                     i, elements[i],
+                                     elemXpts, vars, dvars, ddvars,
+                                     elemRes);
           vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
         }
       }
@@ -4285,16 +4265,13 @@ void TACSAssembler::addSVSens( double alpha, double beta,
 
             // Evaluate the sensitivity
             funcs[k]->getElementSVSens(alpha, beta, gamma,
-                                       elemRes, elements[elemNum], elemNum,
-                                       elemXpts, vars, dvars, ddvars, ctx);
+                                       elemNum, elements[elemNum],
+                                       elemXpts, vars, dvars, ddvars,
+                                       elemRes);
             vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
           }
         }
       }
-
-      // Free the context
-      if (ctx){ delete ctx; }
-
       // Add the values into the array
       vec[k]->beginSetValues(TACS_ADD_VALUES);
     }
@@ -4905,7 +4882,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
   TacsScalar pdf = xtemp->dot(xpert);
 
   if (mpiRank == 0){
-    fprintf(stderr, "Testing function %s\n", func->functionName());
+    fprintf(stderr, "Testing function %s\n", func->getObjectName());
     const char *descript = "df/dx^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n",
             (int)strlen(descript), "Val", "Analytic",

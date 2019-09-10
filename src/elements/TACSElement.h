@@ -434,11 +434,9 @@ class TACSElement : public TACSObject {
   /**
     Evaluate a point-wise quantity of interest.
 
-    This quantity may be derived from a
-
-    @param quantityType The integer indicating the pointwise quantity
     @param elemIndex The index of the element
     @param time The simulation time
+    @param quantityType The integer indicating the pointwise quantity
     @parma n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
@@ -446,46 +444,100 @@ class TACSElement : public TACSObject {
     @param dvars The first time derivative of the element DOF
     @param ddvars The second time derivative of the element DOF
     @param quantity The output quantity of interest
-    @return Integer indicating whether the quantity is undefined
+    @return Integer indicating the number of defined quantities
   */
-  virtual int evalPointQuantity( int quantityType,
-                                 int elemIndex, double time,
+  virtual int evalPointQuantity( int elemIndex, double time,
+                                 int quantityType,
                                  int n, double pt[],
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[],
                                  TacsScalar *quantity ){
-    return 1; // This quantity is not defined
+    return 0; // No quantities defined by default
   }
 
-  virtual int addPointQuantityDVSens( int quantityType,
-                                      int elemIndex, double time,
-                                      int n, double pt[],
-                                      const TacsScalar Xpts[],
-                                      const TacsScalar vars[],
-                                      const TacsScalar dvars[],
-                                      const TacsScalar ddvars[],
-                                      int dvLen,
-                                      TacsScalar fdvSens[] );
+  /**
+    Add the derivative of the point quantity w.r.t. the design variables
 
-  virtual int addPointQuantitySVSens( int quantityType,
-                                 int elemIndex, double time,
-                                 int n, double pt[],
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[],
-                                 const TacsScalar dvars[],
-                                 const TacsScalar ddvars[],
-                                 TacsScalar *quantity );
+    @param elemIndex The index of the element
+    @param time The simulation time
+    @param quantityType The integer indicating the pointwise quantity
+    @parma n The quadrature point index
+    @param pt The quadrature point
+    @param Xpts The element node locations
+    @param vars The values of the element degrees of freedom
+    @param dvars The first time derivative of the element DOF
+    @param ddvars The second time derivative of the element DOF
+    @param dvLen The length of the design array
+    @param fdvSens The derivative array
+  */
+  virtual void addPointQuantityDVSens( int elemIndex, double time,
+                                       int quantityType,
+                                       TacsScalar scale,
+                                       int n, double pt[],
+                                       const TacsScalar Xpts[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[],
+                                       const TacsScalar ddvars[],
+                                       int dvLen,
+                                       TacsScalar dfdx[] ){}
 
-  virtual int addPointQuantityXptSens( int quantityType,
-                                 int elemIndex, double time,
-                                 int n, double pt[],
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[],
-                                 const TacsScalar dvars[],
-                                 const TacsScalar ddvars[],
-                                 TacsScalar *quantity );
+  /**
+    Add the derivative of the point quantity w.r.t. the state variables
+
+    @param elemIndex The index of the element
+    @param time The simulation time
+    @param quantityType The integer indicating the pointwise quantity
+    @param alpha The coefficient for the state variables
+    @param beta The coefficient for the first time derivatives
+    @param gamma The coefficient for the second time derivatives
+    @parma n The quadrature point index
+    @param pt The quadrature point
+    @param Xpts The element node locations
+    @param vars The values of the element degrees of freedom
+    @param dvars The first time derivative of the element DOF
+    @param ddvars The second time derivative of the element DOF
+    @param dvLen The length of the design array
+    @param dfdu The derivative of the quantity w.r.t. state variables
+  */
+  virtual void addPointQuantitySVSens( int elemIndex, double time,
+                                       int quantityType,
+                                       double alpha, double beta, double gamma,
+                                       int n, double pt[],
+                                       const TacsScalar Xpts[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[],
+                                       const TacsScalar ddvars[],
+                                       TacsScalar *dfdu ){}
+
+  /**
+    Add the derivative of the point quantity w.r.t. the node locations
+
+    @param elemIndex The index of the element
+    @param time The simulation time
+    @param quantityType The integer indicating the pointwise quantity
+    @param alpha The coefficient for the state variables
+    @param beta The coefficient for the first time derivatives
+    @param gamma The coefficient for the second time derivatives
+    @parma n The quadrature point index
+    @param pt The quadrature point
+    @param Xpts The element node locations
+    @param vars The values of the element degrees of freedom
+    @param dvars The first time derivative of the element DOF
+    @param ddvars The second time derivative of the element DOF
+    @param dvLen The length of the design array
+    @param dfdu The derivative of the quantity w.r.t. state variables
+  */
+  virtual void addPointQuantityXptSens( int elemIndex, double time,
+                                        int quantityType,
+                                        TacsScalar scale,
+                                        int n, double pt[],
+                                        const TacsScalar Xpts[],
+                                        const TacsScalar vars[],
+                                        const TacsScalar dvars[],
+                                        const TacsScalar ddvars[],
+                                        TacsScalar dfdXpts[] ){}
   /**
     Compute the output data for visualization
 

@@ -16,44 +16,7 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "KSFailure.h"
-#include "TACSAssembler.h"
-
-/*
-   KS function implementation
-*/
-
-/*
-  The context for the TACSKSFailure function
-*/
-class KSFunctionCtx : public TACSFunctionCtx {
- public:
-  KSFunctionCtx( TACSFunction *ks,
-                 int maxStrains,
-                 int maxNodes ){
-    maxFail = -1e20;
-    ksFailSum = 0.0;
-
-    // Allocate the working array
-    work = new TacsScalar[2*maxStrains + 3*maxNodes];
-
-    // Set the pointers into the work array
-    strain = &work[0];
-    failSens = &work[maxStrains];
-    hXptSens = &work[2*maxStrains];
-  }
-  ~KSFunctionCtx(){
-    delete [] work;
-  }
-
-  // Data to be used for the function computation
-  TacsScalar maxFail;
-  TacsScalar ksFailSum;
-  TacsScalar *strain;
-  TacsScalar *failSens;
-  TacsScalar *hXptSens;
-  TacsScalar *work;
-};
+#include "TACSKSFailure.h"
 
 /*
   Initialize the TACSKSFailure class properties
@@ -121,7 +84,7 @@ void TACSKSFailure::setLoadFactor( TacsScalar _loadFactor ){
 /*
   Return the function name
 */
-const char *TACSKSFailure::functionName(){
+const char *TACSKSFailure::getObjectName(){
   return funcName;
 }
 
@@ -140,13 +103,6 @@ TacsScalar TACSKSFailure::getFunctionValue(){
 */
 TacsScalar TACSKSFailure::getMaximumFailure(){
   return maxFail;
-}
-
-/*
-  Allocate and return the function-specific context
-*/
-TACSFunctionCtx *TACSKSFailure::createFunctionCtx(){
-  return new KSFunctionCtx(this, maxNumStrains, maxNumNodes);
 }
 
 /*
@@ -209,13 +165,13 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
       // Evaluate the failure index, and check whether it is an
       // undefined quantity of interest on this element
       TacsScalar fail = 0.0;
-      int undef = element->evalPointQuantity(TACS_FAILURE_INDEX,
-                                             elemIndex, time, i, pt,
+      int count = element->evalPointQuantity(elemIndex, time,
+                                             TACS_FAILURE_INDEX, i, pt,
                                              Xpts, vars, dvars, ddvars,
-                                             &quantity);
+                                             &fail);
 
       // Check whether the quantity requested is defined or not
-      if (!undef){
+      if (count >= 1){
         if (ftype == TACSFunction::INITIALIZE){
           // Set the maximum failure load
           if (TacsRealPart(fail) > TacsRealPart(maxFail)){
@@ -223,9 +179,10 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
           }
         }
         else {
-
-
-
+          // Evaluate the determinant of the Jacobian
+          TacsScalar Xd[9], J[9];
+          TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+          TacsScalar h = tcoef*weight*detJ;
 
           // Add the failure load to the sum
           if (ksType == DISCRETE){

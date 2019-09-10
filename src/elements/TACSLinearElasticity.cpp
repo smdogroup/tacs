@@ -77,8 +77,8 @@ void TACSLinearElasticity2D::getDesignVarRange( int elemIndex, int dvLen,
 }
 
 void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
-                                                int n,
                                                 const double time,
+                                                int n,
                                                 const double pt[],
                                                 const TacsScalar X[],
                                                 const TacsScalar Ut[],
@@ -120,8 +120,8 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
 }
 
 void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
-                                               int n,
                                                const double time,
+                                               int n,
                                                const double pt[],
                                                const TacsScalar X[],
                                                const TacsScalar Ut[],
@@ -212,8 +212,9 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
   Add the product of the adjoint vector times the weak form of the adjoint
   equations to the design variable components
 */
-void TACSLinearElasticity2D::addWeakAdjProduct( int elemIndex, int n,
+void TACSLinearElasticity2D::addWeakAdjProduct( int elemIndex,
                                                 const double time,
+                                                int n,
                                                 const double pt[],
                                                 const TacsScalar X[],
                                                 const TacsScalar Ut[],

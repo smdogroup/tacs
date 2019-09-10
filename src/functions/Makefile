@@ -7,8 +7,8 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-CXX_OBJS = TACSFunction.o
-# 	KSFailure.o \
+CXX_OBJS = TACSFunction.o \
+	TACSKSFailure.o
 # 	KSDisplacement.o \
 # 	DisplacementIntegral.o \
 # 	Compliance.o \
