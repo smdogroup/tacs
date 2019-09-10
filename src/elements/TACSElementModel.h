@@ -133,9 +133,8 @@ class TACSElementModel {
     @param DUx Coefficients of the spatial-derivative weak form
   */
   virtual void evalWeakIntegrand( int elemIndex,
-                                  int n,
                                   const double time,
-                                  const double pt[],
+                                  int n, const double pt[],
                                   const TacsScalar X[],
                                   const TacsScalar Ut[],
                                   const TacsScalar Ux[],
@@ -147,37 +146,32 @@ class TACSElementModel {
     equations of motion.
 
     The following code computes the weak form coefficients and their
-    derivatives with respect to each of the input components.
-
-    The descriptions of the terms DUt and DUx are the same as the
+    derivatives with respect to each of the input components. The
+    descriptions of the terms DUt and DUx are the same as the
     evalWeakIntegrand() function described above.
 
-    The parameter *DDUt* contains a sparse matrix representation of the
-    the derivatives of the coefficients in DUt with respect to the
-    displacement and their first and second time derivatives. A complete
-    matrix DDUt would be a matrix of dimension
-    (3*vars_per_node X 3*vars_per_node).
+    The parameter Jac contains a sparse matrix representation of the
+    the derivatives of the coefficients in DUt and DUx. The dense matrix
+    contains (3 + spatial_dim)*vars_per_node rows and columns.
 
-    For instance, for the problem U = (u, v), the full DDUt would be a
-    6 X 6 matrix whose first row would contain
+    For instance, for the 2D problem (spatial_dim = 2) with the variables
+    U = (u, v), the Jac matrix would contain 10 x 10 entries. The rows of the
+    matrix (corresponding to DUt and DUx) are ordered first by variable, then
+    by derivative. The columns of the matrix are ordered in a similar manner
+    so that for this case:
 
-    DDUt[0] = d(DUt[0])/du
-    DDUt[1] = d(DUt[0])/d(dot{u})
-    DDUt[2] = d(DUt[0])/d(ddot{u})
-    DDUt[3] = d(DUt[0])/dv
-    DDUt[4] = d(DUt[0])/d(dot{v})
-    DDUt[5] = d(DUt[0])/d(ddot{v})
+    Index:     0;       1;      2;      3;      4;
+    rows:  DUt[0]; DUt[1]; DUt[2]; DUx[0]; DUx[1];
+    cols:      u;     u,t;   u,tt;    u,x;    u,y;
 
-    However, this matrix is usually very sparse. For this reason, the
-    a simple non-zero pattern is returned in DDT_non_zero_paris[], which
-    contains the entries of the matrix which are non-zero. For instance
-    if: DUt[2] = rho*Uddot[0] and DUt[5] = rho*Uddot[1], then the output
-    would be
+    Index:      5;      6;      7;      8;      9;
+    rows:  DUt[3]; DUt[4]; DUt[5]; DUx[2]; DUx[3];
+    cols:       v;    v,t;   v,tt;    v,x;    v,y;
 
-    DDt_num_non_zeros = 2
-    DDt_non_zero_pairs = [2, 2, 5, 5]
-    DDt[0] = rho
-    DDt[1] = rho
+    However, the Jacobian matrix of the terms DUt/DUx w.r.t. Ut and Ux is
+    often sparse. For this reason, the sparsity pattern is returned in a
+    pair-wise format with in Jac_pairs which stores the (row, column) entries
+    that are non-zero.
 
     @param elemIndex The local element index
     @param n The quadrature point index
@@ -193,9 +187,8 @@ class TACSElementModel {
     @param DDUt Jacobian of the time-dependent weak form
   */
   virtual void evalWeakJacobian( int elemIndex,
-                                 int n,
                                  const double time,
-                                 const double pt[],
+                                 int n, const double pt[],
                                  const TacsScalar X[],
                                  const TacsScalar Ut[],
                                  const TacsScalar Ux[],
@@ -209,9 +202,8 @@ class TACSElementModel {
 
   */
   virtual void addWeakAdjProduct( int elemIndex,
-                                  int n,
                                   const double time,
-                                  const double pt[],
+                                  int n, const double pt[],
                                   const TacsScalar X[],
                                   const TacsScalar Ut[],
                                   const TacsScalar Ux[],
@@ -220,6 +212,18 @@ class TACSElementModel {
                                   TacsScalar scale,
                                   int dvLen,
                                   TacsScalar *fdvSens ){}
+
+  virtual int evalPointQuantity( int elemIndex,
+                                  const double time,
+                                  int n, const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar Ut[],
+                                  const TacsScalar Ux[],
+                                  const TacsScalar Psi[],
+                                  const TacsScalar Psix[],
+                                  TacsScalar scale,
+                                  int dvLen,
+                                  TacsScalar *fdvSens )
 
   /**
     Generate a line of output for a single visualization point

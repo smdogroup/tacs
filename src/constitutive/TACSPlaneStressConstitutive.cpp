@@ -88,8 +88,8 @@ void TACSPlaneStressConstitutive::getDesignVarRange( int elemIndex,
                                                      TacsScalar lb[],
                                                      TacsScalar ub[] ){
   if (tNum >= 0 && dvLen >= 1){
-    lb[0] = tlb;
-    ub[0] = tub;
+    if (lb){ lb[0] = tlb; }
+    if (ub){ ub[0] = tub; }
   }
 }
 
@@ -131,6 +131,28 @@ void TACSPlaneStressConstitutive::evalTangentStiffness( int elemIndex,
   }
 }
 
+void TACSPlaneStressConstitutive::addStressDVSens( int elemIndex,
+                                                   const double pt[],
+                                                   const TacsScalar X[],
+                                                   const TacsScalar e[],
+                                                   TacsScalar scale,
+                                                   const TacsScalar psi[],
+                                                   int dvLen,
+                                                   TacsScalar dvSens[] ){
+  if (properties && tNum >= 0){
+    TacsScalar C[6];
+    properties->evalTangentStiffness2D(C);
+
+    TacsScalar s[3];
+    s[0] = (C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
+    s[1] = (C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
+    s[2] = (C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
+
+    // Compute the derivative w.r.t. the design vector
+    dvSens[0] += scale*(s[0]*psi[0] + s[1]*psi[1] + s[2]*psi[2]);
+  }
+}
+
 /**
   Evaluate the thermal strain
 */
@@ -152,10 +174,21 @@ TacsScalar TACSPlaneStressConstitutive::evalDensity( int elemIndex,
                                                      const double pt[],
                                                      const TacsScalar X[] ){
   if (properties){
-    return properties->getDensity();
+    return t*properties->getDensity();
   }
-
   return 0.0;
+}
+
+// Add the derivative of the density
+void TACSPlaneStressConstitutive::addDensityDVSens( int elemIndex,
+                                                    const double pt[],
+                                                    const TacsScalar X[],
+                                                    const TacsScalar scale,
+                                                    int dvLen,
+                                                    TacsScalar dvSens[] ){
+  if (properties && tNum >= 0){
+    dvSens[0] += scale*properties->getDensity();
+  }
 }
 
 // Evaluate the material failure index

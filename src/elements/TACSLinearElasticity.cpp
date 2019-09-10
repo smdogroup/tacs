@@ -209,6 +209,44 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
 }
 
 /*
+  Add the product of the adjoint vector times the weak form of the adjoint
+  equations to the design variable components
+*/
+void TACSLinearElasticity2D::addWeakAdjProduct( int elemIndex, int n,
+                                                const double time,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                const TacsScalar Ut[],
+                                                const TacsScalar Ux[],
+                                                const TacsScalar Psi[],
+                                                const TacsScalar Psix[],
+                                                TacsScalar scale,
+                                                int dvLen,
+                                                TacsScalar *fdvSens ){
+  // Evaluate the density
+  TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1]);
+  stiff->addDensityDVSens(elemIndex, pt, X, rho_coef, dvLen, fdvSens);
+
+  TacsScalar e[3];
+  if (strain_type == TACS_LINEAR_STRAIN){
+    e[0] = Ux[0];
+    e[1] = Ux[3];
+    e[2] = Ux[1] + Ux[2];
+  }
+  else {
+    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+    e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+    e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+  }
+
+  TacsScalar phi[3];
+  phi[0] = Psix[0];
+  phi[1] = Psix[3];
+  phi[2] = Psix[1] + Psix[2];
+  stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, fdvSens);
+}
+
+/*
   Get the data for visualization at a given point
 */
 void TACSLinearElasticity2D::getOutputData( int elemIndex,

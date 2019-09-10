@@ -84,8 +84,8 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
   extNodeOffset = 0;
 
   // Print out the number of local nodes and elements
-  printf("[%d] Creating TACSAssembler with numOwnedNodes = %d \
-numElements = %d\n", mpiRank, numOwnedNodes, numElements);
+  printf("[%d] Creating TACSAssembler with numOwnedNodes = %d "
+         "numElements = %d\n", mpiRank, numOwnedNodes, numElements);
 
   // Calculate the total number of nodes and elements
   int info[2], recv_info[2];
@@ -93,8 +93,8 @@ numElements = %d\n", mpiRank, numOwnedNodes, numElements);
   info[1] = numElements;
   MPI_Reduce(info, recv_info, 2, MPI_INT, MPI_SUM, 0, tacs_comm);
   if (mpiSize > 1 && mpiRank == 0){
-    printf("[%d] TACSAssembler: Total dof = %d Total nodes = %d \
-Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
+    printf("[%d] TACSAssembler: Total dof = %d Total nodes = %d "
+           "Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
            recv_info[0], recv_info[1]);
   }
 
@@ -102,7 +102,7 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   meshInitializedFlag = 0;
 
   // Initialize the maximum element propertie
-  maxElementStrain = 0;
+  maxElementDesignVars = 0;
   maxElementNodes = 0;
   maxElementSize = 0;
   maxElementIndepNodes = 0;
@@ -154,9 +154,17 @@ Total elements = %d\n", mpiRank, varsPerNode*recv_info[0],
   // Null out the dependent node data
   depNodes = NULL;
 
+  // Design variable information
+  designVarsPerNode = 1;
+  designVarMap = NULL;
+  designExtDist = NULL;
+  designDepNodes = NULL;
+
   // Set the local element data to NULL
   elementData = NULL;
   elementIData = NULL;
+  elementSensData = NULL;
+  elementSensIData = NULL;
 }
 
 /**
@@ -217,6 +225,8 @@ TACSAssembler::~TACSAssembler(){
   // Delete arrays allocated in initializeArrays()
   if (elementData){ delete [] elementData; }
   if (elementIData){ delete [] elementIData; }
+  if (elementSensData){ delete [] elementSensData; }
+  if (elementSensIData){ delete [] elementSensIData; }
 
   // Decref the thread information class
   thread_info->decref();
@@ -323,8 +333,8 @@ int TACSAssembler::getMaxElementVariables(){
 /*
   Get the maximum number of strain components
 */
-int TACSAssembler::getMaxElementStrains(){
-  return maxElementStrain;
+int TACSAssembler::getMaxElementDesignVars(){
+  return maxElementDesignVars;
 }
 
 /*
@@ -494,8 +504,8 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   for ( int i = 0; i < numElements; i++ ){
     if (_elements[i]->getVarsPerNode() != varsPerNode){
       fprintf(stderr,
-              "[%d] Element %s, num displacements %d \
-does not match variables per node %d\n",
+              "[%d] Element %s, num displacements %d "
+              "does not match variables per node %d\n",
               mpiRank, _elements[i]->getObjectName(),
               _elements[i]->getVarsPerNode(), varsPerNode);
       return 1;
@@ -523,19 +533,19 @@ does not match variables per node %d\n",
   numMultiplierNodes = 0;
 
   // Determine the maximum number of nodes per element
-  maxElementStrain = 0;
+  maxElementDesignVars = 0;
   maxElementSize = 0;
   maxElementNodes = 0;
 
   for ( int i = 0; i < numElements; i++ ){
     // Determine if the maximum number of variables and nodes needs to
     // be changed
-    int elemSize = _elements[i]->getNumVariables();
+    int elemSize = elements[i]->getNumVariables();
     if (elemSize > maxElementSize){
       maxElementSize = elemSize;
     }
 
-    elemSize = _elements[i]->getNumNodes();
+    elemSize = elements[i]->getNumNodes();
     if (elemSize > maxElementNodes){
       maxElementNodes = elemSize;
     }
@@ -544,6 +554,12 @@ does not match variables per node %d\n",
     int multiplier = elements[i]->getMultiplierIndex();
     if (multiplier > 0){
       numMultiplierNodes++;
+    }
+
+    // Keep track of the maximum number of element design variables
+    int numDVs = elements[i]->getDesignVarNums(i, 0, NULL);
+    if (numDVs > maxElementDesignVars){
+      maxElementDesignVars = numDVs;
     }
   }
 
@@ -807,8 +823,8 @@ int TACSAssembler::computeExtNodes(){
     return 1;
   }
   if (!elementNodeIndex){
-    fprintf(stderr, "[%d] Cannot call computeExtNodes() element \
-connectivity not defined\n", mpiRank);
+    fprintf(stderr, "[%d] Cannot call computeExtNodes() element "
+            "connectivity not defined\n", mpiRank);
     return 1;
   }
 
@@ -2447,6 +2463,10 @@ int TACSAssembler::initialize(){
   int idataSize = maxElementIndepNodes + maxElementNodes+1;
   elementIData = new int[ idataSize ];
 
+  // Allocate memory for the design variable data
+  elementSensData = new TacsScalar[ maxElementDesignVars ];
+  elementSensIData = new int[ maxElementDesignVars ];
+
   return 0;
 }
 
@@ -2681,13 +2701,31 @@ void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
   }
 }
 
-/*!
+/**
+  Create a distributed design vector
+
+  Vector classes initialized by one TACS object, cannot be used by a
+  second, unless they share are exactly the parallel layout.
+*/
+TACSBVec *TACSAssembler::createDesignVec(){
+  if (!meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call createDeignVec() before initialize()\n",
+            mpiRank);
+    return NULL;
+  }
+
+  // Create the vector
+  return new TACSBVec(designVarMap, designVarsPerNode,
+                      designExtDist, designDepNodes);
+}
+
+
+/**
   Collect all the design variable values assigned by this process
 
   This code does not ensure consistency of the design variable values
   between processes. If the values of the design variables are
-  inconsistent to begin with, the maximum design variable value is
-  returned. Call setDesignVars to make them consistent.
+  inconsistent to begin with. Call setDesignVars to force consistency.
 
   Each process contains objects that maintain their own design
   variable values. Ensuring the consistency of the ordering is up to
@@ -2695,76 +2733,120 @@ void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
   corresponding to different design variables results in undefined
   behaviour.
 
-  dvs:    the array of design variable values (output)
-  numDVs: the number of design variables
+  @param dvs The vector of design variables
 */
-void TACSAssembler::getDesignVars( TacsScalar dvs[], int numDVs ){
+void TACSAssembler::getDesignVars( TACSBVec *dvs ){
   // Get the design variables from the elements on this process
-  for ( int i = 0; i < numElements; i++ ){
-    elements[i]->getDesignVars(i, numDVs, dvs);
-  }
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *dvVals = elementSensData;
+  int *dvNums = elementSensIData;
 
   // Get the design variables from the auxiliary elements
   if (auxElements){
-    auxElements->getDesignVars(numDVs, dvs);
+    TACSAuxElem *aux = NULL;
+    int naux = auxElements->getAuxElements(&aux);
+    for ( int i = 0; i < naux; i++ ){
+      int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+      aux[i].elem->getDesignVars(aux[i].num, maxDVs, dvVals);
+      dvs->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
+    }
   }
+
+  for ( int i = 0; i < numElements; i++ ){
+    int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+    elements[i]->getDesignVars(i, numDVs, dvVals);
+    dvs->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
+  }
+
+  dvs->beginSetValues(TACS_INSERT_VALUES);
+  dvs->endSetValues(TACS_INSERT_VALUES);
 }
 
-/*!
+/**
   Set the design variables.
 
   The design variable values provided must be the same on all
-  processes for consistency. This call however, is not collective.
+  processes for consistency. This must be called by all processors.
 
-  dvs:    the array of design variable values
-  numDVs: the number of design variables
+  @param dvs The design variable values
 */
-void TACSAssembler::setDesignVars( const TacsScalar dvs[], int numDVs ){
-  for ( int i = 0; i < numElements; i++ ){
-    elements[i]->setDesignVars(i, numDVs, dvs);
+void TACSAssembler::setDesignVars( TACSBVec *dvs ){
+  // Get the design variables from the elements on this process
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *dvVals = elementSensData;
+  int *dvNums = elementSensIData;
+
+  // Get the design variables from the auxiliary elements
+  if (auxElements){
+    TACSAuxElem *aux = NULL;
+    int naux = auxElements->getAuxElements(&aux);
+    for ( int i = 0; i < naux; i++ ){
+      int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+      dvs->getValues(numDVs, dvNums, dvVals);
+      aux[i].elem->setDesignVars(aux[i].num, maxDVs, dvVals);
+    }
   }
 
-  // Set the design variables in the auxiliary elements
-  if (auxElements){
-    auxElements->setDesignVars(numDVs, dvs);
+  for ( int i = 0; i < numElements; i++ ){
+    int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+    dvs->getValues(numDVs, dvNums, dvVals);
+    elements[i]->setDesignVars(i, numDVs, dvVals);
   }
 }
 
-/*
+/**
   Retrieve the design variable range.
 
   This call is collective on all TACS processes. The ranges provided
   by indivdual objects may not be consistent (if someone provided
-  incorrect data they could be.) Make a best guess; take the minimum
-  upper bound and the maximum lower bound.
+  incorrect data they could be.)
 
-  lowerBound: the lower bound on the design variables (output)
-  upperBound: the upper bound on the design variables (output)
-  numDVs:     the number of design variables
+  @param lb the lower bound on the design variables
+  @param ub the upper bound on the design variables
 */
-void TACSAssembler::getDesignVarRange( TacsScalar lb[],
-                                       TacsScalar ub[],
-                                       int numDVs ){
+void TACSAssembler::getDesignVarRange( TACSBVec *lb, TACSBVec *ub ){
   // Get the design variables from the elements on this process
-  for ( int i = 0; i < numElements; i++ ){
-    elements[i]->getDesignVarRange(i, numDVs, lb, ub);
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *dvVals = elementSensData;
+  TacsScalar *ubVals = new TacsScalar[ maxDVs ];
+  int *dvNums = elementSensIData;
+
+  // Get the design variables from the auxiliary elements
+  if (auxElements){
+    TACSAuxElem *aux = NULL;
+    int naux = auxElements->getAuxElements(&aux);
+    for ( int i = 0; i < naux; i++ ){
+      int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+      aux[i].elem->getDesignVarRange(aux[i].num, maxDVs, dvVals, ubVals);
+      lb->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
+      ub->setValues(numDVs, dvNums, ubVals, TACS_INSERT_VALUES);
+    }
   }
 
-  // Get the design variable range from the auxiliary elements
-  if (auxElements){
-    auxElements->getDesignVarRange(numDVs, lb, ub);
+  for ( int i = 0; i < numElements; i++ ){
+    int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+    elements[i]->getDesignVarRange(i, numDVs, dvVals, ubVals);
+    lb->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
+    ub->setValues(numDVs, dvNums, ubVals, TACS_INSERT_VALUES);
   }
+
+  lb->beginSetValues(TACS_INSERT_VALUES);
+  ub->beginSetValues(TACS_INSERT_VALUES);
+  lb->endSetValues(TACS_INSERT_VALUES);
+  ub->endSetValues(TACS_INSERT_VALUES);
+
+  delete [] ubVals;
 }
 
-/*!
+/**
   Set the number of threads to use in the computation
 */
 void TACSAssembler::setNumThreads( int t ){
   thread_info->setNumThreads(t);
 }
 
-/*
-  Create a distributed vector.
+/**
+  Create a distributed solution vector.
 
   Vector classes initialized by one TACS object, cannot be used by a
   second, unless they share are exactly the parallel layout.
@@ -2776,7 +2858,7 @@ TACSBVec *TACSAssembler::createVec(){
     return NULL;
   }
 
-  // Create the vector with all the bells and whistles
+  // Create the vector
   return new TACSBVec(varMap, varsPerNode, extDist, depNodes);
 }
 
@@ -3811,8 +3893,8 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
   output:
   funcVals: the values of the functions
 */
-void TACSAssembler::evalFunctions( TACSFunction **funcs,
-                                   int numFuncs,
+void TACSAssembler::evalFunctions( int numFuncs,
+                                   TACSFunction **funcs,
                                    TacsScalar *funcVals ){
   // Here we will use time-independent formulation
   double tcoef = 1.0;
@@ -3835,7 +3917,7 @@ void TACSAssembler::evalFunctions( TACSFunction **funcs,
       }
     }
     integrateFunctions(tcoef, TACSFunction::INITIALIZE,
-                       funcs, numFuncs);
+                       numFuncs, funcs);
     for ( int k = 0; k < numFuncs; k++ ){
       if (funcs[k]){
         funcs[k]->finalEvaluation(TACSFunction::INITIALIZE);
@@ -3850,7 +3932,7 @@ void TACSAssembler::evalFunctions( TACSFunction **funcs,
     }
   }
   integrateFunctions(tcoef, TACSFunction::INTEGRATE,
-                     funcs, numFuncs);
+                     numFuncs, funcs);
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
       funcs[k]->finalEvaluation(TACSFunction::INTEGRATE);
@@ -3877,8 +3959,8 @@ void TACSAssembler::evalFunctions( TACSFunction **funcs,
 */
 void TACSAssembler::integrateFunctions( double tcoef,
                                         TACSFunction::EvaluationType ftype,
-                                        TACSFunction **funcs,
-                                        int numFuncs ){
+                                        int numFuncs,
+                                        TACSFunction **funcs ){
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars;
   TacsScalar *elemXpts;
@@ -3944,7 +4026,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
   }
 }
 
-/*
+/**
   Evaluate the derivative of a list of functions w.r.t. the design
   variables.
 
@@ -3979,8 +4061,9 @@ void TACSAssembler::integrateFunctions( double tcoef,
   numDVs:    the number of design variables
 */
 void TACSAssembler::addDVSens( double coef,
-                               TACSFunction **funcs, int numFuncs,
-                               TacsScalar *fdvSens, int numDVs ){
+                               int numFuncs, TACSFunction **funcs,
+                               TACSBVec **dfdx ){
+/*
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars, *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
@@ -3990,8 +4073,7 @@ void TACSAssembler::addDVSens( double coef,
   // design variables for each element
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
-      TACSFunctionCtx *ctx =
-        funcs[k]->createFunctionCtx();
+      TACSFunctionCtx *ctx = funcs[k]->createFunctionCtx();
 
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
         // Get the funcs[k] sub-domain
@@ -4008,6 +4090,7 @@ void TACSAssembler::addDVSens( double coef,
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
           ddvarsVec->getValues(len, nodes, ddvars);
+
           // Evaluate the element-wise sensitivity of the function
           funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
                                      elements[elemNum], elemNum,
@@ -4036,6 +4119,7 @@ void TACSAssembler::addDVSens( double coef,
       if (ctx){ delete ctx; }
     }
   }
+*/
 }
 
 /*
@@ -4055,8 +4139,8 @@ void TACSAssembler::addDVSens( double coef,
   numFuncs:  the number of functions - size of funcs array
   fXptSens:  the sensitivity
 */
-void TACSAssembler::addXptSens( double coef,
-                                TACSFunction **funcs, int numFuncs,
+void TACSAssembler::addXptSens( double coef, int numFuncs,
+                                TACSFunction **funcs,
                                 TACSBVec **fXptSens ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
@@ -4143,8 +4227,8 @@ void TACSAssembler::addXptSens( double coef,
   vec:      the derivative of the function w.r.t. the state variables
 */
 void TACSAssembler::addSVSens( double alpha, double beta,
-                               double gamma,
-                               TACSFunction **funcs, int numFuncs,
+                               double gamma, int numFuncs,
+                               TACSFunction **funcs,
                                TACSBVec **vec ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
@@ -4243,10 +4327,10 @@ void TACSAssembler::addSVSens( double alpha, double beta,
   numDVs:      the number of design variables
 */
 void TACSAssembler::addAdjointResProducts( double scale,
-                                           TACSBVec **adjoint,
                                            int numAdjoints,
-                                           TacsScalar *fdvSens,
-                                           int numDVs ){
+                                           TACSBVec **adjoint,
+                                           TACSBVec **dfdx ){
+  // Distribute the design variable values to all processors
   for ( int k = 0; k < numAdjoints; k++ ){
     adjoint[k]->beginDistributeValues();
   }
@@ -4267,6 +4351,11 @@ void TACSAssembler::addAdjointResProducts( double scale,
                   &elemAdjoint,
                   &elemXpts, NULL, NULL, NULL);
 
+  // Get the design variables from the elements on this process
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *fdvSens = elementSensData;
+  int *dvNums = elementSensIData;
+
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
   TACSAuxElem *aux = NULL;
@@ -4284,21 +4373,41 @@ void TACSAssembler::addAdjointResProducts( double scale,
     dvarsVec->getValues(len, nodes, dvars);
     ddvarsVec->getValues(len, nodes, ddvars);
 
+    // Get the design variables for this element
+    int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+
     // Get the adjoint variables
     for ( int k = 0; k < numAdjoints; k++ ){
+      memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+
+      // Get the element adjoint vector
       adjoint[k]->getValues(len, nodes, elemAdjoint);
+
+      // Add the adjoint-residual product
       elements[i]->addAdjResProduct(i, time, scale,
                                     elemAdjoint, elemXpts,
                                     vars, dvars, ddvars,
-                                    numDVs, &fdvSens[k*numDVs]);
+                                    numDVs, fdvSens);
 
-      // Add the contribution from the auxiliary elements
-      while (aux_count < naux && aux[aux_count].num == i){
+      dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
+    }
+
+    // Add the contribution from the auxiliary elements
+    while (aux_count < naux && aux[aux_count].num == i){
+      // Get the design variables for this element
+      numDVs = aux[aux_count].elem->getDesignVarNums(i, maxDVs, dvNums);
+
+      // Get the adjoint variables
+      for ( int k = 0; k < numAdjoints; k++ ){
+        memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+
         aux[aux_count].elem->addAdjResProduct(i, time, scale,
                                               elemAdjoint, elemXpts,
                                               vars, dvars, ddvars,
-                                              numDVs, &fdvSens[k*numDVs]);
+                                              numDVs, fdvSens);
         aux_count++;
+
+        dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
       }
     }
   }
@@ -4320,8 +4429,8 @@ void TACSAssembler::addAdjointResProducts( double scale,
   numDVs:      the number of design variables
 */
 void TACSAssembler::addAdjointResXptSensProducts( double scale,
-                                                  TACSBVec **adjoint,
                                                   int numAdjoints,
+                                                  TACSBVec **adjoint,
                                                   TACSBVec **adjXptSens ){
   for ( int k = 0; k < numAdjoints; k++ ){
     adjoint[k]->beginDistributeValues();
@@ -4399,7 +4508,7 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
 void TACSAssembler::addMatDVSensInnerProduct( double scale,
                                               ElementMatrixType matType,
                                               TACSBVec *psi, TACSBVec *phi,
-                                              TacsScalar *fdvSens, int numDVs ){
+                                              TACSBVec *dfdx ){
   psi->beginDistributeValues();
   if (phi != psi){
     phi->beginDistributeValues();
@@ -4414,6 +4523,11 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
   getDataPointers(elementData, &elemVars, &elemPsi, &elemPhi, NULL,
                   &elemXpts, NULL, NULL, NULL);
 
+  // Get the design variables from the elements on this process
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *fdvSens = elementSensData;
+  int *dvNums = elementSensIData;
+
   // Go through each element in the domain and compute the derivative
   // of the residuals with respect to each design variable and multiply by
   // the adjoint variables
@@ -4427,10 +4541,16 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
     psi->getValues(len, nodes, elemPsi);
     phi->getValues(len, nodes, elemPhi);
 
+    // Get the design variables for this element
+    int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+    memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+
     // Add the contribution to the design variable vector
     elements[i]->addMatDVSensInnerProduct(i, matType, scale,
                                           elemPsi, elemPhi, elemXpts,
                                           elemVars, numDVs, fdvSens);
+
+    dfdx->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
   }
 }
 
@@ -4725,11 +4845,9 @@ void TACSAssembler::testConstitutive( int elemNum, int print_level ){
   of the code is used.
 
   func:            the function to test
-  num_design_vars: the number of design variables to use
   dh:              the step size to use
 */
 void TACSAssembler::testFunction( TACSFunction *func,
-                                  int num_design_vars,
                                   double dh ){
   if (!meshInitializedFlag){
     fprintf(stderr,
@@ -4739,60 +4857,52 @@ void TACSAssembler::testFunction( TACSFunction *func,
   }
 
   // First, test the design variable values
-  TacsScalar *x = new TacsScalar[ num_design_vars ];
-  TacsScalar *xpert = new TacsScalar[ num_design_vars ];
-  TacsScalar *xtemp = new TacsScalar[ num_design_vars ];
+  TACSBVec *x = createDesignVec();
+  TACSBVec *xpert = createDesignVec();
+  TACSBVec *xtemp = createDesignVec();
+  x->incref();
+  xpert->incref();
+  xtemp->incref();
 
-  for ( int k = 0; k < num_design_vars; k++ ){
-    xpert[k] = (1.0*rand())/RAND_MAX;
-  }
-
-  MPI_Bcast(xpert, num_design_vars, TACS_MPI_TYPE, 0, tacs_comm);
-
-  getDesignVars(x, num_design_vars);
-  setDesignVars(x, num_design_vars);
+  xpert->setRand(-1.0, 1.0);
+  getDesignVars(x);
+  setDesignVars(x);
 
   TacsScalar fd = 0.0;
 #ifdef TACS_USE_COMPLEX
   // Compute the function at the point x + dh*xpert
-  for ( int k = 0; k < num_design_vars; k++ ){
-    xtemp[k] = x[k] + TacsScalar(0.0, dh)*xpert[k];
-  }
-  setDesignVars(xtemp, num_design_vars);
-  evalFunctions(&func, 1, &fd);
+  xtemp->copyValues(x);
+  xtemp->axpy(TacsScalar(0.0, dh), xpert);
+  setDesignVars(xtemp);
+  evalFunctions(1, &func, &fd);
   fd = TacsImagPart(fd)/dh;
 #else
   // Compute the function at the point x + dh*xpert
-  for ( int k = 0; k < num_design_vars; k++ ){
-    xtemp[k] = x[k] + dh*xpert[k];
-  }
-  setDesignVars(xtemp, num_design_vars);
+  xtemp->copyValues(x);
+  xtemp->axpy(dh, xpert);
+  setDesignVars(xtemp);
   TacsScalar fval0;
-  evalFunctions(&func, 1, &fval0);
+  evalFunctions(1, &func, &fval0);
 
   // Compute the function at the point x - dh*xpert
-  for ( int k = 0; k < num_design_vars; k++ ){
-    xtemp[k] = x[k] - dh*xpert[k];
-  }
-  setDesignVars(xtemp, num_design_vars);
+  xtemp->copyValues(x);
+  xtemp->axpy(dh, xpert);
+  setDesignVars(xtemp);
   TacsScalar fval1;
-  evalFunctions(&func, 1, &fval1);
+  evalFunctions(1, &func, &fval1);
   fd = 0.5*(fval0 - fval1)/dh;
 #endif // TACS_USE_COMPLEX
 
   // Compute df/dx
   double coef = 1.0;
   TacsScalar ftmp;
-  setDesignVars(x, num_design_vars);
-  evalFunctions(&func, 1, &ftmp);
-  memset(xtemp, 0, num_design_vars*sizeof(TacsScalar));
-  addDVSens(coef, &func, 1, xtemp, num_design_vars);
+  setDesignVars(x);
+  evalFunctions(1, &func, &ftmp);
+  xtemp->zeroEntries();
+  addDVSens(coef, 1, &func, &xtemp);
 
   // Compute df/dx^{T} * xpert
-  TacsScalar pdf = 0.0;
-  for ( int k = 0; k < num_design_vars; k++ ){
-    pdf += xtemp[k]*xpert[k];
-  }
+  TacsScalar pdf = xtemp->dot(xpert);
 
   if (mpiRank == 0){
     fprintf(stderr, "Testing function %s\n", func->functionName());
@@ -4811,9 +4921,9 @@ void TACSAssembler::testFunction( TACSFunction *func,
     }
   }
 
-  delete [] x;
-  delete [] xtemp;
-  delete [] xpert;
+  x->decref();
+  xtemp->decref();
+  xpert->decref();
 
   TACSBVec *temp = createVec();
   TACSBVec *pert = createVec();
@@ -4835,20 +4945,20 @@ void TACSAssembler::testFunction( TACSFunction *func,
   temp->axpy(TacsScalar(0.0, dh), pert);
   setVariables(temp);
 
-  evalFunctions(&func, 1, &fd);
+  evalFunctions(1, &func, &fd);
   fd = TacsImagPart(fd)/dh;
 #else
   // Evaluate the function at vars + dh*pert
   temp->copyValues(vars);
   temp->axpy(dh, pert);
   setVariables(temp);
-  evalFunctions(&func, 1, &fval0);
+  evalFunctions(1, &func, &fval0);
 
   // Evaluate the function at vars - dh*pert
   temp->copyValues(vars);
   temp->axpy(-dh, pert);
   setVariables(temp);
-  evalFunctions(&func, 1, &fval1);
+  evalFunctions(1, &func, &fval1);
 
   fd = 0.5*(fval0 - fval1)/dh;
 #endif // TACS_USE_COMPLEX
@@ -4857,10 +4967,10 @@ void TACSAssembler::testFunction( TACSFunction *func,
   setVariables(vars);
 
   // Evaluate the state variable sensitivity
-  evalFunctions(&func, 1, &ftmp);
+  evalFunctions(1, &func, &ftmp);
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   temp->zeroEntries();
-  addSVSens(alpha, beta, gamma, &func, 1, &temp);
+  addSVSens(alpha, beta, gamma, 1, &func, &temp);
   pdf = temp->dot(pert);
 
   if (mpiRank == 0){
@@ -4902,20 +5012,20 @@ void TACSAssembler::testFunction( TACSFunction *func,
   Xtemp->axpy(TacsScalar(0.0, dh), Xpert);
   setNodes(Xtemp);
 
-  evalFunctions(&func, 1, &fd);
+  evalFunctions(1, &func, &fd);
   fd = TacsImagPart(fd)/dh;
 #else
   // Evaluate the function at vars + dh*pert
   Xtemp->copyValues(Xvars);
   Xtemp->axpy(dh, Xpert);
   setNodes(Xtemp);
-  evalFunctions(&func, 1, &fval0);
+  evalFunctions(1, &func, &fval0);
 
   // Evaluate the function at vars - dh*pert
   Xtemp->copyValues(Xvars);
   Xtemp->axpy(-dh, Xpert);
   setNodes(Xtemp);
-  evalFunctions(&func, 1, &fval1);
+  evalFunctions(1, &func, &fval1);
 
   fd = 0.5*(fval0 - fval1)/dh;
 #endif // TACS_USE_COMPLEX
@@ -4924,9 +5034,9 @@ void TACSAssembler::testFunction( TACSFunction *func,
   setNodes(Xvars);
 
   // Evaluate the state variable sensitivity
-  evalFunctions(&func, 1, &ftmp);
+  evalFunctions(1, &func, &ftmp);
   Xtemp->zeroEntries();
-  addXptSens(1.0, &func, 1, &Xtemp);
+  addXptSens(1.0, 1, &func, &Xtemp);
   Xtemp->beginSetValues(TACS_ADD_VALUES);
   Xtemp->endSetValues(TACS_ADD_VALUES);
   pdf = Xtemp->dot(Xpert);

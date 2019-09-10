@@ -169,13 +169,13 @@ void TACSKSFailure::finalEvaluation( EvaluationType ftype ){
     // Distribute the values of the KS function computed on this domain
     TacsScalar temp = maxFail;
     MPI_Allreduce(&temp, &maxFail, 1, TACS_MPI_TYPE,
-                  TACS_MPI_MAX, tacs->getMPIComm());
+                  TACS_MPI_MAX, assembler->getMPIComm());
   }
   else {
     // Find the sum of the ks contributions from all processes
     TacsScalar temp = ksFailSum;
     MPI_Allreduce(&temp, &ksFailSum, 1, TACS_MPI_TYPE,
-                  MPI_SUM, tacs->getMPIComm());
+                  MPI_SUM, assembler->getMPIComm());
 
     // Compute the P-norm quantity if needed
     invPnorm = 0.0;
@@ -188,117 +188,63 @@ void TACSKSFailure::finalEvaluation( EvaluationType ftype ){
 }
 
 /*
-  Initialize the context for either integration or initialization
-*/
-void TACSKSFailure::initThread( const double tcoef,
-                                EvaluationType ftype,
-                                TACSFunctionCtx *fctx ){
-  KSFunctionCtx *ctx = dynamic_cast<KSFunctionCtx*>(fctx);
-  if (ctx){
-    if (ftype == TACSFunction::INITIALIZE){
-      ctx->maxFail = -1e20;
-      ctx->ksFailSum = 0.0;
-    }
-  }
-}
-
-/*
   Perform the element-wise evaluation of the TACSKSFailure function.
 */
 void TACSKSFailure::elementWiseEval( EvaluationType ftype,
-                                     TACSElement *element, int elemNum,
+                                     TACSElement *element, int elemIndex,
                                      const TacsScalar Xpts[],
                                      const TacsScalar vars[],
                                      const TacsScalar dvars[],
                                      const TacsScalar ddvars[],
                                      TACSFunctionCtx *fctx ){
-  KSFunctionCtx *ctx = dynamic_cast<KSFunctionCtx*>(fctx);
+  // Retrieve the number of stress components for this element
+  int numStresses = element->numStresses();
+  TACSElementBasis *basis = element->getElementBasis();
 
-  if (ctx){
-    // Retrieve the number of stress components for this element
-    int numStresses = element->numStresses();
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
+      double pt[3];
+      double weight = basis->getQuadraturePoint(i, pt);
 
-    // Get the number of quadrature points for this element
-    int numGauss = element->getNumGaussPts();
+      // Evaluate the failure index, and check whether it is an
+      // undefined quantity of interest on this element
+      TacsScalar fail = 0.0;
+      int undef = element->evalPointQuantity(TACS_FAILURE_INDEX,
+                                             elemIndex, time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &quantity);
 
-    // Get the constitutive object for this element
-    TACSConstitutive *constitutive = element->getConstitutive();
-
-    if (constitutive){
-      // Set the strain buffer
-      TacsScalar *strain = ctx->strain;
-
-      if (ftype == TACSFunction::INITIALIZE){
-        // With the first iteration, find the maximum over the domain
-        for ( int i = 0; i < numGauss; i++ ){
-          // Get the Gauss points one at a time
-          double pt[3];
-          element->getGaussWtsPts(i, pt);
-
-          // Get the strain
-          element->getStrain(strain, pt, Xpts, vars);
-
-          // Scale the strain by the load factor
-          for ( int k = 0; k < numStresses; k++ ){
-            strain[k] *= loadFactor;
-          }
-
-          // Determine the failure criteria
-          TacsScalar fail;
-          if (conType == FAILURE){
-            constitutive->failure(pt, strain, &fail);
-          }
-          else {
-            constitutive->buckling(strain, &fail);
-          }
-
+      // Check whether the quantity requested is defined or not
+      if (!undef){
+        if (ftype == TACSFunction::INITIALIZE){
           // Set the maximum failure load
-          if (TacsRealPart(fail) > TacsRealPart(ctx->maxFail)){
-            ctx->maxFail = fail;
+          if (TacsRealPart(fail) > TacsRealPart(maxFail)){
+            maxFail = fail;
           }
         }
-      }
-      else {
-        for ( int i = 0; i < numGauss; i++ ){
-          // Get the Gauss points one at a time
-          double pt[3];
-          double weight = element->getGaussWtsPts(i, pt);
+        else {
 
-          // Get the strain
-          element->getStrain(strain, pt, Xpts, vars);
 
-          // Scale the strain by the load factor
-          for ( int k = 0; k < numStresses; k++ ){
-            strain[k] *= loadFactor;
-          }
 
-          // Determine the failure criteria again
-          TacsScalar fail;
-          if (conType == FAILURE){
-            constitutive->failure(pt, strain, &fail);
-          }
-          else {
-            constitutive->buckling(strain, &fail);
-          }
 
           // Add the failure load to the sum
           if (ksType == DISCRETE){
             TacsScalar fexp = exp(ksWeight*(fail - maxFail));
-            ctx->ksFailSum += fexp;
+            ksFailSum += fexp;
           }
           else if (ksType == CONTINUOUS){
             TacsScalar fexp = exp(ksWeight*(fail - maxFail));
             TacsScalar h = element->getDetJacobian(pt, Xpts);
-            ctx->ksFailSum += h*weight*fexp;
+            ksFailSum += h*weight*fexp;
           }
           else if (ksType == PNORM_DISCRETE){
             TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight);
-            ctx->ksFailSum += fpow;
+            ksFailSum += fpow;
           }
           else if (ksType == PNORM_CONTINUOUS){
             TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight);
             TacsScalar h = element->getDetJacobian(pt, Xpts);
-            ctx->ksFailSum += h*weight*fpow;
+            ksFailSum += h*weight*fpow;
           }
         }
       }

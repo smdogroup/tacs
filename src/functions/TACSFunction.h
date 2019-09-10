@@ -104,8 +104,7 @@ class TACSFunction : public TACSObject {
                 int _maxElems=0 );
   virtual ~TACSFunction();
 
-  virtual const char *functionName() = 0;
-  const char *TACSObjectName();
+  const char *getObjectName();
 
   // Functions for setting/adjusting the domain
   // ------------------------------------------
@@ -123,68 +122,59 @@ class TACSFunction : public TACSObject {
 
   // Return associated TACSAssembler object
   // ---------------------------------------
-  TACSAssembler *getTACS();
-
-  // Create the function context for evaluation
-  // ------------------------------------------
-  virtual TACSFunctionCtx *createFunctionCtx() = 0;
+  TACSAssembler *getAssembler();
 
   // Collective calls on the TACS MPI Comm
   // -------------------------------------
   virtual void initEvaluation( EvaluationType ftype ){}
+  virtual void elementWiseEval( EvaluationType ftype, int elemIndex,
+                                TACSElement *element,
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[],
+                                const TacsScalar dvars[],
+                                const TacsScalar ddvars[] );
   virtual void finalEvaluation( EvaluationType ftype ){}
-
-  // Functions for integration over the structural domain on each thread
-  // -------------------------------------------------------------------
-  virtual void initThread( double tcoef,
-                           EvaluationType ftype,
-                           TACSFunctionCtx *ctx ){}
-  virtual void elementWiseEval( EvaluationType ftype,
-                                TACSElement *element, int elemNum,
-                                const TacsScalar Xpts[], const TacsScalar vars[],
-                                const TacsScalar dvars[], const TacsScalar ddvars[],
-                                TACSFunctionCtx *ctx ){}
-  virtual void finalThread( double tcoef,
-                            EvaluationType ftype,
-                            TACSFunctionCtx *ctx ){}
-
-  // Return the value of the function
-  // --------------------------------
   virtual TacsScalar getFunctionValue() = 0;
 
   // State variable sensitivities
   // ----------------------------
   virtual void getElementSVSens( double alpha, double beta, double gamma,
-                                 TacsScalar *elemSVSens,
-                                 TACSElement *element, int elemNum,
-                                 const TacsScalar Xpts[], const TacsScalar vars[],
-                                 const TacsScalar dvars[], const TacsScalar ddvars[],
-                                 TACSFunctionCtx *ctx ){
+                                 int elemIndex, TACSElement *element,
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[],
+                                 TacsScalar *elemSVSens ){
     int numVars = element->getNumVariables();
     memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
   }
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  virtual void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
-                                 TACSElement *element, int elemNum,
-                                 const TacsScalar Xpts[], const TacsScalar vars[],
-                                 const TacsScalar dvars[], const TacsScalar ddvars[],
-                                 TACSFunctionCtx *ctx ){}
+  virtual void addElementDVSens( double tcoef,
+                                 int elemIndex, TACSElement *element,
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[],
+                                 int dvLen,
+                                 TacsScalar dfdx[] ){}
 
   // Nodal sensitivities
   // -------------------
-  virtual void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                                  TACSElement *element, int elemNum,
-                                  const TacsScalar Xpts[], const TacsScalar vars[],
-                                  const TacsScalar dvars[], const TacsScalar ddvars[],
-                                  TACSFunctionCtx *ctx ){
+  virtual void getElementXptSens( double tcoef,
+                                  int elemIndex, TACSElement *element,
+                                  const TacsScalar Xpts[],
+                                  const TacsScalar vars[],
+                                  const TacsScalar dvars[],
+                                  const TacsScalar ddvars[],
+                                  TacsScalar fXptSens[] ){
     int numNodes = element->getNumNodes();
     memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
   }
 
  protected:
-  TACSAssembler *tacs;
+  TACSAssembler *assembler;
 
  private:
   // Store the function domain type

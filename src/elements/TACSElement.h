@@ -432,6 +432,61 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Evaluate a point-wise quantity of interest.
+
+    This quantity may be derived from a
+
+    @param quantityType The integer indicating the pointwise quantity
+    @param elemIndex The index of the element
+    @param time The simulation time
+    @parma n The quadrature point index
+    @param pt The quadrature point
+    @param Xpts The element node locations
+    @param vars The values of the element degrees of freedom
+    @param dvars The first time derivative of the element DOF
+    @param ddvars The second time derivative of the element DOF
+    @param quantity The output quantity of interest
+    @return Integer indicating whether the quantity is undefined
+  */
+  virtual int evalPointQuantity( int quantityType,
+                                 int elemIndex, double time,
+                                 int n, double pt[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[],
+                                 TacsScalar *quantity ){
+    return 1; // This quantity is not defined
+  }
+
+  virtual int addPointQuantityDVSens( int quantityType,
+                                      int elemIndex, double time,
+                                      int n, double pt[],
+                                      const TacsScalar Xpts[],
+                                      const TacsScalar vars[],
+                                      const TacsScalar dvars[],
+                                      const TacsScalar ddvars[],
+                                      int dvLen,
+                                      TacsScalar fdvSens[] );
+
+  virtual int addPointQuantitySVSens( int quantityType,
+                                 int elemIndex, double time,
+                                 int n, double pt[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[],
+                                 TacsScalar *quantity );
+
+  virtual int addPointQuantityXptSens( int quantityType,
+                                 int elemIndex, double time,
+                                 int n, double pt[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar dvars[],
+                                 const TacsScalar ddvars[],
+                                 TacsScalar *quantity );
+  /**
     Compute the output data for visualization
 
     @param elemIndex The local element index

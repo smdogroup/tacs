@@ -73,10 +73,10 @@ class TACSElement2D : public TACSElement {
     the material design variables
   */
   void addAdjResProduct( int elemIndex, double time, double scale,
-                        const TacsScalar psi[], const TacsScalar Xpts[],
-                        const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[],
-                        int dvLen, TacsScalar dvSens[] );
+                         const TacsScalar psi[], const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[],
+                         int dvLen, TacsScalar dvSens[] );
 
   /**
     Add the derivative of the product of the adjoint variables and the

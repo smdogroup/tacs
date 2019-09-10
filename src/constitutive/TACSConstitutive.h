@@ -141,6 +141,7 @@ class TACSConstitutive : public TACSObject {
   */
   virtual void addStressDVSens( int elemIndex,
                                 const double pt[],
+                                const TacsScalar X[],
                                 const TacsScalar strain[],
                                 TacsScalar scale,
                                 const TacsScalar psi[],

@@ -70,6 +70,12 @@ class TACSLinearElasticity2D : public TACSElementModel {
                           int *Jac_nnz, const int *_Jac_pairs[],
                           TacsScalar Jac[] );
 
+  void addWeakAdjProduct( int elemIndex, int n, const double time,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar Ut[], const TacsScalar Ux[],
+                          const TacsScalar Psi[], const TacsScalar Psix[],
+                          TacsScalar scale, int dvLen, TacsScalar *fdvSens );
+
   /**
     Get the output for a single node in the mesh
   */

@@ -134,7 +134,7 @@ class TACSAssembler : public TACSObject {
   // ---------------------
   int getMaxElementNodes();
   int getMaxElementVariables();
-  int getMaxElementStrains();
+  int getMaxElementDesignVars();
 
   // Set auxiliary elements into the TACSAssembler object
   // ----------------------------------------------------
@@ -178,6 +178,8 @@ class TACSAssembler : public TACSObject {
                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
   void getVariables( TACSBVec **q,
                      TACSBVec **qdot=NULL, TACSBVec **qddot=NULL );
+  void copyVariables( TACSBVec *q,
+                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
 
   // Create the matrices that can be used for analysis
   // -------------------------------------------------
@@ -211,51 +213,47 @@ class TACSAssembler : public TACSObject {
 
   // Design variable handling
   // ------------------------
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+  TACSBVec* createDesignVec();
+  void getDesignVars( TACSBVec *dvs );
+  void setDesignVars( TACSBVec *dvs );
+  void getDesignVarRange( TACSBVec *lb, TACSBVec *ub );
 
   // Function and sensitivity evaluation
   // -----------------------------------
-  void evalFunctions( TACSFunction **funcs, int numFuncs,
+  void evalFunctions( int numFuncs, TACSFunction **funcs,
                       TacsScalar *funcVals );
 
   // Steady or unsteady derivative evaluation
   // ----------------------------------------
-  void addDVSens( double coef, TACSFunction **funcs, int numFuncs,
-                  TacsScalar *fdvSens, int numDVs );
+  void addDVSens( double coef, int numFuncs, TACSFunction **funcs,
+                  TACSBVec **dfdx );
   void addSVSens( double alpha, double beta, double gamma,
-                  TACSFunction **funcs, int numFuncs,
+                  int numFuncs, TACSFunction **funcs,
                   TACSBVec **fuSens );
-  void addAdjointResProducts( double scale,
-                              TACSBVec **adjoint, int numAdjoints,
-                              TacsScalar *dvSens, int numDVs );
-  void addXptSens( double coef, TACSFunction **funcs, int numFuncs,
+  void addAdjointResProducts( double scale, int numAdjoints,
+                              TACSBVec **adjoint,
+                              TACSBVec **dfdx );
+  void addXptSens( double coef, int numFuncs, TACSFunction **funcs,
                    TACSBVec **fXptSens );
-  void addAdjointResXptSensProducts( double scale,
-                                     TACSBVec **adjoint, int numAdjoints,
+  void addAdjointResXptSensProducts( double scale, int numAdjoints,
+                                     TACSBVec **adjoint,
                                      TACSBVec **adjXptSens );
 
   // Advanced function interface - for time integration
   // --------------------------------------------------
   void integrateFunctions( double tcoef,
                            TACSFunction::EvaluationType ftype,
-                           TACSFunction **funcs, int numFuncs );
+                           int numFuncs, TACSFunction **funcs );
 
   // Add the derivatives of inner products
   // -------------------------------------
   void addMatDVSensInnerProduct( double scale,
                                  ElementMatrixType matType,
                                  TACSBVec *psi, TACSBVec *phi,
-                                 TacsScalar *dvSens, int numDVs );
+                                 TACSBVec *dfdx );
   void evalMatSVSensInnerProduct( ElementMatrixType matType,
                                   TACSBVec *psi, TACSBVec *phi,
                                   TACSBVec *res );
-
-  // Direct copy of the variable values
-  // ----------------------------------
-  void copyVariables( TACSBVec *q,
-                      TACSBVec *qdot=NULL, TACSBVec *qddot=NULL );
 
   // Return elements and node numbers
   // --------------------------------
@@ -271,8 +269,7 @@ class TACSAssembler : public TACSObject {
   void testElement( int elemNum, int print_level, double dh=1e-6,
                     double rtol=1e-8, double atol=1e-1 );
   void testConstitutive( int elemNum, int print_level );
-  void testFunction( TACSFunction *func,
-                     int num_design_vars, double dh );
+  void testFunction( TACSFunction *func, double dh );
 
   // Set the number of threads to work with
   // --------------------------------------
@@ -341,6 +338,10 @@ class TACSAssembler : public TACSObject {
   TACSBcMap *bcInitMap; // Initial boundary condition data
   TACSBVecDistribute *extDist; // Distribute the vector
   TACSBVecIndices *extDistIndices; // The tacsVarNum indices
+  TACSBVecDepNodes *depNodes; // Dependent variable information
+  TACSVarMap *designVarMap; // Distribution of design variables
+  TACSBVecDistribute *designExtDist; // Distribute the design variables
+  TACSBVecDepNodes *designDepNodes; // Dependent design variable information
 
   // Reordering information
   TACSBVecIndices *newNodeIndices;
@@ -359,7 +360,7 @@ class TACSAssembler : public TACSObject {
   // variables/elements have been initialized
   int meshInitializedFlag;
 
-  // Information about the
+  // Information about the variables and elements
   int varsPerNode; // number of variables per node
   int numElements; // number of elements
   int numNodes; // number of nodes referenced by this process
@@ -367,9 +368,10 @@ class TACSAssembler : public TACSObject {
   int numExtNodes; // number of extneral nodes
   int numDependentNodes; // number of dependent nodes
   int numMultiplierNodes; // number of multiplier nodes/elements
+  int designVarsPerNode; // number of design variables at each design "node"
 
   // Maximum element information
-  int maxElementStrain; // maximum number of strains components
+  int maxElementDesignVars; // maximum number of design variable
   int maxElementNodes; // maximum number of ind. and dep. element nodes
   int maxElementSize; // maximum number of variables for any element
   int maxElementIndepNodes; // maximum number of independent nodes
@@ -382,10 +384,6 @@ class TACSAssembler : public TACSObject {
   // store the element -> node information
   int *elementNodeIndex;
   int *elementTacsNodes;
-
-  // Variables that define the dependent node to independent node
-  // dependence
-  TACSBVecDepNodes *depNodes;
 
   // The local list of elements
   TACSElement **elements;
@@ -402,6 +400,10 @@ class TACSAssembler : public TACSObject {
   // Memory for the element residuals and variables
   TacsScalar *elementData; // Space for element residuals/matrices
   int *elementIData; // Space for element index data
+
+  // Memory for the design variables and inddex data
+  TacsScalar *elementSensData;
+  int *elementSensIData;
 
   // The data required to perform parallel operations
   // MPI info

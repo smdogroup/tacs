@@ -165,8 +165,8 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
   // operators for level < nlevels-1
   if (level < nlevels-1){
     if (!_interp){
-      fprintf(stderr, "TACSMg: Must define prolongation\
- operators for all but the coarsest problem\n");
+      fprintf(stderr, "TACSMg: Must define prolongation "
+              "operators for all but the coarsest problem\n");
     }
     interp[level] = _interp;
     interp[level]->incref();
@@ -268,13 +268,12 @@ void TACSMg::setVariables( TACSBVec *vec ){
   objects they reference, share the same set of design variables.
 
   input:
-  dvs:     the design variable values
-  numDVs:  the number of design variables
+  x:     the design variable values
 */
-void TACSMg::setDesignVars( const TacsScalar dvs[], int numDVs ){
+void TACSMg::setDesignVars( TACSBVec *x ){
   for ( int i = 0; i < nlevels; i++ ){
     if (tacs[i]){
-      tacs[i]->setDesignVars(dvs, numDVs);
+      tacs[i]->setDesignVars(x);
     }
   }
 }

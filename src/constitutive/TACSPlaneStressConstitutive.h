@@ -52,28 +52,31 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
                           TacsScalar lb[], TacsScalar ub[] );
 
   // Evaluate the stresss
-  void evalStress( int elemIndex,
-                   const double pt[],
-                   const TacsScalar X[],
-                   const TacsScalar strain[],
-                   TacsScalar stress[] );
+  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
+                   const TacsScalar strain[], TacsScalar stress[] );
 
   // Evaluate the tangent stiffness
-  void evalTangentStiffness( int elemIndex,
-                             const double pt[],
-                             const TacsScalar X[],
-                             TacsScalar C[] );
+  void evalTangentStiffness( int elemIndex, const double pt[],
+                             const TacsScalar X[], TacsScalar C[] );
+
+  // Add the contribution
+  void addStressDVSens( int elemIndex, const double pt[],
+                        const TacsScalar X[], const TacsScalar strain[],
+                        TacsScalar scale, const TacsScalar psi[],
+                        int dvLen, TacsScalar dvSens[] );
 
   // Evaluate the thermal strain
-  void evalThermalStrain( int elemIndex,
-                          const double pt[],
-                          const TacsScalar X[],
-                          TacsScalar strain[] );
+  void evalThermalStrain( int elemIndex, const double pt[],
+                          const TacsScalar X[], TacsScalar strain[] );
 
   // Evaluate the material density
-  TacsScalar evalDensity( int elemIndex,
-                          const double pt[],
+  TacsScalar evalDensity( int elemIndex, const double pt[],
                           const TacsScalar X[] );
+
+  // Add the derivative of the density
+  void addDensityDVSens( int elemIndex, const double pt[],
+                         const TacsScalar X[], const TacsScalar scale,
+                         int dvLen, TacsScalar dvSens[] );
 
   // Evaluate the material failure index
   TacsScalar failure( int elemIndex,

@@ -366,10 +366,9 @@ void TACSLinearBuckling::checkEigenvector( int n ){
   K*psi = d(u^{T}*G*u)/d(path)
 */
 void TACSLinearBuckling::evalEigenDVSens( int n,
-                                          TacsScalar fdvSens[],
-                                          int numDVs ){
+                                          TACSBVec *dfdx ){
   // Zero the derivative
-  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+  dfdx->zeroEntries();
 
   // Copy over the values of the stiffness matrix, factor
   // the stiffness matrix.
@@ -382,14 +381,14 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
 
   // Evaluate the partial derivative for the stiffness matrix
   tacs->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX,
-                                 eigvec, eigvec, fdvSens, numDVs);
+                                 eigvec, eigvec, dfdx);
   int mpi_rank;
   MPI_Comm_rank(tacs->getMPIComm(),&mpi_rank);
 
   // Evaluate the derivative of the geometric stiffness matrix
   tacs->addMatDVSensInnerProduct(TacsRealPart(eig),
                                  TACS_GEOMETRIC_STIFFNESS_MATRIX,
-                                 eigvec, eigvec, fdvSens, numDVs);
+                                 eigvec, eigvec, dfdx);
 
   // Evaluate derivative of the inner product with respect to
   // the path variables
@@ -399,20 +398,17 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  tacs->addAdjointResProducts(-TacsRealPart(eig), &update, 1,
-                              fdvSens, numDVs);
+  tacs->addAdjointResProducts(-TacsRealPart(eig), 1, &update, &dfdx);
 
   // Now compute the inner product: u^{T}*G*u
   gmat->mult(eigvec, res);
   TacsScalar scale = res->dot(eigvec);
 
-  // Prepare to scale the final result
-  scale = -1.0/scale;
+  dfdx->beginSetValues(TACS_ADD_VALUES);
+  dfdx->endSetValues(TACS_ADD_VALUES);
 
-  // Scale the gradient to complete the calculation
-  for ( int i = 0; i < numDVs; i++ ){
-    fdvSens[i] *= scale;
-  }
+  // Scale the final result
+  dfdx->scale(-1.0/scale);
 }
 
 /*!
@@ -766,10 +762,9 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
   (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
 */
 void TACSFrequencyAnalysis::evalEigenDVSens( int n,
-                                             TacsScalar fdvSens[],
-                                             int numDVs ){
+                                             TACSBVec *dfdx ){
   // Zero the derivative
-  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+  dfdx->zeroEntries();
 
   // Extract the eigenvalue and eigenvector
   TacsScalar error;
@@ -777,20 +772,19 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 
   // Evaluate the partial derivative for the stiffness matrix
   tacs->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX,
-                                 eigvec, eigvec, fdvSens, numDVs);
+                                 eigvec, eigvec, dfdx);
 
   // Evaluate the derivative of the geometric stiffness matrix
   tacs->addMatDVSensInnerProduct(-TacsRealPart(eig), TACS_MASS_MATRIX,
-                                 eigvec, eigvec, fdvSens, numDVs);
+                                 eigvec, eigvec, dfdx);
 
   // Finish computing the derivative
   mmat->mult(eigvec, res);
   TacsScalar scale = 1.0/res->dot(eigvec);
 
-  // Finish computing the derivative
-  for ( int i = 0; i < numDVs; i++ ){
-    fdvSens[i] *= scale;
-  }
+  dfdx->beginSetValues(TACS_ADD_VALUES);
+  dfdx->endSetValues(TACS_ADD_VALUES);
+  dfdx->scale(scale);
 }
 
 /*!

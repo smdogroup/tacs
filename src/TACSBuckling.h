@@ -62,7 +62,7 @@ class TACSLinearBuckling : public TACSObject {
   // Solve the eigenvalue problem
   // ----------------------------
   void solve( TACSVec *rhs=NULL, KSMPrint *ksm_print=NULL );
-  void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
+  void evalEigenDVSens( int n, TACSBVec *dfdx );
 
   // Extract the eigenvalue or check the solution
   // --------------------------------------------
@@ -152,7 +152,7 @@ class TACSFrequencyAnalysis : public TACSObject {
   TacsScalar getSigma();
   void setSigma( TacsScalar _sigma );
   void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
-  void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
+  void evalEigenDVSens( int n, TACSBVec *dfdx );
 
   // Extract and check the solution
   // ------------------------------

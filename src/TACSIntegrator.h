@@ -33,7 +33,7 @@
 
 class TACSIntegrator : public TACSObject {
  public:
-  TACSIntegrator( TACSAssembler *tacs,
+  TACSIntegrator( TACSAssembler *assembler,
                   double tinit,
                   double tfinal,
                   double num_steps );
@@ -172,7 +172,7 @@ class TACSIntegrator : public TACSObject {
   void logTimeStep( int time_step );
 
   // TACSAssembler information
-  TACSAssembler *tacs;        // Instance of TACS
+  TACSAssembler *assembler;   // Instance of TACSAssembler
 
   // The step information
   int num_time_steps;         // Total number of time steps
