@@ -84,7 +84,7 @@ class TACSFunction : public TACSObject {
   enum StageType { SINGLE_STAGE, TWO_STAGE };
   enum EvaluationType { INITIALIZE, INTEGRATE };
 
-  TACSFunction( TACSAssembler *_tacs,
+  TACSFunction( TACSAssembler *_assembler,
                 DomainType _funcDomain=ENTIRE_DOMAIN,
                 StageType _funcStages=SINGLE_STAGE,
                 int _maxElems=0 );
@@ -92,53 +92,140 @@ class TACSFunction : public TACSObject {
 
   const char *getObjectName();
 
-  // Functions for setting/adjusting the domain
-  // ------------------------------------------
+  /**
+     Get the type of integration domain
+
+     @return The enum type of domain
+  */
   DomainType getDomainType();
+
+  /**
+     Get the stage type of this function: Either one or two stage
+
+     Some functions (such as aggregation functionals) require a
+     two-stage integration strategy for numerical stability.
+
+     @return The enum type indicating whether this is a one or two stage func.
+  */
   StageType getStageType();
 
-  // Set the function domain by adding or setting element numbers
-  // ------------------------------------------------------------
-  void setDomain( int _elemNums[], int _numElems );
-  void addDomain( int elemNums[], int numElems );
+  /**
+     Set the element numbers within the domain to integrate
 
-  // Retrieve information about the domain
-  // -------------------------------------
+     @param numElems The number of elements in the array
+     @param elemNums The local element numbers for the domain
+  */
+  void setDomain( int numElems, const int _elemNums[] );
+
+  /**
+     Add the element numbers to the domain
+
+     @param numElems The number of elements in the array
+     @param elemNums The local element numbers for the domain
+  */
+  void addDomain( int numElems, const int elemNums[] );
+
+  /**
+     Retrieve the element domain from the function
+
+     @param elemNums The element numbers defining the domain
+     @return The numer of elements in the domain
+  */
   int getElementNums( const int **_elemNums );
 
-  // Return associated TACSAssembler object
-  // ---------------------------------------
+  /**
+     Return the TACSAssembler object associated with this function
+  */
   TACSAssembler *getAssembler();
 
-  // Collective calls on the TACS MPI Comm
-  // -------------------------------------
+  /**
+     Initialize the function for the given type of evaluation
+
+     This call is collective on all processors in the assembler.
+  */
   virtual void initEvaluation( EvaluationType ftype ){}
-  virtual void elementWiseEval( EvaluationType ftype, double tcoef,
+
+  /**
+     Perform an element-wise integration over this element.
+
+     Note that this is not a collective call and should be called once
+     for each element within the integration domain.
+
+     @param ftype The type of evaluation
+     @param elemIndex The local element index
+     @param element The TACSElement object
+     @param time The simulation time
+     @param scale The scalar integration factor to apply
+     @param Xpts The element node locations
+     @param vars The element DOF
+     @param dvars The first time derivatives of the element DOF
+     @param ddvars The second time derivatives of the element DOF
+  */
+  virtual void elementWiseEval( EvaluationType ftype,
                                 int elemIndex, TACSElement *element,
+                                double time,
+                                TacsScalar scale,
                                 const TacsScalar Xpts[],
                                 const TacsScalar vars[],
                                 const TacsScalar dvars[],
                                 const TacsScalar ddvars[] ){}
+
+  /**
+     Finalize the function evaluation for the specified eval type.
+
+     This call is collective on all processors in the assembler.
+  */
   virtual void finalEvaluation( EvaluationType ftype ){}
+
+  /**
+     Get the value of the function
+  */
   virtual TacsScalar getFunctionValue() = 0;
 
-  // State variable sensitivities
-  // ----------------------------
-  virtual void getElementSVSens( double alpha, double beta, double gamma,
-                                 int elemIndex, TACSElement *element,
+  /**
+     Evaluate the derivative of the function w.r.t. state variables
+
+     @param elemIndex The local element index
+     @param element The TACSElement object
+     @param time The simulation time
+     @param alpha Coefficient for the DOF derivative
+     @param beta Coefficient for the first time DOF derivative
+     @param gamma Coefficient for the second time DOF derivative
+     @param Xpts The element node locations
+     @param vars The element DOF
+     @param dvars The first time derivatives of the element DOF
+     @param ddvars The second time derivatives of the element DOF
+  */
+  virtual void getElementSVSens( int elemIndex, TACSElement *element,
+                                 double time,
+                                 TacsScalar alpha, TacsScalar beta,
+                                 TacsScalar gamma,
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[],
-                                 TacsScalar *elemSVSens ){
+                                 TacsScalar dfdu[] ){
     int numVars = element->getNumVariables();
-    memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
+    memset(dfdu, 0, numVars*sizeof(TacsScalar));
   }
 
-  // Design variable sensitivity evaluation
-  // --------------------------------------
-  virtual void addElementDVSens( double tcoef,
-                                 int elemIndex, TACSElement *element,
+  /**
+     Add the derivative of the function w.r.t. the design variables
+
+     The design variables *must* be the same set of variables defined
+     in the element. The TACSFunction class cannot define new design
+     variables!
+
+     @param elemIndex The local element index
+     @param element The TACSElement object
+     @param time The simulation time
+     @param Xpts The element node locations
+     @param vars The element DOF
+     @param dvars The first time derivatives of the element DOF
+     @param ddvars The second time derivatives of the element DOF
+  */
+  virtual void addElementDVSens( int elemIndex, TACSElement *element,
+                                 double time, TacsScalar scale,
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
@@ -146,17 +233,27 @@ class TACSFunction : public TACSObject {
                                  int dvLen,
                                  TacsScalar dfdx[] ){}
 
-  // Nodal sensitivities
-  // -------------------
-  virtual void getElementXptSens( double tcoef,
-                                  int elemIndex, TACSElement *element,
+  /**
+     Evaluate the derivative of the function w.r.t. the node locations
+
+     @param elemIndex The local element index
+     @param element The TACSElement object
+     @param time The simulation time
+     @param scale The scalar integration factor to apply
+     @param Xpts The element node locations
+     @param vars The element DOF
+     @param dvars The first time derivatives of the element DOF
+     @param ddvars The second time derivatives of the element DOF
+  */
+  virtual void getElementXptSens( int elemIndex, TACSElement *element,
+                                  double time, TacsScalar scale,
                                   const TacsScalar Xpts[],
                                   const TacsScalar vars[],
                                   const TacsScalar dvars[],
                                   const TacsScalar ddvars[],
-                                  TacsScalar fXptSens[] ){
+                                  TacsScalar dfdXpts[] ){
     int numNodes = element->getNumNodes();
-    memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
+    memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
   }
 
  protected:

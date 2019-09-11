@@ -317,6 +317,12 @@ class TACSElementBasis {
   }
 
  protected:
+  static TacsScalar computeJacobianTransform( const int num_params,
+                                              const int num_nodes,
+                                              const double Nxi[],
+                                              const TacsScalar Xpts[],
+                                              TacsScalar Xd[],
+                                              TacsScalar J[] );
   static void computeFieldValues( const int num_nodes, const double N[],
                                   const TacsScalar Xpts[],
                                   const int vars_per_node,

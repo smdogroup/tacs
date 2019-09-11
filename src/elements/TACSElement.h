@@ -30,6 +30,7 @@
 
 #include "TACSObject.h"
 #include "TACSElementTypes.h"
+#include "TACSElementBasis.h"
 
 // The TACSElement base class
 class TACSElement : public TACSObject {
@@ -100,6 +101,15 @@ class TACSElement : public TACSObject {
   */
   virtual int getMultiplierIndex(){
     return -1;
+  }
+
+  /**
+    Get the element basis class
+
+    @return The TACSElementBasis class associated with this element
+  */
+  virtual TACSElementBasis* getElementBasis(){
+    return NULL;
   }
 
   /**
@@ -435,8 +445,8 @@ class TACSElement : public TACSObject {
     Evaluate a point-wise quantity of interest.
 
     @param elemIndex The index of the element
-    @param time The simulation time
     @param quantityType The integer indicating the pointwise quantity
+    @param time The simulation time
     @parma n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
@@ -446,8 +456,8 @@ class TACSElement : public TACSObject {
     @param quantity The output quantity of interest
     @return Integer indicating the number of defined quantities
   */
-  virtual int evalPointQuantity( int elemIndex, double time,
-                                 int quantityType,
+  virtual int evalPointQuantity( int elemIndex, int quantityType,
+                                 double time,
                                  int n, double pt[],
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
@@ -461,8 +471,8 @@ class TACSElement : public TACSObject {
     Add the derivative of the point quantity w.r.t. the design variables
 
     @param elemIndex The index of the element
-    @param time The simulation time
     @param quantityType The integer indicating the pointwise quantity
+    @param time The simulation time
     @parma n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
@@ -472,8 +482,8 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design array
     @param fdvSens The derivative array
   */
-  virtual void addPointQuantityDVSens( int elemIndex, double time,
-                                       int quantityType,
+  virtual void addPointQuantityDVSens( int elemIndex, int quantityType,
+                                       double time,
                                        TacsScalar scale,
                                        int n, double pt[],
                                        const TacsScalar Xpts[],
@@ -502,8 +512,8 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design array
     @param dfdu The derivative of the quantity w.r.t. state variables
   */
-  virtual void addPointQuantitySVSens( int elemIndex, double time,
-                                       int quantityType,
+  virtual void addPointQuantitySVSens( int elemIndex, int quantityType,
+                                       double time,
                                        double alpha, double beta, double gamma,
                                        int n, double pt[],
                                        const TacsScalar Xpts[],
@@ -517,11 +527,9 @@ class TACSElement : public TACSObject {
     Add the derivative of the point quantity w.r.t. the node locations
 
     @param elemIndex The index of the element
-    @param time The simulation time
     @param quantityType The integer indicating the pointwise quantity
-    @param alpha The coefficient for the state variables
-    @param beta The coefficient for the first time derivatives
-    @param gamma The coefficient for the second time derivatives
+    @param time The simulation time
+    @param scale The scalar factor applied to the derivative
     @parma n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
@@ -531,8 +539,8 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design array
     @param dfdu The derivative of the quantity w.r.t. state variables
   */
-  virtual void addPointQuantityXptSens( int elemIndex, double time,
-                                        int quantityType,
+  virtual void addPointQuantityXptSens( int elemIndex, int quantityType,
+                                        double time,
                                         TacsScalar scale,
                                         int n, double pt[],
                                         const TacsScalar Xpts[],

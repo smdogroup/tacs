@@ -37,6 +37,93 @@ void TACSElementBasis::getVisPoint( int n, double pt[] ){
   }
 }
 
+TacsScalar TACSElementBasis::getJacobianTransform( const double pt[],
+                                                   const TacsScalar Xpts[],
+                                                   TacsScalar Xd[],
+                                                   TacsScalar J[] ){
+  const int num_params = getNumParameters();
+  const int num_nodes = getNumNodes();
+  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  computeBasisGradient(pt, N, Nxi);
+
+  return computeJacobianTransform(num_params, num_nodes, Nxi, Xpts, Xd, J);
+}
+
+TacsScalar TACSElementBasis::computeJacobianTransform( const int num_params,
+                                                       const int num_nodes,
+                                                       const double Nxi[],
+                                                       const TacsScalar Xpts[],
+                                                       TacsScalar Xd[],
+                                                       TacsScalar J[] ){
+  if (num_params == 3){
+    // Zero the values of the coordinate and its derivative
+    Xd[0] = Xd[1] = Xd[2] = 0.0;
+    Xd[3] = Xd[4] = Xd[5] = 0.0;
+    Xd[6] = Xd[7] = Xd[8] = 0.0;
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      Xd[0] += nxi[0]*Xpts[0];
+      Xd[1] += nxi[1]*Xpts[0];
+      Xd[2] += nxi[2]*Xpts[0];
+
+      Xd[3] += nxi[0]*Xpts[1];
+      Xd[4] += nxi[1]*Xpts[1];
+      Xd[5] += nxi[2]*Xpts[1];
+
+      Xd[6] += nxi[0]*Xpts[2];
+      Xd[7] += nxi[1]*Xpts[2];
+      Xd[8] += nxi[2]*Xpts[2];
+      Xpts += 3;
+      nxi += 3;
+    }
+
+    // Compute the Jacobian transformation
+    TacsScalar detJ = inv3x3(Xd, J);
+
+    return detJ;
+  }
+  else if (num_params == 2){
+    // Zero the values of the coordinate and its derivative
+    Xd[0] = Xd[1] = Xd[2] = Xd[3] = 0.0;
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      Xd[0] += nxi[0]*Xpts[0];
+      Xd[1] += nxi[1]*Xpts[0];
+
+      Xd[2] += nxi[0]*Xpts[1];
+      Xd[3] += nxi[1]*Xpts[1];
+      Xpts += 3;
+      nxi += 2;
+    }
+
+    // Compute the Jacobian transformation
+    TacsScalar detJ = inv2x2(Xd, J);
+
+    return detJ;
+  }
+  else if (num_params == 1){
+    // Zero the values of the coordinate and its derivative
+    Xd[0] = 0.0;
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      Xd[0] += nxi[0]*Xpts[0];
+      Xpts += 3;
+    }
+
+    J[0] = 1.0/Xd[0];
+
+    return Xd[0];
+  }
+
+  return 0.0;
+}
+
 /*
   Get the field values at the specified quadrature point
 */

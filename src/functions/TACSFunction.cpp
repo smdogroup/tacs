@@ -83,7 +83,7 @@ enum TACSFunction::StageType TACSFunction::getStageType(){
   elemNums: the element numbers used to set the domain
   numElems: the number of elements to add
 */
-void TACSFunction::setDomain( int _elemNums[], int _numElems ){
+void TACSFunction::setDomain( int _numElems, const int _elemNums[] ){
   if (funcDomain == NO_DOMAIN){
     fprintf(stderr, "Cannot set function domain for %s\n",
             getObjectName());
@@ -120,7 +120,7 @@ void TACSFunction::setDomain( int _elemNums[], int _numElems ){
   elemNums: the element numbers to add to the domain
   numElems: the number of elements to add
 */
-void TACSFunction::addDomain( int _elemNums[], int _numElems ){
+void TACSFunction::addDomain( int _numElems, const int _elemNums[] ){
   if (funcDomain == NO_DOMAIN){
     fprintf(stderr, "Cannot add function domain for %s\n",
             getObjectName());

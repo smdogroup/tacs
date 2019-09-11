@@ -1683,7 +1683,7 @@ void TACSMeshLoader::addFunctionDomain( TACSFunction * function,
     int *elems;
     int num_elems = creator->getElementIdNums(comp_nums, num_comps,
                                               &elems);
-    function->addDomain(elems, num_elems);
+    function->addDomain(num_elems, elems);
     delete [] elems;
   }
 }

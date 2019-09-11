@@ -80,44 +80,61 @@ class TACSKSFailure : public TACSFunction {
     maxFail = _maxFail;
   }
 
-  // Collective calls on the TACS MPI Comm
-  // -------------------------------------
-  void initEvaluation( EvaluationType ftype );
-  void finalEvaluation( EvaluationType ftype );
+  // Get the maximum failure value
+  // -----------------------------
+  TacsScalar getMaximumFailure();
 
-  // Functions for integration over the structural domain on each thread
-  // -------------------------------------------------------------------
-  void elementWiseEval( EvaluationType ftype, double tcoef,
+  /**
+     Initialize the function for the given type of evaluation
+  */
+  void initEvaluation( EvaluationType ftype );
+
+  /**
+     Perform an element-wise integration over this element.
+  */
+  void elementWiseEval( EvaluationType ftype,
                         int elemIndex, TACSElement *element,
+                        double time, TacsScalar scale,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[] );
 
-  // Return the value of the function
-  // --------------------------------
-  TacsScalar getFunctionValue();
-  TacsScalar getMaximumFailure();
+  /**
+     Finalize the function evaluation for the specified eval type.
+  */
+  void finalEvaluation( EvaluationType ftype );
 
-  // State variable sensitivities
-  // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma,
-                         int elemIndex, TACSElement *element,
+  /**
+     Get the value of the function
+  */
+  TacsScalar getFunctionValue();
+
+  /**
+     Evaluate the derivative of the function w.r.t. state variables
+  */
+  void getElementSVSens( int elemIndex, TACSElement *element, double time,
+                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TacsScalar dfdu[] );
+                         TacsScalar *elemSVSens );
 
-  // Design variable sensitivity evaluation
-  // --------------------------------------
-  void addElementDVSens( double tcoef, int elemIndex, TACSElement *element,
+  /**
+     Add the derivative of the function w.r.t. the design variables
+  */
+  void addElementDVSens( int elemIndex, TACSElement *element,
+                         double time, TacsScalar scale,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
                          int dvLen, TacsScalar dfdx[] );
 
-  // Nodal sensitivities
-  // -------------------
-  void getElementXptSens( double tcoef, int elemIndex, TACSElement *element,
+  /**
+     Evaluate the derivative of the function w.r.t. the node locations
+  */
+  void getElementXptSens( int elemIndex, TACSElement *element,
+                          double time, TacsScalar scale,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TacsScalar dfdX[] );
+                          TacsScalar fXptSens[] );
+
  private:
   // The type of aggregation to use
   KSFailureType ksType;
@@ -133,9 +150,6 @@ class TACSKSFailure : public TACSFunction {
 
   // Load factor applied to the strain
   TacsScalar loadFactor;
-
-  // The maximum number of nodes/stresses in any given element
-  int maxNumNodes, maxNumStrains;
 
   // The name of the function
   static const char *funcName;

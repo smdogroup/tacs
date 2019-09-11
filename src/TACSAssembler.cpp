@@ -3966,7 +3966,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
   TacsScalar *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
                     &elemXpts, NULL, NULL, NULL);
- 
+
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
       if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
@@ -3982,7 +3982,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise component of the function
-          funcs[k]->elementWiseEval(ftype, i, elements[i],
+          funcs[k]->elementWiseEval(ftype, i, elements[i], time, tcoef,
                                     elemXpts, vars, dvars, ddvars);
         }
       }
@@ -4006,6 +4006,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
 
             // Evaluate the element-wise component of the function
             funcs[k]->elementWiseEval(ftype, elemNum, elements[elemNum],
+                                      time, tcoef,
                                       elemXpts, vars, dvars, ddvars);
           }
         }
@@ -4051,18 +4052,20 @@ void TACSAssembler::integrateFunctions( double tcoef,
 void TACSAssembler::addDVSens( double coef,
                                int numFuncs, TACSFunction **funcs,
                                TACSBVec **dfdx ){
-/*
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars, *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
                   &elemXpts, NULL, NULL, NULL);
 
+  // Get the design variables from the elements on this process
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *fdvSens = elementSensData;
+  int *dvNums = elementSensIData;
+
   // For each function, evaluate the derivative w.r.t. the
   // design variables for each element
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
-      TACSFunctionCtx *ctx = funcs[k]->createFunctionCtx();
-
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
         // Get the funcs[k] sub-domain
         const int *elemSubList;
@@ -4079,10 +4082,19 @@ void TACSAssembler::addDVSens( double coef,
           dvarsVec->getValues(len, nodes, dvars);
           ddvarsVec->getValues(len, nodes, ddvars);
 
+          // Get the design variables for this element
+          int numDVs =
+            elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
+
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
-                                     elements[elemNum], elemNum,
-                                     elemXpts, vars, dvars, ddvars, ctx);
+          memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+          funcs[k]->addElementDVSens(elemNum, elements[elemNum],
+                                     time, coef,
+                                     elemXpts, vars, dvars, ddvars,
+                                     maxDVs, fdvSens);
+
+          // Add the derivative values
+          dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
         }
       }
       else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
@@ -4096,18 +4108,23 @@ void TACSAssembler::addDVSens( double coef,
           dvarsVec->getValues(len, nodes, dvars);
           ddvarsVec->getValues(len, nodes, ddvars);
 
+          // Get the design variables for this element
+          int numDVs =
+            elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
+
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->addElementDVSens(coef, &fdvSens[k*numDVs], numDVs,
-                                     elements[elemNum], elemNum,
-                                     elemXpts, vars, dvars, ddvars, ctx);
+          memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+          funcs[k]->addElementDVSens(elemNum, elements[elemNum],
+                                     time, coef,
+                                     elemXpts, vars, dvars, ddvars,
+                                     maxDVs, fdvSens);
+
+          // Add the derivative values
+          dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
         }
       }
-
-      // Free the context
-      if (ctx){ delete ctx; }
     }
   }
-*/
 }
 
 /*
@@ -4164,7 +4181,8 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->getElementXptSens(coef, elemNum, elements[elemNum],
+          funcs[k]->getElementXptSens(elemNum, elements[elemNum],
+                                      time, coef,
                                       elemXpts, vars, dvars, ddvars,
                                       elemXptSens);
           fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
@@ -4182,7 +4200,8 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->getElementXptSens(coef, elemNum, elements[elemNum],
+          funcs[k]->getElementXptSens(elemNum, elements[elemNum],
+                                      time, coef,
                                       elemXpts, vars, dvars, ddvars,
                                       elemXptSens);
           fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
@@ -4228,10 +4247,10 @@ void TACSAssembler::addSVSens( double alpha, double beta,
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
       if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
-        for ( int i = 0; i < numElements; i++ ){
+        for ( int elemNum = 0; elemNum < numElements; elemNum++ ){
           // Determine the values of the state variables for subElem
-          int ptr = elementNodeIndex[i];
-          int len = elementNodeIndex[i+1] - ptr;
+          int ptr = elementNodeIndex[elemNum];
+          int len = elementNodeIndex[elemNum+1] - ptr;
           const int *nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
@@ -4239,8 +4258,8 @@ void TACSAssembler::addSVSens( double alpha, double beta,
           ddvarsVec->getValues(len, nodes, ddvars);
 
           // Evaluate the element-wise sensitivity of the function
-          funcs[k]->getElementSVSens(alpha, beta, gamma,
-                                     i, elements[i],
+          funcs[k]->getElementSVSens(elemNum, elements[elemNum],
+                                     time, alpha, beta, gamma,
                                      elemXpts, vars, dvars, ddvars,
                                      elemRes);
           vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
@@ -4263,9 +4282,9 @@ void TACSAssembler::addSVSens( double alpha, double beta,
             dvarsVec->getValues(len, nodes, dvars);
             ddvarsVec->getValues(len, nodes, ddvars);
 
-            // Evaluate the sensitivity
-            funcs[k]->getElementSVSens(alpha, beta, gamma,
-                                       elemNum, elements[elemNum],
+            // Evaluate the element-wise sensitivity of the function
+            funcs[k]->getElementSVSens(elemNum, elements[elemNum],
+                                       time, alpha, beta, gamma,
                                        elemXpts, vars, dvars, ddvars,
                                        elemRes);
             vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
