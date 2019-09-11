@@ -90,6 +90,9 @@ class TACSFunction : public TACSObject {
                 int _maxElems=0 );
   virtual ~TACSFunction();
 
+  /**
+     Get the object name
+  */
   const char *getObjectName();
 
   /**

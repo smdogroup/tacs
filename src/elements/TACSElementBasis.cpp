@@ -124,6 +124,114 @@ TacsScalar TACSElementBasis::computeJacobianTransform( const int num_params,
   return 0.0;
 }
 
+void TACSElementBasis::addJacobianTransformSens( const double pt[],
+                                                 const TacsScalar Xd[],
+                                                 const TacsScalar J[],
+                                                 TacsScalar dfddetJ,
+                                                 const TacsScalar dfdXd[],
+                                                 const TacsScalar dfdJ[],
+                                                 TacsScalar dfdXpts[] ){
+  const int num_params = getNumParameters();
+  const int num_nodes = getNumNodes();
+  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  computeBasisGradient(pt, N, Nxi);
+
+  return addJacobianTransformSens(num_params, num_nodes, Nxi, Xd, J,
+                                  dfddetJ, dfdXd, dfdJ, dfdXpts);
+}
+
+void TACSElementBasis::addJacobianTransformSens( const int num_params,
+                                                 const int num_nodes,
+                                                 const double Nxi[],
+                                                 const TacsScalar Xd[],
+                                                 const TacsScalar J[],
+                                                 TacsScalar dfddetJ,
+                                                 const TacsScalar dfdXd[],
+                                                 const TacsScalar dfdJ[],
+                                                 TacsScalar dfdXpts[] ){
+  if (num_params == 3){
+    // Compute t = d(detJ)/d(Xd)
+    TacsScalar t[9];
+    det3x3Sens(Xd, t);
+
+    // Multiply the derivative by df/d(detJ)
+    TacsScalar *T = t;
+    for ( int i = 0; i < 9; i++, T++ ){
+      T[0] *= dfddetJ;
+    }
+
+    // If dfdXd is supplied, add it to the derivative
+    if (dfdXd){
+      for ( int i = 0; i < 9; i++ ){
+        t[i] += dfdXd[i];
+      }
+    }
+
+    // if df/d(J) is supplied, compute df/d(J)*d(J)/d(Xd) and add it
+    // to the array t
+    if (dfdJ){
+      TacsScalar t2[9];
+      inv3x3Sens(J, dfdJ, t2);
+      for ( int i = 0; i < 9; i++ ){
+        t[i] += t2[i];
+      }
+    }
+    
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      dfdXpts[3*i] += (nxi[0]*t[0] +
+                       nxi[1]*t[1] +
+                       nxi[2]*t[2]);
+
+      dfdXpts[3*i+1] += (nxi[0]*t[3] +
+                         nxi[1]*t[4] +
+                         nxi[2]*t[5]);
+      
+      dfdXpts[3*i+2] += (nxi[0]*t[6] +
+                         nxi[1]*t[7] +
+                         nxi[2]*t[8]);
+      nxi += 3;
+    }
+  }
+  else if (num_params == 2){
+    // Compute t = d(detJ)/d(Xd)
+    TacsScalar t[4];
+    det2x2Sens(Xd, t);
+
+    // Multiply the derivative by df/d(detJ)
+    TacsScalar *T = t;
+    for ( int i = 0; i < 4; i++, T++ ){
+      T[0] *= dfddetJ;
+    }
+
+    // If dfdXd is supplied, add it to the derivative
+    if (dfdXd){
+      for ( int i = 0; i < 4; i++ ){
+        t[i] += dfdXd[i];
+      }
+    }
+
+    // if df/d(J) is supplied, compute df/d(J)*d(J)/d(Xd) and add it
+    // to the array t
+    if (dfdJ){
+      TacsScalar t2[4];
+      inv2x2Sens(J, dfdJ, t2);
+      for ( int i = 0; i < 4; i++ ){
+        t[i] += t2[i];
+      }
+    }
+    
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      dfdXpts[3*i] += (nxi[0]*t[0] + nxi[1]*t[1]);
+      dfdXpts[3*i+1] += (nxi[0]*t[2] + nxi[1]*t[3]);
+      nxi += 2;
+    }
+  }
+}
+
 /*
   Get the field values at the specified quadrature point
 */

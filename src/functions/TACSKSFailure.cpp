@@ -286,110 +286,57 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
                                        const TacsScalar dvars[],
                                        const TacsScalar ddvars[],
                                        TacsScalar dfdXpts[] ){
-  /*
-  // Zero the sensitivity w.r.t. the nodes
-  int numNodes = element->numNodes();
-  memset(fXptSens, 0, 3*numNodes*sizeof(TacsScalar));
+  // Zero the derivative of the function w.r.t. the element state
+  // variables
+  int numNodes = element->getNumNodes();
+  memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
 
-  if (ctx){
-    // Get the number of stress components, the total number of
-    // variables, and the total number of nodes
-    int numStresses = element->numStresses();
+  // Get the element basis class
+  TACSElementBasis *basis = element->getElementBasis();
 
-    // Get the quadrature scheme information
-    int numGauss = element->getNumGaussPts();
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
+      double pt[3];
+      double weight = basis->getQuadraturePoint(i, pt);
 
-    // Get the constitutive object for this element
-    TACSConstitutive *constitutive = element->getConstitutive();
+      TacsScalar fail = 0.0;
+      int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
+                                             time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &fail);
 
-    if (constitutive){
-      // Set pointers into the buffer
-      TacsScalar *strain = ctx->strain;
-      TacsScalar *failSens = ctx->failSens;
-      TacsScalar *hXptSens = ctx->hXptSens;
-
-      for ( int i = 0; i < numGauss; i++ ){
-        // Get the gauss point
-        double pt[3];
-        double weight = element->getGaussWtsPts(i, pt);
-
-        // Get the strain at the current point within the element
-        element->getStrain(strain, pt, Xpts, vars);
-
-        // Multiply by the load factor
-        for ( int k = 0; k < numStresses; k++ ){
-          strain[k] *= loadFactor;
-        }
-
-        // Determine the strain failure criteria
-        TacsScalar fail;
-        if (conType == FAILURE){
-          // Determine the sensitivity of the failure criteria to
-          // the design variables and stresses
-          constitutive->failure(pt, strain, &fail);
-          constitutive->failureStrainSens(pt, strain, failSens);
-        }
-        else {
-          constitutive->buckling(strain, &fail);
-          constitutive->bucklingStrainSens(strain, failSens);
-        }
+      if (count >= 1){
+        // Evaluate the determinant of the Jacobian
+        TacsScalar Xd[9], J[9];
+        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
 
         // Compute the sensitivity contribution
+        TacsScalar dfdq = 0.0;
+        TacsScalar dfddetJ = 0.0;
         if (ksType == DISCRETE){
           // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
-          TacsScalar ksPtWeight =
-            loadFactor*exp(ksWeight*(fail - maxFail))/ksFailSum;
-
-          element->addStrainXptSens(fXptSens, pt, tcoef*ksPtWeight, failSens,
-                                    Xpts, vars);
+          dfdq = exp(ksWeight*(fail - maxFail))/ksFailSum;
         }
         else if (ksType == CONTINUOUS){
-          // Get the derivative of the determinant of the Jacobian
-          // w.r.t. the nodes
-          TacsScalar h = element->getDetJacobianXptSens(hXptSens, pt, Xpts);
-
-          // Compute the derivative of the KS functional
-          TacsScalar ksExp = exp(ksWeight*(fail - maxFail))/ksFailSum;
-          TacsScalar ksHptWeight = tcoef*weight*ksExp/ksWeight;
-          TacsScalar ksPtWeight = tcoef*h*weight*loadFactor*ksExp;
-
-          for ( int j = 0; j < 3*numNodes; j++ ){
-            fXptSens[j] += ksHptWeight*hXptSens[j];
-          }
-
-          element->addStrainXptSens(fXptSens, pt, ksPtWeight, failSens,
-                                    Xpts, vars);
+          dfdq = weight*detJ*exp(ksWeight*(fail - maxFail))/ksFailSum;
         }
         else if (ksType == PNORM_DISCRETE){
           TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight-2.0);
-          TacsScalar ksPtWeight = loadFactor*fail*fpow*invPnorm;
-
-          element->addStrainXptSens(fXptSens, pt, tcoef*ksPtWeight, failSens,
-                                    Xpts, vars);
+          dfdq = fail*fpow*invPnorm;
         }
         else if (ksType == PNORM_CONTINUOUS){
-          // Get the derivative of the determinant of the Jacobian
-          // w.r.t. the nodes
-          TacsScalar h = element->getDetJacobianXptSens(hXptSens, pt, Xpts);
-          double fratio = fabs(TacsRealPart(fail/maxFail));
-          TacsScalar fpow = pow(fratio, ksWeight-2.0);
-          TacsScalar ksPtWeight = loadFactor*h*weight*fail*fpow*invPnorm;
-
-          // Compute the derivative of the KS functional
-          TacsScalar ksHptWeight = loadFactor*weight*fpow*invPnorm;
-          ksHptWeight *= fratio*fratio;
-
-          for ( int j = 0; j < 3*numNodes; j++ ){
-            fXptSens[j] += ksHptWeight*hXptSens[j];
-          }
-
-          element->addStrainXptSens(fXptSens, pt, tcoef*ksPtWeight, failSens,
-                                    Xpts, vars);
+          // Get the determinant of the Jacobian
+          TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight-2.0);
+          dfdq = fail*fpow*invPnorm;
+          dfdq *= weight*detJ;
         }
+
+        element->addPointQuantityXptSens(elemIndex, TACS_FAILURE_INDEX, time,
+                                         scale, i, pt, Xpts, vars, dvars, ddvars,
+                                         &dfdq, dfdXpts);
       }
     }
   }
-  */
 }
 
 /*

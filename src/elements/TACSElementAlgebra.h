@@ -1205,6 +1205,7 @@ static inline void inv3x3Sens( const TacsScalar Ainv[],
   Ad[8] = -Ad[8];
   Ad[9] = -Ad[9];
 }
+
 /*
   Compute the determinant of a 3x3 matrix
 
