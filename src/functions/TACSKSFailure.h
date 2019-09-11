@@ -87,11 +87,10 @@ class TACSKSFailure : public TACSFunction {
 
   // Functions for integration over the structural domain on each thread
   // -------------------------------------------------------------------
-  void elementWiseEval( EvaluationType ftype,
-                        TACSElement *element, int elemNum,
+  void elementWiseEval( EvaluationType ftype, double tcoef,
+                        int elemIndex, TACSElement *element,
                         const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TACSFunctionCtx *ctx );
+                        const TacsScalar dvars[], const TacsScalar ddvars[] );
 
   // Return the value of the function
   // --------------------------------
@@ -101,27 +100,24 @@ class TACSKSFailure : public TACSFunction {
   // State variable sensitivities
   // ----------------------------
   void getElementSVSens( double alpha, double beta, double gamma,
-                         TacsScalar *elemSVSens,
-                         TACSElement *element, int elemNum,
+                         int elemIndex, TACSElement *element,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+                         TacsScalar dfdu[] );
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
-                         TACSElement *element, int elemNum,
+  void addElementDVSens( double tcoef, int elemIndex, TACSElement *element,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+                         int dvLen, TacsScalar dfdx[] );
 
   // Nodal sensitivities
   // -------------------
-  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                          TACSElement *element, int elemNum,
+  void getElementXptSens( double tcoef, int elemIndex, TACSElement *element,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx );
+                          TacsScalar dfdX[] );
  private:
   // The type of aggregation to use
   KSFailureType ksType;

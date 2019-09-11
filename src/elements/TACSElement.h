@@ -480,6 +480,7 @@ class TACSElement : public TACSObject {
                                        const TacsScalar vars[],
                                        const TacsScalar dvars[],
                                        const TacsScalar ddvars[],
+                                       const TacsScalar dfdq[],
                                        int dvLen,
                                        TacsScalar dfdx[] ){}
 
@@ -509,7 +510,8 @@ class TACSElement : public TACSObject {
                                        const TacsScalar vars[],
                                        const TacsScalar dvars[],
                                        const TacsScalar ddvars[],
-                                       TacsScalar *dfdu ){}
+                                       const TacsScalar dfdq[],
+                                       TacsScalar dfdu[] ){}
 
   /**
     Add the derivative of the point quantity w.r.t. the node locations
@@ -537,6 +539,7 @@ class TACSElement : public TACSObject {
                                         const TacsScalar vars[],
                                         const TacsScalar dvars[],
                                         const TacsScalar ddvars[],
+                                        const TacsScalar dfdq[],
                                         TacsScalar dfdXpts[] ){}
   /**
     Compute the output data for visualization

@@ -261,7 +261,7 @@ class TACSElementModel {
   /**
      Evaluate the derivatives of the point-wise quantity of interest
      with respect to X, Ut and Ux.
-  */     
+  */
   virtual int evalPointQuantitySens( int elemIndex,
                                      const double time,
                                      const int quantityType,

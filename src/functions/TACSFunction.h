@@ -25,20 +25,6 @@ class TACSAssembler;
 #include "TACSElement.h"
 
 /*
-  Base class for the TACSFunctionCtx. Each context is function-specific
-  and is designed to store information required to
-
-  It's implementation is designed to be opaque to the user, but its
-  data is required when evaluating the function. It is used to store
-  information for each thread in the function/gradient evaluation.
-*/
-class TACSFunctionCtx {
- public:
-  TACSFunctionCtx(){}
-  virtual ~TACSFunctionCtx(){}
-};
-
-/*
   TACSFunction is the base class used to calculate the values of
   functions of interest within TACS. This class also defines the
   methods required for gradient evaluation. This class should be used
@@ -127,8 +113,8 @@ class TACSFunction : public TACSObject {
   // Collective calls on the TACS MPI Comm
   // -------------------------------------
   virtual void initEvaluation( EvaluationType ftype ){}
-  virtual void elementWiseEval( EvaluationType ftype, int elemIndex,
-                                TACSElement *element,
+  virtual void elementWiseEval( EvaluationType ftype, double tcoef,
+                                int elemIndex, TACSElement *element,
                                 const TacsScalar Xpts[],
                                 const TacsScalar vars[],
                                 const TacsScalar dvars[],
