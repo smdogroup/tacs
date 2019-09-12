@@ -42,7 +42,7 @@ int compare_integers( const void *a, const void *b ){
   block_cols:       the columns in each row
   bcs:              the boundary conditions for the problem
 */
-SerialBCSCMat::SerialBCSCMat( TACSVarMap *_rmap, int _bsize,
+SerialBCSCMat::SerialBCSCMat( TACSNodeMap *_rmap, int _bsize,
                               int num_block_rows,
                               int num_block_cols,
                               const int *block_rowp,

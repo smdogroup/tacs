@@ -17,7 +17,7 @@
 */
 
 #include <stdio.h>
-#include "PMat.h"
+#include "TACSParallelMat.h"
 #include "FElibrary.h"
 #include "tacslapack.h"
 
@@ -49,16 +49,17 @@
   The matrix structure outlined above can be exploited to achieve
   efficient and effective parallel preconditioning.
 */
-TACSPMat::TACSPMat( TACSVarMap *_rmap,
-                    BCSRMat *_Aloc, BCSRMat *_Bext,
-                    TACSBVecDistribute *_ext_dist ){
+TACSParallelMat::TACSParallelMat( TACSNodeMap *_rmap,
+                                  BCSRMat *_Aloc,
+                                  BCSRMat *_Bext,
+                                  TACSBVecDistribute *_ext_dist ){
   init(_rmap, _Aloc, _Bext, _ext_dist);
 }
 
 /*
   The protected constructor that does not take any arguments.
 */
-TACSPMat::TACSPMat(){
+TACSParallelMat::TACSParallelMat(){
   rmap = NULL;
   Aloc = NULL;
   Bext = NULL;
@@ -71,9 +72,9 @@ TACSPMat::TACSPMat(){
 /*
   Initialize the PMat object
 */
-void TACSPMat::init( TACSVarMap *_rmap,
-                     BCSRMat *_Aloc, BCSRMat *_Bext,
-                     TACSBVecDistribute *_ext_dist ){
+void TACSParallelMat::init( TACSNodeMap *_rmap,
+                            BCSRMat *_Aloc, BCSRMat *_Bext,
+                            TACSBVecDistribute *_ext_dist ){
   // Set the variable map and the local matrix components
   rmap = _rmap;
   Aloc = _Aloc;
@@ -102,9 +103,9 @@ void TACSPMat::init( TACSVarMap *_rmap,
   // Copy the distribution array vector
   ext_dist = _ext_dist;
   ext_dist->incref();
-  if (Bext->getColDim() != ext_dist->getDim()){
-    fprintf(stderr, "PMat error: Dimensions of external variables and \
-external block matrix do not match\n");
+  if (Bext->getColDim() != ext_dist->getNumNodes()){
+    fprintf(stderr, "PMat error: Dimensions of external variables and "
+            "external block matrix do not match\n");
     return;
   }
 
@@ -119,13 +120,13 @@ external block matrix do not match\n");
   ctx->incref();
 
   // Allocate the external array
-  int len = bsize*ext_dist->getDim();
+  int len = bsize*ext_dist->getNumNodes();
   x_ext = new TacsScalar[ len ];
   memset(x_ext, 0, len*sizeof(TacsScalar));
   ext_offset = bsize*Np;
 }
 
-TACSPMat::~TACSPMat(){
+TACSParallelMat::~TACSParallelMat(){
   if (rmap){ rmap->decref(); }
   if (Aloc){ Aloc->decref(); }
   if (Bext){ Bext->decref(); }
@@ -137,7 +138,7 @@ TACSPMat::~TACSPMat(){
 /*!
   Determine the local dimensions of the matrix - the diagonal part
 */
-void TACSPMat::getSize( int *_nr, int *_nc ){
+void TACSParallelMat::getSize( int *_nr, int *_nc ){
   *_nr = N*bsize;
   *_nc = N*bsize;
 }
@@ -145,7 +146,7 @@ void TACSPMat::getSize( int *_nr, int *_nc ){
 /*!
   Zero all matrix-entries
 */
-void TACSPMat::zeroEntries(){
+void TACSParallelMat::zeroEntries(){
   Aloc->zeroEntries();
   Bext->zeroEntries();
 }
@@ -153,8 +154,8 @@ void TACSPMat::zeroEntries(){
 /*!
   Copy the values from the another matrix
 */
-void TACSPMat::copyValues( TACSMat *mat ){
-  TACSPMat *pmat = dynamic_cast<TACSPMat*>(mat);
+void TACSParallelMat::copyValues( TACSMat *mat ){
+  TACSParallelMat *pmat = dynamic_cast<TACSParallelMat*>(mat);
   if (pmat){
     Aloc->copyValues(pmat->Aloc);
     Bext->copyValues(pmat->Bext);
@@ -167,7 +168,7 @@ void TACSPMat::copyValues( TACSMat *mat ){
 /*!
   Scale the entries in the other matrices by a given scalar
 */
-void TACSPMat::scale( TacsScalar alpha ){
+void TACSParallelMat::scale( TacsScalar alpha ){
   Aloc->scale(alpha);
   Bext->scale(alpha);
 }
@@ -175,8 +176,8 @@ void TACSPMat::scale( TacsScalar alpha ){
 /*!
   Compute y <- y + alpha * x
 */
-void TACSPMat::axpy( TacsScalar alpha, TACSMat *mat ){
-  TACSPMat *pmat = dynamic_cast<TACSPMat*>(mat);
+void TACSParallelMat::axpy( TacsScalar alpha, TACSMat *mat ){
+  TACSParallelMat *pmat = dynamic_cast<TACSParallelMat*>(mat);
   if (pmat){
     Aloc->axpy(alpha, pmat->Aloc);
     Bext->axpy(alpha, pmat->Bext);
@@ -189,8 +190,8 @@ void TACSPMat::axpy( TacsScalar alpha, TACSMat *mat ){
 /*!
   Compute y <- alpha * x + beta * y
 */
-void TACSPMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
-  TACSPMat *pmat = dynamic_cast<TACSPMat*>(mat);
+void TACSParallelMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
+  TACSParallelMat *pmat = dynamic_cast<TACSParallelMat*>(mat);
   if (pmat){
     Aloc->axpby(alpha, beta, pmat->Aloc);
     Bext->axpby(alpha, beta, pmat->Bext);
@@ -203,14 +204,14 @@ void TACSPMat::axpby( TacsScalar alpha, TacsScalar beta, TACSMat *mat ){
 /*
   Add a scalar to the diagonal
 */
-void TACSPMat::addDiag( TacsScalar alpha ){
+void TACSParallelMat::addDiag( TacsScalar alpha ){
   Aloc->addDiag(alpha);
 }
 
 /*!
   Matrix multiplication
 */
-void TACSPMat::mult( TACSVec *txvec, TACSVec *tyvec ){
+void TACSParallelMat::mult( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
@@ -233,7 +234,7 @@ void TACSPMat::mult( TACSVec *txvec, TACSVec *tyvec ){
 /*!
   Matrix multiplication
 */
-void TACSPMat::multTranspose( TACSVec *txvec, TACSVec *tyvec ){
+void TACSParallelMat::multTranspose( TACSVec *txvec, TACSVec *tyvec ){
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
   yvec = dynamic_cast<TACSBVec*>(tyvec);
@@ -257,7 +258,7 @@ void TACSPMat::multTranspose( TACSVec *txvec, TACSVec *tyvec ){
 /*!
   Access the underlying matrices
 */
-void TACSPMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
+void TACSParallelMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
   if (A){ *A = Aloc; }
   if (B){ *B = Bext; }
 }
@@ -265,7 +266,7 @@ void TACSPMat::getBCSRMat( BCSRMat ** A, BCSRMat ** B ){
 /*
   Get the local number of rows/coupling rows in the matrix
 */
-void TACSPMat::getRowMap( int *_bs, int *_N, int *_Nc ){
+void TACSParallelMat::getRowMap( int *_bs, int *_N, int *_Nc ){
   if (_bs){ *_bs = bsize; }
   if (_Nc){ *_Nc = Nc; }
   if (_N){ *_N = N; }
@@ -274,7 +275,7 @@ void TACSPMat::getRowMap( int *_bs, int *_N, int *_Nc ){
 /*
   Get the number of columns in the matrix
 */
-void TACSPMat::getColMap( int *_bs, int *_M ){
+void TACSParallelMat::getColMap( int *_bs, int *_M ){
   if (_bs){ *_bs = bsize; }
   if (_M){ *_M = N; }
 }
@@ -282,7 +283,7 @@ void TACSPMat::getColMap( int *_bs, int *_M ){
 /*
   Get the distribute object to distribute values to other processors
 */
-void TACSPMat::getExtColMap( TACSBVecDistribute ** ext_map ){
+void TACSParallelMat::getExtColMap( TACSBVecDistribute ** ext_map ){
   if (ext_map){ *ext_map = ext_dist; }
 }
 
@@ -291,7 +292,7 @@ void TACSPMat::getExtColMap( TACSBVecDistribute ** ext_map ){
 
   This code applies the boundary conditions supplied to the matrix
 */
-void TACSPMat::applyBCs( TACSBcMap *bcmap ){
+void TACSParallelMat::applyBCs( TACSBcMap *bcmap ){
   // Get the MPI rank and ownership range
   int mpi_rank;
   const int *ownerRange;
@@ -326,14 +327,14 @@ void TACSPMat::applyBCs( TACSBcMap *bcmap ){
 /*
   Create a vector for the matrix
 */
-TACSVec *TACSPMat::createVec(){
+TACSVec *TACSParallelMat::createVec(){
   return new TACSBVec(rmap, Aloc->getBlockSize());
 }
 
 /*!
   Print the matrix non-zero pattern to the screen.
 */
-void TACSPMat::printNzPattern( const char *fileName ){
+void TACSParallelMat::printNzPattern( const char *fileName ){
   int mpi_rank;
   const int *ownerRange;
   MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
@@ -384,16 +385,16 @@ void TACSPMat::printNzPattern( const char *fileName ){
   }
 }
 
-const char *TACSPMat::TACSObjectName(){
+const char *TACSParallelMat::TACSObjectName(){
   return matName;
 }
 
-const char *TACSPMat::matName = "TACSPMat";
+const char *TACSParallelMat::matName = "TACSParallelMat";
 
 /*
   Build a simple SOR or Symmetric-SOR preconditioner for the matrix
 */
-TACSGaussSeidel::TACSGaussSeidel( TACSPMat *_mat, int _zero_guess,
+TACSGaussSeidel::TACSGaussSeidel( TACSParallelMat *_mat, int _zero_guess,
                                   TacsScalar _omega, int _iters,
                                   int _symmetric,
                                   int _use_l1_gauss_seidel ){
@@ -430,7 +431,7 @@ TACSGaussSeidel::TACSGaussSeidel( TACSPMat *_mat, int _zero_guess,
   ctx->incref();
 
   // Compute the size of the external components
-  int ysize = bsize*ext_dist->getDim();
+  int ysize = bsize*ext_dist->getNumNodes();
   yext = new TacsScalar[ ysize ];
 
   // Store the relaxation options
@@ -694,7 +695,7 @@ void TACSGaussSeidel::getMat( TACSMat **_mat ){
 /*
   Create the Chebyshev smoother object
 */
-TACSChebyshevSmoother::TACSChebyshevSmoother( TACSPMat *_mat, int _degree,
+TACSChebyshevSmoother::TACSChebyshevSmoother( TACSParallelMat *_mat, int _degree,
                                               double _lower_factor,
                                               double _upper_factor,
                                               int _iters ){
@@ -1011,7 +1012,7 @@ double TACSChebyshevSmoother::arnoldi( int size ){
 /*!
   Build the additive Schwarz preconditioner
 */
-TACSAdditiveSchwarz::TACSAdditiveSchwarz( TACSPMat *_mat,
+TACSAdditiveSchwarz::TACSAdditiveSchwarz( TACSParallelMat *_mat,
                                           int levFill, double fill ){
   mat = _mat;
   mat->incref();
@@ -1121,7 +1122,7 @@ void TACSAdditiveSchwarz::getMat( TACSMat **_mat ){
 /*!
   The approximate Schur preconditioner class.
 */
-TACSApproximateSchur::TACSApproximateSchur( TACSPMat *_mat,
+TACSApproximateSchur::TACSApproximateSchur( TACSParallelMat *_mat,
                                             int levFill, double fill,
                                             int inner_gmres_iters,
                                             double inner_rtol,
@@ -1250,7 +1251,7 @@ void TACSApproximateSchur::printNzPattern( const char *fileName ){
   const int *col_vars;
   bindex->getIndices(&col_vars);
 
-  TACSVarMap *rmap = mat->getRowMap();
+  TACSNodeMap *rmap = mat->getRowMap();
   int mpi_rank;
   MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
   const int *ownerRange;
@@ -1386,7 +1387,7 @@ void TACSApproximateSchur::getMat( TACSMat **_mat ){
 
   This matrix is used within the ApproximateSchur preconditioner.
 */
-TACSGlobalSchurMat::TACSGlobalSchurMat( TACSPMat *mat, BCSRMat *_Apc ){
+TACSGlobalSchurMat::TACSGlobalSchurMat( TACSParallelMat *mat, BCSRMat *_Apc ){
   Apc = _Apc;
   Apc->incref();
 
@@ -1399,14 +1400,14 @@ TACSGlobalSchurMat::TACSGlobalSchurMat( TACSPMat *mat, BCSRMat *_Apc ){
 
   varoffset = N-Nc;
   nvars = bsize*Nc;
-  rmap = new TACSVarMap(mat->getMPIComm(), Nc);
+  rmap = new TACSNodeMap(mat->getMPIComm(), Nc);
 
   mat->getExtColMap(&ext_dist);
   ext_dist->incref();
   ctx = ext_dist->createCtx(bsize);
   ctx->incref();
 
-  int xsize = bsize*ext_dist->getDim();
+  int xsize = bsize*ext_dist->getNumNodes();
   x_ext = new TacsScalar[ xsize ];
 }
 

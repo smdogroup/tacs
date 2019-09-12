@@ -24,7 +24,7 @@
 */
 
 #include "KSM.h"
-#include "BVecDist.h"
+#include "TACSBVecDistribute.h"
 
 /*
   The following class defines the dependent node information.
@@ -35,35 +35,16 @@ class TACSBVecDepNodes : public TACSObject {
  public:
   TACSBVecDepNodes( int _ndep_nodes,
                     int **_dep_ptr, int **_dep_conn,
-                    double **_dep_weights ){
-    ndep_nodes = _ndep_nodes;
-    dep_ptr = *_dep_ptr;  *_dep_ptr = NULL;
-    dep_conn = *_dep_conn;  *_dep_conn = NULL;
-    dep_weights = *_dep_weights;  *_dep_weights = NULL;
-  }
-  ~TACSBVecDepNodes(){
-    delete [] dep_ptr;
-    delete [] dep_conn;
-    delete [] dep_weights;
-  }
+                    double **_dep_weights );
+  ~TACSBVecDepNodes();
 
   // Get the dependent connectivity and weights
-  // ------------------------------------------
   int getDepNodes( const int **_dep_ptr, const int **_dep_conn,
-                   const double **_dep_weights ){
-    if (_dep_ptr){ *_dep_ptr = dep_ptr; }
-    if (_dep_conn){ *_dep_conn = dep_conn; }
-    if (_dep_weights){ *_dep_weights = dep_weights; }
-    return ndep_nodes;
-  }
-
+                   const double **_dep_weights );
+  
   // Get the dependent node connectivity for reordering
   // --------------------------------------------------
-  int getDepNodeReorder( const int **_dep_ptr, int **_dep_conn ){
-    if (_dep_ptr){ *_dep_ptr = dep_ptr; }
-    if (_dep_conn){ *_dep_conn = dep_conn; }
-    return ndep_nodes;
-  }
+  int getDepNodeReorder( const int **_dep_ptr, int **_dep_conn );
 
  private:
   int ndep_nodes;
@@ -86,7 +67,7 @@ class TACSBVecDepNodes : public TACSObject {
 */
 class TACSBVec : public TACSVec {
  public:
-  TACSBVec( TACSVarMap *map, int bsize,
+  TACSBVec( TACSNodeMap *map, int bsize,
             TACSBVecDistribute *ext_dist=NULL,
             TACSBVecDepNodes *dep_nodes=NULL );
   TACSBVec( MPI_Comm _comm, int size, int bsize );
@@ -126,7 +107,7 @@ class TACSBVec : public TACSVec {
 
   // Retrieve objects stored within the vector class
   // -----------------------------------------------
-  TACSVarMap *getVarMap();
+  TACSNodeMap *getNodeMap();
   TACSBVecIndices *getBVecIndices();
   TACSBVecDistribute *getBVecDistribute();
   TACSBVecDepNodes *getBVecDepNodes();
@@ -153,7 +134,7 @@ class TACSBVec : public TACSVec {
   MPI_Comm comm;
 
   // The variable map that defines the global distribution of nodes
-  TACSVarMap *var_map;
+  TACSNodeMap *node_map;
 
   // The vector block size
   int bsize;
@@ -183,4 +164,4 @@ class TACSBVec : public TACSVec {
   static const char *vecName;
 };
 
-#endif
+#endif // TACS_BVEC_H

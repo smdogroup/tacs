@@ -19,12 +19,12 @@
   The following class wraps a serial BCSC matrix
 */
 #include "BCSCMatPivot.h"
-#include "BVec.h"
+#include "TACSBVec.h"
 #include "KSM.h"
 
 class SerialBCSCMat : public TACSMat {
  public:
-  SerialBCSCMat( TACSVarMap *_rmap, int bsize,
+  SerialBCSCMat( TACSNodeMap *_rmap, int bsize,
                  int num_block_rows, int num_block_cols,
                  const int *block_rowp, const int *block_cols );
   ~SerialBCSCMat();
@@ -58,7 +58,7 @@ class SerialBCSCMat : public TACSMat {
   int *rowp, *cols;
 
   // The variable
-  TACSVarMap *rmap;
+  TACSNodeMap *rmap;
 
   // The serial CSC matrix itself
   BCSCMat *mat;

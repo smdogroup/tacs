@@ -23,16 +23,16 @@
   Distributed matrix implementation
 */
 
-#include "PMat.h"
+#include "TACSParallelMat.h"
 
 /*
   Distributed matrix based on a parallel distribution of rows.  This
   class inherits from PMat.
 */
-class TACSDistMat : public TACSPMat {
+class TACSDistMat : public TACSParallelMat {
  public:
   TACSDistMat( TACSThreadInfo *thread_info,
-               TACSVarMap *_rmap, int bsize,
+               TACSNodeMap *_rmap, int bsize,
                int next_vars, const int *rowp, const int *cols,
                TACSBVecIndices *bindex );
   ~TACSDistMat();

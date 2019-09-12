@@ -23,8 +23,8 @@
   Interpolate between two TACSBVecs
 */
 
-#include "BVec.h"
-#include "BVecDist.h"
+#include "TACSBVec.h"
+#include "TACSBVecDistribute.h"
 #include "TACSAssembler.h"
 
 /*
@@ -61,7 +61,7 @@
 */
 class TACSBVecInterp : public TACSObject {
  public:
-  TACSBVecInterp( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
+  TACSBVecInterp( TACSNodeMap *_inMap, TACSNodeMap *_outMap, int _bsize );
   TACSBVecInterp( TACSAssembler *_inTacs, TACSAssembler *_outTacs );
   ~TACSBVecInterp();
 
@@ -93,7 +93,7 @@ class TACSBVecInterp : public TACSObject {
   MPI_Comm comm;
 
   // Initialize the distribution object
-  void init( TACSVarMap *_inMap, TACSVarMap *_outMap, int _bsize );
+  void init( TACSNodeMap *_inMap, TACSNodeMap *_outMap, int _bsize );
 
   void (*multadd)( int bsize, int nrows,
                    const int *rowp, const int *cols,
@@ -127,7 +127,7 @@ class TACSBVecInterp : public TACSObject {
 
   // The number of local rows from outMap
   int N, M, bsize;
-  TACSVarMap *inMap, *outMap;
+  TACSNodeMap *inMap, *outMap;
 
   // The TACSAssembler classes - these may not exist
   TACSAssembler *inTacs, *outTacs;

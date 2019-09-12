@@ -25,8 +25,8 @@
 */
 
 #include "TACSAssembler.h"
-#include "BVec.h"
-#include "BVecInterp.h"
+#include "TACSBVec.h"
+#include "TACSBVecInterp.h"
 
 /*
   This class implements a geometric multi-grid solution method as

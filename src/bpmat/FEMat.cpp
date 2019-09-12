@@ -86,7 +86,7 @@
   However, the matrix A is provided in a CSR format. This complicates
   the code somewhat.
 */
-FEMat::FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
+FEMat::FEMat( TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
               int bsize, int nlocal_vars,
               const int *rowp, const int *cols,
               TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map,

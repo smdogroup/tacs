@@ -323,9 +323,9 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
   int *tacs_nodes = NULL;
 
   // Get the variable map from TACSAssembler
-  TACSVarMap *varMap = tacs->getVarMap();
+  TACSNodeMap *nodeMap = tacs->getNodeMap();
   const int *owner_range = NULL;
-  varMap->getOwnerRange(&owner_range);
+  nodeMap->getOwnerRange(&owner_range);
 
   if (rank == root_rank){
     // First allocate an array of nodes that we will overwrite

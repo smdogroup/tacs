@@ -185,7 +185,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       pc[level] = _smoother;
     }
     else {
-      TACSPMat *pmat = tacs[level]->createMat();
+      TACSParallelMat *pmat = tacs[level]->createMat();
       mat[level] = pmat;
       mat[level]->incref();
 
@@ -220,7 +220,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       int lev = 10000;
       double fill = 15.0;
       int reorder_schur = 1;
-      PcScMat *_pc = new PcScMat(femat, lev, fill, reorder_schur);
+      TACSSchurPc *_pc = new TACSSchurPc(femat, lev, fill, reorder_schur);
       // _pc->setMonitorFactorFlag(1);
       // _pc->setMonitorBackSolveFlag(1);
       root_pc = _pc;

@@ -16,7 +16,7 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "BVecInterp.h"
+#include "TACSBVecInterp.h"
 #include "FElibrary.h"
 #include "MatUtils.h"
 
@@ -110,8 +110,8 @@ void BVecInterpMultTransposeAdd6( int bsize, int nrows,
   3. A call to finalize() is made to finish initialization
   4. Calls can be made to mult, multAdd, multTranspose, and multTransposeAdd
 */
-TACSBVecInterp::TACSBVecInterp( TACSVarMap *_inMap,
-                                TACSVarMap *_outMap,
+TACSBVecInterp::TACSBVecInterp( TACSNodeMap *_inMap,
+                                TACSNodeMap *_outMap,
                                 int _bsize ){
   inTacs = NULL;
   outTacs = NULL;
@@ -130,15 +130,15 @@ TACSBVecInterp::TACSBVecInterp( TACSAssembler *_inTacs,
 
   outTacs = _outTacs;
   outTacs->incref();
-  init(inTacs->getVarMap(), outTacs->getVarMap(),
+  init(inTacs->getNodeMap(), outTacs->getNodeMap(),
        inTacs->getVarsPerNode());
 }
 
 /*
   Initialize the underlying TACSAssembler classes
 */
-void TACSBVecInterp::init( TACSVarMap *_inMap,
-                           TACSVarMap *_outMap,
+void TACSBVecInterp::init( TACSNodeMap *_inMap,
+                           TACSNodeMap *_outMap,
                            int _bsize ){
   inMap = _inMap;
   inMap->incref();
@@ -166,8 +166,8 @@ or congruent. Cannot form interpolant.\n");
 
   // Initialize the on- and off-processor temporary storage that
   // will be used to store the interpolation weights
-  N = outMap->getDim();
-  M = inMap->getDim();
+  N = outMap->getNumNodes();
+  M = inMap->getNumNodes();
 
   on_size = 0;
   max_on_size = N;

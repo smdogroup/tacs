@@ -33,9 +33,8 @@ class TACSAssembler;
 #include "TACSAuxElements.h"
 
 // Linear algebra classes
-#include "BVec.h"
-#include "BVecDist.h"
-#include "DistMat.h"
+#include "TACSBVecDistribute.h"
+#include "TACSDistMat.h"
 #include "FEMat.h"
 #include "SerialBCSCMat.h"
 
@@ -124,7 +123,7 @@ class TACSAssembler : public TACSObject {
   int getNumDependentNodes();
   int getNumOwnedNodes();
   int getNumElements();
-  TACSVarMap *getVarMap();
+  TACSNodeMap *getNodeMap();
   TACSBcMap *getBcMap();
   TACSBcMap *getInitBcMap();
   TACSBVecDistribute *getBVecDistribute();
@@ -333,13 +332,13 @@ class TACSAssembler : public TACSObject {
                             int *item, TacsScalar *temp,
                             MatrixOrientation matOr );
 
-  TACSVarMap *varMap; // Variable ownership map
+  TACSNodeMap *nodeMap; // Variable ownership map
   TACSBcMap *bcMap; // Boundary condition data
   TACSBcMap *bcInitMap; // Initial boundary condition data
   TACSBVecDistribute *extDist; // Distribute the vector
   TACSBVecIndices *extDistIndices; // The tacsVarNum indices
   TACSBVecDepNodes *depNodes; // Dependent variable information
-  TACSVarMap *designVarMap; // Distribution of design variables
+  TACSNodeMap *designNodeMap; // Distribution of design variables
   TACSBVecDistribute *designExtDist; // Distribute the design variables
   TACSBVecDepNodes *designDepNodes; // Dependent design variable information
 

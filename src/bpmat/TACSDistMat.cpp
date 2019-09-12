@@ -16,7 +16,7 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "DistMat.h"
+#include "TACSDistMat.h"
 #include "FElibrary.h"
 #include "MatUtils.h"
 
@@ -68,7 +68,7 @@
   8. The persistent data communication paths are initialized
 */
 TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info,
-                          TACSVarMap *map, int bsize, int num_ext_vars,
+                          TACSNodeMap *map, int bsize, int num_ext_vars,
                           const int *rowp, const int *cols,
                           TACSBVecIndices *bindex ){
   comm = map->getMPIComm();
@@ -80,8 +80,8 @@ TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info,
   // Get the external variables
   const int *ext_vars;
   if (bindex->getIndices(&ext_vars) != num_ext_vars){
-    fprintf(stderr, "[%d] DistMat error: number of indices provided must be \
-equal to the number of rows\n", mpiRank);
+    fprintf(stderr, "[%d] DistMat error: number of indices provided must be "
+            "equal to the number of rows\n", mpiRank);
     return;
   }
 
@@ -803,8 +803,8 @@ void TACSDistMat::addValues( int nrow, const int *row,
               }
             }
             else {
-              fprintf(stderr, "[%d] DistMat error: could not find col \
-(%d,%d) r_ext = %d\n", mpiRank, r, c, r_ext);
+              fprintf(stderr, "[%d] DistMat error: could not find col "
+                      "(%d,%d) r_ext = %d\n", mpiRank, r, c, r_ext);
             }
           }
         }
@@ -976,8 +976,8 @@ void TACSDistMat::addWeightValues( int nvars, const int *varp, const int *vars,
                   }
                 }
                 else {
-                  fprintf(stderr, "[%d] DistMat error: could not find col \
-(%d,%d) r_ext = %d\n", mpiRank, vars[jp], c, r_ext);
+                  fprintf(stderr, "[%d] DistMat error: could not find col "
+                          "(%d,%d) r_ext = %d\n", mpiRank, vars[jp], c, r_ext);
                 }
               }
             }
@@ -1089,13 +1089,13 @@ void TACSDistMat::setValues( int nvars, const int *ext_vars,
               memcpy(a, &avals[b2*j], b2*sizeof(TacsScalar));
             }
             else {
-              fprintf(stderr, "[%d] DistMat error: could not find col \
-(%d,%d) r_ext = %d \n", mpiRank, row, col, r_ext);
+              fprintf(stderr, "[%d] DistMat error: could not find col "
+                      "(%d,%d) r_ext = %d \n", mpiRank, row, col, r_ext);
             }
           }
           else {
-            fprintf(stderr, "[%d] DistMat error: local column out of \
-range 0 <= %d < %d\n", mpiRank, c, nvars);
+            fprintf(stderr, "[%d] DistMat error: local column out of "
+                    "range 0 <= %d < %d\n", mpiRank, c, nvars);
           }
         }
       }

@@ -114,8 +114,8 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
   auxElements = NULL;
 
   // Information for setting boundary conditions and distributing variables
-  varMap = new TACSVarMap(tacs_comm, numOwnedNodes);
-  varMap->incref();
+  nodeMap = new TACSNodeMap(tacs_comm, numOwnedNodes);
+  nodeMap->incref();
 
   // Estimate 100 bcs at first, but this is expanded as required
   int nbc_est = 100;
@@ -156,7 +156,7 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
 
   // Design variable information
   designVarsPerNode = 1;
-  designVarMap = NULL;
+  designNodeMap = NULL;
   designExtDist = NULL;
   designDepNodes = NULL;
 
@@ -204,7 +204,7 @@ TACSAssembler::~TACSAssembler(){
   if (auxElements){ auxElements->decref(); }
 
   // Decrease the reference count to objects allocated in initialize
-  if (varMap){ varMap->decref(); }
+  if (nodeMap){ nodeMap->decref(); }
   if (bcMap){ bcMap->decref(); }
   if (bcInitMap){ bcInitMap->decref(); }
   if (extDist){ extDist->decref(); }
@@ -283,8 +283,8 @@ int TACSAssembler::getNumElements(){
 /*
   Get the node-processor assignment
 */
-TACSVarMap *TACSAssembler::getVarMap(){
-  return varMap;
+TACSNodeMap *TACSAssembler::getNodeMap(){
+  return nodeMap;
 }
 
 /*
@@ -439,7 +439,7 @@ int TACSAssembler::setElementConnectivity( const int *ptr,
   // Check that the node numbers are all within range and that the
   // dependent node numbers (if any) are in range
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   for ( int i = 0; i < numElements; i++ ){
     int jend = elementNodeIndex[i+1];
@@ -613,7 +613,7 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
 
   // Get the ownership range of the nodes
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   // Check that all the independent nodes are positive and are within an
   // allowable range
@@ -678,7 +678,7 @@ void TACSAssembler::addBCs( int nnodes, const int *nodes,
 
   // Get the ownership range
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   // Add all the boundary conditions within the specified owner range
   for ( int i = 0; i < nnodes; i++ ){
@@ -711,7 +711,7 @@ void TACSAssembler::addInitBCs( int nnodes, const int *nodes,
 
   // Get the ownership range
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   // Add all the boundary conditions within the specified owner range
   for ( int i = 0; i < nnodes; i++ ){
@@ -726,7 +726,7 @@ void TACSAssembler::addInitBCs( int nnodes, const int *nodes,
   Create a global vector of node locations
 */
 TACSBVec *TACSAssembler::createNodeVec(){
-  return new TACSBVec(varMap, TACS_SPATIAL_DIM,
+  return new TACSBVec(nodeMap, TACS_SPATIAL_DIM,
                       extDist, depNodes);
 }
 
@@ -830,7 +830,7 @@ int TACSAssembler::computeExtNodes(){
 
   // Get the ownership range of the nodes
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   // Find the maximum possible size of array
   int max_size = elementNodeIndex[numElements];
@@ -986,7 +986,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
 
     // Get the owner range
     const int *ownerRange;
-    varMap->getOwnerRange(&ownerRange);
+    nodeMap->getOwnerRange(&ownerRange);
 
     // Compute the node types. This is the node type relative to its
     // owner.
@@ -1000,7 +1000,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
       int node = getGlobalNodeNum(i);
 
       // Get the processor that owns this node
-      int owner = varMap->getOwner(node);
+      int owner = nodeMap->getNodeOwner(node);
 
       // Search the columns for the type of node
       for ( int jp = rowp[i]; jp < rowp[i+1]; jp++ ){
@@ -1200,7 +1200,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
     // Place the result back into the newNodeNums - add the
     // ownership offset
     const int *ownerRange;
-    varMap->getOwnerRange(&ownerRange);
+    nodeMap->getOwnerRange(&ownerRange);
     int offset = ownerRange[mpiRank];
     for ( int i = 0, j = 0; i < numNodes; i++ ){
       if (reducedNodes[i] >= 0){
@@ -1504,7 +1504,7 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
 int TACSAssembler::getLocalNodeNum( int node ){
   // Get the ownership range
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   if (node >= ownerRange[mpiRank] &&
       node < ownerRange[mpiRank+1]){
@@ -1568,7 +1568,7 @@ int TACSAssembler::getLocalNodeNum( int node ){
 int TACSAssembler::getGlobalNodeNum( int node ){
   // Get the ownership range
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   if (node < extNodeOffset){
     const int *ext_nodes = NULL;
@@ -2139,7 +2139,7 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
                                          int **_recvNodes ){
   // Get the ownership range and match the intervals of ownership
   const int *ownerRange;
-  varMap->getOwnerRange(&ownerRange);
+  nodeMap->getOwnerRange(&ownerRange);
 
   // Get the external node numbers
   const int *extNodes = tacsExtNodeNums;
@@ -2357,7 +2357,7 @@ int TACSAssembler::computeCouplingElements( int **_couplingElems ){
   tacsNodeNums[i] is the global node number for the local node number i
 
   Two objects are required:
-  1. VarMap is constructed with the block sizes of each
+  1. NodeMap is constructed with the block sizes of each
   node owned by this process
 
   2. VecDistribute is constructed so that it takes an array and
@@ -2432,7 +2432,7 @@ int TACSAssembler::initialize(){
   extDistIndices->setUpInverse();
 
   // Set up the external vector distribute object
-  extDist = new TACSBVecDistribute(varMap, extDistIndices);
+  extDist = new TACSBVecDistribute(nodeMap, extDistIndices);
   extDist->incref();
 
   // Scatter the boundary conditions to the external nodes
@@ -2615,7 +2615,7 @@ void TACSAssembler::getReordering( int *oldToNew ){
   }
   else {
     const int *ownerRange;
-    varMap->getOwnerRange(&ownerRange);
+    nodeMap->getOwnerRange(&ownerRange);
     for ( int k = 0; k < numOwnedNodes; k++ ){
       oldToNew[k] = ownerRange[mpiRank] + k;
     }
@@ -2636,7 +2636,7 @@ void TACSAssembler::reorderVec( TACSBVec *vec ){
   if (newNodeIndices){
     // Get the ownership range
     const int *ownerRange;
-    varMap->getOwnerRange(&ownerRange);
+    nodeMap->getOwnerRange(&ownerRange);
 
     // Get the vector of values from the array
     TacsScalar *x;
@@ -2682,7 +2682,7 @@ void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
   if (newNodeIndices){
     // Get the ownership range
     const int *ownerRange;
-    varMap->getOwnerRange(&ownerRange);
+    nodeMap->getOwnerRange(&ownerRange);
 
     // Get the new node indices
     const int *newNodes;
@@ -2715,7 +2715,7 @@ TACSBVec *TACSAssembler::createDesignVec(){
   }
 
   // Create the vector
-  return new TACSBVec(designVarMap, designVarsPerNode,
+  return new TACSBVec(designNodeMap, designVarsPerNode,
                       designExtDist, designDepNodes);
 }
 
@@ -2859,7 +2859,7 @@ TACSBVec *TACSAssembler::createVec(){
   }
 
   // Create the vector
-  return new TACSBVec(varMap, varsPerNode, extDist, depNodes);
+  return new TACSBVec(nodeMap, varsPerNode, extDist, depNodes);
 }
 
 /*
@@ -2921,7 +2921,7 @@ TACSDistMat *TACSAssembler::createMat(){
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
   // Create the distributed matrix class
-  TACSDistMat *dmat = new TACSDistMat(thread_info, varMap, varsPerNode,
+  TACSDistMat *dmat = new TACSDistMat(thread_info, nodeMap, varsPerNode,
                                       numNodes, rowp, cols, distMatIndices);
 
   // Free the local connectivity
@@ -3276,8 +3276,8 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
                                                   nlocal_nodes);
     TACSBVecIndices *tcoupling = new TACSBVecIndices(&tacs_coupling_nodes,
                                                      ncoupling_nodes);
-    feMatBMap = new TACSBVecDistribute(varMap, tlocal);
-    feMatCMap = new TACSBVecDistribute(varMap, tcoupling);
+    feMatBMap = new TACSBVecDistribute(nodeMap, tlocal);
+    feMatCMap = new TACSBVecDistribute(nodeMap, tcoupling);
     feMatBMap->incref();
     feMatCMap->incref();
   }
@@ -3286,7 +3286,7 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
   int *rowp, *cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
-  FEMat *fmat = new FEMat(thread_info, varMap,
+  FEMat *fmat = new FEMat(thread_info, nodeMap,
                           varsPerNode, numNodes, rowp, cols,
                           feMatBIndices, feMatBMap,
                           feMatCIndices, feMatCMap);
@@ -3320,7 +3320,7 @@ SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
   // Allocate the matrix
-  SerialBCSCMat *mat = new SerialBCSCMat(varMap, varsPerNode,
+  SerialBCSCMat *mat = new SerialBCSCMat(nodeMap, varsPerNode,
                                          numNodes, numNodes,
                                          rowp, cols);
   delete [] rowp;

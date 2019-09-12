@@ -23,9 +23,9 @@
   Matrix and preconditioner based upon the use of the Schur-complement
 */
 
-#include "BVecDist.h"
+#include "TACSBVecDistribute.h"
 #include "BCSRMat.h"
-#include "DistMat.h"
+#include "TACSDistMat.h"
 #include "PDMat.h"
 
 /*!
@@ -56,13 +56,13 @@
 
   to the global Schur complement system.
 */
-class ScMat : public TACSMat {
+class TACSSchurMat : public TACSMat {
  public:
-  ScMat( TACSVarMap *_rmap,
-         BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
-         TACSBVecDistribute *_b_map,
-         TACSBVecDistribute *_c_map );
-  ~ScMat();
+  TACSSchurMat( TACSNodeMap *_rmap,
+                BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
+                TACSBVecDistribute *_b_map,
+                TACSBVecDistribute *_c_map );
+  ~TACSSchurMat();
 
   // Functions for setting values in the matrix
   // ------------------------------------------
@@ -85,17 +85,17 @@ class ScMat : public TACSMat {
 
   TACSBVecDistribute *getLocalMap(){ return b_map; }
   TACSBVecDistribute *getSchurMap(){ return c_map; }
-  TACSVarMap *getVarMap(){ return rmap; }
+  TACSNodeMap *getNodeMap(){ return rmap; }
 
  protected:
-  ScMat();
-  void init( TACSVarMap *_rmap,
+  TACSSchurMat();
+  void init( TACSNodeMap *_rmap,
              BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
              TACSBVecDistribute *_b_map,
              TACSBVecDistribute *_c_map );
 
   BCSRMat *B, *E, *F, *C; // The local matrices
-  TACSVarMap *rmap; // Global row map
+  TACSNodeMap *rmap; // Global row map
   TACSBVecDistribute *b_map; // Collect variables for B/E
   TACSBVecDistribute *c_map; // Collect variables for C/F
   TACSBVecDistCtx *b_ctx, *c_ctx;
@@ -129,11 +129,11 @@ class ScMat : public TACSMat {
   performs extremely well in parallel, and is much smaller than the
   full matrix.
 */
-class PcScMat : public TACSPc {
+class TACSSchurPc : public TACSPc {
  public:
-  PcScMat( ScMat *_mat, int levFill, double fill,
-           int reorder_schur_complement );
-  ~PcScMat();
+  TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
+               int reorder_schur_complement );
+  ~TACSSchurPc();
 
   // Functions associated with the factorization
   // -------------------------------------------
@@ -157,7 +157,7 @@ class PcScMat : public TACSPc {
                    BCSRMat **_Fpc, BCSRMat **_Sc );
 
  private:
-  ScMat *mat;
+  TACSSchurMat *mat;
   BCSRMat *B, *E, *F, *C; // The block matrices
   BCSRMat *Bpc, *Epc, *Fpc; // The diagonal contributions
   BCSRMat *Sc; // Schur complement from this proc.
@@ -181,7 +181,7 @@ class PcScMat : public TACSPc {
   // There are two Schur maps here:
   // These objects defines a mapping between the local C-variables
   // (in xlocal/ylocal) to the global Schur complement system (scmat).
-  TACSVarMap *schur_map; // The variable map associated with Sc
+  TACSNodeMap *schur_map; // The variable map associated with Sc
   TACSBVecDistribute *schur_dist; // Map that distributes the Schur complement
   TACSBVecDistCtx *schur_ctx; // The context for the distribution object
   int use_pdmat_alltoall; // Use the Alltoall version for matrix assembly

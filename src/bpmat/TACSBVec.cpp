@@ -16,13 +16,51 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "BVec.h"
+#include "TACSBVec.h"
 #include "FElibrary.h"
 #include "tacslapack.h"
 
 /*
-  Code for the block-vector basis class
+  The following class defines the dependent node information.
+
+  Note that this class steals the ownership of the data.
 */
+TACSBVecDepNodes::TACSBVecDepNodes( int _ndep_nodes,
+                                    int **_dep_ptr,
+                                    int **_dep_conn,
+                                    double **_dep_weights ){
+  ndep_nodes = _ndep_nodes;
+  dep_ptr = *_dep_ptr;  *_dep_ptr = NULL;
+  dep_conn = *_dep_conn;  *_dep_conn = NULL;
+  dep_weights = *_dep_weights;  *_dep_weights = NULL;
+}
+
+TACSBVecDepNodes::  ~TACSBVecDepNodes(){
+  delete [] dep_ptr;
+  delete [] dep_conn;
+  delete [] dep_weights;
+}
+
+/*
+  Get the dependent connectivity and weights
+*/
+int TACSBVecDepNodes::getDepNodes( const int **_dep_ptr,
+                                   const int **_dep_conn,
+                                   const double **_dep_weights ){
+  if (_dep_ptr){ *_dep_ptr = dep_ptr; }
+  if (_dep_conn){ *_dep_conn = dep_conn; }
+  if (_dep_weights){ *_dep_weights = dep_weights; }
+  return ndep_nodes;
+}
+
+/*
+  Get the dependent node connectivity for reordering
+*/
+int TACSBVecDepNodes::getDepNodeReorder( const int **_dep_ptr, int **_dep_conn ){
+  if (_dep_ptr){ *_dep_ptr = dep_ptr; }
+  if (_dep_conn){ *_dep_conn = dep_conn; }
+  return ndep_nodes;
+}
 
 /*!
   Create a block-based parallel vector
@@ -31,18 +69,18 @@
   rmap:   the variable->processor map for the unknowns
   bcs:    the boundary conditions associated with this vector
 */
-TACSBVec::TACSBVec( TACSVarMap *map, int _bsize,
+TACSBVec::TACSBVec( TACSNodeMap *map, int _bsize,
                     TACSBVecDistribute *_ext_dist,
                     TACSBVecDepNodes *_dep_nodes ){
-  var_map = map;
-  var_map->incref();
+  node_map = map;
+  node_map->incref();
 
   // Get the MPI communicator
-  comm = var_map->getMPIComm();
+  comm = node_map->getMPIComm();
 
   // Set the block size
   bsize = _bsize;
-  size = bsize*var_map->getDim();
+  size = bsize*node_map->getNumNodes();
 
   // Allocate the array of owned unknowns
   x = new TacsScalar[ size ];
@@ -54,7 +92,7 @@ TACSBVec::TACSBVec( TACSVarMap *map, int _bsize,
     ext_dist->incref();
     ext_indices = ext_dist->getIndices();
     ext_indices->incref();
-    ext_size = bsize*ext_dist->getDim();
+    ext_size = bsize*ext_dist->getNumNodes();
     x_ext = new TacsScalar[ ext_size ];
     memset(x_ext, 0, ext_size*sizeof(TacsScalar));
 
@@ -84,7 +122,7 @@ TACSBVec::TACSBVec( TACSVarMap *map, int _bsize,
 }
 
 /*
-  Create the block-based parallel vector without a TACSVarMap object
+  Create the block-based parallel vector without a TACSNodeMap object
   or boundary conditions - this is required for some parallel matrix
   objects, or other situtations in which neither object exists.
 
@@ -96,7 +134,7 @@ TACSBVec::TACSBVec( MPI_Comm _comm, int _size, int _bsize ){
   bsize = _bsize;
   size = _size;
   comm = _comm;
-  var_map = NULL;
+  node_map = NULL;
 
   x = new TacsScalar[ size ];
   memset(x, 0, size*sizeof(TacsScalar));
@@ -114,7 +152,7 @@ TACSBVec::TACSBVec( MPI_Comm _comm, int _size, int _bsize ){
 }
 
 TACSBVec::~TACSBVec(){
-  if (var_map){ var_map->decref(); }
+  if (node_map){ node_map->decref(); }
   if (x){ delete [] x; }
   if (x_ext){ delete [] x_ext; }
   if (ext_dist){ ext_dist->decref(); }
@@ -403,7 +441,7 @@ void TACSBVec::initRand(){
   distribution over an interval between lower/upper.
 */
 void TACSBVec::setRand( double lower, double upper ){
-  if (!var_map){
+  if (!node_map){
     for ( int i = 0; i < size; i++ ){
       x[i] = lower + ((upper - lower)*rand())/(1.0*RAND_MAX);
     }
@@ -414,7 +452,7 @@ void TACSBVec::setRand( double lower, double upper ){
     MPI_Comm_rank(comm, &mpi_rank);
 
     const int *owner_range;
-    var_map->getOwnerRange(&owner_range);
+    node_map->getOwnerRange(&owner_range);
 
     // Generate random values for each processor sequentially.
     // This should result in the same number of calls on all
@@ -462,8 +500,8 @@ int TACSBVec::getExtArray( TacsScalar **array ){
 /*
   Access the var map
 */
-TACSVarMap *TACSBVec::getVarMap(){
-  return var_map;
+TACSNodeMap *TACSBVec::getNodeMap(){
+  return node_map;
 }
 
 /*
@@ -504,7 +542,7 @@ void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
 
     // Get ownership range
     const int *owner_range;
-    var_map->getOwnerRange(&owner_range);
+    node_map->getOwnerRange(&owner_range);
 
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
@@ -554,7 +592,7 @@ void TACSBVec::setBCs( TACSBcMap *bcmap ){
 
     // Get ownership range
     const int *owner_range;
-    var_map->getOwnerRange(&owner_range);
+    node_map->getOwnerRange(&owner_range);
 
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
@@ -676,8 +714,8 @@ int TACSBVec::readFromFile( const char *filename ){
     }
     MPI_Bcast(&len, 1, MPI_INT, 0, comm);
     if (len != range[mpi_size]){
-      fprintf(stderr, "[%d] Cannot read TACSBVec from file, incorrect size \
- %d != %d\n", mpi_rank, range[mpi_size], len);
+      fprintf(stderr, "[%d] Cannot read TACSBVec from file, incorrect "
+              "size %d != %d\n", mpi_rank, range[mpi_size], len);
       memset(x, 0, size*sizeof(TacsScalar));
 
       // Mark this as a failure
@@ -713,7 +751,7 @@ void TACSBVec::setValues( int n, const int *index,
 
   // Get the ownership range
   const int *owner_range;
-  var_map->getOwnerRange(&owner_range);
+  node_map->getOwnerRange(&owner_range);
 
   // Loop over the values
   for ( int i = 0; i < n; i++ ){
@@ -811,7 +849,7 @@ void TACSBVec::beginSetValues( TACSBVecOperation op ){
 
   // Get the ownership range
   const int *owner_range;
-  var_map->getOwnerRange(&owner_range);
+  node_map->getOwnerRange(&owner_range);
 
   if (dep_nodes && (op == TACS_ADD_VALUES)){
     const int *dep_ptr, *dep_conn;
@@ -897,7 +935,7 @@ void TACSBVec::endDistributeValues(){
 
     // Get the ownership range
     const int *owner_range;
-    var_map->getOwnerRange(&owner_range);
+    node_map->getOwnerRange(&owner_range);
 
     // Get the dependent node information
     const int *dep_ptr, *dep_conn;
@@ -953,7 +991,7 @@ int TACSBVec::getValues( int n, const int *index,
 
   // Get the ownership range
   const int *owner_range;
-  var_map->getOwnerRange(&owner_range);
+  node_map->getOwnerRange(&owner_range);
 
   // Fail flag
   int fail = 0;

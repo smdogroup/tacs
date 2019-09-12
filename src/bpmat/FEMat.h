@@ -23,7 +23,7 @@
   Parallel matrix based upon a finite-element partitioning of the problem
 */
 
-#include "ScMat.h"
+#include "TACSSchurMat.h"
 
 /*
   The finite-element Schur-based matrix implementation.
@@ -48,9 +48,9 @@
 
   bcs: The boundary conditions
 */
-class FEMat : public ScMat {
+class FEMat : public TACSSchurMat {
  public:
-  FEMat( TACSThreadInfo *thread_info, TACSVarMap *_rmap,
+  FEMat( TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
          int bsize, int nlocal_vars,
          const int *rowp, const int *cols,
          TACSBVecIndices *b_local_indices, TACSBVecDistribute *_b_map,

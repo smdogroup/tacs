@@ -19,8 +19,8 @@
 #ifndef TACS_PARALLEL_MATRIX_H
 #define TACS_PARALLEL_MATRIX_H
 
-#include "BVec.h"
-#include "BVecDist.h"
+#include "TACSBVec.h"
+#include "TACSBVecDistribute.h"
 #include "BCSRMat.h"
 #include "KSM.h"
 
@@ -45,12 +45,12 @@
   3. End scatter operation
   4. Perform local, exteral matrix-vector product
 */
-class TACSPMat : public TACSMat {
+class TACSParallelMat : public TACSMat {
  public:
-  TACSPMat( TACSVarMap *rmap,
-            BCSRMat *_Aloc, BCSRMat *_Bext,
-            TACSBVecDistribute *_col_map );
-  ~TACSPMat();
+  TACSParallelMat( TACSNodeMap *rmap,
+                   BCSRMat *_Aloc, BCSRMat *_Bext,
+                   TACSBVecDistribute *_col_map );
+  ~TACSParallelMat();
 
   // Functions for setting values in the matrix
   // ------------------------------------------
@@ -75,7 +75,7 @@ class TACSPMat : public TACSMat {
   void getBCSRMat( BCSRMat ** A, BCSRMat ** B );  // Access the underlying mats
   void getRowMap( int *bs, int *_N, int *_Nc );
   void getColMap( int *bs, int *_M );
-  TACSVarMap *getRowMap(){ return rmap; }
+  TACSNodeMap *getRowMap(){ return rmap; }
   void getExtColMap( TACSBVecDistribute **ext_map ); // Access the column map
   void printNzPattern( const char *fileName ); // Print the non-zero pattern
 
@@ -83,10 +83,10 @@ class TACSPMat : public TACSMat {
   MPI_Comm getMPIComm(){ return rmap->getMPIComm(); }
 
  protected:
-  TACSPMat();
+  TACSParallelMat();
 
   // Common initialization routine
-  void init( TACSVarMap *_rmap,
+  void init( TACSNodeMap *_rmap,
              BCSRMat *_Aloc, BCSRMat *_Bext,
              TACSBVecDistribute *_col_map );
 
@@ -94,7 +94,7 @@ class TACSPMat : public TACSMat {
   BCSRMat *Aloc, *Bext;
 
   // Map the local entries into the global data
-  TACSVarMap *rmap;
+  TACSNodeMap *rmap;
   TACSBVecDistribute *ext_dist;
   TACSBVecDistCtx *ctx;
 
@@ -121,7 +121,7 @@ class TACSPMat : public TACSMat {
 */
 class TACSGaussSeidel : public TACSPc {
  public:
-  TACSGaussSeidel( TACSPMat *_mat, int _zero_guess,
+  TACSGaussSeidel( TACSParallelMat *_mat, int _zero_guess,
                    TacsScalar _omega, int _iters, int _symmetric,
                    int _use_l1_gauss_seidel=0 );
   ~TACSGaussSeidel();
@@ -132,7 +132,7 @@ class TACSGaussSeidel : public TACSPc {
 
  private:
   // Parallel matrix pointer
-  TACSPMat *mat;
+  TACSParallelMat *mat;
 
   // Information about how to handle the smoother
   int iters; // The number of iterations to apply
@@ -157,7 +157,7 @@ class TACSGaussSeidel : public TACSPc {
 */
 class TACSChebyshevSmoother : public TACSPc {
  public:
-  TACSChebyshevSmoother( TACSPMat *_mat, int _degree,
+  TACSChebyshevSmoother( TACSParallelMat *_mat, int _degree,
                          double _lower_factor=1.0/30.0,
                          double _upper_factor=1.1, int _iters=1 );
   ~TACSChebyshevSmoother();
@@ -174,7 +174,7 @@ class TACSChebyshevSmoother : public TACSPc {
   double arnoldi( int size );
 
   // Parallel matrix pointer
-  TACSPMat *mat;
+  TACSParallelMat *mat;
 
   // The factor to apply to the largest eigenvalue
   double lower_factor;
@@ -202,7 +202,7 @@ class TACSChebyshevSmoother : public TACSPc {
 */
 class TACSAdditiveSchwarz : public TACSPc {
  public:
-  TACSAdditiveSchwarz( TACSPMat *mat, int levFill, double fill );
+  TACSAdditiveSchwarz( TACSParallelMat *mat, int levFill, double fill );
   ~TACSAdditiveSchwarz();
 
   void setDiagShift( TacsScalar _alpha );
@@ -212,7 +212,7 @@ class TACSAdditiveSchwarz : public TACSPc {
   void getMat( TACSMat **_mat );
 
  private:
-  TACSPMat *mat;
+  TACSParallelMat *mat;
   BCSRMat *Aloc;
   TacsScalar alpha;
   BCSRMat *Apc;
@@ -231,7 +231,7 @@ class TACSAdditiveSchwarz : public TACSPc {
 */
 class TACSGlobalSchurMat : public TACSMat {
  public:
-  TACSGlobalSchurMat( TACSPMat *mat, BCSRMat *Apc );
+  TACSGlobalSchurMat( TACSParallelMat *mat, BCSRMat *Apc );
   ~TACSGlobalSchurMat();
 
   // Functions used to solve the linear system
@@ -244,7 +244,7 @@ class TACSGlobalSchurMat : public TACSMat {
   void multOffDiag( TACSBVec *x, TACSBVec *y );
 
  private:
-  TACSVarMap *rmap; // The variable map for the interface variables
+  TACSNodeMap *rmap; // The variable map for the interface variables
   BCSRMat *Apc; // The factored diagonal matrix
   BCSRMat *Bext; // The off-diagonal part
   TACSBVecDistribute *ext_dist;
@@ -263,7 +263,7 @@ class TACSGlobalSchurMat : public TACSMat {
 */
 class TACSApproximateSchur : public TACSPc {
  public:
-  TACSApproximateSchur( TACSPMat *mat, int levFill, double fill,
+  TACSApproximateSchur( TACSParallelMat *mat, int levFill, double fill,
                         int inner_gmres_iters, double inner_rtol=1e-3,
                         double inner_atol=1e-30 );
   ~TACSApproximateSchur();
@@ -277,7 +277,7 @@ class TACSApproximateSchur : public TACSPc {
 
  private:
   TACSBVec *rvec, *wvec;
-  TACSPMat *mat;
+  TACSParallelMat *mat;
   BCSRMat *Aloc, *Apc;
   TacsScalar alpha;
 

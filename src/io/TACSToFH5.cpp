@@ -375,8 +375,8 @@ int TACSToFH5::writeConnectivity( TACSFH5File *file ){
 
   // Get the ownership range for each group of nodes
   const int *ownerRange;
-  TACSVarMap *varMap = assembler->getVarMap();
-  varMap->getOwnerRange(&ownerRange);
+  TACSNodeMap *nodeMap = assembler->getNodeMap();
+  nodeMap->getOwnerRange(&ownerRange);
 
   // Get the number of nodes and dependent nodes
   int nnodes = assembler->getNumOwnedNodes();

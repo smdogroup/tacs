@@ -16,110 +16,8 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "BVecDist.h"
+#include "TACSBVecDistribute.h"
 #include "FElibrary.h"
-
-/*
-  Distribute/collect block-vector code
-*/
-
-/*!
-  TACSVarMap
-
-  Defines the variable map from the parallel distribution of variables
-  to each process
-
-  input:
-  comm:  this object is defined over all processors in this comm
-  N:     the number of nodes for this processor
-*/
-TACSVarMap::TACSVarMap( MPI_Comm _comm, int _N ){
-  comm = _comm;
-
-  // Get the communicator size
-  MPI_Comm_size(comm, &mpiSize);
-  MPI_Comm_rank(comm, &mpiRank);
-
-  // The ownership ranges for all processes
-  N = _N;
-  ownerRange = new int[ mpiSize+1 ];
-  memset(ownerRange, 0, (mpiSize+1)*sizeof(int));
-
-  // Get the number of variables
-  ownerRange[0] = 0;
-  MPI_Allgather(&N, 1, MPI_INT, &ownerRange[1], 1, MPI_INT, comm);
-
-  // Set the ownership values so that they range over
-  // the owned unknown node numbers
-  for ( int i = 0; i < mpiSize; i++ ){
-    ownerRange[i+1] += ownerRange[i];
-  }
-}
-
-TACSVarMap::~TACSVarMap(){
-  delete [] ownerRange;
-}
-
-/*
-  Get the number of nodes on this processor
-*/
-int TACSVarMap::getDim(){
-  return N;
-}
-
-/*
-  Get the MPI communicator
-*/
-MPI_Comm TACSVarMap::getMPIComm(){ return comm; }
-
-/*
-  Get the ownership range for this processor
-*/
-void TACSVarMap::getOwnerRange( const int **_ownerRange ){
-  *_ownerRange = ownerRange;
-}
-
-/*
-  Get the owner of this processor. If the node number is out of range,
-  then return -1;
-*/
-int TACSVarMap::getOwner( int node ){
-  // If the node is out of range, return immediately
-  if (node < 0 || node >= ownerRange[mpiSize]){
-    return -1;
-  }
-
-  // Check whether the node is on the current processor
-  if (node >= ownerRange[mpiRank] &&
-      node < ownerRange[mpiRank+1]){
-    return mpiRank;
-  }
-
-  // Perform a binary search starting from the mid-processor
-  int low = 0;
-  int high = mpiSize-1;
-
-  while (high - low >= 0){
-    // Compute the mid-point
-    int mid = (high + low)/2;
-    if (node >= ownerRange[mid] &&
-        node < ownerRange[mid+1]){
-      return mid;
-    }
-    else if (node < ownerRange[mid]){
-      high = mid-1;
-    }
-    else if (node >= ownerRange[mid+1]){
-      low = mid+1;
-    }
-  }
-
-  return (high + low)/2;
-}
-
-/*!
-  BVecIndices class definitions
-*/
 
 /*
   The static array arg_sort_list and the function compare_arg_sort are
@@ -165,8 +63,8 @@ TACSBVecIndices::TACSBVecIndices( int ** _indices, int _nindices ){
       break;
     }
     if (indices[i] < 0){
-      fprintf(stderr, "TACSBVecIndices: replacing negative index at \
-entry %d with 0\n", i);
+      fprintf(stderr, "TACSBVecIndices: replacing negative index at "
+              "entry %d with 0\n", i);
       indices[i] = 0;
     }
   }
@@ -410,7 +308,7 @@ void VecDistSetVars6( int bsize, int nvars, const int *vars, int lower,
   (The buffer on the local/requesting process will be an offset into
   index into the local array supplied by the user).
 */
-TACSBVecDistribute::TACSBVecDistribute( TACSVarMap * _rmap,
+TACSBVecDistribute::TACSBVecDistribute( TACSNodeMap * _rmap,
                                         TACSBVecIndices * _bindex ){
   rmap = _rmap;
   rmap->incref();
@@ -632,7 +530,7 @@ TACSBVecDistCtx *TACSBVecDistribute::createCtx( int bsize ){
 /*
   Get the number of indices
 */
-int TACSBVecDistribute::getDim(){
+int TACSBVecDistribute::getNumNodes(){
   return bindex->getNumIndices();
 }
 

@@ -115,7 +115,7 @@ int main( int argc, char *argv[] ){
     int lev = 4500;
     double fill = 10.0;
     int reorder_schur = 1;
-    PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur);
+    TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
     pc->incref();
 
     // Allocate the GMRES object

@@ -23,7 +23,7 @@
   Distribute/gather elements of a BVec
 */
 
-#include "TACSObject.h"
+#include "TACSNodeMap.h"
 
 enum TACSBVecOperation { TACS_INSERT_VALUES,
                          TACS_ADD_VALUES,
@@ -33,29 +33,6 @@ enum TACSBVecOperation { TACS_INSERT_VALUES,
   Declare the TACSBVecDistCtx class
 */
 class TACSBVecDistCtx;
-
-/*!
-  Variable map for the parallel distribution of a vector
-
-  This class defines the mapping between the variables and processors
-  and should be instantiated once for each analysis model.
-*/
-class TACSVarMap : public TACSObject {
- public:
-  TACSVarMap( MPI_Comm _comm, int _N );
-  ~TACSVarMap();
-
-  int getDim();
-  MPI_Comm getMPIComm();
-  void getOwnerRange( const int **_ownerRange );
-  int getOwner( int node );
-
- private:
-  MPI_Comm comm; // The MPI communicator
-  int mpiSize, mpiRank; // The size/rank of the processor
-  int *ownerRange; // The ownership range of the variables
-  int N; // Number of nodes on this processor
-};
 
 /*
   A class containing a pointer to an array of indices.  These indices
@@ -116,7 +93,7 @@ class TACSBVecIndices : public TACSObject {
 */
 class TACSBVecDistribute : public TACSObject {
  public:
-  TACSBVecDistribute( TACSVarMap *rmap, TACSBVecIndices *bindex );
+  TACSBVecDistribute( TACSNodeMap *rmap, TACSBVecIndices *bindex );
   ~TACSBVecDistribute();
 
   // Create a context to send/recv the data
@@ -126,7 +103,7 @@ class TACSBVecDistribute : public TACSObject {
   // Get the size of the local array
   // All arrays passed must be at least this size
   // --------------------------------------------
-  int getDim();
+  int getNumNodes();
   TACSBVecIndices *getIndices();
 
   // Transfer the data to the array provided
@@ -167,7 +144,7 @@ class TACSBVecDistribute : public TACSObject {
   MPI_Comm comm;
 
   // Data defining the distribution of the variables
-  TACSVarMap *rmap;
+  TACSNodeMap *rmap;
 
   // Object containing the indices of the external variables
   // -------------------------------------------------------
@@ -214,8 +191,7 @@ class TACSBVecDistCtx : public TACSObject {
   ~TACSBVecDistCtx();
 
  private:
-  TACSBVecDistCtx( TACSBVecDistribute *_me,
-                   int _bsize );
+  TACSBVecDistCtx( TACSBVecDistribute *_me, int _bsize );
 
   // The block size for this context
   int bsize;
