@@ -79,10 +79,18 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
                          int dvLen, TacsScalar dvSens[] );
 
   // Evaluate the material failure index
-  TacsScalar failure( int elemIndex,
-                      const double pt[],
-                      const TacsScalar X[],
-                      const TacsScalar strain[] );
+  TacsScalar failure( int elemIndex, const double pt[],
+                      const TacsScalar X[], const TacsScalar strain[] );
+
+  // Evaluate the derivative of the failure criteria w.r.t. strain
+  TacsScalar failureStrainSens( int elemIndex, const double pt[],
+                                const TacsScalar X[], const TacsScalar strain[],
+                                TacsScalar sens[] );
+
+  // Add the derivative of the failure w.r.t. design variables
+  void addFailureDVSens( int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar strain[], TacsScalar scale,
+                         int dvLen, TacsScalar dvSens[] );
 
   // Extra info about the constitutive class
   const char *getObjectName();

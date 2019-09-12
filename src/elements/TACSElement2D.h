@@ -116,6 +116,42 @@ class TACSElement2D : public TACSElement {
                                  TacsScalar res[] );
 
   /**
+    Evaluate a point-wise quantity of interest.
+  */
+  int evalPointQuantity( int elemIndex, int quantityType, double time,
+                         int n, double pt[], const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], TacsScalar *quantity );
+
+  /**
+    Add the derivative of the point quantity w.r.t. the design variables
+  */
+  void addPointQuantityDVSens( int elemIndex, int quantityType, double time,
+                               TacsScalar scale, int n, double pt[],
+                               const TacsScalar Xpts[], const TacsScalar vars[],
+                               const TacsScalar dvars[], const TacsScalar ddvars[],
+                               const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[] );
+
+  /**
+    Add the derivative of the point quantity w.r.t. the state variables
+  */
+  void addPointQuantitySVSens( int elemIndex, int quantityType, double time,
+                               double alpha, double beta, double gamma,
+                               int n, double pt[],
+                               const TacsScalar Xpts[], const TacsScalar vars[],
+                               const TacsScalar dvars[], const TacsScalar ddvars[],
+                               const TacsScalar dfdq[], TacsScalar dfdu[] );
+
+  /**
+    Add the derivative of the point quantity w.r.t. the node locations
+  */
+  void addPointQuantityXptSens( int elemIndex, int quantityType, double time,
+                                TacsScalar scale, int n, double pt[],
+                                const TacsScalar Xpts[], const TacsScalar vars[],
+                                const TacsScalar dvars[], const TacsScalar ddvars[],
+                                const TacsScalar dfdq[], TacsScalar dfdXpts[] );
+
+  /**
     Compute the output data for visualization
   */
   void getOutputData( int elemIndex, ElementType etype, int write_flag,

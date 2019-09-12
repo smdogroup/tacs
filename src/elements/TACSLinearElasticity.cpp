@@ -248,6 +248,79 @@ void TACSLinearElasticity2D::addWeakAdjProduct( int elemIndex,
 }
 
 /*
+  Evaluate a specified pointwise quantity of interest
+*/
+int TACSLinearElasticity2D::evalPointQuantity( int elemIndex,
+                                               const int quantityType,
+                                               const double time,
+                                               int n, const double pt[],
+                                               const TacsScalar X[],
+                                               const TacsScalar Ut[],
+                                               const TacsScalar Ux[],
+                                               TacsScalar *quantity ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+    }
+
+    *quantity = stiff->failure(elemIndex, pt, X, e);
+
+    return 1;
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    *quantity = stiff->evalDensity(elemIndex, pt, X);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+/*
+  Add the derivative of the point-wise quantity of interest w.r.t.
+  design variables to the design vector
+*/
+void TACSLinearElasticity2D::addPointQuantityDVSens( int elemIndex,
+                                                     const int quantityType,
+                                                     const double time,
+                                                     TacsScalar scale,
+                                                     int n, const double pt[],
+                                                     const TacsScalar X[],
+                                                     const TacsScalar Ut[],
+                                                     const TacsScalar Ux[],
+                                                     const TacsScalar dfdq[],
+                                                     int dvLen,
+                                                     TacsScalar dfdx[] ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+    }
+
+    stiff->addFailureDVSens(elemIndex, pt, X, e, scale,
+                            dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    stiff->addDensityDVSens(elemIndex, pt, X, scale, dvLen, dfdx);
+  }
+}
+
+/*
   Get the data for visualization at a given point
 */
 void TACSLinearElasticity2D::getOutputData( int elemIndex,

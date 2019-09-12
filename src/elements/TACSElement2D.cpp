@@ -170,7 +170,6 @@ void TACSElement2D::addAdjResProduct( int elemIndex,
                                       const TacsScalar ddvars[],
                                       int dvLen,
                                       TacsScalar dvSens[] ){
-
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
@@ -246,6 +245,90 @@ void TACSElement2D::getMatSVSensInnerProduct( int elemIndex,
                                               const TacsScalar Xpts[],
                                               const TacsScalar vars[],
                                               TacsScalar res[] ){}
+
+  /**
+    Evaluate a point-wise quantity of interest.
+  */
+int TACSElement2D::evalPointQuantity( int elemIndex,
+                                      int quantityType,
+                                      double time,
+                                      int n, double pt[],
+                                      const TacsScalar Xpts[],
+                                      const TacsScalar vars[],
+                                      const TacsScalar dvars[],
+                                      const TacsScalar ddvars[],
+                                      TacsScalar *quantity ){
+  const int vars_per_node = model->getVarsPerNode();
+  TacsScalar X[3], Xd[4], J[4];
+  TacsScalar Ut[3*MAX_VARS_PER_NODE];
+  TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+                          X, Xd, J, Ut, Ud, Ux);
+
+  return model->evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                                  X, Ut, Ux, quantity);
+}
+
+/**
+   Add the derivative of the point quantity w.r.t. the design variables
+*/
+void TACSElement2D::addPointQuantityDVSens( int elemIndex,
+                                            int quantityType,
+                                            double time,
+                                            TacsScalar scale,
+                                            int n, double pt[],
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[],
+                                            const TacsScalar dfdq[],
+                                            int dvLen, TacsScalar dfdx[] ){
+  const int vars_per_node = model->getVarsPerNode();
+  TacsScalar X[3], Xd[4], J[4];
+  TacsScalar Ut[3*MAX_VARS_PER_NODE];
+  TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+                          X, Xd, J, Ut, Ud, Ux);
+
+  model->addPointQuantityDVSens(elemIndex, quantityType, time, scale, n, pt,
+                                X, Ut, Ux, dfdq, dvLen, dfdx);
+}
+
+/**
+   Add the derivative of the point quantity w.r.t. the state variables
+*/
+void TACSElement2D::addPointQuantitySVSens( int elemIndex,
+                                            int quantityType,
+                                            double time,
+                                            double alpha,
+                                            double beta,
+                                            double gamma,
+                                            int n, double pt[],
+                                            const TacsScalar Xpts[],
+                                            const TacsScalar vars[],
+                                            const TacsScalar dvars[],
+                                            const TacsScalar ddvars[],
+                                            const TacsScalar dfdq[],
+                                            TacsScalar dfdu[] ){
+
+}
+
+/**
+   Add the derivative of the point quantity w.r.t. the node locations
+*/
+void TACSElement2D::addPointQuantityXptSens( int elemIndex,
+                                             int quantityType,
+                                             double time,
+                                             TacsScalar scale,
+                                             int n, double pt[],
+                                             const TacsScalar Xpts[],
+                                             const TacsScalar vars[],
+                                             const TacsScalar dvars[],
+                                             const TacsScalar ddvars[],
+                                             const TacsScalar dfdq[],
+                                             TacsScalar dfdXpts[] ){
+
+}
 
 /*
   Get the element data for the basis

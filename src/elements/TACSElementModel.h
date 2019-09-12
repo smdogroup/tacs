@@ -237,19 +237,19 @@ class TACSElementModel {
      needed.
 
      @param elemIndex The local element index
-     @param time The simulation time
      @param quantityType Integer indicating the type of pointwise quantity
+     @param time The simulation time
      @param n The quadrature point index
      @param pt The parametric position of the quadrature point
      @param X The physical position of the quadrature point
      @param Ut Values of the state variables and their 1st/2nd time derivs
      @param Ux The spatial derivatives of the state variables
      @param quantity The quantity of interest
-     @return Number of quantities computed
+     @return Length of the quantity computed (a scalar or physical vector)
   */
   virtual int evalPointQuantity( int elemIndex,
-                                 const double time,
                                  const int quantityType,
+                                 const double time,
                                  int n, const double pt[],
                                  const TacsScalar X[],
                                  const TacsScalar Ut[],
@@ -259,12 +259,42 @@ class TACSElementModel {
   }
 
   /**
+     Add the derivative of the quantity w.r.t. the design variables
+
+     @param elemIndex The local element index
+     @param quantityType Integer indicating the type of pointwise quantity
+     @param time The simulation time
+     @param scale Scale factor applied to the derivative
+     @param n The quadrature point index
+     @param pt The parametric position of the quadrature point
+     @param X The physical position of the quadrature point
+     @param Ut Values of the state variables and their 1st/2nd time derivs
+     @param Ux The spatial derivatives of the state variables
+     @param dfdq The derivative of the function of interest w.r.t. the quantity
+     @param dvLen The length of the design sensitivity array
+     @param dfdx The derivative array being computed
+  */
+  virtual void addPointQuantityDVSens( int elemIndex,
+                                       const int quantityType,
+                                       const double time,
+                                       TacsScalar scale,
+                                       int n, const double pt[],
+                                       const TacsScalar X[],
+                                       const TacsScalar Ut[],
+                                       const TacsScalar Ux[],
+                                       const TacsScalar dfdq[],
+                                       int dvLen,
+                                       TacsScalar dfdx[] ){}
+
+  /**
      Evaluate the derivatives of the point-wise quantity of interest
      with respect to X, Ut and Ux.
   */
+
+  /*
   virtual int evalPointQuantitySens( int elemIndex,
-                                     const double time,
                                      const int quantityType,
+                                     const double time,
                                      int n, const double pt[],
                                      const TacsScalar X[],
                                      const TacsScalar Ut[],
@@ -275,6 +305,7 @@ class TACSElementModel {
                                      TacsScalar dqdUx[] ){
     return 0;
   }
+  */
 
   /**
     Generate a line of output for a single visualization point

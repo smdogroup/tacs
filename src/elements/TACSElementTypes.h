@@ -18,7 +18,7 @@
 /*
   Quantity output types defined
 */
-const int TACS_MASS_DENSITY = 1;
+const int TACS_ELEMENT_DENSITY = 1;
 const int TACS_FAILURE_INDEX = 2;
 const int TACS_X_DIPLACEMENT_VALUE = 3;
 const int TACS_Y_DIPLACEMENT_VALUE = 4;

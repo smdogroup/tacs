@@ -70,11 +70,33 @@ class TACSLinearElasticity2D : public TACSElementModel {
                          int *Jac_nnz, const int *_Jac_pairs[],
                          TacsScalar Jac[] );
 
+  /**
+     Add the derivative of the product of the adjoint and residual to
+     the design vector
+  */
   void addWeakAdjProduct( int elemIndex, const double time, int n,
                           const double pt[], const TacsScalar X[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],
-                          TacsScalar scale, int dvLen, TacsScalar *fdvSens );
+                          TacsScalar scale, int dvLen, TacsScalar dfdx[] );
+
+  /**
+     Evaluate a point-wise quantity of interest at a quadrature point
+  */
+  int evalPointQuantity( int elemIndex, const int quantityType,
+                         const double time, int n, const double pt[],
+                         const TacsScalar X[], const TacsScalar Ut[],
+                         const TacsScalar Ux[], TacsScalar *quantity );
+
+  /**
+     Add the derivative of the quantity w.r.t. the design variables
+  */
+  void addPointQuantityDVSens( int elemIndex, const int quantityType,
+                               const double time, TacsScalar scale,
+                               int n, const double pt[],
+                               const TacsScalar X[], const TacsScalar Ut[],
+                               const TacsScalar Ux[], const TacsScalar dfdq[],
+                               int dvLen, TacsScalar dfdx[] );
 
   /**
     Get the output for a single node in the mesh
