@@ -27,7 +27,7 @@ class TACSNodeMap : public TACSObject {
  public:
   // Contro the type of variable map
   enum NodeMapType { DISTRIBUTED, GLOBAL };
-  
+
   TACSNodeMap( MPI_Comm _comm, int _N,
                NodeMapType vtype=DISTRIBUTED );
   ~TACSNodeMap();

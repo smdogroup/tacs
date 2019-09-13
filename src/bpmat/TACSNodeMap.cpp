@@ -21,7 +21,7 @@
   The mapping may be either distributed, in which case the node
   variable values are distributed across all processors, or global, in
   which the node values are duplicated across all procs.
-  
+
   @param comm Communicator for this object
   @param N The number of variables defined (either locally or globally)
   @param vtype The type of node map

@@ -3099,7 +3099,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
   where P^{T} is a permutation of the columns (variables), while P is
   a permutation of the rows (equations).
 */
-FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
+TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n",
             mpiRank);
@@ -3286,14 +3286,14 @@ FEMat *TACSAssembler::createFEMat( OrderingType order_type ){
   int *rowp, *cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
-  FEMat *fmat = new FEMat(thread_info, nodeMap,
-                          varsPerNode, numNodes, rowp, cols,
-                          feMatBIndices, feMatBMap,
-                          feMatCIndices, feMatCMap);
+  TACSSchurMat *mat = new TACSSchurMat(thread_info, nodeMap,
+                                       varsPerNode, numNodes, rowp, cols,
+                                       feMatBIndices, feMatBMap,
+                                       feMatCIndices, feMatCMap);
   delete [] rowp;
   delete [] cols;
 
-  return fmat;
+  return mat;
 }
 
 /*

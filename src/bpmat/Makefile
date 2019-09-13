@@ -33,7 +33,6 @@ CXX_OBJS = MatUtils.o \
 	KSM.o \
 	TACSDistMat.o \
 	TACSSchurMat.o \
-	FEMat.o \
 	GSEP.o \
 	JacobiDavidson.o \
 	PDMat.o \

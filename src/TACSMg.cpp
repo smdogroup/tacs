@@ -212,7 +212,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
     }
     else {
       // Set up the root matrix
-      FEMat *femat = tacs[level]->createFEMat();
+      TACSSchurMat *femat = tacs[level]->createSchurMat();
       root_mat = femat;
       root_mat->incref();
 

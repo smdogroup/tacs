@@ -1430,7 +1430,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           // Read in the component number and nodes associated
           // with this element
           int elem_num, component_num;
-          int nodes[3]; // Should have at most four nodes
+          int nodes[4]; // Should have at most four nodes
           parse_element_field(line[0],
                               &elem_num, &component_num,
                               nodes, 3);

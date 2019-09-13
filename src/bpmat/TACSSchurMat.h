@@ -62,7 +62,25 @@ class TACSSchurMat : public TACSMat {
                 BCSRMat *_B, BCSRMat *_E, BCSRMat *_F, BCSRMat *_C,
                 TACSBVecDistribute *_b_map,
                 TACSBVecDistribute *_c_map );
+  TACSSchurMat( TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
+                int bsize, int nlocal_vars,
+                const int *rowp, const int *cols,
+                TACSBVecIndices *b_local_indices,
+                TACSBVecDistribute *_b_map,
+                TACSBVecIndices *c_local_indices,
+                TACSBVecDistribute *_c_map );
   ~TACSSchurMat();
+
+  // Functions for setting values in the matrix
+  // ------------------------------------------
+  void addValues( int nrow, const int *row, int ncol, const int *col,
+                  int nv, int mv, const TacsScalar *values );
+  void addWeightValues( int nvars, const int *varp, const int *vars,
+                        const TacsScalar *weights,
+                        int nv, int mv, const TacsScalar *values,
+                        MatrixOrientation matOr=NORMAL );
+  void applyBCs( TACSBcMap *bcmap );
+  TACSVec *createVec();
 
   // Functions for setting values in the matrix
   // ------------------------------------------

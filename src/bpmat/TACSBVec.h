@@ -41,7 +41,7 @@ class TACSBVecDepNodes : public TACSObject {
   // Get the dependent connectivity and weights
   int getDepNodes( const int **_dep_ptr, const int **_dep_conn,
                    const double **_dep_weights );
-  
+
   // Get the dependent node connectivity for reordering
   // --------------------------------------------------
   int getDepNodeReorder( const int **_dep_ptr, int **_dep_conn );
