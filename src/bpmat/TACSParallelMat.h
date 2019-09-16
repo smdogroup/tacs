@@ -50,7 +50,28 @@ class TACSParallelMat : public TACSMat {
   TACSParallelMat( TACSNodeMap *rmap,
                    BCSRMat *_Aloc, BCSRMat *_Bext,
                    TACSBVecDistribute *_col_map );
+  TACSParallelMat( TACSThreadInfo *thread_info,
+                   TACSNodeMap *_rmap, int bsize,
+                   int next_vars, const int *rowp, const int *cols,
+                   TACSBVecIndices *bindex );
   ~TACSParallelMat();
+
+  // Functions for setting values in the matrix
+  // ------------------------------------------
+  void addValues( int nrow, const int *row,
+                  int ncol, const int *col,
+                  int nv, int mv, const TacsScalar *values );
+  void addWeightValues( int nvars, const int *varp, const int *vars,
+                        const TacsScalar *weights,
+                        int nv, int mv, const TacsScalar *values,
+                        MatrixOrientation matOr=NORMAL );
+  void beginAssembly();
+  void endAssembly();
+
+  // Set values into the matrix from the local BCSRMat
+  // -------------------------------------------------
+  void setValues( int nvars, const int *ext_vars,
+                  const int *rowp, const int *cols, TacsScalar *avals );
 
   // Functions for setting values in the matrix
   // ------------------------------------------

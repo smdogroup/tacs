@@ -59,7 +59,11 @@ TACSParallelMat::TACSParallelMat( TACSNodeMap *_rmap,
 /*
   The protected constructor that does not take any arguments.
 */
-TACSParallelMat::TACSParallelMat(){
+TACSParallelMat::TACSParallelMat( TACSThreadInfo *thread_info,
+                                  TACSNodeMap *map, int bsize,
+                                  int num_ext_vars,
+                                  const int *rowp, const int *cols,
+                                  TACSBVecIndices *bindex ){
   rmap = NULL;
   Aloc = NULL;
   Bext = NULL;

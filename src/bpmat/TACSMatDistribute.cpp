@@ -16,13 +16,9 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "TACSDistMat.h"
+#include "TACSMatDistribute.h"
 #include "FElibrary.h"
 #include "MatUtils.h"
-
-/*
-  TACSDistMat implementation
-*/
 
 /*
   Given the non-zero pattern of a local matrix, the global indices
@@ -49,9 +45,8 @@
   construct the DistMat, or a sub-set of it.
 
   input:
-  thread_info:   object that stores pthreads info
   rmap:          variable mapping assignment to processors
-  num_ext_vars:  the size of the block matrix on this processor
+  num_nodes:     the number of nodes on this processor
   rowp:          the pointer to the cols for the non-zero pattern
   cols:          the column indices for the non-zero pattern
   bindex:        the global block indices of the CSR data structure
@@ -67,54 +62,55 @@
   7. The CSR data structures from all procs are merged
   8. The persistent data communication paths are initialized
 */
-TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info,
-                          TACSNodeMap *map, int bsize, int num_ext_vars,
-                          const int *rowp, const int *cols,
-                          TACSBVecIndices *bindex ){
-  comm = map->getMPIComm();
-
+TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
+                                      const int *rowp, const int *cols,
+                                      TACSBVecIndices *rowIndex ){
   int mpiRank, mpiSize;
+  comm = rowmap->getMPIComm();
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
 
   // Get the external variables
   const int *ext_vars;
-  if (bindex->getIndices(&ext_vars) != num_ext_vars){
-    fprintf(stderr, "[%d] DistMat error: number of indices provided must be "
-            "equal to the number of rows\n", mpiRank);
+  if (rowIndex->getIndices(&ext_vars) != num_nodes){
+    fprintf(stderr, "[%d] TACSMatDistribute error: number of indices "
+            "provided must be equal to the number of rows\n", mpiRank);
     return;
   }
 
+  // Get the owner range for the number of variables owned by
+  // each node
   const int *ownerRange;
-  map->getOwnerRange(&ownerRange);
+  rowMap->getOwnerRange(&ownerRange);
 
   // Get the non-zero pattern of the input matrix
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
 
   // Count up the number of equations that must be sent to other
-  // processors.
-  // Get only the variables associated with those ones.
-  next_rows = 0;
+  // processors. Get only the variables associated with those ones.
+  num_ext_rows = 0;
   for ( int k = 0; k < num_ext_vars; k++ ){
     if (ext_vars[k] < lower || ext_vars[k] >= upper){
-      next_rows++;
+      num_ext_rows++;
     }
   }
 
-  ext_rows = new int[ next_rows ];
-  next_rows = 0;
+  ext_rows = new int[ num_ext_rows ];
+  num_ext_rows = 0;
   for ( int k = 0; k < num_ext_vars; k++ ){
     if (ext_vars[k] < lower || ext_vars[k] >= upper){
-      ext_rows[next_rows] = ext_vars[k];
-      next_rows++;
+      ext_rows[num_ext_rows] = ext_vars[k];
+      num_ext_rows++;
     }
   }
 
-  int next_row_init = next_rows;
+  // Check that the row indices provided are unique and sort them
+  // in preparation
+  int next_row_init = num_ext_rows;
   next_rows = FElibrary::uniqueSort(ext_rows, next_rows);
   if (next_row_init != next_rows){
-    fprintf(stderr, "[%d] DistMat error, ext_vars are not unique\n",
+    fprintf(stderr, "[%d] TACSMatDistrubte error: ext_vars are not unique\n",
             mpiRank);
   }
 
@@ -125,24 +121,24 @@ TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info,
 
   for ( int i = 0; i < num_ext_vars; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
-      int *item = (int*)bsearch(&ext_vars[i], ext_rows, next_rows,
+      int *item = (int*)bsearch(&ext_vars[i], ext_rows, num_ext_rows,
                                 sizeof(int), FElibrary::comparator);
       int index = item - ext_rows;
       ext_rowp[index+1] = rowp[i+1] - rowp[i];
     }
   }
 
-  for ( int i = 0; i < next_rows; i++ ){
+  for ( int i = 0; i < num_ext_rows; i++ ){
     ext_rowp[i+1] += ext_rowp[i];
   }
 
   // Next, calculate ext_cols. Find only the external rows and
   // convert them to the global numbering scheme
-  ext_cols = new int[ ext_rowp[next_rows] ];
+  ext_cols = new int[ ext_rowp[num_ext_rows] ];
 
   for ( int i = 0; i < num_ext_vars; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
-      int *item = (int*)bsearch(&ext_vars[i], ext_rows, next_rows,
+      int *item = (int*)bsearch(&ext_vars[i], ext_rows, num_ext_rows,
                                 sizeof(int), FElibrary::comparator);
       int index = item - ext_rows;
 
@@ -161,28 +157,81 @@ TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info,
 
   // Match the intervals of the external variables to be
   // sent to other processes
-  ext_row_ptr = new int[ mpiSize+1 ];
-  ext_row_count = new int[ mpiSize ];
+  int *ptr = new int[ mpiSize+1 ];
+  FElibrary::matchIntervals(mpiSize, ownerRange, num_ext_rows,
+                            ext_rows, ptr);
 
-  FElibrary::matchIntervals(mpiSize, ownerRange, next_rows,
-    ext_rows, ext_row_ptr);
-
+  // Count up the processors that will be sending information
+  num_ext_procs = 0;
   for ( int k = 0; k < mpiSize; k++ ){
-    ext_row_count[k] = ext_row_ptr[k+1] - ext_row_ptr[k];
+    int count = ptr[k+1] - ptr[k];
+    if (count > 0){
+      num_ext_procs++;
+    }
   }
 
-  in_row_count = new int[ mpiSize ];
-  in_row_ptr= new int[ mpiSize+1 ];
+  // Allocate and store the information that they will be sending
 
+
+  int *ext_row_count_full = new int[ mpiSize ];
+  for ( int k = 0; k < mpiSize; k++ ){
+    ext_row_count_full[k] =
+  }
+
+
+
+  int *in_row_count = new int[ mpiSize ];
   MPI_Alltoall(ext_row_count, 1, MPI_INT, in_row_count, 1, MPI_INT, comm);
 
-  // Prepare to receive the equation numbers from the other processes
-  in_row_ptr[0] = 0;
+
+  // Count up the number of processors contributing entries to
+  // this procesor
+  num_in_procs = 0;
   for ( int k = 0; k < mpiSize; k++ ){
+    if (in_row_count[k] > 0){
+      num_in_procs++;
+    }
+  }
+
+  // Allocate space to store which processors are sendin
+  in_procs = new int[ num_in_procs ];
+  in_row_count = new int[ num_in_procs ];
+  for ( int k = 0; k < mpiSize; k++ ){
+    if (in_row_count[k] > 0 ){
+      in_procs[count] = k;
+      in_row_count[count] = in_row_count_full[k];
+      count++;
+    }
+  }
+
+  // Prepare to receive the equation numbers from the other processes
+  in_row_ptr = new int[ num_in_procs+1 ];
+  for ( int k = 0; k < num_in_procs; k++ ){
     in_row_ptr[k+1] = in_row_ptr[k] + in_row_count[k];
   }
 
-  in_rows = new int[ in_row_ptr[mpiSize] ];
+  // Allocate space for the integers
+  in_rows = new int[ in_row_ptr[num_in_procs] ];
+
+  // Post the sends and recieves
+  for ( int k = 0; k < num_ext_procs; k++ ){
+    int offset = ;
+    int count = ;
+    int dest = ;
+    int tag = ;
+    MPI_Isend(&ext_rows[offset], count, MPI_INT, dest, tag,
+              comm, &ext_send_req[k]);
+  }
+
+
+
+
+
+
+
+
+
+
 
   MPI_Alltoallv(ext_rows, ext_row_count, ext_row_ptr, MPI_INT,
                 in_rows, in_row_count, in_row_ptr, MPI_INT, comm);
@@ -304,7 +353,7 @@ TACSDistMat::TACSDistMat( TACSThreadInfo *thread_info,
   initPersistent();
 }
 
-TACSDistMat::~TACSDistMat(){
+TACSMatDistribute::~TACSMatDistribute(){
   delete [] ext_rows;
   delete [] ext_rowp;
   delete [] ext_cols;
@@ -339,12 +388,14 @@ TACSDistMat::~TACSDistMat(){
   [ B, E ][ x ]
   [ F, C ][ y ] + [ Bext ][ y_ext ] = 0
 */
-void TACSDistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars,
-                                    const int *rowp, const int *cols,
-                                    int lower, int upper,
-                                    int nz_per_row,
-                                    int **_Arowp, int **_Acols,
-                                    int *_np, int **_Browp, int **_Bcols ){
+void TACSMatDistribute::setUpLocalExtCSR( int num_ext_vars,
+                                          const int *ext_vars,
+                                          const int *rowp, const int *cols,
+                                          int lower, int upper,
+                                          int nz_per_row,
+                                          int **_Arowp, int **_Acols,
+                                          int *_np, int **_Browp,
+                                          int **_Bcols ){
   int mpiRank, mpiSize;
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
@@ -599,7 +650,7 @@ void TACSDistMat::setUpLocalExtCSR( int num_ext_vars, const int *ext_vars,
   matrix values that are set on this processor, but are destined for
   other processors.
 */
-void TACSDistMat::initPersistent(){
+void TACSMatDistributeTACSDistMat::initPersistent(){
   int bsize = Aloc->getBlockSize();
 
   int mpiRank, mpiSize;
@@ -691,9 +742,10 @@ void TACSDistMat::initPersistent(){
   nv, mv:   number of true rows/columns in the dense matrix
   values:   the dense matrix values
 */
-void TACSDistMat::addValues( int nrow, const int *row,
-                             int ncol, const int *col,
-                             int nv, int mv, const TacsScalar *values ){
+void TACSMatDistribute::addValues( int nrow, const int *row,
+                                   int ncol, const int *col,
+                                   int nv, int mv,
+                                   const TacsScalar *values ){
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
 
@@ -839,10 +891,13 @@ void TACSDistMat::addValues( int nrow, const int *row,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
-void TACSDistMat::addWeightValues( int nvars, const int *varp, const int *vars,
-                                   const TacsScalar *weights,
-                                   int nv, int mv, const TacsScalar *values,
-                                   MatrixOrientation matOr ){
+void TACSMatDistribute::addWeightValues( int nvars,
+                                         const int *varp,
+                                         const int *vars,
+                                         const TacsScalar *weights,
+                                         int nv, int mv,
+                                         const TacsScalar *values,
+                                         MatrixOrientation matOr ){
   int bsize = Aloc->getBlockSize();
   int b2 = bsize*bsize;
 
@@ -997,9 +1052,9 @@ void TACSDistMat::addWeightValues( int nvars, const int *varp, const int *vars,
 /*!
   Given a non-zero pattern, pass in the values for the array
 */
-void TACSDistMat::setValues( int nvars, const int *ext_vars,
-                             const int *rowp, const int *cols,
-                             TacsScalar *avals ){
+void TACSMatDistribute::setValues( int nvars, const int *ext_vars,
+                                   const int *rowp, const int *cols,
+                                   TacsScalar *avals ){
   zeroEntries();
 
   int bsize = Aloc->getBlockSize();
@@ -1155,7 +1210,7 @@ void TACSDistMat::beginAssembly(){
   Once the communication is completed, add the off-processor
   entries to the matrix.
 */
-void TACSDistMat::endAssembly(){
+void TACSMatDistribute::endAssembly(){
   // Get the map between the global-external variables
   // and the local variables (for Bext)
   int bsize = Aloc->getBlockSize();

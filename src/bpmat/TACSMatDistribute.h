@@ -19,27 +19,16 @@
 #ifndef TACS_DISTRIBUTED_MAT_H
 #define TACS_DISTRIBUTED_MAT_H
 
-/*
-  Distributed matrix implementation
-*/
-
+#include "TACSBVecDistribute.h"
 #include "TACSParallelMat.h"
 
-/*
-  Distributed matrix based on a parallel distribution of rows.  This
-  class inherits from PMat.
-*/
-class TACSDistMat : public TACSParallelMat {
+class TACSMatDistCtx {
  public:
-  TACSDistMat( TACSThreadInfo *thread_info,
-               TACSNodeMap *_rmap, int bsize,
-               int next_vars, const int *rowp, const int *cols,
-               TACSBVecIndices *bindex );
-  ~TACSDistMat();
+
+
 
   // Functions for setting values in the matrix
   // ------------------------------------------
-  void zeroEntries();
   void addValues( int nrow, const int *row,
                   int ncol, const int *col,
                   int nv, int mv, const TacsScalar *values );
@@ -47,6 +36,41 @@ class TACSDistMat : public TACSParallelMat {
                         const TacsScalar *weights,
                         int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=NORMAL );
+
+  // Information for the persistent communication set up
+  // ---------------------------------------------------
+  int nsends, nreceives;
+  MPI_Request *sends, *receives;
+  MPI_Status *send_status, *receive_status;
+  int *send_proc, *receive_proc;
+
+
+
+  // Pointer to the external data
+  TacsScalar *ext_A;
+
+  // Pointer to incoming data
+  TacsScalar *in_A;
+};
+
+
+/*
+  Distribute components of a matrix from a local CSR format to a global
+  distributed format compatible with TACSParallelMat.
+
+  This distribution may be performed in essentially two different ways:
+
+  First, the values may be set
+  on the desired
+
+*/
+class TACSMatDistribute : public TACSObject {
+ public:
+  TACSMatDistribute( TACSNodeMap *rmap, int num_nodes,
+                     const int *rowp, const int *cols,
+                     TACSBVecIndices *bindex );
+  ~TACSMatDistribute();
+
   void beginAssembly();
   void endAssembly();
 
@@ -84,9 +108,6 @@ class TACSDistMat : public TACSParallelMat {
   int *ext_rowp;
   int *ext_cols;
 
-  // Pointer to the external data
-  TacsScalar *ext_A;
-
   // Data received from other processes
   // ----------------------------------
   int nin_rows;
@@ -94,16 +115,6 @@ class TACSDistMat : public TACSParallelMat {
   int *in_row_ptr, *in_row_count;
   int *in_rowp;
   int *in_cols;
-
-  // Pointer to incoming data
-  TacsScalar *in_A;
-
-  // Information for the persistent communication set up
-  // ---------------------------------------------------
-  int nsends, nreceives;
-  MPI_Request *sends, *receives;
-  MPI_Status *send_status, *receive_status;
-  int *send_proc, *receive_proc;
 };
 
 #endif // TACS_DISTRIBUTED_MAT_H

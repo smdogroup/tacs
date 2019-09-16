@@ -34,7 +34,7 @@ class TACSAssembler;
 
 // Linear algebra classes
 #include "TACSBVecDistribute.h"
-#include "TACSDistMat.h"
+#include "TACSParallelMat.h"
 #include "TACSSchurMat.h"
 #include "SerialBCSCMat.h"
 
@@ -182,7 +182,7 @@ class TACSAssembler : public TACSObject {
 
   // Create the matrices that can be used for analysis
   // -------------------------------------------------
-  TACSDistMat *createMat();
+  TACSParallelMat *createMat();
   TACSSchurMat *createSchurMat( OrderingType order_type=TACS_AMD_ORDER );
   SerialBCSCMat *createSerialBCSCMat();
 
