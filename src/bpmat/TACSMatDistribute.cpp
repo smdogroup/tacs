@@ -62,17 +62,21 @@
   7. The CSR data structures from all procs are merged
   8. The persistent data communication paths are initialized
 */
-TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
+TACSMatDistribute::TACSMatDistribute( TACSNodeMap *_row_map, int numNodes,
                                       const int *rowp, const int *cols,
                                       TACSBVecIndices *rowIndex ){
   int mpiRank, mpiSize;
-  comm = rowmap->getMPIComm();
+  comm = row_map->getMPIComm();
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
 
+  row_map = _row_map;
+  row_map->incref();
+
   // Get the external variables
   const int *ext_vars;
-  if (rowIndex->getIndices(&ext_vars) != num_nodes){
+
+  if (rowIndex->getIndices(&ext_vars) != numNodes){
     fprintf(stderr, "[%d] TACSMatDistribute error: number of indices "
             "provided must be equal to the number of rows\n", mpiRank);
     return;
@@ -81,7 +85,7 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
   // Get the owner range for the number of variables owned by
   // each node
   const int *ownerRange;
-  rowMap->getOwnerRange(&ownerRange);
+  row_map->getOwnerRange(&ownerRange);
 
   // Get the non-zero pattern of the input matrix
   int lower = ownerRange[mpiRank];
@@ -90,7 +94,7 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
   // Count up the number of equations that must be sent to other
   // processors. Get only the variables associated with those ones.
   num_ext_rows = 0;
-  for ( int k = 0; k < num_ext_vars; k++ ){
+  for ( int k = 0; k < numNodes; k++ ){
     if (ext_vars[k] < lower || ext_vars[k] >= upper){
       num_ext_rows++;
     }
@@ -98,7 +102,7 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
 
   ext_rows = new int[ num_ext_rows ];
   num_ext_rows = 0;
-  for ( int k = 0; k < num_ext_vars; k++ ){
+  for ( int k = 0; k < numNodes; k++ ){
     if (ext_vars[k] < lower || ext_vars[k] >= upper){
       ext_rows[num_ext_rows] = ext_vars[k];
       num_ext_rows++;
@@ -107,19 +111,19 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
 
   // Check that the row indices provided are unique and sort them
   // in preparation
-  int next_row_init = num_ext_rows;
-  next_rows = FElibrary::uniqueSort(ext_rows, next_rows);
-  if (next_row_init != next_rows){
+  int num_ext_row_init = num_ext_rows;
+  num_ext_rows = FElibrary::uniqueSort(ext_rows, num_ext_rows);
+  if (num_ext_row_init != num_ext_rows){
     fprintf(stderr, "[%d] TACSMatDistrubte error: ext_vars are not unique\n",
             mpiRank);
   }
 
   // Create the off-process CSR data structure that will be sent to
   // other processes. First, calculate ext_rowp
-  ext_rowp = new int[ next_rows+1 ];
-  memset(ext_rowp, 0, (next_rows+1)*sizeof(int));
+  ext_rowp = new int[ num_ext_rows+1 ];
+  memset(ext_rowp, 0, (num_ext_rows+1)*sizeof(int));
 
-  for ( int i = 0; i < num_ext_vars; i++ ){
+  for ( int i = 0; i < numNodes; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
       int *item = (int*)bsearch(&ext_vars[i], ext_rows, num_ext_rows,
                                 sizeof(int), FElibrary::comparator);
@@ -136,7 +140,7 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
   // convert them to the global numbering scheme
   ext_cols = new int[ ext_rowp[num_ext_rows] ];
 
-  for ( int i = 0; i < num_ext_vars; i++ ){
+  for ( int i = 0; i < numNodes; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
       int *item = (int*)bsearch(&ext_vars[i], ext_rows, num_ext_rows,
                                 sizeof(int), FElibrary::comparator);
@@ -149,57 +153,72 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
 
       int size = ext_rowp[index+1] - ext_rowp[index];
       if (size != FElibrary::uniqueSort(&ext_cols[ext_rowp[index]], size)){
-        fprintf(stderr, "[%d] DistMat error, array is not unique\n",
+        fprintf(stderr, "[%d] TACSMatDistribute error: Array is not unique\n",
                 mpiRank);
       }
     }
   }
 
-  // Match the intervals of the external variables to be
-  // sent to other processes
-  int *ptr = new int[ mpiSize+1 ];
+  // Match the intervals of the external variables to be sent to other
+  // processes
+  int *ext_ptr = new int[ mpiSize+1 ];
   FElibrary::matchIntervals(mpiSize, ownerRange, num_ext_rows,
-                            ext_rows, ptr);
+                            ext_rows, ext_ptr);
 
   // Count up the processors that will be sending information
   num_ext_procs = 0;
   for ( int k = 0; k < mpiSize; k++ ){
-    int count = ptr[k+1] - ptr[k];
-    if (count > 0){
+    int num_rows = ext_ptr[k+1] - ext_ptr[k];
+    if (num_rows > 0){
       num_ext_procs++;
     }
   }
 
-  // Allocate and store the information that they will be sending
-
-
-  int *ext_row_count_full = new int[ mpiSize ];
-  for ( int k = 0; k < mpiSize; k++ ){
-    ext_row_count_full[k] =
+  // Find the external processors
+  ext_procs = new int[ num_ext_procs ];
+  ext_count = new int[ num_ext_procs ];
+  ext_row_ptr = new int[ num_ext_procs+1 ];
+  ext_row_ptr[0] = 0;
+  for ( int k = 0, count = 0; k < mpiSize; k++ ){
+    int num_rows = ext_ptr[k+1] - ext_ptr[k];
+    if (num_rows > 0){
+      ext_procs[count] = k;
+      ext_count[count] = num_rows;
+      ext_row_ptr[count+1] = ext_row_ptr[count] + num_rows;
+      count++;
+    }
   }
 
+  // Adjust the pointer array so that it is an array of counts
+  for ( int k = 0, offset = 0; k < mpiSize; k++ ){
+    ext_ptr[k] = ext_ptr[k+1] - offset;
+    offset = ext_ptr[k+1];
+  }
 
-
-  int *in_row_count = new int[ mpiSize ];
-  MPI_Alltoall(ext_row_count, 1, MPI_INT, in_row_count, 1, MPI_INT, comm);
-
+  // Allocate space to store the number of in-coming entries
+  int *in_full = new int[ mpiSize ];
+  MPI_Alltoall(ext_ptr, 1, MPI_INT, in_full, 1, MPI_INT, comm);
+  delete [] ext_ptr;
 
   // Count up the number of processors contributing entries to
   // this procesor
   num_in_procs = 0;
   for ( int k = 0; k < mpiSize; k++ ){
-    if (in_row_count[k] > 0){
+    if (in_count[k] > 0){
       num_in_procs++;
     }
   }
 
   // Allocate space to store which processors are sendin
   in_procs = new int[ num_in_procs ];
-  in_row_count = new int[ num_in_procs ];
-  for ( int k = 0; k < mpiSize; k++ ){
-    if (in_row_count[k] > 0 ){
+  in_count = new int[ num_in_procs ];
+  in_row_ptr = new int[ num_in_procs+1 ];
+  in_row_ptr[0] = 0;
+  for ( int k = 0, count = 0; k < mpiSize; k++ ){
+    if (in_full[k] > 0){
       in_procs[count] = k;
-      in_row_count[count] = in_row_count_full[k];
+      in_count[count] = in_full[k];
+      in_row_ptr[count+1] = in_row_ptr[count] + in_count[count];
       count++;
     }
   }
@@ -207,98 +226,136 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
   // Prepare to receive the equation numbers from the other processes
   in_row_ptr = new int[ num_in_procs+1 ];
   for ( int k = 0; k < num_in_procs; k++ ){
-    in_row_ptr[k+1] = in_row_ptr[k] + in_row_count[k];
+    in_row_ptr[k+1] = in_row_ptr[k] + in_count[k];
   }
 
   // Allocate space for the integers
-  in_rows = new int[ in_row_ptr[num_in_procs] ];
+  num_in_rows = in_row_ptr[num_in_procs];
+  in_rows = new int[ num_in_rows ];
 
-  // Post the sends and recieves
-  for ( int k = 0; k < num_ext_procs; k++ ){
-    int offset = ;
-    int count = ;
-    int dest = ;
-    int tag = ;
-    MPI_Isend(&ext_rows[offset], count, MPI_INT, dest, tag,
-              comm, &ext_send_req[k]);
+  // Allocate space for the statuses
+  MPI_Request *in_requests = new MPI_Request[ num_in_procs ];
+  MPI_Request *ext_requests = new MPI_Request[ num_ext_procs ];
+
+  // Post the recvs
+  for ( int k = 0, offset = 0; k < num_in_procs; k++ ){
+    int count = in_count[k];
+    int source = in_procs[k];
+    int tag = 1;
+    MPI_Irecv(&in_rows[offset], count, MPI_INT, source, tag,
+              comm, &in_requests[k]);
+    offset += count;
   }
 
+  // Post the sends
+  for ( int k = 0, offset = 0; k < num_ext_procs; k++ ){
+    int count = ext_count[k];
+    int dest = ext_procs[k];
+    int tag = 1;
+    MPI_Isend(&ext_rows[offset], count, MPI_INT, dest, tag,
+              comm, &ext_requests[k]);
+    offset += count;
+  }
 
-
-
-
-
-
-
-
-
-
-  MPI_Alltoallv(ext_rows, ext_row_count, ext_row_ptr, MPI_INT,
-                in_rows, in_row_count, in_row_ptr, MPI_INT, comm);
+  // Wait until everything completes
+  if (num_ext_procs > 0){
+    MPI_Waitall(num_ext_procs, ext_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_in_procs > 0){
+    MPI_Waitall(num_in_procs, in_requests, MPI_STATUSES_IGNORE);
+  }
 
   // Prepare to pass information from ext_rowp to in_rowp
-  int *ext_row_var_count = new int[ next_rows ];
-  for ( int k = 0; k < next_rows; k++ ){
+  int *ext_row_var_count = new int[ num_ext_rows ];
+  for ( int k = 0; k < num_ext_rows; k++ ){
     ext_row_var_count[k] = ext_rowp[k+1] - ext_rowp[k];
   }
 
-  nin_rows = in_row_ptr[mpiSize];
-  in_rowp = new int[ nin_rows+1 ];
+  in_rowp = new int[ num_in_rows+1 ];
   in_rowp[0] = 0;
 
-  MPI_Alltoallv(ext_row_var_count, ext_row_count, ext_row_ptr, MPI_INT,
-                &in_rowp[1], in_row_count, in_row_ptr, MPI_INT, comm);
+  // Post the recvs
+  for ( int k = 0, offset = 1; k < num_in_procs; k++ ){
+    int count = in_count[k];
+    int source = in_procs[k];
+    int tag = 2;
+    MPI_Irecv(&in_rowp[offset], count, MPI_INT, source, tag,
+              comm, &in_requests[k]);
+    offset += count;
+  }
 
-  for ( int k = 0; k < nin_rows; k++ ){
+  // Post the sends
+  for ( int k = 0, offset = 0; k < num_ext_procs; k++ ){
+    int count = ext_count[k];
+    int dest = ext_procs[k];
+    int tag = 2;
+    MPI_Isend(&ext_row_var_count[offset], count, MPI_INT, dest, tag,
+              comm, &ext_requests[k]);
+    offset += count;
+  }
+
+  if (num_ext_procs > 0){
+    MPI_Waitall(num_ext_procs, ext_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_in_procs > 0){
+    MPI_Waitall(num_in_procs, in_requests, MPI_STATUSES_IGNORE);
+  }
+
+  // Convert the counts to a pointer offset
+  for ( int k = 0; k < num_in_rows; k++ ){
     in_rowp[k+1] += in_rowp[k];
   }
 
   delete [] ext_row_var_count;
 
   // Pass ext_cols to in_cols
-  in_cols = new int[ in_rowp[nin_rows] ];
+  in_cols = new int[ in_rowp[num_in_rows] ];
 
-  int *ext_cols_ptr = new int[ mpiSize ];
-  int *ext_cols_count = new int[ mpiSize ];
-  int *in_cols_ptr = new int[ mpiSize ];
-  int *in_cols_count = new int[ mpiSize ];
-
-  for ( int i = 0; i < mpiSize; i++ ){
-    ext_cols_ptr[i] = ext_rowp[ ext_row_ptr[i] ];
-    ext_cols_count[i] =
-      ext_rowp[ ext_row_ptr[i+1] ] - ext_rowp[ ext_row_ptr[i] ];
-    in_cols_ptr[i] = in_rowp[ in_row_ptr[i] ];
-    in_cols_count[i] =
-      in_rowp[ in_row_ptr[i+1] ] - in_rowp[ in_row_ptr[i] ];
+  // Post the recvs
+  for ( int k = 0, offset = 0; k < num_in_procs; k++ ){
+    int count = in_rowp[offset + in_count[k]] - in_rowp[offset];
+    int source = in_procs[k];
+    int tag = 2;
+    MPI_Irecv(&in_cols[offset], count, MPI_INT, source, tag,
+              comm, &in_requests[k]);
+    offset += in_count[k];
   }
 
-  // Send the column numbers to the other processors
-  MPI_Alltoallv(ext_cols, ext_cols_count, ext_cols_ptr, MPI_INT,
-                in_cols, in_cols_count, in_cols_ptr, MPI_INT, comm);
+  // Post the sends
+  for ( int k = 0, offset = 0; k < num_ext_procs; k++ ){
+    int count = ext_rowp[offset + ext_count[k]] - ext_rowp[offset];
+    int dest = ext_procs[k];
+    int tag = 2;
+    MPI_Isend(&ext_cols[offset], count, MPI_INT, dest, tag,
+              comm, &ext_requests[k]);
+    offset += ext_count[k];
+  }
 
-  delete [] ext_cols_count;
-  delete [] ext_cols_ptr;
-  delete [] in_cols_count;
-  delete [] in_cols_ptr;
+  if (num_ext_procs > 0){
+    MPI_Waitall(num_ext_procs, ext_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_in_procs > 0){
+    MPI_Waitall(num_in_procs, in_requests, MPI_STATUSES_IGNORE);
+  }
 
   // estimate the non-zero entries per row
   int nz_per_row = 10;
-  if (num_ext_vars > 0){
-    nz_per_row = (int)(rowp[num_ext_vars]/num_ext_vars + 1);
+  if (numNodes > 0){
+    nz_per_row = (int)(rowp[numNodes]/numNodes + 1);
   }
 
   // Now, set up the column map using in_cols
-  int max_col_vars_size = 5*nz_per_row + next_rows;
+  int max_col_vars_size = 5*nz_per_row + num_ext_rows;
   int col_vars_size = 0;
   int *col_vars = new int[ max_col_vars_size ];
 
   // Get contributions from ext_rows
-  for ( int i = 0; i < next_rows; i++ ){
+  for ( int i = 0; i < num_ext_rows; i++ ){
     col_vars[col_vars_size] = ext_rows[i];
     col_vars_size++;
   }
 
-  for ( int i = 0; i < nin_rows; i++ ){
+  for ( int i = 0; i < num_in_rows; i++ ){
     if (col_vars_size + in_rowp[i+1] - in_rowp[i] > max_col_vars_size){
       max_col_vars_size = 2.0*max_col_vars_size;
       matutils::ExtendArray(&col_vars, col_vars_size, max_col_vars_size);
@@ -316,21 +373,22 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
   }
 
   TACSBVecIndices *col_indices = new TACSBVecIndices(&col_vars, col_vars_size);
-  TACSBVecDistribute *col_map = new TACSBVecDistribute(map, col_indices);
+  TACSBVecDistribute *col_map = new TACSBVecDistribute(row_map, col_indices);
   col_map_size = col_indices->getIndices(&col_map_vars);
 
   // Assemble everything into on and off-diagonal parts
   int *Arowp, *Acols; // The diagonal entries
   int np, *Browp, *Bcols;
 
-  setUpLocalExtCSR(num_ext_vars, ext_vars, rowp, cols,
+  setUpLocalExtCSR(numNodes, ext_vars, rowp, cols,
                    ownerRange[mpiRank], ownerRange[mpiRank+1],
                    nz_per_row, &Arowp, &Acols,
                    &np, &Browp, &Bcols);
 
+  /*
   // Allocate space for in-coming matrix elements
-  ext_A = new TacsScalar[ bsize*bsize*ext_rowp[next_rows] ];
-  in_A = new TacsScalar[ bsize*bsize*in_rowp[nin_rows] ];
+  ext_A = new TacsScalar[ bsize*bsize*ext_rowp[num_ext_rows] ];
+  in_A = new TacsScalar[ bsize*bsize*in_rowp[num_in_rows] ];
 
   int len = bsize*bsize*ext_rowp[next_rows];
   for ( int k = 0; k < len; k++ ){
@@ -348,37 +406,24 @@ TACSMatDistribute::TACSMatDistribute( TACSNodeMap *rowMap, int numNodes,
 
   // Finally, initialize PMat
   init(map, aloc, bext, col_map);
-
-  // Set up the presistent communication amongst processors
-  initPersistent();
+  */
 }
 
 TACSMatDistribute::~TACSMatDistribute(){
+  row_map->decref();
+  delete [] ext_procs;
+  delete [] ext_count;
+  delete [] ext_row_ptr;
   delete [] ext_rows;
   delete [] ext_rowp;
   delete [] ext_cols;
-  delete [] ext_row_ptr;
-  delete [] ext_row_count;
 
+  delete [] in_procs;
+  delete [] in_count;
+  delete [] in_row_ptr;
   delete [] in_rows;
   delete [] in_rowp;
   delete [] in_cols;
-  delete [] in_row_ptr;
-  delete [] in_row_count;
-
-  delete [] in_A;
-  delete [] ext_A;
-
-  if (nsends > 0){
-    delete [] sends;
-    delete [] send_proc;
-    delete [] send_status;
-  }
-  if (nreceives > 0){
-    delete [] receives;
-    delete [] receive_proc;
-    delete [] receive_status;
-  }
 }
 
 /*!
@@ -388,7 +433,7 @@ TACSMatDistribute::~TACSMatDistribute(){
   [ B, E ][ x ]
   [ F, C ][ y ] + [ Bext ][ y_ext ] = 0
 */
-void TACSMatDistribute::setUpLocalExtCSR( int num_ext_vars,
+void TACSMatDistribute::setUpLocalExtCSR( int numNodes,
                                           const int *ext_vars,
                                           const int *rowp, const int *cols,
                                           int lower, int upper,
@@ -422,7 +467,7 @@ void TACSMatDistribute::setUpLocalExtCSR( int num_ext_vars,
     var_map[i] = -1;
   }
 
-  for ( int i = 0; i < num_ext_vars; i++ ){
+  for ( int i = 0; i < numNodes; i++ ){
     int var = ext_vars[i];
     if (var >= lower && var < upper){
       var_map[var - lower] = i;
@@ -467,42 +512,41 @@ void TACSMatDistribute::setUpLocalExtCSR( int num_ext_vars,
     }
 
     // Merge the off-processor contributions to the rows of A/B
-    for ( int k = 0; k < mpiSize; k++ ){
-      if (in_row_count[k] > 0){
-        // Try to find the variable in the k-th input - these are sorted
-        // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
-        int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]],
-                                  in_row_count[k], sizeof(int),
-                                  FElibrary::comparator);
+    for ( int k = 0; k < num_in_procs; k++ ){
+      // Try to find the variable in the k-th input - these are sorted
+      // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
+      int count = in_row_ptr[k+1] - in_row_ptr[k];
+      int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]],
+                                count, sizeof(int),
+                                FElibrary::comparator);
 
-        if (item){
-          int row = item - &in_rows[in_row_ptr[k]];
-          row += in_row_ptr[k];
+      if (item){
+        int row = item - &in_rows[in_row_ptr[k]];
+        row += in_row_ptr[k];
+        
+        // Add variables in this range to the row as well
+        int start = in_rowp[row];
+        int end   = in_rowp[row+1];
+        
+        if (A_row_size + end-start > A_max_row_size){
+          A_max_row_size = A_max_row_size + end-start;
+          matutils::ExtendArray(&A_row_vars, A_row_size, A_max_row_size);
+        }
 
-          // Add variables in this range to the row as well
-          int start = in_rowp[row];
-          int end   = in_rowp[row+1];
+        if (B_row_size + end-start > B_max_row_size){
+          B_max_row_size = B_max_row_size + end-start;
+          matutils::ExtendArray(&B_row_vars, B_row_size, B_max_row_size);
+        }
 
-          if (A_row_size + end-start > A_max_row_size){
-            A_max_row_size = A_max_row_size + end-start;
-            matutils::ExtendArray(&A_row_vars, A_row_size, A_max_row_size);
+        for ( int j = start; j < end; j++ ){
+          int col_var = in_cols[j];
+          if (col_var >= lower && col_var < upper){
+            A_row_vars[A_row_size] = col_var;
+            A_row_size++;
           }
-
-          if (B_row_size + end-start > B_max_row_size){
-            B_max_row_size = B_max_row_size + end-start;
-            matutils::ExtendArray(&B_row_vars, B_row_size, B_max_row_size);
-          }
-
-          for ( int j = start; j < end; j++ ){
-            int col_var = in_cols[j];
-            if (col_var >= lower && col_var < upper){
-              A_row_vars[A_row_size] = col_var;
-              A_row_size++;
-            }
-            else {
-              B_row_vars[B_row_size] = col_var;
-              B_row_size++;
-            }
+          else {
+            B_row_vars[B_row_size] = col_var;
+            B_row_size++;
           }
         }
       }
@@ -573,32 +617,31 @@ void TACSMatDistribute::setUpLocalExtCSR( int num_ext_vars,
     }
 
     // Merge the off-processor contributions to the rows of A/B
-    for ( int k = 0; k < mpiSize; k++ ){
-      if (in_row_count[k] > 0){
-        // Try to find the variable in the k-th input - these are sorted
-        // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
-        int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]],
-                                  in_row_count[k], sizeof(int),
-                                  FElibrary::comparator);
+    for ( int k = 0; k < num_in_procs; k++ ){
+      // Try to find the variable in the k-th input - these are sorted
+      // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
+      int count = in_row_ptr[k+1] - in_row_ptr[k];
+      int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]],
+                                count, sizeof(int),
+                                FElibrary::comparator);
 
-        if (item){
-          int row = item - &in_rows[in_row_ptr[k]];
-          row += in_row_ptr[k];
+      if (item){
+        int row = item - &in_rows[in_row_ptr[k]];
+        row += in_row_ptr[k];
 
-          // Add variables in this range to the row as well
-          int start = in_rowp[row];
-          int end   = in_rowp[row+1];
-
-          for ( int j = start; j < end; j++ ){
-            int col_var = in_cols[j];
-            if (col_var >= lower && col_var < upper){
-              A_row_vars[A_row_size] = col_var - lower;
-              A_row_size++;
-            }
-            else {
-              B_row_vars[B_row_size] = col_var;
-              B_row_size++;
-            }
+        // Add variables in this range to the row as well
+        int start = in_rowp[row];
+        int end   = in_rowp[row+1];
+        
+        for ( int j = start; j < end; j++ ){
+          int col_var = in_cols[j];
+          if (col_var >= lower && col_var < upper){
+            A_row_vars[A_row_size] = col_var - lower;
+            A_row_size++;
+          }
+          else {
+            B_row_vars[B_row_size] = col_var;
+            B_row_size++;
           }
         }
       }
@@ -646,85 +689,6 @@ void TACSMatDistribute::setUpLocalExtCSR( int num_ext_vars,
 }
 
 /*!
-  Initialize the persistent communication for the transfer of the
-  matrix values that are set on this processor, but are destined for
-  other processors.
-*/
-void TACSMatDistributeTACSDistMat::initPersistent(){
-  int bsize = Aloc->getBlockSize();
-
-  int mpiRank, mpiSize;
-  MPI_Comm_rank(comm, &mpiRank);
-  MPI_Comm_size(comm, &mpiSize);
-
-  // Count up the number of non-zero send/receives
-  nreceives = 0;
-  nsends = 0;
-
-  for ( int i = 0; i < mpiSize; i++ ){
-    if (ext_row_count[i] > 0){
-      nsends++;
-    }
-    if (in_row_count[i] > 0){
-      nreceives++;
-    }
-  }
-
-  send_proc = NULL;
-  receive_proc = NULL;
-  send_status = NULL;
-  receive_status = NULL;
-
-  if (nsends > 0){
-    sends = new MPI_Request[ nsends ];
-    send_proc = new int[ nsends ];
-    send_status = new MPI_Status[ nsends ];
-  }
-  else {
-    sends = NULL;
-    send_proc = NULL;
-    send_status = NULL;
-  }
-  if (nreceives > 0){
-    receives = new MPI_Request[ nreceives ];
-    receive_proc = new int[ nreceives ];
-    receive_status = new MPI_Status[ nreceives ];
-  }
-  else {
-    receives = NULL;
-    receive_proc = NULL;
-    receive_status = NULL;
-  }
-
-  // Set up the sends
-  int n = 0;
-  int tag = 0;
-  for ( int i = 0; i < mpiSize; i++ ){
-    if (ext_row_count[i] > 0){
-      int var = ext_row_ptr[i];
-      int count = bsize*bsize*(ext_rowp[ext_row_ptr[i+1]] - ext_rowp[var]);
-      MPI_Send_init(&ext_A[bsize*bsize*ext_rowp[var]], count, TACS_MPI_TYPE,
-                    i, tag, comm, &sends[n]);
-      send_proc[n] = i;
-      n++;
-    }
-  }
-
-  // Set up the receives
-  n = 0;
-  for ( int i = 0; i < mpiSize; i++ ){
-    if (in_row_count[i] > 0){
-      int var = in_row_ptr[i];
-      int count = bsize*bsize*(in_rowp[in_row_ptr[i+1]] - in_rowp[var]);
-      MPI_Recv_init(&in_A[bsize*bsize*in_rowp[var]], count, TACS_MPI_TYPE,
-                    i, tag, comm, &receives[n]);
-      receive_proc[n] = i;
-      n++;
-    }
-  }
-}
-
-/*!
   Add values to the matrix.
 
   If the indices are owned on this processor add them here.  If not,
@@ -742,6 +706,7 @@ void TACSMatDistributeTACSDistMat::initPersistent(){
   nv, mv:   number of true rows/columns in the dense matrix
   values:   the dense matrix values
 */
+/*
 void TACSMatDistribute::addValues( int nrow, const int *row,
                                    int ncol, const int *col,
                                    int nv, int mv,
@@ -869,6 +834,7 @@ void TACSMatDistribute::addValues( int nrow, const int *row,
   }
   if (temp){ delete [] temp; }
 }
+*/
 
 /*
   Add a weighted sum of the dense input matrix.
@@ -891,6 +857,7 @@ void TACSMatDistribute::addValues( int nrow, const int *row,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
+/*
 void TACSMatDistribute::addWeightValues( int nvars,
                                          const int *varp,
                                          const int *vars,
@@ -1048,10 +1015,11 @@ void TACSMatDistribute::addWeightValues( int nvars,
 
   if (temp){ delete [] temp; }
 }
-
+*/
 /*!
   Given a non-zero pattern, pass in the values for the array
 */
+/*
 void TACSMatDistribute::setValues( int nvars, const int *ext_vars,
                                    const int *rowp, const int *cols,
                                    TacsScalar *avals ){
@@ -1172,36 +1140,45 @@ void TACSDistMat::zeroEntries(){
   int len = bsize*bsize*ext_rowp[next_rows];
   memset(ext_A, 0, len*sizeof(TacsScalar));
 }
-
+*/
 /*
    Initiate the communication of the off-process matrix entries
 */
-void TACSDistMat::beginAssembly(){
-  if (nreceives > 0){
-    int ierr = MPI_Startall(nreceives, receives);
-    if (ierr != MPI_SUCCESS){
-      int mpiRank;
-      MPI_Comm_rank(comm, &mpiRank);
-      int len;
-      char err_str[MPI_MAX_ERROR_STRING];
-      MPI_Error_string(ierr, err_str, &len);
-      fprintf(stderr,
-              "[%d] DistMat::beginAssembly MPI startall receives error\n%s\n",
-              mpiRank, err_str);
-    }
+void TACSMatDistribute::beginAssembly( TACSMatDistCtx *ctx,
+                                       TACSParallelMat *mat ){
+  int mpiRank;
+  MPI_Comm_rank(comm, &mpiRank);
+  if (this != ctx->dist){
+    fprintf(stderr, "[%d] TACSMatDistribute error: Mismatch between "
+            "context and object\n", mpiRank);
+    return;
   }
-  if (nsends > 0){
-    int ierr = MPI_Startall(nsends, sends);
-    if (ierr != MPI_SUCCESS){
-      int mpiRank;
-      MPI_Comm_rank(comm, &mpiRank);
-      int len;
-      char err_str[MPI_MAX_ERROR_STRING];
-      MPI_Error_string(ierr, err_str, &len);
-      fprintf(stderr,
-              "[%d] DistMat::beginAssembly MPI startall sends error\n%s\n",
-              mpiRank, err_str);
-    }
+
+  // Get the block size squared
+  const int b2 = ctx->bsize*ctx->bsize;
+
+  // Post the recvs
+  for ( int k = 0, offset = 0; k < num_in_procs; k++ ){
+    int count = in_rowp[offset + in_count[k]] - in_rowp[offset];
+    count *= b2;
+
+    int source = in_procs[k];
+    int tag = 2;
+    MPI_Irecv(&ctx->in_A[offset], count, MPI_INT, source, tag,
+              comm, &ctx->in_requests[k]);
+    offset += in_count[k];
+  }
+
+  // Post the sends
+  for ( int k = 0, offset = 0; k < num_ext_procs; k++ ){
+    int count = ext_rowp[offset + ext_count[k]] - ext_rowp[offset];
+    count *= b2;
+
+    int dest = ext_procs[k];
+    int tag = 2;
+    MPI_Isend(&ctx->ext_A[offset], count, MPI_INT, dest, tag,
+              comm, &ctx->ext_requests[k]);
+    offset += ext_count[k];
   }
 }
 
@@ -1210,47 +1187,72 @@ void TACSDistMat::beginAssembly(){
   Once the communication is completed, add the off-processor
   entries to the matrix.
 */
-void TACSMatDistribute::endAssembly(){
-  // Get the map between the global-external variables
-  // and the local variables (for Bext)
-  int bsize = Aloc->getBlockSize();
-  int b2 = bsize*bsize;
-
+void TACSMatDistribute::endAssembly( TACSMatDistCtx *ctx,
+                                     TACSParallelMat *mat ){
   int mpiRank;
   MPI_Comm_rank(comm, &mpiRank);
+  if (this != ctx->dist){
+    fprintf(stderr, "[%d] TACSMatDistribute error: Mismatch between "
+            "context and object\n", mpiRank);
+    return;
+  }
 
+  // Get the map between the global-external variables and the local
+  // variables (for Bext)
+  BCSRMat *Aloc, *Bext;
+  mat->getBCSRMat(&Aloc, &Bext);
+
+  // Get the block size squared
+  const int b2 = ctx->bsize*ctx->bsize;
+
+  // Find the owner range for mapping variables
   const int *ownerRange;
-  rmap->getOwnerRange(&ownerRange);
-
+  row_map->getOwnerRange(&ownerRange);
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank+1];
 
-  for ( int i = 0; i < nreceives; i++ ){
+  // Get the number of local variables and number of coupling
+  // variables
+  int N, Nc;
+  mat->getRowMap(NULL, &N, &Nc);
+  int Np = N - Nc;
+
+  for ( int i = 0; i < num_in_procs; i++ ){
+    // Get the recv that just completed
     int index;
     MPI_Status status;
+    int ierr = MPI_Waitany(num_in_procs, ctx->in_requests,
+                           &index, &status);
 
-    int ierr = MPI_Waitany(nreceives, receives, &index, &status);
+    // Check whether the recv was successful
     if (ierr != MPI_SUCCESS){
       int len;
       char err_str[MPI_MAX_ERROR_STRING];
       MPI_Error_string(ierr, err_str, &len);
-      fprintf(stderr, "[%d] DistMat::endAssembly MPI waitany error\n%s\n",
-              mpiRank, err_str);
+      fprintf(stderr, "[%d] TACSMatDistribute::endAssembly MPI_Waitany "
+              "error\n%s\n", mpiRank, err_str);
     }
-    int n = receive_proc[index];
 
-    for ( int j = in_row_ptr[n]; j < in_row_ptr[n+1]; j++ ){
+    // Identify which group of rows were just recv'd from another
+    // processor
+    for ( int j = in_row_ptr[index]; j < in_row_ptr[index+1]; j++ ){
+      // Find the local index of the row
       int row = in_rows[j] - lower;
 
+      // Find the local row index
       for ( int k = in_rowp[j]; k < in_rowp[j+1]; k++ ){
-        TacsScalar *a = &in_A[b2*k];
+        TacsScalar *a = &ctx->in_A[b2*k];
 
+        // Set the column indices
         int col = in_cols[k];
         if (col >= lower && col < upper){
+          // Get the local column index
           col = col - lower;
           Aloc->addBlockRowValues(row, 1, &col, a);
         }
         else {
+          // Use the map from the global column index back to the
+          // processor
           int *item = (int*)bsearch(&col, col_map_vars, col_map_size,
                                     sizeof(int), FElibrary::comparator);
           if (item){
@@ -1263,7 +1265,7 @@ void TACSMatDistribute::endAssembly(){
   }
 
   // Wait for all the sending requests
-  if (nsends > 0){
-    MPI_Waitall(nsends, sends, MPI_STATUSES_IGNORE);
+  if (num_ext_procs > 0){
+    MPI_Waitall(num_ext_procs, ctx->ext_requests, MPI_STATUSES_IGNORE);
   }
 }

@@ -153,6 +153,9 @@ void TACSParallelMat::getSize( int *_nr, int *_nc ){
 void TACSParallelMat::zeroEntries(){
   Aloc->zeroEntries();
   Bext->zeroEntries();
+  if (ctx){
+    ctx->zeroEntries();
+  }
 }
 
 /*!
@@ -387,6 +390,446 @@ void TACSParallelMat::printNzPattern( const char *fileName ){
 
     fclose(fp);
   }
+}
+
+/*!
+  Add values to the matrix.
+
+  If the indices are owned on this processor add them here.  If not,
+  add them to arrays that will be passed to other processors during
+  the final assembly process.
+
+  If the row or column index passed in is negative, then the entry is
+  skipped.
+
+  input:
+  nrow:     number of block rows in the dense matrix
+  row:      block row numbers in the global matrix
+  ncol:     number of block columns in the dense matrix
+  col:      block column numbers in the global matrix
+  nv, mv:   number of true rows/columns in the dense matrix
+  values:   the dense matrix values
+*/
+void TACSParallelMat::addValues( int nrow, const int *row,
+                                 int ncol, const int *col,
+                                 int nv, int mv,
+                                 const TacsScalar *values ){
+  int bsize = Aloc->getBlockSize();
+  int b2 = bsize*bsize;
+
+  // Set up storage for the variable numbers
+  int array[256];
+  int *temp = NULL, *acols = NULL, *bcols = NULL;
+
+  // If the number of columns is greater than 128,
+  // allocate a new array that can store that many
+  if (ncol > 128){
+    temp = new int[ 2*ncol ];
+    acols = &temp[0];
+    bcols = &temp[ncol];
+  }
+  else {
+    acols = &array[0];
+    bcols = &array[ncol];
+  }
+
+  int mpiRank;
+  MPI_Comm_rank(comm, &mpiRank);
+
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
+
+  // The lower/upper variable ranges
+  int lower = ownerRange[mpiRank];
+  int upper = ownerRange[mpiRank+1];
+
+  // Determine what is the diagonal block and what is off-diagonal
+  int nb = 0;
+  for ( int i = 0; i < ncol; i++ ){
+    int c = col[i];
+    acols[i] = -1;
+    bcols[i] = -1;
+
+    if (c >= lower && c < upper){
+      // The column is in A
+      acols[i] = c - lower;
+    }
+    else if (c >= 0){
+      // The column is in the B off-processor part
+      int *item = (int*)bsearch(&c, col_map_vars, col_map_size,
+                                sizeof(int), FElibrary::comparator);
+      if (item){
+        nb++;
+        bcols[i] = item - col_map_vars;
+      }
+    }
+
+    // If we were supposed to find something and didn't,
+    // print an error
+    if (c >= 0 &&
+        acols[i] == -1 &&
+        bcols[i] == -1){
+      fprintf(stderr, "[%d] Could not find a match for column %d\n",
+              mpiRank, c);
+    }
+  }
+
+  for ( int i = 0; i < nrow; i++ ){
+    int r = row[i];
+
+    // Check if the row is on this processor
+    if (r >= lower && r < upper){
+      r = r - lower;
+      // Add values to the diagonal
+      Aloc->addRowValues(r, ncol, acols, mv, &values[mv*i*bsize]);
+
+      // Add values to the off-diagonal
+      r = r - Np;
+      if (r >= 0 && r < Nc){
+        Bext->addRowValues(r, ncol, bcols, mv, &values[mv*i*bsize]);
+      }
+      else if (nb > 0){
+        fprintf(stderr, "[%d] DistMat error, some values were not added\n",
+                mpiRank);
+      }
+    }
+    else if (r >= 0){
+      // The row is not on this processor, search for it in the
+      // off-processor part that we'll have to communicate later
+      // Locate the row within ext_rows
+      int *item = (int*)bsearch(&r, ext_rows, num_ext_rows,
+                                sizeof(int), FElibrary::comparator);
+      if (item){
+        int r_ext = item - ext_rows;
+
+        // Find the values within ext_cols
+        for ( int j = 0; j < ncol; j++ ){
+          int c = col[j];
+
+          if (c >= 0){
+            int start = ext_rowp[r_ext];
+            int size = ext_rowp[r_ext+1] - start;
+            item = (int*)bsearch(&c, &ext_cols[start], size,
+                                 sizeof(int), FElibrary::comparator);
+
+            if (item){
+              TacsScalar *a = &ctx->ext_A[b2*(item - ext_cols)];
+
+              for ( int ii = 0; ii < bsize; ii++ ){
+                for ( int jj = 0; jj < bsize; jj++ ){
+                  a[ii*bsize + jj] +=
+                    values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                }
+              }
+            }
+            else {
+              fprintf(stderr, "[%d] TACSParallelMat error: could not find col "
+                      "(%d,%d) r_ext = %d\n", mpiRank, r, c, r_ext);
+            }
+          }
+        }
+      }
+      else {
+        fprintf(stderr, "[%d] TACSParallelMat error: could not find row %d\n",
+                mpiRank, r);
+      }
+    }
+  }
+  if (temp){ delete [] temp; }
+}
+
+/*
+  Add a weighted sum of the dense input matrix.
+
+  This function adds an inner product of a weighting matrix with a
+  dense matrix to the DistMat matrix. The weight matrix is a sparse,
+  low-dimensional matrix given in a CSR-type format. The code takes
+  this representation of W and adds the terms:
+
+  self <- self + W^{T}*Kv*W
+
+  to the values in the matrix. This code can be used to add the effect
+  of dependent nodes to the matrix.
+
+  input:
+  nvars:    the number of block variables in the dense input matrix
+  varp:     pointer to the start of each weight matrix; len(varp) = nvars+1
+  vars:     variable numbers in the matrix; len(vars) = varp[nvars]
+  weights:  weighting values for each variable; len(weights) = len(vars)
+  nv, nw:   the number of rows and number of columns in the values matrix
+  values:   the dense input matrix
+*/
+void TACSParallelMat::addWeightValues( int nvars,
+                                       const int *varp,
+                                       const int *vars,
+                                       const TacsScalar *weights,
+                                       int nv, int mv,
+                                       const TacsScalar *values,
+                                       MatrixOrientation matOr ){
+  int bsize = Aloc->getBlockSize();
+  int b2 = bsize*bsize;
+
+  // The number of variables we'll have to convert = row dim(W^{T})
+  int n = varp[nvars];
+
+  // Set up storage for the variable numbers
+  int array[256];
+  int *temp = NULL, *avars = NULL, *bvars = NULL;
+
+  // If the number of columns is greater than 128,
+  // allocate a new array that can store that many
+  if (n > 128){
+    temp = new int[ 2*n ];
+    avars = &temp[0];
+    bvars = &temp[n];
+  }
+  else {
+    avars = &array[0];
+    bvars = &array[n];
+  }
+
+  int mpiRank;
+  MPI_Comm_rank(comm, &mpiRank);
+
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
+
+  // The lower/upper variable ranges
+  int lower = ownerRange[mpiRank];
+  int upper = ownerRange[mpiRank+1];
+
+  // Determine what is the diagonal block and what is off-diagonal
+  int nb = 0;
+  for ( int i = 0; i < n; i++ ){
+    int c = vars[i];
+    avars[i] = -1;
+    bvars[i] = -1;
+
+    if (c >= lower && c < upper){
+      // The column is in A
+      avars[i] = c - lower;
+    }
+    else if (c >= 0){
+      // The column is in the B off-processor part
+      int *item = (int*)bsearch(&c, col_map_vars, col_map_size,
+                                sizeof(int), FElibrary::comparator);
+      if (item){
+        nb++;
+        bvars[i] = item - col_map_vars;
+      }
+    }
+
+    // If we were supposed to find something and didn't,
+    // print an error
+    if (c >= 0 &&
+        avars[i] == -1 &&
+        bvars[i] == -1){
+      fprintf(stderr, "[%d] TACSParallelMat error: Could not find a "
+              "match for column %d\n", mpiRank, c);
+    }
+  }
+
+  // Set the increment along the row or column of the matrix depending
+  // on whether we are adding the original matrix or its transpose
+  int incr = mv;
+  if (matOr == TRANSPOSE){
+    incr = 1;
+  }
+
+  for ( int i = 0; i < nvars; i++ ){
+    for ( int ip = varp[i]; ip < varp[i+1]; ip++ ){
+      // Check if the row is on this processor
+      if (avars[ip] >= 0){
+        // Add values to the diagonal
+        Aloc->addRowWeightValues(weights[ip], avars[ip],
+                                 nvars, varp, avars, weights,
+                                 mv, &values[incr*i*bsize], matOr);
+
+        // Add values to the off-diagonal
+        int r = avars[ip] - Np;
+        if (r >= 0 && r < Nc){
+          Bext->addRowWeightValues(weights[ip], r,
+                                   nvars, varp, bvars, weights,
+                                   mv, &values[incr*i*bsize], matOr);
+        }
+        else if (nb > 0){
+          fprintf(stderr, "[%d] TACSParallelMat error: some values were not added\n",
+                  mpiRank);
+        }
+      }
+      else if (bvars[ip] >= 0){
+        // The row is not on this processor, search for it in the
+        // off-processor part that we'll have to communicate later
+        // Locate the row within ext_rows
+        int *item = (int*)bsearch(&vars[ip], ext_rows, next_rows,
+                                  sizeof(int), FElibrary::comparator);
+        if (item){
+          int r_ext = item - ext_rows;
+
+          // Find the values within ext_cols
+          for ( int j = 0; j < nvars; j++ ){
+            for ( int jp = varp[j]; jp < varp[j+1]; jp++ ){
+              int c = vars[jp];
+              TacsScalar aw = weights[ip]*weights[jp];
+
+              if (c >= 0 && aw != 0.0){
+                int start = ext_rowp[r_ext];
+                int size = ext_rowp[r_ext+1] - start;
+                item = (int*)bsearch(&c, &ext_cols[start], size,
+                                     sizeof(int), FElibrary::comparator);
+
+                if (item){
+                  TacsScalar *a = &ext_A[b2*(item - ext_cols)];
+
+                  if (matOr == NORMAL){
+                    for ( int ii = 0; ii < bsize; ii++ ){
+                      for ( int jj = 0; jj < bsize; jj++ ){
+                        a[ii*bsize + jj] +=
+                          aw*values[mv*(ii + i*bsize) + (jj + j*bsize)];
+                      }
+                    }
+                  }
+                  else {
+                    for ( int ii = 0; ii < bsize; ii++ ){
+                      for ( int jj = 0; jj < bsize; jj++ ){
+                        a[ii*bsize + jj] +=
+                          aw*values[mv*(jj + j*bsize) + (ii + i*bsize)];
+                      }
+                    }
+                  }
+                }
+                else {
+                  fprintf(stderr, "[%d] TACSParallelMat error: could not find col "
+                          "(%d,%d) r_ext = %d\n", mpiRank, vars[jp], c, r_ext);
+                }
+              }
+            }
+          }
+        }
+        else {
+          fprintf(stderr, "[%d] TACSParallelMat error: could not find row %d\n",
+                  mpiRank, vars[ip]);
+        }
+      }
+    }
+  }
+
+  if (temp){ delete [] temp; }
+}
+
+/*!
+  Given a non-zero pattern, pass in the values for the array
+*/
+void TACSParallelMat::setValues( int nvars, const int *ext_vars,
+                                 const int *rowp, const int *cols,
+                                 TacsScalar *avals ){
+  zeroEntries();
+
+  int bsize = Aloc->getBlockSize();
+  int b2 = bsize*bsize;
+
+  // Determine the maximum size of the array
+  int max_row = 0;
+  for ( int i = 0; i < nvars; i++ ){
+    int size = rowp[i+1] - rowp[i];
+    if (size > max_row){
+      max_row = size;
+    }
+  }
+
+  int mpiRank;
+  MPI_Comm_rank(comm, &mpiRank);
+
+  const int *ownerRange;
+  rmap->getOwnerRange(&ownerRange);
+
+  int lower = ownerRange[mpiRank];
+  int upper = ownerRange[mpiRank+1];
+
+  int *acols = new int[ 2*max_row ];
+  int *bcols = &acols[max_row];
+
+  for ( int i = 0; i < nvars; i++ ){
+    int row = ext_vars[i];
+
+    // Check if this row is in the local or external block
+    int nb = 0;
+    if (row >= lower && row < upper){
+      row = row - lower;
+
+      // Convert the cols
+      int start = rowp[i];
+      int end   = rowp[i+1];
+      for ( int j = rowp[i], k = 0; j < end; j++, k++ ){
+        int col = ext_vars[cols[j]];
+        acols[k] = -1;
+        bcols[k] = -1;
+
+        if (col >= lower && col < upper){
+          acols[k] = col - lower;
+        }
+        else {
+          int *item = (int*)bsearch(&col, col_map_vars, col_map_size,
+                                    sizeof(int), FElibrary::comparator);
+          bcols[k] = item - col_map_vars;
+          nb++;
+        }
+      }
+
+      Aloc->addBlockRowValues(row, end-start, acols, &avals[b2*start]);
+
+      if (nb > 0){
+        row = row - Np;
+        if (row >= 0 && row < Nc){
+          Bext->addBlockRowValues(row, end-start, bcols, &avals[b2*start]);
+        }
+        else {
+          fprintf(stderr, "[%d] TACSParallelMat error: could not find row %d\n",
+                  mpiRank, row);
+        }
+      }
+    }
+    else {
+      int *item = (int*)bsearch(&row, ext_rows, next_rows,
+                                sizeof(int), FElibrary::comparator);
+
+      if (item){
+        int r_ext = item - ext_rows;
+
+        int end   = rowp[i+1];
+        for ( int j = rowp[i], k = 0; j < end; j++, k++ ){
+          int c = cols[j];
+          if (c >= 0 && c < nvars){
+            int col = ext_vars[c];
+
+            int ext_start = ext_rowp[r_ext];
+            int ext_size = ext_rowp[r_ext+1] - ext_start;
+            item = (int*)bsearch(&col, &ext_cols[ext_start], ext_size,
+                                 sizeof(int), FElibrary::comparator);
+
+            if (item){
+              TacsScalar *a = &ext_A[b2*(item - ext_cols)];
+              memcpy(a, &avals[b2*j], b2*sizeof(TacsScalar));
+            }
+            else {
+              fprintf(stderr, "[%d] TACSParallelMat error: could not find col "
+                      "(%d,%d) r_ext = %d \n", mpiRank, row, col, r_ext);
+            }
+          }
+          else {
+            fprintf(stderr, "[%d] TACSParallelMat error: local column out of "
+                    "range 0 <= %d < %d\n", mpiRank, c, nvars);
+          }
+        }
+      }
+      else {
+        fprintf(stderr, "[%d] TACSParallelMat error: could not find row %d\n",
+                mpiRank, row);
+      }
+    }
+  }
+
+  delete [] acols;
 }
 
 const char *TACSParallelMat::TACSObjectName(){

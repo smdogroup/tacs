@@ -93,15 +93,14 @@ class TACSParallelMat : public TACSMat {
 
   // Other miscelaneous functions
   // ----------------------------
+  MPI_Comm getMPIComm(){ return rmap->getMPIComm(); }
   void getBCSRMat( BCSRMat ** A, BCSRMat ** B );  // Access the underlying mats
   void getRowMap( int *bs, int *_N, int *_Nc );
   void getColMap( int *bs, int *_M );
   TACSNodeMap *getRowMap(){ return rmap; }
   void getExtColMap( TACSBVecDistribute **ext_map ); // Access the column map
   void printNzPattern( const char *fileName ); // Print the non-zero pattern
-
-  const char *TACSObjectName();
-  MPI_Comm getMPIComm(){ return rmap->getMPIComm(); }
+  const char* getObjectName();
 
  protected:
   TACSParallelMat();
