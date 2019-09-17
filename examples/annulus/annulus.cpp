@@ -143,7 +143,7 @@ int main( int argc, char *argv[] ){
                       TACS_OUTPUT_STRAINS |
                       TACS_OUTPUT_STRESSES |
                       TACS_OUTPUT_EXTRAS);
-    TACSToFH5 * f5 = new TACSToFH5(assembler, etype, write_flag);
+    TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
     f5->incref();
     f5->writeToFile("output.f5");
 

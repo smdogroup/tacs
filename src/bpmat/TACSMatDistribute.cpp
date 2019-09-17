@@ -68,14 +68,18 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
                                       TACSBVecIndices *rowIndex,
                                       BCSRMat **Aloc, BCSRMat **Bext,
                                       TACSBVecDistribute **colMap ){
+  // Copy over the row map
+  row_map = _row_map;
+  row_map->incref();
+
+  // Get the rank/size of this communicator
   int mpiRank, mpiSize;
   comm = row_map->getMPIComm();
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
 
+  // Copy over the block size for the matrix
   bsize = _bsize;
-  row_map = _row_map;
-  row_map->incref();
 
   // Get the external variables
   const int *ext_vars;
@@ -208,7 +212,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   // this procesor
   num_in_procs = 0;
   for ( int k = 0; k < mpiSize; k++ ){
-    if (in_count[k] > 0){
+    if (in_full[k] > 0){
       num_in_procs++;
     }
   }
@@ -229,6 +233,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
 
   // Prepare to receive the equation numbers from the other processes
   in_row_ptr = new int[ num_in_procs+1 ];
+  in_row_ptr[0] = 0;
   for ( int k = 0; k < num_in_procs; k++ ){
     in_row_ptr[k+1] = in_row_ptr[k] + in_count[k];
   }
@@ -238,8 +243,8 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   in_rows = new int[ num_in_rows ];
 
   // Allocate space for the statuses
-  MPI_Request *in_requests = new MPI_Request[ num_in_procs ];
-  MPI_Request *ext_requests = new MPI_Request[ num_ext_procs ];
+  in_requests = new MPI_Request[ num_in_procs ];
+  ext_requests = new MPI_Request[ num_ext_procs ];
 
   // Post the recvs
   for ( int k = 0, offset = 0; k < num_in_procs; k++ ){
@@ -316,23 +321,25 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   in_cols = new int[ in_rowp[num_in_rows] ];
 
   // Post the recvs
-  for ( int k = 0, offset = 0; k < num_in_procs; k++ ){
+  for ( int k = 0, offset = 0, buff_offset = 0; k < num_in_procs; k++ ){
     int count = in_rowp[offset + in_count[k]] - in_rowp[offset];
     int source = in_procs[k];
-    int tag = 2;
-    MPI_Irecv(&in_cols[offset], count, MPI_INT, source, tag,
+    int tag = 3;
+    MPI_Irecv(&in_cols[buff_offset], count, MPI_INT, source, tag,
               comm, &in_requests[k]);
     offset += in_count[k];
+    buff_offset += count;
   }
 
   // Post the sends
-  for ( int k = 0, offset = 0; k < num_ext_procs; k++ ){
+  for ( int k = 0, offset = 0, buff_offset = 0; k < num_ext_procs; k++ ){
     int count = ext_rowp[offset + ext_count[k]] - ext_rowp[offset];
     int dest = ext_procs[k];
-    int tag = 2;
-    MPI_Isend(&ext_cols[offset], count, MPI_INT, dest, tag,
+    int tag = 3;
+    MPI_Isend(&ext_cols[buff_offset], count, MPI_INT, dest, tag,
               comm, &ext_requests[k]);
     offset += ext_count[k];
+    buff_offset += count;
   }
 
   if (num_ext_procs > 0){
@@ -366,7 +373,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
     }
 
     for ( int j = in_rowp[i]; j < in_rowp[i+1]; j++ ){
-      if (in_cols[j] <  ownerRange[mpiRank] ||
+      if (in_cols[j] < ownerRange[mpiRank] ||
           in_cols[j] >= ownerRange[mpiRank+1]){
         col_vars[col_vars_size] = in_cols[j];
         col_vars_size++;
@@ -399,8 +406,6 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   // Allocate space for in-coming matrix elements
   ext_A = new TacsScalar[ bsize*bsize*ext_rowp[num_ext_rows] ];
   in_A = new TacsScalar[ bsize*bsize*in_rowp[num_in_rows] ];
-
-  // Zero the entries in the data
   zeroEntries();
 }
 
@@ -1177,27 +1182,29 @@ void TACSMatDistribute::beginAssembly( TACSParallelMat *mat ){
   const int b2 = bsize*bsize;
 
   // Post the recvs
-  for ( int k = 0, offset = 0; k < num_in_procs; k++ ){
+  for ( int k = 0, offset = 0, buff_offset = 0; k < num_in_procs; k++ ){
     int count = in_rowp[offset + in_count[k]] - in_rowp[offset];
     count *= b2;
 
     int source = in_procs[k];
-    int tag = 2;
-    MPI_Irecv(&in_A[offset], count, MPI_INT, source, tag,
+    int tag = 5;
+    MPI_Irecv(&in_A[buff_offset], count, TACS_MPI_TYPE, source, tag,
               comm, &in_requests[k]);
     offset += in_count[k];
+    buff_offset += count;
   }
 
   // Post the sends
-  for ( int k = 0, offset = 0; k < num_ext_procs; k++ ){
+  for ( int k = 0, offset = 0, buff_offset = 0; k < num_ext_procs; k++ ){
     int count = ext_rowp[offset + ext_count[k]] - ext_rowp[offset];
     count *= b2;
 
     int dest = ext_procs[k];
-    int tag = 2;
-    MPI_Isend(&ext_A[offset], count, MPI_INT, dest, tag,
+    int tag = 5;
+    MPI_Isend(&ext_A[buff_offset], count, TACS_MPI_TYPE, dest, tag,
               comm, &ext_requests[k]);
     offset += ext_count[k];
+    buff_offset += count;
   }
 }
 

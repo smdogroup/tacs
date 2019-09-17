@@ -57,6 +57,8 @@ class TACSParallelMat : public TACSMat {
   TACSParallelMat( TACSNodeMap *rmap,
                    BCSRMat *_Aloc, BCSRMat *_Bext,
                    TACSBVecDistribute *_col_map );
+  TACSParallelMat( TACSParallelMat *A,
+                   TACSParallelMat *B );
   ~TACSParallelMat();
 
   // Functions for setting values in the matrix

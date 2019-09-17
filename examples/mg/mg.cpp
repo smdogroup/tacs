@@ -1,23 +1,23 @@
+#include "TACSLinearElasticity.h"
+#include "TACSQuadBasis.h"
+#include "TACSElement2D.h"
+
 #include "TACSAssembler.h"
-#include "MITCShell.h"
-#include "TACSShellTraction.h"
-#include "isoFSDTStiffness.h"
 #include "TACSMg.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
-#include "TACSBuckling.h"
 
 /*
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
 void createTACS( MPI_Comm comm, int nx, int ny,
-                 TACSAssembler **_tacs, TACSCreator **_creator ){
+                 TACSAssembler **_assembler, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   // Set the number of nodes/elements on this proc
-  int varsPerNode = 6;
+  int varsPerNode = 2;
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
@@ -88,49 +88,40 @@ void createTACS( MPI_Comm comm, int nx, int ny,
     delete [] Xpts;
   }
 
-  // Create and set the element
-  TacsScalar rho = 2500.0; // Not used
-  TacsScalar E = 70e9;
+  // Create the isotropic material class
+  TacsScalar rho = 2700.0;
+  TacsScalar E = 70e3;
   TacsScalar nu = 0.3;
-  TacsScalar kcorr = 5.0/6.0; // The shear correction factor
-  TacsScalar yield_stress = 464.0e6;
-  TacsScalar thickness = 0.005;
+  TacsScalar ys = 270.0;
+  TacsScalar cte = 0.0, kappa = 0.0;
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, E, nu, ys, cte, kappa);
 
   // Create the stiffness object
-  isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr,
-                                                 yield_stress, thickness);
-  TACSElement *elem = new MITCShell<2>(stiff);
+  TACSPlaneStressConstitutive *stiff =
+    new TACSPlaneStressConstitutive(props);
+  stiff->incref();
+
+  // Create the model class
+  TACSLinearElasticity2D *model =
+    new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+
+  // Create the element class
+  TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
+  TACSElement2D *linear_element = new TACSElement2D(model, linear_basis);
+
+  // Set the one element
+  TACSElement *elem = linear_element;
   creator->setElements(&elem, 1);
 
   creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
                              TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
-  TACSAssembler *tacs = creator->createTACS();
-
-  // Get all the element numbers
-  int *elemNums;
-  int id = 0;
-  int numElems = creator->getElementIdNums(&id, 1, &elemNums);
-
-  // Create the auxiliary element class
-  TACSAuxElements *aux = new TACSAuxElements(tacs->getNumElements());
-
-  // Create a surface traction associated with this element and add
-  // it to the auxilary elements. Note that the element number must
-  // correspond to the local element number used for this processor.
-  TacsScalar tx = 0.0, ty = 0.0, tz = -1e5;
-  TACSShellTraction<2> *trac = new TACSShellTraction<2>(tx, ty, tz);
-  for ( int i = 0; i < numElems; i++ ){
-    aux->addElement(elemNums[i], trac);
-  }
-  delete [] elemNums;
-
-  // Set the auxiliary elements into TACSAssembler
-  tacs->setAuxElements(aux);
+  TACSAssembler *assembler = creator->createTACS();
 
   // Set the pointers
-  *_tacs = tacs;
+  *_assembler = assembler;
   *_creator = creator;
 }
 
@@ -164,11 +155,8 @@ int main( int argc, char *argv[] ){
   // Number of different levels
   int nlevels = 3;
   const int max_nlevels = 5;
-  TACSAssembler *tacs[max_nlevels];
+  TACSAssembler *assembler[max_nlevels];
   TACSCreator *creator[max_nlevels];
-
-  // Set whether to use the direct solver or not
-  int use_direct_lanczos = 0;
 
   // Set the dimension of the largest meshes
   int nx = 128;
@@ -187,9 +175,6 @@ int main( int argc, char *argv[] ){
       if (nlevels < 2){ nlevels = 2; }
       if (nlevels > max_nlevels){ nlevels = max_nlevels; }
     }
-    if (strcmp(argv[k], "use_direct_lanczos") == 0){
-      use_direct_lanczos = 1;
-    }
   }
 
   // Create the multigrid object
@@ -202,8 +187,8 @@ int main( int argc, char *argv[] ){
   // Create the TACS/Creator objects for all levels
   for ( int i = 0; i < nlevels; i++ ){
     int Nx = nx/(1 << i), Ny = ny/(1 << i);
-    createTACS(comm, Nx, Ny, &tacs[i], &creator[i]);
-    tacs[i]->incref();
+    createTACS(comm, Nx, Ny, &assembler[i], &creator[i]);
+    assembler[i]->incref();
     creator[i]->incref();
   }
 
@@ -211,7 +196,7 @@ int main( int argc, char *argv[] ){
   for ( int level = 0; level < nlevels-1; level++ ){
     // Allocate the interpolation object
     TACSBVecInterp *interp =
-      new TACSBVecInterp(tacs[level+1], tacs[level]);
+      new TACSBVecInterp(assembler[level+1], assembler[level]);
 
     if (rank == 0){
       // Retrieve the node numbers
@@ -274,11 +259,11 @@ int main( int argc, char *argv[] ){
     interp->initialize();
 
     // Set the multigrid information at this level
-    mg->setLevel(level, tacs[level], interp, 1);
+    mg->setLevel(level, assembler[level], interp, 1);
   }
 
   // Set the model at the lowest grid level
-  mg->setLevel(nlevels-1, tacs[nlevels-1], NULL);
+  mg->setLevel(nlevels-1, assembler[nlevels-1], NULL);
 
   // We no longer require any of the creator objects
   for ( int i = 0; i < nlevels; i++ ){
@@ -286,8 +271,8 @@ int main( int argc, char *argv[] ){
   }
 
   // Create the residual and solution vectors on the finest TACS mesh
-  TACSBVec *res = tacs[0]->createVec();  res->incref();
-  TACSBVec *ans = tacs[0]->createVec();  ans->incref();
+  TACSBVec *res = assembler[0]->createVec();  res->incref();
+  TACSBVec *ans = assembler[0]->createVec();  ans->incref();
 
   // Allocate the GMRES solution method
   int gmres_iters = 100;
@@ -307,6 +292,14 @@ int main( int argc, char *argv[] ){
   // Assemble the Jacobian matrix for each level
   mg->assembleJacobian(1.0, 0.0, 0.0, res);
 
+  res->zeroEntries();
+  TacsScalar *res_array;
+  int size = res->getArray(&res_array);
+  for ( int i = 1; i < size; i += 2){
+    res_array[i] = 1.0;
+  }
+  assembler[0]->applyBCs(res);
+
   // "Factor" the preconditioner
   mg->factor();
 
@@ -320,9 +313,9 @@ int main( int argc, char *argv[] ){
 
   // Set the variables into TACS
   ans->scale(-1.0);
-  tacs[0]->setVariables(ans);
+  assembler[0]->setVariables(ans);
 
-  tacs[0]->assembleRes(res);
+  assembler[0]->assembleRes(res);
   TacsScalar res_norm = res->norm();
   if (rank == 0){
     printf("||R||: %15.5e\n", TacsRealPart(res_norm));
@@ -330,96 +323,23 @@ int main( int argc, char *argv[] ){
   }
 
   // Output for visualization
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs[0], TACS_SHELL, write_flag);
+  ElementType etype = TACS_PLANE_STRESS_ELEMENT;
+  int write_flag = (TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
   f5->incref();
-  f5->writeToFile("mg_plate.f5");
-
-  // Perform the Frequency Analysis
-  int max_lanczos = 100;
-  int num_eigvals = 20;
-  double eigtol = 1e-12;
-  TacsScalar sigma = 0.0;
-
-  TACSFrequencyAnalysis *freq_analysis = NULL;
-
-  if (use_direct_lanczos){
-    // Create matrix and vectors
-    FEMat *kmat = tacs[0]->createFEMat(); // stiffness matrix
-    kmat->incref();
-
-    FEMat *mmat = tacs[0]->createFEMat();
-    mmat->incref();
-
-    // Create the preconditioner
-    int lev_fill = 10000;
-    double fill = 10.0;
-    PcScMat *pc = new PcScMat(kmat, lev_fill, fill, 1);
-    pc->incref();
-
-    GMRES *ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
-    ksm->incref();
-    ksm->setTolerances(1e-12, 1e-30);
-
-    freq_analysis =
-      new TACSFrequencyAnalysis(tacs[0], sigma, mmat, kmat, ksm,
-                                max_lanczos, num_eigvals, eigtol);
-    freq_analysis->incref();
-
-    // Decref the pointers that go out of scope
-    kmat->decref();
-    mmat->decref();
-    pc->decref();
-  }
-  else {
-    // Create a mass matrix
-    TACSMat *mmat = tacs[0]->createMat();
-    mmat->incref();
-
-    // Create the frequency analysis object
-    freq_analysis =
-      new TACSFrequencyAnalysis(tacs[0], sigma, mmat,
-                                mg->getMat(0), gmres,
-                                max_lanczos, num_eigvals, eigtol);
-    freq_analysis->incref();
-
-    // Decref the poitners that go out of scope
-    mmat->decref();
-  }
-
-  // Solve the frequency analysis problem
-  freq_analysis->solve(new KSMPrintStdout("Frequency analysis", rank, freq));
-
-  // Print out the eigenvalues and natural frequencies
-  for ( int k = 0; k < num_eigvals; k++ ){
-    TacsScalar error;
-    TacsScalar eigvalue =
-      freq_analysis->extractEigenvector(k, ans, &error);
-
-    tacs[0]->setVariables(ans);
-    char filename[128];
-    sprintf(filename, "eigenvector%d.f5", k);
-    f5->writeToFile(filename);
-
-    if (rank == 0){
-      printf("TACS eigs[%2d]: %15.6f Omega = %15.6f [Hz]\n",
-             k, TacsRealPart(eigvalue),
-             TacsRealPart(sqrt(eigvalue))/(2.0*3.14159));
-    }
-  }
+  f5->writeToFile("plate.f5");
 
   // Free the memory
-  freq_analysis->decref();
   f5->decref();
   ans->decref();
   res->decref();
   gmres->decref();
   for ( int i = 0; i < nlevels; i++ ){
-    tacs[i]->decref();
+    assembler[i]->decref();
   }
 
   MPI_Finalize();

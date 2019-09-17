@@ -40,7 +40,7 @@ class BCSRMat : public TACSObject {
   // Create a (possibly rectangular matrix)
   BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
            int _bsize, int _nrows, int _ncols,
-           int **_rowp, int **_cols );
+           int **_rowp, int **_cols, TacsScalar **_A=NULL );
 
   // Perform the symbolic computation C = S + A*B
   BCSRMat( MPI_Comm _comm, BCSRMat *Smat,
@@ -57,7 +57,11 @@ class BCSRMat : public TACSObject {
   // Perform a symbolic computation of A = B^{T}*B
   BCSRMat( MPI_Comm comm, BCSRMat *Bmat, double fill );
 
+  // Free the matrix
   ~BCSRMat();
+
+  // Form the transpose of the matrix, copying the entries
+  // BCSRMat *transpose();
 
   // Functions for setting values in the matrix
   // ------------------------------------------

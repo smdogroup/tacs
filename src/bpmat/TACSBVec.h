@@ -127,7 +127,7 @@ class TACSBVec : public TACSVec {
 
   // Get the name of this object
   // ---------------------------
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   // The MPI communicator

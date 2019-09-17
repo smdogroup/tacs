@@ -56,7 +56,7 @@ TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
   }
 
   // Create the list of pointers to the TACS objects at each level
-  tacs = new TACSAssembler*[ nlevels ];
+  assembler = new TACSAssembler*[ nlevels ];
 
   // Number of smoothing operations to be performed at each iteration
   iters = new int[ nlevels ];
@@ -69,7 +69,7 @@ TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
   // Initialie the data in the arrays
   for ( int i = 0; i < nlevels; i++ ){
     iters[i] = 1; // defaults to one - a V cycle
-    tacs[i] = NULL;
+    assembler[i] = NULL;
     r[i] = NULL;
     x[i] = NULL;
     b[i] = NULL;
@@ -102,7 +102,7 @@ TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
 */
 TACSMg::~TACSMg(){
   for ( int i = 0; i < nlevels; i++ ){
-    if (tacs[i]){ tacs[i]->decref(); }
+    if (assembler[i]){ assembler[i]->decref(); }
     if (r[i]){ r[i]->decref(); }
     if (b[i]){ b[i]->decref(); }
     if (x[i]){ x[i]->decref(); }
@@ -118,7 +118,7 @@ TACSMg::~TACSMg(){
   if (root_mat){ root_mat->decref(); }
   if (root_pc){ root_pc->decref(); }
 
-  delete [] tacs;
+  delete [] assembler;
   delete [] mat;
   delete [] iters;
   delete [] x;
@@ -142,12 +142,12 @@ TACSMg::~TACSMg(){
   interp:    the interpolation operator
   iters:     the number of iterations to take at this level
 */
-void TACSMg::setLevel( int level, TACSAssembler *_tacs,
+void TACSMg::setLevel( int level, TACSAssembler *_assembler,
                        TACSBVecInterp *_interp,
                        int _iters, TACSMat *_mat,
                        TACSPc *_smoother ){
-  tacs[level] = _tacs;
-  tacs[level]->incref();
+  assembler[level] = _assembler;
+  assembler[level]->incref();
 
   if ((!_mat && _smoother) || (!_smoother && _mat)){
     fprintf(stderr,
@@ -185,7 +185,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
       pc[level] = _smoother;
     }
     else {
-      TACSParallelMat *pmat = tacs[level]->createMat();
+      TACSParallelMat *pmat = assembler[level]->createMat();
       mat[level] = pmat;
       mat[level]->incref();
 
@@ -212,7 +212,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
     }
     else {
       // Set up the root matrix
-      TACSSchurMat *femat = tacs[level]->createSchurMat();
+      TACSSchurMat *femat = assembler[level]->createSchurMat();
       root_mat = femat;
       root_mat->incref();
 
@@ -229,14 +229,14 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
   }
 
   if (level > 0){
-    x[level] = tacs[level]->createVec();
+    x[level] = assembler[level]->createVec();
     x[level]->incref();
 
-    b[level] = tacs[level]->createVec();
+    b[level] = assembler[level]->createVec();
     b[level]->incref();
   }
 
-  r[level] = tacs[level]->createVec();
+  r[level] = assembler[level]->createVec();
   r[level]->incref();
 }
 
@@ -247,7 +247,7 @@ void TACSMg::setLevel( int level, TACSAssembler *_tacs,
   vec:      the input vector of state variables
 */
 void TACSMg::setVariables( TACSBVec *vec ){
-  tacs[0]->setVariables(vec);
+  assembler[0]->setVariables(vec);
 
   for ( int i = 0; i < nlevels-1; i++ ){
     if (i == 0){
@@ -256,8 +256,8 @@ void TACSMg::setVariables( TACSBVec *vec ){
     else {
       interp[i]->multWeightTranspose(x[i], x[i+1]);
     }
-    x[i+1]->applyBCs(tacs[i+1]->getBcMap());
-    tacs[i+1]->setVariables(x[i+1]);
+    x[i+1]->applyBCs(assembler[i+1]->getBcMap());
+    assembler[i+1]->setVariables(x[i+1]);
   }
 }
 
@@ -272,8 +272,8 @@ void TACSMg::setVariables( TACSBVec *vec ){
 */
 void TACSMg::setDesignVars( TACSBVec *x ){
   for ( int i = 0; i < nlevels; i++ ){
-    if (tacs[i]){
-      tacs[i]->setDesignVars(x);
+    if (assembler[i]){
+      assembler[i]->setDesignVars(x);
     }
   }
 }
@@ -298,21 +298,21 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
                                MatrixOrientation matOr ){
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
-  if (tacs[0]){
-    tacs[0]->assembleJacobian(alpha, beta, gamma,
+  if (assembler[0]){
+    assembler[0]->assembleJacobian(alpha, beta, gamma,
                               res, mat[0], matOr);
   }
 
   for ( int i = 1; i < nlevels-1; i++ ){
-    if (tacs[i]){
-      tacs[i]->assembleJacobian(alpha, beta, gamma,
+    if (assembler[i]){
+      assembler[i]->assembleJacobian(alpha, beta, gamma,
                                 NULL, mat[i], matOr);
     }
   }
 
   // Assemble the coarsest problem
-  if (tacs[nlevels-1]){
-    tacs[nlevels-1]->assembleJacobian(alpha, beta, gamma,
+  if (assembler[nlevels-1]){
+    assembler[nlevels-1]->assembleJacobian(alpha, beta, gamma,
                                       NULL, root_mat, matOr);
   }
 }
@@ -326,14 +326,14 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
   // Assemble the matrices if they are locally owned, otherwise assume
   // that they have already been assembled
   for ( int i = 0; i < nlevels-1; i++ ){
-    if (tacs[i]){
-      tacs[i]->assembleMatType(matType, mat[i], matOr);
+    if (assembler[i]){
+      assembler[i]->assembleMatType(matType, mat[i], matOr);
     }
   }
 
   // Assemble the coarsest problem
-  if (tacs[nlevels-1]){
-    tacs[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+  if (assembler[nlevels-1]){
+    assembler[nlevels-1]->assembleMatType(matType, root_mat, matOr);
   }
 }
 
@@ -345,14 +345,14 @@ void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
                                TacsScalar scale[], int nmats,
                                MatrixOrientation matOr ){
   for ( int i = 0; i < nlevels-1; i++ ){
-    if (tacs[i]){
-      tacs[i]->assembleMatCombo(matTypes, scale, nmats, mat[i], matOr);
+    if (assembler[i]){
+      assembler[i]->assembleMatCombo(matTypes, scale, nmats, mat[i], matOr);
     }
   }
 
   // Assemble the coarsest problem
-  if (tacs[nlevels-1]){
-    tacs[nlevels-1]->assembleMatCombo(matTypes, scale, nmats, root_mat, matOr);
+  if (assembler[nlevels-1]){
+    assembler[nlevels-1]->assembleMatCombo(matTypes, scale, nmats, root_mat, matOr);
   }
 }
 
@@ -379,9 +379,9 @@ TACSMat *TACSMg::getMat( int level ){
 /*
   Retrieve the TACSAssembler model
 */
-TACSAssembler *TACSMg::getTACS( int level ){
+TACSAssembler *TACSMg::getAssembler( int level ){
   if (level >= 0 && level < nlevels-1){
-    return tacs[level];
+    return assembler[level];
   }
   return NULL;
 }
@@ -506,14 +506,14 @@ void TACSMg::applyMg( int level ){
     // Restrict the residual to the next lowest level
     // to form the RHS at that level
     interp[level]->multTranspose(r[level], b[level+1]);
-    b[level+1]->applyBCs(tacs[level+1]->getBcMap());
+    b[level+1]->applyBCs(assembler[level+1]->getBcMap());
     x[level+1]->zeroEntries();
 
     applyMg(level+1);
 
     // Interpolate back from the next lowest level
     interp[level]->multAdd(x[level+1], x[level], x[level]);
-    x[level]->applyBCs(tacs[level]->getBcMap());
+    x[level]->applyBCs(assembler[level]->getBcMap());
   }
 
   // Post-Smooth the residual

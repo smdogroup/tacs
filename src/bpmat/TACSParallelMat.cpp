@@ -146,6 +146,12 @@ TACSParallelMat::~TACSParallelMat(){
   if (x_ext){ delete [] x_ext; }
 }
 
+/*
+  Symbolically compute C = A*B
+*/
+TACSParallelMat::TACSParallelMat( TACSParallelMat *A,
+                                  TACSParallelMat *B ){}
+
 /*!
   Determine the local dimensions of the matrix - the diagonal part
 */

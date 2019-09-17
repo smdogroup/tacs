@@ -617,7 +617,7 @@ void TACSBVec::setBCs( TACSBcMap *bcmap ){
 /*
   Return the object name
 */
-const char *TACSBVec::TACSObjectName(){
+const char *TACSBVec::getObjectName(){
   return vecName;
 }
 

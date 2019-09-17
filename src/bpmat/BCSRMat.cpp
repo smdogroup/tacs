@@ -203,10 +203,11 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *mat,
   ncols:        the number of columns in the matrix
   rowp:         the CSR row pointer
   cols:         the column indices
+  A:            the matrix values
 */
 BCSRMat::BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
                   int bsize, int nrows, int ncols,
-                  int **_rowp, int **_cols ){
+                  int **_rowp, int **_cols, TacsScalar **_A ){
   comm = _comm;
   thread_info = _thread_info;
   thread_info->incref();
@@ -220,11 +221,19 @@ BCSRMat::BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
   // Take the pointer from the input
   data->rowp = *_rowp;
   data->cols = *_cols;
-
-  // Find the size of the array
-  int length = bsize*bsize*data->rowp[nrows];
-  data->A = new TacsScalar[ length ];
-  memset(data->A, 0, length*sizeof(TacsScalar));
+  *_rowp = NULL;
+  *_cols = NULL;
+  
+  if (_Avals){
+    data->A = *_A;
+    *_A = NULL;
+  }
+  else {
+    // Find the size of the array
+    int length = bsize*bsize*data->rowp[nrows];
+    data->A = new TacsScalar[ length ];
+    memset(data->A, 0, length*sizeof(TacsScalar));
+  }
 }
 
 /*!
@@ -587,6 +596,16 @@ BCSRMat::~BCSRMat(){
   if (Adiag){ delete [] Adiag; }
 }
 
+/*
+BCSRMat* BCSRMat::transpose(){
+  // Flip the columns/rows
+  BCSRMat *At = new BCSRMat(comm, thread_info, bsize, ncols, nrows,
+                            trans_rowp, trans_cols, trans_A);
+
+  // Go through and copy over the matrix 
+}
+*/
+
 /*!
   Compute the ILU(levFill) preconditioner
 
@@ -703,8 +722,8 @@ void BCSRMat::computeILUk( BCSRMat *mat, int levFill,
   if (mat->data->rowp[nrows] > 0){
     int rank;
     MPI_Comm_rank(comm, &rank);
-    printf("[%d] BCSRMat: ILU(%d) Input fill ratio %4.2f, actual \
-fill ratio: %4.2f, nnz(ILU) = %d\n", rank, levFill, fill,
+    printf("[%d] BCSRMat: ILU(%d) Input fill ratio %4.2f, actual "
+           "fill ratio: %4.2f, nnz(ILU) = %d\n", rank, levFill, fill,
            (1.0*rowp[nrows])/mat->data->rowp[nrows], rowp[nrows]);
   }
 
@@ -981,7 +1000,7 @@ void BCSRMat::initGenericImpl(){
   applypartiallower = BCSRMatApplyPartialLower;
   applypartialupper = BCSRMatApplyPartialUpper;
   applyschur = BCSRMatApplyFactorSchur;
-  // applysor = BCSRMatApplySOR;
+  applysor = BCSRMatApplySOR;
 
   // No default threaded versions
   bmultadd_thread = NULL;
@@ -2203,7 +2222,7 @@ void BCSRMat::getArrays( int *_bsize, int *_nrows, int *_ncols,
   if (_ncols){ *_ncols = data->ncols; }
   if (_rowp){ *_rowp = data->rowp; }
   if (_cols){ *_cols = data->cols; }
-  if(Avals){ *Avals = data->A; }
+  if (Avals){ *Avals = data->A; }
 }
 
 /*

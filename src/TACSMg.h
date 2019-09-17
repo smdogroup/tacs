@@ -62,7 +62,7 @@ class TACSMg : public TACSPc {
 
   // Set the data for the multi-grid level
   // -------------------------------------
-  void setLevel( int level, TACSAssembler *_tacs,
+  void setLevel( int level, TACSAssembler *_assembler,
                  TACSBVecInterp *interp=NULL,
                  int _iters=1, TACSMat *_mat=NULL,
                  TACSPc *_smoother=NULL );
@@ -97,7 +97,7 @@ class TACSMg : public TACSPc {
   // --------------------------------------------
   void getMat( TACSMat **_mat );
   TACSMat *getMat( int level );
-  TACSAssembler *getTACS( int level );
+  TACSAssembler *getAssembler( int level );
   TACSBVecInterp *getInterpolation( int level );
 
   // Set the solution monitor context
@@ -122,7 +122,7 @@ class TACSMg : public TACSPc {
   int nlevels;
 
   // The TACSAssembler object for each level
-  TACSAssembler **tacs;
+  TACSAssembler **assembler;
   int *iters;
 
   // The solution, right-hand-side and residual on each level
