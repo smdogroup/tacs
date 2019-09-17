@@ -176,7 +176,7 @@ void TACSElementBasis::addJacobianTransformSens( const int num_params,
         t[i] += t2[i];
       }
     }
-    
+
     // Loop over each quadrature point for each basis function
     const double *nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
@@ -187,7 +187,7 @@ void TACSElementBasis::addJacobianTransformSens( const int num_params,
       dfdXpts[3*i+1] += (nxi[0]*t[3] +
                          nxi[1]*t[4] +
                          nxi[2]*t[5]);
-      
+
       dfdXpts[3*i+2] += (nxi[0]*t[6] +
                          nxi[1]*t[7] +
                          nxi[2]*t[8]);
@@ -221,7 +221,7 @@ void TACSElementBasis::addJacobianTransformSens( const int num_params,
         t[i] += t2[i];
       }
     }
-    
+
     // Loop over each quadrature point for each basis function
     const double *nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){

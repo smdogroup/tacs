@@ -29,9 +29,9 @@ CXX_OBJS = MatUtils.o \
 	TACSNodeMap.o \
 	TACSBVec.o \
 	TACSBVecDistribute.o \
+	TACSMatDistribute.o \
 	TACSParallelMat.o \
 	KSM.o \
-	TACSDistMat.o \
 	TACSSchurMat.o \
 	GSEP.o \
 	JacobiDavidson.o \

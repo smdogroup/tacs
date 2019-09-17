@@ -62,7 +62,7 @@
 class TACSBVecInterp : public TACSObject {
  public:
   TACSBVecInterp( TACSNodeMap *_inMap, TACSNodeMap *_outMap, int _bsize );
-  TACSBVecInterp( TACSAssembler *_inTacs, TACSAssembler *_outTacs );
+  TACSBVecInterp( TACSAssembler *_inAssembler, TACSAssembler *_outAssembler );
   ~TACSBVecInterp();
 
   // Add components of the interpolation
@@ -130,7 +130,7 @@ class TACSBVecInterp : public TACSObject {
   TACSNodeMap *inMap, *outMap;
 
   // The TACSAssembler classes - these may not exist
-  TACSAssembler *inTacs, *outTacs;
+  TACSAssembler *inAssembler, *outAssembler;
 
   // Store the transpose weights
   TacsScalar *transpose_weights;

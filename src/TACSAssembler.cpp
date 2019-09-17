@@ -2896,7 +2896,7 @@ void TACSAssembler::setBCs( TACSVec *vec ){
   TACSBVecIndices object is reused if any subsequent DistMat objects
   are created.
 */
-TACSDistMat *TACSAssembler::createMat(){
+TACSParallelMat *TACSAssembler::createMat(){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createMat() before initialize()\n",
             mpiRank);
@@ -2921,8 +2921,9 @@ TACSDistMat *TACSAssembler::createMat(){
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
   // Create the distributed matrix class
-  TACSDistMat *dmat = new TACSDistMat(thread_info, nodeMap, varsPerNode,
-                                      numNodes, rowp, cols, distMatIndices);
+  TACSParallelMat *dmat = new TACSParallelMat(thread_info, nodeMap,
+                                              varsPerNode, numNodes,
+                                              rowp, cols, distMatIndices);
 
   // Free the local connectivity
   delete [] rowp;

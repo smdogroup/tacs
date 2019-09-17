@@ -162,7 +162,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *mat,
   memset(data->A, 0, length*sizeof(TacsScalar));
 
   // Go through and print out the nz-pattern of the matrix
-  if (fname != NULL){
+  if (fname){
     FILE *fp = fopen(fname, "w");
     if (fp){
       fprintf(fp, "VARIABLES = \"i\",\"j\"\n");
@@ -320,13 +320,13 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *smat,
 
   // Check that the block sizes are the same
   if (amat->data->bsize != bmat->data->bsize){
-    fprintf(stderr, "BCSRMat symbolic multiplication error: Matrix block \
-sizes must be equal\n");
+    fprintf(stderr, "BCSRMat symbolic multiplication error: Matrix block "
+            "sizes must be equal\n");
     return;
   }
   if (amat->data->nrows != bmat->data->ncols){
-    fprintf(stderr, "BCSRMat symbolic multiplication error: Matrix sizes \
-must agree ncol(A) != nrow(B)\n");
+    fprintf(stderr, "BCSRMat symbolic multiplication error: Matrix sizes "
+            "must agree ncol(A) != nrow(B)\n");
     return;
   }
 
@@ -337,13 +337,13 @@ must agree ncol(A) != nrow(B)\n");
 
   const int nrows = data->nrows;
 
-  int *rowp = new int[ nrows+1 ];
-
+  // Allocate the row and column data
   int init_size = (amat->data->rowp[amat->data->nrows] +
                    bmat->data->rowp[bmat->data->nrows] +
                    smat->data->rowp[smat->data->nrows]);
-
   int max_size = (int)(fill*init_size);
+
+  int *rowp = new int[ nrows+1 ];
   int *cols = new int[ max_size ];
 
   // C_{ik} = A_{ij}*B_{jk}
@@ -371,7 +371,7 @@ must agree ncol(A) != nrow(B)\n");
         int alev = alevs[jp];
 
         // Merge the two arrays into cols
-        int brpj   = bmat->data->rowp[j];
+        int brpj = bmat->data->rowp[j];
         int brsize = bmat->data->rowp[j+1] - brpj;
         num_cols = mergeArraysWithLevels(tcols, tlevs, num_cols,
                                          &(bmat->data->cols[brpj]),
@@ -411,7 +411,7 @@ must agree ncol(A) != nrow(B)\n");
         int j = amat->data->cols[jp];
 
         // Merge the two arrays into cols
-        int brpj   = bmat->data->rowp[j];
+        int brpj = bmat->data->rowp[j];
         int brsize = bmat->data->rowp[j+1] - brpj;
         num_cols = FElibrary::mergeArrays(tcols, num_cols,
                                           &(bmat->data->cols[brpj]), brsize);
@@ -1567,14 +1567,14 @@ void BCSRMat::matMultAdd( double alpha, BCSRMat *amat, BCSRMat *bmat ){
   // Check that the sizes work
   if (data->bsize != amat->data->bsize ||
       data->bsize != bmat->data->bsize){
-    fprintf(stderr, "BCSRMat error: cannot multiply matrices with \
-different block sizes\n");
+    fprintf(stderr, "BCSRMat error: cannot multiply matrices with "
+            "different block sizes\n");
   }
   if (data->nrows != amat->data->nrows ||
       amat->data->ncols != bmat->data->nrows ||
       bmat->data->ncols != data->ncols){
-    fprintf(stderr, "BCSRMat error: cannot multiply matrices, \
-incorrect dimensions:\n");
+    fprintf(stderr, "BCSRMat error: cannot multiply matrices, "
+            "incorrect dimensions:\n");
     fprintf(stderr, " dim(this) = %d,%d\n dim(A) = %d,%d\n dim(B) = %d,%d\n",
             data->nrows, data->ncols, amat->data->nrows, amat->data->ncols,
             bmat->data->nrows, bmat->data->ncols);
@@ -1622,13 +1622,13 @@ incorrect dimensions:\n");
 */
 void BCSRMat::applyLowerFactor( BCSRMat *emat ){
   if (!data->diag){
-    fprintf(stderr, "BCSRMat error: cannot use applyLowerFactor \
-with an un-factored matrix\n");
+    fprintf(stderr, "BCSRMat error: cannot use applyLowerFactor "
+            "with an un-factored matrix\n");
     return;
   }
   if (data->nrows != emat->data->nrows){
-    fprintf(stderr, "BCSRMat error: matrices are not the \
-correction dimensions\n");
+    fprintf(stderr, "BCSRMat error: matrices are not the "
+            "correction dimensions\n");
   }
 
   if (bfactorlower_thread && thread_info->getNumThreads() > 1){
@@ -1670,13 +1670,13 @@ correction dimensions\n");
 */
 void BCSRMat::applyUpperFactor( BCSRMat *fmat ){
   if (!data->diag){
-    fprintf(stderr, "BCSRMat error: cannot use applyUpperFactor with \
-an un-factored matrix\n");
+    fprintf(stderr, "BCSRMat error: cannot use applyUpperFactor with "
+            "an un-factored matrix\n");
     return;
   }
   if (data->nrows != fmat->data->ncols){
-    fprintf(stderr, "BCSRMat error: matrices are not the \
-correction dimensions\n");
+    fprintf(stderr, "BCSRMat error: matrices are not the "
+            "correction dimensions\n");
   }
 
   if (bfactorupper_thread && thread_info->getNumThreads() > 1){
@@ -1721,8 +1721,8 @@ correction dimensions\n");
 */
 void BCSRMat::matMultNormal( TacsScalar *s, BCSRMat *bmat ){
   if (data->nrows != bmat->data->ncols){
-    fprintf(stderr, "BCSRMat error: matMultNormal matrices are not the \
-correction dimensions\n");
+    fprintf(stderr, "BCSRMat error: matMultNormal matrices are not the "
+            "correction dimensions\n");
   }
 
   zeroEntries();
@@ -1993,8 +1993,8 @@ void BCSRMat::addBlockRowValues( int row, int ncol, const int *col,
         }
       }
       else {
-        fprintf(stderr, "BCSRMat error: column %d \
-out of range [0,%d)\n", c, ncols);
+        fprintf(stderr, "BCSRMat error: column %d "
+                "out of range [0,%d)\n", c, ncols);
       }
     }
   }
@@ -2250,8 +2250,8 @@ void BCSRMat::copyValues( BCSRMat *mat ){
   if (mat->data->nrows != data->nrows ||
       mat->data->ncols != data->ncols ||
       data->bsize != mat->data->bsize){
-    fprintf(stderr, "BCSRMat: Matrices are not the same size \
-cannot copy values\n");
+    fprintf(stderr, "BCSRMat: Matrices are not the same size "
+            "cannot copy values\n");
     return;
   }
 
@@ -2306,8 +2306,8 @@ void BCSRMat::axpy( TacsScalar alpha, BCSRMat *mat ){
   if (mat->data->nrows != data->nrows ||
       mat->data->ncols != data->ncols ||
       mat->data->bsize != data->bsize){
-    fprintf(stderr, "BCSRMat: Matrices are not the same \
-size cannot apply axpy\n");
+    fprintf(stderr, "BCSRMat: Matrices are not the same "
+            "size cannot apply axpy\n");
     return;
   }
 
@@ -2362,8 +2362,8 @@ size cannot apply axpy\n");
 */
 void BCSRMat::axpby( TacsScalar alpha, TacsScalar beta, BCSRMat *mat ){
   if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols){
-    fprintf(stderr, "BCSRMat: Matrices are not the same \
-size cannot apply axpby\n");
+    fprintf(stderr, "BCSRMat: Matrices are not the same "
+            "size cannot apply axpby\n");
   }
 
   const int nrows = data->nrows;
@@ -2782,4 +2782,3 @@ void BCSRMat::printNzPattern( const char *fname ){
     fclose(fp);
   }
 }
-

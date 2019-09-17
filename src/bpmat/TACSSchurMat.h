@@ -24,8 +24,8 @@
 */
 
 #include "TACSBVecDistribute.h"
+#include "TACSBVec.h"
 #include "BCSRMat.h"
-#include "TACSDistMat.h"
 #include "PDMat.h"
 
 /*!

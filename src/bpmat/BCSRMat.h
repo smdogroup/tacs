@@ -35,7 +35,7 @@ class BCSRMat : public TACSObject {
  public:
   // Factor the matrix - construct the non--zero pattern from an ILU(p)
   BCSRMat( MPI_Comm _comm, BCSRMat *mat, int levFill, double fill,
-           const char *fname = NULL );
+           const char *fname=NULL );
 
   // Create a (possibly rectangular matrix)
   BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,

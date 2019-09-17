@@ -16,69 +16,62 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_DISTRIBUTED_MAT_H
-#define TACS_DISTRIBUTED_MAT_H
+#ifndef TACS_MAT_DISTRIBUTE_H
+#define TACS_MAT_DISTRIBUTE_H
+
+class TACSParallelMat;
 
 #include "TACSBVecDistribute.h"
 #include "TACSParallelMat.h"
-
-class TACSMatDistribute;
-
-class TACSMatDistCtx {
- public:
-
-  // Information for the persistent communication set up
-  // ---------------------------------------------------
-  TACSMatDistribute *dist;
-  MPI_Request *in_requests;
-  MPI_Request *ext_requests;
-
-  // Block size for this matrix
-  int bsize;
-
-  // Pointer to the external data
-  TacsScalar *ext_A;
-
-  // Pointer to incoming data
-  TacsScalar *in_A;
-};
+#include "BCSRMat.h"
+#include "TACSParallelMat.h"
 
 /*
   Distribute components of a matrix from a local CSR format to a global
   distributed format compatible with TACSParallelMat.
-
-  This distribution may be performed in essentially two different ways:
-
-  First, the values may be set
-  on the desired
-
 */
 class TACSMatDistribute : public TACSObject {
  public:
-  TACSMatDistribute( TACSNodeMap *rmap, int num_nodes,
-                     const int *rowp, const int *cols,
-                     TACSBVecIndices *bindex );
+  TACSMatDistribute( TACSThreadInfo *thread_info,
+                     TACSNodeMap *rmap, int bsize,
+                     int num_nodes, const int *rowp, const int *cols,
+                     TACSBVecIndices *bindex,
+                     BCSRMat **_Aloc, BCSRMat **_Bext,
+                     TACSBVecDistribute **_colMap );
   ~TACSMatDistribute();
 
-  void beginAssembly( TACSMatDistCtx *ctx,
-                      TACSParallelMat *mat);
-  void endAssembly( TACSMatDistCtx *ctx,
-                    TACSParallelMat *mat);
+  // Zero the entries in the temporary storage
+  // -----------------------------------------
+  void zeroEntries();
 
-  /*
+  // Add values to the entries in the matrix
+  // ---------------------------------------
+  void addValues( TACSParallelMat *mat, int nrow, const int *row,
+                  int ncol, const int *col,
+                  int nv, int mv, const TacsScalar *values );
+  void addWeightValues( TACSParallelMat *mat,
+                        int nvars, const int *varp, const int *vars,
+                        const TacsScalar *weights,
+                        int nv, int mv, const TacsScalar *values,
+                        MatrixOrientation matOr=NORMAL );
+
   // Set values into the matrix from the local BCSRMat
   // -------------------------------------------------
-  void setValues( int nvars, const int *ext_vars,
+  void setValues( TACSParallelMat *mat, int nvars, const int *ext_vars,
                   const int *rowp, const int *cols, TacsScalar *avals );
-  */
+
+  // Begin/end distributing values into the matrix
+  // ---------------------------------------------
+  void beginAssembly( TACSParallelMat *mat );
+  void endAssembly( TACSParallelMat *mat );
+
  private:
   // Set up the local/external CSR data structure
-  void setUpLocalExtCSR( int next_vars, const int *ext_vars,
-                         const int *rowp, const int *cols,
-                         int lower, int upper,
-                         int nz_per_row,
-                         int ** _Arowp, int ** _Acols,
-                         int *_Np, int ** _Browp, int ** _Bcols );
+  void computeLocalCSR( int num_ext_vars, const int *ext_vars,
+                        const int *rowp, const int *cols,
+                        int lower, int upper, int nz_per_row,
+                        int ** _Arowp, int ** _Acols,
+                        int *_Np, int ** _Browp, int ** _Bcols );
 
   // Variables for the column map
   // ----------------------------
@@ -90,6 +83,9 @@ class TACSMatDistribute : public TACSObject {
   // -------------------------------------------------
   MPI_Comm comm;
 
+  // Block size for this matrix
+  int bsize;
+
   // Data destined for other processes
   // ---------------------------------
   int num_ext_procs; // Number of processors that will be sent data
@@ -100,6 +96,8 @@ class TACSMatDistribute : public TACSObject {
   int *ext_rows; // Row indices
   int *ext_rowp; // Pointer into the rows
   int *ext_cols; // Global column indices
+  TacsScalar *ext_A; // Pointer to the data accumulated on this proc
+  MPI_Request *ext_requests; // Requests for sending info
 
   // Data received from other processes
   // ----------------------------------
@@ -111,6 +109,8 @@ class TACSMatDistribute : public TACSObject {
   int *in_rows; // Row numbers for each row (num_in_rows)
   int *in_rowp; // Pointer into the column numbers (num_in_rows)
   int *in_cols; // Global column indices
+  MPI_Request *in_requests; // Requests for recving data
+  TacsScalar *in_A;
 };
 
-#endif // TACS_DISTRIBUTED_MAT_H
+#endif // TACS_MAT_DISTRIBUTE_H

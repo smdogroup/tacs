@@ -19,8 +19,11 @@
 #ifndef TACS_PARALLEL_MATRIX_H
 #define TACS_PARALLEL_MATRIX_H
 
+class TACSMatDistribute;
+
 #include "TACSBVec.h"
 #include "TACSBVecDistribute.h"
+#include "TACSMatDistribute.h"
 #include "BCSRMat.h"
 #include "KSM.h"
 
@@ -47,13 +50,13 @@
 */
 class TACSParallelMat : public TACSMat {
  public:
-  TACSParallelMat( TACSNodeMap *rmap,
-                   BCSRMat *_Aloc, BCSRMat *_Bext,
-                   TACSBVecDistribute *_col_map );
   TACSParallelMat( TACSThreadInfo *thread_info,
                    TACSNodeMap *_rmap, int bsize,
                    int next_vars, const int *rowp, const int *cols,
                    TACSBVecIndices *bindex );
+  TACSParallelMat( TACSNodeMap *rmap,
+                   BCSRMat *_Aloc, BCSRMat *_Bext,
+                   TACSBVecDistribute *_col_map );
   ~TACSParallelMat();
 
   // Functions for setting values in the matrix
@@ -102,9 +105,7 @@ class TACSParallelMat : public TACSMat {
   void printNzPattern( const char *fileName ); // Print the non-zero pattern
   const char* getObjectName();
 
- protected:
-  TACSParallelMat();
-
+ private:
   // Common initialization routine
   void init( TACSNodeMap *_rmap,
              BCSRMat *_Aloc, BCSRMat *_Bext,
@@ -117,6 +118,7 @@ class TACSParallelMat : public TACSMat {
   TACSNodeMap *rmap;
   TACSBVecDistribute *ext_dist;
   TACSBVecDistCtx *ctx;
+  TACSMatDistribute *mat_dist;
 
   // Sizes/dimensions of the matrix
   int bsize; // The block size
@@ -124,7 +126,6 @@ class TACSParallelMat : public TACSMat {
   int Nc; // Number of equations that are coupled to other processors
   int Np; // The number of local-only equations Np + Nc = N
 
- private:
   // External values - used for matrix-vector products
   TacsScalar *x_ext;
   int ext_offset;
