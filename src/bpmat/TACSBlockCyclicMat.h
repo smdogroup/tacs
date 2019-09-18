@@ -16,8 +16,8 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_PD_MAT_H
-#define TACS_PD_MAT_H
+#ifndef TACS_BLOCK_CYCLIC_MAT_H
+#define TACS_BLOCK_CYCLIC_MAT_H
 
 #include "TACSObject.h"
 
@@ -73,18 +73,18 @@
   4. Compute the factorization in parallel.
   5. Perform back-solves in parallel.
 */
-class PDMat : public TACSObject {
+class TACSBlockCyclicMat : public TACSObject {
  public:
   // Create a sparse matrix
-  PDMat( MPI_Comm _comm, int csr_m, int csr_n,
-         int csr_bsize, const int *csr_vars,
-         int nvars, const int *csr_rowp, const int *csr_cols,
-         int csr_blocks_per_block, int reorder_blocks,
-         int max_grid_size=-1 );
+  TACSBlockCyclicMat( MPI_Comm _comm, int csr_m, int csr_n,
+                      int csr_bsize, const int *csr_vars,
+                      int nvars, const int *csr_rowp, const int *csr_cols,
+                      int csr_blocks_per_block, int reorder_blocks,
+                      int max_grid_size=-1 );
 
   // Create a dense matrix
-  PDMat( MPI_Comm _comm, int _nrows, int _ncols );
-  ~PDMat();
+  TACSBlockCyclicMat( MPI_Comm _comm, int _nrows, int _ncols );
+  ~TACSBlockCyclicMat();
 
   // Functions for various parts of the matrix
   // -----------------------------------------
@@ -248,4 +248,4 @@ class PDMat : public TACSObject {
   int *upper_row_sum_count, *upper_row_sum_recv;
 };
 
-#endif // TACS_PD_MAT_H
+#endif // TACS_BLOCK_CYCLIC_MAT_H

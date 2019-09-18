@@ -26,7 +26,7 @@
 #include "TACSBVecDistribute.h"
 #include "TACSBVec.h"
 #include "BCSRMat.h"
-#include "PDMat.h"
+#include "TACSBlockCyclicMat.h"
 
 /*!
   A class for a distributed finite-element matrix.
@@ -117,6 +117,7 @@ class TACSSchurMat : public TACSMat {
   TACSBVecDistribute *b_map; // Collect variables for B/E
   TACSBVecDistribute *c_map; // Collect variables for C/F
   TACSBVecDistCtx *b_ctx, *c_ctx;
+
  private:
   // The local sizes/offsets
   int local_size, local_offset;
@@ -188,8 +189,8 @@ class TACSSchurPc : public TACSPc {
   int monitor_factor; // Monitor the factorization time
   int monitor_back_solve; // Monitor the back-solves
 
-  // The partially dense matrix
-  PDMat *pdmat; // This stores the Schur complement
+  // The sparse block cyclic matrix
+  TACSBlockCyclicMat *bcyclic; // This stores the Schur complement
 
   // This set of indices defines the ordering passed into the
   // parallel block-cyclic matrix factorization
@@ -202,7 +203,7 @@ class TACSSchurPc : public TACSPc {
   TACSNodeMap *schur_map; // The variable map associated with Sc
   TACSBVecDistribute *schur_dist; // Map that distributes the Schur complement
   TACSBVecDistCtx *schur_ctx; // The context for the distribution object
-  int use_pdmat_alltoall; // Use the Alltoall version for matrix assembly
+  int use_cyclic_alltoall; // Use the Alltoall version for matrix assembly
 
   // This object defines a mapping between the variables in the
   // global vectors (from ScMat - in/out in applyFactor) and the

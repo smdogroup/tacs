@@ -17,7 +17,7 @@
 */
 
 #include <stdlib.h>
-#include "PDMat.h"
+#include "TACSBlockCyclicMat.h"
 #include "tacslapack.h"
 #include "FElibrary.h"
 #include "MatUtils.h"
@@ -56,8 +56,8 @@
 
   Procedure:
   ----------
-  1. Determine the block layout structure for PDMat: populate bptr.
-  2. Determine the PDMat CSR structure from the block CSR structure
+  1. Determine the block layout structure, populate bptr.
+  2. Determine the CSR structure from the block CSR structure
   provided on each processor.
   3. Pass the non-zero patterns to the root processor.
   4. Determine the fill-ins required for the factorization process on
@@ -65,11 +65,13 @@
   5. Pass the block structure back to all processes.
   6. Clean up time.
 */
-PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
-              int csr_bsize, const int *csr_vars,
-              int csr_nvars, const int *csr_rowp, const int *csr_cols,
-              int csr_blocks_per_block, int reorder_blocks,
-              int max_grid_size ){
+TACSBlockCyclicMat::TACSBlockCyclicMat( MPI_Comm _comm, int csr_m, int csr_n,
+                                        int csr_bsize, const int *csr_vars,
+                                        int csr_nvars, const int *csr_rowp,
+                                        const int *csr_cols,
+                                        int csr_blocks_per_block,
+                                        int reorder_blocks,
+                                        int max_grid_size ){
   comm = _comm;
   monitor_factor = 0;
   perm = iperm = orig_bptr = NULL;
@@ -188,7 +190,8 @@ PDMat::PDMat( MPI_Comm _comm, int csr_m, int csr_n,
 /*
   Create a dense matrix.
 */
-PDMat::PDMat( MPI_Comm _comm, int _nrows, int _ncols ){
+TACSBlockCyclicMat::TACSBlockCyclicMat( MPI_Comm _comm,
+                                        int _nrows, int _ncols ){
   comm = _comm;
   monitor_factor = 0;
   perm = iperm = orig_bptr = NULL;
@@ -288,7 +291,7 @@ PDMat::PDMat( MPI_Comm _comm, int _nrows, int _ncols ){
   init_row_counts();
 }
 
-PDMat::~PDMat(){
+TACSBlockCyclicMat::~TACSBlockCyclicMat(){
   // Delete the process grid information
   delete [] proc_grid;
 
@@ -339,8 +342,9 @@ PDMat::~PDMat(){
   computed. Finally, the arrays Urowp/Ucols and Lcolp/Lrows can be
   allocated and set.
 */
-void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
-                              int reorder_blocks ){
+void TACSBlockCyclicMat::merge_nz_pattern( int root,
+                                           int *rowp, int *cols,
+                                           int reorder_blocks ){
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -463,7 +467,7 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
           temp_rowp[i+1] = p;
           size = FElibrary::uniqueSort(&temp_cols[temp_rowp[i]], size);
           if (size != temp_rowp[i+1] - temp_rowp[i]){
-            printf("[%d] PDMat: problem with the permutation array\n",
+            printf("[%d] TACSBlockCyclicMat: problem with the permutation array\n",
                    rank);
           }
         }
@@ -482,8 +486,9 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
     int final_nnz = root_rowp[nrows];
 
     if (m && n){
-      printf("[%d] PDMat: (%d,%d) Initial density: %4.3f factor fill in: %4.3f\n",
-             root, m, n, (1.0*init_nnz)/(nrows*ncols),
+      printf("[%d] TACSBlockCyclicMat: (%d,%d) Initial density: %4.3f "
+             "factor fill in: %4.3f\n", root, m, n,
+             (1.0*init_nnz)/(nrows*ncols),
              (1.0*(final_nnz - init_nnz))/init_nnz);
     }
 
@@ -586,8 +591,9 @@ void PDMat::merge_nz_pattern( int root, int *rowp, int *cols,
   generated at each step in the factorization process.  This shift is
   delayed until all the new entries for the new row are processed.
 */
-void PDMat::compute_symbolic_factor( int ** _rowp, int ** _cols,
-                                     int max_size ){
+void TACSBlockCyclicMat::compute_symbolic_factor( int ** _rowp,
+                                                  int ** _cols,
+                                                  int max_size ){
   int *rowp = *_rowp;
   int *cols = *_cols;
 
@@ -692,7 +698,7 @@ void PDMat::compute_symbolic_factor( int ** _rowp, int ** _cols,
   in Lcolp/Lrows will be sorted if rowp/cols are sorted - which
   they must be!
 */
-void PDMat::init_ptr_arrays( int *rowp, int *cols ){
+void TACSBlockCyclicMat::init_ptr_arrays( int *rowp, int *cols ){
   Urowp = new int[nrows+1];
   Lcolp = new int[ncols+1];
   memset(Urowp, 0, (nrows+1)*sizeof(int));
@@ -756,7 +762,7 @@ void PDMat::init_ptr_arrays( int *rowp, int *cols ){
   it should work fine. More flexibility with the block assignment
   should be considered for future versions of the code.
 */
-void PDMat::init_proc_grid( int size ){
+void TACSBlockCyclicMat::init_proc_grid( int size ){
   // Special cases
   if (size == 1){
     nprows = 1;
@@ -789,7 +795,7 @@ void PDMat::init_proc_grid( int size ){
 /*
   Get the size of the matrix
 */
-void PDMat::getSize( int *nr, int *nc ){
+void TACSBlockCyclicMat::getSize( int *nr, int *nc ){
   if (nr){ *nr = bptr[nrows]; }
   if (nc){ *nc = bptr[ncols]; }
 }
@@ -797,7 +803,7 @@ void PDMat::getSize( int *nr, int *nc ){
 /*
   Retrieve the size of the process grid.
 */
-void PDMat::getProcessGridSize( int *_nprows, int *_npcols ){
+void TACSBlockCyclicMat::getProcessGridSize( int *_nprows, int *_npcols ){
   if (_nprows){ *_nprows = nprows; }
   if (_npcols){ *_npcols = npcols; }
 }
@@ -805,10 +811,12 @@ void PDMat::getProcessGridSize( int *_nprows, int *_npcols ){
 /*
   Retrieve the block pointers
 */
-void PDMat::getBlockPointers( int *_nrows, int *_ncols,
-                              const int **_bptr, const int **_xbptr,
-                              const int **_perm, const int **_iperm,
-                              const int **_orig_bptr ){
+void TACSBlockCyclicMat::getBlockPointers( int *_nrows, int *_ncols,
+                                           const int **_bptr,
+                                           const int **_xbptr,
+                                           const int **_perm,
+                                           const int **_iperm,
+                                           const int **_orig_bptr ){
   if (_nrows){ *_nrows = nrows; }
   if (_ncols){ *_ncols = ncols; }
   if (_bptr){ *_bptr = bptr; }
@@ -821,7 +829,7 @@ void PDMat::getBlockPointers( int *_nrows, int *_ncols,
 /*
   Set the flag that prints out the factorization time
 */
-void PDMat::setMonitorFactorFlag( int flag ){
+void TACSBlockCyclicMat::setMonitorFactorFlag( int flag ){
   monitor_factor = flag;
 }
 
@@ -840,7 +848,7 @@ void PDMat::setMonitorFactorFlag( int flag ){
   - max_ubuff_size, max_lbuff_size: Maximum size required for
   buffers during factorization
 */
-void PDMat::init_nz_arrays(){
+void TACSBlockCyclicMat::init_nz_arrays(){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -932,7 +940,7 @@ void PDMat::init_nz_arrays(){
 /*
   Zero all the matrix entries.
 */
-void PDMat::zeroEntries(){
+void TACSBlockCyclicMat::zeroEntries(){
   memset(Dvals, 0, dval_size*sizeof(TacsScalar));
   memset(Lvals, 0, lval_size*sizeof(TacsScalar));
   memset(Uvals, 0, uval_size*sizeof(TacsScalar));
@@ -948,9 +956,11 @@ void PDMat::zeroEntries(){
   This code uses MPI_Gatherv for each process rather than a single
   call to MPI_Alltoallv which may be faster, but requires more memory.
 */
-void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
-                          const int *csr_rowp, const int *csr_cols,
-                          TacsScalar *vals ){
+void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
+                                       const int *vars,
+                                       const int *csr_rowp,
+                                       const int *csr_cols,
+                                       TacsScalar *vals ){
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -1151,9 +1161,11 @@ void PDMat::addAllValues( int csr_bsize, int nvars, const int *vars,
   processes. The receive buffers are then added to the local components.
   All allocated memory is freed.
 */
-void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
-                               const int *csr_rowp, const int *csr_cols,
-                               TacsScalar *vals ){
+void TACSBlockCyclicMat::addAlltoallValues( int csr_bsize, int nvars,
+                                            const int *vars,
+                                            const int *csr_rowp,
+                                            const int *csr_cols,
+                                            TacsScalar *vals ){
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -1352,14 +1364,14 @@ void PDMat::addAlltoallValues( int csr_bsize, int nvars, const int *vars,
 
   ptr[i] <= var < ptr[i+1]
 */
-int PDMat::get_block_num( int var, const int *ptr ){
+int TACSBlockCyclicMat::get_block_num( int var, const int *ptr ){
   int high = (ncols > nrows ? ncols : nrows);
   int low = 0;
 
   if ((var < ptr[low]) || (var >= ptr[high])){
     int rank;
     MPI_Comm_rank(comm, &rank);
-    fprintf(stderr, "[%d] PDMat::get_block_num(%d) out of range\n",
+    fprintf(stderr, "[%d] TACSBlockCyclicMat::get_block_num(%d) out of range\n",
             rank, var);
     return -1;
   }
@@ -1394,9 +1406,9 @@ int PDMat::get_block_num( int var, const int *ptr ){
   The input block matrix a[] is in row-major order (C-order), and the
   storage format is in column-major (fortran-order).
 */
-int PDMat::add_values( int rank, int i, int j,
-                       int csr_bsize, int ioff, int joff,
-                       TacsScalar *a ){
+int TACSBlockCyclicMat::add_values( int rank, int i, int j,
+                                    int csr_bsize, int ioff, int joff,
+                                    TacsScalar *a ){
   TacsScalar *A = get_block(rank, i, j);
 
   if (A){
@@ -1415,7 +1427,7 @@ int PDMat::add_values( int rank, int i, int j,
     }
   }
   else {
-    fprintf(stderr, "[%d] PDMat: Error, (%d, %d) not in nz-pattern\n",
+    fprintf(stderr, "[%d] TACSBlockCyclicMat: Error, (%d, %d) not in nz-pattern\n",
             rank, i, j);
   }
 
@@ -1428,7 +1440,7 @@ int PDMat::add_values( int rank, int i, int j,
   Note that this uses the rand() function from stdlib. The matrix
   entries lie within the unit interval.
 */
-void PDMat::setRand(){
+void TACSBlockCyclicMat::setRand(){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -1502,7 +1514,7 @@ void PDMat::setRand(){
   function will not work after the matrix is factored since the
   factorization over-writes the original matrix entries.
 */
-void PDMat::mult( TacsScalar *x, TacsScalar *y ){
+void TACSBlockCyclicMat::mult( TacsScalar *x, TacsScalar *y ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -1698,7 +1710,7 @@ void PDMat::mult( TacsScalar *x, TacsScalar *y ){
   lower_row_sum_count: the number of local updates for L^{-1} for row i
   upper_row_sum_count: the number of local updates for U^{-1} for row i
 */
-void PDMat::init_row_counts(){
+void TACSBlockCyclicMat::init_row_counts(){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -1845,7 +1857,7 @@ void PDMat::init_row_counts(){
   .     compute x[i] = L[i,i]^{-1}(x[i] - xsum[i]),
   .     send x[i] to the j-th columns
 */
-void PDMat::applyFactor( TacsScalar *x ){
+void TACSBlockCyclicMat::applyFactor( TacsScalar *x ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2069,12 +2081,12 @@ void PDMat::applyFactor( TacsScalar *x ){
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
   row_sum_recv:  the number of received row sums
 */
-void PDMat::lower_column_update( int col,
-                                 TacsScalar *x,
-                                 TacsScalar *tx,
-                                 TacsScalar *xsum,
-                                 int *row_sum_count,
-                                 int *row_sum_recv ){
+void TACSBlockCyclicMat::lower_column_update( int col,
+                                              TacsScalar *x,
+                                              TacsScalar *tx,
+                                              TacsScalar *xsum,
+                                              int *row_sum_count,
+                                              int *row_sum_recv ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2161,12 +2173,12 @@ void PDMat::lower_column_update( int col,
   row_sum_count: the number of updates required for the row[i]
   row_sum_recv:  the number of received row sums
 */
-void PDMat::add_lower_row_sum( int col,
-                               TacsScalar *x,
-                               TacsScalar *tx,
-                               TacsScalar *xsum,
-                               int *row_sum_count,
-                               int *row_sum_recv ){
+void TACSBlockCyclicMat::add_lower_row_sum( int col,
+                                            TacsScalar *x,
+                                            TacsScalar *tx,
+                                            TacsScalar *xsum,
+                                            int *row_sum_count,
+                                            int *row_sum_recv ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2238,12 +2250,12 @@ void PDMat::add_lower_row_sum( int col,
   xsum:          the column sums on this processor
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
 */
-void PDMat::upper_column_update( int col,
-                                 TacsScalar *x,
-                                 TacsScalar *tx,
-                                 TacsScalar *xsum,
-                                 int *row_sum_count,
-                                 int *row_sum_recv ){
+void TACSBlockCyclicMat::upper_column_update( int col,
+                                              TacsScalar *x,
+                                              TacsScalar *tx,
+                                              TacsScalar *xsum,
+                                              int *row_sum_count,
+                                              int *row_sum_recv ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2336,12 +2348,12 @@ void PDMat::upper_column_update( int col,
   xsum:          the sum of all rows
   row_sum_count: the number of updates required for the row[i]
 */
-void PDMat::add_upper_row_sum( int row,
-                               TacsScalar *x,
-                               TacsScalar *tx,
-                               TacsScalar *xsum,
-                               int *row_sum_count,
-                               int *row_sum_recv ){
+void TACSBlockCyclicMat::add_upper_row_sum( int row,
+                                            TacsScalar *x,
+                                            TacsScalar *tx,
+                                            TacsScalar *xsum,
+                                            int *row_sum_count,
+                                            int *row_sum_recv ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2406,7 +2418,7 @@ void PDMat::add_upper_row_sum( int row,
   column it is in. These searches rely on the fact that the
   rows/column indices are sorted.
 */
-TacsScalar *PDMat::get_block( int rank, int i, int j ){
+TacsScalar *TACSBlockCyclicMat::get_block( int rank, int i, int j ){
   TacsScalar *A = NULL;
 
   if (rank == get_block_owner(i, j)){
@@ -2480,7 +2492,7 @@ TacsScalar *PDMat::get_block( int rank, int i, int j ){
   3. Compute the update
   A[i+1:n,i+1:n] <-- A[i+1:n,i+1:n] - L[i+1:n,i]*U[i,i+1:n]
 */
-void PDMat::factor(){
+void TACSBlockCyclicMat::factor(){
   int rank;
   MPI_Comm_rank(comm, &rank);
 

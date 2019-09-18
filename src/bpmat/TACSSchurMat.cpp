@@ -914,7 +914,7 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
   monitor_back_solve = 0;
 
   // By default use the less-memory intensive option
-  use_pdmat_alltoall = 0;
+  use_cyclic_alltoall = 0;
 
   // Perform the symbolic factorization of the [ B, E; F, C ] matrix
   int use_full_schur = 1; // Use the exact F * B^{-1} * E
@@ -1044,16 +1044,17 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
   int csr_blocks_per_block = 36/bsize;
 
   // Create the global block-cyclic Schur complement matrix
-  pdmat = new PDMat(comm, M, N, bsize, local_schur_vars,
-                    num_schur_vars, rowp, cols, csr_blocks_per_block,
-                    reorder_schur_complement, max_grid_size);
-  pdmat->incref();
+  bcyclic = new TACSBlockCyclicMat(comm, M, N, bsize, local_schur_vars,
+                                   num_schur_vars, rowp, cols,
+                                   csr_blocks_per_block,
+                                   reorder_schur_complement, max_grid_size);
+  bcyclic->incref();
 
   // Get the information about the reordering/blocks from the matrix
   int nrows, ncols;
   const int *bptr, *xbptr, *perm, *iperm, *orig_bptr;
-  pdmat->getBlockPointers(&nrows, &ncols, &bptr, &xbptr,
-                          &perm, &iperm, &orig_bptr);
+  bcyclic->getBlockPointers(&nrows, &ncols, &bptr, &xbptr,
+                            &perm, &iperm, &orig_bptr);
   if (!orig_bptr){
     orig_bptr = bptr;
   }
@@ -1076,7 +1077,7 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
   // Now, reorder the variables in the Schur complement
   int *local_tacs_schur_vars = NULL;
   if (rank == root){
-    // Compute the offset into the pdmat order
+    // Compute the offset into the block order
     int num_schur = 0;
     for ( int i = 0; i < size; i++ ){
       tacs_schur_ptr[i] = num_schur;
@@ -1093,14 +1094,14 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
         // Get the re-ordered block
         int block = i;
         if (iperm){ block = iperm[i]; }
-        int owner = pdmat->get_block_owner(block, block);
+        int owner = bcyclic->get_block_owner(block, block);
 
         // Count up the number of local blocks to offset.  This is a
         // double loop which could be avoided in future. This might be
         // a bottle neck for very large cases, but just at set up.
         int index = (bsize*j - orig_bptr[i])/bsize + tacs_schur_ptr[owner];
         for ( int k = 0; k < block; k++ ){
-          if (owner == pdmat->get_block_owner(k, k)){
+          if (owner == bcyclic->get_block_owner(k, k)){
             index += (bptr[k+1] - bptr[k])/bsize;
           }
         }
@@ -1221,7 +1222,7 @@ TACSSchurPc::~TACSSchurPc(){
   tacs_schur_ctx->decref();
 
   // Free the global Schur complement matrix
-  pdmat->decref();
+  bcyclic->decref();
 
   // Deallocate the local vectors
   gschur->decref();
@@ -1277,7 +1278,7 @@ void TACSSchurPc::testSchurComplement( TACSVec *tin, TACSVec *tout ){
 
     TacsScalar *g = NULL;
     yschur->getArray(&y);
-    pdmat->mult(y, g);
+    bcyclic->mult(y, g);
 
     TacsScalar outnorm = outvec->norm();
     TacsScalar gnorm = gschur->norm();
@@ -1286,7 +1287,7 @@ void TACSSchurPc::testSchurComplement( TACSVec *tin, TACSVec *tout ){
     tacs_schur_dist->beginForward(tacs_schur_ctx, in, y);
     tacs_schur_dist->endForward(tacs_schur_ctx, in, y);
 
-    pdmat->mult(y, g);
+    bcyclic->mult(y, g);
     TacsScalar gnorm2 = gschur->norm();
 
     int rank;
@@ -1341,7 +1342,7 @@ void TACSSchurPc::setMonitorBackSolveFlag( int flag ){
 /*
   Set the flag that controls which matrix assembly code to use.
 
-  This flag controls whether the Alltoall version of the PDMat matrix
+  This flag controls whether the Alltoall version of the block matrix
   assembly is used. When true, this uses a faster, but more
   memory-intensive version of the code. Be aware that this can cause
   the code to run out of memory, but can be very beneficial in terms
@@ -1351,7 +1352,7 @@ void TACSSchurPc::setMonitorBackSolveFlag( int flag ){
   flag:  the flag value to use for the Alltoall flag
 */
 void TACSSchurPc::setAlltoallAssemblyFlag( int flag ){
-  use_pdmat_alltoall = flag;
+  use_cyclic_alltoall = flag;
 }
 
 /*
@@ -1412,9 +1413,9 @@ void TACSSchurPc::factor(){
     global_schur_assembly = -MPI_Wtime();
   }
 
-  // Assemble the global Schur complement system into PDMat
+  // Assemble the global Schur complement system into block matrix.
   // First, zero the Schur complement matrix
-  pdmat->zeroEntries();
+  bcyclic->zeroEntries();
 
   // Retrieve the local arrays for the local Schur complement
   int bsize, mlocal, nlocal;
@@ -1426,13 +1427,13 @@ void TACSSchurPc::factor(){
   // Add the values into the global Schur complement matrix
   // using either the alltoall approach or a sequential add values
   // approach that uses less memory
-  if (use_pdmat_alltoall){
-    pdmat->addAlltoallValues(bsize, mlocal, local_schur_vars,
-                             rowp, cols, scvals);
+  if (use_cyclic_alltoall){
+    bcyclic->addAlltoallValues(bsize, mlocal, local_schur_vars,
+                               rowp, cols, scvals);
   }
   else {
-    pdmat->addAllValues(bsize, mlocal, local_schur_vars,
-                        rowp, cols, scvals);
+    bcyclic->addAllValues(bsize, mlocal, local_schur_vars,
+                          rowp, cols, scvals);
   }
 
   if (monitor_factor){
@@ -1441,7 +1442,7 @@ void TACSSchurPc::factor(){
   }
 
   // Factor the global Schur complement
-  pdmat->factor();
+  bcyclic->factor();
 
   if (monitor_factor){
     global_schur_time += MPI_Wtime();
@@ -1548,7 +1549,7 @@ void TACSSchurPc::applyFactor( TACSVec *tin, TACSVec *tout ){
 
     // Apply the global Schur complement factorization to the right
     // hand side
-    pdmat->applyFactor(g);
+    bcyclic->applyFactor(g);
 
     if (monitor_back_solve){
       schur_time += MPI_Wtime();

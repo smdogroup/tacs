@@ -35,7 +35,7 @@ CXX_OBJS = MatUtils.o \
 	TACSSchurMat.o \
 	GSEP.o \
 	JacobiDavidson.o \
-	PDMat.o \
+	TACSBlockCyclicMat.o \
 	BCSCMatPivot.o \
 	SerialBCSCMat.o \
 	TACSBVecInterp.o
