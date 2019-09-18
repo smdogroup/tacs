@@ -21,6 +21,7 @@ include ../../TACS_Common.mk
 CXX_OBJS = FElibrary.o \
 	TACSElement.o \
 	TACSElement2D.o \
+	TACSElement3D.o \
 	TACSElementTypes.o \
 	TACSElementBasis.o \
 	TACSQuadBasis.o \

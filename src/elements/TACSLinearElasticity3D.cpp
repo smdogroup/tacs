@@ -25,6 +25,22 @@ TACSLinearElasticity3D::~TACSLinearElasticity3D(){
   con->decref();
 }
 
+// 0;   1;    2;   3;   4;   5;
+// u; u,t; u,tt; u,x; u,y; u,z;
+
+// 6;   7;    8;   9;  10;  11;
+// v; v,t; v,tt; v,x; v,y; v,z;
+
+//12;  13;   14;  15;  16;  17;
+// w; w,t; w,tt; w,x; w,y; w,z;
+
+const int TACSLinearElasticity3D::linear_Jac_pairs[] =
+ {2, 2, 7, 7,
+  3, 3, 3, 4, 3, 8, 3, 9,
+  4, 3, 4, 4, 4, 8, 4, 9,
+  8, 3, 8, 4, 8, 8, 8, 9,
+  9, 3, 9, 4, 9, 8, 9, 9};
+
 int TACSLinearElasticity3D::getSpatialDim(){
   return 3;
 }
@@ -45,7 +61,7 @@ int TACSLinearElasticity3D::getDesignVarNums( int elemIndex, int dvLen,
   Set the element design variables from the design vector
 */
 void TACSLinearElasticity3D::setDesignVars( int elemIndex, int dvLen,
-                                   const TacsScalar dvs[] ){
+                                            const TacsScalar dvs[] ){
   stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
@@ -112,20 +128,17 @@ void TACSLinearElasticity3D::evalWeakIntegrand( const double time,
   TacsScalar s[6];
   con->evalStress(pt, X, e, s);
 
-  DUx[0] = 0.0;
-  DUx[1] = s[0];
-  DUx[2] = s[5];
-  DUx[3] = s[4];
+  DUx[0] = s[0];
+  DUx[1] = s[5];
+  DUx[2] = s[4];
 
-  DUx[4] = 0.0;
-  DUx[5] = s[5];
-  DUx[6] = s[1];
+  DUx[3] = s[5];
+  DUx[4] = s[1];
+  DUx[5] = s[3];
+
+  DUx[6] = s[4];
   DUx[7] = s[3];
-
-  DUx[8] = 0.0;
-  DUx[9] = s[4];
-  DUx[10] = s[3];
-  DUx[11] = s[2];
+  DUx[8] = s[2];
 }
 
 void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
@@ -179,26 +192,23 @@ void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
   TacsScalar s[6];
   con->evalStress(pt, X, e, s);
 
-  DUx[0] = 0.0;
-  DUx[1] = s[0];
-  DUx[2] = s[5];
-  DUx[3] = s[4];
-
-  DUx[4] = 0.0;
-  DUx[5] = s[5];
-  DUx[6] = s[1];
+  DUx[0] = s[0];
+  DUx[1] = s[5];
+  DUx[2] = s[4];
+    
+  DUx[3] = s[5];
+  DUx[4] = s[1];
+  DUx[5] = s[3];
+    
+  DUx[6] = s[4];
   DUx[7] = s[3];
-
-  DUx[8] = 0.0;
-  DUx[9] = s[4];
-  DUx[10] = s[3];
-  DUx[11] = s[2];
+  DUx[8] = s[2];
 
   TacsScalar C[21];
   stiff->evalTangentStiffness(pt, X, C);
 
   // Set nonzero Jacobian terms
-  *Jac_nnz = ;
+  *Jac_nnz = 84;
   *Jac_pairs = linear_Jac_pairs;
 
   // Acceleration terms
@@ -229,16 +239,25 @@ void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
     // s[5] = C[5]*(u,x) + C[10]*(v,y) + C[14]*(w,z) + C[17]*(v,z + w,y)
     //                   + C[19]*(u,z + w,x) + C[20]*(u,y + v,x)
 
+    // 0;   1;    2;   3;   4;   5;
+    // u; u,t; u,tt; u,x; u,y; u,z;
+
+    // 6;   7;    8;   9;  10;  11;
+    // v; v,t; v,tt; v,x; v,y; v,z;
+
+    //12;  13;   14;  15;  16;  17;
+    // w; w,t; w,tt; w,x; w,y; w,z;
+      
     // s[0]
-    Jac[3] = C[0];
-    Jac[4] = C[5];
-    Jac[5] = C[4];
-    Jac[6] = C[5];
-    Jac[7] = C[1];
-    Jac[8] = C[3];
-    Jac[9] = C[4];
-    Jac[10] = C[3];
-    Jac[11] = C[2];
+    Jac[3] = C[0]; // u,x 3
+    Jac[4] = C[5]; // u,y 4
+    Jac[5] = C[4]; // u,z 5
+    Jac[6] = C[5]; // v,x 9
+    Jac[7] = C[1]; // v,y 10
+    Jac[8] = C[3]; // v,z 11
+    Jac[9] = C[4]; // w,x 15
+    Jac[10] = C[3]; // w,y 16
+    Jac[11] = C[2]; // w,z 17
 
     // s[5]
     Jac[12] = C[5];
@@ -327,7 +346,6 @@ void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
     Jac[81] = C[13];
     Jac[82] = C[12];
     Jac[83] = C[11];
-    
   }
 }
 
@@ -347,8 +365,7 @@ void TACSLinearElasticity3D::addWeakAdjProduct( int elemIndex,
                                                 TacsScalar scale,
                                                 int dvLen,
                                                 TacsScalar *fdvSens ){
-
-   // Evaluate the density
+  // Evaluate the density
   TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1] + Ut[8]*Psi[8]);
   stiff->addDensityDVSens(elemIndex, pt, X, rho_coef, dvLen, fdvSens);
 
@@ -491,13 +508,12 @@ void TACSLinearElasticity3D::getOutputData( int elemIndex,
       data[0] = X[0];
       data[1] = X[1];
       data[2] = X[2];
-      data[3] = X[3];
-      data += 4;
+      data += 3;
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
       data[0] = Ut[0];
-      data[1] = Ut[4];
-      data[3] = Ut[8];
+      data[1] = Ut[3];
+      data[3] = Ut[6];
       data += 3;
     }
 

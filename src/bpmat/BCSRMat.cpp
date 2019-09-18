@@ -224,7 +224,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
   *_rowp = NULL;
   *_cols = NULL;
   
-  if (_Avals){
+  if (_A){
     data->A = *_A;
     *_A = NULL;
   }
@@ -1000,7 +1000,7 @@ void BCSRMat::initGenericImpl(){
   applypartiallower = BCSRMatApplyPartialLower;
   applypartialupper = BCSRMatApplyPartialUpper;
   applyschur = BCSRMatApplyFactorSchur;
-  applysor = BCSRMatApplySOR;
+  // applysor = BCSRMatApplySOR;
 
   // No default threaded versions
   bmultadd_thread = NULL;
