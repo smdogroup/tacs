@@ -774,7 +774,7 @@ void TACSBVecDistribute::endReverse( TACSBVecDistCtx *ctx,
            ctx->reqvals, global, op);
 }
 
-const char *TACSBVecDistribute::TACSObjectName(){
+const char *TACSBVecDistribute::getObjectName(){
   return name;
 }
 

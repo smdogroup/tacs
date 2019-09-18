@@ -271,7 +271,9 @@ int main( int argc, char *argv[] ){
   // Create the preconditioner
   TACSBVec *res = assembler->createVec();
   TACSBVec *ans = assembler->createVec();
-  TACSSchurMat *mat = assembler->createSchurMat();
+
+  // TACSSchurMat *mat = assembler->createSchurMat();
+  TACSParallelMat *mat = assembler->createMat();
 
   // Increment the reference count to the matrix/vectors
   res->incref();
@@ -279,11 +281,14 @@ int main( int argc, char *argv[] ){
   mat->incref();
 
   // Allocate the factorization
-  int lev = 4500;
-  double fill = 10.0;
-  int reorder_schur = 1;
-  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
-  pc->incref();
+//  int lev = 4500;
+//  double fill = 10.0;
+//  int reorder_schur = 1;
+//  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+//  pc->incref();
+
+  TACSBlockCyclicPc *pc = new TACSBlockCyclicPc(mat, 4, 1);
+
 
   // Assemble and factor the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;

@@ -204,16 +204,16 @@ void TACSVec::mdot( TACSVec **x, TacsScalar *ans, int m ){
   }
 }
 
-const char *TACSMat::TACSObjectName(){ return matName; }
+const char *TACSMat::getObjectName(){ return matName; }
 const char *TACSMat::matName = "TACSMat";
 
-const char *TACSPc::TACSObjectName(){ return pcName; }
+const char *TACSPc::getObjectName(){ return pcName; }
 const char *TACSPc::pcName = "TACSPc";
 
-const char *KSMPrint::TACSObjectName(){ return printName; }
+const char *KSMPrint::getObjectName(){ return printName; }
 const char *KSMPrint::printName = "TACSPrint";
 
-const char *TACSKsm::TACSObjectName(){ return ksmName; }
+const char *TACSKsm::getObjectName(){ return ksmName; }
 const char *TACSKsm::ksmName = "TACSKsm";
 
 /*
@@ -726,7 +726,7 @@ void GMRES::setTimeMonitor(){
   monitor_time = 1;
 }
 
-const char *GMRES::TACSObjectName(){
+const char *GMRES::getObjectName(){
   return gmresName;
 }
 
@@ -1112,7 +1112,7 @@ void GCROT::setMonitor( KSMPrint *_monitor ){
   monitor = _monitor;
 }
 
-const char *GCROT::TACSObjectName(){
+const char *GCROT::getObjectName(){
   return gcrotName;
 }
 

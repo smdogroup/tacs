@@ -125,7 +125,7 @@ class TACSBVecDistribute : public TACSObject {
                    TACSBVecOperation op=TACS_ADD_VALUES );
 
   MPI_Comm getMPIComm();
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   // Block-specific implementation pointers

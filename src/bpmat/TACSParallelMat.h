@@ -26,6 +26,7 @@ class TACSMatDistribute;
 #include "TACSMatDistribute.h"
 #include "BCSRMat.h"
 #include "KSM.h"
+#include "TACSBlockCyclicMat.h"
 
 /*!
   Parallel matrix class with Block Compressed-Sparse row format.
@@ -310,6 +311,33 @@ class TACSApproximateSchur : public TACSPc {
   // Global Schur matrix and its associated KSM object
   TACSGlobalSchurMat *gsmat;
   TACSKsm *inner_ksm;
+};
+
+/*
+  A pre-conditioner based on a parallel block-cyclic matrix
+*/
+class TACSBlockCyclicPc : public TACSPc {
+ public:
+  TACSBlockCyclicPc( TACSParallelMat *_mat, int blocks_per_block=4,
+                     int reorder_blocks=1 );
+  ~TACSBlockCyclicPc();
+
+  // Apply the preconditioner to x, to produce y
+  void applyFactor( TACSVec *x, TACSVec *y );
+
+  // Factor (or set up) the preconditioner
+  void factor();
+
+  // Get the matrix associated with the preconditioner itself
+  void getMat( TACSMat **_mat );
+
+ private:
+  MPI_Comm comm;
+  TACSParallelMat *mat;
+  TACSBlockCyclicMat *bcyclic;
+  TacsScalar *rhs_array;
+  TACSBVecDistribute *vec_dist;
+  TACSBVecDistCtx *vec_ctx;
 };
 
 #endif // TACS_PARALLEL_MATRIX_H

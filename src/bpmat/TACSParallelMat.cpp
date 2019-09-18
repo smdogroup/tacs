@@ -1589,3 +1589,243 @@ void TACSGlobalSchurMat::multOffDiag( TACSBVec *xvec, TACSBVec *yvec ){
 TACSVec *TACSGlobalSchurMat::createVec(){
   return new TACSBVec(rmap, Apc->getBlockSize());
 }
+
+TACSBlockCyclicPc::TACSBlockCyclicPc( TACSParallelMat *_mat,
+                                      int blocks_per_block,
+                                      int reorder_blocks ){
+  mat = _mat;
+  mat->incref();
+
+  // Get the communicator and the number of ranks
+  int mpi_size, mpi_rank;
+  comm = mat->getMPIComm();
+  MPI_Comm_size(comm, &mpi_size);
+  MPI_Comm_rank(comm, &mpi_rank);
+
+  // Get the mapping for the nodes
+  TACSNodeMap *node_map = mat->getRowMap();
+  const int *range;
+  node_map->getOwnerRange(&range);
+
+  // Get the total size of the matrix
+  int N = range[mpi_size];
+
+  // Get the matrix block size
+  int bsize, n, nc;
+  mat->getRowMap(&bsize, &n, &nc);
+
+  // Aggregate the blocks together
+  const int *arowp, *browp, *acols, *bcols;
+
+  // Get the block matrices
+  BCSRMat *Aloc, *Bext;
+  mat->getBCSRMat(&Aloc, &Bext);
+  Aloc->getArrays(NULL, NULL, NULL, &arowp, &acols, NULL);
+  Bext->getArrays(NULL, NULL, NULL, &browp, &bcols, NULL);
+
+  // Get the external set of variables
+  TACSBVecDistribute *ext_vars = NULL;
+  mat->getExtColMap(&ext_vars);
+  TACSBVecIndices *ext_indices = ext_vars->getIndices();
+
+  // Get the indices of the external B matrix components
+  const int *bindices;
+  ext_indices->getIndices(&bindices);
+
+  int *csr_vars = new int[ n ];
+  int *rowp = new int[ n+1 ];
+  int *cols = new int[ arowp[n] + browp[nc] ];
+
+  // Extract the matrix structure
+  rowp[0] = 0;
+  for ( int i = 0; i < n; i++ ){
+    // Set the variable for this row
+    csr_vars[i] = range[mpi_rank] + i;
+
+    // Add the columns from the matrix A
+    int index = rowp[i];
+    for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
+      cols[index] = acols[jp] + range[mpi_rank];
+      index++;
+    }
+
+    // Add the columns from the external part of the matrix
+    if (i >= n - nc){
+      int ib = i - (n - nc);
+      for ( int jp = browp[ib]; jp < browp[ib+1]; jp++ ){
+        cols[index] = bindices[bcols[jp]];
+        index++;
+      }
+    }
+
+    // Set the starting point for the next column
+    rowp[i+1] = index;
+  }
+
+  // Allocate the block cyclic matrix
+  bcyclic = new TACSBlockCyclicMat(comm, N, N, bsize, csr_vars, n,
+                                   rowp, cols, blocks_per_block,
+                                   reorder_blocks);
+  bcyclic->incref();
+
+  delete [] csr_vars;
+  delete [] rowp;
+  delete [] cols;
+
+  // Create the vector corresponding to the local vector
+  TACSBVecIndices *vec_indices = NULL;
+
+  int rhs_size = bcyclic->getLocalVecSize();
+  rhs_array = NULL;
+  if (rhs_size > 0){
+    rhs_array = new TacsScalar[ rhs_size ];
+
+    // Create an array of indices that will store the
+    // indices of the right-hand-sides
+    int num_local_indices = rhs_size/bsize;
+    int *indices = new int[ num_local_indices ];
+    for ( int i = 0; i < N; i++ ){
+      int index = bcyclic->getVecIndex(bsize*i);
+      if (index >= 0){
+        indices[index] = i;
+      }
+    }
+
+    // Create the vec indices
+    vec_indices = new TACSBVecIndices(&indices, num_local_indices);
+  }
+
+  // Create the index set for the global Schur complement variables
+  vec_dist = new TACSBVecDistribute(mat->getRowMap(), vec_indices);
+  vec_dist->incref();
+
+  vec_ctx = vec_dist->createCtx(bsize);
+  vec_ctx->incref();
+}
+
+TACSBlockCyclicPc::~TACSBlockCyclicPc(){
+  mat->decref();
+  bcyclic->decref();
+  if (rhs_array){
+    delete [] rhs_array;
+  }
+  vec_dist->decref();
+  vec_ctx->decref();
+}
+
+// Apply the preconditioner to x, to produce y
+void TACSBlockCyclicPc::applyFactor( TACSVec *tx, TACSVec *ty ){
+  TACSBVec *x, *y;
+  x = dynamic_cast<TACSBVec*>(tx);
+  y = dynamic_cast<TACSBVec*>(ty);
+
+  if (x && y){
+    // Move the values from their original distributed locations to
+    // their positions in the distributed array
+    TacsScalar *x_array, *y_array;
+    x->getArray(&x_array);
+    vec_dist->beginForward(vec_ctx, x_array, rhs_array);
+    vec_dist->endForward(vec_ctx, x_array, rhs_array);
+
+    // Apply the factorization to the right-hand-side
+    bcyclic->applyFactor(rhs_array);
+
+    // Distribute the values back to their original locations in the
+    // output vector
+    y->getArray(&y_array);
+    vec_dist->beginReverse(vec_ctx, rhs_array, y_array, TACS_INSERT_VALUES);
+    vec_dist->endReverse(vec_ctx, rhs_array, y_array, TACS_INSERT_VALUES);
+  }
+  else {
+    fprintf(stderr,
+            "TACSBlockCyclicPc type error: Input/output must be TACSBVec\n");
+  }
+}
+
+// Factor (or set up) the preconditioner
+void TACSBlockCyclicPc::factor(){
+  bcyclic->zeroEntries();
+
+  int mpi_size, mpi_rank;
+  MPI_Comm_size(comm, &mpi_size);
+  MPI_Comm_rank(comm, &mpi_rank);
+
+  // Get the mapping for the nodes
+  TACSNodeMap *node_map = mat->getRowMap();
+  const int *range;
+  node_map->getOwnerRange(&range);
+
+  // Get the block matrices
+  BCSRMat *Aloc, *Bext;
+  mat->getBCSRMat(&Aloc, &Bext);
+  const int *arowp, *browp, *acols, *bcols;
+  TacsScalar *Avals, *Bvals;
+  Aloc->getArrays(NULL, NULL, NULL, &arowp, &acols, &Avals);
+  Bext->getArrays(NULL, NULL, NULL, &browp, &bcols, &Bvals);
+
+  // Get the matrix block size
+  int bsize, n, nc;
+  mat->getRowMap(&bsize, &n, &nc);
+
+  // Get the external set of variables
+  TACSBVecDistribute *ext_vars = NULL;
+  mat->getExtColMap(&ext_vars);
+  TACSBVecIndices *ext_indices = ext_vars->getIndices();
+
+  // Get the indices of the external B matrix components
+  const int *bindices;
+  ext_indices->getIndices(&bindices);
+
+  // Find the maximum size of the rowp vector required
+  int max_size = arowp[n];
+  if (browp[nc] > max_size){
+    max_size = browp[nc];
+  }
+
+  int *csr_vars = new int[ n ];
+  int *rowp = new int[ n+1 ];
+  int *cols = new int[ arowp[n] + browp[nc] ];
+
+  // Set the A matrix structure
+  rowp[0] = 0;
+  for ( int i = 0; i < n; i++ ){
+    // Set the variable for this row
+    csr_vars[i] = range[mpi_rank] + i;
+
+    // Add the columns from the matrix A
+    int index = rowp[i];
+    for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
+      cols[index] = acols[jp] + range[mpi_rank];
+      index++;
+    }
+    rowp[i+1] = index;
+  }
+
+  // Add the Aloc components to the matrix
+  bcyclic->addAlltoallValues(bsize, n, csr_vars, rowp, cols, Avals);
+
+  // Set the B matrix structure
+  rowp[0] = 0;
+  for ( int i = 0; i < nc; i++ ){
+    // Set the variable for this row
+    csr_vars[i] = range[mpi_rank] + i + (n - nc);
+
+    int index = rowp[i];
+    for ( int jp = browp[i]; jp < browp[i+1]; jp++ ){
+      cols[index] = bindices[bcols[jp]];
+      index++;
+    }
+    rowp[i+1] = index;
+  }
+
+  // Add the Bext components to the matrix
+  bcyclic->addAlltoallValues(bsize, n, csr_vars, rowp, cols, Bvals);
+
+  // Factor the block cyclic matrix
+  bcyclic->factor();
+}
+
+// Get the matrix associated with the preconditioner itself
+void TACSBlockCyclicPc::getMat( TACSMat **_mat ){
+  *_mat = mat;
+}

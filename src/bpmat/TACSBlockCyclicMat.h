@@ -55,8 +55,7 @@
   result in numerical instability. The effect of round-off errors can
   be assessed after the factorization is complete. In practice there
   should be few difficulties because of the nice properties that
-  result from the use of a nearly positive definite finite-element
-  discretization.
+  result from the use of positive definite matrices.
 
   The main purpose of this matrix class is to be used for an interface
   problem (the Schur-complement problem) in a precondition or direct
@@ -101,6 +100,28 @@ class TACSBlockCyclicMat : public TACSObject {
                          const int **_bptr, const int **_xbptr,
                          const int **_perm, const int **_iperm,
                          const int **_orig_bptr );
+
+  // Get right-hand-side index of the given global variable number
+  // -------------------------------------------------------------
+  int getVecIndex( int index ){
+    int ioff = 0, ib = 0;
+    if (orig_bptr){
+      ib = get_block_num(index, orig_bptr);
+      ioff = index - orig_bptr[ib];
+      ib = iperm[ib];
+    }
+    else {
+      ib = get_block_num(index, bptr);
+      ioff = index - bptr[ib];
+    }
+
+    int mpi_rank;
+    MPI_Comm_rank(comm, &mpi_rank);
+    if (mpi_rank == get_block_owner(ib, ib)){
+      return ioff + xbptr[ib];
+    }
+    return -1;
+  }
 
   // Functions for setting values into the matrix
   // --------------------------------------------

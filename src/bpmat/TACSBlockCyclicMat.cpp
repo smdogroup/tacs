@@ -105,7 +105,7 @@ TACSBlockCyclicMat::TACSBlockCyclicMat( MPI_Comm _comm, int csr_m, int csr_n,
   bptr = new int[len_bptr];
   max_bsize = bsize;
 
-  if ( m >= n ){
+  if (m >= n){
     bptr[0] = 0;
     for ( int i = 0; i < nrows; i++ ){
       bptr[i+1] = bptr[i] + bsize;

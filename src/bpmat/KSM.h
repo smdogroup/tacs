@@ -177,7 +177,7 @@ class TACSMat : public TACSObject {
 
   // Return the name of the object
   // -----------------------------
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *matName;
@@ -211,7 +211,7 @@ class TACSPc : public TACSObject {
 
   // Retrieve the object name
   // ------------------------
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *pcName;
@@ -229,7 +229,7 @@ class KSMPrint : public TACSObject {
 
   virtual void printResidual( int iter, TacsScalar res ) = 0;
   virtual void print( const char *cstr ) = 0;
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *printName;
@@ -266,7 +266,7 @@ class TACSKsm : public TACSObject {
   virtual void solve( TACSVec *b, TACSVec *x, int zero_guess = 1 ) = 0;
   virtual void setTolerances( double _rtol, double _atol ) = 0;
   virtual void setMonitor( KSMPrint *_monitor ) = 0;
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *ksmName;
@@ -390,8 +390,7 @@ class GMRES : public TACSKsm {
   void setMonitor( KSMPrint *_monitor );
   void setOrthoType( enum OrthoType otype );
   void setTimeMonitor();
-
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   // Initialize the class
@@ -455,8 +454,7 @@ class GCROT : public TACSKsm {
   void getOperators( TACSMat **_mat, TACSPc **_pc );
   void setTolerances( double _rtol, double _atol );
   void setMonitor( KSMPrint *_monitor );
-
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
 
