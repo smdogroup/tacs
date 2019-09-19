@@ -419,7 +419,6 @@ int TACSToFH5::writeConnectivity( TACSFH5File *file ){
       }
     }
   }
-  delete [] new_owner_range;
 
   dim1 = conn_size;
   dim2 = 1;

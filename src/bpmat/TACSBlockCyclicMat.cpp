@@ -51,7 +51,7 @@
   csr_vars:              global block-CSR variable numbers
   csr_nvars:             number of CSR variables
   csr_rowp:              CSR row pointer
-  csr_cols:              CSR non-zero columns
+  csr_cols:              global non-zero column indices
   csr_blocks_per_block:  number of CSR blocks per block
 
   Procedure:
@@ -126,7 +126,7 @@ TACSBlockCyclicMat::TACSBlockCyclicMat( MPI_Comm _comm, int csr_m, int csr_n,
     }
   }
 
-  // Determine the block-CSR format for PDMat.
+  // Determine the block-CSR format for the block-cyclic matrix.
 
   // The following approach allocates more memory than is actually
   // required. However, it is fixed to at most len(csr_rowp) + nvars+1
@@ -156,7 +156,7 @@ TACSBlockCyclicMat::TACSBlockCyclicMat( MPI_Comm _comm, int csr_m, int csr_n,
     int ib = get_block_num(csr_bsize*i, bptr);
 
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
-      int j = csr_vars[csr_cols[jp]];
+      int j = csr_cols[jp];
       int jb = get_block_num(csr_bsize*j, bptr);
       cols[rowp[ib]] = jb;
       rowp[ib]++;
@@ -948,7 +948,7 @@ void TACSBlockCyclicMat::zeroEntries(){
 
 /*
   Add values into the matrix. This function is collective on all
-  processes in the PDMat comm.
+  processes in the block-cyclic comm.
 
   First, add the on-process components. Next, add the off-process
   components from each process. This approach tries to minimize the
@@ -993,7 +993,7 @@ void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
 
     // Determine the local block for vars
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
-      int j = csr_bsize*vars[csr_cols[jp]];
+      int j = csr_bsize*csr_cols[jp];
       int joff = 0;
 
       // Get the block numbers
@@ -1050,7 +1050,7 @@ void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
 
         // Determine the local block for vars
         for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
-          int j = csr_bsize*vars[csr_cols[jp]];
+          int j = csr_bsize*csr_cols[jp];
 
           if (get_block_owner(ib, jblock[jp]) == k){
             send_ivals[send_count] = i;
@@ -1146,7 +1146,7 @@ void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
 }
 
 /*
-  Add values into the matrix. This function is collective on all PDMat
+  Add values into the matrix. This function is collective on all matrix
   processes.
 
   This function requires more memory than the function above, but may
@@ -1196,7 +1196,7 @@ void TACSBlockCyclicMat::addAlltoallValues( int csr_bsize, int nvars,
 
     // Determine the local block for vars
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
-      int j = csr_bsize*vars[csr_cols[jp]];
+      int j = csr_bsize*csr_cols[jp];
       int joff = 0, jb = 0;
 
       // Get the block numbers
@@ -1253,7 +1253,7 @@ void TACSBlockCyclicMat::addAlltoallValues( int csr_bsize, int nvars,
 
     // Determine the local block for vars
     for ( int jp = csr_rowp[ip]; jp < csr_rowp[ip+1]; jp++ ){
-      int j = csr_bsize*vars[csr_cols[jp]];
+      int j = csr_bsize*csr_cols[jp];
       int jb = 0;
 
       // Get the block numbers

@@ -1672,28 +1672,28 @@ TACSBlockCyclicPc::TACSBlockCyclicPc( TACSParallelMat *_mat,
   delete [] rowp;
   delete [] cols;
 
-  // Create the vector corresponding to the local vector
-  TACSBVecIndices *vec_indices = NULL;
-
+  // Find the indices corresponding to the local vector
   int rhs_size = bcyclic->getLocalVecSize();
+  int num_local_indices = rhs_size/bsize;
+  int *indices = new int[ num_local_indices ];
+
   rhs_array = NULL;
   if (rhs_size > 0){
     rhs_array = new TacsScalar[ rhs_size ];
 
     // Create an array of indices that will store the
     // indices of the right-hand-sides
-    int num_local_indices = rhs_size/bsize;
-    int *indices = new int[ num_local_indices ];
     for ( int i = 0; i < N; i++ ){
       int index = bcyclic->getVecIndex(bsize*i);
       if (index >= 0){
-        indices[index] = i;
+        indices[index/bsize] = i;
       }
     }
-
-    // Create the vec indices
-    vec_indices = new TACSBVecIndices(&indices, num_local_indices);
   }
+
+  // Create the vec indices
+  TACSBVecIndices *vec_indices =
+    new TACSBVecIndices(&indices, num_local_indices);
 
   // Create the index set for the global Schur complement variables
   vec_dist = new TACSBVecDistribute(mat->getRowMap(), vec_indices);
@@ -1819,7 +1819,7 @@ void TACSBlockCyclicPc::factor(){
   }
 
   // Add the Bext components to the matrix
-  bcyclic->addAlltoallValues(bsize, n, csr_vars, rowp, cols, Bvals);
+  bcyclic->addAlltoallValues(bsize, nc, csr_vars, rowp, cols, Bvals);
 
   // Factor the block cyclic matrix
   bcyclic->factor();

@@ -1043,12 +1043,18 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
   // Determine the number of blocks to use per block-cylic block
   int csr_blocks_per_block = 36/bsize;
 
+  int *schur_cols = new int[ rowp[num_schur_vars] ];
+  for ( int i = 0; i < rowp[num_schur_vars]; i++ ){
+    schur_cols[i] = local_schur_vars[cols[i]];
+  }
+
   // Create the global block-cyclic Schur complement matrix
   bcyclic = new TACSBlockCyclicMat(comm, M, N, bsize, local_schur_vars,
                                    num_schur_vars, rowp, cols,
                                    csr_blocks_per_block,
                                    reorder_schur_complement, max_grid_size);
   bcyclic->incref();
+  delete [] schur_cols;
 
   // Get the information about the reordering/blocks from the matrix
   int nrows, ncols;
@@ -1424,17 +1430,23 @@ void TACSSchurPc::factor(){
   Sc->getArrays(&bsize, &mlocal, &nlocal,
                 &rowp, &cols, &scvals);
 
+  int *schur_cols = new int[ rowp[mlocal] ];
+  for ( int i = 0; i < rowp[mlocal]; i++ ){
+    schur_cols[i] = local_schur_vars[cols[i]];
+  }
+
   // Add the values into the global Schur complement matrix
   // using either the alltoall approach or a sequential add values
   // approach that uses less memory
   if (use_cyclic_alltoall){
     bcyclic->addAlltoallValues(bsize, mlocal, local_schur_vars,
-                               rowp, cols, scvals);
+                               rowp, schur_cols, scvals);
   }
   else {
     bcyclic->addAllValues(bsize, mlocal, local_schur_vars,
-                          rowp, cols, scvals);
+                          rowp, schur_cols, scvals);
   }
+  delete [] schur_cols;
 
   if (monitor_factor){
     global_schur_assembly += MPI_Wtime();
