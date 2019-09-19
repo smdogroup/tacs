@@ -920,7 +920,7 @@ void TACSLinearElasticity3D::getOutputData( int elemIndex,
       data += 6;
     }
     if (write_flag & TACS_OUTPUT_STRESSES){
-      TacsScalar s[3];
+      TacsScalar s[6];
       stiff->evalStress(elemIndex, pt, X, e, s);
       data[0] = s[0];
       data[1] = s[1];
