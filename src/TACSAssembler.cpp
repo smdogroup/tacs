@@ -140,12 +140,12 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
   // Reordering information old node i -> newNodeIndices[i]
   newNodeIndices = NULL;
 
-  // DistMat specific objects
-  distMatIndices = NULL;
+  // parMat specific objects
+  parMatIndices = NULL;
 
-  // FEMat-specific objects
-  feMatBIndices = feMatCIndices = NULL;
-  feMatBMap = feMatCMap = NULL;
+  // TACSSchurMat-specific objects
+  schurBIndices = schurCIndices = NULL;
+  schurBMap = schurCMap = NULL;
 
   // Allocate element-> node information
   elementNodeIndex = NULL;
@@ -213,14 +213,14 @@ TACSAssembler::~TACSAssembler(){
   // Free the reordering if it has been used
   if (newNodeIndices){ newNodeIndices->decref(); }
 
-  // Decrease ref. count for DistMat data
-  if (distMatIndices){ distMatIndices->decref(); }
+  // Decrease ref. count for TACSParallelMat data
+  if (parMatIndices){ parMatIndices->decref(); }
 
-  // Decrease ref. count for the FEMat data if it is allocated
-  if (feMatBIndices){ feMatBIndices->decref(); }
-  if (feMatCIndices){ feMatCIndices->decref(); }
-  if (feMatBMap){ feMatBMap->decref(); }
-  if (feMatCMap){ feMatCMap->decref(); }
+  // Decrease ref. count for the TACSSchurMat data if it is allocated
+  if (schurBIndices){ schurBIndices->decref(); }
+  if (schurCIndices){ schurCIndices->decref(); }
+  if (schurBMap){ schurBMap->decref(); }
+  if (schurCMap){ schurCMap->decref(); }
 
   // Delete arrays allocated in initializeArrays()
   if (elementData){ delete [] elementData; }
@@ -2464,8 +2464,80 @@ int TACSAssembler::initialize(){
   elementIData = new int[ idataSize ];
 
   // Allocate memory for the design variable data
-  elementSensData = new TacsScalar[ maxElementDesignVars ];
+  elementSensData =
+    new TacsScalar[ designVarsPerNode*maxElementDesignVars ];
   elementSensIData = new int[ maxElementDesignVars ];
+
+  // Create the design variable node mapping
+  if (!designNodeMap){
+    // Get the number of design variables
+    int numDVs = getNumDesignVars();
+
+    if (mpiRank > 0){
+      numDVs = 0;
+    }
+
+    designNodeMap = new TACSNodeMap(tacs_comm, numDVs);
+    designNodeMap->incref();
+  }
+
+  // Find all the design variable numbers associated
+  if (!designExtDist){
+    // Get the design variables from the auxiliary elements
+    int dvLen = 0;
+    const int maxDVs = maxElementDesignVars;
+    int *dvNums = elementSensIData;
+
+    if (auxElements){
+      TACSAuxElem *aux = NULL;
+      int naux = auxElements->getAuxElements(&aux);
+      for ( int i = 0; i < naux; i++ ){
+        dvLen += aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+      }
+    }
+    for ( int i = 0; i < numElements; i++ ){
+      dvLen += elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+    }
+
+    if (designDepNodes){
+      const int *dep_ptr;
+      int num_dep = designDepNodes->getDepNodes(&dep_ptr, NULL, NULL);
+      dvLen += dep_ptr[num_dep];
+    }
+
+    // Allocate space for absolutely everything!
+    int *allDVs = new int[ dvLen ];
+
+    // Add all of the design variable numbers to the external node values
+    dvLen = 0;
+    if (auxElements){
+      TACSAuxElem *aux = NULL;
+      int naux = auxElements->getAuxElements(&aux);
+      for ( int i = 0; i < naux; i++ ){
+        dvLen += aux[i].elem->getDesignVarNums(aux[i].num, maxDVs,
+                                               &allDVs[dvLen]);
+      }
+    }
+    for ( int i = 0; i < numElements; i++ ){
+      dvLen += elements[i]->getDesignVarNums(i, maxDVs,
+                                             &allDVs[dvLen]);
+    }
+
+    if (designDepNodes){
+      const int *dep_ptr, *dep_conn;
+      int num_dep = designDepNodes->getDepNodes(&dep_ptr, &dep_conn, NULL);
+      memcpy(&allDVs[dvLen], dep_conn, dep_ptr[num_dep]*sizeof(int));
+    }
+
+    dvLen = FElibrary::uniqueSort(allDVs, dvLen);
+    int *dvs = new int[ dvLen ];
+    memcpy(dvs, allDVs, dvLen*sizeof(int));
+    delete [] allDVs;
+
+    TACSBVecIndices *dvIndices = new TACSBVecIndices(&dvs, dvLen);
+    designExtDist = new TACSBVecDistribute(designNodeMap, dvIndices);
+    designExtDist->incref();
+  }
 
   return 0;
 }
@@ -2719,6 +2791,103 @@ TACSBVec *TACSAssembler::createDesignVec(){
                       designExtDist, designDepNodes);
 }
 
+/**
+  Set the design variable mapping, indicating the owners of the design vars
+
+  @param designVarsPerNode The number of design variables for each var number
+  @param designVarMap The design variable mapping
+*/
+void TACSAssembler::setDesignNodeMap( int _designVarsPerNode,
+                                      TACSNodeMap *_designNodeMap ){
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call setDesignVarMap() after initialize()\n",
+            mpiRank);
+    return;
+  }
+
+  // Copy over the data
+  designVarsPerNode = _designVarsPerNode;
+  _designNodeMap->incref();
+  if (designNodeMap){
+    designNodeMap->decref();
+  }
+  designNodeMap = _designNodeMap;
+}
+
+/**
+  Set the dependent design variable information
+
+  @param designDepNodes The dependent design variable information
+*/
+void TACSAssembler::setDesignDependentNodes( TACSBVecDepNodes *_designDepNodes ){
+  if (meshInitializedFlag){
+    fprintf(stderr, "[%d] Cannot call setDesignDependentNodes() after initialize()\n",
+            mpiRank);
+    return;
+  }
+
+  _designDepNodes->incref();
+  if (designDepNodes){
+    designDepNodes->decref();
+  }
+  designDepNodes = _designDepNodes;
+}
+
+/**
+  Get the number of design variables defined by this assembler object.
+
+  Note that when the designNodeMap is defined, the number of design variables
+  are taken from the defined mapping. Otherwise, the maximum design variable
+  values is computed from all elements in the TACSAssembler object.
+
+  @return The number of design variables defined by TACSAssembler
+*/
+int TACSAssembler::getNumDesignVars(){
+  if (designNodeMap){
+    const int *range;
+    designNodeMap->getOwnerRange(&range);
+    return range[mpiRank];
+  }
+  else if (elementSensIData){
+    // Get the design variables from the elements on this process
+    const int maxDVs = maxElementDesignVars;
+    int *dvNums = elementSensIData;
+
+    // Set the maximum design variable number
+    int maxDV = 0;
+
+    // Get the design variables from the auxiliary elements
+    if (auxElements){
+      TACSAuxElem *aux = NULL;
+      int naux = auxElements->getAuxElements(&aux);
+      for ( int i = 0; i < naux; i++ ){
+        int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+
+        for ( int j = 0; j < numDVs; j++ ){
+          if (dvNums[j] > maxDV){
+            maxDV = dvNums[j];
+          }
+        }
+      }
+    }
+
+    for ( int i = 0; i < numElements; i++ ){
+      int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+      for ( int j = 0; j < numDVs; j++ ){
+        if (dvNums[j] > maxDV){
+          maxDV = dvNums[j];
+        }
+      }
+    }
+
+    int maxDVglobal = 0;
+    MPI_Allreduce(&maxDV, &maxDVglobal, 1, MPI_INT, MPI_MAX, tacs_comm);
+
+    return maxDVglobal+1;
+  }
+
+  return 0;
+}
 
 /**
   Collect all the design variable values assigned by this process
@@ -2893,7 +3062,7 @@ void TACSAssembler::setBCs( TACSVec *vec ){
 
   This code creates a local array of global indices that is used to
   determine the destination for each entry in the sparse matrix.  This
-  TACSBVecIndices object is reused if any subsequent DistMat objects
+  TACSBVecIndices object is reused if any subsequent parMat objects
   are created.
 */
 TACSParallelMat *TACSAssembler::createMat(){
@@ -2903,17 +3072,17 @@ TACSParallelMat *TACSAssembler::createMat(){
     return NULL;
   }
 
-  // Create the distMat indices if they do not already exist
-  if (!distMatIndices){
+  // Create the parMat indices if they do not already exist
+  if (!parMatIndices){
     // Get the global node numbering
     int *indices = new int[ numNodes ];
     for ( int i = 0; i < numNodes; i++ ){
       indices[i] = getGlobalNodeNum(i);
     }
 
-    distMatIndices = new TACSBVecIndices(&indices, numNodes);
-    distMatIndices->incref();
-    distMatIndices->setUpInverse();
+    parMatIndices = new TACSBVecIndices(&indices, numNodes);
+    parMatIndices->incref();
+    parMatIndices->setUpInverse();
   }
 
   // Compute the local connectivity
@@ -2923,7 +3092,7 @@ TACSParallelMat *TACSAssembler::createMat(){
   // Create the distributed matrix class
   TACSParallelMat *dmat = new TACSParallelMat(thread_info, nodeMap,
                                               varsPerNode, numNodes,
-                                              rowp, cols, distMatIndices);
+                                              rowp, cols, parMatIndices);
 
   // Free the local connectivity
   delete [] rowp;
@@ -3072,8 +3241,8 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
 
   On the first call, this computes a reordering with the scheme
   provided. On subsequent calls, the reordering scheme is reused so
-  that all FEMats, created from the same TACSAssembler object have
-  the same non-zero structure. This makes adding matrices together
+  that all TACSSchurMats, created from the same TACSAssembler object
+  have the same non-zero structure. This makes adding matrices together
   easier (which is required for eigenvalue computations.)
 
   The first step is to determine the coupling nodes. (For a serial
@@ -3089,7 +3258,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
   is no firm proof to back that up.
 
   The results from the reordering are placed in a set of objects.  The
-  matrix reordering is stored in feMatBIndices and feMatCIndices while
+  matrix reordering is stored in schurBIndices and schurCIndices while
   two mapping objects are created that map the variables from the
   global vector to reordered matrix.
 
@@ -3102,12 +3271,12 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
 */
 TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
   if (!meshInitializedFlag){
-    fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n",
-            mpiRank);
+    fprintf(stderr, "[%d] Cannot call createSchurMat() before "
+            "initialize()\n", mpiRank);
     return NULL;
   }
 
-  if (!feMatBMap){
+  if (!schurBMap){
     // The number of local nodes and the number of coupling nodes
     // that are referenced by other processors
     int nlocal_nodes = numNodes;
@@ -3266,21 +3435,21 @@ TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
       delete [] local_nodes;
     }
 
-    // Create persistent objects so that all further FEMats will have
+    // Create persistent objects so that all further TACSSchurMat will have
     // the same ordering.
-    feMatBIndices = new TACSBVecIndices(&perm_local_nodes, nlocal_nodes);
-    feMatCIndices = new TACSBVecIndices(&perm_coupling_nodes, ncoupling_nodes);
-    feMatBIndices->incref();
-    feMatCIndices->incref();
+    schurBIndices = new TACSBVecIndices(&perm_local_nodes, nlocal_nodes);
+    schurCIndices = new TACSBVecIndices(&perm_coupling_nodes, ncoupling_nodes);
+    schurBIndices->incref();
+    schurCIndices->incref();
 
     TACSBVecIndices *tlocal = new TACSBVecIndices(&tacs_local_nodes,
                                                   nlocal_nodes);
     TACSBVecIndices *tcoupling = new TACSBVecIndices(&tacs_coupling_nodes,
                                                      ncoupling_nodes);
-    feMatBMap = new TACSBVecDistribute(nodeMap, tlocal);
-    feMatCMap = new TACSBVecDistribute(nodeMap, tcoupling);
-    feMatBMap->incref();
-    feMatCMap->incref();
+    schurBMap = new TACSBVecDistribute(nodeMap, tlocal);
+    schurCMap = new TACSBVecDistribute(nodeMap, tcoupling);
+    schurBMap->incref();
+    schurCMap->incref();
   }
 
   // Compute he local non-zero pattern
@@ -3289,8 +3458,8 @@ TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
 
   TACSSchurMat *mat = new TACSSchurMat(thread_info, nodeMap,
                                        varsPerNode, numNodes, rowp, cols,
-                                       feMatBIndices, feMatBMap,
-                                       feMatCIndices, feMatCMap);
+                                       schurBIndices, schurBMap,
+                                       schurCIndices, schurCMap);
   delete [] rowp;
   delete [] cols;
 
@@ -3303,15 +3472,15 @@ TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
   testing the effects of roundoff errors in the solution process.  It
   does not work in parallel applications.
 */
-SerialBCSCMat *TACSAssembler::createSerialBCSCMat(){
+SerialBCSCMat *TACSAssembler::createSerialMat(){
   if (!meshInitializedFlag){
-    fprintf(stderr, "[%d] Cannot call createFEMat() before initialize()\n",
+    fprintf(stderr, "[%d] Cannot call createSerialMat() before initialize()\n",
             mpiRank);
     return NULL;
   }
   if (mpiSize > 1){
     fprintf(stderr,
-            "[%d] Cannot call createSerialBCSCMat() with multiple processors\n",
+            "[%d] Cannot call createSerialMat() with multiple processors\n",
             mpiRank);
     return NULL;
   }

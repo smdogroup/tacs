@@ -90,6 +90,12 @@ class TACSAssembler : public TACSObject {
                          const int *_depNodeToTacs,
                          const double *_depNodeWeights );
 
+  // Set additional information about the design vector
+  // --------------------------------------------------
+  void setDesignNodeMap( int _designVarsPerNode,
+                         TACSNodeMap *_designVarMap );
+  void setDesignDependentNodes( TACSBVecDepNodes *_designDepNodes );
+
   // Associate a Dirichlet boundary condition with the given variables
   // -----------------------------------------------------------------
   void addBCs( int nnodes, const int *nodes,
@@ -184,7 +190,7 @@ class TACSAssembler : public TACSObject {
   // -------------------------------------------------
   TACSParallelMat *createMat();
   TACSSchurMat *createSchurMat( OrderingType order_type=TACS_AMD_ORDER );
-  SerialBCSCMat *createSerialBCSCMat();
+  SerialBCSCMat *createSerialMat();
 
   // Retrieve the initial conditions for the simulation
   // --------------------------------------------------
@@ -288,6 +294,10 @@ class TACSAssembler : public TACSObject {
   void computeNodeToElementCSR( int **_nodeElem, int **_nodeElemIndex );
 
  private:
+  // Get the number of design variable numbers
+  // -----------------------------------------
+  int getNumDesignVars();
+
   // Get pointers to the start-locations within the data array
   // ---------------------------------------------------------
   void getDataPointers( TacsScalar *data,
@@ -345,13 +355,13 @@ class TACSAssembler : public TACSObject {
   // Reordering information
   TACSBVecIndices *newNodeIndices;
 
-  // Additional information information for the DistMat class
-  TACSBVecIndices *distMatIndices;
+  // Additional information information for the TACSParallel class
+  TACSBVecIndices *parMatIndices;
 
-  // Additional ordering information for the FEMat class
+  // Additional ordering information for the TACSSchurMat class
   // These are created once - all subsequent calls use this data.
-  TACSBVecIndices *feMatBIndices, *feMatCIndices;
-  TACSBVecDistribute *feMatBMap, *feMatCMap;
+  TACSBVecIndices *schurBIndices, *schurCIndices;
+  TACSBVecDistribute *schurBMap, *schurCMap;
 
   // The global simulation time variable
   double time;
