@@ -1,4 +1,4 @@
-#include "PDMat.h"
+#include "TACSBlockCyclicMat.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -9,7 +9,7 @@ int main( int argc, char *argv[] ){
 
   // Create a square matrix
   int nrows = 50;
-  PDMat *mat = new PDMat(comm, nrows, nrows);
+  TACSBlockCyclicMat *mat = new TACSBlockCyclicMat(comm, nrows, nrows);
   mat->incref();
 
   // Set Random values into the matrix
