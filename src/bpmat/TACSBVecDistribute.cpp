@@ -323,6 +323,7 @@ TACSBVecDistribute::TACSBVecDistribute( TACSNodeMap * _rmap,
   // The external variables
   bindex = _bindex;
   bindex->incref();
+  bindex->setUpInverse();
   const int *vars;
   int nvars = bindex->getIndices(&vars);
 

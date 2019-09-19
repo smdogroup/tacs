@@ -2488,21 +2488,41 @@ int TACSAssembler::initialize(){
     const int maxDVs = maxElementDesignVars;
     int *dvNums = elementSensIData;
 
+    // Get the design variable range
+    const int *range;
+    designNodeMap->getOwnerRange(&range);
+    int lower = range[mpiRank];
+    int upper = range[mpiRank+1];
+
     if (auxElements){
       TACSAuxElem *aux = NULL;
       int naux = auxElements->getAuxElements(&aux);
       for ( int i = 0; i < naux; i++ ){
-        dvLen += aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+        int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+        for ( int j = 0; j < numDVs; j++ ){
+          if (dvNums[j] < lower || dvNums[j] >= upper){
+            dvLen++;
+          }
+        }
       }
     }
     for ( int i = 0; i < numElements; i++ ){
-      dvLen += elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+      int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+      for ( int j = 0; j < numDVs; j++ ){
+        if (dvNums[j] < lower || dvNums[j] >= upper){
+          dvLen++;
+        }
+      }
     }
 
     if (designDepNodes){
-      const int *dep_ptr;
-      int num_dep = designDepNodes->getDepNodes(&dep_ptr, NULL, NULL);
-      dvLen += dep_ptr[num_dep];
+      const int *dep_ptr, *dep_conn;
+      int num_dep = designDepNodes->getDepNodes(&dep_ptr, &dep_conn, NULL);
+      for ( int j = 0; j < dep_ptr[num_dep]; j++ ){
+        if (dep_conn[j] < lower || dep_conn[j] >= upper){
+          dvLen++;
+        }
+      }
     }
 
     // Allocate space for absolutely everything!
@@ -2514,19 +2534,34 @@ int TACSAssembler::initialize(){
       TACSAuxElem *aux = NULL;
       int naux = auxElements->getAuxElements(&aux);
       for ( int i = 0; i < naux; i++ ){
-        dvLen += aux[i].elem->getDesignVarNums(aux[i].num, maxDVs,
-                                               &allDVs[dvLen]);
+        int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
+        for ( int j = 0; j < numDVs; j++ ){
+          if (dvNums[j] < lower || dvNums[j] >= upper){
+            allDVs[dvLen] = dvNums[j];
+            dvLen++;
+          }
+        }
       }
     }
     for ( int i = 0; i < numElements; i++ ){
-      dvLen += elements[i]->getDesignVarNums(i, maxDVs,
-                                             &allDVs[dvLen]);
+      int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
+      for ( int j = 0; j < numDVs; j++ ){
+        if (dvNums[j] < lower || dvNums[j] >= upper){
+          allDVs[dvLen] = dvNums[j];
+          dvLen++;
+        }
+      }
     }
 
     if (designDepNodes){
       const int *dep_ptr, *dep_conn;
       int num_dep = designDepNodes->getDepNodes(&dep_ptr, &dep_conn, NULL);
-      memcpy(&allDVs[dvLen], dep_conn, dep_ptr[num_dep]*sizeof(int));
+      for ( int j = 0; j < dep_ptr[num_dep]; j++ ){
+        if (dep_conn[j] < lower || dep_conn[j] >= upper){
+          allDVs[dvLen] = dep_conn[j];
+          dvLen++;
+        }
+      }
     }
 
     dvLen = FElibrary::uniqueSort(allDVs, dvLen);
@@ -2535,6 +2570,7 @@ int TACSAssembler::initialize(){
     delete [] allDVs;
 
     TACSBVecIndices *dvIndices = new TACSBVecIndices(&dvs, dvLen);
+    dvIndices->setUpInverse();
     designExtDist = new TACSBVecDistribute(designNodeMap, dvIndices);
     designExtDist->incref();
   }
@@ -4257,7 +4293,7 @@ void TACSAssembler::addDVSens( double coef,
             elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
 
           // Evaluate the element-wise sensitivity of the function
-          memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+          memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
           funcs[k]->addElementDVSens(elemNum, elements[elemNum],
                                      time, coef,
                                      elemXpts, vars, dvars, ddvars,
@@ -4283,7 +4319,7 @@ void TACSAssembler::addDVSens( double coef,
             elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
 
           // Evaluate the element-wise sensitivity of the function
-          memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+          memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
           funcs[k]->addElementDVSens(elemNum, elements[elemNum],
                                      time, coef,
                                      elemXpts, vars, dvars, ddvars,
@@ -4544,7 +4580,7 @@ void TACSAssembler::addAdjointResProducts( double scale,
 
     // Get the adjoint variables
     for ( int k = 0; k < numAdjoints; k++ ){
-      memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+      memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
 
       // Get the element adjoint vector
       adjoint[k]->getValues(len, nodes, elemAdjoint);
@@ -4565,7 +4601,7 @@ void TACSAssembler::addAdjointResProducts( double scale,
 
       // Get the adjoint variables
       for ( int k = 0; k < numAdjoints; k++ ){
-        memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+        memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
 
         aux[aux_count].elem->addAdjResProduct(i, time, scale,
                                               elemAdjoint, elemXpts,
@@ -4709,7 +4745,7 @@ void TACSAssembler::addMatDVSensInnerProduct( double scale,
 
     // Get the design variables for this element
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
-    memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
+    memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
 
     // Add the contribution to the design variable vector
     elements[i]->addMatDVSensInnerProduct(i, matType, scale,

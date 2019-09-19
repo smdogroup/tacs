@@ -465,14 +465,14 @@ int main( int argc, char * argv[] ){
   // variables. In this case, we do not need to zero dfdu since it is
   // zeroed on initialization, however, in general it is good practice
   // to zero them unless you're absolutely sure...
-  dfdu->zeroEntries();
-  assembler->addSVSens(alpha, beta, gamma, 1, &func, &dfdu);
+  // dfdu->zeroEntries();
+  // assembler->addSVSens(alpha, beta, gamma, 1, &func, &dfdu);
 
   // Solve for the adjoint variables
-  ksm->solve(dfdu, ans);
+  // ksm->solve(dfdu, ans);
 
   // Compute the total derivative
-  assembler->addAdjointResProducts(-1.0, 1, &ans, &dfdx);
+  // assembler->addAdjointResProducts(-1.0, 1, &ans, &dfdx);
 
   dfdx->beginSetValues(TACS_ADD_VALUES);
   dfdx->endSetValues(TACS_ADD_VALUES);

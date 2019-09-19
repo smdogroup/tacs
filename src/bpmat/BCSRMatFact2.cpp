@@ -107,7 +107,7 @@ for row %d\n", i);
     d22 = a[3];
 
     TacsScalar det = (d11*d22 - d12*d21);
-    if ( det == 0.0 ){
+    if (det == 0.0){
       fprintf(stderr, "Failure in factorization of row %d\n", i);
     }
     det = 1.0/det;
