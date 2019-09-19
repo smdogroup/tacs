@@ -188,7 +188,7 @@ void TACSMaterialProperties::getThermalConductivity( TacsScalar *_k1,
   if (_k3){ *_k3 = kappa3; }
 }
 
-void TACSMaterialProperties::evalTangentStiffness( TacsScalar C[] ){
+void TACSMaterialProperties::evalTangentStiffness3D( TacsScalar C[] ){
   if (mat_type == TACS_ISOTROPIC_MATERIAL){
     TacsScalar D = E/((1.0 + nu)*(1.0 - 2.0*nu));
 
@@ -260,7 +260,7 @@ void TACSMaterialProperties::evalTangentStiffness2D( TacsScalar C[] ){
   }
 }
 
-void TACSMaterialProperties::evalThermalStrain( TacsScalar e[] ){
+void TACSMaterialProperties::evalThermalStrain3D( TacsScalar e[] ){
   e[0] = alpha1;
   e[1] = alpha2;
   e[2] = alpha3;

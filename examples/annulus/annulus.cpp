@@ -104,7 +104,7 @@ int main( int argc, char *argv[] ){
     // Create the preconditioner
     TACSBVec *res = assembler->createVec();
     TACSBVec *ans = assembler->createVec();
-    FEMat *mat = assembler->createFEMat();
+    TACSSchurMat *mat = assembler->createSchurMat();
 
     // Increment the reference count to the matrix/vectors
     res->incref();

@@ -9,7 +9,8 @@ include ../../TACS_Common.mk
 
 CXX_OBJS = TACSMaterialProperties.o \
 	TACSConstitutive.o \
-	TACSPlaneStressConstitutive.o
+	TACSPlaneStressConstitutive.o \
+	TACSSolidConstitutive.o
 
 
 # 	MaterialProperties.o \

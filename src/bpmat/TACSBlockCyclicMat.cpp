@@ -467,8 +467,8 @@ void TACSBlockCyclicMat::merge_nz_pattern( int root,
           temp_rowp[i+1] = p;
           size = FElibrary::uniqueSort(&temp_cols[temp_rowp[i]], size);
           if (size != temp_rowp[i+1] - temp_rowp[i]){
-            printf("[%d] TACSBlockCyclicMat: problem with the permutation array\n",
-                   rank);
+            printf("[%d] TACSBlockCyclicMat: problem with the "
+                   "permutation array\n", rank);
           }
         }
 
@@ -957,7 +957,7 @@ void TACSBlockCyclicMat::zeroEntries(){
   call to MPI_Alltoallv which may be faster, but requires more memory.
 */
 void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
-                                       const int *vars,
+                                       const int *csr_vars,
                                        const int *csr_rowp,
                                        const int *csr_cols,
                                        TacsScalar *vals ){
@@ -979,7 +979,7 @@ void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
 
   // Go through and add any contributions from the local process
   for ( int ip = 0; ip < nvars; ip++ ){
-    int i = csr_bsize*vars[ip];
+    int i = csr_bsize*csr_vars[ip];
     int ioff = 0, ib = 0;
     if (orig_bptr){
       ib = get_block_num(i, orig_bptr);
@@ -1038,7 +1038,7 @@ void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
     if (rank != k){
       // Figure out what to add where
       for ( int ip = 0; ip < nvars; ip++ ){
-        int i = csr_bsize*vars[ip];
+        int i = csr_bsize*csr_vars[ip];
         int ib;
         if (orig_bptr){
           ib = get_block_num(i, orig_bptr);
@@ -1162,7 +1162,7 @@ void TACSBlockCyclicMat::addAllValues( int csr_bsize, int nvars,
   All allocated memory is freed.
 */
 void TACSBlockCyclicMat::addAlltoallValues( int csr_bsize, int nvars,
-                                            const int *vars,
+                                            const int *csr_vars,
                                             const int *csr_rowp,
                                             const int *csr_cols,
                                             TacsScalar *vals ){
@@ -1182,7 +1182,7 @@ void TACSBlockCyclicMat::addAlltoallValues( int csr_bsize, int nvars,
 
   // Go through and add any contributions from the local process
   for ( int ip = 0; ip < nvars; ip++ ){
-    int i = csr_bsize*vars[ip];
+    int i = csr_bsize*csr_vars[ip];
     int ioff = 0, ib = 0;
     if (orig_bptr){
       ib = get_block_num(i, orig_bptr);
@@ -1241,7 +1241,7 @@ void TACSBlockCyclicMat::addAlltoallValues( int csr_bsize, int nvars,
 
   // Go back through and copy over values to pass to all the processes
   for ( int ip = 0; ip < nvars; ip++ ){
-    int i = csr_bsize*vars[ip];
+    int i = csr_bsize*csr_vars[ip];
     int ib = 0;
     if (orig_bptr){
       ib = get_block_num(i, orig_bptr);

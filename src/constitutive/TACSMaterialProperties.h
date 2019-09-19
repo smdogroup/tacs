@@ -86,10 +86,10 @@ class TACSMaterialProperties : public TACSObject {
                                TacsScalar *_k2,
                                TacsScalar *_k3 );
 
-  void evalTangentStiffness( TacsScalar C[] );
+  void evalTangentStiffness3D( TacsScalar C[] );
   void evalTangentStiffness2D( TacsScalar C[] );
 
-  void evalThermalStrain( TacsScalar e[] );
+  void evalThermalStrain3D( TacsScalar e[] );
   void evalThermalStrain2D( TacsScalar e[] );
 
   // Compute the failure index using the von Mises stress

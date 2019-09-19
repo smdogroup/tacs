@@ -1050,7 +1050,7 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
 
   // Create the global block-cyclic Schur complement matrix
   bcyclic = new TACSBlockCyclicMat(comm, M, N, bsize, local_schur_vars,
-                                   num_schur_vars, rowp, cols,
+                                   num_schur_vars, rowp, schur_cols,
                                    csr_blocks_per_block,
                                    reorder_schur_complement, max_grid_size);
   bcyclic->incref();

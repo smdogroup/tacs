@@ -389,7 +389,7 @@ TACSLinearElasticity3D::TACSLinearElasticity3D( TACSSolidConstitutive *_stiff,
 }
 
 TACSLinearElasticity3D::~TACSLinearElasticity3D(){
-  con->decref();
+  stiff->decref();
 }
 
 // 0;   1;    2;   3;   4;   5;
@@ -453,15 +453,17 @@ void TACSLinearElasticity3D::getDesignVarRange( int elemIndex, int dvLen,
   stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
-void TACSLinearElasticity3D::evalWeakIntegrand( const double time,
-                                                 const double pt[],
-                                                 const TacsScalar X[],
-                                                 const TacsScalar Ut[],
-                                                 const TacsScalar Ux[],
-                                                 TacsScalar DUt[],
-                                                 TacsScalar DUx[] ){
+void TACSLinearElasticity3D::evalWeakIntegrand( int elemIndex,
+                                                const double time,
+                                                int n,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                const TacsScalar Ut[],
+                                                const TacsScalar Ux[],
+                                                TacsScalar DUt[],
+                                                TacsScalar DUx[] ){
   // Evaluate the density
-  TacsScalar rho = con->evalDensity(pt, X);
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
@@ -497,7 +499,7 @@ void TACSLinearElasticity3D::evalWeakIntegrand( const double time,
 
   // Evaluate the stress
   TacsScalar s[6];
-  con->evalStress(pt, X, e, s);
+  stiff->evalStress(elemIndex, pt, X, e, s);
 
   DUx[0] = s[0];
   DUx[1] = s[5];
@@ -525,7 +527,7 @@ void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
                                                const int *Jac_pairs[],
                                                TacsScalar Jac[] ){
   // Evaluate the density
-  TacsScalar rho = con->evalDensity(pt, X);
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
@@ -561,7 +563,7 @@ void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
 
   // Evaluate the stress
   TacsScalar s[6];
-  con->evalStress(pt, X, e, s);
+  stiff->evalStress(elemIndex, pt, X, e, s);
 
   DUx[0] = s[0];
   DUx[1] = s[5];
@@ -576,7 +578,7 @@ void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
   DUx[8] = s[2];
 
   TacsScalar C[21];
-  stiff->evalTangentStiffness(pt, X, C);
+  stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
   // Set nonzero Jacobian terms
   *Jac_nnz = 84;
