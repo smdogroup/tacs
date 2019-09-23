@@ -60,6 +60,25 @@ static void getFaceTangents( int face, double t[] ){
 /*
   Linear Tetrahedral basis class functions
 */
+ElementLayout TACSLinearTetrahedralBasis::getLayoutType(){
+  return TACS_TETRA_ELEMENT;
+}
+
+void TACSLinearTetrahedralBasis::getVisPoint( int n, double pt[] ){
+  if (n == 0){
+    pt[0] = pt[1] = pt[2] = 0.0;
+  }
+  else if (n == 1){
+    pt[0] = 1.0; pt[1] = 0.0; pt[2] = 0.0;
+  }
+  else if (n == 2){
+    pt[0] = 0.0; pt[1] = 1.0; pt[2] = 0.0;
+  }
+  else if (n == 3){
+    pt[0] = 0.0; pt[1] = 0.0; pt[2] = 1.0;
+  }
+}
+
 int TACSLinearTetrahedralBasis::getNumNodes(){
   return 4;
 }
@@ -157,7 +176,6 @@ double TACSLinearTetrahedralBasis::getFaceQuadraturePoint( int face,
     return TacsTriangleWts3[0];
   }
   else if (face == 2){
-    // slanted face -- not sure how to do this
     // points should be the same but multiplied by rt 2
     // weight is already multiplied by 1/2 (area of regular tri)
     // needs to me multiplied by 2 to remove that and then by the area of slanted tri

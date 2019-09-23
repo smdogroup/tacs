@@ -19,6 +19,7 @@ EXAMPLE_SUBDIRS = \
 	profile_elements \
 	rigid \
 	stiffened_panel \
+        tetrahedral \
 	triangle \
 	tutorial
 
