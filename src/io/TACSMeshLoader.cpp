@@ -1431,9 +1431,8 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           // with this element
           int elem_num, component_num;
           int nodes[4]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 3);
+          parse_element_field(line[0], &elem_num, &component_num,
+                              nodes, 4);
 
           // Add the element to the connectivity list
           elem_nums[num_elements] = elem_num-1;
