@@ -44,7 +44,7 @@ int main( int argc, char *argv[] ){
   // root processor
   if (rank == 0){
     // Create a regular mesh of triangular elements
-    int nx = 10, ny = 10;
+    int nx = 40, ny = 40;
     int num_elements = 10*nx*ny;
 
     // Allocate the two halfs of the mesh
@@ -272,38 +272,61 @@ int main( int argc, char *argv[] ){
   TACSBVec *res = assembler->createVec();
   TACSBVec *ans = assembler->createVec();
 
-  // TACSSchurMat *mat = assembler->createSchurMat();
-  TACSParallelMat *mat = assembler->createMat();
-
   // Increment the reference count to the matrix/vectors
   res->incref();
   ans->incref();
-  mat->incref();
 
-  // Allocate the factorization
-//  int lev = 4500;
-//  double fill = 10.0;
-//  int reorder_schur = 1;
-//  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
-//  pc->incref();
-
-  TACSBlockCyclicPc *pc = new TACSBlockCyclicPc(mat, 4, 1);
-
-
-  // Assemble and factor the stiffness/Jacobian matrix
+  // Set the parameters for the stiffness/Jacobian matrix
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  assembler->assembleJacobian(alpha, beta, gamma, res, mat);
-  pc->factor();
 
+  // Allocate, assemble and factor the TACSSchurMat and preconditioner
+  TACSSchurMat *schur_mat = assembler->createSchurMat();
+  schur_mat->incref();
+
+  int lev = 4500;
+  double fill = 10.0;
+  int reorder_schur = 1;
+  TACSSchurPc *schur_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
+  schur_pc->incref();
+
+  double schur_time = MPI_Wtime();
+  assembler->assembleJacobian(alpha, beta, gamma, res, schur_mat);
+  schur_pc->factor();
+  schur_time = MPI_Wtime() - schur_time;
+
+  if (rank == 0){
+    printf("TACSSchurMat/TACSSchurPc assembly and factorization time: %15.5e\n",
+           schur_time);
+  }
+
+  // Allocate, assemble and factor the TACSParallelMat using the
+  // block-cyclic preconditioner
+  TACSParallelMat *par_mat = assembler->createMat();
+  par_mat->incref();
+
+  TACSBlockCyclicPc *par_pc = new TACSBlockCyclicPc(par_mat, 4, 1);
+  par_pc->incref();
+
+  double par_time = MPI_Wtime();
+  assembler->assembleJacobian(alpha, beta, gamma, res, par_mat);
+  par_pc->factor();
+  par_time = MPI_Wtime() - par_time;
+
+  if (rank == 0){
+    printf("TACSParallelMat/TACSBlockCyclicPc assembly and factorization time: %15.5e\n",
+           par_time);
+  }
+
+  // Allocate the GMRES object with the TACSSchurMat matrix
   int gmres_iters = 10; // Number of GMRES iterations
   int nrestart = 2; // Number of allowed restarts
   int is_flexible = 1; // Is a flexible preconditioner?
-  GMRES *gmres = new GMRES(mat, pc, gmres_iters,
-                           nrestart, is_flexible);
+  GMRES *schur_gmres = new GMRES(schur_mat, schur_pc, gmres_iters,
+                                 nrestart, is_flexible);
 
   res->set(1.0);
   assembler->applyBCs(res);
-  gmres->solve(res, ans);
+  schur_gmres->solve(res, ans);
   assembler->setVariables(ans);
 
   // Create an TACSToFH5 object for writing output to files
@@ -320,8 +343,10 @@ int main( int argc, char *argv[] ){
   f5->decref();
 
   // Decrease the reference count to the linear algebra objects
-  pc->decref();
-  mat->decref();
+  schur_pc->decref();
+  schur_mat->decref();
+  par_pc->decref();
+  par_mat->decref();
   ans->decref();
   res->decref();
 

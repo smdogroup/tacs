@@ -328,10 +328,16 @@ int main( int argc, char * argv[] ){
   kmat->incref();
   pc->incref();
 
-  // Assemble the stiffness matrix and residual
-  TACSBVec *res = assembler->createVec();  res->incref();
-  TACSBVec *ans = assembler->createVec();  ans->incref();
-  TACSBVec *tmp = assembler->createVec();  tmp->incref();
+  // Allocate space for the vectors
+  TACSBVec *force = assembler->createVec(); force->incref();
+  TACSBVec *res = assembler->createVec();   res->incref();
+  TACSBVec *ans = assembler->createVec();   ans->incref();
+  TACSBVec *tmp = assembler->createVec();   tmp->incref();
+
+  // Set all components of the vector to 1.0 and apply boundary
+  // conditions
+  force->set(1.0);
+  assembler->applyBCs(force);
 
   /*
     Assemble the Jacobian of governing equations. Note that the alpha,
@@ -352,6 +358,7 @@ int main( int argc, char * argv[] ){
   */
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   assembler->assembleJacobian(alpha, beta, gamma, res, kmat);
+  res->axpy(-1.0, force); // res = Ku - f
 
   // This call copies then factors the matrix
   double t0 = MPI_Wtime();
@@ -396,6 +403,7 @@ int main( int argc, char * argv[] ){
   ans->scale(-1.0);
   assembler->setVariables(ans);
   assembler->assembleRes(res);
+  res->axpy(-1.0, force); // res = Ku - f
   norm = res->norm();
   if (rank == 0){
     printf("|R|: %15.5e\n", TacsRealPart(norm));
@@ -511,6 +519,7 @@ int main( int argc, char * argv[] ){
   // Evaluate the problem again and compare the results
   assembler->zeroVariables();
   assembler->assembleJacobian(alpha, beta, gamma, res, kmat);
+  res->axpy(-1.0, force); // res = Ku - f
 
   // Factor the preconditioner
   pc->factor();

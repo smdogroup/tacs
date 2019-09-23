@@ -2976,6 +2976,10 @@ void TACSAssembler::getDesignVars( TACSBVec *dvs ){
   @param dvs The design variable values
 */
 void TACSAssembler::setDesignVars( TACSBVec *dvs ){
+  // Distribute the non-local design variable values
+  dvs->beginDistributeValues();
+  dvs->endDistributeValues();
+
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
   TacsScalar *dvVals = elementSensData;
