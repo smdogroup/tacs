@@ -136,11 +136,11 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2];
+  DUt[2] = rho*Ut[2]; // u,tt
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5];
+  DUt[5] = rho*Ut[5]; // v,tt
 
   TacsScalar e[3];
   if (strain_type == TACS_LINEAR_STRAIN){

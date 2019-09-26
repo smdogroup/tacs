@@ -925,7 +925,6 @@ void TACSElementBasis::addWeakFormResidual( const int num_params,
                         nx[2]*DUx[3*ii+2]);
         r++;
       }
-      n++;
       nxi += 3;
     }
   }
@@ -938,7 +937,6 @@ void TACSElementBasis::addWeakFormResidual( const int num_params,
                         nx[1]*DUx[2*ii+1]);
         r++;
       }
-      n++;
       nxi += 2;
     }
   }
@@ -949,7 +947,6 @@ void TACSElementBasis::addWeakFormResidual( const int num_params,
         r[0] += weight*(nx*DUx[ii]);
         r++;
       }
-      n++;
       nxi++;
     }
   }
@@ -1060,6 +1057,7 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
   const double *n = N;
   const double *nx = Nx;
   if (res){
+    // Add the residual contribution from the time derivative components
     TacsScalar *r = res;
     for ( int i = 0; i < num_nodes; i++ ){
       for ( int ii = 0; ii < vars_per_node; ii++ ){
@@ -1071,6 +1069,8 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
       n++;
     }
 
+    // Add the residual contribution from the spatial derivative components
+    r = res;
     if (num_params == 3){
       for ( int i = 0; i < num_nodes; i++ ){
         for ( int ii = 0; ii < vars_per_node; ii++ ){
@@ -1079,7 +1079,6 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
                           nx[2]*DUx[3*ii+2]);
           r++;
         }
-        n++;
         nx += 3;
       }
     }
@@ -1090,7 +1089,6 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
                           nx[1]*DUx[2*ii+1]);
           r++;
         }
-        n++;
         nx += 2;
       }
     }
@@ -1100,7 +1098,6 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
           r[0] += weight*(nx[0]*DUx[ii]);
           r++;
         }
-        n++;
         nx++;
       }
     }
@@ -1178,7 +1175,7 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
       int jx = Jac_pairs[2*ii+1];
 
       if (Jac[ii] != 0.0){
-        TacsScalar init_scale = alpha*weight*Jac[ii];
+        TacsScalar init_scale = weight*Jac[ii];
 
         // Compute the offset point in the matrix
         const int init_index = (num_vars*(ix/(num_params+3)) +
