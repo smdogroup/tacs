@@ -271,8 +271,9 @@ int main( int argc, char *argv[] ){
   }
 
   // Create the residual and solution vectors on the finest TACS mesh
-  TACSBVec *res = assembler[0]->createVec();  res->incref();
-  TACSBVec *ans = assembler[0]->createVec();  ans->incref();
+  TACSBVec *force = assembler[0]->createVec();  force->incref();
+  TACSBVec *res = assembler[0]->createVec();    res->incref();
+  TACSBVec *ans = assembler[0]->createVec();    ans->incref();
 
   // Allocate the GMRES solution method
   int gmres_iters = 100;
@@ -292,30 +293,31 @@ int main( int argc, char *argv[] ){
   // Assemble the Jacobian matrix for each level
   mg->assembleJacobian(1.0, 0.0, 0.0, res);
 
-  res->zeroEntries();
-  TacsScalar *res_array;
-  int size = res->getArray(&res_array);
+  force->zeroEntries();
+  TacsScalar *force_array;
+  int size = force->getArray(&force_array);
   for ( int i = 1; i < size; i += 2){
-    res_array[i] = 1.0;
+    force_array[i] = 1.0;
   }
-  assembler[0]->applyBCs(res);
+  assembler[0]->applyBCs(force);
 
   // "Factor" the preconditioner
   mg->factor();
 
   mg->setMonitor(new KSMPrintStdout("MG", rank, freq));
-  mg->solve(res, ans);
 
   // Compute the solution using GMRES
-  gmres->solve(res, ans);
+  gmres->solve(force, ans);
 
   t0 = MPI_Wtime() - t0;
 
   // Set the variables into TACS
-  ans->scale(-1.0);
   assembler[0]->setVariables(ans);
 
-  assembler[0]->assembleRes(res);
+  // Compute the residual
+  TACSMat *mat = mg->getMat(0);
+  mat->mult(ans, res);
+  res->axpy(-1.0, force);
   TacsScalar res_norm = res->norm();
   if (rank == 0){
     printf("||R||: %15.5e\n", TacsRealPart(res_norm));
@@ -337,6 +339,7 @@ int main( int argc, char *argv[] ){
   f5->decref();
   ans->decref();
   res->decref();
+  force->decref();
   gmres->decref();
   for ( int i = 0; i < nlevels; i++ ){
     assembler[i]->decref();

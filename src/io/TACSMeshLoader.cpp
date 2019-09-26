@@ -1559,6 +1559,9 @@ TACSAssembler *TACSMeshLoader::createTACS( int vars_per_node,
   creator = new TACSCreator(comm, vars_per_node);
   creator->incref();
 
+  // Set the ordering type and matrix type
+  creator->setReorderingType(order_type, mat_type);
+
   if (rank == root){
     // Set the connectivity
     creator->setGlobalConnectivity(num_nodes, num_elements,

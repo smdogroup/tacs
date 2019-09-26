@@ -83,8 +83,8 @@ if order == 2:
             # Write the connectivity data
             fp.write('%-8s%8d%8d%8d%8d%8d%8d\n'%
                      ('CQUAD4', elem, elem, 
-                      nodes[i, j], nodes[i, j+1], 
-                      nodes[i+1, j+1], nodes[i+1, j]))
+                      nodes[i, j], nodes[i+1, j],
+                      nodes[i+1, j+1], nodes[i, j+1]))
 elif order == 3:
     # Output 3rd order elements                
     for j in range(0, nodes.shape[1]-1, order-1):
@@ -100,28 +100,6 @@ elif order == 3:
             fp.write('        %8d%8d%8d\n'%
                      (nodes[i+1, j+2], nodes[i, j+1],
                       nodes[i+1, j+1]))
-            elem += 1
-elif order == 4:
-    # Output 4th order elements
-    for j in range(0, nodes.shape[1]-1, order-1):
-        for i in range(0, nodes.shape[0]-1, order-1):
-            # Write the connectivity data
-            # CQUAD16 elem id  n1  n2  n3  n4  n5  n6
-            #         n7   n8  n9  n10 n11 n12 n13 n14
-            #         n15  n16
-            
-            fp.write('%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n'%
-                     ('CQUAD16', elem, elem,
-                      nodes[i  , j  ], nodes[i+1, j  ], 
-                      nodes[i+2, j  ], nodes[i+3, j  ], 
-                      nodes[i  , j+1], nodes[i+1, j+1]))
-            fp.write('        %8d%8d%8d%8d%8d%8d%8d%8d\n'%
-                     (nodes[i+2, j+1], nodes[i+3, j+1], 
-                      nodes[i  , j+2], nodes[i+1, j+2], 
-                      nodes[i+2, j+2], nodes[i+3, j+2], 
-                      nodes[i  , j+3], nodes[i+1, j+3]))
-            fp.write('        %8d%8d\n'%
-                     (nodes[i+2, j+3], nodes[i+3, j+3]))
             elem += 1
 
 # Set up the plate so that it is fully clamped

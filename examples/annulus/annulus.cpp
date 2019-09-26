@@ -3,6 +3,7 @@
 #include "TACSElement2D.h"
 #include "TACSToFH5.h"
 #include "TACSMeshLoader.h"
+#include "TACSKSFailure.h"
 
 /*
   The following test illustrates the use of PlaneStressQuad elements
@@ -88,7 +89,9 @@ int main( int argc, char *argv[] ){
 
         // Now, create the TACSAssembler object
         int vars_per_node = 2;
-        assembler = mesh->createTACS(vars_per_node);
+        assembler = mesh->createTACS(vars_per_node,
+                                     TACSAssembler::ND_ORDER,
+                                     TACSAssembler::ADDITIVE_SCHWARZ);
         assembler->incref();
       }
     }
@@ -101,12 +104,18 @@ int main( int argc, char *argv[] ){
   }
 
   if (assembler){
-    // Create the preconditioner
+    int mpi_rank;
+    MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
+
+    // Create the matrices and vectors
+    TACSBVec *force = assembler->createVec();
     TACSBVec *res = assembler->createVec();
     TACSBVec *ans = assembler->createVec();
-    TACSSchurMat *mat = assembler->createSchurMat();
+    // TACSSchurMat *mat = assembler->createSchurMat();
+    TACSParallelMat *mat = assembler->createMat();
 
     // Increment the reference count to the matrix/vectors
+    force->incref();
     res->incref();
     ans->incref();
     mat->incref();
@@ -115,26 +124,75 @@ int main( int argc, char *argv[] ){
     int lev = 4500;
     double fill = 10.0;
     int reorder_schur = 1;
-    TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+    // TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+    // pc->incref();
+
+    TACSAdditiveSchwarz *pc = new TACSAdditiveSchwarz(mat, lev, fill);
     pc->incref();
+
+
 
     // Allocate the GMRES object
     int gmres_iters = 80;
     int nrestart = 2; // Number of allowed restarts
     int is_flexible = 0; // Is a flexible preconditioner?
-    TACSKsm *ksm = new GMRES(mat, pc, gmres_iters,
-                             nrestart, is_flexible);
-    ksm->incref();
+    TACSKsm *gmres = new GMRES(mat, pc, gmres_iters,
+                               nrestart, is_flexible);
+    gmres->incref();
 
     // Assemble and factor the stiffness/Jacobian matrix
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
     assembler->assembleJacobian(alpha, beta, gamma, res, mat);
     pc->factor();
 
+    force->set(1.0);
+    assembler->applyBCs(force);
+    gmres->solve(force, ans);
+    assembler->setVariables(ans);
+
+    mat->mult(ans, res);
+    res->axpy(-1.0, force);
+    TacsScalar res_norm = res->norm();
+    if (mpi_rank == 0){
+      printf("||R||: %20.15e\n", res_norm);
+    }
+
+    assembler->setVariables(res);
+
+/*
+
+
+
+    printf("compliance: %20.15e\n", res->dot(ans));
+
+    TACSBVec *vec = assembler->createVec();
+    vec->incref();
+    mat->mult(ans, vec);
+
+
     res->set(1.0);
     assembler->applyBCs(res);
-    ksm->solve(res, ans);
-    assembler->setVariables(ans);
+    vec->axpy(-1.0, res);
+
+    printf("vec: %20.15e\n", vec->norm());
+
+    vec->decref();
+
+    TACSFunction *func = new TACSKSFailure(assembler, 30);
+    func->incref();
+
+    // Allocate an array for the design variable values
+    TACSBVec *x = assembler->createDesignVec();
+    x->incref();
+    assembler->getDesignVars(x);
+
+    // Evaluate the function
+    TacsScalar funcVal = 0.0;
+    assembler->evalFunctions(1, &func, &funcVal);
+
+    printf("func val: %20.15e\n", funcVal);
+
+*/
 
     // Create an TACSToFH5 object for writing output to files
     ElementType etype = TACS_PLANE_STRESS_ELEMENT;
@@ -152,9 +210,10 @@ int main( int argc, char *argv[] ){
     f5->decref();
 
     // Decrease the reference count to the linear algebra objects
-    ksm->decref();
+    gmres->decref();
     pc->decref();
     mat->decref();
+    force->decref();
     ans->decref();
     res->decref();
   }
