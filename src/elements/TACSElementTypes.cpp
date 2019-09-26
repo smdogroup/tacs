@@ -425,6 +425,9 @@ void TacsConvertVisLayoutToBasicCount( ElementLayout ltype,
     break;
 
   case TACS_TETRA_ELEMENT:
+    *ntypes = 1;
+    *nconn = 4;
+    break;
   case TACS_TETRA_QUADRATIC_ELEMENT:
   case TACS_TETRA_CUBIC_ELEMENT:
     break;

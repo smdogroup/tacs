@@ -12,7 +12,7 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "SerialBCSCMat.h"
+#include "TACSSerialPivotMat.h"
 
 /*
   Compare integers for binary searches
@@ -42,11 +42,11 @@ int compare_integers( const void *a, const void *b ){
   block_cols:       the columns in each row
   bcs:              the boundary conditions for the problem
 */
-SerialBCSCMat::SerialBCSCMat( TACSNodeMap *_rmap, int _bsize,
-                              int num_block_rows,
-                              int num_block_cols,
-                              const int *block_rowp,
-                              const int *block_cols ){
+TACSSerialPivotMat::TACSSerialPivotMat( TACSNodeMap *_rmap, int _bsize,
+                                        int num_block_rows,
+                                        int num_block_cols,
+                                        const int *block_rowp,
+                                        const int *block_cols ){
   rmap = _rmap;
   rmap->incref();
   mat = new BCSCMat(rmap->getMPIComm(), _bsize,
@@ -68,7 +68,7 @@ SerialBCSCMat::SerialBCSCMat( TACSNodeMap *_rmap, int _bsize,
 /*
   Free the SerialBCSC matrix data
 */
-SerialBCSCMat::~SerialBCSCMat(){
+TACSSerialPivotMat::~TACSSerialPivotMat(){
   // Free the CSR matrix data
   delete [] rowp;
   delete [] cols;
@@ -81,7 +81,7 @@ SerialBCSCMat::~SerialBCSCMat(){
 /*
   Zero all the entries in the matrix
 */
-void SerialBCSCMat::zeroEntries(){
+void TACSSerialPivotMat::zeroEntries(){
   mat->zeroEntries();
 }
 
@@ -97,9 +97,9 @@ void SerialBCSCMat::zeroEntries(){
   mv:      the column dimension of the dense vaules matrix
   values:  the values to add to the matrix
 */
-void SerialBCSCMat::addValues( int nrow, const int *row,
-                               int ncol, const int *col,
-                               int nv, int mv, const TacsScalar *values ){
+void TACSSerialPivotMat::addValues( int nrow, const int *row,
+                                    int ncol, const int *col,
+                                    int nv, int mv, const TacsScalar *values ){
   mat->addMatBlockValues(nrow, row, ncol, col, values, mv);
 }
 
@@ -114,12 +114,12 @@ void SerialBCSCMat::addValues( int nrow, const int *row,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
-void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
-                                     const int *vars,
-                                     const TacsScalar *weights,
-                                     int nv, int mv,
-                                     const TacsScalar *values,
-                                     MatrixOrientation matOr ){
+void TACSSerialPivotMat::addWeightValues( int nvars, const int *varp,
+                                          const int *vars,
+                                          const TacsScalar *weights,
+                                          int nv, int mv,
+                                          const TacsScalar *values,
+                                          MatrixOrientation matOr ){
   if (varp[nvars] == nvars){
     // Special case when there are no weights - no copying required
     int is_transpose = 0;
@@ -169,7 +169,7 @@ void SerialBCSCMat::addWeightValues( int nvars, const int *varp,
   matrix data to simplify searching for the columns with the rows
   corresponding to each boundary condition.
 */
-void SerialBCSCMat::applyBCs( TACSBcMap *bcmap ){
+void TACSSerialPivotMat::applyBCs( TACSBcMap *bcmap ){
   // Set up data so that we can quickly zero rows associated with the
   // boundary conditions in the column-oriented storage format. This
   // relies on the boundary conditions remaining fixed after they are
@@ -221,14 +221,14 @@ void SerialBCSCMat::applyBCs( TACSBcMap *bcmap ){
 /*
   Create the TACSBVec object that matches with this matrix
 */
-TACSVec *SerialBCSCMat::createVec(){
+TACSVec *TACSSerialPivotMat::createVec(){
   return new TACSBVec(rmap, mat->getMaxBlockSize());
 }
 
 /*
   Perform a matrix multiplication
 */
-void SerialBCSCMat::mult( TACSVec *tx, TACSVec *ty ){
+void TACSSerialPivotMat::mult( TACSVec *tx, TACSVec *ty ){
   // Dynamic cast to TACSBVec
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(tx);
@@ -247,18 +247,18 @@ void SerialBCSCMat::mult( TACSVec *tx, TACSVec *ty ){
 /*
   Retrieve the underlying BCSCMat object
 */
-BCSCMat *SerialBCSCMat::getBCSCMat(){
+BCSCMat *TACSSerialPivotMat::getBCSCMat(){
   return mat;
 }
 
 /*
   Create the preconditioner (a direct solve) associated with the
-  SerialBCSCMat class
+  TACSSerialPivotMat class
 
   This code uses a direct factorization and applyFactor can be used to
   solve the problem.
 */
-SerialBCSCPc::SerialBCSCPc( SerialBCSCMat *_mat ){
+TACSSerialPivotPc::TACSSerialPivotPc( TACSSerialPivotMat *_mat ){
   mat = _mat;
   mat->incref();
   fill = 10.0;
@@ -269,7 +269,7 @@ SerialBCSCPc::SerialBCSCPc( SerialBCSCMat *_mat ){
 /*
   Free the data associated with the preconditioner
 */
-SerialBCSCPc::~SerialBCSCPc(){
+TACSSerialPivotPc::~TACSSerialPivotPc(){
   mat->decref();
   pivot->decref();
 }
@@ -278,7 +278,7 @@ SerialBCSCPc::~SerialBCSCPc(){
   Factor the matrix using the BCSCMatPivot code and update the
   estimate for the fill-in experienced during the factorization.
 */
-void SerialBCSCPc::factor(){
+void TACSSerialPivotPc::factor(){
   // Factor the matrix
   double new_fill = pivot->factor(fill);
 
@@ -295,7 +295,7 @@ void SerialBCSCPc::factor(){
   Apply the factorization to the input vector and store the result in
   the output vector without over-writing the right-hand-side.
 */
-void SerialBCSCPc::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
+void TACSSerialPivotPc::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
   // Covert to TACSBVec objects
   TACSBVec *xvec, *yvec;
   xvec = dynamic_cast<TACSBVec*>(txvec);
@@ -318,6 +318,6 @@ void SerialBCSCPc::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
 /*
   Retrieve the underlying matrix
 */
-void SerialBCSCPc::getMat( TACSMat **_mat ){
+void TACSSerialPivotPc::getMat( TACSMat **_mat ){
   *_mat = mat;
 }

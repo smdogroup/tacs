@@ -41,9 +41,9 @@ void BCSRMatFactor2( BCSRMatData * data ){
 
   for ( int i = 0; i < nrows; i++ ){
     // variable = i
-    if ( diag[i] < 0 ){
-      fprintf(stderr, "Error in factorization: no diagonal entry \
-for row %d\n", i);
+    if (diag[i] < 0){
+      fprintf(stderr, "Error in factorization: no diagonal entry "
+              "for row %d\n", i);
       return;
     }
 
@@ -52,8 +52,8 @@ for row %d\n", i);
 
     for ( int j = rowp[i]; cols[j] < i; j++ ){
       int cj = cols[j];
-      TacsScalar * a = &A[4*j];
-      TacsScalar * b = &A[4*diag[cj]];
+      TacsScalar *a = &A[4*j];
+      TacsScalar *b = &A[4*diag[cj]];
 
       // D = A[j] * A[diag[cj]]
       d11 = a[0]*b[0] + a[1]*b[2];

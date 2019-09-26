@@ -89,9 +89,7 @@ int main( int argc, char *argv[] ){
 
         // Now, create the TACSAssembler object
         int vars_per_node = 2;
-        assembler = mesh->createTACS(vars_per_node,
-                                     TACSAssembler::ND_ORDER,
-                                     TACSAssembler::ADDITIVE_SCHWARZ);
+        assembler = mesh->createTACS(vars_per_node);
         assembler->incref();
       }
     }
@@ -111,8 +109,7 @@ int main( int argc, char *argv[] ){
     TACSBVec *force = assembler->createVec();
     TACSBVec *res = assembler->createVec();
     TACSBVec *ans = assembler->createVec();
-    // TACSSchurMat *mat = assembler->createSchurMat();
-    TACSParallelMat *mat = assembler->createMat();
+    TACSSerialPivotMat *mat = assembler->createSerialMat();
 
     // Increment the reference count to the matrix/vectors
     force->incref();
@@ -120,17 +117,9 @@ int main( int argc, char *argv[] ){
     ans->incref();
     mat->incref();
 
-    // Allocate the factorization
-    int lev = 4500;
-    double fill = 10.0;
-    int reorder_schur = 1;
-    // TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
-    // pc->incref();
-
-    TACSAdditiveSchwarz *pc = new TACSAdditiveSchwarz(mat, lev, fill);
+    // Allocate the direct factorization
+    TACSSerialPivotPc *pc = new TACSSerialPivotPc(mat);
     pc->incref();
-
-
 
     // Allocate the GMRES object
     int gmres_iters = 80;
@@ -139,6 +128,7 @@ int main( int argc, char *argv[] ){
     TACSKsm *gmres = new GMRES(mat, pc, gmres_iters,
                                nrestart, is_flexible);
     gmres->incref();
+    gmres->setMonitor(new KSMPrintStdout("GMRES", mpi_rank, 1));
 
     // Assemble and factor the stiffness/Jacobian matrix
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
@@ -154,45 +144,10 @@ int main( int argc, char *argv[] ){
     res->axpy(-1.0, force);
     TacsScalar res_norm = res->norm();
     if (mpi_rank == 0){
-      printf("||R||: %20.15e\n", res_norm);
+      printf("||R||: %20.15e\n", TacsRealPart(res_norm));
     }
 
-    assembler->setVariables(res);
-
-/*
-
-
-
-    printf("compliance: %20.15e\n", res->dot(ans));
-
-    TACSBVec *vec = assembler->createVec();
-    vec->incref();
-    mat->mult(ans, vec);
-
-
-    res->set(1.0);
-    assembler->applyBCs(res);
-    vec->axpy(-1.0, res);
-
-    printf("vec: %20.15e\n", vec->norm());
-
-    vec->decref();
-
-    TACSFunction *func = new TACSKSFailure(assembler, 30);
-    func->incref();
-
-    // Allocate an array for the design variable values
-    TACSBVec *x = assembler->createDesignVec();
-    x->incref();
-    assembler->getDesignVars(x);
-
-    // Evaluate the function
-    TacsScalar funcVal = 0.0;
-    assembler->evalFunctions(1, &func, &funcVal);
-
-    printf("func val: %20.15e\n", funcVal);
-
-*/
+    assembler->setVariables(ans);
 
     // Create an TACSToFH5 object for writing output to files
     ElementType etype = TACS_PLANE_STRESS_ELEMENT;

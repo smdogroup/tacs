@@ -12,8 +12,8 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_SERIAL_BCSC_MATRIX_H
-#define TACS_SERIAL_BCSC_MATRIX_H
+#ifndef TACS_SERIAL_PIVOT_MATRIX_H
+#define TACS_SERIAL_PIVOT_MATRIX_H
 
 /*
   The following class wraps a serial BCSC matrix
@@ -22,12 +22,12 @@
 #include "TACSBVec.h"
 #include "KSM.h"
 
-class SerialBCSCMat : public TACSMat {
+class TACSSerialPivotMat : public TACSMat {
  public:
-  SerialBCSCMat( TACSNodeMap *_rmap, int bsize,
-                 int num_block_rows, int num_block_cols,
-                 const int *block_rowp, const int *block_cols );
-  ~SerialBCSCMat();
+  TACSSerialPivotMat( TACSNodeMap *_rmap, int bsize,
+                      int num_block_rows, int num_block_cols,
+                      const int *block_rowp, const int *block_cols );
+  ~TACSSerialPivotMat();
 
   // Set entries into the matrix
   void zeroEntries();
@@ -64,10 +64,10 @@ class SerialBCSCMat : public TACSMat {
   BCSCMat *mat;
 };
 
-class SerialBCSCPc : public TACSPc {
+class TACSSerialPivotPc : public TACSPc {
  public:
-  SerialBCSCPc( SerialBCSCMat *_mat );
-  ~SerialBCSCPc();
+  TACSSerialPivotPc( TACSSerialPivotMat *_mat );
+  ~TACSSerialPivotPc();
 
   // Factor the matrix and apply the factorization
   // ---------------------------------------------
@@ -76,9 +76,9 @@ class SerialBCSCPc : public TACSPc {
   void getMat( TACSMat **_mat );
 
  private:
-  SerialBCSCMat *mat;
+  TACSSerialPivotMat *mat;
   double fill;
   BCSCMatPivot *pivot;
 };
 
-#endif // TACS_SERIAL_BCSC_MATRIX_H
+#endif // TACS_SERIAL_PIVOT_MATRIX_H

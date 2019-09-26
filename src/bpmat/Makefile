@@ -26,18 +26,18 @@ CXX_OBJS = MatUtils.o \
 	BCSRMatMult6.o \
 	BCSRMatFact8.o \
 	BCSRMatMult8.o \
+	BCSCMatPivot.o \
 	TACSNodeMap.o \
 	TACSBVec.o \
 	TACSBVecDistribute.o \
 	TACSMatDistribute.o \
 	TACSParallelMat.o \
+	TACSBlockCyclicMat.o \
+	TACSSerialPivotMat.o \
 	KSM.o \
 	TACSSchurMat.o \
 	GSEP.o \
 	JacobiDavidson.o \
-	TACSBlockCyclicMat.o \
-	BCSCMatPivot.o \
-	SerialBCSCMat.o \
 	TACSBVecInterp.o
 
 DIR=${TACS_DIR}/src/bpmat

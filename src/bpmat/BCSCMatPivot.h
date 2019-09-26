@@ -282,4 +282,4 @@ class BCSCMatPivot : public TACSObject {
   int *lu_col_ptr; // Pointer to the indices of each column
 };
 
-#endif
+#endif // TACS_BCSC_MAT_PIVOT_H

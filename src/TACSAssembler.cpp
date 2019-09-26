@@ -3512,7 +3512,7 @@ TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
   testing the effects of roundoff errors in the solution process.  It
   does not work in parallel applications.
 */
-SerialBCSCMat *TACSAssembler::createSerialMat(){
+TACSSerialPivotMat *TACSAssembler::createSerialMat(){
   if (!meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call createSerialMat() before initialize()\n",
             mpiRank);
@@ -3530,9 +3530,9 @@ SerialBCSCMat *TACSAssembler::createSerialMat(){
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
   // Allocate the matrix
-  SerialBCSCMat *mat = new SerialBCSCMat(nodeMap, varsPerNode,
-                                         numNodes, numNodes,
-                                         rowp, cols);
+  TACSSerialPivotMat *mat = new TACSSerialPivotMat(nodeMap, varsPerNode,
+                                                   numNodes, numNodes,
+                                                   rowp, cols);
   delete [] rowp;
   delete [] cols;
 

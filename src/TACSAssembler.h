@@ -36,7 +36,7 @@ class TACSAssembler;
 #include "TACSBVecDistribute.h"
 #include "TACSParallelMat.h"
 #include "TACSSchurMat.h"
-#include "SerialBCSCMat.h"
+#include "TACSSerialPivotMat.h"
 
 /*
   TACSAssembler
@@ -190,7 +190,7 @@ class TACSAssembler : public TACSObject {
   // -------------------------------------------------
   TACSParallelMat *createMat();
   TACSSchurMat *createSchurMat( OrderingType order_type=TACS_AMD_ORDER );
-  SerialBCSCMat *createSerialMat();
+  TACSSerialPivotMat *createSerialMat();
 
   // Retrieve the initial conditions for the simulation
   // --------------------------------------------------

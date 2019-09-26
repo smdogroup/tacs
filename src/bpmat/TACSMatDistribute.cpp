@@ -788,8 +788,8 @@ void TACSMatDistribute::addValues( TACSParallelMat *mat,
     if (c >= 0 &&
         acols[i] == -1 &&
         bcols[i] == -1){
-      fprintf(stderr, "[%d] Could not find a match for column %d\n",
-              mpiRank, c);
+      fprintf(stderr, "[%d] TACSMatDistribute: Could not find "
+              "a match for column %d\n", mpiRank, c);
     }
   }
 
@@ -808,8 +808,8 @@ void TACSMatDistribute::addValues( TACSParallelMat *mat,
         Bext->addRowValues(r, ncol, bcols, mv, &values[mv*i*bsize]);
       }
       else if (nb > 0){
-        fprintf(stderr, "[%d] DistMat error, some values were not added\n",
-                mpiRank);
+        fprintf(stderr, "[%d] TACSMatDistribute error: some values "
+                "were not added\n", mpiRank);
       }
     }
     else if (r >= 0){
@@ -842,15 +842,15 @@ void TACSMatDistribute::addValues( TACSParallelMat *mat,
               }
             }
             else {
-              fprintf(stderr, "[%d] DistMat error: could not find col "
-                      "(%d,%d) r_ext = %d\n", mpiRank, r, c, r_ext);
+              fprintf(stderr, "[%d] TACSMatDistribute error: could not "
+                      "find col (%d,%d) r_ext = %d\n", mpiRank, r, c, r_ext);
             }
           }
         }
       }
       else {
-        fprintf(stderr, "[%d] DistMat error: could not find row %d\n",
-                mpiRank, r);
+        fprintf(stderr, "[%d] TACSMatDistribute error: could not "
+                "find row %d\n", mpiRank, r);
       }
     }
   }
@@ -954,8 +954,8 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
     if (c >= 0 &&
         avars[i] == -1 &&
         bvars[i] == -1){
-      fprintf(stderr, "[%d] Could not find a match for column %d\n",
-              mpiRank, c);
+      fprintf(stderr, "[%d] TACSMatDistribute error: Could not find "
+              "a match for column %d\n", mpiRank, c);
     }
   }
 
@@ -983,8 +983,8 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
                                    mv, &values[incr*i*bsize], matOr);
         }
         else if (nb > 0){
-          fprintf(stderr, "[%d] DistMat error, some values were not added\n",
-                  mpiRank);
+          fprintf(stderr, "[%d] TACSMatDistribute error, some "
+                  "values were not added\n", mpiRank);
         }
       }
       else if (bvars[ip] >= 0){
@@ -1029,16 +1029,17 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
                   }
                 }
                 else {
-                  fprintf(stderr, "[%d] DistMat error: could not find col "
-                          "(%d,%d) r_ext = %d\n", mpiRank, vars[jp], c, r_ext);
+                  fprintf(stderr, "[%d] TACSMatDistribute error: could not "
+                          "find col (%d,%d) r_ext = %d\n", mpiRank,
+                          vars[jp], c, r_ext);
                 }
               }
             }
           }
         }
         else {
-          fprintf(stderr, "[%d] DistMat error: could not find row %d\n",
-                  mpiRank, vars[ip]);
+          fprintf(stderr, "[%d] TACSMatDistribute error: could not "
+                  "find row %d\n", mpiRank, vars[ip]);
         }
       }
     }
