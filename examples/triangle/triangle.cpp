@@ -44,7 +44,7 @@ int main( int argc, char *argv[] ){
   // root processor
   if (rank == 0){
     // Create a regular mesh of triangular elements
-    int nx = 40, ny = 40;
+    int nx = 20, ny = 20;
     int num_elements = 10*nx*ny;
 
     // Allocate the two halfs of the mesh
@@ -355,31 +355,6 @@ int main( int argc, char *argv[] ){
   elem->decref();
   assembler->decref();
   creator->decref();
-
-  if (rank == 0){
-    TACSFH5Loader *loader = new TACSFH5Loader();
-    loader->incref();
-    int fail = loader->loadData("triangle.f5");
-    if (fail){
-      printf("TACSFH5Loader failed to load file\n");
-    }
-    else {
-      int num_elements;
-      int *comp_nums, *ltypes, *ptr, *conn;
-      loader->getConnectivity(&num_elements, &comp_nums, &ltypes, &ptr, &conn);
-
-      const char *cname, *cvars;
-      int cdim1, cdim2;
-      float *cdata;
-      loader->getContinuousData(&cname, &cvars, &cdim1, &cdim2, &cdata);
-
-      const char *ename, *evars;
-      int edim1, edim2;
-      float *edata;
-      loader->getElementData(&ename, &evars, &edim1, &edim2, &edata);
-    }
-    loader->decref();
-  }
 
   MPI_Finalize();
   return (0);

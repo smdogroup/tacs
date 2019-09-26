@@ -35,6 +35,10 @@ ElementLayout TACSElement3D::getLayoutType(){
   return basis->getLayoutType();
 }
 
+TACSElementBasis* TACSElement3D::getElementBasis(){
+  return basis;
+}
+
 /*
   Retrieve the global design variable numbers associated with this element
 */

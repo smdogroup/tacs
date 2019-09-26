@@ -4175,7 +4175,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
   TacsScalar *vars, *dvars, *ddvars;
   TacsScalar *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
-                    &elemXpts, NULL, NULL, NULL);
+                  &elemXpts, NULL, NULL, NULL);
 
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){

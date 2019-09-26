@@ -59,8 +59,9 @@ class TACSToFH5 : public TACSObject {
 
   // Parameters to control how data is written to the file
   ElementType elem_type; // Write flag type
-  int write_flag; // Keep track of which components to write
-  int nvals; // The number of values
+  int write_flag; // Keep track of which data to write
+  int element_write_flag; // Element-wise data write flag
+  int nvals; // The number of element-wise values
 
   int num_components; // The number of components in the model
   char **component_names; // The names of each of the components

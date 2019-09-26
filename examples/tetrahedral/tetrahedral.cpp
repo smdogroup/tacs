@@ -4,6 +4,7 @@
 #include "TACSLinearElasticity.h"
 #include "TACSTetrahedralBasis.h"
 #include "TACSElement3D.h"
+#include "TACSStructuralMass.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -121,9 +122,26 @@ int main( int argc, char *argv[] ){
     ksm->solve(res, ans);
     assembler->setVariables(ans);
 
+    ans->decref();
+    ans = assembler->createNodeVec();
+    ans->incref();
+    assembler->getNodes(ans);
+    assembler->setVariables(ans);
+
+    // The function that we will use: The KS failure function evaluated
+    // over all the elements in the mesh
+    TACSFunction *func = new TACSStructuralMass(assembler);
+    func->incref();
+
+    // Evaluate the function
+    TacsScalar mass = 0.0;
+    assembler->evalFunctions(1, &func, &mass);
+    printf("StructuralMass: %e\n", mass);
+
     // Create an TACSToFH5 object for writing output to files
     ElementType etype = TACS_SOLID_ELEMENT;
-    int write_flag = (TACS_OUTPUT_NODES |
+    int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                      TACS_OUTPUT_NODES |
                       TACS_OUTPUT_DISPLACEMENTS |
                       TACS_OUTPUT_STRAINS |
                       TACS_OUTPUT_STRESSES |

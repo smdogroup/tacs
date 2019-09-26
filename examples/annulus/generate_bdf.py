@@ -49,13 +49,13 @@ y = np.zeros((nx, ny))
 nodes[:] = np.arange(1, nx*ny+1).reshape((nx, ny))
 
 # Set the locations of theta/u
-theta = np.linspace(0.0, np.pi/2.0, nx)
-u = np.linspace(0.0, 1.0, ny)
+theta = np.linspace(np.pi/2.0, 0.0, nx)
+u = np.linspace(Rinner, Router, ny)
 
 # Set the nodal coordinates the coordinates for the center section
 for j in range(ny):
     for i in range(nx):       
-        r = Rinner*(1.0 - u[j]) + Router*u[j]
+        r = u[j]
         x[i,j] = r*np.cos(theta[i])
         y[i,j] = r*np.sin(theta[i])
 
@@ -94,12 +94,12 @@ elif order == 3:
             #        n7   n8 n9
             fp.write('%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n'%
                      ('CQUAD9', elem, elem, 
-                      nodes[i,   j],   nodes[i+1, j], 
-                      nodes[i+2, j],   nodes[i,   j+1], 
-                      nodes[i+1, j+1], nodes[i+2, j+1]))
+                      nodes[i,   j],   nodes[i+2, j],
+                      nodes[i+2, j+2], nodes[i,   j+2],
+                      nodes[i+1, j],   nodes[i+2, j+1]))
             fp.write('        %8d%8d%8d\n'%
-                     (nodes[i,   j+2], nodes[i+1, j+2], 
-                      nodes[i+2, j+2]))
+                     (nodes[i+1, j+2], nodes[i, j+1],
+                      nodes[i+1, j+1]))
             elem += 1
 elif order == 4:
     # Output 4th order elements

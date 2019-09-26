@@ -30,61 +30,50 @@
 */
 class TACSStructuralMass : public TACSFunction {
  public:
-  TACSStructuralMass( TACSAssembler * _tacs );
+  TACSStructuralMass( TACSAssembler * _assembler );
   ~TACSStructuralMass();
 
-  const char *functionName();
+  const char *getObjectName();
 
-  // Create the function context for evaluation
-  // ------------------------------------------
-  TACSFunctionCtx *createFunctionCtx();
-
-  // Collective calls on the TACS MPI Comm
-  // -------------------------------------
+  /**
+    Member functions to integrate the function value
+  */
   void initEvaluation( EvaluationType ftype );
+  void elementWiseEval( EvaluationType ftype,
+                        int elemIndex, TACSElement *element,
+                        double time, TacsScalar scale,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[] );
   void finalEvaluation( EvaluationType ftype );
 
-  // Functions for integration over the structural domain on each thread
-  // -------------------------------------------------------------------
-  void initThread( double tcoef,
-                   EvaluationType ftype,
-                   TACSFunctionCtx *ctx );
-  void elementWiseEval( EvaluationType ftype,
-                        TACSElement *element, int elemNum,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TACSFunctionCtx *ctx );
-  void finalThread( double tcoef,
-                    EvaluationType ftype,
-                    TACSFunctionCtx *ctx );
-
-  // Return the value of the function
-  // --------------------------------
+  /**
+    Return the value of the function
+  */
   TacsScalar getFunctionValue();
 
-  // Design variable sensitivity evaluation
-  // --------------------------------------
-  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
-                         TACSElement *element, int elemNum,
+  /**
+     Add the derivative of the function w.r.t. the design variables
+  */
+  void addElementDVSens( int elemIndex, TACSElement *element,
+                         double time, TacsScalar scale,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+                         int dvLen, TacsScalar dfdx[] );
 
-  // Nodal sensitivities
-  // -------------------
-  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                          TACSElement *element, int elemNum,
+  /**
+     Evaluate the derivative of the function w.r.t. the node locations
+  */
+  void getElementXptSens( int elemIndex, TACSElement *element,
+                          double time, TacsScalar scale,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx );
- private:
-  // Max. number of nodes
-  int maxNumNodes;
+                          TacsScalar fXptSens[] );
 
+ private:
   // The total mass of all elements in the specified domain
   TacsScalar totalMass;
 
-  static const char * funcName;
+  static const char *funcName;
 };
 
 #endif // TACS_STRUCTURAL_MASS_H

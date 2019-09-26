@@ -155,8 +155,8 @@ double TACSQuadraticQuadBasis::getQuadratureWeight( int n ){
 
 double TACSQuadraticQuadBasis::getQuadraturePoint( int n,
                                                    double pt[] ){
-  pt[0] = TacsGaussQuadWts3[n % 3];
-  pt[1] = TacsGaussQuadWts3[n/3];
+  pt[0] = TacsGaussQuadPts3[n % 3];
+  pt[1] = TacsGaussQuadPts3[n/3];
 
   return TacsGaussQuadWts3[n % 3]*TacsGaussQuadWts3[n/3];
 }
@@ -294,8 +294,8 @@ double TACSCubicQuadBasis::getQuadratureWeight( int n ){
 
 double TACSCubicQuadBasis::getQuadraturePoint( int n,
                                                double pt[] ){
-  pt[0] = TacsGaussQuadWts4[n % 4];
-  pt[1] = TacsGaussQuadWts4[n/4];
+  pt[0] = TacsGaussQuadPts4[n % 4];
+  pt[1] = TacsGaussQuadPts4[n/4];
 
   return TacsGaussQuadWts4[n % 4]*TacsGaussQuadWts4[n/4];
 }

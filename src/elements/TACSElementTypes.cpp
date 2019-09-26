@@ -481,9 +481,25 @@ void TacsConvertVisLayoutToBasic( ElementLayout ltype,
       basic_conn[2*i+1] = conn[i+1];
     }
   }
-  else if (ltype == TACS_TRI_ELEMENT ||
-           ltype == TACS_TRI_QUADRATIC_ELEMENT ||
-           ltype == TACS_TRI_CUBIC_ELEMENT){
+  else if (ltype == TACS_TRI_ELEMENT){
+    basic_ltypes[0] = TACS_TRI_ELEMENT;
+    basic_conn[0] = conn[0];
+    basic_conn[1] = conn[1];
+    basic_conn[2] = conn[2];
+  }
+  else if (ltype == TACS_TRI_QUADRATIC_ELEMENT){
+    for ( int i = 0; i < 4; i++ ){
+      basic_ltypes[i] = TACS_TRI_ELEMENT;
+    }
+    const int tris[] = {0, 3, 5,
+                        3, 1, 4,
+                        5, 3, 4,
+                        5, 4, 2};
+    for ( int i = 0; i < 12; i++ ){
+      basic_conn[i] = conn[tris[i]];
+    }
+  }
+  else if (ltype == TACS_TRI_CUBIC_ELEMENT){
 
   }
   else if (ltype == TACS_QUAD_ELEMENT ||
@@ -508,9 +524,17 @@ void TacsConvertVisLayoutToBasic( ElementLayout ltype,
       }
     }
   }
-  else if (ltype == TACS_TETRA_ELEMENT ||
-           ltype == TACS_TETRA_QUADRATIC_ELEMENT ||
-           ltype == TACS_TETRA_CUBIC_ELEMENT){
+  else if (ltype == TACS_TETRA_ELEMENT){
+    basic_ltypes[0] = TACS_TETRA_ELEMENT;
+    basic_conn[0] = conn[0];
+    basic_conn[1] = conn[1];
+    basic_conn[2] = conn[2];
+    basic_conn[3] = conn[3];
+  }
+  else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT){
+
+  }
+  else if (ltype == TACS_TETRA_CUBIC_ELEMENT){
 
   }
   else if (ltype == TACS_HEXA_ELEMENT ||

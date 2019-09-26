@@ -10,6 +10,7 @@
 #include "TACSElement2D.h"
 #include "TACSToFH5.h"
 #include "TACSKSFailure.h"
+#include "TACSStructuralMass.h"
 
 /*
   The following example demonstrates the use of TACS on a pressure
@@ -445,8 +446,9 @@ int main( int argc, char * argv[] ){
 
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
-  double ksRho = 100.0;
-  TACSFunction *func = new TACSKSFailure(assembler, ksRho);
+  // double ksRho = 100.0;
+  // TACSFunction *func = new TACSKSFailure(assembler, ksRho);
+  TACSFunction *func = new TACSStructuralMass(assembler);
   func->incref();
 
   // Allocate an array for the design variable values
@@ -473,14 +475,14 @@ int main( int argc, char * argv[] ){
   // variables. In this case, we do not need to zero dfdu since it is
   // zeroed on initialization, however, in general it is good practice
   // to zero them unless you're absolutely sure...
-  // dfdu->zeroEntries();
-  // assembler->addSVSens(alpha, beta, gamma, 1, &func, &dfdu);
+  dfdu->zeroEntries();
+  assembler->addSVSens(alpha, beta, gamma, 1, &func, &dfdu);
 
   // Solve for the adjoint variables
-  // ksm->solve(dfdu, ans);
+  ksm->solve(dfdu, ans);
 
   // Compute the total derivative
-  // assembler->addAdjointResProducts(-1.0, 1, &ans, &dfdx);
+  assembler->addAdjointResProducts(-1.0, 1, &ans, &dfdx);
 
   dfdx->beginSetValues(TACS_ADD_VALUES);
   dfdx->endSetValues(TACS_ADD_VALUES);
@@ -566,6 +568,7 @@ int main( int argc, char * argv[] ){
   ans->decref();
   res->decref();
   tmp->decref();
+  force->decref();
   assembler->decref();
 
   MPI_Finalize();

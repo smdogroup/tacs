@@ -863,6 +863,80 @@ void TACSLinearElasticity3D::addPointQuantityDVSens( int elemIndex,
 }
 
 /*
+int TACSLinearElasticity3D::evalPointQuantitySens( int elemIndex,
+                                                   const int quantityType,
+                                                   const double time,
+                                                   int n, const double pt[],
+                                                   const TacsScalar X[],
+                                                   const TacsScalar Ut[],
+                                                   const TacsScalar Ux[],
+                                                   const TacsScalar dfdq[],
+                                                   TacsScalar dfdX[],
+                                                   TacsScalar dfdUt[],
+                                                   TacsScalar dfdUx[] ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    TacsScalar sens[6];
+    stiff->failureStrainSens(elemIndex, pt, X, strain, sens);
+
+    if (strain_type == TACS_LINEAR_STRAIN){
+      dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+
+      dfdUt[0] = dfdUt[1] = dfdUt[2] = 0.0;
+      dfdUt[3] = dfdUt[4] = dfdUt[5] = 0.0;
+      dfdUt[6] = dfdUt[7] = dfdUt[8] = 0.0;
+
+      dfdUx[0] = dfdq[0]*sens[0];
+      dfdUx[4] = dfdq[0]*sens[1];
+      dfdUx[8] = dfdq[0]*sens[2];
+
+      dfdUx[5] = dfdq[0]*sens[3];
+      dfdUx[7] = dfdq[0]*sens[3];
+
+      dfdUx[2] = dfdq[0]*sens[4];
+      dfdUx[6] = dfdq[0]*sens[4];
+
+      dfdUx[1] = dfdq[0]*sens[5];
+      dfdUx[3] = dfdq[0]*sens[5];
+    }
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+    dfdUt[0] = dfdUt[1] = dfdUt[2] = 0.0;
+    dfdUt[3] = dfdUt[4] = dfdUt[5] = 0.0;
+    dfdUt[6] = dfdUt[7] = dfdUt[8] = 0.0;
+
+    dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
+    dfdUx[3] = dfdUx[4] = dfdUx[5] = 0.0;
+    dfdUx[6] = dfdUx[7] = dfdUx[8] = 0.0;
+
+    return 1;
+  }
+
+  return 0.0;
+}
+*/
+
+/*
   Get the data for visualization at a given point
 */
 void TACSLinearElasticity3D::getOutputData( int elemIndex,

@@ -19,14 +19,14 @@
   Quadrature points for tetrahedra on the [0, 1];[0, 1];[0, 1] intervals.
 */
 
-const double TacsTetrahedronWts4[] = { 0.25 };
+const double TacsTetrahedronWts4[] = { 1.0/24.0 };
 const double TacsTetrahedronPts4[] =
   { 0.138196601125011, 0.138196601125011, 0.138196601125011,
     0.585410196624969, 0.138196601125011, 0.138196601125011,
     0.138196601125011, 0.585410196624969, 0.138196601125011,
     0.138196601125011, 0.138196601125011, 0.585410196624969 };
 
-const double TacsTetrahedronWts5[] = { -4.0/5.0, 11.0/20.0 };
+const double TacsTetrahedronWts5[] = { -2.0/15.0, 11.0/120.0 };
 const double TacsTetrahedronPts5[] =
   { 0.25, 0.25, 0.25,
     1.0/6.0, 1.0/6.0, 1.0/6.0,
@@ -34,6 +34,7 @@ const double TacsTetrahedronPts5[] =
     1.0/6.0, 0.5, 1.0/6.0,
     1.0/6.0, 1.0/6.0, 0.5 };
 
+/// Check this quadrature scheme for correctness
 const double TacsTetrahedronWts11[] =
   { -0.013155555555556, 0.007622222222222, 0.02488888888889 };
 const double TacsTetrahedronPts11[] =

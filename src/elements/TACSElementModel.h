@@ -289,23 +289,32 @@ class TACSElementModel {
   /**
      Evaluate the derivatives of the point-wise quantity of interest
      with respect to X, Ut and Ux.
-  */
 
-  /*
-  virtual int evalPointQuantitySens( int elemIndex,
-                                     const int quantityType,
-                                     const double time,
-                                     int n, const double pt[],
-                                     const TacsScalar X[],
-                                     const TacsScalar Ut[],
-                                     const TacsScalar Ux[],
-                                     TacsScalar *quantity,
-                                     TacsScalar dqdX[],
-                                     TacsScalar dqdUt[],
-                                     TacsScalar dqdUx[] ){
-    return 0;
-  }
+     @param elemIndex The local element index
+     @param quantityType Integer indicating the type of pointwise quantity
+     @param time The simulation time
+     @param scale Scale factor applied to the derivative
+     @param n The quadrature point index
+     @param pt The parametric position of the quadrature point
+     @param X The physical position of the quadrature point
+     @param Ut Values of the state variables and their 1st/2nd time derivs
+     @param Ux The spatial derivatives of the state variables
+     @param dfdq The derivative of the function of interest w.r.t. the quantity
+     @param dfdX The derivative of the function w.r.t. X
+     @param dfdX The derivative of the function w.r.t. Ut
+     @param dfdX The derivative of the function w.r.t. Ux
   */
+  virtual void evalPointQuantitySens( int elemIndex,
+                                      const int quantityType,
+                                      const double time,
+                                      int n, const double pt[],
+                                      const TacsScalar X[],
+                                      const TacsScalar Ut[],
+                                      const TacsScalar Ux[],
+                                      const TacsScalar dfdq[],
+                                      TacsScalar dfdX[],
+                                      TacsScalar dfdUt[],
+                                      TacsScalar dfdUx[] ){}
 
   /**
     Generate a line of output for a single visualization point

@@ -47,16 +47,16 @@ TACSToFH5::TACSToFH5( TACSAssembler *_assembler,
 
   // Form a flag that masks off the connectivity, nodes and displacements
   // which are handled separately from the remaining variables
-  int flag = write_flag & (~(TACS_OUTPUT_CONNECTIVITY |
-                             TACS_OUTPUT_NODES |
-                             TACS_OUTPUT_DISPLACEMENTS));
+  element_write_flag =  write_flag & (~(TACS_OUTPUT_CONNECTIVITY |
+                                        TACS_OUTPUT_NODES |
+                                        TACS_OUTPUT_DISPLACEMENTS));
 
   // Count up the number of values that will be output for each point
   // in the mesh
-  nvals = TacsGetTotalOutputCount(elem_type, flag);
+  nvals = TacsGetTotalOutputCount(elem_type, element_write_flag);
 
   // Get a comma separated list of the variable names
-  variable_names = getElementVarNames(flag);
+  variable_names = getElementVarNames(element_write_flag);
 
   // Retrieve the number of components
   num_components = assembler->getNumComponents();
@@ -180,8 +180,8 @@ int TACSToFH5::writeToFile( const char *filename ){
       nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
       k = 0;
       for ( ; (k < nd && k < vars_per_node); k++ ){
-        const char* stemp = TacsGetOutputComponentName(elem_type,
-                                                       TACS_OUTPUT_DISPLACEMENTS, k);
+        const char* stemp =
+          TacsGetOutputComponentName(elem_type, TACS_OUTPUT_DISPLACEMENTS, k);
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES)){
           sprintf(&(var_names[len]), "%s", stemp);
@@ -276,7 +276,7 @@ int TACSToFH5::writeToFile( const char *filename ){
     // Write out the data to a file
     TacsScalar *data;
     int dim1, dim2;
-    assembler->getElementOutputData(elem_type, write_flag,
+    assembler->getElementOutputData(elem_type, element_write_flag,
                                     &dim1, &dim2, &data);
 
     // Convert the data to float
@@ -353,11 +353,11 @@ int TACSToFH5::writeConnectivity( TACSFH5File *file ){
   }
 
   if (offset > 0){
-    for ( int i = 0; i < num_elements; i++ ){
+    for ( int i = 0; i <= num_elements; i++ ){
       ptr_copy[i] += offset;
     }
   }
-  offset = ptr[num_elements];
+  offset = ptr_copy[num_elements];
 
   if (mpi_rank < mpi_size-1){
     MPI_Send(&offset, 1, MPI_INT, mpi_rank+1, 1, comm);
@@ -396,25 +396,27 @@ int TACSToFH5::writeConnectivity( TACSFH5File *file ){
   // Create the copy of the connectivity
   int conn_size = ptr[num_elements];
   int *conn_copy = new int[ conn_size ];
-  memcpy(conn_copy, conn, conn_size*sizeof(int));
 
   for ( int i = 0; i < conn_size; i++ ){
-    if (conn_copy[i] >= ownerRange[mpi_rank] &&
-        conn_copy[i] < ownerRange[mpi_rank+1]){
-      conn_copy[i] = (conn_copy[i] - ownerRange[mpi_rank] +
-                      new_owner_range[mpi_rank]);
-    }
-    else if (conn_copy[i] < 0){
-      int dep = -conn_copy[i]-1;
+    // Get the global node number
+    if (conn[i] < 0){
+      int dep = -conn[i]-1;
       conn_copy[i] = new_owner_range[mpi_rank] + nnodes + dep;
     }
     else {
-      for ( int j = 0; j < mpi_size; j++ ){
-        if (conn_copy[i] >= ownerRange[j] &&
-            conn_copy[i] < ownerRange[j+1]){
-          conn_copy[i] = (conn_copy[i] - ownerRange[j] +
-                          new_owner_range[j]);
-          break;
+      if (conn[i] >= ownerRange[mpi_rank] &&
+          conn[i] < ownerRange[mpi_rank+1]){
+        conn_copy[i] = (conn[i] - ownerRange[mpi_rank] +
+                        new_owner_range[mpi_rank]);
+      }
+      else {
+        for ( int j = 0; j < mpi_size; j++ ){
+          if (conn[i] >= ownerRange[j] &&
+              conn[i] < ownerRange[j+1]){
+            conn_copy[i] = (conn[i] - ownerRange[j] +
+                            new_owner_range[j]);
+            break;
+          }
         }
       }
     }

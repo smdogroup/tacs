@@ -212,6 +212,7 @@ class TACSElementBasis {
     @param Ut The variables and time derivatives at the quadrature point
     @param Ud The derivative of the variables w.r.t. the parametric coords
     @param Ux The derivative of the variables w.r.t. the spatial coords
+    @return The determinant of the matrix Xd
   */
   virtual TacsScalar getFieldGradient( const double pt[],
                                        const TacsScalar Xpts[],
@@ -244,6 +245,7 @@ class TACSElementBasis {
     @param Psi The adjoint variable values (no time derivatives!)
     @param Psid The derivatives of the adjoint variables w.r.t. parameters
     @param Psix The spatial derivatives of the adjoint variables
+    @return The determinant of the matrix Xd
   */
   virtual TacsScalar getFieldGradient( const double pt[],
                                        const TacsScalar Xpts[],
@@ -261,6 +263,26 @@ class TACSElementBasis {
                                        TacsScalar Psi[],
                                        TacsScalar Psid[],
                                        TacsScalar Psix[] );
+
+  /**
+    Given the derivative of the function wit
+
+  */
+  /*
+  virtual void addFieldGradientSens( const double pt[],
+                                     const TacsScalar Xpts[],
+                                     const int vars_per_node,
+                                     const TacsScalar Xd[],
+                                     const TacsScalar J[],
+                                     const TacsScalar Ud[],
+                                     const TacsScalar dfddetJ,
+                                     const TacsScalar dfdX[],
+                                     const TacsScalar dfdJ[],
+                                     const TacsScalar dfdUt[],
+                                     const TacsScalar dfdUx[],
+                                     TacsScalar dfdu[],
+                                     TacsScalar dfdXpts[] );
+                                     */
 
   /**
     Add the weak form of the governing equations to the residual

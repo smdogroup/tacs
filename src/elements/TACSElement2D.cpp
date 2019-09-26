@@ -35,6 +35,10 @@ ElementLayout TACSElement2D::getLayoutType(){
   return basis->getLayoutType();
 }
 
+TACSElementBasis* TACSElement2D::getElementBasis(){
+  return basis;
+}
+
 /*
   Retrieve the global design variable numbers associated with this element
 */
@@ -310,7 +314,21 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
                                             const TacsScalar ddvars[],
                                             const TacsScalar dfdq[],
                                             TacsScalar dfdu[] ){
+                                            /*
+  const int vars_per_node = model->getVarsPerNode();
+  TacsScalar X[3], Xd[4], J[4];
+  TacsScalar Ut[3*MAX_VARS_PER_NODE];
+  TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+                          X, Xd, J, Ut, Ud, Ux);
 
+  // Evaluate the derivative of the function with respect to X, Ut, Ux
+  TacsScalar dfdX[3], dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
+  model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
+                               X, Ut, Ux, dfdq, dfdX, dfdUt, dfdUx);
+
+
+  basis->addFieldGradientSens(pt, Xpts, vars_per_node, Xd, J, Ud, )*/
 }
 
 /**
