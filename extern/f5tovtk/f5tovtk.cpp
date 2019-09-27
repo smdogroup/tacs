@@ -27,6 +27,7 @@ const int VTK_TRIANGLE = 5;
 const int VTK_QUAD = 9;
 const int VTK_TETRA = 10;
 const int VTK_HEXAHEDRON = 12;
+const int VTK_QUADRATIC_TETRA = 24;
 
 int main( int argc, char * argv[] ){
   MPI_Init(&argc, &argv);
@@ -104,7 +105,13 @@ int main( int argc, char * argv[] ){
     for ( int k = 0; k < num_elements; k++ ){
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
-      TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+      if (ltype == TACS_TETRA_QUADRATIC_ELEMENT){
+        ntypes = 1;
+        nconn = 10;
+      }
+      else {
+        TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+      }
       num_basic_elements += ntypes;
       basic_conn_size += nconn;
     }
@@ -117,9 +124,15 @@ int main( int argc, char * argv[] ){
     for ( int k = 0; k < num_elements; k++ ){
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
-      TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
-      TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]],
-                                  btypes, bconn);
+      if (ltype == TACS_TETRA_QUADRATIC_ELEMENT){
+        btypes[0] = ltype;
+        memcpy(bconn, &conn[ptr[k]], 10*sizeof(int));
+      }
+      else {
+        TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+        TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]],
+                                    btypes, bconn);
+      }
       btypes += ntypes;
       bconn += nconn;
     }
@@ -172,6 +185,9 @@ int main( int argc, char * argv[] ){
       }
       else if (basic_ltypes[k] == TACS_TETRA_ELEMENT){
         fprintf(fp, "%d\n", VTK_TETRA);
+      }
+      else if (basic_ltypes[k] == TACS_TETRA_QUADRATIC_ELEMENT){
+        fprintf(fp, "%d\n", VTK_QUADRATIC_TETRA);
       }
       else if (basic_ltypes[k] == TACS_HEXA_ELEMENT){
         fprintf(fp, "%d\n", VTK_HEXAHEDRON);
