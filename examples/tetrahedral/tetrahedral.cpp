@@ -122,12 +122,6 @@ int main( int argc, char *argv[] ){
     ksm->solve(res, ans);
     assembler->setVariables(ans);
 
-    ans->decref();
-    ans = assembler->createNodeVec();
-    ans->incref();
-    assembler->getNodes(ans);
-    assembler->setVariables(ans);
-
     // The function that we will use: The KS failure function evaluated
     // over all the elements in the mesh
     TACSFunction *func = new TACSStructuralMass(assembler);

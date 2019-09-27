@@ -30,6 +30,7 @@ CXX_OBJS = MatUtils.o \
 	TACSNodeMap.o \
 	TACSBVec.o \
 	TACSBVecDistribute.o \
+	TACSBVecInterp.o \
 	TACSMatDistribute.o \
 	TACSParallelMat.o \
 	TACSBlockCyclicMat.o \
@@ -37,8 +38,7 @@ CXX_OBJS = MatUtils.o \
 	KSM.o \
 	TACSSchurMat.o \
 	GSEP.o \
-	JacobiDavidson.o \
-	TACSBVecInterp.o
+	JacobiDavidson.o
 
 DIR=${TACS_DIR}/src/bpmat
 
