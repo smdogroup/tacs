@@ -249,6 +249,47 @@ void TACSLinearTetrahedralBasis::computeBasisGradient( const double pt[],
 /*
   Quadratic Tetrahedral basis class functions
 */
+ElementLayout TACSQuadraticTetrahedralBasis::getLayoutType(){
+  return TACS_TETRA_QUADRATIC_ELEMENT;
+}
+
+/*
+  Get the parametric node locations for visualization
+
+*/
+void TACSQuadraticTetrahedralBasis::getVisPoint( int n, double pt[] ){
+  if (n == 0){
+    pt[0] = pt[1] = pt[2] = 0.0;
+  }
+  else if (n == 1){
+    pt[0] = 1.0; pt[1] = 0.0; pt[2] = 0.0;
+  }
+  else if (n == 2){
+    pt[0] = 0.0; pt[1] = 1.0; pt[2] = 0.0;
+  }
+  else if (n == 3){
+    pt[0] = 0.0; pt[1] = 0.0; pt[2] = 1.0;
+  }
+  else if (n == 4){
+    pt[0] = 0.5; pt[1] = 0.0; pt[2] = 0.0;
+  }
+  else if (n == 5){
+    pt[0] = 0.5; pt[1] = 0.5; pt[2] = 0.0;
+  }
+  else if (n == 6){
+    pt[0] = 0.0; pt[1] = 0.5; pt[2] = 0.0;
+  }
+  else if (n == 7){
+    pt[0] = 0.0; pt[1] = 0.0; pt[2] = 0.5;
+  }
+  else if (n == 8){
+    pt[0] = 0.5; pt[1] = 0.0; pt[2] = 0.5;
+  }
+  else if (n == 9){
+    pt[0] = 0.0; pt[1] = 0.5; pt[2] = 0.5;
+  }
+}
+
 int TACSQuadraticTetrahedralBasis::getNumNodes(){
   return 10;
 }

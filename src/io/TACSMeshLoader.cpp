@@ -296,187 +296,127 @@ static void parse_node_short_free_field( char *line, int *node,
   *z = bdf_atof(field[4]);
 }
 
-static void parse_element_field( char line[],
-                                 int * elem_num, int * component_num,
-                                 int * node_nums, int num_nodes ){
-  char node[9];
+/*
+  Parse a single element entry in the file.
+
+  The element entries are fixed-width. The first entry consists
+  of an element type or
+
+*/
+static int parse_element_field( size_t *loc,
+                                char *buffer,
+                                const size_t buffer_len,
+                                const int entry_width,
+                                const int max_num_nodes,
+                                int *elem_num,
+                                int *component_num,
+                                int *node_nums,
+                                int *num_nodes ){
+  int fail = 0;
+  *num_nodes = -1;
+  char line[81]; // Space for the line read from the buffer
+  char node[17]; // Space for the node number
+
+  // Offset to find the first entry - always at position 8
   int entry = 8;
 
-  strncpy(node, &line[entry], 8);
-  node[8] = '\0';
+  size_t temp_loc = *loc;
+  int line_len = read_buffer_line(line, sizeof(line), &temp_loc,
+                                  buffer, buffer_len);
+
+  // This is a hard failure - no element/component defined
+  if (line_len <= 0){
+    fail = 1;
+    return fail;
+  }
+
+  // Set the buffer location
+  *loc = temp_loc;
+
+  // Find the element number
+  strncpy(node, &line[entry], entry_width);
+  node[entry_width] = '\0';
   *elem_num = atoi(node);
-  entry += 8;
+  entry += entry_width;
 
-  strncpy(node, &line[entry], 8);
-  node[8] = '\0';
+  // The element indices must be positive
+  if (*elem_num <= 0){
+    fail = 1;
+    return fail;
+  }
+
+  // Find the component number
+  strncpy(node, &line[entry], entry_width);
+  node[entry_width] = '\0';
   *component_num = atoi(node);
-  entry += 8;
+  entry += entry_width;
 
-  if (*component_num <= 0){
-    fprintf(stderr,
-            "Error: The component numbers must be strictly positive\n");
+  // The component indices must be positive
+  if (*elem_num <= 0){
+    fail = 1;
+    return fail;
   }
 
-  for ( int n = 0; n < num_nodes && entry < 80; entry += 8, n++ ){
-    // Parse the line containing the entry
-    strncpy(node, &line[entry], 8);
-    node[8] = '\0';
-    node_nums[n] = atoi(node);
-  }
-}
+  // Keep track of the number of nodes found
+  int n = 0;
 
-static void parse_element_field2( char line1[], char line2[],
-                                  int * elem_num, int * component_num,
-                                  int * node_nums, int num_nodes, int width=8 ){
+  while (n < max_num_nodes){
+    for ( ; (n < max_num_nodes) && (entry < line_len);
+      entry += entry_width, n++ ){
 
-  int n = 0; // The number of parsed nodes
-  char node[17];
-  for ( int m = 0; m < 2; m++ ){
-    int entry = width;
-    const char * line = line1;
-    if (m == 1){
-      line = line2;
+      // Parse the fixed-width entry containing the node number
+      strncpy(node, &line[entry], entry_width);
+      node[entry_width] = '\0';
+      int temp = atoi(node);
+      if (temp > 0){
+        if (node_nums){
+          node_nums[n] = temp;
+        }
+      }
+      else if (temp <= 0){
+        *num_nodes = n;
+        fail = 0;
+        return fail;
+      }
     }
 
-    if (n == 0){
-      strncpy(node, &line[entry], width);
-      node[width] = '\0';
-      *elem_num = atoi(node);
-      entry += width;
+    if ((n < max_num_nodes) && (entry >= line_len)){
+      // Try to read the next line of the file
+      temp_loc = *loc;
+      line_len = read_buffer_line(line, sizeof(line), &temp_loc,
+                                  buffer, buffer_len);
 
-      strncpy(node, &line[entry], width);
-      node[width] = '\0';
-      *component_num = atoi(node);
-      entry += width;
-    }
+      // This is not a failure - element index/component defined, but
+      // if either of these are true, then the next line does not
+      // contain a continuation of this element
+      if (line_len <= 0){
+        *num_nodes = n;
+        fail = 0;
+        return fail;
+      }
+      else if (!(line[0] == '*' || line[0] == ' ')){
+        // The first character of a continuation line must be "*" or " ".
+        // Otherwise, this next line is a new element that must be
+        // parsed separately
+        *num_nodes = n;
+        fail = 0;
+        return fail;
+      }
 
-    for ( ; n < num_nodes && entry < 72; entry += width, n++ ){
-      // Parse the line containing the entry
-      strncpy(node, &line[entry], width);
-      node[width] = '\0';
-      node_nums[n] = atoi(node);
-    }
-  }
-}
+      // The next line is a continuation of this element.
+      // Set the end of the new buffer accordingly
+      *loc = temp_loc;
 
-
-static void parse_element_field3( char line1[], char line2[], char line3[],
-                                  int * elem_num, int * component_num,
-                                  int * node_nums, int num_nodes, int width=8 ){
-  int n = 0; // The number of parsed nodes
-  char node[17];
-
-  for ( int m = 0; m < 3; m++ ){
-    int entry = width;
-    const char * line = line1;
-    if (m == 1){
-      line = line2;
-    }
-    else if (m == 2){
-      line = line3;
-    }
-
-    if (n == 0){
-      strncpy(node, &line[entry], width);
-      node[width] = '\0';
-      *elem_num = atoi(node);
-      entry += width;
-
-      strncpy(node, &line[entry], width);
-      node[width] = '\0';
-      *component_num = atoi(node);
-      entry += width;
-    }
-
-    for ( ; n < num_nodes && entry < 72; entry += width, n++ ){
-      // Parse the line containing the entry
-      strncpy(node, &line[entry], width);
-      node[width] = '\0';
-      node_nums[n] = atoi(node);
+      // Set the new entry location for the next line. Note that
+      // this is offset by 8 regardless of the entry width
+      entry = 8;
     }
   }
-}
 
-static void parse_element_field4( char line1[], char line2[], char line3[],
-                                  char line4[],
-                                  int * elem_num, int * component_num,
-                                  int * node_nums, int num_nodes ){
-  int n = 0; // The number of parsed nodes
-  char node[9];
-
-  for ( int m = 0; m < 4; m++ ){
-    int entry = 8;
-    const char * line = line1;
-    if (m == 1){
-      line = line2;
-    }
-    else if (m == 2){
-      line = line3;
-    }
-    else if (m == 3){
-      line = line4;
-    }
-
-    if (n == 0){
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
-      *elem_num = atoi(node);
-      entry += 8;
-
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
-      *component_num = atoi(node);
-      entry += 8;
-    }
-
-    for ( ; n < num_nodes && entry < 72; entry += 8, n++ ){
-      // Parse the line containing the entry
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
-      node_nums[n] = atoi(node);
-    }
-  }
-}
-
-static void parse_element_field9( char line1[], char line2[], char line3[],
-                                  char line4[], char line5[], char line6[],
-                                  char line7[], char line8[], char line9[],
-                                  int * elem_num, int * component_num,
-                                  int * node_nums, int num_nodes ){
-  int n = 0; // The number of parsed nodes
-  char node[9];
-
-  for ( int m = 0; m < 4; m++ ){
-    int entry = 8;
-    const char * line = line1;
-    if (m == 1){ line = line2; }
-    else if (m == 2){ line = line3; }
-    else if (m == 3){ line = line4; }
-    else if (m == 4){ line = line5; }
-    else if (m == 5){ line = line6; }
-    else if (m == 6){ line = line7; }
-    else if (m == 7){ line = line8; }
-    else if (m == 8){ line = line9; }
-
-    if (n == 0){
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
-      *elem_num = atoi(node);
-      entry += 8;
-
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
-      *component_num = atoi(node);
-      entry += 8;
-    }
-
-    for ( ; n < num_nodes && entry < 72; entry += 8, n++ ){
-      // Parse the line containing the entry
-      strncpy(node, &line[entry], 8);
-      node[8] = '\0';
-      node_nums[n] = atoi(node);
-    }
-  }
+  // This read did not fail
+  fail = 0;
+  *num_nodes = n;
+  return fail;
 }
 
 /*
@@ -619,7 +559,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     int bc_vars_size = 0;
 
     // Each line can only be 80 characters long
-    char line[9][80];
+    char line[81];
 
     // Determine the size of the file
     fseek(fp, 0, SEEK_END);
@@ -638,7 +578,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 
     // Keep track of where the current point in the buffer is
     size_t buffer_loc = 0;
-    read_buffer_line(line[0], sizeof(line[0]),
+    read_buffer_line(line, sizeof(line),
                      &buffer_loc, buffer, buffer_len);
 
     // Flags which indicate where the bulk data begins
@@ -648,11 +588,11 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     // Scan the file for the begin bulk location. If none exists, then
     // the whole file is treated as bulk data.
     while (buffer_loc < buffer_len){
-      if (strncmp(line[0], "BEGIN BULK", 10) == 0){
+      if (strncmp(line, "BEGIN BULK", 10) == 0){
         in_bulk = 1;
         bulk_start = buffer_loc;
       }
-      read_buffer_line(line[0], sizeof(line[0]),
+      read_buffer_line(line, sizeof(line),
                        &buffer_loc, buffer, buffer_len);
     }
 
@@ -664,274 +604,120 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     // Set the starting location
     buffer_loc = bulk_start;
 
-    while (buffer_loc < buffer_len){
-      if (line[0][0] != '$'){ // This is not a comment line
-        int node;
-        double x, y, z;
+    // Keep track of the maximum number of nodes defined by
+    // any of the elements
+    int max_element_conn = -1;
 
-        // Check for GRID or GRID*
-        if (strncmp(line[0], "GRID*", 5) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
+    while (buffer_loc < buffer_len){
+      // Read the first line of the buffer
+      size_t buffer_temp_loc = buffer_loc;
+      if (!read_buffer_line(line, sizeof(line),
+                            &buffer_temp_loc, buffer, buffer_len)){
+        fail = 1;
+        break;
+      }
+
+      if (line[0] != '$'){
+        if (in_bulk && strncmp(line, "END BULK", 8) == 0){
+          buffer_temp_loc = buffer_len;
+        }
+        else if (strncmp(line, "GRID*", 5) == 0){
+          char line2[81];
+          if (!read_buffer_line(line2, sizeof(line2),
+                                &buffer_temp_loc, buffer, buffer_len)){
             fail = 1;
             break;
           }
-          parse_node_long_field(line[0], line[1], &node, &x, &y, &z);
+          int node;
+          double x, y, z;
+          parse_node_long_field(line, line2, &node, &x, &y, &z);
           num_nodes++;
         }
-        else if (strncmp(line[0], "GRID", 4) == 0){
-          parse_node_short_free_field(line[0], &node, &x, &y, &z);
+        else if (strncmp(line, "GRID", 4) == 0){
+          int node;
+          double x, y, z;
+          parse_node_short_free_field(line, &node, &x, &y, &z);
           num_nodes++;
         }
-        else if (strncmp(line[0], "CBAR", 4) == 0){
-          // Read in the component number and nodes associated with
-          // this element
-          int elem_num, component_num;
-          int nodes[2]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 2);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 2;
-          num_elements++;
-        }
-
-        else if (strncmp(line[0], "CHEXA*", 6) == 0){
-          for ( int i = 1; i < 3; i++ ){
-            if (!read_buffer_line(line[i], sizeof(line[i]),
-                                  &buffer_loc, buffer, buffer_len)){
-              fail = 1; break;
-            }
-          }
-          // Read in the component number and nodes associated with
-          // this element
-          int elem_num, component_num, nodes[8];
-          parse_element_field3(line[0], line[1], line[2],
-                               &elem_num, &component_num,
-                               nodes, 8, 16);
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-          elem_con_size += 8;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CHEXA", 5) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-
-          // Read in the component number and nodes associated with
-          // this element
-          int elem_num, component_num, nodes[8];
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 8);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 8;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CHEXA27", 7) == 0){
-          for ( int i = 1; i < 4; i++ ){
-            if (!read_buffer_line(line[i], sizeof(line[i]),
-                                  &buffer_loc, buffer, buffer_len)){
-              fail = 1; break;
-            }
-          }
-
-          // Read in the component number and nodes associated with
-          // this element
-          int elem_num, component_num, nodes[27];
-          parse_element_field4(line[0], line[1], line[2], line[3],
-                               &elem_num, &component_num,
-                               nodes, 27);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 27;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CHEXA64", 7) == 0){
-          for ( int i = 1; i < 9; i++ ){
-            if (!read_buffer_line(line[i], sizeof(line[i]),
-                                  &buffer_loc, buffer, buffer_len)){
-              fail = 1; break;
-            }
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num, nodes[27];
-          parse_element_field9(line[0], line[1], line[2], line[3], line[4],
-                               line[5], line[6], line[7], line[8],
-                               &elem_num, &component_num,
-                               nodes, 64);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 64;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CQUAD16", 7) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-          if (!read_buffer_line(line[2], sizeof(line[2]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[16]; // Should have at most four nodes
-          parse_element_field3(line[0], line[1], line[2],
-                               &elem_num, &component_num,
-                               nodes, 16);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 16;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CQUAD4*", 7) == 0 ){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[4]; // Should have at most four nodes
-          parse_element_field2(line[0], line[1],
-                              &elem_num, &component_num,
-                               nodes, 4, 16);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 4;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CQUAD4", 6) == 0 ||
-                 strncmp(line[0], "CQUADR", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[4]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 4);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 4;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CQUAD9", 6) == 0 ||
-                 strncmp(line[0], "CQUAD", 5) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[9]; // Should have at most 9 nodes
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 9;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CTRIA3", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[3]; // Should have at most three nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 3);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 3;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "CTETRA", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[4]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 4);
-
-          if (component_num > num_components){
-            num_components = component_num;
-          }
-
-          elem_con_size += 4;
-          num_elements++;
-        }
-        else if (strncmp(line[0], "SPC", 3) == 0){
+        else if (strncmp(line, "SPC", 3) == 0){
           bc_vars_size += 8;
           num_bcs++;
         }
-        else if (strncmp(line[0], "FFORCE", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[1]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 1);
+        else {
+          // Check the library of elements
+          int max_num_conn = -1;
+          int entry_width = 8;
 
-          if (component_num > num_components){
-            num_components = component_num;
+          // Loop over the number of types and determine the number of
+          // nodes
+          int index = -1;
+          for ( int k = 0; k < TacsMeshLoaderNumElementTypes; k++ ){
+            int len = strlen(TacsMeshLoaderElementTypes[k]);
+            if (strncmp(line, TacsMeshLoaderElementTypes[k], len) == 0){
+              max_num_conn = TacsMeshLoaderElementLimits[k][1];
+              index = k;
+
+              // Check if we should use the extended width or not
+              if (line[len] == '*'){
+                entry_width = 16;
+              }
+              break;
+            }
           }
-          elem_con_size += 1;
-          num_elements++;
+
+          if (index >= 0){
+            // Find the number of entries in the element
+            int elem_num, component_num, num_conn;
+            buffer_temp_loc = buffer_loc;
+            int fail = parse_element_field(&buffer_temp_loc, buffer, buffer_len,
+                                           entry_width, max_num_conn,
+                                           &elem_num, &component_num, NULL,
+                                           &num_conn);
+            if (fail){
+              break;
+            }
+
+            // Check if the number of nodes is within the prescribed limits
+            if (num_conn < TacsMeshLoaderElementLimits[index][0]){
+              fprintf(stderr, "TACSMeshLoader: Number of nodes for element %s "
+                      "not within limits\n", TacsMeshLoaderElementTypes[index]);
+              fail = 1;
+              break;
+            }
+
+            elem_con_size += num_conn;
+            num_elements++;
+            if (num_conn > max_element_conn){
+              max_element_conn = num_conn;
+            }
+            if (component_num > num_components){
+              num_components = component_num;
+            }
+          }
+          else {
+            fprintf(stderr, "TACSMeshLoader: Element not recognized. Line\n %s\n",
+                    line);
+          }
         }
       }
 
-      read_buffer_line(line[0], sizeof(line[0]),
-                       &buffer_loc, buffer, buffer_len);
+      buffer_loc = buffer_temp_loc;
     }
+
+    // Allocate space to store the node numbers
+    int *temp_nodes = new int[ max_element_conn ];
 
     // Allocate space for everything
     node_nums = new int[ num_nodes ];
     Xpts_unsorted = new double[ 3*num_nodes ];
 
     // Element type information
-    int * elem_nums = new int[ num_elements ];
-    int * elem_comp = new int[ num_elements ];
+    int *elem_nums = new int[ num_elements ];
+    int *elem_comp = new int[ num_elements ];
 
     // The connectivity information
-    int * elem_con = new int[ elem_con_size ];
-    int * elem_con_ptr = new int[ num_elements+1 ];
+    int *elem_con = new int[ elem_con_size ];
+    int *elem_con_ptr = new int[ num_elements+1 ];
     elem_con_ptr[0] = 0;
 
     // Boundary condition information
@@ -956,18 +742,21 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 
     // Rewind to the beginning of the bulk section and allocate everything
     buffer_loc = bulk_start;
-    read_buffer_line(line[0], sizeof(line[0]),
-                     &buffer_loc, buffer, buffer_len);
 
     // Keep track of the component numbers loaded from an
     // ICEM-generated bdf file
     int component_counter = 0;
 
     while (buffer_loc < buffer_len){
-      int node;
-      double x, y, z;
+      // Read the first line of the buffer
+      size_t buffer_temp_loc = buffer_loc;
+      if (!read_buffer_line(line, sizeof(line),
+                            &buffer_temp_loc, buffer, buffer_len)){
+        fail = 1;
+        break;
+      }
 
-      if (strncmp(line[0], "$       Shell", 13) == 0){
+      if (strncmp(line, "$       Shell", 13) == 0){
         // A standard icem output - description of each
         // component. This is very useful for describing what the
         // components actually are with a string.
@@ -976,401 +765,55 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
         int comp_num = component_counter;
         component_counter++;
 
-        strncpy(comp, &line[0][41], 32);
+        strncpy(comp, &line[41], 32);
         comp[32] = '\0';
         // Remove white space
         if (comp_num >= 0 && comp_num < num_components){
           sscanf(comp, "%s", &component_descript[33*comp_num]);
         }
       }
-      if (line[0][0] != '$'){ // A comment line
-        // Check for GRID or GRID*
-        if (strncmp(line[0], "GRID*", 5) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
+      if (line[0] != '$'){ // A comment line
+        if (in_bulk && strncmp(line, "END BULK", 8) == 0){
+          buffer_temp_loc = buffer_len;
+        }
+        else if (strncmp(line, "GRID*", 5) == 0){
+          char line2[81];
+          if (!read_buffer_line(line2, sizeof(line2),
+                                &buffer_temp_loc, buffer, buffer_len)){
             fail = 1;
             break;
           }
-          parse_node_long_field(line[0], line[1], &node, &x, &y, &z);
+          int node;
+          double x, y, z;
+          parse_node_long_field(line, line2, &node, &x, &y, &z);
           node_nums[num_nodes] = node-1; // Get the C ordering
           Xpts_unsorted[3*num_nodes]   = x;
           Xpts_unsorted[3*num_nodes+1] = y;
           Xpts_unsorted[3*num_nodes+2] = z;
           num_nodes++;
         }
-        else if (strncmp(line[0], "GRID", 4) == 0){
-          parse_node_short_free_field(line[0], &node, &x, &y, &z);
+        else if (strncmp(line, "GRID", 4) == 0){
+          int node;
+          double x, y, z;
+          parse_node_short_free_field(line, &node, &x, &y, &z);
           node_nums[num_nodes] = node-1; // Get the C ordering
           Xpts_unsorted[3*num_nodes]   = x;
           Xpts_unsorted[3*num_nodes+1] = y;
           Xpts_unsorted[3*num_nodes+2] = z;
           num_nodes++;
         }
-        else if (strncmp(line[0], "CBAR", 4) == 0){
-          // Read in the component number and nodes associated with
-          // this element
-          int elem_num, component_num;
-          int nodes[2]; // Should have at most two nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 2);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size] = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-
-          elem_con_size += 2;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CBAR");
-          }
-        }
-
-        else if (strncmp(line[0], "CHEXA*", 6) == 0){
-          for ( int i = 1; i < 3; i++ ){
-            if (!read_buffer_line(line[i], sizeof(line[i]),
-                                  &buffer_loc, buffer, buffer_len)){
-              fail = 1; break;
-            }
-          }
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num, nodes[8];
-          parse_element_field3(line[0], line[1], line[2],
-                               &elem_num, &component_num,
-                               nodes, 8, 16);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size]   = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-          elem_con[elem_con_size+2] = nodes[3]-1;
-          elem_con[elem_con_size+3] = nodes[2]-1;
-          elem_con[elem_con_size+4] = nodes[4]-1;
-          elem_con[elem_con_size+5] = nodes[5]-1;
-          elem_con[elem_con_size+6] = nodes[7]-1;
-          elem_con[elem_con_size+7] = nodes[6]-1;
-
-          elem_con_size += 8;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CHEXA*");
-          }
-        }
-        else if (strncmp(line[0], "CHEXA", 5) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num, nodes[8];
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 8);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size]   = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-          elem_con[elem_con_size+2] = nodes[3]-1;
-          elem_con[elem_con_size+3] = nodes[2]-1;
-          elem_con[elem_con_size+4] = nodes[4]-1;
-          elem_con[elem_con_size+5] = nodes[5]-1;
-          elem_con[elem_con_size+6] = nodes[7]-1;
-          elem_con[elem_con_size+7] = nodes[6]-1;
-
-          elem_con_size += 8;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CHEXA");
-          }
-        }
-        else if (strncmp(line[0], "CHEXA27", 7) == 0){
-          for ( int i = 1; i < 4; i++ ){
-            if (!read_buffer_line(line[i], sizeof(line[i]),
-                                  &buffer_loc, buffer, buffer_len)){
-              fail = 1; break;
-            }
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num, nodes[27];
-          parse_element_field4(line[0], line[1], line[2], line[3],
-                               &elem_num, &component_num,
-                               nodes, 27);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          for ( int k = 0; k < 27; k++ ){
-            elem_con[elem_con_size+k] = nodes[k]-1;
-          }
-
-          elem_con_size += 27;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CHEXA64");
-          }
-        }
-        else if (strncmp(line[0], "CHEXA64", 7) == 0){
-          for ( int i = 1; i < 9; i++ ){
-            if (!read_buffer_line(line[i], sizeof(line[i]),
-                                  &buffer_loc, buffer, buffer_len)){
-              fail = 1; break;
-            }
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num, nodes[64];
-          parse_element_field9(line[0], line[1], line[2], line[3], line[4],
-                               line[5], line[6], line[7], line[8],
-                               &elem_num, &component_num,
-                               nodes, 64);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          for ( int k = 0; k < 64; k++ ){
-            elem_con[elem_con_size+k] = nodes[k]-1;
-          }
-
-          elem_con_size += 64;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CHEXA64");
-          }
-        }
-        else if (strncmp(line[0], "CQUAD16", 7) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-          if (!read_buffer_line(line[2], sizeof(line[2]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[16]; // Should have at most four nodes
-          parse_element_field3(line[0], line[1], line[2],
-                               &elem_num, &component_num,
-                               nodes, 16);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          for ( int k = 0; k < 16; k++ ){
-            elem_con[elem_con_size+k] = nodes[k]-1;
-          }
-
-          elem_con_size += 16;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CQUAD16");
-          }
-        }
-        else if (strncmp(line[0], "CQUAD4*", 7) == 0 ){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1;
-            break;
-          }
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[4]; // Should have at most four nodes
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 4, 16);
-
-          // Add the element to the connectivity list
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-          elem_con[elem_con_size]   = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-          elem_con[elem_con_size+2] = nodes[3]-1;
-          elem_con[elem_con_size+3] = nodes[2]-1;
-          elem_con_size += 4;
-
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CQUAD4");
-          }
-        }
-        else if (strncmp(line[0], "CQUAD4", 6) == 0 ||
-                 strncmp(line[0], "CQUADR", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[4]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 4);
-          // Add the element to the connectivity list
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size]   = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-          elem_con[elem_con_size+2] = nodes[3]-1;
-          elem_con[elem_con_size+3] = nodes[2]-1;
-          elem_con_size += 4;
-
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CQUAD4");
-          }
-        }
-        else if (strncmp(line[0], "CQUAD9", 6) == 0 ||
-                 strncmp(line[0], "CQUAD", 5) == 0){
-          if (!read_buffer_line(line[1], sizeof(line[1]),
-                                &buffer_loc, buffer, buffer_len)){
-            fail = 1; break;
-          }
-
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[9]; // Should have at most 9 nodes
-          parse_element_field2(line[0], line[1],
-                               &elem_num, &component_num,
-                               nodes, 9);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size] = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[4]-1;
-          elem_con[elem_con_size+2] = nodes[1]-1;
-
-          elem_con[elem_con_size+3] = nodes[7]-1;
-          elem_con[elem_con_size+4] = nodes[8]-1;
-          elem_con[elem_con_size+5] = nodes[5]-1;
-
-          elem_con[elem_con_size+6] = nodes[3]-1;
-          elem_con[elem_con_size+7] = nodes[6]-1;
-          elem_con[elem_con_size+8] = nodes[2]-1;
-
-          elem_con_size += 9;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            if (strncmp(line[0], "CQUAD9", 6)){
-              strcpy(&component_elems[9*(component_num-1)], "CQUAD9");
-            }
-            else {
-              strcpy(&component_elems[9*(component_num-1)], "CQUAD");
-            }
-          }
-        }
-        else if (strncmp(line[0], "CTRIA3", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[3]; // Should have at most four nodes
-          parse_element_field(line[0],
-                              &elem_num, &component_num,
-                              nodes, 3);
-
-          // Add the element to the connectivity list
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size]   = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-          elem_con[elem_con_size+2] = nodes[2]-1;
-          elem_con_size += 3;
-
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CTRIA3");
-          }
-        }
-        else if (strncmp(line[0], "CTETRA", 6) == 0){
-          // Read in the component number and nodes associated
-          // with this element
-          int elem_num, component_num;
-          int nodes[4]; // Should have at most four nodes
-          parse_element_field(line[0], &elem_num, &component_num,
-                              nodes, 4);
-
-          // Add the element to the connectivity list
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-
-          elem_con[elem_con_size]   = nodes[0]-1;
-          elem_con[elem_con_size+1] = nodes[1]-1;
-          elem_con[elem_con_size+2] = nodes[2]-1;
-          elem_con[elem_con_size+3] = nodes[3]-1;
-          elem_con_size += 4;
-
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "CTETRA");
-          }
-        }
-        else if (strncmp(line[0], "FFORCE", 6) == 0){
-          // Read in the component number and nodes associated
-          // with the following force
-          int elem_num, component_num;
-          int nodes[1]; // Should have at most four nodes
-          parse_element_field(line[0], &elem_num, &component_num,
-                              nodes, 1);
-
-          elem_nums[num_elements] = elem_num-1;
-          elem_comp[num_elements] = component_num-1;
-          elem_con[elem_con_size] = nodes[0]-1;
-
-          elem_con_size++;
-          elem_con_ptr[num_elements+1] = elem_con_size;
-          num_elements++;
-
-          if (component_elems[9*(component_num-1)] == '\0'){
-            strcpy(&component_elems[9*(component_num-1)], "FFORCE");
-          }
-        }
-        else if (strncmp(line[0], "SPC", 3) == 0){
+        else if (strncmp(line, "SPC", 3) == 0){
           // This is a variable-length format. Read in grid points until
           // zero is reached. This is a fixed-width format
           // SPC SID  G1  C  D
 
           // Read in the nodal value
           char node[9];
-          strncpy(node, &line[0][16], 8);
+          strncpy(node, &line[16], 8);
           node[8] = '\0';
           bc_nodes[num_bcs] = atoi(node)-1;
 
-          strncpy(node, &line[0][32], 8);
+          strncpy(node, &line[32], 8);
           node[8] = '\0';
           double val = bdf_atof(node);
 
@@ -1379,7 +822,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
             char dofs[9] = "12345678";
 
             for ( int j = 0; j < 8; j++ ){
-              if (dofs[j] == line[0][k]){
+              if (dofs[j] == line[k]){
                 bc_vars[bc_vars_size] = j;
                 bc_vals[bc_vars_size] = val;
                 bc_vars_size++;
@@ -1391,13 +834,105 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           bc_ptr[num_bcs+1] = bc_vars_size;
           num_bcs++;
         }
+        else {
+          // Check the library of elements
+          int max_num_conn = -1;
+          int entry_width = 8;
+
+          // Loop over the number of types and determine the number of
+          // nodes
+          int index = -1;
+          for ( int k = 0; k < TacsMeshLoaderNumElementTypes; k++ ){
+            int len = strlen(TacsMeshLoaderElementTypes[k]);
+            if (strncmp(line, TacsMeshLoaderElementTypes[k], len) == 0){
+              max_num_conn = TacsMeshLoaderElementLimits[k][1];
+              index = k;
+
+              // Check if we should use the extended width or not
+              if (line[len] == '*'){
+                entry_width = 16;
+              }
+              break;
+            }
+          }
+
+          if (index >= 0){
+            // Find the number of entries in the element
+            int elem_num, component_num, num_conn;
+            buffer_temp_loc = buffer_loc;
+            int fail = parse_element_field(&buffer_temp_loc, buffer, buffer_len,
+                                           entry_width, max_num_conn,
+                                           &elem_num, &component_num, temp_nodes,
+                                           &num_conn);
+            if (fail){
+              break;
+            }
+
+            if (strncmp(line, "CQUAD4", 6) == 0 ||
+                strncmp(line, "CQUADR", 6) == 0){
+              elem_con[elem_con_size]   = temp_nodes[0]-1;
+              elem_con[elem_con_size+1] = temp_nodes[1]-1;
+              elem_con[elem_con_size+2] = temp_nodes[3]-1;
+              elem_con[elem_con_size+3] = temp_nodes[2]-1;
+            }
+            else if (strncmp(line, "CQUAD9", 6) == 0 ||
+                     strncmp(line, "CQUAD", 5) == 0){
+              elem_con[elem_con_size] = temp_nodes[0]-1;
+              elem_con[elem_con_size+1] = temp_nodes[4]-1;
+              elem_con[elem_con_size+2] = temp_nodes[1]-1;
+              elem_con[elem_con_size+3] = temp_nodes[7]-1;
+              elem_con[elem_con_size+4] = temp_nodes[8]-1;
+              elem_con[elem_con_size+5] = temp_nodes[5]-1;
+              elem_con[elem_con_size+6] = temp_nodes[3]-1;
+              elem_con[elem_con_size+7] = temp_nodes[6]-1;
+              elem_con[elem_con_size+8] = temp_nodes[2]-1;
+            }
+            else if (strncmp(line, "CHEXA", 5) == 0){
+              elem_con[elem_con_size]   = temp_nodes[0]-1;
+              elem_con[elem_con_size+1] = temp_nodes[1]-1;
+              elem_con[elem_con_size+2] = temp_nodes[3]-1;
+              elem_con[elem_con_size+3] = temp_nodes[2]-1;
+              elem_con[elem_con_size+4] = temp_nodes[4]-1;
+              elem_con[elem_con_size+5] = temp_nodes[5]-1;
+              elem_con[elem_con_size+6] = temp_nodes[7]-1;
+              elem_con[elem_con_size+7] = temp_nodes[6]-1;
+            }
+            else {
+              for ( int k = 0; k < num_conn; k++ ){
+                elem_con[elem_con_size+k] = temp_nodes[k]-1;
+              }
+            }
+
+            // Set the node numbers
+            elem_nums[num_elements] = elem_num-1;
+            elem_comp[num_elements] = component_num-1;
+
+            elem_con_size += num_conn;
+            elem_con_ptr[num_elements+1] = elem_con_size;
+            num_elements++;
+
+            if (component_elems[9*(component_num-1)] == '\0'){
+              if (strncmp(line, "CTETRA", 6) == 0 && num_conn == 10){
+                strcpy(&component_elems[9*(component_num-1)], "CTETRA10");
+              }
+              else {
+                strcpy(&component_elems[9*(component_num-1)],
+                       TacsMeshLoaderElementTypes[index]);
+              }
+            }
+          }
+          else {
+            fprintf(stderr, "TACSMeshLoader: Element not recognized. Line\n %s\n",
+                    line);
+          }
+        }
       }
 
-      read_buffer_line(line[0], sizeof(line[0]),
-                       &buffer_loc, buffer, buffer_len);
+      buffer_loc = buffer_temp_loc;
     }
 
     delete [] buffer;
+    delete [] temp_nodes;
 
     if (fail){
       delete [] elem_nums;

@@ -126,6 +126,8 @@ int main( int argc, char * argv[] ){
       ElementLayout ltype = (ElementLayout)ltypes[k];
       if (ltype == TACS_TETRA_QUADRATIC_ELEMENT){
         btypes[0] = ltype;
+        ntypes = 1;
+        nconn = 10;
         memcpy(bconn, &conn[ptr[k]], 10*sizeof(int));
       }
       else {

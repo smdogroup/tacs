@@ -33,9 +33,11 @@ int main( int argc, char *argv[] ){
 
   // Create basis
   TACSElementBasis *linear_basis = new TACSLinearTetrahedralBasis();
+  TACSElementBasis *quad_basis = new TACSQuadraticTetrahedralBasis();
 
   // Create the element type (need 3D element class)
   TACSElement3D *linear_element = new TACSElement3D(&model, linear_basis);
+  TACSElement3D *quad_element = new TACSElement3D(&model, quad_basis);
 
   // The TACSAssembler object - which should be allocated if the mesh
   // is loaded correctly
@@ -62,8 +64,12 @@ int main( int argc, char *argv[] ){
 
           // Get the BDF description of the element
           const char *elem_descript = mesh->getElementDescript(i);
-          if (strcmp(elem_descript, "CTETRA") == 0){
+          if (strcmp(elem_descript, "CTETRA") == 0 ||
+              strcmp(elem_descript, "CTETRA4") == 0){
             elem = linear_element;
+          }
+          else if (strcmp(elem_descript, "CTETRA10") == 0){
+            elem = quad_element;
           }
 
           // Set the element object into the mesh loader class
