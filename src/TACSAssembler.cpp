@@ -429,8 +429,9 @@ int TACSAssembler::setElementConnectivity( const int *ptr,
       int size = elementNodeIndex[i+1] - elementNodeIndex[i];
       if (size != elements[i]->getNumNodes()){
         fprintf(stderr,
-                "[%d] Element %s does not match connectivity\n",
-                mpiRank, elements[i]->getObjectName());
+                "[%d] TACSAssembler: Element %s does not match "
+                " connectivity\n", mpiRank,
+                elements[i]->getObjectName());
         return 1;
       }
     }
@@ -446,14 +447,14 @@ int TACSAssembler::setElementConnectivity( const int *ptr,
     for ( int j = elementNodeIndex[i]; j < jend; j++ ){
       if (elementTacsNodes[j] >= ownerRange[mpiSize]){
         fprintf(stderr,
-                "[%d] Element %d contains node number out of range\n",
-                mpiRank, i);
+                "[%d] TACSAssembler: Element %d contains node number "
+                "out of range\n", mpiRank, i);
         return -1;
       }
       else if (elementTacsNodes[j] < -numDependentNodes){
         fprintf(stderr,
-                "[%d] Element %d contains dependent node number out of range\n",
-                mpiRank, i);
+                "[%d] TACSAssembler: Element %d contains dependent "
+                "node number out of range\n", mpiRank, i);
         return -1;
       }
     }
@@ -504,7 +505,7 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   for ( int i = 0; i < numElements; i++ ){
     if (_elements[i]->getVarsPerNode() != varsPerNode){
       fprintf(stderr,
-              "[%d] Element %s, num displacements %d "
+              "[%d] TACSAssembler: Element %s, num displacements %d "
               "does not match variables per node %d\n",
               mpiRank, _elements[i]->getObjectName(),
               _elements[i]->getVarsPerNode(), varsPerNode);
@@ -569,8 +570,8 @@ int TACSAssembler::setElements( TACSElement **_elements ){
       int size = elementNodeIndex[i+1] - elementNodeIndex[i];
       if (size != elements[i]->getNumNodes()){
         fprintf(stderr,
-                "[%d] Element %s does not match connectivity\n",
-                mpiRank, elements[i]->getObjectName());
+                "[%d] TACSAssembler: Element %s does not match "
+                "connectivity\n", mpiRank, elements[i]->getObjectName());
         return 1;
       }
     }
