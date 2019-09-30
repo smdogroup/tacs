@@ -337,7 +337,7 @@ int main( int argc, char * argv[] ){
 
   // Set all components of the vector to 1.0 and apply boundary
   // conditions
-  force->set(1.0);
+  force->set(10e3);
   assembler->applyBCs(force);
 
   /*
@@ -446,9 +446,8 @@ int main( int argc, char * argv[] ){
 
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
-  // double ksRho = 100.0;
-  // TACSFunction *func = new TACSKSFailure(assembler, ksRho);
-  TACSFunction *func = new TACSStructuralMass(assembler);
+  double ksRho = 100.0;
+  TACSFunction *func = new TACSKSFailure(assembler, ksRho);
   func->incref();
 
   // Allocate an array for the design variable values
@@ -459,6 +458,8 @@ int main( int argc, char * argv[] ){
   // Evaluate the function
   TacsScalar ksFuncVal = 0.0;
   assembler->evalFunctions(1, &func, &ksFuncVal);
+
+  assembler->testFunction(func, 1e-6);
 
   // Now, compute the total derivative of the function of interest
   TACSBVec *dfdx = assembler->createDesignVec();

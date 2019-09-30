@@ -652,6 +652,8 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     for ( int j = 0; j < vars_per_node; j++ ){
       Ut[3*j] = Ut[3*j+1] = Ut[3*j+2] = 0.0;
       Ud[2*j] = Ud[2*j+1] = 0.0;
+      Psix[2*j] = Psix[2*j+1] = 0.0;
+      Psi[j] = 0.0;
     }
 
     // Loop over each quadrature point for each basis function
@@ -790,6 +792,7 @@ void TACSElementBasis::addFieldGradientSVSens( const int num_params,
                      dfdUx[3*j]*nx[0] +
                      dfdUx[3*j+1]*nx[1] +
                      dfdUx[3*j+2]*nx[2]);
+        dfdu++;
       }
       N++;
       Nxi += 3;
@@ -803,6 +806,7 @@ void TACSElementBasis::addFieldGradientSVSens( const int num_params,
         dfdu[0] += ((dfdUt[3*j] + dfdUt[3*j+1] + dfdUt[3*j+2])*N[0] +
                      dfdUx[2*j]*nx[0] +
                      dfdUx[2*j+1]*nx[1]);
+        dfdu++;
       }
       N++;
       Nxi += 2;

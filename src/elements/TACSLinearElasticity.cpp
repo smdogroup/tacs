@@ -314,11 +314,11 @@ void TACSLinearElasticity2D::addPointQuantityDVSens( int elemIndex,
       e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
     }
 
-    stiff->addFailureDVSens(elemIndex, pt, X, e, scale,
+    stiff->addFailureDVSens(elemIndex, pt, X, e, scale*dfdq[0],
                             dvLen, dfdx);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    stiff->addDensityDVSens(elemIndex, pt, X, scale, dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, pt, X, scale*dfdq[0], dvLen, dfdx);
   }
 }
 
@@ -913,11 +913,11 @@ void TACSLinearElasticity3D::addPointQuantityDVSens( int elemIndex,
       e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
     }
 
-    stiff->addFailureDVSens(elemIndex, pt, X, e, scale,
+    stiff->addFailureDVSens(elemIndex, pt, X, e, scale*dfdq[0],
                             dvLen, dfdx);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    stiff->addDensityDVSens(elemIndex, pt, X, scale, dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, pt, X, scale*dfdq[0], dvLen, dfdx);
   }
 }
 

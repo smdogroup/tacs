@@ -711,13 +711,13 @@ int TacsTestElementBasis( TACSElementBasis *basis,
 
   double *N0 = new double[ nnodes ];
   double *N = new double[ nnodes ];
-  basis->computeBasis(pt0, N0);
+  basis->computeBasisGradient(pt0, N0, result);
 
   // Compute the finite-difference
   for ( int i = 0; i < nparams; i++ ){
     double pt[3];
     memcpy(pt, pt0, 3*sizeof(double));
-    pt[i] = pt[0] + dh;
+    pt[i] = pt[i] + dh;
     basis->computeBasis(pt, N);
 
     for ( int j = 0; j < nnodes; j++ ){
@@ -728,8 +728,8 @@ int TacsTestElementBasis( TACSElementBasis *basis,
 #ifndef TACS_USE_COMPLEX
   // Compute the error
   int max_err_index, max_rel_index;
-  double max_err = TacsGetMaxError(result, fd, 3*nnodes, &max_err_index);
-  double max_rel = TacsGetMaxRelError(result, fd, 3*nnodes, &max_rel_index);
+  double max_err = TacsGetMaxError(result, fd, nparams*nnodes, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, nparams*nnodes, &max_rel_index);
 
   if (test_print_level > 0){
     fprintf(stderr,

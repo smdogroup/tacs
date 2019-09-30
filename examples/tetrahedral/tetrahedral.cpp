@@ -5,6 +5,7 @@
 #include "TACSTetrahedralBasis.h"
 #include "TACSElement3D.h"
 #include "TACSStructuralMass.h"
+#include "TACSElementVerification.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -33,7 +34,9 @@ int main( int argc, char *argv[] ){
 
   // Create basis
   TACSElementBasis *linear_basis = new TACSLinearTetrahedralBasis();
+  TacsTestElementBasis(linear_basis);
   TACSElementBasis *quad_basis = new TACSQuadraticTetrahedralBasis();
+  TacsTestElementBasis(quad_basis);
 
   // Create the element type (need 3D element class)
   TACSElement3D *linear_element = new TACSElement3D(&model, linear_basis);

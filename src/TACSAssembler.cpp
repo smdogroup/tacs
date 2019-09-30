@@ -5092,7 +5092,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
 
   // Compute the function at the point x - dh*xpert
   xtemp->copyValues(x);
-  xtemp->axpy(dh, xpert);
+  xtemp->axpy(-dh, xpert);
   setDesignVars(xtemp);
   TacsScalar fval1;
   evalFunctions(1, &func, &fval1);
