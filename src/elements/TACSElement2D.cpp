@@ -270,7 +270,7 @@ int TACSElement2D::evalPointQuantity( int elemIndex,
                           X, Xd, J, Ut, Ud, Ux);
 
   return model->evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                                  X, Ut, Ux, quantity);
+                                  X, Xd, Ut, Ux, quantity);
 }
 
 /**
@@ -295,7 +295,7 @@ void TACSElement2D::addPointQuantityDVSens( int elemIndex,
                           X, Xd, J, Ut, Ud, Ux);
 
   model->addPointQuantityDVSens(elemIndex, quantityType, time, scale, n, pt,
-                                X, Ut, Ux, dfdq, dvLen, dfdx);
+                                X, Xd, Ut, Ux, dfdq, dvLen, dfdx);
 }
 
 /**
@@ -314,7 +314,6 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
                                             const TacsScalar ddvars[],
                                             const TacsScalar dfdq[],
                                             TacsScalar dfdu[] ){
-                                            /*
   const int vars_per_node = model->getVarsPerNode();
   TacsScalar X[3], Xd[4], J[4];
   TacsScalar Ut[3*MAX_VARS_PER_NODE];
@@ -323,12 +322,13 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
                           X, Xd, J, Ut, Ud, Ux);
 
   // Evaluate the derivative of the function with respect to X, Ut, Ux
-  TacsScalar dfdX[3], dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
+  TacsScalar dfdX[3], dfdXd[9];
+  TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
-                               X, Ut, Ux, dfdq, dfdX, dfdUt, dfdUx);
+                               X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
-
-  basis->addFieldGradientSens(pt, Xpts, vars_per_node, Xd, J, Ud, )*/
+  basis->addFieldGradientSVSens(pt, Xpts, vars_per_node, Xd, J, Ud,
+                                dfdUt, dfdUx, dfdu);
 }
 
 /**
@@ -345,7 +345,21 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
                                              const TacsScalar ddvars[],
                                              const TacsScalar dfdq[],
                                              TacsScalar dfdXpts[] ){
+  const int vars_per_node = model->getVarsPerNode();
+  TacsScalar X[3], Xd[4], J[4];
+  TacsScalar Ut[3*MAX_VARS_PER_NODE];
+  TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+                          X, Xd, J, Ut, Ud, Ux);
 
+  // Evaluate the derivative of the function with respect to X, Ut, Ux
+  TacsScalar dfdX[3], dfdXd[9];
+  TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
+  model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
+                               X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
+
+  basis->addFieldGradientXptSens(pt, Xpts, vars_per_node, Xd, J, Ud,
+                                 0.0, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
 }
 
 /*

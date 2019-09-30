@@ -85,8 +85,9 @@ class TACSLinearElasticity2D : public TACSElementModel {
   */
   int evalPointQuantity( int elemIndex, const int quantityType,
                          const double time, int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Ut[],
-                         const TacsScalar Ux[], TacsScalar *quantity );
+                         const TacsScalar X[], const TacsScalar Xd[],
+                         const TacsScalar Ut[], const TacsScalar Ux[],
+                         TacsScalar *quantity );
 
   /**
      Add the derivative of the quantity w.r.t. the design variables
@@ -94,9 +95,22 @@ class TACSLinearElasticity2D : public TACSElementModel {
   void addPointQuantityDVSens( int elemIndex, const int quantityType,
                                const double time, TacsScalar scale,
                                int n, const double pt[],
-                               const TacsScalar X[], const TacsScalar Ut[],
-                               const TacsScalar Ux[], const TacsScalar dfdq[],
+                               const TacsScalar X[], const TacsScalar Xd[],
+                               const TacsScalar Ut[], const TacsScalar Ux[],
+                               const TacsScalar dfdq[],
                                int dvLen, TacsScalar dfdx[] );
+
+  /**
+     Evaluate the derivatives of the point-wise quantity of interest
+     with respect to X, Ut and Ux.
+  */
+  void evalPointQuantitySens( int elemIndex, const int quantityType,
+                              const double time, int n, const double pt[],
+                              const TacsScalar X[], const TacsScalar Xd[],
+                              const TacsScalar Ut[], const TacsScalar Ux[],
+                              const TacsScalar dfdq[],
+                              TacsScalar dfdX[], TacsScalar dfdXd[],
+                              TacsScalar dfdUt[], TacsScalar dfdUx[] );
 
   /**
     Get the output for a single node in the mesh
@@ -178,8 +192,9 @@ class TACSLinearElasticity3D : public TACSElementModel {
   */
   int evalPointQuantity( int elemIndex, const int quantityType,
                          const double time, int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Ut[],
-                         const TacsScalar Ux[], TacsScalar *quantity );
+                         const TacsScalar X[], const TacsScalar Xd[],
+                         const TacsScalar Ut[], const TacsScalar Ux[],
+                         TacsScalar *quantity );
 
   /**
      Add the derivative of the quantity w.r.t. the design variables
@@ -187,9 +202,22 @@ class TACSLinearElasticity3D : public TACSElementModel {
   void addPointQuantityDVSens( int elemIndex, const int quantityType,
                                const double time, TacsScalar scale,
                                int n, const double pt[],
-                               const TacsScalar X[], const TacsScalar Ut[],
-                               const TacsScalar Ux[], const TacsScalar dfdq[],
+                               const TacsScalar X[], const TacsScalar Xd[],
+                               const TacsScalar Ut[], const TacsScalar Ux[],
+                               const TacsScalar dfdq[],
                                int dvLen, TacsScalar dfdx[] );
+
+  /**
+     Evaluate the derivatives of the point-wise quantity of interest
+     with respect to X, Ut and Ux.
+  */
+  void evalPointQuantitySens( int elemIndex, const int quantityType,
+                              const double time, int n, const double pt[],
+                              const TacsScalar X[], const TacsScalar Xd[],
+                              const TacsScalar Ut[], const TacsScalar Ux[],
+                              const TacsScalar dfdq[],
+                              TacsScalar dfdX[], TacsScalar dfdXd[],
+                              TacsScalar dfdUt[], TacsScalar dfdUx[] );
 
   /**
     Get the output for a single node in the mesh

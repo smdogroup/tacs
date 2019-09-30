@@ -265,24 +265,33 @@ class TACSElementBasis {
                                        TacsScalar Psix[] );
 
   /**
-    Given the derivative of the function wit
-
+    Add contributions to the gradient
   */
-  /*
-  virtual void addFieldGradientSens( const double pt[],
-                                     const TacsScalar Xpts[],
-                                     const int vars_per_node,
-                                     const TacsScalar Xd[],
-                                     const TacsScalar J[],
-                                     const TacsScalar Ud[],
-                                     const TacsScalar dfddetJ,
-                                     const TacsScalar dfdX[],
-                                     const TacsScalar dfdJ[],
-                                     const TacsScalar dfdUt[],
-                                     const TacsScalar dfdUx[],
-                                     TacsScalar dfdu[],
-                                     TacsScalar dfdXpts[] );
-                                     */
+  virtual void addFieldGradientXptSens( const double pt[],
+                                        const TacsScalar Xpts[],
+                                        const int vars_per_node,
+                                        const TacsScalar Xd[],
+                                        const TacsScalar J[],
+                                        const TacsScalar Ud[],
+                                        const TacsScalar dfddetJ,
+                                        const TacsScalar dfdX[],
+                                        const TacsScalar dfdXd[],
+                                        const TacsScalar dfdJ[],
+                                        const TacsScalar dfdUx[],
+                                        TacsScalar dfdXpts[] );
+
+  /**
+    Add contributions to the gradient
+  */
+  virtual void addFieldGradientSVSens( const double pt[],
+                                       const TacsScalar Xpts[],
+                                       const int vars_per_node,
+                                       const TacsScalar Xd[],
+                                       const TacsScalar J[],
+                                       const TacsScalar Ud[],
+                                       const TacsScalar dfdUt[],
+                                       const TacsScalar dfdUx[],
+                                       TacsScalar dfdu[] );
 
   /**
     Add the weak form of the governing equations to the residual
@@ -418,6 +427,30 @@ class TACSElementBasis {
                                           TacsScalar Ud[], TacsScalar Ux[],
                                           TacsScalar Psi[], TacsScalar Psid[],
                                           TacsScalar Psix[] );
+  static void addFieldGradientSVSens( const int num_params,
+                                      const int num_nodes,
+                                      const double N[],
+                                      const double Nxi[],
+                                      const int vars_per_node,
+                                      const TacsScalar J[],
+                                      const TacsScalar dfdUt[],
+                                      const TacsScalar dfdUx[],
+                                      TacsScalar dfdu[] );
+  static void addFieldGradientXptSens( const int num_params,
+                                       const int num_nodes,
+                                       const double N[],
+                                       const double Nxi[],
+                                       const TacsScalar Xpts[],
+                                       const int vars_per_node,
+                                       const TacsScalar Xd[],
+                                       const TacsScalar J[],
+                                       const TacsScalar Ud[],
+                                       const TacsScalar dfddetJ,
+                                       const TacsScalar dfdX[],
+                                       const TacsScalar dfdXd[],
+                                       const TacsScalar dfdJ[],
+                                       const TacsScalar dfdUx[],
+                                       TacsScalar dfdXpts[] );
   static void addWeakFormResidual( const int num_params, const int num_nodes,
                                    const double N[], const double Nxi[],
                                    TacsScalar weight, const TacsScalar J[],
