@@ -685,3 +685,73 @@ int TacsTestAdjResXptProduct( TACSElement *element,
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
+
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to material design variables.
+*/
+int TacsTestElementBasis( TACSElementBasis *basis,
+                          double dh,
+                          int test_print_level,
+                          double test_fail_atol,
+                          double test_fail_rtol ){
+  int nparams = basis->getNumParameters();
+  int nnodes = basis->getNumNodes();
+
+  // Create an array to store the values of the adjoint-residual
+  // product
+  double *result = new double[ nparams*nnodes ];
+  memset(result, 0, 3*nnodes*sizeof(double));
+
+  // Generate a random array of values
+  double *fd = new double[ nparams*nnodes ];
+
+  double pt0[3];
+  TacsGenerateRandomArray(pt0, 3);
+
+  double *N0 = new double[ nnodes ];
+  double *N = new double[ nnodes ];
+  basis->computeBasis(pt0, N0);
+
+  // Compute the finite-difference
+  for ( int i = 0; i < nparams; i++ ){
+    double pt[3];
+    memcpy(pt, pt0, 3*sizeof(double));
+    pt[i] = pt[0] + dh;
+    basis->computeBasis(pt, N);
+
+    for ( int j = 0; j < nnodes; j++ ){
+      fd[nparams*j + i] = (N[j] - N0[j])/dh;
+    }
+  }
+
+#ifndef TACS_USE_COMPLEX
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(result, fd, 3*nnodes, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, 3*nnodes, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the basis functions\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dN/dp",
+                             result, fd, nparams*nnodes);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+#endif // TACS_USE_COMPLEX
+
+  delete [] result;
+  delete [] fd;
+  delete [] N;
+  delete [] N0;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}

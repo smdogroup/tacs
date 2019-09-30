@@ -165,4 +165,14 @@ int TacsTestAdjResXptProduct( TACSElement *element,
                               double test_fail_atol=1e-5,
                               double test_fail_rtol=1e-5 );
 
+/**
+  Test if the basis function derivatives are implemented correct
+
+*/
+int TacsTestElementBasis( TACSElementBasis *basis,
+                          double dh=1e-7,
+                          int test_print_level=2,
+                          double test_fail_atol=1e-5,
+                          double test_fail_rtol=1e-5 );
+
 #endif // TACS_ELEMENT_VERIFICATION_H
