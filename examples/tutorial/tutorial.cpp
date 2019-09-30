@@ -447,7 +447,9 @@ int main( int argc, char * argv[] ){
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
   double ksRho = 100.0;
-  TACSFunction *func = new TACSKSFailure(assembler, ksRho);
+  TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
+  ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
+  TACSFunction *func = ksfunc;
   func->incref();
 
   // Allocate an array for the design variable values
@@ -458,8 +460,6 @@ int main( int argc, char * argv[] ){
   // Evaluate the function
   TacsScalar ksFuncVal = 0.0;
   assembler->evalFunctions(1, &func, &ksFuncVal);
-
-  assembler->testFunction(func, 1e-6);
 
   // Now, compute the total derivative of the function of interest
   TACSBVec *dfdx = assembler->createDesignVec();
@@ -544,7 +544,7 @@ int main( int argc, char * argv[] ){
 #else
     fd = (ksFuncVal1 - ksFuncVal)/dh;
 #endif
-    printf("The %s is %15.8f \n", func->getObjectName(),
+    printf("The %s function value is %15.8f \n", func->getObjectName(),
            TacsRealPart(ksFuncVal));
     printf("The projected derivative is             %20.8e \n",
            TacsRealPart(proj_deriv));

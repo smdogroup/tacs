@@ -351,7 +351,7 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
   computeBasisGradient(pt, N, Nxi);
 
   return computeFieldGradient(num_params, num_nodes, N, Nxi, Xpts,
-                              vars_per_node, vars, dvars, ddvars,
+                              vars_per_node, vars, dvars, ddvars, psi,
                               X, Xd, J, Ut, Ud, Ux, Psi, Psid, Psix);
 }
 
@@ -560,6 +560,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
                                                    const TacsScalar vars[],
                                                    const TacsScalar dvars[],
                                                    const TacsScalar ddvars[],
+                                                   const TacsScalar psi[],
                                                    TacsScalar X[],
                                                    TacsScalar Xd[],
                                                    TacsScalar J[],
@@ -610,21 +611,29 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     n = N, nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
       // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud;
+      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psix;
       for ( int j = 0; j < vars_per_node; j++ ){
         ut[0] += n[0]*vars[0];
         ut[1] += n[0]*dvars[0];
         ut[2] += n[0]*ddvars[0];
+        p[0] += n[0]*psi[0];
 
         ud[0] += nxi[0]*vars[0];
         ud[1] += nxi[1]*vars[0];
         ud[2] += nxi[2]*vars[0];
 
+        pd[0] += nxi[0]*psi[0];
+        pd[1] += nxi[1]*psi[0];
+        pd[2] += nxi[2]*psi[0];
+
         vars++;
         dvars++;
         ddvars++;
+        psi++;
+        p++;
         ut += 3;
         ud += 3;
+        pd += 3;
       }
 
       n++;
@@ -639,6 +648,16 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     for ( int j = 0; j < vars_per_node; j++ ){
       mat3x3MultTrans(J, &Ud[3*j], ux);
       ux += 3;
+    }
+
+    TacsScalar *px = Psix;
+    for ( int j = 0; j < vars_per_node; j++ ){
+      TacsScalar pd[3];
+      pd[0] = px[0];
+      pd[1] = px[1];
+      pd[2] = px[2];
+      mat3x3MultTrans(J, pd, px);
+      px += 3;
     }
 
     return detJ;
@@ -671,20 +690,27 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud;
+      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psix;
       for ( int j = 0; j < vars_per_node; j++ ){
         ut[0] += n[0]*vars[0];
         ut[1] += n[0]*dvars[0];
         ut[2] += n[0]*ddvars[0];
+        p[0] += n[0]*psi[0];
 
         ud[0] += nxi[0]*vars[0];
         ud[1] += nxi[1]*vars[0];
 
+        pd[0] += nxi[0]*psi[0];
+        pd[1] += nxi[1]*psi[0];
+
         vars++;
         dvars++;
         ddvars++;
+        psi++;
+        p++;
         ut += 3;
         ud += 2;
+        pd += 2;
       }
 
       n++;
@@ -699,6 +725,15 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     for ( int j = 0; j < vars_per_node; j++ ){
       mat2x2MultTrans(J, &Ud[2*j], ux);
       ux += 2;
+    }
+
+    TacsScalar *px = Psix;
+    for ( int j = 0; j < vars_per_node; j++ ){
+      TacsScalar pd[2];
+      pd[0] = px[0];
+      pd[1] = px[1];
+      mat2x2MultTrans(J, pd, px);
+      px += 2;
     }
 
     return detJ;
@@ -877,17 +912,17 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
       TacsScalar df[9];
       memcpy(df, dfdJ, 9*sizeof(TacsScalar));
       for ( int k = 0; k < vars_per_node; k++ ){
-        df[0] += dfdUx[3*k]*Ud[3*k];
-        df[1] += dfdUx[3*k]*Ud[3*k+1];
-        df[2] += dfdUx[3*k]*Ud[3*k+2];
+        df[0] += Ud[3*k]*dfdUx[3*k];
+        df[1] += Ud[3*k]*dfdUx[3*k+1];
+        df[2] += Ud[3*k]*dfdUx[3*k+2];
 
-        df[3] += dfdUx[3*k+1]*Ud[3*k];
-        df[4] += dfdUx[3*k+2]*Ud[3*k+1];
-        df[5] += dfdUx[3*k+3]*Ud[3*k+2];
+        df[3] += Ud[3*k+1]*dfdUx[3*k];
+        df[4] += Ud[3*k+1]*dfdUx[3*k+1];
+        df[5] += Ud[3*k+1]*dfdUx[3*k+2];
 
-        df[6] += dfdUx[3*k+1]*Ud[3*k];
-        df[7] += dfdUx[3*k+2]*Ud[3*k+1];
-        df[8] += dfdUx[3*k+3]*Ud[3*k+2];
+        df[6] += Ud[3*k+2]*dfdUx[3*k];
+        df[7] += Ud[3*k+2]*dfdUx[3*k+1];
+        df[8] += Ud[3*k+2]*dfdUx[3*k+2];
       }
 
       TacsScalar t2[9];
@@ -908,17 +943,17 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
       TacsScalar df[9];
       memset(df, 0, 9*sizeof(TacsScalar));
       for ( int k = 0; k < vars_per_node; k++ ){
-        df[0] += dfdUx[3*k]*Ud[3*k];
-        df[1] += dfdUx[3*k]*Ud[3*k+1];
-        df[2] += dfdUx[3*k]*Ud[3*k+2];
+        df[0] += Ud[3*k]*dfdUx[3*k];
+        df[1] += Ud[3*k]*dfdUx[3*k+1];
+        df[2] += Ud[3*k]*dfdUx[3*k+2];
 
-        df[3] += dfdUx[3*k+1]*Ud[3*k];
-        df[4] += dfdUx[3*k+1]*Ud[3*k+1];
-        df[5] += dfdUx[3*k+1]*Ud[3*k+2];
+        df[3] += Ud[3*k+1]*dfdUx[3*k];
+        df[4] += Ud[3*k+1]*dfdUx[3*k+1];
+        df[5] += Ud[3*k+1]*dfdUx[3*k+2];
 
-        df[6] += dfdUx[3*k+2]*Ud[3*k];
-        df[7] += dfdUx[3*k+2]*Ud[3*k+1];
-        df[8] += dfdUx[3*k+2]*Ud[3*k+2];
+        df[6] += Ud[3*k+2]*dfdUx[3*k];
+        df[7] += Ud[3*k+2]*dfdUx[3*k+1];
+        df[8] += Ud[3*k+2]*dfdUx[3*k+2];
       }
 
       TacsScalar t2[9];
@@ -980,11 +1015,11 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
       TacsScalar df[4];
       memcpy(df, dfdJ, 4*sizeof(TacsScalar));
       for ( int k = 0; k < vars_per_node; k++ ){
-        df[0] += dfdUx[2*k]*Ud[2*k];
-        df[1] += dfdUx[2*k]*Ud[2*k+1];
+        df[0] += Ud[2*k]*dfdUx[2*k];
+        df[1] += Ud[2*k]*dfdUx[2*k+1];
 
-        df[2] += dfdUx[2*k+1]*Ud[2*k];
-        df[3] += dfdUx[2*k+1]*Ud[2*k+1];
+        df[2] += Ud[2*k+1]*dfdUx[2*k];
+        df[3] += Ud[2*k+1]*dfdUx[2*k+1];
       }
 
       TacsScalar t2[4];
@@ -1004,11 +1039,11 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
       TacsScalar df[4];
       memset(df, 0, 4*sizeof(TacsScalar));
       for ( int k = 0; k < vars_per_node; k++ ){
-        df[0] += dfdUx[2*k]*Ud[2*k];
-        df[1] += dfdUx[2*k]*Ud[2*k+1];
+        df[0] += Ud[2*k]*dfdUx[2*k];
+        df[1] += Ud[2*k]*dfdUx[2*k+1];
 
-        df[2] += dfdUx[2*k+1]*Ud[2*k];
-        df[3] += dfdUx[2*k+1]*Ud[2*k+1];
+        df[2] += Ud[2*k+1]*dfdUx[2*k];
+        df[3] += Ud[2*k+1]*dfdUx[2*k+1];
       }
 
       TacsScalar t2[4];

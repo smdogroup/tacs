@@ -360,7 +360,6 @@ void TACSKSFailure::addElementDVSens( int elemIndex,
                                       const TacsScalar dvars[],
                                       const TacsScalar ddvars[],
                                       int dvLen, TacsScalar dfdx[] ){
-
   // Get the element basis class
   TACSElementBasis *basis = element->getElementBasis();
 

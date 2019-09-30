@@ -27,7 +27,7 @@
   This is also designed to capture
 */
 
-class TACSElementBasis {
+class TACSElementBasis : public TACSObject {
  public:
   static const int MAX_BASIS_SIZE = 216;
 
@@ -422,6 +422,7 @@ class TACSElementBasis {
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[],
+                                          const TacsScalar psi[],
                                           TacsScalar X[], TacsScalar Xd[],
                                           TacsScalar J[], TacsScalar Ut[],
                                           TacsScalar Ud[], TacsScalar Ux[],

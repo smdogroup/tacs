@@ -201,9 +201,9 @@ TacsScalar TACSPlaneStressConstitutive::failure( int elemIndex,
     properties->evalTangentStiffness2D(C);
 
     TacsScalar s[3];
-    s[0] = t*(C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
-    s[1] = t*(C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
-    s[2] = t*(C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
+    s[0] = (C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
+    s[1] = (C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
+    s[2] = (C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
 
     return properties->vonMisesFailure2D(s);
   }
@@ -222,16 +222,16 @@ TacsScalar TACSPlaneStressConstitutive::failureStrainSens( int elemIndex,
     properties->evalTangentStiffness2D(C);
 
     TacsScalar s[3];
-    s[0] = t*(C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
-    s[1] = t*(C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
-    s[2] = t*(C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
+    s[0] = (C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
+    s[1] = (C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
+    s[2] = (C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
 
     TacsScalar sens[3];
     TacsScalar fail = properties->vonMisesFailure2DStressSens(s, sens);
 
-    dfde[0] = t*(C[0]*sens[0] + C[1]*sens[1] + C[2]*sens[2]);
-    dfde[1] = t*(C[1]*sens[0] + C[3]*sens[1] + C[4]*sens[2]);
-    dfde[2] = t*(C[2]*sens[0] + C[4]*sens[1] + C[5]*sens[2]);
+    dfde[0] = (C[0]*sens[0] + C[1]*sens[1] + C[2]*sens[2]);
+    dfde[1] = (C[1]*sens[0] + C[3]*sens[1] + C[4]*sens[2]);
+    dfde[2] = (C[2]*sens[0] + C[4]*sens[1] + C[5]*sens[2]);
 
     return fail;
   }
@@ -244,25 +244,4 @@ void TACSPlaneStressConstitutive::addFailureDVSens( int elemIndex,
                                                     const TacsScalar X[],
                                                     const TacsScalar e[],
                                                     TacsScalar scale,
-                                                    int dvLen, TacsScalar dvSens[] ){
-
-  if (properties && tNum >= 0){
-    TacsScalar C[6];
-    properties->evalTangentStiffness2D(C);
-
-    TacsScalar s[3], s0[3];
-    s0[0] = (C[0]*e[0] + C[1]*e[1] + C[2]*e[2]);
-    s0[1] = (C[1]*e[0] + C[3]*e[1] + C[4]*e[2]);
-    s0[2] = (C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
-
-    s[0] = t*s0[0];
-    s[1] = t*s0[1];
-    s[2] = t*s0[2];
-
-    TacsScalar sens[3];
-    properties->vonMisesFailure2DStressSens(s, sens);
-
-    // Compute the derivative w.r.t. the design vector
-    dvSens[0] += scale*(sens[0]*s0[0] + sens[1]*s0[1] + sens[2]*s0[2]);
-  }
-}
+                                                    int dvLen, TacsScalar dvSens[] ){}
