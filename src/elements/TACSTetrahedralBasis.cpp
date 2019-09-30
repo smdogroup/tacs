@@ -481,9 +481,12 @@ void TACSQuadraticTetrahedralBasis::computeBasis( const double pt[],
   N[4] = 4*l1*l0;
   N[5] = 4*l1*l2;
   N[6] = 4*l2*l0;
-  N[7] = 4*l3*l1;
-  N[8] = 4*l2*l3;
-  N[9] = 4*l3*l0;
+  //N[7] = 4*l3*l1;
+  N[7] = 4*l3*l0;
+  //N[8] = 4*l2*l3;
+  N[8] = 4*l1*l3;
+  //N[9] = 4*l3*l0;
+  N[9] = 4*l3*l2;
 }
 
 void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
@@ -504,9 +507,12 @@ void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
   N[4] = 4*l1*l0;
   N[5] = 4*l1*l2;
   N[6] = 4*l2*l0;
-  N[7] = 4*l3*l1;
-  N[8] = 4*l2*l3;
-  N[9] = 4*l3*l0;
+  //N[7] = 4*l3*l1;
+  N[7] = 4*l3*l0;
+  //N[8] = 4*l2*l3;
+  N[8] = 4*l1*l3;
+  //N[9] = 4*l3*l0;
+  N[9] = 4*l3*l2;
 
   // Corner node derivatives
   Nxi[0] = 4*pt[0] + 4*pt[1] + 4*pt[2] - 3;
@@ -536,6 +542,19 @@ void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
   Nxi[20] = -4*pt[1];
 
   Nxi[21] = -4*pt[2];
+  Nxi[22] = -4*pt[2];
+  Nxi[23] = -4*(pt[0] + pt[1] + 2*pt[2] - 1);
+
+  Nxi[24] = -4*pt[2];
+  Nxi[25] = 0.0;
+  Nxi[26] = -4*pt[0];
+
+  Nxi[27] = 0.0;
+  Nxi[28] = -4*pt[2];
+  Nxi[29] = -4*pt[1];
+  
+  /*
+  Nxi[21] = -4*pt[2];
   Nxi[22] = 0.0;
   Nxi[23] = -4*pt[0];
 
@@ -546,6 +565,7 @@ void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
   Nxi[27] = -4*pt[2];
   Nxi[28] = -4*pt[2];
   Nxi[29] = -4*(pt[0] + pt[1] + 2*pt[2] - 1);
+  */
 }
 
 /*
