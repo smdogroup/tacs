@@ -18,6 +18,7 @@
 #include "TACSElementModel.h"
 #include "TACSLinearElasticity.h"
 #include "TACSPlaneStressConstitutive.h"
+#include "TACSSolidConstitutive.h"
 
 class TACSLinearThermoelasticity2D : public TACSElementModel {
  public:
@@ -124,6 +125,114 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
 
   // Constant member data
   static const int linear_Jac_pairs[54];
+};
+
+
+class TACSLinearThermoelasticity3D : public TACSElementModel {
+ public:
+  TACSLinearThermoelasticity3D( TACSSolidConstitutive *_con,
+                                ElementStrainType strain_type );
+  ~TACSLinearThermoelasticity3D();
+
+  int getSpatialDim();
+  int getVarsPerNode();
+
+  /**
+    Retrieve the global design variable numbers associated with this element
+  */
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+
+  /**
+    Set the element design variables from the design vector
+  */
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  /**
+    Get the element design variables values
+  */
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  /**
+    Get the lower and upper bounds for the design variable values
+  */
+  void getDesignVarRange( int elemIndex, int dvLen,
+                          TacsScalar lb[], TacsScalar ub[] );
+
+  /**
+    Evaluate the coefficients of the weak form integrand
+  */
+  void evalWeakIntegrand( int elemIndex, const double time, int n,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar Ut[], const TacsScalar Ux[],
+                          TacsScalar DUt[], TacsScalar DUx[] );
+
+  /**
+    Evaluate the derivatives of the weak form coefficients
+  */
+  void evalWeakJacobian( int elemIndex, const double time, int n,
+                         const double pt[], const TacsScalar X[],
+                         const TacsScalar Ut[], const TacsScalar Ux[],
+                         TacsScalar DUt[], TacsScalar DUx[],
+                         int *Jac_nnz, const int *_Jac_pairs[],
+                         TacsScalar Jac[] );
+
+  /**
+     Add the derivative of the product of the adjoint and residual to
+     the design vector
+  */
+  void addWeakAdjProduct( int elemIndex, const double time, int n,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar Ut[], const TacsScalar Ux[],
+                          const TacsScalar Psi[], const TacsScalar Psix[],
+                          TacsScalar scale, int dvLen, TacsScalar dfdx[] );
+
+  /**
+     Evaluate a point-wise quantity of interest at a quadrature point
+  */
+  int evalPointQuantity( int elemIndex, const int quantityType,
+                         const double time, int n, const double pt[],
+                         const TacsScalar X[], const TacsScalar Xd[],
+                         const TacsScalar Ut[], const TacsScalar Ux[],
+                         TacsScalar *quantity );
+
+  /**
+     Add the derivative of the quantity w.r.t. the design variables
+  */
+  void addPointQuantityDVSens( int elemIndex, const int quantityType,
+                               const double time, TacsScalar scale,
+                               int n, const double pt[],
+                               const TacsScalar X[], const TacsScalar Xd[],
+                               const TacsScalar Ut[], const TacsScalar Ux[],
+                               const TacsScalar dfdq[],
+                               int dvLen, TacsScalar dfdx[] );
+
+  /**
+     Evaluate the derivatives of the point-wise quantity of interest
+     with respect to X, Ut and Ux.
+  */
+  void evalPointQuantitySens( int elemIndex, const int quantityType,
+                              const double time, int n, const double pt[],
+                              const TacsScalar X[], const TacsScalar Xd[],
+                              const TacsScalar Ut[], const TacsScalar Ux[],
+                              const TacsScalar dfdq[],
+                              TacsScalar dfdX[], TacsScalar dfdXd[],
+                              TacsScalar dfdUt[], TacsScalar dfdUx[] );
+
+  /**
+    Get the output for a single node in the mesh
+  */
+  void getOutputData( int elemIndex, const double time,
+                      ElementType etype, int write_flag,
+                      const double pt[], const TacsScalar X[],
+                      const TacsScalar Ut[], const TacsScalar Ux[],
+                      int ld_data, TacsScalar *data );
+
+ private:
+  ElementStrainType strain_type;
+  TACSSolidConstitutive *stiff;
+
+  // Constant member data
+  static const int linear_Jac_pairs[206];
 };
 
 #endif // TACS_THERMOELASTICITY_H

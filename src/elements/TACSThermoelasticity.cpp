@@ -167,7 +167,7 @@ void TACSLinearThermoelasticity2D::evalWeakJacobian( int elemIndex,
   DUt[5] = rho*Ut[5]; // v,tt
 
   DUt[6] = 0.0;
-  DUt[7] = c*rho*Ut[7];
+  DUt[7] = c*rho*Ut[7]; // theta,t
   DUt[8] = 0.0;
 
   // Compute the thermal strain components
@@ -488,6 +488,700 @@ void TACSLinearThermoelasticity2D::getOutputData( int elemIndex,
       data[1] = s[1];
       data[2] = s[2];
       data += 3;
+    }
+    if (write_flag & TACS_OUTPUT_EXTRAS){
+      data[0] = stiff->evalFailure(elemIndex, pt, X, e);
+      data[1] = 0.0;
+      data[2] = 0.0;
+      data += 3;
+    }
+  }
+}
+
+
+
+TACSLinearThermoelasticity3D::TACSLinearThermoelasticity3D( TACSSolidConstitutive *_stiff,
+                                                            ElementStrainType _strain_type ){
+  stiff = _stiff;
+  stiff->incref();
+  strain_type = _strain_type;
+}
+
+TACSLinearThermoelasticity3D::~TACSLinearThermoelasticity3D(){
+  stiff->decref();
+}
+
+
+
+// 0;   1;    2;   3;   4;   5;
+// u; u,t; u,tt; u,x; u,y; u,z;
+
+// 6;   7;    8;   9;  10;  11;
+// v; v,t; v,tt; v,x; v,y; v,z;
+
+//12;  13;   14;  15;  16;  17;
+// w; w,t; w,tt; w,x; w,y; w,z;
+
+//18;  19;   20;  21;  22;  23;
+// T; T,t; T,tt; T,x; T,y; T,z;
+
+const int TACSLinearThermoelasticity3D::linear_Jac_pairs[] =
+  {2, 2, 8, 8, 14, 14, 19, 19,
+   3, 3, 3, 4, 3, 5, 3, 9, 3, 10, 3, 11, 3, 15, 3, 16, 3, 17, 3, 18,
+   4, 3, 4, 4, 4, 5, 4, 9, 4, 10, 4, 11, 4, 15, 4, 16, 4, 17, 4, 18,
+   5, 3, 5, 4, 5, 5, 5, 9, 5, 10, 5, 11, 5, 15, 5, 16, 5, 17, 5, 18,
+   9, 3, 9, 4, 9, 5, 9, 9, 9, 10, 9, 11, 9, 15, 9, 16, 9, 17, 9, 18,
+   10, 3, 10, 4, 10, 5, 10, 9, 10, 10, 10, 11, 10, 15, 10, 16, 10, 17, 10, 18,
+   11, 3, 11, 4, 11, 5, 11, 9, 11, 10, 11, 11, 11, 15, 11, 16, 11, 17, 11, 18,
+   15, 3, 15, 4, 15, 5, 15, 9, 15, 10, 15, 11, 15, 15, 15, 16, 15, 17, 15, 18,
+   16, 3, 16, 4, 16, 5, 16, 9, 16, 10, 16, 11, 16, 15, 16, 16, 16, 17, 16, 18,
+   17, 3, 17, 4, 17, 5, 17, 9, 17, 10, 17, 11, 17, 15, 17, 16, 17, 17, 17, 18,
+   20, 20, 20, 21, 20, 22,
+   21, 20, 21, 21, 21, 22,
+   22, 20, 22, 21, 22, 22 };
+
+int TACSLinearThermoelasticity3D::getSpatialDim(){
+  return 3;
+}
+
+int TACSLinearThermoelasticity3D::getVarsPerNode(){
+  return 4;
+}
+
+/*
+  Retrieve the global design variable numbers associated with this element
+*/
+int TACSLinearThermoelasticity3D::getDesignVarNums( int elemIndex, int dvLen,
+                                                    int dvNums[] ){
+  return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
+}
+
+/*
+  Set the element design variables from the design vector
+*/
+void TACSLinearThermoelasticity3D::setDesignVars( int elemIndex, int dvLen,
+                                                  const TacsScalar dvs[] ){
+  stiff->setDesignVars(elemIndex, dvLen, dvs);
+}
+
+/*
+  Get the element design variables values
+*/
+void TACSLinearThermoelasticity3D::getDesignVars( int elemIndex, int dvLen,
+                                                  TacsScalar dvs[] ){
+  stiff->getDesignVars(elemIndex, dvLen, dvs);
+}
+
+/*
+  Get the lower and upper bounds for the design variable values
+*/
+void TACSLinearThermoelasticity3D::getDesignVarRange( int elemIndex, int dvLen,
+                                                      TacsScalar lb[],
+                                                      TacsScalar ub[] ){
+  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+}
+
+void TACSLinearThermoelasticity3D::evalWeakIntegrand( int elemIndex,
+                                                      const double time,
+                                                      int n,
+                                                      const double pt[],
+                                                      const TacsScalar X[],
+                                                      const TacsScalar Ut[],
+                                                      const TacsScalar Ux[],
+                                                      TacsScalar DUt[],
+                                                      TacsScalar DUx[] ){
+  // Evaluate the density and specific heat
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+
+  DUt[0] = 0.0;
+  DUt[1] = 0.0;
+  DUt[2] = rho*Ut[2];
+
+  DUt[3] = 0.0;
+  DUt[4] = 0.0;
+  DUt[5] = rho*Ut[5];
+
+  DUt[6] = 0.0;
+  DUt[7] = 0.0;
+  DUt[8] = rho*Ut[8];
+
+  DUt[9] = 0.0;
+  DUt[10] = c*rho*Ut[10];
+  DUt[11] = 0.0;
+
+  // Compute the thermal strain components
+  TacsScalar theta = Ut[9]; // The temperature value
+  TacsScalar et[6];
+  stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+
+  // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
+  TacsScalar e[6];
+  if (strain_type == TACS_LINEAR_STRAIN){
+    e[0] = Ux[0] - et[0];
+    e[1] = Ux[4] - et[1];
+    e[2] = Ux[8] - et[2];
+
+    e[3] = Ux[5] + Ux[7] - et[3];
+    e[4] = Ux[2] + Ux[6] - et[4];
+    e[5] = Ux[1] + Ux[3] - et[5];
+  }
+  else {
+    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
+    e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
+    e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
+
+    e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
+    e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
+    e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
+  }
+
+  // Evaluate the stress
+  TacsScalar s[6];
+  stiff->evalStress(elemIndex, pt, X, e, s);
+
+  DUx[0] = s[0];
+  DUx[1] = s[5];
+  DUx[2] = s[4];
+
+  DUx[3] = s[5];
+  DUx[4] = s[1];
+  DUx[5] = s[3];
+
+  DUx[6] = s[4];
+  DUx[7] = s[3];
+  DUx[8] = s[2];
+
+  // Compute the thermal flux from the thermal gradient
+  TacsScalar grad[3], flux[3];
+  grad[0] = Ux[9];
+  grad[1] = Ux[10];
+  grad[2] = Ux[11];
+
+  // Add the flux components to the heat transfer portion
+  // of the governing equations
+  stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+  DUx[9] = flux[0];
+  DUx[10] = flux[1];
+  DUx[11] = flux[2];
+}
+
+void TACSLinearThermoelasticity3D::evalWeakJacobian( int elemIndex,
+                                                     const double time,
+                                                     int n,
+                                                     const double pt[],
+                                                     const TacsScalar X[],
+                                                     const TacsScalar Ut[],
+                                                     const TacsScalar Ux[],
+                                                     TacsScalar DUt[],
+                                                     TacsScalar DUx[],
+                                                     int *Jac_nnz,
+                                                     const int *Jac_pairs[],
+                                                     TacsScalar Jac[] ){
+  // Evaluate the density and specific heat
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+
+  DUt[0] = 0.0;
+  DUt[1] = 0.0;
+  DUt[2] = rho*Ut[2];
+
+  DUt[3] = 0.0;
+  DUt[4] = 0.0;
+  DUt[5] = rho*Ut[5];
+
+  DUt[6] = 0.0;
+  DUt[7] = 0.0;
+  DUt[8] = rho*Ut[8];
+
+  DUt[9] = 0.0;
+  DUt[10] = c*rho*Ut[10];
+  DUt[11] = 0.0;
+
+  // Compute the thermal strain components
+  TacsScalar theta = Ut[9]; // The temperature value
+  TacsScalar et[6];
+  stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+
+  // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
+  TacsScalar e[6];
+  if (strain_type == TACS_LINEAR_STRAIN){
+    e[0] = Ux[0] - et[0];
+    e[1] = Ux[4] - et[1];
+    e[2] = Ux[8] - et[2];
+
+    e[3] = Ux[5] + Ux[7] - et[3];
+    e[4] = Ux[2] + Ux[6] - et[4];
+    e[5] = Ux[1] + Ux[3] - et[5];
+  }
+  else {
+    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
+    e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
+    e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
+
+    e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
+    e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
+    e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
+  }
+
+  // Evaluate the stress
+  TacsScalar s[6];
+  stiff->evalStress(elemIndex, pt, X, e, s);
+
+  DUx[0] = s[0];
+  DUx[1] = s[5];
+  DUx[2] = s[4];
+
+  DUx[3] = s[5];
+  DUx[4] = s[1];
+  DUx[5] = s[3];
+
+  DUx[6] = s[4];
+  DUx[7] = s[3];
+  DUx[8] = s[2];
+
+  // Compute the thermal flux from the thermal gradient
+  TacsScalar grad[3], flux[3];
+  grad[0] = Ux[9];
+  grad[1] = Ux[10];
+  grad[2] = Ux[11];
+
+  // Add the flux components to the heat transfer portion
+  // of the governing equations
+  stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+  DUx[9] = flux[0];
+  DUx[10] = flux[1];
+  DUx[11] = flux[2];
+
+  // Set the non-zero terms in the Jacobian
+  *Jac_nnz = 103;
+  *Jac_pairs = linear_Jac_pairs;
+
+  // Set the time-dependent terms
+  Jac[0] = rho;
+  Jac[1] = rho;
+  Jac[2] = rho;
+  Jac[3] = c*rho;
+
+  // Compute the unit strain
+  TacsScalar C[21], Kc[6];
+  stiff->evalThermalStrain(elemIndex, pt, X, 1.0, et);
+  stiff->evalTangentStiffness(elemIndex, pt, X, C);
+  stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
+
+  // Compute the thermal stress
+  s[0] = C[0]*et[0] + C[1]*et[1]  + C[2]*et[2]  + C[3]*et[3]  + C[4]*et[4]  + C[5]*et[5];
+  s[1] = C[1]*et[0] + C[6]*et[1]  + C[7]*et[2]  + C[8]*et[3]  + C[9]*et[4]  + C[10]*et[5];
+  s[2] = C[2]*et[0] + C[7]*et[1]  + C[11]*et[2] + C[12]*et[3] + C[13]*et[4] + C[14]*et[5];
+  s[3] = C[3]*et[0] + C[8]*et[1]  + C[12]*et[2] + C[15]*et[3] + C[16]*et[4] + C[17]*et[5];
+  s[4] = C[4]*et[0] + C[9]*et[1]  + C[13]*et[2] + C[16]*et[3] + C[18]*et[4] + C[19]*et[5];
+  s[5] = C[5]*et[0] + C[10]*et[1] + C[14]*et[2] + C[17]*et[3] + C[19]*et[4] + C[20]*et[5];
+
+  // Add the terms for linear thermoelasticity
+  if (strain_type == TACS_LINEAR_STRAIN){
+    // s[0]
+    Jac[4] = C[0];
+    Jac[5] = C[5];
+    Jac[6] = C[4];
+    Jac[7] = C[5];
+    Jac[8] = C[1];
+    Jac[9] = C[3];
+    Jac[10] = C[4];
+    Jac[11] = C[3];
+    Jac[12] = C[2];
+    Jac[13] = -s[0];
+
+    // s[5]
+    Jac[14] = C[5];
+    Jac[15] = C[20];
+    Jac[16] = C[19];
+    Jac[17] = C[20];
+    Jac[18] = C[10];
+    Jac[19] = C[17];
+    Jac[20] = C[19];
+    Jac[21] = C[17];
+    Jac[22] = C[14];
+    Jac[23] = -s[5];
+
+    // s[4]
+    Jac[24] = C[4];
+    Jac[25] = C[19];
+    Jac[26] = C[18];
+    Jac[27] = C[19];
+    Jac[28] = C[9];
+    Jac[29] = C[16];
+    Jac[30] = C[18];
+    Jac[31] = C[16];
+    Jac[32] = C[13];
+    Jac[33] = -s[4];
+
+    // s[5]
+    Jac[34] = C[5];
+    Jac[35] = C[20];
+    Jac[36] = C[19];
+    Jac[37] = C[20];
+    Jac[38] = C[10];
+    Jac[39] = C[17];
+    Jac[40] = C[19];
+    Jac[41] = C[17];
+    Jac[42] = C[14];
+    Jac[43] = -s[5];
+
+    // s[1]
+    Jac[44] = C[1];
+    Jac[45] = C[10];
+    Jac[46] = C[9];
+    Jac[47] = C[10];
+    Jac[48] = C[6];
+    Jac[49] = C[8];
+    Jac[50] = C[9];
+    Jac[51] = C[8];
+    Jac[52] = C[7];
+    Jac[53] = -s[1];
+
+    // s[3]
+    Jac[54] = C[3];
+    Jac[55] = C[17];
+    Jac[56] = C[16];
+    Jac[57] = C[17];
+    Jac[58] = C[8];
+    Jac[59] = C[15];
+    Jac[60] = C[16];
+    Jac[61] = C[15];
+    Jac[62] = C[12];
+    Jac[63] = -s[3];
+
+    // s[4]
+    Jac[64] = C[4];
+    Jac[65] = C[19];
+    Jac[66] = C[18];
+    Jac[67] = C[19];
+    Jac[68] = C[9];
+    Jac[69] = C[16];
+    Jac[70] = C[18];
+    Jac[71] = C[16];
+    Jac[72] = C[13];
+    Jac[73] = -s[4];
+
+    // s[3]
+    Jac[74] = C[3];
+    Jac[75] = C[17];
+    Jac[76] = C[16];
+    Jac[77] = C[17];
+    Jac[78] = C[8];
+    Jac[79] = C[15];
+    Jac[80] = C[16];
+    Jac[81] = C[15];
+    Jac[82] = C[12];
+    Jac[83] = -s[3];
+
+    // s[2]
+    Jac[84] = C[2];
+    Jac[85] = C[14];
+    Jac[86] = C[13];
+    Jac[87] = C[14];
+    Jac[88] = C[7];
+    Jac[89] = C[12];
+    Jac[90] = C[13];
+    Jac[91] = C[12];
+    Jac[92] = C[11];
+    Jac[93] = -s[2];
+  }
+
+  Jac[94] = Kc[0];
+  Jac[95] = Kc[1];
+  Jac[96] = Kc[2];
+
+  Jac[97] = Kc[1];
+  Jac[98] = Kc[3];
+  Jac[99] = Kc[4];
+
+  Jac[100] = Kc[2];
+  Jac[101] = Kc[4];
+  Jac[102] = Kc[5];
+}
+
+/*
+  Add the product of the adjoint vector times the weak form of the adjoint
+  equations to the design variable components
+*/
+void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
+                                                      const double time,
+                                                      int n,
+                                                      const double pt[],
+                                                      const TacsScalar X[],
+                                                      const TacsScalar Ut[],
+                                                      const TacsScalar Ux[],
+                                                      const TacsScalar Psi[],
+                                                      const TacsScalar Psix[],
+                                                      TacsScalar scale,
+                                                      int dvLen,
+                                                      TacsScalar *fdvSens ){
+  // Evaluate the density
+  TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1] + Ut[8]*Psi[2]);
+  stiff->addDensityDVSens(elemIndex, pt, X, rho_coef, dvLen, fdvSens);
+
+  TacsScalar e[6];
+  if (strain_type == TACS_LINEAR_STRAIN){
+    e[0] = Ux[0];
+    e[1] = Ux[4];
+    e[2] = Ux[8];
+
+    e[3] = Ux[5] + Ux[7];
+    e[4] = Ux[2] + Ux[6];
+    e[5] = Ux[1] + Ux[3];
+  }
+  else {
+    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+    e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+    e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+    e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+    e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+    e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+  }
+
+  TacsScalar phi[6];
+  phi[0] = Psix[0];
+  phi[1] = Psix[4];
+  phi[2] = Psix[8];
+  phi[3] = Psix[5] + Psix[7];
+  phi[4] = Psix[2] + Psix[6];
+  phi[5] = Psix[1] + Psix[3];
+
+  stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, fdvSens);
+}
+
+/*
+  Evaluate a specified pointwise quantity of interest
+*/
+int TACSLinearThermoelasticity3D::evalPointQuantity( int elemIndex,
+                                                     const int quantityType,
+                                                     const double time,
+                                                     int n, const double pt[],
+                                                     const TacsScalar X[],
+                                                     const TacsScalar Xd[],
+                                                     const TacsScalar Ut[],
+                                                     const TacsScalar Ux[],
+                                                     TacsScalar *quantity ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    *quantity = stiff->evalFailure(elemIndex, pt, X, e);
+
+    return 1;
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    *quantity = stiff->evalDensity(elemIndex, pt, X);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+/*
+  Add the derivative of the point-wise quantity of interest w.r.t.
+  design variables to the design vector
+*/
+void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
+                                                           const int quantityType,
+                                                           const double time,
+                                                           TacsScalar scale,
+                                                           int n, const double pt[],
+                                                           const TacsScalar X[],
+                                                           const TacsScalar Xd[],
+                                                           const TacsScalar Ut[],
+                                                           const TacsScalar Ux[],
+                                                           const TacsScalar dfdq[],
+                                                           int dvLen,
+                                                           TacsScalar dfdx[] ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    stiff->addFailureDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                            dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    stiff->addDensityDVSens(elemIndex, pt, X, scale*dfdq[0], dvLen, dfdx);
+  }
+}
+
+/*
+   Evaluate the derivatives of the point-wise quantity of interest
+   with respect to X, Ut and Ux.
+*/
+void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
+                                                          const int quantityType,
+                                                          const double time,
+                                                          int n, const double pt[],
+                                                          const TacsScalar X[],
+                                                          const TacsScalar Xd[],
+                                                          const TacsScalar Ut[],
+                                                          const TacsScalar Ux[],
+                                                          const TacsScalar dfdq[],
+                                                          TacsScalar dfdX[],
+                                                          TacsScalar dfdXd[],
+                                                          TacsScalar dfdUt[],
+                                                          TacsScalar dfdUx[] ){
+  dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+
+  dfdXd[0] = dfdXd[1] = dfdXd[2] = 0.0;
+  dfdXd[3] = dfdXd[4] = dfdXd[5] = 0.0;
+  dfdXd[6] = dfdXd[7] = dfdXd[8] = 0.0;
+
+  dfdUt[0] = dfdUt[1] = dfdUt[2] = 0.0;
+  dfdUt[3] = dfdUt[4] = dfdUt[5] = 0.0;
+  dfdUt[6] = dfdUt[7] = dfdUt[8] = 0.0;
+
+  dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
+  dfdUx[3] = dfdUx[4] = dfdUx[5] = 0.0;
+  dfdUx[6] = dfdUx[7] = dfdUx[8] = 0.0;
+
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    TacsScalar sens[6];
+    stiff->evalFailureStrainSens(elemIndex, pt, X, e, sens);
+
+    if (strain_type == TACS_LINEAR_STRAIN){
+      dfdUx[0] = dfdq[0]*sens[0];
+      dfdUx[4] = dfdq[0]*sens[1];
+      dfdUx[8] = dfdq[0]*sens[2];
+
+      dfdUx[5] = dfdq[0]*sens[3];
+      dfdUx[7] = dfdq[0]*sens[3];
+
+      dfdUx[2] = dfdq[0]*sens[4];
+      dfdUx[6] = dfdq[0]*sens[4];
+
+      dfdUx[1] = dfdq[0]*sens[5];
+      dfdUx[3] = dfdq[0]*sens[5];
+    }
+  }
+}
+
+/*
+  Get the data for visualization at a given point
+*/
+void TACSLinearThermoelasticity3D::getOutputData( int elemIndex,
+                                                  const double time,
+                                                  ElementType etype,
+                                                  int write_flag,
+                                                  const double pt[],
+                                                  const TacsScalar X[],
+                                                  const TacsScalar Ut[],
+                                                  const TacsScalar Ux[],
+                                                  int ld_data,
+                                                  TacsScalar *data ){
+  if (etype == TACS_SOLID_ELEMENT){
+    if (write_flag & TACS_OUTPUT_NODES){
+      // doesn't this depend whether it's linear/quadratic/etc?
+      data[0] = X[0];
+      data[1] = X[1];
+      data[2] = X[2];
+      data += 3;
+    }
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+      data[0] = Ut[0];
+      data[1] = Ut[3];
+      data[3] = Ut[6];
+      data += 3;
+    }
+
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    if (write_flag & TACS_OUTPUT_STRAINS){
+      data[0] = e[0];
+      data[1] = e[1];
+      data[2] = e[2];
+      data[3] = e[3];
+      data[4] = e[4];
+      data[5] = e[5];
+      data += 6;
+    }
+    if (write_flag & TACS_OUTPUT_STRESSES){
+      TacsScalar s[6];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+      data[0] = s[0];
+      data[1] = s[1];
+      data[2] = s[2];
+      data[3] = s[3];
+      data[4] = s[4];
+      data[5] = s[5];
+      data += 6;
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){
       data[0] = stiff->evalFailure(elemIndex, pt, X, e);

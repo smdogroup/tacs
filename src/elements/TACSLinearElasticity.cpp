@@ -796,7 +796,7 @@ void TACSLinearElasticity3D::addWeakAdjProduct( int elemIndex,
                                                 int dvLen,
                                                 TacsScalar *fdvSens ){
   // Evaluate the density
-  TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1] + Ut[8]*Psi[8]);
+  TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1] + Ut[8]*Psi[2]);
   stiff->addDensityDVSens(elemIndex, pt, X, rho_coef, dvLen, fdvSens);
 
   TacsScalar e[6];

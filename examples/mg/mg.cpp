@@ -114,7 +114,7 @@ void createTACS( MPI_Comm comm, int nx, int ny,
 
   // Set the one element
   TACSElement *elem = linear_element;
-  creator->setElements(&elem, 1);
+  creator->setElements(1, &elem);
 
   creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
                              TACSAssembler::GAUSS_SEIDEL);

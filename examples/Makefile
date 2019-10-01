@@ -9,19 +9,20 @@ include ../TACS_Common.mk
 
 EXAMPLE_SUBDIRS = \
 	annulus \
-	beam \
-	benchmark \
-	crm \
-	cylinder \
-	grad_verify \
 	mg \
-	plate \
-	profile_elements \
-	rigid \
-	stiffened_panel \
         tetrahedral \
 	triangle \
 	tutorial
+
+#	plate \
+#	profile_elements \
+#	rigid \
+#	stiffened_panel \
+#	beam \
+#	benchmark \
+#	crm \
+#	cylinder \
+#	grad_verify \
 
 default:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \

@@ -129,8 +129,8 @@ static int read_buffer_line( char *line, size_t line_len,
   list[arg[k]] = var
 */
 static int find_index_arg_sorted( int var, int size,
-                                  const int * list,
-                                  const int * args ){
+                                  const int *list,
+                                  const int *args ){
   // Binary search an array to find k such that list[k] = var,
   // where the array list[args[k]] is sorted in ascending
   // order
@@ -181,7 +181,7 @@ static int find_index_arg_sorted( int var, int size,
 /*
   Convert a Nastran-style number with an exponent to a double.
 */
-static double bdf_atof( char * str ){
+static double bdf_atof( char *str ){
   // First, check if the string contains an E/e or D/d - if so, convert it
   int slen = strlen(str);
   for ( int i = 0; i < slen; i++ ){
@@ -436,8 +436,11 @@ TACSMeshLoader::TACSMeshLoader( MPI_Comm _comm ){
   // Initialize everything to zero
   num_nodes = num_elements = 0;
   num_bcs = 0;
-  node_nums = NULL;
-  Xpts_unsorted = NULL;
+  file_node_nums = NULL;
+  file_elem_nums = NULL;
+  node_arg_sort_list = NULL;
+  elem_arg_sort_list = NULL;
+
   elem_node_conn = elem_node_ptr = NULL;
   elem_component = NULL;
   Xpts = NULL;
@@ -477,8 +480,10 @@ TACSMeshLoader::~TACSMeshLoader(){
   }
   if (component_elems){ delete [] component_elems; }
   if (component_descript){ delete [] component_descript; }
-  if (Xpts_unsorted){ delete [] Xpts_unsorted;}
-  if (node_nums) {delete [] node_nums;}
+  if (file_node_nums){ delete [] file_node_nums; }
+  if (file_elem_nums){ delete [] file_elem_nums; }
+  if (node_arg_sort_list){ delete [] node_arg_sort_list; }
+  if (elem_arg_sort_list){ delete [] elem_arg_sort_list; }
 
   // Free the creator object
   if (creator){ creator->decref(); }
@@ -555,7 +560,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     num_bcs = 0;
 
     // The size of the connectivity arrays
-    int elem_con_size = 0;
+    int elem_conn_size = 0;
     int bc_vars_size = 0;
 
     // Each line can only be 80 characters long
@@ -685,7 +690,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
               break;
             }
 
-            elem_con_size += num_conn;
+            elem_conn_size += num_conn;
             num_elements++;
             if (num_conn > max_element_conn){
               max_element_conn = num_conn;
@@ -708,17 +713,17 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     int *temp_nodes = new int[ max_element_conn ];
 
     // Allocate space for everything
-    node_nums = new int[ num_nodes ];
-    Xpts_unsorted = new double[ 3*num_nodes ];
+    file_node_nums = new int[ num_nodes ];
+    double *file_Xpts = new double[ 3*num_nodes ];
 
     // Element type information
-    int *elem_nums = new int[ num_elements ];
-    int *elem_comp = new int[ num_elements ];
+    file_elem_nums = new int[ num_elements ];
+    int *file_comp = new int[ num_elements ];
 
     // The connectivity information
-    int *elem_con = new int[ elem_con_size ];
-    int *elem_con_ptr = new int[ num_elements+1 ];
-    elem_con_ptr[0] = 0;
+    int *file_conn = new int[ elem_conn_size ];
+    int *file_conn_ptr = new int[ num_elements+1 ];
+    file_conn_ptr[0] = 0;
 
     // Boundary condition information
     bc_nodes = new int[ num_bcs ];
@@ -737,7 +742,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     num_nodes = 0;
     num_elements = 0;
     num_bcs = 0;
-    elem_con_size = 0;
+    elem_conn_size = 0;
     bc_vars_size = 0;
 
     // Rewind to the beginning of the bulk section and allocate everything
@@ -786,20 +791,20 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
           int node;
           double x, y, z;
           parse_node_long_field(line, line2, &node, &x, &y, &z);
-          node_nums[num_nodes] = node-1; // Get the C ordering
-          Xpts_unsorted[3*num_nodes]   = x;
-          Xpts_unsorted[3*num_nodes+1] = y;
-          Xpts_unsorted[3*num_nodes+2] = z;
+          file_node_nums[num_nodes] = node-1; // Get the C ordering
+          file_Xpts[3*num_nodes]   = x;
+          file_Xpts[3*num_nodes+1] = y;
+          file_Xpts[3*num_nodes+2] = z;
           num_nodes++;
         }
         else if (strncmp(line, "GRID", 4) == 0){
           int node;
           double x, y, z;
           parse_node_short_free_field(line, &node, &x, &y, &z);
-          node_nums[num_nodes] = node-1; // Get the C ordering
-          Xpts_unsorted[3*num_nodes]   = x;
-          Xpts_unsorted[3*num_nodes+1] = y;
-          Xpts_unsorted[3*num_nodes+2] = z;
+          file_node_nums[num_nodes] = node-1; // Get the C ordering
+          file_Xpts[3*num_nodes]   = x;
+          file_Xpts[3*num_nodes+1] = y;
+          file_Xpts[3*num_nodes+2] = z;
           num_nodes++;
         }
         else if (strncmp(line, "SPC", 3) == 0){
@@ -870,45 +875,45 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
 
             if (strncmp(line, "CQUAD4", 6) == 0 ||
                 strncmp(line, "CQUADR", 6) == 0){
-              elem_con[elem_con_size]   = temp_nodes[0]-1;
-              elem_con[elem_con_size+1] = temp_nodes[1]-1;
-              elem_con[elem_con_size+2] = temp_nodes[3]-1;
-              elem_con[elem_con_size+3] = temp_nodes[2]-1;
+              file_conn[elem_conn_size]   = temp_nodes[0]-1;
+              file_conn[elem_conn_size+1] = temp_nodes[1]-1;
+              file_conn[elem_conn_size+2] = temp_nodes[3]-1;
+              file_conn[elem_conn_size+3] = temp_nodes[2]-1;
             }
             else if (strncmp(line, "CQUAD9", 6) == 0 ||
                      strncmp(line, "CQUAD", 5) == 0){
-              elem_con[elem_con_size] = temp_nodes[0]-1;
-              elem_con[elem_con_size+1] = temp_nodes[4]-1;
-              elem_con[elem_con_size+2] = temp_nodes[1]-1;
-              elem_con[elem_con_size+3] = temp_nodes[7]-1;
-              elem_con[elem_con_size+4] = temp_nodes[8]-1;
-              elem_con[elem_con_size+5] = temp_nodes[5]-1;
-              elem_con[elem_con_size+6] = temp_nodes[3]-1;
-              elem_con[elem_con_size+7] = temp_nodes[6]-1;
-              elem_con[elem_con_size+8] = temp_nodes[2]-1;
+              file_conn[elem_conn_size] = temp_nodes[0]-1;
+              file_conn[elem_conn_size+1] = temp_nodes[4]-1;
+              file_conn[elem_conn_size+2] = temp_nodes[1]-1;
+              file_conn[elem_conn_size+3] = temp_nodes[7]-1;
+              file_conn[elem_conn_size+4] = temp_nodes[8]-1;
+              file_conn[elem_conn_size+5] = temp_nodes[5]-1;
+              file_conn[elem_conn_size+6] = temp_nodes[3]-1;
+              file_conn[elem_conn_size+7] = temp_nodes[6]-1;
+              file_conn[elem_conn_size+8] = temp_nodes[2]-1;
             }
             else if (strncmp(line, "CHEXA", 5) == 0){
-              elem_con[elem_con_size]   = temp_nodes[0]-1;
-              elem_con[elem_con_size+1] = temp_nodes[1]-1;
-              elem_con[elem_con_size+2] = temp_nodes[3]-1;
-              elem_con[elem_con_size+3] = temp_nodes[2]-1;
-              elem_con[elem_con_size+4] = temp_nodes[4]-1;
-              elem_con[elem_con_size+5] = temp_nodes[5]-1;
-              elem_con[elem_con_size+6] = temp_nodes[7]-1;
-              elem_con[elem_con_size+7] = temp_nodes[6]-1;
+              file_conn[elem_conn_size]   = temp_nodes[0]-1;
+              file_conn[elem_conn_size+1] = temp_nodes[1]-1;
+              file_conn[elem_conn_size+2] = temp_nodes[3]-1;
+              file_conn[elem_conn_size+3] = temp_nodes[2]-1;
+              file_conn[elem_conn_size+4] = temp_nodes[4]-1;
+              file_conn[elem_conn_size+5] = temp_nodes[5]-1;
+              file_conn[elem_conn_size+6] = temp_nodes[7]-1;
+              file_conn[elem_conn_size+7] = temp_nodes[6]-1;
             }
             else {
               for ( int k = 0; k < num_conn; k++ ){
-                elem_con[elem_con_size+k] = temp_nodes[k]-1;
+                file_conn[elem_conn_size+k] = temp_nodes[k]-1;
               }
             }
 
             // Set the node numbers
-            elem_nums[num_elements] = elem_num-1;
-            elem_comp[num_elements] = component_num-1;
+            file_elem_nums[num_elements] = elem_num-1;
+            file_comp[num_elements] = component_num-1;
 
-            elem_con_size += num_conn;
-            elem_con_ptr[num_elements+1] = elem_con_size;
+            elem_conn_size += num_conn;
+            file_conn_ptr[num_elements+1] = elem_conn_size;
             num_elements++;
 
             if (component_elems[9*(component_num-1)] == '\0'){
@@ -935,22 +940,18 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     delete [] temp_nodes;
 
     if (fail){
-      delete [] elem_nums;
-      delete [] elem_comp;
-      delete [] elem_con;
-      delete [] elem_con_ptr;
       MPI_Abort(comm, fail);
       return fail;
     }
 
     // Arg sort the list of nodes
-    int *node_args = new int[ num_nodes ];
+    node_arg_sort_list = new int[ num_nodes ];
     for ( int k = 0; k < num_nodes; k++ ){
-      node_args[k] = k;
+      node_arg_sort_list[k] = k;
     }
 
-    arg_sort_list = node_nums;
-    qsort(node_args, num_nodes, sizeof(int), compare_arg_sort);
+    arg_sort_list = file_node_nums;
+    qsort(node_arg_sort_list, num_nodes, sizeof(int), compare_arg_sort);
     arg_sort_list = NULL;
 
     // Arg sort the list of elements
@@ -959,7 +960,7 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
       elem_args[k] = k;
     }
 
-    arg_sort_list = elem_nums;
+    arg_sort_list = file_elem_nums;
     qsort(elem_args, num_elements, sizeof(int), compare_arg_sort);
     arg_sort_list = NULL;
 
@@ -969,27 +970,30 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     Xpts = new TacsScalar[3*num_nodes];
 
     for ( int k = 0; k < num_nodes; k++ ){
-      int n = node_args[k];
+      int n = node_arg_sort_list[k];
       for ( int j = 0; j < 3; j++ ){
-        Xpts[3*k+j] = Xpts_unsorted[3*n+j];
+        Xpts[3*k+j] = file_Xpts[3*n+j];
       }
     }
+    delete [] file_Xpts;
 
     // Read in the connectivity array and store the information
-    elem_node_conn = new int[ elem_con_size ];
+    elem_node_conn = new int[ elem_conn_size ];
     elem_node_ptr = new int[ num_elements+1 ];
     elem_component = new int[ num_elements ];
 
+    // Now, loop over all of the elements and all of the connectivity
+    // list and find the
     elem_node_ptr[0] = 0;
     for ( int k = 0, n = 0; k < num_elements; k++ ){
-      int e = elem_args[k];
+      int e = elem_arg_sort_list[k];
 
-      for ( int j = elem_con_ptr[e]; j < elem_con_ptr[e+1]; j++, n++ ){
-        int node_num = elem_con[j];
+      for ( int j = file_conn_ptr[e]; j < file_conn_ptr[e+1]; j++, n++ ){
+        int node_num = file_conn[j];
 
         // Find node_num in the list
         int node = find_index_arg_sorted(node_num, num_nodes,
-                                         node_nums, node_args);
+                                         file_node_nums, node_arg_sort_list);
         if (node < 0){
           elem_node_conn[n] = -1;
           fail = 1;
@@ -999,14 +1003,14 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
         }
       }
 
-      elem_component[k] = elem_comp[e];
+      elem_component[k] = file_comp[e];
       elem_node_ptr[k+1] = n;
     }
 
     // Find the boundary condition nodes
     for ( int k = 0; k < num_bcs; k++ ){
       int node = find_index_arg_sorted(bc_nodes[k], num_nodes,
-                                       node_nums, node_args);
+                                       file_node_nums, node_arg_sort_list);
       if (node < 0){
         fail = 1;
         bc_nodes[k] = -1;
@@ -1017,12 +1021,9 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     }
 
     // Free data that has been allocated locally
-    delete [] elem_nums;
-    delete [] elem_comp;
-    delete [] elem_con;
-    delete [] elem_con_ptr;
-    delete [] elem_args;
-    delete [] node_args;
+    delete [] file_comp;
+    delete [] file_conn;
+    delete [] file_conn_ptr;
   }
 
   // Distribute the component numbers and descritpions
@@ -1123,7 +1124,7 @@ TACSAssembler *TACSMeshLoader::createTACS( int vars_per_node,
   }
 
   // This call must occur on all processor
-  creator->setElements(elements, num_components);
+  creator->setElements(num_components, elements);
 
   // Create the TACSAssembler object
   TACSAssembler *tacs = creator->createTACS();
@@ -1145,10 +1146,10 @@ int TACSMeshLoader::getNumElements(){
   domain of interest, set the element numbers in the function that
 */
 void TACSMeshLoader::addFunctionDomain( TACSFunction * function,
-                                        int comp_nums[], int num_comps ){
+                                        int num_comps, int comp_nums[] ){
   if (creator){
     int *elems;
-    int num_elems = creator->getElementIdNums(comp_nums, num_comps,
+    int num_elems = creator->getElementIdNums(num_comps, comp_nums,
                                               &elems);
     function->addDomain(num_elems, elems);
     delete [] elems;
@@ -1163,11 +1164,76 @@ void TACSMeshLoader::addAuxElement( TACSAuxElements *aux, int component_num,
                                     TACSElement *element ){
   if (creator){
     int *elems;
-    int num_elems = creator->getElementIdNums(&component_num, 1,
-                                              &elems);
+    int num_elems = creator->getElementIdNums(1, &component_num, &elems);
     for ( int i = 0; i < num_elems; i++ ){
       aux->addElement(elems[i], element);
     }
     delete [] elems;
   }
+}
+
+/**
+  Given node numbers from the original file on the root processor,
+  find the corresponding global node numbers in the given assembler object.
+
+  Note that the node numbers are assumed to be 1-based as is the case in the
+  original file format. In addition, the node array is over-written by a
+  temporary ordering. The number of nodes and their numbers are returned in
+  a newly allocated array.
+*/
+void TACSMeshLoader::getAssemblerNodeNums( TACSAssembler *assembler,
+                                           int num_nodes,
+                                           int *node_nums,
+                                           int *num_new_nodes,
+                                           int **new_nodes ){
+  *num_new_nodes = 0;
+  *new_nodes = NULL;
+
+  if (creator){
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+    if (rank == 0){
+      // Convert from the
+      for ( int k = 0; k < num_nodes; k++ ){
+        int node_num = node_nums[k]-1;
+        node_nums[k] = find_index_arg_sorted(node_num, num_nodes,
+                                             file_node_nums,
+                                             node_arg_sort_list);
+      }
+    }
+
+    creator->getAssemblerNodeNums(assembler, num_nodes, node_nums,
+                                  num_new_nodes, new_nodes);
+  }
+}
+
+/*
+  Get the element connectivity and node locations
+*/
+void TACSMeshLoader::getConnectivity( int *_num_nodes, int *_num_elements,
+                                      const int **_elem_node_ptr,
+                                      const int **_elem_node_conn,
+                                      const int **_elem_component,
+                                      const TacsScalar **_Xpts ){
+  if (_num_nodes){ *_num_nodes = num_nodes; }
+  if (_num_elements){ *_num_elements = num_elements; }
+  if (_elem_node_ptr){ *_elem_node_ptr = elem_node_ptr; }
+  if (_elem_node_conn){ *_elem_node_conn = elem_node_conn; }
+  if (_elem_component){ *_elem_component = elem_component; }
+  if (_Xpts){ *_Xpts = Xpts; }
+}
+
+/*
+  Get the boundary conditions and data
+*/
+void TACSMeshLoader::getBCs( int *_num_bcs,
+                             const int **_bc_nodes,
+                             const int **_bc_vars,
+                             const int **_bc_ptr,
+                             const TacsScalar **_bc_vals ){
+  if (_num_bcs){ *_num_bcs = num_bcs; }
+  if (_bc_nodes){ *_bc_nodes = bc_nodes; }
+  if (_bc_vars){ *_bc_vars = bc_vars; }
+  if (_bc_ptr){ *_bc_ptr = bc_ptr; }
+  if (_bc_vals){ *_bc_vals = bc_vals; }
 }

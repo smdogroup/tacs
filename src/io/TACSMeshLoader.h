@@ -110,33 +110,26 @@ class TACSMeshLoader : public TACSObject {
   // Set the domain of a structural function with component numbers
   // --------------------------------------------------------------
   void addFunctionDomain( TACSFunction *function,
-                          int comp_nums[], int num_comps );
+                          int num_comps, int comp_nums[] );
 
   // Add the auxiliary element to the given component
   // ------------------------------------------------
   void addAuxElement( TACSAuxElements *aux, int component_num,
                       TACSElement *_element );
 
+  // Get the node numbers in the Assembler object from the file number
+  // -----------------------------------------------------------------
+  void getAssemblerNodeNums( TACSAssembler *assembler,
+                             int num_nodes, int *node_nums,
+                             int *num_new_nodes, int **new_nodes );
+
+  // Get the connectivity and boundary conditions
+  // --------------------------------------------
   void getConnectivity( int *_num_nodes, int *_num_elements,
-                        const int **_elem_node_ptr,
-                        const int **_elem_node_conn,
-                        const int **_elem_component,
-                        const TacsScalar **_Xpts ){
-    if (_num_nodes){ *_num_nodes = num_nodes; }
-    if (_num_elements){ *_num_elements = num_elements; }
-    if (_elem_node_ptr){ *_elem_node_ptr = elem_node_ptr; }
-    if (_elem_node_conn){ *_elem_node_conn = elem_node_conn; }
-    if (_elem_component){ *_elem_component = elem_component; }
-    if (_Xpts){ *_Xpts = Xpts; }
-  }
+                        const int **_elem_node_ptr, const int **_elem_node_conn,
+                        const int **_elem_component, const TacsScalar **_Xpts );
   void getBCs( int *_num_bcs, const int **_bc_nodes, const int **_bc_vars,
-               const int **_bc_ptr, const TacsScalar **_bc_vals ){
-    if (_num_bcs){ *_num_bcs = num_bcs; }
-    if (_bc_nodes){ *_bc_nodes = bc_nodes; }
-    if (_bc_vars){ *_bc_vars = bc_vars; }
-    if (_bc_ptr){ *_bc_ptr = bc_ptr; }
-    if (_bc_vals){ *_bc_vals = bc_vals; }
-  }
+               const int **_bc_ptr, const TacsScalar **_bc_vals );
 
  private:
   // Communicator for all processors
@@ -151,12 +144,16 @@ class TACSMeshLoader : public TACSObject {
   // Original BDF mesh information: Note that the original
   // ordering may not be contiguous. The node numbers associated
   // with the original ordering are stored in node_nums.
-  int *node_nums;
-  double *Xpts_unsorted;
+  int *file_node_nums;
+  int *node_arg_sort_list;
+  int *file_elem_nums;
+  int *elem_arg_sort_list;
 
   // Reduced set of contiguous nodes
   TacsScalar *Xpts;
 
+  // Store information about the original node numbers,
+  // element numbers from the file
   // The mesh and element connectivity
   int num_nodes, num_elements;
   int *elem_node_conn, *elem_node_ptr;

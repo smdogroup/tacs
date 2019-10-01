@@ -83,7 +83,7 @@ class TACSCreator : public TACSObject {
 
   // Set the elements into TACS creator
   // ----------------------------------
-  void setElements( TACSElement **_elements, int _num_elems );
+  void setElements( int _num_elems, TACSElement **_elements );
   void setElementCreator( TACSElement* (*func)(int, int) );
 
   // Create the TACSAssembler object
@@ -92,14 +92,15 @@ class TACSCreator : public TACSObject {
 
   // Get local element numbers with the given set of element-id numbers
   // ------------------------------------------------------------------
-  int getElementIdNums( int ids[], int num_ids,
-                        int **elem_nums );
+  int getElementIdNums( int num_ids, int *ids, int **elem_nums );
 
   // Convert from the list of nodes from the original serial ordering
   // ----------------------------------------------------------------
-  void getTacsNodeNums( TACSAssembler *tacs,
-                        const int *orig_nodes, int num_orig_nodes,
-                        int **new_nodes, int *num_dist_nodes );
+  void getAssemblerNodeNums( TACSAssembler *tacs,
+                              int num_orig_nodes,
+                              const int *orig_nodes,
+                              int *num_dist_nodes,
+                              int **new_nodes );
 
   // Get the new node numbers and element partition on the root proc
   // ---------------------------------------------------------------

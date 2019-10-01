@@ -209,7 +209,7 @@ void TACSPlaneStressConstitutive::evalHeatFlux( int elemIndex,
     TacsScalar C[3];
     properties->evalTangentHeatFlux2D(C);
     flux[0] = C[0]*grad[0] + C[1]*grad[1];
-    flux[1] = C[1]*grad[1] + C[2]*grad[2];
+    flux[1] = C[1]*grad[0] + C[2]*grad[1];
   }
 }
 
@@ -219,7 +219,6 @@ void TACSPlaneStressConstitutive::evalTangentHeatFlux( int elemIndex,
                                                        const TacsScalar X[],
                                                        TacsScalar C[] ){
   if (properties){
-    TacsScalar C[3];
     properties->evalTangentHeatFlux2D(C);
   }
 }

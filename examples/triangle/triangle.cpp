@@ -1,4 +1,5 @@
 #include "TACSLinearElasticity.h"
+#include "TACSThermoelasticity.h"
 #include "TACSTriangularBasis.h"
 #include "TACSElement2D.h"
 #include "TACSCreator.h"
@@ -8,12 +9,25 @@
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
+  // Check whether to use elasticity or thoermoelasticity
+  int use_thermoelasticity = 0;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp(argv[i], "thermoelasticity") == 0){
+      use_thermoelasticity = 1;
+    }
+  }
+
   // Get the rank of the processor
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  int vars_per_node = 2;
+  if (use_thermoelasticity){
+    vars_per_node = 3;
+  }
+
   // Allocate the TACS creator
-  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, 2);
+  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, vars_per_node);
   creator->incref();
 
   // Create the isotropic material class
@@ -33,13 +47,20 @@ int main( int argc, char *argv[] ){
   stiff->incref();
 
   // Create the model class
-  TACSLinearElasticity2D model(stiff, TACS_LINEAR_STRAIN);
+  TACSElementModel *model = NULL;
+  if (use_thermoelasticity){
+    model = new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
+  }
+  else {
+    model = new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+  }
+  model->incref();
 
   // Create the basis
   TACSElementBasis *basis = new TACSQuadraticTriangleBasis();
 
   // Create the element type
-  TACSElement2D *elem = new TACSElement2D(&model, basis);
+  TACSElement2D *elem = new TACSElement2D(model, basis);
   elem->incref();
 
   // Only set the mesh/boundary conditions etc. on the
@@ -260,7 +281,7 @@ int main( int argc, char *argv[] ){
 
   // This call must occur on all processor
   TACSElement *element = elem;
-  creator->setElements(&element, 1);
+  creator->setElements(1, &element);
 
   // Set the reordering type
   creator->setReorderingType(TACSAssembler::TACS_AMD_ORDER,
@@ -330,6 +351,10 @@ int main( int argc, char *argv[] ){
   assembler->applyBCs(res);
   schur_gmres->solve(res, ans);
   assembler->setVariables(ans);
+
+  // ans->setRand(-1.0, 1.0);
+  // assembler->setVariables(ans);
+  assembler->testElement(0, 2);
 
   // Create an TACSToFH5 object for writing output to files
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;

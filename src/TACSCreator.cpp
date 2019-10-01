@@ -239,7 +239,7 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
 /*
   Set the elements with an array indexed by element id
 */
-void TACSCreator::setElements( TACSElement **_elements, int _num_elem_ids ){
+void TACSCreator::setElements( int _num_elem_ids, TACSElement **_elements ){
   num_elem_ids = _num_elem_ids;
   elements = new TACSElement*[ num_elem_ids ];
   memcpy(elements, _elements, num_elem_ids*sizeof(TACSElement*));
@@ -307,9 +307,11 @@ void TACSCreator::getNumOwnedElements( int **_owned_elements ){
   Input the node numbers on the root processor in the original order,
   and get out the distributed node numbers on the final mesh
 */
-void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
-                                   const int *_orig_nodes, int num_orig_nodes,
-                                   int **_tacs_nodes, int *num_dist_nodes ){
+void TACSCreator::getAssemblerNodeNums( TACSAssembler *assembler,
+                                        int num_orig_nodes,
+                                        const int *_orig_nodes,
+                                        int *num_dist_nodes,
+                                        int **_tacs_nodes ){
   // Figure out how to distribute the nodes
   int size, rank;
   MPI_Comm_size(comm, &size);
@@ -323,7 +325,7 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
   int *tacs_nodes = NULL;
 
   // Get the variable map from TACSAssembler
-  TACSNodeMap *nodeMap = tacs->getNodeMap();
+  TACSNodeMap *nodeMap = assembler->getNodeMap();
   const int *owner_range = NULL;
   nodeMap->getOwnerRange(&owner_range);
 
@@ -385,7 +387,7 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
   }
 
   // Apply the reordering in TACS
-  tacs->reorderNodes(tacs_nodes, *num_dist_nodes);
+  assembler->reorderNodes(tacs_nodes, *num_dist_nodes);
 
   *_tacs_nodes = tacs_nodes;
 }
@@ -1164,13 +1166,13 @@ void TACSCreator::partitionMesh( int split_size,
   Retrieve the element numbers on each processor corresponding to the
   given component numbers.
 */
-int TACSCreator::getElementIdNums( int ids[], int num_ids,
+int TACSCreator::getElementIdNums( int num_ids, int ids[],
                                    int **elem_nums ){
   int rank;
   MPI_Comm_rank(comm, &rank);
   if (!local_elem_id_nums){
-    fprintf(stderr, "[%d] TACSCreator: Cannot get elements until \
-mesh is partitioned\n", rank);
+    fprintf(stderr, "[%d] TACSCreator: Cannot get elements until "
+            "mesh is partitioned\n", rank);
     *elem_nums = NULL;
     return 0;
   }
