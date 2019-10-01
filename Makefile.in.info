@@ -8,6 +8,8 @@
 TACS_DIR = ${HOME}/git/tacs
 CXX = mpicxx
 RM = rm -f
+PYTHON=python3
+PYTHON_CONFIG=python3-config
 
 # Set up for parallel make
 MAKE = make -j 8
@@ -58,10 +60,10 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # If using the python interface you'll need to include python and numpy 
 
-PYTHON_INCLUDE = ${shell python-config --includes}
-NUMPY_DIR=${shell python -c "import numpy; print numpy.get_include()"}
+PYTHON_INCLUDE = ${shell ${PYTHON_CONFIG} --includes}
+NUMPY_DIR=${shell ${PYTHON} -c "import numpy; print numpy.get_include()"}
 
 # If you're going to use the python interface you'll also have to have
 # a working version of mpi4py
 
-MPI4PY_DIR=${shell python -c "import mpi4py; print mpi4py.get_include()"}
+MPI4PY_DIR=${shell ${PYTHON} -c "import mpi4py; print mpi4py.get_include()"}
