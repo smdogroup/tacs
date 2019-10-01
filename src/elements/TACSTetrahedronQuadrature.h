@@ -26,7 +26,7 @@ const double TacsTetrahedronPts4[] =
     0.138196601125011, 0.585410196624969, 0.138196601125011,
     0.138196601125011, 0.138196601125011, 0.585410196624969 };
 
-const double TacsTetrahedronWts5[] = { -2.0/15.0, 11.0/120.0 };
+const double TacsTetrahedronWts5[] = { -2.0/15.0, 3.0/40.0 };
 const double TacsTetrahedronPts5[] =
   { 0.25, 0.25, 0.25,
     1.0/6.0, 1.0/6.0, 1.0/6.0,
