@@ -1192,17 +1192,23 @@ void TACSMeshLoader::getAssemblerNodeNums( TACSAssembler *assembler,
   if (creator){
     int rank;
     MPI_Comm_rank(comm, &rank);
+
+    int index = 0;
     if (rank == 0){
-      // Convert from the
+      // Convert from the BDF order, to the local TACSMeshLoader order
       for ( int k = 0; k < num_nodes; k++ ){
         int node_num = node_nums[k]-1;
-        node_nums[k] = find_index_arg_sorted(node_num, num_nodes,
-                                             file_node_nums,
-                                             node_arg_sort_list);
+        int node = find_index_arg_sorted(node_num, num_nodes,
+                                         file_node_nums,
+                                         node_arg_sort_list);
+        if (node >= 0){
+          node_nums[index] = node;
+          index++;
+        }
       }
     }
 
-    creator->getAssemblerNodeNums(assembler, num_nodes, node_nums,
+    creator->getAssemblerNodeNums(assembler, index, node_nums,
                                   num_new_nodes, new_nodes);
   }
 }
