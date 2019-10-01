@@ -41,11 +41,11 @@ enum MaterialType { TACS_ISOTROPIC_MATERIAL,
 */
 class TACSMaterialProperties : public TACSObject {
  public:
-  TACSMaterialProperties( TacsScalar _rho,
+  TACSMaterialProperties( TacsScalar _rho, TacsScalar _specific_heat,
                           TacsScalar _E, TacsScalar _nu,
                           TacsScalar _ys, TacsScalar _alpha,
                           TacsScalar _kappa );
-  TACSMaterialProperties( TacsScalar _rho,
+  TACSMaterialProperties( TacsScalar _rho, TacsScalar _specific_heat,
                           TacsScalar _E1, TacsScalar _E2, TacsScalar _E3,
                           TacsScalar _nu12, TacsScalar _nu13, TacsScalar _nu23,
                           TacsScalar _G12, TacsScalar _G13, TacsScalar _G23,
@@ -65,6 +65,7 @@ class TACSMaterialProperties : public TACSObject {
 
   // Extract material property values
   TacsScalar getDensity();
+  TacsScalar getSpecificHeat();
 
   // Extract the coefficients
   void getIsotropicProperties( TacsScalar *_E, TacsScalar *_nu );
@@ -86,9 +87,15 @@ class TACSMaterialProperties : public TACSObject {
                                TacsScalar *_k2,
                                TacsScalar *_k3 );
 
+  // Evaluate the constitutive relationships
   void evalTangentStiffness3D( TacsScalar C[] );
   void evalTangentStiffness2D( TacsScalar C[] );
 
+  // Evaluate the thermal conductivity matrices
+  void evalTangentHeatFlux3D( TacsScalar Kc[] );
+  void evalTangentHeatFlux2D( TacsScalar Kc[] );
+
+  // Evaluate the thermal strain
   void evalThermalStrain3D( TacsScalar e[] );
   void evalThermalStrain2D( TacsScalar e[] );
 
@@ -107,6 +114,9 @@ class TACSMaterialProperties : public TACSObject {
 
   // Density
   TacsScalar rho;
+
+  // Specific heat
+  TacsScalar specific_heat;
 
   // Isotropic properties
   TacsScalar E, nu, G; // Modulus and Poisson ratio

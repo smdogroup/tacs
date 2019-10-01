@@ -263,7 +263,7 @@ class TACSKsm : public TACSObject {
   virtual TACSVec *createVec() = 0;
   virtual void setOperators( TACSMat *_mat, TACSPc *_pc ) = 0;
   virtual void getOperators( TACSMat **_mat, TACSPc **_pc ) = 0;
-  virtual void solve( TACSVec *b, TACSVec *x, int zero_guess = 1 ) = 0;
+  virtual void solve( TACSVec *b, TACSVec *x, int zero_guess=1 ) = 0;
   virtual void setTolerances( double _rtol, double _atol ) = 0;
   virtual void setMonitor( KSMPrint *_monitor ) = 0;
   const char *getObjectName();

@@ -272,7 +272,7 @@ int TACSLinearElasticity2D::evalPointQuantity( int elemIndex,
       e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
     }
 
-    *quantity = stiff->failure(elemIndex, pt, X, e);
+    *quantity = stiff->evalFailure(elemIndex, pt, X, e);
 
     return 1;
   }
@@ -364,7 +364,7 @@ void TACSLinearElasticity2D::evalPointQuantitySens( int elemIndex,
     }
 
     TacsScalar sens[3];
-    stiff->failureStrainSens(elemIndex, pt, X, e, sens);
+    stiff->evalFailureStrainSens(elemIndex, pt, X, e, sens);
 
     if (strain_type == TACS_LINEAR_STRAIN){
       dfdUx[0] = dfdq[0]*sens[0];
@@ -429,7 +429,7 @@ void TACSLinearElasticity2D::getOutputData( int elemIndex,
       data += 3;
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){
-      data[0] = stiff->failure(elemIndex, pt, X, e);
+      data[0] = stiff->evalFailure(elemIndex, pt, X, e);
       data[1] = 0.0;
       data[2] = 0.0;
       data += 3;
@@ -863,7 +863,7 @@ int TACSLinearElasticity3D::evalPointQuantity( int elemIndex,
       e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
     }
 
-    *quantity = stiff->failure(elemIndex, pt, X, e);
+    *quantity = stiff->evalFailure(elemIndex, pt, X, e);
 
     return 1;
   }
@@ -974,7 +974,7 @@ void TACSLinearElasticity3D::evalPointQuantitySens( int elemIndex,
     }
 
     TacsScalar sens[6];
-    stiff->failureStrainSens(elemIndex, pt, X, e, sens);
+    stiff->evalFailureStrainSens(elemIndex, pt, X, e, sens);
 
     if (strain_type == TACS_LINEAR_STRAIN){
       dfdUx[0] = dfdq[0]*sens[0];
@@ -1062,7 +1062,7 @@ void TACSLinearElasticity3D::getOutputData( int elemIndex,
       data += 6;
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){
-      data[0] = stiff->failure(elemIndex, pt, X, e);
+      data[0] = stiff->evalFailure(elemIndex, pt, X, e);
       data[1] = 0.0;
       data[2] = 0.0;
       data += 3;

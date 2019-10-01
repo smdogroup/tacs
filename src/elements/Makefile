@@ -29,6 +29,7 @@ CXX_OBJS = FElibrary.o \
 	TACSTriangularBasis.o \
 	TACSTetrahedralBasis.o \
 	TACSLinearElasticity.o \
+	TACSThermoelasticity.o \
 	TACSElementVerification.o
 
 DIR=${TACS_DIR}/src/elements

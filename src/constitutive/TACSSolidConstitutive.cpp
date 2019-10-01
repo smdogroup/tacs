@@ -93,9 +93,28 @@ void TACSSolidConstitutive::getDesignVarRange( int elemIndex,
   }
 }
 
-/**
-  Evaluate the stresss
-*/
+// Evaluate the material density
+TacsScalar TACSSolidConstitutive::evalDensity( int elemIndex,
+                                               const double pt[],
+                                               const TacsScalar X[] ){
+  if (properties){
+    return t*properties->getDensity();
+  }
+  return 0.0;
+}
+
+
+// Evaluate the specific heat
+TacsScalar TACSSolidConstitutive::evalSpecificHeat( int elemIndex,
+                                                    const double pt[],
+                                                    const TacsScalar X[] ){
+  if (properties){
+    return t*properties->getSpecificHeat();
+  }
+  return 0.0;
+}
+
+// Evaluate the stresss
 void TACSSolidConstitutive::evalStress( int elemIndex,
                                         const double pt[],
                                         const TacsScalar X[],
@@ -104,11 +123,11 @@ void TACSSolidConstitutive::evalStress( int elemIndex,
   TacsScalar C[21];
   if (properties){
     properties->evalTangentStiffness3D(C);
-    s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2] + C[3]*e[3] + C[4]*e[4] + C[5]*e[5];
-    s[1] = C[1]*e[0] + C[6]*e[1] + C[7]*e[2] + C[8]*e[3] + C[9]*e[4] + C[10]*e[5];
-    s[2] = C[2]*e[0] + C[7]*e[1] + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
-    s[3] = C[3]*e[0] + C[8]*e[1] + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
-    s[4] = C[4]*e[0] + C[9]*e[1] + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
+    s[0] = C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5];
+    s[1] = C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5];
+    s[2] = C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
+    s[3] = C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
+    s[4] = C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
     s[5] = C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5];
   }
   else {
@@ -116,9 +135,7 @@ void TACSSolidConstitutive::evalStress( int elemIndex,
   }
 }
 
-/**
-  Evaluate the tangent stiffness
-*/
+// Evaluate the tangent stiffness
 void TACSSolidConstitutive::evalTangentStiffness( int elemIndex,
                                                   const double pt[],
                                                   const TacsScalar X[],
@@ -133,48 +150,66 @@ void TACSSolidConstitutive::evalTangentStiffness( int elemIndex,
   }
 }
 
-/**
-  Evaluate the thermal strain
-*/
+// Evaluate the thermal strain
 void TACSSolidConstitutive::evalThermalStrain( int elemIndex,
                                                const double pt[],
                                                const TacsScalar X[],
+                                               TacsScalar theta,
                                                TacsScalar e[] ){
   if (properties){
     properties->evalThermalStrain3D(e);
-    e[0] *= t;  e[1] *= t;  e[2] *= t;
-    e[3] *= t;  e[4] *= t;  e[5] *= t; 
+    e[0] *= theta;
+    e[1] *= theta;
+    e[2] *= theta;
+    e[3] *= theta;
+    e[4] *= theta;
+    e[5] *= theta;
   }
   else {
     e[0] = e[1] = e[2] = e[3] = e[4] = e[5] = 0.0;
   }
 }
 
-// Evaluate the material density
-TacsScalar TACSSolidConstitutive::evalDensity( int elemIndex,
-                                               const double pt[],
-                                               const TacsScalar X[] ){
+// Evaluate the heat flux, given the thermal gradient
+void TACSSolidConstitutive::evalHeatFlux( int elemIndex,
+                                          const double pt[],
+                                          const TacsScalar X[],
+                                          const TacsScalar grad[],
+                                          TacsScalar flux[] ){
   if (properties){
-    return t*properties->getDensity();
+    TacsScalar C[3];
+    properties->evalTangentHeatFlux2D(C);
+    flux[0] = C[0]*grad[0] + C[1]*grad[1];
+    flux[1] = C[1]*grad[1] + C[2]*grad[2];
   }
-  return 0.0;
+}
+
+// Evaluate the tangent of the heat flux
+void TACSSolidConstitutive::evalTangentHeatFlux( int elemIndex,
+                                                 const double pt[],
+                                                 const TacsScalar X[],
+                                                 TacsScalar C[] ){
+  if (properties){
+    TacsScalar C[3];
+    properties->evalTangentHeatFlux2D(C);
+  }
 }
 
 // Evaluate the material failure index
-TacsScalar TACSSolidConstitutive::failure( int elemIndex,
-                                           const double pt[],
-                                           const TacsScalar X[],
-                                           const TacsScalar e[] ){
+TacsScalar TACSSolidConstitutive::evalFailure( int elemIndex,
+                                               const double pt[],
+                                               const TacsScalar X[],
+                                               const TacsScalar e[] ){
   if (properties){
     TacsScalar C[21];
     properties->evalTangentStiffness3D(C);
 
     TacsScalar s[6];
-    s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2] + C[3]*e[3] + C[4]*e[4] + C[5]*e[5];
-    s[1] = C[1]*e[0] + C[6]*e[1] + C[7]*e[2] + C[8]*e[3] + C[9]*e[4] + C[10]*e[5];
-    s[2] = C[2]*e[0] + C[7]*e[1] + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
-    s[3] = C[3]*e[0] + C[8]*e[1] + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
-    s[4] = C[4]*e[0] + C[9]*e[1] + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
+    s[0] = C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5];
+    s[1] = C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5];
+    s[2] = C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
+    s[3] = C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
+    s[4] = C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
     s[5] = C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5];
 
     return properties->vonMisesFailure3D(s);
@@ -182,33 +217,32 @@ TacsScalar TACSSolidConstitutive::failure( int elemIndex,
   return 0.0;
 }
 
-
 // Evaluate the derivative of the failure criteria w.r.t. strain
-TacsScalar TACSSolidConstitutive::failureStrainSens( int elemIndex,
-                                                     const double pt[],
-                                                     const TacsScalar X[],
-                                                     const TacsScalar e[],
-                                                     TacsScalar dfde[] ){
+TacsScalar TACSSolidConstitutive::evalFailureStrainSens( int elemIndex,
+                                                         const double pt[],
+                                                         const TacsScalar X[],
+                                                         const TacsScalar e[],
+                                                         TacsScalar dfde[] ){
   if (properties){
     TacsScalar C[21];
     properties->evalTangentStiffness3D(C);
 
     TacsScalar s[6];
-    s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2] + C[3]*e[3] + C[4]*e[4] + C[5]*e[5];
-    s[1] = C[1]*e[0] + C[6]*e[1] + C[7]*e[2] + C[8]*e[3] + C[9]*e[4] + C[10]*e[5];
-    s[2] = C[2]*e[0] + C[7]*e[1] + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
-    s[3] = C[3]*e[0] + C[8]*e[1] + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
-    s[4] = C[4]*e[0] + C[9]*e[1] + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
+    s[0] = C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5];
+    s[1] = C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5];
+    s[2] = C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
+    s[3] = C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
+    s[4] = C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
     s[5] = C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5];
 
     TacsScalar sens[6];
     TacsScalar fail = properties->vonMisesFailure3DStressSens(s, sens);
 
-    dfde[0] = C[0]*sens[0] + C[1]*sens[1] + C[2]*sens[2] + C[3]*sens[3] + C[4]*sens[4] + C[5]*sens[5];
-    dfde[1] = C[1]*sens[0] + C[6]*sens[1] + C[7]*sens[2] + C[8]*sens[3] + C[9]*sens[4] + C[10]*sens[5];
-    dfde[2] = C[2]*sens[0] + C[7]*sens[1] + C[11]*sens[2] + C[12]*sens[3] + C[13]*sens[4] + C[14]*sens[5];
-    dfde[3] = C[3]*sens[0] + C[8]*sens[1] + C[12]*sens[2] + C[15]*sens[3] + C[16]*sens[4] + C[17]*sens[5];
-    dfde[4] = C[4]*sens[0] + C[9]*sens[1] + C[13]*sens[2] + C[16]*sens[3] + C[18]*sens[4] + C[19]*sens[5];
+    dfde[0] = C[0]*sens[0] + C[1]*sens[1]  + C[2]*sens[2]  + C[3]*sens[3]  + C[4]*sens[4]  + C[5]*sens[5];
+    dfde[1] = C[1]*sens[0] + C[6]*sens[1]  + C[7]*sens[2]  + C[8]*sens[3]  + C[9]*sens[4]  + C[10]*sens[5];
+    dfde[2] = C[2]*sens[0] + C[7]*sens[1]  + C[11]*sens[2] + C[12]*sens[3] + C[13]*sens[4] + C[14]*sens[5];
+    dfde[3] = C[3]*sens[0] + C[8]*sens[1]  + C[12]*sens[2] + C[15]*sens[3] + C[16]*sens[4] + C[17]*sens[5];
+    dfde[4] = C[4]*sens[0] + C[9]*sens[1]  + C[13]*sens[2] + C[16]*sens[3] + C[18]*sens[4] + C[19]*sens[5];
     dfde[5] = C[5]*sens[0] + C[10]*sens[1] + C[14]*sens[2] + C[17]*sens[3] + C[19]*sens[4] + C[20]*sens[5];
 
     return fail;

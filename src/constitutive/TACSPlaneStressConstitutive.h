@@ -51,6 +51,19 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
   void getDesignVarRange( int elemIndex, int dvLen,
                           TacsScalar lb[], TacsScalar ub[] );
 
+  // Evaluate the material density
+  TacsScalar evalDensity( int elemIndex, const double pt[],
+                          const TacsScalar X[] );
+
+  // Add the derivative of the density
+  void addDensityDVSens( int elemIndex, const double pt[],
+                         const TacsScalar X[], const TacsScalar scale,
+                         int dvLen, TacsScalar dvSens[] );
+
+  // Evaluate the specific heat
+  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
+                               const TacsScalar X[] );
+
   // Evaluate the stresss
   void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
                    const TacsScalar strain[], TacsScalar stress[] );
@@ -67,30 +80,26 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
 
   // Evaluate the thermal strain
   void evalThermalStrain( int elemIndex, const double pt[],
-                          const TacsScalar X[], TacsScalar strain[] );
+                          const TacsScalar X[], TacsScalar theta,
+                          TacsScalar strain[] );
 
-  // Evaluate the material density
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
+  // Evaluate the heat flux, given the thermal gradient
+  void evalHeatFlux( int elemIndex, const double pt[],
+                     const TacsScalar X[], const TacsScalar grad[],
+                     TacsScalar flux[] );
 
-  // Add the derivative of the density
-  void addDensityDVSens( int elemIndex, const double pt[],
-                         const TacsScalar X[], const TacsScalar scale,
-                         int dvLen, TacsScalar dvSens[] );
+  // Evaluate the tangent of the heat flux
+  void evalTangentHeatFlux( int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[] );
 
   // Evaluate the material failure index
-  TacsScalar failure( int elemIndex, const double pt[],
-                      const TacsScalar X[], const TacsScalar strain[] );
+  TacsScalar evalFailure( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar e[] );
 
   // Evaluate the derivative of the failure criteria w.r.t. strain
-  TacsScalar failureStrainSens( int elemIndex, const double pt[],
-                                const TacsScalar X[], const TacsScalar strain[],
-                                TacsScalar sens[] );
-
-  // Add the derivative of the failure w.r.t. design variables
-  void addFailureDVSens( int elemIndex, const double pt[], const TacsScalar X[],
-                         const TacsScalar strain[], TacsScalar scale,
-                         int dvLen, TacsScalar dvSens[] );
+  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
+                                    const TacsScalar X[], const TacsScalar e[],
+                                    TacsScalar sens[] );
 
   // Extra info about the constitutive class
   const char *getObjectName();

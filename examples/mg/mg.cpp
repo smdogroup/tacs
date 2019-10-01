@@ -90,12 +90,14 @@ void createTACS( MPI_Comm comm, int nx, int ny,
 
   // Create the isotropic material class
   TacsScalar rho = 2700.0;
+  TacsScalar specific_heat = 921.096;
   TacsScalar E = 70e3;
   TacsScalar nu = 0.3;
   TacsScalar ys = 270.0;
-  TacsScalar cte = 0.0, kappa = 0.0;
+  TacsScalar cte = 24.0e-6;
+  TacsScalar kappa = 230.0;
   TACSMaterialProperties *props =
-    new TACSMaterialProperties(rho, E, nu, ys, cte, kappa);
+    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   // Create the stiffness object
   TACSPlaneStressConstitutive *stiff =

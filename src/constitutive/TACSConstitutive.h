@@ -98,6 +98,61 @@ class TACSConstitutive : public TACSObject {
                                   TacsScalar upperBound[] ){}
 
   /**
+    Evaluate the mass per unit length, area or volume for the element
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The density
+  */
+  virtual TacsScalar evalDensity( int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[] ) = 0;
+
+  /**
+    Add the derivative of the pointwise mass times the given scalar
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param scale Scale factor for the derivative
+    @param dvLen the length of the sensitivity array
+    @param dvSens The sensitivity array
+  */
+  virtual void addDensityDVSens( int elemIndex,
+                                 const double pt[],
+                                 const TacsScalar X[],
+                                 const TacsScalar scale,
+                                 int dvLen, TacsScalar dvSens[] ){}
+
+  /**
+    Evaluate the specific heat (heat capacity per unit mass)
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The specific heat of the material
+  */
+  virtual TacsScalar evalSpecificHeat( int elemIndex,
+                                       const double pt[],
+                                       const TacsScalar X[] ) = 0;
+
+  /**
+    Add the derivative of the pointwise mass times the given scalar
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param scale Scale factor for the derivative
+    @param dvLen the length of the sensitivity array
+    @param dvSens The sensitivity array
+  */
+  virtual void addSpecificHeatDVSens( int elemIndex,
+                                      const double pt[],
+                                      const TacsScalar X[],
+                                      const TacsScalar scale,
+                                      int dvLen, TacsScalar dvSens[] ){}
+  /**
     Return the stress as a function of the strain at the Gauss point
 
     @param elemIndex The local element index
@@ -134,7 +189,7 @@ class TACSConstitutive : public TACSObject {
     @param elemIndex The local element index
     @param pt The parametric point within the element
     @param X The physical point location
-    @param scale The scalar factor
+    @param scale A scalar factor
     @param psi The adjoint components of the strain
     @param dvLen The length of the design vector array
     @param dvSens The sensitivity vector
@@ -153,42 +208,79 @@ class TACSConstitutive : public TACSObject {
     @param elemIndex The local element index
     @param pt The parametric point within the element
     @param X The physical point location
+    @param theta The local change in temperature
     @param strain The components of the thermal strain
   */
   virtual void evalThermalStrain( int elemIndex,
                                   const double pt[],
                                   const TacsScalar X[],
+                                  TacsScalar theta,
                                   TacsScalar strain[] ){
     memset(strain, 0, getNumStresses()*sizeof(TacsScalar));
   }
 
   /**
-    Evaluate the mass per unit length, area or volume for the element
+    Add the contributions from the derivatives to the thermal strain
 
     @param elemIndex The local element index
-    @param pt The parametric location
-    @param X The point location
-    @return The density
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param theta The local change in temperature
+    @param psi Multiplier vector (same size as the strain)
+    @param dvLen The length of the sensitivity array
+    @param dvSens The sensitivity
   */
-  virtual TacsScalar evalDensity( int elemIndex,
-                                  const double pt[],
-                                  const TacsScalar X[] ) = 0;
+  virtual void addThermalStrainDVSens( int elemIndex,
+                                       const double pt[],
+                                       const TacsScalar X[],
+                                       TacsScalar theta,
+                                       const TacsScalar psi[],
+                                       int dvLen, TacsScalar dvSens[] ){}
 
   /**
-    Add the derivative of the pointwise mass times the given scalar
+    Given the thermal gradient, compute the heat flux
 
     @param elemIndex The local element index
-    @param pt The parametric location
-    @param X The point location
-    @param scale Scale factor for the derivative
-    @param dvLen the length of the sensitivity array
-    @param dvSens The sensitivity array
+    @param pt The parametric point within the element
+    @param X The physical point location
   */
-  virtual void addDensityDVSens( int elemIndex,
-                                 const double pt[],
-                                 const TacsScalar X[],
-                                 const TacsScalar scale,
-                                 int dvLen, TacsScalar dvSens[] ){}
+  virtual void evalHeatFlux( int elemIndex,
+                             const double pt[],
+                             const TacsScalar X[],
+                             const TacsScalar grad[],
+                             TacsScalar flux[] ){}
+
+  /**
+    Compute the coefficients of the heat flux
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param C The tangent heat flux matrix
+  */
+  virtual void evalTangentHeatFlux( int elemIndex,
+                                    const double pt[],
+                                    const TacsScalar X[],
+                                    TacsScalar C[] ){}
+
+  /**
+    Add the derivative of the heat flux to the sensitivity array
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param scale A scalar factor
+    @param psi Multiplier vector (same size as the strain)
+    @param dvLen The length of the sensitivity array
+    @param dvSens The sensitivity
+  */
+  virtual void addHeatFluxDVSens( int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar grad[],
+                                  TacsScalar scale,
+                                  const TacsScalar psi[],
+                                  int dvLen, TacsScalar dvSens[] ){}
 
   /**
     Evaluate the failure index at a quadrature point
@@ -198,10 +290,10 @@ class TACSConstitutive : public TACSObject {
     @param strain the strain value
     @return The failure index value
   */
-  virtual TacsScalar failure( int elemIndex,
-                              const double pt[],
-                              const TacsScalar X[],
-                              const TacsScalar strain[] ){
+  virtual TacsScalar evalFailure( int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar strain[] ){
     return 0.0;
   }
 
@@ -214,11 +306,11 @@ class TACSConstitutive : public TACSObject {
     @param sens The derivative of the failure index w.r.t. the strain
     @return The failure index value
   */
-  virtual TacsScalar failureStrainSens( int elemIndex,
-                                        const double pt[],
-                                        const TacsScalar X[],
-                                        const TacsScalar strain[],
-                                        TacsScalar sens[] ){
+  virtual TacsScalar evalFailureStrainSens( int elemIndex,
+                                            const double pt[],
+                                            const TacsScalar X[],
+                                            const TacsScalar strain[],
+                                            TacsScalar sens[] ){
     memset(sens, 0, getNumStresses()*sizeof(TacsScalar));
     return 0.0;
   }

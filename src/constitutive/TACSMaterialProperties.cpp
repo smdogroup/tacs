@@ -22,12 +22,14 @@ const static double LINEAR_STRESS_CUTOFF = 1e-15;
 const static double HUGE_FAILURE_LOAD = 1e20;
 
 TACSMaterialProperties::TACSMaterialProperties( TacsScalar _rho,
+                                                TacsScalar _specific_heat,
                                                 TacsScalar _E,
                                                 TacsScalar _nu,
                                                 TacsScalar _ys,
                                                 TacsScalar _alpha,
                                                 TacsScalar _kappa){
   rho = _rho;
+  specific_heat = _specific_heat;
   E = _E;
   nu = _nu;
   G = 0.5*E/(1.0 + nu);
@@ -59,6 +61,7 @@ TACSMaterialProperties::TACSMaterialProperties( TacsScalar _rho,
 }
 
 TACSMaterialProperties::TACSMaterialProperties( TacsScalar _rho,
+                                                TacsScalar _specific_heat,
                                                 TacsScalar _E1,
                                                 TacsScalar _E2,
                                                 TacsScalar _E3,
@@ -86,8 +89,12 @@ TACSMaterialProperties::TACSMaterialProperties( TacsScalar _rho,
   mat_type = TACS_ANISOTROPIC_MATERIAL;
 
   rho = _rho;
+  specific_heat = _specific_heat;
+
+  // Set the isotropic properties to 0
   E = nu = G = ys = alpha = 0.0;
 
+  // Record the orthotropic properties
   E1 = _E1;  E2 = _E2;  E3 = _E3;
   G12 = _G12; G13 = _G13; G23 = _G23;
   nu12 = _nu12; nu13 = _nu13; nu23 = _nu23;
@@ -120,9 +127,13 @@ MaterialType TACSMaterialProperties::getMaterialType(){
   return mat_type;
 }
 
-// Extract material property values
+// Extract the density property values
 TacsScalar TACSMaterialProperties::getDensity(){
   return rho;
+}
+
+TacsScalar TACSMaterialProperties::getSpecificHeat(){
+  return specific_heat;
 }
 
 // Extract the coefficients
@@ -257,6 +268,31 @@ void TACSMaterialProperties::evalTangentStiffness2D( TacsScalar C[] ){
     C[3] = E2/(1.0 - nu12*nu21);
     C[4] = 0.0;
     C[5] = G12;
+  }
+}
+
+void TACSMaterialProperties::evalTangentHeatFlux3D( TacsScalar C[] ){
+  if (mat_type == TACS_ISOTROPIC_MATERIAL){
+    C[0] = C[3] = C[5] = kappa;
+    C[1] = C[2] = C[4] = 0.0;
+  }
+  else {
+    C[0] = kappa1;
+    C[3] = kappa2;
+    C[5] = kappa2;
+    C[1] = C[2] = C[4] = 0.0;
+  }
+}
+
+void TACSMaterialProperties::evalTangentHeatFlux2D( TacsScalar C[] ){
+  if (mat_type == TACS_ISOTROPIC_MATERIAL){
+    C[0] = C[2] = kappa;
+    C[1] = 0.0;
+  }
+  else {
+    C[0] = kappa1;
+    C[2] = kappa2;
+    C[1] = 0.0;
   }
 }
 

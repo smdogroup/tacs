@@ -107,13 +107,13 @@ void TACSConstitutive::writeFailureEnvelope( const char * file_name, int npts,
         // Compute the failure criterion and the derivative of the
         // failure criterion w.r.t. the load parameter P
         TacsScalar fail, failSens;
-        fail = failure(elemIndex, pt, X, e);
+        fail = evalFailure(elemIndex, pt, X, e);
 
         if (fabs(TacsRealPart(fail) - 1.0) < tol){
           break;
         }
 
-        failureStrainSens(elemIndex, pt, X, e, f_sens);
+        evalFailureStrainSens(elemIndex, pt, X, e, f_sens);
 
         failSens = 0.0;
         for ( int j = 0; j < nstress; j++ ){
