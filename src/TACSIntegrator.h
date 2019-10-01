@@ -47,7 +47,7 @@ class TACSIntegrator : public TACSObject {
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
-  void setUseFEMat( int _use_femat, TACSAssembler::OrderingType _type );
+  void setUseSchurMat( int _use_femat, TACSAssembler::OrderingType _type );
   void setInitNewtonDeltaFraction( double frac );
   void setKrylovSubspaceMethod( TACSKsm *_ksm );
 
@@ -57,8 +57,7 @@ class TACSIntegrator : public TACSObject {
 
   // Set the functions to integrate
   //--------------------------------
-  void setFunctions( TACSFunction **funcs, int num_funcs,
-                     int num_design_vars,
+  void setFunctions( int num_funcs, TACSFunction **funcs,
                      int start_plane=-1, int end_plane=-1 );
 
   // Solve for time-step t with
@@ -100,8 +99,11 @@ class TACSIntegrator : public TACSObject {
                            TACSBVec **adjoint ) = 0;
 
   // Copy out the function
-  virtual void getGradient( TacsScalar *_dfdx ){
-    memcpy(_dfdx, dfdx, num_funcs*num_design_vars*sizeof(TacsScalar));
+  virtual void getGradient( int func_num, TACSBVec **_dfdx ){
+    *_dfdx = NULL;
+    if (func_num >= 0 && func_num < num_funcs){
+      *_dfdx = dfdx[func_num];
+    }
   }
 
   // Get the vector of the shape derivatives
@@ -127,10 +129,7 @@ class TACSIntegrator : public TACSObject {
   //-----------------------------------------------------------------
   void setOutputPrefix( const char *prefix );
   void setOutputFrequency( int _write_step );
-  void setRigidOutput( TACSToFH5 *_rigidf5 );
-  void setShellOutput( TACSToFH5 *_shellf5 );
-  void setBeamOutput( TACSToFH5 *_beamf5 );
-  void setSolidOutput( TACSToFH5 *_solidf5 );
+  void setFH5( TACSToFH5 *_f5 );
   void writeRawSolution( const char *filename, int format=2 );
   void writeSolutionToF5();
   void writeStepToF5( int step_num );
@@ -183,11 +182,10 @@ class TACSIntegrator : public TACSObject {
 
   // Objects that store information about the functions of interest
   int start_plane, end_plane; // Time-window for the functions of interest
-  TACSFunction **funcs;       // List of functions
   int num_funcs;              // The number of objective functions
+  TACSFunction **funcs;       // List of functions
   TacsScalar *fvals;          // Function values
-  TacsScalar *dfdx;           // Derivative values
-  int num_design_vars;        // Number of design variables
+  TACSBVec **dfdx;            // Derivative values
   TACSBVec **dfdXpt;          // Derivatives w.r.t. node locations
 
   // Linear algebra objects and parameters associated with the Newton solver
@@ -206,7 +204,7 @@ class TACSIntegrator : public TACSObject {
   double rtol;              // Relative tolerance
   double init_newton_delta; // Initial value of delta for globalization
   int jac_comp_freq;        // Frequency of Jacobian factorization
-  int use_femat;            // use femet for parallel execution
+  int use_schur_mat;        // use the Schur matrix type for parallel execution
   TACSAssembler::OrderingType order_type;
   int use_lapack;           // Flag to switch to LAPACK for linear solve
 
@@ -224,10 +222,7 @@ class TACSIntegrator : public TACSObject {
   int print_level;          // 0 = off;
                             // 1 = summary per time step;
                             // 2 = summary per Newton solve iteration
-  TACSToFH5 *rigidf5;       // F5 file for rigid body visualization
-  TACSToFH5 *shellf5;       // F5 file for shell visualization
-  TACSToFH5 *beamf5;        // F5 file for beam visualization
-  TACSToFH5 *solidf5;        // F5 file for solid visualization
+  TACSToFH5 *f5;            // F5 output visualization
   int f5_write_freq;        // Frequency for output during time marching
 
   int niter;                // Newton iteration number
