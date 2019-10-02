@@ -30,7 +30,8 @@
   The following enumeration defines whether the matrix is either the
   normal or the transpose orientation.
 */
-enum MatrixOrientation { NORMAL, TRANSPOSE };
+enum MatrixOrientation { TACS_MAT_NORMAL,
+                         TACS_MAT_TRANSPOSE };
 
 /*
   Define boundary conditions that are applied after all the
@@ -157,7 +158,7 @@ class TACSMat : public TACSObject {
   virtual void addWeightValues( int nvars, const int *varp, const int *vars,
                                 const TacsScalar *weights,
                                 int nv, int mv, const TacsScalar *values,
-                                MatrixOrientation matOr=NORMAL ){}
+                                MatrixOrientation matOr=TACS_MAT_NORMAL ){}
   virtual void applyBCs( TACSBcMap *bcmap ){}
   virtual void beginAssembly(){}
   virtual void endAssembly(){}

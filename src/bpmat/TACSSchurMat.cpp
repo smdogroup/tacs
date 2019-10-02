@@ -612,7 +612,7 @@ void TACSSchurMat::addWeightValues( int nvars, const int *varp,
   // Set the increment along the row or column of the matrix depending
   // on whether we are adding the original matrix or its transpose
   int incr = mv;
-  if (matOr == TRANSPOSE){
+  if (matOr == TACS_MAT_TRANSPOSE){
     incr = 1;
   }
 

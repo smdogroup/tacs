@@ -40,14 +40,6 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-def setElementFDStepSize(double dh):
-    TACSSetElementFDStepSize(dh)
-
-# Wrap the element behavior types
-PY_LINEAR = LINEAR
-PY_NONLINEAR = NONLINEAR
-PY_LARGE_ROTATION = LARGE_ROTATION
-
 # A generic wrapper class for the TACSElement object
 cdef class Element:
     '''Base element class'''
@@ -59,7 +51,7 @@ cdef class Element:
         self.ptr.setComponentNum(comp_num)
         return
 
-    def numNodes(self):
+    def getNumNodes(self):
         return self.ptr.numNodes()
 
 cdef class GibbsVector:
@@ -76,31 +68,6 @@ cdef class RefFrame:
     cdef TACSRefFrame *ptr
     def __cinit__(self, GibbsVector r0, GibbsVector r1, GibbsVector r2):
         self.ptr = new TACSRefFrame(r0.ptr, r1.ptr, r2.ptr)
-        self.ptr.incref()
-        return
-
-    def __dealloc__(self):
-        self.ptr.decref()
-        return
-
-cdef class RigidBodyViz:
-    cdef TACSRigidBodyViz *ptr
-    def __cinit__(self,
-                  int npts=0, int nelems=0,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] xpts=None,
-                  np.ndarray[int, ndim=1, mode='c'] conn=None,
-                  GibbsVector vref=None,
-                  TacsScalar Lx=1.0, TacsScalar Ly=1.0, TacsScalar Lz=1.0):
-        cdef TACSGibbsVector *vptr = NULL
-        if vref is not None:
-            vptr = vref.ptr
-        if xpts is not None and conn is not None:
-            self.ptr = new TACSRigidBodyViz(npts, nelems,
-                                            <TacsScalar*>xpts.data,
-                                            <int*>conn.data, vref.ptr)
-        else:
-            self.ptr = new TACSRigidBodyViz(Lx, Ly, Lz)
-
         self.ptr.incref()
         return
 
@@ -142,11 +109,12 @@ cdef class RigidBody(Element):
 
     def setVisualization(self, RigidBodyViz viz):
         self.rbptr.setVisualization(viz.ptr)
+
     def __dealloc__(self):
         self.ptr.decref()
         return
 
-    def numNodes(self):
+    def getNumNodes(self):
         return self.ptr.numNodes()
 
     def setComponentNum(self, int comp_num):
@@ -161,11 +129,14 @@ cdef class FixedConstraint(Element):
                                            point.ptr)
         self.ptr.incref()
         return
+        
     def __dealloc__(self):
         self.ptr.decref()
         return
-    def numNodes(self):
+
+    def getNumNodes(self):
         return self.ptr.numNodes()
+
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return

@@ -53,7 +53,7 @@ class TACSMatDistribute : public TACSObject {
                         int nvars, const int *varp, const int *vars,
                         const TacsScalar *weights,
                         int nv, int mv, const TacsScalar *values,
-                        MatrixOrientation matOr=NORMAL );
+                        MatrixOrientation matOr=TACS_MAT_NORMAL );
 
   // Set values into the matrix from the local BCSRMat
   // -------------------------------------------------

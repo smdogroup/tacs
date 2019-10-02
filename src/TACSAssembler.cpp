@@ -4911,7 +4911,7 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
     // result, the transpose arguments are reversed.
     TacsScalar zero = 0.0;
     int incx = 1;
-    if (matOr == NORMAL){
+    if (matOr == TACS_MAT_NORMAL){
       BLASgemv("T", &nvars, &nvars, &scale, elemMat, &nvars,
                xvars, &incx, &zero, yvars, &incx);
     }

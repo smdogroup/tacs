@@ -39,42 +39,31 @@ cdef inline convert_bytes_to_str(bytes s):
         return s.decode('utf8')
     return s
 
-cdef extern from "TACSElement.h":
+cdef extern from "TACSElementTypes.h":
     enum ElementType:
         TACS_ELEMENT_NONE
-        TACS_POINT_ELEMENT
-        TACS_EULER_BEAM
-        TACS_TIMOSHENKO_BEAM
-        TACS_PLANE_STRESS
-        TACS_SHELL
-        TACS_SOLID
-        TACS_Q3D_ELEMENT
-        TACS_RIGID
-        TACS_POISSON_2D_ELEMENT
-        TACS_POISSON_3D_ELEMENT
+        TACS_SCALAR_2D_ELEMENT
+        TACS_SCALAR_3D_ELEMENT
+        TACS_BEAM_OR_SHELL_ELEMENT
+        TACS_PLANE_STRESS_ELEMENT
+        TACS_SOLID_ELEMENT
 
     enum ElementMatrixType:
-        STIFFNESS_MATRIX
-        MASS_MATRIX
-        GEOMETRIC_STIFFNESS_MATRIX
-        STIFFNESS_PRODUCT_DERIVATIVE
+        TACS_STIFFNESS_MATRIX
+        TACS_MASS_MATRIX
+        TACS_GEOMETRIC_STIFFNESS_MATRIX
+        TACS_STIFFNESS_PRODUCT_DERIVATIVE
 
 cdef extern from "KSM.h":
     enum MatrixOrientation:
-        NORMAL
-        TRANSPOSE
-
-cdef extern from "BVecDist.h":
-    enum TACSBVecOperation:
-        TACS_INSERT_VALUES
-        TACS_ADD_VALUES
-        TACS_INSERT_NONZERO_VALUES
+        TACS_MAT_NORMAL
+        TACS_MAT_TRANSPOSE
 
 # Special functions required for converting pointers
 cdef extern from "":
-    ScMat* _dynamicScMat "dynamic_cast<ScMat*>"(TACSMat*)
-    TACSPMat* _dynamicPMat "dynamic_cast<TACSPMat*>"(TACSMat*)
-    PcScMat* _dynamicPcScMat "dynamic_cast<PcScMat*>"(TACSPc*)
+    TACSSchurMat* _dynamicSchurMat "dynamic_cast<TACSSchurMat*>"(TACSMat*)
+    TACSSchurPc* _dynamicSchurPc "dynamic_cast<TACSSchurPc*>"(TACSPc*)
+    TACSParallelMat* _dynamicParallelMat "dynamic_cast<TACSParallelMat*>"(TACSMat*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
     GMRES* _dynamicGMRES "dynamic_cast<GMRES*>"(TACSKsm*)
     void deleteArray "delete []"(void*)
@@ -129,12 +118,12 @@ cdef extern from "KSM.h":
               int _nrestart, int _isFlexible )
         void setTimeMonitor()
 
-cdef extern from "BVec.h":
+cdef extern from "TACSBVec.h":
     cdef cppclass TACSBVec(TACSVec):
-        TACSBVec(TACSVarMap*, int)
+        TACSBVec(TACSNodeMap*, int)
         int getSize(int*)
         int getBlockSize()
-        TACSVarMap *getVarMap()
+        TACSNodeMap *getNodeMap()
         int getArray(TacsScalar**)
         int readFromFile(const_char*)
         int writeToFile(const_char*)
@@ -145,9 +134,14 @@ cdef extern from "BVec.h":
         void beginDistributeValues()
         void endDistributeValues()
 
-cdef extern from "BVecDist.h":
-    cdef cppclass TACSVarMap(TACSObject):
-        TACSVarMap(MPI_Comm, int)
+cdef extern from "TACSBVecDistribute.h":
+    enum TACSBVecOperation:
+        TACS_INSERT_VALUES
+        TACS_ADD_VALUES
+        TACS_INSERT_NONZERO_VALUES
+
+    cdef cppclass TACSNodeMap(TACSObject):
+        TACSNodeMap(MPI_Comm, int)
         MPI_Comm getMPIComm()
         void getOwnerRange(const int**)
 
@@ -158,11 +152,11 @@ cdef extern from "BVecDist.h":
     cdef cppclass TACSBVecDistribute(TACSObject):
         TACSBVecIndices *getIndices()
 
-cdef class VarMap:
-    cdef TACSVarMap *ptr
+cdef class NodeMap:
+    cdef TACSNodeMap *ptr
 
-cdef inline _init_VarMap(TACSVarMap *ptr):
-    vmap = VarMap()
+cdef inline _init_NodeMap(TACSNodeMap *ptr):
+    vmap = NodeMap()
     vmap.ptr = ptr
     vmap.ptr.incref()
     return vmap
@@ -176,9 +170,9 @@ cdef inline _init_VecIndices(TACSBVecIndices *ptr):
     indices.ptr.incref()
     return indices
 
-cdef extern from "BVecInterp.h":
+cdef extern from "TACSBVecInterp.h":
     cdef cppclass TACSBVecInterp(TACSObject):
-        TACSBVecInterp(TACSVarMap*, TACSVarMap*, int)
+        TACSBVecInterp(TACSNodeMap*, TACSNodeMap*, int)
         TACSBVecInterp(TACSAssembler*, TACSAssembler*)
         void mult(TACSBVec*, TACSBVec*)
         void multAdd(TACSBVec*, TACSBVec*, TACSBVec*)
@@ -203,37 +197,29 @@ cdef extern from "BCSRMat.h":
         int getColDim()
         void getDenseColumnMajor(TacsScalar*)
 
-cdef extern from "PMat.h":
-    cdef cppclass TACSPMat(TACSMat):
+cdef extern from "TACSParallelMat.h":
+    cdef cppclass TACSParallelMat(TACSMat):
         pass
 
     cdef cppclass TACSAdditiveSchwarz(TACSPc):
-        TACSAdditiveSchwarz(TACSPMat *mat, int levFill, double fill)
+        TACSAdditiveSchwarz(TACSParallelMat *mat, int levFill, double fill)
 
     cdef cppclass ApproximateSchur(TACSPc):
-        TACSApproximateSchur(TACSPMat *mat, int levFill, double fill,
+        TACSApproximateSchur(TACSParallelMat *mat, int levFill, double fill,
                              int inner_gmres_iters, double inner_rtol,
                              double inner_atol)
 
-cdef extern from "DistMat.h":
-    cdef cppclass TACSDistMat(TACSPMat):
-        pass
-
-cdef extern from "ScMat.h":
-    cdef cppclass ScMat(TACSMat):
+cdef extern from "TACSSchurMat.h":
+    cdef cppclass TACSSchurMat(TACSMat):
         void getBCSRMat(BCSRMat**, BCSRMat**, BCSRMat**, BCSRMat**)
         TACSBVecDistribute *getLocalMap()
         TACSBVecDistribute *getSchurMap()
 
-    cdef cppclass PcScMat(TACSPc):
-        PcScMat(ScMat *mat, int levFill, double fill,
-                int reorder_schur_complement)
+    cdef cppclass TACSSchurPc(TACSPc):
+        TACSSchurPc(TACSSchurMat *mat, int levFill, double fill,
+                    int reorder_schur_complement)
         void setMonitorFactorFlag(int)
         void setMonitorBackSolveFlag(int)
-
-cdef extern from "FEMat.h":
-    cdef cppclass FEMat(ScMat):
-        pass
 
 cdef extern from "TACSMg.h":
     cdef cppclass TACSMg(TACSPc):
@@ -246,44 +232,6 @@ cdef extern from "TACSMg.h":
         void assembleMatType(ElementMatrixType,
                              MatrixOrientation)
         void setMonitor(KSMPrint*)
-
-cdef extern from "TACSElement.h":
-    void TACSSetElementFDStepSize"TACSElement::setStepSize"(double)
-
-    cdef cppclass TACSElement(TACSObject):
-        int numNodes()
-        int numVariables()
-        void setComponentNum(int)
-        TACSConstitutive *getConstitutive()
-
-cdef extern from "TACSFunction.h":
-    cdef cppclass TACSFunction(TACSObject):
-        void setDomain(int*, int)
-
-cdef extern from "TACSConstitutive.h":
-    cdef cppclass TACSConstitutive(TACSObject):
-        TacsScalar getDVOutputValue(int, const double*)
-
-cdef class Element:
-    cdef TACSElement *ptr
-
-cdef inline _init_Element(TACSElement *ptr):
-    elem = Element()
-    elem.ptr = ptr
-    elem.ptr.incref()
-    return elem
-
-cdef class Function:
-    cdef TACSFunction *ptr
-
-cdef class Constitutive:
-    cdef TACSConstitutive *ptr
-
-cdef inline _init_Constitutive(TACSConstitutive *ptr):
-    cons = Constitutive()
-    cons.ptr = ptr
-    cons.ptr.incref()
-    return cons
 
 cdef class Vec:
     cdef TACSBVec *ptr
@@ -325,6 +273,41 @@ cdef inline _init_Mg(TACSMg *ptr):
 cdef class KSM:
     cdef TACSKsm *ptr
 
+cdef extern from "TACSElement.h":
+    cdef cppclass TACSElement(TACSObject):
+        int getNumNodes()
+        int getNumVariables()
+        void setComponentNum(int)
+
+cdef class Element:
+    cdef TACSElement *ptr
+
+cdef inline _init_Element(TACSElement *ptr):
+    elem = Element()
+    elem.ptr = ptr
+    elem.ptr.incref()
+    return elem
+
+cdef extern from "TACSFunction.h":
+    cdef cppclass TACSFunction(TACSObject):
+        void setDomain(int, int*)
+
+cdef class Function:
+    cdef TACSFunction *ptr
+
+cdef extern from "TACSConstitutive.h":
+    cdef cppclass TACSConstitutive(TACSObject):
+        TacsScalar getDVOutputValue(int, const double*)
+
+cdef class Constitutive:
+    cdef TACSConstitutive *ptr
+
+cdef inline _init_Constitutive(TACSConstitutive *ptr):
+    cons = Constitutive()
+    cons.ptr = ptr
+    cons.ptr.incref()
+    return cons
+
 cdef extern from "TACSAuxElements.h":
     cdef cppclass TACSAuxElements(TACSObject):
         TACSAuxElements(int)
@@ -332,18 +315,17 @@ cdef extern from "TACSAuxElements.h":
 
 cdef extern from "TACSAssembler.h":
     enum OrderingType"TACSAssembler::OrderingType":
-        NATURAL_ORDER"TACSAssembler::NATURAL_ORDER"
-        RCM_ORDER"TACSAssembler::RCM_ORDER"
-        AMD_ORDER"TACSAssembler::AMD_ORDER"
-        ND_ORDER"TACSAssembler::ND_ORDER"
-        TACS_AMD_ORDER"TACSAssembler::TACS_AMD_ORDER"
-        MULTICOLOR_ORDER"TACSAssembler::MULTICOLOR_ORDER"
+        TACS_NATURAL_ORDER"TACSAssembler::NATURAL_ORDER"
+        TACS_RCM_ORDER"TACSAssembler::RCM_ORDER"
+        TACS_ND_ORDER"TACSAssembler::ND_ORDER"
+        TACS_TACS_AMD_ORDER"TACSAssembler::TACS_AMD_ORDER"
+        TACS_MULTICOLOR_ORDER"TACSAssembler::MULTICOLOR_ORDER"
 
     enum MatrixOrderingType"TACSAssembler::MatrixOrderingType":
-        ADDITIVE_SCHWARZ"TACSAssembler::ADDITIVE_SCHWARZ"
-        APPROXIMATE_SCHUR"TACSAssembler::APPROXIMATE_SCHUR"
-        DIRECT_SCHUR"TACSAssembler::DIRECT_SCHUR"
-        GAUSS_SEIDEL"TACSAssembler::GAUSS_SEIDEL"
+        TACS_ADDITIVE_SCHWARZ"TACSAssembler::ADDITIVE_SCHWARZ"
+        TACS_APPROXIMATE_SCHUR"TACSAssembler::APPROXIMATE_SCHUR"
+        TACS_DIRECT_SCHUR"TACSAssembler::DIRECT_SCHUR"
+        TACS_GAUSS_SEIDEL"TACSAssembler::GAUSS_SEIDEL"
 
     cdef cppclass TACSAssembler(TACSObject):
         TACSAssembler(MPI_Comm tacs_comm, int varsPerNode,
@@ -351,11 +333,13 @@ cdef extern from "TACSAssembler.h":
                       int numDependentNodes)
 
         # Set the element connectivity
-        int setElementConnectivity(int *conn, int *ptr)
+        int setElementConnectivity(int *ptr, int *conn)
         int setElements(TACSElement **elements)
         int setDependentNodes(int *depNodeIndex,
                               int *depNodeToTacs,
                               double *depNodeWeights)
+        void setDesignNodeMap(int _designVarsPerNode,
+                              TACSNodeMap *_designVarMap)
 
         # Add boundary conditions
         void addBCs(int nnodes, int *nodes,
@@ -375,7 +359,7 @@ cdef extern from "TACSAssembler.h":
         int getNumDependentNodes()
         int getNumOwnedNodes()
         int getNumElements()
-        TACSVarMap *getVarMap()
+        TACSNodeMap *getNodeMap()
 
         # Return information about the element
         TACSElement **getElements()
@@ -393,14 +377,16 @@ cdef extern from "TACSAssembler.h":
         TACSBVec *createNodeVec()
         void setNodes(TACSBVec*)
         void getNodes(TACSBVec*)
-        void getDesignVars(TacsScalar*, int)
-        void setDesignVars(TacsScalar*, int)
-        void getDesignVarRange(TacsScalar*, TacsScalar *, int)
+
+        TACSBVec *createDesignVec()
+        void getDesignVars(TACSBVec*)
+        void setDesignVars(TACSBVec*)
+        void getDesignVarRange(TACSBVec*, TACSBVec*)
 
         # Create vectors/matrices
         TACSBVec *createVec()
-        TACSDistMat *createMat()
-        FEMat *createFEMat(OrderingType)
+        TACSParallelMat *createMat()
+        TACSSchurMat *createSchurMat(OrderingType)
 
         # Reorder the vector based on the selected reordering
         void getReordering(int*)
@@ -443,29 +429,28 @@ cdef extern from "TACSAssembler.h":
                                    MatrixOrientation matOr)
 
         # Evaluation routines
-        void evalFunctions(TACSFunction **functions, int numFuncs,
+        void evalFunctions(int numFuncs, TACSFunction **functions,
                            TacsScalar *funcVals)
 
         # Derivative evaluation routines
-        void addDVSens(double coef, TACSFunction **funcs, int numFuncs,
-                       TacsScalar *fdvSens, int numDVs)
+        void addDVSens(double coef, int numFuncs, TACSFunction **funcs,
+                       TACSBVec **dfdx)
         void addSVSens(double alpha, double beta, double gamma,
-                       TACSFunction **funcs, int numFuncs,
+                       int numFuncs, TACSFunction **funcs,
                        TACSBVec **fuSens)
-        void addAdjointResProducts(double scale,
-                                   TACSBVec **adjoint, int numAdjoints,
-                                   TacsScalar *dvSens, int numDVs)
-        void addXptSens(double coef, TACSFunction **funcs, int numFuncs,
+        void addAdjointResProducts(double scale, int numAdjoints,
+                                   TACSBVec **adjoint, TACSBVec **dfdx)
+        void addXptSens(double coef, int numFuncs, TACSFunction **funcs,
                         TACSBVec **fXptSens)
-        void addAdjointResXptSensProducts(double scale,
-                                          TACSBVec **adjoint, int numAdjoints,
+        void addAdjointResXptSensProducts(double scale, int numAdjoints,
+                                          TACSBVec **adjoint,
                                           TACSBVec **adjXptSens)
 
         # Add the derivative of the inner product with a matrix
         void addMatDVSensInnerProduct(double scale,
                                       ElementMatrixType matType,
                                       TACSBVec *psi, TACSBVec *phi,
-                                      TacsScalar *dvSens, int numDVs)
+                                      TACSBVec *dfdx)
         void evalMatSVSensInnerProduct(ElementMatrixType matType,
                                        TACSBVec *psi, TACSBVec *phi,
                                        TACSBVec *res)
@@ -473,9 +458,7 @@ cdef extern from "TACSAssembler.h":
         # Test routines
         void testElement(int elemNum, int print_level, double dh,
                          double rtol, double atol)
-        void testConstitutive(int elemNum, int print_level)
-        void testFunction(TACSFunction *func, int num_dvs,
-                          double dh)
+        void testFunction(TACSFunction *func, double dh)
 
         # Set the number of threads
         void setNumThreads(int t)
@@ -534,17 +517,15 @@ cdef extern from "TACSMeshLoader.h":
         const char *getComponentDescript(int comp_num)
         const char *getElementDescript(int comp_num)
         void setElement(int component_num, TACSElement *_element)
-        void setConvertToCoordinate(int flag)
         int getNumNodes()
         int getNumElements()
-        TACSAssembler*createTACS(int vars_per_node,
+        TACSAssembler* createTACS(int vars_per_node,
                                   OrderingType order_type,
                                   MatrixOrderingType mat_type)
         void addAuxElement(TACSAuxElements *aux, int comp_num,
-	                   TACSElement *_element)
-
+	                         TACSElement *_element)
         void addFunctionDomain(TACSFunction * function,
-                               int *comp_nums, int num_comps)
+                               int num_comps, int *comp_nums)
         void getConnectivity(int *_num_nodes, int *_num_elements,
                              const int **_elem_node_ptr,
                              const int **_elem_node_conn,
@@ -567,7 +548,7 @@ cdef extern from "TACSCreator.h":
                                int *_dep_node_ptr,
                                int *_dep_node_conn,
                                double *_dep_node_weights )
-        void setElements(TACSElement **_elements, int _num_elems)
+        void setElements(int _num_elems, TACSElement **_elements)
         void setNodes(TacsScalar *_Xpts)
         void setReorderingType(OrderingType _order_type,
                                MatrixOrderingType _mat_type)
@@ -575,7 +556,8 @@ cdef extern from "TACSCreator.h":
         int getElementPartition(const int **)
         TACSAssembler *createTACS()
         int getNodeNums(const int**)
-        void getTacsNodeNums(TACSAssembler*, const int*, int, int**, int*)
+        void getAssemblerNodeNums(TACSAssembler*, int, const int*,
+                                  int*, int**)
 
 cdef extern from "TACSToFH5.h":
     cdef cppclass TACSToFH5(TACSObject):
@@ -593,12 +575,11 @@ cdef extern from "TACSIntegrator.h":
         void setPrintLevel(int level, const_char *filename)
         void setJacAssemblyFreq(int)
         void setUseLapack(int)
-        void setUseFEMat(int,OrderingType)
+        void setUseSchurMat(int, OrderingType)
         void setInitNewtonDeltaFraction(double)
         void setKrylovSubspaceMethod(TACSKsm *_ksm)
         void setTimeInterval(double, double)
-        void setFunctions(TACSFunction **funcs, int num_funcs,
-                          int num_design_vars,
+        void setFunctions(int num_funcs, TACSFunction **funcs,
                           int start_step, int end_step)
         void lapackNaturalFrequencies(int, TACSBVec*, TACSBVec*,
                                       TACSBVec*, TacsScalar*, TacsScalar*)
@@ -614,19 +595,15 @@ cdef extern from "TACSIntegrator.h":
         void integrateAdjoint()
         void postAdjoint(int step_num)
         void getAdjoint(int step_num, int func_num, TACSBVec **adjoint)
-        void getGradient(TacsScalar *_dfdx)
+        void getGradient(int func_num, TACSBVec **dfdx)
         void getXptGradient(int func_num, TACSBVec **dfdXpt)
-
         double getStates(int step_num,
                          TACSBVec **q, TACSBVec **qdot, TACSBVec **qddot)
 
         # Configure output
         void setOutputPrefix(const_char *prefix)
         void setOutputFrequency(int write_freq)
-        void setRigidOutput(TACSToFH5 *_rigidf5)
-        void setShellOutput(TACSToFH5 *_shellf5)
-        void setBeamOutput(TACSToFH5 *_beamf5)
-        void setSolidOutput(TACSToFH5 *_solidf5)
+        void setFH5(TACSToFH5 *_f5)
         void writeSolution(const_char *filename, int format)
         void writeSolutionToF5(int step_num)
 

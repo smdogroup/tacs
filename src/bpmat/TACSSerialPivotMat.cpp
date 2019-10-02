@@ -123,7 +123,7 @@ void TACSSerialPivotMat::addWeightValues( int nvars, const int *varp,
   if (varp[nvars] == nvars){
     // Special case when there are no weights - no copying required
     int is_transpose = 0;
-    if (matOr == TRANSPOSE){
+    if (matOr == TACS_MAT_TRANSPOSE){
       is_transpose = 1;
     }
     mat->addMatBlockValues(nvars, vars, nvars, vars,
@@ -153,7 +153,7 @@ void TACSSerialPivotMat::addWeightValues( int nvars, const int *varp,
 
     // Check whether the weighted matrix should be transposed or not
     int is_transpose = 0;
-    if (matOr == TRANSPOSE){
+    if (matOr == TACS_MAT_TRANSPOSE){
       is_transpose = 1;
     }
     mat->addMatBlockValues(n, vars, n, vars, Aw, n*bsize, is_transpose);

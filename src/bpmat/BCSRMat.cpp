@@ -1913,7 +1913,7 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
             int cp = item - cols;
             TacsScalar *A = &(data->A[b2*cp]);
 
-            if (matOr == NORMAL){
+            if (matOr == TACS_MAT_NORMAL){
               // Set the offset in the dense input row to the current
               // block matrix entry added to the BCSRMat
               const int offset = bsize*i;

@@ -962,7 +962,7 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
   // Set the increment along the row or column of the matrix depending
   // on whether we are adding the original matrix or its transpose
   int incr = mv;
-  if (matOr == TRANSPOSE){
+  if (matOr == TACS_MAT_TRANSPOSE){
     incr = 1;
   }
 
@@ -1011,7 +1011,7 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
                 if (item){
                   TacsScalar *a = &ext_A[b2*(item - ext_cols)];
 
-                  if (matOr == NORMAL){
+                  if (matOr == TACS_MAT_NORMAL){
                     for ( int ii = 0; ii < bsize; ii++ ){
                       for ( int jj = 0; jj < bsize; jj++ ){
                         a[ii*bsize + jj] +=

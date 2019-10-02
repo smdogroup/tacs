@@ -611,10 +611,10 @@ int TACSIntegrator::initAccelerationSolve( TACSBVec *forces ){
 
     // Assemble residual and jacobian
     if (mg){
-      mg->assembleJacobian(alpha, beta, gamma, res, NORMAL);
+      mg->assembleJacobian(alpha, beta, gamma, res, TACS_MAT_NORMAL);
     }
     else {
-      assembler->assembleJacobian(alpha, beta, gamma, res, mat, NORMAL);
+      assembler->assembleJacobian(alpha, beta, gamma, res, mat, TACS_MAT_NORMAL);
     }
 
     // Add the forces into the residual
@@ -752,11 +752,11 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
       TACSMg *mg = dynamic_cast<TACSMg*>(pc);
       if (mg){
         mg->assembleJacobian(alpha, beta, gamma + delta,
-                             res, NORMAL);
+                             res, TACS_MAT_NORMAL);
       }
       else {
         assembler->assembleJacobian(alpha, beta, gamma + delta,
-                               res, mat, NORMAL);
+                               res, mat, TACS_MAT_NORMAL);
       }
     }
     else {
@@ -1881,10 +1881,11 @@ void TACSBDFIntegrator::initAdjoint( int k ){
     // Try to downcast to a multigrid pc
     TACSMg *mg = dynamic_cast<TACSMg*>(pc);
     if (mg){
-      mg->assembleJacobian(alpha, beta, gamma, NULL, TRANSPOSE);
+      mg->assembleJacobian(alpha, beta, gamma, NULL, TACS_MAT_TRANSPOSE);
     }
     else {
-      assembler->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+      assembler->assembleJacobian(alpha, beta, gamma, NULL, mat,
+                                  TACS_MAT_TRANSPOSE);
     }
     time_rev_assembly += MPI_Wtime() - tassembly;
 
@@ -1976,7 +1977,7 @@ void TACSBDFIntegrator::postAdjoint( int k ){
       for ( int n = 0; n < num_funcs; n++ ){
         assembler->addJacobianVecProduct(1.0, 0.0, beta, gamma,
                                          psi[n], rhs[rhs_index*num_funcs+n],
-                                         TRANSPOSE);
+                                         TACS_MAT_TRANSPOSE);
       }
     }
     time_rev_assembly += MPI_Wtime() - tassembly2;
@@ -2553,10 +2554,11 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
     // Setup the Jacobian
     TACSMg *mg = dynamic_cast<TACSMg*>(pc);
     if (mg){
-      mg->assembleJacobian(alpha, beta, gamma, NULL, TRANSPOSE);
+      mg->assembleJacobian(alpha, beta, gamma, NULL, TACS_MAT_TRANSPOSE);
     }
     else {
-      assembler->assembleJacobian(alpha, beta, gamma, NULL, mat, TRANSPOSE);
+      assembler->assembleJacobian(alpha, beta, gamma, NULL, mat,
+                                  TACS_MAT_TRANSPOSE);
     }
 
     // Factor the preconditioner
@@ -2602,7 +2604,7 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
       assembler->addJacobianVecProduct(1.0, 1.0, 0.0, 0.0,
                                        lambda[num_funcs*stage + i],
                                        omega[num_funcs*stage + i],
-                                       TRANSPOSE);
+                                       TACS_MAT_TRANSPOSE);
     }
 
     // Add the products of omega and domega
@@ -2610,7 +2612,7 @@ void TACSDIRKIntegrator::iterateAdjoint( int k, TACSBVec **adj_rhs ){
       assembler->addJacobianVecProduct(1.0, 0.0, 1.0, 0.0,
                                        lambda[num_funcs*stage + i],
                                        domega[num_funcs*stage + i],
-                                       TRANSPOSE);
+                                       TACS_MAT_TRANSPOSE);
     }
   }
 }

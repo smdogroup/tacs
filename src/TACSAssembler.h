@@ -205,16 +205,16 @@ class TACSAssembler : public TACSObject {
   void assembleRes( TACSBVec *residual );
   void assembleJacobian( double alpha, double beta, double gamma,
                          TACSBVec *residual, TACSMat *A,
-                         MatrixOrientation matOr=NORMAL );
+                         MatrixOrientation matOr=TACS_MAT_NORMAL );
   void assembleMatType( ElementMatrixType matType,
-                        TACSMat *A, MatrixOrientation matOr=NORMAL );
+                        TACSMat *A, MatrixOrientation matOr=TACS_MAT_NORMAL );
   void assembleMatCombo( ElementMatrixType matTypes[],
                          TacsScalar scale[], int nmats,
-                         TACSMat *A, MatrixOrientation matOr=NORMAL );
+                         TACSMat *A, MatrixOrientation matOr=TACS_MAT_NORMAL );
   void addJacobianVecProduct( TacsScalar scale,
                               double alpha, double beta, double gamma,
                               TACSBVec *x, TACSBVec *y,
-                              MatrixOrientation matOr=NORMAL );
+                              MatrixOrientation matOr=TACS_MAT_NORMAL );
 
   // Design variable handling
   // ------------------------
@@ -439,7 +439,7 @@ class TACSAssembler : public TACSObject {
       mat = NULL;
       alpha = beta = gamma = 0.0;
       matType = TACS_STIFFNESS_MATRIX;
-      matOr = NORMAL;
+      matOr = TACS_MAT_NORMAL;
       coef = 0.0;
       numFuncs = 0;
       functions = NULL;
@@ -524,7 +524,7 @@ inline void TACSAssembler::addMatValues( TACSMat *A,
   // Add the element values to the matrix
   const int *nodeNums = &elementTacsNodes[start];
 
-  if (matOr == NORMAL && numDependentNodes == 0){
+  if (matOr == TACS_MAT_NORMAL && numDependentNodes == 0){
     // If we have no dependent nodes, then we don't need to do
     // anything extra here
     A->addValues(nnodes, nodeNums, nnodes, nodeNums,

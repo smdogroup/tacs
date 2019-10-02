@@ -78,7 +78,7 @@ class TACSSchurMat : public TACSMat {
   void addWeightValues( int nvars, const int *varp, const int *vars,
                         const TacsScalar *weights,
                         int nv, int mv, const TacsScalar *values,
-                        MatrixOrientation matOr=NORMAL );
+                        MatrixOrientation matOr=TACS_MAT_NORMAL );
   void applyBCs( TACSBcMap *bcmap );
   TACSVec *createVec();
 
