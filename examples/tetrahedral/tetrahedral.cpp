@@ -2,6 +2,7 @@
 #include "TACSToFH5.h"
 #include "TACSMeshLoader.h"
 #include "TACSLinearElasticity.h"
+#include "TACSThermoelasticity.h"
 #include "TACSTetrahedralBasis.h"
 #include "TACSElement3D.h"
 #include "TACSStructuralMass.h"
@@ -10,9 +11,21 @@
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
+  // Check whether to use elasticity or thoermoelasticity
+  int use_thermoelasticity = 0;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp(argv[i], "thermoelasticity") == 0){
+      use_thermoelasticity = 1;
+    }
+  }
+
   // Create the mesh loader object on MPI_COMM_WORLD. The
   // TACSAssembler object will be created on the same comm
-  TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int mpi_rank;
+  MPI_Comm_rank(comm, &mpi_rank);
+
+  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
 
   // Create the isotropic material class
@@ -32,17 +45,27 @@ int main( int argc, char *argv[] ){
   stiff->incref();
 
   // Create model (need class)
-  TACSLinearElasticity3D model(stiff, TACS_LINEAR_STRAIN);
+  TACSElementModel *model = NULL;
+  if (use_thermoelasticity){
+    model = new TACSLinearThermoelasticity3D(stiff, TACS_LINEAR_STRAIN);
+  }
+  else {
+    model = new TACSLinearElasticity3D(stiff, TACS_LINEAR_STRAIN);
+  }
+  int vars_per_node = model->getVarsPerNode();
 
   // Create basis
   TACSElementBasis *linear_basis = new TACSLinearTetrahedralBasis();
-  TacsTestElementBasis(linear_basis);
   TACSElementBasis *quad_basis = new TACSQuadraticTetrahedralBasis();
-  TacsTestElementBasis(quad_basis);
+
+  if (mpi_rank == 0){
+    TacsTestElementBasis(linear_basis);
+    TacsTestElementBasis(quad_basis);
+  }
 
   // Create the element type (need 3D element class)
-  TACSElement3D *linear_element = new TACSElement3D(&model, linear_basis);
-  TACSElement3D *quad_element = new TACSElement3D(&model, quad_basis);
+  TACSElement3D *linear_element = new TACSElement3D(model, linear_basis);
+  TACSElement3D *quad_element = new TACSElement3D(model, quad_basis);
 
   // The TACSAssembler object - which should be allocated if the mesh
   // is loaded correctly
@@ -84,7 +107,6 @@ int main( int argc, char *argv[] ){
         }
 
         // Now, create the TACSAssembler object
-        int vars_per_node = 3;
         assembler = mesh->createTACS(vars_per_node);
         assembler->incref();
       }

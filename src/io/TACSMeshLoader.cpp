@@ -955,16 +955,17 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
     arg_sort_list = NULL;
 
     // Arg sort the list of elements
-    int *elem_args = new int[ num_elements ];
+    elem_arg_sort_list = new int[ num_elements ];
     for ( int k = 0; k < num_elements; k++ ){
-      elem_args[k] = k;
+      elem_arg_sort_list[k] = k;
     }
 
     arg_sort_list = file_elem_nums;
-    qsort(elem_args, num_elements, sizeof(int), compare_arg_sort);
+    qsort(elem_arg_sort_list, num_elements, sizeof(int), compare_arg_sort);
     arg_sort_list = NULL;
 
-    // Now node_nums[node_args[k]] and elem_nums[elem_args[k] are sorted.
+    // Now file_node_nums[node_arg_sort_list[k]] and
+    // file_elem_nums[elem_arg_sort_list[k] are sorted.
 
     // Create the output for the nodes
     Xpts = new TacsScalar[3*num_nodes];
