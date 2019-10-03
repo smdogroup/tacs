@@ -282,7 +282,7 @@ int TACSToFH5::writeToFile( const char *filename ){
     // Convert the data to float
     float *float_data = new float[ dim1*dim2 ];
     for ( int i = 0; i < dim1*dim2; i++ ){
-      float_data[i] = data[i];
+      float_data[i] = TacsRealPart(data[i]);
     }
     delete [] data;
 

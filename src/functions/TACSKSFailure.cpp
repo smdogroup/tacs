@@ -24,13 +24,11 @@
 */
 TACSKSFailure::TACSKSFailure( TACSAssembler *_assembler,
                               double _ksWeight,
-                              KSConstitutiveFunction func,
                               double _alpha ):
 TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
              TACSFunction::TWO_STAGE, 0){
   ksWeight = _ksWeight;
   alpha = _alpha;
-  conType = func;
   ksType = CONTINUOUS;
   loadFactor = 1.0;
 

@@ -28,9 +28,9 @@
 */
 void TACSElement::addJacobian( int elemIndex,
                                double time,
-                               double alpha,
-                               double beta,
-                               double gamma,
+                               TacsScalar alpha,
+                               TacsScalar beta,
+                               TacsScalar gamma,
                                const TacsScalar Xpts[],
                                const TacsScalar vars[],
                                const TacsScalar dvars[],

@@ -1167,9 +1167,9 @@ void TACSElementBasis::addWeakFormJacobian( int n,
                                             const int vars_per_node,
                                             const TacsScalar DUt[],
                                             const TacsScalar DUx[],
-                                            double alpha,
-                                            double beta,
-                                            double gamma,
+                                            TacsScalar alpha,
+                                            TacsScalar beta,
+                                            TacsScalar gamma,
                                             const int Jac_nnz,
                                             const int *Jac_pairs,
                                             const TacsScalar *Jac,
@@ -1187,7 +1187,12 @@ void TACSElementBasis::addWeakFormJacobian( int n,
   // applying the transformation later on. This does not incurr extra
   // overhead during the residual computation but does here..
 #ifdef TACS_USE_COMPLEX
+  TacsScalar Nc[MAX_BASIS_SIZE];
   TacsScalar Nx[3*MAX_BASIS_SIZE];
+
+  for ( int i = 0; i < num_nodes; i++ ){
+    Nc[i] = N[i];
+  }
 
   if (num_params == 3){
     for ( int i = 0; i < num_nodes; i++ ){
@@ -1205,7 +1210,7 @@ void TACSElementBasis::addWeakFormJacobian( int n,
     }
   }
 
-  addWeakFormJacobian(num_params, num_nodes, N, Nx, weight, J,
+  addWeakFormJacobian(num_params, num_nodes, Nc, Nx, weight, J,
                       vars_per_node, DUt, DUx, alpha, beta, gamma,
                       Jac_nnz, Jac_pairs, Jac, res, mat);
 #else // Real code
@@ -1240,16 +1245,16 @@ void TACSElementBasis::addWeakFormJacobian( int n,
 
 void TACSElementBasis::addWeakFormJacobian( const int num_params,
                                             const int num_nodes,
-                                            const double N[],
+                                            const TacsScalar N[],
                                             const TacsScalar Nx[],
                                             TacsScalar weight,
                                             const TacsScalar J[],
                                             const int vars_per_node,
                                             const TacsScalar DUt[],
                                             const TacsScalar DUx[],
-                                            double alpha,
-                                            double beta,
-                                            double gamma,
+                                            TacsScalar alpha,
+                                            TacsScalar beta,
+                                            TacsScalar gamma,
                                             const int Jac_nnz,
                                             const int *Jac_pairs,
                                             const TacsScalar *Jac,
@@ -1259,8 +1264,8 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
   const int Jac_size = (3 + num_params)*vars_per_node;
 
   // Add contributions from DUt
-  const double *n = N;
-  const double *nx = Nx;
+  const TacsScalar *n = N;
+  const TacsScalar *nx = Nx;
   if (res){
     // Add the residual contribution from the time derivative components
     TacsScalar *r = res;
@@ -1319,7 +1324,7 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
           // Compute the offset point in the matrix
           const int init_index = (num_vars*(ix/(num_params+3)) +
                                   (jx/(num_params+3)));
-          double *M = &mat[init_index];
+          TacsScalar *M = &mat[init_index];
 
           // Evaluate which shape function to use
           int incr = 1;
@@ -1385,7 +1390,7 @@ void TACSElementBasis::addWeakFormJacobian( const int num_params,
         // Compute the offset point in the matrix
         const int init_index = (num_vars*(ix/(num_params+3)) +
                                 (jx/(num_params+3)));
-        double *M = &mat[init_index];
+        TacsScalar *M = &mat[init_index];
 
         // Evaluate which shape function to use
         int incr = 1;

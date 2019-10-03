@@ -16,11 +16,14 @@
 
 TACSElement3D::TACSElement3D( TACSElementModel *_model,
                               TACSElementBasis *_basis ){
-  model = _model;
-  basis = _basis;
+  model = _model;  model->incref();
+  basis = _basis;  basis->incref();
 }
 
-TACSElement3D::~TACSElement3D(){}
+TACSElement3D::~TACSElement3D(){
+  model->decref();
+  basis->decref();
+}
 
 // Get the layout properties of the element
 int TACSElement3D::getVarsPerNode(){
@@ -117,9 +120,9 @@ void TACSElement3D::addResidual( int elemIndex,
 */
 void TACSElement3D::addJacobian( int elemIndex,
                                  double time,
-                                 double alpha,
-                                 double beta,
-                                 double gamma,
+                                 TacsScalar alpha,
+                                 TacsScalar beta,
+                                 TacsScalar gamma,
                                  const TacsScalar *Xpts,
                                  const TacsScalar *vars,
                                  const TacsScalar *dvars,
@@ -166,7 +169,7 @@ void TACSElement3D::addJacobian( int elemIndex,
 // Functions for the adjoint
 void TACSElement3D::addAdjResProduct( int elemIndex,
                                       double time,
-                                      double scale,
+                                      TacsScalar scale,
                                       const TacsScalar psi[],
                                       const TacsScalar Xpts[],
                                       const TacsScalar vars[],
@@ -206,7 +209,7 @@ void TACSElement3D::addAdjResProduct( int elemIndex,
 
 void TACSElement3D::addAdjResXptProduct( int elemIndex,
                                          double time,
-                                         double scale,
+                                         TacsScalar scale,
                                          const TacsScalar psi[],
                                          const TacsScalar Xpts[],
                                          const TacsScalar vars[],
@@ -231,7 +234,7 @@ void TACSElement3D::getMatType( int elemIndex,
 */
 void TACSElement3D::addMatDVSensInnerProduct( int elemIndex,
                                               ElementMatrixType matType,
-                                              double scale,
+                                              TacsScalar scale,
                                               const TacsScalar psi[],
                                               const TacsScalar phi[],
                                               const TacsScalar Xpts[],
@@ -304,9 +307,9 @@ void TACSElement3D::addPointQuantityDVSens( int elemIndex,
 void TACSElement3D::addPointQuantitySVSens( int elemIndex,
                                             int quantityType,
                                             double time,
-                                            double alpha,
-                                            double beta,
-                                            double gamma,
+                                            TacsScalar alpha,
+                                            TacsScalar beta,
+                                            TacsScalar gamma,
                                             int n, double pt[],
                                             const TacsScalar Xpts[],
                                             const TacsScalar vars[],

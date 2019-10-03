@@ -141,7 +141,7 @@ int main( int argc, char *argv[] ){
     // Evaluate the function
     TacsScalar mass = 0.0;
     assembler->evalFunctions(1, &func, &mass);
-    printf("StructuralMass: %e\n", mass);
+    printf("StructuralMass: %e\n", TacsRealPart(mass));
 
     // Create an TACSToFH5 object for writing output to files
     ElementType etype = TACS_SOLID_ELEMENT;

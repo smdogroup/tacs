@@ -109,12 +109,13 @@ const char *TACSSphericalConstraint::elem_name = "TACSSphericalConstraint";
 /*
   Compute the kinetic and potential energy within the element
 */
-void TACSSphericalConstraint::computeEnergies( double time,
-                                               TacsScalar *_Te,
-                                               TacsScalar *_Pe,
+void TACSSphericalConstraint::computeEnergies( int elemIndex,
+                                               double time,
                                                const TacsScalar Xpts[],
                                                const TacsScalar vars[],
-                                               const TacsScalar dvars[] ){
+                                               const TacsScalar dvars[],
+                                               TacsScalar *_Te,
+                                               TacsScalar *_Pe ){
   *_Te = 0.0;
   *_Pe = 0.0;
 }

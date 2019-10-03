@@ -20,6 +20,8 @@
   designed to be included in .c/.cpp files directly.
 */
 
+#include "TACSObject.h"
+
 /*
   Compute the cross-product
 
@@ -247,6 +249,24 @@ static inline void mat3x3MultTrans( const TacsScalar A[],
   Compute y <- A^{T}*x
 
   input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  output:
+  y:   the resulting vector
+*/
+static inline void mat3x3MultTrans( const TacsComplex A[],
+                                    const TacsReal x[],
+                                    TacsComplex y[] ){
+  y[0] = A[0]*x[0] + A[3]*x[1] + A[6]*x[2];
+  y[1] = A[1]*x[0] + A[4]*x[1] + A[7]*x[2];
+  y[2] = A[2]*x[0] + A[5]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- A^{T}*x
+
+  input:
   A:   the 2x2 input matrix in row-major order
   x:   the input 2-vector
 
@@ -256,6 +276,23 @@ static inline void mat3x3MultTrans( const TacsScalar A[],
 static inline void mat2x2MultTrans( const TacsScalar A[],
                                     const TacsScalar x[],
                                     TacsScalar y[] ){
+  y[0] = A[0]*x[0] + A[2]*x[1];
+  y[1] = A[1]*x[0] + A[3]*x[1];
+}
+
+/*
+  Compute y <- A^{T}*x
+
+  input:
+  A:   the 2x2 input matrix in row-major order
+  x:   the input 2-vector
+
+  output:
+  y:   the resulting vector
+*/
+static inline void mat2x2MultTrans( const TacsComplex A[],
+                                    const TacsReal x[],
+                                    TacsComplex y[] ){
   y[0] = A[0]*x[0] + A[2]*x[1];
   y[1] = A[1]*x[0] + A[3]*x[1];
 }
@@ -1285,120 +1322,6 @@ static inline void inv2x2Sens( const TacsScalar Ainv[],
   Ad[1] = -Ad[1];
   Ad[2] = -Ad[2];
   Ad[3] = -Ad[3];
-}
-
-/*
-  Compute the product of a 3x3 and 3x4 matrix and add the result to
-  the block matrix D
-
-  D += A*B
-
-  input:
-  A:    a 3x3 matrix in row-major order
-  B:    a 3x4 matrix in row-major order
-
-  output:
-  D:    the result is added to this matrix
-*/
-static inline void addBlock3x3x4Product( const TacsScalar A[],
-                                         const TacsScalar B[],
-                                         TacsScalar D[],
-                                         const int ldd ){
-  D[0] += A[0]*B[0] + A[1]*B[4] + A[2]*B[8];
-  D[1] += A[0]*B[1] + A[1]*B[5] + A[2]*B[9];
-  D[2] += A[0]*B[2] + A[1]*B[6] + A[2]*B[10];
-  D[3] += A[0]*B[3] + A[1]*B[7] + A[2]*B[11];
-  D += ldd;
-
-  D[0] += A[3]*B[0] + A[4]*B[4] + A[5]*B[8];
-  D[1] += A[3]*B[1] + A[4]*B[5] + A[5]*B[9];
-  D[2] += A[3]*B[2] + A[4]*B[6] + A[5]*B[10];
-  D[3] += A[3]*B[3] + A[4]*B[7] + A[5]*B[11];
-  D += ldd;
-
-  D[0] += A[6]*B[0] + A[7]*B[4] + A[8]*B[8];
-  D[1] += A[6]*B[1] + A[7]*B[5] + A[8]*B[9];
-  D[2] += A[6]*B[2] + A[7]*B[6] + A[8]*B[10];
-  D[3] += A[6]*B[3] + A[7]*B[7] + A[8]*B[11];
-}
-
-/*
-  Compute the product of a 3x3 and 3x4 matrix and add the result to
-  the block matrix D
-
-  D += A^{T}*B
-
-  input:
-  A:    a 3x4 matrix in row-major order
-  B:    a 3x4 matrix in row-major order
-
-  output:
-  D:    the result is added to this matrix
-*/
-static inline void addBlock4x3x3Product( const TacsScalar A[],
-                                         const TacsScalar B[],
-                                         TacsScalar D[],
-                                         const int ldd ){
-  D[0] += A[0]*B[0] + A[4]*B[3] + A[8]*B[6];
-  D[1] += A[0]*B[1] + A[4]*B[4] + A[8]*B[7];
-  D[2] += A[0]*B[2] + A[4]*B[5] + A[8]*B[8];
-  D += ldd;
-
-  D[0] += A[1]*B[0] + A[5]*B[3] + A[9]*B[6];
-  D[1] += A[1]*B[1] + A[5]*B[4] + A[9]*B[7];
-  D[2] += A[1]*B[2] + A[5]*B[5] + A[9]*B[8];
-  D += ldd;
-
-  D[0] += A[2]*B[0] + A[6]*B[3] + A[10]*B[6];
-  D[1] += A[2]*B[1] + A[6]*B[4] + A[10]*B[7];
-  D[2] += A[2]*B[2] + A[6]*B[5] + A[10]*B[8];
-  D += ldd;
-
-  D[0] += A[3]*B[0] + A[7]*B[3] + A[11]*B[6];
-  D[1] += A[3]*B[1] + A[7]*B[4] + A[11]*B[7];
-  D[2] += A[3]*B[2] + A[7]*B[5] + A[11]*B[8];
-}
-
-/*
-  Compute: D += a*A^{T}*B where a is a scalar, and A and B are 3x4
-  matrices stored in column-major order.
-
-  input:
-  a:    the scalar multiple
-  A:    3x4 matrix in row-major order
-  B:    3x4 matrix in row-major order
-  ldd:  the leading row dimension of the Jacobian matrix D
-
-  output:
-  D:    the result is added to this matrix D += a*A^{T}*B
-*/
-static inline void addBlock3x4Product( const TacsScalar a,
-                                       const TacsScalar A[],
-                                       const TacsScalar B[],
-                                       TacsScalar D[],
-                                       const int ldd ){
-  D[0] += a*(A[0]*B[0] + A[4]*B[4] + A[8]*B[8]);
-  D[1] += a*(A[0]*B[1] + A[4]*B[5] + A[8]*B[9]);
-  D[2] += a*(A[0]*B[2] + A[4]*B[6] + A[8]*B[10]);
-  D[3] += a*(A[0]*B[3] + A[4]*B[7] + A[8]*B[11]);
-  D += ldd;
-
-  D[0] += a*(A[1]*B[0] + A[5]*B[4] + A[9]*B[8]);
-  D[1] += a*(A[1]*B[1] + A[5]*B[5] + A[9]*B[9]);
-  D[2] += a*(A[1]*B[2] + A[5]*B[6] + A[9]*B[10]);
-  D[3] += a*(A[1]*B[3] + A[5]*B[7] + A[9]*B[11]);
-  D += ldd;
-
-  D[0] += a*(A[2]*B[0] + A[6]*B[4] + A[10]*B[8]);
-  D[1] += a*(A[2]*B[1] + A[6]*B[5] + A[10]*B[9]);
-  D[2] += a*(A[2]*B[2] + A[6]*B[6] + A[10]*B[10]);
-  D[3] += a*(A[2]*B[3] + A[6]*B[7] + A[10]*B[11]);
-  D += ldd;
-
-  D[0] += a*(A[3]*B[0] + A[7]*B[4] + A[11]*B[8]);
-  D[1] += a*(A[3]*B[1] + A[7]*B[5] + A[11]*B[9]);
-  D[2] += a*(A[3]*B[2] + A[7]*B[6] + A[11]*B[10]);
-  D[3] += a*(A[3]*B[3] + A[7]*B[7] + A[11]*B[11]);
 }
 
 #endif // TACS_ALGEBRA_H

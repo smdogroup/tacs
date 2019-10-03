@@ -19,9 +19,17 @@
   Assign variables randomly to an array. This is useful for
   testing various things.
 */
-void TacsGenerateRandomArray( TacsScalar *array, int size,
-                              TacsScalar lower,
-                              TacsScalar upper ){
+void TacsGenerateRandomArray( TacsReal *array, int size,
+                              TacsReal lower,
+                              TacsReal upper ){
+  for ( int i = 0; i < size; i++ ){
+    array[i] = (upper - lower)*(rand()/((double)RAND_MAX+1)) + lower;
+  }
+}
+
+void TacsGenerateRandomArray( TacsComplex *array, int size,
+                              TacsComplex lower,
+                              TacsComplex upper ){
   for ( int i = 0; i < size; i++ ){
     array[i] = (upper - lower)*(rand()/((double)RAND_MAX+1)) + lower;
   }
@@ -202,7 +210,7 @@ int TacsTestElementResidual( TACSElement *element,
     TacsScalar dqtmp = dq[i];
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
-    element->computeEnergies(elemIndex, time, Xpts, q, dq&, T1, &P1);
+    element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     dq[i] = dqtmp + dh;
@@ -753,5 +761,9 @@ int TacsTestElementBasis( TACSElementBasis *basis,
   delete [] N;
   delete [] N0;
 
+#ifndef TACS_USE_COMPLEX
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+#else
+  return 0;
+#endif // TACS_USE_COMPLEX
 }

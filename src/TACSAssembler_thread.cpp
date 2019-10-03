@@ -138,9 +138,9 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
   TACSAssembler *tacs = pinfo->tacs;
   TACSBVec *res = pinfo->res;
   TACSMat *A = pinfo->mat;
-  double alpha = pinfo->alpha;
-  double beta = pinfo->beta;
-  double gamma = pinfo->gamma;
+  TacsScalar alpha = pinfo->alpha;
+  TacsScalar beta = pinfo->beta;
+  TacsScalar gamma = pinfo->gamma;
   MatrixOrientation matOr = pinfo->matOr;
 
   // Allocate a temporary array large enough to store everything

@@ -203,7 +203,7 @@ class TACSAssembler : public TACSObject {
   // Residual and Jacobian assembly
   // ------------------------------
   void assembleRes( TACSBVec *residual );
-  void assembleJacobian( double alpha, double beta, double gamma,
+  void assembleJacobian( TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                          TACSBVec *residual, TACSMat *A,
                          MatrixOrientation matOr=TACS_MAT_NORMAL );
   void assembleMatType( ElementMatrixType matType,
@@ -212,7 +212,7 @@ class TACSAssembler : public TACSObject {
                          TacsScalar scale[], int nmats,
                          TACSMat *A, MatrixOrientation matOr=TACS_MAT_NORMAL );
   void addJacobianVecProduct( TacsScalar scale,
-                              double alpha, double beta, double gamma,
+                              TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                               TACSBVec *x, TACSBVec *y,
                               MatrixOrientation matOr=TACS_MAT_NORMAL );
 
@@ -230,29 +230,29 @@ class TACSAssembler : public TACSObject {
 
   // Steady or unsteady derivative evaluation
   // ----------------------------------------
-  void addDVSens( double coef, int numFuncs, TACSFunction **funcs,
+  void addDVSens( TacsScalar coef, int numFuncs, TACSFunction **funcs,
                   TACSBVec **dfdx );
-  void addSVSens( double alpha, double beta, double gamma,
+  void addSVSens( TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                   int numFuncs, TACSFunction **funcs,
                   TACSBVec **fuSens );
-  void addAdjointResProducts( double scale, int numAdjoints,
+  void addAdjointResProducts( TacsScalar scale, int numAdjoints,
                               TACSBVec **adjoint,
                               TACSBVec **dfdx );
-  void addXptSens( double coef, int numFuncs, TACSFunction **funcs,
+  void addXptSens( TacsScalar coef, int numFuncs, TACSFunction **funcs,
                    TACSBVec **fXptSens );
-  void addAdjointResXptSensProducts( double scale, int numAdjoints,
+  void addAdjointResXptSensProducts( TacsScalar scale, int numAdjoints,
                                      TACSBVec **adjoint,
                                      TACSBVec **adjXptSens );
 
   // Advanced function interface - for time integration
   // --------------------------------------------------
-  void integrateFunctions( double tcoef,
+  void integrateFunctions( TacsScalar tcoef,
                            TACSFunction::EvaluationType ftype,
                            int numFuncs, TACSFunction **funcs );
 
   // Add the derivatives of inner products
   // -------------------------------------
-  void addMatDVSensInnerProduct( double scale,
+  void addMatDVSensInnerProduct( TacsScalar scale,
                                  ElementMatrixType matType,
                                  TACSBVec *psi, TACSBVec *phi,
                                  TACSBVec *dfdx );
@@ -284,7 +284,7 @@ class TACSAssembler : public TACSObject {
   // ------------------------------------------------------------
   int getNumComponents();
   void getElementOutputData( ElementType elem_type, int write_flag,
-                             int *len, int *nvals, double **data );
+                             int *len, int *nvals, TacsScalar **data );
 
   // Functions for ordering the variables
   // ------------------------------------
@@ -460,7 +460,7 @@ class TACSAssembler : public TACSObject {
 
     // Information for matrix assembly
     TACSMat *mat;
-    double alpha, beta, gamma;
+    TacsScalar alpha, beta, gamma;
     ElementMatrixType matType;
     MatrixOrientation matOr;
 

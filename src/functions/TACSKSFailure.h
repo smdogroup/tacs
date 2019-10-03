@@ -56,10 +56,8 @@ class TACSKSFailure : public TACSFunction {
  public:
   enum KSFailureType { DISCRETE, CONTINUOUS,
                        PNORM_DISCRETE, PNORM_CONTINUOUS };
-  enum KSConstitutiveFunction { FAILURE, BUCKLING };
 
   TACSKSFailure( TACSAssembler * _tacs, double ksWeight,
-                 KSConstitutiveFunction func=FAILURE,
                  double alpha=1.0 );
   ~TACSKSFailure();
 
@@ -138,9 +136,6 @@ class TACSKSFailure : public TACSFunction {
  private:
   // The type of aggregation to use
   KSFailureType ksType;
-
-  // The constitutive function to use
-  KSConstitutiveFunction conType;
 
   // The weight on the ks function value
   double ksWeight;

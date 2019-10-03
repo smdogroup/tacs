@@ -45,7 +45,6 @@ class MITC3 : public TACSElement {
   static const int NUM_NODES = ORDER;
   static const int NUM_DISPS = 8;
   static const int NUM_STRESSES = 6;
-  static const int NUM_EXTRAS = 4;
 
   MITC3( TimoshenkoStiffness *_stiff,
          TACSGibbsVector *_gravity=NULL,
@@ -55,77 +54,56 @@ class MITC3 : public TACSElement {
 
   // Return the sizes of the array components
   // ----------------------------------------
-  int numDisplacements();
-  int numStresses();
-  int numExtras();
-  int numNodes();
+  int getVarsPerNode();
+  int getNumNodes();
 
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
-  const char *elementName();
-  const char *displacementName( int i );
-  const char *stressName( int i );
-  const char *strainName( int i );
-  const char *extraName( int i );
-
-  ElementType getElementType();
+  const char *getObjectName();
+  ElementLayout getLayoutType();
 
   // Functions for handling the design variables
   // -------------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lowerBound[],
-                          TacsScalar upperBound[], int numDVs );
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  void getDesignVarRange( int elemIndex, int dvLen,
+                          TacsScalar lb[], TacsScalar ub[] );
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
-  void getInitConditions( TacsScalar vars[],
+  void getInitConditions( int elemIndex, const TacsScalar X[],
+                          TacsScalar vars[],
                           TacsScalar dvars[],
-                          TacsScalar ddvars[],
-                          const TacsScalar X[] );
+                          TacsScalar ddvars[] );
 
-  // Compute the kinetic and potential energies
-  // ------------------------------------------
-  void computeEnergies( double time,
-                        TacsScalar *_Te, TacsScalar *_Pe,
-                        const TacsScalar X[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( int elemIndex, double time,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        TacsScalar *Te, TacsScalar *Pe );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( double time,
-                    TacsScalar res[],
-                    const TacsScalar X[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], TacsScalar res[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
+  void addJacobian( int elemIndex, double time,
                     double alpha, double beta, double gamma,
-                    const TacsScalar X[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
 
-  // Add the product of the adjoint with the derivative of the design variables
-  // --------------------------------------------------------------------------
-  void addAdjResProduct( double time, double scale,
-                         TacsScalar dvSens[], int dvLen,
-                         const TacsScalar psi[],
-                         const TacsScalar X[],
-                         const TacsScalar vars[],
-                         const TacsScalar dvars[],
-                         const TacsScalar ddvars[] );
-  void addAdjResXptProduct( double time, double scale,
-                            TacsScalar fXptSens[],
-                            const TacsScalar psi[],
-                            const TacsScalar X[],
-                            const TacsScalar vars[],
-                            const TacsScalar dvars[],
-                            const TacsScalar ddvars[] );
+  // Functions for post-processing
+  // -----------------------------
+  void getOutputData( int elemIndex, ElementType etype, int write_flag,
+                      const TacsScalar Xpts[], const TacsScalar vars[],
+                      const TacsScalar dvars[], const TacsScalar ddvars[],
+                      int ld_data, TacsScalar *data );
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
@@ -160,15 +138,6 @@ class MITC3 : public TACSElement {
                         const TacsScalar esens[],
                         const TacsScalar Xpts[],
                         const TacsScalar vars[] );
-
-  // Functions for post-processing
-  // -----------------------------
-  void addOutputCount( int * nelems, int * nnodes, int * ncsr );
-  void getOutputData( unsigned int out_type,
-                      double * data, int ld_data,
-                      const TacsScalar Xpts[],
-                      const TacsScalar vars[] );
-  void getOutputConnectivity( int * con, int node );
 
   // Test the strain expressions
   void testStrain( const TacsScalar X[] );
@@ -288,12 +257,8 @@ class MITC3 : public TACSElement {
   // Initial velocity/angular velocity
   TACSGibbsVector *vInit, *omegaInit;
 
-  // The names of the displacements, stresses etc.
+  // The element name
   static const char *elemName;
-  static const char *dispNames[NUM_DISPS];
-  static const char *stressNames[NUM_STRESSES];
-  static const char *strainNames[NUM_STRESSES];
-  static const char *extraNames[NUM_EXTRAS];
 };
 
 #endif // TACS_MITC3_H

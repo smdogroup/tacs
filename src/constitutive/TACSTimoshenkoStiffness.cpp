@@ -12,11 +12,11 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "TimoshenkoStiffness.h"
+#include "TACSTimoshenkoStiffness.h"
 
-const char *TimoshenkoStiffness::constName = "TimoshenkoStiffness";
+const char *TACSTimoshenkoStiffness::constName = "TACSTimoshenkoStiffness";
 
-const char *TimoshenkoStiffness::constitutiveName(){
+const char *TACSTimoshenkoStiffness::getObjectName(){
   return constName;
 }
 
@@ -33,17 +33,17 @@ const char *TimoshenkoStiffness::constitutiveName(){
   xk2, xk3         : cross sectional shear center
   muS              : viscous damping coefficient
 */
-TimoshenkoStiffness::TimoshenkoStiffness( const TacsScalar _axis[],
-                                          TacsScalar EA,
-                                          TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-                                          TacsScalar GJ,
-                                          TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
-                                          TacsScalar m00,
-                                          TacsScalar m11, TacsScalar m22, TacsScalar m33,
-                                          TacsScalar xm2, TacsScalar xm3,
-                                          TacsScalar xc2, TacsScalar xc3,
-                                          TacsScalar xk2, TacsScalar xk3,
-                                          TacsScalar muS ){
+TACSTimoshenkoStiffness::TACSTimoshenkoStiffness( const TacsScalar _axis[],
+                                                  TacsScalar EA,
+                                                  TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
+                                                  TacsScalar GJ,
+                                                  TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
+                                                  TacsScalar m00,
+                                                  TacsScalar m11, TacsScalar m22, TacsScalar m33,
+                                                  TacsScalar xm2, TacsScalar xm3,
+                                                  TacsScalar xc2, TacsScalar xc3,
+                                                  TacsScalar xk2, TacsScalar xk3,
+                                                  TacsScalar muS ){
   // Set the reference axis and normalize it
   axis[0] = _axis[0];
   axis[1] = _axis[1];
@@ -99,17 +99,17 @@ TimoshenkoStiffness::TimoshenkoStiffness( const TacsScalar _axis[],
   Set the diagonal components of the stiffness matrix and the mass
   moments of the cross-section.
 */
-TimoshenkoStiffness::TimoshenkoStiffness( TacsScalar rhoA,
-                                          TacsScalar rhoIy,
-                                          TacsScalar rhoIz,
-                                          TacsScalar rhoIyz,
-                                          TacsScalar EA,
-                                          TacsScalar GJ,
-                                          TacsScalar EIy,
-                                          TacsScalar EIz,
-                                          TacsScalar kGAy,
-                                          TacsScalar kGAz,
-                                          const TacsScalar _axis[] ){
+TACSTimoshenkoStiffness::TACSTimoshenkoStiffness( TacsScalar rhoA,
+                                                  TacsScalar rhoIy,
+                                                  TacsScalar rhoIz,
+                                                  TacsScalar rhoIyz,
+                                                  TacsScalar EA,
+                                                  TacsScalar GJ,
+                                                  TacsScalar EIy,
+                                                  TacsScalar EIz,
+                                                  TacsScalar kGAy,
+                                                  TacsScalar kGAz,
+                                                  const TacsScalar _axis[] ){
   // Set the reference axis and normalize it
   axis[0] = _axis[0];
   axis[1] = _axis[1];
@@ -140,18 +140,18 @@ TimoshenkoStiffness::TimoshenkoStiffness( TacsScalar rhoA,
 /*
   Set the full stiffness matrix
 */
-TimoshenkoStiffness::TimoshenkoStiffness( const TacsScalar _rho[],
-                                          const TacsScalar _C[],
-                                          const TacsScalar _axis[] ){
+TACSTimoshenkoStiffness::TACSTimoshenkoStiffness( const TacsScalar _rho[],
+                                                  const TacsScalar _C[],
+                                                  const TacsScalar _axis[] ){
   setData(_rho, _C, _axis);
 }
 
 /*
   Set the stiffness data
 */
-void TimoshenkoStiffness::setData( const TacsScalar _rho[],
-                                   const TacsScalar _C[],
-                                   const TacsScalar _axis[] ){
+void TACSTimoshenkoStiffness::setData( const TacsScalar _rho[],
+                                       const TacsScalar _C[],
+                                       const TacsScalar _axis[] ){
   // Set the reference axis and normalize it
   axis[0] = _axis[0];
   axis[1] = _axis[1];
@@ -168,19 +168,33 @@ void TimoshenkoStiffness::setData( const TacsScalar _rho[],
   memcpy(C, _C, 36*sizeof(TacsScalar));
 }
 
-TimoshenkoStiffness::~TimoshenkoStiffness(){}
+TACSTimoshenkoStiffness::~TACSTimoshenkoStiffness(){}
 
 /*
   Get the number of stress components
 */
-int TimoshenkoStiffness::getNumStresses(){
+int TACSTimoshenkoStiffness::getNumStresses(){
   return 6;
 }
+
+
+  // Evaluate material properties
+  TacsScalar evalDensity( int elemIndex, const double pt[],
+                          const TacsScalar X[] );
+  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
+                               const TacsScalar X[] );
+
+  // Evaluate the stress and the tangent stiffness matrix
+  void evalStress( int elemIndex, const double pt[],
+                   const TacsScalar X[], const TacsScalar e[],
+                   TacsScalar s[] );
+  void evalTangentStiffness( int elemIndex, const double pt[],
+                             const TacsScalar X[], TacsScalar C[] );
 
 /*
   Compute the stress, given the strain
 */
-void TimoshenkoStiffness::calculateStress( const double pt[],
+void TACSTimoshenkoStiffness::calculateStress( const double pt[],
                                            const TacsScalar strain[],
                                            TacsScalar stress[] ){
   calcStress(strain, stress);

@@ -30,48 +30,6 @@
 enum TACSTranslationConType { COINCIDENT, COLINEAR, COPLANAR };
 
 /*
-  Generic base class for constraint elements
-*/
-class TACSKinematicConstraint : public TACSElement {
- public:
-  TACSKinematicConstraint( TACSGibbsVector *_point,
-                           int _dof_flag,
-                           TACSRigidBody *_bodyA,
-                           TACSRigidBody *_bodyB=NULL );
-  ~TACSKinematicConstraint();
-
-  // Get the multiplier precedent to ensure they are ordered last
-  // ------------------------------------------------------------
-  void getMultiplierIndex( int *multiplier ){
-    if (bodyA && bodyB){
-      *multiplier = 2;
-    }
-    else {
-      *multiplier = 1;
-    }
-  }
-
-  // Return the number of displacements and nodes
-  // --------------------------------------------
-  int numDisplacements(){ return 8; }
-  int numNodes() = 0;
-  const char* elementName(){ return elem_name; }
-
- private:
-  // The point where the joint is located in global frame
-  TACSGibbsVector *point;
-
-  // The rigid bodies involved in the joint
-  TACSRigidBody *bodyA, *bodyB;
-
-  // The positions of joint from each body in global frame
-  TACSGibbsVector *xAVec, *xBVec;
-
-  // The name of the element
-  static const char *elem_name;
-};
-
-/*
   Spherical constraint
 
   The spherical constraint class imposes no restriction on the
@@ -106,40 +64,35 @@ class TACSSphericalConstraint : public TACSElement {
 
   // Set and retrieve design variable values
   // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------
-  int numDisplacements(){ return 8; }
-  int numNodes();
-  const char* elementName(){ return elem_name; }
+  int getVarsPerNode(){ return 8; }
+  int getNumNodes();
+  const char* getObjectName(){ return elem_name; }
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time,
-                        TacsScalar *_Te,
-                        TacsScalar *_Pe,
+  void computeEnergies( int elemIndex, double time,
                         const TacsScalar Xpts[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        TacsScalar *Te, TacsScalar *Pe );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], TacsScalar res[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
+  void addJacobian( int elemIndex, double time,
                     double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
 
  private:
   // Keep a record of the constraint type
@@ -206,8 +159,8 @@ class TACSRevoluteConstraint : public TACSElement {
 
   // Set and retrieve design variable values
   // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------
@@ -215,31 +168,28 @@ class TACSRevoluteConstraint : public TACSElement {
   int numNodes();
   const char* elementName(){ return elem_name; }
 
+
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time,
-                        TacsScalar *_Te,
-                        TacsScalar *_Pe,
+  void computeEnergies( int elemIndex, double time,
                         const TacsScalar Xpts[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        TacsScalar *Te, TacsScalar *Pe );
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], TacsScalar res[] );
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
+  void addJacobian( int elemIndex, double time,
                     double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
+
  private:
   // Update the local data
   void updatePoints( int init_e=0 );
@@ -289,6 +239,26 @@ class TACSRigidLink : public TACSElement {
   int numNodes();
   const char* elementName();
 
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( int elemIndex, double time,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        TacsScalar *Te, TacsScalar *Pe );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], TacsScalar res[] );
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void addJacobian( int elemIndex, double time,
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
@@ -397,6 +367,26 @@ class TACSAverageConstraint : public TACSElement {
   int numNodes();
   const char* elementName();
 
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( int elemIndex, double time,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        TacsScalar *Te, TacsScalar *Pe );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], TacsScalar res[] );
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void addJacobian( int elemIndex, double time,
+                    double alpha, double beta, double gamma,
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
   void computeEnergies( double time,
@@ -656,23 +646,27 @@ class TACSRevoluteDriver : public TACSElement {
   int numNodes();
   const char* elementName();
 
-  void computeEnergies( double time,
-                        TacsScalar *_Te,
-                        TacsScalar *_Pe,
+
+  // Compute the kinetic and potential energy within the element
+  // -----------------------------------------------------------
+  void computeEnergies( int elemIndex, double time,
                         const TacsScalar Xpts[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] );
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
-  void addJacobian( double time, TacsScalar J[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        TacsScalar *Te, TacsScalar *Pe );
+
+  // Compute the residual of the governing equations
+  // -----------------------------------------------
+  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
+                    const TacsScalar vars[], const TacsScalar dvars[],
+                    const TacsScalar ddvars[], TacsScalar res[] );
+
+  // Compute the Jacobian of the governing equations
+  // -----------------------------------------------
+  void addJacobian( int elemIndex, double time,
                     double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] );
 
  private:
   TacsScalar omega;

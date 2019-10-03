@@ -3848,8 +3848,9 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   A:         the Jacobian matrix
   matOr:     the matrix orientation NORMAL or TRANSPOSE
 */
-void TACSAssembler::assembleJacobian( double alpha, double beta,
-                                      double gamma,
+void TACSAssembler::assembleJacobian( TacsScalar alpha,
+                                      TacsScalar beta,
+                                      TacsScalar gamma,
                                       TACSBVec *residual,
                                       TACSMat *A,
                                       MatrixOrientation matOr ){
@@ -4108,7 +4109,7 @@ void TACSAssembler::evalFunctions( int numFuncs,
                                    TACSFunction **funcs,
                                    TacsScalar *funcVals ){
   // Here we will use time-independent formulation
-  double tcoef = 1.0;
+  TacsScalar tcoef = 1.0;
 
   // Check whether these are two-stage or single-stage functions
   int twoStage = 0;
@@ -4168,7 +4169,7 @@ void TACSAssembler::evalFunctions( int numFuncs,
   ftype:   the type of integration to use
   funcs:   the array of functions
 */
-void TACSAssembler::integrateFunctions( double tcoef,
+void TACSAssembler::integrateFunctions( TacsScalar tcoef,
                                         TACSFunction::EvaluationType ftype,
                                         int numFuncs,
                                         TACSFunction **funcs ){
@@ -4260,7 +4261,7 @@ void TACSAssembler::integrateFunctions( double tcoef,
   fdvSens:   the sensitivity - size numFuncs*numDVs
   numDVs:    the number of design variables
 */
-void TACSAssembler::addDVSens( double coef,
+void TACSAssembler::addDVSens( TacsScalar coef,
                                int numFuncs, TACSFunction **funcs,
                                TACSBVec **dfdx ){
   // Retrieve pointers to temporary storage
@@ -4355,7 +4356,7 @@ void TACSAssembler::addDVSens( double coef,
   numFuncs:  the number of functions - size of funcs array
   fXptSens:  the sensitivity
 */
-void TACSAssembler::addXptSens( double coef, int numFuncs,
+void TACSAssembler::addXptSens( TacsScalar coef, int numFuncs,
                                 TACSFunction **funcs,
                                 TACSBVec **fXptSens ){
   // First check if this is the right assembly object
@@ -4438,8 +4439,9 @@ void TACSAssembler::addXptSens( double coef, int numFuncs,
   function: the function pointer
   vec:      the derivative of the function w.r.t. the state variables
 */
-void TACSAssembler::addSVSens( double alpha, double beta,
-                               double gamma, int numFuncs,
+void TACSAssembler::addSVSens( TacsScalar alpha,
+                               TacsScalar beta,
+                               TacsScalar gamma, int numFuncs,
                                TACSFunction **funcs,
                                TACSBVec **vec ){
   // First check if this is the right assembly object
@@ -4533,7 +4535,7 @@ void TACSAssembler::addSVSens( double alpha, double beta,
   dvSens:      product of the derivative of the residuals and the adjoint
   numDVs:      the number of design variables
 */
-void TACSAssembler::addAdjointResProducts( double scale,
+void TACSAssembler::addAdjointResProducts( TacsScalar scale,
                                            int numAdjoints,
                                            TACSBVec **adjoint,
                                            TACSBVec **dfdx ){
@@ -4635,7 +4637,7 @@ void TACSAssembler::addAdjointResProducts( double scale,
   dvSens:      the product of the derivative of the residuals and the adjoint
   numDVs:      the number of design variables
 */
-void TACSAssembler::addAdjointResXptSensProducts( double scale,
+void TACSAssembler::addAdjointResXptSensProducts( TacsScalar scale,
                                                   int numAdjoints,
                                                   TACSBVec **adjoint,
                                                   TACSBVec **adjXptSens ){
@@ -4712,7 +4714,7 @@ void TACSAssembler::addAdjointResXptSensProducts( double scale,
   output:
   dvSens:    the derivative of the inner product
 */
-void TACSAssembler::addMatDVSensInnerProduct( double scale,
+void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
                                               ElementMatrixType matType,
                                               TACSBVec *psi, TACSBVec *phi,
                                               TACSBVec *dfdx ){
@@ -4851,9 +4853,9 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
   y:         the output vector y <- y + scale*J^{Op}*x
 */
 void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
-                                           double alpha,
-                                           double beta,
-                                           double gamma,
+                                           TacsScalar alpha,
+                                           TacsScalar beta,
+                                           TacsScalar gamma,
                                            TACSBVec *x, TACSBVec *y,
                                            MatrixOrientation matOr ){
   x->beginDistributeValues();
@@ -5101,7 +5103,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
 #endif // TACS_USE_COMPLEX
 
   // Compute df/dx
-  double coef = 1.0;
+  TacsScalar coef = 1.0;
   TacsScalar ftmp;
   setDesignVars(x);
   evalFunctions(1, &func, &ftmp);
@@ -5175,7 +5177,7 @@ void TACSAssembler::testFunction( TACSFunction *func,
 
   // Evaluate the state variable sensitivity
   evalFunctions(1, &func, &ftmp);
-  double alpha = 1.0, beta = 0.0, gamma = 0.0;
+  TacsScalar alpha = 1.0, beta = 0.0, gamma = 0.0;
   temp->zeroEntries();
   addSVSens(alpha, beta, gamma, 1, &func, &temp);
   pdf = temp->dot(pert);
@@ -5317,8 +5319,8 @@ void TACSAssembler::getElementOutputData( ElementType elem_type,
   for ( int i = 0; i < numElements; i++ ){
     len += elements[i]->getNumNodes();
   }
-  double *data = new double[ len*nvals ];
-  memset(data, 0, len*nvals*sizeof(double));
+  TacsScalar *data = new TacsScalar[ len*nvals ];
+  memset(data, 0, len*nvals*sizeof(TacsScalar));
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemXpts, *vars, *dvars, *ddvars;

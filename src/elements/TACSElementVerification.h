@@ -20,11 +20,13 @@
 /**
   Assign variables randomly to an array. This is useful for
   testing various things.
-
  */
-void TacsGenerateRandomArray( TacsScalar *array, int size,
-                              TacsScalar lower=-1.0,
-                              TacsScalar upper=1.0 );
+void TacsGenerateRandomArray( TacsReal *array, int size,
+                              TacsReal lower=-1.0,
+                              TacsReal upper=1.0 );
+void TacsGenerateRandomArray( TacsComplex *array, int size,
+                              TacsComplex lower=-1.0,
+                              TacsComplex upper=1.0 );
 
 /*
   Find the largest absolute value of the difference between the

@@ -300,7 +300,9 @@ class TACSElement : public TACSObject {
     @param mat The element Jacobian input/output
   */
   virtual void addJacobian( int elemIndex, double time,
-                            double alpha, double beta, double gamma,
+                            TacsScalar alpha,
+                            TacsScalar beta,
+                            TacsScalar gamma,
                             const TacsScalar Xpts[],
                             const TacsScalar vars[],
                             const TacsScalar dvars[],
@@ -330,7 +332,8 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design variable vector
     @param dvSens The derivative vector
   */
-  virtual void addAdjResProduct( int elemIndex, double time, double scale,
+  virtual void addAdjResProduct( int elemIndex, double time,
+                                 TacsScalar scale,
                                  const TacsScalar psi[],
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
@@ -361,7 +364,8 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design variable vector
     @param dvSens The derivative vector
   */
-  virtual void addAdjResXptProduct( int elemIndex, double time, double scale,
+  virtual void addAdjResXptProduct( int elemIndex, double time,
+                                    TacsScalar scale,
                                     const TacsScalar psi[],
                                     const TacsScalar Xpts[],
                                     const TacsScalar vars[],
@@ -406,7 +410,7 @@ class TACSElement : public TACSObject {
   */
   virtual void addMatDVSensInnerProduct( int elemIndex,
                                          ElementMatrixType matType,
-                                         double scale,
+                                         TacsScalar scale,
                                          const TacsScalar psi[],
                                          const TacsScalar phi[],
                                          const TacsScalar Xpts[],
@@ -514,7 +518,9 @@ class TACSElement : public TACSObject {
   */
   virtual void addPointQuantitySVSens( int elemIndex, int quantityType,
                                        double time,
-                                       double alpha, double beta, double gamma,
+                                       TacsScalar alpha,
+                                       TacsScalar beta,
+                                       TacsScalar gamma,
                                        int n, double pt[],
                                        const TacsScalar Xpts[],
                                        const TacsScalar vars[],

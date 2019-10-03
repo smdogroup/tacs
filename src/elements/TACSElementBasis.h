@@ -322,6 +322,14 @@ class TACSElementBasis : public TACSObject {
     @param vars_per_node The number of variables per node
     @param DUt The coefficients of the temporal part of the weak form
     @param DUx The coefficients of the spatial part of the weak form
+    @param alpha Coefficient for the Jacobian w.r.t. states
+    @param beta Coefficient for the Jacobian w.r.t. first time deriv states
+    @param gamma Coefficient for the Jacobian w.r.t. second time deriv states
+    @param Jac_nnz Number of non-zero Jacobian entries
+    @param Jac_paris The (i,j) locations of the Jacobian entries
+    @param Jac The Jacobian values
+    @param res The resulting residual
+    @param mat The Jacobian matrix
   */
   virtual void addWeakFormJacobian( int n,
                                     const double pt[],
@@ -330,7 +338,9 @@ class TACSElementBasis : public TACSObject {
                                     const int vars_per_node,
                                     const TacsScalar DUt[],
                                     const TacsScalar DUx[],
-                                    double alpha, double beta, double gamma,
+                                    TacsScalar alpha,
+                                    TacsScalar beta,
+                                    TacsScalar gamma,
                                     const int Jac_nnz,
                                     const int *Jac_pairs,
                                     const TacsScalar *Jac,
@@ -459,11 +469,11 @@ class TACSElementBasis : public TACSObject {
                                    const TacsScalar DUt[], const TacsScalar DUx[],
                                    TacsScalar res[] );
   static void addWeakFormJacobian( const int num_params, const int num_nodes,
-                                   const double N[], const TacsScalar Nx[],
+                                   const TacsScalar N[], const TacsScalar Nx[],
                                    TacsScalar weight, const TacsScalar J[],
                                    const int vars_per_node,
                                    const TacsScalar DUt[], const TacsScalar DUx[],
-                                   double alpha, double beta, double gamma,
+                                   TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                                    const int Jac_nnz, const int *Jac_pairs,
                                    const TacsScalar *Jac,
                                    TacsScalar *res, TacsScalar *mat );

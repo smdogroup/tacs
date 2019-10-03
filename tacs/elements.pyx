@@ -129,7 +129,7 @@ cdef class FixedConstraint(Element):
                                            point.ptr)
         self.ptr.incref()
         return
-        
+         
     def __dealloc__(self):
         self.ptr.decref()
         return

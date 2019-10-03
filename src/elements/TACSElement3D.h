@@ -64,7 +64,7 @@ class TACSElement3D : public TACSElement {
     Add the residual and Jacobians to the arrays
   */
   void addJacobian( int elemIndex, double time,
-                    double alpha, double beta, double gamma,
+                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                     const TacsScalar *Xpts, const TacsScalar *vars,
                     const TacsScalar *dvars, const TacsScalar *ddvars,
                     TacsScalar *res, TacsScalar *mat );
@@ -73,7 +73,7 @@ class TACSElement3D : public TACSElement {
     Add the derivative of the product of the adjoint variables w.r.t.
     the material design variables
   */
-  void addAdjResProduct( int elemIndex, double time, double scale,
+  void addAdjResProduct( int elemIndex, double time, TacsScalar scale,
                          const TacsScalar psi[], const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[],
@@ -83,7 +83,7 @@ class TACSElement3D : public TACSElement {
     Add the derivative of the product of the adjoint variables and the
     residuals with respect to the node locations
   */
-  void addAdjResXptProduct( int elemIndex, double time, double scale,
+  void addAdjResXptProduct( int elemIndex, double time, TacsScalar scale,
                             const TacsScalar psi[], const TacsScalar Xpts[],
                             const TacsScalar vars[], const TacsScalar dvars[],
                             const TacsScalar ddvars[], TacsScalar fXptSens[] );
@@ -101,7 +101,7 @@ class TACSElement3D : public TACSElement {
     the design variables
   */
   void addMatDVSensInnerProduct( int elemIndex, ElementMatrixType matType,
-                                 double scale, const TacsScalar psi[],
+                                 TacsScalar scale, const TacsScalar psi[],
                                  const TacsScalar phi[],
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
@@ -137,7 +137,7 @@ class TACSElement3D : public TACSElement {
     Add the derivative of the point quantity w.r.t. the state variables
   */
   void addPointQuantitySVSens( int elemIndex, int quantityType, double time,
-                               double alpha, double beta, double gamma,
+                               TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                                int n, double pt[],
                                const TacsScalar Xpts[], const TacsScalar vars[],
                                const TacsScalar dvars[], const TacsScalar ddvars[],
