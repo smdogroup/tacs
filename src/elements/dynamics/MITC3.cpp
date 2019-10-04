@@ -67,63 +67,6 @@ static void writeErrorComponents( FILE *fp, const char *descript,
 }
 
 /*
-   Return the number of displacements
-*/
-int MITC3::getVarsPerNode(){ return NUM_DISPS; }
-
-/*
-  Return the number of FE nodes
-*/
-int MITC3::getNumNodes(){ return NUM_NODES; }
-
-/*
-  Return the ElementLayout
-*/
-ElementLayout MITC3::getLayoutType(){ return TACS_TRI_QUADRATIC_ELEMENT; }
-
-/*
-   Set up the internal static data for the names of the element,
-   displacements, stresses, strains and extra variables, respectively.
-*/
-const char* MITC3::elemName = "MITC3";
-
-/*
-  Returns the elementName
-*/
-const char* MITC3::getObjectName(){
-  return elemName;
-}
-
-/*
-  Get the design variable numbers
-*/
-int MITC3::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
-  return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
-}
-
-/*
-  Set the design variable values
-*/
-void MITC3::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
-}
-
-/*
-  Get the design variable values
-*/
-void MITC3::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
-}
-
-/*
-  Get the design variable range
-*/
-void MITC3::getDesignVarRange( int elemIndex, int dvLen,
-                               TacsScalar lb[], TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
-}
-
-/*
   Evaluate the shape functions of the element given the u-coordinate
   of the point
 
@@ -398,7 +341,7 @@ static inline void computeInertiaRateProduct( const TacsScalar Jr[],
   vInit:      the initial velocity
   omegaInit:  the initial angular velocity
 */
-MITC3::MITC3( TimoshenkoStiffness *_stiff,
+MITC3::MITC3( TACSTimoshenkoStiffness *_stiff,
               TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit,
               TACSGibbsVector *_omegaInit ){
@@ -427,6 +370,63 @@ MITC3::~MITC3(){
   if (gravity){ gravity->decref(); }
   if (vInit){ vInit->decref(); }
   if (omegaInit){ omegaInit->decref(); }
+}
+
+/*
+   Return the number of displacements
+*/
+int MITC3::getVarsPerNode(){ return NUM_DISPS; }
+
+/*
+  Return the number of FE nodes
+*/
+int MITC3::getNumNodes(){ return NUM_NODES; }
+
+/*
+  Return the ElementLayout
+*/
+ElementLayout MITC3::getLayoutType(){ return TACS_TRI_QUADRATIC_ELEMENT; }
+
+/*
+   Set up the internal static data for the names of the element,
+   displacements, stresses, strains and extra variables, respectively.
+*/
+const char* MITC3::elemName = "MITC3";
+
+/*
+  Returns the elementName
+*/
+const char* MITC3::getObjectName(){
+  return elemName;
+}
+
+/*
+  Get the design variable numbers
+*/
+int MITC3::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+  return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
+}
+
+/*
+  Set the design variable values
+*/
+void MITC3::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
+  stiff->setDesignVars(elemIndex, dvLen, dvs);
+}
+
+/*
+  Get the design variable values
+*/
+void MITC3::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
+  stiff->getDesignVars(elemIndex, dvLen, dvs);
+}
+
+/*
+  Get the design variable range
+*/
+void MITC3::getDesignVarRange( int elemIndex, int dvLen,
+                               TacsScalar lb[], TacsScalar ub[] ){
+  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*
@@ -605,7 +605,7 @@ void MITC3::computeEnergies( int elemIndex,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getPointwiseMass(&u, rho);
+    stiff->getMassMoments(&u, rho);
 
     // Compute the inertia tensor
     TacsScalar Jr[6];
@@ -663,7 +663,8 @@ void MITC3::computeEnergies( int elemIndex,
 
     // Compute the stress based on the strain values
     TacsScalar s[6];
-    stiff->calculateStress(&u, e, s);
+    TacsScalar Xpt[] = {0.0, 0.0, 0.0};
+    stiff->evalStress(elemIndex, &u, Xpt, e, s);
 
     // Compute the terms for the potential energy due to gravity
     TacsScalar U[3];
@@ -770,7 +771,7 @@ void MITC3::addResidual( int elemIndex,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getPointwiseMass(&u, rho);
+    stiff->getMassMoments(&u, rho);
 
     // The following is used to evaluate the contributions from the
     // kinetic energy terms
@@ -859,8 +860,9 @@ void MITC3::addResidual( int elemIndex,
     addTyingBmat(B, N12, B12, B13);
 
     // Compute the stress based on the strain values
+    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
     TacsScalar s[6];
-    stiff->calculateStress(&u, e, s);
+    stiff->evalStress(elemIndex, &u, Xpt, e, s);
 
     // Add the contribution to the residual
     r = res;
@@ -926,7 +928,9 @@ void MITC3::addResidual( int elemIndex,
   J:       the Jacobian matrix
 */
 void MITC3::addJacobian( int elemIndex, double time,
-                         double alpha, double beta, double gamma,
+                         TacsScalar alpha,
+                         TacsScalar beta,
+                         TacsScalar gamma,
                          const TacsScalar X[],
                          const TacsScalar vars[],
                          const TacsScalar dvars[],
@@ -982,7 +986,7 @@ void MITC3::addJacobian( int elemIndex, double time,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getPointwiseMass(&u, rho);
+    stiff->getMassMoments(&u, rho);
 
     // Compute the inertia tensor
     TacsScalar Jr[6];
@@ -1111,7 +1115,8 @@ void MITC3::addJacobian( int elemIndex, double time,
 
       // Compute the stress based on the strain values
       TacsScalar s[6];
-      stiff->calculateStress(&u, e, s);
+      TacsScalar Xpt[] = {0.0, 0.0, 0.0};
+      stiff->evalStress(elemIndex, &u, Xpt, e, s);
 
       // Add the contributions to the tying strain weights
       w12[0] += det*N12[0]*s[4];
@@ -1123,12 +1128,16 @@ void MITC3::addJacobian( int elemIndex, double time,
       addGmat(J, det, s, N, Na, Ur, d1a, d2a,
               Xdinv, z1Xdinv, z2Xdinv, T, Xr, d1dq, d2dq);
 
+      // Compute the stress based on the strain values
+      TacsScalar C[36];
+      stiff->evalTangentStiffness(elemIndex, &u, Xpt, C);
+
       // Add the contribution to the residual
       for ( int ii = 0; ii < NUM_NODES; ii++ ){
         for ( int ik = 0; ik < 7; ik++ ){
           // Compute the stress from the 8*i + ik component
           TacsScalar sbii[8];
-          stiff->calculateStress(&u, &B[6*(8*ii + ik)], sbii);
+          stiff->computeStress(C, &B[6*(8*ii + ik)], sbii);
 
           const TacsScalar *b = B;
           TacsScalar *Jp = &J[8*NUM_NODES*(8*ii + ik)];
@@ -2669,7 +2678,8 @@ void MITC3::getOutputData( int elemIndex,
       if (write_flag & TACS_OUTPUT_STRESSES){
         // Evaluate the stiffness at the current point
         // and then calculate the stress
-        stiff->calculateStress(pt, strain, stress);
+        TacsScalar Xpt[] = {0.0, 0.0, 0.0};
+        stiff->evalStress(elemIndex, pt, Xpt, strain, stress);
 
         for ( int k = 0; k < NUM_STRESSES; k++ ){
           data[index+k] = TacsRealPart(stress[k]);

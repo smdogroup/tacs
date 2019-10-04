@@ -10,6 +10,7 @@ include TACS_Common.mk
 TACS_SUBDIRS = src \
 	src/bpmat \
 	src/elements \
+	src/elements/dynamics \
 	src/constitutive \
 	src/functions \
 	src/io

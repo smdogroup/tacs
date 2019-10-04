@@ -1,4 +1,4 @@
-#include "TimoshenkoStiffness.h"
+#include "TACSTimoshenkoStiffness.h"
 #include "MITC3.h"
 #include "TACSAssembler.h"
 #include "RigidBody.h"

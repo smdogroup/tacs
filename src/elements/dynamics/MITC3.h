@@ -16,7 +16,7 @@
 #define TACS_MITC3_H
 
 #include "TACSElement.h"
-#include "TimoshenkoStiffness.h"
+#include "TACSTimoshenkoStiffness.h"
 #include "TACSGibbsVector.h"
 
 /*
@@ -46,7 +46,7 @@ class MITC3 : public TACSElement {
   static const int NUM_DISPS = 8;
   static const int NUM_STRESSES = 6;
 
-  MITC3( TimoshenkoStiffness *_stiff,
+  MITC3( TACSTimoshenkoStiffness *_stiff,
          TACSGibbsVector *_gravity=NULL,
          TACSGibbsVector *_vInit=NULL,
          TACSGibbsVector *_omegaInit=NULL );
@@ -93,7 +93,7 @@ class MITC3 : public TACSElement {
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
   void addJacobian( int elemIndex, double time,
-                    double alpha, double beta, double gamma,
+                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                     const TacsScalar Xpts[], const TacsScalar vars[],
                     const TacsScalar dvars[], const TacsScalar ddvars[],
                     TacsScalar res[], TacsScalar mat[] );
@@ -249,7 +249,7 @@ class MITC3 : public TACSElement {
   const double *gaussPts, *gaussWts;
 
   // The stiffness object
-  TimoshenkoStiffness *stiff;
+  TACSTimoshenkoStiffness *stiff;
 
   // The gravity vector (if any)
   TACSGibbsVector *gravity;

@@ -177,25 +177,33 @@ int TACSTimoshenkoStiffness::getNumStresses(){
   return 6;
 }
 
-
-  // Evaluate material properties
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] );
-
-  // Evaluate the stress and the tangent stiffness matrix
-  void evalStress( int elemIndex, const double pt[],
-                   const TacsScalar X[], const TacsScalar e[],
-                   TacsScalar s[] );
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C[] );
-
 /*
-  Compute the stress, given the strain
+  Evaluate material properties
 */
-void TACSTimoshenkoStiffness::calculateStress( const double pt[],
-                                           const TacsScalar strain[],
-                                           TacsScalar stress[] ){
-  calcStress(strain, stress);
+TacsScalar TACSTimoshenkoStiffness::evalDensity( int elemIndex,
+                                                 const double pt[],
+                                                 const TacsScalar X[] ){
+  return rho[0];
+}
+
+TacsScalar TACSTimoshenkoStiffness::evalSpecificHeat( int elemIndex,
+                                                      const double pt[],
+                                                      const TacsScalar X[] ){
+  return 0.0;
+}
+
+// Evaluate the stress and the tangent stiffness matrix
+void TACSTimoshenkoStiffness::evalStress( int elemIndex,
+                                          const double pt[],
+                                          const TacsScalar X[],
+                                          const TacsScalar e[],
+                                          TacsScalar s[] ){
+  computeStress(C, e, s);
+}
+
+void TACSTimoshenkoStiffness::evalTangentStiffness( int elemIndex,
+                                                    const double pt[],
+                                                    const TacsScalar X[],
+                                                    TacsScalar _C[] ){
+  memcpy(_C, C, 36*sizeof(TacsScalar));
 }

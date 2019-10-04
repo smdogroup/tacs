@@ -104,6 +104,10 @@ class TACSTimoshenkoStiffness : public TACSConstitutive {
     s[5] = Ct[30]*e[0] + Ct[31]*e[1] + Ct[32]*e[2] + Ct[33]*e[3] + Ct[34]*e[4] + Ct[35]*e[5];
   }
 
+ protected:
+  void setData( const TacsScalar _rho[], const TacsScalar _C[],
+                const TacsScalar _axis[] );
+
  private:
   // The constitutive matrix
   TacsScalar C[36];
@@ -118,10 +122,5 @@ class TACSTimoshenkoStiffness : public TACSConstitutive {
   // Set the constitutive name
   static const char *constName;
 };
-
-/*
-  Given the strain, compute the stress
-*/
-inline void TimoshenkoStiffness::calcStress
 
 #endif // TACS_TIMOSHENKO_STIFFNESS_H

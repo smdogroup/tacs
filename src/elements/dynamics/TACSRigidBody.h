@@ -26,6 +26,7 @@
 
 #include "TACSElement.h"
 #include "TACSGibbsVector.h"
+#include "TACSElementTypes.h"
 
 /*
   Class for visualizing rigid bodies with different geometries
@@ -144,28 +145,25 @@ class TACSRigidBody : public TACSElement {
 
   // Set and retrieve design variable values
   // ---------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lb[], TacsScalar ub[], int numDVs );
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  void getDesignVarRange( int elemIndex, int dvLen,
+                          TacsScalar lb[], TacsScalar ub[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------
-  int numDisplacements(){ return 8; }
-  int numNodes(){ return 1; }
-  const char* elementName(){ return elem_name; }
-
-  // Functions to determine the variable names and quantities
-  // --------------------------------------------------------
-  const char* displacementName( int i );
-  const char* extraName( int i );
-  ElementType getElementType(){ return TACS_RIGID; }
+  int getVarsPerNode();
+  int getNumNodes();
+  ElementLayout getLayoutType();
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------
-  void getInitConditions( TacsScalar vars[],
+  void getInitConditions( int elemIndex,
+                          const TacsScalar X[],
+                          TacsScalar vars[],
                           TacsScalar dvars[],
-                          TacsScalar ddvars[],
-                          const TacsScalar X[] );
+                          TacsScalar ddvars[] );
 
   // Retrieve the position of the rigid body
   // ---------------------------------------
@@ -173,48 +171,39 @@ class TACSRigidBody : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time,
-                        TacsScalar *_Te,
-                        TacsScalar *_Pe,
-                        const TacsScalar Xpts[],
-                        const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+  void computeEnergies( int elemIndex, double time,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[],
+                        TacsScalar *_Te, TacsScalar *_Pe );
 
-  // Compute the residual of the governing equations
-  // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
-
-  // Compute the Jacobian of the governing equations
-  // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
-                    double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+  // Compute the residual and Jacobian of the governing equations
+  // ------------------------------------------------------------
+  void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
+                    const TacsScalar *vars, const TacsScalar *dvars,
+                    const TacsScalar *ddvars, TacsScalar *res );
+  void addJacobian( int elemIndex, double time,
+                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                    const TacsScalar *Xpts, const TacsScalar *vars,
+                    const TacsScalar *dvars, const TacsScalar *ddvars,
+                    TacsScalar *res, TacsScalar *mat );
 
   // Test the residual implementation
   // --------------------------------
   void testResidual( double dh );
-  void testJacobian( double dh, double alpha,
-                     double beta, double gamma );
+  void testJacobian( double dh, TacsScalar alpha,
+                     TacsScalar beta, TacsScalar gamma );
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount( int *nelems, int *nnodes, int *ncsr );
-  void getOutputData( unsigned int out_type,
-                      double *data, int ld_data,
-                      const TacsScalar Xpts[],
-                      const TacsScalar vars[] );
-  void getOutputConnectivity( int *con, int node );
+  void getOutputData( int elemIndex, ElementType etype, int write_flag,
+                      const TacsScalar Xpts[], const TacsScalar vars[],
+                      const TacsScalar dvars[], const TacsScalar ddvars[],
+                      int ld_data, TacsScalar *data );
 
   // Rigid body visualization
   //-------------------------
   void setVisualization( TACSRigidBodyViz *viz );
+
  private:
   // Recompute the inertial properties in the global ref. frame
   void updateInertialProperties();
@@ -246,7 +235,6 @@ class TACSRigidBody : public TACSElement {
 
   // The name of the element
   static const char *elem_name;
-  static const char *disp_names[8];
 };
 
 #endif // TACS_RIGID_BODY_DYNAMICS_H
