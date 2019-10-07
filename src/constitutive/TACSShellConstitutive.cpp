@@ -16,15 +16,15 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "FSDTStiffness.h"
+#include "TACSShellConstitutive.h"
 #include "tacslapack.h"
 
-const char * FSDTStiffness::constName = "FSDTStiffness";
+const char* TACSShellConstitutive::constName = "TACSShellConstitutive";
 
 /*
-  Construct the FSDTStiffness object
+  Construct the TACSShellConstitutive object
 */
-FSDTStiffness::FSDTStiffness(){
+TACSShellConstitutive::TACSShellConstitutive(){
   transform_type = NATURAL;
   axis[0] = axis[1] = axis[2] = 0.0;
   axis[0] = 1.0;
@@ -33,36 +33,20 @@ FSDTStiffness::FSDTStiffness(){
 /*
   Return the constitutive name
 */
-const char * FSDTStiffness::constitutiveName(){
+const char* TACSShellConstitutive::getObjectName(){
   return constName;
 }
 
 /*
   Set the default drilling regularization value
 */
-double FSDTStiffness::DRILLING_REGULARIZATION = 10.0;
+double TACSShellConstitutive::DRILLING_REGULARIZATION = 10.0;
 
 /*
   Set the drilling stiffness regularization parameter
 */
-void FSDTStiffness::setDrillingRegularization( double kval ){
+void TACSShellConstitutive::setDrillingRegularization( double kval ){
   DRILLING_REGULARIZATION = kval;
-}
-
-/*
-  Return the number of stresses associated with this constitutive
-  object
-*/
-int FSDTStiffness::getNumStresses(){
-  return NUM_STRESSES;
-}
-
-/*
-  Return the number of mass moments defined by this group of
-  objects
-*/
-int FSDTStiffness::getNumMassMoments(){
-  return NUM_MASS_MOMENTS;
 }
 
 /*
@@ -76,9 +60,9 @@ int FSDTStiffness::getNumMassMoments(){
   output:
   s:    the components of the stress
 */
-void FSDTStiffness::calculateStress( const double pt[],
-                                     const TacsScalar e[],
-                                     TacsScalar s[] ){
+void TACSShellConstitutive::calculateStress( const double pt[],
+                                             const TacsScalar e[],
+                                             TacsScalar s[] ){
   // Compute the stiffness matrix (ignore the in-plane rotation penalty)
   TacsScalar A[6], B[6], D[6], As[3];
   getStiffness(pt, A, B, D, As);
@@ -107,9 +91,9 @@ void FSDTStiffness::calculateStress( const double pt[],
   output:
   fdvSens:  the design variable vector
 */
-void FSDTStiffness::addStressDVSens( const double pt[], const TacsScalar e[],
-                                     TacsScalar alpha, const TacsScalar psi[],
-                                     TacsScalar fdvSens[], int dvLen ){
+void TACSShellConstitutive::addStressDVSens( const double pt[], const TacsScalar e[],
+                                             TacsScalar alpha, const TacsScalar psi[],
+                                             TacsScalar fdvSens[], int dvLen ){
   // Scale the input vector psi by the scalar alpha
   TacsScalar p[8];
   if (alpha != 1.0){
@@ -131,7 +115,7 @@ void FSDTStiffness::addStressDVSens( const double pt[], const TacsScalar e[],
 /*
   Print the stiffness information from this object
 */
-void FSDTStiffness::printStiffness( const double pt[] ){
+void TACSShellConstitutive::printStiffness( const double pt[] ){
   double zero[3] = {0.0, 0.0, 0.0};
 
   // Evaluate the stiffness
@@ -172,5 +156,5 @@ void FSDTStiffness::printStiffness( const double pt[] ){
   printf("%20.4f %20.4f \n",
          TacsRealPart(As[0]), TacsRealPart(As[1]));
   printf( "%20.4f %20.4f \n",
-         TacsRealPart(As[1]), TacsRealPart(As[2]));
+          TacsRealPart(As[1]), TacsRealPart(As[2]));
 }

@@ -341,7 +341,7 @@ static inline void computeInertiaRateProduct( const TacsScalar Jr[],
   vInit:      the initial velocity
   omegaInit:  the initial angular velocity
 */
-MITC3::MITC3( TACSTimoshenkoStiffness *_stiff,
+MITC3::MITC3( TACSTimoshenkoConstitutive *_stiff,
               TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit,
               TACSGibbsVector *_omegaInit ){
@@ -385,7 +385,7 @@ int MITC3::getNumNodes(){ return NUM_NODES; }
 /*
   Return the ElementLayout
 */
-ElementLayout MITC3::getLayoutType(){ return TACS_TRI_QUADRATIC_ELEMENT; }
+ElementLayout MITC3::getLayoutType(){ return TACS_LINE_QUADRATIC_ELEMENT; }
 
 /*
    Set up the internal static data for the names of the element,

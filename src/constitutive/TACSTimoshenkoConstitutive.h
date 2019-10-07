@@ -21,29 +21,29 @@
 
 #include "TACSConstitutive.h"
 
-class TACSTimoshenkoStiffness : public TACSConstitutive {
+class TACSTimoshenkoConstitutive : public TACSConstitutive {
  public:
-  TACSTimoshenkoStiffness( const TacsScalar _axis[],
-                           TacsScalar EA,
-                           TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-                           TacsScalar GJ,
-                           TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
-                           TacsScalar m00,
-                           TacsScalar m11, TacsScalar m22, TacsScalar m33,
-                           TacsScalar xm2, TacsScalar xm3,
-                           TacsScalar xc2, TacsScalar xc3,
-                           TacsScalar xk2, TacsScalar xk3,
-                           TacsScalar muS );
-  TACSTimoshenkoStiffness( TacsScalar rhoA, TacsScalar rhoIy,
-                           TacsScalar rhoIz, TacsScalar rhoIyz,
-                           TacsScalar EA, TacsScalar GJ,
-                           TacsScalar EIy, TacsScalar EIz,
-                           TacsScalar kGAy, TacsScalar kGAz,
-                           const TacsScalar axis[] );
-  TACSTimoshenkoStiffness( const TacsScalar rho[],
-                           const TacsScalar C[],
-                           const TacsScalar axis[] );
-  virtual ~TACSTimoshenkoStiffness();
+  TACSTimoshenkoConstitutive( const TacsScalar _axis[],
+                              TacsScalar EA,
+                              TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
+                              TacsScalar GJ,
+                              TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
+                              TacsScalar m00,
+                              TacsScalar m11, TacsScalar m22, TacsScalar m33,
+                              TacsScalar xm2, TacsScalar xm3,
+                              TacsScalar xc2, TacsScalar xc3,
+                              TacsScalar xk2, TacsScalar xk3,
+                              TacsScalar muS );
+  TACSTimoshenkoConstitutive( TacsScalar rhoA, TacsScalar rhoIy,
+                              TacsScalar rhoIz, TacsScalar rhoIyz,
+                              TacsScalar EA, TacsScalar GJ,
+                              TacsScalar EIy, TacsScalar EIz,
+                              TacsScalar kGAy, TacsScalar kGAz,
+                              const TacsScalar axis[] );
+  TACSTimoshenkoConstitutive( const TacsScalar rho[],
+                              const TacsScalar C[],
+                              const TacsScalar axis[] );
+  virtual ~TACSTimoshenkoConstitutive();
 
   /**
     Get the reference axis for the beam.

@@ -337,6 +337,20 @@ int TACSLinearThermoelasticity2D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_HEAT_FLUX){
+    // Compute the thermal flux from the thermal gradient
+    TacsScalar grad[2], flux[2];
+    grad[0] = Ux[4];
+    grad[1] = Ux[5];
+
+    // Add the flux components to the heat transfer portion
+    // of the governing equations
+    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+    quantity[0] = flux[0];
+    quantity[1] = flux[1];
+
+    return 2;
+  }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     *quantity = stiff->evalDensity(elemIndex, pt, X);
 
@@ -498,8 +512,6 @@ void TACSLinearThermoelasticity2D::getOutputData( int elemIndex,
   }
 }
 
-
-
 TACSLinearThermoelasticity3D::TACSLinearThermoelasticity3D( TACSSolidConstitutive *_stiff,
                                                             ElementStrainType _strain_type ){
   stiff = _stiff;
@@ -510,8 +522,6 @@ TACSLinearThermoelasticity3D::TACSLinearThermoelasticity3D( TACSSolidConstitutiv
 TACSLinearThermoelasticity3D::~TACSLinearThermoelasticity3D(){
   stiff->decref();
 }
-
-
 
 // 0;   1;    2;   3;   4;   5;
 // u; u,t; u,tt; u,x; u,y; u,z;

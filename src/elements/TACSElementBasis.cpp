@@ -37,6 +37,100 @@ void TACSElementBasis::getVisPoint( int n, double pt[] ){
   }
 }
 
+TacsScalar TACSElementBasis::getFaceNormal( int face, int n,
+                                            const TacsScalar Xpts[],
+                                            TacsScalar Xd[],
+                                            TacsScalar normal[] ){
+  const int num_params = getNumParameters();
+  const int num_nodes = getNumNodes();
+
+  double pt[3];
+  double tangents[2*3];
+  getFaceQuadraturePoint(face, n, pt, tangents);
+
+  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  computeBasisGradient(pt, N, Nxi);
+
+  return computeFaceNormal(num_params, num_nodes, Nxi, Xpts,
+                           tangents, Xd, normal);
+}
+
+TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
+                                                const int num_nodes,
+                                                const double Nxi[],
+                                                const TacsScalar Xpts[],
+                                                const double tangents[],
+                                                TacsScalar Xd[],
+                                                TacsScalar n[] ){
+
+  if (num_params == 3){
+    // Zero the values of the coordinate and its derivative
+    Xd[0] = Xd[1] = Xd[2] = 0.0;
+    Xd[3] = Xd[4] = Xd[5] = 0.0;
+    Xd[6] = Xd[7] = Xd[8] = 0.0;
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      Xd[0] += nxi[0]*Xpts[0];
+      Xd[1] += nxi[1]*Xpts[0];
+      Xd[2] += nxi[2]*Xpts[0];
+
+      Xd[3] += nxi[0]*Xpts[1];
+      Xd[4] += nxi[1]*Xpts[1];
+      Xd[5] += nxi[2]*Xpts[1];
+
+      Xd[6] += nxi[0]*Xpts[2];
+      Xd[7] += nxi[1]*Xpts[2];
+      Xd[8] += nxi[2]*Xpts[2];
+      Xpts += 3;
+      nxi += 3;
+    }
+
+    // Compute the tangent directions
+    TacsScalar t1[3], t2[3];
+    mat3x3Mult(Xd, &tangents[0], t1);
+    mat3x3Mult(Xd, &tangents[3], t2);
+
+    // Find the cross product
+    crossProduct(1.0, t1, t2, n);
+
+    TacsScalar A = sqrt(vec3Dot(n, n));
+    vec3Scale(1.0/A, n);
+
+    return A;
+  }
+  else if (num_params == 2){
+    // Zero the values of the coordinate and its derivative
+    Xd[0] = Xd[1] = Xd[2] = Xd[3] = 0.0;
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      Xd[0] += nxi[0]*Xpts[0];
+      Xd[1] += nxi[1]*Xpts[0];
+
+      Xd[2] += nxi[0]*Xpts[1];
+      Xd[3] += nxi[1]*Xpts[1];
+      Xpts += 3;
+      nxi += 2;
+    }
+
+    // Compute the tangent direction
+    TacsScalar t[2];
+    mat2x2Mult(Xd, tangents, t);
+
+    // Compute the norm of the vector
+    TacsScalar A = sqrt(vec2Dot(t, t));
+
+    n[0] = -t[1]/A;
+    n[1] = t[0]/A;
+
+    return A;
+  }
+  return 0.0;
+}
+
 TacsScalar TACSElementBasis::getJacobianTransform( const double pt[],
                                                    const TacsScalar Xpts[],
                                                    TacsScalar Xd[],

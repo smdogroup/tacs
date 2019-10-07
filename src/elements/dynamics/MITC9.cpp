@@ -14,7 +14,8 @@
 
 #include "MITC9.h"
 #include "TACSElementAlgebra.h"
-#include "FElibrary.h"
+#include "TACSElementQuaternion.h"
+#include "TACSGaussQuadrature.h"
 
 /*
   Rigid-body dynamics routines for TACS
@@ -63,120 +64,6 @@ static void writeErrorComponents( FILE *fp, const char *descript,
       }
     }
   }
-}
-
-/*
-   Return the number of displacements
-*/
-int MITC9::numDisplacements(){ return NUM_DISPS; }
-
-/*
-  Return the number of stresses
-*/
-int MITC9::numStresses(){ return NUM_STRESSES; }
-
-/*
-  Return the number of extras
-*/
-int MITC9::numExtras(){ return NUM_EXTRAS; }
-
-/*
-  Return the number of FE nodes
-*/
-int MITC9::numNodes(){ return NUM_NODES; }
-
-/*
-  Return the ElementType
-*/
-ElementType MITC9::getElementType(){ return TACS_SHELL; }
-
-/*
-   Set up the internal static data for the names of the element,
-   displacements, stresses, strains and extra variables, respectively.
-*/
-const char * MITC9::elemName = "MITC9";
-
-const char * MITC9::dispNames[] = { "u0", "v0", "w0",
-                                    "eta", "epsx", "epsy", "epsz", "lam" };
-
-const char * MITC9::stressNames[] = { "sx0", "sy0", "sxy0",
-                                      "sx1", "sy1", "sxy1",
-                                      "syz0", "sxz0" };
-
-const char * MITC9::strainNames[] = { "ex0", "ey0", "exy0",
-                                      "ex1", "ey1", "exy1",
-                                      "eyz0", "exz0" };
-
-const char * MITC9::extraNames[] = { "lambda", "buckling",
-                                     "dv1", "dv2" };
-
-/*
-  Returns the elementName
-*/
-const char * MITC9::elementName(){
-  return elemName;
-}
-
-/*
-  Returns the displacement names
-*/
-const char * MITC9::displacementName( int i ){
-  if (i >= 0 && i < NUM_DISPS){
-    return dispNames[i];
-  }
-  return "";
-}
-
-/*
-  Returns the name of the stresses
-*/
-const char * MITC9::stressName( int i ){
-  if (i >= 0 && i < NUM_STRESSES){
-    return stressNames[i];
-  }
-  return "";
-}
-
-/*
-  Returns the name of the strains
-*/
-const char * MITC9::strainName( int i ){
-  if (i >= 0 && i < NUM_STRESSES){
-    return strainNames[i];
-  }
-  return "";
-}
-
-/*
-  Returns the extra names
-*/
-const char * MITC9::extraName( int i ){
-  if (i >= 0 && i < NUM_EXTRAS){
-    return extraNames[i];
-  }
-  return "";
-}
-
-/*
-  Set the design variable values
-*/
-void MITC9::setDesignVars( const TacsScalar dvs[], int numDVs ){
-  stiff->setDesignVars(dvs, numDVs);
-}
-
-/*
-  Get the design variable values
-*/
-void MITC9::getDesignVars( TacsScalar dvs[], int numDVs ){
-  stiff->getDesignVars(dvs, numDVs);
-}
-
-/*
-  Get the design variable range
-*/
-void MITC9::getDesignVarRange( TacsScalar lb[],
-                               TacsScalar ub[], int numDVs ){
-  stiff->getDesignVarRange(lb, ub, numDVs);
 }
 
 /*
@@ -731,12 +618,70 @@ MITC9::~MITC9(){
 }
 
 /*
+   Return the number of displacements
+*/
+int MITC9::getVarsPerNode(){ return NUM_DISPS; }
+
+/*
+  Return the number of FE nodes
+*/
+int MITC9::getNumNodes(){ return NUM_NODES; }
+
+/*
+  Return the ElementLayout
+*/
+ElementLayout MITC9::getLayoutType(){ return TACS_QUAD_QUADRATIC_ELEMENT; }
+
+/*
+   Set up the internal static data for the names of the element,
+   displacements, stresses, strains and extra variables, respectively.
+*/
+const char* MITC9::elemName = "MITC9";
+
+/*
+  Returns the elementName
+*/
+const char* MITC9::getObjectName(){
+  return elemName;
+}
+
+/*
+  Get the design variable numbers
+*/
+int MITC9::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+  return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
+}
+
+/*
+  Set the design variable values
+*/
+void MITC9::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
+  stiff->setDesignVars(elemIndex, dvLen, dvs);
+}
+
+/*
+  Get the design variable values
+*/
+void MITC9::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
+  stiff->getDesignVars(elemIndex, dvLen, dvs);
+}
+
+/*
+  Get the design variable range
+*/
+void MITC9::getDesignVarRange( int elemIndex, int dvLen,
+                               TacsScalar lb[], TacsScalar ub[] ){
+  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+}
+
+/*
   Retrieve the initial values of the design variables
 */
-void MITC9::getInitConditions( TacsScalar vars[],
+void MITC9::getInitConditions( int elemIndex,
+                               const TacsScalar X[],
+                               TacsScalar vars[],
                                TacsScalar dvars[],
-                               TacsScalar ddvars[],
-                               const TacsScalar X[] ){
+                               TacsScalar ddvars[] ){
   memset(vars, 0, 8*NUM_NODES*sizeof(TacsScalar));
   memset(dvars, 0, 8*NUM_NODES*sizeof(TacsScalar));
   memset(ddvars, 0, 8*NUM_NODES*sizeof(TacsScalar));
@@ -798,12 +743,13 @@ void MITC9::getInitConditions( TacsScalar vars[],
   Te:     the kinetic energy
   Pe:     the potential energy
 */
-void MITC9::computeEnergies( double time,
-                             TacsScalar *_Te,
-                             TacsScalar *_Pe,
-                             const TacsScalar X[],
+void MITC9::computeEnergies( int elemIndex,
+                             double time,
+                             const TacsScalar Xpts[],
                              const TacsScalar vars[],
-                             const TacsScalar dvars[] ){
+                             const TacsScalar dvars[],
+                             TacsScalar *Te,
+                             TacsScalar *Pe ){
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -982,12 +928,13 @@ void MITC9::computeEnergies( double time,
   output:
   res:    the residuals
 */
-void MITC9::addResidual( double time,
-                         TacsScalar res[],
-                         const TacsScalar X[],
+void MITC9::addResidual( int elemIndex,
+                         double time,
+                         const TacsScalar Xpts[],
                          const TacsScalar vars[],
                          const TacsScalar dvars[],
-                         const TacsScalar ddvars[] ){
+                         const TacsScalar ddvars[],
+                         TacsScalar res[] ){
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -1233,12 +1180,16 @@ void MITC9::addResidual( double time,
   output:
   J:       the Jacobian matrix
 */
-void MITC9::addJacobian( double time, TacsScalar J[],
-                         double alpha, double beta, double gamma,
-                         const TacsScalar X[],
+void MITC9::addJacobian( int elemIndex, double time,
+                         TacsScalar alpha,
+                         TacsScalar beta,
+                         TacsScalar gamma,
+                         const TacsScalar Xpts[],
                          const TacsScalar vars[],
                          const TacsScalar dvars[],
-                         const TacsScalar ddvars[] ){
+                         const TacsScalar ddvars[],
+                         TacsScalar res[],
+                         TacsScalar mat[] ){
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
   computeFrames(Xr, X);
@@ -1549,13 +1500,15 @@ void MITC9::addJacobian( double time, TacsScalar J[],
   dvars:    the time derivatives of the variable values
   ddvars:   the second time derivative of the variable values
 */
-void MITC9::addAdjResProduct( double time, double scale,
-                              TacsScalar fdvSens[], int dvLen,
+void MITC9::addAdjResProduct( int elemIndex,
+                              double time,
+                              TacsScalar scale,
                               const TacsScalar psi[],
-                              const TacsScalar X[],
+                              const TacsScalar Xpts[],
                               const TacsScalar vars[],
                               const TacsScalar dvars[],
-                              const TacsScalar ddvars[] ){
+                              const TacsScalar ddvars[],
+                              int dvLen, TacsScalar dfdx[] ){
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity){
@@ -1758,11 +1711,11 @@ void MITC9::addAdjResProduct( double time, double scale,
       }
 
       // Add the derivative contribution from the mass/area
-      stiff->addPointwiseMassDVSens(pt, mscale, fdvSens, dvLen);
+      stiff->addMassMomentsDVSens(pt, mscale, dvLen, dfdx);
 
       // Add the derivative
-      stiff->addStiffnessDVSens(pt, e, epsi, h*scale*rot*rotPsi,
-                                fdvSens, dvLen);
+      stiff->addStressDVSens(elemIndex, pt, Xpt, e, h*scale*rot*rotPsi,
+                             epsi, dvLen, dfdx);
     }
   }
 }

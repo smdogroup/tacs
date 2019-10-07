@@ -152,6 +152,7 @@ class TACSConstitutive : public TACSObject {
                                       const TacsScalar X[],
                                       const TacsScalar scale,
                                       int dvLen, TacsScalar dvSens[] ){}
+
   /**
     Return the stress as a function of the strain at the Gauss point
 

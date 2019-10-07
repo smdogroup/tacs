@@ -16,7 +16,7 @@
 #define TACS_MITC3_H
 
 #include "TACSElement.h"
-#include "TACSTimoshenkoStiffness.h"
+#include "TACSTimoshenkoConstitutive.h"
 #include "TACSGibbsVector.h"
 
 /*
@@ -46,7 +46,7 @@ class MITC3 : public TACSElement {
   static const int NUM_DISPS = 8;
   static const int NUM_STRESSES = 6;
 
-  MITC3( TACSTimoshenkoStiffness *_stiff,
+  MITC3( TACSTimoshenkoConstitutive *_stiff,
          TACSGibbsVector *_gravity=NULL,
          TACSGibbsVector *_vInit=NULL,
          TACSGibbsVector *_omegaInit=NULL );
@@ -249,7 +249,7 @@ class MITC3 : public TACSElement {
   const double *gaussPts, *gaussWts;
 
   // The stiffness object
-  TACSTimoshenkoStiffness *stiff;
+  TACSTimoshenkoConstitutive *stiff;
 
   // The gravity vector (if any)
   TACSGibbsVector *gravity;

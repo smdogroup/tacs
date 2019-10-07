@@ -11,9 +11,9 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSConstitutive.o \
 	TACSPlaneStressConstitutive.o \
 	TACSSolidConstitutive.o \
-	TACSTimoshenkoStiffness.o
+	TACSTimoshenkoConstitutive.o
 
-
+#	TACSShellConstitutive.o \
 # 	MaterialProperties.o \
 # 	SolidStiffness.o \
 # 	PlaneStressStiffness.o \

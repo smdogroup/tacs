@@ -122,6 +122,37 @@ class TACSElementBasis : public TACSObject {
                                          double tangent[] ) = 0;
 
   /**
+    Get the face normal at a specified face quadrature point.
+
+    This function returns a 2 or 3-vector depending on the dimension
+    of the problem. Note that this function can only be used to evaluate
+    the face normal at locations defined by the basis function class.
+
+    @param face The face/edge index
+    @param n The quadrautre point index
+    @param Xpts The node locations
+    @param Xd The derivative of the physical node location w.r.t. parameters
+    @param n The face (or edge) normal
+  */
+  virtual TacsScalar getFaceNormal( int face, int n,
+                                    const TacsScalar Xpts[],
+                                    TacsScalar Xd[],
+                                    TacsScalar normal[] );
+
+  /**
+    Add the derivative of the face normal into the nodal sensitivities
+
+  */
+  virtual void addFaceNormalXptSens( int face, int n,
+                                     const TacsScalar Xpts[],
+                                     const TacsScalar A,
+                                     const TacsScalar normal[],
+                                     const TacsScalar dfdA,
+                                     const TacsScalar dfdXd[],
+                                     const TacsScalar dfdn[],
+                                     TacsScalar dfdXpts[] ){}
+
+  /**
     Get the Jacobian transformation from computational to physical
     coordinates.
 
@@ -393,6 +424,13 @@ class TACSElementBasis : public TACSObject {
   }
 
  protected:
+  static TacsScalar computeFaceNormal( const int num_params,
+                                       const int num_nodes,
+                                       const double Nxi[],
+                                       const TacsScalar Xpts[],
+                                       const double tangents[],
+                                       TacsScalar Xd[],
+                                       TacsScalar n[] );
   static TacsScalar computeJacobianTransform( const int num_params,
                                               const int num_nodes,
                                               const double Nxi[],
