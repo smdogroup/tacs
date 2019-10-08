@@ -16,13 +16,11 @@
 #define TACS_ELEMENT_TYPES_H
 
 /*
-  Quantity output types defined
+  Quantity output types defined globally
 */
 const int TACS_ELEMENT_DENSITY = 1;
 const int TACS_FAILURE_INDEX = 2;
-const int TACS_X_DIPLACEMENT_VALUE = 3;
-const int TACS_Y_DIPLACEMENT_VALUE = 4;
-const int TACS_Z_DIPLACEMENT_VALUE = 5;
+const int TACS_HEAT_FLUX = 3;
 
 /*
   The output flags from each element type

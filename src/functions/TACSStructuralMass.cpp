@@ -140,8 +140,8 @@ void TACSStructuralMass::getElementXptSens( int elemIndex,
 
         // Compute the sensitivity contribution
         TacsScalar dfddetJ = density*weight;
-        basis->addJacobianTransformSens(pt, Xd, J, scale*dfddetJ,
-                                        NULL, NULL, dfdXpts);
+        basis->addJacobianTransformXptSens(pt, Xd, J, scale*dfddetJ,
+                                           NULL, NULL, dfdXpts);
       }
     }
   }

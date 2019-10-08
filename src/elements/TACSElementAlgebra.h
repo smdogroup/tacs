@@ -166,6 +166,234 @@ static inline void vec2Axpy( const TacsScalar a,
 }
 
 /*
+  Compute the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec3x3Outer( const TacsReal a[],
+                                const TacsReal b[],
+                                TacsReal C[] ){
+  C[0] = a[0]*b[0];
+  C[1] = a[0]*b[1];
+  C[2] = a[0]*b[2];
+
+  C[3] = a[1]*b[0];
+  C[4] = a[1]*b[1];
+  C[5] = a[1]*b[2];
+
+  C[6] = a[2]*b[0];
+  C[7] = a[2]*b[1];
+  C[8] = a[2]*b[2];
+}
+
+/*
+  Add the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec3x3OuterAdd( const TacsScalar alpha,
+                                   const TacsScalar a[],
+                                   const TacsScalar b[],
+                                   TacsScalar C[] ){
+  C[0] += alpha*a[0]*b[0];
+  C[1] += alpha*a[0]*b[1];
+  C[2] += alpha*a[0]*b[2];
+
+  C[3] += alpha*a[1]*b[0];
+  C[4] += alpha*a[1]*b[1];
+  C[5] += alpha*a[1]*b[2];
+
+  C[6] += alpha*a[2]*b[0];
+  C[7] += alpha*a[2]*b[1];
+  C[8] += alpha*a[2]*b[2];
+}
+
+/*
+  Compute the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec3x3Outer( const TacsComplex a[],
+                                const TacsReal b[],
+                                TacsComplex C[] ){
+  C[0] = a[0]*b[0];
+  C[1] = a[0]*b[1];
+  C[2] = a[0]*b[2];
+
+  C[3] = a[1]*b[0];
+  C[4] = a[1]*b[1];
+  C[5] = a[1]*b[2];
+
+  C[6] = a[2]*b[0];
+  C[7] = a[2]*b[1];
+  C[8] = a[2]*b[2];
+}
+
+/*
+  Add the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec3x3OuterAdd( const TacsComplex alpha,
+                                   const TacsComplex a[],
+                                   const TacsReal b[],
+                                   TacsComplex C[] ){
+  C[0] += alpha*a[0]*b[0];
+  C[1] += alpha*a[0]*b[1];
+  C[2] += alpha*a[0]*b[2];
+
+  C[3] += alpha*a[1]*b[0];
+  C[4] += alpha*a[1]*b[1];
+  C[5] += alpha*a[1]*b[2];
+
+  C[6] += alpha*a[2]*b[0];
+  C[7] += alpha*a[2]*b[1];
+  C[8] += alpha*a[2]*b[2];
+}
+
+/*
+  Compute the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec2x2Outer( const TacsScalar a[],
+                                const TacsScalar b[],
+                                TacsScalar C[] ){
+  C[0] = a[0]*b[0];
+  C[1] = a[0]*b[1];
+  C[2] = a[0]*b[2];
+
+  C[3] = a[1]*b[0];
+  C[4] = a[1]*b[1];
+  C[5] = a[1]*b[2];
+
+  C[6] = a[2]*b[0];
+  C[7] = a[2]*b[1];
+  C[8] = a[2]*b[2];
+}
+
+/*
+  Add the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec2x2OuterAdd( const TacsScalar alpha,
+                                   const TacsScalar a[],
+                                   const TacsScalar b[],
+                                   TacsScalar C[] ){
+  C[0] += alpha*a[0]*b[0];
+  C[1] += alpha*a[0]*b[1];
+  C[2] += alpha*a[0]*b[2];
+
+  C[3] += alpha*a[1]*b[0];
+  C[4] += alpha*a[1]*b[1];
+  C[5] += alpha*a[1]*b[2];
+
+  C[6] += alpha*a[2]*b[0];
+  C[7] += alpha*a[2]*b[1];
+  C[8] += alpha*a[2]*b[2];
+}
+
+/*
+  Compute the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec2x2Outer( const TacsComplex a[],
+                                const TacsReal b[],
+                                TacsComplex C[] ){
+  C[0] = a[0]*b[0];
+  C[1] = a[0]*b[1];
+  C[2] = a[0]*b[2];
+
+  C[3] = a[1]*b[0];
+  C[4] = a[1]*b[1];
+  C[5] = a[1]*b[2];
+
+  C[6] = a[2]*b[0];
+  C[7] = a[2]*b[1];
+  C[8] = a[2]*b[2];
+}
+
+/*
+  Add the outer product of two vectors
+
+  C <- a*b^{T}
+
+  input:
+  a:   the first vector
+  b:   the second vector
+
+  output:
+  C:   the resulting matrix
+*/
+static inline void vec2x2OuterAdd( const TacsComplex alpha,
+                                   const TacsComplex a[],
+                                   const TacsReal b[],
+                                   TacsComplex C[] ){
+  C[0] += alpha*a[0]*b[0];
+  C[1] += alpha*a[0]*b[1];
+  C[2] += alpha*a[0]*b[2];
+
+  C[3] += alpha*a[1]*b[0];
+  C[4] += alpha*a[1]*b[1];
+  C[5] += alpha*a[1]*b[2];
+
+  C[6] += alpha*a[2]*b[0];
+  C[7] += alpha*a[2]*b[1];
+  C[8] += alpha*a[2]*b[2];
+}
+
+/*
   Compute the derivative of x/||x||_{2} w.r.t. x using x and the norm
   of x.
 
@@ -214,6 +442,24 @@ static inline void mat3x3Mult( const TacsScalar A[],
   Compute y <- A*x
 
   input:
+  A:   the 3x3 input matrix in row-major order
+  x:   the input 3-vector
+
+  output:
+  y:   the resulting vector
+*/
+static inline void mat3x3Mult( const TacsComplex A[],
+                               const TacsReal x[],
+                               TacsComplex y[] ){
+  y[0] = A[0]*x[0] + A[1]*x[1] + A[2]*x[2];
+  y[1] = A[3]*x[0] + A[4]*x[1] + A[5]*x[2];
+  y[2] = A[6]*x[0] + A[7]*x[1] + A[8]*x[2];
+}
+
+/*
+  Compute y <- A*x
+
+  input:
   A:   the 2x2 input matrix in row-major order
   x:   the input 2-vector
 
@@ -223,6 +469,23 @@ static inline void mat3x3Mult( const TacsScalar A[],
 static inline void mat2x2Mult( const TacsScalar A[],
                                const TacsScalar x[],
                                TacsScalar y[] ){
+  y[0] = A[0]*x[0] + A[1]*x[1];
+  y[1] = A[2]*x[0] + A[3]*x[1];
+}
+
+/*
+  Compute y <- A*x
+
+  input:
+  A:   the 2x2 input matrix in row-major order
+  x:   the input 2-vector
+
+  output:
+  y:   the resulting vector
+*/
+static inline void mat2x2Mult( const TacsComplex A[],
+                               const TacsReal x[],
+                               TacsComplex y[] ){
   y[0] = A[0]*x[0] + A[1]*x[1];
   y[1] = A[2]*x[0] + A[3]*x[1];
 }

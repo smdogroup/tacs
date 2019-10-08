@@ -284,8 +284,8 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
                                        const TacsScalar dvars[],
                                        const TacsScalar ddvars[],
                                        TacsScalar dfdXpts[] ){
-  // Zero the derivative of the function w.r.t. the element state
-  // variables
+  // Zero the derivative of the function w.r.t. the element node
+  // locations
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
 
@@ -336,8 +336,8 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
                                          &dfdq, dfdXpts);
 
         if (dfddetJ != 0.0){
-          basis->addJacobianTransformSens(pt, Xd, J, scale*dfddetJ,
-                                          NULL, NULL, dfdXpts);
+          basis->addJacobianTransformXptSens(pt, Xd, J, scale*dfddetJ,
+                                             NULL, NULL, dfdXpts);
         }
       }
     }

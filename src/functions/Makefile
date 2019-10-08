@@ -9,7 +9,8 @@ include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
 	TACSKSFailure.o \
-  TACSStructuralMass.o \
+	TACSStructuralMass.o \
+	TACSHeatFlux.o
 
 # 	KSDisplacement.o \
 # 	DisplacementIntegral.o \

@@ -132,7 +132,8 @@ class TACSElementBasis : public TACSObject {
     @param n The quadrautre point index
     @param Xpts The node locations
     @param Xd The derivative of the physical node location w.r.t. parameters
-    @param n The face (or edge) normal
+    @param normal The face (or edge) normal
+    @return The area contribution
   */
   virtual TacsScalar getFaceNormal( int face, int n,
                                     const TacsScalar Xpts[],
@@ -142,15 +143,24 @@ class TACSElementBasis : public TACSObject {
   /**
     Add the derivative of the face normal into the nodal sensitivities
 
+    @param face The face/edge index
+    @param n The quadrautre point index
+    @param Xpts The node locations
+    @param A The area contribution (computed from forward code)
+    @param normal The face normal
+    @param dfdA The input derivative of the function w.r.t. area
+    @param dfdXd The derivative of the function w.r.t. Xd
+    @param dfdn The derivative of the function w.r.t. surface normal
+    @param dfdXpts The output derivative w.r.t. the node locations
   */
   virtual void addFaceNormalXptSens( int face, int n,
-                                     const TacsScalar Xpts[],
                                      const TacsScalar A,
+                                     const TacsScalar Xd[],
                                      const TacsScalar normal[],
                                      const TacsScalar dfdA,
                                      const TacsScalar dfdXd[],
                                      const TacsScalar dfdn[],
-                                     TacsScalar dfdXpts[] ){}
+                                     TacsScalar dfdXpts[] );
 
   /**
     Get the Jacobian transformation from computational to physical
@@ -189,13 +199,13 @@ class TACSElementBasis : public TACSObject {
     @param dfdJ The derivative of the function w.r.t. J
     @param dfdXpts The output derivative of the function w.r.t. Xpts
   */
-  virtual void addJacobianTransformSens( const double pt[],
-                                         const TacsScalar Xd[],
-                                         const TacsScalar J[],
-                                         TacsScalar dfddetJ,
-                                         const TacsScalar dfXd[],
-                                         const TacsScalar dfdJ[],
-                                         TacsScalar dfdXpts[] );
+  virtual void addJacobianTransformXptSens( const double pt[],
+                                            const TacsScalar Xd[],
+                                            const TacsScalar J[],
+                                            TacsScalar dfddetJ,
+                                            const TacsScalar dfXd[],
+                                            const TacsScalar dfdJ[],
+                                            TacsScalar dfdXpts[] );
   /**
     Get the field values at the specified quadrature point
 
@@ -382,7 +392,7 @@ class TACSElementBasis : public TACSObject {
     Evaluate basis functions at a parametric point
 
     @param pt The parametric point
-    @parma N The shape function values
+    @param N The shape function values
   */
   virtual void computeBasis( const double pt[], double N[] ) = 0;
 
@@ -393,7 +403,7 @@ class TACSElementBasis : public TACSObject {
     N[1],pt[0] ...
 
     @param pt The parametric point
-    @parma N The shape function values
+    @param N The shape function values
     @param Nxi The derivative of the shape functions w.r.t. the parameters
   */
   virtual void computeBasisGradient( const double pt[], double N[],
@@ -403,7 +413,7 @@ class TACSElementBasis : public TACSObject {
     Compute the derivative of the basis functions with respect to
 
     @param n Index of the parametric point
-    @parma N The shape function values
+    @param N The shape function values
   */
   virtual void computeBasis( int n, double N[] ){
     double pt[3];
@@ -415,7 +425,7 @@ class TACSElementBasis : public TACSObject {
     Compute the derivative of the basis functions with respect to
 
     @param n Index of the parametric point
-    @parma N The shape function values
+    @param N The shape function values
   */
   virtual void computeBasisGradient( int n, double N[], double Nxi[] ){
     double pt[3];
@@ -431,21 +441,32 @@ class TACSElementBasis : public TACSObject {
                                        const double tangents[],
                                        TacsScalar Xd[],
                                        TacsScalar n[] );
+  static void addFaceNormalXptSens( const int num_params,
+                                    const int num_nodes,
+                                    const double Nxi[],
+                                    const double tangents[],
+                                    const TacsScalar A,
+                                    const TacsScalar Xd[],
+                                    const TacsScalar n[],
+                                    const TacsScalar dfdA,
+                                    const TacsScalar dfdXd[],
+                                    const TacsScalar dfdn[],
+                                    TacsScalar dfdXpts[] );
   static TacsScalar computeJacobianTransform( const int num_params,
                                               const int num_nodes,
                                               const double Nxi[],
                                               const TacsScalar Xpts[],
                                               TacsScalar Xd[],
                                               TacsScalar J[] );
-  static void addJacobianTransformSens( const int num_params,
-                                        const int num_nodes,
-                                        const double Nxi[],
-                                        const TacsScalar Xd[],
-                                        const TacsScalar J[],
-                                        TacsScalar dfddetJ,
-                                        const TacsScalar dfXd[],
-                                        const TacsScalar dfdJ[],
-                                        TacsScalar dfdXpts[] );
+  static void addJacobianTransformXptSens( const int num_params,
+                                           const int num_nodes,
+                                           const double Nxi[],
+                                           const TacsScalar Xd[],
+                                           const TacsScalar J[],
+                                           TacsScalar dfddetJ,
+                                           const TacsScalar dfXd[],
+                                           const TacsScalar dfdJ[],
+                                           TacsScalar dfdXpts[] );
   static void computeFieldValues( const int num_nodes, const double N[],
                                   const TacsScalar Xpts[],
                                   const int vars_per_node,

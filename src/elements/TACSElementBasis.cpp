@@ -62,7 +62,6 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
                                                 const double tangents[],
                                                 TacsScalar Xd[],
                                                 TacsScalar n[] ){
-
   if (num_params == 3){
     // Zero the values of the coordinate and its derivative
     Xd[0] = Xd[1] = Xd[2] = 0.0;
@@ -129,6 +128,118 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
     return A;
   }
   return 0.0;
+}
+
+void TACSElementBasis::addFaceNormalXptSens( int face, int n,
+                                             const TacsScalar A,
+                                             const TacsScalar Xd[],
+                                             const TacsScalar normal[],
+                                             const TacsScalar dfdA,
+                                             const TacsScalar dfdXd[],
+                                             const TacsScalar dfdn[],
+                                             TacsScalar dfdXpts[] ){
+  const int num_params = getNumParameters();
+  const int num_nodes = getNumNodes();
+
+  double pt[3];
+  double tangents[2*3];
+  getFaceQuadraturePoint(face, n, pt, tangents);
+
+  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  computeBasisGradient(pt, N, Nxi);
+
+  return addFaceNormalXptSens(num_params, num_nodes, Nxi, tangents,
+                              A, Xd, normal, dfdA, dfdXd, dfdn, dfdXpts);
+}
+
+void TACSElementBasis::addFaceNormalXptSens( const int num_params,
+                                             const int num_nodes,
+                                             const double Nxi[],
+                                             const double tangents[],
+                                             const TacsScalar A,
+                                             const TacsScalar Xd[],
+                                             const TacsScalar n[],
+                                             const TacsScalar dfdA,
+                                             const TacsScalar dfdXd[],
+                                             const TacsScalar dfdn[],
+                                             TacsScalar dfdXpts[] ){
+  if (num_params == 3){
+    TacsScalar Ainv = 1.0/A;
+
+    // Compute dfda = 1.0/A*(dfdn - (dfdn^{T}*n)*n)
+    TacsScalar dfda[3];
+    dfda[0] = Ainv*dfdn[0];
+    dfda[1] = Ainv*dfdn[1];
+    dfda[2] = Ainv*dfdn[2];
+    vec3Axpy(dfdA - Ainv*vec3Dot(n, dfdn), n, dfda);
+
+    // Compute the tangent directions
+    TacsScalar t1[3], t2[3];
+    mat3x3Mult(Xd, &tangents[0], t1);
+    mat3x3Mult(Xd, &tangents[3], t2);
+
+    // Compute thee
+    TacsScalar dfdt1[3], dfdt2[3];
+    crossProduct(1.0, dfda, t2, dfdt1);
+    crossProductAdd(1.0, t1, dfda, dfdt2);
+
+    TacsScalar t[9];
+    if (dfdXd){
+      memcpy(t, dfdXd, 9*sizeof(TacsScalar));
+      vec3x3OuterAdd(1.0, dfdt1, &tangents[0], t);
+      vec3x3OuterAdd(1.0, dfdt2, &tangents[3], t);
+    }
+    else {
+      vec3x3Outer(dfdt1, &tangents[0], t);
+      vec3x3OuterAdd(1.0, dfdt2, &tangents[3], t);
+    }
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      dfdXpts[3*i] += (nxi[0]*t[0] +
+                       nxi[1]*t[1] +
+                       nxi[2]*t[2]);
+
+      dfdXpts[3*i+1] += (nxi[0]*t[3] +
+                         nxi[1]*t[4] +
+                         nxi[2]*t[5]);
+
+      dfdXpts[3*i+2] += (nxi[0]*t[6] +
+                         nxi[1]*t[7] +
+                         nxi[2]*t[8]);
+      nxi += 3;
+    }
+  }
+  else if (num_params == 2){
+    TacsScalar Ainv = 1.0/A;
+
+    TacsScalar dfda[2];
+    dfda[0] = Ainv*dfdn[0];
+    dfda[1] = Ainv*dfdn[1];
+    vec2Axpy(dfdA - Ainv*vec2Dot(n, dfdn), n, dfda);
+
+    TacsScalar dfdt[2];
+    dfdt[0] = -dfda[1];
+    dfdt[1] = dfda[0];
+
+    TacsScalar t[4];
+    if (dfdXd){
+      memcpy(t, dfdXd, 4*sizeof(TacsScalar));
+      vec2x2OuterAdd(1.0, dfdt, &tangents[0], t);
+    }
+    else {
+      vec2x2Outer(dfdt, &tangents[0], t);
+    }
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      dfdXpts[3*i] += (nxi[0]*t[0] + nxi[1]*t[1]);
+      dfdXpts[3*i+1] += (nxi[0]*t[2] + nxi[1]*t[3]);
+      nxi += 2;
+    }
+  }
 }
 
 TacsScalar TACSElementBasis::getJacobianTransform( const double pt[],
@@ -218,31 +329,31 @@ TacsScalar TACSElementBasis::computeJacobianTransform( const int num_params,
   return 0.0;
 }
 
-void TACSElementBasis::addJacobianTransformSens( const double pt[],
-                                                 const TacsScalar Xd[],
-                                                 const TacsScalar J[],
-                                                 TacsScalar dfddetJ,
-                                                 const TacsScalar dfdXd[],
-                                                 const TacsScalar dfdJ[],
-                                                 TacsScalar dfdXpts[] ){
+void TACSElementBasis::addJacobianTransformXptSens( const double pt[],
+                                                    const TacsScalar Xd[],
+                                                    const TacsScalar J[],
+                                                    TacsScalar dfddetJ,
+                                                    const TacsScalar dfdXd[],
+                                                    const TacsScalar dfdJ[],
+                                                    TacsScalar dfdXpts[] ){
   const int num_params = getNumParameters();
   const int num_nodes = getNumNodes();
   double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
   computeBasisGradient(pt, N, Nxi);
 
-  return addJacobianTransformSens(num_params, num_nodes, Nxi, Xd, J,
-                                  dfddetJ, dfdXd, dfdJ, dfdXpts);
+  return addJacobianTransformXptSens(num_params, num_nodes, Nxi, Xd, J,
+                                     dfddetJ, dfdXd, dfdJ, dfdXpts);
 }
 
-void TACSElementBasis::addJacobianTransformSens( const int num_params,
-                                                 const int num_nodes,
-                                                 const double Nxi[],
-                                                 const TacsScalar Xd[],
-                                                 const TacsScalar J[],
-                                                 TacsScalar dfddetJ,
-                                                 const TacsScalar dfdXd[],
-                                                 const TacsScalar dfdJ[],
-                                                 TacsScalar dfdXpts[] ){
+void TACSElementBasis::addJacobianTransformXptSens( const int num_params,
+                                                    const int num_nodes,
+                                                    const double Nxi[],
+                                                    const TacsScalar Xd[],
+                                                    const TacsScalar J[],
+                                                    TacsScalar dfddetJ,
+                                                    const TacsScalar dfdXd[],
+                                                    const TacsScalar dfdJ[],
+                                                    TacsScalar dfdXpts[] ){
   if (num_params == 3){
     // Compute t = d(detJ)/d(Xd)
     TacsScalar t[9];
