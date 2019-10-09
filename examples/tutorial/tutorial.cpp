@@ -464,6 +464,7 @@ int main( int argc, char * argv[] ){
   TACSBVec *x = assembler->createDesignVec();
   x->incref();
   assembler->getDesignVars(x);
+  assembler->getNodes(X);
 
   // Evaluate the function
   TacsScalar ksFuncVal = 0.0;
@@ -471,10 +472,13 @@ int main( int argc, char * argv[] ){
 
   // Now, compute the total derivative of the function of interest
   TACSBVec *dfdx = assembler->createDesignVec();
+  TACSBVec *dfdX = assembler->createNodeVec();
   dfdx->incref();
+  dfdX->incref();
 
   // Evaluate the partial derivative w.r.t. the design variables
   assembler->addDVSens(1.0, 1, &func, &dfdx);
+  assembler->addXptSens(1.0, 1, &func, &dfdX);
 
   // Evaluate the partial derivative
   TACSBVec *dfdu = assembler->createVec();
@@ -495,13 +499,18 @@ int main( int argc, char * argv[] ){
 
   // Compute the total derivative
   assembler->addAdjointResProducts(-1.0, 1, &ans, &dfdx);
+  assembler->addAdjointResXptSensProducts(-1.0, 1, &ans, &dfdX);
 
   dfdx->beginSetValues(TACS_ADD_VALUES);
+  dfdX->beginSetValues(TACS_ADD_VALUES);
   dfdx->endSetValues(TACS_ADD_VALUES);
+  dfdX->endSetValues(TACS_ADD_VALUES);
 
   // Now check with a finite-difference projected derivative
   TACSBVec *px = assembler->createDesignVec();
+  TACSBVec *pX = assembler->createNodeVec();
   px->incref();
+  pX->incref();
 
   // Set the entries in the px vector based on the value
   // of the dfdx vector
@@ -518,17 +527,36 @@ int main( int argc, char * argv[] ){
     }
   }
 
+  TacsScalar *pX_array, *dfdX_array;
+  int local_node_size = pX->getArray(&pX_array);
+  dfdX->getArray(&dfdX_array);
+
+  for ( int i = 0; i < local_node_size; i++ ){
+    if (TacsRealPart(dfdX_array[i]) >= 0.0){
+      pX_array[i] = 1.0;
+    }
+    else {
+      pX_array[i] = -1.0;
+    }
+  }
+
   // Compute the projected derivative along the directin px
   TacsScalar proj_deriv = px->dot(dfdx);
+  TacsScalar proj_node_deriv = pX->dot(dfdX);
 
+  TACSBVec *xtemp = assembler->createDesignVec();
+  xtemp->incref();
+
+  xtemp->copyValues(x);
 #ifdef TACS_USE_COMPLEX
-  x->axpy(TacsScalar(0.0, dh), px);
+  xtemp->axpy(TacsScalar(0.0, dh), px);
 #else
-  x->axpy(dh, px);
+  xtemp->axpy(dh, px);
 #endif
 
   // Set the new design variable values
-  assembler->setDesignVars(x);
+  assembler->setDesignVars(xtemp);
+  xtemp->decref();
 
   // Evaluate the problem again and compare the results
   assembler->zeroVariables();
@@ -546,6 +574,8 @@ int main( int argc, char * argv[] ){
   // Evaluate the function
   TacsScalar ksFuncVal1 = 0.0;
   assembler->evalFunctions(1, &func, &ksFuncVal1);
+
+  assembler->setDesignVars(x);
 
   // Compare with finite-difference and print the result
   if (rank == 0){
@@ -565,12 +595,58 @@ int main( int argc, char * argv[] ){
            fabs(TacsRealPart((fd - proj_deriv)/fd)));
   }
 
+#ifdef TACS_USE_COMPLEX
+  X->axpy(TacsScalar(0.0, dh), pX);
+#else
+  X->axpy(dh, px);
+#endif
+  // Set the new design variable values
+  assembler->setNodes(X);
+
+  // Evaluate the problem again and compare the results
+  assembler->zeroVariables();
+  assembler->assembleJacobian(alpha, beta, gamma, res, kmat);
+  res->axpy(-1.0, force); // res = Ku - f
+
+  // Factor the preconditioner
+  pc->factor();
+
+  // Solve the problem
+  ksm->solve(res, ans);
+  ans->scale(-1.0);
+  assembler->setVariables(ans);
+
+  // Evaluate the function
+  ksFuncVal1 = 0.0;
+  assembler->evalFunctions(1, &func, &ksFuncVal1);
+
+  // Compare with finite-difference and print the result
+  if (rank == 0){
+    TacsScalar fd = 0.0;
+#ifdef TACS_USE_COMPLEX
+    fd = TacsImagPart(ksFuncVal1)/dh;
+#else
+    fd = (ksFuncVal1 - ksFuncVal)/dh;
+#endif
+    printf("The %s function value is %15.8f \n", func->getObjectName(),
+           TacsRealPart(ksFuncVal));
+    printf("The projected derivative is             %20.8e \n",
+           TacsRealPart(proj_node_deriv));
+    printf("The finite-difference approximation is  %20.8e \n",
+           TacsRealPart(fd));
+    printf("The relative error is                   %20.5e \n",
+           fabs(TacsRealPart((fd - proj_node_deriv)/fd)));
+  }
+
   // Clean up data required by the adjoint
   func->decref();
   dfdu->decref();
   x->decref();
+  X->decref();
   px->decref();
+  pX->decref();
   dfdx->decref();
+  dfdX->decref();
 
   // Clean up data required for the analysis (and adjoint too)
   ksm->decref();

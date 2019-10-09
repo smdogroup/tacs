@@ -59,8 +59,8 @@ int main( int argc, char *argv[] ){
     printf("Multiply time:     %15.10e\n", tm);
     printf("Factor time:       %15.10e\n", tf);
     printf("Apply factor time: %15.10e\n", ta);
-    printf("Error:             %15.10e\n", sqrt(err[0]));
-    printf("e^{T}*A*e:         %15.10e\n", err[1]);
+    printf("Error:             %15.10e\n", TacsRealPart(sqrt(err[0])));
+    printf("e^{T}*A*e:         %15.10e\n", TacsRealPart(err[1]));
   }
 
   TacsFinalize();

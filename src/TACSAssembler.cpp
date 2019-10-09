@@ -4994,52 +4994,6 @@ void TACSAssembler::testElement( int elemNum, int print_level,
 }
 
 /*
-  Test the implementation of the given element's constitutive class.
-
-  This function tests the failure computation and the mass
-  sensitivities for the given element.
-
-  elemNum:     the element to retrieve the constitutive object from
-  print_level: the print level to use for the test
-*/
-void TACSAssembler::testConstitutive( int elemNum, int print_level ){
-  /*
-  if (!meshInitializedFlag){
-    fprintf(stderr, "[%d] Cannot call testConstitutive() before initialize()\n",
-            mpiRank);
-    return;
-  }
-  else if (elemNum < 0 || elemNum >= numElements){
-    fprintf(stderr, "[%d] Element number %d out of range [0,%d)\n",
-            mpiRank, elemNum, numElements);
-    return;
-  }
-
-  TACSConstitutive *stiffness = elements[elemNum]->getConstitutive();
-
-  if (stiffness){
-    double pt[] = {0.0, 0.0, 0.0};
-    TestConstitutive *test = new TestConstitutive(stiffness);
-    test->incref();
-    test->setPrintLevel(print_level);
-
-    printf("Testing constitutive class %s\n", stiffness->constitutiveName());
-    if (test->testFailStrainSens(pt)){ printf("Fail StrainSens failed\n"); }
-    else { printf("Fail StrainSens passed\n"); }
-    if (test->testMassDVSens(pt)){ printf("Mass DVSens failed\n"); }
-    else { printf("Mass DVSens passed\n"); }
-    if (test->testFailDVSens(pt)){ printf("Fail DVSens failed\n"); }
-    else { printf("Fail DVSens passed\n"); }
-    if (test->testBucklingDVSens()){ printf("Buckling DVSens failed\n"); }
-    else { printf("Buckling DVSens passed\n"); }
-    printf("\n");
-
-    test->decref();
-  }
-  */
-}
-
-/*
   Test the implementation of the function.
 
   This tests the state variable sensitivities and the design variable

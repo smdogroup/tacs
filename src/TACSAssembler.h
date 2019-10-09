@@ -273,7 +273,6 @@ class TACSAssembler : public TACSObject {
   // ------------------------------------------------------
   void testElement( int elemNum, int print_level, double dh=1e-6,
                     double rtol=1e-8, double atol=1e-1 );
-  void testConstitutive( int elemNum, int print_level );
   void testFunction( TACSFunction *func, double dh );
 
   // Set the number of threads to work with

@@ -12,7 +12,8 @@ EXAMPLE_SUBDIRS = \
 	mg \
         tetrahedral \
 	triangle \
-	tutorial
+	tutorial \
+	block_cyclic_mat
 
 #	plate \
 #	profile_elements \
