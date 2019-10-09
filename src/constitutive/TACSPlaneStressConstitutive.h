@@ -64,6 +64,11 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
   TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
                                const TacsScalar X[] );
 
+  // Add the derivative of the density
+  void addSpecificHeatDVSens( int elemIndex, const double pt[],
+                              const TacsScalar X[], const TacsScalar scale,
+                              int dvLen, TacsScalar dvSens[] );
+
   // Evaluate the stresss
   void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
                    const TacsScalar strain[], TacsScalar stress[] );
@@ -91,6 +96,12 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
   // Evaluate the tangent of the heat flux
   void evalTangentHeatFlux( int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar C[] );
+
+  // Add the derivative of the heat flux
+  void addHeatFluxDVSens( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar grad[],
+                          TacsScalar scale, const TacsScalar psi[],
+                          int dvLen, TacsScalar dvSens[] );
 
   // Evaluate the material failure index
   TacsScalar evalFailure( int elemIndex, const double pt[],

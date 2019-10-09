@@ -317,7 +317,7 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
         }
         else if (ksType == CONTINUOUS){
           TacsScalar expfact = exp(ksWeight*(fail - maxFail))/ksFailSum;
-          dfddetJ = weight*expfact;
+          dfddetJ = weight*expfact/ksWeight;
           dfdq = weight*detJ*expfact;
         }
         else if (ksType == PNORM_DISCRETE){

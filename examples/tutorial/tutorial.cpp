@@ -6,11 +6,14 @@
 
 #include "TACSAssembler.h"
 #include "TACSLinearElasticity.h"
+#include "TACSThermoelasticity.h"
 #include "TACSQuadBasis.h"
 #include "TACSElement2D.h"
 #include "TACSToFH5.h"
 #include "TACSKSFailure.h"
 #include "TACSStructuralMass.h"
+#include "TACSHeatFlux.h"
+#include "TACSTetrahedralBasis.h"
 
 /*
   The following example demonstrates the use of TACS on a pressure
@@ -87,7 +90,8 @@ int main( int argc, char * argv[] ){
   // going to be equal to 2 (You can find this value by checking
   // with element->getVarsPerNode() which returns the number
   // of unknowns per node)
-  int varsPerNode = 2;
+  // int varsPerNode = 2;
+  int varsPerNode = 3;
 
   int nodesPerProc = ((nx+1)*(ny+1))/size;
   int elemsPerProc = (nx*ny)/size;
@@ -196,8 +200,10 @@ int main( int argc, char * argv[] ){
       new TACSPlaneStressConstitutive(props, t, tNum);
 
     // Create the element class
-    TACSLinearElasticity2D *model =
-      new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+    // TACSLinearElasticity2D *model =
+    //   new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+     TACSLinearThermoelasticity2D *model =
+       new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
     elements[k] = new TACSElement2D(model, linear_basis);
 
     // Create a surface traction associated with this element and add
@@ -409,7 +415,7 @@ int main( int argc, char * argv[] ){
   res->axpy(-1.0, force); // res = Ku - f
   norm = res->norm();
   if (rank == 0){
-    printf("|R|: %15.5e\n", TacsRealPart(norm));
+    printf("|R|:      %15.5e\n", TacsRealPart(norm));
   }
 
   // Output for visualization
@@ -450,7 +456,7 @@ int main( int argc, char * argv[] ){
   // over all the elements in the mesh
   double ksRho = 100.0;
   TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
-  ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
+  ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
   TACSFunction *func = ksfunc;
   func->incref();
 
@@ -482,6 +488,9 @@ int main( int argc, char * argv[] ){
   assembler->addSVSens(alpha, beta, gamma, 1, &func, &dfdu);
 
   // Solve for the adjoint variables
+  assembler->assembleJacobian(alpha, beta, gamma, res, kmat,
+                              TACS_MAT_TRANSPOSE);
+  pc->factor();
   ksm->solve(dfdu, ans);
 
   // Compute the total derivative

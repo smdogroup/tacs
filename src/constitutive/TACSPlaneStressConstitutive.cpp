@@ -125,6 +125,18 @@ TacsScalar TACSPlaneStressConstitutive::evalSpecificHeat( int elemIndex,
   return 0.0;
 }
 
+// Add the derivative of the specific heat
+void TACSPlaneStressConstitutive::addSpecificHeatDVSens( int elemIndex,
+                                                         const double pt[],
+                                                         const TacsScalar X[],
+                                                         const TacsScalar scale,
+                                                         int dvLen,
+                                                         TacsScalar dvSens[] ){
+  if (properties && tNum >= 0){
+    dvSens[0] += scale*properties->getSpecificHeat();
+  }
+}
+
 // Evaluate the stresss
 void TACSPlaneStressConstitutive::evalStress( int elemIndex,
                                               const double pt[],
@@ -206,10 +218,10 @@ void TACSPlaneStressConstitutive::evalHeatFlux( int elemIndex,
                                                 const TacsScalar grad[],
                                                 TacsScalar flux[] ){
   if (properties){
-    TacsScalar C[3];
-    properties->evalTangentHeatFlux2D(C);
-    flux[0] = C[0]*grad[0] + C[1]*grad[1];
-    flux[1] = C[1]*grad[0] + C[2]*grad[1];
+    TacsScalar Kc[3];
+    properties->evalTangentHeatFlux2D(Kc);
+    flux[0] = t*(Kc[0]*grad[0] + Kc[1]*grad[1]);
+    flux[1] = t*(Kc[1]*grad[0] + Kc[2]*grad[1]);
   }
 }
 
@@ -217,9 +229,27 @@ void TACSPlaneStressConstitutive::evalHeatFlux( int elemIndex,
 void TACSPlaneStressConstitutive::evalTangentHeatFlux( int elemIndex,
                                                        const double pt[],
                                                        const TacsScalar X[],
-                                                       TacsScalar C[] ){
+                                                       TacsScalar Kc[] ){
   if (properties){
-    properties->evalTangentHeatFlux2D(C);
+    properties->evalTangentHeatFlux2D(Kc);
+    Kc[0] *= t;  Kc[1] *= t;  Kc[2] *= t;
+  }
+}
+
+// Add the derivative of the heat flux
+void TACSPlaneStressConstitutive::addHeatFluxDVSens( int elemIndex,
+                                                     const double pt[],
+                                                     const TacsScalar X[],
+                                                     const TacsScalar grad[],
+                                                     TacsScalar scale,
+                                                     const TacsScalar psi[],
+                                                     int dvLen,
+                                                     TacsScalar dvSens[] ){
+  if (properties && tNum >= 0){
+    TacsScalar Kc[3];
+    properties->evalTangentHeatFlux2D(Kc);
+    dvSens[0] += scale*(psi[0]*(Kc[0]*grad[0] + Kc[1]*grad[1]) +
+                        psi[1]*(Kc[1]*grad[0] + Kc[2]*grad[1]));
   }
 }
 

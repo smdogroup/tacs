@@ -122,8 +122,8 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
     // Compute the norm of the vector
     TacsScalar A = sqrt(vec2Dot(t, t));
 
-    n[0] = -t[1]/A;
-    n[1] = t[0]/A;
+    n[0] = t[1]/A;
+    n[1] = -t[0]/A;
 
     return A;
   }
@@ -166,7 +166,7 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
   if (num_params == 3){
     TacsScalar Ainv = 1.0/A;
 
-    // Compute dfda = 1.0/A*(dfdn - (dfdn^{T}*n)*n)
+    // Compute dfda = 1.0/A*dfdn(I - (dfdn^{T}*n)*n)
     TacsScalar dfda[3];
     dfda[0] = Ainv*dfdn[0];
     dfda[1] = Ainv*dfdn[1];
@@ -178,10 +178,9 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
     mat3x3Mult(Xd, &tangents[0], t1);
     mat3x3Mult(Xd, &tangents[3], t2);
 
-    // Compute thee
     TacsScalar dfdt1[3], dfdt2[3];
-    crossProduct(1.0, dfda, t2, dfdt1);
-    crossProductAdd(1.0, t1, dfda, dfdt2);
+    crossProduct(1.0, t2, dfda, dfdt1);
+    crossProduct(1.0, dfda, t1, dfdt2);
 
     TacsScalar t[9];
     if (dfdXd){

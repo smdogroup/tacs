@@ -113,6 +113,7 @@ static inline void vec3Axpy( const TacsScalar a,
                              TacsScalar y[] ){
   y[0] += a*x[0];
   y[1] += a*x[1];
+  y[2] += a*x[2];
 }
 
 
@@ -296,15 +297,9 @@ static inline void vec2x2Outer( const TacsScalar a[],
                                 TacsScalar C[] ){
   C[0] = a[0]*b[0];
   C[1] = a[0]*b[1];
-  C[2] = a[0]*b[2];
 
-  C[3] = a[1]*b[0];
-  C[4] = a[1]*b[1];
-  C[5] = a[1]*b[2];
-
-  C[6] = a[2]*b[0];
-  C[7] = a[2]*b[1];
-  C[8] = a[2]*b[2];
+  C[2] = a[1]*b[0];
+  C[3] = a[1]*b[1];
 }
 
 /*
@@ -325,15 +320,9 @@ static inline void vec2x2OuterAdd( const TacsScalar alpha,
                                    TacsScalar C[] ){
   C[0] += alpha*a[0]*b[0];
   C[1] += alpha*a[0]*b[1];
-  C[2] += alpha*a[0]*b[2];
 
-  C[3] += alpha*a[1]*b[0];
-  C[4] += alpha*a[1]*b[1];
-  C[5] += alpha*a[1]*b[2];
-
-  C[6] += alpha*a[2]*b[0];
-  C[7] += alpha*a[2]*b[1];
-  C[8] += alpha*a[2]*b[2];
+  C[2] += alpha*a[1]*b[0];
+  C[3] += alpha*a[1]*b[1];
 }
 
 /*
@@ -353,15 +342,9 @@ static inline void vec2x2Outer( const TacsComplex a[],
                                 TacsComplex C[] ){
   C[0] = a[0]*b[0];
   C[1] = a[0]*b[1];
-  C[2] = a[0]*b[2];
 
-  C[3] = a[1]*b[0];
-  C[4] = a[1]*b[1];
-  C[5] = a[1]*b[2];
-
-  C[6] = a[2]*b[0];
-  C[7] = a[2]*b[1];
-  C[8] = a[2]*b[2];
+  C[2] = a[1]*b[0];
+  C[3] = a[1]*b[1];
 }
 
 /*
@@ -382,15 +365,9 @@ static inline void vec2x2OuterAdd( const TacsComplex alpha,
                                    TacsComplex C[] ){
   C[0] += alpha*a[0]*b[0];
   C[1] += alpha*a[0]*b[1];
-  C[2] += alpha*a[0]*b[2];
 
-  C[3] += alpha*a[1]*b[0];
-  C[4] += alpha*a[1]*b[1];
-  C[5] += alpha*a[1]*b[2];
-
-  C[6] += alpha*a[2]*b[0];
-  C[7] += alpha*a[2]*b[1];
-  C[8] += alpha*a[2]*b[2];
+  C[2] += alpha*a[1]*b[0];
+  C[3] += alpha*a[1]*b[1];
 }
 
 /*
