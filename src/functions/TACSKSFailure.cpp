@@ -30,7 +30,6 @@ TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
   ksWeight = _ksWeight;
   alpha = _alpha;
   ksType = CONTINUOUS;
-  loadFactor = 1.0;
 
   // Initialize the maximum failure value and KS sum to default values
   // that will be overwritten later.
@@ -65,15 +64,6 @@ double TACSKSFailure::getParameter(){
 */
 void TACSKSFailure::setParameter( double _ksWeight ){
   ksWeight = _ksWeight;
-}
-
-/*
-  Set the load factor to some value greater than or equal to 1.0
-*/
-void TACSKSFailure::setLoadFactor( TacsScalar _loadFactor ){
-  if (TacsRealPart(_loadFactor) >= 1.0){
-    loadFactor = _loadFactor;
-  }
 }
 
 /*

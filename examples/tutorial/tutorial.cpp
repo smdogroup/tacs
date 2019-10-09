@@ -13,7 +13,7 @@
 #include "TACSKSFailure.h"
 #include "TACSStructuralMass.h"
 #include "TACSHeatFlux.h"
-#include "TACSTetrahedralBasis.h"
+#include "TACSInducedFailure.h"
 
 /*
   The following example demonstrates the use of TACS on a pressure
@@ -454,11 +454,13 @@ int main( int argc, char * argv[] ){
 
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
-  double ksRho = 100.0;
-  TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
-  ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
+  double ksRho = 2.0;
+  TACSInducedFailure *ksfunc = new TACSInducedFailure(assembler, ksRho);
+  ksfunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
   TACSFunction *func = ksfunc;
   func->incref();
+
+  assembler->testFunction(func, 1e-30);
 
   // Allocate an array for the design variable values
   TACSBVec *x = assembler->createDesignVec();

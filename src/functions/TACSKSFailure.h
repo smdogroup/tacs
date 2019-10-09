@@ -57,7 +57,7 @@ class TACSKSFailure : public TACSFunction {
   enum KSFailureType { DISCRETE, CONTINUOUS,
                        PNORM_DISCRETE, PNORM_CONTINUOUS };
 
-  TACSKSFailure( TACSAssembler * _tacs, double ksWeight,
+  TACSKSFailure( TACSAssembler * _assembler, double ksWeight,
                  double alpha=1.0 );
   ~TACSKSFailure();
 
@@ -70,7 +70,6 @@ class TACSKSFailure : public TACSFunction {
   void setKSFailureType( enum KSFailureType type );
   double getParameter();
   void setParameter( double _ksWeight );
-  void setLoadFactor( TacsScalar _loadFactor );
 
   // Set the value of the failure offset for numerical stability
   // -----------------------------------------------------------
@@ -142,9 +141,6 @@ class TACSKSFailure : public TACSFunction {
 
   // The integral scaling value
   double alpha;
-
-  // Load factor applied to the strain
-  TacsScalar loadFactor;
 
   // The name of the function
   static const char *funcName;
