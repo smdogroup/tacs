@@ -248,7 +248,7 @@ void TACSElement2D::addAdjResXptProduct( int elemIndex,
     TacsScalar s = scale*detJ*weight;
     dfdX[0] *= s;  dfdX[1] *= s;  dfdX[2] *= s;
 
-    for ( int i = 0; i < 4; i++ ){
+    for ( int i = 0; i < 2*vars_per_node; i++ ){
       dfdUx[i] *= s;
       dfdPsix[i] *= s;
     }

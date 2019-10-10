@@ -8,12 +8,10 @@ include ../../Makefile.in
 include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
-	TACSKSFailure.o \
 	TACSStructuralMass.o \
 	TACSHeatFlux.o \
+	TACSKSFailure.o \
 	TACSInducedFailure.o
-
-#	TACSKSTemperature.o
 
 DIR=${TACS_DIR}/src/functions
 

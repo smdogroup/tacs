@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
-#include "FElibrary.h"
+#include <stdlib.h>
+#include <string.h>
 
 /*
   Get the coordinates of the deformed plate
@@ -48,10 +49,10 @@ void get_coordinates( double * x, double * y,
     jj = 1;
   }
 
-  double N[4];
-  double pt[2];
-  pt[0] = u;  pt[1] = v;
-  FElibrary::biLagrangeSF(N, pt, 2);
+  double N[4] = {0.25*(1.0 + u)*(1.0 + v),
+                 0.25*(1.0 - u)*(1.0 + v),
+                 0.25*(1.0 + u)*(1.0 - v),
+                 0.25*(1.0 - u)*(1.0 - v)};
 
   u = (N[0]*uvals[ii   + 3*jj] +
        N[1]*uvals[ii+1 + 3*jj] +
