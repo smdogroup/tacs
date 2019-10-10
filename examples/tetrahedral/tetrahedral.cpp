@@ -155,6 +155,8 @@ int main( int argc, char *argv[] ){
     ksm->solve(res, ans);
     assembler->setVariables(ans);
 
+    assembler->testElement(0, 2, 1e-30);
+
     // The function that we will use: The KS failure function evaluated
     // over all the elements in the mesh
     TACSFunction *func = new TACSStructuralMass(assembler);

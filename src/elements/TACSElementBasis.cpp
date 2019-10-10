@@ -785,7 +785,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     for ( int j = 0; j < vars_per_node; j++ ){
       Ut[3*j] = Ut[3*j+1] = Ut[3*j+2] = 0.0;
       Ud[3*j] = Ud[3*j+1] = Ud[3*j+2] = 0.0;
-      Psix[3*j] = Psix[3*j+1] = Psix[3*j+2] = 0.0;
+      Psid[3*j] = Psid[3*j+1] = Psid[3*j+2] = 0.0;
       Psi[j] = 0.0;
     }
 
@@ -815,7 +815,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     n = N, nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
       // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psix;
+      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
       for ( int j = 0; j < vars_per_node; j++ ){
         ut[0] += n[0]*vars[0];
         ut[1] += n[0]*dvars[0];
@@ -856,11 +856,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
 
     TacsScalar *px = Psix;
     for ( int j = 0; j < vars_per_node; j++ ){
-      TacsScalar pd[3];
-      pd[0] = px[0];
-      pd[1] = px[1];
-      pd[2] = px[2];
-      mat3x3MultTrans(J, pd, px);
+      mat3x3MultTrans(J, &Psid[3*j], px);
       px += 3;
     }
 
@@ -875,7 +871,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     for ( int j = 0; j < vars_per_node; j++ ){
       Ut[3*j] = Ut[3*j+1] = Ut[3*j+2] = 0.0;
       Ud[2*j] = Ud[2*j+1] = 0.0;
-      Psix[2*j] = Psix[2*j+1] = 0.0;
+      Psid[2*j] = Psid[2*j+1] = 0.0;
       Psi[j] = 0.0;
     }
 
@@ -894,7 +890,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xpts += 3;
 
       // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psix;
+      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
       for ( int j = 0; j < vars_per_node; j++ ){
         ut[0] += n[0]*vars[0];
         ut[1] += n[0]*dvars[0];
@@ -933,10 +929,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
 
     TacsScalar *px = Psix;
     for ( int j = 0; j < vars_per_node; j++ ){
-      TacsScalar pd[2];
-      pd[0] = px[0];
-      pd[1] = px[1];
-      mat2x2MultTrans(J, pd, px);
+      mat2x2MultTrans(J, &Psid[2*j], px);
       px += 2;
     }
 
@@ -1252,6 +1245,277 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
 
       TacsScalar t2[4];
       inv2x2Sens(J, df, t2);
+      for ( int i = 0; i < 4; i++ ){
+        t[i] += t2[i];
+      }
+    }
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      dfdXpts[3*i] += (nxi[0]*t[0] + nxi[1]*t[1]);
+      dfdXpts[3*i+1] += (nxi[0]*t[2] + nxi[1]*t[3]);
+      nxi += 2;
+    }
+
+    if (dfdX){
+      const double *n = N;
+      for ( int i = 0; i < num_nodes; i++ ){
+        dfdXpts[3*i] += n[0]*dfdX[0];
+        dfdXpts[3*i+1] += n[0]*dfdX[1];
+        n++;
+      }
+    }
+  }
+}
+
+void TACSElementBasis::addFieldGradientXptSens( const double pt[],
+                                                const TacsScalar Xpts[],
+                                                const int vars_per_node,
+                                                const TacsScalar Xd[],
+                                                const TacsScalar J[],
+                                                const TacsScalar Ud[],
+                                                const TacsScalar Psid[],
+                                                const TacsScalar dfddetJ,
+                                                const TacsScalar dfdX[],
+                                                const TacsScalar dfdXd[],
+                                                const TacsScalar dfdJ[],
+                                                const TacsScalar dfdUx[],
+                                                const TacsScalar dfdPsix[],
+                                                TacsScalar dfdXpts[] ){
+  const int num_params = getNumParameters();
+  const int num_nodes = getNumNodes();
+  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  computeBasisGradient(pt, N, Nxi);
+
+  return addFieldGradientXptSens(num_params, num_nodes, N, Nxi, Xpts,
+                                 vars_per_node, Xd, J, Ud, Psid,
+                                 dfddetJ, dfdX, dfdXd, dfdJ, dfdUx, dfdPsix,
+                                 dfdXpts);
+}
+
+void TACSElementBasis::addFieldGradientXptSens( const int num_params,
+                                                const int num_nodes,
+                                                const double N[],
+                                                const double Nxi[],
+                                                const TacsScalar Xpts[],
+                                                const int vars_per_node,
+                                                const TacsScalar Xd[],
+                                                const TacsScalar J[],
+                                                const TacsScalar Ud[],
+                                                const TacsScalar Psid[],
+                                                const TacsScalar dfddetJ,
+                                                const TacsScalar dfdX[],
+                                                const TacsScalar dfdXd[],
+                                                const TacsScalar dfdJ[],
+                                                const TacsScalar dfdUx[],
+                                                const TacsScalar dfdPsix[],
+                                                TacsScalar dfdXpts[] ){
+  if (num_params == 3){
+    // Compute t = d(detJ)/d(Xd)
+    TacsScalar t[9];
+    det3x3Sens(Xd, t);
+
+    // Multiply the derivative by df/d(detJ)
+    TacsScalar *T = t;
+    for ( int i = 0; i < 9; i++, T++ ){
+      T[0] *= dfddetJ;
+    }
+
+    // If dfdXd is supplied, add it to the derivative
+    if (dfdXd){
+      for ( int i = 0; i < 9; i++ ){
+        t[i] += dfdXd[i];
+      }
+    }
+
+    // if df/d(J) is supplied, compute df/d(J)*d(J)/d(Xd) and add it
+    // to the array t
+    if (dfdJ && dfdUx && dfdPsix){
+      // dfdJ = dfdUx*dUx/dJ, where dUx/dJ = Ud
+      TacsScalar df[9];
+      memcpy(df, dfdJ, 9*sizeof(TacsScalar));
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Ud[3*k]*dfdUx[3*k];
+        df[1] += Ud[3*k]*dfdUx[3*k+1];
+        df[2] += Ud[3*k]*dfdUx[3*k+2];
+
+        df[3] += Ud[3*k+1]*dfdUx[3*k];
+        df[4] += Ud[3*k+1]*dfdUx[3*k+1];
+        df[5] += Ud[3*k+1]*dfdUx[3*k+2];
+
+        df[6] += Ud[3*k+2]*dfdUx[3*k];
+        df[7] += Ud[3*k+2]*dfdUx[3*k+1];
+        df[8] += Ud[3*k+2]*dfdUx[3*k+2];
+      }
+
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Psid[3*k]*dfdPsix[3*k];
+        df[1] += Psid[3*k]*dfdPsix[3*k+1];
+        df[2] += Psid[3*k]*dfdPsix[3*k+2];
+
+        df[3] += Psid[3*k+1]*dfdPsix[3*k];
+        df[4] += Psid[3*k+1]*dfdPsix[3*k+1];
+        df[5] += Psid[3*k+1]*dfdPsix[3*k+2];
+
+        df[6] += Psid[3*k+2]*dfdPsix[3*k];
+        df[7] += Psid[3*k+2]*dfdPsix[3*k+1];
+        df[8] += Psid[3*k+2]*dfdPsix[3*k+2];
+      }
+
+      TacsScalar t2[9];
+      inv3x3Sens(J, df, t2);
+      for ( int i = 0; i < 9; i++ ){
+        t[i] += t2[i];
+      }
+    }
+    else if (dfdUx && dfdPsix){
+      // dfdJ = dfdUx*dUx/dJ, where dUx/dJ = Ud
+      TacsScalar df[9];
+      memset(df, 0, 9*sizeof(TacsScalar));
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Ud[3*k]*dfdUx[3*k];
+        df[1] += Ud[3*k]*dfdUx[3*k+1];
+        df[2] += Ud[3*k]*dfdUx[3*k+2];
+
+        df[3] += Ud[3*k+1]*dfdUx[3*k];
+        df[4] += Ud[3*k+1]*dfdUx[3*k+1];
+        df[5] += Ud[3*k+1]*dfdUx[3*k+2];
+
+        df[6] += Ud[3*k+2]*dfdUx[3*k];
+        df[7] += Ud[3*k+2]*dfdUx[3*k+1];
+        df[8] += Ud[3*k+2]*dfdUx[3*k+2];
+      }
+
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Psid[3*k]*dfdPsix[3*k];
+        df[1] += Psid[3*k]*dfdPsix[3*k+1];
+        df[2] += Psid[3*k]*dfdPsix[3*k+2];
+
+        df[3] += Psid[3*k+1]*dfdPsix[3*k];
+        df[4] += Psid[3*k+1]*dfdPsix[3*k+1];
+        df[5] += Psid[3*k+1]*dfdPsix[3*k+2];
+
+        df[6] += Psid[3*k+2]*dfdPsix[3*k];
+        df[7] += Psid[3*k+2]*dfdPsix[3*k+1];
+        df[8] += Psid[3*k+2]*dfdPsix[3*k+2];
+      }
+
+      TacsScalar t2[9];
+      inv3x3Sens(J, df, t2);
+      for ( int i = 0; i < 9; i++ ){
+        t[i] += t2[i];
+      }
+    }
+    else if (dfdJ){
+      TacsScalar t2[9];
+      inv3x3Sens(J, dfdJ, t2);
+      for ( int i = 0; i < 9; i++ ){
+        t[i] += t2[i];
+      }
+    }
+
+    // Loop over each quadrature point for each basis function
+    const double *nxi = Nxi;
+    for ( int i = 0; i < num_nodes; i++ ){
+      dfdXpts[3*i] += (nxi[0]*t[0] +
+                       nxi[1]*t[1] +
+                       nxi[2]*t[2]);
+
+      dfdXpts[3*i+1] += (nxi[0]*t[3] +
+                         nxi[1]*t[4] +
+                         nxi[2]*t[5]);
+
+      dfdXpts[3*i+2] += (nxi[0]*t[6] +
+                         nxi[1]*t[7] +
+                         nxi[2]*t[8]);
+      nxi += 3;
+    }
+
+    if (dfdX){
+      const double *n = N;
+      for ( int i = 0; i < num_nodes; i++ ){
+        dfdXpts[3*i] += n[0]*dfdX[0];
+        dfdXpts[3*i+1] += n[0]*dfdX[1];
+        dfdXpts[3*i+2] += n[0]*dfdX[2];
+        n++;
+      }
+    }
+  }
+  else if (num_params == 2){
+    // Compute t = d(detJ)/d(Xd)
+    TacsScalar t[4];
+    det2x2Sens(Xd, t);
+
+    // Multiply the derivative by df/d(detJ)
+    TacsScalar *T = t;
+    for ( int i = 0; i < 4; i++, T++ ){
+      T[0] *= dfddetJ;
+    }
+
+    // If dfdXd is supplied, add it to the derivative
+    if (dfdXd){
+      for ( int i = 0; i < 4; i++ ){
+        t[i] += dfdXd[i];
+      }
+    }
+
+    // If df/d(J) is supplied, compute df/d(J)*d(J)/d(Xd) and add it
+    // to the array t
+    if (dfdJ && dfdUx && dfdPsix){
+      // dfdJ = dfdUx*dUx/dJ, where dUx/dJ = Ud
+      TacsScalar df[4];
+      memcpy(df, dfdJ, 4*sizeof(TacsScalar));
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Ud[2*k]*dfdUx[2*k];
+        df[1] += Ud[2*k]*dfdUx[2*k+1];
+
+        df[2] += Ud[2*k+1]*dfdUx[2*k];
+        df[3] += Ud[2*k+1]*dfdUx[2*k+1];
+      }
+
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Psid[2*k]*dfdPsix[2*k];
+        df[1] += Psid[2*k]*dfdPsix[2*k+1];
+
+        df[2] += Psid[2*k+1]*dfdPsix[2*k];
+        df[3] += Psid[2*k+1]*dfdPsix[2*k+1];
+      }
+
+      TacsScalar t2[4];
+      inv2x2Sens(J, df, t2);
+      for ( int i = 0; i < 4; i++ ){
+        t[i] += t2[i];
+      }
+    }
+    else if (dfdUx && dfdPsix){
+      TacsScalar df[4];
+      memset(df, 0, 4*sizeof(TacsScalar));
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Ud[2*k]*dfdUx[2*k];
+        df[1] += Ud[2*k]*dfdUx[2*k+1];
+
+        df[2] += Ud[2*k+1]*dfdUx[2*k];
+        df[3] += Ud[2*k+1]*dfdUx[2*k+1];
+      }
+
+      for ( int k = 0; k < vars_per_node; k++ ){
+        df[0] += Psid[2*k]*dfdPsix[2*k];
+        df[1] += Psid[2*k]*dfdPsix[2*k+1];
+
+        df[2] += Psid[2*k+1]*dfdPsix[2*k];
+        df[3] += Psid[2*k+1]*dfdPsix[2*k+1];
+      }
+
+      TacsScalar t2[4];
+      inv2x2Sens(J, df, t2);
+      for ( int i = 0; i < 4; i++ ){
+        t[i] += t2[i];
+      }
+    }
+    else if (dfdJ){
+      TacsScalar t2[4];
+      inv2x2Sens(J, dfdJ, t2);
       for ( int i = 0; i < 4; i++ ){
         t[i] += t2[i];
       }

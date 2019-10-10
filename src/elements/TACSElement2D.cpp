@@ -215,8 +215,52 @@ void TACSElement2D::addAdjResXptProduct( int elemIndex,
                                          const TacsScalar vars[],
                                          const TacsScalar dvars[],
                                          const TacsScalar ddvars[],
-                                         TacsScalar fXptSens[] ){}
+                                         TacsScalar dfdXpts[] ){
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumQuadraturePoints();
+  const int vars_per_node = model->getVarsPerNode();
 
+  // Loop over each quadrature point and add the residual contribution
+  for ( int n = 0; n < nquad; n++ ){
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the solution field and the solution field gradient and the
+    // Jacobian transformation
+    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar Ut[3*MAX_VARS_PER_NODE];
+    TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+    TacsScalar Psi[MAX_VARS_PER_NODE];
+    TacsScalar Psid[2*MAX_VARS_PER_NODE], Psix[2*MAX_VARS_PER_NODE];
+    TacsScalar detJ = basis->getFieldGradient(pt, Xpts, vars_per_node,
+                                              vars, dvars, ddvars, psi,
+                                              X, Xd, J, Ut, Ud, Ux,
+                                              Psi, Psid, Psix);
+
+    TacsScalar product;
+    TacsScalar dfdX[3], dfdUx[2*MAX_VARS_PER_NODE], dfdPsix[2*MAX_VARS_PER_NODE];
+    model->evalWeakAdjXptSensProduct(elemIndex, n, time, pt, X,
+                                     Ut, Ux, Psi, Psix, &product,
+                                     dfdX, dfdUx, dfdPsix);
+
+    // Scale the derivatives appropriately
+    TacsScalar s = scale*detJ*weight;
+    dfdX[0] *= s;  dfdX[1] *= s;  dfdX[2] *= s;
+
+    for ( int i = 0; i < 4; i++ ){
+      dfdUx[i] *= s;
+      dfdPsix[i] *= s;
+    }
+
+    // Compute the derivative of the determinant of the transformation
+    TacsScalar dfddetJ = scale*weight*product;
+
+    basis->addFieldGradientXptSens(pt, Xpts, vars_per_node, Xd, J, Ud, Psid,
+                                   dfddetJ, dfdX, NULL, NULL, dfdUx, dfdPsix,
+                                   dfdXpts);
+  }
+}
 
 /**
   Compute a specific type of element matrix (mass, stiffness, geometric

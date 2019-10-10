@@ -90,8 +90,7 @@ int main( int argc, char * argv[] ){
   // going to be equal to 2 (You can find this value by checking
   // with element->getVarsPerNode() which returns the number
   // of unknowns per node)
-  // int varsPerNode = 2;
-  int varsPerNode = 3;
+  int varsPerNode = 2;
 
   int nodesPerProc = ((nx+1)*(ny+1))/size;
   int elemsPerProc = (nx*ny)/size;
@@ -200,10 +199,10 @@ int main( int argc, char * argv[] ){
       new TACSPlaneStressConstitutive(props, t, tNum);
 
     // Create the element class
-    // TACSLinearElasticity2D *model =
-    //   new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
-     TACSLinearThermoelasticity2D *model =
-       new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
+    TACSLinearElasticity2D *model =
+      new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+//    TACSLinearThermoelasticity2D *model =
+//      new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
     elements[k] = new TACSElement2D(model, linear_basis);
 
     // Create a surface traction associated with this element and add
@@ -454,13 +453,14 @@ int main( int argc, char * argv[] ){
 
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
-  double ksRho = 2.0;
-  TACSInducedFailure *ksfunc = new TACSInducedFailure(assembler, ksRho);
-  ksfunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
+  double ksRho = 10.0;
+  TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
+  ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
   TACSFunction *func = ksfunc;
   func->incref();
 
-  assembler->testFunction(func, 1e-30);
+  assembler->testFunction(func, dh);
+  assembler->testElement(0, 2, dh);
 
   // Allocate an array for the design variable values
   TACSBVec *x = assembler->createDesignVec();

@@ -55,7 +55,7 @@ int TACSLinearElasticity2D::getDesignVarNums( int elemIndex, int dvLen,
   Set the element design variables from the design vector
 */
 void TACSLinearElasticity2D::setDesignVars( int elemIndex, int dvLen,
-                                   const TacsScalar dvs[] ){
+                                            const TacsScalar dvs[] ){
   stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
@@ -209,8 +209,8 @@ void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
 }
 
 /*
-  Add the product of the adjoint vector times the weak form of the adjoint
-  equations to the design variable components
+  Add the design variable derivative of the product of the adjoint
+  vector with the weak form of the residual
 */
 void TACSLinearElasticity2D::addWeakAdjProduct( int elemIndex,
                                                 const double time,
@@ -245,6 +245,59 @@ void TACSLinearElasticity2D::addWeakAdjProduct( int elemIndex,
   phi[1] = Psix[3];
   phi[2] = Psix[1] + Psix[2];
   stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, fdvSens);
+}
+
+void TACSLinearElasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
+                                                        const double time,
+                                                        int n,
+                                                        const double pt[],
+                                                        const TacsScalar X[],
+                                                        const TacsScalar Ut[],
+                                                        const TacsScalar Ux[],
+                                                        const TacsScalar Psi[],
+                                                        const TacsScalar Psix[],
+                                                        TacsScalar *product,
+                                                        TacsScalar dfdX[],
+                                                        TacsScalar dfdUx[],
+                                                        TacsScalar dfdPsix[] ){
+  dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+  dfdUx[0] = dfdUx[1] = dfdUx[2] = dfdUx[3] = 0.0;
+  dfdPsix[0] = dfdPsix[1] = dfdPsix[2] = dfdPsix[3] = 0.0;
+
+  TacsScalar e[3];
+  if (strain_type == TACS_LINEAR_STRAIN){
+    e[0] = Ux[0];
+    e[1] = Ux[3];
+    e[2] = Ux[1] + Ux[2];
+  }
+  else {
+    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+    e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+    e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+  }
+
+  TacsScalar phi[3];
+  phi[0] = Psix[0];
+  phi[1] = Psix[3];
+  phi[2] = Psix[1] + Psix[2];
+
+  TacsScalar t1[3], t2[3];
+  stiff->evalStress(elemIndex, pt, X, e, t1);
+  stiff->evalStress(elemIndex, pt, X, phi, t2);
+
+  *product = t2[0]*e[0] + t2[1]*e[1] + t2[2]*e[2];
+
+  if (strain_type == TACS_LINEAR_STRAIN){
+    dfdPsix[0] = t1[0];
+    dfdPsix[3] = t1[1];
+    dfdPsix[1] = t1[2];
+    dfdPsix[2] = t1[2];
+
+    dfdUx[0] = t2[0];
+    dfdUx[3] = t2[1];
+    dfdUx[1] = t2[2];
+    dfdUx[2] = t2[2];
+  }
 }
 
 /*
@@ -323,8 +376,8 @@ void TACSLinearElasticity2D::addPointQuantityDVSens( int elemIndex,
 }
 
 /*
-   Evaluate the derivatives of the point-wise quantity of interest
-   with respect to X, Ut and Ux.
+  Evaluate the derivatives of the point-wise quantity of interest
+  with respect to X, Ut and Ux.
 */
 void TACSLinearElasticity2D::evalPointQuantitySens( int elemIndex,
                                                     const int quantityType,
@@ -830,6 +883,84 @@ void TACSLinearElasticity3D::addWeakAdjProduct( int elemIndex,
   stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, fdvSens);
 }
 
+void TACSLinearElasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
+                                                        const double time,
+                                                        int n,
+                                                        const double pt[],
+                                                        const TacsScalar X[],
+                                                        const TacsScalar Ut[],
+                                                        const TacsScalar Ux[],
+                                                        const TacsScalar Psi[],
+                                                        const TacsScalar Psix[],
+                                                        TacsScalar *product,
+                                                        TacsScalar dfdX[],
+                                                        TacsScalar dfdUx[],
+                                                        TacsScalar dfdPsix[] ){
+  dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+  dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
+  dfdUx[3] = dfdUx[4] = dfdUx[5] = 0.0;
+  dfdUx[6] = dfdUx[7] = dfdUx[8] = 0.0;
+  dfdPsix[0] = dfdPsix[1] = dfdPsix[2] = 0.0;
+  dfdPsix[3] = dfdPsix[4] = dfdPsix[5] = 0.0;
+  dfdPsix[6] = dfdPsix[7] = dfdPsix[8] = 0.0;
+
+  TacsScalar e[6];
+  if (strain_type == TACS_LINEAR_STRAIN){
+    e[0] = Ux[0];
+    e[1] = Ux[4];
+    e[2] = Ux[8];
+
+    e[3] = Ux[5] + Ux[7];
+    e[4] = Ux[2] + Ux[6];
+    e[5] = Ux[1] + Ux[3];
+  }
+  else {
+    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+    e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+    e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+    e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+    e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+    e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+  }
+
+  TacsScalar phi[6];
+  phi[0] = Psix[0];
+  phi[1] = Psix[4];
+  phi[2] = Psix[8];
+  phi[3] = Psix[5] + Psix[7];
+  phi[4] = Psix[2] + Psix[6];
+  phi[5] = Psix[1] + Psix[3];
+
+  TacsScalar t1[6], t2[6];
+  stiff->evalStress(elemIndex, pt, X, e, t1);
+  stiff->evalStress(elemIndex, pt, X, phi, t2);
+
+  *product = (t2[0]*e[0] + t2[1]*e[1] + t2[2]*e[2] +
+              t2[3]*e[3] + t2[4]*e[4] + t2[5]*e[5]);
+
+  if (strain_type == TACS_LINEAR_STRAIN){
+    dfdUx[0] = t2[0];
+    dfdUx[4] = t2[1];
+    dfdUx[8] = t2[2];
+    dfdUx[5] = t2[3];
+    dfdUx[7] = t2[3];
+    dfdUx[2] = t2[4];
+    dfdUx[6] = t2[4];
+    dfdUx[1] = t2[5];
+    dfdUx[3] = t2[5];
+
+    dfdPsix[0] = t1[0];
+    dfdPsix[4] = t1[1];
+    dfdPsix[8] = t1[2];
+    dfdPsix[5] = t1[3];
+    dfdPsix[7] = t1[3];
+    dfdPsix[2] = t1[4];
+    dfdPsix[6] = t1[4];
+    dfdPsix[1] = t1[5];
+    dfdPsix[3] = t1[5];
+  }
+}
 /*
   Evaluate a specified pointwise quantity of interest
 */
@@ -922,8 +1053,8 @@ void TACSLinearElasticity3D::addPointQuantityDVSens( int elemIndex,
 }
 
 /*
-   Evaluate the derivatives of the point-wise quantity of interest
-   with respect to X, Ut and Ux.
+  Evaluate the derivatives of the point-wise quantity of interest
+  with respect to X, Ut and Ux.
 */
 void TACSLinearElasticity3D::evalPointQuantitySens( int elemIndex,
                                                     const int quantityType,

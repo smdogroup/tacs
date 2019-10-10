@@ -228,6 +228,43 @@ class TACSElementModel : public TACSObject {
                                   TacsScalar *fdvSens ){}
 
   /**
+    Compute the spatial derivatives of the point-wise product of the adjoint
+
+    @param elemIndex The local element index
+    @param time The simulation time
+    @param n The quadrature point index
+    @param pt The parametric position of the quadrature point
+    @param X The physical position of the quadrature point
+    @param Ut Values of the state variables and their 1st/2nd time derivs
+    @param Ux The spatial derivatives of the state variables
+    @param Psi The adjoint variable values
+    @param Psix The spatial derivatives of the adjoint variable values
+
+  */
+  virtual void evalWeakAdjXptSensProduct( int elemIndex,
+                                          const double time,
+                                          int n, const double pt[],
+                                          const TacsScalar X[],
+                                          const TacsScalar Ut[],
+                                          const TacsScalar Ux[],
+                                          const TacsScalar Psi[],
+                                          const TacsScalar Psix[],
+                                          TacsScalar *product,
+                                          TacsScalar dfdX[],
+                                          TacsScalar dfdUx[],
+                                          TacsScalar dfdPsix[] ){
+    *product = 0.0;
+    dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+    const int vars_per_node = getVarsPerNode();
+    const int num_params = getSpatialDim();
+
+    for ( int i = 0; i < num_params*vars_per_node; i++ ){
+      dfdUx[i] = 0.0;
+      dfdPsix[i] = 0.0;
+    }
+  }
+
+  /**
      Evaluate a point-wise quantity of interest at a quadrature point
 
      This function computes a local pointwise quantity of interest

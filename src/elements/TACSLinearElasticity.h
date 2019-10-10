@@ -81,6 +81,18 @@ class TACSLinearElasticity2D : public TACSElementModel {
                           TacsScalar scale, int dvLen, TacsScalar dfdx[] );
 
   /**
+    Evaluate the spatial derivatives of the product of the adjoint
+    and the residual vector.
+  */
+  void evalWeakAdjXptSensProduct( int elemIndex, const double time,
+                                  int n, const double pt[],
+                                  const TacsScalar X[], const TacsScalar Ut[],
+                                  const TacsScalar Ux[], const TacsScalar Psi[],
+                                  const TacsScalar Psix[], TacsScalar *product,
+                                  TacsScalar dfdX[], TacsScalar dfdUx[],
+                                  TacsScalar dfdPsix[] );
+
+  /**
      Evaluate a point-wise quantity of interest at a quadrature point
   */
   int evalPointQuantity( int elemIndex, const int quantityType,
@@ -186,6 +198,18 @@ class TACSLinearElasticity3D : public TACSElementModel {
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],
                           TacsScalar scale, int dvLen, TacsScalar dfdx[] );
+
+  /**
+    Evaluate the spatial derivatives of the product of the adjoint
+    and the residual vector.
+  */
+  void evalWeakAdjXptSensProduct( int elemIndex, const double time,
+                                  int n, const double pt[],
+                                  const TacsScalar X[], const TacsScalar Ut[],
+                                  const TacsScalar Ux[], const TacsScalar Psi[],
+                                  const TacsScalar Psix[], TacsScalar *product,
+                                  TacsScalar dfdX[], TacsScalar dfdUx[],
+                                  TacsScalar dfdPsix[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point
