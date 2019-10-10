@@ -1231,7 +1231,6 @@ void TACSLinearThermoelasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
     dfdPsix[3] = t1[5];
   }
 
-
   // Compute the thermal flux from the thermal gradient
   TacsScalar grad[3];
   grad[0] = Ux[9];
@@ -1485,9 +1484,9 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
     TacsScalar Kc[6];
     stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
 
-    dfdUx[6] = dfdq[0]*Kc[0] + dfdq[1]*Kc[1] + dfdq[2]*Kc[2];
-    dfdUx[7] = dfdq[0]*Kc[1] + dfdq[1]*Kc[3] + dfdq[2]*Kc[4];
-    dfdUx[7] = dfdq[0]*Kc[2] + dfdq[1]*Kc[4] + dfdq[2]*Kc[5];
+    dfdUx[9] = dfdq[0]*Kc[0] + dfdq[1]*Kc[1] + dfdq[2]*Kc[2];
+    dfdUx[10] = dfdq[0]*Kc[1] + dfdq[1]*Kc[3] + dfdq[2]*Kc[4];
+    dfdUx[11] = dfdq[0]*Kc[2] + dfdq[1]*Kc[4] + dfdq[2]*Kc[5];
   }
 }
 

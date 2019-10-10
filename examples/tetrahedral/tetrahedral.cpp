@@ -1,6 +1,7 @@
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
 #include "TACSMeshLoader.h"
+#include "TACSHeatConduction.h"
 #include "TACSLinearElasticity.h"
 #include "TACSThermoelasticity.h"
 #include "TACSTetrahedralBasis.h"
@@ -12,10 +13,13 @@ int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
   // Check whether to use elasticity or thoermoelasticity
-  int use_thermoelasticity = 0;
+  int analysis_type = 0;
   for ( int i = 0; i < argc; i++ ){
-    if (strcmp(argv[i], "thermoelasticity") == 0){
-      use_thermoelasticity = 1;
+    if (strcmp(argv[i], "conduction") == 0){
+      analysis_type = 1;
+    }
+    else if (strcmp(argv[i], "thermoelasticity") == 0){
+      analysis_type = 2;
     }
   }
 
@@ -46,7 +50,10 @@ int main( int argc, char *argv[] ){
 
   // Create model (need class)
   TACSElementModel *model = NULL;
-  if (use_thermoelasticity){
+  if (analysis_type == 1){
+    model = new TACSHeatConduction3D(stiff);
+  }
+  else if (analysis_type == 2){
     model = new TACSLinearThermoelasticity3D(stiff, TACS_LINEAR_STRAIN);
   }
   else {
@@ -154,6 +161,10 @@ int main( int argc, char *argv[] ){
     assembler->applyBCs(res);
     ksm->solve(res, ans);
     assembler->setVariables(ans);
+
+#ifdef TACS_USE_COMPLEX
+    assembler->testElement(0, 2, 1e-30);
+#endif
 
     // The function that we will use: The KS failure function evaluated
     // over all the elements in the mesh
