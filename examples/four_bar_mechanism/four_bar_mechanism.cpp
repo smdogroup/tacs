@@ -1,9 +1,10 @@
+#include "TACSRigidBody.h"
+#include "TACSKinematicConstraints.h"
 #include "TACSTimoshenkoStiffness.h"
 #include "MITC3.h"
+
 #include "TACSAssembler.h"
-#include "RigidBody.h"
 #include "TACSIntegrator.h"
-#include "KinematicConstraints.h"
 
 /*
   Create the one bar

@@ -71,9 +71,12 @@ class TACSConstitutive : public TACSObject {
     @param elemIndex The local element index
     @param dvLen The length of the design array
     @param dvs The design variable values
+    @return The number of design variable numbers defined
   */
-  virtual void setDesignVars( int elemIndex,
-                              int dvLen, const TacsScalar dvs[] ){}
+  virtual int setDesignVars( int elemIndex,
+                             int dvLen, const TacsScalar dvs[] ){
+    return 0;
+  }
 
   /**
     Get the design variables values
@@ -81,9 +84,12 @@ class TACSConstitutive : public TACSObject {
     @param elemIndex The local element index
     @param dvLen The length of the design array
     @param dvs The design variable values
+    @return The number of design variable numbers defined
   */
-  virtual void getDesignVars( int elemIndex,
-                              int dvLen, TacsScalar dvs[] ){}
+  virtual int getDesignVars( int elemIndex,
+                             int dvLen, TacsScalar dvs[] ){
+    return 0;
+  }
 
   /**
     Get the lower and upper bounds for the design variable values
@@ -92,10 +98,13 @@ class TACSConstitutive : public TACSObject {
     @param dvLen The length of the design array
     @param lowerBound The design variable lower bounds
     @param lowerBound The design variable upper bounds
+    @return The number of design variable numbers defined
   */
-  virtual void getDesignVarRange( int elemIndex, int dvLen,
-                                  TacsScalar lowerBound[],
-                                  TacsScalar upperBound[] ){}
+  virtual int getDesignVarRange( int elemIndex, int dvLen,
+                                 TacsScalar lowerBound[],
+                                 TacsScalar upperBound[] ){
+    return 0;
+  }
 
   /**
     Evaluate the mass per unit length, area or volume for the element

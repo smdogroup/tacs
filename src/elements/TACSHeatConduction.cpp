@@ -50,26 +50,26 @@ int TACSHeatConduction2D::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the element design variables from the design vector
 */
-void TACSHeatConduction2D::setDesignVars( int elemIndex, int dvLen,
-                                          const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int TACSHeatConduction2D::setDesignVars( int elemIndex, int dvLen,
+                                         const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSHeatConduction2D::getDesignVars( int elemIndex, int dvLen,
-                                          TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int TACSHeatConduction2D::getDesignVars( int elemIndex, int dvLen,
+                                         TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSHeatConduction2D::getDesignVarRange( int elemIndex, int dvLen,
-                                              TacsScalar lb[],
-                                              TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSHeatConduction2D::getDesignVarRange( int elemIndex, int dvLen,
+                                             TacsScalar lb[],
+                                             TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSHeatConduction2D::evalWeakIntegrand( int elemIndex,
@@ -380,26 +380,26 @@ int TACSHeatConduction3D::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the element design variables from the design vector
 */
-void TACSHeatConduction3D::setDesignVars( int elemIndex, int dvLen,
-                                          const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int TACSHeatConduction3D::setDesignVars( int elemIndex, int dvLen,
+                                         const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSHeatConduction3D::getDesignVars( int elemIndex, int dvLen,
-                                          TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int TACSHeatConduction3D::getDesignVars( int elemIndex, int dvLen,
+                                         TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSHeatConduction3D::getDesignVarRange( int elemIndex, int dvLen,
-                                              TacsScalar lb[],
-                                              TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSHeatConduction3D::getDesignVarRange( int elemIndex, int dvLen,
+                                             TacsScalar lb[],
+                                             TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSHeatConduction3D::evalWeakIntegrand( int elemIndex,

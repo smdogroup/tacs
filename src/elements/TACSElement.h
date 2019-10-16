@@ -141,9 +141,12 @@ class TACSElement : public TACSObject {
     @param elemIndex The local element index
     @param dvLen The length of the design array
     @param dvs The design variable values
+    @return The number of design variable numbers defined by the element
   */
-  virtual void setDesignVars( int elemIndex,
-                              int dvLen, const TacsScalar dvs[] ){}
+  virtual int setDesignVars( int elemIndex,
+                             int dvLen, const TacsScalar dvs[] ){
+    return 0;
+  }
 
   /**
     Get the element design variables values
@@ -151,9 +154,12 @@ class TACSElement : public TACSObject {
     @param elemIndex The local element index
     @param dvLen The length of the design array
     @param dvs The design variable values
+    @return The number of design variable numbers defined by the element
   */
-  virtual void getDesignVars( int elemIndex,
-                              int dvLen, TacsScalar dvs[] ){}
+  virtual int getDesignVars( int elemIndex,
+                             int dvLen, TacsScalar dvs[] ){
+    return 0;
+  }
 
   /**
     Get the lower and upper bounds for the design variable values
@@ -162,10 +168,13 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design array
     @param lowerBound The design variable lower bounds
     @param lowerBound The design variable upper bounds
+    @return The number of design variable numbers defined by the element
   */
-  virtual void getDesignVarRange( int elemIndex, int dvLen,
-                                  TacsScalar lowerBound[],
-                                  TacsScalar upperBound[] ){}
+  virtual int getDesignVarRange( int elemIndex, int dvLen,
+                                 TacsScalar lowerBound[],
+                                 TacsScalar upperBound[] ){
+    return 0;
+  }
 
   /**
     Retrieve the initial conditions for time-dependent analysis
@@ -451,7 +460,7 @@ class TACSElement : public TACSObject {
     @param elemIndex The index of the element
     @param quantityType The integer indicating the pointwise quantity
     @param time The simulation time
-    @parma n The quadrature point index
+    @param n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
     @param vars The values of the element degrees of freedom
@@ -477,7 +486,7 @@ class TACSElement : public TACSObject {
     @param elemIndex The index of the element
     @param quantityType The integer indicating the pointwise quantity
     @param time The simulation time
-    @parma n The quadrature point index
+    @param n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
     @param vars The values of the element degrees of freedom
@@ -507,7 +516,7 @@ class TACSElement : public TACSObject {
     @param alpha The coefficient for the state variables
     @param beta The coefficient for the first time derivatives
     @param gamma The coefficient for the second time derivatives
-    @parma n The quadrature point index
+    @param n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
     @param vars The values of the element degrees of freedom
@@ -536,7 +545,7 @@ class TACSElement : public TACSObject {
     @param quantityType The integer indicating the pointwise quantity
     @param time The simulation time
     @param scale The scalar factor applied to the derivative
-    @parma n The quadrature point index
+    @param n The quadrature point index
     @param pt The quadrature point
     @param Xpts The element node locations
     @param vars The values of the element degrees of freedom

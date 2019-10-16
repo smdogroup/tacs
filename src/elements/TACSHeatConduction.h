@@ -35,18 +35,18 @@ class TACSHeatConduction2D : public TACSElementModel {
   /**
      Set the element design variables from the design vector
   */
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
 
   /**
      Get the element design variables values
   */
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
   /**
      Get the lower and upper bounds for the design variable values
   */
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   /**
      Evaluate the coefficients of the weak form integrand
@@ -153,18 +153,18 @@ class TACSHeatConduction3D : public TACSElementModel {
   /**
      Set the element design variables from the design vector
   */
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
 
   /**
      Get the element design variables values
   */
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
   /**
      Get the lower and upper bounds for the design variable values
   */
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   /**
      Evaluate the coefficients of the weak form integrand

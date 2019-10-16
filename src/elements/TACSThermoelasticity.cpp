@@ -56,26 +56,26 @@ int TACSLinearThermoelasticity2D::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the element design variables from the design vector
 */
-void TACSLinearThermoelasticity2D::setDesignVars( int elemIndex, int dvLen,
-                                                  const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearThermoelasticity2D::setDesignVars( int elemIndex, int dvLen,
+                                                 const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSLinearThermoelasticity2D::getDesignVars( int elemIndex, int dvLen,
-                                                  TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearThermoelasticity2D::getDesignVars( int elemIndex, int dvLen,
+                                                 TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSLinearThermoelasticity2D::getDesignVarRange( int elemIndex, int dvLen,
-                                                      TacsScalar lb[],
-                                                      TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSLinearThermoelasticity2D::getDesignVarRange( int elemIndex, int dvLen,
+                                                     TacsScalar lb[],
+                                                     TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSLinearThermoelasticity2D::evalWeakIntegrand( int elemIndex,
@@ -725,26 +725,26 @@ int TACSLinearThermoelasticity3D::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the element design variables from the design vector
 */
-void TACSLinearThermoelasticity3D::setDesignVars( int elemIndex, int dvLen,
-                                                  const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearThermoelasticity3D::setDesignVars( int elemIndex, int dvLen,
+                                                 const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSLinearThermoelasticity3D::getDesignVars( int elemIndex, int dvLen,
-                                                  TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearThermoelasticity3D::getDesignVars( int elemIndex, int dvLen,
+                                                 TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSLinearThermoelasticity3D::getDesignVarRange( int elemIndex, int dvLen,
-                                                      TacsScalar lb[],
-                                                      TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSLinearThermoelasticity3D::getDesignVarRange( int elemIndex, int dvLen,
+                                                     TacsScalar lb[],
+                                                     TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSLinearThermoelasticity3D::evalWeakIntegrand( int elemIndex,

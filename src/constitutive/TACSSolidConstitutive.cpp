@@ -65,32 +65,38 @@ int TACSSolidConstitutive::getDesignVarNums( int elemIndex,
 }
 
 // Set the element design variable from the design vector
-void TACSSolidConstitutive::setDesignVars( int elemIndex,
-                                           int dvLen,
-                                           const TacsScalar dvs[] ){
+int TACSSolidConstitutive::setDesignVars( int elemIndex,
+                                          int dvLen,
+                                          const TacsScalar dvs[] ){
   if (tNum >= 0 && dvLen >= 1){
     t = dvs[0];
+    return 1;
   }
+  return 0;
 }
 
 // Get the element design variables values
-void TACSSolidConstitutive::getDesignVars( int elemIndex,
-                                           int dvLen,
-                                           TacsScalar dvs[] ){
+int TACSSolidConstitutive::getDesignVars( int elemIndex,
+                                          int dvLen,
+                                          TacsScalar dvs[] ){
   if (tNum >= 0 && dvLen >= 1){
     dvs[0] = t;
+    return 1;
   }
+  return 0;
 }
 
 // Get the lower and upper bounds for the design variable values
-void TACSSolidConstitutive::getDesignVarRange( int elemIndex,
-                                               int dvLen,
-                                               TacsScalar lb[],
-                                               TacsScalar ub[] ){
+int TACSSolidConstitutive::getDesignVarRange( int elemIndex,
+                                              int dvLen,
+                                              TacsScalar lb[],
+                                              TacsScalar ub[] ){
   if (tNum >= 0 && dvLen >= 1){
     if (lb){ lb[0] = tlb; }
     if (ub){ ub[0] = tub; }
+    return 1;
   }
+  return 0;
 }
 
 // Evaluate the material density

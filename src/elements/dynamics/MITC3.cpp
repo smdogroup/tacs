@@ -410,23 +410,23 @@ int MITC3::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
 /*
   Set the design variable values
 */
-void MITC3::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int MITC3::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the design variable values
 */
-void MITC3::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int MITC3::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the design variable range
 */
-void MITC3::getDesignVarRange( int elemIndex, int dvLen,
-                               TacsScalar lb[], TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int MITC3::getDesignVarRange( int elemIndex, int dvLen,
+                              TacsScalar lb[], TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*

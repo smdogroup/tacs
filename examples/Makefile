@@ -13,13 +13,13 @@ EXAMPLE_SUBDIRS = \
         tetrahedral \
 	triangle \
 	tutorial \
+	four_bar_mechanism \
 	block_cyclic_mat
 
 #	plate \
 #	profile_elements \
 #	rigid \
 #	stiffened_panel \
-#	beam \
 #	benchmark \
 #	crm \
 #	cylinder \

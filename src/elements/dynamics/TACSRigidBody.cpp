@@ -239,9 +239,11 @@ void TACSRefFrame::getRotation( const TacsScalar **_C ){
   based solely on moving points.
 */
 void TACSRefFrame::initialize(){
-  //-----------------------------------------------------------------//
-  // Setup the reference frame
-  //-----------------------------------------------------------------//
+  // Get the counts of the design variables
+  int elemIndex = 0;
+  r0offset = 0;
+  r1offset = r0->getDesignVarNums(elemIndex, 0, NULL);
+  r2offset = r1offset + r1->getDesignVarNums(elemIndex, 0, NULL);
 
   // Compute the initial position based on v1
   const TacsScalar *x0, *x1, *x2;
@@ -336,6 +338,21 @@ void TACSRefFrame::initialize(){
 }
 
 /*
+  Get the design variables numbers from the relevant vectors
+*/
+int TACSRefFrame::getDesignVarNums( int elemIndex,
+                                    int dvLen,
+                                    int dvNums[] ){
+  int count = 0;
+  count += r0->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+  count += r1->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+  count += r2->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+
+  return count;
+}
+
+
+/*
   Set the design variables into the three points which define the
   reference frame and recompute the rotation matrix with new set of
   design varaibles
@@ -344,15 +361,19 @@ void TACSRefFrame::initialize(){
   dvs:     the design variable values
   numDVs:  the number of design vars/array length
 */
-void TACSRefFrame::setDesignVars( const TacsScalar *dvs,
-                                  int numDVs ){
+int TACSRefFrame::setDesignVars( int elemIndex,
+                                 int dvLen,
+                                 const TacsScalar dvs[] ){
   // Set the design varibles
-  r0->setDesignVars(dvs, numDVs);
-  r1->setDesignVars(dvs, numDVs);
-  r2->setDesignVars(dvs, numDVs);
+  int count = 0;
+  count += r0->setDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += r1->setDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += r2->setDesignVars(elemIndex, dvLen, &dvs[count]);
 
   // Recompute the rotation matrix and other variables
   initialize();
+
+  return count;
 }
 
 /*
@@ -365,10 +386,16 @@ void TACSRefFrame::setDesignVars( const TacsScalar *dvs,
   output:
   dvs:     the design variable values
 */
-void TACSRefFrame::getDesignVars( TacsScalar *dvs, int numDVs ){
-  r0->getDesignVars(dvs, numDVs);
-  r1->getDesignVars(dvs, numDVs);
-  r2->getDesignVars(dvs, numDVs);
+int TACSRefFrame::getDesignVars( int elemIndex,
+                                 int dvLen,
+                                 TacsScalar dvs[] ){
+  // Set the design varibles
+  int count = 0;
+  count += r0->getDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += r1->getDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += r2->getDesignVars(elemIndex, dvLen, &dvs[count]);
+
+  return count;
 }
 
 /*
@@ -388,17 +415,17 @@ void TACSRefFrame::getDesignVars( TacsScalar *dvs, int numDVs ){
   (r2 - r0), respectively.
 
   input:
-  numDVs:   the number of design variables in the array
+  dvLen:   the number of design variables in the array
   psi:      the pre-multiplying vector
   phi:      the post-multiplying vector
 
   output:
   fdvSens:  the derivatives are added to this array
 */
-void TACSRefFrame::addRotationAdjResProduct( TacsScalar fdvSens[],
-                                             int numDVs,
-                                             const TacsScalar psi[],
-                                             const TacsScalar phi[] ){
+void TACSRefFrame::addRotationAdjResProduct( const TacsScalar psi[],
+                                             const TacsScalar phi[],
+                                             int dvLen,
+                                             TacsScalar fdvSens[] ){
   // Temporary vector
   TacsScalar tmp[3];
 
@@ -425,14 +452,14 @@ void TACSRefFrame::addRotationAdjResProduct( TacsScalar fdvSens[],
   mat3x3MultTransAdd(dC1d1, tmp, dx1);
 
   // Add the derivative to the sensitivity vector
-  r1->addPointAdjResProduct(fdvSens, numDVs, 1.0, dx1);
-  r2->addPointAdjResProduct(fdvSens, numDVs, 1.0, dx2);
+  r1->addPointAdjResProduct(1.0, dx1, dvLen, &fdvSens[r1offset]);
+  r2->addPointAdjResProduct(1.0, dx2, dvLen, &fdvSens[r2offset]);
 
   // Add the result from the base point
   dx0[0] = -(dx1[0] + dx2[0]);
   dx0[1] = -(dx1[1] + dx2[1]);
   dx0[2] = -(dx1[2] + dx2[2]);
-  r0->addPointAdjResProduct(fdvSens, numDVs, 1.0, dx0);
+  r0->addPointAdjResProduct(1.0, dx0, dvLen, &fdvSens[r0offset]);
 }
 
 /*
@@ -442,10 +469,12 @@ void TACSRefFrame::addRotationAdjResProduct( TacsScalar fdvSens[],
   numDVs: the number of design variables
   dh:     the step size for the central-difference formula
 */
-void TACSRefFrame::testRotation( int numDVs, double dh ){
+void TACSRefFrame::testRotation( double dh ){
   // Allocate design variable arrays
+  int elemIndex = 0;
+  int numDVs = getDesignVarNums(0, 0, NULL);
   TacsScalar *x = new TacsScalar[ numDVs ];
-  TacsScalar *fdvSens = new TacsScalar[ numDVs ];
+  TacsScalar *product = new TacsScalar[ numDVs ];
 
   // Set random values into the psi/phi vectors
   TacsScalar psi[3], phi[3];
@@ -454,70 +483,55 @@ void TACSRefFrame::testRotation( int numDVs, double dh ){
     phi[k] = -0.5 + (1.0*rand())/RAND_MAX;
   }
 
-  // Zero the sensitivity
-  memset(fdvSens, 0, numDVs*sizeof(TacsScalar));
-
   // Get the variables and make sure that they are consistent
-  getDesignVars(x, numDVs);
-  setDesignVars(x, numDVs);
+  getDesignVars(elemIndex, numDVs, x);
+  setDesignVars(elemIndex, numDVs, x);
 
   // Compute the derivative and store it in fdvSens
-  addRotationAdjResProduct(fdvSens, numDVs, psi, phi);
+  memset(product, 0, numDVs*sizeof(TacsScalar));
+  addRotationAdjResProduct(psi, phi, numDVs, product);
 
   // Set the vectors to zero
-  TacsScalar dfdx[9], fd[9];
-  memset(dfdx, 0, sizeof(dfdx));
+  TacsScalar fd[9];
   memset(fd, 0, sizeof(fd));
 
   // Set the vectors
-  TACSGibbsVector *vec[3] = {r0, r1, r2};
-  for ( int k = 0; k < 3; k++ ){
-    // Retrieve the design variables
-    const int *dvs;
-    vec[k]->getVectorDesignVarNums(&dvs);
-
-    for ( int i = 0; i < 3; i++ ){
-      if (dvs[i] >= 0 && dvs[i] < numDVs){
-        TacsScalar t[3];
-        TacsScalar xtmp = x[dvs[i]];
+  for ( int i = 0; i < numDVs; i++ ){
+    TacsScalar t[3];
+    TacsScalar xtmp = x[i];
 
 #ifdef TACS_USE_COMPLEX
-        // Evaluate the matrix at x + j*dh
-        x[dvs[i]] = xtmp + TacsScalar(0.0, dh);
-        setDesignVars(x, numDVs);
-        mat3x3Mult(C, phi, t);
-        fd[3*k+i] = TacsImagPart(vec3Dot(psi, t))/dh;
+    // Evaluate the matrix at x + j*dh
+    x[i] = xtmp + TacsScalar(0.0, dh);
+    setDesignVars(elemIndex, numDVs, x);
+    mat3x3Mult(C, phi, t);
+    fd[i] = TacsImagPart(vec3Dot(psi, t))/dh;
 #else
-        // Evaluate C at (x + dh)
-        x[dvs[i]] = xtmp + dh;
-        setDesignVars(x, numDVs);
-        mat3x3Mult(C, phi, t);
-        TacsScalar f1 = vec3Dot(psi, t);
+    // Evaluate C at (x + dh)
+    x[i] = xtmp + dh;
+    setDesignVars(elemIndex, numDVs, x);
+    mat3x3Mult(C, phi, t);
+    TacsScalar f1 = vec3Dot(psi, t);
 
-        // Evaluate C at (x - dh)
-        x[dvs[i]] = xtmp - dh;
-        setDesignVars(x, numDVs);
-        mat3x3Mult(C, phi, t);
-        TacsScalar f2 = vec3Dot(psi, t);
+    // Evaluate C at (x - dh)
+    x[i] = xtmp - dh;
+    setDesignVars(elemIndex, numDVs, x);
+    mat3x3Mult(C, phi, t);
+    TacsScalar f2 = vec3Dot(psi, t);
 
-        fd[3*k+i] = 0.5*(f1 - f2)/dh;
+    fd[i] = 0.5*(f1 - f2)/dh;
 #endif // TACS_USE_COMPLEX
-        x[dvs[i]] = xtmp;
-
-        // Track the values
-        dfdx[3*k+i] = fdvSens[dvs[i]];
-      }
-    }
+    x[i] = xtmp;
   }
 
   // Set the design variable values back to their original values
-  setDesignVars(x, numDVs);
+  setDesignVars(elemIndex, numDVs, x);
 
-  writeErrorComponents(stdout, "TACSRefFrame", dfdx, fd, 9);
+  writeErrorComponents(stdout, "TACSRefFrame", product, fd, 9);
 
   // Free the allocated memory
   delete [] x;
-  delete [] fdvSens;
+  delete [] product;
 }
 
 /*
@@ -635,40 +649,46 @@ void TACSRigidBody::setDesignVarNums( int _massDV,
 /*
   Set the design variable values
 */
-void TACSRigidBody::setDesignVars( int elemIndex,
-                                   int dvLen,
-                                   const TacsScalar dvs[] ){
+int TACSRigidBody::setDesignVars( int elemIndex,
+                                  int dvLen,
+                                  const TacsScalar dvs[] ){
   // Set the mass design variable
+  int count = 0;
   if (massDV >= 0 && massDV < dvLen){
-    mass = dvs[massDV];
+    mass = dvs[count];
+    count++;
   }
 
   // Set the moment of mass variable
   for ( int k = 0; k < 3; k++ ){
     if (cDV[k] >= 0 && cDV[k] < dvLen){
-      cRef[k] = dvs[cDV[k]];
+      cRef[k] = dvs[count];
+      count++;
     }
   }
 
   // Set the second moment of mass variables
   for ( int k = 0; k < 6; k++ ){
     if (JDV[k] >= 0 && JDV[k] < dvLen){
-      JRef[k] = dvs[JDV[k]];
+      JRef[k] = dvs[count];
+      count++;
     }
   }
 
   // Set the reference frame design variables
-  CRef->setDesignVars(dvs, dvLen);
+  count += CRef->setDesignVars(elemIndex, dvLen, &dvs[count]);
 
   // Set the design variable values for the initial vectors
-  gvec->setDesignVars(dvs, dvLen);
-  rInit->setDesignVars(dvs, dvLen);
-  vInit->setDesignVars(dvs, dvLen);
-  omegaInit->setDesignVars(dvs, dvLen);
+  count += gvec->setDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += rInit->setDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += vInit->setDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += omegaInit->setDesignVars(elemIndex, dvLen, &dvs[count]);
 
   // Update the inertial properties based on the design variable
   // values
   updateInertialProperties();
+
+  return count;
 }
 
 /*
@@ -677,51 +697,91 @@ void TACSRigidBody::setDesignVars( int elemIndex,
 int TACSRigidBody::getDesignVarNums( int elemIndex,
                                      int dvLen,
                                      int *dvNums ){
-  return 0;
-}
-
-/*
-  Retrieve the design variable values
-*/
-void TACSRigidBody::getDesignVars( int elemIndex,
-                                   int dvLen,
-                                   TacsScalar dvs[] ){
   // Get the mass design variable
+  int count = 0;
   if (massDV >= 0 && massDV < dvLen){
-    dvs[massDV] = mass;
+    dvNums[count] = massDV;
+    count++;
   }
 
   // Get the moment of mass variables
   for ( int k = 0; k < 3; k++ ){
     if (cDV[k] >= 0 && cDV[k] < dvLen){
-      dvs[cDV[k]] = cRef[k];
+      dvNums[count] = cRef[k];
+      count++;
     }
   }
 
   // Get the second moment of mass variables
   for ( int k = 0; k < 6; k++ ){
     if (JDV[k] >= 0 && JDV[k] < dvLen){
-      dvs[JDV[k]] = JRef[k];
+      dvNums[count] = JRef[k];
+      count++;
     }
   }
 
   // Get the reference frame design variables
-  CRef->getDesignVars(dvs, dvLen);
+  count += CRef->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
 
   // Get the design variable values for the initial vectors
-  gvec->getDesignVars(dvs, dvLen);
-  rInit->getDesignVars(dvs, dvLen);
-  vInit->getDesignVars(dvs, dvLen);
-  omegaInit->getDesignVars(dvs, dvLen);
+  count += gvec->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+  count += rInit->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+  count += vInit->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+  count += omegaInit->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
+
+  return count;
+}
+
+/*
+  Retrieve the design variable values
+*/
+int TACSRigidBody::getDesignVars( int elemIndex,
+                                  int dvLen,
+                                  TacsScalar dvs[] ){
+  // Get the mass design variable
+  int count = 0;
+  if (massDV >= 0 && massDV < dvLen){
+    dvs[count] = mass;
+    count++;
+  }
+
+  // Get the moment of mass variables
+  for ( int k = 0; k < 3; k++ ){
+    if (cDV[k] >= 0 && cDV[k] < dvLen){
+      dvs[count] = cRef[k];
+      count++;
+    }
+  }
+
+  // Get the second moment of mass variables
+  for ( int k = 0; k < 6; k++ ){
+    if (JDV[k] >= 0 && JDV[k] < dvLen){
+      dvs[count] = JRef[k];
+      count++;
+    }
+  }
+
+  // Get the reference frame design variables
+  count += CRef->getDesignVars(elemIndex, dvLen, &dvs[count]);
+
+  // Get the design variable values for the initial vectors
+  count += gvec->getDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += rInit->getDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += vInit->getDesignVars(elemIndex, dvLen, &dvs[count]);
+  count += omegaInit->getDesignVars(elemIndex, dvLen, &dvs[count]);
+
+  return count;
 }
 
 /*
   Retrieve the design variable range
 */
-void TACSRigidBody::getDesignVarRange( int elemIndex,
-                                       int dvLen,
-                                       TacsScalar lb[],
-                                       TacsScalar ub[] ){}
+int TACSRigidBody::getDesignVarRange( int elemIndex,
+                                      int dvLen,
+                                      TacsScalar lb[],
+                                      TacsScalar ub[] ){
+  return 0;
+}
 
 /*
   Set the inertial properties in the global frame based on the
@@ -1591,4 +1651,3 @@ void TACSRigidBody::setVisualization( TACSRigidBodyViz *_viz ){
   viz = _viz;
   viz->incref();
 }
-

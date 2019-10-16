@@ -9,8 +9,8 @@ include ../../../TACS_Common.mk
 
 CXX_OBJS = MITC3.o \
 	TACSRigidBody.o
+#  	TACSKinematicConstraints.o
 #  	MITC9.o \
-#  	KinematicConstraints.o	
 
 DIR=${TACS_DIR}/src/elements/dynamics/
 

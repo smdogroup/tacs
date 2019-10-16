@@ -54,26 +54,26 @@ int TACSLinearElasticity2D::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the element design variables from the design vector
 */
-void TACSLinearElasticity2D::setDesignVars( int elemIndex, int dvLen,
-                                            const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearElasticity2D::setDesignVars( int elemIndex, int dvLen,
+                                           const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSLinearElasticity2D::getDesignVars( int elemIndex, int dvLen,
-                                            TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearElasticity2D::getDesignVars( int elemIndex, int dvLen,
+                                           TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSLinearElasticity2D::getDesignVarRange( int elemIndex, int dvLen,
-                                                TacsScalar lb[],
-                                                TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSLinearElasticity2D::getDesignVarRange( int elemIndex, int dvLen,
+                                               TacsScalar lb[],
+                                               TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
@@ -541,26 +541,26 @@ int TACSLinearElasticity3D::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the element design variables from the design vector
 */
-void TACSLinearElasticity3D::setDesignVars( int elemIndex, int dvLen,
-                                            const TacsScalar dvs[] ){
-  stiff->setDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearElasticity3D::setDesignVars( int elemIndex, int dvLen,
+                                           const TacsScalar dvs[] ){
+  return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSLinearElasticity3D::getDesignVars( int elemIndex, int dvLen,
-                                            TacsScalar dvs[] ){
-  stiff->getDesignVars(elemIndex, dvLen, dvs);
+int TACSLinearElasticity3D::getDesignVars( int elemIndex, int dvLen,
+                                           TacsScalar dvs[] ){
+  return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSLinearElasticity3D::getDesignVarRange( int elemIndex, int dvLen,
-                                                TacsScalar lb[],
-                                                TacsScalar ub[] ){
-  stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSLinearElasticity3D::getDesignVarRange( int elemIndex, int dvLen,
+                                               TacsScalar lb[],
+                                               TacsScalar ub[] ){
+  return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSLinearElasticity3D::evalWeakIntegrand( int elemIndex,

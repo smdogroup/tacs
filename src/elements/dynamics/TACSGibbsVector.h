@@ -31,13 +31,17 @@ class TACSGibbsVector : public TACSObject {
                    int n1=-1, int n2=-1, int n3=-1 );
   ~TACSGibbsVector(){}
 
+  // Get the coponents of the vector
   void getVector( const TacsScalar **_x );
-  void setDesignVars( const TacsScalar *dvs, int numDVs );
-  void getDesignVars( TacsScalar *dvs, int numDVs );
-  void addPointAdjResProduct( TacsScalar fdvSens[], int numDVs,
-                              TacsScalar scale,
-                              const TacsScalar psi[] );
-  void getVectorDesignVarNums( const int **dvs );
+
+  // Set the design variable numbers
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  // Take the derivative of the product of the adjoint variables and the vector
+  void addPointAdjResProduct( TacsScalar scale, const TacsScalar psi[],
+                              int dvLen, TacsScalar dfdx[] );
 
  private:
   TacsScalar x[3];
@@ -116,16 +120,55 @@ inline void TACSGibbsVector::getVector( const TacsScalar **_x ){
 }
 
 /*
+  Get the design variable numbers associated with this object
+
+  input:
+  dvs:    the design variable values
+  numDVs: the number of design variable values in the array
+*/
+inline int TACSGibbsVector::getDesignVarNums( int elemIndex,
+                                              int dvLen,
+                                              int dvNums[] ){
+  int count = 0;
+  if (xDV[0] >= 0 && (dvNums && count < dvLen)){
+    dvNums[count] = xDV[0];
+    count++;
+  }
+  if (xDV[1] >= 0 && (dvNums && count < dvLen)){
+    dvNums[count] = xDV[1];
+    count++;
+  }
+  if (xDV[2] >= 0 && (dvNums && count < dvLen)){
+    dvNums[count] = xDV[2];
+    count++;
+  }
+  return count;
+}
+
+/*
   Set the design variable values from the input vector into this object
 
   input:
   dvs:    the design variable values
   numDVs: the number of design variable values in the array
 */
-inline void TACSGibbsVector::setDesignVars( const TacsScalar *dvs, int numDVs ){
-  if (xDV[0] >= 0 && xDV[0] < numDVs){ x[0] = dvs[xDV[0]]; }
-  if (xDV[1] >= 0 && xDV[1] < numDVs){ x[1] = dvs[xDV[1]]; }
-  if (xDV[2] >= 0 && xDV[2] < numDVs){ x[2] = dvs[xDV[2]]; }
+inline int TACSGibbsVector::setDesignVars( int elemIndex,
+                                           int dvLen,
+                                           const TacsScalar *dvs ){
+  int count = 0;
+  if (xDV[0] >= 0){
+    x[0] = dvs[count];
+    count++;
+  }
+  if (xDV[1] >= 0){
+    x[1] = dvs[count];
+    count++;
+  }
+  if (xDV[2] >= 0){
+    x[2] = dvs[count];
+    count++;
+  }
+  return count;
 }
 
 /*
@@ -137,40 +180,53 @@ inline void TACSGibbsVector::setDesignVars( const TacsScalar *dvs, int numDVs ){
   output:
   dvs:     the design variable values retrieved from the object
 */
-inline void TACSGibbsVector::getDesignVars( TacsScalar *dvs, int numDVs ){
-  if (xDV[0] >= 0 && xDV[0] < numDVs){ dvs[xDV[0]] = x[0]; }
-  if (xDV[1] >= 0 && xDV[1] < numDVs){ dvs[xDV[1]] = x[1]; }
-  if (xDV[2] >= 0 && xDV[2] < numDVs){ dvs[xDV[2]] = x[2]; }
+inline int TACSGibbsVector::getDesignVars( int elemIndex,
+                                           int dvLen,
+                                           TacsScalar *dvs ){
+  int count = 0;
+  if (xDV[0] >= 0){
+    dvs[count] = x[0];
+    count++;
+  }
+  if (xDV[1] >= 0){
+    dvs[count] = x[1];
+    count++;
+  }
+  if (xDV[2] >= 0){
+    dvs[count] = x[2];
+    count++;
+  }
+  return count;
 }
 
 /*
   Add the derivative associated with the point locations to the vector.
 
   input:
-  numDVs:  the number of design variables
   scale:   the sensitivity is multiplied by this scalar
   psi:     the adjoint vector
+  dvLen:   the number of design variables
 
   input/output:
-  fdvSens: the array of derivatives
+  dfdx: the array of derivatives
 */
-inline void TACSGibbsVector::addPointAdjResProduct( TacsScalar fdvSens[],
-                                                    int numDVs,
-                                                    TacsScalar scale,
-                                                    const TacsScalar psi[] ){
-  if (xDV[0] >= 0 && xDV[0] < numDVs){ fdvSens[xDV[0]] += scale*psi[0]; }
-  if (xDV[1] >= 0 && xDV[1] < numDVs){ fdvSens[xDV[1]] += scale*psi[1]; }
-  if (xDV[2] >= 0 && xDV[2] < numDVs){ fdvSens[xDV[2]] += scale*psi[2]; }
-}
-
-/*
-  Retrieve the design variable numbers from the Gibbs vector object
-
-  output:
-  dvs:  the design variable numbers
-*/
-inline void TACSGibbsVector::getVectorDesignVarNums( const int **dvs ){
-  *dvs = xDV;
+inline void TACSGibbsVector::addPointAdjResProduct( TacsScalar scale,
+                                                    const TacsScalar psi[],
+                                                    int dvLen,
+                                                    TacsScalar dfdx[] ){
+  int count = 0;
+  if (xDV[0] >= 0){
+    dfdx[count] += scale*psi[0];
+    count++;
+  }
+  if (xDV[1] >= 0){
+    dfdx[count] += scale*psi[1];
+    count++;
+  }
+  if (xDV[2] >= 0){
+    dfdx[count] += scale*psi[2];
+    count++;
+  }
 }
 
 #endif // TACS_GIBBS_VECTOR_H

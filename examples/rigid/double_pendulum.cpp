@@ -1,6 +1,6 @@
 #include "TACSIntegrator.h"
 #include "TACSAssembler.h"
-#include "RigidBody.h"
+#include "TACSRigidBody.h"
 
 /*
   Function to test the rigid body dynamics implementation
@@ -38,16 +38,12 @@ int main( int argc, char *argv[] ){
   // Define dynamics properties
   TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0);
 
-  // Create visualization
-  TACSRigidBodyViz *vizA = new TACSRigidBodyViz(0.5, 5.0, 0.5);
-
   // Construct a rigid body
   TACSRigidBody *bodyA = new  TACSRigidBody(refFrameA,
                                             mA, cA, JA,
                                             rAInitVec, zero, zero, gravVec);
-  bodyA->setVisualization(vizA);
-  bodyA->setComponentNum(0);
   bodyA->incref();
+  bodyA->setComponentNum(0);
 
   // Define the inertial properties
   const TacsScalar mB    = 2.0;
@@ -59,14 +55,10 @@ int main( int argc, char *argv[] ){
   // Define dynamics properties
   TACSGibbsVector *rBInitVec = new TACSGibbsVector(0.0, 5.5, 0.0);
 
-  // Create visualization
-  TACSRigidBodyViz *vizB = new TACSRigidBodyViz(1.0);
-
   // Construct the second rigid body
   TACSRigidBody *bodyB = new  TACSRigidBody(refFrameA,
                                             mB, cB, JB,
                                             rBInitVec, zero, zero, gravVec);
-  bodyB->setVisualization(vizB);
   bodyA->setComponentNum(1);
   bodyB->incref();
 

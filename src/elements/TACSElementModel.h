@@ -46,7 +46,7 @@ class TACSElementModel : public TACSObject {
 
     @param dvLen The length of the array dvNums
     @param dvNums An array of the design variable numbers for this element
-    @return The number of design variable numbers defined by the element
+    @return The number of design variable numbers defined by the model
   */
   virtual int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
     return 0;
@@ -58,9 +58,12 @@ class TACSElementModel : public TACSObject {
     @param elemIndex The local element index
     @param dvLen The length of the design array
     @param dvs The design variable values
+    @return The number of design variable numbers defined by the model
   */
-  virtual void setDesignVars( int elemIndex,
-                              int dvLen, const TacsScalar dvs[] ){}
+  virtual int setDesignVars( int elemIndex,
+                             int dvLen, const TacsScalar dvs[] ){
+    return 0;
+  }
 
   /**
     Get the element design variables values
@@ -68,9 +71,12 @@ class TACSElementModel : public TACSObject {
     @param elemIndex The local element index
     @param dvLen The length of the design array
     @param dvs The design variable values
+    @return The number of design variable numbers defined by the model
   */
-  virtual void getDesignVars( int elemIndex,
-                              int dvLen, TacsScalar dvs[] ){}
+  virtual int getDesignVars( int elemIndex,
+                             int dvLen, TacsScalar dvs[] ){
+    return 0;
+  }
 
   /**
     Get the lower and upper bounds for the design variable values
@@ -79,10 +85,13 @@ class TACSElementModel : public TACSObject {
     @param dvLen The length of the design array
     @param lowerBound The design variable lower bounds
     @param lowerBound The design variable upper bounds
+    @return The number of design variable numbers defined by the model
   */
-  virtual void getDesignVarRange( int elemIndex, int dvLen,
-                                  TacsScalar lowerBound[],
-                                  TacsScalar upperBound[] ){}
+  virtual int getDesignVarRange( int elemIndex, int dvLen,
+                                 TacsScalar lowerBound[],
+                                 TacsScalar upperBound[] ){
+    return 0;
+  }
 
   /**
     Evaluate the point-wise integrand for the weak form of the governing

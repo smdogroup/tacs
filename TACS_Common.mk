@@ -4,6 +4,7 @@ TACS_LIB = ${TACS_DIR}/lib/libtacs.a
 TACS_INCLUDE = -I${TACS_DIR}/src \
 	-I${TACS_DIR}/src/bpmat \
 	-I${TACS_DIR}/src/elements \
+	-I${TACS_DIR}/src/elements/dynamics \
 	-I${TACS_DIR}/src/constitutive \
 	-I${TACS_DIR}/src/functions \
 	-I${TACS_DIR}/src/io

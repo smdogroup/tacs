@@ -65,10 +65,10 @@ class MITC3 : public TACSElement {
   // Functions for handling the design variables
   // -------------------------------------------
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   // Retrieve the initial values of the state variables
   // --------------------------------------------------

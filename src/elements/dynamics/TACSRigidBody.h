@@ -77,19 +77,20 @@ class TACSRefFrame : public TACSObject {
 
   // Getters and setters for DVs
   //----------------------------
-  void setDesignVars( const TacsScalar *dvs, int numDVs );
-  void getDesignVars( TacsScalar *dvs, int numDVs );
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
   // Product of adjoint variables with rotation parametrization
   //-----------------------------------------------------------
-  void addRotationAdjResProduct( TacsScalar fdvSens[], int numDVs,
-                                 const TacsScalar psi[],
-                                 const TacsScalar phi[] );
+  void addRotationAdjResProduct( const TacsScalar psi[],
+                                 const TacsScalar phi[],
+                                 int dvLen, TacsScalar dfdx[] );
 
   // Routine to perform sanity checks on the implementations of the
   // frame of reference
   // --------------------------------------------------------------
-  void testRotation( int numDVs, double dh );
+  void testRotation( double dh );
 
  private:
   // Recompute the rotation matrix
@@ -107,6 +108,7 @@ class TACSRefFrame : public TACSObject {
 
   // The basis points for the reference frame
   TACSGibbsVector *r0, *r1, *r2;
+  int r0offset, r1offset, r2offset; // Offset indices
 };
 
 /*
@@ -146,10 +148,10 @@ class TACSRigidBody : public TACSElement {
   // Set and retrieve design variable values
   // ---------------------------------------
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------

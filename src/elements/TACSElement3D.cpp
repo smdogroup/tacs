@@ -52,25 +52,25 @@ int TACSElement3D::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
 /*
   Set the element design variables from the design vector
 */
-void TACSElement3D::setDesignVars( int elemIndex, int dvLen,
-                                   const TacsScalar dvs[] ){
-  model->setDesignVars(elemIndex, dvLen, dvs);
+int TACSElement3D::setDesignVars( int elemIndex, int dvLen,
+                                  const TacsScalar dvs[] ){
+  return model->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the element design variables values
 */
-void TACSElement3D::getDesignVars( int elemIndex, int dvLen,
-                                   TacsScalar dvs[] ){
-  model->getDesignVars(elemIndex, dvLen, dvs);
+int TACSElement3D::getDesignVars( int elemIndex, int dvLen,
+                                  TacsScalar dvs[] ){
+  return model->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the lower and upper bounds for the design variable values
 */
-void TACSElement3D::getDesignVarRange( int elemIndex, int dvLen,
-                                       TacsScalar lb[], TacsScalar ub[] ){
-  model->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSElement3D::getDesignVarRange( int elemIndex, int dvLen,
+                                      TacsScalar lb[], TacsScalar ub[] ){
+  return model->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*
