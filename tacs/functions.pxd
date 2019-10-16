@@ -41,18 +41,11 @@ cdef extern from "TACSKSFailure.h":
         PNORM_FAILURE_DISCRETE"TACSKSFailure::PNORM_DISCRETE"
         PNORM_FAILURE_CONTINUOUS"TACSKSFailure::PNORM_CONTINUOUS"
 
-    enum KSConstitutiveFunction"TACSKSFailure::KSConstitutiveFunction":
-        KS_FAILURE"TACSKSFailure::FAILURE"
-        KS_BUCKLING"TACSKSFailure::BUCKLING"
-
     cdef cppclass TACSKSFailure(TACSFunction):
-        TACSKSFailure(TACSAssembler *tacs, double ksWeight,
-                      KSConstitutiveFunction func,
-                      double alpha)
+        TACSKSFailure(TACSAssembler*, double, double)
         void setKSFailureType(KSFailureType ftype)
         double getParameter()
         void setParameter(double _ksWeight)
-        void setLoadFactor(TacsScalar _loadFactor)
         void setMaxFailOffset(TacsScalar _maxFail)
 
 cdef extern from "TACSInducedFailure.h":
@@ -66,21 +59,16 @@ cdef extern from "TACSInducedFailure.h":
         INDUCED_DISCRETE_EXPONENTIAL_SQUARED"TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED"
         INDUCED_DISCRETE_POWER_SQUARED"TACSInducedFailure::DISCRETE_POWER_SQUARED"
 
-    enum InducedConstitutiveFunction"TACSInducedFailure::InducedConstitutiveFunction":
-        INDUCED_FAILURE"TACSInducedFailure::FAILURE"
-        INDUCED_BUCKLING"TACSInducedFailure::BUCKLING"
-
     cdef cppclass TACSInducedFailure(TACSFunction):
-        TACSInducedFailure(TACSAssembler *tacs, double P,
-                           InducedConstitutiveFunction func)
+        TACSInducedFailure(TACSAssembler*, double)
         void setInducedType(InducedNormType _norm_type)
         void setParameter(double _P)
         double getParameter()
         void setMaxFailOffset(TacsScalar _max_fail)
 
 cdef extern from "TACSHeatFlux.h":
-    cdef cppclass HeatFluxIntegral( TACSFunction ):
-        HeatFluxIntegral(TACSAssembler*, int*, int*, int)
+    cdef cppclass TACSHeatFlux( TACSFunction ):
+        TACSHeatFlux(TACSAssembler*, int*, int*, int)
 
 # cdef extern from "TACSDisplacementIntegral.h":
 #     cdef cppclass TACSDisplacementIntegral(TACSFunction):

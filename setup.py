@@ -41,7 +41,7 @@ inc_dirs, lib_dirs, libs = get_mpi_flags()
 runtime_lib_dirs = get_global_dir(['lib'])
 
 # Relative paths for the include/library directories
-rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 
+rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 'src/elements/dynamics',
                 'src/constitutive', 'src/functions', 'src/io']
 rel_lib_dirs = ['lib']
 libs.extend(['tacs'])
@@ -61,7 +61,7 @@ inc_dirs.extend(get_global_dir(default_ext_inc))
 inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
 
 exts = []
-for mod in ['TACS', 'elements', 'constitutive', 'functions']:
+for mod in ['TACS', 'functions']: # 'elements', 'constitutive', 'functions']:
     exts.append(Ext('tacs.%s'%(mod), sources=['tacs/%s.pyx'%(mod)],
                     include_dirs=inc_dirs, libraries=libs, 
                     library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs,

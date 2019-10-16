@@ -53,9 +53,9 @@ cdef class Function:
 
 cdef class StructuralMass(Function):
     def __cinit__(self, Assembler tacs):
-        '''
+        """
         Wrap the function StructuralMass
-        '''
+        """
         self.ptr = new TACSStructuralMass(tacs.ptr)
         self.ptr.incref()
         return
@@ -63,11 +63,10 @@ cdef class StructuralMass(Function):
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
     def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
-        '''
+        """
         Wrap the function KSFailure
-        '''
-        self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight,
-                                       KS_FAILURE, alpha)
+        """
+        self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight, alpha)
         self.ptr = self.ksptr
         self.ptr.incref()
         return
@@ -89,11 +88,10 @@ cdef class KSFailure(Function):
 cdef class InducedFailure(Function):
     cdef TACSInducedFailure *iptr
     def __cinit__(self, Assembler tacs, double P):
-        '''
+        """
         Wrap the function InducedFailure
-        '''
-        self.iptr = new TACSInducedFailure(tacs.ptr, P,
-                                           INDUCED_FAILURE)
+        """
+        self.iptr = new TACSInducedFailure(tacs.ptr, P)
         self.ptr = self.iptr
         self.ptr.incref()
         return
@@ -145,9 +143,9 @@ cdef class HeatFlux(Function):
 # cdef class DisplacementIntegral(Function):
 #     cdef TACSDisplacementIntegral *dptr
 #     def __cinit__(self, Assembler tacs, dirs):
-#         '''
+#         """
 #         Wrap the function KSFailure
-#         '''
+#         """
 #         cdef TacsScalar _dirs[3]
 #         _dirs[0] = dirs[0]
 #         _dirs[1] = dirs[1]
