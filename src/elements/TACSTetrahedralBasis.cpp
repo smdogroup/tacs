@@ -554,6 +554,14 @@ void TACSQuadraticTetrahedralBasis::computeBasisGradient( const double pt[],
 /*
   Cubic Tetrahedral basis class functions
 */
+ElementLayout TACSCubicTetrahedralBasis::getLayoutType(){
+  return TACS_TETRA_CUBIC_ELEMENT;
+}
+
+void TACSCubicTetrahedralBasis::getVisPoint( int n, double pt[] ){
+  pt[0] = pt[1] = pt[2] = 0.0;
+}
+
 int TACSCubicTetrahedralBasis::getNumNodes(){
   return 3;
 }

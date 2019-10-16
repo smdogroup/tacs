@@ -51,6 +51,16 @@ static void getFaceTangents( int face, double t[] ){
 /*
   Linear Hexa basis class functions
 */
+ElementLayout TACSLinearHexaBasis::getLayoutType(){
+  return TACS_HEXA_ELEMENT;
+}
+
+void TACSLinearHexaBasis::getVisPoint( int n, double pt[] ){
+  pt[0] = -1.0 + 2.0*(n % 2);
+  pt[1] = -1.0 + 2.0*((n % 4) / 2);
+  pt[2] = -1.0 + 2.0*(n / 4);
+}
+
 int TACSLinearHexaBasis::getNumNodes(){
   return 8;
 }
@@ -173,6 +183,16 @@ void TACSLinearHexaBasis::computeBasisGradient( const double pt[],
 /*
   Quadratic Hexa basis class functions
 */
+ElementLayout TACSQuadraticHexaBasis::getLayoutType(){
+  return TACS_HEXA_QUADRATIC_ELEMENT;
+}
+
+void TACSQuadraticHexaBasis::getVisPoint( int n, double pt[] ){
+  pt[0] = -1.0 + 2.0*(n % 3);
+  pt[1] = -1.0 + 2.0*((n % 9) / 3);
+  pt[2] = -1.0 + 2.0*(n / 9);
+}
+
 int TACSQuadraticHexaBasis::getNumNodes(){
   return 27;
 }
@@ -312,6 +332,16 @@ void TACSQuadraticHexaBasis::computeBasisGradient( const double pt[],
 /*
   Cubic Hexa basis class functions
 */
+ElementLayout TACSCubicHexaBasis::getLayoutType(){
+  return TACS_HEXA_CUBIC_ELEMENT;
+}
+
+void TACSCubicHexaBasis::getVisPoint( int n, double pt[] ){
+  pt[0] = -1.0 + 2.0*(n % 4);
+  pt[1] = -1.0 + 2.0*((n % 16) / 4);
+  pt[2] = -1.0 + 2.0*(n / 16);
+}
+
 int TACSCubicHexaBasis::getNumNodes(){
   return 64;
 }

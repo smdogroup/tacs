@@ -48,6 +48,32 @@ cdef extern from "TACSElementTypes.h":
         TACS_PLANE_STRESS_ELEMENT
         TACS_SOLID_ELEMENT
 
+    enum ElementLayout:
+        TACS_LAYOUT_NONE
+        TACS_POINT_ELEMENT
+        TACS_LINE_ELEMENT
+        TACS_LINE_QUADRATIC_ELEMENT
+        TACS_LINE_CUBIC_ELEMENT
+        TACS_TRI_ELEMENT
+        TACS_TRI_QUADRATIC_ELEMENT
+        TACS_TRI_CUBIC_ELEMENT
+        TACS_QUAD_ELEMENT
+        TACS_QUAD_QUADRATIC_ELEMENT
+        TACS_QUAD_CUBIC_ELEMENT
+        TACS_QUAD_QUARTIC_ELEMENT
+        TACS_QUAD_QUINTIC_ELEMENT
+        TACS_TETRA_ELEMENT
+        TACS_TETRA_QUADRATIC_ELEMENT
+        TACS_TETRA_CUBIC_ELEMENT
+        TACS_HEXA_ELEMENT
+        TACS_HEXA_QUADRATIC_ELEMENT
+        TACS_HEXA_CUBIC_ELEMENT
+        TACS_HEXA_QUARTIC_ELEMENT
+        TACS_HEXA_QUINTIC_ELEMENT
+        TACS_PENTA_ELEMENT
+        TACS_PETTA_QUADRATIC_ELEMENT
+        TACS_PENTA_CUBIC_ELEMENT
+
     enum ElementMatrixType:
         TACS_STIFFNESS_MATRIX
         TACS_MASS_MATRIX
@@ -72,6 +98,7 @@ cdef extern from "TACSObject.h":
     cdef cppclass TACSObject:
         void incref()
         void decref()
+        const char* getObjectName()
 
     cdef MPI_Datatype TACS_MPI_TYPE
 
@@ -275,9 +302,11 @@ cdef class KSM:
 
 cdef extern from "TACSElement.h":
     cdef cppclass TACSElement(TACSObject):
+        void setComponentNum(int)
+        int getComponentNum()
+        int getVarsPerNode()
         int getNumNodes()
         int getNumVariables()
-        void setComponentNum(int)
 
 cdef class Element:
     cdef TACSElement *ptr
@@ -297,7 +326,8 @@ cdef class Function:
 
 cdef extern from "TACSConstitutive.h":
     cdef cppclass TACSConstitutive(TACSObject):
-        TacsScalar getDVOutputValue(int, const double*)
+        # TacsScalar getDVOutputValue(int, const double*)
+        int getNumStresses()
 
 cdef class Constitutive:
     cdef TACSConstitutive *ptr

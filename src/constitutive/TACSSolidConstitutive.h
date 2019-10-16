@@ -32,8 +32,8 @@ class TACSSolidConstitutive : public TACSConstitutive {
   static const int NUM_STRESSES = 6;
 
   TACSSolidConstitutive( TACSMaterialProperties *properties,
-                               TacsScalar _t=1.0, int _tNum=-1,
-                               TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
+                         TacsScalar _t=1.0, int _tNum=-1,
+                         TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
   ~TACSSolidConstitutive();
 
   int getNumStresses();

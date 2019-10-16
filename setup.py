@@ -61,7 +61,7 @@ inc_dirs.extend(get_global_dir(default_ext_inc))
 inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
 
 exts = []
-for mod in ['TACS', 'functions']: # 'elements', 'constitutive', 'functions']:
+for mod in ['TACS', 'elements', 'constitutive', 'functions']:
     exts.append(Ext('tacs.%s'%(mod), sources=['tacs/%s.pyx'%(mod)],
                     include_dirs=inc_dirs, libraries=libs, 
                     library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs,
