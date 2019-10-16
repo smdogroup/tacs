@@ -40,6 +40,14 @@ cdef inline convert_bytes_to_str(bytes s):
     return s
 
 cdef extern from "TACSElementTypes.h":
+    enum:
+        TACS_OUTPUT_CONNECTIVITY
+        TACS_OUTPUT_NODES
+        TACS_OUTPUT_DISPLACEMENTS
+        TACS_OUTPUT_STRAINS
+        TACS_OUTPUT_STRESSES
+        TACS_OUTPUT_EXTRAS
+
     enum ElementType:
         TACS_ELEMENT_NONE
         TACS_SCALAR_2D_ELEMENT
