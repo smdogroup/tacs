@@ -15,7 +15,7 @@ props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)
 stiff = constitutive.PlaneStressConstitutive(props)
 
 # Set up the basis function
-model = elements.LinearElasticity2D(stiff)
+model = elements.LinearThermoelasticity2D(stiff)
 basis = elements.QuadraticTriangleBasis()
 elem = elements.Element2D(model, basis)
 
@@ -91,11 +91,11 @@ elements = [ elem ]
 creator.setElements(elements)
 
 # Create the tacs assembler object
-tacs = creator.createTACS()
+assembler = creator.createTACS()
 
-res = tacs.createVec()
-ans = tacs.createVec()
-mat = tacs.createSchurMat()
+res = assembler.createVec()
+ans = assembler.createVec()
+mat = assembler.createSchurMat()
 
 # Create the preconditioner for the corresponding matrix
 pc = TACS.Pc(mat)
@@ -104,17 +104,17 @@ pc = TACS.Pc(mat)
 alpha = 1.0
 beta = 0.0
 gamma = 0.0
-tacs.assembleJacobian(alpha, beta, gamma, res, mat)
+assembler.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
 res.setRand(1.0, 1.0)
-tacs.applyBCs(res)
+assembler.applyBCs(res)
 pc.applyFactor(res, ans)
 ans.scale(-1.0)
 
-tacs.setVariables(ans)
+assembler.setVariables(ans)
 
-tacs.setSimulationTime(0.15)
+assembler.setSimulationTime(0.15)
 
 # Create the function list
 funcs = []
@@ -122,14 +122,14 @@ funcs = []
 # Create the KS function
 ksweight = 100.0
 for i in range(1):
-    funcs.append(functions.KSFailure(tacs, ksweight))
+    funcs.append(functions.KSFailure(assembler, ksweight))
 
-func_vals = tacs.evalFunctions(funcs)
+func_vals = assembler.evalFunctions(funcs)
 
 # Set the element flag
 flag = (TACS.OUTPUT_CONNECTIVITY |
         TACS.OUTPUT_NODES |
         TACS.OUTPUT_DISPLACEMENTS |
         TACS.OUTPUT_STRAINS)
-f5 = TACS.ToFH5(tacs, TACS.PLANE_STRESS_ELEMENT, flag)
+f5 = TACS.ToFH5(assembler, TACS.PLANE_STRESS_ELEMENT, flag)
 f5.writeToFile('triangle_test.f5')

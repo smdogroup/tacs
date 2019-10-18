@@ -391,7 +391,7 @@ class TACSElementModel : public TACSObject {
                               const TacsScalar Ut[],
                               const TacsScalar Ux[],
                               int ld_data,
-                              TacsScalar *data ) = 0;
+                              TacsScalar *data ){}
 };
 
 #endif // TACS_ELEMENT_MODEL_H

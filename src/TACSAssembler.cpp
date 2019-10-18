@@ -253,6 +253,15 @@ int TACSAssembler::getVarsPerNode(){
 }
 
 /**
+   Get the number of design variables per "node"
+
+   @return the number of design variables for each design "node"
+*/
+int TACSAssembler::getDesignVarsPerNode(){
+  return designVarsPerNode;
+}
+
+/**
   Get the number of local nodes
 */
 int TACSAssembler::getNumNodes(){
@@ -285,6 +294,13 @@ int TACSAssembler::getNumElements(){
 */
 TACSNodeMap *TACSAssembler::getNodeMap(){
   return nodeMap;
+}
+
+/*
+  Get the node-processor assignment
+*/
+TACSNodeMap *TACSAssembler::getDesignNodeMap(){
+  return designNodeMap;
 }
 
 /*

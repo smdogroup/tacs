@@ -459,9 +459,6 @@ int main( int argc, char * argv[] ){
   TACSFunction *func = ksfunc;
   func->incref();
 
-  assembler->testFunction(func, dh);
-  assembler->testElement(0, 2, dh);
-
   // Allocate an array for the design variable values
   TACSBVec *x = assembler->createDesignVec();
   x->incref();
@@ -600,7 +597,7 @@ int main( int argc, char * argv[] ){
 #ifdef TACS_USE_COMPLEX
   X->axpy(TacsScalar(0.0, dh), pX);
 #else
-  X->axpy(dh, px);
+  X->axpy(dh, pX);
 #endif
   // Set the new design variable values
   assembler->setNodes(X);

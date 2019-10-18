@@ -31,6 +31,7 @@
 #include "TACSObject.h"
 #include "TACSElementTypes.h"
 #include "TACSElementBasis.h"
+#include "TACSElementModel.h"
 
 // The TACSElement base class
 class TACSElement : public TACSObject {
@@ -106,9 +107,18 @@ class TACSElement : public TACSObject {
   /**
     Get the element basis class
 
-    @return The TACSElementBasis class associated with this element
+    @return The TACSElementBasis class associated with this element. Possibly NULL.
   */
   virtual TACSElementBasis* getElementBasis(){
+    return NULL;
+  }
+
+  /**
+    Get the element model class
+
+    @return The TACSElementModel class associated with this element. Possibly NULL.
+  */
+  virtual TACSElementModel* getElementModel(){
     return NULL;
   }
 

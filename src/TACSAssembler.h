@@ -125,11 +125,13 @@ class TACSAssembler : public TACSObject {
   // -----------------------------------------------------------
   MPI_Comm getMPIComm();
   int getVarsPerNode();
+  int getDesignVarsPerNode();
   int getNumNodes();
   int getNumDependentNodes();
   int getNumOwnedNodes();
   int getNumElements();
   TACSNodeMap *getNodeMap();
+  TACSNodeMap *getDesignNodeMap();
   TACSBcMap *getBcMap();
   TACSBcMap *getInitBcMap();
   TACSBVecDistribute *getBVecDistribute();
