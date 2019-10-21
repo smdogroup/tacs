@@ -88,23 +88,26 @@ cdef class MaterialProperties:
 
 
 cdef class PlaneStressConstitutive(Constitutive):
-    def __cinit__(self, MaterialProperties props=None, **kwargs):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
 
-        if props is not None:
-            if 't' in kwargs:
-                t = kwargs['t']
-            if 'tNum' in kwargs:
-                tNum = kwargs['tNum']
-            if 'tlb' in kwargs:
-                tlb = kwargs['tlb']
-            if 'tub' in kwargs:
-                tub = kwargs['tub']
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
 
-            self.cptr = new TACSPlaneStressConstitutive(props.ptr, t, tNum,
+        if props is not NULL:
+            self.cptr = new TACSPlaneStressConstitutive(props, t, tNum,
                                                         tlb, tub)
             self.ptr = self.cptr
             self.ptr.incref()
@@ -113,23 +116,26 @@ cdef class PlaneStressConstitutive(Constitutive):
             self.cptr = NULL
 
 cdef class SolidConstitutive(Constitutive):
-    def __cinit__(self, MaterialProperties props=None, **kwargs):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
 
-        if props is not None:
-            if 't' in kwargs:
-                t = kwargs['t']
-            if 'tNum' in kwargs:
-                tNum = kwargs['tNum']
-            if 'tlb' in kwargs:
-                tlb = kwargs['tlb']
-            if 'tub' in kwargs:
-                tub = kwargs['tub']
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
 
-            self.cptr = new TACSSolidConstitutive(props.ptr, t, tNum,
+        if props is not NULL:
+            self.cptr = new TACSSolidConstitutive(props, t, tNum,
                                                   tlb, tub)
             self.ptr = self.cptr
             self.ptr.incref()
