@@ -55,7 +55,6 @@ cdef class Constitutive:
 
 
 cdef class MaterialProperties:
-    cdef TACSMaterialProperties *ptr
     def __cinit__(self, **kwargs):
         cdef TacsScalar rho = 2700.0
         cdef TacsScalar specific_heat = 921.0
@@ -89,44 +88,51 @@ cdef class MaterialProperties:
 
 
 cdef class PlaneStressConstitutive(Constitutive):
-    def __cinit__(self, MaterialProperties props, **kwargs):
+    def __cinit__(self, MaterialProperties props=None, **kwargs):
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
 
-        if 't' in kwargs:
-            t = kwargs['t']
-        if 'tNum' in kwargs:
-            tNum = kwargs['tNum']
-        if 'tlb' in kwargs:
-            tlb = kwargs['tlb']
-        if 'tub' in kwargs:
-            tub = kwargs['tub']
+        if props is not None:
+            if 't' in kwargs:
+                t = kwargs['t']
+            if 'tNum' in kwargs:
+                tNum = kwargs['tNum']
+            if 'tlb' in kwargs:
+                tlb = kwargs['tlb']
+            if 'tub' in kwargs:
+                tub = kwargs['tub']
 
-        self.cptr = new TACSPlaneStressConstitutive(props.ptr, t, tNum,
-                                                    tlb, tub)
-        self.ptr = self.cptr
-        self.ptr.incref()
-
+            self.cptr = new TACSPlaneStressConstitutive(props.ptr, t, tNum,
+                                                        tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
 
 cdef class SolidConstitutive(Constitutive):
-    def __cinit__(self, MaterialProperties props, **kwargs):
+    def __cinit__(self, MaterialProperties props=None, **kwargs):
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
 
-        if 't' in kwargs:
-            t = kwargs['t']
-        if 'tNum' in kwargs:
-            tNum = kwargs['tNum']
-        if 'tlb' in kwargs:
-            tlb = kwargs['tlb']
-        if 'tub' in kwargs:
-            tub = kwargs['tub']
+        if props is not None:
+            if 't' in kwargs:
+                t = kwargs['t']
+            if 'tNum' in kwargs:
+                tNum = kwargs['tNum']
+            if 'tlb' in kwargs:
+                tlb = kwargs['tlb']
+            if 'tub' in kwargs:
+                tub = kwargs['tub']
 
-        self.cptr = new TACSSolidConstitutive(props.ptr, t, tNum,
-                                              tlb, tub)
-        self.ptr = self.cptr
-        self.ptr.incref()
+            self.cptr = new TACSSolidConstitutive(props.ptr, t, tNum,
+                                                  tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL

@@ -34,6 +34,15 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar,
                                TacsScalar)
 
+cdef class MaterialProperties:
+    cdef TACSMaterialProperties *ptr
+
+cdef inline _init_MaterialProperties(TACSMaterialProperties *ptr):
+    props = MaterialProperties()
+    props.ptr = ptr
+    props.ptr.incref()
+    return props
+
 cdef extern from "TACSPlaneStressConstitutive.h":
     cdef cppclass TACSPlaneStressConstitutive(TACSConstitutive):
         TACSPlaneStressConstitutive(TACSMaterialProperties*,
