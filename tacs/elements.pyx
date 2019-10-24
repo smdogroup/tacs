@@ -61,6 +61,11 @@ cdef class Element:
             return self.ptr.getNumNodes()
         return 0;
 
+    def getVarsPerNode(self):
+        if self.ptr != NULL:
+            return self.ptr.getVarsPerNode()
+        return 0
+
 cdef class ElementBasis:
     def __cinit__(self):
         self.ptr = NULL
