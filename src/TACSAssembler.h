@@ -93,8 +93,11 @@ class TACSAssembler : public TACSObject {
   // Set additional information about the design vector
   // --------------------------------------------------
   void setDesignNodeMap( int _designVarsPerNode,
-                         TACSNodeMap *_designVarMap );
-  void setDesignDependentNodes( TACSBVecDepNodes *_designDepNodes );
+                         TACSNodeMap *_designVarMap=NULL );
+  int setDesignDependentNodes( int numDepDesignVars,
+                               const int *_depNodePtr,
+                               const int *_depNodes,
+                               const double *_depNodeWeights );
 
   // Associate a Dirichlet boundary condition with the given variables
   // -----------------------------------------------------------------

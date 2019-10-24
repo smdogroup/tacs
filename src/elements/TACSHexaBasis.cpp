@@ -70,7 +70,7 @@ int TACSLinearHexaBasis::getNumParameters(){
 }
 
 int TACSLinearHexaBasis::getNumQuadraturePoints(){
-  return 4;
+  return 8;
 }
 
 double TACSLinearHexaBasis::getQuadratureWeight( int n ){

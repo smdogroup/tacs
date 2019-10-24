@@ -2860,7 +2860,9 @@ void TACSAssembler::setDesignNodeMap( int _designVarsPerNode,
 
   // Copy over the data
   designVarsPerNode = _designVarsPerNode;
-  _designNodeMap->incref();
+  if (_designNodeMap){
+    _designNodeMap->incref();
+  }
   if (designNodeMap){
     designNodeMap->decref();
   }
@@ -2870,20 +2872,73 @@ void TACSAssembler::setDesignNodeMap( int _designVarsPerNode,
 /**
   Set the dependent design variable information
 
-  @param designDepNodes The dependent design variable information
+  @param numDepDesignVars The number of dependent design variables
+  @param depNodePtr Pointer into the depNodes array
+  @param depNodes The dependent node numbers
+  @param depNodeWeights The weights applied to each independent node
+  @return Error code indicating failure or success
 */
-void TACSAssembler::setDesignDependentNodes( TACSBVecDepNodes *_designDepNodes ){
+int TACSAssembler::setDesignDependentNodes( int numDepDesignVars,
+                                            const int *_depNodePtr,
+                                            const int *_depNodes,
+                                            const double *_depNodeWeights ){
   if (meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call setDesignDependentNodes() after initialize()\n",
             mpiRank);
-    return;
+    return 1;
   }
 
-  _designDepNodes->incref();
+  // Free the data if the dependent nodes have already been set
   if (designDepNodes){
     designDepNodes->decref();
+    designDepNodes = NULL;
   }
-  designDepNodes = _designDepNodes;
+
+  // Get the ownership range of the nodes
+  if (designNodeMap){
+    const int *ownerRange;
+    designNodeMap->getOwnerRange(&ownerRange);
+
+    // Check that all the independent nodes are positive and are within an
+    // allowable range
+    for ( int i = 0; i < numDepDesignVars; i++ ){
+      for ( int jp = _depNodePtr[i]; jp < _depNodePtr[i+1]; jp++ ){
+        if (_depNodes[jp] >= ownerRange[mpiSize]){
+          fprintf(stderr,
+                  "[%d] Dependent design node %d contains node number "
+                  "%d out of range\n", mpiRank, i, _depNodes[jp]);
+          return 1;
+        }
+        else if (_depNodes[jp] < 0){
+          fprintf(stderr,
+                  "[%d] Dependent design node %d contains dependent node %d\n",
+                  mpiRank, i, _depNodes[jp]);
+          return 1;
+        }
+      }
+    }
+  }
+
+  if (numDepDesignVars > 0){
+    // Allocate the new memory and copy over the data
+    int *depNodePtr = new int[ numDepDesignVars+1 ];
+    memcpy(depNodePtr, _depNodePtr, (numDepDesignVars+1)*sizeof(int));
+
+    int size = depNodePtr[numDepDesignVars];
+    int *depNodes = new int[ size ];
+    memcpy(depNodes, _depNodes, size*sizeof(int));
+
+    double *depNodeWeights = new double[ size ];
+    memcpy(depNodeWeights, _depNodeWeights, size*sizeof(double));
+
+    // Allocate the dependent node data structure
+    designDepNodes = new TACSBVecDepNodes(numDepDesignVars,
+                                          &depNodePtr, &depNodes,
+                                          &depNodeWeights);
+    designDepNodes->incref();
+  }
+
+  return 0;
 }
 
 /**
