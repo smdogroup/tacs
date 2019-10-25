@@ -57,6 +57,11 @@ cdef class ElementBasis:
             return self.ptr.getNumNodes()
         return 0
 
+def TestElementBasis(ElementBasis basis, double dh=1e-6,
+                     int test_print_level=2, double atol=1e-30,
+                     double rtol=1e-5):
+    return TacsTestElementBasis(basis.ptr, dh, test_print_level, atol, rtol)
+
 cdef class ElementModel:
     def __cinit__(self):
         self.ptr = NULL

@@ -103,17 +103,21 @@ void TACSBcMap::addBC( int node, int nvals,
 
   if (bc_vars && bc_vals){
     for ( int i = 0; i < nvals; i++ ){
-      vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
-      values[bsize*nbcs + bc_vars[i]] = bc_vals[i];
+      if (bc_vars[i] >= 0 && bc_vars[i] < bsize){
+        vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
+        values[bsize*nbcs + bc_vars[i]] = bc_vals[i];
+      }
     }
   }
   else if (bc_vars){
     for ( int i = 0; i < nvals; i++ ){
-      vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
+      if (bc_vars[i] >= 0 && bc_vars[i] < bsize){
+        vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
+      }
     }
   }
   else {
-    for ( int i = 0; i < nvals; i++ ){
+    for ( int i = 0; (i < nvals && i < bsize); i++ ){
       vars[nbcs] = vars[nbcs] | (1 << i);
     }
   }

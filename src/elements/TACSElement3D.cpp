@@ -34,6 +34,10 @@ int TACSElement3D::getNumNodes(){
   return basis->getNumNodes();
 }
 
+int TACSElement3D::getDesignVarsPerNode(){
+  return model->getDesignVarsPerNode();
+}
+
 ElementLayout TACSElement3D::getLayoutType(){
   return basis->getLayoutType();
 }

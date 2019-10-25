@@ -54,7 +54,7 @@ class TACSConstitutive : public TACSObject {
   /**
     Get the number of design variables per "design node"
   */
-  int getDesignVarsPerNode(){
+  virtual int getDesignVarsPerNode(){
     return 1;
   }
 

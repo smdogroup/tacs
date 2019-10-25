@@ -55,6 +55,9 @@ cdef inline _init_ElementModel(TACSElementModel *ptr):
     model.ptr.incref()
     return model
 
+cdef extern from "TACSElementVerification.h":
+    int TacsTestElementBasis(TACSElementBasis*, double, int, double, double)
+
 cdef extern from "TACSTetrahedralBasis.h":
     cdef cppclass TACSLinearTetrahedralBasis(TACSElementBasis):
         TACSLinearTetrahedralBasis()

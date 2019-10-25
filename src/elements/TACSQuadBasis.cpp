@@ -277,7 +277,7 @@ void TACSCubicQuadBasis::getVisPoint( int n, double pt[] ){
 }
 
 int TACSCubicQuadBasis::getNumNodes(){
-  return 9;
+  return 16;
 }
 
 int TACSCubicQuadBasis::getNumParameters(){
@@ -285,7 +285,7 @@ int TACSCubicQuadBasis::getNumParameters(){
 }
 
 int TACSCubicQuadBasis::getNumQuadraturePoints(){
-  return 9;
+  return 16;
 }
 
 double TACSCubicQuadBasis::getQuadratureWeight( int n ){
@@ -402,51 +402,51 @@ void TACSCubicQuadBasis::computeBasisGradient( const double pt[],
   dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
   dnb[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
 
-  N[0] = dna[0]*nb[0];
-  N[1] = na[0]*dnb[0];
+  Nxi[0] = dna[0]*nb[0];
+  Nxi[1] = na[0]*dnb[0];
 
-  N[2] = dna[1]*nb[0];
-  N[3] = na[1]*dnb[0];
+  Nxi[2] = dna[1]*nb[0];
+  Nxi[3] = na[1]*dnb[0];
 
-  N[4] = dna[2]*nb[0];
-  N[5] = na[2]*dnb[0];
+  Nxi[4] = dna[2]*nb[0];
+  Nxi[5] = na[2]*dnb[0];
 
-  N[6] = dna[3]*nb[0];
-  N[7] = na[3]*dnb[0];
+  Nxi[6] = dna[3]*nb[0];
+  Nxi[7] = na[3]*dnb[0];
 
-  N[8] = dna[0]*nb[1];
-  N[9] = na[0]*dnb[1];
+  Nxi[8] = dna[0]*nb[1];
+  Nxi[9] = na[0]*dnb[1];
 
-  N[10] = dna[1]*nb[1];
-  N[11] = na[1]*dnb[1];
+  Nxi[10] = dna[1]*nb[1];
+  Nxi[11] = na[1]*dnb[1];
 
-  N[12] = dna[2]*nb[1];
-  N[13] = na[2]*dnb[1];
+  Nxi[12] = dna[2]*nb[1];
+  Nxi[13] = na[2]*dnb[1];
 
-  N[14] = dna[3]*nb[1];
-  N[15] = na[3]*dnb[1];
+  Nxi[14] = dna[3]*nb[1];
+  Nxi[15] = na[3]*dnb[1];
 
-  N[16] = dna[0]*nb[2];
-  N[17] = na[0]*dnb[2];
+  Nxi[16] = dna[0]*nb[2];
+  Nxi[17] = na[0]*dnb[2];
 
-  N[18] = dna[1]*nb[2];
-  N[19] = na[1]*dnb[2];
+  Nxi[18] = dna[1]*nb[2];
+  Nxi[19] = na[1]*dnb[2];
 
-  N[20] = dna[2]*nb[2];
-  N[21] = na[2]*dnb[2];
+  Nxi[20] = dna[2]*nb[2];
+  Nxi[21] = na[2]*dnb[2];
 
-  N[22] = dna[3]*nb[2];
-  N[23] = na[3]*dnb[2];
+  Nxi[22] = dna[3]*nb[2];
+  Nxi[23] = na[3]*dnb[2];
 
-  N[24] = dna[0]*nb[3];
-  N[25] = na[0]*dnb[3];
+  Nxi[24] = dna[0]*nb[3];
+  Nxi[25] = na[0]*dnb[3];
 
-  N[26] = dna[1]*nb[3];
-  N[27] = na[1]*dnb[3];
+  Nxi[26] = dna[1]*nb[3];
+  Nxi[27] = na[1]*dnb[3];
 
-  N[28] = dna[2]*nb[3];
-  N[29] = na[2]*dnb[3];
+  Nxi[28] = dna[2]*nb[3];
+  Nxi[29] = na[2]*dnb[3];
 
-  N[30] = dna[3]*nb[3];
-  N[31] = na[3]*dnb[3];
+  Nxi[30] = dna[3]*nb[3];
+  Nxi[31] = na[3]*dnb[3];
 }

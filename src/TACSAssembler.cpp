@@ -3089,7 +3089,7 @@ void TACSAssembler::getDesignVarRange( TACSBVec *lb, TACSBVec *ub ){
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
   TacsScalar *dvVals = elementSensData;
-  TacsScalar *ubVals = new TacsScalar[ maxDVs ];
+  TacsScalar *ubVals = new TacsScalar[ designVarsPerNode*maxDVs ];
   int *dvNums = elementSensIData;
 
   // Get the design variables from the auxiliary elements

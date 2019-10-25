@@ -83,6 +83,10 @@ void TacsFormDiffApproximate( TacsScalar *forward,
   @param vars The element state variables
   @param dvars The time derivatives of the state variables
   @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
 */
 int TacsTestElementResidual( TACSElement *element,
                              int elemIndex,
@@ -105,6 +109,10 @@ int TacsTestElementResidual( TACSElement *element,
   @param vars The element state variables
   @param dvars The time derivatives of the state variables
   @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
 */
 int TacsTestElementJacobian( TACSElement *element,
                              int elemIndex,
@@ -130,6 +138,10 @@ int TacsTestElementJacobian( TACSElement *element,
   @param vars The element state variables
   @param dvars The time derivatives of the state variables
   @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
 */
 int TacsTestAdjResProduct( TACSElement *element,
                            int elemIndex,
@@ -154,6 +166,10 @@ int TacsTestAdjResProduct( TACSElement *element,
   @param vars The element state variables
   @param dvars The time derivatives of the state variables
   @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
 */
 int TacsTestAdjResXptProduct( TACSElement *element,
                               int elemIndex,
@@ -170,6 +186,11 @@ int TacsTestAdjResXptProduct( TACSElement *element,
 /**
   Test if the basis function derivatives are implemented correct
 
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
 */
 int TacsTestElementBasis( TACSElementBasis *basis,
                           double dh=1e-7,

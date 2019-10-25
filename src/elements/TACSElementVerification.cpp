@@ -709,7 +709,7 @@ int TacsTestElementBasis( TACSElementBasis *basis,
   // Create an array to store the values of the adjoint-residual
   // product
   double *result = new double[ nparams*nnodes ];
-  memset(result, 0, 3*nnodes*sizeof(double));
+  memset(result, 0, nparams*nnodes*sizeof(double));
 
   // Generate a random array of values
   double *fd = new double[ nparams*nnodes ];
