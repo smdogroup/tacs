@@ -150,13 +150,18 @@ cdef class Element:
             self.ptr.decref()
 
     def setComponentNum(self, int comp_num):
-        if self.ptr != NULL:
+        if self.ptr:
             self.ptr.setComponentNum(comp_num)
         return
 
     def getNumNodes(self):
         if self.ptr != NULL:
             return self.ptr.getNumNodes()
+        return 0
+
+    def getVarsPerNode(self):
+        if self.ptr:
+            return self.ptr.getVarsPerNode()
         return 0
 
     def getDesignVarsPerNode(self):
@@ -168,7 +173,9 @@ cdef class Element:
         Returns:
             (integer) The number of design variables at each node
         """
-        return self.ptr.getDesignVarsPerNode()
+        if self.ptr:
+            return self.ptr.getDesignVarsPerNode()
+        return 0;
 
     def getDesignVars(self, int elemIndex):
         """
