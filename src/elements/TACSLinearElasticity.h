@@ -30,6 +30,7 @@ class TACSLinearElasticity2D : public TACSElementModel {
 
   int getSpatialDim();
   int getVarsPerNode();
+  int getDesignVarsPerNode();
 
   /**
     Retrieve the global design variable numbers associated with this element
@@ -149,6 +150,7 @@ class TACSLinearElasticity3D : public TACSElementModel {
 
   int getSpatialDim();
   int getVarsPerNode();
+  int getDesignVarsPerNode();
 
   /**
     Retrieve the global design variable numbers associated with this element

@@ -138,23 +138,106 @@ cdef class Function:
 
 # A generic wrapper class for the TACSElement object
 cdef class Element:
-    """Base element class"""
-    def __cinit__(self):
+    """
+    TACSElement base class
+    """
+    def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
         return
 
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
     def setComponentNum(self, int comp_num):
-        self.ptr.setComponentNum(comp_num)
+        if self.ptr != NULL:
+            self.ptr.setComponentNum(comp_num)
         return
 
     def getNumNodes(self):
-        return self.ptr.getNumNodes()
+        if self.ptr != NULL:
+            return self.ptr.getNumNodes()
+        return 0
+
+    def getDesignVarsPerNode(self):
+        """
+        getDesignVarsPerNode(self)
+
+        Get the number of design variables at each 'design node'
+
+        Returns:
+            (integer) The number of design variables at each node
+        """
+        return self.ptr.getDesignVarsPerNode()
+
+    def getDesignVars(self, int elemIndex):
+        """
+        getDesignVars(self, int elemIndex)
+
+        Get the design variable values associated with this element
+
+        Args:
+            elemIndex (integer) The element index
+
+        Returns:
+            (np.ndarray) An array of the design variable values
+        """
+        cdef int dvsPerNode = 0
+        cdef int dvLen = 0
+        cdef np.ndarray dvs = None
+
+        if self.ptr is NULL:
+            return None
+
+        dvsPerNode = self.ptr.getDesignVarsPerNode()
+        dvLen = self.ptr.getDesignVarNums(elemIndex, 0, NULL)
+        dvs = np.zeros(dvLen*dvsPerNode, dtype=dtype)
+        self.ptr.getDesignVars(elemIndex, dvLen, <TacsScalar*>dvs.data)
+        return dvs
+
+    def getDesignVarRange(self, int elemIndex):
+        """
+        getDesignVarRange(self, int elemIndex)
+
+        Get the lower and upper bounds for the design variables associated with
+        this element
+
+        Args:
+            elemIndex (integer) The element index
+
+        Returns:
+            (np.ndarray) Two arrays of the design variable lower/upper bounds
+        """
+        cdef int dvsPerNode = 0
+        cdef int dvLen = 0
+        cdef np.ndarray lb = None
+        cdef np.ndarray ub = None
+
+        if self.ptr is NULL:
+            return None
+
+        dvsPerNode = self.ptr.getDesignVarsPerNode()
+        dvLen = self.ptr.getDesignVarNums(elemIndex, 0, NULL)
+        lb = np.zeros(dvLen*dvsPerNode, dtype=dtype)
+        ub = np.zeros(dvLen*dvsPerNode, dtype=dtype)
+        self.ptr.getDesignVarRange(elemIndex, dvLen, <TacsScalar*>lb.data,
+                                   <TacsScalar*>ub.data)
+        return lb, ub
 
 # A generic wrapper class for the TACSConstitutive object
 cdef class Constitutive:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
         return
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def getNumStresses(self):
+        if self.ptr:
+            return self.ptr.getNumStresses()
+        return 0
 
 # A generic wrapper for a TACSVec class - usually TACSBVec
 cdef class Vec:
@@ -284,7 +367,7 @@ cdef class Vec:
         cdef np.ndarray values
         bsize = self.ptr.getBlockSize()
         length = bsize*var.shape[0]
-        values = np.zeros(length)
+        values = np.zeros(length, dtype=dtype)
         fail = self.ptr.getValues(length, <int*>var.data, <TacsScalar*>values.data)
         if fail:
             errmsg = 'Vec: Failed on get values. Incorrect indices'

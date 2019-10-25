@@ -2880,7 +2880,7 @@ void TACSAssembler::setDesignNodeMap( int _designVarsPerNode,
 */
 int TACSAssembler::setDesignDependentNodes( int numDepDesignVars,
                                             const int *_depNodePtr,
-                                            const int *_depNodes,
+                                            const int *_depNodeConn,
                                             const double *_depNodeWeights ){
   if (meshInitializedFlag){
     fprintf(stderr, "[%d] Cannot call setDesignDependentNodes() after initialize()\n",
@@ -2903,16 +2903,16 @@ int TACSAssembler::setDesignDependentNodes( int numDepDesignVars,
     // allowable range
     for ( int i = 0; i < numDepDesignVars; i++ ){
       for ( int jp = _depNodePtr[i]; jp < _depNodePtr[i+1]; jp++ ){
-        if (_depNodes[jp] >= ownerRange[mpiSize]){
+        if (_depNodeConn[jp] >= ownerRange[mpiSize]){
           fprintf(stderr,
                   "[%d] Dependent design node %d contains node number "
-                  "%d out of range\n", mpiRank, i, _depNodes[jp]);
+                  "%d out of range\n", mpiRank, i, _depNodeConn[jp]);
           return 1;
         }
-        else if (_depNodes[jp] < 0){
+        else if (_depNodeConn[jp] < 0){
           fprintf(stderr,
                   "[%d] Dependent design node %d contains dependent node %d\n",
-                  mpiRank, i, _depNodes[jp]);
+                  mpiRank, i, _depNodeConn[jp]);
           return 1;
         }
       }
@@ -2925,15 +2925,15 @@ int TACSAssembler::setDesignDependentNodes( int numDepDesignVars,
     memcpy(depNodePtr, _depNodePtr, (numDepDesignVars+1)*sizeof(int));
 
     int size = depNodePtr[numDepDesignVars];
-    int *depNodes = new int[ size ];
-    memcpy(depNodes, _depNodes, size*sizeof(int));
+    int *depNodeConn = new int[ size ];
+    memcpy(depNodeConn, _depNodeConn, size*sizeof(int));
 
     double *depNodeWeights = new double[ size ];
     memcpy(depNodeWeights, _depNodeWeights, size*sizeof(double));
 
     // Allocate the dependent node data structure
     designDepNodes = new TACSBVecDepNodes(numDepDesignVars,
-                                          &depNodePtr, &depNodes,
+                                          &depNodePtr, &depNodeConn,
                                           &depNodeWeights);
     designDepNodes->incref();
   }

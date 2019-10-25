@@ -52,6 +52,13 @@ class TACSConstitutive : public TACSObject {
   virtual int getNumStresses() = 0;
 
   /**
+    Get the number of design variables per "design node"
+  */
+  int getDesignVarsPerNode(){
+    return 1;
+  }
+
+  /**
     Retrieve the global design variable numbers
 
     Note when the dvNums argument is NULL, then the result is a query

@@ -167,7 +167,7 @@ int main( int argc, char * argv[] ){
         basic_conn_offset += 4;
       }
       else if (basic_ltypes[k] == TACS_HEXA_ELEMENT){
-        const int convert[] = {0, 1, 3, 2, 4, 5, 8, 7};
+        const int convert[] = {0, 1, 3, 2, 4, 5, 7, 6};
         for ( int j = 0; j < conn_size; j++ ){
           fprintf(fp, "%d ", basic_conn[basic_conn_offset + convert[j]]);
         }

@@ -40,20 +40,6 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-cdef class Constitutive:
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-
-    def __dealloc__(self):
-        if self.ptr != NULL:
-            self.ptr.decref()
-
-    def getNumStresses(self):
-        if self.ptr != NULL:
-            return self.ptr.getNumStresses()
-        return 0
-
-
 cdef class MaterialProperties:
     def __cinit__(self, **kwargs):
         cdef TacsScalar rho = 2700.0

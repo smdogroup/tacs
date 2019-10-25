@@ -12,54 +12,36 @@
 
 # distutils: language=c++
 
+from __future__ import print_function, division
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
 # Import numpy
-import numpy as np
 cimport numpy as np
+import numpy as np
 
 # Ensure that numpy is initialized
 np.import_array()
 
-# Import the definition required for const strings from libc.string cimport const_char
+# Import the definition required for const strings
+from libc.string cimport const_char
+from libc.stdlib cimport malloc, free
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
+
+# Include the definitions
+include "TacsDefs.pxi"
 
 # Import the definitions
 from TACS cimport *
 from constitutive cimport *
 from elements cimport *
 
-# Include the definitions
-include "TacsDefs.pxi"
-
 # Include the mpi4py header
 cdef extern from "mpi-compat.h":
     pass
-
-# A generic wrapper class for the TACSElement object
-cdef class Element:
-    '''Base element class'''
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-        return
-
-    def __dealloc__(self):
-        if self.ptr != NULL:
-            self.ptr.decref()
-
-    def setComponentNum(self, int comp_num):
-        if self.ptr != NULL:
-            self.ptr.setComponentNum(comp_num)
-        return
-
-    def getNumNodes(self):
-        if self.ptr != NULL:
-            return self.ptr.getNumNodes()
-        return 0;
 
 cdef class ElementBasis:
     def __cinit__(self):

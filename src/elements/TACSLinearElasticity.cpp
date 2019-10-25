@@ -43,6 +43,10 @@ int TACSLinearElasticity2D::getVarsPerNode(){
   return 2;
 }
 
+int TACSLinearElasticity2D::getDesignVarsPerNode(){
+  return stiff->getDesignVarsPerNode();
+}
+
 /*
   Retrieve the global design variable numbers associated with this element
 */
@@ -528,6 +532,10 @@ int TACSLinearElasticity3D::getSpatialDim(){
 
 int TACSLinearElasticity3D::getVarsPerNode(){
   return 3;
+}
+
+int TACSLinearElasticity3D::getDesignVarsPerNode(){
+  return stiff->getDesignVarsPerNode();
 }
 
 /*

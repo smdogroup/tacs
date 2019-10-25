@@ -315,6 +315,10 @@ cdef extern from "TACSElement.h":
         int getVarsPerNode()
         int getNumNodes()
         int getNumVariables()
+        int getDesignVarsPerNode()
+        int getDesignVarNums(int, int, int*)
+        int getDesignVars(int, int, TacsScalar*)
+        int getDesignVarRange(int, int, TacsScalar*, TacsScalar*)
 
 cdef class Element:
     cdef TACSElement *ptr

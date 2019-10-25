@@ -41,16 +41,6 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-# A generic wrapper class for the TACSFunction object
-cdef class Function:
-    def __cinit__(self):
-        self.ptr = NULL
-        return
-    def __dealloc__(self):
-        if self.ptr:
-            self.ptr.decref()
-        return
-
 cdef class StructuralMass(Function):
     def __cinit__(self, Assembler tacs):
         """

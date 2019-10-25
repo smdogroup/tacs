@@ -39,6 +39,13 @@ class TACSElementModel : public TACSObject {
   virtual int getVarsPerNode() = 0;
 
   /**
+    Return the number of design variables per "design node"
+  */
+  virtual int getDesignVarsPerNode(){
+    return 1;
+  }
+
+  /**
     Retrieve the global design variable numbers associated with this element
 
     Note when the dvNums argument is NULL, then the result is a query

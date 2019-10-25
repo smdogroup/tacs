@@ -39,6 +39,10 @@ int TACSHeatConduction2D::getVarsPerNode(){
   return 1;
 }
 
+int TACSHeatConduction2D::getDesignVarsPerNode(){
+  return stiff->getDesignVarsPerNode();
+}
+
 /*
   Retrieve the global design variable numbers associated with this element
 */
@@ -367,6 +371,10 @@ int TACSHeatConduction3D::getSpatialDim(){
 
 int TACSHeatConduction3D::getVarsPerNode(){
   return 1;
+}
+
+int TACSHeatConduction3D::getDesignVarsPerNode(){
+  return stiff->getDesignVarsPerNode();
 }
 
 /*

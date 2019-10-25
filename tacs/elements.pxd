@@ -12,14 +12,15 @@
 
 # distutils: language=c++
 
-# For MPI capabilities
-from mpi4py.libmpi cimport *
-cimport mpi4py.MPI as MPI
+# Import numpy
+from libc.string cimport const_char
+
+# Import the major python version
+from cpython.version cimport PY_MAJOR_VERSION
 
 # Import numpy
-import numpy as np
 cimport numpy as np
-from libc.string cimport const_char
+import numpy as np
 
 # Import from constitutive for definitions
 from constitutive cimport *
