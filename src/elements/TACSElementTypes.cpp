@@ -169,6 +169,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      default: return NULL;
       }
     }
   }
@@ -197,6 +198,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      default: return NULL;
       }
     }
   }
@@ -245,6 +247,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      default: return NULL;
       }
     }
   }
@@ -277,6 +280,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      default: return NULL;
       }
     }
   }
@@ -316,6 +320,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      default: return NULL;
       }
     }
   }

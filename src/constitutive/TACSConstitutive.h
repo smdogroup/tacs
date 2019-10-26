@@ -350,6 +350,16 @@ class TACSConstitutive : public TACSObject {
                                  int dvLen, TacsScalar dvSens[] ){}
 
   /**
+    Evaluate a design field (if defined) at the given quadrature point
+  */
+  virtual TacsScalar evalDesignFieldValue( int elemIndex,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           int index ){
+    return 0.0;
+  }
+
+  /**
     Write out a two-dimensional representation of the failure envelope
   */
   void writeFailureEnvelope( const char *file_name, int npts,

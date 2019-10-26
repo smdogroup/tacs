@@ -665,8 +665,8 @@ void TACSLinearThermoelasticity2D::getOutputData( int elemIndex,
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){
       data[0] = stiff->evalFailure(elemIndex, pt, X, e);
-      data[1] = 0.0;
-      data[2] = 0.0;
+      data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
+      data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
       data += 3;
     }
   }
@@ -1568,8 +1568,8 @@ void TACSLinearThermoelasticity3D::getOutputData( int elemIndex,
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){
       data[0] = stiff->evalFailure(elemIndex, pt, X, e);
-      data[1] = 0.0;
-      data[2] = 0.0;
+      data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
+      data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
       data += 3;
     }
   }
