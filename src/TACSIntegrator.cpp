@@ -2248,13 +2248,16 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
   Get the stage coefficient from the tableau using the full index
 */
 double TACSDIRKIntegrator::getACoeff( const int i, const int j ){
-  if (i < num_stages && j < num_stages){
-    if (i <= j){
-      int index = getRowIndex(i);
-      return a[index + j];
-    }
-  }
-  return 0.0;
+ if (i < num_stages && j < num_stages){
+   if (j > i){
+     return 0.0;
+   }
+   else {
+     int index = getRowIndex(i);
+     return a[index + j];
+   }
+ }
+ return 0.0;
 }
 
 /*
