@@ -502,7 +502,10 @@ PcScMat::PcScMat( ScMat *_mat, int levFill, double fill,
   int M = num_unique_schur, N = num_unique_schur;
 
   // Determine the number of blocks to use per block-cylic block
-  int csr_blocks_per_block = 36/bsize;
+  int csr_blocks_per_block = 1;
+  if (bsize < 36){
+    csr_blocks_per_block = 36/bsize;
+  }
 
   // Create the global block-cyclic Schur complement matrix
   pdmat = new PDMat(comm, M, N, bsize, local_schur_vars,
