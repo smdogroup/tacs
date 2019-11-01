@@ -58,3 +58,6 @@ cdef extern from "TACSSolidConstitutive.h":
 
 cdef class SolidConstitutive(Constitutive):
     cdef TACSSolidConstitutive *cptr
+
+cdef extern from "TACSConstitutiveVerification.h":
+    int TacsTestConstitutive(TACSConstitutive*, int, double, int, double, double)

@@ -52,7 +52,7 @@ TACSIntegrator::TACSIntegrator( TACSAssembler *_assembler,
   MPI_Comm_size(assembler->getMPIComm(), &mpiSize);
 
   // Default print level and logging control
-  print_level = 2;
+  print_level = 0;
   logfp = NULL;
   if (mpiRank == 0){
     logfp = stdout;
@@ -2178,7 +2178,10 @@ void TACSDIRKIntegrator::setupDefaultCoeffs(){
 */
 double TACSDIRKIntegrator::getACoeff( const int i, const int j ){
   if (i < num_stages && j < num_stages){
-    if (i <= j){
+    if (j > i){
+      return 0.0;
+    }
+    else {
       int index = getRowIndex(i);
       return a[index + j];
     }

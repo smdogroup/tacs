@@ -128,3 +128,9 @@ cdef class SolidConstitutive(Constitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+
+def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
+                     int test_print_level=2, double atol=1e-30,
+                     double rtol=1e-5):
+    return TacsTestConstitutive(con.ptr, elemIndex, dh,
+                                test_print_level, atol, rtol)

@@ -239,15 +239,13 @@ class TACSAssembler : public TACSObject {
                   TACSBVec **dfdx );
   void addSVSens( TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                   int numFuncs, TACSFunction **funcs,
-                  TACSBVec **fuSens );
+                  TACSBVec **dfdu );
   void addAdjointResProducts( TacsScalar scale, int numAdjoints,
-                              TACSBVec **adjoint,
-                              TACSBVec **dfdx );
+                              TACSBVec **adjoint, TACSBVec **dfdx );
   void addXptSens( TacsScalar coef, int numFuncs, TACSFunction **funcs,
-                   TACSBVec **fXptSens );
+                   TACSBVec **dfdXpts );
   void addAdjointResXptSensProducts( TacsScalar scale, int numAdjoints,
-                                     TACSBVec **adjoint,
-                                     TACSBVec **adjXptSens );
+                                     TACSBVec **adjoint, TACSBVec **dfdXpts );
 
   // Advanced function interface - for time integration
   // --------------------------------------------------

@@ -372,7 +372,7 @@ class TACSElement : public TACSObject {
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[],
                                  int dvLen,
-                                 TacsScalar dvSens[] ){}
+                                 TacsScalar dfdx[] ){}
 
   /**
     Add the derivative of the adjoint-residual product to the output vector

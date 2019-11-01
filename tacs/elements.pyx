@@ -394,3 +394,76 @@ cdef class Element3D(Element):
 #     def __dealloc__(self):
 #         self.ptr.decref()
 #         return
+
+cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
+    '''Return a numpy version of the array'''
+    # Set the shape of the array
+    cdef int size = 1
+    cdef np.npy_intp shape[1]
+    cdef np.ndarray ndarray
+
+    # Set the first entry of the shape array
+    shape[0] = <np.npy_intp>dim1
+
+    # Create the array itself - Note that this function will not
+    # delete the data once the ndarray goes out of scope
+    ndarray = np.PyArray_SimpleNewFromData(size, shape,
+                                           nptype, data_ptr)
+
+    return ndarray
+
+cdef void getInitConditions(void *self_ptr, int elem_index, int num_nodes,
+                            const TacsScalar *Xpts, int num_vars,
+                            TacsScalar *vars,
+                            TacsScalar *dvars,
+                            TacsScalar *ddvars):
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
+    (<object>self_ptr).getInitConditions(elem_index, _Xpts, _vars, _dvars, _ddvars)
+    return
+
+cdef void addResidual(void *self_ptr, int elem_index, double time,
+                      int num_nodes, const TacsScalar *Xpts,
+                      int num_vars, const TacsScalar *vars,
+                      const TacsScalar *dvars, const TacsScalar *ddvars,
+                      TacsScalar *res):
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
+    _res = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>res)
+    (<object>self_ptr).addResidual(elem_index, time, _Xpts,
+                                   _vars, _dvars, _ddvars, _res)
+    return
+
+cdef void addJacobian(void *self_ptr, int elem_index, double time,
+                      TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                      int num_nodes, const TacsScalar *Xpts,
+                      int num_vars, const TacsScalar *vars,
+                      const TacsScalar *dvars, const TacsScalar *ddvars,
+                      TacsScalar *res, TacsScalar *mat):
+    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+    _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
+    _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
+    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
+    _res = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>res)
+    _mat = inplace_array_1d(TACS_NPY_SCALAR, num_vars*num_vars, <void*>mat)
+    (<object>self_ptr).addJacobian(elem_index, time, alpha, beta, gamma, _Xpts,
+                                   _vars, _dvars, _ddvars, _res, _mat)
+    return
+
+cdef class pyElement(Element):
+    def __cinit__(self, int vars_per_node, int num_nodes, *args, **kwargs):
+        cdef TACSElementWrapper *pointer
+        pointer = new TACSElementWrapper(<PyObject*>self, vars_per_node,
+                                         num_nodes)
+        pointer.incref()
+
+        # Set the function pointers
+        pointer.getinitconditions = getInitConditions
+        pointer.addresidual = addResidual
+        pointer.addjacobian = addJacobian
+
+        self.ptr = pointer

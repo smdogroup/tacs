@@ -34,12 +34,12 @@
 */
 class TACSElementWrapper : public TACSElement {
  public:
-  TACSElementWrapper( PyObject *_self_ptr, 
-                      int _num_nodes,
-                      int _num_displacements ){ 
+  TACSElementWrapper( PyObject *_self_ptr,
+                      int _vars_per_node,
+                      int _num_nodes ){
     self_ptr = _self_ptr;
+    vars_per_node = _vars_per_node;
     num_nodes = _num_nodes;
-    num_displacements = _num_displacements;
 
     // This causes a circular reference so the object is never
     // deleted. This should be fixed properly using weak references,
@@ -49,7 +49,6 @@ class TACSElementWrapper : public TACSElement {
     getinitconditions = NULL;
     addresidual = NULL;
     addjacobian = NULL;
-    addadjresproduct = NULL;
 
   }
   ~TACSElementWrapper() {
@@ -58,111 +57,80 @@ class TACSElementWrapper : public TACSElement {
 
   // TACS Element member variables
   // -----------------------------
+  int vars_per_node;
   int num_nodes;
-  int num_displacements;
 
   // TACS Element member functions
   // -----------------------------
-  int numDisplacements() {
-    return num_displacements;
+  int getVarsPerNode() {
+    return vars_per_node;
   }
 
-  int numNodes() {
+  int getNumNodes() {
     return num_nodes;
   }
 
   // Retrieve the initial conditions and add the derivative
   // ------------------------------------------------------
-  void getInitConditions( TacsScalar vars[],
-                          TacsScalar dvars[],
-                          TacsScalar ddvars[],
-                          const TacsScalar Xpts[] ){
-    memset(vars, 0, numVariables()*sizeof(TacsScalar));
-    memset(dvars, 0, numVariables()*sizeof(TacsScalar));
-    memset(ddvars, 0, numVariables()*sizeof(TacsScalar));
+  void getInitConditions( int elem_index, const TacsScalar Xpts[],
+                          TacsScalar vars[], TacsScalar dvars[],
+                          TacsScalar ddvars[] ){
+    memset(vars, 0, getNumVariables()*sizeof(TacsScalar));
+    memset(dvars, 0, getNumVariables()*sizeof(TacsScalar));
+    memset(ddvars, 0, getNumVariables()*sizeof(TacsScalar));
     if (self_ptr && getinitconditions) {
-      int nvars = num_nodes*num_displacements;
-      getinitconditions(self_ptr, nvars, num_nodes, 
-                        vars, dvars, ddvars, Xpts);
+      int num_vars = num_nodes*vars_per_node;
+      getinitconditions(self_ptr, elem_index, num_nodes, Xpts, num_vars,
+                        vars, dvars, ddvars);
     }
   }
   
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] ) {
-    if (self_ptr && addresidual) {
-      int nvars = num_nodes*num_displacements;
-      addresidual(self_ptr, nvars, num_nodes, time, 
-                  res, Xpts, vars, dvars, ddvars);
+  void addResidual( int elem_index, double time,
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[] ) {
+    if (self_ptr && addresidual){
+      int num_vars = num_nodes*vars_per_node;
+      addresidual(self_ptr, elem_index, time, num_nodes, Xpts,
+                  num_vars, vars, dvars, ddvars, res);
     }
   }
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
-                    double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[] ) {
-    if (self_ptr && addjacobian) {
-      int nvars = num_nodes*num_displacements;
-      addjacobian(self_ptr, nvars, num_nodes, time, 
-                  J, alpha, beta, gamma, 
-                  Xpts, vars, dvars, ddvars);
-    }
-  }
-
-  // Add the product of the adjoint variables with the derivative of the residual
-  // ----------------------------------------------------------------------------
-  void addAdjResProduct( double time, double scale,
-                         TacsScalar dvSens[], int dvLen,
-                         const TacsScalar psi[],
-                         const TacsScalar Xpts[],
-                         const TacsScalar vars[],
-                         const TacsScalar dvars[],
-                         const TacsScalar ddvars[] ) {
-    if (self_ptr && addadjresproduct) {
-      int nvars = num_nodes*num_displacements;
-      addadjresproduct(self_ptr, nvars, num_nodes, time, scale, dvSens, dvLen, 
-                       psi, Xpts, vars, dvars, ddvars);
+  void addJacobian( int elem_index, double time,
+                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                    const TacsScalar Xpts[], const TacsScalar vars[],
+                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                    TacsScalar res[], TacsScalar mat[] ) {
+    if (self_ptr && addjacobian){
+      int num_vars = num_nodes*vars_per_node;
+      addjacobian(self_ptr, elem_index, time,
+                  alpha, beta, gamma, num_nodes, Xpts,
+                  num_vars, vars, dvars, ddvars, res, mat);
     }
   }
 
   // Define the object name 
   // ----------------------
-  const char * elementName(){ 
+  const char *getObjectName(){
     return "TACSElementWrapper";
   }
 
   // Function pointers
   // -----------------
   PyObject *self_ptr; // Pointer to the python object
-  void (*getinitconditions)( void *, int, int, 
-                             TacsScalar *, TacsScalar *, 
-                             TacsScalar *, const TacsScalar * );
-  
-  void (*addresidual)( void *, int, int, double time, TacsScalar res[],
-                       const TacsScalar Xpts[],
-                       const TacsScalar vars[],
-                       const TacsScalar dvars[],
-                       const TacsScalar ddvars[] );
-  
-  void (*addjacobian)( void *, int, int, double time, TacsScalar J[],
-                       double alpha, double beta, double gamma,
-                       const TacsScalar Xpts[],
-                       const TacsScalar vars[],
-                       const TacsScalar dvars[],
-                       const TacsScalar ddvars[] );
-
-  void (*addadjresproduct)( void*, int, int, double, TacsScalar, TacsScalar *,
-                            int, const TacsScalar *, const TacsScalar *, 
-                            const TacsScalar *, const TacsScalar *, 
-                            const TacsScalar * );
+  void (*getinitconditions)(void*, int, int, const TacsScalar*, int,
+                            TacsScalar*, TacsScalar*, TacsScalar*);
+  void (*addresidual)(void*, int, double, int, const TacsScalar*,
+                      int, const TacsScalar*, const TacsScalar*,
+                      const TacsScalar*, TacsScalar*);
+  void (*addjacobian)(void*, int, double, TacsScalar, TacsScalar, TacsScalar,
+                      int, const TacsScalar*, int, const TacsScalar*,
+                      const TacsScalar*, const TacsScalar*,
+                      TacsScalar*, TacsScalar*);
 };
 
 #endif

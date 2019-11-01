@@ -184,32 +184,16 @@ cdef extern from "TACSElement3D.h":
 #         TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
 #                               TACSRefFrame*, int)
 
-# cdef extern from "TACSElementWrapper.h":
-#     cdef cppclass TACSElementWrapper(TACSElement):
-#         TACSElementWrapper(PyObject *obj, int, int)
+cdef extern from "TACSElementWrapper.h":
+    cdef cppclass TACSElementWrapper(TACSElement):
+        TACSElementWrapper(PyObject*, int, int)
 
-#         # Member functions
-#         void (*getinitconditions)( void *, int, int,
-#                                    TacsScalar *, TacsScalar *,
-#                                    TacsScalar *, const TacsScalar * )
-
-#         void (*addresidual)( void *, int, int, double time, TacsScalar *,
-#                              const TacsScalar *,
-#                              const TacsScalar *,
-#                              const TacsScalar *,
-#                              const TacsScalar * )
-
-#         void (*addjacobian)( void *, int, int, double time, TacsScalar *,
-#                              double alpha, double beta, double gamma,
-#                              const TacsScalar *,
-#                              const TacsScalar *,
-#                              const TacsScalar *,
-#                              const TacsScalar * )
-
-#         void addadjresproduct(void * , int, int, double,
-#                            TacsScalar, TacsScalar *, int,
-#                            const TacsScalar *,
-#                            const TacsScalar *,
-#                            const TacsScalar *,
-#                            const TacsScalar *,
-#                            const TacsScalar * )
+        void (*getinitconditions)(void*, int, int, const TacsScalar*, int,
+                                  TacsScalar*, TacsScalar*, TacsScalar*)
+        void (*addresidual)(void*, int, double, int, const TacsScalar*,
+                            int, const TacsScalar*, const TacsScalar*,
+                            const TacsScalar*, TacsScalar*)
+        void (*addjacobian)(void*, int, double, TacsScalar, TacsScalar, TacsScalar,
+                            int, const TacsScalar*, int, const TacsScalar*,
+                            const TacsScalar*, const TacsScalar*,
+                            TacsScalar*, TacsScalar*)

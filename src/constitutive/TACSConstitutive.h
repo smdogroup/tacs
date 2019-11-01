@@ -302,6 +302,7 @@ class TACSConstitutive : public TACSObject {
   /**
     Evaluate the failure index at a quadrature point
 
+    @param elemIndex The local element index
     @param pt The parametric point
     @param X The physical node location
     @param strain the strain value
@@ -317,6 +318,7 @@ class TACSConstitutive : public TACSObject {
   /**
     Evaluate the failure index at a quadrature point
 
+    @param elemIndex The local element index
     @param pt The parametric point
     @param X The physical node location
     @param strain the strain value
@@ -351,6 +353,12 @@ class TACSConstitutive : public TACSObject {
 
   /**
     Evaluate a design field (if defined) at the given quadrature point
+
+    @param elemIndex The local element index
+    @param pt The parametric point
+    @param X The physical node location
+    @param index The design field index
+    @return The value of the design field
   */
   virtual TacsScalar evalDesignFieldValue( int elemIndex,
                                            const double pt[],

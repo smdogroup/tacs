@@ -834,15 +834,15 @@ cdef class Assembler:
         return
 
     def setElementConnectivity(self,
-                               np.ndarray[int, ndim=1, mode='c'] conn,
-                               np.ndarray[int, ndim=1, mode='c'] ptr):
+                               np.ndarray[int, ndim=1, mode='c'] ptr,
+                               np.ndarray[int, ndim=1, mode='c'] conn):
         """Set the connectivity"""
         cdef int num_elements = ptr.shape[0]-1
         if num_elements != self.getNumElements():
             raise ValueError('Connectivity must match number of elements')
 
         # Set the connectivity into TACSAssembler
-        self.ptr.setElementConnectivity(<int*>conn.data, <int*>ptr.data)
+        self.ptr.setElementConnectivity(<int*>ptr.data, <int*>conn.data)
 
         return
 
