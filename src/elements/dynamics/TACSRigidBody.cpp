@@ -1104,6 +1104,8 @@ void TACSRigidBody::addJacobian( int elemIndex,
                                  const TacsScalar *ddvars,
                                  TacsScalar *res,
                                  TacsScalar *mat ){
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   // Get the acceleration due to gravity
   const TacsScalar *g;
   gvec->getVector(&g);

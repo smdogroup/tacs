@@ -65,10 +65,10 @@ class TACSSphericalConstraint : public TACSElement {
   // Set and retrieve design variable values
   // ---------------------------------------
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------
@@ -156,10 +156,10 @@ class TACSRevoluteConstraint : public TACSElement {
   // Set and retrieve design variable values
   // ---------------------------------------
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------
@@ -505,10 +505,10 @@ class TACSFixedConstraint : public TACSElement {
   // Set and retrieve design variable values
   // ---------------------------------------
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  void setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  void getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  void getDesignVarRange( int elemIndex, int dvLen,
-                          TacsScalar lb[], TacsScalar ub[] );
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   // Return the number of displacements and nodes
   // --------------------------------------------

@@ -38,6 +38,8 @@ class TACSGibbsVector : public TACSObject {
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
   int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
   int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[],
+                         TacsScalar ub[] );
 
   // Take the derivative of the product of the adjoint variables and the vector
   void addPointAdjResProduct( TacsScalar scale, const TacsScalar psi[],
@@ -194,6 +196,32 @@ inline int TACSGibbsVector::getDesignVars( int elemIndex,
   }
   if (xDV[2] >= 0){
     dvs[count] = x[2];
+    count++;
+  }
+  return count;
+}
+
+/*
+  Retrieve the design variable range from the object
+*/
+inline int TACSGibbsVector::getDesignVarRange( int elemIndex,
+                                               int dvLen,
+                                               TacsScalar lb[],
+                                               TacsScalar ub[] ){
+  int count = 0;
+  if (xDV[0] >= 0){
+    lb[count] = -1e30;
+    ub[count] = 1e30;
+    count++;
+  }
+  if (xDV[1] >= 0){
+    lb[count] = -1e30;
+    ub[count] = 1e30;
+    count++;
+  }
+  if (xDV[2] >= 0){
+    lb[count] = -1e30;
+    ub[count] = 1e30;
     count++;
   }
   return count;

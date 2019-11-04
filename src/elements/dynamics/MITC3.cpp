@@ -937,6 +937,8 @@ void MITC3::addJacobian( int elemIndex, double time,
                          const TacsScalar ddvars[],
                          TacsScalar res[],
                          TacsScalar J[] ){
+  addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
+
   // Compute the reference frames at the nodes
   TacsScalar Xr[9*NUM_NODES];
   computeFrames(Xr, X);

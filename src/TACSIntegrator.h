@@ -47,7 +47,7 @@ class TACSIntegrator : public TACSObject {
   void setPrintLevel( int _print_level, const char *logfilename=NULL );
   void setJacAssemblyFreq( int _jac_comp_freq );
   void setUseLapack( int _use_lapack );
-  void setUseSchurMat( int _use_femat, TACSAssembler::OrderingType _type );
+  void setUseSchurMat( int _use_schur_mat, TACSAssembler::OrderingType _type );
   void setInitNewtonDeltaFraction( double frac );
   void setKrylovSubspaceMethod( TACSKsm *_ksm );
 
@@ -151,7 +151,6 @@ class TACSIntegrator : public TACSObject {
   int newtonSolve( double alpha, double beta, double gamma,
                    double t, TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot,
                    TACSBVec *forces=NULL );
-  int initAccelerationSolve( TACSBVec *forces=NULL );
   void lapackLinearSolve( TACSBVec *res, TACSMat *mat, TACSBVec *update );
 
   // Variables that keep track of time

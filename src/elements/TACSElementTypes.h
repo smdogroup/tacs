@@ -22,6 +22,9 @@ const int TACS_ELEMENT_DENSITY = 1;
 const int TACS_FAILURE_INDEX = 2;
 const int TACS_HEAT_FLUX = 3;
 const int TACS_TEMPERATURE = 4;
+const int TACS_ELEMENT_DISPLACEMENT = 5;
+const int TACS_ELEMENT_STRAIN = 6;
+const int TACS_ELEMENT_STRESS = 7;
 
 /*
   The output flags from each element type

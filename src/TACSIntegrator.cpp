@@ -579,108 +579,6 @@ int TACSIntegrator::getNumTimeSteps(){
 }
 
 /*
-  Perform a nonlinear solve to obtain accelerations with q and qdot
-  held constant as obtained from intial conditions.
-*/
-int TACSIntegrator::initAccelerationSolve( TACSBVec *forces ){
- double force_norm = 0.0;
-  if(forces){
-    force_norm = TacsRealPart(forces->norm());
-  }
-
-  // initialize the linear solver
-  initializeLinearSolver();
-
-  // Create KSM
-  TACSMg *mg = dynamic_cast<TACSMg*>(pc);
-  if (mg){
-    mg->incref();
-  };
-
-  if (logfp && print_level >= 2){
-    fprintf(logfp, "%12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
-            "#iters", "|R|", "|R|/|R0|", "|dq|",
-            "alpha", "beta", "gamma","delta", "|F|");
-  }
-
-  // Assemble the residual and jacobian
-  double alpha = 0.0, beta  = 0.0, gamma = 1.0;
-
-  // Iterate accelerations until residual is zero
-  for ( niter = 0; niter < max_newton_iters; niter++ ){
-
-    // Assemble residual and jacobian
-    if (mg){
-      mg->assembleJacobian(alpha, beta, gamma, res, TACS_MAT_NORMAL);
-    }
-    else {
-      assembler->assembleJacobian(alpha, beta, gamma, res, mat, TACS_MAT_NORMAL);
-    }
-
-    // Add the forces into the residual
-    if (forces){
-      assembler->applyBCs(forces);
-      res->axpy(-1.0, forces);
-      assembler->applyBCs(res);
-    }
-    res_norm = res->norm();
-
-    // Record the residual norm at the first Newton iteration
-    if (niter == 0){
-      init_res_norm = res_norm;
-    }
-
-    // Write a summary
-    if(logfp && print_level >= 2){
-      if (niter == 0){
-        fprintf(logfp,
-                "%12d %12.5e %12.5e %12s %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-                niter, TacsRealPart(res_norm),
-                (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm),
-                " ", alpha, beta, gamma, 0.0, force_norm);
-      }
-      else {
-        fprintf(logfp,
-                "%12d %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",
-                niter, TacsRealPart(res_norm),
-                (niter == 0) ? 1.0 : TacsRealPart(res_norm/init_res_norm),
-                TacsRealPart(update_norm), alpha, beta, gamma, 0.0, force_norm);
-      }
-    }
-
-    // Check if the Newton convergence tolerance is satisfied
-    if (TacsRealPart(res_norm) < atol){
-      break;
-    }
-
-    // LU Factor the matrix when needed
-    if ((niter % jac_comp_freq) == 0){
-      pc->factor();
-    }
-
-    // Solve for update using KSM
-    ksm->solve(res, update);
-
-    // Update the state variables using the solution
-    qddot[0]->axpy(-1.0, update);
-
-    // Set states into TACS (new acceleration)
-    assembler->setVariables(q[0], qdot[0], qddot[0]);
-
-    // Check whether the update is sufficiently small
-    if (TacsRealPart(update_norm) < atol){
-      break;
-    }
-  }
-
-  if (mg){
-    mg->decref();
-  }
-
-  return 0;
-}
-
-/*
   Drives the residual R(t,q,qdot,qddot) to zero using Newton's method
 
   Input:
@@ -1627,7 +1525,6 @@ int TACSBDFIntegrator::iterate( int k, TACSBVec *forces ){
 
     // Solve for acceleration and set into TACS
     logTimeStep(k);
-    initAccelerationSolve(forces);
 
     return 0;
   }
@@ -2287,7 +2184,6 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
 
     // Solve for acceleration and set into TACS
     logTimeStep(k);
-    initAccelerationSolve(forces);
 
     return 0;
   }

@@ -1,127 +1,10 @@
-#include "TACSRigidBody.h"
-#include "TACSKinematicConstraints.h"
-#include "TACSTimoshenkoStiffness.h"
-#include "MITC3.h"
-
 #include "TACSAssembler.h"
 #include "TACSIntegrator.h"
-
-/*
-  Create the one bar
-*/
-TACSAssembler *one_bar_beam( int nA ){
-    // Set the gravity vector
-  TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, -9.81);
-
-  // Set the points b, c and d
-  TACSGibbsVector *ptA = new TACSGibbsVector(0.0, 0.0, 0.0);
-  TACSGibbsVector *ptB = new TACSGibbsVector(1.0, 0.0, 0.0);
-
-  // Create the revolute direction for B and D
-  TACSGibbsVector *revDirA = new TACSGibbsVector(0.0, 0.0, 1.0);
-  TACSGibbsVector *revDirB = new TACSGibbsVector(0.0, 0.0, 1.0);
-
-  // Create the revolute constraints
-  int fixed_point = 1;
-  TACSRevoluteConstraint *revA =
-    new TACSRevoluteConstraint(fixed_point, ptA, revDirA);
-  TACSRevoluteConstraint *revB =
-    new TACSRevoluteConstraint(fixed_point, ptB, revDirB);
-
-  // Create the stiffness objects for each element
-  TacsScalar mA = 1.997; // kg/m
-  TacsScalar IA = 42.60e-6; // kg*m
-
-  TacsScalar EA_A = 52.99e6;
-  TacsScalar GJ_A = 733.5;
-  TacsScalar kGAz_A = 16.88e6;
-  TacsScalar EIz_A = 1131.0;
-
-  // Set the reference axes for each beam
-  TacsScalar axis_A[] = {0.0, 1.0, 0.0};
-
-  // Create the Timoshenko stiffness object
-  TimoshenkoStiffness *stiffA =
-    new TimoshenkoStiffness(mA, IA, IA, 0.0,
-                            EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
-                            axis_A);
-
-  // Set up the connectivity
-  MITC3 *beamA = new MITC3(stiffA, gravity);
-
-  // Set the number of nodes in the mesh
-  int nnodes = 2*nA + 3;
-
-  // Set the number of elements
-  int nelems = nA + 2;
-
-  // Create the connectivities
-  TacsScalar *X = new TacsScalar[ 3*nnodes ];
-  memset(X, 0, 3*nnodes*sizeof(TacsScalar));
-
-  int *ptr = new int[ nelems+1 ];
-  int *conn = new int[ 3*nelems ];
-  TACSElement **elems = new TACSElement*[ nelems ];
-
-  // Set the nodes numbers and locations
-  int *nodesA = new int[ 2*nA+1 ];
-  int n = 0;
-  for ( int i = 0; i < 2*nA+1; i++, n++ ){
-    nodesA[i] = n;
-    X[3*n+1] = 0.12*i/(2*nA);
-  }
-
-  // Set the connectivity for the beams
-  int elem = 0;
-  ptr[0] = 0;
-  for ( int i = 0; i < nA; i++ ){
-    conn[ptr[elem]] = nodesA[2*i];
-    conn[ptr[elem]+1] = nodesA[2*i+1];
-    conn[ptr[elem]+2] = nodesA[2*i+2];
-    elems[elem] = beamA;
-    ptr[elem+1] = ptr[elem] + 3;
-    elem++;
-  }
-
-  // Add the connectivities for the constraints
-  conn[ptr[elem]] = nodesA[0];
-  conn[ptr[elem]+1] = nnodes-2;
-  elems[elem] = revA;
-  ptr[elem+1] = ptr[elem] + 2;
-  elem++;
-
-  conn[ptr[elem]] = nodesA[2*nA];
-  conn[ptr[elem]+1] = nnodes-1;
-  elems[elem] = revB;
-  ptr[elem+1] = ptr[elem] + 2;
-  elem++;
-
-  delete [] nodesA;
-
-  // Create the TACSAssembler object
-  TACSAssembler *tacs = new TACSAssembler(MPI_COMM_WORLD, 8, nnodes, nelems);
-
-  tacs->setElementConnectivity(conn, ptr);
-  delete [] conn;
-  delete [] ptr;
-
-  tacs->setElements(elems);
-  delete [] elems;
-
-  tacs->initialize();
-
-  // Set the node locations
-  TACSBVec *Xvec = tacs->createNodeVec();
-  Xvec->incref();
-  TacsScalar *Xarray;
-  Xvec->getArray(&Xarray);
-  memcpy(Xarray, X, 3*nnodes*sizeof(TacsScalar));
-  tacs->setNodes(Xvec);
-  Xvec->decref();
-  delete [] X;
-
-  return tacs;
-}
+#include "TACSRigidBody.h"
+#include "TACSKinematicConstraints.h"
+#include "TACSTimoshenkoConstitutive.h"
+#include "MITC3.h"
+#include "TACSElementVerification.h"
 
 /*
   Create and return the TACSAssembler object for the four bar
@@ -206,20 +89,20 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   TacsScalar axis_C[] = {1.0, 0.0, 0.0};
 
   // Create the Timoshenko stiffness object
-  TimoshenkoStiffness *stiffA =
-    new TimoshenkoStiffness(mA, IA, IA, 0.0,
-                            EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
-                            axis_A);
+  TACSTimoshenkoConstitutive *stiffA =
+    new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
+                                   EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+                                   axis_A);
 
-  TimoshenkoStiffness *stiffB =
-    new TimoshenkoStiffness(mA, IA, IA, 0.0,
-                            EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
-                            axis_B);
+  TACSTimoshenkoConstitutive *stiffB =
+    new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
+                                   EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+                                   axis_B);
 
-  TimoshenkoStiffness *stiffC =
-    new TimoshenkoStiffness(mB, IB, IB, 0.0,
-                            EA_B, GJ_B, EIz_B, EIz_B, kGAz_B, kGAz_B,
-                            axis_C);
+  TACSTimoshenkoConstitutive *stiffC =
+    new TACSTimoshenkoConstitutive(mB, IB, IB, 0.0,
+                                   EA_B, GJ_B, EIz_B, EIz_B, kGAz_B, kGAz_B,
+                                   axis_C);
 
   // Set up the connectivity
   MITC3 *beamA = new MITC3(stiffA, gravity);
@@ -322,28 +205,28 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   delete [] nodesC;
 
   // Create the TACSAssembler object
-  TACSAssembler *tacs = new TACSAssembler(MPI_COMM_WORLD, 8, nnodes, nelems);
+  TACSAssembler *assembler = new TACSAssembler(MPI_COMM_WORLD, 8, nnodes, nelems);
 
-  tacs->setElementConnectivity(conn, ptr);
+  assembler->setElementConnectivity(ptr, conn);
   delete [] conn;
   delete [] ptr;
 
-  tacs->setElements(elems);
+  assembler->setElements(elems);
   delete [] elems;
 
-  tacs->initialize();
+  assembler->initialize();
 
   // Set the node locations
-  TACSBVec *Xvec = tacs->createNodeVec();
+  TACSBVec *Xvec = assembler->createNodeVec();
   Xvec->incref();
   TacsScalar *Xarray;
   Xvec->getArray(&Xarray);
   memcpy(Xarray, X, 3*nnodes*sizeof(TacsScalar));
-  tacs->setNodes(Xvec);
+  assembler->setNodes(Xvec);
   Xvec->decref();
   delete [] X;
 
-  return tacs;
+  return assembler;
 }
 
 /*
@@ -370,10 +253,10 @@ void test_beam_element(){
   TacsScalar kGAz = 5.2e3;
 
   // Create the Timoshenko stiffness object
-  TimoshenkoStiffness *stiff =
-    new TimoshenkoStiffness(rhoA, rhoIy, rhoIz, rhoIyz,
-                            EA, GJ, EIy, EIz, kGAy, kGAz,
-                            axis);
+  TACSTimoshenkoConstitutive *stiff =
+    new TACSTimoshenkoConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
+                                   EA, GJ, EIy, EIz, kGAy, kGAz,
+                                   axis);
   stiff->incref();
 
   // Create the MITC3 element
@@ -395,10 +278,8 @@ void test_beam_element(){
       ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
     }
 
-    beam->setStepSize(5e-6);
-    beam->setPrintLevel(2);
-    beam->testResidual(0.0, X, vars, dvars, ddvars, multipliers, 3);
-    beam->testJacobian(0.0, X, vars, dvars, ddvars);
+    TacsTestElementResidual(beam, 0, 0.0, X, vars, dvars, ddvars, 5e-6);
+    TacsTestElementJacobian(beam, 0, 0.0, X, vars, dvars, ddvars, -1, 5e-6);
   }
 
   int test_average = 1;
@@ -443,11 +324,8 @@ void test_beam_element(){
     TACSAverageConstraint *avg =
       new TACSAverageConstraint(bodyA, point, refFrame, moment_flag);
 
-    avg->setStepSize(5e-6);
-    avg->setPrintLevel(2);
-    avg->testResidual(0.0, X, vars, dvars, ddvars,
-                      multipliers, nmultipliers);
-    avg->testJacobian(0.0, X, vars, dvars, ddvars);
+    TacsTestElementResidual(avg, 0, 0.0, X, vars, dvars, ddvars, 5e-6);
+    TacsTestElementJacobian(avg, 0, 0.0, X, vars, dvars, ddvars, -1, 5e-6);
   }
 }
 
@@ -478,10 +356,10 @@ int main( int argc, char *argv[] ){
     TacsScalar axis_A[] = {0.0, 1.0, 0.0};
 
     // Create the Timoshenko stiffness object
-    TimoshenkoStiffness *stiffA =
-      new TimoshenkoStiffness(mA, IA, IA, 0.0,
-                              EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
-                              axis_A);
+    TACSTimoshenkoConstitutive *stiffA =
+      new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
+                                     EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+                                     axis_A);
 
     // Create the element
     TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, -9.81);
@@ -544,10 +422,11 @@ int main( int argc, char *argv[] ){
     integrator->incref();
 
     // Set the integrator options
-    integrator->setUseFEMat(1, TACSAssembler::TACS_AMD_ORDER);
+    integrator->setUseSchurMat(1, TACSAssembler::TACS_AMD_ORDER);
     integrator->setAbsTol(1e-7);
     integrator->setOutputFrequency(10);
-    integrator->setPrintLevel(-1);
+
+    // Integrate the equations of motion forward in time
     integrator->integrate();
 
     // Set the output options/locations
@@ -577,10 +456,12 @@ int main( int argc, char *argv[] ){
         tacs->setVariables(q);
         TACSElement *element = tacs->getElement(elem[pt], X, vars);
 
-        TacsScalar e[6], s[6];
-        element->getStrain(e, param[pt], X, vars);
-        TACSConstitutive *con = element->getConstitutive();
-        con->calculateStress(param[pt], e, s);
+//        TacsScalar e[6], s[6];
+//        element->getStrain(e, param[pt], X, vars);
+//        TACSConstitutive *con = element->getConstitutive();
+//        con->calculateStress(param[pt], e, s);
+        TacsScalar s[6];
+        s[0] = s[1] = s[2] = s[3] = s[4] = s[5] = 0.0;
 
         fprintf(fp, "%e  %e %e %e  %e %e %e  %e %e %e\n",
                 time, vars[0], vars[1], vars[2],

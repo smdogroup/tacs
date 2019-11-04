@@ -385,6 +385,9 @@ void TACSSphericalConstraint::addJacobian( int elemIndex,
                                            const TacsScalar *ddvars,
                                            TacsScalar *res,
                                            TacsScalar *J ){
+  // Add the residual
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   // Retrieve the spherical joint location in the global frame
   const TacsScalar *pt;
   point->getVector(&pt);
@@ -562,26 +565,26 @@ int TACSSphericalConstraint::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the design variable values
 */
-void TACSSphericalConstraint::setDesignVars( int elemIndex, int dvLen,
-                                             const TacsScalar dvs[] ){
-  point->setDesignVars(elemIndex, dvLen, dvs);
+int TACSSphericalConstraint::setDesignVars( int elemIndex, int dvLen,
+                                            const TacsScalar dvs[] ){
+  return point->setDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the design variable values associated with the joint location
 */
-void TACSSphericalConstraint::getDesignVars( int elemIndex, int dvLen,
-                                             TacsScalar dvs[] ){
-  point->getDesignVars(elemIndex, dvLen, dvs);
+int TACSSphericalConstraint::getDesignVars( int elemIndex, int dvLen,
+                                            TacsScalar dvs[] ){
+  return point->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the design variable values associated with the joint location
 */
-void TACSSphericalConstraint::getDesignVarRange( int elemIndex, int dvLen,
-                                                 TacsScalar lb[],
-                                                 TacsScalar ub[] ){
-  point->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSSphericalConstraint::getDesignVarRange( int elemIndex, int dvLen,
+                                                TacsScalar lb[],
+                                                TacsScalar ub[] ){
+  return point->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*
@@ -994,6 +997,9 @@ void TACSRevoluteConstraint::addJacobian( int elemIndex,
                                           const TacsScalar *ddvars,
                                           TacsScalar *res,
                                           TacsScalar *J ){
+  // Add the residual
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   // Retrieve the coordinates of the joint point in the global frame
   const TacsScalar *pt;
   point->getVector(&pt);
@@ -1281,27 +1287,28 @@ int TACSRevoluteConstraint::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the design variable values
 */
-void TACSRevoluteConstraint::setDesignVars( int elemIndex, int dvLen,
-                                            const TacsScalar dvs[] ){
-  point->setDesignVars(elemIndex, dvLen, dvs);
+int TACSRevoluteConstraint::setDesignVars( int elemIndex, int dvLen,
+                                           const TacsScalar dvs[] ){
+  int ndvs = point->setDesignVars(elemIndex, dvLen, dvs);
   updatePoints();
+  return ndvs;
 }
 
 /*
   Get the design variable values associated with the joint location
 */
-void TACSRevoluteConstraint::getDesignVars( int elemIndex, int dvLen,
-                                            TacsScalar dvs[] ){
-  point->getDesignVars(elemIndex, dvLen, dvs);
+int TACSRevoluteConstraint::getDesignVars( int elemIndex, int dvLen,
+                                           TacsScalar dvs[] ){
+  return point->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the design variable values associated with the joint location
 */
-void TACSRevoluteConstraint::getDesignVarRange( int elemIndex, int dvLen,
-                                                TacsScalar lb[],
-                                                TacsScalar ub[] ){
-  point->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSRevoluteConstraint::getDesignVarRange( int elemIndex, int dvLen,
+                                               TacsScalar lb[],
+                                               TacsScalar ub[] ){
+  return point->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*
@@ -1438,6 +1445,9 @@ void TACSRigidLink::addJacobian( int elemIndex,
                                  const TacsScalar *ddvars,
                                  TacsScalar *res,
                                  TacsScalar *J ){
+  // Add the residual
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   // Set the variables for body A
   const TacsScalar etaA = vars[3];
   const TacsScalar *epsA = &vars[4];
@@ -1591,6 +1601,9 @@ void TACSRevoluteDriver::addJacobian( int elemIndex,
                                       const TacsScalar *ddvars,
                                       TacsScalar *res,
                                       TacsScalar *J ){
+  // Add the residual to the governing equations
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   const int nvars = 16;
 
   // Add the terms from the displacement
@@ -1905,6 +1918,8 @@ void TACSAverageConstraint::addJacobian( int elemIndex,
                                          const TacsScalar *ddvars,
                                          TacsScalar *res,
                                          TacsScalar *J ){
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   const int nvars = 5*8;
 
   // Get the initial position for bodyA  from global origin
@@ -2287,25 +2302,26 @@ int TACSFixedConstraint::getDesignVarNums( int elemIndex, int dvLen,
 /*
   Set the design variable values
 */
-void TACSFixedConstraint::setDesignVars( int elemIndex, int dvLen,
-                                         const TacsScalar dvs[] ){
-  point->setDesignVars(elemIndex, dvLen, dvs);
+int TACSFixedConstraint::setDesignVars( int elemIndex, int dvLen,
+                                        const TacsScalar dvs[] ){
+  int ndvs = point->setDesignVars(elemIndex, dvLen, dvs);
   updatePoints();
+  return ndvs;
 }
 
 /*
   Get the design variable values associated with the joint location
 */
-void TACSFixedConstraint::getDesignVars( int elemIndex, int dvLen,
-                                         TacsScalar dvs[] ){
-  point->getDesignVars(elemIndex, dvLen, dvs);
+int TACSFixedConstraint::getDesignVars( int elemIndex, int dvLen,
+                                        TacsScalar dvs[] ){
+  return point->getDesignVars(elemIndex, dvLen, dvs);
 }
 
 /*
   Get the design variable values associated with the joint location
 */
-void TACSFixedConstraint::getDesignVarRange( int elemIndex, int dvLen,
-                                             TacsScalar lb[],
-                                             TacsScalar ub[] ){
-  point->getDesignVarRange(elemIndex, dvLen, lb, ub);
+int TACSFixedConstraint::getDesignVarRange( int elemIndex, int dvLen,
+                                            TacsScalar lb[],
+                                            TacsScalar ub[] ){
+  return point->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }

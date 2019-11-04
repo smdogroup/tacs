@@ -8,8 +8,8 @@ include ../../../Makefile.in
 include ../../../TACS_Common.mk
 
 CXX_OBJS = MITC3.o \
-	TACSRigidBody.o
-#  	TACSKinematicConstraints.o
+	TACSRigidBody.o \
+  	TACSKinematicConstraints.o
 #  	MITC9.o \
 
 DIR=${TACS_DIR}/src/elements/dynamics/
