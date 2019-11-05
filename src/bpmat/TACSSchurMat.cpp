@@ -1041,7 +1041,10 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
   int M = num_unique_schur, N = num_unique_schur;
 
   // Determine the number of blocks to use per block-cylic block
-  int csr_blocks_per_block = 36/bsize;
+  int csr_blocks_per_block = 1;
+  if (bsize < 36){
+    csr_blocks_per_block = 36/bsize;
+  }
 
   int *schur_cols = new int[ rowp[num_schur_vars] ];
   for ( int i = 0; i < rowp[num_schur_vars]; i++ ){
