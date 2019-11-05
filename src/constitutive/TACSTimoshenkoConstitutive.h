@@ -46,6 +46,33 @@ class TACSTimoshenkoConstitutive : public TACSConstitutive {
   virtual ~TACSTimoshenkoConstitutive();
 
   /**
+     Set the mass moments, stiffness matrix and reference axis into
+     the constitutive object
+
+     Note that a null argument is ignored on input.
+
+     @param _rho The mass moments about the axis
+     @param _C The stiffness matrix
+     @param _axis The reference axis used to compute the stiffness
+  */
+  void setProperties( const TacsScalar _rho[], const TacsScalar _C[],
+                      const TacsScalar _axis[] );
+
+
+  /**
+     Get the mass moments, stiffness matrix and reference axis into
+     the constitutive object
+
+     Note that a null argument is ignored.
+
+     @param _rho The mass moments about the axis
+     @param _C The stiffness matrix
+     @param _axis The reference axis used to compute the stiffness
+  */
+  void getProperties( TacsScalar _rho[], TacsScalar _C[],
+                      TacsScalar _axis[] );
+
+  /**
     Get the reference axis for the beam.
 
     This reference axis defines the direction of the stiffest bending
@@ -105,8 +132,6 @@ class TACSTimoshenkoConstitutive : public TACSConstitutive {
   }
 
  protected:
-  void setData( const TacsScalar _rho[], const TacsScalar _C[],
-                const TacsScalar _axis[] );
 
  private:
   // The constitutive matrix

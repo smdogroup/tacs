@@ -152,29 +152,57 @@ TACSTimoshenkoConstitutive::TACSTimoshenkoConstitutive( TacsScalar rhoA,
 TACSTimoshenkoConstitutive::TACSTimoshenkoConstitutive( const TacsScalar _rho[],
                                                         const TacsScalar _C[],
                                                         const TacsScalar _axis[] ){
-  setData(_rho, _C, _axis);
+  setProperties(_rho, _C, _axis);
 }
 
 /*
-  Set the stiffness data
+  Set the stiffness/mass/axis properties
 */
-void TACSTimoshenkoConstitutive::setData( const TacsScalar _rho[],
-                                          const TacsScalar _C[],
-                                          const TacsScalar _axis[] ){
+void TACSTimoshenkoConstitutive::setProperties( const TacsScalar _rho[],
+                                                const TacsScalar _C[],
+                                                const TacsScalar _axis[] ){
   // Set the reference axis and normalize it
-  axis[0] = _axis[0];
-  axis[1] = _axis[1];
-  axis[2] = _axis[2];
-  TacsScalar tmp = 1.0/sqrt(axis[0]*axis[0] +
-                            axis[1]*axis[1] +
-                            axis[2]*axis[2]);
-  axis[0] *= tmp;
-  axis[1] *= tmp;
-  axis[2] *= tmp;
+  if (_axis){
+    axis[0] = _axis[0];
+    axis[1] = _axis[1];
+    axis[2] = _axis[2];
+    TacsScalar tmp = 1.0/sqrt(axis[0]*axis[0] +
+                              axis[1]*axis[1] +
+                              axis[2]*axis[2]);
+    axis[0] *= tmp;
+    axis[1] *= tmp;
+    axis[2] *= tmp;
+  }
 
   // Copy the density/stiffness matrix
-  memcpy(rho, _rho, 4*sizeof(TacsScalar));
-  memcpy(C, _C, 36*sizeof(TacsScalar));
+  if (_rho){
+    memcpy(rho, _rho, 4*sizeof(TacsScalar));
+  }
+  if (_C){
+    memcpy(C, _C, 36*sizeof(TacsScalar));
+  }
+}
+
+/*
+  Get the stiffness/mass/axis properties
+*/
+void TACSTimoshenkoConstitutive::getProperties( TacsScalar _rho[],
+                                                TacsScalar _C[],
+                                                TacsScalar _axis[] ){
+  // Set the reference axis and normalize it
+  if (_axis){
+    _axis[0] = axis[0];
+    _axis[1] = axis[1];
+    _axis[2] = axis[2];
+  }
+
+  // Copy the density/stiffness matrix
+  if (_rho){
+    memcpy(_rho, rho, 4*sizeof(TacsScalar));
+  }
+  if (_C){
+    memcpy(_C, C, 36*sizeof(TacsScalar));
+  }
 }
 
 TACSTimoshenkoConstitutive::~TACSTimoshenkoConstitutive(){}
