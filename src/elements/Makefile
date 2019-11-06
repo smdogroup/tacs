@@ -17,6 +17,8 @@ CXX_OBJS = FElibrary.o \
 	TACSHexaBasis.o \
 	TACSTriangularBasis.o \
 	TACSTetrahedralBasis.o \
+	TACSQuadBernsteinBasis.o \
+	TACSHexaBernsteinBasis.o \
 	TACSLinearElasticity.o \
 	TACSThermoelasticity.o \
 	TACSHeatConduction.o \

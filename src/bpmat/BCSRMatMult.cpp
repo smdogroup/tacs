@@ -435,7 +435,9 @@ void BCSRMatVecMultAdd( BCSRMatData *data,
   TacsScalar beta = 1.0;
 
   for ( int i = 0; i < nrows; i++ ){
-    memcpy(z, y, bsize*sizeof(TacsScalar));
+    if (z != y){
+      memcpy(z, y, bsize*sizeof(TacsScalar));
+    }
 
     int end = rowp[i+1];
     int j = rowp[i];
@@ -503,7 +505,9 @@ void BCSRMatApplyLower( BCSRMatData *data,
   TacsScalar *xx = x;
 
   for ( int i = 0; i < nrows; i++ ){
-    memcpy(yy, xx, bsize*sizeof(TacsScalar));
+    if (x != y){
+      memcpy(yy, xx, bsize*sizeof(TacsScalar));
+    }
 
     int end = diag[i];
     int j = rowp[i];
