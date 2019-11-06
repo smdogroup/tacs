@@ -37,6 +37,9 @@ void TACSElement::addJacobian( int elemIndex,
                                const TacsScalar ddvars[],
                                TacsScalar res[],
                                TacsScalar J[] ){
+  // Call the residual implementation
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   // Get the number of variables
   int nvars = getNumVariables();
 
