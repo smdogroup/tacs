@@ -43,44 +43,10 @@ from elements cimport *
 cdef extern from "mpi-compat.h":
     pass
 
-cdef class ElementBasis:
-    def __cinit__(self):
-        self.ptr = NULL
-        return
-
-    def __dealloc__(self):
-        if self.ptr != NULL:
-            self.ptr.decref()
-
-    def getNumNodes(self):
-        if self.ptr != NULL:
-            return self.ptr.getNumNodes()
-        return 0
-
 def TestElementBasis(ElementBasis basis, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):
     return TacsTestElementBasis(basis.ptr, dh, test_print_level, atol, rtol)
-
-cdef class ElementModel:
-    def __cinit__(self):
-        self.ptr = NULL
-        return
-
-    def __dealloc__(self):
-        if self.ptr != NULL:
-            self.ptr.decref()
-
-    def getSpatialDim(self):
-        if self.ptr != NULL:
-            return self.ptr.getSpatialDim()
-        return 0
-
-    def getVarsPerNode(self):
-        if self.ptr != NULL:
-            return self.ptr.getVarsPerNode()
-        return 0
-
 
 cdef class LinearTetrahedralBasis(ElementBasis):
     def __cinit__(self):
@@ -188,6 +154,31 @@ cdef class Element3D(Element):
         self.ptr = new TACSElement3D(model.ptr, basis.ptr)
         self.ptr.incref()
 
+cdef class Traction2D(Element):
+    def __cinit__(self, int varsPerNode, int faceIndex,
+                  ElementBasis basis, list traction, normalComp=True):
+        cdef TacsScalar trac[16]
+        cdef int tractionNormalComponent = 0
+        if normalComp:
+            tractionNormalComponent = 1
+        for i in range(max(16, len(traction))):
+            trac[i] = traction[i]
+        self.ptr = new TACSTraction2D(varsPerNode, faceIndex, basis.ptr,
+                                      trac, tractionNormalComponent)
+        self.ptr.incref()
+
+cdef class Traction3D(Element):
+    def __cinit__(self, int varsPerNode, int faceIndex,
+                  ElementBasis basis, list traction, normalComp=True):
+        cdef TacsScalar trac[24]
+        cdef int tractionNormalComponent = 0
+        if normalComp:
+            tractionNormalComponent = 1
+        for i in range(max(24, len(traction))):
+            trac[i] = traction[i]
+        self.ptr = new TACSTraction3D(varsPerNode, faceIndex, basis.ptr,
+                                      trac, tractionNormalComponent)
+        self.ptr.incref()
 
 
 # cdef class GibbsVector:

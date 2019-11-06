@@ -618,7 +618,7 @@ void TACSBVecInterp::initialize(){
     }
     else {
       // Print an error message. This should never happen.
-      fprintf(stderr, "Error, local interpolation variable out of range\n");
+      fprintf(stderr, "TACSBVecInterp: Error, local interpolation variable out of range\n");
     }
   }
 
@@ -656,7 +656,7 @@ void TACSBVecInterp::initialize(){
     }
     else {
       // Print an error message. This should never happen.
-      fprintf(stderr, "Error, local interpolation variable out of range\n");
+      fprintf(stderr, "TACSBVecInterp: Error, local interpolation variable out of range\n");
 
       // Increment the pointer to the input array
       k += in_weights_per_row[i];

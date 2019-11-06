@@ -308,6 +308,35 @@ cdef inline _init_Mg(TACSMg *ptr):
 cdef class KSM:
     cdef TACSKsm *ptr
 
+cdef extern from "TACSElementBasis.h":
+    cdef cppclass TACSElementBasis(TACSObject):
+        ElementLayout getLayoutType()
+        int getNumNodes()
+        int getNumParameters()
+
+cdef class ElementBasis:
+    cdef TACSElementBasis *ptr
+
+cdef inline _init_ElementBasis(TACSElementBasis *ptr):
+    basis = ElementBasis()
+    basis.ptr = ptr
+    basis.ptr.incref()
+    return basis
+
+cdef extern from "TACSElementModel.h":
+    cdef cppclass TACSElementModel(TACSObject):
+        int getSpatialDim()
+        int getVarsPerNode()
+
+cdef class ElementModel:
+    cdef TACSElementModel *ptr
+
+cdef inline _init_ElementModel(TACSElementModel *ptr):
+    model = ElementModel()
+    model.ptr = ptr
+    model.ptr.incref()
+    return model
+
 cdef extern from "TACSElement.h":
     cdef cppclass TACSElement(TACSObject):
         void setComponentNum(int)
@@ -319,6 +348,8 @@ cdef extern from "TACSElement.h":
         int getDesignVarNums(int, int, int*)
         int getDesignVars(int, int, TacsScalar*)
         int getDesignVarRange(int, int, TacsScalar*, TacsScalar*)
+        TACSElementBasis* getElementBasis()
+        TACSElementModel* getElementModel()
 
 cdef class Element:
     cdef TACSElement *ptr

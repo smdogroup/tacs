@@ -39,6 +39,7 @@ void TACSElementBasis::getVisPoint( int n, double pt[] ){
 
 TacsScalar TACSElementBasis::getFaceNormal( int face, int n,
                                             const TacsScalar Xpts[],
+                                            TacsScalar X[],
                                             TacsScalar Xd[],
                                             TacsScalar normal[] ){
   const int num_params = getNumParameters();
@@ -51,19 +52,22 @@ TacsScalar TACSElementBasis::getFaceNormal( int face, int n,
   double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
   computeBasisGradient(pt, N, Nxi);
 
-  return computeFaceNormal(num_params, num_nodes, Nxi, Xpts,
-                           tangents, Xd, normal);
+  return computeFaceNormal(num_params, num_nodes, N, Nxi, Xpts,
+                           tangents, X, Xd, normal);
 }
 
 TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
                                                 const int num_nodes,
+                                                const double N[],
                                                 const double Nxi[],
                                                 const TacsScalar Xpts[],
                                                 const double tangents[],
+                                                TacsScalar X[],
                                                 TacsScalar Xd[],
                                                 TacsScalar n[] ){
   if (num_params == 3){
     // Zero the values of the coordinate and its derivative
+    X[0] = X[1] = X[2] = 0.0;
     Xd[0] = Xd[1] = Xd[2] = 0.0;
     Xd[3] = Xd[4] = Xd[5] = 0.0;
     Xd[6] = Xd[7] = Xd[8] = 0.0;
@@ -71,6 +75,10 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
     // Loop over each quadrature point for each basis function
     const double *nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
+      X[0] += N[0]*Xpts[0];
+      X[1] += N[0]*Xpts[1];
+      X[2] += N[0]*Xpts[2];
+      
       Xd[0] += nxi[0]*Xpts[0];
       Xd[1] += nxi[1]*Xpts[0];
       Xd[2] += nxi[2]*Xpts[0];
@@ -84,6 +92,7 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
       Xd[8] += nxi[2]*Xpts[2];
       Xpts += 3;
       nxi += 3;
+      N++;
     }
 
     // Compute the tangent directions
@@ -101,11 +110,16 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
   }
   else if (num_params == 2){
     // Zero the values of the coordinate and its derivative
+    X[0] = X[1] = X[2] = 0.0;
     Xd[0] = Xd[1] = Xd[2] = Xd[3] = 0.0;
 
     // Loop over each quadrature point for each basis function
     const double *nxi = Nxi;
     for ( int i = 0; i < num_nodes; i++ ){
+      X[0] += N[0]*Xpts[0];
+      X[1] += N[0]*Xpts[1];
+      X[2] += N[0]*Xpts[2];
+      
       Xd[0] += nxi[0]*Xpts[0];
       Xd[1] += nxi[1]*Xpts[0];
 
@@ -113,6 +127,7 @@ TacsScalar TACSElementBasis::computeFaceNormal( const int num_params,
       Xd[3] += nxi[1]*Xpts[1];
       Xpts += 3;
       nxi += 2;
+      N++;
     }
 
     // Compute the tangent direction
@@ -135,6 +150,7 @@ void TACSElementBasis::addFaceNormalXptSens( int face, int n,
                                              const TacsScalar Xd[],
                                              const TacsScalar normal[],
                                              const TacsScalar dfdA,
+                                             const TacsScalar dfdX[],
                                              const TacsScalar dfdXd[],
                                              const TacsScalar dfdn[],
                                              TacsScalar dfdXpts[] ){
@@ -148,18 +164,20 @@ void TACSElementBasis::addFaceNormalXptSens( int face, int n,
   double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
   computeBasisGradient(pt, N, Nxi);
 
-  return addFaceNormalXptSens(num_params, num_nodes, Nxi, tangents,
-                              A, Xd, normal, dfdA, dfdXd, dfdn, dfdXpts);
+  return addFaceNormalXptSens(num_params, num_nodes, N, Nxi, tangents,
+                              A, Xd, normal, dfdA, dfdX, dfdXd, dfdn, dfdXpts);
 }
 
 void TACSElementBasis::addFaceNormalXptSens( const int num_params,
                                              const int num_nodes,
+                                             const double N[],
                                              const double Nxi[],
                                              const double tangents[],
                                              const TacsScalar A,
                                              const TacsScalar Xd[],
                                              const TacsScalar n[],
                                              const TacsScalar dfdA,
+                                             const TacsScalar dfdX[],
                                              const TacsScalar dfdXd[],
                                              const TacsScalar dfdn[],
                                              TacsScalar dfdXpts[] ){
@@ -209,6 +227,16 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
                          nxi[2]*t[8]);
       nxi += 3;
     }
+
+    if (dfdX){
+      const double *n = N;
+      for ( int i = 0; i < num_nodes; i++ ){
+        dfdXpts[3*i] += n[0]*dfdX[0];
+        dfdXpts[3*i+1] += n[0]*dfdX[1];
+        dfdXpts[3*i+2] += n[0]*dfdX[2];
+        n++;
+      }
+    }
   }
   else if (num_params == 2){
     TacsScalar Ainv = 1.0/A;
@@ -237,6 +265,16 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
       dfdXpts[3*i] += (nxi[0]*t[0] + nxi[1]*t[1]);
       dfdXpts[3*i+1] += (nxi[0]*t[2] + nxi[1]*t[3]);
       nxi += 2;
+    }
+    
+    if (dfdX){
+      const double *n = N;
+      for ( int i = 0; i < num_nodes; i++ ){
+        dfdXpts[3*i] += n[0]*dfdX[0];
+        dfdXpts[3*i+1] += n[0]*dfdX[1];
+        dfdXpts[3*i+2] += n[0]*dfdX[2];
+        n++;
+      }
     }
   }
 }
@@ -1178,12 +1216,11 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
     }
 
     if (dfdX){
-      const double *n = N;
       for ( int i = 0; i < num_nodes; i++ ){
-        dfdXpts[3*i] += n[0]*dfdX[0];
-        dfdXpts[3*i+1] += n[0]*dfdX[1];
-        dfdXpts[3*i+2] += n[0]*dfdX[2];
-        n++;
+        dfdXpts[3*i] += N[0]*dfdX[0];
+        dfdXpts[3*i+1] += N[0]*dfdX[1];
+        dfdXpts[3*i+2] += N[0]*dfdX[2];
+        N++;
       }
     }
   }
@@ -1259,11 +1296,10 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
     }
 
     if (dfdX){
-      const double *n = N;
       for ( int i = 0; i < num_nodes; i++ ){
-        dfdXpts[3*i] += n[0]*dfdX[0];
-        dfdXpts[3*i+1] += n[0]*dfdX[1];
-        n++;
+        dfdXpts[3*i] += N[0]*dfdX[0];
+        dfdXpts[3*i+1] += N[0]*dfdX[1];
+        N++;
       }
     }
   }

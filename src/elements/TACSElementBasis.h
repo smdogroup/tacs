@@ -137,6 +137,7 @@ class TACSElementBasis : public TACSObject {
   */
   virtual TacsScalar getFaceNormal( int face, int n,
                                     const TacsScalar Xpts[],
+                                    TacsScalar X[],
                                     TacsScalar Xd[],
                                     TacsScalar normal[] );
 
@@ -158,6 +159,7 @@ class TACSElementBasis : public TACSObject {
                                      const TacsScalar Xd[],
                                      const TacsScalar normal[],
                                      const TacsScalar dfdA,
+                                     const TacsScalar dfdX[],
                                      const TacsScalar dfdXd[],
                                      const TacsScalar dfdn[],
                                      TacsScalar dfdXpts[] );
@@ -521,19 +523,23 @@ class TACSElementBasis : public TACSObject {
  protected:
   static TacsScalar computeFaceNormal( const int num_params,
                                        const int num_nodes,
+                                       const double N[],
                                        const double Nxi[],
                                        const TacsScalar Xpts[],
                                        const double tangents[],
+                                       TacsScalar X[],
                                        TacsScalar Xd[],
                                        TacsScalar n[] );
   static void addFaceNormalXptSens( const int num_params,
                                     const int num_nodes,
+                                    const double N[],
                                     const double Nxi[],
                                     const double tangents[],
                                     const TacsScalar A,
                                     const TacsScalar Xd[],
                                     const TacsScalar n[],
                                     const TacsScalar dfdA,
+                                    const TacsScalar dfdX[],
                                     const TacsScalar dfdXd[],
                                     const TacsScalar dfdn[],
                                     TacsScalar dfdXpts[] );

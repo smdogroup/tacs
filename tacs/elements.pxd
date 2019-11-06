@@ -26,35 +26,6 @@ import numpy as np
 from constitutive cimport *
 from TACS cimport *
 
-cdef extern from "TACSElementBasis.h":
-    cdef cppclass TACSElementBasis(TACSObject):
-        ElementLayout getLayoutType()
-        int getNumNodes()
-        int getNumParameters()
-
-cdef class ElementBasis:
-    cdef TACSElementBasis *ptr
-
-cdef inline _init_ElementBasis(TACSElementBasis *ptr):
-    basis = ElementBasis()
-    basis.ptr = ptr
-    basis.ptr.incref()
-    return basis
-
-cdef extern from "TACSElementModel.h":
-    cdef cppclass TACSElementModel(TACSObject):
-        int getSpatialDim()
-        int getVarsPerNode()
-
-cdef class ElementModel:
-    cdef TACSElementModel *ptr
-
-cdef inline _init_ElementModel(TACSElementModel *ptr):
-    model = ElementModel()
-    model.ptr = ptr
-    model.ptr.incref()
-    return model
-
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasis(TACSElementBasis*, double, int, double, double)
 
@@ -134,6 +105,15 @@ cdef extern from "TACSElement2D.h":
 cdef extern from "TACSElement3D.h":
     cdef cppclass TACSElement3D(TACSElement):
         TACSElement3D(TACSElementModel*, TACSElementBasis*)
+
+cdef extern from "TACSTraction2D.h":
+    cdef cppclass TACSTraction2D(TACSElement):
+        TACSTraction2D(int, int, TACSElementBasis*, TacsScalar*, int)
+
+cdef extern from "TACSTraction3D.h":
+    cdef cppclass TACSTraction3D(TACSElement):
+        TACSTraction3D(int, int, TACSElementBasis*, TacsScalar*, int)
+
 
 # cdef extern from "TACSGibbsVector.h":
 #     cdef cppclass TACSGibbsVector(TACSObject):

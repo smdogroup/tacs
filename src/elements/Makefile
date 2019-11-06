@@ -22,6 +22,8 @@ CXX_OBJS = FElibrary.o \
 	TACSLinearElasticity.o \
 	TACSThermoelasticity.o \
 	TACSHeatConduction.o \
+	TACSTraction2D.o \
+	TACSTraction3D.o \
 	TACSElementVerification.o
 
 DIR=${TACS_DIR}/src/elements

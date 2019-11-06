@@ -136,7 +136,39 @@ cdef class Function:
         free(elem_ind)
         return
 
-# A generic wrapper class for the TACSElement object
+cdef class ElementBasis:
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+    def getNumNodes(self):
+        if self.ptr != NULL:
+            return self.ptr.getNumNodes()
+        return 0
+
+cdef class ElementModel:
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+    def getSpatialDim(self):
+        if self.ptr != NULL:
+            return self.ptr.getSpatialDim()
+        return 0
+
+    def getVarsPerNode(self):
+        if self.ptr != NULL:
+            return self.ptr.getVarsPerNode()
+        return 0
+
 cdef class Element:
     """
     TACSElement base class
@@ -163,6 +195,16 @@ cdef class Element:
         if self.ptr:
             return self.ptr.getVarsPerNode()
         return 0
+
+    def getElementModel(self):
+        if self.ptr:
+            return _init_ElementModel(self.ptr.getElementModel())
+        return None
+
+    def getElementBasis(self):
+        if self.ptr:
+            return _init_ElementBasis(self.ptr.getElementBasis())
+        return None
 
     def getDesignVarsPerNode(self):
         """

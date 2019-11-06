@@ -123,8 +123,8 @@ void TACSHeatFlux::elementWiseEval( EvaluationType ftype,
 
           // Compute the component of the flux normal to the surface
           if (count > 0){
-            TacsScalar Xd[9], normal[3];
-            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, Xd, normal);
+            TacsScalar X[3], Xd[9], normal[3];
+            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, X, Xd, normal);
             if (count == 2){
               value += scale*weight*Area*vec2Dot(flux, normal);
             }
@@ -183,8 +183,8 @@ void TACSHeatFlux::getElementSVSens( int elemIndex, TACSElement *element,
                                                  flux);
 
           if (count > 0){
-            TacsScalar Xd[9], normal[3];
-            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, Xd, normal);
+            TacsScalar X[3], Xd[9], normal[3];
+            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, X, Xd, normal);
 
             TacsScalar dfdq[3] = {0.0, 0.0, 0.0};
             if (count == 2){
@@ -253,8 +253,8 @@ void TACSHeatFlux::getElementXptSens( int elemIndex,
                                                  flux);
 
           if (count > 0){
-            TacsScalar Xd[9], normal[3];
-            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, Xd, normal);
+            TacsScalar X[3], Xd[9], normal[3];
+            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, X, Xd, normal);
 
             TacsScalar dfdq[3] = {0.0, 0.0, 0.0};
             TacsScalar dfdn[3] = {0.0, 0.0, 0.0};
@@ -285,7 +285,7 @@ void TACSHeatFlux::getElementXptSens( int elemIndex,
                                              dfdq, dfdXpts);
 
             basis->addFaceNormalXptSens(face, i, Area, Xd, normal,
-                                        dfdA, NULL, dfdn, dfdXpts);
+                                        dfdA, NULL, NULL, dfdn, dfdXpts);
           }
         }
       }
@@ -333,8 +333,8 @@ void TACSHeatFlux::addElementDVSens( int elemIndex,
                                                  flux);
 
           if (count > 0){
-            TacsScalar Xd[9], normal[3];
-            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, Xd, normal);
+            TacsScalar X[3], Xd[9], normal[3];
+            TacsScalar Area = basis->getFaceNormal(face, i, Xpts, X, Xd, normal);
 
             TacsScalar dfdq[3] = {0.0, 0.0, 0.0};
             if (count == 2){
