@@ -32,7 +32,7 @@ TACSTraction2D::TACSTraction2D( int _varsPerNode, int _faceIndex,
 }
 
 TACSTraction2D::TACSTraction2D( int _varsPerNode, int _faceIndex,
-                                TACSElementBasis *_basis, 
+                                TACSElementBasis *_basis,
                                 void (*_getTractionComponents)(int, int, double,
                                                                const TacsScalar*,
                                                                const TacsScalar*,
@@ -91,16 +91,16 @@ void TACSTraction2D::addResidual( int elemIndex,
     // Compute the inverse of the transformation
     TacsScalar J[4];
     inv2x2(Xd, J);
-    
+
     // Multiply the weight by the quadrature point
     area *= weight;
 
     // Evaluate the weak form of the model
     TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
     TacsScalar DUx[2*TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3*varsPerNode*sizeof(DUt));
-    memset(DUx, 0, 2*varsPerNode*sizeof(DUx));    
-    
+    memset(DUt, 0, 3*varsPerNode*sizeof(TacsScalar));
+    memset(DUx, 0, 2*varsPerNode*sizeof(TacsScalar));
+
     if (getTractionComponents){
       getTractionComponents(elemIndex, time, faceIndex, X, normal, trac);
 
@@ -113,14 +113,13 @@ void TACSTraction2D::addResidual( int elemIndex,
       for ( int k = 0; k < varsPerNode; k++ ){
         DUt[3*k] = -trac[k];
       }
-      
     }
     else {
       for ( int k = 0; k < varsPerNode; k++ ){
         DUt[3*k] = -vec2Dot(&trac[2*k], normal);
       }
     }
-        
+
     // Add the weak form of the residual at this point
     basis->addWeakFormResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
   }

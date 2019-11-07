@@ -161,7 +161,7 @@ cdef class Traction2D(Element):
         cdef int tractionNormalComponent = 0
         if normalComp:
             tractionNormalComponent = 1
-        for i in range(max(16, len(traction))):
+        for i in range(min(16, len(traction))):
             trac[i] = traction[i]
         self.ptr = new TACSTraction2D(varsPerNode, faceIndex, basis.ptr,
                                       trac, tractionNormalComponent)
@@ -174,7 +174,7 @@ cdef class Traction3D(Element):
         cdef int tractionNormalComponent = 0
         if normalComp:
             tractionNormalComponent = 1
-        for i in range(max(24, len(traction))):
+        for i in range(min(24, len(traction))):
             trac[i] = traction[i]
         self.ptr = new TACSTraction3D(varsPerNode, faceIndex, basis.ptr,
                                       trac, tractionNormalComponent)

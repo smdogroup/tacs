@@ -31,7 +31,6 @@ class TACSTraction2D : public TACSElement {
   // Get the layout properties of the element
   int getVarsPerNode();
   int getNumNodes();
-  int getDesignVarsPerNode();
   ElementLayout getLayoutType();
   TACSElementBasis* getElementBasis();
 
