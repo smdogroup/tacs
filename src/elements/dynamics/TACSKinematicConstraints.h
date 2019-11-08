@@ -460,6 +460,15 @@ class TACSRevoluteDriver : public TACSElement {
     return 1;
   }
 
+  // Setters and getters for the revolute speed of element
+  //------------------------------------------------------
+  void setSpeed( TacsScalar _omega ){
+    this->omega = _omega;
+  }
+  TacsScalar getSpeed(){
+    return this->omega;
+  }
+
   int getVarsPerNode();
   int getNumNodes();
   const char* getObjectName();
