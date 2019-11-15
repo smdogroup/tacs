@@ -217,7 +217,32 @@ cdef class Element:
         """
         if self.ptr:
             return self.ptr.getDesignVarsPerNode()
-        return 0;
+        return 0
+
+    def getDesignVarNums(self, int elemIndex):
+        """
+        getDesignVarNums(self, int elemIndex)
+
+        Get the design variable numbers associated with this element
+
+        Args:
+            elemIndex (integer) The element index
+
+        Returns:
+            (np.ndarray) An array of the design variable numbers
+        """
+        cdef int dvsPerNode = 0
+        cdef int dvLen = 0
+        cdef np.ndarray dvNums = None
+
+        if self.ptr is NULL:
+            return None
+
+        dvsPerNode = self.ptr.getDesignVarsPerNode()
+        dvLen = self.ptr.getDesignVarNums(elemIndex, 0, NULL)
+        dvNums = np.zeros(dvLen, dtype=np.intc)
+        self.ptr.getDesignVarNums(elemIndex, dvLen, <int*>dvNums.data)
+        return dvNums
 
     def getDesignVars(self, int elemIndex):
         """
