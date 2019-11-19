@@ -3099,22 +3099,23 @@ void TACSAssembler::getDesignVarRange( TACSBVec *lb, TACSBVec *ub ){
     for ( int i = 0; i < naux; i++ ){
       int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
       aux[i].elem->getDesignVarRange(aux[i].num, maxDVs, dvVals, ubVals);
-      lb->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
-      ub->setValues(numDVs, dvNums, ubVals, TACS_INSERT_VALUES);
+      lb->setValues(numDVs, dvNums, dvVals, TACS_INSERT_NONZERO_VALUES);
+      ub->setValues(numDVs, dvNums, ubVals, TACS_INSERT_NONZERO_VALUES);
     }
   }
 
   for ( int i = 0; i < numElements; i++ ){
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
     elements[i]->getDesignVarRange(i, numDVs, dvVals, ubVals);
-    lb->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
-    ub->setValues(numDVs, dvNums, ubVals, TACS_INSERT_VALUES);
+    lb->setValues(numDVs, dvNums, dvVals, TACS_INSERT_NONZERO_VALUES);
+    ub->setValues(numDVs, dvNums, ubVals, TACS_INSERT_NONZERO_VALUES);
   }
 
-  lb->beginSetValues(TACS_INSERT_VALUES);
-  ub->beginSetValues(TACS_INSERT_VALUES);
-  lb->endSetValues(TACS_INSERT_VALUES);
-  ub->endSetValues(TACS_INSERT_VALUES);
+  // Insert the values into the arrays
+  lb->beginSetValues(TACS_INSERT_NONZERO_VALUES);
+  ub->beginSetValues(TACS_INSERT_NONZERO_VALUES);
+  lb->endSetValues(TACS_INSERT_NONZERO_VALUES);
+  ub->endSetValues(TACS_INSERT_NONZERO_VALUES);
 
   delete [] ubVals;
 }
