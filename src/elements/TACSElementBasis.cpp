@@ -184,7 +184,7 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
   if (num_params == 3){
     TacsScalar Ainv = 1.0/A;
 
-    // Compute dfda = 1.0/A*dfdn(I - (dfdn^{T}*n)*n)
+    // Compute dfda = 1.0/A*dfdn(I - (n*n^{T}))
     TacsScalar dfda[3];
     dfda[0] = Ainv*dfdn[0];
     dfda[1] = Ainv*dfdn[1];
