@@ -373,7 +373,7 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
                           X, Xd, J, Ut, Ud, Ux);
 
   // Evaluate the derivative of the function with respect to X, Ut, Ux
-  TacsScalar dfdX[3], dfdXd[9];
+  TacsScalar dfdX[3], dfdXd[4];
   TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
@@ -404,7 +404,7 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
                           X, Xd, J, Ut, Ud, Ux);
 
   // Evaluate the derivative of the function with respect to X, Ut, Ux
-  TacsScalar dfdX[3], dfdXd[9];
+  TacsScalar dfdX[3], dfdXd[4];
   TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
