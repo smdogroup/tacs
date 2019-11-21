@@ -707,7 +707,7 @@ int TACSRigidBody::getDesignVarNums( int elemIndex,
   // Get the moment of mass variables
   for ( int k = 0; k < 3; k++ ){
     if (cDV[k] >= 0 && cDV[k] < dvLen){
-      dvNums[count] = cRef[k];
+      dvNums[count] = cDV[k];
       count++;
     }
   }
@@ -715,7 +715,7 @@ int TACSRigidBody::getDesignVarNums( int elemIndex,
   // Get the second moment of mass variables
   for ( int k = 0; k < 6; k++ ){
     if (JDV[k] >= 0 && JDV[k] < dvLen){
-      dvNums[count] = JRef[k];
+      dvNums[count] = JDV[k];
       count++;
     }
   }

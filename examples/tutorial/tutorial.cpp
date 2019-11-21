@@ -90,7 +90,7 @@ int main( int argc, char * argv[] ){
   // going to be equal to 2 (You can find this value by checking
   // with element->getVarsPerNode() which returns the number
   // of unknowns per node)
-  int varsPerNode = 2;
+  int varsPerNode = 3;
 
   int nodesPerProc = ((nx+1)*(ny+1))/size;
   int elemsPerProc = (nx*ny)/size;
@@ -199,10 +199,8 @@ int main( int argc, char * argv[] ){
       new TACSPlaneStressConstitutive(props, t, tNum);
 
     // Create the element class
-    TACSLinearElasticity2D *model =
-      new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
-//    TACSLinearThermoelasticity2D *model =
-//      new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
+    TACSLinearThermoelasticity2D *model =
+      new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
     elements[k] = new TACSElement2D(model, linear_basis);
 
     // Create a surface traction associated with this element and add
@@ -221,7 +219,9 @@ int main( int argc, char * argv[] ){
   // boundary conditions on its own nodes
   for ( int i = 0; i < nx+1; i++ ){
     int nodes[] = {i, i + (nx+1)*ny, i*(nx+1), (i+1)*(nx+1)-1};
-    assembler->addBCs(4, nodes);
+    TacsScalar values[] = {0.0, 0.0, 1.0*i};
+    int vars[] = {0, 1, 2};
+    assembler->addBCs(4, nodes, 3, vars, values);
   }
 
   // Reorder the nodal variables
@@ -344,8 +344,8 @@ int main( int argc, char * argv[] ){
 
   // Set all components of the vector to 1.0 and apply boundary
   // conditions
-  force->set(10e3);
-  assembler->applyBCs(force);
+  force->set(1.0);
+  assembler->setBCs(force);
 
   /*
     Assemble the Jacobian of governing equations. Note that the alpha,
@@ -419,7 +419,8 @@ int main( int argc, char * argv[] ){
 
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
-  int write_flag = (TACS_OUTPUT_NODES |
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS |
                     TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES |
