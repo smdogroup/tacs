@@ -301,9 +301,9 @@ void TACSElement3D::getMatSVSensInnerProduct( int elemIndex,
                                               const TacsScalar vars[],
                                               TacsScalar res[] ){}
 
-  /**
-    Evaluate a point-wise quantity of interest.
-  */
+/**
+   Evaluate a point-wise quantity of interest.
+*/
 int TACSElement3D::evalPointQuantity( int elemIndex,
                                       int quantityType,
                                       double time,

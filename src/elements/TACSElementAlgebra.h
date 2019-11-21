@@ -1480,7 +1480,6 @@ static inline void inv3x3Sens( const TacsScalar Ainv[],
   Ad[6] = -Ad[6];
   Ad[7] = -Ad[7];
   Ad[8] = -Ad[8];
-  Ad[9] = -Ad[9];
 }
 
 /*

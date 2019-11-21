@@ -164,6 +164,8 @@ int main( int argc, char *argv[] ){
 
 #ifdef TACS_USE_COMPLEX
     assembler->testElement(0, 2, 1e-30);
+#else
+    assembler->testElement(0, 2);
 #endif
 
     // The function that we will use: The KS failure function evaluated
