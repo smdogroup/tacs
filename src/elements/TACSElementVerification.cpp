@@ -694,15 +694,15 @@ int TacsTestAdjResXptProduct( TACSElement *element,
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
 
-/*
-  Test the derivative of the inner product of the adjoint vector and
-  the residual with respect to material design variables.
-*/
-int TacsTestElementBasis( TACSElementBasis *basis,
-                          double dh,
-                          int test_print_level,
-                          double test_fail_atol,
-                          double test_fail_rtol ){
+int TacsTestElementBasisFunctions( TACSElementBasis *basis,
+                                   double dh,
+                                   int test_print_level,
+                                   double test_fail_atol,
+                                   double test_fail_rtol ){
+  // Set the failure parameter
+  int fail = 0;
+
+  // Get the number of parameters/number of nodes
   int nparams = basis->getNumParameters();
   int nnodes = basis->getNumNodes();
 
@@ -754,7 +754,7 @@ int TacsTestElementBasis( TACSElementBasis *basis,
                              result, fd, nparams*nnodes);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
-#endif // TACS_USE_COMPLEX
+#endif // not TACS_USE_COMPLEX
 
   delete [] result;
   delete [] fd;
@@ -762,8 +762,248 @@ int TacsTestElementBasis( TACSElementBasis *basis,
   delete [] N0;
 
 #ifndef TACS_USE_COMPLEX
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
-#else
-  return 0;
-#endif // TACS_USE_COMPLEX
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+#endif // not TACS_USE_COMPLEX
+
+  return fail;
+}
+
+int TacsTestElementBasisFaceNormals( TACSElementBasis *basis,
+                                     double dh,
+                                     int test_print_level,
+                                     double test_fail_atol,
+                                     double test_fail_rtol ){
+  int fail = 0;
+
+  // The failure value
+  int nfaces = basis->getNumElementFaces();
+  int nnodes = basis->getNumNodes();
+
+  // The sensitivity values
+  TacsScalar dfdA, dfdX[3], dfdXd[9], dfdn[3];
+
+  // Generate random sensitivity inputs
+  TacsGenerateRandomArray(&dfdA, 1);
+  TacsGenerateRandomArray(dfdX, 3);
+  TacsGenerateRandomArray(dfdXd, 9);
+  TacsGenerateRandomArray(dfdn, 3);
+
+  // Other vectors
+  TacsScalar *Xpts = new TacsScalar[ 3*nnodes ];
+  TacsScalar *pert = new TacsScalar[ 3*nnodes ];
+  TacsGenerateRandomArray(pert, 3*nnodes);
+  TacsGenerateRandomArray(Xpts, 3*nnodes);
+
+  TacsScalar *Xpts_pert = new TacsScalar[ 3*nnodes ];
+  TacsScalar *dfdXpts = new TacsScalar[ 3*nnodes ];
+
+  for ( int face = 0; face < nfaces; face++ ){
+    for ( int n = 0; n < basis->getNumFaceQuadraturePoints(face); n++ ){
+      TacsScalar X[3], Xd[9], normal[3];
+      TacsScalar A = basis->getFaceNormal(face, n, Xpts, X, Xd, normal);
+      memset(dfdXpts, 0, 3*nnodes*sizeof(TacsScalar));
+
+      basis->addFaceNormalXptSens(face, n, A, Xd, normal,
+                                  dfdA, dfdX, dfdXd, dfdn, dfdXpts);
+
+      TacsScalar proj = 0.0;
+      for ( int k = 0; k < 3*nnodes; k++ ){
+        proj += pert[k]*dfdXpts[k];
+      }
+
+      // Perturb the variables in the forward sense
+      TacsForwardDiffPerturb(Xpts_pert, 3*nnodes, Xpts, pert, dh);
+
+      TacsScalar forward_X[3], forward_Xd[9], forward_normal[3];
+      memset(forward_X, 0, 3*sizeof(TacsScalar));
+      memset(forward_Xd, 0, 9*sizeof(TacsScalar));
+      memset(forward_normal, 0, 3*sizeof(TacsScalar));
+      TacsScalar forward_A = basis->getFaceNormal(face, n, Xpts_pert,
+                                                  forward_X, forward_Xd,
+                                                  forward_normal);
+
+      TacsBackwardDiffPerturb(Xpts_pert, 3*nnodes, Xpts, pert, dh);
+
+      TacsScalar backward_X[3], backward_Xd[9], backward_normal[3];
+      memset(backward_X, 0, 3*sizeof(TacsScalar));
+      memset(backward_Xd, 0, 9*sizeof(TacsScalar));
+      memset(backward_normal, 0, 3*sizeof(TacsScalar));
+      TacsScalar backward_A = basis->getFaceNormal(face, n, Xpts_pert,
+                                                  backward_X, backward_Xd,
+                                                  backward_normal);
+
+      // Form the FD/CS approximate
+      TacsFormDiffApproximate(&forward_A, &backward_A, 1, dh);
+      TacsFormDiffApproximate(forward_X, backward_X, 3, dh);
+      TacsFormDiffApproximate(forward_Xd, backward_Xd, 9, dh);
+      TacsFormDiffApproximate(forward_normal, backward_normal, 3, dh);
+
+      TacsScalar fd = 0.0;
+      fd = dfdA*forward_A;
+      for ( int i = 0; i < 3; i++ ){
+        fd += forward_X[i]*dfdX[i] + forward_normal[i]*dfdn[i];
+      }
+      for ( int i = 0; i < 9; i++ ){
+        fd += forward_Xd[i]*dfdXd[i];
+      }
+
+      // Compute the error
+      int max_err_index, max_rel_index;
+      double max_err = TacsGetMaxError(&proj, &fd, 1, &max_err_index);
+      double max_rel = TacsGetMaxRelError(&proj, &fd, 1, &max_rel_index);
+      int flag = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+      fail = flag || fail;
+
+      if (test_print_level > 0){
+        fprintf(stderr,
+                "Testing the face normal derivative on face %d quadrature point %d\n",
+                face, n);
+        fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+                max_err, max_err_index);
+        fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+                max_rel, max_rel_index);
+      }
+
+      // Print the error if required
+      if (test_print_level > 1){
+        TacsPrintErrorComponents(stderr, "df/dXpts",
+                                 &proj, &fd, 1);
+      }
+      if (test_print_level){ fprintf(stderr, "\n"); }
+    }
+  }
+
+  delete [] Xpts;
+  delete [] pert;
+  delete [] Xpts_pert;
+  delete [] dfdXpts;
+
+  return fail;
+}
+
+int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol ){
+  int fail = 0;
+
+  // The failure value
+  int nquad = basis->getNumQuadraturePoints();
+  int nnodes = basis->getNumNodes();
+
+  // The sensitivity values
+  TacsScalar dfddetJ, dfdXd[9], dfdJ[9];
+
+  // Generate random sensitivity inputs
+  TacsGenerateRandomArray(&dfddetJ, 1);
+  TacsGenerateRandomArray(dfdXd, 9);
+  TacsGenerateRandomArray(dfdJ, 9);
+
+  // Other vectors
+  TacsScalar *Xpts = new TacsScalar[ 3*nnodes ];
+  TacsScalar *pert = new TacsScalar[ 3*nnodes ];
+  TacsGenerateRandomArray(pert, 3*nnodes);
+  TacsGenerateRandomArray(Xpts, 3*nnodes);
+
+  TacsScalar *Xpts_pert = new TacsScalar[ 3*nnodes ];
+  TacsScalar *dfdXpts = new TacsScalar[ 3*nnodes ];
+
+  for ( int n = 0; n < nquad; n++ ){
+    double pt[3];
+    basis->getQuadraturePoint(n, pt);
+
+    TacsScalar Xd[9], J[9];
+    basis->getJacobianTransform(pt, Xpts, Xd, J);
+    memset(dfdXpts, 0, 3*nnodes*sizeof(TacsScalar));
+
+    basis->addJacobianTransformXptSens(pt, Xd, J, dfddetJ, dfdXd, dfdJ, dfdXpts);
+
+    TacsScalar proj = 0.0;
+    for ( int k = 0; k < 3*nnodes; k++ ){
+      proj += pert[k]*dfdXpts[k];
+    }
+
+    // Perturb the variables in the forward sense
+    TacsForwardDiffPerturb(Xpts_pert, 3*nnodes, Xpts, pert, dh);
+
+    TacsScalar forward_Xd[9], forward_J[9];
+    memset(forward_Xd, 0, 9*sizeof(TacsScalar));
+    memset(forward_J, 0, 9*sizeof(TacsScalar));
+    TacsScalar forward_detJ = basis->getJacobianTransform(pt, Xpts_pert,
+                                                          forward_Xd, forward_J);
+
+    TacsBackwardDiffPerturb(Xpts_pert, 3*nnodes, Xpts, pert, dh);
+
+    TacsScalar backward_Xd[9], backward_J[9];
+    memset(backward_Xd, 0, 9*sizeof(TacsScalar));
+    memset(backward_J, 0, 9*sizeof(TacsScalar));
+    TacsScalar backward_detJ = basis->getJacobianTransform(pt, Xpts_pert,
+                                                           backward_Xd, backward_J);
+
+    // Form the FD/CS approximate
+    TacsFormDiffApproximate(&forward_detJ, &backward_detJ, 1, dh);
+    TacsFormDiffApproximate(forward_Xd, backward_Xd, 9, dh);
+    TacsFormDiffApproximate(forward_J, backward_J, 9, dh);
+
+    TacsScalar fd = dfddetJ*forward_detJ;
+    for ( int i = 0; i < 9; i++ ){
+      fd += forward_Xd[i]*dfdXd[i] + forward_J[i]*dfdJ[i];
+    }
+
+    // Compute the error
+    int max_err_index, max_rel_index;
+    double max_err = TacsGetMaxError(&proj, &fd, 1, &max_err_index);
+    double max_rel = TacsGetMaxRelError(&proj, &fd, 1, &max_rel_index);
+    int flag = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+    fail = flag || fail;
+
+    if (test_print_level > 0){
+      fprintf(stderr,
+              "Testing the Jacobian transformation derivative at quadrature point %d\n", n);
+      fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+              max_err, max_err_index);
+      fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+              max_rel, max_rel_index);
+    }
+
+    // Print the error if required
+    if (test_print_level > 1){
+      TacsPrintErrorComponents(stderr, "df/dXpts",
+                               &proj, &fd, 1);
+    }
+    if (test_print_level){ fprintf(stderr, "\n"); }
+  }
+
+  delete [] Xpts;
+  delete [] pert;
+  delete [] Xpts_pert;
+  delete [] dfdXpts;
+
+  return fail;
+}
+
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to material design variables.
+*/
+int TacsTestElementBasis( TACSElementBasis *basis,
+                          double dh,
+                          int test_print_level,
+                          double test_fail_atol,
+                          double test_fail_rtol ){
+  int fail = 0;
+  int flag = TacsTestElementBasisFunctions(basis, dh, test_print_level,
+                                           test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  flag = TacsTestElementBasisFaceNormals(basis, dh, test_print_level,
+                                         test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  flag = TacsTestElementBasisJacobianTransform(basis, dh, test_print_level,
+                                               test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  return fail;
 }

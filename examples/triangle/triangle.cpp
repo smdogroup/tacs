@@ -352,10 +352,6 @@ int main( int argc, char *argv[] ){
   schur_gmres->solve(res, ans);
   assembler->setVariables(ans);
 
-  // ans->setRand(-1.0, 1.0);
-  // assembler->setVariables(ans);
-  assembler->testElement(0, 2);
-
   // Create an TACSToFH5 object for writing output to files
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
   int write_flag = (TACS_OUTPUT_CONNECTIVITY |

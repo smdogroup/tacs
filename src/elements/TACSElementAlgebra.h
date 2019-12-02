@@ -833,9 +833,9 @@ static inline void mat2x2MatTransMult( const TacsScalar A[],
                                        const TacsScalar B[],
                                        TacsScalar C[] ){
   C[0] = A[0]*B[0] + A[1]*B[1];
-  C[2] = A[2]*B[0] + A[3]*B[1];
-
   C[1] = A[0]*B[2] + A[1]*B[3];
+
+  C[2] = A[2]*B[0] + A[3]*B[1];
   C[3] = A[2]*B[2] + A[3]*B[3];
 }
 
@@ -879,9 +879,9 @@ static inline void mat2x2TransMatMult( const TacsScalar A[],
                                        const TacsScalar B[],
                                        TacsScalar C[] ){
   C[0] = A[0]*B[0] + A[2]*B[2];
-  C[2] = A[1]*B[0] + A[3]*B[2];
-
   C[1] = A[0]*B[1] + A[2]*B[3];
+
+  C[2] = A[1]*B[0] + A[3]*B[2];
   C[3] = A[1]*B[1] + A[3]*B[3];
 }
 
@@ -1480,7 +1480,6 @@ static inline void inv3x3Sens( const TacsScalar Ainv[],
   Ad[6] = -Ad[6];
   Ad[7] = -Ad[7];
   Ad[8] = -Ad[8];
-  Ad[9] = -Ad[9];
 }
 
 /*
@@ -1504,7 +1503,7 @@ static inline void det2x2Sens( const TacsScalar A[],
   Ad[0] = A[3];
   Ad[1] = -A[2];
   Ad[2] = -A[1];
-  Ad[3] = Ad[0];
+  Ad[3] = A[0];
 }
 
 /*
@@ -1564,4 +1563,4 @@ static inline void inv2x2Sens( const TacsScalar Ainv[],
   Ad[3] = -Ad[3];
 }
 
-#endif // TACS_ALGEBRA_H
+#endif // TACS_ELEMENT_ALGEBRA_H

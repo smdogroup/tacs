@@ -376,15 +376,15 @@ int TacsTestConstitutiveThermalStrain( TACSConstitutive *con,
 }
 
 int TacsTestConstitutiveFailure( TACSConstitutive *con,
-                                       int elemIndex,
-                                       const double pt[],
-                                       const TacsScalar X[],
-                                       int ndvs,
-                                       const TacsScalar *dvs,
-                                       double dh,
-                                       int test_print_level,
-                                       double test_fail_atol,
-                                       double test_fail_rtol ){
+                                 int elemIndex,
+                                 const double pt[],
+                                 const TacsScalar X[],
+                                 int ndvs,
+                                 const TacsScalar *dvs,
+                                 double dh,
+                                 int test_print_level,
+                                 double test_fail_atol,
+                                 double test_fail_rtol ){
   con->setDesignVars(elemIndex, ndvs, dvs);
 
   int nstress = con->getNumStresses();
@@ -461,6 +461,74 @@ int TacsTestConstitutiveFailure( TACSConstitutive *con,
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
 
+int TacsTestConstitutiveFailureStrainSens( TACSConstitutive *con,
+                                           int elemIndex,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol ){
+  int nstress = con->getNumStresses();
+  TacsScalar *e = new TacsScalar[ nstress ];
+  TacsGenerateRandomArray(e, nstress);
+
+  // Allocate space for the derivatives
+  TacsScalar *dfde = new TacsScalar[ nstress ];
+  TacsScalar *dfde_approx = new TacsScalar[ nstress ];
+
+  // Evaluate the derivatives
+  con->evalFailureStrainSens(elemIndex, pt, X, e, dfde);
+
+  TacsScalar failure = con->evalFailure(elemIndex, pt, X, e);
+
+  // Compute the approximate derivative
+  for ( int i = 0; i < nstress; i++ ){
+    TacsScalar et = e[i];
+#ifdef TACS_USE_COMPLEX
+    e[i] = et + TacsScalar(0.0, dh);
+#else
+    e[i] = et + dh;
+#endif
+
+    TacsScalar failure_forward = con->evalFailure(elemIndex, pt, X, e);
+#ifdef TACS_USE_COMPLEX
+    dfde_approx[i] = TacsImagPart(failure_forward)/dh;
+#else
+    dfde_approx[i] = (failure_forward - failure)/dh;
+#endif
+    e[i] = et;
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(dfde, dfde_approx, nstress, &max_err_index);
+  double max_rel = TacsGetMaxRelError(dfde, dfde_approx, nstress,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the failure index w.r.t. strain for object %s\n",
+            con->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "d(failure)/de",
+                             dfde, dfde_approx, nstress);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] e;
+  delete [] dfde;
+  delete [] dfde_approx;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
 /*
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
@@ -518,6 +586,11 @@ int TacsTestConstitutive( TACSConstitutive *con,
   flag = TacsTestConstitutiveFailure(con, elemIndex, pt, X,
                                      ndvs, dvs, dh, test_print_level,
                                      test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  flag = TacsTestConstitutiveFailureStrainSens(con, elemIndex, pt, X, dh,
+                                               test_print_level,
+                                               test_fail_atol, test_fail_rtol);
   fail = flag || fail;
 
   return fail;

@@ -184,7 +184,7 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
   if (num_params == 3){
     TacsScalar Ainv = 1.0/A;
 
-    // Compute dfda = 1.0/A*dfdn(I - (dfdn^{T}*n)*n)
+    // Compute dfda = 1.0/A*dfdn(I - (n*n^{T}))
     TacsScalar dfda[3];
     dfda[0] = Ainv*dfdn[0];
     dfda[1] = Ainv*dfdn[1];
@@ -1059,9 +1059,9 @@ void TACSElementBasis::addFieldGradientSVSens( const int num_params,
       mat3x3MultTrans(J, Nxi, nx);
       for ( int j = 0 ; j < vars_per_node; j++ ){
         dfdu[0] += ((dfdUt[3*j] + dfdUt[3*j+1] + dfdUt[3*j+2])*N[0] +
-                     dfdUx[3*j]*nx[0] +
-                     dfdUx[3*j+1]*nx[1] +
-                     dfdUx[3*j+2]*nx[2]);
+                    dfdUx[3*j]*nx[0] +
+                    dfdUx[3*j+1]*nx[1] +
+                    dfdUx[3*j+2]*nx[2]);
         dfdu++;
       }
       N++;
@@ -1074,8 +1074,8 @@ void TACSElementBasis::addFieldGradientSVSens( const int num_params,
       mat2x2MultTrans(J, Nxi, nx);
       for ( int j = 0 ; j < vars_per_node; j++ ){
         dfdu[0] += ((dfdUt[3*j] + dfdUt[3*j+1] + dfdUt[3*j+2])*N[0] +
-                     dfdUx[2*j]*nx[0] +
-                     dfdUx[2*j+1]*nx[1]);
+                    dfdUx[2*j]*nx[0] +
+                    dfdUx[2*j+1]*nx[1]);
         dfdu++;
       }
       N++;
