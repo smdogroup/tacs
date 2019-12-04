@@ -208,6 +208,7 @@ class TACSElementBasis : public TACSObject {
                                             const TacsScalar dfXd[],
                                             const TacsScalar dfdJ[],
                                             TacsScalar dfdXpts[] );
+
   /**
     Get the field values at the specified quadrature point
 

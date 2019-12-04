@@ -13,12 +13,15 @@ CXX_OBJS = FElibrary.o \
 	TACSElement3D.o \
 	TACSElementTypes.o \
 	TACSElementBasis.o \
+	TACSLineBasis.o \
 	TACSQuadBasis.o \
 	TACSHexaBasis.o \
 	TACSTriangularBasis.o \
 	TACSTetrahedralBasis.o \
 	TACSQuadBernsteinBasis.o \
 	TACSHexaBernsteinBasis.o \
+	TACSElementMappedBasis.o \
+	TACSBeamBasis.o \
 	TACSLinearElasticity.o \
 	TACSThermoelasticity.o \
 	TACSHeatConduction.o \

@@ -5050,6 +5050,13 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TacsTestElementJacobian(elements[elemNum], elemNum, time,
                           elemXpts, vars, dvars, ddvars,
                           col, dh, print_level, rtol, atol);
+  
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *x = elementSensData;
+  elements[elemNum]->getDesignVars(elemNum, maxDVs, x);
+  TacsTestAdjResProduct(elements[elemNum], elemNum, maxDVs, x,
+                        time, elemXpts, vars, dvars, ddvars,
+                        dh, print_level, rtol, atol);
   TacsTestAdjResXptProduct(elements[elemNum], elemNum, time,
                           elemXpts, vars, dvars, ddvars,
                           dh, print_level, rtol, atol);

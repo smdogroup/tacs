@@ -61,7 +61,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 2;
     }
     else if (comp == TACS_OUTPUT_EXTRAS){
-      return 3;
+      return 4;
     }
   }
   else if (etype == TACS_SCALAR_3D_ELEMENT){
@@ -75,7 +75,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 3;
     }
     else if (comp == TACS_OUTPUT_EXTRAS){
-      return 3;
+      return 4;
     }
   }
   else if (etype == TACS_BEAM_OR_SHELL_ELEMENT){
@@ -89,7 +89,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 9;
     }
     else if (comp == TACS_OUTPUT_EXTRAS){
-      return 3;
+      return 4;
     }
   }
   else if (etype == TACS_PLANE_STRESS_ELEMENT){
@@ -103,7 +103,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 3;
     }
     else if (comp == TACS_OUTPUT_EXTRAS){
-      return 3;
+      return 4;
     }
   }
   else if (etype == TACS_SOLID_ELEMENT){
@@ -117,7 +117,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 6;
     }
     else if (comp == TACS_OUTPUT_EXTRAS){
-      return 3;
+      return 4;
     }
   }
 
@@ -169,6 +169,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      case 3: return "dv3";
       default: return NULL;
       }
     }
@@ -198,6 +199,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      case 3: return "dv3";
       default: return NULL;
       }
     }
@@ -247,6 +249,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      case 3: return "dv3";
       default: return NULL;
       }
     }
@@ -280,6 +283,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      case 3: return "dv3";
       default: return NULL;
       }
     }
@@ -320,6 +324,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 0: return "failure";
       case 1: return "dv1";
       case 2: return "dv2";
+      case 3: return "dv3";
       default: return NULL;
       }
     }

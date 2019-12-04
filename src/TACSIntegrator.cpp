@@ -1225,9 +1225,12 @@ void TACSIntegrator::checkGradients( double dh ){
   // Get the design variable values
   TACSBVec *x = assembler->createDesignVec();
   TACSBVec *xtmp = assembler->createDesignVec();
+  TACSBVec *xpert = assembler->createDesignVec();
   x->incref();
   xtmp->incref();
+  xpert->incref();
   assembler->getDesignVars(x);
+  xpert->setRand(-1.0, 1.0);
 
   // Allocate an array of function values
   TacsScalar *fvs = new TacsScalar[ num_funcs ];
@@ -1253,8 +1256,8 @@ void TACSIntegrator::checkGradients( double dh ){
   // total derivative
 #ifdef TACS_USE_COMPLEX
   // Set the design variables
-  xtmp->set(dh);
-  xtmp->axpy(1.0, x);
+  xtmp->copyValues(x);
+  xtmp->axpy(dh, xpert);
   assembler->setDesignVars(xtmp);
 
   // Integrate forward in time
@@ -1281,8 +1284,8 @@ void TACSIntegrator::checkGradients( double dh ){
   integrateAdjoint();
 
   // Set the design variables
-  xtmp->set(dh);
-  xtmp->axpy(1.0, x);
+  xtmp->copyValues(x);
+  xtmp->axpy(dh, xpert);
   assembler->setDesignVars(xtmp);
 
   // Integrate forward in time
@@ -1299,9 +1302,8 @@ void TACSIntegrator::checkGradients( double dh ){
   assembler->setDesignVars(x);
 
   // Compute the total projected derivative
-  xtmp->set(dh);
   for ( int i = 0; i < num_funcs; i++ ){
-    dfp[i] = dfdx[i]->dot(xtmp);
+    dfp[i] = dfdx[i]->dot(xpert);
   }
 
   printf("%3s %15s %15s %15s\n", "Fn", "Adjoint", "FD", "Relative Err");
@@ -1365,6 +1367,7 @@ void TACSIntegrator::checkGradients( double dh ){
   Xtmp->decref();
   x->decref();
   xtmp->decref();
+  xpert->decref();
   delete [] fvs;
   delete [] ftmp;
   delete [] dfp;

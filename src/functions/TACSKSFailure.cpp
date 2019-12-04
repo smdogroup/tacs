@@ -172,19 +172,19 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
           // Add the failure load to the sum
           if (ksType == DISCRETE){
             TacsScalar fexp = exp(ksWeight*(fail - maxFail));
-            ksFailSum += fexp;
+            ksFailSum += scale*fexp;
           }
           else if (ksType == CONTINUOUS){
             TacsScalar fexp = exp(ksWeight*(fail - maxFail));
-            ksFailSum += weight*detJ*fexp;
+            ksFailSum += scale*weight*detJ*fexp;
           }
           else if (ksType == PNORM_DISCRETE){
             TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight);
-            ksFailSum += fpow;
+            ksFailSum += scale*fpow;
           }
           else if (ksType == PNORM_CONTINUOUS){
             TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight);
-            ksFailSum += weight*detJ*fpow;
+            ksFailSum += scale*weight*detJ*fpow;
           }
         }
       }

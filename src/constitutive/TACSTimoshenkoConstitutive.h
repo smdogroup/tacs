@@ -87,13 +87,17 @@ class TACSTimoshenkoConstitutive : public TACSConstitutive {
 
     The mass moments consist of the mass per unit area and the
   */
-  void getMassMoments( const double pt[], TacsScalar moments[] ){
+  virtual void getMassMoments( int elemIndex, const double pt[], TacsScalar moments[] ){
     moments[0] = rho[0];
     moments[1] = rho[1];
     moments[2] = rho[2];
     moments[3] = rho[3];
   }
 
+  virtual void addMassMomentsDVSens( int elemIndex, const double pt[],
+                                     TacsScalar scale, const TacsScalar psi[],
+                                     int dvLen, TacsScalar dfdx[] ){}
+  
   // Get the number of stress components
   int getNumStresses();
 
@@ -132,8 +136,6 @@ class TACSTimoshenkoConstitutive : public TACSConstitutive {
   }
 
  protected:
-
- private:
   // The constitutive matrix
   TacsScalar C[36];
 

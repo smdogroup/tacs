@@ -587,6 +587,7 @@ class TACSElement : public TACSObject {
                                         const TacsScalar ddvars[],
                                         const TacsScalar dfdq[],
                                         TacsScalar dfdXpts[] ){}
+
   /**
     Compute the output data for visualization
 

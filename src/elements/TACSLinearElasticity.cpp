@@ -489,7 +489,8 @@ void TACSLinearElasticity2D::getOutputData( int elemIndex,
       data[0] = stiff->evalFailure(elemIndex, pt, X, e);
       data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
       data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
-      data += 3;
+      data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
+      data += 4;
     }
   }
 }
@@ -1204,6 +1205,7 @@ void TACSLinearElasticity3D::getOutputData( int elemIndex,
       data[0] = stiff->evalFailure(elemIndex, pt, X, e);
       data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
       data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
+      data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
       data += 3;
     }
   }

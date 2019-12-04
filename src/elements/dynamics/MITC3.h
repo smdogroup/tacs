@@ -18,6 +18,7 @@
 #include "TACSElement.h"
 #include "TACSTimoshenkoConstitutive.h"
 #include "TACSGibbsVector.h"
+#include "TACSBeamBasis.h"
 
 /*
   A Mixed-Interpolation of Tensorial Components element for dynamic
@@ -62,6 +63,12 @@ class MITC3 : public TACSElement {
   const char *getObjectName();
   ElementLayout getLayoutType();
 
+  // Get the element basis
+  // ---------------------
+  TACSElementBasis* getElementBasis(){
+    return &basis;
+  }
+
   // Functions for handling the design variables
   // -------------------------------------------
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
@@ -98,12 +105,52 @@ class MITC3 : public TACSElement {
                     const TacsScalar dvars[], const TacsScalar ddvars[],
                     TacsScalar res[], TacsScalar mat[] );
 
+  // Add the adjoint-residual product
+  // --------------------------------
+  void addAdjResProduct( int elemIndex, double time, TacsScalar scale,
+                         const TacsScalar psi[], const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], int dvLen,
+                         TacsScalar dfdx[] );
+
   // Functions for post-processing
   // -----------------------------
   void getOutputData( int elemIndex, ElementType etype, int write_flag,
                       const TacsScalar Xpts[], const TacsScalar vars[],
                       const TacsScalar dvars[], const TacsScalar ddvars[],
                       int ld_data, TacsScalar *data );
+
+  // Evaluate a point-wise quantity of interest.
+  // ------------------------------------------
+  int evalPointQuantity( int elemIndex, int quantityType, double time,
+                         int n, double pt[], const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], TacsScalar *quantity );
+
+  // Add the derivative of the point quantity w.r.t. the design variables
+  // --------------------------------------------------------------------
+  void addPointQuantityDVSens( int elemIndex, int quantityType, double time,
+                               TacsScalar scale, int n, double pt[],
+                               const TacsScalar Xpts[], const TacsScalar vars[],
+                               const TacsScalar dvars[], const TacsScalar ddvars[],
+                               const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[] );
+
+  // Add the derivative of the point quantity w.r.t. the state variables
+  // -------------------------------------------------------------------
+  void addPointQuantitySVSens( int elemIndex, int quantityType, double time,
+                               TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                               int n, double pt[],
+                               const TacsScalar Xpts[], const TacsScalar vars[],
+                               const TacsScalar dvars[], const TacsScalar ddvars[],
+                               const TacsScalar dfdq[], TacsScalar dfdu[] );
+
+  // Add the derivative of the point quantity w.r.t. the node locations
+  // ------------------------------------------------------------------
+  void addPointQuantityXptSens( int elemIndex, int quantityType, double time,
+                                TacsScalar scale, int n, double pt[],
+                                const TacsScalar Xpts[], const TacsScalar vars[],
+                                const TacsScalar dvars[], const TacsScalar ddvars[],
+                                const TacsScalar dfdq[], TacsScalar dfdXpts[] );
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
@@ -125,19 +172,19 @@ class MITC3 : public TACSElement {
 
   // Get the strain and the parametric location from the element
   // -----------------------------------------------------------
-  void getStrain( TacsScalar e[],
-                  const double pt[],
+  void getStrain( const double pt[],
                   const TacsScalar X[],
-                  const TacsScalar vars[] );
+                  const TacsScalar vars[],
+                  TacsScalar e[] );
 
   // This function adds the sensitivity of the strain to the state variables
   // -----------------------------------------------------------------------
-  void addStrainSVSens( TacsScalar sens[],
-                        const double pt[],
+  void addStrainSVSens( const double pt[],
                         const TacsScalar scale,
                         const TacsScalar esens[],
                         const TacsScalar Xpts[],
-                        const TacsScalar vars[] );
+                        const TacsScalar vars[],
+                        TacsScalar sens[] );
 
   // Test the strain expressions
   void testStrain( const TacsScalar X[] );
@@ -259,6 +306,9 @@ class MITC3 : public TACSElement {
 
   // The element name
   static const char *elemName;
+
+  // The element basis
+  TACSQuadraticBeamBasis basis;
 };
 
 #endif // TACS_MITC3_H

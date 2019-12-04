@@ -4,7 +4,122 @@
 #include "TACSKinematicConstraints.h"
 #include "TACSTimoshenkoConstitutive.h"
 #include "MITC3.h"
+#include "TACSKSFailure.h"
+#include "TACSConstitutiveVerification.h"
 #include "TACSElementVerification.h"
+
+class SquareSection : public TACSTimoshenkoConstitutive {
+public:
+  static const double k = 5.0/6.0;
+
+  SquareSection( TacsScalar _density, TacsScalar _E, TacsScalar _G,
+                 TacsScalar _w, int _wNum,
+                 const TacsScalar axis[] ):
+    TACSTimoshenkoConstitutive(NULL, NULL, axis){
+    density = _density;
+    E = _E;
+    G = _G;
+    w = _w;
+    wNum = _wNum;
+    if (wNum < 0){
+      wNum = 0;
+    }
+
+    computeProperties();
+  }
+
+  void computeProperties(){
+    // Set the properties based on the width/thickness variables
+    TacsScalar A = w*w;
+    TacsScalar Iy = w*w*w*w/12.0;
+    TacsScalar Iz = Iy;
+    TacsScalar J = Iy + Iz;
+    TacsScalar Iyz = 0.0;
+
+    // Set the entries of the stiffness matrix
+    memset(C, 0, 36*sizeof(TacsScalar));
+    C[0] = E*A;
+    C[7] = G*J;
+    C[14] = E*Iy;
+    C[21] = E*Iz;
+    C[28] = k*G*A;
+    C[35] = k*G*A;
+
+    // Set the entries of the density matrix
+    rho[0] = density*A;
+    rho[1] = density*Iy;
+    rho[2] = density*Iz;
+    rho[3] = density*Iyz;
+  }
+
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+    if (dvNums){
+      dvNums[0] = wNum;
+    }
+    return 1;
+  }
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
+    w = dvs[0];
+    computeProperties();
+    return 1;
+  }
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
+    dvs[0] = w;
+    return 1;
+  }
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] ){
+    lb[0] = 0.0;
+    ub[0] = 10.0;
+    return 1;
+  }
+  void addStressDVSens( int elemIndex, const double pt[], const TacsScalar X[],
+                        const TacsScalar e[], TacsScalar scale,
+                        const TacsScalar psi[], int dvLen, TacsScalar dfdx[] ){
+    dfdx[0] += scale*(2.0*w*(E*e[0]*psi[0] + k*G*(e[4]*psi[4] + e[5]*psi[5])) +
+                      (w*w*w/3.0)*(2.0*G*e[1]*psi[1] + E*(e[2]*psi[2] + e[3]*psi[3])));
+  }
+  void addMassMomentsDVSens( int elemIndex, const double pt[],
+                             TacsScalar scale, const TacsScalar psi[],
+                             int dvLen, TacsScalar dfdx[] ){
+    dfdx[0] += scale*density*(2.0*w*psi[0] + ((w*w*w)/3.0)*(psi[1] + psi[2]));
+  }
+
+  TacsScalar evalDensity( int elemIndex, const double pt[],
+                          const TacsScalar X[] ){
+    return density*w*w;
+  }
+  void addDensityDVSens( int elemIndex, const double pt[],
+                         const TacsScalar X[], const TacsScalar scale,
+                         int dvLen, TacsScalar dfdx[] ){
+    dfdx[0] += 2.0*scale*density*w;
+  }
+
+  TacsScalar evalFailure( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar e[] ){
+    return E*w*w*fabs(e[0])/10e3;
+  }
+  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
+                                    const TacsScalar X[], const TacsScalar e[],
+                                    TacsScalar sens[] ){
+    memset(sens, 0, 6*sizeof(TacsScalar));
+    if (e[0] >= 0.0){
+      sens[0] = E*w*w/10e3;
+    }
+    else {
+      sens[0] = -E*w*w/10e3;
+    }
+  }
+  void addFailureDVSens( int elemIndex, const double pt[],
+                         const TacsScalar X[], const TacsScalar e[],
+                         TacsScalar scale, int dvLen, TacsScalar dfdx[] ){
+    dfdx[0] += 2.0*scale*E*w*fabs(e[0])/10e3;
+  }
+
+  TacsScalar density, E, G;
+  TacsScalar w;
+  int wNum;
+};
 
 /*
   Create and return the TACSAssembler object for the four bar
@@ -65,44 +180,63 @@ TACSAssembler *four_bar_mechanism( int nA, int nB, int nC ){
   TACSRevoluteConstraint *revD =
     new TACSRevoluteConstraint(fixed_point, ptD, revDirD);
 
-  // Create the stiffness objects for each element
-  TacsScalar mA = 1.997; // kg/m
-  TacsScalar IA = 42.60e-6; // kg*m
-
-  TacsScalar EA_A = 52.99e6;
-  TacsScalar GJ_A = 733.5;
-  TacsScalar kGAz_A = 16.88e6;
-  TacsScalar EIz_A = 1131.0;
-
-  // The properties of the second beam
-  TacsScalar mB = 0.4992; // kg*m^2/m
-  TacsScalar IB = 2.662e-6; // kg*m^2/m
-
-  TacsScalar EA_B = 13.25e6;
-  TacsScalar GJ_B = 45.84;
-  TacsScalar kGAz_B = 4.220e6;
-  TacsScalar EIz_B = 70.66;
-
   // Set the reference axes for each beam
   TacsScalar axis_A[] = {-1.0, 0.0, 0.0};
   TacsScalar axis_B[] = {0.0, 1.0, 0.0};
   TacsScalar axis_C[] = {1.0, 0.0, 0.0};
 
+  // // Create the stiffness objects for each element
+  // TacsScalar mA = 1.997; // kg/m
+  // TacsScalar IA = 42.60e-6; // kg*m
+
+  // TacsScalar EA_A = 52.99e6;
+  // TacsScalar GJ_A = 733.5;
+  // TacsScalar kGAz_A = 16.88e6;
+  // TacsScalar EIz_A = 1131.0;
+
+  // // The properties of the second beam
+  // TacsScalar mB = 0.4992; // kg*m^2/m
+  // TacsScalar IB = 2.662e-6; // kg*m^2/m
+
+  // TacsScalar EA_B = 13.25e6;
+  // TacsScalar GJ_B = 45.84;
+  // TacsScalar kGAz_B = 4.220e6;
+  // TacsScalar EIz_B = 70.66;
+
   // Create the Timoshenko stiffness object
+  // TACSTimoshenkoConstitutive *stiffA =
+  //   new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
+  //                                  EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+  //                                  axis_A);
+
+  // TACSTimoshenkoConstitutive *stiffB =
+  //   new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
+  //                                  EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
+  //                                  axis_B);
+
+  // TACSTimoshenkoConstitutive *stiffC =
+  //   new TACSTimoshenkoConstitutive(mB, IB, IB, 0.0,
+  //                                  EA_B, GJ_B, EIz_B, EIz_B, kGAz_B, kGAz_B,
+  //                                  axis_C);
+
+  // Set the material properties
+  TacsScalar density = 7800.0;
+  TacsScalar E = 207e9;
+  TacsScalar nu = 0.3;
+  TacsScalar G = 0.5*E/(1.0 + nu);
+
+  TacsScalar wA = 0.016;
+  TacsScalar wB = 0.008;
+  int wANum = 0, wBNum = 1;
+
   TACSTimoshenkoConstitutive *stiffA =
-    new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
-                                   EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
-                                   axis_A);
+    new SquareSection(density, E, G, wA, wANum, axis_A);
 
   TACSTimoshenkoConstitutive *stiffB =
-    new TACSTimoshenkoConstitutive(mA, IA, IA, 0.0,
-                                   EA_A, GJ_A, EIz_A, EIz_A, kGAz_A, kGAz_A,
-                                   axis_B);
+    new SquareSection(density, E, G, wA, wANum, axis_B);
 
   TACSTimoshenkoConstitutive *stiffC =
-    new TACSTimoshenkoConstitutive(mB, IB, IB, 0.0,
-                                   EA_B, GJ_B, EIz_B, EIz_B, kGAz_B, kGAz_B,
-                                   axis_C);
+    new SquareSection(density, E, G, wB, wBNum, axis_C);
 
   // Set up the connectivity
   MITC3 *beamA = new MITC3(stiffA, gravity);
@@ -407,8 +541,8 @@ int main( int argc, char *argv[] ){
   else {
     // Create the finite-element model
     int nA = 4, nB = 8, nC = 4;
-    TACSAssembler *tacs = four_bar_mechanism(nA, nB, nC);
-    tacs->incref();
+    TACSAssembler *assembler = four_bar_mechanism(nA, nB, nC);
+    assembler->incref();
 
     // Set the final time
     double tf = 12.0;
@@ -418,7 +552,7 @@ int main( int argc, char *argv[] ){
 
     // Create the integrator class
     TACSIntegrator *integrator =
-      new TACSBDFIntegrator(tacs, 0.0, tf, num_steps, 2);
+      new TACSBDFIntegrator(assembler, 0.0, tf, num_steps, 2);
     integrator->incref();
 
     // Set the integrator options
@@ -429,12 +563,30 @@ int main( int argc, char *argv[] ){
     // Integrate the equations of motion forward in time
     integrator->integrate();
 
+    // Create the continuous KS function
+    double ksRho = 100.0;
+    TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
+    ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
+
+    // Set the functions
+    TACSFunction *funcs = ksfunc;
+    integrator->setFunctions(1, &funcs);
+
+    TacsScalar fval;
+    integrator->evalFunctions(&fval);
+    printf("Function value: %15.10e\n", TacsRealPart(fval));
+
+    // Evaluate the adjoint
+    integrator->integrateAdjoint();
+
+    // Get the gradient
+    TACSBVec *dfdx;
+    integrator->getGradient(0, &dfdx);
+
+    integrator->checkGradients(1e-8);
+    
     // Set the output options/locations
     int elem[3];
-    // elem[0] = nA/2;
-    // elem[1] = nA + nB/2;
-    // elem[2] = nA + nB + nC/2;
-    // double param[][1] = {{-1.0}, {-1.0}, {-1.0}};
     elem[0] = nA/2;
     elem[1] = nA + nB/2;
     elem[2] = nA + nB + nC/2;
@@ -446,32 +598,28 @@ int main( int argc, char *argv[] ){
       sprintf(filename, "mid_beam_%d.dat", pt+1);
       FILE *fp = fopen(filename, "w");
 
-      fprintf(fp, "Variables = t, u0, v0, w0, sx0, st0, sy1, sz1, sxy0, sxz0\n");
+      fprintf(fp, "Variables = t, u0, v0, w0, quantity\n");
 
       // Write out data from the beams
       TACSBVec *q = NULL;
       for ( int k = 0; k < num_steps+1; k++ ){
-        TacsScalar X[3*3], vars[8*3];
+        TacsScalar X[3*3], vars[8*3], dvars[8*3], ddvars[8*3];
         double time = integrator->getStates(k, &q, NULL, NULL);
-        tacs->setVariables(q);
-        TACSElement *element = tacs->getElement(elem[pt], X, vars);
+        assembler->setVariables(q);
+        TACSElement *element = assembler->getElement(elem[pt], X, vars, dvars, ddvars);
 
-//        TacsScalar e[6], s[6];
-//        element->getStrain(e, param[pt], X, vars);
-//        TACSConstitutive *con = element->getConstitutive();
-//        con->calculateStress(param[pt], e, s);
-        TacsScalar s[6];
-        s[0] = s[1] = s[2] = s[3] = s[4] = s[5] = 0.0;
+        TacsScalar quantity;
+        element->evalPointQuantity(elem[pt], TACS_FAILURE_INDEX, time,
+                                   0, param[pt], X, vars, dvars, ddvars, &quantity);
 
-        fprintf(fp, "%e  %e %e %e  %e %e %e  %e %e %e\n",
-                time, vars[0], vars[1], vars[2],
-                s[0], s[1], s[2], s[3], s[4], s[5]);
+        fprintf(fp, "%e  %e %e %e  %e\n",
+                time, vars[0], vars[1], vars[2], quantity);
       }
       fclose(fp);
     }
 
     integrator->decref();
-    tacs->decref();
+    assembler->decref();
   }
 
   MPI_Finalize();

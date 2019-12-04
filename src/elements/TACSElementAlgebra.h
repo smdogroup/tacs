@@ -25,6 +25,26 @@
 /*
   Compute the cross-product
 
+  out = (x cross y)
+
+  input:
+  x:    the first input 3-vector
+  y:    the second input 3-vector
+
+  output:
+  out:  the resulting vector
+*/
+static inline void crossProduct( const TacsScalar x[],
+                                 const TacsScalar y[],
+                                 TacsScalar out[] ){
+  out[0] = (x[1]*y[2] - x[2]*y[1]);
+  out[1] = (x[2]*y[0] - x[0]*y[2]);
+  out[2] = (x[0]*y[1] - x[1]*y[0]);
+}
+
+/*
+  Compute the cross-product
+
   out = a*(x cross y)
 
   input:

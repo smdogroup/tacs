@@ -605,7 +605,7 @@ void MITC3::computeEnergies( int elemIndex,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(&u, rho);
+    stiff->getMassMoments(elemIndex, &u, rho);
 
     // Compute the inertia tensor
     TacsScalar Jr[6];
@@ -771,7 +771,7 @@ void MITC3::addResidual( int elemIndex,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(&u, rho);
+    stiff->getMassMoments(elemIndex, &u, rho);
 
     // The following is used to evaluate the contributions from the
     // kinetic energy terms
@@ -988,7 +988,7 @@ void MITC3::addJacobian( int elemIndex, double time,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(&u, rho);
+    stiff->getMassMoments(elemIndex, &u, rho);
 
     // Compute the inertia tensor
     TacsScalar Jr[6];
@@ -1191,6 +1191,179 @@ void MITC3::addJacobian( int elemIndex, double time,
     Jp[ldj+1] += scale*lamb;
     Jp[2*(ldj+1)] += scale*lamb;
     Jp[3*(ldj+1)] += scale*lamb;
+  }
+}
+
+void MITC3::addAdjResProduct( int elemIndex, double time, TacsScalar scale,
+                              const TacsScalar psi[], const TacsScalar X[],
+                              const TacsScalar vars[], const TacsScalar dvars[],
+                              const TacsScalar ddvars[], int dvLen,
+                              TacsScalar dfdx[] ){
+  // Set the gravity vector - if one exists
+  TacsScalar g[3] = {0.0, 0.0, 0.0};
+  if (gravity){
+    const TacsScalar *_g;
+    gravity->getVector(&_g);
+    g[0] = _g[0];  g[1] = _g[1];  g[2] = _g[2];
+  }
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the directors at the nodes
+  TacsScalar d1[3*NUM_NODES], d2[3*NUM_NODES];
+  TacsScalar d1dq[12*NUM_NODES], d2dq[12*NUM_NODES];
+  computeDirectors(d1, d2, vars, Xr);
+  computeDirectorDeriv(d1dq, d2dq, vars, Xr);
+
+  // Compute the angular velocity and acceleration at the nodes
+  TacsScalar omega[3*NUM_NODES], domega[3*NUM_NODES];
+  computeAngularVelocity(omega, vars, dvars);
+  computeAngularAccel(domega, vars, dvars, ddvars);
+
+  // Compute the strain at the tying points
+  TacsScalar g12[2], g13[2];
+  TacsScalar B12[2*8*NUM_NODES], B13[2*8*NUM_NODES];
+  computeTyingBmat(g12, g13, B12, B13,
+                   X, Xr, vars, d1, d2, d1dq, d2dq);
+
+  // Evaluate the kinetic energy of the element
+  for ( int i = 0; i < ORDER; i++ ){
+      // Set the Gauss quadrature points
+    const double u = gaussPts[i];
+
+    // Evaluate the shape functions
+    double N[NUM_NODES], Na[NUM_NODES];
+    computeShapeFunc(u, N, Na);
+
+    // Use the local frame to compute the
+    TacsScalar n1[3], n2[3];
+    computeFrameNormals(N, Xr, n1, n2);
+
+    // Assemble the frame at the current point
+    TacsScalar Xa[3], Xd[9], Xdinv[9];
+    innerProduct(Na, X, Xa);
+    assembleFrame(Xa, n1, n2, Xd);
+    TacsScalar det = inv3x3(Xd, Xdinv);
+    det *= gaussWts[i];
+
+    // Evaluate the areal mass properties
+    TacsScalar rho[4];
+    stiff->getMassMoments(elemIndex, &u, rho);
+
+    // Store sensitivity vectors
+    TacsScalar drho[4] = {0.0, 0.0, 0.0, 0.0};
+
+    // The following is used to evaluate the contributions from the
+    // kinetic energy terms
+    // ---------------------------------------------------
+    // Evaluate the acceleration at the quadrature point
+    TacsScalar a0[3];
+    innerProduct8(N, ddvars, a0);
+
+    // Compute the value of omega at the current point
+    TacsScalar omeg[3], domeg[3];
+    innerProduct(N, omega, omeg);
+    innerProduct(N, domega, domeg);
+
+    // Compute the inertia tensor
+    TacsScalar Jr[6];
+    computeInertiaTensor(rho, n1, n2, Jr);
+
+    // Remove the normal component from angular velocity/accel.
+    // w = Jr*omega, dw = Jr*dot{omega}
+    TacsScalar w[3], dw[3];
+    mat3x3SymmMult(Jr, omeg, w);
+    mat3x3SymmMult(Jr, domeg, dw);
+
+    // Add the contribution to the residual
+    const TacsScalar *r = psi;
+    const TacsScalar *q = vars, *dq = dvars;
+    for ( int ii = 0; ii < NUM_NODES; ii++ ){
+      // Add the contributions from the rectilinear velocity
+      drho[0] += det*N[ii]*(r[0]*a0[0] + r[1]*a0[1] + r[2]*a0[2]);
+
+      /*
+      // Add the contributions from the angular velocity
+      // S^{T}*dw + 2*dot{S}^{T}*w
+      TacsScalar eta = q[3];
+      const TacsScalar *eps = &q[4];
+      TacsScalar deta = dq[3];
+      const TacsScalar *deps = &dq[4];
+
+      // Add S^{T}*dw
+      addSRateTransProduct(det*N[ii], eta, eps, dw,
+                           &r[3], &r[4]);
+
+      // Add 2*dot{S}^{T}*w
+      addSRateTransProduct(2.0*det*N[ii], deta, deps, w,
+                           &r[3], &r[4]);
+      */
+      r += 8;
+      q += 8;
+      dq += 8;
+    }
+
+    // Compute d(Xdinv)/dz1 and d(Xdinv)/dz2
+    TacsScalar z1Xdinv[9], z2Xdinv[9];
+    computeFrameRateNormals(Na, Xr, Xdinv, z1Xdinv, z2Xdinv);
+
+    // Compute the transformation to local coordinates
+    TacsScalar T[9];
+    computeTransform(T, Xa);
+
+    // Compute the derivative of U along the axial direction and
+    // evaluate the director at the current point
+    TacsScalar Ua[3], d1u[3], d2u[3];
+    innerProduct8(Na, vars, Ua);
+    innerProduct(N, d1, d1u);
+    innerProduct(N, d2, d2u);
+
+    // Derivatives of the displacement w.r.t. the beam parameters
+    TacsScalar Ur[9];
+    assembleFrame(Ua, d1u, d2u, Ur);
+
+    // Derivative of the directors d1 and d2 along the axial direction
+    TacsScalar d1a[3], d2a[3];
+    innerProduct(Na, d1, d1a);
+    innerProduct(Na, d2, d2a);
+
+    // Compute the displacement-based strain
+    TacsScalar e[6], B[6*8*NUM_NODES];
+    evalBmat(e, B, N, Na, Ur, d1a, d2a,
+             Xdinv, z1Xdinv, z2Xdinv, T, d1dq, d2dq);
+
+    // Add the contribution from the tying strain
+    double N12[2];
+    computeTyingFunc(u, N12);
+    addTyingStrain(e, N12, g12, g13);
+    addTyingBmat(B, N12, B12, B13);
+
+    // Compute the stress based on the strain values
+    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
+
+    // Set the stress-sensitivity values
+    TacsScalar ds[6] = {0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0};
+
+    // Add the contribution to the residual
+    r = psi;
+    const TacsScalar *b = B;
+    for ( int ii = 0; ii < NUM_NODES; ii++ ){
+      drho[0] -= det*N[ii]*(g[0]*r[0] + g[1]*r[1] + g[2]*r[2]);
+
+      for ( int jj = 0; jj < 8; jj++ ){
+        for ( int k = 0; k < 6; k++ ){
+          ds[k] += b[k]*r[0];
+        }
+        b += 6;
+        r++;
+      }
+    }
+
+    stiff->addMassMomentsDVSens(elemIndex, &u, scale, drho, dvLen, dfdx);
+    stiff->addStressDVSens(elemIndex, &u, Xpt, e, scale*det, ds, dvLen, dfdx);
   }
 }
 
@@ -2516,6 +2689,83 @@ void MITC3::addTyingGmat( TacsScalar J[],
 }
 
 /*
+  Evaluate a point-wise quantity of interest
+*/
+int MITC3::evalPointQuantity( int elemIndex, int quantityType, double time,
+                              int n, double pt[], const TacsScalar Xpts[],
+                              const TacsScalar vars[], const TacsScalar dvars[],
+                              const TacsScalar ddvars[], TacsScalar *quantity ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    if (quantity){
+      TacsScalar X[3] = {0.0, 0.0, 0.0};
+      TacsScalar e[6];
+      getStrain(pt, Xpts, vars, e);
+      *quantity = stiff->evalFailure(elemIndex, pt, X, e);
+    }
+
+    return 1;
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    if (quantity){
+      TacsScalar X[3] = {0.0, 0.0, 0.0};
+      *quantity = stiff->evalDensity(elemIndex, pt, X);
+    }
+
+    return 1;
+  }
+
+  return 0;
+}
+
+/*
+  Add the derivative of the point quantity w.r.t. the design variables
+*/
+void MITC3::addPointQuantityDVSens( int elemIndex, int quantityType, double time,
+                                    TacsScalar scale, int n, double pt[],
+                                    const TacsScalar Xpts[], const TacsScalar vars[],
+                                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                                    const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[] ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar X[3] = {0.0, 0.0, 0.0};
+    TacsScalar e[6];
+    getStrain(pt, Xpts, vars, e);
+    stiff->addFailureDVSens(elemIndex, pt, X, e, scale, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY){
+    TacsScalar X[3] = {0.0, 0.0, 0.0};
+    stiff->addDensityDVSens(elemIndex, pt, X, scale, dvLen, dfdx);
+  }
+}
+
+/*
+  Add the derivative of the point quantity w.r.t. the state variables
+*/
+void MITC3::addPointQuantitySVSens( int elemIndex, int quantityType, double time,
+                                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                                    int n, double pt[],
+                                    const TacsScalar Xpts[], const TacsScalar vars[],
+                                    const TacsScalar dvars[], const TacsScalar ddvars[],
+                                    const TacsScalar dfdq[], TacsScalar dfdu[] ){
+  if (quantityType == TACS_FAILURE_INDEX){
+    TacsScalar X[3] = {0.0, 0.0, 0.0};
+    TacsScalar e[6], dfde[6];
+    getStrain(pt, Xpts, vars, e);
+    stiff->evalFailureStrainSens(elemIndex, pt, X, e, dfde);
+
+    addStrainSVSens(pt, alpha, dfde, Xpts, vars, dfdu);
+  }
+}
+
+/*
+  Add the derivative of the point quantity w.r.t. the node locations
+*/
+void MITC3::addPointQuantityXptSens( int elemIndex, int quantityType, double time,
+                                     TacsScalar scale, int n, double pt[],
+                                     const TacsScalar Xpts[], const TacsScalar vars[],
+                                     const TacsScalar dvars[], const TacsScalar ddvars[],
+                                     const TacsScalar dfdq[], TacsScalar dfdXpts[] ){}
+
+/*
   Get the constitutive object
 */
 TACSConstitutive *MITC3::getConstitutive(){
@@ -2555,10 +2805,10 @@ TacsScalar MITC3::getDetJacobian( const double pt[],
 /*
   Evaluate the strain at a parametric point within the element
 */
-void MITC3::getStrain( TacsScalar e[],
-                       const double pt[],
+void MITC3::getStrain( const double pt[],
                        const TacsScalar X[],
-                       const TacsScalar vars[] ){
+                       const TacsScalar vars[],
+                       TacsScalar e[] ){
   const double u = pt[0];
 
   // Compute the reference frames at the nodes
@@ -2620,6 +2870,90 @@ void MITC3::getStrain( TacsScalar e[],
   addTyingStrain(e, N12, g12, g13);
 }
 
+
+/*
+  Add the derivative of the product of the array esens with the strain
+  with respect to the state variables
+*/
+void MITC3::addStrainSVSens( const double pt[],
+                             const TacsScalar scale,
+                             const TacsScalar esens[],
+                             const TacsScalar X[],
+                             const TacsScalar vars[],
+                             TacsScalar sens[] ){
+  const double u = pt[0];
+
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9*NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Compute the directors at the nodes
+  TacsScalar d1[3*NUM_NODES], d2[3*NUM_NODES];
+  TacsScalar d1dq[12*NUM_NODES], d2dq[12*NUM_NODES];
+  computeDirectors(d1, d2, vars, Xr);
+  computeDirectorDeriv(d1dq, d2dq, vars, Xr);
+
+  // Compute the strain at the tying points
+  TacsScalar g12[2], g13[2];
+  TacsScalar B12[2*8*NUM_NODES], B13[2*8*NUM_NODES];
+  computeTyingBmat(g12, g13, B12, B13,
+                   X, Xr, vars, d1, d2, d1dq, d2dq);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES], Na[NUM_NODES];
+  computeShapeFunc(u, N, Na);
+
+  // Use the local frame to compute the
+  TacsScalar n1[3], n2[3];
+  computeFrameNormals(N, Xr, n1, n2);
+
+  // Assemble the frame at the current point
+  TacsScalar Xa[3], Xd[9], Xdinv[9];
+  innerProduct(Na, X, Xa);
+  assembleFrame(Xa, n1, n2, Xd);
+  inv3x3(Xd, Xdinv);
+
+  // Compute d(Xdinv)/dz1 and d(Xdinv)/dz2
+  TacsScalar z1Xdinv[9], z2Xdinv[9];
+  computeFrameRateNormals(Na, Xr, Xdinv, z1Xdinv, z2Xdinv);
+
+  // Compute the frame normals
+  TacsScalar T[9];
+  computeTransform(T, Xa);
+
+  // Compute the derivative of U along the axial direction and
+  // evaluate the director at the current point
+  TacsScalar Ua[3], d1u[3], d2u[3];
+  innerProduct8(Na, vars, Ua);
+  innerProduct(N, d1, d1u);
+  innerProduct(N, d2, d2u);
+
+  // Derivatives of the displacement w.r.t. the beam parameters
+  TacsScalar Ur[9];
+  assembleFrame(Ua, d1u, d2u, Ur);
+
+  // Derivative of the directors d1 and d2 along the axial direction
+  TacsScalar d1a[3], d2a[3];
+  innerProduct(Na, d1, d1a);
+  innerProduct(Na, d2, d2a);
+
+  // Compute the displacement-based strain
+  TacsScalar e[6], B[6*8*NUM_NODES];
+  evalBmat(e, B, N, Na, Ur, d1a, d2a,
+           Xdinv, z1Xdinv, z2Xdinv, T, d1dq, d2dq);
+
+  // Add the contribution from the tying strain
+  double N12[2];
+  computeTyingFunc(u, N12);
+  addTyingBmat(B, N12, B12, B13);
+
+  const TacsScalar *b = B;
+  for ( int i = 0; i < 8*NUM_NODES; i++ ){
+    sens[i] += scale*strainProduct(b, esens);
+    b += 6;
+  }
+}
+
 /*
   Get the output data from this element and place it in a real
   array for visualization later. The values generated for visualization
@@ -2655,7 +2989,7 @@ void MITC3::getOutputData( int elemIndex,
       pt[0] = -1.0 + 1.0*n;
 
       TacsScalar strain[6], stress[6];
-      getStrain(strain, pt, Xpts, vars);
+      getStrain(pt, Xpts, vars, strain);
 
       int index = 0;
       if (write_flag & TACS_OUTPUT_NODES){
@@ -2865,7 +3199,7 @@ void MITC3::testStrain( const TacsScalar X[] ){
     vars[8*k+3] = 1.0;
     vars[8*k+4] = vars[8*k+5] = vars[8*k+6] = vars[8*k+7] = 0.0;
   }
-  getStrain(e, &u, X, vars);
+  getStrain(&u, X, vars, e);
 
   // Compute the rotation matrix C
   q[0] = 0.5;
@@ -2887,7 +3221,7 @@ void MITC3::testStrain( const TacsScalar X[] ){
     // Copy the values of the quaternions
     memcpy(&vars[8*k+3], q, 4*sizeof(TacsScalar));
   }
-  getStrain(fd, &u, X, vars);
+  getStrain(&u, X, vars, fd);
 
   // Write out the error components of the strain
   sprintf(descript, "strain before/after rigid rotation");
