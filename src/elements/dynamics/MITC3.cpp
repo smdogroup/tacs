@@ -2729,11 +2729,11 @@ void MITC3::addPointQuantityDVSens( int elemIndex, int quantityType, double time
     TacsScalar X[3] = {0.0, 0.0, 0.0};
     TacsScalar e[6];
     getStrain(pt, Xpts, vars, e);
-    stiff->addFailureDVSens(elemIndex, pt, X, e, scale, dvLen, dfdx);
+    stiff->addFailureDVSens(elemIndex, pt, X, e, scale*dfdq[0], dvLen, dfdx);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     TacsScalar X[3] = {0.0, 0.0, 0.0};
-    stiff->addDensityDVSens(elemIndex, pt, X, scale, dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, pt, X, scale*dfdq[0], dvLen, dfdx);
   }
 }
 
@@ -2752,7 +2752,7 @@ void MITC3::addPointQuantitySVSens( int elemIndex, int quantityType, double time
     getStrain(pt, Xpts, vars, e);
     stiff->evalFailureStrainSens(elemIndex, pt, X, e, dfde);
 
-    addStrainSVSens(pt, alpha, dfde, Xpts, vars, dfdu);
+    addStrainSVSens(pt, alpha*dfdq[0], dfde, Xpts, vars, dfdu);
   }
 }
 

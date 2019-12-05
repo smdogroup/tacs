@@ -1257,7 +1257,7 @@ void TACSIntegrator::checkGradients( double dh ){
 #ifdef TACS_USE_COMPLEX
   // Set the design variables
   xtmp->copyValues(x);
-  xtmp->axpy(dh, xpert);
+  xtmp->axpy(TacsScalar(0.0, dh), xpert);
   assembler->setDesignVars(xtmp);
 
   // Integrate forward in time

@@ -96,7 +96,7 @@ void TACSStructuralMass::elementWiseEval( EvaluationType ftype,
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
         TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
-        totalMass += weight*detJ*density;
+        totalMass += scale*weight*detJ*density;
       }
     }
   }
