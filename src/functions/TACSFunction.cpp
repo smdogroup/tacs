@@ -18,7 +18,7 @@
 
 #include "TACSFunction.h"
 #include "TACSAssembler.h"
-#include "FElibrary.h"
+#include "TacsUtilities.h"
 
 /*
   Base TACSFunction implementation
@@ -105,7 +105,7 @@ void TACSFunction::setDomain( int _numElems, const int _elemNums[] ){
     }
 
     memcpy(elemNums, _elemNums, numElems*sizeof(int));
-    numElems = FElibrary::uniqueSort(elemNums, numElems);
+    numElems = TacsUniqueSort(numElems, elemNums);
   }
 }
 
@@ -154,7 +154,7 @@ void TACSFunction::addDomain( int _numElems, const int _elemNums[] ){
       }
     }
 
-    numElems = FElibrary::uniqueSort(elemNums, numElems);
+    numElems = TacsUniqueSort(numElems, elemNums);
   }
 }
 

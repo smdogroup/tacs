@@ -19,8 +19,7 @@
 #include <stdio.h>
 #include "BCSRMat.h"
 #include "BCSRMatImpl.h"
-#include "MatUtils.h"
-#include "FElibrary.h"
+#include "TacsUtilities.h"
 #include "tacslapack.h"
 
 /*
@@ -391,7 +390,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *smat,
       // Check if adding this row will exceed the allowable size
       if (nnz + num_cols > max_size){
         max_size = 2*max_size + num_cols;
-        matutils::ExtendArray(&cols, nnz, max_size);
+        TacsExtendArray(&cols, nnz, max_size);
       }
 
       for ( int k = 0; k < num_cols; k++, nnz++ ){
@@ -422,14 +421,14 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *smat,
         // Merge the two arrays into cols
         int brpj = bmat->data->rowp[j];
         int brsize = bmat->data->rowp[j+1] - brpj;
-        num_cols = FElibrary::mergeArrays(tcols, num_cols,
-                                          &(bmat->data->cols[brpj]), brsize);
+        num_cols = TacsMergeSortedArrays(num_cols, tcols, brsize,
+                                         &(bmat->data->cols[brpj]));
       }
 
       // Check if adding this row will exceed the allowable size
       if (nnz + num_cols > max_size){
         max_size = 2*max_size + num_cols;
-        matutils::ExtendArray(&cols, nnz, max_size);
+        TacsExtendArray(&cols, nnz, max_size);
       }
 
       for ( int k = 0; k < num_cols; k++, nnz++ ){
@@ -441,7 +440,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *smat,
 
   // Clip the cols array to the correct size
   if (max_size > nnz){
-    matutils::ExtendArray(&cols, nnz, nnz);
+    TacsExtendArray(&cols, nnz, nnz);
   }
 
   delete [] tcols;
@@ -560,7 +559,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *B, double fill ){
     // Extend the array if required
     if (rowp[i] + nz > max_size){
       max_size = 2*max_size + nz;
-      matutils::ExtendArray(&cols, rowp[i], max_size);
+      TacsExtendArray(&cols, rowp[i], max_size);
     }
 
     // Set the non-zeros from this row
@@ -571,7 +570,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, BCSRMat *B, double fill ){
   // Clip the cols array to the correct size
   int nnz = rowp[nrows];
   if (max_size > nnz){
-    matutils::ExtendArray(&cols, nnz, nnz);
+    TacsExtendArray(&cols, nnz, nnz);
   }
 
   delete [] new_nz;
@@ -651,7 +650,7 @@ void BCSRMat::computeILUk( BCSRMat *mat, int levFill,
 
     // No diagonal element associated with row i, add one!
     if (!diag_flag){
-      nr = FElibrary::mergeArrays(rcols, nr, &i, 1);
+      nr = TacsMergeSortedArrays(nr, rcols, 1, &i);
     }
 
     // Now, perform the symbolic factorization -- this generates new entries
@@ -699,8 +698,8 @@ void BCSRMat::computeILUk( BCSRMat *mat, int levFill,
       int mat_ext = (int)((fill - 1.0)*mat_size);
       if (nr > mat_ext){ mat_ext = nr; }
       max_size = max_size + mat_ext;
-      matutils::ExtendArray( &cols, size, max_size );
-      matutils::ExtendArray( &levs, size, max_size );
+      TacsExtendArray( &cols, size, max_size );
+      TacsExtendArray( &levs, size, max_size );
     }
 
     // Now, put the new entries into the cols/levs arrays
@@ -716,7 +715,7 @@ void BCSRMat::computeILUk( BCSRMat *mat, int levFill,
 
   // Clip the cols array to the correct size
   if (max_size > size){
-    matutils::ExtendArray(&cols, size, size);
+    TacsExtendArray(&cols, size, size);
   }
 
   if (mat->data->rowp[nrows] > 0){
@@ -814,8 +813,8 @@ BCSRMat *BCSRMat::computeILUkEpc( BCSRMat *Emat, const int *levs,
       int mat_ext = (int)((fill - 1.0)*mat_size);
       if (nr > mat_ext){ mat_ext = nr; }
       max_size = max_size + mat_ext;
-      matutils::ExtendArray( &ecols, size, max_size );
-      matutils::ExtendArray( &elevs, size, max_size );
+      TacsExtendArray( &ecols, size, max_size );
+      TacsExtendArray( &elevs, size, max_size );
     }
 
     // Now, put the new entries into the cols/levs arrays
@@ -839,7 +838,7 @@ BCSRMat *BCSRMat::computeILUkEpc( BCSRMat *Emat, const int *levs,
 
   // Clip the ecols array to the correct length
   if (max_size > size){
-    matutils::ExtendArray(&ecols, size, size);
+    TacsExtendArray(&ecols, size, size);
   }
 
   return new BCSRMat(comm, thread_info, Emat->data->bsize,
@@ -926,8 +925,8 @@ BCSRMat *BCSRMat::computeILUkFpc( BCSRMat *Fmat, const int *levs,
       int mat_ext = (int)((fill - 1.0)*mat_size);
       if (nr > mat_ext){ mat_ext = nr; }
       max_size = max_size + mat_ext;
-      matutils::ExtendArray( &fcols, size, max_size );
-      matutils::ExtendArray( &flevs, size, max_size );
+      TacsExtendArray( &fcols, size, max_size );
+      TacsExtendArray( &flevs, size, max_size );
     }
 
     // Now, put the new entries into the cols/levs arrays
@@ -951,7 +950,7 @@ BCSRMat *BCSRMat::computeILUkFpc( BCSRMat *Fmat, const int *levs,
 
   // Clip the fcols array to the correct length
   if (max_size > size){
-    matutils::ExtendArray(&fcols, size, size);
+    TacsExtendArray(&fcols, size, size);
   }
 
   return new BCSRMat(comm, thread_info, Fmat->data->bsize,
@@ -970,8 +969,7 @@ void BCSRMat::setUpDiag(){
     int row_size = data->rowp[i+1] - data->rowp[i];
 
     // Figure out the location of the diagonal entry
-    int *item = (int*)bsearch(&i, &data->cols[data->rowp[i]], row_size,
-                              sizeof(int), FElibrary::comparator);
+    int *item = TacsSearchArray(i, row_size, &data->cols[data->rowp[i]]);
     if (item == NULL){
       data->diag[i] = -1; // No diagonal entry
     }
@@ -1807,8 +1805,7 @@ void BCSRMat::addRowValues( int row, int ncol, const int *col,
         continue;
       }
       else if (c < ncols){
-        int *item = (int*)bsearch(&c, col_array, row_size,
-                                  sizeof(int), FElibrary::comparator);
+        int *item = TacsSearchArray(c, row_size, col_array);
 
         if (item == NULL){
           fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
@@ -1901,8 +1898,7 @@ void BCSRMat::addRowWeightValues( TacsScalar alpha, int row,
           continue;
         }
         else if (c < ncols){
-          int *item = (int*)bsearch(&c, col_array, row_size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(c, row_size, col_array);
 
           if (item == NULL){
             fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n",
@@ -1995,8 +1991,7 @@ void BCSRMat::addBlockRowValues( int row, int ncol, const int *col,
         continue;
       }
       else if (c < ncols){
-        int *item = (int*)bsearch(&c, col_array, row_size,
-                                  sizeof(int), FElibrary::comparator);
+        int *item = TacsSearchArray(c, row_size, col_array);
 
         if (item == NULL){
           fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);

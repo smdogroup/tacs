@@ -45,52 +45,6 @@ enum QuadratureType { GAUSS_QUADRATURE,
 
 TACS_BEGIN_NAMESPACE(FElibrary)
 
-int comparator( const void * a, const void * b );
-
-// Design variable related operations
-
-/*!
-  Sort an array and return the number of unique design variables within
-  that array start is the index of the first non-negative value and the
-  return value is the number of non-negative design variables
-  &dvNums[start] is the start of the new array of unique design vars...
-*/
-int uniqueSort( int *dvNums, int numDVs );
-
-/*!
-  Merge two sorted arrays into a single sorted array, in place.
-
-  Two part algorithm:
-  1. Find the number of duplicates between a and b
-  2. Run through the list backwards placing elements into a[]
-  when appropriate.
-
-  Memory requirements: note that len(a) >= na + nb
-*/
-int mergeArrays( int *a, int na, const int *b, int nb );
-
-/*!
-  Find the interval such that the given index satisfies:
-
-  intv[k] <= index < intv[k+1]
-
-  The intervals must be non-decreasing. Note that len is equal
-  to the length of the intv array which is one more than the
-  total number of intervals.
-*/
-int findInterval( int index, const int intv[], int len );
-
-/*!
-  Match the intervals in a list of sorted variables.
-
-  Given the intervals, the range of the intervals and
-  the list of sorted variables, local a point such that
-
-  vars[ext_ptr[n]] <= ownerRange[n]
-*/
-void matchIntervals( int mpiSize, const int ownerRange[],
-                     int nvars, const int vars[], int ext_ptr[] );
-
 /*!
   Solve the quadratic equation and return the positive and negative
   roots.
