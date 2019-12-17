@@ -152,6 +152,7 @@ class TACSRevoluteConstraint : public TACSElement {
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   int getMultiplierIndex();
+  void setRevoluteAxis( TACSGibbsVector *_eAVec );
 
   // Set and retrieve design variable values
   // ---------------------------------------

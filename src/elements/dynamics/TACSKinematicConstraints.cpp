@@ -684,6 +684,12 @@ TACSRevoluteConstraint::~TACSRevoluteConstraint(){
   eB2Vec->decref();
 }
 
+void TACSRevoluteConstraint::setRevoluteAxis( TACSGibbsVector *_eAVec ){
+  eAVec = _eAVec;
+  int init_vector = 1;
+  updatePoints(init_vector);
+}
+
 const char *TACSRevoluteConstraint::elem_name = "TACSRevoluteConstraint";
 
 /*
