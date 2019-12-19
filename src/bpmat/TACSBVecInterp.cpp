@@ -17,8 +17,7 @@
 */
 
 #include "TACSBVecInterp.h"
-#include "FElibrary.h"
-#include "MatUtils.h"
+#include "TacsUtilities.h"
 
 /*
   BVecInterp: Interpolate with constant weights between two vectors.
@@ -432,8 +431,7 @@ void TACSBVecInterp::initialize(){
   memset(tmp_weights_count, 0, mpi_size*sizeof(int));
 
   for ( int i = 0; i < off_size; i++ ){
-    int index = FElibrary::findInterval(off_nums[i],
-                                        outOwnerRange, mpi_size+1);
+    int index = TacsFindInterval(off_nums[i], mpi_size+1, outOwnerRange);
     tmp_count[index]++;
     tmp_weights_count[index] += off_rowp[i+1] - off_rowp[i];
   }
@@ -460,8 +458,7 @@ void TACSBVecInterp::initialize(){
   // copy over the data to the required off-diagonal spot in the
   // temporary data arrays.
   for ( int i = 0; i < off_size; i++ ){
-    int index = FElibrary::findInterval(off_nums[i],
-                                        outOwnerRange, mpi_size+1);
+    int index = TacsFindInterval(off_nums[i], mpi_size+1, outOwnerRange);
 
     if (!(index < 0 || index >= mpi_size)){
       // Copy the values over to a temporary array
@@ -759,8 +756,8 @@ void TACSBVecInterp::initialize(){
   // Sort and uniquify the CSR data structures so that we don't have
   // duplicate entries
   int nodiag = 0; // Don't remove the diagonal from the matrix
-  matutils::SortAndUniquifyCSR(N, rowp, cols, nodiag);
-  matutils::SortAndUniquifyCSR(N, ext_rowp, ext_cols, nodiag);
+  TacsSortAndUniquifyCSR(N, rowp, cols, nodiag);
+  TacsSortAndUniquifyCSR(N, ext_rowp, ext_cols, nodiag);
 
   // Allocate space for the weights. Initialize the weight values
   // to zero
@@ -791,17 +788,14 @@ void TACSBVecInterp::initialize(){
             inAssembler->reorderNodes(&index, 1);
           }
           int size = rowp[num+1] - rowp[num];
-          int *item = (int*)bsearch(&index, &cols[rowp[num]], size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(index, size, &cols[rowp[num]]);
           if (item){
             weights[item - cols] += on_weights[j];
           }
         }
         else {
           int size = ext_rowp[num+1] - ext_rowp[num];
-          int *item = (int*)bsearch(&on_vars[j],
-                                    &ext_cols[ext_rowp[num]], size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(on_vars[j], size, &ext_cols[ext_rowp[num]]);
           if (item){
             ext_weights[item - ext_cols] += on_weights[j];
           }
@@ -832,17 +826,14 @@ void TACSBVecInterp::initialize(){
             inAssembler->reorderNodes(&index, 1);
           }
           int size = rowp[num+1] - rowp[num];
-          int *item = (int*)bsearch(&index, &cols[rowp[num]], size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(index, size, &cols[rowp[num]]);
           if (item){
             weights[item - cols] += in_weights[k];
           }
         }
         else {
           int size = ext_rowp[num+1] - ext_rowp[num];
-          int *item = (int*)bsearch(&in_vars[k],
-                                    &ext_cols[ext_rowp[num]], size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(in_vars[k], size, &ext_cols[ext_rowp[num]]);
           if (item){
             ext_weights[item - ext_cols] += in_weights[k];
           }
@@ -879,15 +870,15 @@ void TACSBVecInterp::initialize(){
   // Allocate space for the external variable numbers
   int *ext_vars = new int[ ext_rowp[N] ];
   memcpy(ext_vars, ext_cols, ext_rowp[N]*sizeof(int));
-  num_ext_vars = FElibrary::uniqueSort(ext_vars, ext_rowp[N]);
+  num_ext_vars = TacsUniqueSort(ext_rowp[N], ext_vars);
 
   // Check if the version of TACS has been reordered. If so,
   if (inAssembler && inAssembler->isReordered()){
     // Match the intervals for the external node numbers
     int *ext_ptr = new int[ mpi_size+1 ];
     int *ext_count = new int[ mpi_size ];
-    FElibrary::matchIntervals(mpi_size, inOwnerRange,
-                              num_ext_vars, ext_vars, ext_ptr);
+    TacsMatchIntervals(mpi_size, inOwnerRange,
+                       num_ext_vars, ext_vars, ext_ptr);
 
     // Send the nodes owned by other processors the information. First
     // count up how many will go to each process.
@@ -921,8 +912,7 @@ void TACSBVecInterp::initialize(){
 
     // Adjust the ordering of the external variables
     for ( int j = 0; j < ext_rowp[N]; j++ ){
-      int *item = (int*)bsearch(&ext_cols[j], ext_vars, num_ext_vars,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(ext_cols[j], num_ext_vars, ext_vars);
       ext_cols[j] = new_ext_vars[item - ext_vars];
     }
 
@@ -931,7 +921,7 @@ void TACSBVecInterp::initialize(){
 
     // Set the new ext vars array and sort it
     ext_vars = new_ext_vars;
-    FElibrary::uniqueSort(ext_vars, num_ext_vars);
+    TacsUniqueSort(num_ext_vars, ext_vars);
 
     // Free the recv_vars array - it is no longer required
     delete [] recv_vars;
@@ -943,8 +933,7 @@ void TACSBVecInterp::initialize(){
 
   // Adjust the external ordering
   for ( int j = 0; j < ext_rowp[N]; j++ ){
-    int *item = (int*)bsearch(&ext_cols[j], ext_vars, num_ext_vars,
-                              sizeof(int), FElibrary::comparator);
+    int *item = TacsSearchArray(ext_cols[j], num_ext_vars, ext_vars);
     ext_cols[j] = item - ext_vars;
   }
 

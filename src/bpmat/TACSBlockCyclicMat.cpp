@@ -19,8 +19,7 @@
 #include <stdlib.h>
 #include "TACSBlockCyclicMat.h"
 #include "tacslapack.h"
-#include "FElibrary.h"
-#include "MatUtils.h"
+#include "TacsUtilities.h"
 
 #ifdef TACS_HAS_AMD_LIBRARY
 #include "amd.h"
@@ -170,7 +169,7 @@ TACSBlockCyclicMat::TACSBlockCyclicMat( MPI_Comm _comm, int csr_m, int csr_n,
   rowp[0] = 0;
 
   int nodiag = 0;
-  matutils::SortAndUniquifyCSR(nrows, rowp, cols, nodiag);
+  TacsSortAndUniquifyCSR(nrows, rowp, cols, nodiag);
 
   int root = size-1;
 
@@ -394,7 +393,7 @@ void TACSBlockCyclicMat::merge_nz_pattern( int root,
     if (rank == root){
       // Sort and uniquify this row
       int row_len = recv_ptr[size];
-      row_len = FElibrary::uniqueSort(recv_row, row_len);
+      row_len = TacsUniqueSort(row_len, recv_row);
 
       // Now add this row to the CSR data structure
       root_rowp[i+1] = root_rowp[i] + row_len;
@@ -465,7 +464,7 @@ void TACSBlockCyclicMat::merge_nz_pattern( int root,
           }
           // Sort the row
           temp_rowp[i+1] = p;
-          size = FElibrary::uniqueSort(&temp_cols[temp_rowp[i]], size);
+          size = TacsUniqueSort(size, &temp_cols[temp_rowp[i]]);
           if (size != temp_rowp[i+1] - temp_rowp[i]){
             printf("[%d] TACSBlockCyclicMat: problem with the "
                    "permutation array\n", rank);
@@ -613,7 +612,7 @@ void TACSBlockCyclicMat::compute_symbolic_factor( int ** _rowp,
     }
 
     if (!diag_flag){
-      nr = FElibrary::mergeArrays(rcols, nr, &i, 1);
+      nr = TacsMergeSortedArrays(nr, rcols, 1, &i);
     }
 
     // Perform the symbolic factorization - generating new entries
@@ -662,7 +661,7 @@ void TACSBlockCyclicMat::compute_symbolic_factor( int ** _rowp,
       int mat_ext = 2*current_size;
       if (nr > mat_ext){ mat_ext = nr; }
       max_size = max_size + mat_ext;
-      matutils::ExtendArray(&cols, current_size, max_size);
+      TacsExtendArray(&cols, current_size, max_size);
     }
 
     // Move everthing forward so that there's enough space
@@ -2273,8 +2272,7 @@ void TACSBlockCyclicMat::upper_column_update( int col,
       // Find the location where Ucols[jp] == col
       int jp = Urowp[row];
       int size = Urowp[row+1] - jp;
-      int *item = (int*)bsearch(&col, &Ucols[jp], size,
-                                 sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(col, size, &Ucols[jp]);
 
       // Check if the column is in the array
       if (item){
@@ -2427,8 +2425,7 @@ TacsScalar *TACSBlockCyclicMat::get_block( int rank, int i, int j ){
       int size = Lcolp[j+1] - Lcolp[j];
 
       // Look for row i
-      int *item = (int*)bsearch(&i, &Lrows[lp], size,
-                                 sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(i, size, &Lrows[lp]);
       if (item){
         lp = lp + (item - &Lrows[lp]);
         A = &Lvals[lval_offset[lp]];
@@ -2442,8 +2439,7 @@ TacsScalar *TACSBlockCyclicMat::get_block( int rank, int i, int j ){
       int size = Urowp[i+1] - Urowp[i];
 
       // Look for column j
-      int *item = (int*)bsearch(&j, &Ucols[up], size,
-                                 sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(j, size, &Ucols[up]);
       if (item){
         up = up + (item - &Ucols[up]);
         A = &Uvals[uval_offset[up]];

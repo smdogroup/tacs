@@ -7,8 +7,7 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-CXX_OBJS = MatUtils.o \
-	AMDInterface.o \
+CXX_OBJS = AMDInterface.o \
 	BCSRMat.o \
 	BCSRMatFact.o \
 	BCSRMatMult.o \

@@ -8,6 +8,7 @@ include ../Makefile.in
 include ../TACS_Common.mk
 
 CXX_OBJS = TACSObject.o \
+	TacsUtilities.o \
 	TACSAssembler.o \
 	TACSAuxElements.o \
 	TACSCreator.o \

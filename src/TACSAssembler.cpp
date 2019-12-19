@@ -18,10 +18,9 @@
 
 #include "TACSAssembler.h"
 #include "TACSElementVerification.h"
+#include "TacsUtilities.h"
 
 // Reordering implementation
-#include "FElibrary.h"
-#include "MatUtils.h"
 #include "AMDInterface.h"
 
 // Include the AMD package if we have it
@@ -896,7 +895,7 @@ int TACSAssembler::computeExtNodes(){
   }
 
   // Sort the list of nodes
-  numExtNodes = FElibrary::uniqueSort(ext_list, ext_size);
+  numExtNodes = TacsUniqueSort(ext_size, ext_list);
 
   // Allocate an array of the external nodes that is tight
   // to the number of external nodes
@@ -1363,7 +1362,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
 
   // Resort the external node numbers - these are already unique and
   // the extNodeOffset should not change either
-  FElibrary::uniqueSort(tacsExtNodeNums, numExtNodes);
+  TacsUniqueSort(numExtNodes, tacsExtNodeNums);
 
   // Save the mapping to the new numbers for later reorderings
   newNodeIndices = new TACSBVecIndices(&newNodeNums, numNodes);
@@ -1412,8 +1411,8 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     // of the RCM algorithm
     int root_node = 0;
     int num_rcm_iters = 1;
-    matutils::ComputeRCMOrder(nvars, rowp, cols,
-                              _new_vars, root_node, num_rcm_iters);
+    TacsComputeRCMOrder(nvars, rowp, cols,
+                        _new_vars, root_node, num_rcm_iters);
 
     if (perm){
       for ( int k = 0; k < nvars; k++ ){
@@ -1478,8 +1477,7 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
     // Compute the matrix reordering using RCM TACS' version of the
     // RCM algorithm
     int *colors = new int[ nvars ];
-    matutils::ComputeSerialMultiColor(nvars, rowp, cols,
-                                      colors, new_vars);
+    TacsComputeSerialMultiColor(nvars, rowp, cols, colors, new_vars);
     delete [] colors;
 
     if (perm){
@@ -1541,8 +1539,7 @@ int TACSAssembler::getLocalNodeNum( int node ){
     }
 
     // Find the local index for external nodes
-    int *item = (int*)bsearch(&node, ext_nodes, numExtNodes,
-                              sizeof(int), FElibrary::comparator);
+    int *item = TacsSearchArray(node, numExtNodes, ext_nodes);
 
     // Check if the item is found in the list
     if (item){
@@ -1727,7 +1724,7 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
   nodeElementPtr[0] = 0;
 
   // Sort and unquify the CSR data structure
-  matutils::SortAndUniquifyCSR(numNodes, nodeElementPtr, nodeToElements);
+  TacsSortAndUniquifyCSR(numNodes, nodeElementPtr, nodeToElements);
 
   // Set the output pointers
   *_nodeToElements = nodeToElements;
@@ -1909,7 +1906,7 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
 
   // Go through and sort/uniquify each row and remove
   // the diagonal if requested
-  matutils::SortAndUniquifyCSR(numNodes, rowp, cols, nodiag);
+  TacsSortAndUniquifyCSR(numNodes, rowp, cols, nodiag);
 
   delete [] nodeElementPtr;
   delete [] nodeToElements;
@@ -2120,7 +2117,7 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
 
   // Go through and sort/uniquify each row and remove
   // the diagonal if requested
-  matutils::SortAndUniquifyCSR(nrnodes, rowp, cols, nodiag);
+  TacsSortAndUniquifyCSR(nrnodes, rowp, cols, nodiag);
 
   // Free the node -> element data structure
   delete [] nodeToElements;
@@ -2167,8 +2164,7 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   // Match the intervals for the external node numbers
   int *extPtr = new int[ mpiSize+1 ];
   int *extCount = new int[ mpiSize ];
-  FElibrary::matchIntervals(mpiSize, ownerRange,
-                            numExtNodes, extNodes, extPtr);
+  TacsMatchIntervals(mpiSize, ownerRange, numExtNodes, extNodes, extPtr);
 
   // Send the nodes owned by other processors the information. First
   // count up how many will go to each process.
@@ -2203,8 +2199,7 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   }
 
   // Uniquely sort the recieved nodes
-  int nrecv_unique =
-    FElibrary::uniqueSort(recvNodesSorted, recvPtr[mpiSize]);
+  int nrecv_unique = TacsUniqueSort(recvPtr[mpiSize], recvNodesSorted);
 
   int num_multipliers = 0;
   int *multipliers = NULL;
@@ -2244,8 +2239,7 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
               num_multipliers++;
               break;
             }
-            else if (bsearch(&node, recvNodesSorted, nrecv_unique,
-                             sizeof(int), FElibrary::comparator)){
+            else if (TacsSearchArray(node, nrecv_unique, recvNodesSorted)){
               multipliers[num_multipliers] = mult_node;
               num_multipliers++;
               break;
@@ -2256,7 +2250,7 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
     }
 
     // Uniquely sort the number of multiplier nodes
-    num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+    num_multipliers = TacsUniqueSort(num_multipliers, multipliers);
   }
 
   // Count up the number of coupling nodes
@@ -2353,8 +2347,7 @@ int TACSAssembler::computeCouplingElements( int **_couplingElems ){
 
     for ( int j = nodeElementPtr[cnode]; j < nodeElementPtr[cnode+1]; j++ ){
       int elem = nodeToElements[j];
-      numCouplingElems =
-        FElibrary::mergeArrays(couplingElems, numCouplingElems, &elem, 1);
+      numCouplingElems = TacsMergeSortedArrays(numCouplingElems, couplingElems, 1, &elem);
     }
   }
 
@@ -2581,7 +2574,7 @@ int TACSAssembler::initialize(){
       }
     }
 
-    dvLen = FElibrary::uniqueSort(allDVs, dvLen);
+    dvLen = TacsUniqueSort(dvLen, allDVs);
     int *dvs = new int[ dvLen ];
     memcpy(dvs, allDVs, dvLen*sizeof(int));
     delete [] allDVs;
@@ -2630,8 +2623,7 @@ void TACSAssembler::scatterExternalBCs( TACSBcMap *bcs ){
     if (recvCount[k] > 0){
       int size = recvCount[k];
       for ( int i = 0; i < nbcs; i++ ){
-        int *item = (int*)bsearch(&nodes[i], &recvNodes[ptr], size,
-                                  sizeof(int), FElibrary::comparator);
+        int *item = TacsSearchArray(nodes[i], size, &recvNodes[ptr]);
 
         // This node is an interface node and a boundary node
         // add it to the list
@@ -3260,7 +3252,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
 
   // Uniquely sort the list of multipliers to determine the number of
   // true multiplier nodes
-  num_multipliers = FElibrary::uniqueSort(multipliers, num_multipliers);
+  num_multipliers = TacsUniqueSort(num_multipliers, multipliers);
 
   // Create the array of offsets into the pointer array
   int *ptr = new int[ num_multipliers+1 ];
@@ -3280,9 +3272,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
         getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
 
       // Find the local index for external nodes
-      int *item = (int*)bsearch(&mult_node, multipliers, num_multipliers,
-                                sizeof(int), FElibrary::comparator);
-
+      int *item = TacsSearchArray(mult_node, num_multipliers, multipliers);
       if (item){
         int index = item - multipliers;
 
@@ -3313,9 +3303,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
         getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
 
       // Find the local index for external nodes
-      int *item = (int*)bsearch(&mult_node, multipliers, num_multipliers,
-                                sizeof(int), FElibrary::comparator);
-
+      int *item = TacsSearchArray(mult_node, num_multipliers, multipliers);
       if (item){
         int index = item - multipliers;
         for ( int j = 0; j < size; j++ ){
@@ -3340,7 +3328,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
   }
 
   // Sort and uniquify the CSR - this compresses the CSR data
-  matutils::SortAndUniquifyCSR(num_multipliers, ptr, nodes);
+  TacsSortAndUniquifyCSR(num_multipliers, ptr, nodes);
 
   // Set the data and return
   *_num_multipliers = num_multipliers;

@@ -13,7 +13,7 @@
 */
 
 #include "TACSCreator.h"
-#include "FElibrary.h"
+#include "TacsUtilities.h"
 #include "tacsmetis.h"
 
 /*
@@ -345,12 +345,11 @@ void TACSCreator::getAssemblerNodeNums( TACSAssembler *assembler,
     }
 
     // Sort the nodes uniquely
-    num_orig_nodes = FElibrary::uniqueSort(orig_nodes, num_orig_nodes);
+    num_orig_nodes = TacsUniqueSort(num_orig_nodes, orig_nodes);
 
     // Match the intervals for the external node numbers
     ext_ptr = new int[ size+1 ];
-    FElibrary::matchIntervals(size, owner_range,
-                              num_orig_nodes, orig_nodes, ext_ptr);
+    TacsMatchIntervals(size, owner_range, num_orig_nodes, orig_nodes, ext_ptr);
 
     // Send the processors the information, one at a time
     for ( int i = 0; i < size; i++ ){
@@ -1007,7 +1006,7 @@ void TACSCreator::partitionMesh( int split_size,
             // duplicates. This is guaranteed to make additional
             // room.
             if (row_size >= num_elements){
-              row_size = FElibrary::uniqueSort(row, row_size);
+              row_size = TacsUniqueSort(row_size, row);
             }
 
             // Append the element index to the list
@@ -1019,7 +1018,7 @@ void TACSCreator::partitionMesh( int split_size,
 
       // Sort the element indices and remove duplicates from the
       // array
-      row_size = FElibrary::uniqueSort(row, row_size);
+      row_size = TacsUniqueSort(row_size, row);
 
       // Check if adding this new row to the data structure will excee
       if (elem_conn_size + row_size > max_elem_conn_size){
@@ -1178,13 +1177,12 @@ int TACSCreator::getElementIdNums( int num_ids, int ids[],
   }
 
   // Sort the component numbers on input
-  num_ids = FElibrary::uniqueSort(ids, num_ids);
+  num_ids = TacsUniqueSort(num_ids, ids);
 
   int *all_elems = new int[ num_owned_elements ];
   int elem_size = 0;
   for ( int k = 0; k < num_owned_elements; k++ ){
-    if (bsearch(&local_elem_id_nums[k], ids, num_ids,
-                sizeof(int), FElibrary::comparator)){
+    if (TacsSearchArray(local_elem_id_nums[k], num_ids, ids)){
       all_elems[elem_size] = k;
       elem_size++;
     }

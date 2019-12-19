@@ -17,7 +17,7 @@
 */
 
 #include "TACSBVecDistribute.h"
-#include "FElibrary.h"
+#include "TacsUtilities.h"
 
 /*
   The static array arg_sort_list and the function compare_arg_sort are
@@ -80,7 +80,7 @@ TACSBVecIndices::TACSBVecIndices( TACSBVecIndices *idx1,
   memcpy(temp, idx1->indices, idx1->nindices*sizeof(int));
   memcpy(&temp[idx1->nindices], idx2->indices, idx2->nindices*sizeof(int));
 
-  nindices = FElibrary::uniqueSort(temp, nindices);
+  nindices = TacsUniqueSort(nindices, temp);
   indices = new int[ nindices ];
   memcpy(indices, temp, nindices*sizeof(int));
   delete [] temp;
@@ -350,12 +350,11 @@ TACSBVecDistribute::TACSBVecDistribute( TACSNodeMap * _rmap,
     memcpy(ext_unsorted_index, vars, nvars*sizeof(int));
 
     // Uniquely sort the array
-    next_vars = FElibrary::uniqueSort(ext_sorted, nvars);
+    next_vars = TacsUniqueSort(nvars, ext_sorted);
 
     // For each value, go through and find the matching index
     for ( int i = 0; i < nvars_unsorted; i++ ){
-      int * item = (int*) bsearch(&ext_unsorted_index[i], ext_sorted, next_vars,
-                                  sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(ext_unsorted_index[i], next_vars, ext_sorted);
 
       // ext_unsorted_index[i] points from variable ext_unsorted[i] to the
       // index of the array in ext_sorted
@@ -386,8 +385,8 @@ TACSBVecDistribute::TACSBVecDistribute( TACSNodeMap * _rmap,
   rmap->getOwnerRange(&owner_range);
 
   // Match the intervals for the owner range into the extneral variables
-  FElibrary::matchIntervals(mpi_size, owner_range,
-                            next_vars, ext_vars, full_ext_ptr);
+  TacsMatchIntervals(mpi_size, owner_range,
+                     next_vars, ext_vars, full_ext_ptr);
 
   // Find the external counts destined for each processor
   for ( int i = 0; i < mpi_size; i++ ){

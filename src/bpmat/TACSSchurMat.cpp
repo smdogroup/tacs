@@ -17,7 +17,7 @@
 */
 
 #include "TACSSchurMat.h"
-#include "FElibrary.h"
+#include "TacsUtilities.h"
 #include "tacslapack.h"
 
 /*
@@ -293,24 +293,24 @@ TACSSchurMat::TACSSchurMat( TACSThreadInfo *thread_info,
   // Sort the rows
   for ( int i = 0; i < Nb; i++ ){
     int nb = browp[i+1] - browp[i];
-    if (nb != FElibrary::uniqueSort(&bcols[browp[i]], nb)){
+    if (nb != TacsUniqueSort(nb, &bcols[browp[i]])){
       fprintf(stderr, "FEMat error, B input nz-pattern not unique\n");
     }
 
     int ne = erowp[i+1] - erowp[i];
-    if (ne != FElibrary::uniqueSort(&ecols[erowp[i]], ne)){
+    if (ne != TacsUniqueSort(ne, &ecols[erowp[i]])){
       fprintf(stderr, "FEMat error, E input nz-pattern not unique\n");
     }
   }
 
   for ( int i = 0; i < Nc; i++ ){
     int nf = frowp[i+1] - frowp[i];
-    if (nf != FElibrary::uniqueSort(&fcols[frowp[i]], nf) ){
+    if (nf != TacsUniqueSort(nf, &fcols[frowp[i]]) ){
       fprintf(stderr, "FEMat error, F input nz-pattern not unique\n");
     }
 
     int nc = crowp[i+1] - crowp[i];
-    if (nc != FElibrary::uniqueSort(&ccols[crowp[i]], nc)){
+    if (nc != TacsUniqueSort(nc, &ccols[crowp[i]])){
       fprintf(stderr, "FEMat error, C input nz-pattern not unique\n");
     }
   }
@@ -1008,14 +1008,12 @@ TACSSchurPc::TACSSchurPc( TACSSchurMat *_mat, int levFill, double fill,
   if (rank == root){
     unique_schur = new int[ num_schur_root ];
     memcpy(unique_schur, schur_root, num_schur_root*sizeof(int));
-    num_unique_schur = FElibrary::uniqueSort(unique_schur, num_schur_root);
+    num_unique_schur = TacsUniqueSort(num_schur_root, unique_schur);
 
     // For each global Schur variable, now assign an output - the index
     // into the unique list of global Schur variables
     for ( int i = 0; i < num_schur_root; i++ ){
-      int *item = (int*)bsearch(&schur_root[i], unique_schur,
-                                num_unique_schur, sizeof(int),
-                                FElibrary::comparator);
+      int *item = TacsSearchArray(schur_root[i], num_unique_schur, unique_schur);
       schur_root[i] = item - unique_schur;
     }
   }

@@ -14,6 +14,7 @@
 
 #include "tacslapack.h"
 #include "BCSCMatPivot.h"
+#include "TacsUtilities.h"
 
 /*
   Matrix classes based on compressed-sparse-column formats with
@@ -398,13 +399,6 @@ static inline void subtractScatterColumn( TacsScalar *X, const int xdim,
       index++;
     }
   }
-}
-
-/*
-  This function compares to integers for sorting/searching data
-*/
-static int compare_integers( const void * a, const void * b ){
-  return (*(int*)a - *(int*)b);
 }
 
 /*
@@ -970,8 +964,7 @@ void BCSCMat::addMatBlockValues( int num_rows, const int brows[],
             int r = bptr[row] + ii;
 
             // Search the column to obtain the row index
-            int *row_pos = (int*)bsearch(&r, col_rows, col_size,
-                                         sizeof(int), compare_integers);
+            int *row_pos = TacsSearchArray(r, col_size, col_rows);
             if (row_pos){
               int loc = row_pos - col_rows;
               TacsScalar *a = &column[cdim*loc];
@@ -1088,8 +1081,7 @@ void BCSCMat::addMatBlockValues( int num_rows, const int brows[],
             int r = bptr[row] + ii;
 
             // Search the column to obtain the row index
-            int *row_pos = (int*)bsearch(&r, col_rows, col_size,
-                                         sizeof(int), compare_integers);
+            int *row_pos = TacsSearchArray(r, col_size, col_rows);
             if (row_pos){
               int loc = row_pos - col_rows;
               TacsScalar *a = &column[cdim*loc];

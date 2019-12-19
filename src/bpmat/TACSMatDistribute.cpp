@@ -17,8 +17,7 @@
 */
 
 #include "TACSMatDistribute.h"
-#include "FElibrary.h"
-#include "MatUtils.h"
+#include "TacsUtilities.h"
 
 /*
   Given the non-zero pattern of a local matrix, the global indices
@@ -120,7 +119,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   // Check that the row indices provided are unique and sort them
   // in preparation
   int num_ext_row_init = num_ext_rows;
-  num_ext_rows = FElibrary::uniqueSort(ext_rows, num_ext_rows);
+  num_ext_rows = TacsUniqueSort(num_ext_rows, ext_rows);
   if (num_ext_row_init != num_ext_rows){
     fprintf(stderr, "[%d] TACSMatDistrubte error: ext_vars are not unique\n",
             mpiRank);
@@ -133,8 +132,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
 
   for ( int i = 0; i < numNodes; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
-      int *item = (int*)bsearch(&ext_vars[i], ext_rows, num_ext_rows,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(ext_vars[i], num_ext_rows, ext_rows);
       int index = item - ext_rows;
       ext_rowp[index+1] = rowp[i+1] - rowp[i];
     }
@@ -150,8 +148,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
 
   for ( int i = 0; i < numNodes; i++ ){
     if (ext_vars[i] < lower || ext_vars[i] >= upper){
-      int *item = (int*)bsearch(&ext_vars[i], ext_rows, num_ext_rows,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(ext_vars[i], num_ext_rows, ext_rows);
       int index = item - ext_rows;
 
       for ( int j = ext_rowp[index], jj = rowp[i];
@@ -160,7 +157,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
       }
 
       int size = ext_rowp[index+1] - ext_rowp[index];
-      if (size != FElibrary::uniqueSort(&ext_cols[ext_rowp[index]], size)){
+      if (size != TacsUniqueSort(size, &ext_cols[ext_rowp[index]])){
         fprintf(stderr, "[%d] TACSMatDistribute error: Array is not unique\n",
                 mpiRank);
       }
@@ -170,8 +167,8 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   // Match the intervals of the external variables to be sent to other
   // processes
   int *ext_ptr = new int[ mpiSize+1 ];
-  FElibrary::matchIntervals(mpiSize, ownerRange, num_ext_rows,
-                            ext_rows, ext_ptr);
+  TacsMatchIntervals(mpiSize, ownerRange, num_ext_rows,
+                     ext_rows, ext_ptr);
 
   // Count up the processors that will be sending information
   num_ext_procs = 0;
@@ -369,7 +366,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
   for ( int i = 0; i < num_in_rows; i++ ){
     if (col_vars_size + in_rowp[i+1] - in_rowp[i] > max_col_vars_size){
       max_col_vars_size = 2.0*max_col_vars_size;
-      matutils::ExtendArray(&col_vars, col_vars_size, max_col_vars_size);
+      TacsExtendArray(&col_vars, col_vars_size, max_col_vars_size);
     }
 
     for ( int j = in_rowp[i]; j < in_rowp[i+1]; j++ ){
@@ -380,7 +377,7 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
       }
     }
 
-    col_vars_size = FElibrary::uniqueSort(col_vars, col_vars_size);
+    col_vars_size = TacsUniqueSort(col_vars_size, col_vars);
   }
 
   TACSBVecIndices *col_indices = new TACSBVecIndices(&col_vars, col_vars_size);
@@ -502,12 +499,12 @@ void TACSMatDistribute::computeLocalCSR( int numNodes,
       // Add rowp[ei], to A_row_vars, B_row_vars
       if (A_row_size + end-start > A_max_row_size){
         A_max_row_size = A_max_row_size + end-start;
-        matutils::ExtendArray(&A_row_vars, A_row_size, A_max_row_size);
+        TacsExtendArray(&A_row_vars, A_row_size, A_max_row_size);
       }
 
       if (B_row_size + end-start > B_max_row_size){
         B_max_row_size = B_max_row_size + end-start;
-        matutils::ExtendArray(&B_row_vars, B_row_size, B_max_row_size);
+        TacsExtendArray(&B_row_vars, B_row_size, B_max_row_size);
       }
 
       for ( int j = start; j < end; j++ ){
@@ -528,9 +525,7 @@ void TACSMatDistribute::computeLocalCSR( int numNodes,
       // Try to find the variable in the k-th input - these are sorted
       // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
       int count = in_row_ptr[k+1] - in_row_ptr[k];
-      int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]],
-                                count, sizeof(int),
-                                FElibrary::comparator);
+      int *item = TacsSearchArray(var, count, &in_rows[in_row_ptr[k]]);
 
       if (item){
         int row = item - &in_rows[in_row_ptr[k]];
@@ -542,12 +537,12 @@ void TACSMatDistribute::computeLocalCSR( int numNodes,
 
         if (A_row_size + end-start > A_max_row_size){
           A_max_row_size = A_max_row_size + end-start;
-          matutils::ExtendArray(&A_row_vars, A_row_size, A_max_row_size);
+          TacsExtendArray(&A_row_vars, A_row_size, A_max_row_size);
         }
 
         if (B_row_size + end-start > B_max_row_size){
           B_max_row_size = B_max_row_size + end-start;
-          matutils::ExtendArray(&B_row_vars, B_row_size, B_max_row_size);
+          TacsExtendArray(&B_row_vars, B_row_size, B_max_row_size);
         }
 
         for ( int j = start; j < end; j++ ){
@@ -565,10 +560,10 @@ void TACSMatDistribute::computeLocalCSR( int numNodes,
     }
 
     // Sort the entries and remove duplicates
-    A_row_size = FElibrary::uniqueSort(A_row_vars, A_row_size);
+    A_row_size = TacsUniqueSort(A_row_size, A_row_vars);
     A_rowp[var - lower+1] = A_row_size;
 
-    B_row_size = FElibrary::uniqueSort(B_row_vars, B_row_size);
+    B_row_size = TacsUniqueSort(B_row_size, B_row_vars);
     B_rowp[var - lower+1] = B_row_size;
   }
 
@@ -633,9 +628,7 @@ void TACSMatDistribute::computeLocalCSR( int numNodes,
       // Try to find the variable in the k-th input - these are sorted
       // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
       int count = in_row_ptr[k+1] - in_row_ptr[k];
-      int *item = (int*)bsearch(&var, &in_rows[in_row_ptr[k]],
-                                count, sizeof(int),
-                                FElibrary::comparator);
+      int *item = TacsSearchArray(var, count, &in_rows[in_row_ptr[k]]);
 
       if (item){
         int row = item - &in_rows[in_row_ptr[k]];
@@ -660,18 +653,16 @@ void TACSMatDistribute::computeLocalCSR( int numNodes,
     }
 
     // Sort the entries and remove duplicates
-    A_row_size = FElibrary::uniqueSort(A_row_vars, A_row_size);
+    A_row_size = TacsUniqueSort(A_row_size, A_row_vars);
     for ( int j = A_rowp[var - lower], k = 0; k < A_row_size; j++, k++ ){
       A_cols[j] = A_row_vars[k];
     }
 
     // Convert the global indices into the local ordering
-    B_row_size = FElibrary::uniqueSort(B_row_vars, B_row_size);
+    B_row_size = TacsUniqueSort(B_row_size, B_row_vars);
     if (var - lower >= np){
       for ( int k = 0; k < B_row_size; k++ ){
-        int *item = (int*)bsearch(&B_row_vars[k], col_map_vars,
-                                  col_map_size, sizeof(int),
-                                  FElibrary::comparator);
+        int *item = TacsSearchArray(B_row_vars[k], col_map_size, col_map_vars);
 
         if (!item){
           fprintf(stderr, "[%d] Error: variable %d not in column map\n",
@@ -775,8 +766,7 @@ void TACSMatDistribute::addValues( TACSParallelMat *mat,
     }
     else if (c >= 0){
       // The column is in the B off-processor part
-      int *item = (int*)bsearch(&c, col_map_vars, col_map_size,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(c, col_map_size, col_map_vars);
       if (item){
         nb++;
         bcols[i] = item - col_map_vars;
@@ -816,8 +806,7 @@ void TACSMatDistribute::addValues( TACSParallelMat *mat,
       // The row is not on this processor, search for it in the
       // off-processor part that we'll have to communicate later
       // Locate the row within ext_rows
-      int *item = (int*)bsearch(&r, ext_rows, num_ext_rows,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(r, num_ext_rows, ext_rows);
       if (item){
         int r_ext = item - ext_rows;
 
@@ -828,8 +817,7 @@ void TACSMatDistribute::addValues( TACSParallelMat *mat,
           if (c >= 0){
             int start = ext_rowp[r_ext];
             int size = ext_rowp[r_ext+1] - start;
-            item = (int*)bsearch(&c, &ext_cols[start], size,
-                                 sizeof(int), FElibrary::comparator);
+            item = TacsSearchArray(c, size, &ext_cols[start]);
 
             if (item){
               TacsScalar *a = &ext_A[b2*(item - ext_cols)];
@@ -941,8 +929,7 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
     }
     else if (c >= 0){
       // The column is in the B off-processor part
-      int *item = (int*)bsearch(&c, col_map_vars, col_map_size,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(c, col_map_size, col_map_vars);
       if (item){
         nb++;
         bvars[i] = item - col_map_vars;
@@ -991,8 +978,7 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
         // The row is not on this processor, search for it in the
         // off-processor part that we'll have to communicate later
         // Locate the row within ext_rows
-        int *item = (int*)bsearch(&vars[ip], ext_rows, num_ext_rows,
-                                  sizeof(int), FElibrary::comparator);
+        int *item = TacsSearchArray(vars[ip], num_ext_rows, ext_rows);
         if (item){
           int r_ext = item - ext_rows;
 
@@ -1005,8 +991,7 @@ void TACSMatDistribute::addWeightValues( TACSParallelMat *mat,
               if (c >= 0 && aw != 0.0){
                 int start = ext_rowp[r_ext];
                 int size = ext_rowp[r_ext+1] - start;
-                item = (int*)bsearch(&c, &ext_cols[start], size,
-                                     sizeof(int), FElibrary::comparator);
+                item = TacsSearchArray(c, size, &ext_cols[start]);
 
                 if (item){
                   TacsScalar *a = &ext_A[b2*(item - ext_cols)];
@@ -1109,8 +1094,7 @@ void TACSMatDistribute::setValues( TACSParallelMat *mat,
           acols[k] = col - lower;
         }
         else {
-          int *item = (int*)bsearch(&col, col_map_vars, col_map_size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(col, col_map_size, col_map_vars);
           bcols[k] = item - col_map_vars;
           nb++;
         }
@@ -1130,8 +1114,7 @@ void TACSMatDistribute::setValues( TACSParallelMat *mat,
       }
     }
     else {
-      int *item = (int*)bsearch(&row, ext_rows, num_ext_rows,
-                                sizeof(int), FElibrary::comparator);
+      int *item = TacsSearchArray(row, num_ext_rows, ext_rows);
 
       if (item){
         int r_ext = item - ext_rows;
@@ -1144,8 +1127,7 @@ void TACSMatDistribute::setValues( TACSParallelMat *mat,
 
             int ext_start = ext_rowp[r_ext];
             int ext_size = ext_rowp[r_ext+1] - ext_start;
-            item = (int*)bsearch(&col, &ext_cols[ext_start], ext_size,
-                                 sizeof(int), FElibrary::comparator);
+            item = TacsSearchArray(col, ext_size, &ext_cols[ext_start]);
 
             if (item){
               TacsScalar *a = &ext_A[b2*(item - ext_cols)];
@@ -1274,8 +1256,7 @@ void TACSMatDistribute::endAssembly( TACSParallelMat *mat ){
         else {
           // Use the map from the global column index back to the
           // processor
-          int *item = (int*)bsearch(&col, col_map_vars, col_map_size,
-                                    sizeof(int), FElibrary::comparator);
+          int *item = TacsSearchArray(col, col_map_size, col_map_vars);
           if (item){
             int c = item - col_map_vars;
             Bext->addBlockRowValues(row - Np, 1, &c, a);
