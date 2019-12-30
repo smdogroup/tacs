@@ -98,4 +98,111 @@ int TacsComputeSerialMultiColor( const int nvars, const int *rowp,
                                  const int *cols, int *colors,
                                  int *new_vars );
 
+/*
+  Hash table implementation for storing a set of integers
+*/
+class TACSIndexHash : public TACSObject {
+ public:
+  TACSIndexHash( int approx_size, int _increment_size=-1 );
+  ~TACSIndexHash();
+
+  /*
+    Add an entry to the hash table
+  */
+  int addEntry( int i );
+
+  /*
+    Convert the hash table to an array
+  */
+  void toArray( int *_size, int **_array );
+
+ private:
+  void reset( int new_table_size );
+
+  // The hash entry corresponding to an (i,j) entry in the matrix
+  class HashEntry {
+    public:
+    int i;
+    HashEntry *next;
+  };
+
+  // An entry in the linked list of hash nodes
+  class MemNode {
+    public:
+    int size;
+    int current;
+    HashEntry *array;
+    MemNode *next;
+  };
+
+  // Number of total entries in the table
+  int num_entries;
+
+  // The number of slots avaiable in the hash table data structure.
+  // This is based on the estimated number of non-zero entries in the matrix.
+  int table_size;
+  HashEntry **table;
+
+  // The size of the memory increments allocated
+  int increment_size;
+
+  // Memory root and head of the linked list of memory
+  MemNode *mem_root, *mem;
+};
+
+/*
+  Hash table implementation for storing pairs of indices.
+
+  The matrix pairs can be extracted to obtain a compressed sparse row matrix.
+*/
+class TACSMatrixHash : public TACSObject {
+ public:
+  TACSMatrixHash( int approx_size, int _increment_size=-1 );
+  ~TACSMatrixHash();
+
+  /*
+    Add an entry to the hash table
+  */
+  int addEntry( int i, int j );
+
+  /*
+    Convert the hash table to an array
+  */
+  void tocsr( int *_nrows, int **_rows,
+              int **_rowp, int **_cols );
+
+ private:
+  void reset( int new_table_size );
+
+  // The hash entry corresponding to an (i,j) entry in the matrix
+  class HashEntry {
+    public:
+    int i, j;
+    HashEntry *next;
+  };
+
+  // An entry in the linked list of hash nodes
+  class MemNode {
+    public:
+    int size;
+    int current;
+    HashEntry *array;
+    MemNode *next;
+  };
+
+  // Number of total entries in the table
+  int num_entries;
+
+  // The number of slots avaiable in the hash table data structure.
+  // This is based on the estimated number of non-zero entries in the matrix.
+  int table_size;
+  HashEntry **table;
+
+  // The size of the memory increments allocated
+  int increment_size;
+
+  // Memory root and head of the linked list of memory
+  MemNode *mem_root, *mem;
+};
+
 #endif // TACS_UTILITIES_H

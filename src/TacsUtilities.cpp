@@ -467,3 +467,484 @@ int TacsComputeSerialMultiColor( const int nvars, const int *rowp,
 
   return num_colors;
 }
+
+/*
+  Hash function definitions
+*/
+#define TACS_MAT_ROT_INT(x,k) (((x) << (k)) | ((x) >> (32 - (k))))
+#define TACS_MAT_MIX_INT(a,b,c) ((a -= c, a ^= TACS_MAT_ROT_INT(c, 4), c += b, \
+                                  b -= a, b ^= TACS_MAT_ROT_INT(a, 6), a += c, \
+                                  c -= b, c ^= TACS_MAT_ROT_INT(b, 8), b += a, \
+                                  a -= c, a ^= TACS_MAT_ROT_INT(c,16), c += b, \
+                                  b -= a, b ^= TACS_MAT_ROT_INT(a,19), a += c, \
+                                  c -= b, c ^= TACS_MAT_ROT_INT(b, 4), b += a))
+#define TACS_MAT_FINAL_HASH(a,b,c) ((c ^= b, c -= TACS_MAT_ROT_INT(b,14), \
+                                     a ^= c, a -= TACS_MAT_ROT_INT(c,11), \
+                                     b ^= a, b -= TACS_MAT_ROT_INT(a,25), \
+                                     c ^= b, c -= TACS_MAT_ROT_INT(b,16), \
+                                     a ^= c, a -= TACS_MAT_ROT_INT(c, 4), \
+                                     b ^= a, b -= TACS_MAT_ROT_INT(a,14), \
+                                     c ^= b, c -= TACS_MAT_ROT_INT(b,24)))
+
+/*
+  Create a hash value for pairs of usigned integers
+*/
+inline uint32_t TACSMatIntegerPairHash( uint32_t u, uint32_t v ){
+  uint32_t w = 0;
+  TACS_MAT_MIX_INT(u, v, w);
+  return TACS_MAT_FINAL_HASH(u, v, w);
+}
+
+inline uint32_t TACSIndexHashFunction( uint32_t x ){
+  x ^= x >> 16;
+  x *= UINT32_C(0x7feb352d);
+  x ^= x >> 15;
+  x *= UINT32_C(0x846ca68b);
+  x ^= x >> 16;
+  return x;
+}
+
+TACSIndexHash::TACSIndexHash( int approx_size, int _increment_size ){
+  // Keep track of the total number of entries
+  num_entries = 0;
+
+  // Set the table size based on the non-zero estimate. This
+  // is important and will
+  table_size = approx_size;
+  if (table_size < 1024){
+    table_size = 1024;
+  }
+
+  // Set the number of non-zeros
+  if (_increment_size < 1){
+    increment_size = approx_size/2;
+  }
+  else {
+    increment_size = _increment_size;
+  }
+  if (increment_size < 1024){
+    increment_size = 1024;
+  }
+
+  // Allocate the table and set the entries
+  table = new HashEntry*[ table_size ];
+  memset(table, 0, table_size*sizeof(HashEntry*));
+
+  // Allocate the memory nodes
+  mem = new MemNode();
+  mem->current = 0;
+  mem->size = approx_size;
+  mem->array = new HashEntry[ approx_size  ];
+  mem->next = NULL;
+  mem_root = mem;
+}
+
+TACSIndexHash::~TACSIndexHash(){
+  delete [] table;
+  while (mem_root){
+    delete [] mem_root->array;
+    MemNode *temp = mem_root;
+    mem_root = mem_root->next;
+    delete temp;
+  }
+  delete [] table;
+}
+
+/*
+  Add an entry into the matrix.
+*/
+int TACSIndexHash::addEntry( int i ){
+  if (i >= 0){
+    if (num_entries >= 4*table_size){
+      reset(2*(table_size+1)-1);
+    }
+
+    // Set the node attributes
+    HashEntry node;
+    node.i = i;
+    node.next = NULL;
+
+    // Compute the index
+    uint32_t index = TACSIndexHashFunction(i);
+    index = index % table_size;
+
+    if (table[index]){
+      // Loop until finding the location where to insert the entry
+      HashEntry *ptr = table[index];
+      while (ptr){
+        // If the entry already exists, don't add it
+        if (ptr->i == i){
+          return 0;
+        }
+
+        // If the next list element does not exist, find/allocate space
+        // for the new entry
+        if (!ptr->next){
+          if (mem->current >= mem->size){
+            mem->next = new MemNode();
+            mem = mem->next;
+
+            // Finish allocating the memory required
+            mem->current = 0;
+            mem->size = increment_size;
+            mem->array = new HashEntry[ increment_size ];
+            mem->next = NULL;
+          }
+
+          // Add the new entry and update the allocation
+          mem->array[mem->current] = node;
+          ptr->next = &(mem->array[mem->current]);
+          mem->current++;
+          num_entries++;
+          return 1;
+        }
+        else {
+          ptr = ptr->next;
+        }
+      }
+    }
+    else {
+      if (mem->current >= mem->size){
+        mem->next = new MemNode();
+        mem = mem->next;
+
+        // Finish allocating the memory required
+        mem->current = 0;
+        mem->size = increment_size;
+        mem->array = new HashEntry[ increment_size ];
+        mem->next = NULL;
+      }
+
+      // Add the new entry and update the allocation
+      mem->array[mem->current] = node;
+      table[index] = &(mem->array[mem->current]);
+      mem->current++;
+      num_entries++;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+/*
+  Convert the hash table to an array
+*/
+void TACSIndexHash::toArray( int *_size, int **_array ){
+  if (_size){
+    *_size = num_entries;
+  }
+  if (_array){
+    int *array = new int[ num_entries ];
+    int i = 0;
+
+    // Reset the locations for all the
+    MemNode *node = mem_root;
+    while (node){
+      for ( int k = 0; k < node->current; k++, i++ ){
+        array[i] = node->array[k].i;
+      }
+    }
+    *_array = array;
+  }
+}
+
+void TACSIndexHash::reset( int new_table_size ){
+  // Allocate the entries for the new table
+  HashEntry **new_table = new HashEntry*[ new_table_size ];
+  memset(new_table, 0, new_table_size*sizeof(HashEntry*));
+
+  // Reset the locations for all the
+  MemNode *node = mem_root;
+  while (node){
+    for ( int k = 0; k < node->current; k++ ){
+      // Reset the new entries
+      HashEntry *entry = &node->array[k];
+      entry->next = NULL;
+
+      uint32_t index = TACSIndexHashFunction(entry->i);
+      index = index % new_table_size;
+
+      if (new_table[index]){
+        HashEntry *ptr = new_table[index];
+        while (ptr->next){
+          ptr = ptr->next;
+        }
+        ptr->next = entry;
+      }
+      else {
+        new_table[index] = entry;
+      }
+    }
+
+    node = node->next;
+  }
+
+  // Reset the table
+  delete [] table;
+  table = new_table;
+  table_size = new_table_size;
+}
+
+TACSMatrixHash::TACSMatrixHash( int approx_num_nonzero,
+                                int _increment_size ){
+  // Keep track of the total number of entries
+  num_entries = 0;
+
+  // Set the table size based on the non-zero estimate. This
+  // is important and will
+  int temp = approx_num_nonzero;
+  int exponent = 0;
+  while ((temp >>= 1)){ exponent++; }
+
+  table_size = (1 << exponent) - 1;
+  if (table_size < 1023){
+    table_size = 1023;
+  }
+
+  // Set the number of non-zeros
+  if (_increment_size < 1){
+    increment_size = approx_num_nonzero/2;
+  }
+  else {
+    increment_size = _increment_size;
+  }
+  if (increment_size < 1024){
+    increment_size = 1024;
+  }
+
+  // Allocate the table and set the entries
+  table = new HashEntry*[ table_size ];
+  memset(table, 0, table_size*sizeof(HashEntry*));
+
+  // Allocate the memory nodes
+  mem = new MemNode();
+  mem->current = 0;
+  mem->size = approx_num_nonzero;
+  mem->array = new HashEntry[ approx_num_nonzero ];
+  mem->next = NULL;
+  mem_root = mem;
+}
+
+TACSMatrixHash::~TACSMatrixHash(){
+  delete [] table;
+  while (mem_root){
+    delete [] mem_root->array;
+    MemNode *temp = mem_root;
+    mem_root = mem_root->next;
+    delete temp;
+  }
+  delete [] table;
+}
+
+/*
+  Add an entry into the matrix.
+*/
+int TACSMatrixHash::addEntry( int i, int j ){
+  if (i >= 0 && j >= 0){
+    if (num_entries >= 2*table_size){
+      reset(2*(table_size+1)-1);
+    }
+
+    // Set the node attributes
+    HashEntry node;
+    node.i = i;
+    node.j = j;
+    node.next = NULL;
+
+    // Compute the index
+    uint32_t index = TACSMatIntegerPairHash(i, j);
+    index = index % table_size;
+
+    if (table[index]){
+      // Loop until finding the location where to insert the entry
+      HashEntry *ptr = table[index];
+      while (ptr){
+        // If the entry already exists, don't add it
+        if (ptr->i == i && ptr->j == j){
+          return 0;
+        }
+
+        // If the next list element does not exist, find/allocate space
+        // for the new entry
+        if (!ptr->next){
+          if (mem->current >= mem->size){
+            mem->next = new MemNode();
+            mem = mem->next;
+
+            // Finish allocating the memory required
+            mem->current = 0;
+            mem->size = increment_size;
+            mem->array = new HashEntry[ increment_size ];
+            mem->next = NULL;
+          }
+
+          // Add the new entry and update the allocation
+          mem->array[mem->current] = node;
+          ptr->next = &(mem->array[mem->current]);
+          mem->current++;
+          num_entries++;
+          return 1;
+        }
+        else {
+          ptr = ptr->next;
+        }
+      }
+    }
+    else {
+      if (mem->current >= mem->size){
+        mem->next = new MemNode();
+        mem = mem->next;
+
+        // Finish allocating the memory required
+        mem->current = 0;
+        mem->size = increment_size;
+        mem->array = new HashEntry[ increment_size ];
+        mem->next = NULL;
+      }
+
+      // Add the new entry and update the allocation
+      mem->array[mem->current] = node;
+      table[index] = &(mem->array[mem->current]);
+      mem->current++;
+      num_entries++;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+/*
+  Convert the hash table to a non-zero CSR pattern
+*/
+void TACSMatrixHash::tocsr( int *_nrows, int **_rows,
+                            int **_rowp, int **_cols ){
+  // Add in all the rows
+  TACSIndexHash *row_hash = new TACSIndexHash(1 << 13);
+  row_hash->incref();
+
+  // Find a unique list of rows
+  MemNode *node = mem_root;
+  while (node){
+    for ( int k = 0; k < node->current; k++ ){
+      row_hash->addEntry(node->array[k].i);
+    }
+    node = node->next;
+  }
+
+  // Get the array
+  int nrows, *rows;
+  row_hash->toArray(&nrows, &rows);
+  row_hash->decref();
+
+  TacsUniqueSort(nrows, rows);
+
+  // Allocate space for the row pointer array
+  int *rowp = new int[ nrows+1 ];
+  memset(rowp, 0, (nrows+1)*sizeof(int));
+
+  node = mem_root;
+  while (node){
+    for ( int k = 0; k < node->current; k++ ){
+      int row = node->array[k].i;
+      int *index = TacsSearchArray(row, nrows, rows);
+      if (index){
+        node->array[k].i = *index;
+        rowp[*index+1]++;
+      }
+    }
+    node = node->next;
+  }
+
+  // Sum up the contributions so that rowp indexes into cols
+  for ( int k = 0; k < nrows; k++ ){
+    rowp[k+1] += rowp[k];
+  }
+
+  // Allocate space to store the column indices
+  int *cols = new int[ num_entries ];
+
+  node = mem_root;
+  while (node){
+    for ( int k = 0; k < node->current; k++ ){
+      int index = node->array[k].i;
+      cols[rowp[index]] = node->array[k].j;
+      rowp[index]++;
+    }
+    node = node->next;
+  }
+
+  // Reset the columns array
+  for ( int k = nrows; k > 0; k-- ){
+    rowp[k] = rowp[k-1];
+  }
+  rowp[0] = 0;
+
+  // Restore the index values
+  node = mem_root;
+  while (node){
+    for ( int k = 0; k < node->current; k++ ){
+      int index = node->array[k].i;
+      node->array[k].i = rows[index];
+    }
+  }
+
+  // Set the output
+  if (_nrows){ *_nrows = nrows; }
+  if (_rows){
+    *_rows = rows;
+  }
+  else {
+    delete [] rows;
+  }
+  if (_rowp){
+    *_rowp = rowp;
+  }
+  else {
+    delete [] rowp;
+  }
+  if (_cols){
+    *_cols = cols;
+  }
+  else {
+    delete [] cols;
+  }
+}
+
+void TACSMatrixHash::reset( int new_table_size ){
+  // Allocate the entries for the new table
+  HashEntry **new_table = new HashEntry*[ new_table_size ];
+  memset(new_table, 0, new_table_size*sizeof(HashEntry*));
+
+  // Reset the locations for all the
+  MemNode *node = mem_root;
+  while (node){
+    for ( int k = 0; k < node->current; k++ ){
+      // Reset the new entries
+      HashEntry *entry = &node->array[k];
+      entry->next = NULL;
+
+      uint32_t index = TACSMatIntegerPairHash(entry->i, entry->j);
+      index = index % new_table_size;
+
+      if (new_table[index]){
+        HashEntry *ptr = new_table[index];
+        while (ptr->next){
+          ptr = ptr->next;
+        }
+        ptr->next = entry;
+      }
+      else {
+        new_table[index] = entry;
+      }
+    }
+
+    node = node->next;
+  }
+
+  // Reset the table
+  delete [] table;
+  table = new_table;
+  table_size = new_table_size;
+}
