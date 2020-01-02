@@ -701,7 +701,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Record the residual norm at the first Newton iteration
     if (niter == 0){
       init_res_norm = res_norm;
-      if (TacsRealPart(init_res_norm) > 10.0){
+      if (init_res_norm > 100.0){
         // reset the jacobian assembly frequency for this time step to
         // prevent divergence due to high initial residual
         jfreq = 1;
