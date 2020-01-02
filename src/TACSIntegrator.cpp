@@ -628,6 +628,8 @@ int TACSIntegrator::getNumTimeSteps(){
 int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
                                  double t, TACSBVec *u, TACSBVec *udot,
                                  TACSBVec *uddot, TACSBVec *forces ){
+  int jfreq = jac_comp_freq;
+
   // Compute the norm of the forces if supplied
   double force_norm = 0.0;
   if(forces){
@@ -663,7 +665,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
     // Assemble the Jacobian matrix once in Newton iterations
     double t0 = MPI_Wtime();
-    if ((niter % jac_comp_freq) == 0){
+    if (niter == 0 || (niter % jfreq) == 0){
       delta = init_newton_delta*gamma;
       if (niter > 0 &&
           (TacsRealPart(res_norm) < TacsRealPart(init_res_norm))){
@@ -699,6 +701,11 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     // Record the residual norm at the first Newton iteration
     if (niter == 0){
       init_res_norm = res_norm;
+      if (init_res_norm > 100.0){
+        // reset the jacobian assembly frequency for this time step to
+        // prevent divergence due to high initial residual
+        jfreq = 1;
+      }
     }
 
     // Write a summary
@@ -762,7 +769,7 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
     else {
       // LU Factor the matrix when needed
       double t1 = MPI_Wtime();
-      if ((niter % jac_comp_freq) == 0){
+      if ( (niter % jfreq) == 0 ){
         pc->factor();
       }
       time_fwd_factor += MPI_Wtime() - t1;

@@ -2713,6 +2713,13 @@ int MITC3::evalPointQuantity( int elemIndex, int quantityType, double time,
 
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      *quantity = fabs(vars[2]);
+    }
+
+    return 1;
+  }
 
   return 0;
 }
@@ -2735,6 +2742,9 @@ void MITC3::addPointQuantityDVSens( int elemIndex, int quantityType, double time
     TacsScalar X[3] = {0.0, 0.0, 0.0};
     stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
   }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    // no direct contributions dudx
+  }
 }
 
 /*
@@ -2753,6 +2763,14 @@ void MITC3::addPointQuantitySVSens( int elemIndex, int quantityType, double time
     stiff->evalFailureStrainSens(elemIndex, pt, X, e, dfde);
 
     addStrainSVSens(pt, alpha*dfdq[0], dfde, Xpts, vars, dfdu);
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    TacsScalar scale = alpha*dfdq[0];
+    if (TacsRealPart(vars[2]) < 0.0){
+      dfdu[2] += -scale;
+    } else {
+      dfdu[2] += scale;
+    }
   }
 }
 
