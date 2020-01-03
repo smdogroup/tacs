@@ -243,6 +243,15 @@ MPI_Comm TACSAssembler::getMPIComm(){
 }
 
 /**
+   Return the thread information from the TACSAssembler object
+
+   @return the thread info object
+*/
+TACSThreadInfo* TACSAssembler::getThreadInfo(){
+  return thread_info;
+}
+
+/**
    Get the number of degrees of freedom per node
 
    @return the number of degrees of freedom per node

@@ -11,8 +11,8 @@
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-void createTACS( MPI_Comm comm, int nx, int ny,
-                 TACSAssembler **_assembler, TACSCreator **_creator ){
+void createAssembler( MPI_Comm comm, int nx, int ny,
+                      TACSAssembler **_assembler, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -32,8 +32,16 @@ void createTACS( MPI_Comm comm, int nx, int ny,
     int *ptr = new int[ numElements+1 ];
     int *conn = new int[ 4*numElements ];
 
-    // Use just one element
+    // Set the ids as alternating
     memset(ids, 0, numElements*sizeof(int));
+    for ( int k = 0; k < numElements; k++ ){
+      if (k % nx < nx/2 && (k/nx) < nx/2){
+        ids[k] = 1;
+      }
+      else if (k % nx >= nx/2 && (k/nx) >= nx/2){
+        ids[k] = 1;
+      }
+    }
 
     ptr[0] = 0;
     for ( int k = 0; k < numElements; k++ ){
@@ -91,30 +99,39 @@ void createTACS( MPI_Comm comm, int nx, int ny,
   // Create the isotropic material class
   TacsScalar rho = 2700.0;
   TacsScalar specific_heat = 921.096;
-  TacsScalar E = 70e3;
+  TacsScalar E1 = 70e3;
+  TacsScalar E2 = 70e-3;
   TacsScalar nu = 0.3;
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties *props =
-    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+  TACSMaterialProperties *props1 =
+    new TACSMaterialProperties(rho, specific_heat, E1, nu, ys, cte, kappa);
+  TACSMaterialProperties *props2 =
+    new TACSMaterialProperties(rho, specific_heat, E2, nu, ys, cte, kappa);
 
   // Create the stiffness object
-  TACSPlaneStressConstitutive *stiff =
-    new TACSPlaneStressConstitutive(props);
-  stiff->incref();
+  TACSPlaneStressConstitutive *stiff1 =
+    new TACSPlaneStressConstitutive(props1);
+  TACSPlaneStressConstitutive *stiff2 =
+    new TACSPlaneStressConstitutive(props2);
 
   // Create the model class
-  TACSLinearElasticity2D *model =
-    new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+  TACSLinearElasticity2D *model1 =
+    new TACSLinearElasticity2D(stiff1, TACS_LINEAR_STRAIN);
+  TACSLinearElasticity2D *model2 =
+    new TACSLinearElasticity2D(stiff2, TACS_LINEAR_STRAIN);
 
   // Create the element class
   TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
-  TACSElement2D *linear_element = new TACSElement2D(model, linear_basis);
+  TACSElement2D *linear_element1 = new TACSElement2D(model1, linear_basis);
+  TACSElement2D *linear_element2 = new TACSElement2D(model2, linear_basis);
 
   // Set the one element
-  TACSElement *elem = linear_element;
-  creator->setElements(1, &elem);
+  TACSElement *elems[2];
+  elems[0] = linear_element1;
+  elems[1] = linear_element2;
+  creator->setElements(2, elems);
 
   creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
                              TACSAssembler::GAUSS_SEIDEL);
@@ -183,22 +200,30 @@ int main( int argc, char *argv[] ){
   double omega = 1.0;
   int sor_iters = 1;
   int sor_symm = 0;
-  TACSMg *mg = new TACSMg(comm, nlevels, omega, sor_iters, sor_symm);
+  int use_galerkin = 1;
+  TACSMg *mg = new TACSMg(comm, nlevels, omega, sor_iters, sor_symm, use_galerkin);
   mg->incref();
 
   // Create the TACS/Creator objects for all levels
   for ( int i = 0; i < nlevels; i++ ){
     int Nx = nx/(1 << i), Ny = ny/(1 << i);
-    createTACS(comm, Nx, Ny, &assembler[i], &creator[i]);
+    createAssembler(comm, Nx, Ny, &assembler[i], &creator[i]);
     assembler[i]->incref();
     creator[i]->incref();
   }
 
+  // Create the matrix for the finest grid level
+  TACSParallelMat *mat = assembler[0]->createMat();
+  mat->incref();
+
+  // Allocate the interpolation objects for all remaining levels
+  TACSParallelMat *coarse[max_nlevels-1];
+  TACSBVecInterp *interp[max_nlevels-1];
+
   // Create the interpolation operators
   for ( int level = 0; level < nlevels-1; level++ ){
     // Allocate the interpolation object
-    TACSBVecInterp *interp =
-      new TACSBVecInterp(assembler[level+1], assembler[level]);
+    interp[level] = new TACSBVecInterp(assembler[level+1], assembler[level]);
 
     if (rank == 0){
       // Retrieve the node numbers
@@ -251,17 +276,17 @@ int main( int argc, char *argv[] ){
           }
 
           int node = nodes[i + (nx_fine+1)*j];
-          interp->addInterp(node, w, vars, nvars);
+          interp[level]->addInterp(node, w, vars, nvars);
         }
       }
     }
 
     // Initialize the interpolation object. This is a collective
     // call that distributes the interpolation operator.
-    interp->initialize();
+    interp[level]->initialize();
 
     // Set the multigrid information at this level
-    mg->setLevel(level, assembler[level], interp, 1);
+    mg->setLevel(level, assembler[level], interp[level], 1);
   }
 
   // Set the model at the lowest grid level
@@ -278,16 +303,15 @@ int main( int argc, char *argv[] ){
   TACSBVec *ans = assembler[0]->createVec();    ans->incref();
 
   // Allocate the GMRES solution method
-  int gmres_iters = 100;
-  int nrestart = 1;
+  int gmres_iters = 25;
+  int nrestart = 8;
   int is_flexible = 0;
-  GMRES *gmres = new GMRES(mg->getMat(0), mg,
-                           gmres_iters, nrestart, is_flexible);
-  gmres->incref();
+  GMRES *ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
+  ksm->incref();
 
   // Set a monitor to check on solution progress
-  int freq = 5;
-  gmres->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
+  int freq = 1;
+  ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
 
   // The initial time
   double t0 = MPI_Wtime();
@@ -306,10 +330,8 @@ int main( int argc, char *argv[] ){
   // "Factor" the preconditioner
   mg->factor();
 
-  mg->setMonitor(new KSMPrintStdout("MG", rank, freq));
-
   // Compute the solution using GMRES
-  gmres->solve(force, ans);
+  ksm->solve(force, ans);
 
   t0 = MPI_Wtime() - t0;
 
@@ -317,8 +339,8 @@ int main( int argc, char *argv[] ){
   assembler[0]->setVariables(ans);
 
   // Compute the residual
-  TACSMat *mat = mg->getMat(0);
-  mat->mult(ans, res);
+  TACSMat *matrix = mg->getMat(0);
+  matrix->mult(ans, res);
   res->axpy(-1.0, force);
   TacsScalar res_norm = res->norm();
   if (rank == 0){
@@ -329,6 +351,7 @@ int main( int argc, char *argv[] ){
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
   int write_flag = (TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_CONNECTIVITY |
                     TACS_OUTPUT_DISPLACEMENTS |
                     TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES |
@@ -342,7 +365,7 @@ int main( int argc, char *argv[] ){
   ans->decref();
   res->decref();
   force->decref();
-  gmres->decref();
+  ksm->decref();
   for ( int i = 0; i < nlevels; i++ ){
     assembler[i]->decref();
   }

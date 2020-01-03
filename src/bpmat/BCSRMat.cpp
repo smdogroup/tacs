@@ -595,15 +595,13 @@ BCSRMat::~BCSRMat(){
   if (Adiag){ delete [] Adiag; }
 }
 
-/*
-BCSRMat* BCSRMat::transpose(){
-  // Flip the columns/rows
-  BCSRMat *At = new BCSRMat(comm, thread_info, bsize, ncols, nrows,
-                            trans_rowp, trans_cols, trans_A);
-
-  // Go through and copy over the matrix 
+MPI_Comm BCSRMat::getMPIComm(){
+  return comm;
 }
-*/
+
+TACSThreadInfo* BCSRMat::getThreadInfo(){
+  return thread_info;
+}
 
 /*!
   Compute the ILU(levFill) preconditioner

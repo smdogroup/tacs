@@ -60,8 +60,10 @@ class BCSRMat : public TACSObject {
   // Free the matrix
   ~BCSRMat();
 
-  // Form the transpose of the matrix, copying the entries
-  // BCSRMat *transpose();
+  // Access data
+  // -----------
+  MPI_Comm getMPIComm();
+  TACSThreadInfo* getThreadInfo();
 
   // Functions for setting values in the matrix
   // ------------------------------------------

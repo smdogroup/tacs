@@ -204,6 +204,14 @@ void TACSBVecInterp::init( TACSNodeMap *_inMap,
   // NULL the transpose weight vector
   transpose_weights = NULL;
 
+  // Set the external interpolation rows (set when computing the
+  // Galerkin projection)
+  num_ext_interp_rows = 0;
+  ext_interp_rows = NULL;
+  ext_interp_rowp = NULL;
+  ext_interp_cols = NULL;
+  ext_interp_weights = NULL;
+
   // Initialize the implementation
   multadd = BVecInterpMultAddGen;
   multtransadd = BVecInterpMultTransposeAddGen;
@@ -271,6 +279,11 @@ TACSBVecInterp::~TACSBVecInterp(){
   if (ext_cols){ delete [] ext_cols; }
   if (ext_weights){ delete [] ext_weights; }
   if (transpose_weights){ delete [] transpose_weights; }
+
+  if (ext_interp_rows){ delete [] ext_interp_rows; }
+  if (ext_interp_rowp){ delete [] ext_interp_rowp; }
+  if (ext_interp_cols){ delete [] ext_interp_cols; }
+  if (ext_interp_weights){ delete [] ext_interp_weights; }
 }
 
 /*
@@ -1246,6 +1259,627 @@ void TACSBVecInterp::printInterp( const char *filename ){
     }
     fclose(fp);
   }
+}
+
+/*
+  Initialize the off-processor part of the interpolation matrix
+*/
+void TACSBVecInterp::initExtInterpRows( int _num_ext_interp_rows,
+                                        const int *_ext_interp_rows ){
+  if (ext_interp_rows){ delete [] ext_interp_rows; }
+  if (ext_interp_rowp){ delete [] ext_interp_rowp; }
+  if (ext_interp_cols){ delete [] ext_interp_cols; }
+  if (ext_interp_weights){ delete [] ext_interp_weights; }
+
+  // Prepare to find the matching intervals
+  num_ext_interp_rows = _num_ext_interp_rows;
+  ext_interp_rows = new int[ num_ext_interp_rows ];
+  ext_interp_rowp = new int[ num_ext_interp_rows+1 ];
+  memcpy(ext_interp_rows, _ext_interp_rows, num_ext_interp_rows*sizeof(int));
+  int len = TacsUniqueSort(num_ext_interp_rows, ext_interp_rows);
+
+  int rank, mpi_size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &mpi_size);
+
+  // Allocate an array
+  int *send_ptr = new int[ mpi_size+1 ];
+  int *send_size = new int[ mpi_size ];
+  int *recv_size = new int[ mpi_size ];
+
+  // Match intervals
+  const int *out_range;
+  outMap->getOwnerRange(&out_range);
+  TacsMatchIntervals(mpi_size, out_range, num_ext_interp_rows,
+                     ext_interp_rows, send_ptr);
+
+  // Find the number of rows that will be requested from the other
+  // processors
+  int num_sends = 0;
+  for ( int i = 0; i < mpi_size; i++ ){
+    // Count up the total number of rows that will be sent
+    send_size[i] = send_ptr[i+1] - send_ptr[i];
+    if (send_size[i] > 0){
+      num_sends++;
+    }
+  }
+
+  int *send_procs = new int[ num_sends ];
+  for ( int index = 0, i = 0; i < mpi_size; i++ ){
+    if (send_size[i] > 0){
+      send_procs[index] = i;
+      index++;
+    }
+  }
+
+  // Communicate the number of rows
+  MPI_Alltoall(send_size, 1, MPI_INT, recv_size, 1, MPI_INT, comm);
+
+  // Count up the number of rows requested from the other procs
+  int num_recvs = 0;
+  for ( int i = 0; i < mpi_size; i++ ){
+    if (recv_size[i] > 0){
+      num_recvs++;
+    }
+  }
+
+  int num_recv_interp_rows = 0;
+  int *recv_procs = new int[ num_recvs ];
+  for ( int index = 0, i = 0; i < mpi_size; i++ ){
+    if (recv_size[i] > 0){
+      num_recv_interp_rows += recv_size[i];
+      recv_procs[index] = i;
+      index++;
+    }
+  }
+
+  // Allocate the send/recv request data
+  MPI_Request *send_requests = new MPI_Request[ num_sends ];
+  MPI_Request *recv_requests = new MPI_Request[ num_recvs ];
+
+  // Send the requested row numbers to the processors that own them
+  for ( int i = 0; i < num_sends; i++ ){
+    int proc = send_procs[i];
+    int offset = send_ptr[proc];
+    int count = send_ptr[proc+1] - send_ptr[proc];
+    int tag = 41;
+    MPI_Isend(&ext_interp_rows[offset], count, MPI_INT, proc,
+              tag, comm, &send_requests[i]);
+  }
+
+  // Post the receives
+  int *recv_interp_rows = new int[ num_recv_interp_rows ];
+  for ( int offset = 0, i = 0; i < num_recvs; i++ ){
+    int proc = recv_procs[i];
+    int count = recv_size[proc];
+    int tag = 41;
+    MPI_Irecv(&recv_interp_rows[offset], count, MPI_INT, proc,
+              tag, comm, &recv_requests[i]);
+    offset += count;
+  }
+
+  // Wait for all the sends/recvs to complete
+  if (num_sends > 0){
+    MPI_Waitall(num_sends, send_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_recvs > 0){
+    MPI_Waitall(num_recvs, recv_requests, MPI_STATUSES_IGNORE);
+  }
+
+  // Now, count up the total number of column indices and send them
+  // back to the recving processors
+  int *recv_interp_count = new int[ num_recv_interp_rows+1 ];
+  for ( int i = 0; i < num_recv_interp_rows; i++ ){
+    int row = recv_interp_rows[i];
+    int index = row - out_range[rank];
+
+    // Add up the total size of this row
+    recv_interp_count[i] = (rowp[index+1] - rowp[index] +
+                            ext_rowp[index+1] - ext_rowp[index]);
+  }
+
+  // Reverse the send/recvs procs to send the row counts back to the owners
+  for ( int offset = 0, i = 0; i < num_recvs; i++ ){
+    int proc = recv_procs[i];
+    int count = recv_size[proc];
+    int tag = 51;
+    MPI_Isend(&recv_interp_count[offset], count, MPI_INT, proc,
+              tag, comm, &recv_requests[i]);
+    offset += count;
+  }
+
+  // Store up the internal row counts
+  for ( int i = 0; i < num_sends; i++ ){
+    int proc = send_procs[i];
+    int offset = send_ptr[proc];
+    int count = send_ptr[proc+1] - send_ptr[proc];
+    int tag = 51;
+    MPI_Irecv(&ext_interp_rowp[offset], count, MPI_INT, proc,
+              tag, comm, &send_requests[i]);
+  }
+
+  // Wait for all the sends/recvs to complete
+  if (num_sends > 0){
+    MPI_Waitall(num_sends, send_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_recvs > 0){
+    MPI_Waitall(num_recvs, recv_requests, MPI_STATUSES_IGNORE);
+  }
+
+  // Count up the total number of column numbers that will be received
+  int counter = 0;
+  for ( int i = 0; i < num_ext_interp_rows; i++ ){
+    int temp = ext_interp_rowp[i];
+    ext_interp_rowp[i] = counter;
+    counter += temp;
+  }
+  ext_interp_rowp[num_ext_interp_rows] = counter;
+
+  // Allocate space for the external rows on this processor
+  ext_interp_cols = new int[ counter ];
+  ext_interp_weights = new TacsScalar[ counter ];
+
+  counter = 0;
+  for ( int i = 0; i < num_recv_interp_rows; i++ ){
+    int temp = recv_interp_count[i];
+    recv_interp_count[i] = counter;
+    counter += temp;
+  }
+  recv_interp_count[num_recv_interp_rows] = counter;
+
+  // Allocate space for the rows that will be sent back
+  int *recv_interp_cols = new int[ counter ];
+  TacsScalar *recv_interp_weights = new TacsScalar[ counter ];
+
+  // Copy the data for the columns and weights that will be sent back to the
+  // original processors
+  const int *in_range;
+  inMap->getOwnerRange(&in_range);
+
+  TACSBVecIndices *distIndices = vecDist->getIndices();
+  const int *indices;
+  distIndices->getIndices(&indices);
+
+  for ( int i = 0; i < num_recv_interp_rows; i++ ){
+    int row = recv_interp_rows[i];
+    int index = row - out_range[rank];
+
+    int pos = recv_interp_count[i];
+    for ( int jp = rowp[index]; jp < rowp[index+1]; jp++, pos++ ){
+      recv_interp_cols[pos] = cols[jp] + in_range[rank];
+      recv_interp_weights[pos] = weights[jp];
+    }
+
+    for ( int jp = ext_rowp[index]; jp < ext_rowp[index+1]; jp++, pos++ ){
+      recv_interp_cols[pos] = indices[ext_cols[jp]];
+      recv_interp_weights[pos] = ext_weights[jp];
+    }
+  }
+
+  // Send the column numbers back to their destinations
+  for ( int offset = 0, i = 0; i < num_recvs; i++ ){
+    int proc = recv_procs[i];
+    int num_rows = recv_size[proc];
+    int count = (recv_interp_count[offset + num_rows] -
+                 recv_interp_count[offset]);
+
+    int ptr = recv_interp_count[offset];
+    int tag = 61;
+    MPI_Isend(&recv_interp_cols[ptr], count, MPI_INT, proc,
+              tag, comm, &recv_requests[i]);
+    offset += recv_size[proc];
+  }
+
+  // Recv the column indices from the extneral procs.
+  for ( int i = 0; i < num_sends; i++ ){
+    int proc = send_procs[i];
+    int offset = send_ptr[proc];
+    int num_rows = send_size[proc];
+    int count = (ext_interp_rowp[offset + num_rows] -
+                 ext_interp_rowp[offset]);
+
+    int ptr = ext_interp_rowp[offset];
+    int tag = 61;
+    MPI_Irecv(&ext_interp_cols[ptr], count, MPI_INT, proc,
+              tag, comm, &send_requests[i]);
+  }
+
+  // Wait for all the sends/recvs to complete
+  if (num_sends > 0){
+    MPI_Waitall(num_sends, send_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_recvs > 0){
+    MPI_Waitall(num_recvs, recv_requests, MPI_STATUSES_IGNORE);
+  }
+
+  // Send the column numbers back to their destinations
+  for ( int offset = 0, i = 0; i < num_recvs; i++ ){
+    int proc = recv_procs[i];
+    int num_rows = recv_size[proc];
+    int count = (recv_interp_count[offset + num_rows] -
+                 recv_interp_count[offset]);
+
+    int ptr = recv_interp_count[offset];
+    int tag = 71;
+    MPI_Isend(&recv_interp_weights[ptr], count, TACS_MPI_TYPE, proc,
+              tag, comm, &recv_requests[i]);
+    offset += recv_size[proc];
+  }
+
+  // Recv the column indices from the extneral procs.
+  for ( int i = 0; i < num_sends; i++ ){
+    int proc = send_procs[i];
+    int offset = send_ptr[proc];
+    int num_rows = send_size[proc];
+    int count = (ext_interp_rowp[offset + num_rows] -
+                 ext_interp_rowp[offset]);
+
+    int ptr = ext_interp_rowp[offset];
+    int tag = 71;
+    MPI_Irecv(&ext_interp_weights[ptr], count, TACS_MPI_TYPE, proc,
+              tag, comm, &send_requests[i]);
+  }
+
+  // Wait for all the sends/recvs to complete
+  if (num_sends > 0){
+    MPI_Waitall(num_sends, send_requests, MPI_STATUSES_IGNORE);
+  }
+  if (num_recvs > 0){
+    MPI_Waitall(num_recvs, recv_requests, MPI_STATUSES_IGNORE);
+  }
+
+  // Free all the data that is no longer required
+  delete [] send_requests;
+  delete [] recv_requests;
+  delete [] send_ptr;
+  delete [] send_size;
+  delete [] recv_size;
+  delete [] send_procs;
+  delete [] recv_procs;
+  delete [] recv_interp_rows;
+  delete [] recv_interp_count;
+  delete [] recv_interp_cols;
+  delete [] recv_interp_weights;
+}
+
+/*
+  Get the maximum number of entries in any row
+*/
+int TACSBVecInterp::getMaxRowSize(){
+  int max_size = 0;
+  for ( int i = 0; i < N; i++ ){
+    int size = rowp[i+1] - rowp[i] + (ext_rowp[i+1] - ext_rowp[i]);
+    if (size > max_size){
+      max_size = size;
+    }
+  }
+  for ( int i = 0; i < num_ext_interp_rows; i++ ){
+    int size = ext_interp_rowp[i+1] - ext_interp_rowp[i];
+    if (size > max_size){
+      max_size = size;
+    }
+  }
+  return max_size;
+}
+
+/*
+  Get the non-zero row entries and values from the array based on either
+  a local or global value
+*/
+int TACSBVecInterp::getRow( int row,
+                            int *columns,
+                            TacsScalar *values ){
+  // Get the rank and the owner range
+  int rank;
+  MPI_Comm_rank(outMap->getMPIComm(), &rank);
+
+  const int *outRange, *inRange;
+  inMap->getOwnerRange(&inRange);
+  outMap->getOwnerRange(&outRange);
+
+  int size = 0;
+  if (row >= outRange[rank] && row < outRange[rank+1]){
+    int index = row - outRange[rank];
+
+    for ( int jp = rowp[index]; jp < rowp[index+1]; jp++, size++ ){
+      if (columns){
+        columns[size] = cols[jp] + inRange[rank];
+      }
+      if (values){
+        values[size] = weights[jp];
+      }
+    }
+
+    TACSBVecIndices *distIndices = vecDist->getIndices();
+    const int *indices;
+    distIndices->getIndices(&indices);
+
+    for ( int jp = ext_rowp[index]; jp < ext_rowp[index+1]; jp++, size++ ){
+      if (columns){
+        columns[size] = indices[ext_cols[jp]];
+      }
+      if (values){
+        values[size] = ext_weights[jp];
+      }
+    }
+  }
+  else if (ext_interp_rows){
+    int *item = TacsSearchArray(row, num_ext_interp_rows, ext_interp_rows);
+    if (item){
+      int index = item - ext_interp_rows;
+      int jp = ext_interp_rowp[index];
+      int end = ext_interp_rowp[index+1];
+      for ( ; jp < end; jp++, size++ ){
+        if (columns){
+          columns[size] = ext_interp_cols[jp];
+        }
+        if (values){
+          values[size] = ext_interp_weights[jp];
+        }
+      }
+    }
+  }
+
+  return size;
+}
+
+/*
+  Compute the non-zero pattern of the Galerkin projection of the fine matrix
+  onto a coarse matrix based on the interpolation matrix P represented by this
+  object.
+
+  Ac = P^{T}*A*P
+
+  This code also distributes the components of P that are locally stored to
+  enable a faster computation of P^{T}*A*P. P is stored row-wise in a distributed
+  format. The full matrix Ac is computed from the rows of P, where the j-th row
+  is written as P[j] as
+
+  Ac = sum_{i,j} P[i]^{T}*A[i,j]*P[j]
+
+  Note that the non-zero pattern
+*/
+void TACSBVecInterp::computeGalerkinNonZeroPattern( TACSParallelMat *Afine,
+                                                    TACSParallelMat **_Acoarse ){
+  // Get the indices of the external unknowns
+  TACSBVecDistribute *ext_map;
+  Afine->getExtColMap(&ext_map);
+  TACSBVecIndices *ext_bvec_indices = ext_map->getIndices();
+  const int *ext_indices;
+  int num_ext_indices = ext_bvec_indices->getIndices(&ext_indices);
+
+  // Test the the row space for the matrix is correct
+  int Nmap;
+  Afine->getRowMap(NULL, &Nmap, NULL);
+  if (Nmap != N){
+    fprintf(stderr, "TACSBVecInterp: Error output mapping is not congruent with "
+            "the row mapping for the fine matrix nrows(Afine)(%d) != N(%d)\n",
+            Nmap, N);
+    MPI_Abort(comm, 1);
+  }
+
+  // Initialize the external rows
+  initExtInterpRows(num_ext_indices, ext_indices);
+
+  // Get the local matrices
+  BCSRMat *A, *B;
+  Afine->getBCSRMat(&A, &B);
+
+  // Get the rank and the owner range
+  int rank;
+  MPI_Comm_rank(outMap->getMPIComm(), &rank);
+
+  // Get th
+  const int *range;
+  outMap->getOwnerRange(&range);
+
+  // Allocate the matrix - overestimate the number of non-zero entries
+  int nnz_est = rowp[N] + ext_rowp[N];
+  TACSMatrixHash *matrix_hash = new TACSMatrixHash(nnz_est);
+  matrix_hash->incref();
+
+  // Get the non-zero pattern of the A matrix
+  int nArows;
+  const int *Arowp, *Acols;
+  A->getArrays(NULL, &nArows, NULL, &Arowp, &Acols, NULL);
+
+  int max_size = getMaxRowSize();
+  int *row_entries = new int[ max_size ];
+  int *col_entries = new int[ max_size ];
+
+  // Loop over all the entries in the A matrix
+  for ( int i = 0; i < nArows; i++ ){
+    int row = i + range[rank];
+    int num_row_entries = getRow(row, row_entries, NULL);
+
+    for ( int jp = Arowp[i]; jp < Arowp[i+1]; jp++ ){
+      int col = Acols[jp] + range[rank];
+
+      // Get the row and column entries for the matrix
+      int num_col_entries = getRow(col, col_entries, NULL);
+
+      for ( int ii = 0; ii < num_row_entries; ii++ ){
+        for ( int jj = 0; jj < num_col_entries; jj++ ){
+          matrix_hash->addEntry(row_entries[ii], col_entries[jj]);
+        }
+      }
+    }
+  }
+
+  // Loop over all the entries in the external part of the matrix
+  int nBrows;
+  const int *Browp, *Bcols;
+  B->getArrays(NULL, &nBrows, NULL, &Browp, &Bcols, NULL);
+
+  // Get the size of the fine space
+  int bsize, Na, Na_coupled;
+  Afine->getRowMap(&bsize, &Na, &Na_coupled);
+
+  for ( int i = 0; i < Na_coupled; i++ ){
+    // Compute the row index
+    int row = (i + Na - Na_coupled) + range[rank];
+    int num_row_entries = getRow(row, row_entries, NULL);
+
+    for ( int jp = Browp[i]; jp < Browp[i+1]; jp++ ){
+      int col = ext_indices[Bcols[jp]];
+
+      // Get the row and column entries for the matrix
+      int num_col_entries = getRow(col, col_entries, NULL);
+
+      for ( int ii = 0; ii < num_row_entries; ii++ ){
+        for ( int jj = 0; jj < num_col_entries; jj++ ){
+          matrix_hash->addEntry(row_entries[ii], col_entries[jj]);
+        }
+      }
+    }
+  }
+
+  delete [] row_entries;
+  delete [] col_entries;
+
+  // Extract the non-zero pattern and delete the matrix hash
+  int coarse_nrows, *coarse_rows, *coarse_rowp, *coarse_cols;
+  matrix_hash->tocsr(&coarse_nrows, &coarse_rows, &coarse_rowp, &coarse_cols);
+  matrix_hash->decref();
+
+  // Allocate the set of coarse indices
+  TACSBVecIndices *coarse_indices = new TACSBVecIndices(&coarse_rows, coarse_nrows);
+  coarse_indices->incref();
+
+  TACSThreadInfo *thread_info = A->getThreadInfo();
+  TACSParallelMat *Acoarse = new TACSParallelMat(thread_info, inMap, bsize,
+                                                 coarse_nrows, coarse_rowp,
+                                                 coarse_cols, coarse_indices);
+  coarse_indices->decref();
+  delete [] coarse_rowp;
+  delete [] coarse_cols;
+
+  // Set the coarse
+  *_Acoarse = Acoarse;
+}
+
+void TACSBVecInterp::computeGalerkin( TACSParallelMat *Afine,
+                                      TACSParallelMat *Acoarse ){
+  Acoarse->zeroEntries();
+
+  BCSRMat *A, *B;
+  Afine->getBCSRMat(&A, &B);
+
+  // Get the rank and the owner range
+  int rank;
+  MPI_Comm_rank(outMap->getMPIComm(), &rank);
+  const int *range;
+  outMap->getOwnerRange(&range);
+
+  // Get the non-zero pattern of the A matrix
+  int bsize, nArows;
+  const int *Arowp, *Acols;
+  TacsScalar *Avals;
+  A->getArrays(&bsize, &nArows, NULL, &Arowp, &Acols, &Avals);
+
+  // Block size squred
+  int b2 = bsize*bsize;
+
+  // Allocate space
+  int max_size = getMaxRowSize();
+  int *row_entries = new int[ max_size ];
+  TacsScalar *row_weights = new TacsScalar[ max_size ];
+  int *col_entries = new int[ max_size ];
+  TacsScalar *col_weights = new TacsScalar[ max_size ];
+  TacsScalar *values = new TacsScalar[ b2*max_size*max_size ];
+
+  // Loop over all the entries in the A matrix
+  for ( int i = 0; i < nArows; i++ ){
+    int row = i + range[rank];
+    int num_row_entries = getRow(row, row_entries, row_weights);
+
+    for ( int jp = Arowp[i]; jp < Arowp[i+1]; jp++ ){
+      int col = Acols[jp] + range[rank];
+
+      const TacsScalar *a = &Avals[b2*jp];
+
+      // Get the row and column entries for the matrix
+      int num_col_entries = getRow(col, col_entries, col_weights);
+
+      // Set the row weights and values
+      int n = bsize*num_row_entries;
+      int m = bsize*num_col_entries;
+      for ( int ii = 0; ii < num_row_entries; ii++ ){
+        for ( int jj = 0; jj < num_col_entries; jj++ ){
+          for ( int ib = 0; ib < bsize; ib++ ){
+            for ( int jb = 0; jb < bsize; jb++ ){
+              values[(bsize*ii + ib)*m + (bsize*jj + jb)] =
+                row_weights[ii]*col_weights[jj]*a[ib*bsize + jb];
+            }
+          }
+        }
+      }
+
+      // Add the values
+      Acoarse->addValues(num_row_entries, row_entries,
+                         num_col_entries, col_entries, n, m, values);
+    }
+  }
+
+  // Loop over all the entries in the external part of the matrix
+  int nBrows;
+  const int *Browp, *Bcols;
+  TacsScalar *Bvals;
+  B->getArrays(&bsize, &nBrows, NULL, &Browp, &Bcols, &Bvals);
+
+  // Get the indices of the external unknowns
+  TACSBVecDistribute *ext_map;
+  Afine->getExtColMap(&ext_map);
+  TACSBVecIndices *ext_bvec_indices = ext_map->getIndices();
+  const int *ext_indices;
+  ext_bvec_indices->getIndices(&ext_indices);
+
+  // Get the size of the fine space
+  int Na, Na_coupled;
+  Afine->getRowMap(NULL, &Na, &Na_coupled);
+
+  for ( int i = 0; i < Na_coupled; i++ ){
+    // Compute the row index
+    int row = (i + Na - Na_coupled) + range[rank];
+    int num_row_entries = getRow(row, row_entries, row_weights);
+
+    for ( int jp = Browp[i]; jp < Browp[i+1]; jp++ ){
+      int col = ext_indices[Bcols[jp]];
+
+      // Get the row and column entries for the matrix
+      int num_col_entries = getRow(col, col_entries, col_weights);
+
+      // Set the contribution for this entry
+      const TacsScalar *a = &Bvals[b2*jp];
+
+      // Set the row weights and values
+      int n = bsize*num_row_entries;
+      int m = bsize*num_col_entries;
+      for ( int ii = 0; ii < num_row_entries; ii++ ){
+        for ( int jj = 0; jj < num_col_entries; jj++ ){
+          for ( int ib = 0; ib < bsize; ib++ ){
+            for ( int jb = 0; jb < bsize; jb++ ){
+              values[(bsize*ii + ib)*m + (bsize*jj + jb)] =
+                row_weights[ii]*col_weights[jj]*a[ib*bsize + jb];
+            }
+          }
+        }
+      }
+
+      // Add the values
+      Acoarse->addValues(num_row_entries, row_entries,
+                         num_col_entries, col_entries, n, m, values);
+    }
+  }
+
+  delete [] row_entries;
+  delete [] row_weights;
+  delete [] col_entries;
+  delete [] col_weights;
+  delete [] values;
+
+  Acoarse->beginAssembly();
+  Acoarse->endAssembly();
 }
 
 /*

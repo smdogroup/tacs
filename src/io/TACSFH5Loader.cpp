@@ -198,7 +198,6 @@ char *TACSFH5Loader::getComponentName( int comp ){
   return NULL;
 }
 
-
 void TACSFH5Loader::getConnectivity( int *_num_elements,
                                      int **_comp_nums, int **_ltypes,
                                      int **_ptr, int **_conn ){

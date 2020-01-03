@@ -88,6 +88,11 @@ class TACSBVecInterp : public TACSObject {
   // -----------------------
   void printInterp( const char *filename );
 
+  // Initialize the non-zero pattern
+  void computeGalerkinNonZeroPattern( TACSParallelMat *Afine,
+                                      TACSParallelMat **_Acoarse );
+  void computeGalerkin( TACSParallelMat *Afine, TACSParallelMat *Acoarse );
+
  private:
   // The MPI communicator
   MPI_Comm comm;
@@ -103,6 +108,14 @@ class TACSBVecInterp : public TACSObject {
                         const int *rowp, const int *cols,
                         const TacsScalar *weights,
                         const TacsScalar *x, TacsScalar *y );
+
+  // Initialize data from off-processor rows
+  void initExtInterpRows( int _num_ext_interp_rows,
+                          const int *_ext_interp_rows );
+
+  // Get information about the local/non-local rows after initialization
+  int getMaxRowSize();
+  int getRow( int row, int *columns, TacsScalar *values );
 
   // The on and off-processor parts of the interpolation
   // These are dynamically expanded if they are not large enough
@@ -134,6 +147,11 @@ class TACSBVecInterp : public TACSObject {
 
   // Store the transpose weights
   TacsScalar *transpose_weights;
+
+  // Interpolation weights stored in the
+  int num_ext_interp_rows;
+  int *ext_interp_rows, *ext_interp_rowp, *ext_interp_cols;
+  TacsScalar *ext_interp_weights;
 
   // The object responsible for fetching/distributing the
   // external variables

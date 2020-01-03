@@ -127,6 +127,7 @@ class TACSAssembler : public TACSObject {
   // Return important information about the TACSAssembler object
   // -----------------------------------------------------------
   MPI_Comm getMPIComm();
+  TACSThreadInfo *getThreadInfo();
   int getVarsPerNode();
   int getDesignVarsPerNode();
   int getNumNodes();

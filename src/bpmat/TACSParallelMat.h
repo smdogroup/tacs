@@ -53,8 +53,8 @@ class TACSParallelMat : public TACSMat {
  public:
   TACSParallelMat( TACSThreadInfo *thread_info,
                    TACSNodeMap *_rmap, int bsize,
-                   int next_vars, const int *rowp, const int *cols,
-                   TACSBVecIndices *bindex );
+                   int num_nodes, const int *rowp, const int *cols,
+                   TACSBVecIndices *node_indices );
   TACSParallelMat( TACSNodeMap *rmap,
                    BCSRMat *_Aloc, BCSRMat *_Bext,
                    TACSBVecDistribute *_col_map );

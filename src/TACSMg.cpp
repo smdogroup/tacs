@@ -37,16 +37,18 @@
   sor_omega:     SOR factor
   sor_iters:     number of SOR iterations to perform at each level
   sor_symmetric: symmetric SOR flag
+  use_galerkin:  form the coarse grid operators via projection: P^{T}*A*P
 */
 TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
                 double _sor_omega, int _sor_iters,
-                int _sor_symmetric ){
+                int _sor_symmetric, int _use_galerkin ){
   // Copy over the data
   comm = _comm;
   nlevels = _nlevels;
   sor_omega = _sor_omega;
   sor_iters = _sor_iters;
   sor_symmetric = _sor_symmetric;
+  use_galerkin = _use_galerkin;
 
   if (nlevels < 2){
     int mpi_rank;
@@ -57,6 +59,7 @@ TACSMg::TACSMg( MPI_Comm _comm, int _nlevels,
 
   // Create the list of pointers to the TACS objects at each level
   assembler = new TACSAssembler*[ nlevels ];
+  memset(assembler, 0, nlevels*sizeof(TACSAssembler*));
 
   // Number of smoothing operations to be performed at each iteration
   iters = new int[ nlevels ];
@@ -171,7 +174,38 @@ void TACSMg::setLevel( int level, TACSAssembler *_assembler,
     interp[level] = _interp;
     interp[level]->incref();
 
-    if (_mat){
+    if (use_galerkin){
+      if (level == 0){
+        TACSParallelMat *pmat = assembler[level]->createMat();
+        mat[level] = pmat;
+        mat[level]->incref();
+
+        int zero_guess = 0;
+        pc[level] = new TACSGaussSeidel(pmat, zero_guess, sor_omega,
+                                        sor_iters, sor_symmetric);
+        pc[level]->incref();
+      }
+      else {
+        TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[level-1]);
+        TACSParallelMat *coarse_mat = NULL;
+
+        if (fine_mat && interp[level-1]){
+          interp[level-1]->computeGalerkinNonZeroPattern(fine_mat, &coarse_mat);
+          mat[level] = coarse_mat;
+          mat[level]->incref();
+
+          int zero_guess = 0;
+          pc[level] = new TACSGaussSeidel(coarse_mat, zero_guess, sor_omega,
+                                          sor_iters, sor_symmetric);
+          pc[level]->incref();
+        }
+        else {
+          fprintf(stderr, "TACSMg: Must define operators from finest to "
+                  "to coarsest levels\n");
+        }
+      }
+    }
+    else if (_mat){
       _mat->incref();
       if (mat[level]){
         mat[level]->decref();
@@ -197,7 +231,24 @@ void TACSMg::setLevel( int level, TACSAssembler *_assembler,
     }
   }
   else {
-    if (_mat){
+    if (use_galerkin){
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[level-1]);
+      TACSParallelMat *coarse_mat = NULL;
+
+      if (fine_mat && interp[level-1]){
+        interp[level-1]->computeGalerkinNonZeroPattern(fine_mat, &coarse_mat);
+        root_mat = coarse_mat;
+        root_mat->incref();
+
+        root_pc = new TACSBlockCyclicPc(coarse_mat);
+        root_pc->incref();
+      }
+      else {
+        fprintf(stderr, "TACSMg: Must define operators from finest to "
+                "to coarsest levels\n");
+      }
+    }
+    else if (_mat){
       _mat->incref();
       if (root_mat){
         root_mat->decref();
@@ -212,17 +263,15 @@ void TACSMg::setLevel( int level, TACSAssembler *_assembler,
     }
     else {
       // Set up the root matrix
-      TACSSchurMat *femat = assembler[level]->createSchurMat();
-      root_mat = femat;
+      TACSSchurMat *schur_mat = assembler[level]->createSchurMat();
+      root_mat = schur_mat;
       root_mat->incref();
 
       // Set up the root preconditioner/solver
       int lev = 10000;
       double fill = 15.0;
       int reorder_schur = 1;
-      TACSSchurPc *_pc = new TACSSchurPc(femat, lev, fill, reorder_schur);
-      // _pc->setMonitorFactorFlag(1);
-      // _pc->setMonitorBackSolveFlag(1);
+      TACSSchurPc *_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
       root_pc = _pc;
       root_pc->incref();
     }
@@ -300,20 +349,38 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
   // that they have already been assembled
   if (assembler[0]){
     assembler[0]->assembleJacobian(alpha, beta, gamma,
-                              res, mat[0], matOr);
+                                   res, mat[0], matOr);
   }
 
-  for ( int i = 1; i < nlevels-1; i++ ){
-    if (assembler[i]){
-      assembler[i]->assembleJacobian(alpha, beta, gamma,
-                                NULL, mat[i], matOr);
+  if (use_galerkin && nlevels >= 2){
+    for ( int i = 1; i < nlevels-1; i++ ){
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[i-1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      if (fine_mat && coarse_mat){
+        interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
+        assembler[i]->applyBCs(coarse_mat);
+      }
+    }
+    TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    if (fine_mat && coarse_mat){
+      interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
+      assembler[nlevels-1]->applyBCs(coarse_mat);
     }
   }
+  else {
+    for ( int i = 1; i < nlevels-1; i++ ){
+      if (assembler[i]){
+        assembler[i]->assembleJacobian(alpha, beta, gamma,
+                                      NULL, mat[i], matOr);
+      }
+    }
 
-  // Assemble the coarsest problem
-  if (assembler[nlevels-1]){
-    assembler[nlevels-1]->assembleJacobian(alpha, beta, gamma,
-                                      NULL, root_mat, matOr);
+    // Assemble the coarsest problem
+    if (assembler[nlevels-1]){
+      assembler[nlevels-1]->assembleJacobian(alpha, beta, gamma,
+                                            NULL, root_mat, matOr);
+    }
   }
 }
 
@@ -323,17 +390,38 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
 */
 void TACSMg::assembleMatType( ElementMatrixType matType,
                               MatrixOrientation matOr ){
-  // Assemble the matrices if they are locally owned, otherwise assume
-  // that they have already been assembled
-  for ( int i = 0; i < nlevels-1; i++ ){
-    if (assembler[i]){
-      assembler[i]->assembleMatType(matType, mat[i], matOr);
-    }
+  // Assemble the matrix
+  if (assembler[0]){
+    assembler[0]->assembleMatType(matType, mat[0], matOr);
   }
 
-  // Assemble the coarsest problem
-  if (assembler[nlevels-1]){
-    assembler[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+  if (use_galerkin && nlevels >= 2){
+    for ( int i = 1; i < nlevels-1; i++ ){
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[i-1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      if (fine_mat && coarse_mat){
+        interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
+      }
+    }
+    TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    if (fine_mat && coarse_mat){
+      interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
+    }
+  }
+  else {
+    // Assemble the matrices if they are locally owned, otherwise assume
+    // that they have already been assembled
+    for ( int i = 1; i < nlevels-1; i++ ){
+      if (assembler[i]){
+        assembler[i]->assembleMatType(matType, mat[i], matOr);
+      }
+    }
+
+    // Assemble the coarsest problem
+    if (assembler[nlevels-1]){
+      assembler[nlevels-1]->assembleMatType(matType, root_mat, matOr);
+    }
   }
 }
 
@@ -344,15 +432,35 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
 void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
                                TacsScalar scale[], int nmats,
                                MatrixOrientation matOr ){
-  for ( int i = 0; i < nlevels-1; i++ ){
-    if (assembler[i]){
-      assembler[i]->assembleMatCombo(matTypes, scale, nmats, mat[i], matOr);
-    }
+  if (assembler[0]){
+    assembler[0]->assembleMatCombo(matTypes, scale, nmats, mat[0], matOr);
   }
 
-  // Assemble the coarsest problem
-  if (assembler[nlevels-1]){
-    assembler[nlevels-1]->assembleMatCombo(matTypes, scale, nmats, root_mat, matOr);
+  if (use_galerkin && nlevels >= 2){
+    for ( int i = 1; i < nlevels-1; i++ ){
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[i-1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      if (fine_mat && coarse_mat){
+        interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
+      }
+    }
+    TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    if (fine_mat && coarse_mat){
+      interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
+    }
+  }
+  else {
+    for ( int i = 1; i < nlevels-1; i++ ){
+      if (assembler[i]){
+        assembler[i]->assembleMatCombo(matTypes, scale, nmats, mat[i], matOr);
+      }
+    }
+
+    // Assemble the coarsest problem
+    if (assembler[nlevels-1]){
+      assembler[nlevels-1]->assembleMatCombo(matTypes, scale, nmats, root_mat, matOr);
+    }
   }
 }
 
@@ -372,7 +480,6 @@ TACSMat *TACSMg::getMat( int level ){
   if (level >= 0 && level < nlevels-1){
     return mat[level];
   }
-
   return NULL;
 }
 

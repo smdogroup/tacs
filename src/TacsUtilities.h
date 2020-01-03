@@ -63,10 +63,10 @@ int TacsFindInterval( int index, int len, const int intv[] );
   Given the intervals, the range of the intervals and
   the list of sorted variables, local a point such that
 
-  vars[ext_ptr[n]] <= ownerRange[n]
+  vars[ptr[n]] <= ownerRange[n]
 */
 void TacsMatchIntervals( int size, const int range[],
-                         int nvars, const int vars[], int ext_ptr[] );
+                         int nvars, const int vars[], int ptr[] );
 
 /*!
   Extend an array and copy values from the old to the new array

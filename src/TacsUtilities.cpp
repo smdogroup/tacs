@@ -540,7 +540,6 @@ TACSIndexHash::TACSIndexHash( int approx_size, int _increment_size ){
 }
 
 TACSIndexHash::~TACSIndexHash(){
-  delete [] table;
   while (mem_root){
     delete [] mem_root->array;
     MemNode *temp = mem_root;
@@ -644,6 +643,7 @@ void TACSIndexHash::toArray( int *_size, int **_array ){
       for ( int k = 0; k < node->current; k++, i++ ){
         array[i] = node->array[k].i;
       }
+      node = node->next;
     }
     *_array = array;
   }
@@ -727,7 +727,6 @@ TACSMatrixHash::TACSMatrixHash( int approx_num_nonzero,
 }
 
 TACSMatrixHash::~TACSMatrixHash(){
-  delete [] table;
   while (mem_root){
     delete [] mem_root->array;
     MemNode *temp = mem_root;
@@ -829,6 +828,7 @@ void TACSMatrixHash::tocsr( int *_nrows, int **_rows,
   while (node){
     for ( int k = 0; k < node->current; k++ ){
       row_hash->addEntry(node->array[k].i);
+      row_hash->addEntry(node->array[k].j);
     }
     node = node->next;
   }
@@ -848,10 +848,18 @@ void TACSMatrixHash::tocsr( int *_nrows, int **_rows,
   while (node){
     for ( int k = 0; k < node->current; k++ ){
       int row = node->array[k].i;
-      int *index = TacsSearchArray(row, nrows, rows);
-      if (index){
-        node->array[k].i = *index;
-        rowp[*index+1]++;
+      int *item = TacsSearchArray(row, nrows, rows);
+      if (item){
+        int index = item - rows;
+        node->array[k].i = index;
+        rowp[index+1]++;
+      }
+
+      int col = node->array[k].j;
+      item = TacsSearchArray(col, nrows, rows);
+      if (item){
+        int index = item - rows;
+        node->array[k].j = index;
       }
     }
     node = node->next;
@@ -885,9 +893,10 @@ void TACSMatrixHash::tocsr( int *_nrows, int **_rows,
   node = mem_root;
   while (node){
     for ( int k = 0; k < node->current; k++ ){
-      int index = node->array[k].i;
-      node->array[k].i = rows[index];
+      node->array[k].i = rows[node->array[k].i];
+      node->array[k].j = rows[node->array[k].j];
     }
+    node = node->next;
   }
 
   // Set the output

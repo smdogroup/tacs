@@ -57,7 +57,7 @@
 class TACSMg : public TACSPc {
  public:
   TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega=1.0,
-          int _sor_iters=1, int _sor_symmetric=0 );
+          int _sor_iters=1, int _sor_symmetric=0, int _use_galerkin=0 );
   ~TACSMg();
 
   // Set the data for the multi-grid level
@@ -117,6 +117,10 @@ class TACSMg : public TACSPc {
   // The SOR data
   int sor_iters, sor_symmetric;
   double sor_omega;
+
+  // Flag to indicate whether to form the coarse grid operators
+  // via Galerkin projection coarse = P^{T}*A*P
+  int use_galerkin;
 
   // The number of multi-grid levels
   int nlevels;
