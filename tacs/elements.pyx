@@ -156,28 +156,28 @@ cdef class Element3D(Element):
 
 cdef class Traction2D(Element):
     def __cinit__(self, int varsPerNode, int faceIndex,
-                  ElementBasis basis, list traction, normalComp=True):
+                  ElementBasis basis, list traction, coordComp=True):
         cdef TacsScalar trac[16]
-        cdef int tractionNormalComponent = 0
-        if normalComp:
-            tractionNormalComponent = 1
+        cdef int tractionCoordinateComponent = 0
+        if coordComp:
+            tractionCoordinateComponent = 1
         for i in range(min(16, len(traction))):
             trac[i] = traction[i]
         self.ptr = new TACSTraction2D(varsPerNode, faceIndex, basis.ptr,
-                                      trac, tractionNormalComponent)
+                                      trac, tractionCoordinateComponent)
         self.ptr.incref()
 
 cdef class Traction3D(Element):
     def __cinit__(self, int varsPerNode, int faceIndex,
-                  ElementBasis basis, list traction, normalComp=True):
+                  ElementBasis basis, list traction, coordComp=True):
         cdef TacsScalar trac[24]
-        cdef int tractionNormalComponent = 0
-        if normalComp:
-            tractionNormalComponent = 1
+        cdef int tractionCoordinateComponent = 0
+        if coordComp:
+            tractionCoordinateComponent = 1
         for i in range(min(24, len(traction))):
             trac[i] = traction[i]
         self.ptr = new TACSTraction3D(varsPerNode, faceIndex, basis.ptr,
-                                      trac, tractionNormalComponent)
+                                      trac, tractionCoordinateComponent)
         self.ptr.incref()
 
 
