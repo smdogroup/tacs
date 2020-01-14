@@ -13,6 +13,7 @@
 */
 
 #include "TacsUtilities.h"
+#include <stdint.h>
 #include <stdlib.h>
 
 int TacsIntegerComparator( const void *a, const void *b ){
