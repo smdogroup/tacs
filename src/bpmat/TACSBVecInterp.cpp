@@ -1276,7 +1276,7 @@ void TACSBVecInterp::initExtInterpRows( int _num_ext_interp_rows,
   ext_interp_rows = new int[ num_ext_interp_rows ];
   ext_interp_rowp = new int[ num_ext_interp_rows+1 ];
   memcpy(ext_interp_rows, _ext_interp_rows, num_ext_interp_rows*sizeof(int));
-  int len = TacsUniqueSort(num_ext_interp_rows, ext_interp_rows);
+  TacsUniqueSort(num_ext_interp_rows, ext_interp_rows);
 
   int rank, mpi_size;
   MPI_Comm_rank(comm, &rank);

@@ -140,7 +140,7 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
                                      const TacsScalar vars[],
                                      const TacsScalar dvars[],
                                      const TacsScalar ddvars[] ){
-  // Retrieve the number of stress components for this element
+  // Retrieve the basis object for this element (if it exists)
   TACSElementBasis *basis = element->getElementBasis();
 
   if (basis){

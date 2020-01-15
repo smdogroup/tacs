@@ -32,7 +32,11 @@ cdef extern from "TACSFunction.h":
 
 cdef extern from "TACSStructuralMass.h":
     cdef cppclass TACSStructuralMass(TACSFunction):
-        TACSStructuralMass(TACSAssembler *tacs)
+        TACSStructuralMass(TACSAssembler*)
+
+cdef extern from "TACSCompliance.h":
+    cdef cppclass TACSCompliance(TACSFunction):
+        TACSCompliance(TACSAssembler*)
 
 cdef extern from "TACSKSFailure.h":
     enum KSFailureType"TACSKFailure::KSFailureType":
@@ -45,8 +49,8 @@ cdef extern from "TACSKSFailure.h":
         TACSKSFailure(TACSAssembler*, double, double)
         void setKSFailureType(KSFailureType ftype)
         double getParameter()
-        void setParameter(double _ksWeight)
-        void setMaxFailOffset(TacsScalar _maxFail)
+        void setParameter(double)
+        void setMaxFailOffset(TacsScalar)
 
 cdef extern from "TACSInducedFailure.h":
     enum InducedNormType"TACSInducedFailure::InducedNormType":
@@ -61,13 +65,13 @@ cdef extern from "TACSInducedFailure.h":
 
     cdef cppclass TACSInducedFailure(TACSFunction):
         TACSInducedFailure(TACSAssembler*, double)
-        void setInducedType(InducedNormType _norm_type)
-        void setParameter(double _P)
+        void setInducedType(InducedNormType)
+        void setParameter(double)
         double getParameter()
         void setMaxFailOffset(TacsScalar _max_fail)
 
 cdef extern from "TACSHeatFlux.h":
-    cdef cppclass TACSHeatFlux( TACSFunction ):
+    cdef cppclass TACSHeatFlux(TACSFunction):
         TACSHeatFlux(TACSAssembler*, int*, int*, int)
 
 # cdef extern from "TACSDisplacementIntegral.h":

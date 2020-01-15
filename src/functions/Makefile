@@ -8,6 +8,7 @@ include ../../Makefile.in
 include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
+	TACSCompliance.o \
 	TACSStructuralMass.o \
 	TACSHeatFlux.o \
 	TACSKSFailure.o \

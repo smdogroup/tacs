@@ -42,21 +42,30 @@ cdef extern from "mpi-compat.h":
     pass
 
 cdef class StructuralMass(Function):
-    def __cinit__(self, Assembler tacs):
+    def __cinit__(self, Assembler assembler):
         """
         Wrap the function StructuralMass
         """
-        self.ptr = new TACSStructuralMass(tacs.ptr)
+        self.ptr = new TACSStructuralMass(assembler.ptr)
+        self.ptr.incref()
+        return
+
+cdef class Compliance(Function):
+    def __cinit__(self, Assembler assembler):
+        """
+        Wrap the function Compliance
+        """
+        self.ptr = new TACSCompliance(assembler.ptr)
         self.ptr.incref()
         return
 
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
-    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+    def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
         """
         Wrap the function KSFailure
         """
-        self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight, alpha)
+        self.ksptr = new TACSKSFailure(assembler.ptr, ksWeight, alpha)
         self.ptr = self.ksptr
         self.ptr.incref()
         return
@@ -77,11 +86,11 @@ cdef class KSFailure(Function):
 
 cdef class InducedFailure(Function):
     cdef TACSInducedFailure *iptr
-    def __cinit__(self, Assembler tacs, double P):
+    def __cinit__(self, Assembler assembler, double P):
         """
         Wrap the function InducedFailure
         """
-        self.iptr = new TACSInducedFailure(tacs.ptr, P)
+        self.iptr = new TACSInducedFailure(assembler.ptr, P)
         self.ptr = self.iptr
         self.ptr.incref()
         return
@@ -132,7 +141,7 @@ cdef class HeatFlux(Function):
 
 # cdef class DisplacementIntegral(Function):
 #     cdef TACSDisplacementIntegral *dptr
-#     def __cinit__(self, Assembler tacs, dirs):
+#     def __cinit__(self, Assembler assembler, dirs):
 #         """
 #         Wrap the function KSFailure
 #         """
@@ -140,7 +149,7 @@ cdef class HeatFlux(Function):
 #         _dirs[0] = dirs[0]
 #         _dirs[1] = dirs[1]
 #         _dirs[2] = dirs[2]
-#         self.dptr = new TACSDisplacementIntegral(tacs.ptr, _dirs)
+#         self.dptr = new TACSDisplacementIntegral(assembler.ptr, _dirs)
 #         self.ptr = self.dptr
 #         self.ptr.incref()
 #         return

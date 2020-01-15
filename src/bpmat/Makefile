@@ -34,8 +34,8 @@ CXX_OBJS = AMDInterface.o \
 	TACSParallelMat.o \
 	TACSBlockCyclicMat.o \
 	TACSSerialPivotMat.o \
-	KSM.o \
 	TACSSchurMat.o \
+	KSM.o \
 	GSEP.o \
 	JacobiDavidson.o
 

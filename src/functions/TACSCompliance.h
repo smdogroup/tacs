@@ -16,72 +16,30 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_KS_FAILURE_H
-#define TACS_KS_FAILURE_H
+#ifndef TACS_COMPLIANCE_H
+#define TACS_COMPLIANCE_H
 
 /*
-  Compute the KS function in TACS
+  Calculate the compliance
 */
-
 #include "TACSFunction.h"
 
 /*
-  The following class implements the methods from TACSFunction.h
-  necessary to calculate the KS function of either a stress or strain
-  failure criteria over the domain of some finite element model.
+  Evaluate the compliance of the structure.
 
-  Each class should only ever be passed to a single instance of
-  TACS. If the KS function needs to be calculated for separate
-  instances, this should be handled by separate instances of
-  KSFailure.
-
-  The failure load is calculated using the strain-based failure
-  criteria from the base Constitutive class which requires linear and
-  constant components of the strain to determine the failure load.
-
-  The arguments to the KSFailure class are:
-
-  ksWeight:  the ks weight used in the calculation
-
-  optional arguments:
-
-  elementNums, numElements -- these specify a subdomain of the TACS
-  model over which the KS function should be calculated by passing in
-  the element numbers and number of elements in the subdomain.
-
-  note: if no subdomain is specified, the calculation takes place over
-  all the elements in the model
+  This evaluates the compliance within the structure based on an
+  integration of the strain energy in each element, not by the product
+  of the load vector with the displacement.
 */
-class TACSKSFailure : public TACSFunction {
+class TACSCompliance : public TACSFunction {
  public:
-  enum KSFailureType { DISCRETE, CONTINUOUS,
-                       PNORM_DISCRETE, PNORM_CONTINUOUS };
-
-  TACSKSFailure( TACSAssembler * _assembler, double ksWeight,
-                 double alpha=1.0 );
-  ~TACSKSFailure();
+  TACSCompliance( TACSAssembler *_tacs );
+  ~TACSCompliance();
 
   /**
     Get the object/function name
   */
-  const char* getObjectName();
-
-  // Set parameters for the KS function
-  // ----------------------------------
-  void setKSFailureType( enum KSFailureType type );
-  double getParameter();
-  void setParameter( double _ksWeight );
-
-  // Set the value of the failure offset for numerical stability
-  // -----------------------------------------------------------
-  void setMaxFailOffset( TacsScalar _maxFail ){
-    maxFail = _maxFail;
-  }
-
-  /**
-    Get the maximum failure value
-  */
-  TacsScalar getMaximumFailure();
+  const char *getObjectName();
 
   /**
      Initialize the function for the given type of evaluation
@@ -114,7 +72,7 @@ class TACSKSFailure : public TACSFunction {
                          TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TacsScalar *elemSVSens );
+                         TacsScalar dfdu[] );
 
   /**
      Add the derivative of the function w.r.t. the design variables
@@ -135,24 +93,11 @@ class TACSKSFailure : public TACSFunction {
                           TacsScalar fXptSens[] );
 
  private:
-  // The type of aggregation to use
-  KSFailureType ksType;
-
-  // The weight on the ks function value
-  double ksWeight;
-
-  // The integral scaling value
-  double alpha;
-
   // The name of the function
-  static const char *funcName;
+  static const char * funcName;
 
-  // The maximum failure value, the sum of exp(ksWeight*(f[i] - maxFail)
-  // and the value of the KS function
-  TacsScalar ksFailSum, maxFail;
-
-  // Used for the case when this is used to evaluate the p-norm
-  TacsScalar invPnorm;
+  // The compliance value
+  TacsScalar compliance;
 };
 
-#endif // TACS_KS_FAILURE_H
+#endif // TACS_COMPLIANCE_H
