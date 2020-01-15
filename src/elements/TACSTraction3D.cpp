@@ -17,13 +17,13 @@
 
 TACSTraction3D::TACSTraction3D( int _varsPerNode, int _faceIndex,
                                 TACSElementBasis *_basis, TacsScalar _trac[],
-                                int _tractionNormalComponent ){
+                                int _tractionCoordinateComponent ){
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;  basis->incref();
-  tractionNormalComponent = _tractionNormalComponent;
+  tractionCoordinateComponent = _tractionCoordinateComponent;
   getTractionComponents = NULL;
-  if (tractionNormalComponent){
+  if (tractionCoordinateComponent){
     memcpy(trac, _trac, varsPerNode*sizeof(TacsScalar));
   }
   else {
@@ -40,7 +40,7 @@ TACSTraction3D::TACSTraction3D( int _varsPerNode, int _faceIndex,
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;  basis->incref();
-  tractionNormalComponent = 0;
+  tractionCoordinateComponent = 0;
   getTractionComponents = _getTractionComponents;
 }
 
@@ -109,14 +109,14 @@ void TACSTraction3D::addResidual( int elemIndex,
         DUt[3*k] = -trac[k];
       }
     }
-    else if (tractionNormalComponent){
+    else if (tractionCoordinateComponent){
       for ( int k = 0; k < varsPerNode; k++ ){
         DUt[3*k] = -trac[k];
       }
     }
     else {
       for ( int k = 0; k < varsPerNode; k++ ){
-        DUt[3*k] = -vec3Dot(&trac[2*k], normal);
+        DUt[3*k] = -vec3Dot(&trac[3*k], normal);
       }
     }
 

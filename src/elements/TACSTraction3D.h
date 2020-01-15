@@ -21,7 +21,7 @@ class TACSTraction3D : public TACSElement {
  public:
   TACSTraction3D( int _varsPerNode, int _faceIndex,
                   TACSElementBasis *_basis, TacsScalar trac[],
-                  int tractionNormalComponent=1 );
+                  int tractionCoordinateComponent=1 );
   TACSTraction3D( int _varsPerNode, int _faceIndex,
                   TACSElementBasis *_basis, 
                   void (*_getTractionComponents)(int, int, double, const TacsScalar*,
@@ -72,7 +72,7 @@ class TACSTraction3D : public TACSElement {
  private:
   int varsPerNode, faceIndex;
   TACSElementBasis *basis;
-  int tractionNormalComponent;
+  int tractionCoordinateComponent;
   TacsScalar trac[3*TACSElement3D::MAX_VARS_PER_NODE];
   void (*getTractionComponents)(int, int, double, const TacsScalar*,
                                 const TacsScalar*, TacsScalar*);
