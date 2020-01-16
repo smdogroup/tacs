@@ -413,8 +413,8 @@ void TACSLinearElasticity2D::addPointQuantityDVSens( int elemIndex,
 
     TacsScalar s[3];
     stiff->evalStress(elemIndex, pt, X, e, s);
-    stiff->addStressDVSens(elemIndex, pt, X, e, 2.0*scale*dfdq[0],
-                           s, dvLen, dfdx);
+    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                           e, dvLen, dfdx);
   }
 }
 
@@ -1175,8 +1175,8 @@ void TACSLinearElasticity3D::addPointQuantityDVSens( int elemIndex,
 
     TacsScalar s[6];
     stiff->evalStress(elemIndex, pt, X, e, s);
-    stiff->addStressDVSens(elemIndex, pt, X, e, 2.0*scale*dfdq[0],
-                           s, dvLen, dfdx);
+    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                           e, dvLen, dfdx);
   }
 }
 

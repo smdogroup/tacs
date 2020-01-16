@@ -581,10 +581,8 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
     // Add the contributions to the derivative from the strain
     TacsScalar s[3];
     stiff->evalStress(elemIndex, pt, X, e, s);
-    stiff->addStressDVSens(elemIndex, pt, X, e, 2.0*scale*dfdq[0],
-                           s, dvLen, dfdx);
-
-    // Add the result from the derivative of the thermal strain
+    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                           e, dvLen, dfdx);
     stiff->addThermalStrainDVSens(elemIndex, pt, X, -2.0*scale*dfdq[0]*theta,
                                   s, dvLen, dfdx);
   }
@@ -1558,8 +1556,8 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
     // Add the contributions to the derivative from the strain
     TacsScalar s[6];
     stiff->evalStress(elemIndex, pt, X, e, s);
-    stiff->addStressDVSens(elemIndex, pt, X, e, 2.0*scale*dfdq[0],
-                           s, dvLen, dfdx);
+    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                           e, dvLen, dfdx);
 
     // Add the result from the derivative of the thermal strain
     stiff->addThermalStrainDVSens(elemIndex, pt, X, -2.0*scale*dfdq[0]*theta,
