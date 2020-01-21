@@ -468,11 +468,13 @@ int TacsTestAdjResProduct( TACSElement *element,
                            double test_fail_rtol ){
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
+  int dvs_per_node = element->getDesignVarsPerNode();
+  int num_dvs = dvs_per_node*dvLen;
 
   // Create an array to store the values of the adjoint-residual
   // product
-  TacsScalar *result = new TacsScalar[ dvLen ];
-  memset(result, 0, dvLen*sizeof(TacsScalar));
+  TacsScalar *result = new TacsScalar[ num_dvs ];
+  memset(result, 0, num_dvs*sizeof(TacsScalar));
 
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[ nvars ];
@@ -487,13 +489,13 @@ int TacsTestAdjResProduct( TACSElement *element,
   // Compute the product of the result with a perturbation
   // vector that is equal to perturb = sign(result[k])
   TacsScalar dpdx = 0.0;
-  for ( int k = 0; k < dvLen; k++ ){
+  for ( int k = 0; k < num_dvs; k++ ){
     dpdx += fabs(result[k]);
   }
 
   // Allocate an array to store the perturbed design variable
   // values
-  TacsScalar *xpert = new TacsScalar[ dvLen ];
+  TacsScalar *xpert = new TacsScalar[ num_dvs ];
   TacsScalar fd_dpdx = 0.0;
 
   // Zero the residual
@@ -501,7 +503,7 @@ int TacsTestAdjResProduct( TACSElement *element,
 
 #ifdef TACS_USE_COMPLEX
   // Perturb the design variables: xpert = x + dh*sign(result[k])
-  for ( int k = 0; k < dvLen; k++ ){
+  for ( int k = 0; k < num_dvs; k++ ){
     if (TacsRealPart(result[k]) >= 0.0){
       xpert[k] = x[k] + TacsScalar(0.0, dh);
     }
@@ -521,7 +523,7 @@ int TacsTestAdjResProduct( TACSElement *element,
   fd_dpdx = TacsImagPart(p1)/dh;
 #else
   // Perturb the design variables: xpert = x + dh*sign(result[k])
-  for ( int k = 0; k < dvLen; k++ ){
+  for ( int k = 0; k < num_dvs; k++ ){
     if (result[k] >= 0.0){
       xpert[k] = x[k] + dh;
     }
@@ -540,7 +542,7 @@ int TacsTestAdjResProduct( TACSElement *element,
   }
 
   // Pertub the design variables: xpert = x - dh*sign(result[k])
-  for ( int k = 0; k < dvLen; k++ ){
+  for ( int k = 0; k < num_dvs; k++ ){
     if (result[k] >= 0.0){
       xpert[k] = x[k] - dh;
     }
