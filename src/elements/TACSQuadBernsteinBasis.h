@@ -55,4 +55,42 @@ class TACSCubicQuadBernsteinBasis : public TACSElementBasis {
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
 
+/**
+   Basis class for a quintic quad element
+*/
+class TACSQuarticQuadBernsteinBasis : public TACSElementBasis {
+ public:
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
+  int getNumNodes();
+  int getNumParameters();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight( int n );
+  double getQuadraturePoint( int n, double pt[] );
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints( int face );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void computeBasis( const double pt[], double N[] );
+  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+};
+
+/**
+   Basis class for a quintic quad element
+*/
+class TACSQuinticQuadBernsteinBasis : public TACSElementBasis {
+ public:
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
+  int getNumNodes();
+  int getNumParameters();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight( int n );
+  double getQuadraturePoint( int n, double pt[] );
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints( int face );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void computeBasis( const double pt[], double N[] );
+  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+};
+
 #endif // TACS_QUAD_BERNSTEIN_BASIS_H

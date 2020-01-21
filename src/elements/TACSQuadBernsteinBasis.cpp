@@ -312,3 +312,191 @@ void TACSCubicQuadBernsteinBasis::computeBasisGradient( const double pt[],
   Nxi[30] = dna[3]*nb[3];
   Nxi[31] = na[3]*dnb[3];
 }
+
+/*
+  Quartic Quad basis class functions
+*/
+ElementLayout TACSQuarticQuadBernsteinBasis::getLayoutType(){
+  return TACS_QUAD_QUARTIC_ELEMENT;
+}
+
+void TACSQuarticQuadBernsteinBasis::getVisPoint( int n, double pt[] ){
+  static const double pts[5] = {-1.0, -0.7071067811865475, 0.0,
+                                0.7071067811865475, 1.0};
+  pt[0] = pts[n % 5];
+  pt[1] = pts[n/5];
+}
+
+int TACSQuarticQuadBernsteinBasis::getNumNodes(){
+  return 25;
+}
+
+int TACSQuarticQuadBernsteinBasis::getNumParameters(){
+  return 2;
+}
+
+int TACSQuarticQuadBernsteinBasis::getNumQuadraturePoints(){
+  return 25;
+}
+
+double TACSQuarticQuadBernsteinBasis::getQuadratureWeight( int n ){
+  return TacsGaussQuadWts5[n % 5]*TacsGaussQuadWts5[n/5];
+}
+
+double TACSQuarticQuadBernsteinBasis::getQuadraturePoint( int n,
+                                                          double pt[] ){
+  pt[0] = TacsGaussQuadPts5[n % 5];
+  pt[1] = TacsGaussQuadPts5[n/5];
+
+  return TacsGaussQuadWts5[n % 5]*TacsGaussQuadWts5[n/5];
+}
+
+int TACSQuarticQuadBernsteinBasis::getNumElementFaces(){
+  return 4;
+}
+
+int TACSQuarticQuadBernsteinBasis::getNumFaceQuadraturePoints( int face ){
+  return 5;
+}
+
+double TACSQuarticQuadBernsteinBasis::getFaceQuadraturePoint( int face,
+                                                              int n,
+                                                              double pt[],
+                                                              double t[] ){
+  if (face/2 == 0){
+    pt[0] = -1.0 + 2.0*(face % 2);
+    pt[1] = TacsGaussQuadPts5[n];
+  }
+  else {
+    pt[0] = TacsGaussQuadPts5[n];
+    pt[1] = -1.0 + 2.0*(face % 2);
+  }
+
+  getEdgeTangent(face, t);
+
+  return TacsGaussQuadWts5[n];
+}
+
+void TACSQuarticQuadBernsteinBasis::computeBasis( const double pt[],
+                                                  double N[] ){
+  double na[5], nb[5];
+  TacsBernsteinShapeFunctions(5, pt[0], na);
+  TacsBernsteinShapeFunctions(5, pt[1], nb);
+
+  for ( int j = 0; j < 5; j++ ){
+    for ( int i = 0; i < 5; i++ ){
+      N[i + 5*j] = na[i]*nb[j];
+    }
+  }
+}
+
+void TACSQuarticQuadBernsteinBasis::computeBasisGradient( const double pt[],
+                                                          double N[],
+                                                          double Nxi[] ){
+  double na[5], nb[5];
+  double dna[5], dnb[5];
+  TacsBernsteinShapeFuncDerivative(5, pt[0], na, dna);
+  TacsBernsteinShapeFuncDerivative(5, pt[1], nb, dnb);
+
+  for ( int j = 0; j < 5; j++ ){
+    for ( int i = 0; i < 5; i++ ){
+      N[i + 5*j] = na[i]*nb[j];
+      Nxi[2*(i + 5*j)] = dna[i]*nb[j];
+      Nxi[2*(i + 5*j)+1] = na[i]*dnb[j];
+    }
+  }
+}
+
+/*
+  Quintic Quad basis class functions
+*/
+ElementLayout TACSQuinticQuadBernsteinBasis::getLayoutType(){
+  return TACS_QUAD_QUINTIC_ELEMENT;
+}
+
+void TACSQuinticQuadBernsteinBasis::getVisPoint( int n, double pt[] ){
+  static const double pts[6] = {-1.0, -0.8090169943749475, -0.30901699437494745,
+                                0.30901699437494745, 0.8090169943749475, 1.0};
+  pt[0] = pts[n % 6];
+  pt[1] = pts[n/6];
+}
+
+int TACSQuinticQuadBernsteinBasis::getNumNodes(){
+  return 36;
+}
+
+int TACSQuinticQuadBernsteinBasis::getNumParameters(){
+  return 2;
+}
+
+int TACSQuinticQuadBernsteinBasis::getNumQuadraturePoints(){
+  return 36;
+}
+
+double TACSQuinticQuadBernsteinBasis::getQuadratureWeight( int n ){
+  return TacsGaussQuadWts6[n % 6]*TacsGaussQuadWts6[n/6];
+}
+
+double TACSQuinticQuadBernsteinBasis::getQuadraturePoint( int n,
+                                                          double pt[] ){
+  pt[0] = TacsGaussQuadPts6[n % 6];
+  pt[1] = TacsGaussQuadPts6[n/6];
+
+  return TacsGaussQuadWts6[n % 6]*TacsGaussQuadWts6[n/6];
+}
+
+int TACSQuinticQuadBernsteinBasis::getNumElementFaces(){
+  return 4;
+}
+
+int TACSQuinticQuadBernsteinBasis::getNumFaceQuadraturePoints( int face ){
+  return 6;
+}
+
+double TACSQuinticQuadBernsteinBasis::getFaceQuadraturePoint( int face,
+                                                              int n,
+                                                              double pt[],
+                                                              double t[] ){
+  if (face/2 == 0){
+    pt[0] = -1.0 + 2.0*(face % 2);
+    pt[1] = TacsGaussQuadPts6[n];
+  }
+  else {
+    pt[0] = TacsGaussQuadPts6[n];
+    pt[1] = -1.0 + 2.0*(face % 2);
+  }
+
+  getEdgeTangent(face, t);
+
+  return TacsGaussQuadWts6[n];
+}
+
+void TACSQuinticQuadBernsteinBasis::computeBasis( const double pt[],
+                                                  double N[] ){
+  double na[6], nb[6];
+  TacsBernsteinShapeFunctions(6, pt[0], na);
+  TacsBernsteinShapeFunctions(6, pt[1], nb);
+
+  for ( int j = 0; j < 6; j++ ){
+    for ( int i = 0; i < 6; i++ ){
+      N[i + 6*j] = na[i]*nb[j];
+    }
+  }
+}
+
+void TACSQuinticQuadBernsteinBasis::computeBasisGradient( const double pt[],
+                                                          double N[],
+                                                          double Nxi[] ){
+  double na[6], nb[6];
+  double dna[6], dnb[6];
+  TacsBernsteinShapeFuncDerivative(6, pt[0], na, dna);
+  TacsBernsteinShapeFuncDerivative(6, pt[1], nb, dnb);
+
+  for ( int j = 0; j < 6; j++ ){
+    for ( int i = 0; i < 6; i++ ){
+      N[i + 6*j] = na[i]*nb[j];
+      Nxi[2*(i + 6*j)] = dna[i]*nb[j];
+      Nxi[2*(i + 6*j)+1] = na[i]*dnb[j];
+    }
+  }
+}

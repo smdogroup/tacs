@@ -59,6 +59,12 @@ cdef extern from "TACSQuadBasis.h":
     cdef cppclass TACSCubicQuadBasis(TACSElementBasis):
         TACSCubicQuadBasis()
 
+    cdef cppclass TACSQuarticQuadBasis(TACSElementBasis):
+        TACSQuarticQuadBasis()
+
+    cdef cppclass TACSQuinticQuadBasis(TACSElementBasis):
+        TACSQuinticQuadBasis()
+
 cdef extern from "TACSTriangularBasis.h":
     cdef cppclass TACSLinearTriangleBasis(TACSElementBasis):
         TACSLinearTriangleBasis()

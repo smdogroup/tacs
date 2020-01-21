@@ -285,7 +285,7 @@ void TACSHeatConduction2D::evalPointQuantitySens( int elemIndex,
   dfdUx[0] = dfdUx[1] = 0.0;
 
   if (quantityType == TACS_TEMPERATURE){
-    dfdUt[0] = 1.0;
+    dfdUt[0] = dfdq[0];
   }
   else if (quantityType == TACS_HEAT_FLUX){
     // flux = Kc*grad
@@ -639,7 +639,7 @@ void TACSHeatConduction3D::evalPointQuantitySens( int elemIndex,
   dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
 
   if (quantityType == TACS_TEMPERATURE){
-    dfdUt[0] = 1.0;
+    dfdUt[0] = dfdq[0];
   }
   else if (quantityType == TACS_HEAT_FLUX){
     // flux = Kc*grad

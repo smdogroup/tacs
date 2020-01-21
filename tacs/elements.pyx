@@ -95,6 +95,16 @@ cdef class CubicQuadBasis(ElementBasis):
         self.ptr = new TACSCubicQuadBasis()
         self.ptr.incref()
 
+cdef class QuarticQuadBasis(ElementBasis):
+    def __cinit__(self):
+        self.ptr = new TACSQuarticQuadBasis()
+        self.ptr.incref()
+
+cdef class QuinticQuadBasis(ElementBasis):
+    def __cinit__(self):
+        self.ptr = new TACSQuinticQuadBasis()
+        self.ptr.incref()
+
 
 cdef class LinearTriangleBasis(ElementBasis):
     def __cinit__(self):

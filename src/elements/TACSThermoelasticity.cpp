@@ -652,7 +652,7 @@ void TACSLinearThermoelasticity2D::evalPointQuantitySens( int elemIndex,
     }
   }
   else if (quantityType == TACS_TEMPERATURE){
-    dfdUt[6] = 1.0;
+    dfdUt[6] = dfdq[0];
   }
   else if (quantityType == TACS_HEAT_FLUX){
     // flux = Kc*grad
@@ -1646,7 +1646,7 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
     }
   }
   else if (quantityType == TACS_TEMPERATURE){
-    dfdUt[9] = 1.0;
+    dfdUt[9] = dfdq[0];
   }
   else if (quantityType == TACS_HEAT_FLUX){
     // flux = Kc*grad

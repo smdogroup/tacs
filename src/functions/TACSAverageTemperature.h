@@ -16,25 +16,21 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_COMPLIANCE_H
-#define TACS_COMPLIANCE_H
+#ifndef TACS_AVERAGE_TEMPERATURE_H
+#define TACS_AVERAGE_TEMPERATURE_H
 
 /*
-  Calculate the compliance
+  Calculate the average temperature
 */
 #include "TACSFunction.h"
 
 /*
-  Evaluate the compliance of the structure.
-
-  This evaluates the compliance within the structure based on an
-  integration of the strain energy in each element, not by the product
-  of the load vector with the displacement.
+  Evaluate the spatial average of the temperature of the model.
 */
-class TACSCompliance : public TACSFunction {
+class TACSAverageTemperature : public TACSFunction {
  public:
-  TACSCompliance( TACSAssembler *_assembler );
-  ~TACSCompliance();
+  TACSAverageTemperature( TACSAssembler *_assembler );
+  ~TACSAverageTemperature();
 
   /**
     Get the object/function name
@@ -96,8 +92,9 @@ class TACSCompliance : public TACSFunction {
   // The name of the function
   static const char * funcName;
 
-  // The compliance value
-  TacsScalar compliance;
+  // The volume (area) and the integral of temperature
+  TacsScalar volume;
+  TacsScalar integral_temp;
 };
 
-#endif // TACS_COMPLIANCE_H
+#endif // TACS_AVERAGE_TEMPERATURE_H

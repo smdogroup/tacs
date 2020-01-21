@@ -59,6 +59,15 @@ cdef class Compliance(Function):
         self.ptr.incref()
         return
 
+cdef class AverageTemperature(Function):
+    def __cinit__(self, Assembler assembler):
+        """
+        Wrap the function AverageTemperature
+        """
+        self.ptr = new TACSAverageTemperature(assembler.ptr)
+        self.ptr.incref()
+        return
+
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
     def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
