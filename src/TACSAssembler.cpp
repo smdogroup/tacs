@@ -2601,9 +2601,9 @@ int TACSAssembler::initialize(){
   Scatter the boundary conditions that are shared between processors
 
   Note that we do not need to scatter the values along with the
-  boundary condition values along with the boundary condition
-  variables because the values are only used on the processors which
-  own the nodes (that already have the correct information.)
+  boundary condition values because the values are only used on the
+  processors which own the nodes (that already have the correct
+  information.)
 
   This function is called during initialize()
 */
@@ -3158,6 +3158,13 @@ void TACSAssembler::applyBCs( TACSVec *vec ){
 */
 void TACSAssembler::applyBCs( TACSMat *mat ){
   mat->applyBCs(bcMap);
+}
+
+/*
+  Apply the boundary conditions to the tranpose of the matrix
+*/
+void TACSAssembler::applyTransposeBCs( TACSMat *mat ){
+  mat->applyTransposeBCs(bcMap);
 }
 
 /*
@@ -4031,7 +4038,14 @@ void TACSAssembler::assembleJacobian( TacsScalar alpha,
   if (residual){
     residual->applyBCs(bcMap, varsVec);
   }
-  A->applyBCs(bcMap);
+
+  // Apply the appropriate boundary conditions
+  if (matOr == TACS_MAT_TRANSPOSE){
+    A->applyTransposeBCs(bcMap);
+  }
+  else {
+    A->applyBCs(bcMap);
+  }
 }
 
 /*!
@@ -4100,7 +4114,13 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
 
   A->beginAssembly();
   A->endAssembly();
-  A->applyBCs(bcMap);
+
+  if (matOr == TACS_MAT_TRANSPOSE){
+    A->applyTransposeBCs(bcMap);
+  }
+  else {
+    A->applyBCs(bcMap);
+  }
 }
 
 /*!
@@ -4154,7 +4174,13 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
 
   A->beginAssembly();
   A->endAssembly();
-  A->applyBCs(bcMap);
+
+  if (matOr == TACS_MAT_TRANSPOSE){
+    A->applyTransposeBCs(bcMap);
+  }
+  else {
+    A->applyBCs(bcMap);
+  }
 }
 
 /*

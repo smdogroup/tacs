@@ -2052,6 +2052,115 @@ void BCSRMat::zeroRow( int row, int vars, int ident ){
 }
 
 /*!
+  Zero the column values
+*/
+void BCSRMat::zeroColumns( int num_zero_cols,
+                           const int *zero_cols,
+                           const int *zero_vars,
+                           int ident ){
+  const int ncols = data->ncols;
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int bsize = data->bsize;
+  const int b2 = bsize*bsize;
+  const int *diag = data->diag;
+
+  // Count up the number of columns
+  int *colp = new int[ ncols+1 ];
+  memset(colp, 0, (ncols+1)*sizeof(int));
+
+  // Set the entries of colp to -1 and only those entries
+  // with the correct index = -1
+  for ( int i = 0; i < ncols; i++ ){
+    colp[i] = -1;
+  }
+  for ( int i = 0; i < num_zero_cols; i++ ){
+    int col = zero_cols[i];
+    if (col >= 0 && col < ncols){
+      colp[col] = 0;
+    }
+  }
+  
+  for ( int jp = 0; jp < rowp[nrows]; jp++ ){
+    int col = cols[jp];
+    if (colp[col] >= 0){
+      colp[col]++;
+    }
+  }
+
+  // Adjust the indices
+  int index = 0;
+  for ( int i = 0; i < ncols; i++ ){
+    int temp = colp[i];
+    colp[i] = index;
+    if (temp >= 0){
+      index += temp;
+    }
+  }
+  colp[ncols] = index;
+
+  // Allocate space for the rows
+  int *ptr = new int[ colp[ncols] ];
+  
+  for ( int jp = 0; jp < rowp[nrows]; jp++ ){
+    int col = cols[jp];
+    if (colp[col+1] - colp[col] > 0){
+      ptr[colp[col]] = jp;
+      colp[col]++;
+    }
+  }
+
+  // Reset the columns
+  for ( int i = ncols; i > 0; i-- ){
+    colp[i] = colp[i-1];
+  }
+  colp[0] = 0;
+
+  // Now, zero the columns
+  for ( int i = 0; i < num_zero_cols; i++ ){
+    int col = zero_cols[i];
+    if (col >= 0 && col < ncols){
+
+      for ( int j = colp[col]; j < colp[col+1]; j++ ){
+        int jp = ptr[j];
+
+        TacsScalar *a = &(data->A[b2*jp]);
+        for ( int jj = 0; jj < bsize; jj++ ){
+          if (zero_vars[i] & (1 << jj)){
+            for ( int ii = 0; ii < bsize; ii++ ){
+              a[bsize*ii + jj] = 0.0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (ident && diag){
+    for ( int i = 0; i < num_zero_cols; i++ ){
+      int col = zero_cols[i];
+      if (col >= 0 && col < ncols){
+        int jp = diag[col];
+
+        TacsScalar *a = &(data->A[b2*jp]);
+        for ( int jj = 0; jj < bsize; jj++ ){
+          if (zero_vars[i] & (1 << jj)){
+            for ( int ii = 0; ii < bsize; ii++ ){
+              a[bsize*ii + jj] = 0.0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Free the allocated space
+  delete [] colp;
+  delete [] ptr;
+}
+
+/*!
   Partition the existing matrix into four sub-matrices.
   This routine should be avoided if possible however,
   it's useful for testing purposes.

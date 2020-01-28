@@ -80,6 +80,7 @@ class TACSSchurMat : public TACSMat {
                         int nv, int mv, const TacsScalar *values,
                         MatrixOrientation matOr=TACS_MAT_NORMAL );
   void applyBCs( TACSBcMap *bcmap );
+  void applyTransposeBCs( TACSBcMap *bcmap );
   TACSVec *createVec();
 
   // Functions for setting values in the matrix

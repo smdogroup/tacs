@@ -307,34 +307,93 @@ void TACSParallelMat::getExtColMap( TACSBVecDistribute ** ext_map ){
   This code applies the boundary conditions supplied to the matrix
 */
 void TACSParallelMat::applyBCs( TACSBcMap *bcmap ){
-  // Get the MPI rank and ownership range
-  int mpi_rank;
-  const int *ownerRange;
-  MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
-  rmap->getOwnerRange(&ownerRange);
+  if (bcmap){
+    // Get the MPI rank and ownership range
+    int mpi_rank;
+    const int *ownerRange;
+    MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
+    rmap->getOwnerRange(&ownerRange);
 
-  // apply the boundary conditions
-  const int *nodes, *vars;
-  const TacsScalar *values;
-  int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+    // apply the boundary conditions
+    const int *nodes, *vars;
+    const TacsScalar *values;
+    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
-  // Get the matrix values
-  for ( int i = 0; i < nbcs; i++){
-    // Find block i and zero out the variables associated with it
-    if (nodes[i] >= ownerRange[mpi_rank] &&
-        nodes[i] < ownerRange[mpi_rank+1]){
-      int bvar  = nodes[i] - ownerRange[mpi_rank];
-      int ident = 1; // Replace the diagonal with the identity matrix
-      Aloc->zeroRow(bvar, vars[i], ident);
+    // Get the matrix values
+    for ( int i = 0; i < nbcs; i++ ){
+      // Find block i and zero out the variables associated with it
+      if (nodes[i] >= ownerRange[mpi_rank] &&
+          nodes[i] < ownerRange[mpi_rank+1]){
+        int bvar  = nodes[i] - ownerRange[mpi_rank];
+        int ident = 1; // Replace the diagonal with the identity matrix
+        Aloc->zeroRow(bvar, vars[i], ident);
 
-      // Now, check if the variable will be
-      // in the off diagonal block (potentially)
-      bvar = bvar - (N-Nc);
-      if (bvar >= 0){
-        ident = 0;
-        Bext->zeroRow(bvar, vars[i], ident);
+        // Now, check if the variable will be
+        // in the off diagonal block (potentially)
+        bvar = bvar - (N-Nc);
+        if (bvar >= 0){
+          ident = 0;
+          Bext->zeroRow(bvar, vars[i], ident);
+        }
       }
     }
+  }
+}
+
+/*!
+  Apply the boundary conditions for a transpose matrix
+*/
+void TACSParallelMat::applyTransposeBCs( TACSBcMap *bcmap ){
+  if (bcmap){
+    // Get the MPI rank and ownership range
+    int mpi_rank;
+    const int *ownerRange;
+    MPI_Comm_rank(rmap->getMPIComm(), &mpi_rank);
+    rmap->getOwnerRange(&ownerRange);
+
+    // apply the boundary conditions
+    const int *nodes, *vars;
+    const TacsScalar *values;
+    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+
+    // Allocate space for the temporary values
+    int *temp_nodes = new int[ nbcs ];
+    int *temp_vars = new int[ nbcs ];
+  
+    // Get the column indices for the locally owned boundary conditions
+    int nvals = 0;
+    for ( int i = 0; i < nbcs; i++ ){
+      // Find block i and zero out the variables associated with it
+      if (nodes[i] >= ownerRange[mpi_rank] &&
+          nodes[i] < ownerRange[mpi_rank+1]){
+        temp_nodes[nvals] = nodes[i] - ownerRange[mpi_rank];
+        temp_vars[nvals] = vars[i];
+        nvals++;
+      }
+    }
+    int ident = 1;
+    Aloc->zeroColumns(nvals, temp_nodes, temp_vars, ident);
+
+    // Find the column indices for the non-local boundary conditions
+    nvals = 0;
+    for ( int i = 0; i < nbcs; i++ ){
+      if (nodes[i] < ownerRange[mpi_rank] ||
+          nodes[i] >= ownerRange[mpi_rank+1]){
+        TACSBVecIndices *bindex = ext_dist->getIndices();
+        int index = bindex->findIndex(nodes[i]);
+        if (index >= 0){
+          temp_nodes[nvals] = index;
+          temp_vars[nvals] = vars[i];
+          nvals++;
+        }
+      }
+    }
+
+    ident = 0;
+    Bext->zeroColumns(nvals, temp_nodes, temp_vars, ident);
+
+    delete [] temp_nodes;
+    delete [] temp_vars;
   }
 }
 

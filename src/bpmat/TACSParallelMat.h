@@ -81,6 +81,7 @@ class TACSParallelMat : public TACSMat {
   // ------------------------------------------
   void zeroEntries();                // Zero the matrix values
   void applyBCs( TACSBcMap *bcmap ); // Apply the boundary conditions
+  void applyTransposeBCs( TACSBcMap *bcmap ); // Apply the transpose BCs
 
   // Functions required for solving linear systems
   // ---------------------------------------------

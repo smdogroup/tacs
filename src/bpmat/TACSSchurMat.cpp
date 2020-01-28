@@ -707,6 +707,53 @@ void TACSSchurMat::applyBCs( TACSBcMap *bcmap ){
   }
 }
 
+/*!
+  Apply the transpose of the Dirichlet boundary conditions (zero-ing)
+  columns and setting the diagonal entries to unity.
+*/
+void TACSSchurMat::applyTransposeBCs( TACSBcMap *bcmap ){
+  if (bcmap){
+    /*
+    TACSBVecIndices *bindx = b_map->getIndices();
+    TACSBVecIndices *cindx = c_map->getIndices();
+
+    int mpiRank;
+    MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
+
+    const int *ownerRange;
+    rmap->getOwnerRange(&ownerRange);
+
+    // apply the boundary conditions
+    const int *nodes, *vars;
+    const TacsScalar *values;
+    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+
+    // Get the matrix values
+    for ( int i = 0; i < nbcs; i++ ){
+      // Find block i and zero out the variables associated with it
+      int br = bindx->findIndex(nodes[i]), cr = 0;
+      if (br >= 0){
+        int ident = 1; // Replace the diagonal with the identity matrix
+        B->zeroRow(br, vars[i], ident);
+        ident = 0;
+        E->zeroRow(br, vars[i], ident);
+      }
+      else if ((cr = cindx->findIndex(nodes[i])) >= 0){
+        int cident = 0;
+        int fident = 0;
+        if (nodes[i] >= ownerRange[mpiRank] &&
+            nodes[i] < ownerRange[mpiRank+1]){
+          // Only use the identity here if it is locally owned
+          cident = 1;
+        }
+        F->zeroRow(cr, vars[i], fident);
+        C->zeroRow(cr, vars[i], cident);
+      }
+    }
+    */
+  }
+}
+    
 /*
   Get the row/column dimension of the matrix
 

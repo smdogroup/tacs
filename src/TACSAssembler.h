@@ -171,6 +171,7 @@ class TACSAssembler : public TACSObject {
   // Shortcut to apply boundary conditions
   void applyBCs( TACSVec *vec );
   void applyBCs( TACSMat *mat );
+  void applyTransposeBCs( TACSMat *mat );
 
   // Set the Dirichlet boundary conditions to the state vector
   void setBCs( TACSVec *vec );

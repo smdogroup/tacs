@@ -160,6 +160,7 @@ class TACSMat : public TACSObject {
                                 int nv, int mv, const TacsScalar *values,
                                 MatrixOrientation matOr=TACS_MAT_NORMAL ){}
   virtual void applyBCs( TACSBcMap *bcmap ){}
+  virtual void applyTransposeBCs( TACSBcMap *bcmap ){}
   virtual void beginAssembly(){}
   virtual void endAssembly(){}
 
