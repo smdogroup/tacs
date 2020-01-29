@@ -323,6 +323,12 @@ void TACSLinearThermoelasticity2D::addWeakAdjProduct( int elemIndex,
   phi[2] = Psix[1] + Psix[2];
   stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, dfdx);
 
+  // Evaluate the components of the stress using the components of the
+  // phi vector
+  TacsScalar s[3];
+  stiff->evalStress(elemIndex, pt, X, phi, s);
+  stiff->addThermalStrainDVSens(elemIndex, pt, X, -theta*scale, s, dvLen, dfdx);
+
   // Compute the thermal flux from the thermal gradient
   TacsScalar grad[2];
   grad[0] = Ux[4];
@@ -1224,6 +1230,12 @@ void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
   phi[4] = Psix[2] + Psix[6];
   phi[5] = Psix[1] + Psix[3];
   stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, dfdx);
+
+  // Evaluate the components of the stress using the components of the
+  // phi vector
+  TacsScalar s[6];
+  stiff->evalStress(elemIndex, pt, X, phi, s);
+  stiff->addThermalStrainDVSens(elemIndex, pt, X, -theta*scale, s, dvLen, dfdx);
 
   // Compute the thermal flux from the thermal gradient
   TacsScalar grad[3];

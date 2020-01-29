@@ -358,24 +358,14 @@ void TACSMg::assembleJacobian( double alpha, double beta, double gamma,
       TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
       if (fine_mat && coarse_mat){
         interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
-        if (matOr == TACS_MAT_TRANSPOSE){
-          assembler[i]->applyTransposeBCs(coarse_mat);
-        }
-        else {
-          assembler[i]->applyBCs(coarse_mat);
-        }
+        assembler[i]->applyBCs(coarse_mat);
       }
     }
     TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
     TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
     if (fine_mat && coarse_mat){
       interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
-      if (matOr == TACS_MAT_TRANSPOSE){
-        assembler[nlevels-1]->applyTransposeBCs(coarse_mat);
-      }
-      else {
-        assembler[nlevels-1]->applyBCs(coarse_mat);
-      }
+      assembler[nlevels-1]->applyBCs(coarse_mat);
     }
   }
   else {
@@ -411,12 +401,14 @@ void TACSMg::assembleMatType( ElementMatrixType matType,
       TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
       if (fine_mat && coarse_mat){
         interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
+        assembler[i]->applyBCs(coarse_mat);
       }
     }
     TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
     TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
     if (fine_mat && coarse_mat){
       interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
+      assembler[nlevels-1]->applyBCs(coarse_mat);
     }
   }
   else {
@@ -452,12 +444,14 @@ void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
       TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
       if (fine_mat && coarse_mat){
         interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
+        assembler[i]->applyBCs(coarse_mat);
       }
     }
     TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
     TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
     if (fine_mat && coarse_mat){
       interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
+      assembler[nlevels-1]->applyBCs(coarse_mat);
     }
   }
   else {

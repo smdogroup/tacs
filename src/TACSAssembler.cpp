@@ -3026,18 +3026,18 @@ void TACSAssembler::getDesignVars( TACSBVec *dvs ){
     for ( int i = 0; i < naux; i++ ){
       int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
       aux[i].elem->getDesignVars(aux[i].num, maxDVs, dvVals);
-      dvs->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
+      dvs->setValues(numDVs, dvNums, dvVals, TACS_INSERT_NONZERO_VALUES);
     }
   }
 
   for ( int i = 0; i < numElements; i++ ){
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
     elements[i]->getDesignVars(i, numDVs, dvVals);
-    dvs->setValues(numDVs, dvNums, dvVals, TACS_INSERT_VALUES);
+    dvs->setValues(numDVs, dvNums, dvVals, TACS_INSERT_NONZERO_VALUES);
   }
 
-  dvs->beginSetValues(TACS_INSERT_VALUES);
-  dvs->endSetValues(TACS_INSERT_VALUES);
+  dvs->beginSetValues(TACS_INSERT_NONZERO_VALUES);
+  dvs->endSetValues(TACS_INSERT_NONZERO_VALUES);
 }
 
 /**
@@ -4040,12 +4040,7 @@ void TACSAssembler::assembleJacobian( TacsScalar alpha,
   }
 
   // Apply the appropriate boundary conditions
-  if (matOr == TACS_MAT_TRANSPOSE){
-    A->applyTransposeBCs(bcMap);
-  }
-  else {
-    A->applyBCs(bcMap);
-  }
+  A->applyBCs(bcMap);
 }
 
 /*!
@@ -4115,12 +4110,7 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
   A->beginAssembly();
   A->endAssembly();
 
-  if (matOr == TACS_MAT_TRANSPOSE){
-    A->applyTransposeBCs(bcMap);
-  }
-  else {
-    A->applyBCs(bcMap);
-  }
+  A->applyBCs(bcMap);
 }
 
 /*!
@@ -4175,12 +4165,7 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
   A->beginAssembly();
   A->endAssembly();
 
-  if (matOr == TACS_MAT_TRANSPOSE){
-    A->applyTransposeBCs(bcMap);
-  }
-  else {
-    A->applyBCs(bcMap);
-  }
+  A->applyBCs(bcMap);
 }
 
 /*
@@ -5073,7 +5058,7 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TacsTestElementJacobian(elements[elemNum], elemNum, time,
                           elemXpts, vars, dvars, ddvars,
                           col, dh, print_level, rtol, atol);
-  
+
   const int maxDVs = maxElementDesignVars;
   TacsScalar *x = elementSensData;
   elements[elemNum]->getDesignVars(elemNum, maxDVs, x);

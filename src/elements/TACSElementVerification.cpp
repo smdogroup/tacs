@@ -483,6 +483,7 @@ int TacsTestAdjResProduct( TACSElement *element,
   // Evaluate the derivative of the adjoint-residual product
   double scale = 1.0*rand()/RAND_MAX;
 
+  element->setDesignVars(elemIndex, dvLen, x);
   element->addAdjResProduct(elemIndex, time, scale, adjoint,
                             Xpts, vars, dvars, ddvars, dvLen, result);
 
@@ -573,7 +574,6 @@ int TacsTestAdjResProduct( TACSElement *element,
   double max_rel = TacsGetMaxRelError(&dpdx, &fd_dpdx, 1,
                                       &max_rel_index);
 
-  test_print_level = 2;
   if (test_print_level > 0){
     fprintf(stderr,
             "Testing the derivative of the adjoint-residual product for %s\n",
