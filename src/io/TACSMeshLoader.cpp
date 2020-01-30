@@ -352,7 +352,7 @@ static int parse_element_field( size_t *loc,
   entry += entry_width;
 
   // The component indices must be positive
-  if (*elem_num <= 0){
+  if (*component_num <= 0){
     fail = 1;
     return fail;
   }
@@ -362,21 +362,29 @@ static int parse_element_field( size_t *loc,
 
   while (n < max_num_nodes){
     for ( ; (n < max_num_nodes) && (entry < line_len);
-      entry += entry_width, n++ ){
+      entry += entry_width ){
 
       // Parse the fixed-width entry containing the node number
       strncpy(node, &line[entry], entry_width);
       node[entry_width] = '\0';
-      int temp = atoi(node);
-      if (temp > 0){
-        if (node_nums){
-          node_nums[n] = temp;
+
+      // Check if the entry is entirely blank. Skip the update if it
+      // is completely blank
+      int count = 0;
+      while (count < entry_width && isspace(node[count])) count++;
+      if (count < entry_width){
+        int temp = atoi(node);
+        if (temp > 0){
+          if (node_nums){
+            node_nums[n] = temp;
+          }
+          n++;
         }
-      }
-      else if (temp <= 0){
-        *num_nodes = n;
-        fail = 0;
-        return fail;
+        else if (temp <= 0){
+          *num_nodes = n;
+          fail = 0;
+          return fail;
+        }
       }
     }
 
@@ -623,7 +631,8 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
       }
 
       if (line[0] != '$'){
-        if (in_bulk && strncmp(line, "END BULK", 8) == 0){
+        if (in_bulk && (strncmp(line, "END BULK", 8) == 0 ||
+                        strncmp(line, "ENDDATA", 7) == 0)){
           buffer_temp_loc = buffer_len;
         }
         else if (strncmp(line, "GRID*", 5) == 0){
@@ -778,7 +787,8 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
         }
       }
       if (line[0] != '$'){ // A comment line
-        if (in_bulk && strncmp(line, "END BULK", 8) == 0){
+        if (in_bulk && (strncmp(line, "END BULK", 8) == 0 ||
+                        strncmp(line, "ENDDATA", 7) == 0)){
           buffer_temp_loc = buffer_len;
         }
         else if (strncmp(line, "GRID*", 5) == 0){
