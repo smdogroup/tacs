@@ -37,6 +37,7 @@ cdef extern from "TACSStructuralMass.h":
 cdef extern from "TACSCompliance.h":
     cdef cppclass TACSCompliance(TACSFunction):
         TACSCompliance(TACSAssembler*)
+        void setComplianceType(int)
 
 cdef extern from "TACSAverageTemperature.h":
     cdef cppclass TACSAverageTemperature(TACSFunction):

@@ -26,6 +26,7 @@ TACSCompliance::TACSCompliance( TACSAssembler *_assembler ):
   TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                TACSFunction::SINGLE_STAGE, 0){
   compliance = 0.0;
+  compliance_type = TACS_STRAIN_ENERGY_DENSITY;
 }
 
 TACSCompliance::~TACSCompliance(){}
@@ -34,6 +35,13 @@ const char *TACSCompliance::funcName = "TACSCompliance";
 
 const char *TACSCompliance::getObjectName(){
   return funcName;
+}
+
+/*
+  Set the compliance type
+*/
+void TACSCompliance::setComplianceType( int _compliance_type ){
+  compliance_type = _compliance_type;
 }
 
 /*
@@ -82,7 +90,7 @@ void TACSCompliance::elementWiseEval( EvaluationType ftype,
 
       // Evaluate the strain energy density
       TacsScalar U0 = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_STRAIN_ENERGY_DENSITY,
+      int count = element->evalPointQuantity(elemIndex, compliance_type,
                                              time, i, pt,
                                              Xpts, vars, dvars, ddvars, &U0);
 
@@ -126,7 +134,7 @@ void TACSCompliance::getElementSVSens( int elemIndex, TACSElement *element,
 
       // Evaluate the strain energy density
       TacsScalar U0 = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_STRAIN_ENERGY_DENSITY,
+      int count = element->evalPointQuantity(elemIndex, compliance_type,
                                              time, i, pt,
                                              Xpts, vars, dvars, ddvars, &U0);
 
@@ -137,7 +145,7 @@ void TACSCompliance::getElementSVSens( int elemIndex, TACSElement *element,
 
         // Evaluate the derivative of the strain energy w.r.t. state variables
         TacsScalar dfdq = detJ*weight;
-        element->addPointQuantitySVSens(elemIndex, TACS_STRAIN_ENERGY_DENSITY, time,
+        element->addPointQuantitySVSens(elemIndex, compliance_type, time,
                                         alpha, beta, gamma,
                                         i, pt, Xpts, vars, dvars, ddvars,
                                         &dfdq, dfdu);
@@ -188,7 +196,7 @@ void TACSCompliance::addElementDVSens( int elemIndex,
 
       // Evaluate the strain energy density
       TacsScalar U0 = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_STRAIN_ENERGY_DENSITY,
+      int count = element->evalPointQuantity(elemIndex, compliance_type,
                                              time, i, pt,
                                              Xpts, vars, dvars, ddvars, &U0);
 
@@ -199,7 +207,7 @@ void TACSCompliance::addElementDVSens( int elemIndex,
 
         // Evaluate the derivative of the strain energy
         TacsScalar dfdq = detJ*weight;
-        element->addPointQuantityDVSens(elemIndex, TACS_STRAIN_ENERGY_DENSITY,
+        element->addPointQuantityDVSens(elemIndex, compliance_type,
                                         time, scale, i, pt,
                                         Xpts, vars, dvars, ddvars,
                                         &dfdq, dvLen, dfdx);

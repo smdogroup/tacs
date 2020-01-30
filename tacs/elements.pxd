@@ -26,6 +26,17 @@ import numpy as np
 from constitutive cimport *
 from TACS cimport *
 
+cdef extern from "TACSElementTypes.h":
+    const int TACS_ELEMENT_DENSITY
+    const int TACS_STRAIN_ENERGY_DENSITY
+    const int TACS_FAILURE_INDEX
+    const int TACS_HEAT_FLUX
+    const int TACS_TEMPERATURE
+    const int TACS_TOTAL_STRAIN_ENERGY_DENSITY
+    const int TACS_ELEMENT_DISPLACEMENT
+    const int TACS_ELEMENT_STRAIN
+    const int TACS_ELEMENT_STRESS
+
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasis(TACSElementBasis*, double, int, double, double)
 

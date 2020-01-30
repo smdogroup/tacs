@@ -23,9 +23,6 @@ elem = elements.Element2D(model, basis)
 varsPerNode = model.getVarsPerNode()
 creator = TACS.Creator(comm, varsPerNode)
 
-# Create the elements
-elem_order = 2
-
 if comm.rank == 0:
     # Create the elements
     nx = 25
@@ -107,14 +104,12 @@ gamma = 0.0
 assembler.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
-res.setRand(1.0, 1.0)
+res.getArray()[:] = 1.0
 assembler.applyBCs(res)
 pc.applyFactor(res, ans)
 ans.scale(-1.0)
 
 assembler.setVariables(ans)
-
-assembler.setSimulationTime(0.15)
 
 # Create the function list
 funcs = []

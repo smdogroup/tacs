@@ -43,6 +43,17 @@ from elements cimport *
 cdef extern from "mpi-compat.h":
     pass
 
+# TACSElement quantity types
+ELEMENT_DENSITY = TACS_ELEMENT_DENSITY
+STRAIN_ENERGY_DENSITY = TACS_STRAIN_ENERGY_DENSITY
+FAILURE_INDEX = TACS_FAILURE_INDEX
+HEAT_FLUX = TACS_HEAT_FLUX
+TEMPERATURE = TACS_TEMPERATURE
+TOTAL_STRAIN_ENERGY_DENSITY = TACS_TOTAL_STRAIN_ENERGY_DENSITY
+ELEMENT_DISPLACEMENT = TACS_ELEMENT_DISPLACEMENT
+ELEMENT_STRAIN = TACS_ELEMENT_STRAIN
+ELEMENT_STRESS = TACS_ELEMENT_STRESS
+
 def TestElementBasis(ElementBasis basis, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):

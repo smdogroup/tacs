@@ -37,6 +37,11 @@ class TACSCompliance : public TACSFunction {
   ~TACSCompliance();
 
   /**
+    Set the type of compliance to evaluate
+  */
+  void setComplianceType( int _compliance_type );
+
+  /**
     Get the object/function name
   */
   const char *getObjectName();
@@ -95,6 +100,9 @@ class TACSCompliance : public TACSFunction {
  private:
   // The name of the function
   static const char * funcName;
+
+  // The integer indicating the type of compliance to evaluate
+  int compliance_type;
 
   // The compliance value
   TacsScalar compliance;

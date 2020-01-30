@@ -507,6 +507,26 @@ int TACSLinearThermoelasticity2D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+    }
+
+    // Evaluate the sress
+    TacsScalar s[3];
+    stiff->evalStress(elemIndex, pt, X, e, s);
+
+    // Evaluate the strain energy density
+    *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2]);
+  }
 
   return 0;
 }
@@ -591,6 +611,23 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
                            e, dvLen, dfdx);
     stiff->addThermalStrainDVSens(elemIndex, pt, X, -2.0*scale*dfdq[0]*theta,
                                   s, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+    }
+
+    // Add the contributions to the derivative from the strain
+    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                           e, dvLen, dfdx);
   }
 }
 
@@ -700,6 +737,31 @@ void TACSLinearThermoelasticity2D::evalPointQuantitySens( int elemIndex,
       dfdUt[6] = -2.0*dfdq[0]*(s[0]*et[0] +
                                s[1]*et[1] +
                                s[2]*et[2]);
+    }
+  }
+  else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+    }
+
+    // Add the contributions to the derivative from the strain
+    TacsScalar s[3];
+    stiff->evalStress(elemIndex, pt, X, e, s);
+
+    if (strain_type == TACS_LINEAR_STRAIN){
+      dfdUx[0] = 2.0*dfdq[0]*s[0];
+      dfdUx[3] = 2.0*dfdq[0]*s[1];
+
+      dfdUx[1] = 2.0*dfdq[0]*s[2];
+      dfdUx[2] = 2.0*dfdq[0]*s[2];
     }
   }
 }
@@ -1469,6 +1531,37 @@ int TACSLinearThermoelasticity3D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+    // Compute the total strain e = 0.5*(u,x + u,x^{T})
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    TacsScalar s[6];
+    stiff->evalStress(elemIndex, pt, X, e, s);
+
+    // Evaluate the strain energy density
+    *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2] +
+                 e[3]*s[3] + e[4]*s[4] + e[5]*s[5]);
+
+    return 1;
+  }
 
   return 0;
 }
@@ -1574,6 +1667,31 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
     // Add the result from the derivative of the thermal strain
     stiff->addThermalStrainDVSens(elemIndex, pt, X, -2.0*scale*dfdq[0]*theta,
                                   s, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+    // Compute the total strain e = 0.5*(u,x + u,x^{T})
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+                           e, dvLen, dfdx);
   }
 }
 
@@ -1716,6 +1834,46 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
       dfdUt[9] = -2.0*dfdq[0]*(s[0]*et[0] + s[1]*et[1] +
                                s[2]*et[2] + s[3]*et[3] +
                                s[4]*et[4] + s[5]*et[5]);
+    }
+  }
+  else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+    // Compute the total strain e = 0.5*(u,x + u,x^{T})
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+    }
+
+    TacsScalar s[6];
+    stiff->evalStress(elemIndex, pt, X, e, s);
+
+    if (strain_type == TACS_LINEAR_STRAIN){
+      dfdUx[0] = 2.0*dfdq[0]*s[0];
+      dfdUx[4] = 2.0*dfdq[0]*s[1];
+      dfdUx[8] = 2.0*dfdq[0]*s[2];
+
+      dfdUx[5] = 2.0*dfdq[0]*s[3];
+      dfdUx[7] = 2.0*dfdq[0]*s[3];
+
+      dfdUx[2] = 2.0*dfdq[0]*s[4];
+      dfdUx[6] = 2.0*dfdq[0]*s[4];
+
+      dfdUx[1] = 2.0*dfdq[0]*s[5];
+      dfdUx[3] = 2.0*dfdq[0]*s[5];
     }
   }
 }

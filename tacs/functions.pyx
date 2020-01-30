@@ -51,12 +51,21 @@ cdef class StructuralMass(Function):
         return
 
 cdef class Compliance(Function):
+    cdef TACSCompliance *cptr
     def __cinit__(self, Assembler assembler):
         """
         Wrap the function Compliance
         """
-        self.ptr = new TACSCompliance(assembler.ptr)
+        self.cptr = new TACSCompliance(assembler.ptr)
+        self.ptr = self.cptr
         self.ptr.incref()
+        return
+
+    def setComplianceType(self, int compliance_type):
+        """
+        Set the type of compliance value to use
+        """
+        self.cptr.setComplianceType(compliance_type)
         return
 
 cdef class AverageTemperature(Function):
