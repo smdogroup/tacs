@@ -191,6 +191,11 @@ cdef class Element:
             return self.ptr.getNumNodes()
         return 0
 
+    def getNumVariables(self):
+        if self.ptr != NULL:
+            return self.ptr.getNumVariables()
+        return 0
+
     def getVarsPerNode(self):
         if self.ptr:
             return self.ptr.getVarsPerNode()
