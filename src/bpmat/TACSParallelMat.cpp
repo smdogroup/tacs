@@ -359,7 +359,7 @@ void TACSParallelMat::applyTransposeBCs( TACSBcMap *bcmap ){
     // Allocate space for the temporary values
     int *temp_nodes = new int[ nbcs ];
     int *temp_vars = new int[ nbcs ];
-  
+
     // Get the column indices for the locally owned boundary conditions
     int nvals = 0;
     for ( int i = 0; i < nbcs; i++ ){
@@ -736,6 +736,9 @@ void TACSGaussSeidel::applyFactor( TACSVec *txvec, TACSVec *tyvec ){
       if (zero_guess){
         yvec->zeroEntries();
         Aloc->applySOR(x, y, omega, 1);
+
+        int ysize = bsize*ext_dist->getNumNodes();
+        memset(yext, 0, ysize*sizeof(TacsScalar));
       }
       else {
         // Begin sending the external-interface values

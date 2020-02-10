@@ -526,6 +526,8 @@ int TACSLinearThermoelasticity2D::evalPointQuantity( int elemIndex,
 
     // Evaluate the strain energy density
     *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2]);
+
+    return 1;
   }
 
   return 0;
