@@ -79,7 +79,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_HEXA_QUARTIC_ELEMENT
         TACS_HEXA_QUINTIC_ELEMENT
         TACS_PENTA_ELEMENT
-        TACS_PETTA_QUADRATIC_ELEMENT
+        TACS_PENTA_QUADRATIC_ELEMENT
         TACS_PENTA_CUBIC_ELEMENT
 
     enum ElementMatrixType:
@@ -637,6 +637,18 @@ cdef extern from "TACSToFH5.h":
         TACSToFH5(TACSAssembler *_tacs, ElementType _elem_type, int _out_type)
         void setComponentName(int comp_num, char *group_name)
         void writeToFile(char *filename)
+
+cdef extern from "TACSFH5Loader.h":
+    cdef cppclass TACSFH5Loader(TACSObject):
+        TACSFH5Loader()
+        int loadData(const char*, const char*)
+        int getNumComponents();
+        char* getComponentName( int comp );
+        void getConnectivity(int*, int**, int**, int**, int**)
+        void getContinuousData(const char**, const char**,
+                               int*, int*, float**)
+        void getElementData(const char**, const char**,
+                            int*, int*, float**)
 
 cdef extern from "TACSIntegrator.h":
     # Declare the TACSIntegrator base class

@@ -366,7 +366,7 @@ int TacsGetNumVisNodes( ElementLayout ltype ){
   case TACS_HEXA_QUINTIC_ELEMENT: return 216;
 
   case TACS_PENTA_ELEMENT: return 6;
-  case TACS_PETTA_QUADRATIC_ELEMENT: return 0; /// Fix me later
+  case TACS_PENTA_QUADRATIC_ELEMENT: return 0; /// Fix me later
   case TACS_PENTA_CUBIC_ELEMENT: return 0; /// Fix me later
   default: break;
   }
@@ -464,7 +464,7 @@ void TacsConvertVisLayoutToBasicCount( ElementLayout ltype,
     break;
 
   case TACS_PENTA_ELEMENT:
-  case TACS_PETTA_QUADRATIC_ELEMENT:
+  case TACS_PENTA_QUADRATIC_ELEMENT:
   case TACS_PENTA_CUBIC_ELEMENT:
     break;
 
@@ -579,7 +579,7 @@ void TacsConvertVisLayoutToBasic( ElementLayout ltype,
     }
   }
   else if (ltype == TACS_PENTA_ELEMENT ||
-           ltype == TACS_PETTA_QUADRATIC_ELEMENT ||
+           ltype == TACS_PENTA_QUADRATIC_ELEMENT ||
            ltype == TACS_PENTA_CUBIC_ELEMENT){
 
   }
