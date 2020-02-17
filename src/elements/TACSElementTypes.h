@@ -80,7 +80,7 @@ enum ElementLayout { TACS_LAYOUT_NONE=0,
                      TACS_HEXA_QUINTIC_ELEMENT=20,
 
                      TACS_PENTA_ELEMENT=21,
-                     TACS_PETTA_QUADRATIC_ELEMENT=22,
+                     TACS_PENTA_QUADRATIC_ELEMENT=22,
                      TACS_PENTA_CUBIC_ELEMENT=23 };
 
 /**

@@ -90,6 +90,31 @@ OUTPUT_STRAINS = TACS_OUTPUT_STRAINS
 OUTPUT_STRESSES = TACS_OUTPUT_STRESSES
 OUTPUT_EXTRAS = TACS_OUTPUT_EXTRAS
 
+LAYOUT_NONE = TACS_LAYOUT_NONE
+POINT_ELEMENT = TACS_POINT_ELEMENT
+LINE_ELEMENT = TACS_LINE_ELEMENT
+LINE_QUADRATIC_ELEMENT = TACS_LINE_QUADRATIC_ELEMENT
+LINE_CUBIC_ELEMENT = TACS_LINE_CUBIC_ELEMENT
+TRI_ELEMENT = TACS_TRI_ELEMENT
+TRI_QUADRATIC_ELEMENT = TACS_TRI_QUADRATIC_ELEMENT
+TRI_CUBIC_ELEMENT = TACS_TRI_CUBIC_ELEMENT
+QUAD_ELEMENT = TACS_QUAD_ELEMENT
+QUAD_QUADRATIC_ELEMENT = TACS_QUAD_QUADRATIC_ELEMENT
+QUAD_CUBIC_ELEMENT = TACS_QUAD_CUBIC_ELEMENT
+QUAD_QUARTIC_ELEMENT = TACS_QUAD_QUARTIC_ELEMENT
+QUAD_QUINTIC_ELEMENT = TACS_QUAD_QUINTIC_ELEMENT
+TETRA_ELEMENT = TACS_TETRA_ELEMENT
+TETRA_QUADRATIC_ELEMENT = TACS_TETRA_QUADRATIC_ELEMENT
+TETRA_CUBIC_ELEMENT = TACS_TETRA_CUBIC_ELEMENT
+HEXA_ELEMENT = TACS_HEXA_ELEMENT
+HEXA_QUADRATIC_ELEMENT = TACS_HEXA_QUADRATIC_ELEMENT
+HEXA_CUBIC_ELEMENT = TACS_HEXA_CUBIC_ELEMENT
+HEXA_QUARTIC_ELEMENT = TACS_HEXA_QUARTIC_ELEMENT
+HEXA_QUINTIC_ELEMENT = TACS_HEXA_QUINTIC_ELEMENT
+PENTA_ELEMENT = TACS_PENTA_ELEMENT
+PENTA_QUADRATIC_ELEMENT = TACS_PENTA_QUADRATIC_ELEMENT
+PENTA_CUBIC_ELEMENT = TACS_PENTA_CUBIC_ELEMENT
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -1758,7 +1783,98 @@ cdef class ToFH5:
         cdef char *filename = convert_to_chars(fname)
         self.ptr.writeToFile(filename)
 
-# Wrap the TACSCreator object
+cdef class FH5Loader:
+    cdef TACSFH5Loader *ptr
+    def __cinit__(self):
+        self.ptr = new TACSFH5Loader()
+        self.ptr.incref()
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def loadData(self, fname, datafile=None):
+        """
+        Load the data from a file
+        """
+        cdef char *filename = convert_to_chars(fname)
+        cdef char *dataname = NULL
+        if datafile is not None:
+            dataname = convert_to_chars(datafile)
+        self.ptr.loadData(filename, dataname)
+        return
+
+    def getNumComponents(self):
+        """
+        Return the number of components
+        """
+        return self.ptr.getNumComponents()
+
+    def getComponentName(self, int num):
+        """
+        Return the name of the specified component
+        """
+        cdef bytes py_string
+        py_string = self.ptr.getComponentName(num)
+        return convert_bytes_to_str(py_string)
+
+    def getConnectivity(self):
+        cdef int num_elems
+        cdef int *_comps
+        cdef int *_ltypes
+        cdef int *_ptr
+        cdef int *_conn
+        self.ptr.getConnectivity(&num_elems, &_comps, &_ltypes, &_ptr, &_conn)
+
+        cdef np.ndarray ptr = np.zeros(num_elems+1, dtype=np.intc)
+        cdef np.ndarray conn = np.zeros(_ptr[num_elems], dtype=np.intc)
+        cdef np.ndarray ltypes = np.zeros(num_elems, dtype=np.intc)
+        cdef np.ndarray comps = np.zeros(num_elems, dtype=np.intc)
+
+        ptr[0] = _ptr[0]
+        for i in range(num_elems):
+            comps[i] = _comps[i]
+            ltypes[i] = _ltypes[i]
+            ptr[i+1] = _ptr[i+1]
+
+        for i in range(ptr[num_elems]):
+            conn[i] = _conn[i]
+
+        return comps, ltypes, ptr, conn
+
+    def getContinuousData(self):
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int dim1 = 0
+        cdef int dim2 = 0
+        cdef float *data = NULL
+
+        self.ptr.getContinuousData(NULL, &_var_names, &dim1, &dim2, &data)
+        var_names = _var_names
+        cdef np.ndarray fdata = np.zeros((dim1, dim2), dtype=np.single)
+        for i in range(dim1):
+            for j in range(dim2):
+                fdata[i,j] = data[j + dim2*i]
+
+        return convert_bytes_to_str(var_names), fdata
+
+    def getElementData(self):
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int dim1 = 0
+        cdef int dim2 = 0
+        cdef float *data = NULL
+
+        self.ptr.getElementData(NULL, &_var_names, &dim1, &dim2, &data)
+        var_names = _var_names
+        cdef np.ndarray fdata = np.zeros((dim1, dim2), dtype=np.single)
+        for i in range(dim1):
+            for j in range(dim2):
+                fdata[i,j] = data[j + dim2*i]
+
+        return convert_bytes_to_str(var_names), fdata
+
+  # Wrap the TACSCreator object
 cdef class Creator:
     cdef TACSCreator *ptr
     def __cinit__(self, MPI.Comm comm, int vars_per_node):
