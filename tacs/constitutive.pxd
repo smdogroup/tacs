@@ -57,8 +57,7 @@ cdef extern from "TACSSolidConstitutive.h":
     cdef cppclass TACSSolidConstitutive(TACSConstitutive):
         TACSSolidConstitutive(TACSMaterialProperties*,
                               TacsScalar, int, TacsScalar, TacsScalar)
-        TACSMaterialProperties* getMaterialProperties()
-        
+       
 cdef class SolidConstitutive(Constitutive):
     cdef TACSSolidConstitutive *cptr
 

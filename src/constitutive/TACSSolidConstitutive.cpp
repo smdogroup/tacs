@@ -25,13 +25,6 @@ const char* TACSSolidConstitutive::getObjectName(){
 }
 
 /*
-  Get the material properties object
-*/
-TACSConstitutive *TACSSolidConstitutive::getMaterialProperties(){
-  return properties;
-}
-
-/*
   SolidStiffness member function definitions
 */
 TACSSolidConstitutive::TACSSolidConstitutive( TACSMaterialProperties *props,
