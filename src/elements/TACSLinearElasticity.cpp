@@ -1368,3 +1368,8 @@ void TACSLinearElasticity3D::getOutputData( int elemIndex,
     }
   }
 }
+
+// Return the underlying constitutive object
+TACSSolidConstitutive* TACSLinearElasticity3D::getConstitutive(){
+  return stiff;
+}

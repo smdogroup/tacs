@@ -254,6 +254,11 @@ class TACSLinearElasticity3D : public TACSElementModel {
                       const TacsScalar Ut[], const TacsScalar Ux[],
                       int ld_data, TacsScalar *data );
 
+  /**
+     Get the consitutive object
+  */
+  TACSSolidConstitutive* getConstitutive();
+  
  private:
   ElementStrainType strain_type;
   TACSSolidConstitutive *stiff;
