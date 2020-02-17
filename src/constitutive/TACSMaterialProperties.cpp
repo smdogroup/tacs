@@ -136,6 +136,15 @@ TacsScalar TACSMaterialProperties::getSpecificHeat(){
   return specific_heat;
 }
 
+// Set the density property values
+void TACSMaterialProperties::setDensity( TacsScalar _rho ){
+  rho = _rho;
+}
+
+void TACSMaterialProperties::setSpecificHeat( TacsScalar _specific_heat ){
+  specific_heat = _specific_heat;
+}
+
 // Extract the coefficients
 void TACSMaterialProperties::getIsotropicProperties( TacsScalar *_E,
                                                      TacsScalar *_nu ){

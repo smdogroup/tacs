@@ -72,6 +72,11 @@ cdef class MaterialProperties:
     def __dealloc__(self):
         self.ptr.decref()
 
+    def setDensity(self, TacsScalar rho):
+        self.ptr.setDensity(rho)
+
+    def setSpecificHeat(self, TacsScalar specific_heat):
+        self.ptr.setSpecificHeat(specific_heat)
 
 cdef class PlaneStressConstitutive(Constitutive):
     def __cinit__(self, *args, **kwargs):
@@ -129,6 +134,11 @@ cdef class SolidConstitutive(Constitutive):
             self.ptr = NULL
             self.cptr = NULL
 
+        def getMaterialProperties(self):
+            if self.cptr:
+                return _init_MaterialProperties(self.cptr.getMaterialProperties())
+            return None
+        
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):
