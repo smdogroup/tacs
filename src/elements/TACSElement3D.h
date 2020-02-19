@@ -32,6 +32,7 @@ class TACSElement3D : public TACSElement {
   int getDesignVarsPerNode();
   ElementLayout getLayoutType();
   TACSElementBasis* getElementBasis();
+  TACSElementModel* getElementModel();
 
   /**
     Retrieve the global design variable numbers associated with this element
