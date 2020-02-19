@@ -67,6 +67,10 @@ class TACSMaterialProperties : public TACSObject {
   TacsScalar getDensity();
   TacsScalar getSpecificHeat();
 
+  // Set material property values
+  void setDensity( TacsScalar _rho );
+  void setSpecificHeat( TacsScalar _specific_heat );
+
   // Extract the coefficients
   void getIsotropicProperties( TacsScalar *_E, TacsScalar *_nu );
   void getOrthotropicProperties( TacsScalar *_E1, TacsScalar *_E2,

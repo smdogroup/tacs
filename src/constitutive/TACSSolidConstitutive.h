@@ -93,6 +93,9 @@ class TACSSolidConstitutive : public TACSConstitutive {
   // Extra info about the constitutive class
   const char *getObjectName();
 
+  // Return the material properties object
+  TACSMaterialProperties* getMaterialProperties();
+
  protected:
   // Materiial properties class
   TACSMaterialProperties *properties;
