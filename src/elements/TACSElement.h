@@ -201,7 +201,8 @@ enum ElementMatrixType { STIFFNESS_MATRIX,
 // Element behavior types
 enum ElementBehaviorType{ LINEAR,
                           NONLINEAR,
-                          LARGE_ROTATION };
+                          LARGE_ROTATION,
+                          NONE };
 
 // The TACSElement base class
 class TACSElement : public TACSOptObject {
@@ -419,10 +420,11 @@ class TACSElement : public TACSOptObject {
   // ------------------------------
   virtual const char *TACSObjectName(){ return this->elementName(); }
 
-  // Get the number of extras and element type information
+  // Get the number of extras, element type, and element behavior type
   // -----------------------------------------------------
   virtual int numExtras(){ return 0; }
   virtual enum ElementType getElementType(){ return TACS_ELEMENT_NONE; }
+  virtual enum ElementBehaviorType getElementBehaviorType(){ return NONE; }
 
   // Functions for retrieving data from the element for visualization
   // ----------------------------------------------------------------

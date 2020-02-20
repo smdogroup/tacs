@@ -72,6 +72,7 @@ class MITCShell : public TACSShell {
   // ------------------------------------
   int numNodes();
   int numVariables();
+  ElementBehaviorType getElementBehaviorType(){ return type; }
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
@@ -1303,7 +1304,7 @@ void MITCShell<order, tying_order>::getMatType( ElementMatrixType matType,
 template <int order, int tying_order>
 void MITCShell<order, tying_order>::addAdjResProduct( double time,
                                                       double scale,
-                                                      TacsScalar fdvSens[], 
+                                                      TacsScalar fdvSens[],
                                                       int dvLen,
                                                       const TacsScalar psi[],
                                                       const TacsScalar Xpts[],
