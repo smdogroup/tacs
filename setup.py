@@ -10,6 +10,9 @@ import mpi4py
 from setuptools import setup
 from distutils.core import Extension as Ext
 from Cython.Build import cythonize
+from Cython.Compiler import Options
+
+Options.docstrings = True
 
 # Convert from local to absolute directories
 def get_global_dir(files):
@@ -64,8 +67,7 @@ exts = []
 for mod in ['TACS', 'elements', 'constitutive', 'functions']:
     exts.append(Ext('tacs.%s'%(mod), sources=['tacs/%s.pyx'%(mod)],
                     include_dirs=inc_dirs, libraries=libs, 
-                    library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs,
-                    cython_directives={"embedsignature": True, "binding": True}))
+                    library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs))
 
 setup(name='tacs',
       version=0.1,

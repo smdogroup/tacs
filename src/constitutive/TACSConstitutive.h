@@ -129,16 +129,16 @@ class TACSConstitutive : public TACSObject {
     Add the derivative of the pointwise mass times the given scalar
 
     @param elemIndex The local element index
+    @param scale Scale factor for the derivative
     @param pt The parametric location
     @param X The point location
-    @param scale Scale factor for the derivative
     @param dvLen the length of the sensitivity array
     @param dvSens The sensitivity array
   */
   virtual void addDensityDVSens( int elemIndex,
+                                 TacsScalar scale,
                                  const double pt[],
                                  const TacsScalar X[],
-                                 const TacsScalar scale,
                                  int dvLen, TacsScalar dvSens[] ){}
 
   /**
@@ -157,16 +157,16 @@ class TACSConstitutive : public TACSObject {
     Add the derivative of the pointwise mass times the given scalar
 
     @param elemIndex The local element index
+    @param scale Scale factor for the derivative
     @param pt The parametric location
     @param X The point location
-    @param scale Scale factor for the derivative
     @param dvLen the length of the sensitivity array
     @param dvSens The sensitivity array
   */
   virtual void addSpecificHeatDVSens( int elemIndex,
+                                      TacsScalar scale,
                                       const double pt[],
                                       const TacsScalar X[],
-                                      const TacsScalar scale,
                                       int dvLen, TacsScalar dvSens[] ){}
 
   /**
@@ -204,20 +204,61 @@ class TACSConstitutive : public TACSObject {
     Add the derivative of the stress times an input vector to dvSens
 
     @param elemIndex The local element index
+    @param scale A scalar factor
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param psi The adjoint components of the strain
+    @param dvLen The length of the design vector array
+    @param dfdx The sensitivity vector
+  */
+  virtual void addStressDVSens( int elemIndex,
+                                TacsScalar scale,
+                                const double pt[],
+                                const TacsScalar X[],
+                                const TacsScalar strain[],
+                                const TacsScalar psi[],
+                                int dvLen, TacsScalar dfdx[] ){}
+
+  /**
+    Evaluate the tangent stiffness used for the geometric stiffness
+    matrix computations.
+
+    Note that by default this uses the original tangent stiffness
+    computation, but some topology optimization techniques use a
+    different definition.
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param C The components of the geometric tangent stiffness
+  */
+  virtual void evalGeometricTangentStiffness( int elemIndex,
+                                              const double pt[],
+                                              const TacsScalar X[],
+                                              TacsScalar C[] ){
+    evalTangentStiffness(elemIndex, pt, X, C);
+  }
+
+  /**
+    Add the derivative of the geometric tangent stress matrix
+
+    @param elemIndex The local element index
     @param pt The parametric point within the element
     @param X The physical point location
     @param scale A scalar factor
     @param psi The adjoint components of the strain
     @param dvLen The length of the design vector array
-    @param dvSens The sensitivity vector
+    @param dfdx The sensitivity vector
   */
-  virtual void addStressDVSens( int elemIndex,
-                                const double pt[],
-                                const TacsScalar X[],
-                                const TacsScalar strain[],
-                                TacsScalar scale,
-                                const TacsScalar psi[],
-                                int dvLen, TacsScalar dvSens[] ){}
+  virtual void addGeometricTangentStressDVSens( int elemIndex,
+                                                TacsScalar scale,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                const TacsScalar strain[],
+                                                const TacsScalar psi[],
+                                                int dvLen, TacsScalar dfdx[] ){
+    addStressDVSens(elemIndex, scale, pt, X, strain, psi, dvLen, dfdx);
+  }
 
   /**
     Evaluate the thermal strain at a point
@@ -284,18 +325,18 @@ class TACSConstitutive : public TACSObject {
     Add the derivative of the heat flux to the sensitivity array
 
     @param elemIndex The local element index
+    @param scale A scalar factor
     @param pt The parametric point within the element
     @param X The physical point location
-    @param scale A scalar factor
     @param psi Multiplier vector (same size as the strain)
     @param dvLen The length of the sensitivity array
     @param dvSens The sensitivity
   */
   virtual void addHeatFluxDVSens( int elemIndex,
+                                  TacsScalar scale,
                                   const double pt[],
                                   const TacsScalar X[],
                                   const TacsScalar grad[],
-                                  TacsScalar scale,
                                   const TacsScalar psi[],
                                   int dvLen, TacsScalar dvSens[] ){}
 
@@ -337,18 +378,19 @@ class TACSConstitutive : public TACSObject {
   /**
     Add the derivative of the failure w.r.t. design variables
 
+    @param elemIndex The local element index
+    @param scale Scale The derivative of the failure index w.r.t. the strain
     @param pt The parametric point
     @param X The physical node location
     @param strain the strain value
-    @param scale Scale The derivative of the failure index w.r.t. the strain
     @param dvLen The length of the design vector
     @param dvSens The sensitivity contribution
   */
   virtual void addFailureDVSens( int elemIndex,
+                                 TacsScalar scale,
                                  const double pt[],
                                  const TacsScalar X[],
                                  const TacsScalar strain[],
-                                 TacsScalar scale,
                                  int dvLen, TacsScalar dvSens[] ){}
 
   /**

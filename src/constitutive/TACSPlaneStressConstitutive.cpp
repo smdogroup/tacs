@@ -111,9 +111,9 @@ TacsScalar TACSPlaneStressConstitutive::evalDensity( int elemIndex,
 
 // Add the derivative of the density
 void TACSPlaneStressConstitutive::addDensityDVSens( int elemIndex,
+                                                    TacsScalar scale,
                                                     const double pt[],
                                                     const TacsScalar X[],
-                                                    const TacsScalar scale,
                                                     int dvLen,
                                                     TacsScalar dvSens[] ){
   if (properties && tNum >= 0){
@@ -133,9 +133,9 @@ TacsScalar TACSPlaneStressConstitutive::evalSpecificHeat( int elemIndex,
 
 // Add the derivative of the specific heat
 void TACSPlaneStressConstitutive::addSpecificHeatDVSens( int elemIndex,
+                                                         TacsScalar scale,
                                                          const double pt[],
                                                          const TacsScalar X[],
-                                                         const TacsScalar scale,
                                                          int dvLen,
                                                          TacsScalar dvSens[] ){
   if (properties && tNum >= 0){
@@ -179,10 +179,10 @@ void TACSPlaneStressConstitutive::evalTangentStiffness( int elemIndex,
 
 // Add the derivative of the stress w.r.t. design variables
 void TACSPlaneStressConstitutive::addStressDVSens( int elemIndex,
+                                                   TacsScalar scale,
                                                    const double pt[],
                                                    const TacsScalar X[],
                                                    const TacsScalar e[],
-                                                   TacsScalar scale,
                                                    const TacsScalar psi[],
                                                    int dvLen,
                                                    TacsScalar dvSens[] ){
@@ -244,10 +244,10 @@ void TACSPlaneStressConstitutive::evalTangentHeatFlux( int elemIndex,
 
 // Add the derivative of the heat flux
 void TACSPlaneStressConstitutive::addHeatFluxDVSens( int elemIndex,
+                                                     TacsScalar scale,
                                                      const double pt[],
                                                      const TacsScalar X[],
                                                      const TacsScalar grad[],
-                                                     TacsScalar scale,
                                                      const TacsScalar psi[],
                                                      int dvLen,
                                                      TacsScalar dvSens[] ){

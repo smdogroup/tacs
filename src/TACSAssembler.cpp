@@ -3835,7 +3835,7 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   if (thread_info->getNumThreads() > 1){
     // Set the number of completed elements to zero
     numCompletedElements = 0;
-    tacsPInfo->tacs = this;
+    tacsPInfo->assembler = this;
 
     // Create the joinable attribute
     pthread_attr_t attr;
@@ -3946,7 +3946,7 @@ void TACSAssembler::assembleJacobian( TacsScalar alpha,
   if (thread_info->getNumThreads() > 1){
     // Set the number of completed elements to zero
     numCompletedElements = 0;
-    tacsPInfo->tacs = this;
+    tacsPInfo->assembler = this;
     tacsPInfo->res = residual;
     tacsPInfo->mat = A;
     tacsPInfo->alpha = alpha;
@@ -4061,7 +4061,7 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
   if (thread_info->getNumThreads() > 1){
     // Set the number of completed elements to zero
     numCompletedElements = 0;
-    tacsPInfo->tacs = this;
+    tacsPInfo->assembler = this;
     tacsPInfo->mat = A;
     tacsPInfo->matType = matType;
     tacsPInfo->matOr = matOr;
@@ -4100,7 +4100,7 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
       varsVec->getValues(len, nodes, vars);
 
       // Get the element matrix
-      elements[i]->getMatType(i, matType, elemXpts, vars, elemMat);
+      elements[i]->getMatType(matType, i, time, elemXpts, vars, elemMat);
 
       // Add the values into the element
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
@@ -4148,7 +4148,7 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
 
     for ( int j = 0; j < nmats; j++ ){
       // Get the element matrix
-      elements[i]->getMatType(i, matTypes[j], elemXpts, vars, elemMat);
+      elements[i]->getMatType(matTypes[j], i, time, elemXpts, vars, elemMat);
 
       // Scale the matrix
       if (scale[j] != 1.0){
@@ -4835,7 +4835,7 @@ void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
     memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
 
     // Add the contribution to the design variable vector
-    elements[i]->addMatDVSensInnerProduct(i, matType, scale,
+    elements[i]->addMatDVSensInnerProduct(matType, i, time, scale,
                                           elemPsi, elemPhi, elemXpts,
                                           elemVars, numDVs, fdvSens);
 
@@ -4861,9 +4861,9 @@ void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
 */
 void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
                                                TACSBVec *psi, TACSBVec *phi,
-                                               TACSBVec *res ){
+                                               TACSBVec *dfdu ){
   // Zero the entries in the residual vector
-  res->zeroEntries();
+  dfdu->zeroEntries();
 
   // Distribute the variable values
   psi->beginDistributeValues();
@@ -4894,19 +4894,19 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
     phi->getValues(len, nodes, elemPhi);
 
     // Add the contribution to the design variable vector
-    elements[i]->getMatSVSensInnerProduct(i, matType,
+    elements[i]->getMatSVSensInnerProduct(matType, i, time,
                                           elemPsi, elemPhi, elemXpts,
                                           elemVars, elemRes);
 
     // Add the residual values to the local residual array
-    res->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
+    dfdu->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
   }
 
-  res->beginSetValues(TACS_ADD_VALUES);
-  res->endSetValues(TACS_ADD_VALUES);
+  dfdu->beginSetValues(TACS_ADD_VALUES);
+  dfdu->endSetValues(TACS_ADD_VALUES);
 
   // Apply the boundary conditions to the fully assembled vector
-  res->applyBCs(bcMap);
+  dfdu->applyBCs(bcMap);
 }
 
 /*

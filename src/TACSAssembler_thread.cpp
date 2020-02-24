@@ -24,13 +24,13 @@
 */
 static pthread_mutex_t sched_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void TACSAssembler::schedPthreadJob( TACSAssembler * tacs,
-                                     int * index, int total_size ){
+void TACSAssembler::schedPthreadJob( TACSAssembler *assembler,
+                                     int *index, int total_size ){
   pthread_mutex_lock(&sched_mutex);
 
-  if (tacs->numCompletedElements < total_size){
-    *index = tacs->numCompletedElements;
-    tacs->numCompletedElements += 1;
+  if (assembler->numCompletedElements < total_size){
+    *index = assembler->numCompletedElements;
+    assembler->numCompletedElements += 1;
   }
   else {
     *index = -1;
@@ -52,12 +52,12 @@ void *TACSAssembler::assembleRes_thread( void *t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler *tacs = pinfo->tacs;
+  TACSAssembler *assembler = pinfo->assembler;
   TACSBVec *res = pinfo->res;
 
   // Allocate a temporary array large enough to store everything required
-  int s = tacs->maxElementSize;
-  int sx = 3*tacs->maxElementNodes;
+  int s = assembler->maxElementSize;
+  int sx = 3*assembler->maxElementNodes;
   int dataSize = 4*s + sx;
   TacsScalar *data = new TacsScalar[ dataSize ];
 
@@ -71,29 +71,29 @@ void *TACSAssembler::assembleRes_thread( void *t ){
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
   TACSAuxElem *aux = NULL;
-  if (tacs->auxElements){
-    naux = tacs->auxElements->getAuxElements(&aux);
+  if (assembler->auxElements){
+    naux = assembler->auxElements->getAuxElements(&aux);
   }
 
-  while (tacs->numCompletedElements < tacs->numElements){
+  while (assembler->numCompletedElements < assembler->numElements){
     int elemIndex = -1;
-    TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
+    TACSAssembler::schedPthreadJob(assembler, &elemIndex, assembler->numElements);
 
     if (elemIndex >= 0){
       // Get the element object
-      TACSElement *element = tacs->elements[elemIndex];
+      TACSElement *element = assembler->elements[elemIndex];
 
       // Retrieve the variable values
-      int ptr = tacs->elementNodeIndex[elemIndex];
-      int len = tacs->elementNodeIndex[elemIndex+1] - ptr;
-      const int *nodes = &tacs->elementTacsNodes[ptr];
-      tacs->xptVec->getValues(len, nodes, elemXpts);
-      tacs->varsVec->getValues(len, nodes, vars);
-      tacs->dvarsVec->getValues(len, nodes, dvars);
-      tacs->ddvarsVec->getValues(len, nodes, ddvars);
+      int ptr = assembler->elementNodeIndex[elemIndex];
+      int len = assembler->elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &assembler->elementTacsNodes[ptr];
+      assembler->xptVec->getValues(len, nodes, elemXpts);
+      assembler->varsVec->getValues(len, nodes, vars);
+      assembler->dvarsVec->getValues(len, nodes, dvars);
+      assembler->ddvarsVec->getValues(len, nodes, ddvars);
 
       // Generate the Jacobian of the element
-      element->addResidual(elemIndex, tacs->time, elemXpts,
+      element->addResidual(elemIndex, assembler->time, elemXpts,
                            vars, dvars, ddvars, elemRes);
 
       // Increment the aux counter until we possibly have
@@ -104,15 +104,15 @@ void *TACSAssembler::assembleRes_thread( void *t ){
 
       // Add the residual from the auxiliary elements
       while (aux_count < naux && aux[aux_count].num == elemIndex){
-        aux[aux_count].elem->addResidual(elemIndex, tacs->time, elemXpts,
+        aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
                                          vars, dvars, ddvars, elemRes);
         aux_count++;
       }
 
       // Add the values to the residual when the memory unlocks
-      pthread_mutex_lock(&tacs->tacs_mutex);
+      pthread_mutex_lock(&assembler->tacs_mutex);
       res->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
-      pthread_mutex_unlock(&tacs->tacs_mutex);
+      pthread_mutex_unlock(&assembler->tacs_mutex);
     }
   }
 
@@ -135,7 +135,7 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler *tacs = pinfo->tacs;
+  TACSAssembler *assembler = pinfo->assembler;
   TACSBVec *res = pinfo->res;
   TACSMat *A = pinfo->mat;
   TacsScalar alpha = pinfo->alpha;
@@ -145,12 +145,12 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
 
   // Allocate a temporary array large enough to store everything
   // required
-  int s = tacs->maxElementSize;
-  int sx = 3*tacs->maxElementNodes;
-  int sw = tacs->maxElementIndepNodes;
+  int s = assembler->maxElementSize;
+  int sx = 3*assembler->maxElementNodes;
+  int sw = assembler->maxElementIndepNodes;
   int dataSize = 4*s + sx + s*s + sw;
   TacsScalar *data = new TacsScalar[ dataSize ];
-  int *idata = new int[ sw + tacs->maxElementNodes + 1 ];
+  int *idata = new int[ sw + assembler->maxElementNodes + 1 ];
 
   // Set pointers to the allocate memory
   TacsScalar *vars = &data[0];
@@ -164,26 +164,26 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
   TACSAuxElem *aux = NULL;
-  if (tacs->auxElements){
-    naux = tacs->auxElements->getAuxElements(&aux);
+  if (assembler->auxElements){
+    naux = assembler->auxElements->getAuxElements(&aux);
   }
 
-  while (tacs->numCompletedElements < tacs->numElements){
+  while (assembler->numCompletedElements < assembler->numElements){
     int elemIndex = -1;
-    TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
+    TACSAssembler::schedPthreadJob(assembler, &elemIndex, assembler->numElements);
 
     if (elemIndex >= 0){
       // Get the element object
-      TACSElement *element = tacs->elements[elemIndex];
+      TACSElement *element = assembler->elements[elemIndex];
 
       // Retrieve the variable values
-      int ptr = tacs->elementNodeIndex[elemIndex];
-      int len = tacs->elementNodeIndex[elemIndex+1] - ptr;
-      const int *nodes = &tacs->elementTacsNodes[ptr];
-      tacs->xptVec->getValues(len, nodes, elemXpts);
-      tacs->varsVec->getValues(len, nodes, vars);
-      tacs->dvarsVec->getValues(len, nodes, dvars);
-      tacs->ddvarsVec->getValues(len, nodes, ddvars);
+      int ptr = assembler->elementNodeIndex[elemIndex];
+      int len = assembler->elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &assembler->elementTacsNodes[ptr];
+      assembler->xptVec->getValues(len, nodes, elemXpts);
+      assembler->varsVec->getValues(len, nodes, vars);
+      assembler->dvarsVec->getValues(len, nodes, dvars);
+      assembler->ddvarsVec->getValues(len, nodes, ddvars);
 
       // Retrieve the number of element variables
       int nvars = element->getNumVariables();
@@ -191,7 +191,7 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
       memset(elemMat, 0, nvars*nvars*sizeof(TacsScalar));
 
       // Generate the Jacobian of the element
-      element->addJacobian(elemIndex, tacs->time, alpha, beta, gamma,
+      element->addJacobian(elemIndex, assembler->time, alpha, beta, gamma,
                            elemXpts, vars, dvars, ddvars, elemRes, elemMat);
 
       // Increment the aux counter until we possibly have
@@ -203,22 +203,22 @@ void *TACSAssembler::assembleJacobian_thread( void *t ){
       // Add the residual from the auxiliary elements
       while (aux_count < naux && aux[aux_count].num == elemIndex){
 
-        aux[aux_count].elem->addJacobian(elemIndex, tacs->time,
+        aux[aux_count].elem->addJacobian(elemIndex, assembler->time,
                                          alpha, beta, gamma,
                                          elemXpts, vars, dvars, ddvars,
                                          elemRes, elemMat);
         aux_count++;
       }
 
-      pthread_mutex_lock(&tacs->tacs_mutex);
+      pthread_mutex_lock(&assembler->tacs_mutex);
       // Add values to the residual
       if (res){
         res->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
       }
 
       // Add values to the matrix
-      tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
-      pthread_mutex_unlock(&tacs->tacs_mutex);
+      assembler->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
+      pthread_mutex_unlock(&assembler->tacs_mutex);
     }
   }
 
@@ -244,47 +244,47 @@ void *TACSAssembler::assembleMatType_thread( void *t ){
     static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler *tacs = pinfo->tacs;
+  TACSAssembler *assembler = pinfo->assembler;
   TACSMat *A = pinfo->mat;
   ElementMatrixType matType = pinfo->matType;
   MatrixOrientation matOr = pinfo->matOr;
 
   // Allocate a temporary array large enough to store everything required
-  int s = tacs->maxElementSize;
-  int sx = 3*tacs->maxElementNodes;
-  int sw = tacs->maxElementIndepNodes;
+  int s = assembler->maxElementSize;
+  int sx = 3*assembler->maxElementNodes;
+  int sw = assembler->maxElementIndepNodes;
   int dataSize = s + sx + s*s + sw;
   TacsScalar *data = new TacsScalar[ dataSize ];
-  int *idata = new int[ sw + tacs->maxElementNodes + 1 ];
+  int *idata = new int[ sw + assembler->maxElementNodes + 1 ];
 
   TacsScalar *vars = &data[0];
   TacsScalar *elemXpts = &data[s];
   TacsScalar *elemWeights = &data[s + sx];
   TacsScalar *elemMat = &data[s + sx + sw];
 
-  while (tacs->numCompletedElements < tacs->numElements){
+  while (assembler->numCompletedElements < assembler->numElements){
     int elemIndex = -1;
-    TACSAssembler::schedPthreadJob(tacs, &elemIndex, tacs->numElements);
+    TACSAssembler::schedPthreadJob(assembler, &elemIndex, assembler->numElements);
 
     if (elemIndex >= 0){
       // Get the element
-      TACSElement *element = tacs->elements[elemIndex];
+      TACSElement *element = assembler->elements[elemIndex];
 
       // Retrieve the variable values
       // Retrieve the variable values
-      int ptr = tacs->elementNodeIndex[elemIndex];
-      int len = tacs->elementNodeIndex[elemIndex+1] - ptr;
-      const int *nodes = &tacs->elementTacsNodes[ptr];
-      tacs->xptVec->getValues(len, nodes, elemXpts);
-      tacs->varsVec->getValues(len, nodes, vars);
+      int ptr = assembler->elementNodeIndex[elemIndex];
+      int len = assembler->elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &assembler->elementTacsNodes[ptr];
+      assembler->xptVec->getValues(len, nodes, elemXpts);
+      assembler->varsVec->getValues(len, nodes, vars);
 
       // Retrieve the type of the matrix
-      element->getMatType(elemIndex, matType, elemXpts, vars, elemMat);
+      element->getMatType(matType, elemIndex, assembler->time, elemXpts, vars, elemMat);
 
-      pthread_mutex_lock(&tacs->tacs_mutex);
+      pthread_mutex_lock(&assembler->tacs_mutex);
       // Add values to the matrix
-      tacs->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
-      pthread_mutex_unlock(&tacs->tacs_mutex);
+      assembler->addMatValues(A, elemIndex, elemMat, idata, elemWeights, matOr);
+      pthread_mutex_unlock(&assembler->tacs_mutex);
     }
   }
 

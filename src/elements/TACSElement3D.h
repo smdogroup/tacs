@@ -93,7 +93,7 @@ class TACSElement3D : public TACSElement {
     Compute a specific type of element matrix (mass, stiffness, geometric
     stiffness, etc.)
   */
-  void getMatType( int elemIndex, ElementMatrixType matType,
+  void getMatType( ElementMatrixType matType, int elemIndex, double time,
                    const TacsScalar Xpts[], const TacsScalar vars[],
                    TacsScalar mat[] );
 
@@ -101,21 +101,20 @@ class TACSElement3D : public TACSElement {
     Add the derivative of the product of a specific matrix w.r.t.
     the design variables
   */
-  void addMatDVSensInnerProduct( int elemIndex, ElementMatrixType matType,
-                                 TacsScalar scale, const TacsScalar psi[],
-                                 const TacsScalar phi[],
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[],
-                                 int dvLen, TacsScalar dvSens[] );
+  void addMatDVSensInnerProduct( ElementMatrixType matType, int elemIndex,
+                                 double time, TacsScalar scale,
+                                 const TacsScalar psi[], const TacsScalar phi[],
+                                 const TacsScalar Xpts[], const TacsScalar vars[],
+                                 int dvLen, TacsScalar dfdx[] );
 
   /**
     Compute the derivative of the product of a specific matrix w.r.t.
     the input variables (vars).
   */
-  void getMatSVSensInnerProduct( int elemIndex, ElementMatrixType matType,
+  void getMatSVSensInnerProduct( ElementMatrixType matType, int elemIndex, double time,
                                  const TacsScalar psi[], const TacsScalar phi[],
                                  const TacsScalar Xpts[], const TacsScalar vars[],
-                                 TacsScalar res[] );
+                                 TacsScalar dfdu[] );
 
   /**
     Evaluate a point-wise quantity of interest.
