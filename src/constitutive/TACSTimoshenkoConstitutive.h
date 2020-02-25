@@ -94,8 +94,8 @@ class TACSTimoshenkoConstitutive : public TACSConstitutive {
     moments[3] = rho[3];
   }
 
-  virtual void addMassMomentsDVSens( int elemIndex, const double pt[],
-                                     TacsScalar scale, const TacsScalar psi[],
+  virtual void addMassMomentsDVSens( int elemIndex, TacsScalar scale,
+                                     const double pt[], const TacsScalar psi[],
                                      int dvLen, TacsScalar dfdx[] ){}
   
   // Get the number of stress components

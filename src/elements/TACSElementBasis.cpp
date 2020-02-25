@@ -649,27 +649,49 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     }
 
     n = N, nxi = Nxi;
-    for ( int i = 0; i < num_nodes; i++ ){
-      // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud;
-      for ( int j = 0; j < vars_per_node; j++ ){
-        ut[0] += n[0]*vars[0];
-        ut[1] += n[0]*dvars[0];
-        ut[2] += n[0]*ddvars[0];
+    if (vars && dvars && ddvars){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ut[1] += n[0]*dvars[0];
+          ut[2] += n[0]*ddvars[0];
 
-        ud[0] += nxi[0]*vars[0];
-        ud[1] += nxi[1]*vars[0];
-        ud[2] += nxi[2]*vars[0];
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+          ud[2] += nxi[2]*vars[0];
 
-        vars++;
-        dvars++;
-        ddvars++;
-        ut += 3;
-        ud += 3;
+          vars++;
+          dvars++;
+          ddvars++;
+          ut += 3;
+          ud += 3;
+        }
+
+        n++;
+        nxi += 3;
       }
+    }
+    else if (vars){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
 
-      n++;
-      nxi += 3;
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+          ud[2] += nxi[2]*vars[0];
+
+          vars++;
+          ut += 3;
+          ud += 3;
+        }
+
+        n++;
+        nxi += 3;
+      }
     }
 
     // Compute the Jacobian transformation
@@ -708,26 +730,52 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xd[2] += nxi[0]*Xpts[1];
       Xd[3] += nxi[1]*Xpts[1];
       Xpts += 3;
-
-      // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud;
-      for ( int j = 0; j < vars_per_node; j++ ){
-        ut[0] += n[0]*vars[0];
-        ut[1] += n[0]*dvars[0];
-        ut[2] += n[0]*ddvars[0];
-
-        ud[0] += nxi[0]*vars[0];
-        ud[1] += nxi[1]*vars[0];
-
-        vars++;
-        dvars++;
-        ddvars++;
-        ut += 3;
-        ud += 2;
-      }
-
       n++;
       nxi += 2;
+    }
+
+    n = N; nxi = Nxi;
+    if (vars && dvars && ddvars){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ut[1] += n[0]*dvars[0];
+          ut[2] += n[0]*ddvars[0];
+
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+
+          vars++;
+          dvars++;
+          ddvars++;
+          ut += 3;
+          ud += 2;
+        }
+
+        n++;
+        nxi += 2;
+      }
+    }
+    else if (vars){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+
+          vars++;
+          ut += 3;
+          ud += 2;
+        }
+
+        n++;
+        nxi += 2;
+      }
     }
 
     // Compute the Jacobian transformation
@@ -762,24 +810,48 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
 
       Xd[0] += nxi[0]*Xpts[0];
       Xpts += 3;
-
-      // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud;
-      for ( int j = 0; j < vars_per_node; j++ ){
-        ut[0] += n[0]*vars[0];
-        ut[1] += n[0]*dvars[0];
-        ut[2] += n[0]*ddvars[0];
-        ud[0] += nxi[0]*vars[0];
-
-        vars++;
-        dvars++;
-        ddvars++;
-        ut += 3;
-        ud++;
-      }
-
       n++;
       nxi++;
+    }
+
+    n = N; nxi = Nxi;
+    if (vars && dvars && ddvars){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ut[1] += n[0]*dvars[0];
+          ut[2] += n[0]*ddvars[0];
+          ud[0] += nxi[0]*vars[0];
+
+          vars++;
+          dvars++;
+          ddvars++;
+          ut += 3;
+          ud++;
+        }
+
+        n++;
+        nxi++;
+      }
+    }
+    else if (vars){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ud[0] += nxi[0]*vars[0];
+
+          vars++;
+          ut += 3;
+          ud++;
+        }
+
+        n++;
+        nxi++;
+      }
     }
 
     J[0] = 1.0/Xd[0];
@@ -851,35 +923,65 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
     }
 
     n = N, nxi = Nxi;
-    for ( int i = 0; i < num_nodes; i++ ){
-      // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
-      for ( int j = 0; j < vars_per_node; j++ ){
-        ut[0] += n[0]*vars[0];
-        ut[1] += n[0]*dvars[0];
-        ut[2] += n[0]*ddvars[0];
-        p[0] += n[0]*psi[0];
+    if (vars && dvars && ddvars && psi){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ut[1] += n[0]*dvars[0];
+          ut[2] += n[0]*ddvars[0];
+          p[0] += n[0]*psi[0];
 
-        ud[0] += nxi[0]*vars[0];
-        ud[1] += nxi[1]*vars[0];
-        ud[2] += nxi[2]*vars[0];
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+          ud[2] += nxi[2]*vars[0];
 
-        pd[0] += nxi[0]*psi[0];
-        pd[1] += nxi[1]*psi[0];
-        pd[2] += nxi[2]*psi[0];
+          pd[0] += nxi[0]*psi[0];
+          pd[1] += nxi[1]*psi[0];
+          pd[2] += nxi[2]*psi[0];
 
-        vars++;
-        dvars++;
-        ddvars++;
-        psi++;
-        p++;
-        ut += 3;
-        ud += 3;
-        pd += 3;
+          vars++;
+          dvars++;
+          ddvars++;
+          psi++;
+          p++;
+          ut += 3;
+          ud += 3;
+          pd += 3;
+        }
+
+        n++;
+        nxi += 3;
       }
+    }
+    else if (vars && psi){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          p[0] += n[0]*psi[0];
 
-      n++;
-      nxi += 3;
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+          ud[2] += nxi[2]*vars[0];
+
+          pd[0] += nxi[0]*psi[0];
+          pd[1] += nxi[1]*psi[0];
+          pd[2] += nxi[2]*psi[0];
+
+          vars++;
+          psi++;
+          p++;
+          ut += 3;
+          ud += 3;
+          pd += 3;
+        }
+
+        n++;
+        nxi += 3;
+      }
     }
 
     // Compute the Jacobian transformation
@@ -926,33 +1028,66 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       Xd[2] += nxi[0]*Xpts[1];
       Xd[3] += nxi[1]*Xpts[1];
       Xpts += 3;
-
-      // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
-      for ( int j = 0; j < vars_per_node; j++ ){
-        ut[0] += n[0]*vars[0];
-        ut[1] += n[0]*dvars[0];
-        ut[2] += n[0]*ddvars[0];
-        p[0] += n[0]*psi[0];
-
-        ud[0] += nxi[0]*vars[0];
-        ud[1] += nxi[1]*vars[0];
-
-        pd[0] += nxi[0]*psi[0];
-        pd[1] += nxi[1]*psi[0];
-
-        vars++;
-        dvars++;
-        ddvars++;
-        psi++;
-        p++;
-        ut += 3;
-        ud += 2;
-        pd += 2;
-      }
-
       n++;
       nxi += 2;
+    }
+
+    n = N, nxi = Nxi;
+    if (vars && dvars && ddvars && psi){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ut[1] += n[0]*dvars[0];
+          ut[2] += n[0]*ddvars[0];
+          p[0] += n[0]*psi[0];
+
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+
+          pd[0] += nxi[0]*psi[0];
+          pd[1] += nxi[1]*psi[0];
+
+          vars++;
+          dvars++;
+          ddvars++;
+          psi++;
+          p++;
+          ut += 3;
+          ud += 2;
+          pd += 2;
+        }
+
+        n++;
+        nxi += 2;
+      }
+    }
+    else if (vars &&psi){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud, *p = Psi, *pd = Psid;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          p[0] += n[0]*psi[0];
+
+          ud[0] += nxi[0]*vars[0];
+          ud[1] += nxi[1]*vars[0];
+
+          pd[0] += nxi[0]*psi[0];
+          pd[1] += nxi[1]*psi[0];
+
+          vars++;
+          psi++;
+          p++;
+          ut += 3;
+          ud += 2;
+          pd += 2;
+        }
+
+        n++;
+        nxi += 2;
+      }
     }
 
     // Compute the Jacobian transformation
@@ -993,24 +1128,48 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
 
       Xd[0] += nxi[0]*Xpts[0];
       Xpts += 3;
-
-      // Add contributions to the derivatives of the displacements
-      TacsScalar *ut = Ut, *ud = Ud;
-      for ( int j = 0; j < vars_per_node; j++ ){
-        ut[0] += n[0]*vars[0];
-        ut[1] += n[0]*dvars[0];
-        ut[2] += n[0]*ddvars[0];
-        ud[0] += nxi[0]*vars[0];
-
-        vars++;
-        dvars++;
-        ddvars++;
-        ut += 3;
-        ud++;
-      }
-
       n++;
       nxi++;
+    }
+
+    n = N, nxi = Nxi;
+    if (vars && dvars && ddvars && psi){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ut[1] += n[0]*dvars[0];
+          ut[2] += n[0]*ddvars[0];
+          ud[0] += nxi[0]*vars[0];
+
+          vars++;
+          dvars++;
+          ddvars++;
+          ut += 3;
+          ud++;
+        }
+
+        n++;
+        nxi++;
+      }
+    }
+    else if (vars && psi){
+      for ( int i = 0; i < num_nodes; i++ ){
+        // Add contributions to the derivatives of the displacements
+        TacsScalar *ut = Ut, *ud = Ud;
+        for ( int j = 0; j < vars_per_node; j++ ){
+          ut[0] += n[0]*vars[0];
+          ud[0] += nxi[0]*vars[0];
+
+          vars++;
+          ut += 3;
+          ud++;
+        }
+
+        n++;
+        nxi++;
+      }
     }
 
     J[0] = 1.0/Xd[0];

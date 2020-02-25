@@ -73,11 +73,11 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
      Add the derivative of the product of the adjoint and residual to
      the design vector
   */
-  void addWeakAdjProduct( int elemIndex, const double time, int n,
-                          const double pt[], const TacsScalar X[],
+  void addWeakAdjProduct( int elemIndex, const double time, TacsScalar scale,
+                          int n, const double pt[], const TacsScalar X[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],
-                          TacsScalar scale, int dvLen, TacsScalar dfdx[] );
+                          int dvLen, TacsScalar dfdx[] );
 
   /**
     Evaluate the spatial derivatives of the product of the adjoint
@@ -194,11 +194,11 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
      Add the derivative of the product of the adjoint and residual to
      the design vector
   */
-  void addWeakAdjProduct( int elemIndex, const double time, int n,
-                          const double pt[], const TacsScalar X[],
+  void addWeakAdjProduct( int elemIndex, const double time, TacsScalar scale,
+                          int n, const double pt[], const TacsScalar X[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],
-                          TacsScalar scale, int dvLen, TacsScalar dfdx[] );
+                          int dvLen, TacsScalar dfdx[] );
 
   /**
     Evaluate the spatial derivatives of the product of the adjoint

@@ -102,7 +102,7 @@ class TACSElementModel : public TACSObject {
 
   /**
     Evaluate the point-wise integrand for the weak form of the governing
-    equations of motion.
+    equation.
 
     The weak form consists of two groups of components, the coefficients
     of time-dependent terms (up to second-order), and the coefficients of
@@ -158,8 +158,8 @@ class TACSElementModel : public TACSObject {
                                   TacsScalar DUx[] ) = 0;
 
   /**
-    Evaluate the point-wise integrand for the weak form of the governing
-    equations of motion.
+    Evaluate the Jacobian of the point-wise integrand for the weak form of
+    the governing equations.
 
     The following code computes the weak form coefficients and their
     derivatives with respect to each of the input components. The
@@ -198,9 +198,9 @@ class TACSElementModel : public TACSObject {
     @param Ux The spatial derivatives of the state variables
     @param DUt Coefficients of the time-dependent weak form
     @param DUx Coefficients of the spatial-derivative weak form
-    @param DDUt_num_non_zeros Number of non-zeros (negative for dense matrix)
-    @param DDUt_non_zero_pairs Non-zero Jacobian matrix pairs for DDt
-    @param DDUt Jacobian of the time-dependent weak form
+    @param Jac_nnz Number of non-zeros (negative for dense matrix)
+    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
+    @param Jac Jacobian entries of the weak form
   */
   virtual void evalWeakJacobian( int elemIndex,
                                  const double time,
@@ -211,7 +211,7 @@ class TACSElementModel : public TACSObject {
                                  TacsScalar DUt[],
                                  TacsScalar DUx[],
                                  int *Jac_nnz,
-                                 const int *Jac_Pairs[],
+                                 const int *Jac_pairs[],
                                  TacsScalar Jac[] ) = 0;
 
   /**
@@ -220,6 +220,7 @@ class TACSElementModel : public TACSObject {
 
      @param elemIndex The local element index
      @param time The simulation time
+     @param scale The scaling factor applied to the derivative
      @param n The quadrature point index
      @param pt The parametric position of the quadrature point
      @param X The physical position of the quadrature point
@@ -227,19 +228,18 @@ class TACSElementModel : public TACSObject {
      @param Ux The spatial derivatives of the state variables
      @param Psi The adjoint variable values
      @param Psix The spatial derivatives of the adjoint variable values
-     @param scale The scaling factor applied to the derivative
      @param dvLen The length of the design variable vector
      @param fdvSens The derivative vector
   */
   virtual void addWeakAdjProduct( int elemIndex,
                                   const double time,
+                                  TacsScalar scale,
                                   int n, const double pt[],
                                   const TacsScalar X[],
                                   const TacsScalar Ut[],
                                   const TacsScalar Ux[],
                                   const TacsScalar Psi[],
                                   const TacsScalar Psix[],
-                                  TacsScalar scale,
                                   int dvLen,
                                   TacsScalar *fdvSens ){}
 
@@ -255,7 +255,10 @@ class TACSElementModel : public TACSObject {
     @param Ux The spatial derivatives of the state variables
     @param Psi The adjoint variable values
     @param Psix The spatial derivatives of the adjoint variable values
-
+    @param product The product of the adjoint and element residual vector
+    @param dfdX The derivative of the product w.r.t. X
+    @param dfdUx The derivative of the product with respect to Ux
+    @param dfdPsix The derivative of the product with respect to Psix
   */
   virtual void evalWeakAdjXptSensProduct( int elemIndex,
                                           const double time,
@@ -277,6 +280,117 @@ class TACSElementModel : public TACSObject {
     for ( int i = 0; i < num_params*vars_per_node; i++ ){
       dfdUx[i] = 0.0;
       dfdPsix[i] = 0.0;
+    }
+  }
+
+  /**
+    Evaluate the terms for a point-wise integrand of an element matrix
+    of specified type.
+
+    This code uses the same ordering conventions as the Jacobian code described
+    above. This can be used to evaluate the stiffness, mass and geometric stiffness
+    matrices.
+
+    @param elemIndex The local element index
+    @param time The simulation time
+    @param n The quadrature point index
+    @param pt The parametric position of the quadrature point
+    @param X The physical position of the quadrature point
+    @param Ut Values of the state variables and their 1st/2nd time derivs
+    @param Ux The spatial derivatives of the state variables
+    @param Jac_nnz Number of non-zeros (negative for dense matrix)
+    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
+    @param Jac Jacobian entries of the weak form
+  */
+  virtual void evalWeakMatrix( ElementMatrixType matType,
+                               int elemIndex,
+                               const double time,
+                               int n, const double pt[],
+                               const TacsScalar X[],
+                               const TacsScalar Ut[],
+                               const TacsScalar Ux[],
+                               int *Jac_nnz,
+                               const int *Jac_pairs[],
+                               TacsScalar Jac[] ){
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+
+  /**
+    Add the derivative of the matrix inner product with respect to the
+    design variables to the element design vector.
+
+    @param elemIndex The local element index
+    @param time The simulation time
+    @param scale Scaling parameter
+    @param n The quadrature point index
+    @param pt The parametric position of the quadrature point
+    @param X The physical position of the quadrature point
+    @param Ut Values of the state variables and their 1st/2nd time derivs
+    @param Ux The spatial derivatives of the state variables
+    @param Psi Values of the left vector
+    @param Psix Spatial derivatives of the left vector
+    @param Phi Value of the right vector
+    @param Phix Spatial derivative of the right vector
+    @param dvLen The length of the design sensitivity array
+    @param dfdx The derivative array being computed
+  */
+  virtual void addWeakMatDVSens( ElementMatrixType matType,
+                                 int elemIndex,
+                                 const double time,
+                                 TacsScalar scale,
+                                 int n, const double pt[],
+                                 const TacsScalar X[],
+                                 const TacsScalar Ut[],
+                                 const TacsScalar Ux[],
+                                 const TacsScalar Psi[],
+                                 const TacsScalar Psix[],
+                                 const TacsScalar Phi[],
+                                 const TacsScalar Phix[],
+                                 int dvLen,
+                                 TacsScalar dfdx[] ){}
+
+  /**
+    Evaluate the derivative of the matrix inner product with respect to the
+    state variables U and Ux.
+
+    @param elemIndex The local element index
+    @param time The simulation time
+    @param scale Scaling parameter
+    @param n The quadrature point index
+    @param pt The parametric position of the quadrature point
+    @param X The physical position of the quadrature point
+    @param Ut Values of the state variables and their 1st/2nd time derivs
+    @param Ux The spatial derivatives of the state variables
+    @param Psi Values of the left vector
+    @param Psix Spatial derivatives of the left vector
+    @param Phi Value of the right vector
+    @param Phix Spatial derivative of the right vector
+    @param dfdU Derivative of the inner product w.r.t. U
+    @param dfdUx Derivative of the inner product w.r.t. Ux
+  */
+  virtual void evalWeakMatSVSens( ElementMatrixType matType,
+                                  int elemIndex,
+                                  const double time,
+                                  TacsScalar scale,
+                                  int n, const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar Ut[],
+                                  const TacsScalar Ux[],
+                                  const TacsScalar Psi[],
+                                  const TacsScalar Psix[],
+                                  const TacsScalar Phi[],
+                                  const TacsScalar Phix[],
+                                  TacsScalar dfdU[],
+                                  TacsScalar dfdUx[] ){
+    const int vars_per_node = getVarsPerNode();
+    const int num_params = getSpatialDim();
+
+    for ( int i = 0; i < vars_per_node; i++ ){
+      dfdU[i] = 0.0;
+    }
+    for ( int i = 0; i < num_params*vars_per_node; i++ ){
+      dfdUx[i] = 0.0;
     }
   }
 
@@ -350,7 +464,6 @@ class TACSElementModel : public TACSObject {
      @param elemIndex The local element index
      @param quantityType Integer indicating the type of pointwise quantity
      @param time The simulation time
-     @param scale Scale factor applied to the derivative
      @param n The quadrature point index
      @param pt The parametric position of the quadrature point
      @param X The physical position of the quadrature point
