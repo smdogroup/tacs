@@ -46,6 +46,10 @@ TACSElementBasis* TACSElement3D::getElementBasis(){
   return basis;
 }
 
+TACSElementModel* TACSElement3D::getElementModel(){
+  return model;
+}
+
 /*
   Retrieve the global design variable numbers associated with this element
 */
