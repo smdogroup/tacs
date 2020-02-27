@@ -206,7 +206,7 @@ void TACSElement2D::addAdjResProduct( int elemIndex,
     // Compute the weight
     TacsScalar s = scale*detJ*weight;
 
-    model->addWeakAdjProduct(elemIndex, n, time, s, pt, X,
+    model->addWeakAdjProduct(elemIndex, time, s, n, pt, X,
                              Ut, Ux, Psi, Psix, dvLen, dfdx);
   }
 }
@@ -276,6 +276,10 @@ void TACSElement2D::getMatType( ElementMatrixType matType,
                                 const TacsScalar Xpts[],
                                 const TacsScalar vars[],
                                 TacsScalar mat[] ){
+  // Zero the element matrix
+  const int nvars = getNumVariables();
+  memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
+
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
@@ -358,9 +362,9 @@ void TACSElement2D::addMatDVSensInnerProduct( ElementMatrixType matType,
                             Phit, Phid, Phix);
 
     // Multiply by the quadrature weight
-    TacsScalar scale = weight*detJ;
+    TacsScalar s = scale*weight*detJ;
 
-    model->addWeakMatDVSens(matType, elemIndex, time, scale, n, pt, X, Ut, Ux,
+    model->addWeakMatDVSens(matType, elemIndex, time, s, n, pt, X, Ut, Ux,
                             Psit, Psix, Phit, Phix, dvLen, dfdx);
   }
 }

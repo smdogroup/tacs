@@ -455,13 +455,13 @@ int TacsTestElementJacobian( TACSElement *element,
 */
 int TacsTestAdjResProduct( TACSElement *element,
                            int elemIndex,
-                           int dvLen,
-                           const TacsScalar *x,
                            double time,
                            const TacsScalar Xpts[],
                            const TacsScalar vars[],
                            const TacsScalar dvars[],
                            const TacsScalar ddvars[],
+                           int dvLen,
+                           const TacsScalar *x,
                            double dh,
                            int test_print_level,
                            double test_fail_atol,
@@ -695,6 +695,139 @@ int TacsTestAdjResXptProduct( TACSElement *element,
 
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
+
+
+int TacsTestElementMatDVSens( TACSElement *element,
+                              ElementMatrixType matType,
+                              int elemIndex,
+                              double time,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
+                              int dvLen,
+                              const TacsScalar *x,
+                              double dh,
+                              int test_print_level,
+                              double test_fail_atol,
+                              double test_fail_rtol ){
+  // Retrieve the number of variables
+  int nvars = element->getNumVariables();
+  int dvs_per_node = element->getDesignVarsPerNode();
+  int num_dvs = dvs_per_node*dvLen;
+
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *xcopy = new TacsScalar[ num_dvs ];
+  TacsScalar *result = new TacsScalar[ num_dvs ];
+  TacsScalar *fd = new TacsScalar[ num_dvs ];
+  memset(result, 0, num_dvs*sizeof(TacsScalar));
+
+  // Generate a random array of values
+  TacsScalar *mat = new TacsScalar[ nvars*nvars ];
+  TacsScalar *psi = new TacsScalar[ nvars ];
+  TacsScalar *phi = new TacsScalar[ nvars ];
+  TacsGenerateRandomArray(psi, nvars);
+  TacsGenerateRandomArray(phi, nvars);
+
+  // Evaluate the derivative of the adjoint-residual product
+  double scale = 1.0*rand()/RAND_MAX;
+
+  element->setDesignVars(elemIndex, dvLen, x);
+  memset(result, 0, num_dvs*sizeof(TacsScalar));
+  element->addMatDVSensInnerProduct(matType, elemIndex, time, scale,
+                                    psi, phi, Xpts, vars, dvLen, result);
+
+  for ( int k = 0; k < num_dvs; k++ ){
+    memcpy(xcopy, x, num_dvs*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+    // Perturb the design variables: xpert = x + dh*sign(result[k])
+    xcopy[k] = x[k] + TacsScalar(0.0, dh);
+    element->setDesignVars(elemIndex, dvLen, xcopy);
+
+    TacsScalar p1 = 0.0;
+    element->getMatType(matType, elemIndex, time, Xpts, vars, mat);
+    for ( int i = 0; i < nvars; i++ ){
+      for ( int j = 0; j < nvars; j++ ){
+        p1 += scale*mat[i + j*nvars]*psi[i]*phi[j];
+      }
+    }
+
+    fd[k] = TacsImagPart(p1)/dh;
+#else
+    xcopy[k] = x[k] + dh;
+    element->setDesignVars(elemIndex, dvLen, xcopy);
+
+    TacsScalar p1 = 0.0;
+    element->getMatType(matType, elemIndex, time, Xpts, vars, mat);
+    for ( int i = 0; i < nvars; i++ ){
+      for ( int j = 0; j < nvars; j++ ){
+        p1 += scale*mat[i + j*nvars]*psi[i]*phi[j];
+      }
+    }
+
+    xcopy[k] = x[k] - dh;
+    element->setDesignVars(elemIndex, dvLen, xcopy);
+
+    TacsScalar p2 = 0.0;
+    element->getMatType(matType, elemIndex, time, Xpts, vars, mat);
+    for ( int i = 0; i < nvars; i++ ){
+      for ( int j = 0; j < nvars; j++ ){
+        p2 += scale*mat[i + j*nvars]*psi[i]*phi[j];
+      }
+    }
+
+    fd[k] = 0.5*(p1 - p2)/dh;
+#endif // TACS_USE_COMPLEX
+  }
+
+  // Set the design variable values
+  element->setDesignVars(elemIndex, dvLen, x);
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(result, fd, num_dvs, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, num_dvs,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the matrix inner product for %s\n",
+            element->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "Matrix inner product",
+                             result, fd, num_dvs);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] xcopy;
+  delete [] psi;
+  delete [] phi;
+  delete [] mat;
+  delete [] result;
+  delete [] fd;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+int TacsTestElementMatSVSens( TACSElement *element,
+                              ElementMatrixType elemType,
+                              int elemIndex,
+                              double time,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
+                              double dh,
+                              int test_print_level,
+                              double test_fail_atol,
+                              double test_fail_rtol ){
+  return 0;
+}
+
 
 int TacsTestElementBasisFunctions( TACSElementBasis *basis,
                                    double dh,

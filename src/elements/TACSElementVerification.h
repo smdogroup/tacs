@@ -131,13 +131,13 @@ int TacsTestElementJacobian( TACSElement *element,
   Test the adjoint-residual product implementation
 
   @param element The element object
-  @param dvLen The length of the design variable array
-  @param x The design variable array
   @param time Simulation time
   @param Xpts The element nodal variables
   @param vars The element state variables
   @param dvars The time derivatives of the state variables
   @param ddvars The second time derivatives of the state variables
+  @param dvLen The length of the design variable array
+  @param x The design variable array
   @param dh The finite-difference step size
   @param test_print_level The output level
   @param test_fail_atol The test absolute tolerance
@@ -145,13 +145,13 @@ int TacsTestElementJacobian( TACSElement *element,
 */
 int TacsTestAdjResProduct( TACSElement *element,
                            int elemIndex,
-                           int dvLen,
-                           const TacsScalar *x,
                            double time,
                            const TacsScalar Xpts[],
                            const TacsScalar vars[],
                            const TacsScalar dvars[],
                            const TacsScalar ddvars[],
+                           int dvLen,
+                           const TacsScalar *x,
                            double dh=1e-7,
                            int test_print_level=2,
                            double test_fail_atol=1e-5,
@@ -178,6 +178,60 @@ int TacsTestAdjResXptProduct( TACSElement *element,
                               const TacsScalar vars[],
                               const TacsScalar dvars[],
                               const TacsScalar ddvars[],
+                              double dh=1e-7,
+                              int test_print_level=2,
+                              double test_fail_atol=1e-5,
+                              double test_fail_rtol=1e-5 );
+
+/**
+  Test the matrix design variable sensitivity implementation
+
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+  @param dvLen The length of the design variable array
+  @param x The design variable array
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementMatDVSens( TACSElement *element,
+                              ElementMatrixType elemType,
+                              int elemIndex,
+                              double time,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
+                              int dvLen,
+                              const TacsScalar *x,
+                              double dh=1e-7,
+                              int test_print_level=2,
+                              double test_fail_atol=1e-5,
+                              double test_fail_rtol=1e-5 );
+
+/**
+  Test the matrix design variable sensitivity implementation
+
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementMatSVSens( TACSElement *element,
+                              ElementMatrixType elemType,
+                              int elemIndex,
+                              double time,
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
                               double dh=1e-7,
                               int test_print_level=2,
                               double test_fail_atol=1e-5,

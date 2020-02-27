@@ -115,9 +115,9 @@ void TACSPlaneStressConstitutive::addDensityDVSens( int elemIndex,
                                                     const double pt[],
                                                     const TacsScalar X[],
                                                     int dvLen,
-                                                    TacsScalar dvSens[] ){
+                                                    TacsScalar dfdx[] ){
   if (properties && tNum >= 0){
-    dvSens[0] += scale*properties->getDensity();
+    dfdx[0] += scale*properties->getDensity();
   }
 }
 
@@ -137,9 +137,9 @@ void TACSPlaneStressConstitutive::addSpecificHeatDVSens( int elemIndex,
                                                          const double pt[],
                                                          const TacsScalar X[],
                                                          int dvLen,
-                                                         TacsScalar dvSens[] ){
+                                                         TacsScalar dfdx[] ){
   if (properties && tNum >= 0){
-    dvSens[0] += scale*properties->getSpecificHeat();
+    dfdx[0] += scale*properties->getSpecificHeat();
   }
 }
 
@@ -185,7 +185,7 @@ void TACSPlaneStressConstitutive::addStressDVSens( int elemIndex,
                                                    const TacsScalar e[],
                                                    const TacsScalar psi[],
                                                    int dvLen,
-                                                   TacsScalar dvSens[] ){
+                                                   TacsScalar dfdx[] ){
   if (properties && tNum >= 0){
     TacsScalar C[6];
     properties->evalTangentStiffness2D(C);
@@ -196,7 +196,7 @@ void TACSPlaneStressConstitutive::addStressDVSens( int elemIndex,
     s[2] = (C[2]*e[0] + C[4]*e[1] + C[5]*e[2]);
 
     // Compute the derivative w.r.t. the design vector
-    dvSens[0] += scale*(s[0]*psi[0] + s[1]*psi[1] + s[2]*psi[2]);
+    dfdx[0] += scale*(s[0]*psi[0] + s[1]*psi[1] + s[2]*psi[2]);
   }
 }
 
@@ -250,12 +250,12 @@ void TACSPlaneStressConstitutive::addHeatFluxDVSens( int elemIndex,
                                                      const TacsScalar grad[],
                                                      const TacsScalar psi[],
                                                      int dvLen,
-                                                     TacsScalar dvSens[] ){
+                                                     TacsScalar dfdx[] ){
   if (properties && tNum >= 0){
     TacsScalar Kc[3];
     properties->evalTangentHeatFlux2D(Kc);
-    dvSens[0] += scale*(psi[0]*(Kc[0]*grad[0] + Kc[1]*grad[1]) +
-                        psi[1]*(Kc[1]*grad[0] + Kc[2]*grad[1]));
+    dfdx[0] += scale*(psi[0]*(Kc[0]*grad[0] + Kc[1]*grad[1]) +
+                      psi[1]*(Kc[1]*grad[0] + Kc[2]*grad[1]));
   }
 }
 

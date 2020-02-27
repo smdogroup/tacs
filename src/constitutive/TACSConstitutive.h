@@ -133,13 +133,13 @@ class TACSConstitutive : public TACSObject {
     @param pt The parametric location
     @param X The point location
     @param dvLen the length of the sensitivity array
-    @param dvSens The sensitivity array
+    @param dfdx The sensitivity array
   */
   virtual void addDensityDVSens( int elemIndex,
                                  TacsScalar scale,
                                  const double pt[],
                                  const TacsScalar X[],
-                                 int dvLen, TacsScalar dvSens[] ){}
+                                 int dvLen, TacsScalar dfdx[] ){}
 
   /**
     Evaluate the specific heat (heat capacity per unit mass)
@@ -161,13 +161,13 @@ class TACSConstitutive : public TACSObject {
     @param pt The parametric location
     @param X The point location
     @param dvLen the length of the sensitivity array
-    @param dvSens The sensitivity array
+    @param dfdx The sensitivity array
   */
   virtual void addSpecificHeatDVSens( int elemIndex,
                                       TacsScalar scale,
                                       const double pt[],
                                       const TacsScalar X[],
-                                      int dvLen, TacsScalar dvSens[] ){}
+                                      int dvLen, TacsScalar dfdx[] ){}
 
   /**
     Return the stress as a function of the strain at the Gauss point
@@ -201,7 +201,7 @@ class TACSConstitutive : public TACSObject {
                                      TacsScalar C[] ) = 0;
 
   /**
-    Add the derivative of the stress times an input vector to dvSens
+    Add the derivative of the stress times an input vector
 
     @param elemIndex The local element index
     @param scale A scalar factor
@@ -286,14 +286,14 @@ class TACSConstitutive : public TACSObject {
     @param theta The local change in temperature
     @param psi Multiplier vector (same size as the strain)
     @param dvLen The length of the sensitivity array
-    @param dvSens The sensitivity
+    @param dfdx The sensitivity
   */
   virtual void addThermalStrainDVSens( int elemIndex,
                                        const double pt[],
                                        const TacsScalar X[],
                                        TacsScalar theta,
                                        const TacsScalar psi[],
-                                       int dvLen, TacsScalar dvSens[] ){}
+                                       int dvLen, TacsScalar dfdx[] ){}
 
   /**
     Given the thermal gradient, compute the heat flux
@@ -330,7 +330,7 @@ class TACSConstitutive : public TACSObject {
     @param X The physical point location
     @param psi Multiplier vector (same size as the strain)
     @param dvLen The length of the sensitivity array
-    @param dvSens The sensitivity
+    @param dfdx The sensitivity
   */
   virtual void addHeatFluxDVSens( int elemIndex,
                                   TacsScalar scale,
@@ -338,7 +338,7 @@ class TACSConstitutive : public TACSObject {
                                   const TacsScalar X[],
                                   const TacsScalar grad[],
                                   const TacsScalar psi[],
-                                  int dvLen, TacsScalar dvSens[] ){}
+                                  int dvLen, TacsScalar dfdx[] ){}
 
   /**
     Evaluate the failure index at a quadrature point
@@ -384,14 +384,14 @@ class TACSConstitutive : public TACSObject {
     @param X The physical node location
     @param strain the strain value
     @param dvLen The length of the design vector
-    @param dvSens The sensitivity contribution
+    @param dfdx The sensitivity contribution
   */
   virtual void addFailureDVSens( int elemIndex,
                                  TacsScalar scale,
                                  const double pt[],
                                  const TacsScalar X[],
                                  const TacsScalar strain[],
-                                 int dvLen, TacsScalar dvSens[] ){}
+                                 int dvLen, TacsScalar dfdx[] ){}
 
   /**
     Evaluate a design field (if defined) at the given quadrature point

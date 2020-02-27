@@ -55,9 +55,19 @@ class TACSSolidConstitutive : public TACSConstitutive {
   TacsScalar evalDensity( int elemIndex, const double pt[],
                           const TacsScalar X[] );
 
+  // Add the derivative of the density
+  void addDensityDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
+                         int dvLen, TacsScalar dfdx[] );
+
   // Evaluate the specific heat
   TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
                                const TacsScalar X[] );
+
+  // Add the derivative of the density
+  void addSpecificHeatDVSens( int elemIndex, TacsScalar scale,
+                              const double pt[], const TacsScalar X[],
+                              int dvLen, TacsScalar dfdx[] );
 
   // Evaluate the stresss
   void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
@@ -72,6 +82,12 @@ class TACSSolidConstitutive : public TACSConstitutive {
                           const TacsScalar X[], TacsScalar theta,
                           TacsScalar strain[] );
 
+  // Add the contribution
+  void addStressDVSens( int elemIndex, TacsScalar scale,
+                        const double pt[], const TacsScalar X[],
+                        const TacsScalar strain[], const TacsScalar psi[],
+                        int dvLen, TacsScalar dfdx[] );
+
   // Evaluate the heat flux, given the thermal gradient
   void evalHeatFlux( int elemIndex, const double pt[],
                      const TacsScalar X[], const TacsScalar grad[],
@@ -80,6 +96,12 @@ class TACSSolidConstitutive : public TACSConstitutive {
   // Evaluate the tangent of the heat flux
   void evalTangentHeatFlux( int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar C[] );
+
+  // Add the derivative of the heat flux
+  void addHeatFluxDVSens( int elemIndex, TacsScalar scale,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar grad[], const TacsScalar psi[],
+                          int dvLen, TacsScalar dfdx[] );
 
   // Evaluate the material failure index
   TacsScalar evalFailure( int elemIndex, const double pt[],

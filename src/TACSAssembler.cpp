@@ -5062,8 +5062,8 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   const int maxDVs = maxElementDesignVars;
   TacsScalar *x = elementSensData;
   elements[elemNum]->getDesignVars(elemNum, maxDVs, x);
-  TacsTestAdjResProduct(elements[elemNum], elemNum, maxDVs, x,
-                        time, elemXpts, vars, dvars, ddvars,
+  TacsTestAdjResProduct(elements[elemNum], elemNum,
+                        time, elemXpts, vars, dvars, ddvars, maxDVs, x,
                         dh, print_level, rtol, atol);
   TacsTestAdjResXptProduct(elements[elemNum], elemNum, time,
                           elemXpts, vars, dvars, ddvars,
