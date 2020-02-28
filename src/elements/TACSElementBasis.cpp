@@ -648,7 +648,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       nxi += 3;
     }
 
-    n = N, nxi = Nxi;
+    n = N; nxi = Nxi;
     if (vars && dvars && ddvars){
       for ( int i = 0; i < num_nodes; i++ ){
         // Add contributions to the derivatives of the displacements
@@ -922,7 +922,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
       nxi += 3;
     }
 
-    n = N, nxi = Nxi;
+    n = N; nxi = Nxi;
     if (vars && dvars && ddvars && psi){
       for ( int i = 0; i < num_nodes; i++ ){
         // Add contributions to the derivatives of the displacements
@@ -1243,7 +1243,6 @@ void TACSElementBasis::addFieldGradientSVSens( const int num_params,
   }
 }
 
-
 void TACSElementBasis::addFieldGradientXptSens( const double pt[],
                                                 const TacsScalar Xpts[],
                                                 const int vars_per_node,
@@ -1287,9 +1286,8 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
     det3x3Sens(Xd, t);
 
     // Multiply the derivative by df/d(detJ)
-    TacsScalar *T = t;
-    for ( int i = 0; i < 9; i++, T++ ){
-      T[0] *= dfddetJ;
+    for ( int i = 0; i < 9; i++ ){
+      t[i] *= dfddetJ;
     }
 
     // If dfdXd is supplied, add it to the derivative
@@ -1512,9 +1510,8 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
     det3x3Sens(Xd, t);
 
     // Multiply the derivative by df/d(detJ)
-    TacsScalar *T = t;
-    for ( int i = 0; i < 9; i++, T++ ){
-      T[0] *= dfddetJ;
+    for ( int i = 0; i < 9; i++ ){
+      t[i] *= dfddetJ;
     }
 
     // If dfdXd is supplied, add it to the derivative

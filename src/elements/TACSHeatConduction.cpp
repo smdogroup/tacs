@@ -195,10 +195,13 @@ void TACSHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
                                                       TacsScalar dfdPsix[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+
   stiff->evalHeatFlux(elemIndex, pt, X, Ux, dfdPsix);
   stiff->evalHeatFlux(elemIndex, pt, X, Psix, dfdUx);
 
-  *product += dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1];
+  *product = c*rho*Psi[0]*Ut[1] + dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1];
 }
 
 /*
@@ -542,14 +545,14 @@ void TACSHeatConduction3D::evalWeakAdjXptSensProduct( int elemIndex,
                                                       TacsScalar dfdUx[],
                                                       TacsScalar dfdPsix[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
-  dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
 
-  dfdPsix[0] = dfdPsix[1] = dfdPsix[2] = 0.0;
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
   stiff->evalHeatFlux(elemIndex, pt, X, Ux, dfdPsix);
   stiff->evalHeatFlux(elemIndex, pt, X, Psix, dfdUx);
 
-  *product += dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1] + dfdUx[2]*Ux[2];
+  *product = c*rho*Psi[0]*Ut[1] + dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1] + dfdUx[2]*Ux[2];
 }
 
 /*

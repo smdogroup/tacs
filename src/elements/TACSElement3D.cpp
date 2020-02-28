@@ -248,7 +248,7 @@ void TACSElement3D::addAdjResXptProduct( int elemIndex,
 
     TacsScalar product;
     TacsScalar dfdX[3], dfdUx[3*MAX_VARS_PER_NODE], dfdPsix[3*MAX_VARS_PER_NODE];
-    model->evalWeakAdjXptSensProduct(elemIndex, n, time, pt, X,
+    model->evalWeakAdjXptSensProduct(elemIndex, time, n, pt, X,
                                      Ut, Ux, Psi, Psix, &product,
                                      dfdX, dfdUx, dfdPsix);
 

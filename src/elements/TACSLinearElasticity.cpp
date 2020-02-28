@@ -358,11 +358,15 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
              (Psix[0]*Ux[1] + Psix[3]*Ux[2]);
   }
 
+  // Compute the material density
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+
   TacsScalar s[3], a[3];
   stiff->evalStress(elemIndex, pt, X, e, s);
   stiff->evalStress(elemIndex, pt, X, phi, a);
 
-  *product = a[0]*e[0] + a[1]*e[1] + a[2]*e[2];
+  *product = (rho*(Psi[0]*Ut[2] + Psi[1]*Ut[5]) +
+              a[0]*e[0] + a[1]*e[1] + a[2]*e[2]);
 
   if (strain_type == TACS_LINEAR_STRAIN){
     dfdPsix[0] = s[0];
@@ -1506,11 +1510,15 @@ void TACSLinearElasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
         Psix[4]*Ux[3] + Psix[6]*Ux[7] + Psix[7]*Ux[6];
   }
 
+  // Compute the material density
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+
   TacsScalar s[6], a[6];
   stiff->evalStress(elemIndex, pt, X, e, s);
   stiff->evalStress(elemIndex, pt, X, phi, a);
 
-  *product = (a[0]*e[0] + a[1]*e[1] + a[2]*e[2] +
+  *product = (rho*(Psi[0]*Ut[2] + Psi[1]*Ut[5] + Psi[2]*Ut[8]) +
+              a[0]*e[0] + a[1]*e[1] + a[2]*e[2] +
               a[3]*e[3] + a[4]*e[4] + a[5]*e[5]);
 
   if (strain_type == TACS_LINEAR_STRAIN){
