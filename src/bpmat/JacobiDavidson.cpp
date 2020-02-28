@@ -684,6 +684,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       ksm_print->print(line);
     }
   }
+
   // Print the iteration count to file
   if (ksm_file){
     char line[256];

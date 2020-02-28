@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "TACSMeshLoader.h"
-#include "FElibrary.h"
 
 /*!
   This is an interface for reading NASTRAN-style files.

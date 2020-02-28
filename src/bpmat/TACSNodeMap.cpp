@@ -13,7 +13,6 @@
 */
 
 #include "TACSNodeMap.h"
-#include "FElibrary.h"
 
 /**
   Defines the mapping from nodes to processor owners.

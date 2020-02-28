@@ -17,7 +17,6 @@
 */
 
 #include "TACSBVec.h"
-#include "FElibrary.h"
 #include "tacslapack.h"
 
 /*
