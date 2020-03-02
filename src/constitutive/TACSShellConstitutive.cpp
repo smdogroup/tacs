@@ -22,12 +22,235 @@
 const char* TACSShellConstitutive::constName = "TACSShellConstitutive";
 
 /*
-  Construct the TACSShellConstitutive object
+  Create the shell constitutive
 */
-TACSShellConstitutive::TACSShellConstitutive(){
-  transform_type = NATURAL;
+TACSShellConstitutive::TACSShellConstitutive( TACSMaterialProperties *props,
+                                              TacsScalar _t,
+                                              int _tNum,
+                                              TacsScalar _tlb,
+                                              TacsScalar _tub ){
+  properties = props;
+  if (properties){
+    properties->incref();
+  }
+
+  t = _t;
+  tNum = _tNum;
+  tlb = _tlb;
+  tub = _tub;
+
+  transform_type = TACS_NATURAL_SHELL_COORDINATES;
   axis[0] = axis[1] = axis[2] = 0.0;
   axis[0] = 1.0;
+}
+
+TACSShellConstitutive::~TACSShellConstitutive(){
+  if (properties){
+    properties->decref();
+  }
+}
+
+/*
+  Set the reference axis
+*/
+void TACSShellConstitutive::setRefAxis( const TacsScalar _axis[] ){
+  transform_type = TACS_REFERENCE_AXIS_COORDINATES;
+  axis[0] = _axis[0];
+  axis[1] = _axis[1];
+  axis[2] = _axis[2];
+}
+
+int TACSShellConstitutive::getNumStresses(){
+  return NUM_STRESSES;
+}
+
+// Retrieve the global design variable numbers
+int TACSShellConstitutive::getDesignVarNums( int elemIndex,
+                                             int dvLen, int dvNums[] ){
+  if (tNum >= 0){
+    if (dvNums && dvLen >= 1){
+      dvNums[0] = tNum;
+    }
+    return 1;
+  }
+  return 0;
+}
+
+// Set the element design variable from the design vector
+int TACSShellConstitutive::setDesignVars( int elemIndex,
+                                          int dvLen,
+                                          const TacsScalar dvs[] ){
+  if (tNum >= 0 && dvLen >= 1){
+    t = dvs[0];
+    return 1;
+  }
+  return 0;
+}
+
+// Get the element design variables values
+int TACSShellConstitutive::getDesignVars( int elemIndex,
+                                          int dvLen,
+                                          TacsScalar dvs[] ){
+  if (tNum >= 0 && dvLen >= 1){
+    dvs[0] = t;
+    return 1;
+  }
+  return 0;
+}
+
+// Get the lower and upper bounds for the design variable values
+int TACSShellConstitutive::getDesignVarRange( int elemIndex,
+                                              int dvLen,
+                                              TacsScalar lb[],
+                                              TacsScalar ub[] ){
+  if (tNum >= 0 && dvLen >= 1){
+    if (lb){ lb[0] = tlb; }
+    if (ub){ ub[0] = tub; }
+    return 1;
+  }
+  return 0;
+}
+
+// Evaluate the material density
+TacsScalar TACSShellConstitutive::evalDensity( int elemIndex,
+                                               const double pt[],
+                                               const TacsScalar X[] ){
+  if (properties){
+    return t*properties->getDensity();
+  }
+  return 0.0;
+}
+
+// Add the derivative of the density
+void TACSShellConstitutive::addDensityDVSens( int elemIndex,
+                                              TacsScalar scale,
+                                              const double pt[],
+                                              const TacsScalar X[],
+                                              int dvLen,
+                                              TacsScalar dfdx[] ){
+  if (properties && tNum >= 0){
+    dfdx[0] += scale*properties->getDensity();
+  }
+}
+
+// Evaluate the specific heat
+TacsScalar TACSShellConstitutive::evalSpecificHeat( int elemIndex,
+                                                    const double pt[],
+                                                    const TacsScalar X[] ){
+  if (properties){
+    return properties->getSpecificHeat();
+  }
+  return 0.0;
+}
+
+// Evaluate the stresss
+void TACSShellConstitutive::evalStress( int elemIndex,
+                                        const double pt[],
+                                        const TacsScalar X[],
+                                        const TacsScalar e[],
+                                        TacsScalar s[] ){
+  TacsScalar A[6], B[6], D[6], As[3], drill;
+
+  // Compute the tangent stiffness matrix
+  properties->evalTangentStiffness2D(A);
+
+  // The bending-stretch coupling matrix is zero in this case
+  B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
+
+  // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
+  TacsScalar I = t*t*t/12.0;
+  for ( int i = 0; i < 6; i++ ){
+    D[i] = I*A[i];
+    A[i] *= t;
+  }
+
+  // Set the through-thickness shear stiffness
+  As[0] = As[2] = (5.0/6.0)*t*A[5];
+  As[1] = 0.0;
+
+  drill = DRILLING_REGULARIZATION*(As[0] + As[2]);
+
+  // Evaluate the stress
+  evalStress(A, B, D, As, drill, e, s);
+}
+
+// Evaluate the tangent stiffness
+void TACSShellConstitutive::evalTangentStiffness( int elemIndex,
+                                                  const double pt[],
+                                                  const TacsScalar X[],
+                                                  TacsScalar C[] ){
+  TacsScalar *A = &C[0];
+  TacsScalar *B = &C[6];
+  TacsScalar *D = &C[12];
+  TacsScalar *As = &C[18];
+
+  // Compute the tangent stiffness matrix
+  properties->evalTangentStiffness2D(A);
+
+  // The bending-stretch coupling matrix is zero in this case
+  B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
+
+  TacsScalar I = t*t*t/12.0;
+  for ( int i = 0; i < 6; i++ ){
+    D[i] = I*A[i];
+    A[i] *= t;
+  }
+
+  // Set the through-thickness shear stiffness
+  As[0] = As[2] = (5.0/6.0)*t*A[5];
+  As[1] = 0.0;
+
+  C[21] = DRILLING_REGULARIZATION*(As[0] + As[2]);
+}
+
+// Extract the tangent stiffness components from the matrix
+void TACSShellConstitutive::extractTangenttStiffness( const TacsScalar *C,
+                                                      const TacsScalar **A,
+                                                      const TacsScalar **B,
+                                                      const TacsScalar **D,
+                                                      const TacsScalar **As,
+                                                      TacsScalar *drill ){
+  if (A){ *A = &C[0]; }
+  if (B){ *B = &C[6]; }
+  if (D){ *D = &C[12]; }
+  if (As){ *As = &C[18]; }
+  if (A){ *A = &C[21]; }
+}
+
+
+// Add the contribution
+void TACSShellConstitutive::addStressDVSens( int elemIndex,
+                                             TacsScalar scale,
+                                             const double pt[],
+                                             const TacsScalar X[],
+                                             const TacsScalar strain[],
+                                             const TacsScalar psi[],
+                                             int dvLen, TacsScalar dfdx[] ){}
+
+// Evaluate the thermal strain
+void TACSShellConstitutive::evalThermalStrain( int elemIndex,
+                                               const double pt[],
+                                               const TacsScalar X[],
+                                               TacsScalar theta,
+                                               TacsScalar e[] ){
+
+}
+
+// Evaluate the heat flux, given the thermal gradient
+void TACSShellConstitutive::evalHeatFlux( int elemIndex,
+                                          const double pt[],
+                                          const TacsScalar X[],
+                                          const TacsScalar grad[],
+                                          TacsScalar flux[] ){
+
+}
+
+// Evaluate the tangent of the heat flux
+void TACSShellConstitutive::evalTangentHeatFlux( int elemIndex,
+                                                 const double pt[],
+                                                 const TacsScalar X[],
+                                                 TacsScalar C[] ){
+
 }
 
 /*
@@ -47,114 +270,4 @@ double TACSShellConstitutive::DRILLING_REGULARIZATION = 10.0;
 */
 void TACSShellConstitutive::setDrillingRegularization( double kval ){
   DRILLING_REGULARIZATION = kval;
-}
-
-/*
-  Given the parametric point within the element and the value of the
-  strain, compute the stress
-
-  input:
-  pt:   the parametric point
-  e:    the components of the strain
-
-  output:
-  s:    the components of the stress
-*/
-void TACSShellConstitutive::calculateStress( const double pt[],
-                                             const TacsScalar e[],
-                                             TacsScalar s[] ){
-  // Compute the stiffness matrix (ignore the in-plane rotation penalty)
-  TacsScalar A[6], B[6], D[6], As[3];
-  getStiffness(pt, A, B, D, As);
-
-  // Cmopute the stress
-  calculateStress(A, B, D, As, e, s);
-}
-
-/*
-  Given the parametric point, the comonents of the strain, and a
-  vector psi equal in length to the size of the strain, add the
-  derivative of the product with the stiffness with respect to the
-  design variables to the input vector.
-
-  In other words, compute the derivative:
-
-  fdvSens += alpha*d(psi^{T}*C*e)/dx
-
-  input:
-  pt:       the parametric point
-  e:        the components of the strain
-  alpha:    a scalar multiplier
-  psi:      the components of the multiplying vector
-  dvLen:    the length of the design variable array
-
-  output:
-  fdvSens:  the design variable vector
-*/
-void TACSShellConstitutive::addStressDVSens( const double pt[], const TacsScalar e[],
-                                             TacsScalar alpha, const TacsScalar psi[],
-                                             TacsScalar fdvSens[], int dvLen ){
-  // Scale the input vector psi by the scalar alpha
-  TacsScalar p[8];
-  if (alpha != 1.0){
-    p[0] = alpha*psi[0];
-    p[1] = alpha*psi[1];
-    p[2] = alpha*psi[2];
-    p[3] = alpha*psi[3];
-    p[4] = alpha*psi[4];
-    p[5] = alpha*psi[5];
-    p[6] = alpha*psi[6];
-    p[7] = alpha*psi[7];
-  }
-
-  // Add the derivative of the product to the design vector
-  TacsScalar rotPsi = 0.0;
-  addStiffnessDVSens(pt, e, p, rotPsi, fdvSens, dvLen);
-}
-
-/*
-  Print the stiffness information from this object
-*/
-void TACSShellConstitutive::printStiffness( const double pt[] ){
-  double zero[3] = {0.0, 0.0, 0.0};
-
-  // Evaluate the stiffness
-  TacsScalar A[6], B[6], D[6], As[3];
-  if (pt){
-    getStiffness(pt, A, B, D, As);
-  }
-  else {
-    getStiffness(zero, A, B, D, As);
-  }
-
-  // Print out the stiffness matrices
-  printf("\nThe A matrix: \n");
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(A[0]), TacsRealPart(A[1]), TacsRealPart(A[2]));
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(A[1]), TacsRealPart(A[3]), TacsRealPart(A[4]));
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(A[2]), TacsRealPart(A[4]), TacsRealPart(A[5]));
-
-  printf("\nThe B matrix: \n");
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(B[0]), TacsRealPart(B[1]), TacsRealPart(B[2]));
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(B[1]), TacsRealPart(B[3]), TacsRealPart(B[4]));
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(B[2]), TacsRealPart(B[4]), TacsRealPart(B[5]));
-
-  printf("\nThe D matrix: \n");
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(D[0]), TacsRealPart(D[1]), TacsRealPart(D[2]));
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(D[1]), TacsRealPart(D[3]), TacsRealPart(D[4]));
-  printf("%20.4f %20.4f %20.4f \n",
-         TacsRealPart(D[2]), TacsRealPart(D[4]), TacsRealPart(D[5]));
-
-  printf("\nThe Ashear matrix: \n");
-  printf("%20.4f %20.4f \n",
-         TacsRealPart(As[0]), TacsRealPart(As[1]));
-  printf( "%20.4f %20.4f \n",
-          TacsRealPart(As[1]), TacsRealPart(As[2]));
 }

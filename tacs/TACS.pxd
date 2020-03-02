@@ -561,7 +561,7 @@ cdef extern from "TACSBuckling.h":
                               TACSPc*,
                               int, int, int, double, double, double,
                               int, JDRecycleType)
-        TACSAssembler* getTACS()
+        TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
         void solve(KSMPrint*)
@@ -574,7 +574,7 @@ cdef extern from "TACSBuckling.h":
                             TACSMat *, TACSMat *,
                             TACSMat *, TACSKsm *,
                             int, int, double)
-        TACSAssembler* getTACS()
+        TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
         void solve(TACSVec*, KSMPrint*)

@@ -2182,7 +2182,7 @@ cdef class FrequencyAnalysis:
         cdef KSMPrint *ksm_print = NULL
 
         if print_flag:
-            assembler = self.ptr.getTACS()
+            assembler = self.ptr.getAssembler()
             comm = assembler.getMPIComm()
             MPI_Comm_rank(comm, &rank)
             ksm_print = new KSMPrintStdout("FrequencyAnalysis", rank, freq)
@@ -2239,7 +2239,7 @@ cdef class BucklingAnalysis:
             f = force.ptr
 
         if print_flag:
-            assembler = self.ptr.getTACS()
+            assembler = self.ptr.getAssembler()
             comm = assembler.getMPIComm()
             MPI_Comm_rank(comm, &rank)
             ksm_print = new KSMPrintStdout("BucklingAnalysis", rank, freq)

@@ -95,7 +95,7 @@ void TACSAverageTemperature::elementWiseEval( EvaluationType ftype,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         volume += detJ*weight;
         integral_temp += detJ*weight*temp;
@@ -141,7 +141,7 @@ void TACSAverageTemperature::getElementSVSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Evaluate the derivative of the temperature w.r.t. states
         TacsScalar dfdq = detJ*weight/volume;
@@ -203,7 +203,7 @@ void TACSAverageTemperature::addElementDVSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Evaluate the derivative of the strain energy
         TacsScalar dfdq = detJ*weight/volume;

@@ -167,7 +167,7 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
         else {
           // Evaluate the determinant of the Jacobian
           TacsScalar Xd[9], J[9];
-          TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+          TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
           // Add the failure load to the sum
           if (ksType == DISCRETE){
@@ -228,7 +228,7 @@ void TACSKSFailure::getElementSVSens( int elemIndex, TACSElement *element,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Compute the sensitivity contribution
         TacsScalar ksPtWeight = 0.0;
@@ -296,7 +296,7 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Compute the sensitivity contribution
         TacsScalar dfdq = 0.0;
@@ -326,7 +326,7 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
                                          &dfdq, dfdXpts);
 
         if (dfddetJ != 0.0){
-          basis->addJacobianTransformXptSens(pt, Xd, J, scale*dfddetJ,
+          basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
                                              NULL, NULL, dfdXpts);
         }
       }
@@ -365,7 +365,7 @@ void TACSKSFailure::addElementDVSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Compute the sensitivity contribution
         TacsScalar dfdq = 0.0;

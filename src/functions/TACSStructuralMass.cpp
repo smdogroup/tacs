@@ -95,7 +95,7 @@ void TACSStructuralMass::elementWiseEval( EvaluationType ftype,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
         totalMass += scale*weight*detJ*density;
       }
     }
@@ -136,11 +136,11 @@ void TACSStructuralMass::getElementXptSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        basis->getJacobianTransform(pt, Xpts, Xd, J);
+        basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Compute the sensitivity contribution
         TacsScalar dfddetJ = density*weight;
-        basis->addJacobianTransformXptSens(pt, Xd, J, scale*dfddetJ,
+        basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
                                            NULL, NULL, dfdXpts);
       }
     }
@@ -176,7 +176,7 @@ void TACSStructuralMass::addElementDVSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
         TacsScalar dfdq = weight*detJ;
 
         element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY,

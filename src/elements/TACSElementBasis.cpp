@@ -279,7 +279,7 @@ void TACSElementBasis::addFaceNormalXptSens( const int num_params,
   }
 }
 
-TacsScalar TACSElementBasis::getJacobianTransform( const double pt[],
+TacsScalar TACSElementBasis::getJacobianTransform( int n, const double pt[],
                                                    const TacsScalar Xpts[],
                                                    TacsScalar Xd[],
                                                    TacsScalar J[] ){
@@ -366,7 +366,7 @@ TacsScalar TACSElementBasis::computeJacobianTransform( const int num_params,
   return 0.0;
 }
 
-void TACSElementBasis::addJacobianTransformXptSens( const double pt[],
+void TACSElementBasis::addJacobianTransformXptSens( int n, const double pt[],
                                                     const TacsScalar Xd[],
                                                     const TacsScalar J[],
                                                     TacsScalar dfddetJ,
@@ -477,7 +477,7 @@ void TACSElementBasis::addJacobianTransformXptSens( const int num_params,
 /*
   Get the field values at the specified quadrature point
 */
-void TACSElementBasis::getFieldValues( const double pt[],
+void TACSElementBasis::getFieldValues( int n, const double pt[],
                                        const TacsScalar Xpts[],
                                        const int vars_per_node,
                                        const TacsScalar vars[],
@@ -543,13 +543,13 @@ void TACSElementBasis::getFieldValues( int n,
                                        TacsScalar U[] ){
   double pt[3];
   getQuadraturePoint(n, pt);
-  getFieldValues(pt, Xpts, vars_per_node, vars, X, U);
+  getFieldValues(n, pt, Xpts, vars_per_node, vars, X, U);
 }
 
 /*
   Get the gradient of the field at the quadrature point
 */
-TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
+TacsScalar TACSElementBasis::getFieldGradient( int n, const double pt[],
                                                const TacsScalar Xpts[],
                                                const int vars_per_node,
                                                const TacsScalar vars[],
@@ -571,7 +571,7 @@ TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
                               X, Xd, J, Ut, Ud, Ux);
 }
 
-TacsScalar TACSElementBasis::getFieldGradient( const double pt[],
+TacsScalar TACSElementBasis::getFieldGradient( int n, const double pt[],
                                                const TacsScalar Xpts[],
                                                const int vars_per_node,
                                                const TacsScalar vars[],
@@ -1183,7 +1183,7 @@ TacsScalar TACSElementBasis::computeFieldGradient( const int num_params,
   return 0.0;
 }
 
-void TACSElementBasis::addFieldGradientSVSens( const double pt[],
+void TACSElementBasis::addFieldGradientSVSens( int n, const double pt[],
                                                const TacsScalar Xpts[],
                                                const int vars_per_node,
                                                const TacsScalar Xd[],
@@ -1243,7 +1243,7 @@ void TACSElementBasis::addFieldGradientSVSens( const int num_params,
   }
 }
 
-void TACSElementBasis::addFieldGradientXptSens( const double pt[],
+void TACSElementBasis::addFieldGradientXptSens( int n, const double pt[],
                                                 const TacsScalar Xpts[],
                                                 const int vars_per_node,
                                                 const TacsScalar Xd[],
@@ -1462,7 +1462,7 @@ void TACSElementBasis::addFieldGradientXptSens( const int num_params,
   }
 }
 
-void TACSElementBasis::addFieldGradientXptSens( const double pt[],
+void TACSElementBasis::addFieldGradientXptSens( int n, const double pt[],
                                                 const TacsScalar Xpts[],
                                                 const int vars_per_node,
                                                 const TacsScalar Xd[],

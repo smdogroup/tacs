@@ -97,7 +97,7 @@ void TACSCompliance::elementWiseEval( EvaluationType ftype,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         compliance += detJ*weight*U0;
       }
@@ -141,7 +141,7 @@ void TACSCompliance::getElementSVSens( int elemIndex, TACSElement *element,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Evaluate the derivative of the strain energy w.r.t. state variables
         TacsScalar dfdq = detJ*weight;
@@ -203,7 +203,7 @@ void TACSCompliance::addElementDVSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Evaluate the derivative of the strain energy
         TacsScalar dfdq = detJ*weight;

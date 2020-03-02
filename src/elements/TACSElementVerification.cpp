@@ -1049,10 +1049,10 @@ int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
     basis->getQuadraturePoint(n, pt);
 
     TacsScalar Xd[9], J[9];
-    basis->getJacobianTransform(pt, Xpts, Xd, J);
+    basis->getJacobianTransform(n, pt, Xpts, Xd, J);
     memset(dfdXpts, 0, 3*nnodes*sizeof(TacsScalar));
 
-    basis->addJacobianTransformXptSens(pt, Xd, J, dfddetJ, dfdXd, dfdJ, dfdXpts);
+    basis->addJacobianTransformXptSens(n, pt, Xd, J, dfddetJ, dfdXd, dfdJ, dfdXpts);
 
     TacsScalar proj = 0.0;
     for ( int k = 0; k < 3*nnodes; k++ ){
@@ -1065,7 +1065,7 @@ int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
     TacsScalar forward_Xd[9], forward_J[9];
     memset(forward_Xd, 0, 9*sizeof(TacsScalar));
     memset(forward_J, 0, 9*sizeof(TacsScalar));
-    TacsScalar forward_detJ = basis->getJacobianTransform(pt, Xpts_pert,
+    TacsScalar forward_detJ = basis->getJacobianTransform(n, pt, Xpts_pert,
                                                           forward_Xd, forward_J);
 
     TacsBackwardDiffPerturb(Xpts_pert, 3*nnodes, Xpts, pert, dh);
@@ -1073,7 +1073,7 @@ int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
     TacsScalar backward_Xd[9], backward_J[9];
     memset(backward_Xd, 0, 9*sizeof(TacsScalar));
     memset(backward_J, 0, 9*sizeof(TacsScalar));
-    TacsScalar backward_detJ = basis->getJacobianTransform(pt, Xpts_pert,
+    TacsScalar backward_detJ = basis->getJacobianTransform(n, pt, Xpts_pert,
                                                            backward_Xd, backward_J);
 
     // Form the FD/CS approximate
