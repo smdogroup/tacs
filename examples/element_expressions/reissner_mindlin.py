@@ -98,6 +98,14 @@ def print_plate_coef():
 
     U0 += sym.Symbol('rho')*(Ut[2]**2 + Ut[5]**2 + Ut[8]**2)
 
+    for k in range(3*5):
+        coef = 0.5*sym.diff(U0, Ut[k])
+        print('DUt[%d] = '%(k) + str_coef(coef) + ';')
+
+    for k in range(10):
+        coef = 0.5*sym.diff(U0, Ux[k])
+        print('DUx[%d] = '%(k) + str_coef(coef) + ';')
+
     # Arrange the variables in their order
     elem_vars = []
     for i in range(5):

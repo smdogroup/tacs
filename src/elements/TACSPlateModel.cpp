@@ -49,7 +49,7 @@ static inline void evalPlateStrain( const TacsScalar Ut[],
   e[5] = Ux[9] - Ux[6]; // kxy = roty,y - rotx,x
 
   e[6] = Ux[5] - Ut[9]; // eyz = w,y - rotx
-  e[7] = Ux[4] - Ut[12]; // exz = w,x + roty
+  e[7] = Ux[4] + Ut[12]; // exz = w,x + roty
 
   e[8] = 0.0;
 }
@@ -141,11 +141,6 @@ void TACSPlateModel::evalWeakIntegrand( int elemIndex,
   // Evaluate the density
   TacsScalar rho = con->evalDensity(elemIndex, pt, X);
 
-  memset(DUt, 0, 5*3*sizeof(TacsScalar));
-  DUt[2] = rho*Ut[2];
-  DUt[5] = rho*Ut[5];
-  DUt[5] = rho*Ut[8];
-
   // Compute the 8 components of the strain, plus a place-holder for the
   // in-plane rotation (zero always in this case)
   TacsScalar e[9];
@@ -160,6 +155,14 @@ void TACSPlateModel::evalWeakIntegrand( int elemIndex,
   const TacsScalar *M = &s[3];
   const TacsScalar *Q = &s[6];
 
+  // Set the coefficients
+  memset(DUt, 0, 5*3*sizeof(TacsScalar));
+  DUt[2] = rho*Ut[2];
+  DUt[5] = rho*Ut[5];
+  DUt[8] = rho*Ut[8];
+  DUt[9] = -Q[0]; // rotx
+  DUt[12] = Q[1]; // roty
+
   DUx[0] = N[0]; // u,x
   DUx[1] = N[2]; // u,y
 
@@ -169,11 +172,9 @@ void TACSPlateModel::evalWeakIntegrand( int elemIndex,
   DUx[4] = Q[1]; // w,x
   DUx[5] = Q[0]; // w,y
 
-  DUt[9] = -Q[0]; // rotx
   DUx[6] = -M[2]; // rotx,x
   DUx[7] = -M[1]; // rotx,y
 
-  DUt[12] = Q[1]; // roty
   DUx[8] = M[0]; // roty,x
   DUx[9] = M[2]; // roty,y
 }
@@ -193,17 +194,12 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
   // Evaluate the density
   TacsScalar rho = con->evalDensity(elemIndex, pt, X);
 
-  memset(DUt, 0, 5*3*sizeof(TacsScalar));
-  DUt[2] = rho*Ut[2];
-  DUt[5] = rho*Ut[5];
-  DUt[5] = rho*Ut[8];
-
   // Compute the 8 components of the strain, plus a place-holder for the
   // in-plane rotation (zero always in this case)
   TacsScalar e[9];
   evalPlateStrain(Ut, Ux, e);
 
-  // Evaluate the stress
+  // Compute the stiffness matrix
   TacsScalar C[TACSShellConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
   con->evalTangentStiffness(elemIndex, pt, X, C);
 
@@ -221,6 +217,14 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
   const TacsScalar *M = &s[3];
   const TacsScalar *Q = &s[6];
 
+  // Set the coefficients
+  memset(DUt, 0, 5*3*sizeof(TacsScalar));
+  DUt[2] = rho*Ut[2];
+  DUt[5] = rho*Ut[5];
+  DUt[8] = rho*Ut[8];
+  DUt[9] = -Q[0]; // rotx
+  DUt[12] = Q[1]; // roty
+
   DUx[0] = N[0]; // u,x
   DUx[1] = N[2]; // u,y
 
@@ -230,11 +234,9 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
   DUx[4] = Q[1]; // w,x
   DUx[5] = Q[0]; // w,y
 
-  DUt[9] = -Q[0]; // rotx
   DUx[6] = -M[2]; // rotx,x
   DUx[7] = -M[1]; // rotx,y
 
-  DUt[12] = Q[1]; // roty
   DUx[8] = M[0]; // roty,x
   DUx[9] = M[2]; // roty,y
 
@@ -370,7 +372,9 @@ void TACSPlateModel::evalWeakMatrix( ElementMatrixType matType,
                                      const TacsScalar Ux[],
                                      int *Jac_nnz,
                                      const int *Jac_pairs[],
-                                     TacsScalar Jac[] ){}
+                                     TacsScalar Jac[] ){
+  *Jac_nnz = 0;
+}
 
 void TACSPlateModel::addWeakMatDVSens( ElementMatrixType matType,
                                        int elemIndex,

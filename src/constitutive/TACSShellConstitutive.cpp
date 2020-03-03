@@ -165,10 +165,10 @@ void TACSShellConstitutive::evalStress( int elemIndex,
   }
 
   // Set the through-thickness shear stiffness
-  As[0] = As[2] = (5.0/6.0)*t*A[5];
+  As[0] = As[2] = (5.0/6.0)*A[5];
   As[1] = 0.0;
 
-  drill = DRILLING_REGULARIZATION*(As[0] + As[2]);
+  drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
 
   // Evaluate the stress
   evalStress(A, B, D, As, drill, e, s);
@@ -190,6 +190,7 @@ void TACSShellConstitutive::evalTangentStiffness( int elemIndex,
   // The bending-stretch coupling matrix is zero in this case
   B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
 
+  // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
   TacsScalar I = t*t*t/12.0;
   for ( int i = 0; i < 6; i++ ){
     D[i] = I*A[i];
@@ -197,10 +198,10 @@ void TACSShellConstitutive::evalTangentStiffness( int elemIndex,
   }
 
   // Set the through-thickness shear stiffness
-  As[0] = As[2] = (5.0/6.0)*t*A[5];
+  As[0] = As[2] = (5.0/6.0)*A[5];
   As[1] = 0.0;
 
-  C[21] = DRILLING_REGULARIZATION*(As[0] + As[2]);
+  C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + A[2]);
 }
 
 // Extract the tangent stiffness components from the matrix
@@ -214,7 +215,7 @@ void TACSShellConstitutive::extractTangenttStiffness( const TacsScalar *C,
   if (B){ *B = &C[6]; }
   if (D){ *D = &C[12]; }
   if (As){ *As = &C[18]; }
-  if (A){ *A = &C[21]; }
+  if (drill){ *drill = C[21]; }
 }
 
 
