@@ -139,6 +139,34 @@ cdef class SolidConstitutive(Constitutive):
             return _init_MaterialProperties(self.cptr.getMaterialProperties())
         return None
 
+cdef class ShellConstitutive(Constitutive):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSShellConstitutive(props, t, tNum,
+                                                  tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):

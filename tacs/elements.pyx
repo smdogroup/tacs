@@ -174,6 +174,11 @@ cdef class LinearThermoelasticity3D(ElementModel):
         self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN)
         self.ptr.incref()
 
+cdef class PlateModel(ElementModel):
+    def __cinit__(self, ShellConstitutive con):
+        self.ptr = new TACSPlateModel(con.cptr)
+        self.ptr.incref()
+
 cdef class Element2D(Element):
     def __cinit__(self, ElementModel model, ElementBasis basis):
         self.ptr = new TACSElement2D(model.ptr, basis.ptr)
