@@ -201,211 +201,191 @@ cdef class Traction3D(Element):
                                       trac, tractionCoordinateComponent)
         self.ptr.incref()
 
+cdef class GibbsVector:
+    cdef TACSGibbsVector *ptr
+    def __cinit__(self, x, y, z):
+        self.ptr = new TACSGibbsVector(x, y, z)
+        self.ptr.incref()
 
-# cdef class GibbsVector:
-#     cdef TACSGibbsVector *ptr
-#     def __cinit__(self, x, y, z):
-#         self.ptr = new TACSGibbsVector(x, y, z)
-#         self.ptr.incref()
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
+cdef class RefFrame:
+    cdef TACSRefFrame *ptr
+    def __cinit__(self, GibbsVector r0, GibbsVector r1, GibbsVector r2):
+        self.ptr = new TACSRefFrame(r0.ptr, r1.ptr, r2.ptr)
+        self.ptr.incref()
+        return
 
-# cdef class RefFrame:
-#     cdef TACSRefFrame *ptr
-#     def __cinit__(self, GibbsVector r0, GibbsVector r1, GibbsVector r2):
-#         self.ptr = new TACSRefFrame(r0.ptr, r1.ptr, r2.ptr)
-#         self.ptr.incref()
-#         return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
+cdef class RigidBodyViz:
+    cdef TACSRigidBodyViz *ptr
+    def __cinit__(self,
+                  int npts=0, int nelems=0,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] xpts=None,
+                  np.ndarray[int, ndim=1, mode='c'] conn=None,
+                  GibbsVector vref=None,
+                  TacsScalar Lx=1.0, TacsScalar Ly=1.0, TacsScalar Lz=1.0):
+        cdef TACSGibbsVector *vptr = NULL
+        if vref is not None:
+            vptr = vref.ptr
+        if xpts is not None and conn is not None:
+            self.ptr = new TACSRigidBodyViz(npts, nelems,
+                                            <TacsScalar*>xpts.data,
+                                            <int*>conn.data, vref.ptr)
+        else:
+            self.ptr = new TACSRigidBodyViz(Lx, Ly, Lz)
 
-# cdef class RigidBody(Element):
-#     cdef TACSRigidBody *rbptr
-#     def __cinit__(self, RefFrame frame, TacsScalar mass,
-#                   np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
-#                   np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
-#                   GibbsVector r0,
-#                   GibbsVector v0, GibbsVector omega0, GibbsVector g,
-#                   int mdv=-1,
-#                   np.ndarray[int, ndim=1, mode='c'] cdvs=None,
-#                   np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
-#         cdef int *_cdvs = NULL
-#         cdef int *_Jdvs = NULL
+        self.ptr.incref()
+        return
 
-#         # Assign the the variable numbers if they are supplied by the
-#         # user
-#         if cdvs is not None:
-#             _cdvs = <int*>cdvs.data
-#         if Jdvs is not None:
-#             _Jdvs = <int*>Jdvs.data
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+    
+cdef class RigidBody(Element):
+    cdef TACSRigidBody *rbptr
+    def __cinit__(self, RefFrame frame, TacsScalar mass,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
+                  GibbsVector r0,
+                  GibbsVector v0, GibbsVector omega0, GibbsVector g,
+                  int mdv=-1,
+                  np.ndarray[int, ndim=1, mode='c'] cdvs=None,
+                  np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
+        cdef int *_cdvs = NULL
+        cdef int *_Jdvs = NULL
 
-#         # Allocate the rigid body object and set the design variables
-#         self.rbptr = new TACSRigidBody(frame.ptr, mass,
-#                                        <TacsScalar*>cRef.data,
-#                                        <TacsScalar*>JRef.data, r0.ptr,
-#                                        v0.ptr, omega0.ptr, g.ptr)
-#         self.rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
+        # Assign the the variable numbers if they are supplied by the
+        # user
+        if cdvs is not None:
+            _cdvs = <int*>cdvs.data
+        if Jdvs is not None:
+            _Jdvs = <int*>Jdvs.data
 
-#         # Increase the reference count to the underlying object
-#         self.ptr = self.rbptr
-#         self.ptr.incref()
-#         return
+        # Allocate the rigid body object and set the design variables
+        self.rbptr = new TACSRigidBody(frame.ptr, mass,
+                                       <TacsScalar*>cRef.data,
+                                       <TacsScalar*>JRef.data, r0.ptr,
+                                       v0.ptr, omega0.ptr, g.ptr)
+        self.rbptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
-#     def setVisualization(self, RigidBodyViz viz):
-#         self.rbptr.setVisualization(viz.ptr)
+        # Increase the reference count to the underlying object
+        self.ptr = self.rbptr
+        self.ptr.incref()
+        return
+    
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
+    def setVisualization(self, RigidBodyViz viz):
+        self.rbptr.setVisualization(viz.ptr)
 
-#     def getNumNodes(self):
-#         return self.ptr.numNodes()
+cdef class FixedConstraint(Element):
+    def __cinit__(self,
+                  GibbsVector point,
+                  RigidBody bodyA):
+        self.ptr = new TACSFixedConstraint(bodyA.rbptr,
+                                           point.ptr)
+        self.ptr.incref()
+        return
 
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-# cdef class FixedConstraint(Element):
-#     def __cinit__(self,
-#                   GibbsVector point,
-#                   RigidBody bodyA):
-#         self.ptr = new TACSFixedConstraint(bodyA.rbptr,
-#                                            point.ptr)
-#         self.ptr.incref()
-#         return
+cdef class SphericalConstraint(Element):
+    def __cinit__(self,
+                  GibbsVector point,
+                  RigidBody bodyA, RigidBody bodyB=None):
+        if bodyB is None:
+            self.ptr = new TACSSphericalConstraint(bodyA.rbptr,
+                                                   point.ptr)
+        else:
+            self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
+                                                   point.ptr)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
+cdef class RevoluteConstraint(Element):
+    def __cinit__(self, GibbsVector point, GibbsVector eA,
+                  RigidBody bodyA, RigidBody bodyB=None):
+        if bodyB is None:
+            self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
+                                                  point.ptr, eA.ptr)
+        else:
+            self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
+                                                  point.ptr, eA.ptr)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-#     def getNumNodes(self):
-#         return self.ptr.numNodes()
+## cdef class CylindricalConstraint(Element):
+##     def __cinit__(self, GibbsVector point, GibbsVector eA,
+##                   RigidBody bodyA, RigidBody bodyB=None):
+##         if bodyB is None:
+##             self.ptr = new TACSCylindricalConstraint(bodyA.rbptr,
+##                                                      point.ptr, eA.ptr)
+##         else:
+##             self.ptr = new TACSCylindricalConstraint(bodyA.rbptr, bodyB.rbptr,
+##                                                      point.ptr, eA.ptr)
+##         self.ptr.incref()
+##         return
+##     def __dealloc__(self):
+##         self.ptr.decref()
+##         return
+    
+cdef class RigidLink(Element):
+    def __cinit__(self, RigidBody bodyA):
+        self.ptr = new TACSRigidLink(bodyA.rbptr)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+    
+cdef class RevoluteDriver(Element):
+    def __cinit__(self, GibbsVector rev, TacsScalar omega):
+        self.ptr = new TACSRevoluteDriver(rev.ptr, omega)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
+cdef class MotionDriver(Element):
+    def __cinit__(self, GibbsVector dir, TacsScalar omega,
+                  arrest_rot=False):
+        if arrest_rot is False:
+            self.ptr = new TACSMotionDriver(dir.ptr, omega, 0)
+        else:
+            self.ptr = new TACSMotionDriver(dir.ptr, omega, 1)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
-# cdef class SphericalConstraint(Element):
-#     def __cinit__(self,
-#                   GibbsVector point,
-#                   RigidBody bodyA, RigidBody bodyB=None):
-#         if bodyB is None:
-#             self.ptr = new TACSSphericalConstraint(bodyA.rbptr,
-#                                                    point.ptr)
-#         else:
-#             self.ptr = new TACSSphericalConstraint(bodyA.rbptr, bodyB.rbptr,
-#                                                    point.ptr)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
-#     def numNodes(self):
-#         return self.ptr.numNodes()
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
-
-# cdef class RevoluteConstraint(Element):
-#     def __cinit__(self, GibbsVector point, GibbsVector eA,
-#                   RigidBody bodyA, RigidBody bodyB=None):
-#         if bodyB is None:
-#             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
-#                                                   point.ptr, eA.ptr)
-#         else:
-#             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
-#                                                   point.ptr, eA.ptr)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
-#     def numNodes(self):
-#         return self.ptr.numNodes()
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
-
-# cdef class CylindricalConstraint(Element):
-#     def __cinit__(self, GibbsVector point, GibbsVector eA,
-#                   RigidBody bodyA, RigidBody bodyB=None):
-#         if bodyB is None:
-#             self.ptr = new TACSCylindricalConstraint(bodyA.rbptr,
-#                                                      point.ptr, eA.ptr)
-#         else:
-#             self.ptr = new TACSCylindricalConstraint(bodyA.rbptr, bodyB.rbptr,
-#                                                      point.ptr, eA.ptr)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
-#     def numNodes(self):
-#         return self.ptr.numNodes()
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
-
-# cdef class RigidLink(Element):
-#     def __cinit__(self, RigidBody bodyA):
-#         self.ptr = new TACSRigidLink(bodyA.rbptr)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
-#     def numNodes(self):
-#         return self.ptr.numNodes()
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
-
-# cdef class RevoluteDriver(Element):
-#     def __cinit__(self, GibbsVector rev, TacsScalar omega):
-#         self.ptr = new TACSRevoluteDriver(rev.ptr, omega)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
-#     def numNodes(self):
-#         return self.ptr.numNodes()
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
-
-# cdef class MotionDriver(Element):
-#     def __cinit__(self, GibbsVector dir, TacsScalar omega,
-#                   arrest_rot=False):
-#         if arrest_rot is False:
-#             self.ptr = new TACSMotionDriver(dir.ptr, omega, 0)
-#         else:
-#             self.ptr = new TACSMotionDriver(dir.ptr, omega, 1)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
-#     def numNodes(self):
-#         return self.ptr.numNodes()
-#     def setComponentNum(self, int comp_num):
-#         self.ptr.setComponentNum(comp_num)
-#         return
-
-# cdef class AverageConstraint(Element):
-#     def __cinit__(self, RigidBody body, GibbsVector point,
-#                   RefFrame frame, int moment_flag=0):
-#         self.ptr = new TACSAverageConstraint(body.rbptr, point.ptr,
-#                                              frame.ptr, moment_flag)
-#         self.ptr.incref()
-#         return
-#     def __dealloc__(self):
-#         self.ptr.decref()
-#         return
+cdef class AverageConstraint(Element):
+    def __cinit__(self, RigidBody body, GibbsVector point,
+                  RefFrame frame, int moment_flag=0):
+        self.ptr = new TACSAverageConstraint(body.rbptr, point.ptr,
+                                             frame.ptr, moment_flag)
+        self.ptr.incref()
+        return
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
 
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
     '''Return a numpy version of the array'''

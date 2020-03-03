@@ -131,55 +131,54 @@ cdef extern from "TACSTraction3D.h":
     cdef cppclass TACSTraction3D(TACSElement):
         TACSTraction3D(int, int, TACSElementBasis*, TacsScalar*, int)
 
+cdef extern from "TACSGibbsVector.h":
+    cdef cppclass TACSGibbsVector(TACSObject):
+        TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
 
-# cdef extern from "TACSGibbsVector.h":
-#     cdef cppclass TACSGibbsVector(TACSObject):
-#         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
+cdef extern from "TACSRigidBody.h":
+    cdef cppclass TACSRefFrame(TACSObject):
+        TACSRefFrame(TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
 
-# cdef extern from "TACSRigidBody.h":
-#     cdef cppclass TACSRefFrame(TACSObject):
-#         TACSRefFrame(TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
+    cdef cppclass TACSRigidBodyViz(TACSObject):
+        TACSRigidBodyViz(int, int, TacsScalar*, int*, TACSGibbsVector*)
+        TACSRigidBodyViz(TacsScalar, TacsScalar, TacsScalar)
 
-#     cdef cppclass TACSRigidBodyViz(TACSObject):
-#         TACSRigidBodyViz(int, int, TacsScalar*, int*, TACSGibbsVector*)
-#         TACSRigidBodyViz(TacsScalar, TacsScalar, TacsScalar)
+    cdef cppclass TACSRigidBody(TACSElement):
+        TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
+                      const TacsScalar*, TACSGibbsVector*,
+                      TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
+        void setDesignVarNums(int, const int*, const int*)
+        void setVisualization(TACSRigidBodyViz*)
 
-#     cdef cppclass TACSRigidBody(TACSElement):
-#         TACSRigidBody(TACSRefFrame*, const TacsScalar, const TacsScalar*,
-#                       const TacsScalar*, TACSGibbsVector*,
-#                       TACSGibbsVector*, TACSGibbsVector*, TACSGibbsVector*)
-#         void setDesignVarNums(int, const int*, const int*)
-#         void setVisualization(TACSRigidBodyViz*)
+cdef extern from "TACSKinematicConstraints.h":
+    cdef cppclass TACSFixedConstraint(TACSElement):
+        TACSFixedConstraint(TACSRigidBody *bodyA,
+                            TACSGibbsVector *point)
 
-# cdef extern from "KinematicConstraints.h":
-#     cdef cppclass TACSFixedConstraint(TACSElement):
-#         TACSFixedConstraint(TACSRigidBody *bodyA,
-#                             TACSGibbsVector *point)
+    cdef cppclass TACSSphericalConstraint(TACSElement):
+        TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                                TACSGibbsVector *point)
+        TACSSphericalConstraint(TACSRigidBody *bodyA,
+                                TACSGibbsVector *point)
 
-#     cdef cppclass TACSSphericalConstraint(TACSElement):
-#         TACSSphericalConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
-#                                 TACSGibbsVector *point)
-#         TACSSphericalConstraint(TACSRigidBody *bodyA,
-#                                 TACSGibbsVector *point)
+    cdef cppclass TACSRevoluteConstraint(TACSElement):
+        TACSRevoluteConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
+                               TACSGibbsVector *point, TACSGibbsVector *eA)
+        TACSRevoluteConstraint(TACSRigidBody *bodyA,
+                               TACSGibbsVector *point, TACSGibbsVector *eA)
 
-#     cdef cppclass TACSRevoluteConstraint(TACSElement):
-#         TACSRevoluteConstraint(TACSRigidBody *bodyA, TACSRigidBody *bodyB,
-#                                TACSGibbsVector *point, TACSGibbsVector *eA)
-#         TACSRevoluteConstraint(TACSRigidBody *bodyA,
-#                                TACSGibbsVector *point, TACSGibbsVector *eA)
+    cdef cppclass TACSRigidLink(TACSElement):
+        TACSRigidLink(TACSRigidBody*)
 
-#     cdef cppclass TACSRigidLink(TACSElement):
-#         TACSRigidLink(TACSRigidBody*)
+    cdef cppclass TACSRevoluteDriver(TACSElement):
+        TACSRevoluteDriver(TACSGibbsVector*, TacsScalar)
 
-#     cdef cppclass TACSRevoluteDriver(TACSElement):
-#         TACSRevoluteDriver(TACSGibbsVector*, TacsScalar)
+    cdef cppclass TACSMotionDriver(TACSElement):
+        TACSMotionDriver(TACSGibbsVector*, TacsScalar, int)
 
-#     cdef cppclass TACSMotionDriver(TACSElement):
-#         TACSMotionDriver(TACSGibbsVector*, TacsScalar, int)
-
-#     cdef cppclass TACSAverageConstraint(TACSElement):
-#         TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
-#                               TACSRefFrame*, int)
+    cdef cppclass TACSAverageConstraint(TACSElement):
+        TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
+                              TACSRefFrame*, int)
 
 cdef extern from "TACSElementWrapper.h":
     cdef cppclass TACSElementWrapper(TACSElement):
