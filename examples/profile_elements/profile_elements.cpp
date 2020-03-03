@@ -1,13 +1,23 @@
 #include "TACSElementVerification.h"
+
+// Include the models
 #include "TACSLinearElasticity.h"
 #include "TACSHeatConduction.h"
 #include "TACSThermoelasticity.h"
+#include "TACSPlateModel.h"
+
+// Include the constitutive classes
 #include "TACSSolidConstitutive.h"
 #include "TACSPlaneStressConstitutive.h"
+#include "TACSSolidConstitutive.h"
+
+// Include the basis functions
 #include "TACSHexaBasis.h"
 #include "TACSTetrahedralBasis.h"
 #include "TACSQuadBasis.h"
 #include "TACSTriangularBasis.h"
+
+// Include the element classes
 #include "TACSElement3D.h"
 #include "TACSElement2D.h"
 
@@ -123,7 +133,10 @@ int main( int argc, char *argv[] ){
   con3d->incref();
 
   TACSPlaneStressConstitutive *con2d = new TACSPlaneStressConstitutive(props, 1.0, 0);
-  con3d->incref();
+  con2d->incref();
+
+  TACSShellConstitutive *conShell = new TACSShellConstitutive(props, 1.0, 0);
+  conShell->incref();
 
   // Set the model type
   const int NUM_3D_MODELS = 4;
@@ -136,12 +149,13 @@ int main( int argc, char *argv[] ){
     model3d[i]->incref();
   }
 
-  const int NUM_2D_MODELS = 4;
+  const int NUM_2D_MODELS = 5;
   TACSElementModel *model2d[NUM_2D_MODELS];
   model2d[0] = new TACSHeatConduction2D(con2d);
   model2d[1] = new TACSLinearElasticity2D(con2d, TACS_LINEAR_STRAIN);
   model2d[2] = new TACSLinearElasticity2D(con2d, TACS_NONLINEAR_STRAIN);
   model2d[3] = new TACSLinearThermoelasticity2D(con2d, TACS_LINEAR_STRAIN);
+  model2d[4] = new TACSPlateModel(conShell);
   for ( int i = 0; i < NUM_2D_MODELS; i++ ){
     model2d[i]->incref();
   }

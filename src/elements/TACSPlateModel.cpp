@@ -48,8 +48,8 @@ static inline void evalPlateStrain( const TacsScalar Ut[],
   e[4] = -Ux[7]; // kyy = -rotx,y
   e[5] = Ux[9] - Ux[6]; // kxy = roty,y - rotx,x
 
-  e[6] = Ux[5] - Ut[12]; // eyz = w,y - rotx
-  e[7] = Ux[4] - Ut[15]; // exz = w,x + roty
+  e[6] = Ux[5] - Ut[9]; // eyz = w,y - rotx
+  e[7] = Ux[4] - Ut[12]; // exz = w,x + roty
 
   e[8] = 0.0;
 }
@@ -64,11 +64,21 @@ TACSPlateModel::~TACSPlateModel(){
 }
 
 const int TACSPlateModel::linear_Jac_pairs[] =
-  {2, 2, 7, 7,
-   3, 3, 3, 4, 3, 8, 3, 9,
-   4, 3, 4, 4, 4, 8, 4, 9,
-   8, 3, 8, 4, 8, 8, 8, 9,
-   9, 3, 9, 4, 9, 8, 9, 9};
+  {2, 2,
+   3, 3, 3, 4, 3, 8, 3, 9, 3, 18, 3, 19, 3, 23, 3, 24,
+   4, 3, 4, 4, 4, 8, 4, 9, 4, 18, 4, 19, 4, 23, 4, 24,
+   7, 7,
+   8, 3, 8, 4, 8, 8, 8, 9, 8, 18, 8, 19, 8, 23, 8, 24,
+   9, 3, 9, 4, 9, 8, 9, 9, 9, 18, 9, 19, 9, 23, 9, 24,
+   12, 12,
+   13, 13, 13, 14, 13, 15, 13, 20,
+   14, 13, 14, 14, 14, 15, 14, 20,
+   15, 13, 15, 14, 15, 15, 15, 20,
+   18, 3, 18, 4, 18, 8, 18, 9, 18, 18, 18, 19, 18, 23, 18, 24,
+   19, 3, 19, 4, 19, 8, 19, 9, 19, 18, 19, 19, 19, 23, 19, 24,
+   20, 13, 20, 14, 20, 15, 20, 20,
+   23, 3, 23, 4, 23, 8, 23, 9, 23, 18, 23, 19, 23, 23, 23, 24,
+   24, 3, 24, 4, 24, 8, 24, 9, 24, 18, 24, 19, 24, 23, 24, 24};
 
 int TACSPlateModel::getSpatialDim(){
   return 2;
@@ -194,8 +204,17 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
   evalPlateStrain(Ut, Ux, e);
 
   // Evaluate the stress
+  TacsScalar C[TACSShellConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
+  con->evalTangentStiffness(elemIndex, pt, X, C);
+
+  // Extract the stiffnesses
+  TacsScalar drill;
+  const TacsScalar *A, *B, *D, *As;
+  con->extractTangenttStiffness(C, &A, &B, &D, &As, &drill);
+
+  // Get the stress components
   TacsScalar s[9];
-  con->evalStress(elemIndex, pt, X, e, s);
+  con->evalStress(A, B, D, As, drill, e, s);
 
   // Set pointers to the in-plane, bending and shear resultants
   const TacsScalar *N = &s[0];
@@ -218,6 +237,96 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
   DUt[12] = Q[1]; // roty
   DUx[8] = M[0]; // roty,x
   DUx[9] = M[2]; // roty,y
+
+  // Set the non-zero terms in the Jacobian
+  *Jac_nnz = 83;
+  *Jac_pairs = linear_Jac_pairs;
+
+  Jac[0] = rho;
+  Jac[1] = A[0];
+  Jac[2] = A[2];
+  Jac[3] = A[2];
+  Jac[4] = A[1];
+  Jac[5] = -B[2];
+  Jac[6] = -B[1];
+  Jac[7] = B[0];
+  Jac[8] = B[2];
+  Jac[9] = A[2];
+  Jac[10] = A[5];
+  Jac[11] = A[5];
+  Jac[12] = A[4];
+  Jac[13] = -B[5];
+  Jac[14] = -B[4];
+  Jac[15] = B[2];
+  Jac[16] = B[5];
+
+  Jac[17] = rho;
+  Jac[18] = A[2];
+  Jac[19] = A[5];
+  Jac[20] = A[5];
+  Jac[21] = A[4];
+  Jac[22] = -B[5];
+  Jac[23] = -B[4];
+  Jac[24] = B[2];
+  Jac[25] = B[5];
+  Jac[26] = A[1];
+  Jac[27] = A[4];
+  Jac[28] = A[4];
+  Jac[29] = A[3];
+  Jac[30] = -B[4];
+  Jac[31] = -B[3];
+  Jac[32] = B[1];
+  Jac[33] = B[4];
+
+  Jac[34] = rho;
+  Jac[35] = As[2];
+  Jac[36] = As[1];
+  Jac[37] = -As[1];
+  Jac[38] = As[2];
+  Jac[39] = As[1];
+  Jac[40] = As[0];
+  Jac[41] = -As[0];
+  Jac[42] = As[1];
+  Jac[43] = -As[1];
+  Jac[44] = -As[0];
+  Jac[45] = As[0];
+  Jac[46] = -As[1];
+  Jac[47] = -B[2];
+  Jac[48] = -B[5];
+  Jac[49] = -B[5];
+  Jac[50] = -B[4];
+  Jac[51] = D[5];
+  Jac[52] = D[4];
+  Jac[53] = -D[2];
+  Jac[54] = -D[5];
+  Jac[55] = -B[1];
+  Jac[56] = -B[4];
+  Jac[57] = -B[4];
+  Jac[58] = -B[3];
+  Jac[59] = D[4];
+  Jac[60] = D[3];
+  Jac[61] = -D[1];
+  Jac[62] = -D[4];
+  Jac[63] = As[2];
+  Jac[64] = As[1];
+  Jac[65] = -As[1];
+  Jac[66] = As[2];
+  Jac[67] = B[0];
+  Jac[68] = B[2];
+  Jac[69] = B[2];
+  Jac[70] = B[1];
+  Jac[71] = -D[2];
+  Jac[72] = -D[1];
+  Jac[73] = D[0];
+  Jac[74] = D[2];
+  Jac[75] = B[2];
+  Jac[76] = B[5];
+  Jac[77] = B[5];
+  Jac[78] = B[4];
+  Jac[79] = -D[5];
+  Jac[80] = -D[4];
+  Jac[81] = D[2];
+  Jac[82] = D[5];
 }
 
 /*

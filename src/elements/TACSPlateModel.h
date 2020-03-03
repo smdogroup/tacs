@@ -166,7 +166,7 @@ class TACSPlateModel : public TACSElementModel {
   TACSShellConstitutive *con;
 
   // Constant member data
-  static const int linear_Jac_pairs[36];
+  static const int linear_Jac_pairs[2*83];
 };
 
 #endif // TACS_PLATE_MODEL_H
