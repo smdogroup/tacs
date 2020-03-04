@@ -149,29 +149,36 @@ void TACSShellConstitutive::evalStress( int elemIndex,
                                         const TacsScalar X[],
                                         const TacsScalar e[],
                                         TacsScalar s[] ){
-  TacsScalar A[6], B[6], D[6], As[3], drill;
+  if (properties){
+    TacsScalar A[6], B[6], D[6], As[3], drill;
 
-  // Compute the tangent stiffness matrix
-  properties->evalTangentStiffness2D(A);
+    // Compute the tangent stiffness matrix
+    properties->evalTangentStiffness2D(A);
 
-  // The bending-stretch coupling matrix is zero in this case
-  B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
+    // The bending-stretch coupling matrix is zero in this case
+    B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
 
-  // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
-  TacsScalar I = t*t*t/12.0;
-  for ( int i = 0; i < 6; i++ ){
-    D[i] = I*A[i];
-    A[i] *= t;
+    // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
+    TacsScalar I = t*t*t/12.0;
+    for ( int i = 0; i < 6; i++ ){
+      D[i] = I*A[i];
+      A[i] *= t;
+    }
+
+    // Set the through-thickness shear stiffness
+    As[0] = As[2] = (5.0/6.0)*A[5];
+    As[1] = 0.0;
+
+    drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
+
+    // Evaluate the stress
+    evalStress(A, B, D, As, drill, e, s);
   }
-
-  // Set the through-thickness shear stiffness
-  As[0] = As[2] = (5.0/6.0)*A[5];
-  As[1] = 0.0;
-
-  drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
-
-  // Evaluate the stress
-  evalStress(A, B, D, As, drill, e, s);
+  else {
+    s[0] = s[1] = s[2] = 0.0;
+    s[3] = s[4] = s[5] = 0.0;
+    s[6] = s[7] = s[8] = 0.0;
+  }
 }
 
 // Evaluate the tangent stiffness
@@ -179,29 +186,34 @@ void TACSShellConstitutive::evalTangentStiffness( int elemIndex,
                                                   const double pt[],
                                                   const TacsScalar X[],
                                                   TacsScalar C[] ){
-  TacsScalar *A = &C[0];
-  TacsScalar *B = &C[6];
-  TacsScalar *D = &C[12];
-  TacsScalar *As = &C[18];
+  if (properties){
+    TacsScalar *A = &C[0];
+    TacsScalar *B = &C[6];
+    TacsScalar *D = &C[12];
+    TacsScalar *As = &C[18];
 
-  // Compute the tangent stiffness matrix
-  properties->evalTangentStiffness2D(A);
+    // Compute the tangent stiffness matrix
+    properties->evalTangentStiffness2D(A);
 
-  // The bending-stretch coupling matrix is zero in this case
-  B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
+    // The bending-stretch coupling matrix is zero in this case
+    B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
 
-  // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
-  TacsScalar I = t*t*t/12.0;
-  for ( int i = 0; i < 6; i++ ){
-    D[i] = I*A[i];
-    A[i] *= t;
+    // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
+    TacsScalar I = t*t*t/12.0;
+    for ( int i = 0; i < 6; i++ ){
+      D[i] = I*A[i];
+      A[i] *= t;
+    }
+
+    // Set the through-thickness shear stiffness
+    As[0] = As[2] = (5.0/6.0)*A[5];
+    As[1] = 0.0;
+
+    C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + A[2]);
   }
-
-  // Set the through-thickness shear stiffness
-  As[0] = As[2] = (5.0/6.0)*A[5];
-  As[1] = 0.0;
-
-  C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + A[2]);
+  else {
+    memset(C, 0, 22*sizeof(TacsScalar));
+  }
 }
 
 // Extract the tangent stiffness components from the matrix
@@ -234,7 +246,20 @@ void TACSShellConstitutive::evalThermalStrain( int elemIndex,
                                                const TacsScalar X[],
                                                TacsScalar theta,
                                                TacsScalar e[] ){
+  if (properties){
+    properties->evalThermalStrain2D(e);
+    e[0] *= theta;
+    e[1] *= theta;
+    e[2] *= theta;
 
+    e[3] = e[4] = e[5] = 0.0;
+    e[6] = e[7] = e[8] = 0.0;
+  }
+  else {
+    e[0] = e[1] = e[2] = 0.0;
+    e[3] = e[4] = e[5] = 0.0;
+    e[6] = e[7] = e[8] = 0.0;
+  }
 }
 
 // Evaluate the heat flux, given the thermal gradient
@@ -243,15 +268,23 @@ void TACSShellConstitutive::evalHeatFlux( int elemIndex,
                                           const TacsScalar X[],
                                           const TacsScalar grad[],
                                           TacsScalar flux[] ){
-
+  if (properties){
+    TacsScalar Kc[3];
+    properties->evalTangentHeatFlux2D(Kc);
+    flux[0] = t*(Kc[0]*grad[0] + Kc[1]*grad[1]);
+    flux[1] = t*(Kc[1]*grad[0] + Kc[2]*grad[1]);
+  }
 }
 
 // Evaluate the tangent of the heat flux
 void TACSShellConstitutive::evalTangentHeatFlux( int elemIndex,
                                                  const double pt[],
                                                  const TacsScalar X[],
-                                                 TacsScalar C[] ){
-
+                                                 TacsScalar Kc[] ){
+  if (properties){
+    properties->evalTangentHeatFlux2D(Kc);
+    Kc[0] *= t;  Kc[1] *= t;  Kc[2] *= t;
+  }
 }
 
 /*

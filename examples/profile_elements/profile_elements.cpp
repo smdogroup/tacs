@@ -5,6 +5,7 @@
 #include "TACSHeatConduction.h"
 #include "TACSThermoelasticity.h"
 #include "TACSPlateModel.h"
+#include "TACSThermoelasticPlateModel.h"
 
 // Include the constitutive classes
 #include "TACSSolidConstitutive.h"
@@ -149,13 +150,14 @@ int main( int argc, char *argv[] ){
     model3d[i]->incref();
   }
 
-  const int NUM_2D_MODELS = 5;
+  const int NUM_2D_MODELS = 6;
   TACSElementModel *model2d[NUM_2D_MODELS];
   model2d[0] = new TACSHeatConduction2D(con2d);
   model2d[1] = new TACSLinearElasticity2D(con2d, TACS_LINEAR_STRAIN);
   model2d[2] = new TACSLinearElasticity2D(con2d, TACS_NONLINEAR_STRAIN);
   model2d[3] = new TACSLinearThermoelasticity2D(con2d, TACS_LINEAR_STRAIN);
   model2d[4] = new TACSPlateModel(conShell);
+  model2d[5] = new TACSThermoelasticPlateModel(conShell);
   for ( int i = 0; i < NUM_2D_MODELS; i++ ){
     model2d[i]->incref();
   }

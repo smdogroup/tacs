@@ -120,6 +120,10 @@ cdef extern from "TACSPlateModel.h":
     cdef cppclass TACSPlateModel(TACSElementModel):
         TACSPlateModel(TACSShellConstitutive*)
 
+cdef extern from "TACSThermoelasticPlateModel.h":
+    cdef cppclass TACSThermoelasticPlateModel(TACSElementModel):
+        TACSThermoelasticPlateModel(TACSShellConstitutive*)
+
 cdef extern from "TACSElement2D.h":
     cdef cppclass TACSElement2D(TACSElement):
         TACSElement2D(TACSElementModel*, TACSElementBasis*)

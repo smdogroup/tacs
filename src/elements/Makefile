@@ -26,6 +26,7 @@ CXX_OBJS = FElibrary.o \
 	TACSThermoelasticity.o \
 	TACSHeatConduction.o \
 	TACSPlateModel.o \
+	TACSThermoelasticPlateModel.o \
 	TACSTraction2D.o \
 	TACSTraction3D.o \
 	TACSElementVerification.o
