@@ -1433,6 +1433,141 @@ static inline void det3x3Sens( const TacsScalar A[],
 }
 
 /*
+  Compute the derivative of the determinant with respect to the
+  components of A
+*/
+static inline void addDet3x3Sens( const TacsScalar s,
+                                  const TacsScalar A[],
+                                  TacsScalar Ad[] ){
+  Ad[0] += s*(A[8]*A[4] - A[7]*A[5]);
+  Ad[1] += s*(A[6]*A[5] - A[8]*A[3]);
+  Ad[2] += s*(A[7]*A[3] - A[6]*A[4]);
+
+  Ad[3] += s*(A[7]*A[2] - A[8]*A[1]);
+  Ad[4] += s*(A[8]*A[0] - A[6]*A[2]);
+  Ad[5] += s*(A[6]*A[1] - A[7]*A[0]);
+
+  Ad[6] += s*(A[1]*A[5] - A[2]*A[4]);
+  Ad[7] += s*(A[3]*A[2] - A[0]*A[5]);
+  Ad[8] += s*(A[0]*A[4] - A[3]*A[1]);
+}
+
+/*
+  Compute the derivative of the determinant with respect to the
+  components of A
+*/
+static inline void det3x32ndSens( const TacsScalar s,
+                                  const TacsScalar A[],
+                                  TacsScalar Ad[] ){
+  // Ad[0] = s*(A[8]*A[4] - A[7]*A[5]);
+  Ad[0] = 0.0;
+  Ad[1] = 0.0;
+  Ad[2] = 0.0;
+  Ad[3] = 0.0;
+  Ad[4] = s*A[8];
+  Ad[5] = -s*A[7];
+  Ad[6] = 0.0;
+  Ad[7] = -s*A[5];
+  Ad[8] = s*A[4];
+  Ad += 9;
+
+  // Ad[1] += s*(A[6]*A[5] - A[8]*A[3]);
+  Ad[0] = 0.0;
+  Ad[1] = 0.0;
+  Ad[2] = 0.0;
+  Ad[3] = -s*A[8];
+  Ad[4] = 0.0;
+  Ad[5] = s*A[6];
+  Ad[6] = s*A[5];
+  Ad[7] = 0.0;
+  Ad[8] = -s*A[3];;
+  Ad += 9;
+
+  // Ad[2] += s*(A[7]*A[3] - A[6]*A[4]);
+  Ad[0] = 0.0;
+  Ad[1] = 0.0;
+  Ad[2] = 0.0;
+  Ad[3] = s*A[7];
+  Ad[4] = -s*A[6];
+  Ad[5] = 0.0;
+  Ad[6] = -s*A[4];
+  Ad[7] = s*A[3];
+  Ad[8] = 0.0;
+  Ad += 9;
+
+  // Ad[3] += s*(A[7]*A[2] - A[8]*A[1]);
+  Ad[0] = 0.0;
+  Ad[1] = -s*A[8];
+  Ad[2] = s*A[7];
+  Ad[3] = 0.0;
+  Ad[4] = 0.0;
+  Ad[5] = 0.0;
+  Ad[6] = 0.0;
+  Ad[7] = s*A[2];
+  Ad[8] = -s*A[1];
+  Ad += 9;
+
+  // Ad[4] += s*(A[8]*A[0] - A[6]*A[2]);
+  Ad[0] = s*A[8];
+  Ad[1] = 0.0;
+  Ad[2] = -s*A[6];
+  Ad[3] = 0.0;
+  Ad[4] = 0.0;
+  Ad[5] = 0.0;
+  Ad[6] = -s*A[2];
+  Ad[7] = 0.0;
+  Ad[8] = s*A[0];
+  Ad += 9;
+
+  // Ad[5] += s*(A[6]*A[1] - A[7]*A[0]);
+  Ad[0] = -s*A[7];
+  Ad[1] = s*A[6];
+  Ad[2] = 0.0;
+  Ad[3] = 0.0;
+  Ad[4] = 0.0;
+  Ad[5] = 0.0;
+  Ad[6] = s*A[1];
+  Ad[7] = -s*A[0];
+  Ad[8] = 0.0;
+  Ad += 9;
+
+  // Ad[6] += s*(A[1]*A[5] - A[2]*A[4]);
+  Ad[0] = 0.0;
+  Ad[1] = s*A[5];
+  Ad[2] = -s*A[4];
+  Ad[3] = 0.0;
+  Ad[4] = -s*A[2];
+  Ad[5] = s*A[1];
+  Ad[6] = 0.0;
+  Ad[7] = 0.0;
+  Ad[8] = 0.0;
+  Ad += 9;
+
+  // Ad[7] += s*(A[3]*A[2] - A[0]*A[5]);
+  Ad[0] = -s*A[5];
+  Ad[1] = 0.0;
+  Ad[2] = s*A[3];
+  Ad[3] = s*A[2];
+  Ad[4] = 0.0;
+  Ad[5] = -s*A[0];
+  Ad[6] = 0.0;
+  Ad[7] = 0.0;
+  Ad[8] = 0.0;
+  Ad += 9;
+
+  // Ad[8] += s*(A[0]*A[4] - A[3]*A[1]);
+  Ad[0] = s*A[4];
+  Ad[1] = -s*A[3];
+  Ad[2] = 0.0;
+  Ad[3] = -s*A[1];
+  Ad[4] = s*A[0];
+  Ad[5] = 0.0;
+  Ad[6] = 0.0;
+  Ad[7] = 0.0;
+  Ad[8] = 0.0;
+}
+
+/*
   Compute the inverse of a 3x3 matrix
 
   input:

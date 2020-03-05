@@ -6,6 +6,7 @@
 #include "TACSThermoelasticity.h"
 #include "TACSPlateModel.h"
 #include "TACSThermoelasticPlateModel.h"
+#include "TACSNeohookean.h"
 
 // Include the constitutive classes
 #include "TACSSolidConstitutive.h"
@@ -140,12 +141,13 @@ int main( int argc, char *argv[] ){
   conShell->incref();
 
   // Set the model type
-  const int NUM_3D_MODELS = 4;
+  const int NUM_3D_MODELS = 5;
   TACSElementModel *model3d[NUM_3D_MODELS];
   model3d[0] = new TACSHeatConduction3D(con3d);
   model3d[1] = new TACSLinearElasticity3D(con3d, TACS_LINEAR_STRAIN);
   model3d[2] = new TACSLinearElasticity3D(con3d, TACS_NONLINEAR_STRAIN);
   model3d[3] = new TACSLinearThermoelasticity3D(con3d, TACS_LINEAR_STRAIN);
+  model3d[4] = new TACSNeohookean3D(2.34, 5.73);
   for ( int i = 0; i < NUM_3D_MODELS; i++ ){
     model3d[i]->incref();
   }
