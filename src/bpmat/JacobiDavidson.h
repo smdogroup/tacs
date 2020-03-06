@@ -32,6 +32,9 @@ enum JDRecycleType { JD_SUM_TWO,
 */
 class TACSJacobiDavidsonOperator : public TACSObject {
  public:
+  // Get the MPI_Comm
+  virtual MPI_Comm getMPIComm() = 0;
+
   // Create a vector
   virtual TACSVec *createVec() = 0;
 
@@ -58,14 +61,16 @@ class TACSJacobiDavidsonOperator : public TACSObject {
 };
 
 /*
-  The Jacobi-Davidson operator for the natural frequency problem
+  The Jacobi-Davidson operator for simple eigenvalue problems
 */
-class TACSJDFrequencyOperator : public TACSJacobiDavidsonOperator {
+class TACSJDSimpleOperator : public TACSJacobiDavidsonOperator {
  public:
-  TACSJDFrequencyOperator( TACSAssembler *_tacs,
-                           TACSMat *_kmat, TACSMat *_mmat,
-                           TACSMat *_pc_mat, TACSPc *_pc );
-  ~TACSJDFrequencyOperator();
+  TACSJDSimpleOperator( TACSAssembler *_assembler,
+                        TACSMat *_mat, TACSPc *_pc );
+  ~TACSJDSimpleOperator();
+
+  // Get the MPI_Comm
+  MPI_Comm getMPIComm();
 
   // Create a vector
   TACSVec *createVec();
@@ -89,7 +94,47 @@ class TACSJDFrequencyOperator : public TACSJacobiDavidsonOperator {
   void multB( TACSVec *x, TACSVec * y );
 
  private:
-  TACSAssembler *tacs;
+  TACSAssembler *assembler;
+  TACSMat *mat;
+  TACSPc *pc;
+};
+
+/*
+  The Jacobi-Davidson operator for the natural frequency problem
+*/
+class TACSJDFrequencyOperator : public TACSJacobiDavidsonOperator {
+ public:
+  TACSJDFrequencyOperator( TACSAssembler *_assembler,
+                           TACSMat *_kmat, TACSMat *_mmat,
+                           TACSMat *_pc_mat, TACSPc *_pc );
+  ~TACSJDFrequencyOperator();
+
+  // Get the MPI_Comm
+  MPI_Comm getMPIComm();
+
+  // Create a vector
+  TACSVec *createVec();
+
+  // Set the eigenvalue estimate (and reset the factorization)
+  // pc = K in this case
+  void setEigenvalueEstimate( double estimate );
+
+  // Apply the preconditioner
+  void applyFactor( TACSVec *x, TACSVec *y );
+
+  // Apply boundary conditions associated with the matrix
+  void applyBCs( TACSVec *x );
+
+  // Perform a dot-product of two vectors in the operator space e.g.
+  // output <- x^{T}*B*y
+  TacsScalar dot( TACSVec *x, TACSVec *y );
+
+  // Matrix-vector products with either the A or B operators.
+  void multA( TACSVec *x, TACSVec * y );
+  void multB( TACSVec *x, TACSVec * y );
+
+ private:
+  TACSAssembler *assembler;
   TACSMat *kmat, *mmat, *pc_mat;
   TACSPc *pc;
   TACSVec *work;
@@ -106,6 +151,9 @@ class TACSJacobiDavidson : public TACSObject {
                       int _max_gmres_size=30 );
   ~TACSJacobiDavidson();
 
+  // Get the MPI_Comm
+  MPI_Comm getMPIComm();
+
   // Extract the eigenvalues and eigenvectors
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
   TacsScalar extractEigenvector( int n, TACSVec *ans, TacsScalar *error );
@@ -115,6 +163,7 @@ class TACSJacobiDavidson : public TACSObject {
 
   // Set tolerances to FGMRES
   void setTolerances( double _eigtol, double _rtol, double _atol );
+
   // Set the number of vectors to recycle
   void setRecycle( int _recycle, JDRecycleType _recycle_type );
 

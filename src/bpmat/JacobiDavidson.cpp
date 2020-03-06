@@ -15,23 +15,83 @@
 #include "tacslapack.h"
 #include "JacobiDavidson.h"
 
+TACSJDSimpleOperator::TACSJDSimpleOperator( TACSAssembler *_assembler,
+                                            TACSMat *_mat,
+                                            TACSPc *_pc ){
+  assembler = _assembler;  assembler->incref();
+  mat = _mat;  mat->incref();
+  pc = _pc;  pc->incref();
+}
 
-TACSJDFrequencyOperator::TACSJDFrequencyOperator( TACSAssembler *_tacs,
+TACSJDSimpleOperator::~TACSJDSimpleOperator(){
+  assembler->decref();
+  mat->decref();
+  pc->decref();
+}
+
+// Get the MPI_Comm
+MPI_Comm TACSJDSimpleOperator::getMPIComm(){
+  return assembler->getMPIComm();
+}
+
+// Create a vector
+TACSVec *TACSJDSimpleOperator::createVec(){
+  return assembler->createVec();
+}
+
+// Set the eigenvalue estimate (and reset the factorization)
+// pc = K in this case
+void TACSJDSimpleOperator::setEigenvalueEstimate( double estimate ){
+  pc->factor();
+}
+
+// Apply the preconditioner
+void TACSJDSimpleOperator::applyFactor( TACSVec *x, TACSVec *y ){
+  pc->applyFactor(x, y);
+  assembler->applyBCs(y);
+}
+
+// Apply boundary conditions associated with the matrix
+void TACSJDSimpleOperator::applyBCs( TACSVec *x ){
+  assembler->applyBCs(x);
+}
+
+// Perform a dot-product of two vectors in the operator space e.g.
+// output <- x^{T}*y
+TacsScalar TACSJDSimpleOperator::dot( TACSVec *x, TACSVec *y ){
+  return y->dot(x);
+}
+
+// Matrix-vector products with either the A or B operators.
+void TACSJDSimpleOperator::multA( TACSVec *x, TACSVec * y ){
+  mat->mult(x, y);
+  assembler->applyBCs(y);
+}
+
+void TACSJDSimpleOperator::multB( TACSVec *x, TACSVec * y ){
+  y->copyValues(x);
+  assembler->applyBCs(y);
+}
+
+/*
+  JD operator class for frequency analysis
+*/
+TACSJDFrequencyOperator::TACSJDFrequencyOperator( TACSAssembler *_assembler,
                                                   TACSMat *_kmat,
                                                   TACSMat *_mmat,
                                                   TACSMat *_pc_mat,
                                                   TACSPc *_pc ){
-  tacs = _tacs;  tacs->incref();
+  assembler = _assembler;  assembler->incref();
   kmat = _kmat;  kmat->incref();
   mmat = _mmat;  mmat->incref();
   pc_mat = _pc_mat;  pc_mat->incref();
   pc = _pc;  pc->incref();
-  work = tacs->createVec();
+  work = assembler->createVec();
   work->incref();
 }
 
 TACSJDFrequencyOperator::~TACSJDFrequencyOperator(){
-  tacs->decref();
+  assembler->decref();
   kmat->decref();
   mmat->decref();
   pc_mat->decref();
@@ -39,9 +99,14 @@ TACSJDFrequencyOperator::~TACSJDFrequencyOperator(){
   work->decref();
 }
 
+// Get the MPI_Comm
+MPI_Comm TACSJDFrequencyOperator::getMPIComm(){
+  return assembler->getMPIComm();
+}
+
 // Create a vector
 TACSVec *TACSJDFrequencyOperator::createVec(){
-  return tacs->createVec();
+  return assembler->createVec();
 }
 
 // Set the eigenvalue estimate (and reset the factorization)
@@ -52,19 +117,19 @@ void TACSJDFrequencyOperator::setEigenvalueEstimate( double estimate ){
   if (estimate != 0.0){
     pc_mat->axpy(-estimate, mmat);
   }
-  tacs->applyBCs(pc_mat);
+  assembler->applyBCs(pc_mat);
   pc->factor();
 }
 
 // Apply the preconditioner
 void TACSJDFrequencyOperator::applyFactor( TACSVec *x, TACSVec *y ){
   pc->applyFactor(x, y);
-  tacs->applyBCs(y);
+  assembler->applyBCs(y);
 }
 
 // Apply boundary conditions associated with the matrix
 void TACSJDFrequencyOperator::applyBCs( TACSVec *x ){
-  tacs->applyBCs(x);
+  assembler->applyBCs(x);
 }
 
 // Perform a dot-product of two vectors in the operator space e.g.
@@ -77,12 +142,12 @@ TacsScalar TACSJDFrequencyOperator::dot( TACSVec *x, TACSVec *y ){
 // Matrix-vector products with either the A or B operators.
 void TACSJDFrequencyOperator::multA( TACSVec *x, TACSVec * y ){
   kmat->mult(x, y);
-  tacs->applyBCs(y);
+  assembler->applyBCs(y);
 }
 
 void TACSJDFrequencyOperator::multB( TACSVec *x, TACSVec * y ){
   mmat->mult(x, y);
-  tacs->applyBCs(y);
+  assembler->applyBCs(y);
 }
 
 /*
@@ -226,6 +291,11 @@ TACSJacobiDavidson::~TACSJacobiDavidson(){
   delete [] Z;
 
   work->decref();
+}
+
+// Get the MPI_Comm
+MPI_Comm TACSJacobiDavidson::getMPIComm(){
+  return oper->getMPIComm();
 }
 
 /*!

@@ -551,6 +551,28 @@ cdef extern from "JacobiDavidson.h":
       JD_SUM_TWO
       JD_NUM_RECYCLE
 
+   cdef cppclass TACSJacobiDavidsonOperator(TACSObject):
+       pass
+
+   cdef cppclass TACSJDSimpleOperator(TACSJacobiDavidsonOperator):
+       TACSJDSimpleOperator(TACSAssembler*, TACSMat*, TACSPc*)
+
+   cdef cppclass TACSJDFrequencyOperator(TACSJacobiDavidsonOperator):
+       TACSJDFrequencyOperator(TACSAssembler*, TACSMat*,
+                               TACSMat*, TACSMat*, TACSPc*)
+
+   cdef cppclass TACSJacobiDavidson(TACSObject):
+       TACSJacobiDavidson(TACSJacobiDavidsonOperator*, int, int, int)
+       MPI_Comm getMPIComm()
+       TacsScalar extractEigenvalue(int, TacsScalar*)
+       TacsScalar extractEigenvector(int n, TACSVec*, TacsScalar*)
+       void solve(KSMPrint*)
+       void setTolerances(double, double, double)
+       void setRecycle(int, JDRecycleType)
+
+cdef class JacobiDavidsonOperator:
+    cdef TACSJacobiDavidsonOperator *ptr
+
 cdef extern from "TACSBuckling.h":
     cdef cppclass TACSFrequencyAnalysis(TACSObject):
         TACSFrequencyAnalysis(TACSAssembler *, TacsScalar,

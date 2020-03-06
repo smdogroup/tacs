@@ -813,7 +813,10 @@ cdef class Mg(Pc):
         return
 
     def assembleMatType(self, ElementMatrixType matType,
-                        MatrixOrientation matOr):
+                        MatrixOrientation matOr=NORMAL):
+        """
+        Assemble the given matrix type
+        """
         self.mg.assembleMatType(matType, matOr)
         return
 
@@ -899,6 +902,131 @@ cdef class KSM:
         if gmres_ptr != NULL:
             gmres_ptr.setTimeMonitor()
 
+cdef class JacobiDavidsonOperator:
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+cdef class JDSimpleOperator(JacobiDavidsonOperator):
+    def __cinit__(self, Assembler assembler, Mat mat, Pc pc):
+        self.ptr = new TACSJDSimpleOperator(assembler.ptr, mat.ptr, pc.ptr)
+        self.ptr.incref()
+        return
+
+cdef class JDFrequencyOperator(JacobiDavidsonOperator):
+    def __cinit__(self, Assembler assembler, Mat kmat, Mat mmat, Mat pcmat, Pc pc):
+        self.ptr = new TACSJDFrequencyOperator(assembler.ptr,
+                                               kmat.ptr, mmat.ptr, pcmat.ptr, pc.ptr)
+        self.ptr.incref()
+        return
+
+cdef class JacobiDavidson:
+    cdef TACSJacobiDavidson *ptr
+    def __cinit__(self, JacobiDavidsonOperator oper,
+                  num_eigenvalues=10, max_jd_size=20, max_gmres_size=30):
+        """
+        Create the Jacobi-Davidson solver object.
+
+        This problem class can be used to solve either simple or
+        generalized eigenvalue problems. Usually, the smallest
+        eigenvalues are sought, so the specification of desired the
+        spectrum has not been wrapped at this time.
+
+        Args:
+            oper (JacobiDavidsonOperator): The operator for the eigenvalue problem
+            num_eigenvalues (int): The number of desired eigenvalues
+            max_jd_size (int): The maximum size of the Jacobi-Davidson subspace
+            max_gmres_size (int): The maximum size of the GMRES suproblem subspace
+        """
+        self.ptr = new TACSJacobiDavidson(oper.ptr, num_eigenvalues,
+                                          max_jd_size, max_gmres_size)
+        self.ptr.incref()
+        return
+
+    def extractEigenvalue(self, int index):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvalue(index, &err)
+        return eigval, err
+
+    def extractEigenvector(self, int index, Vec vec):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            vec (Vec): The vector in which the eigenvector will be stored
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
+        return eigval, err
+
+    def solve(self, print_flag=False, freq=1):
+        """
+        Solve the eigenvalue problem using the Jacobi-Davidson method
+
+        Args:
+            print_flag (bool): Indicates whether to print output to stdout
+            freq (int): The frequency to print output
+        """
+        cdef MPI_Comm comm
+        cdef int rank
+        cdef KSMPrint *ksm_print = NULL
+
+        if print_flag:
+            comm = self.ptr.getMPIComm()
+            MPI_Comm_rank(comm, &rank)
+            ksm_print = new KSMPrintStdout("JD", rank, freq)
+            ksm_print.incref()
+
+        self.ptr.solve(ksm_print)
+        if ksm_print != NULL:
+            ksm_print.decref()
+
+        return
+
+    def setTolerance(self, eigtol=5e-7, eig_rtol=1e-6, eig_atol=1e-12):
+        """
+        Set the tolerances for the eigenvalue problem.
+
+        Usually the eigtol is the most important, whereas the GMRES
+        subproblem can be solved inaccurately, so fixed max_gmres_size
+        to a smaller value can be beneficial.
+
+        Args:
+            eigtol (float): Relative tolerance for the eigenvalue error
+            eig_rtol (float): Relative tolerance for the GMRES subproblem
+            eig_atol (float): Absolute tolerance for the GMRES subproblem
+        """
+        self.ptr.setTolerances(eigtol, eig_rtol, eig_atol)
+        return
+
+    def setRecycle(self, int num_recycle):
+        """
+        Set the number of eigenvectors to recycle from the previous iteration
+
+        Args:
+            num_recycle (int): The number of eigenvectors to recycle
+        """
+        self.ptr.setRecycle(num_recycle, JD_NUM_RECYCLE)
+        return
 
 cdef class Assembler:
     def __cinit__(self):
@@ -2176,6 +2304,9 @@ cdef class FrequencyAnalysis:
         self.ptr.setSigma(sigma)
 
     def solve(self, print_flag=True, int freq=10):
+        """
+        Solve the natural frequency problem
+        """
         cdef MPI_Comm comm
         cdef int rank
         cdef TACSAssembler *assembler = NULL
@@ -2186,20 +2317,42 @@ cdef class FrequencyAnalysis:
             comm = assembler.getMPIComm()
             MPI_Comm_rank(comm, &rank)
             ksm_print = new KSMPrintStdout("FrequencyAnalysis", rank, freq)
+            ksm_print.incref()
 
         self.ptr.solve(ksm_print)
+        if ksm_print != NULL:
+            ksm_print.decref()
         return
 
-    def extractEigenvalue(self, int eig):
+    def extractEigenvalue(self, int index):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
         cdef TacsScalar err = 0.0
         cdef TacsScalar eigval = 0.0
-        eigval = self.ptr.extractEigenvalue(eig, &err)
+        eigval = self.ptr.extractEigenvalue(index, &err)
         return eigval, err
 
-    def extractEigenvector(self, int eig, Vec vec):
+    def extractEigenvector(self, int index, Vec vec):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            vec (Vec): The vector in which the eigenvector will be stored
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
         cdef TacsScalar err = 0.0
         cdef TacsScalar eigval = 0.0
-        eigval = self.ptr.extractEigenvector(eig, vec.ptr, &err)
+        eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
         return eigval, err
 
 cdef class BucklingAnalysis:
