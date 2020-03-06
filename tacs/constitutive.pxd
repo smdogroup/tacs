@@ -58,7 +58,7 @@ cdef extern from "TACSSolidConstitutive.h":
         TACSSolidConstitutive(TACSMaterialProperties*,
                               TacsScalar, int, TacsScalar, TacsScalar)
         TACSMaterialProperties* getMaterialProperties()
-        
+
 cdef class SolidConstitutive(Constitutive):
     cdef TACSSolidConstitutive *cptr
 
@@ -69,6 +69,19 @@ cdef extern from "TACSShellConstitutive.h":
 
 cdef class ShellConstitutive(Constitutive):
     cdef TACSShellConstitutive *cptr
+
+cdef extern from "TACSTimoshenkoConstitutive.h":
+    cdef cppclass TACSTimoshenkoConstitutive(TACSConstitutive):
+        TACSTimoshenkoConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                   TacsScalar, TacsScalar, const TacsScalar*)
+
+cdef class TimoshenkoConstitutive(Constitutive):
+    cdef TACSTimoshenkoConstitutive *cptr
+
+# Special functions required for converting pointers
+cdef extern from "":
+    TACSTimoshenkoConstitutive* _dynamicTimoshenkoConstitutive"dynamic_cast<TACSTimoshenkoConstitutive*>"(TACSConstitutive*)
 
 cdef extern from "TACSConstitutiveVerification.h":
     int TacsTestConstitutive(TACSConstitutive*, int, double, int, double, double)
