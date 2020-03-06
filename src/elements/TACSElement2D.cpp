@@ -381,6 +381,10 @@ void TACSElement2D::getMatSVSensInnerProduct( ElementMatrixType matType,
                                               const TacsScalar Xpts[],
                                               const TacsScalar vars[],
                                               TacsScalar dfdu[] ){
+  // Set the sensitivity to zero
+  const int nvars = getNumVariables();
+  memset(dfdu, 0, nvars*sizeof(TacsScalar));
+
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();

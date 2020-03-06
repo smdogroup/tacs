@@ -5078,6 +5078,18 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   TacsTestElementResidual(elements[elemNum], elemNum, time, elemXpts,
                           vars, dvars, ddvars,
                           dh, print_level, rtol, atol);
+  TacsTestElementMatDVSens(elements[elemNum], TACS_MASS_MATRIX, elemNum,
+                           time, elemXpts, vars, maxDVs, x,
+                           dh, print_level, rtol, atol);
+  TacsTestElementMatDVSens(elements[elemNum], TACS_STIFFNESS_MATRIX, elemNum,
+                           time, elemXpts, vars, maxDVs, x,
+                           dh, print_level, rtol, atol);
+  TacsTestElementMatDVSens(elements[elemNum], TACS_GEOMETRIC_STIFFNESS_MATRIX, elemNum,
+                           time, elemXpts, vars, maxDVs, x,
+                           dh, print_level, rtol, atol);
+  TacsTestElementMatSVSens(elements[elemNum], TACS_GEOMETRIC_STIFFNESS_MATRIX, elemNum,
+                           time, elemXpts, vars,
+                           dh, print_level, rtol, atol);
 }
 
 /*

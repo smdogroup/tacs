@@ -820,6 +820,23 @@ cdef class Mg(Pc):
         self.mg.assembleMatType(matType, matOr)
         return
 
+    def assembleMatCombo(self, ElementMatrixType matType1, double scale1,
+                         ElementMatrixType matType2, double scale2,
+                         MatrixOrientation matOr=NORMAL):
+        """
+        Assemble a combination of two matrices
+        """
+        cdef ElementMatrixType matTypes[2]
+        cdef TacsScalar scale[2]
+        cdef int nmats = 2
+
+        matTypes[0] = matType1
+        matTypes[1] = matType2
+        scale[0] = scale1
+        scale[1] = scale2
+        self.mg.assembleMatCombo(matTypes, scale, 2, matOr)
+        return
+
     def setMonitor(self, MPI.Comm comm,
                    _descript='GMRES', int freq=10):
         """
@@ -1618,6 +1635,23 @@ cdef class Assembler:
         matOr:      the matrix orientation NORMAL or TRANSPOSE
         """
         self.ptr.assembleMatType(matType, A.ptr, matOr)
+        return
+
+    def assembleMatCombo(self, ElementMatrixType matType1, double scale1,
+                         ElementMatrixType matType2, double scale2, Mat A,
+                         MatrixOrientation matOr=NORMAL):
+        """
+        Assemble a combination of two matrices
+        """
+        cdef ElementMatrixType matTypes[2]
+        cdef TacsScalar scale[2]
+        cdef int nmats = 2
+
+        matTypes[0] = matType1
+        matTypes[1] = matType2
+        scale[0] = scale1
+        scale[1] = scale2
+        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr)
         return
 
     def evalFunctions(self, funclist):
