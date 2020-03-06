@@ -13,18 +13,18 @@ def str_coef(coef):
 def print_coef(coef):
     print(str_coef(coef) + ';')
 
-def get_disps():
+def get_disps(ndof=5):
     Ut = []
-    for i in range(3*5):
+    for i in range(3*ndof):
         Ut.append(sym.Symbol('Ut[%d]'%(i)))
 
     Ux = []
-    for i in range(6*2):
+    for i in range(2*ndof):
         Ux.append(sym.Symbol('Ux[%d]'%(i)))
 
     return Ut, Ux
 
-def get_strains(Ut, Ux):
+def get_strain(Ut, Ux):
     e = []
     e.append(Ux[0]) # exx = u,x
     e.append(Ux[3]) # eyy = v,y
@@ -37,7 +37,13 @@ def get_strains(Ut, Ux):
     e.append(Ux[5] - Ut[9]) # eyz = w,y - rotx
     e.append(Ux[4] + Ut[12]) # exz = w,x + roty
 
-    return e
+    return sym.Matrix(e)
+
+def get_thermal_strain(Ut):
+    et = []
+    for i in range(8):
+        et.append(Ut[5*3]*sym.Symbol('et[%d]'%(i)))
+    return sym.Matrix(et)
 
 def get_stress_components():
     s = []
@@ -75,7 +81,7 @@ def get_stress(e):
 
 def print_plate_coef():
     Ut, Ux = get_disps()
-    e = get_strains(Ut, Ux)
+    e = get_strain(Ut, Ux)
     s = get_stress(e)
 
     S = get_stress_components()
@@ -97,14 +103,6 @@ def print_plate_coef():
         U0 = U0 + e[i]*s[i]
 
     U0 += sym.Symbol('rho')*(Ut[2]**2 + Ut[5]**2 + Ut[8]**2)
-
-    for k in range(3*5):
-        coef = 0.5*sym.diff(U0, Ut[k])
-        print('DUt[%d] = '%(k) + str_coef(coef) + ';')
-
-    for k in range(10):
-        coef = 0.5*sym.diff(U0, Ux[k])
-        print('DUx[%d] = '%(k) + str_coef(coef) + ';')
 
     # Arrange the variables in their order
     elem_vars = []
@@ -130,5 +128,77 @@ def print_plate_coef():
 
     return
 
+def print_thermoelastic_plate_coef():
+    ndof = 6
+    Ut, Ux = get_disps(ndof=ndof)
+    e = get_strain(Ut, Ux)
+    et = get_thermal_strain(Ut)
+
+    # Substract the thermal strain to get the mechanical component of the strain
+    em = e - et
+    s = get_stress(em)
+
+    # Get the stress components
+    S = get_stress_components()
+
+    U0 = e[0]*S[0]
+    for i in range(1, 8):
+        U0 = U0 + e[i]*S[i]
+
+    c = sym.Symbol('c')
+    rho = sym.Symbol('rho')
+    U0 += 0.5*rho*(Ut[2]**2 + Ut[5]**2 + Ut[8]**2) + 0.5*rho*c*Ut[16]**2
+
+    Kc = [sym.Symbol('Kc[0]'), sym.Symbol('Kc[1]'), sym.Symbol('Kc[2]')]
+
+    U0 += 0.5*(Kc[0]*Ux[10]**2 + 2*Kc[1]*Ux[10]*Ux[11] + Kc[2]*Ux[11]**2)
+
+    DUt = []
+    for k in range(3*ndof):
+        coef = sym.diff(U0, Ut[k])
+        print('DUt[%d] = '%(k) + str_coef(coef) + ';')
+        for i in range(8):
+            coef = coef.subs(S[i], s[i])
+        DUt.append(coef)
+
+    DUx = []
+    for k in range(2*ndof):
+        coef = sym.diff(U0, Ux[k])
+        print('DUx[%d] = '%(k) + str_coef(coef) + ';')
+        for i in range(8):
+            coef = coef.subs(S[i], s[i])
+        DUx.append(coef)
+
+    U0 = e[0]*s[0]
+    for i in range(1, 8):
+        U0 = U0 + e[i]*s[i]
+
+    # Arrange the variables in their order
+    expr = []
+    elem_vars = []
+    for i in range(ndof):
+        for j in range(3):
+            elem_vars.append(Ut[3*i + j])
+            expr.append(DUt[3*i + j])
+        for j in range(2):
+            elem_vars.append(Ux[2*i + j])
+            expr.append(DUx[2*i + j])
+
+    s = ''
+    index = 0
+    for i, ui in enumerate(elem_vars):
+        for j, uj in enumerate(elem_vars):
+            coef = sym.diff(expr[i], uj)
+            if coef != 0:
+                print('Jac[%d] = '%(index) + str_coef(coef) + ';')
+                s += '%d, %d, '%(i, j)
+                index += 1
+        s += '\n'
+
+    print('num_pairs = ', index)
+    print('pairs = ', s)
+
+    return
 
 print_plate_coef()
+print_thermoelastic_plate_coef()

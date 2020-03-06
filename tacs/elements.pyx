@@ -179,6 +179,11 @@ cdef class PlateModel(ElementModel):
         self.ptr = new TACSPlateModel(con.cptr)
         self.ptr.incref()
 
+cdef class ThermoelasticPlateModel(ElementModel):
+    def __cinit__(self, ShellConstitutive con):
+        self.ptr = new TACSThermoelasticPlateModel(con.cptr)
+        self.ptr.incref()
+
 cdef class Element2D(Element):
     def __cinit__(self, ElementModel model, ElementBasis basis):
         self.ptr = new TACSElement2D(model.ptr, basis.ptr)
