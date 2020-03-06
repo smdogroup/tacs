@@ -70,8 +70,8 @@ cdef class MaterialProperties:
         self.ptr.incref()
 
     def __dealloc__(self):
-        self.ptr.decref()
-
+        if self.ptr:
+            self.ptr.decref()
 
 cdef class PlaneStressConstitutive(Constitutive):
     def __cinit__(self, *args, **kwargs):
@@ -128,6 +128,16 @@ cdef class SolidConstitutive(Constitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+
+cdef class TimoshenkoConstitutive(Constitutive):
+    def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
+                      EA, GJ, EIy, EIz, kGAy, kGAz,
+                      np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
+        self.cptr = new TACSTimoshenkoConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
+                                                  EA, GJ, EIy, EIz, kGAy, kGAz,
+                                                  <TacsScalar*>axis.data)
+        self.ptr = self.cptr
+        self.ptr.incref()
 
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,

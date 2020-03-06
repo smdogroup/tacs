@@ -180,6 +180,13 @@ cdef extern from "TACSKinematicConstraints.h":
         TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
                               TACSRefFrame*, int)
 
+cdef extern from  "MITC3.h":
+    cdef cppclass MITC3(TACSElement):
+        MITC3(TACSTimoshenkoConstitutive *_stiff,
+              TACSGibbsVector *_gravity,
+              TACSGibbsVector *_vInit,
+              TACSGibbsVector *_omegaInit)
+
 cdef extern from "TACSElementWrapper.h":
     cdef cppclass TACSElementWrapper(TACSElement):
         TACSElementWrapper(PyObject*, int, int)
