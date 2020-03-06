@@ -79,7 +79,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_HEXA_QUARTIC_ELEMENT
         TACS_HEXA_QUINTIC_ELEMENT
         TACS_PENTA_ELEMENT
-        TACS_PETTA_QUADRATIC_ELEMENT
+        TACS_PENTA_QUADRATIC_ELEMENT
         TACS_PENTA_CUBIC_ELEMENT
 
     enum ElementMatrixType:
@@ -551,6 +551,28 @@ cdef extern from "JacobiDavidson.h":
       JD_SUM_TWO
       JD_NUM_RECYCLE
 
+   cdef cppclass TACSJacobiDavidsonOperator(TACSObject):
+       pass
+
+   cdef cppclass TACSJDSimpleOperator(TACSJacobiDavidsonOperator):
+       TACSJDSimpleOperator(TACSAssembler*, TACSMat*, TACSPc*)
+
+   cdef cppclass TACSJDFrequencyOperator(TACSJacobiDavidsonOperator):
+       TACSJDFrequencyOperator(TACSAssembler*, TACSMat*,
+                               TACSMat*, TACSMat*, TACSPc*)
+
+   cdef cppclass TACSJacobiDavidson(TACSObject):
+       TACSJacobiDavidson(TACSJacobiDavidsonOperator*, int, int, int)
+       MPI_Comm getMPIComm()
+       TacsScalar extractEigenvalue(int, TacsScalar*)
+       TacsScalar extractEigenvector(int n, TACSVec*, TacsScalar*)
+       void solve(KSMPrint*)
+       void setTolerances(double, double, double)
+       void setRecycle(int, JDRecycleType)
+
+cdef class JacobiDavidsonOperator:
+    cdef TACSJacobiDavidsonOperator *ptr
+
 cdef extern from "TACSBuckling.h":
     cdef cppclass TACSFrequencyAnalysis(TACSObject):
         TACSFrequencyAnalysis(TACSAssembler *, TacsScalar,
@@ -561,7 +583,7 @@ cdef extern from "TACSBuckling.h":
                               TACSPc*,
                               int, int, int, double, double, double,
                               int, JDRecycleType)
-        TACSAssembler* getTACS()
+        TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
         void solve(KSMPrint*)
@@ -574,7 +596,7 @@ cdef extern from "TACSBuckling.h":
                             TACSMat *, TACSMat *,
                             TACSMat *, TACSKsm *,
                             int, int, double)
-        TACSAssembler* getTACS()
+        TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
         void solve(TACSVec*, KSMPrint*)
@@ -637,6 +659,18 @@ cdef extern from "TACSToFH5.h":
         TACSToFH5(TACSAssembler *_tacs, ElementType _elem_type, int _out_type)
         void setComponentName(int comp_num, char *group_name)
         void writeToFile(char *filename)
+
+cdef extern from "TACSFH5Loader.h":
+    cdef cppclass TACSFH5Loader(TACSObject):
+        TACSFH5Loader()
+        int loadData(const char*, const char*)
+        int getNumComponents();
+        char* getComponentName( int comp );
+        void getConnectivity(int*, int**, int**, int**, int**)
+        void getContinuousData(const char**, const char**,
+                               int*, int*, float**)
+        void getElementData(const char**, const char**,
+                            int*, int*, float**)
 
 cdef extern from "TACSIntegrator.h":
     # Declare the TACSIntegrator base class

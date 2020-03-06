@@ -73,6 +73,12 @@ cdef class MaterialProperties:
         if self.ptr:
             self.ptr.decref()
 
+    def setDensity(self, TacsScalar rho):
+        self.ptr.setDensity(rho)
+
+    def setSpecificHeat(self, TacsScalar specific_heat):
+        self.ptr.setSpecificHeat(specific_heat)
+
 cdef class PlaneStressConstitutive(Constitutive):
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -122,6 +128,39 @@ cdef class SolidConstitutive(Constitutive):
 
         if props is not NULL:
             self.cptr = new TACSSolidConstitutive(props, t, tNum,
+                                                  tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
+    def getMaterialProperties(self):
+        if self.cptr:
+            return _init_MaterialProperties(self.cptr.getMaterialProperties())
+        return None
+
+cdef class ShellConstitutive(Constitutive):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSShellConstitutive(props, t, tNum,
                                                   tlb, tub)
             self.ptr = self.cptr
             self.ptr.incref()

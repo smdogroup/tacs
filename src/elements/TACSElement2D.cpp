@@ -102,7 +102,7 @@ void TACSElement2D::addResidual( int elemIndex,
     TacsScalar X[3], Xd[4], J[4];
     TacsScalar Ut[3*MAX_VARS_PER_NODE];
     TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(pt, Xpts, vars_per_node,
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                                               vars, dvars, ddvars,
                                               X, Xd, J, Ut, Ud, Ux);
 
@@ -148,7 +148,7 @@ void TACSElement2D::addJacobian( int elemIndex,
     TacsScalar X[3], Xd[4], J[4];
     TacsScalar Ut[3*MAX_VARS_PER_NODE];
     TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(pt, Xpts, vars_per_node,
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                                               vars, dvars, ddvars, X, Xd, J,
                                               Ut, Ud, Ux);
 
@@ -180,7 +180,7 @@ void TACSElement2D::addAdjResProduct( int elemIndex,
                                       const TacsScalar dvars[],
                                       const TacsScalar ddvars[],
                                       int dvLen,
-                                      TacsScalar dvSens[] ){
+                                      TacsScalar dfdx[] ){
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
@@ -198,7 +198,7 @@ void TACSElement2D::addAdjResProduct( int elemIndex,
     TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
     TacsScalar Psi[MAX_VARS_PER_NODE];
     TacsScalar Psid[2*MAX_VARS_PER_NODE], Psix[2*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(pt, Xpts, vars_per_node,
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                                               vars, dvars, ddvars, psi,
                                               X, Xd, J, Ut, Ud, Ux,
                                               Psi, Psid, Psix);
@@ -206,8 +206,8 @@ void TACSElement2D::addAdjResProduct( int elemIndex,
     // Compute the weight
     TacsScalar s = scale*detJ*weight;
 
-    model->addWeakAdjProduct(elemIndex, n, time, pt, X,
-                             Ut, Ux, Psi, Psix, s, dvLen, dvSens);
+    model->addWeakAdjProduct(elemIndex, time, s, n, pt, X,
+                             Ut, Ux, Psi, Psix, dvLen, dfdx);
   }
 }
 
@@ -237,14 +237,14 @@ void TACSElement2D::addAdjResXptProduct( int elemIndex,
     TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
     TacsScalar Psi[MAX_VARS_PER_NODE];
     TacsScalar Psid[2*MAX_VARS_PER_NODE], Psix[2*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(pt, Xpts, vars_per_node,
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                                               vars, dvars, ddvars, psi,
                                               X, Xd, J, Ut, Ud, Ux,
                                               Psi, Psid, Psix);
 
     TacsScalar product;
     TacsScalar dfdX[3], dfdUx[2*MAX_VARS_PER_NODE], dfdPsix[2*MAX_VARS_PER_NODE];
-    model->evalWeakAdjXptSensProduct(elemIndex, n, time, pt, X,
+    model->evalWeakAdjXptSensProduct(elemIndex, time, n, pt, X,
                                      Ut, Ux, Psi, Psix, &product,
                                      dfdX, dfdUx, dfdPsix);
 
@@ -260,7 +260,7 @@ void TACSElement2D::addAdjResXptProduct( int elemIndex,
     // Compute the derivative of the determinant of the transformation
     TacsScalar dfddetJ = scale*weight*product;
 
-    basis->addFieldGradientXptSens(pt, Xpts, vars_per_node, Xd, J, Ud, Psid,
+    basis->addFieldGradientXptSens(n, pt, Xpts, vars_per_node, Xd, J, Ud, Psid,
                                    dfddetJ, dfdX, NULL, NULL, dfdUx, dfdPsix,
                                    dfdXpts);
   }
@@ -270,40 +270,162 @@ void TACSElement2D::addAdjResXptProduct( int elemIndex,
   Compute a specific type of element matrix (mass, stiffness, geometric
   stiffness, etc.)
 */
-void TACSElement2D::getMatType( int elemIndex,
-                                ElementMatrixType matType,
+void TACSElement2D::getMatType( ElementMatrixType matType,
+                                int elemIndex,
+                                double time,
                                 const TacsScalar Xpts[],
                                 const TacsScalar vars[],
-                                TacsScalar mat[] ){}
+                                TacsScalar mat[] ){
+  // Zero the element matrix
+  const int nvars = getNumVariables();
+  memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
+
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumQuadraturePoints();
+  const int vars_per_node = model->getVarsPerNode();
+
+  // Loop over each quadrature point and add the residual contribution
+  for ( int n = 0; n < nquad; n++ ){
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the solution field and the solution field gradient and the
+    // Jacobian transformation
+    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar Ut[3*MAX_VARS_PER_NODE];
+    TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                              vars, NULL, NULL, X, Xd, J,
+                                              Ut, Ud, Ux);
+
+    // Multiply the weight by the quadrature point
+    detJ *= weight;
+
+    // Evaluate the weak form of the model
+    int Jac_nnz;
+    const int *Jac_pairs;
+    TacsScalar Jac[25*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
+    model->evalWeakMatrix(matType, elemIndex, time, n, pt, X, Ut, Ux,
+                          &Jac_nnz, &Jac_pairs, Jac);
+
+    // Add the weak form of the residual at this point
+    double alpha = 1.0, beta = 1.0, gamma = 1.0;
+    basis->addWeakFormJacobian(n, pt, detJ, J, vars_per_node,
+                               NULL, NULL, alpha, beta, gamma,
+                               Jac_nnz, Jac_pairs, Jac, NULL, mat);
+  }
+}
 
 /**
   Add the derivative of the product of a specific matrix w.r.t.
   the design variables
 */
-void TACSElement2D::addMatDVSensInnerProduct( int elemIndex,
-                                              ElementMatrixType matType,
+void TACSElement2D::addMatDVSensInnerProduct( ElementMatrixType matType,
+                                              int elemIndex,
+                                              double time,
                                               TacsScalar scale,
                                               const TacsScalar psi[],
                                               const TacsScalar phi[],
                                               const TacsScalar Xpts[],
                                               const TacsScalar vars[],
-                                              int dvLen, TacsScalar dvSens[] ){}
+                                              int dvLen,
+                                              TacsScalar dfdx[] ){
+
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumQuadraturePoints();
+  const int vars_per_node = model->getVarsPerNode();
+
+  // Loop over each quadrature point and add the residual contribution
+  for ( int n = 0; n < nquad; n++ ){
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the solution field and the solution field gradient and the
+    // Jacobian transformation
+    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar Ut[3*MAX_VARS_PER_NODE];
+    TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+    TacsScalar Psit[3*MAX_VARS_PER_NODE];
+    TacsScalar Psid[2*MAX_VARS_PER_NODE], Psix[2*MAX_VARS_PER_NODE];
+    TacsScalar Phit[3*MAX_VARS_PER_NODE];
+    TacsScalar Phid[2*MAX_VARS_PER_NODE], Phix[2*MAX_VARS_PER_NODE];
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                              vars, NULL, NULL, X, Xd, J,
+                                              Ut, Ud, Ux);
+    basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                            psi, NULL, NULL, X, Xd, J,
+                            Psit, Psid, Psix);
+    basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                            phi, NULL, NULL, X, Xd, J,
+                            Phit, Phid, Phix);
+
+    // Multiply by the quadrature weight
+    TacsScalar s = scale*weight*detJ;
+
+    model->addWeakMatDVSens(matType, elemIndex, time, s, n, pt, X, Ut, Ux,
+                            Psit, Psix, Phit, Phix, dvLen, dfdx);
+  }
+}
 
 /**
   Compute the derivative of the product of a specific matrix w.r.t.
   the input variables (vars).
 */
-void TACSElement2D::getMatSVSensInnerProduct( int elemIndex,
-                                              ElementMatrixType matType,
+void TACSElement2D::getMatSVSensInnerProduct( ElementMatrixType matType,
+                                              int elemIndex,
+                                              double time,
                                               const TacsScalar psi[],
                                               const TacsScalar phi[],
                                               const TacsScalar Xpts[],
                                               const TacsScalar vars[],
-                                              TacsScalar res[] ){}
+                                              TacsScalar dfdu[] ){
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumQuadraturePoints();
+  const int vars_per_node = model->getVarsPerNode();
 
-  /**
-    Evaluate a point-wise quantity of interest.
-  */
+  // Loop over each quadrature point and add the residual contribution
+  for ( int n = 0; n < nquad; n++ ){
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the solution field and the solution field gradient and the
+    // Jacobian transformation
+    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar Ut[3*MAX_VARS_PER_NODE];
+    TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+    TacsScalar Psit[3*MAX_VARS_PER_NODE];
+    TacsScalar Psid[2*MAX_VARS_PER_NODE], Psix[2*MAX_VARS_PER_NODE];
+    TacsScalar Phit[3*MAX_VARS_PER_NODE];
+    TacsScalar Phid[2*MAX_VARS_PER_NODE], Phix[2*MAX_VARS_PER_NODE];
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                              vars, NULL, NULL, X, Xd, J,
+                                              Ut, Ud, Ux);
+    basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                            psi, NULL, NULL, X, Xd, J,
+                            Psit, Psid, Psix);
+    basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                            phi, NULL, NULL, X, Xd, J,
+                            Phit, Phid, Phix);
+
+    // Multiply by the quadrature weight
+    TacsScalar scale = weight*detJ;
+
+    TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
+    model->evalWeakMatSVSens(matType, elemIndex, time, scale, n, pt, X, Ut, Ux,
+                             Psit, Psix, Phit, Phix, dfdUt, dfdUx);
+
+    // Add the field gradient
+    basis->addFieldGradientSVSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
+                                  dfdUt, dfdUx, dfdu);
+  }
+}
+
+/**
+  Evaluate a point-wise quantity of interest.
+*/
 int TACSElement2D::evalPointQuantity( int elemIndex,
                                       int quantityType,
                                       double time,
@@ -317,7 +439,7 @@ int TACSElement2D::evalPointQuantity( int elemIndex,
   TacsScalar X[3], Xd[4], J[4];
   TacsScalar Ut[3*MAX_VARS_PER_NODE];
   TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+  basis->getFieldGradient(n, pt, Xpts, vars_per_node, vars, dvars, ddvars,
                           X, Xd, J, Ut, Ud, Ux);
 
   return model->evalPointQuantity(elemIndex, quantityType, time, n, pt,
@@ -342,7 +464,7 @@ void TACSElement2D::addPointQuantityDVSens( int elemIndex,
   TacsScalar X[3], Xd[4], J[4];
   TacsScalar Ut[3*MAX_VARS_PER_NODE];
   TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+  basis->getFieldGradient(n, pt, Xpts, vars_per_node, vars, dvars, ddvars,
                           X, Xd, J, Ut, Ud, Ux);
 
   model->addPointQuantityDVSens(elemIndex, quantityType, time, scale, n, pt,
@@ -369,7 +491,7 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
   TacsScalar X[3], Xd[4], J[4];
   TacsScalar Ut[3*MAX_VARS_PER_NODE];
   TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+  basis->getFieldGradient(n, pt, Xpts, vars_per_node, vars, dvars, ddvars,
                           X, Xd, J, Ut, Ud, Ux);
 
   // Evaluate the derivative of the function with respect to X, Ut, Ux
@@ -378,7 +500,7 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
-  basis->addFieldGradientSVSens(pt, Xpts, vars_per_node, Xd, J, Ud,
+  basis->addFieldGradientSVSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
                                 dfdUt, dfdUx, dfdu);
 }
 
@@ -400,7 +522,7 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
   TacsScalar X[3], Xd[4], J[4];
   TacsScalar Ut[3*MAX_VARS_PER_NODE];
   TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-  basis->getFieldGradient(pt, Xpts, vars_per_node, vars, dvars, ddvars,
+  basis->getFieldGradient(n, pt, Xpts, vars_per_node, vars, dvars, ddvars,
                           X, Xd, J, Ut, Ud, Ux);
 
   // Evaluate the derivative of the function with respect to X, Ut, Ux
@@ -409,7 +531,7 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
-  basis->addFieldGradientXptSens(pt, Xpts, vars_per_node, Xd, J, Ud,
+  basis->addFieldGradientXptSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
                                  0.0, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
 }
 
@@ -437,7 +559,7 @@ void TACSElement2D::getOutputData( int elemIndex,
     TacsScalar X[3], Xd[4], J[4];
     TacsScalar Ut[3*MAX_VARS_PER_NODE];
     TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-    basis->getFieldGradient(pt, Xpts, vars_per_node,
+    basis->getFieldGradient(-1, pt, Xpts, vars_per_node,
                             vars, dvars, ddvars,
                             X, Xd, J, Ut, Ud, Ux);
 

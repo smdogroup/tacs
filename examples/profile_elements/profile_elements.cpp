@@ -1,61 +1,57 @@
-// Include the shell element classes
-#include "isoFSDTStiffness.h"
-#include "MITCShell.h"
-#include "MITC9.h"
+#include "TACSElementVerification.h"
 
-// Include the plane stress classes
-#include "PlaneStressStiffness.h"
-#include "PlaneStressQuad.h"
-#include "PlaneStressTri6.h"
+// Include the models
+#include "TACSLinearElasticity.h"
+#include "TACSHeatConduction.h"
+#include "TACSThermoelasticity.h"
+#include "TACSPlateModel.h"
+#include "TACSThermoelasticPlateModel.h"
+#include "TACSNeohookean.h"
 
-// Include the solid/3D element classes
-#include "SolidStiffness.h"
-#include "Solid.h"
+// Include the constitutive classes
+#include "TACSSolidConstitutive.h"
+#include "TACSPlaneStressConstitutive.h"
+#include "TACSSolidConstitutive.h"
 
-// Include the multibody dynamics code
-#include "RigidBody.h"
-#include "KinematicConstraints.h"
+// Include the basis functions
+#include "TACSHexaBasis.h"
+#include "TACSTetrahedralBasis.h"
+#include "TACSQuadBasis.h"
+#include "TACSTriangularBasis.h"
 
-/*
-  Generate a random array of values
-*/
-static void generate_random_array( TacsScalar *array, int size,
-                                   TacsScalar lower=-1.0,
-                                   TacsScalar upper=1.0 ){
-  for ( int i = 0; i < size; i++ ){
-    array[i] = (upper - lower)*(rand()/((double)RAND_MAX+1)) + lower;
-  }
-}
+// Include the element classes
+#include "TACSElement3D.h"
+#include "TACSElement2D.h"
 
 /*
   Apply all the tests to the element
 */
 void test_element( TACSElement *element,
+                   int elemIndex,
                    double time,
                    const TacsScalar Xpts[],
                    const TacsScalar vars[],
                    const TacsScalar dvars[],
-                   const TacsScalar ddvars[],
-                   int dvLen ){
+                   const TacsScalar ddvars[] ){
+  // Get the design variable numbers
+  int dvLen = element->getDesignVarNums(elemIndex, 0, NULL);
   TacsScalar *x = new TacsScalar[ dvLen ];
-
-  // Get the design variables from the element
-  element->getDesignVars(x, dvLen);
+  element->getDesignVars(elemIndex, dvLen, x);
 
   // Test the element
-  TACSElement::setStepSize(1e-5);
 #ifdef TACS_USE_COMPLEX
-  TACSElement::setStepSize(1e-30);
+  double dh = 1e-30;
+#else
+  double dh = 1e-5;
 #endif
-  element->testResidual(time, Xpts, vars, dvars, ddvars);
-  element->testJacobian(time, Xpts, vars, dvars, ddvars);
-  element->testAdjResProduct(x, dvLen, time, Xpts, vars, dvars, ddvars);
-  element->testAdjResXptProduct(time, Xpts, vars, dvars, ddvars);
-  element->testStrainSVSens(Xpts, vars);
-  element->testStrainXptSens(Xpts, vars);
-  element->testJacobianXptSens(Xpts);
-  element->testMatDVSensInnerProduct(STIFFNESS_MATRIX, x, dvLen, Xpts, vars);
-  element->testMatDVSensInnerProduct(MASS_MATRIX, x, dvLen, Xpts, vars);
+  // TacsTestElementResidual(element, elemIndex, time, Xpts, vars, dvars, ddvars, dh);
+  TacsTestElementJacobian(element, elemIndex, time, Xpts, vars, dvars, ddvars, -1, dh);
+  TacsTestAdjResProduct(element, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x, dh);
+  TacsTestAdjResXptProduct(element, elemIndex, time, Xpts, vars, dvars, ddvars, dh);
+  TacsTestElementMatDVSens(element, TACS_MASS_MATRIX, elemIndex, time, Xpts, vars, dvLen, x, dh);
+  TacsTestElementMatDVSens(element, TACS_STIFFNESS_MATRIX, elemIndex, time, Xpts, vars, dvLen, x, dh);
+  TacsTestElementMatDVSens(element, TACS_GEOMETRIC_STIFFNESS_MATRIX, elemIndex, time, Xpts, vars, dvLen, x, dh);
+  TacsTestElementMatSVSens(element, TACS_GEOMETRIC_STIFFNESS_MATRIX, elemIndex, time, Xpts, vars, dh);
 
   delete [] x;
 }
@@ -80,11 +76,12 @@ int main( int argc, char *argv[] ){
     ename = argv[1];
   }
 
-  const int MAX_NODES = 27;
+  const int MAX_NODES = 64;
   const int MAX_VARS_PER_NODE = 8;
   const int MAX_VARS = MAX_NODES*MAX_VARS_PER_NODE;
 
   // Set the simulation time
+  int elemIndex = 0;
   double time = 0.0;
 
   // Set the variable arrays
@@ -92,317 +89,101 @@ int main( int argc, char *argv[] ){
   TacsScalar vars[MAX_VARS], dvars[MAX_VARS], ddvars[MAX_VARS];
 
   // Generate random arrays
-  generate_random_array(Xpts, 3*MAX_NODES, 0.0, 1.0);
-  generate_random_array(vars, MAX_VARS);
-  generate_random_array(dvars, MAX_VARS);
-  generate_random_array(ddvars, MAX_VARS);
+  TacsGenerateRandomArray(Xpts, 3*MAX_NODES, 0.0, 1.0);
+  TacsGenerateRandomArray(vars, MAX_VARS);
+  TacsGenerateRandomArray(dvars, MAX_VARS);
+  TacsGenerateRandomArray(ddvars, MAX_VARS);
 
-  // Set the tolerances depending on whether we're using complex step
-  // or not...
-#ifdef TACS_USE_COMPLEX
-  TACSElement::setFailTolerances(1e-1, 1e-12);
-#else
-  TACSElement::setFailTolerances(1e-1, 1e-5);
-#endif
+  // Create the isotropic material class
+  TacsScalar rho = 2700.0;
+  TacsScalar specific_heat = 921.096;
+  TacsScalar E = 70e3;
+  TacsScalar nu = 0.3;
+  TacsScalar ys = 270.0;
+  TacsScalar cte = 24.0e-6;
+  TacsScalar kappa = 230.0;
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+  props->incref();
 
-  // Set the print level
-  TACSElement::setPrintLevel(2);
-
-  // Set up the constitutive relationship
-  TacsScalar rho = 2700.0, E = 35e4, nu = 0.3, kcorr = 0.8333;
-  TacsScalar ys = 434.0e6, t = 0.01;
-
-  // Set the parameter values from the command line
-  for ( int i = 0; i < argc; i++ ){
-    double Ec = 0.0, rhoc = 0.0;
-    if (sscanf(argv[i], "E=%lf", &Ec)){
-      if (Ec >= 0.0){
-        E = Ec;
-        printf("E = %g\n", TacsRealPart(E));
-      }
-    }
-    if (sscanf(argv[i], "rho=%lf", &rhoc)){
-      if (rhoc >= 0.0){
-        rho = rhoc;
-        printf("rho = %g\n", TacsRealPart(rho));
-      }
-    }
+  // Create the basis functions for 3D
+  const int NUM_3D_BASIS = 5;
+  TACSElementBasis *basis3d[NUM_3D_BASIS];
+  basis3d[0] = new TACSLinearTetrahedralBasis();
+  basis3d[1] = new TACSQuadraticTetrahedralBasis();
+  basis3d[2] = new TACSLinearHexaBasis();
+  basis3d[3] = new TACSQuadraticHexaBasis();
+  basis3d[4] = new TACSCubicHexaBasis();
+  for ( int i = 0; i < NUM_3D_BASIS; i++ ){
+    basis3d[i]->incref();
   }
 
-  int dv_num = 14;
-  int num_design_vars = dv_num+1;
-  FSDTStiffness *fsdt = new isoFSDTStiffness(rho, E, nu, kcorr, ys, t,
-                                             dv_num);
-  fsdt->incref();
-  TacsScalar axis[3] = {1.0, -1.0, 0.5};
-  fsdt->setRefAxis(axis);
-
-  // Allocate and test all the different types of shell elements
-  TACSElement *shell = NULL;
-  shell = new MITCShell<2>(fsdt, LINEAR);  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  // Create the basis functions for 2D
+  const int NUM_2D_BASIS = 5;
+  TACSElementBasis *basis2d[NUM_3D_BASIS];
+  basis2d[0] = new TACSLinearTriangleBasis();
+  basis2d[1] = new TACSQuadraticTriangleBasis();
+  basis2d[2] = new TACSLinearQuadBasis();
+  basis2d[3] = new TACSQuadraticQuadBasis();
+  basis2d[4] = new TACSCubicQuadBasis();
+  for ( int i = 0; i < NUM_2D_BASIS; i++ ){
+    basis2d[i]->incref();
   }
-  shell->decref();
 
-  shell = new MITCShell<3>(fsdt, LINEAR);  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  // Create stiffness (need class)
+  TACSSolidConstitutive *con3d = new TACSSolidConstitutive(props, 1.0, 0);
+  con3d->incref();
+
+  TACSPlaneStressConstitutive *con2d = new TACSPlaneStressConstitutive(props, 1.0, 0);
+  con2d->incref();
+
+  TACSShellConstitutive *conShell = new TACSShellConstitutive(props, 1.0, 0);
+  conShell->incref();
+
+  // Set the model type
+  const int NUM_3D_MODELS = 5;
+  TACSElementModel *model3d[NUM_3D_MODELS];
+  model3d[0] = new TACSHeatConduction3D(con3d);
+  model3d[1] = new TACSLinearElasticity3D(con3d, TACS_LINEAR_STRAIN);
+  model3d[2] = new TACSLinearElasticity3D(con3d, TACS_NONLINEAR_STRAIN);
+  model3d[3] = new TACSLinearThermoelasticity3D(con3d, TACS_LINEAR_STRAIN);
+  model3d[4] = new TACSNeohookean3D(2.34, 5.73);
+  for ( int i = 0; i < NUM_3D_MODELS; i++ ){
+    model3d[i]->incref();
   }
-  shell->decref();
 
-  // Nonlinear elements
-  shell = new MITCShell<2>(fsdt, NONLINEAR);  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
+  const int NUM_2D_MODELS = 6;
+  TACSElementModel *model2d[NUM_2D_MODELS];
+  model2d[0] = new TACSHeatConduction2D(con2d);
+  model2d[1] = new TACSLinearElasticity2D(con2d, TACS_LINEAR_STRAIN);
+  model2d[2] = new TACSLinearElasticity2D(con2d, TACS_NONLINEAR_STRAIN);
+  model2d[3] = new TACSLinearThermoelasticity2D(con2d, TACS_LINEAR_STRAIN);
+  model2d[4] = new TACSPlateModel(conShell);
+  model2d[5] = new TACSThermoelasticPlateModel(conShell);
+  for ( int i = 0; i < NUM_2D_MODELS; i++ ){
+    model2d[i]->incref();
   }
-  shell->decref();
 
-  shell = new MITCShell<3>(fsdt, NONLINEAR);  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  shell->decref();
-
-  // Large rotation elements
-  shell = new MITCShell<2>(fsdt, LARGE_ROTATION);  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  shell->decref();
-
-  shell = new MITCShell<3>(fsdt, LARGE_ROTATION);  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  shell->decref();
-
-  // Normalize the variables for unit quaternions
-  for ( int i = 0; i < MAX_NODES; i++ ){
-    vars[8*i+7] = 0.0;
-    TacsScalar *v = &vars[8*i+3];
-    TacsScalar fact =
-      1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
-    for ( int j = 0; j < 4; j++ ){
-      v[j] *= fact;
+  for ( int j = 0; j < NUM_3D_MODELS; j++ ){
+    for ( int i = 0; i < NUM_3D_BASIS; i++ ){
+      printf("Testing with model %s with basis functions %s\n",
+             model3d[j]->getObjectName(), basis3d[i]->getObjectName());
+      TACSElement *element = new TACSElement3D(model3d[j], basis3d[i]);
+      element->incref();
+      test_element(element, elemIndex, time, Xpts, vars, dvars, ddvars);
+      element->decref();
     }
   }
 
-  MITC9 *mitc9 = new MITC9(fsdt);
-  shell = mitc9;
-  shell->incref();
-  if (!ename || strcmp(ename, shell->elementName()) == 0){
-    test_element(shell, time, Xpts, vars, dvars, ddvars, num_design_vars);
-    // mitc9->testStrain(Xpts);
-  }
-  shell->decref();
-  fsdt->decref();
-
-  // Set the variables back to a random array
-  generate_random_array(dvars, MAX_VARS);
-
-  // Allocate the plane stress stiffness object
-  PlaneStressStiffness *ps = new PlaneStressStiffness(rho, E, nu);
-  ps->incref();
-
-  TACSElement *elem = NULL;
-
-  elem = new PlaneStressTri6(ps);  elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new PlaneStressQuad<2>(ps);  elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new PlaneStressQuad<3>(ps);  elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new PlaneStressTri6(ps, NONLINEAR);  elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new PlaneStressQuad<2>(ps, NONLINEAR);  elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new PlaneStressQuad<3>(ps, NONLINEAR);  elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-  ps->decref();
-
-  // Create the solid stiffness classes
-  SolidStiffness *stiff = new SolidStiffness(rho, E, nu, ys);
-  stiff->incref();
-
-  elem = new Solid<2>(stiff); elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new Solid<3>(stiff); elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new Solid<2>(stiff, NONLINEAR); elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-
-  elem = new Solid<3>(stiff, NONLINEAR); elem->incref();
-  if (!ename || strcmp(ename, elem->elementName()) == 0){
-    test_element(elem, time, Xpts, vars, dvars, ddvars, num_design_vars);
-  }
-  elem->decref();
-  stiff->decref();
-
-  // Test the rigid body code within TACS
-
-  if (!ename || strcmp(ename, "Rigid") == 0){
-    // Generate a random arrary of variables conforming to the
-    // quaternion constraint
-    generate_random_array(vars, MAX_VARS);
-    generate_random_array(dvars, MAX_VARS);
-    generate_random_array(ddvars, MAX_VARS);
-    for ( int i = 0; i < MAX_NODES; i++ ){
-      vars[8*i+7] = 0.0;
-      TacsScalar *v = &vars[8*i+3];
-
-      // Normalize the quaternion constraints
-      TacsScalar fact =
-        1.0/sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
-      for ( int j = 0; j < 4; j++ ){
-        v[j] *= fact;
-      }
+  for ( int j = 0; j < NUM_2D_MODELS; j++ ){
+    for ( int i = 0; i < NUM_2D_BASIS; i++ ){
+      printf("Testing with model %s with basis functions %s\n",
+             model2d[j]->getObjectName(), basis2d[i]->getObjectName());
+      TACSElement *element = new TACSElement2D(model2d[j], basis2d[i]);
+      element->incref();
+      test_element(element, elemIndex, time, Xpts, vars, dvars, ddvars);
+      element->decref();
     }
-
-    // The acceleration due to gravity in global frame of reference
-    TACSGibbsVector *gravVec = new TACSGibbsVector(19.0, 10.0, -9.8);
-
-    // Construct the frame of reference
-    TACSGibbsVector *rAInitVec = new TACSGibbsVector(5.2, 5.3, 5.4);
-    TACSGibbsVector *rA1Vec = new TACSGibbsVector(5.2+1.0, 5.3, 5.4);
-    TACSGibbsVector *rA2Vec = new TACSGibbsVector(5.2, 5.3+1.0, 5.4);
-    TACSRefFrame *refFrameA = new TACSRefFrame(rAInitVec, rA1Vec, rA2Vec);
-
-    // Define the inertial properties
-    const TacsScalar mA    = 6.0;
-    const TacsScalar cA[3] = {20.0, 14.0, 42.0};
-    const TacsScalar JA[6] = {1.0, 0.8, -0.7,
-                              2.0, 1.4,
-                              3.0};
-    // Construct a rigid body
-    TACSRigidBody *bodyA = new TACSRigidBody(refFrameA,
-                                             mA, cA, JA,
-                                             rAInitVec, rAInitVec, rAInitVec,
-                                             gravVec);
-    bodyA->incref();
-    test_element(bodyA, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the motion driver element
-    TACSGibbsVector *dir = new TACSGibbsVector(0.0, 0.0, 0.1);
-    TacsScalar omega = 0.25; // rad/s
-    TACSMotionDriver *mDriver =
-      new TACSMotionDriver(dir, omega);
-    mDriver->incref();
-    test_element(mDriver, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the revolute constraint
-    TACSGibbsVector *point = new TACSGibbsVector(0.5, 1.0, -2.5);
-    TACSGibbsVector *eRev = new TACSGibbsVector(1.0, -1.0, 1.0);
-    TACSRevoluteConstraint *rev =
-      new TACSRevoluteConstraint(bodyA, point, eRev);
-    rev->incref();
-    test_element(rev, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the cylindrical constraint
-    TACSCylindricalConstraint *cyl =
-      new TACSCylindricalConstraint(bodyA, point, eRev);
-    cyl->incref();
-    test_element(cyl, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the fixed constraint
-    TACSFixedConstraint *fix = new TACSFixedConstraint(bodyA, point);
-    fix->incref();
-    test_element(fix, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the spherical constraint
-    TACSSphericalConstraint *ball = new TACSSphericalConstraint(bodyA, point);
-    ball->incref();
-    test_element(ball, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the rigid link code
-    TACSRigidLink *rlink = new TACSRigidLink(bodyA);
-    rlink->incref();
-
-    // Test the rigid link
-    test_element(rlink, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Define the inertial properties
-    const TacsScalar mB    = 2.0;
-    const TacsScalar cB[3] = {2.0, 3.0, 4.0};
-    const TacsScalar JB[6] = {2.0, 0.60, 0.7,
-                              3.0, 0.80,
-                              4.0};
-
-    // Define dynamics properties
-    TACSGibbsVector *rBInitVec = new TACSGibbsVector(3.2, 3.2, 4.3);
-    TACSGibbsVector *rB1Vec = new TACSGibbsVector(3.2+1.0, 3.2, 4.3);
-    TACSGibbsVector *rB2Vec = new TACSGibbsVector(3.2, 3.2+1.0, 4.3);
-    TACSRefFrame *refFrameB = new TACSRefFrame(rBInitVec, rB1Vec, rB2Vec);
-
-    // Construct a rigid body
-    TACSRigidBody *bodyB = new TACSRigidBody(refFrameB,
-                                             mB, cB, JB,
-                                             rBInitVec, rBInitVec, rBInitVec,
-                                             gravVec);
-    bodyB->incref();
-
-    // Test the revolute constraint
-    TACSRevoluteConstraint *rev2 =
-      new TACSRevoluteConstraint(bodyA, bodyB, point, eRev);
-    rev2->incref();
-    test_element(rev2, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the revolute constraint
-    TACSCylindricalConstraint *cyl2 =
-      new TACSCylindricalConstraint(bodyA, bodyB, point, eRev);
-    cyl2->incref();
-    test_element(cyl2, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Test the spherical constraint
-    TACSSphericalConstraint *ball2 =
-      new TACSSphericalConstraint(bodyA, bodyB, point);
-    ball2->incref();
-    test_element(ball2, time, Xpts, vars, dvars, ddvars, num_design_vars);
-
-    // Decref everything
-    cyl->decref();
-    fix->decref();
-    rev->decref();
-    ball->decref();
-    bodyA->decref();
-    rev2->decref();
-    ball2->decref();
-    bodyB->decref();
-    rlink->decref();
   }
 
   MPI_Finalize();

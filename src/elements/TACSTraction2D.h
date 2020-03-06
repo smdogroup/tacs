@@ -69,7 +69,6 @@ class TACSTraction2D : public TACSElement {
                             const TacsScalar vars[], const TacsScalar dvars[],
                             const TacsScalar ddvars[], TacsScalar fXptSens[] );
 
-
  private:
   int varsPerNode, faceIndex;
   TACSElementBasis *basis;

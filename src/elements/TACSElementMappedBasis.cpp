@@ -143,7 +143,7 @@ void TACSElementMappedBasis::addFaceNormalXptSens( int face, int n,
                                                    const TacsScalar dfdn[],
                                                    TacsScalar dfdXpts[] ){}
 
-TacsScalar TACSElementMappedBasis::getJacobianTransform( const double pt[],
+TacsScalar TACSElementMappedBasis::getJacobianTransform( int n, const double pt[],
                                                          const TacsScalar Xpts[],
                                                          TacsScalar Xd[],
                                                          TacsScalar J[] ){
@@ -219,7 +219,7 @@ TacsScalar TACSElementMappedBasis::computeMappedJacobianTransform( const int num
   return 0.0;
 }
 
-void TACSElementMappedBasis::addJacobianTransformXptSens( const double pt[],
+void TACSElementMappedBasis::addJacobianTransformXptSens( int n, const double pt[],
                                                           const TacsScalar Xd[],
                                                           const TacsScalar J[],
                                                           TacsScalar dfddetJ,

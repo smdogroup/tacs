@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 #include "TACSParallelMat.h"
-#include "FElibrary.h"
 #include "tacslapack.h"
 
 /*!

@@ -105,6 +105,7 @@ cdef extern from "TACSLinearElasticity.h":
     cdef cppclass TACSLinearElasticity3D(TACSElementModel):
         TACSLinearElasticity3D(TACSSolidConstitutive*,
                                ElementStrainType)
+        TACSSolidConstitutive* getConstitutive()
 
 cdef extern from "TACSThermoelasticity.h":
     cdef cppclass TACSLinearThermoelasticity2D(TACSElementModel):
@@ -114,6 +115,14 @@ cdef extern from "TACSThermoelasticity.h":
     cdef cppclass TACSLinearThermoelasticity3D(TACSElementModel):
         TACSLinearThermoelasticity3D(TACSSolidConstitutive*,
                                      ElementStrainType)
+
+cdef extern from "TACSPlateModel.h":
+    cdef cppclass TACSPlateModel(TACSElementModel):
+        TACSPlateModel(TACSShellConstitutive*)
+
+cdef extern from "TACSThermoelasticPlateModel.h":
+    cdef cppclass TACSThermoelasticPlateModel(TACSElementModel):
+        TACSThermoelasticPlateModel(TACSShellConstitutive*)
 
 cdef extern from "TACSElement2D.h":
     cdef cppclass TACSElement2D(TACSElement):

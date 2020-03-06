@@ -42,7 +42,7 @@
 */
 class TACSLinearBuckling : public TACSObject {
  public:
-  TACSLinearBuckling( TACSAssembler *_tacs,
+  TACSLinearBuckling( TACSAssembler *_assembler,
                       TacsScalar _sigma,
                       TACSMat *_gmat, TACSMat *_kmat,
                       TACSMat *_aux_mat, TACSKsm *_solver,
@@ -52,7 +52,7 @@ class TACSLinearBuckling : public TACSObject {
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
-  TACSAssembler* getTACS(){ return tacs; }
+  TACSAssembler* getAssembler(){ return assembler; }
 
   // Functions to set the shift value
   // --------------------------------
@@ -80,7 +80,7 @@ class TACSLinearBuckling : public TACSObject {
   SEP *sep;
 
   // The tacs object
-  TACSAssembler *tacs;
+  TACSAssembler *assembler;
 
   // Tolerances/required number of eigenvalues
   int max_lanczos_vecs;
@@ -123,13 +123,13 @@ class TACSLinearBuckling : public TACSObject {
 */
 class TACSFrequencyAnalysis : public TACSObject {
  public:
-  TACSFrequencyAnalysis( TACSAssembler *_tacs,
+  TACSFrequencyAnalysis( TACSAssembler *_assembler,
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
                          TACSKsm *_solver, int max_lanczos,
                          int num_eigvals, double _eig_tol );
 
-  TACSFrequencyAnalysis( TACSAssembler *_tacs,
+  TACSFrequencyAnalysis( TACSAssembler *_assembler,
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
                          TACSMat *_pcmat, TACSPc *_pc,
@@ -145,7 +145,7 @@ class TACSFrequencyAnalysis : public TACSObject {
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
-  TACSAssembler* getTACS(){ return tacs; }
+  TACSAssembler* getAssembler(){ return assembler; }
 
   // Solve the generalized eigenvalue problem
   // ----------------------------------------
@@ -163,7 +163,7 @@ class TACSFrequencyAnalysis : public TACSObject {
 
  private:
   // The TACS assembler object
-  TACSAssembler *tacs;
+  TACSAssembler *assembler;
 
   // The matrices used in the analysis
   TACSMat *mmat; // The mass matrix

@@ -90,6 +90,31 @@ OUTPUT_STRAINS = TACS_OUTPUT_STRAINS
 OUTPUT_STRESSES = TACS_OUTPUT_STRESSES
 OUTPUT_EXTRAS = TACS_OUTPUT_EXTRAS
 
+LAYOUT_NONE = TACS_LAYOUT_NONE
+POINT_ELEMENT = TACS_POINT_ELEMENT
+LINE_ELEMENT = TACS_LINE_ELEMENT
+LINE_QUADRATIC_ELEMENT = TACS_LINE_QUADRATIC_ELEMENT
+LINE_CUBIC_ELEMENT = TACS_LINE_CUBIC_ELEMENT
+TRI_ELEMENT = TACS_TRI_ELEMENT
+TRI_QUADRATIC_ELEMENT = TACS_TRI_QUADRATIC_ELEMENT
+TRI_CUBIC_ELEMENT = TACS_TRI_CUBIC_ELEMENT
+QUAD_ELEMENT = TACS_QUAD_ELEMENT
+QUAD_QUADRATIC_ELEMENT = TACS_QUAD_QUADRATIC_ELEMENT
+QUAD_CUBIC_ELEMENT = TACS_QUAD_CUBIC_ELEMENT
+QUAD_QUARTIC_ELEMENT = TACS_QUAD_QUARTIC_ELEMENT
+QUAD_QUINTIC_ELEMENT = TACS_QUAD_QUINTIC_ELEMENT
+TETRA_ELEMENT = TACS_TETRA_ELEMENT
+TETRA_QUADRATIC_ELEMENT = TACS_TETRA_QUADRATIC_ELEMENT
+TETRA_CUBIC_ELEMENT = TACS_TETRA_CUBIC_ELEMENT
+HEXA_ELEMENT = TACS_HEXA_ELEMENT
+HEXA_QUADRATIC_ELEMENT = TACS_HEXA_QUADRATIC_ELEMENT
+HEXA_CUBIC_ELEMENT = TACS_HEXA_CUBIC_ELEMENT
+HEXA_QUARTIC_ELEMENT = TACS_HEXA_QUARTIC_ELEMENT
+HEXA_QUINTIC_ELEMENT = TACS_HEXA_QUINTIC_ELEMENT
+PENTA_ELEMENT = TACS_PENTA_ELEMENT
+PENTA_QUADRATIC_ELEMENT = TACS_PENTA_QUADRATIC_ELEMENT
+PENTA_CUBIC_ELEMENT = TACS_PENTA_CUBIC_ELEMENT
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -788,7 +813,10 @@ cdef class Mg(Pc):
         return
 
     def assembleMatType(self, ElementMatrixType matType,
-                        MatrixOrientation matOr):
+                        MatrixOrientation matOr=NORMAL):
+        """
+        Assemble the given matrix type
+        """
         self.mg.assembleMatType(matType, matOr)
         return
 
@@ -874,6 +902,131 @@ cdef class KSM:
         if gmres_ptr != NULL:
             gmres_ptr.setTimeMonitor()
 
+cdef class JacobiDavidsonOperator:
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+cdef class JDSimpleOperator(JacobiDavidsonOperator):
+    def __cinit__(self, Assembler assembler, Mat mat, Pc pc):
+        self.ptr = new TACSJDSimpleOperator(assembler.ptr, mat.ptr, pc.ptr)
+        self.ptr.incref()
+        return
+
+cdef class JDFrequencyOperator(JacobiDavidsonOperator):
+    def __cinit__(self, Assembler assembler, Mat kmat, Mat mmat, Mat pcmat, Pc pc):
+        self.ptr = new TACSJDFrequencyOperator(assembler.ptr,
+                                               kmat.ptr, mmat.ptr, pcmat.ptr, pc.ptr)
+        self.ptr.incref()
+        return
+
+cdef class JacobiDavidson:
+    cdef TACSJacobiDavidson *ptr
+    def __cinit__(self, JacobiDavidsonOperator oper,
+                  num_eigenvalues=10, max_jd_size=20, max_gmres_size=30):
+        """
+        Create the Jacobi-Davidson solver object.
+
+        This problem class can be used to solve either simple or
+        generalized eigenvalue problems. Usually, the smallest
+        eigenvalues are sought, so the specification of desired the
+        spectrum has not been wrapped at this time.
+
+        Args:
+            oper (JacobiDavidsonOperator): The operator for the eigenvalue problem
+            num_eigenvalues (int): The number of desired eigenvalues
+            max_jd_size (int): The maximum size of the Jacobi-Davidson subspace
+            max_gmres_size (int): The maximum size of the GMRES suproblem subspace
+        """
+        self.ptr = new TACSJacobiDavidson(oper.ptr, num_eigenvalues,
+                                          max_jd_size, max_gmres_size)
+        self.ptr.incref()
+        return
+
+    def extractEigenvalue(self, int index):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvalue(index, &err)
+        return eigval, err
+
+    def extractEigenvector(self, int index, Vec vec):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            vec (Vec): The vector in which the eigenvector will be stored
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
+        return eigval, err
+
+    def solve(self, print_flag=False, freq=1):
+        """
+        Solve the eigenvalue problem using the Jacobi-Davidson method
+
+        Args:
+            print_flag (bool): Indicates whether to print output to stdout
+            freq (int): The frequency to print output
+        """
+        cdef MPI_Comm comm
+        cdef int rank
+        cdef KSMPrint *ksm_print = NULL
+
+        if print_flag:
+            comm = self.ptr.getMPIComm()
+            MPI_Comm_rank(comm, &rank)
+            ksm_print = new KSMPrintStdout("JD", rank, freq)
+            ksm_print.incref()
+
+        self.ptr.solve(ksm_print)
+        if ksm_print != NULL:
+            ksm_print.decref()
+
+        return
+
+    def setTolerance(self, eigtol=5e-7, eig_rtol=1e-6, eig_atol=1e-12):
+        """
+        Set the tolerances for the eigenvalue problem.
+
+        Usually the eigtol is the most important, whereas the GMRES
+        subproblem can be solved inaccurately, so fixed max_gmres_size
+        to a smaller value can be beneficial.
+
+        Args:
+            eigtol (float): Relative tolerance for the eigenvalue error
+            eig_rtol (float): Relative tolerance for the GMRES subproblem
+            eig_atol (float): Absolute tolerance for the GMRES subproblem
+        """
+        self.ptr.setTolerances(eigtol, eig_rtol, eig_atol)
+        return
+
+    def setRecycle(self, int num_recycle):
+        """
+        Set the number of eigenvectors to recycle from the previous iteration
+
+        Args:
+            num_recycle (int): The number of eigenvectors to recycle
+        """
+        self.ptr.setRecycle(num_recycle, JD_NUM_RECYCLE)
+        return
 
 cdef class Assembler:
     def __cinit__(self):
@@ -1758,7 +1911,98 @@ cdef class ToFH5:
         cdef char *filename = convert_to_chars(fname)
         self.ptr.writeToFile(filename)
 
-# Wrap the TACSCreator object
+cdef class FH5Loader:
+    cdef TACSFH5Loader *ptr
+    def __cinit__(self):
+        self.ptr = new TACSFH5Loader()
+        self.ptr.incref()
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def loadData(self, fname, datafile=None):
+        """
+        Load the data from a file
+        """
+        cdef char *filename = convert_to_chars(fname)
+        cdef char *dataname = NULL
+        if datafile is not None:
+            dataname = convert_to_chars(datafile)
+        self.ptr.loadData(filename, dataname)
+        return
+
+    def getNumComponents(self):
+        """
+        Return the number of components
+        """
+        return self.ptr.getNumComponents()
+
+    def getComponentName(self, int num):
+        """
+        Return the name of the specified component
+        """
+        cdef bytes py_string
+        py_string = self.ptr.getComponentName(num)
+        return convert_bytes_to_str(py_string)
+
+    def getConnectivity(self):
+        cdef int num_elems
+        cdef int *_comps
+        cdef int *_ltypes
+        cdef int *_ptr
+        cdef int *_conn
+        self.ptr.getConnectivity(&num_elems, &_comps, &_ltypes, &_ptr, &_conn)
+
+        cdef np.ndarray ptr = np.zeros(num_elems+1, dtype=np.intc)
+        cdef np.ndarray conn = np.zeros(_ptr[num_elems], dtype=np.intc)
+        cdef np.ndarray ltypes = np.zeros(num_elems, dtype=np.intc)
+        cdef np.ndarray comps = np.zeros(num_elems, dtype=np.intc)
+
+        ptr[0] = _ptr[0]
+        for i in range(num_elems):
+            comps[i] = _comps[i]
+            ltypes[i] = _ltypes[i]
+            ptr[i+1] = _ptr[i+1]
+
+        for i in range(ptr[num_elems]):
+            conn[i] = _conn[i]
+
+        return comps, ltypes, ptr, conn
+
+    def getContinuousData(self):
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int dim1 = 0
+        cdef int dim2 = 0
+        cdef float *data = NULL
+
+        self.ptr.getContinuousData(NULL, &_var_names, &dim1, &dim2, &data)
+        var_names = _var_names
+        cdef np.ndarray fdata = np.zeros((dim1, dim2), dtype=np.single)
+        for i in range(dim1):
+            for j in range(dim2):
+                fdata[i,j] = data[j + dim2*i]
+
+        return convert_bytes_to_str(var_names), fdata
+
+    def getElementData(self):
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int dim1 = 0
+        cdef int dim2 = 0
+        cdef float *data = NULL
+
+        self.ptr.getElementData(NULL, &_var_names, &dim1, &dim2, &data)
+        var_names = _var_names
+        cdef np.ndarray fdata = np.zeros((dim1, dim2), dtype=np.single)
+        for i in range(dim1):
+            for j in range(dim2):
+                fdata[i,j] = data[j + dim2*i]
+
+        return convert_bytes_to_str(var_names), fdata
+
+  # Wrap the TACSCreator object
 cdef class Creator:
     cdef TACSCreator *ptr
     def __cinit__(self, MPI.Comm comm, int vars_per_node):
@@ -2060,30 +2304,55 @@ cdef class FrequencyAnalysis:
         self.ptr.setSigma(sigma)
 
     def solve(self, print_flag=True, int freq=10):
+        """
+        Solve the natural frequency problem
+        """
         cdef MPI_Comm comm
         cdef int rank
         cdef TACSAssembler *assembler = NULL
         cdef KSMPrint *ksm_print = NULL
 
         if print_flag:
-            assembler = self.ptr.getTACS()
+            assembler = self.ptr.getAssembler()
             comm = assembler.getMPIComm()
             MPI_Comm_rank(comm, &rank)
             ksm_print = new KSMPrintStdout("FrequencyAnalysis", rank, freq)
+            ksm_print.incref()
 
         self.ptr.solve(ksm_print)
+        if ksm_print != NULL:
+            ksm_print.decref()
         return
 
-    def extractEigenvalue(self, int eig):
+    def extractEigenvalue(self, int index):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
         cdef TacsScalar err = 0.0
         cdef TacsScalar eigval = 0.0
-        eigval = self.ptr.extractEigenvalue(eig, &err)
+        eigval = self.ptr.extractEigenvalue(index, &err)
         return eigval, err
 
-    def extractEigenvector(self, int eig, Vec vec):
+    def extractEigenvector(self, int index, Vec vec):
+        """
+        Extract the eigenvalue with the specified index.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            vec (Vec): The vector in which the eigenvector will be stored
+
+        Returns:
+            (eigval, error): The eigenvalue and error estimate
+        """
         cdef TacsScalar err = 0.0
         cdef TacsScalar eigval = 0.0
-        eigval = self.ptr.extractEigenvector(eig, vec.ptr, &err)
+        eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
         return eigval, err
 
 cdef class BucklingAnalysis:
@@ -2123,7 +2392,7 @@ cdef class BucklingAnalysis:
             f = force.ptr
 
         if print_flag:
-            assembler = self.ptr.getTACS()
+            assembler = self.ptr.getAssembler()
             comm = assembler.getMPIComm()
             MPI_Comm_rank(comm, &rank)
             ksm_print = new KSMPrintStdout("BucklingAnalysis", rank, freq)

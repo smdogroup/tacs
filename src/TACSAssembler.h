@@ -438,7 +438,7 @@ class TACSAssembler : public TACSObject {
   class TACSAssemblerPthreadInfo {
   public:
     TACSAssemblerPthreadInfo(){
-      tacs = NULL;
+      assembler = NULL;
       res = NULL;
       mat = NULL;
       alpha = beta = gamma = 0.0;
@@ -457,7 +457,7 @@ class TACSAssembler : public TACSObject {
 
     // The data required to perform most of the matrix
     // assembly.
-    TACSAssembler *tacs;
+    TACSAssembler *assembler;
 
     // Information for residual assembly
     TACSBVec *res;

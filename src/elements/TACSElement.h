@@ -415,7 +415,8 @@ class TACSElement : public TACSObject {
     @param vars The values of element degrees of freedom
     @param mat The element matrix output
   */
-  virtual void getMatType( int elemIndex, ElementMatrixType matType,
+  virtual void getMatType( ElementMatrixType matType,
+                           int elemIndex, double time,
                            const TacsScalar Xpts[],
                            const TacsScalar vars[],
                            TacsScalar mat[] ){
@@ -431,24 +432,27 @@ class TACSElement : public TACSObject {
 
     where mat is computed via the getMatType().
 
-    @param elemIndex The local element index
     @param matType The type of element matrix to compute
+    @param elemIndex The local element index
+    @param time The simulation time
     @param scale The scalar value that multiplies the derivative
     @param psi The left-hand vector
     @param phi The right-hand vector
     @param Xpts The element node locations
     @param vars The values of element degrees of freedom
-    @param mat The element matrix output
+    @param dvLen The length of the element derivative
+    @param dfdx The element derivative
   */
-  virtual void addMatDVSensInnerProduct( int elemIndex,
-                                         ElementMatrixType matType,
+  virtual void addMatDVSensInnerProduct( ElementMatrixType matType,
+                                         int elemIndex,
+                                         double time,
                                          TacsScalar scale,
                                          const TacsScalar psi[],
                                          const TacsScalar phi[],
                                          const TacsScalar Xpts[],
                                          const TacsScalar vars[],
                                          int dvLen,
-                                         TacsScalar dvSens[] ){}
+                                         TacsScalar dfdx[] ){}
 
   /**
     Compute the derivative of the product of a specific matrix w.r.t.
@@ -458,23 +462,25 @@ class TACSElement : public TACSObject {
 
     where mat is computed via the getMatType().
 
-    @param elemIndex The local element index
     @param matType The type of element matrix to compute
+    @param elemIndex The local element index
+    @param time The simulation time
     @param psi The left-hand vector
     @param phi The right-hand vector
     @param Xpts The element node locations
     @param vars The values of element degrees of freedom
-    @param res The residual output The element matrix output
+    @param dfdu The residual output The element matrix output
   */
-  virtual void getMatSVSensInnerProduct( int elemIndex,
-                                         ElementMatrixType matType,
+  virtual void getMatSVSensInnerProduct( ElementMatrixType matType,
+                                         int elemIndex,
+                                         double time,
                                          const TacsScalar psi[],
                                          const TacsScalar phi[],
                                          const TacsScalar Xpts[],
                                          const TacsScalar vars[],
-                                         TacsScalar res[] ){
+                                         TacsScalar dfdu[] ){
     int size = getNumNodes()*getVarsPerNode();
-    memset(res, 0, size*sizeof(TacsScalar));
+    memset(dfdu, 0, size*sizeof(TacsScalar));
   }
 
   /**

@@ -17,7 +17,6 @@
 */
 
 #include "TACSBVec.h"
-#include "FElibrary.h"
 #include "tacslapack.h"
 
 /*
@@ -393,6 +392,7 @@ void TACSBVec::copyValues( TACSVec *tvec ){
     fprintf(stderr, "TACSBVec type error: Input must be TACSBVec\n");
   }
 }
+
 /*
   Zero all the entries in the vector
 */

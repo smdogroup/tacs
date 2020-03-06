@@ -279,6 +279,7 @@ void TACSLinearThermoelasticity2D::evalWeakJacobian( int elemIndex,
 */
 void TACSLinearThermoelasticity2D::addWeakAdjProduct( int elemIndex,
                                                       const double time,
+                                                      TacsScalar scale,
                                                       int n,
                                                       const double pt[],
                                                       const TacsScalar X[],
@@ -286,7 +287,6 @@ void TACSLinearThermoelasticity2D::addWeakAdjProduct( int elemIndex,
                                                       const TacsScalar Ux[],
                                                       const TacsScalar Psi[],
                                                       const TacsScalar Psix[],
-                                                      TacsScalar scale,
                                                       int dvLen,
                                                       TacsScalar *dfdx ){
   // Evaluate the density
@@ -294,10 +294,10 @@ void TACSLinearThermoelasticity2D::addWeakAdjProduct( int elemIndex,
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
   TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1] + c*Ut[7]*Psi[2]);
-  stiff->addDensityDVSens(elemIndex, pt, X, rho_coef, dvLen, dfdx);
+  stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, dfdx);
 
   TacsScalar c_coef = scale*rho*Ut[7]*Psi[2];
-  stiff->addSpecificHeatDVSens(elemIndex, pt, X, c_coef, dvLen, dfdx);
+  stiff->addSpecificHeatDVSens(elemIndex, c_coef, pt, X, dvLen, dfdx);
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[6]; // The temperature value
@@ -321,7 +321,7 @@ void TACSLinearThermoelasticity2D::addWeakAdjProduct( int elemIndex,
   phi[0] = Psix[0];
   phi[1] = Psix[3];
   phi[2] = Psix[1] + Psix[2];
-  stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, dfdx);
+  stiff->addStressDVSens(elemIndex, scale, pt, X, e, phi, dvLen, dfdx);
 
   // Evaluate the components of the stress using the components of the
   // phi vector
@@ -339,7 +339,7 @@ void TACSLinearThermoelasticity2D::addWeakAdjProduct( int elemIndex,
   TacsScalar psi[2];
   psi[0] = Psix[4];
   psi[1] = Psix[5];
-  stiff->addHeatFluxDVSens(elemIndex, pt, X, grad, scale, psi, dvLen, dfdx);
+  stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, grad, psi, dvLen, dfdx);
 }
 
 void TACSLinearThermoelasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
@@ -567,7 +567,7 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
       e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
     }
 
-    stiff->addFailureDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+    stiff->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                             dvLen, dfdx);
 
     TacsScalar dfde[3];
@@ -583,10 +583,10 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
 
     // Add the flux components to the heat transfer portion
     // of the governing equations
-    stiff->addHeatFluxDVSens(elemIndex, pt, X, grad, scale, dfdq, dvLen, dfdx);
+    stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, grad, dfdq, dvLen, dfdx);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    stiff->addDensityDVSens(elemIndex, pt, X, scale*dfdq[0], dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
   }
   else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
     // Compute the thermal strain components
@@ -609,7 +609,7 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
     // Add the contributions to the derivative from the strain
     TacsScalar s[3];
     stiff->evalStress(elemIndex, pt, X, e, s);
-    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+    stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
     stiff->addThermalStrainDVSens(elemIndex, pt, X, -2.0*scale*dfdq[0]*theta,
                                   s, dvLen, dfdx);
@@ -628,7 +628,7 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
     }
 
     // Add the contributions to the derivative from the strain
-    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+    stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
   }
 }
@@ -1239,6 +1239,7 @@ void TACSLinearThermoelasticity3D::evalWeakJacobian( int elemIndex,
 */
 void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
                                                       const double time,
+                                                      TacsScalar scale,
                                                       int n,
                                                       const double pt[],
                                                       const TacsScalar X[],
@@ -1246,7 +1247,6 @@ void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
                                                       const TacsScalar Ux[],
                                                       const TacsScalar Psi[],
                                                       const TacsScalar Psix[],
-                                                      TacsScalar scale,
                                                       int dvLen,
                                                       TacsScalar dfdx[] ){
   // Evaluate the density
@@ -1255,10 +1255,10 @@ void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
 
   TacsScalar rho_coef = scale*(Ut[2]*Psi[0] + Ut[5]*Psi[1] + Ut[8]*Psi[2] +
                                c*Ut[10]*Psi[3]);
-  stiff->addDensityDVSens(elemIndex, pt, X, rho_coef, dvLen, dfdx);
+  stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, dfdx);
 
   TacsScalar c_coef = scale*rho*Ut[10]*Psi[3];
-  stiff->addSpecificHeatDVSens(elemIndex, pt, X, c_coef, dvLen, dfdx);
+  stiff->addSpecificHeatDVSens(elemIndex, c_coef, pt, X, dvLen, dfdx);
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[9]; // The temperature value
@@ -1293,7 +1293,7 @@ void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
   phi[3] = Psix[5] + Psix[7];
   phi[4] = Psix[2] + Psix[6];
   phi[5] = Psix[1] + Psix[3];
-  stiff->addStressDVSens(elemIndex, pt, X, e, scale, phi, dvLen, dfdx);
+  stiff->addStressDVSens(elemIndex, scale, pt, X, e, phi, dvLen, dfdx);
 
   // Evaluate the components of the stress using the components of the
   // phi vector
@@ -1313,7 +1313,7 @@ void TACSLinearThermoelasticity3D::addWeakAdjProduct( int elemIndex,
   psi[0] = Psix[9];
   psi[1] = Psix[10];
   psi[2] = Psix[11];
-  stiff->addHeatFluxDVSens(elemIndex, pt, X, grad, scale, psi, dvLen, dfdx);
+  stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, grad, psi, dvLen, dfdx);
 }
 
 void TACSLinearThermoelasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
@@ -1611,7 +1611,7 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
       e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
     }
 
-    stiff->addFailureDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+    stiff->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                             dvLen, dfdx);
 
     TacsScalar dfde[6];
@@ -1628,10 +1628,10 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
 
     // Add the flux components to the heat transfer portion
     // of the governing equations
-    stiff->addHeatFluxDVSens(elemIndex, pt, X, grad, scale, dfdq, dvLen, dfdx);
+    stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, grad, dfdq, dvLen, dfdx);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    stiff->addDensityDVSens(elemIndex, pt, X, scale*dfdq[0], dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
   }
   else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
     // Compute the thermal strain components
@@ -1663,7 +1663,7 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
     // Add the contributions to the derivative from the strain
     TacsScalar s[6];
     stiff->evalStress(elemIndex, pt, X, e, s);
-    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+    stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
 
     // Add the result from the derivative of the thermal strain
@@ -1692,7 +1692,7 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
       e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
     }
 
-    stiff->addStressDVSens(elemIndex, pt, X, e, scale*dfdq[0],
+    stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
   }
 }

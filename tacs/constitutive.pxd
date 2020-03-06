@@ -33,6 +33,8 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar,
                                TacsScalar, TacsScalar,
                                TacsScalar)
+        void setDensity(TacsScalar)
+        void setSpecificHeat(TacsScalar)
 
 cdef class MaterialProperties:
     cdef TACSMaterialProperties *ptr
@@ -55,9 +57,18 @@ cdef extern from "TACSSolidConstitutive.h":
     cdef cppclass TACSSolidConstitutive(TACSConstitutive):
         TACSSolidConstitutive(TACSMaterialProperties*,
                               TacsScalar, int, TacsScalar, TacsScalar)
+        TACSMaterialProperties* getMaterialProperties()
 
 cdef class SolidConstitutive(Constitutive):
     cdef TACSSolidConstitutive *cptr
+
+cdef extern from "TACSShellConstitutive.h":
+    cdef cppclass TACSShellConstitutive(TACSConstitutive):
+        TACSShellConstitutive(TACSMaterialProperties*,
+                              TacsScalar, int, TacsScalar, TacsScalar)
+
+cdef class ShellConstitutive(Constitutive):
+    cdef TACSShellConstitutive *cptr
 
 cdef extern from "TACSTimoshenkoConstitutive.h":
     cdef cppclass TACSTimoshenkoConstitutive(TACSConstitutive):

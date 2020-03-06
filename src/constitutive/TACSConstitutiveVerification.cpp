@@ -44,7 +44,7 @@ int TacsTestConstitutiveDensity( TACSConstitutive *con,
 
   // Evaluate the derivatives
   memset(dfdx, 0, ndvs*sizeof(TacsScalar));
-  con->addDensityDVSens(elemIndex, pt, X, scale, ndvs, dfdx);
+  con->addDensityDVSens(elemIndex, scale, pt, X, ndvs, dfdx);
 
   // Compute the approximate derivative
   for ( int i = 0; i < ndvs; i++ ){
@@ -123,7 +123,7 @@ int TacsTestConstitutiveSpecificHeat( TACSConstitutive *con,
 
   // Evaluate the derivatives
   memset(dfdx, 0, ndvs*sizeof(TacsScalar));
-  con->addSpecificHeatDVSens(elemIndex, pt, X, scale, ndvs, dfdx);
+  con->addSpecificHeatDVSens(elemIndex, scale, pt, X, ndvs, dfdx);
 
   // Evaluate the specific heat
   TacsScalar c = con->evalSpecificHeat(elemIndex, pt, X);
@@ -212,7 +212,7 @@ int TacsTestConstitutiveStress( TACSConstitutive *con,
 
   // Evaluate the derivatives
   memset(dfdx, 0, ndvs*sizeof(TacsScalar));
-  con->addStressDVSens(elemIndex, pt, X, e, scale, psi, ndvs, dfdx);
+  con->addStressDVSens(elemIndex, scale, pt, X, e, psi, ndvs, dfdx);
 
   con->evalStress(elemIndex, pt, X, e, s);
   TacsScalar prod = 0.0;
@@ -405,7 +405,7 @@ int TacsTestConstitutiveFailure( TACSConstitutive *con,
 
   // Evaluate the derivatives
   memset(dfdx, 0, ndvs*sizeof(TacsScalar));
-  con->addFailureDVSens(elemIndex, pt, X, e, scale, ndvs, dfdx);
+  con->addFailureDVSens(elemIndex, scale, pt, X, e, ndvs, dfdx);
 
   TacsScalar failure = con->evalFailure(elemIndex, pt, X, e);
 

@@ -155,15 +155,34 @@ cdef class HeatConduction3D(ElementModel):
         self.ptr.incref()
 
 cdef class LinearElasticity3D(ElementModel):
+    cdef TACSLinearElasticity3D *leptr
     def __cinit__(self, SolidConstitutive con):
-        self.ptr = new TACSLinearElasticity3D(con.cptr, TACS_LINEAR_STRAIN)
+        self.leptr = new TACSLinearElasticity3D(con.cptr, TACS_LINEAR_STRAIN)
+        self.ptr = self.leptr
         self.ptr.incref()
 
+    def getConstitutive(self):
+        if self.leptr:
+            scon = SolidConstitutive()
+            scon.ptr = self.leptr.getConstitutive()
+            scon.ptr.incref()
+            return scon
+        return None
+    
 cdef class LinearThermoelasticity3D(ElementModel):
     def __cinit__(self, SolidConstitutive con):
         self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN)
         self.ptr.incref()
 
+cdef class PlateModel(ElementModel):
+    def __cinit__(self, ShellConstitutive con):
+        self.ptr = new TACSPlateModel(con.cptr)
+        self.ptr.incref()
+
+cdef class ThermoelasticPlateModel(ElementModel):
+    def __cinit__(self, ShellConstitutive con):
+        self.ptr = new TACSThermoelasticPlateModel(con.cptr)
+        self.ptr.incref()
 
 cdef class Element2D(Element):
     def __cinit__(self, ElementModel model, ElementBasis basis):

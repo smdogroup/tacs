@@ -81,13 +81,14 @@ class TACSElementMappedBasis : public TACSElementBasis {
     w.r.t. the parameters, and J, the inverse of Xd. This code can be
     used for computing the volume/area quadratures.
 
+    @param n The quadrautre point index
     @param pt The quadrature point
     @param Xpts The node locations
     @param Xd The derivative of the physical node location w.r.t. parameters
     @param J The Jacobian transformation (inverse of Xd)
     @return The determinant of Xd
   */
-  virtual TacsScalar getJacobianTransform( const double pt[],
+  virtual TacsScalar getJacobianTransform( int n, const double pt[],
                                            const TacsScalar Xpts[],
                                            TacsScalar Xd[],
                                            TacsScalar J[] );
@@ -109,7 +110,7 @@ class TACSElementMappedBasis : public TACSElementBasis {
     @param dfdJ The derivative of the function w.r.t. J
     @param dfdXpts The output derivative of the function w.r.t. Xpts
   */
-  virtual void addJacobianTransformXptSens( const double pt[],
+  virtual void addJacobianTransformXptSens( int n, const double pt[],
                                             const TacsScalar Xd[],
                                             const TacsScalar J[],
                                             TacsScalar dfddetJ,

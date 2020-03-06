@@ -372,11 +372,11 @@ double TACSCubicHexaBasis::getQuadraturePoint( int n,
 }
 
 int TACSCubicHexaBasis::getNumElementFaces(){
-  return 4;
+  return 6;
 }
 
 int TACSCubicHexaBasis::getNumFaceQuadraturePoints( int face ){
-  return 4;
+  return 16;
 }
 
 double TACSCubicHexaBasis::getFaceQuadraturePoint( int face,
