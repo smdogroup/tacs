@@ -168,7 +168,7 @@ cdef class LinearElasticity3D(ElementModel):
             scon.ptr.incref()
             return scon
         return None
-    
+
 cdef class LinearThermoelasticity3D(ElementModel):
     def __cinit__(self, SolidConstitutive con):
         self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN)
@@ -321,13 +321,18 @@ cdef class SphericalConstraint(Element):
 
 cdef class RevoluteConstraint(Element):
     def __cinit__(self, GibbsVector point, GibbsVector eA,
-                  RigidBody bodyA, RigidBody bodyB=None):
-        if bodyB is None:
+                  int fixed_ref_point=0, int inertial_rev_axis=0,
+                  RigidBody bodyA=None, RigidBody bodyB=None):
+        if bodyA is not None and bodyB is not None:
+            self.ptr = new TACSRevoluteConstraint(bodyA.cptr, bodyB.cptr,
+                                                  point.ptr, eA.ptr)
+        elif bodyA is not None and bodyB is None:
             self.ptr = new TACSRevoluteConstraint(bodyA.cptr,
                                                   point.ptr, eA.ptr)
         else:
-            self.ptr = new TACSRevoluteConstraint(bodyA.cptr, bodyB.cptr,
-                                                  point.ptr, eA.ptr)
+            self.ptr = new TACSRevoluteConstraint(fixed_ref_point,
+                                                  point.ptr, eA.ptr,
+                                                  inertial_rev_axis)
         self.ptr.incref()
 
 ## cdef class CylindricalConstraint(Element):
@@ -376,14 +381,14 @@ cdef class MITCBeam(Element):
                   GibbsVector omegaInit=None):
         cdef TACSTimoshenkoConstitutive *con = _dynamicTimoshenkoConstitutive(stiff.ptr)
         if omegaInit is not None:
-            self.ptr = new MITC3(NULL, gravity.ptr,
+            self.ptr = new MITC3(con, gravity.ptr,
                                  vInit.ptr, omegaInit.ptr)
         elif vInit is not None:
-            self.ptr = new MITC3(NULL, gravity.ptr, vInit.ptr, NULL)
+            self.ptr = new MITC3(con, gravity.ptr, vInit.ptr, NULL)
         elif gravity is not None:
-            self.ptr = new MITC3(NULL, gravity.ptr, NULL, NULL)
+            self.ptr = new MITC3(con, gravity.ptr, NULL, NULL)
         else:
-            self.ptr = new MITC3(NULL, NULL, NULL, NULL)
+            self.ptr = new MITC3(con, NULL, NULL, NULL)
         self.ptr.incref()
 
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):

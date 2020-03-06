@@ -175,6 +175,10 @@ cdef extern from "TACSKinematicConstraints.h":
                                TACSGibbsVector *point, TACSGibbsVector *eA)
         TACSRevoluteConstraint(TACSRigidBody *bodyA,
                                TACSGibbsVector *point, TACSGibbsVector *eA)
+        TACSRevoluteConstraint( int fixed_ref_point,
+                                TACSGibbsVector *point,
+                                TACSGibbsVector *eAVec,
+                                int inertial_rev_axis )
 
     cdef cppclass TACSRigidLink(TACSElement):
         TACSRigidLink(TACSRigidBody*)
