@@ -623,22 +623,16 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
   Solve the eigenvalue problem
 */
 void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
-                                   KSMPrint *ksm_file ){
+                                   int print_level ){
   // Zero the variables
   assembler->zeroVariables();
   if (jd){
     if (mg){
       // Assemble the mass matrix
-      // ElementMatrixType matTypes[2] = {STIFFNESS_MATRIX,
-      //                                  MASS_MATRIX};
-      // TacsScalar scale[2] = {1.0, sigma};
-
-      // Assemble the mass matrix
       assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
 
       // Assemble the linear combination
-      // mg->assembleMatCombo(matTypes, scale, 2);
       mg->assembleMatType(TACS_STIFFNESS_MATRIX);
       mg->factor();
     }
@@ -646,17 +640,22 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
       assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
     }
-    // Factor the preconditioner
-    // jd_op->setEigenvalueEstimate(0.0); // TacsRealPart(sigma));
+
+    // Keep track of the computational time
+    double t0 = 0.0;
+    if (ksm_print && print_level > 0){
+      t0 = MPI_Wtime();
+    }
+
     // Solve the problem using Jacobi-Davidson
-    // Print the iteration count to file
-    double t0 = MPI_Wtime();
-    jd->solve(ksm_print);
-    double t1 = MPI_Wtime();
-    if (ksm_file){
+    jd->solve(ksm_print, print_level);
+
+    if (ksm_print && print_level > 0){
+      t0 = MPI_Wtime() - t0;
+
       char line[256];
-      sprintf(line, "%15.6f\n", t1-t0);
-      ksm_file->print(line);
+      sprintf(line, "JD computational time: %15.6f\n", t0);
+      ksm_print->print(line);
     }
   }
   else{
@@ -682,17 +681,24 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
       kmat->applyBCs(assembler->getBcMap());
     }
 
+    // Keep track of the computational time
+    double t0 = 0.0;
+    if (ksm_print && print_level > 0){
+      t0 = MPI_Wtime();
+    }
+
     // Factor the preconditioner
     pc->factor();
 
-    // Solve the symmetric eigenvalue problem
-    double t0 = MPI_Wtime();
+    // Solve the problem using Jacobi-Davidson
     sep->solve(ksm_print);
-    double t1 = MPI_Wtime();
-    if (ksm_file){
+
+    if (ksm_print && print_level > 0){
+      t0 = MPI_Wtime() - t0;
+
       char line[256];
-      sprintf(line, "%2.6f\n", t1-t0);
-      ksm_file->print(line);
+      sprintf(line, "Lanczos computational time: %15.6f\n", t0);
+      ksm_print->print(line);
     }
   }
 }

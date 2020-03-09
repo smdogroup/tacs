@@ -568,7 +568,7 @@ cdef extern from "JacobiDavidson.h":
        MPI_Comm getMPIComm()
        TacsScalar extractEigenvalue(int, TacsScalar*)
        TacsScalar extractEigenvector(int n, TACSVec*, TacsScalar*)
-       void solve(KSMPrint*)
+       void solve(KSMPrint*, int)
        void setTolerances(double, double, double)
        void setRecycle(int, JDRecycleType)
 
@@ -588,7 +588,7 @@ cdef extern from "TACSBuckling.h":
         TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
-        void solve(KSMPrint*)
+        void solve(KSMPrint*, int)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
 

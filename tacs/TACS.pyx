@@ -995,7 +995,7 @@ cdef class JacobiDavidson:
         eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
         return eigval, err
 
-    def solve(self, print_flag=False, freq=1):
+    def solve(self, print_flag=False, int freq=1, int print_level=0):
         """
         Solve the eigenvalue problem using the Jacobi-Davidson method
 
@@ -1013,13 +1013,13 @@ cdef class JacobiDavidson:
             ksm_print = new KSMPrintStdout("JD", rank, freq)
             ksm_print.incref()
 
-        self.ptr.solve(ksm_print)
+        self.ptr.solve(ksm_print, print_level)
         if ksm_print != NULL:
             ksm_print.decref()
 
         return
 
-    def setTolerance(self, eigtol=5e-7, eig_rtol=1e-6, eig_atol=1e-12):
+    def setTolerances(self, eigtol=5e-7, eig_rtol=1e-6, eig_atol=1e-12):
         """
         Set the tolerances for the eigenvalue problem.
 
@@ -2337,7 +2337,7 @@ cdef class FrequencyAnalysis:
     def setSigma(self, TacsScalar sigma):
         self.ptr.setSigma(sigma)
 
-    def solve(self, print_flag=True, int freq=10):
+    def solve(self, print_flag=True, int freq=10, int print_level=0):
         """
         Solve the natural frequency problem
         """
@@ -2353,7 +2353,7 @@ cdef class FrequencyAnalysis:
             ksm_print = new KSMPrintStdout("FrequencyAnalysis", rank, freq)
             ksm_print.incref()
 
-        self.ptr.solve(ksm_print)
+        self.ptr.solve(ksm_print, print_level)
         if ksm_print != NULL:
             ksm_print.decref()
         return

@@ -183,7 +183,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   nconverged = 0;
 
   // Set the number of vectors to recycle (0 by default)
-  recycle = 0;
+  num_recycle_vecs = 0;
   recycle_type = JD_NUM_RECYCLE;
 
   // The eigen tolerance
@@ -203,6 +203,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   Q = new TACSVec*[ max_eigen_vectors+1 ];
   P = new TACSVec*[ max_eigen_vectors+1 ];
   eigvals = new TacsScalar[ max_eigen_vectors ];
+  eigerror = new TacsScalar[ max_eigen_vectors ];
 
   // Allocate the variables
   for ( int i = 0; i < max_jd_size+1; i++ ){
@@ -277,6 +278,7 @@ TACSJacobiDavidson::~TACSJacobiDavidson(){
   delete [] ritzvecs;
   delete [] ritzvals;
   delete [] eigvals;
+  delete [] eigerror;
 
   // Free the GMRES subspace vectors
   W[0]->decref();
@@ -368,8 +370,7 @@ TacsScalar TACSJacobiDavidson::extractEigenvector( int n, TACSVec *ans,
   where r is orthogonal to the subspace Q and t is orthogonal to the
   subspace t by construction. FGMRES builds the subspaces W and Z.
 */
-void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
-                                KSMPrint *ksm_file ){
+void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
   // Keep track of the current subspace
   V[0]->setRand(-1.0, 1.0);
   oper->applyBCs(V[0]);
@@ -382,14 +383,15 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
   int lwork = 16*max_jd_size;
   double *rwork = new double[ lwork ];
 
-  // Store the number of converged eigenvalues
+  // Store the number of iterations of the inner GMRES algorithm
   int iteration = 0;
+  int gmres_iteration = 0;
 
   // Check if the recycle flag is set
   int kstart = 0;
-  if (recycle > 0){
+  if (num_recycle_vecs > 0){
     // Set the actual number of recycled eigenvectors
-    int num_recycle = recycle;
+    int num_recycle = num_recycle_vecs;
     if (num_recycle > nconverged){
       num_recycle = nconverged;
     }
@@ -553,9 +555,9 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       oper->applyBCs(work);
 
       TacsScalar w_norm = work->norm();
-      if (ksm_print){
+      if (ksm_print && print_level > 1){
         char line[256];
-        sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %20.10e\n",
+        sprintf(line, "JD Residual[%2d]: %15.5e  Ritz value[%2d]: %20.10e\n",
                 iteration, TacsRealPart(w_norm), nconverged, theta);
         ksm_print->print(line);
       }
@@ -564,6 +566,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       if (TacsRealPart(w_norm) <= TacsRealPart(eigtol*Anorm)){
         // Record the Ritz value as the eigenvalue
         eigvals[nconverged] = theta;
+        eigerror[nconverged] = w_norm;
 
         nconverged++;
       }
@@ -707,11 +710,12 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       res[i]   =   h1*Qcos[i];
       res[i+1] = - h1*Qsin[i];
 
-      // if (ksm_print){
-      //   ksm_print->printResidual(niters, fabs(TacsRealPart(res[i+1])));
-      // }
+      if (ksm_print && print_level > 1){
+        ksm_print->printResidual(niters, fabs(TacsRealPart(res[i+1])));
+      }
 
-      niters++;
+      niters++; // Number of iterations for this GMRES solve
+      gmres_iteration++; // Total number of GMRES iterations
 
       if (fabs(TacsRealPart(res[i+1])) < atol ||
           fabs(TacsRealPart(res[i+1])) < rtol*beta){
@@ -747,20 +751,19 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
   }
 
   if (ksm_print){
+    char line[256];
     for ( int i = 0; i < nconverged; i++ ){
-      char line[256];
-      sprintf(line, "Eigenvalue[%2d]: %25.10e\n",
-              i, TacsRealPart(eigvals[i]));
+      sprintf(line, "Eigenvalue[%2d]: %25.10e Eig. error[%2d]: %25.10e\n",
+              i, TacsRealPart(eigvals[i]), i, TacsRealPart(eigerror[i]));
       ksm_print->print(line);
     }
+
+    sprintf(line, "JD number of outer iterations: %2d\n", iteration);
+    ksm_print->print(line);
+    sprintf(line, "JD number of inner GMRES iterations: %2d\n", gmres_iteration);
+    ksm_print->print(line);
   }
 
-  // Print the iteration count to file
-  if (ksm_file){
-    char line[256];
-    sprintf(line, "%2d\n", iteration);
-    ksm_file->print(line);
-  }
   delete [] rwork;
 }
 
@@ -783,10 +786,10 @@ void TACSJacobiDavidson::setTolerances( double _eigtol,
   Set the number of vectors to recycle if the eigenvectors are converged
 
   input:
-  recycle: number of vectors to recycle
+  num_recycle_vecs: number of vectors to recycle
 */
-void TACSJacobiDavidson::setRecycle( int _recycle,
+void TACSJacobiDavidson::setRecycle( int _num_recycle_vecs,
                                      JDRecycleType _recycle_type ){
-  recycle = _recycle;
+  num_recycle_vecs = _num_recycle_vecs;
   recycle_type = _recycle_type;
 }

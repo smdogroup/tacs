@@ -159,7 +159,7 @@ class TACSJacobiDavidson : public TACSObject {
   TacsScalar extractEigenvector( int n, TACSVec *ans, TacsScalar *error );
 
   // Solve the eigenvalue problem
-  void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
+  void solve( KSMPrint *ksm_print=NULL, int print_level=0 );
 
   // Set tolerances to FGMRES
   void setTolerances( double _eigtol, double _rtol, double _atol );
@@ -173,8 +173,8 @@ class TACSJacobiDavidson : public TACSObject {
 
   // The recycle flag that indicates the number of converged eigenvectors to
   // recycle in the next solve
-  int recycle;
   JDRecycleType recycle_type;
+  int num_recycle_vecs;
 
   // Generic work vector
   TACSVec *work;
@@ -190,6 +190,7 @@ class TACSJacobiDavidson : public TACSObject {
 
   // The eigenvalues
   TacsScalar *eigvals;
+  TacsScalar *eigerror;
 
   // The vectors for the eigenvalue space
   TACSVec **V;
