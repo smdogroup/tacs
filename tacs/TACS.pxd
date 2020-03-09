@@ -566,10 +566,11 @@ cdef extern from "JacobiDavidson.h":
    cdef cppclass TACSJacobiDavidson(TACSObject):
        TACSJacobiDavidson(TACSJacobiDavidsonOperator*, int, int, int)
        MPI_Comm getMPIComm()
+       int getNumConvergedEigenvalues()
        TacsScalar extractEigenvalue(int, TacsScalar*)
        TacsScalar extractEigenvector(int n, TACSVec*, TacsScalar*)
        void solve(KSMPrint*, int)
-       void setTolerances(double, double, double)
+       void setTolerances(double, double, double, double)
        void setRecycle(int, JDRecycleType)
 
 cdef class JacobiDavidsonOperator:

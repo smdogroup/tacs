@@ -964,6 +964,12 @@ cdef class JacobiDavidson:
         self.ptr.incref()
         return
 
+    def getNumConvergedEigenvalues(self):
+        """
+        Get the number of converged eigenvalues and eigenvectors
+        """
+        return self.ptr.getNumConvergedEigenvalues()
+
     def extractEigenvalue(self, int index):
         """
         Extract the eigenvalue with the specified index.
@@ -1019,20 +1025,22 @@ cdef class JacobiDavidson:
 
         return
 
-    def setTolerances(self, eigtol=5e-7, eig_rtol=1e-6, eig_atol=1e-12):
+    def setTolerances(self, eig_rtol=5e-7, eig_atol=1e-30,
+                      rtol=1e-6, atol=1e-12):
         """
         Set the tolerances for the eigenvalue problem.
 
-        Usually the eigtol is the most important, whereas the GMRES
+        Usually the eig_rtol is the most important, whereas the GMRES
         subproblem can be solved inaccurately, so fixed max_gmres_size
         to a smaller value can be beneficial.
 
         Args:
-            eigtol (float): Relative tolerance for the eigenvalue error
-            eig_rtol (float): Relative tolerance for the GMRES subproblem
-            eig_atol (float): Absolute tolerance for the GMRES subproblem
+            eig_rtol (float): Relative tolerance for the eigenvalue error
+            eig_atol (float): Absolute tolerance for the eigenvalue error
+            rtol (float): Relative tolerance for the GMRES subproblem
+            atol (float): Absolute tolerance for the GMRES subproblem
         """
-        self.ptr.setTolerances(eigtol, eig_rtol, eig_atol)
+        self.ptr.setTolerances(eig_rtol, eig_atol, rtol, atol)
         return
 
     def setRecycle(self, int num_recycle):

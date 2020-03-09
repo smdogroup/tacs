@@ -575,7 +575,8 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   solver = NULL;
 
   // Set the tolerance to the Jacobi-Davidson solver
-  jd->setTolerances(eigtol, eig_rtol, eig_atol);
+  jd->setTolerances(eigtol, 1e-30, eig_rtol, eig_atol);
+
   // Set the number of eigenvectors to recycle
   jd->setRecycle(num_recycle, recycle_type);
 }
