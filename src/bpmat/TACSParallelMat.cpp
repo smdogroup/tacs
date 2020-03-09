@@ -1839,7 +1839,7 @@ void TACSBlockCyclicPc::factor(){
 
   int *csr_vars = new int[ n ];
   int *rowp = new int[ n+1 ];
-  int *cols = new int[ arowp[n] + browp[nc] ];
+  int *cols = new int[ max_size ];
 
   // Set the A matrix structure
   rowp[0] = 0;
@@ -1875,6 +1875,9 @@ void TACSBlockCyclicPc::factor(){
 
   // Add the Bext components to the matrix
   bcyclic->addAlltoallValues(bsize, nc, csr_vars, rowp, cols, Bvals);
+  delete [] csr_vars;
+  delete [] rowp;
+  delete [] cols;
 
   // Factor the block cyclic matrix
   bcyclic->factor();
