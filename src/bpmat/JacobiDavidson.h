@@ -155,6 +155,7 @@ class TACSJacobiDavidson : public TACSObject {
   MPI_Comm getMPIComm();
 
   // Extract the eigenvalues and eigenvectors
+  int getNumConvergedEigenvalues();
   TacsScalar extractEigenvalue( int n, TacsScalar *error );
   TacsScalar extractEigenvector( int n, TACSVec *ans, TacsScalar *error );
 
@@ -162,7 +163,7 @@ class TACSJacobiDavidson : public TACSObject {
   void solve( KSMPrint *ksm_print=NULL, int print_level=0 );
 
   // Set tolerances to FGMRES
-  void setTolerances( double _eigtol, double _rtol, double _atol );
+  void setTolerances( double _eig_rtol, double _eig_atol, double _rtol, double _atol );
 
   // Set the number of vectors to recycle
   void setRecycle( int _recycle, JDRecycleType _recycle_type );
@@ -179,10 +180,14 @@ class TACSJacobiDavidson : public TACSObject {
   // Generic work vector
   TACSVec *work;
 
-  // The Jacobi--Davidson data
+  // The maximum size of the Jacobi--Davidson subspace
   int max_jd_size;
+
+  // The desired number of eigenvectors
   int max_eigen_vectors;
-  double eigtol;
+
+  // The relative and absolute eigenvalue tolerances
+  double eig_rtol, eig_atol;
 
   // The matrix of variables
   TacsScalar *M;

@@ -187,7 +187,8 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   recycle_type = JD_NUM_RECYCLE;
 
   // The eigen tolerance
-  eigtol = 1e-9;
+  eig_rtol = 1e-9;
+  eig_atol = 1e-30;
 
   // The residual tolerances for the GMRES iterations
   rtol = 1e-9;
@@ -298,6 +299,13 @@ TACSJacobiDavidson::~TACSJacobiDavidson(){
 // Get the MPI_Comm
 MPI_Comm TACSJacobiDavidson::getMPIComm(){
   return oper->getMPIComm();
+}
+
+/*
+  Get the number of converged eigenvalues
+*/
+int TACSJacobiDavidson::getNumConvergedEigenvalues(){
+  return nconverged;
 }
 
 /*!
@@ -555,7 +563,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
       oper->applyBCs(work);
 
       TacsScalar w_norm = work->norm();
-      if (ksm_print && print_level > 1){
+      if (ksm_print && print_level > 0){
         char line[256];
         sprintf(line, "JD Residual[%2d]: %15.5e  Ritz value[%2d]: %20.10e\n",
                 iteration, TacsRealPart(w_norm), nconverged, theta);
@@ -563,7 +571,8 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
       }
 
       // Compute the norm of the eigenvalue to check if it has converged
-      if (TacsRealPart(w_norm) <= TacsRealPart(eigtol*Anorm)){
+      if (TacsRealPart(w_norm) <= eig_rtol*TacsRealPart(Anorm) ||
+          TacsRealPart(w_norm) <= eig_atol){
         // Record the Ritz value as the eigenvalue
         eigvals[nconverged] = theta;
         eigerror[nconverged] = w_norm;
@@ -772,16 +781,21 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
   criterion.
 
   input:
+  eig_rtol: the eigenvector tolerance ||(A - theta*B)*eigvec|| < eig_rtol*||A*eigvec||
+  eig_atol: the eigenvector tolerance ||(A - theta*B)*eigvec|| < eig_atol
   rtol: the relative tolerance ||r_k|| < rtol*||r_0||
   atol: the absolute tolerancne ||r_k|| < atol
 */
-void TACSJacobiDavidson::setTolerances( double _eigtol,
+void TACSJacobiDavidson::setTolerances( double _eig_rtol,
+                                        double _eig_atol,
                                         double _rtol,
                                         double _atol ){
-  eigtol = _eigtol;
+  eig_rtol = _eig_rtol;
+  eig_atol = _eig_atol;
   rtol = _rtol;
   atol = _atol;
 }
+
 /*
   Set the number of vectors to recycle if the eigenvectors are converged
 
