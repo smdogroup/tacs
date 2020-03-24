@@ -175,7 +175,9 @@ int main( int argc, char *argv[] ){
     }
   }
 
-  for ( int j = 0; j < NUM_2D_MODELS; j++ ){
+  // for ( int j = 0; j < NUM_2D_MODELS; j++ ){
+  {
+    int j = 1;
     for ( int i = 0; i < NUM_2D_BASIS; i++ ){
       printf("Testing with model %s with basis functions %s\n",
              model2d[j]->getObjectName(), basis2d[i]->getObjectName());

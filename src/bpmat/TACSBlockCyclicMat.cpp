@@ -1860,8 +1860,6 @@ void TACSBlockCyclicMat::applyFactor( TacsScalar *x ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  // double t0 = MPI_Wtime();
-
   // Space required for the factorization
   TacsScalar *tx = NULL;
   TacsScalar *xsum = NULL;
@@ -2048,11 +2046,6 @@ void TACSBlockCyclicMat::applyFactor( TacsScalar *x ){
   // Barrier required to prevent interference between U^{-1}
   // application and the re-distribution of the vector components
   MPI_Barrier(comm);
-
-  // t0 = MPI_Wtime() - t0;
-  // if (proc_row >= 0){
-  //   printf("Backsolve time[%3d] %15.8e\n", rank, t0);
-  // }
 }
 
 /*
