@@ -720,19 +720,31 @@ void BCSRMatApplyFactorSchur( BCSRMatData *data, TacsScalar *x,
 /*!
   Apply a given number of steps of SOR to the system A*x = b.
 */
-void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
-                      TacsScalar omega, int iters, TacsScalar *b,
-                      TacsScalar *x ){
-  const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  int bsize = data->bsize;
+void BCSRMatApplySOR( BCSRMatData *Adata, BCSRMatData *Bdata,
+                      const int start, const int end,
+                      const int var_offset,
+                      const TacsScalar *Adiag,
+                      const TacsScalar omega,
+                      const TacsScalar *b,
+                      const TacsScalar *xext, TacsScalar *x ){
+  const int *Arowp = Adata->rowp;
+  const int *Acols = Adata->cols;
+
+  const int *Browp = NULL;
+  const int *Bcols = NULL;
+  if (Bdata){
+    Browp = Bdata->rowp;
+    Bcols = Bdata->cols;
+  }
+
+  const int nrows = Adata->nrows;
+  int bsize = Adata->bsize;
   const int b2 = bsize*bsize;
 
   TacsScalar *tx = new TacsScalar[ bsize ];
 
-  for ( int iter = 0; iter < iters; iter++ ){
-    for ( int i = 0; i < nrows; i++ ){
+  if (start < end){
+    for ( int i = start; i < end; i++ ){
       int bi = bsize*i;
 
       // Copy the right-hand-side to the temporary vector
@@ -743,13 +755,13 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
 
       // Set the pointer to the beginning of the current
       // row
-      TacsScalar *a = &data->A[b2*rowp[i]];
+      TacsScalar *a = &Adata->A[b2*Arowp[i]];
 
       // Scan through the row and compute the result:
       // tx <- b_i - A_{ij}*x_{j} for j != i
-      int end = rowp[i+1];
-      for ( int k = rowp[i]; k < end; k++ ){
-        int j = cols[k];
+      int end = Arowp[i+1];
+      for ( int k = Arowp[i]; k < end; k++ ){
+        int j = Acols[k];
         int bj = bsize*j;
 
         if (i != j){
@@ -765,6 +777,29 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
         a += b2;
       }
 
+      if (Bdata && i >= var_offset){
+        const int row = i - var_offset;
+
+        // Set the pointer to the row in B
+        a = &Bdata->A[36*Browp[row]];
+        end = Browp[row+1];
+
+        for ( int k = Browp[row]; k < end; k++ ){
+          int j = Bcols[k];
+          const TacsScalar *y = &xext[bsize*j];
+
+          for ( int m = 0; m < bsize; m++ ){
+            int bm = bsize*m;
+            for ( int n = 0; n < bsize; n++ ){
+              tx[m] -= a[bm + n]*y[n];
+            }
+          }
+
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
+      }
+
       // Compute the first term in the update:
       // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
       for ( int n = 0; n < bsize; n++ ){
@@ -773,7 +808,82 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
 
       // Apply the diagonal inverse and add the result to
       // the matrix
-      TacsScalar *adiag = &Adiag[b2*i];
+      const TacsScalar *adiag = &Adiag[b2*i];
+      for ( int m = 0; m < bsize; m++ ){
+        int bm = bsize*m;
+        for ( int n = 0; n < bsize; n++ ){
+          x[bi + m] += omega*adiag[bm + n]*tx[n];
+        }
+      }
+    }
+  }
+  else {
+    // Go through the matrix with the forward ordering
+    for ( int i = start; i < end; i++ ){
+      int bi = bsize*i;
+
+      // Copy the right-hand-side to the temporary vector
+      // for this row
+      for ( int n = 0; n < bsize; n++ ){
+        tx[n] = b[bi + n];
+      }
+
+      // Set the pointer to the beginning of the current
+      // row
+      TacsScalar *a = &Adata->A[b2*Arowp[i]];
+
+      // Scan through the row and compute the result:
+      // tx <- b_i - A_{ij}*x_{j} for j != i
+      int end = Arowp[i+1];
+      for ( int k = Arowp[i]; k < end; k++ ){
+        int j = Acols[k];
+        int bj = bsize*j;
+
+        if (i != j){
+          for ( int m = 0; m < bsize; m++ ){
+            int bm = bsize*m;
+            for ( int n = 0; n < bsize; n++ ){
+              tx[m] -= a[bm + n]*x[bj + n];
+            }
+          }
+        }
+
+        // Increment the block pointer by bsize^2
+        a += b2;
+      }
+
+      if (Bdata && i >= var_offset){
+        const int row = i - var_offset;
+
+        // Set the pointer to the row in B
+        a = &Bdata->A[36*Browp[row]];
+        end = Browp[row+1];
+
+        for ( int k = Browp[row]; k < end; k++ ){
+          int j = Bcols[k];
+          const TacsScalar *y = &xext[bsize*j];
+
+          for ( int m = 0; m < bsize; m++ ){
+            int bm = bsize*m;
+            for ( int n = 0; n < bsize; n++ ){
+              tx[m] -= a[bm + n]*y[n];
+            }
+          }
+
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
+      }
+
+      // Compute the first term in the update:
+      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+      for ( int n = 0; n < bsize; n++ ){
+        x[bi + n] = (1.0 - omega)*x[bi + n];
+      }
+
+      // Apply the diagonal inverse and add the result to
+      // the matrix
+      const TacsScalar *adiag = &Adiag[b2*i];
       for ( int m = 0; m < bsize; m++ ){
         int bm = bsize*m;
         for ( int n = 0; n < bsize; n++ ){

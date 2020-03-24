@@ -129,14 +129,11 @@ void BCSRMatMatMultAdd( double alpha, BCSRMatData *A,
 void BCSRMatFactorLower( BCSRMatData *A, BCSRMatData *E );
 void BCSRMatFactorUpper( BCSRMatData *A, BCSRMatData *F );
 void BCSRMatMatMultNormal( BCSRMatData *A, TacsScalar *s, BCSRMatData *B );
-
-/*
 void BCSRMatApplySOR( BCSRMatData *Adata, BCSRMatData *Bdata,
-                      const int start, const int end, const int incr,
+                      const int start, const int end,
                       const int var_offset, const TacsScalar *Adiag,
                       const TacsScalar omega, const TacsScalar *b,
                       const TacsScalar *xext, TacsScalar *x );
-*/
 
 /*
   These are the definitions for the block-specific code.

@@ -222,7 +222,7 @@ BCSRMat::BCSRMat( MPI_Comm _comm, TACSThreadInfo *_thread_info,
   data->cols = *_cols;
   *_rowp = NULL;
   *_cols = NULL;
-  
+
   if (_A){
     data->A = *_A;
     *_A = NULL;
@@ -996,7 +996,7 @@ void BCSRMat::initGenericImpl(){
   applypartiallower = BCSRMatApplyPartialLower;
   applypartialupper = BCSRMatApplyPartialUpper;
   applyschur = BCSRMatApplyFactorSchur;
-  // applysor = BCSRMatApplySOR;
+  applysor = BCSRMatApplySOR;
 
   // No default threaded versions
   bmultadd_thread = NULL;
@@ -2081,7 +2081,7 @@ void BCSRMat::zeroColumns( int num_zero_cols,
       colp[col] = 0;
     }
   }
-  
+
   for ( int jp = 0; jp < rowp[nrows]; jp++ ){
     int col = cols[jp];
     if (colp[col] >= 0){
@@ -2102,7 +2102,7 @@ void BCSRMat::zeroColumns( int num_zero_cols,
 
   // Allocate space for the rows
   int *ptr = new int[ colp[ncols] ];
-  
+
   for ( int jp = 0; jp < rowp[nrows]; jp++ ){
     int col = cols[jp];
     if (colp[col+1] - colp[col] > 0){
