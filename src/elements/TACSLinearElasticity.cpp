@@ -552,6 +552,8 @@ void TACSLinearElasticity2D::evalWeakMatSVSens( ElementMatrixType matType,
                                                 TacsScalar dfdU[],
                                                 TacsScalar dfdUx[] ){
   dfdU[0] = dfdU[1] = 0.0;
+  dfdU[2] = dfdU[3] = 0.0;
+  dfdU[4] = dfdU[5] = 0.0;
   dfdUx[0] = dfdUx[1] = 0.0;
   dfdUx[2] = dfdUx[3] = 0.0;
 
@@ -1889,6 +1891,8 @@ void TACSLinearElasticity3D::evalWeakMatSVSens( ElementMatrixType matType,
                                                 TacsScalar dfdU[],
                                                 TacsScalar dfdUx[] ){
   dfdU[0] = dfdU[1] = dfdU[2] = 0.0;
+  dfdU[3] = dfdU[4] = dfdU[5] = 0.0;
+  dfdU[6] = dfdU[7] = dfdU[8] = 0.0;
   dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
   dfdUx[3] = dfdUx[4] = dfdUx[5] = 0.0;
   dfdUx[6] = dfdUx[7] = dfdUx[8] = 0.0;
