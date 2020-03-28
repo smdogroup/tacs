@@ -386,7 +386,7 @@ class TACSElementModel : public TACSObject {
     const int vars_per_node = getVarsPerNode();
     const int num_params = getSpatialDim();
 
-    for ( int i = 0; i < vars_per_node; i++ ){
+    for ( int i = 0; i < 3*vars_per_node; i++ ){
       dfdU[i] = 0.0;
     }
     for ( int i = 0; i < num_params*vars_per_node; i++ ){

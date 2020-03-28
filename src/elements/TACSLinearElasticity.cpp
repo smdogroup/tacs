@@ -568,7 +568,7 @@ void TACSLinearElasticity2D::evalWeakMatSVSens( ElementMatrixType matType,
     stiff->evalGeometricTangentStiffness(elemIndex, pt, X, C);
 
     // Compute the tangent strain and stress
-    TacsScalar s[6];
+    TacsScalar s[3];
     s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
     s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
     s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];
