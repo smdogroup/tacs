@@ -1,6 +1,7 @@
 #include "TACSIntegrator.h"
 #include "TACSAssembler.h"
 #include "TACSRigidBody.h"
+#include "TACSKinematicConstraints.h"
 
 /*
   Function to test the rigid body dynamics implementation
@@ -54,7 +55,7 @@ int main( int argc, char *argv[] ){
 
   // Define dynamics properties
   TACSGibbsVector *rBInitVec = new TACSGibbsVector(0.0, 5.5, 0.0);
-
+  
   // Construct the second rigid body
   TACSRigidBody *bodyB = new  TACSRigidBody(refFrameA,
                                             mB, cB, JB,
@@ -115,9 +116,9 @@ int main( int argc, char *argv[] ){
   //--------------------------------------------------------------------//
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_RIGID, write_flag);
+  unsigned int write_flag = (TACS_OUTPUT_NODES | TACS_OUTPUT_DISPLACEMENTS);
+  ElementType etype = TACS_BEAM_OR_SHELL_ELEMENT; // How to set rigid type?
+  TACSToFH5 *f5 = new TACSToFH5(tacs, etype, write_flag);
   f5->incref();
 
   double tinit            = 0.0;
@@ -137,12 +138,10 @@ int main( int argc, char *argv[] ){
   bdf->setPrintLevel(1);
   bdf->setJacAssemblyFreq(1);
   bdf->setUseLapack(0);
-  bdf->setOrderingType(TACSAssembler::NATURAL_ORDER);
   bdf->setOutputFrequency(1);
 
   // Integrate and write solution to file
   bdf->integrate();
-  bdf->writeSolution("solutionBDF.dat");
 
   // Delete objects
   bodyA->decref();
