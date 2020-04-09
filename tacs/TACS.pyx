@@ -1989,6 +1989,9 @@ cdef class FH5Loader:
         return convert_bytes_to_str(py_string)
 
     def getConnectivity(self):
+        """
+        Get the connectivity from the file
+        """
         cdef int num_elems
         cdef int *_comps
         cdef int *_ltypes
@@ -2044,7 +2047,88 @@ cdef class FH5Loader:
 
         return convert_bytes_to_str(var_names), fdata
 
-  # Wrap the TACSCreator object
+    def getElementDataAsContinuous(self, name):
+        cdef int index = -1
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int num_nodes
+        cdef np.ndarray data
+
+        # Get the dimension of the continuous data
+        self.ptr.getContinuousData(NULL, NULL, &num_nodes, NULL, NULL)
+        data = np.zeros(num_nodes, dtype=np.single)
+
+        # Get the index of the values
+        self.ptr.getElementData(NULL, &_var_names, NULL, NULL, NULL)
+        var_names = _var_names
+        var_list = convert_bytes_to_str(var_names).split(',')
+        if name in var_list:
+            index = var_list.index(name)
+        else:
+            raise ValueError('%s not in element data list'%(name))
+
+        self.ptr.getElementDataAsContinuous(index, <float*>data.data)
+        return data
+
+    def computePlanarMask(self, ElementLayout layout, base, normal):
+        cdef float _base[3]
+        cdef float _normal[3]
+        cdef int num_elements
+
+        self.ptr.getConnectivity(&num_elements, NULL, NULL, NULL, NULL)
+        cdef np.ndarray mask = np.array(num_elements, dtype=np.intc)
+
+        _base[0] = base[0]
+        _base[1] = base[1]
+        _base[2] = base[2]
+        _normal[0] = normal[0]
+        _normal[1] = normal[1]
+        _normal[2] = normal[2]
+
+        self.ptr.computePlanarMask(layout, _base, _normal, <int*>mask.data)
+        return mask
+
+    def computeValueMask(self, ElementLayout layout, name,
+                         lower=None, upper=None):
+        cdef int index = -1
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int use_continuous_data = 1
+        cdef float _lower, _upper
+        cdef int num_elements
+        cdef np.ndarray mask
+
+        _lower = -1e30
+        _upper = 1e30
+        if lower is not None:
+            _lower = lower
+        if upper is not None:
+            _upper = upper
+
+        self.ptr.getConnectivity(&num_elements, NULL, NULL, NULL, NULL)
+        mask = np.array(num_elements, dtype=np.intc)
+
+        self.ptr.getContinuousData(NULL, &_var_names, NULL, NULL, NULL)
+        var_names = _var_names
+        var_list = convert_bytes_to_str(var_names).split(',')
+        if name in var_list:
+            use_continuous_data = 1
+            index = var_list.index(name)
+
+        self.ptr.getElementData(NULL, &_var_names, NULL, NULL, NULL)
+        var_names = _var_names
+        var_list = convert_bytes_to_str(var_names).split(',')
+        if name in var_list:
+            use_continuous_data = 0
+            index = var_list.index(name)
+
+        if index == -1:
+            raise ValueError('%s not in element data list'%(name))
+
+        self.ptr.computeValueMask(layout, use_continuous_data, index,
+                                  _lower, _upper, <int*>mask.data)
+        return mask
+
 cdef class Creator:
     cdef TACSCreator *ptr
     def __cinit__(self, MPI.Comm comm, int vars_per_node):

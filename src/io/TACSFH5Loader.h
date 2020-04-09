@@ -16,6 +16,7 @@
 #define TACS_FH5_LOADER_H
 
 #include "TACSFH5.h"
+#include "TACSElementTypes.h"
 
 /**
    Load data from a file created by the TACSToFH5.
@@ -46,6 +47,15 @@ class TACSFH5Loader : public TACSObject {
                           int *dim1, int *dim2, float **data );
   void getElementData( const char **zone_name, const char **var_names,
                        int *dim1, int *dim2, float **data );
+
+  // Methods for post-processing data
+  void getElementDataAsContinuous( int index, float *data );
+  void computeValueMask( ElementLayout layout, int use_continuous_data,
+                         int index, float lower, float upper, int *mask );
+  void computePlanarMask( ElementLayout layout, const float base[],
+                          const float normal[], int *mask );
+  void getIsoSurfaces( ElementLayout layout, const int *mask, float isoval,
+                       int index, float *_data, int *_ntris, float **_verts );
 
  private:
   // Things associated with the types of elements
