@@ -301,7 +301,7 @@ void TACSFH5Loader::computeValueMask( ElementLayout layout,
             }
             val /= (ptr[i+1] - ptr[i]);
 
-            if (val >= lower && val < upper){
+            if (val >= lower && val <= upper){
               mask[i] = 1;
             }
           }
@@ -319,11 +319,11 @@ void TACSFH5Loader::computeValueMask( ElementLayout layout,
           if (ptr[i+1] - ptr[i] > 0){
             float val = 0.0;
             for ( int j = ptr[i]; j < ptr[i+1]; j++ ){
-              val += element_data[j*num_vals_continuous + index];
+              val += element_data[j*num_vals_element + index];
             }
             val /= (ptr[i+1] - ptr[i]);
 
-            if (val >= lower && val < upper){
+            if (val >= lower && val <= upper){
               mask[i] = 1;
             }
           }
@@ -385,19 +385,118 @@ void TACSFH5Loader::computePlanarMask( ElementLayout layout,
   }
 }
 
+/**
+  Compute the node to element data structure for the specified layout
+  and optional mask array.
+
+  Note that if all indices should be used, num_sub_indices = -1 will
+  form a connectivity from all nodes
+
+  @param layout Element layout type to use
+  @param mask The element mask to apply (optional)
+  @param num_sub_indices Connect only those elements with sub indices
+  @param sub_indices Subindex array
+  @param node_to_element_ptr Output pointer into the node_to_element array
+  @param node_to_element Elements associated with the specified node
+*/
+void TACSFH5Loader::computeNodeToElement( ElementLayout layout,
+                                          const int *mask,
+                                          int num_sub_indices,
+                                          const int *sub_indices,
+                                          int **_node_to_element_ptr,
+                                          int **_node_to_element ){
+  // Scan through the elements, and figure out how many times
+  // each node is referred to
+  int *node_to_element_ptr = new int[ num_nodes_continuous+1 ];
+  memset(node_to_element_ptr, 0, (num_nodes_continuous + 1)*sizeof(int));
+  for ( int i = 0; i < num_elements; i++ ){
+    if (ltypes[i] == layout && !(mask && mask[i])){
+      if (num_sub_indices > 0){
+        for ( int j = 0; j < num_sub_indices; j++ ){
+          int node = conn[ptr[i] + sub_indices[j]];
+          node_to_element_ptr[node + 1]++;
+        }
+      }
+      else {
+        for ( int j = ptr[i]; j < ptr[i+1]; j++ ){
+          int node = conn[ptr[j]];
+          node_to_element_ptr[node + 1]++;
+        }
+      }
+    }
+  }
+
+  // Set the node pointer
+  for ( int i = 1; i <= num_nodes_continuous; i++ ){
+    node_to_element_ptr[i] += node_to_element_ptr[i-1];
+  }
+
+  // Now, loop over and set the adjacent
+  int *node_to_element =
+    new int[ node_to_element_ptr[num_nodes_continuous] ];
+
+  for ( int i = 0; i < num_elements; i++ ){
+    if (ltypes[i] == layout && !(mask && mask[i])){
+      if (num_sub_indices > 0){
+        for ( int j = 0; j < num_sub_indices; j++ ){
+          // Only consider the corner nodes
+          int node = conn[ptr[i] + sub_indices[j]];
+          node_to_element[node_to_element_ptr[node]] = i;
+          node_to_element_ptr[node]++;
+        }
+      }
+      else {
+        for ( int j = ptr[i]; j < ptr[i+1]; j++ ){
+          // Only consider the corner nodes
+          int node = conn[j];
+          node_to_element[node_to_element_ptr[node]] = i;
+          node_to_element_ptr[node]++;
+        }
+      }
+    }
+  }
+
+  // Reset the node to element pointer
+  for ( int i = num_nodes_continuous; i > 0; i-- ){
+    node_to_element_ptr[i] = node_to_element_ptr[i-1];
+  }
+  node_to_element_ptr[0] = 0;
+
+  *_node_to_element_ptr = node_to_element_ptr;
+  *_node_to_element = node_to_element;
+}
+
 /*
   Compute the unique set of triangles representing the
   faces
 */
-/*
 void TACSFH5Loader::getUnmatchedEdgesAndFaces( ElementLayout layout,
                                                const int *mask,
+                                               int index,
+                                               const float *data,
+                                               int *_num_points,
+                                               float **_points,
+                                               float **_values,
                                                int *_num_edges,
                                                int **_edges,
-                                               int *_num_faces,
-                                               int **_faces ){
-  int num_edges = 0;
-  int *edges = NULL;
+                                               int *_ntris,
+                                               int **_verts ){
+  // Keep track of the max number of triangles
+  int chunk_size = num_elements;
+  if (num_elements > (1 << 16)){
+    chunk_size = 1 << 16;
+  }
+  int max_num_tris = 0;
+
+  // Set the number of triangles/vertices
+  int ntris = 0;
+  int *vert_indices = NULL;
+
+  TACSMatrixHash *hash = NULL;
+  if (_edges){
+    hash = new TACSMatrixHash(chunk_size, chunk_size);
+    hash->incref();
+  }
 
   if (layout == TACS_HEXA_ELEMENT ||
       layout == TACS_HEXA_QUADRATIC_ELEMENT ||
@@ -419,108 +518,230 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces( ElementLayout layout,
       npe = 6;
     }
 
-    // Scan through the elements, and figure out how many times
-    // each node is referred to
-    int *node_to_element_ptr = new int[ num_nodes_continuous+1 ];
-    memset(node_to_element_ptr, 0, (num_nodes_continuous + 1)*sizeof(int));
-    for ( int i = 0; i < num_elements; i++ ){
-      if (ltypes[i] == layout && !(mask && mask[i]))){
-        // Scan through each node
-        for ( int j = 0; j < 8; j++ ){
-          // Only consider the corner nodes
-          int index = ((npe-1)*(j % 2) +
-                       (npe-1)*npe*((j % 4)/2) +
-                       (npe-1)*npe*npe*(j / 4));
+    // Get the hex indices
+    int hex_indices[8];
+    for ( int j = 0; j < 8; j++ ){
+      // Only consider the corner nodes
+      hex_indices[j] = ((npe-1)*(j % 2) +
+                        (npe-1)*npe*((j % 4)/2) +
+                        (npe-1)*npe*npe*(j / 4));
+    }
 
-          int node = conn[ptr[i] + index];
-          node_to_element_ptr[node + 1]++;
-        }
+    // Compute the node to element data across shared nodes
+    int *node_to_element_ptr, *node_to_element;
+    computeNodeToElement(layout, mask, 8, hex_indices,
+                         &node_to_element_ptr, &node_to_element);
+
+    // Face nodes associated with each edge
+    int hex_face_nodes[][4] =
+      {{0,2,4,6}, {1,3,5,7},
+       {0,1,4,5}, {2,3,6,7},
+       {0,1,2,3}, {4,5,6,7}};
+
+    const int hex_face_to_edges[][4][2] =
+      {{{0,2}, {4,6}, {0,4}, {2,6}},
+       {{1,3}, {5,7}, {1,5}, {3,7}},
+       {{0,1}, {4,5}, {0,4}, {1,5}},
+       {{2,3}, {6,7}, {2,6}, {3,7}},
+       {{0,1}, {2,3}, {0,2}, {1,3}},
+       {{4,5}, {6,7}, {4,6}, {5,7}}};
+
+    // Convert to the node numbers on each face
+    for ( int face = 0; face < 6; face++ ){
+      for ( int i = 0; i < 4; i++ ){
+        int j = hex_face_nodes[face][i];
+        hex_face_nodes[face][i] = ((npe-1)*(j % 2) +
+                                   (npe-1)*npe*((j % 4)/2) +
+                                   (npe-1)*npe*npe*(j / 4));
       }
     }
-
-    // Set the node pointer
-    for ( int i = 1; i <= num_nodes_continuous; i++ ){
-      node_to_element_ptr[i] += node_to_element_ptr[i-1];
-    }
-
-    // Now, loop over and set the adjacent
-    int *node_to_element = new int[ node_element_ptr[num_nodes_continuous] ];
-
-    for ( int i = 0; i < num_elements; i++ ){
-      if (ltypes[i] == layout && !(mask && mask[i]))){
-        // Scan through each node
-        for ( int j = 0; j < 8; j++ ){
-          // Only consider the corner nodes
-          int index = ((npe-1)*(j % 2) +
-                       (npe-1)*npe*((j % 4)/2) +
-                       (npe-1)*npe*npe*(j / 4));
-
-          int node = conn[ptr[i] + index];
-          node_to_element[node_to_element_ptr[node]] = i;
-          node_to_element_ptr[node]++;
-        }
-      }
-    }
-
-    // Reset the node to element pointer
-    for ( int i = num_nodes_continuous; i > 0; i-- ){
-      node_to_element_ptr[i] = node_to_element_ptr[i-1];
-    }
-    node_to_element_ptr[0] = 0;
 
     // Look for elements that are adjacent to one another
     // via a connected face
     for ( int i = 0; i < num_elements; i++ ){
-      for ( int face = 0; face < 6; face++ ){
-        // Check for a common element index that is not
-        // this element
-        if (checkForCommonElement()){
-
-
-          // Add the edges - there may be duplicates so
-          for ( int k = 0; k < 4; k++ ){
-            // Look for the node indices associated with the edge
-            // for this face
-            int j1 = hex_face_to_edges[face][k][0];
-            int j2 = hex_face_to_edges[face][k][1];
-
-            // Look for the closest two adjacent elements
-            int n1 = ((npe-1)*(j1 % 2) +
-                      (npe-1)*npe*((j1 % 4)/2) +
-                      (npe-1)*npe*npe*(j1 / 4));
-            int n2 = ((npe-1)*(j2 % 2) +
-                      (npe-1)*npe*((j2 % 4)/2) +
-                      (npe-1)*npe*npe*(j2 / 4));
-
-            n1 = conn[ptr[i + n1]];
-            n2 = conn[ptr[i + n2]];
-
-            // Find the edges
-            int imin = n1;
-            int imax = n2;
-            if (n2 > n1){
-              imin = n2;
-              imax = n1;
-            }
-
-            hash->addEntry(imin, imax);
+      if (ltypes[i] == layout && !(mask && mask[i])){
+        for ( int face = 0; face < 6; face++ ){
+          int len[4];
+          const int *array[4];
+          for ( int j = 0; j < 4; j++ ){
+            // Pull out the node number from the connectivity and set the
+            // array pointer and length of each element sub-length
+            int node = conn[ptr[i] + hex_face_nodes[face][j]];
+            len[j] = node_to_element_ptr[node+1] - node_to_element_ptr[node];
+            array[j] = &node_to_element[node_to_element_ptr[node]];
           }
 
+          // Find if there is an element that shares all the same
+          // face nodes as element i, that
+          int unique_face = 1;
+          for ( int j = 0; j < len[0]; j++ ){
+            if (array[0][j] != i){
+              int count = 1;
 
+              // Search through the adjacent nodes
+              for ( int n = 1; n < 4; n++ ){
+                for ( int jj = 0; (jj < len[n] && array[n][jj] <= array[0][j]); jj++ ){
+                  // Check for a matching element number
+                  if (array[n][jj] == array[0][j]){
+                    count++;
+                    break;
+                  }
+                }
 
+                // Check if it doesn't exist
+                if (count != n+1){
+                  break;
+                }
+              }
 
+              if (count == 4){
+                unique_face = 0;
+                break;
+              }
+            }
+          }
+
+          if (unique_face){
+            // Add the faces
+            if (_verts){
+              // Expand the buffer if needed
+              if (2 + ntris > max_num_tris){
+                max_num_tris = ntris + 2 + chunk_size;
+                int *buff = new int[ 3*max_num_tris ];
+                memcpy(buff, vert_indices, 3*ntris*sizeof(int));
+                if (vert_indices){
+                  delete [] vert_indices;
+                }
+                vert_indices = buff;
+              }
+
+              // Add the new triangles
+              int *v = &vert_indices[3*ntris];
+              v[0] = conn[ptr[i] + hex_face_nodes[face][0]];
+              v[1] = conn[ptr[i] + hex_face_nodes[face][1]];
+              v[2] = conn[ptr[i] + hex_face_nodes[face][3]];
+
+              v[3] = conn[ptr[i] + hex_face_nodes[face][0]];
+              v[4] = conn[ptr[i] + hex_face_nodes[face][3]];
+              v[5] = conn[ptr[i] + hex_face_nodes[face][2]];
+
+              // Add the new triangles
+              ntris += 2;
+            }
+
+            if (hash){
+              // Add the edges - there may be duplicates so use the
+              // hash table
+              for ( int k = 0; k < 4; k++ ){
+                int n1 = hex_indices[hex_face_to_edges[face][k][0]];
+                int n2 = hex_indices[hex_face_to_edges[face][k][1]];
+                n1 = conn[ptr[i] + n1];
+                n2 = conn[ptr[i] + n2];
+
+                // Find the edges
+                int imin = n1;
+                int imax = n2;
+                if (n2 < n1){
+                  imin = n2;
+                  imax = n1;
+                }
+
+                hash->addEntry(imin, imax);
+              }
+            }
+          }
         }
       }
     }
+
+    delete [] node_to_element;
+    delete [] node_to_element_ptr;
   }
 
-  // Extract the final set of edges
-  *_num_edges = num_edges;
-  *_edges = edges;
-}
-*/
+  int num_points = 0;
+  int *global_to_local = NULL;
 
-const int hex_ordering_transform[] = {0, 1, 3, 2, 4, 5, 7, 6};
+  if (hash){
+    int nrows;
+    int *rowp, *cols;
+    hash->tocsr(&nrows, &global_to_local, &rowp, &cols);
+    hash->decref();
+
+    // Set the number of points
+    num_points = nrows;
+
+    int num_edges = rowp[nrows];
+    int *edges = new int[ 2*num_edges ];
+    int *e = edges;
+    for ( int ip = 0; ip < nrows; ip++ ){
+      for ( int jp = rowp[ip]; jp < rowp[ip+1]; jp++ ){
+        e[0] = ip;
+        e[1] = cols[jp];
+        e += 2;
+      }
+    }
+
+    // Free the CSR data
+    delete [] rowp;
+    delete [] cols;
+
+    // Set the edges
+    *_num_edges = num_edges;
+    *_edges = edges;
+  }
+
+  if (_verts){
+    // Create the global to local mapping
+    if (!global_to_local){
+      TACSIndexHash *index_hash = new TACSIndexHash(ntris);
+      index_hash->incref();
+      for ( int i = 0; i < 3*ntris; i++ ){
+        index_hash->addEntry(vert_indices[i]);
+      }
+      index_hash->toArray(&num_points, &global_to_local);
+      index_hash->decref();
+    }
+
+    for ( int i = 0; i < 3*ntris; i++ ){
+      int *item = TacsSearchArray(vert_indices[i], num_points, global_to_local);
+      if (item){
+        vert_indices[i] = item - global_to_local;
+      }
+    }
+    *_verts = vert_indices;
+    *_ntris = ntris;
+  }
+
+  // Set the points
+  float *points = new float[ 3*num_points ];
+  float *p = points;
+  for ( int i = 0; i < num_points; i++ ){
+    p[0] = continuous_data[num_vals_continuous*global_to_local[i]];
+    p[1] = continuous_data[num_vals_continuous*global_to_local[i]+1];
+    p[2] = continuous_data[num_vals_continuous*global_to_local[i]+2];
+    p += 3;
+  }
+
+  *_points = points;
+  *_num_points = num_points;
+
+  if (_values){
+    float *values = new float[ num_points ];
+    if (data){
+      for ( int i = 0; i < num_points; i++ ){
+        values[i] = data[global_to_local[i]];
+      }
+    }
+    else if (index >= 0 && index < num_vals_continuous){
+      for ( int i = 0; i < num_points; i++ ){
+        values[i] = continuous_data[num_vals_continuous*global_to_local[i] + index];
+      }
+    }
+    *_values = values;
+  }
+
+  delete [] global_to_local;
+}
 
 /*
   Extract the iso-surface for the given element type.
@@ -529,7 +750,7 @@ const int hex_ordering_transform[] = {0, 1, 3, 2, 4, 5, 7, 6};
   @param mask Element mask array to apply
   @param isoval The isovalue of the contour
   @param index Index of the continuous data set to use
-  @param _data Continuuos data set to use (overrides index choice)
+  @param _data Continuous data set to use (overrides index choice)
   @param _ntris Output number of triangles
   @param _verts Triangles vertices
 */
@@ -567,6 +788,8 @@ void TACSFH5Loader::getIsoSurfaces( ElementLayout layout,
       layout == TACS_HEXA_CUBIC_ELEMENT ||
       layout == TACS_HEXA_QUARTIC_ELEMENT ||
       layout == TACS_HEXA_QUARTIC_ELEMENT){
+
+    const int hex_ordering_transform[] = {0, 1, 3, 2, 4, 5, 7, 6};
 
     int npe = 2;
     if (layout == TACS_HEXA_QUADRATIC_ELEMENT){
@@ -623,7 +846,9 @@ void TACSFH5Loader::getIsoSurfaces( ElementLayout layout,
                 max_num_tris = ntris + new_tris + chunk_size;
                 float *buff = new float[ 9*max_num_tris ];
                 memcpy(buff, verts, 9*ntris*sizeof(float));
-                delete [] verts;
+                if (verts){
+                  delete [] verts;
+                }
                 verts = buff;
               }
 

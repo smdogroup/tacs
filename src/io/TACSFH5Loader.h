@@ -54,10 +54,23 @@ class TACSFH5Loader : public TACSObject {
                          int index, float lower, float upper, int *mask );
   void computePlanarMask( ElementLayout layout, const float base[],
                           const float normal[], int *mask );
+  void getUnmatchedEdgesAndFaces( ElementLayout layout, const int *mask,
+                                  int *_num_edges, int **_edges,
+                                  int *_num_faces, int **_faces );
   void getIsoSurfaces( ElementLayout layout, const int *mask, float isoval,
                        int index, float *_data, int *_ntris, float **_verts );
+  void getUnmatchedEdgesAndFaces( ElementLayout layout, const int *mask,
+                                  int index, const float *data,
+                                  int *_num_points, float **_points, float **_values,
+                                  int *_num_edges, int **_edges,
+                                  int *_ntris, int **_verts );
 
  private:
+  void computeNodeToElement( ElementLayout layout, const int *mask,
+                             int num_sub_indices, const int *sub_indices,
+                             int **_node_to_element_ptr,
+                             int **_node_to_element );
+
   // Things associated with the types of elements
   int num_elements;
   int *comp_nums, *ltypes;

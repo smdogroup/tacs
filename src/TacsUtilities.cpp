@@ -20,6 +20,11 @@ int TacsIntegerComparator( const void *a, const void *b ){
   return (*(int*)a - *(int*)b);
 }
 
+int TacsSort( int len, int *array ){
+  qsort(array, len, sizeof(int), TacsIntegerComparator);
+  return len;
+}
+
 /*
   Sort an array and remove duplicate entries from the array. Negative
   values are removed from the array.
@@ -32,14 +37,14 @@ int TacsIntegerComparator( const void *a, const void *b ){
   duplicate entries are discovered.
 
   input:
-  dvNums:   the array of values to be sorted
-  numDVs:   the length of the array
+  len:     the length of the array
+  array:   the array of values to be sorted
 
   returns:
-  the size of the unique list <= numDVs
+  the size of the unique list <= len
 */
 int TacsUniqueSort( int len, int *array ){
-  // Sort the dvNums
+  // Sort the array
   qsort(array, len, sizeof(int), TacsIntegerComparator);
 
   int i = 0; // The location from which to take the entires
