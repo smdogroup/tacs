@@ -20,6 +20,11 @@
 int TacsIntegerComparator( const void *a, const void *b );
 
 /**
+  Sort an array of integers
+*/
+int TacsSort( int len, int *array );
+
+/**
   Sort an array and return the number of unique design variables within
   that array start is the index of the first non-negative value and the
   return value is the number of non-negative design variables
@@ -74,13 +79,13 @@ void TacsMatchIntervals( int size, const int range[],
 void TacsExtendArray( int **_array, int oldlen, int newlen );
 void TacsExtendArray( TacsScalar **_array, int oldlen, int newlen );
 
-/*!
+/**
   Sort and uniquify a CSR data structure.
 
-  nvars:        the number of variables
-  rowp:         pointer into the rows of of the matrix
-  cols:         the column indices
-  remove_diag:  remove any diagonal entries encountered
+  @param nvars The number of variables
+  @param rowp Pointer into the rows of of the matrix
+  @param cols The column indices
+  @param remove_diag Flag indicating whether to remove diagonal entries
 */
 void TacsSortAndUniquifyCSR( int nvars, int *rowp, int *cols,
                              int remove_diag=0 );

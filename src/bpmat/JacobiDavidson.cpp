@@ -410,18 +410,21 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
         for (int i = 0; i < nconverged; i++){
           V[1]->axpy(1.0, Q[i]);
         }
+
         for ( int k = 0; k < 2; k++ ){
           // B-orthogonalize the eigenvectors
           for ( int i = 0; i < k; i++ ){
             TacsScalar h = oper->dot(V[k], V[i]);
             V[k]->axpy(-h, V[i]);
           }
+
           // Apply boundary conditions for this vector
           oper->applyBCs(V[k]);
 
           // Normalize the vector so that it is orthonormal
           TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
           V[k]->scale(1.0/vnorm);
+
           // Compute work = A*V[k]
           oper->multA(V[k], work);
 
@@ -478,6 +481,13 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
 
   // Reset the number of converged eigenvectors/eigenvalues
   nconverged = 0;
+
+  if (ksm_print && print_level > 0){
+    char line[256];
+    sprintf(line, "%4s %15s %15s %10s\n",
+            "Iter", "JD Residual", "Ritz value", "toler");
+    ksm_print->print(line);
+  }
 
   for ( int k = kstart; k < m; k++ ){
     // Orthogonalize against converged eigenvectors as well (if any)...
@@ -562,17 +572,22 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
       work->axpy(-theta, P[nconverged]);
       oper->applyBCs(work);
 
+      // Compute the norm of the residual: ||A*q - theta*B*q||
       TacsScalar w_norm = work->norm();
+
+      // Compute the norm of the eigenvalue to check if it has converged
+      double abs_theta = fabs(TacsRealPart(theta));
+      double toler = (eig_atol*(0.1/(0.1 + abs_theta)) +
+                      eig_rtol*(0.1*abs_theta/(0.1 + abs_theta))*Anorm);
+
       if (ksm_print && print_level > 0){
         char line[256];
-        sprintf(line, "JD Residual[%2d]: %15.5e  Ritz value[%2d]: %20.10e\n",
-                iteration, TacsRealPart(w_norm), nconverged, theta);
+        sprintf(line, "%4d %15.5e %15.5e %10.2e\n",
+                iteration, TacsRealPart(w_norm), theta, toler);
         ksm_print->print(line);
       }
 
-      // Compute the norm of the eigenvalue to check if it has converged
-      if (TacsRealPart(w_norm) <= eig_rtol*TacsRealPart(Anorm) ||
-          TacsRealPart(w_norm) <= eig_atol){
+      if (TacsRealPart(w_norm) <= toler){
         // Record the Ritz value as the eigenvalue
         eigvals[nconverged] = theta;
         eigerror[nconverged] = w_norm;

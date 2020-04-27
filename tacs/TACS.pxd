@@ -674,6 +674,14 @@ cdef extern from "TACSFH5Loader.h":
                                int*, int*, float**)
         void getElementData(const char**, const char**,
                             int*, int*, float**)
+        void getElementDataAsContinuous(int, float*)
+        void computeValueMask(ElementLayout, int, int, float, float, int*)
+        void computePlanarMask(ElementLayout, float*, float*, int*)
+        void getIsoSurfaces(ElementLayout, const int*, float, int, float*, int*, float**)
+        void getUnmatchedEdgesAndFaces(ElementLayout, const int*,
+                                       int, const float*,
+                                       int*, float**, float**,
+                                       int*, int**, int*, int**)
 
 cdef extern from "TACSIntegrator.h":
     # Declare the TACSIntegrator base class

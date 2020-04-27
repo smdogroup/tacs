@@ -51,7 +51,6 @@ TACSFH5File::~TACSFH5File(){
     }
     delete [] comp_names;
   }
-
 }
 
 /**

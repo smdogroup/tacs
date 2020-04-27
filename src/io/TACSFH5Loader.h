@@ -16,6 +16,7 @@
 #define TACS_FH5_LOADER_H
 
 #include "TACSFH5.h"
+#include "TACSElementTypes.h"
 
 /**
    Load data from a file created by the TACSToFH5.
@@ -47,7 +48,29 @@ class TACSFH5Loader : public TACSObject {
   void getElementData( const char **zone_name, const char **var_names,
                        int *dim1, int *dim2, float **data );
 
+  // Methods for post-processing data
+  void getElementDataAsContinuous( int index, float *data );
+  void computeValueMask( ElementLayout layout, int use_continuous_data,
+                         int index, float lower, float upper, int *mask );
+  void computePlanarMask( ElementLayout layout, const float base[],
+                          const float normal[], int *mask );
+  void getUnmatchedEdgesAndFaces( ElementLayout layout, const int *mask,
+                                  int *_num_edges, int **_edges,
+                                  int *_num_faces, int **_faces );
+  void getIsoSurfaces( ElementLayout layout, const int *mask, float isoval,
+                       int index, float *_data, int *_ntris, float **_verts );
+  void getUnmatchedEdgesAndFaces( ElementLayout layout, const int *mask,
+                                  int index, const float *data,
+                                  int *_num_points, float **_points, float **_values,
+                                  int *_num_edges, int **_edges,
+                                  int *_ntris, int **_verts );
+
  private:
+  void computeNodeToElement( ElementLayout layout, const int *mask,
+                             int num_sub_indices, const int *sub_indices,
+                             int **_node_to_element_ptr,
+                             int **_node_to_element );
+
   // Things associated with the types of elements
   int num_elements;
   int *comp_nums, *ltypes;

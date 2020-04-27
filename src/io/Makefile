@@ -10,7 +10,8 @@ include ../../TACS_Common.mk
 CXX_OBJS = TACSFH5.o \
 	TACSToFH5.o \
 	TACSFH5Loader.o \
-	TACSMeshLoader.o
+	TACSMeshLoader.o \
+	TACSMarchingCubes.o
 
 DIR=${TACS_DIR}/src/io
 
