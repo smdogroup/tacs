@@ -29,7 +29,7 @@ CXX_OBJS = FElibrary.o \
 	TACSThermoelasticPlateModel.o \
 	TACSNeohookean.o \
 	TACSTraction2D.o \
-	TACSTraction2D.o \
+	TACSTraction3D.o \
 	TACSConvectiveTraction2D.o \
 	TACSConvectiveTraction3D.o \
 	TACSElementVerification.o
