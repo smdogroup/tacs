@@ -54,6 +54,10 @@ ELEMENT_DISPLACEMENT = TACS_ELEMENT_DISPLACEMENT
 ELEMENT_STRAIN = TACS_ELEMENT_STRAIN
 ELEMENT_STRESS = TACS_ELEMENT_STRESS
 
+# Flags for the thermomechanical model
+STEADY_STATE_MECHANICAL = TACS_STEADY_STATE_MECHANICAL
+STEADY_STATE_THERMAL = TACS_STEADY_STATE_THERMAL
+
 def TestElementBasis(ElementBasis basis, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):
@@ -144,8 +148,9 @@ cdef class LinearElasticity2D(ElementModel):
         self.ptr.incref()
 
 cdef class LinearThermoelasticity2D(ElementModel):
-    def __cinit__(self, PlaneStressConstitutive con):
-        self.ptr = new TACSLinearThermoelasticity2D(con.cptr, TACS_LINEAR_STRAIN)
+    def __cinit__(self, PlaneStressConstitutive con, int steady_flag=0):
+        self.ptr = new TACSLinearThermoelasticity2D(con.cptr, TACS_LINEAR_STRAIN,
+                                                    steady_flag)
         self.ptr.incref()
 
 
@@ -170,8 +175,9 @@ cdef class LinearElasticity3D(ElementModel):
         return None
 
 cdef class LinearThermoelasticity3D(ElementModel):
-    def __cinit__(self, SolidConstitutive con):
-        self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN)
+    def __cinit__(self, SolidConstitutive con, int steady_flag=0):
+        self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN,
+                                                    steady_flag)
         self.ptr.incref()
 
 cdef class PlateModel(ElementModel):

@@ -20,10 +20,14 @@
 #include "TACSPlaneStressConstitutive.h"
 #include "TACSSolidConstitutive.h"
 
+const int TACS_STEADY_STATE_MECHANICAL = 1;
+const int TACS_STEADY_STATE_THERMAL = 2;
+
 class TACSLinearThermoelasticity2D : public TACSElementModel {
  public:
   TACSLinearThermoelasticity2D( TACSPlaneStressConstitutive *_con,
-                                ElementStrainType strain_type );
+                                ElementStrainType strain_type,
+                                int _steady_state_flag=0 );
   ~TACSLinearThermoelasticity2D();
 
   int getSpatialDim();
@@ -133,6 +137,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
                       int ld_data, TacsScalar *data );
 
  private:
+  int steady_state_flag;
   ElementStrainType strain_type;
   TACSPlaneStressConstitutive *stiff;
 
@@ -144,7 +149,8 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
 class TACSLinearThermoelasticity3D : public TACSElementModel {
  public:
   TACSLinearThermoelasticity3D( TACSSolidConstitutive *_con,
-                                ElementStrainType strain_type );
+                                ElementStrainType strain_type,
+                                int _steady_state_flag=0 );
   ~TACSLinearThermoelasticity3D();
 
   int getSpatialDim();
@@ -254,6 +260,7 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
                       int ld_data, TacsScalar *data );
 
  private:
+  int steady_state_flag;
   ElementStrainType strain_type;
   TACSSolidConstitutive *stiff;
 

@@ -15,10 +15,12 @@
 #include "TACSThermoelasticity.h"
 
 TACSLinearThermoelasticity2D::TACSLinearThermoelasticity2D( TACSPlaneStressConstitutive *_stiff,
-                                                            ElementStrainType _strain_type ){
+                                                            ElementStrainType _strain_type,
+                                                            int _steady_state_flag ){
   stiff = _stiff;
   stiff->incref();
   strain_type = _strain_type;
+  steady_state_flag = _steady_state_flag;
 }
 
 TACSLinearThermoelasticity2D::~TACSLinearThermoelasticity2D(){
@@ -97,15 +99,28 @@ void TACSLinearThermoelasticity2D::evalWeakIntegrand( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5];
+
+  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+    DUt[2] = 0.0;
+    DUt[5] = 0.0;
+  }
+  else {
+    DUt[2] = rho*Ut[2];
+    DUt[5] = rho*Ut[5];
+  }
 
   DUt[6] = 0.0;
-  DUt[7] = c*rho*Ut[7];
   DUt[8] = 0.0;
+
+  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+    DUt[7] = 0.0;
+  }
+  else {
+    DUt[7] = c*rho*Ut[7];
+  }
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[6]; // The temperature value
@@ -164,15 +179,28 @@ void TACSLinearThermoelasticity2D::evalWeakJacobian( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2]; // u,tt
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5]; // v,tt
+
+  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+    DUt[2] = 0.0;
+    DUt[5] = 0.0;
+  }
+  else {
+    DUt[2] = rho*Ut[2];
+    DUt[5] = rho*Ut[5];
+  }
 
   DUt[6] = 0.0;
-  DUt[7] = c*rho*Ut[7]; // theta,t
   DUt[8] = 0.0;
+
+  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+    DUt[7] = 0.0;
+  }
+  else {
+    DUt[7] = c*rho*Ut[7];
+  }
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[6]; // The temperature value
@@ -217,9 +245,21 @@ void TACSLinearThermoelasticity2D::evalWeakJacobian( int elemIndex,
   *Jac_pairs = linear_Jac_pairs;
 
   // Set the time-dependent terms
-  Jac[0] = rho;
-  Jac[1] = rho;
-  Jac[2] = c*rho;
+  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+    Jac[0] = 0.0;
+    Jac[1] = 0.0;
+  }
+  else {
+    Jac[0] = rho;
+    Jac[1] = rho;
+  }
+
+  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+    Jac[2] = 0.0;
+  }
+  else {
+    Jac[2] = c*rho;
+  }
 
   // Compute the unit strain
   TacsScalar C[6], Kc[3];
@@ -831,10 +871,12 @@ void TACSLinearThermoelasticity2D::getOutputData( int elemIndex,
 }
 
 TACSLinearThermoelasticity3D::TACSLinearThermoelasticity3D( TACSSolidConstitutive *_stiff,
-                                                            ElementStrainType _strain_type ){
+                                                            ElementStrainType _strain_type,
+                                                            int _steady_state_flag ){
   stiff = _stiff;
   stiff->incref();
   strain_type = _strain_type;
+  steady_state_flag = _steady_state_flag;
 }
 
 TACSLinearThermoelasticity3D::~TACSLinearThermoelasticity3D(){
@@ -928,19 +970,33 @@ void TACSLinearThermoelasticity3D::evalWeakIntegrand( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5];
 
   DUt[6] = 0.0;
   DUt[7] = 0.0;
-  DUt[8] = rho*Ut[8];
+
+  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+    DUt[2] = 0.0;
+    DUt[5] = 0.0;
+    DUt[8] = 0.0;
+  }
+  else {
+    DUt[2] = rho*Ut[2];
+    DUt[5] = rho*Ut[5];
+    DUt[8] = rho*Ut[8];
+  }
 
   DUt[9] = 0.0;
-  DUt[10] = c*rho*Ut[10];
   DUt[11] = 0.0;
+
+  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+    DUt[10] = 0.0;
+  }
+  else {
+    DUt[10] = c*rho*Ut[10];
+  }
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[9]; // The temperature value
@@ -1016,19 +1072,33 @@ void TACSLinearThermoelasticity3D::evalWeakJacobian( int elemIndex,
 
   DUt[0] = 0.0;
   DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2];
 
   DUt[3] = 0.0;
   DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5];
 
   DUt[6] = 0.0;
   DUt[7] = 0.0;
-  DUt[8] = rho*Ut[8];
+
+  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+    DUt[2] = 0.0;
+    DUt[5] = 0.0;
+    DUt[8] = 0.0;
+  }
+  else {
+    DUt[2] = rho*Ut[2];
+    DUt[5] = rho*Ut[5];
+    DUt[8] = rho*Ut[8];
+  }
 
   DUt[9] = 0.0;
-  DUt[10] = c*rho*Ut[10];
   DUt[11] = 0.0;
+
+  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+    DUt[10] = 0.0;
+  }
+  else {
+    DUt[10] = c*rho*Ut[10];
+  }
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[9]; // The temperature value
@@ -1089,11 +1159,23 @@ void TACSLinearThermoelasticity3D::evalWeakJacobian( int elemIndex,
   *Jac_nnz = 103;
   *Jac_pairs = linear_Jac_pairs;
 
-  // Set the time-dependent terms
-  Jac[0] = rho;
-  Jac[1] = rho;
-  Jac[2] = rho;
-  Jac[3] = c*rho;
+  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+    Jac[0] = 0.0;
+    Jac[1] = 0.0;
+    Jac[2] = 0.0;
+  }
+  else {
+    Jac[0] = rho;
+    Jac[1] = rho;
+    Jac[2] = rho;
+  }
+
+  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+    Jac[3] = 0.0;
+  }
+  else {
+    Jac[3] = c*rho;
+  }
 
   // Compute the unit strain
   TacsScalar C[21], Kc[6];
