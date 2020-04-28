@@ -1274,7 +1274,7 @@ cdef class Assembler:
 
         # Get the node numbers
         if num >= 0 and num < self.ptr.getNumElements():
-            self.ptr.getElement(num, &node_nums, &num_nodes)
+            self.ptr.getElement(num, &num_nodes, &node_nums)
             nodes = np.zeros(num_nodes, dtype=np.int)
             for i in range(num_nodes):
                 nodes[i] = node_nums[i]

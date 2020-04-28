@@ -404,8 +404,6 @@ cdef extern from "TACSAssembler.h":
         TACSAssembler(MPI_Comm tacs_comm, int varsPerNode,
                       int numOwnedNodes, int numElements,
                       int numDependentNodes)
-
-        # Set the element connectivity
         int setElementConnectivity(int *ptr, int *conn)
         int setElements(TACSElement **elements)
         int setDependentNodes(int *depNodeIndex,
@@ -413,83 +411,50 @@ cdef extern from "TACSAssembler.h":
                               double *depNodeWeights)
         void setDesignNodeMap(int _designVarsPerNode,
                               TACSNodeMap *_designVarMap)
-
-        # Add boundary conditions
         void addBCs(int nnodes, int *nodes,
                     int nbcs, int *vars, TacsScalar *vals)
         void addInitBCs(int nnodes, int *nodes,
                         int nbcs, int *vars, TacsScalar *vals)
-
         void computeReordering(OrderingType, MatrixOrderingType)
-
-        # Finalize the mesh - no further elements or nodes may be added
-        # following this call
         void initialize()
-
-        # Return information about the TACSObject
         int getVarsPerNode()
         int getNumNodes()
         int getNumDependentNodes()
         int getNumOwnedNodes()
         int getNumElements()
         TACSNodeMap *getNodeMap()
-
-        # Return information about the element
         TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)
-        TACSElement *getElement(int, const int**, int*)
-
-        # MPI communicator
+        TACSElement *getElement(int, int*, const int**)
         MPI_Comm getMPIComm()
-
-        # Set the auxiliary element class
         void setAuxElements(TACSAuxElements*)
         TACSAuxElements *getAuxElements()
-
+        TACSBVec *createVec()
+        TACSParallelMat *createMat()
+        TACSSchurMat *createSchurMat(OrderingType)
         TACSBVec *createNodeVec()
         void setNodes(TACSBVec*)
         void getNodes(TACSBVec*)
-
         TACSBVec *createDesignVec()
         void getDesignVars(TACSBVec*)
         void setDesignVars(TACSBVec*)
         void getDesignVarRange(TACSBVec*, TACSBVec*)
-
-        # Create vectors/matrices
-        TACSBVec *createVec()
-        TACSParallelMat *createMat()
-        TACSSchurMat *createSchurMat(OrderingType)
-
-        # Reorder the vector based on the selected reordering
         void getReordering(int*)
         void reorderVec(TACSBVec*)
-
-        # Set/get the simulation time
         void setSimulationTime(double)
         double getSimulationTime()
-
         void applyBCs(TACSVec*)
         void applyBCs(TACSMat*)
         void setBCs(TACSVec*)
-
-        # Zero the variables
         void zeroVariables()
         void zeroDotVariables()
         void zeroDDotVariables()
-
-        # Set and retrieve the state variables
         void setVariables(TACSBVec*, TACSBVec*, TACSBVec*)
         void getVariables(TACSBVec*, TACSBVec*, TACSBVec*)
         void copyVariables(TACSBVec*, TACSBVec*, TACSBVec*)
-
-        # Get the initial conditions
         void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
-
-        # Evaluate the kinetic/potential energy
         void evalEnergies(TacsScalar*, TacsScalar*)
-
-        # Assembly routines
         void assembleRes(TACSBVec *residual)
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
@@ -502,12 +467,8 @@ cdef extern from "TACSAssembler.h":
                                    double alpha, double beta, double gamma,
                                    TACSBVec *x, TACSBVec *y,
                                    MatrixOrientation matOr)
-
-        # Evaluation routines
         void evalFunctions(int numFuncs, TACSFunction **functions,
                            TacsScalar *funcVals)
-
-        # Derivative evaluation routines
         void addDVSens(double coef, int numFuncs, TACSFunction **funcs,
                        TACSBVec **dfdx)
         void addSVSens(double alpha, double beta, double gamma,
@@ -520,8 +481,6 @@ cdef extern from "TACSAssembler.h":
         void addAdjointResXptSensProducts(double scale, int numAdjoints,
                                           TACSBVec **adjoint,
                                           TACSBVec **adjXptSens)
-
-        # Add the derivative of the inner product with a matrix
         void addMatDVSensInnerProduct(double scale,
                                       ElementMatrixType matType,
                                       TACSBVec *psi, TACSBVec *phi,
@@ -530,7 +489,6 @@ cdef extern from "TACSAssembler.h":
                                        TACSBVec *psi, TACSBVec *phi,
                                        TACSBVec *res)
 
-        # Test routines
         void testElement(int elemNum, int print_level, double dh,
                          double rtol, double atol)
         void testFunction(TACSFunction *func, double dh)

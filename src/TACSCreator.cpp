@@ -386,7 +386,7 @@ void TACSCreator::getAssemblerNodeNums( TACSAssembler *assembler,
   }
 
   // Apply the reordering in TACS
-  assembler->reorderNodes(tacs_nodes, *num_dist_nodes);
+  assembler->reorderNodes(*num_dist_nodes, tacs_nodes);
 
   *_tacs_nodes = tacs_nodes;
 }

@@ -138,7 +138,56 @@ void TACSTraction2D::addJacobian( int elemIndex,
                                   const TacsScalar *dvars,
                                   const TacsScalar *ddvars,
                                   TacsScalar *res,
-                                  TacsScalar *mat ){}
+                                  TacsScalar *mat ){
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
+
+  // Loop over each quadrature point and add the residual contribution
+  for ( int n = 0; n < nquad; n++ ){
+    // Get the quadrature weight
+    double pt[3], tangent[6];
+    double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
+
+    // Get the face normal
+    TacsScalar X[3], Xd[4], normal[3];
+    TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
+
+    // Compute the inverse of the transformation
+    TacsScalar J[4];
+    inv2x2(Xd, J);
+
+    // Multiply the weight by the quadrature point
+    area *= weight;
+
+    // Evaluate the weak form of the model
+    TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
+    TacsScalar DUx[2*TACSElement2D::MAX_VARS_PER_NODE];
+    memset(DUt, 0, 3*varsPerNode*sizeof(TacsScalar));
+    memset(DUx, 0, 2*varsPerNode*sizeof(TacsScalar));
+
+    if (getTractionComponents){
+      getTractionComponents(elemIndex, time, faceIndex, X, normal, trac);
+
+      // Set the coefficients for the traction
+      for ( int k = 0; k < varsPerNode; k++ ){
+        DUt[3*k] = -trac[k];
+      }
+    }
+    else if (tractionCoordinateComponent){
+      for ( int k = 0; k < varsPerNode; k++ ){
+        DUt[3*k] = -trac[k];
+      }
+    }
+    else {
+      for ( int k = 0; k < varsPerNode; k++ ){
+        DUt[3*k] = -vec2Dot(&trac[2*k], normal);
+      }
+    }
+
+    // Add the weak form of the residual at this point
+    basis->addWeakFormResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+  }
+}
 
 void TACSTraction2D::addAdjResProduct( int elemIndex,
                                        double time,
@@ -149,7 +198,7 @@ void TACSTraction2D::addAdjResProduct( int elemIndex,
                                        const TacsScalar dvars[],
                                        const TacsScalar ddvars[],
                                        int dvLen,
-                                       TacsScalar dvSens[] ){}
+                                       TacsScalar dfdx[] ){}
 
 void TACSTraction2D::addAdjResXptProduct( int elemIndex,
                                           double time,

@@ -243,6 +243,15 @@ MPI_Comm TACSAssembler::getMPIComm(){
 }
 
 /**
+  Set the number of threads to use in the computation
+
+  @param t The number of threads
+*/
+void TACSAssembler::setNumThreads( int t ){
+  thread_info->setNumThreads(t);
+}
+
+/**
    Return the thread information from the TACSAssembler object
 
    @return the thread info object
@@ -271,6 +280,8 @@ int TACSAssembler::getDesignVarsPerNode(){
 
 /**
   Get the number of local nodes
+
+  @return the number of local nodes defined on this processor
 */
 int TACSAssembler::getNumNodes(){
   return numNodes;
@@ -278,6 +289,8 @@ int TACSAssembler::getNumNodes(){
 
 /**
   Get the number of dependent nodes
+
+  @return the number of dependent nodes defined on this processor
 */
 int TACSAssembler::getNumDependentNodes(){
   return numDependentNodes;
@@ -285,123 +298,159 @@ int TACSAssembler::getNumDependentNodes(){
 
 /**
   Get the number of owned local nodes
+
+  @return the number of locally owned nodes on this processor
 */
 int TACSAssembler::getNumOwnedNodes(){
   return numOwnedNodes;
 }
 
-/*
+/**
   Get the number of elements
+
+  @return The number of elements defined on this processor
 */
 int TACSAssembler::getNumElements(){
   return numElements;
 }
 
-/*
+/**
   Get the node-processor assignment
+
+  @return The map that defines the nodal assignment to each processor
 */
 TACSNodeMap *TACSAssembler::getNodeMap(){
   return nodeMap;
 }
 
-/*
-  Get the node-processor assignment
+/**
+  Get the node-processor design variable assignment
+
+  @return The map that defines the design variable assignment to each processor
 */
 TACSNodeMap *TACSAssembler::getDesignNodeMap(){
   return designNodeMap;
 }
 
-/*
+/**
   Get the boundary conditions
+
+  @return The boundary conditions (may be NULL)
 */
 TACSBcMap *TACSAssembler::getBcMap(){
   return bcMap;
 }
 
-/*
+/**
   Get the additional boundary conditions associated with the initial
   conditions.
+
+  @return Initial boundary conditions (may be NULL)
 */
 TACSBcMap *TACSAssembler::getInitBcMap(){
   return bcInitMap;
 }
 
-/*
-  Get the external indices
+/**
+  Get the vector distribution object
+
+  @return The object for distributing vector values
 */
 TACSBVecDistribute *TACSAssembler::getBVecDistribute(){
   return extDist;
 }
 
-/*
+/**
   Get the dependent node vectors
+
+  @return The object used to define the dependent node equations
 */
 TACSBVecDepNodes *TACSAssembler::getBVecDepNodes(){
   return depNodes;
 }
 
-/*
-  Get the maximum number of variables per node
+/**
+  Get the maximum number of nodes for an element
+
+  @return The maximum number of nodes for an element
 */
 int TACSAssembler::getMaxElementNodes(){
   return maxElementNodes;
 }
 
-/*
+/**
   Get the maximum number of element variables
+
+  @return The maximum number of variables for an element
 */
 int TACSAssembler::getMaxElementVariables(){
   return maxElementSize;
 }
 
-/*
-  Get the maximum number of strain components
+/**
+  Get the maximum number of design variables for an element
+
+  @return The maximum number of design variables for an element
 */
 int TACSAssembler::getMaxElementDesignVars(){
   return maxElementDesignVars;
 }
 
-/*
+/**
   Get the array of elements from TACSAssembler
+
+  @return The array of element objects
 */
 TACSElement **TACSAssembler::getElements(){
   return elements;
 }
 
-/*
+/**
   Get the element object and the corresponding element variables
+
+  @param index The element index
+  @param Xpts The element nodes array (may be NULL)
+  @param vars The element variable array (may be NULL)
+  @param dvars The element variable time derivative array (may be NULL)
+  @param dvars The element variable time derivative array (may be NULL)
+  @return The element object (NULL if index is out of range)
 */
-TACSElement *TACSAssembler::getElement( int elem,
+TACSElement *TACSAssembler::getElement( int index,
                                         TacsScalar *Xpts,
                                         TacsScalar *vars,
                                         TacsScalar *dvars,
                                         TacsScalar *ddvars ){
   if (elements && xptVec &&
-      (elem >= 0 && elem < numElements)){
-    int ptr = elementNodeIndex[elem];
-    int len = elementNodeIndex[elem+1] - ptr;
+      (index >= 0 && index < numElements)){
+    int ptr = elementNodeIndex[index];
+    int len = elementNodeIndex[index+1] - ptr;
     const int *nodes = &elementTacsNodes[ptr];
     if (Xpts){ xptVec->getValues(len, nodes, Xpts); }
     if (vars){ varsVec->getValues(len, nodes, vars); }
     if (dvars){ dvarsVec->getValues(len, nodes, dvars); }
     if (ddvars){ ddvarsVec->getValues(len, nodes, ddvars); }
 
-    return elements[elem];
+    return elements[index];
   }
 
   return NULL;
 }
 
-/*
+/**
   Get the element object and the pointer to the node numbers
+
+  @param index The element index
+  @param nodes The global node numbers
+  @param len The number of nodes for this element
+  @return The element object (NULL if index is out of range)
 */
-TACSElement *TACSAssembler::getElement( int elem,
-                                        const int **nodes, int *len ){
-  if (elements && (elem >= 0 && elem < numElements)){
-    int ptr = elementNodeIndex[elem];
-    if (len){ *len = elementNodeIndex[elem+1] - ptr; }
+TACSElement *TACSAssembler::getElement( int index,
+                                        int *len, const int **nodes ){
+  if (elements && (index >= 0 && index < numElements)){
+    int ptr = elementNodeIndex[index];
+    if (len){ *len = elementNodeIndex[index+1] - ptr; }
     if (nodes){ *nodes = &elementTacsNodes[ptr]; }
-    return elements[elem];
+    return elements[index];
   }
 
   if (len){ *len = 0; }
@@ -419,6 +468,7 @@ TACSElement *TACSAssembler::getElement( int elem,
 
   @param ptr Offset into the connectivity array for this processor
   @param conn The connectivity from elements to global node index
+  @return Fail flag indicating if a failure occured
 */
 int TACSAssembler::setElementConnectivity( const int *ptr,
                                            const int *conn ){
@@ -517,6 +567,7 @@ void TACSAssembler::getElementConnectivity( const int **ptr,
   them.
 
   @param elements The array of element pointers with length = numElements.
+  @return Fail flag indicating if a failure occured
 */
 int TACSAssembler::setElements( TACSElement **_elements ){
   if (meshInitializedFlag){
@@ -604,7 +655,7 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   return 0;
 }
 
-/*
+/**
   Set the dependent node data structure
 
   The dependent nodes are designated by a negative index with a 1-base
@@ -612,10 +663,10 @@ int TACSAssembler::setElements( TACSElement **_elements ){
   matrix with constant weights that designates the weights applied to
   the global independent nodes (storred in depNodeToTacs).
 
-  input:
-  depNodePtr:      the offset into the connectivity/weight arrays
-  depNodeToTacs:   the independent global nodes
-  depNodeWeights:  the weight applied to each independent node
+  @param depNodePtr Offset into the connectivity/weight arrays
+  @param depNodeToTacs The independent global nodes
+  @param depNodeWeights The weight applied to each independent node
+  @return Fail flag indicating if a failure occured
 */
 int TACSAssembler::setDependentNodes( const int *_depNodePtr,
                                       const int *_depNodeToTacs,
@@ -681,9 +732,21 @@ int TACSAssembler::setDependentNodes( const int *_depNodePtr,
   return 0;
 }
 
-/*!
-  Set the boundary conditions object that will be associated with the
+/**
+  Add Dirichlet boundary conditions.
+
+  These BCs are added to an object that will be associated with the
   vectors/matrices that are created using TACSAssembler.
+
+  Fully-fixed boundary conditions can be specified by passing in
+  nbcs < 0. If the vals array is NULL, then it is assumed that all values
+  are fixed to zero.
+
+  @param nnodes The number of nodes
+  @param nodes The node numbers
+  @param nbcs The number of nodal variables to be constrained
+  @param vars The variable indices satisfying (0 <= vars[i] < varsPerNode)
+  @param vals The boundary condition values
 */
 void TACSAssembler::addBCs( int nnodes, const int *nodes,
                             int nbcs, const int *vars,
@@ -714,9 +777,21 @@ void TACSAssembler::addBCs( int nnodes, const int *nodes,
   }
 }
 
-/*!
-  Set the boundary conditions object that will be associated with the
+/**
+  Add Dirichlet boundary conditions for the initial conditions.
+
+  These BCs are added to an object that will be associated with the
   vectors/matrices that are created using TACSAssembler.
+
+  Fully-fixed boundary conditions can be specified by passing in
+  nbcs < 0. If the vals array is NULL, then it is assumed that all values
+  are fixed to zero.
+
+  @param nnodes The number of nodes
+  @param nodes The node numbers
+  @param nbcs The number of nodal variables to be constrained
+  @param vars The variable indices satisfying (0 <= vars[i] < varsPerNode)
+  @param vals The boundary condition values
 */
 void TACSAssembler::addInitBCs( int nnodes, const int *nodes,
                                 int nbcs, const int *vars,
@@ -747,16 +822,22 @@ void TACSAssembler::addInitBCs( int nnodes, const int *nodes,
   }
 }
 
-/*
-  Create a global vector of node locations
+/**
+  Create a global vector of node locations.
+
+  Note that the nodal coordinates are not set into the vector.
+
+  @return A new vector for spatial coordinates
 */
 TACSBVec *TACSAssembler::createNodeVec(){
   return new TACSBVec(nodeMap, TACS_SPATIAL_DIM,
                       extDist, depNodes);
 }
 
-/*!
-  Set the nodes from the node map object
+/**
+  Set the nodal locations from the input vector
+
+  @param X The nodal coordinate vector
 */
 void TACSAssembler::setNodes( TACSBVec *X ){
   xptVec->copyValues(X);
@@ -766,21 +847,25 @@ void TACSAssembler::setNodes( TACSBVec *X ){
   xptVec->endDistributeValues();
 }
 
-/*!
+/**
   Get the node locations from TACS
+
+  @param X The nodal coordinates are copied into this vector
 */
 void TACSAssembler::getNodes( TACSBVec *X ){
   if (X){ X->copyValues(xptVec); }
 }
 
-/*!
-  Get the node locations from TACS
+/**
+  Get a pointer to the internal nodal coordinate vector
+
+  @param X A pointer to the nodal coordinate vector used by this Assembler object
 */
 void TACSAssembler::getNodes( TACSBVec **X ){
   if (X){ *X = xptVec; }
 }
 
-/*
+/**
   Set the auxiliary elements within the TACSAssembler object
 
   This only needs to be done once sometime during initialization.  If
@@ -789,19 +874,21 @@ void TACSAssembler::getNodes( TACSBVec **X ){
   something odd. Note that the code assumes that the elements defined
   here perfectly overlap the non-zero pattern of the elements set
   internally within TACS already.
+
+  @param auxElems Auxiliary element object
 */
-void TACSAssembler::setAuxElements( TACSAuxElements *_aux_elems ){
+void TACSAssembler::setAuxElements( TACSAuxElements *auxElems ){
   // Increase the reference count to the input elements (Note that
   // the input may be NULL to over-write the internal object
-  if (_aux_elems){
-    _aux_elems->incref();
+  if (auxElems){
+    auxElems->incref();
   }
 
   // Decrease the reference count if the old object is not NULL
   if (auxElements){
     auxElements->decref();
   }
-  auxElements = _aux_elems;
+  auxElements = auxElems;
 
   // Check whether the auxiliary elements match
   if (auxElements){
@@ -823,22 +910,26 @@ void TACSAssembler::setAuxElements( TACSAuxElements *_aux_elems ){
   }
 }
 
-/*
+/**
   Retrieve the auxiliary element object from TACSAssembler
 
-  Warning: The auxiliary element object may be NULL
+  Note that the auxiliary element object may be NULL
+
+  @return The auxiliary element object
 */
 TACSAuxElements *TACSAssembler::getAuxElements(){
   return auxElements;
 }
 
-/*
+/**
   Compute the external list of nodes and sort these nodes
 
   This code is called automatically by TACSAssembler and is private.
   This code computes numExtNodes and allocates the array
   tacsExtNodeNums for use in other functions. This function should
   only be called once during reordering or during initialization.
+
+  @return Fail flag indicating if a failure occured
 */
 int TACSAssembler::computeExtNodes(){
   if (meshInitializedFlag){
@@ -928,7 +1019,7 @@ int TACSAssembler::computeExtNodes(){
   return 0;
 }
 
-/*!
+/**
   Compute a reordering of the nodes.
 
   This function should be called after the element connectivity,
@@ -943,13 +1034,13 @@ int TACSAssembler::computeExtNodes(){
   The algorithm proceeds as follows:
 
   1. Compute the coupling nodes referenced by another processor
-
   2. Order the locally owned nodes based on the input ordering.
-
   3. Based on the recvied coupling nodes, set the outgoing node
   numbers back into the recieving array.
-
   4. Set the new values of the nodes on the requesting processes
+
+  @param order_type The type of ordering to apply
+  @param mat_type The anticipated matrix distribution type
 */
 void TACSAssembler::computeReordering( OrderingType order_type,
                                        MatrixOrderingType mat_type ){
@@ -1385,7 +1476,7 @@ void TACSAssembler::computeReordering( OrderingType order_type,
   delete [] recvNodes;
 }
 
-/*
+/**
   Compute the reordering for the given matrix.
 
   This uses either Reverse Cuthill-McKee (RCM_ORDER), Approximate
@@ -1406,6 +1497,13 @@ void TACSAssembler::computeReordering( OrderingType order_type,
 
   new_vars = P^{T} old_vars
   perm = P
+
+  @param order_type The ordering type
+  @param nvars The number of variables
+  @param rowp Pointer into each new row of the matrix
+  @param cols Column indices for each row
+  @param perm Permutation array
+  @param new_vars New variable array
 */
 void TACSAssembler::computeMatReordering( OrderingType order_type,
                                           int nvars, int *rowp, int *cols,
@@ -1512,7 +1610,7 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
   if (!new_vars){ delete [] _new_vars; }
 }
 
-/*
+/**
   The following function returns a local node number based on the
   provided (global) TACS node number.
 
@@ -1520,10 +1618,8 @@ void TACSAssembler::computeMatReordering( OrderingType order_type,
   however, if the node is externally owned, then a binary search is
   needed to determine the index into the off-processor list of nodes.
 
-  input:
-  node:     the global TACS node number unique across all processors
-
-  returns:  the local node number
+  @param node The global TACS node number unique across all processors
+  @return The local node number
 */
 int TACSAssembler::getLocalNodeNum( int node ){
   // Get the ownership range
@@ -1576,17 +1672,15 @@ int TACSAssembler::getLocalNodeNum( int node ){
   return node;
 }
 
-/*
+/**
   Given the local node number find the corresponding global TACS node
   number
 
   This function is the inverse of the getLocalNodeNum() function
   defined above.
 
-  input:
-  node:   the local node number
-
-  returns: the global TACS node number
+  @param node The local node number
+  @return The global TACS node number
 */
 int TACSAssembler::getGlobalNodeNum( int node ){
   // Get the ownership range
@@ -1636,7 +1730,7 @@ int TACSAssembler::getGlobalNodeNum( int node ){
   return node;
 }
 
-/*!
+/**
   The following function creates a data structure that links nodes
   to elements - this reverses the existing data structure that
   links elements to nodes but keeps the original in tact.
@@ -1651,6 +1745,9 @@ int TACSAssembler::getGlobalNodeNum( int node ){
 
   3. The original data structure is again traversed and this time
   an element number is associated with each element.
+
+  @param _nodeElementPtr Pointer into the array nodeToElements
+  @param _nodeToElements Element index associated with each node
 */
 void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
                                              int **_nodeToElements ){
@@ -1740,7 +1837,7 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
   *_nodeElementPtr = nodeElementPtr;
 }
 
-/*!
+/**
   Set up a CSR data structure pointing from local nodes to other
   local nodes.
 
@@ -1758,12 +1855,9 @@ void TACSAssembler::computeNodeToElementCSR( int **_nodeElementPtr,
   this operation is completed.  The last step is to sort and uniquify
   each row of the matrix.
 
-  input:
-  nodiag:   Remove the diagonal matrix entry
-
-  output:
-  rowp:     the row pointer corresponding to CSR data structure
-  colp:     the column indices for each row of the CSR data structure
+  @param _rowp The row pointer corresponding to CSR data structure
+  @param cols The column indices for each row of the CSR data structure
+  @param nodiag Flag to indicate whether to remove the diagonal matrix entry
 */
 void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
                                                int nodiag ){
@@ -1924,7 +2018,7 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   *_cols = cols;
 }
 
-/*
+/**
   Prepare a reduced CSR data structure corresponding to a matrix
   formed from a selection of the global matrix. This routine can be
   used in matrix/variable re-ordering computations.
@@ -1935,14 +2029,11 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   integers between 0 and nrnodes-1, at any arbitrary location. All
   remaining entries of rnodes must be negative.
 
-  input:
-  nrnodes:  the number of reduced nodes
-  rnodes:   the indices of the reduced nodes
-  nodiag:   flag to indicate whether to remove the diagonal matrix entry
-
-  output:
-  rowp:     the row pointer corresponding to CSR data structure
-  cols:     the column indices for each row of the CSR data structure
+  @param rowp The row pointer corresponding to CSR data structure
+  @param cols The column indices for each row of the CSR data structure
+  @param nrnodes The number of reduced nodes
+  @param rnodes The indices of the reduced nodes
+  @param nodiag Flag to indicate whether to remove the diagonal matrix entry
 */
 void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
                                                int nrnodes, const int *rnodes,
@@ -2136,7 +2227,7 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   *_cols = cols;
 }
 
-/*!
+/**
   Compute the local node numbers that correspond to the coupling
   nodes connected to elements on other processes.
 
@@ -2144,15 +2235,12 @@ void TACSAssembler::computeLocalNodeToNodeCSR( int **_rowp, int **_cols,
   to the owning process. On the owner, scan through the arrays until
   all the local coupling nodes are found.
 
-  output:
-  couplingNodes:   local node numbers of the coupling nodes
-
-  The following arguments may be NULL inputs:
-  extPtr:          pointer into the external node array
-  extCount:        external node count
-  recvPtr:         incoming external ptr from other processors
-  recvCount:       incoming external node count
-  recvNodes:       the incoming nodes from other procs
+  @param couplingNodes Local node numbers of the coupling nodes
+  @param extPtr Pointer into the external node array (may be NULL)
+  @param extCount External node count (may be NULL)
+  @param recvPtr Incoming external ptr from other processors (may be NULL)
+  @param recvCount Incoming external node count (may be NULL)
+  @param recvNodes The incoming nodes from other procs (may be NULL)
 */
 int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
                                          int **_extPtr,
@@ -2329,12 +2417,14 @@ int TACSAssembler::computeCouplingNodes( int **_couplingNodes,
   return numCouplingNodes;
 }
 
-/*!
+/**
   Compute the elements that couple with other processors.
 
   Compute the coupling nodes and the node to element pointer
   CSR data structure. From these, collect all elements that "own" a
   node that is referred to from another process.
+
+  @param _couplingElems The elements coupled to other processors
 */
 int TACSAssembler::computeCouplingElements( int **_couplingElems ){
   // Compute the nodes that couple to other processors
@@ -2369,7 +2459,7 @@ int TACSAssembler::computeCouplingElements( int **_couplingElems ){
   return numCouplingElems;
 }
 
-/*!
+/**
   The function initialize performs a number of synchronization
   tasks that prepare the finite-element model for use.
 
@@ -2383,6 +2473,8 @@ int TACSAssembler::computeCouplingElements( int **_couplingElems ){
   distributes its values to a vector or takes the vector values and
   collects them into an array This requires a sorted array of global
   node numbers.
+
+  @return Fail flag indicating if a failure occured
 */
 int TACSAssembler::initialize(){
   if (meshInitializedFlag){
@@ -2693,7 +2785,7 @@ void TACSAssembler::scatterExternalBCs( TACSBcMap *bcs ){
   delete [] extBCs;
 }
 
-/*
+/**
   Get pointers to the element data. This code provides a way to
   automatically segment an array to avoid coding mistakes.
 
@@ -2719,18 +2811,19 @@ void TACSAssembler::getDataPointers( TacsScalar *data,
   }
 }
 
-/*
+/**
   Check whether a reordering has been applied to the nodes
+
+  @return Flag indicating if the nodes have been reordered
 */
 int TACSAssembler::isReordered(){
   return (newNodeIndices != NULL);
 }
 
-/*
+/**
   Get the ordering from the old nodes to the new nodes
 
-  input/output:
-  oldToNew:  array of size equal to the number of owned nodes
+  @param oldToNew Array of size equal to the number of owned nodes
 */
 void TACSAssembler::getReordering( int *oldToNew ){
   if (newNodeIndices){
@@ -2748,15 +2841,14 @@ void TACSAssembler::getReordering( int *oldToNew ){
   }
 }
 
-/*
+/**
   Reorder the vector using the reordering computed using the
   computeReordering() call.
 
   This is useful for reordering nodal vectors after the reordering has
   been applied.
 
-  input/output:
-  vec:    the vector to be reordered in place
+  @param vec The vector to be reordered in place
 */
 void TACSAssembler::reorderVec( TACSBVec *vec ){
   if (newNodeIndices){
@@ -2794,17 +2886,16 @@ void TACSAssembler::reorderVec( TACSBVec *vec ){
   }
 }
 
-/*
+/**
   Reorder the nodes from the initial ordering to the final ordering
 
   Note that this only works for the nodes that are owned locally.
   Non-local or local non-owned nodes will not be reordered properly.
 
-  input/output:
-  nodes:      the owned node numbers that will be converted
-  num_nodes:  the length of the nodes array
+  @param num_nodes The length of the nodes array
+  @param nodes The owned node numbers that will be converted
 */
-void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
+void TACSAssembler::reorderNodes( int num_nodes, int *nodes ){
   if (newNodeIndices){
     // Get the ownership range
     const int *ownerRange;
@@ -2832,6 +2923,8 @@ void TACSAssembler::reorderNodes( int *nodes, int num_nodes ){
 
   Vector classes initialized by one TACS object, cannot be used by a
   second, unless they share are exactly the parallel layout.
+
+  @return A new design variable vector
 */
 TACSBVec *TACSAssembler::createDesignVec(){
   if (!meshInitializedFlag){
@@ -3122,17 +3215,12 @@ void TACSAssembler::getDesignVarRange( TACSBVec *lb, TACSBVec *ub ){
 }
 
 /**
-  Set the number of threads to use in the computation
-*/
-void TACSAssembler::setNumThreads( int t ){
-  thread_info->setNumThreads(t);
-}
-
-/**
   Create a distributed solution vector.
 
   Vector classes initialized by one TACS object, cannot be used by a
   second, unless they share are exactly the parallel layout.
+
+  @return A new, empty solution vector initialized to zero
 */
 TACSBVec *TACSAssembler::createVec(){
   if (!meshInitializedFlag){
@@ -3145,36 +3233,45 @@ TACSBVec *TACSAssembler::createVec(){
   return new TACSBVec(nodeMap, varsPerNode, extDist, depNodes);
 }
 
-/*
+/**
   Apply the boundary conditions associated with the regular boundary
-  conditions
+  conditions. This zeros all entries in the vector associated with Dirichlet conditions.
+
+  @param vec Apply the boundary conditions to this vector
 */
 void TACSAssembler::applyBCs( TACSVec *vec ){
   vec->applyBCs(bcMap);
 }
 
-/*
+/**
   Apply the boundary conditions to the matrix
+
+  @param mat Apply the boundary conditions to the rows of this matrix
 */
 void TACSAssembler::applyBCs( TACSMat *mat ){
   mat->applyBCs(bcMap);
 }
 
-/*
+/**
   Apply the boundary conditions to the tranpose of the matrix
+
+  @param mat Apply the boundary conditions to the columns of this matrix
 */
 void TACSAssembler::applyTransposeBCs( TACSMat *mat ){
   mat->applyTransposeBCs(bcMap);
 }
 
-/*
-  Set the Dirichlet boundary conditions into the vector
+/**
+  Set the Dirichlet boundary conditions into the vector. This differs
+  from applyBCs since the boundary condition values are set (not zeroed).
+
+  @param vec Set the boundary conditions values into this vector
 */
 void TACSAssembler::setBCs( TACSVec *vec ){
   vec->setBCs(bcMap);
 }
 
-/*!
+/**
   Create a distributed matrix
 
   This matrix is distributed in block-rows. Each processor owns a
@@ -3185,6 +3282,8 @@ void TACSAssembler::setBCs( TACSVec *vec ){
   determine the destination for each entry in the sparse matrix.  This
   TACSBVecIndices object is reused if any subsequent parMat objects
   are created.
+
+  @return A new parallel matrix with zeroed entries
 */
 TACSParallelMat *TACSAssembler::createMat(){
   if (!meshInitializedFlag){
@@ -3223,7 +3322,7 @@ TACSParallelMat *TACSAssembler::createMat(){
   return dmat;
 }
 
-/*
+/**
   Compute the connectivity information for the multiplier nodes
 
   This goes through element-by-element and finds the local node
@@ -3232,6 +3331,11 @@ TACSParallelMat *TACSAssembler::createMat(){
   the associated element variables that must be ordered before the
   multiplier are determined. This data is stored in a CSR-like data
   structure that is sorted and uniquified before it is returned.
+
+  @param num_multipliers The number of multipliers
+  @param multipliers The multiplier node numbers
+  @param indep_ptr Pointer into the array of independent node numbers
+  @param indep_nodes Independent nodes associated with each multiplier
 */
 void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
                                            int **_multipliers,
@@ -3353,7 +3457,7 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
   *_indep_nodes = nodes;
 }
 
-/*!
+/**
   Create a parallel matrix for finite-element analysis.
 
   On the first call, this computes a reordering with the scheme
@@ -3385,6 +3489,9 @@ void TACSAssembler::computeMultiplierConn( int *_num_multipliers,
 
   where P^{T} is a permutation of the columns (variables), while P is
   a permutation of the rows (equations).
+
+  @param order_type Order the Schur matrix with this type of ordeirng
+  @return A new TACSSchurMat matrix with zeroed entries
 */
 TACSSchurMat *TACSAssembler::createSchurMat( OrderingType order_type ){
   if (!meshInitializedFlag){
@@ -3616,8 +3723,12 @@ TACSSerialPivotMat *TACSAssembler::createSerialMat(){
   return mat;
 }
 
-/*
+/**
   Retrieve the initial conditions associated with the problem
+
+  @param vars The initial variable values (may be NULL)
+  @param dvars The initial time derivative values (may be NULL)
+  @param ddvars The initial second time derivative values (may be NULL)
 */
 void TACSAssembler::getInitConditions( TACSBVec *vars,
                                        TACSBVec *dvars,
@@ -3666,14 +3777,14 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
   if (ddvars){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
 }
 
-/*
+/**
   Zero the entries of the local variables
 */
 void TACSAssembler::zeroVariables(){
   varsVec->zeroEntries();
 }
 
-/*
+/**
   Zero the values of the time-derivatives of the state variables.
   This time-derivative is load-case independent.
 */
@@ -3681,7 +3792,7 @@ void TACSAssembler::zeroDotVariables(){
   dvarsVec->zeroEntries();
 }
 
-/*
+/**
   Zero the values of the time-derivatives of the state variables.
   This time-derivative is load-case independent.
 */
@@ -3689,70 +3800,88 @@ void TACSAssembler::zeroDDotVariables(){
   ddvarsVec->zeroEntries();
 }
 
-/*
+/**
   Set the value of the time/variables/time derivatives simultaneously
+
+  @param vars The variable values (may be NULL)
+  @param dvars The time derivative values (may be NULL)
+  @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::setVariables( TACSBVec *q,
-                                  TACSBVec *qdot,
-                                  TACSBVec *qddot ){
+void TACSAssembler::setVariables( TACSBVec *vars,
+                                  TACSBVec *dvars,
+                                  TACSBVec *ddvars ){
   // Copy the values to the array.
-  if (q){ varsVec->copyValues(q); }
-  if (qdot){ dvarsVec->copyValues(qdot); }
-  if (qddot){ ddvarsVec->copyValues(qddot); }
+  if (vars){ varsVec->copyValues(vars); }
+  if (dvars){ dvarsVec->copyValues(dvars); }
+  if (ddvars){ ddvarsVec->copyValues(ddvars); }
 
   // Distribute the values and evaluate the dependent nodes.
-  if (q){ varsVec->beginDistributeValues(); }
-  if (qdot){ dvarsVec->beginDistributeValues(); }
-  if (qddot){ ddvarsVec->beginDistributeValues(); }
-  if (q){ varsVec->endDistributeValues(); }
-  if (qdot){ dvarsVec->endDistributeValues(); }
-  if (qddot){ ddvarsVec->endDistributeValues(); }
+  if (vars){ varsVec->beginDistributeValues(); }
+  if (dvars){ dvarsVec->beginDistributeValues(); }
+  if (ddvars){ ddvarsVec->beginDistributeValues(); }
+  if (vars){ varsVec->endDistributeValues(); }
+  if (dvars){ dvarsVec->endDistributeValues(); }
+  if (ddvars){ ddvarsVec->endDistributeValues(); }
 }
 
-/*
+/**
   Copy the values directly without distributing them.
 
   This is designed for specific instances where you want to use the
   values in the vector directly without distributing them.  This means
   that the variable values may be inconsistent across processors.
   This is not usually what you want to do.
+
+  @param vars The variable values (may be NULL)
+  @param dvars The time derivative values (may be NULL)
+  @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::copyVariables( TACSBVec *q,
-                                   TACSBVec *qdot,
-                                   TACSBVec *qddot ){
-  if (q){ varsVec->copyValues(q); }
-  if (qdot){ dvarsVec->copyValues(qdot); }
-  if (qddot){ ddvarsVec->copyValues(qddot); }
+void TACSAssembler::copyVariables( TACSBVec *vars,
+                                   TACSBVec *dvars,
+                                   TACSBVec *ddvars ){
+  if (vars){ varsVec->copyValues(vars); }
+  if (dvars){ dvarsVec->copyValues(dvars); }
+  if (ddvars){ ddvarsVec->copyValues(ddvars); }
 }
 
-/*
+/**
   Get the variables from the vectors in TACS
+
+  @param vars The variable values (may be NULL)
+  @param dvars The time derivative values (may be NULL)
+  @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::getVariables( TACSBVec *q,
-                                  TACSBVec *qdot,
-                                  TACSBVec *qddot ){
+void TACSAssembler::getVariables( TACSBVec *vars,
+                                  TACSBVec *dvars,
+                                  TACSBVec *ddvars ){
   // Copy the values to the array. Only local values are
   // copied, not external/dependents
-  if (q){ q->copyValues(varsVec); }
-  if (qdot){ qdot->copyValues(dvarsVec); }
-  if (qddot){ qddot->copyValues(ddvarsVec); }
+  if (vars){ vars->copyValues(varsVec); }
+  if (dvars){ dvars->copyValues(dvarsVec); }
+  if (ddvars){ ddvars->copyValues(ddvarsVec); }
 }
 
-/*
+/**
   Get the variables from the vectors in TACS
+
+  @param vars The variable values (may be NULL)
+  @param dvars The time derivative values (may be NULL)
+  @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::getVariables( TACSBVec **q,
-                                  TACSBVec **qdot,
-                                  TACSBVec **qddot ){
+void TACSAssembler::getVariables( TACSBVec **vars,
+                                  TACSBVec **dvars,
+                                  TACSBVec **ddvars ){
   // Copy the values to the array. Only local values are
   // copied, not external/dependents
-  if (q){ *q = varsVec; }
-  if (qdot){ *qdot = dvarsVec; }
-  if (qddot){ *qddot = ddvarsVec; }
+  if (vars){ *vars = varsVec; }
+  if (dvars){ *dvars = dvarsVec; }
+  if (ddvars){ *ddvars = ddvarsVec; }
 }
 
-/*
+/**
   Set the simulation time internally in the TACSAssembler object
+
+  @param _time The simulation time
 */
 void TACSAssembler::setSimulationTime( double _time ){
   time = _time;
@@ -3760,13 +3889,18 @@ void TACSAssembler::setSimulationTime( double _time ){
 
 /*
   Retrieve the simulation time from the TACSAssembler object
+
+  @return The simulation time
 */
 double TACSAssembler::getSimulationTime(){
   return time;
 }
 
-/*
+/**
   Evaluates the total kinetic and potential energies of the structure
+
+  @param Te The kinetic energy
+  @param Pe The potential energy
 */
 void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   // Zero the kinetic and potential energy
@@ -3810,17 +3944,15 @@ void TACSAssembler::evalEnergies( TacsScalar *Te, TacsScalar *Pe ){
   *Pe = output[1];
 }
 
-/*!
-  Assemble the residual associated with the input load case.
+/**
+  Assemble the residual
 
   This residual includes the contributions from element tractions set
-  in the TACSSurfaceTraction class and any point loads. Note that the
-  vector entries are zeroed first, and that the Dirichlet boundary
-  conditions are applied after the assembly of the residual is
-  complete.
+  in the auxiliary element classes. Note that the vector entries are
+  zeroed first, and that the Dirichlet boundary conditions are applied
+  after the assembly of the residual is complete.
 
-  in/out:
-  residual:      the residual evaluated at the current point
+  @param residual The residual vector
 */
 void TACSAssembler::assembleRes( TACSBVec *residual ){
   // Sort the list of auxiliary elements - this only performs the
@@ -3906,7 +4038,7 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   residual->applyBCs(bcMap, varsVec);
 }
 
-/*!
+/**
   Assemble the Jacobian matrix
 
   This function assembles the global Jacobian matrix and
@@ -3917,12 +4049,12 @@ void TACSAssembler::assembleRes( TACSBVec *residual ){
   also performs any communication required so that the matrix can be
   used immediately after assembly.
 
-  alpha:     coefficient on the variables
-  beta:      coefficient on the time-derivative terms
-  gamma:     coefficient on the second time derivative term
-  residual:  the residual of the governing equations
-  A:         the Jacobian matrix
-  matOr:     the matrix orientation NORMAL or TRANSPOSE
+  @param alpha Coefficient for the variables
+  @param beta Coefficient for the time-derivative terms
+  @param gamma Coefficientfor the second time derivative term
+  @param residual The residual of the governing equations
+  @param A The Jacobian matrix
+  @param matOr the matrix orientation NORMAL or TRANSPOSE
 */
 void TACSAssembler::assembleJacobian( TacsScalar alpha,
                                       TacsScalar beta,
@@ -4043,14 +4175,14 @@ void TACSAssembler::assembleJacobian( TacsScalar alpha,
   A->applyBCs(bcMap);
 }
 
-/*!
+/**
   Assemble a matrix of a specified type. Note that all matrices
   created from the TACSAssembler object have the same non-zero pattern
   and are interchangable.
 
-  matType:      the matrix type defined in Element.h
-  A:            the matrix to assemble (output)
-  matOr:        the matrix orientation: NORMAL or TRANSPOSE
+  @param matType The matrix type
+  @param A The matrix to assemble (output)
+  @param matOr The matrix orientation: NORMAL or TRANSPOSE
 */
 void TACSAssembler::assembleMatType( ElementMatrixType matType,
                                      TACSMat *A,
@@ -4113,17 +4245,17 @@ void TACSAssembler::assembleMatType( ElementMatrixType matType,
   A->applyBCs(bcMap);
 }
 
-/*!
+/**
   Assemble a linear combination of matrices.
 
   This is used for some buckling/eigenvalue computations which require
   matrices that are linear combinations of specific types.
 
-  matTypes:     the matrix type defined in Element.h
-  scale:        the scalar values
-  nmats:        the number of matrices in the linear combination
-  A:            the matrix to assemble (output)
-  matOr:        the matrix orientation: NORMAL or TRANSPOSE
+  @param matTypes The array of matrix types
+  @param scale The array of scalar values
+  @param nmats The number of matrices in the linear combination
+  @param A The matrix to assemble (output)
+  @param matOr the matrix orientation: NORMAL or TRANSPOSE
 */
 void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
                                       TacsScalar scale[],
@@ -4168,7 +4300,7 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
   A->applyBCs(bcMap);
 }
 
-/*
+/**
   Evaluate a list of TACS functions
 
   First, check if the functions are initialized. Obtain the number of
@@ -4178,12 +4310,9 @@ void TACSAssembler::assembleMatCombo( ElementMatrixType matTypes[],
   This function will print an error and return 0 if the underlying
   TACSAssembler object does not correspond to the TACSAssembler object.
 
-  input:
-  functions:  array of functions to evaluate
-  numFuncs:   the number of functions to evaluate
-
-  output:
-  funcVals: the values of the functions
+  @param numFuncs The number of functions to evaluate
+  @param funcs Array of functions to evaluate
+  @param funcVals The function values
 */
 void TACSAssembler::evalFunctions( int numFuncs,
                                    TACSFunction **funcs,
@@ -4240,14 +4369,14 @@ void TACSAssembler::evalFunctions( int numFuncs,
   }
 }
 
-/*
-  Integrate/initialize the function for a single time step of a time
+/**
+  Integrate or initialize functions for a single time step of a time
   integration (or steady-state simulation).
 
-  input:
-  tcoef:   the integration coefficient
-  ftype:   the type of integration to use
-  funcs:   the array of functions
+  @param tcoef The integration coefficient
+  @param ftype The type of integration to use
+  @param numFuncs The number of functions
+  @param funcs The array of functions
 */
 void TACSAssembler::integrateFunctions( TacsScalar tcoef,
                                         TACSFunction::EvaluationType ftype,
@@ -4334,12 +4463,10 @@ void TACSAssembler::integrateFunctions( TacsScalar tcoef,
   through a collective communication call. No further parallel
   communication is required.
 
-  input:
-  coef:      the coefficient applied to the derivative
-  funcs:     the TACSFunction function objects
-  numFuncs:  the number of functions - size of funcs array
-  fdvSens:   the sensitivity - size numFuncs*numDVs
-  numDVs:    the number of design variables
+  @param coef The coefficient applied to the derivative
+  @param numFuncs The number of functions - size of funcs array
+  @param funcs The TACSFunction function objects
+  @param dfdx The derivative vector
 */
 void TACSAssembler::addDVSens( TacsScalar coef,
                                int numFuncs, TACSFunction **funcs,
@@ -4419,7 +4546,7 @@ void TACSAssembler::addDVSens( TacsScalar coef,
   }
 }
 
-/*
+/**
   Evaluate the derivative of the function w.r.t. the owned nodes.
 
   This code evaluates the sensitivity of the function w.r.t. the
@@ -4431,14 +4558,14 @@ void TACSAssembler::addDVSens( TacsScalar coef,
   This function should be preferred to the use of evalDVSens without a
   list of functions since it is more efficient!
 
-  input:
-  funcs:     the TACSFunction function objects
-  numFuncs:  the number of functions - size of funcs array
-  fXptSens:  the sensitivity
+  @param coef The coefficient applied to the derivative
+  @param numFuncs The number of functions - size of funcs array
+  @param funcs The TACSFunction function objects
+  @param dfdXpt The derivative vector
 */
 void TACSAssembler::addXptSens( TacsScalar coef, int numFuncs,
                                 TACSFunction **funcs,
-                                TACSBVec **fXptSens ){
+                                TACSBVec **dfdXpt ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k] && this != funcs[k]->getAssembler()){
@@ -4477,7 +4604,7 @@ void TACSAssembler::addXptSens( TacsScalar coef, int numFuncs,
                                       time, coef,
                                       elemXpts, vars, dvars, ddvars,
                                       elemXptSens);
-          fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
+          dfdXpt[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
         }
       }
       else if (funcs[k]->getDomainType() == TACSFunction::ENTIRE_DOMAIN){
@@ -4496,14 +4623,14 @@ void TACSAssembler::addXptSens( TacsScalar coef, int numFuncs,
                                       time, coef,
                                       elemXpts, vars, dvars, ddvars,
                                       elemXptSens);
-          fXptSens[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
+          dfdXpt[k]->setValues(len, nodes, elemXptSens, TACS_ADD_VALUES);
         }
       }
     }
   }
 }
 
-/*
+/**
   Evaluate the derivative of the function w.r.t. the state
   variables.
 
@@ -4516,14 +4643,19 @@ void TACSAssembler::addXptSens( TacsScalar coef, int numFuncs,
   appropriate boundary conditions are imposed before the function
   is returned.
 
-  function: the function pointer
-  vec:      the derivative of the function w.r.t. the state variables
+  @param alpha Coefficient for the variables
+  @param beta Coefficient for the time-derivative terms
+  @param gamma Coefficientfor the second time derivative term
+  @param numFuncs The number of functions - size of funcs array
+  @param funcs The TACSFunction function objects
+  @param dfdu The derivative array
 */
 void TACSAssembler::addSVSens( TacsScalar alpha,
                                TacsScalar beta,
-                               TacsScalar gamma, int numFuncs,
+                               TacsScalar gamma,
+                               int numFuncs,
                                TACSFunction **funcs,
-                               TACSBVec **vec ){
+                               TACSBVec **dfdu ){
   // First check if this is the right assembly object
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k] && this != funcs[k]->getAssembler()){
@@ -4555,7 +4687,7 @@ void TACSAssembler::addSVSens( TacsScalar alpha,
                                      time, alpha, beta, gamma,
                                      elemXpts, vars, dvars, ddvars,
                                      elemRes);
-          vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
+          dfdu[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
         }
       }
       else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN){
@@ -4580,25 +4712,26 @@ void TACSAssembler::addSVSens( TacsScalar alpha,
                                        time, alpha, beta, gamma,
                                        elemXpts, vars, dvars, ddvars,
                                        elemRes);
-            vec[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
+            dfdu[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
           }
         }
       }
+
       // Add the values into the array
-      vec[k]->beginSetValues(TACS_ADD_VALUES);
+      dfdu[k]->beginSetValues(TACS_ADD_VALUES);
     }
   }
 
   // Finish adding the values
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
-      vec[k]->endSetValues(TACS_ADD_VALUES);
-      vec[k]->applyBCs(bcMap);
+      dfdu[k]->endSetValues(TACS_ADD_VALUES);
+      dfdu[k]->applyBCs(bcMap);
     }
   }
 }
 
-/*
+/**
   Evaluate the product of several ajdoint vectors with the derivative
   of the residual w.r.t. the design variables.
 
@@ -4610,10 +4743,10 @@ void TACSAssembler::addSVSens( TacsScalar alpha,
   same task as evalAdjointResProduct, but uses more memory than
   calling it for each adjoint vector.
 
-  adjoint:     the array of adjoint vectors
-  numAdjoints: the number of adjoint vectors
-  dvSens:      product of the derivative of the residuals and the adjoint
-  numDVs:      the number of design variables
+  @param scale Scalar factor applied to the derivative
+  @param numAdjoints The number of adjoint vectors
+  @param adjoint The array of adjoint vectors
+  @param dfdx Product of the derivative of the residuals and the adjoint
 */
 void TACSAssembler::addAdjointResProducts( TacsScalar scale,
                                            int numAdjoints,
@@ -4712,15 +4845,15 @@ void TACSAssembler::addAdjointResProducts( TacsScalar scale,
   saves computational time as the derivative of the element residuals
   can be reused for each adjoint vector.
 
-  adjoint:     the array of adjoint vectors
-  numAdjoints: the number of adjoint vectors
-  dvSens:      the product of the derivative of the residuals and the adjoint
-  numDVs:      the number of design variables
+  @param scale Scalar factor applied to the derivative
+  @param numAdjoints The number of adjoint vectors
+  @param adjoint The array of adjoint vectors
+  @param dfdXpt Product of the derivative of the residuals and the adjoint
 */
 void TACSAssembler::addAdjointResXptSensProducts( TacsScalar scale,
                                                   int numAdjoints,
                                                   TACSBVec **adjoint,
-                                                  TACSBVec **adjXptSens ){
+                                                  TACSBVec **dfdXpt ){
   for ( int k = 0; k < numAdjoints; k++ ){
     adjoint[k]->beginDistributeValues();
   }
@@ -4773,7 +4906,7 @@ void TACSAssembler::addAdjointResXptSensProducts( TacsScalar scale,
         aux_count++;
       }
 
-      adjXptSens[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
+      dfdXpt[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
     }
   }
 }
@@ -4796,7 +4929,8 @@ void TACSAssembler::addAdjointResXptSensProducts( TacsScalar scale,
 */
 void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
                                               ElementMatrixType matType,
-                                              TACSBVec *psi, TACSBVec *phi,
+                                              TACSBVec *psi,
+                                              TACSBVec *phi,
                                               TACSBVec *dfdx ){
   psi->beginDistributeValues();
   if (phi != psi){

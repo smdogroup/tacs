@@ -604,7 +604,7 @@ void TACSBVecInterp::initialize(){
         num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
       if (outAssembler){
-        outAssembler->reorderNodes(&num, 1);
+        outAssembler->reorderNodes(1, &num);
       }
       num = num - outOwnerRange[mpi_rank];
 
@@ -642,7 +642,7 @@ void TACSBVecInterp::initialize(){
         num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
       if (outAssembler){
-        outAssembler->reorderNodes(&num, 1);
+        outAssembler->reorderNodes(1, &num);
       }
       num = num - outOwnerRange[mpi_rank];
 
@@ -699,7 +699,7 @@ void TACSBVecInterp::initialize(){
         num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
       if (outAssembler){
-        outAssembler->reorderNodes(&num, 1);
+        outAssembler->reorderNodes(1, &num);
       }
       num = num - outOwnerRange[mpi_rank];
 
@@ -708,7 +708,7 @@ void TACSBVecInterp::initialize(){
             on_vars[j] < inOwnerRange[mpi_rank+1]){
           int index = on_vars[j];
           if (inAssembler){
-            inAssembler->reorderNodes(&index, 1);
+            inAssembler->reorderNodes(1, &index);
           }
           cols[rowp[num]] = index;
           rowp[num]++;
@@ -731,7 +731,7 @@ void TACSBVecInterp::initialize(){
         num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
       if (outAssembler){
-        outAssembler->reorderNodes(&num, 1);
+        outAssembler->reorderNodes(1, &num);
       }
       num = num - outOwnerRange[mpi_rank];
 
@@ -740,7 +740,7 @@ void TACSBVecInterp::initialize(){
             in_vars[k] < inOwnerRange[mpi_rank+1]){
           int index = in_vars[k];
           if (inAssembler){
-            inAssembler->reorderNodes(&index, 1);
+            inAssembler->reorderNodes(1, &index);
           }
           cols[rowp[num]] = index;
           rowp[num]++;
@@ -789,7 +789,7 @@ void TACSBVecInterp::initialize(){
         num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
       if (outAssembler){
-        outAssembler->reorderNodes(&num, 1);
+        outAssembler->reorderNodes(1, &num);
       }
       num = num - outOwnerRange[mpi_rank];
 
@@ -798,7 +798,7 @@ void TACSBVecInterp::initialize(){
             on_vars[j] < inOwnerRange[mpi_rank+1]){
           int index = on_vars[j];
           if (inAssembler){
-            inAssembler->reorderNodes(&index, 1);
+            inAssembler->reorderNodes(1, &index);
           }
           int size = rowp[num+1] - rowp[num];
           int *item = TacsSearchArray(index, size, &cols[rowp[num]]);
@@ -827,7 +827,7 @@ void TACSBVecInterp::initialize(){
         num < outOwnerRange[mpi_rank+1]){
       // Adjust the range of the output variable to the local index
       if (outAssembler){
-        outAssembler->reorderNodes(&num, 1);
+        outAssembler->reorderNodes(1, &num);
       }
       num = num - outOwnerRange[mpi_rank];
 
@@ -836,7 +836,7 @@ void TACSBVecInterp::initialize(){
             in_vars[k] < inOwnerRange[mpi_rank+1]){
           int index = in_vars[k];
           if (inAssembler){
-            inAssembler->reorderNodes(&index, 1);
+            inAssembler->reorderNodes(1, &index);
           }
           int size = rowp[num+1] - rowp[num];
           int *item = TacsSearchArray(index, size, &cols[rowp[num]]);
@@ -915,7 +915,7 @@ void TACSBVecInterp::initialize(){
                   recv_vars, recv_count, recv_ptr, MPI_INT, comm);
 
     // Reorder the variables that are local to this processor
-    inAssembler->reorderNodes(recv_vars, recv_ptr[mpi_size]);
+    inAssembler->reorderNodes(recv_ptr[mpi_size], recv_vars);
 
     // Send the new variables back to the original processors in the
     // same order as we recvd them

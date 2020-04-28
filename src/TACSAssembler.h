@@ -118,7 +118,7 @@ class TACSAssembler : public TACSObject {
   int isReordered();
   void getReordering( int *oldToNew );
   void reorderVec( TACSBVec *vec );
-  void reorderNodes( int *nodes, int num_nodes );
+  void reorderNodes( int num_nodes, int *nodes );
 
   // Initialize the mesh
   // -------------------
@@ -272,7 +272,7 @@ class TACSAssembler : public TACSObject {
                            TacsScalar *vars=NULL,
                            TacsScalar *dvars=NULL,
                            TacsScalar *ddvars=NULL );
-  TACSElement *getElement( int elem, const int **nodes, int *len );
+  TACSElement *getElement( int elem, int *len, const int **nodes );
 
   // Test the given element, constitutive or function class
   // ------------------------------------------------------
