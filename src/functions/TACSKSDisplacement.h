@@ -54,8 +54,7 @@
 */
 class TACSKSDisplacement : public TACSFunction {
  public:
-
-  TACSKSDisplacement( TACSAssembler * _assembler, double ksWeight,
+  TACSKSDisplacement( TACSAssembler *_assembler, double ksWeight,
                       double alpha=1.0 );
   ~TACSKSDisplacement();
 
