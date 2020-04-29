@@ -1,0 +1,20 @@
+Class reference
+===============
+
+.. automodule:: tacs
+   :members:
+
+.. autoclass:: tacs.TACS
+   :members:
+   
+.. automodule:: tacs.TACS.Assembler
+   :members:
+
+.. doxygenclass:: TACSAssembler
+    :members:
+
+.. doxygenclass:: TACSCreator
+    :members:
+
+.. doxygenclass:: TACSElement
+    :members:

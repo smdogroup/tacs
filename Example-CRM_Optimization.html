@@ -1,101 +1,66 @@
+
 <!DOCTYPE html>
 
-<html>
+<html lang="python">
   <head>
-    <meta charset="utf-8">
-    
-    <title>Example: CRM Optimization &mdash; TACS  documentation</title>
-    
-    <link rel="stylesheet" type="text/css" href="_static/css/spc-bootstrap.css">
-    <link rel="stylesheet" type="text/css" href="_static/css/spc-extend.css">
-    <link rel="stylesheet" href="_static/scipy.css" type="text/css" >
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" >
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" >
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/javascript" src="_static/js/copybutton.js"></script>
-    <link rel="index" title="Index" href="genindex.html" >
-    <link rel="search" title="Search" href="search.html" >
-    <link rel="top" title="TACS  documentation" href="index.html" >
-    <link rel="prev" title="TACS Interface" href="interface.html" > 
-  </head>
-  <body>
-
-  <div class="container">
-    <div class="header">
+    <meta charset="utf-8" />
+    <title>Example: CRM Optimization &#8212; TACS  documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="TACS Interface" href="interface.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="interface.html" title="TACS Interface"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li> 
+      </ul>
     </div>
-  </div>
-
-
-    <div class="container">
-      <div class="main">
-        
-	<div class="row-fluid">
-	  <div class="span12">
-	    <div class="spc-navbar">
-              
-    <ul class="nav nav-pills pull-left">
-        <li class="active"><a href="["></a></li>
-        <li class="active"><a href="]"></a></li>
-	
-        <li class="active"><a href="index.html">TACS  documentation</a></li>
-	 
-    </ul>
-              
-              
-    <ul class="nav nav-pills pull-right">
-      <li class="active">
-        <a href="genindex.html" title="General Index"
-           accesskey="I">index</a>
-      </li>
-      <li class="active">
-        <a href="py-modindex.html" title="Python Module Index"
-           >modules</a>
-      </li>
-      <li class="active">
-        <a href="interface.html" title="TACS Interface"
-           accesskey="P">previous</a>
-      </li>
-    </ul>
-              
-	    </div>
-	  </div>
-	</div>
-        
-
-	<div class="row-fluid">
-      <div class="spc-rightsidebar span3">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="interface.html"
                         title="previous chapter">TACS Interface</a></p>
-  <h3>This Page</h3>
-  <div>
-    <a href="_sources/Example-CRM_Optimization.rst.txt"
-       rel="nofollow">Show Source</a>
-  </div>
-<div class="this-page-menu">
-  <a href="/scipy/docs/scipy-docs/Example-CRM_Optimization.rst.rst">Edit page</a>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/Example-CRM_Optimization.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
 </div>
-
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
-          <div class="span9">
-            
+
+    <div class="document">
+      <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" id="spc-section-body">
+          <div class="body" role="main">
             
   <div class="section" id="example-crm-optimization">
 <h1>Example: CRM Optimization<a class="headerlink" href="#example-crm-optimization" title="Permalink to this headline">¶</a></h1>
@@ -106,7 +71,7 @@ quadrature point is less than a specified upper bound.</p>
 <p>First, import required libraries:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
 <span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">TACS</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
 <span class="kn">from</span> <span class="nn">paropt</span> <span class="kn">import</span> <span class="n">ParOpt</span>
@@ -151,7 +116,7 @@ problem to be optimized.</p>
             <span class="n">stiff</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">isoFSDT</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">kcorr</span><span class="p">,</span>
                 <span class="n">ys</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">design_variable_index</span><span class="p">,</span>
                 <span class="n">min_thickness</span><span class="p">,</span> <span class="n">max_thickness</span><span class="p">)</span>
-            <span class="n">element</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">element</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="c1"># Create the element object and assign the</span>
             <span class="c1"># constitutive object</span>
@@ -211,8 +176,8 @@ problem to be optimized.</p>
         <span class="c1"># Set the inequality options for this problem in ParOpt:</span>
         <span class="c1"># The dense constraints are inequalities c(x) &gt;= 0 and</span>
         <span class="c1"># use both the upper/lower bounds</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setInequalityOptions</span><span class="p">(</span><span class="n">dense_ineq</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                          <span class="n">use_lower</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">use_upper</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setInequalityOptions</span><span class="p">(</span><span class="n">dense_ineq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">use_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_upper</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># For visualization</span>
         <span class="n">flag</span> <span class="o">=</span> <span class="p">(</span><span class="n">TACS</span><span class="o">.</span><span class="n">ToFH5</span><span class="o">.</span><span class="n">NODES</span> <span class="o">|</span>
@@ -346,15 +311,23 @@ the model and set optimization parameters. Finally, call the
 
           </div>
         </div>
-          </div>
-        </div>
       </div>
+      <div class="clearer"></div>
     </div>
-
-    <div class="container container-navbar-bottom">
-      <div class="spc-navbar">
-        
-      </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="interface.html" title="TACS Interface"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li> 
+      </ul>
     </div>
  <script type="text/javascript">
     $(document).ready(function() {
