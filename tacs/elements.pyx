@@ -226,6 +226,32 @@ cdef class Traction3D(Element):
                                       trac, tractionCoordinateComponent)
         self.ptr.incref()
 
+cdef class ConvectiveTraction2D(Element):
+    def __cinit__(self, int varsPerNode, int faceIndex,
+                  int fieldIndex, TacsScalar alpha,
+                  TacsScalar refValue,
+                  ElementBasis basis):
+        self.ptr = new TACSConvectiveTraction2D(varsPerNode,
+                                                faceIndex,
+                                                fieldIndex,
+                                                alpha,
+                                                refValue,
+                                                basis.ptr)
+        self.ptr.incref()
+
+cdef class ConvectiveTraction3D(Element):
+    def __cinit__(self, int varsPerNode, int faceIndex,
+                  int fieldIndex, TacsScalar alpha,
+                  TacsScalar refValue,
+                  ElementBasis basis):
+        self.ptr = new TACSConvectiveTraction3D(varsPerNode,
+                                                faceIndex,
+                                                fieldIndex,
+                                                alpha,
+                                                refValue,
+                                                basis.ptr)
+        self.ptr.incref()
+
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
     def __cinit__(self, x, y, z):

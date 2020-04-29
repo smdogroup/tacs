@@ -143,6 +143,18 @@ cdef extern from "TACSTraction3D.h":
     cdef cppclass TACSTraction3D(TACSElement):
         TACSTraction3D(int, int, TACSElementBasis*, TacsScalar*, int)
 
+cdef extern from "TACSConvectiveTraction2D.h":
+    cdef cppclass TACSConvectiveTraction2D(TACSElement):
+        TACSConvectiveTraction2D(int, int, int, TacsScalar,
+                                 TacsScalar,
+                                 TACSElementBasis*)
+
+cdef extern from "TACSConvectiveTraction3D.h":
+    cdef cppclass TACSConvectiveTraction3D(TACSElement):
+        TACSConvectiveTraction3D(int, int, int, TacsScalar,
+                                 TacsScalar,
+                                 TACSElementBasis*)
+
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
