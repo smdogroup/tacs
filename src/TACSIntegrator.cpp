@@ -1524,6 +1524,7 @@ int TACSBDFIntegrator::iterate( int k, TACSBVec *forces ){
 
     // Retrieve the initial conditions and set into TACS
     assembler->getInitConditions(q[0], qdot[0], qddot[0]);
+    assembler->setBCs(q[0]); // Set the Dirichlet BCs
     assembler->setVariables(q[0], qdot[0], qddot[0]);
 
     // Solve for acceleration and set into TACS
@@ -2183,6 +2184,7 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
 
     // Retrieve the initial conditions and set into TACS
     assembler->getInitConditions(q[0], qdot[0], qddot[0]);
+    assembler->setBCs(q[0]); // Set the Dirichlet BCs
     assembler->setVariables(q[0], qdot[0], qddot[0]);
 
     // Solve for acceleration and set into TACS
