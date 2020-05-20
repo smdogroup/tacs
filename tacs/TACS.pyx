@@ -966,12 +966,16 @@ cdef class JacobiDavidson:
 
     def getNumConvergedEigenvalues(self):
         """
+        getNumConvergedEigenvalues(self)
+
         Get the number of converged eigenvalues and eigenvectors
         """
         return self.ptr.getNumConvergedEigenvalues()
 
     def extractEigenvalue(self, int index):
         """
+        extractEigenvalue(self, index)
+
         Extract the eigenvalue with the specified index.
 
         Args:
@@ -987,6 +991,8 @@ cdef class JacobiDavidson:
 
     def extractEigenvector(self, int index, Vec vec):
         """
+        extractEigenvector(self, index, vec)
+
         Extract the eigenvalue with the specified index.
 
         Args:
@@ -1003,6 +1009,8 @@ cdef class JacobiDavidson:
 
     def solve(self, print_flag=False, int freq=1, int print_level=0):
         """
+        solve(self, print_flag=False, freq=1, print_level=0)
+
         Solve the eigenvalue problem using the Jacobi-Davidson method
 
         Args:
@@ -1028,6 +1036,8 @@ cdef class JacobiDavidson:
     def setTolerances(self, eig_rtol=5e-7, eig_atol=1e-30,
                       rtol=1e-6, atol=1e-12):
         """
+        setTolerances(self, eig_rtol=5e-7, eig_atol=1e-30, rtol=1e-6, atol=1e-12)
+
         Set the tolerances for the eigenvalue problem.
 
         Usually the eig_rtol is the most important, whereas the GMRES
@@ -1045,6 +1055,8 @@ cdef class JacobiDavidson:
 
     def setRecycle(self, int num_recycle):
         """
+        setRecycle(self, num_recycle)
+
         Set the number of eigenvectors to recycle from the previous iteration
 
         Args:
@@ -1965,6 +1977,8 @@ cdef class FH5Loader:
 
     def loadData(self, fname, datafile=None):
         """
+        loadData(self, fname, datafile=None)
+
         Load the data from a file
         """
         cdef char *filename = convert_to_chars(fname)
@@ -1976,12 +1990,16 @@ cdef class FH5Loader:
 
     def getNumComponents(self):
         """
+        getNumComponents(self)
+
         Return the number of components
         """
         return self.ptr.getNumComponents()
 
     def getComponentName(self, int num):
         """
+        getComponentName(self, int num)
+
         Return the name of the specified component
         """
         cdef bytes py_string
@@ -1990,6 +2008,8 @@ cdef class FH5Loader:
 
     def getConnectivity(self):
         """
+        getConnectivity(self)
+
         Get the connectivity from the file
         """
         cdef int num_elems
@@ -2016,6 +2036,11 @@ cdef class FH5Loader:
         return comps, ltypes, ptr, conn
 
     def getContinuousData(self):
+        """
+        getContinuousData(self)
+
+        Return the continuous data
+        """
         cdef const char* _var_names = NULL
         cdef bytes var_names
         cdef int dim1 = 0
@@ -2032,6 +2057,11 @@ cdef class FH5Loader:
         return convert_bytes_to_str(var_names), fdata
 
     def getElementData(self):
+        """
+        getElementData(self)
+
+        Return the element data, discontinuous between elements
+        """
         cdef const char* _var_names = NULL
         cdef bytes var_names
         cdef int dim1 = 0
@@ -2048,6 +2078,12 @@ cdef class FH5Loader:
         return convert_bytes_to_str(var_names), fdata
 
     def getElementDataAsContinuous(self, name):
+        """
+        getElementDataAsContinuous(self, name)
+
+        Return an element data field as continuous by averaging
+        duplicate element nodes
+        """
         cdef int index = -1
         cdef const char* _var_names = NULL
         cdef bytes var_names

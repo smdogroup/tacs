@@ -260,6 +260,35 @@ class TACSElementBasis : public TACSObject {
     @param Xpts The element node locations
     @param vars_per_node The number of degrees of freedom per node
     @param vars The element state variables
+    @param X The physical quadrature point
+    @param Xd The derivative of the physical node location w.r.t. parameters
+    @param U The variables at the quadrature point
+    @param Ud The derivative of the variables w.r.t. the parametric coords
+  */
+  /*
+  virtual void getFieldGradient( int n,
+                                 const double pt[],
+                                 const TacsScalar Xpts[],
+                                 const int vars_per_node,
+                                 const TacsScalar vars[],
+                                 TacsScalar X[],
+                                 TacsScalar Xd[],
+                                 TacsScalar U[],
+                                 TacsScalar Ud[] );
+  */
+  /**
+    Get the gradient of the field at the quadrature point.
+
+    Note that all matrices are row-major order.
+
+    The arguments Xd and Ud are often only intermediate values, but are returned
+    here so that they can be passed in to the differentiated code.
+
+    @param n The index of the quadrature point
+    @param pt The parametric location
+    @param Xpts The element node locations
+    @param vars_per_node The number of degrees of freedom per node
+    @param vars The element state variables
     @param dvars The first time derivative of the element state vars
     @param ddvars The second time derivative of the element state vars
     @param X The physical quadrature point

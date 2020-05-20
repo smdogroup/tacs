@@ -25,6 +25,18 @@ int TacsIntegerComparator( const void *a, const void *b );
 int TacsSort( int len, int *array );
 
 /**
+  Sort a list by argument
+
+  The array indices are sorted such that values[array[i]] are
+  in increasing order. Note that this is not thread-safe.
+
+  @param len The length of the array
+  @param values The array of values
+  @param array The array of indices sorted so that values[array[i]] is ascending
+*/
+int TacsArgSort( int len, const TacsScalar *values, int *array );
+
+/**
   Sort an array and return the number of unique design variables within
   that array start is the index of the first non-negative value and the
   return value is the number of non-negative design variables

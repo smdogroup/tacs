@@ -14,7 +14,7 @@
 
 #include "TACSMixedInterpElement2D.h"
 
-TACSMixedInterpElement2D::TACSMixedInterpElement2D( TASCMixedInterpElementModel *_model,
+TACSMixedInterpElement2D::TACSMixedInterpElement2D( TACSMixedInterpElementModel *_model,
                                                     TACSMixedInterpElementBasis *_basis ){
   model = _model;  model->incref();
   basis = _basis;  basis->incref();
@@ -83,7 +83,6 @@ int TACSMixedInterpElement2D::getDesignVarRange( int elemIndex,
   return model->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
-
 void TACSMixedInterpElement2D::addResidual( int elemIndex,
                                             double time,
                                             const TacsScalar *Xpts,
@@ -95,25 +94,36 @@ void TACSMixedInterpElement2D::addResidual( int elemIndex,
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
 
-  // Get the number of tying points
-  int ntying = basis->getNumTyingPoints();
-  for ( int ty = 0; ty < ntying; ty++ ){
-    basis->getTyingPoint(ty, pt);
+  // Set the number of tying field values
+  TacsScalar qty[TACSMixedInterpElementBasis::MAX_TOTAL_TYING_POINTS];
 
-    // Compute the field gradient at the tying point. Note that this computes the
-    // gradient w.r.t. parametric coordiantes only. No coordinate
-    // transformation is applied.
-    TacsScalar X[3], Xd[4];
-    TacsScalar U[MAX_VARS_PER_NODE], Ud[2*MAX_VARS_PER_NODE];
-    basis->getFieldGradient(ty, pt, Xpts, vars_per_node, vars, X, Xd, U, Ud);
+  // The residual associated with each tying point value
+  TacsScalar rty[TACSMixedInterpElementBasis::MAX_TOTAL_TYING_POINTS];
+  memset(rty, 0, TACSMixedInterpElementBasis::MAX_TOTAL_TYING_POINTS*sizeof(TacsScalar));
 
-    // Evaluate the tying quantity based on the tying values
-    model->evalTyingQuantity(ty, pt, U, Ud, &qty[ty]);
+  // Get the number of tying field values
+  const int nfields = basis->getNumTyingFields();
+  for ( int field = 0, tyindex = 0; field < nfields; field++ ){
+
+    // Loop over the tying points field values
+    const int ntying = basis->getNumTyingPoints(field);
+    for ( int ty = 0; ty < ntying; ty++, tyindex++ ){
+      double pt[2];
+      basis->getTyingPoint(field, ty, pt);
+
+      // Compute the field gradient at the tying point. Note that this computes the
+      // gradient w.r.t. parametric coordiantes only. No coordinate
+      // transformation is applied.
+      TacsScalar X[3], Xd[4];
+      TacsScalar U[MAX_VARS_PER_NODE], Ud[2*MAX_VARS_PER_NODE];
+      basis->getFieldGradient(ty, pt, Xpts, vars_per_node, vars, X, Xd, U, Ud);
+
+      // Evaluate the tying quantity based on the tying values
+      qty[tyindex] = model->evalTyingQuantity(field, ty, pt, Xd, U, Ud);
+    }
   }
 
-
-
-  // Loop over each quadrature point
+  // Loop over each quadrature points
   for ( int n = 0; n < nquad; n++ ){
     // Get the quadrature weight
     double pt[3];
@@ -122,24 +132,56 @@ void TACSMixedInterpElement2D::addResidual( int elemIndex,
     // Get the solution field and the solution field gradient and the
     // Jacobian transformation
     TacsScalar X[3], Xd[4], J[4];
-    TacsScalar Ut[3*MAX_VARS_PER_NODE];
+    TacsScalar Ut[3*MAX_VARS_PER_NODE + TACSMixedInterpElementBasis::MAX_NUM_TYING_FIELDS];
     TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(pt, Xpts, vars_per_node,
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                                               vars, dvars, ddvars,
                                               X, Xd, J, Ut, Ud, Ux);
 
     // Evaluate the tying quantities
-    basis->evalTyingField(n, pt, qty, Uty);
+    TacsScalar *Uty = &Ut[2*vars_per_node];
+    basis->getTyingFieldValues(n, pt, qty, Uty);
 
     // Evaluate the weak integrand for the quantity of interest..
-    model->evalWeakIntegrand(elemIndex, n, time, pt, X,
-                             Ut, Ux, Uty, DUt, DUx, &DUty[ntying*n]);
+    TacsScalar DUt[3*MAX_VARS_PER_NODE + TACSMixedInterpElementBasis::MAX_NUM_TYING_FIELDS];
+    TacsScalar DUx[2*MAX_VARS_PER_NODE];
+    model->evalWeakIntegrand(elemIndex, n, time, pt, X, Xd,
+                             Ut, Ux, DUt, DUx);
 
-    // Add the weak form of the residual at this point
+    // Multiply the weight by the quadrature point
+    detJ *= weight;
+
+    // Add the weak form of the residual in the usual manner
     basis->addWeakFormResidual(n, pt, detJ, J, vars_per_node, DUt, DUx, res);
+
+    // Add the specific contributions from the mixed interpolation
+    TacsScalar *DUty = &DUt[2*vars_per_node];
+    basis->addMixedWeakFormResidual(n, pt, detJ, vars_per_node, DUty, rty);
+  }
+
+  // Get the number of tying field values
+  for ( int field = 0, tyindex = 0; field < nfields; field++ ){
+
+    // Loop over the tying points field value
+    const int ntying = basis->getNumTyingPoints(field);
+    for ( int ty = 0; ty < ntying; ty++, tyindex++ ){
+      double pt[2];
+      basis->getTyingPoint(field, ty, pt);
+
+      // Evaluate the point and field quantity
+      TacsScalar X[3], Xd[4];
+      TacsScalar U[MAX_VARS_PER_NODE], Ud[2*MAX_VARS_PER_NODE];
+      basis->getFieldGradient(ty, pt, Xpts, vars_per_node, vars, X, Xd, U, Ud);
+
+      // Evaluate the tying quantity based on the tying values
+      // TacsScalar DU[MAX_VARS_PER_NODE], DUd[2*MAX_VARS_PER_NODE];
+      // model->evalTyingQuantitySVSens(field, ty, pt, dqtyp[tyindex], DU, DUd);
+
+      // Add the weak form derivative
+      // basis->addWeakFormResidual(-1, pt, 1.0, J, vars_per_node, DUt, DUx, res, rty);
+    }
   }
 }
-
 
 void TACSMixedInterpElement2D::addJacobian( int elemIndex,
                                             double time,
@@ -153,8 +195,97 @@ void TACSMixedInterpElement2D::addJacobian( int elemIndex,
                                             TacsScalar *res,
                                             TacsScalar *mat ){
 
-}
+  const int nquad = basis->getNumQuadraturePoints();
+  const int vars_per_node = model->getVarsPerNode();
 
+  // Set the number of tying field values
+  TacsScalar qty[TACSMixedInterpElementBasis::MAX_TOTAL_TYING_POINTS];
+
+  // The residual associated with each tying point value
+  TacsScalar rty[TACSMixedInterpElementBasis::MAX_TOTAL_TYING_POINTS];
+  memset(rty, 0, TACSMixedInterpElementBasis::MAX_TOTAL_TYING_POINTS*sizeof(TacsScalar));
+
+  // Get the number of tying field values
+  const int nfields = basis->getNumTyingFields();
+  for ( int field = 0, tyindex = 0; field < nfields; field++ ){
+
+    // Loop over the tying points field values
+    const int ntying = basis->getNumTyingPoints(field);
+    for ( int ty = 0; ty < ntying; ty++, tyindex++ ){
+      double pt[2];
+      basis->getTyingPoint(field, ty, pt);
+
+      // Compute the field gradient at the tying point. Note that this computes the
+      // gradient w.r.t. parametric coordiantes only. No coordinate
+      // transformation is applied.
+      TacsScalar X[3], Xd[4];
+      TacsScalar U[MAX_VARS_PER_NODE], Ud[2*MAX_VARS_PER_NODE];
+      basis->getFieldGradient(ty, pt, Xpts, vars_per_node, vars, X, Xd, U, Ud);
+
+      // Evaluate the tying quantity based on the tying values
+      qty[tyindex] = model->evalTyingQuantity(field, ty, pt, Xd, U, Ud);
+    }
+  }
+
+  // Loop over each quadrature points
+  for ( int n = 0; n < nquad; n++ ){
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the solution field and the solution field gradient and the
+    // Jacobian transformation
+    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar Ut[3*MAX_VARS_PER_NODE + TACSMixedInterpElementBasis::MAX_NUM_TYING_FIELDS];
+    TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
+    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                              vars, dvars, ddvars,
+                                              X, Xd, J, Ut, Ud, Ux);
+
+    // Evaluate the tying quantities
+    TacsScalar *Uty = &Ut[2*vars_per_node];
+    basis->getTyingFieldValues(n, pt, qty, Uty);
+
+    // Evaluate the weak integrand for the quantity of interest..
+    TacsScalar DUt[3*MAX_VARS_PER_NODE + TACSMixedInterpElementBasis::MAX_NUM_TYING_FIELDS];
+    TacsScalar DUx[2*MAX_VARS_PER_NODE];
+    model->evalWeakIntegrand(elemIndex, n, time, pt, X, Xd,
+                             Ut, Ux, DUt, DUx);
+
+    // Multiply the weight by the quadrature point
+    detJ *= weight;
+
+    // Add the weak form of the residual in the usual manner
+    basis->addWeakFormResidual(n, pt, detJ, J, vars_per_node, DUt, DUx, res);
+
+    // Add the specific contributions from the mixed interpolation
+    TacsScalar *DUty = &DUt[2*vars_per_node];
+    basis->addMixedWeakFormResidual(n, pt, detJ, vars_per_node, DUty, rty);
+  }
+
+  // Get the number of tying field values
+  for ( int field = 0, tyindex = 0; field < nfields; field++ ){
+
+    // Loop over the tying points field value
+    const int ntying = basis->getNumTyingPoints(field);
+    for ( int ty = 0; ty < ntying; ty++, tyindex++ ){
+      double pt[2];
+      basis->getTyingPoint(field, ty, pt);
+
+      // Evaluate the point and field quantity
+      TacsScalar X[3], Xd[4];
+      TacsScalar U[MAX_VARS_PER_NODE], Ud[2*MAX_VARS_PER_NODE];
+      basis->getFieldGradient(ty, pt, Xpts, vars_per_node, vars, X, Xd, U, Ud);
+
+      // Evaluate the tying quantity based on the tying values
+      // TacsScalar DU[MAX_VARS_PER_NODE], DUd[2*MAX_VARS_PER_NODE];
+      // model->evalTyingQuantitySVSens(field, ty, pt, dqtyp[tyindex], DU, DUd);
+
+      // Add the weak form derivative
+      // basis->addWeakFormResidual(-1, pt, 1.0, J, vars_per_node, DUt, DUx, res, rty);
+    }
+  }
+}
 
 // Functions for the adjoint
 void TACSMixedInterpElement2D::addAdjResProduct( int elemIndex,

@@ -50,18 +50,20 @@ class TACSHeatConduction2D : public TACSElementModel {
                          TacsScalar lb[], TacsScalar ub[] );
 
   /**
-     Evaluate the coefficients of the weak form integrand
+    Evaluate the coefficients of the weak form integrand
   */
-  void evalWeakIntegrand( int elemIndex, const double time, int n,
-                          const double pt[], const TacsScalar X[],
+  void evalWeakIntegrand( int elemIndex, const double time,
+                          int n, const double pt[],
+                          const TacsScalar X[], const TacsScalar Xd[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-     Evaluate the derivatives of the weak form coefficients
+    Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, const double time, int n,
-                         const double pt[], const TacsScalar X[],
+  void evalWeakJacobian( int elemIndex, const double time,
+                         int n, const double pt[],
+                         const TacsScalar X[], const TacsScalar Xd[],
                          const TacsScalar Ut[], const TacsScalar Ux[],
                          TacsScalar DUt[], TacsScalar DUx[],
                          int *Jac_nnz, const int *_Jac_pairs[],
@@ -72,22 +74,24 @@ class TACSHeatConduction2D : public TACSElementModel {
      the design vector
   */
   void addWeakAdjProduct( int elemIndex, const double time, TacsScalar scale,
-                          int n, const double pt[], const TacsScalar X[],
+                          int n, const double pt[],
+                          const TacsScalar X[], const TacsScalar Xd[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],
                           int dvLen, TacsScalar dfdx[] );
 
   /**
-     Evaluate the spatial derivatives of the product of the adjoint
-     and the residual vector.
+    Evaluate the spatial derivatives of the product of the adjoint
+    and the residual vector.
   */
   void evalWeakAdjXptSensProduct( int elemIndex, const double time,
                                   int n, const double pt[],
-                                  const TacsScalar X[], const TacsScalar Ut[],
-                                  const TacsScalar Ux[], const TacsScalar Psi[],
-                                  const TacsScalar Psix[], TacsScalar *product,
-                                  TacsScalar dfdX[], TacsScalar dfdUx[],
-                                  TacsScalar dfdPsix[] );
+                                  const TacsScalar X[], const TacsScalar Xd[],
+                                  const TacsScalar Ut[], const TacsScalar Ux[],
+                                  const TacsScalar Psi[], const TacsScalar Psix[],
+                                  TacsScalar *product,
+                                  TacsScalar dfdX[], TacsScalar dfdXd[],
+                                  TacsScalar dfdUx[], TacsScalar dfdPsix[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point
@@ -169,18 +173,20 @@ class TACSHeatConduction3D : public TACSElementModel {
                          TacsScalar lb[], TacsScalar ub[] );
 
   /**
-     Evaluate the coefficients of the weak form integrand
+    Evaluate the coefficients of the weak form integrand
   */
-  void evalWeakIntegrand( int elemIndex, const double time, int n,
-                          const double pt[], const TacsScalar X[],
+  void evalWeakIntegrand( int elemIndex, const double time,
+                          int n, const double pt[],
+                          const TacsScalar X[], const TacsScalar Xd[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-     Evaluate the derivatives of the weak form coefficients
+    Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, const double time, int n,
-                         const double pt[], const TacsScalar X[],
+  void evalWeakJacobian( int elemIndex, const double time,
+                         int n, const double pt[],
+                         const TacsScalar X[], const TacsScalar Xd[],
                          const TacsScalar Ut[], const TacsScalar Ux[],
                          TacsScalar DUt[], TacsScalar DUx[],
                          int *Jac_nnz, const int *_Jac_pairs[],
@@ -191,22 +197,24 @@ class TACSHeatConduction3D : public TACSElementModel {
      the design vector
   */
   void addWeakAdjProduct( int elemIndex, const double time, TacsScalar scale,
-                          int n, const double pt[], const TacsScalar X[],
+                          int n, const double pt[],
+                          const TacsScalar X[], const TacsScalar Xd[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           const TacsScalar Psi[], const TacsScalar Psix[],
                           int dvLen, TacsScalar dfdx[] );
 
   /**
-     Evaluate the spatial derivatives of the product of the adjoint
-     and the residual vector.
+    Evaluate the spatial derivatives of the product of the adjoint
+    and the residual vector.
   */
   void evalWeakAdjXptSensProduct( int elemIndex, const double time,
                                   int n, const double pt[],
-                                  const TacsScalar X[], const TacsScalar Ut[],
-                                  const TacsScalar Ux[], const TacsScalar Psi[],
-                                  const TacsScalar Psix[], TacsScalar *product,
-                                  TacsScalar dfdX[], TacsScalar dfdUx[],
-                                  TacsScalar dfdPsix[] );
+                                  const TacsScalar X[], const TacsScalar Xd[],
+                                  const TacsScalar Ut[], const TacsScalar Ux[],
+                                  const TacsScalar Psi[], const TacsScalar Psix[],
+                                  TacsScalar *product,
+                                  TacsScalar dfdX[], TacsScalar dfdXd[],
+                                  TacsScalar dfdUx[], TacsScalar dfdPsix[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point

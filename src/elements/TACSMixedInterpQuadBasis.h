@@ -29,26 +29,35 @@ class TACSLinearMITCQuadBasis : public TACSMixedInterpElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
 
-  int getNumTyingPoints(){
-    return 4;
-  }
-  int getNumTyingFieldValues(){
+  int getNumTyingFields(){
     return 2;
   }
-  void getTyingPoint( int ty, double pt ){
-    if (ty == 0){
-
+  int getNumTyingPoints( int field ){
+    return 2;
+  }
+  void getTyingPoint( int field, int ty, double pt[] ){
+    if (field == 0){
+      if (ty == 0){
+        pt[0] = -1.0;
+        pt[1] = 0.0;
+      }
+      else if (ty == 1){
+        pt[0] = 1.0;
+        pt[1] = 0.0;
+      }
     }
-    else if (ty == 1){
-
-    }
-    else if (ty == 2){
-
-    }
-    else if (ty == 3){
-
+    else if (field == 1){
+      if (ty == 0){
+        pt[0] = 0.0;
+        pt[1] = -1.0;
+      }
+      else if (ty == 1){
+        pt[0] = 0.0;
+        pt[1] = 1.0;
+      }
     }
   }
+
   void getTyingFieldValue( int n, const double pt[],
                            const TacsScalar qtys[], TacsScalar Uty ){
     

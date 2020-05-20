@@ -207,6 +207,7 @@ cdef extern from "TACSElementWrapper.h":
     cdef cppclass TACSElementWrapper(TACSElement):
         TACSElementWrapper(PyObject*, int, int)
 
+        int (*getmultiplierindex)(void*);
         void (*getinitconditions)(void*, int, int, const TacsScalar*, int,
                                   TacsScalar*, TacsScalar*, TacsScalar*)
         void (*addresidual)(void*, int, double, int, const TacsScalar*,

@@ -13,6 +13,7 @@
 */
 
 #include "tacslapack.h"
+#include "TacsUtilities.h"
 #include "JacobiDavidson.h"
 
 TACSJDSimpleOperator::TACSJDSimpleOperator( TACSAssembler *_assembler,
@@ -205,6 +206,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   P = new TACSVec*[ max_eigen_vectors+1 ];
   eigvals = new TacsScalar[ max_eigen_vectors ];
   eigerror = new TacsScalar[ max_eigen_vectors ];
+  eigindex = new int[ max_eigen_vectors ];
 
   // Allocate the variables
   for ( int i = 0; i < max_jd_size+1; i++ ){
@@ -280,6 +282,7 @@ TACSJacobiDavidson::~TACSJacobiDavidson(){
   delete [] ritzvals;
   delete [] eigvals;
   delete [] eigerror;
+  delete [] eigindex;
 
   // Free the GMRES subspace vectors
   W[0]->decref();
@@ -317,14 +320,49 @@ TacsScalar TACSJacobiDavidson::extractEigenvalue( int n,
     *error = 0.0;
   }
 
-  if (n >= 0 && n < max_eigen_vectors){
+  if (n >= 0 && n < nconverged){
+    int index = eigindex[n];
     if (error){
-      oper->multA(Q[n], work);
-      work->axpy(-eigvals[n], P[n]);
+      oper->multA(Q[index], work);
+      work->axpy(-eigvals[index], P[index]);
       *error = work->norm();
     }
 
-    return eigvals[n];
+    return eigvals[index];
+  }
+  else if (n >= 0 && n < max_eigen_vectors){
+    int index = n - nconverged;
+
+    // Get the Ritz value
+    TacsScalar theta = ritzvals[index];
+
+    // Assemble the predicted Ritz vector
+    if (error){
+      // Set the temporary vector space
+      TACSVec *qvec = Q[n];
+      TACSVec *pvec = P[n];
+      qvec->zeroEntries();
+      for ( int j = 0; j <= max_jd_size; j++ ){
+        qvec->axpy(ritzvecs[n*(max_jd_size+1) + j], V[j]);
+      }
+      oper->applyBCs(qvec);
+
+      // Normalize the predicted eigenvalue
+      TacsScalar qnorm = sqrt(oper->dot(qvec, qvec));
+      qvec->scale(1.0/qnorm);
+
+      // Compute the residual: work = A*q - theta*B*q
+      // and store it in the work vector
+      oper->multA(qvec, work);
+      oper->multB(qvec, pvec);
+      work->axpy(-theta, pvec);
+      oper->applyBCs(work);
+
+      // Set the error
+      *error = work->norm();
+    }
+
+    return theta;
   }
 
   return 0.0;
@@ -339,17 +377,61 @@ TacsScalar TACSJacobiDavidson::extractEigenvector( int n, TACSVec *ans,
     *error = 0.0;
   }
 
-  if (n >= 0 && n < max_eigen_vectors){
+  if (n >= 0 && n < nconverged){
+    int index = eigindex[n];
     if (error){
-      oper->multA(Q[n], work);
-      work->axpy(-eigvals[n], P[n]);
+      oper->multA(Q[index], work);
+      work->axpy(-eigvals[index], P[index]);
       *error = work->norm();
     }
     if (ans){
-      ans->copyValues(Q[n]);
+      ans->copyValues(Q[index]);
     }
 
-    return eigvals[n];
+    return eigvals[index];
+  }
+  else if (n >= 0 && n < max_eigen_vectors){
+    int index = n - nconverged;
+
+    // Get the Ritz value
+    TacsScalar theta = ritzvals[index];
+
+    // Assemble the predicted Ritz vector
+    if (error || ans){
+      // Set which vectors to use
+      TACSVec *qvec = Q[n];
+      if (ans){
+        qvec = ans;
+      }
+      TACSVec *pvec = P[n];
+
+      qvec->zeroEntries();
+      for ( int j = 0; j <= max_jd_size; j++ ){
+        qvec->axpy(ritzvecs[n*(max_jd_size+1) + j], V[j]);
+      }
+      oper->applyBCs(qvec);
+
+      // Normalize the predicted eigenvalue
+      TacsScalar qnorm = sqrt(oper->dot(qvec, qvec));
+      qvec->scale(1.0/qnorm);
+
+      if (error){
+        // Compute the residual: work = A*q - theta*B*q
+        // and store it in the work vector
+        oper->multA(qvec, work);
+        oper->multB(qvec, pvec);
+        work->axpy(-theta, pvec);
+        oper->applyBCs(work);
+
+        // Set the error
+        *error = work->norm();
+      }
+      if (Q[n] != ans){
+        Q[n]->copyValues(ans);
+      }
+    }
+
+    return theta;
   }
 
   return 0.0;
@@ -774,11 +856,16 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
     iteration++;
   }
 
+  // Sort the indices for the converged eigenvalues
+  TacsArgSort(nconverged, eigvals, eigindex);
+
   if (ksm_print){
     char line[256];
     for ( int i = 0; i < nconverged; i++ ){
+      int index = eigindex[i];
       sprintf(line, "Eigenvalue[%2d]: %25.10e Eig. error[%2d]: %25.10e\n",
-              i, TacsRealPart(eigvals[i]), i, TacsRealPart(eigerror[i]));
+              i, TacsRealPart(eigvals[index]),
+              i, TacsRealPart(eigerror[index]));
       ksm_print->print(line);
     }
 

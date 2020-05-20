@@ -737,7 +737,6 @@ void BCSRMatApplySOR( BCSRMatData *Adata, BCSRMatData *Bdata,
     Bcols = Bdata->cols;
   }
 
-  const int nrows = Adata->nrows;
   int bsize = Adata->bsize;
   const int b2 = bsize*bsize;
 

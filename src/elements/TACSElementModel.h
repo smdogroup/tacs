@@ -143,6 +143,7 @@ class TACSElementModel : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
+    @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param DUt Coefficients of the time-dependent weak form
@@ -152,6 +153,7 @@ class TACSElementModel : public TACSObject {
                                   const double time,
                                   int n, const double pt[],
                                   const TacsScalar X[],
+                                  const TacsScalar Xd[],
                                   const TacsScalar Ut[],
                                   const TacsScalar Ux[],
                                   TacsScalar DUt[],
@@ -194,6 +196,7 @@ class TACSElementModel : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
+    @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param DUt Coefficients of the time-dependent weak form
@@ -206,6 +209,7 @@ class TACSElementModel : public TACSObject {
                                  const double time,
                                  int n, const double pt[],
                                  const TacsScalar X[],
+                                 const TacsScalar Xd[],
                                  const TacsScalar Ut[],
                                  const TacsScalar Ux[],
                                  TacsScalar DUt[],
@@ -224,6 +228,7 @@ class TACSElementModel : public TACSObject {
      @param n The quadrature point index
      @param pt The parametric position of the quadrature point
      @param X The physical position of the quadrature point
+     @param Xd The derivative physical position of the quadrature point
      @param Ut Values of the state variables and their 1st/2nd time derivs
      @param Ux The spatial derivatives of the state variables
      @param Psi The adjoint variable values
@@ -236,6 +241,7 @@ class TACSElementModel : public TACSObject {
                                   TacsScalar scale,
                                   int n, const double pt[],
                                   const TacsScalar X[],
+                                  const TacsScalar Xd[],
                                   const TacsScalar Ut[],
                                   const TacsScalar Ux[],
                                   const TacsScalar Psi[],
@@ -251,12 +257,14 @@ class TACSElementModel : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
+    @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param Psi The adjoint variable values
     @param Psix The spatial derivatives of the adjoint variable values
     @param product The product of the adjoint and element residual vector
     @param dfdX The derivative of the product w.r.t. X
+    @param dfdXd The derivative of the product w.r.t. Xd
     @param dfdUx The derivative of the product with respect to Ux
     @param dfdPsix The derivative of the product with respect to Psix
   */
@@ -264,12 +272,14 @@ class TACSElementModel : public TACSObject {
                                           const double time,
                                           int n, const double pt[],
                                           const TacsScalar X[],
+                                          const TacsScalar Xd[],
                                           const TacsScalar Ut[],
                                           const TacsScalar Ux[],
                                           const TacsScalar Psi[],
                                           const TacsScalar Psix[],
                                           TacsScalar *product,
                                           TacsScalar dfdX[],
+                                          TacsScalar dfdXd[],
                                           TacsScalar dfdUx[],
                                           TacsScalar dfdPsix[] ){
     *product = 0.0;
@@ -280,6 +290,10 @@ class TACSElementModel : public TACSObject {
     for ( int i = 0; i < num_params*vars_per_node; i++ ){
       dfdUx[i] = 0.0;
       dfdPsix[i] = 0.0;
+    }
+
+    for ( int i = 0; i < num_params*num_params; i++ ){
+      dfdXd[i] = 0.0;
     }
   }
 
@@ -296,6 +310,7 @@ class TACSElementModel : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
+    @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param Jac_nnz Number of non-zeros (negative for dense matrix)
@@ -307,6 +322,7 @@ class TACSElementModel : public TACSObject {
                                const double time,
                                int n, const double pt[],
                                const TacsScalar X[],
+                               const TacsScalar Xd[],
                                const TacsScalar Ut[],
                                const TacsScalar Ux[],
                                int *Jac_nnz,
@@ -326,6 +342,7 @@ class TACSElementModel : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
+    @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param Psi Values of the left vector
@@ -341,6 +358,7 @@ class TACSElementModel : public TACSObject {
                                  TacsScalar scale,
                                  int n, const double pt[],
                                  const TacsScalar X[],
+                                 const TacsScalar Xd[],
                                  const TacsScalar Ut[],
                                  const TacsScalar Ux[],
                                  const TacsScalar Psi[],
@@ -360,6 +378,7 @@ class TACSElementModel : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric position of the quadrature point
     @param X The physical position of the quadrature point
+    @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
     @param Psi Values of the left vector
@@ -375,6 +394,7 @@ class TACSElementModel : public TACSObject {
                                   TacsScalar scale,
                                   int n, const double pt[],
                                   const TacsScalar X[],
+                                  const TacsScalar Xd[],
                                   const TacsScalar Ut[],
                                   const TacsScalar Ux[],
                                   const TacsScalar Psi[],

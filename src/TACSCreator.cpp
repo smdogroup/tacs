@@ -46,8 +46,11 @@ static int compare_arg_sort( const void * a, const void * b ){
   return aval - bval;
 }
 
-/*
+/**
   Allocate the TACSCreator object
+
+  @param _comm The MPI_Comm object
+  @param _vars_per_node The number of variables at each node
 */
 TACSCreator::TACSCreator( MPI_Comm _comm,
                           int _vars_per_node ){
@@ -107,7 +110,7 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
   local_elem_id_nums = NULL;
 }
 
-/*
+/**
   Deallocate the TACSCreator object
 */
 TACSCreator::~TACSCreator(){
@@ -137,7 +140,12 @@ TACSCreator::~TACSCreator(){
 }
 
 /*
-  Set the global element connectivity arrays into the class
+  Set the global element connectivity arrays into the class.
+
+  This call 
+
+  @param _num_nodes The number of nodes in the mesh
+  @param _num_elements The number of
 */
 void TACSCreator::setGlobalConnectivity( int _num_nodes, int _num_elements,
                                          const int *_elem_node_ptr,

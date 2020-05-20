@@ -4835,7 +4835,7 @@ void TACSAssembler::addAdjointResProducts( TacsScalar scale,
   }
 }
 
-/*
+/**
   Evaluate the product of several ajdoint vectors with the derivative
   of the residual w.r.t. the nodal points.
 
@@ -4911,21 +4911,18 @@ void TACSAssembler::addAdjointResXptSensProducts( TacsScalar scale,
   }
 }
 
-/*
+/**
   Evaluate the derivative of an inner product of two vectors with a
   matrix of a given type. This code does not explicitly evaluate the
-  element matrices.  Instead, the inner product contribution from each
+  element matrices. Instead, the inner product contribution from each
   element matrix is added to the final result. This implementation
   saves considerable computational time and memory.
 
-  input:
-  matType:   the matrix type
-  psi:       the left-multiplying vector
-  phi:       the right-multiplying vector
-  numDVs:    the length of the design variable array
-
-  output:
-  dvSens:    the derivative of the inner product
+  @param scale Scalar factor applied to the result
+  @param matType The type of matrix
+  @param psi The left-multiplying vector
+  @param phi The right-multiplying vector
+  @param dfdx The derivative vector
 */
 void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
                                               ElementMatrixType matType,
@@ -4977,7 +4974,7 @@ void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
   }
 }
 
-/*
+/**
   Evaluate the derivative of the inner product of two vectors with a
   matrix with respect to the state variables. This is only defined for
   nonlinear matrices, like the geometric stiffness matrix.  Instead of
@@ -4985,16 +4982,14 @@ void TACSAssembler::addMatDVSensInnerProduct( TacsScalar scale,
   then computing the inner product, this code computes the derivative
   of the inner product directly, saving computational time and memory.
 
-  input:
-  matType:   the matrix type
-  psi:       the left-multiplying vector
-  phi:       the right-multiplying vector
-
-  output:
-  res:       the derivative of the inner product w.r.t. the state vars
+  @param matType The type of matrix
+  @param psi The left-multiplying vector
+  @param phi The right-multiplying vector
+  @param dfdu The derivative of the inner product w.r.t. the state vars
 */
 void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
-                                               TACSBVec *psi, TACSBVec *phi,
+                                               TACSBVec *psi,
+                                               TACSBVec *phi,
                                                TACSBVec *dfdu ){
   // Zero the entries in the residual vector
   dfdu->zeroEntries();
@@ -5043,7 +5038,7 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
   dfdu->applyBCs(bcMap);
 }
 
-/*
+/**
   Evaluate the matrix-free Jacobian-vector product of the input vector
   x and store the result in the output vector y.
 
@@ -5055,22 +5050,20 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
   evaluate either a regular matrix-product or the transpose matrix
   product.
 
-  input:
-  scale:     the scalar coefficient
-  alpha:     coefficient on the variables
-  beta:      coefficient on the time-derivative terms
-  gamma:     coefficient on the second time derivative term
-  x:         the input vector
-  matOr:     the matrix orientation
-
-  output:
-  y:         the output vector y <- y + scale*J^{Op}*x
+  @param scale The scalar coefficient
+  @param alpha Coefficient on the variables
+  @param beta Coefficient on the time-derivative terms
+  @param gamma Coefficient on the second time derivative term
+  @param x The input vector
+  @param y the output vector y <- y + scale*J^{Op}*x
+  @param matOr The matrix orientation
 */
 void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
                                            TacsScalar alpha,
                                            TacsScalar beta,
                                            TacsScalar gamma,
-                                           TACSBVec *x, TACSBVec *y,
+                                           TACSBVec *x,
+                                           TACSBVec *y,
                                            MatrixOrientation matOr ){
   x->beginDistributeValues();
   x->endDistributeValues();
@@ -5148,7 +5141,7 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
   y->applyBCs(bcMap);
 }
 
-/*
+/**
   Test the implementation of the given element number.
 
   This tests the stiffness matrix and various parts of the
@@ -5157,8 +5150,11 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
   and the state variables and the derivative of the residual w.r.t.
   the design variables and nodal coordiantes.
 
-  elemNum:     the element number to test
-  print_level: the print level to use
+  @param elemNum The local element index to test
+  @param print_level Print level to use
+  @param dh Finite-difference (or complex-step) step length
+  @param rtol Relative tolerance to apply
+  @param atol Absolute tolerance to apply
 */
 void TACSAssembler::testElement( int elemNum, int print_level,
                                  double dh, double rtol, double atol ){
@@ -5226,7 +5222,7 @@ void TACSAssembler::testElement( int elemNum, int print_level,
                            dh, print_level, rtol, atol);
 }
 
-/*
+/**
   Test the implementation of the function.
 
   This tests the state variable sensitivities and the design variable
@@ -5240,8 +5236,8 @@ void TACSAssembler::testElement( int elemNum, int print_level,
   is compiled, and a complex step approximation if the complex version
   of the code is used.
 
-  func:            the function to test
-  dh:              the step size to use
+  @param func The function to test
+  @param dh The finite-difference or complex-step step size
 */
 void TACSAssembler::testFunction( TACSFunction *func,
                                   double dh ){
@@ -5464,6 +5460,8 @@ void TACSAssembler::testFunction( TACSFunction *func,
 
   This call is collective - the number of components is obtained
   by a global reduction.
+
+  @return The number of components
 */
 int TACSAssembler::getNumComponents(){
   // Find the maximum component number on this processor
@@ -5481,7 +5479,7 @@ int TACSAssembler::getNumComponents(){
   return num_components;
 }
 
-/*
+/**
   Go through each element and get the output data for that element.
 
   The data is stored point-wise with each variable stored contiguously
@@ -5491,11 +5489,11 @@ int TACSAssembler::getNumComponents(){
   remaining data may be design variable entries that are computed
   below.
 
-  elem_type:   the element type
-  write_flag:  the components to write to the file
-  len:         the number of nodes
-  nvals:       the number of entries
-  data:        the output data array
+  @param elem_type The element type to match
+  @param write_flag Binary flag indicating the components to write
+  @param len The number of points (output)
+  @param nvals The number of values at each point (output)
+  @param data The data for each point for each value (output)
 */
 void TACSAssembler::getElementOutputData( ElementType elem_type,
                                           int write_flag,

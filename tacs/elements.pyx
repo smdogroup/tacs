@@ -414,6 +414,9 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
 
     return ndarray
 
+cdef int getMultiplierIndex(void *self_ptr):
+    return (<object>self_ptr).getMultiplierIndex()
+
 cdef void getInitConditions(void *self_ptr, int elem_index, int num_nodes,
                             const TacsScalar *Xpts, int num_vars,
                             TacsScalar *vars,
@@ -464,6 +467,7 @@ cdef class pyElement(Element):
         pointer.incref()
 
         # Set the function pointers
+        pointer.getmultiplierindex = getMultiplierIndex
         pointer.getinitconditions = getInitConditions
         pointer.addresidual = addResidual
         pointer.addjacobian = addJacobian

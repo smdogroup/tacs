@@ -8,7 +8,7 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
+
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
@@ -20,8 +20,8 @@
 
   These C++ classes are used to create python-level implementations of
   the underlying TACS constitutive objects. They are designed to use
-  callbacks through the python layer. 
-  
+  callbacks through the python layer.
+
   Not much error checking is performed here, so beware.
 */
 
@@ -30,7 +30,7 @@
 
 /*
   The following class implements a basic wrapper for the
-  PlaneStressStiffness type of constitutive object 
+  PlaneStressStiffness type of constitutive object
 */
 class TACSElementWrapper : public TACSElement {
  public:
@@ -45,7 +45,8 @@ class TACSElementWrapper : public TACSElement {
     // deleted. This should be fixed properly using weak references,
     // but I'm not 100% sure how to do this yet...
     Py_INCREF(self_ptr);
-    
+
+    getmultiplierindex = NULL;
     getinitconditions = NULL;
     addresidual = NULL;
     addjacobian = NULL;
@@ -70,6 +71,15 @@ class TACSElementWrapper : public TACSElement {
     return num_nodes;
   }
 
+  // Get the multiplier index
+  // ------------------------
+  int getMultiplierIndex(){
+    if (self_ptr && getmultiplierindex){
+      return getmultiplierindex(self_ptr);
+    }
+    return -1;
+  }
+
   // Retrieve the initial conditions and add the derivative
   // ------------------------------------------------------
   void getInitConditions( int elem_index, const TacsScalar Xpts[],
@@ -84,7 +94,7 @@ class TACSElementWrapper : public TACSElement {
                         vars, dvars, ddvars);
     }
   }
-  
+
   // Compute the residual of the governing equations
   // -----------------------------------------------
   void addResidual( int elem_index, double time,
@@ -113,7 +123,7 @@ class TACSElementWrapper : public TACSElement {
     }
   }
 
-  // Define the object name 
+  // Define the object name
   // ----------------------
   const char *getObjectName(){
     return "TACSElementWrapper";
@@ -122,6 +132,7 @@ class TACSElementWrapper : public TACSElement {
   // Function pointers
   // -----------------
   PyObject *self_ptr; // Pointer to the python object
+  int (*getmultiplierindex)(void*);
   void (*getinitconditions)(void*, int, int, const TacsScalar*, int,
                             TacsScalar*, TacsScalar*, TacsScalar*);
   void (*addresidual)(void*, int, double, int, const TacsScalar*,

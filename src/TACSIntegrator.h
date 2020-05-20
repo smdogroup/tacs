@@ -67,7 +67,9 @@ class TACSIntegrator : public TACSObject {
   virtual int integrate(){
     for ( int i = 0; i < num_time_steps+1; i++ ){
       int flag = iterate(i, NULL);
-      if (flag != 0) return flag;
+      if (flag != 0){
+        return flag;
+      }
     }
     return 0;
   }

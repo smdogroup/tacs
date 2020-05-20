@@ -134,6 +134,7 @@ void TACSPlateModel::evalWeakIntegrand( int elemIndex,
                                         int n,
                                         const double pt[],
                                         const TacsScalar X[],
+                                        const TacsScalar Xd[],
                                         const TacsScalar Ut[],
                                         const TacsScalar Ux[],
                                         TacsScalar DUt[],
@@ -184,6 +185,7 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
                                        int n,
                                        const double pt[],
                                        const TacsScalar X[],
+                                       const TacsScalar Xd[],
                                        const TacsScalar Ut[],
                                        const TacsScalar Ux[],
                                        TacsScalar DUt[],
@@ -330,83 +332,6 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
   Jac[81] = D[2];
   Jac[82] = D[5];
 }
-
-/*
-  Add the design variable derivative of the product of the adjoint
-  vector with the weak form of the residual
-*/
-void TACSPlateModel::addWeakAdjProduct( int elemIndex,
-                                        const double time,
-                                        TacsScalar scale,
-                                        int n,
-                                        const double pt[],
-                                        const TacsScalar X[],
-                                        const TacsScalar Ut[],
-                                        const TacsScalar Ux[],
-                                        const TacsScalar Psi[],
-                                        const TacsScalar Psix[],
-                                        int dvLen,
-                                        TacsScalar *dfdx ){}
-
-void TACSPlateModel::evalWeakAdjXptSensProduct( int elemIndex,
-                                                const double time,
-                                                int n,
-                                                const double pt[],
-                                                const TacsScalar X[],
-                                                const TacsScalar Ut[],
-                                                const TacsScalar Ux[],
-                                                const TacsScalar Psi[],
-                                                const TacsScalar Psix[],
-                                                TacsScalar *product,
-                                                TacsScalar dfdX[],
-                                                TacsScalar dfdUx[],
-                                                TacsScalar dfdPsix[] ){}
-
-void TACSPlateModel::evalWeakMatrix( ElementMatrixType matType,
-                                     int elemIndex,
-                                     const double time,
-                                     int n,
-                                     const double pt[],
-                                     const TacsScalar X[],
-                                     const TacsScalar Ut[],
-                                     const TacsScalar Ux[],
-                                     int *Jac_nnz,
-                                     const int *Jac_pairs[],
-                                     TacsScalar Jac[] ){
-  *Jac_nnz = 0;
-}
-
-void TACSPlateModel::addWeakMatDVSens( ElementMatrixType matType,
-                                       int elemIndex,
-                                       const double time,
-                                       TacsScalar scale,
-                                       int n,
-                                       const double pt[],
-                                       const TacsScalar X[],
-                                       const TacsScalar Ut[],
-                                       const TacsScalar Ux[],
-                                       const TacsScalar Psi[],
-                                       const TacsScalar Psix[],
-                                       const TacsScalar Phi[],
-                                       const TacsScalar Phix[],
-                                       int dvLen,
-                                       TacsScalar *dfdx ){}
-
-void TACSPlateModel::evalWeakMatSVSens( ElementMatrixType matType,
-                                        int elemIndex,
-                                        const double time,
-                                        TacsScalar scale,
-                                        int n,
-                                        const double pt[],
-                                        const TacsScalar X[],
-                                        const TacsScalar Ut[],
-                                        const TacsScalar Ux[],
-                                        const TacsScalar Psi[],
-                                        const TacsScalar Psix[],
-                                        const TacsScalar Phi[],
-                                        const TacsScalar Phix[],
-                                        TacsScalar dfdU[],
-                                        TacsScalar dfdUx[] ){}
 
 /*
   Evaluate a specified pointwise quantity of interest

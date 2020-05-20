@@ -26,6 +26,34 @@ int TacsSort( int len, int *array ){
 }
 
 /*
+  Data and comparison function for the argsort
+*/
+static const TacsScalar *tacs_arg_sort_list = NULL;
+
+static int TacsCompareArgSort( const void * a, const void * b ){
+  if (TacsRealPart(tacs_arg_sort_list[*(int*)a]) < TacsRealPart(tacs_arg_sort_list[*(int*)b])){
+    return -1;
+  }
+  else if (TacsRealPart(tacs_arg_sort_list[*(int*)a]) > TacsRealPart(tacs_arg_sort_list[*(int*)b])){
+    return 1;
+  }
+  return 0;
+}
+
+/*
+  Sort the values by argument
+*/
+int TacsArgSort( int len, const TacsScalar *values, int *array ){
+  for ( int i = 0; i < len; i++ ){
+    array[i] = i;
+  }
+  tacs_arg_sort_list = values;
+  qsort(array, len, sizeof(int), TacsCompareArgSort);
+  tacs_arg_sort_list = NULL;
+  return len;
+}
+
+/*
   Sort an array and remove duplicate entries from the array. Negative
   values are removed from the array.
 

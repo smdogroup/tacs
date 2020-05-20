@@ -14,6 +14,7 @@ Contents:
    install
    interface
    Example-CRM_Optimization
+   reference
 
 Indices and tables
 ==================

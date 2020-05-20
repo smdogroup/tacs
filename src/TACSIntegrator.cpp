@@ -446,7 +446,7 @@ void TACSIntegrator::writeStepToF5( int step_num ){
   assembler->setVariables(q[step_num], qdot[step_num], qddot[step_num]);
   assembler->setSimulationTime(time[step_num]);
 
-  // Write RIGID body if set
+  // Write the f5 file
   if (f5){
     char fname[256];
     snprintf(fname, sizeof(fname), "%s/output_%06d.f5", prefix, step_num);

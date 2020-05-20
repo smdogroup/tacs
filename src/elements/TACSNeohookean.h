@@ -29,16 +29,18 @@ class TACSNeohookean3D : public TACSElementModel {
   /**
     Evaluate the coefficients of the weak form integrand
   */
-  void evalWeakIntegrand( int elemIndex, const double time, int n,
-                          const double pt[], const TacsScalar X[],
+  void evalWeakIntegrand( int elemIndex, const double time,
+                          int n, const double pt[],
+                          const TacsScalar X[], const TacsScalar Xd[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
     Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, const double time, int n,
-                         const double pt[], const TacsScalar X[],
+  void evalWeakJacobian( int elemIndex, const double time,
+                         int n, const double pt[],
+                         const TacsScalar X[], const TacsScalar Xd[],
                          const TacsScalar Ut[], const TacsScalar Ux[],
                          TacsScalar DUt[], TacsScalar DUx[],
                          int *Jac_nnz, const int *_Jac_pairs[],

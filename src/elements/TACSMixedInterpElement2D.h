@@ -16,14 +16,14 @@
 #define TACS_ELEMENT_2D_H
 
 #include "TACSElement.h"
-#include "TACSElementModel.h"
+#include "TACSMixedInterpElementModel.h"
 #include "TACSMixedInterpElementBasis.h"
 
 class TACSMixedInterpElement2D : public TACSElement {
  public:
   static const int MAX_VARS_PER_NODE = 8;
 
-  TACSMixedInterpElement2D( TASCMixedInterpElementModel *_model,
+  TACSMixedInterpElement2D( TACSMixedInterpElementModel *_model,
                             TACSMixedInterpElementBasis *_basis );
   ~TACSMixedInterpElement2D();
 
@@ -162,7 +162,7 @@ class TACSMixedInterpElement2D : public TACSElement {
                       int ld_data, TacsScalar *data );
 
  private:
-  TASCMixedInterpElementModel *model;
+  TACSMixedInterpElementModel *model;
   TACSMixedInterpElementBasis *basis;
 };
 

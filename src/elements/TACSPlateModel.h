@@ -52,74 +52,22 @@ class TACSPlateModel : public TACSElementModel {
   /**
     Evaluate the coefficients of the weak form integrand
   */
-  void evalWeakIntegrand( int elemIndex, const double time, int n,
-                          const double pt[], const TacsScalar X[],
+  void evalWeakIntegrand( int elemIndex, const double time,
+                          int n, const double pt[],
+                          const TacsScalar X[], const TacsScalar Xd[],
                           const TacsScalar Ut[], const TacsScalar Ux[],
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
     Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, const double time, int n,
-                         const double pt[], const TacsScalar X[],
+  void evalWeakJacobian( int elemIndex, const double time,
+                         int n, const double pt[],
+                         const TacsScalar X[], const TacsScalar Xd[],
                          const TacsScalar Ut[], const TacsScalar Ux[],
                          TacsScalar DUt[], TacsScalar DUx[],
                          int *Jac_nnz, const int *_Jac_pairs[],
                          TacsScalar Jac[] );
-
-  /**
-     Add the derivative of the product of the adjoint and residual to
-     the design vector
-  */
-  void addWeakAdjProduct( int elemIndex, const double time, TacsScalar scale,
-                          int n, const double pt[], const TacsScalar X[],
-                          const TacsScalar Ut[], const TacsScalar Ux[],
-                          const TacsScalar Psi[], const TacsScalar Psix[],
-                          int dvLen, TacsScalar dfdx[] );
-
-  /**
-    Evaluate the spatial derivatives of the product of the adjoint
-    and the residual vector.
-  */
-  void evalWeakAdjXptSensProduct( int elemIndex, const double time,
-                                  int n, const double pt[],
-                                  const TacsScalar X[], const TacsScalar Ut[],
-                                  const TacsScalar Ux[], const TacsScalar Psi[],
-                                  const TacsScalar Psix[], TacsScalar *product,
-                                  TacsScalar dfdX[], TacsScalar dfdUx[],
-                                  TacsScalar dfdPsix[] );
-
-  /**
-    Evaluate weak form coefficients for the specific type of matrix
-  */
-  void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
-                       const double time, int n, const double pt[],
-                       const TacsScalar X[], const TacsScalar Ut[],
-                       const TacsScalar Ux[],
-                       int *Jac_nnz, const int *_Jac_pairs[],
-                       TacsScalar Jac[] );
-
-  /**
-    Add the derivative of the weak form to the element sensitivity vector
-  */
-  void addWeakMatDVSens( ElementMatrixType matType, int elemIndex,
-                         const double time, TacsScalar scale,
-                         int n, const double pt[], const TacsScalar X[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         const TacsScalar Psi[], const TacsScalar Psix[],
-                         const TacsScalar Phi[], const TacsScalar Phix[],
-                         int dvLen, TacsScalar dfdx[] );
-
-  /**
-    Evaluate the derivative of the weak form with respect to U and Ux
-  */
-  void evalWeakMatSVSens( ElementMatrixType matType, int elemIndex,
-                          const double time, TacsScalar scale,
-                          int n, const double pt[], const TacsScalar X[],
-                          const TacsScalar Ut[], const TacsScalar Ux[],
-                          const TacsScalar Psi[], const TacsScalar Psix[],
-                          const TacsScalar Phi[], const TacsScalar Phix[],
-                          TacsScalar dfdU[], TacsScalar dfdUx[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point

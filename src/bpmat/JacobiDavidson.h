@@ -194,8 +194,9 @@ class TACSJacobiDavidson : public TACSObject {
   double *ritzvecs, *ritzvals;
 
   // The eigenvalues
-  TacsScalar *eigvals;
-  TacsScalar *eigerror;
+  TacsScalar *eigvals; // The eigenvalues
+  TacsScalar *eigerror; // The error associated with the eigenvalues
+  int *eigindex; // Argsorted list such that eigvals[argindex[i]] is sorted
 
   // The vectors for the eigenvalue space
   TACSVec **V;

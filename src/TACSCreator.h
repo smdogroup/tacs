@@ -17,7 +17,7 @@
 
 #include "TACSAssembler.h"
 
-/*
+/**
   The following file contains the TACSCreator object which can be used
   to create TACSAssembler object for finite-element analysis.
 
