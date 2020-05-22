@@ -41,7 +41,7 @@ cdef extern from "TACSCompliance.h":
 
 cdef extern from "TACSAverageTemperature.h":
     cdef cppclass TACSAverageTemperature(TACSFunction):
-        TACSAverageTemperature(TACSAssembler*)
+        TACSAverageTemperature(TACSAssembler*, TacsScalar)
 
 cdef extern from "TACSKSFailure.h":
     enum KSFailureType"TACSKFailure::KSFailureType":

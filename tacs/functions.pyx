@@ -69,11 +69,11 @@ cdef class Compliance(Function):
         return
 
 cdef class AverageTemperature(Function):
-    def __cinit__(self, Assembler assembler):
+    def __cinit__(self, Assembler assembler, TacsScalar _volume=1.0):
         """
         Wrap the function AverageTemperature
         """
-        self.ptr = new TACSAverageTemperature(assembler.ptr)
+        self.ptr = new TACSAverageTemperature(assembler.ptr, _volume)
         self.ptr.incref()
         return
 

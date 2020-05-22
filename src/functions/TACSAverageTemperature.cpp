@@ -22,10 +22,16 @@
 /*
   Initialize the TACSAverageTemperature class properties
 */
-TACSAverageTemperature::TACSAverageTemperature( TACSAssembler *_assembler ):
+TACSAverageTemperature::TACSAverageTemperature( TACSAssembler *_assembler,
+                                                TacsScalar _volume ):
   TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                TACSFunction::SINGLE_STAGE, 0){
-  volume = 0.0;
+  if (_volume != 0.0){
+    inv_volume = 1.0/_volume;
+  }
+  else {
+    inv_volume = 1.0;
+  }
   integral_temp = 0.0;
 }
 
@@ -41,7 +47,7 @@ const char *TACSAverageTemperature::getObjectName(){
   Retrieve the function value
 */
 TacsScalar TACSAverageTemperature::getFunctionValue(){
-  return integral_temp/volume;
+  return integral_temp*inv_volume;
 }
 
 /*
@@ -49,7 +55,6 @@ TacsScalar TACSAverageTemperature::getFunctionValue(){
 */
 void TACSAverageTemperature::initEvaluation( EvaluationType ftype ){
   integral_temp = 0.0;
-  volume = 0.0;
 }
 
 /*
@@ -57,13 +62,10 @@ void TACSAverageTemperature::initEvaluation( EvaluationType ftype ){
 */
 void TACSAverageTemperature::finalEvaluation( EvaluationType ftype ){
   // Distribute the values of the KS function computed on this domain
-  TacsScalar temp[2], result[2];
-  temp[0] = volume;
-  temp[1] = integral_temp;
-  MPI_Allreduce(temp, result, 2, TACS_MPI_TYPE,
+  TacsScalar result = 0.0;
+  MPI_Allreduce(&integral_temp, &result, 1, TACS_MPI_TYPE,
                 MPI_SUM, assembler->getMPIComm());
-  volume = result[0];
-  integral_temp = result[1];
+  integral_temp = result;
 }
 
 /*
@@ -97,8 +99,7 @@ void TACSAverageTemperature::elementWiseEval( EvaluationType ftype,
         TacsScalar Xd[9], J[9];
         TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
-        volume += detJ*weight;
-        integral_temp += detJ*weight*temp;
+        integral_temp += scale*detJ*weight*temp;
       }
     }
   }
@@ -144,7 +145,7 @@ void TACSAverageTemperature::getElementSVSens( int elemIndex,
         TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Evaluate the derivative of the temperature w.r.t. states
-        TacsScalar dfdq = detJ*weight/volume;
+        TacsScalar dfdq = detJ*weight*inv_volume;
         element->addPointQuantitySVSens(elemIndex, TACS_TEMPERATURE, time,
                                         alpha, beta, gamma,
                                         i, pt, Xpts, vars, dvars, ddvars,
@@ -206,7 +207,7 @@ void TACSAverageTemperature::addElementDVSens( int elemIndex,
         TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
         // Evaluate the derivative of the strain energy
-        TacsScalar dfdq = detJ*weight/volume;
+        TacsScalar dfdq = detJ*weight*inv_volume;
         element->addPointQuantityDVSens(elemIndex, TACS_TEMPERATURE,
                                         time, scale, i, pt,
                                         Xpts, vars, dvars, ddvars,

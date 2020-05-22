@@ -505,6 +505,16 @@ void TACSElement2D::addPointQuantitySVSens( int elemIndex,
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
+  // Multiply by the scalar coefficients
+  for ( int i = 0; i < vars_per_node; i++ ){
+    dfdUt[3*i] *= alpha;
+    dfdUt[3*i+1] *= beta;
+    dfdUt[3*i+2] *= gamma;
+
+    dfdUx[2*i] *= alpha;
+    dfdUx[2*i+1] *= alpha;
+  }
+
   basis->addFieldGradientSVSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
                                 dfdUt, dfdUx, dfdu);
 }

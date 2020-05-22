@@ -29,7 +29,8 @@
 */
 class TACSAverageTemperature : public TACSFunction {
  public:
-  TACSAverageTemperature( TACSAssembler *_assembler );
+  TACSAverageTemperature( TACSAssembler *_assembler,
+                          TacsScalar _volume=1.0 );
   ~TACSAverageTemperature();
 
   /**
@@ -93,7 +94,7 @@ class TACSAverageTemperature : public TACSFunction {
   static const char * funcName;
 
   // The volume (area) and the integral of temperature
-  TacsScalar volume;
+  TacsScalar inv_volume;
   TacsScalar integral_temp;
 };
 

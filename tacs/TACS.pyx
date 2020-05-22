@@ -138,6 +138,30 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
 
     return ndarray
 
+# This wraps a C++ array with a numpy array for later useage
+cdef inplace_array_2d(int nptype, int dim1, int dim2, void *data_ptr,
+                      PyObject *ptr):
+    """Return a numpy version of the array"""
+    # Set the shape of the array
+    cdef int size = 2
+    cdef np.npy_intp shape[2]
+    cdef np.ndarray ndarray
+
+    # Set the first entry of the shape array
+    shape[0] = <np.npy_intp>dim1
+    shape[1] = <np.npy_intp>dim2
+
+    # Create the array itself - Note that this function will not
+    # delete the data once the ndarray goes out of scope
+    ndarray = np.PyArray_SimpleNewFromData(size, shape,
+                                           nptype, data_ptr)
+
+    # Set the base class who owns the memory
+    if ptr != NULL:
+        ndarray.base = ptr
+
+    return ndarray
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
     def __cinit__(self):
@@ -2049,10 +2073,10 @@ cdef class FH5Loader:
 
         self.ptr.getContinuousData(NULL, &_var_names, &dim1, &dim2, &data)
         var_names = _var_names
-        cdef np.ndarray fdata = np.zeros((dim1, dim2), dtype=np.single)
-        for i in range(dim1):
-            for j in range(dim2):
-                fdata[i,j] = data[j + dim2*i]
+
+        fdata = inplace_array_2d(np.NPY_FLOAT, dim1, dim2, <void*>data,
+                                 <PyObject*>self)
+        Py_INCREF(self)
 
         return convert_bytes_to_str(var_names), fdata
 
@@ -2070,10 +2094,10 @@ cdef class FH5Loader:
 
         self.ptr.getElementData(NULL, &_var_names, &dim1, &dim2, &data)
         var_names = _var_names
-        cdef np.ndarray fdata = np.zeros((dim1, dim2), dtype=np.single)
-        for i in range(dim1):
-            for j in range(dim2):
-                fdata[i,j] = data[j + dim2*i]
+
+        fdata = inplace_array_2d(np.NPY_FLOAT, dim1, dim2, <void*>data,
+                                 <PyObject*>self)
+        Py_INCREF(self)
 
         return convert_bytes_to_str(var_names), fdata
 
@@ -2698,13 +2722,17 @@ cdef class Integrator:
 
     def setRelTol(self, double rtol):
         """
-        Relative tolerance of Newton solver
+        setRelTol(self, double rtol)
+
+        Set the relative tolerance of Newton solver
         """
         self.ptr.setRelTol(rtol)
         return
 
     def setAbsTol(self, double atol):
         """
+        setAbsTol(self, double atol)
+
         Absolute tolerance of Newton solver
         """
         self.ptr.setAbsTol(atol)
@@ -2712,6 +2740,8 @@ cdef class Integrator:
 
     def setMaxNewtonIters(self, int max_newton_iters):
         """
+        setMaxNewtonIters(self, int max_newton_iters):
+
         Maximum iteration in Newton solver
         """
         self.ptr.setMaxNewtonIters(max_newton_iters)
@@ -2719,6 +2749,8 @@ cdef class Integrator:
 
     def setPrintLevel(self, int print_level, fname=None):
         """
+        setPrintLevel(self, int print_level, fname=None)
+
         Level of print from TACSIntegrator
         0: off
         1: summary each step
@@ -2732,28 +2764,39 @@ cdef class Integrator:
 
     def setJacAssemblyFreq(self, int freq):
         """
+        setJacAssemblyFreq(self, int freq)
+
         How frequent to assemble the Jacobian for nonlinear solve
         """
         self.ptr.setJacAssemblyFreq(freq)
         return
 
-    def setUseLapack(self, int use_lapack):
+    def setUseLapack(self, use_lapack):
         """
+        setUseLapack(self, use_lapack)
+
         Should TACSIntegrator use lapack for linear solve. This will
         be slow and need to be in serial mode only
         """
-        self.ptr.setUseLapack(use_lapack)
+        cdef int _use_lapack = 0
+        if use_lapack:
+            _use_lapack = 1
+        self.ptr.setUseLapack(_use_lapack)
         return
 
     def setUseSchurMat(self, int use_schur_mat, OrderingType order_type):
         """
-        Set FEMAT = 1 for parallel execution
+        setUseSchurMat(self, int use_schur_mat, OrderingType order_type)
+
+        Use the TACSSchurMat for parallel execution
         """
         self.ptr.setUseSchurMat(use_schur_mat, order_type)
         return
 
     def setInitNewtonDeltaFraction(self, double frac):
         """
+        setInitNewtonDeltaFraction(self, double frac)
+
         Parameter for globalization in Newton solver
         """
         self.ptr.setInitNewtonDeltaFraction(frac)
@@ -2761,6 +2804,8 @@ cdef class Integrator:
 
     def setKrylovSubspaceMethod(self, KSM ksm):
         """
+        setKrylovSubspaceMethod(self, KSM ksm)
+
         Make TACS use this linear solver
         """
         self.ptr.setKrylovSubspaceMethod(ksm.ptr)
@@ -2768,6 +2813,8 @@ cdef class Integrator:
 
     def setTimeInterval(self, double tinit, double tfinal):
         """
+        setTimeInterval(self, double tinit, double tfinal):
+
         Set the time interval for the simulation
         """
         self.ptr.setTimeInterval(tinit, tfinal)
@@ -2820,6 +2867,8 @@ cdef class Integrator:
 
     def iterate(self, int step_num, Vec forces=None):
         """
+        iterate(self, int step_num, Vec forces=None)
+
         Solve the nonlinear system at current time step
         """
         cdef TACSBVec *fvec = NULL
@@ -2829,12 +2878,16 @@ cdef class Integrator:
 
     def integrate(self):
         """
+        integrate(self)
+
         Integrates the governing equations forward in time
         """
         return self.ptr.integrate()
 
     def evalFunctions(self, funclist):
         """
+        evalFunctions(self, funclist)
+
         Evaluate a list of TACS function in time
         """
 
@@ -2858,13 +2911,17 @@ cdef class Integrator:
 
     def initAdjoint(self, int step_num):
         """
-        Initialize adjoint step
+        initAdjoint(self, int step_num):
+
+        Initialize adjoint at the specified step
         """
         self.ptr.initAdjoint(step_num)
         return
 
     def iterateAdjoint(self, int step_num, list adjlist=None):
         """
+        iterateAdjoint(self, int step_num, list adjlist=None):
+
         Perform one iteration in reverse mode
         """
         cdef TACSBVec **adjoint = NULL
@@ -2882,13 +2939,17 @@ cdef class Integrator:
 
     def postAdjoint(self, int step_num):
         """
-        Terminate adjoint step
+        postAdjoint(self, int step_num)
+
+        Finish the calculations at the specified adjoint step
         """
         self.ptr.postAdjoint(step_num)
         return
 
     def integrateAdjoint(self):
         """
+        integrateAdjoint(self)
+
         Integrates the adjoint backwards in time
         """
         self.ptr.integrateAdjoint()
@@ -2896,6 +2957,8 @@ cdef class Integrator:
 
     def getAdjoint(self, int step_num, int func_num):
         """
+        getAdjoint(self, int step_num, int func_num)
+
         Get the adjoint vector at the given step
         """
         cdef TACSBVec *adjoint = NULL
@@ -2904,6 +2967,8 @@ cdef class Integrator:
 
     def getGradient(self, int func_num):
         """
+        getGradient(self, int func_num)
+
         Get the time-dependent derivative of functionals
         """
         cdef TACSBVec *dfdx = NULL
@@ -2912,6 +2977,8 @@ cdef class Integrator:
 
     def getXptGradient(self, int func_num):
         """
+        getXptGradient(self, int func_num)
+
         Get the time-dependent nodal derivatives of the functional
         """
         cdef TACSBVec *dfdXpt = NULL
@@ -2920,6 +2987,8 @@ cdef class Integrator:
 
     def getStates(self, int time_step):
         """
+        getStates(self, int time_step)
+
         TACS state vectors are returned at the given time step
         """
         cdef double time
@@ -2931,6 +3000,8 @@ cdef class Integrator:
 
     def checkGradients(self, double dh):
         """
+        checkGradients(self, double dh)
+
         Performs a FD/CSD verification of the gradients
         """
         self.ptr.checkGradients(dh)
@@ -2938,6 +3009,8 @@ cdef class Integrator:
 
     def setOutputPrefix(self, _prefix):
         """
+        setOutputPrefix(self, _prefix)
+
         Output directory to use for f5 files
         """
         cdef char *prefix = convert_to_chars(_prefix)
@@ -2946,6 +3019,8 @@ cdef class Integrator:
 
     def setOutputFrequency(self, int write_freq=0):
         """
+        setOutputFrequency(self, int write_freq=0)
+
         Configure how frequent to write f5 files
         """
         self.ptr.setOutputFrequency(write_freq)
@@ -2953,6 +3028,8 @@ cdef class Integrator:
 
     def setFH5(self, ToFH5 f5):
         """
+        setFH5(self, ToFH5 f5)
+
         Configure the export of rigid bodies
         """
         self.ptr.setFH5(f5.ptr)
@@ -2960,6 +3037,8 @@ cdef class Integrator:
 
     def getNumTimeSteps(self):
         """
+        getNumTimeSteps(self)
+
         Get the number of time steps
         """
         return self.ptr.getNumTimeSteps()
