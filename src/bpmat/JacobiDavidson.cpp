@@ -660,7 +660,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
       // Compute the norm of the eigenvalue to check if it has converged
       double abs_theta = fabs(TacsRealPart(theta));
       double toler = (eig_atol*(0.1/(0.1 + abs_theta)) +
-                      eig_rtol*(0.1*abs_theta/(0.1 + abs_theta))*Anorm);
+                      eig_rtol*(0.1*abs_theta/(0.1 + abs_theta))*TacsRealPart(Anorm));
 
       if (ksm_print && print_level > 0){
         char line[256];

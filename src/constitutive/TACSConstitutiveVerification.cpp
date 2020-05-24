@@ -179,6 +179,101 @@ int TacsTestConstitutiveSpecificHeat( TACSConstitutive *con,
   return (max_err > test_fail_atol || max_rel > test_fail_rtol);
 }
 
+int TacsTestConstitutiveHeatFlux( TACSConstitutive *con,
+                                  int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  int ndvs,
+                                  const TacsScalar *dvs,
+                                  double dh,
+                                  int test_print_level,
+                                  double test_fail_atol,
+                                  double test_fail_rtol ){
+  con->setDesignVars(elemIndex, ndvs, dvs);
+
+  TacsScalar flux[3], grad[3], psi[3];
+  TacsGenerateRandomArray(grad, 3);
+  TacsGenerateRandomArray(psi, 3);
+
+  // Allocate space for the derivatives
+  TacsScalar *xtemp = new TacsScalar[ ndvs ];
+  TacsScalar *dfdx = new TacsScalar[ ndvs ];
+  TacsScalar *dfdx_approx = new TacsScalar[ ndvs ];
+
+  // Copy the design variable values
+  memcpy(xtemp, dvs, ndvs*sizeof(TacsScalar));
+
+  // Generate a random array for the scale factor
+  TacsScalar scale;
+  TacsGenerateRandomArray(&scale, 1);
+
+  // Evaluate the derivatives
+  memset(dfdx, 0, ndvs*sizeof(TacsScalar));
+  con->addHeatFluxDVSens(elemIndex, scale, pt, X, grad, psi, ndvs, dfdx);
+
+  flux[0] = flux[1] = flux[2] = 0.0;
+  con->evalHeatFlux(elemIndex, pt, X, grad, flux);
+  TacsScalar prod = 0.0;
+  for ( int j = 0; j < 3; j++ ){
+    prod += psi[j]*flux[j];
+  }
+
+  // Compute the approximate derivative
+  for ( int i = 0; i < ndvs; i++ ){
+    TacsScalar x = xtemp[i];
+#ifdef TACS_USE_COMPLEX
+    xtemp[i] = x + TacsScalar(0.0, dh);
+#else
+    xtemp[i] = x + dh;
+#endif
+    con->setDesignVars(elemIndex, ndvs, xtemp);
+
+    flux[0] = flux[1] = flux[2] = 0.0;
+    con->evalHeatFlux(elemIndex, pt, X, grad, flux);
+    TacsScalar prod_forward = 0.0;
+    for ( int j = 0; j < 3; j++ ){
+      prod_forward += psi[j]*flux[j];
+    }
+#ifdef TACS_USE_COMPLEX
+    dfdx_approx[i] = scale*TacsImagPart(prod_forward)/dh;
+#else
+    dfdx_approx[i] = scale*(prod_forward - prod)/dh;
+#endif
+    xtemp[i] = x;
+  }
+
+  // Reset the design variable values
+  con->setDesignVars(elemIndex, ndvs, dvs);
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(dfdx, dfdx_approx, ndvs, &max_err_index);
+  double max_rel = TacsGetMaxRelError(dfdx, dfdx_approx, ndvs,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the heat-flux product %s\n",
+            con->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "d(psi^{T}flux)/dx",
+                             dfdx, dfdx_approx, ndvs);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] xtemp;
+  delete [] dfdx;
+  delete [] dfdx_approx;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
 int TacsTestConstitutiveStress( TACSConstitutive *con,
                                 int elemIndex,
                                 const double pt[],
@@ -571,6 +666,11 @@ int TacsTestConstitutive( TACSConstitutive *con,
   flag = TacsTestConstitutiveSpecificHeat(con, elemIndex, pt, X,
                                           ndvs, dvs, dh, test_print_level,
                                           test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  flag = TacsTestConstitutiveHeatFlux(con, elemIndex, pt, X,
+                                      ndvs, dvs, dh, test_print_level,
+                                      test_fail_atol, test_fail_rtol);
   fail = flag || fail;
 
   flag = TacsTestConstitutiveStress(con, elemIndex, pt, X,

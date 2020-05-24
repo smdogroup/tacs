@@ -74,14 +74,15 @@ public:
     ub[0] = 10.0;
     return 1;
   }
-  void addStressDVSens( int elemIndex, const double pt[], const TacsScalar X[],
-                        const TacsScalar e[], TacsScalar scale,
-                        const TacsScalar psi[], int dvLen, TacsScalar dfdx[] ){
+  void addStressDVSens( int elemIndex, TacsScalar scale,
+                        const double pt[], const TacsScalar X[],
+                        const TacsScalar e[], const TacsScalar psi[],
+                        int dvLen, TacsScalar dfdx[] ){
     dfdx[0] += scale*(2.0*w*(E*e[0]*psi[0] + kcorr*G*(e[4]*psi[4] + e[5]*psi[5])) +
                       (w*w*w/3.0)*(2.0*G*e[1]*psi[1] + E*(e[2]*psi[2] + e[3]*psi[3])));
   }
-  void addMassMomentsDVSens( int elemIndex, const double pt[],
-                             TacsScalar scale, const TacsScalar psi[],
+  void addMassMomentsDVSens( int elemIndex, TacsScalar scale,
+                             const double pt[], const TacsScalar psi[],
                              int dvLen, TacsScalar dfdx[] ){
     dfdx[0] += scale*density*(2.0*w*psi[0] + ((w*w*w)/3.0)*(psi[1] + psi[2]));
   }
@@ -90,8 +91,8 @@ public:
                           const TacsScalar X[] ){
     return density*w*w;
   }
-  void addDensityDVSens( int elemIndex, const double pt[],
-                         const TacsScalar X[], const TacsScalar scale,
+  void addDensityDVSens( int elemIndex, const TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[] ){
     dfdx[0] += 2.0*scale*density*w;
   }
@@ -112,9 +113,10 @@ public:
     }
     return E*w*w*fabs(e[0])/10e3;
   }
-  void addFailureDVSens( int elemIndex, const double pt[],
-                         const TacsScalar X[], const TacsScalar e[],
-                         TacsScalar scale, int dvLen, TacsScalar dfdx[] ){
+  void addFailureDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
+                         const TacsScalar e[],
+                         int dvLen, TacsScalar dfdx[] ){
     dfdx[0] += 2.0*scale*E*w*fabs(e[0])/10e3;
   }
 

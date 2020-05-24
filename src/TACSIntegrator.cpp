@@ -341,6 +341,30 @@ void TACSIntegrator::setOutputPrefix( const char *_prefix ){
 }
 
 /*
+  Integration the equations of motion forward in time.
+*/
+int TACSIntegrator::integrate(){
+  for ( int i = 0; i < num_time_steps+1; i++ ){
+    int flag = iterate(i, NULL);
+    if (flag != 0){
+      return flag;
+    }
+  }
+  return 0;
+}
+
+/*
+  Integrate the adjoint equations backwards in time
+*/
+void TACSIntegrator::integrateAdjoint(){
+  for ( int i = num_time_steps; i >= 0; i-- ){
+    initAdjoint(i);
+    iterateAdjoint(i, NULL);
+    postAdjoint(i);
+  }
+}
+
+/*
   Function that writes time, q, qdot, qddot to file
 */
 void TACSIntegrator::writeRawSolution( const char *filename, int format ){
@@ -1671,7 +1695,6 @@ void TACSBDFIntegrator::evalFunctions( TacsScalar *fvals ){
       fvals[n] = funcs[n]->getFunctionValue();
     }
   }
-
 }
 
 /*

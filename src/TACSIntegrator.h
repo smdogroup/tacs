@@ -64,15 +64,7 @@ class TACSIntegrator : public TACSObject {
   virtual int iterate( int step_num, TACSBVec *forces ) = 0;
 
   // Integrate the equations of motion forward in time
-  virtual int integrate(){
-    for ( int i = 0; i < num_time_steps+1; i++ ){
-      int flag = iterate(i, NULL);
-      if (flag != 0){
-        return flag;
-      }
-    }
-    return 0;
-  }
+  virtual int integrate();
 
   // Evaluate the functions of interest
   virtual void evalFunctions( TacsScalar *fvals ) = 0;
@@ -88,13 +80,7 @@ class TACSIntegrator : public TACSObject {
 
   // Integrate the adjoint and add the total derivative from all
   // time-steps
-  virtual void integrateAdjoint(){
-    for ( int i = num_time_steps; i >= 0; i-- ){
-      initAdjoint(i);
-      iterateAdjoint(i, NULL);
-      postAdjoint(i);
-    }
-  }
+  virtual void integrateAdjoint();
 
   // Get the adjoint vector for the given function
   virtual void getAdjoint( int step_num, int func_num,
