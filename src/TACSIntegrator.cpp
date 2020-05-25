@@ -687,7 +687,6 @@ int TACSIntegrator::newtonSolve( double alpha, double beta, double gamma,
 
     // Add the forces into the residual
     if (forces){
-      assembler->applyBCs(forces);
       res->axpy(-1.0, forces);
       assembler->applyBCs(res);
     }
@@ -1900,7 +1899,7 @@ void TACSBDFIntegrator::postAdjoint( int k ){
       }
       for ( int n = 0; n < num_funcs; n++ ){
         assembler->addJacobianVecProduct(1.0, 0.0, beta, gamma,
-                                         psi[n], rhs[rhs_index*num_funcs+n],
+                                         psi[n], rhs[rhs_index*num_funcs + n],
                                          TACS_MAT_TRANSPOSE);
       }
     }
