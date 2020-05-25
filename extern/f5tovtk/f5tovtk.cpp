@@ -232,6 +232,11 @@ int main( int argc, char * argv[] ){
 
         for ( int k = 0; k < cdim1; k++ ){
           double d = cdata[cdim2*k + j];
+	  // If the value is smaller than 10^-15, set it to 0
+	  // so Paraview won't throw an error
+	  if (abs(d) < 1e-15){
+	    d = 0.0;
+	  }
           fprintf(fp, "%.3e\n", d);
         }
       }
