@@ -193,15 +193,22 @@ cdef class SphericalConstraint(Element):
 
 cdef class RevoluteConstraint(Element):
     def __cinit__(self, GibbsVector point, GibbsVector eA,
-                  RigidBody bodyA, RigidBody bodyB=None):
-        if bodyB is None:
-            self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
-                                                  point.ptr, eA.ptr)
-        else:
+                  int fixed_ref_point=0, int inertial_rev_axis=0,
+                  RigidBody bodyA=None, RigidBody bodyB=None):
+        if bodyA is not None and bodyB is not None:
             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
                                                   point.ptr, eA.ptr)
-        self.ptr.incref()
-        return
+            self.ptr.incref()        
+        elif bodyA is not None and bodyB is None:
+            self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
+                                                  point.ptr, eA.ptr)
+            self.ptr.incref()        
+        else:
+            self.ptr = new TACSRevoluteConstraint(fixed_ref_point,
+                                                  point.ptr, eA.ptr,
+                                                  inertial_rev_axis)
+            self.ptr.incref()        
+        return    
     def __dealloc__(self):
         self.ptr.decref()
         return
