@@ -43,6 +43,20 @@ cdef extern from "TACSAverageTemperature.h":
     cdef cppclass TACSAverageTemperature(TACSFunction):
         TACSAverageTemperature(TACSAssembler*, TacsScalar)
 
+cdef extern from "TACSKSTemperature.h":
+    enum KSTemperatureType"TACSKTemperature::KSTemperatureType":
+        KS_TEMPERATURE_DISCRETE"TACSKSTemperature::DISCRETE"
+        KS_TEMPERATURE_CONTINUOUS"TACSKSTemperature::CONTINUOUS"
+        PNORM_TEMPERATURE_DISCRETE"TACSKSTemperature::PNORM_DISCRETE"
+        PNORM_TEMPERATURE_CONTINUOUS"TACSKSTemperature::PNORM_CONTINUOUS"
+
+    cdef cppclass TACSKSTemperature(TACSFunction):
+        TACSKSTemperature(TACSAssembler*, double, double)
+        void setKSTemperatureType(KSTemperatureType ftype)
+        double getParameter()
+        void setParameter(double)
+        void setMaxFailOffset(TacsScalar)
+
 cdef extern from "TACSKSFailure.h":
     enum KSFailureType"TACSKFailure::KSFailureType":
         KS_FAILURE_DISCRETE"TACSKSFailure::DISCRETE"

@@ -3,7 +3,11 @@
   Structures, a parallel finite-element code for structural and
   multidisciplinary design optimization.
 
-  Copyright (C) 2018 Georgia Tech Research Corporation
+  Copyright (C) 2010 University of Toronto
+  Copyright (C) 2012 University of Michigan
+  Copyright (C) 2014 Georgia Tech Research Corporation
+  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
+  R.R.A. Martins All rights reserved.
 
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
@@ -15,101 +19,131 @@
 #ifndef TACS_KS_TEMPERATURE_H
 #define TACS_KS_TEMPERATURE_H
 
+/*
+  Compute the KS function in TACS
+*/
+
 #include "TACSFunction.h"
 
 /*
-  Compute the KS functional of the displacement along a given direction
+  The following class implements the methods from TACSFunction.h
+  necessary to calculate the KS function of temperature over the
+  domain of some finite element model.
+
+  Each class should only ever be passed to a single instance of
+  TACS. If the KS function needs to be calculated for separate
+  instances, this should be handled by separate instances of
+  KSTemperature.
+
+  The arguments to the KSTemperature class are:
+
+  ksWeight:  the ks weight used in the calculation
+
+  optional arguments:
+
+  alpha: scaling factor for the integration
 */
 class TACSKSTemperature : public TACSFunction {
  public:
   enum KSTemperatureType { DISCRETE, CONTINUOUS,
                            PNORM_DISCRETE, PNORM_CONTINUOUS };
 
-  TACSKSTemperature( TACSAssembler *_tacs, double _ksWeight,
-                     KSTemperatureType _ksType=CONTINUOUS );
+  TACSKSTemperature( TACSAssembler * _assembler, double ksWeight,
+                     double alpha=1.0 );
   ~TACSKSTemperature();
 
-  // Retrieve the name of the function
-  // ---------------------------------
-  const char *functionName();
+  /**
+    Get the object/function name
+  */
+  const char* getObjectName();
 
-  // Create the function context for evaluation
-  // ------------------------------------------
-  TACSFunctionCtx *createFunctionCtx();
+  // Set parameters for the KS function
+  // ----------------------------------
+  void setKSTemperatureType( enum KSTemperatureType type );
+  double getParameter();
+  void setParameter( double _ksWeight );
 
-  // Set the type of displacement aggregate
-  // --------------------------------------
-  void setKSDispType( KSTemperatureType _ksType );
+  // Set the value of the temperature offset for numerical stability
+  // -----------------------------------------------------------
+  void setMaxTempOffset( TacsScalar _maxTemp ){
+    maxTemp = _maxTemp;
+  }
 
-  // Collective calls on the TACS MPI Comm
-  // -------------------------------------
+  /**
+    Get the maximum temperature value
+  */
+  TacsScalar getMaximumTemperature();
+
+  /**
+     Initialize the function for the given type of evaluation
+  */
   void initEvaluation( EvaluationType ftype );
+
+  /**
+     Perform an element-wise integration over this element.
+  */
+  void elementWiseEval( EvaluationType ftype,
+                        int elemIndex, TACSElement *element,
+                        double time, TacsScalar scale,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[] );
+
+  /**
+     Finalize the function evaluation for the specified eval type.
+  */
   void finalEvaluation( EvaluationType ftype );
 
-  // Functions for integration over the structural domain on each thread
-  // -------------------------------------------------------------------
-  void initThread( double tcoef,
-                   EvaluationType ftype,
-                   TACSFunctionCtx *ctx );
-  void elementWiseEval( EvaluationType ftype,
-                        TACSElement *element, int elemNum,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TACSFunctionCtx *ctx );
-  void finalThread( double tcoef,
-                    EvaluationType ftype,
-                    TACSFunctionCtx *ctx );
-
-  // Return the value of the function
-  // --------------------------------
+  /**
+     Get the value of the function
+  */
   TacsScalar getFunctionValue();
 
-  // State variable sensitivities
-  // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma,
-                         TacsScalar *elemSVSens,
-                         TACSElement *element, int elemNum,
+  /**
+     Evaluate the derivative of the function w.r.t. state variables
+  */
+  void getElementSVSens( int elemIndex, TACSElement *element, double time,
+                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+                         TacsScalar *elemSVSens );
 
-  // Design variable sensitivity evaluation
-  // --------------------------------------
-  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
-                         TACSElement *element, int elemNum,
+  /**
+     Add the derivative of the function w.r.t. the design variables
+  */
+  void addElementDVSens( int elemIndex, TACSElement *element,
+                         double time, TacsScalar scale,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+                         int dvLen, TacsScalar dfdx[] );
 
-  // Nodal sensitivities
-  // -------------------
-  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                          TACSElement *element, int elemNum,
+  /**
+     Evaluate the derivative of the function w.r.t. the node locations
+  */
+  void getElementXptSens( int elemIndex, TACSElement *element,
+                          double time, TacsScalar scale,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx );
+                          TacsScalar fXptSens[] );
 
  private:
+  // The type of aggregation to use
+  KSTemperatureType ksType;
+
+  // The weight on the ks function value
+  double ksWeight;
+
+  // The integral scaling value
+  double alpha;
+
   // The name of the function
   static const char *funcName;
 
-  // The value of the KS weight
-  double ksWeight;
+  // The maximum temperature value, the sum of exp(ksWeight*(f[i] - maxTemp)
+  // and the value of the KS function
+  TacsScalar ksTempSum, maxTemp;
 
-  // Intermediate values in the functional evaluation
-  TacsScalar ksSum;
-  TacsScalar maxValue;
+  // Used for the case when this is used to evaluate the p-norm
   TacsScalar invPnorm;
-
-  // Set the type of constraint aggregate
-  KSTemperatureType ksType;
-
-  // The max number of nodes
-  int maxNumNodes;
-
-  // Whether the domain is a plane stress or 3d
-  int is_2d, is_3d;
-
 };
 
-#endif // TACS_KS_DISPLACEMENT_H
+#endif // TACS_KS_TEMPERATURE_H

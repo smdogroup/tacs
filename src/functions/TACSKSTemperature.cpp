@@ -3,7 +3,11 @@
   Structures, a parallel finite-element code for structural and
   multidisciplinary design optimization.
 
-  Copyright (C) 2018 Georgia Tech Research Corporation
+  Copyright (C) 2010 University of Toronto
+  Copyright (C) 2012 University of Michigan
+  Copyright (C) 2014 Georgia Tech Research Corporation
+  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
+  R.R.A. Martins All rights reserved.
 
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
@@ -12,56 +16,26 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "KSTemperature.h"
+#include "TACSKSTemperature.h"
 #include "TACSAssembler.h"
-#include "CoupledThermoSolidStiffness.h"
-#include "CoupledThermoPlaneStressStiffness.h"
-
-/*
-  The context for the TACSKSTemperature function
-*/
-class KSTemperatureCtx : public TACSFunctionCtx {
- public:
-  KSTemperatureCtx( TACSFunction *func,
-                    int maxNodes ){
-    // Allocate the working array
-    N = new double[ maxNodes ];
-    ksSum = 0.0;
-    maxValue = -1e20;
-  }
-  ~KSTemperatureCtx(){
-    delete [] N;
-  }
-
-  // Data to be used for the function computation
-  TacsScalar ksSum;
-  TacsScalar maxValue;
-  double *N;
-};
 
 /*
   Initialize the TACSKSTemperature class properties
 */
-TACSKSTemperature::TACSKSTemperature( TACSAssembler *_tacs,
+TACSKSTemperature::TACSKSTemperature( TACSAssembler *_assembler,
                                       double _ksWeight,
-                                      KSTemperatureType _ksType ):
-TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
+                                      double _alpha ):
+TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
              TACSFunction::TWO_STAGE, 0){
-  maxNumNodes = _tacs->getMaxElementNodes();
   ksWeight = _ksWeight;
-  ksType = _ksType;
-  maxValue = -1e20;
-  ksSum = 0.0;
+  alpha = _alpha;
+  ksType = CONTINUOUS;
+
+  // Initialize the maximum temperature value and KS sum to default values
+  // that will be overwritten later.
+  maxTemp = -1e20;
+  ksTempSum = 0.0;
   invPnorm = 0.0;
-  int maxNumStrains = _tacs->getMaxElementStrains();
-  if (maxNumStrains == 6){
-    is_3d = 1;
-    is_2d = 0;
-  }
-  else if (maxNumStrains == 3){
-    is_2d = 1;
-    is_3d = 0;
-  }
 }
 
 TACSKSTemperature::~TACSKSTemperature(){}
@@ -72,17 +46,31 @@ TACSKSTemperature::~TACSKSTemperature(){}
 const char * TACSKSTemperature::funcName = "TACSKSTemperature";
 
 /*
-  Return the function name
+  Set the KS aggregation type
 */
-const char *TACSKSTemperature::functionName(){
-  return funcName;
+void TACSKSTemperature::setKSTemperatureType( enum KSTemperatureType type ){
+  ksType = type;
 }
 
 /*
-  Set the displacement aggregate type
+  Retrieve the KS aggregation weight
 */
-void TACSKSTemperature::setKSDispType( KSTemperatureType _ksType ){
-  ksType = _ksType;
+double TACSKSTemperature::getParameter(){
+  return ksWeight;
+}
+
+/*
+  Set the KS aggregation parameter
+*/
+void TACSKSTemperature::setParameter( double _ksWeight ){
+  ksWeight = _ksWeight;
+}
+
+/*
+  Return the function name
+*/
+const char *TACSKSTemperature::getObjectName(){
+  return funcName;
 }
 
 /*
@@ -90,21 +78,16 @@ void TACSKSTemperature::setKSDispType( KSTemperatureType _ksType ){
 */
 TacsScalar TACSKSTemperature::getFunctionValue(){
   // Compute the final value of the KS function on all processors
-  if (ksType == CONTINUOUS || ksType == DISCRETE){
-    TacsScalar ksValue = maxValue + log(ksSum)/ksWeight;
+  TacsScalar ksTemp = maxTemp + log(ksTempSum/alpha)/ksWeight;
 
-    return ksValue;
-  }
-  else {
-    return maxValue*pow(ksSum, 1.0/ksWeight);
-  }
+  return ksTemp;
 }
 
 /*
-  Allocate and return the function-specific context
+  Retrieve the maximum value
 */
-TACSFunctionCtx *TACSKSTemperature::createFunctionCtx(){
-  return new KSTemperatureCtx(this, maxNumNodes);
+TacsScalar TACSKSTemperature::getMaximumTemperature(){
+  return maxTemp;
 }
 
 /*
@@ -112,10 +95,10 @@ TACSFunctionCtx *TACSKSTemperature::createFunctionCtx(){
 */
 void TACSKSTemperature::initEvaluation( EvaluationType ftype ){
   if (ftype == TACSFunction::INITIALIZE){
-    maxValue = -1e20;
+    maxTemp = -1e20;
   }
   else if (ftype == TACSFunction::INTEGRATE){
-    ksSum = 0.0;
+    ksTempSum = 0.0;
   }
 }
 
@@ -125,37 +108,22 @@ void TACSKSTemperature::initEvaluation( EvaluationType ftype ){
 void TACSKSTemperature::finalEvaluation( EvaluationType ftype ){
   if (ftype == TACSFunction::INITIALIZE){
     // Distribute the values of the KS function computed on this domain
-    TacsScalar temp = maxValue;
-    MPI_Allreduce(&temp, &maxValue, 1, TACS_MPI_TYPE,
-                  TACS_MPI_MAX, tacs->getMPIComm());
+    TacsScalar temp = maxTemp;
+    MPI_Allreduce(&temp, &maxTemp, 1, TACS_MPI_TYPE,
+                  TACS_MPI_MAX, assembler->getMPIComm());
   }
   else {
     // Find the sum of the ks contributions from all processes
-    TacsScalar temp = ksSum;
-    MPI_Allreduce(&temp, &ksSum, 1, TACS_MPI_TYPE,
-                  MPI_SUM, tacs->getMPIComm());
+    TacsScalar temp = ksTempSum;
+    MPI_Allreduce(&temp, &ksTempSum, 1, TACS_MPI_TYPE,
+                  MPI_SUM, assembler->getMPIComm());
 
     // Compute the P-norm quantity if needed
     invPnorm = 0.0;
     if (ksType == PNORM_DISCRETE || ksType == PNORM_CONTINUOUS){
-      if (ksSum != 0.0){
-        invPnorm = pow(ksSum, (1.0 - ksWeight)/ksWeight);
+      if (ksTempSum != 0.0){
+        invPnorm = pow(ksTempSum, (1.0 - ksWeight)/ksWeight);
       }
-    }
-  }
-}
-
-/*
-  Initialize the context for either integration or initialization
-*/
-void TACSKSTemperature::initThread( const double tcoef,
-                                     EvaluationType ftype,
-                                     TACSFunctionCtx *fctx ){
-  KSTemperatureCtx *ctx = dynamic_cast<KSTemperatureCtx*>(fctx);
-  if (ctx){
-    if (ftype == TACSFunction::INITIALIZE){
-      ctx->maxValue = -1e20;
-      ctx->ksSum = 0.0;
     }
   }
 }
@@ -164,143 +132,62 @@ void TACSKSTemperature::initThread( const double tcoef,
   Perform the element-wise evaluation of the TACSKSTemperature function.
 */
 void TACSKSTemperature::elementWiseEval( EvaluationType ftype,
-                                          TACSElement *element,
-                                          int elemNum,
-                                          const TacsScalar Xpts[],
-                                          const TacsScalar vars[],
-                                          const TacsScalar dvars[],
-                                          const TacsScalar ddvars[],
-                                          TACSFunctionCtx *fctx ){
-  KSTemperatureCtx *ctx = dynamic_cast<KSTemperatureCtx*>(fctx);
-  if (ctx){
-    // Get the number of quadrature points for this element
-    const int numGauss = element->getNumGaussPts();
-    const int numDisps = element->numDisplacements();
-    const int numNodes = element->numNodes();
+                                         int elemIndex,
+                                         TACSElement *element,
+                                         double time,
+                                         TacsScalar scale,
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[],
+                                         const TacsScalar dvars[],
+                                         const TacsScalar ddvars[] ){
+  // Retrieve the basis object for this element (if it exists)
+  TACSElementBasis *basis = element->getElementBasis();
 
-    if (ftype == TACSFunction::INITIALIZE){
-      // With the first iteration, find the maximum over the domain
-      for ( int i = 0; i < numGauss; i++ ){
-        // Get the Gauss points one at a time
-        double pt[3];
-        element->getGaussWtsPts(i, pt);
-        element->getShapeFunctions(pt, ctx->N);
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
+      double pt[3];
+      double weight = basis->getQuadraturePoint(i, pt);
 
-        // Evaluate the dot-product with the displacements
-        const double *N = ctx->N;
-        const TacsScalar *d = vars;
+      // Evaluate the temperature, and check whether it is an
+      // undefined quantity of interest on this element
+      TacsScalar temperature = 0.0;
+      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                             time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &temperature);
 
-        TacsScalar value = 0.0;
-        TacsScalar ns = 0.0;
-        for ( int j = 0; j < numNodes; j++ ){
-          ns += N[0];
-          value += N[0]*d[numDisps-1];
-          d += numDisps;
-          N++;
-        }
-        if (TacsRealPart(ns) > 1.0){
-          printf("Wrong shape functions\n");
-        }
-
-        // --------------------------------------------------------
-        // Get the constitutive object for this element
-        TacsScalar value1 = value;
-        TACSConstitutive *constitutive = element->getConstitutive();
-        if (is_3d){
-          CoupledThermoSolidStiffness *con =
-            dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-          if (con){
-            con->maxtemp(pt, value1, &value);
+      // Check whether the quantity requested is defined or not
+      if (count >= 1){
+        if (ftype == TACSFunction::INITIALIZE){
+          // Set the maximum temperature
+          if (TacsRealPart(temperature) > TacsRealPart(maxTemp)){
+            maxTemp = temperature;
           }
         }
         else {
-          CoupledThermoPlaneStressStiffness *con =
-            dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-          if (con){
-            con->maxtemp(pt, value1, &value);
+          // Evaluate the determinant of the Jacobian
+          TacsScalar Xd[9], J[9];
+          TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
+
+          // Add the temperature to the sum
+          if (ksType == DISCRETE){
+            TacsScalar fexp = exp(ksWeight*(temperature - maxTemp));
+            ksTempSum += scale*fexp;
+          }
+          else if (ksType == CONTINUOUS){
+            TacsScalar fexp = exp(ksWeight*(temperature - maxTemp));
+            ksTempSum += scale*weight*detJ*fexp;
+          }
+          else if (ksType == PNORM_DISCRETE){
+            TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight);
+            ksTempSum += scale*fpow;
+          }
+          else if (ksType == PNORM_CONTINUOUS){
+            TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight);
+            ksTempSum += scale*weight*detJ*fpow;
           }
         }
-        // ---------------------------------------------------------
-        if (TacsRealPart(value) > TacsRealPart(ctx->maxValue)){
-          ctx->maxValue = value;
-        }
       }
-    }
-    else {
-      // With the first iteration, find the maximum over the domain
-      for ( int i = 0; i < numGauss; i++ ){
-        // Get the Gauss points one at a time
-        double pt[3];
-        double weight = element->getGaussWtsPts(i, pt);
-        element->getShapeFunctions(pt, ctx->N);
-
-        // Evaluate the dot-product with the displacements
-        const double *N = ctx->N;
-        const TacsScalar *d = vars;
-
-        TacsScalar value = 0.0;
-        for ( int j = 0; j < numNodes; j++ ){
-          value += N[0]*d[numDisps-1];
-          d += numDisps;
-          N++;
-        }
-
-        // --------------------------------------------------------
-        // Get the constitutive object for this element
-        TacsScalar value1 = value;
-        TACSConstitutive *constitutive = element->getConstitutive();
-        if (is_3d){
-          CoupledThermoSolidStiffness *con =
-            dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-          if (con){
-            con->maxtemp(pt, value1, &value);
-          }
-        }
-        else {
-          CoupledThermoPlaneStressStiffness *con =
-            dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-          if (con){
-            con->maxtemp(pt, value1, &value);
-          }
-        }
-        // ---------------------------------------------------------
-
-        // Add up the contribution from the quadrature
-        TacsScalar h = element->getDetJacobian(pt, Xpts);
-        if (ksType == CONTINUOUS){
-          ctx->ksSum += h*weight*exp(ksWeight*(value - maxValue));
-        }
-        else if (ksType == DISCRETE){
-          ctx->ksSum += exp(ksWeight*(value - maxValue));
-        }
-        else if (ksType == PNORM_CONTINUOUS){
-          ctx->ksSum +=
-            h*weight*pow(fabs(TacsRealPart(value/maxValue)), ksWeight);
-        }
-        else if (ksType == PNORM_DISCRETE){
-          ctx->ksSum += pow(fabs(TacsRealPart(value/maxValue)), ksWeight);
-        }
-      }
-    }
-  }
-}
-
-/*
-  For each thread used to evaluate the function, call the
-  post-evaluation code once.
-*/
-void TACSKSTemperature::finalThread( const double tcoef,
-                                      EvaluationType ftype,
-                                      TACSFunctionCtx *fctx ){
-  KSTemperatureCtx *ctx = dynamic_cast<KSTemperatureCtx*>(fctx);
-  if (ctx){
-    if (ftype == TACSFunction::INITIALIZE){
-      if (TacsRealPart(ctx->maxValue) > TacsRealPart(maxValue)){
-        maxValue = ctx->maxValue;
-      }
-    }
-    else {
-      ksSum += tcoef*ctx->ksSum;
     }
   }
 }
@@ -309,107 +196,66 @@ void TACSKSTemperature::finalThread( const double tcoef,
   These functions are used to determine the sensitivity of the
   function with respect to the state variables.
 */
-void TACSKSTemperature::getElementSVSens( double alpha,
-                                          double beta,
-                                          double gamma,
-                                          TacsScalar *elemSVSens,
-                                          TACSElement *element,
-                                          int elemNum,
+void TACSKSTemperature::getElementSVSens( int elemIndex, TACSElement *element,
+                                          double time,
+                                          TacsScalar alpha,
+                                          TacsScalar beta,
+                                          TacsScalar gamma,
                                           const TacsScalar Xpts[],
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[],
-                                          TACSFunctionCtx *fctx ){
-  KSTemperatureCtx *ctx = dynamic_cast<KSTemperatureCtx*>(fctx);
-
+                                          TacsScalar dfdu[] ){
   // Zero the derivative of the function w.r.t. the element state
   // variables
-  int numVars = element->numVariables();
-  memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
+  int numVars = element->getNumVariables();
+  memset(dfdu, 0, numVars*sizeof(TacsScalar));
 
-  if (ctx){
-    // Get the number of quadrature points for this element
-    const int numGauss = element->getNumGaussPts();
-    const int numDisps = element->numDisplacements();
-    const int numNodes = element->numNodes();
+  // Get the element basis class
+  TACSElementBasis *basis = element->getElementBasis();
 
-    // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
       double pt[3];
-      double weight = element->getGaussWtsPts(i, pt);
-      element->getShapeFunctions(pt, ctx->N);
+      double weight = basis->getQuadraturePoint(i, pt);
 
-      // Evaluate the dot-product with the displacements
-      const double *N = ctx->N;
-      const TacsScalar *d = vars;
+      TacsScalar temperature = 0.0;
+      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                             time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &temperature);
 
-      TacsScalar value = 0.0;
-      for ( int j = 0; j < numNodes; j++ ){
-        value += N[0]*d[numDisps-1];
-        d += numDisps;
-        N++;
-      }
-      // Get the constitutive object for this element
-      TacsScalar value1 = value;
-      TACSConstitutive *constitutive = element->getConstitutive();
-      if (is_3d){
-        CoupledThermoSolidStiffness *con =
-          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-        if (con){
-          con->maxtemp(pt, value1, &value);
-        }
-      }
-      else {
-        CoupledThermoPlaneStressStiffness *con =
-          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-        if (con){
-          con->maxtemp(pt, value1, &value);
-        }
-      }
-      // Add up the contribution from the quadrature
-      TacsScalar h = element->getDetJacobian(pt, Xpts);
-      TacsScalar ptWeight = 0.0;
+      if (count >= 1){
+        // Evaluate the determinant of the Jacobian
+        TacsScalar Xd[9], J[9];
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
-      if (ksType == CONTINUOUS){
-        ptWeight = alpha*h*weight*exp(ksWeight*(value - maxValue))/ksSum;
-      }
-      else if (ksType == DISCRETE){
-        ptWeight = alpha*exp(ksWeight*(value - maxValue))/ksSum;
-      }
-      else if (ksType == PNORM_CONTINUOUS){
-        ptWeight = value*pow(fabs(TacsRealPart(value/maxValue)), ksWeight-2.0);
-        ptWeight *= alpha*h*weight*invPnorm;
-      }
-      else if (ksType == PNORM_DISCRETE){
-        ptWeight = value*pow(fabs(TacsRealPart(value/maxValue)), ksWeight-2.0);
-        ptWeight *= alpha*ksWeight*invPnorm;
-      }
-      // Get the weights from design variables
-      TacsScalar wx[] = {0.0};
-      if (is_3d){
-        CoupledThermoSolidStiffness *con =
-          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-        if (con){
-          con->maxtempStrainSens(pt, value1, wx);
+        // Compute the sensitivity contribution
+        TacsScalar ksPtWeight = 0.0;
+        if (ksType == DISCRETE){
+          // d(log(ksTempSum))/dx = 1/(ksTempSum)*d(temperature)/dx
+          ksPtWeight = exp(ksWeight*(temperature - maxTemp))/ksTempSum;
         }
-      }
-      else {
-        CoupledThermoPlaneStressStiffness *con =
-          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-        if (con){
-          con->maxtempStrainSens(pt, value1, wx);
+        else if (ksType == CONTINUOUS){
+          ksPtWeight = exp(ksWeight*(temperature - maxTemp))/ksTempSum;
+          ksPtWeight *= weight*detJ;
         }
-      }
-      // Reset the shape function pointer and run through the
-      // element nodes again to set the derivative
-      N = ctx->N;
-      TacsScalar *s = elemSVSens;
-      for ( int j = 0; j < numNodes; j++ ){
-        //s[numDisps-1] += ptWeight*N[0];
-        s[numDisps-1] += ptWeight*N[0]*wx[0];
-        s += numDisps;
-        N++;
+        else if (ksType == PNORM_DISCRETE){
+          TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight-2.0);
+          ksPtWeight = temperature*fpow*invPnorm;
+        }
+        else if (ksType == PNORM_CONTINUOUS){
+          // Get the determinant of the Jacobian
+          TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight-2.0);
+          ksPtWeight = temperature*fpow*invPnorm;
+          ksPtWeight *= weight*detJ;
+        }
+
+        TacsScalar dfdq = ksPtWeight;
+        element->addPointQuantitySVSens(elemIndex, TACS_TEMPERATURE, time,
+                                        alpha, beta, gamma,
+                                        i, pt, Xpts, vars, dvars, ddvars,
+                                        &dfdq, dfdu);
       }
     }
   }
@@ -419,106 +265,132 @@ void TACSKSTemperature::getElementSVSens( double alpha,
   Determine the derivative of the function with respect to
   the element nodal locations
 */
-void TACSKSTemperature::getElementXptSens( const double tcoef,
-                                            TacsScalar fXptSens[],
-                                            TACSElement *element,
-                                            int elemNum,
-                                            const TacsScalar Xpts[],
-                                            const TacsScalar vars[],
-                                            const TacsScalar dvars[],
-                                            const TacsScalar ddvars[],
-                                            TACSFunctionCtx *fctx ){}
+void TACSKSTemperature::getElementXptSens( int elemIndex,
+                                           TACSElement *element,
+                                           double time,
+                                           TacsScalar scale,
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[],
+                                           const TacsScalar ddvars[],
+                                           TacsScalar dfdXpts[] ){
+  // Zero the derivative of the function w.r.t. the element node
+  // locations
+  int numNodes = element->getNumNodes();
+  memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
+
+  // Get the element basis class
+  TACSElementBasis *basis = element->getElementBasis();
+
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
+      double pt[3];
+      double weight = basis->getQuadraturePoint(i, pt);
+
+      TacsScalar temperature = 0.0;
+      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                             time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &temperature);
+
+      if (count >= 1){
+        // Evaluate the determinant of the Jacobian
+        TacsScalar Xd[9], J[9];
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
+
+        // Compute the sensitivity contribution
+        TacsScalar dfdq = 0.0;
+        TacsScalar dfddetJ = 0.0;
+        if (ksType == DISCRETE){
+          // d(log(ksTempSum))/dx = 1/(ksTempSum)*d(temperature)/dx
+          dfdq = exp(ksWeight*(temperature - maxTemp))/ksTempSum;
+        }
+        else if (ksType == CONTINUOUS){
+          TacsScalar expfact = exp(ksWeight*(temperature - maxTemp))/ksTempSum;
+          dfddetJ = weight*expfact/ksWeight;
+          dfdq = weight*detJ*expfact;
+        }
+        else if (ksType == PNORM_DISCRETE){
+          TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight-2.0);
+          dfdq = temperature*fpow*invPnorm;
+        }
+        else if (ksType == PNORM_CONTINUOUS){
+          // Get the determinant of the Jacobian
+          TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight-2.0);
+          dfdq = temperature*fpow*invPnorm*weight*detJ;
+          dfddetJ = temperature*fpow*invPnorm*weight;
+        }
+
+        element->addPointQuantityXptSens(elemIndex, TACS_TEMPERATURE, time,
+                                         scale, i, pt, Xpts, vars, dvars, ddvars,
+                                         &dfdq, dfdXpts);
+
+        if (dfddetJ != 0.0){
+          basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
+                                             NULL, NULL, dfdXpts);
+        }
+      }
+    }
+  }
+}
 
 /*
   Determine the derivative of the function with respect to
   the design variables defined by the element - usually just
   the constitutive/material design variables.
 */
-void TACSKSTemperature::addElementDVSens( const double tcoef,
-                                           TacsScalar *fdvSens, int numDVs,
-                                           TACSElement *element, int elemNum,
-                                           const TacsScalar Xpts[],
-                                           const TacsScalar vars[],
-                                           const TacsScalar dvars[],
-                                           const TacsScalar ddvars[],
-                                           TACSFunctionCtx *fctx ){
-  KSTemperatureCtx *ctx = dynamic_cast<KSTemperatureCtx*>(fctx);
-  // Get the constitutive object for this element
-  TACSConstitutive *constitutive = element->getConstitutive();
-  if (ctx){
-    // Get the number of quadrature points for this element
-    const int numGauss = element->getNumGaussPts();
-    const int numDisps = element->numDisplacements();
-    const int numNodes = element->numNodes();
-    // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
-      // Get the Gauss points one at a time
+void TACSKSTemperature::addElementDVSens( int elemIndex,
+                                          TACSElement *element,
+                                          double time,
+                                          TacsScalar scale,
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[],
+                                          int dvLen, TacsScalar dfdx[] ){
+  // Get the element basis class
+  TACSElementBasis *basis = element->getElementBasis();
+
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
       double pt[3];
-      double weight = element->getGaussWtsPts(i, pt);
-      element->getShapeFunctions(pt, ctx->N);
+      double weight = basis->getQuadraturePoint(i, pt);
 
-      // Evaluate the dot-product with the displacements
-      const double *N = ctx->N;
-      const TacsScalar *d = vars;
+      TacsScalar temperature = 0.0;
+      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                             time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &temperature);
 
-      TacsScalar value = 0.0;
-      for ( int j = 0; j < numNodes; j++ ){
-        value += N[0]*d[numDisps-1];
-        d += numDisps;
-        N++;
-      }
-      // --------------------------------------------------------
-      // Get the constitutive object for this element
-      TacsScalar value1 = value;
-      TACSConstitutive *constitutive = element->getConstitutive();
-      if (is_3d){
-        CoupledThermoSolidStiffness *con =
-          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-        if (con){
-          con->maxtemp(pt, value1, &value);
-        }
-      }
-      else {
-        CoupledThermoPlaneStressStiffness *con =
-          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-        if (con){
-          con->maxtemp(pt, value1, &value);
-        }
-      }
-      // Add up the contribution from the quadrature
-      TacsScalar h = element->getDetJacobian(pt, Xpts);
-      TacsScalar ptWeight = 0.0;
+      if (count >= 1){
+        // Evaluate the determinant of the Jacobian
+        TacsScalar Xd[9], J[9];
+        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
 
-      if (ksType == CONTINUOUS){
-        ptWeight = h*weight*exp(ksWeight*(value - maxValue))/ksSum;
-      }
-      else if (ksType == DISCRETE){
-        ptWeight = exp(ksWeight*(value - maxValue))/ksSum;
-      }
-      else if (ksType == PNORM_CONTINUOUS){
-        ptWeight = value*pow(fabs(TacsRealPart(value/maxValue)), ksWeight-2.0);
-        ptWeight *= h*weight*invPnorm;
-      }
-      else if (ksType == PNORM_DISCRETE){
-        ptWeight = value*pow(fabs(TacsRealPart(value/maxValue)), ksWeight-2.0);
-        ptWeight *= ksWeight*invPnorm;
-      }
-      // Add contribution of the relaxation to the design sensitivity
-      if (is_3d){
-        CoupledThermoSolidStiffness *con =
-          dynamic_cast<CoupledThermoSolidStiffness*>(constitutive);
-        if (con){
-          con->addMaxTempDVSens(pt, value1, tcoef*ptWeight,
-                                fdvSens, numDVs);
+        // Compute the sensitivity contribution
+        TacsScalar dfdq = 0.0;
+        if (ksType == DISCRETE){
+          // d(log(ksTempSum))/dx = 1/(ksTempSum)*d(temperature)/dx
+          dfdq = exp(ksWeight*(temperature - maxTemp))/ksTempSum;
         }
-      }
-      else {
-        CoupledThermoPlaneStressStiffness *con =
-          dynamic_cast<CoupledThermoPlaneStressStiffness*>(constitutive);
-        if (con){
-          con->addMaxTempDVSens(pt, value1, tcoef*ptWeight,
-                                fdvSens, numDVs);
+        else if (ksType == CONTINUOUS){
+          TacsScalar expfact = exp(ksWeight*(temperature - maxTemp))/ksTempSum;
+          dfdq = weight*detJ*expfact;
         }
+        else if (ksType == PNORM_DISCRETE){
+          TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight-2.0);
+          dfdq = temperature*fpow*invPnorm;
+        }
+        else if (ksType == PNORM_CONTINUOUS){
+          // Get the determinant of the Jacobian
+          TacsScalar fpow = pow(fabs(TacsRealPart(temperature/maxTemp)), ksWeight-2.0);
+          dfdq = temperature*fpow*invPnorm*weight*detJ;
+        }
+
+        element->addPointQuantityDVSens(elemIndex, TACS_TEMPERATURE,
+                                        time, scale, i, pt,
+                                        Xpts, vars, dvars, ddvars,
+                                        &dfdq, dvLen, dfdx);
       }
     }
   }
