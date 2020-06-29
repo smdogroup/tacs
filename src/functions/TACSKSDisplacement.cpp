@@ -242,15 +242,7 @@ void TACSKSDisplacement::getElementXptSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-<<<<<<< HEAD
-<<<<<<< HEAD
         TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-=======
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
->>>>>>> changes for ouu setup
-=======
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
->>>>>>> fixed ouu setup
 
         // Compute the sensitivity contribution
         TacsScalar dfdq = 0.0;
@@ -262,15 +254,7 @@ void TACSKSDisplacement::getElementXptSens( int elemIndex,
                                          scale, i, pt, Xpts, vars, dvars, ddvars,
                                          &dfdq, dfdXpts);
         if (dfddetJ != 0.0){
-<<<<<<< HEAD
-<<<<<<< HEAD
           basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
-=======
-          basis->addJacobianTransformXptSens(pt, Xd, J, scale*dfddetJ,
->>>>>>> changes for ouu setup
-=======
-          basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
->>>>>>> fixed ouu setup
                                              NULL, NULL, dfdXpts);
         }
       }
@@ -309,15 +293,7 @@ void TACSKSDisplacement::addElementDVSens( int elemIndex,
       if (count >= 1){
         // Evaluate the determinant of the Jacobian
         TacsScalar Xd[9], J[9];
-<<<<<<< HEAD
-<<<<<<< HEAD
         TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-=======
-        TacsScalar detJ = basis->getJacobianTransform(pt, Xpts, Xd, J);
->>>>>>> changes for ouu setup
-=======
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
->>>>>>> fixed ouu setup
 
         // Compute the sensitivity contribution
         TacsScalar dfdq = 0.0;
