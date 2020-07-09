@@ -591,6 +591,13 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
   updateInertialProperties();
 }
 
+
+void TACSRigidBody::setMass( TacsScalar _mass ){
+  mass = _mass;
+  //  printf("Mass of rigid body updated to %e \n", _mass);
+  // updateInertialProperties();
+}
+
 /*
   Decrease the reference counts to everything
 */
