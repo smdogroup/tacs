@@ -96,94 +96,110 @@ void TACSNeohookean3D::evalWeakIntegrand( int elemIndex,
 }
 
 /**
-   Evaluate the derivatives of the weak form coefficients
+  Get the non-zero pattern for the matrix
 */
-void TACSNeohookean3D::evalWeakJacobian( int elemIndex,
-                                         const double time,
-                                         int n,  const double pt[],
-                                         const TacsScalar X[],
-                                         const TacsScalar Xd[],
-                                         const TacsScalar Ut[],
-                                         const TacsScalar Ux[],
-                                         TacsScalar DUt[],
-                                         TacsScalar DUx[],
-                                         int *Jac_nnz,
-                                         const int *Jac_pairs[],
-                                         TacsScalar Jac[] ){
-  TacsScalar F[9];
-  F[0] = 1.0 + Ux[0];
-  F[1] = Ux[1];
-  F[2] = Ux[2];
-
-  F[3] = Ux[3];
-  F[4] = 1.0 + Ux[4];
-  F[5] = Ux[5];
-
-  F[6] = Ux[6];
-  F[7] = Ux[7];
-  F[8] = 1.0 + Ux[8];
-
-  // Compute tr(C) = tr(F^{T}*F) = sum_{ij} F_{ij}^2
-  TacsScalar I1 = (F[0]*F[0] + F[1]*F[1] + F[2]*F[2] +
-                   F[3]*F[3] + F[4]*F[4] + F[5]*F[5] +
-                   F[6]*F[6] + F[7]*F[7] + F[8]*F[8]);
-  TacsScalar J = det3x3(F);
-
-  TacsScalar dI1, dJ;
-  evalStrainEnergyDeriv(I1, J, &dI1, &dJ);
-
-  memset(DUt, 0, 9*sizeof(TacsScalar));
-  memset(DUx, 0, 9*sizeof(TacsScalar));
-
-  // Add dU0/dJ*dJ/dUx
-  addDet3x3Sens(dJ, F, DUx);
-
-  // Add dU0/dI1*dI1/dUx
-  DUx[0] += 2.0*F[0]*dI1;
-  DUx[1] += 2.0*F[1]*dI1;
-  DUx[2] += 2.0*F[2]*dI1;
-
-  DUx[3] += 2.0*F[3]*dI1;
-  DUx[4] += 2.0*F[4]*dI1;
-  DUx[5] += 2.0*F[5]*dI1;
-
-  DUx[6] += 2.0*F[6]*dI1;
-  DUx[7] += 2.0*F[7]*dI1;
-  DUx[8] += 2.0*F[8]*dI1;
-
-  *Jac_nnz = 81;
-  *Jac_pairs = linear_Jac_pairs;
-
-  // Add the second derivative contributions from the first derivatives
-  // of the strain energy
-  det3x32ndSens(dJ, F, Jac);
-  for ( int i = 0; i < 9; i++ ){
-    Jac[10*i] += 2.0*dI1;
+void TACSNeohookean3D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                              int elemIndex,
+                                              int n,
+                                              int *Jac_nnz,
+                                              const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 81;
+    *Jac_pairs = linear_Jac_pairs;
   }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
 
-  // Add the other second derivative contributions directly from the
-  // strain energy
-  TacsScalar d2I1, d2J, dIJ;
-  evalStrainEnergy2ndDeriv(I1, J, &d2I1, &d2J, &dIJ);
+/**
+  Evaluate the derivatives of the weak form coefficients
+*/
+void TACSNeohookean3D::evalWeakMatrix( ElementMatrixType matType,
+                                       int elemIndex,
+                                       const double time,
+                                       int n,  const double pt[],
+                                       const TacsScalar X[],
+                                       const TacsScalar Xd[],
+                                       const TacsScalar Ut[],
+                                       const TacsScalar Ux[],
+                                       TacsScalar DUt[],
+                                       TacsScalar DUx[],
+                                       TacsScalar Jac[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    TacsScalar F[9];
+    F[0] = 1.0 + Ux[0];
+    F[1] = Ux[1];
+    F[2] = Ux[2];
 
-  if (TacsRealPart(d2I1) != 0.0){
+    F[3] = Ux[3];
+    F[4] = 1.0 + Ux[4];
+    F[5] = Ux[5];
+
+    F[6] = Ux[6];
+    F[7] = Ux[7];
+    F[8] = 1.0 + Ux[8];
+
+    // Compute tr(C) = tr(F^{T}*F) = sum_{ij} F_{ij}^2
+    TacsScalar I1 = (F[0]*F[0] + F[1]*F[1] + F[2]*F[2] +
+                     F[3]*F[3] + F[4]*F[4] + F[5]*F[5] +
+                     F[6]*F[6] + F[7]*F[7] + F[8]*F[8]);
+    TacsScalar J = det3x3(F);
+
+    TacsScalar dI1, dJ;
+    evalStrainEnergyDeriv(I1, J, &dI1, &dJ);
+
+    memset(DUt, 0, 9*sizeof(TacsScalar));
+    memset(DUx, 0, 9*sizeof(TacsScalar));
+
+    // Add dU0/dJ*dJ/dUx
+    addDet3x3Sens(dJ, F, DUx);
+
+    // Add dU0/dI1*dI1/dUx
+    DUx[0] += 2.0*F[0]*dI1;
+    DUx[1] += 2.0*F[1]*dI1;
+    DUx[2] += 2.0*F[2]*dI1;
+
+    DUx[3] += 2.0*F[3]*dI1;
+    DUx[4] += 2.0*F[4]*dI1;
+    DUx[5] += 2.0*F[5]*dI1;
+
+    DUx[6] += 2.0*F[6]*dI1;
+    DUx[7] += 2.0*F[7]*dI1;
+    DUx[8] += 2.0*F[8]*dI1;
+
+    // Add the second derivative contributions from the first derivatives
+    // of the strain energy
+    det3x32ndSens(dJ, F, Jac);
     for ( int i = 0; i < 9; i++ ){
-      for ( int j = 0; j < 9; j++ ){
-        Jac[9*i + j] += 4.0*F[i]*F[j]*d2I1;
+      Jac[10*i] += 2.0*dI1;
+    }
+
+    // Add the other second derivative contributions directly from the
+    // strain energy
+    TacsScalar d2I1, d2J, dIJ;
+    evalStrainEnergy2ndDeriv(I1, J, &d2I1, &d2J, &dIJ);
+
+    if (TacsRealPart(d2I1) != 0.0){
+      for ( int i = 0; i < 9; i++ ){
+        for ( int j = 0; j < 9; j++ ){
+          Jac[9*i + j] += 4.0*F[i]*F[j]*d2I1;
+        }
       }
     }
-  }
-  if (TacsRealPart(d2J) != 0.0){
-    TacsScalar t[9];
-    det3x3Sens(F, t);
+    if (TacsRealPart(d2J) != 0.0){
+      TacsScalar t[9];
+      det3x3Sens(F, t);
 
-    for ( int i = 0; i < 9; i++ ){
-      addDet3x3Sens(d2J*t[i], F, &Jac[9*i]);
+      for ( int i = 0; i < 9; i++ ){
+        addDet3x3Sens(d2J*t[i], F, &Jac[9*i]);
+      }
     }
-  }
-  if (TacsRealPart(dIJ) != 0.0){
-    for ( int i = 0; i < 9; i++ ){
-      addDet3x3Sens(2.0*dIJ*F[i], F, &Jac[9*i]);
+    if (TacsRealPart(dIJ) != 0.0){
+      for ( int i = 0; i < 9; i++ ){
+        addDet3x3Sens(2.0*dIJ*F[i], F, &Jac[9*i]);
+      }
     }
   }
 }

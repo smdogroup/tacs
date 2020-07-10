@@ -342,6 +342,20 @@ class TACSElement : public TACSObject {
                             TacsScalar res[],
                             TacsScalar mat[] );
 
+  /*
+    Add the Jacobian-vector product to the output
+  */
+ virtual void addJacobianVecProduct( int elemIndex, double time,
+                                     TacsScalar alpha,
+                                     TacsScalar beta,
+                                     TacsScalar gamma,
+                                     const TacsScalar Xpts[],
+                                     const TacsScalar vars[],
+                                     const TacsScalar dvars[],
+                                     const TacsScalar ddvars[],
+                                     const TacsScalar pvars[],
+                                     TacsScalar res[] ){}
+
   /**
     Add the derivative of the adjoint-residual product to the output vector
 

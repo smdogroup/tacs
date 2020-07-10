@@ -27,7 +27,7 @@ class TACSElementModel : public TACSObject {
   /**
     Returns the spatial dimension of the element: 1, 2 or 3
 
-    @return Degrees of freedom per node
+    @return The number of computational parameters associated with the model
   */
   virtual int getSpatialDim() = 0;
 
@@ -160,65 +160,6 @@ class TACSElementModel : public TACSObject {
                                   TacsScalar DUx[] ) = 0;
 
   /**
-    Evaluate the Jacobian of the point-wise integrand for the weak form of
-    the governing equations.
-
-    The following code computes the weak form coefficients and their
-    derivatives with respect to each of the input components. The
-    descriptions of the terms DUt and DUx are the same as the
-    evalWeakIntegrand() function described above.
-
-    The parameter Jac contains a sparse matrix representation of the
-    the derivatives of the coefficients in DUt and DUx. The dense matrix
-    contains (3 + spatial_dim)*vars_per_node rows and columns.
-
-    For instance, for the 2D problem (spatial_dim = 2) with the variables
-    U = (u, v), the Jac matrix would contain 10 x 10 entries. The rows of the
-    matrix (corresponding to DUt and DUx) are ordered first by variable, then
-    by derivative. The columns of the matrix are ordered in a similar manner
-    so that for this case:
-
-    Index:     0;       1;      2;      3;      4;
-    rows:  DUt[0]; DUt[1]; DUt[2]; DUx[0]; DUx[1];
-    cols:      u;     u,t;   u,tt;    u,x;    u,y;
-
-    Index:      5;      6;      7;      8;      9;
-    rows:  DUt[3]; DUt[4]; DUt[5]; DUx[2]; DUx[3];
-    cols:       v;    v,t;   v,tt;    v,x;    v,y;
-
-    However, the Jacobian matrix of the terms DUt/DUx w.r.t. Ut and Ux is
-    often sparse. For this reason, the sparsity pattern is returned in a
-    pair-wise format with in Jac_pairs which stores the (row, column) entries
-    that are non-zero.
-
-    @param elemIndex The local element index
-    @param time The simulation time
-    @param n The quadrature point index
-    @param pt The parametric position of the quadrature point
-    @param X The physical position of the quadrature point
-    @param Xd The derivative physical position of the quadrature point
-    @param Ut Values of the state variables and their 1st/2nd time derivs
-    @param Ux The spatial derivatives of the state variables
-    @param DUt Coefficients of the time-dependent weak form
-    @param DUx Coefficients of the spatial-derivative weak form
-    @param Jac_nnz Number of non-zeros (negative for dense matrix)
-    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
-    @param Jac Jacobian entries of the weak form
-  */
-  virtual void evalWeakJacobian( int elemIndex,
-                                 const double time,
-                                 int n, const double pt[],
-                                 const TacsScalar X[],
-                                 const TacsScalar Xd[],
-                                 const TacsScalar Ut[],
-                                 const TacsScalar Ux[],
-                                 TacsScalar DUt[],
-                                 TacsScalar DUx[],
-                                 int *Jac_nnz,
-                                 const int *Jac_pairs[],
-                                 TacsScalar Jac[] ) = 0;
-
-  /**
      Add the product of the adjoint with the derivative w.r.t. design
      variables to the design variable vector.
 
@@ -292,19 +233,59 @@ class TACSElementModel : public TACSObject {
       dfdPsix[i] = 0.0;
     }
 
-    for ( int i = 0; i < num_params*num_params; i++ ){
+    for ( int i = 0; i < 3*num_params; i++ ){
       dfdXd[i] = 0.0;
     }
   }
 
+  /*
+    Get the non-zero entries at a quadrature point
+
+    @param matType The type of matrix to use
+    @param elemIndex The element index
+    @param n The quadrature point index
+    @param Jac_nnz Number of non-zeros (negative for dense matrix)
+    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
+  */
+  virtual void getWeakMatrixNonzeros( ElementMatrixType matType,
+                                      int elemIndex,
+                                      int n,
+                                      int *Jac_nnz,
+                                      const int *Jac_pairs[] ) = 0;
+
   /**
-    Evaluate the terms for a point-wise integrand of an element matrix
-    of specified type.
+    Evaluate the Jacobian of the point-wise integrand for the weak form of
+    the governing equations.
 
-    This code uses the same ordering conventions as the Jacobian code described
-    above. This can be used to evaluate the stiffness, mass and geometric stiffness
-    matrices.
+    The following code computes the weak form coefficients and their
+    derivatives with respect to each of the input components. The
+    descriptions of the terms DUt and DUx are the same as the
+    evalWeakIntegrand() function described above.
 
+    The parameter Jac contains a sparse matrix representation of the
+    the derivatives of the coefficients in DUt and DUx. The dense matrix
+    contains (3 + spatial_dim)*vars_per_node rows and columns.
+
+    For instance, for the 2D problem (spatial_dim = 2) with the variables
+    U = (u, v), the Jac matrix would contain 10 x 10 entries. The rows of the
+    matrix (corresponding to DUt and DUx) are ordered first by variable, then
+    by derivative. The columns of the matrix are ordered in a similar manner
+    so that for this case:
+
+    Index:     0;       1;      2;      3;      4;
+    rows:  DUt[0]; DUt[1]; DUt[2]; DUx[0]; DUx[1];
+    cols:      u;     u,t;   u,tt;    u,x;    u,y;
+
+    Index:      5;      6;      7;      8;      9;
+    rows:  DUt[3]; DUt[4]; DUt[5]; DUx[2]; DUx[3];
+    cols:       v;    v,t;   v,tt;    v,x;    v,y;
+
+    However, the Jacobian matrix of the terms DUt/DUx w.r.t. Ut and Ux is
+    often sparse. For this reason, the sparsity pattern is returned in a
+    pair-wise format with in Jac_pairs which stores the (row, column) entries
+    that are non-zero.
+
+    @param matType The element matrix type
     @param elemIndex The local element index
     @param time The simulation time
     @param n The quadrature point index
@@ -313,8 +294,8 @@ class TACSElementModel : public TACSObject {
     @param Xd The derivative physical position of the quadrature point
     @param Ut Values of the state variables and their 1st/2nd time derivs
     @param Ux The spatial derivatives of the state variables
-    @param Jac_nnz Number of non-zeros (negative for dense matrix)
-    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
+    @param DUt Coefficients of the time-dependent weak form
+    @param DUx Coefficients of the spatial-derivative weak form
     @param Jac Jacobian entries of the weak form
   */
   virtual void evalWeakMatrix( ElementMatrixType matType,
@@ -325,12 +306,9 @@ class TACSElementModel : public TACSObject {
                                const TacsScalar Xd[],
                                const TacsScalar Ut[],
                                const TacsScalar Ux[],
-                               int *Jac_nnz,
-                               const int *Jac_pairs[],
-                               TacsScalar Jac[] ){
-    *Jac_nnz = 0;
-    *Jac_pairs = NULL;
-  }
+                               TacsScalar DUt[],
+                               TacsScalar DUx[],
+                               TacsScalar Jac[] ) = 0;
 
   /**
     Add the derivative of the matrix inner product with respect to the

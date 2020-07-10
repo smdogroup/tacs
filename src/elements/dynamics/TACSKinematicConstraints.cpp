@@ -960,7 +960,6 @@ void TACSRevoluteConstraint::addResidual( int elemIndex,
       mat3x3MultTrans(CB, eB1, tB1);
       mat3x3MultTrans(CB, eB2, tB2);
 
-
       // Compute the contributions to the first revolute constraint
       resC[3] += vec3Dot(tA, tB1);
 

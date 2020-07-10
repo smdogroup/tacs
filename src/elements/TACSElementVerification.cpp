@@ -14,6 +14,7 @@
 
 #include "TACSElementVerification.h"
 #include "tacslapack.h"
+#include "TACSElementAlgebra.h"
 
 /*
   Assign variables randomly to an array. This is useful for
@@ -1215,6 +1216,507 @@ int TacsTestElementBasis( TACSElementBasis *basis,
   fail = flag || fail;
 
   flag = TacsTestElementBasisJacobianTransform(basis, dh, test_print_level,
+                                               test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  return fail;
+}
+
+static const int MAX_VARS_PER_NODE = 10;
+
+/*
+int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
+                                           int elemIndex,
+                                           const double time,
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol ){
+  const int num_params = model->getSpatialDim();
+  const int vpn = model->getVarsPerNode();
+
+  // Evaluate the weak integrand
+  model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, Ux, DUt, DUx);
+
+
+    *product = 0.0;
+    dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
+    const int vars_per_node = getVarsPerNode();
+    const int num_params = getSpatialDim();
+
+    for ( int i = 0; i < num_params*vars_per_node; i++ ){
+      dfdUx[i] = 0.0;
+      dfdPsix[i] = 0.0;
+    }
+
+    for ( int i = 0; i < num_params*num_params; i++ ){
+      dfdXd[i] = 0.0;
+    }
+
+
+  model->evalWeakAdjXptSensProduct(elemIndex, time, scale, n, pt, X, Xd, Ut, Ux, Psi, Psix,
+                            dvLen, dfdx);
+}
+*/
+
+int TacsTestElementModelJacobian( TACSElementModel *model,
+                                  int elemIndex,
+                                  const double time,
+                                  double dh,
+                                  int test_print_level,
+                                  double test_fail_atol,
+                                  double test_fail_rtol ){
+  int fail = 0;
+
+  const int vars_per_node = model->getVarsPerNode();
+  const int num_params = model->getSpatialDim();
+
+  // Set the quadrature point
+  const int n = 0;
+  const double pt[3] = {-0.125, 0.383, -0.233};
+
+  int Jac_nnz;
+  const int *Jac_pairs;
+  model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex, n,
+                               &Jac_nnz, &Jac_pairs);
+
+  // Fill in this data with random numbers...
+  TacsScalar X[3], Xd[9];
+  TacsGenerateRandomArray(X, 3);
+  TacsGenerateRandomArray(Xd, 9);
+
+  TacsScalar Ut[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
+  TacsGenerateRandomArray(Ut, 3*vars_per_node);
+  TacsGenerateRandomArray(Ux, num_params*vars_per_node);
+
+  // Check consistency with the integrad
+  TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
+  model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, Ux, pDUt, pDUx);
+
+  // Evaluate the weak form of the model
+  TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
+  TacsScalar Jac[36*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
+  model->evalWeakMatrix(TACS_JACOBIAN_MATRIX, elemIndex, time,
+                        n, pt, X, Xd, Ut, Ux, DUt, DUx, Jac);
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(DUt, pDUt, 3*vars_per_node, &max_err_index);
+  double max_rel = TacsGetMaxRelError(DUt, pDUt, 3*vars_per_node,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the consistency of the weak form for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "DUt",
+                             DUt, pDUt, 3*vars_per_node);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  max_err = TacsGetMaxError(DUx, pDUx, num_params*vars_per_node, &max_err_index);
+  max_rel = TacsGetMaxRelError(DUx, pDUx, num_params*vars_per_node, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the Jacobian of the weak form for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "DUx", DUx, pDUx,
+                             num_params*vars_per_node);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Now compute the derivative, component by component. Assume that
+  // the Jacobian is supplied in a sparse format (the most common)
+  TacsScalar fd[36*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
+  for ( int k = 0; k < Jac_nnz; k++ ){
+    TacsScalar pUt[3*MAX_VARS_PER_NODE], pUx[3*MAX_VARS_PER_NODE];
+    memcpy(pUt, Ut, 3*vars_per_node*sizeof(TacsScalar));
+    memcpy(pUx, Ux, num_params*vars_per_node*sizeof(TacsScalar));
+
+    int ix = Jac_pairs[2*k];
+    int jx = Jac_pairs[2*k+1];
+
+    // Check which parameter to perturb
+    if (jx % (num_params + 3) < 3){
+      int i = jx / (num_params + 3);
+      int j = jx % (num_params + 3);
+#ifdef TACS_USE_COMPLEX
+      pUt[3*i + j] = Ut[3*i + j] + TacsScalar(0.0, dh);
+#else
+      pUt[3*i + j] = Ut[3*i + j] + dh;
+#endif // TACS_USE_COMPLEX
+    }
+    else {
+      int i = jx / (num_params + 3);
+      int j = (jx % (num_params + 3)) - 3;
+#ifdef TACS_USE_COMPLEX
+      pUx[num_params*i + j] = Ux[num_params*i + j] + TacsScalar(0.0, dh);
+#else
+      pUx[num_params*i + j] = Ux[num_params*i + j] + dh;
+#endif // TACS_USE_COMPLEX
+    }
+
+    model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, pUt, pUx, pDUt, pDUx);
+
+    if (ix % (num_params + 3) < 3){
+      int i = ix / (num_params + 3);
+      int j = ix % (num_params + 3);
+#ifdef TACS_USE_COMPLEX
+      fd[k] = TacsImagPart(pDUt[3*i + j])/dh;
+#else
+      fd[k] = (pDUt[3*i + j] - DUt[3*i + j])/dh;
+#endif // TACS_USE_COMPLEX
+    }
+    else {
+      int i = ix / (num_params + 3);
+      int j = (ix % (num_params + 3)) - 3;
+#ifdef TACS_USE_COMPLEX
+      fd[k] = TacsImagPart(pDUx[num_params*i + j])/dh;
+#else
+      fd[k] = (pDUx[num_params*i + j] - DUx[num_params*i + j])/dh;
+#endif // TACS_USE_COMPLEX
+    }
+  }
+
+  max_err = TacsGetMaxError(Jac, fd, Jac_nnz, &max_err_index);
+  max_rel = TacsGetMaxRelError(Jac, fd, Jac_nnz, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the Jacobian of the weak form for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "Jac", Jac, fd, Jac_nnz);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  return fail;
+}
+
+int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
+                                           int elemIndex,
+                                           const double time,
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol ){
+  int fail = 0;
+
+  const int num_params = model->getSpatialDim();
+  const int vars_per_node = model->getVarsPerNode();
+
+  // Set the quadrature point
+  const int n = 0;
+  const double pt[3] = {-0.233, 0.383, -0.125};
+
+  // Fill in this data with random numbers...
+  TacsScalar X[3], Xd[9];
+  TacsGenerateRandomArray(X, 3);
+  TacsGenerateRandomArray(Xd, 9);
+
+  TacsScalar Ut[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
+  TacsGenerateRandomArray(Ut, 3*vars_per_node);
+  TacsGenerateRandomArray(Ux, num_params*vars_per_node);
+
+  TacsScalar Psi[MAX_VARS_PER_NODE], Psix[3*MAX_VARS_PER_NODE];
+  TacsGenerateRandomArray(Psi, vars_per_node);
+  TacsGenerateRandomArray(Psix, num_params*vars_per_node);
+
+  // Evaluate the weak integrand
+  TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
+  model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, Ux, DUt, DUx);
+
+  TacsScalar result = 0.0;
+  for ( int i = 0; i < vars_per_node; i++ ){
+    result += Psi[i]*(DUt[3*i] + DUt[3*i+1] + DUt[3*i+2]);
+    for ( int j = 0; j < num_params; j++ ){
+      result += Psix[num_params*i + j]*DUx[num_params*i + j];
+    }
+  }
+
+  // Evaluate the derivative
+  TacsScalar product;
+  TacsScalar dfdX[3], dfdXd[9], dfdUx[3*MAX_VARS_PER_NODE];
+  TacsScalar dfdPsix[3*MAX_VARS_PER_NODE];
+  model->evalWeakAdjXptSensProduct(elemIndex, time, n, pt,
+                                   X, Xd, Ut, Ux, Psi, Psix,
+                                   &product, dfdX, dfdXd, dfdUx, dfdPsix);
+
+  int max_err_index, max_rel_index;
+  double max_err = 0.0, max_rel = 0.0;
+  max_err = TacsGetMaxError(&product, &result, 1, &max_err_index);
+  max_rel = TacsGetMaxRelError(&product, &result, 1, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the product term for consistency for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "product", &product, &result, 1);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Perturb X
+  TacsScalar fdX[3];
+  for ( int k = 0; k < 3; k++ ){
+    TacsScalar pX[3];
+    memcpy(pX, X, 3*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+    pX[k] = X[k] + TacsScalar(0.0, dh);
+#else
+    pX[k] = X[k] + dh;
+#endif // TACS_USE_COMPLEX
+
+    TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
+    model->evalWeakIntegrand(elemIndex, time, n, pt, pX, Xd, Ut, Ux, pDUt, pDUx);
+
+    result = 0.0;
+    for ( int i = 0; i < vars_per_node; i++ ){
+      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      for ( int j = 0; j < num_params; j++ ){
+        result += Psix[num_params*i + j]*pDUx[num_params*i + j];
+      }
+    }
+
+#ifdef TACS_USE_COMPLEX
+    fdX[k] = TacsImagPart(result)/dh;
+#else
+    fdX[k] = (result - product)/dh;
+#endif // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(dfdX, fdX, 3, &max_err_index);
+  max_rel = TacsGetMaxRelError(dfdX, fdX, 3, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative dfdX for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdX", dfdX, fdX, 3);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Perturb Xd
+  TacsScalar fdXd[9];
+  for ( int k = 0; k < 3*num_params; k++ ){
+    TacsScalar pXd[9];
+    memcpy(pXd, Xd, 9*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+    pXd[k] = Xd[k] + TacsScalar(0.0, dh);
+#else
+    pXd[k] = Xd[k] + dh;
+#endif // TACS_USE_COMPLEX
+
+    TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
+    model->evalWeakIntegrand(elemIndex, time, n, pt, X, pXd, Ut, Ux, pDUt, pDUx);
+
+    result = 0.0;
+    for ( int i = 0; i < vars_per_node; i++ ){
+      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      for ( int j = 0; j < num_params; j++ ){
+        result += Psix[num_params*i + j]*pDUx[num_params*i + j];
+      }
+    }
+
+#ifdef TACS_USE_COMPLEX
+    fdXd[k] = TacsImagPart(result)/dh;
+#else
+    fdXd[k] = (result - product)/dh;
+#endif // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(dfdXd, fdXd, 3*num_params, &max_err_index);
+  max_rel = TacsGetMaxRelError(dfdXd, fdXd, 3*num_params, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative dfdXd for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdX", dfdXd, fdXd, 3*num_params);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Perturb Ux
+  TacsScalar fdUx[3*MAX_VARS_PER_NODE];
+  for ( int k = 0; k < num_params*vars_per_node; k++ ){
+    TacsScalar pUx[3*MAX_VARS_PER_NODE];
+    memcpy(pUx, Ux, num_params*vars_per_node*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+    pUx[k] = Ux[k] + TacsScalar(0.0, dh);
+#else
+    pUx[k] = Ux[k] + dh;
+#endif // TACS_USE_COMPLEX
+
+    TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
+    model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, pUx, pDUt, pDUx);
+
+    result = 0.0;
+    for ( int i = 0; i < vars_per_node; i++ ){
+      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      for ( int j = 0; j < num_params; j++ ){
+        result += Psix[num_params*i + j]*pDUx[num_params*i + j];
+      }
+    }
+
+#ifdef TACS_USE_COMPLEX
+    fdUx[k] = TacsImagPart(result)/dh;
+#else
+    fdUx[k] = (result - product)/dh;
+#endif // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(dfdUx, fdUx, vars_per_node*num_params, &max_err_index);
+  max_rel = TacsGetMaxRelError(dfdUx, fdUx, vars_per_node*num_params, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative dfdUx for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdUx", dfdUx, fdUx, vars_per_node*num_params);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Perturb Psix
+  TacsScalar fdPsix[3];
+  for ( int k = 0; k < num_params*vars_per_node; k++ ){
+    TacsScalar pPsix[3*MAX_VARS_PER_NODE];
+    memcpy(pPsix, Psix, num_params*vars_per_node*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+    pPsix[k] = Psix[k] + TacsScalar(0.0, dh);
+#else
+    pPsix[k] = Psix[k] + dh;
+#endif // TACS_USE_COMPLEX
+
+    TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
+    model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, Ux, pDUt, pDUx);
+
+    result = 0.0;
+    for ( int i = 0; i < vars_per_node; i++ ){
+      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      for ( int j = 0; j < num_params; j++ ){
+        result += pPsix[num_params*i + j]*pDUx[num_params*i + j];
+      }
+    }
+
+#ifdef TACS_USE_COMPLEX
+    fdPsix[k] = TacsImagPart(result)/dh;
+#else
+    fdPsix[k] = (result - product)/dh;
+#endif // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(dfdPsix, fdPsix,
+                            vars_per_node*num_params, &max_err_index);
+  max_rel = TacsGetMaxRelError(dfdPsix, fdPsix,
+                               vars_per_node*num_params, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative dfdPsix for model %s\n",
+            model->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdPsix", dfdPsix, fdPsix,
+                             vars_per_node*num_params);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  return fail;
+}
+
+
+/*
+  Test the derivative of the inner product of the adjoint vector and
+  the residual with respect to material design variables.
+*/
+int TacsTestElementModel( TACSElementModel *model,
+                          int elemIndex,
+                          const double time,
+                          double dh,
+                          int test_print_level,
+                          double test_fail_atol,
+                          double test_fail_rtol ){
+  int fail = 0;
+  int flag = TacsTestElementModelJacobian(model, elemIndex, time, dh,
+                                          test_print_level,
+                                          test_fail_atol, test_fail_rtol);
+  fail = flag || fail;
+
+  flag = TacsTestElementModelAdjXptSensProduct(model, elemIndex, time, dh,
+                                               test_print_level,
                                                test_fail_atol, test_fail_rtol);
   fail = flag || fail;
 

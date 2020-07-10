@@ -180,19 +180,33 @@ void TACSPlateModel::evalWeakIntegrand( int elemIndex,
   DUx[9] = M[2]; // roty,y
 }
 
-void TACSPlateModel::evalWeakJacobian( int elemIndex,
-                                       const double time,
-                                       int n,
-                                       const double pt[],
-                                       const TacsScalar X[],
-                                       const TacsScalar Xd[],
-                                       const TacsScalar Ut[],
-                                       const TacsScalar Ux[],
-                                       TacsScalar DUt[],
-                                       TacsScalar DUx[],
-                                       int *Jac_nnz,
-                                       const int *Jac_pairs[],
-                                       TacsScalar Jac[] ){
+void TACSPlateModel::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                            int elemIndex,
+                                            int n,
+                                            int *Jac_nnz,
+                                            const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 83;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
+
+void TACSPlateModel::evalWeakMatrix( ElementMatrixType matType,
+                                     int elemIndex,
+                                     const double time,
+                                     int n,
+                                     const double pt[],
+                                     const TacsScalar X[],
+                                     const TacsScalar Xd[],
+                                     const TacsScalar Ut[],
+                                     const TacsScalar Ux[],
+                                     TacsScalar DUt[],
+                                     TacsScalar DUx[],
+                                     TacsScalar Jac[] ){
   // Evaluate the density
   TacsScalar rho = con->evalDensity(elemIndex, pt, X);
 
@@ -241,10 +255,6 @@ void TACSPlateModel::evalWeakJacobian( int elemIndex,
 
   DUx[8] = M[0]; // roty,x
   DUx[9] = M[2]; // roty,y
-
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 83;
-  *Jac_pairs = linear_Jac_pairs;
 
   Jac[0] = rho;
   Jac[1] = A[0];

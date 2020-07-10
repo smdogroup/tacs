@@ -29,8 +29,6 @@
 
 class TACSElementBasis : public TACSObject {
  public:
-  static const int MAX_BASIS_SIZE = 216;
-
   /**
     Get the layout type
 
@@ -231,52 +229,6 @@ class TACSElementBasis : public TACSObject {
                                TacsScalar U[] );
 
   /**
-    Get the field values at the specified quadrature point
-
-    @param n The index of the quadrature point
-    @param pt The quadrature point
-    @param Xpts The element node locations
-    @param vars The element variable values
-    @param X The computed coordinate location at quadrature point n
-    @param U The computed field values at quadrature point n
-  */
-  virtual void getFieldValues( int n,
-                               const TacsScalar Xpts[],
-                               const int vars_per_node,
-                               const TacsScalar vars[],
-                               TacsScalar X[],
-                               TacsScalar U[] );
-
-  /**
-    Get the gradient of the field at the quadrature point.
-
-    Note that all matrices are row-major order.
-
-    The arguments Xd and Ud are often only intermediate values, but are returned
-    here so that they can be passed in to the differentiated code.
-
-    @param n The index of the quadrature point
-    @param pt The parametric location
-    @param Xpts The element node locations
-    @param vars_per_node The number of degrees of freedom per node
-    @param vars The element state variables
-    @param X The physical quadrature point
-    @param Xd The derivative of the physical node location w.r.t. parameters
-    @param U The variables at the quadrature point
-    @param Ud The derivative of the variables w.r.t. the parametric coords
-  */
-  /*
-  virtual void getFieldGradient( int n,
-                                 const double pt[],
-                                 const TacsScalar Xpts[],
-                                 const int vars_per_node,
-                                 const TacsScalar vars[],
-                                 TacsScalar X[],
-                                 TacsScalar Xd[],
-                                 TacsScalar U[],
-                                 TacsScalar Ud[] );
-  */
-  /**
     Get the gradient of the field at the quadrature point.
 
     Note that all matrices are row-major order.
@@ -336,7 +288,7 @@ class TACSElementBasis : public TACSObject {
                                        const TacsScalar J[],
                                        const TacsScalar Ud[],
                                        const TacsScalar dfdUt[],
-                                       const TacsScalar dfdUx[],
+                                       TacsScalar dfdUx[],
                                        TacsScalar dfdu[] );
 
   /**
@@ -482,8 +434,8 @@ class TACSElementBasis : public TACSObject {
                                     TacsScalar weight,
                                     const TacsScalar J[],
                                     const int vars_per_node,
-                                    const TacsScalar DUt[],
-                                    const TacsScalar DUx[],
+                                    TacsScalar DUt[],
+                                    TacsScalar DUx[],
                                     TacsScalar res[] );
 
   /**
@@ -521,166 +473,256 @@ class TACSElementBasis : public TACSObject {
                                     TacsScalar *res,
                                     TacsScalar *mat );
 
-  /**
-    Evaluate basis functions at a parametric point
-
-    @param pt The parametric point
-    @param N The shape function values
-  */
+  // Temporary before wrecking everything...
   virtual void computeBasis( const double pt[], double N[] ) = 0;
+  virtual void computeBasisGradient( const double pt[], double N[], double Nxi[] ) = 0;
 
   /**
-    Compute the derivative of the basis functions with respect to the
-    parametric coordinates. This is stored by basis function in
-    coordinate order, i.e. Nx = [N[0],pt[0], N[0],pt[1], N[0],pt[2],
-    N[1],pt[0] ...
+    Interpolate the specified number of fields
 
+    This function computes the following for i = 0, num_fields-1
+
+    field[incr*i] = sum_{j} N[j]*values[num_fields*j + i]
+
+    @param n The quadrature point index
     @param pt The parametric point
-    @param N The shape function values
-    @param Nxi The derivative of the shape functions w.r.t. the parameters
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param incr The increment between locations in the field array
+    @param field The field values
   */
-  virtual void computeBasisGradient( const double pt[], double N[],
-                                     double Nxi[] ) = 0;
-
-  /**
-    Compute the derivative of the basis functions with respect to
-
-    @param n Index of the parametric point
-    @param N The shape function values
-  */
-  virtual void computeBasis( int n, double N[] ){
-    double pt[3];
-    getQuadraturePoint(n, pt);
+  virtual void interpFields( const int n,
+                             const double pt[],
+                             const int num_fields,
+                             const TacsScalar values[],
+                             const int incr,
+                             TacsScalar field[] ){
+    const int num_nodes = getNumNodes();
+    double N[256];
     computeBasis(pt, N);
+    for ( int i = 0; i < num_fields; i++ ){
+      field[incr*i] = 0.0;
+      for ( int j = 0; j < num_nodes; j++ ){
+        field[incr*i] += values[num_fields*j + i]*N[j];
+      }
+    }
   }
 
   /**
-    Compute the derivative of the basis functions with respect to
+    Compute the interpolation field for three different interpolants
+    simultaneously. This is common when assemblying the temporal derivatives
 
-    @param n Index of the parametric point
-    @param N The shape function values
+    This function computes the following for i = 0, num_fields-1
+
+    field[3*i] = sum_{j} N[j]*vals1[num_fields*j + i]
+    field[3*i+1] = sum_{j} N[j]*vals2[num_fields*j + i]
+    field[3*i+2] = sum_{j} N[j]*vals3[num_fields*j + i]
+
+    @param n The quadrature point index
+    @param pt The parametric point
+    @param num_fields The number of fields to interpolate
+    @param vals1 The first array of values at the nodes
+    @param vals2 The second array of values at the nodes
+    @param vals3 The third array of values at the nodes
+    @param field The field values
   */
-  virtual void computeBasisGradient( int n, double N[], double Nxi[] ){
-    double pt[3];
-    getQuadraturePoint(n, pt);
+  virtual void interpFields( const int n,
+                             const double pt[],
+                             const int num_fields,
+                             const TacsScalar val1[],
+                             const TacsScalar val2[],
+                             const TacsScalar val3[],
+                             TacsScalar field[] ){
+    interpFields(n, pt, num_fields, val1, 3, &field[0]);
+    interpFields(n, pt, num_fields, val2, 3, &field[1]);
+    interpFields(n, pt, num_fields, val3, 3, &field[2]);
+  }
+
+  /**
+    Compute the interpolate to a quadrature point on the face
+
+    By default, this evaluates the interpFields function, but if you have
+    a specific shape function implementation, indexed on the quadrature
+    point, this will not work.
+
+    @param face The face index
+    @param n The quadrature point index on this face
+    @param num_fields The number of fields to interpolate
+    @param values The values to interpolate
+    @param incr The increment between locations in the field array
+    @param field The field values
+  */
+  virtual void interpFaceFields( const int face,
+                                 const int n,
+                                 const double pt[],
+                                 const int num_fields,
+                                 const TacsScalar values[],
+                                 const int incr,
+                                 TacsScalar field[] ){
+    interpFields(-1, pt, num_fields, values, incr, field);
+  }
+
+  /**
+    Add the transpose of the interpolation operation to the vector
+
+    This function computes the following for i = 0, num_fields-1,
+    and j = 0, num_nodes-1
+
+    values[num_fields*j + i] += N[j]*field[incr*i]
+
+    @param n The quadrature point index
+    @param pt The parametric point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param incr The increment between locations in the field array
+    @param field The field values
+  */
+  virtual void addInterpFieldsTranspose( const int n,
+                                         const double pt[],
+                                         const int incr,
+                                         const TacsScalar field[],
+                                         const int num_fields,
+                                         TacsScalar values[] ){
+    const int num_nodes = getNumNodes();
+    double N[256];
+    computeBasis(pt, N);
+    for ( int i = 0; i < num_fields; i++ ){
+      for ( int j = 0; j < num_nodes; j++ ){
+        values[num_fields*j + i] += field[incr*i]*N[j];
+      }
+    }
+  }
+
+  /**
+    Add the transpose of the interpolation operation to the vector
+    on the face quadrature points.
+
+    @param n The quadrature point index
+    @param pt The parametric point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param incr The increment between locations in the field array
+    @param field The field values
+  */
+  virtual void addInterpFaceFieldsTranspose( const int face,
+                                             const int n,
+                                             const double pt[],
+                                             const int incr,
+                                             const TacsScalar field[],
+                                             const int num_fields,
+                                             TacsScalar values[] ){
+    addInterpFieldsTranspose(-1, pt, incr, field, num_fields, values);
+  }
+
+  /**
+    Compute the gradient of the fields in the computational space
+
+    This function must compute
+
+    grad[num_params*i + j] = sum_{k} N_{k,j}*values[num_fields*k + i]
+
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param grad The gradient of the field in the computational space
+  */
+  virtual void interpFieldsGrad( const int n,
+                                 const double pt[],
+                                 const int num_fields,
+                                 const TacsScalar values[],
+                                 TacsScalar grad[] ){
+    const int num_nodes = getNumNodes();
+    const int num_params = getNumParameters();
+    double N[256], Nxi[3*256];
     computeBasisGradient(pt, N, Nxi);
+    for ( int i = 0; i < num_fields; i++ ){
+      for ( int j = 0; j < num_params; j++ ){
+        grad[num_params*i + j] = 0.0;
+      }
+      for ( int k = 0; k < num_nodes; k++ ){
+        for ( int j = 0; j < num_params; j++ ){
+          grad[num_params*i + j] += values[num_fields*k + i]*Nxi[num_params*k + j];
+        }
+      }
+    }
+  }
+
+  /**
+    Compute the interpolate to a quadrature point on the face
+
+    By default, this evaluates the interpFields function, but if you have
+    a specific shape function implementation, indexed on the quadrature
+    point, this will not work.
+
+    @param face The face index
+    @param n The quadrature point index on this face
+    @param num_fields The number of fields to interpolate
+    @param values The values to interpolate
+    @param grad The gradient of the field in the computational space
+  */
+  virtual void interpFaceFieldsGrad( const int face,
+                                     const int n,
+                                     const double pt[],
+                                     const int num_fields,
+                                     const TacsScalar values[],
+                                     TacsScalar grad[] ){
+    interpFieldsGrad(-1, pt, num_fields, values, grad);
+  }
+
+  /**
+    Add the transpose of the gradient interpolation to the vector
+
+    This function computes the following for i = 0, num_fields-1,
+    j = 1, num_params-1, and j = 0, num_nodes-1
+
+    values[num_fields*k + i] += N_{k,j}*grad[incr*i + j]
+
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param grad The gradient of the field in the computational space
+  */
+  virtual void addInterpFieldsGradTranspose( int n,
+                                             const double pt[],
+                                             const int num_fields,
+                                             const TacsScalar grad[],
+                                             TacsScalar values[] ){
+    const int num_nodes = getNumNodes();
+    const int num_params = getNumParameters();
+    double N[256], Nxi[3*256];
+    computeBasisGradient(pt, N, Nxi);
+    for ( int i = 0; i < num_fields; i++ ){
+      for ( int k = 0; k < num_nodes; k++ ){
+        for ( int j = 0; j < num_params; j++ ){
+          values[num_fields*k + i] += grad[num_params*i + j]*Nxi[num_params*k + j];
+        }
+      }
+    }
+  }
+
+  /**
+    Add the transpose of the gradient interpolation to the vector
+    at quadrature points on the specified face
+
+    @param face The face index
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param grad The gradient of the field in the computational space
+  */
+  virtual void addInterpFaceFieldsGradTranspose( const int face,
+                                                 int n,
+                                                 const double pt[],
+                                                 const int num_fields,
+                                                 const TacsScalar grad[],
+                                                 TacsScalar values[] ){
+    addInterpFieldsGradTranspose(-1, pt, num_fields, grad, values);
   }
 
  protected:
-  static TacsScalar computeFaceNormal( const int num_params,
-                                       const int num_nodes,
-                                       const double N[],
-                                       const double Nxi[],
-                                       const TacsScalar Xpts[],
-                                       const double tangents[],
-                                       TacsScalar X[],
-                                       TacsScalar Xd[],
-                                       TacsScalar n[] );
-  static void addFaceNormalXptSens( const int num_params,
-                                    const int num_nodes,
-                                    const double N[],
-                                    const double Nxi[],
-                                    const double tangents[],
-                                    const TacsScalar A,
-                                    const TacsScalar Xd[],
-                                    const TacsScalar n[],
-                                    const TacsScalar dfdA,
-                                    const TacsScalar dfdX[],
-                                    const TacsScalar dfdXd[],
-                                    const TacsScalar dfdn[],
-                                    TacsScalar dfdXpts[] );
-  static TacsScalar computeJacobianTransform( const int num_params,
-                                              const int num_nodes,
-                                              const double Nxi[],
-                                              const TacsScalar Xpts[],
-                                              TacsScalar Xd[],
-                                              TacsScalar J[] );
-  static void addJacobianTransformXptSens( const int num_params,
-                                           const int num_nodes,
-                                           const double Nxi[],
-                                           const TacsScalar Xd[],
-                                           const TacsScalar J[],
-                                           TacsScalar dfddetJ,
-                                           const TacsScalar dfXd[],
-                                           const TacsScalar dfdJ[],
-                                           TacsScalar dfdXpts[] );
-  static void computeFieldValues( const int num_nodes, const double N[],
-                                  const TacsScalar Xpts[],
-                                  const int vars_per_node,
-                                  const TacsScalar vars[],
-                                  TacsScalar X[], TacsScalar U[] );
-  static TacsScalar computeFieldGradient( const int num_params,
-                                          const int num_nodes,
-                                          const double N[], const double Nxi[],
-                                          const TacsScalar Xpts[],
-                                          const int vars_per_node,
-                                          const TacsScalar vars[],
-                                          const TacsScalar dvars[],
-                                          const TacsScalar ddvars[],
-                                          TacsScalar X[], TacsScalar Xd[],
-                                          TacsScalar J[], TacsScalar Ut[],
-                                          TacsScalar Ud[], TacsScalar Ux[] );
-  static TacsScalar computeFieldGradient( const int num_params,
-                                          const int num_nodes,
-                                          const double N[], const double Nxi[],
-                                          const TacsScalar Xpts[],
-                                          const int vars_per_node,
-                                          const TacsScalar vars[],
-                                          const TacsScalar dvars[],
-                                          const TacsScalar ddvars[],
-                                          const TacsScalar psi[],
-                                          TacsScalar X[], TacsScalar Xd[],
-                                          TacsScalar J[], TacsScalar Ut[],
-                                          TacsScalar Ud[], TacsScalar Ux[],
-                                          TacsScalar Psi[], TacsScalar Psid[],
-                                          TacsScalar Psix[] );
-  static void addFieldGradientSVSens( const int num_params,
-                                      const int num_nodes,
-                                      const double N[],
-                                      const double Nxi[],
-                                      const int vars_per_node,
-                                      const TacsScalar J[],
-                                      const TacsScalar dfdUt[],
-                                      const TacsScalar dfdUx[],
-                                      TacsScalar dfdu[] );
-  static void addFieldGradientXptSens( const int num_params,
-                                       const int num_nodes,
-                                       const double N[],
-                                       const double Nxi[],
-                                       const TacsScalar Xpts[],
-                                       const int vars_per_node,
-                                       const TacsScalar Xd[],
-                                       const TacsScalar J[],
-                                       const TacsScalar Ud[],
-                                       const TacsScalar dfddetJ,
-                                       const TacsScalar dfdX[],
-                                       const TacsScalar dfdXd[],
-                                       const TacsScalar dfdJ[],
-                                       const TacsScalar dfdUx[],
-                                       TacsScalar dfdXpts[] );
-  static void addFieldGradientXptSens( const int num_params,
-                                       const int num_nodes,
-                                       const double N[],
-                                       const double Nxi[],
-                                       const TacsScalar Xpts[],
-                                       const int vars_per_node,
-                                       const TacsScalar Xd[],
-                                       const TacsScalar J[],
-                                       const TacsScalar Ud[],
-                                       const TacsScalar Psid[],
-                                       const TacsScalar dfddetJ,
-                                       const TacsScalar dfdX[],
-                                       const TacsScalar dfdXd[],
-                                       const TacsScalar dfdJ[],
-                                       const TacsScalar dfdUx[],
-                                       const TacsScalar dfdPsix[],
-                                       TacsScalar dfdXpts[] );
-  static void addWeakFormResidual( const int num_params, const int num_nodes,
-                                   const double N[], const double Nxi[],
-                                   TacsScalar weight, const TacsScalar J[],
-                                   const int vars_per_node,
-                                   const TacsScalar DUt[], const TacsScalar DUx[],
-                                   TacsScalar res[] );
   static void addWeakFormJacobian( const int num_params, const int num_nodes,
                                    const TacsScalar N[], const TacsScalar Nx[],
                                    TacsScalar weight, const TacsScalar J[],

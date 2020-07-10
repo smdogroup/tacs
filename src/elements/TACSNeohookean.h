@@ -36,15 +36,21 @@ class TACSNeohookean3D : public TACSElementModel {
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
     Evaluate the derivatives of the weak form coefficients
   */
-  void evalWeakJacobian( int elemIndex, const double time,
-                         int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Xd[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         TacsScalar DUt[], TacsScalar DUx[],
-                         int *Jac_nnz, const int *_Jac_pairs[],
-                         TacsScalar Jac[] );
+  void evalWeakMatrix( ElementMatrixType matType,
+                       int elemIndex, const double time,
+                       int n, const double pt[],
+                       const TacsScalar X[], const TacsScalar Xd[],
+                       const TacsScalar Ut[], const TacsScalar Ux[],
+                       TacsScalar DUt[], TacsScalar DUx[],
+                       TacsScalar Jac[] );
 
   /**
     Get the output for a single node in the mesh

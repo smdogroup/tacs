@@ -136,145 +136,6 @@ void TACSLinearElasticity2D::evalWeakIntegrand( int elemIndex,
   }
 }
 
-void TACSLinearElasticity2D::evalWeakJacobian( int elemIndex,
-                                               const double time,
-                                               int n,
-                                               const double pt[],
-                                               const TacsScalar X[],
-                                               const TacsScalar Xd[],
-                                               const TacsScalar Ut[],
-                                               const TacsScalar Ux[],
-                                               TacsScalar DUt[],
-                                               TacsScalar DUx[],
-                                               int *Jac_nnz,
-                                               const int *Jac_pairs[],
-                                               TacsScalar Jac[] ){
-  // Evaluate the density
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-
-  DUt[0] = 0.0;
-  DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2]; // u,tt
-
-  DUt[3] = 0.0;
-  DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5]; // v,tt
-
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 18;
-  *Jac_pairs = linear_Jac_pairs;
-
-  // Set the acceleration terms
-  Jac[0] = rho;
-  Jac[1] = rho;
-
-  if (strain_type == TACS_LINEAR_STRAIN){
-    TacsScalar e[3];
-    e[0] = Ux[0];
-    e[1] = Ux[3];
-    e[2] = Ux[1] + Ux[2];
-
-    // Evaluate the stress
-    TacsScalar s[3];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    DUx[0] = s[0]; // u,x
-    DUx[1] = s[2]; // u,y
-
-    DUx[2] = s[2]; // v,x
-    DUx[3] = s[1]; // v,y
-
-    TacsScalar C[6];
-    stiff->evalTangentStiffness(elemIndex, pt, X, C);
-
-    // Index:         3            9            4     8
-    // s[0] = C[0]*(u,x) + C[1]*(v,y) + C[2]*(u,y + v,x)
-    // s[1] = C[1]*(u,x) + C[3]*(v,y) + C[4]*(u,y + v,x)
-    // s[2] = C[2]*(u,x) + C[4]*(v,y) + C[5]*(u,y + v,x)
-
-    // i == 1 (s[0])
-    Jac[2] = C[0]; // j == 3
-    Jac[3] = C[2]; // j == 4
-    Jac[4] = C[2]; // j == 8
-    Jac[5] = C[1]; // j == 9
-
-    // i == 2 (s[2])
-    Jac[6] = C[2]; // j == 3
-    Jac[7] = C[5]; // j == 4
-    Jac[8] = C[5]; // j == 8
-    Jac[9] = C[4]; // j == 9
-
-    // i == 4 (s[2])
-    Jac[10] = C[2]; // j == 3
-    Jac[11] = C[5]; // j == 4
-    Jac[12] = C[5]; // j == 8
-    Jac[13] = C[4]; // j == 9
-
-    // i == 5 (s[1])
-    Jac[14] = C[1]; // j == 3
-    Jac[15] = C[4]; // j == 4
-    Jac[16] = C[4]; // j == 8
-    Jac[17] = C[3]; // j == 9
-  }
-  else {
-    TacsScalar e[3];
-    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
-    e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
-    e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
-
-    // Evaluate the stress
-    TacsScalar s[3];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    // Set the coefficients for the weak form
-    // Coef = S + Ux*S
-    DUx[0] = Ux[1]*s[2] + s[0]*(Ux[0] + 1.0);
-    DUx[1] = Ux[1]*s[1] + s[2]*(Ux[0] + 1.0);
-    DUx[2] = Ux[2]*s[0] + s[2]*(Ux[3] + 1.0);
-    DUx[3] = Ux[2]*s[2] + s[1]*(Ux[3] + 1.0);
-
-    TacsScalar C[6];
-    stiff->evalTangentStiffness(elemIndex, pt, X, C);
-
-    // Compute the derivative of the stress w.r.t. the components of Ux
-    TacsScalar dsdUx[3*4];
-    dsdUx[0] = C[0]*(Ux[0] + 1.0) + C[2]*Ux[1];
-    dsdUx[1] = C[1]*Ux[1] + C[2]*(Ux[0] + 1.0);
-    dsdUx[2] = C[0]*Ux[2] + C[2]*(Ux[3] + 1.0);
-    dsdUx[3] = C[1]*(Ux[3] + 1.0) + C[2]*Ux[2];
-
-    dsdUx[4] = C[1]*(Ux[0] + 1.0) + C[4]*Ux[1];
-    dsdUx[5] = C[3]*Ux[1] + C[4]*(Ux[0] + 1.0);
-    dsdUx[6] = C[1]*Ux[2] + C[4]*(Ux[3] + 1.0);
-    dsdUx[7] = C[3]*(Ux[3] + 1.0) + C[4]*Ux[2];
-
-    dsdUx[8] = C[2]*(Ux[0] + 1.0) + C[5]*Ux[1];
-    dsdUx[9] = C[4]*Ux[1] + C[5]*(Ux[0] + 1.0);
-    dsdUx[10] = C[2]*Ux[2] + C[5]*(Ux[3] + 1.0);
-    dsdUx[11] = C[4]*(Ux[3] + 1.0) + C[5]*Ux[2];
-
-    Jac[2] = Ux[1]*dsdUx[8] + dsdUx[0]*(Ux[0] + 1.0) + s[0];
-    Jac[3] = Ux[1]*dsdUx[9] + dsdUx[1]*(Ux[0] + 1.0) + s[2];
-    Jac[4] = Ux[1]*dsdUx[10] + dsdUx[2]*(Ux[0] + 1.0);
-    Jac[5] = Ux[1]*dsdUx[11] + dsdUx[3]*(Ux[0] + 1.0);
-
-    Jac[6] = Ux[1]*dsdUx[4] + dsdUx[8]*(Ux[0] + 1.0) + s[2];
-    Jac[7] = Ux[1]*dsdUx[5] + dsdUx[9]*(Ux[0] + 1.0) + s[1];
-    Jac[8] = Ux[1]*dsdUx[6] + dsdUx[10]*(Ux[0] + 1.0);
-    Jac[9] = Ux[1]*dsdUx[7] + dsdUx[11]*(Ux[0] + 1.0);
-
-    Jac[10] = Ux[2]*dsdUx[0] + dsdUx[8]*(Ux[3] + 1.0);
-    Jac[11] = Ux[2]*dsdUx[1] + dsdUx[9]*(Ux[3] + 1.0);
-    Jac[12] = Ux[2]*dsdUx[2] + dsdUx[10]*(Ux[3] + 1.0) + s[0];
-    Jac[13] = Ux[2]*dsdUx[3] + dsdUx[11]*(Ux[3] + 1.0) + s[2];
-
-    Jac[14] = Ux[2]*dsdUx[8] + dsdUx[4]*(Ux[3] + 1.0);
-    Jac[15] = Ux[2]*dsdUx[9] + dsdUx[5]*(Ux[3] + 1.0);
-    Jac[16] = Ux[2]*dsdUx[10] + dsdUx[6]*(Ux[3] + 1.0) + s[2];
-    Jac[17] = Ux[2]*dsdUx[11] + dsdUx[7]*(Ux[3] + 1.0) + s[1];
-  }
-}
-
 /*
   Add the design variable derivative of the product of the adjoint
   vector with the weak form of the residual
@@ -358,10 +219,9 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
     e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
     e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
 
-    phi[0] = Psix[0]*(Ux[0] + 1.0) + 0.5*(Psix[1] + Psix[2])*Ux[2];
-    phi[1] = Psix[3]*(Ux[3] + 1.0) + 0.5*(Psix[1] + Psix[2])*Ux[1];
-    phi[2] = 0.5*(Psix[1]*(Ux[0] + Ux[3] + 2.0) + Psix[2]*(Ux[0] + Ux[3] + 2.0)) +
-             (Psix[0]*Ux[1] + Psix[3]*Ux[2]);
+    phi[0] = Psix[0]*(Ux[0] + 1.0) + Psix[2]*Ux[2];
+    phi[1] = Psix[1]*Ux[1] + Psix[3]*(Ux[3] + 1.0);
+    phi[2] = Psix[0]*Ux[1] + Psix[1]*(Ux[0] + 1.0) + Psix[2]*(Ux[3] + 1.0) + Psix[3]*Ux[2];
   }
 
   // Compute the material density
@@ -398,6 +258,33 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
   }
 }
 
+void TACSLinearElasticity2D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                    int elemIndex,
+                                                    int n,
+                                                    int *Jac_nnz,
+                                                    const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 18;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else if (matType == TACS_MASS_MATRIX){
+    *Jac_nnz = 2;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else if (matType == TACS_STIFFNESS_MATRIX){
+    *Jac_nnz = 16;
+    *Jac_pairs = &linear_Jac_pairs[4];
+  }
+  else if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX){
+    *Jac_nnz = 16;
+    *Jac_pairs = &linear_Jac_pairs[4];
+  }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
+
 void TACSLinearElasticity2D::evalWeakMatrix( ElementMatrixType matType,
                                              int elemIndex,
                                              const double time,
@@ -407,26 +294,140 @@ void TACSLinearElasticity2D::evalWeakMatrix( ElementMatrixType matType,
                                              const TacsScalar Xd[],
                                              const TacsScalar Ut[],
                                              const TacsScalar Ux[],
-                                             int *Jac_nnz,
-                                             const int *Jac_pairs[],
+                                             TacsScalar DUt[],
+                                             TacsScalar DUx[],
                                              TacsScalar Jac[] ){
-  if (matType == TACS_MASS_MATRIX){
+  if (matType == TACS_JACOBIAN_MATRIX){
     // Evaluate the density
     TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
-    // Set the non-zero terms in the Jacobian
-    *Jac_nnz = 2;
-    *Jac_pairs = linear_Jac_pairs;
+    DUt[0] = 0.0;
+    DUt[1] = 0.0;
+    DUt[2] = rho*Ut[2]; // u,tt
+
+    DUt[3] = 0.0;
+    DUt[4] = 0.0;
+    DUt[5] = rho*Ut[5]; // v,tt
+
+    // Set the acceleration terms
+    Jac[0] = rho;
+    Jac[1] = rho;
+
+    if (strain_type == TACS_LINEAR_STRAIN){
+      TacsScalar e[3];
+      e[0] = Ux[0];
+      e[1] = Ux[3];
+      e[2] = Ux[1] + Ux[2];
+
+      // Evaluate the stress
+      TacsScalar s[3];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      DUx[0] = s[0]; // u,x
+      DUx[1] = s[2]; // u,y
+
+      DUx[2] = s[2]; // v,x
+      DUx[3] = s[1]; // v,y
+
+      TacsScalar C[6];
+      stiff->evalTangentStiffness(elemIndex, pt, X, C);
+
+      // Index:         3            9            4     8
+      // s[0] = C[0]*(u,x) + C[1]*(v,y) + C[2]*(u,y + v,x)
+      // s[1] = C[1]*(u,x) + C[3]*(v,y) + C[4]*(u,y + v,x)
+      // s[2] = C[2]*(u,x) + C[4]*(v,y) + C[5]*(u,y + v,x)
+
+      // i == 1 (s[0])
+      Jac[2] = C[0]; // j == 3
+      Jac[3] = C[2]; // j == 4
+      Jac[4] = C[2]; // j == 8
+      Jac[5] = C[1]; // j == 9
+
+      // i == 2 (s[2])
+      Jac[6] = C[2]; // j == 3
+      Jac[7] = C[5]; // j == 4
+      Jac[8] = C[5]; // j == 8
+      Jac[9] = C[4]; // j == 9
+
+      // i == 4 (s[2])
+      Jac[10] = C[2]; // j == 3
+      Jac[11] = C[5]; // j == 4
+      Jac[12] = C[5]; // j == 8
+      Jac[13] = C[4]; // j == 9
+
+      // i == 5 (s[1])
+      Jac[14] = C[1]; // j == 3
+      Jac[15] = C[4]; // j == 4
+      Jac[16] = C[4]; // j == 8
+      Jac[17] = C[3]; // j == 9
+    }
+    else {
+      TacsScalar e[3];
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+
+      // Evaluate the stress
+      TacsScalar s[3];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      // Set the coefficients for the weak form
+      // Coef = S + Ux*S
+      DUx[0] = Ux[1]*s[2] + s[0]*(Ux[0] + 1.0);
+      DUx[1] = Ux[1]*s[1] + s[2]*(Ux[0] + 1.0);
+      DUx[2] = Ux[2]*s[0] + s[2]*(Ux[3] + 1.0);
+      DUx[3] = Ux[2]*s[2] + s[1]*(Ux[3] + 1.0);
+
+      TacsScalar C[6];
+      stiff->evalTangentStiffness(elemIndex, pt, X, C);
+
+      // Compute the derivative of the stress w.r.t. the components of Ux
+      TacsScalar dsdUx[3*4];
+      dsdUx[0] = C[0]*(Ux[0] + 1.0) + C[2]*Ux[1];
+      dsdUx[1] = C[1]*Ux[1] + C[2]*(Ux[0] + 1.0);
+      dsdUx[2] = C[0]*Ux[2] + C[2]*(Ux[3] + 1.0);
+      dsdUx[3] = C[1]*(Ux[3] + 1.0) + C[2]*Ux[2];
+
+      dsdUx[4] = C[1]*(Ux[0] + 1.0) + C[4]*Ux[1];
+      dsdUx[5] = C[3]*Ux[1] + C[4]*(Ux[0] + 1.0);
+      dsdUx[6] = C[1]*Ux[2] + C[4]*(Ux[3] + 1.0);
+      dsdUx[7] = C[3]*(Ux[3] + 1.0) + C[4]*Ux[2];
+
+      dsdUx[8] = C[2]*(Ux[0] + 1.0) + C[5]*Ux[1];
+      dsdUx[9] = C[4]*Ux[1] + C[5]*(Ux[0] + 1.0);
+      dsdUx[10] = C[2]*Ux[2] + C[5]*(Ux[3] + 1.0);
+      dsdUx[11] = C[4]*(Ux[3] + 1.0) + C[5]*Ux[2];
+
+      Jac[2] = Ux[1]*dsdUx[8] + dsdUx[0]*(Ux[0] + 1.0) + s[0];
+      Jac[3] = Ux[1]*dsdUx[9] + dsdUx[1]*(Ux[0] + 1.0) + s[2];
+      Jac[4] = Ux[1]*dsdUx[10] + dsdUx[2]*(Ux[0] + 1.0);
+      Jac[5] = Ux[1]*dsdUx[11] + dsdUx[3]*(Ux[0] + 1.0);
+
+      Jac[6] = Ux[1]*dsdUx[4] + dsdUx[8]*(Ux[0] + 1.0) + s[2];
+      Jac[7] = Ux[1]*dsdUx[5] + dsdUx[9]*(Ux[0] + 1.0) + s[1];
+      Jac[8] = Ux[1]*dsdUx[6] + dsdUx[10]*(Ux[0] + 1.0);
+      Jac[9] = Ux[1]*dsdUx[7] + dsdUx[11]*(Ux[0] + 1.0);
+
+      Jac[10] = Ux[2]*dsdUx[0] + dsdUx[8]*(Ux[3] + 1.0);
+      Jac[11] = Ux[2]*dsdUx[1] + dsdUx[9]*(Ux[3] + 1.0);
+      Jac[12] = Ux[2]*dsdUx[2] + dsdUx[10]*(Ux[3] + 1.0) + s[0];
+      Jac[13] = Ux[2]*dsdUx[3] + dsdUx[11]*(Ux[3] + 1.0) + s[2];
+
+      Jac[14] = Ux[2]*dsdUx[8] + dsdUx[4]*(Ux[3] + 1.0);
+      Jac[15] = Ux[2]*dsdUx[9] + dsdUx[5]*(Ux[3] + 1.0);
+      Jac[16] = Ux[2]*dsdUx[10] + dsdUx[6]*(Ux[3] + 1.0) + s[2];
+      Jac[17] = Ux[2]*dsdUx[11] + dsdUx[7]*(Ux[3] + 1.0) + s[1];
+    }
+  }
+  else if (matType == TACS_MASS_MATRIX){
+    // Evaluate the density
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
     // Set the acceleration terms
     Jac[0] = rho;
     Jac[1] = rho;
   }
   else if (matType == TACS_STIFFNESS_MATRIX){
-    // Set the non-zero terms in the Jacobian
-    *Jac_nnz = 16;
-    *Jac_pairs = &linear_Jac_pairs[4];
-
     TacsScalar C[6];
     stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
@@ -454,10 +455,6 @@ void TACSLinearElasticity2D::evalWeakMatrix( ElementMatrixType matType,
     Jac[15] = C[3]; // j == 9
   }
   else if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX){
-    // Set the non-zero terms in the Jacobian
-    *Jac_nnz = 16;
-    *Jac_pairs = &linear_Jac_pairs[4];
-
     // Compute the tangent stiffness
     TacsScalar C[6];
     stiff->evalGeometricTangentStiffness(elemIndex, pt, X, C);
@@ -1015,388 +1012,6 @@ void TACSLinearElasticity3D::evalWeakIntegrand( int elemIndex,
   }
 }
 
-void TACSLinearElasticity3D::evalWeakJacobian( int elemIndex,
-                                               const double time,
-                                               int n,
-                                               const double pt[],
-                                               const TacsScalar X[],
-                                               const TacsScalar Xd[],
-                                               const TacsScalar Ut[],
-                                               const TacsScalar Ux[],
-                                               TacsScalar DUt[],
-                                               TacsScalar DUx[],
-                                               int *Jac_nnz,
-                                               const int *Jac_pairs[],
-                                               TacsScalar Jac[] ){
-  // Evaluate the density
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-
-  DUt[0] = 0.0;
-  DUt[1] = 0.0;
-  DUt[2] = rho*Ut[2];
-
-  DUt[3] = 0.0;
-  DUt[4] = 0.0;
-  DUt[5] = rho*Ut[5];
-
-  DUt[6] = 0.0;
-  DUt[7] = 0.0;
-  DUt[8] = rho*Ut[8];
-
-  // Set nonzero Jacobian terms
-  *Jac_nnz = 84;
-  *Jac_pairs = linear_Jac_pairs;
-
-  // Acceleration terms
-  Jac[0] = rho;
-  Jac[1] = rho;
-  Jac[2] = rho;
-
-  if (strain_type == TACS_LINEAR_STRAIN){
-    TacsScalar e[6];
-    e[0] = Ux[0];
-    e[1] = Ux[4];
-    e[2] = Ux[8];
-
-    e[3] = Ux[5] + Ux[7];
-    e[4] = Ux[2] + Ux[6];
-    e[5] = Ux[1] + Ux[3];
-
-    // Evaluate the stress
-    TacsScalar s[6];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    DUx[0] = s[0];
-    DUx[1] = s[5];
-    DUx[2] = s[4];
-
-    DUx[3] = s[5];
-    DUx[4] = s[1];
-    DUx[5] = s[3];
-
-    DUx[6] = s[4];
-    DUx[7] = s[3];
-    DUx[8] = s[2];
-
-    TacsScalar C[21];
-    stiff->evalTangentStiffness(elemIndex, pt, X, C);
-
-    // u,x u,y u,z v,x v,y v,z w,x w,y w,z
-    // e[0] = Ux[0]; e[1] = Ux[4]; e[2] = Ux[8];
-    // e[3] = Ux[5] + Ux[7]; e[4] = Ux[2] + Ux[6]; e[5] = Ux[1] + Ux[3];
-
-    // s =  [s0 s5 s4]
-    //      [s5 s1 s3]
-    //      [s4 s3 s2]
-
-    // Index:
-    // s[0] = C[0]*(u,x) + C[1]*(v,y) + C[2]*(w,z) + C[3]*(v,z + w,y)
-    //                   + C[4]*(u,z + w,x) + C[5]*(u,y + v,x)
-    // s[1] = C[1]*(u,x) + C[6]*(v,y) + C[7]*(w,z) + C[8]*(v,z + w,y)
-    //                   + C[9]*(u,z + w,x) + C[10]*(u,y + v,x)
-    // s[2] = C[2]*(u,x) + C[7]*(v,y) + C[11]*(w,z) + C[12]*(v,z + w,y)
-    //                   + C[13]*(u,z + w,x) + C[14]*(u,y + v,x)
-    // s[3] = C[3]*(u,x) + C[8]*(v,y) + C[12]*(w,z) + C[15]*(v,z + w,y)
-    //                   + C[16]*(u,z + w,x) + C[17]*(u,y + v,x)
-    // s[4] = C[4]*(u,x) + C[9]*(v,y) + C[13]*(w,z) + C[16]*(v,z + w,y)
-    //                   + C[18]*(u,z + w,x) + C[19]*(u,y + v,x)
-    // s[5] = C[5]*(u,x) + C[10]*(v,y) + C[14]*(w,z) + C[17]*(v,z + w,y)
-    //                   + C[19]*(u,z + w,x) + C[20]*(u,y + v,x)
-
-    // 0;   1;    2;   3;   4;   5;
-    // u; u,t; u,tt; u,x; u,y; u,z;
-
-    // 6;   7;    8;   9;  10;  11;
-    // v; v,t; v,tt; v,x; v,y; v,z;
-
-    //12;  13;   14;  15;  16;  17;
-    // w; w,t; w,tt; w,x; w,y; w,z;
-      
-    // s[0]
-    Jac[3] = C[0]; // u,x 3
-    Jac[4] = C[5]; // u,y 4
-    Jac[5] = C[4]; // u,z 5
-    Jac[6] = C[5]; // v,x 9
-    Jac[7] = C[1]; // v,y 10
-    Jac[8] = C[3]; // v,z 11
-    Jac[9] = C[4]; // w,x 15
-    Jac[10] = C[3]; // w,y 16
-    Jac[11] = C[2]; // w,z 17
-
-    // s[5]
-    Jac[12] = C[5];
-    Jac[13] = C[20];
-    Jac[14] = C[19];
-    Jac[15] = C[20];
-    Jac[16] = C[10];
-    Jac[17] = C[17];
-    Jac[18] = C[19];
-    Jac[19] = C[17];
-    Jac[20] = C[14];
-
-    // s[4]
-    Jac[21] = C[4];
-    Jac[22] = C[19];
-    Jac[23] = C[18];
-    Jac[24] = C[19];
-    Jac[25] = C[9];
-    Jac[26] = C[16];
-    Jac[27] = C[18];
-    Jac[28] = C[16];
-    Jac[29] = C[13];
-
-    // s[5]
-    Jac[30] = C[5];
-    Jac[31] = C[20];
-    Jac[32] = C[19];
-    Jac[33] = C[20];
-    Jac[34] = C[10];
-    Jac[35] = C[17];
-    Jac[36] = C[19];
-    Jac[37] = C[17];
-    Jac[38] = C[14];
-
-    // s[1]
-    Jac[39] = C[1];
-    Jac[40] = C[10];
-    Jac[41] = C[9];
-    Jac[42] = C[10];
-    Jac[43] = C[6];
-    Jac[44] = C[8];
-    Jac[45] = C[9];
-    Jac[46] = C[8];
-    Jac[47] = C[7];
-
-    // s[3]
-    Jac[48] = C[3];
-    Jac[49] = C[17];
-    Jac[50] = C[16];
-    Jac[51] = C[17];
-    Jac[52] = C[8];
-    Jac[53] = C[15];
-    Jac[54] = C[16];
-    Jac[55] = C[15];
-    Jac[56] = C[12];
-
-    // s[4]
-    Jac[57] = C[4];
-    Jac[58] = C[19];
-    Jac[59] = C[18];
-    Jac[60] = C[19];
-    Jac[61] = C[9];
-    Jac[62] = C[16];
-    Jac[63] = C[18];
-    Jac[64] = C[16];
-    Jac[65] = C[13];
-
-    // s[3]
-    Jac[66] = C[3];
-    Jac[67] = C[17];
-    Jac[68] = C[16];
-    Jac[69] = C[17];
-    Jac[70] = C[8];
-    Jac[71] = C[15];
-    Jac[72] = C[16];
-    Jac[73] = C[15];
-    Jac[74] = C[12];
-    
-    // s[2]
-    Jac[75] = C[2];
-    Jac[76] = C[14];
-    Jac[77] = C[13];
-    Jac[78] = C[14];
-    Jac[79] = C[7];
-    Jac[80] = C[12];
-    Jac[81] = C[13];
-    Jac[82] = C[12];
-    Jac[83] = C[11];
-  }
-  else {
-    TacsScalar e[6];
-    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
-    e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
-    e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
-
-    e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
-    e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
-    e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
-
-    // Evaluate the stress
-    TacsScalar s[6];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    // Set the coefficients for the weak form
-    // Coef = (I + Ux)*S
-    DUx[0] = Ux[1]*s[5] + Ux[2]*s[4] + s[0]*(Ux[0] + 1.0);
-    DUx[1] = Ux[1]*s[1] + Ux[2]*s[3] + s[5]*(Ux[0] + 1.0);
-    DUx[2] = Ux[1]*s[3] + Ux[2]*s[2] + s[4]*(Ux[0] + 1.0);
-
-    DUx[3] = Ux[3]*s[0] + Ux[5]*s[4] + s[5]*(Ux[4] + 1.0);
-    DUx[4] = Ux[3]*s[5] + Ux[5]*s[3] + s[1]*(Ux[4] + 1.0);
-    DUx[5] = Ux[3]*s[4] + Ux[5]*s[2] + s[3]*(Ux[4] + 1.0);
-
-    DUx[6] = Ux[6]*s[0] + Ux[7]*s[5] + s[4]*(Ux[8] + 1.0);
-    DUx[7] = Ux[6]*s[5] + Ux[7]*s[1] + s[3]*(Ux[8] + 1.0);
-    DUx[8] = Ux[6]*s[4] + Ux[7]*s[3] + s[2]*(Ux[8] + 1.0);
-
-    TacsScalar C[21];
-    stiff->evalTangentStiffness(elemIndex, pt, X, C);
-
-    // Compute the derivative of each stress component w.r.t. Ux
-    TacsScalar dsdUx[6*9];
-    dsdUx[0] = C[0]*(Ux[0] + 1.0) + C[4]*Ux[2] + C[5]*Ux[1];
-    dsdUx[1] = C[1]*Ux[1] + C[3]*Ux[2] + C[5]*(Ux[0] + 1.0);
-    dsdUx[2] = C[2]*Ux[2] + C[3]*Ux[1] + C[4]*(Ux[0] + 1.0);
-    dsdUx[3] = C[0]*Ux[3] + C[4]*Ux[5] + C[5]*(Ux[4] + 1.0);
-    dsdUx[4] = C[1]*(Ux[4] + 1.0) + C[3]*Ux[5] + C[5]*Ux[3];
-    dsdUx[5] = C[2]*Ux[5] + C[3]*(Ux[4] + 1.0) + C[4]*Ux[3];
-    dsdUx[6] = C[0]*Ux[6] + C[4]*(Ux[8] + 1.0) + C[5]*Ux[7];
-    dsdUx[7] = C[1]*Ux[7] + C[3]*(Ux[8] + 1.0) + C[5]*Ux[6];
-    dsdUx[8] = C[2]*(Ux[8] + 1.0) + C[3]*Ux[7] + C[4]*Ux[6];
-
-    dsdUx[9] = C[10]*Ux[1] + C[1]*(Ux[0] + 1.0) + C[9]*Ux[2];
-    dsdUx[10] = C[10]*(Ux[0] + 1.0) + C[6]*Ux[1] + C[8]*Ux[2];
-    dsdUx[11] = C[7]*Ux[2] + C[8]*Ux[1] + C[9]*(Ux[0] + 1.0);
-    dsdUx[12] = C[10]*(Ux[4] + 1.0) + C[1]*Ux[3] + C[9]*Ux[5];
-    dsdUx[13] = C[10]*Ux[3] + C[6]*(Ux[4] + 1.0) + C[8]*Ux[5];
-    dsdUx[14] = C[7]*Ux[5] + C[8]*(Ux[4] + 1.0) + C[9]*Ux[3];
-    dsdUx[15] = C[10]*Ux[7] + C[1]*Ux[6] + C[9]*(Ux[8] + 1.0);
-    dsdUx[16] = C[10]*Ux[6] + C[6]*Ux[7] + C[8]*(Ux[8] + 1.0);
-    dsdUx[17] = C[7]*(Ux[8] + 1.0) + C[8]*Ux[7] + C[9]*Ux[6];
-
-    dsdUx[18] = C[13]*Ux[2] + C[14]*Ux[1] + C[2]*(Ux[0] + 1.0);
-    dsdUx[19] = C[12]*Ux[2] + C[14]*(Ux[0] + 1.0) + C[7]*Ux[1];
-    dsdUx[20] = C[11]*Ux[2] + C[12]*Ux[1] + C[13]*(Ux[0] + 1.0);
-    dsdUx[21] = C[13]*Ux[5] + C[14]*(Ux[4] + 1.0) + C[2]*Ux[3];
-    dsdUx[22] = C[12]*Ux[5] + C[14]*Ux[3] + C[7]*(Ux[4] + 1.0);
-    dsdUx[23] = C[11]*Ux[5] + C[12]*(Ux[4] + 1.0) + C[13]*Ux[3];
-    dsdUx[24] = C[13]*(Ux[8] + 1.0) + C[14]*Ux[7] + C[2]*Ux[6];
-    dsdUx[25] = C[12]*(Ux[8] + 1.0) + C[14]*Ux[6] + C[7]*Ux[7];
-    dsdUx[26] = C[11]*(Ux[8] + 1.0) + C[12]*Ux[7] + C[13]*Ux[6];
-
-    dsdUx[27] = C[16]*Ux[2] + C[17]*Ux[1] + C[3]*(Ux[0] + 1.0);
-    dsdUx[28] = C[15]*Ux[2] + C[17]*(Ux[0] + 1.0) + C[8]*Ux[1];
-    dsdUx[29] = C[12]*Ux[2] + C[15]*Ux[1] + C[16]*(Ux[0] + 1.0);
-    dsdUx[30] = C[16]*Ux[5] + C[17]*(Ux[4] + 1.0) + C[3]*Ux[3];
-    dsdUx[31] = C[15]*Ux[5] + C[17]*Ux[3] + C[8]*(Ux[4] + 1.0);
-    dsdUx[32] = C[12]*Ux[5] + C[15]*(Ux[4] + 1.0) + C[16]*Ux[3];
-    dsdUx[33] = C[16]*(Ux[8] + 1.0) + C[17]*Ux[7] + C[3]*Ux[6];
-    dsdUx[34] = C[15]*(Ux[8] + 1.0) + C[17]*Ux[6] + C[8]*Ux[7];
-    dsdUx[35] = C[12]*(Ux[8] + 1.0) + C[15]*Ux[7] + C[16]*Ux[6];
-
-    dsdUx[36] = C[18]*Ux[2] + C[19]*Ux[1] + C[4]*(Ux[0] + 1.0);
-    dsdUx[37] = C[16]*Ux[2] + C[19]*(Ux[0] + 1.0) + C[9]*Ux[1];
-    dsdUx[38] = C[13]*Ux[2] + C[16]*Ux[1] + C[18]*(Ux[0] + 1.0);
-    dsdUx[39] = C[18]*Ux[5] + C[19]*(Ux[4] + 1.0) + C[4]*Ux[3];
-    dsdUx[40] = C[16]*Ux[5] + C[19]*Ux[3] + C[9]*(Ux[4] + 1.0);
-    dsdUx[41] = C[13]*Ux[5] + C[16]*(Ux[4] + 1.0) + C[18]*Ux[3];
-    dsdUx[42] = C[18]*(Ux[8] + 1.0) + C[19]*Ux[7] + C[4]*Ux[6];
-    dsdUx[43] = C[16]*(Ux[8] + 1.0) + C[19]*Ux[6] + C[9]*Ux[7];
-    dsdUx[44] = C[13]*(Ux[8] + 1.0) + C[16]*Ux[7] + C[18]*Ux[6];
-
-    dsdUx[45] = C[19]*Ux[2] + C[20]*Ux[1] + C[5]*(Ux[0] + 1.0);
-    dsdUx[46] = C[10]*Ux[1] + C[17]*Ux[2] + C[20]*(Ux[0] + 1.0);
-    dsdUx[47] = C[14]*Ux[2] + C[17]*Ux[1] + C[19]*(Ux[0] + 1.0);
-    dsdUx[48] = C[19]*Ux[5] + C[20]*(Ux[4] + 1.0) + C[5]*Ux[3];
-    dsdUx[49] = C[10]*(Ux[4] + 1.0) + C[17]*Ux[5] + C[20]*Ux[3];
-    dsdUx[50] = C[14]*Ux[5] + C[17]*(Ux[4] + 1.0) + C[19]*Ux[3];
-    dsdUx[51] = C[19]*(Ux[8] + 1.0) + C[20]*Ux[7] + C[5]*Ux[6];
-    dsdUx[52] = C[10]*Ux[7] + C[17]*(Ux[8] + 1.0) + C[20]*Ux[6];
-    dsdUx[53] = C[14]*(Ux[8] + 1.0) + C[17]*Ux[7] + C[19]*Ux[6];
-
-    // Set the Jacobian coefficients
-    Jac[3] = Ux[1]*dsdUx[45] + Ux[2]*dsdUx[36] + dsdUx[0]*(Ux[0] + 1.0) + s[0];
-    Jac[4] = Ux[1]*dsdUx[46] + Ux[2]*dsdUx[37] + dsdUx[1]*(Ux[0] + 1.0) + s[5];
-    Jac[5] = Ux[1]*dsdUx[47] + Ux[2]*dsdUx[38] + dsdUx[2]*(Ux[0] + 1.0) + s[4];
-    Jac[6] = Ux[1]*dsdUx[48] + Ux[2]*dsdUx[39] + dsdUx[3]*(Ux[0] + 1.0);
-    Jac[7] = Ux[1]*dsdUx[49] + Ux[2]*dsdUx[40] + dsdUx[4]*(Ux[0] + 1.0);
-    Jac[8] = Ux[1]*dsdUx[50] + Ux[2]*dsdUx[41] + dsdUx[5]*(Ux[0] + 1.0);
-    Jac[9] = Ux[1]*dsdUx[51] + Ux[2]*dsdUx[42] + dsdUx[6]*(Ux[0] + 1.0);
-    Jac[10] = Ux[1]*dsdUx[52] + Ux[2]*dsdUx[43] + dsdUx[7]*(Ux[0] + 1.0);
-    Jac[11] = Ux[1]*dsdUx[53] + Ux[2]*dsdUx[44] + dsdUx[8]*(Ux[0] + 1.0);
-
-    Jac[12] = Ux[1]*dsdUx[9] + Ux[2]*dsdUx[27] + dsdUx[45]*(Ux[0] + 1.0) + s[5];
-    Jac[13] = Ux[1]*dsdUx[10] + Ux[2]*dsdUx[28] + dsdUx[46]*(Ux[0] + 1.0) + s[1];
-    Jac[14] = Ux[1]*dsdUx[11] + Ux[2]*dsdUx[29] + dsdUx[47]*(Ux[0] + 1.0) + s[3];
-    Jac[15] = Ux[1]*dsdUx[12] + Ux[2]*dsdUx[30] + dsdUx[48]*(Ux[0] + 1.0);
-    Jac[16] = Ux[1]*dsdUx[13] + Ux[2]*dsdUx[31] + dsdUx[49]*(Ux[0] + 1.0);
-    Jac[17] = Ux[1]*dsdUx[14] + Ux[2]*dsdUx[32] + dsdUx[50]*(Ux[0] + 1.0);
-    Jac[18] = Ux[1]*dsdUx[15] + Ux[2]*dsdUx[33] + dsdUx[51]*(Ux[0] + 1.0);
-    Jac[19] = Ux[1]*dsdUx[16] + Ux[2]*dsdUx[34] + dsdUx[52]*(Ux[0] + 1.0);
-    Jac[20] = Ux[1]*dsdUx[17] + Ux[2]*dsdUx[35] + dsdUx[53]*(Ux[0] + 1.0);
-
-    Jac[21] = Ux[1]*dsdUx[27] + Ux[2]*dsdUx[18] + dsdUx[36]*(Ux[0] + 1.0) + s[4];
-    Jac[22] = Ux[1]*dsdUx[28] + Ux[2]*dsdUx[19] + dsdUx[37]*(Ux[0] + 1.0) + s[3];
-    Jac[23] = Ux[1]*dsdUx[29] + Ux[2]*dsdUx[20] + dsdUx[38]*(Ux[0] + 1.0) + s[2];
-    Jac[24] = Ux[1]*dsdUx[30] + Ux[2]*dsdUx[21] + dsdUx[39]*(Ux[0] + 1.0);
-    Jac[25] = Ux[1]*dsdUx[31] + Ux[2]*dsdUx[22] + dsdUx[40]*(Ux[0] + 1.0);
-    Jac[26] = Ux[1]*dsdUx[32] + Ux[2]*dsdUx[23] + dsdUx[41]*(Ux[0] + 1.0);
-    Jac[27] = Ux[1]*dsdUx[33] + Ux[2]*dsdUx[24] + dsdUx[42]*(Ux[0] + 1.0);
-    Jac[28] = Ux[1]*dsdUx[34] + Ux[2]*dsdUx[25] + dsdUx[43]*(Ux[0] + 1.0);
-    Jac[29] = Ux[1]*dsdUx[35] + Ux[2]*dsdUx[26] + dsdUx[44]*(Ux[0] + 1.0);
-
-    Jac[30] = Ux[3]*dsdUx[0] + Ux[5]*dsdUx[36] + dsdUx[45]*(Ux[4] + 1.0);
-    Jac[31] = Ux[3]*dsdUx[1] + Ux[5]*dsdUx[37] + dsdUx[46]*(Ux[4] + 1.0);
-    Jac[32] = Ux[3]*dsdUx[2] + Ux[5]*dsdUx[38] + dsdUx[47]*(Ux[4] + 1.0);
-    Jac[33] = Ux[3]*dsdUx[3] + Ux[5]*dsdUx[39] + dsdUx[48]*(Ux[4] + 1.0) + s[0];
-    Jac[34] = Ux[3]*dsdUx[4] + Ux[5]*dsdUx[40] + dsdUx[49]*(Ux[4] + 1.0) + s[5];
-    Jac[35] = Ux[3]*dsdUx[5] + Ux[5]*dsdUx[41] + dsdUx[50]*(Ux[4] + 1.0) + s[4];
-    Jac[36] = Ux[3]*dsdUx[6] + Ux[5]*dsdUx[42] + dsdUx[51]*(Ux[4] + 1.0);
-    Jac[37] = Ux[3]*dsdUx[7] + Ux[5]*dsdUx[43] + dsdUx[52]*(Ux[4] + 1.0);
-    Jac[38] = Ux[3]*dsdUx[8] + Ux[5]*dsdUx[44] + dsdUx[53]*(Ux[4] + 1.0);
-
-    Jac[39] = Ux[3]*dsdUx[45] + Ux[5]*dsdUx[27] + dsdUx[9]*(Ux[4] + 1.0);
-    Jac[40] = Ux[3]*dsdUx[46] + Ux[5]*dsdUx[28] + dsdUx[10]*(Ux[4] + 1.0);
-    Jac[41] = Ux[3]*dsdUx[47] + Ux[5]*dsdUx[29] + dsdUx[11]*(Ux[4] + 1.0);
-    Jac[42] = Ux[3]*dsdUx[48] + Ux[5]*dsdUx[30] + dsdUx[12]*(Ux[4] + 1.0) + s[5];
-    Jac[43] = Ux[3]*dsdUx[49] + Ux[5]*dsdUx[31] + dsdUx[13]*(Ux[4] + 1.0) + s[1];
-    Jac[44] = Ux[3]*dsdUx[50] + Ux[5]*dsdUx[32] + dsdUx[14]*(Ux[4] + 1.0) + s[3];
-    Jac[45] = Ux[3]*dsdUx[51] + Ux[5]*dsdUx[33] + dsdUx[15]*(Ux[4] + 1.0);
-    Jac[46] = Ux[3]*dsdUx[52] + Ux[5]*dsdUx[34] + dsdUx[16]*(Ux[4] + 1.0);
-    Jac[47] = Ux[3]*dsdUx[53] + Ux[5]*dsdUx[35] + dsdUx[17]*(Ux[4] + 1.0);
-
-    Jac[48] = Ux[3]*dsdUx[36] + Ux[5]*dsdUx[18] + dsdUx[27]*(Ux[4] + 1.0);
-    Jac[49] = Ux[3]*dsdUx[37] + Ux[5]*dsdUx[19] + dsdUx[28]*(Ux[4] + 1.0);
-    Jac[50] = Ux[3]*dsdUx[38] + Ux[5]*dsdUx[20] + dsdUx[29]*(Ux[4] + 1.0);
-    Jac[51] = Ux[3]*dsdUx[39] + Ux[5]*dsdUx[21] + dsdUx[30]*(Ux[4] + 1.0) + s[4];
-    Jac[52] = Ux[3]*dsdUx[40] + Ux[5]*dsdUx[22] + dsdUx[31]*(Ux[4] + 1.0) + s[3];
-    Jac[53] = Ux[3]*dsdUx[41] + Ux[5]*dsdUx[23] + dsdUx[32]*(Ux[4] + 1.0) + s[2];
-    Jac[54] = Ux[3]*dsdUx[42] + Ux[5]*dsdUx[24] + dsdUx[33]*(Ux[4] + 1.0);
-    Jac[55] = Ux[3]*dsdUx[43] + Ux[5]*dsdUx[25] + dsdUx[34]*(Ux[4] + 1.0);
-    Jac[56] = Ux[3]*dsdUx[44] + Ux[5]*dsdUx[26] + dsdUx[35]*(Ux[4] + 1.0);
-
-    Jac[57] = Ux[6]*dsdUx[0] + Ux[7]*dsdUx[45] + dsdUx[36]*(Ux[8] + 1.0);
-    Jac[58] = Ux[6]*dsdUx[1] + Ux[7]*dsdUx[46] + dsdUx[37]*(Ux[8] + 1.0);
-    Jac[59] = Ux[6]*dsdUx[2] + Ux[7]*dsdUx[47] + dsdUx[38]*(Ux[8] + 1.0);
-    Jac[60] = Ux[6]*dsdUx[3] + Ux[7]*dsdUx[48] + dsdUx[39]*(Ux[8] + 1.0);
-    Jac[61] = Ux[6]*dsdUx[4] + Ux[7]*dsdUx[49] + dsdUx[40]*(Ux[8] + 1.0);
-    Jac[62] = Ux[6]*dsdUx[5] + Ux[7]*dsdUx[50] + dsdUx[41]*(Ux[8] + 1.0);
-    Jac[63] = Ux[6]*dsdUx[6] + Ux[7]*dsdUx[51] + dsdUx[42]*(Ux[8] + 1.0) + s[0];
-    Jac[64] = Ux[6]*dsdUx[7] + Ux[7]*dsdUx[52] + dsdUx[43]*(Ux[8] + 1.0) + s[5];
-    Jac[65] = Ux[6]*dsdUx[8] + Ux[7]*dsdUx[53] + dsdUx[44]*(Ux[8] + 1.0) + s[4];
-
-    Jac[66] = Ux[6]*dsdUx[45] + Ux[7]*dsdUx[9] + dsdUx[27]*(Ux[8] + 1.0);
-    Jac[67] = Ux[6]*dsdUx[46] + Ux[7]*dsdUx[10] + dsdUx[28]*(Ux[8] + 1.0);
-    Jac[68] = Ux[6]*dsdUx[47] + Ux[7]*dsdUx[11] + dsdUx[29]*(Ux[8] + 1.0);
-    Jac[69] = Ux[6]*dsdUx[48] + Ux[7]*dsdUx[12] + dsdUx[30]*(Ux[8] + 1.0);
-    Jac[70] = Ux[6]*dsdUx[49] + Ux[7]*dsdUx[13] + dsdUx[31]*(Ux[8] + 1.0);
-    Jac[71] = Ux[6]*dsdUx[50] + Ux[7]*dsdUx[14] + dsdUx[32]*(Ux[8] + 1.0);
-    Jac[72] = Ux[6]*dsdUx[51] + Ux[7]*dsdUx[15] + dsdUx[33]*(Ux[8] + 1.0) + s[5];
-    Jac[73] = Ux[6]*dsdUx[52] + Ux[7]*dsdUx[16] + dsdUx[34]*(Ux[8] + 1.0) + s[1];
-    Jac[74] = Ux[6]*dsdUx[53] + Ux[7]*dsdUx[17] + dsdUx[35]*(Ux[8] + 1.0) + s[3];
-
-    Jac[75] = Ux[6]*dsdUx[36] + Ux[7]*dsdUx[27] + dsdUx[18]*(Ux[8] + 1.0);
-    Jac[76] = Ux[6]*dsdUx[37] + Ux[7]*dsdUx[28] + dsdUx[19]*(Ux[8] + 1.0);
-    Jac[77] = Ux[6]*dsdUx[38] + Ux[7]*dsdUx[29] + dsdUx[20]*(Ux[8] + 1.0);
-    Jac[78] = Ux[6]*dsdUx[39] + Ux[7]*dsdUx[30] + dsdUx[21]*(Ux[8] + 1.0);
-    Jac[79] = Ux[6]*dsdUx[40] + Ux[7]*dsdUx[31] + dsdUx[22]*(Ux[8] + 1.0);
-    Jac[80] = Ux[6]*dsdUx[41] + Ux[7]*dsdUx[32] + dsdUx[23]*(Ux[8] + 1.0);
-    Jac[81] = Ux[6]*dsdUx[42] + Ux[7]*dsdUx[33] + dsdUx[24]*(Ux[8] + 1.0) + s[4];
-    Jac[82] = Ux[6]*dsdUx[43] + Ux[7]*dsdUx[34] + dsdUx[25]*(Ux[8] + 1.0) + s[3];
-    Jac[83] = Ux[6]*dsdUx[44] + Ux[7]*dsdUx[35] + dsdUx[26]*(Ux[8] + 1.0) + s[2];
-  }
-}
-
 /*
   Add the product of the adjoint vector times the weak form of the adjoint
   equations to the design variable components
@@ -1591,6 +1206,33 @@ void TACSLinearElasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
   }
 }
 
+void TACSLinearElasticity3D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                    int elemIndex,
+                                                    int n,
+                                                    int *Jac_nnz,
+                                                    const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 84;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else if (matType == TACS_MASS_MATRIX){
+    *Jac_nnz = 3;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else if (matType == TACS_STIFFNESS_MATRIX){
+    *Jac_nnz = 81;
+    *Jac_pairs = &linear_Jac_pairs[6];
+  }
+  else if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX){
+    *Jac_nnz = 81;
+    *Jac_pairs = &linear_Jac_pairs[6];
+  }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
+
 void TACSLinearElasticity3D::evalWeakMatrix( ElementMatrixType matType,
                                              int elemIndex,
                                              const double time,
@@ -1600,16 +1242,377 @@ void TACSLinearElasticity3D::evalWeakMatrix( ElementMatrixType matType,
                                              const TacsScalar Xd[],
                                              const TacsScalar Ut[],
                                              const TacsScalar Ux[],
-                                             int *Jac_nnz,
-                                             const int *Jac_pairs[],
+                                             TacsScalar DUt[],
+                                             TacsScalar DUx[],
                                              TacsScalar Jac[] ){
-  if (matType == TACS_MASS_MATRIX){
+  if (matType == TACS_JACOBIAN_MATRIX){
     // Evaluate the density
     TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
-    // Set the non-zero terms in the Jacobian
-    *Jac_nnz = 3;
-    *Jac_pairs = linear_Jac_pairs;
+    DUt[0] = 0.0;
+    DUt[1] = 0.0;
+    DUt[2] = rho*Ut[2];
+
+    DUt[3] = 0.0;
+    DUt[4] = 0.0;
+    DUt[5] = rho*Ut[5];
+
+    DUt[6] = 0.0;
+    DUt[7] = 0.0;
+    DUt[8] = rho*Ut[8];
+
+    // Acceleration terms
+    Jac[0] = rho;
+    Jac[1] = rho;
+    Jac[2] = rho;
+
+    if (strain_type == TACS_LINEAR_STRAIN){
+      TacsScalar e[6];
+      e[0] = Ux[0];
+      e[1] = Ux[4];
+      e[2] = Ux[8];
+
+      e[3] = Ux[5] + Ux[7];
+      e[4] = Ux[2] + Ux[6];
+      e[5] = Ux[1] + Ux[3];
+
+      // Evaluate the stress
+      TacsScalar s[6];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      DUx[0] = s[0];
+      DUx[1] = s[5];
+      DUx[2] = s[4];
+
+      DUx[3] = s[5];
+      DUx[4] = s[1];
+      DUx[5] = s[3];
+
+      DUx[6] = s[4];
+      DUx[7] = s[3];
+      DUx[8] = s[2];
+
+      TacsScalar C[21];
+      stiff->evalTangentStiffness(elemIndex, pt, X, C);
+
+      // u,x u,y u,z v,x v,y v,z w,x w,y w,z
+      // e[0] = Ux[0]; e[1] = Ux[4]; e[2] = Ux[8];
+      // e[3] = Ux[5] + Ux[7]; e[4] = Ux[2] + Ux[6]; e[5] = Ux[1] + Ux[3];
+
+      // s =  [s0 s5 s4]
+      //      [s5 s1 s3]
+      //      [s4 s3 s2]
+
+      // Index:
+      // s[0] = C[0]*(u,x) + C[1]*(v,y) + C[2]*(w,z) + C[3]*(v,z + w,y)
+      //                   + C[4]*(u,z + w,x) + C[5]*(u,y + v,x)
+      // s[1] = C[1]*(u,x) + C[6]*(v,y) + C[7]*(w,z) + C[8]*(v,z + w,y)
+      //                   + C[9]*(u,z + w,x) + C[10]*(u,y + v,x)
+      // s[2] = C[2]*(u,x) + C[7]*(v,y) + C[11]*(w,z) + C[12]*(v,z + w,y)
+      //                   + C[13]*(u,z + w,x) + C[14]*(u,y + v,x)
+      // s[3] = C[3]*(u,x) + C[8]*(v,y) + C[12]*(w,z) + C[15]*(v,z + w,y)
+      //                   + C[16]*(u,z + w,x) + C[17]*(u,y + v,x)
+      // s[4] = C[4]*(u,x) + C[9]*(v,y) + C[13]*(w,z) + C[16]*(v,z + w,y)
+      //                   + C[18]*(u,z + w,x) + C[19]*(u,y + v,x)
+      // s[5] = C[5]*(u,x) + C[10]*(v,y) + C[14]*(w,z) + C[17]*(v,z + w,y)
+      //                   + C[19]*(u,z + w,x) + C[20]*(u,y + v,x)
+
+      // 0;   1;    2;   3;   4;   5;
+      // u; u,t; u,tt; u,x; u,y; u,z;
+
+      // 6;   7;    8;   9;  10;  11;
+      // v; v,t; v,tt; v,x; v,y; v,z;
+
+      //12;  13;   14;  15;  16;  17;
+      // w; w,t; w,tt; w,x; w,y; w,z;
+
+      // s[0]
+      Jac[3] = C[0]; // u,x 3
+      Jac[4] = C[5]; // u,y 4
+      Jac[5] = C[4]; // u,z 5
+      Jac[6] = C[5]; // v,x 9
+      Jac[7] = C[1]; // v,y 10
+      Jac[8] = C[3]; // v,z 11
+      Jac[9] = C[4]; // w,x 15
+      Jac[10] = C[3]; // w,y 16
+      Jac[11] = C[2]; // w,z 17
+
+      // s[5]
+      Jac[12] = C[5];
+      Jac[13] = C[20];
+      Jac[14] = C[19];
+      Jac[15] = C[20];
+      Jac[16] = C[10];
+      Jac[17] = C[17];
+      Jac[18] = C[19];
+      Jac[19] = C[17];
+      Jac[20] = C[14];
+
+      // s[4]
+      Jac[21] = C[4];
+      Jac[22] = C[19];
+      Jac[23] = C[18];
+      Jac[24] = C[19];
+      Jac[25] = C[9];
+      Jac[26] = C[16];
+      Jac[27] = C[18];
+      Jac[28] = C[16];
+      Jac[29] = C[13];
+
+      // s[5]
+      Jac[30] = C[5];
+      Jac[31] = C[20];
+      Jac[32] = C[19];
+      Jac[33] = C[20];
+      Jac[34] = C[10];
+      Jac[35] = C[17];
+      Jac[36] = C[19];
+      Jac[37] = C[17];
+      Jac[38] = C[14];
+
+      // s[1]
+      Jac[39] = C[1];
+      Jac[40] = C[10];
+      Jac[41] = C[9];
+      Jac[42] = C[10];
+      Jac[43] = C[6];
+      Jac[44] = C[8];
+      Jac[45] = C[9];
+      Jac[46] = C[8];
+      Jac[47] = C[7];
+
+      // s[3]
+      Jac[48] = C[3];
+      Jac[49] = C[17];
+      Jac[50] = C[16];
+      Jac[51] = C[17];
+      Jac[52] = C[8];
+      Jac[53] = C[15];
+      Jac[54] = C[16];
+      Jac[55] = C[15];
+      Jac[56] = C[12];
+
+      // s[4]
+      Jac[57] = C[4];
+      Jac[58] = C[19];
+      Jac[59] = C[18];
+      Jac[60] = C[19];
+      Jac[61] = C[9];
+      Jac[62] = C[16];
+      Jac[63] = C[18];
+      Jac[64] = C[16];
+      Jac[65] = C[13];
+
+      // s[3]
+      Jac[66] = C[3];
+      Jac[67] = C[17];
+      Jac[68] = C[16];
+      Jac[69] = C[17];
+      Jac[70] = C[8];
+      Jac[71] = C[15];
+      Jac[72] = C[16];
+      Jac[73] = C[15];
+      Jac[74] = C[12];
+
+      // s[2]
+      Jac[75] = C[2];
+      Jac[76] = C[14];
+      Jac[77] = C[13];
+      Jac[78] = C[14];
+      Jac[79] = C[7];
+      Jac[80] = C[12];
+      Jac[81] = C[13];
+      Jac[82] = C[12];
+      Jac[83] = C[11];
+    }
+    else {
+      TacsScalar e[6];
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+
+      // Evaluate the stress
+      TacsScalar s[6];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      // Set the coefficients for the weak form
+      // Coef = (I + Ux)*S
+      DUx[0] = Ux[1]*s[5] + Ux[2]*s[4] + s[0]*(Ux[0] + 1.0);
+      DUx[1] = Ux[1]*s[1] + Ux[2]*s[3] + s[5]*(Ux[0] + 1.0);
+      DUx[2] = Ux[1]*s[3] + Ux[2]*s[2] + s[4]*(Ux[0] + 1.0);
+
+      DUx[3] = Ux[3]*s[0] + Ux[5]*s[4] + s[5]*(Ux[4] + 1.0);
+      DUx[4] = Ux[3]*s[5] + Ux[5]*s[3] + s[1]*(Ux[4] + 1.0);
+      DUx[5] = Ux[3]*s[4] + Ux[5]*s[2] + s[3]*(Ux[4] + 1.0);
+
+      DUx[6] = Ux[6]*s[0] + Ux[7]*s[5] + s[4]*(Ux[8] + 1.0);
+      DUx[7] = Ux[6]*s[5] + Ux[7]*s[1] + s[3]*(Ux[8] + 1.0);
+      DUx[8] = Ux[6]*s[4] + Ux[7]*s[3] + s[2]*(Ux[8] + 1.0);
+
+      TacsScalar C[21];
+      stiff->evalTangentStiffness(elemIndex, pt, X, C);
+
+      // Compute the derivative of each stress component w.r.t. Ux
+      TacsScalar dsdUx[6*9];
+      dsdUx[0] = C[0]*(Ux[0] + 1.0) + C[4]*Ux[2] + C[5]*Ux[1];
+      dsdUx[1] = C[1]*Ux[1] + C[3]*Ux[2] + C[5]*(Ux[0] + 1.0);
+      dsdUx[2] = C[2]*Ux[2] + C[3]*Ux[1] + C[4]*(Ux[0] + 1.0);
+      dsdUx[3] = C[0]*Ux[3] + C[4]*Ux[5] + C[5]*(Ux[4] + 1.0);
+      dsdUx[4] = C[1]*(Ux[4] + 1.0) + C[3]*Ux[5] + C[5]*Ux[3];
+      dsdUx[5] = C[2]*Ux[5] + C[3]*(Ux[4] + 1.0) + C[4]*Ux[3];
+      dsdUx[6] = C[0]*Ux[6] + C[4]*(Ux[8] + 1.0) + C[5]*Ux[7];
+      dsdUx[7] = C[1]*Ux[7] + C[3]*(Ux[8] + 1.0) + C[5]*Ux[6];
+      dsdUx[8] = C[2]*(Ux[8] + 1.0) + C[3]*Ux[7] + C[4]*Ux[6];
+
+      dsdUx[9] = C[10]*Ux[1] + C[1]*(Ux[0] + 1.0) + C[9]*Ux[2];
+      dsdUx[10] = C[10]*(Ux[0] + 1.0) + C[6]*Ux[1] + C[8]*Ux[2];
+      dsdUx[11] = C[7]*Ux[2] + C[8]*Ux[1] + C[9]*(Ux[0] + 1.0);
+      dsdUx[12] = C[10]*(Ux[4] + 1.0) + C[1]*Ux[3] + C[9]*Ux[5];
+      dsdUx[13] = C[10]*Ux[3] + C[6]*(Ux[4] + 1.0) + C[8]*Ux[5];
+      dsdUx[14] = C[7]*Ux[5] + C[8]*(Ux[4] + 1.0) + C[9]*Ux[3];
+      dsdUx[15] = C[10]*Ux[7] + C[1]*Ux[6] + C[9]*(Ux[8] + 1.0);
+      dsdUx[16] = C[10]*Ux[6] + C[6]*Ux[7] + C[8]*(Ux[8] + 1.0);
+      dsdUx[17] = C[7]*(Ux[8] + 1.0) + C[8]*Ux[7] + C[9]*Ux[6];
+
+      dsdUx[18] = C[13]*Ux[2] + C[14]*Ux[1] + C[2]*(Ux[0] + 1.0);
+      dsdUx[19] = C[12]*Ux[2] + C[14]*(Ux[0] + 1.0) + C[7]*Ux[1];
+      dsdUx[20] = C[11]*Ux[2] + C[12]*Ux[1] + C[13]*(Ux[0] + 1.0);
+      dsdUx[21] = C[13]*Ux[5] + C[14]*(Ux[4] + 1.0) + C[2]*Ux[3];
+      dsdUx[22] = C[12]*Ux[5] + C[14]*Ux[3] + C[7]*(Ux[4] + 1.0);
+      dsdUx[23] = C[11]*Ux[5] + C[12]*(Ux[4] + 1.0) + C[13]*Ux[3];
+      dsdUx[24] = C[13]*(Ux[8] + 1.0) + C[14]*Ux[7] + C[2]*Ux[6];
+      dsdUx[25] = C[12]*(Ux[8] + 1.0) + C[14]*Ux[6] + C[7]*Ux[7];
+      dsdUx[26] = C[11]*(Ux[8] + 1.0) + C[12]*Ux[7] + C[13]*Ux[6];
+
+      dsdUx[27] = C[16]*Ux[2] + C[17]*Ux[1] + C[3]*(Ux[0] + 1.0);
+      dsdUx[28] = C[15]*Ux[2] + C[17]*(Ux[0] + 1.0) + C[8]*Ux[1];
+      dsdUx[29] = C[12]*Ux[2] + C[15]*Ux[1] + C[16]*(Ux[0] + 1.0);
+      dsdUx[30] = C[16]*Ux[5] + C[17]*(Ux[4] + 1.0) + C[3]*Ux[3];
+      dsdUx[31] = C[15]*Ux[5] + C[17]*Ux[3] + C[8]*(Ux[4] + 1.0);
+      dsdUx[32] = C[12]*Ux[5] + C[15]*(Ux[4] + 1.0) + C[16]*Ux[3];
+      dsdUx[33] = C[16]*(Ux[8] + 1.0) + C[17]*Ux[7] + C[3]*Ux[6];
+      dsdUx[34] = C[15]*(Ux[8] + 1.0) + C[17]*Ux[6] + C[8]*Ux[7];
+      dsdUx[35] = C[12]*(Ux[8] + 1.0) + C[15]*Ux[7] + C[16]*Ux[6];
+
+      dsdUx[36] = C[18]*Ux[2] + C[19]*Ux[1] + C[4]*(Ux[0] + 1.0);
+      dsdUx[37] = C[16]*Ux[2] + C[19]*(Ux[0] + 1.0) + C[9]*Ux[1];
+      dsdUx[38] = C[13]*Ux[2] + C[16]*Ux[1] + C[18]*(Ux[0] + 1.0);
+      dsdUx[39] = C[18]*Ux[5] + C[19]*(Ux[4] + 1.0) + C[4]*Ux[3];
+      dsdUx[40] = C[16]*Ux[5] + C[19]*Ux[3] + C[9]*(Ux[4] + 1.0);
+      dsdUx[41] = C[13]*Ux[5] + C[16]*(Ux[4] + 1.0) + C[18]*Ux[3];
+      dsdUx[42] = C[18]*(Ux[8] + 1.0) + C[19]*Ux[7] + C[4]*Ux[6];
+      dsdUx[43] = C[16]*(Ux[8] + 1.0) + C[19]*Ux[6] + C[9]*Ux[7];
+      dsdUx[44] = C[13]*(Ux[8] + 1.0) + C[16]*Ux[7] + C[18]*Ux[6];
+
+      dsdUx[45] = C[19]*Ux[2] + C[20]*Ux[1] + C[5]*(Ux[0] + 1.0);
+      dsdUx[46] = C[10]*Ux[1] + C[17]*Ux[2] + C[20]*(Ux[0] + 1.0);
+      dsdUx[47] = C[14]*Ux[2] + C[17]*Ux[1] + C[19]*(Ux[0] + 1.0);
+      dsdUx[48] = C[19]*Ux[5] + C[20]*(Ux[4] + 1.0) + C[5]*Ux[3];
+      dsdUx[49] = C[10]*(Ux[4] + 1.0) + C[17]*Ux[5] + C[20]*Ux[3];
+      dsdUx[50] = C[14]*Ux[5] + C[17]*(Ux[4] + 1.0) + C[19]*Ux[3];
+      dsdUx[51] = C[19]*(Ux[8] + 1.0) + C[20]*Ux[7] + C[5]*Ux[6];
+      dsdUx[52] = C[10]*Ux[7] + C[17]*(Ux[8] + 1.0) + C[20]*Ux[6];
+      dsdUx[53] = C[14]*(Ux[8] + 1.0) + C[17]*Ux[7] + C[19]*Ux[6];
+
+      // Set the Jacobian coefficients
+      Jac[3] = Ux[1]*dsdUx[45] + Ux[2]*dsdUx[36] + dsdUx[0]*(Ux[0] + 1.0) + s[0];
+      Jac[4] = Ux[1]*dsdUx[46] + Ux[2]*dsdUx[37] + dsdUx[1]*(Ux[0] + 1.0) + s[5];
+      Jac[5] = Ux[1]*dsdUx[47] + Ux[2]*dsdUx[38] + dsdUx[2]*(Ux[0] + 1.0) + s[4];
+      Jac[6] = Ux[1]*dsdUx[48] + Ux[2]*dsdUx[39] + dsdUx[3]*(Ux[0] + 1.0);
+      Jac[7] = Ux[1]*dsdUx[49] + Ux[2]*dsdUx[40] + dsdUx[4]*(Ux[0] + 1.0);
+      Jac[8] = Ux[1]*dsdUx[50] + Ux[2]*dsdUx[41] + dsdUx[5]*(Ux[0] + 1.0);
+      Jac[9] = Ux[1]*dsdUx[51] + Ux[2]*dsdUx[42] + dsdUx[6]*(Ux[0] + 1.0);
+      Jac[10] = Ux[1]*dsdUx[52] + Ux[2]*dsdUx[43] + dsdUx[7]*(Ux[0] + 1.0);
+      Jac[11] = Ux[1]*dsdUx[53] + Ux[2]*dsdUx[44] + dsdUx[8]*(Ux[0] + 1.0);
+
+      Jac[12] = Ux[1]*dsdUx[9] + Ux[2]*dsdUx[27] + dsdUx[45]*(Ux[0] + 1.0) + s[5];
+      Jac[13] = Ux[1]*dsdUx[10] + Ux[2]*dsdUx[28] + dsdUx[46]*(Ux[0] + 1.0) + s[1];
+      Jac[14] = Ux[1]*dsdUx[11] + Ux[2]*dsdUx[29] + dsdUx[47]*(Ux[0] + 1.0) + s[3];
+      Jac[15] = Ux[1]*dsdUx[12] + Ux[2]*dsdUx[30] + dsdUx[48]*(Ux[0] + 1.0);
+      Jac[16] = Ux[1]*dsdUx[13] + Ux[2]*dsdUx[31] + dsdUx[49]*(Ux[0] + 1.0);
+      Jac[17] = Ux[1]*dsdUx[14] + Ux[2]*dsdUx[32] + dsdUx[50]*(Ux[0] + 1.0);
+      Jac[18] = Ux[1]*dsdUx[15] + Ux[2]*dsdUx[33] + dsdUx[51]*(Ux[0] + 1.0);
+      Jac[19] = Ux[1]*dsdUx[16] + Ux[2]*dsdUx[34] + dsdUx[52]*(Ux[0] + 1.0);
+      Jac[20] = Ux[1]*dsdUx[17] + Ux[2]*dsdUx[35] + dsdUx[53]*(Ux[0] + 1.0);
+
+      Jac[21] = Ux[1]*dsdUx[27] + Ux[2]*dsdUx[18] + dsdUx[36]*(Ux[0] + 1.0) + s[4];
+      Jac[22] = Ux[1]*dsdUx[28] + Ux[2]*dsdUx[19] + dsdUx[37]*(Ux[0] + 1.0) + s[3];
+      Jac[23] = Ux[1]*dsdUx[29] + Ux[2]*dsdUx[20] + dsdUx[38]*(Ux[0] + 1.0) + s[2];
+      Jac[24] = Ux[1]*dsdUx[30] + Ux[2]*dsdUx[21] + dsdUx[39]*(Ux[0] + 1.0);
+      Jac[25] = Ux[1]*dsdUx[31] + Ux[2]*dsdUx[22] + dsdUx[40]*(Ux[0] + 1.0);
+      Jac[26] = Ux[1]*dsdUx[32] + Ux[2]*dsdUx[23] + dsdUx[41]*(Ux[0] + 1.0);
+      Jac[27] = Ux[1]*dsdUx[33] + Ux[2]*dsdUx[24] + dsdUx[42]*(Ux[0] + 1.0);
+      Jac[28] = Ux[1]*dsdUx[34] + Ux[2]*dsdUx[25] + dsdUx[43]*(Ux[0] + 1.0);
+      Jac[29] = Ux[1]*dsdUx[35] + Ux[2]*dsdUx[26] + dsdUx[44]*(Ux[0] + 1.0);
+
+      Jac[30] = Ux[3]*dsdUx[0] + Ux[5]*dsdUx[36] + dsdUx[45]*(Ux[4] + 1.0);
+      Jac[31] = Ux[3]*dsdUx[1] + Ux[5]*dsdUx[37] + dsdUx[46]*(Ux[4] + 1.0);
+      Jac[32] = Ux[3]*dsdUx[2] + Ux[5]*dsdUx[38] + dsdUx[47]*(Ux[4] + 1.0);
+      Jac[33] = Ux[3]*dsdUx[3] + Ux[5]*dsdUx[39] + dsdUx[48]*(Ux[4] + 1.0) + s[0];
+      Jac[34] = Ux[3]*dsdUx[4] + Ux[5]*dsdUx[40] + dsdUx[49]*(Ux[4] + 1.0) + s[5];
+      Jac[35] = Ux[3]*dsdUx[5] + Ux[5]*dsdUx[41] + dsdUx[50]*(Ux[4] + 1.0) + s[4];
+      Jac[36] = Ux[3]*dsdUx[6] + Ux[5]*dsdUx[42] + dsdUx[51]*(Ux[4] + 1.0);
+      Jac[37] = Ux[3]*dsdUx[7] + Ux[5]*dsdUx[43] + dsdUx[52]*(Ux[4] + 1.0);
+      Jac[38] = Ux[3]*dsdUx[8] + Ux[5]*dsdUx[44] + dsdUx[53]*(Ux[4] + 1.0);
+
+      Jac[39] = Ux[3]*dsdUx[45] + Ux[5]*dsdUx[27] + dsdUx[9]*(Ux[4] + 1.0);
+      Jac[40] = Ux[3]*dsdUx[46] + Ux[5]*dsdUx[28] + dsdUx[10]*(Ux[4] + 1.0);
+      Jac[41] = Ux[3]*dsdUx[47] + Ux[5]*dsdUx[29] + dsdUx[11]*(Ux[4] + 1.0);
+      Jac[42] = Ux[3]*dsdUx[48] + Ux[5]*dsdUx[30] + dsdUx[12]*(Ux[4] + 1.0) + s[5];
+      Jac[43] = Ux[3]*dsdUx[49] + Ux[5]*dsdUx[31] + dsdUx[13]*(Ux[4] + 1.0) + s[1];
+      Jac[44] = Ux[3]*dsdUx[50] + Ux[5]*dsdUx[32] + dsdUx[14]*(Ux[4] + 1.0) + s[3];
+      Jac[45] = Ux[3]*dsdUx[51] + Ux[5]*dsdUx[33] + dsdUx[15]*(Ux[4] + 1.0);
+      Jac[46] = Ux[3]*dsdUx[52] + Ux[5]*dsdUx[34] + dsdUx[16]*(Ux[4] + 1.0);
+      Jac[47] = Ux[3]*dsdUx[53] + Ux[5]*dsdUx[35] + dsdUx[17]*(Ux[4] + 1.0);
+
+      Jac[48] = Ux[3]*dsdUx[36] + Ux[5]*dsdUx[18] + dsdUx[27]*(Ux[4] + 1.0);
+      Jac[49] = Ux[3]*dsdUx[37] + Ux[5]*dsdUx[19] + dsdUx[28]*(Ux[4] + 1.0);
+      Jac[50] = Ux[3]*dsdUx[38] + Ux[5]*dsdUx[20] + dsdUx[29]*(Ux[4] + 1.0);
+      Jac[51] = Ux[3]*dsdUx[39] + Ux[5]*dsdUx[21] + dsdUx[30]*(Ux[4] + 1.0) + s[4];
+      Jac[52] = Ux[3]*dsdUx[40] + Ux[5]*dsdUx[22] + dsdUx[31]*(Ux[4] + 1.0) + s[3];
+      Jac[53] = Ux[3]*dsdUx[41] + Ux[5]*dsdUx[23] + dsdUx[32]*(Ux[4] + 1.0) + s[2];
+      Jac[54] = Ux[3]*dsdUx[42] + Ux[5]*dsdUx[24] + dsdUx[33]*(Ux[4] + 1.0);
+      Jac[55] = Ux[3]*dsdUx[43] + Ux[5]*dsdUx[25] + dsdUx[34]*(Ux[4] + 1.0);
+      Jac[56] = Ux[3]*dsdUx[44] + Ux[5]*dsdUx[26] + dsdUx[35]*(Ux[4] + 1.0);
+
+      Jac[57] = Ux[6]*dsdUx[0] + Ux[7]*dsdUx[45] + dsdUx[36]*(Ux[8] + 1.0);
+      Jac[58] = Ux[6]*dsdUx[1] + Ux[7]*dsdUx[46] + dsdUx[37]*(Ux[8] + 1.0);
+      Jac[59] = Ux[6]*dsdUx[2] + Ux[7]*dsdUx[47] + dsdUx[38]*(Ux[8] + 1.0);
+      Jac[60] = Ux[6]*dsdUx[3] + Ux[7]*dsdUx[48] + dsdUx[39]*(Ux[8] + 1.0);
+      Jac[61] = Ux[6]*dsdUx[4] + Ux[7]*dsdUx[49] + dsdUx[40]*(Ux[8] + 1.0);
+      Jac[62] = Ux[6]*dsdUx[5] + Ux[7]*dsdUx[50] + dsdUx[41]*(Ux[8] + 1.0);
+      Jac[63] = Ux[6]*dsdUx[6] + Ux[7]*dsdUx[51] + dsdUx[42]*(Ux[8] + 1.0) + s[0];
+      Jac[64] = Ux[6]*dsdUx[7] + Ux[7]*dsdUx[52] + dsdUx[43]*(Ux[8] + 1.0) + s[5];
+      Jac[65] = Ux[6]*dsdUx[8] + Ux[7]*dsdUx[53] + dsdUx[44]*(Ux[8] + 1.0) + s[4];
+
+      Jac[66] = Ux[6]*dsdUx[45] + Ux[7]*dsdUx[9] + dsdUx[27]*(Ux[8] + 1.0);
+      Jac[67] = Ux[6]*dsdUx[46] + Ux[7]*dsdUx[10] + dsdUx[28]*(Ux[8] + 1.0);
+      Jac[68] = Ux[6]*dsdUx[47] + Ux[7]*dsdUx[11] + dsdUx[29]*(Ux[8] + 1.0);
+      Jac[69] = Ux[6]*dsdUx[48] + Ux[7]*dsdUx[12] + dsdUx[30]*(Ux[8] + 1.0);
+      Jac[70] = Ux[6]*dsdUx[49] + Ux[7]*dsdUx[13] + dsdUx[31]*(Ux[8] + 1.0);
+      Jac[71] = Ux[6]*dsdUx[50] + Ux[7]*dsdUx[14] + dsdUx[32]*(Ux[8] + 1.0);
+      Jac[72] = Ux[6]*dsdUx[51] + Ux[7]*dsdUx[15] + dsdUx[33]*(Ux[8] + 1.0) + s[5];
+      Jac[73] = Ux[6]*dsdUx[52] + Ux[7]*dsdUx[16] + dsdUx[34]*(Ux[8] + 1.0) + s[1];
+      Jac[74] = Ux[6]*dsdUx[53] + Ux[7]*dsdUx[17] + dsdUx[35]*(Ux[8] + 1.0) + s[3];
+
+      Jac[75] = Ux[6]*dsdUx[36] + Ux[7]*dsdUx[27] + dsdUx[18]*(Ux[8] + 1.0);
+      Jac[76] = Ux[6]*dsdUx[37] + Ux[7]*dsdUx[28] + dsdUx[19]*(Ux[8] + 1.0);
+      Jac[77] = Ux[6]*dsdUx[38] + Ux[7]*dsdUx[29] + dsdUx[20]*(Ux[8] + 1.0);
+      Jac[78] = Ux[6]*dsdUx[39] + Ux[7]*dsdUx[30] + dsdUx[21]*(Ux[8] + 1.0);
+      Jac[79] = Ux[6]*dsdUx[40] + Ux[7]*dsdUx[31] + dsdUx[22]*(Ux[8] + 1.0);
+      Jac[80] = Ux[6]*dsdUx[41] + Ux[7]*dsdUx[32] + dsdUx[23]*(Ux[8] + 1.0);
+      Jac[81] = Ux[6]*dsdUx[42] + Ux[7]*dsdUx[33] + dsdUx[24]*(Ux[8] + 1.0) + s[4];
+      Jac[82] = Ux[6]*dsdUx[43] + Ux[7]*dsdUx[34] + dsdUx[25]*(Ux[8] + 1.0) + s[3];
+      Jac[83] = Ux[6]*dsdUx[44] + Ux[7]*dsdUx[35] + dsdUx[26]*(Ux[8] + 1.0) + s[2];
+    }
+  }
+  else if (matType == TACS_MASS_MATRIX){
+    // Evaluate the density
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
     // Set the acceleration terms
     Jac[0] = rho;
@@ -1617,10 +1620,6 @@ void TACSLinearElasticity3D::evalWeakMatrix( ElementMatrixType matType,
     Jac[2] = rho;
   }
   else if (matType == TACS_STIFFNESS_MATRIX){
-    // Set the non-zero terms in the Jacobian
-    *Jac_nnz = 81;
-    *Jac_pairs = &linear_Jac_pairs[6];
-
     TacsScalar C[21];
     stiff->evalTangentStiffness(elemIndex, pt, X, C);
 
@@ -1715,10 +1714,6 @@ void TACSLinearElasticity3D::evalWeakMatrix( ElementMatrixType matType,
     Jac[80] = C[11];
   }
   else if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX){
-    // Set the non-zero terms in the Jacobian
-    *Jac_nnz = 81;
-    *Jac_pairs = &linear_Jac_pairs[6];
-
     // Compute the tangent stiffness
     TacsScalar C[21];
     stiff->evalGeometricTangentStiffness(elemIndex, pt, X, C);

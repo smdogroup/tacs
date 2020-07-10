@@ -851,7 +851,7 @@ void TACSGaussSeidel::getMat( TACSMat **_mat ){
 /*
   Create the Chebyshev smoother object
 */
-TACSChebyshevSmoother::TACSChebyshevSmoother( TACSParallelMat *_mat, int _degree,
+TACSChebyshevSmoother::TACSChebyshevSmoother( TACSMat *_mat, int _degree,
                                               double _lower_factor,
                                               double _upper_factor,
                                               int _iters ){
@@ -916,8 +916,17 @@ void TACSChebyshevSmoother::factor(){
   alpha = 0.0;
   beta = 0.0;
 
-  double rho = gershgorin();
-  // double rho = arnoldi(15);
+  // Compute the spectral radius
+  double rho = 1.0;
+
+  // Check if this is a TACSParallelMat
+  TACSParallelMat *pmat = dynamic_cast<TACSParallelMat*>(mat);
+  if (pmat){
+    rho = gershgorin(pmat);
+  }
+  else {
+    rho = 1.1*arnoldi(10, mat);
+  }
 
   // Compute the factor
   alpha = lower_factor*rho;
@@ -1000,12 +1009,12 @@ void TACSChebyshevSmoother::getMat( TACSMat **_mat ){
 /*
   Estimate the spectral radius using Gershgorin disks
 */
-double TACSChebyshevSmoother::gershgorin(){
+double TACSChebyshevSmoother::gershgorin( TACSParallelMat *pmat ){
   double rho = 0.0;
 
   // Get the matrices
   BCSRMat *A, *B;
-  mat->getBCSRMat(&A, &B);
+  pmat->getBCSRMat(&A, &B);
   BCSRMatData *Adata = A->getMatData();
   BCSRMatData *Bdata = B->getMatData();
 
@@ -1015,7 +1024,7 @@ double TACSChebyshevSmoother::gershgorin(){
 
   // Get the number of variables in the row map
   int N, Nc;
-  mat->getRowMap(NULL, &N, &Nc);
+  pmat->getRowMap(NULL, &N, &Nc);
   int var_offset = N - Nc;
 
   // Allocate space to store the
@@ -1088,7 +1097,7 @@ double TACSChebyshevSmoother::gershgorin(){
 
   // Perform an Allreduce across all processors
   double temp = 0.0;
-  MPI_Allreduce(&rho, &temp, 1, MPI_DOUBLE, MPI_MAX, mat->getMPIComm());
+  MPI_Allreduce(&rho, &temp, 1, MPI_DOUBLE, MPI_MAX, pmat->getMPIComm());
 
   return temp;
 }
@@ -1096,7 +1105,7 @@ double TACSChebyshevSmoother::gershgorin(){
 /*
   Estimate the spectral radius using Arnoldi
 */
-double TACSChebyshevSmoother::arnoldi( int size ){
+double TACSChebyshevSmoother::arnoldi( int size, TACSMat *pmat ){
   double *H = new double[ size*(size+1) ];
   memset(H, 0, size*(size+1)*sizeof(double));
 
@@ -1104,18 +1113,18 @@ double TACSChebyshevSmoother::arnoldi( int size ){
   TACSVec **W = new TACSVec*[ size+1 ];
 
   // Create an initial random vector
-  W[0] = mat->createVec();
+  W[0] = pmat->createVec();
   W[0]->incref();
   W[0]->setRand(-1.0, 1.0);
   W[0]->scale(1.0/W[0]->norm());
 
   // Apply the boundary conditions
   for ( int i = 0; i < size; i++ ){
-    W[i+1] = mat->createVec();
+    W[i+1] = pmat->createVec();
     W[i+1]->incref();
 
     // Multiply by the matrix to get the next vector
-    mat->mult(W[i], W[i+1]);
+    pmat->mult(W[i], W[i+1]);
 
     // Orthogonalize against the existing subspace
     for ( int j = 0; j <= i; j++ ){

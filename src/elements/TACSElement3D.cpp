@@ -106,12 +106,12 @@ void TACSElement3D::addResidual( int elemIndex,
     TacsScalar X[3], Xd[9], J[9];
     TacsScalar Ut[3*MAX_VARS_PER_NODE];
     TacsScalar Ud[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, dvars, ddvars,
-                                              X, Xd, J, Ut, Ud, Ux);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, dvars, ddvars,
+                                               X, Xd, J, Ut, Ud, Ux);
 
     // Multiply the weight by the quadrature point
-    detJ *= weight;
+    detXd *= weight;
 
     // Evaluate the weak form of the model
     TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
@@ -119,7 +119,7 @@ void TACSElement3D::addResidual( int elemIndex,
                              Ut, Ux, DUt, DUx);
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormResidual(n, pt, detJ, J, vars_per_node, DUt, DUx, res);
+    basis->addWeakFormResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
   }
 }
 
@@ -152,23 +152,27 @@ void TACSElement3D::addJacobian( int elemIndex,
     TacsScalar X[3], Xd[9], J[9];
     TacsScalar Ut[3*MAX_VARS_PER_NODE];
     TacsScalar Ud[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, dvars, ddvars, X, Xd, J,
-                                              Ut, Ud, Ux);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, dvars, ddvars, X, Xd, J,
+                                               Ut, Ud, Ux);
 
     // Multiply the weight by the quadrature point
-    detJ *= weight;
+    detXd *= weight;
 
     // Evaluate the weak form of the model
-    int Jac_nnz;
-    const int *Jac_pairs;
     TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
     TacsScalar Jac[36*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
-    model->evalWeakJacobian(elemIndex, n, time, pt, X, Xd, Ut, Ux, DUt, DUx,
-                            &Jac_nnz, &Jac_pairs, Jac);
+    model->evalWeakMatrix(TACS_JACOBIAN_MATRIX, elemIndex,
+                          n, time, pt, X, Xd, Ut, Ux, DUt, DUx, Jac);
+
+    // Extract the non-zero pattern
+    int Jac_nnz;
+    const int *Jac_pairs;
+    model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex,
+                                 n, &Jac_nnz, &Jac_pairs);
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormJacobian(n, pt, detJ, J, vars_per_node, DUt, DUx,
+    basis->addWeakFormJacobian(n, pt, detXd, J, vars_per_node, DUt, DUx,
                                alpha, beta, gamma,
                                Jac_nnz, Jac_pairs, Jac, res, mat);
   }
@@ -202,13 +206,13 @@ void TACSElement3D::addAdjResProduct( int elemIndex,
     TacsScalar Ud[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
     TacsScalar Psi[MAX_VARS_PER_NODE];
     TacsScalar Psid[3*MAX_VARS_PER_NODE], Psix[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, dvars, ddvars, psi,
-                                              X, Xd, J, Ut, Ud, Ux,
-                                              Psi, Psid, Psix);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, dvars, ddvars, psi,
+                                               X, Xd, J, Ut, Ud, Ux,
+                                               Psi, Psid, Psix);
 
     // Compute the weight
-    TacsScalar s = scale*detJ*weight;
+    TacsScalar s = scale*detXd*weight;
 
     model->addWeakAdjProduct(elemIndex, time, s, n, pt, X, Xd,
                              Ut, Ux, Psi, Psix, dvLen, dfdx);
@@ -241,10 +245,10 @@ void TACSElement3D::addAdjResXptProduct( int elemIndex,
     TacsScalar Ud[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
     TacsScalar Psi[MAX_VARS_PER_NODE];
     TacsScalar Psid[3*MAX_VARS_PER_NODE], Psix[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, dvars, ddvars, psi,
-                                              X, Xd, J, Ut, Ud, Ux,
-                                              Psi, Psid, Psix);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, dvars, ddvars, psi,
+                                               X, Xd, J, Ut, Ud, Ux,
+                                               Psi, Psid, Psix);
 
     TacsScalar product;
     TacsScalar dfdX[3], dfdXd[9];
@@ -254,7 +258,7 @@ void TACSElement3D::addAdjResXptProduct( int elemIndex,
                                      dfdX, dfdXd, dfdUx, dfdPsix);
 
     // Scale the derivatives appropriately
-    TacsScalar s = scale*detJ*weight;
+    TacsScalar s = scale*detXd*weight;
     dfdX[0] *= s;  dfdX[1] *= s;  dfdX[2] *= s;
 
     for ( int i = 0; i < 3*vars_per_node; i++ ){
@@ -263,10 +267,10 @@ void TACSElement3D::addAdjResXptProduct( int elemIndex,
     }
 
     // Compute the derivative of the determinant of the transformation
-    TacsScalar dfddetJ = scale*weight*product;
+    TacsScalar dfddetXd = scale*weight*product;
 
     basis->addFieldGradientXptSens(n, pt, Xpts, vars_per_node, Xd, J, Ud, Psid,
-                                   dfddetJ, dfdX, dfdXd, NULL, dfdUx, dfdPsix,
+                                   dfddetXd, dfdX, dfdXd, NULL, dfdUx, dfdPsix,
                                    dfdXpts);
   }
 }
@@ -300,23 +304,28 @@ void TACSElement3D::getMatType( ElementMatrixType matType,
     TacsScalar X[3], Xd[9], J[9];
     TacsScalar Ut[3*MAX_VARS_PER_NODE];
     TacsScalar Ud[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, NULL, NULL, X, Xd, J,
-                                              Ut, Ud, Ux);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, NULL, NULL, X, Xd, J,
+                                               Ut, Ud, Ux);
 
     // Multiply the weight by the quadrature weight
-    detJ *= weight;
+    detXd *= weight;
 
     // Evaluate the weak form of the model
+    TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
+    TacsScalar Jac[36*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
+    model->evalWeakMatrix(matType, elemIndex, time, n, pt,
+                          X, Xd, Ut, Ux, DUt, DUx, Jac);
+
+    // Extract the non-zero pattern
     int Jac_nnz;
     const int *Jac_pairs;
-    TacsScalar Jac[36*MAX_VARS_PER_NODE*MAX_VARS_PER_NODE];
-    model->evalWeakMatrix(matType, elemIndex, time, n, pt, X, Xd, Ut, Ux,
-                          &Jac_nnz, &Jac_pairs, Jac);
+    model->getWeakMatrixNonzeros(matType, elemIndex,
+                                 n, &Jac_nnz, &Jac_pairs);
 
     // Add the weak form of the residual at this point
     double alpha = 1.0, beta = 1.0, gamma = 1.0;
-    basis->addWeakFormJacobian(n, pt, detJ, J, vars_per_node,
+    basis->addWeakFormJacobian(n, pt, detXd, J, vars_per_node,
                                NULL, NULL, alpha, beta, gamma,
                                Jac_nnz, Jac_pairs, Jac, NULL, mat);
   }
@@ -355,9 +364,9 @@ void TACSElement3D::addMatDVSensInnerProduct( ElementMatrixType matType,
     TacsScalar Psid[3*MAX_VARS_PER_NODE], Psix[3*MAX_VARS_PER_NODE];
     TacsScalar Phit[3*MAX_VARS_PER_NODE];
     TacsScalar Phid[3*MAX_VARS_PER_NODE], Phix[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, NULL, NULL, X, Xd, J,
-                                              Ut, Ud, Ux);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, NULL, NULL, X, Xd, J,
+                                               Ut, Ud, Ux);
     basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                             psi, NULL, NULL, X, Xd, J,
                             Psit, Psid, Psix);
@@ -366,7 +375,7 @@ void TACSElement3D::addMatDVSensInnerProduct( ElementMatrixType matType,
                             Phit, Phid, Phix);
 
     // Multiply by the quadrature weight
-    TacsScalar s = scale*weight*detJ;
+    TacsScalar s = scale*weight*detXd;
 
     model->addWeakMatDVSens(matType, elemIndex, time, s, n, pt, X, Xd, Ut, Ux,
                             Psit, Psix, Phit, Phix, dvLen, dfdx);
@@ -408,9 +417,9 @@ void TACSElement3D::getMatSVSensInnerProduct( ElementMatrixType matType,
     TacsScalar Psid[3*MAX_VARS_PER_NODE], Psix[3*MAX_VARS_PER_NODE];
     TacsScalar Phit[3*MAX_VARS_PER_NODE];
     TacsScalar Phid[3*MAX_VARS_PER_NODE], Phix[3*MAX_VARS_PER_NODE];
-    TacsScalar detJ = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
-                                              vars, NULL, NULL, X, Xd, J,
-                                              Ut, Ud, Ux);
+    TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                               vars, NULL, NULL, X, Xd, J,
+                                               Ut, Ud, Ux);
     basis->getFieldGradient(n, pt, Xpts, vars_per_node,
                             psi, NULL, NULL, X, Xd, J,
                             Psit, Psid, Psix);
@@ -419,7 +428,7 @@ void TACSElement3D::getMatSVSensInnerProduct( ElementMatrixType matType,
                             Phit, Phid, Phix);
 
     // Multiply by the quadrature weight
-    TacsScalar scale = weight*detJ;
+    TacsScalar scale = weight*detXd;
 
     TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[3*MAX_VARS_PER_NODE];
     model->evalWeakMatSVSens(matType, elemIndex, time, scale, n, pt, X, Xd, Ut, Ux,

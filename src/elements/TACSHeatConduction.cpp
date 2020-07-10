@@ -106,51 +106,63 @@ void TACSHeatConduction2D::evalWeakIntegrand( int elemIndex,
   DUx[1] = flux[1];
 }
 
-void TACSHeatConduction2D::evalWeakJacobian( int elemIndex,
-                                             const double time,
-                                             int n,
-                                             const double pt[],
-                                             const TacsScalar X[],
-                                             const TacsScalar Xd[],
-                                             const TacsScalar Ut[],
-                                             const TacsScalar Ux[],
-                                             TacsScalar DUt[],
-                                             TacsScalar DUx[],
-                                             int *Jac_nnz,
-                                             const int *Jac_pairs[],
-                                             TacsScalar Jac[] ){
-  // Evaluate the density and specific heat
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+void TACSHeatConduction2D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                  int elemIndex,
+                                                  int n,
+                                                  int *Jac_nnz,
+                                                  const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 5;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
 
-  DUt[0] = 0.0;
-  DUt[1] = c*rho*Ut[1];
-  DUt[2] = 0.0;
+void TACSHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
+                                           int elemIndex,
+                                           const double time,
+                                           int n,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           const TacsScalar Xd[],
+                                           const TacsScalar Ut[],
+                                           const TacsScalar Ux[],
+                                           TacsScalar DUt[],
+                                           TacsScalar DUx[],
+                                           TacsScalar Jac[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    // Evaluate the density and specific heat
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
-  // Compute the thermal flux from the thermal gradient
-  TacsScalar grad[2], flux[2];
-  grad[0] = Ux[0];
-  grad[1] = Ux[1];
+    DUt[0] = 0.0;
+    DUt[1] = c*rho*Ut[1];
+    DUt[2] = 0.0;
 
-  stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
-  DUx[0] = flux[0];
-  DUx[1] = flux[1];
+    // Compute the thermal flux from the thermal gradient
+    TacsScalar grad[2], flux[2];
+    grad[0] = Ux[0];
+    grad[1] = Ux[1];
 
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 5;
-  *Jac_pairs = linear_Jac_pairs;
+    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+    DUx[0] = flux[0];
+    DUx[1] = flux[1];
 
-  // Set the time-dependent terms
-  Jac[0] = c*rho;
+    // Set the time-dependent terms
+    Jac[0] = c*rho;
 
-  // Compute the unit strain
-  TacsScalar Kc[3];
-  stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
+    // Compute the unit strain
+    TacsScalar Kc[3];
+    stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
 
-  Jac[1] = Kc[0];
-  Jac[2] = Kc[1];
-  Jac[3] = Kc[1];
-  Jac[4] = Kc[2];
+    Jac[1] = Kc[0];
+    Jac[2] = Kc[1];
+    Jac[3] = Kc[1];
+    Jac[4] = Kc[2];
+  }
 }
 
 /*
@@ -453,62 +465,74 @@ void TACSHeatConduction3D::evalWeakIntegrand( int elemIndex,
   DUx[2] = flux[2];
 }
 
-void TACSHeatConduction3D::evalWeakJacobian( int elemIndex,
-                                             const double time,
-                                             int n,
-                                             const double pt[],
-                                             const TacsScalar X[],
-                                             const TacsScalar Xd[],
-                                             const TacsScalar Ut[],
-                                             const TacsScalar Ux[],
-                                             TacsScalar DUt[],
-                                             TacsScalar DUx[],
-                                             int *Jac_nnz,
-                                             const int *Jac_pairs[],
-                                             TacsScalar Jac[] ){
-  // Evaluate the density and specific heat
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+void TACSHeatConduction3D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                  int elemIndex,
+                                                  int n,
+                                                  int *Jac_nnz,
+                                                  const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 10;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
 
-  DUt[0] = 0.0;
-  DUt[1] = c*rho*Ut[1];
-  DUt[2] = 0.0;
+void TACSHeatConduction3D::evalWeakMatrix( ElementMatrixType matType,
+                                           int elemIndex,
+                                           const double time,
+                                           int n,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           const TacsScalar Xd[],
+                                           const TacsScalar Ut[],
+                                           const TacsScalar Ux[],
+                                           TacsScalar DUt[],
+                                           TacsScalar DUx[],
+                                           TacsScalar Jac[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    // Evaluate the density and specific heat
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
-  // Compute the thermal flux from the thermal gradient
-  TacsScalar grad[3], flux[3];
-  grad[0] = Ux[0];
-  grad[1] = Ux[1];
-  grad[2] = Ux[2];
+    DUt[0] = 0.0;
+    DUt[1] = c*rho*Ut[1];
+    DUt[2] = 0.0;
 
-  // Add the flux components to the heat transfer portion
-  // of the governing equations
-  stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
-  DUx[0] = flux[0];
-  DUx[1] = flux[1];
-  DUx[2] = flux[2];
+    // Compute the thermal flux from the thermal gradient
+    TacsScalar grad[3], flux[3];
+    grad[0] = Ux[0];
+    grad[1] = Ux[1];
+    grad[2] = Ux[2];
 
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 10;
-  *Jac_pairs = linear_Jac_pairs;
+    // Add the flux components to the heat transfer portion
+    // of the governing equations
+    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+    DUx[0] = flux[0];
+    DUx[1] = flux[1];
+    DUx[2] = flux[2];
 
-  // Set the time-dependent terms
-  Jac[0] = c*rho;
+    // Set the time-dependent terms
+    Jac[0] = c*rho;
 
-  // Compute the unit strain
-  TacsScalar Kc[6];
-  stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
+    // Compute the unit strain
+    TacsScalar Kc[6];
+    stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
 
-  Jac[1] = Kc[0];
-  Jac[2] = Kc[1];
-  Jac[3] = Kc[2];
+    Jac[1] = Kc[0];
+    Jac[2] = Kc[1];
+    Jac[3] = Kc[2];
 
-  Jac[4] = Kc[1];
-  Jac[5] = Kc[3];
-  Jac[6] = Kc[4];
+    Jac[4] = Kc[1];
+    Jac[5] = Kc[3];
+    Jac[6] = Kc[4];
 
-  Jac[7] = Kc[2];
-  Jac[8] = Kc[4];
-  Jac[9] = Kc[5];
+    Jac[7] = Kc[2];
+    Jac[8] = Kc[4];
+    Jac[9] = Kc[5];
+  }
 }
 
 /*

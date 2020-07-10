@@ -246,7 +246,7 @@ void TACSCubicQuadBernsteinBasis::computeBasisGradient( const double pt[],
   double dna[4], dnb[4];
   TacsBernsteinShapeFuncDerivative(4, pt[0], na, dna);
   TacsBernsteinShapeFuncDerivative(4, pt[1], nb, dnb);
-  
+
   N[0] = na[0]*nb[0];
   N[1] = na[1]*nb[0];
   N[2] = na[2]*nb[0];

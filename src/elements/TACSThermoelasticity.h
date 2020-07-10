@@ -65,17 +65,6 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-    Evaluate the derivatives of the weak form coefficients
-  */
-  void evalWeakJacobian( int elemIndex, const double time,
-                         int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Xd[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         TacsScalar DUt[], TacsScalar DUx[],
-                         int *Jac_nnz, const int *_Jac_pairs[],
-                         TacsScalar Jac[] );
-
-  /**
      Add the derivative of the product of the adjoint and residual to
      the design vector
   */
@@ -98,6 +87,21 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
                                   TacsScalar *product,
                                   TacsScalar dfdX[], TacsScalar dfdXd[],
                                   TacsScalar dfdUx[], TacsScalar dfdPsix[] );
+
+  /**
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
+    Evaluate weak form coefficients for the specific type of matrix
+  */
+  void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
+                       const double time, int n, const double pt[],
+                       const TacsScalar X[], const TacsScalar Xd[],
+                       const TacsScalar Ut[], const TacsScalar Ux[],
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar Jac[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point
@@ -192,17 +196,6 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-    Evaluate the derivatives of the weak form coefficients
-  */
-  void evalWeakJacobian( int elemIndex, const double time,
-                         int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Xd[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         TacsScalar DUt[], TacsScalar DUx[],
-                         int *Jac_nnz, const int *_Jac_pairs[],
-                         TacsScalar Jac[] );
-
-  /**
      Add the derivative of the product of the adjoint and residual to
      the design vector
   */
@@ -225,6 +218,21 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
                                   TacsScalar *product,
                                   TacsScalar dfdX[], TacsScalar dfdXd[],
                                   TacsScalar dfdUx[], TacsScalar dfdPsix[] );
+
+  /**
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
+    Evaluate weak form coefficients for the specific type of matrix
+  */
+  void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
+                       const double time, int n, const double pt[],
+                       const TacsScalar X[], const TacsScalar Xd[],
+                       const TacsScalar Ut[], const TacsScalar Ux[],
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar Jac[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point

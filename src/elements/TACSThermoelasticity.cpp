@@ -162,157 +162,169 @@ void TACSLinearThermoelasticity2D::evalWeakIntegrand( int elemIndex,
   DUx[5] = flux[1];
 }
 
-void TACSLinearThermoelasticity2D::evalWeakJacobian( int elemIndex,
-                                                     const double time,
-                                                     int n,
-                                                     const double pt[],
-                                                     const TacsScalar X[],
-                                                     const TacsScalar Xd[],
-                                                     const TacsScalar Ut[],
-                                                     const TacsScalar Ux[],
-                                                     TacsScalar DUt[],
-                                                     TacsScalar DUx[],
-                                                     int *Jac_nnz,
-                                                     const int *Jac_pairs[],
-                                                     TacsScalar Jac[] ){
-  // Evaluate the density and specific heat
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
-
-  DUt[0] = 0.0;
-  DUt[1] = 0.0;
-
-  DUt[3] = 0.0;
-  DUt[4] = 0.0;
-
-  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
-    DUt[2] = 0.0;
-    DUt[5] = 0.0;
+void TACSLinearThermoelasticity2D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                          int elemIndex,
+                                                          int n,
+                                                          int *Jac_nnz,
+                                                          const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 27;
+    *Jac_pairs = linear_Jac_pairs;
   }
   else {
-    DUt[2] = rho*Ut[2];
-    DUt[5] = rho*Ut[5];
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
   }
+}
 
-  DUt[6] = 0.0;
-  DUt[8] = 0.0;
+void TACSLinearThermoelasticity2D::evalWeakMatrix( ElementMatrixType matType,
+                                                   int elemIndex,
+                                                   const double time,
+                                                   int n,
+                                                   const double pt[],
+                                                   const TacsScalar X[],
+                                                   const TacsScalar Xd[],
+                                                   const TacsScalar Ut[],
+                                                   const TacsScalar Ux[],
+                                                   TacsScalar DUt[],
+                                                   TacsScalar DUx[],
+                                                   TacsScalar Jac[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    // Evaluate the density and specific heat
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
-  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
-    DUt[7] = 0.0;
+    DUt[0] = 0.0;
+    DUt[1] = 0.0;
+
+    DUt[3] = 0.0;
+    DUt[4] = 0.0;
+
+    if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+      DUt[2] = 0.0;
+      DUt[5] = 0.0;
+    }
+    else {
+      DUt[2] = rho*Ut[2];
+      DUt[5] = rho*Ut[5];
+    }
+
+    DUt[6] = 0.0;
+    DUt[8] = 0.0;
+
+    if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+      DUt[7] = 0.0;
+    }
+    else {
+      DUt[7] = c*rho*Ut[7];
+    }
+
+    // Compute the thermal strain components
+    TacsScalar theta = Ut[6]; // The temperature value
+    TacsScalar et[3];
+    stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+
+    // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
+    TacsScalar e[3];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0] - et[0];
+      e[1] = Ux[3] - et[1];
+      e[2] = Ux[1] + Ux[2] - et[2];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]) - et[0];
+      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]) - et[1];
+      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
+    }
+
+    // Evaluate the components of the stress
+    TacsScalar s[3];
+    stiff->evalStress(elemIndex, pt, X, e, s);
+    DUx[0] = s[0];
+    DUx[1] = s[2];
+
+    DUx[2] = s[2];
+    DUx[3] = s[1];
+
+    // Compute the thermal flux from the thermal gradient
+    TacsScalar grad[2], flux[2];
+    grad[0] = Ux[4];
+    grad[1] = Ux[5];
+
+    // Add the flux components to the heat transfer portion
+    // of the governing equations
+    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+    DUx[4] = flux[0];
+    DUx[5] = flux[1];
+
+    // Set the time-dependent terms
+    if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+      Jac[0] = 0.0;
+      Jac[1] = 0.0;
+    }
+    else {
+      Jac[0] = rho;
+      Jac[1] = rho;
+    }
+
+    if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+      Jac[2] = 0.0;
+    }
+    else {
+      Jac[2] = c*rho;
+    }
+
+    // Compute the unit strain
+    TacsScalar C[6], Kc[3];
+    stiff->evalThermalStrain(elemIndex, pt, X, 1.0, et);
+    stiff->evalTangentStiffness(elemIndex, pt, X, C);
+    stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
+
+    // Add the terms for linear thermoelasticity
+    if (strain_type == TACS_LINEAR_STRAIN){
+      // s[0] = C[0]*(u,x - theta*et[0]) + C[1]*(v,y - theta*et[1])
+      //      + C[2]*(u,y + v,x - theta*et[2])
+      // s[1] = C[1]*(u,x) + C[3]*(v,y) + C[4]*(u,y + v,x)
+      // s[2] = C[2]*(u,x - theta*et[0]) + C[4]*(v,y - theta*et[1])
+      //      + C[5]*(u,y + v,x - theta*et[2])
+
+      // i == 3 (s[0])
+      Jac[3] = C[0]; // j == 3
+      Jac[4] = C[2]; // j == 4
+      Jac[5] = C[2]; // j == 8
+      Jac[6] = C[1]; // j == 9
+      Jac[7] = -(C[0]*et[0] + C[1]*et[1] + C[2]*et[2]); // j == 10
+
+      // i == 4 (s[2])
+      Jac[8] = C[2]; // j == 3
+      Jac[9] = C[5]; // j == 4
+      Jac[10] = C[5]; // j == 8
+      Jac[11] = C[4]; // j == 9
+      Jac[12] = -(C[2]*et[0] + C[4]*et[1] + C[5]*et[2]); // j == 10
+
+      // i == 8 (s[2])
+      Jac[13] = C[2]; // j == 3
+      Jac[14] = C[5]; // j == 4
+      Jac[15] = C[5]; // j == 8
+      Jac[16] = C[4]; // j == 9
+      Jac[17] = -(C[2]*et[0] + C[4]*et[1] + C[5]*et[2]); // j == 10
+
+      // i == 9 (s[1])
+      Jac[18] = C[1]; // j == 3
+      Jac[19] = C[4]; // j == 4
+      Jac[20] = C[4]; // j == 8
+      Jac[21] = C[3]; // j == 9
+      Jac[22] = -(C[1]*et[0] + C[3]*et[1] + C[4]*et[2]); // j == 10
+    }
+
+    // i == 13
+    Jac[23] = Kc[0]; // j == 13
+    Jac[24] = Kc[1]; // j == 14
+
+    // i == 14
+    Jac[25] = Kc[1]; // j == 13
+    Jac[26] = Kc[2]; // j == 14
   }
-  else {
-    DUt[7] = c*rho*Ut[7];
-  }
-
-  // Compute the thermal strain components
-  TacsScalar theta = Ut[6]; // The temperature value
-  TacsScalar et[3];
-  stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
-
-  // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
-  TacsScalar e[3];
-  if (strain_type == TACS_LINEAR_STRAIN){
-    e[0] = Ux[0] - et[0];
-    e[1] = Ux[3] - et[1];
-    e[2] = Ux[1] + Ux[2] - et[2];
-  }
-  else {
-    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]) - et[0];
-    e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]) - et[1];
-    e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
-  }
-
-  // Evaluate the components of the stress
-  TacsScalar s[3];
-  stiff->evalStress(elemIndex, pt, X, e, s);
-  DUx[0] = s[0];
-  DUx[1] = s[2];
-
-  DUx[2] = s[2];
-  DUx[3] = s[1];
-
-  // Compute the thermal flux from the thermal gradient
-  TacsScalar grad[2], flux[2];
-  grad[0] = Ux[4];
-  grad[1] = Ux[5];
-
-  // Add the flux components to the heat transfer portion
-  // of the governing equations
-  stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
-  DUx[4] = flux[0];
-  DUx[5] = flux[1];
-
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 27;
-  *Jac_pairs = linear_Jac_pairs;
-
-  // Set the time-dependent terms
-  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
-    Jac[0] = 0.0;
-    Jac[1] = 0.0;
-  }
-  else {
-    Jac[0] = rho;
-    Jac[1] = rho;
-  }
-
-  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
-    Jac[2] = 0.0;
-  }
-  else {
-    Jac[2] = c*rho;
-  }
-
-  // Compute the unit strain
-  TacsScalar C[6], Kc[3];
-  stiff->evalThermalStrain(elemIndex, pt, X, 1.0, et);
-  stiff->evalTangentStiffness(elemIndex, pt, X, C);
-  stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
-
-  // Add the terms for linear thermoelasticity
-  if (strain_type == TACS_LINEAR_STRAIN){
-    // s[0] = C[0]*(u,x - theta*et[0]) + C[1]*(v,y - theta*et[1])
-    //      + C[2]*(u,y + v,x - theta*et[2])
-    // s[1] = C[1]*(u,x) + C[3]*(v,y) + C[4]*(u,y + v,x)
-    // s[2] = C[2]*(u,x - theta*et[0]) + C[4]*(v,y - theta*et[1])
-    //      + C[5]*(u,y + v,x - theta*et[2])
-
-    // i == 3 (s[0])
-    Jac[3] = C[0]; // j == 3
-    Jac[4] = C[2]; // j == 4
-    Jac[5] = C[2]; // j == 8
-    Jac[6] = C[1]; // j == 9
-    Jac[7] = -(C[0]*et[0] + C[1]*et[1] + C[2]*et[2]); // j == 10
-
-    // i == 4 (s[2])
-    Jac[8] = C[2]; // j == 3
-    Jac[9] = C[5]; // j == 4
-    Jac[10] = C[5]; // j == 8
-    Jac[11] = C[4]; // j == 9
-    Jac[12] = -(C[2]*et[0] + C[4]*et[1] + C[5]*et[2]); // j == 10
-
-    // i == 8 (s[2])
-    Jac[13] = C[2]; // j == 3
-    Jac[14] = C[5]; // j == 4
-    Jac[15] = C[5]; // j == 8
-    Jac[16] = C[4]; // j == 9
-    Jac[17] = -(C[2]*et[0] + C[4]*et[1] + C[5]*et[2]); // j == 10
-
-    // i == 9 (s[1])
-    Jac[18] = C[1]; // j == 3
-    Jac[19] = C[4]; // j == 4
-    Jac[20] = C[4]; // j == 8
-    Jac[21] = C[3]; // j == 9
-    Jac[22] = -(C[1]*et[0] + C[3]*et[1] + C[4]*et[2]); // j == 10
-  }
-
-  // i == 13
-  Jac[23] = Kc[0]; // j == 13
-  Jac[24] = Kc[1]; // j == 14
-
-  // i == 14
-  Jac[25] = Kc[1]; // j == 13
-  Jac[26] = Kc[2]; // j == 14
 }
 
 /*
@@ -407,6 +419,10 @@ void TACSLinearThermoelasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
   dfdPsix[0] = dfdPsix[1] = dfdPsix[2] = 0.0;
   dfdPsix[3] = dfdPsix[4] = dfdPsix[5] = 0.0;
 
+  // Compute the material density
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c =  stiff->evalSpecificHeat(elemIndex, pt, X);
+
   // Compute the thermal strain components
   TacsScalar theta = Ut[6]; // The temperature value
   TacsScalar et[3];
@@ -434,7 +450,8 @@ void TACSLinearThermoelasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
   stiff->evalStress(elemIndex, pt, X, e, t1);
   stiff->evalStress(elemIndex, pt, X, phi, t2);
 
-  *product = t2[0]*e[0] + t2[1]*e[1] + t2[2]*e[2];
+  *product = (rho*(Psi[0]*Ut[2] + Psi[1]*Ut[5] + c*Psi[2]*Ut[7]) +
+              t2[0]*e[0] + t2[1]*e[1] + t2[2]*e[2]);
 
   if (strain_type == TACS_LINEAR_STRAIN){
     dfdPsix[0] = t1[0];
@@ -1061,266 +1078,278 @@ void TACSLinearThermoelasticity3D::evalWeakIntegrand( int elemIndex,
   DUx[11] = flux[2];
 }
 
-void TACSLinearThermoelasticity3D::evalWeakJacobian( int elemIndex,
-                                                     const double time,
-                                                     int n,
-                                                     const double pt[],
-                                                     const TacsScalar X[],
-                                                     const TacsScalar Xd[],
-                                                     const TacsScalar Ut[],
-                                                     const TacsScalar Ux[],
-                                                     TacsScalar DUt[],
-                                                     TacsScalar DUx[],
-                                                     int *Jac_nnz,
-                                                     const int *Jac_pairs[],
-                                                     TacsScalar Jac[] ){
-  // Evaluate the density and specific heat
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
-
-  DUt[0] = 0.0;
-  DUt[1] = 0.0;
-
-  DUt[3] = 0.0;
-  DUt[4] = 0.0;
-
-  DUt[6] = 0.0;
-  DUt[7] = 0.0;
-
-  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
-    DUt[2] = 0.0;
-    DUt[5] = 0.0;
-    DUt[8] = 0.0;
+void TACSLinearThermoelasticity3D::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                          int elemIndex,
+                                                          int n,
+                                                          int *Jac_nnz,
+                                                          const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 103;
+    *Jac_pairs = linear_Jac_pairs;
   }
   else {
-    DUt[2] = rho*Ut[2];
-    DUt[5] = rho*Ut[5];
-    DUt[8] = rho*Ut[8];
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
   }
+}
 
-  DUt[9] = 0.0;
-  DUt[11] = 0.0;
+void TACSLinearThermoelasticity3D::evalWeakMatrix( ElementMatrixType matType,
+                                                   int elemIndex,
+                                                   const double time,
+                                                   int n,
+                                                   const double pt[],
+                                                   const TacsScalar X[],
+                                                   const TacsScalar Xd[],
+                                                   const TacsScalar Ut[],
+                                                   const TacsScalar Ux[],
+                                                   TacsScalar DUt[],
+                                                   TacsScalar DUx[],
+                                                   TacsScalar Jac[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    // Evaluate the density and specific heat
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
-  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
-    DUt[10] = 0.0;
+    DUt[0] = 0.0;
+    DUt[1] = 0.0;
+
+    DUt[3] = 0.0;
+    DUt[4] = 0.0;
+
+    DUt[6] = 0.0;
+    DUt[7] = 0.0;
+
+    if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+      DUt[2] = 0.0;
+      DUt[5] = 0.0;
+      DUt[8] = 0.0;
+    }
+    else {
+      DUt[2] = rho*Ut[2];
+      DUt[5] = rho*Ut[5];
+      DUt[8] = rho*Ut[8];
+    }
+
+    DUt[9] = 0.0;
+    DUt[11] = 0.0;
+
+    if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+      DUt[10] = 0.0;
+    }
+    else {
+      DUt[10] = c*rho*Ut[10];
+    }
+
+    // Compute the thermal strain components
+    TacsScalar theta = Ut[9]; // The temperature value
+    TacsScalar et[6];
+    stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+
+    // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
+    TacsScalar e[6];
+    if (strain_type == TACS_LINEAR_STRAIN){
+      e[0] = Ux[0] - et[0];
+      e[1] = Ux[4] - et[1];
+      e[2] = Ux[8] - et[2];
+
+      e[3] = Ux[5] + Ux[7] - et[3];
+      e[4] = Ux[2] + Ux[6] - et[4];
+      e[5] = Ux[1] + Ux[3] - et[5];
+    }
+    else {
+      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
+      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
+      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
+
+      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
+      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
+      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
+    }
+
+    // Evaluate the stress
+    TacsScalar s[6];
+    stiff->evalStress(elemIndex, pt, X, e, s);
+
+    DUx[0] = s[0];
+    DUx[1] = s[5];
+    DUx[2] = s[4];
+
+    DUx[3] = s[5];
+    DUx[4] = s[1];
+    DUx[5] = s[3];
+
+    DUx[6] = s[4];
+    DUx[7] = s[3];
+    DUx[8] = s[2];
+
+    // Compute the thermal flux from the thermal gradient
+    TacsScalar grad[3], flux[3];
+    grad[0] = Ux[9];
+    grad[1] = Ux[10];
+    grad[2] = Ux[11];
+
+    // Add the flux components to the heat transfer portion
+    // of the governing equations
+    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+    DUx[9] = flux[0];
+    DUx[10] = flux[1];
+    DUx[11] = flux[2];
+
+    if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
+      Jac[0] = 0.0;
+      Jac[1] = 0.0;
+      Jac[2] = 0.0;
+    }
+    else {
+      Jac[0] = rho;
+      Jac[1] = rho;
+      Jac[2] = rho;
+    }
+
+    if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
+      Jac[3] = 0.0;
+    }
+    else {
+      Jac[3] = c*rho;
+    }
+
+    // Compute the unit strain
+    TacsScalar C[21], Kc[6];
+    stiff->evalThermalStrain(elemIndex, pt, X, 1.0, et);
+    stiff->evalTangentStiffness(elemIndex, pt, X, C);
+    stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
+
+    // Compute the thermal stress
+    s[0] = C[0]*et[0] + C[1]*et[1]  + C[2]*et[2]  + C[3]*et[3]  + C[4]*et[4]  + C[5]*et[5];
+    s[1] = C[1]*et[0] + C[6]*et[1]  + C[7]*et[2]  + C[8]*et[3]  + C[9]*et[4]  + C[10]*et[5];
+    s[2] = C[2]*et[0] + C[7]*et[1]  + C[11]*et[2] + C[12]*et[3] + C[13]*et[4] + C[14]*et[5];
+    s[3] = C[3]*et[0] + C[8]*et[1]  + C[12]*et[2] + C[15]*et[3] + C[16]*et[4] + C[17]*et[5];
+    s[4] = C[4]*et[0] + C[9]*et[1]  + C[13]*et[2] + C[16]*et[3] + C[18]*et[4] + C[19]*et[5];
+    s[5] = C[5]*et[0] + C[10]*et[1] + C[14]*et[2] + C[17]*et[3] + C[19]*et[4] + C[20]*et[5];
+
+    // Add the terms for linear thermoelasticity
+    if (strain_type == TACS_LINEAR_STRAIN){
+      // s[0]
+      Jac[4] = C[0];
+      Jac[5] = C[5];
+      Jac[6] = C[4];
+      Jac[7] = C[5];
+      Jac[8] = C[1];
+      Jac[9] = C[3];
+      Jac[10] = C[4];
+      Jac[11] = C[3];
+      Jac[12] = C[2];
+      Jac[13] = -s[0];
+
+      // s[5]
+      Jac[14] = C[5];
+      Jac[15] = C[20];
+      Jac[16] = C[19];
+      Jac[17] = C[20];
+      Jac[18] = C[10];
+      Jac[19] = C[17];
+      Jac[20] = C[19];
+      Jac[21] = C[17];
+      Jac[22] = C[14];
+      Jac[23] = -s[5];
+
+      // s[4]
+      Jac[24] = C[4];
+      Jac[25] = C[19];
+      Jac[26] = C[18];
+      Jac[27] = C[19];
+      Jac[28] = C[9];
+      Jac[29] = C[16];
+      Jac[30] = C[18];
+      Jac[31] = C[16];
+      Jac[32] = C[13];
+      Jac[33] = -s[4];
+
+      // s[5]
+      Jac[34] = C[5];
+      Jac[35] = C[20];
+      Jac[36] = C[19];
+      Jac[37] = C[20];
+      Jac[38] = C[10];
+      Jac[39] = C[17];
+      Jac[40] = C[19];
+      Jac[41] = C[17];
+      Jac[42] = C[14];
+      Jac[43] = -s[5];
+
+      // s[1]
+      Jac[44] = C[1];
+      Jac[45] = C[10];
+      Jac[46] = C[9];
+      Jac[47] = C[10];
+      Jac[48] = C[6];
+      Jac[49] = C[8];
+      Jac[50] = C[9];
+      Jac[51] = C[8];
+      Jac[52] = C[7];
+      Jac[53] = -s[1];
+
+      // s[3]
+      Jac[54] = C[3];
+      Jac[55] = C[17];
+      Jac[56] = C[16];
+      Jac[57] = C[17];
+      Jac[58] = C[8];
+      Jac[59] = C[15];
+      Jac[60] = C[16];
+      Jac[61] = C[15];
+      Jac[62] = C[12];
+      Jac[63] = -s[3];
+
+      // s[4]
+      Jac[64] = C[4];
+      Jac[65] = C[19];
+      Jac[66] = C[18];
+      Jac[67] = C[19];
+      Jac[68] = C[9];
+      Jac[69] = C[16];
+      Jac[70] = C[18];
+      Jac[71] = C[16];
+      Jac[72] = C[13];
+      Jac[73] = -s[4];
+
+      // s[3]
+      Jac[74] = C[3];
+      Jac[75] = C[17];
+      Jac[76] = C[16];
+      Jac[77] = C[17];
+      Jac[78] = C[8];
+      Jac[79] = C[15];
+      Jac[80] = C[16];
+      Jac[81] = C[15];
+      Jac[82] = C[12];
+      Jac[83] = -s[3];
+
+      // s[2]
+      Jac[84] = C[2];
+      Jac[85] = C[14];
+      Jac[86] = C[13];
+      Jac[87] = C[14];
+      Jac[88] = C[7];
+      Jac[89] = C[12];
+      Jac[90] = C[13];
+      Jac[91] = C[12];
+      Jac[92] = C[11];
+      Jac[93] = -s[2];
+    }
+
+    Jac[94] = Kc[0];
+    Jac[95] = Kc[1];
+    Jac[96] = Kc[2];
+
+    Jac[97] = Kc[1];
+    Jac[98] = Kc[3];
+    Jac[99] = Kc[4];
+
+    Jac[100] = Kc[2];
+    Jac[101] = Kc[4];
+    Jac[102] = Kc[5];
   }
-  else {
-    DUt[10] = c*rho*Ut[10];
-  }
-
-  // Compute the thermal strain components
-  TacsScalar theta = Ut[9]; // The temperature value
-  TacsScalar et[6];
-  stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
-
-  // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
-  TacsScalar e[6];
-  if (strain_type == TACS_LINEAR_STRAIN){
-    e[0] = Ux[0] - et[0];
-    e[1] = Ux[4] - et[1];
-    e[2] = Ux[8] - et[2];
-
-    e[3] = Ux[5] + Ux[7] - et[3];
-    e[4] = Ux[2] + Ux[6] - et[4];
-    e[5] = Ux[1] + Ux[3] - et[5];
-  }
-  else {
-    e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
-    e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
-    e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
-
-    e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
-    e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
-    e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
-  }
-
-  // Evaluate the stress
-  TacsScalar s[6];
-  stiff->evalStress(elemIndex, pt, X, e, s);
-
-  DUx[0] = s[0];
-  DUx[1] = s[5];
-  DUx[2] = s[4];
-
-  DUx[3] = s[5];
-  DUx[4] = s[1];
-  DUx[5] = s[3];
-
-  DUx[6] = s[4];
-  DUx[7] = s[3];
-  DUx[8] = s[2];
-
-  // Compute the thermal flux from the thermal gradient
-  TacsScalar grad[3], flux[3];
-  grad[0] = Ux[9];
-  grad[1] = Ux[10];
-  grad[2] = Ux[11];
-
-  // Add the flux components to the heat transfer portion
-  // of the governing equations
-  stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
-  DUx[9] = flux[0];
-  DUx[10] = flux[1];
-  DUx[11] = flux[2];
-
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 103;
-  *Jac_pairs = linear_Jac_pairs;
-
-  if (steady_state_flag & TACS_STEADY_STATE_MECHANICAL){
-    Jac[0] = 0.0;
-    Jac[1] = 0.0;
-    Jac[2] = 0.0;
-  }
-  else {
-    Jac[0] = rho;
-    Jac[1] = rho;
-    Jac[2] = rho;
-  }
-
-  if (steady_state_flag & TACS_STEADY_STATE_THERMAL){
-    Jac[3] = 0.0;
-  }
-  else {
-    Jac[3] = c*rho;
-  }
-
-  // Compute the unit strain
-  TacsScalar C[21], Kc[6];
-  stiff->evalThermalStrain(elemIndex, pt, X, 1.0, et);
-  stiff->evalTangentStiffness(elemIndex, pt, X, C);
-  stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc);
-
-  // Compute the thermal stress
-  s[0] = C[0]*et[0] + C[1]*et[1]  + C[2]*et[2]  + C[3]*et[3]  + C[4]*et[4]  + C[5]*et[5];
-  s[1] = C[1]*et[0] + C[6]*et[1]  + C[7]*et[2]  + C[8]*et[3]  + C[9]*et[4]  + C[10]*et[5];
-  s[2] = C[2]*et[0] + C[7]*et[1]  + C[11]*et[2] + C[12]*et[3] + C[13]*et[4] + C[14]*et[5];
-  s[3] = C[3]*et[0] + C[8]*et[1]  + C[12]*et[2] + C[15]*et[3] + C[16]*et[4] + C[17]*et[5];
-  s[4] = C[4]*et[0] + C[9]*et[1]  + C[13]*et[2] + C[16]*et[3] + C[18]*et[4] + C[19]*et[5];
-  s[5] = C[5]*et[0] + C[10]*et[1] + C[14]*et[2] + C[17]*et[3] + C[19]*et[4] + C[20]*et[5];
-
-  // Add the terms for linear thermoelasticity
-  if (strain_type == TACS_LINEAR_STRAIN){
-    // s[0]
-    Jac[4] = C[0];
-    Jac[5] = C[5];
-    Jac[6] = C[4];
-    Jac[7] = C[5];
-    Jac[8] = C[1];
-    Jac[9] = C[3];
-    Jac[10] = C[4];
-    Jac[11] = C[3];
-    Jac[12] = C[2];
-    Jac[13] = -s[0];
-
-    // s[5]
-    Jac[14] = C[5];
-    Jac[15] = C[20];
-    Jac[16] = C[19];
-    Jac[17] = C[20];
-    Jac[18] = C[10];
-    Jac[19] = C[17];
-    Jac[20] = C[19];
-    Jac[21] = C[17];
-    Jac[22] = C[14];
-    Jac[23] = -s[5];
-
-    // s[4]
-    Jac[24] = C[4];
-    Jac[25] = C[19];
-    Jac[26] = C[18];
-    Jac[27] = C[19];
-    Jac[28] = C[9];
-    Jac[29] = C[16];
-    Jac[30] = C[18];
-    Jac[31] = C[16];
-    Jac[32] = C[13];
-    Jac[33] = -s[4];
-
-    // s[5]
-    Jac[34] = C[5];
-    Jac[35] = C[20];
-    Jac[36] = C[19];
-    Jac[37] = C[20];
-    Jac[38] = C[10];
-    Jac[39] = C[17];
-    Jac[40] = C[19];
-    Jac[41] = C[17];
-    Jac[42] = C[14];
-    Jac[43] = -s[5];
-
-    // s[1]
-    Jac[44] = C[1];
-    Jac[45] = C[10];
-    Jac[46] = C[9];
-    Jac[47] = C[10];
-    Jac[48] = C[6];
-    Jac[49] = C[8];
-    Jac[50] = C[9];
-    Jac[51] = C[8];
-    Jac[52] = C[7];
-    Jac[53] = -s[1];
-
-    // s[3]
-    Jac[54] = C[3];
-    Jac[55] = C[17];
-    Jac[56] = C[16];
-    Jac[57] = C[17];
-    Jac[58] = C[8];
-    Jac[59] = C[15];
-    Jac[60] = C[16];
-    Jac[61] = C[15];
-    Jac[62] = C[12];
-    Jac[63] = -s[3];
-
-    // s[4]
-    Jac[64] = C[4];
-    Jac[65] = C[19];
-    Jac[66] = C[18];
-    Jac[67] = C[19];
-    Jac[68] = C[9];
-    Jac[69] = C[16];
-    Jac[70] = C[18];
-    Jac[71] = C[16];
-    Jac[72] = C[13];
-    Jac[73] = -s[4];
-
-    // s[3]
-    Jac[74] = C[3];
-    Jac[75] = C[17];
-    Jac[76] = C[16];
-    Jac[77] = C[17];
-    Jac[78] = C[8];
-    Jac[79] = C[15];
-    Jac[80] = C[16];
-    Jac[81] = C[15];
-    Jac[82] = C[12];
-    Jac[83] = -s[3];
-
-    // s[2]
-    Jac[84] = C[2];
-    Jac[85] = C[14];
-    Jac[86] = C[13];
-    Jac[87] = C[14];
-    Jac[88] = C[7];
-    Jac[89] = C[12];
-    Jac[90] = C[13];
-    Jac[91] = C[12];
-    Jac[92] = C[11];
-    Jac[93] = -s[2];
-  }
-
-  Jac[94] = Kc[0];
-  Jac[95] = Kc[1];
-  Jac[96] = Kc[2];
-
-  Jac[97] = Kc[1];
-  Jac[98] = Kc[3];
-  Jac[99] = Kc[4];
-
-  Jac[100] = Kc[2];
-  Jac[101] = Kc[4];
-  Jac[102] = Kc[5];
 }
 
 /*

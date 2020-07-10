@@ -16,6 +16,8 @@
 #define TACS_ELEMENT_VERIFICATION_H
 
 #include "TACSElement.h"
+#include "TACSElementBasis.h"
+#include "TACSElementModel.h"
 
 /**
   Assign variables randomly to an array. This is useful for
@@ -247,6 +249,23 @@ int TacsTestElementMatSVSens( TACSElement *element,
   @param test_fail_rtol The test relative tolerance
 */
 int TacsTestElementBasis( TACSElementBasis *basis,
+                          double dh=1e-7,
+                          int test_print_level=2,
+                          double test_fail_atol=1e-5,
+                          double test_fail_rtol=1e-5 );
+
+/**
+  Test the element model functions
+
+  @param model The TACSElementModel instance to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementModel( TACSElementModel *model,
+                          int elemIndex,
+                          const double time,
                           double dh=1e-7,
                           int test_print_level=2,
                           double test_fail_atol=1e-5,

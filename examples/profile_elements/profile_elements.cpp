@@ -80,6 +80,13 @@ int main( int argc, char *argv[] ){
   const int MAX_VARS_PER_NODE = 8;
   const int MAX_VARS = MAX_NODES*MAX_VARS_PER_NODE;
 
+  // Set the// Test the element
+#ifdef TACS_USE_COMPLEX
+  double dh = 1e-30;
+#else
+  double dh = 1e-5;
+#endif
+
   // Set the simulation time
   int elemIndex = 0;
   double time = 0.0;
@@ -165,6 +172,7 @@ int main( int argc, char *argv[] ){
   }
 
   for ( int j = 0; j < NUM_3D_MODELS; j++ ){
+    TacsTestElementModel(model3d[j], elemIndex, time, dh);
     for ( int i = 0; i < NUM_3D_BASIS; i++ ){
       printf("Testing with model %s with basis functions %s\n",
              model3d[j]->getObjectName(), basis3d[i]->getObjectName());
@@ -176,6 +184,7 @@ int main( int argc, char *argv[] ){
   }
 
   for ( int j = 0; j < NUM_2D_MODELS; j++ ){
+    TacsTestElementModel(model2d[j], elemIndex, time, dh);
     for ( int i = 0; i < NUM_2D_BASIS; i++ ){
       printf("Testing with model %s with basis functions %s\n",
              model2d[j]->getObjectName(), basis2d[i]->getObjectName());

@@ -180,7 +180,7 @@ class TACSGaussSeidel : public TACSPc {
 */
 class TACSChebyshevSmoother : public TACSPc {
  public:
-  TACSChebyshevSmoother( TACSParallelMat *_mat, int _degree,
+  TACSChebyshevSmoother( TACSMat *_mat, int _degree,
                          double _lower_factor=1.0/30.0,
                          double _upper_factor=1.1, int _iters=1 );
   ~TACSChebyshevSmoother();
@@ -191,13 +191,13 @@ class TACSChebyshevSmoother : public TACSPc {
 
  private:
   // Estimate the spectral radius using Gershgorin method
-  double gershgorin();
+  double gershgorin( TACSParallelMat *pmat );
 
   // Estimate the spectral radius using Arnoldi
-  double arnoldi( int size );
+  double arnoldi( int size, TACSMat *pmat );
 
   // Parallel matrix pointer
-  TACSParallelMat *mat;
+  TACSMat *mat;
 
   // The factor to apply to the largest eigenvalue
   double lower_factor;

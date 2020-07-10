@@ -59,17 +59,6 @@ class TACSHeatConduction2D : public TACSElementModel {
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-    Evaluate the derivatives of the weak form coefficients
-  */
-  void evalWeakJacobian( int elemIndex, const double time,
-                         int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Xd[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         TacsScalar DUt[], TacsScalar DUx[],
-                         int *Jac_nnz, const int *_Jac_pairs[],
-                         TacsScalar Jac[] );
-
-  /**
      Add the derivative of the product of the adjoint and residual to
      the design vector
   */
@@ -92,6 +81,21 @@ class TACSHeatConduction2D : public TACSElementModel {
                                   TacsScalar *product,
                                   TacsScalar dfdX[], TacsScalar dfdXd[],
                                   TacsScalar dfdUx[], TacsScalar dfdPsix[] );
+
+  /**
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
+    Evaluate the derivatives of the weak form coefficients
+  */
+  void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
+                       const double time, int n, const double pt[],
+                       const TacsScalar X[], const TacsScalar Xd[],
+                       const TacsScalar Ut[], const TacsScalar Ux[],
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar Jac[] );
 
   /**
      Evaluate a point-wise quantity of interest at a quadrature point
@@ -152,22 +156,22 @@ class TACSHeatConduction3D : public TACSElementModel {
   int getDesignVarsPerNode();
 
   /**
-     Retrieve the global design variable numbers associated with this element
+    Retrieve the global design variable numbers associated with this element
   */
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
 
   /**
-     Set the element design variables from the design vector
+    Set the element design variables from the design vector
   */
   int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
 
   /**
-     Get the element design variables values
+    Get the element design variables values
   */
   int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
   /**
-     Get the lower and upper bounds for the design variable values
+    Get the lower and upper bounds for the design variable values
   */
   int getDesignVarRange( int elemIndex, int dvLen,
                          TacsScalar lb[], TacsScalar ub[] );
@@ -182,19 +186,8 @@ class TACSHeatConduction3D : public TACSElementModel {
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-    Evaluate the derivatives of the weak form coefficients
-  */
-  void evalWeakJacobian( int elemIndex, const double time,
-                         int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Xd[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         TacsScalar DUt[], TacsScalar DUx[],
-                         int *Jac_nnz, const int *_Jac_pairs[],
-                         TacsScalar Jac[] );
-
-  /**
-     Add the derivative of the product of the adjoint and residual to
-     the design vector
+    Add the derivative of the product of the adjoint and residual to
+    the design vector
   */
   void addWeakAdjProduct( int elemIndex, const double time, TacsScalar scale,
                           int n, const double pt[],
@@ -217,7 +210,22 @@ class TACSHeatConduction3D : public TACSElementModel {
                                   TacsScalar dfdUx[], TacsScalar dfdPsix[] );
 
   /**
-     Evaluate a point-wise quantity of interest at a quadrature point
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
+    Evaluate the derivatives of the weak form coefficients
+  */
+  void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
+                       const double time, int n, const double pt[],
+                       const TacsScalar X[], const TacsScalar Xd[],
+                       const TacsScalar Ut[], const TacsScalar Ux[],
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar Jac[] );
+
+  /**
+    Evaluate a point-wise quantity of interest at a quadrature point
   */
   int evalPointQuantity( int elemIndex, const int quantityType,
                          const double time, int n, const double pt[],
@@ -226,7 +234,7 @@ class TACSHeatConduction3D : public TACSElementModel {
                          TacsScalar *quantity );
 
   /**
-     Add the derivative of the quantity w.r.t. the design variables
+    Add the derivative of the quantity w.r.t. the design variables
   */
   void addPointQuantityDVSens( int elemIndex, const int quantityType,
                                const double time, TacsScalar scale,
@@ -237,8 +245,8 @@ class TACSHeatConduction3D : public TACSElementModel {
                                int dvLen, TacsScalar dfdx[] );
 
   /**
-     Evaluate the derivatives of the point-wise quantity of interest
-     with respect to X, Ut and Ux.
+    Evaluate the derivatives of the point-wise quantity of interest
+    with respect to X, Ut and Ux.
   */
   void evalPointQuantitySens( int elemIndex, const int quantityType,
                               const double time, int n, const double pt[],
@@ -249,7 +257,7 @@ class TACSHeatConduction3D : public TACSElementModel {
                               TacsScalar dfdUt[], TacsScalar dfdUx[] );
 
   /**
-     Get the output for a single node in the mesh
+    Get the output for a single node in the mesh
   */
   void getOutputData( int elemIndex, const double time,
                       ElementType etype, int write_flag,

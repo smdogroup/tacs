@@ -245,7 +245,7 @@ void TACSCubicHexaBernsteinBasis::computeBasis( const double pt[],
   TacsBernsteinShapeFunctions(4, pt[0], na);
   TacsBernsteinShapeFunctions(4, pt[1], nb);
   TacsBernsteinShapeFunctions(4, pt[2], nc);
-  
+
   for ( int k = 0; k < 4; k++ ){
     for ( int j = 0; j < 4; j++ ){
       for ( int i = 0; i < 4; i++ ){

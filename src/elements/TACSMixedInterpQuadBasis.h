@@ -60,7 +60,7 @@ class TACSLinearMITCQuadBasis : public TACSMixedInterpElementBasis {
 
   void getTyingFieldValue( int n, const double pt[],
                            const TacsScalar qtys[], TacsScalar Uty ){
-    
+
   }
 
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );

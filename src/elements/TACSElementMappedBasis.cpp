@@ -27,7 +27,7 @@ TacsScalar TACSElementMappedBasis::getFaceNormal( int face, int n,
   double tangents[2*3];
   getFaceQuadraturePoint(face, n, pt, tangents);
 
-  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  double N[256], Nxi[3*256];
   computeBasisGradient(pt, N, Nxi);
 
   return computeMappedFaceNormal(num_params, num_nodes, N, Nxi, Xpts,
@@ -149,7 +149,7 @@ TacsScalar TACSElementMappedBasis::getJacobianTransform( int n, const double pt[
                                                          TacsScalar J[] ){
   const int num_params = getNumParameters();
   const int num_nodes = getNumNodes();
-  double N[MAX_BASIS_SIZE], Nxi[3*MAX_BASIS_SIZE];
+  double N[256], Nxi[3*256];
   computeBasisGradient(pt, N, Nxi);
 
   return computeMappedJacobianTransform(num_params, num_nodes, Nxi, Xpts, Xd, J);

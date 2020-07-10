@@ -63,17 +63,6 @@ class TACSLinearElasticity2D : public TACSElementModel {
                           TacsScalar DUt[], TacsScalar DUx[] );
 
   /**
-    Evaluate the derivatives of the weak form coefficients
-  */
-  void evalWeakJacobian( int elemIndex, const double time,
-                         int n, const double pt[],
-                         const TacsScalar X[], const TacsScalar Xd[],
-                         const TacsScalar Ut[], const TacsScalar Ux[],
-                         TacsScalar DUt[], TacsScalar DUx[],
-                         int *Jac_nnz, const int *_Jac_pairs[],
-                         TacsScalar Jac[] );
-
-  /**
      Add the derivative of the product of the adjoint and residual to
      the design vector
   */
@@ -98,14 +87,19 @@ class TACSLinearElasticity2D : public TACSElementModel {
                                   TacsScalar dfdUx[], TacsScalar dfdPsix[] );
 
   /**
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
     Evaluate weak form coefficients for the specific type of matrix
   */
   void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
                        const double time, int n, const double pt[],
                        const TacsScalar X[], const TacsScalar Xd[],
                        const TacsScalar Ut[], const TacsScalar Ux[],
-                       int *Jac_nnz, const int *_Jac_pairs[],
-                       TacsScalar Jac[] );
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar Jac[] );
 
   /**
     Add the derivative of the weak form to the element sensitivity vector
@@ -256,14 +250,19 @@ class TACSLinearElasticity3D : public TACSElementModel {
                                   TacsScalar dfdUx[], TacsScalar dfdPsix[] );
 
   /**
+    Get the non-zero pattern for the matrix
+  */
+  void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
+                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+
+  /**
     Evaluate weak form coefficients for the specific type of matrix
   */
   void evalWeakMatrix( ElementMatrixType matType, int elemIndex,
                        const double time, int n, const double pt[],
                        const TacsScalar X[], const TacsScalar Xd[],
                        const TacsScalar Ut[], const TacsScalar Ux[],
-                       int *Jac_nnz, const int *_Jac_pairs[],
-                       TacsScalar Jac[] );
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar Jac[] );
 
   /**
     Add the derivative of the weak form to the element sensitivity vector
@@ -334,7 +333,7 @@ class TACSLinearElasticity3D : public TACSElementModel {
      Get the consitutive object
   */
   TACSSolidConstitutive* getConstitutive();
-  
+
  private:
   ElementStrainType strain_type;
   TACSSolidConstitutive *stiff;

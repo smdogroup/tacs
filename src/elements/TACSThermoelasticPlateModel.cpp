@@ -226,19 +226,33 @@ void TACSThermoelasticPlateModel::evalWeakIntegrand( int elemIndex,
   DUx[11] = flux[1];
 }
 
-void TACSThermoelasticPlateModel::evalWeakJacobian( int elemIndex,
-                                                    const double time,
-                                                    int n,
-                                                    const double pt[],
-                                                    const TacsScalar X[],
-                                                    const TacsScalar Xd[],
-                                                    const TacsScalar Ut[],
-                                                    const TacsScalar Ux[],
-                                                    TacsScalar DUt[],
-                                                    TacsScalar DUx[],
-                                                    int *Jac_nnz,
-                                                    const int *Jac_pairs[],
-                                                    TacsScalar Jac[] ){
+void TACSThermoelasticPlateModel::getWeakMatrixNonzeros( ElementMatrixType matType,
+                                                         int elemIndex,
+                                                         int n,
+                                                         int *Jac_nnz,
+                                                         const int *Jac_pairs[] ){
+  if (matType == TACS_JACOBIAN_MATRIX){
+    *Jac_nnz = 100;
+    *Jac_pairs = linear_Jac_pairs;
+  }
+  else {
+    *Jac_nnz = 0;
+    *Jac_pairs = NULL;
+  }
+}
+
+void TACSThermoelasticPlateModel::evalWeakMatrix( ElementMatrixType matType,
+                                                  int elemIndex,
+                                                  const double time,
+                                                  int n,
+                                                  const double pt[],
+                                                  const TacsScalar X[],
+                                                  const TacsScalar Xd[],
+                                                  const TacsScalar Ut[],
+                                                  const TacsScalar Ux[],
+                                                  TacsScalar DUt[],
+                                                  TacsScalar DUx[],
+                                                  TacsScalar Jac[] ){
   // Evaluate the density
   TacsScalar rho = con->evalDensity(elemIndex, pt, X);
   TacsScalar c = con->evalSpecificHeat(elemIndex, pt, X);
@@ -302,10 +316,6 @@ void TACSThermoelasticPlateModel::evalWeakJacobian( int elemIndex,
   // Add the components from the heat flux
   DUx[10] = Kc[0]*Ux[10] + Kc[1]*Ux[11];
   DUx[11] = Kc[1]*Ux[10] + Kc[2]*Ux[11];
-
-  // Set the non-zero terms in the Jacobian
-  *Jac_nnz = 100;
-  *Jac_pairs = linear_Jac_pairs;
 
   Jac[0] = rho;
   Jac[1] = A[0];
