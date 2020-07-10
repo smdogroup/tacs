@@ -119,7 +119,7 @@ void TACSElement3D::addResidual( int elemIndex,
                              Ut, Ux, DUt, DUx);
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
+    basis->addWeakResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
   }
 }
 
@@ -165,16 +165,19 @@ void TACSElement3D::addJacobian( int elemIndex,
     model->evalWeakMatrix(TACS_JACOBIAN_MATRIX, elemIndex,
                           n, time, pt, X, Xd, Ut, Ux, DUt, DUx, Jac);
 
+    // Add the contributions to the residual
+    basis->addWeakResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
+
     // Extract the non-zero pattern
     int Jac_nnz;
     const int *Jac_pairs;
     model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex,
                                  n, &Jac_nnz, &Jac_pairs);
 
-    // Add the weak form of the residual at this point
-    basis->addWeakFormJacobian(n, pt, detXd, J, vars_per_node, DUt, DUx,
-                               alpha, beta, gamma,
-                               Jac_nnz, Jac_pairs, Jac, res, mat);
+    // Add the weak form of the Jacobian
+    basis->scaleWeakMatrix(detXd, alpha, beta, gamma, Jac_nnz, Jac_pairs, Jac);
+    basis->addWeakMatrix(n, pt, J, vars_per_node,
+                         Jac_nnz, Jac_pairs, Jac, mat);
   }
 }
 
@@ -325,10 +328,131 @@ void TACSElement3D::getMatType( ElementMatrixType matType,
 
     // Add the weak form of the residual at this point
     double alpha = 1.0, beta = 1.0, gamma = 1.0;
-    basis->addWeakFormJacobian(n, pt, detXd, J, vars_per_node,
-                               NULL, NULL, alpha, beta, gamma,
-                               Jac_nnz, Jac_pairs, Jac, NULL, mat);
+    basis->scaleWeakMatrix(detXd, alpha, beta, gamma, Jac_nnz, Jac_pairs, Jac);
+    basis->addWeakMatrix(n, pt, J, vars_per_node,
+                         Jac_nnz, Jac_pairs, Jac, mat);
   }
+}
+
+int TACSElement3D::getMatVecProductData( ElementMatrixType matType,
+                                         int elemIndex, double time,
+                                         TacsScalar alpha,
+                                         TacsScalar beta,
+                                         TacsScalar gamma,
+                                         const TacsScalar Xpts[],
+                                         const TacsScalar vars[],
+                                         const TacsScalar dvars[],
+                                         const TacsScalar ddvars[],
+                                         TacsScalar data[] ){
+  // Length of the data array
+  int data_size = 0;
+
+  if (data){
+    // Compute the number of quadrature points
+    const int nquad = basis->getNumQuadraturePoints();
+    const int vars_per_node = model->getVarsPerNode();
+
+    // Loop over each quadrature point and add the residual contribution
+    for ( int n = 0; n < nquad; n++ ){
+      // Get the quadrature weight
+      double pt[3];
+      double weight = basis->getQuadraturePoint(n, pt);
+
+      // Set pointers to the Jacobian transformation and the entries
+      // of the weak form Jacobian
+      TacsScalar *J = &data[0];
+      TacsScalar *Jac = &data[9];
+
+      // Get the solution field and the solution field gradient and the
+      // Jacobian transformation
+      TacsScalar X[3], Xd[9];
+      TacsScalar Ut[3*MAX_VARS_PER_NODE];
+      TacsScalar Ud[3*MAX_VARS_PER_NODE], Ux[3*MAX_VARS_PER_NODE];
+      TacsScalar detXd = basis->getFieldGradient(n, pt, Xpts, vars_per_node,
+                                                vars, dvars, ddvars, X, Xd, J,
+                                                Ut, Ud, Ux);
+
+      // Multiply the weight by the quadrature point
+      detXd *= weight;
+
+      // Evaluate the weak form of the model
+      TacsScalar DUt[3*MAX_VARS_PER_NODE], DUx[3*MAX_VARS_PER_NODE];
+      model->evalWeakMatrix(matType, elemIndex, time, n, pt,
+                            X, Xd, Ut, Ux, DUt, DUx, Jac);
+
+      // Extract the non-zero pattern
+      int Jac_nnz;
+      const int *Jac_pairs;
+      model->getWeakMatrixNonzeros(matType, elemIndex,
+                                   n, &Jac_nnz, &Jac_pairs);
+
+      // Scale the terms in the matrix
+      basis->scaleWeakMatrix(detXd, alpha, beta, gamma,
+                             Jac_nnz, Jac_pairs, Jac);
+
+      // Make sure enough information is stored for the
+      data_size += 9 + Jac_nnz;
+      data += 9 + Jac_nnz;
+    }
+  }
+  else {
+    const int nquad = basis->getNumQuadraturePoints();
+
+    for ( int n = 0; n < nquad; n++ ){
+      // Extract the non-zero pattern
+      int Jac_nnz;
+      const int *Jac_pairs;
+      model->getWeakMatrixNonzeros(matType, elemIndex,
+                                   n, &Jac_nnz, &Jac_pairs);
+
+      // Make sure enough information is stored for the
+      data_size += 9 + Jac_nnz;
+    }
+  }
+
+  return data_size;
+}
+
+int TACSElement3D::addMatVecProduct( ElementMatrixType matType,
+                                     int elemIndex,
+                                     const TacsScalar data[],
+                                     const TacsScalar px[],
+                                     TacsScalar py[] ){
+  // Length of the data array
+  int data_size = 0;
+
+  if (data){
+    // Compute the number of quadrature points
+    const int nquad = basis->getNumQuadraturePoints();
+    const int vars_per_node = model->getVarsPerNode();
+
+    for ( int n = 0; n < nquad; n++ ){
+      // Set pointers to for the current quadrature point
+      const TacsScalar *J = &data[0];
+      const TacsScalar *Jac = &data[9];
+
+      // Extract the non-zero pattern
+      int Jac_nnz;
+      const int *Jac_pairs;
+      model->getWeakMatrixNonzeros(matType, elemIndex,
+                                   n, &Jac_nnz, &Jac_pairs);
+
+      // Get the quadrature weight
+      double pt[3];
+      basis->getQuadraturePoint(n, pt);
+
+      // Compute the contribution to the matrix-vector product
+      TacsScalar temp[8*MAX_VARS_PER_NODE];
+      basis->addMatVecProduct(n, pt, J, vars_per_node,
+                              Jac_nnz, Jac_pairs, Jac, temp, px, py);
+
+      // Update the data pointers
+      data += 9 + Jac_nnz;
+      data_size += 9 + Jac_nnz;
+    }
+  }
+
+  return data_size;
 }
 
 /**

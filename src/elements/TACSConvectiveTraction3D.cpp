@@ -97,7 +97,7 @@ void TACSConvectiveTraction3D::addResidual( int elemIndex,
     DUt[3*fieldIndex] = -alpha*(U[fieldIndex] - refValue);
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+    basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
   }
 }
 
@@ -149,14 +149,17 @@ void TACSConvectiveTraction3D::addJacobian( int elemIndex,
     DUt[3*fieldIndex] = -alpha*(U[fieldIndex] - refValue);
 
     // Add the weak form of the residual at this point
+    basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+
+    // Add the weak form of the residual at this point
     int Jac_nnz = 1;
     TacsScalar Jac = -alpha;
     int Jac_pairs[2] = {3*fieldIndex, 3*fieldIndex};
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormJacobian(n, pt, area, J, varsPerNode, DUt, DUx,
-                               alpha, beta, gamma,
-                               Jac_nnz, Jac_pairs, &Jac, res, mat);
+    basis->scaleWeakMatrix(area, alpha, beta, gamma, Jac_nnz, Jac_pairs, &Jac);
+    basis->addWeakMatrix(n, pt, J, varsPerNode,
+                         Jac_nnz, Jac_pairs, &Jac, mat);
   }
 }
 

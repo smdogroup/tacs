@@ -342,20 +342,6 @@ class TACSElement : public TACSObject {
                             TacsScalar res[],
                             TacsScalar mat[] );
 
-  /*
-    Add the Jacobian-vector product to the output
-  */
- virtual void addJacobianVecProduct( int elemIndex, double time,
-                                     TacsScalar alpha,
-                                     TacsScalar beta,
-                                     TacsScalar gamma,
-                                     const TacsScalar Xpts[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar dvars[],
-                                     const TacsScalar ddvars[],
-                                     const TacsScalar pvars[],
-                                     TacsScalar res[] ){}
-
   /**
     Add the derivative of the adjoint-residual product to the output vector
 
@@ -423,8 +409,9 @@ class TACSElement : public TACSObject {
     Compute a specific type of element matrix (mass, stiffness, geometric
     stiffness, etc.)
 
-    @param elemIndex The local element index
     @param matType The type of element matrix to compute
+    @param elemIndex The local element index
+    @param time The simulation time
     @param Xpts The element node locations
     @param vars The values of element degrees of freedom
     @param mat The element matrix output
@@ -436,6 +423,56 @@ class TACSElement : public TACSObject {
                            TacsScalar mat[] ){
     int size = getNumNodes()*getVarsPerNode();
     memset(mat, 0, size*size*sizeof(TacsScalar));
+  }
+
+  /**
+    Get the element data needed to perform a matrix-vector product
+    with the specified matrix type.
+
+    If the data input is NULL, no data is written, but the function
+    should return the size needed to store the matrix-vector product
+    data.
+
+    @param matType The type of element matrix to compute
+    @param elemIndex The local element index
+    @param time The simulation time
+    @param alpha The coefficient for the DOF Jacobian
+    @param beta The coefficient for the first time derivative DOF Jacobian
+    @param gamma The coefficient for the second time derivative DOF Jacobian
+    @param Xpts The element node locations
+    @param vars The values of the element degrees of freedom
+    @param dvars The first time derivative of the element DOF
+    @param ddvars The second time derivative of the element DOF
+    @param data The element data required for a matrix-vector product
+  */
+  virtual int getMatVecProductData( ElementMatrixType matType,
+                                    int elemIndex, double time,
+                                    TacsScalar alpha,
+                                    TacsScalar beta,
+                                    TacsScalar gamma,
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    TacsScalar data[] ){
+    return 0;
+  }
+
+  /**
+    Compute the element-wise matrix-vector product
+
+    @param matType The type of element matrix to compute
+    @param elemIndex The local element index
+    @param data The element data required for a matrix-vector product
+    @param px The input vector
+    @param py The output vector with the added matrix-vector product
+  */
+  virtual int addMatVecProduct( ElementMatrixType matType,
+                                int elemIndex,
+                                const TacsScalar data[],
+                                const TacsScalar px[],
+                                TacsScalar py[] ){
+    return 0;
   }
 
   /**

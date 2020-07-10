@@ -133,11 +133,11 @@ class TACSElementBasis : public TACSObject {
     @param normal The face (or edge) normal
     @return The area contribution
   */
-  virtual TacsScalar getFaceNormal( int face, int n,
-                                    const TacsScalar Xpts[],
-                                    TacsScalar X[],
-                                    TacsScalar Xd[],
-                                    TacsScalar normal[] );
+  TacsScalar getFaceNormal( int face, int n,
+                            const TacsScalar Xpts[],
+                            TacsScalar X[],
+                            TacsScalar Xd[],
+                            TacsScalar normal[] );
 
   /**
     Add the derivative of the face normal into the nodal sensitivities
@@ -152,15 +152,15 @@ class TACSElementBasis : public TACSObject {
     @param dfdn The derivative of the function w.r.t. surface normal
     @param dfdXpts The output derivative w.r.t. the node locations
   */
-  virtual void addFaceNormalXptSens( int face, int n,
-                                     const TacsScalar A,
-                                     const TacsScalar Xd[],
-                                     const TacsScalar normal[],
-                                     const TacsScalar dfdA,
-                                     const TacsScalar dfdX[],
-                                     const TacsScalar dfdXd[],
-                                     const TacsScalar dfdn[],
-                                     TacsScalar dfdXpts[] );
+  void addFaceNormalXptSens( int face, int n,
+                             const TacsScalar A,
+                             const TacsScalar Xd[],
+                             const TacsScalar normal[],
+                             const TacsScalar dfdA,
+                             const TacsScalar dfdX[],
+                             const TacsScalar dfdXd[],
+                             const TacsScalar dfdn[],
+                             TacsScalar dfdXpts[] );
 
   /**
     Get the Jacobian transformation from computational to physical
@@ -178,11 +178,11 @@ class TACSElementBasis : public TACSObject {
     @param J The Jacobian transformation (inverse of Xd)
     @return The determinant of Xd
   */
-  virtual TacsScalar getJacobianTransform( int n,
-                                           const double pt[],
-                                           const TacsScalar Xpts[],
-                                           TacsScalar Xd[],
-                                           TacsScalar J[] );
+  TacsScalar getJacobianTransform( int n,
+                                   const double pt[],
+                                   const TacsScalar Xpts[],
+                                   TacsScalar Xd[],
+                                   TacsScalar J[] );
 
   /**
     Compute the derivative of the Jacobian transformation
@@ -202,14 +202,14 @@ class TACSElementBasis : public TACSObject {
     @param dfdJ The derivative of the function w.r.t. J
     @param dfdXpts The output derivative of the function w.r.t. Xpts
   */
-  virtual void addJacobianTransformXptSens( int n,
-                                            const double pt[],
-                                            const TacsScalar Xd[],
-                                            const TacsScalar J[],
-                                            TacsScalar dfddetJ,
-                                            const TacsScalar dfXd[],
-                                            const TacsScalar dfdJ[],
-                                            TacsScalar dfdXpts[] );
+  void addJacobianTransformXptSens( int n,
+                                    const double pt[],
+                                    const TacsScalar Xd[],
+                                    const TacsScalar J[],
+                                    TacsScalar dfddetJ,
+                                    const TacsScalar dfXd[],
+                                    const TacsScalar dfdJ[],
+                                    TacsScalar dfdXpts[] );
 
   /**
     Get the field values at the specified quadrature point
@@ -221,12 +221,12 @@ class TACSElementBasis : public TACSObject {
     @param X The computed coordinate location at quadrature point n
     @param U The computed field values at quadrature point n
   */
-  virtual void getFieldValues( int n, const double pt[],
-                               const TacsScalar Xpts[],
-                               const int vars_per_node,
-                               const TacsScalar vars[],
-                               TacsScalar X[],
-                               TacsScalar U[] );
+  void getFieldValues( int n, const double pt[],
+                       const TacsScalar Xpts[],
+                       const int vars_per_node,
+                       const TacsScalar vars[],
+                       TacsScalar X[],
+                       TacsScalar U[] );
 
   /**
     Get the gradient of the field at the quadrature point.
@@ -251,19 +251,19 @@ class TACSElementBasis : public TACSObject {
     @param Ux The derivative of the variables w.r.t. the spatial coords
     @return The determinant of the matrix Xd
   */
-  virtual TacsScalar getFieldGradient( int n,
-                                       const double pt[],
-                                       const TacsScalar Xpts[],
-                                       const int vars_per_node,
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[],
-                                       TacsScalar X[],
-                                       TacsScalar Xd[],
-                                       TacsScalar J[],
-                                       TacsScalar Ut[],
-                                       TacsScalar Ud[],
-                                       TacsScalar Ux[] );
+  TacsScalar getFieldGradient( int n,
+                               const double pt[],
+                               const TacsScalar Xpts[],
+                               const int vars_per_node,
+                               const TacsScalar vars[],
+                               const TacsScalar dvars[],
+                               const TacsScalar ddvars[],
+                               TacsScalar X[],
+                               TacsScalar Xd[],
+                               TacsScalar J[],
+                               TacsScalar Ut[],
+                               TacsScalar Ud[],
+                               TacsScalar Ux[] );
 
   /**
     Add the derivative of the field gradient terms with respect to
@@ -280,16 +280,16 @@ class TACSElementBasis : public TACSObject {
     @param dfdUx The derivative of the function w.r.t. Ux
     @param dfdu The output derivative of the function w.r.t. state variables
   */
-  virtual void addFieldGradientSVSens( int n,
-                                       const double pt[],
-                                       const TacsScalar Xpts[],
-                                       const int vars_per_node,
-                                       const TacsScalar Xd[],
-                                       const TacsScalar J[],
-                                       const TacsScalar Ud[],
-                                       const TacsScalar dfdUt[],
-                                       TacsScalar dfdUx[],
-                                       TacsScalar dfdu[] );
+  void addFieldGradientSVSens( int n,
+                               const double pt[],
+                               const TacsScalar Xpts[],
+                               const int vars_per_node,
+                               const TacsScalar Xd[],
+                               const TacsScalar J[],
+                               const TacsScalar Ud[],
+                               const TacsScalar dfdUt[],
+                               TacsScalar dfdUx[],
+                               TacsScalar dfdu[] );
 
   /**
     Add the contributions to the derivative of the node locations from
@@ -318,19 +318,19 @@ class TACSElementBasis : public TACSObject {
     @param dfdUx The derivative w.r.t. the components of Ux
     @param dfdXpts The output derivative of the function w.r.t. node locations
   */
-  virtual void addFieldGradientXptSens( int n,
-                                        const double pt[],
-                                        const TacsScalar Xpts[],
-                                        const int vars_per_node,
-                                        const TacsScalar Xd[],
-                                        const TacsScalar J[],
-                                        const TacsScalar Ud[],
-                                        const TacsScalar dfddetJ,
-                                        const TacsScalar dfdX[],
-                                        const TacsScalar dfdXd[],
-                                        const TacsScalar dfdJ[],
-                                        const TacsScalar dfdUx[],
-                                        TacsScalar dfdXpts[] );
+  void addFieldGradientXptSens( int n,
+                                const double pt[],
+                                const TacsScalar Xpts[],
+                                const int vars_per_node,
+                                const TacsScalar Xd[],
+                                const TacsScalar J[],
+                                const TacsScalar Ud[],
+                                const TacsScalar dfddetJ,
+                                const TacsScalar dfdX[],
+                                const TacsScalar dfdXd[],
+                                const TacsScalar dfdJ[],
+                                const TacsScalar dfdUx[],
+                                TacsScalar dfdXpts[] );
 
   /**
     Get the gradient of the field at the quadrature point.
@@ -361,23 +361,23 @@ class TACSElementBasis : public TACSObject {
     @param Psix The spatial derivatives of the adjoint variables
     @return The determinant of the matrix Xd
   */
-  virtual TacsScalar getFieldGradient( int n,
-                                       const double pt[],
-                                       const TacsScalar Xpts[],
-                                       const int vars_per_node,
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[],
-                                       const TacsScalar psi[],
-                                       TacsScalar X[],
-                                       TacsScalar Xd[],
-                                       TacsScalar J[],
-                                       TacsScalar Ut[],
-                                       TacsScalar Ud[],
-                                       TacsScalar Ux[],
-                                       TacsScalar Psi[],
-                                       TacsScalar Psid[],
-                                       TacsScalar Psix[] );
+  TacsScalar getFieldGradient( int n,
+                               const double pt[],
+                               const TacsScalar Xpts[],
+                               const int vars_per_node,
+                               const TacsScalar vars[],
+                               const TacsScalar dvars[],
+                               const TacsScalar ddvars[],
+                               const TacsScalar psi[],
+                               TacsScalar X[],
+                               TacsScalar Xd[],
+                               TacsScalar J[],
+                               TacsScalar Ut[],
+                               TacsScalar Ud[],
+                               TacsScalar Ux[],
+                               TacsScalar Psi[],
+                               TacsScalar Psid[],
+                               TacsScalar Psix[] );
 
   /**
     Add the contributions to the derivative of the node locations from
@@ -403,21 +403,21 @@ class TACSElementBasis : public TACSObject {
     @param dfdPsix The derivative w.r.t. the components of Psix
     @param dfdXpts The output derivative of the function w.r.t. node locations
   */
-  virtual void addFieldGradientXptSens( int n,
-                                        const double pt[],
-                                        const TacsScalar Xpts[],
-                                        const int vars_per_node,
-                                        const TacsScalar Xd[],
-                                        const TacsScalar J[],
-                                        const TacsScalar Ud[],
-                                        const TacsScalar Psid[],
-                                        const TacsScalar dfddetJ,
-                                        const TacsScalar dfdX[],
-                                        const TacsScalar dfdXd[],
-                                        const TacsScalar dfdJ[],
-                                        const TacsScalar dfdUx[],
-                                        const TacsScalar dfdPsix[],
-                                        TacsScalar dfdXpts[] );
+  void addFieldGradientXptSens( int n,
+                                const double pt[],
+                                const TacsScalar Xpts[],
+                                const int vars_per_node,
+                                const TacsScalar Xd[],
+                                const TacsScalar J[],
+                                const TacsScalar Ud[],
+                                const TacsScalar Psid[],
+                                const TacsScalar dfddetJ,
+                                const TacsScalar dfdX[],
+                                const TacsScalar dfdXd[],
+                                const TacsScalar dfdJ[],
+                                const TacsScalar dfdUx[],
+                                const TacsScalar dfdPsix[],
+                                TacsScalar dfdXpts[] );
 
   /**
     Add the weak form of the governing equations to the residual
@@ -430,48 +430,76 @@ class TACSElementBasis : public TACSObject {
     @param DUt The coefficients of the temporal part of the weak form
     @param DUx The coefficients of the spatial part of the weak form
   */
-  virtual void addWeakFormResidual( int n, const double pt[],
-                                    TacsScalar weight,
-                                    const TacsScalar J[],
-                                    const int vars_per_node,
-                                    TacsScalar DUt[],
-                                    TacsScalar DUx[],
-                                    TacsScalar res[] );
+  void addWeakResidual( int n, const double pt[],
+                        TacsScalar weight,
+                        const TacsScalar J[],
+                        const int vars_per_node,
+                        TacsScalar DUt[],
+                        TacsScalar DUx[],
+                        TacsScalar res[] );
 
   /**
-    Add the weak form of the governing equations to the residual
+    Scale the terms in the Jacobian matrix
 
-    @param n The quadrautre point index
-    @param pt The quadrature point value
     @param weight The quadrature weight
-    @param J The Jacobian coordinate transformation
-    @param vars_per_node The number of variables per node
-    @param DUt The coefficients of the temporal part of the weak form
-    @param DUx The coefficients of the spatial part of the weak form
     @param alpha Coefficient for the Jacobian w.r.t. states
     @param beta Coefficient for the Jacobian w.r.t. first time deriv states
     @param gamma Coefficient for the Jacobian w.r.t. second time deriv states
     @param Jac_nnz Number of non-zero Jacobian entries
     @param Jac_paris The (i,j) locations of the Jacobian entries
     @param Jac The Jacobian values
-    @param res The resulting residual
+  */
+  void scaleWeakMatrix( const TacsScalar weight,
+                        const TacsScalar alpha,
+                        const TacsScalar beta,
+                        const TacsScalar gamma,
+                        const int Jac_nnz,
+                        const int *Jac_pairs,
+                        TacsScalar *Jac );
+
+  /**
+    Add the entries from the matrix of the weak form residual to a matrix
+
+    @param n The quadrautre point index
+    @param pt The quadrature point value
+    @param J The Jacobian coordinate transformation
+    @param vars_per_node The number of variables per node
+    @param Jac_nnz Number of non-zero Jacobian entries
+    @param Jac_paris The (i,j) locations of the Jacobian entries
+    @param Jac The Jacobian values
     @param mat The Jacobian matrix
   */
-  virtual void addWeakFormJacobian( int n,
-                                    const double pt[],
-                                    TacsScalar weight,
-                                    const TacsScalar J[],
-                                    const int vars_per_node,
-                                    const TacsScalar DUt[],
-                                    const TacsScalar DUx[],
-                                    TacsScalar alpha,
-                                    TacsScalar beta,
-                                    TacsScalar gamma,
-                                    const int Jac_nnz,
-                                    const int *Jac_pairs,
-                                    const TacsScalar *Jac,
-                                    TacsScalar *res,
-                                    TacsScalar *mat );
+  void addWeakMatrix( int n, const double pt[],
+                      const TacsScalar J[],
+                      const int vars_per_node,
+                      const int Jac_nnz,
+                      const int *Jac_pairs,
+                      const TacsScalar *Jac,
+                      TacsScalar *mat );
+
+  /**
+    Add the entries from the Jacobian of the weak form residual to a matrix
+
+    @param n The quadrautre point index
+    @param pt The quadrature point value
+    @param J The Jacobian coordinate transformation
+    @param vars_per_node The number of variables per node
+    @param Jac_nnz Number of non-zero Jacobian entries
+    @param Jac_paris The (i,j) locations of the Jacobian entries
+    @param Jac The Jacobian values
+    @param temp A temporary array of at least size (2*getNumParameters()+1)*vars_per_node
+    @param px The input vector
+    @param py The output vector
+  */
+  void addMatVecProduct( int n, const double pt[],
+                         const TacsScalar J[],
+                         const int vars_per_node,
+                         const int Jac_nnz,
+                         const int *Jac_pairs,
+                         const TacsScalar *Jac,
+                         TacsScalar temp[],
+                         const TacsScalar *px,
+                         TacsScalar *py );
 
   // Temporary before wrecking everything...
   virtual void computeBasis( const double pt[], double N[] ) = 0;
@@ -722,16 +750,165 @@ class TACSElementBasis : public TACSObject {
     addInterpFieldsGradTranspose(-1, pt, num_fields, grad, values);
   }
 
- protected:
-  static void addWeakFormJacobian( const int num_params, const int num_nodes,
-                                   const TacsScalar N[], const TacsScalar Nx[],
-                                   TacsScalar weight, const TacsScalar J[],
-                                   const int vars_per_node,
-                                   const TacsScalar DUt[], const TacsScalar DUx[],
-                                   TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                                   const int Jac_nnz, const int *Jac_pairs,
-                                   const TacsScalar *Jac,
-                                   TacsScalar *res, TacsScalar *mat );
+  /*
+    Add the outer-product of the shape functions to the matrix
+
+    mat[row_incr*i + col_incr*j] += scale*N[i]*N[j]
+
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param weight The weight factor added to the matrix
+    @param row_incr The row increment applied to the matrix
+    @param col_incr The column increment applied to the matrix
+    @param mat The element matrix
+  */
+  virtual void addInterpOuterProduct( const int n,
+                                      const double pt[],
+                                      const TacsScalar weight,
+                                      const int row_incr,
+                                      const int col_incr,
+                                      TacsScalar *mat ){
+    const int num_nodes = getNumNodes();
+    double N[256];
+    computeBasis(pt, N);
+    for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+      for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+        mat[0] += weight*N[i]*N[j];
+      }
+    }
+  }
+
+  /*
+    Add the outer-product of the shape functions to the matrix
+
+    mat[row_incr*i + col_incr*j] += scale*N[i]*N[j]
+
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param weight The weight factor added to the matrix
+    @param row_incr The row increment applied to the matrix
+    @param col_incr The column increment applied to the matrix
+    @param mat The element matrix
+  */
+  virtual void addInterpGradOuterProduct( const int n,
+                                          const double pt[],
+                                          const int transpose,
+                                          const TacsScalar weight,
+                                          const TacsScalar scale[],
+                                          const int row_incr,
+                                          const int col_incr,
+                                          TacsScalar *mat ){
+    const int num_nodes = getNumNodes();
+    const int num_params = getNumParameters();
+    double N[256], Nxi[3*256];
+    computeBasisGradient(pt, N, Nxi);
+
+    if (transpose){
+      if (num_params == 1){
+        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+            mat[0] +=
+              weight*N[j]*(Nxi[i]*scale[0]);
+          }
+        }
+      }
+      else if (num_params == 2){
+        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+            mat[0] += weight*N[j]*(Nxi[2*i]*scale[0] + Nxi[2*i+1]*scale[1]);
+          }
+        }
+      }
+      else if (num_params == 3){
+        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+            mat[0] += weight*N[j]*(Nxi[3*i]*scale[0] +
+                                   Nxi[3*i+1]*scale[1] +
+                                   Nxi[3*i+2]*scale[2]);
+          }
+        }
+      }
+    }
+    else {
+      if (num_params == 1){
+        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+            mat[0] +=
+              weight*N[i]*(Nxi[j]*scale[0]);
+          }
+        }
+      }
+      else if (num_params == 2){
+        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+            mat[0] += weight*N[i]*(Nxi[2*j]*scale[0] + Nxi[2*j+1]*scale[1]);
+          }
+        }
+      }
+      else if (num_params == 3){
+        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+            mat[0] += weight*N[i]*(Nxi[3*j]*scale[0] +
+                                   Nxi[3*j+1]*scale[1] +
+                                   Nxi[3*j+2]*scale[2]);
+          }
+        }
+      }
+    }
+  }
+
+  /*
+    Add the outer-product of the shape functions to the matrix
+
+    mat[row_incr*i + col_incr*j] += scale*N[i]*N[j]
+
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param weight The weight factor added to the matrix
+    @param row_incr The row increment applied to the matrix
+    @param col_incr The column increment applied to the matrix
+    @param mat The element matrix
+  */
+  virtual void addInterpGradGradOuterProduct( const int n,
+                                              const double pt[],
+                                              const TacsScalar weight,
+                                              const TacsScalar iscale[],
+                                              const TacsScalar jscale[],
+                                              const int row_incr,
+                                              const int col_incr,
+                                              TacsScalar *mat ){
+    const int num_nodes = getNumNodes();
+    const int num_params = getNumParameters();
+    double N[256], Nxi[3*256];
+    computeBasisGradient(pt, N, Nxi);
+
+    if (num_params == 1){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] +=
+            weight*(Nxi[i]*iscale[0])*(Nxi[j]*jscale[0]);
+        }
+      }
+    }
+    else if (num_params == 2){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] +=
+            weight*(Nxi[2*i]*iscale[0] + Nxi[2*i+1]*iscale[1])*
+                  (Nxi[2*j]*jscale[0] + Nxi[2*j+1]*jscale[1]);
+        }
+      }
+    }
+    else if (num_params == 3){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] +=
+            weight*(Nxi[3*i]*iscale[0] + Nxi[3*i+1]*iscale[1] + Nxi[3*i+2]*iscale[2])*
+                   (Nxi[3*j]*jscale[0] + Nxi[3*j+1]*jscale[1] + Nxi[3*j+2]*jscale[2]);
+        }
+      }
+    }
+  }
 };
 
 #endif // TACS_ELEMENT_BASIS_H

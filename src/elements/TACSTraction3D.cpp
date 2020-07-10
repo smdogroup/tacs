@@ -121,7 +121,7 @@ void TACSTraction3D::addResidual( int elemIndex,
     }
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+    basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
   }
 }
 
@@ -185,7 +185,7 @@ void TACSTraction3D::addJacobian( int elemIndex,
     }
 
     // Add the weak form of the residual at this point
-    basis->addWeakFormResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+    basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
   }
 }
 

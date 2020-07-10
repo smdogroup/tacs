@@ -349,18 +349,21 @@ int TacsTestElementJacobian( TACSElement *element,
                              int test_print_level,
                              double test_fail_atol,
                              double test_fail_rtol ){
+  // Set the failure flag
+  int fail = 0;
+
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar *result = new TacsScalar[nvars];
-  TacsScalar *temp = new TacsScalar[nvars];
-  TacsScalar *pert = new TacsScalar[nvars]; // perturbation for vars
+  TacsScalar *result = new TacsScalar[ nvars ];
+  TacsScalar *temp = new TacsScalar[ nvars ];
+  TacsScalar *pert = new TacsScalar[ nvars ];
 
-  TacsScalar *q = new TacsScalar[nvars];
-  TacsScalar *dq = new TacsScalar[nvars];
-  TacsScalar *ddq = new TacsScalar[nvars];
-  TacsScalar *res = new TacsScalar[nvars];
-  TacsScalar *mat = new TacsScalar[nvars*nvars];
+  TacsScalar *q = new TacsScalar[ nvars ];
+  TacsScalar *dq = new TacsScalar[ nvars ];
+  TacsScalar *ddq = new TacsScalar[ nvars ];
+  TacsScalar *res = new TacsScalar[ nvars ];
+  TacsScalar *mat = new TacsScalar[ nvars*nvars ];
 
   if (col >= 0 && col < nvars){
     memset(pert, 0, nvars*sizeof(TacsScalar));
@@ -410,12 +413,12 @@ int TacsTestElementJacobian( TACSElement *element,
   if (test_print_level > 0){
     if (col >= 0 && col < nvars){
       fprintf(stderr,
-              "Testing column %d of the stiffness matrix for element %s.\n",
+              "Testing column %d of the Jacobian matrix for element %s.\n",
               col, element->getObjectName());
     }
     else {
       fprintf(stderr,
-              "Testing the stiffness matrix for element %s.\n",
+              "Testing the Jacobian matrix for element %s.\n",
               element->getObjectName());
     }
     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
@@ -427,27 +430,66 @@ int TacsTestElementJacobian( TACSElement *element,
   if (test_print_level > 1){
     if (col >= 0 && col < nvars){
       fprintf(stderr,
-              "Column %d of the stiffness matrix is\n", col);
+              "Column %d of the Jacobian matrix is\n", col);
     }
     else {
       fprintf(stderr,
-              "The product of a random vector and the stiffness matrix is\n");
+              "The product of a random vector and the Jacobian matrix is\n");
     }
     TacsPrintErrorComponents(stderr, "K*u",
                              result, res, nvars);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
-  delete [] result;
   delete [] temp;
-  delete [] pert;
   delete [] q;
   delete [] dq;
   delete [] ddq;
-  delete [] res;
   delete [] mat;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Get the size of the matrix
+  int dsize = element->getMatVecProductData(TACS_JACOBIAN_MATRIX, elemIndex, time,
+                                            alpha, beta, gamma,
+                                            Xpts, vars, dvars, ddvars,
+                                            NULL);
+
+  // Allocate the matrix
+  TacsScalar *data = new TacsScalar[ dsize ];
+  element->getMatVecProductData(TACS_JACOBIAN_MATRIX, elemIndex, time,
+                                alpha, beta, gamma,
+                                Xpts, vars, dvars, ddvars, data);
+
+  memset(res, 0, nvars*sizeof(TacsScalar));
+  element->addMatVecProduct(TACS_JACOBIAN_MATRIX, elemIndex, data, pert, res);
+
+  max_err = TacsGetMaxError(result, res, nvars, &max_err_index);
+  max_rel = TacsGetMaxRelError(result, res, nvars, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the matrix-free Jacobian for element %s.\n",
+            element->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  if (test_print_level > 1){
+    fprintf(stderr,
+            "The product of a random vector and the Jacobian matrix is\n");
+    TacsPrintErrorComponents(stderr, "mat-free",
+                             result, res, nvars);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] pert;
+  delete [] res;
+  delete [] result;
+  delete [] data;
+
+  return fail;
 }
 
 /*

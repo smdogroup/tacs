@@ -244,7 +244,7 @@ class TACSElementModel : public TACSObject {
     @param matType The type of matrix to use
     @param elemIndex The element index
     @param n The quadrature point index
-    @param Jac_nnz Number of non-zeros (negative for dense matrix)
+    @param Jac_nnz Number of non-zeros
     @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
   */
   virtual void getWeakMatrixNonzeros( ElementMatrixType matType,
@@ -263,7 +263,7 @@ class TACSElementModel : public TACSObject {
     evalWeakIntegrand() function described above.
 
     The parameter Jac contains a sparse matrix representation of the
-    the derivatives of the coefficients in DUt and DUx. The dense matrix
+    the derivatives of the coefficients in DUt and DUx. The matrix
     contains (3 + spatial_dim)*vars_per_node rows and columns.
 
     For instance, for the 2D problem (spatial_dim = 2) with the variables

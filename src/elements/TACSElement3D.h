@@ -91,6 +91,23 @@ class TACSElement3D : public TACSElement {
                             const TacsScalar ddvars[], TacsScalar fXptSens[] );
 
   /**
+    Get the data for a matrix vector product. When data is NULL, the function
+    returns the size of the required array
+  */
+  int getMatVecProductData( ElementMatrixType matType, int elemIndex, double time,
+                            TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                            const TacsScalar Xpts[], const TacsScalar vars[],
+                            const TacsScalar dvars[], const TacsScalar ddvars[],
+                            TacsScalar data[] );
+
+  /**
+    Compute the matrix-vector product with the given element data
+  */
+  int addMatVecProduct( ElementMatrixType matType, int elemIndex,
+                        const TacsScalar data[], const TacsScalar px[],
+                        TacsScalar py[] );
+
+  /**
     Compute a specific type of element matrix (mass, stiffness, geometric
     stiffness, etc.)
   */
