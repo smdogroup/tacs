@@ -208,9 +208,9 @@ cdef class ElementModel:
         if self.ptr != NULL:
             self.ptr.decref()
 
-    def getSpatialDim(self):
+    def getNumParameters(self):
         if self.ptr != NULL:
-            return self.ptr.getSpatialDim()
+            return self.ptr.getNumParameters()
         return 0
 
     def getVarsPerNode(self):

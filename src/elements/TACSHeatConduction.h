@@ -24,7 +24,7 @@ class TACSHeatConduction2D : public TACSElementModel {
   TACSHeatConduction2D( TACSPlaneStressConstitutive *_con );
   ~TACSHeatConduction2D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 
@@ -151,7 +151,7 @@ class TACSHeatConduction3D : public TACSElementModel {
   TACSHeatConduction3D( TACSSolidConstitutive *_con );
   ~TACSHeatConduction3D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 

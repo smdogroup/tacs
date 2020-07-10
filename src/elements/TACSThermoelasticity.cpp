@@ -39,7 +39,7 @@ const int TACSLinearThermoelasticity2D::linear_Jac_pairs[] =
    13, 13, 13, 14,
    14, 13, 14, 14};
 
-int TACSLinearThermoelasticity2D::getSpatialDim(){
+int TACSLinearThermoelasticity2D::getNumParameters(){
   return 2;
 }
 
@@ -933,7 +933,7 @@ const int TACSLinearThermoelasticity3D::linear_Jac_pairs[] =
    22, 21, 22, 22, 22, 23,
    23, 21, 23, 22, 23, 23 };
 
-int TACSLinearThermoelasticity3D::getSpatialDim(){
+int TACSLinearThermoelasticity3D::getNumParameters(){
   return 3;
 }
 

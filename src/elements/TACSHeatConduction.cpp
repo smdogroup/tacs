@@ -31,7 +31,7 @@ const int TACSHeatConduction2D::linear_Jac_pairs[] =
    3, 3, 3, 4,
    4, 3, 4, 4};
 
-int TACSHeatConduction2D::getSpatialDim(){
+int TACSHeatConduction2D::getNumParameters(){
   return 2;
 }
 
@@ -388,7 +388,7 @@ const int TACSHeatConduction3D::linear_Jac_pairs[] =
    4, 3, 4, 4, 4, 5,
    5, 3, 5, 4, 5, 5};
 
-int TACSHeatConduction3D::getSpatialDim(){
+int TACSHeatConduction3D::getNumParameters(){
   return 3;
 }
 

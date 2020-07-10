@@ -29,7 +29,7 @@ class TACSElementModel : public TACSObject {
 
     @return The number of computational parameters associated with the model
   */
-  virtual int getSpatialDim() = 0;
+  virtual int getNumParameters() = 0;
 
   /**
     Returns the number of degrees of freedom per node
@@ -226,7 +226,7 @@ class TACSElementModel : public TACSObject {
     *product = 0.0;
     dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
     const int vars_per_node = getVarsPerNode();
-    const int num_params = getSpatialDim();
+    const int num_params = getNumParameters();
 
     for ( int i = 0; i < num_params*vars_per_node; i++ ){
       dfdUx[i] = 0.0;
@@ -382,7 +382,7 @@ class TACSElementModel : public TACSObject {
                                   TacsScalar dfdU[],
                                   TacsScalar dfdUx[] ){
     const int vars_per_node = getVarsPerNode();
-    const int num_params = getSpatialDim();
+    const int num_params = getNumParameters();
 
     for ( int i = 0; i < 3*vars_per_node; i++ ){
       dfdU[i] = 0.0;

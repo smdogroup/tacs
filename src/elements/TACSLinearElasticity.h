@@ -28,7 +28,7 @@ class TACSLinearElasticity2D : public TACSElementModel {
                           ElementStrainType strain_type );
   ~TACSLinearElasticity2D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 
@@ -180,7 +180,7 @@ class TACSLinearElasticity3D : public TACSElementModel {
                           ElementStrainType strain_type );
   ~TACSLinearElasticity3D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 

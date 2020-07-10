@@ -33,7 +33,7 @@ const int TACSNeohookean3D::linear_Jac_pairs[] =
    16, 3, 16, 4, 16, 5, 16, 9, 16, 10, 16, 11, 16, 15, 16, 16, 16, 17,
    17, 3, 17, 4, 17, 5, 17, 9, 17, 10, 17, 11, 17, 15, 17, 16, 17, 17};
 
-int TACSNeohookean3D::getSpatialDim(){
+int TACSNeohookean3D::getNumParameters(){
   return 3;
 }
 

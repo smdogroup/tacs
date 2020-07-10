@@ -24,7 +24,7 @@ class TACSThermoelasticPlateModel : public TACSElementModel {
   ~TACSThermoelasticPlateModel();
 
   // Get the problem dimensions
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 

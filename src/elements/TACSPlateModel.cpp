@@ -80,7 +80,7 @@ const int TACSPlateModel::linear_Jac_pairs[] =
    23, 3, 23, 4, 23, 8, 23, 9, 23, 18, 23, 19, 23, 23, 23, 24,
    24, 3, 24, 4, 24, 8, 24, 9, 24, 18, 24, 19, 24, 23, 24, 24};
 
-int TACSPlateModel::getSpatialDim(){
+int TACSPlateModel::getNumParameters(){
   return 2;
 }
 

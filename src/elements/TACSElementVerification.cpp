@@ -1222,42 +1222,8 @@ int TacsTestElementBasis( TACSElementBasis *basis,
   return fail;
 }
 
+// Set the maximum number of variables at a given node
 static const int MAX_VARS_PER_NODE = 10;
-
-/*
-int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
-                                           int elemIndex,
-                                           const double time,
-                                           double dh,
-                                           int test_print_level,
-                                           double test_fail_atol,
-                                           double test_fail_rtol ){
-  const int num_params = model->getSpatialDim();
-  const int vpn = model->getVarsPerNode();
-
-  // Evaluate the weak integrand
-  model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, Ux, DUt, DUx);
-
-
-    *product = 0.0;
-    dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
-    const int vars_per_node = getVarsPerNode();
-    const int num_params = getSpatialDim();
-
-    for ( int i = 0; i < num_params*vars_per_node; i++ ){
-      dfdUx[i] = 0.0;
-      dfdPsix[i] = 0.0;
-    }
-
-    for ( int i = 0; i < num_params*num_params; i++ ){
-      dfdXd[i] = 0.0;
-    }
-
-
-  model->evalWeakAdjXptSensProduct(elemIndex, time, scale, n, pt, X, Xd, Ut, Ux, Psi, Psix,
-                            dvLen, dfdx);
-}
-*/
 
 int TacsTestElementModelJacobian( TACSElementModel *model,
                                   int elemIndex,
@@ -1269,7 +1235,7 @@ int TacsTestElementModelJacobian( TACSElementModel *model,
   int fail = 0;
 
   const int vars_per_node = model->getVarsPerNode();
-  const int num_params = model->getSpatialDim();
+  const int num_params = model->getNumParameters();
 
   // Set the quadrature point
   const int n = 0;
@@ -1429,7 +1395,7 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
                                            double test_fail_rtol ){
   int fail = 0;
 
-  const int num_params = model->getSpatialDim();
+  const int num_params = model->getNumParameters();
   const int vars_per_node = model->getVarsPerNode();
 
   // Set the quadrature point

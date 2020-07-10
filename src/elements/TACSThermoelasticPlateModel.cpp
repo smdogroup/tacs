@@ -105,7 +105,7 @@ const int TACSThermoelasticPlateModel::linear_Jac_pairs[] =
    28, 28, 28, 29,
    29, 28, 29, 29};
 
-int TACSThermoelasticPlateModel::getSpatialDim(){
+int TACSThermoelasticPlateModel::getNumParameters(){
   return 2;
 }
 

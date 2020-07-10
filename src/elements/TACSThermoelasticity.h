@@ -30,7 +30,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
                                 int _steady_state_flag=0 );
   ~TACSLinearThermoelasticity2D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 
@@ -161,7 +161,7 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
                                 int _steady_state_flag=0 );
   ~TACSLinearThermoelasticity3D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 

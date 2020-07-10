@@ -24,7 +24,7 @@ class TACSPlateModel : public TACSElementModel {
   ~TACSPlateModel();
 
   // Get the problem dimensions
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
   int getDesignVarsPerNode();
 

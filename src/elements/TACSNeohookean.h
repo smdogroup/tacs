@@ -23,7 +23,7 @@ class TACSNeohookean3D : public TACSElementModel {
   TACSNeohookean3D( TacsScalar C1, TacsScalar D1 );
   ~TACSNeohookean3D();
 
-  int getSpatialDim();
+  int getNumParameters();
   int getVarsPerNode();
 
   /**

@@ -325,7 +325,7 @@ cdef inline _init_ElementBasis(TACSElementBasis *ptr):
 
 cdef extern from "TACSElementModel.h":
     cdef cppclass TACSElementModel(TACSObject):
-        int getSpatialDim()
+        int getNumParameters()
         int getVarsPerNode()
 
 cdef class ElementModel:

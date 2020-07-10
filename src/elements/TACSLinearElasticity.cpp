@@ -35,7 +35,7 @@ const int TACSLinearElasticity2D::linear_Jac_pairs[] =
    8, 3, 8, 4, 8, 8, 8, 9,
    9, 3, 9, 4, 9, 8, 9, 9};
 
-int TACSLinearElasticity2D::getSpatialDim(){
+int TACSLinearElasticity2D::getNumParameters(){
   return 2;
 }
 
@@ -886,7 +886,7 @@ const int TACSLinearElasticity3D::linear_Jac_pairs[] =
    16, 3, 16, 4, 16, 5, 16, 9, 16, 10, 16, 11, 16, 15, 16, 16, 16, 17,
    17, 3, 17, 4, 17, 5, 17, 9, 17, 10, 17, 11, 17, 15, 17, 16, 17, 17};
 
-int TACSLinearElasticity3D::getSpatialDim(){
+int TACSLinearElasticity3D::getNumParameters(){
   return 3;
 }
 
