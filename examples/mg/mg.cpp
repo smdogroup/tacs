@@ -173,7 +173,7 @@ int main( int argc, char *argv[] ){
 
   // Number of different levels
   int nlevels = 3;
-  const int max_nlevels = 5;
+  const int max_nlevels = 8;
   TACSAssembler *assembler[max_nlevels];
   TACSCreator *creator[max_nlevels];
 
@@ -206,18 +206,24 @@ int main( int argc, char *argv[] ){
 
   // Create the TACS/Creator objects for all levels
   for ( int i = 0; i < nlevels; i++ ){
+    double t0 = MPI_Wtime();
     int Nx = nx/(1 << i), Ny = ny/(1 << i);
     createAssembler(comm, Nx, Ny, &assembler[i], &creator[i]);
+    t0 = MPI_Wtime() - t0;
     assembler[i]->incref();
     creator[i]->incref();
+    if (rank == 0){
+      printf("Assembler creation time for level %d: %e\n", i, t0);
+    }
   }
+
+  double tmg = MPI_Wtime();
 
   // Create the matrix for the finest grid level
   TACSParallelMat *mat = assembler[0]->createMat();
   mat->incref();
 
   // Allocate the interpolation objects for all remaining levels
-  TACSParallelMat *coarse[max_nlevels-1];
   TACSBVecInterp *interp[max_nlevels-1];
 
   // Create the interpolation operators
@@ -286,7 +292,12 @@ int main( int argc, char *argv[] ){
     interp[level]->initialize();
 
     // Set the multigrid information at this level
+    double tlev = MPI_Wtime();
     mg->setLevel(level, assembler[level], interp[level], 1);
+    tlev = MPI_Wtime() - tlev;
+    if (rank == 0){
+      printf("Initialization time for level %d: %e\n", level, tlev);
+    }
   }
 
   // Set the model at the lowest grid level
@@ -295,6 +306,11 @@ int main( int argc, char *argv[] ){
   // We no longer require any of the creator objects
   for ( int i = 0; i < nlevels; i++ ){
     creator[i]->decref();
+  }
+
+  tmg = MPI_Wtime() - tmg;
+  if (rank == 0){
+    printf("TACSMg creation time: %e\n", tmg);
   }
 
   // Create the residual and solution vectors on the finest TACS mesh
@@ -327,7 +343,7 @@ int main( int argc, char *argv[] ){
   }
   assembler[0]->applyBCs(force);
 
-  // "Factor" the preconditioner
+  // Factor the preconditioner
   mg->factor();
 
   // Compute the solution using GMRES

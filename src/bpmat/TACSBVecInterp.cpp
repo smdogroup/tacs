@@ -1674,7 +1674,7 @@ void TACSBVecInterp::computeGalerkinNonZeroPattern( TACSParallelMat *Afine,
   outMap->getOwnerRange(&range);
 
   // Allocate the matrix - overestimate the number of non-zero entries
-  int nnz_est = rowp[N] + ext_rowp[N];
+  int nnz_est = 10*(rowp[N] + ext_rowp[N]);
   TACSMatrixHash *matrix_hash = new TACSMatrixHash(nnz_est);
   matrix_hash->incref();
 

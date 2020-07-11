@@ -352,33 +352,41 @@ TACSMatDistribute::TACSMatDistribute( TACSThreadInfo *thread_info,
     nz_per_row = (int)(rowp[numNodes]/numNodes + 1);
   }
 
-  // Now, set up the column map using in_cols
-  int max_col_vars_size = 5*nz_per_row + num_ext_rows;
+  int max_col_vars_size = num_ext_rows;
+  for ( int i = 0; i < num_in_rows; i++ ){
+    for ( int j = in_rowp[i]; j < in_rowp[i+1]; j++ ){
+      if (in_cols[j] < ownerRange[mpiRank] ||
+          in_cols[j] >= ownerRange[mpiRank+1]){
+        max_col_vars_size++;
+      }
+    }
+  }
+
   int col_vars_size = 0;
-  int *col_vars = new int[ max_col_vars_size ];
+  int *temp_col_vars = new int[ max_col_vars_size ];
 
   // Get contributions from ext_rows
   for ( int i = 0; i < num_ext_rows; i++ ){
-    col_vars[col_vars_size] = ext_rows[i];
+    temp_col_vars[col_vars_size] = ext_rows[i];
     col_vars_size++;
   }
 
   for ( int i = 0; i < num_in_rows; i++ ){
-    if (col_vars_size + in_rowp[i+1] - in_rowp[i] > max_col_vars_size){
-      max_col_vars_size = 2.0*max_col_vars_size;
-      TacsExtendArray(&col_vars, col_vars_size, max_col_vars_size);
-    }
-
     for ( int j = in_rowp[i]; j < in_rowp[i+1]; j++ ){
       if (in_cols[j] < ownerRange[mpiRank] ||
           in_cols[j] >= ownerRange[mpiRank+1]){
-        col_vars[col_vars_size] = in_cols[j];
+        temp_col_vars[col_vars_size] = in_cols[j];
         col_vars_size++;
       }
     }
-
-    col_vars_size = TacsUniqueSort(col_vars_size, col_vars);
   }
+
+  // Uniquely sort the array
+  col_vars_size = TacsUniqueSort(col_vars_size, temp_col_vars);
+
+  int *col_vars = new int[ col_vars_size ];
+  memcpy(col_vars, temp_col_vars, col_vars_size*sizeof(int));
+  delete [] temp_col_vars;
 
   TACSBVecIndices *col_indices = new TACSBVecIndices(&col_vars, col_vars_size);
   *colMap = new TACSBVecDistribute(row_map, col_indices);
