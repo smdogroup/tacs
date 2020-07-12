@@ -18,7 +18,7 @@
 #include "TACSElementBasis.h"
 
 /**
-   Basis class for a linear hexahedral element
+  Basis class for a linear hexahedral element
 */
 class TACSLinearHexaBasis : public TACSElementBasis {
  public:
@@ -37,7 +37,7 @@ class TACSLinearHexaBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a quadratic hexahedral element
+  Basis class for a quadratic hexahedral element
 */
 class TACSQuadraticHexaBasis : public TACSElementBasis {
  public:
@@ -51,12 +51,24 @@ class TACSQuadraticHexaBasis : public TACSElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
 
 /**
-   Basis class for a cubic hexahedral element
+  Basis class for a cubic hexahedral element
 */
 class TACSCubicHexaBasis : public TACSElementBasis {
  public:
@@ -70,8 +82,90 @@ class TACSCubicHexaBasis : public TACSElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+};
+
+/**
+  Basis class for a quartic hexahedral element
+*/
+class TACSQuarticHexaBasis : public TACSElementBasis {
+ public:
+  TACSQuarticHexaBasis();
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
+  int getNumNodes();
+  int getNumParameters();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight( int n );
+  double getQuadraturePoint( int n, double pt[] );
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints( int face );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
+  void computeBasis( const double pt[], double N[] );
+  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+ private:
+  static const double cosine_pts[5];
+  double Nf[25], Nfxi[25];
+};
+
+/**
+  Basis class for a quintic hexahedral element
+*/
+class TACSQuinticHexaBasis : public TACSElementBasis {
+ public:
+  TACSQuinticHexaBasis();
+  ElementLayout getLayoutType();
+  void getVisPoint( int n, double pt[] );
+  int getNumNodes();
+  int getNumParameters();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight( int n );
+  double getQuadraturePoint( int n, double pt[] );
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints( int face );
+  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
+  void computeBasis( const double pt[], double N[] );
+  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+ private:
+  static const double cosine_pts[6];
+  double Nf[36], Nfxi[36];
 };
 
 #endif // TACS_HEXA_BASIS_H

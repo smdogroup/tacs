@@ -18,7 +18,7 @@
 #include "TACSElementBasis.h"
 
 /**
-   Basis class for a linear quad element
+  Basis class for a linear quad element
 */
 class TACSLinearQuadBasis : public TACSElementBasis {
  public:
@@ -37,7 +37,7 @@ class TACSLinearQuadBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a quadratic quad element
+  Basis class for a quadratic quad element
 */
 class TACSQuadraticQuadBasis : public TACSElementBasis {
  public:
@@ -56,7 +56,7 @@ class TACSQuadraticQuadBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a cubic quad element
+  Basis class for a cubic quad element
 */
 class TACSCubicQuadBasis : public TACSElementBasis {
  public:
@@ -87,7 +87,7 @@ class TACSCubicQuadBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a cubic quad element
+  Basis class for a quartic quad element
 */
 class TACSQuarticQuadBasis : public TACSElementBasis {
  public:
@@ -122,7 +122,7 @@ class TACSQuarticQuadBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a cubic quad element
+  Basis class for a quintic quad element
 */
 class TACSQuinticQuadBasis : public TACSElementBasis {
  public:

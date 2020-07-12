@@ -4,8 +4,11 @@
 */
 
 #include "TACSLinearElasticity.h"
+#include "TACSThermoelasticity.h"
 #include "TACSQuadBasis.h"
+#include "TACSHexaBasis.h"
 #include "TACSElement2D.h"
+#include "TACSElement3D.h"
 
 #include "TACSAssembler.h"
 #include "TACSMatrixFreeMat.h"
@@ -17,26 +20,26 @@
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-void createAssembler( MPI_Comm comm, int order, int nx, int ny,
+void createAssembler( MPI_Comm comm, int order, int nx, int ny, int nz,
                       TACSAssembler **_assembler, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   // Set the number of nodes/elements on this proc
-  int varsPerNode = 2;
+  int varsPerNode = 4;
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
 
   if (rank == 0){
     // Set the number of elements
-    int numNodes = ((order - 1)*nx + 1)*((order - 1)*ny + 1);
-    int numElements = nx*ny;
+    int numNodes = ((order - 1)*nx + 1)*((order - 1)*ny + 1)*((order - 1)*nz + 1);
+    int numElements = nx * ny * nz;
 
     // Allocate the input arrays into the creator object
     int *ids = new int[ numElements ];
     int *ptr = new int[ numElements+1 ];
-    int *conn = new int[ order*order*numElements ];
+    int *conn = new int[ order*order*order*numElements ];
 
     // Set the ids
     memset(ids, 0, numElements*sizeof(int));
@@ -50,21 +53,25 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny,
     }
 
     ptr[0] = 0;
-    for ( int k = 0; k < numElements; k++ ){
+    for ( int n = 0; n < numElements; n++ ){
       // Back out the i, j coordinates from the corresponding
       // element number
-      int i = k % nx;
-      int j = k/nx;
+      int i = (n % (nx * ny)) % nx;
+      int j = (n % (nx * ny)) / nx;
+      int k = n / (nx * ny);
 
       // Set the node connectivity
-      for ( int jj = 0; jj < order; jj++ ){
-        for ( int ii = 0; ii < order; ii++ ){
-          conn[order*order*k + ii + order*jj] =
-            ((order-1)*i + ii) +
-            ((order-1)*j + jj)*((order-1)*nx + 1);
+      for ( int kk = 0; kk < order; kk++ ){
+        for ( int jj = 0; jj < order; jj++ ){
+          for ( int ii = 0; ii < order; ii++ ){
+            conn[order*order*order*n + ii + order*jj + order*order*kk] =
+              ((order-1)*i + ii) +
+              ((order-1)*j + jj)*((order-1)*nx + 1) +
+              ((order-1)*k + kk)*((order-1)*nx + 1)*((order-1)*ny + 1);
+          }
         }
       }
-      ptr[k+1] = order*order*(k+1);
+      ptr[n+1] = order*order*order*(n + 1);
     }
 
     // Set the connectivity
@@ -91,12 +98,17 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny,
 
     // Set the node locations
     TacsScalar *Xpts = new TacsScalar[ 3*numNodes ];
-    for ( int j = 0; j < (order - 1)*ny + 1; j++ ){
-      for ( int i = 0; i < (order - 1)*nx + 1; i++ ){
-        int node = i + ((order - 1)*nx + 1)*j;
-        Xpts[3*node] = (1.0*i)/nx;
-        Xpts[3*node+1] = (1.0*j)/ny;
-        Xpts[3*node+2] = 0.0;
+    for ( int k = 0; k < (order - 1)*nz + 1; k++ ){
+      for ( int j = 0; j < (order - 1)*ny + 1; j++ ){
+        for ( int i = 0; i < (order - 1)*nx + 1; i++ ){
+          int node =
+            i +
+            j*((order - 1)*nx + 1) +
+            k*((order - 1)*nx + 1)*((order - 1)*ny + 1);
+          Xpts[3*node] = (1.0*i)/nx;
+          Xpts[3*node+1] = (1.0*j)/ny;
+          Xpts[3*node+2] = (1.0*k)/nz;
+        }
       }
     }
 
@@ -120,36 +132,36 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny,
     new TACSMaterialProperties(rho, specific_heat, E2, nu, ys, cte, kappa);
 
   // Create the stiffness object
-  TACSPlaneStressConstitutive *stiff1 =
-    new TACSPlaneStressConstitutive(props1);
-  TACSPlaneStressConstitutive *stiff2 =
-    new TACSPlaneStressConstitutive(props2);
+  TACSSolidConstitutive *stiff1 =
+    new TACSSolidConstitutive(props1);
+  TACSSolidConstitutive *stiff2 =
+    new TACSSolidConstitutive(props2);
 
   // Create the model class
-  TACSLinearElasticity2D *model1 =
-    new TACSLinearElasticity2D(stiff1, TACS_LINEAR_STRAIN);
-  TACSLinearElasticity2D *model2 =
-    new TACSLinearElasticity2D(stiff2, TACS_LINEAR_STRAIN);
+  TACSLinearThermoelasticity3D *model1 =
+    new TACSLinearThermoelasticity3D(stiff1, TACS_LINEAR_STRAIN);
+  TACSLinearThermoelasticity3D *model2 =
+    new TACSLinearThermoelasticity3D(stiff2, TACS_LINEAR_STRAIN);
 
   // Create the element class
   TACSElementBasis *basis = NULL;
   if (order == 2){
-    basis = new TACSLinearQuadBasis();
+    basis = new TACSLinearHexaBasis();
   }
   else if (order == 3){
-    basis = new TACSQuadraticQuadBasis();
+    basis = new TACSQuadraticHexaBasis();
   }
   else if (order == 4){
-    basis = new TACSCubicQuadBasis();
+    basis = new TACSCubicHexaBasis();
   }
   else if (order == 5){
-    basis = new TACSQuarticQuadBasis();
+    basis = new TACSQuarticHexaBasis();
   }
   else if (order == 6){
-    basis = new TACSQuinticQuadBasis();
+    basis = new TACSQuinticHexaBasis();
   }
-  TACSElement2D *linear_element1 = new TACSElement2D(model1, basis);
-  TACSElement2D *linear_element2 = new TACSElement2D(model2, basis);
+  TACSElement3D *linear_element1 = new TACSElement3D(model1, basis);
+  TACSElement3D *linear_element2 = new TACSElement3D(model2, basis);
 
   // Set the one element
   TACSElement *elems[2];
@@ -180,11 +192,12 @@ int main( int argc, char *argv[] ){
   TACSCreator *creator;
 
   // Set the dimension of the mesh
-  int nx = 64;
-  int ny = 64;
+  int nx = 5;
+  int ny = 5;
+  int nz = 5;
   int order = 6;
 
-  createAssembler(comm, order, nx, ny, &assembler, &creator);
+  createAssembler(comm, order, nx, ny, nz, &assembler, &creator);
   assembler->incref();
   creator->incref();
 
@@ -196,9 +209,6 @@ int main( int argc, char *argv[] ){
   TACSBVec *y_free = assembler->createVec();
   x->setRand(-1.0, 1.0);
   assembler->applyBCs(x);
-
-  assembler->setVariables(x);
-  assembler->testElement(0, 2);
 
   double tassemble = MPI_Wtime();
   double alpha = 1.0, beta = 0.0, gamma = 0.0;

@@ -511,7 +511,7 @@ class TACSElementBasis : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric point
     @param num_fields The number of fields to interpolate
-    @param values The values of the interpolant at the nodes
+    @param values The values of the field at the nodes
     @param incr The increment between locations in the field array
     @param field The field values
   */
@@ -549,28 +549,6 @@ class TACSElementBasis : public TACSObject {
                              TacsScalar field[] );
 
   /**
-    Compute the interpolate to a quadrature point on the face
-
-    By default, this evaluates the interpFields function, but if you have
-    a specific shape function implementation, indexed on the quadrature
-    point, this will not work.
-
-    @param face The face index
-    @param n The quadrature point index on this face
-    @param num_fields The number of fields to interpolate
-    @param values The values to interpolate
-    @param incr The increment between locations in the field array
-    @param field The field values
-  */
-  virtual void interpFaceFields( const int face,
-                                 const int n,
-                                 const double pt[],
-                                 const int num_fields,
-                                 const TacsScalar values[],
-                                 const int incr,
-                                 TacsScalar field[] );
-
-  /**
     Add the transpose of the interpolation operation to the vector
 
     This function computes the following for i = 0, num_fields-1,
@@ -593,25 +571,6 @@ class TACSElementBasis : public TACSObject {
                                          TacsScalar values[] );
 
   /**
-    Add the transpose of the interpolation operation to the vector
-    on the face quadrature points.
-
-    @param n The quadrature point index
-    @param pt The parametric point
-    @param num_fields The number of fields to interpolate
-    @param values The values of the interpolant at the nodes
-    @param incr The increment between locations in the field array
-    @param field The field values
-  */
-  virtual void addInterpFaceFieldsTranspose( const int face,
-                                             const int n,
-                                             const double pt[],
-                                             const int incr,
-                                             const TacsScalar field[],
-                                             const int num_fields,
-                                             TacsScalar values[] );
-
-  /**
     Compute the gradient of the fields in the computational space
 
     This function must compute
@@ -621,7 +580,7 @@ class TACSElementBasis : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric location of the quadrature point
     @param num_fields The number of fields to interpolate
-    @param values The values of the interpolant at the nodes
+    @param values The values of the field at the nodes
     @param grad The gradient of the field in the computational space
   */
   virtual void interpFieldsGrad( const int n,
@@ -629,26 +588,6 @@ class TACSElementBasis : public TACSObject {
                                  const int num_fields,
                                  const TacsScalar values[],
                                  TacsScalar grad[] );
-
-  /**
-    Compute the interpolate to a quadrature point on the face
-
-    By default, this evaluates the interpFields function, but if you have
-    a specific shape function implementation, indexed on the quadrature
-    point, this will not work.
-
-    @param face The face index
-    @param n The quadrature point index on this face
-    @param num_fields The number of fields to interpolate
-    @param values The values to interpolate
-    @param grad The gradient of the field in the computational space
-  */
-  virtual void interpFaceFieldsGrad( const int face,
-                                     const int n,
-                                     const double pt[],
-                                     const int num_fields,
-                                     const TacsScalar values[],
-                                     TacsScalar grad[] );
 
   /**
     Add the transpose of the gradient interpolation to the vector
@@ -661,7 +600,7 @@ class TACSElementBasis : public TACSObject {
     @param n The quadrature point index
     @param pt The parametric location of the quadrature point
     @param num_fields The number of fields to interpolate
-    @param values The values of the interpolant at the nodes
+    @param values The values of the field at the nodes
     @param grad The gradient of the field in the computational space
   */
   virtual void addInterpFieldsGradTranspose( int n,
@@ -671,24 +610,6 @@ class TACSElementBasis : public TACSObject {
                                              TacsScalar values[] );
 
   /**
-    Add the transpose of the gradient interpolation to the vector
-    at quadrature points on the specified face
-
-    @param face The face index
-    @param n The quadrature point index
-    @param pt The parametric location of the quadrature point
-    @param num_fields The number of fields to interpolate
-    @param values The values of the interpolant at the nodes
-    @param grad The gradient of the field in the computational space
-  */
-  virtual void addInterpFaceFieldsGradTranspose( const int face,
-                                                 int n,
-                                                 const double pt[],
-                                                 const int num_fields,
-                                                 const TacsScalar grad[],
-                                                 TacsScalar values[] );
-
-  /*
     Add the outer-product of the shape functions to the matrix
 
     mat[row_incr*i + col_incr*j] += scale*N[i]*N[j]
@@ -707,7 +628,7 @@ class TACSElementBasis : public TACSObject {
                                       const int col_incr,
                                       TacsScalar *mat );
 
-  /*
+  /**
     Add the outer-product of the shape functions to the matrix
 
     mat[row_incr*i + col_incr*j] += scale*N[i]*N[j]
@@ -749,8 +670,84 @@ class TACSElementBasis : public TACSObject {
                                               const int col_incr,
                                               TacsScalar *mat );
 
-  // private: // These functions/data will become private
-   static const int MAX_NUM_NODES = 256;
+  /**
+    Compute the interpolate to a quadrature point on the face
+
+    By default, this evaluates the interpFields function, but if you have
+    a specific shape function implementation, indexed on the quadrature
+    point, this will not work.
+
+    @param face The face index
+    @param n The quadrature point index on this face
+    @param num_fields The number of fields to interpolate
+    @param values The values to interpolate
+    @param incr The increment between locations in the field array
+    @param field The field values
+  */
+  virtual void interpFaceFields( const int face,
+                                 const int n,
+                                 const double pt[],
+                                 const int num_fields,
+                                 const TacsScalar values[],
+                                 const int incr,
+                                 TacsScalar field[] );
+
+  /**
+    Add the transpose of the interpolation operation to the vector
+    on the face quadrature points.
+
+    @param n The quadrature point index
+    @param pt The parametric point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param incr The increment between locations in the field array
+    @param field The field values
+  */
+  virtual void addInterpFaceFieldsTranspose( const int face,
+                                             const int n,
+                                             const double pt[],
+                                             const int incr,
+                                             const TacsScalar field[],
+                                             const int num_fields,
+                                             TacsScalar values[] );
+
+  /**
+    Compute the interpolate to a quadrature point on the face
+
+    By default, this evaluates the interpFields function, but if you have
+    a specific shape function implementation, indexed on the quadrature
+    point, this will not work.
+
+    @param face The face index
+    @param n The quadrature point index on this face
+    @param num_fields The number of fields to interpolate
+    @param values The values to interpolate
+    @param grad The gradient of the field in the computational space
+  */
+  virtual void interpFaceFieldsGrad( const int face,
+                                     const int n,
+                                     const double pt[],
+                                     const int num_fields,
+                                     const TacsScalar values[],
+                                     TacsScalar grad[] );
+
+  /**
+    Add the transpose of the gradient interpolation to the vector
+    at quadrature points on the specified face
+
+    @param face The face index
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @param num_fields The number of fields to interpolate
+    @param values The values of the interpolant at the nodes
+    @param grad The gradient of the field in the computational space
+  */
+  virtual void addInterpFaceFieldsGradTranspose( const int face,
+                                                 int n,
+                                                 const double pt[],
+                                                 const int num_fields,
+                                                 const TacsScalar grad[],
+                                                 TacsScalar values[] );
 
   /**
     Evaluate the basis functions at the quadrature points
@@ -772,6 +769,12 @@ class TACSElementBasis : public TACSObject {
     @param Nxi The derivatives of the shape functions
   */
   virtual void computeBasisGradient( const double pt[], double N[], double Nxi[] ) = 0;
+
+ private:
+  // This is the maximum number of nodes (basis functions). This
+  // is only used in the default implementation of the interpolatant
+  // functions above and should not be accessed by any external class.
+  static const int MAX_NUM_NODES = 216; // = 6**3
 };
 
 #endif // TACS_ELEMENT_BASIS_H
