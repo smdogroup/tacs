@@ -1134,3 +1134,249 @@ void TACSElementBasis::addMatVecProduct( int n,
   addInterpFieldsTranspose(n, pt, 1, DU, vars_per_node, py);
   addInterpFieldsGradTranspose(n, pt, vars_per_node, DUxi, py);
 }
+
+void TACSElementBasis::interpFields( const int n,
+                                     const double pt[],
+                                     const int num_fields,
+                                     const TacsScalar values[],
+                                     const int incr,
+                                     TacsScalar field[] ){
+  const int num_nodes = getNumNodes();
+  double N[MAX_NUM_NODES];
+  computeBasis(pt, N);
+  for ( int i = 0; i < num_fields; i++ ){
+    field[incr*i] = 0.0;
+    for ( int j = 0; j < num_nodes; j++ ){
+      field[incr*i] += values[num_fields*j + i]*N[j];
+    }
+  }
+}
+
+void TACSElementBasis::interpFields( const int n,
+                                     const double pt[],
+                                     const int num_fields,
+                                     const TacsScalar val1[],
+                                     const TacsScalar val2[],
+                                     const TacsScalar val3[],
+                                     TacsScalar field[] ){
+  interpFields(n, pt, num_fields, val1, 3, &field[0]);
+  interpFields(n, pt, num_fields, val2, 3, &field[1]);
+  interpFields(n, pt, num_fields, val3, 3, &field[2]);
+}
+
+void TACSElementBasis::interpFaceFields( const int face,
+                                         const int n,
+                                         const double pt[],
+                                         const int num_fields,
+                                         const TacsScalar values[],
+                                         const int incr,
+                                         TacsScalar field[] ){
+  interpFields(-1, pt, num_fields, values, incr, field);
+}
+
+void TACSElementBasis::addInterpFieldsTranspose( const int n,
+                                                 const double pt[],
+                                                 const int incr,
+                                                 const TacsScalar field[],
+                                                 const int num_fields,
+                                                 TacsScalar values[] ){
+  const int num_nodes = getNumNodes();
+  double N[MAX_NUM_NODES];
+  computeBasis(pt, N);
+  for ( int i = 0; i < num_fields; i++ ){
+    for ( int j = 0; j < num_nodes; j++ ){
+      values[num_fields*j + i] += field[incr*i]*N[j];
+    }
+  }
+}
+
+void TACSElementBasis::addInterpFaceFieldsTranspose( const int face,
+                                                     const int n,
+                                                     const double pt[],
+                                                     const int incr,
+                                                     const TacsScalar field[],
+                                                     const int num_fields,
+                                                     TacsScalar values[] ){
+  addInterpFieldsTranspose(-1, pt, incr, field, num_fields, values);
+}
+
+void TACSElementBasis::interpFieldsGrad( const int n,
+                                         const double pt[],
+                                         const int num_fields,
+                                         const TacsScalar values[],
+                                         TacsScalar grad[] ){
+  const int num_nodes = getNumNodes();
+  const int num_params = getNumParameters();
+  double N[MAX_NUM_NODES], Nxi[3*MAX_NUM_NODES];
+  computeBasisGradient(pt, N, Nxi);
+  for ( int i = 0; i < num_fields; i++ ){
+    for ( int j = 0; j < num_params; j++ ){
+      grad[num_params*i + j] = 0.0;
+    }
+    for ( int k = 0; k < num_nodes; k++ ){
+      for ( int j = 0; j < num_params; j++ ){
+        grad[num_params*i + j] += values[num_fields*k + i]*Nxi[num_params*k + j];
+      }
+    }
+  }
+}
+
+void TACSElementBasis::interpFaceFieldsGrad( const int face,
+                                             const int n,
+                                             const double pt[],
+                                             const int num_fields,
+                                             const TacsScalar values[],
+                                             TacsScalar grad[] ){
+  interpFieldsGrad(-1, pt, num_fields, values, grad);
+}
+
+void TACSElementBasis::addInterpFieldsGradTranspose( int n,
+                                                     const double pt[],
+                                                     const int num_fields,
+                                                     const TacsScalar grad[],
+                                                     TacsScalar values[] ){
+  const int num_nodes = getNumNodes();
+  const int num_params = getNumParameters();
+  double N[MAX_NUM_NODES], Nxi[3*MAX_NUM_NODES];
+  computeBasisGradient(pt, N, Nxi);
+  for ( int i = 0; i < num_fields; i++ ){
+    for ( int k = 0; k < num_nodes; k++ ){
+      for ( int j = 0; j < num_params; j++ ){
+        values[num_fields*k + i] += grad[num_params*i + j]*Nxi[num_params*k + j];
+      }
+    }
+  }
+}
+
+void TACSElementBasis::addInterpFaceFieldsGradTranspose( const int face,
+                                                         int n,
+                                                         const double pt[],
+                                                         const int num_fields,
+                                                         const TacsScalar grad[],
+                                                         TacsScalar values[] ){
+  addInterpFieldsGradTranspose(-1, pt, num_fields, grad, values);
+}
+
+void TACSElementBasis::addInterpOuterProduct( const int n,
+                                              const double pt[],
+                                              const TacsScalar weight,
+                                              const int row_incr,
+                                              const int col_incr,
+                                              TacsScalar *mat ){
+  const int num_nodes = getNumNodes();
+  double N[MAX_NUM_NODES];
+  computeBasis(pt, N);
+  for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+    for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+      mat[0] += weight*N[i]*N[j];
+    }
+  }
+}
+
+void TACSElementBasis::addInterpGradOuterProduct( const int n,
+                                                  const double pt[],
+                                                  const int transpose,
+                                                  const TacsScalar weight,
+                                                  const TacsScalar scale[],
+                                                  const int row_incr,
+                                                  const int col_incr,
+                                                  TacsScalar *mat ){
+  const int num_nodes = getNumNodes();
+  const int num_params = getNumParameters();
+  double N[MAX_NUM_NODES], Nxi[3*MAX_NUM_NODES];
+  computeBasisGradient(pt, N, Nxi);
+
+  if (transpose){
+    if (num_params == 1){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] +=
+            weight*N[j]*(Nxi[i]*scale[0]);
+        }
+      }
+    }
+    else if (num_params == 2){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] += weight*N[j]*(Nxi[2*i]*scale[0] + Nxi[2*i+1]*scale[1]);
+        }
+      }
+    }
+    else if (num_params == 3){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] += weight*N[j]*(Nxi[3*i]*scale[0] +
+                                 Nxi[3*i+1]*scale[1] +
+                                 Nxi[3*i+2]*scale[2]);
+        }
+      }
+    }
+  }
+  else {
+    if (num_params == 1){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] +=
+            weight*N[i]*(Nxi[j]*scale[0]);
+        }
+      }
+    }
+    else if (num_params == 2){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] += weight*N[i]*(Nxi[2*j]*scale[0] + Nxi[2*j+1]*scale[1]);
+        }
+      }
+    }
+    else if (num_params == 3){
+      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+          mat[0] += weight*N[i]*(Nxi[3*j]*scale[0] +
+                                 Nxi[3*j+1]*scale[1] +
+                                 Nxi[3*j+2]*scale[2]);
+        }
+      }
+    }
+  }
+}
+
+void TACSElementBasis::addInterpGradGradOuterProduct( const int n,
+                                                      const double pt[],
+                                                      const TacsScalar weight,
+                                                      const TacsScalar iscale[],
+                                                      const TacsScalar jscale[],
+                                                      const int row_incr,
+                                                      const int col_incr,
+                                                      TacsScalar *mat ){
+  const int num_nodes = getNumNodes();
+  const int num_params = getNumParameters();
+  double N[256], Nxi[3*256];
+  computeBasisGradient(pt, N, Nxi);
+
+  if (num_params == 1){
+    for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+      for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+        mat[0] +=
+          weight*(Nxi[i]*iscale[0])*(Nxi[j]*jscale[0]);
+      }
+    }
+  }
+  else if (num_params == 2){
+    for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+      for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+        mat[0] +=
+          weight*(Nxi[2*i]*iscale[0] + Nxi[2*i+1]*iscale[1])*
+          (Nxi[2*j]*jscale[0] + Nxi[2*j+1]*jscale[1]);
+      }
+    }
+  }
+  else if (num_params == 3){
+    for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
+      for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
+        mat[0] +=
+          weight*(Nxi[3*i]*iscale[0] + Nxi[3*i+1]*iscale[1] + Nxi[3*i+2]*iscale[2])*
+          (Nxi[3*j]*jscale[0] + Nxi[3*j+1]*jscale[1] + Nxi[3*j+2]*jscale[2]);
+      }
+    }
+  }
+}

@@ -18,7 +18,7 @@
 #include "TACSElementBasis.h"
 
 /**
-   Basis class for a linear triangular element
+   Basis class for a linear hexahedral element
 */
 class TACSLinearHexaBasis : public TACSElementBasis {
  public:
@@ -37,7 +37,7 @@ class TACSLinearHexaBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a quadratic triangular element
+   Basis class for a quadratic hexahedral element
 */
 class TACSQuadraticHexaBasis : public TACSElementBasis {
  public:
@@ -56,7 +56,7 @@ class TACSQuadraticHexaBasis : public TACSElementBasis {
 };
 
 /**
-   Basis class for a cubic triangular element
+   Basis class for a cubic hexahedral element
 */
 class TACSCubicHexaBasis : public TACSElementBasis {
  public:

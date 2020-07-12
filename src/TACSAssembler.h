@@ -223,6 +223,15 @@ class TACSAssembler : public TACSObject {
                               TACSBVec *x, TACSBVec *y,
                               MatrixOrientation matOr=TACS_MAT_NORMAL );
 
+  // Assemble data for and compute matrix-free matrix-vector products
+  // ----------------------------------------------------------------
+  int assembleMatrixFreeData( ElementMatrixType matType,
+                              TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                              TacsScalar data[] );
+  void addMatrixFreeVecProduct( ElementMatrixType matType,
+                                const TacsScalar data[], TACSBVec *x, TACSBVec *y,
+                                MatrixOrientation matOr=TACS_MAT_NORMAL );
+
   // Design variable handling
   // ------------------------
   TACSBVec* createDesignVec();

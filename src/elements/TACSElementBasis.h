@@ -501,10 +501,6 @@ class TACSElementBasis : public TACSObject {
                          const TacsScalar *px,
                          TacsScalar *py );
 
-  // Temporary before wrecking everything...
-  virtual void computeBasis( const double pt[], double N[] ) = 0;
-  virtual void computeBasisGradient( const double pt[], double N[], double Nxi[] ) = 0;
-
   /**
     Interpolate the specified number of fields
 
@@ -524,17 +520,7 @@ class TACSElementBasis : public TACSObject {
                              const int num_fields,
                              const TacsScalar values[],
                              const int incr,
-                             TacsScalar field[] ){
-    const int num_nodes = getNumNodes();
-    double N[256];
-    computeBasis(pt, N);
-    for ( int i = 0; i < num_fields; i++ ){
-      field[incr*i] = 0.0;
-      for ( int j = 0; j < num_nodes; j++ ){
-        field[incr*i] += values[num_fields*j + i]*N[j];
-      }
-    }
-  }
+                             TacsScalar field[] );
 
   /**
     Compute the interpolation field for three different interpolants
@@ -560,11 +546,7 @@ class TACSElementBasis : public TACSObject {
                              const TacsScalar val1[],
                              const TacsScalar val2[],
                              const TacsScalar val3[],
-                             TacsScalar field[] ){
-    interpFields(n, pt, num_fields, val1, 3, &field[0]);
-    interpFields(n, pt, num_fields, val2, 3, &field[1]);
-    interpFields(n, pt, num_fields, val3, 3, &field[2]);
-  }
+                             TacsScalar field[] );
 
   /**
     Compute the interpolate to a quadrature point on the face
@@ -586,9 +568,7 @@ class TACSElementBasis : public TACSObject {
                                  const int num_fields,
                                  const TacsScalar values[],
                                  const int incr,
-                                 TacsScalar field[] ){
-    interpFields(-1, pt, num_fields, values, incr, field);
-  }
+                                 TacsScalar field[] );
 
   /**
     Add the transpose of the interpolation operation to the vector
@@ -610,16 +590,7 @@ class TACSElementBasis : public TACSObject {
                                          const int incr,
                                          const TacsScalar field[],
                                          const int num_fields,
-                                         TacsScalar values[] ){
-    const int num_nodes = getNumNodes();
-    double N[256];
-    computeBasis(pt, N);
-    for ( int i = 0; i < num_fields; i++ ){
-      for ( int j = 0; j < num_nodes; j++ ){
-        values[num_fields*j + i] += field[incr*i]*N[j];
-      }
-    }
-  }
+                                         TacsScalar values[] );
 
   /**
     Add the transpose of the interpolation operation to the vector
@@ -638,9 +609,7 @@ class TACSElementBasis : public TACSObject {
                                              const int incr,
                                              const TacsScalar field[],
                                              const int num_fields,
-                                             TacsScalar values[] ){
-    addInterpFieldsTranspose(-1, pt, incr, field, num_fields, values);
-  }
+                                             TacsScalar values[] );
 
   /**
     Compute the gradient of the fields in the computational space
@@ -659,22 +628,7 @@ class TACSElementBasis : public TACSObject {
                                  const double pt[],
                                  const int num_fields,
                                  const TacsScalar values[],
-                                 TacsScalar grad[] ){
-    const int num_nodes = getNumNodes();
-    const int num_params = getNumParameters();
-    double N[256], Nxi[3*256];
-    computeBasisGradient(pt, N, Nxi);
-    for ( int i = 0; i < num_fields; i++ ){
-      for ( int j = 0; j < num_params; j++ ){
-        grad[num_params*i + j] = 0.0;
-      }
-      for ( int k = 0; k < num_nodes; k++ ){
-        for ( int j = 0; j < num_params; j++ ){
-          grad[num_params*i + j] += values[num_fields*k + i]*Nxi[num_params*k + j];
-        }
-      }
-    }
-  }
+                                 TacsScalar grad[] );
 
   /**
     Compute the interpolate to a quadrature point on the face
@@ -694,9 +648,7 @@ class TACSElementBasis : public TACSObject {
                                      const double pt[],
                                      const int num_fields,
                                      const TacsScalar values[],
-                                     TacsScalar grad[] ){
-    interpFieldsGrad(-1, pt, num_fields, values, grad);
-  }
+                                     TacsScalar grad[] );
 
   /**
     Add the transpose of the gradient interpolation to the vector
@@ -716,19 +668,7 @@ class TACSElementBasis : public TACSObject {
                                              const double pt[],
                                              const int num_fields,
                                              const TacsScalar grad[],
-                                             TacsScalar values[] ){
-    const int num_nodes = getNumNodes();
-    const int num_params = getNumParameters();
-    double N[256], Nxi[3*256];
-    computeBasisGradient(pt, N, Nxi);
-    for ( int i = 0; i < num_fields; i++ ){
-      for ( int k = 0; k < num_nodes; k++ ){
-        for ( int j = 0; j < num_params; j++ ){
-          values[num_fields*k + i] += grad[num_params*i + j]*Nxi[num_params*k + j];
-        }
-      }
-    }
-  }
+                                             TacsScalar values[] );
 
   /**
     Add the transpose of the gradient interpolation to the vector
@@ -746,9 +686,7 @@ class TACSElementBasis : public TACSObject {
                                                  const double pt[],
                                                  const int num_fields,
                                                  const TacsScalar grad[],
-                                                 TacsScalar values[] ){
-    addInterpFieldsGradTranspose(-1, pt, num_fields, grad, values);
-  }
+                                                 TacsScalar values[] );
 
   /*
     Add the outer-product of the shape functions to the matrix
@@ -767,16 +705,7 @@ class TACSElementBasis : public TACSObject {
                                       const TacsScalar weight,
                                       const int row_incr,
                                       const int col_incr,
-                                      TacsScalar *mat ){
-    const int num_nodes = getNumNodes();
-    double N[256];
-    computeBasis(pt, N);
-    for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-      for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-        mat[0] += weight*N[i]*N[j];
-      }
-    }
-  }
+                                      TacsScalar *mat );
 
   /*
     Add the outer-product of the shape functions to the matrix
@@ -797,70 +726,12 @@ class TACSElementBasis : public TACSObject {
                                           const TacsScalar scale[],
                                           const int row_incr,
                                           const int col_incr,
-                                          TacsScalar *mat ){
-    const int num_nodes = getNumNodes();
-    const int num_params = getNumParameters();
-    double N[256], Nxi[3*256];
-    computeBasisGradient(pt, N, Nxi);
+                                          TacsScalar *mat );
 
-    if (transpose){
-      if (num_params == 1){
-        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-            mat[0] +=
-              weight*N[j]*(Nxi[i]*scale[0]);
-          }
-        }
-      }
-      else if (num_params == 2){
-        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-            mat[0] += weight*N[j]*(Nxi[2*i]*scale[0] + Nxi[2*i+1]*scale[1]);
-          }
-        }
-      }
-      else if (num_params == 3){
-        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-            mat[0] += weight*N[j]*(Nxi[3*i]*scale[0] +
-                                   Nxi[3*i+1]*scale[1] +
-                                   Nxi[3*i+2]*scale[2]);
-          }
-        }
-      }
-    }
-    else {
-      if (num_params == 1){
-        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-            mat[0] +=
-              weight*N[i]*(Nxi[j]*scale[0]);
-          }
-        }
-      }
-      else if (num_params == 2){
-        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-            mat[0] += weight*N[i]*(Nxi[2*j]*scale[0] + Nxi[2*j+1]*scale[1]);
-          }
-        }
-      }
-      else if (num_params == 3){
-        for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-          for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-            mat[0] += weight*N[i]*(Nxi[3*j]*scale[0] +
-                                   Nxi[3*j+1]*scale[1] +
-                                   Nxi[3*j+2]*scale[2]);
-          }
-        }
-      }
-    }
-  }
-
-  /*
+  /**
     Add the outer-product of the shape functions to the matrix
 
-    mat[row_incr*i + col_incr*j] += scale*N[i]*N[j]
+    mat[row_incr*i + col_incr*j] += scale*N,x[i]*N,x[j]
 
     @param n The quadrature point index
     @param pt The parametric location of the quadrature point
@@ -876,39 +747,31 @@ class TACSElementBasis : public TACSObject {
                                               const TacsScalar jscale[],
                                               const int row_incr,
                                               const int col_incr,
-                                              TacsScalar *mat ){
-    const int num_nodes = getNumNodes();
-    const int num_params = getNumParameters();
-    double N[256], Nxi[3*256];
-    computeBasisGradient(pt, N, Nxi);
+                                              TacsScalar *mat );
 
-    if (num_params == 1){
-      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-          mat[0] +=
-            weight*(Nxi[i]*iscale[0])*(Nxi[j]*jscale[0]);
-        }
-      }
-    }
-    else if (num_params == 2){
-      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-          mat[0] +=
-            weight*(Nxi[2*i]*iscale[0] + Nxi[2*i+1]*iscale[1])*
-                  (Nxi[2*j]*jscale[0] + Nxi[2*j+1]*jscale[1]);
-        }
-      }
-    }
-    else if (num_params == 3){
-      for ( int i = 0; i < num_nodes; i++, mat += row_incr ){
-        for ( int j = 0; j < num_nodes; j++, mat += col_incr ){
-          mat[0] +=
-            weight*(Nxi[3*i]*iscale[0] + Nxi[3*i+1]*iscale[1] + Nxi[3*i+2]*iscale[2])*
-                   (Nxi[3*j]*jscale[0] + Nxi[3*j+1]*jscale[1] + Nxi[3*j+2]*jscale[2]);
-        }
-      }
-    }
-  }
+  // private: // These functions/data will become private
+   static const int MAX_NUM_NODES = 256;
+
+  /**
+    Evaluate the basis functions at the quadrature points
+
+    This provides direct access to the shape functions, but should
+    not be used by any external code.
+
+    @param pt The quadrature point
+    @param N The shape function values
+  */
+  virtual void computeBasis( const double pt[], double N[] ) = 0;
+
+  /**
+    Evaluate the basis functions and their derivatives at each
+    node.
+
+    @param pt The quadrature point
+    @param N The shape function values
+    @param Nxi The derivatives of the shape functions
+  */
+  virtual void computeBasisGradient( const double pt[], double N[], double Nxi[] ) = 0;
 };
 
 #endif // TACS_ELEMENT_BASIS_H

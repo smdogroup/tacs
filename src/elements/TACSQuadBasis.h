@@ -70,6 +70,18 @@ class TACSCubicQuadBasis : public TACSElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
@@ -79,6 +91,7 @@ class TACSCubicQuadBasis : public TACSElementBasis {
 */
 class TACSQuarticQuadBasis : public TACSElementBasis {
  public:
+  TACSQuarticQuadBasis();
   ElementLayout getLayoutType();
   void getVisPoint( int n, double pt[] );
   int getNumNodes();
@@ -89,10 +102,23 @@ class TACSQuarticQuadBasis : public TACSElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
  private:
   static const double cosine_pts[5];
+  double Nf[25], Nfxi[25];
 };
 
 /**
@@ -100,6 +126,7 @@ class TACSQuarticQuadBasis : public TACSElementBasis {
 */
 class TACSQuinticQuadBasis : public TACSElementBasis {
  public:
+  TACSQuinticQuadBasis();
   ElementLayout getLayoutType();
   void getVisPoint( int n, double pt[] );
   int getNumNodes();
@@ -110,10 +137,23 @@ class TACSQuinticQuadBasis : public TACSElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
  private:
   static const double cosine_pts[6];
+  double Nf[36], Nfxi[36];
 };
 
 #endif // TACS_QUAD_BASIS_H

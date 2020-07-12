@@ -5039,7 +5039,7 @@ void TACSAssembler::evalMatSVSensInnerProduct( ElementMatrixType matType,
 }
 
 /**
-  Evaluate the matrix-free Jacobian-vector product of the input vector
+  Evaluate a Jacobian-vector product of the input vector
   x and store the result in the output vector y.
 
   This code does not assemble a matrix, but does compute the
@@ -5127,6 +5127,151 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
     else {
       BLASgemv("N", &nvars, &nvars, &scale, elemMat, &nvars,
                xvars, &incx, &zero, yvars, &incx);
+    }
+
+    // Add the residual values
+    y->setValues(len, nodes, yvars, TACS_ADD_VALUES);
+  }
+
+  // Add the dependent-variable residual from the dependent nodes
+  y->beginSetValues(TACS_ADD_VALUES);
+  y->endSetValues(TACS_ADD_VALUES);
+
+  // Set the boundary conditions
+  y->applyBCs(bcMap);
+}
+
+/**
+  Compute the element-wise data for a matrix-free matrix-vector product.
+
+  If the data array is NULL, the code computes the size of data array required.
+  This is returned
+
+  The memory required to store the data scales with the number of quadrature
+  points in the mesh.
+
+  @param matType The type of matrix to assemble
+  @param alpha Coefficient for the variables
+  @param beta Coefficient for the time-derivative terms
+  @param gamma Coefficientfor the second time derivative term
+  @param data The data array that is used (may be NULL)
+  @return The size of the data array
+*/
+int TACSAssembler::assembleMatrixFreeData( ElementMatrixType matType,
+                                           TacsScalar alpha,
+                                           TacsScalar beta,
+                                           TacsScalar gamma,
+                                           TacsScalar data[] ){
+  int data_size = 0;
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *vars, *dvars, *ddvars, *yvars, *elemXpts;
+  getDataPointers(elementData,
+                  &vars, &dvars, &ddvars, &yvars,
+                  &elemXpts, NULL, NULL, NULL);
+
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (auxElements){
+    naux = auxElements->getAuxElements(&aux);
+  }
+
+  // Loop over all the elements in the model
+  for ( int i = 0; i < numElements; i++ ){
+    // Extract the element node locations and variable values
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    if (data){
+      xptVec->getValues(len, nodes, elemXpts);
+      varsVec->getValues(len, nodes, vars);
+      dvarsVec->getValues(len, nodes, dvars);
+      ddvarsVec->getValues(len, nodes, ddvars);
+    }
+
+    // Compute the data for the matrix-free vector product
+    int size = elements[i]->getMatVecProductData(matType, i, time,
+                                                 alpha, beta, gamma,
+                                                 elemXpts, vars, dvars, ddvars, data);
+    if (data){
+      data += size;
+    }
+    data_size += size;
+
+    // Add the contribution to the residual and the Jacobian
+    // from the auxiliary elements - if any
+    while (aux_count < naux && aux[aux_count].num == i){
+      size = aux[aux_count].elem->getMatVecProductData(matType, i, time,
+                                                       alpha, beta, gamma,
+                                                       elemXpts, vars, dvars, ddvars,
+                                                       data);
+      if (data){
+        data += size;
+      }
+      data_size += size;
+      aux_count++;
+    }
+  }
+
+  return data_size;
+}
+
+/**
+  Compute a matrix-free matrix-vector product
+
+  Note that the matType parameter must be consistent with the parameter used when
+  generating the original data.
+
+  @param matType The type of matrix to assemble
+  @param data The matrix-free data computed from assembleMatrixFreeData
+  @param x The input vector
+  @param y The vector containing the matrix-vector product
+  @param matOr The orientation of the matrix
+*/
+void TACSAssembler::addMatrixFreeVecProduct( ElementMatrixType matType,
+                                             const TacsScalar data[],
+                                             TACSBVec *x, TACSBVec *y,
+                                             MatrixOrientation matOr ){
+  x->beginDistributeValues();
+  x->endDistributeValues();
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *xvars, *yvars;
+  getDataPointers(elementData,
+                  &xvars, &yvars, NULL, NULL,
+                  NULL, NULL, NULL, NULL);
+
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (auxElements){
+    naux = auxElements->getAuxElements(&aux);
+  }
+
+  // Loop over all the elements in the model
+  for ( int i = 0; i < numElements; i++ ){
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i+1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+
+    // Get the number of variables from the element
+    int nvars = elements[i]->getNumVariables();
+
+    // Get the values
+    x->getValues(len, nodes, xvars);
+
+    // Compute and add the contributions to the Jacobian
+    memset(yvars, 0, nvars*sizeof(TacsScalar));
+    int size = elements[i]->addMatVecProduct(matType, i, data, xvars, yvars);
+    data += size;
+
+    // Add the contribution to the residual and the Jacobian
+    // from the auxiliary elements - if any
+    while (aux_count < naux && aux[aux_count].num == i){
+      size = aux[aux_count].elem->addMatVecProduct(matType, i, data, xvars, yvars);
+      data += size;
+      aux_count++;
     }
 
     // Add the residual values
