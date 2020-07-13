@@ -3,6 +3,7 @@
   the matrix-free matrix matrix-vector product implementation.
 */
 
+#include "TACSHeatConduction.h"
 #include "TACSLinearElasticity.h"
 #include "TACSThermoelasticity.h"
 #include "TACSQuadBasis.h"
@@ -20,13 +21,15 @@
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-void createAssembler( MPI_Comm comm, int order, int nx, int ny, int nz,
+void createAssembler( MPI_Comm comm, int varsPerNode,
+                      int order, int nx, int ny, int nz,
                       TACSAssembler **_assembler, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  // Set the number of nodes/elements on this proc
-  int varsPerNode = 3;
+  if (!(varsPerNode == 1 || varsPerNode == 3 || varsPerNode == 4)){
+    varsPerNode = 4;
+  }
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
@@ -138,10 +141,19 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny, int nz,
     new TACSSolidConstitutive(props2);
 
   // Create the model class
-  TACSLinearElasticity3D *model1 =
-    new TACSLinearElasticity3D(stiff1, TACS_LINEAR_STRAIN);
-  TACSLinearElasticity3D *model2 =
-    new TACSLinearElasticity3D(stiff2, TACS_LINEAR_STRAIN);
+  TACSElementModel *model1 = NULL, *model2 = NULL;
+  if (varsPerNode == 1){
+    model1 = new TACSHeatConduction3D(stiff1);
+    model2 = new TACSHeatConduction3D(stiff2);
+  }
+  else if (varsPerNode == 3){
+    model1 = new TACSLinearElasticity3D(stiff1, TACS_LINEAR_STRAIN);
+    model2 = new TACSLinearElasticity3D(stiff2, TACS_LINEAR_STRAIN);
+  }
+  else if (varsPerNode == 4){
+    model1 = new TACSLinearThermoelasticity3D(stiff1, TACS_LINEAR_STRAIN);
+    model2 = new TACSLinearThermoelasticity3D(stiff2, TACS_LINEAR_STRAIN);
+  }
 
   // Create the element class
   TACSElementBasis *basis = NULL;
@@ -183,6 +195,19 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny, int nz,
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
+  int varsPerNode = 4;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp(argv[i], "varsPerNode=1") == 0){
+      varsPerNode = 1;
+    }
+    else if (strcmp(argv[i], "varsPerNode=3") == 0){
+      varsPerNode = 3;
+    }
+    else if (strcmp(argv[i], "varsPerNode=4") == 0){
+      varsPerNode = 4;
+    }
+  }
+
   // Get the rank
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -197,7 +222,7 @@ int main( int argc, char *argv[] ){
   int nz = 5;
   int order = 6;
 
-  createAssembler(comm, order, nx, ny, nz, &assembler, &creator);
+  createAssembler(comm, varsPerNode, order, nx, ny, nz, &assembler, &creator);
   assembler->incref();
   creator->incref();
 

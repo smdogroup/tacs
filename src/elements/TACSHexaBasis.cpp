@@ -1227,22 +1227,22 @@ void TACSQuinticHexaBasis::interpFieldsGrad( const int n,
 
     for ( int k = 0; k < 6; k++ ){
       for ( int j = 0; j < 6; j++ ){
-        TacsScalar n23 = n2[j]*n3[k];
+        TacsScalar n23  = n2[j]*n3[k];
         TacsScalar n2x3 = n2x[j]*n3[k];
         TacsScalar n23x = n2[j]*n3x[k];
 
         TacsScalar *g = grad;
         for ( int p = 0; p < m; p++ ){
-          g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                        n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          g[0] += n23*(n1x[0]*v[0]   + n1x[1]*v[m]   + n1x[2]*v[2*m] +
+                       n1x[3]*v[3*m] + n1x[4]*v[4*m] + n1x[5]*v[5*m]);
+          TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]   + n1[2]*v[2*m] +
+                           n1[3]*v[3*m] + n1[4]*v[4*m] + n1[5]*v[5*m]);
           g[1] += n2x3*t1;
           g[2] += n23x*t1;
           g += 3;
           v++;
         }
-        v += 6*(m-1);
+        v += 5*m;
       }
     }
   }
@@ -1254,22 +1254,22 @@ void TACSQuinticHexaBasis::interpFieldsGrad( const int n,
 
     for ( int k = 0; k < 6; k++ ){
       for ( int j = 0; j < 6; j++ ){
-        TacsScalar n23 = n2[j]*n3[k];
+        TacsScalar n23  = n2[j]*n3[k];
         TacsScalar n2x3 = n2x[j]*n3[k];
         TacsScalar n23x = n2[j]*n3x[k];
 
         TacsScalar *g = grad;
         for ( int p = 0; p < m; p++ ){
-          g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                        n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          g[0] += n23*(n1x[0]*v[0]   + n1x[1]*v[m]   + n1x[2]*v[2*m] +
+                       n1x[3]*v[3*m] + n1x[4]*v[4*m] + n1x[5]*v[5*m]);
+          TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]   + n1[2]*v[2*m] +
+                           n1[3]*v[3*m] + n1[4]*v[4*m] + n1[5]*v[5*m]);
           g[1] += n2x3*t1;
           g[2] += n23x*t1;
           g += 3;
           v++;
         }
-        v += 6*(m-1);
+        v += 5*m;
       }
     }
   }
@@ -1310,7 +1310,6 @@ void TACSQuinticHexaBasis::addInterpFieldsGradTranspose( int n,
   }
 }
 
-
 void TACSQuinticHexaBasis::interpAllFieldsGrad( const int m,
                                                 const TacsScalar values[],
                                                 TacsScalar out[] ){
@@ -1326,41 +1325,124 @@ void TACSQuinticHexaBasis::interpAllFieldsGrad( const int m,
 
     const TacsScalar *v = values;
 
-    if (m == 3){
+    if (m == 1){
       for ( int k = 0; k < 6; k++ ){
         for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23 = n2[j]*n3[k];
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          out[1] += n23*(n1x[0]*v[0] + n1x[1]*v[1] + n1x[2]*v[2] +
+                         n1x[3]*v[3] + n1x[4]*v[4] + n1x[5]*v[5]);
+          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[1] + n1[2]*v[2] +
+                           n1[3]*v[3] + n1[4]*v[4] + n1[5]*v[5]);
+          out[0] += n23*t1;
+          out[2] += n2x3*t1;
+          out[3] += n23x*t1;
+          v += 6;
+        }
+      }
+    }
+    else if (m == 3){
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar t1;
+          TacsScalar n23  = n2[j]*n3[k];
           TacsScalar n2x3 = n2x[j]*n3[k];
           TacsScalar n23x = n2[j]*n3x[k];
 
           out[3] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
                          n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
-          out[0] += t1*n23;
+          t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
+                n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          out[0] += n23*t1;
           out[4] += n2x3*t1;
           out[5] += n23x*t1;
-          v++;
 
-          out[6] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
-          TacsScalar t2 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
-          out[1] += t2*n23;
+          out[6] += n23*(n1x[0]*v[1]  + n1x[1]*v[4]  + n1x[2]*v[7] +
+                         n1x[3]*v[10] + n1x[4]*v[13] + n1x[5]*v[16]);
+          t1 = (n1[0]*v[1]  + n1[1]*v[4]  + n1[2]*v[7] +
+                n1[3]*v[10] + n1[4]*v[13] + n1[5]*v[16]);
+          out[1] += n23*t1;
           out[7] += n2x3*t1;
           out[8] += n23x*t1;
-          v++;
 
-          out[9] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
-          TacsScalar t3 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
-          out[2] += t3*n23;
+          out[9] += n23*(n1x[0]*v[2]  + n1x[1]*v[5]  + n1x[2]*v[8] +
+                         n1x[3]*v[11] + n1x[4]*v[14] + n1x[5]*v[17]);
+          t1 = (n1[0]*v[2]  + n1[1]*v[5]   + n1[2]*v[8] +
+                n1[3]*v[11] + n1[4]*v[14] + n1[5]*v[17]);
+          out[2] += n23*t1;
           out[10] += n2x3*t1;
           out[11] += n23x*t1;
-          v++;
 
-          v += 6*(m-1);
+          v += 18;
+        }
+      }
+    }
+    else if (m == 4){
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar t1;
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          out[4] += n23*(n1x[0]*v[0]  + n1x[1]*v[4]  + n1x[2]*v[8] +
+                         n1x[3]*v[12] + n1x[4]*v[16] + n1x[5]*v[20]);
+          t1 = (n1[0]*v[0] + n1[1]*v[4]  + n1[2]*v[8] +
+                n1[3]*v[12] + n1[4]*v[16] + n1[5]*v[20]);
+          out[0] += n23*t1;
+          out[5] += n2x3*t1;
+          out[6] += n23x*t1;
+
+          out[7] += n23*(n1x[0]*v[1]  + n1x[1]*v[5]  + n1x[2]*v[9] +
+                         n1x[3]*v[13] + n1x[4]*v[17] + n1x[5]*v[21]);
+          t1 = (n1[0]*v[1]  + n1[1]*v[5]  + n1[2]*v[9] +
+                n1[3]*v[13] + n1[4]*v[17] + n1[5]*v[21]);
+          out[1] += n23*t1;
+          out[8] += n2x3*t1;
+          out[9] += n23x*t1;
+
+          out[10] += n23*(n1x[0]*v[2]  + n1x[1]*v[6]  + n1x[2]*v[10] +
+                          n1x[3]*v[14] + n1x[4]*v[18] + n1x[5]*v[22]);
+          t1 = (n1[0]*v[2]  + n1[1]*v[6]  + n1[2]*v[10] +
+                n1[3]*v[14] + n1[4]*v[18] + n1[5]*v[22]);
+          out[2] += n23*t1;
+          out[11] += n2x3*t1;
+          out[12] += n23x*t1;
+
+          out[13] += n23*(n1x[0]*v[3]  + n1x[1]*v[7]  + n1x[2]*v[11] +
+                         n1x[3]*v[15] + n1x[4]*v[19] + n1x[5]*v[23]);
+          t1 = (n1[0]*v[3] + n1[1]*v[7]  + n1[2]*v[11] +
+                n1[3]*v[15] + n1[4]*v[19] + n1[5]*v[23]);
+          out[3] += n23*t1;
+          out[14] += n2x3*t1;
+          out[15] += n23x*t1;
+
+          v += 24;
+        }
+      }
+    }
+    else {
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          TacsScalar *g = &out[m];
+          for ( int p = 0; p < m; p++ ){
+            g[0] += n23*(n1x[0]*v[0]   + n1x[1]*v[m]   + n1x[2]*v[2*m] +
+                         n1x[3]*v[3*m] + n1x[4]*v[4*m] + n1x[5]*v[5*m]);
+            TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]   + n1[2]*v[2*m] +
+                             n1[3]*v[3*m] + n1[4]*v[4*m] + n1[5]*v[5*m]);
+            out[p] += n23*t1;
+            g[1] += n2x3*t1;
+            g[2] += n23x*t1;
+            g += 3;
+            v++;
+          }
+          v += 5*m;
         }
       }
     }
@@ -1382,58 +1464,143 @@ void TACSQuinticHexaBasis::addInterpAllFieldsGradTranspose( const int m,
 
     TacsScalar *v = values;
 
-    if (m == 3){
-      const TacsScalar *g = &in[3];
+    if (m == 1){
       for ( int k = 0; k < 6; k++ ){
-        TacsScalar n23, n2x3, n23x;
-        TacsScalar t, b, a1, a2, a3;
-
         for ( int j = 0; j < 6; j++ ){
-          n23 = n2[j]*n3[k];
-          n2x3 = n2x[j]*n3[k];
-          n23x = n2[j]*n3x[k];
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
 
-          a1 = (n2x3*g[1] + n23x*g[2]);
-          a2 = (n2x3*g[4] + n23x*g[5]);
-          a3 = (n2x3*g[7] + n23x*g[8]);
+          TacsScalar a = n23*in[0] + n2x3*in[2] + n23x*in[3];
+          TacsScalar b = n23*in[1];
+          v[0] += a*n1[0] + b*n1x[0];
+          v[1] += a*n1[1] + b*n1x[1];
+          v[2] += a*n1[2] + b*n1x[2];
+          v[3] += a*n1[3] + b*n1x[3];
+          v[4] += a*n1[4] + b*n1x[4];
+          v[5] += a*n1[5] + b*n1x[5];
+          v += 6;
+        }
+      }
+    }
+    else if (m == 3){
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
 
-          b = n23*n1[0];
-          t = n23*n1x[0];
-          v[0] += b*in[0] + t*g[0] + n1[0]*a1;
-          v[1] += b*in[1] + t*g[3] + n1[0]*a2;
-          v[2] += b*in[2] + t*g[6] + n1[0]*a3;
+          TacsScalar a1 = n23*in[0] + n2x3*in[4] + n23x*in[5];
+          TacsScalar b1 = n23*in[3];
 
-          b = n23*n1[1];
-          t = n23*n1x[1];
-          v[3] += b*in[0] + t*g[0] + n1[1]*a1;
-          v[4] += b*in[1] + t*g[3] + n1[1]*a2;
-          v[5] += b*in[2] + t*g[6] + n1[1]*a3;
+          TacsScalar a2 = n23*in[1] + n2x3*in[7] + n23x*in[8];
+          TacsScalar b2 = n23*in[6];
 
-          b = n23*n1[2];
-          t = n23*n1x[2];
-          v[6] += b*in[0] + t*g[0] + n1[2]*a1;
-          v[7] += b*in[1] + t*g[3] + n1[2]*a2;
-          v[8] += b*in[2] + t*g[6] + n1[2]*a3;
+          TacsScalar a3 = n23*in[2] + n2x3*in[10] + n23x*in[11];
+          TacsScalar b3 = n23*in[9];
 
-          b = n23*n1[3];
-          t = n23*n1x[3];
-          v[9] += b*in[0] + t*g[0] + n1[3]*a1;
-          v[10] += b*in[1] + t*g[3] + n1[3]*a2;
-          v[11] += b*in[2] + t*g[6] + n1[3]*a3;
+          v[0] +=  a1*n1[0] + b1*n1x[0];
+          v[1] +=  a2*n1[0] + b2*n1x[0];
+          v[2] +=  a3*n1[0] + b3*n1x[0];
 
-          b = n23*n1[4];
-          t = n23*n1x[4];
-          v[12] += b*in[0] + t*g[0] + n1[4]*a1;
-          v[13] += b*in[1] + t*g[3] + n1[4]*a2;
-          v[14] += b*in[2] + t*g[6] + n1[4]*a3;
+          v[3] +=  a1*n1[1] + b1*n1x[1];
+          v[4] +=  a2*n1[1] + b2*n1x[1];
+          v[5] +=  a3*n1[1] + b3*n1x[1];
 
-          b = n23*n1[5];
-          t = n23*n1x[5];
-          v[15] += b*in[0] + t*g[0] + n1[5]*a1;
-          v[16] += b*in[1] + t*g[3] + n1[5]*a2;
-          v[17] += b*in[2] + t*g[6] + n1[5]*a3;
+          v[6] +=  a1*n1[2] + b1*n1x[2];
+          v[7] +=  a2*n1[2] + b2*n1x[2];
+          v[8] +=  a3*n1[2] + b3*n1x[2];
+
+          v[9] +=  a1*n1[3] + b1*n1x[3];
+          v[10] += a2*n1[3] + b2*n1x[3];
+          v[11] += a3*n1[3] + b3*n1x[3];
+
+          v[12] += a1*n1[4] + b1*n1x[4];
+          v[13] += a2*n1[4] + b2*n1x[4];
+          v[14] += a3*n1[4] + b3*n1x[4];
+
+          v[15] += a1*n1[5] + b1*n1x[5];
+          v[16] += a2*n1[5] + b2*n1x[5];
+          v[17] += a3*n1[5] + b3*n1x[5];
 
           v += 18;
+        }
+      }
+    }
+    else if (m == 4){
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          TacsScalar a1 = n23*in[0] + n2x3*in[5] + n23x*in[6];
+          TacsScalar b1 = n23*in[4];
+
+          TacsScalar a2 = n23*in[1] + n2x3*in[8] + n23x*in[9];
+          TacsScalar b2 = n23*in[7];
+
+          TacsScalar a3 = n23*in[2] + n2x3*in[11] + n23x*in[12];
+          TacsScalar b3 = n23*in[10];
+
+          TacsScalar a4 = n23*in[1] + n2x3*in[14] + n23x*in[15];
+          TacsScalar b4 = n23*in[13];
+
+          v[0] +=  a1*n1[0] + b1*n1x[0];
+          v[1] +=  a2*n1[0] + b2*n1x[0];
+          v[2] +=  a3*n1[0] + b3*n1x[0];
+          v[3] +=  a4*n1[0] + b4*n1x[0];
+
+          v[4] +=  a1*n1[1] + b1*n1x[1];
+          v[5] +=  a2*n1[1] + b2*n1x[1];
+          v[6] +=  a3*n1[1] + b3*n1x[1];
+          v[7] +=  a4*n1[1] + b4*n1x[1];
+
+          v[8] +=  a1*n1[2] + b1*n1x[2];
+          v[9] +=  a2*n1[2] + b2*n1x[2];
+          v[10] += a3*n1[2] + b3*n1x[2];
+          v[11] += a4*n1[2] + b4*n1x[2];
+
+          v[12] += a1*n1[3] + b1*n1x[3];
+          v[13] += a2*n1[3] + b2*n1x[3];
+          v[14] += a3*n1[3] + b3*n1x[3];
+          v[15] += a4*n1[3] + b4*n1x[3];
+
+          v[16] += a1*n1[4] + b1*n1x[4];
+          v[17] += a2*n1[4] + b2*n1x[4];
+          v[18] += a3*n1[4] + b3*n1x[4];
+          v[19] += a4*n1[4] + b4*n1x[4];
+
+          v[20] += a1*n1[5] + b1*n1x[5];
+          v[21] += a2*n1[5] + b2*n1x[5];
+          v[22] += a3*n1[5] + b3*n1x[5];
+          v[23] += a4*n1[5] + b4*n1x[5];
+
+          v += 24;
+        }
+      }
+    }
+    else {
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          const TacsScalar *g = &in[m];
+          for ( int p = 0; p < m; p++ ){
+            TacsScalar a = n23*in[p] + n2x3*g[1] + n23x*g[2];
+            TacsScalar b = n23*g[0];
+            v[0] +=   a*n1[0] + b*n1x[0];
+            v[m] +=   a*n1[1] + b*n1x[1];
+            v[2*m] += a*n1[2] + b*n1x[2];
+            v[3*m] += a*n1[3] + b*n1x[3];
+            v[4*m] += a*n1[4] + b*n1x[4];
+            v[5*m] += a*n1[5] + b*n1x[5];
+            g += 3;
+            v++;
+          }
+          v += 5*m;
         }
       }
     }
