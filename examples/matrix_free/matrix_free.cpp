@@ -26,7 +26,7 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny, int nz,
   MPI_Comm_rank(comm, &rank);
 
   // Set the number of nodes/elements on this proc
-  int varsPerNode = 4;
+  int varsPerNode = 3;
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
@@ -138,10 +138,10 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny, int nz,
     new TACSSolidConstitutive(props2);
 
   // Create the model class
-  TACSLinearThermoelasticity3D *model1 =
-    new TACSLinearThermoelasticity3D(stiff1, TACS_LINEAR_STRAIN);
-  TACSLinearThermoelasticity3D *model2 =
-    new TACSLinearThermoelasticity3D(stiff2, TACS_LINEAR_STRAIN);
+  TACSLinearElasticity3D *model1 =
+    new TACSLinearElasticity3D(stiff1, TACS_LINEAR_STRAIN);
+  TACSLinearElasticity3D *model2 =
+    new TACSLinearElasticity3D(stiff2, TACS_LINEAR_STRAIN);
 
   // Create the element class
   TACSElementBasis *basis = NULL;
@@ -201,6 +201,8 @@ int main( int argc, char *argv[] ){
   assembler->incref();
   creator->incref();
 
+  assembler->testElement(0, 2);
+
   TACSParallelMat *mat = assembler->createMat();
   mat->incref();
 
@@ -212,10 +214,10 @@ int main( int argc, char *argv[] ){
 
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
 
-  // double tassemble = MPI_Wtime();
-  // assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
-  // tassemble = MPI_Wtime() - tassemble;
-  // printf("Assembly time: %e\n", tassemble);
+  double tassemble = MPI_Wtime();
+  assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
+  tassemble = MPI_Wtime() - tassemble;
+  printf("Assembly time: %e\n", tassemble);
 
   double tprod = MPI_Wtime();
   for ( int i = 0; i < 20; i++ ){
@@ -237,12 +239,12 @@ int main( int argc, char *argv[] ){
   tprod_free = MPI_Wtime() - tprod_free;
   printf("Matrix-free matrix-vector product time: %e\n", tprod_free);
 
-  // assembler->applyBCs(y_mat);
-  // y_mat->axpy(-1.0, y_free);
-  // TacsScalar norm = y_mat->norm();
-  // if (rank == 0){
-  //   printf("Residual norm of the difference: %e\n", norm);
-  // }
+  assembler->applyBCs(y_mat);
+  y_mat->axpy(-1.0, y_free);
+  TacsScalar norm = y_mat->norm();
+  if (rank == 0){
+    printf("Residual norm of the difference: %e\n", norm);
+  }
 
   mat->decref();
 

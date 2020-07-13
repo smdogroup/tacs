@@ -4,7 +4,7 @@ include ../../TACS_Common.mk
 OBJS = matrix_free.o
 
 default: ${OBJS}
-	${CXX} -o matrix_free matrix_free.o ${TACS_LD_FLAGS} -lprofiler
+	${CXX} -o matrix_free matrix_free.o ${TACS_LD_FLAGS}
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
