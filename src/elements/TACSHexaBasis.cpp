@@ -1236,7 +1236,7 @@ void TACSQuinticHexaBasis::interpFieldsGrad( const int n,
           g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
           TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                            n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
           g[1] += n2x3*t1;
           g[2] += n23x*t1;
           g += 3;
@@ -1263,7 +1263,7 @@ void TACSQuinticHexaBasis::interpFieldsGrad( const int n,
           g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
           TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                            n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
           g[1] += n2x3*t1;
           g[2] += n23x*t1;
           g += 3;
@@ -1307,5 +1307,137 @@ void TACSQuinticHexaBasis::addInterpFieldsGradTranspose( int n,
       TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2x, n3, g[1], temp, m, v);
       TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2, n3x, g[2], temp, m, v);
     }
+  }
+}
+
+
+void TACSQuinticHexaBasis::interpAllFieldsGrad( const int m,
+                                                const TacsScalar values[],
+                                                TacsScalar out[] ){
+  memset(out, 0, 4*m*216*sizeof(TacsScalar));
+
+  for ( int n = 0; n < 216; n++ ){
+    const double *n1 = &Nf[6*(n % 6)];
+    const double *n2 = &Nf[6*((n % 36)/6)];
+    const double *n3 = &Nf[6*(n / 36)];
+    const double *n1x = &Nfxi[6*(n % 6)];
+    const double *n2x = &Nfxi[6*((n % 36)/6)];
+    const double *n3x = &Nfxi[6*(n / 36)];
+
+    const TacsScalar *v = values;
+
+    if (m == 3){
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar n23 = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          out[3] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
+                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
+          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
+                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          out[0] += t1*n23;
+          out[4] += n2x3*t1;
+          out[5] += n23x*t1;
+          v++;
+
+          out[6] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
+                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
+          TacsScalar t2 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
+                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          out[1] += t2*n23;
+          out[7] += n2x3*t1;
+          out[8] += n23x*t1;
+          v++;
+
+          out[9] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
+                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
+          TacsScalar t3 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
+                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          out[2] += t3*n23;
+          out[10] += n2x3*t1;
+          out[11] += n23x*t1;
+          v++;
+
+          v += 6*(m-1);
+        }
+      }
+    }
+
+    out += 4*m;
+  }
+}
+
+void TACSQuinticHexaBasis::addInterpAllFieldsGradTranspose( const int m,
+                                                            const TacsScalar in[],
+                                                            TacsScalar values[] ){
+  for ( int n = 0; n < 216; n++ ){
+    const double *n1 = &Nf[6*(n % 6)];
+    const double *n2 = &Nf[6*((n % 36)/6)];
+    const double *n3 = &Nf[6*(n / 36)];
+    const double *n1x = &Nfxi[6*(n % 6)];
+    const double *n2x = &Nfxi[6*((n % 36)/6)];
+    const double *n3x = &Nfxi[6*(n / 36)];
+
+    TacsScalar *v = values;
+
+    if (m == 3){
+      const TacsScalar *g = &in[3];
+      for ( int k = 0; k < 6; k++ ){
+        TacsScalar n23, n2x3, n23x;
+        TacsScalar t, b, a1, a2, a3;
+
+        for ( int j = 0; j < 6; j++ ){
+          n23 = n2[j]*n3[k];
+          n2x3 = n2x[j]*n3[k];
+          n23x = n2[j]*n3x[k];
+
+          a1 = (n2x3*g[1] + n23x*g[2]);
+          a2 = (n2x3*g[4] + n23x*g[5]);
+          a3 = (n2x3*g[7] + n23x*g[8]);
+
+          b = n23*n1[0];
+          t = n23*n1x[0];
+          v[0] += b*in[0] + t*g[0] + n1[0]*a1;
+          v[1] += b*in[1] + t*g[3] + n1[0]*a2;
+          v[2] += b*in[2] + t*g[6] + n1[0]*a3;
+
+          b = n23*n1[1];
+          t = n23*n1x[1];
+          v[3] += b*in[0] + t*g[0] + n1[0]*a1;
+          v[4] += b*in[1] + t*g[3] + n1[0]*a2;
+          v[5] += b*in[2] + t*g[6] + n1[0]*a3;
+
+          b = n23*n1[2];
+          t = n23*n1x[2];
+          v[6] += b*in[0] + t*g[0] + n1[0]*a1;
+          v[7] += b*in[1] + t*g[3] + n1[0]*a2;
+          v[8] += b*in[2] + t*g[6] + n1[0]*a3;
+
+          b = n23*n1[3];
+          t = n23*n1x[3];
+          v[9] += b*in[0] + t*g[0] + n1[0]*a1;
+          v[10] += b*in[1] + t*g[3] + n1[0]*a2;
+          v[11] += b*in[2] + t*g[6] + n1[0]*a3;
+
+          b = n23*n1[4];
+          t = n23*n1x[4];
+          v[12] += b*in[0] + t*g[0] + n1[0]*a1;
+          v[13] += b*in[1] + t*g[3] + n1[0]*a2;
+          v[14] += b*in[2] + t*g[6] + n1[0]*a3;
+
+          b = n23*n1[5];
+          t = n23*n1x[5];
+          v[15] += b*in[0] + t*g[0] + n1[0]*a1;
+          v[16] += b*in[1] + t*g[3] + n1[0]*a2;
+          v[17] += b*in[2] + t*g[6] + n1[0]*a3;
+
+          v += 18;
+        }
+      }
+    }
+
+    in += 4*m;
   }
 }
