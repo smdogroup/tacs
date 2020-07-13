@@ -426,6 +426,21 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Get array sizes needed for a matrix-free matrix-vector product
+
+    @param matType The type of matrix to use
+    @param elemIndex The element index
+    @param _data_size The size of the data to store the matrix-vector product
+    @param _temp_size The size of the temporary array needed as an argument
+  */
+  virtual void getMatVecDataSizes( ElementMatrixType matType,
+                                   int elemIndex,
+                                   int *_data_size, int *_temp_size ){
+    *_data_size = 0;
+    *_temp_size = 0;
+  }
+
+  /**
     Get the element data needed to perform a matrix-vector product
     with the specified matrix type.
 
@@ -445,18 +460,16 @@ class TACSElement : public TACSObject {
     @param ddvars The second time derivative of the element DOF
     @param data The element data required for a matrix-vector product
   */
-  virtual int getMatVecProductData( ElementMatrixType matType,
-                                    int elemIndex, double time,
-                                    TacsScalar alpha,
-                                    TacsScalar beta,
-                                    TacsScalar gamma,
-                                    const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[],
-                                    TacsScalar data[] ){
-    return 0;
-  }
+  virtual void getMatVecProductData( ElementMatrixType matType,
+                                     int elemIndex, double time,
+                                     TacsScalar alpha,
+                                     TacsScalar beta,
+                                     TacsScalar gamma,
+                                     const TacsScalar Xpts[],
+                                     const TacsScalar vars[],
+                                     const TacsScalar dvars[],
+                                     const TacsScalar ddvars[],
+                                     TacsScalar data[] ){}
 
   /**
     Compute the element-wise matrix-vector product
@@ -464,16 +477,16 @@ class TACSElement : public TACSObject {
     @param matType The type of element matrix to compute
     @param elemIndex The local element index
     @param data The element data required for a matrix-vector product
+    @param temp Temporary array
     @param px The input vector
     @param py The output vector with the added matrix-vector product
   */
-  virtual int addMatVecProduct( ElementMatrixType matType,
-                                int elemIndex,
-                                const TacsScalar data[],
-                                const TacsScalar px[],
-                                TacsScalar py[] ){
-    return 0;
-  }
+  virtual void addMatVecProduct( ElementMatrixType matType,
+                                 int elemIndex,
+                                 const TacsScalar data[],
+                                 TacsScalar temp[],
+                                 const TacsScalar px[],
+                                 TacsScalar py[] ){}
 
   /**
     Add the derivative of the product of a specific matrix w.r.t.

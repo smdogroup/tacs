@@ -182,7 +182,6 @@ void TACSPlateModel::evalWeakIntegrand( int elemIndex,
 
 void TACSPlateModel::getWeakMatrixNonzeros( ElementMatrixType matType,
                                             int elemIndex,
-                                            int n,
                                             int *Jac_nnz,
                                             const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){

@@ -36,8 +36,8 @@ class TACSMatrixFreeMat : public TACSMat {
  private:
   TACSAssembler *assembler;
   ElementMatrixType matType;
-  TacsScalar *data;
-  int data_size;
+  TacsScalar *data, *temp;
+  int data_size, temp_size;
 };
 
 #endif // TACS_MATRIX_FREE_MAT_H

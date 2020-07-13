@@ -478,25 +478,43 @@ class TACSElementBasis : public TACSObject {
                       TacsScalar *mat );
 
   /**
-    Add the entries from the Jacobian of the weak form residual to a matrix
+    Compute the matrix-vector product using thd data computed from a weak
 
-    @param n The quadrautre point index
-    @param pt The quadrature point value
-    @param J The Jacobian coordinate transformation
+    The data array consists of both the Jacobian transformation and the
+    entries that contain the element matrix data obtained from a call to
+    evalWeakMatrix at a given quadrature point. The data is repeated for each
+    quadrature point in the element. For the case when num_params = 3, the
+    data array will contain the following entries:
+
+    data = [ J[0], J[1], ... , J[8], Jac[0], Jac[1], ... , Jac[Jac_nnz-1],
+             J[0], J[1], ... , J[8], Jac[0], Jac[1], ... , Jac[Jac_nnz-1],
+             .... ]
+
+    This data repeats for each quadrature point in element. It is assumed
+    that the non-zero pattern for each quadrature point is the same.
+
+    The overall size of the data array is therefore:
+
+    num_quadrature_points*(num_params*num_params + Jac_nnz)
+
+    The temp array is used to store intermediate values needed for the
+    computation of the matrix-vector product. The size of the temporary array
+    must be at least:
+
+    (num_quadrature_points+1)*vars_per_node*(num_params+1)
+
     @param vars_per_node The number of variables per node
     @param Jac_nnz Number of non-zero Jacobian entries
     @param Jac_paris The (i,j) locations of the Jacobian entries
-    @param Jac The Jacobian values
-    @param temp A temporary array of at least size (2*getNumParameters()+1)*vars_per_node
+    @param data The element data
+    @param temp A temporary array
     @param px The input vector
     @param py The output vector
   */
-  void addMatVecProduct( int n, const double pt[],
-                         const TacsScalar J[],
-                         const int vars_per_node,
+  void addMatVecProduct( const int vars_per_node,
                          const int Jac_nnz,
                          const int *Jac_pairs,
-                         const TacsScalar *Jac,
+                         const TacsScalar *data,
                          TacsScalar temp[],
                          const TacsScalar *px,
                          TacsScalar *py );
@@ -504,20 +522,20 @@ class TACSElementBasis : public TACSObject {
   /**
     Interpolate the specified number of fields
 
-    This function computes the following for i = 0, num_fields-1
+    This function computes the following for i = 0, vars_per_node-1
 
-    field[incr*i] = sum_{j} N[j]*values[num_fields*j + i]
+    field[incr*i] = sum_{j} N[j]*values[vars_per_node*j + i]
 
     @param n The quadrature point index
     @param pt The parametric point
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of variables to interpolate
     @param values The values of the field at the nodes
     @param incr The increment between locations in the field array
     @param field The field values
   */
   virtual void interpFields( const int n,
                              const double pt[],
-                             const int num_fields,
+                             const int vars_per_node,
                              const TacsScalar values[],
                              const int incr,
                              TacsScalar field[] );
@@ -526,15 +544,15 @@ class TACSElementBasis : public TACSObject {
     Compute the interpolation field for three different interpolants
     simultaneously. This is common when assemblying the temporal derivatives
 
-    This function computes the following for i = 0, num_fields-1
+    This function computes the following for i = 0, vars_per_node-1
 
-    field[3*i] = sum_{j} N[j]*vals1[num_fields*j + i]
-    field[3*i+1] = sum_{j} N[j]*vals2[num_fields*j + i]
-    field[3*i+2] = sum_{j} N[j]*vals3[num_fields*j + i]
+    field[3*i] = sum_{j} N[j]*vals1[vars_per_node*j + i]
+    field[3*i+1] = sum_{j} N[j]*vals2[vars_per_node*j + i]
+    field[3*i+2] = sum_{j} N[j]*vals3[vars_per_node*j + i]
 
     @param n The quadrature point index
     @param pt The parametric point
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of variables to interpolate
     @param vals1 The first array of values at the nodes
     @param vals2 The second array of values at the nodes
     @param vals3 The third array of values at the nodes
@@ -542,7 +560,7 @@ class TACSElementBasis : public TACSObject {
   */
   virtual void interpFields( const int n,
                              const double pt[],
-                             const int num_fields,
+                             const int vars_per_node,
                              const TacsScalar val1[],
                              const TacsScalar val2[],
                              const TacsScalar val3[],
@@ -551,23 +569,23 @@ class TACSElementBasis : public TACSObject {
   /**
     Add the transpose of the interpolation operation to the vector
 
-    This function computes the following for i = 0, num_fields-1,
+    This function computes the following for i = 0, vars_per_node-1,
     and j = 0, num_nodes-1
 
-    values[num_fields*j + i] += N[j]*field[incr*i]
+    values[vars_per_node*j + i] += N[j]*field[incr*i]
 
     @param n The quadrature point index
     @param pt The parametric point
-    @param num_fields The number of fields to interpolate
-    @param values The values of the interpolant at the nodes
     @param incr The increment between locations in the field array
     @param field The field values
+    @param vars_per_node The number of fields to interpolate
+    @param values The values of the variables at the nodes
   */
   virtual void addInterpFieldsTranspose( const int n,
                                          const double pt[],
                                          const int incr,
                                          const TacsScalar field[],
-                                         const int num_fields,
+                                         const int vars_per_node,
                                          TacsScalar values[] );
 
   /**
@@ -575,39 +593,61 @@ class TACSElementBasis : public TACSObject {
 
     This function must compute
 
-    grad[num_params*i + j] = sum_{k} N_{k,j}*values[num_fields*k + i]
+    grad[num_params*i + j] = sum_{k} N_{k,j}*values[vars_per_node*k + i]
 
     @param n The quadrature point index
     @param pt The parametric location of the quadrature point
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of fields to interpolate
     @param values The values of the field at the nodes
     @param grad The gradient of the field in the computational space
   */
   virtual void interpFieldsGrad( const int n,
                                  const double pt[],
-                                 const int num_fields,
+                                 const int vars_per_node,
                                  const TacsScalar values[],
                                  TacsScalar grad[] );
 
   /**
     Add the transpose of the gradient interpolation to the vector
 
-    This function computes the following for i = 0, num_fields-1,
+    This function computes the following for i = 0, vars_per_node-1,
     j = 1, num_params-1, and j = 0, num_nodes-1
 
-    values[num_fields*k + i] += N_{k,j}*grad[incr*i + j]
+    values[vars_per_node*k + i] += N_{k,j}*grad[incr*i + j]
 
     @param n The quadrature point index
     @param pt The parametric location of the quadrature point
-    @param num_fields The number of fields to interpolate
-    @param values The values of the field at the nodes
+    @param vars_per_node The number of fields to interpolate
     @param grad The gradient of the field in the computational space
+    @param values The array to add values
   */
   virtual void addInterpFieldsGradTranspose( int n,
                                              const double pt[],
-                                             const int num_fields,
+                                             const int vars_per_node,
                                              const TacsScalar grad[],
                                              TacsScalar values[] );
+
+  /**
+    Interpolate the fields and gradients at every quadrature point and
+    store them in the array out.
+
+    The values are stored by values and gradients, so the total size of
+    the output array "out" is:
+
+    vars_per_node*(num_params + 1)*num_quadrature_points
+
+
+  */
+  virtual void interpAllFieldsGrad( const int vars_per_node,
+                                    const TacsScalar values[],
+                                    TacsScalar out[] );
+
+  /*
+
+  */
+  virtual void addInterpAllFieldsGradTranspose( const int vars_per_node,
+                                                const TacsScalar in[],
+                                                TacsScalar values[] );
 
   /**
     Add the outer-product of the shape functions to the matrix
@@ -679,7 +719,7 @@ class TACSElementBasis : public TACSObject {
 
     @param face The face index
     @param n The quadrature point index on this face
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of variables per node
     @param values The values to interpolate
     @param incr The increment between locations in the field array
     @param field The field values
@@ -687,7 +727,7 @@ class TACSElementBasis : public TACSObject {
   virtual void interpFaceFields( const int face,
                                  const int n,
                                  const double pt[],
-                                 const int num_fields,
+                                 const int vars_per_node,
                                  const TacsScalar values[],
                                  const int incr,
                                  TacsScalar field[] );
@@ -698,7 +738,7 @@ class TACSElementBasis : public TACSObject {
 
     @param n The quadrature point index
     @param pt The parametric point
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of variables per node
     @param values The values of the interpolant at the nodes
     @param incr The increment between locations in the field array
     @param field The field values
@@ -708,7 +748,7 @@ class TACSElementBasis : public TACSObject {
                                              const double pt[],
                                              const int incr,
                                              const TacsScalar field[],
-                                             const int num_fields,
+                                             const int vars_per_node,
                                              TacsScalar values[] );
 
   /**
@@ -720,14 +760,14 @@ class TACSElementBasis : public TACSObject {
 
     @param face The face index
     @param n The quadrature point index on this face
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of fields to interpolate
     @param values The values to interpolate
     @param grad The gradient of the field in the computational space
   */
   virtual void interpFaceFieldsGrad( const int face,
                                      const int n,
                                      const double pt[],
-                                     const int num_fields,
+                                     const int vars_per_node,
                                      const TacsScalar values[],
                                      TacsScalar grad[] );
 
@@ -738,14 +778,14 @@ class TACSElementBasis : public TACSObject {
     @param face The face index
     @param n The quadrature point index
     @param pt The parametric location of the quadrature point
-    @param num_fields The number of fields to interpolate
+    @param vars_per_node The number of fields to interpolate
     @param values The values of the interpolant at the nodes
     @param grad The gradient of the field in the computational space
   */
   virtual void addInterpFaceFieldsGradTranspose( const int face,
                                                  int n,
                                                  const double pt[],
-                                                 const int num_fields,
+                                                 const int vars_per_node,
                                                  const TacsScalar grad[],
                                                  TacsScalar values[] );
 

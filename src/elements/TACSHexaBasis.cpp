@@ -1214,7 +1214,7 @@ void TACSQuinticHexaBasis::interpFieldsGrad( const int n,
                                              const double pt[],
                                              const int m,
                                              const TacsScalar v[],
-                                             TacsScalar g[] ){
+                                             TacsScalar grad[] ){
   if (n >= 0){
     const double *n1 = &Nf[6*(n % 6)];
     const double *n2 = &Nf[6*((n % 36)/6)];
@@ -1223,58 +1223,54 @@ void TACSQuinticHexaBasis::interpFieldsGrad( const int n,
     const double *n2x = &Nfxi[6*((n % 36)/6)];
     const double *n3x = &Nfxi[6*(n / 36)];
 
-    memset(g, 0, 3*m*sizeof(TacsScalar));
+    memset(grad, 0, 3*m*sizeof(TacsScalar));
 
-    if (m == 3){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23 = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
+    for ( int k = 0; k < 6; k++ ){
+      for ( int j = 0; j < 6; j++ ){
+        TacsScalar n23 = n2[j]*n3[k];
+        TacsScalar n2x3 = n2x[j]*n3[k];
+        TacsScalar n23x = n2[j]*n3x[k];
 
+        TacsScalar *g = grad;
+        for ( int p = 0; p < m; p++ ){
           g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                       n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
+                        n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
           TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                           n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+                            n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
           g[1] += n2x3*t1;
           g[2] += n23x*t1;
-
-          g[3] += n23*(n1x[0]*v[1]  + n1x[1]*v[4]  + n1x[2]*v[7] +
-                       n1x[3]*v[10] + n1x[4]*v[13] + n1x[5]*v[16]);
-          TacsScalar t2 = (n1[0]*v[1]  + n1[1]*v[4]  + n1[2]*v[7] +
-                           n1[3]*v[10] + n1[4]*v[13] + n1[5]*v[16]);
-          g[4] += n2x3*t2;
-          g[5] += n23x*t2;
-
-          g[6] += n23*(n1x[0]*v[2]  + n1x[1]*v[5]  + n1x[2]*v[8] +
-                       n1x[3]*v[11] + n1x[4]*v[14] + n1x[5]*v[17]);
-          TacsScalar t3 = (n1[0]*v[2]  + n1[1]*v[5]  + n1[2]*v[8] +
-                           n1[3]*v[11] + n1[4]*v[14] + n1[5]*v[17]);
-          g[7] += n2x3*t3;
-          g[8] += n23x*t3;
-
-          v += 18;
+          g += 3;
+          v++;
         }
-      }
-    }
-    else {
-      for ( int i = 0; i < m; i++, g += 3, v++ ){
-        g[0] = TACS_BASIS_EVAL_TENSOR3D_ORDER6(n1x, n2, n3, m, v);
-        g[1] = TACS_BASIS_EVAL_TENSOR3D_ORDER6(n1, n2x, n3, m, v);
-        g[2] = TACS_BASIS_EVAL_TENSOR3D_ORDER6(n1, n2, n3x, m, v);
+        v += 6*(m-1);
       }
     }
   }
   else {
-    double n1[6], n2[6], n3[6], n1xi[6], n2xi[6], n3xi[6];
-    TacsLagrangeShapeFuncDerivative(6, pt[0], cosine_pts, n1, n1xi);
-    TacsLagrangeShapeFuncDerivative(6, pt[1], cosine_pts, n2, n2xi);
-    TacsLagrangeShapeFuncDerivative(6, pt[2], cosine_pts, n3, n3xi);
+    double n1[6], n2[6], n3[6], n1x[6], n2x[6], n3x[6];
+    TacsLagrangeShapeFuncDerivative(6, pt[0], cosine_pts, n1, n1x);
+    TacsLagrangeShapeFuncDerivative(6, pt[1], cosine_pts, n2, n2x);
+    TacsLagrangeShapeFuncDerivative(6, pt[2], cosine_pts, n3, n3x);
 
-    for ( int i = 0; i < m; i++, g += 3, v++ ){
-      g[0] = TACS_BASIS_EVAL_TENSOR3D_ORDER6(n1xi, n2, n3, m, v);
-      g[1] = TACS_BASIS_EVAL_TENSOR3D_ORDER6(n1, n2xi, n3, m, v);
-      g[2] = TACS_BASIS_EVAL_TENSOR3D_ORDER6(n1, n2, n3xi, m, v);
+    for ( int k = 0; k < 6; k++ ){
+      for ( int j = 0; j < 6; j++ ){
+        TacsScalar n23 = n2[j]*n3[k];
+        TacsScalar n2x3 = n2x[j]*n3[k];
+        TacsScalar n23x = n2[j]*n3x[k];
+
+        TacsScalar *g = grad;
+        for ( int p = 0; p < m; p++ ){
+          g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
+                        n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
+          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
+                            n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
+          g[1] += n2x3*t1;
+          g[2] += n23x*t1;
+          g += 3;
+          v++;
+        }
+        v += 6*(m-1);
+      }
     }
   }
 }
@@ -1292,71 +1288,24 @@ void TACSQuinticHexaBasis::addInterpFieldsGradTranspose( int n,
     const double *n2x = &Nfxi[6*((n % 36)/6)];
     const double *n3x = &Nfxi[6*(n / 36)];
 
-    if (m == 3){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23 = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a1 = (n2x3*g[1] + n23x*g[2]);
-          TacsScalar a2 = (n2x3*g[4] + n23x*g[5]);
-          TacsScalar a3 = (n2x3*g[7] + n23x*g[8]);
-
-          TacsScalar t = n23*n1x[0];
-          v[0] += t*g[0] + n1[0]*a1;
-          v[1] += t*g[3] + n1[0]*a2;
-          v[2] += t*g[6] + n1[0]*a3;
-
-          t = n23*n1x[1];
-          v[3] += t*g[0] + n1[1]*a1;
-          v[4] += t*g[3] + n1[1]*a2;
-          v[5] += t*g[6] + n1[1]*a3;
-
-          t = n23*n1x[2];
-          v[6] += t*g[0] + n1[2]*a1;
-          v[7] += t*g[3] + n1[2]*a2;
-          v[8] += t*g[6] + n1[2]*a3;
-
-          t = n23*n1x[3];
-          v[9] += t*g[0] + n1[3]*a1;
-          v[10] += t*g[3] + n1[3]*a2;
-          v[11] += t*g[6] + n1[3]*a3;
-
-          t = n23*n1x[4];
-          v[12] += t*g[0] + n1[4]*a1;
-          v[13] += t*g[3] + n1[4]*a2;
-          v[14] += t*g[6] + n1[4]*a3;
-
-          t = n23*n1x[5];
-          v[15] += t*g[0] + n1[5]*a1;
-          v[16] += t*g[3] + n1[5]*a2;
-          v[17] += t*g[6] + n1[5]*a3;
-
-          v += 18;
-        }
-      }
-    }
-    else {
-      for ( int i = 0; i < m; i++, g += 3, v++ ){
-        TacsScalar temp;
-        TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1x, n2, n3, g[0], temp, m, v);
-        TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2x, n3, g[1], temp, m, v);
-        TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2, n3x, g[2], temp, m, v);
-      }
+    for ( int i = 0; i < m; i++, g += 3, v++ ){
+      TacsScalar temp;
+      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1x, n2, n3, g[0], temp, m, v);
+      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2x, n3, g[1], temp, m, v);
+      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2, n3x, g[2], temp, m, v);
     }
   }
   else {
-    double n1[6], n2[6], n3[6], n1xi[6], n2xi[6], n3xi[6];
-    TacsLagrangeShapeFuncDerivative(6, pt[0], cosine_pts, n1, n1xi);
-    TacsLagrangeShapeFuncDerivative(6, pt[1], cosine_pts, n2, n2xi);
-    TacsLagrangeShapeFuncDerivative(6, pt[2], cosine_pts, n3, n3xi);
+    double n1[6], n2[6], n3[6], n1x[6], n2x[6], n3x[6];
+    TacsLagrangeShapeFuncDerivative(6, pt[0], cosine_pts, n1, n1x);
+    TacsLagrangeShapeFuncDerivative(6, pt[1], cosine_pts, n2, n2x);
+    TacsLagrangeShapeFuncDerivative(6, pt[2], cosine_pts, n3, n3x);
 
     for ( int i = 0; i < m; i++, g += 3, v++ ){
       TacsScalar temp;
-      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1xi, n2, n3, g[0], temp, m, v);
-      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2xi, n3, g[1], temp, m, v);
-      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2, n3xi, g[2], temp, m, v);
+      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1x, n2, n3, g[0], temp, m, v);
+      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2x, n3, g[1], temp, m, v);
+      TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER6(n1, n2, n3x, g[2], temp, m, v);
     }
   }
 }

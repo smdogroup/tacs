@@ -39,7 +39,7 @@ class TACSNeohookean3D : public TACSElementModel {
     Get the non-zero pattern for the matrix
   */
   void getWeakMatrixNonzeros( ElementMatrixType matType, int elemIndex,
-                              int n, int *Jac_nnz, const int *Jac_pairs[] );
+                              int *Jac_nnz, const int *Jac_pairs[] );
 
   /**
     Evaluate the derivatives of the weak form coefficients

@@ -108,7 +108,6 @@ void TACSHeatConduction2D::evalWeakIntegrand( int elemIndex,
 
 void TACSHeatConduction2D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                   int elemIndex,
-                                                  int n,
                                                   int *Jac_nnz,
                                                   const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
@@ -467,7 +466,6 @@ void TACSHeatConduction3D::evalWeakIntegrand( int elemIndex,
 
 void TACSHeatConduction3D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                   int elemIndex,
-                                                  int n,
                                                   int *Jac_nnz,
                                                   const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){

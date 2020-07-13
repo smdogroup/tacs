@@ -5141,6 +5141,52 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
   y->applyBCs(bcMap);
 }
 
+/*
+  Compute the sizes of the element-wise data and temporary array needed
+  for a matrix-free matrix-vector product
+*/
+void TACSAssembler::getMatrixFreeDataSize( ElementMatrixType matType,
+                                           int *_data_size,
+                                           int *_temp_size ){
+  int data_size = 0;
+  int temp_size = 0;
+
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (auxElements){
+    naux = auxElements->getAuxElements(&aux);
+  }
+
+  for ( int i = 0; i < numElements; i++ ){
+    // Compute the data for the matrix-free vector product
+    int dsize, tsize;
+    elements[i]->getMatVecDataSizes(matType, i, &dsize, &tsize);
+    data_size += dsize;
+    if (tsize > temp_size){
+      temp_size = tsize;
+    }
+
+    // Add the contribution to the residual and the Jacobian
+    // from the auxiliary elements - if any
+    while (aux_count < naux && aux[aux_count].num == i){
+      aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+      data_size += dsize;
+      if (tsize > temp_size){
+        temp_size = tsize;
+      }
+      aux_count++;
+    }
+  }
+
+  if (_data_size){
+    *_data_size = data_size;
+  }
+  if (_temp_size){
+    *_temp_size = temp_size;
+  }
+}
+
 /**
   Compute the element-wise data for a matrix-free matrix-vector product.
 
@@ -5155,15 +5201,12 @@ void TACSAssembler::addJacobianVecProduct( TacsScalar scale,
   @param beta Coefficient for the time-derivative terms
   @param gamma Coefficientfor the second time derivative term
   @param data The data array that is used (may be NULL)
-  @return The size of the data array
 */
-int TACSAssembler::assembleMatrixFreeData( ElementMatrixType matType,
-                                           TacsScalar alpha,
-                                           TacsScalar beta,
-                                           TacsScalar gamma,
-                                           TacsScalar data[] ){
-  int data_size = 0;
-
+void TACSAssembler::assembleMatrixFreeData( ElementMatrixType matType,
+                                            TacsScalar alpha,
+                                            TacsScalar beta,
+                                            TacsScalar gamma,
+                                            TacsScalar data[] ){
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars, *yvars, *elemXpts;
   getDataPointers(elementData,
@@ -5190,31 +5233,28 @@ int TACSAssembler::assembleMatrixFreeData( ElementMatrixType matType,
       ddvarsVec->getValues(len, nodes, ddvars);
     }
 
+    // Get the size of the data array
+    int dsize, tsize;
+    elements[i]->getMatVecDataSizes(matType, i, &dsize, &tsize);
+
     // Compute the data for the matrix-free vector product
-    int size = elements[i]->getMatVecProductData(matType, i, time,
-                                                 alpha, beta, gamma,
-                                                 elemXpts, vars, dvars, ddvars, data);
-    if (data){
-      data += size;
-    }
-    data_size += size;
+    elements[i]->getMatVecProductData(matType, i, time,
+                                      alpha, beta, gamma,
+                                      elemXpts, vars, dvars, ddvars, data);
+    data += dsize;
 
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any
     while (aux_count < naux && aux[aux_count].num == i){
-      size = aux[aux_count].elem->getMatVecProductData(matType, i, time,
-                                                       alpha, beta, gamma,
-                                                       elemXpts, vars, dvars, ddvars,
-                                                       data);
-      if (data){
-        data += size;
-      }
-      data_size += size;
+      aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+      aux[aux_count].elem->getMatVecProductData(matType, i, time,
+                                                alpha, beta, gamma,
+                                                elemXpts, vars, dvars, ddvars,
+                                                data);
+      data += dsize;
       aux_count++;
     }
   }
-
-  return data_size;
 }
 
 /**
@@ -5231,6 +5271,7 @@ int TACSAssembler::assembleMatrixFreeData( ElementMatrixType matType,
 */
 void TACSAssembler::addMatrixFreeVecProduct( ElementMatrixType matType,
                                              const TacsScalar data[],
+                                             TacsScalar temp[],
                                              TACSBVec *x, TACSBVec *y,
                                              MatrixOrientation matOr ){
   x->beginDistributeValues();
@@ -5263,14 +5304,20 @@ void TACSAssembler::addMatrixFreeVecProduct( ElementMatrixType matType,
 
     // Compute and add the contributions to the Jacobian
     memset(yvars, 0, nvars*sizeof(TacsScalar));
-    int size = elements[i]->addMatVecProduct(matType, i, data, xvars, yvars);
-    data += size;
+
+    // Get the size of the data array
+    int dsize, tsize;
+    elements[i]->getMatVecDataSizes(matType, i, &dsize, &tsize);
+
+    elements[i]->addMatVecProduct(matType, i, data, temp, xvars, yvars);
+    data += dsize;
 
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any
     while (aux_count < naux && aux[aux_count].num == i){
-      size = aux[aux_count].elem->addMatVecProduct(matType, i, data, xvars, yvars);
-      data += size;
+      aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+      aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars, yvars);
+      data += dsize;
       aux_count++;
     }
 

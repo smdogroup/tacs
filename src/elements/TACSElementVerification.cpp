@@ -450,19 +450,18 @@ int TacsTestElementJacobian( TACSElement *element,
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Get the size of the matrix
-  int dsize = element->getMatVecProductData(TACS_JACOBIAN_MATRIX, elemIndex, time,
-                                            alpha, beta, gamma,
-                                            Xpts, vars, dvars, ddvars,
-                                            NULL);
+  int dsize, tsize;
+  element->getMatVecDataSizes(TACS_JACOBIAN_MATRIX, elemIndex, &dsize, &tsize);
 
   // Allocate the matrix
+  TacsScalar *tarray = new TacsScalar[ tsize ];
   TacsScalar *data = new TacsScalar[ dsize ];
   element->getMatVecProductData(TACS_JACOBIAN_MATRIX, elemIndex, time,
                                 alpha, beta, gamma,
                                 Xpts, vars, dvars, ddvars, data);
 
   memset(res, 0, nvars*sizeof(TacsScalar));
-  element->addMatVecProduct(TACS_JACOBIAN_MATRIX, elemIndex, data, pert, res);
+  element->addMatVecProduct(TACS_JACOBIAN_MATRIX, elemIndex, data, tarray, pert, res);
 
   max_err = TacsGetMaxError(result, res, nvars, &max_err_index);
   max_rel = TacsGetMaxRelError(result, res, nvars, &max_rel_index);
@@ -488,6 +487,7 @@ int TacsTestElementJacobian( TACSElement *element,
   delete [] res;
   delete [] result;
   delete [] data;
+  delete [] tarray;
 
   return fail;
 }
@@ -1285,7 +1285,7 @@ int TacsTestElementModelJacobian( TACSElementModel *model,
 
   int Jac_nnz;
   const int *Jac_pairs;
-  model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex, n,
+  model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex,
                                &Jac_nnz, &Jac_pairs);
 
   // Fill in this data with random numbers...

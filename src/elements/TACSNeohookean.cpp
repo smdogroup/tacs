@@ -100,7 +100,6 @@ void TACSNeohookean3D::evalWeakIntegrand( int elemIndex,
 */
 void TACSNeohookean3D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                               int elemIndex,
-                                              int n,
                                               int *Jac_nnz,
                                               const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){

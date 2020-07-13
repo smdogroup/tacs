@@ -228,7 +228,6 @@ void TACSThermoelasticPlateModel::evalWeakIntegrand( int elemIndex,
 
 void TACSThermoelasticPlateModel::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                          int elemIndex,
-                                                         int n,
                                                          int *Jac_nnz,
                                                          const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){

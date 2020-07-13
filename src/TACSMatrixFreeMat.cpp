@@ -18,7 +18,9 @@ TACSMatrixFreeMat::TACSMatrixFreeMat( TACSAssembler *_assembler ){
   assembler = _assembler;
   assembler->incref();
   data_size = 0;
+  temp_size = 0;
   data = NULL;
+  temp = NULL;
   matType = TACS_JACOBIAN_MATRIX;
 }
 
@@ -26,6 +28,9 @@ TACSMatrixFreeMat::~TACSMatrixFreeMat(){
   assembler->decref();
   if (data){
     delete [] data;
+  }
+  if (temp){
+    delete [] temp;
   }
 }
 
@@ -36,10 +41,14 @@ void TACSMatrixFreeMat::assembleMatrixFreeData( ElementMatrixType _matType,
   if (data){
     delete [] data;
   }
+  if (temp){
+    delete [] temp;
+  }
   matType = _matType;
-  data_size = assembler->assembleMatrixFreeData(matType, alpha, beta, gamma, NULL);
+  assembler->getMatrixFreeDataSize(matType, &data_size, &temp_size);
   data = new TacsScalar[ data_size ];
-  data_size = assembler->assembleMatrixFreeData(matType, alpha, beta, gamma, data);
+  temp = new TacsScalar[ temp_size ];
+  assembler->assembleMatrixFreeData(matType, alpha, beta, gamma, data);
 }
 
 TACSVec *TACSMatrixFreeMat::createVec(){
@@ -51,7 +60,7 @@ void TACSMatrixFreeMat::mult( TACSVec *tx, TACSVec *ty ){
   TACSBVec *y = dynamic_cast<TACSBVec*>(ty);
   if (x && y){
     y->zeroEntries();
-    assembler->addMatrixFreeVecProduct(matType, data, x, y, TACS_MAT_NORMAL);
+    assembler->addMatrixFreeVecProduct(matType, data, temp, x, y, TACS_MAT_NORMAL);
   }
 }
 
@@ -60,7 +69,7 @@ void TACSMatrixFreeMat::multTranspose( TACSVec *tx, TACSVec *ty ){
   TACSBVec *y = dynamic_cast<TACSBVec*>(ty);
   if (x && y){
     y->zeroEntries();
-    assembler->addMatrixFreeVecProduct(matType, data, x, y, TACS_MAT_TRANSPOSE);
+    assembler->addMatrixFreeVecProduct(matType, data, temp, x, y, TACS_MAT_TRANSPOSE);
   }
 }
 

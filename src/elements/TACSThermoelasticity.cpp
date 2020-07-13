@@ -164,7 +164,6 @@ void TACSLinearThermoelasticity2D::evalWeakIntegrand( int elemIndex,
 
 void TACSLinearThermoelasticity2D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                           int elemIndex,
-                                                          int n,
                                                           int *Jac_nnz,
                                                           const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
@@ -1080,7 +1079,6 @@ void TACSLinearThermoelasticity3D::evalWeakIntegrand( int elemIndex,
 
 void TACSLinearThermoelasticity3D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                           int elemIndex,
-                                                          int n,
                                                           int *Jac_nnz,
                                                           const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){

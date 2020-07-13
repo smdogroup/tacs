@@ -238,18 +238,16 @@ class TACSElementModel : public TACSObject {
     }
   }
 
-  /*
-    Get the non-zero entries at a quadrature point
+  /**
+    Get the non-zero pattern of the element type
 
     @param matType The type of matrix to use
     @param elemIndex The element index
-    @param n The quadrature point index
     @param Jac_nnz Number of non-zeros
     @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
   */
   virtual void getWeakMatrixNonzeros( ElementMatrixType matType,
                                       int elemIndex,
-                                      int n,
                                       int *Jac_nnz,
                                       const int *Jac_pairs[] ) = 0;
 

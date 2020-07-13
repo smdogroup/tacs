@@ -260,7 +260,6 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
 
 void TACSLinearElasticity2D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                     int elemIndex,
-                                                    int n,
                                                     int *Jac_nnz,
                                                     const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
@@ -1208,7 +1207,6 @@ void TACSLinearElasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
 
 void TACSLinearElasticity3D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                     int elemIndex,
-                                                    int n,
                                                     int *Jac_nnz,
                                                     const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
