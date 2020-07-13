@@ -1543,7 +1543,7 @@ void TACSQuinticHexaBasis::addInterpAllFieldsGradTranspose( const int m,
           TacsScalar a3 = n23*in[2] + n2x3*in[11] + n23x*in[12];
           TacsScalar b3 = n23*in[10];
 
-          TacsScalar a4 = n23*in[1] + n2x3*in[14] + n23x*in[15];
+          TacsScalar a4 = n23*in[3] + n2x3*in[14] + n23x*in[15];
           TacsScalar b4 = n23*in[13];
 
           v[0] +=  a1*n1[0] + b1*n1x[0];
