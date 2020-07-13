@@ -1089,8 +1089,8 @@ void TACSElementBasis::addMatVecProduct( const int vars_per_node,
     const TacsScalar *Ux = Ud;
 
     // Set pointers to next entry in the temporary array
-    TacsScalar *DU = &temp[(n+1)*(np2 + Jac_nnz)];
-    TacsScalar *DUx = &temp[(n+1)*(np2 + Jac_nnz)];
+    TacsScalar *DU = &temp[(n+1)*vars_per_node*(1 + num_params)];
+    TacsScalar *DUx = &temp[(n+1)*vars_per_node*(1 + num_params) + vars_per_node];
 
     memset(DU, 0, vars_per_node*sizeof(TacsScalar));
     memset(DUx, 0, num_params*vars_per_node*sizeof(TacsScalar));
