@@ -5391,15 +5391,22 @@ void TACSAssembler::testElement( int elemNum, int print_level,
                           elemXpts, vars, dvars, ddvars,
                           dh, print_level, rtol, atol);
 
-  // Test the residual computation last - with the Lagrange multipliers zeroed
-  if (elements[elemNum]->getVarsPerNode() == 8){
-    for ( int i = 7; i < elements[elemNum]->getNumVariables(); i++ ){
-      vars[i] = 0.0;
-    }
+  // Test the residual computation with the Lagrange multipliers zeroed.
+  // This does not work for most elements. The test requires that
+  // the kinetic and potential energy functions be properly implemented. Results
+  // from this test should be used with caution.
+  // if (elements[elemNum]->getVarsPerNode() == 8){
+  //   for ( int i = 7; i < elements[elemNum]->getNumVariables(); i++ ){
+  //     vars[i] = 0.0;
+  //   }
+  // }
+  // TacsTestElementResidual(elements[elemNum], elemNum, time, elemXpts,
+  //                         vars, dvars, ddvars,
+  //                         dh, print_level, rtol, atol);
+  TACSElementModel *model = elements[elemNum]->getElementModel();
+  if (model){
+    TacsTestElementModel(model, elemNum, time, dh, print_level, rtol, atol);
   }
-  TacsTestElementResidual(elements[elemNum], elemNum, time, elemXpts,
-                          vars, dvars, ddvars,
-                          dh, print_level, rtol, atol);
   TacsTestElementMatDVSens(elements[elemNum], TACS_MASS_MATRIX, elemNum,
                            time, elemXpts, vars, maxDVs, x,
                            dh, print_level, rtol, atol);

@@ -195,6 +195,7 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
+  int order = 6;
   int varsPerNode = 4;
   for ( int i = 0; i < argc; i++ ){
     if (strcmp(argv[i], "varsPerNode=1") == 0){
@@ -205,6 +206,21 @@ int main( int argc, char *argv[] ){
     }
     else if (strcmp(argv[i], "varsPerNode=4") == 0){
       varsPerNode = 4;
+    }
+    else if (strcmp(argv[i], "order=2") == 0){
+      order = 2;
+    }
+    else if (strcmp(argv[i], "order=3") == 0){
+      order = 3;
+    }
+    else if (strcmp(argv[i], "order=4") == 0){
+      order = 4;
+    }
+    else if (strcmp(argv[i], "order=5") == 0){
+      order = 5;
+    }
+    else if (strcmp(argv[i], "order=6") == 0){
+      order = 6;
     }
   }
 
@@ -220,13 +236,10 @@ int main( int argc, char *argv[] ){
   int nx = 5;
   int ny = 5;
   int nz = 5;
-  int order = 6;
 
   createAssembler(comm, varsPerNode, order, nx, ny, nz, &assembler, &creator);
   assembler->incref();
   creator->incref();
-
-  assembler->testElement(0, 2);
 
   TACSParallelMat *mat = assembler->createMat();
   mat->incref();
@@ -236,6 +249,9 @@ int main( int argc, char *argv[] ){
   TACSBVec *y_free = assembler->createVec();
   x->setRand(-1.0, 1.0);
   assembler->applyBCs(x);
+
+  assembler->setVariables(x);
+  assembler->testElement(0, 2);
 
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
 

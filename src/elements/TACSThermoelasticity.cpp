@@ -420,7 +420,7 @@ void TACSLinearThermoelasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
 
   // Compute the material density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c =  stiff->evalSpecificHeat(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
   // Compute the thermal strain components
   TacsScalar theta = Ut[6]; // The temperature value
@@ -1465,6 +1465,10 @@ void TACSLinearThermoelasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
   dfdPsix[6] = dfdPsix[7] = dfdPsix[8] = 0.0;
   dfdPsix[9] = dfdPsix[10] = dfdPsix[11] = 0.0;
 
+  // Compute the material density
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+
   // Compute the thermal strain components
   TacsScalar theta = Ut[9]; // The temperature value
   TacsScalar et[6];
@@ -1503,8 +1507,10 @@ void TACSLinearThermoelasticity3D::evalWeakAdjXptSensProduct( int elemIndex,
   stiff->evalStress(elemIndex, pt, X, e, t1);
   stiff->evalStress(elemIndex, pt, X, phi, t2);
 
-  *product = (t2[0]*e[0] + t2[1]*e[1] + t2[2]*e[2] +
-              t2[3]*e[3] + t2[4]*e[4] + t2[5]*e[5]);
+  *product =
+    (rho*(Psi[0]*Ut[2] + Psi[1]*Ut[5] + Psi[2]*Ut[8] + c*Psi[3]*Ut[10]) +
+     (t2[0]*e[0] + t2[1]*e[1] + t2[2]*e[2] +
+      t2[3]*e[3] + t2[4]*e[4] + t2[5]*e[5]));
 
   if (strain_type == TACS_LINEAR_STRAIN){
     dfdUx[0] = t2[0];

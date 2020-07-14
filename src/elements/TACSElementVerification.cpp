@@ -1514,18 +1514,18 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
     TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
     model->evalWeakIntegrand(elemIndex, time, n, pt, pX, Xd, Ut, Ux, pDUt, pDUx);
 
-    result = 0.0;
+    product = 0.0;
     for ( int i = 0; i < vars_per_node; i++ ){
-      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      product += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
       for ( int j = 0; j < num_params; j++ ){
-        result += Psix[num_params*i + j]*pDUx[num_params*i + j];
+        product += Psix[num_params*i + j]*pDUx[num_params*i + j];
       }
     }
 
 #ifdef TACS_USE_COMPLEX
-    fdX[k] = TacsImagPart(result)/dh;
+    fdX[k] = TacsImagPart(product)/dh;
 #else
-    fdX[k] = (result - product)/dh;
+    fdX[k] = (product - result)/dh;
 #endif // TACS_USE_COMPLEX
   }
 
@@ -1564,18 +1564,18 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
     TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
     model->evalWeakIntegrand(elemIndex, time, n, pt, X, pXd, Ut, Ux, pDUt, pDUx);
 
-    result = 0.0;
+    product = 0.0;
     for ( int i = 0; i < vars_per_node; i++ ){
-      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      product += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
       for ( int j = 0; j < num_params; j++ ){
-        result += Psix[num_params*i + j]*pDUx[num_params*i + j];
+        product += Psix[num_params*i + j]*pDUx[num_params*i + j];
       }
     }
 
 #ifdef TACS_USE_COMPLEX
-    fdXd[k] = TacsImagPart(result)/dh;
+    fdXd[k] = TacsImagPart(product)/dh;
 #else
-    fdXd[k] = (result - product)/dh;
+    fdXd[k] = (product - result)/dh;
 #endif // TACS_USE_COMPLEX
   }
 
@@ -1593,7 +1593,7 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
   }
   // Print the error if required
   if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "dfdX", dfdXd, fdXd, 3*num_params);
+    TacsPrintErrorComponents(stderr, "dfdXd", dfdXd, fdXd, 3*num_params);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
@@ -1614,18 +1614,18 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
     TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
     model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, pUx, pDUt, pDUx);
 
-    result = 0.0;
+    product = 0.0;
     for ( int i = 0; i < vars_per_node; i++ ){
-      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      product += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
       for ( int j = 0; j < num_params; j++ ){
-        result += Psix[num_params*i + j]*pDUx[num_params*i + j];
+        product += Psix[num_params*i + j]*pDUx[num_params*i + j];
       }
     }
 
 #ifdef TACS_USE_COMPLEX
-    fdUx[k] = TacsImagPart(result)/dh;
+    fdUx[k] = TacsImagPart(product)/dh;
 #else
-    fdUx[k] = (result - product)/dh;
+    fdUx[k] = (product - result)/dh;
 #endif // TACS_USE_COMPLEX
   }
 
@@ -1664,18 +1664,18 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
     TacsScalar pDUt[3*MAX_VARS_PER_NODE], pDUx[3*MAX_VARS_PER_NODE];
     model->evalWeakIntegrand(elemIndex, time, n, pt, X, Xd, Ut, Ux, pDUt, pDUx);
 
-    result = 0.0;
+    product = 0.0;
     for ( int i = 0; i < vars_per_node; i++ ){
-      result += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
+      product += Psi[i]*(pDUt[3*i] + pDUt[3*i+1] + pDUt[3*i+2]);
       for ( int j = 0; j < num_params; j++ ){
-        result += pPsix[num_params*i + j]*pDUx[num_params*i + j];
+        product += pPsix[num_params*i + j]*pDUx[num_params*i + j];
       }
     }
 
 #ifdef TACS_USE_COMPLEX
-    fdPsix[k] = TacsImagPart(result)/dh;
+    fdPsix[k] = TacsImagPart(product)/dh;
 #else
-    fdPsix[k] = (result - product)/dh;
+    fdPsix[k] = (product - result)/dh;
 #endif // TACS_USE_COMPLEX
   }
 

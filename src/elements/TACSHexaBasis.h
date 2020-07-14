@@ -126,6 +126,10 @@ class TACSQuarticHexaBasis : public TACSElementBasis {
   void addInterpFieldsGradTranspose( int n, const double pt[],
                                      const int num_fields, const TacsScalar grad[],
                                      TacsScalar values[] );
+  void interpAllFieldsGrad( const int m, const TacsScalar values[],
+                            TacsScalar out[] );
+  void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
+                                        TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
  private:
@@ -165,7 +169,6 @@ class TACSQuinticHexaBasis : public TACSElementBasis {
                             TacsScalar out[] );
   void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
                                         TacsScalar values[] );
-
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
  private:
