@@ -6,6 +6,7 @@
 #include "TACSHeatConduction.h"
 #include "TACSLinearElasticity.h"
 #include "TACSThermoelasticity.h"
+#include "TACSLagrangeInterpolation.h"
 #include "TACSQuadBasis.h"
 #include "TACSHexaBasis.h"
 #include "TACSElement2D.h"
@@ -33,6 +34,7 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
+  creator->incref();
 
   if (rank == 0){
     // Set the number of elements
@@ -186,60 +188,23 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
 
   // Create TACS
   TACSAssembler *assembler = creator->createTACS();
+  assembler->incref();
 
   // Set the pointers
   *_assembler = assembler;
   *_creator = creator;
 }
 
-int main( int argc, char *argv[] ){
-  MPI_Init(&argc, &argv);
-
-  int order = 6;
-  int varsPerNode = 4;
-  for ( int i = 0; i < argc; i++ ){
-    if (strcmp(argv[i], "varsPerNode=1") == 0){
-      varsPerNode = 1;
-    }
-    else if (strcmp(argv[i], "varsPerNode=3") == 0){
-      varsPerNode = 3;
-    }
-    else if (strcmp(argv[i], "varsPerNode=4") == 0){
-      varsPerNode = 4;
-    }
-    else if (strcmp(argv[i], "order=2") == 0){
-      order = 2;
-    }
-    else if (strcmp(argv[i], "order=3") == 0){
-      order = 3;
-    }
-    else if (strcmp(argv[i], "order=4") == 0){
-      order = 4;
-    }
-    else if (strcmp(argv[i], "order=5") == 0){
-      order = 5;
-    }
-    else if (strcmp(argv[i], "order=6") == 0){
-      order = 6;
-    }
-  }
-
-  // Get the rank
-  MPI_Comm comm = MPI_COMM_WORLD;
+void test_matrix_vector_products( MPI_Comm comm, int varsPerNode,
+                                  int order, int nx, int ny, int nz ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   TACSAssembler *assembler;
   TACSCreator *creator;
 
-  // Set the dimension of the mesh
-  int nx = 5;
-  int ny = 5;
-  int nz = 5;
-
-  createAssembler(comm, varsPerNode, order, nx, ny, nz, &assembler, &creator);
-  assembler->incref();
-  creator->incref();
+  createAssembler(comm, varsPerNode, order, nx, ny, nz,
+                  &assembler, &creator);
 
   TACSParallelMat *mat = assembler->createMat();
   mat->incref();
@@ -291,6 +256,270 @@ int main( int argc, char *argv[] ){
 
   assembler->decref();
   creator->decref();
+}
+
+int main( int argc, char *argv[] ){
+  MPI_Init(&argc, &argv);
+
+  int order = 6;
+  int varsPerNode = 4;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp(argv[i], "varsPerNode=1") == 0){
+      varsPerNode = 1;
+    }
+    else if (strcmp(argv[i], "varsPerNode=3") == 0){
+      varsPerNode = 3;
+    }
+    else if (strcmp(argv[i], "varsPerNode=4") == 0){
+      varsPerNode = 4;
+    }
+    else if (strcmp(argv[i], "order=2") == 0){
+      order = 2;
+    }
+    else if (strcmp(argv[i], "order=3") == 0){
+      order = 3;
+    }
+    else if (strcmp(argv[i], "order=4") == 0){
+      order = 4;
+    }
+    else if (strcmp(argv[i], "order=5") == 0){
+      order = 5;
+    }
+    else if (strcmp(argv[i], "order=6") == 0){
+      order = 6;
+    }
+  }
+
+  // Get the rank
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+
+  TACSAssembler *assembler[5];
+  TACSCreator *creator[5];
+
+  // Set the dimension of the mesh
+  int nx = 5;
+  int ny = 5;
+  int nz = 5;
+
+  // Get the multigrid levels
+  for ( int i = 0; i < order-1; i++ ){
+    int mesh_order = order-i;
+    createAssembler(comm, varsPerNode, mesh_order, nx, ny, nz,
+                    &assembler[i], &creator[i]);
+  }
+
+  // Create the multigrid object
+  int nlevels = order-1;
+  TACSMg *mg = new TACSMg(comm, nlevels);
+  mg->incref();
+
+  // Create the interpolation operators
+  for ( int level = 0; level < nlevels-1; level++ ){
+    // Allocate the interpolation object
+    TACSBVecInterp *interp = NULL;
+    interp = new TACSBVecInterp(assembler[level+1],
+                                assembler[level]);
+
+    if (rank == 0){
+      // Retrieve the node numbers
+      const int *nodes, *coarse_nodes;
+      creator[level]->getNodeNums(&nodes);
+      creator[level+1]->getNodeNums(&coarse_nodes);
+
+      int fine_order = order - level;
+      const double *fine_knots = NULL;
+      if (fine_order == 3){
+        fine_knots = TacsGaussLobattoPoints3;
+      }
+      else if (fine_order == 4){
+        fine_knots = TacsGaussLobattoPoints4;
+      }
+      else if (fine_order == 5){
+        fine_knots = TacsGaussLobattoPoints5;
+      }
+      else if (fine_order == 6){
+        fine_knots = TacsGaussLobattoPoints6;
+      }
+
+      int coarse_order = order - level - 1;
+      const double *coarse_knots = NULL;
+      if (coarse_order == 2){
+        coarse_knots = TacsGaussLobattoPoints2;
+      }
+      else if (coarse_order == 3){
+        coarse_knots = TacsGaussLobattoPoints3;
+      }
+      else if (coarse_order == 4){
+        coarse_knots = TacsGaussLobattoPoints4;
+      }
+      else if (coarse_order == 5){
+        coarse_knots = TacsGaussLobattoPoints5;
+      }
+
+      // In this case, we cheat and set the entire interpolation
+      // operator just from the root processor. The operator will be
+      // communicated to the appropriate procs during initialization
+      // on all procs.
+      for ( int nindex = 0, k = 0; k < (fine_order - 1)*nz + 1; k++ ){
+        for ( int j = 0; j < (fine_order - 1)*ny + 1; j++ ){
+          for ( int i = 0; i < (fine_order - 1)*nx + 1; i++, nindex++ ){
+            int istart, iend;
+            int jstart, jend;
+            int kstart, kend;
+            double ni[6], nj[6], nk[6];
+
+            if (i % (fine_order-1) == 0){
+              istart = 0;
+              iend = 1;
+              ni[0] = 1.0;
+            }
+            else {
+              istart = 0;
+              iend = coarse_order;
+              double u = fine_knots[i % (fine_order - 1)];
+              TacsLagrangeShapeFunctions(coarse_order, u, coarse_knots, ni);
+            }
+            if (j % (fine_order-1) == 0){
+              jstart = 0;
+              jend = 1;
+              nj[0] = 1.0;
+            }
+            else {
+              jstart = 0;
+              jend = coarse_order;
+              double u = fine_knots[j % (fine_order - 1)];
+              TacsLagrangeShapeFunctions(coarse_order, u, coarse_knots, nj);
+            }
+            if (k % (fine_order-1) == 0){
+              kstart = 0;
+              kend = 1;
+              nk[0] = 1.0;
+            }
+            else {
+              kstart = 0;
+              kend = coarse_order;
+              double u = fine_knots[k % (fine_order - 1)];
+              TacsLagrangeShapeFunctions(coarse_order, u, coarse_knots, nk);
+            }
+
+            // Find the indices of the coarse and fine element
+            int ix = i/(fine_order-1);
+            int iy = j/(fine_order-1);
+            int iz = k/(fine_order-1);
+
+            // Construct the interpolation
+            int count = 0;
+            double N[216];
+            int vars[216];
+            for ( int kk = kstart; kk < kend; kk++ ){
+              for ( int jj = jstart; jj < jend; jj++ ){
+                for ( int ii = istart; ii < iend; ii++ ){
+                  N[count] = ni[ii]*nj[jj]*nk[kk];
+
+                  int index =
+                    (ix*(coarse_order - 1) + ii) +
+                    (iy*(coarse_order - 1) + jj)*((coarse_order - 1)*nx + 1) +
+                    (iz*(coarse_order - 1) + jj)*((coarse_order - 1)*nx + 1)*((coarse_order - 1)*ny + 1);
+                  vars[count] = coarse_nodes[index];
+                  count++;
+                }
+              }
+            }
+
+            int node = nodes[nindex];
+            interp->addInterp(node, N, vars, count);
+          }
+        }
+      }
+    }
+
+    // Initialize the interpolation object. This is a collective
+    // call that distributes the interpolation operator.
+    interp->initialize();
+
+    mg->setLevel(level, assembler[level], interp, 1);
+  }
+
+  // Set the model at the lowest grid level
+  mg->setLevel(nlevels-1, assembler[nlevels-1], NULL);
+
+  // We no longer require any of the creator objects
+  for ( int i = 0; i < nlevels; i++ ){
+    creator[i]->decref();
+  }
+
+  // Create the residual and solution vectors on the finest TACS mesh
+  TACSBVec *force = assembler[0]->createVec();  force->incref();
+  TACSBVec *res = assembler[0]->createVec();    res->incref();
+  TACSBVec *ans = assembler[0]->createVec();    ans->incref();
+
+  // Allocate the GMRES solution method
+  int gmres_iters = 25;
+  int nrestart = 8;
+  int is_flexible = 0;
+  GMRES *ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
+  ksm->incref();
+
+  // Set a monitor to check on solution progress
+  int freq = 1;
+  ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
+
+  // The initial time
+  double t0 = MPI_Wtime();
+
+  // Assemble the Jacobian matrix for each level
+  mg->assembleJacobian(1.0, 0.0, 0.0, res);
+
+  force->zeroEntries();
+  TacsScalar *force_array;
+  int size = force->getArray(&force_array);
+  for ( int i = 1; i < size; i += varsPerNode ){
+    force_array[i] = 1.0;
+  }
+  assembler[0]->applyBCs(force);
+
+  // Factor the preconditioner
+  mg->factor();
+
+  // Compute the solution using GMRES
+  ksm->solve(force, ans);
+
+  t0 = MPI_Wtime() - t0;
+
+  // Set the variables into TACS
+  assembler[0]->setVariables(ans);
+
+  // Compute the residual
+  TACSMat *matrix = mg->getMat(0);
+  matrix->mult(ans, res);
+  res->axpy(-1.0, force);
+  TacsScalar res_norm = res->norm();
+  if (rank == 0){
+    printf("||R||: %15.5e\n", TacsRealPart(res_norm));
+    printf("Solution time: %e\n", t0);
+  }
+
+  // Output for visualization
+  ElementType etype = TACS_SOLID_ELEMENT;
+  int write_flag = (TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
+  f5->incref();
+  f5->writeToFile("plate.f5");
+
+  // Free the memory
+  f5->decref();
+  ans->decref();
+  res->decref();
+  force->decref();
+  ksm->decref();
+  for ( int i = 0; i < nlevels; i++ ){
+    assembler[i]->decref();
+  }
 
   MPI_Finalize();
   return (0);

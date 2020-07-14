@@ -15,6 +15,19 @@
 #ifndef TACS_LAGRANGE_INTERPOLATION_H
 #define TACS_LAGRANGE_INTERPOLATION_H
 
+static const double TacsGaussLobattoPoints2[] = {-1.0, 1.0};
+
+static const double TacsGaussLobattoPoints3[] = {-1.0, 0.0, 1.0};
+
+static const double TacsGaussLobattoPoints4[] = {-1.0, -0.5, 0.5, 1.0};
+
+static const double TacsGaussLobattoPoints5[] =
+  {-1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0};
+
+static const double TacsGaussLobattoPoints6[] =
+  {-1.0, -0.8090169943749475, -0.30901699437494745,
+   0.30901699437494745, 0.8090169943749475, 1.0};
+
 /*
   Evaluate the shape functions at the given parametric point
 
