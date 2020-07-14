@@ -1650,7 +1650,7 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
   fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Perturb Psix
-  TacsScalar fdPsix[3];
+  TacsScalar fdPsix[3*MAX_VARS_PER_NODE];
   for ( int k = 0; k < num_params*vars_per_node; k++ ){
     TacsScalar pPsix[3*MAX_VARS_PER_NODE];
     memcpy(pPsix, Psix, num_params*vars_per_node*sizeof(TacsScalar));
