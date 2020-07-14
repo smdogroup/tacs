@@ -57,15 +57,15 @@
 class TACSMg : public TACSPc {
  public:
   TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega=1.0,
-          int _sor_iters=1, int _sor_symmetric=0, int _use_galerkin=0 );
+          int _sor_iters=1, int _sor_symmetric=0 );
   ~TACSMg();
 
   // Set the data for the multi-grid level
   // -------------------------------------
   void setLevel( int level, TACSAssembler *_assembler,
                  TACSBVecInterp *interp=NULL,
-                 int _iters=1, TACSMat *_mat=NULL,
-                 TACSPc *_smoother=NULL );
+                 int _iters=1, int _use_galerkin=0,
+                 TACSMat *_mat=NULL, TACSPc *_smoother=NULL );
 
   // Set the state/design variables of all lower finite-element models
   // -----------------------------------------------------------------
@@ -120,7 +120,7 @@ class TACSMg : public TACSPc {
 
   // Flag to indicate whether to form the coarse grid operators
   // via Galerkin projection coarse = P^{T}*A*P
-  int use_galerkin;
+  int *use_galerkin;
 
   // The number of multi-grid levels
   int nlevels;

@@ -48,14 +48,6 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
 
     // Set the ids
     memset(ids, 0, numElements*sizeof(int));
-    for ( int k = 0; k < numElements; k++ ){
-      if (k % nx < nx/2 && (k/nx) < nx/2){
-        ids[k] = 1;
-      }
-      else if (k % nx >= nx/2 && (k/nx) >= nx/2){
-        ids[k] = 1;
-      }
-    }
 
     ptr[0] = 0;
     for ( int n = 0; n < numElements; n++ ){
@@ -87,14 +79,11 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
     delete [] ids;
 
     // We're over-counting one of the nodes on each edge
-    int numBcs = 4*((order - 1)*nx + 1);
+    int numBcs = ((order-1)*nx + 1)*((order-1)*ny + 1);
     int *bcNodes = new int[ numBcs ];
 
-    for ( int i = 0; i < ((order-1)*nx + 1); i++ ){
-      bcNodes[4*i] = i;
-      bcNodes[4*i+1] = i + ((order-1)*nx + 1)*ny;
-      bcNodes[4*i+2] = i*((order-1)*nx + 1);
-      bcNodes[4*i+3] = (i + 1)*((order-1)*nx + 1) - 1;
+    for ( int i = 0; i < numBcs; i++ ){
+      bcNodes[i] = i;
     }
 
     // Set the boundary conditions
@@ -103,6 +92,27 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
 
     // Set the node locations
     TacsScalar *Xpts = new TacsScalar[ 3*numNodes ];
+    double hx = 1.0/nx;
+    double hy = 1.0/ny;
+    double hz = 1.0/nz;
+
+    const double *pts = NULL;
+    if (order == 2){
+      pts = TacsGaussLobattoPoints2;
+    }
+    if (order == 3){
+      pts = TacsGaussLobattoPoints3;
+    }
+    else if (order == 4){
+      pts = TacsGaussLobattoPoints4;
+    }
+    else if (order == 5){
+      pts = TacsGaussLobattoPoints5;
+    }
+    else if (order == 6){
+      pts = TacsGaussLobattoPoints6;
+    }
+
     for ( int k = 0; k < (order - 1)*nz + 1; k++ ){
       for ( int j = 0; j < (order - 1)*ny + 1; j++ ){
         for ( int i = 0; i < (order - 1)*nx + 1; i++ ){
@@ -110,9 +120,9 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
             i +
             j*((order - 1)*nx + 1) +
             k*((order - 1)*nx + 1)*((order - 1)*ny + 1);
-          Xpts[3*node] = (1.0*i)/nx;
-          Xpts[3*node+1] = (1.0*j)/ny;
-          Xpts[3*node+2] = (1.0*k)/nz;
+          Xpts[3*node]   = hx*(i/(order-1) + 0.5*(1.0 + pts[i % (order-1)]));
+          Xpts[3*node+1] = hy*(j/(order-1) + 0.5*(1.0 + pts[j % (order-1)]));
+          Xpts[3*node+2] = hz*(k/(order-1) + 0.5*(1.0 + pts[k % (order-1)]));
         }
       }
     }
@@ -261,8 +271,15 @@ void test_matrix_vector_products( MPI_Comm comm, int varsPerNode,
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
+  // Set the dimension of the mesh
+  int nx = 5;
+  int ny = 5;
+  int nz = 5;
+
+  // Set the largest mesh order and number of variables at each node
   int order = 6;
   int varsPerNode = 4;
+
   for ( int i = 0; i < argc; i++ ){
     if (strcmp(argv[i], "varsPerNode=1") == 0){
       varsPerNode = 1;
@@ -288,6 +305,18 @@ int main( int argc, char *argv[] ){
     else if (strcmp(argv[i], "order=6") == 0){
       order = 6;
     }
+    if (sscanf(argv[i], "nx=%d", &nx) == 0){
+      if (nx < 1){ nx = 1; }
+      if (nx > 100){ nx = 100; }
+    }
+    if (sscanf(argv[i], "ny=%d", &ny) == 0){
+      if (ny < 1){ ny = 1; }
+      if (ny > 100){ ny = 100; }
+    }
+    if (sscanf(argv[i], "nz=%d", &nz) == 0){
+      if (nz < 1){ nz = 1; }
+      if (nz > 100){ nz = 100; }
+    }
   }
 
   // Get the rank
@@ -297,11 +326,6 @@ int main( int argc, char *argv[] ){
 
   TACSAssembler *assembler[5];
   TACSCreator *creator[5];
-
-  // Set the dimension of the mesh
-  int nx = 5;
-  int ny = 5;
-  int nz = 5;
 
   // Get the multigrid levels
   for ( int i = 0; i < order-1; i++ ){
@@ -322,13 +346,15 @@ int main( int argc, char *argv[] ){
     interp = new TACSBVecInterp(assembler[level+1],
                                 assembler[level]);
 
+    int fine_order = order - level;
+    int coarse_order = order - level - 1;
+
     if (rank == 0){
       // Retrieve the node numbers
       const int *nodes, *coarse_nodes;
       creator[level]->getNodeNums(&nodes);
       creator[level+1]->getNodeNums(&coarse_nodes);
 
-      int fine_order = order - level;
       const double *fine_knots = NULL;
       if (fine_order == 3){
         fine_knots = TacsGaussLobattoPoints3;
@@ -343,7 +369,6 @@ int main( int argc, char *argv[] ){
         fine_knots = TacsGaussLobattoPoints6;
       }
 
-      int coarse_order = order - level - 1;
       const double *coarse_knots = NULL;
       if (coarse_order == 2){
         coarse_knots = TacsGaussLobattoPoints2;
@@ -370,7 +395,20 @@ int main( int argc, char *argv[] ){
             int kstart, kend;
             double ni[6], nj[6], nk[6];
 
-            if (i % (fine_order-1) == 0){
+            // Find the indices of the coarse and fine element
+            int ix = i/(fine_order-1);
+            int iy = j/(fine_order-1);
+            int iz = k/(fine_order-1);
+            if (ix >= nx){ ix = nx-1; }
+            if (iy >= ny){ iy = ny-1; }
+            if (iz >= nz){ iz = nz-1; }
+
+            if (i == (fine_order-1)*nx){
+              istart = coarse_order-1;
+              iend = coarse_order;
+              ni[0] = 1.0;
+            }
+            else if (i % (fine_order-1) == 0){
               istart = 0;
               iend = 1;
               ni[0] = 1.0;
@@ -381,7 +419,12 @@ int main( int argc, char *argv[] ){
               double u = fine_knots[i % (fine_order - 1)];
               TacsLagrangeShapeFunctions(coarse_order, u, coarse_knots, ni);
             }
-            if (j % (fine_order-1) == 0){
+            if (j == (fine_order-1)*ny){
+              jstart = coarse_order-1;
+              jend = coarse_order;
+              nj[0] = 1.0;
+            }
+            else if (j % (fine_order-1) == 0){
               jstart = 0;
               jend = 1;
               nj[0] = 1.0;
@@ -392,7 +435,12 @@ int main( int argc, char *argv[] ){
               double u = fine_knots[j % (fine_order - 1)];
               TacsLagrangeShapeFunctions(coarse_order, u, coarse_knots, nj);
             }
-            if (k % (fine_order-1) == 0){
+            if (k == (fine_order-1)*nz){
+              kstart = coarse_order-1;
+              kend = coarse_order;
+              nk[0] = 1.0;
+            }
+            else if (k % (fine_order-1) == 0){
               kstart = 0;
               kend = 1;
               nk[0] = 1.0;
@@ -403,11 +451,6 @@ int main( int argc, char *argv[] ){
               double u = fine_knots[k % (fine_order - 1)];
               TacsLagrangeShapeFunctions(coarse_order, u, coarse_knots, nk);
             }
-
-            // Find the indices of the coarse and fine element
-            int ix = i/(fine_order-1);
-            int iy = j/(fine_order-1);
-            int iz = k/(fine_order-1);
 
             // Construct the interpolation
             int count = 0;
@@ -421,7 +464,7 @@ int main( int argc, char *argv[] ){
                   int index =
                     (ix*(coarse_order - 1) + ii) +
                     (iy*(coarse_order - 1) + jj)*((coarse_order - 1)*nx + 1) +
-                    (iz*(coarse_order - 1) + jj)*((coarse_order - 1)*nx + 1)*((coarse_order - 1)*ny + 1);
+                    (iz*(coarse_order - 1) + kk)*((coarse_order - 1)*nx + 1)*((coarse_order - 1)*ny + 1);
                   vars[count] = coarse_nodes[index];
                   count++;
                 }
@@ -439,11 +482,29 @@ int main( int argc, char *argv[] ){
     // call that distributes the interpolation operator.
     interp->initialize();
 
-    mg->setLevel(level, assembler[level], interp, 1);
+    // Set the matrices to use
+    int use_galerkin = 0;
+    TACSMat *mat = NULL;
+    TACSPc *smoother = NULL;
+
+    if (fine_order > 3){
+      // Create the matrix-free matrix object
+      mat = new TACSMatrixFreeMat(assembler[level]);
+
+      // Create the smoother
+      int cheb_degree = 3;
+      double lower = 1.0/10.0, upper = 1.1;
+      int smooth_iters = 1;
+      smoother = new TACSChebyshevSmoother(mat, cheb_degree, lower, upper,
+                                           smooth_iters);
+    }
+
+    mg->setLevel(level, assembler[level], interp, 1, use_galerkin, mat, smoother);
   }
 
   // Set the model at the lowest grid level
-  mg->setLevel(nlevels-1, assembler[nlevels-1], NULL);
+  int use_galerkin = 1;
+  mg->setLevel(nlevels-1, assembler[nlevels-1], NULL, 1, use_galerkin);
 
   // We no longer require any of the creator objects
   for ( int i = 0; i < nlevels; i++ ){
@@ -509,7 +570,7 @@ int main( int argc, char *argv[] ){
                     TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
   f5->incref();
-  f5->writeToFile("plate.f5");
+  f5->writeToFile("volume.f5");
 
   // Free the memory
   f5->decref();

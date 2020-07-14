@@ -197,11 +197,7 @@ int main( int argc, char *argv[] ){
   }
 
   // Create the multigrid object
-  double omega = 1.0;
-  int sor_iters = 1;
-  int sor_symm = 0;
-  int use_galerkin = 1;
-  TACSMg *mg = new TACSMg(comm, nlevels, omega, sor_iters, sor_symm, use_galerkin);
+  TACSMg *mg = new TACSMg(comm, nlevels);
   mg->incref();
 
   // Create the TACS/Creator objects for all levels
@@ -293,7 +289,8 @@ int main( int argc, char *argv[] ){
 
     // Set the multigrid information at this level
     double tlev = MPI_Wtime();
-    mg->setLevel(level, assembler[level], interp[level], 1);
+    int use_galerkin = 1;
+    mg->setLevel(level, assembler[level], interp[level], 1, use_galerkin);
     tlev = MPI_Wtime() - tlev;
     if (rank == 0){
       printf("Initialization time for level %d: %e\n", level, tlev);
@@ -301,7 +298,8 @@ int main( int argc, char *argv[] ){
   }
 
   // Set the model at the lowest grid level
-  mg->setLevel(nlevels-1, assembler[nlevels-1], NULL);
+    int use_galerkin = 1;
+  mg->setLevel(nlevels-1, assembler[nlevels-1], NULL, 1, use_galerkin);
 
   // We no longer require any of the creator objects
   for ( int i = 0; i < nlevels; i++ ){

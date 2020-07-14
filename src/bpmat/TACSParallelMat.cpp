@@ -925,7 +925,7 @@ void TACSChebyshevSmoother::factor(){
     rho = gershgorin(pmat);
   }
   else {
-    rho = 1.1*arnoldi(10, mat);
+    rho = arnoldi(10, mat);
   }
 
   // Compute the factor
