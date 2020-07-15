@@ -1779,6 +1779,96 @@ void TACSQuinticHexaBasis::interpAllFieldsGrad( const int m,
                                                 TacsScalar out[] ){
   memset(out, 0, 4*m*216*sizeof(TacsScalar));
 
+  if (m == 1){
+    for ( int n = 0; n < 36; n++ ){
+      const double *n11 = &Nf[0];
+      const double *n12 = &Nf[6];
+      const double *n13 = &Nf[12];
+      const double *n14 = &Nf[18];
+      const double *n15 = &Nf[24];
+      const double *n16 = &Nf[30];
+
+      const double *n1x1 = &Nfxi[0];
+      const double *n1x2 = &Nfxi[6];
+      const double *n1x3 = &Nfxi[12];
+      const double *n1x4 = &Nfxi[18];
+      const double *n1x5 = &Nfxi[24];
+      const double *n1x6 = &Nfxi[30];
+
+      const double *n2 = &Nf[6*(n % 6)];
+      const double *n3 = &Nf[6*(n / 6)];
+      const double *n2x = &Nfxi[6*(n % 6)];
+      const double *n3x = &Nfxi[6*(n / 6)];
+
+      const TacsScalar *v = values;
+
+      if (m == 1){
+        for ( int k = 0; k < 6; k++ ){
+          for ( int j = 0; j < 6; j++ ){
+            TacsScalar n23  = n2[j]*n3[k];
+            TacsScalar n2x3 = n2x[j]*n3[k];
+            TacsScalar n23x = n2[j]*n3x[k];
+
+            out[1] += n23*(n1x1[0]*v[0] + n1x1[1]*v[1] + n1x1[2]*v[2] +
+                          n1x1[3]*v[3] + n1x1[4]*v[4] + n1x1[5]*v[5]);
+            TacsScalar t1 = (n11[0]*v[0] + n11[1]*v[1] + n11[2]*v[2] +
+                            n11[3]*v[3] + n11[4]*v[4] + n11[5]*v[5]);
+            out[0] += n23*t1;
+            out[2] += n2x3*t1;
+            out[3] += n23x*t1;
+
+            out[5] += n23*(n1x2[0]*v[0] + n1x2[1]*v[1] + n1x2[2]*v[2] +
+                          n1x2[3]*v[3] + n1x2[4]*v[4] + n1x2[5]*v[5]);
+            TacsScalar t2 = (n12[0]*v[0] + n12[1]*v[1] + n12[2]*v[2] +
+                            n12[3]*v[3] + n12[4]*v[4] + n12[5]*v[5]);
+            out[4] += n23*t2;
+            out[6] += n2x3*t2;
+            out[7] += n23x*t2;
+
+            out[9] += n23*(n1x3[0]*v[0] + n1x3[1]*v[1] + n1x3[2]*v[2] +
+                          n1x3[3]*v[3] + n1x3[4]*v[4] + n1x3[5]*v[5]);
+            TacsScalar t3 = (n13[0]*v[0] + n13[1]*v[1] + n13[2]*v[2] +
+                            n13[3]*v[3] + n13[4]*v[4] + n13[5]*v[5]);
+            out[8] += n23*t3;
+            out[10] += n2x3*t3;
+            out[11] += n23x*t3;
+
+            out[13] += n23*(n1x4[0]*v[0] + n1x4[1]*v[1] + n1x4[2]*v[2] +
+                          n1x4[3]*v[3] + n1x4[4]*v[4] + n1x4[5]*v[5]);
+            TacsScalar t4 = (n14[0]*v[0] + n14[1]*v[1] + n14[2]*v[2] +
+                            n14[3]*v[3] + n14[4]*v[4] + n14[5]*v[5]);
+            out[12] += n23*t4;
+            out[14] += n2x3*t4;
+            out[15] += n23x*t4;
+
+            out[17] += n23*(n1x5[0]*v[0] + n1x5[1]*v[1] + n1x5[2]*v[2] +
+                          n1x5[3]*v[3] + n1x5[4]*v[4] + n1x5[5]*v[5]);
+            TacsScalar t5 = (n15[0]*v[0] + n15[1]*v[1] + n15[2]*v[2] +
+                            n15[3]*v[3] + n15[4]*v[4] + n15[5]*v[5]);
+            out[16] += n23*t5;
+            out[18] += n2x3*t5;
+            out[19] += n23x*t5;
+
+            out[21] += n23*(n1x6[0]*v[0] + n1x6[1]*v[1] + n1x6[2]*v[2] +
+                            n1x6[3]*v[3] + n1x6[4]*v[4] + n1x6[5]*v[5]);
+            TacsScalar t6 = (n16[0]*v[0] + n16[1]*v[1] + n16[2]*v[2] +
+                            n16[3]*v[3] + n16[4]*v[4] + n16[5]*v[5]);
+            out[20] += n23*t6;
+            out[22] += n2x3*t6;
+            out[23] += n23x*t6;
+
+            v += 6;
+          }
+        }
+
+        out += 24;
+      }
+    }
+
+    return;
+  }
+
+
   for ( int n = 0; n < 216; n++ ){
     const double *n1 = &Nf[6*(n % 6)];
     const double *n2 = &Nf[6*((n % 36)/6)];
@@ -1918,6 +2008,74 @@ void TACSQuinticHexaBasis::interpAllFieldsGrad( const int m,
 void TACSQuinticHexaBasis::addInterpAllFieldsGradTranspose( const int m,
                                                             const TacsScalar in[],
                                                             TacsScalar values[] ){
+  if (m == 1){
+    for ( int n = 0; n < 36; n++ ){
+      const double *n11 = &Nf[0];
+      const double *n12 = &Nf[6];
+      const double *n13 = &Nf[12];
+      const double *n14 = &Nf[18];
+      const double *n15 = &Nf[24];
+      const double *n16 = &Nf[30];
+
+      const double *n1x1 = &Nfxi[0];
+      const double *n1x2 = &Nfxi[6];
+      const double *n1x3 = &Nfxi[12];
+      const double *n1x4 = &Nfxi[18];
+      const double *n1x5 = &Nfxi[24];
+      const double *n1x6 = &Nfxi[30];
+
+      const double *n2 = &Nf[6*(n % 6)];
+      const double *n3 = &Nf[6*(n / 6)];
+      const double *n2x = &Nfxi[6*(n % 6)];
+      const double *n3x = &Nfxi[6*(n / 6)];
+
+      TacsScalar *v = values;
+
+      for ( int k = 0; k < 6; k++ ){
+        for ( int j = 0; j < 6; j++ ){
+          TacsScalar n23  = n2[j]*n3[k];
+          TacsScalar n2x3 = n2x[j]*n3[k];
+          TacsScalar n23x = n2[j]*n3x[k];
+
+          TacsScalar a1 = n23*in[0] + n2x3*in[2] + n23x*in[3];
+          TacsScalar b1 = n23*in[1];
+
+          TacsScalar a2 = n23*in[4] + n2x3*in[6] + n23x*in[7];
+          TacsScalar b2 = n23*in[5];
+
+          TacsScalar a3 = n23*in[8] + n2x3*in[10] + n23x*in[11];
+          TacsScalar b3 = n23*in[9];
+
+          TacsScalar a4 = n23*in[12] + n2x3*in[14] + n23x*in[15];
+          TacsScalar b4 = n23*in[13];
+
+          TacsScalar a5 = n23*in[16] + n2x3*in[18] + n23x*in[19];
+          TacsScalar b5 = n23*in[17];
+
+          TacsScalar a6 = n23*in[20] + n2x3*in[22] + n23x*in[23];
+          TacsScalar b6 = n23*in[21];
+
+          v[0] += (a1*n11[0] + b1*n1x1[0] + a2*n12[0] + b2*n1x2[0] + a3*n13[0] + b3*n1x3[0] +
+                   a4*n14[0] + b4*n1x4[0] + a5*n15[0] + b5*n1x5[0] + a6*n16[0] + b6*n1x6[0]);
+          v[1] += (a1*n11[1] + b1*n1x1[1] + a2*n12[1] + b2*n1x2[1] + a3*n13[1] + b3*n1x3[1] +
+                   a4*n14[1] + b4*n1x4[1] + a5*n15[1] + b5*n1x5[1] + a6*n16[1] + b6*n1x6[1]);
+          v[2] += (a1*n11[2] + b1*n1x1[2] + a2*n12[2] + b2*n1x2[2] + a3*n13[2] + b3*n1x3[2] +
+                   a4*n14[2] + b4*n1x4[2] + a5*n15[2] + b5*n1x5[2] + a6*n16[2] + b6*n1x6[2]);
+          v[3] += (a1*n11[3] + b1*n1x1[3] + a2*n12[3] + b2*n1x2[3] + a3*n13[3] + b3*n1x3[3] +
+                   a4*n14[3] + b4*n1x4[3] + a5*n15[3] + b5*n1x5[3] + a6*n16[3] + b6*n1x6[3]);
+          v[4] += (a1*n11[4] + b1*n1x1[4] + a2*n12[4] + b2*n1x2[4] + a3*n13[4] + b3*n1x3[4] +
+                   a4*n14[4] + b4*n1x4[4] + a5*n15[4] + b5*n1x5[4] + a6*n16[4] + b6*n1x6[4]);
+          v[5] += (a1*n11[5] + b1*n1x1[5] + a2*n12[5] + b2*n1x2[5] + a3*n13[5] + b3*n1x3[5] +
+                   a4*n14[5] + b4*n1x4[5] + a5*n15[5] + b5*n1x5[5] + a6*n16[5] + b6*n1x6[5]);
+          v += 6;
+        }
+      }
+      in += 24;
+    }
+
+    return;
+  }
+
   for ( int n = 0; n < 216; n++ ){
     const double *n1 = &Nf[6*(n % 6)];
     const double *n2 = &Nf[6*((n % 36)/6)];

@@ -324,6 +324,9 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
+  test_matrix_vector_products(comm, varsPerNode, order,
+                              nx, ny, nz);
+
   TACSAssembler *assembler[5];
   TACSCreator *creator[5];
 
