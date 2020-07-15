@@ -810,17 +810,20 @@ cdef class Mg(Pc):
         self.ptr = self.mg
 
     def setLevel(self, int lev, Assembler assembler, VecInterp interp=None,
-                 int num_iters=0, Mat mat=None, Pc pc=None):
+                 int num_iters=0, use_galerkin=False, Mat mat=None, Pc pc=None):
         cdef TACSBVecInterp *_interp = NULL
         cdef TACSMat *_mat = NULL
         cdef TACSPc *_pc = NULL
+        cdef int _use_galerkin = 0
+        if use_galerkin:
+            _use_galerkin = 1
         if interp is not None:
             _interp = interp.ptr
         if mat is not None:
             _mat = mat.ptr
         if pc is not None:
             _pc = pc.ptr
-        self.mg.setLevel(lev, assembler.ptr, _interp, num_iters, _mat, _pc)
+        self.mg.setLevel(lev, assembler.ptr, _interp, num_iters, _use_galerkin, _mat, _pc)
         return
 
     def setVariables(self, Vec vec):

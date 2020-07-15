@@ -259,7 +259,7 @@ cdef extern from "TACSSchurMat.h":
 cdef extern from "TACSMg.h":
     cdef cppclass TACSMg(TACSPc):
         TACSMg(MPI_Comm, int, double, int, int)
-        void setLevel(int, TACSAssembler*, TACSBVecInterp*, int,
+        void setLevel(int, TACSAssembler*, TACSBVecInterp*, int, int,
                       TACSMat*, TACSPc*)
         void setVariables(TACSBVec*)
         void assembleJacobian(double, double, double, TACSBVec*,
