@@ -32,6 +32,18 @@ class TACSLinearHexaBasis : public TACSElementBasis {
   int getNumElementFaces();
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  void interpFields( const int n, const double pt[],
+                     const int num_fields, const TacsScalar values[],
+                     const int incr, TacsScalar field[] );
+  void addInterpFieldsTranspose( const int n, const double pt[],
+                                 const int incr, const TacsScalar field[],
+                                 const int num_fields, TacsScalar values[] );
+  void interpFieldsGrad( const int n, const double pt[],
+                         const int num_fields, const TacsScalar values[],
+                         TacsScalar grad[] );
+  void addInterpFieldsGradTranspose( int n, const double pt[],
+                                     const int num_fields, const TacsScalar grad[],
+                                     TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
@@ -63,6 +75,10 @@ class TACSQuadraticHexaBasis : public TACSElementBasis {
   void addInterpFieldsGradTranspose( int n, const double pt[],
                                      const int num_fields, const TacsScalar grad[],
                                      TacsScalar values[] );
+  // void interpAllFieldsGrad( const int m, const TacsScalar values[],
+  //                           TacsScalar out[] );
+  // void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
+  //                                       TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };
@@ -94,6 +110,10 @@ class TACSCubicHexaBasis : public TACSElementBasis {
   void addInterpFieldsGradTranspose( int n, const double pt[],
                                      const int num_fields, const TacsScalar grad[],
                                      TacsScalar values[] );
+  // void interpAllFieldsGrad( const int m, const TacsScalar values[],
+  //                           TacsScalar out[] );
+  // void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
+  //                                       TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
 };

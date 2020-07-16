@@ -15,7 +15,7 @@
 #include "TACSHexaBasis.h"
 #include "TACSGaussQuadrature.h"
 #include "TACSLagrangeInterpolation.h"
-#include "TACSBasisMacros.h"
+#include "TACSTensorProductBasisImpl.h"
 
 static void getFaceTangents( int face, double t[] ){
   if (face == 0){
@@ -182,6 +182,135 @@ void TACSLinearHexaBasis::computeBasisGradient( const double pt[],
   Nxi[23] = 0.125*(1.0 + pt[0])*(1.0 + pt[1]);
 }
 
+void TACSLinearHexaBasis::interpFields( const int n,
+                                        const double pt[],
+                                        const int m,
+                                        const TacsScalar v[],
+                                        const int incr,
+                                        TacsScalar u[] ){
+  double n1[2], n2[2], n3[2];
+  n1[0] = 0.5*(1.0 - pt[0]);
+  n1[1] = 0.5*(1.0 + pt[0]);
+  n2[0] = 0.5*(1.0 - pt[1]);
+  n2[1] = 0.5*(1.0 + pt[1]);
+  n3[0] = 0.5*(1.0 - pt[2]);
+  n3[1] = 0.5*(1.0 + pt[2]);
+
+  for ( int p = 0; p < m; p++, v++, u += incr ){
+    TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]);
+    TacsScalar t2 = (n1[0]*v[2*m] + n1[1]*v[3*m]);
+    TacsScalar t3 = (n1[0]*v[4*m] + n1[1]*v[5*m]);
+    TacsScalar t4 = (n1[0]*v[6*m] + n1[1]*v[7*m]);
+
+    u[0] = n3[0]*(n2[0]*t1 + n2[1]*t2) + n3[1]*(n2[0]*t3 + n2[1]*t4);
+  }
+}
+
+void TACSLinearHexaBasis::addInterpFieldsTranspose( const int n,
+                                                    const double pt[],
+                                                    const int incr,
+                                                    const TacsScalar u[],
+                                                    const int m,
+                                                    TacsScalar v[] ){
+  double n1[2], n2[2], n3[2];
+  n1[0] = 0.5*(1.0 - pt[0]);
+  n1[1] = 0.5*(1.0 + pt[0]);
+  n2[0] = 0.5*(1.0 - pt[1]);
+  n2[1] = 0.5*(1.0 + pt[1]);
+  n3[0] = 0.5*(1.0 - pt[2]);
+  n3[1] = 0.5*(1.0 + pt[2]);
+
+  for ( int p = 0; p < m; p++, v++, u += incr ){
+    TacsScalar t1 = n3[0]*n2[0]*u[0];
+    TacsScalar t2 = n3[0]*n2[1]*u[0];
+    TacsScalar t3 = n3[1]*n2[0]*u[0];
+    TacsScalar t4 = n3[1]*n2[1]*u[0];
+
+    v[0] += n1[0]*t1;
+    v[m] += n1[1]*t1;
+    v[2*m] += n1[0]*t2;
+    v[3*m] += n1[1]*t2;
+    v[4*m] += n1[0]*t3;
+    v[5*m] += n1[1]*t3;
+    v[6*m] += n1[0]*t4;
+    v[7*m] += n1[1]*t4;
+  }
+}
+
+void TACSLinearHexaBasis::interpFieldsGrad( const int n,
+                                            const double pt[],
+                                            const int m,
+                                            const TacsScalar v[],
+                                            TacsScalar g[] ){
+  double n1[2], n2[2], n3[2], n1x[2], n2x[2], n3x[3];
+  n1[0] = 0.5*(1.0 - pt[0]);
+  n1[1] = 0.5*(1.0 + pt[0]);
+  n2[0] = 0.5*(1.0 - pt[1]);
+  n2[1] = 0.5*(1.0 + pt[1]);
+  n3[0] = 0.5*(1.0 - pt[2]);
+  n3[1] = 0.5*(1.0 + pt[2]);
+  n1x[0] = -0.5;
+  n1x[1] = 0.5;
+  n2x[0] = -0.5;
+  n2x[1] = 0.5;
+  n3x[0] = -0.5;
+  n3x[1] = 0.5;
+
+  for ( int p = 0; p < m; p++, v++, g += 3 ){
+    TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]);
+    TacsScalar t2 = (n1[0]*v[2*m] + n1[1]*v[3*m]);
+    TacsScalar t3 = (n1[0]*v[4*m] + n1[1]*v[5*m]);
+    TacsScalar t4 = (n1[0]*v[6*m] + n1[1]*v[7*m]);
+
+    TacsScalar t1x = (n1x[0]*v[0]   + n1x[1]*v[m]);
+    TacsScalar t2x = (n1x[0]*v[2*m] + n1x[1]*v[3*m]);
+    TacsScalar t3x = (n1x[0]*v[4*m] + n1x[1]*v[5*m]);
+    TacsScalar t4x = (n1x[0]*v[6*m] + n1x[1]*v[7*m]);
+
+    g[0] = n3[0]*(n2[0]*t1x + n2[1]*t2x) + n3[1]*(n2[0]*t3x + n2[1]*t4x);
+    g[1] = n3[0]*(n2x[0]*t1 + n2x[1]*t2) + n3[1]*(n2x[0]*t3 + n2x[1]*t4);
+    g[2] = n3x[0]*(n2[0]*t1 + n2[1]*t2) + n3x[1]*(n2[0]*t3 + n2[1]*t4);
+  }
+}
+
+void TACSLinearHexaBasis::addInterpFieldsGradTranspose( int n,
+                                                        const double pt[],
+                                                        const int m,
+                                                        const TacsScalar g[],
+                                                        TacsScalar v[] ){
+
+  double n1[2], n2[2], n3[2], n1x[2], n2x[2], n3x[3];
+  n1[0] = 0.5*(1.0 - pt[0]);
+  n1[1] = 0.5*(1.0 + pt[0]);
+  n2[0] = 0.5*(1.0 - pt[1]);
+  n2[1] = 0.5*(1.0 + pt[1]);
+  n3[0] = 0.5*(1.0 - pt[2]);
+  n3[1] = 0.5*(1.0 + pt[2]);
+  n1x[0] = -0.5;
+  n1x[1] = 0.5;
+  n2x[0] = -0.5;
+  n2x[1] = 0.5;
+  n3x[0] = -0.5;
+  n3x[1] = 0.5;
+
+  for ( int p = 0; p < m; p++, v++, g += 3 ){
+    TacsScalar t1 = n3[0]*n2x[0]*g[1] + n3x[0]*n2[0]*g[2];
+    TacsScalar t2 = n3[0]*n2x[1]*g[1] + n3x[0]*n2[1]*g[2];
+    TacsScalar t3 = n3[1]*n2x[0]*g[1] + n3x[1]*n2[0]*g[2];
+    TacsScalar t4 = n3[1]*n2x[1]*g[1] + n3x[1]*n2[1]*g[2];
+
+    TacsScalar t1x = n3[0]*n2[0]*g[0];
+    TacsScalar t2x = n3[0]*n2[1]*g[0];
+    TacsScalar t3x = n3[1]*n2[0]*g[0];
+    TacsScalar t4x = n3[1]*n2[1]*g[0];
+
+    v[0] += n1[0]*t1 + n1x[0]*t1x;     v[m] += n1[1]*t1 + n1x[1]*t1x;
+    v[2*m] += n1[0]*t2 + n1x[0]*t2x;   v[3*m] += n1[1]*t2 + n1x[1]*t2x;
+    v[4*m] += n1[0]*t3 + n1x[0]*t3x;   v[5*m] += n1[1]*t3 + n1x[1]*t3x;
+    v[6*m] += n1[0]*t4 + n1x[0]*t4x;   v[7*m] += n1[1]*t4 + n1x[1]*t4x;
+  }
+}
+
 /*
   Quadratic Hexa basis class functions
 */
@@ -259,25 +388,25 @@ double TACSQuadraticHexaBasis::getFaceQuadraturePoint( int face,
 
 void TACSQuadraticHexaBasis::computeBasis( const double pt[],
                                            double N[] ){
-  double na[3];
-  na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-  na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-  na[2] = 0.5*(1.0 + pt[0])*pt[0];
+  double n1[3];
+  n1[0] = -0.5*pt[0]*(1.0 - pt[0]);
+  n1[1] = (1.0 - pt[0])*(1.0 + pt[0]);
+  n1[2] = 0.5*(1.0 + pt[0])*pt[0];
 
-  double nb[3];
-  nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-  nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-  nb[2] = 0.5*(1.0 + pt[1])*pt[1];
+  double n2[3];
+  n2[0] = -0.5*pt[1]*(1.0 - pt[1]);
+  n2[1] = (1.0 - pt[1])*(1.0 + pt[1]);
+  n2[2] = 0.5*(1.0 + pt[1])*pt[1];
 
-  double nc[3];
-  nc[0] = -0.5*pt[2]*(1.0 - pt[2]);
-  nc[1] = (1.0 - pt[2])*(1.0 + pt[2]);
-  nc[2] = 0.5*(1.0 + pt[2])*pt[2];
+  double n3[3];
+  n3[0] = -0.5*pt[2]*(1.0 - pt[2]);
+  n3[1] = (1.0 - pt[2])*(1.0 + pt[2]);
+  n3[2] = 0.5*(1.0 + pt[2])*pt[2];
 
   for ( int k = 0; k < 3; k++ ){
     for ( int j = 0; j < 3; j++ ){
       for ( int i = 0; i < 3; i++ ){
-        N[0] = na[i]*nb[j]*nc[k];
+        N[0] = n1[i]*n2[j]*n3[k];
         N++;
       }
     }
@@ -287,43 +416,43 @@ void TACSQuadraticHexaBasis::computeBasis( const double pt[],
 void TACSQuadraticHexaBasis::computeBasisGradient( const double pt[],
                                                     double N[],
                                                     double Nxi[] ){
-  double na[3];
-  na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-  na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-  na[2] = 0.5*(1.0 + pt[0])*pt[0];
+  double n1[3];
+  n1[0] = -0.5*pt[0]*(1.0 - pt[0]);
+  n1[1] = (1.0 - pt[0])*(1.0 + pt[0]);
+  n1[2] = 0.5*(1.0 + pt[0])*pt[0];
 
-  double nb[3];
-  nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-  nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-  nb[2] = 0.5*(1.0 + pt[1])*pt[1];
+  double n2[3];
+  n2[0] = -0.5*pt[1]*(1.0 - pt[1]);
+  n2[1] = (1.0 - pt[1])*(1.0 + pt[1]);
+  n2[2] = 0.5*(1.0 + pt[1])*pt[1];
 
-  double nc[3];
-  nc[0] = -0.5*pt[2]*(1.0 - pt[2]);
-  nc[1] = (1.0 - pt[2])*(1.0 + pt[2]);
-  nc[2] = 0.5*(1.0 + pt[2])*pt[2];
+  double n3[3];
+  n3[0] = -0.5*pt[2]*(1.0 - pt[2]);
+  n3[1] = (1.0 - pt[2])*(1.0 + pt[2]);
+  n3[2] = 0.5*(1.0 + pt[2])*pt[2];
 
-  double dna[3];
-  dna[0] = -0.5 + pt[0];
-  dna[1] = -2.0*pt[0];
-  dna[2] = 0.5 + pt[0];
+  double n1x[3];
+  n1x[0] = -0.5 + pt[0];
+  n1x[1] = -2.0*pt[0];
+  n1x[2] = 0.5 + pt[0];
 
-  double dnb[3];
-  dnb[0] = -0.5 + pt[1];
-  dnb[1] = -2.0*pt[1];
-  dnb[2] = 0.5 + pt[1];
+  double n2x[3];
+  n2x[0] = -0.5 + pt[1];
+  n2x[1] = -2.0*pt[1];
+  n2x[2] = 0.5 + pt[1];
 
-  double dnc[3];
-  dnc[0] = -0.5 + pt[2];
-  dnc[1] = -2.0*pt[2];
-  dnc[2] = 0.5 + pt[2];
+  double n3x[3];
+  n3x[0] = -0.5 + pt[2];
+  n3x[1] = -2.0*pt[2];
+  n3x[2] = 0.5 + pt[2];
 
   for ( int k = 0; k < 3; k++ ){
     for ( int j = 0; j < 3; j++ ){
       for ( int i = 0; i < 3; i++ ){
-        N[0] = na[i]*nb[j]*nc[k];
-        Nxi[0] = dna[i]*nb[j]*nc[k];
-        Nxi[1] = na[i]*dnb[j]*nc[k];
-        Nxi[2] = na[i]*nb[j]*dnc[k];
+        N[0] = n1[i]*n2[j]*n3[k];
+        Nxi[0] = n1x[i]*n2[j]*n3[k];
+        Nxi[1] = n1[i]*n2x[j]*n3[k];
+        Nxi[2] = n1[i]*n2[j]*n3x[k];
         N++;
         Nxi += 3;
       }
@@ -337,23 +466,36 @@ void TACSQuadraticHexaBasis::interpFields( const int n,
                                            const TacsScalar v[],
                                            const int incr,
                                            TacsScalar u[] ){
-  double na[3];
-  na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-  na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-  na[2] = 0.5*(1.0 + pt[0])*pt[0];
+  double n1[3];
+  n1[0] = -0.5*pt[0]*(1.0 - pt[0]);
+  n1[1] = (1.0 - pt[0])*(1.0 + pt[0]);
+  n1[2] = 0.5*(1.0 + pt[0])*pt[0];
 
-  double nb[3];
-  nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-  nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-  nb[2] = 0.5*(1.0 + pt[1])*pt[1];
+  double n2[3];
+  n2[0] = -0.5*pt[1]*(1.0 - pt[1]);
+  n2[1] = (1.0 - pt[1])*(1.0 + pt[1]);
+  n2[2] = 0.5*(1.0 + pt[1])*pt[1];
 
-  double nc[3];
-  nc[0] = -0.5*pt[2]*(1.0 - pt[2]);
-  nc[1] = (1.0 - pt[2])*(1.0 + pt[2]);
-  nc[2] = 0.5*(1.0 + pt[2])*pt[2];
+  double n3[3];
+  n3[0] = -0.5*pt[2]*(1.0 - pt[2]);
+  n3[1] = (1.0 - pt[2])*(1.0 + pt[2]);
+  n3[2] = 0.5*(1.0 + pt[2])*pt[2];
 
-  for ( int i = 0; i < m; i++, u += incr, v++ ){
-    u[0] = TACS_BASIS_EVAL_TENSOR3D_ORDER3(na, nb, nc, m, v);
+  for ( int p = 0; p < m; p++, v++, u += incr ){
+    TacsScalar t1 = (n1[0]*v[0]    + n1[1]*v[m]    + n1[2]*v[2*m]);
+    TacsScalar t2 = (n1[0]*v[3*m]  + n1[1]*v[4*m]  + n1[2]*v[5*m]);
+    TacsScalar t3 = (n1[0]*v[6*m]  + n1[1]*v[7*m]  + n1[2]*v[8*m]);
+    TacsScalar t4 = (n1[0]*v[9*m]  + n1[1]*v[10*m] + n1[2]*v[11*m]);
+    TacsScalar t5 = (n1[0]*v[12*m] + n1[1]*v[13*m] + n1[2]*v[14*m]);
+    TacsScalar t6 = (n1[0]*v[15*m] + n1[1]*v[16*m] + n1[2]*v[17*m]);
+    TacsScalar t7 = (n1[0]*v[18*m] + n1[1]*v[19*m] + n1[2]*v[20*m]);
+    TacsScalar t8 = (n1[0]*v[21*m] + n1[1]*v[22*m] + n1[2]*v[23*m]);
+    TacsScalar t9 = (n1[0]*v[24*m] + n1[1]*v[25*m] + n1[2]*v[26*m]);
+
+    u[0] =
+      n3[0]*(n2[0]*t1 + n2[1]*t2 + n2[2]*t3) +
+      n3[1]*(n2[0]*t4 + n2[1]*t5 + n2[2]*t6) +
+      n3[2]*(n2[0]*t7 + n2[1]*t8 + n2[2]*t9);
   }
 }
 
@@ -363,24 +505,41 @@ void TACSQuadraticHexaBasis::addInterpFieldsTranspose( const int n,
                                                        const TacsScalar u[],
                                                        const int m,
                                                        TacsScalar v[] ){
-  double na[3];
-  na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-  na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-  na[2] = 0.5*(1.0 + pt[0])*pt[0];
+  double n1[3];
+  n1[0] = -0.5*pt[0]*(1.0 - pt[0]);
+  n1[1] = (1.0 - pt[0])*(1.0 + pt[0]);
+  n1[2] = 0.5*(1.0 + pt[0])*pt[0];
 
-  double nb[3];
-  nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-  nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-  nb[2] = 0.5*(1.0 + pt[1])*pt[1];
+  double n2[3];
+  n2[0] = -0.5*pt[1]*(1.0 - pt[1]);
+  n2[1] = (1.0 - pt[1])*(1.0 + pt[1]);
+  n2[2] = 0.5*(1.0 + pt[1])*pt[1];
 
-  double nc[3];
-  nc[0] = -0.5*pt[2]*(1.0 - pt[2]);
-  nc[1] = (1.0 - pt[2])*(1.0 + pt[2]);
-  nc[2] = 0.5*(1.0 + pt[2])*pt[2];
+  double n3[3];
+  n3[0] = -0.5*pt[2]*(1.0 - pt[2]);
+  n3[1] = (1.0 - pt[2])*(1.0 + pt[2]);
+  n3[2] = 0.5*(1.0 + pt[2])*pt[2];
 
   for ( int i = 0; i < m; i++, u += incr, v++ ){
-    TacsScalar temp;
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER3(na, nb, nc, u[0], temp, m, v);
+    TacsScalar t1 = n3[0]*n2[0]*u[0];
+    TacsScalar t2 = n3[0]*n2[1]*u[0];
+    TacsScalar t3 = n3[0]*n2[2]*u[0];
+    TacsScalar t4 = n3[1]*n2[0]*u[0];
+    TacsScalar t5 = n3[1]*n2[1]*u[0];
+    TacsScalar t6 = n3[1]*n2[2]*u[0];
+    TacsScalar t7 = n3[2]*n2[0]*u[0];
+    TacsScalar t8 = n3[2]*n2[1]*u[0];
+    TacsScalar t9 = n3[2]*n2[2]*u[0];
+
+    v[0] += n1[0]*t1;     v[m] += n1[1]*t1;     v[2*m] += n1[2]*t1;
+    v[3*m] += n1[0]*t2;   v[4*m] += n1[1]*t2;   v[5*m] += n1[2]*t2;
+    v[6*m] += n1[0]*t3;   v[7*m] += n1[1]*t3;   v[8*m] += n1[2]*t3;
+    v[9*m] += n1[0]*t4;   v[10*m] += n1[1]*t4;  v[11*m] += n1[2]*t4;
+    v[12*m] += n1[0]*t5;  v[13*m] += n1[1]*t5;  v[14*m] += n1[2]*t5;
+    v[15*m] += n1[0]*t6;  v[16*m] += n1[1]*t6;  v[17*m] += n1[2]*t6;
+    v[18*m] += n1[0]*t7;  v[19*m] += n1[1]*t7;  v[20*m] += n1[2]*t7;
+    v[21*m] += n1[0]*t8;  v[22*m] += n1[1]*t8;  v[23*m] += n1[2]*t8;
+    v[24*m] += n1[0]*t9;  v[25*m] += n1[1]*t9;  v[26*m] += n1[2]*t9;
   }
 }
 
@@ -389,40 +548,71 @@ void TACSQuadraticHexaBasis::interpFieldsGrad( const int n,
                                                const int m,
                                                const TacsScalar v[],
                                                TacsScalar g[] ){
-  double na[3];
-  na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-  na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-  na[2] = 0.5*(1.0 + pt[0])*pt[0];
+  double n1[3];
+  n1[0] = -0.5*pt[0]*(1.0 - pt[0]);
+  n1[1] = (1.0 - pt[0])*(1.0 + pt[0]);
+  n1[2] = 0.5*(1.0 + pt[0])*pt[0];
 
-  double nb[3];
-  nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-  nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-  nb[2] = 0.5*(1.0 + pt[1])*pt[1];
+  double n2[3];
+  n2[0] = -0.5*pt[1]*(1.0 - pt[1]);
+  n2[1] = (1.0 - pt[1])*(1.0 + pt[1]);
+  n2[2] = 0.5*(1.0 + pt[1])*pt[1];
 
-  double nc[3];
-  nc[0] = -0.5*pt[2]*(1.0 - pt[2]);
-  nc[1] = (1.0 - pt[2])*(1.0 + pt[2]);
-  nc[2] = 0.5*(1.0 + pt[2])*pt[2];
+  double n3[3];
+  n3[0] = -0.5*pt[2]*(1.0 - pt[2]);
+  n3[1] = (1.0 - pt[2])*(1.0 + pt[2]);
+  n3[2] = 0.5*(1.0 + pt[2])*pt[2];
 
-  double dna[3];
-  dna[0] = -0.5 + pt[0];
-  dna[1] = -2.0*pt[0];
-  dna[2] = 0.5 + pt[0];
+  double n1x[3];
+  n1x[0] = -0.5 + pt[0];
+  n1x[1] = -2.0*pt[0];
+  n1x[2] = 0.5 + pt[0];
 
-  double dnb[3];
-  dnb[0] = -0.5 + pt[1];
-  dnb[1] = -2.0*pt[1];
-  dnb[2] = 0.5 + pt[1];
+  double n2x[3];
+  n2x[0] = -0.5 + pt[1];
+  n2x[1] = -2.0*pt[1];
+  n2x[2] = 0.5 + pt[1];
 
-  double dnc[3];
-  dnc[0] = -0.5 + pt[2];
-  dnc[1] = -2.0*pt[2];
-  dnc[2] = 0.5 + pt[2];
+  double n3x[3];
+  n3x[0] = -0.5 + pt[2];
+  n3x[1] = -2.0*pt[2];
+  n3x[2] = 0.5 + pt[2];
 
-  for ( int i = 0; i < m; i++, g += 3, v++ ){
-    g[0] = TACS_BASIS_EVAL_TENSOR3D_ORDER3(dna, nb, nc, m, v);
-    g[1] = TACS_BASIS_EVAL_TENSOR3D_ORDER3(na, dnb, nc, m, v);
-    g[2] = TACS_BASIS_EVAL_TENSOR3D_ORDER3(na, nb, dnc, m, v);
+  for ( int p = 0; p < m; p++, v++, g += 3 ){
+    TacsScalar t1 = (n1[0]*v[0]    + n1[1]*v[m]    + n1[2]*v[2*m]);
+    TacsScalar t2 = (n1[0]*v[3*m]  + n1[1]*v[4*m]  + n1[2]*v[5*m]);
+    TacsScalar t3 = (n1[0]*v[6*m]  + n1[1]*v[7*m]  + n1[2]*v[8*m]);
+    TacsScalar t4 = (n1[0]*v[9*m]  + n1[1]*v[10*m] + n1[2]*v[11*m]);
+    TacsScalar t5 = (n1[0]*v[12*m] + n1[1]*v[13*m] + n1[2]*v[14*m]);
+    TacsScalar t6 = (n1[0]*v[15*m] + n1[1]*v[16*m] + n1[2]*v[17*m]);
+    TacsScalar t7 = (n1[0]*v[18*m] + n1[1]*v[19*m] + n1[2]*v[20*m]);
+    TacsScalar t8 = (n1[0]*v[21*m] + n1[1]*v[22*m] + n1[2]*v[23*m]);
+    TacsScalar t9 = (n1[0]*v[24*m] + n1[1]*v[25*m] + n1[2]*v[26*m]);
+
+    TacsScalar t1x = (n1x[0]*v[0]    + n1x[1]*v[m]    + n1x[2]*v[2*m]);
+    TacsScalar t2x = (n1x[0]*v[3*m]  + n1x[1]*v[4*m]  + n1x[2]*v[5*m]);
+    TacsScalar t3x = (n1x[0]*v[6*m]  + n1x[1]*v[7*m]  + n1x[2]*v[8*m]);
+    TacsScalar t4x = (n1x[0]*v[9*m]  + n1x[1]*v[10*m] + n1x[2]*v[11*m]);
+    TacsScalar t5x = (n1x[0]*v[12*m] + n1x[1]*v[13*m] + n1x[2]*v[14*m]);
+    TacsScalar t6x = (n1x[0]*v[15*m] + n1x[1]*v[16*m] + n1x[2]*v[17*m]);
+    TacsScalar t7x = (n1x[0]*v[18*m] + n1x[1]*v[19*m] + n1x[2]*v[20*m]);
+    TacsScalar t8x = (n1x[0]*v[21*m] + n1x[1]*v[22*m] + n1x[2]*v[23*m]);
+    TacsScalar t9x = (n1x[0]*v[24*m] + n1x[1]*v[25*m] + n1x[2]*v[26*m]);
+
+    g[0] =
+      n3[0]*(n2[0]*t1x + n2[1]*t2x + n2[2]*t3x) +
+      n3[1]*(n2[0]*t4x + n2[1]*t5x + n2[2]*t6x) +
+      n3[2]*(n2[0]*t7x + n2[1]*t8x + n2[2]*t9x);
+
+    g[1] =
+      n3[0]*(n2x[0]*t1 + n2x[1]*t2 + n2x[2]*t3) +
+      n3[1]*(n2x[0]*t4 + n2x[1]*t5 + n2x[2]*t6) +
+      n3[2]*(n2x[0]*t7 + n2x[1]*t8 + n2x[2]*t9);
+
+    g[2] =
+      n3x[0]*(n2[0]*t1 + n2[1]*t2 + n2[2]*t3) +
+      n3x[1]*(n2[0]*t4 + n2[1]*t5 + n2[2]*t6) +
+      n3x[2]*(n2[0]*t7 + n2[1]*t8 + n2[2]*t9);
   }
 }
 
@@ -431,41 +621,66 @@ void TACSQuadraticHexaBasis::addInterpFieldsGradTranspose( int n,
                                                            const int m,
                                                            const TacsScalar g[],
                                                            TacsScalar v[] ){
-  double na[3];
-  na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-  na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-  na[2] = 0.5*(1.0 + pt[0])*pt[0];
+  double n1[3];
+  n1[0] = -0.5*pt[0]*(1.0 - pt[0]);
+  n1[1] = (1.0 - pt[0])*(1.0 + pt[0]);
+  n1[2] = 0.5*(1.0 + pt[0])*pt[0];
 
-  double nb[3];
-  nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-  nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-  nb[2] = 0.5*(1.0 + pt[1])*pt[1];
+  double n2[3];
+  n2[0] = -0.5*pt[1]*(1.0 - pt[1]);
+  n2[1] = (1.0 - pt[1])*(1.0 + pt[1]);
+  n2[2] = 0.5*(1.0 + pt[1])*pt[1];
 
-  double nc[3];
-  nc[0] = -0.5*pt[2]*(1.0 - pt[2]);
-  nc[1] = (1.0 - pt[2])*(1.0 + pt[2]);
-  nc[2] = 0.5*(1.0 + pt[2])*pt[2];
+  double n3[3];
+  n3[0] = -0.5*pt[2]*(1.0 - pt[2]);
+  n3[1] = (1.0 - pt[2])*(1.0 + pt[2]);
+  n3[2] = 0.5*(1.0 + pt[2])*pt[2];
 
-  double dna[3];
-  dna[0] = -0.5 + pt[0];
-  dna[1] = -2.0*pt[0];
-  dna[2] = 0.5 + pt[0];
+  double n1x[3];
+  n1x[0] = -0.5 + pt[0];
+  n1x[1] = -2.0*pt[0];
+  n1x[2] = 0.5 + pt[0];
 
-  double dnb[3];
-  dnb[0] = -0.5 + pt[1];
-  dnb[1] = -2.0*pt[1];
-  dnb[2] = 0.5 + pt[1];
+  double n2x[3];
+  n2x[0] = -0.5 + pt[1];
+  n2x[1] = -2.0*pt[1];
+  n2x[2] = 0.5 + pt[1];
 
-  double dnc[3];
-  dnc[0] = -0.5 + pt[2];
-  dnc[1] = -2.0*pt[2];
-  dnc[2] = 0.5 + pt[2];
+  double n3x[3];
+  n3x[0] = -0.5 + pt[2];
+  n3x[1] = -2.0*pt[2];
+  n3x[2] = 0.5 + pt[2];
 
-  for ( int i = 0; i < m; i++, g += 3, v++ ){
-    TacsScalar temp;
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER3(dna, nb, nc, g[0], temp, m, v);
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER3(na, dnb, nc, g[1], temp, m, v);
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER3(na, nb, dnc, g[2], temp, m, v);
+  for ( int p = 0; p < m; p++, v++, g += 3 ){
+    TacsScalar t1 = n3[0]*n2x[0]*g[1] + n3x[0]*n2[0]*g[2];
+    TacsScalar t2 = n3[0]*n2x[1]*g[1] + n3x[0]*n2[1]*g[2];
+    TacsScalar t3 = n3[0]*n2x[2]*g[1] + n3x[0]*n2[2]*g[2];
+    TacsScalar t4 = n3[1]*n2x[0]*g[1] + n3x[1]*n2[0]*g[2];
+    TacsScalar t5 = n3[1]*n2x[1]*g[1] + n3x[1]*n2[1]*g[2];
+    TacsScalar t6 = n3[1]*n2x[2]*g[1] + n3x[1]*n2[2]*g[2];
+    TacsScalar t7 = n3[2]*n2x[0]*g[1] + n3x[2]*n2[0]*g[2];
+    TacsScalar t8 = n3[2]*n2x[1]*g[1] + n3x[2]*n2[1]*g[2];
+    TacsScalar t9 = n3[2]*n2x[2]*g[1] + n3x[2]*n2[2]*g[2];
+
+    TacsScalar t1x = n3[0]*n2[0]*g[0];
+    TacsScalar t2x = n3[0]*n2[1]*g[0];
+    TacsScalar t3x = n3[0]*n2[2]*g[0];
+    TacsScalar t4x = n3[1]*n2[0]*g[0];
+    TacsScalar t5x = n3[1]*n2[1]*g[0];
+    TacsScalar t6x = n3[1]*n2[2]*g[0];
+    TacsScalar t7x = n3[2]*n2[0]*g[0];
+    TacsScalar t8x = n3[2]*n2[1]*g[0];
+    TacsScalar t9x = n3[2]*n2[2]*g[0];
+
+    v[0] += n1[0]*t1 + n1x[0]*t1x;     v[m] += n1[1]*t1 + n1x[1]*t1x;     v[2*m] += n1[2]*t1 + n1x[2]*t1x;
+    v[3*m] += n1[0]*t2 + n1x[0]*t2x;   v[4*m] += n1[1]*t2 + n1x[1]*t2x;   v[5*m] += n1[2]*t2 + n1x[2]*t2x;
+    v[6*m] += n1[0]*t3 + n1x[0]*t3x;   v[7*m] += n1[1]*t3 + n1x[1]*t3x;   v[8*m] += n1[2]*t3 + n1x[2]*t3x;
+    v[9*m] += n1[0]*t4 + n1x[0]*t4x;   v[10*m] += n1[1]*t4 + n1x[1]*t4x;  v[11*m] += n1[2]*t4 + n1x[2]*t4x;
+    v[12*m] += n1[0]*t5 + n1x[0]*t5x;  v[13*m] += n1[1]*t5 + n1x[1]*t5x;  v[14*m] += n1[2]*t5 + n1x[2]*t5x;
+    v[15*m] += n1[0]*t6 + n1x[0]*t6x;  v[16*m] += n1[1]*t6 + n1x[1]*t6x;  v[17*m] += n1[2]*t6 + n1x[2]*t6x;
+    v[18*m] += n1[0]*t7 + n1x[0]*t7x;  v[19*m] += n1[1]*t7 + n1x[1]*t7x;  v[20*m] += n1[2]*t7 + n1x[2]*t7x;
+    v[21*m] += n1[0]*t8 + n1x[0]*t8x;  v[22*m] += n1[1]*t8 + n1x[1]*t8x;  v[23*m] += n1[2]*t8 + n1x[2]*t8x;
+    v[24*m] += n1[0]*t9 + n1x[0]*t9x;  v[25*m] += n1[1]*t9 + n1x[1]*t9x;  v[26*m] += n1[2]*t9 + n1x[2]*t9x;
   }
 }
 
@@ -546,28 +761,28 @@ double TACSCubicHexaBasis::getFaceQuadraturePoint( int face,
 
 void TACSCubicHexaBasis::computeBasis( const double pt[],
                                        double N[] ){
-  double na[4];
-  na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
-  na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
+  double n1[4];
+  n1[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
+  n1[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
 
-  double nb[4];
-  nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
-  nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
+  double n2[4];
+  n2[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
+  n2[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
-  double nc[4];
-  nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
-  nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
+  double n3[4];
+  n3[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
+  n3[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
   for ( int k = 0; k < 4; k++ ){
     for ( int j = 0; j < 4; j++ ){
       for ( int i = 0; i < 4; i++ ){
-        N[0] = na[i]*nb[j]*nc[k];
+        N[0] = n1[i]*n2[j]*n3[k];
         N++;
       }
     }
@@ -577,49 +792,49 @@ void TACSCubicHexaBasis::computeBasis( const double pt[],
 void TACSCubicHexaBasis::computeBasisGradient( const double pt[],
                                                double N[],
                                                double Nxi[] ){
-  double na[4];
-  na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
-  na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
+  double n1[4];
+  n1[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
+  n1[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
 
-  double nb[4];
-  nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
-  nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
+  double n2[4];
+  n2[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
+  n2[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
-  double nc[4];
-  nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
-  nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
+  double n3[4];
+  n3[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
+  n3[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
-  double dna[4];
-  dna[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
-  dna[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
-  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
-  dna[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
+  double n1x[4];
+  n1x[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
+  n1x[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
+  n1x[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
+  n1x[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
 
-  double dnb[4];
-  dnb[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
-  dnb[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
-  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
-  dnb[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
+  double n2x[4];
+  n2x[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
+  n2x[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
+  n2x[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
+  n2x[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
 
-  double dnc[4];
-  dnc[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
-  dnc[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
-  dnc[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
-  dnc[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
+  double n3x[4];
+  n3x[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
+  n3x[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
+  n3x[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
+  n3x[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
 
   for ( int k = 0; k < 4; k++ ){
     for ( int j = 0; j < 4; j++ ){
       for ( int i = 0; i < 4; i++ ){
-        N[0] = na[i]*nb[j]*nc[k];
-        Nxi[0] = dna[i]*nb[j]*nc[k];
-        Nxi[1] = na[i]*dnb[j]*nc[k];
-        Nxi[2] = na[i]*nb[j]*dnc[k];
+        N[0] = n1[i]*n2[j]*n3[k];
+        Nxi[0] = n1x[i]*n2[j]*n3[k];
+        Nxi[1] = n1[i]*n2x[j]*n3[k];
+        Nxi[2] = n1[i]*n2[j]*n3x[k];
         N++;
         Nxi += 3;
       }
@@ -633,26 +848,47 @@ void TACSCubicHexaBasis::interpFields( const int n,
                                        const TacsScalar v[],
                                        const int incr,
                                        TacsScalar u[] ){
-  double na[4];
-  na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
-  na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
+  double n1[4];
+  n1[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
+  n1[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
 
-  double nb[4];
-  nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
-  nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
+  double n2[4];
+  n2[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
+  n2[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
-  double nc[4];
-  nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
-  nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
+  double n3[4];
+  n3[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
+  n3[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
-  for ( int i = 0; i < m; i++, u += incr, v++ ){
-    u[0] = TACS_BASIS_EVAL_TENSOR3D_ORDER4(na, nb, nc, m, v);
+  for ( int p = 0; p < m; p++, v++, u += incr ){
+    TacsScalar t1  = (n1[0]*v[0]    + n1[1]*v[m]    + n1[2]*v[2*m]  + n1[3]*v[3*m]);
+    TacsScalar t2  = (n1[0]*v[4*m]  + n1[1]*v[5*m]  + n1[2]*v[6*m]  + n1[3]*v[7*m]);
+    TacsScalar t3  = (n1[0]*v[8*m]  + n1[1]*v[9*m]  + n1[2]*v[10*m] + n1[3]*v[11*m]);
+    TacsScalar t4  = (n1[0]*v[12*m] + n1[1]*v[13*m] + n1[2]*v[14*m] + n1[3]*v[15*m]);
+    TacsScalar t5  = (n1[0]*v[16*m] + n1[1]*v[17*m] + n1[2]*v[18*m] + n1[3]*v[19*m]);
+    TacsScalar t6  = (n1[0]*v[20*m] + n1[1]*v[21*m] + n1[2]*v[22*m] + n1[3]*v[23*m]);
+    TacsScalar t7  = (n1[0]*v[24*m] + n1[1]*v[25*m] + n1[2]*v[26*m] + n1[3]*v[27*m]);
+    TacsScalar t8  = (n1[0]*v[28*m] + n1[1]*v[29*m] + n1[2]*v[30*m] + n1[3]*v[31*m]);
+    TacsScalar t9  = (n1[0]*v[32*m] + n1[1]*v[33*m] + n1[2]*v[34*m] + n1[3]*v[35*m]);
+    TacsScalar t10 = (n1[0]*v[36*m] + n1[1]*v[37*m] + n1[2]*v[38*m] + n1[3]*v[39*m]);
+    TacsScalar t11 = (n1[0]*v[40*m] + n1[1]*v[41*m] + n1[2]*v[42*m] + n1[3]*v[43*m]);
+    TacsScalar t12 = (n1[0]*v[44*m] + n1[1]*v[45*m] + n1[2]*v[46*m] + n1[3]*v[47*m]);
+    TacsScalar t13 = (n1[0]*v[48*m] + n1[1]*v[49*m] + n1[2]*v[50*m] + n1[3]*v[51*m]);
+    TacsScalar t14 = (n1[0]*v[52*m] + n1[1]*v[53*m] + n1[2]*v[54*m] + n1[3]*v[55*m]);
+    TacsScalar t15 = (n1[0]*v[56*m] + n1[1]*v[57*m] + n1[2]*v[58*m] + n1[3]*v[59*m]);
+    TacsScalar t16 = (n1[0]*v[60*m] + n1[1]*v[61*m] + n1[2]*v[62*m] + n1[3]*v[63*m]);
+
+    u[0] =
+      n3[0]*(n2[0]*t1 +  n2[1]*t2 +  n2[2]*t3 +  n2[3]*t4) +
+      n3[1]*(n2[0]*t5 +  n2[1]*t6 +  n2[2]*t7 +  n2[3]*t8) +
+      n3[2]*(n2[0]*t9 +  n2[1]*t10 + n2[2]*t11 + n2[3]*t12) +
+      n3[3]*(n2[0]*t13 + n2[1]*t14 + n2[2]*t15 + n2[3]*t16);
   }
 }
 
@@ -662,27 +898,58 @@ void TACSCubicHexaBasis::addInterpFieldsTranspose( const int n,
                                                    const TacsScalar u[],
                                                    const int m,
                                                    TacsScalar v[] ){
-  double na[4];
-  na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
-  na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
+  double n1[4];
+  n1[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
+  n1[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
 
-  double nb[4];
-  nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
-  nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
+  double n2[4];
+  n2[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
+  n2[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
-  double nc[4];
-  nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
-  nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
+  double n3[4];
+  n3[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
+  n3[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
-  for ( int i = 0; i < m; i++, u += incr, v++ ){
-    TacsScalar temp;
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER4(na, nb, nc, u[0], temp, m, v);
+  for ( int p = 0; p < m; p++, v++, u += incr ){
+    TacsScalar t1 = n3[0]*n2[0]*u[0];
+    TacsScalar t2 = n3[0]*n2[1]*u[0];
+    TacsScalar t3 = n3[0]*n2[2]*u[0];
+    TacsScalar t4 = n3[0]*n2[3]*u[0];
+    TacsScalar t5 = n3[1]*n2[0]*u[0];
+    TacsScalar t6 = n3[1]*n2[1]*u[0];
+    TacsScalar t7 = n3[1]*n2[2]*u[0];
+    TacsScalar t8 = n3[1]*n2[3]*u[0];
+    TacsScalar t9 = n3[2]*n2[0]*u[0];
+    TacsScalar t10 = n3[2]*n2[1]*u[0];
+    TacsScalar t11 = n3[2]*n2[2]*u[0];
+    TacsScalar t12 = n3[2]*n2[3]*u[0];
+    TacsScalar t13 = n3[3]*n2[0]*u[0];
+    TacsScalar t14 = n3[3]*n2[1]*u[0];
+    TacsScalar t15 = n3[3]*n2[2]*u[0];
+    TacsScalar t16 = n3[3]*n2[3]*u[0];
+
+    v[0] += n1[0]*t1;     v[m] += n1[1]*t1;     v[2*m] += n1[2]*t1;   v[3*m] += n1[3]*t1;
+    v[4*m] += n1[0]*t2;   v[5*m] += n1[1]*t2;   v[6*m] += n1[2]*t2;   v[7*m] += n1[3]*t2;
+    v[8*m] += n1[0]*t3;   v[9*m] += n1[1]*t3;   v[10*m] += n1[2]*t3;  v[11*m] += n1[3]*t3;
+    v[12*m] += n1[0]*t4;  v[13*m] += n1[1]*t4;  v[14*m] += n1[2]*t4;  v[15*m] += n1[3]*t4;
+    v[16*m] += n1[0]*t5;  v[17*m] += n1[1]*t5;  v[18*m] += n1[2]*t5;  v[19*m] += n1[3]*t5;
+    v[20*m] += n1[0]*t6;  v[21*m] += n1[1]*t6;  v[22*m] += n1[2]*t6;  v[23*m] += n1[3]*t6;
+    v[24*m] += n1[0]*t7;  v[25*m] += n1[1]*t7;  v[26*m] += n1[2]*t7;  v[27*m] += n1[3]*t7;
+    v[28*m] += n1[0]*t8;  v[29*m] += n1[1]*t8;  v[30*m] += n1[2]*t8;  v[31*m] += n1[3]*t8;
+    v[32*m] += n1[0]*t9;  v[33*m] += n1[1]*t9;  v[34*m] += n1[2]*t9;  v[35*m] += n1[3]*t9;
+    v[36*m] += n1[0]*t10; v[37*m] += n1[1]*t10; v[38*m] += n1[2]*t10; v[39*m] += n1[3]*t10;
+    v[40*m] += n1[0]*t11; v[41*m] += n1[1]*t11; v[42*m] += n1[2]*t11; v[43*m] += n1[3]*t11;
+    v[44*m] += n1[0]*t12; v[45*m] += n1[1]*t12; v[46*m] += n1[2]*t12; v[47*m] += n1[3]*t12;
+    v[48*m] += n1[0]*t13; v[49*m] += n1[1]*t13; v[50*m] += n1[2]*t13; v[51*m] += n1[3]*t13;
+    v[52*m] += n1[0]*t14; v[53*m] += n1[1]*t14; v[54*m] += n1[2]*t14; v[55*m] += n1[3]*t14;
+    v[56*m] += n1[0]*t15; v[57*m] += n1[1]*t15; v[58*m] += n1[2]*t15; v[59*m] += n1[3]*t15;
+    v[60*m] += n1[0]*t16; v[61*m] += n1[1]*t16; v[62*m] += n1[2]*t16; v[63*m] += n1[3]*t16;
   }
 }
 
@@ -691,46 +958,94 @@ void TACSCubicHexaBasis::interpFieldsGrad( const int n,
                                            const int m,
                                            const TacsScalar v[],
                                            TacsScalar g[] ){
-  double na[4];
-  na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
-  na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
+  double n1[4];
+  n1[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
+  n1[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
 
-  double nb[4];
-  nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
-  nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
+  double n2[4];
+  n2[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
+  n2[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
-  double nc[4];
-  nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
-  nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
+  double n3[4];
+  n3[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
+  n3[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
-  double dna[4];
-  dna[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
-  dna[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
-  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
-  dna[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
+  double n1x[4];
+  n1x[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
+  n1x[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
+  n1x[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
+  n1x[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
 
-  double dnb[4];
-  dnb[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
-  dnb[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
-  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
-  dnb[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
+  double n2x[4];
+  n2x[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
+  n2x[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
+  n2x[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
+  n2x[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
 
-  double dnc[4];
-  dnc[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
-  dnc[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
-  dnc[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
-  dnc[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
+  double n3x[4];
+  n3x[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
+  n3x[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
+  n3x[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
+  n3x[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
 
-  for ( int i = 0; i < m; i++, g += 3, v++ ){
-    g[0] = TACS_BASIS_EVAL_TENSOR3D_ORDER4(dna, nb, nc, m, v);
-    g[1] = TACS_BASIS_EVAL_TENSOR3D_ORDER4(na, dnb, nc, m, v);
-    g[2] = TACS_BASIS_EVAL_TENSOR3D_ORDER4(na, nb, dnc, m, v);
+  for ( int p = 0; p < m; p++, v++, g += 3 ){
+    TacsScalar t1  = (n1[0]*v[0]    + n1[1]*v[m]    + n1[2]*v[2*m]  + n1[3]*v[3*m]);
+    TacsScalar t2  = (n1[0]*v[4*m]  + n1[1]*v[5*m]  + n1[2]*v[6*m]  + n1[3]*v[7*m]);
+    TacsScalar t3  = (n1[0]*v[8*m]  + n1[1]*v[9*m]  + n1[2]*v[10*m] + n1[3]*v[11*m]);
+    TacsScalar t4  = (n1[0]*v[12*m] + n1[1]*v[13*m] + n1[2]*v[14*m] + n1[3]*v[15*m]);
+    TacsScalar t5  = (n1[0]*v[16*m] + n1[1]*v[17*m] + n1[2]*v[18*m] + n1[3]*v[19*m]);
+    TacsScalar t6  = (n1[0]*v[20*m] + n1[1]*v[21*m] + n1[2]*v[22*m] + n1[3]*v[23*m]);
+    TacsScalar t7  = (n1[0]*v[24*m] + n1[1]*v[25*m] + n1[2]*v[26*m] + n1[3]*v[27*m]);
+    TacsScalar t8  = (n1[0]*v[28*m] + n1[1]*v[29*m] + n1[2]*v[30*m] + n1[3]*v[31*m]);
+    TacsScalar t9  = (n1[0]*v[32*m] + n1[1]*v[33*m] + n1[2]*v[34*m] + n1[3]*v[35*m]);
+    TacsScalar t10 = (n1[0]*v[36*m] + n1[1]*v[37*m] + n1[2]*v[38*m] + n1[3]*v[39*m]);
+    TacsScalar t11 = (n1[0]*v[40*m] + n1[1]*v[41*m] + n1[2]*v[42*m] + n1[3]*v[43*m]);
+    TacsScalar t12 = (n1[0]*v[44*m] + n1[1]*v[45*m] + n1[2]*v[46*m] + n1[3]*v[47*m]);
+    TacsScalar t13 = (n1[0]*v[48*m] + n1[1]*v[49*m] + n1[2]*v[50*m] + n1[3]*v[51*m]);
+    TacsScalar t14 = (n1[0]*v[52*m] + n1[1]*v[53*m] + n1[2]*v[54*m] + n1[3]*v[55*m]);
+    TacsScalar t15 = (n1[0]*v[56*m] + n1[1]*v[57*m] + n1[2]*v[58*m] + n1[3]*v[59*m]);
+    TacsScalar t16 = (n1[0]*v[60*m] + n1[1]*v[61*m] + n1[2]*v[62*m] + n1[3]*v[63*m]);
+
+    TacsScalar t1x  = (n1x[0]*v[0]    + n1x[1]*v[m]    + n1x[2]*v[2*m]  + n1x[3]*v[3*m]);
+    TacsScalar t2x  = (n1x[0]*v[4*m]  + n1x[1]*v[5*m]  + n1x[2]*v[6*m]  + n1x[3]*v[7*m]);
+    TacsScalar t3x  = (n1x[0]*v[8*m]  + n1x[1]*v[9*m]  + n1x[2]*v[10*m] + n1x[3]*v[11*m]);
+    TacsScalar t4x  = (n1x[0]*v[12*m] + n1x[1]*v[13*m] + n1x[2]*v[14*m] + n1x[3]*v[15*m]);
+    TacsScalar t5x  = (n1x[0]*v[16*m] + n1x[1]*v[17*m] + n1x[2]*v[18*m] + n1x[3]*v[19*m]);
+    TacsScalar t6x  = (n1x[0]*v[20*m] + n1x[1]*v[21*m] + n1x[2]*v[22*m] + n1x[3]*v[23*m]);
+    TacsScalar t7x  = (n1x[0]*v[24*m] + n1x[1]*v[25*m] + n1x[2]*v[26*m] + n1x[3]*v[27*m]);
+    TacsScalar t8x  = (n1x[0]*v[28*m] + n1x[1]*v[29*m] + n1x[2]*v[30*m] + n1x[3]*v[31*m]);
+    TacsScalar t9x  = (n1x[0]*v[32*m] + n1x[1]*v[33*m] + n1x[2]*v[34*m] + n1x[3]*v[35*m]);
+    TacsScalar t10x = (n1x[0]*v[36*m] + n1x[1]*v[37*m] + n1x[2]*v[38*m] + n1x[3]*v[39*m]);
+    TacsScalar t11x = (n1x[0]*v[40*m] + n1x[1]*v[41*m] + n1x[2]*v[42*m] + n1x[3]*v[43*m]);
+    TacsScalar t12x = (n1x[0]*v[44*m] + n1x[1]*v[45*m] + n1x[2]*v[46*m] + n1x[3]*v[47*m]);
+    TacsScalar t13x = (n1x[0]*v[48*m] + n1x[1]*v[49*m] + n1x[2]*v[50*m] + n1x[3]*v[51*m]);
+    TacsScalar t14x = (n1x[0]*v[52*m] + n1x[1]*v[53*m] + n1x[2]*v[54*m] + n1x[3]*v[55*m]);
+    TacsScalar t15x = (n1x[0]*v[56*m] + n1x[1]*v[57*m] + n1x[2]*v[58*m] + n1x[3]*v[59*m]);
+    TacsScalar t16x = (n1x[0]*v[60*m] + n1x[1]*v[61*m] + n1x[2]*v[62*m] + n1x[3]*v[63*m]);
+
+    g[0] =
+      n3[0]*(n2[0]*t1x +  n2[1]*t2x +  n2[2]*t3x +  n2[3]*t4x) +
+      n3[1]*(n2[0]*t5x +  n2[1]*t6x +  n2[2]*t7x +  n2[3]*t8x) +
+      n3[2]*(n2[0]*t9x +  n2[1]*t10x + n2[2]*t11x + n2[3]*t12x) +
+      n3[3]*(n2[0]*t13x + n2[1]*t14x + n2[2]*t15x + n2[3]*t16x);
+
+    g[1] =
+      n3[0]*(n2x[0]*t1 +  n2x[1]*t2 +  n2x[2]*t3 +  n2x[3]*t4) +
+      n3[1]*(n2x[0]*t5 +  n2x[1]*t6 +  n2x[2]*t7 +  n2x[3]*t8) +
+      n3[2]*(n2x[0]*t9 +  n2x[1]*t10 + n2x[2]*t11 + n2x[3]*t12) +
+      n3[3]*(n2x[0]*t13 + n2x[1]*t14 + n2x[2]*t15 + n2x[3]*t16);
+
+    g[2] =
+      n3x[0]*(n2[0]*t1 +  n2[1]*t2 +  n2[2]*t3 +  n2[3]*t4) +
+      n3x[1]*(n2[0]*t5 +  n2[1]*t6 +  n2[2]*t7 +  n2[3]*t8) +
+      n3x[2]*(n2[0]*t9 +  n2[1]*t10 + n2[2]*t11 + n2[3]*t12) +
+      n3x[3]*(n2[0]*t13 + n2[1]*t14 + n2[2]*t15 + n2[3]*t16);
   }
 }
 
@@ -739,49 +1054,132 @@ void TACSCubicHexaBasis::addInterpFieldsGradTranspose( int n,
                                                          const int m,
                                                          const TacsScalar g[],
                                                          TacsScalar v[] ){
-  double na[4];
-  na[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
-  na[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
-  na[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
+  double n1[4];
+  n1[0] = -(2.0/3.0)*(0.5 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[1] = (4.0/3.0)*(1.0 + pt[0])*(0.5 - pt[0])*(1.0 - pt[0]);
+  n1[2] = (4.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(1.0 - pt[0]);
+  n1[3] = -(2.0/3.0)*(1.0 + pt[0])*(0.5 + pt[0])*(0.5 - pt[0]);
 
-  double nb[4];
-  nb[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
-  nb[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
-  nb[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
+  double n2[4];
+  n2[0] = -(2.0/3.0)*(0.5 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[1] = (4.0/3.0)*(1.0 + pt[1])*(0.5 - pt[1])*(1.0 - pt[1]);
+  n2[2] = (4.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(1.0 - pt[1]);
+  n2[3] = -(2.0/3.0)*(1.0 + pt[1])*(0.5 + pt[1])*(0.5 - pt[1]);
 
-  double nc[4];
-  nc[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
-  nc[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
-  nc[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
+  double n3[4];
+  n3[0] = -(2.0/3.0)*(0.5 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[1] = (4.0/3.0)*(1.0 + pt[2])*(0.5 - pt[2])*(1.0 - pt[2]);
+  n3[2] = (4.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(1.0 - pt[2]);
+  n3[3] = -(2.0/3.0)*(1.0 + pt[2])*(0.5 + pt[2])*(0.5 - pt[2]);
 
-  double dna[4];
-  dna[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
-  dna[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
-  dna[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
-  dna[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
+  double n1x[4];
+  n1x[0] = -2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] + 1.0/6.0;
+  n1x[1] = 4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] - 4.0/3.0;
+  n1x[2] = -4.0*pt[0]*pt[0] - (4.0/3.0)*pt[0] + 4.0/3.0;
+  n1x[3] = 2.0*pt[0]*pt[0] + (4.0/3.0)*pt[0] - 1.0/6.0;
 
-  double dnb[4];
-  dnb[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
-  dnb[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
-  dnb[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
-  dnb[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
+  double n2x[4];
+  n2x[0] = -2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] + 1.0/6.0;
+  n2x[1] = 4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] - 4.0/3.0;
+  n2x[2] = -4.0*pt[1]*pt[1] - (4.0/3.0)*pt[1] + 4.0/3.0;
+  n2x[3] = 2.0*pt[1]*pt[1] + (4.0/3.0)*pt[1] - 1.0/6.0;
 
-  double dnc[4];
-  dnc[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
-  dnc[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
-  dnc[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
-  dnc[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
+  double n3x[4];
+  n3x[0] = -2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] + 1.0/6.0;
+  n3x[1] = 4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] - 4.0/3.0;
+  n3x[2] = -4.0*pt[2]*pt[2] - (4.0/3.0)*pt[2] + 4.0/3.0;
+  n3x[3] = 2.0*pt[2]*pt[2] + (4.0/3.0)*pt[2] - 1.0/6.0;
 
-  for ( int i = 0; i < m; i++, g += 3, v++ ){
-    TacsScalar temp;
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER4(dna, nb, nc, g[0], temp, m, v);
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER4(na, dnb, nc, g[1], temp, m, v);
-    TACS_BASIS_TRANSPOSE_TENSOR3D_ORDER4(na, nb, dnc, g[2], temp, m, v);
+  for ( int p = 0; p < m; p++, v++, g += 3 ){
+    TacsScalar t1x = n3[0]*n2x[0]*g[1] + n3x[0]*n2[0]*g[2];
+    TacsScalar t2x = n3[0]*n2x[1]*g[1] + n3x[0]*n2[1]*g[2];
+    TacsScalar t3x = n3[0]*n2x[2]*g[1] + n3x[0]*n2[2]*g[2];
+    TacsScalar t4x = n3[0]*n2x[3]*g[1] + n3x[0]*n2[3]*g[2];
+    TacsScalar t5x = n3[1]*n2x[0]*g[1] + n3x[1]*n2[0]*g[2];
+    TacsScalar t6x = n3[1]*n2x[1]*g[1] + n3x[1]*n2[1]*g[2];
+    TacsScalar t7x = n3[1]*n2x[2]*g[1] + n3x[1]*n2[2]*g[2];
+    TacsScalar t8x = n3[1]*n2x[3]*g[1] + n3x[1]*n2[3]*g[2];
+    TacsScalar t9x = n3[2]*n2x[0]*g[1] + n3x[2]*n2[0]*g[2];
+    TacsScalar t10x = n3[2]*n2x[1]*g[1] + n3x[2]*n2[1]*g[2];
+    TacsScalar t11x = n3[2]*n2x[2]*g[1] + n3x[2]*n2[2]*g[2];
+    TacsScalar t12x = n3[2]*n2x[3]*g[1] + n3x[2]*n2[3]*g[2];
+    TacsScalar t13x = n3[3]*n2x[0]*g[1] + n3x[3]*n2[0]*g[2];
+    TacsScalar t14x = n3[3]*n2x[1]*g[1] + n3x[3]*n2[1]*g[2];
+    TacsScalar t15x = n3[3]*n2x[2]*g[1] + n3x[3]*n2[2]*g[2];
+    TacsScalar t16x = n3[3]*n2x[3]*g[1] + n3x[3]*n2[3]*g[2];
+
+    TacsScalar t1 = n3[0]*n2[0]*g[0];
+    TacsScalar t2 = n3[0]*n2[1]*g[0];
+    TacsScalar t3 = n3[0]*n2[2]*g[0];
+    TacsScalar t4 = n3[0]*n2[3]*g[0];
+    TacsScalar t5 = n3[1]*n2[0]*g[0];
+    TacsScalar t6 = n3[1]*n2[1]*g[0];
+    TacsScalar t7 = n3[1]*n2[2]*g[0];
+    TacsScalar t8 = n3[1]*n2[3]*g[0];
+    TacsScalar t9 = n3[2]*n2[0]*g[0];
+    TacsScalar t10 = n3[2]*n2[1]*g[0];
+    TacsScalar t11 = n3[2]*n2[2]*g[0];
+    TacsScalar t12 = n3[2]*n2[3]*g[0];
+    TacsScalar t13 = n3[3]*n2[0]*g[0];
+    TacsScalar t14 = n3[3]*n2[1]*g[0];
+    TacsScalar t15 = n3[3]*n2[2]*g[0];
+    TacsScalar t16 = n3[3]*n2[3]*g[0];
+
+    v[0] += n1[0]*t1x + n1x[0]*t1;      v[m] += n1[1]*t1x + n1x[1]*t1;      v[2*m] += n1[2]*t1x + n1x[2]*t1;    v[3*m] += n1[3]*t1x + n1x[3]*t1;
+    v[4*m] += n1[0]*t2x + n1x[0]*t2;    v[5*m] += n1[1]*t2x + n1x[1]*t2;    v[6*m] += n1[2]*t2x + n1x[2]*t2;    v[7*m] += n1[3]*t2x + n1x[3]*t2;
+    v[8*m] += n1[0]*t3x + n1x[0]*t3;    v[9*m] += n1[1]*t3x + n1x[1]*t3;    v[10*m] += n1[2]*t3x + n1x[2]*t3;   v[11*m] += n1[3]*t3x + n1x[3]*t3;
+    v[12*m] += n1[0]*t4x + n1x[0]*t4;   v[13*m] += n1[1]*t4x + n1x[1]*t4;   v[14*m] += n1[2]*t4x + n1x[2]*t4;   v[15*m] += n1[3]*t4x + n1x[3]*t4;
+    v[16*m] += n1[0]*t5x + n1x[0]*t5;   v[17*m] += n1[1]*t5x + n1x[1]*t5;   v[18*m] += n1[2]*t5x + n1x[2]*t5;   v[19*m] += n1[3]*t5x + n1x[3]*t5;
+    v[20*m] += n1[0]*t6x + n1x[0]*t6;   v[21*m] += n1[1]*t6x + n1x[1]*t6;   v[22*m] += n1[2]*t6x + n1x[2]*t6;   v[23*m] += n1[3]*t6x + n1x[3]*t6;
+    v[24*m] += n1[0]*t7x + n1x[0]*t7;   v[25*m] += n1[1]*t7x + n1x[1]*t7;   v[26*m] += n1[2]*t7x + n1x[2]*t7;   v[27*m] += n1[3]*t7x + n1x[3]*t7;
+    v[28*m] += n1[0]*t8x + n1x[0]*t8;   v[29*m] += n1[1]*t8x + n1x[1]*t8;   v[30*m] += n1[2]*t8x + n1x[2]*t8;   v[31*m] += n1[3]*t8x + n1x[3]*t8;
+    v[32*m] += n1[0]*t9x + n1x[0]*t9;   v[33*m] += n1[1]*t9x + n1x[1]*t9;   v[34*m] += n1[2]*t9x + n1x[2]*t9;   v[35*m] += n1[3]*t9x + n1x[3]*t9;
+    v[36*m] += n1[0]*t10x + n1x[0]*t10; v[37*m] += n1[1]*t10x + n1x[1]*t10; v[38*m] += n1[2]*t10x + n1x[2]*t10; v[39*m] += n1[3]*t10x + n1x[3]*t10;
+    v[40*m] += n1[0]*t11x + n1x[0]*t11; v[41*m] += n1[1]*t11x + n1x[1]*t11; v[42*m] += n1[2]*t11x + n1x[2]*t11; v[43*m] += n1[3]*t11x + n1x[3]*t11;
+    v[44*m] += n1[0]*t12x + n1x[0]*t12; v[45*m] += n1[1]*t12x + n1x[1]*t12; v[46*m] += n1[2]*t12x + n1x[2]*t12; v[47*m] += n1[3]*t12x + n1x[3]*t12;
+    v[48*m] += n1[0]*t13x + n1x[0]*t13; v[49*m] += n1[1]*t13x + n1x[1]*t13; v[50*m] += n1[2]*t13x + n1x[2]*t13; v[51*m] += n1[3]*t13x + n1x[3]*t13;
+    v[52*m] += n1[0]*t14x + n1x[0]*t14; v[53*m] += n1[1]*t14x + n1x[1]*t14; v[54*m] += n1[2]*t14x + n1x[2]*t14; v[55*m] += n1[3]*t14x + n1x[3]*t14;
+    v[56*m] += n1[0]*t15x + n1x[0]*t15; v[57*m] += n1[1]*t15x + n1x[1]*t15; v[58*m] += n1[2]*t15x + n1x[2]*t15; v[59*m] += n1[3]*t15x + n1x[3]*t15;
+    v[60*m] += n1[0]*t16x + n1x[0]*t16; v[61*m] += n1[1]*t16x + n1x[1]*t16; v[62*m] += n1[2]*t16x + n1x[2]*t16; v[63*m] += n1[3]*t16x + n1x[3]*t16;
   }
 }
+
+/*
+void TACSCubicHexaBasis::interpAllFieldsGrad( const int m,
+                                                const TacsScalar values[],
+                                                TacsScalar out[] ){
+  if (m == 1){
+    TACSInterpAllTensor3DInterp4VarsPerNode1(Nf, Nfxi, values, out);
+  }
+  else if (m == 3){
+    TACSInterpAllTensor3DInterp4VarsPerNode3(Nf, Nfxi, values, out);
+  }
+  else if (m == 4){
+    TACSInterpAllTensor3DInterp4VarsPerNode4(Nf, Nfxi, values, out);
+  }
+  else {
+    TACSInterpAllTensor3DInterp4(m, Nf, Nfxi, values, out);
+  }
+}
+
+void TACSCubicHexaBasis::addInterpAllFieldsGradTranspose( const int m,
+                                                            const TacsScalar in[],
+                                                            TacsScalar values[] ){
+  if (m == 1){
+    TacsAddAllTransTensor3DInterp4VarsPerNode1(Nf, Nfxi, in, values);
+  }
+  else if (m == 3){
+    TacsAddAllTransTensor3DInterp4VarsPerNode3(Nf, Nfxi, in, values);
+  }
+  else if (m == 4){
+    TacsAddAllTransTensor3DInterp4VarsPerNode4(Nf, Nfxi, in, values);
+  }
+  else {
+    TacsAddAllTransTensor3DInterp4(m, Nf, Nfxi, in, values);
+  }
+}
+
+*/
 /*
   Quartic hexahedral basis class functions
 */
@@ -912,6 +1310,10 @@ void TACSQuarticHexaBasis::interpFields( const int n,
                                          const TacsScalar v[],
                                          const int incr,
                                          TacsScalar u[] ){
+  for ( int p = 0; p < m; p++ ){
+    u[p*incr] = 0.0;
+  }
+
   if (n >= 0){
     const double *n1 = &Nf[5*(n % 5)];
     const double *n2 = &Nf[5*((n % 25)/5)];
@@ -1135,288 +1537,34 @@ void TACSQuarticHexaBasis::addInterpFieldsGradTranspose( int n,
 void TACSQuarticHexaBasis::interpAllFieldsGrad( const int m,
                                                 const TacsScalar values[],
                                                 TacsScalar out[] ){
-  memset(out, 0, 4*m*125*sizeof(TacsScalar));
-
-  for ( int n = 0; n < 125; n++ ){
-    const double *n1 = &Nf[5*(n % 5)];
-    const double *n2 = &Nf[5*((n % 25)/5)];
-    const double *n3 = &Nf[5*(n / 25)];
-    const double *n1x = &Nfxi[5*(n % 5)];
-    const double *n2x = &Nfxi[5*((n % 25)/5)];
-    const double *n3x = &Nfxi[5*(n / 25)];
-
-    const TacsScalar *v = values;
-
-    if (m == 1){
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          out[1] += n23*(n1x[0]*v[0] + n1x[1]*v[1] + n1x[2]*v[2] +
-                         n1x[3]*v[3] + n1x[4]*v[4]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[1] + n1[2]*v[2] +
-                           n1[3]*v[3] + n1[4]*v[4]);
-          out[0] += n23*t1;
-          out[2] += n2x3*t1;
-          out[3] += n23x*t1;
-          v += 5;
-        }
-      }
-    }
-    else if (m == 3){
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar t1;
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          out[3] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                         n1x[3]*v[9] + n1x[4]*v[12]);
-          t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                n1[3]*v[9] + n1[4]*v[12]);
-          out[0] += n23*t1;
-          out[4] += n2x3*t1;
-          out[5] += n23x*t1;
-
-          out[6] += n23*(n1x[0]*v[1]  + n1x[1]*v[4]  + n1x[2]*v[7] +
-                         n1x[3]*v[10] + n1x[4]*v[13]);
-          t1 = (n1[0]*v[1]  + n1[1]*v[4]  + n1[2]*v[7] +
-                n1[3]*v[10] + n1[4]*v[13]);
-          out[1] += n23*t1;
-          out[7] += n2x3*t1;
-          out[8] += n23x*t1;
-
-          out[9] += n23*(n1x[0]*v[2]  + n1x[1]*v[5]  + n1x[2]*v[8] +
-                         n1x[3]*v[11] + n1x[4]*v[14]);
-          t1 = (n1[0]*v[2]  + n1[1]*v[5]   + n1[2]*v[8] +
-                n1[3]*v[11] + n1[4]*v[14]);
-          out[2] += n23*t1;
-          out[10] += n2x3*t1;
-          out[11] += n23x*t1;
-
-          v += 15;
-        }
-      }
-    }
-    else if (m == 4){
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar t1;
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          out[4] += n23*(n1x[0]*v[0]  + n1x[1]*v[4]  + n1x[2]*v[8] +
-                         n1x[3]*v[12] + n1x[4]*v[16]);
-          t1 = (n1[0]*v[0] + n1[1]*v[4]  + n1[2]*v[8] +
-                n1[3]*v[12] + n1[4]*v[16]);
-          out[0] += n23*t1;
-          out[5] += n2x3*t1;
-          out[6] += n23x*t1;
-
-          out[7] += n23*(n1x[0]*v[1]  + n1x[1]*v[5]  + n1x[2]*v[9] +
-                         n1x[3]*v[13] + n1x[4]*v[17]);
-          t1 = (n1[0]*v[1]  + n1[1]*v[5]  + n1[2]*v[9] +
-                n1[3]*v[13] + n1[4]*v[17]);
-          out[1] += n23*t1;
-          out[8] += n2x3*t1;
-          out[9] += n23x*t1;
-
-          out[10] += n23*(n1x[0]*v[2]  + n1x[1]*v[6]  + n1x[2]*v[10] +
-                          n1x[3]*v[14] + n1x[4]*v[18]);
-          t1 = (n1[0]*v[2]  + n1[1]*v[6]  + n1[2]*v[10] +
-                n1[3]*v[14] + n1[4]*v[18]);
-          out[2] += n23*t1;
-          out[11] += n2x3*t1;
-          out[12] += n23x*t1;
-
-          out[13] += n23*(n1x[0]*v[3]  + n1x[1]*v[7]  + n1x[2]*v[11] +
-                         n1x[3]*v[15] + n1x[4]*v[19]);
-          t1 = (n1[0]*v[3] + n1[1]*v[7]  + n1[2]*v[11] +
-                n1[3]*v[15] + n1[4]*v[19]);
-          out[3] += n23*t1;
-          out[14] += n2x3*t1;
-          out[15] += n23x*t1;
-
-          v += 20;
-        }
-      }
-    }
-    else {
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar *g = &out[m];
-          for ( int p = 0; p < m; p++ ){
-            g[0] += n23*(n1x[0]*v[0]   + n1x[1]*v[m]   + n1x[2]*v[2*m] +
-                         n1x[3]*v[3*m] + n1x[4]*v[4*m]);
-            TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]   + n1[2]*v[2*m] +
-                             n1[3]*v[3*m] + n1[4]*v[4*m]);
-            out[p] += n23*t1;
-            g[1] += n2x3*t1;
-            g[2] += n23x*t1;
-            g += 3;
-            v++;
-          }
-          v += 4*m;
-        }
-      }
-    }
-
-    out += 4*m;
+  if (m == 1){
+    TACSInterpAllTensor3DInterp5VarsPerNode1(Nf, Nfxi, values, out);
+  }
+  else if (m == 3){
+    TACSInterpAllTensor3DInterp5VarsPerNode3(Nf, Nfxi, values, out);
+  }
+  else if (m == 4){
+    TACSInterpAllTensor3DInterp5VarsPerNode4(Nf, Nfxi, values, out);
+  }
+  else {
+    TACSInterpAllTensor3DInterp5(m, Nf, Nfxi, values, out);
   }
 }
 
 void TACSQuarticHexaBasis::addInterpAllFieldsGradTranspose( const int m,
                                                             const TacsScalar in[],
                                                             TacsScalar values[] ){
-  for ( int n = 0; n < 125; n++ ){
-    const double *n1 = &Nf[5*(n % 5)];
-    const double *n2 = &Nf[5*((n % 25)/5)];
-    const double *n3 = &Nf[5*(n / 25)];
-    const double *n1x = &Nfxi[5*(n % 5)];
-    const double *n2x = &Nfxi[5*((n % 25)/5)];
-    const double *n3x = &Nfxi[5*(n / 25)];
-
-    TacsScalar *v = values;
-
-    if (m == 1){
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a = n23*in[0] + n2x3*in[2] + n23x*in[3];
-          TacsScalar b = n23*in[1];
-          v[0] += a*n1[0] + b*n1x[0];
-          v[1] += a*n1[1] + b*n1x[1];
-          v[2] += a*n1[2] + b*n1x[2];
-          v[3] += a*n1[3] + b*n1x[3];
-          v[4] += a*n1[4] + b*n1x[4];
-          v += 5;
-        }
-      }
-    }
-    else if (m == 3){
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a1 = n23*in[0] + n2x3*in[4] + n23x*in[5];
-          TacsScalar b1 = n23*in[3];
-
-          TacsScalar a2 = n23*in[1] + n2x3*in[7] + n23x*in[8];
-          TacsScalar b2 = n23*in[6];
-
-          TacsScalar a3 = n23*in[2] + n2x3*in[10] + n23x*in[11];
-          TacsScalar b3 = n23*in[9];
-
-          v[0] +=  a1*n1[0] + b1*n1x[0];
-          v[1] +=  a2*n1[0] + b2*n1x[0];
-          v[2] +=  a3*n1[0] + b3*n1x[0];
-
-          v[3] +=  a1*n1[1] + b1*n1x[1];
-          v[4] +=  a2*n1[1] + b2*n1x[1];
-          v[5] +=  a3*n1[1] + b3*n1x[1];
-
-          v[6] +=  a1*n1[2] + b1*n1x[2];
-          v[7] +=  a2*n1[2] + b2*n1x[2];
-          v[8] +=  a3*n1[2] + b3*n1x[2];
-
-          v[9] +=  a1*n1[3] + b1*n1x[3];
-          v[10] += a2*n1[3] + b2*n1x[3];
-          v[11] += a3*n1[3] + b3*n1x[3];
-
-          v[12] += a1*n1[4] + b1*n1x[4];
-          v[13] += a2*n1[4] + b2*n1x[4];
-          v[14] += a3*n1[4] + b3*n1x[4];
-
-          v += 15;
-        }
-      }
-    }
-    else if (m == 4){
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a1 = n23*in[0] + n2x3*in[5] + n23x*in[6];
-          TacsScalar b1 = n23*in[4];
-
-          TacsScalar a2 = n23*in[1] + n2x3*in[8] + n23x*in[9];
-          TacsScalar b2 = n23*in[7];
-
-          TacsScalar a3 = n23*in[2] + n2x3*in[11] + n23x*in[12];
-          TacsScalar b3 = n23*in[10];
-
-          TacsScalar a4 = n23*in[3] + n2x3*in[14] + n23x*in[15];
-          TacsScalar b4 = n23*in[13];
-
-          v[0] +=  a1*n1[0] + b1*n1x[0];
-          v[1] +=  a2*n1[0] + b2*n1x[0];
-          v[2] +=  a3*n1[0] + b3*n1x[0];
-          v[3] +=  a4*n1[0] + b4*n1x[0];
-
-          v[4] +=  a1*n1[1] + b1*n1x[1];
-          v[5] +=  a2*n1[1] + b2*n1x[1];
-          v[6] +=  a3*n1[1] + b3*n1x[1];
-          v[7] +=  a4*n1[1] + b4*n1x[1];
-
-          v[8] +=  a1*n1[2] + b1*n1x[2];
-          v[9] +=  a2*n1[2] + b2*n1x[2];
-          v[10] += a3*n1[2] + b3*n1x[2];
-          v[11] += a4*n1[2] + b4*n1x[2];
-
-          v[12] += a1*n1[3] + b1*n1x[3];
-          v[13] += a2*n1[3] + b2*n1x[3];
-          v[14] += a3*n1[3] + b3*n1x[3];
-          v[15] += a4*n1[3] + b4*n1x[3];
-
-          v[16] += a1*n1[4] + b1*n1x[4];
-          v[17] += a2*n1[4] + b2*n1x[4];
-          v[18] += a3*n1[4] + b3*n1x[4];
-          v[19] += a4*n1[4] + b4*n1x[4];
-
-          v += 20;
-        }
-      }
-    }
-    else {
-      for ( int k = 0; k < 5; k++ ){
-        for ( int j = 0; j < 5; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          const TacsScalar *g = &in[m];
-          for ( int p = 0; p < m; p++ ){
-            TacsScalar a = n23*in[p] + n2x3*g[1] + n23x*g[2];
-            TacsScalar b = n23*g[0];
-            v[0] +=   a*n1[0] + b*n1x[0];
-            v[m] +=   a*n1[1] + b*n1x[1];
-            v[2*m] += a*n1[2] + b*n1x[2];
-            v[3*m] += a*n1[3] + b*n1x[3];
-            v[4*m] += a*n1[4] + b*n1x[4];
-            g += 3;
-            v++;
-          }
-          v += 4*m;
-        }
-      }
-    }
-
-    in += 4*m;
+  if (m == 1){
+    TacsAddAllTransTensor3DInterp5VarsPerNode1(Nf, Nfxi, in, values);
+  }
+  else if (m == 3){
+    TacsAddAllTransTensor3DInterp5VarsPerNode3(Nf, Nfxi, in, values);
+  }
+  else if (m == 4){
+    TacsAddAllTransTensor3DInterp5VarsPerNode4(Nf, Nfxi, in, values);
+  }
+  else {
+    TacsAddAllTransTensor3DInterp5(m, Nf, Nfxi, in, values);
   }
 }
 
@@ -1550,6 +1698,11 @@ void TACSQuinticHexaBasis::interpFields( const int n,
                                          const TacsScalar v[],
                                          const int incr,
                                          TacsScalar u[] ){
+  for ( int p = 0; p < m; p++ ){
+    u[p*incr] = 0.0;
+  }
+
+
   if (n >= 0){
     const double *n1 = &Nf[6*(n % 6)];
     const double *n2 = &Nf[6*((n % 36)/6)];
@@ -1777,231 +1930,17 @@ void TACSQuinticHexaBasis::addInterpFieldsGradTranspose( int n,
 void TACSQuinticHexaBasis::interpAllFieldsGrad( const int m,
                                                 const TacsScalar values[],
                                                 TacsScalar out[] ){
-  memset(out, 0, 4*m*216*sizeof(TacsScalar));
-
   if (m == 1){
-    for ( int n = 0; n < 36; n++ ){
-      const double *n11 = &Nf[0];
-      const double *n12 = &Nf[6];
-      const double *n13 = &Nf[12];
-      const double *n14 = &Nf[18];
-      const double *n15 = &Nf[24];
-      const double *n16 = &Nf[30];
-
-      const double *n1x1 = &Nfxi[0];
-      const double *n1x2 = &Nfxi[6];
-      const double *n1x3 = &Nfxi[12];
-      const double *n1x4 = &Nfxi[18];
-      const double *n1x5 = &Nfxi[24];
-      const double *n1x6 = &Nfxi[30];
-
-      const double *n2 = &Nf[6*(n % 6)];
-      const double *n3 = &Nf[6*(n / 6)];
-      const double *n2x = &Nfxi[6*(n % 6)];
-      const double *n3x = &Nfxi[6*(n / 6)];
-
-      const TacsScalar *v = values;
-
-      if (m == 1){
-        for ( int k = 0; k < 6; k++ ){
-          for ( int j = 0; j < 6; j++ ){
-            TacsScalar n23  = n2[j]*n3[k];
-            TacsScalar n2x3 = n2x[j]*n3[k];
-            TacsScalar n23x = n2[j]*n3x[k];
-
-            out[1] += n23*(n1x1[0]*v[0] + n1x1[1]*v[1] + n1x1[2]*v[2] +
-                          n1x1[3]*v[3] + n1x1[4]*v[4] + n1x1[5]*v[5]);
-            TacsScalar t1 = (n11[0]*v[0] + n11[1]*v[1] + n11[2]*v[2] +
-                            n11[3]*v[3] + n11[4]*v[4] + n11[5]*v[5]);
-            out[0] += n23*t1;
-            out[2] += n2x3*t1;
-            out[3] += n23x*t1;
-
-            out[5] += n23*(n1x2[0]*v[0] + n1x2[1]*v[1] + n1x2[2]*v[2] +
-                          n1x2[3]*v[3] + n1x2[4]*v[4] + n1x2[5]*v[5]);
-            TacsScalar t2 = (n12[0]*v[0] + n12[1]*v[1] + n12[2]*v[2] +
-                            n12[3]*v[3] + n12[4]*v[4] + n12[5]*v[5]);
-            out[4] += n23*t2;
-            out[6] += n2x3*t2;
-            out[7] += n23x*t2;
-
-            out[9] += n23*(n1x3[0]*v[0] + n1x3[1]*v[1] + n1x3[2]*v[2] +
-                          n1x3[3]*v[3] + n1x3[4]*v[4] + n1x3[5]*v[5]);
-            TacsScalar t3 = (n13[0]*v[0] + n13[1]*v[1] + n13[2]*v[2] +
-                            n13[3]*v[3] + n13[4]*v[4] + n13[5]*v[5]);
-            out[8] += n23*t3;
-            out[10] += n2x3*t3;
-            out[11] += n23x*t3;
-
-            out[13] += n23*(n1x4[0]*v[0] + n1x4[1]*v[1] + n1x4[2]*v[2] +
-                          n1x4[3]*v[3] + n1x4[4]*v[4] + n1x4[5]*v[5]);
-            TacsScalar t4 = (n14[0]*v[0] + n14[1]*v[1] + n14[2]*v[2] +
-                            n14[3]*v[3] + n14[4]*v[4] + n14[5]*v[5]);
-            out[12] += n23*t4;
-            out[14] += n2x3*t4;
-            out[15] += n23x*t4;
-
-            out[17] += n23*(n1x5[0]*v[0] + n1x5[1]*v[1] + n1x5[2]*v[2] +
-                          n1x5[3]*v[3] + n1x5[4]*v[4] + n1x5[5]*v[5]);
-            TacsScalar t5 = (n15[0]*v[0] + n15[1]*v[1] + n15[2]*v[2] +
-                            n15[3]*v[3] + n15[4]*v[4] + n15[5]*v[5]);
-            out[16] += n23*t5;
-            out[18] += n2x3*t5;
-            out[19] += n23x*t5;
-
-            out[21] += n23*(n1x6[0]*v[0] + n1x6[1]*v[1] + n1x6[2]*v[2] +
-                            n1x6[3]*v[3] + n1x6[4]*v[4] + n1x6[5]*v[5]);
-            TacsScalar t6 = (n16[0]*v[0] + n16[1]*v[1] + n16[2]*v[2] +
-                            n16[3]*v[3] + n16[4]*v[4] + n16[5]*v[5]);
-            out[20] += n23*t6;
-            out[22] += n2x3*t6;
-            out[23] += n23x*t6;
-
-            v += 6;
-          }
-        }
-
-        out += 24;
-      }
-    }
-
-    return;
+    TACSInterpAllTensor3DInterp6VarsPerNode1(Nf, Nfxi, values, out);
   }
-
-
-  for ( int n = 0; n < 216; n++ ){
-    const double *n1 = &Nf[6*(n % 6)];
-    const double *n2 = &Nf[6*((n % 36)/6)];
-    const double *n3 = &Nf[6*(n / 36)];
-    const double *n1x = &Nfxi[6*(n % 6)];
-    const double *n2x = &Nfxi[6*((n % 36)/6)];
-    const double *n3x = &Nfxi[6*(n / 36)];
-
-    const TacsScalar *v = values;
-
-    if (m == 1){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          out[1] += n23*(n1x[0]*v[0] + n1x[1]*v[1] + n1x[2]*v[2] +
-                         n1x[3]*v[3] + n1x[4]*v[4] + n1x[5]*v[5]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[1] + n1[2]*v[2] +
-                           n1[3]*v[3] + n1[4]*v[4] + n1[5]*v[5]);
-          out[0] += n23*t1;
-          out[2] += n2x3*t1;
-          out[3] += n23x*t1;
-          v += 6;
-        }
-      }
-    }
-    else if (m == 3){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar t1;
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          out[3] += n23*(n1x[0]*v[0] + n1x[1]*v[3]  + n1x[2]*v[6] +
-                         n1x[3]*v[9] + n1x[4]*v[12] + n1x[5]*v[15]);
-          t1 = (n1[0]*v[0] + n1[1]*v[3]  + n1[2]*v[6] +
-                n1[3]*v[9] + n1[4]*v[12] + n1[5]*v[15]);
-          out[0] += n23*t1;
-          out[4] += n2x3*t1;
-          out[5] += n23x*t1;
-
-          out[6] += n23*(n1x[0]*v[1]  + n1x[1]*v[4]  + n1x[2]*v[7] +
-                         n1x[3]*v[10] + n1x[4]*v[13] + n1x[5]*v[16]);
-          t1 = (n1[0]*v[1]  + n1[1]*v[4]  + n1[2]*v[7] +
-                n1[3]*v[10] + n1[4]*v[13] + n1[5]*v[16]);
-          out[1] += n23*t1;
-          out[7] += n2x3*t1;
-          out[8] += n23x*t1;
-
-          out[9] += n23*(n1x[0]*v[2]  + n1x[1]*v[5]  + n1x[2]*v[8] +
-                         n1x[3]*v[11] + n1x[4]*v[14] + n1x[5]*v[17]);
-          t1 = (n1[0]*v[2]  + n1[1]*v[5]   + n1[2]*v[8] +
-                n1[3]*v[11] + n1[4]*v[14] + n1[5]*v[17]);
-          out[2] += n23*t1;
-          out[10] += n2x3*t1;
-          out[11] += n23x*t1;
-
-          v += 18;
-        }
-      }
-    }
-    else if (m == 4){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar t1;
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          out[4] += n23*(n1x[0]*v[0]  + n1x[1]*v[4]  + n1x[2]*v[8] +
-                         n1x[3]*v[12] + n1x[4]*v[16] + n1x[5]*v[20]);
-          t1 = (n1[0]*v[0] + n1[1]*v[4]  + n1[2]*v[8] +
-                n1[3]*v[12] + n1[4]*v[16] + n1[5]*v[20]);
-          out[0] += n23*t1;
-          out[5] += n2x3*t1;
-          out[6] += n23x*t1;
-
-          out[7] += n23*(n1x[0]*v[1]  + n1x[1]*v[5]  + n1x[2]*v[9] +
-                         n1x[3]*v[13] + n1x[4]*v[17] + n1x[5]*v[21]);
-          t1 = (n1[0]*v[1]  + n1[1]*v[5]  + n1[2]*v[9] +
-                n1[3]*v[13] + n1[4]*v[17] + n1[5]*v[21]);
-          out[1] += n23*t1;
-          out[8] += n2x3*t1;
-          out[9] += n23x*t1;
-
-          out[10] += n23*(n1x[0]*v[2]  + n1x[1]*v[6]  + n1x[2]*v[10] +
-                          n1x[3]*v[14] + n1x[4]*v[18] + n1x[5]*v[22]);
-          t1 = (n1[0]*v[2]  + n1[1]*v[6]  + n1[2]*v[10] +
-                n1[3]*v[14] + n1[4]*v[18] + n1[5]*v[22]);
-          out[2] += n23*t1;
-          out[11] += n2x3*t1;
-          out[12] += n23x*t1;
-
-          out[13] += n23*(n1x[0]*v[3]  + n1x[1]*v[7]  + n1x[2]*v[11] +
-                         n1x[3]*v[15] + n1x[4]*v[19] + n1x[5]*v[23]);
-          t1 = (n1[0]*v[3] + n1[1]*v[7]  + n1[2]*v[11] +
-                n1[3]*v[15] + n1[4]*v[19] + n1[5]*v[23]);
-          out[3] += n23*t1;
-          out[14] += n2x3*t1;
-          out[15] += n23x*t1;
-
-          v += 24;
-        }
-      }
-    }
-    else {
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar *g = &out[m];
-          for ( int p = 0; p < m; p++ ){
-            g[0] += n23*(n1x[0]*v[0]   + n1x[1]*v[m]   + n1x[2]*v[2*m] +
-                         n1x[3]*v[3*m] + n1x[4]*v[4*m] + n1x[5]*v[5*m]);
-            TacsScalar t1 = (n1[0]*v[0]   + n1[1]*v[m]   + n1[2]*v[2*m] +
-                             n1[3]*v[3*m] + n1[4]*v[4*m] + n1[5]*v[5*m]);
-            out[p] += n23*t1;
-            g[1] += n2x3*t1;
-            g[2] += n23x*t1;
-            g += 3;
-            v++;
-          }
-          v += 5*m;
-        }
-      }
-    }
-
-    out += 4*m;
+  else if (m == 3){
+    TACSInterpAllTensor3DInterp6VarsPerNode3(Nf, Nfxi, values, out);
+  }
+  else if (m == 4){
+    TACSInterpAllTensor3DInterp6VarsPerNode4(Nf, Nfxi, values, out);
+  }
+  else {
+    TACSInterpAllTensor3DInterp6(m, Nf, Nfxi, values, out);
   }
 }
 
@@ -2009,224 +1948,15 @@ void TACSQuinticHexaBasis::addInterpAllFieldsGradTranspose( const int m,
                                                             const TacsScalar in[],
                                                             TacsScalar values[] ){
   if (m == 1){
-    for ( int n = 0; n < 36; n++ ){
-      const double *n11 = &Nf[0];
-      const double *n12 = &Nf[6];
-      const double *n13 = &Nf[12];
-      const double *n14 = &Nf[18];
-      const double *n15 = &Nf[24];
-      const double *n16 = &Nf[30];
-
-      const double *n1x1 = &Nfxi[0];
-      const double *n1x2 = &Nfxi[6];
-      const double *n1x3 = &Nfxi[12];
-      const double *n1x4 = &Nfxi[18];
-      const double *n1x5 = &Nfxi[24];
-      const double *n1x6 = &Nfxi[30];
-
-      const double *n2 = &Nf[6*(n % 6)];
-      const double *n3 = &Nf[6*(n / 6)];
-      const double *n2x = &Nfxi[6*(n % 6)];
-      const double *n3x = &Nfxi[6*(n / 6)];
-
-      TacsScalar *v = values;
-
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a1 = n23*in[0] + n2x3*in[2] + n23x*in[3];
-          TacsScalar b1 = n23*in[1];
-
-          TacsScalar a2 = n23*in[4] + n2x3*in[6] + n23x*in[7];
-          TacsScalar b2 = n23*in[5];
-
-          TacsScalar a3 = n23*in[8] + n2x3*in[10] + n23x*in[11];
-          TacsScalar b3 = n23*in[9];
-
-          TacsScalar a4 = n23*in[12] + n2x3*in[14] + n23x*in[15];
-          TacsScalar b4 = n23*in[13];
-
-          TacsScalar a5 = n23*in[16] + n2x3*in[18] + n23x*in[19];
-          TacsScalar b5 = n23*in[17];
-
-          TacsScalar a6 = n23*in[20] + n2x3*in[22] + n23x*in[23];
-          TacsScalar b6 = n23*in[21];
-
-          v[0] += (a1*n11[0] + b1*n1x1[0] + a2*n12[0] + b2*n1x2[0] + a3*n13[0] + b3*n1x3[0] +
-                   a4*n14[0] + b4*n1x4[0] + a5*n15[0] + b5*n1x5[0] + a6*n16[0] + b6*n1x6[0]);
-          v[1] += (a1*n11[1] + b1*n1x1[1] + a2*n12[1] + b2*n1x2[1] + a3*n13[1] + b3*n1x3[1] +
-                   a4*n14[1] + b4*n1x4[1] + a5*n15[1] + b5*n1x5[1] + a6*n16[1] + b6*n1x6[1]);
-          v[2] += (a1*n11[2] + b1*n1x1[2] + a2*n12[2] + b2*n1x2[2] + a3*n13[2] + b3*n1x3[2] +
-                   a4*n14[2] + b4*n1x4[2] + a5*n15[2] + b5*n1x5[2] + a6*n16[2] + b6*n1x6[2]);
-          v[3] += (a1*n11[3] + b1*n1x1[3] + a2*n12[3] + b2*n1x2[3] + a3*n13[3] + b3*n1x3[3] +
-                   a4*n14[3] + b4*n1x4[3] + a5*n15[3] + b5*n1x5[3] + a6*n16[3] + b6*n1x6[3]);
-          v[4] += (a1*n11[4] + b1*n1x1[4] + a2*n12[4] + b2*n1x2[4] + a3*n13[4] + b3*n1x3[4] +
-                   a4*n14[4] + b4*n1x4[4] + a5*n15[4] + b5*n1x5[4] + a6*n16[4] + b6*n1x6[4]);
-          v[5] += (a1*n11[5] + b1*n1x1[5] + a2*n12[5] + b2*n1x2[5] + a3*n13[5] + b3*n1x3[5] +
-                   a4*n14[5] + b4*n1x4[5] + a5*n15[5] + b5*n1x5[5] + a6*n16[5] + b6*n1x6[5]);
-          v += 6;
-        }
-      }
-      in += 24;
-    }
-
-    return;
+    TacsAddAllTransTensor3DInterp6VarsPerNode1(Nf, Nfxi, in, values);
   }
-
-  for ( int n = 0; n < 216; n++ ){
-    const double *n1 = &Nf[6*(n % 6)];
-    const double *n2 = &Nf[6*((n % 36)/6)];
-    const double *n3 = &Nf[6*(n / 36)];
-    const double *n1x = &Nfxi[6*(n % 6)];
-    const double *n2x = &Nfxi[6*((n % 36)/6)];
-    const double *n3x = &Nfxi[6*(n / 36)];
-
-    TacsScalar *v = values;
-
-    if (m == 1){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a = n23*in[0] + n2x3*in[2] + n23x*in[3];
-          TacsScalar b = n23*in[1];
-          v[0] += a*n1[0] + b*n1x[0];
-          v[1] += a*n1[1] + b*n1x[1];
-          v[2] += a*n1[2] + b*n1x[2];
-          v[3] += a*n1[3] + b*n1x[3];
-          v[4] += a*n1[4] + b*n1x[4];
-          v[5] += a*n1[5] + b*n1x[5];
-          v += 6;
-        }
-      }
-    }
-    else if (m == 3){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a1 = n23*in[0] + n2x3*in[4] + n23x*in[5];
-          TacsScalar b1 = n23*in[3];
-
-          TacsScalar a2 = n23*in[1] + n2x3*in[7] + n23x*in[8];
-          TacsScalar b2 = n23*in[6];
-
-          TacsScalar a3 = n23*in[2] + n2x3*in[10] + n23x*in[11];
-          TacsScalar b3 = n23*in[9];
-
-          v[0] +=  a1*n1[0] + b1*n1x[0];
-          v[1] +=  a2*n1[0] + b2*n1x[0];
-          v[2] +=  a3*n1[0] + b3*n1x[0];
-
-          v[3] +=  a1*n1[1] + b1*n1x[1];
-          v[4] +=  a2*n1[1] + b2*n1x[1];
-          v[5] +=  a3*n1[1] + b3*n1x[1];
-
-          v[6] +=  a1*n1[2] + b1*n1x[2];
-          v[7] +=  a2*n1[2] + b2*n1x[2];
-          v[8] +=  a3*n1[2] + b3*n1x[2];
-
-          v[9] +=  a1*n1[3] + b1*n1x[3];
-          v[10] += a2*n1[3] + b2*n1x[3];
-          v[11] += a3*n1[3] + b3*n1x[3];
-
-          v[12] += a1*n1[4] + b1*n1x[4];
-          v[13] += a2*n1[4] + b2*n1x[4];
-          v[14] += a3*n1[4] + b3*n1x[4];
-
-          v[15] += a1*n1[5] + b1*n1x[5];
-          v[16] += a2*n1[5] + b2*n1x[5];
-          v[17] += a3*n1[5] + b3*n1x[5];
-
-          v += 18;
-        }
-      }
-    }
-    else if (m == 4){
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          TacsScalar a1 = n23*in[0] + n2x3*in[5] + n23x*in[6];
-          TacsScalar b1 = n23*in[4];
-
-          TacsScalar a2 = n23*in[1] + n2x3*in[8] + n23x*in[9];
-          TacsScalar b2 = n23*in[7];
-
-          TacsScalar a3 = n23*in[2] + n2x3*in[11] + n23x*in[12];
-          TacsScalar b3 = n23*in[10];
-
-          TacsScalar a4 = n23*in[3] + n2x3*in[14] + n23x*in[15];
-          TacsScalar b4 = n23*in[13];
-
-          v[0] +=  a1*n1[0] + b1*n1x[0];
-          v[1] +=  a2*n1[0] + b2*n1x[0];
-          v[2] +=  a3*n1[0] + b3*n1x[0];
-          v[3] +=  a4*n1[0] + b4*n1x[0];
-
-          v[4] +=  a1*n1[1] + b1*n1x[1];
-          v[5] +=  a2*n1[1] + b2*n1x[1];
-          v[6] +=  a3*n1[1] + b3*n1x[1];
-          v[7] +=  a4*n1[1] + b4*n1x[1];
-
-          v[8] +=  a1*n1[2] + b1*n1x[2];
-          v[9] +=  a2*n1[2] + b2*n1x[2];
-          v[10] += a3*n1[2] + b3*n1x[2];
-          v[11] += a4*n1[2] + b4*n1x[2];
-
-          v[12] += a1*n1[3] + b1*n1x[3];
-          v[13] += a2*n1[3] + b2*n1x[3];
-          v[14] += a3*n1[3] + b3*n1x[3];
-          v[15] += a4*n1[3] + b4*n1x[3];
-
-          v[16] += a1*n1[4] + b1*n1x[4];
-          v[17] += a2*n1[4] + b2*n1x[4];
-          v[18] += a3*n1[4] + b3*n1x[4];
-          v[19] += a4*n1[4] + b4*n1x[4];
-
-          v[20] += a1*n1[5] + b1*n1x[5];
-          v[21] += a2*n1[5] + b2*n1x[5];
-          v[22] += a3*n1[5] + b3*n1x[5];
-          v[23] += a4*n1[5] + b4*n1x[5];
-
-          v += 24;
-        }
-      }
-    }
-    else {
-      for ( int k = 0; k < 6; k++ ){
-        for ( int j = 0; j < 6; j++ ){
-          TacsScalar n23  = n2[j]*n3[k];
-          TacsScalar n2x3 = n2x[j]*n3[k];
-          TacsScalar n23x = n2[j]*n3x[k];
-
-          const TacsScalar *g = &in[m];
-          for ( int p = 0; p < m; p++ ){
-            TacsScalar a = n23*in[p] + n2x3*g[1] + n23x*g[2];
-            TacsScalar b = n23*g[0];
-            v[0] +=   a*n1[0] + b*n1x[0];
-            v[m] +=   a*n1[1] + b*n1x[1];
-            v[2*m] += a*n1[2] + b*n1x[2];
-            v[3*m] += a*n1[3] + b*n1x[3];
-            v[4*m] += a*n1[4] + b*n1x[4];
-            v[5*m] += a*n1[5] + b*n1x[5];
-            g += 3;
-            v++;
-          }
-          v += 5*m;
-        }
-      }
-    }
-
-    in += 4*m;
+  else if (m == 3){
+    TacsAddAllTransTensor3DInterp6VarsPerNode3(Nf, Nfxi, in, values);
+  }
+  else if (m == 4){
+    TacsAddAllTransTensor3DInterp6VarsPerNode4(Nf, Nfxi, in, values);
+  }
+  else {
+    TacsAddAllTransTensor3DInterp6(m, Nf, Nfxi, in, values);
   }
 }

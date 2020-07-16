@@ -205,8 +205,12 @@ void createAssembler( MPI_Comm comm, int varsPerNode,
   *_creator = creator;
 }
 
-void test_matrix_vector_products( MPI_Comm comm, int varsPerNode,
-                                  int order, int nx, int ny, int nz ){
+/*
+  Do a direct comparison in time and result against the in-memory
+  matrix-vector products
+*/
+void testMatrixVectorProducts( MPI_Comm comm, int varsPerNode,
+                               int order, int nx, int ny, int nz ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -226,7 +230,9 @@ void test_matrix_vector_products( MPI_Comm comm, int varsPerNode,
   assembler->applyBCs(x);
 
   assembler->setVariables(x);
-  assembler->testElement(0, 2);
+  if (rank == 0){
+    assembler->testElement(0, 2);
+  }
 
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
 
@@ -280,6 +286,10 @@ int main( int argc, char *argv[] ){
   int order = 6;
   int varsPerNode = 4;
 
+  // This flag indicates whether to perform a test against the
+  // in-memory matrix-vector products
+  int test_products = 0;
+
   for ( int i = 0; i < argc; i++ ){
     if (strcmp(argv[i], "varsPerNode=1") == 0){
       varsPerNode = 1;
@@ -305,6 +315,9 @@ int main( int argc, char *argv[] ){
     else if (strcmp(argv[i], "order=6") == 0){
       order = 6;
     }
+    else if (strcmp(argv[i], "test") == 0){
+      test_products = 1;
+    }
     if (sscanf(argv[i], "nx=%d", &nx) == 0){
       if (nx < 1){ nx = 1; }
       if (nx > 100){ nx = 100; }
@@ -324,8 +337,10 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  test_matrix_vector_products(comm, varsPerNode, order,
-                              nx, ny, nz);
+  if (test_products){
+    testMatrixVectorProducts(comm, varsPerNode, order,
+                             nx, ny, nz);
+  }
 
   TACSAssembler *assembler[5];
   TACSCreator *creator[5];

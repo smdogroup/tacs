@@ -16,6 +16,7 @@ CXX_OBJS = FElibrary.o \
 	TACSLineBasis.o \
 	TACSQuadBasis.o \
 	TACSHexaBasis.o \
+	TACSTensorProductBasisImpl.o \
 	TACSTriangularBasis.o \
 	TACSTetrahedralBasis.o \
 	TACSQuadBernsteinBasis.o \
