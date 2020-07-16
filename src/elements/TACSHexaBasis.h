@@ -22,6 +22,7 @@
 */
 class TACSLinearHexaBasis : public TACSElementBasis {
  public:
+  TACSLinearHexaBasis();
   ElementLayout getLayoutType();
   void getVisPoint( int n, double pt[] );
   int getNumNodes();
@@ -44,8 +45,14 @@ class TACSLinearHexaBasis : public TACSElementBasis {
   void addInterpFieldsGradTranspose( int n, const double pt[],
                                      const int num_fields, const TacsScalar grad[],
                                      TacsScalar values[] );
+  void interpAllFieldsGrad( const int m, const TacsScalar values[],
+                            TacsScalar out[] );
+  void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
+                                        TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+ private:
+  double Nf[4], Nfx[4];
 };
 
 /**
@@ -53,6 +60,7 @@ class TACSLinearHexaBasis : public TACSElementBasis {
 */
 class TACSQuadraticHexaBasis : public TACSElementBasis {
  public:
+  TACSQuadraticHexaBasis();
   ElementLayout getLayoutType();
   void getVisPoint( int n, double pt[] );
   int getNumNodes();
@@ -75,12 +83,14 @@ class TACSQuadraticHexaBasis : public TACSElementBasis {
   void addInterpFieldsGradTranspose( int n, const double pt[],
                                      const int num_fields, const TacsScalar grad[],
                                      TacsScalar values[] );
-  // void interpAllFieldsGrad( const int m, const TacsScalar values[],
-  //                           TacsScalar out[] );
-  // void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
-  //                                       TacsScalar values[] );
+  void interpAllFieldsGrad( const int m, const TacsScalar values[],
+                            TacsScalar out[] );
+  void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
+                                        TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+ private:
+  double Nf[9], Nfx[9];
 };
 
 /**
@@ -88,6 +98,7 @@ class TACSQuadraticHexaBasis : public TACSElementBasis {
 */
 class TACSCubicHexaBasis : public TACSElementBasis {
  public:
+  TACSCubicHexaBasis();
   ElementLayout getLayoutType();
   void getVisPoint( int n, double pt[] );
   int getNumNodes();
@@ -110,12 +121,14 @@ class TACSCubicHexaBasis : public TACSElementBasis {
   void addInterpFieldsGradTranspose( int n, const double pt[],
                                      const int num_fields, const TacsScalar grad[],
                                      TacsScalar values[] );
-  // void interpAllFieldsGrad( const int m, const TacsScalar values[],
-  //                           TacsScalar out[] );
-  // void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
-  //                                       TacsScalar values[] );
+  void interpAllFieldsGrad( const int m, const TacsScalar values[],
+                            TacsScalar out[] );
+  void addInterpAllFieldsGradTranspose( const int m, const TacsScalar in[],
+                                        TacsScalar values[] );
   void computeBasis( const double pt[], double N[] );
   void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+ private:
+  double Nf[16], Nfx[16];
 };
 
 /**

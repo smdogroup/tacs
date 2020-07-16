@@ -1,129 +1,18 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2014 Georgia Tech Research Corporation
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+*/
+
 #include "TACSTensorProductBasisImpl.h"
-
-void TACSInterpAllTensor3DInterp2( const int m,
-                                   const TacsScalar N[],
-                                   const TacsScalar Nx[],
-                                   const TacsScalar values[],
-                                   TacsScalar out[] ){
-  memset(out, 0, 4*m*8*sizeof(TacsScalar));
-
-  for ( int n = 0; n < 8; n++ ){
-    const double *n1 = &N[2*(n % 2)];
-    const double *n2 = &N[2*((n % 4)/2)];
-    const double *n3 = &N[2*(n / 4)];
-    const double *n1x = &Nx[2*(n % 2)];
-    const double *n2x = &Nx[2*((n % 4)/2)];
-    const double *n3x = &Nx[2*(n / 4)];
-
-    const TacsScalar *v = values;
-
-    for ( int k = 0; k < 2; k++ ){
-      for ( int j = 0; j < 2; j++ ){
-        TacsScalar n23  = n2[j]*n3[k];
-        TacsScalar n2x3 = n2x[j]*n3[k];
-        TacsScalar n23x = n2[j]*n3x[k];
-
-        TacsScalar *g = &out[m];
-        for ( int p = 0; p < m; p++ ){
-          g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[m]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[m]);
-          out[p] += n23*t1;
-          g[1] += n2x3*t1;
-          g[2] += n23x*t1;
-          g += 3;
-          v++;
-        }
-        v += 4*m;
-      }
-    }
-
-    out += 4*m;
-  }
-}
-
-void TACSInterpAllTensor3DInterp3( const int m,
-                                   const TacsScalar N[],
-                                   const TacsScalar Nx[],
-                                   const TacsScalar values[],
-                                   TacsScalar out[] ){
-  memset(out, 0, 4*m*9*sizeof(TacsScalar));
-
-  for ( int n = 0; n < 9; n++ ){
-    const double *n1 = &N[3*(n % 3)];
-    const double *n2 = &N[3*((n % 9)/3)];
-    const double *n3 = &N[3*(n / 9)];
-    const double *n1x = &Nx[3*(n % 3)];
-    const double *n2x = &Nx[3*((n % 9)/3)];
-    const double *n3x = &Nx[3*(n / 9)];
-
-    const TacsScalar *v = values;
-
-    for ( int k = 0; k < 3; k++ ){
-      for ( int j = 0; j < 3; j++ ){
-        TacsScalar n23  = n2[j]*n3[k];
-        TacsScalar n2x3 = n2x[j]*n3[k];
-        TacsScalar n23x = n2[j]*n3x[k];
-
-        TacsScalar *g = &out[m];
-        for ( int p = 0; p < m; p++ ){
-          g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[m] + n1x[2]*v[2*m]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[m] + n1[2]*v[2*m]);
-          out[p] += n23*t1;
-          g[1] += n2x3*t1;
-          g[2] += n23x*t1;
-          g += 3;
-          v++;
-        }
-        v += 4*m;
-      }
-    }
-
-    out += 4*m;
-  }
-}
-
-void TACSInterpAllTensor3DInterp4( const int m,
-                                   const TacsScalar N[],
-                                   const TacsScalar Nx[],
-                                   const TacsScalar values[],
-                                   TacsScalar out[] ){
-  memset(out, 0, 4*m*64*sizeof(TacsScalar));
-
-  for ( int n = 0; n < 64; n++ ){
-    const double *n1 = &N[4*(n % 4)];
-    const double *n2 = &N[4*((n % 16)/4)];
-    const double *n3 = &N[4*(n / 16)];
-    const double *n1x = &Nx[4*(n % 4)];
-    const double *n2x = &Nx[4*((n % 16)/4)];
-    const double *n3x = &Nx[4*(n / 16)];
-
-    const TacsScalar *v = values;
-
-    for ( int k = 0; k < 4; k++ ){
-      for ( int j = 0; j < 4; j++ ){
-        TacsScalar n23  = n2[j]*n3[k];
-        TacsScalar n2x3 = n2x[j]*n3[k];
-        TacsScalar n23x = n2[j]*n3x[k];
-
-        TacsScalar *g = &out[m];
-        for ( int p = 0; p < m; p++ ){
-          g[0] += n23*(n1x[0]*v[0] + n1x[1]*v[m] +
-                       n1x[2]*v[2*m] + n1x[3]*v[3*m]);
-          TacsScalar t1 = (n1[0]*v[0] + n1[1]*v[m] +
-                           n1[2]*v[2*m] + n1[3]*v[3*m]);
-          out[p] += n23*t1;
-          g[1] += n2x3*t1;
-          g[2] += n23x*t1;
-          g += 3;
-          v++;
-        }
-        v += 4*m;
-      }
-    }
-
-    out += 4*m;
-  }
-}
 
 void TACSInterpAllTensor3DInterp5( const int m,
                                    const TacsScalar N[],
