@@ -420,7 +420,15 @@ class TACSElementBasis : public TACSObject {
                                 TacsScalar dfdXpts[] );
 
   /**
-    Add the weak form of the governing equations to the residual
+    Add the weak form of the governing equations to the residual.
+
+    This code adds the residual contributions from a quadrature point
+    to the residual. The coefficients DUt and DUx are obtained from
+    the physical domain so the Jacobian transformation is applied to
+    bring these derivatives back to the computational space.
+
+    In this call, the values of DUt and DUx are modified in applying
+    the Jacobian transformation.
 
     @param n The quadrautre point index
     @param pt The quadrature point value
@@ -429,6 +437,7 @@ class TACSElementBasis : public TACSObject {
     @param vars_per_node The number of variables per node
     @param DUt The coefficients of the temporal part of the weak form
     @param DUx The coefficients of the spatial part of the weak form
+    @param res The residual
   */
   void addWeakResidual( int n, const double pt[],
                         TacsScalar weight,

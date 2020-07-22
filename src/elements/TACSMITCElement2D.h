@@ -16,16 +16,17 @@
 #define TACS_ELEMENT_2D_H
 
 #include "TACSElement.h"
-#include "TACSMixedInterpElementModel.h"
-#include "TACSMixedInterpElementBasis.h"
+#include "TACSMITCModel.h"
+#include "TACSMITCBasis.h"
 
-class TACSMixedInterpElement2D : public TACSElement {
+class TACSMITCElement2D : public TACSElement {
  public:
   static const int MAX_VARS_PER_NODE = 8;
+  static const int MAX_NUM_TYING_FIELDS = 5;
+  static const int MAX_TOTAL_TYING_POINTS = 5*16;
 
-  TACSMixedInterpElement2D( TACSMixedInterpElementModel *_model,
-                            TACSMixedInterpElementBasis *_basis );
-  ~TACSMixedInterpElement2D();
+  TACSMITCElement2D( TACSMITCModel *_model, TACSMITCBasis *_basis );
+  ~TACSMITCElement2D();
 
   // Get the layout properties of the element
   int getVarsPerNode();
@@ -61,61 +62,6 @@ class TACSMixedInterpElement2D : public TACSElement {
   void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
                     const TacsScalar *vars, const TacsScalar *dvars,
                     const TacsScalar *ddvars, TacsScalar *res );
-
-  /**
-    Add the residual and Jacobians to the arrays
-  */
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar *Xpts, const TacsScalar *vars,
-                    const TacsScalar *dvars, const TacsScalar *ddvars,
-                    TacsScalar *res, TacsScalar *mat );
-
-  /**
-    Add the derivative of the product of the adjoint variables w.r.t.
-    the material design variables
-  */
-  void addAdjResProduct( int elemIndex, double time, TacsScalar scale,
-                         const TacsScalar psi[], const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dvSens[] );
-
-  /**
-    Add the derivative of the product of the adjoint variables and the
-    residuals with respect to the node locations
-  */
-  void addAdjResXptProduct( int elemIndex, double time, TacsScalar scale,
-                            const TacsScalar psi[], const TacsScalar Xpts[],
-                            const TacsScalar vars[], const TacsScalar dvars[],
-                            const TacsScalar ddvars[], TacsScalar fXptSens[] );
-
-  /**
-    Compute a specific type of element matrix (mass, stiffness, geometric
-    stiffness, etc.)
-  */
-  void getMatType( ElementMatrixType matType, int elemIndex, double time,
-                   const TacsScalar Xpts[], const TacsScalar vars[],
-                   TacsScalar mat[] );
-
-  /**
-    Add the derivative of the product of a specific matrix w.r.t.
-    the design variables
-  */
-  void addMatDVSensInnerProduct( ElementMatrixType matType, int elemIndex,
-                                 double time, TacsScalar scale,
-                                 const TacsScalar psi[], const TacsScalar phi[],
-                                 const TacsScalar Xpts[], const TacsScalar vars[],
-                                 int dvLen, TacsScalar dfdx[] );
-
-  /**
-    Compute the derivative of the product of a specific matrix w.r.t.
-    the input variables (vars).
-  */
-  void getMatSVSensInnerProduct( ElementMatrixType matType, int elemIndex, double time,
-                                 const TacsScalar psi[], const TacsScalar phi[],
-                                 const TacsScalar Xpts[], const TacsScalar vars[],
-                                 TacsScalar dfdu[] );
 
   /**
     Evaluate a point-wise quantity of interest.
@@ -162,8 +108,8 @@ class TACSMixedInterpElement2D : public TACSElement {
                       int ld_data, TacsScalar *data );
 
  private:
-  TACSMixedInterpElementModel *model;
-  TACSMixedInterpElementBasis *basis;
+  TACSMITCModel *model;
+  TACSMITCBasis *basis;
 };
 
 #endif // TACS_ELEMENT_2D_H

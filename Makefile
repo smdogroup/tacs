@@ -11,6 +11,7 @@ TACS_SUBDIRS = src \
 	src/bpmat \
 	src/elements \
 	src/elements/dynamics \
+	src/elements/basis \
 	src/constitutive \
 	src/functions \
 	src/io

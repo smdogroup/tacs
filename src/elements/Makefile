@@ -12,17 +12,6 @@ CXX_OBJS = FElibrary.o \
 	TACSElement2D.o \
 	TACSElement3D.o \
 	TACSElementTypes.o \
-	TACSElementBasis.o \
-	TACSLineBasis.o \
-	TACSQuadBasis.o \
-	TACSHexaBasis.o \
-	TACSTensorProductBasisImpl.o \
-	TACSTriangularBasis.o \
-	TACSTetrahedralBasis.o \
-	TACSQuadBernsteinBasis.o \
-	TACSHexaBernsteinBasis.o \
-	TACSElementMappedBasis.o \
-	TACSBeamBasis.o \
 	TACSLinearElasticity.o \
 	TACSThermoelasticity.o \
 	TACSHeatConduction.o \
@@ -33,7 +22,10 @@ CXX_OBJS = FElibrary.o \
 	TACSTraction3D.o \
 	TACSConvectiveTraction2D.o \
 	TACSConvectiveTraction3D.o \
-	TACSElementVerification.o
+	TACSElementVerification.o \
+	TACSMITCElement2D.o \
+	TACSMITCPlateModel.o \
+	TACSMITCThermoelasticPlateModel.o
 
 DIR=${TACS_DIR}/src/elements
 

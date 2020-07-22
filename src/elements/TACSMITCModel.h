@@ -12,16 +12,16 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_MIXED_INTERP_ELEMENT_MODEL_H
-#define TACS_MIXED_INTERP_ELEMENT_MODEL_H
+#ifndef TACS_MITC_MODEL_H
+#define TACS_MITC_MODEL_H
 
 #include "TACSElementModel.h"
 
 /**
-  TACSMixedInterpElementModel defines a physical model class independent of a
+  TACSMITCModel defines a physical model class independent of a
   finite element basis
 */
-class TACSMixedInterpElementModel : public TACSElementModel {
+class TACSMITCModel : public TACSElementModel {
  public:
   /**
     Get the number of tying field values required by this element
@@ -33,7 +33,7 @@ class TACSMixedInterpElementModel : public TACSElementModel {
   /**
     Evaluate the given field value at the specified tying point.
 
-    @param field The field index
+    @param field The tying field index
     @param ty The tying point index
     @param pt The parametric location of the tying point
     @param Xd The derivative of the spatial coordinates w.r.t. computational parameters
@@ -47,6 +47,27 @@ class TACSMixedInterpElementModel : public TACSElementModel {
                                         const TacsScalar U[],
                                         const TacsScalar Ud[] ) = 0;
 
+  /**
+    Evaluate the derivative of the tying point quantity with respect to the state
+    variables at the specified tying point.
+
+    This code comptues the
+
+    @param field The tying field index
+    @param ty The tying point index
+    @param pt The parametric location of the tying point
+    @param dfdqty The input derivative seed w.r.t. the tying point
+    @param Xd The derivative of the spatial coordinates w.r.t. computational parameters
+    @param U The values of the field variables at the tying point
+    @param Ud The derivative of the field variables w.r.t. computational parameters
+    @param DU The derivative w.r.t. the tying field variables
+    @param DUd The derivative w.r.t. the spatial derivatives of the field
+  */
+  virtual void evalTyingQuantitySVSens( int field, int ty, const double pt[],
+                                        const TacsScalar dfdqty,
+                                        const TacsScalar Xd[],
+                                        const TacsScalar U[], const TacsScalar Ud[],
+                                        TacsScalar DU[], TacsScalar DUd[] ) = 0;
 };
 
-#endif // TACS_MIXED_INTERP_ELEMENT_MODEL_H
+#endif // TACS_MITC_MODEL_H
