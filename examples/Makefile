@@ -10,14 +10,14 @@ include ../TACS_Common.mk
 EXAMPLE_SUBDIRS = \
 	annulus \
 	mg \
-        tetrahedral \
+	tetrahedral \
 	triangle \
 	tutorial \
 	four_bar_mechanism \
-	block_cyclic_mat
+	block_cyclic_mat \
+	plate \
+	profile_elements
 
-#	plate \
-#	profile_elements \
 #	rigid \
 #	stiffened_panel \
 #	benchmark \
