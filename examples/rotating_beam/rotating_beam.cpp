@@ -37,14 +37,14 @@ int main( int argc, char *argv[] ){
   }
 
   // Set the length of the rotating beam
-  TacsScalar chord = 0.121; // 
+  TacsScalar chord = 0.121; //
   TacsScalar precone = 2.5*M_PI/180.0; // 2.5 degrees
   TacsScalar r = 0.22;
   TacsScalar L = 2.0;
 
   // Create the Timoshenko stiffness object
   TimoshenkoStiffness *stiff = NULL;
-  
+
   const TacsScalar angular_rate = Omega*Omega_ref;
   TacsScalar freq_normalization = 1.0;
 
@@ -94,7 +94,7 @@ int main( int argc, char *argv[] ){
     precone = 2.5*M_PI/180.0; // 2.5 degrees
     r = 0.12; // cutout
     freq_normalization = 1.0/Omega_ref;
-    
+
     // Set the inertial properties
     TacsScalar mA = 0.95; // kg/m
     TacsScalar m22 = 1.7e-5;    // kg m
@@ -112,15 +112,15 @@ int main( int argc, char *argv[] ){
     TacsScalar EI33 = 5.2e3;
     TacsScalar EI23 = 0.0;
 
-    // Shear stiffness    
+    // Shear stiffness
     TacsScalar kG22 = 5.85e5; // N
     TacsScalar kG33 = 5.85e5; // N
-   
+
     // Set the reference axes
     TacsScalar axis_A[] = {0.0, 0.0, 1.0};
 
     stiff = new TimoshenkoStiffness( axis_A,
-                                     EA, 
+                                     EA,
                                      EI22, EI33, 0.0,
                                      GJ,
                                      kG22, kG33, 0.0,
@@ -132,15 +132,15 @@ int main( int argc, char *argv[] ){
                                      0.0);
   }
   else {
-    // Run uniform rectangular geometry  
+    // Run uniform rectangular geometry
     freq_normalization = 1.0/Omega_ref;
-    
+
     // Set the inertial properties
     TacsScalar mA = 2.7; // kg/m
     TacsScalar m22 = 2.25e-5;    // kg m
     TacsScalar m33 = 2.25e-3; // kg m
     TacsScalar m11 = m22 + m33; // kg m
-    TacsScalar m23 = 0.0; 
+    TacsScalar m23 = 0.0;
 
     // Axial stiffness
     TacsScalar EA = 70.0e6;  // N
@@ -153,7 +153,7 @@ int main( int argc, char *argv[] ){
     TacsScalar EI33 = 58333.33333333333;
     TacsScalar EI23 = 0.0;
 
-    // Shear stiffness    
+    // Shear stiffness
     TacsScalar kG22 = 21666666.666666668; // N
     TacsScalar kG33 = 21666666.666666668; // N
 
@@ -164,10 +164,10 @@ int main( int argc, char *argv[] ){
                                     EA, GJ, EI22, EI33, kG22, kG33,
                                     axis_A);
   }
-  
+
   TACSGibbsVector *direction = new TACSGibbsVector(0.0, 0.0, 1.0);
 
-  TACSRevoluteDriver *rd = 
+  TACSRevoluteDriver *rd =
     new TACSRevoluteDriver(direction, angular_rate);
 
   // Create a rigid link
@@ -219,7 +219,7 @@ int main( int argc, char *argv[] ){
 
   // Set the rigid body element
   int rigid_node = nnodes;
-  conn[ptr[nelems]] = nnodes; 
+  conn[ptr[nelems]] = nnodes;
   ptr[nelems+1] = ptr[nelems]+1;
   elements[nelems] = rb;
   nelems++;
@@ -244,7 +244,7 @@ int main( int argc, char *argv[] ){
 
   // Create TACS itself and set the elements
   const int vars_per_node = 8;
-  TACSAssembler *tacs = 
+  TACSAssembler *tacs =
     new TACSAssembler(comm, vars_per_node, num_nodes, num_elements);
 
   tacs->setElementConnectivity(conn, ptr);
@@ -277,7 +277,7 @@ int main( int argc, char *argv[] ){
     new TACSBDFIntegrator(tacs, 0.0, tfinal, num_steps, order);
   integrator->incref();
 
-  integrator->setPrintLevel(1);
+  integrator->setPrintLevel(0);
   integrator->integrate();
 
   // Create an TACSToFH5 object for writing output to files
@@ -299,7 +299,7 @@ int main( int argc, char *argv[] ){
 
   int nfreq = vars_per_node*num_nodes;
   TacsScalar *freq = new TacsScalar[ 2*nfreq ];
-  nfreq = integrator->lapackNaturalFrequencies(gyroscopic, 
+  nfreq = integrator->lapackNaturalFrequencies(gyroscopic,
                                                q, qdot, qddot, freq);
 
   printf("number of frequencies = %d\n", nfreq);
