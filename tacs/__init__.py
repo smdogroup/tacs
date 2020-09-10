@@ -17,7 +17,8 @@ def get_include():
     '''
     root_path, tail = os.path.split(os.path.abspath(os.path.dirname(__file__)))
 
-    rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 'src/elements/dynamics',
+    rel_inc_dirs = ['src', 'src/bpmat', 'src/elements',
+                    'src/elements/dynamics', 'src/elements/basis',
                     'src/constitutive', 'src/functions', 'src/io',
                     'extern/AMD/Include', 'extern/UFconfig',
                     'extern/metis/include']

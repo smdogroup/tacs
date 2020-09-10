@@ -943,8 +943,8 @@ inline void TACSInterpAllTensor3DInterp4( const int m,
 
 inline void TacsAddAllTransTensor3DInterp4( const int m,
                                             const int i,
-                                            const TacsScalar N[],
-                                            const TacsScalar Nx[],
+                                            const double N[],
+                                            const double Nx[],
                                             const TacsScalar in[],
                                             TacsScalar v[] ){
   const int j = 3*i + m;
@@ -979,38 +979,38 @@ inline void TacsAddAllTransTensor3DInterp4( const int m,
   3D Tensor product functions for p = 4
 */
 void TACSInterpAllTensor3DInterp5( const int m,
-                                   const TacsScalar N[],
-                                   const TacsScalar Nx[],
+                                   const double N[],
+                                   const double Nx[],
                                    const TacsScalar values[],
                                    TacsScalar out[] );
-void TACSInterpAllTensor3DInterp5VarsPerNode1( const TacsScalar N[],
-                                               const TacsScalar Nx[],
+void TACSInterpAllTensor3DInterp5VarsPerNode1( const double N[],
+                                               const double Nx[],
                                                const TacsScalar values[],
                                                TacsScalar out[] );
-void TACSInterpAllTensor3DInterp5VarsPerNode3( const TacsScalar N[],
-                                               const TacsScalar Nx[],
+void TACSInterpAllTensor3DInterp5VarsPerNode3( const double N[],
+                                               const double Nx[],
                                                const TacsScalar values[],
                                                TacsScalar out[] );
-void TACSInterpAllTensor3DInterp5VarsPerNode4( const TacsScalar N[],
-                                               const TacsScalar Nx[],
+void TACSInterpAllTensor3DInterp5VarsPerNode4( const double N[],
+                                               const double Nx[],
                                                const TacsScalar values[],
                                                TacsScalar out[] );
 
 void TacsAddAllTransTensor3DInterp5( const int m,
-                                     const TacsScalar N[],
-                                     const TacsScalar Nx[],
+                                     const double N[],
+                                     const double Nx[],
                                      const TacsScalar in[],
                                      TacsScalar values[] );
-void TacsAddAllTransTensor3DInterp5VarsPerNode1( const TacsScalar N[],
-                                                 const TacsScalar Nx[],
+void TacsAddAllTransTensor3DInterp5VarsPerNode1( const double N[],
+                                                 const double Nx[],
                                                  const TacsScalar in[],
                                                  TacsScalar values[] );
-void TacsAddAllTransTensor3DInterp5VarsPerNode3( const TacsScalar N[],
-                                                 const TacsScalar Nx[],
+void TacsAddAllTransTensor3DInterp5VarsPerNode3( const double N[],
+                                                 const double Nx[],
                                                  const TacsScalar in[],
                                                  TacsScalar values[] );
-void TacsAddAllTransTensor3DInterp5VarsPerNode4( const TacsScalar N[],
-                                                 const TacsScalar Nx[],
+void TacsAddAllTransTensor3DInterp5VarsPerNode4( const double N[],
+                                                 const double Nx[],
                                                  const TacsScalar in[],
                                                  TacsScalar values[] );
 
@@ -1018,38 +1018,38 @@ void TacsAddAllTransTensor3DInterp5VarsPerNode4( const TacsScalar N[],
   3D Tensor product functions for p = 5
 */
 void TACSInterpAllTensor3DInterp6( const int m,
-                                   const TacsScalar N[],
-                                   const TacsScalar Nx[],
+                                   const double N[],
+                                   const double Nx[],
                                    const TacsScalar values[],
                                    TacsScalar out[] );
-void TACSInterpAllTensor3DInterp6VarsPerNode1( const TacsScalar N[],
-                                               const TacsScalar Nx[],
+void TACSInterpAllTensor3DInterp6VarsPerNode1( const double N[],
+                                               const double Nx[],
                                                const TacsScalar values[],
                                                TacsScalar out[] );
-void TACSInterpAllTensor3DInterp6VarsPerNode3( const TacsScalar N[],
-                                               const TacsScalar Nx[],
+void TACSInterpAllTensor3DInterp6VarsPerNode3( const double N[],
+                                               const double Nx[],
                                                const TacsScalar values[],
                                                TacsScalar out[] );
-void TACSInterpAllTensor3DInterp6VarsPerNode4( const TacsScalar N[],
-                                               const TacsScalar Nx[],
+void TACSInterpAllTensor3DInterp6VarsPerNode4( const double N[],
+                                               const double Nx[],
                                                const TacsScalar values[],
                                                TacsScalar out[] );
 
 void TacsAddAllTransTensor3DInterp6( const int m,
-                                     const TacsScalar N[],
-                                     const TacsScalar Nx[],
+                                     const double N[],
+                                     const double Nx[],
                                      const TacsScalar in[],
                                      TacsScalar values[] );
-void TacsAddAllTransTensor3DInterp6VarsPerNode1( const TacsScalar N[],
-                                                 const TacsScalar Nx[],
+void TacsAddAllTransTensor3DInterp6VarsPerNode1( const double N[],
+                                                 const double Nx[],
                                                  const TacsScalar in[],
                                                  TacsScalar values[] );
-void TacsAddAllTransTensor3DInterp6VarsPerNode3( const TacsScalar N[],
-                                                 const TacsScalar Nx[],
+void TacsAddAllTransTensor3DInterp6VarsPerNode3( const double N[],
+                                                 const double Nx[],
                                                  const TacsScalar in[],
                                                  TacsScalar values[] );
-void TacsAddAllTransTensor3DInterp6VarsPerNode4( const TacsScalar N[],
-                                                 const TacsScalar Nx[],
+void TacsAddAllTransTensor3DInterp6VarsPerNode4( const double N[],
+                                                 const double Nx[],
                                                  const TacsScalar in[],
                                                  TacsScalar values[] );
 
