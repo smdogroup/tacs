@@ -41,7 +41,7 @@
   tacs_comm:           the TACS communicator
   varsPerNode:         the number of degrees of freedom per node
   numOwnedNodes:       the number of locally-owned nodes
-  numElements:         the number of elements in the mesh
+  numElements:         the number of locally-owned elements in the mesh
   numDependentNodes:   the number of dependent nodes in the mesh
 */
 TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,

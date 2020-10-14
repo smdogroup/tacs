@@ -886,6 +886,7 @@ cdef class Assembler:
             element = self.ptr.getElement(num, NULL, NULL, NULL, NULL)
             nnodes = element.numNodes()
             nvars = element.numVariables()
+            compID = element.getComponentNum()
 
             # Allocate the numpy array and retrieve the internal data
             Xpt = np.zeros(3*nnodes, dtype=dtype)
@@ -898,7 +899,7 @@ cdef class Assembler:
         else:
             raise ValueError('Element index out of range')
 
-        return _init_Element(element), Xpt, vars0, dvars, ddvars
+        return _init_Element(element), Xpt, vars0, dvars, ddvars, compID
 
     def getElementNodes(self, int num):
         '''Get the node numbers associated with the given element'''
