@@ -92,6 +92,9 @@ cdef class KSFailure(Function):
             self.ksptr.setKSFailureType(PNORM_FAILURE_CONTINUOUS)
         return
 
+    def setLoadFactor(self, TacsScalar loadFactor):
+        self.ksptr.setLoadFactor(loadFactor)
+
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
 
