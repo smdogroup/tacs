@@ -98,6 +98,19 @@ cdef class KSFailure(Function):
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
 
+cdef class KSBuckling(KSFailure):
+    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+        '''
+        Wrap the function KSBuckling for panel buckling approximation.
+        This uses hand-calc approximations to predict panel buckling and is not 
+        the same as TACS's eigenvalue buckling function.
+        '''
+        self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight,
+                                       KS_BUCKLING, alpha)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+		
 cdef class KSDisplacement(Function):
     cdef TACSKSDisplacement *ksptr
     def __cinit__(self, Assembler tacs, double ksWeight, dirs):
