@@ -11,7 +11,7 @@
   The bladeFSDTStiffness object
 
   This is the constitutive class for a blade-stiffened panel. The
-  constribution of the stiffeners to the panel thickness are handled
+  contribution of the stiffeners to the panel thickness are handled
   using a smeared-stiffener approach - see Brush and Almroth: Buckling
   of bars, plates and shells.
 
@@ -194,7 +194,7 @@ void bladeFSDTStiffness::setKSWeight( double _ks_weight ){
 }
 
 /*
-  Retreive the critical panel loads for the given set of design variables
+  Retrieve the critical panel loads for the given set of design variables
 */
 void bladeFSDTStiffness::getCriticalGlobalLoads( TacsScalar * Nx,
                                                  TacsScalar * Nxy ){
@@ -623,9 +623,9 @@ void bladeFSDTStiffness::updateStiffness(){
   if (TacsRealPart(B[0]*B[0]) > TacsRealPart(A[0]*D[0])){
     fprintf(stderr, "bladeFSDTStiffness: A11*D11 - B11^2 < 0\n");
     fprintf(stderr, "t = %8.3f sh = %8.3f st = %8.3f sp = %8.3f\n",
-	    TacsRealPart(t), TacsRealPart(sh), TacsRealPart(st), TacsRealPart(sp));
+      TacsRealPart(t), TacsRealPart(sh), TacsRealPart(st), TacsRealPart(sp));
     fprintf(stderr, "A11 = %10.3e B11 = %10.3e D11 = %10.3e\n",
-	    TacsRealPart(A[0]), TacsRealPart(B[0]), TacsRealPart(D[0]));
+      TacsRealPart(A[0]), TacsRealPart(B[0]), TacsRealPart(D[0]));
   }
 
   calcBucklingProps();
@@ -752,7 +752,7 @@ TacsScalar bladeFSDTStiffness::getDensity(){
   Add the derivative of the pointwise mass times alpha to each component
 */
 void bladeFSDTStiffness::addPointwiseMassDVSens( const double pt[], const TacsScalar alpha[],
-						 TacsScalar dvSens[], int dvLen ){
+                                                 TacsScalar dvSens[], int dvLen ){
   TacsScalar rho = ortho_ply->getRho();
 
   if (t_num >= 0 && t_num < dvLen){
@@ -1109,9 +1109,9 @@ TacsScalar bladeFSDTStiffness::calculateStressDVSens( const double pt[],
   Nxy_crit:  the approximate critical buckling load
 */
 TacsScalar bladeFSDTStiffness::calcCriticalShearLoad( TacsScalar D1,
-						      TacsScalar D2,
-						      TacsScalar D3,
-						      TacsScalar L ){
+                                                      TacsScalar D2,
+                                                      TacsScalar D3,
+                                                      TacsScalar L ){
   TacsScalar xi = sqrt(D1*D2)/D3;
 
   double ks = 50.0;
@@ -1137,13 +1137,13 @@ TacsScalar bladeFSDTStiffness::calcCriticalShearLoad( TacsScalar D1,
   inputs. This is the differentiated version of the above code.
 */
 TacsScalar bladeFSDTStiffness::calcCriticalShearLoadSens( TacsScalar D1,
-							  TacsScalar D2,
-							  TacsScalar D3,
-							  TacsScalar L,
-							  TacsScalar sD1,
-							  TacsScalar sD2,
-							  TacsScalar sD3,
-							  TacsScalar sL ){
+                                                          TacsScalar D2,
+                                                          TacsScalar D3,
+                                                          TacsScalar L,
+                                                          TacsScalar sD1,
+                                                          TacsScalar sD2,
+                                                          TacsScalar sD3,
+                                                          TacsScalar sL ){
   TacsScalar xi = sqrt(D1*D2)/D3;
   TacsScalar sxi = (0.5*(D1*sD2 + D2*sD1) - xi*xi*D3*sD3)/(xi*D3*D3);
 
@@ -1361,7 +1361,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
                   (sh*sf_fraction)/(D66_stiff*D66_stiff)*D66_stiff_sens);
 
     *sNxy_global_crit = calcCriticalShearLoadSens(D1, D2, D3, Lx,
-						  D1_sens, D2_sens, D3_sens, 0.0);
+                                                  D1_sens, D2_sens, D3_sens, 0.0);
 
     // Compute the remaining critical loads
     TacsScalar I = (t*t*t)/12.0;
@@ -1382,8 +1382,8 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
       (0.5*(D11*D22_sens + D11_sens*D22)/sqrtD11D22 + D12_sens + 2.0*D66_sens);
 
     *sNxy_panel_crit = calcCriticalShearLoadSens(D11, D22, D12 + 2.0*D66, sp,
-						 D11_sens, D22_sens,
-						 D12_sens + 2.0*D66_sens, 0.0);
+                                                 D11_sens, D22_sens,
+                                                 D12_sens + 2.0*D66_sens, 0.0);
 
     *sNx_weak_stiff_crit = 0.0;
     *sNx_strong_stiff_crit = 0.0;
@@ -1437,7 +1437,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
     TacsScalar D3_sens = (D3/sp) - ((D3*D3)/sp)*(1.0/D66_panel);
 
     *sNxy_global_crit = calcCriticalShearLoadSens(D1, D2, D3, Lx,
-						  D1_sens, D2_sens, D3_sens, 0.0);
+                                                  D1_sens, D2_sens, D3_sens, 0.0);
 
     // Compute the critical buckling loads for the panel
     TacsScalar I = (t*t*t)/12.0;
@@ -1449,7 +1449,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
     *sNx_panel_crit = (-4.0*M_PI*M_PI/(sp*sp*sp))*(sqrt(D11*D22) +
                                                   D12 + 2.0*D66);
     *sNxy_panel_crit = calcCriticalShearLoadSens(D11, D22, D12 + 2.0*D66, sp,
-						 0.0, 0.0, 0.0, 1.0);
+                                                 0.0, 0.0, 0.0, 1.0);
 
     *sNx_weak_stiff_crit = 0.0;
     *sNx_strong_stiff_crit = 0.0;
@@ -1508,7 +1508,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
                                         sf_fraction/D66_panel);
 
     *sNxy_global_crit = calcCriticalShearLoadSens(D1, D2, D3, Lx,
-						  D1_sens, D2_sens, D3_sens, 0.0);
+                                                  D1_sens, D2_sens, D3_sens, 0.0);
 
     *sNx_panel_crit = 0.0;
     *sNxy_panel_crit = 0.0;
@@ -1577,7 +1577,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
       (D3*D3)/sp*((sh*sf_fraction)/(D66_stiff*D66_stiff)*D66_stiff_sens);
 
     *sNxy_global_crit = calcCriticalShearLoadSens(D1, D2, D3, Lx,
-						  D1_sens, D2_sens, D3_sens, 0.0);
+                                                  D1_sens, D2_sens, D3_sens, 0.0);
 
     *sNx_panel_crit = 0.0;
     *sNxy_panel_crit = 0.0;
@@ -1629,7 +1629,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
                         (sh*sf_fraction)/D66_stiff);
 
     *sNxy_global_crit = calcCriticalShearLoadSens(D1, D2, D3, Lx,
-						  0.0, 0.0, 0.0, 1.0);
+                                                  0.0, 0.0, 0.0, 1.0);
 
     *sNx_panel_crit = 0.0;
     *sNxy_panel_crit = 0.0;
@@ -1741,7 +1741,7 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
                   (sh*sf_fraction)/(D66_stiff*D66_stiff)*D66_stiff_sens);
 
     *sNxy_global_crit = calcCriticalShearLoadSens(D1, D2, D3, Lx,
-						  D1_sens, D2_sens, D3_sens, 0.0);
+                                                  D1_sens, D2_sens, D3_sens, 0.0);
 
     // Compute the critical buckling loads for the panel
     // -------------------------------------------------
@@ -1762,8 +1762,8 @@ void bladeFSDTStiffness::calcBucklingPropsDVSens( int dvNum,
       (0.5*(D11*D22_sens + D11_sens*D22)/sqrtD11D22 + D12_sens + 2.0*D66_sens);
 
     *sNxy_panel_crit = calcCriticalShearLoadSens(D11, D22, D12 + 2.0*D66, sp,
-						 D11_sens, D22_sens,
-						 D12_sens + 2.0*D66_sens, 0.0);
+                                                 D11_sens, D22_sens,
+                                                 D12_sens + 2.0*D66_sens, 0.0);
 
     // Compute the critical loads for the stiffener
     // --------------------------------------------
@@ -1935,8 +1935,8 @@ TacsScalar bladeFSDTStiffness::calcFailDVSens( int dvNum,
 
       ortho_ply->failureStrainSens(e_sens, ply_angles[k], e);
       failSens += 0.5*weights[load_num]*(strain[3]*e_sens[0] +
-					 strain[4]*e_sens[1] +
-					 strain[5]*e_sens[2]);
+                                         strain[4]*e_sens[1] +
+                                         strain[5]*e_sens[2]);
       load_num++;
     }
 
@@ -1949,8 +1949,8 @@ TacsScalar bladeFSDTStiffness::calcFailDVSens( int dvNum,
 
       ortho_ply->failureStrainSens(e_sens, ply_angles[k], e);
       failSens -= 0.5*weights[load_num]*(strain[3]*e_sens[0] +
-					 strain[4]*e_sens[1] +
-					 strain[5]*e_sens[2]);
+                                         strain[4]*e_sens[1] +
+                                         strain[5]*e_sens[2]);
       load_num++;
     }
   }
@@ -2033,9 +2033,9 @@ void bladeFSDTStiffness::failureDVSens( int dvNum, const double pt[],
   Add the derivative of the failure load times alpha
 */
 void bladeFSDTStiffness::addFailureDVSens( const double pt[],
-					   const TacsScalar strain[],
-					   TacsScalar alpha,
-					   TacsScalar dvSens[], int dvLen ){
+                                           const TacsScalar strain[],
+                                           TacsScalar alpha,
+                                           TacsScalar dvSens[], int dvLen ){
   TacsScalar fail[MAX_NUM_FAIL], sens_weights[MAX_NUM_FAIL], max;
   int num_fail = calcFail(strain, fail, &max);
   TacsScalar ks_sum = 0.0;
@@ -2068,14 +2068,12 @@ void bladeFSDTStiffness::addFailureDVSens( const double pt[],
   // Add the derivatives from the ply fraction variables
   for ( int k = 0; k < num_pf_unique; k++ ){
     if (pf_unique[k] < dvLen){
-      dvSens[pf_unique[k]] += alpha*calcFailDVSens(pf_unique[k],
-						   strain, sens_weights);
+      dvSens[pf_unique[k]] += alpha*calcFailDVSens(pf_unique[k], strain, sens_weights);
     }
   }
   for ( int k = 0; k < num_stiff_pf_unique; k++ ){
     if (stiff_pf_unique[k] < dvLen){
-      dvSens[stiff_pf_unique[k]] += alpha*calcFailDVSens(stiff_pf_unique[k],
-							 strain, sens_weights);
+      dvSens[stiff_pf_unique[k]] += alpha*calcFailDVSens(stiff_pf_unique[k],strain, sens_weights);
     }
   }
 }
@@ -2087,7 +2085,7 @@ void bladeFSDTStiffness::addFailureDVSens( const double pt[],
 */
 int bladeFSDTStiffness::calcBuckling( const TacsScalar strain[],
                                       TacsScalar bval[],
-				      TacsScalar * _max ){
+                                      TacsScalar * _max ){
   TacsScalar max = 0.0;
   int load_num = 0;
 
@@ -2103,7 +2101,7 @@ int bladeFSDTStiffness::calcBuckling( const TacsScalar strain[],
   TacsScalar Nxy = stress[2];
 
   bval[load_num] = ((Nx/Nx_global_crit) +
-		    (Nxy/Nxy_global_crit)*(Nxy/Nxy_global_crit));
+                    (Nxy/Nxy_global_crit)*(Nxy/Nxy_global_crit));
   max = bval[load_num];
   load_num++;
 
@@ -2113,7 +2111,7 @@ int bladeFSDTStiffness::calcBuckling( const TacsScalar strain[],
   Nxy = t*Qbar_panel[5]*strain[2];
 
   bval[load_num] = ((Nx/Nx_panel_crit) +
-		    (Nxy/Nxy_panel_crit)*(Nxy/Nxy_panel_crit));
+                    (Nxy/Nxy_panel_crit)*(Nxy/Nxy_panel_crit));
   if (TacsRealPart(bval[load_num]) > TacsRealPart(max)){ max = bval[load_num]; }
   load_num++;
 
@@ -2123,7 +2121,7 @@ int bladeFSDTStiffness::calcBuckling( const TacsScalar strain[],
 }
 
 void bladeFSDTStiffness::calcBucklingStrainSens( const TacsScalar strain[],
-						 const TacsScalar weights[],
+                                                 const TacsScalar weights[],
                                                  TacsScalar sens[] ){
 
   sens[0] = sens[1] = sens[2] = sens[3] = 0.0;
@@ -2164,7 +2162,7 @@ void bladeFSDTStiffness::calcBucklingStrainSens( const TacsScalar strain[],
 
 TacsScalar bladeFSDTStiffness::calcBucklingDVSens( int dvNum,
                                                    const TacsScalar strain[],
-						   const TacsScalar weights[] ){
+                                                   const TacsScalar weights[] ){
   int load_num = 0;
   TacsScalar bvalSens = 0.0;
 
@@ -2328,8 +2326,8 @@ void bladeFSDTStiffness::bucklingDVSens( int dvNum, const TacsScalar strain[],
   dvSens
 */
 void bladeFSDTStiffness::addBucklingDVSens( const TacsScalar strain[],
-					    TacsScalar alpha,
-					    TacsScalar dvSens[], int dvLen ){
+                                            TacsScalar alpha,
+                                            TacsScalar dvSens[], int dvLen ){
   TacsScalar bfuncs[NUM_BUCKLING], sens_weights[NUM_BUCKLING], max;
   int num_buckling = calcBuckling(strain, bfuncs, &max);
   TacsScalar ks_sum = 0.0;
@@ -2361,14 +2359,12 @@ void bladeFSDTStiffness::addBucklingDVSens( const TacsScalar strain[],
   // Add the derivatives from the ply fraction variables
   for ( int k = 0; k < num_pf_unique; k++ ){
     if (pf_unique[k] < dvLen){
-      dvSens[pf_unique[k]] += alpha*calcBucklingDVSens(pf_unique[k],
-						       strain, sens_weights);
+      dvSens[pf_unique[k]] += alpha*calcBucklingDVSens(pf_unique[k], strain, sens_weights);
     }
   }
   for ( int k = 0; k < num_stiff_pf_unique; k++ ){
     if (stiff_pf_unique[k] < dvLen){
-      dvSens[stiff_pf_unique[k]] += alpha*calcBucklingDVSens(stiff_pf_unique[k],
-							     strain, sens_weights);
+      dvSens[stiff_pf_unique[k]] += alpha*calcBucklingDVSens(stiff_pf_unique[k], strain, sens_weights);
     }
   }
 }
