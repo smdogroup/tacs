@@ -50,7 +50,7 @@ cdef class Function:
         if self.ptr:
             self.ptr.decref()
         return
-    
+
 cdef class Compliance(Function):
     def __cinit__(self, Assembler tacs):
         '''
@@ -71,12 +71,18 @@ cdef class StructuralMass(Function):
 
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
-    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
+    def __cinit__(self, Assembler tacs, double ksWeight,
+                  cfunc='failure', double alpha=1.0):
         '''
         Wrap the function KSFailure
         '''
+        if cfunc == 'failure':
+            func = KS_FAILURE
+        elif cfunc == 'buckling':
+            func = KS_BUCKLING
+
         self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight,
-                                       KS_FAILURE, alpha)
+                                       func, alpha)
         self.ptr = self.ksptr
         self.ptr.incref()
         return
@@ -98,19 +104,6 @@ cdef class KSFailure(Function):
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
 
-cdef class KSBuckling(KSFailure):
-    def __cinit__(self, Assembler tacs, double ksWeight, double alpha=1.0):
-        '''
-        Wrap the function KSBuckling for panel buckling approximation.
-        This uses hand-calc approximations to predict panel buckling and is not 
-        the same as TACS's eigenvalue buckling function.
-        '''
-        self.ksptr = new TACSKSFailure(tacs.ptr, ksWeight,
-                                       KS_BUCKLING, alpha)
-        self.ptr = self.ksptr
-        self.ptr.incref()
-        return
-		
 cdef class KSDisplacement(Function):
     cdef TACSKSDisplacement *ksptr
     def __cinit__(self, Assembler tacs, double ksWeight, dirs):
@@ -196,7 +189,7 @@ cdef class ThermalKSFailure(Function):
         self.ptr = self.ksptr
         self.ptr.incref()
         return
-        
+
     def setKSFailureType(self, ftype='discrete'):
         if ftype == 'discrete':
             self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
@@ -222,7 +215,7 @@ cdef class HeatFlux(Function):
                                          num_elems)
         self.ptr = self.hptr
         self.ptr.incref()
-        
+
         free(elem_ind)
         free(surf)
         return
@@ -248,7 +241,7 @@ cdef class KSTemperature(Function):
         elif ftype == 'pnorm-continuous':
             self.ksptr.setKSDispType(PNORM_TEMP_CONTINUOUS)
         return
-	
+
 cdef class KSMatTemperature(Function):
     cdef TACSKSMatTemperature *ksptr
     def __cinit__(self, Assembler tacs, double ksWeight, int nmats):
