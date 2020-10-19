@@ -98,6 +98,7 @@ cdef class Function:
         if self.ptr:
             self.ptr.decref()
         return
+
     def setDomain(self, list elem_index):
         cdef int num_elems = len(elem_index)
         cdef int *elem_ind = NULL
@@ -115,11 +116,17 @@ cdef class Element:
     def __cinit__(self):
         self.ptr = NULL
         return
+
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
+
+    def getComponentNum(self):
+        return self.ptr.getComponentNum()
+
     def numNodes(self):
         return self.ptr.numNodes()
+
     def getConstitutive(self):
         return _init_Constitutive(self.ptr.getConstitutive())
 
@@ -886,7 +893,6 @@ cdef class Assembler:
             element = self.ptr.getElement(num, NULL, NULL, NULL, NULL)
             nnodes = element.numNodes()
             nvars = element.numVariables()
-            compID = element.getComponentNum()
 
             # Allocate the numpy array and retrieve the internal data
             Xpt = np.zeros(3*nnodes, dtype=dtype)
@@ -899,7 +905,7 @@ cdef class Assembler:
         else:
             raise ValueError('Element index out of range')
 
-        return _init_Element(element), Xpt, vars0, dvars, ddvars, compID
+        return _init_Element(element), Xpt, vars0, dvars, ddvars
 
     def getElementNodes(self, int num):
         '''Get the node numbers associated with the given element'''
