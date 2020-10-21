@@ -253,6 +253,7 @@ cdef extern from "TACSElement.h":
     cdef cppclass TACSElement(TACSObject):
         int numNodes()
         int numVariables()
+        int getComponentNum()
         void setComponentNum(int)
         TACSConstitutive *getConstitutive()
 

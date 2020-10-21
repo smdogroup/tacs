@@ -198,17 +198,17 @@ cdef class RevoluteConstraint(Element):
         if bodyA is not None and bodyB is not None:
             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
                                                   point.ptr, eA.ptr)
-            self.ptr.incref()        
+            self.ptr.incref()
         elif bodyA is not None and bodyB is None:
             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
                                                   point.ptr, eA.ptr)
-            self.ptr.incref()        
+            self.ptr.incref()
         else:
             self.ptr = new TACSRevoluteConstraint(fixed_ref_point,
                                                   point.ptr, eA.ptr,
                                                   inertial_rev_axis)
-            self.ptr.incref()        
-        return    
+            self.ptr.incref()
+        return
     def __dealloc__(self):
         self.ptr.decref()
         return

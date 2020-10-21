@@ -116,10 +116,78 @@ cdef class isoFSDT(FSDT):
         '''
         Wraps the isoFSDTStiffness class that is used with shell elements
         '''
-        self.ptr = new isoFSDTStiffness(rho, E, nu, kcorr, ys, 
+        self.ptr = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
                                         t, tNum, minT, maxT)
         self.ptr.incref()
         return
+
+
+cdef class Ply:
+    cdef OrthoPly *ptr
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        self.ptr.decref()
+        return
+
+cdef class orthoPly(Ply):
+    def __cinit__(self, plyThickness, rho, E1, E2, nu12,
+                  G12,  G23,  G13, Xt, Xc, Yt, Yc, S12, C):
+        '''
+        Wraps the OrthoPly class that is used with composite laminates
+        '''
+        self.ptr = new OrthoPly(plyThickness, rho, E1, E2, nu12,
+                  G12,  G23,  G13, Xt, Xc, Yt, Yc, S12, C)
+        self.ptr.incref()
+        return
+
+cdef class isoPly(Ply):
+    def __cinit__(self, plyThickness, rho, E, nu, ys ):
+        '''
+        Wraps the OrthoPly class that is used with isotropic laminates
+        '''
+        self.ptr = new OrthoPly(plyThickness, rho, E, nu, ys )
+        self.ptr.incref()
+        return
+
+cdef class bladeFSDT(FSDT):
+    def __cinit__(self, _ortho_ply, kcorr,
+                      Lx, Lx_num,
+                      sp, sp_num,
+                      sh, sh_num,
+                      st, st_num,
+                      t, t_num,
+                      np.ndarray[int, ndim=1, mode='c'] pf_nums,
+                      np.ndarray[int, ndim=1, mode='c'] stiff_pf_nums):
+        '''
+        Wraps the bladeFSDTStiffness class that is used with shell elements
+        '''
+        ortho_ply = (<Ply>_ortho_ply).ptr
+
+        self.ptr = new bladeFSDTStiffness(ortho_ply, kcorr, Lx, Lx_num, sp,
+                  sp_num, sh, sh_num, st, st_num, t, t_num, <int*>(pf_nums.data), <int*>(stiff_pf_nums.data))
+        self.ptr.incref()
+        return
+
+    def setStiffenerPitchBounds(self, lb, ub):
+        _dynamicBlade(self.ptr).setStiffenerPitchBounds(lb, ub)
+
+    def setStiffenerHeightBounds(self, lb, ub):
+        _dynamicBlade(self.ptr).setStiffenerHeightBounds(lb, ub)
+
+    def setStiffenerThicknessBounds(self, lb, ub):
+        _dynamicBlade(self.ptr).setStiffenerThicknessBounds(lb, ub)
+
+    def setThicknessBounds(self, lb, ub):
+        _dynamicBlade(self.ptr).setThicknessBounds(lb, ub)
+
+    def setPlyFractions(self, np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fractions):
+        _dynamicBlade(self.ptr).setPlyFractions(<TacsScalar*>ply_fractions.data)
+
+    def setStiffenerPlyFractions(self, np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fractions):
+        _dynamicBlade(self.ptr).setStiffenerPlyFractions(<TacsScalar*>ply_fractions.data)
 
 cdef class PlaneStress(Constitutive):
     def __cinit__(self, *args, **kwargs):

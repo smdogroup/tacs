@@ -98,6 +98,7 @@ cdef class Function:
         if self.ptr:
             self.ptr.decref()
         return
+
     def setDomain(self, list elem_index):
         cdef int num_elems = len(elem_index)
         cdef int *elem_ind = NULL
@@ -115,11 +116,17 @@ cdef class Element:
     def __cinit__(self):
         self.ptr = NULL
         return
+
     def setComponentNum(self, int comp_num):
         self.ptr.setComponentNum(comp_num)
         return
+
+    def getComponentNum(self):
+        return self.ptr.getComponentNum()
+
     def numNodes(self):
         return self.ptr.numNodes()
+
     def getConstitutive(self):
         return _init_Constitutive(self.ptr.getConstitutive())
 
@@ -261,8 +268,8 @@ cdef class Vec:
         cdef int bsize = 0
         cdef np.ndarray values
         bsize = self.ptr.getBlockSize()
-        length = bsize*var.shape[0]
-        values = np.zeros(length)
+        length = var.shape[0]
+        values = np.zeros(bsize*length)
         fail = self.ptr.getValues(length, <int*>var.data, <TacsScalar*>values.data)
         if fail:
             errmsg = 'Vec: Failed on get values. Incorrect indices'

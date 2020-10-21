@@ -42,6 +42,32 @@ cdef extern from "isoFSDTStiffness.h":
                          TacsScalar minThickness, 
                          TacsScalar maxThickness)
 
+cdef extern from "MaterialProperties.h":
+    cdef cppclass OrthoPly(TACSObject):
+        OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
+	    TacsScalar _E1, TacsScalar _E2, TacsScalar _nu12,
+	    TacsScalar _G12, TacsScalar _G23, TacsScalar _G13,
+	    TacsScalar _Xt, TacsScalar _Xc, TacsScalar _Yt, TacsScalar _Yc,
+	    TacsScalar _S12, TacsScalar C)
+        OrthoPly( TacsScalar _plyThickness, TacsScalar _rho,
+                    TacsScalar E, TacsScalar nu, TacsScalar ys )
+
+cdef extern from "bladeFSDTStiffness.h":
+    cdef cppclass bladeFSDTStiffness(FSDTStiffness):
+        bladeFSDTStiffness( OrthoPly * _ortho_ply, TacsScalar _kcorr,
+                      TacsScalar _Lx, int _Lx_num,
+                      TacsScalar _sp, int _sp_num,
+                      TacsScalar _sh, int _sh_num,
+                      TacsScalar _st, int _st_num,
+                      TacsScalar _t, int _t_num,
+                      int _pf_nums[], int _stiff_pf_nums[] )
+        void setStiffenerPitchBounds( TacsScalar _sp_low, TacsScalar _sp_high )
+        void setStiffenerHeightBounds( TacsScalar _sh_low, TacsScalar _sh_high )
+        void setStiffenerThicknessBounds( TacsScalar _st_low, TacsScalar _st_high )
+        void setThicknessBounds( TacsScalar _t_low, TacsScalar _t_high )
+        void setStiffenerPlyFractions( TacsScalar _pf[] )
+        void setPlyFractions( TacsScalar _pf[] )
+
 cdef extern from "TimoshenkoStiffness.h":
     cdef cppclass TimoshenkoStiffness(TACSConstitutive):
         
@@ -149,6 +175,7 @@ cdef class CoupledSolid(Constitutive):
 cdef extern from "":
     PlaneStressStiffness* _dynamicPlaneStress"dynamic_cast<PlaneStressStiffness*>"(TACSConstitutive*)
     FSDTStiffness* _dynamicFSDT"dynamic_cast<FSDTStiffness*>"(TACSConstitutive*)
+    bladeFSDTStiffness* _dynamicBlade"dynamic_cast<bladeFSDTStiffness*>"(TACSConstitutive*)
     SolidStiffness* _dynamicSolid"dynamic_cast<SolidStiffness*>"(TACSConstitutive*)
     TimoshenkoStiffness* _dynamicTimoshenko"dynamic_cast<TimoshenkoStiffness*>"(TACSConstitutive*)
     CoupledThermoPlaneStressStiffness* _dynamicPSThermo"dynamic_cast<CoupledThermoPlaneStressStiffness*>"(TACSConstitutive*)
