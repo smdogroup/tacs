@@ -172,6 +172,33 @@ void TACSAverageTemperature::getElementXptSens( int elemIndex,
   // locations
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
+
+  // Get the element basis class
+  TACSElementBasis *basis = element->getElementBasis();
+
+  if (basis){
+    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
+      double pt[3];
+      double weight = basis->getQuadraturePoint(i, pt);
+
+      TacsScalar temp = 0.0;
+      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                             time, i, pt,
+                                             Xpts, vars, dvars, ddvars,
+                                             &temp);
+
+      if (count >= 1){
+        // Evaluate the determinant of the Jacobian
+        TacsScalar Xd[9], J[9];
+        basis->getJacobianTransform(i, pt, Xpts, Xd, J);
+
+        // Compute the sensitivity contribution
+        TacsScalar dfddetJ = scale*weight*temp*inv_volume;
+        basis->addJacobianTransformXptSens(i, pt, Xd, J, dfddetJ,
+                                           NULL, NULL, dfdXpts);
+      }
+    }
+  }
 }
 
 /*

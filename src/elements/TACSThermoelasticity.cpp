@@ -1619,7 +1619,7 @@ int TACSLinearThermoelasticity3D::evalPointQuantity( int elemIndex,
     return 3;
   }
   else if (quantityType == TACS_TEMPERATURE){
-    *quantity = Ut[6];
+    *quantity = Ut[9];
 
     return 1;
   }
