@@ -319,9 +319,9 @@ cdef class RigidBody(Element):
 
         # Allocate the rigid body object and set the design variables
         self.cptr = new TACSRigidBody(frame.ptr, mass,
-                                       <TacsScalar*>cRef.data,
-                                       <TacsScalar*>JRef.data, r0.ptr,
-                                       v0.ptr, omega0.ptr, g.ptr)
+                                      <TacsScalar*>cRef.data,
+                                      <TacsScalar*>JRef.data, r0.ptr,
+                                      v0.ptr, omega0.ptr, g.ptr)
         self.cptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
         # Increase the reference count to the underlying object

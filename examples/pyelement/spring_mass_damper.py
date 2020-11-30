@@ -9,23 +9,26 @@ class SpringMassDamper(elements.pyElement):
     def __init__(self, num_disps, num_nodes, m, c, k):
         self.m = m
         self.c = c
-        self.k = k    
+        self.k = k
+
+    def getMultiplierIndex(self):
+        return -1
 
     def getInitConditions(self, index, X, v, dv, ddv):
-        '''Define the initial conditions'''
+        """Define the initial conditions"""
         v[0] = -0.5
         dv[0] = 1.0
 
         return
 
     def addResidual(self, index, time, X, v, dv, ddv, res):
-        '''Add the residual of the governing equations'''
+        """Add the residual of the governing equations"""
         res[0] += self.m*ddv[0] + self.c*dv[0] + self.k*v[0]
 
-        return    
+        return
 
     def addJacobian(self, index, time, alpha, beta, gamma, X, v, dv, ddv, res, mat):
-        '''Add the Jacobian of the governing equations'''
+        """Add the Jacobian of the governing equations"""
         res[0] += self.m*ddv[0] + self.c*dv[0] + self.k*v[0]
         mat[0] += alpha*self.k + beta*self.c + gamma*self.m
 
@@ -85,7 +88,10 @@ if __name__ == '__main__':
             t, vec, dvec, ddvec = integrator.getStates(num_steps)
 
             sol = vec.getArray()[0]
-            all_error[-1].append(np.fabs((sol - x_exact)/x_exact))
+            if TACS.dtype is complex:
+                all_error[-1].append(np.fabs((sol.real - x_exact.real)/x_exact.real))
+            else:
+                all_error[-1].append(np.fabs((sol - x_exact)/x_exact))
             all_dt[-1].append(tf/num_steps)
 
     plt.figure()
