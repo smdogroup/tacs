@@ -290,12 +290,12 @@ TacsScalar TACSSolidConstitutive::evalFailure( int elemIndex,
     properties->evalTangentStiffness3D(C);
 
     TacsScalar s[6];
-    s[0] = t*(C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5]);
-    s[1] = t*(C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5]);
-    s[2] = t*(C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5]);
-    s[3] = t*(C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5]);
-    s[4] = t*(C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5]);
-    s[5] = t*(C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5]);
+    s[0] = C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5];
+    s[1] = C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5];
+    s[2] = C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
+    s[3] = C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
+    s[4] = C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
+    s[5] = C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5];
 
     return properties->vonMisesFailure3D(s);
   }
@@ -334,4 +334,3 @@ TacsScalar TACSSolidConstitutive::evalFailureStrainSens( int elemIndex,
   }
   return 0.0;
 }
-

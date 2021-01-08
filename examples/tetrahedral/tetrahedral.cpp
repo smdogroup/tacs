@@ -8,18 +8,27 @@
 #include "TACSElement3D.h"
 #include "TACSStructuralMass.h"
 #include "TACSElementVerification.h"
+#include "TACSKSFailure.h"
+#include "TACSKSTemperature.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
   // Check whether to use elasticity or thoermoelasticity
   int analysis_type = 0;
+  int function_type = 0;
   for ( int i = 0; i < argc; i++ ){
     if (strcmp(argv[i], "conduction") == 0){
       analysis_type = 1;
     }
     else if (strcmp(argv[i], "thermoelasticity") == 0){
       analysis_type = 2;
+    }
+    else if (strcmp(argv[i], "failure") == 0){
+      function_type = 1;
+    }
+    else if (strcmp(argv[i], "temperature") == 0){
+      function_type = 2;
     }
   }
 
@@ -45,7 +54,7 @@ int main( int argc, char *argv[] ){
 
   // Create stiffness (need class)
   TACSSolidConstitutive *stiff =
-    new TACSSolidConstitutive(props);
+    new TACSSolidConstitutive(props, 1.0, 0);
   stiff->incref();
 
   // Create model (need class)
@@ -170,13 +179,28 @@ int main( int argc, char *argv[] ){
 
     // The function that we will use: The KS failure function evaluated
     // over all the elements in the mesh
-    TACSFunction *func = new TACSStructuralMass(assembler);
+    TACSFunction *func = NULL;
+    if (function_type == 1){
+      func = new TACSKSFailure(assembler, 100.0);
+    }
+    else if (function_type == 2){
+      func = new TACSKSTemperature(assembler, 100.0);
+    }
+    else {
+      func = new TACSStructuralMass(assembler);
+    }
     func->incref();
 
     // Evaluate the function
     TacsScalar mass = 0.0;
     assembler->evalFunctions(1, &func, &mass);
-    printf("StructuralMass: %e\n", TacsRealPart(mass));
+    printf("%s: %e\n", func->getObjectName(), TacsRealPart(mass));
+
+#ifdef TACS_USE_COMPLEX
+    assembler->testFunction(func, 1e-30);
+#else
+    assembler->testFunction(func, 1e-6);
+#endif // TACS_USE_COMPLEX
 
     // Create an TACSToFH5 object for writing output to files
     ElementType etype = TACS_SOLID_ELEMENT;
