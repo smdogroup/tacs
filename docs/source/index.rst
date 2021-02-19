@@ -9,12 +9,14 @@ Welcome to TACS's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    install
    interface
-   Example-CRM_Optimization
+   shell_element
+   dynamics
    reference
+   Example-CRM_Optimization
 
 Indices and tables
 ==================

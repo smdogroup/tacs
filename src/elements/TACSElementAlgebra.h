@@ -136,8 +136,6 @@ static inline void vec3Axpy( const TacsScalar a,
   y[2] += a*x[2];
 }
 
-
-
 /*
   Scale the vector by the given scalar
 
@@ -975,6 +973,129 @@ static inline void mat3x3TransMatMultAdd( const TacsScalar A[],
   C[6] += A[2]*B[0] + A[5]*B[3] + A[8]*B[6];
   C[7] += A[2]*B[1] + A[5]*B[4] + A[8]*B[7];
   C[8] += A[2]*B[2] + A[5]*B[5] + A[8]*B[8];
+}
+
+/*
+  Compute the transformation A = T*S*T^{T}
+
+  input:
+  T:  the 3x3 transformation
+  S:  the 3x3 flattened symmetric matrix
+
+  output:
+  A:  the 3x3 flattened symmetric matrix
+*/
+static inline void mat3x3SymmTransform( const TacsScalar T[],
+                                        const TacsScalar S[],
+                                        TacsScalar A[] ){
+  // Compute W = S*T^{T}
+  // [S[0] S[1] S[2]][T[0] T[3] T[6]]
+  // [S[1] S[3] S[4]][T[1] T[4] T[7]]
+  // [S[2] S[4] S[5]][T[2] T[5] T[8]]
+
+  TacsScalar W[9];
+  W[0] = S[0]*T[0] + S[1]*T[1] + S[2]*T[2];
+  W[1] = S[0]*T[3] + S[1]*T[4] + S[2]*T[5];
+  W[2] = S[0]*T[6] + S[1]*T[7] + S[2]*T[8];
+
+  W[3] = S[1]*T[0] + S[3]*T[1] + S[4]*T[2];
+  W[4] = S[1]*T[3] + S[3]*T[4] + S[4]*T[5];
+  W[5] = S[1]*T[6] + S[3]*T[7] + S[4]*T[8];
+
+  W[6] = S[2]*T[0] + S[4]*T[1] + S[5]*T[2];
+  W[7] = S[2]*T[3] + S[4]*T[4] + S[5]*T[5];
+  W[8] = S[2]*T[6] + S[4]*T[7] + S[5]*T[8];
+
+  // Compute the symmetric part of T*W
+  // [T[0] T[1] T[2]][W[0] W[1] W[2]]
+  // [T[3] T[4] T[5]][W[3] W[4] W[5]]
+  // [T[6] T[6] T[8]][W[6] W[7] W[8]]
+  A[0] = T[0]*W[0] + T[1]*W[3] + T[2]*W[6];
+  A[1] = T[0]*W[1] + T[1]*W[4] + T[2]*W[7];
+  A[2] = T[0]*W[2] + T[1]*W[5] + T[2]*W[8];
+
+  A[3] = T[3]*W[1] + T[4]*W[4] + T[5]*W[7];
+  A[4] = T[3]*W[2] + T[4]*W[5] + T[5]*W[8];
+
+  A[5] = T[6]*W[2] + T[7]*W[5] + T[8]*W[8];
+}
+
+/*
+  Compute the transformation A = T^{T}*S*T
+
+  input:
+  T:  the 3x3 transformation
+  S:  the 3x3 flattened symmetric matrix
+
+  output:
+  A:  the 3x3 flattened symmetric matrix
+*/
+static inline void mat3x3SymmTransformTranspose( const TacsScalar T[],
+                                                 const TacsScalar S[],
+                                                 TacsScalar A[] ){
+  // Compute W = S*T
+  // [S[0] S[1] S[2]][T[0] T[1] T[2]]
+  // [S[1] S[3] S[4]][T[3] T[4] T[5]]
+  // [S[2] S[4] S[5]][T[6] T[7] T[8]]
+
+  TacsScalar W[9];
+  W[0] = S[0]*T[0] + S[1]*T[3] + S[2]*T[6];
+  W[1] = S[0]*T[1] + S[1]*T[4] + S[2]*T[7];
+  W[2] = S[0]*T[2] + S[1]*T[5] + S[2]*T[8];
+
+  W[3] = S[1]*T[0] + S[3]*T[3] + S[4]*T[6];
+  W[4] = S[1]*T[1] + S[3]*T[4] + S[4]*T[7];
+  W[5] = S[1]*T[2] + S[3]*T[5] + S[4]*T[8];
+
+  W[6] = S[2]*T[0] + S[4]*T[3] + S[5]*T[6];
+  W[7] = S[2]*T[1] + S[4]*T[4] + S[5]*T[7];
+  W[8] = S[2]*T[2] + S[4]*T[5] + S[5]*T[8];
+
+  // Compute the symmetric part of T^{T}*W
+  // [T[0] T[3] T[6]][W[0] W[1] W[2]]
+  // [T[1] T[4] T[7]][W[3] W[4] W[5]]
+  // [T[2] T[5] T[8]][W[6] W[7] W[8]]
+  A[0] = T[0]*W[0] + T[3]*W[3] + T[6]*W[6];
+  A[1] = T[0]*W[1] + T[3]*W[4] + T[6]*W[7];
+  A[2] = T[0]*W[2] + T[3]*W[5] + T[6]*W[8];
+
+  A[3] = T[1]*W[1] + T[4]*W[4] + T[7]*W[7];
+  A[4] = T[1]*W[2] + T[4]*W[5] + T[7]*W[8];
+
+  A[5] = T[2]*W[2] + T[5]*W[5] + T[8]*W[8];
+}
+
+/*
+  Compute the derivative of the
+
+*/
+static inline void mat3x3SymmTransformTransSens( const TacsScalar T[],
+                                                 const TacsScalar dA[],
+                                                 TacsScalar dS[] ){
+  TacsScalar dW[9];
+  dW[0] = T[0]*dA[0];
+  dW[1] = T[0]*dA[1] + T[1]*dA[3];
+  dW[2] = T[0]*dA[2] + T[1]*dA[4] + T[2]*dA[5];
+
+  dW[3] = T[3]*dA[0];
+  dW[4] = T[3]*dA[1] + T[4]*dA[3];
+  dW[5] = T[3]*dA[2] + T[4]*dA[4] + T[5]*dA[5];
+
+  dW[6] = T[6]*dA[0];
+  dW[7] = T[6]*dA[1] + T[7]*dA[3];
+  dW[8] = T[6]*dA[2] + T[7]*dA[4] + T[8]*dA[5];
+
+  dS[0] = (T[0]*dW[0] + T[1]*dW[1] + T[2]*dW[2]);
+  dS[1] = (T[3]*dW[0] + T[4]*dW[1] + T[5]*dW[2] +
+           T[0]*dW[3] + T[1]*dW[4] + T[2]*dW[5]);
+  dS[2] = (T[6]*dW[0] + T[7]*dW[1] + T[8]*dW[2] +
+           T[0]*dW[6] + T[1]*dW[7] + T[2]*dW[8]);
+
+  dS[3] = (T[3]*dW[3] + T[4]*dW[4] + T[5]*dW[5]);
+  dS[4] = (T[6]*dW[3] + T[7]*dW[4] + T[8]*dW[5] +
+           T[3]*dW[6] + T[4]*dW[7] + T[5]*dW[8]);
+
+  dS[5] = (T[6]*dW[6] + T[7]*dW[7] + T[8]*dW[8]);
 }
 
 /*

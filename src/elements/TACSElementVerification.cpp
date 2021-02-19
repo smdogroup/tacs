@@ -1705,7 +1705,6 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
   return fail;
 }
 
-
 /*
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.

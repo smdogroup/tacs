@@ -22,10 +22,6 @@
 #include "TACSConstitutive.h"
 #include "TACSMaterialProperties.h"
 
-enum TACSShellCoordinateTransform {
-  TACS_NATURAL_SHELL_COORDINATES,
-  TACS_REFERENCE_AXIS_COORDINATES };
-
 /**
   This constitutive class defines the stiffness properties for a
   first-order shear deformation theory type element. This class
@@ -41,19 +37,6 @@ class TACSShellConstitutive : public TACSConstitutive {
                          TacsScalar _t=1.0, int _tNum=-1,
                          TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
   ~TACSShellConstitutive();
-
-  // Set the reference axis used for the transformation
-  void setRefAxis( const TacsScalar _axis[] );
-
-  // Get the type of transformation
-  enum TACSShellCoordinateTransform getTransformType(){
-    return transform_type;
-  }
-
-  // Return the reference axis itself
-  const TacsScalar *getRefAxis(){
-    return axis;
-  }
 
   // Get the number of stresses
   int getNumStresses();
@@ -124,7 +107,6 @@ class TACSShellConstitutive : public TACSConstitutive {
                                         const TacsScalar **D, const TacsScalar **As,
                                         TacsScalar *drill );
 
-
   // Once the stiffness matrices have been evaluated, use this
   // function to compute the stress given the strain components
   inline void evalStress( const TacsScalar A[], const TacsScalar B[],
@@ -139,17 +121,13 @@ class TACSShellConstitutive : public TACSConstitutive {
   // The drilling regularization constant
   static double DRILLING_REGULARIZATION;
 
-  // Reference axis information
-  TACSShellCoordinateTransform transform_type;
-  TacsScalar axis[3]; // The reference axis
-
  private:
   // Store information about the design variable
   TacsScalar t, tlb, tub;
   int tNum;
 
   // The object name
-  static const char * constName;
+  static const char *constName;
 };
 
 /*

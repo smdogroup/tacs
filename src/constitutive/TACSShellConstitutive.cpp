@@ -38,26 +38,12 @@ TACSShellConstitutive::TACSShellConstitutive( TACSMaterialProperties *props,
   tNum = _tNum;
   tlb = _tlb;
   tub = _tub;
-
-  transform_type = TACS_NATURAL_SHELL_COORDINATES;
-  axis[0] = axis[1] = axis[2] = 0.0;
-  axis[0] = 1.0;
 }
 
 TACSShellConstitutive::~TACSShellConstitutive(){
   if (properties){
     properties->decref();
   }
-}
-
-/*
-  Set the reference axis
-*/
-void TACSShellConstitutive::setRefAxis( const TacsScalar _axis[] ){
-  transform_type = TACS_REFERENCE_AXIS_COORDINATES;
-  axis[0] = _axis[0];
-  axis[1] = _axis[1];
-  axis[2] = _axis[2];
 }
 
 int TACSShellConstitutive::getNumStresses(){
@@ -209,7 +195,7 @@ void TACSShellConstitutive::evalTangentStiffness( int elemIndex,
     As[0] = As[2] = (5.0/6.0)*A[5];
     As[1] = 0.0;
 
-    C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + A[2]);
+    C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
   }
   else {
     memset(C, 0, 22*sizeof(TacsScalar));
@@ -229,7 +215,6 @@ void TACSShellConstitutive::extractTangenttStiffness( const TacsScalar *C,
   if (As){ *As = &C[18]; }
   if (drill){ *drill = C[21]; }
 }
-
 
 // Add the contribution
 void TACSShellConstitutive::addStressDVSens( int elemIndex,
