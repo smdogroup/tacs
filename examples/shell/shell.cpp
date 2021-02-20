@@ -6,8 +6,11 @@
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
 
-typedef TACSShellElement<TACSQuadQuadrature, TACSShellQuadQuadraticBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadraticQuadLinearShell;
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadLinearBasis,
+    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
+
+typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadQuadraticBasis,
+    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadQuadraticShell;
 
 /*
   Create the TACSAssembler object and return the associated TACS
@@ -83,8 +86,7 @@ void createAssembler( MPI_Comm comm, int nx, int ny,
         int node = i + (2*nx+1)*j;
         TacsScalar x = (0.5*i)/nx;
         TacsScalar y = (0.5*j)/ny;
-        // TacsScalar z = x*(1.0 - x)*y*(1.0 - y);
-        TacsScalar z = 0.0;
+        TacsScalar z = x*(1.0 - x)*y*(1.0 - y);
         Xpts[3*node] = x;
         Xpts[3*node+1] = y;
         Xpts[3*node+2] = z;
@@ -129,14 +131,17 @@ int main( int argc, char *argv[] ){
   TACSMaterialProperties *props =
     new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  TACSShellTransform *transform = new
-    TACSShellNaturalTransform();
+  // TACSShellTransform *transform = new TACSShellNaturalTransform();
+  TacsScalar axis[] = {0.0, 1.0, 0.0};
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
-  TACSShellConstitutive *con = new
-    TACSShellConstitutive(props);
+  TACSShellConstitutive *con = new TACSShellConstitutive(props);
 
-  TACSQuadraticQuadLinearShell *shell = new TACSQuadraticQuadLinearShell(transform, con);
-  shell->incref();
+  TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
+  linear_shell->incref();
+
+  TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
+  quadratic_shell->incref();
 
   const int NUM_NODES = 9;
   int elemIndex = 0;
@@ -150,12 +155,13 @@ int main( int argc, char *argv[] ){
   TacsGenerateRandomArray(dvars, 6*NUM_NODES);
   TacsGenerateRandomArray(ddvars, 6*NUM_NODES);
 
-  TacsTestElementResidual(shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+  TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+  TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
-  int nx = 100, ny = 100;
+  int nx = 20, ny = 20;
   TACSAssembler *assembler;
   TACSCreator *creator;
-  createAssembler(comm, nx, ny, shell, &assembler, &creator);
+  createAssembler(comm, nx, ny, quadratic_shell, &assembler, &creator);
   assembler->incref();
   creator->incref();
 
@@ -209,7 +215,6 @@ int main( int argc, char *argv[] ){
   f5->incref();
   f5->writeToFile("plate.f5");
 
-
   /*
   // Treat f(A) = trace(D o A) as a function of S via A(S) = T^{T}*S*T
   TacsScalar T[9], S[6], D[6], A[6];
@@ -240,7 +245,8 @@ int main( int argc, char *argv[] ){
   }
   */
 
-  shell->decref();
+  linear_shell->decref();
+  quadratic_shell->decref();
   assembler->decref();
 
   MPI_Finalize();

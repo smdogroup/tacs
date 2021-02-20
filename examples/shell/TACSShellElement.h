@@ -2,6 +2,7 @@
 #define TACS_SHELL_ELEMENT_H
 
 #include "TACSShellElementModel.h"
+#include "TACSShellElementBasis.h"
 #include "TACSGaussQuadrature.h"
 #include "TACSElementAlgebra.h"
 #include "TACSShellConstitutive.h"
@@ -64,6 +65,75 @@ class TACSShellNaturalTransform : public TACSShellTransform {
     T[5] = n[1];
     T[8] = n[2];
   }
+};
+
+
+class TACSShellRefAxisTransform : public TACSShellTransform {
+ public:
+  TACSShellRefAxisTransform( const TacsScalar _axis[] ){
+    axis[0] = _axis[0];
+    axis[1] = _axis[1];
+    axis[2] = _axis[2];
+
+    TacsScalar norm = sqrt(vec3Dot(axis, axis));
+    TacsScalar invNorm = 0.0;
+    if (norm != 0.0){
+      invNorm = 1.0/norm;
+    }
+    vec3Scale(invNorm, axis);
+  }
+
+  void computeTransform( const TacsScalar Xxi[], TacsScalar T[] ){
+    // Compute the transformation
+    TacsScalar a[3], b[3];
+    a[0] = Xxi[0];
+    a[1] = Xxi[2];
+    a[2] = Xxi[4];
+
+    b[0] = Xxi[1];
+    b[1] = Xxi[3];
+    b[2] = Xxi[5];
+
+    // Compute the normal direction
+    TacsScalar n[3];
+    crossProduct(a, b, n);
+
+    // Normalize the normal direction
+    TacsScalar invNorm = 1.0/sqrt(vec3Dot(n, n));
+    vec3Scale(invNorm, n);
+
+    // Compute the dot product with
+    TacsScalar an = vec3Dot(axis, n);
+
+    // Take the component of the reference axis perpendicular
+    // to the surface
+    a[0] = axis[0] - an*n[0];
+    a[1] = axis[1] - an*n[1];
+    a[2] = axis[2] - an*n[2];
+
+    // Normalize the new direction
+    TacsScalar inv = 1.0/sqrt(vec3Dot(a, a));
+    vec3Scale(inv, a);
+
+    // Compute the second perpendicular direction
+    crossProduct(1.0, n, a, b);
+
+    // Set the components of the transformation
+    T[0] = a[0];
+    T[3] = a[1];
+    T[6] = a[2];
+
+    T[1] = b[0];
+    T[4] = b[1];
+    T[7] = b[2];
+
+    T[2] = n[0];
+    T[5] = n[1];
+    T[8] = n[2];
+  }
+
+ private:
+  TacsScalar axis[3];
 };
 
 /*
@@ -160,406 +230,147 @@ class TACSLinearizedRotation {
   }
 };
 
-/**
-  Defines the quadrature over both the face and quadrature
+
+
+/*
+  The director class.
+
+  Given a reference vector, t, from the element geometry, the director computes
+  the exact or approximate rate of change of the displacement t.
 */
-class TACSQuadQuadrature {
+class TACSQuaternionDirector : public TACSObject {
  public:
-  static int getNumParameters(){
-    return 2;
-  }
-  static int getNumQuadraturePoints(){
-    return 9;
-  }
-  static double getQuadratureWeight( int n ){
-    return TacsGaussQuadWts3[n % 3]*TacsGaussQuadWts3[n / 3];
-  }
-  static double getQuadraturePoint( int n, double pt[] ){
-    pt[0] = TacsGaussQuadPts3[n % 3];
-    pt[1] = TacsGaussQuadPts3[n / 3];
 
-    return TacsGaussQuadWts3[n % 3]*TacsGaussQuadWts3[n/3];
-  }
-  static int getNumFaces(){
-    return 4;
-  }
-  static int getNumFaceQuadraturePoints( int face ){
-    return 3;
-  }
-  static double getFaceQuadraturePoint( int face, int n,
-                                        double pt[],
-                                        double t[] ){
-    if (face/2 == 0){
-      pt[0] = -1.0 + 2.0*(face % 2);
-      pt[1] = TacsGaussQuadPts3[n];
-    }
-    else {
-      pt[0] = TacsGaussQuadPts3[n];
-      pt[1] = -1.0 + 2.0*(face % 2);
-    }
+  static const int NUM_PARAMETERS = 5;
 
-    if (face == 0){
-      // -X edge
-      t[0] = 0.0;  t[1] = -1.0;
-    }
-    else if (face == 1){
-      // +X edge
-      t[0] = 0.0;  t[1] = 1.0;
-    }
-    else if (face == 2){
-      // -Y edge
-      t[0] = 1.0;  t[1] = 0.0;
-    }
-    else if (face == 3){
-      // +Y edge
-      t[0] = -1.0;  t[1] = 0.0;
-    }
+  /**
+    Compute the director at a point.
 
-    return TacsGaussQuadWts3[n];
+    d = Q(q)*t = (C(q)^{T} - I)*t
+
+    @param q The input rotation parametrization
+    @param t The reference direction
+    @param d The director values
+  */
+  static void computeDirector( const TacsScalar q[],
+                               const TacsScalar t[],
+                               TacsScalar d[] ){
+    // Compute Q = C^{T} - I
+    TacsScalar Q[9];
+    Q[0] =-2.0*(q[2]*q[2] + q[3]*q[3]);
+    Q[1] = 2.0*(q[2]*q[1] - q[3]*q[0]);
+    Q[2] = 2.0*(q[3]*q[1] + q[2]*q[0]);
+
+    Q[3] = 2.0*(q[1]*q[2] + q[3]*q[0]);
+    Q[4] =-2.0*(q[1]*q[1] + q[3]*q[3]);
+    Q[5] = 2.0*(q[3]*q[2] - q[1]*q[0]);
+
+    Q[6] = 2.0*(q[1]*q[3] - q[2]*q[0]);
+    Q[7] = 2.0*(q[2]*q[3] + q[1]*q[0]);
+    Q[8] =-2.0*(q[1]*q[1] + q[2]*q[2]);
+
+    // Compute d = Q*t
+    d[0] = Q[0]*t[0] + Q[1]*t[1] + Q[2]*t[2];
+    d[1] = Q[3]*t[0] + Q[4]*t[1] + Q[5]*t[2];
+    d[2] = Q[6]*t[0] + Q[7]*t[1] + Q[8]*t[2];
   }
+
+  /*
+    Compute the director and rates at a point.
+
+    d = Q(q)*t = (C(q)^{T} - I)*t
+    ddot = d/dt(Q(q))*t
+    dddot = d^2/dt^2(Q(q))*t
+
+    @param q The input rotation parametrization
+    @param t The reference direction
+    @param d The director values
+  */
+  // void computeDirectorRates( const TacsScalar q[],
+  //                            const TacsScalar qdot[],
+  //                            const TacsScalar qddot[],
+  //                            const TacsScalar t[],
+  //                            TacsScalar d[],
+  //                            TacsScalar ddot[],
+  //                            TacsScalar dddot[] ){
+  //   oid TACSShellQuaternion::getAngularAcceleration( const int num_nodes,
+  //                                                 const int vars_per_node,
+  //                                                 const TacsScalar fn[],
+  //                                                 const TacsScalar vars[],
+  //                                                 const TacsScalar dvars[],
+  //                                                 const TacsScalar ddvars[],
+  //                                                 TacsScalar omega[],
+  //                                                 TacsScalar domega[] )
+
+  // for ( int i = 0; i < num_nodes; i++ ){
+  //   TacsScalar eta = vars[0];
+  //   const TacsScalar *eps = &vars[1];
+  //   TacsScalar deta = dvars[0];
+  //   const TacsScalar *deps = &dvars[1];
+  //   TacsScalar ddeta = ddvars[0];
+  //   const TacsScalar *ddeps = &ddvars[1];
+
+  //   // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
+  //   TacsScalar omeg[3];
+  //   crossProduct(-2.0, eps, deps, omega);
+  //   vecAxpy(2.0*eta, deps, omega);
+  //   vecAxpy(-2.0*deta, eps, omega);
+
+  //   // domega = S(q)*ddot{q}
+  //   TacsScalar domeg[3];
+  //   crossProduct(-2.0, eps, ddeps, domeg);
+  //   vecAxpy(2.0*eta, ddeps, domeg);
+  //   vecAxpy(-2.0*ddeta, eps, domeg);
+
+  //   TacsScalar tmp = 0.0;
+  //   tmp = vecDot(omeg, fn);
+  //   omega[0] = omeg[0] - tmp*fn[0];
+  //   omega[1] = omeg[1] - tmp*fn[1];
+  //   omega[2] = omeg[2] - tmp*fn[2];
+
+  //   tmp = vecDot(domeg, fn);
+  //   domega[0] = domeg[0] - tmp*fn[0];
+  //   domega[1] = domeg[1] - tmp*fn[1];
+  //   domega[2] = domeg[2] - tmp*fn[2];
+
+  //   fn += 3;
+  //   vars += vars_per_node;
+  //   dvars += vars_per_node;
+  //   ddvars += vars_per_node;
+  //   omega += 3;
+  //   domega += 3;
+  // }
+
+  // }
+
+  /*
+    Given the derivatives of the kinetic energy expression with respect to time,
+    add the contributions to the derivative of the
+
+    Given the partial derivatives of the Lagrangian with respect to the
+    director and the time derivative of the vector, compute
+
+    ddtdTddot = d/dt(dT/d(ddot))
+    dTddot = dT/d(dot)
+
+    Compute:
+
+    res += scale*(d/dt(dT/d(ddot))*d(ddot)/d(qdot) + dT/d(ddot)*d/dt(d(ddot)/d(qdot)))
+
+  */
+//  void addResidual( TacsScalar scale,
+//                    const TacsScalar ddtdTddot[],
+//                    const TacsScalar dTddot[],
+//                    const TacsScalar dLdd[],
+//                    const TacsScalar t[],
+//                    TacsScalar res[] ){
+//     TacsScalar ddot
+
+
+//     res[0] +=
+//   }
 };
 
-class TACSShellQuadQuadraticBasis {
- public:
-  static const int NUM_NODES = 9;
-
-  // Set the number of tying points for each of the 5 components
-  // of the tying strain
-  static const int NUM_G11_TYING_POINTS = 6;
-  static const int NUM_G22_TYING_POINTS = 6;
-  static const int NUM_G12_TYING_POINTS = 4;
-  static const int NUM_G13_TYING_POINTS = 6;
-  static const int NUM_G23_TYING_POINTS = 6;
-
-  static const int NUM_TYING_POINTS =
-    NUM_G11_TYING_POINTS +
-    NUM_G22_TYING_POINTS +
-    NUM_G12_TYING_POINTS +
-    NUM_G13_TYING_POINTS +
-    NUM_G23_TYING_POINTS;
-
-  static void getNodePoint( const int n, double pt[] ){
-    pt[0] = -1.0 + 1.0*(n % 3);
-    pt[1] = -1.0 + 1.0*(n / 3);
-  }
-  static ElementLayout getLayoutType(){
-    return TACS_QUAD_QUADRATIC_ELEMENT;
-  }
-
-  static void interpFields( const double pt[],
-                            const int vars_per_node,
-                            const TacsScalar values[],
-                            const int m,
-                            TacsScalar field[] ){
-    double na[3];
-    na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-    na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-    na[2] = 0.5*(1.0 + pt[0])*pt[0];
-
-    double nb[3];
-    nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-    nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-    nb[2] = 0.5*(1.0 + pt[1])*pt[1];
-
-    for ( int k = 0; k < m; k++ ){
-      field[k] = 0.0;
-    }
-
-    for ( int j = 0; j < 3; j++ ){
-      for ( int i = 0; i < 3; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          field[k] += na[i]*nb[j]*values[k];
-        }
-        values += vars_per_node;
-      }
-    }
-  }
-
-  static void addInterpFieldsTranspose( const double pt[],
-                                        const int m,
-                                        const TacsScalar field[],
-                                        const int vars_per_node,
-                                        TacsScalar values[] ){
-    double na[3];
-    na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-    na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-    na[2] = 0.5*(1.0 + pt[0])*pt[0];
-
-    double nb[3];
-    nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-    nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-    nb[2] = 0.5*(1.0 + pt[1])*pt[1];
-
-    for ( int j = 0; j < 3; j++ ){
-      for ( int i = 0; i < 3; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          values[k] += na[i]*nb[j]*field[k];
-        }
-        values += vars_per_node;
-      }
-    }
-  }
-
-  static void interpFieldsGrad( const double pt[],
-                                const int vars_per_node,
-                                const TacsScalar values[],
-                                const int m,
-                                TacsScalar grad[] ){
-    double na[3];
-    na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-    na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-    na[2] = 0.5*(1.0 + pt[0])*pt[0];
-
-    double nb[3];
-    nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-    nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-    nb[2] = 0.5*(1.0 + pt[1])*pt[1];
-
-    double dna[3];
-    dna[0] = -0.5 + pt[0];
-    dna[1] = -2.0*pt[0];
-    dna[2] = 0.5 + pt[0];
-
-    double dnb[3];
-    dnb[0] = -0.5 + pt[1];
-    dnb[1] = -2.0*pt[1];
-    dnb[2] = 0.5 + pt[1];
-
-    for ( int k = 0; k < m; k++ ){
-      grad[2*k] = 0.0;
-      grad[2*k+1] = 0.0;
-    }
-
-    for ( int j = 0; j < 3; j++ ){
-      for ( int i = 0; i < 3; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          grad[2*k]   += dna[i]*nb[j]*values[k];
-          grad[2*k+1] += na[i]*dnb[j]*values[k];
-        }
-        values += vars_per_node;
-      }
-    }
-  }
-
-  static void addInterpFieldsGradTranspose( const double pt[],
-                                            const int m,
-                                            TacsScalar grad[],
-                                            const int vars_per_node,
-                                            TacsScalar values[] ){
-    double na[3];
-    na[0] = -0.5*pt[0]*(1.0 - pt[0]);
-    na[1] = (1.0 - pt[0])*(1.0 + pt[0]);
-    na[2] = 0.5*(1.0 + pt[0])*pt[0];
-
-    double nb[3];
-    nb[0] = -0.5*pt[1]*(1.0 - pt[1]);
-    nb[1] = (1.0 - pt[1])*(1.0 + pt[1]);
-    nb[2] = 0.5*(1.0 + pt[1])*pt[1];
-
-    double dna[3];
-    dna[0] = -0.5 + pt[0];
-    dna[1] = -2.0*pt[0];
-    dna[2] = 0.5 + pt[0];
-
-    double dnb[3];
-    dnb[0] = -0.5 + pt[1];
-    dnb[1] = -2.0*pt[1];
-    dnb[2] = 0.5 + pt[1];
-
-    for ( int j = 0; j < 3; j++ ){
-      for ( int i = 0; i < 3; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          values[k] += (dna[i]*nb[j]*grad[2*k] + na[i]*dnb[j]*grad[2*k+1]);
-        }
-        values += vars_per_node;
-      }
-    }
-  }
-
-  static int getNumTyingFields(){
-    return 5;
-  }
-  static int getNumTyingPoints( const int field ){
-    if (field == 0){ return 6; }
-    else if (field == 1){ return 6; }
-    else if (field == 2){ return 4; }
-    else if (field == 3){ return 6; }
-    else if (field == 4){ return 6; }
-    return 0;
-  }
-  static void getTyingPoint( const int field,
-                             const int ty,
-                             double pt[] ){
-    const double s = 0.774596669241483;
-    const double t = 0.577350269189626;
-
-    if (field == 0 || field == 4){ // g11 or g13
-      if (ty % 2 == 0){
-        pt[0] = -t;
-      }
-      else {
-        pt[0] = t;
-      }
-      if (ty / 2 == 0){
-        pt[1] = -s;
-      }
-      else if (ty / 2 == 1){
-        pt[1] = 0.0;
-      }
-      else {
-        pt[1] = s;
-      }
-    }
-    else if (field == 1 || field == 3){ // g22 or g23
-      if (ty / 2 == 0){
-        pt[1] = -s;
-      }
-      else if (ty / 2 == 1){
-        pt[1] = 0.0;
-      }
-      else {
-        pt[1] = s;
-      }
-      if (ty % 2 == 0){
-        pt[1] = -t;
-      }
-      else {
-        pt[1] = t;
-      }
-    }
-    else { // (field == 2) g12
-      if (ty % 2 == 0){
-        pt[0] = -t;
-      }
-      else {
-        pt[0] = t;
-      }
-      if (ty / 2 == 0){
-        pt[1] = -t;
-      }
-      else {
-        pt[1] = t;
-      }
-    }
-  }
-  static TacsScalar interpTying( const int field,
-                                 const double pt[],
-                                 const TacsScalar ety[] ){
-    const double s = 0.774596669241483;
-    const double t = 0.577350269189626;
-    const double tinv = 1.0/t;
-    const double sinv = 1.0/(s*s);
-
-    TacsScalar value = 0.0;
-    if (field == 0 || field == 4){
-      double ntu[2];
-      ntu[0] = 0.5*tinv*(t - pt[0]);
-      ntu[1] = 0.5*tinv*(t + pt[0]);
-
-      double nv[3];
-      nv[0] = 0.5*sinv*pt[1]*(pt[1] - s);
-      nv[1] = sinv*(s - pt[1])*(s + pt[1]);
-      nv[2] = 0.5*sinv*pt[1]*(s + pt[1]);
-
-      for ( int j = 0; j < 3; j++ ){
-        for ( int i = 0; i < 2; i++ ){
-          value += ntu[i]*nv[j]*ety[i + 2*j];
-        }
-      }
-    }
-    else if (field == 1 || field == 3){
-      double nu[3];
-      nu[0] = 0.5*sinv*pt[0]*(pt[0] - s);
-      nu[1] = sinv*(s - pt[0])*(s + pt[0]);
-      nu[2] = 0.5*sinv*pt[0]*(s + pt[0]);
-
-      double ntv[2];
-      ntv[0] = 0.5*tinv*(t - pt[1]);
-      ntv[1] = 0.5*tinv*(t + pt[1]);
-
-      for ( int j = 0; j < 2; j++ ){
-        for ( int i = 0; i < 3; i++ ){
-          value += nu[i]*ntv[j]*ety[i + 3*j];
-        }
-      }
-    }
-    else { // field == 2
-      double ntu[2];
-      ntu[0] = 0.5*tinv*(t - pt[0]);
-      ntu[1] = 0.5*tinv*(t + pt[0]);
-
-      double ntv[2];
-      ntv[0] = 0.5*tinv*(t - pt[1]);
-      ntv[1] = 0.5*tinv*(t + pt[1]);
-
-      for ( int j = 0; j < 2; j++ ){
-        for ( int i = 0; i < 2; i++ ){
-          value += ntu[i]*ntv[j]*ety[i + 2*j];
-        }
-      }
-    }
-
-    return value;
-  }
-
-  static void addInterpTyingTranspose( const int field,
-                                       const double pt[],
-                                       const TacsScalar value,
-                                       TacsScalar ety[] ){
-    const double s = 0.774596669241483;
-    const double t = 0.577350269189626;
-    const double tinv = 1.0/t;
-    const double sinv = 1.0/(s*s);
-
-    if (field == 0 || field == 4){
-      double ntu[2];
-      ntu[0] = 0.5*tinv*(t - pt[0]);
-      ntu[1] = 0.5*tinv*(t + pt[0]);
-
-      double nv[3];
-      nv[0] = 0.5*sinv*pt[1]*(pt[1] - s);
-      nv[1] = sinv*(s - pt[1])*(s + pt[1]);
-      nv[2] = 0.5*sinv*pt[1]*(s + pt[1]);
-
-      for ( int j = 0; j < 3; j++ ){
-        for ( int i = 0; i < 2; i++ ){
-          ety[i + 2*j] += ntu[i]*nv[j]*value;
-        }
-      }
-    }
-    else if (field == 1 || field == 3){
-      double nu[3];
-      nu[0] = 0.5*sinv*pt[0]*(pt[0] - s);
-      nu[1] = sinv*(s - pt[0])*(s + pt[0]);
-      nu[2] = 0.5*sinv*pt[0]*(s + pt[0]);
-
-      double ntv[2];
-      ntv[0] = 0.5*tinv*(t - pt[1]);
-      ntv[1] = 0.5*tinv*(t + pt[1]);
-
-      for ( int j = 0; j < 2; j++ ){
-        for ( int i = 0; i < 3; i++ ){
-          ety[i + 3*j] += nu[i]*ntv[j]*value;
-        }
-      }
-    }
-    else { // field == 2
-      double ntu[2];
-      ntu[0] = 0.5*tinv*(t - pt[0]);
-      ntu[1] = 0.5*tinv*(t + pt[0]);
-
-      double ntv[2];
-      ntv[0] = 0.5*tinv*(t - pt[1]);
-      ntv[1] = 0.5*tinv*(t + pt[1]);
-
-      for ( int j = 0; j < 2; j++ ){
-        for ( int i = 0; i < 2; i++ ){
-          ety[i + 2*j] += ntu[i]*ntv[j]*value;
-        }
-      }
-    }
-  }
-};
 
 
 template <class quadrature, class basis, class director, class model>
@@ -601,6 +412,19 @@ class TACSShellElement : public TACSElement {
                     const TacsScalar *dvars,
                     const TacsScalar *ddvars,
                     TacsScalar *res );
+
+/*
+  void addJacobian( int elemIndex, double time,
+                    TacsScalar alpha,
+                    TacsScalar beta,
+                    TacsScalar gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[],
+                    TacsScalar res[],
+                    TacsScalar mat[] );
+*/
 
   void getOutputData( int elemIndex,
                       ElementType etype,
@@ -789,9 +613,9 @@ void TACSShellElement<quadrature, basis, director, model>::
       negXdinvXdz[i] *= -1.0;
     }
 
-    // Compute XdinvTT = Xdinv*T^{T}
-    TacsScalar XdinvTT[9];
-    mat3x3MatTransMult(Xdinv, T, XdinvTT);
+    // Compute XdinvT = Xdinv*T
+    TacsScalar XdinvT[9];
+    mat3x3MatMult(Xdinv, T, XdinvT);
 
     // Compute the director field and the gradient of the director
     // field at the specified point
@@ -803,32 +627,32 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar u0xi[6];
     basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
 
-    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvTT
+    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
     // Output: u0x, u1x
 
-    // Compute the transformation u0x = T*ueta*Xdinv*T^{T}
-    // u0x = T*u0d*Xdinv*T^{T}
+    // Set u0x = [u0,xi ; d]
     TacsScalar u0x[9];
     assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
 
-    // u1x = T*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T^{T}
+    // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
     TacsScalar u1x[9], tmp[9];
     assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
     mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
-    mat3x3MatMult(T, u1x, tmp);
-    mat3x3MatMult(tmp, XdinvTT, u1x);
+    mat3x3TransMatMult(T, u1x, tmp);
+    mat3x3MatMult(tmp, XdinvT, u1x);
 
-    // Compute u0x = T*[u0,xi ; d]*Xdinv*T^{T}
-    mat3x3MatMult(u0x, XdinvTT, tmp);
-    mat3x3MatMult(T, tmp, u0x);
+    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+    // u0x = T^{T}*u0d*Xdinv*T
+    mat3x3MatMult(u0x, XdinvT, tmp);
+    mat3x3TransMatMult(T, tmp, u0x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
     model::template interpTyingStrain<basis>(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvTT^{T}*gty*XdinvTT
-    mat3x3SymmTransformTranspose(XdinvTT, gty, e0ty);
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
     TacsScalar e[9]; // The components of the strain
@@ -926,9 +750,9 @@ void TACSShellElement<quadrature, basis, director, model>::
       negXdinvXdz[i] *= -1.0;
     }
 
-    // Compute XdinvTT = Xdinv*T^{T}
-    TacsScalar XdinvTT[9];
-    mat3x3MatTransMult(Xdinv, T, XdinvTT);
+    // Compute XdinvT = Xdinv*T
+    TacsScalar XdinvT[9];
+    mat3x3MatMult(Xdinv, T, XdinvT);
 
     // Compute the director field and the gradient of the director
     // field at the specified point
@@ -940,32 +764,32 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar u0xi[6];
     basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
 
-    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvTT
+    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
     // Output: u0x, u1x
 
-    // Compute the transformation u0x = T*ueta*Xdinv*T^{T}
-    // u0x = T*u0d*Xdinv*T^{T}
+    // Set u0x = [u0,xi ; d]
     TacsScalar u0x[9];
     assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
 
-    // u1x = T*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T^{T}
+    // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
     TacsScalar u1x[9], tmp[9];
     assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
     mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
-    mat3x3MatMult(T, u1x, tmp);
-    mat3x3MatMult(tmp, XdinvTT, u1x);
+    mat3x3TransMatMult(T, u1x, tmp);
+    mat3x3MatMult(tmp, XdinvT, u1x);
 
-    // Compute u0x = T*[u0,xi ; d]*Xdinv*T^{T}
-    mat3x3MatMult(u0x, XdinvTT, tmp);
-    mat3x3MatMult(T, tmp, u0x);
+    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+    // u0x = T^{T}*u0d*Xdinv*T
+    mat3x3MatMult(u0x, XdinvT, tmp);
+    mat3x3TransMatMult(T, tmp, u0x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
     model::template interpTyingStrain<basis>(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvTT^{T}*gty*XdinvTT
-    mat3x3SymmTransformTranspose(XdinvTT, gty, e0ty);
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
     TacsScalar e[9]; // The components of the strain
@@ -982,22 +806,22 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
     TacsScalar dgty[6];
-    mat3x3SymmTransformTransSens(XdinvTT, de0ty, dgty);
+    mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
 
     // Evaluate the tying strain
     model::template addInterpTyingStrainTranspose<basis>(pt, dgty, dety);
 
-    // Compute du0d = T^{T}*(du0x*XdinvTT^{T} + du1x*XdinvTT^{T}*negXdinvXdz^{T})
+    // Compute du0d = T*(du0x*XdinvT^{T} + du1x*XdinvT^{T}*negXdinvXdz^{T})
     TacsScalar du0d[9];
-    mat3x3MatTransMult(du1x, XdinvTT, du0d);
+    mat3x3MatTransMult(du1x, XdinvT, du0d);
     mat3x3MatTransMult(du0d, negXdinvXdz, tmp);
-    mat3x3MatTransMultAdd(du0x, XdinvTT, tmp);
-    mat3x3TransMatMult(T, tmp, du0d);
+    mat3x3MatTransMultAdd(du0x, XdinvT, tmp);
+    mat3x3MatMult(T, tmp, du0d);
 
-    // Compute du1d = T^{T}*du1x*XdinvTT^{T}
+    // Compute du1d = T*du1x*XdinvT^{T}
     TacsScalar du1d[9];
-    mat3x3MatTransMult(du1x, XdinvTT, tmp);
-    mat3x3TransMatMult(T, tmp, du1d);
+    mat3x3MatTransMult(du1x, XdinvT, tmp);
+    mat3x3MatMult(T, tmp, du1d);
 
     // du0d = [du0xi; dd0]
     TacsScalar du0xi[6], dd0[3];
@@ -1025,10 +849,29 @@ void TACSShellElement<quadrature, basis, director, model>::
   }
 
   for ( int i = 0; i < basis::NUM_NODES; i++ ){
-    res[5 + 6*i] += 0.5*vars[5 + 6*i];
+    res[5 + 6*i] += vars[5 + 6*i];
   }
 }
 
+/*
+  Add the residual to the provided vector
+*/
+/*
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+  addJacobian( int elemIndex, double time,
+               TacsScalar alpha,
+               TacsScalar beta,
+               TacsScalar gamma,
+               const TacsScalar Xpts[],
+               const TacsScalar vars[],
+               const TacsScalar dvars[],
+               const TacsScalar ddvars[],
+               TacsScalar res[],
+               TacsScalar mat[] ){
+
+}
+*/
 
 /*
   Get the element data for the basis
@@ -1099,9 +942,9 @@ void TACSShellElement<quadrature, basis, director, model>::
       negXdinvXdz[i] *= -1.0;
     }
 
-    // Compute XdinvTT = Xdinv*T^{T}
-    TacsScalar XdinvTT[9];
-    mat3x3MatTransMult(Xdinv, T, XdinvTT);
+    // Compute XdinvT = Xdinv*T
+    TacsScalar XdinvT[9];
+    mat3x3MatTransMult(Xdinv, T, XdinvT);
 
     // Compute the director field and the gradient of the director
     // field at the specified point
@@ -1113,32 +956,32 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar u0xi[6];
     basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
 
-    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvTT
+    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
     // Output: u0x, u1x
 
-    // Compute the transformation u0x = T*ueta*Xdinv*T^{T}
-    // u0x = T*u0d*Xdinv*T^{T}
+    // Set u0x = [u0,xi ; d]
     TacsScalar u0x[9];
     assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
 
-    // u1x = T*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T^{T}
+    // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
     TacsScalar u1x[9], tmp[9];
     assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
     mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
-    mat3x3MatMult(T, u1x, tmp);
-    mat3x3MatMult(tmp, XdinvTT, u1x);
+    mat3x3TransMatMult(T, u1x, tmp);
+    mat3x3MatMult(tmp, XdinvT, u1x);
 
-    // Compute u0x = T*[u0,xi ; d]*Xdinv*T^{T}
-    mat3x3MatMult(u0x, XdinvTT, tmp);
-    mat3x3MatMult(T, tmp, u0x);
+    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+    // u0x = T^{T}*u0d*Xdinv*T
+    mat3x3MatMult(u0x, XdinvT, tmp);
+    mat3x3TransMatMult(T, tmp, u0x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
     model::template interpTyingStrain<basis>(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvTT^{T}*gty*XdinvTT
-    mat3x3SymmTransformTranspose(XdinvTT, gty, e0ty);
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
     TacsScalar e[9]; // The components of the strain

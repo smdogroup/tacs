@@ -1,0 +1,100 @@
+/*
+  This file is part of TACS: The Toolkit for the Analysis of Composite
+  Structures, a parallel finite-element code for structural and
+  multidisciplinary design optimization.
+
+  Copyright (C) 2010 University of Toronto
+  Copyright (C) 2012 University of Michigan
+  Copyright (C) 2014 Georgia Tech Research Corporation
+  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
+  R.R.A. Martins All rights reserved.
+
+  TACS is licensed under the Apache License, Version 2.0 (the
+  "License"); you may not use this software except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+*/
+
+#ifndef TACS_COMPOSITE_SHELL_CONSTITUTIVE_H
+#define TACS_COMPOSITE_SHELL_CONSTITUTIVE_H
+
+#include "TACSMaterialProperties.h"
+#include "TACSShellConstitutive.h"
+
+class TACSCompositeShellConstitutive : public TACSShellConstitutive {
+ public:
+  TACSCompositeShellConstitutive( TACSOrthotropicPly **_ply_props,
+                                  const TacsScalar *_ply_thickness,
+                                  const TacsScalar *_ply_angles,
+                                  int _num_plies );
+  ~TACSCompositeShellConstitutive();
+
+  // Retrieve the global design variable numbers
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+
+  // Set the element design variable from the design vector
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  // Get the element design variables values
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  // Get the lower and upper bounds for the design variable values
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
+
+  // Evaluate the material density
+  TacsScalar evalDensity( int elemIndex, const double pt[],
+                          const TacsScalar X[] );
+
+  // Add the derivative of the density
+  void addDensityDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
+                         int dvLen, TacsScalar dfdx[] );
+
+  // Evaluate the specific heat
+  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
+                               const TacsScalar X[] );
+
+  // Evaluate the stresss
+  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
+                   const TacsScalar strain[], TacsScalar stress[] );
+
+  // Evaluate the tangent stiffness
+  void evalTangentStiffness( int elemIndex, const double pt[],
+                             const TacsScalar X[], TacsScalar C[] );
+
+  // Add the contribution
+  void addStressDVSens( int elemIndex, TacsScalar scale,
+                        const double pt[], const TacsScalar X[],
+                        const TacsScalar strain[], const TacsScalar psi[],
+                        int dvLen, TacsScalar dfdx[] );
+
+  // Evaluate the thermal strain
+  void evalThermalStrain( int elemIndex, const double pt[],
+                          const TacsScalar X[], TacsScalar theta,
+                          TacsScalar strain[] );
+
+  // Evaluate the heat flux, given the thermal gradient
+  void evalHeatFlux( int elemIndex, const double pt[],
+                     const TacsScalar X[], const TacsScalar grad[],
+                     TacsScalar flux[] );
+
+  // Evaluate the tangent of the heat flux
+  void evalTangentHeatFlux( int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[] );
+
+  // The name of the constitutive object
+  const char *getObjectName();
+
+ private:
+  // Store information about the design variable
+  TACSOrthotropicPly *ply_props;
+  TacsScalar *ply_thickness, *ply_angles;
+  int num_plies;
+
+  // The object name
+  static const char *constName;
+};
+
+#endif // TACS_COMPOSITE_SHELL_CONSTITUTIVE_H
