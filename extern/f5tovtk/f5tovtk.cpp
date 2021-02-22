@@ -8,7 +8,7 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
+
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
@@ -29,7 +29,7 @@ int main( int argc, char * argv[] ){
 
   int plot_displaced_shape = 0;
 
-  // Convert hdf5 file argv[1] to 
+  // Convert hdf5 file argv[1] to
   if (argc == 1){
     fprintf(stderr, "Error, no input files\n");
     return (1);
@@ -50,12 +50,12 @@ int main( int argc, char * argv[] ){
     int len = strlen(infile);
     int i = len-1;
     for ( ; i >= 0; i-- ){
-      if (infile[i] == '.'){ break; }     
+      if (infile[i] == '.'){ break; }
     }
     strcpy(outfile, infile);
     strcpy(&outfile[i], ".vtk");
 
-    printf("Trying to convert FH5 file %s to vtk file %s\n", 
+    printf("Trying to convert FH5 file %s to vtk file %s\n",
            infile, outfile);
 
     // Open the output file
@@ -99,7 +99,7 @@ int main( int argc, char * argv[] ){
         fprintf(stderr, "Error, zone not defined\n");
         break;
       }
-      
+
       if (strcmp(zone_name, "components") == 0){
         void *vdata;
         if (file->getZoneData(&zone_name, &var_names, &dtype,
@@ -126,7 +126,7 @@ int main( int argc, char * argv[] ){
         // Initialize the tecplot file with the variables
         vars = new char[ strlen(var_names)+1 ];
         strcpy(vars, var_names);
-   
+
         // Retrieve the data
         void *vdata;
         if (file->getZoneData(&zone_name, &var_names, &dtype,
@@ -142,9 +142,9 @@ int main( int argc, char * argv[] ){
         }
       }
     } while (file->nextZone());
-      
+
     if (!(element_comp_num && conn && (data || float_data))){
-      fprintf(stderr, 
+      fprintf(stderr,
               "Error, data, connectivity or \
 component numbers not defined in file\n");
     }
@@ -153,7 +153,7 @@ component numbers not defined in file\n");
     fprintf(fp, "# vtk DataFile Version 3.0\n");
     fprintf(fp, "vtk output\nASCII\n");
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
-      
+
     // Write out the points
     fprintf(fp, "POINTS %d float\n", num_points);
 
@@ -189,7 +189,7 @@ component numbers not defined in file\n");
     }
 
     // Write out the cell values
-    fprintf(fp, "\nCELLS %d %d\n", 
+    fprintf(fp, "\nCELLS %d %d\n",
             num_elements, (conn_dim+1)*num_elements);
     const int *c = conn;
     for ( int k = 0; k < num_elements; k++ ){
@@ -202,10 +202,10 @@ component numbers not defined in file\n");
     }
 
     int vtk_elem_id = 0;
-    if (conn_dim == 2){ 
+    if (conn_dim == 2){
       vtk_elem_id = 3; // VTK_LINE;
     }
-    else if (conn_dim == 8){ 
+    else if (conn_dim == 8){
       vtk_elem_id = 12; // VTK_HEXAHEDRON
     }
     else {
@@ -225,7 +225,7 @@ component numbers not defined in file\n");
     for ( int j = 0; j < num_variables; j++ ){
       char name[256];
       int index = 0;
-      while (strlen(ptr) > 0 && ptr[0] != ','){ 
+      while (strlen(ptr) > 0 && ptr[0] != ','){
         name[index] = ptr[0];
         index++; ptr++;
       }
@@ -234,9 +234,9 @@ component numbers not defined in file\n");
 
       // Write out the zone names
       if (j >= 3){
-        fprintf(fp, "SCALARS %s float 1\n", name);
+        fprintf(fp, "SCALARS %s double 1\n", name);
         fprintf(fp, "LOOKUP_TABLE default\n");
-      
+
         if (data){
           for ( int k = 0; k < num_points; k++ ){
             fprintf(fp, "%.3e\n", data[num_variables*k + j]);
@@ -246,7 +246,7 @@ component numbers not defined in file\n");
           for ( int k = 0; k < num_points; k++ ){
             double d = float_data[num_variables*k + j];
             fprintf(fp, "%.3e\n", d);
-          }          
+          }
         }
       }
     }
