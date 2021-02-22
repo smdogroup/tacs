@@ -444,6 +444,18 @@ class TACSShellElement : public TACSElement {
                        TacsScalar fn[],
                        TacsScalar fnorm[]=NULL );
 
+  TacsScalar computeDispGrad( const double pt[],
+                              const TacsScalar Xpts[],
+                              const TacsScalar vars[],
+                              const TacsScalar fn[],
+                              const TacsScalar d[],
+                              TacsScalar X[],
+                              TacsScalar T[],
+                              TacsScalar XdinvT[],
+                              TacsScalar negXdinvXdz[],
+                              TacsScalar u0x[],
+                              TacsScalar u1x[] );
+
   static void assembleFrame( const TacsScalar Xxi[],
                              const TacsScalar n[],
                              TacsScalar Xd[] ){
@@ -545,7 +557,85 @@ void TACSShellElement<quadrature, basis, director, model>::
 }
 
 /*
-  Add the residual to the provided vector
+  Compute the displacement gradient of the constant and through-thickness
+  rate of change of the displacements.
+*/
+template <class quadrature, class basis, class director, class model>
+TacsScalar TACSShellElement<quadrature, basis, director, model>::
+  computeDispGrad( const double pt[],
+                   const TacsScalar Xpts[],
+                   const TacsScalar vars[],
+                   const TacsScalar fn[],
+                   const TacsScalar d[],
+                   TacsScalar X[],
+                   TacsScalar T[],
+                   TacsScalar XdinvT[],
+                   TacsScalar negXdinvXdz[],
+                   TacsScalar u0x[],
+                   TacsScalar u1x[] ){
+  const int vars_per_node = 3 + director::NUM_PARAMETERS;
+
+  // Compute X,xi = [dX/dxi1 ; dX/dxi2] and n,xi = [dn/dxi1; dn/dxi2]
+  TacsScalar Xxi[6], n[3], nxi[6];
+  basis::interpFields(pt, 3, Xpts, 3, X);
+  basis::interpFields(pt, 3, fn, 3, n);
+  basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
+  basis::interpFieldsGrad(pt, 3, fn, 3, nxi);
+
+  // Compute the transformation at the quadrature point
+  transform->computeTransform(Xxi, T);
+
+  // Assemble the terms Xd = [Xxi; n] and Xdz
+  TacsScalar Xd[9], Xdz[9];
+  assembleFrame(Xxi, n, Xd);
+  assembleFrame(nxi, Xdz);
+
+  // Compute the inverse of the 3x3 Jacobian transformation
+  TacsScalar Xdinv[9];
+  TacsScalar detXd = inv3x3(Xd, Xdinv);
+
+  // Compute negXdinvXdz = -Xdinv*Xdz
+  mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
+  for ( int i = 0; i < 9; i++ ){
+    negXdinvXdz[i] *= -1.0;
+  }
+
+  // Compute XdinvT = Xdinv*T
+  mat3x3MatMult(Xdinv, T, XdinvT);
+
+  // Compute the director field and the gradient of the director
+  // field at the specified point
+  TacsScalar d0[3], d0xi[6];
+  basis::interpFields(pt, 3, d, 3, d0);
+  basis::interpFieldsGrad(pt, 3, d, 3, d0xi);
+
+  // Compute the gradient of the displacement solution at the quadrature points
+  TacsScalar u0xi[6];
+  basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
+
+  // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
+  // Output: u0x, u1x
+
+  // Set u0x = [u0,xi ; d]
+  assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
+
+  // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
+  TacsScalar tmp[9];
+  assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
+  mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
+  mat3x3TransMatMult(T, u1x, tmp);
+  mat3x3MatMult(tmp, XdinvT, u1x);
+
+  // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+  // u0x = T^{T}*u0d*Xdinv*T
+  mat3x3MatMult(u0x, XdinvT, tmp);
+  mat3x3TransMatMult(T, tmp, u0x);
+
+  return detXd;
+}
+
+/*
+  Compute the kinetic and potential energies of the shell
 */
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::
@@ -585,66 +675,14 @@ void TACSShellElement<quadrature, basis, director, model>::
     double pt[3];
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-    // Compute X,xi = [dX/dxi1 ; dX/dxi2] and n,xi = [dn/dxi1; dn/dxi2]
-    TacsScalar X[3], Xxi[6], n[3], nxi[6];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFields(pt, 3, fn, 3, n);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFieldsGrad(pt, 3, fn, 3, nxi);
-
-    // Compute the transformation at the quadrature point
-    TacsScalar T[9];
-    transform->computeTransform(Xxi, T);
-
-    // Assemble the terms Xd = [Xxi; n] and Xdz
-    TacsScalar Xd[9], Xdz[9];
-    assembleFrame(Xxi, n, Xd);
-    assembleFrame(nxi, Xdz);
-
-    // Compute the inverse of the 3x3 Jacobian transformation
-    TacsScalar Xdinv[9];
-    TacsScalar detXd = inv3x3(Xd, Xdinv);
+    // Evaluate the displacement gradient at the point
+    TacsScalar X[3], T[9];
+    TacsScalar XdinvT[9], negXdinvXdz[9];
+    TacsScalar u0x[9], u1x[9];
+    TacsScalar detXd = computeDispGrad(pt, Xpts, vars, fn, d,
+                                       X, T, XdinvT, negXdinvXdz,
+                                       u0x, u1x);
     detXd *= weight;
-
-    // Compute negXdinvXdz = -Xdinv*Xdz
-    TacsScalar negXdinvXdz[9];
-    mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
-    for ( int i = 0; i < 9; i++ ){
-      negXdinvXdz[i] *= -1.0;
-    }
-
-    // Compute XdinvT = Xdinv*T
-    TacsScalar XdinvT[9];
-    mat3x3MatMult(Xdinv, T, XdinvT);
-
-    // Compute the director field and the gradient of the director
-    // field at the specified point
-    TacsScalar d0[3], d0xi[6];
-    basis::interpFields(pt, 3, d, 3, d0);
-    basis::interpFieldsGrad(pt, 3, d, 3, d0xi);
-
-    // Compute the gradient of the displacement solution at the quadrature points
-    TacsScalar u0xi[6];
-    basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
-
-    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
-    // Output: u0x, u1x
-
-    // Set u0x = [u0,xi ; d]
-    TacsScalar u0x[9];
-    assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
-
-    // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
-    TacsScalar u1x[9], tmp[9];
-    assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
-    mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
-    mat3x3TransMatMult(T, u1x, tmp);
-    mat3x3MatMult(tmp, XdinvT, u1x);
-
-    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-    // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(u0x, XdinvT, tmp);
-    mat3x3TransMatMult(T, tmp, u0x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
@@ -722,66 +760,14 @@ void TACSShellElement<quadrature, basis, director, model>::
     double pt[3];
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-    // Compute X,xi = [dX/dxi1 ; dX/dxi2] and n,xi = [dn/dxi1; dn/dxi2]
-    TacsScalar X[3], Xxi[6], n[3], nxi[6];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFields(pt, 3, fn, 3, n);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFieldsGrad(pt, 3, fn, 3, nxi);
-
-    // Compute the transformation at the quadrature point
-    TacsScalar T[9];
-    transform->computeTransform(Xxi, T);
-
-    // Assemble the terms Xd = [Xxi; n] and Xdz
-    TacsScalar Xd[9], Xdz[9];
-    assembleFrame(Xxi, n, Xd);
-    assembleFrame(nxi, Xdz);
-
-    // Compute the inverse of the 3x3 Jacobian transformation
-    TacsScalar Xdinv[9];
-    TacsScalar detXd = inv3x3(Xd, Xdinv);
+    // Evaluate the displacement gradient at the point
+    TacsScalar X[3], T[9];
+    TacsScalar XdinvT[9], negXdinvXdz[9];
+    TacsScalar u0x[9], u1x[9];
+    TacsScalar detXd = computeDispGrad(pt, Xpts, vars, fn, d,
+                                       X, T, XdinvT, negXdinvXdz,
+                                       u0x, u1x);
     detXd *= weight;
-
-    // Compute negXdinvXdz = -Xdinv*Xdz
-    TacsScalar negXdinvXdz[9];
-    mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
-    for ( int i = 0; i < 9; i++ ){
-      negXdinvXdz[i] *= -1.0;
-    }
-
-    // Compute XdinvT = Xdinv*T
-    TacsScalar XdinvT[9];
-    mat3x3MatMult(Xdinv, T, XdinvT);
-
-    // Compute the director field and the gradient of the director
-    // field at the specified point
-    TacsScalar d0[3], d0xi[6];
-    basis::interpFields(pt, 3, d, 3, d0);
-    basis::interpFieldsGrad(pt, 3, d, 3, d0xi);
-
-    // Compute the gradient of the displacement solution at the quadrature points
-    TacsScalar u0xi[6];
-    basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
-
-    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
-    // Output: u0x, u1x
-
-    // Set u0x = [u0,xi ; d]
-    TacsScalar u0x[9];
-    assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
-
-    // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
-    TacsScalar u1x[9], tmp[9];
-    assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
-    mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
-    mat3x3TransMatMult(T, u1x, tmp);
-    mat3x3MatMult(tmp, XdinvT, u1x);
-
-    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-    // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(u0x, XdinvT, tmp);
-    mat3x3TransMatMult(T, tmp, u0x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
@@ -812,7 +798,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     model::template addInterpTyingStrainTranspose<basis>(pt, dgty, dety);
 
     // Compute du0d = T*(du0x*XdinvT^{T} + du1x*XdinvT^{T}*negXdinvXdz^{T})
-    TacsScalar du0d[9];
+    TacsScalar du0d[9], tmp[9];
     mat3x3MatTransMult(du1x, XdinvT, du0d);
     mat3x3MatTransMult(du0d, negXdinvXdz, tmp);
     mat3x3MatTransMultAdd(du0x, XdinvT, tmp);
@@ -915,65 +901,13 @@ void TACSShellElement<quadrature, basis, director, model>::
     double pt[3];
     basis::getNodePoint(index, pt);
 
-    // Compute X,xi = [dX/dxi1 ; dX/dxi2] and n,xi = [dn/dxi1; dn/dxi2]
-    TacsScalar X[3], Xxi[6], n[3], nxi[6];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFields(pt, 3, fn, 3, n);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFieldsGrad(pt, 3, fn, 3, nxi);
-
-    // Compute the transformation at the quadrature point
-    TacsScalar T[9];
-    transform->computeTransform(Xxi, T);
-
-    // Assemble the terms Xd = [Xxi; n] and Xdz
-    TacsScalar Xd[9], Xdz[9];
-    assembleFrame(Xxi, n, Xd);
-    assembleFrame(nxi, Xdz);
-
-    // Compute the inverse of the 3x3 Jacobian transformation
-    TacsScalar Xdinv[9];
-    inv3x3(Xd, Xdinv);
-
-    // Compute negXdinvXdz = -Xdinv*Xdz
-    TacsScalar negXdinvXdz[9];
-    mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
-    for ( int i = 0; i < 9; i++ ){
-      negXdinvXdz[i] *= -1.0;
-    }
-
-    // Compute XdinvT = Xdinv*T
-    TacsScalar XdinvT[9];
-    mat3x3MatMult(Xdinv, T, XdinvT);
-
-    // Compute the director field and the gradient of the director
-    // field at the specified point
-    TacsScalar d0[3], d0xi[6];
-    basis::interpFields(pt, 3, d, 3, d0);
-    basis::interpFieldsGrad(pt, 3, d, 3, d0xi);
-
-    // Compute the gradient of the displacement solution at the quadrature points
-    TacsScalar u0xi[6];
-    basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
-
-    // Input: u0xi, d0, d0xi, T, negXdinvXdz, XdinvT
-    // Output: u0x, u1x
-
-    // Set u0x = [u0,xi ; d]
-    TacsScalar u0x[9];
-    assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
-
-    // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
-    TacsScalar u1x[9], tmp[9];
-    assembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
-    mat3x3MatMultAdd(u0x, negXdinvXdz, u1x);
-    mat3x3TransMatMult(T, u1x, tmp);
-    mat3x3MatMult(tmp, XdinvT, u1x);
-
-    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-    // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(u0x, XdinvT, tmp);
-    mat3x3TransMatMult(T, tmp, u0x);
+    // Evaluate the displacement gradient at the point
+    TacsScalar X[3], T[9];
+    TacsScalar XdinvT[9], negXdinvXdz[9];
+    TacsScalar u0x[9], u1x[9];
+    computeDispGrad(pt, Xpts, vars, fn, d,
+                    X, T, XdinvT, negXdinvXdz,
+                    u0x, u1x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
