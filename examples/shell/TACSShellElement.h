@@ -944,7 +944,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute XdinvT = Xdinv*T
     TacsScalar XdinvT[9];
-    mat3x3MatTransMult(Xdinv, T, XdinvT);
+    mat3x3MatMult(Xdinv, T, XdinvT);
 
     // Compute the director field and the gradient of the director
     // field at the specified point
