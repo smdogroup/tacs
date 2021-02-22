@@ -28,38 +28,38 @@ class TACSShellNaturalTransform : public TACSShellTransform {
 
   void computeTransform( const TacsScalar Xxi[], TacsScalar T[] ){
     // Compute the transformation
-    TacsScalar a[3], b[3];
-    a[0] = Xxi[0];
-    a[1] = Xxi[2];
-    a[2] = Xxi[4];
+    TacsScalar t1[3], t2[3];
+    t1[0] = Xxi[0];
+    t1[1] = Xxi[2];
+    t1[2] = Xxi[4];
 
-    b[0] = Xxi[1];
-    b[1] = Xxi[3];
-    b[2] = Xxi[5];
+    t2[0] = Xxi[1];
+    t2[1] = Xxi[3];
+    t2[2] = Xxi[5];
 
     // Compute the normal direction
     TacsScalar n[3];
-    crossProduct(a, b, n);
+    crossProduct(t1, t2, n);
 
     // Normalize the normal direction
     TacsScalar invNorm = 1.0/sqrt(vec3Dot(n, n));
     vec3Scale(invNorm, n);
 
     // Normalize the 1-direction of the element
-    TacsScalar inv = 1.0/sqrt(vec3Dot(a, a));
-    vec3Scale(inv, a);
+    TacsScalar inv = 1.0/sqrt(vec3Dot(t1, t1));
+    vec3Scale(inv, t1);
 
     // Take the cross product to determine the 2-direction
-    crossProduct(n, a, b);
+    crossProduct(n, t1, t2);
 
     // Set the components of the transformation
-    T[0] = a[0];
-    T[3] = a[1];
-    T[6] = a[2];
+    T[0] = t1[0];
+    T[3] = t1[1];
+    T[6] = t1[2];
 
-    T[1] = b[0];
-    T[4] = b[1];
-    T[7] = b[2];
+    T[1] = t2[0];
+    T[4] = t2[1];
+    T[7] = t2[2];
 
     T[2] = n[0];
     T[5] = n[1];
@@ -85,18 +85,18 @@ class TACSShellRefAxisTransform : public TACSShellTransform {
 
   void computeTransform( const TacsScalar Xxi[], TacsScalar T[] ){
     // Compute the transformation
-    TacsScalar a[3], b[3];
-    a[0] = Xxi[0];
-    a[1] = Xxi[2];
-    a[2] = Xxi[4];
+    TacsScalar t1[3], t2[3];
+    t1[0] = Xxi[0];
+    t1[1] = Xxi[2];
+    t1[2] = Xxi[4];
 
-    b[0] = Xxi[1];
-    b[1] = Xxi[3];
-    b[2] = Xxi[5];
+    t2[0] = Xxi[1];
+    t2[1] = Xxi[3];
+    t2[2] = Xxi[5];
 
     // Compute the normal direction
     TacsScalar n[3];
-    crossProduct(a, b, n);
+    crossProduct(t1, t2, n);
 
     // Normalize the normal direction
     TacsScalar invNorm = 1.0/sqrt(vec3Dot(n, n));
@@ -107,25 +107,25 @@ class TACSShellRefAxisTransform : public TACSShellTransform {
 
     // Take the component of the reference axis perpendicular
     // to the surface
-    a[0] = axis[0] - an*n[0];
-    a[1] = axis[1] - an*n[1];
-    a[2] = axis[2] - an*n[2];
+    t1[0] = axis[0] - an*n[0];
+    t1[1] = axis[1] - an*n[1];
+    t1[2] = axis[2] - an*n[2];
 
     // Normalize the new direction
-    TacsScalar inv = 1.0/sqrt(vec3Dot(a, a));
-    vec3Scale(inv, a);
+    TacsScalar inv = 1.0/sqrt(vec3Dot(t1, t1));
+    vec3Scale(inv, t1);
 
-    // Compute the second perpendicular direction
-    crossProduct(1.0, n, a, b);
+    // Take the cross product to determine the 2-direction
+    crossProduct(n, t1, t2);
 
     // Set the components of the transformation
-    T[0] = a[0];
-    T[3] = a[1];
-    T[6] = a[2];
+    T[0] = t1[0];
+    T[3] = t1[1];
+    T[6] = t1[2];
 
-    T[1] = b[0];
-    T[4] = b[1];
-    T[7] = b[2];
+    T[1] = t2[0];
+    T[4] = t2[1];
+    T[7] = t2[2];
 
     T[2] = n[0];
     T[5] = n[1];

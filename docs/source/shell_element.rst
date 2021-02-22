@@ -10,8 +10,10 @@ Small, moderate and finite rotations can be modeled.
 Director parametrization
 ------------------------
 
-A director :math:`\mathbf{d}` defines the rate of change of displacement in a reference direction :math:`\mathbf{t}` induced by an exact or approximate rotation.
-The relationship between the director and the reference direction is
+A director is a vector that defines the orientation and length of the reference shell normal in the deformed configuration.
+In the beam and shell elements implemented in TACS, the director itself is is not required, but can be evaluated via :math:`\mathbf{d} + \mathbf{n}`.
+The vector field :math:`\mathbf{d}` defines the rate of change of displacement in a reference direction :math:`\mathbf{t}` induced by an exact or approximate rotation.
+The relationship between :math:`\mathbf{d}` and the reference direction is
 
 .. math::
 
@@ -20,9 +22,9 @@ The relationship between the director and the reference direction is
 where :math:`\mathbf{C}(\mathbf{q})` is a rotation matrix parametrized by the variables :math:`\mathbf{q}`.
 The reference direction :math:`\mathbf{t}` is generated from the initial, undeformed geometry of the beam or shell.
 
-The spatial and temporal derivatives of directors at each node are used to determine the potential and kinetic energies, respectively, of the beam and shell elements.
+The spatial and temporal derivatives of :math:`\mathbf{d}` at each node are used to determine the potential and kinetic energies, respectively, of the beam and shell elements.
 Here we focus on the kinetic energy term, since the spatial derivatives are a result of the interpolation between nodes.
-The first and second time derivatives of the director are required for computing the kinetic energy and governing equations.
+The first and second time derivatives are required for computing the kinetic energy and governing equations.
 When the matrix :math:`\mathbf{C}(\mathbf{q})` is an exact rotation matrix, the relationship :math:`\dot{\mathbf{C}} = -\omega^{\times} \mathbf{C}` holds.
 Therefore :math:`\dot{\mathbf{C}}^{T} = \mathbf{C}^{T}\omega^{\times}` and the director satisfies
 
@@ -33,7 +35,7 @@ Therefore :math:`\dot{\mathbf{C}}^{T} = \mathbf{C}^{T}\omega^{\times}` and the d
     \ddot{\mathbf{d}} & = \mathbf{C}^{T} \left( \dot{\omega}^{\times} + \omega^{\times}\omega^{\times} \right) \mathbf{t} \\
     \end{aligned}
 
-There are several parametrizations that are implemented to enable linear and geometrically nonlinear analysis that are described below.
+There are several parametrizations of the field :math:`\mathbf{d}` that are implemented to enable linear and geometrically nonlinear analysis that are described below.
 
 The equations of motion in TACS are derived from Lagrange's equations.
 To provide a concrete explanation of the implementation, consider the kinetic energy expression
@@ -51,9 +53,9 @@ In this example, the potential energy expression takes the form
 
     U = U(\mathbf{u}_{0}, \mathbf{u}_{0,\xi}, \mathbf{d}, \mathbf{d}_{,\xi})
 
-where :math:`\mathbf{u}_{0}, \mathbf{u}_{0,\xi}, \mathbf{d}, \mathbf{d}_{,\xi}` represent the displacement and director values and their derivatives with respect to the parametrization of the beam or shell.
+where :math:`\mathbf{u}_{0}, \mathbf{u}_{0,\xi}, \mathbf{d}, \mathbf{d}_{,\xi}` represent the displacement values and their derivatives with respect to the parametrization of the beam or shell.
 
-Assuming that the Lagrangian can be written as :math:`L = T(\dot{\mathbf{q}}, \dot{\mathbf{u}}_{0}, \mathbf{q}, \mathbf{u}_{0}) - U(\mathbf{q})`, the contributions to the governing equations from the director dynamics are derived from Lagrange's equations, giving
+Assuming that the Lagrangian can be written as :math:`L = T(\dot{\mathbf{q}}, \dot{\mathbf{u}}_{0}, \mathbf{q}, \mathbf{u}_{0}) - U(\mathbf{q})`, the contributions to the governing equations are derived from Lagrange's equations, giving
 
 .. math::
 
@@ -74,11 +76,7 @@ The full expression for the kinetic engery is integrated over the quadrature poi
 
     T = \sum_{k} w_{k} T_{k}( \sum_{i} N_{i}(\xi_{k}) \dot{\mathbf{u}}_{0i}, \sum_{i} N_{i}(\xi_{k}) \dot{\mathbf{d}}_{i})
 
-
-
-
-
-The linear director parametrization is based on a 3 parameter parameter model, where :math:`\mathbf{q} \in \mathbb{R}^{3}` that takes the form
+A linear parametrization is based on a 3 parameter parameter model, where :math:`\mathbf{q} \in \mathbb{R}^{3}` that takes the form
 
 .. math::
 
@@ -129,31 +127,26 @@ This reference direction must have a component perpendicular to the centerline o
 The total
 
 
+.. Kinetic energy for the shell
+.. ----------------------------
 
+.. The kinetic energy in the shell element is computed as
 
-Kinetic energy for the shell
-----------------------------
+.. .. math::
 
-The kinetic energy in the shell element is computed as
+..     T = \frac{1}{2} \int_{\Omega} \rho \dot{\mathbf{u}}^{T} \dot{\mathbf{u}} \mathbf{u} d\Omega
 
-.. math::
+.. .. math::
 
-    T = \frac{1}{2} \int_{\Omega} \rho \dot{\mathbf{u}}^{T} \dot{\mathbf{u}} \mathbf{u} d\Omega
+..     T = \frac{1}{2} \int_{A} \rho_{0} \dot{\mathbf{u}}^{T}  \dot{\mathbf{u}} + \rho_{1} \omega^{T} \mathbf{J} \omega^{T} \; dA
 
-.. math::
+.. here :math:`\mathbf{J} = \mathbf{1} - \mathbf{n}\mathbf{n}^{T}`.
 
-    T = \frac{1}{2} \int_{A} \rho_{0} \dot{\mathbf{u}}^{T}  \dot{\mathbf{u}} + \rho_{1} \omega^{T} \mathbf{J} \omega^{T} \; dA
+.. We assume that the midsurface of the shell is co-located with the center of mass of the shell.
 
-here :math:`\mathbf{J} = \mathbf{1} - \mathbf{n}\mathbf{n}^{T}`.
+.. .. math::
 
-We assume that the midsurface of the shell is co-located with the center of mass of the shell.
-
-
-
-
-.. math::
-
-    \dot{\mathbf{C}} = - \omega^{\times} \mathbf{C}
+..     \dot{\mathbf{C}} = - \omega^{\times} \mathbf{C}
 
 
 Shell volume parametrization
@@ -226,18 +219,18 @@ Later, a transformation will be introduced to a local shell-oriented coordinate 
 Displacement parametrization
 ----------------------------
 
-The displacement field in the shell is parameterized using a combination of the mid-plane deflections and the through-thickness rate of deformation parametrized using a director field.
-At each node in the shell element, a director is parametrized based on the rotational variables at each node, :math:`\mathbf{q}_{i}`.
-The director gives the rate of change of the displacement in the through-thickness direction and is computed at each node :math:`i`
+The displacement field in the shell is parameterized using a combination of the mid-plane deflections and the through-thickness rate of deformation parameterized by :math:`\mathbf{d}`.
+At each node in the shell element, :math:`\mathbf{d}` is parametrized based on the rotational variables at each node, :math:`\mathbf{q}_{i}`.
+The field :math:`\mathbf{d}` gives the rate of change of the displacement in the through-thickness direction and is computed at each node :math:`i`
 
 .. math::
 
     \mathbf{d}_{i}(\mathbf{q}_{i}) = (\mathbf{Q}^{T}(\mathbf{q}_{i}) - \mathbf{I})\mathbf{n}_{i}
 
 The matrix :math:`\mathbf{Q}(\mathbf{q}_{i})` is either an exact or approximate rotation matrix.
-Note that this matrix is only ever evaluated at the nodes and is never interpolated directly, only the director field itself is interpolated.
+Note that this matrix is only ever evaluated at the nodes and is never interpolated directly, only the :math:`\mathbf{d}` field itself is interpolated.
 
-The displacement field is a combination of the mid-surface displacements at each node :math:`\mathbf{u}_{0i}` and the directors at each node
+The displacement field is a combination of the mid-surface displacements at each node :math:`\mathbf{u}_{0i}` and the :math:`\mathbf{d}_{i}` values at each node
 
 .. math::
 
@@ -286,47 +279,47 @@ The zeroth and first order displacement gradient expressions are used to constru
 Transformation to local shell-attached frame
 --------------------------------------------
 
-At each point on the shell, we construct a transformation :math:`\mathbf{T}` that transforms the displacements from the global reference frame to the shell-attached local reference frame.
+At each point on the shell, we construct a transformation :math:`\mathbf{T}` that transforms the displacements from a local shell-attached reference frame to the global reference frame.
 This transformation preserves the normal direction such that
 
 .. math::
 
     \mathbf{T} \mathbf{e}_{3} = \hat{\mathbf{n}}
 
-In practice the transformation is only required at the quadrature points.
+The transformation is computed at quadrature points and to visualize the results.
 
-There are two methods that are implemented to compute the local shell transformation.
-The first method utilizes a unit reference direction, denoted :math:`\mathbf{e}_{ref}`.
-The reference direction must not be normal to the shell surface.
-The reference direction is projected onto the surface of the shell to construct the local 1-direction.
-This local reference direction is then combined with the normal to create the 2-direction.
-
-The projection of the reference direction onto the shell surface takes the form
-
-.. math::
-
-    \mathbf{r} = (\mathbf{X}_{0,\xi_{1}}^{T} \mathbf{e}_{ref}) \mathbf{X}_{0,\xi_{1}} +
-    (\mathbf{X}_{0,\xi_{2}}^{T} \mathbf{e}_{ref}) \mathbf{X}_{0,\xi_{2}}
-
-The 2-direction is then computed by combining the reference direction with the surface normal to give the 2-direction :math:`\mathbf{t}_{2}`
-
-.. math::
-
-    \mathbf{t}_{2} = \dfrac{\hat{\mathbf{n}} \times \mathbf{r}}{||\hat{\mathbf{n}} \times \mathbf{r}||_{2}}
-
-The unit 1-direction is computed as
-
-.. math::
-
-    \mathbf{t}_{1} = \mathbf{t}_{2} \times \hat{\mathbf{n}}
-
+There are two methods that are implemented to compute the local shell transformation described below.
+Both methods assemble the transformation by finding tangent directions :math:`\mathbf{t}_{1}` and :math:`\mathbf{t}_{2}`.
 After these vectors have been computed, the full transformation matrix is
 
 .. math::
 
     \mathbf{T} = \begin{bmatrix} \mathbf{t}_{1} & \mathbf{t}_{2} & \hat{\mathbf{n}} \end{bmatrix}
 
-In the second method, the 1-direction is taken as the parametric direction
+Reference axis projection transform
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The first transformation utilizes a unit reference direction, denoted :math:`\mathbf{e}_{ref}`.
+Note: *the reference direction cannot be normal to the shell surface*.
+The reference direction is projected onto the surface of the shell to construct the local 1-direction.
+This local reference direction is then combined with the normal to create the 2-direction.
+The projection of the reference direction onto the shell surface takes the form
+
+.. math::
+
+    \mathbf{t}_{1} = \dfrac{\mathbf{e}_{ref} - \hat{\mathbf{n}}^{T}\mathbf{e}_{ref} \hat{\mathbf{n}}}{||\mathbf{e}_{ref} - \hat{\mathbf{n}}^{T}\mathbf{e}_{ref} \hat{\mathbf{n}}||_{2}}
+
+The 2-direction is then computed by combining the reference direction with the surface normal to give the 2-direction :math:`\mathbf{t}_{2}`
+
+.. math::
+
+    \mathbf{t}_{2} = \hat{\mathbf{n}} \times \mathbf{t}_{1}.
+
+Natural transform
+^^^^^^^^^^^^^^^^^
+
+The second transformation method utilizes the first tangent direction captured via the parametrization of the shell.
+This tangent direction is always well defined and computed as
 
 .. math::
 
@@ -338,14 +331,8 @@ The 2-direction is taken as the vector that completes the orthogonal basis
 
     \mathbf{t}_{2} = \hat{\mathbf{n}} \times \mathbf{t}_{1}
 
-After these vectors have been computed, the full transformation matrix is
-
-.. math::
-
-    \mathbf{T} = \begin{bmatrix} \mathbf{t}_{1} & \mathbf{t}_{2} & \hat{\mathbf{n}} \end{bmatrix}
-
 Caution should be used when utilizing this transformation, since it will vary between shell elements depending on their orientation.
-When the shell material is orthotropic the first method should be used.
+When the shell material is orthotropic the reference direction method should be used.
 
 Strain expressions
 ------------------
@@ -354,18 +341,19 @@ The displacement gradient is transformed into the local reference frame as
 
 .. math::
 
-    \mathbf{u}_{,\mathbf{x}} =
-    \mathbf{u}_{,\mathbf{x}}^{0} + \mathbf{u}_{,\mathbf{x}}^{1} =
-    \mathbf{T} \mathbf{u}^{0}_{\mathbf{X}} \mathbf{T}^{T} + \zeta \mathbf{T} \mathbf{u}^{1}_{\mathbf{X}} \mathbf{T}^{T}
+    \mathbf{u}_{,x} =
+    \mathbf{u}_{,x}^{0} + \mathbf{u}_{,x}^{1} =
+    \mathbf{T}^{T} \mathbf{u}^{0}_{\mathbf{X}} \mathbf{T} +
+    \zeta \mathbf{T}^{T} \mathbf{u}^{1}_{\mathbf{X}} \mathbf{T}
 
 The strain distribution throughout the shell is
 
 .. math::
 
-    \epsilon = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{0} + {\mathbf{u}_{,\mathbf{x}}^{0}}^{T} + {\mathbf{u}_{,\mathbf{x}}^{0}}^{T} \mathbf{u}_{,\mathbf{x}}^{0} +
-    \zeta \left( \mathbf{u}_{,\mathbf{x}}^{1} + {\mathbf{u}_{,\mathbf{x}}^{1}}^{T} +
-    {\mathbf{u}_{,\mathbf{x}}^{1}}^{T}\mathbf{u}_{,\mathbf{x}}^{0} +
-    {\mathbf{u}_{,\mathbf{x}}^{0}}^{T}\mathbf{u}_{,\mathbf{x}}^{1}\right) \right] +
+    \epsilon = \frac{1}{2} \left[ \mathbf{u}_{,x}^{0} + {\mathbf{u}_{,x}^{0}}^{T} + {\mathbf{u}_{,x}^{0}}^{T} \mathbf{u}_{,x}^{0} +
+    \zeta \left( \mathbf{u}_{,x}^{1} + {\mathbf{u}_{,x}^{1}}^{T} +
+    {\mathbf{u}_{,x}^{1}}^{T}\mathbf{u}_{,x}^{0} +
+    {\mathbf{u}_{,x}^{0}}^{T}\mathbf{u}_{,x}^{1}\right) \right] +
     \mathcal{O}(\zeta^{2})
 
 For analysis, the strain is split into the zeroth order and bending components.
@@ -373,27 +361,27 @@ The zeroth order strain terms consist of both in-plane normal and shear strains 
 
 .. math::
 
-    \epsilon^{0} = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{0} + {\mathbf{u}_{,\mathbf{x}}^{0}}^{T} + {\mathbf{u}_{,\mathbf{x}}^{0}}^{T} \mathbf{u}_{,\mathbf{x}}^{0} \right]
+    \epsilon^{0} = \frac{1}{2} \left[ \mathbf{u}_{,x}^{0} + {\mathbf{u}_{,x}^{0}}^{T} + {\mathbf{u}_{,x}^{0}}^{T} \mathbf{u}_{,x}^{0} \right]
 
 For linear analysis, the zeroth order strains are
 
 .. math::
 
-    \epsilon^{0} = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{0} + {\mathbf{u}_{,\mathbf{x}}^{0}}^{T} \right]
+    \epsilon^{0} = \frac{1}{2} \left[ \mathbf{u}_{,x}^{0} + {\mathbf{u}_{,x}^{0}}^{T} \right]
 
 The bending strains consist of the normal and twisting bending components and are computed as
 
 .. math::
 
-    \kappa = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{1} + {\mathbf{u}_{,\mathbf{x}}^{1}}^{T} +
-    {\mathbf{u}_{,\mathbf{x}}^{1}}^{T}\mathbf{u}_{,\mathbf{x}}^{0} +
-    {\mathbf{u}_{,\mathbf{x}}^{0}}^{T}\mathbf{u}_{,\mathbf{x}}^{1} \right]
+    \kappa = \frac{1}{2} \left[ \mathbf{u}_{,x}^{1} + {\mathbf{u}_{,x}^{1}}^{T} +
+    {\mathbf{u}_{,x}^{1}}^{T}\mathbf{u}_{,x}^{0} +
+    {\mathbf{u}_{,x}^{0}}^{T}\mathbf{u}_{,x}^{1} \right]
 
 For linear analysis, the bending strain components are
 
 .. math::
 
-    \kappa = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{1} + {\mathbf{u}_{,\mathbf{x}}^{1}}^{T} \right]
+    \kappa = \frac{1}{2} \left[ \mathbf{u}_{,x}^{1} + {\mathbf{u}_{,x}^{1}}^{T} \right]
 
 Thermal strain formulation
 --------------------------
@@ -405,7 +393,7 @@ The temperature field gradient is
 
 .. math::
 
-    \theta_{,\mathbf{x}} = \begin{bmatrix} \theta_{,\xi_{1}} & \theta_{,\xi_{1}} & 0 \end{bmatrix} \mathbf{X}_{,\eta}^{-1} \mathbf{T}^{T}
+    \theta_{,x} = \begin{bmatrix} \theta_{,\xi_{1}} & \theta_{,\xi_{1}} & 0 \end{bmatrix} \mathbf{X}_{,\eta}^{-1} \mathbf{T}
 
 The change in temperature causes a strain due to thermal expansion
 
@@ -425,13 +413,13 @@ Under thermoelastic analysis, the in-plane mechanical strain for linear elements
 
 .. math::
 
-    \epsilon^{0} = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{0} + {\mathbf{u}_{,\mathbf{x}}^{0}}^{T} \right] - \epsilon_{T}^{0}
+    \epsilon^{0} = \frac{1}{2} \left[ \mathbf{u}_{,x}^{0} + {\mathbf{u}_{,x}^{0}}^{T} \right] - \epsilon_{T}^{0}
 
 The bending components of the mechanical strain for the linear elements is
 
 .. math::
 
-    \kappa = \frac{1}{2} \left[ \mathbf{u}_{,\mathbf{x}}^{1} + {\mathbf{u}_{,\mathbf{x}}^{1}}^{T} \right] - \kappa_{T}
+    \kappa = \frac{1}{2} \left[ \mathbf{u}_{,x}^{1} + {\mathbf{u}_{,x}^{1}}^{T} \right] - \kappa_{T}
 
 Here :math:`\epsilon_{T}^{0}` and :math:`\kappa_{T}` are the components of the strain due to thermal expansion from lamination theory.
 
@@ -443,14 +431,30 @@ In this formulation, we add a penalization between the rotation normal to the sh
 This penalization adds stiffness to the shell.
 The value of the penalization is taken from the shell constitutive object.
 
-Given the rotation matrix :math:`\mathbf{Q}(q_{i})`, at each node, the rotation penalty term is computed as
+Given the rotation matrix :math:`\mathbf{C}(q_{i})`, at each node, the rotation penalty term is computed as
 
 .. math::
 
-    \epsilon_{t} = \mathbf{X}_{0,\xi_{1}}^{T} \left[ \sum_{i} N_{i} \mathbf{Q}(\mathbf{q}_{i}) \right]
-    \left(\mathbf{X}_{0,\xi_{2}} + \mathbf{u}_{0,\xi_{2}} \right) -
-    \mathbf{X}_{0,\xi_{2}}^{T} \left[ \sum_{i} N_{i} \mathbf{Q}(\mathbf{q}_{i}) \right]
-    \left(\mathbf{X}_{0,\xi_{1}} + \mathbf{u}_{0,\xi_{1}} \right)
+    \epsilon_{t} =
+    \mathbf{e}_{2}^{T} \mathbf{T}^{T} \left[ \sum_{i} N_{i} \mathbf{C}(\mathbf{q}_{i}) \right] \mathbf{T} \left(\mathbf{e}_{1} + \mathbf{u}_{,x}^{0} \mathbf{e}_{1} \right) -
+    \mathbf{e}_{1}^{T} \mathbf{T}^{T} \left[ \sum_{i} N_{i} \mathbf{C}(\mathbf{q}_{i}) \right] \mathbf{T} \left(\mathbf{e}_{2} + \mathbf{u}_{,x}^{0} \mathbf{e}_{2} \right)
+
+here :math:`\mathbf{e}_{1}` and :math:`\mathbf{e}_{2}` denote the cartesian basis, and :math:`\mathbf{u}_{,x}^{0}` is the derivative of the mid surface displacements in the locally attached reference frame.
+This deviation is treated by adding a strain energy penalty term to the total potential energy of the element :math:`\frac{1}{2} k_{t} \epsilon_{t}^2`.
+
+In the case of the linear rotation matrix :math:`\mathbf{C}(\mathbf{q}) = \mathbf{1} - \mathbf{q}^{\times}` for :math:`\mathbf{q} \in \mathbb{R}^{3}`.
+Linearizing the expression for :math:`\epsilon_{t}` gives
+
+.. math::
+
+    \begin{aligned}
+    \epsilon_{t} &=
+    \mathbf{t}_{2}^{T} (\mathbf{1} -  \mathbf{q}(\xi)^{\times}) \mathbf{t}_{1} + \mathbf{t}_{2}^{T} \mathbf{T} \mathbf{u}_{,x}^{0} \mathbf{e}_{1}
+    - \mathbf{t}_{1}^{T} (\mathbf{1} -  \mathbf{q}(\xi)^{\times}) \mathbf{t}_{2} - \mathbf{t}_{1}^{T} \mathbf{T} \mathbf{u}_{,x}^{0} \mathbf{e}_{2} \\
+    &= \mathbf{e}_{2} \mathbf{u}_{,x}^{0} \mathbf{e}_{1} - \mathbf{e}_{1} \mathbf{u}_{,x}^{0} \mathbf{e}_{2} - 2 \hat{\mathbf{n}}^{T} \mathbf{q}(\xi) \\
+    \end{aligned}
+
+Note that for a plate in the :math:`x-y` plane this simplifies to the relationship :math:`\epsilon_{t} = v_{,x} - u_{,y} - 2 q_{z}`.
 
 Mixed Interpolation of Tensorial Components
 -------------------------------------------
@@ -483,7 +487,12 @@ With these definitions, the zeroth order strain components can be computed from 
 
 .. math::
 
-    \epsilon_{as}^{0} = \mathbf{T} {\eta_{\mathbf{X}}^{0}}^{T} \left[ \sum_{t} N^{as}_{t}(\xi) \tilde{\epsilon}(\xi_{t}) \right] \eta_{\mathbf{X}}^{0} \mathbf{T}^{T}
+    \epsilon_{as}^{0} = \mathbf{T}^{T} {\eta_{\mathbf{X}}^{0}}^{T} \left[ \sum_{t} N^{as}_{t}(\xi) \tilde{\epsilon}(\xi_{t}) \right] \eta_{\mathbf{X}}^{0} \mathbf{T}
+
+Constitutive relationships for the shell element
+------------------------------------------------
+
+For the shell element, the constitutive relationship is
 
 
 Equations of motion
