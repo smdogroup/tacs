@@ -47,12 +47,6 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   void evalTangentStiffness( int elemIndex, const double pt[],
                              const TacsScalar X[], TacsScalar C[] );
 
-  // Add the contribution
-  void addStressDVSens( int elemIndex, TacsScalar scale,
-                        const double pt[], const TacsScalar X[],
-                        const TacsScalar strain[], const TacsScalar psi[],
-                        int dvLen, TacsScalar dfdx[] );
-
   // Evaluate the thermal strain
   void evalThermalStrain( int elemIndex, const double pt[],
                           const TacsScalar X[], TacsScalar theta,
