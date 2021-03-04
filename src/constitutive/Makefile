@@ -13,7 +13,8 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSPlaneStressConstitutive.o \
 	TACSSolidConstitutive.o \
 	TACSTimoshenkoConstitutive.o \
-	TACSShellConstitutive.o
+	TACSShellConstitutive.o \
+	TACSCompositeShellConstitutive.o
 
 DIR=${TACS_DIR}/src/constitutive
 

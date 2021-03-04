@@ -17,21 +17,21 @@
 */
 
 #include "TACSCompositeShellConstitutive.h"
-#include "tacslapack.h"
 
 const char* TACSCompositeShellConstitutive::constName = "TACSCompositeShellConstitutive";
 
 /*
   Create the shell constitutive
 */
-TACSCompositeShellConstitutive::TACSCompositeShellConstitutive( TACSOrthotropicPly **_ply_props,
+TACSCompositeShellConstitutive::TACSCompositeShellConstitutive( int _num_plies,
+                                                                TACSOrthotropicPly **_ply_props,
                                                                 const TacsScalar *_ply_thickness,
                                                                 const TacsScalar *_ply_angles,
-                                                                int _num_plies ){
+                                                                TacsScalar _kcorr ){
   num_plies = _num_plies;
   ply_thickness = new TacsScalar[ num_plies ];
   ply_angles = new TacsScalar[ num_plies ];
-  ply_props = new TACSOrthotropicPly[ num_plies ];
+  ply_props = new TACSOrthotropicPly*[ num_plies ];
 
   for ( int i = 0; i < num_plies; i++ ){
     ply_props[i] = _ply_props[i];
@@ -40,6 +40,8 @@ TACSCompositeShellConstitutive::TACSCompositeShellConstitutive( TACSOrthotropicP
     ply_thickness[i] = _ply_thickness[i];
     ply_angles[i] = _ply_angles[i];
   }
+
+  kcorr = _kcorr;
 }
 
 TACSCompositeShellConstitutive::~TACSCompositeShellConstitutive(){
@@ -51,83 +53,17 @@ TACSCompositeShellConstitutive::~TACSCompositeShellConstitutive(){
   delete [] ply_angles;
 }
 
-
-// Retrieve the global design variable numbers
-int TACSCompositeShellConstitutive::getDesignVarNums( int elemIndex,
-                                                      int dvLen, int dvNums[] ){
-  if (tNum >= 0){
-    if (dvNums && dvLen >= 1){
-      dvNums[0] = tNum;
-    }
-    return 1;
-  }
-  return 0;
-}
-
-// Set the element design variable from the design vector
-int TACSCompositeShellConstitutive::setDesignVars( int elemIndex,
-                                                   int dvLen,
-                                                   const TacsScalar dvs[] ){
-  if (tNum >= 0 && dvLen >= 1){
-    t = dvs[0];
-    return 1;
-  }
-  return 0;
-}
-
-// Get the element design variables values
-int TACSCompositeShellConstitutive::getDesignVars( int elemIndex,
-                                                   int dvLen,
-                                                   TacsScalar dvs[] ){
-  if (tNum >= 0 && dvLen >= 1){
-    dvs[0] = t;
-    return 1;
-  }
-  return 0;
-}
-
-// Get the lower and upper bounds for the design variable values
-int TACSCompositeShellConstitutive::getDesignVarRange( int elemIndex,
-                                                       int dvLen,
-                                                       TacsScalar lb[],
-                                                       TacsScalar ub[] ){
-  if (tNum >= 0 && dvLen >= 1){
-    if (lb){ lb[0] = tlb; }
-    if (ub){ ub[0] = tub; }
-    return 1;
-  }
-  return 0;
-}
-
 // Evaluate the material density
 TacsScalar TACSCompositeShellConstitutive::evalDensity( int elemIndex,
                                                         const double pt[],
                                                         const TacsScalar X[] ){
-  if (properties){
-    return t*properties->getDensity();
-  }
   return 0.0;
-}
-
-// Add the derivative of the density
-void TACSCompositeShellConstitutive::addDensityDVSens( int elemIndex,
-                                                       TacsScalar scale,
-                                                       const double pt[],
-                                                       const TacsScalar X[],
-                                                       int dvLen,
-                                                       TacsScalar dfdx[] ){
-  if (properties && tNum >= 0){
-    dfdx[0] += scale*properties->getDensity();
-  }
 }
 
 // Evaluate the specific heat
 TacsScalar TACSCompositeShellConstitutive::evalSpecificHeat( int elemIndex,
                                                              const double pt[],
                                                              const TacsScalar X[] ){
-  if (properties){
-    return properties->getSpecificHeat();
-  }
   return 0.0;
 }
 
@@ -158,8 +94,8 @@ void TACSCompositeShellConstitutive::evalStress( int elemIndex,
   TacsScalar t0 = -0.5*t;
   for ( int k = 0; k < num_plies; k++ ){
     TacsScalar Qbar[6], Abar[3];
-    ply_props[k]->calculateQbar(Qbar, ply_angles[k]);
-    ply_props[k]->calculateAbar(Abar, ply_angles[k]);
+    ply_props[k]->calculateQbar(ply_angles[k], Qbar);
+    ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
     TacsScalar t1 = t0 + ply_thickness[k];
 
@@ -184,7 +120,7 @@ void TACSCompositeShellConstitutive::evalStress( int elemIndex,
   drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
 
   // Evaluate the stress
-  evalStress(A, B, D, As, drill, e, s);
+  TACSShellConstitutive::evalStress(A, B, D, As, drill, e, s);
 }
 
 // Evaluate the tangent stiffness
@@ -216,8 +152,8 @@ void TACSCompositeShellConstitutive::evalTangentStiffness( int elemIndex,
   TacsScalar t0 = -0.5*t;
   for ( int k = 0; k < num_plies; k++ ){
     TacsScalar Qbar[6], Abar[3];
-    ply_props[k]->calculateQbar(Qbar, ply_angles[k]);
-    ply_props[k]->calculateAbar(Abar, ply_angles[k]);
+    ply_props[k]->calculateQbar(ply_angles[k], Qbar);
+    ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
     TacsScalar t1 = t0 + ply_thickness[k];
 
@@ -242,35 +178,15 @@ void TACSCompositeShellConstitutive::evalTangentStiffness( int elemIndex,
   C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
 }
 
-// Add the contribution
-void TACSCompositeShellConstitutive::addStressDVSens( int elemIndex,
-                                                      TacsScalar scale,
-                                                      const double pt[],
-                                                      const TacsScalar X[],
-                                                      const TacsScalar strain[],
-                                                      const TacsScalar psi[],
-                                                      int dvLen, TacsScalar dfdx[] ){}
-
 // Evaluate the thermal strain
 void TACSCompositeShellConstitutive::evalThermalStrain( int elemIndex,
                                                         const double pt[],
                                                         const TacsScalar X[],
                                                         TacsScalar theta,
                                                         TacsScalar e[] ){
-  if (properties){
-    properties->evalThermalStrain2D(e);
-    e[0] *= theta;
-    e[1] *= theta;
-    e[2] *= theta;
-
-    e[3] = e[4] = e[5] = 0.0;
-    e[6] = e[7] = e[8] = 0.0;
-  }
-  else {
-    e[0] = e[1] = e[2] = 0.0;
-    e[3] = e[4] = e[5] = 0.0;
-    e[6] = e[7] = e[8] = 0.0;
-  }
+  e[0] = e[1] = e[2] = 0.0;
+  e[3] = e[4] = e[5] = 0.0;
+  e[6] = e[7] = e[8] = 0.0;
 }
 
 // Evaluate the heat flux, given the thermal gradient
@@ -279,12 +195,8 @@ void TACSCompositeShellConstitutive::evalHeatFlux( int elemIndex,
                                                    const TacsScalar X[],
                                                    const TacsScalar grad[],
                                                    TacsScalar flux[] ){
-  if (properties){
-    TacsScalar Kc[3];
-    properties->evalTangentHeatFlux2D(Kc);
-    flux[0] = t*(Kc[0]*grad[0] + Kc[1]*grad[1]);
-    flux[1] = t*(Kc[1]*grad[0] + Kc[2]*grad[1]);
-  }
+  flux[0] = 0.0;
+  flux[1] = 0.0;
 }
 
 // Evaluate the tangent of the heat flux
@@ -292,10 +204,7 @@ void TACSCompositeShellConstitutive::evalTangentHeatFlux( int elemIndex,
                                                           const double pt[],
                                                           const TacsScalar X[],
                                                           TacsScalar Kc[] ){
-  if (properties){
-    properties->evalTangentHeatFlux2D(Kc);
-    Kc[0] *= t;  Kc[1] *= t;  Kc[2] *= t;
-  }
+  Kc[0] = Kc[1] = Kc[2] = 0.0;
 }
 
 /*

@@ -24,33 +24,16 @@
 
 class TACSCompositeShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSCompositeShellConstitutive( TACSOrthotropicPly **_ply_props,
+  TACSCompositeShellConstitutive( int _num_plies,
+                                  TACSOrthotropicPly **_ply_props,
                                   const TacsScalar *_ply_thickness,
                                   const TacsScalar *_ply_angles,
-                                  int _num_plies );
+                                  TacsScalar _kcorr=5.0/6.0 );
   ~TACSCompositeShellConstitutive();
-
-  // Retrieve the global design variable numbers
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-
-  // Set the element design variable from the design vector
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-
-  // Get the element design variables values
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-
-  // Get the lower and upper bounds for the design variable values
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
 
   // Evaluate the material density
   TacsScalar evalDensity( int elemIndex, const double pt[],
                           const TacsScalar X[] );
-
-  // Add the derivative of the density
-  void addDensityDVSens( int elemIndex, TacsScalar scale,
-                         const double pt[], const TacsScalar X[],
-                         int dvLen, TacsScalar dfdx[] );
 
   // Evaluate the specific heat
   TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
@@ -89,9 +72,10 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
 
  private:
   // Store information about the design variable
-  TACSOrthotropicPly *ply_props;
-  TacsScalar *ply_thickness, *ply_angles;
   int num_plies;
+  TACSOrthotropicPly **ply_props;
+  TacsScalar *ply_thickness, *ply_angles;
+  TacsScalar kcorr;
 
   // The object name
   static const char *constName;

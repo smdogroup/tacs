@@ -36,6 +36,7 @@ class TACSShellConstitutive : public TACSConstitutive {
   TACSShellConstitutive( TACSMaterialProperties *props,
                          TacsScalar _t=1.0, int _tNum=-1,
                          TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
+  TACSShellConstitutive();
   ~TACSShellConstitutive();
 
   // Get the number of stresses

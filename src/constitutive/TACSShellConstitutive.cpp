@@ -40,6 +40,12 @@ TACSShellConstitutive::TACSShellConstitutive( TACSMaterialProperties *props,
   tub = _tub;
 }
 
+TACSShellConstitutive::TACSShellConstitutive(){
+  properties = NULL;
+  t = tlb = tub = 0.0;
+  tNum = 0;
+}
+
 TACSShellConstitutive::~TACSShellConstitutive(){
   if (properties){
     properties->decref();
